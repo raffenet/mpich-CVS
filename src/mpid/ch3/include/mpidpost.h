@@ -358,7 +358,7 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq);
 
 
 /*E
-  MPIDI_CH3U_Request_create - Initialize the channel device's component of a request.
+  MPIDI_CH3U_Request_create - Initialize the channel device (ch3) component of a request.
 
   Input Parameters:
 . req - pointer to the request object
@@ -370,7 +370,7 @@ void MPIDI_CH3U_Request_create(MPID_Request * req);
 
 
 /*E
-  MPIDI_CH3U_Request_destroy - Free resources associated with the channel device's component of a request.
+  MPIDI_CH3U_Request_destroy - Free resources associated with the channel device (ch3) component of a request.
 
   Input Parameters:
 . req - pointer to the request object
