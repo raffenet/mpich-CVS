@@ -586,7 +586,8 @@ def mpdrun():
                     msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
                     mpd_send_one_msg(manSocket,msgToSend)
                     manSocket.close()
-                exit(-1)
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
 
     if mergingOutput:
         for line in linesOrdered:
