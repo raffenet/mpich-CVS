@@ -1,4 +1,5 @@
 #! @PERL@
+# -*- Mode: perl; -*-
 #
 # Set some defaults
 $includedir = ".";
@@ -12,7 +13,6 @@ $commonmake = "";    # Common entries for each generated Makefile
 $maint_targets = 1;  # set to 0 for distribution versions
 $verbose = 0;        # set to 1 to get more information
 $am_a = "";          # set to _a for automake style input
-$smdir = "";         # directory containing simplemake
 $do_dependencies = 1;# set to 1 to attempt to generate dependency information
 $autoconf_args = ""; # Extra arguments for autoconf
 $do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
@@ -28,6 +28,17 @@ $Sleep = $SleepFast;
 
 $create_configure_input = 1;  # Changes file.sm to file.in .  Set to 0
                               # for file.sm to file .
+$smdir=$0;         # directory containing simplemake
+if ($smdir =~/^[^\/]/) {
+    $curpwd = $ENV{'PWD'};
+    #chomp($curpwd = `pwd`);
+    #print "curdir = $curpwd\n";
+    #print "\$0 = $0\n";
+    $smdir = $curpwd . "/$0";
+}
+$smdir =~ s/\/?simplemake$//;
+#print "smdir = $smdir\n";
+
 $debug = 0;
 
 %libdir = ();
@@ -117,7 +128,9 @@ $includedir_name =           'includedir  = @' . "includedir"  . '@';
 # Need a way to substitute for additional or replacement default rules
 
 @subdirs = ();
+@keepargs = ();    # Used to recreate simplemake invocation for make target
 foreach $_ (@ARGV) {
+    $keepargs[$#keepargs+1] = $_;    # Add all args by default
     if (/-nocomments/) { $nocomments = 1; }
     elsif (/-v/) { $verbose = 1; }
     elsif (/-am/) { $am_a = "_a"; }
@@ -126,12 +139,17 @@ foreach $_ (@ARGV) {
 	$libdir{$1}  = "$2/";
     }
     elsif (/-common=(.*)$/) {
-	open( CD,"<$1" ) || die "Could not open $1\n";
+	$filename = $1;
+	open( CD,"<$filename" ) || die "Could not open $filename\n";
 	while (<CD>) {
 	    s/\r//g; # Strip \r for DOS
 	    $commonmake .= $_;
 	}
 	close(CD);
+	# Replace this argument with an updated version
+	if ($filename =~ /^[^\/]/) {
+  	    $keepargs[$#keepargs] = "-common=$curpwd/$filename";
+	}
     }
     elsif (/-autoconf=(.*)$/) {
 	$autoconf_args = $1;
@@ -159,14 +177,27 @@ foreach $_ (@ARGV) {
     elsif (/-nodepend/) {
 	$do_dependencies = 0;
     }
+    elsif (/-rootdir=(.*)$/) {
+        $rootdirpath = $1;
+	$#keepargs--;  # remove this entry (it is explicitly recreated)
+    }
+    elsif (/-distcleanfiles=(.*)/) {
+	# extra files to remove in this directory
+	$distcleanfiles = $1;
+    }
+    elsif (/-debug/) {
+	$debug = 1;
+    }
     elsif (/-help/) {
 	&printHelp;
 	exit 0;
     }
     else {
+	$#keepargs--;  # Remove filename from list
 	&ProcessFile ( $_ );
     }
 }
+
 
 # Check that gcc is available if we need it
 if ($do_dependencies) {
@@ -512,7 +543,23 @@ sub DefaultRules {
 	}
     }
     if ($maint_targets && "$smdir" ne "") {
-	print FD "\nMakefile.in: Makefile.sm\n\t$smdir/simplemake Makefile.sm\n";
+	print FD "\nMakefile.in: Makefile.sm\n";
+	print FD "\t$smdir/simplemake -rootdir=$rootdir \\\n";
+	foreach $curarg (@keepargs) {
+	    # Must handle $ specially
+	    $tmparg = $curarg;
+	    $tmparg =~ s/\$/\1\\\$\$/;
+	    if ($tmparg =~ /\s/) {
+		print FD "\t\"$tmparg\" \\\n";
+	    }
+	    else {
+		print FD "\t$tmparg \\\n";
+	    }
+	}
+	if (defined($autoconf_files_by_dir{$lcurdir})) {
+	    print FD "\t-distcleanfiles=\"$autoconf_files_by_dir{$lcurdir}\" \\\n";
+	}
+	print FD "\t\tMakefile.sm\n";
     }
     # Clean targets
     &TargetClean;
@@ -617,6 +664,7 @@ sub ExpandMakeVars {
 # ===========================================================================
 sub ProcessFile {
     $file = $_[0];
+
     print "Processing $curdir$file\n";
     if (-s "configure.in") {
 	&ReadAutoconf;
@@ -658,8 +706,8 @@ sub ProcessFile {
 	chdir $dir;
 	$curdir .= "$dir/";
 	$rootdirpath .= "../";
-	#print "rootdir = $rootdirpath\n";
-	#print "curdir = $curdir\n";
+	print "rootdir = $rootdirpath\n" if $debug;
+	print "curdir = $curdir\n" if $debug;
 	&ProcessFile( $file );
 	$rootdirpath =~ s/\.\.\/$//;
 	chdir "..";
@@ -830,6 +878,9 @@ sub TargetClean {
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
 	print FD "\t-rm -f $rmfile\n";
+    }
+    if ($distcleanfiles ne "") {
+	print FD "\t-rm -f $distcleanfiles\n";
     }
     if ($maint_targets) {
 	print FD "maintainerclean:";
