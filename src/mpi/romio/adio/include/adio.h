@@ -184,16 +184,20 @@ typedef struct ADIOI_FileD {
     int is_open;		/* deferred open: 0: not open yet 1: is open */
     char *filename;          
     int file_system;         /* type of file system */
-    int access_mode;         
+    int access_mode;         /* Access mode (sequential, append, etc.) */
     ADIO_Offset disp;        /* reqd. for MPI-IO */
     MPI_Datatype etype;      /* reqd. for MPI-IO */
     MPI_Datatype filetype;   /* reqd. for MPI-IO */
     int etype_size;          /* in bytes */
     ADIOI_Hints *hints;      /* structure containing fs-indep. info values */
     MPI_Info info;
+
+    /* The following support the split collective operations */
     int split_coll_count;    /* count of outstanding split coll. ops. */
     MPI_Status split_status; /* status used for split collectives */
     MPI_Datatype split_datatype; /* datatype used for split collectives */
+
+    /* The following support the shared file operations */
     char *shared_fp_fname;   /* name of file containing shared file pointer */
     struct ADIOI_FileD *shared_fp_fd;  /* file handle of file 
                                          containing shared fp */
