@@ -9,6 +9,11 @@
 #endif
 
 /* pmiimpl.h */
+
+/* Define to prevent an smpd root thread or process from being created when there is only one process. */
+/* Currently, defining this prevents the use of the spawn command. */
+/*#define SINGLE_PROCESS_OPTIMIZATION*/
+
 #define PMI_MAX_KEY_LEN          256
 #define PMI_MAX_VALUE_LEN        8192
 #define PMI_MAX_KVS_NAME_LENGTH  100
