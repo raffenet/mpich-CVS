@@ -474,6 +474,7 @@ int smpd_free_context(smpd_context_t *context)
         smpd_dbg_printf("freeing %s context.\n", smpd_get_context_str(context));
 
 	/* this check isn't full-proof because random data might match SMPD_CONTEXT_FREED */
+	/* This also doesn't work because free clobbers the memory instead of leaving it alone */
 	if (context->type == SMPD_CONTEXT_FREED)
 	{
 	    smpd_err_printf("attempt to free context more than once.\n");
@@ -504,6 +505,7 @@ int smpd_free_context(smpd_context_t *context)
 	}
 
 	/* erase the contents to help track down use of freed structures */
+	/* This doesn't work because free clobbers the memory instead of leaving it alone */
 	memset(context, 0, sizeof(smpd_context_t));
 	smpd_init_context(context, SMPD_CONTEXT_FREED, MPIDU_SOCK_INVALID_SET, MPIDU_SOCK_INVALID_SOCK, -1);
 
