@@ -1,7 +1,7 @@
-C
-C     (C) 2004 by Argonne National Laboratory.
-C     See COPYRIGHT in top-level directory.
-C
+!
+!     (C) 2004 by Argonne National Laboratory.
+!     See COPYRIGHT in top-level directory.
+!
        MODULE MPI
        IMPLICIT NONE
        INCLUDE 'mpif.h'
