@@ -4952,9 +4952,10 @@ int smpd_state_reading_mpiexec_abort(smpd_context_t *context, MPIDU_Sock_event_t
     }
     result = smpd_abort_job(smpd_process.pg_list->kvs, 0, "mpiexec aborting job");
 
-    /* return failure here and the mpiexec_abort context will be closed */
     smpd_exit_fn(FCNAME);
-    return SMPD_FAIL;
+    /* return failure here and the mpiexec_abort context will be closed */
+    /*return SMPD_FAIL;*/
+    return SMPD_SUCCESS;
 }
 
 #undef FCNAME
