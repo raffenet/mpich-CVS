@@ -5,7 +5,6 @@
  */
 
 #include "smpd.h"
-#include "crypt.h"
 
 #ifdef HAVE_WINDOWS_H
 void smpd_stdin_thread(SOCKET hWrite)
@@ -185,7 +184,6 @@ int smpd_state_reading_challenge_string(smpd_context_t *context, MPIDU_Sock_even
 {
     int result;
     char phrase[SMPD_PASSPHRASE_MAX_LENGTH];
-    char *crypted;
 
     smpd_enter_fn("smpd_state_reading_challenge_string");
 
@@ -208,8 +206,7 @@ int smpd_state_reading_challenge_string(smpd_context_t *context, MPIDU_Sock_even
     strcat(phrase, context->pszChallengeResponse);
 
     /*smpd_dbg_printf("crypting: %s\n", phrase);*/
-    crypted = crypt(phrase, SMPD_SALT_VALUE);
-    strcpy(context->pszChallengeResponse, crypted);
+    smpd_hash(phrase, (int)strlen(phrase), context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN);
 
     /* write the response */
     /*smpd_dbg_printf("writing response: %s\n", pszStr);*/

@@ -104,9 +104,6 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
-				RelativePath="crypt.c">
-			</File>
-			<File
 				RelativePath="smpd_authenticate.c">
 			</File>
 			<File
@@ -138,6 +135,9 @@
 			</File>
 			<File
 				RelativePath="smpd_launch_process.c">
+			</File>
+			<File
+				RelativePath=".\smpd_md5.c">
 			</File>
 			<File
 				RelativePath="smpd_printf.c">

@@ -685,5 +685,6 @@ int smpd_watch_processes();
 int smpd_get_hostname(char *host, int length);
 int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port);
 int PMIX_Stop_root_smpd(void);
+int smpd_hash(char *input, int input_length, char *output, int output_length);
 
 #endif
