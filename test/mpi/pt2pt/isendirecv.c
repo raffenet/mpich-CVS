@@ -365,14 +365,18 @@ next_subset:
       {
         for (i=0; i<nvals; i++) dptr[i]=1.0*p;
         for (i=0; i<pop->nslaves; i++)
-            if (myrank != i) MPI_Isend( dptr, nvals, MPI_FLOAT, i, 0, MPI_COMM_WORLD, &writeque[nwq++]);
+            if (myrank != i)
+	    {
+		if (nwq>=wqsize) crash("%s ERROR nwq[%d] > wqsize[%d]\n", TSTAMP, nwq, wqsize);
+		MPI_Isend( dptr, nvals, MPI_FLOAT, i, 0, MPI_COMM_WORLD, &writeque[nwq++]);
+	    }
+	
       } else
       {
         cnode = get_compute_plane( pop, p);
+	if (nrq>=rqsize) crash("%s ERROR nrq[%d] > rqsize[%d]\n", TSTAMP, nrq, rqsize);
         MPI_Irecv( dptr, nvals, MPI_FLOAT, cnode, 0, MPI_COMM_WORLD, &readque[nrq++]);
       }
-      if (nwq>wqsize) crash("%s ERROR nwq[%d] > wqsize[%d]\n", TSTAMP, nwq, wqsize);
-      if (nrq>rqsize) crash("%s ERROR nrq[%d] > rqsize[%d]\n", TSTAMP, nrq, rqsize);
     }
     /* Wait for all incoming data to be transfered (if any) */
     if (nrq)
@@ -421,6 +425,7 @@ void crash( char * fmt, ...)
     va_start(ap, fmt);
     vfprintf( stderr, fmt, ap);
     va_end(ap);
+    fflush(stderr);
     
     exit(1);
 }
