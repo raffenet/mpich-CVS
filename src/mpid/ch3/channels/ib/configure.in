@@ -34,11 +34,15 @@ for arg in $ibu_name ; do
   case $arg in 
     ibal)
     AC_DEFINE(USE_IB_IBAL,,[Define to use the SourceForge ibal interface])
+    IB_LIBS="$IB_LIBS -lallib -lcomplib -lpthread -ldl"
+    IB_LDFLAGS="$IB_LDFLAGS -L/usr/sf-iba/iba/linuxuser/bin/x86/2.4.18-19.7.x/lib/free"
     ;;
   esac
   case $arg in
     vapi)
     AC_DEFINE(USE_IB_VAPI,,[Define to use the Mellanox vapi interface])
+    IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
+    IB_LDFLAGS="$IB_LDFLAGS -L/usr/mellanox/lib"
     ;;
   esac
 done
@@ -72,7 +76,7 @@ AC_SEARCH_LIBS(socket,socket)
 AC_SEARCH_LIBS(gethostbyname,nsl)
 
 dnl IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
-IB_LIBS="$IB_LIBS -lallib -lcomplib -lpthread -ldl"
+dnl IB_LIBS="$IB_LIBS -lallib -lcomplib -lpthread -ldl"
 LIBS=$save_libs
 AC_SUBST(IB_LIBS)
 
@@ -80,7 +84,7 @@ dnl IB_CPPFLAGS="$IB_CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
 dnl AC_SUBST(IB_CPPFLAGS)
 
 dnl IB_LDFLAGS="$IB_LDFLAGS -L/usr/mellanox/lib"
-IB_LDFLAGS="$IB_LDFLAGS -L/usr/sf-iba/iba/linuxuser/bin/x86/2.4.18-19.7.x/lib/free"
+dnl IB_LDFLAGS="$IB_LDFLAGS -L/usr/sf-iba/iba/linuxuser/bin/x86/2.4.18-19.7.x/lib/free"
 AC_SUBST(IB_LDFLAGS)
 
 AC_SUBST(device_name)

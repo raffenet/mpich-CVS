@@ -24,7 +24,20 @@ for path in $pathlist ; do
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
 done
 
-#CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
+CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
 CPPFLAGS="$CPPFLAGS -I/usr/sf-iba/iba/linux/include/iba"
 #LDFLAGS="$LDFLAGS -L/usr/mellanox/lib"
 #LIBS="$LIBS -lvapi"
+
+for arg in $ibu_name ; do
+  case $arg in 
+    ibal)
+    CPPFLAGS="$CPPFLAGS -I/usr/sf-iba/iba/linux/include/iba"
+    ;;
+  esac
+  case $arg in
+    vapi)
+    CPPFLAGS="$CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
+    ;;
+  esac
+done
