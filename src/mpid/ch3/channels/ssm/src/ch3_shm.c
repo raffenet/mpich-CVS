@@ -318,6 +318,11 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    recv_vc_ptr = recv_vc_ptr->ch.shm_next_reader;
 		    continue;
 		}
+		if (recv_vc_ptr->ch.recv_active == NULL)
+		{
+		    recv_vc_ptr = recv_vc_ptr->ch.shm_next_reader;
+		    continue;
+		}
 	    }
 
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes", num_bytes));
