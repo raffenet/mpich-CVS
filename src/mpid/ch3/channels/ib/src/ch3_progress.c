@@ -379,7 +379,13 @@ static inline int handle_written(MPIDI_VC * vc)
 	}
 #endif
 	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling ibu_post_writev"));*/
-	nb = ibu_writev(vc->ch.ibu, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset);
+	mpi_errno = ibu_writev(vc->ch.ibu, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
+	if (mpi_errno != IBU_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
+	    return mpi_errno;
+	}
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibu_post_writev returned %d", nb));
 
 	if (nb > 0)

@@ -71,8 +71,14 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	   channel, thus insuring that the progress engine does also try to
 	   write */
 	
-	nb = ibu_write(vc->ch.ibu, pkt, pkt_sz);
-	
+	mpi_errno = ibu_write(vc->ch.ibu, pkt, pkt_sz, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	    return mpi_errno;
+	}
+
 	if (nb == pkt_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "data sent immediately"));

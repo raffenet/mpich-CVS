@@ -100,10 +100,16 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	channel, thus insuring that the progress engine does also try to
 	write */
 
-	nb = (n_iov > 1) ?
-	    ibu_writev(vc->ch.ibu, iov, n_iov) :
-	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
-	
+	mpi_errno = (n_iov > 1) ?
+	    ibu_writev(vc->ch.ibu, iov, n_iov, &nb) :
+	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+	    return mpi_errno;
+	}
+
 	MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb));
 	if (nb > 0)
 	{

@@ -56,8 +56,14 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	   also try to write */
 	
 	MPIU_DBG_PRINTF(("ibu_post_write(%d bytes)\n", pkt_sz));
-	nb = ibu_write(vc->ch.ibu, pkt, pkt_sz);
-	
+	mpi_errno = ibu_write(vc->ch.ibu, pkt, pkt_sz, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
+	    return mpi_errno;
+	}
+
 	MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 	
 	if (nb == pkt_sz)

@@ -73,10 +73,16 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	/* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
 	   as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 	
-	nb = (n_iov > 1) ?
-	    ibu_writev(vc->ch.ibu, iov, n_iov) :
-	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
-	
+	mpi_errno = (n_iov > 1) ?
+	    ibu_writev(vc->ch.ibu, iov, n_iov, &nb) :
+	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	    return mpi_errno;
+	}
+
 	if (nb > 0)
 	{
 	    int offset = 0;
