@@ -63,10 +63,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    int keylen;
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    /* Check input arguments */
 	    if (!key) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_KEY,
@@ -81,7 +78,8 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
 	    }
 	    if (valuelen <= 0) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-					  "**argneg", 2, "value", valuelen );
+					  "**argneg", "**argneg %s %d", 
+					  "value", valuelen );
 	    }
 	    if (!value) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_VALUE, 
