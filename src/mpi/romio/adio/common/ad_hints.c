@@ -268,7 +268,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
      */
     if (fd->hints->cb_config_list == NULL) {
 	MPI_Info_set(info, "cb_config_list", ADIOI_CB_CONFIG_LIST_DFLT);
-	fd->hints->cb_config_list = ADIOI_Malloc(strlen((ADIOI_CB_CONFIG_LIST_DFLT)+1) * sizeof(char));
+	fd->hints->cb_config_list = ADIOI_Malloc((strlen(ADIOI_CB_CONFIG_LIST_DFLT)+1) * sizeof(char));
 	if (fd->hints->cb_config_list == NULL) {
 	    /* NEED TO HANDLE ENOMEM */
 	}
