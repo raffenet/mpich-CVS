@@ -2117,6 +2117,13 @@ if ($write_mpif) {
     # ensure that these are passed as routines, not implicitly-defined 
     # variables
     print MPIFFD "       EXTERNAL MPI_DUP_FN, MPI_NULL_DELETE_FN, MPI_NULL_COPY_FN\n";
+    # Add the external names for the MPI-2 attribute functions
+    print MPIFFD "       EXTERNAL MPI_COMM_DUP_FN, MPI_COMM_NULL_DELETE_FN\n";
+    print MPIFFD "       EXTERNAL MPI_COMM_NULL_COPY_FN\n";
+    print MPIFFD "       EXTERNAL MPI_WIN_DUP_FN, MPI_WIN_NULL_DELETE_FN\n";
+    print MPIFFD "       EXTERNAL MPI_WIN_NULL_COPY_FN\n";
+    print MPIFFD "       EXTERNAL MPI_TYPE_DUP_FN, MPI_TYPE_NULL_DELETE_FN\n";
+    print MPIFFD "       EXTERNAL MPI_TYPE_NULL_COPY_FN\n";
     # the time/tick functions
     print MPIFFD "       DOUBLE PRECISION MPI_WTIME, MPI_WTICK\n";
     print MPIFFD "       DOUBLE PRECISION PMPI_WTIME, PMPI_WTICK\n";
@@ -2207,13 +2214,7 @@ sub build_specials {
     #     
     print $OUTFD "}\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "init" );
-	&print_args( PROTOFD, $args, 1, "init" );
-	&print_attr( PROTOFD, "${out_prefix}init_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "init", $args );
 
     $OUTFD = "INITFFD";
     open( $OUTFD, ">initthreadf.c" ) || die "Cannot open initthreadf.c\n";
@@ -2227,13 +2228,7 @@ sub build_specials {
     print $OUTFD "    *ierr = MPI_Init_thread( 0, 0, *v1, v2 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "init_thread" );
-	&print_args( PROTOFD, $args, 1, "init_thread" );
-	&print_attr( PROTOFD, "${out_prefix}init_thread_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "init_thread", $args );
 
     # Functions used by the C init process, but that must be called 
     # from C
@@ -2304,13 +2299,7 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
     print $OUTFD "    *ierr = MPI_Pcontrol( (int)*v1 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "pcontrol" );
-	&print_args( PROTOFD, $args, 1, "pcontrol" );
-	&print_attr( PROTOFD, "${out_prefix}pcontrol_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "pcontrol", $args );
 
     $OUTFD = "ADDRESSFFD";
     open ($OUTFD, ">addressf.c" ) || die "Cannot open addressf.c\n";
@@ -2345,13 +2334,7 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
 #endif
 }\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "address" );
-	&print_args( PROTOFD, $args, 1, "address" );
-	&print_attr( PROTOFD, "${out_prefix}address_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "address", $args );
 
     $OUTFD = "GETADDRESSFFD";
     open ($OUTFD, ">getaddressf.c" ) || die "Cannot open getaddressf.c\n";
@@ -2378,13 +2361,7 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
     *v2 =  a;
 }\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "get_address" );
-	&print_args( PROTOFD, $args, 1, "get_address" );
-	&print_attr( PROTOFD, "${out_prefix}get_address_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "get_address", $args );
     $tof77{"MPI_Aint*"} =  $saveAINT;
 
     $OUTFD = "WTIMEFD";
@@ -2457,14 +2434,13 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
         }
 }\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "keyval_create" );
-	&print_args( PROTOFD, $args, 1, "keyval_create" );
-	&print_attr( PROTOFD, "${out_prefix}keyval_create_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "keyval_create", $args );
 
+    # Default attribute functions.  
+    # We must create separate functions since we cannot rely on
+    # using a preprocessor to alias the names.
+    # OPTION: we could use weak symbols where available to
+    # reduce the number of files.
     $OUTFD = "DUPFN";
     open ($OUTFD, ">dup_fnf.c" ) || die "Cannot open dup_fnf.c\n";
     $files[$#files+1] = "dup_fnf.c";
@@ -2479,13 +2455,7 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
         *ierr = MPI_SUCCESS;
 }\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "dup_fn" );
-	&print_args( PROTOFD, $args, 1, "dup_fn" );
-	&print_attr( PROTOFD, "${out_prefix}dup_fn_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "dup_fn", $args );
 
     $OUTFD = "NULLDELFN";
     open ($OUTFD, ">null_del_fnf.c" ) || die "Cannot open null_del_fnf.c\n";
@@ -2499,13 +2469,7 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
         *ierr = MPI_SUCCESS;
 }\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "null_delete_fn" );
-	&print_args( PROTOFD, $args, 1, "null_delete_fn" );
-	&print_attr( PROTOFD, "${out_prefix}null_delete_fn_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "null_delete_fn", $args );
 
     $OUTFD = "NULLCOPYFN";
     open ($OUTFD, ">null_copy_fnf.c" ) || die "Cannot open null_copy_fnf.c\n";
@@ -2519,13 +2483,11 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void 
         *v6 = MPIR_TO_FLOG(0);
 }\n";
     close ($OUTFD);
-    if ($build_prototypes) {
-        print PROTOFD "extern ";
-	&print_routine_type_decl( PROTOFD, "null_copy_fn" );
-	&print_args( PROTOFD, $args, 1, "null_copy_fn" );
-	&print_attr( PROTOFD, "${out_prefix}null_copy_fn_" );
-	print PROTOFD ";\n";
-    }
+    &AddPrototype( "null_copy_fn", $args );
+
+    &WriteAttrDefaults( "comm_" );
+    &WriteAttrDefaults( "win_" );
+    &WriteAttrDefaults( "type_" );
 
     # The status conversion functions.
     # These are a little different because they are routines that
@@ -2984,4 +2946,68 @@ sub SkipCPPIfdef {
 	if ($depth <= 0) { last; }
     }
     return 0;
+}
+# ---------------------------------------------------------------------------
+# Add a prototype for (functionname, arguments)
+sub AddPrototype {
+    my ($funcname,$args) = @_;
+    if ($build_prototypes) {
+        print PROTOFD "extern ";
+	&print_routine_type_decl( PROTOFD, "$funcname" );
+	&print_args( PROTOFD, $args, 1, "$funcname" );
+	&print_attr( PROTOFD, "${out_prefix}${funcname}_" );
+	print PROTOFD ";\n";
+    }
+}
+# ---------------------------------------------------------------------------
+# This function writes the attribute copy/delete/dup functions
+# with a particular prefix (and a null prefix is allowed)
+# WriteAttrDefaults( prefix )
+sub WriteAttrDefaults {
+    my $prefix =$_[0];
+    my $ucprefix = uc($prefix);
+    
+    open ($OUTFD, ">dup_${prefix}fnf.c" ) || die "Cannot open dup_${prefix}fnf.c\n";
+    $files[$#files+1] = "dup_${prefix}fnf.c";
+    $args = "MPI_Fint, MPI_Fint *, void *, void **, void **, MPI_Fint *";
+    &print_header( "mpi_${prefix}dup_fn", "${prefix}dup_fn", $args );
+    &print_routine_type_decl( $OUTFD, "${prefix}dup_fn" );
+    &print_args( $OUTFD, $args, 0, "${prefix}dup_fn" );
+    #&print_attr;
+    print $OUTFD "{
+        *v5 = *v4;
+        *v6 = MPIR_TO_FLOG(1);
+        *ierr = MPI_SUCCESS;
+}\n";
+    close ($OUTFD);
+    &AddPrototype( "${prefix}dup_fn", $args );
+
+    $OUTFD = "NULLDELFN";
+    open ($OUTFD, ">null_${prefix}del_fnf.c" ) || die "Cannot open null_${prefix}del_fnf.c\n";
+    $files[$#files+1] = "null_${prefix}del_fnf.c";
+    $args = "MPI_Fint *, MPI_Fint *, void *, void *";
+    &print_header( "mpi_${prefix}null_delete_fn", "${prefix}null_delete_fn", $args );
+    &print_routine_type_decl( $OUTFD, "${prefix}null_delete_fn" );
+    &print_args( $OUTFD, $args, 0, "${prefix}null_delete_fn" );
+    #&print_attr;
+    print $OUTFD "{
+        *ierr = MPI_SUCCESS;
+}\n";
+    close ($OUTFD);
+    &AddPrototype( "${prefix}null_delete_fn", $args );
+
+    $OUTFD = "NULLCOPYFN";
+    open ($OUTFD, ">null_${prefix}copy_fnf.c" ) || die "Cannot open null_${prefix}copy_fnf.c\n";
+    $files[$#files+1] = "null_${prefix}copy_fnf.c";
+    $args = "MPI_Fint *, MPI_Fint *, void *, void *, void *, int *";
+    &print_header( "mpi_${prefix}null_copy_fn", "${prefix}null_copy_fn", $args );
+    &print_routine_type_decl( $OUTFD, "${prefix}null_copy_fn" );
+    &print_args( $OUTFD, $args, 0, "${prefix}null_copy_fn" );
+    print $OUTFD "{
+        *ierr = MPI_SUCCESS;
+        *v6 = MPIR_TO_FLOG(0);
+}\n";
+    close ($OUTFD);
+
+    &AddPrototype( "${prefix}null_copy_fn", $args );
 }
