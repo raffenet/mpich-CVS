@@ -55,14 +55,15 @@ int MPI_Type_contiguous(int count,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-#if 0
-	    /* TODO: SOMEONE EXPLAIN TO ME HOW THIS IS SUPPOSED TO WORK */
-            MPIR_ERRTEST_INITIALIZED(a);
-            if (mpi_errno < 0) {
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    if (count < 0) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                            "**negarg", "**negarg %s %d", "a", a );
+                            "**argneg", "**argneg %s %d", "count", count );
             } 
-#endif
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
         }
         MPID_END_ERROR_CHECKS;
     }
