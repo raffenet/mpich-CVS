@@ -2,7 +2,7 @@
 #include "mpitestconf.h"
 #include <unistd.h>
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #define HAVE_MPI_TYPE_GET_TRUE_EXTENT
 

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #endif
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 static int verbose = 0;
 

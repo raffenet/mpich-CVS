@@ -1,7 +1,7 @@
 #include "mpi.h"
 #include <unistd.h>
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 static int verbose = 0;
