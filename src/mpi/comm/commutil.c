@@ -121,6 +121,22 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
 static unsigned int context_mask[MAX_CONTEXT_MASK];
 static int initialize_context_mask = 1;
 
+#ifdef MPICH_DEBUG_INTERNAL
+static void MPIR_PrintContextMask( FILE *fp )
+{
+    int i;
+    int maxset=0;
+    for (i=MAX_CONTEXT_MASK-1; i>=0; i--) {
+	if (context_mask[i] != 0) break;
+    }
+    maxset = i;
+    DBG_FPRINTF( fp, "Context mask: " );
+    for (i=0; i<maxset; i++) {
+	DBG_FPRINTF( fp, "%.8x ", context_mask[i] );
+    }
+    DBG_FPRINTF( fp, "\n" );
+}
+#endif
 int MPIR_Get_contextid( MPI_Comm comm )
 {
     int i, j, context_id = 0;
@@ -132,7 +148,7 @@ int MPIR_Get_contextid( MPI_Comm comm )
 	    context_mask[i] = 0xFFFFFFFF;
 	}
 	/* the first two values are already used */
-	context_mask[0] = 0x3FFFFFFF; 
+	context_mask[0] = 0xFFFFFFFC; 
 	initialize_context_mask = 0;
     }
     memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
@@ -144,36 +160,53 @@ int MPIR_Get_contextid( MPI_Comm comm )
     for (i=0; i<MAX_CONTEXT_MASK; i++) {
 	if (local_mask[i]) {
 	    /* There is a bit set in this word */
-	    mask = 0x80000000;
+	    mask = 0x00000001;
 	    /* This is a simple sequential search.  */
 	    for (j=0; j<32; j++) {
 		if (mask & local_mask[i]) {
 		    /* Found the leading set bit */
 		    context_mask[i] &= ~mask;
 		    context_id = 4 * (32 * i + j);
-		    /*printf( "returning contextid = %d\n", context_id ); */
+#ifdef MPICH_DEBUG_INTERNAL
+		    if (MPIR_IDebug("context")) {
+			DBG_FPRINTF( stderr, "allocating contextid = %d\n", context_id ); 
+			DBG_FPRINTF( stderr, "(mask[%d], bit %d\n", i, j );
+		    }
+#endif
 		    return context_id;
 		}
-		mask >>= 1;
+		mask <<= 1;
 	    }
 	}
     }
     /* return 0 if no context id found.  The calling routine should 
        check for this and generate the appropriate error code */
+#ifdef MPICH_DEBUG_INTERNAL
+    if (MPIR_IDebug("context"))
+	MPIR_PrintContextMask( stderr );
+#endif
     return context_id;
 }
+
 void MPIR_Free_contextid( int context_id )
 {
     int idx, bitpos;
     /* Convert the context id to the bit position */
     /* printf( "Freeed id = %d\n", context_id ); */
-    context_id <<= 2;       /* Remove the shift of a factor of four */
-    idx = context_id % 32;
-    bitpos = context_id / 32;
+    context_id >>= 2;       /* Remove the shift of a factor of four */
+    idx    = context_id / 32;
+    bitpos = context_id % 32;
 
     context_mask[idx] |= (0x1 << bitpos);
 
+#ifdef MPICH_DEBUG_INTERNAL
+    if (MPIR_IDebug("context")) {
+	DBG_FPRINTF( stderr, "Freed context %d\n", context_id );
+	DBG_FPRINTF( stderr, "mask[%d] bit %d\n", idx, bitpos );
+    }
+#endif
 }
+
 /* Get a context for a new intercomm.  There are two approaches 
    here (for MPI-1 codes only)
    (a) Each local group gets a context; the groups exchange, and
