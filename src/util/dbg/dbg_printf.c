@@ -44,6 +44,7 @@
 #endif
 
 MPIU_dbg_state_t MPIUI_dbg_state = MPIU_DBG_STATE_UNINIT;
+FILE * MPIUI_dbg_fp = NULL;
 static int dbg_memlog_num_lines = MPICH_DBG_MEMLOG_NUM_LINES;
 static int dbg_memlog_line_size = MPICH_DBG_MEMLOG_LINE_SIZE;
 static char **dbg_memlog = NULL;
@@ -54,6 +55,18 @@ static int dbg_rank = -1;
 int MPIU_dbg_init(int rank)
 {
     dbg_rank = rank;
+
+    /* If file logging is enable, we need to open a file */
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_FILE)
+    {
+	char fn[128];
+
+	sprintf(fn, "mpich2-dbg-%d.log", dbg_rank);
+	
+	MPIUI_dbg_fp = fopen(fn, "w");
+	setvbuf(MPIUI_dbg_fp, NULL, _IONBF, 0);
+    }
+    
     return 0;
 }
 
@@ -81,23 +94,29 @@ static void dbg_init(void)
      *   sequencing information ???
      */
     if (strstr(envstr, "stdout"))
+    {
 	MPIUI_dbg_state |= MPIU_DBG_STATE_STDOUT;
+    }
     if (strstr(envstr, "memlog"))
+    {
 	MPIUI_dbg_state |= MPIU_DBG_STATE_MEMLOG;
+    }
+    if (strstr(envstr, "file"))
+    {
+	MPIUI_dbg_state |= MPIU_DBG_STATE_FILE;
+    }
 
     /* If memlog is enabled, the we need to allocate some memory for it */
     if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
-	dbg_memlog = MPIU_Malloc(dbg_memlog_num_lines * sizeof(char *) +
-				 dbg_memlog_num_lines * dbg_memlog_line_size);
+	dbg_memlog = MPIU_Malloc(dbg_memlog_num_lines * sizeof(char *) + dbg_memlog_num_lines * dbg_memlog_line_size);
 	if (dbg_memlog != NULL)
 	{
 	    int i;
 	    
 	    for (i = 0; i < dbg_memlog_num_lines ; i++)
 	    {
-		dbg_memlog[i] = ((char *) &dbg_memlog[dbg_memlog_num_lines]) +
-		    i * dbg_memlog_line_size;
+		dbg_memlog[i] = ((char *) &dbg_memlog[dbg_memlog_num_lines]) + i * dbg_memlog_line_size;
 	    }
 	}
 	else
@@ -123,8 +142,7 @@ int MPIU_dbglog_printf(char *str, ...)
 	
 	dbg_memlog[dbg_memlog_next][0] = '\0';
 	va_start(list, str);
-	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size,
-		      str, list);
+	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size, str, list);
 	va_end(list);
 
 	/* if the output was truncated, we null terminate the end of the
@@ -156,6 +174,13 @@ int MPIU_dbglog_printf(char *str, ...)
 	va_end(list);
     }
 
+    if ((MPIUI_dbg_state & MPIU_DBG_STATE_FILE) && MPIUI_dbg_fp != NULL)
+    {
+	va_start(list, str);
+	n = vfprintf(MPIUI_dbg_fp, str, list);
+	va_end(list);
+    }
+
     return n;
 }
 
@@ -173,8 +198,7 @@ int MPIU_dbglog_vprintf(char *str, va_list ap)
     {
 	va_copy(list,ap);
 	dbg_memlog[dbg_memlog_next][0] = '\0';
-	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size,
-		      str, list);
+	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size, str, list);
         va_copy_end(list);
 
 	/* if the output was truncated, we null terminate the end of the
@@ -201,9 +225,16 @@ int MPIU_dbglog_vprintf(char *str, va_list ap)
 
     if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
     {
-	va_copy(list,ap);
+	va_copy(list, ap);
 	n = vprintf(str, list);
 	va_copy_end(list);
+    }
+
+    if ((MPIUI_dbg_state & MPIU_DBG_STATE_FILE) && MPIUI_dbg_fp != NULL)
+    {
+	va_copy(list, ap);
+	n = vfprintf(MPIUI_dbg_fp, str, list);
+	va_end(list);
     }
 
     return n;

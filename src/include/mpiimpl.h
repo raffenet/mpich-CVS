@@ -115,7 +115,8 @@ typedef enum MPIU_dbg_state_t
     MPIU_DBG_STATE_NONE = 0,
     MPIU_DBG_STATE_UNINIT = 1,
     MPIU_DBG_STATE_STDOUT = 2,
-    MPIU_DBG_STATE_MEMLOG = 4
+    MPIU_DBG_STATE_MEMLOG = 4,
+    MPIU_DBG_STATE_FILE = 8
 }
 MPIU_dbg_state_t;
 int MPIU_dbg_init(int rank);
@@ -134,6 +135,7 @@ int MPIU_dbglog_vprintf(char *str, va_list ap);
 #define MPIU_DBG_PRINTF(e)
 #endif
 extern MPIU_dbg_state_t MPIUI_dbg_state;
+extern FILE * MPIUI_dbg_fp;
 #define MPIU_dbglog_flush()				\
 {							\
     if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)	\
