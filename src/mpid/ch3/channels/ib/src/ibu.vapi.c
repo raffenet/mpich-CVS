@@ -83,7 +83,7 @@ typedef struct ibu_buffer_t
 
 typedef struct ibu_unex_read_t
 {
-    void *mem_ptr;
+    void *mem_ptr, *mem_ptr_orig;
     unsigned char *buf;
     unsigned int length;
     struct ibu_unex_read_t *next;
@@ -1302,11 +1302,7 @@ static int ibui_read_unex(ibu_t ibu)
 		MPIU_Internal_error_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
-#ifdef USE_INLINE_PKT_RECEIVE
-	    ibuBlockFreeIB(ibu->allocator, (unsigned char *)(ibu->unex_list->mem_ptr) - sizeof(MPIDI_CH3_Pkt_t));
-#else
 	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
-#endif
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1382,11 +1378,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
-#ifdef USE_INLINE_PKT_RECEIVE
-	    ibuBlockFreeIB(ibu->allocator, (unsigned char *)(ibu->unex_list->mem_ptr) - sizeof(MPIDI_CH3_Pkt_t));
-#else
 	    ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
-#endif
 	    /* MPIU_Free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1543,7 +1535,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	mem_ptr = (void*)(id_ptr->mem);
 	ibuBlockFree(g_workAllocator, (void*)id_ptr);
 #endif
-
+#ifdef USE_INLINE_PKT_RECEIVE
+	mem_ptr_orig = mem_ptr;
+#endif
 	switch (completion_data.opcode)
 	{
 	case VAPI_CQE_SQ_SEND_DATA:
@@ -1605,8 +1599,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		{
 		    recv_vc_ptr->ch.reading_pkt = TRUE;
 		}
-		mem_ptr_orig = mem_ptr;
-		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_pkt_t);
+		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
 		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
 	    }
 #endif
@@ -1614,7 +1607,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    /*MPIDI_DBG_PRINTF((60, FCNAME, "ibu_wait(recv finished %d bytes)", num_bytes));*/
 	    if (!(ibu->state & IBU_READING))
 	    {
+#ifdef USE_INLINE_PKT_RECEIVE
+		ibui_buffer_unex_read(ibu, mem_ptr_orig, sizeof(MPIDI_CH3_Pkt_t), num_bytes);
+#else
 		ibui_buffer_unex_read(ibu, mem_ptr, 0, num_bytes);
+#endif
 		break;
 	    }
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d\n", ibu->read.total, num_bytes, ibu->read.total + num_bytes));
@@ -1664,7 +1661,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		else
 		{
 		    /* save the unused but received data */
+#ifdef USE_INLINE_PKT_RECEIVE
+		    ibui_buffer_unex_read(ibu, mem_ptr_orig, offset, num_bytes);
+#else
 		    ibui_buffer_unex_read(ibu, mem_ptr, offset, num_bytes);
+#endif
 		}
 		if (ibu->read.iovlen == 0)
 		{
@@ -1693,7 +1694,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    /* copy the received data */
 		    memcpy(ibu->read.buffer, mem_ptr, ibu->read.bufflen);
 		    ibu->read.total = ibu->read.bufflen;
+#ifdef USE_INLINE_PKT_RECEIVE
+		    ibui_buffer_unex_read(ibu, mem_ptr_orig, ibu->read.bufflen, num_bytes - ibu->read.bufflen);
+#else
 		    ibui_buffer_unex_read(ibu, mem_ptr, ibu->read.bufflen, num_bytes - ibu->read.bufflen);
+#endif
 		    ibu->read.bufflen = 0;
 		}
 		else
