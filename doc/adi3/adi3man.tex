@@ -15,7 +15,10 @@
 %
 % Modify the way titles are handled for no breaks between pages
 \def\mantitle#1#2#3{\pagerule\nobreak
-\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi}
+\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi
+\index{#1}}
+
+\makeindex
 
 \begin{document}
 
@@ -27,6 +30,7 @@
 \def_{{\tt \char`\_}}
 \catcode`\_=11
 \def\code#1{{\tt #1}}
+\let\url=\code
 
 %\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
@@ -146,7 +150,10 @@ may want to replace that module with one carefully tuned to their
 specific platform.
 
 Not included in this list is the ADIO module used to support MPI-IO.
-See \cite{romio-adio-manual} for a description of that module.
+See \cite{ThakurGroLus96} and \url{http://www.mcs.anl.gov/~thakur/adio} 
+%\cite{romio-adio-manual} 
+%(ROMIO ADIO Manual)
+for a description of that module.
 
 \subsection{The Core}
 \label{sec-minimal}
@@ -155,10 +162,14 @@ While ADI-3 defines a large number of routines, only a few must be implemented
 by a developer.  For all modules except the \code{MPID_CORE} module, MPICH
 provides a generic implementation.  Thus, only the routines in
 \code{MPID_CORE} must be implemented when porting MPICH to a new interprocess
-communication mechanism.  \code{MPID_CORE} consists of the following routines: 
+communication mechanism.  To further simplify the task of implementing MPI
+with ADI-3, the core does not contains the routines needed to implement the
+I/O or dynamic process chapters of the MPI Standard (it does contain the
+routines needed to implement the remote memory access chapter).  The
+\code{MPID_CORE} consists of the following routines:  
 
 \begin{description}
-\item[\code{MPID_Init_thread}.] This is the device's counterpart to
+\item[\code{MPID_Init}.] This is the device's counterpart to
 \code{MPI_Init_thread}. 
 \item[\code{MPID_Finalize}.] This is the devices's counterpart to
 \code{MPI_Finalize}
@@ -171,11 +182,13 @@ active-message call.  However, only predefined actions are allowed,
 and these actions are enumerated.
 \item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}.] These
 are used to complete \code{MPID_Rhcv} 
-and \code{MPID_Put_contig} operations
+and \code{MPID_Put_contig} operations (and non-core routines such as
+\code{MPID_Get_contig} and \code{MPID_Put_sametype}). 
 \item[\code{MPID_Poll}.] This routine provides a way for a polling routine to
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to
 \emph{allow} polling implementations, not to \emph{require} them.
+Question: Is this routine still needed?
 \item[\code{mpiexec}.] An implementation of \code{mpiexec}, as defined in the
   MPI-2 standard, for starting MPI jobs.  While not a routine, it must be 
   provided by any device.  
@@ -183,7 +196,7 @@ is not needed.  In other words, this routine is provided to
 From these routines, together with the implementation of MPI in terms of MPID
 that we are planning to carry out, all of MPI can be implemented\footnote{See
 Section~\ref{sec-passive-target} for some caveats about pure polling
-implementations}.  However, this approach may sacrifice performance
+implementations.}.  However, this approach may sacrifice performance
 for simplicity.  For increased performance, one might want to do direct
 implementations of some of the non-core MPID routines, such as
 \code{MPID_Isend}, directly, without relying on core routines.  For example, a
@@ -234,6 +247,7 @@ will not implement all of MPI-2.
 
 \subsection{Design Rationale}
 \label{sec-intermediate}
+\label{sec-rationale}
 The design of MPI puts a number of constraints on a high-quality
 implementation.  These constraints help explain the rationale behind
 the design of ADI-3.
@@ -314,7 +328,7 @@ the next step.  This feature influenced the design of the
 \code{Stream} module.
 \end{enumerate}
 
-\subsection{Multi-method Communication}
+\subsubsection{Multi-method Communication}
 An important implementation of the this ADI is the model multi-method
 implementation, based on separate message queues for each method.
 This device illustrates a more complex use of the ADI interface.  It
@@ -327,6 +341,20 @@ ADI is careful with how MPI requests are handled.  It also defined a
 very high-level ADI interface (e.g., \code{MPID_Isend}) that gives the
 device the flexibility to determine the appropriate method and allows
 the method to determine the appropriate protocol for delivering a message.
+
+\subsubsection{Polling}
+ADI-3 has been designed (like ADI-1 and ADI-2) to permit both polling and
+non-polling (e.g., interrupt-driven or thread-scheduled) implementations.
+Thus, some routines are provided that provide convenient points for a polling
+implementation to poll or wait.  \code{MPID_Flags_waitsome} and
+\code{MPID_Test_waitsome} are examples.
+
+It is the responsibility of the implementation of the ADI to ensure that
+progress is made on all communication, particularly passive-target RMA
+operations.  This makes it nearly impossible to support an implementation
+based entirely on polling.  However, many operations can use polling to reduce
+the costs associated with context switches, in combination with a nonpolling
+method.
 
 \subsection{Contrast with ADI-1 and ADI-2}
 \label{sec-historical}
@@ -421,7 +449,7 @@ have to the BNR interface?  Should there be a connection between BNR groups
 and MPID groups?
 
 
-\code{MPID_Join} involves sockets, to we might make it part of the
+\code{MPID_Join} involves sockets, so we might make it part of the
 utility module.  But what routines from \code{MPID_Core} must it call
 to connect up the processes?
 
@@ -437,11 +465,11 @@ to connect up the processes?
 \section{Integrating a Device into the MPICH build tree}
 Still to do.  This section needs to cover:
 \begin{enumerate}
-\item Directory structure.  Where will mpich look for a new device?
-\item Local configure/setup script.  How the top-level mpich configure invokes
-  the device-specific setup scripts?
-\item mpiexec.  How mpich creates the correct mpiexec?
-\item Installation.  How mpich gets the proper device-specific files
+\item Directory structure.  Where will MPICH look for a new device?
+\item Local configure/setup script.  How should the top-level MPICH configure
+  invoke the device-specific setup scripts?
+\item mpiexec.  How does MPICH create the correct mpiexec?
+\item Installation.  How does MPICH get the proper device-specific files
   installed; e.g., the mpd for the mpd device?
 \item Device-specific documentation, such as environment variables and
   command-line arguments used only by a particular device.
@@ -451,11 +479,18 @@ Still to do.  This section needs to cover:
 \section{Motivation}
 Why is the ADI so complex?  Consider the following scenarios:
 \begin{enumerate}
-\item \code{MPI_Irsend( MPI_BOTTOM, 1, my_indexed_datatype, ... )}
+\item Consider
+\begin{verbatim}
+    MPI_Irsend( MPI_BOTTOM, 1, my_indexed_datatype, ... )
+\end{verbatim}
 where the datatype describes 50MB of data, each entry of which is a
 structure.
-\item \code{MPI_Accumulate( MPI_BOTTOM, 1, my_indexed_datatype, ..., 
-   my_vector_type, ..., MPI_MAXLOC )}, where \code{my_vector_type} is
+\item Consider
+\begin{verbatim}
+    MPI_Accumulate( MPI_BOTTOM, 1, my_indexed_datatype, ..., 
+       my_vector_type, ..., MPI_MAXLOC )
+\end{verbatim}
+where \code{my_vector_type} is
 a vector datatype of structures, and the amount of data is 50MB, and
 the access is passive target (the target process makes no MPI calls,
 but the operation must complete).
@@ -483,7 +518,7 @@ parameter checking code in the MPICH2 implementation.
 
 \subsection{Data Structures and Constants}
 \input DSOverview.tex
-\input Constants.tex
+%\input Constants.tex
 \input DyOverview.tex
 
 \section{Summary of MPID Routines by Module}
@@ -505,7 +540,7 @@ See the table of contents for an up-to-date-list.
 %     MPID_Flags_waitsome
 %     MPID_Put_contig
 %     MPID_Rhcv
-%     MPID_Thread_init
+%     MPID_Init
 % \end{verbatim}
 % %    MPID_Hid_Cancel (handler)
 % %    MPID_Hid_Request_to_send (handler)
@@ -702,6 +737,20 @@ codes.
 \input Attribute-list.tex
 
 \section{Datatypes}
+Datatypes are a key part of MPI; they provide a great deal of expressive
+power.  They also are difficult to implement efficiently; see 
+\cite{gropp-swider-lusk99,Traeff:1999:FFE} for some techniques for speeding
+the handling of datatypes.
+In addition to the requirements described in Section~\ref{sec-rationale}, 
+MPI-2 requires that it be possible to return the arguments that the user
+used in creating the datatype.  This requires that, even if the datatype can
+be simplified for the purposes of data motion (e.g., pack and unpack), 
+
+Datatypes are constructed by the implementation of the MPI routines such as 
+\code{MPI_Type_create_struct}.  That routine will call
+\code{MPID_Datatype_new} to acquire a structure and will then set the fields
+in that structure appropriately. 
+
 \input Datatype-list.tex
 \input SGOverview.tex
 \input Segment-list.tex
@@ -843,5 +892,19 @@ tolerant of communication failure can use these to
 \input None-list.tex
 \fi
 \closein\testfile
+
+\let\SaveBibliography=\thebibliography
+\def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
+\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp}
+\bibliographystyle{plain}
+
+% Index
+%\openin\testfile{adi3man.ind}
+%\ifeof\testfile\else
+\let\SaveIndex=\theindex
+\def\theindex{\SaveIndex\addcontentsline{toc}{section}{Index}}
+\input adi3man.ind
+%\fi
+%\closein\testfile
 
 \end{document}

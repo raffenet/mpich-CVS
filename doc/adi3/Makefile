@@ -17,7 +17,7 @@ paper.dvi: paper.tex
 	-latex $*
 	-latex $*
 
-adi3man.ps: adi3man.tex adi3.c adi3.h 
+adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex
 	(cd adi3man ; \
@@ -28,10 +28,23 @@ adi3man.ps: adi3man.tex adi3.c adi3.h
 	(cd adi3man ; \
 	../manextract ../adi3.[ch] > /dev/null ;\
 	latex adi3man ;\
+	bibtex adi3man ;\
+	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
+	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' adi3man.idx > tmp.idx ; \
+	makeindex tmp ;\
+	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
+	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3man.ind ; \
 	latex adi3man ;\
 	dvips adi3man )
 	rm -f adi3man.ps
 	mv adi3man/adi3man.ps .
+
+# This isn't ready yet.  We'd like to use doctext to generate the 
+# HTML for the 
+adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
+	-rm -rf adi3man
+	tohtml -default adi3man.tex
+	tohtml -default adi3man.tex
 
 # This uses the full-featured date program in Linux
 install-web: adi3man.ps
@@ -45,6 +58,7 @@ install-web: adi3man.ps
 
 clean:
 	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod adi3man.ps
+	rm -f adi3man/*.tex
 
 #
 # The following are helpers for assembling the reference manual

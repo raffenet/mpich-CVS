@@ -77,6 +77,13 @@
   data structures are allocated and freed with MPID calls of the form
   'MPID_<datastructure>_new' and 'MPID_<datastructure>_free'.
 
+  Question:  Many people don''t like new/free, because in C and C++ terms,
+  new is used with delete and free is used with malloc.  Free was chosen 
+  because the 
+  semantics defined for 'MPID_xxx_free' matches that of MPI routines that 
+  are named 'MPI_xxx_free'.  Should we use 'alloc' or 'malloc' instead of 
+  'new'?
+
   Reference Counts:
   The semantics of MPI require that objects that have been freed by the user
   (e.g., with 'MPI_Type_free' or 'MPI_Comm_free') remain valid until all 
@@ -88,6 +95,16 @@
   data structure has an 'MPID_<datastructure>_incr' routine that performs an
   atomic fetch and increment operation.  
 
+  Structure Definitions:
+  The structure definitions in this document define `only` that part of
+  a structure that may be used by code that is making use of the ADI.
+  Thus, some structures, such as 'MPID_Comm', have many defined fields;
+  these are used to support MPI routines such as 'MPI_Comm_size' and
+  'MPI_Comm_remote_group'.  Other structures may have few or no defined
+  members; these structures have no (ADI) user-visible fields.  In C++ terms,
+  all members of these structures are 'private'.  One example of such a
+  structure is 'MPID_Stream'.
+  
  T*/
 
 /*
@@ -104,6 +121,9 @@
 
     Notes:
     If no datatype can be allocated, a null is returned.
+    This routine only provides a pointer to the structure.  All ``public''
+    fields, such as 'has_mpi1_ub' and 'loopinfo', will be set by the 
+    implementation of the various MPI datatype construction routines.
 
     Module:
     Datatype
@@ -158,7 +178,7 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
    change it.  A correct MPI program will never do that, but an incorrect, 
    (particularly a multithreaded program with a race condition), might.  
    
-   The following code is `invalid`:
+   The following code is `invalid`\:
 .vb
    MPID_Datatype_incr( datatype, -1 );
    if (datatype->ref_count == 0) MPID_Datatype_free( datatype );
@@ -176,14 +196,33 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
 
    Question:
    Do we want incr to free a datatype that has a reference count of zero?
+   (Current vote is no.)
    The pro is that any incr(-1) will then automatically check for a need
    to free the storage.  The con is that the incr routine must now know 
    about freeing a datatype.  And it really is only one line of code (and
    it isn''t hard to check).
+
+   An alternative is to have two functions, such as 'MPID_Datatype_addref'
+   and 'MPID_Datatype_release'.  Do we want to do that?
   @*/
 int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
-{
-}
+{}
+
+/*@
+  MPID_Datatype_commit - Commits a datatype for use in communication
+
+  Input Parameter:
+. datatype - Datatype to commit
+
+  Notes:
+  All datatypes must be committed before they can be used in any MPID
+  communication call.
+
+  This routine can process the datatype inorder to optimize operations with it.
+
+  @*/
+int MPID_Datatype_commit( MPID_Datatype *datatype )
+{}
 
 /* 
  * There is no datatype_get_envelope and datatype_get_contents because the
@@ -192,7 +231,7 @@ int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
 
 
 /*@
-  MPID_Pack - Pack a message into a specified buffer as type 'MPI_PACK'
+  MPID_Pack - Pack a message into a specified buffer as type 'MPI_PACKED'
 
   Input Parameters:
 + inbuf - Source data to pack
@@ -219,7 +258,7 @@ int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
   Datatype
 
   Questions:
-  Do we really want this as a seperate routine, or can use the 
+  Do we really want this as a separate routine, or can use the 
   'MPID_Segment_xxx'
   routines?  If we can''t use the segment routines, does that mean that we 
   don''t have the right API yet, or is there an important difference?
@@ -243,8 +282,12 @@ int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
 
   Do we want to mandate receiver-makes-right?  Globus guys, speak up.
 
+  The answer appears to be no, we do not want to mandate receiver-makes-right. 
+  MPICH-G2 uses a clever approach that makes use of the vendor MPI wherever
+  possible, and this cannot require any particular format.
+
   Note that XDR isn''t really an option, because it doesn''t handle all of the
-  C datatypes (e.g., 'long double') or Fortran (e.g., 'LOGICIAL').
+  C datatypes (e.g., 'long double') or Fortran (e.g., 'LOGICAL').
 
   Another option is to add the packed type to the head of the output buffer;
   then all that is needed is a bit in the envelope telling the receiver that 
@@ -295,8 +338,7 @@ MPID_Unpack( void *outbuf, int count, MPID_Datatype *type,
    Datatype
   @*/
 int MPID_Pack_size( int count, MPID_Datatype *type, MPID_Comm *comm, int rank )
-{
-}
+{}
 
 /*
  * Groups
@@ -528,7 +570,7 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
   This routine allows the device to find out when an attribute value changes.
   This can be used by a device that defines its own keyvals (see 
 
-  'MPID_Thread_init') to allow the MPI user to communicate preferences to 
+  'MPID_Init') to allow the MPI user to communicate preferences to 
   the device.  This has already been used in MPICH-G to pass quality-of-service
   information to the device.
 
@@ -798,9 +840,8 @@ MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm,
   so would help isolate the impact of communication on one communicator with
   another.
 
-
   @*/
-MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm, 
+MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm, 
 				     int *found )
 {
 }
@@ -1041,7 +1082,7 @@ int MPID_Mem_free( void *ptr )
 . local_flag - Address of a flag to be set when this call is locally complete.
 - target_flag - This is an id of a flag at the target process.  This value
   must have been specified by the target process in a previous communication
-  (either with 'MPID_Put' or 'MPID_Rhc').  A value of '0' indicates no
+  (either with 'MPID_Put_contig' or 'MPID_Rhcv').  A value of '0' indicates no
   target completion flag.
 
   Notes:
@@ -1054,6 +1095,9 @@ int MPID_Mem_free( void *ptr )
   an implementation of 'MPID_Put_contig' that requires such must also
   provide the matching 'MPID_Segment_xxx' routines.
 
+  The 'target_offset' is relative to 'MPI_BOTTOM', and for all expected
+  ADI implementations is the same as the address of the target memory location.
+
   This routine uses a communicator instead of a window because it may be
   used to implement `any` kind of data transfer between processes.  For
   example, the generic implementation of 'MPID_Isend' may use 'MPID_Rhcv'
@@ -1065,19 +1109,27 @@ int MPID_Mem_free( void *ptr )
   MPID_CORE
 
   Questions:
-  What addresses are valid for local flags?  What offsets are valid for 
+  What addresses are valid for local flags?  What offsets (offsets
+  because remote locations are specified by offset rather than address, 
+  since a remote system may have a different-sized address) are valid for 
   target flags?  Should the type of a flag be 'MPID_flag_t'?  
   Do we require a test call on the flag, or only that the local flag be 
   declared as volatile (as in the prototype)?
 
-  (My current thinking is to require 'MPID_Flag_t', and provide a routine
+  My current thinking is to require 'MPID_Flag_t', and provide a routine
   to allocate and free them.  The device can easily include one within
-  an 'MPID_Request' structure.)
+  an 'MPID_Request' structure.  The group voted yes on this, but the
+  document has not yet been changed to reflect this.
 
   Do we want to require that the buffer be setup with the segment routine, 
   or is there a separate routine in 'MPID_CORE' that should be called for
   any data moved with 'MPID_Put_contig'?
 
+  Do we want more information to be associated with the flags?  
+  For example, each flag could have a list of the processes waiting
+  on a flag.  My current feeling is that this is up to the 
+  ADI implementation and need not be required of all devices.  That is,
+  it could be part of the ``private'' (implementation-specific) data in a flag.
   @*/
 int MPID_Put_contig( const void *origin_buf, int n, 
 		     MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
@@ -1087,7 +1139,11 @@ int MPID_Put_contig( const void *origin_buf, int n,
 
 /*@
   MPID_Flags_waitall - Wait for completion of flags specified with
-  MPID_Put, MPID_Get, MPID_Rhc, or MPID_Rhcv
+  MPID_Put_contig, MPID_Get_contig, MPID_Rhcv, or similar routine.
+
+  Input Parameters:
++ count - Number of flags to wait on
+- flags - Array of flags.  See notes.
 
   Note:
   These are local flags only (including local flags that were specified 
@@ -1122,7 +1178,7 @@ int MPID_Flags_waitall( int count, int *(flags[]) )
 . local_flag - Address of a flag to be set when this call is locally complete.
 - target_flag - This is an id of a flag at the target process.  This value
   must have been specified by the target process in a previous communication
-  (either with 'MPID_Put' or 'MPID_Rhc').  A value of '0' indicates no
+  (either with 'MPID_Put_contig' or 'MPID_Rhcv').  A value of '0' indicates no
   target completion flag.
   Notes:
   This routine allows the efficient implementation of strided copies, where
@@ -1152,8 +1208,15 @@ int MPID_Putsametype( const void *origin_buf, int n, MPID_Datatype *dtype,
 {}
 
 /*@
-  MPID_Flags_testall - .
+  MPID_Flags_testall - Test for the completion of flags specified with 
+  MPID_Put_contig, MPID_Rhcv, or similar routine.
 
+  Input Parameters:
++ count - Number of flags to wait on
+- flags - Array of flags.  See notes.
+
+  Notes:
+  See the discussion in 'MPID_Flags_waitall'.  
   Module:
   Communication
   @*/
@@ -1175,6 +1238,9 @@ int MPID_Flags_testall( int count, int *(flags[]), int *found )
   
   In a very rough sense, it corresponds to the Unix 'select', with a timeout
   of null (infinite).
+
+  See Also:
+  MPID_Flags_waitall, MPID_Flags_testall
 
   Module:
   MPID_CORE
@@ -1199,6 +1265,7 @@ int MPID_Flags_testall( int count, int *(flags[]), int *found )
   copied first into a temporary (allocated on the stack) variable.
 
   Votes: Rusty votes no.
+
   @*/
 int MPID_Flags_waitsome( int count, int *(flags[]) )
 {
@@ -1241,7 +1308,7 @@ int MPID_Flags_testsome( int count, int *(flags[]) )
  * this process have also completed.
  *
  * Lock and unlock are more problematic; These look a lot like 
- * Rhc calls.
+ * Rhcv calls.
  */
 
 /*@
@@ -1280,7 +1347,7 @@ int MPID_Get_contig( void * origin_buf, int n,
 . local_flag - Address of a flag to be set when this call is locally complete.
 - target_flag - This is an id of a flag at the target process.  This value
   must have been specified by the target process in a previous communication
-  (either with 'MPID_Put' or 'MPID_Rhc').  A value of '0' indicates no
+  (either with 'MPID_Put_contig' or 'MPID_Rhcv').  A value of '0' indicates no
   target completion flag.
   Notes:
   This routine allows the efficient implementation of strided copies, where
@@ -1297,7 +1364,7 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
 {}
 
 /*@
-   MPID_Rhcv - A vector version of 'MPID_Rhc'
+   MPID_Rhcv - Invoke a predefined handler on another process
 
   Input Parameters:
 + rank - Rank of process to invoke handler on
@@ -1312,7 +1379,7 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
   has completed.
 
   Notes:
-  The first element of 'vector' points to a defined handler datatype that
+  The first element of 'vector' points to a predefined handler datatype that
   corresponds to the handler 'id'; the remaining elements are data that 
   the handler operation needs.  The handler 'id' can restrict the type of 
   memory that 'vector' may point at (e.g., it may require memory allocated 
@@ -1360,6 +1427,9 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
   Questions and Discussion:
   How many handler functions need be written to implement the core?
   What handler types are in the core?  
+
+  Should there be a multisend version of this (one that can send the
+  same data to multiple destinations)?
 
   @*/
 int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id, 
@@ -1528,16 +1598,17 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
  *
  * The routines in this section fill two roles.  In the implementation of
  * routines such as 'MPID_Isend' where the only device-specific routines are 
- * the few in 'MPID_CORE', it is necessary to have the ability to pack and unpack
- * partial messages.  Consider the case where the user calls
+ * the few in 'MPID_CORE', it is necessary to have the ability to pack and 
+ * unpack partial messages.  Consider the case where the user calls
  * 'MPI_Isend( buf, 1, my_huge_indexed_type, ... )'
  * where the total amount of data being sent is 100 MB.  Since 'MPID_CORE'
  * can only move contiguous data, we need to convert the described data
  * into a sequence of contiguous memory segments of some reasonable size
- * (we don't want to have to allocate a 100 MB temporary buffer).
+ * (we don''t want to have to allocate a 100 MB temporary buffer).
  * Thus, to implement this operation, we need a routine that can be called 
- * repeatedly to get the next m bytes from the user's described data buffer.
- * The MPI unpack routine does not have this flexibility.
+ * repeatedly to get the next m bytes from the user''s described data buffer.
+ * Further, we need to be able to pause and remember where we are in processing
+ * a datatype.  The MPI unpack routine does not have this flexibility.
  *
  * The other place where these routines are needed is in the implementation
  * of efficient versions of the MPI collective communication routines.  
@@ -1552,7 +1623,7 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
  T*/
 
 /*@
-  MPID_Segment_init_pack - Get a buffer ready for packing and sending (put
+  MPID_Segment_init_pack - Get a segment ready for packing and sending (put
   and/or Rhcv) data
 
   Input Parameters:
@@ -1653,7 +1724,7 @@ void *MPID_Segment_pack( MPID_Segment *segment, int *first, int *last,
 }
 
 /*@
-  MPID_Segment_init_unpack - Get a buffer ready for receiving and unpacking 
+  MPID_Segment_init_unpack - Get a segment ready for receiving and unpacking 
   data 
   
   Input Parameters:
@@ -1673,6 +1744,8 @@ void *MPID_Segment_pack( MPID_Segment *segment, int *first, int *last,
   Questions:
   Should there be a flag indicating that the buffer may be used in a 
   put operation (as part of a receive and forward operation)?
+
+  Do we need both an init pack and init unpack?
   @*/
 void * MPID_Segment_init_unpack( void *buf, int maxcount, MPID_Datatype *dtype,
     MPID_Comm *comm, int rank, MPID_Segment *segment )
@@ -1830,7 +1903,11 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
  * Streams are actually delivered in blocks; as each block is
  * delivered, the application has the option to process and/or forward
  * the block to another process (or processes).  The block size is
- * determined by the device.
+ * determined by the device.  The 'MPID_Stream_iforward' routine allows a 
+ * code to receive the data into the local destination buffer according to
+ * the specified (possibly noncontiguous) datatype while forwarding the
+ * block.  This avoids the unpack/pack cycle that is required when only
+ * send/receive routines are used.
  *
  * Note to implementors:
  * In determining the block size, you cannot look at the datatype,
@@ -1847,10 +1924,26 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
  * begin delivering the next block into a separate buffer.  Where it
  * makes sense, if there is storage for the entire message, an
  * implementation may choose to deliver the entire message as quickly
- * as possible, updating the stream->cur_length as data is delivered.
+ * as possible, updating the 'stream->cur_length' as data is delivered.
  * This points out that while the stream routines disucss motion in blocks,
  * there is no particular limit to the number of blocks that are delivered
  * each time.
+ *
+ * Questions:
+ * 1. Should a 'MPID_Stream' be an 'MPID_Request'?  That would allow us
+ * to use the same completion routines, and to mix stream and non-stream
+ * communication.  The current choice was made to make the stream module
+ * independent of the other modules, and exploits the fact that these are
+ * intended for implementing the collective operations, all of which are
+ * blocking (except for the two-phase collective in MPI-IO).
+ * Note that if we do make these requests, then the description of 
+ * 'MPID_Waitsome' etc. will become more complex; we may need to provide
+ * a routine to be called by the 'MPID_Waitsome' in that case.  Viewed in
+ * that light, streams are similar to persistant, user-defined MPI requests.
+ *
+ * 2. Should there be a test as well as a wait on a stream?  If a stream
+ * is a kind of request, then we get this automatically.
+ *
  *
  T*/
 
@@ -2065,6 +2158,8 @@ int MPID_Stream_iforward( MPID_Stream *stream, void *header,
  * the needs of the collective operation, such as spanning trees and rings.
  * These may be added to adi3 later.
  *
+ * Question: Should we define a cart create function?
+ *
  T*/
 
 /*@
@@ -2092,6 +2187,9 @@ int MPID_Stream_iforward( MPID_Stream *stream, void *header,
   The communicator argument allows this routine to be used in the dynamic
   process case (i.e., with communicators that are created after 'MPI_Init' 
   and that involve processes that are not part of 'MPI_COMM_WORLD').
+
+  For non-hierarchical systems, this routine simply returns a single 
+  level containing all processes.
 
   Sample Outputs:
   For a single, switch-connected cluster or a uniform-memory-access (UMA)
@@ -2137,8 +2235,9 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
 /*
  * Section : Miscellaneous
  */
+
 /*@
-  MPID_Thread_init - Initialize the device
+  MPID_Init - Initialize the device
 
   Input Parameters:
 + argc_p - Pointer to the argument count
@@ -2184,6 +2283,8 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   common environment.  These variables allow an MPI implementation (that is
   based on ADI-3) to provide both of these.
 
+  This routine is used to implement both 'MPI_Init' and 'MPI_Init_thread'.
+
   Question: The values here are boolean.  They could be more specific.  For 
   example, the value could indicate the rank in 'MPI_COMM_WORLD' of a 
   process that has the values; the value 'MPI_ANY_SOURCE' (or a '-1') could
@@ -2205,9 +2306,15 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
    Questions:
   Should the thread support value be an enum type instead of an int?
 
-  Do we require that all processes get the same argument lists (in the
-  case where the user `wants` or expects that they get the same arguments)?
-  Return the same argument lists?  
+  Do we require that the startup environment (e.g., whatever 'mpiexec' is 
+  using to start processes) is responsible for delivering
+  the command line arguments and environment variables that the user expects?
+  That is, if the user is running an SPMD program, and expects each process
+  to get the same command line argument, who is responsible for this?  
+  The 'has_args' and 'has_env' values are intended to allow the ADI to 
+  handle this while taking advantage of any support that the process 
+  manager framework may provide.
+
   Can we fix the Fortran command-line arguments?  That is, can we arrange for
   'iargc' and 'getarg' (and the POSIX equivalents) to return the correct 
   values?  See, for example, the Absoft implementations of 'getarg'.  
@@ -2219,7 +2326,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   If we don''t require that all processes get the same argument list, 
   we need to find out if they did anyway so that 'MPI_Init_thread' can
   fixup the list for the user.  This argues for another return value that
-  flags how much of the environment the 'MPID_Thread_init' routine set up
+  flags how much of the environment the 'MPID_Init' routine set up
   so that the 'MPI_Init_thread' call can provide the rest.  The reason
   for this is that, even though the MPI standard does not require it, 
   a user-friendly implementation should, in the SPMD mode, give each
@@ -2233,7 +2340,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   'MPICH_ADI_DB'.
 
   Names that are explicitly prohibited?  For example, do we want to 
-  reserve any names that 'MPI_Init_thread' (as opposed to 'MPID_Thread_init')
+  reserve any names that 'MPI_Init_thread' (as opposed to 'MPID_Init')
   might use?  
 
   How does this interface to BNR?  Do we need to know anything?  Should
@@ -2254,14 +2361,14 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   will need to use different algorithms and most fatal errors detected by the 
   MPI implementation should abort only the affected process, not all processes.
   @*/
-int MPID_Thread_init( int *argc_p, char *(*argv_p)[], 
-		      int requested, int *provided,
-		      MPID_Group **parent_group, int *has_args, int *has_env )
+int MPID_Init( int *argc_p, char *(*argv_p)[], 
+	       int requested, int *provided,
+	       MPID_Group **parent_group, int *has_args, int *has_env )
 {
 }
 
 /*@
-  MPID_Abort - Abort the at least the processes in the specified communicator.
+  MPID_Abort - Abort at least the processes in the specified communicator.
 
   Input Parameters:
 + comm        - Communicator of processes to abort
@@ -2288,12 +2395,27 @@ int MPID_Thread_init( int *argc_p, char *(*argv_p)[],
   environment.  See 'mpiexec' for a discussion of how return codes from 
   many processes may be combined.
 
+  An external agent that is aborting processes can invoke this with either
+  'MPI_COMM_WORLD' or 'MPI_COMM_SELF'.  For example, if the process manager
+  wishes to abort a group of processes, it should cause 'MPID_Abort' to 
+  be invoked with 'MPI_COMM_SELF' on each process in the group.
+
+  Question:
+  An alternative design is to provide an 'MPID_Group' instead of a
+  communicator.  This would allow a process manager to ask the ADI 
+  to kill an entire group of processes without needing a communicator.
+  However, the implementation of 'MPID_Abort' will either do this by
+  communicating with other processes or by requesting the process manager
+  to kill the processes.  That brings up this question: should 
+  'MPID_Abort' use 'BNR' to kill processes?  Should it be required to
+  notify the process manager?  What about persistent resources (such 
+  as SYSV segments or forked processes?
+
   Module:
   MPID_CORE
   @*/
 int MPID_Abort( MPID_Comm *comm, int return_code )
-{
-}
+{}
 
 /*@
   MPID_Finalize - Perform the device-specific termination of an MPI job
@@ -2350,7 +2472,7 @@ value might be "not yet heterogeneous").
   made to simplify the use of portable tools to test for memory leaks, 
   overwrites, and other consistency checks.
 
-  Most memory should be allocated at the time that 'MPID_Thread_init' is 
+  Most memory should be allocated at the time that 'MPID_Init' is 
   called and released with 'MPID_Finalize' is called.  If at all possible,
   no other MPID routine should fail because memory could not be allocated
   (for example, because the user has allocated large arrays after 'MPI_Init').
@@ -2583,7 +2705,7 @@ void MPID_Wtime_init( void )
   In an MPI-1 environment, 'comm' would just be the 'MPID_Comm'
   specified by 'MPI_COMM_WORLD'; this routine would normally be called
   from within the implementation of 'MPI_Init_thread' (not
-  'MPID_Thread_init').  In an MPI-2 setting, this routine may be
+  'MPID_Init').  In an MPI-2 setting, this routine may be
   called within 'MPI_Comm_spawn' and friends to establish a global
   timer even when new processes are added to the MPI job.
 
@@ -2889,7 +3011,7 @@ int MPID_Info_delete( MPID_Info *info, const char key[] )
 extern int MPID_THREAD_LEVEL;
 
 /*TDyOverview.tex
- * Section : Dynamic Processes
+ * Dynamic Processes:
  *
  * The challenge here is to define a core set of routines that aren't
  * too complicated to implement.  Unfortunately, these are at the core of

@@ -20,7 +20,8 @@
  */
 
 /*TOpaqOverview.tex
-  Section : MPI Opaque Objects
+  MPI Opaque Objects:
+
   MPI Opaque objects are specified by integers in the range [0,...] (in
   the MPICH2 implementation).
   Out of range values are invalid; the value 0 is reserved for use as
@@ -30,12 +31,23 @@
   MPID objects are not opaque.
 
   Question:
-  Should they be?  For example, should 'MPID_List *' really be 'MPID_List_t', 
+  Should they be?  More precisely, should some of them be?  
+  For example, should 'MPID_List *' really be 'MPID_List_t', 
   with something like\:
 .vb
  typedef struct MPID_List *MPID_List_t;
 .ve
  so that the form of 'MPID_List' is isolated to the list management routines?
+ That is, if the typedef is to a pointer to a structure, the internals of the
+ structure can be left unspecified except to the routines that actually 
+ manipulate them.  In the 'MPID_List' case, this would allow the implementation
+ to use simple lists, hash tables, or HB trees, or skip lists without 
+ affecting or needing to recompile any code that simply refered to 'MPID_List'.
+ 
+ Current vote: No, no objects should be opaque.  However, more rationale 
+ has been added and this should be revisited.
+
+ 
   T*/
 
 /*
@@ -54,9 +66,14 @@ typedef struct {
   MPID_Lang_t - Known language bindings for MPI
 
   A few operations in MPI need to know what language they were called from
-  or created by.  This type enumerates the possible language so that
+  or created by.  This type enumerates the possible languages so that
   the MPI implementation can choose the correct behavior.  An example of this
   are the keyval attribute copy and delete functions.
+
+  Question:
+  Do we want to include Java or Ada, even though there is no official
+  binding?  Do we want to specify values for these (e.g., 'MPID_LANG_C' is
+  zero)?
 
   Module:
   Attribute
@@ -255,7 +272,7 @@ typedef struct {
   S*/
 typedef struct {
     int count;
-    struct dataloop_ datatype;
+    struct dataloop_ *datatype;
 } MPID_datatype_contig;
 
 /*S
@@ -274,7 +291,7 @@ typedef struct {
     int count;
     int blocksize;
     int stride;
-    struct dataloop_ datatype;
+    struct dataloop_ *datatype;
 } MPID_datatype_vector;
 
 /*S
@@ -294,7 +311,7 @@ typedef struct {
     int count;
     int blocksize;
     int *offset;
-    struct dataloop_ datatype;
+    struct dataloop_ *datatype;
 } MPID_datatype_blockindexed;
 
 /*S
@@ -314,7 +331,7 @@ typedef struct {
     int count;
     int *blocksize;
     int *offset;
-    struct dataloop_ datatype;
+    struct dataloop_ *datatype;
 } MPID_datatype_indexed;
 
 /*S
@@ -357,9 +374,10 @@ typedef struct {
 
   S*/
 typedef struct datatloop_ { 
-    int kind;                  /* Contains both the loop type (of the 5 above)
-				  and a bit that indicates whether the
-				  datatype is a leaf type. */
+    int kind;                  /* Contains both the loop type 
+				  (contig, vector, blockindexed, indexed,
+				  or struct) and a bit that indicates 
+				  whether the datatype is a leaf type. */
     union {
 	int                        count;
 	MPID_datatype_contig       c_t;
@@ -406,6 +424,15 @@ typedef struct datatloop_ {
   For datatypes built from other datatypes, do I want to copy the loop
   information from the old datatypes?  This is the 'MPID_Dataloop'
   information (e.g., precopy the entire dataloop stack)?
+
+  We may want to have separate 'dataloop' fields for heterogeneous and
+  homogeneous communication, along with a dataloop field used to 
+  implement fast pack and unpack operations.
+
+  We may want to place the booleans like 'has_mpi1_ub' into a bit-vector.
+  Question: do we want to define a type like 'boolean' instead of 'int'
+  for values that are true/false?
+
   S*/
 typedef struct { 
     int           id;            /* value of MPI_Datatype for this structure */
@@ -413,18 +440,23 @@ typedef struct {
     int           is_contig;     /* True if data is contiguous (even with 
 				    a (count,datatype) pair) */
     int           is_perm;       /* True if datatype is a predefined type */
-    MPID_Dataloop loopinfo;
-
+    MPID_Dataloop loopinfo;      /* Describes the arguments that the
+                                    user provided for creating the datatype;
+				    these are used to implement the
+				    MPI-2 MPI_Type_get_contents functions */
     int           size;
     MPI_Aint      extent;        /* MPI-2 allows a type to created by
 				    resizing (the extent of) an existing 
-				    type */
+				    type.  Note that the extent of the
+				    datatype may be different from the
+				    extent information in loopinfo */
+
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
     int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
     int           has_mpi1_lb;
-    int           is_permanent;  /* */
-    int           is_committed;  /* */
+    int           is_permanent;  /* e.g., MPI_DOUBLE*/
+    int           is_committed;  /* See MPID_Datatype_commit */
 
     int           loopinfo_depth; /* Depth of dataloop stack needed
 				     to process this datatype.  This 
@@ -432,10 +464,10 @@ typedef struct {
 				     no datatype is constructed that
 				     cannot be processed (see MPID_Segment) */
 
-    MPID_List     attributes;    (* MPI-2 adds datatype attributes */
+    MPID_List     attributes;    /* MPI-2 adds datatype attributes */
 
     int32_t       cache_id;      /* These are used to track which processes */
-    MPID_lpidmask mask;          /* have cached values of this datatype */
+    MPID_Lpidmask mask;          /* have cached values of this datatype */
 
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
 
@@ -571,10 +603,19 @@ typedef struct {
  */
 #define MPID_MAX_DATATYPE_DEPTH 8
 
+/*S
+  MPID_Dataloop_stackelm - Structure for an element of the stack used
+  to process datatypes
+
+  Fields:
++ curcount - Current loop count value (between 0 and 
+             loopinfo.loop_params.count-1) 
+. cufoffset - Offset for relative offsets in datatypes 
+- loopinfo  - Loop-based description of the datatype
+  S*/
 typedef struct {
-    int curcount;               /* Current loop count value (between 0
-				 and loopinfo.loop_params.count-1) */
-    MPI_Aint curoffset;         /* Offset for relative offsets in datatypes */
+    int           curcount;
+    MPI_Aint      curoffset;
     MPID_Dataloop loopinfo;
 } MPID_Dataloop_stackelm;
 
@@ -584,11 +625,13 @@ typedef struct {
   Notes:
   This has no corresponding MPI datatype.
 
-  The dataloop stack works as follows
+  The dataloop stack works as follows (the actual code will of course
+  optimize the access to the stack elements and eliminate, for example,
+  the various array references)\:
 .vb
   cur_sp=valid_sp=0;
   stackelm.loopinfo[cur_sp].cur_count = 0;
-  stackelm.loopinfo[cur_sp].loopinfo = datatype->loopinfo;
+  stackelm.loopinfo[cur_sp].loopinfo  = datatype->loopinfo;
   while (cur_sp >= 0) {
      if stackelm[cur_sp].loopinfo.kind is final then
         // final means simple, consisting of basic datatypes, such 
@@ -597,6 +640,8 @@ typedef struct {
             code fragments; we may also include some alignment tests
             so that longer word moves may be used for short (e.g.,
             one or two word) blocks).
+	    We can also choose to stop and return here when, for example,
+	    we have filled an output buffer.
         cur_sp--;
      else if stackelm[cur_sp].cur_count == stackelm[cur_sp].loopinfo.cm_t.count
          then {
@@ -629,11 +674,22 @@ typedef struct {
   vector of vector has the datatype description read only once, not
   once for each count of the outer vector.
 
+  Note that a relatively small value of 'MPID_MAX_DATATYPE_DEPTH', such as
+  '16', will allow the processing of extremely complex datatypes that 
+  describe huge amounts of memory.  Thus, an 'MPID_Segment' is a small 
+  object.
+
   Module:
   Segment
 
   Questions:
   Should this have an id for allocation and similarity purposes?
+
+  Do we really need to specify the contents of the 'MPID_Segment'
+  structure?  
+
+  Should we allow the 'MPID_Dataloop_stackelm' to be a pointer, so 
+  that we can allocate a larger stack?
   S*/
 typedef struct { 
     void *ptr;
@@ -686,7 +742,8 @@ typedef struct {
 
   E*/
 typedef enum { MPID_Hid_Request_to_send = 1, 
-	       MPID_Hid_Cancel = 27,
+	       ... many other predefined handler ids ...,
+	       MPID_Hid_Cancel,
 	       MPID_Hid_Define_Datatype,
 	       MPID_Hid_Lock_Request,
 	       MPID_Hid_Lock_Grant,
@@ -699,6 +756,9 @@ typedef enum { MPID_Hid_Request_to_send = 1,
 
 /*S 
   MPID_Hid_Request_to_send_t - Handler type for point-to-point communication
+
+  Notes: 
+  This is an example of a message the may be sent using 'MPID_Rhcv'.
 
   The specific type lengths are not required; however, the type lengths
   used by the device must be consistent with the rest of the code.
@@ -730,6 +790,9 @@ typedef struct {
 
 /*S
    MPID_Hid_Cancel_t - Cancel a communication operation
+
+   Notes: 
+   This is an example of a message the may be sent using 'MPID_Rhcv'.
 
    Module:
    MPID_CORE
