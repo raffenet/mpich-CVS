@@ -22,6 +22,74 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Comm_join PMPI_Comm_join
 
+#ifdef HAVE_ERRNO_H
+#include <errno.h> /* needed for read/write error codes */
+#endif
+
+#ifdef HAVE_WINDOWS_H
+#include <io.h>
+#define SOCKET_EINTR	    WSAEINTR
+#else
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#define SOCKET_EINTR	    EINTR
+#endif
+
+static int fd_send(int fd, void *buffer, int length)
+{
+    int result, num_bytes;
+
+    while (length)
+    {
+	num_bytes = send(fd, buffer, length, 0);
+	if (num_bytes == -1)
+	{
+#ifdef HAVE_WINDOWS_H
+	    result = WSAGetLastError();
+#else
+	    result = errno;
+#endif
+	    if (result == SOCKET_EINTR)
+                continue;
+            else
+                return result;
+	}
+        else {
+            length -= num_bytes;
+            buffer = (char*)buffer + num_bytes;
+        }
+    }
+    return 0;
+}
+
+static int fd_recv(int fd, void *buffer, int length)
+{
+    int result, num_bytes;
+
+    while (length)
+    {
+	num_bytes = recv(fd, buffer, length, 0);
+	if (num_bytes == -1)
+	{
+#ifdef HAVE_WINDOWS_H
+	    result = WSAGetLastError();
+#else
+	    result = errno;
+#endif
+	    if (result == SOCKET_EINTR)
+                continue;
+	    else
+                return result;
+	}
+        else {
+            length -= num_bytes;
+            buffer = (char*)buffer + num_bytes;
+        }
+    }
+    return 0;
+}
+
 #endif
 
 #undef FUNCNAME
@@ -89,15 +157,15 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     }
     /* --END ERROR HANDLING-- */
 
-    err = write(fd, local_port, MPI_MAX_PORT_NAME);
-    if (err < 0) {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_write", 0);
+    err = fd_send(fd, local_port, MPI_MAX_PORT_NAME);
+    if (err != 0) {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_send", "**join_send %d", err);
         goto fn_fail;
     }
 
-    err = read(fd, remote_port, MPI_MAX_PORT_NAME);
-    if (err < 0) {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_read", 0);
+    err = fd_recv(fd, remote_port, MPI_MAX_PORT_NAME);
+    if (err != 0) {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_recv", "**join_recv %d", err);
         goto fn_fail;
     }
 
