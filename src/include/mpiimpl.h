@@ -1121,8 +1121,9 @@ extern MPICH_PerThread_t MPIR_Thread;
 #define MPID_Comm_thread_unlock( ptr )
 #define MPID_Common_thread_lock()
 #define MPID_Common_thread_unlock()
-#define MPID_Thread_lock( ptr )
-#define MPID_Thread_unlock( ptr )
+/* The basic thread lock/unlock are defined in mpiimplthread.h */
+/* #define MPID_Thread_lock( ptr ) */
+/* #define MPID_Thread_unlock( ptr ) */
 #else
 #define MPID_Comm_thread_lock() MPID_Thread_lock( &ptr->access_lock)
 #define MPID_Comm_thread_unlock() MPID_Thread_unlock( &ptr->access_lock )
