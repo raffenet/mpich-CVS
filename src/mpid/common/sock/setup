@@ -16,12 +16,18 @@ echo "RUNNING SETUP FOR THE SOCK INTERFACE"
 # $ac_configure_args - all arguments passed to configure
 #
 
-. ${master_top_srcdir}/src/mpid/common/sock/setup.args
+if test -z "$CONFIGURE_SOCK_SETUP_SOURCED" ; then
+    CONFIGURE_SOCK_SETUP_SOURCED="sourced"
 
-pathlist=""
-pathlist="$pathlist src/mpid/common/sock"
-pathlist="$pathlist src/mpid/common/sock/${sock_name}"
-for path in $pathlist ; do
-    CPPFLAGS="$CPPFLAGS -I${master_top_builddir}/${path}"
-    CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
-done
+    . ${master_top_srcdir}/src/mpid/common/sock/setup.args
+
+    devsubsystems="$devsubsystems src/mpid/common/sock"
+
+    pathlist=""
+    pathlist="$pathlist src/mpid/common/sock"
+    pathlist="$pathlist src/mpid/common/sock/${sock_name}"
+    for path in $pathlist ; do
+    	CPPFLAGS="$CPPFLAGS -I${master_top_builddir}/${path}"
+    	CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
+    done
+fi
