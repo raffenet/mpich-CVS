@@ -54,7 +54,7 @@ int MPI_File_write_ordered_end(MPI_File fh, void *buf, MPI_Status *status)
 
     if (!(fh->split_coll_count)) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, 
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**iosplitcollnone", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)

@@ -46,72 +46,72 @@
  */
 #define MPIR_ERRTEST_INITIALIZED(err) \
   if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {\
-      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**initialized", 0 ); }
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**initialized", 0 ); }
 #define MPIR_ERRTEST_SEND_TAG(tag,err) \
   if ((tag) < 0 || (tag) > MPIR_Process.attrs.tag_ub) {\
-      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TAG, "**tag", "**tag %d", tag);}
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TAG, "**tag", "**tag %d", tag);}
 #define MPIR_ERRTEST_RECV_TAG(tag,err) \
   if ((tag) < MPI_ANY_TAG || (tag) > MPIR_Process.attrs.tag_ub) {\
-      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TAG, "**tag", "**tag %d", tag );}
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TAG, "**tag", "**tag %d", tag );}
 #define MPIR_ERRTEST_SEND_RANK(comm_ptr,rank,err) \
   if ((rank) < MPI_PROC_NULL || (rank) >= (comm_ptr)->remote_size) {\
-      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_RANK, "**rank", \
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK, "**rank", \
                                   "**rank %d %d", rank, (comm_ptr)->remote_size );}
 #define MPIR_ERRTEST_RECV_RANK(comm_ptr,rank,err) \
   if ((rank) < MPI_ANY_SOURCE || (rank) >= (comm_ptr)->remote_size) {\
-      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_RANK, "**rank", \
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK, "**rank", \
                                   "**rank %d %d", rank, (comm_ptr)->remote_size );}
 #define MPIR_ERRTEST_COUNT(count,err) \
     if ((count) < 0) {\
-        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COUNT, "**countneg", \
+        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COUNT, "**countneg", \
                                     "**countneg %d", count );}
 #define MPIR_ERRTEST_DISP(disp,err) \
     if ((disp) < 0) {\
-        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_DISP, "**rmadisp", 0 );}
+        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DISP, "**rmadisp", 0 );}
 #define MPIR_ERRTEST_ALIAS(ptr1,ptr2,err) \
     if ((ptr1)==(ptr2) && (ptr1) != MPI_BOTTOM) {\
-        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_BUFFER, "**bufalias", 0 );}
+        err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_BUFFER, "**bufalias", 0 );}
 #define MPIR_ERRTEST_ARGNULL(arg,arg_name,err) \
    if (!(arg)) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, "**nullptr", \
+       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**nullptr", \
                                    "**nullptr %s", arg_name ); } 
 #define MPIR_ERRTEST_ARGNEG(arg,arg_name,err) \
    if ((arg) < 0) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, "**argneg", \
+       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**argneg", \
                                    "**argneg %s %d", arg_name, arg ); }
 #define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err) \
    if ((arg) <= 0) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, "**argnonpos", \
+       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**argnonpos", \
                                    "**argnonpos %s %d", arg_name, arg ); }
 #define MPIR_ERRTEST_DATATYPE_NULL(arg,arg_name,err) \
    if ((arg) == MPI_DATATYPE_NULL) {\
-       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE, "**dtypenull", 0); }
+       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypenull", 0); }
 /* An intracommunicator must have a root between 0 and local_size-1. */
 /* intercomm can be between MPI_PROC_NULL (or MPI_ROOT) and local_size-1 */
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
   if ((root) < 0 || (root) >= (comm_ptr)->local_size) {\
-      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ROOT, "**root", "**root %d", root );}
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ROOT, "**root", "**root %d", root );}
 #define MPIR_ERRTEST_PERSISTENT(reqp,err) \
   if ((reqp)->kind != MPID_PREQUEST_SEND && reqp->kind != MPID_PREQUEST_RECV) { \
-      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_REQUEST, "**requestnotpersist", 0 ); }
+      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_REQUEST, "**requestnotpersist", 0 ); }
 #define MPIR_ERRTEST_PERSISTENT_ACTIVE(reqp,err) \
   if (((reqp)->kind == MPID_PREQUEST_SEND || \
       reqp->kind == MPID_PREQUEST_RECV) && reqp->partner_request != NULL) { \
-      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_REQUEST, "**requestpersistactive", 0 ); }
+      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_REQUEST, "**requestpersistactive", 0 ); }
 #define MPIR_ERRTEST_COMM_INTRA(comm_ptr, err ) \
     if ((comm_ptr)->comm_kind != MPID_INTRACOMM) {\
-       err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM,"**commnotintra",0);}
+       err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM,"**commnotintra",0);}
 
 #define MPIR_ERRTEST_DATATYPE(count, datatype,err)									\
 {															\
     if (HANDLE_GET_MPI_KIND(datatype) != MPID_DATATYPE || (HANDLE_GET_KIND(datatype) == HANDLE_KIND_INVALID &&		\
 	datatype != MPI_DATATYPE_NULL))											\
     {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE, "**dtype", 0 );	\
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtype", 0 );	\
     }															\
     if (count > 0 && datatype == MPI_DATATYPE_NULL)									\
     {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE, "**dtypenull", 0 );	\
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypenull", 0 );	\
     }															\
 }
 
@@ -135,7 +135,7 @@
             if (errdtypeptr && errdtypeptr->true_lb == 0) { ferr=1; }							\
         }														\
         if (ferr) {													\
-            err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_BUFFER, "**bufnull", 0 );}	\
+            err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_BUFFER, "**bufnull", 0 );}	\
     }
 /* The following are placeholders.  We haven't decided yet whether these
    should take a handle or pointer, or if they should take a handle and return 
@@ -155,11 +155,11 @@
 	(HANDLE_GET_KIND(comm) == HANDLE_KIND_INVALID &&								\
 	 comm != MPI_COMM_NULL))											\
     {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, "**comm", 0 );	\
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, "**comm", 0 );	\
     }															\
     if (comm == MPI_COMM_NULL)												\
     {															\
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, "**commnull", 0 );	\
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, "**commnull", 0 );	\
     }															\
 }
 #define MPIR_ERRTEST_REQUEST(request,err)

@@ -22,7 +22,7 @@ int MPIDI_CH3_Finalize()
     mpi_errno = MPIDI_CH3I_Progress_finalize();
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**finalize_progress_finalize", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_progress_finalize", 0);
     }
 
     /* Free resources allocated in CH3_Init() */
@@ -32,7 +32,7 @@ int MPIDI_CH3_Finalize()
 	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process.pg, FALSE);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**finalize_release_mem", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_release_mem", 0);
     }
     MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
     MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
@@ -45,7 +45,7 @@ int MPIDI_CH3_Finalize()
     assert(rc == 0);
     if (rc)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 	    MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", rc );
     }
 

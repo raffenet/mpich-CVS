@@ -58,7 +58,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	    if (sreq->ch3.tmpbuf_sz == 0)
 	    {
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		sreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -161,7 +161,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	{
 	    /* If the data can't be unpacked, the we have a mis-match between the datatype and the amount of data received.  Adjust
 	       the segment info so that the remaining data is received and thrown away. */
-	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
 							  "**dtypemismatch", 0);
 	    rreq->status.count = rreq->ch3.segment_first;
 	    rreq->ch3.segment_size = rreq->ch3.segment_first;
@@ -193,7 +193,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 		/* FIXME - we should drain the data off the pipe here, but we don't have a buffer to drain it into.  should this be
 		   a fatal error? */
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -214,7 +214,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    if (rreq->ch3.tmpbuf_sz == 0)
 	    {
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -275,7 +275,7 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	rreq->status.count = rreq->ch3.segment_first;
 	rreq->ch3.segment_size = rreq->ch3.segment_first;
 	rreq->ch3.segment_first += tmpbuf_last;
-	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
 						      "**dtypemismatch", 0);
     }
     else if (tmpbuf_last == rreq->ch3.segment_size)
@@ -288,7 +288,7 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	    rreq->status.count = last;
 	    rreq->ch3.segment_size = last;
 	    rreq->ch3.segment_first = tmpbuf_last;
-	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
 							  "**dtypemismatch", 0);
 	}
     }
@@ -340,7 +340,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 			  MPIDI_MSG_SZ_FMT, rreq->ch3.recv_data_sz, userbuf_sz));
 	unpack_sz = userbuf_sz;
 	rreq->status.count = userbuf_sz;
-	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TRUNCATE,
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
 						      "**truncate", 0);
     }
 
@@ -365,7 +365,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 		/* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic
 		   datatype */
 		rreq->status.count = last;
-		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TYPE,
+		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
 							      "**dtypemismatch", 0);
 	    }
 	}

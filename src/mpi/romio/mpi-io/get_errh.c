@@ -46,7 +46,7 @@ int MPI_File_get_errhandler(MPI_File fh, MPI_Errhandler *errhandler)
     if (fh == MPI_FILE_NULL) *errhandler = ADIOI_DFLT_ERR_HANDLER;
     else if (fh->cookie != ADIOI_FILE_COOKIE) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_FILE, "**iobadfh", 0);
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_FILE, "**iobadfh", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");

@@ -123,11 +123,11 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (BsendBuffer.buffer) {
-		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", MPI_ERR_BUFFER, 
+		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", __LINE__, MPI_ERR_BUFFER, 
 					     "**bufexists", 0 );
 	    }
 	    if (buffer_size < MPI_BSEND_OVERHEAD) {
-		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", MPI_ERR_OTHER, 
+		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", __LINE__, MPI_ERR_OTHER, 
 					     "**bsendbufsmall", "**bsendbufsmall %d %d", buffer_size, MPI_BSEND_OVERHEAD );
 	    }
 	}
@@ -166,11 +166,11 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 int MPIR_Bsend_detach( void *bufferp, int *size )
 {
     if (BsendBuffer.pending) {
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_detach", MPI_ERR_OTHER, "**notimpl", 0 );
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**notimpl", 0 );
     }
     if (BsendBuffer.buffer == 0) {
 	/* Error - detaching an already detached buffer */
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_detach", MPI_ERR_OTHER, "**bsendnobuf", 0 );
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**bsendnobuf", 0 );
     }
     if (BsendBuffer.active) {
 	/* Loop through each active element and wait on it */
@@ -311,7 +311,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	PRINTF( "Could not find space; dumping arena\n" );
 	MPIR_Bsend_dump();
 #endif
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_isend", MPI_ERR_BUFFER, "**bufbsend", 
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_isend", __LINE__, MPI_ERR_BUFFER, "**bufbsend", 
 				     "**bufbsend %d %d", packsize, 
 				     BsendBuffer.buffer_size );
     }

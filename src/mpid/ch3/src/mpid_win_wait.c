@@ -73,7 +73,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
     nops_from_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
     if (!nops_from_proc) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
 
@@ -86,12 +86,12 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
     ranks_in_post_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_post_grp) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     ranks_in_win_grp = (int *) MPIU_Malloc(post_grp_size * sizeof(int));
     if (!ranks_in_win_grp) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
 
@@ -104,13 +104,13 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
     reqs = (MPI_Request *)  MPIU_Malloc(post_grp_size*sizeof(MPI_Request));
     if (!reqs) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     
     tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
     if (!tags) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
 
@@ -176,7 +176,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
                                       rma_op_info.count);
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code(
-                        MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 ); 
+                        MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
                     return mpi_errno;
                 }
                 mpi_errno = NMPI_Recv(tmp_buf,
@@ -192,7 +192,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
                     uop = MPIR_Op_table[op%16 - 1];
                 }
                 else {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP,
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
                                                       "**opnotpredefined", "**opnotpredefined %d", op );
                     return mpi_errno;
                 }
@@ -204,7 +204,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
                 MPIU_Free(tmp_buf);
                 break;
             default:
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
                                                   "**opnotpredefined", "**opnotpredefined %d", rma_op_info.type );
                 return mpi_errno;
             }

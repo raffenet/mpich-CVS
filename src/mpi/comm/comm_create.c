@@ -106,7 +106,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
        member of the group */
     new_context_id = MPIR_Get_contextid( comm_ptr->handle );
     if (new_context_id == 0) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**toomanycomm", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
@@ -131,7 +131,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	  comm_ptr->remote_size ); */
 	mapping = (int *)MPIU_Malloc( n * sizeof(int) );
 	if (!mapping) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
@@ -154,7 +154,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    if (mapping[i] == -1) {
 		/*printf( "failed for %d entry (pid=%d)\n", i,
 		  group_ptr->lrank_to_lpid[i].lpid); */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_GROUP, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_GROUP, 
 						  "**groupnotincomm", 
 						  "**groupnotincomm %d", i );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
@@ -165,7 +165,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	/* Get the new communicator structure and context id */
 	newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
 	if (!newcomm_ptr) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
 	MPIU_Object_set_ref( newcomm_ptr, 1 );

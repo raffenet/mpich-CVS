@@ -116,7 +116,7 @@ int MPI_Pack(void *inbuf,
 	MPID_Datatype_get_size_macro(datatype, tmp_sz);
 
 	if (tmp_sz * incount > outcount - *position) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, "**arg", 0);
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**arg", 0);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
 	    return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
 	}

@@ -41,7 +41,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	{
 	    if (sreq != NULL && sreq->cc != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 						 "**ch3|selfsenddeadlock", 0);
 		goto fn_exit;
 	    }
@@ -81,7 +81,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    /* FIXME: this is a fatal error because a sequence number has already been allocated.  If sequence numbers are not
 	       being used then this could be a recoverable error.  A check needs to be added that sets the error to fatal or
 	       recoverable depending on the use of sequence numbers. */
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
 	    goto fn_exit;
 	}
 	if (sreq != NULL)
@@ -126,7 +126,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &sreq);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
 		goto fn_exit;
 	    }
 	    if (sreq != NULL)
@@ -173,7 +173,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 		    MPIU_Object_set_ref(sreq, 0);
 		    MPIDI_CH3_Request_destroy(sreq);
 		    sreq = NULL;
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
 		    goto fn_exit;
 		}
 	    }
@@ -182,7 +182,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 		MPIU_Object_set_ref(sreq, 0);
 		MPIDI_CH3_Request_destroy(sreq);
 		sreq = NULL;
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
 		goto fn_exit;
 	    }
 	}
@@ -221,7 +221,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    MPIU_Object_set_ref(sreq, 0);
 	    MPIDI_CH3_Request_destroy(sreq);
 	    sreq = NULL;
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
 	    goto fn_exit;
 	}
 	if (rts_sreq != NULL)

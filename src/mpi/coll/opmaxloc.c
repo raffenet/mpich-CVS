@@ -180,7 +180,7 @@ void MPIR_MAXLOC(
     default: {
         MPICH_PerThread_t *p;
         MPID_GetPerThread(p);
-        p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
+        p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
         break;
     }
     }
@@ -211,7 +211,7 @@ int MPIR_MAXLOC_check_dtype( MPI_Datatype type )
 #endif
         return MPI_SUCCESS;
     default: 
-        return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
+        return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
     }
 }
 

@@ -380,7 +380,7 @@ void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype,
 #define MPIR_ERR_FATAL 1
 #define MPIR_ERR_RECOVERABLE 0
 int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode );
-int MPIR_Err_create_code( int, int, const char [], int, const char [], const char [], ... );
+int MPIR_Err_create_code( int, int, const char [], int, int, const char [], const char [], ... );
 int MPIR_Err_is_fatal(int);
 void MPIR_Err_get_string(int, char *);
 void MPIR_Err_print_stack(FILE *, int);

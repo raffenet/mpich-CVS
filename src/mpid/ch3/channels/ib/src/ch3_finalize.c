@@ -38,7 +38,7 @@ int MPIDI_CH3_Finalize()
     assert(rc == 0);
     if (rc)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME,
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 	    MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", rc );
     }
 

@@ -554,18 +554,12 @@ with MPI_Alloc_mem.
 **ch3_send:send failed
 **rdma_finalize:Channel rdma finalization failed
 **ch3_init:Channel init failed
-**ch3_init %d:Channel init failed (line %d)
 **init:Initialization failed
 **rdma_init:Channel rdma initialization failed
-**rdma_init %d:Channel rdma initialization failed (line %d)
 **poke:progress_poke failed
 **postpkt:Unable to post a read for the next packet header
 **write_progress:Write progress failed
-**ch3_finalize %d:Channel finalization failed (line %d)
 **ch3progress %d:Channel progress engine failed on line %d
-**handle_read %d:Unable to handle a packet (line %d)
-**init %d:Initialization failed (line %d)
-**write_progress %d:Write progress failed (line %d)
 
 #
 # pmi

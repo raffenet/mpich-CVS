@@ -97,7 +97,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (offset < 0) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG,
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG,
 	    "**iobadoffset", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
@@ -112,7 +112,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (count < 0) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_ARG, 
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, 
 	    "**iobadcount", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
@@ -127,7 +127,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (datatype == MPI_DATATYPE_NULL) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_TYPE, 
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE, 
 	    "**dtypenull", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
@@ -144,7 +144,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 
     if ((count*datatype_size) % fh->etype_size != 0) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, 
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 	    "**ioetype", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
@@ -159,7 +159,7 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_UNSUPPORTED_OPERATION,
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
 	    "**ioamodeseq", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)

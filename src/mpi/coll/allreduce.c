@@ -175,7 +175,7 @@ PMPI_LOCAL int MPIR_Allreduce (
 
         tmp_buf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
         if (!tmp_buf) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
@@ -322,12 +322,12 @@ PMPI_LOCAL int MPIR_Allreduce (
 
                 cnts = (int *) MPIU_Malloc(pof2*sizeof(int));
                 if (!cnts) {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
                 disps = (int *) MPIU_Malloc(pof2*sizeof(int));
                 if (!disps) {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
 
@@ -576,7 +576,7 @@ PMPI_LOCAL int MPIR_Allreduce (
 
         tmp_buf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
         if (!tmp_buf) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
         /* adjust for potential negative lower bound in datatype */
@@ -895,7 +895,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
                                        op, comm_ptr); 
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
 /*            mpi_errno = MPIR_Allreduce_inter(sendbuf, recvbuf, count,

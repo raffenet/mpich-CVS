@@ -107,7 +107,7 @@ PMPI_LOCAL int MPIR_Scatter (
         if (relative_rank && !(relative_rank % 2)) {
             tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
             if (!tmp_buf) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
         }
@@ -120,7 +120,7 @@ PMPI_LOCAL int MPIR_Scatter (
             if (root != 0) {
                 tmp_buf = MPIU_Malloc(nbytes*comm_size);
                 if (!tmp_buf) { 
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
 
@@ -236,7 +236,7 @@ PMPI_LOCAL int MPIR_Scatter (
                           &tmp_buf_size); 
             tmp_buf = MPIU_Malloc(tmp_buf_size);
             if (!tmp_buf) { 
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
 
@@ -289,7 +289,7 @@ PMPI_LOCAL int MPIR_Scatter (
             NMPI_Pack_size(recvcnt*(comm_size/2), recvtype, comm, &tmp_buf_size);
             tmp_buf = MPIU_Malloc(tmp_buf_size);
             if (!tmp_buf) { 
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
 
@@ -428,7 +428,7 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                 tmp_buf =
                     MPIU_Malloc(recvcnt*local_size*(MPIR_MAX(extent,true_extent)));  
                 if (!tmp_buf) {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
                 /* adjust for potential negative lower bound in datatype */
@@ -597,7 +597,7 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                                      comm_ptr); 
         else {
             /* intercommunicator */ 
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
             /*mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,

@@ -124,7 +124,7 @@ int MPIR_Bcast (
          how much 'position' is incremented, and multiply that by count. */
       tmp_buf = MPIU_Malloc(tmp_buf_size);
       if (!tmp_buf) {
-          mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+          mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
           return mpi_errno;
       }
 
@@ -225,7 +225,7 @@ int MPIR_Bcast (
           /* noncontiguous or heterogeneous. pack into temporary buffer. */
           tmp_buf = MPIU_Malloc(nbytes);
           if (!tmp_buf) {
-              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
               return mpi_errno;
           }
 
@@ -421,12 +421,12 @@ int MPIR_Bcast (
 
           recvcnts = MPIU_Malloc(comm_size*sizeof(int));
           if (!recvcnts) {
-              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
               return mpi_errno;
           }
           displs = MPIU_Malloc(comm_size*sizeof(int));
           if (!displs) {
-              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
               return mpi_errno;
           }
           
@@ -639,7 +639,7 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
             mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
             /*mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,

@@ -104,7 +104,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
 	    /* Check that the communicator is large enough */
 	    if (nnodes > comm_ptr->remote_size) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 				  "**topotoolarge", "**topotoolarge %d %d",
 					  nnodes, comm_ptr->remote_size );
 	    }
@@ -122,11 +122,11 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 	       topology yet */
 	    for (i=0; i<nnodes; i++) {
 		if (index[i] < 0) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 			      "**indexneg", "**indexneg %d %d", i, index[i] );
 		}
 		if (i+1<nnodes && index[i] > index[i+1]) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 			   "**indexnonmonotone", "**indexnonmonotone %d %d %d",
 					      i, index[i], index[i+1] );
 		}
@@ -135,7 +135,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 	    /* Check that edge number is in range */
 	    for (i=0; i<index[nnodes-1]; i++) {
 		if (edges[i] > nnodes || edges[i] < 0) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 			      "**edgeoutrange", "**edgeoutrange %d %d %d", 
 						      i, edges[i], nnodes );
 		}
@@ -150,7 +150,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 		for (i=0; i<nnodes && !mpi_errno; i++) {
 		    for (;j<index[i]; j++) {
 			if (edges[j] == i) {
-			    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+			    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 				     "**nulledge", "**nulledge %d %d", i, j );
 			    break;
 			}
@@ -191,7 +191,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     nedges = index[nnodes-1];
     graph_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof(MPIR_Topology) );
     if (!graph_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
@@ -202,7 +202,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     graph_ptr->topo.graph.index = (int *)MPIU_Malloc( nnodes * sizeof(int) );
     graph_ptr->topo.graph.edges = (int *)MPIU_Malloc( nedges * sizeof(int) );
     if (!graph_ptr->topo.graph.index || !graph_ptr->topo.graph.edges) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

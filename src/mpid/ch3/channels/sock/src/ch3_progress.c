@@ -200,7 +200,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 			int mpi_errno;
 
 			MPIDI_DBG_Print_packet(&conn->pkt);
-			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_INTERN,
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
 							 "**ch3|sock|badpacket", "**ch3|sock|badpacket %d", conn->pkt.type);
 			MPID_Abort(NULL, mpi_errno);
 		    }
@@ -299,7 +299,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 		{
 		    int mpi_errno;
 
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|sock|connfailed",
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|connfailed",
 						     "**ch3|sock|connfailed %d %d", /* FIXME: pgid */ -1, conn->vc->sc.pg_rank);
 		    MPID_Abort(NULL, mpi_errno);
 
@@ -599,7 +599,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     if (temp == NULL)
     {
 	/*MPIDI_err_printf("GetHostAndPort", "MPIU_Strdup failed\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|strdup", 0);
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|strdup", 0);
     }
     /* move to the host part */
     token = strtok(temp, ":");
@@ -607,7 +607,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     {
 	MPIU_Free(temp);
 	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
 				    "**ch3|sock|badbuscard %s", business_card);
     }
     /*strcpy(host, token);*/
@@ -617,7 +617,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     {
 	MPIU_Free(temp);
 	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
 				    "**ch3|sock|badbuscard %s", business_card);
     }
     MPIU_Strncpy(host, token, MAXHOSTNAMELEN); /* use the ip string instead of the hostname, it's more reliable */
@@ -627,7 +627,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
     {
 	MPIU_Free(temp);
 	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
+	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|badbuscard",
 				    "**ch3|sock|badbuscard %s", business_card);
     }
     *port = atoi(token);
@@ -693,12 +693,12 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     {
 	if (rc == SOCK_ERR_HOST_LOOKUP)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|hostlookup",
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|hostlookup",
 					     "**ch3|sock|hostlookup %d %d %s", /* FIXME: pgid*/ -1, conn->vc->sc.pg_rank, val);
 	}
 	else if (rc == SOCK_ERR_CONN_REFUSED)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**ch3|sock|connrefused",
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|connrefused",
 					     "**ch3|sock|connrefused %d %d %s", /* FIXME: pgid */ -1, conn->vc->sc.pg_rank, val);
 	}
 	else
@@ -790,7 +790,7 @@ static inline MPIDI_CH3I_Connection_t * connection_alloc(void)
     conn = MPIU_Malloc(sizeof(MPIDI_CH3I_Connection_t));
     if (conn == NULL)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**ch3|sock|connallocfailed", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|connallocfailed", 0);
 	MPID_Abort(NULL, mpi_errno);
     }
 

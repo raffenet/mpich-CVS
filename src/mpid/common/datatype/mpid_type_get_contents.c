@@ -90,6 +90,6 @@ static int create_error_to_return(void)
 {
     int mpi_errno;
 
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_get_contents", MPI_ERR_OTHER, "**dtype", 0);
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_get_contents", __LINE__, MPI_ERR_OTHER, "**dtype", 0);
     return mpi_errno;
 }

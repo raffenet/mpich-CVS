@@ -547,10 +547,10 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
 #define MPID_Valid_ptr(kind,ptr,err) \
-  {if (!(ptr)) { err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, \
+  {if (!(ptr)) { err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, \
                                              "**nullptrtype", "**nullptrtype %s", #kind ); } }
 #define MPID_Valid_ptr_class(kind,ptr,errclass,err) \
-  {if (!(ptr)) { err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, errclass, \
+  {if (!(ptr)) { err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, errclass, \
                                              "**nullptrtype", "**nullptrtype %s", #kind ); } }
 
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr_class(Info,ptr,MPI_ERR_INFO,err)
@@ -560,7 +560,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Comm_valid_ptr(ptr,err) {                      \
      MPID_Valid_ptr_class(Comm,ptr,MPI_ERR_COMM,err);       \
      if ((ptr) && (ptr)->ref_count == 0) {                      \
-        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_COMM,"**comm", 0);ptr=0;}}
+        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM,"**comm", 0);ptr=0;}}
 #define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr_class(Group,ptr,MPI_ERR_GROUP,err)
 #define MPID_Win_valid_ptr(ptr,err) MPID_Valid_ptr_class(Win,ptr,MPI_ERR_WIN,err)
 #define MPID_Op_valid_ptr(ptr,err) MPID_Valid_ptr_class(Op,ptr,MPI_ERR_OP,err)
@@ -1349,7 +1349,7 @@ int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
 /*int MPIR_Err_return_file( MPID_File *, const char [], int );*/
 int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
-int MPIR_Err_create_code( int, int, const char [], int, const char [], const char [], ... );
+int MPIR_Err_create_code( int, int, const char [], int, int, const char [], const char [], ... );
 int MPIR_Err_is_fatal(int);
 void MPIR_Err_init(void);
 void MPIR_Err_preinit( void );

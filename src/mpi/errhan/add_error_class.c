@@ -68,7 +68,7 @@ int MPI_Add_error_class(int *errorclass)
     new_class = MPIR_Err_add_class( 0, 0 );
     if (new_class < 0) {
 	/* Error return.  */
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**noerrclasses", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**noerrclasses", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_CLASS);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

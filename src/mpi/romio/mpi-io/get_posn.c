@@ -55,7 +55,7 @@ int MPI_File_get_position(MPI_File fh, MPI_Offset *offset)
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_UNSUPPORTED_OPERATION,
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
 	    "**ioamodeseq", 0);
 	return MPIR_Err_return_file(fh, myname, error_code);
 #elif defined(PRINT_ERR_MSG)

@@ -73,13 +73,13 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
         nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
         if (!nops_to_proc) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
         nops_from_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
         if (!nops_from_proc) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
@@ -104,7 +104,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         /* allocate one extra for use in receiving info below */ 
 
         if (!rma_op_infos) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
@@ -112,14 +112,14 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         reqs = (MPI_Request *)
             MPIU_Malloc(total_op_count*4*sizeof(MPI_Request)); 
         if (!reqs) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
 
         tags = (int *) MPIU_Calloc(comm_size, sizeof(int)); 
         if (!tags) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
@@ -128,7 +128,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             MPIU_Malloc((total_op_count+1)*sizeof(MPIU_RMA_dtype_info));
         /* allocate one extra for use when receiving data. see below */
         if (!dtype_infos) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
@@ -137,7 +137,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             MPIU_Malloc((total_op_count+1)*sizeof(void*));
         /* allocate one extra for use when receiving data. see below */
         if (!dataloops) {
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
             return mpi_errno;
         }
@@ -195,7 +195,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
                 dataloops[i] = MPIU_Malloc(dtp->loopsize);
                 if (!dataloops[i]) {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                     return mpi_errno;
                 }
@@ -316,7 +316,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     dataloops[total_op_count] = (void *)
                         MPIU_Malloc(dtype_infos[total_op_count].loopsize);
                     if (!dataloops[total_op_count]) {
-                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                         return mpi_errno;
                     }
@@ -336,7 +336,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     /* allocate new datatype object and handle */
                     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
                     if (!new_dtp) {
-                        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
+                        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
                         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                         return mpi_errno;
                     }
@@ -417,7 +417,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     tmp_buf = MPIU_Malloc(rma_op_infos[total_op_count].count * 
                                           (MPIR_MAX(extent,true_extent)));  
                     if (!tmp_buf) {
-                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                         return mpi_errno;
                     }
                     /* adjust for potential negative lower bound in datatype */
@@ -439,7 +439,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         uop = MPIR_Op_table[op%16 - 1];
                     }
                     else {
-                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP,
+                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
                                                           "**opnotpredefined", "**opnotpredefined %d", op );
                         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                         return mpi_errno;
@@ -475,7 +475,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         dloop_vec = (DLOOP_VECTOR *)
                             MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
                         if (!dloop_vec) {
-                            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, 
+                            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
                                 MPI_ERR_OTHER, "**nomem", 0 ); 
                             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                             return mpi_errno;
@@ -500,7 +500,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     MPIU_Free((char*)tmp_buf + true_lb);
                     break;
                 default:
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP,
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
                                                       "**opundefined_rma","**opundefined_rma %d",
 						      rma_op_infos[total_op_count].type );
                     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);

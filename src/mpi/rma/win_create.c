@@ -87,11 +87,11 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
             if (size < 0)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_SIZE,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_SIZE,
                                                   "**rmasize",
                                                   "**rmasize %d", size);  
             if (disp_unit <= 0)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
                                                  "**arg", "**arg %s", 
                                                  "disp_unit must be positive");  
             if (mpi_errno != MPI_SUCCESS) {

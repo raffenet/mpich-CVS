@@ -24,7 +24,7 @@ void ADIOI_PFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	err = _iowait(*((long *) (*request)->handle));
 	if (err == -1) {
 #ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io",
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
 		"**io %s", strerror(errno));
 #elif defined(PRINT_ERR_MSG)
 	    *error_code =  MPI_ERR_UNKNOWN;

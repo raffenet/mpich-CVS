@@ -86,7 +86,7 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (!topo_ptr || topo_ptr->kind != MPI_GRAPH) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
 						  "**notgraphtopo", 0 );
 	    }
 	    if (mpi_errno) {

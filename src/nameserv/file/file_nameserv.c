@@ -36,7 +36,7 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     const char *dirname;
     *handle_ptr = (MPID_NS_Handle)MPIU_Malloc( sizeof(struct MPID_NS_Handle) );
     if (!*handle_ptr) {
-	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return err;
     }
     handle_ptr->nactive = 0;
@@ -78,7 +78,7 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	handle.filenames[handle.nactive++] = MPIU_Strdup( filename );
     }
     else {
-	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return err;
     }
 
@@ -86,7 +86,7 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     fp = fopen( filename, "w" );
     if (!fp) {
 	err = MPIR_Err_create_code( 
-	    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, 
+	    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
 	    MPI_ERR_OTHER, "**namepublish",
 	    "**namepublish %s", service_name );
 	return err;
@@ -138,7 +138,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 
     if (i == handle->nactive) {
 	/* Error: this name was not found */
-	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, 
+	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
 				    MPI_ERR_OTHER, "**namepubnotpub",
 				    "**namepubnotpub %s", service_name );
 	return err;

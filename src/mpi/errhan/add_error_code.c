@@ -71,7 +71,7 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
     new_code = MPIR_Err_add_code( errorclass, 0, 0 );
     if (new_code < 0) {
 	/* Error return.  */
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**noerrcodes", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**noerrcodes", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_CODE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

@@ -100,11 +100,11 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
             MPIR_Nest_decr();
             if ((target_rank < MPI_PROC_NULL) || (target_rank >=
                                                   comm_size))
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_RANK,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
                    "**rank", "**rank %d %d", target_rank, comm_size );
 
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OP, "**op", 0);
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**op", 0);
 
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);

@@ -31,7 +31,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 
     new_ptr = (MPIU_RMA_ops *) MPIU_Malloc(sizeof(MPIU_RMA_ops));
     if (!new_ptr) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);
         return mpi_errno;
     }

@@ -126,7 +126,7 @@ PMPI_LOCAL int MPIR_Scan (
     MPID_Datatype_get_extent_macro(datatype, extent);
     partial_scan = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
     if (!partial_scan) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */
@@ -135,7 +135,7 @@ PMPI_LOCAL int MPIR_Scan (
     /* need to allocate temporary buffer to store incoming data*/
     tmp_buf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
     if (!tmp_buf) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
     /* adjust for potential negative lower bound in datatype */

@@ -61,7 +61,7 @@ int MPI_Comm_free_keyval(int *comm_keyval)
 	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 	    if (!mpi_errno) {
 		if (keyval_ptr->kind != MPID_COMM) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME,
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 						      MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
 		}
 	    }

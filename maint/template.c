@@ -68,7 +68,7 @@ int MPI_Foo( MPI_Comm comm, MPI_Datatype dataype, int a )
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
             if (a < 0) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
                             "**negarg", "**negarg %s %d", "a", a );
             } 
         }

@@ -192,7 +192,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	rc = MPIDI_CH3I_SHM_Get_mem( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
 	if (rc != MPI_SUCCESS)
 	{
-	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**shmgetmem", 0);
+	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmgetmem", 0);
 	    return rc;
 	}
     }
@@ -201,7 +201,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	rc = MPIDI_CH3I_SHM_Get_mem( pg, shm_block, 0, 1, FALSE );
 	if (rc != MPI_SUCCESS)
 	{
-	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**shmgetmem", 0);
+	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmgetmem", 0);
 	    return rc;
 	}
     }

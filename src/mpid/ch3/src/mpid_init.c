@@ -103,7 +103,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpi_errno = MPIDI_CH3_Init(has_args, has_env, &has_parent);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**init", "**init %d", __LINE__);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init", 0);
 	return mpi_errno;
     }
 

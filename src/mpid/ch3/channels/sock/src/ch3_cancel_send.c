@@ -7,7 +7,7 @@
 #include "mpidi_ch3_impl.h"
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_iSend
+#define FUNCNAME MPIDI_CH3_Cancel_send
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Cancel_send(MPIDI_VC * vc, MPID_Request * sreq, int * cancelled)
@@ -21,4 +21,3 @@ int MPIDI_CH3_Cancel_send(MPIDI_VC * vc, MPID_Request * sreq, int * cancelled)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CANCEL_SEND);
     return MPI_SUCCESS;
 }
-

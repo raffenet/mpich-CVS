@@ -60,14 +60,14 @@ int MPI_Info_delete( MPI_Info info, char *key )
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    /* Check input arguments */
 	    if (!key) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeynull", 0 );
 	    }
 	    else if ((keylen = strlen(key)) > MPI_MAX_INFO_KEY) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeylong", 0 );
 	    } else if (keylen == 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeyempty", 0 );
 	    }
             /* Validate info_ptr */
@@ -99,7 +99,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
 
     if (!curr_ptr) {
 	/* If curr_ptr is not defined, we never found the key */
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_NOKEY, "**infonokey",
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_NOKEY, "**infonokey",
 					  "**infonokey %s", key );
 	
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DELETE);

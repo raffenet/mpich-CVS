@@ -1,7 +1,7 @@
 BUILDING MPICH2 under Windows
 
 requirements:
-MS Visual Studio .NET
+MS Development Environment
 administrative privileges on your machines.
 
 1) unzip the package.

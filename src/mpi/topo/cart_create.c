@@ -83,7 +83,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    MPIR_ERRTEST_ARGNULL( comm_cart, "comm_cart", mpi_errno );
 	    if (ndims <= 0) {
 		/* Must have a positive number of dimensions */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_DIMS, "**dims",
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS, "**dims",
 						  "**dims %d", 0 );
 	    }
 	    MPIR_ERRTEST_ARGNEG( ndims, "ndims", mpi_errno );
@@ -112,7 +112,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    if (newsize > comm_ptr->remote_size) {
 		/* Use ERR_ARG instead of ERR_TOPOLOGY because there 
 		   is no topology yet */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
 					  "**cartdim", "**cartdim %d %d", 
 					  comm_ptr->remote_size, newsize );
 	    }
@@ -146,7 +146,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     /* Create the topololgy structure */
     cart_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof( MPIR_Topology ) );
     if (!cart_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
@@ -159,7 +159,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     cart_ptr->topo.cart.position = (int *)MPIU_Malloc( ndims * sizeof(int) );
     if (!cart_ptr->topo.cart.dims || !cart_ptr->topo.cart.periodic ||
 	!cart_ptr->topo.cart.position) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

@@ -90,7 +90,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 #endif
 	if (fcntl_struct->fsize == -1) {
 #ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io", 
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io", 
 		"**io %s", strerror(errno));
 #elif defined(PRINT_ERR_MSG)
 		*error_code = MPI_ERR_UNKNOWN;
@@ -111,7 +111,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	/* prealloc64 works only if file is of zero length */
 	if (err && (errno != ENOTEMPTY)) {
 #ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io", 
+	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io", 
 		"**io %s", strerror(errno));
 #elif defined(PRINT_ERR_MSG)
 	    *error_code = MPI_ERR_UNKNOWN;
@@ -132,7 +132,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	    err = prealloc(fd->fd_sys, (off_t) fcntl_struct->diskspace);
 	    if (err && (errno != ENOTEMPTY)) {
 #ifdef MPICH2
-		*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io",
+		*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
 		    "**io %s", strerror(errno));
 #elif defined(PRINT_ERR_MSG)
     	        *error_code = MPI_ERR_UNKNOWN;
@@ -171,7 +171,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
                       done, &status, error_code);
 		if (*error_code != MPI_SUCCESS) {
 #ifdef MPICH2
-		    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, 
+		    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
 			"**iopreallocrdwr", 0);
 #elif defined(PRINT_ERR_MSG)
 		    FPRINTF(stderr, "ADIOI_HFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");

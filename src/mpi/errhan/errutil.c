@@ -311,7 +311,7 @@ int MPIR_Err_is_fatal(int errcode)
     return (errcode & ERROR_FATAL_MASK) ? TRUE : FALSE;
 }
 
-int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int class, const char generic_msg[],
+int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line, int class, const char generic_msg[],
 			  const char specific_msg[], ... )
 {
     va_list Argp;
@@ -421,7 +421,8 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int clas
 	    ErrorRing[ring_idx].prev_error = lastcode;
 	    if (fcname != NULL)
 	    {
-		MPIU_Strncpy(ErrorRing[ring_idx].fcname, fcname, MAX_FCNAME_LEN);
+		/*MPIU_Strncpy(ErrorRing[ring_idx].fcname, fcname, MAX_FCNAME_LEN);*/
+		MPIU_Snprintf(ErrorRing[ring_idx].fcname, MAX_FCNAME_LEN, "%s(%d)", fcname, line);
 		ErrorRing[ring_idx].fcname[MAX_FCNAME_LEN] = '\0';
 	    }
 	    else
@@ -595,7 +596,7 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 		    
 		if (ErrorRing[ring_idx].seq == ring_seq)
 		{
-		    fprintf(fp, "%s(): %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
+		    fprintf(fp, "%s: %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
 		    errcode = ErrorRing[ring_idx].prev_error;
 		}
 		else

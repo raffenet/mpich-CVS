@@ -59,7 +59,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
             if (size < 0)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
                                "**argneg", "**argneg %s %d", "size", size);  
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
@@ -72,7 +72,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 
     baseptr = MPIU_Malloc(size);
     if (!baseptr) {
-        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_NO_MEM, "**allocmem", 0 );
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NO_MEM, "**allocmem", 0 );
         return mpi_errno;
     }
 

@@ -61,7 +61,7 @@ int MPI_Type_free_keyval(int *type_keyval)
 	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 	    if (!mpi_errno) {
 		if (keyval_ptr->kind != MPID_DATATYPE) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_KEYVAL, 
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_KEYVAL, 
 						    "**keyvalnotdatatype", 0 );
 		}
 	    }
