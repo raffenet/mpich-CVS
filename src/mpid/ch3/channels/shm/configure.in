@@ -26,9 +26,10 @@ AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
 dnl AC_DEFINE(HAVE_SHARED_PROCESS_READ,,[Define to use /proc directory for shared process reads])
 
 AC_CHECK_FUNCS( sysconf shmget shmat shmdt shmctl mmap shm_unlink )
-AC_SEARCH_LIBS( shm_open, rt, AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) )
+AC_SEARCH_LIBS( shm_open, rt)
 if test "$ac_cv_search_shm_open" != "none required" ; then
-    SHM_LIBS="$SHM_LIBS $ac_cv_search_shm_open" 
+    SHM_LIBS="$SHM_LIBS $ac_cv_search_shm_open"
+    AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) 
 fi
 
 AC_CHECK_HEADERS(				\
