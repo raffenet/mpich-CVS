@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include "mpioimpl.h"
+#include "adio_extern.h"
 
 /* MPICH2 error handling implementation */
 
@@ -38,8 +39,12 @@ int MPIO_Err_return_file(MPI_File mpi_fh, int error_code)
     int myrank, result_len; 
     MPI_Errhandler err_handler;
 
-    if (fd == ADIO_FILE_NULL) err_handler = ADIOI_DFLT_ERR_HANDLER;
-    else err_handler = fd->err_handler;
+    if (mpi_fh == MPI_FILE_NULL) err_handler = ADIOI_DFLT_ERR_HANDLER;
+    else {
+	ADIO_File fh;
+	fh = MPIO_File_resolve(mpi_fh);
+	err_handler = fh->err_handler;
+    }
 
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
     if (err_handler == MPI_ERRORS_ARE_FATAL) {
