@@ -1202,7 +1202,6 @@ SOURCE=.\src\mpi\pt2pt\wait.c
 # Begin Source File
 
 SOURCE=.\src\mpi\pt2pt\waitall.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
