@@ -78,13 +78,13 @@ items listed here that are already sufficiently tested.
     correct values are set.
 13. create_hindexed, create_hvector, and create-struct.  These can use
     the MPI-1 tests, with the data-types suitably updated.  Add these
-    to the Intel tests.
+    to the Intel tests. - done for C.  Need to do Fortran.
 14. type_dup.  Apply to both predefined and user defined types.
 15. type_extent - check lines 99/100 (in coverage file)
 16. type util - make sure that setup of builtins is performed.
 16a. Type free, get-extent, true_extent for derived types
 17. Add tests for add-error-class, code, string; -- done
-17a Add tests for comm call,
+17a Add tests for comm call errhandler
 18. comm set,get errhandler - use MPI-1 versions.  Also apply to win, file.
     Also user-defined errhandlers.  Make sure references work correctly (e.g.,
     if freed while still in communicator, or freed after communicator is 
@@ -141,7 +141,8 @@ items listed here that are already sufficiently tested.
 39. Add tests for dynamic processes
     open_port, close_port, accept, connect, spawn, spawn multiple
 40. Add tests for all of MPI-IO not already covered.
-    These include the routines in the files:
+    These include the routines in the files (entire file if no notes on that
+    file):
     get_posn_sh.c
     get_view.c (rougly lines 99ff, at Type_contiguous)
     iotest.c
