@@ -1,13 +1,13 @@
 dnl
-dnl Borrowed (and slightly altered) from Bill Gropp's confdb stuff.
+dnl Borrowed (and altered) from Bill Gropp's confdb PAC_PROG_CHECK_INSTALL_WORKS.
 dnl
 dnl Fixes to bugs in AC_xxx macros
 dnl 
-dnl PAC_PROG_CHECK_INSTALL_WORKS - Check whether the install program in INSTALL
+dnl MPD_AC_PROG_CHECK_INSTALL_WORKS - Check whether the install program in INSTALL
 dnl works.
 dnl
 dnl Synopsis:
-dnl PAC_PROG_CHECK_INSTALL_WORKS
+dnl MPD_AC_PROG_CHECK_INSTALL_WORKS
 dnl
 dnl Output Effect:
 dnl   Sets the variable 'INSTALL' to the value of 'ac_sh_install' if 
@@ -28,7 +28,7 @@ dnl
 dnl   No variables are cached to ensure that we do not make a mistake in 
 dnl   our choice of install program.
 dnl
-AC_DEFUN([PAC_PROG_CHECK_INSTALL_WORKS],[
+AC_DEFUN([MPD_AC_PROG_CHECK_INSTALL_WORKS],[
 # Check that this install really works
 rm -f conftest
 echo "Test file" > conftest

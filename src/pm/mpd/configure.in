@@ -33,6 +33,14 @@ AC_PROG_MAKE_SET
 AC_PROG_LN_S
 AC_PROG_INSTALL
 
+MPD_AC_PROG_CHECK_INSTALL_WORKS
+
+if test "$installOk" = "no" ; then
+    # echo "RMB1: SETTING install"
+    INSTALL="./install.sh"
+fi
+echo Using INSTALL=$INSTALL
+
 dnl Find a Python
 AC_CHECK_PROG(PY23, python2.3, python2.3)
 AC_CHECK_PROG(PY2,  python2, python2)
