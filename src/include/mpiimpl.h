@@ -165,9 +165,16 @@ typedef MPIU_INT64_T int64_t;
 #define POINTER_TO_AINT(a)   ( ( MPI_Aint )( a ) )
 #define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( a ) )
 #endif
+
+
 /* ------------------------------------------------------------------------- */
 /* end of mpitypedefs.h */
 /* ------------------------------------------------------------------------- */
+
+
+#include "mpiimplthread.h"
+#include "mpiatomic.h"
+
 
 /* Include definitions from the device which must exist before items in this
    file (mpiimpl.h) can be defined. */
@@ -232,8 +239,6 @@ void MPIU_dump_dbg_memlog(FILE * fp);
 /* ------------------------------------------------------------------------- */
 /* end of mpidebug.h */
 /* ------------------------------------------------------------------------- */
-
-#include "mpiimplthread.h"
 
 /* ------------------------------------------------------------------------- */
 /* mpimem.h */
@@ -371,84 +376,72 @@ typedef enum MPID_Lang_t { MPID_LANG_C
 
 #ifdef MPICH_SINGLE_THREADED
 #ifdef MPICH_DEBUG_HANDLES
-#define MPIU_Object_set_ref(objptr,val)				             \
-{									     \
-    if (1) {								     \
-        MPIU_DBG_PRINTF(("set %x (0x%08x) refcount to %d in %s:%d\n",	     \
-                 (unsigned) (objptr), (objptr)->handle, val, __FILE__, __LINE__));}	\
-    ((MPIU_Handle_head*)(objptr))->ref_count = val;			     \
+#define MPIU_Object_set_ref(objptr,val)												\
+{																\
+    if (1) {															\
+        MPIU_DBG_PRINTF(("set %p (0x%08x) refcount to %d in %s:%d\n", (objptr), (objptr)->handle, val, __FILE__, __LINE__));	\
+    }																\
+    ((MPIU_Handle_head*)(objptr))->ref_count = val;										\
 }
 
-#define MPIU_Object_add_ref(objptr)					     \
-{									     \
-    ((MPIU_Handle_head*)(objptr))->ref_count++;				     \
-    if (1) {								     \
-       MPIU_DBG_PRINTF(("incr %x (0x%08x) refcount in %s:%d, count=%d\n",    \
-                (unsigned) objptr, (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));	\
-    }									     \
-    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){\
-        MPIU_DBG_PRINTF(("Invalid refcount in %x (0x%08x) incr at %s:%d\n",  \
-                 (unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__));}\
+#define MPIU_Object_add_ref(objptr)												\
+{																\
+    ((MPIU_Handle_head*)(objptr))->ref_count++;											\
+    if (1) {															\
+	MPIU_DBG_PRINTF(("incr %p (0x%08x) refcount in %s:%d, count=%d\n",							\
+			 (objptr), (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));					\
+    }																\
+    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){							\
+        MPIU_DBG_PRINTF(("Invalid refcount in %p (0x%08x) incr at %s:%d\n", (objptr), (objptr)->handle, __FILE__, __LINE__));	\
+    }																\
 }
 
-#define MPIU_Object_release_ref(objptr,inuse_ptr)			     \
-{									     \
-    *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count;		     \
-    if (1) {								     \
-       MPIU_DBG_PRINTF(("decr %x (0x%08x) refcount in %s:%d, count=%d\n",    \
-		(unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));	\
-    }									     \
-    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){\
-        MPIU_DBG_PRINTF(("Invalid refcount in %x (0x%08x) decr at %s:%d\n",  \
-		 (unsigned) (objptr), (objptr)->handle, __FILE__, __LINE__));}\
+#define MPIU_Object_release_ref(objptr,inuse_ptr)										\
+{																\
+    *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count;									\
+    if (1) {															\
+	MPIU_DBG_PRINTF(("decr %p (0x%08x) refcount in %s:%d, count=%d\n",							\
+			 (objptr), (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));					\
+    }																\
+    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){							\
+        MPIU_DBG_PRINTF(("Invalid refcount in %p (0x%08x) decr at %s:%d\n", (objptr), (objptr)->handle, __FILE__, __LINE__));	\
+    }																\
 }
 #else
 #define MPIU_Object_set_ref(objptr,val) \
-    ((MPIU_Handle_head*)(objptr))->ref_count = val
+    {((MPIU_Handle_head*)(objptr))->ref_count = val;}
 #define MPIU_Object_add_ref(objptr) \
-    ((MPIU_Handle_head*)(objptr))->ref_count++
+    {((MPIU_Handle_head*)(objptr))->ref_count++;}
 #define MPIU_Object_release_ref(objptr,inuse_ptr) \
-    *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count
+    {*(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count;}
 #endif
 #else
-/* These can be implemented using special assembly language operations
-   on most processors.  If no such operation is available, then each
-   object, in addition to the ref_count field, must have a thread-lock. 
-   
-   We also need to know if the decremented value is zero so that we can see if
-   we must deallocate the object.  This fetch and decrement must be 
-   atomic so that multiple threads don't decide that they were 
-   responsible for setting the value to zero.
-
-   FIXME: Who sets "USE_ATOMIC_UPDATES"?  How should we select alternate
-   versions (e.g., other IA32 compilers, IA64, PowerPC, MIPS, etc.)
- */
-#if USE_ATOMIC_UPDATES
-#ifdef HAVE_PENTIUM_GCC_ASM
-#define MPID_Atomic_incr( count_ptr ) \
-   __asm__ __volatile__ ( "lock; incl %0" \
-                         : "=m" (*count_ptr) :: "memory", "cc" )
-
-#define MPID_Atomic_decr_flag( count_ptr, flag ) \
-   __asm__ __volatile__ ( "lock; decl %0 ; setnz %1" \
-                         : "=m" (*count_ptr) , "=q" (flag) :: "memory", "cc" )
-#else
-#error "Atomic updates specified but no code for this platform"
-#endif
+#if defined(USE_ATOMIC_UPDATES)
 #define MPIU_Object_set_ref(objptr,val) \
-    ((MPIU_Handle_head*)(objptr))->ref_count = val
+    {((MPIU_Handle_head*)(objptr))->ref_count = val;}
 #define MPIU_Object_add_ref(objptr) \
-    MPID_Atomic_incr(&((objptr)->ref_count))
-#define MPIU_Object_release_ref(objptr,inuse_ptr) \
-    { int flag; 
-      MPID_Atomic_decr_flag(&((objptr)->ref_count),flag); *inuse_ptr = flag; }
+    {MPID_Atomic_incr(&((objptr)->ref_count));}
+#define MPIU_Object_release_ref(objptr,inuse_ptr)		\
+{								\
+    int nzflag__;						\
+    MPID_Atomic_decr_flag(&((objptr)->ref_count),nzflag__);	\
+    *inuse_ptr = nzflag__;					\
+}
 #else
-#define MPIU_Object_add_ref(objptr) \
-    {MPID_Thread_lock(&(objptr)->mutex);(objptr)->ref_count++;\
-    MPID_Thread_unlock(&(objptr)->mutex);}
-#define MPIU_Object_release_ref(objptr,isuse_ptr) \
-    {MPID_Thread_lock(&(objptr)->mutex);*(inuse_ptr)=--(objptr)->ref_count;\
-    MPID_Thread_unlock(&(objptr)->mutex);}
+#define MPIU_Object_set_ref(objptr,val) \
+    {((MPIU_Handle_head*)(objptr))->ref_count = val;}
+#define MPIU_Object_add_ref(objptr)		\
+{						\
+    MPID_Common_thread_lock();			\
+    (objptr)->ref_count++;			\
+    MPID_Common_thread_unlock();		\
+}
+#define MPIU_Object_release_ref(objptr,inuse_ptr)	\
+{							\
+    MPID_Common_thread_lock();				\
+    *(inuse_ptr)=--(objptr)->ref_count;			\
+    MPID_Common_thread_unlock();			\
+}
 #endif
 #endif
 
@@ -1117,6 +1110,9 @@ typedef struct MPICH_PerThread_t {
 #ifdef HAVE_TIMING
     MPID_Stateinfo_t timestamps[MPICH_MAX_STATES];  /* per thread state info */
 #endif
+#if defined(MPID_DEV_PERTHREAD_DECL)
+    MPID_DEV_PERTHREAD_DECL
+#endif    
 } MPICH_PerThread_t;
 
 #ifdef MPICH_SINGLE_THREADED
@@ -1138,31 +1134,32 @@ extern MPICH_PerThread_t MPIR_Thread;
 /* #define MPID_Thread_lock( ptr ) */
 /* #define MPID_Thread_unlock( ptr ) */
 #else
-#define MPID_Common_thread_lock() MPID_Thread_lock( &MPIR_PerProcess.common_lock )
-#define MPID_Common_thread_unlock() MPID_Thread_unlock( &MPIR_PerProcess.common_lock )
+#define MPID_Common_thread_lock() MPID_Thread_lock( &MPIR_Process.common_lock )
+#define MPID_Common_thread_unlock() MPID_Thread_unlock( &MPIR_Process.common_lock )
 
 #define MPID_Comm_thread_lock(comm_ptr_) MPID_Thread_lock(&(comm_ptr_)->mutex)
 #define MPID_Comm_thread_unlock(comm_ptr_) MPID_Thread_unlock(&(comm_ptr_)->mutex)
 
-#define MPID_Request_construct(request_ptr_)		\
-{							\
-    MPID_Thread_lock_init((request_ptr_)->mutex);	\
-    MPID_Thread_lock_init((request_ptr_)->initialized);	\
+#define MPID_Request_construct(request_ptr_)			\
+{								\
+    MPID_Thread_lock_init(&(request_ptr_)->mutex);		\
+    MPID_Thread_lock_init(&(request_ptr_)->initialized);	\
 }
 #define MPID_Request_destruct(request_ptr_)			\
 {								\
-    MPID_Thread_lock_destroy((request_ptr_)->mutex);		\
-    MPID_Thread_lock_destroy((request_ptr_)->initialized);	\
+    MPID_Thread_lock_destroy(&(request_ptr_)->mutex);		\
+    MPID_Thread_lock_destroy(&(request_ptr_)->initialized);	\
 }
 #define MPID_Request_thread_lock(request_ptr_) MPID_Thread_lock(&(request_ptr_)->mutex)
 #define MPID_Request_thread_unlock(request_ptr_) MPID_Thread_unlock(&(request_ptr_)->mutex)
-/* TODO: MT: these should be rewritten to use busy waiting and appropriate processor memory fences */
+/* TODO: MT: these should be rewritten to use busy waiting and appropriate processor memory fences.  They and an necessary
+   variables should probably be defined by the device rather than in the top level include file.  */
 #define MPID_Request_initialized_clear(request_ptr_) MPID_Thread_lock(&(request_ptr_)->initialized)
 #define MPID_Request_initialized_set(request_ptr_)  MPID_Thread_unlock(&(request_ptr_)->initialized)
 #define MPID_Request_initialized_wait(request_ptr_)	\
 {							\
-    MPID_Thread_lock(&(request_ptr_)->initialized)	\
-    MPID_Thread_unlock(&(request_ptr_)->initialized)	\
+    MPID_Thread_lock(&(request_ptr_)->initialized);	\
+    MPID_Thread_unlock(&(request_ptr_)->initialized);	\
 }    
 #endif
 

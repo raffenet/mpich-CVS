@@ -49,9 +49,42 @@ typedef pthread_mutex_t MPID_Thread_lock_t;
 #define MPID_Thread_cond_wait(condp_, mutexp_) pthread_cond_wait((condp_),(mutexp_))
 #define MPID_Thread_cond_destroy(condp_) pthread_cond_destroy(condp_)
 
+#elif HAVE_THR_CREATE
+#include <thread.h>
+typedef thread_key_t MPID_Thread_key_t;
+typedef thread_t MPID_Thread_id_t;
+typedef mutex_t MPID_Thread_lock_t;
+
+#define MPID_GetPerThread(p_)					\
+{								\
+    thr_getspecific(MPIR_Process.thread_key, &(p_));		\
+    if ((p_) == NULL)						\
+    {								\
+	(p_) = MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
+	thr_setspecific(MPIR_Process.thread_key, (p_));		\
+    }								\
+}
+
+#define MPID_Thread_lock_init(mutexp_) mutex_init((mutexp_), NULL)
+#define MPID_Thread_lock(mutexp_) mutex_lock(mutexp_)
+#define MPID_Thread_unlock(mutexp_) mutex_unlock(mutexp_)
+#define MPID_Thread_lock_destroy(mutexp_) mutex_destroy(mutexp_)
+
 #else
 #error No Thread Package Chosen
 #endif
+
+#if defined(HAVE_THR_YIELD)
+#define MPID_Thread_yield() thr_yield()
+#elif defined(HAVE_SCHED_YIELD)
+#define MPID_Thread_yield() sched_yield()
+#elif defined(HAVE_YIELD)
+#define MPID_Thread_yield() yield()
 #endif
 
-#endif
+#endif /* defined(MPICH_SINGLE_THREADED) */
+
+void MPID_Thread_key_create(MPID_Thread_key_t *);
+MPID_Thread_id_t MPID_Thread_get_id(void);
+
+#endif /* defined(MPIIMPLTHREAD_H) */
