@@ -313,6 +313,9 @@ filecallerrf.c
 filecreerrf.c
 filegeterrf.c
 fileseterrf.c
+typef90intf.c
+typef90realf.c
+typef90cmplxf.c
 statusc2f.c
 statusf2c.c
 .deps
