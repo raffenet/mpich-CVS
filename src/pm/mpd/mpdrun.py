@@ -65,7 +65,6 @@ def mpdrun():
     mergingOutput = 0
     linesToRanks = {}
     linesOrdered = []
-    ranksCached = {}
     gdb = 0
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
@@ -448,11 +447,11 @@ def mpdrun():
                 for line in linesOrdered:
                     linesToRanks[line].sort()
                     fsr = format_sorted_ranks(linesToRanks[line])
+                    stdout.softspace = 0
                     print '%s: %s' % (fsr,line),
                 stdout.flush()
                 linesToRanks = {}
                 linesOrdered = []
-                ranksCached = {}
             for readySocket in readySockets:
                 if readySocket == manSocket:
                     msg = mpd_recv_one_msg(manSocket)
@@ -525,7 +524,8 @@ def mpdrun():
 			        ranks = '0'
 			    else:
 			        ranks = '0-%d' % (nprocs-1)
-                            print '%s: (gdb) ' % (ranks),
+                            stdout.softspace = 0
+                            print '%s:  (gdb) ' % (ranks),
                             continue
                         line = mpd_read_one_line(manCliStdoutSocket.fileno())
                         if not line:
@@ -537,27 +537,9 @@ def mpdrun():
                             rank = int(rank)
                             linesToRanks.setdefault(rest,[])
                             linesToRanks[rest].append(rank)
-                            ranksCached.setdefault(rank,0)
-                            ranksCached[rank] += 1
                             if rest not in linesOrdered:
                                 linesOrdered.append(rest)
-                            if len(ranksCached.keys()) >= nprocs:
-                                # count # of procs that have same # of lines as prev proc
-                                n = 0
-                                x = ranksCached.values()
-                                for i in range(len(x)):
-                                    if x[i] == x[i-1]:    # -1 is valid subscript
-                                        n += 1
-                                # same number of lines for all procs ?
-                                if n == len(ranksCached.keys()):
-                                    for line in linesOrdered:
-                                        linesToRanks[line].sort()
-                                        fsr = format_sorted_ranks(linesToRanks[line])
-                                        print '%s: %s' % (fsr,line),
-                                    linesToRanks = {}
-                                    linesOrdered = []
-                                    ranksCached = {}
-                            stdout.flush()
+                            print_ready_merged_lines(linesOrdered,linesToRanks)
                     else:
                         msg = manCliStdoutSocket.recv(1024)
                         if not msg:
@@ -592,6 +574,7 @@ def mpdrun():
 					continue
                             msgToSend = { 'cmd' : 'stdin_goes_to_who',
                                           'stdin_procs' : line.rstrip()[2:] }
+                            stdout.softspace = 0
                             print '(gdb) ',
                         elif gdb and line.startswith('q'):
                             msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
@@ -644,6 +627,7 @@ def mpdrun():
         for line in linesOrdered:
             linesToRanks[line].sort()
             fsr = format_sorted_ranks(linesToRanks[line])
+            stdout.softspace = 0
             print '%s: %s' % (fsr,line),
         stdout.flush()
     if mshipPid:
@@ -693,6 +677,38 @@ def format_sorted_ranks(ranks):
         if i != (len(all)-1):
             pline += ','
     return pline
+
+def print_ready_merged_lines(linesOrdered,linesToRanks):
+    chgd = 1  # default to get started
+    while chgd:
+        chgd = 0
+        # print "LO=", linesOrdered
+        for line1 in linesOrdered:
+            if len(linesToRanks[line1]) >= nprocs:
+                for line2 in linesOrdered:
+                    if line2 == line1:
+                        continue
+                    for rank in linesToRanks[line2]:
+                        if rank in linesToRanks[line1]:
+                            linesToRanks[line2].sort()
+                            fsr = format_sorted_ranks(linesToRanks[line2])
+                            stdout.softspace = 0
+                            print '%s: %s' % (fsr,line2),
+                            del linesToRanks[line2]
+                            linesOrdered.remove(line2)
+                            chgd = 1
+                            break
+                        if chgd:
+                            break
+    for line in linesOrdered:
+        if len(linesToRanks[line]) >= nprocs:
+            linesToRanks[line].sort()
+            fsr = format_sorted_ranks(linesToRanks[line])
+            stdout.softspace = 0    # seems to get reset (can use write/flush if nec)
+            print '%s: %s' % (fsr,line),
+            del linesToRanks[line]
+            linesOrdered.remove(line)
+    stdout.flush()
 
 def process_cmdline_args():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
