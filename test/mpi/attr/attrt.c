@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 /*
 
   Exercise communicator routines.
@@ -13,6 +19,11 @@
 int test_communicators ( void );
 int copy_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int delete_fn ( MPI_Comm, int, void *, void * );
+#ifdef DEBUG
+#define FFLUSH fflush(stdout);
+#else
+#define FFLUSH
+#endif
 
 int main( int argc, char **argv )
 {
@@ -67,7 +78,7 @@ int test_communicators( void )
     MPI_Comm_size( MPI_COMM_WORLD, &world_size );
 #ifdef DEBUG
     if (world_rank == 0) {
-	printf( "*** Communicators ***\n" );
+	printf( "*** Communicators ***\n" ); fflush(stdout);
     }
 #endif
 
@@ -79,8 +90,9 @@ int test_communicators( void )
     */
 
 #ifdef DEBUG
-    if (world_rank == 0) 
-	printf( "    Comm_create\n" );
+    if (world_rank == 0) {
+	printf( "    Comm_create\n" ); fflush(stdout);
+    }
 #endif
 
     MPI_Comm_group( dup_comm_world, &world_group );
@@ -98,46 +110,48 @@ int test_communicators( void )
     ranges[0][1] = (world_size - n) - 1;
     ranges[0][2] = 1;
 
-    printf( "world rank = %d before range incl\n", world_rank );
+    printf( "world rank = %d before range incl\n", world_rank );FFLUSH;
     MPI_Group_range_incl(world_group, 1, ranges, &lo_group );
-    printf( "world rank = %d after range incl\n", world_rank );
+    printf( "world rank = %d after range incl\n", world_rank );FFLUSH;
     MPI_Comm_create(world_comm, lo_group, &lo_comm );
-    printf( "world rank = %d before group free\n", world_rank );
+    printf( "world rank = %d before group free\n", world_rank );FFLUSH;
     MPI_Group_free( &lo_group );
 
-    printf( "world rank = %d after group free\n", world_rank );
+    printf( "world rank = %d after group free\n", world_rank );FFLUSH;
 
     if (world_rank < (world_size - n)) {
 	MPI_Comm_rank(lo_comm, &rank );
 	if (rank == MPI_UNDEFINED) {
 	    errs++;
-	    printf( "incorrect lo group rank: %d\n", rank );
+	    printf( "incorrect lo group rank: %d\n", rank ); fflush(stdout);
 	    MPI_Abort(MPI_COMM_WORLD, 3002 );
 	}
 	else {
-	    printf( "lo in\n" );
+	    printf( "lo in\n" );FFLUSH;
 	    MPI_Barrier(lo_comm );
-	    printf( "lo out\n" );
+	    printf( "lo out\n" );FFLUSH;
 	}
     }
     else {
 	if (lo_comm != MPI_COMM_NULL) {
 	    errs++;
-	    printf( "incorrect lo comm:\n" );
+	    printf( "incorrect lo comm:\n" ); fflush(stdout);
 	    MPI_Abort(MPI_COMM_WORLD, 3003 );
 	}
     }
 
-    printf( "worldrank = %d\n", world_rank );
+    printf( "worldrank = %d\n", world_rank );FFLUSH;
     MPI_Barrier(world_comm);
 
-    printf( "bar!\n" );
+    printf( "bar!\n" );FFLUSH;
     /*
       Check Comm_dup by adding attributes to lo_comm & duplicating
     */
 #ifdef DEBUG
-    if (world_rank == 0) 
+    if (world_rank == 0) {
 	printf( "    Comm_dup\n" );
+	fflush(stdout);
+    }
 #endif
     
     if (lo_comm != MPI_COMM_NULL) {
@@ -170,12 +184,14 @@ int test_communicators( void )
 	if (! flag) {
 	    errs++;
 	    printf( "dup_comm key_1 not found on %d\n", world_rank );
+	    fflush( stdout );
 	    MPI_Abort(MPI_COMM_WORLD, 3004 );
 	}
 	
 	if (value != world_rank) {
 	    errs++;
 	    printf( "dup_comm key_1 value incorrect: %ld\n", (long)value );
+	    fflush( stdout );
 	    MPI_Abort(MPI_COMM_WORLD, 3005 );
 	}
 
@@ -183,11 +199,13 @@ int test_communicators( void )
 	/*
 	  if (! flag) {
 	     printf( "dup_comm key_2 not found\n" );
+	     fflush( stdout );
              MPI_Abort(MPI_COMM_WORLD, 3006 );
            }
 
 	  if (value != world_size) {
              printf( "dup_comm key_2 value incorrect: %d\n", value );
+	     fflush( stdout );
              MPI_Abort(MPI_COMM_WORLD, 3007 );
 	   }
 	*/
@@ -196,6 +214,7 @@ int test_communicators( void )
 	if (flag) {
 	    errs++;
 	    printf( "dup_comm key_3 found!\n" );
+	    fflush( stdout );
 	    MPI_Abort(MPI_COMM_WORLD, 3008 );
 	}
 	MPI_Keyval_free(&key_1 );
@@ -208,8 +227,10 @@ int test_communicators( void )
        Split the world into even & odd communicators with reversed ranks.
     */
 #ifdef DEBUG
-    if (world_rank == 0) 
+    if (world_rank == 0) {
 	printf( "    Comm_split\n" );
+	fflush(stdout);
+    }
 #endif
     
     color = world_rank % 2;
@@ -220,7 +241,7 @@ int test_communicators( void )
     MPI_Comm_rank(split_comm, &rank );
     if (rank != ((size - world_rank/2) - 1)) {
 	errs++;
-	printf( "incorrect split rank: %d\n", rank );
+	printf( "incorrect split rank: %d\n", rank ); fflush(stdout);
 	MPI_Abort(MPI_COMM_WORLD, 3009 );
     }
     
@@ -229,8 +250,10 @@ int test_communicators( void )
       Test each possible Comm_compare result
     */
 #ifdef DEBUG
-    if (world_rank == 0) 
+    if (world_rank == 0) {
 	printf( "    Comm_compare\n" );
+	fflush(stdout);
+    }
 #endif
     
     MPI_Comm_compare(world_comm, world_comm, &result );
