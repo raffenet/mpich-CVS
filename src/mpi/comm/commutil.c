@@ -104,8 +104,8 @@ MPID_Comm *MPIU_Comm_create( void )
 
 	initialized = 1;
 	for (i=0; i<MPID_COMM_PREALLOC; i++) {
-	    ((MPID_Comm_list*)&MPID_Comm_direct[i])->next = MPID_Comm_direct + i + 1;
-	    MPID_Comm_direct[i].id   = (CONSTRUCT_DIRECT << 30) |
+	    ((MPID_Comm_list*)&MPID_Comm_direct[i])->next = (MPID_Comm_list*)(MPID_Comm_direct + i + 1);
+	    MPID_Comm_direct[i].id = (CONSTRUCT_DIRECT << 30) |
 	    (MPID_COMM << 27) | i;
 	}
 	((MPID_Comm_list *)&MPID_Comm_direct[i-1])->next = 0;
@@ -145,7 +145,7 @@ MPID_Comm *MPIU_Comm_create( void )
 	return 0;
     }
     for (i=0; i<HANDLE_BLOCK_INDEX_SIZE; i++) {
-	((MPID_Comm_list *)&block_ptr[i])->next = block_ptr + i + 1;
+	((MPID_Comm_list *)&block_ptr[i])->next = (MPID_Comm_list*)(block_ptr + i + 1);
 	block_ptr[i].id   = (CONSTRUCT_INDIRECT << 30) |
 	    (MPID_COMM << 27) | (MPID_Comm_indirect_size << 16) | i;
     }
@@ -185,29 +185,4 @@ void MPIU_Comm_destroy( MPID_Comm *comm_ptr )
     avail          = (MPID_Comm_list *)comm_ptr;
     /* Unlock */
     MPID_Allocation_unlock();
- }
-
-void print_handle( int handle )
-{
-    int type, kind, block, index;
-
-    type = CONSTRUCT_TYPE(handle);
-    kind = HANDLE_KIND(handle);
-    switch (type) {
-    case CONSTRUCT_INVALID:
-	printf( "invalid" );
-	break;
-    case CONSTRUCT_BUILTIN:
-	printf( "builtin" );
-	break;
-    case CONSTRUCT_DIRECT:
-	index = HANDLE_INDEX(handle);
-	printf( "direct: %d", index );
-	break;
-    case CONSTRUCT_INDIRECT:
-	block = HANDLE_BLOCK(handle);
-	index = HANDLE_BLOCK_INDEX(handle);
-	printf( "indirect: block %d index %d", block, index );
-	break;
-    }
 }
