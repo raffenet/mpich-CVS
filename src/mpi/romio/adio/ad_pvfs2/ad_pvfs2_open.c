@@ -28,8 +28,8 @@ typedef struct open_status_s open_status;
      * the good news is that only one processor does this and broadcasts the
      * handle to everyone else in the communicator
      */
-void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
-	ADIOI_PVFS2_fs *pvfs2_fs, open_status *o_status)
+static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
+	                 ADIOI_PVFS2_fs *pvfs2_fs, open_status *o_status)
 {
     int ret;
     PVFS_sysresp_lookup resp_lookup;
@@ -90,7 +90,7 @@ void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 
 
 /* if MPI_File_open was called with MPI_MODE_CREATE|MPI_MODE_EXCL, then we have
- * a little problem: our usua open-and-broadcast test will not work because
+ * a little problem: our usual open-and-broadcast test will not work because
  * only one person (the first aggregator) will perform the open w/ CREATE|EXCL
  */
 void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
