@@ -273,13 +273,13 @@ void MPE_ProcessWaitTest ( MPI_Request, MPI_Status *, char *, MPE_State * );
   if (trace_on) {\
       state = &states[name];\
       if (state->is_active) {\
-      	  state->n_calls++;\
+          state->n_calls++;\
           MPE_Log_state_begin( comm, state );\
       }\
   }
 #define MPE_LOG_STATE_END(comm) \
   if (trace_on && state->is_active) {\
-      	  state->n_calls++;\
+          state->n_calls++;\
           MPE_Log_state_end( comm, state );\
       }
 #define MPE_LOG_DO(call) \
@@ -362,7 +362,7 @@ MPE_State   *state;
 #ifdef PRINT_PROBLEMS
     fprintf( stderr, "Request not found in '%s'.\n", note );
 #endif
-    return;		/* request not found */
+    return;                /* request not found */
   }
 
   if ((rq->status & RQ_SEND) && rq->otherParty != MPI_PROC_NULL) {
@@ -398,7 +398,7 @@ MPE_State   *state;
 #ifdef PRINT_PROBLEMS
     fprintf( stderr, "Request not found in '%s'.\n", note );
 #endif
-    return;		/* request not found */
+    return;                /* request not found */
   }
 
   if (status->MPI_TAG != MPI_ANY_TAG || (rq->status & RQ_SEND) ) {
@@ -406,7 +406,7 @@ MPE_State   *state;
 
     if (rq->status & RQ_CANCEL) {
       PMPI_Test_cancelled( status, &flag );
-      if (flag) return;		/* the request has been cancelled */
+      if (flag) return;    /* the request has been cancelled */
     }
 
     /* Receives conclude at the END (wait/test); sends start at the
@@ -421,7 +421,7 @@ MPE_State   *state;
      easy */
   if (!rq->is_persistent) {
       rq_remove_at( requests_head_0, requests_tail_0, requests_avail_0, 
-		    rq, last );
+                    rq, last );
   }
 }
 
@@ -1640,24 +1640,24 @@ int  MPI_Finalize(  )
 */
 
   /* First, get the total number of calls by any processor */
-     for (i=0; i<MPE_MAX_STATES; i++) 
-	 cnt[i] = states[i].n_calls;
-     PMPI_Reduce( cnt, totcnt, MPE_MAX_STATES, MPI_INT, MPI_SUM, 
-		  0, MPI_COMM_WORLD );
+    for (i=0; i<MPE_MAX_STATES; i++) 
+        cnt[i] = states[i].n_calls;
+    PMPI_Reduce( cnt, totcnt, MPE_MAX_STATES, MPI_INT, MPI_SUM, 
+                 0, MPI_COMM_WORLD );
     
-     if (procid_0 == 0) {
-	 fprintf( stderr, "Writing logfile....\n");
-	 for (i=0; i<MPE_MAX_STATES; i++) {
-	     if (totcnt[i] > 0) {
-		 MPE_Describe_state( states[i].id, states[i].id + 1, 
-				     states[i].name, states[i].color );
-	     }
-	 }
-     }
+    if (procid_0 == 0) {
+        fprintf( stderr, "Writing logfile....\n");
+        for (i=0; i<MPE_MAX_STATES; i++) {
+            if (totcnt[i] > 0) {
+                MPE_Describe_state( states[i].id, states[i].id + 1, 
+                                    states[i].name, states[i].color );
+            }
+        }
+    }
 
-     MPE_Finish_log( logFileName_0 );
-     if (procid_0 == 0)
-	 fprintf( stderr, "Finished writing logfile.\n");
+    MPE_Finish_log( logFileName_0 );
+    if (procid_0 == 0)
+        fprintf( stderr, "Finished writing logfile.\n");
 
      /* Recover all of the allocated requests */
      rq_end( requests_avail_0 );
@@ -1709,12 +1709,12 @@ char *** argv;
   stateid=1;
   /* Initialize all states */
   for (i=0; i<MPE_MAX_STATES; i++) {
-  	states[i].n_calls   = 0;
-  	states[i].id	    = stateid; stateid += 2;
-  	states[i].is_active = 0;
-  	states[i].name	    = 0;
-  	states[i].kind_mask = 0;
-  	states[i].color	    = "white:vlines";
+      states[i].n_calls   = 0;
+      states[i].id        = stateid; stateid += 2;
+      states[i].is_active = 0;
+      states[i].name      = 0;
+      states[i].kind_mask = 0;
+      states[i].color     = "white:vlines";
   }
 
   /* By default, log only message-passing (pt-to-pt and collective) */
@@ -2266,7 +2266,8 @@ char *** argv;
 
   /* Enable the basic states */
   for (i=0; i<MPE_MAX_STATES; i++) {
-  	if ((states[i].kind_mask & allow_mask) != 0) states[i].is_active = 1;
+      if ((states[i].kind_mask & allow_mask) != 0)
+          states[i].is_active = 1;
   }
 
   rq_init( requests_avail_0 );
@@ -2761,7 +2762,7 @@ MPI_Request * request;
 */
 
   MPE_LOG_STATE_BEGIN(MPE_ISEND_ID,comm);
-  PMPI_Type_size( datatype, &size );  	         
+  PMPI_Type_size( datatype, &size );
   MPE_LOG_DO(MPE_Log_send( dest, tag, size * count ));
   returnVal = PMPI_Isend( buf, count, datatype, dest, tag, comm, request );
 
@@ -2793,7 +2794,7 @@ MPI_Request * request;
 */
 
   MPE_LOG_STATE_BEGIN(MPE_ISSEND_ID,comm);
-  PMPI_Type_size( datatype, &size );  	         
+  PMPI_Type_size( datatype, &size );
   MPE_LOG_DO(MPE_Log_send( dest, tag, size * count ));
   
   returnVal = PMPI_Issend( buf, count, datatype, dest, tag, comm, request );
@@ -3030,7 +3031,7 @@ MPI_Comm comm;
 }
 
 int  MPI_Sendrecv( sendbuf, sendcount, sendtype, dest, sendtag, 
-		   recvbuf, recvcount, recvtype, source, recvtag,
+                   recvbuf, recvcount, recvtype, source, recvtag,
                    comm, status )
 void * sendbuf;
 int sendcount;
@@ -3066,8 +3067,8 @@ MPI_Status * status;
       MPE_LOG_DO(MPE_Log_send( dest, sendtag, sendcount * sendsize ));
 
   returnVal = PMPI_Sendrecv( sendbuf, sendcount, sendtype, dest, sendtag, 
-			     recvbuf, recvcount, recvtype, source, recvtag, 
-			     comm, status );
+                             recvbuf, recvcount, recvtype, source, recvtag, 
+                             comm, status );
 
 #ifdef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
   if (status && source == MPI_PROC_NULL) {
@@ -3087,7 +3088,7 @@ MPI_Status * status;
 }
 
 int  MPI_Sendrecv_replace( buf, count, datatype, dest, sendtag, source, 
-			   recvtag, comm, status )
+                           recvtag, comm, status )
 void * buf;
 int count;
 MPI_Datatype datatype;
@@ -3119,7 +3120,7 @@ MPI_Status * status;
       MPE_LOG_DO(MPE_Log_send( dest, sendtag, count * sendsize ));
   
   returnVal = PMPI_Sendrecv_replace( buf, count, datatype, dest, 
-				     sendtag, source, recvtag, comm, status );
+                                     sendtag, source, recvtag, comm, status );
 
 #ifdef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
   if (status && source == MPI_PROC_NULL) {
@@ -3295,7 +3296,7 @@ MPI_Status * array_of_statuses;
 
   if (count <= MPE_MAX_REQUESTS) {
       for (i=0; i<count; i++) 
-	  req[i] = array_of_requests[i];
+          req[i] = array_of_requests[i];
   }
 
   returnVal = PMPI_Testall( count, array_of_requests, flag, array_of_statuses );
@@ -3303,7 +3304,7 @@ MPI_Status * array_of_statuses;
   if (*flag && count <= MPE_MAX_REQUESTS) {
     for (i=0; i < count; i++) {
       MPE_ProcessWaitTest( req[i], &array_of_statuses[i], "MPI_Testall",
-			   state );
+                           state );
     }
   }
 
@@ -3340,7 +3341,7 @@ MPI_Status * status;
   
   if (count <= MPE_MAX_REQUESTS) {
       for (i=0; i<count; i++) 
-	  req[i] = array_of_requests[i];
+          req[i] = array_of_requests[i];
   }
 
   returnVal = PMPI_Testany( count, array_of_requests, index, flag, status );
@@ -3375,7 +3376,7 @@ int * flag;
 }
 
 int  MPI_Testsome( incount, array_of_requests, outcount, 
-		   array_of_indices, array_of_statuses )
+                   array_of_indices, array_of_statuses )
 int incount;
 MPI_Request * array_of_requests;
 int * outcount;
@@ -3403,16 +3404,16 @@ MPI_Status * array_of_statuses;
   
   if (incount <= MPE_MAX_REQUESTS) {
       for (i=0; i<incount; i++) 
-	  req[i] = array_of_requests[i];
+          req[i] = array_of_requests[i];
   }
 
   returnVal = PMPI_Testsome( incount, array_of_requests, outcount, 
-			     array_of_indices, array_of_statuses );
+                             array_of_indices, array_of_statuses );
 
   if (incount <= MPE_MAX_REQUESTS) {
       for (i=0; i < *outcount; i++) {
-	  MPE_ProcessWaitTest( req[array_of_indices[i]], 
-	                       &array_of_statuses[i], 
+          MPE_ProcessWaitTest( req[array_of_indices[i]], 
+                               &array_of_statuses[i], 
                                "MPI_Testsome", state );
       }
   }
@@ -3764,15 +3765,15 @@ MPI_Status * array_of_statuses;
 
   if (count <= MPE_MAX_REQUESTS) {
       for (i=0; i<count; i++) 
-	  req[i] = array_of_requests[i];
+          req[i] = array_of_requests[i];
   }
 
   returnVal = PMPI_Waitall( count, array_of_requests, array_of_statuses );
 
   if (count <= MPE_MAX_REQUESTS) {
       for (i=0; i < count; i++) {
-	  MPE_ProcessWaitTest( req[i], &array_of_statuses[i], "MPI_Waitall",
-			       state );
+          MPE_ProcessWaitTest( req[i], &array_of_statuses[i], "MPI_Waitall",
+                               state );
       }
   }
 
@@ -3808,7 +3809,7 @@ MPI_Status * status;
 
   if (count <= MPE_MAX_REQUESTS) {
       for (i=0; i<count; i++) 
-	  req[i] = array_of_requests[i];
+          req[i] = array_of_requests[i];
   }
 
   returnVal = PMPI_Waitany( count, array_of_requests, index, status );
@@ -3857,17 +3858,17 @@ MPI_Status * array_of_statuses;
 
   if (incount <= MPE_MAX_REQUESTS) {
       for (i=0; i<incount; i++) 
-	  req[i] = array_of_requests[i];
+          req[i] = array_of_requests[i];
   }
 
   returnVal = PMPI_Waitsome( incount, array_of_requests, outcount, 
-			     array_of_indices, array_of_statuses );
+                             array_of_indices, array_of_statuses );
 
   if (incount <= MPE_MAX_REQUESTS) {
       for (i=0; i < *outcount; i++)
-	  MPE_ProcessWaitTest( req[array_of_indices[i]],
-			       &array_of_statuses[i],
-			       "MPI_Waitsome", state );
+          MPE_ProcessWaitTest( req[array_of_indices[i]],
+                               &array_of_statuses[i],
+                               "MPI_Waitsome", state );
   }
 
   MPE_LOG_STATE_END(MPI_COMM_NULL);
