@@ -8,27 +8,29 @@
 
 #include "adio.h"
 
-ADIOI_Flatlist_node *ADIOI_Flatlist;
-ADIOI_Async_node *ADIOI_Async_list_head, *ADIOI_Async_list_tail;
+ADIOI_Flatlist_node *ADIOI_Flatlist = NULL;
+ADIOI_Async_node *ADIOI_Async_list_head = NULL, *ADIOI_Async_list_tail = NULL;
     /* list of outstanding asynchronous requests */
-ADIOI_Async_node *ADIOI_Async_avail_head, *ADIOI_Async_avail_tail;
+ADIOI_Async_node *ADIOI_Async_avail_head = NULL,
+    *ADIOI_Async_avail_tail = NULL;
     /* list of available (already malloced) nodes for above async list */
-ADIOI_Malloc_async *ADIOI_Malloc_async_head, *ADIOI_Malloc_async_tail;
+ADIOI_Malloc_async *ADIOI_Malloc_async_head = NULL,
+    *ADIOI_Malloc_async_tail = NULL;
   /* list of malloced areas for async_list, which must be freed in ADIO_End */
 
-ADIOI_Req_node *ADIOI_Req_avail_head, *ADIOI_Req_avail_tail;
+ADIOI_Req_node *ADIOI_Req_avail_head = NULL, *ADIOI_Req_avail_tail = NULL;
     /* list of available (already malloced) request objects */
-ADIOI_Malloc_req *ADIOI_Malloc_req_head, *ADIOI_Malloc_req_tail;
+ADIOI_Malloc_req *ADIOI_Malloc_req_head = NULL, *ADIOI_Malloc_req_tail = NULL;
     /* list of malloced areas for requests, which must be freed in ADIO_End */
 
 /* for f2c and c2f conversion */
-ADIO_File *ADIOI_Ftable;
-int ADIOI_Ftable_ptr, ADIOI_Ftable_max;
-ADIO_Request *ADIOI_Reqtable;
-int ADIOI_Reqtable_ptr, ADIOI_Reqtable_max;
+ADIO_File *ADIOI_Ftable = NULL;
+int ADIOI_Ftable_ptr = 0, ADIOI_Ftable_max = 0;
+ADIO_Request *ADIOI_Reqtable = NULL;
+int ADIOI_Reqtable_ptr = 0, ADIOI_Reqtable_max = 0;
 #ifndef HAVE_MPI_INFO
-MPI_Info *MPIR_Infotable;
-int MPIR_Infotable_ptr, MPIR_Infotable_max;
+MPI_Info *MPIR_Infotable = NULL;
+int MPIR_Infotable_ptr = 0, MPIR_Infotable_max = 0;
 #endif
 
 #ifdef XFS
@@ -51,24 +53,6 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
     ADIOI_Flatlist->next = NULL;
     ADIOI_Flatlist->blocklens = NULL;
     ADIOI_Flatlist->indices = NULL;
-
-    ADIOI_Async_list_head = ADIOI_Async_list_tail = NULL;
-    ADIOI_Async_avail_head = ADIOI_Async_avail_tail = NULL;
-    ADIOI_Malloc_async_head = ADIOI_Malloc_async_tail = NULL;
-
-    ADIOI_Req_avail_head = ADIOI_Req_avail_tail = NULL;
-    ADIOI_Malloc_req_head = ADIOI_Malloc_req_tail = NULL;
-
-    ADIOI_Ftable = NULL;
-    ADIOI_Ftable_ptr = ADIOI_Ftable_max = 0;
-
-    ADIOI_Reqtable = NULL;
-    ADIOI_Reqtable_ptr = ADIOI_Reqtable_max = 0;
-
-#ifndef HAVE_MPI_INFO
-    MPIR_Infotable = NULL;
-    MPIR_Infotable_ptr = MPIR_Infotable_max = 0;
-#endif
 
 #ifdef XFS
     c = getenv("MPIO_DIRECT_READ");
