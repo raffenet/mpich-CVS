@@ -32,8 +32,8 @@ int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, in
 
 /*  begin experimental Ralph and Rusty version */
 
-    printf( "before call to PMI_Spawn, maxprocs=%d, intercomm=%d, comm=%d\n",
-	    maxprocs, intercomm, comm ); fflush(stdout);
+    /* printf( "before call to PMI_Spawn, maxprocs=%d, intercomm=%d, comm=%d\n",
+       maxprocs, intercomm, comm ); fflush(stdout); */
     if (comm->rank == root) {
 	rc = PMI_Spawn(command, argv, maxprocs, spawned_kvsname, kvsnamelen );
 	assert(rc == 0);
@@ -41,8 +41,8 @@ int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, in
     else {
 	/* get some information as needed from root */
     }
-    printf( "after call to PMI_Spawn, maxprocs=%d, intercomm=%d, comm=%d\n",
-	    maxprocs, intercomm, comm ); fflush(stdout);
+    /* printf( "after call to PMI_Spawn, maxprocs=%d, intercomm=%d, comm=%d\n",
+       maxprocs, intercomm, comm ); fflush(stdout); */
 
     /* Fill in new intercomm */
     intercomm->rank	   = comm->rank;
@@ -59,7 +59,7 @@ int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, in
     pg->size = maxprocs;
     pg->kvs_name = MPIU_Malloc(PMI_KVS_Get_name_length_max() + 1);
     assert(pg->kvs_name != NULL);
-    strncpy(pg->kvs_name, spawned_kvsname, PMI_KVS_Get_name_length_max());
+    MPIU_Strncpy(pg->kvs_name, spawned_kvsname, PMI_KVS_Get_name_length_max());
     pg->ref_count = 0;
 
     /* Allocate and initialize the VC table associated with the remote group */
