@@ -46,7 +46,7 @@ ADI3FILES = adi3man.tex adi3.c adi3.h Makefile
 # Eventually, the old versions will be removed.
 ADI3IMPLFILES = adi3.c adi3.h $(MPICH2)/src/include/mpiimpl.h \
 	$(MPICH2)/src/include/mpihandlemem.h \
-	$(MPICH2)/src/mpid/common/mpid_datatype.h \
+	$(MPICH2)/src/mpid/common/datatype/mpid_datatype.h \
 	$(MPICH2)/src/mpi/timer/mpichtimer.h.in
 adi3man/MPID_Init.tex: $(ADI3IMPLFILES) Makefile
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
