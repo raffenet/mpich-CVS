@@ -83,6 +83,9 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
            update_errdefs=no
        fi
        rm -f .err .err2
+    else
+       # Incase it exists but has zero size
+       rm -f .err
     fi
     if [ -s .tmp -a "$update_errdefs" = "yes" ] ; then
         mv .tmp src/mpi/errhan/defmsg.h
