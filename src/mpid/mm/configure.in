@@ -287,4 +287,6 @@ AC_OUTPUT(Makefile \
           src/via/Makefile \
           src/shm/Makefile \
           src/viardma/Makefile \
+          src/packer/Makefile \
+          src/unpacker/Makefile
 )
