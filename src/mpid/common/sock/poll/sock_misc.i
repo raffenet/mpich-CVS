@@ -6,6 +6,26 @@
  */
 
 #undef FUNCNAME
+#define FUNCNAME MPIDU_Sock_hostname_to_host_description
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_description, int len)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
+    MPIDU_SOCKI_VERIFY_INIT(mpi_errno);
+    if (MPIU_Strncpy(host_description, hostname, len))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN, "**sock|badhdmax", 0);
+    }
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_host_description
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
