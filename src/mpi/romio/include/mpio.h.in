@@ -192,6 +192,10 @@ int MPI_File_set_atomicity(MPI_File fh, int flag);
 int MPI_File_get_atomicity(MPI_File fh, int *flag);
 int MPI_File_sync(MPI_File fh);
 
+/* Section 4.13.3 */
+int MPI_File_set_errhandler( MPI_File, MPI_Errhandler );
+int MPI_File_get_errhandler( MPI_File, MPI_Errhandler * );
+
 #ifndef HAVE_MPI_DARRAY_SUBARRAY
 /* Section 4.14.4 */
 int MPI_Type_create_subarray(int ndims, int *array_of_sizes, int
@@ -374,6 +378,10 @@ int PMPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype,
 int PMPI_File_set_atomicity(MPI_File fh, int flag);
 int PMPI_File_get_atomicity(MPI_File fh, int *flag);
 int PMPI_File_sync(MPI_File fh);
+
+/* Section 4.13.3 */
+int PMPI_File_set_errhandler( MPI_File, MPI_Errhandler );
+int PMPI_File_get_errhandler( MPI_File, MPI_Errhandler * );
 
 #ifndef HAVE_MPI_DARRAY_SUBARRAY
 /* Section 4.14.4 */
