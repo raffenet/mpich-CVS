@@ -27,9 +27,9 @@ int main( int argc, char *argv[] )
 {
     int errs = 0;
     MPI::Info info;
-    char *keys[NKEYS] = { "file", "soft", "host" };
-    char *values[NKEYS] = { "runfile.txt", "2:1000:4,3:1000:7", 
-			    "myhost.myorg.org" };
+    const char *keys[NKEYS] = { "file", "soft", "host" };
+    const char *values[NKEYS] = { "runfile.txt", "2:1000:4,3:1000:7", 
+				  "myhost.myorg.org" };
     char *value;
     int i, flag, vallen;
 

@@ -27,9 +27,9 @@ int main( int argc, char *argv[] )
 {
     int errs = 0;
     MPI::Info info;
-    char *keys[NKEYS] = { "file", "soft", "host" };
-    char *values[NKEYS] = { "runfile.txt", "2:1000:4,3:1000:7", 
-			    "myhost.myorg.org" };
+    const char *keys[NKEYS] = { "file", "soft", "host" };
+    const char *values[NKEYS] = { "runfile.txt", "2:1000:4,3:1000:7", 
+				  "myhost.myorg.org" };
     char *value;
     int i, flag, nkeys;
 
@@ -66,7 +66,7 @@ int main( int argc, char *argv[] )
 	cout << "Deleting a key did not change the number of keys\n";
     }
 
-    values[0] = "backfile.txt";
+    values[0] = (char *)"backfile.txt";
     info.Set( keys[0], values[0] );
     for (i=0; i<NKEYS-1; i++) {
 	flag = info.Get( keys[i], MPI::MAX_INFO_VAL, value );
