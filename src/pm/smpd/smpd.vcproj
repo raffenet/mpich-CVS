@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="smpd"
 	ProjectGUID="{73DC517A-212E-4C8C-8B13-D5CA120C7B5C}"
+	RootNamespace="smpd"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -33,7 +34,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="smpd_utild.lib dbgd.lib sockd.lib ws2_32.lib mswsock.lib mpr.lib"
-				OutputFile="$(OutDir)/smpd.exe"
+				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
@@ -86,7 +87,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="smpd_util.lib dbg.lib sock.lib ws2_32.lib mswsock.lib mpr.lib"
-				OutputFile="$(OutDir)/smpd.exe"
+				OutputFile="..\..\..\bin\smpd.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"

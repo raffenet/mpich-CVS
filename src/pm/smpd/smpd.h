@@ -140,6 +140,7 @@ typedef enum smpd_state_t
     SMPD_READING_CONNECT_RESULT,
     SMPD_WRITING_CONNECT_RESULT,
     SMPD_READING_STDIN,
+    SMPD_WRITING_DATA_TO_STDIN,
     SMPD_READING_STDOUT,
     SMPD_READING_STDERR,
     SMPD_READING_CMD_HEADER,
@@ -261,6 +262,13 @@ typedef struct smpd_context_t
     struct smpd_context_t *next;
 } smpd_context_t;
 
+typedef struct smpd_stdin_write_node_t
+{
+    char *buffer;
+    int length;
+    struct smpd_stdin_write_node_t *next;
+} smpd_stdin_write_node_t;
+
 typedef struct smpd_process_t
 {
     int id;
@@ -278,6 +286,7 @@ typedef struct smpd_process_t
     int exitcode;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
     char err_msg[SMPD_MAX_ERROR_LEN];
+    smpd_stdin_write_node_t *stdin_write_list;
     struct smpd_process_t *next;
 } smpd_process_t;
 

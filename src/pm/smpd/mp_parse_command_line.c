@@ -119,6 +119,26 @@ void mp_print_extra_options(void)
     printf("-iproot\n");
     printf("-noiproot\n");
     printf("  use or not the ip address of the root host instead of the host name.\n");
+
+    printf("-port port\n");
+    printf("-p port\n");
+    printf("  specify the port that smpd is listening on.\n");
+    printf("-phrase passphrase\n");
+    printf("  specify the passphrase to authenticate connections to smpd with.\n");
+    printf("-smpdfile filename\n");
+    printf("  specify the file where the smpd options are stored including the passphrase.\n");
+    printf("-soft Fortran90_triple\n");
+    printf("  acceptable number of processes to launch up to maxprocs\n");
+    printf("-path search_path\n");
+    printf("  search path for executable, ; separated\n");
+    printf("-arch architecture\n");
+    printf("  sun, linux, rs6000, ...\n");
+    printf("-register\n");
+    printf("  encrypt a user name and password to the Windows registry.\n");
+    printf("-remove\n");
+    printf("  delete the encrypted credentials from the Windows registry.\n");
+    printf("-validate [-host hostname]\n");
+    printf("  validate the encrypted credentials for the current or specified host.\n");
 }
 
 static int strip_args(int *argcp, char **argvp[], int n)
@@ -768,10 +788,6 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    {
 		smpd_process.logon = SMPD_TRUE;
 	    }
-	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
-	    {
-		smpd_process.credentials_prompt = SMPD_FALSE;
-	    }
 	    else if (strcmp(&(*argvp)[1][1], "dbg") == 0)
 	    {
 		use_debug_flag = SMPD_TRUE;
@@ -1001,7 +1017,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		smpd_process.verbose = SMPD_TRUE;
 		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
 	    }
-	    else if (strcmp(&(*argvp)[1][1], "p") == 0)
+	    else if ( (strcmp(&(*argvp)[1][1], "p") == 0) || (strcmp(&(*argvp)[1][1], "port") == 0))
 	    {
 		if (argc > 2)
 		{
@@ -1011,14 +1027,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    }
 		    else
 		    {
-			printf("Error: you must specify the port you want to use after the -p option.\n");
+			printf("Error: you must specify the port smpd is listening on after the %s option.\n", (*argvp)[1]);
 			smpd_exit_fn("mp_parse_command_args");
 			return SMPD_FAIL;
 		    }
 		}
 		else
 		{
-		    printf("Error: you must specify the port you want to use after the -p option.\n");
+		    printf("Error: you must specify the port smpd is listening on after the %s option.\n", (*argvp)[1]);
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
@@ -1038,6 +1054,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
 	    {
 		smpd_process.noprompt = SMPD_TRUE;
+		smpd_process.credentials_prompt = SMPD_FALSE;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "phrase") == 0)
 	    {
@@ -1195,6 +1212,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		drive_map_list->ref_count++;
 	    }
 	    strcpy(launch_node->exe, exe);
+	    /* insert the node in order
 	    launch_node->next = NULL;
 	    if (smpd_process.launch_list == NULL)
 		smpd_process.launch_list = launch_node;
@@ -1205,6 +1223,10 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    launch_node_iter = launch_node_iter->next;
 		launch_node_iter->next = launch_node;
 	    }
+	    */
+	    /* insert the node in reverse order */
+	    launch_node->next = smpd_process.launch_list;
+	    smpd_process.launch_list = launch_node;
 	}
 
 	if (s_host_list)

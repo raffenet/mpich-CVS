@@ -33,7 +33,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="smpd_utild.lib dbgd.lib sockd.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib"
-				OutputFile="$(OutDir)/mpiexec.exe"
+				OutputFile="..\..\..\bin\mpiexec.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
@@ -86,7 +86,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="smpd_util.lib dbg.lib sock.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib"
-				OutputFile="$(OutDir)/mpiexec.exe"
+				OutputFile="..\..\..\bin\mpiexec.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"

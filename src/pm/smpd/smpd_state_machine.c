@@ -92,6 +92,8 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_WRITING_CONNECT_RESULT";
     case SMPD_READING_STDIN:
 	return "SMPD_READING_STDIN";
+    case SMPD_WRITING_DATA_TO_STDIN:
+	return "SMPD_WRITING_DATA_TO_STDIN";
     case SMPD_READING_STDOUT:
 	return "SMPD_READING_STDOUT";
     case SMPD_READING_STDERR:
@@ -588,6 +590,46 @@ int smpd_state_reading_stdin(smpd_context_t *context, sock_event_t *event_ptr)
     }
     smpd_exit_fn("smpd_state_reading_stdin");
     return SMPD_SUCCESS;
+}
+
+int smpd_state_smpd_writing_data_to_stdin(smpd_context_t *context, sock_event_t *event_ptr)
+{
+    int result;
+    smpd_stdin_write_node_t *node;
+
+    smpd_enter_fn("smpd_state_smpd_writing_data_to_stdin");
+
+    node = context->process->stdin_write_list;
+    if (node == NULL)
+    {
+	smpd_err_printf("write completed to process stdin context with no write posted in the list.\n");
+	smpd_exit_fn("smpd_state_smpd_writing_data_to_stdin");
+	return SMPD_FAIL;
+    }
+
+    smpd_dbg_printf("wrote %d bytes to stdin of rank %d\n", node->length, context->process->rank);
+    free(node->buffer);
+    free(node);
+
+    context->process->stdin_write_list = context->process->stdin_write_list->next;
+    if (context->process->stdin_write_list != NULL)
+    {
+	context->process->in->write_state = SMPD_WRITING_DATA_TO_STDIN;
+	result = sock_post_write(context->process->in->sock,
+	    node->buffer, node->length, NULL);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of %d bytes to stdin for rank %d\n",
+		node->length, context->process->rank);
+	    smpd_exit_fn("smpd_state_smpd_writing_data_to_stdin");
+	}
+    }
+    else
+    {
+	context->process->in->write_state = SMPD_IDLE;
+    }
+
+    smpd_exit_fn("smpd_state_smpd_writing_data_to_stdin");
 }
 
 int smpd_state_reading_stdouterr(smpd_context_t *context, sock_event_t *event_ptr)
@@ -2846,6 +2888,9 @@ int smpd_handle_op_write(smpd_context_t *context, sock_event_t *event_ptr, sock_
 	break;
     case SMPD_WRITING_PROCESS_SESSION_REJECT:
 	result = smpd_state_writing_process_session_reject(context, event_ptr);
+	break;
+    case SMPD_WRITING_DATA_TO_STDIN:
+	result = smpd_state_smpd_writing_data_to_stdin(context, event_ptr);
 	break;
     default:
 	if (event_ptr->error != SOCK_SUCCESS)

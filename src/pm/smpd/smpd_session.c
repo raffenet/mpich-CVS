@@ -258,7 +258,7 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
     p->dir[0] = '\0';
     p->path[0] = '\0';
     p->err_msg[0] = '\0';
-    p->next = NULL;
+    p->stdin_write_list = NULL;
     result = smpd_create_context(SMPD_CONTEXT_STDIN, smpd_process.set, SOCK_INVALID_SOCK, -1, &p->in);
     if (result != SMPD_SUCCESS)
     {

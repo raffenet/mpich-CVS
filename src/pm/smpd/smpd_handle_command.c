@@ -12,6 +12,8 @@ int smpd_handle_stdin_command(smpd_context_t *context)
     smpd_command_t *cmd;
     int num_decoded;
     smpd_process_t *piter;
+    smpd_stdin_write_node_t *node, *iter;
+    int result, num_written;
 
     smpd_enter_fn("handle_stdin_command");
 
@@ -25,7 +27,76 @@ int smpd_handle_stdin_command(smpd_context_t *context)
 	{
 	    if (piter->rank == 0 || smpd_process.stdin_toall)
 	    {
-		smpd_write(piter->in->sock, data, num_decoded);
+		if (piter->stdin_write_list != NULL)
+		{
+		    node = (smpd_stdin_write_node_t*)malloc(sizeof(smpd_stdin_write_node_t));
+		    if (node == NULL)
+			smpd_write(piter->in->sock, data, num_decoded);
+		    else
+		    {
+			node->buffer = (char*)malloc(num_decoded);
+			if (node->buffer == NULL)
+			{
+			    free(node);
+			    smpd_write(piter->in->sock, data, num_decoded);
+			}
+			else
+			{
+			    /* add the node to the end of the write list */
+			    node->length = num_decoded;
+			    memcpy(node->buffer, data, num_decoded);
+			    node->next = NULL;
+			    iter = piter->stdin_write_list;
+			    while (iter->next != NULL)
+				iter = iter->next;
+			    iter->next = node;
+			}
+		    }
+		}
+		else
+		{
+		    /* attempt to write the data immediately */
+		    num_written = 0;
+		    result = sock_write(piter->in->sock, data, num_decoded, &num_written);
+		    if (result != SOCK_SUCCESS)
+		    {
+			smpd_err_printf("unable to write data to the stdin context of process %d\n", piter->rank);
+		    }
+		    else
+		    {
+			if (num_written != num_decoded)
+			{
+			    /* If not all the data is written, copy it to a temp buffer and post a write for the remaining data */
+			    node = (smpd_stdin_write_node_t*)malloc(sizeof(smpd_stdin_write_node_t));
+			    if (node == NULL)
+				smpd_write(piter->in->sock, &data[num_written], num_decoded-num_written);
+			    else
+			    {
+				node->buffer = (char*)malloc(num_decoded-num_written);
+				if (node->buffer == NULL)
+				{
+				    free(node);
+				    smpd_write(piter->in->sock, &data[num_written], num_decoded-num_written);
+				}
+				else
+				{
+				    /* add the node to write list */
+				    node->length = num_decoded - num_written;
+				    memcpy(node->buffer, &data[num_written], num_decoded-num_written);
+				    node->next = NULL;
+				    piter->stdin_write_list = node;
+				    piter->in->write_state = SMPD_WRITING_DATA_TO_STDIN;
+				    result = sock_post_write(piter->in->sock, node->buffer, node->length, NULL);
+				    if (result != SOCK_SUCCESS)
+				    {
+					smpd_err_printf("unable to post a write of %d bytes to stdin for rank %d\n",
+					    node->length, piter->rank);
+				    }
+				}
+			    }
+			}
+		    }
+		}
 	    }
 	    piter = piter->next;
 	}
@@ -174,6 +245,7 @@ int smpd_launch_processes()
 		goto launch_failure;
 	    }
 	}
+	/*printf("creating launch command for rank %d\n", launch_node_ptr->iproc);*/
 	result = smpd_add_command_int_arg(cmd_ptr, "i", launch_node_ptr->iproc);
 	if (result != SMPD_SUCCESS)
 	{
