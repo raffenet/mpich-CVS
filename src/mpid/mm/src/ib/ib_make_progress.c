@@ -12,6 +12,10 @@
 #include <sys/time.h>
 #endif
 
+#ifdef HAVE_WINDOWS_H
+#define usleep Sleep
+#endif
+
 int ib_handle_accept()
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_ACCEPT);
@@ -29,6 +33,7 @@ int ib_handle_accept()
 @*/
 int ib_make_progress()
 {
+    static int count = 0;
     ib_uint32_t status;
     ib_work_completion_t completion_data;
     MPIDI_VC *vc_ptr;
@@ -43,6 +48,9 @@ int ib_make_progress()
 	&completion_data);
     if (status == IBA_CQ_EMPTY)
     {
+	count++;
+	if (count > 500)
+	    usleep(1);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
@@ -59,6 +67,7 @@ int ib_make_progress()
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return -1;
     }
+    count = 0;
 
     /* Get the vc_ptr and mem_ptr out of the work_id */
     vc_ptr = (MPIDI_VC*)(((ib_work_id_handle_t*)&completion_data.work_req_id)->data.vc);
