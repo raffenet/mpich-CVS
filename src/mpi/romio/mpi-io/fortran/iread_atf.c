@@ -84,6 +84,11 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_iread_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
+			int *count,MPI_Datatype *datatype,
+			MPI_Fint *request, int *ierr );
+
 #if defined(MPIHP) || defined(MPILAM)
 void mpi_file_iread_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                       int *count,MPI_Fint *datatype,

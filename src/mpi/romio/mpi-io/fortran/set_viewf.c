@@ -87,6 +87,11 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
+   MPI_Datatype *filetype,char *datarep,MPI_Fint *info, int *ierr,
+			int str_len );
+
 #if defined(MPIHP) || defined(MPILAM)
 void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
    MPI_Fint *filetype,char *datarep,MPI_Fint *info, int *ierr,

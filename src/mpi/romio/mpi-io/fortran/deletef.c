@@ -87,6 +87,9 @@
 #endif
 #endif
 
+/* Prototype to keep compiler happy */
+void mpi_file_delete_(char *filename, MPI_Fint *info, int *ierr, int str_len);
+
 #if _UNICOS
 void mpi_file_delete_(_fcd filename_fcd, MPI_Fint *info, int *ierr)
 {
