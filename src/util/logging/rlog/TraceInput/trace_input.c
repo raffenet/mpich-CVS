@@ -1,10 +1,10 @@
 // TraceInput.cpp : Defines the entry point for the DLL application.
 //
 
-#include "stdafx.h"
 #include "trace_input.h"
 #include "rlog.h"
 #include <stdlib.h>
+#include <ctype.h>
 
 #define TRACEINPUT_SUCCESS 0
 #define TRACEINPUT_FAIL    -1
@@ -20,22 +20,6 @@ typedef struct _trace_file
     RLOG_EVENT **ppEvent;
     BOOL **ppEventAvail;
 } _trace_file;
-
-BOOL APIENTRY DllMain( HANDLE hModule, 
-                       DWORD  ul_reason_for_call, 
-                       LPVOID lpReserved
-					 )
-{
-    switch (ul_reason_for_call)
-	{
-		case DLL_PROCESS_ATTACH:
-		case DLL_THREAD_ATTACH:
-		case DLL_THREAD_DETACH:
-		case DLL_PROCESS_DETACH:
-			break;
-    }
-    return TRUE;
-}
 
 BOOL PackQuadChar(char *str, int *length, char *base, int *pos, const int max)
 {

@@ -20,20 +20,12 @@
 #define MPID_LOGGING_DLOG 2
 
 /* Include the macros specific to the selected logging library */
-/*
-#ifdef USE_LOGGING_RLOG
-#include "rlog_macros.h"
-#elif defined(USE_LOGGING_DLOG)
-#include "dlog_macros.h"
-#else
-#error You must select a logging library if you enable timing
-#endif
-*/
 #if (USE_LOGGING == MPID_LOGGING_RLOG)
 #include "rlog_macros.h"
-#endif
-#if (USE_LOGGING == MPID_LOGGING_DLOG)
+#elif (USE_LOGGING == MPID_LOGGING_DLOG)
 #include "dlog_macros.h"
+#else
+#error You must select a logging library if timing is enabled
 #endif
 
 /* prototype the initialization/finalization functions */
