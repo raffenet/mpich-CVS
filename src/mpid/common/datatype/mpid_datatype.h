@@ -299,6 +299,9 @@ typedef struct MPID_Segment_st {
 #endif
 #define MPID_VECTOR_LIMIT   16
 
+#define MPID_DTYPE_BEGINNING  0
+#define MPID_DTYPE_END       -1
+
 int MPID_Segment_init(void *buf, int count, MPI_Datatype handle, MPID_Segment *segp);
 void MPID_Segment_pack(MPID_Segment *segp, int first, int *lastp, void *pack_buffer);
 void MPID_Segment_unpack(MPID_Segment *segp, int first, int *lastp, const void *unpack_buffer);
