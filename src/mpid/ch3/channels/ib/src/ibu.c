@@ -565,7 +565,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     status = createQP(p, set);
     if (status != IBU_SUCCESS)
     {
-	MPIU_dbg_printf("createQP failed, error %d\n", status);
+	err_printf("createQP failed, error %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
@@ -574,7 +574,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     status = modifyQP(p, IB_QP_STATE_INIT);
     if (status != IBU_SUCCESS)
     {
-	MPIU_dbg_printf("modifyQP(INIT) failed, error %d\n", status);
+	err_printf("modifyQP(INIT) failed, error %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
@@ -582,7 +582,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     status = modifyQP(p, IB_QP_STATE_RTR);
     if (status != IBU_SUCCESS)
     {
-	MPIU_dbg_printf("modifyQP(RTR) failed, error %d\n", status);
+	err_printf("modifyQP(RTR) failed, error %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }
@@ -590,7 +590,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     status = modifyQP(p, IB_QP_STATE_RTS);
     if (status != IBU_SUCCESS)
     {
-	MPIU_dbg_printf("modifyQP(RTS) failed, error %d\n", status);
+	err_printf("modifyQP(RTS) failed, error %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
 	return NULL;
     }

@@ -44,9 +44,10 @@ int MPIDI_CH3I_Setup_connections()
 	assert(dlid >= 0);
 	/* connect to the dlid */
 	MPIU_dbg_printf("calling ibu_create_qp(%d)\n", dlid);
-	vc->ib.ibu =
-	    ibu_create_qp(MPIDI_CH3I_Process.set, dlid);
+	vc->ib.ibu = ibu_create_qp(MPIDI_CH3I_Process.set, dlid);
 	assert(vc->ib.ibu != NULL);
+	if (vc->ib.ibu == NULL)
+	    err_printf("CH3I_Setup_connections: ibu_create_qp failed.\n");
 	/* set the user pointer to be a pointer to the VC */
 	ibu_set_user_ptr(vc->ib.ibu, &MPIDI_CH3I_Process.pg->vc_table[i]);
 	/* set the state to connected */
