@@ -422,6 +422,10 @@ sub RunTestSuites {
 	    else {
 		$config[4] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
 	    }
+	    if (defined($ENV{"MAKE"})) {
+		$makename = $ENV{"MAKE"};
+		$config[5] = "-make=$makename";
+	    }
 	    #$config[5] = "--enable-echo";
 	    %saveENV = %ENV;
 	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
