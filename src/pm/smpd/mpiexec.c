@@ -163,6 +163,6 @@ quit_job:
 	CloseHandle(smpd_process.hCloseStdinThreadEvent);
 #endif
     smpd_exit_fn("main");
-    smpd_exit(0);
+    return smpd_exit(0);
 }
 

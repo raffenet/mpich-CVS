@@ -5,11 +5,9 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpiexec.h"
 #include "smpd.h"
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 char * smpd_get_cmd_state_string(smpd_command_state_t state)
 {

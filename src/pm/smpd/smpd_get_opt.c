@@ -6,8 +6,12 @@
 
 #include "smpd.h"
 #include <stdio.h>
+#include <stdlib.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_MATH_H
+#include <math.h>
 #endif
 
 static const char * first_token(const char *str)
