@@ -42,9 +42,18 @@ ifelse(NEED_POP,yes,[
 undefine([NEED_POP])
 AC_LANG_RESTORE])
 ])
+dnl/*D
+dnl PAC_F90_MODULE_EXT - Determine the filename extension of F90 module
 dnl
+dnl Synopsis:
 dnl PAC_F90_MODULE_EXT(action if found,action if not found)
-dnl
+dnl 
+dnl Variables set include:
+dnl +  pac_cv_f90_module_ext - extension for created modules
+dnl -  pac_cv_f90_module_case - case of name for created module (where the
+dnl      module name in the source file is lowercase).  One
+dnl      of unknown, lower, upper
+dnl D*/
 AC_DEFUN(PAC_F90_MODULE_EXT,
 [AC_CACHE_CHECK([for Fortran 90 module extension],
 pac_cv_f90_module_ext,[
@@ -116,7 +125,9 @@ else
 fi
 ])
 dnl
-dnl PAC_F90_MODULE_INCFLAG
+dnl PAC_F90_MODULE_INCFLAG - Determine the compiler flags for specifying 
+dnl directories that contain compiled Fortran 90 modules
+dnl
 AC_DEFUN(PAC_F90_MODULE_INCFLAG,[
 AC_CACHE_CHECK([for Fortran 90 module include flag],
 pac_cv_f90_module_incflag,[
