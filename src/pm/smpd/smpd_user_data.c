@@ -39,13 +39,16 @@ static FILE * smpd_open_smpd_file(SMPD_BOOL create)
 	}
 	else
 	{
-	    fin = fopen(smpd_process.smpd_filename, "r+");
+	    if (create)
+		fin = fopen(smpd_process.smpd_filename, "w");
+	    else
+		fin = fopen(smpd_process.smpd_filename, "r+");
 	}
     }
     if (fin == NULL && create)
     {
 	umask(077);
-	fin = fopen(smpd_process.smpd_filename, "w+");
+	fin = fopen(smpd_process.smpd_filename, "w");
     }
     return fin;
 }
