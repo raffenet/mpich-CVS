@@ -15,6 +15,23 @@
 #include <sys/types.h>
 #endif
 
+#ifdef HAVE_WINDOWS_H
+BOOL WINAPI smpd_ctrl_handler(DWORD dwCtrlType)
+{
+    switch (dwCtrlType)
+    {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+	break;
+    }
+    smpd_kill_all_processes();
+    return TRUE;
+}
+#endif
+
 #undef FCNAME
 #define FCNAME "smpd_print_options"
 void smpd_print_options(void)
@@ -386,6 +403,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     if (smpd_get_opt(argcp, argvp, "-mgr"))
     {
+	/* Set a ctrl-handler to kill child processes if this smpd is killed */
+	if (!SetConsoleCtrlHandler(smpd_ctrl_handler, TRUE))
+	{
+	    result = GetLastError();
+	    smpd_dbg_printf("unable to set the ctrl handler for the smpd manager, error %d.\n", result);
+	}
+
 	smpd_process.bService = SMPD_FALSE;
 	if (!smpd_get_opt_string(argcp, argvp, "-read", read_handle_str, 20))
 	{

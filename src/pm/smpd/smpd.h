@@ -232,6 +232,7 @@ typedef enum smpd_state_t
     SMPD_WRITING_PROCESS_SESSION_ACCEPT,
     SMPD_WRITING_PROCESS_SESSION_REJECT,
     SMPD_READING_TIMEOUT,
+    SMPD_READING_MPIEXEC_ABORT,
     SMPD_READING_PMI_ID,
     SMPD_WRITING_PMI_ID,
     SMPD_READING_SSPI_HEADER,
@@ -270,6 +271,7 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_SMPD,
     SMPD_CONTEXT_PMI,
     SMPD_CONTEXT_TIMEOUT,
+    SMPD_CONTEXT_MPIEXEC_ABORT,
     SMPD_CONTEXT_UNDETERMINED,
     SMPD_CONTEXT_FREED
 } smpd_context_type_t;
@@ -624,6 +626,7 @@ typedef struct smpd_global_t
 #endif
     int timeout;
     MPIDU_Sock_t timeout_sock;
+    MPIDU_Sock_t mpiexec_abort_sock;
     SMPD_BOOL use_pmi_server;
     char *mpiexec_argv0;
     char encrypt_prefix[SMPD_MAX_PASSWORD_LENGTH];

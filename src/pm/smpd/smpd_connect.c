@@ -159,6 +159,7 @@ smpd_global_t smpd_process =
 #endif
       -1,               /* timeout                 */
       MPIDU_SOCK_INVALID_SOCK, /* timeout_sock     */
+      MPIDU_SOCK_INVALID_SOCK, /* mpiexec_abort_sock */
       SMPD_TRUE,        /* use_pmi_server          */
       NULL,             /* mpiexec_argv0           */
       "dummy",          /* encrypt_prefix          */

@@ -67,6 +67,51 @@ void *timeout_thread(void *p)
 #endif
 #endif
 
+#ifdef HAVE_WINDOWS_H
+BOOL WINAPI mpiexec_ctrl_handler(DWORD dwCtrlType)
+{
+    static int first = 1;
+    char ch = -1;
+    MPIU_Size_t num_written;
+
+    switch (dwCtrlType)
+    {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+	if (smpd_process.mpiexec_abort_sock != MPIDU_SOCK_INVALID_SOCK)
+	{
+	    if (first == 1)
+	    {
+		first = 0;
+		printf("mpiexec aborting job...\n");fflush(stdout);
+		MPIDU_Sock_write(smpd_process.mpiexec_abort_sock, &ch, 1, &num_written);
+		return TRUE;
+	    }
+	}
+	if (smpd_process.hCloseStdinThreadEvent)
+	{
+	    SetEvent(smpd_process.hCloseStdinThreadEvent);
+	}
+	if (smpd_process.hStdinThread != NULL)
+	{
+	    /* close stdin so the input thread will exit */
+	    CloseHandle(GetStdHandle(STD_INPUT_HANDLE));
+	    if (WaitForSingleObject(smpd_process.hStdinThread, 3000) != WAIT_OBJECT_0)
+	    {
+		TerminateThread(smpd_process.hStdinThread, 321);
+	    }
+	    CloseHandle(smpd_process.hStdinThread);
+	}
+	smpd_exit(-1);
+	return TRUE;
+    }
+    return FALSE;
+}
+#endif
+
 int main(int argc, char* argv[])
 {
     int result = SMPD_SUCCESS;
@@ -324,6 +369,30 @@ int main(int argc, char* argv[])
 #ifdef HAVE_WINDOWS_H
     }
 #endif
+
+#ifdef HAVE_WINDOWS_H
+    {
+	/* Create a break handler and a socket to handle aborting the job when mpiexec receives break signals */
+	smpd_context_t *reader_context;
+	MPIDU_Sock_t sock_reader;
+	MPIDU_SOCK_NATIVE_FD reader, writer;
+
+	smpd_make_socket_loop((SOCKET*)&reader, (SOCKET*)&writer);
+	result = MPIDU_Sock_native_to_sock(set, reader, NULL, &sock_reader);
+	result = MPIDU_Sock_native_to_sock(set, writer, NULL, &smpd_process.mpiexec_abort_sock);
+	result = smpd_create_context(SMPD_CONTEXT_MPIEXEC_ABORT, set, sock_reader, -1, &reader_context);
+	reader_context->read_state = SMPD_READING_MPIEXEC_ABORT;
+	result = MPIDU_Sock_post_read(sock_reader, &reader_context->read_cmd.cmd, 1, 1, NULL);
+
+	if (!SetConsoleCtrlHandler(mpiexec_ctrl_handler, TRUE))
+	{
+	    /* Don't error out; allow the job to run without a ctrl handler? */
+	    result = GetLastError();
+	    smpd_dbg_printf("unable to set a ctrl handler for mpiexec, error %d\n", result);
+	}
+    }
+#endif
+
     result = smpd_enter_at_state(set, state);
     if (result != SMPD_SUCCESS)
     {

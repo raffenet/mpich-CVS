@@ -479,6 +479,10 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_WRITING_CLIENT_SSPI_HEADER";
     case SMPD_WRITING_CLIENT_SSPI_BUFFER:
 	return "SMPD_WRITING_CLIENT_SSPI_BUFFER";
+    case SMPD_READING_TIMEOUT:
+	return "SMPD_READING_TIMEOUT";
+    case SMPD_READING_MPIEXEC_ABORT:
+	return "SMPD_READING_MPIEXEC_ABORT";
     }
     sprintf(unknown_str, "unknown state %d", state);
     return unknown_str;
@@ -4904,6 +4908,31 @@ int smpd_state_reading_timeout(smpd_context_t *context, MPIDU_Sock_event_t *even
 }
 
 #undef FCNAME
+#define FCNAME "smpd_state_reading_mpiexec_abort"
+int smpd_state_reading_mpiexec_abort(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
+{
+    int result;
+    char *name;
+
+    smpd_enter_fn(FCNAME);
+    SMPD_UNREFERENCED_ARG(context);
+
+    if (event_ptr->error != MPI_SUCCESS)
+    {
+	smpd_err_printf("unable to read the mpiexec abort byte, %s.\n", get_sock_error_string(event_ptr->error));
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    name = (smpd_process.pg_list) ? name = smpd_process.pg_list->kvs : "";
+    result = smpd_abort_job(name, 0, "mpiexec aborting job");
+
+    /* abort_job is not supposed to return */
+    smpd_exit_fn(FCNAME);
+    return SMPD_FAIL;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_handle_op_read"
 int smpd_handle_op_read(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
@@ -4970,6 +4999,9 @@ int smpd_handle_op_read(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	break;
     case SMPD_READING_TIMEOUT:
 	result = smpd_state_reading_timeout(context, event_ptr);
+	break;
+    case SMPD_READING_MPIEXEC_ABORT:
+	result = smpd_state_reading_mpiexec_abort(context, event_ptr);
 	break;
     case SMPD_READING_PMI_ID:
 	result = smpd_state_reading_pmi_id(context, event_ptr);
