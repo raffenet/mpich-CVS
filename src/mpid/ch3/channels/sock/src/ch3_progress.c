@@ -371,7 +371,7 @@ int MPIDI_CH3I_Progress_init()
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
     rc = sock_init();
-    if (rc == SOCK_SUCCESS)
+    if (rc != SOCK_SUCCESS)
     {
 	mpi_errno = sock_errno_to_mpi_errno(rc);
 	MPID_Abort(NULL, mpi_errno);
