@@ -209,7 +209,7 @@ AC_HEADER_STDC
 AC_C_CONST
 
 dnl  Checking Headers
-AC_CHECK_HEADERS( stdlib.h string.h )
+AC_CHECK_HEADERS( stdio.h stdlib.h string.h )
 AC_CHECK_HEADER( stdarg.h,
                  [AC_DEFINE( HAVE_STDARG_H, 1,
                              [Define if stdarg.h is available] )

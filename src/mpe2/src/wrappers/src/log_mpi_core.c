@@ -9,10 +9,12 @@
 #include "mpi.h"
 #include "mpe_log.h"
 
-#if defined( HAVE_STDLIB_H )
+#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
 #include <stdlib.h>
 #endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
+#endif
 
 /* Enable memory tracing.  This requires MPICH's mpid/util/tr2.c codes */
 #if defined(MPIR_MEMDEBUG)
@@ -72,12 +74,14 @@
  * An alternate version of this could use macros (and require recompiling).
  */
 typedef struct {
-    int n_calls,      /* Number of times this state used */
-        is_active,    /* Allows each state to be selectively switched off */
-        id,           /* Id number of state */
-        kind_mask;    /* Indicates kind of state (message, environment) */
-    char *name;       /* Pointer to name */
-    char *color;      /* Color (or B&W representation) */
+    int  stateID;      /* CLOG state ID */
+    int  start_evtID;  /* CLOG Event ID for the beginning event */
+    int  final_evtID;  /* CLOG event ID for the ending event */
+    int  n_calls;      /* Number of times this state used */
+    int  is_active;    /* Allows each state to be selectively switched off */
+    int  kind_mask;    /* Indicates kind of state (message, environment) */
+    char *name;        /* Pointer to name */
+    char *color;       /* Color (or B&W representation) */
 } MPE_State;
 
 /* Kind_mask values */
@@ -98,12 +102,12 @@ typedef struct {
 
 /* Number of MPI routines; increase to allow user extensions */
 #ifdef HAVE_MPI_RMA
-#define MPE_MAX_STATES 200
+#define MPE_MAX_KNOWN_STATES 200
 #else
 #ifdef HAVE_MPI_IO
-#define MPE_MAX_STATES 180
+#define MPE_MAX_KNOWN_STATES 180
 #else
-#define MPE_MAX_STATES 128
+#define MPE_MAX_KNOWN_STATES 128
 #endif
 #endif
 
@@ -116,7 +120,7 @@ void MPE_Init_MPIIO( void );
 #endif
 
 
-static MPE_State states[MPE_MAX_STATES];
+static MPE_State states[MPE_MAX_KNOWN_STATES];
 /* Global trace control */
 static int trace_on = 0;
 
@@ -272,9 +276,9 @@ void MPE_ProcessWaitTest ( MPI_Request, MPI_Status *, char *, MPE_State * );
    to predefined state structure).  Use MPI_COMM_NULL for no communicator
  */
 #define MPE_Log_state_begin( comm, state ) \
-    MPE_Log_event( state->id, state->n_calls, NULL )
+    MPE_Log_event( state->start_evtID, state->n_calls, NULL )
 #define MPE_Log_state_end( comm, state ) \
-    MPE_Log_event( state->id + 1, state->n_calls, NULL )
+    MPE_Log_event( state->final_evtID, state->n_calls, NULL )
 
 /* To use these, declare
      register MPE_State *state;
@@ -1650,25 +1654,30 @@ MPI_Errhandler errhandler;
 
 int  MPI_Finalize(  )
 {
-    int  returnVal, i;
-    int  cnt[MPE_MAX_STATES], totcnt[MPE_MAX_STATES];
+    MPE_State  *state;
+    int         cnt[MPE_MAX_KNOWN_STATES], totcnt[MPE_MAX_KNOWN_STATES];
+    int         returnVal, idx;
     
 /*
     MPI_Finalize - prototyping replacement for MPI_Finalize
 */
 
   /* First, get the total number of calls by any processor */
-    for (i=0; i<MPE_MAX_STATES; i++) 
-        cnt[i] = states[i].n_calls;
-    PMPI_Reduce( cnt, totcnt, MPE_MAX_STATES, MPI_INT, MPI_SUM, 
+    for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) 
+        cnt[idx] = states[idx].n_calls;
+    PMPI_Reduce( cnt, totcnt, MPE_MAX_KNOWN_STATES, MPI_INT, MPI_SUM, 
                  0, MPI_COMM_WORLD );
 
     if (procid_0 == 0) {
         fprintf( stderr, "Writing logfile....\n");
-        for (i=0; i<MPE_MAX_STATES; i++) {
-            if (totcnt[i] > 0) {
-                MPE_Describe_state( states[i].id, states[i].id + 1, 
-                                    states[i].name, states[i].color );
+        for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
+            if (totcnt[idx] > 0) {
+                state  = &states[idx];
+                MPE_Describe_known_state( state->stateID,
+                                          state->start_evtID,
+                                          state->final_evtID, 
+                                          state->name, state->color,
+                                          NULL );
             }
         }
     }
@@ -1714,25 +1723,27 @@ int  MPI_Init( argc, argv )
 int * argc;
 char *** argv;
 {
-  int  returnVal;
-  int stateid, i;
-  MPE_State *state;
-  int allow_mask;
+  MPE_State  *state;
+  int         returnVal, idx;
+  int         allow_mask;
+
 
   returnVal = PMPI_Init( argc, argv );
 
-
   MPE_Init_log();
   PMPI_Comm_rank( MPI_COMM_WORLD, &procid_0 );
-  stateid=1;
+
   /* Initialize all states */
-  for (i=0; i<MPE_MAX_STATES; i++) {
-      states[i].n_calls   = 0;
-      states[i].id        = stateid; stateid += 2;
-      states[i].is_active = 0;
-      states[i].name      = 0;
-      states[i].kind_mask = 0;
-      states[i].color     = "white:vlines";
+  for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
+      state               = &states[idx];
+      state->stateID      = MPE_Log_get_known_stateID();
+      state->start_evtID  = MPE_Log_get_known_eventID();
+      state->final_evtID  = MPE_Log_get_known_eventID();
+      state->n_calls      = 0;
+      state->is_active    = 0;
+      state->name         = NULL;
+      state->kind_mask    = 0;
+      state->color        = "white:vlines";
   }
 
   /* By default, log only message-passing (pt-to-pt and collective) */
@@ -2292,9 +2303,9 @@ char *** argv;
   sprintf( logFileName_0, "%s", (*argv)[0] );
 
   /* Enable the basic states */
-  for (i=0; i<MPE_MAX_STATES; i++) {
-      if ((states[i].kind_mask & allow_mask) != 0)
-          states[i].is_active = 1;
+  for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
+      if ( (states[idx].kind_mask & allow_mask) != 0 )
+          states[idx].is_active = 1;
   }
 
   rq_init( requests_avail_0 );

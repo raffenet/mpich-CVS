@@ -6,8 +6,8 @@
     This file should be INCLUDED into log_wrap.c when adding the IO routines
     to the profiling list
 
-    Also set MPE_MAX_STATES to 180
- */
+    Also set MPE_MAX_KNOWN_STATES to 180
+*/
 
 #define MPE_FILE_OPEN_ID 128
 #define MPE_FILE_CLOSE_ID 129
