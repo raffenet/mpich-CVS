@@ -46,10 +46,13 @@ int mp_connect_tree(mp_host_node_t *node)
     int parent, id;
     smpd_command_t *cmd_ptr;
 
-    if (node == NULL)
-	return SMPD_FAIL;
-
     mp_enter_fn("mp_connect_tree");
+
+    if (node == NULL)
+    {
+	mp_exit_fn("mp_connect_tree");
+	return SMPD_FAIL;
+    }
 
     /* set the id of the mpiexec node to zero */
     smpd_process.id = 0;

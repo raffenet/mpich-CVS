@@ -26,6 +26,7 @@ int smpd_authenticate(sock_set_t set, sock_t sock, int type)
     if (smpd_get_smpd_data("phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH) != SMPD_SUCCESS)
     {
 	smpd_dbg_printf("failed to get the phrase\n");
+	smpd_exit_fn("smpd_authenticate");
 	return SMPD_FAIL;
     }
 

@@ -6,6 +6,101 @@
 
 #include "smpd.h"
 
+int handle_launch_command(smpd_context_t *context)
+{
+    int result;
+    char exe[SMPD_MAX_EXE_LENGTH];
+    char env[SMPD_MAX_ENV_LENGTH];
+    int iproc;
+    smpd_command_t *cmd, *temp_cmd;
+
+    smpd_enter_fn("handle_launch_command");
+
+    cmd = &context->read_cmd;
+
+    /* parse the command */
+    if (smpd_get_string_arg(cmd->cmd, "c", exe, SMPD_MAX_EXE_LENGTH) == SMPD_FALSE)
+    {
+	smpd_err_printf("launch command received with no executable: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    if (smpd_get_int_arg(cmd->cmd, "i", &iproc) == SMPD_FALSE)
+	iproc = 0;
+    if (smpd_get_string_arg(cmd->cmd, "e", env, SMPD_MAX_ENV_LENGTH) == SMPD_FALSE)
+	env[0] = '\0';
+
+    /* launch the process */
+    smpd_dbg_printf("launching: '%s'\n", exe);
+
+    /* create the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+
+    /* send the result back */
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+
+    /* create the process exited command */
+    result = smpd_create_command("exit", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create an exit command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "iproc", iproc);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the iproc to the exit command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "code", 0);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the exit code to the exit command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+
+    /* send the exit command */
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the exit command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("handle_launch_command");
+    return SMPD_SUCCESS;
+}
+
 int handle_command(smpd_context_t *context)
 {
     int result;
@@ -214,7 +309,9 @@ int handle_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "launch") == 0)
     {
-	smpd_dbg_printf("launch command, whahoo!\n");
+	result = handle_launch_command(context);
+	smpd_exit_fn("handle_command");
+	return result;
     }
     else if (strcmp(cmd->cmd_str, "connect") == 0)
     {
@@ -393,6 +490,7 @@ int handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a read for the next command on the newly connected context.\n");
+	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
 	/* write a success result back to the connect requester */
@@ -898,7 +996,10 @@ int smpd_session(sock_set_t set, sock_t sock)
 		    get_sock_error_string(result), sock_getid(context->sock));
 		result = smpd_post_close_context(context);
 		if (result != SMPD_SUCCESS)
+		{
+		    smpd_exit_fn("smpd_session");
 		    return result;
+		}
 	    }
 	    /*smpd_dbg_printf("calling smpd_handle_read.\n");*/
 	    result = smpd_handle_read(context);
@@ -907,7 +1008,10 @@ int smpd_session(sock_set_t set, sock_t sock)
 		smpd_err_printf("unable to handle read data.\n");
 		result = smpd_post_close_context(context);
 		if (result != SMPD_SUCCESS)
+		{
+		    smpd_exit_fn("smpd_session");
 		    return result;
+		}
 	    }
 	    break;
 	case SOCK_OP_WRITE:
@@ -918,7 +1022,10 @@ int smpd_session(sock_set_t set, sock_t sock)
 		smpd_err_printf("unable to handle written data.\n");
 		result = smpd_post_close_context(context);
 		if (result != SMPD_SUCCESS)
+		{
+		    smpd_exit_fn("smpd_session");
 		    return result;
+		}
 	    }
 	    break;
 	case SOCK_OP_ACCEPT:
@@ -941,6 +1048,7 @@ int smpd_session(sock_set_t set, sock_t sock)
 		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("**** EXITING SMPD_SESSION ****\n");
+		smpd_exit_fn("smpd_session");
 		return SMPD_SUCCESS;
 	    }
 	    else if (context == smpd_process.left_context)

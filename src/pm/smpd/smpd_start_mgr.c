@@ -14,6 +14,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     char password[100];
     int result;
 #ifdef HAVE_WINDOWS_H
+    char *dbg_str;
     char read_handle_str[20], write_handle_str[20];
     char domainaccount[SMPD_MAX_ACCOUNT_LENGTH], account[SMPD_MAX_ACCOUNT_LENGTH], domain[SMPD_MAX_ACCOUNT_LENGTH];
     char *pszDomain;
@@ -174,8 +175,12 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    smpd_exit_fn("smpd_start_mgr");
 	    return SMPD_FAIL;
 	}
-	/* encode the pipes on the command line */
-	snprintf(cmd, 8192, "\"%s\" -mgr -read %s -write %s", smpd_process.pszExe, 
+	/* encode the command line */
+	if (smpd_process.dbg_state == (SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK))
+	    dbg_str = "-d";
+	else
+	    dbg_str = "";
+	snprintf(cmd, 8192, "\"%s\" %s -mgr -read %s -write %s", smpd_process.pszExe, dbg_str,
 	    smpd_encode_handle(read_handle_str, hReadRemote), 
 	    smpd_encode_handle(write_handle_str, hWriteRemote));
 	smpd_dbg_printf("starting command: %s\n", cmd);

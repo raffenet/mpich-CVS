@@ -305,7 +305,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 
     mp_enter_fn("mp_parse_command_args");
 
-    /* check for console option: must be the first option */
+    /* check for console options: must be the first option */
     if (strcmp((*argvp)[1], "-console") == 0)
     {
 	if (smpd_get_opt_string(argcp, argvp, "-console", mp_process.console_host, SMPD_MAX_HOST_LENGTH))
@@ -325,6 +325,23 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	{
 	    mp_err_printf("ignoring extra arguments passed with -console option.\n");
 	}
+	mp_exit_fn("mp_parse_command_args");
+	return SMPD_SUCCESS;
+    }
+
+    if (strcmp((*argvp)[1], "-shutdown") == 0)
+    {
+	if (smpd_get_opt_string(argcp, argvp, "-shutdown", mp_process.console_host, SMPD_MAX_HOST_LENGTH))
+	{
+	    mp_process.do_console = 1;
+	}
+	if (smpd_get_opt(argcp, argvp, "-shutdown"))
+	{
+	    mp_process.do_console = 1;
+	    gethostname(mp_process.console_host, SMPD_MAX_HOST_LENGTH);
+	}
+	mp_process.shutdown_console = 1;
+	mp_exit_fn("mp_parse_command_args");
 	return SMPD_SUCCESS;
     }
 
@@ -354,6 +371,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
      * -localonly <numprocs>
      * -nompi - don't require processes to be MPI processes (don't have to call MPI_Init or PMI_Init)
      * -exitcodes - print the exit codes of processes as they exit
+     * -verbose - same as setting environment variable to SMPD_DBG_OUTPUT=stdout
      * 
      * Windows extensions:
      * -map <drive:\\host\share>
@@ -431,17 +449,20 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		{
 		    printf("Error: only one option is allowed to determine the number of processes.\n");
 		    printf("       -hosts, -n, -np and -localonly x are mutually exclusive\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		if (argc < 3)
 		{
 		    printf("Error: no number specified after %s option.\n", (*argvp)[1]);
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		nproc = atoi((*argvp)[2]);
 		if (nproc < 1)
 		{
 		    printf("Error: must specify a number greater than 0 after the %s option\n", (*argvp)[1]);
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		num_args_to_strip = 2;
@@ -457,12 +478,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 			{
 			    printf("Error: only one option is allowed to determine the number of processes.\n");
 			    printf("       -hosts, -n, -np and -localonly x are mutually exclusive\n");
+			    mp_exit_fn("mp_parse_command_args");
 			    return SMPD_FAIL;
 			}
 			nproc = atoi((*argvp)[2]);
 			if (nproc < 1)
 			{
 			    printf("Error: If you specify a number after -localonly option,\n        it must be greater than 0.\n");
+			    mp_exit_fn("mp_parse_command_args");
 			    return SMPD_FAIL;
 			}
 			num_args_to_strip = 2;
@@ -474,6 +497,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (argc < 3)
 		{
 		    printf("Error: no filename specified after -machinefile option.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		strcpy(machine_file_name, (*argvp)[2]);
@@ -485,6 +509,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (argc < 3)
 		{
 		    printf("Error: no drive specified after -map option.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
@@ -493,6 +518,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    if (map_node == NULL)
 		    {
 			printf("Error: malloc failed to allocate map structure.\n");
+			mp_exit_fn("mp_parse_command_args");
 			return SMPD_FAIL;
 		    }
 		    map_node->drive = (*argvp)[2][0];
@@ -507,6 +533,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (argc < 3)
 		{
 		    printf("Error: no directory after %s option\n", (*argvp)[1]);
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		strcpy(wdir, (*argvp)[2]);
@@ -517,12 +544,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (argc < 3)
 		{
 		    printf("Error: no environment variables after -env option\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		env_node = (mp_env_node*)malloc(sizeof(mp_env_node));
 		if (env_node == NULL)
 		{
 		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		equal_sign_pos = strstr((*argvp)[2], "=");
@@ -530,6 +559,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		{
 		    printf("Error: improper environment variable option. '%s %s' is not in the format '-env var=value'\n",
 			(*argvp)[1], (*argvp)[2]);
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		*equal_sign_pos = '\0';
@@ -557,6 +587,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (argc < 3)
 		{
 		    printf("Error: no filename specified after -pwdfile option\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		strcpy(pwd_file_name, (*argvp)[2]);
@@ -567,6 +598,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (argc < 3)
 		{
 		    printf("Error: no filename specifed after -file option.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		strcpy(configfilename, (*argvp)[2]);
@@ -578,11 +610,13 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (argc < 3)
 		{
 		    printf("Error: no host specified after -host option.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		if (host_list != NULL)
 		{
 		    printf("Error: -host option can only be called once and it cannot be combined with -hosts.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		/* create a host list of one and set nproc to -1 to be replaced by
@@ -591,6 +625,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		if (host_list == NULL)
 		{
 		    printf("failed to allocate memory for a host node.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		host_list->next = NULL;
@@ -604,11 +639,13 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		{
 		    printf("Error: only one option is allowed to determine the number of processes.\n");
 		    printf("       -hosts, -n, -np and -localonly x are mutually exclusive\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		if (host_list != NULL)
 		{
 		    printf("Error: -hosts option can only be called once and it cannot be combined with -host.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 		if (argc > 2)
@@ -620,6 +657,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 			if (nproc < 1)
 			{
 			    printf("Error: You must specify a number greater than 0 after -hosts.\n");
+			    mp_exit_fn("mp_parse_command_args");
 			    return SMPD_FAIL;
 			}
 			num_args_to_strip = 2 + nproc;
@@ -629,12 +667,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 			    if (index >= argc)
 			    {
 				printf("Error: missing host name after -hosts option.\n");
+				mp_exit_fn("mp_parse_command_args");
 				return SMPD_FAIL;
 			    }
 			    host_node_ptr = (mp_host_node_t*)malloc(sizeof(mp_host_node_t));
 			    if (host_node_ptr == NULL)
 			    {
 				printf("failed to allocate memory for a host node.\n");
+				mp_exit_fn("mp_parse_command_args");
 				return SMPD_FAIL;
 			    }
 			    host_node_ptr->next = NULL;
@@ -675,12 +715,14 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    else
 		    {
 			printf("Error: You must specify the number of hosts after the -hosts option.\n");
+			mp_exit_fn("mp_parse_command_args");
 			return SMPD_FAIL;
 		    }
 		}
 		else
 		{
 		    printf("Error: not enough arguments specified for -hosts option.\n");
+		    mp_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
 	    }
@@ -743,6 +785,11 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    {
 		mp_process.use_iproot = SMPD_FALSE;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "verbose") == 0)
+	    {
+		mp_process.verbose = SMPD_TRUE;
+		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT;
+	    }
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);
@@ -754,6 +801,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	{
 	    /* parse configuration file */
 	    mp_err_printf("configuration file parsing not implemented yet.\n");
+	    mp_exit_fn("mp_parse_command_args");
 	    return SMPD_FAIL;
 	}
 	else
@@ -762,6 +810,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    if (argc < 2)
 	    {
 		printf("Error: no executable specified\n");
+		mp_exit_fn("mp_parse_command_args");
 		return SMPD_FAIL;
 	    }
 	    
@@ -798,6 +847,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	if (nproc == 0)
 	{
 	    mp_err_printf("missing num_proc flag: -n, -np, or -hosts.\n");
+	    mp_exit_fn("mp_parse_command_args");
 	    return SMPD_FAIL;
 	}
 	if (host_list != NULL && host_list->nproc == -1)
@@ -813,6 +863,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    if (launch_node == NULL)
 	    {
 		mp_err_printf("unable to allocate a launch node structure.\n");
+		mp_exit_fn("mp_parse_command_args");
 		return SMPD_FAIL;
 	    }
 	    mp_get_next_host(&host_list, launch_node);

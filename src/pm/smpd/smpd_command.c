@@ -489,7 +489,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     cmd->iov[0].SOCK_IOV_LEN = SMPD_CMD_HDR_LENGTH;
     cmd->iov[1].SOCK_IOV_BUF = cmd->cmd;
     cmd->iov[1].SOCK_IOV_LEN = cmd->length;
-    smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);
+    /*smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);*/
     smpd_dbg_printf("smpd_post_write_command on sock %d: %d bytes for command: \"%s\"\n",
 	sock_getid(context->sock),
 	cmd->iov[0].SOCK_IOV_LEN + cmd->iov[1].SOCK_IOV_LEN,

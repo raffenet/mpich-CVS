@@ -31,6 +31,7 @@
 #define SMPD_MAX_CMD_STR_LENGTH           100
 #define SMPD_MAX_HOST_LENGTH	           64
 #define SMPD_MAX_EXE_LENGTH              1024
+#define SMPD_MAX_ENV_LENGTH              1024
 #define SMPD_MAX_ACCOUNT_LENGTH           100
 #define SMPD_MAX_PASSWORD_LENGTH          100
 #define SMPD_MAX_CRED_REQUEST_LENGTH      100

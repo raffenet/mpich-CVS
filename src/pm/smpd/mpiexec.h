@@ -62,6 +62,9 @@ typedef struct mp_process_t
     int local_root;
     int use_iproot;
     int use_process_session;
+    int shutdown_console;
+    int nproc;
+    int verbose;
 } mp_process_t;
 
 #ifdef HAVE_WINDOWS_H

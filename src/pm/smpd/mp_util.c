@@ -179,6 +179,18 @@ int handle_result(smpd_context_t *context)
 			ret_val = SMPD_FAIL;
 		    }
 		}
+		else if (strcmp(iter->cmd_str, "launch") == 0)
+		{
+		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
+		    {
+			mp_dbg_printf("successfully launched: '%s'\n", iter->cmd);
+		    }
+		    else
+		    {
+			mp_err_printf("launch failed: %s\n", str);
+			ret_val = SMPD_FAIL;
+		    }
+		}
 		else
 		{
 		    mp_err_printf("result returned for unhandled command:\n command: '%s'\n result: '%s'\n", iter->cmd, str);
@@ -311,6 +323,30 @@ int handle_command(smpd_context_t *context)
 	result = handle_result(context);
 	mp_exit_fn("handle_command");
 	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "exit") == 0)
+    {
+	int exitcode, iproc;
+	
+	if (!smpd_get_int_arg(cmd->cmd, "code", &exitcode))
+	{
+	    mp_err_printf("no exit code in exit command: '%s'\n", cmd->cmd);
+	}
+	if (!smpd_get_int_arg(cmd->cmd, "iproc", &iproc))
+	{
+	    mp_err_printf("no iproc in exit command: '%s'\n", cmd->cmd);
+	}
+	printf("process %d exited with exit code %d\n", iproc, exitcode);
+	fflush(stdout);
+	mp_process.nproc--;
+	if (mp_process.nproc == 0)
+	{
+	    mp_dbg_printf("last process exited, returning SMPD_CLOSE.\n");
+	    mp_exit_fn("handle_command");
+	    return SMPD_CLOSE;
+	}
+	mp_exit_fn("handle_command");
+	return SMPD_SUCCESS;
     }
 
     mp_err_printf("ignoring unknown command from the session: '%s'\n", cmd->cmd);
@@ -743,6 +779,114 @@ int MakeSockLoop(SOCKET *pRead, SOCKET *pWrite)
 }
 #endif
 
+int shutdown_console(sock_set_t set, sock_t sock, smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd_ptr;
+    sock_event_t event;
+
+    /* create a shutdown command */
+    result = smpd_create_command("shutdown", 0, context->id, SMPD_FALSE, &cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("unable to create a shutdown command.\n");
+	smpd_close_connection(set, sock);
+	mp_exit_fn("shutdown_console");
+	return result;
+    }
+
+    /* post a write for the command */
+    result = smpd_post_write_command(context, cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("unable to post a write of the shutdown command.\n");
+	smpd_close_connection(set, sock);
+	mp_exit_fn("shutdown_console");
+	return result;
+    }
+
+    /* wait until it finishes */
+    result = SMPD_SUCCESS;
+    while (result == SMPD_SUCCESS)
+    {
+	mp_dbg_printf("sock_waiting for next event.\n");
+	result = sock_wait(set, SOCK_INFINITE_TIME, &event);
+	if (result != SOCK_SUCCESS)
+	{
+	    mp_err_printf("sock_wait failed, error:\n%s\n", get_sock_error_string(result));
+	    smpd_close_connection(set, sock);
+	    mp_exit_fn("shutdown_console");
+	    return SMPD_FAIL;
+	}
+
+	switch (event.op_type)
+	{
+	case SOCK_OP_READ:
+	    result = handle_read(event.user_ptr, event.num_bytes, event.error, context);
+	    if (result == SMPD_CLOSE)
+	    {
+		mp_dbg_printf("handle_read returned SMPD_CLOSE\n");
+		result = SMPD_SUCCESS;
+		break;
+	    }
+	    if (result != SMPD_SUCCESS)
+	    {
+		mp_err_printf("handle_read() failed.\n");
+	    }
+	    break;
+	case SOCK_OP_WRITE:
+	    result = handle_written(event.user_ptr, event.num_bytes, event.error);
+	    if (result != SMPD_SUCCESS)
+	    {
+		mp_err_printf("handle_written() failed.\n");
+	    }
+	    break;
+	case SOCK_OP_ACCEPT:
+	    mp_err_printf("unexpected accept event returned by sock_wait.\n");
+	    break;
+	case SOCK_OP_CONNECT:
+	    mp_err_printf("unexpected connect event returned by sock_wait.\n");
+	    break;
+	case SOCK_OP_CLOSE:
+	    if (event.user_ptr == smpd_process.left_context)
+	    {
+		mp_dbg_printf("child context closed.\n");
+		free(smpd_process.left_context);
+		mp_dbg_printf("closing the session.\n");
+		result = sock_destroy_set(set);
+		if (result != SOCK_SUCCESS)
+		{
+		    mp_err_printf("error destroying set: %s\n", get_sock_error_string(result));
+		    mp_exit_fn("shutdown_console");
+		    return SMPD_FAIL;
+		}
+		mp_dbg_printf("mp_console returning SMPD_SUCCESS\n");
+		mp_exit_fn("shutdown_console");
+		return SMPD_SUCCESS;
+	    }
+	    else
+	    {
+		mp_err_printf("unexpected close event returned by sock_wait.\n");
+	    }
+	    break;
+	default:
+	    mp_err_printf("unknown event returned by sock_wait: %d\n", event.op_type);
+	    break;
+	}
+    }
+
+    mp_dbg_printf("closing smpd console session connection.\n");
+    result = smpd_close_connection(set, sock);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("Unable to close the connection to smpd\n");
+	mp_exit_fn("shutdown_console");
+	return result;
+    }
+    mp_exit_fn("shutdown_console");
+    return SMPD_SUCCESS;
+}
+
 int mp_console(char *host)
 {
     int result;
@@ -801,6 +945,13 @@ int mp_console(char *host)
 	    context->host, get_sock_error_string(result));
 	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
+    }
+
+    if (mp_process.shutdown_console)
+    {
+	result = shutdown_console(set, sock, context);
+	mp_exit_fn("mp_console");
+	return result;
     }
 
     /* create a context for reading from stdin */
