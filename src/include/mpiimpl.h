@@ -558,6 +558,9 @@ typedef union MPID_Errhandler_fn {
 typedef struct MPID_Errhandler {
   int                handle;
   volatile int       ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+  MPID_Thread_lock_t mutex;
+#endif
   MPID_Lang_t        language;
   MPID_Object_kind   kind;
   MPID_Errhandler_fn errfn;
@@ -596,6 +599,9 @@ typedef union MPID_Delete_function {
 typedef struct MPID_Keyval {
     int                  handle;
     volatile int         ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t   mutex;
+#endif
     MPID_Lang_t          language;
     MPID_Object_kind     kind;
     void                 *extra_state;
@@ -613,6 +619,9 @@ typedef struct MPID_Keyval {
 typedef struct MPID_Attribute {
     int          handle;
     volatile int ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t mutex;
+#endif
     MPID_Keyval  *keyval;           /* Keyval structure for this attribute */
     struct MPID_Attribute *next;    /* Pointer to next in the list */
     long        pre_sentinal;       /* Used to detect user errors in accessing
@@ -645,6 +654,9 @@ typedef struct MPID_Group_pmap_t {
 typedef struct MPID_Group {
     int          handle;
     volatile int ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t mutex;
+#endif
     int          size;           /* Size of a group */
     int          rank;           /* rank of this process relative to this 
 				    group */
@@ -674,6 +686,9 @@ typedef enum MPID_Comm_kind_t {
 typedef struct MPID_Comm { 
     int           handle;        /* value of MPI_Comm for this structure */
     volatile int  ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t mutex;
+#endif
     int16_t       context_id;    /* Assigned context id */
     int           remote_size;   /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
@@ -703,9 +718,6 @@ typedef struct MPID_Comm {
     struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
                                               implementing the collective 
                                               routines */
-#ifndef MPICH_SINGLE_THREADED
-    MPID_Thread_lock_t access_lock;
-#endif
 #ifdef MPID_HAS_HETERO
     int is_hetero;
 #endif
@@ -741,6 +753,12 @@ typedef enum MPID_Request_kind_t {
 typedef struct MPID_Request {
     int          handle;
     volatile int ref_count;
+#ifndef MPICH_SINGLE_THREADED
+    MPID_Thread_lock_t mutex;
+    /* busy flag used to by recv queue and recv code for thread safety */
+    volatile int busy;
+    MPID_Thread_cond_t cond;
+#endif
     MPID_Request_kind_t kind;
     /* completion counter */
     volatile int cc;
@@ -800,6 +818,9 @@ extern MPIU_RMA_ops *MPIU_RMA_ops_list; /* list of outstanding RMA requests */
 typedef struct MPID_Win {
     int           handle;             /* value of MPI_Win for this structure */
     volatile int  ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t mutex;
+#endif
     int fence_cnt;     /* 0 = no fence has been called; 
                           1 = fence has been called */ 
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
@@ -914,6 +935,9 @@ typedef union MPID_User_function {
 typedef struct MPID_Op {
      int                handle;      /* value of MPI_Op for this structure */
      volatile int       ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t mutex;
+#endif
      MPID_Op_kind       kind;
      MPID_Lang_t        language;
      MPID_User_function function;
@@ -964,6 +988,9 @@ typedef struct MPID_Collops {
 typedef struct MPID_File {
     int           handle;             /* value of MPI_File for this structure */
     volatile int  ref_count;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t mutex;
+#endif
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
   /* Other, device-specific information */
 #ifdef MPID_DEV_FILE_DECL
@@ -998,18 +1025,63 @@ typedef struct MPICH_PerThread_t {
 
 #ifdef MPICH_SINGLE_THREADED
 extern MPICH_PerThread_t MPIR_Thread;
-#define MPID_Comm_thread_lock( ptr )
-#define MPID_Comm_thread_unlock( ptr )
 #define MPID_Common_thread_lock()
 #define MPID_Common_thread_unlock()
+
+#define MPID_Comm_thread_lock(comm_ptr_)
+#define MPID_Comm_thread_unlock(comm_ptr_)
+
+#define MPID_Request_construct(request_ptr_)
+#define MPID_Request_destruct(request_ptr_)
+#define MPID_Request_thread_lock(request_ptr_)
+#define MPID_Request_thread_unlock(request_ptr_)
+#define MPID_Request_busy_set(request_ptr_)
+#define MPID_Request_busy_clear(request_ptr_)
+#define MPID_Request_busy_wait(request_ptr_)
 /* The basic thread lock/unlock are defined in mpiimplthread.h */
 /* #define MPID_Thread_lock( ptr ) */
 /* #define MPID_Thread_unlock( ptr ) */
 #else
-#define MPID_Comm_thread_lock() MPID_Thread_lock( &ptr->access_lock)
-#define MPID_Comm_thread_unlock() MPID_Thread_unlock( &ptr->access_lock )
 #define MPID_Common_thread_lock() MPID_Thread_lock( &MPIR_PerProcess.common_lock )
 #define MPID_Common_thread_unlock() MPID_Thread_unlock( &MPIR_PerProcess.common_lock )
+
+#define MPID_Comm_thread_lock(comm_ptr_) MPID_Thread_lock(&(comm_ptr_)->mutex)
+#define MPID_Comm_thread_unlock(comm_ptr_) MPID_Thread_unlock(&(comm_ptr_)->mutex)
+
+#define MPID_Request_construct(request_ptr_)		\
+{							\
+    MPID_Thread_mutex_init((request_ptr_)->mutex);	\
+    MPID_Thread_cond_init((request_ptr_)->cond);	\
+}
+#define MPID_Request_destruct(request_ptr_)		\
+{							\
+    MPID_Thread_cond_destroy((request_ptr_)->cond);	\
+    MPID_Thread_mutex_destroy((request_ptr_)->mutex);	\
+}
+#define MPID_Request_thread_lock(request_ptr_) MPID_Thread_lock(&(request_ptr_)->mutex)
+#define MPID_Request_thread_unlock(request_ptr_) MPID_Thread_unlock(&(request_ptr_)->mutex)
+/* TODO: MT: these should be rewritten to use busy waiting and appropriate processor memory fences */
+#define MPID_Request_busy_set(request_ptr_) {(request_ptr_)->busy = TRUE;}
+#define MPID_Request_busy_clear(request_ptr_)			\
+{								\
+    MPIR_Request_thread_lock(request_ptr);			\
+    {								\
+	(request_ptr_)->busy = FALSE;				\
+	MPIR_Request_thread_signal((request_ptr_)->cond);	\
+    }								\
+    MPIR_Request_thread_unlock(request_ptr);			\
+}
+#define MPID_Request_busy_wait(request_ptr_)						\
+{											\
+    MPIR_Request_thread_lock(request_ptr);						\
+    {											\
+	while ((request_ptr_)->busy)							\
+	{										\
+	    MPID_Thread_cond_signal((request_ptr_)->cond, (request_ptr_)->mutex);	\
+	}										\
+    }											\
+    MPIR_Request_thread_unlock(request_ptr);						\
+}    
 #endif
 
 /* Per process data */
