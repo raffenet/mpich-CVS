@@ -531,6 +531,16 @@ used instead of \code{getenv} to get values.  Even more complex
 routines could read a \file{.mpichrc} file and remember parameter
 values in a table, looking them up when requested (this is closest to
 the PETSc options database).
+In fact, we may want to enforce the following order:
+\begin{enumerate}
+\item Check for an override value (e.g., a priority environment variable)
+\item Use any info or attribute value
+\item Use environment value
+\item Use configure file value
+\item Use default (compile-time) value
+\end{enumerate}
+The coinfiguration file is read once, by one process (at
+\code{MPI_Init} time).  
 
 Note that errors are indicated by a non-zero return from the routine.
 For example, if \mpidfunc{MPIi_Param_get_int} is called but the value
@@ -541,6 +551,7 @@ system to find them (e.g., with BNR put/fence/get), and simplifies the
 generation of help text.  It 
 would also allow text describing the parameter to be provided from
 within the code.
+
 
 \subsection{Threads}
 \label{sec:threads}
@@ -5262,6 +5273,76 @@ Is there any clear XML definition yet for 2-d data?
 \end{enumerate}
 We should maintain the same data for vendor and other MPI
 implementations, and we should ask for a standard set of tests.  
+
+\subsection{Communication Tests}
+\label{sec:testing-comm}
+
+The MPI communication routines are quite general and allow many
+combinations of arguments.  A comprehensive test needs to check many
+of these combinations.  
+
+\begin{enumerate}
+\item Datatypes. It is particularly important to check cases where the
+sender and receiver use datatypes with the same type signature but
+different type maps (e.g., contiguous data at the sender and indexed
+at the receiver).  
+     \begin{enumerate}
+     \item All predefined datatypes
+     \item Some mixed types
+     \item Different patterns (contig, vector (block count of one,
+           two, 13), indexed (monotone
+           increasing and nonmonotone)) 
+     \item \code{MPI_PACKED} sent but received either with
+           \code{MPI_PACKED} or with the matching type signature
+     \end{enumerate}
+     To implement this, with each datatype, we need routines to
+     \begin{enumerate}
+     \item Allocate the send buffer.  Leave room for sentinals at both
+     ends of the buffer.
+     \item Initialize the send buffer.  Make sure that most bits are
+           set.  E.g., 64-bit int values should include values with
+           bits set in the high 32 bits.
+     \item Allocate receive buffer.
+     \item Check that the correct data has been received (and that no
+           other data has been set).  This takes the data buffer, the
+           count, the status value, and the structure containing the
+           description of this datatype.
+     \item Release buffers.
+     \end{enumerate}
+     This list suggests that a routine be used to return an array of
+     structures that contain both the datatypes to use (providing
+     separate send and receive datatypes), the functions to allocate,
+     initialize, and check the data buffers.  This function can query
+     the test initialization routine to determine the number of
+     datatypes to provide; for example, choosing all types, only the
+     most popular types (e.g., \code{MPI_INT} and \code{MPI_DOUBLE}),
+     or a specific type (e.g., an environment variable containing a
+     string that names the datatype).  The allocation routines must
+     take an \code{nelm} that specifies the number of basic
+     types.  If there is a required divisor of \code{nelm} (e.g., the
+     datatype is a vector with a block count of 13), that is
+     specified, allowing the testing code to compute valid \code{nelm}s.
+
+     Question:  For collective scatter and gather routines
+     (particularly the ``v'' versions), do we also need routines to
+     allocate, initialize, and check the communication buffers?
+\item Communicators
+    \begin{enumerate}
+    \item \code{MPI_COMM_WORLD}
+    \item Dup of \code{MPI_COMM_WORLD}
+    \item rerank from $r$ to $n-r-1$ of \code{MPI_COMM_WORLD} (i.e.,
+    reverse the order of the ranks
+    \item Split into communicators containing only the odd and only
+    the even ranks from \code{MPI_COMM_WORLD}
+    \item \code{MPI_COMM_SELF} (note that this can't be used for some
+    blocking communication)
+    \item Intercommunicator (built from the groups containing odd,
+or even ranks in MPI 
+    \end{enumerate}
+\item Message Sizes from zero to at least 128 KB
+\end{enumerate}
+
+Test harness
 
 \subsection{Debugger Interface}
 \label{sec:debug-interface}
