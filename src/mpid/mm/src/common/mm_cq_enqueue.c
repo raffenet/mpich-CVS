@@ -8,7 +8,7 @@
 
 int mm_cq_enqueue(MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CQ_ENQUEUE);
     MPID_FUNC_ENTER(MPID_STATE_MM_CQ_ENQUEUE);
 
     MPID_Thread_lock(MPID_Process.cqlock);

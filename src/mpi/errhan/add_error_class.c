@@ -45,7 +45,7 @@ int MPI_Add_error_class(int *errorclass)
     static const char FCNAME[] = "MPI_Add_error_class";
     int mpi_errno = MPI_SUCCESS;
     int new_class;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ADD_ERROR_CLASS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ADD_ERROR_CLASS);
 #   ifdef HAVE_ERROR_CHECKING

@@ -48,7 +48,7 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
     MPID_Win *win_ptr = NULL;
     int  in_use;
     MPID_Errhandler *errhan_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SET_ERRHANDLER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_ERRHANDLER);
     /* Get handles to MPI objects. */

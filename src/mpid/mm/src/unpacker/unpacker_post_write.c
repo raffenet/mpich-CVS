@@ -7,7 +7,7 @@
 
 int unpacker_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_UNPACKER_POST_WRITE);
     MPID_FUNC_ENTER(MPID_STATE_UNPACKER_POST_WRITE);
 
     unpacker_car_enqueue(vc_ptr, car_ptr);

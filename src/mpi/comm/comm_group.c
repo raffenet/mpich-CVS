@@ -48,7 +48,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
     MPID_Comm *comm_ptr = NULL;
     int i, lpid, n;
     MPID_Group *group_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_GROUP);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GROUP);
     /* Get handles to MPI objects. */

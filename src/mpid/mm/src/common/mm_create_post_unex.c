@@ -12,7 +12,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     MPID_Header_pkt *hdr_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CREATE_POST_UNEX);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_CREATE_POST_UNEX);
 

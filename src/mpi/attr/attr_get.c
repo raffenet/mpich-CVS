@@ -48,7 +48,7 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
     static const char FCNAME[] = "MPI_Attr_get";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ATTR_GET);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ATTR_GET);
     /* Get handles to MPI objects. */

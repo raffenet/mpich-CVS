@@ -5,13 +5,13 @@
 
 extern RLOG_Struct *g_pRLOG;
 
-#define MPID_STATE_DECLS double time_stamp
-#define MPID_FUNC_ENTER(a) g_pRLOG->nRecursion++; time_stamp = RLOG_timestamp()
-#define MPID_FUNC_EXIT(a)  RLOG_LogEvent( g_pRLOG, a, time_stamp, RLOG_timestamp(), --g_pRLOG->nRecursion )
+#define MPID_STATE_DECL(a) double time_stamp_##a
+#define MPID_FUNC_ENTER(a) g_pRLOG->nRecursion++; time_stamp_##a = RLOG_timestamp()
+#define MPID_FUNC_EXIT(a)  RLOG_LogEvent( g_pRLOG, a, time_stamp_##a, RLOG_timestamp(), --g_pRLOG->nRecursion )
 
-#define MPID_MPI_STATE_DECLS          MPID_STATE_DECLS
-#define MPID_MPI_FINALIZE_STATE_DECLS
-#define MPID_MPI_INIT_STATE_DECLS
+#define MPID_MPI_STATE_DECL          MPID_STATE_DECL
+#define MPID_MPI_FINALIZE_STATE_DECL
+#define MPID_MPI_INIT_STATE_DECL
 #define MPID_MPI_FUNC_ENTER           MPID_FUNC_ENTER
 #define MPID_MPI_FUNC_EXIT            MPID_FUNC_EXIT
 
@@ -20,19 +20,19 @@ extern RLOG_Struct *g_pRLOG;
 #define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a) \
 { \
     g_pRLOG->nRecursion++; \
-    time_stamp = RLOG_timestamp(); \
+    time_stamp_##a = RLOG_timestamp(); \
     RLOG_LogSend( g_pRLOG, dest, tag, count ); \
 }
 #define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a) \
 { \
     g_pRLOG->nRecursion++; \
-    time_stamp = RLOG_timestamp(); \
+    time_stamp_##a = RLOG_timestamp(); \
     RLOG_LogRecv( g_pRLOG, source, tag, count ); \
 }
 #define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a) \
 { \
     g_pRLOG->nRecursion++; \
-    time_stamp = RLOG_timestamp(); \
+    time_stamp_##a = RLOG_timestamp(); \
     RLOG_LogSend( g_pRLOG, dest, sendtag, sendcount ); \
     RLOG_LogRecv( g_pRLOG, source, recvtag, recvcount ); \
 }

@@ -46,7 +46,7 @@ int MPI_Init( int *argc, char ***argv )
 {
     static const char FCNAME[] = "MPI_Init";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_INIT_STATE_DECLS;
+    MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT);
 
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT);
 #   ifdef HAVE_ERROR_CHECKING

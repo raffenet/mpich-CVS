@@ -50,7 +50,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     static const char FCNAME[] = "MPI_Iprobe";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_IPROBE);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

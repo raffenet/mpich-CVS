@@ -50,7 +50,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,int r
     static const char FCNAME[] = "MPI_Graph_create";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_CREATE);
     /* Get handles to MPI objects. */

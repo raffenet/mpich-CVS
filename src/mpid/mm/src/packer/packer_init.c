@@ -12,7 +12,7 @@
 @*/
 int packer_init()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_PACKER_INIT);
     MPID_FUNC_ENTER(MPID_STATE_PACKER_INIT);
 
     MPID_Process.packer_vc_ptr = mm_vc_alloc(MM_PACKER_METHOD);
@@ -28,7 +28,7 @@ int packer_init()
 @*/
 int packer_finalize()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_PACKER_FINALIZE);
     MPID_FUNC_ENTER(MPID_STATE_PACKER_FINALIZE);
 
     if (MPID_Process.packer_vc_ptr != NULL)

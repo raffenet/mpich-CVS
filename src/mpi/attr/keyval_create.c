@@ -49,7 +49,7 @@ int MPI_Keyval_create(MPI_Copy_function *copy_fn,
 {
     static const char FCNAME[] = "MPI_Keyval_create";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_KEYVAL_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_KEYVAL_CREATE);
 #   ifdef HAVE_ERROR_CHECKING

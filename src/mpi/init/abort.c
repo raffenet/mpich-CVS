@@ -49,7 +49,7 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     static const char FCNAME[] = "MPI_Abort";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ABORT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ABORT);
     /* Get handles to MPI objects. */

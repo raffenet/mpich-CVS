@@ -47,7 +47,7 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
     static const char FCNAME[] = "MPI_Comm_rank";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = 0;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_RANK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_RANK);
     /* Get handles to MPI objects. */

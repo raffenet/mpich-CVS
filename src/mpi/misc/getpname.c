@@ -55,7 +55,7 @@ int MPI_Get_processor_name( char *name, int *resultlen)
     static const char FCNAME[] = "MPI_Get_processor_name";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_PROCESSOR_NAME);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_PROCESSOR_NAME);
 #   ifdef HAVE_ERROR_CHECKING

@@ -23,7 +23,7 @@
 int MPID_Close_port(char *port_name)
 {
     int ret_val;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MPID_CLOSE_PORT);
 
     MPID_FUNC_ENTER(MPID_STATE_MPID_CLOSE_PORT);
 

@@ -52,7 +52,7 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *ed
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *topo_ptr;
     int i, n, *vals;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_GET);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_GET);
     /* Get handles to MPI objects. */

@@ -12,7 +12,7 @@
 @*/
 int unpacker_init()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_UNPACKER_INIT);
     MPID_FUNC_ENTER(MPID_STATE_UNPACKER_INIT);
 
     MPID_Process.unpacker_vc_ptr = mm_vc_alloc(MM_UNPACKER_METHOD);
@@ -28,7 +28,7 @@ int unpacker_init()
 @*/
 int unpacker_finalize()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_UNPACKER_FINALIZE);
     MPID_FUNC_ENTER(MPID_STATE_UNPACKER_FINALIZE);
 
     mm_vc_free(MPID_Process.unpacker_vc_ptr);

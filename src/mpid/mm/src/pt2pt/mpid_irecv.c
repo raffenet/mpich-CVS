@@ -29,7 +29,7 @@
 @*/
 int MPID_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPID_Comm *comm_ptr, int mode, MPID_Request **request_pptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MPID_IRECV);
     MPID_FUNC_ENTER(MPID_STATE_MPID_IRECV);
 
     xfer_init(tag, comm_ptr, request_pptr);

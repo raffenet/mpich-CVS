@@ -7,7 +7,7 @@
 
 int via_rdma_get_business_card(char *value, int length)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_VIA_RDMA_GET_BUSINESS_CARD);
     MPID_FUNC_ENTER(MPID_STATE_VIA_RDMA_GET_BUSINESS_CARD);
 
     if (length < 1)

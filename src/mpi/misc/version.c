@@ -45,7 +45,7 @@ int MPI_Get_version( int *version, int *subversion )
 {
     static const char FCNAME[] = "MPI_Get_version";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_VERSION);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_VERSION);
 #   ifdef HAVE_ERROR_CHECKING

@@ -16,7 +16,7 @@
 @*/
 int MPID_Progress_test( void )
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MPID_PROGRESS_TEST);
     MPID_FUNC_ENTER(MPID_STATE_MPID_PROGRESS_TEST);
 
     /* test the completion queue */

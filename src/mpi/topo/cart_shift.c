@@ -63,7 +63,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
     int i, n, *vals;
     int pos[MAX_CART_DIM];
     int rank;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_SHIFT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_SHIFT);
     /* Get handles to MPI objects. */

@@ -46,7 +46,7 @@ int MPI_Group_free(MPI_Group *group)
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL;
     int flag;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_FREE);
     /* Get handles to MPI objects. */

@@ -46,7 +46,7 @@ int MPI_Group_size(MPI_Group group, int *size)
     static const char FCNAME[] = "MPI_Group_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_SIZE);
     /* Get handles to MPI objects. */

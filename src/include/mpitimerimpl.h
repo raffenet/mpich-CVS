@@ -47,12 +47,12 @@ int MPID_Timer_finalize();
 /* evaporate all the timing macros if timing is not selected */
 #define MPID_Timer_init(rank, size)
 #define MPID_Timer_finalize()
-#define MPID_STATE_DECLS
-#define MPID_MPI_STATE_DECLS
+#define MPID_STATE_DECL(a)
+#define MPID_MPI_STATE_DECL(a)
 #define MPID_FUNC_ENTER(a)
 #define MPID_FUNC_EXIT(a)
-#define MPID_MPI_FINALIZE_STATE_DECLS
-#define MPID_MPI_INIT_STATE_DECLS
+#define MPID_MPI_FINALIZE_STATE_DECL(a)
+#define MPID_MPI_INIT_STATE_DECL(a)
 #define MPID_MPI_FUNC_EXIT(a)
 #define MPID_MPI_FUNC_ENTER(a)
 #define MPID_MPI_PT2PT_FUNC_ENTER(a)

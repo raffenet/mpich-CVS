@@ -54,7 +54,7 @@ int MPI_Op_free(MPI_Op *op)
     MPID_Op *op_ptr = NULL;
     int     in_use;
     int     mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_FREE);
 #   ifdef HAVE_ERROR_CHECKING

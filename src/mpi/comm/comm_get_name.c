@@ -49,7 +49,7 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
     static const char FCNAME[] = "MPI_Comm_get_name";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_GET_NAME);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GET_NAME);
     /* Get handles to MPI objects. */

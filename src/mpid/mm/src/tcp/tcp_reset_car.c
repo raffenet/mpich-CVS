@@ -17,7 +17,7 @@
 int tcp_reset_car(MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_RESET_CAR);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_RESET_CAR);
 
@@ -94,7 +94,7 @@ int tcp_reset_car(MM_Car *car_ptr)
 int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_SETUP_PACKET_CAR);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_SETUP_PACKET_CAR);
 
@@ -145,7 +145,7 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
 int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_SETUP_PACKET_CAR);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_SETUP_PACKET_CAR);
 

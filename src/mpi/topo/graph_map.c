@@ -49,7 +49,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
     static const char FCNAME[] = "MPI_Graph_map";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_MAP);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_MAP);
     /* Get handles to MPI objects. */

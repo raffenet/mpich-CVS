@@ -50,7 +50,7 @@ int MPI_Query_thread( int *provided )
 {
     static const char FCNAME[] = "MPI_Query_thread";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_QUERY_THREAD);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_QUERY_THREAD);
 #   ifdef HAVE_ERROR_CHECKING

@@ -9,7 +9,7 @@
 MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr, *trailer_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_FIND_IN_QUEUE);
 
     MPID_FUNC_ENTER(MPID_STATE_FIND_IN_QUEUE);
 
@@ -52,7 +52,7 @@ MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car
 int cq_handle_read_head_car(MM_Car *car_ptr)
 {
     MM_Car *qcar_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_CQ_HANDLE_READ_HEAD_CAR);
 
     MPID_FUNC_ENTER(MPID_STATE_CQ_HANDLE_READ_HEAD_CAR);
 
@@ -126,7 +126,7 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 
 int cq_handle_read_data_car(MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_CQ_HANDLE_READ_DATA_CAR);
     MPID_FUNC_ENTER(MPID_STATE_CQ_HANDLE_READ_DATA_CAR);
 
     if (car_ptr->next_ptr)
@@ -150,7 +150,7 @@ int cq_handle_read_data_car(MM_Car *car_ptr)
 int cq_handle_read_car(MM_Car *car_ptr)
 {
     int ret_val;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_CQ_HANDLE_READ_CAR);
 
     MPID_FUNC_ENTER(MPID_STATE_CQ_HANDLE_READ_CAR);
 
@@ -169,7 +169,7 @@ int cq_handle_read_car(MM_Car *car_ptr)
 #ifdef FOO
 int cq_handle_write_head_car(MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR);
     MPID_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_HEAD_CAR);
 
     /* rndv */
@@ -194,7 +194,7 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
 
 int cq_handle_write_data_car(MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_DATA_CAR);
     MPID_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_DATA_CAR);
 
     if (car_ptr->next_ptr)
@@ -213,7 +213,7 @@ int cq_handle_write_data_car(MM_Car *car_ptr)
 int cq_handle_write_car(MM_Car *car_ptr)
 {
     int ret_val;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_CAR);
 
     MPID_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_CAR);
 
@@ -233,7 +233,7 @@ int cq_handle_write_car(MM_Car *car_ptr)
 
 int cq_handle_write_car(MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_CQ_HANDLE_WRITE_CAR);
     MPID_FUNC_ENTER(MPID_STATE_CQ_HANDLE_WRITE_CAR);
 
     mm_dec_cc(car_ptr->request_ptr);
@@ -247,7 +247,7 @@ int cq_handle_write_car(MM_Car *car_ptr)
 int mm_cq_test()
 {
     MM_Car *car_ptr, *next_car_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CQ_TEST);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_CQ_TEST);
 

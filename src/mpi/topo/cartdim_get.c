@@ -48,7 +48,7 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *cart_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CARTDIM_GET);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CARTDIM_GET);
     /* Get handles to MPI objects. */

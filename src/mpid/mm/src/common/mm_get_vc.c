@@ -20,7 +20,7 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
 {
     int mpi_errno;
     MPIDI_VC *vc_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
     dbg_printf("mm_vc_from_communicator\n");
@@ -77,7 +77,7 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
     int mpi_errno;
     MPIDI_VC *vc_ptr;
     MPID_Comm *comm_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_VC_FROM_CONTEXT);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_VC_FROM_CONTEXT);
     dbg_printf("mm_vc_from_context\n");

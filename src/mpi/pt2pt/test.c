@@ -47,7 +47,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     static const char FCNAME[] = "MPI_Test";
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TEST);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
@@ -79,7 +79,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 	    /* Validate request_ptr */
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }

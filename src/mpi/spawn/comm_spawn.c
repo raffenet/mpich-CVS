@@ -54,7 +54,7 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, int
     static const char FCNAME[] = "MPI_Comm_spawn";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPAWN);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

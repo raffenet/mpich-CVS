@@ -10,7 +10,7 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 {
     MM_Car *rndv_car_ptr;
     MPID_Rndv_clear_to_send_pkt *rndv_cts_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_POST_RNDV_CLEAR_TO_SEND);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_POST_RNDV_CLEAR_TO_SEND);
 

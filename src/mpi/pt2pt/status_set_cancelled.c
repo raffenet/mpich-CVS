@@ -45,7 +45,7 @@ int MPI_Status_set_cancelled(MPI_Status *status, int flag)
 {
     static const char FCNAME[] = "MPI_Status_set_cancelled";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_STATUS_SET_CANCELLED);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_STATUS_SET_CANCELLED);
 #   ifdef HAVE_ERROR_CHECKING

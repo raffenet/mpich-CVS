@@ -119,7 +119,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     Factors factors[MAX_FACTORS];
     int i, j;
     int dims_needed, dims_product, nfactors, ndivisors;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIMS_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_DIMS_CREATE);
 #   ifdef HAVE_ERROR_CHECKING

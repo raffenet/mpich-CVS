@@ -13,7 +13,7 @@
 #ifdef WITH_METHOD_SHM
 int tcp_stuff_vector_shm(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_STUFF_VECTOR_SHM);
     MPID_FUNC_ENTER(MPID_STATE_TCP_STUFF_VECTOR_SHM);
     MPID_FUNC_EXIT(MPID_STATE_TCP_STUFF_VECTOR_SHM);
     return FALSE;
@@ -23,7 +23,7 @@ int tcp_stuff_vector_shm(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segmen
 #ifdef WITH_METHOD_VIA
 int tcp_stuff_vector_via(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_STUFF_VECTOR_VIA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_STUFF_VECTOR_VIA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_STUFF_VECTOR_VIA);
     return FALSE;
@@ -33,7 +33,7 @@ int tcp_stuff_vector_via(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segmen
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_stuff_vector_via_rdma(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_STUFF_VECTOR_VIA_RDMA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_STUFF_VECTOR_VIA_RDMA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_STUFF_VECTOR_VIA_RDMA);
     return FALSE;
@@ -45,7 +45,7 @@ int tcp_stuff_vector_vec(MPID_IOV *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM_Se
     int cur_pos, cur_index, num_avail, final_segment;
     MPID_IOV *car_vec, *buf_vec;
     int num_left, i;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_STUFF_VECTOR_VEC);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_STUFF_VECTOR_VEC);
 
@@ -140,7 +140,7 @@ int tcp_stuff_vector_vec(MPID_IOV *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM_Se
 
 int tcp_stuff_vector_tmp(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_STUFF_VECTOR_TMP);
     MPID_FUNC_ENTER(MPID_STATE_TCP_STUFF_VECTOR_TMP);
 
     /* check to see that there is data available and space in the vector to put it */
@@ -175,7 +175,7 @@ int tcp_stuff_vector_tmp(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segmen
 
 int tcp_stuff_vector_simple(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_STUFF_VECTOR_SIMPLE);
     MPID_FUNC_ENTER(MPID_STATE_TCP_STUFF_VECTOR_SIMPLE);
 
     /* check to see that there is data available and space in the vector to put it */
@@ -211,7 +211,7 @@ int tcp_stuff_vector_simple(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
 #ifdef WITH_METHOD_NEW
 int tcp_stuff_vector_new(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_STUFF_VECTOR_NEW);
     MPID_FUNC_ENTER(MPID_STATE_TCP_STUFF_VECTOR_NEW);
     MPID_FUNC_EXIT(MPID_STATE_TCP_STUFF_VECTOR_NEW);
     return FALSE;
@@ -223,7 +223,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
     MM_Segment_buffer *buf_ptr;
     int num_written;
     int num_left, i;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_UPDATE_CAR_NUM_WRITTEN);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_UPDATE_CAR_NUM_WRITTEN);
 
@@ -414,7 +414,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
     int cur_pos = 0;
     BOOL stop = FALSE;
     int num_written;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_AGGRESSIVE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_AGGRESSIVE);
 

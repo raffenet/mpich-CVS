@@ -14,7 +14,7 @@ VIA_PerProcess VIA_Process;
 @*/
 int via_init( void )
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_VIA_INIT);
     MPID_FUNC_ENTER(MPID_STATE_VIA_INIT);
     MPID_FUNC_EXIT(MPID_STATE_VIA_INIT);
     return MPI_SUCCESS;
@@ -27,7 +27,7 @@ int via_init( void )
 @*/
 int via_finalize( void )
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_VIA_FINALIZE);
     MPID_FUNC_ENTER(MPID_STATE_VIA_FINALIZE);
     MPID_FUNC_EXIT(MPID_STATE_VIA_FINALIZE);
     return MPI_SUCCESS;

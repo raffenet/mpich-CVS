@@ -45,7 +45,7 @@ int MPI_Request_free(MPI_Request *request)
     static const char FCNAME[] = "MPI_Request_free";
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_REQUEST_FREE);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

@@ -23,7 +23,7 @@
 @*/
 int xfer_recv_forward_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src, int dest)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_XFER_RECV_FORWARD_OP);
     MPID_FUNC_ENTER(MPID_STATE_XFER_RECV_FORWARD_OP);
     MPID_FUNC_EXIT(MPID_STATE_XFER_RECV_FORWARD_OP);
     return MPI_SUCCESS;

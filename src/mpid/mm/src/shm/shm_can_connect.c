@@ -7,7 +7,7 @@
 
 int shm_can_connect(char *business_card)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_CAN_CONNECT);
     MPID_FUNC_ENTER(MPID_STATE_SHM_CAN_CONNECT);
 
     if (strncmp(business_card, SHM_Process.host, 100))

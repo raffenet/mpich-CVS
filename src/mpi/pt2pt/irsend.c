@@ -53,7 +53,7 @@ int MPI_Irsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_IRSEND);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

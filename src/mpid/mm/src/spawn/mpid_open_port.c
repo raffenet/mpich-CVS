@@ -22,7 +22,7 @@
 @*/
 int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MPID_OPEN_PORT);
     MPID_FUNC_ENTER(MPID_STATE_MPID_OPEN_PORT);
 
     mm_open_port(info_ptr, port_name);

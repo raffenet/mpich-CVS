@@ -9,7 +9,7 @@
 int packer_reset_car(MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_PACKER_RESET_CAR);
 
     MPID_FUNC_ENTER(MPID_STATE_PACKER_RESET_CAR);
 

@@ -14,7 +14,7 @@ int mm_connect(MPID_Info *info_ptr, char *port_name)
     char *token;
     int bfd;
     int error;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CONNECT);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_CONNECT);
 

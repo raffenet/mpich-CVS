@@ -60,7 +60,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     static const char FCNAME[] = "MPI_Grequest_start";
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *lrequest_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GREQUEST_START);
 
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -73,7 +73,6 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
         }

@@ -16,7 +16,7 @@ int packer_make_progress()
     MM_Segment_buffer *buf_ptr;
     BOOL finished;
     MM_Car *next_qhead;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_PACKER_MAKE_PROGRESS);
 
     MPID_FUNC_ENTER(MPID_STATE_PACKER_MAKE_PROGRESS);
 

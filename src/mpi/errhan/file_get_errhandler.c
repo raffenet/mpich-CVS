@@ -46,7 +46,7 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
     static const char FCNAME[] = "MPI_File_get_errhandler";
     int mpi_errno = MPI_SUCCESS;
     MPID_File *file_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_FILE_GET_ERRHANDLER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_GET_ERRHANDLER);
     /* Get handles to MPI objects. */

@@ -57,7 +57,7 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *cart_ptr;
     int i, nnodes;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_COORDS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_COORDS);
     /* Get handles to MPI objects. */

@@ -23,7 +23,7 @@ int tcp_write(MPIDI_VC *vc_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     int ret_val;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE);
 
@@ -103,7 +103,7 @@ int tcp_write(MPIDI_VC *vc_ptr)
 #ifdef WITH_METHOD_SHM
 int tcp_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_SHM);
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_SHM);
     MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_SHM);
     return MPI_SUCCESS;
@@ -113,7 +113,7 @@ int tcp_write_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA
 int tcp_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_VIA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_VIA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_VIA);
     return MPI_SUCCESS;
@@ -123,7 +123,7 @@ int tcp_write_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_VIA_RDMA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_VIA_RDMA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_WRITE_VIA_RDMA);
     return MPI_SUCCESS;
@@ -136,7 +136,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     int cur_index;
     MPID_IOV *car_vec, *buf_vec;
     int num_left, i;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_VEC);
     
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_VEC);
 
@@ -297,7 +297,7 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_TMP);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_TMP);
 
@@ -342,7 +342,7 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_WRITE_SIMPLE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_WRITE_SIMPLE);
 

@@ -57,7 +57,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request * reqs[2];
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_SENDRECV);
     
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

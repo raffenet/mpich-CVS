@@ -57,7 +57,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 #if 0
     MPID_Datatype *new_ptr;
 #endif
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_VECTOR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_VECTOR);
     /* Get handles to MPI objects. */

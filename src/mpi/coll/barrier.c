@@ -156,7 +156,7 @@ int MPI_Barrier( MPI_Comm comm )
     static const char FCNAME[] = "MPI_Barrier";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_BARRIER);
 
 #   ifdef HAVE_ERROR_CHECKING
     {

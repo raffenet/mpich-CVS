@@ -20,7 +20,7 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 {
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CHOOSE_BUFFER);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_CHOOSE_BUFFER);
 

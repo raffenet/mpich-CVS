@@ -18,7 +18,7 @@ MPIU_Object_alloc_t MPID_Request_mem = { 0, 0, 0, 0, 0,
 MPID_Request * mm_request_alloc()
 {
     MPID_Request *p;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_REQUEST_ALLOC);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_REQUEST_ALLOC);
 
@@ -47,7 +47,7 @@ MPID_Request * mm_request_alloc()
 
 void mm_request_free(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_REQUEST_FREE);
     MPID_FUNC_ENTER(MPID_STATE_MM_REQUEST_FREE);
 
     /* insert reference count code here */
@@ -64,7 +64,7 @@ void mm_request_free(MPID_Request *request_ptr)
 
 void MPID_Request_release(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MPID_REQUEST_RELEASE);
     MPID_FUNC_ENTER(MPID_STATE_MPID_REQUEST_RELEASE);
 
     if (request_ptr == NULL)

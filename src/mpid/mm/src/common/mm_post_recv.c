@@ -9,7 +9,7 @@
 int mm_post_recv(MM_Car *car_ptr)
 {
     MM_Car *iter_ptr, *trailer_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_POST_RECV);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_POST_RECV);
     dbg_printf("mm_post_recv\n");

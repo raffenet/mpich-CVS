@@ -12,7 +12,7 @@ int mm_accept(MPID_Info *info_ptr, char *port_name)
     int error;
     int bfd;
     OpenPortNode *p;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_ACCEPT);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_ACCEPT);
 

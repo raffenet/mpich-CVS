@@ -48,7 +48,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     MPID_Request * request_ptr = NULL;
     MPID_Comm * comm_ptr = NULL;
     int error = FALSE;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAIT);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

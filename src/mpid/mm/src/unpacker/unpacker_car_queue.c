@@ -17,7 +17,7 @@
 @*/
 int unpacker_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_UNPACKER_CAR_ENQUEUE);
     MPID_FUNC_ENTER(MPID_STATE_UNPACKER_CAR_ENQUEUE);
 
     if (car_ptr->type & MM_WRITE_CAR)
@@ -57,7 +57,7 @@ int unpacker_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 int unpacker_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_UNPACKER_CAR_DEQUEUE);
 
     MPID_FUNC_ENTER(MPID_STATE_UNPACKER_CAR_DEQUEUE);
 

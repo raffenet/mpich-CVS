@@ -11,7 +11,7 @@ BlockAllocator MM_Car_allocator;
 
 void mm_car_init()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CAR_INIT);
     MPID_FUNC_ENTER(MPID_STATE_MM_CAR_INIT);
     MM_Car_allocator = BlockAllocInit(sizeof(MM_Car), 100, 100, malloc, free);
     MPID_FUNC_EXIT(MPID_STATE_MM_CAR_INIT);
@@ -19,7 +19,7 @@ void mm_car_init()
 
 void mm_car_finalize()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CAR_FINALIZE);
     MPID_FUNC_ENTER(MPID_STATE_MM_CAR_FINALIZE);
     BlockAllocFinalize(&MM_Car_allocator);
     MPID_FUNC_EXIT(MPID_STATE_MM_CAR_FINALIZE);
@@ -28,7 +28,7 @@ void mm_car_finalize()
 MM_Car* mm_car_alloc()
 {
     MM_Car *pCar;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CAR_ALLOC);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_CAR_ALLOC);
 
@@ -42,7 +42,7 @@ MM_Car* mm_car_alloc()
 
 void mm_car_free(MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CAR_FREE);
     MPID_FUNC_ENTER(MPID_STATE_MM_CAR_FREE);
     if (car_ptr->freeme)
 	BlockFree(MM_Car_allocator, car_ptr);

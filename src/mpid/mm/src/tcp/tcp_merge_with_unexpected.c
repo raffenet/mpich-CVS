@@ -9,7 +9,7 @@ int tcp_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
 {
     int num_left, num_updated;
     char *unex_data_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_WITH_UNEXPECTED);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_WITH_UNEXPECTED);
 

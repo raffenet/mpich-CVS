@@ -45,7 +45,7 @@ int MPI_Cancel(MPI_Request *request)
     static const char FCNAME[] = "MPI_Cancel";
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * request_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CANCEL);
 
 #   ifdef HAVE_ERROR_CHECKING
     {

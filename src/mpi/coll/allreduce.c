@@ -285,7 +285,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = 0;
     MPID_Op *op_ptr = 0;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLREDUCE);
 
     /* This is a temporary version to support the testing library */
 
@@ -317,7 +317,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);

@@ -7,7 +7,7 @@
 
 int tcp_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_POST_READ);
     MPID_FUNC_ENTER(MPID_STATE_TCP_POST_READ);
     tcp_car_enqueue(vc_ptr, car_ptr);
     MPID_FUNC_EXIT(MPID_STATE_TCP_POST_READ);
@@ -16,7 +16,7 @@ int tcp_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
 int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_POST_READ_PKT);
     MPID_FUNC_ENTER(MPID_STATE_TCP_POST_READ_PKT);
 
 #ifdef MPICH_DEV_BUILD

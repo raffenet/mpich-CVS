@@ -14,7 +14,7 @@ int mm_open_port(MPID_Info *info_ptr, char *port_name)
     char host[40];
     int port;
     OpenPortNode *p;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_OPEN_PORT);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_OPEN_PORT);
 

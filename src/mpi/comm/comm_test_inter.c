@@ -49,7 +49,7 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
     static const char FCNAME[] = "MPI_Comm_test_inter";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_TEST_INTER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_TEST_INTER);
     /* Get handles to MPI objects. */

@@ -15,7 +15,7 @@
 @*/
 void *shm_alloc(unsigned int size)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_ALLOC);
     MPID_FUNC_ENTER(MPID_STATE_SHM_ALLOC);
     MPID_FUNC_EXIT(MPID_STATE_SHM_ALLOC);
     return NULL;
@@ -31,7 +31,7 @@ void *shm_alloc(unsigned int size)
 @*/
 void shm_free(void *address)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_FREE);
     MPID_FUNC_ENTER(MPID_STATE_SHM_FREE);
     MPID_FUNC_EXIT(MPID_STATE_SHM_FREE);
 }
@@ -50,7 +50,7 @@ void shm_free(void *address)
 @*/
 void *shm_get_mem_sync(int nTotalSize, int nRank, int nNproc)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_GET_MEM_SYNC);
     MPID_FUNC_ENTER(MPID_STATE_SHM_GET_MEM_SYNC);
     MPID_FUNC_EXIT(MPID_STATE_SHM_GET_MEM_SYNC);
     return NULL;
@@ -63,7 +63,7 @@ void *shm_get_mem_sync(int nTotalSize, int nRank, int nNproc)
 @*/
 void shm_release_mem()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_RELEASE_MEM);
     MPID_FUNC_ENTER(MPID_STATE_SHM_RELEASE_MEM);
     MPID_FUNC_EXIT(MPID_STATE_SHM_RELEASE_MEM);
 }

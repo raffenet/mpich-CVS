@@ -13,7 +13,7 @@ int tcp_accept_connection()
     MPIDI_VC *vc_ptr;
     char ack;
     BOOL inwriteset;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_ACCEPT_CONNECTION);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_ACCEPT_CONNECTION);
 
@@ -186,7 +186,7 @@ int tcp_make_progress()
     struct timeval tv;
     MPIDI_VC *vc_iter;
     bfd_set readset, writeset;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MAKE_PROGRESS);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MAKE_PROGRESS);
 

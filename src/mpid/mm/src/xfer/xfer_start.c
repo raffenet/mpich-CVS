@@ -19,7 +19,7 @@ int xfer_start(MPID_Request *request_ptr)
     int mpi_errno;
     MPID_Request *pRequest;
     MM_Car *pCar, *pCarIter;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_XFER_START);
 
     MPID_FUNC_ENTER(MPID_STATE_XFER_START);
 

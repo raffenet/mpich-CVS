@@ -49,7 +49,7 @@ int MPI_Topo_test(MPI_Comm comm, int *topo_type)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *topo_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TOPO_TEST);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TOPO_TEST);
     /* Get handles to MPI objects. */

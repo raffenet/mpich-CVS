@@ -159,7 +159,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     static const char FCNAME[] = "MPI_Init_thread";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
 #   ifdef HAVE_ERROR_CHECKING

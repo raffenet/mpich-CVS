@@ -45,7 +45,7 @@ int MPI_Errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhan
 {
     static const char FCNAME[] = "MPI_Errhandler_create";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ERRHANDLER_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERRHANDLER_CREATE);
 #   ifdef HAVE_ERROR_CHECKING

@@ -47,7 +47,7 @@ int MPI_Comm_free_keyval(int *comm_keyval)
     MPID_Keyval *keyval_ptr = NULL;
     int          in_use;
     int          mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_FREE_KEYVAL);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_FREE_KEYVAL);
 

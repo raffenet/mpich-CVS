@@ -58,7 +58,7 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *graph_ptr;
     int i, is, ie;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_NEIGHBORS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_NEIGHBORS);
     /* Get handles to MPI objects. */

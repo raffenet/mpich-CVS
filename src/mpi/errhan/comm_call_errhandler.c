@@ -46,7 +46,7 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     static const char FCNAME[] = "MPI_Comm_call_errhandler";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);

@@ -49,7 +49,7 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *topo_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPHDIMS_GET);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPHDIMS_GET);
     /* Get handles to MPI objects. */

@@ -45,7 +45,7 @@ int MPI_Comm_free(MPI_Comm *comm)
     static const char FCNAME[] = "MPI_Comm_free";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_FREE);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

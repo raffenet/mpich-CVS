@@ -19,7 +19,7 @@
 @*/
 int xfer_forward_op(MPID_Request *request_ptr, int size, int src, int dest)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_XFER_FORWARD_OP);
     MPID_FUNC_ENTER(MPID_STATE_XFER_FORWARD_OP);
     MPID_FUNC_EXIT(MPID_STATE_XFER_FORWARD_OP);
     return MPI_SUCCESS;

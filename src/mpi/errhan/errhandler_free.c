@@ -46,7 +46,7 @@ int MPI_Errhandler_free(MPI_Errhandler *errhandler)
     int mpi_errno = MPI_SUCCESS;
     MPID_Errhandler *errhan_ptr = NULL;
     int in_use;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ERRHANDLER_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERRHANDLER_FREE);
 

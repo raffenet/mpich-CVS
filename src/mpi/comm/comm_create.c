@@ -51,7 +51,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     MPID_Comm *newcomm_ptr;
     MPID_Group *group_ptr;
     int        *mapping;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

@@ -45,7 +45,7 @@ int MPI_Pcontrol(const int level, ...)
 {
     static const char FCNAME[] = "MPI_Pcontrol";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_PCONTROL);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PCONTROL);
 #   ifdef HAVE_ERROR_CHECKING

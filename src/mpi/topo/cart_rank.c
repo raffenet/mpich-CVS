@@ -61,7 +61,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
     MPID_Comm *comm_ptr = NULL;
     MPIR_Topology *cart_ptr;
     int i, ndims, coord, multiplier;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_RANK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_RANK);
     /* Get handles to MPI objects. */

@@ -7,7 +7,7 @@
 
 int tcp_merge_with_posted(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_WITH_POSTED);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_WITH_POSTED);
     

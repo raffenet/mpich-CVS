@@ -14,7 +14,7 @@
 @*/
 void mm_vc_init()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_VC_INIT);
     MPID_FUNC_ENTER(MPID_STATE_MM_VC_INIT);
 
     MPID_Process.VCTable_allocator = BlockAllocInit(sizeof(MPIDI_VCRT), 100, 100, malloc, free);
@@ -30,7 +30,7 @@ void mm_vc_init()
 @*/
 void mm_vc_finalize()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_VC_FINALIZE);
     MPID_FUNC_ENTER(MPID_STATE_MM_VC_FINALIZE);
     
     BlockAllocFinalize(&MPID_Process.VCTable_allocator);
@@ -135,7 +135,7 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 {
     MPIDI_VC *vc_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_VC_ALLOC);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_VC_ALLOC);
     dbg_printf("mm_vc_alloc\n");
@@ -271,7 +271,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 #ifdef WITH_METHOD_VIA
     char *temp;
 #endif
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_VC_CONNECT_ALLOC);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_VC_CONNECT_ALLOC);
     dbg_printf("mm_vc_connect_alloc(rank:%d)\n", rank);
@@ -447,7 +447,7 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 @*/
 int mm_vc_free(MPIDI_VC *ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_VC_FREE);
     MPID_FUNC_ENTER(MPID_STATE_MM_VC_FREE);
 
     if (ptr->method == MM_PACKER_METHOD || ptr->method == MM_UNPACKER_METHOD)

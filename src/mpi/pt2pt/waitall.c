@@ -48,7 +48,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     static const char FCNAME[] = "MPI_Waitall";
     int i;
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAITALL);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

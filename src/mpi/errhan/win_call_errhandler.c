@@ -46,7 +46,7 @@ int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
     static const char FCNAME[] = "MPI_Win_call_errhandler";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_CALL_ERRHANDLER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_CALL_ERRHANDLER);
     /* Get handles to MPI objects. */

@@ -22,7 +22,7 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr);
 int tcp_read_header(MPIDI_VC *vc_ptr)
 {
     int num_read;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_HEADER);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_HEADER);
 #ifdef MPICH_DEV_BUILD
@@ -70,7 +70,7 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     int ret_val;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_DATA);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_DATA);
 
@@ -153,7 +153,7 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
 #ifdef WITH_METHOD_SHM
 int tcp_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_SHM);
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_SHM);
     MPID_FUNC_EXIT(MPID_STATE_TCP_READ_SHM);
     return MPI_SUCCESS;
@@ -163,7 +163,7 @@ int tcp_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA
 int tcp_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_VIA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_VIA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_READ_VIA);
     return MPI_SUCCESS;
@@ -173,7 +173,7 @@ int tcp_read_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_VIA_RDMA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_VIA_RDMA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_READ_VIA_RDMA);
     return MPI_SUCCESS;
@@ -184,7 +184,7 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_read;
     int num_left, i;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_VEC);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_VEC);
 
@@ -294,7 +294,7 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_read;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_TMP);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_TMP);
 
@@ -336,7 +336,7 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_read;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_SIMPLE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_SIMPLE);
 
@@ -380,7 +380,7 @@ int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
 int tcp_read_connecting(MPIDI_VC *vc_ptr)
 {
     char ack;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_READ_CONNECTING);
     
     MPID_FUNC_ENTER(MPID_STATE_TCP_READ_CONNECTING);
 

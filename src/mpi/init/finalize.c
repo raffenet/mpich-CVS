@@ -82,7 +82,7 @@ int MPI_Finalize( void )
 {
     static const char FCNAME[] = "MPI_Finalize";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_FINALIZE_STATE_DECLS;
+    MPID_MPI_FINALIZE_STATE_DECL(MPID_STATE_MPI_FINALIZE);
 
 
 #   ifdef HAVE_ERROR_CHECKING

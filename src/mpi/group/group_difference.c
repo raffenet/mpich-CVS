@@ -51,7 +51,7 @@ int MPI_Group_difference(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup
     MPID_Group *group_ptr2 = NULL;
     MPID_Group *new_group_ptr;
     int size1, size2, i, k, g1_idx, g2_idx, l1_pid, l2_pid, nnew;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_DIFFERENCE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_DIFFERENCE);
     /* Get handles to MPI objects. */

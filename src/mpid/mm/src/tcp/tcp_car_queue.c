@@ -18,7 +18,7 @@
 int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_CAR_HEAD_ENQUEUE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_CAR_HEAD_ENQUEUE);
 
@@ -82,7 +82,7 @@ int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_CAR_ENQUEUE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_CAR_ENQUEUE);
 
@@ -204,7 +204,7 @@ static int tcp_vc_dequeue_write(MPIDI_VC *vc_ptr)
 @*/
 int tcp_car_dequeue_write(MPIDI_VC *vc_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_CAR_DEQUEUE_WRITE);
     MPID_FUNC_ENTER(MPID_STATE_TCP_CAR_DEQUEUE_WRITE);
 
 #ifdef MPICH_DEV_BUILD
@@ -237,7 +237,7 @@ int tcp_car_dequeue_write(MPIDI_VC *vc_ptr)
 int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 {
     MM_Car *iter_ptr, *next_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_CAR_DEQUEUE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_CAR_DEQUEUE);
 

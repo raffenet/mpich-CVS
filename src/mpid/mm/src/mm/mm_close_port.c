@@ -10,7 +10,7 @@
 int mm_close_port(char *port_name)
 {
     OpenPortNode *p, *pTrailer;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_CLOSE_PORT);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_CLOSE_PORT);
 

@@ -51,7 +51,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     static const char FCNAME[] = "MPI_Cart_create";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_CREATE);
     /* Get handles to MPI objects. */

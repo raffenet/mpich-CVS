@@ -31,7 +31,7 @@ int MPID_Comm_accept(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *
     char value[10];
     int same_domain;
 */
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MPID_COMM_ACCEPT);
 
     MPID_FUNC_ENTER(MPID_STATE_MPID_COMM_ACCEPT);
 

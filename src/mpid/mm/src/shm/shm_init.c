@@ -16,13 +16,13 @@ int shm_init( void )
 {
 #ifdef HAVE_WINDOWS_H
     DWORD n = 100;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_INIT);
 
     MPID_FUNC_ENTER(MPID_STATE_SHM_INIT);
 
     GetComputerName(SHM_Process.host, &n);
 #else
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_INIT);
 
     MPID_FUNC_ENTER(MPID_STATE_SHM_INIT);
 
@@ -41,7 +41,7 @@ int shm_init( void )
 @*/
 int shm_finalize( void )
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SHM_FINALIZE);
     MPID_FUNC_ENTER(MPID_STATE_SHM_FINALIZE);
     MPID_FUNC_EXIT(MPID_STATE_SHM_FINALIZE);
     return MPI_SUCCESS;

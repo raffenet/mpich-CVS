@@ -55,7 +55,7 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
     MPID_Group *group_ptr1 = NULL;
     MPID_Group *group_ptr2 = NULL;
     int size1, i, g2_idx, l1_pid, l2_pid;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
     /* Get handles to MPI objects. */

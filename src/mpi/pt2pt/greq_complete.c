@@ -50,7 +50,7 @@ int MPI_Grequest_complete( MPI_Request request )
     static const char FCNAME[] = "MPI_Grequest_complete";
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *request_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GREQUEST_COMPLETE);
 
 #   ifdef HAVE_ERROR_CHECKING
     {

@@ -44,7 +44,7 @@ int MPI_Keyval_free(int *keyval)
 {
     static const char FCNAME[] = "MPI_Keyval_free";
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_KEYVAL_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_KEYVAL_FREE);
 #   ifdef HAVE_ERROR_CHECKING

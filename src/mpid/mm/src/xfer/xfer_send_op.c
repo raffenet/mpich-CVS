@@ -90,7 +90,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     MPID_Request *pRequest;
     BOOL bNeedHeader = TRUE;
     long dtype_sz;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_XFER_SEND_OP);
 
     MPID_FUNC_ENTER(MPID_STATE_XFER_SEND_OP);
     dbg_printf("xfer_send_op\n");

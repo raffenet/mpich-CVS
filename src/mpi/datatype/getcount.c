@@ -53,7 +53,7 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
     int size;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_COUNT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_COUNT);
     /* Get handles to MPI objects. */

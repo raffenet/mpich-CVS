@@ -46,7 +46,7 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     static const char FCNAME[] = "MPI_Type_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_SIZE);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING

@@ -47,7 +47,7 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
     static const char FCNAME[] = "MPI_Attr_put";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_ATTR_PUT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ATTR_PUT);
     /* Get handles to MPI objects. */

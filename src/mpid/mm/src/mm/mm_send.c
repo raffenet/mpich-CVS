@@ -10,7 +10,7 @@
 int mm_send(int conn, char *buffer, int length)
 {
     int error;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_SEND);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_SEND);
 

@@ -51,7 +51,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
     int mpi_errno = MPI_SUCCESS;
     int i, k;
     MPID_Request *request_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TESTANY);
 
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TESTANY);
 #   ifdef HAVE_ERROR_CHECKING

@@ -48,7 +48,7 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
     MPID_Comm *comm_ptr = NULL;
     int i, lpid, n;
     MPID_Group *group_ptr;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_REMOTE_GROUP);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_REMOTE_GROUP);
     /* Get handles to MPI objects. */
@@ -75,7 +75,7 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
     n = comm_ptr->remote_size;
     mpi_errno = MPIR_Group_create( n, &group_ptr );
     if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     

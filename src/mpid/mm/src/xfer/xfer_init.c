@@ -19,7 +19,7 @@
 int xfer_init(int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr)
 {
     MPID_Request *pRequest;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_XFER_INIT);
 
     MPID_FUNC_ENTER(MPID_STATE_XFER_INIT);
 

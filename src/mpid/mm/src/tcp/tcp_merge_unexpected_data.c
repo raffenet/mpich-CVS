@@ -26,7 +26,7 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
 {
     int ret_val;
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
 
@@ -103,7 +103,7 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
 #ifdef WITH_METHOD_SHM
 int tcp_merge_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_SHM);
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_SHM);
     MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_SHM);
     return MPI_SUCCESS;
@@ -113,7 +113,7 @@ int tcp_merge_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 #ifdef WITH_METHOD_VIA
 int tcp_merge_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_VIA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_VIA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_VIA);
     return MPI_SUCCESS;
@@ -123,7 +123,7 @@ int tcp_merge_via(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 #ifdef WITH_METHOD_VIA_RDMA
 int tcp_merge_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_VIA_RDMA);
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_VIA_RDMA);
     MPID_FUNC_EXIT(MPID_STATE_TCP_MERGE_VIA_RDMA);
     return MPI_SUCCESS;
@@ -134,7 +134,7 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 {
     int num_read = 0;
     int num_left, i;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_VEC);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_VEC);
 
@@ -217,7 +217,7 @@ int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
     int num_read;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_TMP);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_TMP);
 
@@ -251,7 +251,7 @@ int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr,
 int tcp_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
 {
     int num_read;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_MERGE_SIMPLE);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_MERGE_SIMPLE);
 

@@ -35,7 +35,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
     char pszPortName[MPI_MAX_PORT_NAME];
     MPI_Info info, prepost_info;
     int same_domain;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 
     MPID_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 

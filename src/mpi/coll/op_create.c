@@ -73,7 +73,7 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     static const char FCNAME[] = "MPI_Op_create";
     MPID_Op *op_ptr;
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_CREATE);
 #   ifdef HAVE_ERROR_CHECKING

@@ -47,7 +47,7 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
     static const char FCNAME[] = "MPI_Cart_sub";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_SUB);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_SUB);
     /* Get handles to MPI objects. */

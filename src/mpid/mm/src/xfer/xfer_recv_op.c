@@ -85,7 +85,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     MPID_Request *pRequest;
     BOOL bNeedHeader = TRUE;
     long dtype_sz;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_XFER_RECV_OP);
 
     MPID_FUNC_ENTER(MPID_STATE_XFER_RECV_OP);
     dbg_printf("xfer_recv_op\n");

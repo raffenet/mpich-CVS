@@ -10,7 +10,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     char host[100];
     int port;
     char *token;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_POST_CONNECT);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_POST_CONNECT);
     dbg_printf("tcp_post_connect\n");

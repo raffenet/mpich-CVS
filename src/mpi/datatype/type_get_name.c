@@ -131,7 +131,7 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
     static int setup = 0;
-    MPID_MPI_STATE_DECLS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_GET_NAME);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_GET_NAME);
     /* Get handles to MPI objects. */

@@ -9,7 +9,7 @@
 int mm_release_buffers_tmp(MPID_Request *request_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_RELEASE_BUFFERS_TMP);
 
@@ -33,7 +33,7 @@ int mm_release_buffers_tmp(MPID_Request *request_ptr)
 int mm_get_buffers_tmp(MPID_Request *request_ptr)
 {
     MM_Segment_buffer *buf_ptr;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_GET_BUFFERS_TMP);
 
     MPID_FUNC_ENTER(MPID_STATE_MM_GET_BUFFERS_TMP);
 
@@ -55,7 +55,7 @@ int mm_get_buffers_tmp(MPID_Request *request_ptr)
 
 int tmp_buffer_init(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TMP_BUFFER_INIT);
     MPID_FUNC_ENTER(MPID_STATE_TMP_BUFFER_INIT);
     
     request_ptr->mm.buf.type = MM_TMP_BUFFER;
@@ -69,7 +69,7 @@ int tmp_buffer_init(MPID_Request *request_ptr)
 
 int simple_buffer_init(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_SIMPLE_BUFFER_INIT);
     MPID_FUNC_ENTER(MPID_STATE_SIMPLE_BUFFER_INIT);
 
     request_ptr->mm.buf.type = MM_SIMPLE_BUFFER;
@@ -83,7 +83,7 @@ int simple_buffer_init(MPID_Request *request_ptr)
 
 int mm_get_buffers_vec(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_MM_GET_BUFFERS_VEC);
     MPID_FUNC_ENTER(MPID_STATE_MM_GET_BUFFERS_VEC);
 
     /* set first and last to be the current last and the end of the segment */
@@ -108,7 +108,7 @@ int mm_get_buffers_vec(MPID_Request *request_ptr)
 
 int vec_buffer_init(MPID_Request *request_ptr)
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_VEC_BUFFER_INIT);
     MPID_FUNC_ENTER(MPID_STATE_VEC_BUFFER_INIT);
 
     request_ptr->mm.buf.type = MM_VEC_BUFFER;

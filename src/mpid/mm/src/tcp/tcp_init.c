@@ -15,7 +15,7 @@ TCP_PerProcess TCP_Process;
 int tcp_init()
 {
     int error;
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_INIT);
 
     MPID_FUNC_ENTER(MPID_STATE_TCP_INIT);
 
@@ -61,7 +61,7 @@ int tcp_init()
 @*/
 int tcp_finalize()
 {
-    MPID_STATE_DECLS;
+    MPID_STATE_DECL(MPID_STATE_TCP_FINALIZE);
     MPID_FUNC_ENTER(MPID_STATE_TCP_FINALIZE);
 
     beasy_closesocket(TCP_Process.listener);
