@@ -30,8 +30,6 @@ Booleans:
 + PMI_TRUE - true
 - PMI_FALSE - false
 
-Module:
-PMI
 D*/
 #define PMI_SUCCESS                 0
 #define PMI_FAIL                   -1
@@ -64,8 +62,6 @@ Initialize PMI for this process group. The value of spawned indicates whether
 this process was created by PMI_Spawn_multiple.  spawned will be PMI_TRUE if
 this process group has a parent and PMI_FALSE if it does not.
 
-Module:
-PMI
 @*/
 int PMI_Init( int *spawned );
 
@@ -85,8 +81,6 @@ On successful output, initialized will either be PMI_TRUE or PMI_FALSE.
 PMI_TRUE - initialize has been called.
 PMI_FALSE - initialize has not been called or previously failed.
 
-Module:
-PMI
 @*/
 int PMI_Initialized( PMI_BOOL *initialized );
 
@@ -100,8 +94,6 @@ Return values:
 Notes:
  Finalize PMI for this process group.
 
-Module:
-PMI
 @*/
 int PMI_Finalize( void );
 
@@ -120,8 +112,6 @@ Notes:
 This function returns the size of the process group that the local process
 belongs to.
 
-Module:
-PMI
 @*/
 int PMI_Get_size( int *size );
 
@@ -139,8 +129,6 @@ Return values:
 Notes:
 This function returns the rank of the local process in its process group.
 
-Module:
-PMI
 @*/
 int PMI_Get_rank( int *rank );
 
@@ -164,8 +152,6 @@ This function returns a string that uniquely identifies the process group
 that the local process belongs to.  The string passed in must be at least
 as long as the number returned by PMI_Get_id_length_max().
 
-Module:
-PMI
 @*/
 int PMI_Get_id( char id_str[], int length );
 
@@ -189,8 +175,6 @@ This function returns a string that uniquely identifies the PMI domain
 where keyval spaces can be shared.  The string passed in must be at least
 as long as the number returned by PMI_Get_id_length_max().
 
-Module:
-PMI
 @*/
 int PMI_Get_kvs_domain_id( char id_str[], int length );
 
@@ -208,8 +192,6 @@ Return values:
 Notes:
 This function returns the maximum length of a process group id string.
 
-Module:
-PMI
 @*/
 int PMI_Get_id_length_max( int *length );
 
@@ -225,8 +207,6 @@ This function is a collective call across all processes in the process group
 the local process belongs to.  It will not return until all the processes
 have called PMI_Barrier().
 
-Module:
-PMI
 @*/
 int PMI_Barrier( void );
 
@@ -247,9 +227,6 @@ are on the local node along with the local process.  This is a simple topology
 function to distinguish between processes that can communicate through IPC
 mechanisms (ie shared memory) and other network mechanisms.
 
-
-Module:
-PMI
 @*/
 int PMI_Get_clique_size( int *size );
 
@@ -275,8 +252,6 @@ is a simple topology function to distinguish between processes that can
 communicate through IPC mechanisms (ie shared memory) and other network
 mechanisms.
 
-Module:
-PMI
 @*/
 int PMI_Get_clique_ranks( int ranks[], int length );
 
@@ -302,8 +277,6 @@ other processes in the process group have access to.  The output parameter,
 kvsname, must be at least as long as the value returned by
 PMI_KVS_Get_name_length_max().
 
-Module:
-PMI
 @*/
 int PMI_KVS_Get_my_name( char kvsname[], int length );
 
@@ -321,8 +294,6 @@ Return values:
 Notes:
 This function returns the string length required to store a keyval space name.
 
-Module:
-PMI
 @*/
 int PMI_KVS_Get_name_length_max( int *length );
 
@@ -340,8 +311,6 @@ Return values:
 Notes:
 This function returns the string length required to store a key.
 
-Module:
-PMI
 @*/
 int PMI_KVS_Get_key_length_max( int *length );
 
@@ -360,8 +329,6 @@ Notes:
 This function returns the string length required to store a value from a
 keyval space.
 
-Module:
-PMI
 @*/
 int PMI_KVS_Get_value_length_max( int *length );
 
@@ -387,8 +354,6 @@ function is not collective.  Only one process calls this function.  The output
 parameter, kvsname, must be at least as long as the value returned by
 PMI_KVS_Get_name_length_max().
 
-Module:
-PMI
 @*/
 int PMI_KVS_Create( char kvsname[], int length );
 
@@ -406,8 +371,6 @@ Return values:
 Notes:
 This function destroys a keyval space created by PMI_KVS_Create().
 
-Module:
-PMI
 @*/
 int PMI_KVS_Destroy( const char kvsname[] );
 
@@ -434,8 +397,6 @@ value may be retrieved by calling PMI_KVS_Get().  All keys put to a keyval
 space must be unique to the keyval space.  You may not put more than once
 with the same key.
 
-Module:
-PMI
 @*/
 int PMI_KVS_Put( const char kvsname[], const char key[], const char value[]);
 
@@ -454,8 +415,6 @@ Notes:
 This function commits all previous puts since the last PMI_KVS_Commit() into
 the specified keyval space. It is a process local operation.
 
-Module:
-PMI
 @*/
 int PMI_KVS_Commit( const char kvsname[] );
 
@@ -481,8 +440,6 @@ Return values:
 Notes:
 This function gets the value of the specified key in the keyval space.
 
-Module:
-PMI
 @*/
 int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int length);
 
@@ -514,8 +471,6 @@ by returning an empty key string.  key and val must be at least as long as
 the values returned by PMI_KVS_Get_key_length_max() and
 PMI_KVS_Get_value_length_max().
 
-Module:
-PMI
 @*/
 int PMI_KVS_Iter_first(const char kvsname[], char key[], int key_len, char val[], int val_len);
 
@@ -547,8 +502,6 @@ space is specified by returning an empty key string.  The output parameters,
 key and val, must be at least as long as the values returned by
 PMI_KVS_Get_key_length_max() and PMI_KVS_Get_value_length_max().
 
-Module:
-PMI
 @*/
 int PMI_KVS_Iter_next(const char kvsname[], char key[], int key_len, char val[], int val_len);
 
@@ -561,8 +514,6 @@ Fields:
 + key - name of the key
 - val - value of the key
 
-Module:
-PMI
 S*/
 typedef struct PMI_keyval_t
 {
@@ -604,9 +555,6 @@ maxprocs.  The acceptable number of processes spawned may be controlled by
 ``soft'' keyvals in the info arrays.  The ``soft'' option is specified by
 mpiexec in the MPI-2 standard.  Environment variables may be passed to the
 spawned processes through PMI implementation specific info_keyval parameters.
-0
-Module:
-PMI
 @*/
 int PMI_Spawn_multiple(int count,
                        const char * cmds[],
@@ -639,9 +587,6 @@ This function removes PMI specific arguments from the command line and
 creates the corresponding PMI_keyval_t structures for them.  It returns
 an array and size to the caller that can then be passed to PMI_Spawn_multiple.
 The array can be freed by free().
-
-Module:
-PMI
 @*/
 int PMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t **keyvalp, int *size);
 
