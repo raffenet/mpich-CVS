@@ -713,7 +713,7 @@ int PMI_Publish_name( const char service_name[], const char port[] )
     }
     else
     {
-	PMIU_printf( 1, "PMI_Publish_name called before init\n", buf );
+	PMIU_printf( 1, "PMI_Publish_name called before init\n" );
 	return( PMI_FAIL );
     }
 
@@ -746,7 +746,7 @@ int PMI_Unpublish_name( const char service_name[] )
     }
     else
     {
-	PMIU_printf( 1, "PMI_Unpublish_name called before init\n", buf );
+	PMIU_printf( 1, "PMI_Unpublish_name called before init\n" );
 	return( PMI_FAIL );
     }
 
@@ -780,7 +780,7 @@ int PMI_Lookup_name( const char service_name[], char port[] )
     }
     else
     {
-	PMIU_printf( 1, "PMI_Lookup_name called before init\n", buf );
+	PMIU_printf( 1, "PMI_Lookup_name called before init\n" );
 	return( PMI_FAIL );
     }
 
