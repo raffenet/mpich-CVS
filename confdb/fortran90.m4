@@ -289,6 +289,12 @@ EOF
         fi
     fi
     ac_f90ext=$ac_ext
+    if test "$ac_ext" = "f90" ; then
+        pac_cv_f90_ext_f90=yes
+    else 
+        pac_cv_f90_ext_f90=no
+    fi
+    pac_cv_f90_ext=$ac_ext
     rm -f conftest*
 fi
 # Provide some information about the compiler.
@@ -1041,13 +1047,13 @@ cat >conftest.$ac_ext <<EOF
         use conf
         end
 EOF
-if ${F90-f90} -c $F90FLAGS -Iconftestdir conftest.$ac_ext 1>&AC_FD_CC && \
+if ${F90-f90} -c $F90FLAGS -Iconftestdir conftest.$ac_ext 1>&AC_FD_CC 2>&1 && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-I"
-elif ${F90-f90} -c $F90FLAGS -Mconftestdir conftest.$ac_ext 1>&AC_FD_CC && \
+elif ${F90-f90} -c $F90FLAGS -Mconftestdir conftest.$ac_ext 1>&AC_FD_CC 2>&1 && \
 	test-s conftest.o ; then
     pac_cv_f90_module_incflag="-M"
-elif ${F90-f90} -c $F90FLAGS -pconftestdir conftest.$ac_ext 1>&AC_FD_CC && \
+elif ${F90-f90} -c $F90FLAGS -pconftestdir conftest.$ac_ext 1>&AC_FD_CC 2>&1 && \
 	test -s conftest.o ; then
     pac_cv_f90_module_incflag="-p"
 elif test -s work.pc ; then 
