@@ -124,6 +124,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
     MPIR_Process.initialized = MPICH_WITHIN_MPI;
 
+#ifdef HAVE_DEBUGGER_SUPPORT
+    MPIR_WaitForDebugger();
+#endif    
     return mpi_errno;
 }
 #endif

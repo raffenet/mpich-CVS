@@ -1509,6 +1509,10 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 
 int MPID_Get_processor_name(char *, int *);
 
+/* Debugger support */
+#ifdef HAVE_DEBUGGER_SUPPORT
+void MPIR_WaitForDebugger( void );
+#endif
 
 /* Include definitions from the device which require items defined by this file
    (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to

@@ -102,6 +102,10 @@ AC_ARG_ENABLE(romio,
 [--enable-romio - Enable ROMIO MPI I/O implementation],
 ,enable_romio=no)
 dnl
+AC_ARG_ENABLE(debugger,
+[--enable-debugger - Enable support for debuggers],
+,enable_debugger=no)
+dnl
 dnl With options
 dnl "default" is a special device that allows MPICH to choose one based on 
 dnl the environment.
@@ -367,6 +371,12 @@ fi
 AC_SUBST(bindings)
 # Bindings dirs is used for the installation target
 AC_SUBST(bindings_dirs)
+#
+if test "$enable_debugger" = "yes" ; then
+    debugger_dir=debugger
+    AC_DEFINE(HAVE_DEBUGGER_SUPPORT,,[Define if debugger support is included])
+fi
+AC_SUBST(debugger_dir)
 dnl
 pac_cross_compiling=no
 if test "$with_cross" != "no" ; then
@@ -1070,6 +1080,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  src/mpi/coll/Makefile \
           src/mpi/comm/Makefile \
 	  src/mpi/datatype/Makefile \
+	  src/mpi/debugger/Makefile \
           src/mpi/errhan/Makefile \
           src/mpi/group/Makefile \
           src/mpi/init/Makefile \

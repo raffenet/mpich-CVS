@@ -1,2 +1,3 @@
 SUBDIRS_romio_dir = romio
-SUBDIRS = attr coll comm datatype errhan group init io misc pt2pt rma spawn timer topo @romio_dir@ .
+SUBDIRS_debugger_dir = debugger
+SUBDIRS = attr coll comm datatype errhan group init io misc pt2pt rma spawn timer topo @romio_dir@ @debugger_dir@ .

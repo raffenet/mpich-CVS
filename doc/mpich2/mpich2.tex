@@ -183,6 +183,10 @@ because an MPI implementation is not complete without these components.
     \item[timer]Timers (Section~\ref{sec:timer}).  This is separate from the
       \file{misc} directory because timers are very system dependent; this
       directory has its own \code{configure}.
+    \item[debugger]Routines that provide support for debuggers, including
+      routines to hold processes within \code{MPI_Init} and to 
+      provide information on the processes and routines that implement the
+      debugger interface.
     \item[misc]Runtime (Section~\ref{sec:runtime-env}), profiling
       (Section~\ref{sec:profile}), and Handle transfers
       (Section~\ref{sec:handle-transfer}).  Handle transfer includes handle to
