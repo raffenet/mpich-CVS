@@ -8,6 +8,7 @@
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
 #include "mpidi_ch3i_shm_conf.h"
+#include "mpid_locksconf.h"
 
 /*#define MPICH_DBG_OUTPUT*/
 

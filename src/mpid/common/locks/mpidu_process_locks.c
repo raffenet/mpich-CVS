@@ -1,4 +1,4 @@
-#include "mpiimpl.h"
+#include "mpidu_process_locks.h"
 
 #ifdef USE_PROCESS_LOCKS
 

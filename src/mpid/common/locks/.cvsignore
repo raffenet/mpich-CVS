@@ -1,3 +1,4 @@
+mpid_locksconf.h
 Makefile.in
 Makefile
 *.o

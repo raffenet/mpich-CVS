@@ -1,6 +1,8 @@
 #ifndef MPIDU_PROCESS_LOCKS_H
 #define MPIDU_PROCESS_LOCKS_H
 
+#include "mpiimpl.h"
+
 #include <stdio.h>
 
 extern int g_nLockSpinCount;
