@@ -363,7 +363,7 @@ sub ProcessFile
 		if (!defined($bad_syntax_in_file{$filename}))
 		{
 		    $bad_syntax_in_file{$filename} = 1;
-		    print STDERR "Error: MPIR_Err_create_code() call with too few arguments in $filename\n";
+		    print STDERR "Warning: MPIR_Err_create_code() call with too few arguments in $filename\n";
 		}
 		next;
 	    }
