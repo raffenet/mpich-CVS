@@ -73,19 +73,22 @@ void MPIDI_CH3_Progress_start()
 int MPIDI_CH3_Progress(int is_blocking)
 {
     int rc;
-    int register count;
     sock_event_t event;
     unsigned completions = MPIDI_CH3I_progress_completions;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
 
-#ifdef MPICH_DBG_OUTPUT
-    if (is_blocking)
+#   if defined(MPICH_DBG_OUTPUT)
     {
-	MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
+	if (is_blocking)
+	{
+	    MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
+	}
     }
-#endif
+#   endif
+    
     do
     {
 	rc = sock_wait(sock_set, is_blocking ? SOCK_INFINITE_TIME : 0, &event);
@@ -116,7 +119,11 @@ int MPIDI_CH3_Progress(int is_blocking)
 		if (conn->recv_active)
 		{
 		    conn->recv_active = NULL;
-		    MPIDI_CH3U_Handle_recv_req(conn->vc, rreq);
+		    mpi_errno = MPIDI_CH3U_Handle_recv_req(conn->vc, rreq);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			MPID_Abort(NULL, mpi_errno);
+		    }
 		    if (conn->recv_active == NULL)
 		    { 
 			connection_post_recv_pkt(conn);
@@ -128,7 +135,11 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    if (conn->pkt.type < MPIDI_CH3_PKT_END_CH3)
 		    {
 			conn->recv_active = NULL;
-			MPIDI_CH3U_Handle_recv_pkt(conn->vc, &conn->pkt);
+			mpi_errno = MPIDI_CH3U_Handle_recv_pkt(conn->vc, &conn->pkt);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    MPID_Abort(NULL, mpi_errno);
+			}
 			if (conn->recv_active == NULL)
 			{ 
 			    connection_post_recv_pkt(conn);
@@ -213,7 +224,11 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    MPID_Request * sreq = conn->send_active;
 		    
 		    conn->send_active = NULL;
-		    MPIDI_CH3U_Handle_send_req(conn->vc, sreq);
+		    mpi_errno = MPIDI_CH3U_Handle_send_req(conn->vc, sreq);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			MPID_Abort(NULL, mpi_errno);
+		    }
 		    if (conn->send_active == NULL)
 		    {
 			MPIDI_CH3I_SendQ_dequeue(conn->vc);
@@ -332,34 +347,34 @@ int MPIDI_CH3_Progress(int is_blocking)
     }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 
-    count = MPIDI_CH3I_progress_completions - completions;
-#ifdef MPICH_DBG_OUTPUT
-    if (is_blocking)
+#   if defined(MPICH_DBG_OUTPUT)
     {
-	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
-    }
-    else
-    {
-	if (count > 0)
+	if (is_blocking)
 	{
-	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", count));
+	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
 	}
     }
-#endif
+#   endif
+    
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
-    return count;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_poke
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_poke()
+int MPIDI_CH3_Progress_poke()
 {
+    int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    MPIDI_CH3_Progress(FALSE);
+    
+    mpi_errno = MPIDI_CH3_Progress(FALSE);
+    
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    return mpi_errno;
 }
 
 #if !defined(MPIDI_CH3_Progress_end)
@@ -709,9 +724,11 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 #define FUNCNAME MPIDI_CH3I_VC_post_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
+int MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 {
     MPIDI_CH3I_Connection_t * conn = vc->sc.conn;
+    int sock_errno;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
@@ -719,19 +736,26 @@ void MPIDI_CH3I_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 
     assert (conn->recv_active == NULL);
     conn->recv_active = rreq;
-    sock_post_readv(conn->sock, rreq->ch3.iov + rreq->sc.iov_offset, rreq->ch3.iov_count - rreq->sc.iov_offset, NULL);
+    sock_errno = sock_post_readv(conn->sock, rreq->ch3.iov + rreq->sc.iov_offset, rreq->ch3.iov_count - rreq->sc.iov_offset, NULL);
+    if (sock_errno != SOCK_SUCCESS)
+    {
+	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, sock_errno);
+    }
     
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
+    return mpi_errno;
 }
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_VC_post_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
+int MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
 {
     MPIDI_CH3I_Connection_t * conn = vc->sc.conn;
+    int sock_errno;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
@@ -739,7 +763,12 @@ void MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
     
     assert (conn->send_active == NULL);
     conn->send_active = sreq;
-    sock_post_writev(conn->sock, sreq->ch3.iov + sreq->sc.iov_offset, sreq->ch3.iov_count - sreq->sc.iov_offset, NULL);
+    sock_errno = sock_post_writev(conn->sock, sreq->ch3.iov + sreq->sc.iov_offset,
+				  sreq->ch3.iov_count - sreq->sc.iov_offset,  NULL);
+    if (sock_errno != SOCK_SUCCESS)
+    {
+	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, sock_errno);
+    }
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
@@ -839,9 +868,6 @@ static inline void connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn)
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_RECV_PKT);
 
-#ifdef MPICH_DBG_OUTPUT
-    memset(&conn->pkt, 0, sizeof(conn->pkt));
-#endif
     rc = sock_post_read(conn->sock, &conn->pkt, sizeof(conn->pkt), NULL);
     if (rc != SOCK_SUCCESS)
     {

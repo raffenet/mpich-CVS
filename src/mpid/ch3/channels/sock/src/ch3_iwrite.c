@@ -13,15 +13,18 @@
 #define FUNCNAME MPIDI_CH3_iWrite
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
+int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IWRITE);
     assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);
     req->sc.iov_offset = 0;
     
-    MPIDI_CH3I_VC_post_write(vc, req);
+    mpi_errno = MPIDI_CH3I_VC_post_write(vc, req);
+    MPID_Abort(NULL, mpi_errno);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
+    return mpi_errno;
 }

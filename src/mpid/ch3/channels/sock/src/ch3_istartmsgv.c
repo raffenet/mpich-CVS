@@ -60,9 +60,10 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
 #define FUNCNAME MPIDI_CH3_iStartMsgv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request ** sreq_ptr)
 {
     MPID_Request * sreq = NULL;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
@@ -107,7 +108,11 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 			sreq = create_request(iov, n_iov, offset, nb);
 			assert(sreq != NULL);
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			MPIDI_CH3I_VC_post_write(vc, sreq);
+			mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    MPID_Abort(NULL, mpi_errno);
+			}
 			break;
 		    }
 		}
@@ -167,9 +172,10 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	/* TODO: Create an appropriate error message */
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
     }
-    
+
+    *sreq_ptr = sreq;
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-    return sreq;
+    return mpi_errno;
 }
 

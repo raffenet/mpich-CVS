@@ -13,10 +13,11 @@
 #define FUNCNAME MPIDI_CH3_iRead
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
+int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 {
     int sock_errno;
     sock_size_t nb;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
@@ -37,7 +38,11 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	    {
 		rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_BUF = (char *) rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_BUF + nb;
 		rreq->ch3.iov[rreq->sc.iov_offset].MPID_IOV_LEN -= nb;
-		MPIDI_CH3I_VC_post_read(vc, rreq);
+		mpi_errno = MPIDI_CH3I_VC_post_read(vc, rreq);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    MPID_Abort(NULL, mpi_errno);
+		}
 		goto fn_exit;
 	    }
 	}
@@ -55,4 +60,5 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
+    return mpi_errno;
 }

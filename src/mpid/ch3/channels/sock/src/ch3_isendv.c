@@ -37,8 +37,9 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 #define FUNCNAME MPIDI_CH3_iSendv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
@@ -85,7 +86,11 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 			MPIDI_DBG_PRINTF((55, FCNAME, "partial write, request enqueued at head"));
 			update_request(sreq, iov, n_iov, offset, nb);
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			MPIDI_CH3I_VC_post_write(vc, sreq);
+			mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    MPID_Abort(NULL, mpi_errno);
+			}
 			break;
 		    }
 
@@ -153,5 +158,6 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
     
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+    return mpi_errno;
 }
 

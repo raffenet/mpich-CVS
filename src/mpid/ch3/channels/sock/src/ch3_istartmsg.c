@@ -39,9 +39,10 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, sock_siz
 #define FUNCNAME MPIDI_CH3_iStartMsg
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz)
+int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_Request ** sreq_ptr)
 {
     MPID_Request * sreq = NULL;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
@@ -81,7 +82,11 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
 		    sreq = create_request(hdr, hdr_sz, nb);
 		    assert(sreq != NULL);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    MPIDI_CH3I_VC_post_write(vc, sreq);
+		    mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			MPID_Abort(NULL, mpi_errno);
+		    }
 		}
 	    }
 	    else
@@ -134,8 +139,9 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
 	/* TODO: Create an appropriate error message */
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
     }
-    
+
+    *sreq_ptr = sreq;
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-    return sreq;
+    return mpi_errno;
 }

@@ -25,8 +25,9 @@ static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_s
 #define FUNCNAME MPIDI_CH3_iSend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz)
+int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
@@ -72,7 +73,11 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
 		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
 		    update_request(sreq, hdr, hdr_sz, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    MPIDI_CH3I_VC_post_write(vc, sreq);
+		    mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			MPID_Abort(NULL, mpi_errno);
+		    }
 		}
 	    }
 	    else if (rc == SOCK_ERR_NOMEM)
@@ -124,5 +129,6 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_s
     
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
+    return mpi_errno;
 }
 

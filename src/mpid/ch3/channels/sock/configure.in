@@ -45,8 +45,8 @@ AC_CHECK_HEADERS(				\
 	sys/types.h				\
 	errno.h)
 
-AC_SUBST(DEVICE)
-AC_SUBST(CHANNEL)
+AC_SUBST(device_name)
+AC_SUBST(channel_name)
 
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
