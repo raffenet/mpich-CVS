@@ -139,7 +139,7 @@ void MessageQueueThreadFn(MPIDI_CH3I_BootstrapQ_struct *queue)
     UUID guid;
 
     UuidCreate(&guid);
-    sprintf(queue->name, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    MPIU_Snprintf(queue->name, MPIDI_BOOTSTRAP_NAME_LEN, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
@@ -237,7 +237,7 @@ int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length)
 	return -1;
     }
     UuidCreate(&guid);
-    sprintf(name, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    MPIU_Snprintf(name, length, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
@@ -254,7 +254,7 @@ int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length)
     uuid_generate(guid);
     uuid_unparse(guid, name);
 #else
-    sprintf(name, "%08lX%08lX%08lX%08lX", rand(), rand(), rand(), rand());
+    MPIU_Snprintf(name, 40, "%08lX%08lX%08lX%08lX", rand(), rand(), rand(), rand());
 #endif
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
@@ -302,7 +302,7 @@ int MPIDI_CH3I_BootstrapQ_create_named(MPIDI_CH3I_BootstrapQ *queue_ptr, const c
     queue->id = id;
     queue->pid = getpid();
     /*strcpy(queue->name, name);*/
-    sprintf(queue->name, "%d", queue->pid);
+    MPIU_Snprintf(queue->name, MPIDI_BOOTSTRAP_NAME_LEN, "%d", queue->pid);
 
     *queue_ptr = queue;
 
@@ -377,7 +377,7 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 #endif /* USE_MQSHM */
 
     queue->pid = getpid();
-    sprintf(queue->name, "%d", getpid());
+    MPIU_Snprintf(queue->name, MPIDI_BOOTSTRAP_NAME_LEN, "%d", getpid());
 
     /* drain any stale messages in the queue */
     nb = 0;
@@ -437,7 +437,7 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 #ifdef USE_POSIX_MQ
 
     srand(getpid());
-    sprintf("%s%d", MPICH_MSG_QUEUE_NAME, rand());
+    MPIU_Snprintf(key, 100, "%s%d", MPICH_MSG_QUEUE_NAME, rand());
     mode = 0666;
     memset(&attr, 0, sizeof(attr));
     attr.mq_maxmsg = BOOTSTRAP_MAX_NUM_MSGS;
@@ -452,11 +452,11 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE);
 	    return mpi_errno;
 	}
-	sprintf("%s%d", MPICH_MSG_QUEUE_NAME, rand());
+	MPIU_Snprintf(key, 100, "%s%d", MPICH_MSG_QUEUE_NAME, rand());
 	id = mq_open(key, O_CREAT | O_RDWR | O_NONBLOCK, mode, &attr);
     }
     queue->id = id;
-    strcpy(queue->name, key);
+    MPIU_Strncpy(queue->name, key, MPIDI_BOOTSTRAP_NAME_LEN);
     MPIU_DBG_PRINTF(("created message queue: %s\n", queue->name));
 
 #elif defined(USE_SYSV_MQ)
@@ -478,7 +478,7 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 	id = msgget(key, IPC_CREAT | IPC_EXCL | 0666);
     }
     queue->id = id;
-    sprintf(queue->name, "%d", key);
+    MPIU_Snprintf(queue->name, MPIDI_BOOTSTRAP_NAME_LEN, "%d", key);
     MPIU_DBG_PRINTF(("created message queue: %s\n", queue->name));
 
 #elif defined(HAVE_WINDOWS_H)

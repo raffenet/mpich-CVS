@@ -13,15 +13,15 @@ static void generate_shm_string(char *str)
 #ifdef USE_WINDOWS_SHM
     UUID guid;
     UuidCreate(&guid);
-    sprintf(str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    MPIU_Snprintf(str, 40, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
 #elif defined (USE_POSIX_SHM)
-    sprintf(str, "/mpich_shm_%d", rand());
+    MPIU_Snprintf(str, 40, "/mpich_shm_%d", rand());
 #elif defined (USE_SYSV_SHM)
-    sprintf(str, "%d", getpid());
+    MPIU_Snprintf(str, 40, "%d", getpid());
 #else
 #error No shared memory subsystem defined
 #endif
@@ -40,7 +40,7 @@ static void generate_shm_string(char *str)
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", i, err); /*"unable to open process %d, error %d", i, err);*/
             }
 #else
-            sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
+            MPIU_Snprintf(filename, 256, "/proc/%d/mem", pSharedProcess[i].nPid);
             pSharedProcessIDs[i] = pSharedProcess[i].nPid;
             pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
             if (pSharedProcessFileDescriptors[i] == -1)
@@ -114,7 +114,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	return mpi_errno;
     }
-    strcpy(pOutput->name, pOutput->key);
+    MPIU_Strncpy(pOutput->name, pOutput->key, MPIDI_MAX_SHM_NAME_LENGTH);
     if (ftruncate(pOutput->id, size) == -1)
     {
 	pOutput->error = errno;
