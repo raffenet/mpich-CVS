@@ -35,7 +35,10 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     int mpi_errno = MPI_SUCCESS;
     int has_args;
     int has_env;
-    
+
+    /* XXX - if we pass provided to MPID_Init() then the following code has
+       little effect, and may in fact, allow the setting in MPIR_Process to be
+       out of sync with the value returned from MPID_Init() */
     if (required > MPID_MAX_THREAD_LEVEL) {
 	MPIR_Process.thread_provided = MPID_MAX_THREAD_LEVEL;
     }
