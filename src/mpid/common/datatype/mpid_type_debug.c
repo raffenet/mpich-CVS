@@ -123,6 +123,43 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 			    loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_STRUCT:
+	    MPIU_dbg_printf("      dl%d [shape = record, label = \"struct | {ct = %d; blks = ",
+			    depth,
+			    loop_p->loop_params.s_t.count);
+	    for (i=0; i < 3 && i < loop_p->loop_params.s_t.count; i++) {
+		if (i + 1 < loop_p->loop_params.s_t.count) {
+		    MPIU_dbg_printf("%d, ",
+				    (int) loop_p->loop_params.s_t.blocksize_array[i]);
+		}
+		else {
+		    MPIU_dbg_printf("%d; ",
+				    (int) loop_p->loop_params.s_t.blocksize_array[i]);
+		}
+	    }
+	    if (i < loop_p->loop_params.s_t.count) {
+		MPIU_dbg_printf("...; disps = ");
+	    }
+	    else {
+		MPIU_dbg_printf("disps = ");
+	    }
+
+	    for (i=0; i < 3 && i < loop_p->loop_params.s_t.count; i++) {
+		if (i + 1 < loop_p->loop_params.s_t.count) {
+		    MPIU_dbg_printf("%d, ",
+				    (int) loop_p->loop_params.s_t.offset_array[i]);
+		}
+		else {
+		    MPIU_dbg_printf("%d; ",
+				    (int) loop_p->loop_params.s_t.offset_array[i]);
+		}
+	    }
+	    if (i < loop_p->loop_params.s_t.count) {
+		MPIU_dbg_printf("... }\"];\n");
+	    }
+	    else {
+		MPIU_dbg_printf("}\"];\n");
+	    }
+	    break;
 	default:
 	    assert(0);
     }
@@ -144,6 +181,11 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 		MPIDI_Dataloop_dot_printf(loop_p->loop_params.bi_t.dataloop, depth + 1, 0);
 		break;
 	    case DLOOP_KIND_STRUCT:
+		for (i=0; i < loop_p->loop_params.s_t.count; i++) {
+		    MPIDI_Dataloop_dot_printf(loop_p->loop_params.s_t.dataloop_array[i],
+					      depth + 1, 0);
+		}
+		break;
 	    default:
 		MPIU_dbg_printf("      < unsupported type >\n");
 	}

@@ -348,7 +348,6 @@ void MPID_Dataloop_create_struct(int count,
     /* if count is zero, handle with contig code, call it a int */
     if (count == 0)
     {
-
 	MPID_Dataloop_create_contiguous(0,
 					MPI_INT,
 					dlp_p,
@@ -593,7 +592,100 @@ void MPID_Dataloop_create_struct(int count,
 	return;
     }
     else /* general case, allow branches */ {
-	assert(0);
+	int loop_idx = 0, new_loop_sz = 0, new_loop_depth = 2;
+	char *curpos;
+	MPID_Datatype *old_dtp;
+	struct MPID_Dataloop *new_dlp;
+
+	/* scan through types and gather derived type info */
+	for (i=0; i < count; i++) {
+	    if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) {
+		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
+
+		if (old_dtp->loopinfo_depth + 1 > new_loop_depth) {
+		    new_loop_depth = old_dtp->loopinfo_depth;
+		}
+		new_loop_sz += old_dtp->loopsize;
+	    }
+	}
+
+	new_loop_sz += sizeof(struct MPID_Dataloop) +
+	    ((nr_basics + nr_derived) *
+	     (sizeof(int) + sizeof(MPI_Aint) + sizeof(MPID_Dataloop))) +
+	    (nr_basics * sizeof(struct MPID_Dataloop));
+
+	new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
+	assert(new_dlp != NULL);
+
+	new_dlp->kind = DLOOP_KIND_STRUCT;
+	new_dlp->el_size = -1; /* ????? */
+	new_dlp->el_extent = -1; /* ????? */
+	new_dlp->el_type = MPI_DATATYPE_NULL; /* ????? */
+
+	new_dlp->loop_params.s_t.count = nr_basics + nr_derived;
+
+	/* TODO: ALIGNMENT!!! */
+	new_dlp->loop_params.s_t.dataloop_array = (struct DLOOP_Dataloop **)
+	    (((char *) new_dlp) + sizeof(DLOOP_Dataloop));
+	new_dlp->loop_params.s_t.blocksize_array = (DLOOP_Count *)
+	    ((char *) new_dlp->loop_params.s_t.dataloop_array) +
+	    (nr_basics + nr_derived) * sizeof(struct DLOOP_Dataloop *);
+	new_dlp->loop_params.s_t.offset_array = (DLOOP_Offset *)
+	    ((char *) new_dlp->loop_params.s_t.blocksize_array) +
+	    (nr_basics + nr_derived) * sizeof(DLOOP_Count);
+
+	curpos = (char *) new_dlp;
+	curpos += sizeof(struct MPID_Dataloop) + (nr_basics + nr_derived) *
+	    (sizeof(int) + sizeof(MPI_Aint) + sizeof(MPID_Dataloop));
+
+	for (i=0; i < count; i++) {
+	    if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) {
+		struct MPID_Dataloop *dummy_dlp;
+		int dummy_sz, dummy_depth;
+
+		/* LBs and UBs already taken care of -- skip them */
+		if (oldtype_array[i] == MPI_LB || oldtype_array[i] == MPI_UB) {
+		    continue;
+		}
+
+		/* build a contig dataloop for this basic and point to that */
+		MPID_Dataloop_create_contiguous(blklen_array[i],
+						oldtype_array[i],
+						&dummy_dlp,
+						&dummy_sz,
+						&dummy_depth,
+						flags);
+						
+		assert((dummy_dlp != NULL) &&
+		       (dummy_sz == sizeof(struct MPID_Dataloop)) &&
+		       (dummy_depth == 1));
+
+		MPID_Dataloop_copy(curpos, dummy_dlp, dummy_sz);
+		MPIU_Free(dummy_dlp);
+		new_dlp->loop_params.s_t.dataloop_array[loop_idx] =
+		    (struct MPID_Dataloop *) curpos;
+		curpos += dummy_sz;
+
+		/* we stored the block size in the contig -- use 1 here */
+		new_dlp->loop_params.s_t.blocksize_array[loop_idx] = 1;
+	    }
+	    else {
+		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
+
+		MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+		new_dlp->loop_params.s_t.dataloop_array[loop_idx] =
+		    (struct MPID_Dataloop *) curpos;
+		curpos += old_dtp->loopsize;
+		new_dlp->loop_params.s_t.blocksize_array[loop_idx] =
+		    blklen_array[i];
+	    }
+	    new_dlp->loop_params.s_t.offset_array[loop_idx] = disp_array[i];
+	    loop_idx++;
+	}
+
+	*dlp_p     = new_dlp;
+	*dlsz_p    = new_loop_sz;
+	*dldepth_p = new_loop_depth;
 	return;
     }
 }

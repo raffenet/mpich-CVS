@@ -313,6 +313,15 @@ do {						\
 #define DLOOP_STACKELM_INDEXED_BLOCKSIZE(__elmp, __curcount) \
 (__elmp)->loop_p->loop_params.i_t.blocksize_array[(__curcount)]
 
+#define DLOOP_STACKELM_STRUCT_OFFSET(__elmp, __curcount) \
+(__elmp)->loop_p->loop_params.s_t.offset_array[(__curcount)]
+
+#define DLOOP_STACKELM_STRUCT_BLOCKSIZE(__elmp, __curcount) \
+(__elmp)->loop_p->loop_params.s_t.blocksize_array[(__curcount)]
+
+#define DLOOP_STACKELM_STRUCT_DATALOOP(__elmp, __curcount) \
+(__elmp)->loop_p->loop_params.s_t.dataloop_array[(__curcount)]
+
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 
 					DLOOP_Offset *lastp, 
@@ -413,10 +422,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    DLOOP_Offset myblocks, local_el_size, stream_el_size;
 	    DLOOP_Type el_type;
 
+	    /* structs are never finals (leaves) */
+	    assert((cur_elmp->loop_p->kind & DLOOP_KIND_MASK) !=
+		   DLOOP_KIND_STRUCT);
+
 	    /* pop immediately on zero count */
 	    if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 
-	    /* size on this system of the int, double, etc. that is the elem. type */
+	    /* size on this system of the int, double, etc. that is elem. type */
 	    local_el_size  = cur_elmp->loop_p->el_size;
 	    el_type        = cur_elmp->loop_p->el_type;
 	    stream_el_size = (sizefn) ? sizefn(el_type) : local_el_size;
@@ -668,15 +681,18 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    else {
 		/* new block.  for indexed and struct reset orig_block.  reset curblock for all types */
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
+		    case DLOOP_KIND_CONTIG:
+		    case DLOOP_KIND_VECTOR:
+		    case DLOOP_KIND_BLOCKINDEXED:
+			break;
 		    case DLOOP_KIND_INDEXED:
 			cur_elmp->orig_block =
 			    DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, cur_elmp->orig_count - cur_elmp->curcount);
 			break;
-		    case DLOOP_KIND_VECTOR:
-		    case DLOOP_KIND_BLOCKINDEXED:
-		    case DLOOP_KIND_CONTIG:
-			break;
 		    case DLOOP_KIND_STRUCT:
+			cur_elmp->orig_block =
+			    DLOOP_STACKELM_STRUCT_BLOCKSIZE(cur_elmp, cur_elmp->orig_count - cur_elmp->curcount);
+			break;
 		    default:
 			assert(0);
 			break;
@@ -703,7 +719,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			load_dlp = cur_elmp->loop_p->loop_params.cm_t.dataloop;
 			break;
 		    case DLOOP_KIND_STRUCT:
-			load_dlp = cur_elmp->loop_p->loop_params.s_t.dataloop_array[count_index];
+			load_dlp = DLOOP_STACKELM_STRUCT_DATALOOP(cur_elmp,
+								  count_index);
 			break;
 		    default:
 			assert(0);

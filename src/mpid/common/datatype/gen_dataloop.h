@@ -259,7 +259,9 @@ typedef struct DLOOP_Dataloop {
 
 S*/
 typedef struct DLOOP_Dataloop_stackelm {
-    int may_require_reloading;
+    int may_require_reloading; /* indicates that items below might
+				* need reloading (e.g. this is a struct)
+				*/
 
     DLOOP_Count  curcount;
     DLOOP_Offset curoffset;
