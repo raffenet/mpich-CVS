@@ -127,7 +127,8 @@ linktest_F77:
 
 clean:
 	@-$(RM) -f work.pc work.pcl
-	@-$(RM) -f *.o *~ PI* $(EXECS) cpi_log cpi_trace cpilog fpilog srtest
+	@-$(RM) -f *.o *~ PI* $(EXECS)
+	@-$(RM) -f cpi_log cpi_trace cpilog fpilog fpilog_pack srtest
 	@-$(RM) -f *.clog2 *.slog2
 
 distclean: clean

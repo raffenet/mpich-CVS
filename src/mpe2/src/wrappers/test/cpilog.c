@@ -13,7 +13,7 @@ double f( double a )
     return (4.0 / (1.0 + a*a));
 }
 
-int main( int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
     int  n, myid, numprocs, ii, jj;
     double PI25DT = 3.141592653589793238462643;
@@ -94,6 +94,8 @@ int main( int argc, char *argv[])
         MPE_Log_event( event4a, 0, NULL );
         MPI_Reduce( &mypi, &pi, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
         MPE_Log_event( event4b, 0, NULL );
+
+        MPE_Log_sync_clocks();
     }
 /*
     MPE_Finish_log( "cpilog" );
