@@ -83,7 +83,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     /* ... body of routine ...  */
     /* See if their sizes are equal */
     if (group_ptr1->size != group_ptr2->size) {
-	(*result) = MPI_UNEQUAL;
+	*result = MPI_UNEQUAL;
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
 	return MPI_SUCCESS;
     }
