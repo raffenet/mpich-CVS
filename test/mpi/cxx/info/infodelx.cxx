@@ -83,9 +83,10 @@ int main( int argc, char *argv[] )
     }
 
     info.Free();
+    delete [] value;
 
     MTest_Finalize( errs );
     MPI::Finalize();
-    delete [] value;
+
     return 0;  
 }

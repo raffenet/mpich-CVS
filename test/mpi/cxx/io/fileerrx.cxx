@@ -130,9 +130,10 @@ int main( int argc, char **argv )
 	cout << " Wrong string for error code: " << errstring << "\n";
     }
     
+    delete [] errstring;
+
     MTest_Finalize( errs );
     MPI::Finalize();
-    delete [] errstring;
     return 0;
 }
 

@@ -69,9 +69,10 @@ int main( int argc, char **argv )
     if (MPI::COMM_WORLD.Get_rank() == 0) 
 	MPI::File::Delete( filename, MPI::INFO_NULL );
     
-    MTest_Finalize( errs );
-    MPI::Finalize();
     delete [] mykey;
     delete [] myvalue;
+
+    MTest_Finalize( errs );
+    MPI::Finalize();
     return 0;
 }

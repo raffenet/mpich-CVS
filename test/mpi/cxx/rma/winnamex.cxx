@@ -57,9 +57,10 @@ int main( int argc, char *argv[] )
         cout << "No windows created\n";
     }
 
-    MTest_Finalize( errs );
-    MPI::Finalize();
     delete [] name;
     delete [] nameout;
+
+    MTest_Finalize( errs );
+    MPI::Finalize();
     return 0;
 }

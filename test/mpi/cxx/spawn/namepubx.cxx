@@ -119,10 +119,10 @@ int main( int argc, char *argv[] )
 	}
     }
 
-    MTest_Finalize( errs );
-    MPI::Finalize();
     delete [] port_name;
     delete [] port_name_out;
+
+    MTest_Finalize( errs );
+    MPI::Finalize();
     return 0;
-  
 }

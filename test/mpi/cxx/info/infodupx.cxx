@@ -92,10 +92,12 @@ int main( int argc, char *argv[] )
     infodup.Free();
     
     MTest_Finalize( errs );
-    MPI::Finalize();
     delete [] key;
     delete [] keydup;
     delete [] value;
     delete [] valdup;
+
+    MPI::Finalize();
+
     return 0;  
 }

@@ -89,9 +89,10 @@ int main( int argc, char **argv )
     else {
 	cout << " No Errors\n";
     }
-    MPI::Finalize();
     delete [] name;
     delete [] mpi_names;
+
+    MPI::Finalize();
     return 0;
 }
 
