@@ -21,6 +21,7 @@ Datatypes
 
 C++ binding
     Complete for MPI 1 and MPI 2
+	     Done 7/03
     Tool to create application-specific subsets of the binding (e.g., without
     methods not needed by the app) 
     Short note (PVMMPI'03?) (not done)
@@ -29,6 +30,9 @@ Fortran 90 binding
      Move from MPICH1
      Improve tool to create application-specific subsets of the binding
      Short note (PVMMPI'03?), perhaps combined with C++
+
+	   The "nochoice" version of the Fortran 90 module is supported 
+	   (8/11/03)
 
 Cluster Support
     TCP + shared memory implementation (e.g., a channel method that supports
