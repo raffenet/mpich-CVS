@@ -11,6 +11,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="Win64 (AMD64)"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -481,6 +484,484 @@
 				CommandLine="copy ..\..\..\lib\fmpich2g.dll %SystemRoot%\system32\fmpich2g.dll"
 			/>
 		</Configuration>
+		<Configuration
+			Name="sfortDebug|Win64 (AMD64)"
+			OutputDirectory="amd64\$(ConfigurationName)"
+			IntermediateDirectory="amd64\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include,..\..\include\win64"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_STDCALL;USE_MSC_DLLSPEC;FORTRAN_EXPORTS;F77_NAME_UPPER;USE_FORT_MIXED_STR_LEN;HAVE_C_API;_CRT_SECURE_NO_DEPRECATE;WIN64"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="0"
+				BrowseInformation="1"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpid.lib"
+				OutputFile="../../../lib/fmpich2sd.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2fs.def"
+				GenerateDebugInformation="TRUE"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2sd.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2sd.dll %SystemRoot%\system32\fmpich2sd.dll"
+			/>
+		</Configuration>
+		<Configuration
+			Name="sfortRelease|Win64 (AMD64)"
+			OutputDirectory="amd64\$(ConfigurationName)"
+			IntermediateDirectory="amd64\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\include,..\..\include\win64"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_STDCALL;USE_MSC_DLLSPEC;FORTRAN_EXPORTS;F77_NAME_UPPER;USE_FORT_MIXED_STR_LEN;HAVE_C_API;_CRT_SECURE_NO_DEPRECATE;WIN64"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpi.lib"
+				OutputFile="../../../lib/fmpich2s.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2fs.def"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2s.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2s.dll %SystemRoot%\system32\fmpich2s.dll"
+			/>
+		</Configuration>
+		<Configuration
+			Name="fortRelease|Win64 (AMD64)"
+			OutputDirectory="amd64\$(ConfigurationName)"
+			IntermediateDirectory="amd64\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\include,..\..\include\win64"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;USE_MSC_DLLSPEC;FORTRAN_EXPORTS;F77_NAME_UPPER;HAVE_C_API;_CRT_SECURE_NO_DEPRECATE;WIN64"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpi.lib"
+				OutputFile="../../../lib/fmpich2.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2f.def"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2.dll %SystemRoot%\system32\fmpich2.dll"
+			/>
+		</Configuration>
+		<Configuration
+			Name="fortDebug|Win64 (AMD64)"
+			OutputDirectory="amd64\$(ConfigurationName)"
+			IntermediateDirectory="amd64\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include,..\..\include\win64"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;USE_MSC_DLLSPEC;FORTRAN_EXPORTS;F77_NAME_UPPER;HAVE_C_API;_CRT_SECURE_NO_DEPRECATE;WIN64"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="0"
+				BrowseInformation="1"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpid.lib"
+				OutputFile="../../../lib/fmpich2d.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2f.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2d.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2d.dll %SystemRoot%\system32\fmpich2d.dll"
+			/>
+		</Configuration>
+		<Configuration
+			Name="gfortDebug|Win64 (AMD64)"
+			OutputDirectory="amd64\$(ConfigurationName)"
+			IntermediateDirectory="amd64\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include,..\..\include\win64"
+				PreprocessorDefinitions="_DEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;USE_MSC_DLLSPEC;FORTRAN_EXPORTS;FORTRANDOUBLEUNDERSCORE;F77_NAME_LOWER_2USCORE;HAVE_C_API;_CRT_SECURE_NO_DEPRECATE;WIN64"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="0"
+				BrowseInformation="1"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpid.lib"
+				OutputFile="../../../lib/fmpich2gd.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2fg.def"
+				GenerateDebugInformation="TRUE"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2gd.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2gd.dll %SystemRoot%\system32\fmpich2gd.dll"
+			/>
+		</Configuration>
+		<Configuration
+			Name="gfortRelease|Win64 (AMD64)"
+			OutputDirectory="amd64\$(ConfigurationName)"
+			IntermediateDirectory="amd64\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\include,..\..\include\win64"
+				PreprocessorDefinitions="NDEBUG;_LIB;USE_WINCONF_H;USE_FORT_CDECL;USE_MSC_DLLSPEC;FORTRAN_EXPORTS;FORTRANDOUBLEUNDERSCORE;F77_NAME_LOWER_2USCORE;HAVE_C_API;_CRT_SECURE_NO_DEPRECATE;WIN64"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="mpi.lib"
+				OutputFile="../../../lib/fmpich2g.dll"
+				AdditionalLibraryDirectories="../../../lib"
+				ModuleDefinitionFile="mpich2fg.def"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying fmpich2g.dll to the system32 directory"
+				CommandLine="copy ..\..\..\lib\fmpich2g.dll %SystemRoot%\system32\fmpich2g.dll"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -527,6 +1008,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -589,6 +1102,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\allgathervf.c"
@@ -623,6 +1168,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -673,6 +1250,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\alltoallf.c"
@@ -707,6 +1316,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -753,6 +1394,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\alltoallwf.c"
@@ -787,6 +1460,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -849,6 +1554,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\bsend_initf.c"
@@ -883,6 +1620,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -929,6 +1698,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\bufattachf.c"
@@ -969,6 +1770,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\bufdetachf.c"
@@ -1003,6 +1836,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -1239,6 +2104,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -1517,6 +2414,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\gathervf.c"
@@ -1551,6 +2480,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -1607,6 +2568,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -1737,6 +2730,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\iccreatef.c"
@@ -1837,6 +2862,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\irsendf.c"
@@ -1871,6 +2928,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -1917,6 +3006,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\issendf.c"
@@ -1951,6 +3072,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -1993,6 +3146,22 @@
 						Name="VCCustomBuildTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\mpich2fg.def"
@@ -2023,6 +3192,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="fortDebug|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="sfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="sfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -2145,6 +3346,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\query_threadf.c"
@@ -2183,6 +3416,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -2229,6 +3494,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\redscatf.c"
@@ -2269,6 +3566,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\reducef.c"
@@ -2303,6 +3632,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -2357,6 +3718,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\rsendf.c"
@@ -2391,6 +3784,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -2437,6 +3862,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\scatterf.c"
@@ -2471,6 +3928,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -2517,6 +4006,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\send_initf.c"
@@ -2551,6 +4072,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -2597,6 +4150,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\sendrecvf.c"
@@ -2637,6 +4222,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\sndrcvrplf.c"
@@ -2671,6 +4288,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -2721,6 +4370,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\ssendf.c"
@@ -2755,6 +4436,38 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					ExcludedFromBuild="TRUE"
 					>
 					<Tool
@@ -3001,6 +4714,38 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					ExcludedFromBuild="TRUE"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\win_fencef.c"
@@ -3133,6 +4878,54 @@
 						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="sfortDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="sfortRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\wtimef.c"
@@ -3179,6 +4972,54 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="gfortRelease|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="sfortDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="sfortRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortRelease|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="fortDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortDebug|Win64 (AMD64)"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\..\mpi\romio\mpi-io,..\..\mpi\romio\adio\include,..\..\include,..\..\include\win32,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp,..\..\mpid\ch3\include,..\..\mpid\common\locks,..\..\mpid\ch3\channels\sock\include"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="gfortRelease|Win64 (AMD64)"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
