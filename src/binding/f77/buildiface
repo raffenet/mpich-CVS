@@ -1517,6 +1517,12 @@ sub print_special_decls {
 		$processing_routine = "${method}_ftoc";
 		&$processing_routine( $count );
 	    }
+	    else {
+		$processing_routine = "${method}_out_ftoc";
+		if (defined(&$processing_routine)) {
+		    &$processing_routine( $count );
+		}
+	    }
 	}
     }
 }
