@@ -140,6 +140,7 @@ DEBUG=no
 MIPS=0
 BITS=0
 FROM_MPICH=0
+FROM_LAM=0
 CFLAGS=${CFLAGS:-""}
 LL="\%lld"
 AR_LOCAL=l
@@ -293,6 +294,10 @@ case $arg in
 
   -from_mpich | --from_mpich)
      FROM_MPICH=1
+     ;;
+
+  -from_lam | --from_lam)
+     FROM_LAM=1
      ;;
 
    -ar=* | --ar=*)
@@ -452,12 +457,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -527,12 +534,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -685,7 +694,7 @@ if test -n "$MPI" ; then
 fi
 #
 # check for valid MPI include directory if specified
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_LAM = 0; then
    if test -n "$MPI_INCLUDE_DIR"; then
       if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
          echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
@@ -700,7 +709,7 @@ if test $FROM_MPICH = 0 ; then
 fi
 #
 # check for valid MPI library if specified
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_LAM = 0; then
    if test -n "$MPI_LIB" ; then
       if test ! -f "$MPI_LIB" ; then
          echo "Error: MPI library $MPI_LIB not found"
@@ -946,12 +955,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -1199,12 +1210,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -1265,12 +1278,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -1280,6 +1295,7 @@ echo $ac_n "checking struct statfs.f_fstypename""... $ac_c" 1>&1
 fi
 		echo checking for 
 			#include <sys/param.h>
+			#include <sys/mount.h>
 			#include <string.h>
 cat > conftest.c <<EOF
 #include "confdefs.h"
@@ -1916,12 +1932,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -1948,12 +1966,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -1989,12 +2009,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2050,12 +2072,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2190,12 +2214,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2258,12 +2284,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2369,12 +2397,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2485,7 +2515,7 @@ EOF
         CFLAGS="$CFLAGS $WDEF"
     fi
     rm -f test/mpif.h
-    if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 ; then
+    if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 && test $FROM_LAM = 0 ; then
         if test ! -d test ; then mkdir test ; fi
         ln -s $MPI_INCLUDE_DIR/mpif.h test
     fi
@@ -2506,12 +2536,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2580,12 +2612,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2663,12 +2697,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2738,12 +2774,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2801,12 +2839,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2920,12 +2960,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -2984,12 +3026,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3058,12 +3102,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3196,12 +3242,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3282,12 +3330,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3348,12 +3398,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3403,7 +3455,7 @@ fi
 fi
 #
 # check if MPI_Info functions are defined in the MPI implementation
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_LAM = 0; then
    
   if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
@@ -3417,12 +3469,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3515,12 +3569,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3569,12 +3625,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3637,12 +3695,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3704,12 +3764,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3749,7 +3811,7 @@ fi
 fi
 #
 # check if darray and subarray constructors are defined in the MPI implementation
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_LAM = 0; then
    
   if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
@@ -3763,12 +3825,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3884,12 +3948,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -3945,12 +4011,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4169,12 +4237,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4312,12 +4382,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4527,12 +4599,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4584,12 +4658,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4643,12 +4719,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4716,7 +4794,7 @@ else
    FORTRAN_TEST="fperf fcoll_test fmisc pfcoll_test" 
 fi
 #
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_LAM = 0; then
    
   if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
@@ -4730,12 +4808,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4783,12 +4863,14 @@ if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 
 fi
 if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -4868,6 +4950,30 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\
 "
 }
 
+elif test $FROM_LAM = 1 ; then
+   # LAM does have the status set bytes functionality
+   
+{
+test -n "$verbose" && \
+echo "	defining HAVE_STATUS_SET_BYTES"
+echo "#define" HAVE_STATUS_SET_BYTES 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_STATUS_SET_BYTES=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_STATUS_SET_BYTES\${SEDuB}HAVE_STATUS_SET_BYTES\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_STATUS_SET_BYTES\${SEDeB}HAVE_STATUS_SET_BYTES\${SEDeC}1\${SEDeD}
+"
+}
+
+        
+   # Used in the tests/ subdirectory for after ROMIO is built
+   TEST_CC=mpicc
+   TEST_F77=mpif77
+   MPIRUN=mpirun 
+   MPI_LIB=
+   ROMIO_INCLUDE=
+   USER_CFLAGS=
+   USER_FFLAGS=
+   TEST_LIBNAME=
 fi
 if test "$FROM_MPICH2" = "yes" ; then
          
@@ -4917,6 +5023,7 @@ echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
 #
+
 
 
 
@@ -5075,6 +5182,7 @@ F77IARGC='$F77IARGC'
 FTESTDEFINE='$FTESTDEFINE'
 FORTRAN_MPI_OFFSET='$FORTRAN_MPI_OFFSET'
 FROM_MPICH='$FROM_MPICH'
+FROM_LAM='$FROM_LAM'
 NEEDS_MPI_FINT='$NEEDS_MPI_FINT'
 HAVE_MPI_INFO='$HAVE_MPI_INFO'
 BUILD_MPI_INFO='$BUILD_MPI_INFO'
@@ -5179,6 +5287,7 @@ s%@F77IARGC@%$F77IARGC%g
 s%@FTESTDEFINE@%$FTESTDEFINE%g
 s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g" | sed -e "
 s%@FROM_MPICH@%$FROM_MPICH%g
+s%@FROM_LAM@%$FROM_LAM%g
 s%@NEEDS_MPI_FINT@%$NEEDS_MPI_FINT%g
 s%@HAVE_MPI_INFO@%$HAVE_MPI_INFO%g
 s%@BUILD_MPI_INFO@%$BUILD_MPI_INFO%g
@@ -5364,7 +5473,7 @@ mv test/tmp test/runtests
 chmod 755 test/runtests
 #
 rm -f *.o
-if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = 0 ; then
+if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = 0 -a "$FROM_LAM" = 0 ; then
 print_error " "
 print_error Please register your copy of ROMIO with us by sending email
 print_error to majordomo@mcs.anl.gov with the message
@@ -5373,7 +5482,7 @@ print_error This will enable us to notify you of new releases of ROMIO
 print_error as well as bug fixes.
 print_error " "
 fi
-if test $FROM_MPICH = 0 ; then
+if test $FROM_MPICH = 0 -a $FROM_LAM = 0 ; then
    print_error Configure done. Now type make
    print_error " "
 fi

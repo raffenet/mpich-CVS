@@ -202,12 +202,14 @@ ac_echo_n=yes
 else
   ac_n= ac_c='\c' ac_t=
 fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
+# lam reports this does not work on openbsd.  comment it out because it doesn't
+# really do much for us.
+#ac_echo_test=`echo foo 1>&1`
+#if test -z "$ac_echo_test" ; then
+#     print_error "Your sh shell does not handle the output redirection"
+#     print_error "1>&1 correctly.  Configure will work around this problem,"
+#     print_error "but you should report the problem to your vendor."
+#fi
 ])dnl
 dnl AC_MSG_CHECKING(FEATURE-DESCRIPTION)
 define(AC_FD_MSG,1)dnl
