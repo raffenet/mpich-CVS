@@ -6,6 +6,7 @@ C
       program main
       implicit none
       include 'mpif.h'
+      include 'iodisp.h'
 C tests whether atomicity semantics are satisfied for overlapping accesses
 C in atomic mode. The probability of detecting errors is higher if you run 
 C it on 8 or more processes. 
@@ -75,8 +76,8 @@ C              the rest must also be 0
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 0) then
                      errs = errs + 1
-                     print *, "Process ", mynod, ": readbuf(", i,
-     $                    ") is ", readbuf(i), ", should be 0"
+                     print *, "(contig)Process ", mynod, ": readbuf(", i
+     $                    ,") is ", readbuf(i), ", should be 0"
                      call MPI_Abort(MPI_COMM_WORLD, 1, ierr )
                   endif
                enddo
@@ -85,14 +86,14 @@ C              the rest must also be 10
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 10) then
                      errs = errs + 1
-                     print *, "Process ", mynod, ": readbuf(", i,
-     $                    ") is ", readbuf(i), ", should be 10"  
+                     print *, "(contig)Process ", mynod, ": readbuf(", i
+     $                    ,") is ", readbuf(i), ", should be 10"  
                      call MPI_Abort(MPI_COMM_WORLD, 1, ierr )
                   endif
                enddo
             else 
                errs = errs + 1
-               print *, "Process ", mynod, ": readbuf(1) is ",
+               print *, "(contig)Process ", mynod, ": readbuf(1) is ", 
      $              readbuf(1), ", should be either 0 or 10"
             endif
          endif
@@ -121,8 +122,9 @@ C better to use the default values in practice. */
         do i=1, BUFSIZE
            writebuf(i) = 0
         enddo
-        call MPI_File_set_view(fh, 0, MPI_INTEGER, newtype, "native",
-     $       info, ierr) 
+        disp = 0
+        call MPI_File_set_view(fh, disp, MPI_INTEGER, newtype, "native"
+     $       ,info, ierr) 
         call MPI_File_write(fh, writebuf, BUFSIZE, MPI_INTEGER, status,
      $       ierr ) 
         call MPI_File_close( fh, ierr )
@@ -137,8 +139,9 @@ C better to use the default values in practice. */
       call MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE +
      $     MPI_MODE_RDWR, info, fh, ierr ) 
       call MPI_File_set_atomicity(fh, .true., ierr)
-      call MPI_File_set_view(fh, 0, MPI_INTEGER, newtype, "native", info
-     $     , ierr ) 
+      disp = 0
+      call MPI_File_set_view(fh, disp, MPI_INTEGER, newtype, "native",
+     $     info, ierr ) 
       call MPI_Barrier(MPI_COMM_WORLD, ierr )
     
       if (mynod .eq. 0) then 
@@ -152,8 +155,8 @@ C better to use the default values in practice. */
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 0) then
                      errs = errs + 1
-                     print *, "Process ", mynod, ": readbuf(", i,
-     $                    ") is ", readbuf(i), ", should be 0" 
+                     print *, "(noncontig)Process ", mynod, ": readbuf("
+     $                    , i,") is ", readbuf(i), ", should be 0" 
                      call MPI_Abort(MPI_COMM_WORLD, 1, ierr )
                   endif
                enddo
@@ -161,15 +164,15 @@ C better to use the default values in practice. */
                do i=2, BUFSIZE
                   if (readbuf(i) .ne. 10) then
                      errs = errs + 1
-                     print *, "Process ", mynod, ": readbuf(", i,
-     $                    ") is ", readbuf(i), ", should be 10"
+                     print *, "(noncontig)Process ", mynod, ": readbuf("
+     $                    , i,") is ", readbuf(i), ", should be 10"
                      call MPI_Abort(MPI_COMM_WORLD, 1, ierr )
                   endif
                enddo
             else 
                errs = errs + 1
-               print *, "Process ", mynod, ": readbuf(1) is ",
-     $              readbuf(1), ", should be either 0 or 10" 
+               print *, "(noncontig)Process ", mynod, ": readbuf(1) is "
+     $              ,readbuf(1), ", should be either 0 or 10" 
             endif
          endif
       endif
