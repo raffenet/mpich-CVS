@@ -105,7 +105,7 @@ typedef struct ibu_state_t
 
 #define IBU_ERROR_MSG_LENGTH       255
 #define IBU_PACKET_SIZE            (1024 * 64)
-#define IBU_PACKET_COUNT           64
+#define IBU_PACKET_COUNT           512
 #define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*2)
 #define IBU_MAX_CQ_ENTRIES         255
 #define IBU_MAX_POSTED_SENDS       8192
