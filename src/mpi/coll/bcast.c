@@ -154,7 +154,7 @@ int MPIR_Bcast (
   /* check if multiple threads are calling this collective function */
   MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
-  if ((nbytes < MPIR_BCAST_SHORT_MSG) || (comm_size <= MPIR_BCAST_MIN_PROCS))
+  if ((nbytes < MPIR_BCAST_SHORT_MSG) || (comm_size < MPIR_BCAST_MIN_PROCS))
   {
 
       /* Use short message algorithm, namely, binomial tree */
