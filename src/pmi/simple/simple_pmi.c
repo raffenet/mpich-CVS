@@ -14,12 +14,16 @@
 #include "pmi.h"
 #include "simple_pmiutil.h"
 
+
 char PMIU_print_id[PMIU_IDSIZE];
 
 int PMI_fd;
 int PMI_size;
 int PMI_rank;
 
+/* Set PMI_initialized to 1 for regular initialized and 2 for 
+   the singleton init case (no MPI_Init) */
+#define SINGLETON_INIT 2
 int PMI_initialized;
 
 int PMI_kvsname_max;
@@ -44,9 +48,20 @@ int PMI_Init( int *spawned )
 	PMI_fd = -1;
 
     if ( PMI_fd == -1 ) {
-	MPIU_Error_printf( "warning: process not started with mpiexec\n" );
+	/* Singleton init: Process not started with mpiexec, 
+	   so set size to 1, rank to 0 */
+	PMI_size = 1;
+	PMI_rank = 0;
+	
+	/* MPIU_Error_printf( "warning: process not started with mpiexec\n" );
 	PMI_initialized = 0;
-	return( -1 );
+	return( -1 ); */
+	PMI_initialized = SINGLETON_INIT;
+	PMI_kvsname_max = 256;
+	PMI_keylen_max  = 256;
+	PMI_vallen_max  = 256;
+	
+	return( 0 );
     }
 
     if ( ( p = getenv( "PMI_SIZE" ) ) )
@@ -78,7 +93,11 @@ int PMI_Init( int *spawned )
 
 int PMI_Initialized( void )
 {
-    return( PMI_initialized );
+    /* Turn this into a logical value (1 or 0) .  This allows us
+       to use PMI_initialized to distinguish between initialized with
+       an PMI service (e.g., via mpiexec) and the singleton init, 
+       which has no PMI service */
+    return( PMI_initialized != 0 );
 }
 
 int PMI_Get_size( int *size )
@@ -103,7 +122,8 @@ int PMI_Barrier( )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-    if ( PMI_initialized ) {
+    if ( PMI_initialized == 1) {
+	/* Ignore if SINGLETON_INIT */
 	PMIU_writeline( PMI_fd, "cmd=barrier_in\n" );
 	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
 	PMIU_parse_keyvals( buf );
@@ -122,7 +142,9 @@ int PMI_Barrier( )
 /* Inform the process manager that we're in finalize */
 int PMI_Finalize( )
 {
-    PMIU_writeline( PMI_fd, "cmd=finalize\n" );
+    /* Ignore SINGLETON_INIT */
+    if (PMI_initialized == 1)
+	PMIU_writeline( PMI_fd, "cmd=finalize\n" );
     return( 0 );
 }
 
@@ -132,6 +154,11 @@ int PMI_KVS_Get_my_name( char *kvsname )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
+    if (PMI_initialized == SINGLETON_INIT) {
+	/* Return a dummy name */
+	MPIU_Strncpy( kvsname, "mykvs", PMIU_MAXLINE );
+	return 0;
+    }
     PMIU_writeline( PMI_fd, "cmd=get_my_kvsname\n" );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
@@ -165,6 +192,11 @@ int PMI_KVS_Create( char *kvsname )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     
+    if (PMI_initialized == SINGLETON_INIT) {
+	/* It is ok to pretend to *create* a kvs space */
+	return 0;
+    }
+
     PMIU_writeline( PMI_fd, "cmd=create_kvs\n" );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
@@ -183,6 +215,10 @@ int PMI_KVS_Destroy( const char *kvsname )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int rc;
+
+    if (PMI_initialized == SINGLETON_INIT) {
+	return 0;
+    }
 
     snprintf( buf, PMIU_MAXLINE, "cmd=destroy_kvs kvsname=%s\n", kvsname );
     PMIU_writeline( PMI_fd, buf );
@@ -212,6 +248,10 @@ int PMI_KVS_Put( const char *kvsname, const char *key, const char *value )
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], message[PMIU_MAXLINE];
     int  rc;
 
+    if (PMI_initialized == SINGLETON_INIT) {
+	/* Ignore the put */
+	return 0;
+    }
     snprintf( buf, PMIU_MAXLINE, "cmd=put kvsname=%s key=%s value=%s\n",
 	      kvsname, key, value);
     PMIU_writeline( PMI_fd, buf );
