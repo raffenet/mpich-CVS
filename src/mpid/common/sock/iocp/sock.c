@@ -2090,6 +2090,7 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
 		total = 0;
 	    else
 	    {
+		MPIU_DBG_PRINTF(("single send failed: error %d\n", mpi_errno));
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %d", mpi_errno);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
 		return mpi_errno;
@@ -2112,6 +2113,7 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
 		num_sent = 0;
 	    else
 	    {
+		MPIU_DBG_PRINTF(("stream send failed: %d\n", mpi_errno));
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %d", mpi_errno);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
 		return mpi_errno;
@@ -2156,6 +2158,7 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 	    mpi_errno = MPIDU_Sock_write(sock, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN, &num_sent);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		MPIU_DBG_PRINTF(("sock_write failed.\n"));
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %d", mpi_errno);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
 		return mpi_errno;
@@ -2178,6 +2181,7 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 	    mpi_errno = WSAGetLastError();
 	    if (mpi_errno != WSAEWOULDBLOCK)
 	    {
+		MPIU_DBG_PRINTF(("WSASend failed: error %d\n", mpi_errno));
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %d", mpi_errno);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
 		return mpi_errno;
