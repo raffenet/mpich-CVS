@@ -69,7 +69,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
     pg->size = pg_size;
-    pg->rank = pg_rank;
+    /*pg->rank = pg_rank;*/
     mpi_errno = PMI_KVS_Get_name_length_max(&name_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
