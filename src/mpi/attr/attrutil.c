@@ -161,6 +161,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 	    break;
 #ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX: 
+	    /* FIXME:!!!!! No attribute copy for C++ */
 	    break;
 #endif
 #ifdef HAVE_FORTRAN_BINDING
