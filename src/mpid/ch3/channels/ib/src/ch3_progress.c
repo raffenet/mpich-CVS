@@ -29,6 +29,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
     ibu_wait_t out;
     unsigned register count;
     unsigned completions = MPIDI_CH3I_progress_completions;
+    int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
@@ -46,6 +47,13 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	switch (out.op_type)
 	{
 	case IBU_OP_TIMEOUT:
+	    for (i=0; i<MPIDI_CH3I_Process.pg->size; i++)
+	    {
+		if (i != MPIR_Process.comm_world->rank)
+		{
+		    handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
+		}
+	    }
 	    break;
 	case IBU_OP_READ:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read", out.num_bytes));
