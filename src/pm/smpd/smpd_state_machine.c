@@ -124,6 +124,12 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_READING_SMPD_PASSWORD";
     case SMPD_WRITING_CRED_REQUEST:
 	return "SMPD_WRITING_CRED_REQUEST";
+    case SMPD_READING_CRED_ACK:
+	return "SMPD_READING_CRED_ACK";
+    case SMPD_WRITING_CRED_ACK_YES:
+	return "SMPD_WRITING_CRED_ACK_YES";
+    case SMPD_WRITING_CRED_ACK_NO:
+	return "SMPD_WRITING_CRED_ACK_NO";
     case SMPD_READING_ACCOUNT:
 	return "SMPD_READING_ACCOUNT";
     case SMPD_READING_PASSWORD:
@@ -630,6 +636,7 @@ int smpd_state_smpd_writing_data_to_stdin(smpd_context_t *context, sock_event_t 
     }
 
     smpd_exit_fn("smpd_state_smpd_writing_data_to_stdin");
+    return SMPD_SUCCESS;
 }
 
 int smpd_state_reading_stdouterr(smpd_context_t *context, sock_event_t *event_ptr)
@@ -1582,11 +1589,11 @@ int smpd_state_writing_cred_request(smpd_context_t *context, sock_event_t *event
     }
     smpd_dbg_printf("wrote cred request: '%s'\n", context->cred_request);
     context->write_state = SMPD_IDLE;
-    context->read_state = SMPD_READING_ACCOUNT;
-    result = sock_post_read(context->sock, context->account, SMPD_MAX_ACCOUNT_LENGTH, NULL);
+    context->read_state = SMPD_READING_CRED_ACK;
+    result = sock_post_read(context->sock, context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to post a read of the account credential,\nsock error: %s\n",
+	smpd_err_printf("unable to post a read of the cred ack,\nsock error: %s\n",
 	    get_sock_error_string(result));
 	context->state = SMPD_CLOSING;
 	result = sock_post_close(context->sock);
@@ -1595,6 +1602,99 @@ int smpd_state_writing_cred_request(smpd_context_t *context, sock_event_t *event
     }
     smpd_exit_fn("smpd_state_writing_cred_request");
     return SMPD_SUCCESS;
+}
+
+int smpd_state_reading_cred_ack(smpd_context_t *context, sock_event_t *event_ptr)
+{
+    int result;
+
+    smpd_enter_fn("smpd_state_reading_cred_ack");
+    if (event_ptr->error != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to read the cred ack, %s.\n", get_sock_error_string(event_ptr->error));
+	context->state = SMPD_CLOSING;
+	result = sock_post_close(context->sock);
+	smpd_exit_fn("smpd_state_reading_cred_ack");
+	return result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+    }
+    smpd_dbg_printf("read cred ack: '%s'\n", context->cred_request);
+    context->write_state = SMPD_IDLE;
+    if (strcmp(context->cred_request, "yes") == 0)
+    {
+	context->read_state = SMPD_READING_ACCOUNT;
+	result = sock_post_read(context->sock, context->account, SMPD_MAX_ACCOUNT_LENGTH, NULL);
+	if (result != SOCK_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a read of the account credential,\nsock error: %s\n",
+		get_sock_error_string(result));
+	    context->state = SMPD_CLOSING;
+	    result = sock_post_close(context->sock);
+	    smpd_exit_fn("smpd_state_writing_cred_request");
+	    return result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+	}
+	smpd_exit_fn("smpd_state_writing_cred_request");
+	return SMPD_SUCCESS;
+    }
+    context->state = SMPD_CLOSING;
+    result = sock_post_close(context->sock);
+    smpd_exit_fn("smpd_state_writing_cred_request");
+    return result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+}
+
+int smpd_state_writing_cred_ack_yes(smpd_context_t *context, sock_event_t *event_ptr)
+{
+    int result;
+
+    smpd_enter_fn("smpd_state_writing_cred_request");
+    if (event_ptr->error != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to write the cred request yes ack, %s.\n", get_sock_error_string(event_ptr->error));
+	context->state = SMPD_CLOSING;
+	result = sock_post_close(context->sock);
+	smpd_exit_fn("smpd_state_writing_cred_ack_yes");
+	return result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+    }
+
+    smpd_dbg_printf("wrote cred request yes ack.\n");
+
+    context->read_state = SMPD_IDLE;
+    context->write_state = SMPD_WRITING_ACCOUNT;
+    result = sock_post_write(context->sock, context->account, SMPD_MAX_ACCOUNT_LENGTH, NULL);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the account '%s',\nsock error: %s\n",
+	    context->account, get_sock_error_string(result));
+	smpd_exit_fn("smpd_state_writing_cred_ack_yes");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("smpd_state_writing_cred_ack_yes");
+    return SMPD_SUCCESS;
+}
+
+int smpd_state_writing_cred_ack_no(smpd_context_t *context, sock_event_t *event_ptr)
+{
+    int result;
+
+    smpd_enter_fn("smpd_state_writing_cred_ack_no");
+    if (event_ptr->error != SOCK_SUCCESS)
+    {
+	smpd_err_printf("unable to write the cred request no ack, %s.\n", get_sock_error_string(event_ptr->error));
+	context->state = SMPD_CLOSING;
+	result = sock_post_close(context->sock);
+	smpd_exit_fn("smpd_state_writing_cred_ack_no");
+	return result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+    }
+
+    smpd_dbg_printf("wrote cred request yes ack.\n");
+
+    /* insert code here to handle failed connection attempt */
+
+    context->read_state = SMPD_IDLE;
+    context->write_state = SMPD_IDLE;
+    context->state = SMPD_CLOSING;
+    result = sock_post_close(context->sock);
+    smpd_exit_fn("smpd_state_writing_cred_ack_no");
+    return result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 }
 
 int smpd_state_reading_account(smpd_context_t *context, sock_event_t *event_ptr)
@@ -1900,19 +2000,24 @@ int smpd_state_reading_cred_request(smpd_context_t *context, sock_event_t *event
 	    /* FIXME */
 	    /* This should probably post a close of the sock and continue to SMPD_EXIT? */
 	    /* For now, just bail out. */
+	    strcpy(context->cred_request, "no");
+	    context->write_state = SMPD_WRITING_CRED_ACK_NO;
+	    context->read_state = SMPD_IDLE;
+	    result = sock_post_write(context->sock, context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
 	    smpd_exit_fn("smpd_state_reading_cred_request");
-	    return SMPD_FAIL;
+	    return result == SOCK_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 	}
-	context->write_state = SMPD_WRITING_ACCOUNT;
-	result = sock_post_write(context->sock, context->account, SMPD_MAX_ACCOUNT_LENGTH, NULL);
+	strcpy(context->cred_request, "yes");
+	context->write_state = SMPD_WRITING_CRED_ACK_YES;
+	context->read_state = SMPD_IDLE;
+	result = sock_post_write(context->sock, context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("unable to post a write of the account '%s',\nsock error: %s\n",
-		context->account, get_sock_error_string(result));
+	    smpd_err_printf("unable to post a write of the cred request yes ack.\nsock error: %s\n",
+		get_sock_error_string(result));
 	    smpd_exit_fn("smpd_state_reading_cred_request");
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_state_reading_cred_request");
 	return SMPD_SUCCESS;
     }
     context->read_state = SMPD_READING_RECONNECT_REQUEST;
@@ -2797,6 +2902,9 @@ int smpd_handle_op_read(smpd_context_t *context, sock_event_t *event_ptr)
     case SMPD_READING_SMPD_PASSWORD:
 	result = smpd_state_reading_smpd_password(context, event_ptr);
 	break;
+    case SMPD_READING_CRED_ACK:
+	result = smpd_state_reading_cred_ack(context, event_ptr);
+	break;
     case SMPD_READING_ACCOUNT:
 	result = smpd_state_reading_account(context, event_ptr);
 	break;
@@ -2861,6 +2969,12 @@ int smpd_handle_op_write(smpd_context_t *context, sock_event_t *event_ptr, sock_
 	break;
     case SMPD_WRITING_NO_CRED_REQUEST:
 	result = smpd_state_writing_no_cred_request(context, event_ptr);
+	break;
+    case SMPD_WRITING_CRED_ACK_YES:
+	result = smpd_state_writing_cred_ack_yes(context, event_ptr);
+	break;
+    case SMPD_WRITING_CRED_ACK_NO:
+	result = smpd_state_writing_cred_ack_no(context, event_ptr);
 	break;
     case SMPD_WRITING_RECONNECT_REQUEST:
 	result = smpd_state_writing_reconnect_request(context, event_ptr);
