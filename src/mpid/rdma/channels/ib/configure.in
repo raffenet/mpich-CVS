@@ -9,9 +9,12 @@ AC_CONFIG_AUX_DIR(../../../../../confdb)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
-AC_CONFIG_HEADER(include/mpidi_ch3i_gasnet_conf.h)
+AC_CONFIG_HEADER(include/mpidi_ch3i_ib_conf.h)
 
 echo "RUNNING CONFIGURE FOR THE INFINIBAND CHANNEL"
+
+save_libs=$LIBS
+LIBS=
 
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
@@ -20,45 +23,54 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
+file=${master_top_srcdir}/src/mpid/${device_name}/channels/ib/setup_channel.args
+if test -f ${file} ; then
+    . ${file}
+else
+    echo "Error: ${file} not found"
+    exit 1
+fi
+
+if test "$ibu_name" = ibal ; then
+    AC_DEFINE(USE_IB_IBAL,,[Define to use the SourceForge ibal interface])
+    IB_LIBS="$IB_LIBS -lallib -lcomplib -lpthread -ldl"
+    IB_LDFLAGS="$IB_LDFLAGS -L/usr/sf-iba/iba/linuxuser/bin/x86/2.4.18-19.7.x/lib/free"
+fi
+if test "$ibu_name" = vapi ; then
+    AC_DEFINE(USE_IB_VAPI,,[Define to use the Mellanox vapi interface])
+    IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
+    IB_LDFLAGS="$IB_LDFLAGS -L/usr/mellanox/lib"
+fi
+
 PAC_PROG_MAKE
 
-dnl AC_CHECK_HEADER(net/if.h) fails on Solaris; extra header files needed
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <net/if.h>
-],,lac_cv_header_net_if_h=yes,lac_cv_header_net_if_h=no)
-
-echo "checking for net/if.h... $lac_cv_header_net_if_h"
-
-if test "$lac_cv_header_net_if_h" = "yes" ; then
-    AC_DEFINE(HAVE_NET_IF_H, 1, [Define if you have the <net/if.h> header file.])
-fi
+AC_DEFINE(MPID_IBU_TYPE_UNIX,,[Define to use unix iovecs])
 
 AC_CHECK_HEADERS(				\
-	assert.h				\
-	netdb.h					\
-	sys/ioctl.h				\
-	sys/socket.h				\
-	sys/sockio.h				\
-	sys/types.h				\
-	errno.h)
+    assert.h					\
+    errno.h					\
+    fcntl.h					\
+    netdb.h					\
+    netinet/in.h				\
+    netinet/tcp.h				\
+    stdlib.h					\
+    sys/param.h					\
+    sys/poll.h					\
+    sys/socket.h				\
+    sys/types.h					\
+    unistd.h)
 
-# netinet/in.h often requires sys/types.h first.  With AC 2.57, check_headers
-# does the right thing, which is to test whether the header is found 
-# by the compiler, but this can cause problems when the header needs 
-# other headers.  2.57 changes the syntax (!) of check_headers to allow 
-# additional headers.
-AC_CACHE_CHECK([for netinet/in.h],ac_cv_header_netinet_in_h,[
-AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#include <netinet/in.h>],[int a=0;],
-    ac_cv_header_netinet_in_h=yes,
-    ac_cv_header_netinet_in_h=no)])
-if test "$ac_cv_header_netinet_in_h" = yes ; then
-    AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
-fi
+AC_SEARCH_LIBS(socket,socket)
+AC_SEARCH_LIBS(gethostbyname,nsl)
+
+LIBS=$save_libs
+AC_SUBST(IB_LIBS)
+
+dnl CPPFLAGS is set in setup_channel
+dnl IB_CPPFLAGS="$IB_CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
+dnl AC_SUBST(IB_CPPFLAGS)
+
+AC_SUBST(IB_LDFLAGS)
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)

@@ -1,7 +1,5 @@
 #! /bin/sh
-
-# See if there are any definitions from the sock implementation
-if test -s src/mpid/common/sock/localdefs ; then
-    . src/mpid/common/sock/localdefs
-fi
-
+# Add any libraries needed by the INFINIBAND channel
+LIBS="$LIBS @IB_LIBS@"
+#CPPFLAGS="$CPPFLAGS @IB_CPPFLAGS@"
+LDFLAGS="$LDFLAGS @IB_LDFLAGS@"
