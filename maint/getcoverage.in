@@ -60,6 +60,7 @@ for (@ARGV) {
     elsif (/-annoteweb=(.*)/) {
 	# annoteweb gives the URL that matches the annoteSrcDir.
 	$annoteWebPrefix = $1;
+	next;
     }
     elsif (/-index=(.*)/) {
 	$indexfile = $1;
@@ -512,6 +513,8 @@ sub WriteAnnoteFile {
 sub WriteAnnoteFileMap {
     my @names = sort(keys(%AnnoteFilesMap));
     my $indexfile = $_[0];
+    #my $date = `date "+%Y-%m-%d-%H-%M"`;
+    my $date = `date`;
 
     open (IFD, ">$indexfile" ) || die "Could not open $indexfile\n";
 
@@ -587,28 +590,39 @@ sub WriteAnnoteFileMap {
     # Flush the final table
     if ($curprefix ne "--NONE--") {
 	# In case the page is empty
-	for (my $i=$col-1; $i<=$maxcol; $i++) {
-	    print IFD "<TD></TD>";
+	if ($col > 1) {
+	    for (my $i=$col-1; $i<=$maxcol; $i++) {
+		print IFD "<TD></TD>";
+	    }
+	    print IFD "</TR>\n";
 	}
-	print IFD "</TR></TABLE>\n";
+	print IFD "</TABLE>\n";
     }
-	
+
+    print IFD "<P><HR>\nGenerated on $date\n";
     print IFD "</BODY></HTML>\n";
     close IFD;
 }
 
 # -
 # ( $coveredindexfile );
+# This needs to be updated
 sub WriteCoveredFileMap {
     my $filename = $_[0];
 
     open ( IFD, ">$filename" ) || die "Cannot open $filename\n";
 
+    print IFD "<HTML><HEAD>$newline";
+    print IFD "<TITLE>List of fully covered files</TITLE>$newline";
+    print IFD "</HEAD>$newline";
+    print IFD "<BODY BGCOLOR=\"FFFFFF\">$newline";
     @sortedfiles = sort ( @CoveredFiles );
-    for (my $i = 0; $i <= $#sortedfiles; $i ++ ) {
-	my $file = $sortedfiles[$i];
-	print IFD "$file\n";
-    }
+#     for (my $i = 0; $i <= $#sortedfiles; $i ++ ) {
+# 	my $file = $sortedfiles[$i];
+# 	print IFD "$file\n";
+#     }
+    &OutputFileTable( IFD, "sortedfiles" );
+    print IFD "</BODY></HTML>$newline";
     close( IFD );
 }
 
@@ -650,6 +664,86 @@ sub HTMLify {
     return $line;
 }
 
+#
+# Output a table of file names
+# OutputFileTable( FD, array-of-names, targethash )
+sub OutputFileTable {
+    my $IFD = $_[0];
+    my $arrayname = $_[1];
+    my $targethashname = $_[2];
+
+    my $col = 1;
+    my $maxcol = 4;
+    my $curprefix = "--NONE--";
+    for ($i=0; $i<=$#$arrayname; $i++) {
+	my $file = $$arrayname[$i];
+	my $target = "";
+	if ($targethashname ne "") {
+	    $target = $$targethashname{$file};
+	}
+
+	# Clean up filename
+	$file =~ s/^\.\///;
+	if ($file =~ /(.*)\/([^\/]*)/) {
+	    $dirname  = $1;
+	    $basename = $2;
+	}
+	else {
+	    $dirname  = "";
+	    $basename = $file;
+	}
+
+	# Clean up target
+	if ($annoteWebPrefix ne "" && $target ne "") {
+	    $target =~ s/$annoteSrcDir/$annoteWebPrefix/;
+	}
+
+	# Compare dirname to curprefix; start a new table if
+	# necessary
+	if ($dirname ne $curprefix) {
+	    if ($curprefix ne "--NONE--") {
+		for (my $j=$col-1; $j<=$maxcol; $j++) {
+		    print $IFD "<TD></TD>";
+		}
+		print $IFD "</TR></TABLE>\n";
+	    }
+	    $curprefix = $dirname;
+	    print $IFD "<H2>$dirname</H2>\n";
+	    print $IFD "<TABLE WIDTH=100%>\n";
+	    $col = 1;
+	}
+	if ($col == 1) {
+	    print $IFD "<TR WIDTH=100%>\n";
+	}
+	my $label = $basename;
+	my $origFileName = $AnnoteFilesToOrig{$names[$i]};
+	if (defined($AnnoteMissed{$origFileName})) {
+	    my ($missed,$total) = split(/;/,$AnnoteMissed{$origFileName});
+	    $label = "$label ($missed)";
+	}
+	if ($target ne "") {
+	    print $IFD "<TD><A HREF=\"$target\">$label</A></TD>\n";
+	}
+	else {
+	    print $IFD "<TD>$label</TD>\n";
+	}
+	if ($col++ == $maxcol) {
+	    print $IFD "</TR>\n";
+	    $col = 1;
+	}
+    }
+    # Flush the final table
+    if ($curprefix ne "--NONE--") {
+	# In case the page is empty
+	if ($col > 1) {
+	    for (my $i=$col-1; $i<=$maxcol; $i++) {
+		print $IFD "<TD></TD>";
+	    }
+	    print $IFD "</TR>\n";
+	}
+	print $IFD "</TABLE>\n";
+    }
+}
 #
 # To generate a summary
 # cd mpich2/src 
