@@ -51,7 +51,7 @@ typedef struct pmi_process_t
     int init_finalized;
     int smpd_id;
     SOCK_NATIVE_FD smpd_fd;
-    void *smpd_key;
+    int smpd_key;
     smpd_context_t *context;
 } pmi_process_t;
 
@@ -67,7 +67,7 @@ pmi_process_t pmi_process =
     PMI_FINALIZED,      /* init_finalized */
     -1,                 /* smpd_id        */
     0,                  /* smpd_fd        */
-    NULL,               /* smpd_key       */
+    0,                  /* smpd_key       */
     NULL                /* context        */
 };
 
@@ -86,6 +86,94 @@ static int pmi_err_printf(char *str, ...)
     return n;
 }
 
+static int pmi_create_post_command(const char *command, const char *name, const char *key, const char *value)
+{
+    int result;
+    smpd_command_t *cmd_ptr;
+    int dest = 1;
+
+    if (strcmp(command, "done") == 0)
+    {
+	/* done commands go to the immediate smpd, not the root */
+	dest = pmi_process.smpd_id;
+    }
+
+    result = smpd_create_command((char*)command, pmi_process.smpd_id, dest, SMPD_TRUE, &cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to create a %s command.\n", command);
+	return PMI_FAIL;
+    }
+    result = smpd_add_command_int_arg(cmd_ptr, "ctx_key", pmi_process.smpd_key);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to add the key to the %s command.\n", command);
+	return PMI_FAIL;
+    }
+
+    if (name != NULL)
+    {
+	result = smpd_add_command_arg(cmd_ptr, "name", (char*)name);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to add the kvs name('%s') to the %s command.\n", name, command);
+	    return PMI_FAIL;
+	}
+    }
+
+    if (key != NULL)
+    {
+	result = smpd_add_command_arg(cmd_ptr, "key", (char*)key);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to add the key('%s') to the %s command.\n", key, command);
+	    return PMI_FAIL;
+	}
+    }
+
+    if (value != NULL)
+    {
+	result = smpd_add_command_arg(cmd_ptr, "value", (char*)value);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to add the value('%s') to the %s command.\n", value, command);
+	    return PMI_FAIL;
+	}
+    }
+
+    /* post the write of the command */
+    /*
+    printf("posting write of dbs command to %s context, sock %d: '%s'\n",
+	smpd_get_context_str(pmi_process.context), sock_getid(pmi_process.context->sock), cmd_ptr->cmd);
+    fflush(stdout);
+    */
+    result = smpd_post_write_command(pmi_process.context, cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to post a write of the %s command.\n", command);
+	return PMI_FAIL;
+    }
+    if (strcmp(command, "done"))
+    {
+	/* and post a read for the result if it is not a done command */
+	result = smpd_post_read_command(pmi_process.context);
+	if (result != SMPD_SUCCESS)
+	{
+	    pmi_err_printf("unable to post a read of the next command on the pmi context.\n");
+	    return PMI_FAIL;
+	}
+    }
+
+    /* let the state machine send the command and receive the result */
+    result = smpd_enter_at_state(pmi_process.set, SMPD_WRITING_CMD);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("the state machine logic failed to get the result of the %s command.\n", command);
+	return PMI_FAIL;
+    }
+    return PMI_SUCCESS;
+}
+
 int PMI_Init(int *spawned)
 {
     char *p;
@@ -96,6 +184,21 @@ int PMI_Init(int *spawned)
 	return PMI_SUCCESS;
 
     /* initialize to defaults */
+
+    result = sock_init();
+    if (result != SOCK_SUCCESS)
+    {
+	pmi_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	return PMI_FAIL;
+    }
+
+    result = smpd_init_process();
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("unable to initialize the smpd global process structure.\n");
+	return PMI_FAIL;
+    }
+
     pmi_process.iproc = 0;
     pmi_process.nproc = 1;
 
@@ -150,24 +253,31 @@ int PMI_Init(int *spawned)
     if (p != NULL)
     {
 	pmi_process.smpd_id = atoi(p);
+	smpd_process.id = pmi_process.smpd_id;
     }
 
     p = getenv("PMI_SMPD_KEY");
     if (p != NULL)
     {
-	pmi_process.smpd_key = (void*)atol(p);
+	pmi_process.smpd_key = atoi(p);
     }
 
     p = getenv("PMI_SMPD_FD");
     if (p != NULL)
     {
-	result = sock_init();
+	result = sock_create_set(&pmi_process.set);
 	if (result != SOCK_SUCCESS)
 	{
-	    pmi_err_printf("sock_init failed, sock error:\n%s\n", get_sock_error_string(result));
+	    pmi_err_printf("PMI_Init failed: unable to create a sock set, error:\n%s\n",
+		get_sock_error_string(result));
 	    return PMI_FAIL;
 	}
-	pmi_process.smpd_fd = (SOCK_NATIVE_FD)atol(p);
+
+#ifdef HAVE_WINDOWS_H
+	pmi_process.smpd_fd = smpd_decode_handle(p);
+#else
+	pmi_process.smpd_fd = (SOCK_NATIVE_FD)atoi(p);
+#endif
 	result = sock_native_to_sock(pmi_process.set, pmi_process.smpd_fd, NULL, &pmi_process.sock);
 	if (result != SOCK_SUCCESS)
 	{
@@ -182,6 +292,13 @@ int PMI_Init(int *spawned)
 	}
     }
 
+    /*
+    printf("PMI_RANK=%s PMI_SIZE=%s PMI_KVS=%s PMI_SMPD_ID=%s PMI_SMPD_FD=%s PMI_SMPD_KEY=%s\n",
+	getenv("PMI_RANK"), getenv("PMI_SIZE"), getenv("PMI_KVS"), getenv("PMI_SMPD_ID"),
+	getenv("PMI_SMPD_FD"), getenv("PMI_SMPD_KEY"));
+    fflush(stdout);
+    */
+
     pmi_process.init_finalized = PMI_INITIALIZED;
 
     return PMI_SUCCESS;
@@ -193,6 +310,21 @@ int PMI_Finalize()
 
     if (pmi_process.init_finalized == PMI_FINALIZED)
 	return PMI_SUCCESS;
+
+    /*
+    printf("PMI_Finalize called.\n");
+    fflush(stdout);
+    */
+
+    PMI_Barrier();
+
+    /* post the done command and wait for the result */
+    result = pmi_create_post_command("done", NULL, NULL, NULL);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("failed.\n");
+	return PMI_FAIL;
+    }
 
     if (pmi_process.sock != SOCK_INVALID_SOCK)
     {
@@ -230,29 +362,40 @@ int PMI_Get_rank(int *rank)
 
 int PMI_Barrier()
 {
-    char pszStr[256];
+    int result;
+    char count_str[20];
+    char str[1024];
     
     if (pmi_process.init_finalized == PMI_FINALIZED)
 	return PMI_FAIL;
 
-    /*
-    snprintf(pszStr, 256, "barrier name=%s count=%d", pmi_process.kvs_name, pmi_process.nproc);
-    if (WriteString(g_bfdMPD, pszStr) == SOCKET_ERROR)
-    {
-	pmi_err_printf("PMI_Barrier: WriteString('%s') failed, error %d\n", pszStr, WSAGetLastError());
-	return PMI_FAIL;
-    }
-    if (!ReadString(g_bfdMPD, pszStr))
-    {
-	pmi_err_printf("PMI_Barrier: ReadString failed, error %d\n", WSAGetLastError());
-	return PMI_FAIL;
-    }
-    if (strncmp(pszStr, "SUCCESS", 8) == 0)
+    if (pmi_process.nproc == 1)
 	return PMI_SUCCESS;
-    */
 
-    pmi_err_printf("PMI_Barrier returned: '%s'\n", pszStr);
-    return PMI_FAIL;
+    /* encode the size of the barrier */
+    snprintf(count_str, 20, "%d", pmi_process.nproc);
+
+    /* post the command and wait for the result */
+    result = pmi_create_post_command("barrier", pmi_process.kvs_name, NULL, count_str);
+    if (result != PMI_SUCCESS)
+    {
+	pmi_err_printf("PMI_Barrier failed.\n");
+	return PMI_FAIL;
+    }
+
+    /* interpret the result */
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
+    {
+	pmi_err_printf("PMI_Barrier failed: no result string in the result command.\n");
+	return PMI_FAIL;
+    }
+    if (strcmp(str, DBS_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_Barrier failed: '%s'\n", str);
+	return PMI_FAIL;
+    }
+
+    return PMI_SUCCESS;
 }
 
 int PMI_KVS_Get_my_name(char *kvsname)
@@ -261,6 +404,10 @@ int PMI_KVS_Get_my_name(char *kvsname)
 	return PMI_FAIL;
 
     strcpy(kvsname, pmi_process.kvs_name);
+
+    /*
+    printf("my kvs name is %s\n", kvsname);fflush(stdout);
+    */
 
     return PMI_SUCCESS;
 }
@@ -283,69 +430,35 @@ int PMI_KVS_Get_value_length_max()
 int PMI_KVS_Create(char * kvsname)
 {
     int result;
-    smpd_command_t *cmd_ptr;
     char str[1024];
 
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
 
-    /* This isn't going to work because the command id created here will conflict with
-       command ids created by the smpd process? */
-
-    /* create a command to send to the root smpd manager */
-    result = smpd_create_command("dbcreate", pmi_process.smpd_id, 0, SMPD_TRUE, &cmd_ptr);
-    if (result != SMPD_SUCCESS)
+    result = pmi_create_post_command("dbcreate", NULL, NULL, NULL);
+    if (result != PMI_SUCCESS)
     {
-	pmi_err_printf("unable to create a dbcreate command.\n");
-	return PMI_FAIL;
-    }
-    result = smpd_add_command_int_arg(cmd_ptr, "ctx_key", (int)pmi_process.smpd_key);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to add the key to the dbcreate command.\n");
-	return PMI_FAIL;
-    }
-    result = smpd_post_write_command(pmi_process.context, cmd_ptr);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to post a write of the dbcreate command.\n");
-	return PMI_FAIL;
-    }
-    result = smpd_post_read_command(pmi_process.context);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to post a read of the next command on the pmi context.\n");
-	return PMI_FAIL;
-    }
-
-    /* let the state machine send the command and receive the result */
-    result = smpd_enter_at_state(pmi_process.set, SMPD_WRITING_CMD);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("the state machine logic failed to get the result of the dbcreate command.\n");
+	pmi_err_printf("PMI_KVS_Create failed: unable to create a pmi kvs space.\n");
 	return PMI_FAIL;
     }
 
     /* parse the result of the command */
     if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
     {
-	pmi_err_printf("no result string in the result command.\n");
+	pmi_err_printf("PMI_KVS_Create failed: no result string in the result command.\n");
 	return PMI_FAIL;
     }
-    if (strcmp(str, DBS_SUCCESS_STR) == 0)
+    if (strcmp(str, DBS_SUCCESS_STR))
     {
-	if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "kvs_name", str, 1024))
-	{
-	    pmi_err_printf("no kvs_name in the dbcreate result command.\n");
-	    return PMI_FAIL;
-	}
-	strncpy(kvsname, str, PMI_MAX_KVS_NAME_LENGTH);
-    }
-    else
-    {
-	pmi_err_printf("dbcreate failed: %s\n", str);
+	pmi_err_printf("PMI_KVS_Create failed: %s\n", str);
 	return PMI_FAIL;
     }
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "name", str, 1024))
+    {
+	pmi_err_printf("PMI_KVS_Create failed: no kvs name in the dbcreate result command.\n");
+	return PMI_FAIL;
+    }
+    strncpy(kvsname, str, PMI_MAX_KVS_NAME_LENGTH);
 
     return PMI_SUCCESS;
 }
@@ -353,61 +466,27 @@ int PMI_KVS_Create(char * kvsname)
 int PMI_KVS_Destroy(const char * kvsname)
 {
     int result;
-    smpd_command_t *cmd_ptr;
     char str[1024];
 
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
 
-    /* create a command to send to the root smpd manager */
-    result = smpd_create_command("dbdestroy", pmi_process.smpd_id, 0, SMPD_TRUE, &cmd_ptr);
-    if (result != SMPD_SUCCESS)
+    result = pmi_create_post_command("dbdestroy", kvsname, NULL, NULL);
+    if (result != PMI_SUCCESS)
     {
-	pmi_err_printf("unable to create a dbdestroy command.\n");
-	return PMI_FAIL;
-    }
-    result = smpd_add_command_int_arg(cmd_ptr, "ctx_key", (int)pmi_process.smpd_key);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to add the key to the dbdestroy command.\n");
-	return PMI_FAIL;
-    }
-    result = smpd_add_command_arg(cmd_ptr, "kvs_name", (char*)kvsname);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to add the kvsname to the dbdestroy command.\n");
-	return PMI_FAIL;
-    }
-    result = smpd_post_write_command(pmi_process.context, cmd_ptr);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to post a write of the dbdestroy command.\n");
-	return PMI_FAIL;
-    }
-    result = smpd_post_read_command(pmi_process.context);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("unable to post a read of the next command on the pmi context.\n");
-	return PMI_FAIL;
-    }
-
-    /* let the state machine send the command and receive the result */
-    result = smpd_enter_at_state(pmi_process.set, SMPD_WRITING_CMD);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("the state machine logic failed to get the result of the dbdestroy command.\n");
+	pmi_err_printf("PMI_KVS_Destroy failed: unable to destroy the pmi kvs space named '%s'.\n", kvsname);
 	return PMI_FAIL;
     }
 
     /* parse the result of the command */
     if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
     {
-	pmi_err_printf("no result string in the result command.\n");
+	pmi_err_printf("PMI_KVS_Destroy failed: no result string in the result command.\n");
 	return PMI_FAIL;
     }
     if (strcmp(str, DBS_SUCCESS_STR))
     {
-	pmi_err_printf("dbdestroy failed: %s\n", str);
+	pmi_err_printf("PMI_KVS_Destroy failed: %s\n", str);
 	return PMI_FAIL;
     }
 
@@ -416,26 +495,35 @@ int PMI_KVS_Destroy(const char * kvsname)
 
 int PMI_KVS_Put(const char *kvsname, const char *key, const char *value)
 {
-    char str[SMPD_MAX_CMD_LENGTH];
+    int result;
+    char str[1024];
+
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
 	return PMI_FAIL;
 
     /*
-    snprintf(str, SMPD_MAX_CMD_LENGTH, "dbput name=%s key='%s' value='%s'", kvsname, key, value);
-    if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
+    printf("putting <%s:%s:%s>\n", kvsname, key, value);
+    fflush(stdout);
+    */
+
+    result = pmi_create_post_command("dbput", kvsname, key, value);
+    if (result != PMI_SUCCESS)
     {
-	pmi_err_printf("PMI_KVS_Put: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Put failed: unable to put '%s:%s:%s'\n", kvsname, key, value);
 	return PMI_FAIL;
     }
 
-    if (!ReadString(g_bfdMPD, str))
+    /* parse the result of the command */
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
     {
-	pmi_err_printf("PMI_KVS_Put('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Put failed: no result string in the result command.\n");
 	return PMI_FAIL;
     }
-    if (stricmp(str, DBS_SUCCESS_STR) == 0)
-	return PMI_SUCCESS;
-    */
+    if (strcmp(str, DBS_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_KVS_Put failed: %s\n", str);
+	return PMI_FAIL;
+    }
 
     return PMI_SUCCESS;
 }
@@ -445,109 +533,138 @@ int PMI_KVS_Commit(const char *kvsname)
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL)
 	return PMI_FAIL;
 
+    /* Make the puts return when the commands are written but not acknowledged.
+       Then have this function wait until all outstanding puts are acknowledged.
+       */
+
     return PMI_SUCCESS;
 }
 
 int PMI_KVS_Get(const char *kvsname, const char *key, char *value)
 {
-    char str[SMPD_MAX_CMD_LENGTH];
+    int result;
+    char str[1024];
+
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
 	return PMI_FAIL;
 
-    /*
-    snprintf(str, SMPD_MAX_CMD_LENGTH, "dbget name=%s key='%s'", kvsname, key);
-    if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
+    result = pmi_create_post_command("dbget", kvsname, key, NULL);
+    if (result != PMI_SUCCESS)
     {
-	pmi_err_printf("PMI_KVS_Get: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Get failed: unable to get '%s:%s'\n", kvsname, key);
 	return PMI_FAIL;
     }
 
-    if (!ReadString(g_bfdMPD, value))
+    /* parse the result of the command */
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
     {
-	pmi_err_printf("PMI_KVS_Get('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Get failed: no result string in the result command.\n");
 	return PMI_FAIL;
     }
-    if (strncmp(value, DBS_FAIL_STR, strlen(DBS_FAIL_STR)+1) == 0)
+    if (strcmp(str, DBS_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_KVS_Get failed: %s\n", str);
 	return PMI_FAIL;
-    */
+    }
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN))
+    {
+	pmi_err_printf("PMI_KVS_Get failed: no value in the result command for the get: '%s'\n", pmi_process.context->read_cmd.cmd);
+	return PMI_FAIL;
+    }
 
     return PMI_SUCCESS;
 }
 
 int PMI_KVS_Iter_first(const char *kvsname, char *key, char *value)
 {
-    char str[SMPD_MAX_CMD_LENGTH];
-    char *token;
+    int result;
+    char str[1024];
 
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
 	return PMI_FAIL;
 
-    /*
-    snprintf(str, SMPD_MAX_CMD_LENGTH, "dbfirst %s", kvsname);
-    if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
+    result = pmi_create_post_command("dbfirst", kvsname, NULL, NULL);
+    if (result != PMI_SUCCESS)
     {
-	pmi_err_printf("PMI_KVS_Iter_first: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_first failed: unable to get the first key/value pair from '%s'\n", kvsname);
 	return PMI_FAIL;
     }
 
-    if (!ReadString(g_bfdMPD, str))
+    /* parse the result of the command */
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
     {
-	pmi_err_printf("PMI_KVS_Iter_first('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_first failed: no result string in the result command.\n");
 	return PMI_FAIL;
     }
-    if (strncmp(str, DBS_FAIL_STR, strlen(DBS_FAIL_STR)+1) == 0)
+    if (strcmp(str, DBS_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_KVS_Iter_first failed: %s\n", str);
 	return PMI_FAIL;
-    
-    *key = '\0';
-    *value = '\0';
-    if (strncmp(str, DBS_END_STR, strlen(DBS_END_STR)+1) == 0)
+    }
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "key", str, PMI_MAX_KEY_LEN))
+    {
+	pmi_err_printf("PMI_KVS_Iter_first failed: no key in the result command for the pmi iter_first: '%s'\n", pmi_process.context->read_cmd.cmd);
+	return PMI_FAIL;
+    }
+    if (strcmp(str, DBS_END_STR) == 0)
+    {
+	*key = '\0';
+	*value = '\0';
 	return PMI_SUCCESS;
-    token = strtok(str, "=");
-    if (token == NULL)
-	return PMI_FAIL;
-
+    }
     strcpy(key, str);
-    strcpy(value, token);
-    */
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN))
+    {
+	pmi_err_printf("PMI_KVS_Iter_first failed: no value in the result command for the pmi iter_first: '%s'\n", pmi_process.context->read_cmd.cmd);
+	return PMI_FAIL;
+    }
 
     return PMI_SUCCESS;
 }
 
 int PMI_KVS_Iter_next(const char *kvsname, char *key, char *value)
 {
-    char str[SMPD_MAX_CMD_LENGTH];
-    char *token;
+    int result;
+    char str[1024];
 
     if (pmi_process.init_finalized == PMI_FINALIZED || kvsname == NULL || key == NULL || value == NULL)
 	return PMI_FAIL;
 
-    /*
-    snprintf(str, SMPD_MAX_CMD_LENGTH, "dbnext %s", kvsname);
-    if (WriteString(g_bfdMPD, str) == SOCKET_ERROR)
+    result = pmi_create_post_command("dbnext", kvsname, NULL, NULL);
+    if (result != PMI_SUCCESS)
     {
-	pmi_err_printf("PMI_KVS_Iter_next: WriteString('%s') failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_next failed: unable to get the next key/value pair from '%s'\n", kvsname);
 	return PMI_FAIL;
     }
 
-    if (!ReadString(g_bfdMPD, str))
+    /* parse the result of the command */
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "result", str, 1024))
     {
-	pmi_err_printf("PMI_KVS_Iter_next('%s'): ReadString failed, error %d\n", str, WSAGetLastError());
+	pmi_err_printf("PMI_KVS_Iter_next failed: no result string in the result command.\n");
 	return PMI_FAIL;
     }
-    if (strncmp(str, DBS_FAIL_STR, strlen(DBS_FAIL_STR)+1) == 0)
+    if (strcmp(str, DBS_SUCCESS_STR))
+    {
+	pmi_err_printf("PMI_KVS_Iter_next failed: %s\n", str);
 	return PMI_FAIL;
-    
-    *key = '\0';
-    *value = '\0';
-    if (strncmp(str, DBS_END_STR, strlen(DBS_END_STR)+1) == 0)
+    }
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "key", str, PMI_MAX_KEY_LEN))
+    {
+	pmi_err_printf("PMI_KVS_Iter_next failed: no key in the result command for the pmi iter_next: '%s'\n", pmi_process.context->read_cmd.cmd);
+	return PMI_FAIL;
+    }
+    if (strcmp(str, DBS_END_STR) == 0)
+    {
+	*key = '\0';
+	*value = '\0';
 	return PMI_SUCCESS;
-    token = strtok(str, "=");
-    if (token == NULL)
-	return PMI_FAIL;
-
+    }
     strcpy(key, str);
-    strcpy(value, token);
-    */
+    if (!smpd_get_string_arg(pmi_process.context->read_cmd.cmd, "value", value, PMI_MAX_VALUE_LEN))
+    {
+	pmi_err_printf("PMI_KVS_Iter_next failed: no value in the result command for the pmi iter_next: '%s'\n", pmi_process.context->read_cmd.cmd);
+	return PMI_FAIL;
+    }
 
     return PMI_SUCCESS;
 }
