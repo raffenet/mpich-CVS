@@ -155,7 +155,7 @@ typedef enum {
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
 #define MPID_Valid_ptr(kind,ptr,err) if (!(ptr)) { err = 1; }
-
+#define MPID_Comm_valid_ptr(ptr,err) if (!(ptr)) { err = 1; }
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
 
 /* Info */
@@ -333,8 +333,9 @@ typedef struct {
                                            error handler */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
 #ifdef HAVE_QUERYPERFORMANCEFREQUENCY
-    double            timer_frequency;   /* High performance counter frequency */
+    double            timer_frequency;  /* High performance counter frequency */
 #endif
+    char              bnr_dbname[100];
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
