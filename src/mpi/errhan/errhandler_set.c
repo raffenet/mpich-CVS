@@ -46,6 +46,7 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
     static const char FCNAME[] = "MPI_Errhandler_set";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERRHANDLER_SET);
     /* Get handles to MPI objects. */

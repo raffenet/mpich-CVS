@@ -696,9 +696,13 @@ extern int MPID_THREAD_LEVEL;
 /* These next two include files contain the static state definitions */
 #include "mpistates.h"
 #include "mpisysstates.h"
-#define MPID_MPI_FUNC_EXIT(a) MPID_TimerStateBegin( a )
-#define MPID_MPI_FUNC_ENTER(a) MPID_TimerStateEnd( a )
+extern void MPID_TimerStateBegin( int, MPID_Time_t * );
+extern void MPID_TimerStateEnd( int, MPID_Time_t * );
+#define MPID_MPI_STATE_DECLS  MPID_Time_t time_stamp
+#define MPID_MPI_FUNC_EXIT(a) MPID_TimerStateBegin( a, &time_stamp )
+#define MPID_MPI_FUNC_ENTER(a) MPID_TimerStateEnd( a, &time_stamp )
 #else
+#define MPID_MPI_STATE_DECLS
 #define MPID_MPI_FUNC_EXIT(a)
 #define MPID_MPI_FUNC_ENTER(a)
 #endif

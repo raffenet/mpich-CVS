@@ -55,6 +55,7 @@ int MPI_Foo( MPI_Comm comm, int a )
     static const char FCNAME[] = "MPI_Foo";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FOO);
     /* Get handles to MPI objects. */

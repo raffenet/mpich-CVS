@@ -46,6 +46,7 @@ int MPI_Error_class(int errorcode, int *errorclass)
 {
     static const char FCNAME[] = "MPI_Error_class";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_CLASS);
 #   ifdef HAVE_ERROR_CHECKING

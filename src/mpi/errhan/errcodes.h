@@ -28,9 +28,15 @@
 
 #define ERROR_CLASS_MASK          0x000000FF
 #define ERROR_DYN_MASK            0x00000100
+#define ERROR_DYN_SHIFT           8
 #define ERROR_GENERIC_MASK        0x0001FE00
+#define ERROR_GENERIC_SHIFT       9
 #define ERROR_SPECIFIC_INDEX_MASK 0x01FE0000
+#define ERROR_SPECIFIC_INDEX_SHIFT 17
 #define ERROR_SPECIFIC_SEQ_MASK   0x7E000000
+# Size is size of field as an integer, not the number of bits
+#define ERROR_SPECIFIC_SEQ_SIZE   64
+#define ERROR_SPECIFIC_SEQ_SHIFT  25
 
 /* These must correspond to the masks defined above */
 #define ERROR_MAX_NCLASS 256

@@ -50,6 +50,7 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 {
     static const char FCNAME[] = "MPI_Error_string";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_STRING);
 #   ifdef HAVE_ERROR_CHECKING
@@ -78,6 +79,13 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 	   else use generic code (lookup index in table of messages)
        }
      */
+    if ( (errorcode && ERROR_CLASS_MASK) == errorcode) {
+	/* code is a raw error class.  Convert the class to an index */
+	/* class_to_index[errorcode] */
+	/* Not correct yet, and this data is only available as static info in
+	   errutil.c */
+;
+    }
     /* Not implemented */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
     return MPI_SUCCESS;

@@ -7,19 +7,29 @@
 
 #include "mpiimpl.h"
 
-void MPID_TimerStateBegin( int id )
+/*
+ * We pass in a variable that will hold the time stamp so that these routines
+ * are reentrant.
+ */
+
+void MPID_TimerStateBegin( int id, MPID_Time_t *time_stamp )
 {
 #if HAVE_TIMING 
     MPICH_PerThread_t *p;
+
+    MPID_Wtime( time_stamp );
     MPID_GetPerThread( p );
     p->timestamps[id].count++;
 #endif
 }
-void MPID_TimerStateEnd( int id )
+void MPID_TimerStateEnd( int id, MPID_Time_t *time_stamp )
 {
 #if HAVE_TIMING 
     MPICH_PerThread_t *p;
+    MPID_Time_t final_time;
+
+    MPID_Wtime( &final_time );
     MPID_GetPerThread( p );
-/*     p->timestamps[id].stamp += 0; */
+    MPID_Wtime_acc( time_stamp, &final_time, &p->timestamps[id].stamp );
 #endif
 }

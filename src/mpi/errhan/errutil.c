@@ -6,11 +6,31 @@
  */
 
 #include "mpiimpl.h"
+#include "errcodes.h"
 
 /* defmsg is generated automatically from the source files and contains
    all of the error messages */
 #include "defmsg.h"
 
+/* stdarg is required to handle the variable argument lists for 
+   MPIR_Err_create_code */
+
+/*
+ * Instance-specific error messages are stored in a ring.
+ * Messages are written into the error_ring; the corresponding entry in
+ * error_ring_idx is used to keep a sort of "checkvalue" to ensure that the
+ * error code that points at this message is in fact for this particular 
+ * message.  This is used to handle the unlikely but possible situation where 
+ * so many error messages are generated that the ring is overlapped.
+ */
+#if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+#define MAX_ERROR_RING 32
+#define MAX_ERROR_BIGRING 8192
+
+static char error_ring[MAX_ERROR_RING][MPI_MAX_ERROR_STRING+1];
+static int error_ring_idx[MAX_ERROR_RING];
+static volatile unsigned int error_ring_loc = 0;
+#endif
 
 /* void for now until error handlers are defined */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
@@ -128,7 +148,70 @@ static int FindMsgIndex( const char *msg )
 
 int MPIR_Err_create_code( int class, const char def_string[], ... )
 {
-    return class;
+    va_list Argp;
+    int err_code;
+    /* Create the code from the class and the message ring index */
+
+    va_start( Argp, def_string );
+
+    err_code = class;
+
+    /* Handle the generic message.  This selects a subclass, based on a 
+       text string */
+#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
+    {
+	int specific_idx = FindMsgIndex( def_string );
+	if (specific_idx >= 0)
+	    err_code |= specific_idx << ERROR_GENERIC_SHIFT;
+    }
+#endif
+
+    /* Handle the instance-specific part of the error message */
+#if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+    {
+	const char *inst_string = 0;
+	int  ring_idx, ring_seq=0;
+	char *str;
+	
+	/* THIS NEEDS TO BE ATOMIC AND RELIABLE */
+	ring_idx = error_ring_loc++;
+	
+	if (ring_idx >= MAX_ERROR_RING) ring_idx %= MAX_ERROR_RING;
+	str = error_ring[ring_idx];
+
+	inst_string = va_arg( Argp, const char * );
+	if (inst_string) {
+	    int i;
+	    /* An instance string is available.  Use it */
+#ifdef HAVE_VSNPRINTF
+	    vsnprintf( str, MPI_MAX_ERROR_STRING, inst_string, Argp );
+#elif defined(HAVE_VSPRINTF)
+	    vsprintf( str, inst_string, Argp );
+#else
+	    /* For now, just punt */
+	    strncpy( str, def_string, MPI_MAX_ERROR_STRING );
+#endif
+
+	    /* Create a simple hash function of the message to serve as
+	       the sequence number */
+	    ring_seq = 0;
+	    for (i=0; str[i]; i++) {
+		ring_seq += (unsigned int)str[i];
+	    }
+	    ring_seq %= ERROR_SPECIFIC_SEQ_SIZE;
+	    error_ring_seq[ring_idx] = ring_seq;
+	}
+	else {
+	    strncpy( str, def_string, MPI_MAX_ERROR_STRING );
+	}
+	err_code |= (ring_idx << ERROR_SPECIFIC_INDEX_SHIFT);
+	err_code |= (ring_seq << ERROR_SPECIFIC_SEQ_SHIFT);
+    }
+#endif
+
+    va_end( Argp );
+
+    return err_code;
 }
 
 /* 

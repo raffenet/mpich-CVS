@@ -155,7 +155,12 @@ sub CreateErrMsgMapping {
 		$generic_msgs{"\"$shortmsg\""} = $generic_count;
 		$generic_count ++;
 	    }
-	    $mpimsg[$num] = $generic_msgs{"\"$shortmsg\""};
+	    # This isn't correct.  Because we sort the msgs, the
+	    # matching number must be computed *after* the sort.
+	    # Thus, we first store the short message; then update the
+	    # number.
+	    #$mpimsg[$num] = $generic_msgs{"\"$shortmsg\""};
+	    $mpimsg[$num] = "\"$shortmsg\"";
 	}
     }
     close (FD);
