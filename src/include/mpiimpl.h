@@ -171,6 +171,10 @@ extern int MPIR_IDebug( const char * );
 /* end of mpidebug.h */
 /* ------------------------------------------------------------------------- */
 
+/* Provisional routine (src/util/dbg/dbg_control.c) to test that the
+   environment value of "MPICH_DEBUG_ITEM" matches the input argument */
+int MPIR_IDebug( const char * );
+
 /* Routines for memory management */
 #include "mpimem.h"
 
@@ -1946,6 +1950,16 @@ extern int MPID_THREAD_LEVEL;
    3. Local utility routines, e.g., routines used within a single subdirectory.
    These should be moved into an include file in that subdirectory 
 */
+/* Bindings for internal routines */
+/*@ MPIR_Add_finalize - Add a routine to be called when MPI_Finalize is invoked
+
++ routine - Routine to call
+. extra   - Void pointer to data to pass to the routine
+- priority - Indicates the priority of this callback and controls the order
+  in which callbacks are executed.  Use a priority of zero for most handlers;
+  higher priorities will be executed first.
+ @*/
+void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED

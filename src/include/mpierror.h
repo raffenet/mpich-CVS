@@ -12,13 +12,12 @@
 #define MPIR_ERR_RECOVERABLE 0
 
 /* Bindings for internal routines */
-void MPIR_Add_finalize( int (*)( void * ), void *, int );
 int MPIR_Err_return_comm( struct MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( struct MPID_Win *, const char [], int );
 /*int MPIR_Err_return_file( struct MPID_File *, const char [], int );*/
 int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
 /*@
-  MPID_Err_create_code - Create an error code and associated message
+  MPIR_Err_create_code - Create an error code and associated message
   to report an error
 
   Input Parameters:
@@ -34,7 +33,7 @@ int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
  Notes:
  A typical use is\:
 .vb
-   mpi_errno = MPID_Err_create_code( MPI_ERR_RANK, "Invalid Rank",
+   mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK, "Invalid Rank",
                                 "Invalid rank %d", rank );
 .ve
  
