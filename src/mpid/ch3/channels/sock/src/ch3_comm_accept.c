@@ -341,7 +341,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 
         for (i=0; i<n_local_pgs; i++) {
             mpi_errno = MPIC_Send(local_pg_ids[i],
-                                  strlen(local_pg_ids[i])+1, MPI_CHAR,
+                                  (int)strlen(local_pg_ids[i])+1, MPI_CHAR,
                                   0, sendtag, tmp_comm->handle);
             if (mpi_errno != MPI_SUCCESS) goto fn_exit;
             sendtag++;
