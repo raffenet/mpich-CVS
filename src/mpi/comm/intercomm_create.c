@@ -27,6 +27,7 @@
 #define MPI_Intercomm_create PMPI_Intercomm_create
 
 /* 128 allows us to handle up to 4k processes */
+#ifdef HAVE_ERROR_CHECKING
 #define MAX_LPID32_ARRAY 128
 PMPI_LOCAL int MPIR_CheckDisjointLpids( int [], int, int [], int );
 PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1, 
@@ -78,6 +79,8 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
     
     return 0;
 }
+#endif /* HAVE_ERROR_CHECKING */
+
 #endif
 
 #undef FUNCNAME
@@ -121,6 +124,7 @@ Notes:
 
 .seealso: MPI_Intercomm_merge, MPI_Comm_free, MPI_Comm_remote_group, 
           MPI_Comm_remote_size
+
    Notes:
 
    'peer_comm' is significant only for the process designated the 
