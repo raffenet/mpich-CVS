@@ -138,17 +138,16 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		MPIDI_CH3U_Buffer_copy(sreq->ch3.user_buf, sreq->ch3.user_count, sreq->ch3.datatype, &sreq->status.MPI_ERROR,
 				       buf, count, datatype, &data_sz, &rreq->status.MPI_ERROR);
 		rreq->status.count = data_sz;
+		MPID_Request_set_complete(sreq);
 	    }
 	    else
 	    {
 		rreq->status.count = 0;
 		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
-		sreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
 	    }
 	    
-	    MPID_Request_set_complete(sreq);
-	    MPID_Request_set_complete(rreq);
 	    MPID_Request_release(sreq);
+	    MPID_Request_set_complete(rreq);
 	    MPID_Request_release(rreq);
 	}
 	else

@@ -36,6 +36,15 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
     if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
 	mpi_errno = MPIDI_Isend_self(buf, count, datatype, rank, tag, comm, context_offset, MPIDI_REQUEST_TYPE_SEND, &sreq);
+#       if defined(MPICH_SINGLE_THREADED)
+	{
+	    if (sreq != NULL && sreq->cc != 0)
+	    {
+		MPIDI_ERR_PRINTF((FCNAME, "DEADLOCK - MPI_Send() to self, no matching received posted."));
+		abort();
+	    }
+	}
+#	endif
 	goto fn_exit;
     }
 

@@ -62,27 +62,22 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	sreq->ref_count = 1;
 	sreq->cc = 0;
     }
-    else if (type != MPIDI_REQUEST_TYPE_RSEND)
-    {
-#       if defined(MPICH_SINGLE_THREADED)
-	{
-	    MPIDI_ERR_PRINTF((FCNAME, "DEADLOCK!"));
-	    abort();
-	}
-#	else
-	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "added receive request to unexpected queue; attaching send request"));
-	    MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
-	    rreq->partner_request = sreq;
-	}
-#	endif
-    }
     else
     {
-	MPIDI_DBG_PRINTF((15, FCNAME, "ready send unable to find matching recv req"));
+	if (type != MPIDI_REQUEST_TYPE_RSEND)
+	{
+	    MPIDI_DBG_PRINTF((15, FCNAME, "added receive request to unexpected queue; attaching send request"));
+	}
+	else
+	{
+	    MPIDI_DBG_PRINTF((15, FCNAME, "ready send unable to find matching recv req"));
+	    sreq->status.MPI_ERROR = MPI_ERR_UNKNOWN; /* FIXME */
+	    MPID_Request_set_complete(sreq);
+	    /* sreq is released by matching MPI_Recv/Irecv() */
+	}
+	    
 	MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
 	rreq->partner_request = sreq;
-
     }
 
   fn_exit:
