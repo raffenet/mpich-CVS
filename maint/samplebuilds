@@ -1,0 +1,166 @@
+#! /bin/sh
+#
+# Configure and build the most common configurations.  Does not do 
+# extensive tests
+#
+# ----------------------------------------------------------------------------
+# Set defaults
+#
+do_tests=yes
+builddir=/sandbox/$LOGNAME/mpich2
+instdir=/sandbox/$LOGNAME/mpi2-inst
+srcdir=/home/gropp/projects/mpich2
+# ----------------------------------------------------------------------------
+# Get arguments
+for arg in "$@" ; do
+    case $arg in 
+	-echo) set -x ;;
+	-local) 
+	# Do the testing in place.
+	builddir=`pwd`
+	instdir=`(cd .. && pwd)`"/mpi2-inst"
+	srcdir=`pwd`
+	;;
+	-notest)
+	do_tests=no
+	;;
+	*)
+	if [ -n "$arg" ] ; then
+	    echo "Unknown argument $arg"
+	    exit 1
+	fi
+	;;
+    esac
+done
+
+# ----------------------------------------------------------------------------
+# Validate arguments
+#
+if [ ! -d $srcdir ] ; then
+    if [ -d /homes/gropp/projects/mpich2 ] ; then
+        srcdir=/homes/gropp/projects/mpich2
+    else
+	echo "Cannot find source directory"
+	exit 1
+    fi
+fi
+#
+if cd $builddir ; then
+    :
+else
+    echo "Could not change directory to $builddir"
+    exit 1
+fi
+if [ ! -x $srcdir/configure ] ; then
+    echo "Cannot find configure in $srcdir"
+    exit 1
+fi
+#
+# ---------------------------------------------------------------------------
+# BuildMPICH uses the following global variables:
+#    testname    - string name for test
+#    config_args - arguments to pass to configure
+#    do_tests    - yes or no; controls tests
+#    srcdir,instdir - directories for source, installation
+# This uses XML-style tags to mark the various segments, but does not
+# filter the output from the individual steps for XML/SGML characters (e.g.,
+# the <,>,& characters aren't handled).
+# Note: we could filter through sed with
+# sed -e 's/>/-AMP-gt;/g' -e 's/</-AMP-lt;/g' -e 's/\&/-AMP-amp;/g' | \
+# sed -e 's/-AMP-/&/g'
+#
+BuildMPICH2 () {
+echo "<BUILDTEST NAME=\"$testname\">"
+echo "<CONFIGURE>"
+if $srcdir/configure --prefix=$instdir $config_args ; then
+    echo "</CONFIGURE>"
+    echo "<MAKE>"
+    # Remove any lingering libraries
+    rm -f lib/libmpich*.a lib/libpmpich*.a lib/libfmpich*.a 
+    rm -f lib/libmpich*.so lib/libpmpich*.so lib/libfmpich*.so
+    if make ; then
+        echo "</MAKE>"
+	echo "<INSTALL>"
+	if make install ; then
+	    echo "</INSTALL>"
+	    if [ "$do_tests" = "yes" ] ; then
+	        echo "<TEST>"
+	        if make testing ; then
+		    echo "Tests completed in test/summary.xml"
+		    # Really should copy failures if any
+	        else
+		    echo "Tests failed ($testname)"
+	        fi
+	        echo "</TEST>"
+	    fi
+	else
+	    echo "Install failed ($testname)"
+	    echo "</INSTALL>"
+	fi
+    else 
+	echo "make failed ($testname)"
+	echo "</MAKE>"
+    fi
+else
+    echo "Configure failed ($testname)"
+    echo "</CONFIGURE>"
+fi
+echo "</BUILDTEST>"
+}
+# ---------------------------------------------------------------------------
+# Basic test
+testname="basic"
+config_args=""
+BuildMPICH2
+
+#
+# No Fortran or C++
+testname="no f77/c++"
+config_args="--disable-f77 --disable-cxx"
+BuildMPICH2
+
+#
+# No Weak symbols
+testname="no weak symbols"
+config_args="--disable-weak-symbols"
+BuildMPICH2
+
+#
+# --enable-fast
+testname="fast"
+config_args="--enable-fast"
+BuildMPICH2
+
+#
+# forker pm, strict
+testname="strict and forker"
+config_args="--enable-strict --with-pm=forker"
+BuildMPICH2
+
+#
+# Build and link with a logging library
+testname="logging with lwlog"
+config_args="--with-logging=lwlog --with-pm=forker"
+BuildMPICH2
+
+#
+# Build with memory checking
+testname="memory tests"
+config_args="--enable-g=all --enable-strict"
+BuildMPICH2
+
+#
+# Build with shared libraries
+testname="sharedlibs"
+config_args="--enable-sharedlibs=gcc"
+BuildMPICH2
+
+#
+# Build shared libraries using libtool
+if [ "$LOGNAME" = "gropp" ] ; then
+echo "The following is known not to work yet"
+echo "It is here to spur the support for libtool and shared libraries"
+testname="sharedlibs with libtool"
+config_args="--enable-sharedlibs=libtool"
+BuildMPICH2
+fi
