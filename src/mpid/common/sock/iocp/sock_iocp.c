@@ -386,7 +386,7 @@ int WinToSockError(int error)
     case WSANO_DATA:
 	break;
     case WSA_INVALID_HANDLE:
-	return SOCK_ERR_BAD_SOCK;
+	return SOCK_ERR_BAD_SET;
 	break;
     case WSA_INVALID_PARAMETER:
 	break;
@@ -614,6 +614,7 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
     return SOCK_SUCCESS;
 }
 
+static int g_init_called = 0;
 int sock_init()
 {
     char *szNum;
@@ -622,6 +623,14 @@ int sock_init()
     MPIDI_STATE_DECL(MPID_STATE_SOCK_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_INIT);
+
+    if (g_init_called)
+    {
+	g_init_called++;
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_INIT);
+	return SOCK_SUCCESS;
+    }
+    g_init_called = 1;
 
     /* Start the Winsock dll */
     if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
@@ -650,8 +659,12 @@ int sock_finalize()
     MPIDI_STATE_DECL(MPID_STATE_SOCK_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_FINALIZE);
-    WSACleanup();
-    BlockAllocFinalize(&g_StateAllocator);
+    g_init_called--;
+    if (g_init_called == 0)
+    {
+	WSACleanup();
+	BlockAllocFinalize(&g_StateAllocator);
+    }
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_FINALIZE);
     return SOCK_SUCCESS;
 }
@@ -2107,7 +2120,10 @@ int sock_getid(sock_t sock)
     MPIDI_STATE_DECL(MPID_STATE_SOCK_GETID);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_GETID);
-    ret_val = (int)sock->sock;
+    if (sock == SOCK_INVALID_SOCK)
+	ret_val = -1;
+    else
+	ret_val = (int)sock->sock;
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_GETID);
     return ret_val;
 }
