@@ -699,6 +699,11 @@ typedef struct {
   /* Other, device-specific information */
 } MPID_Errhandler;
 
+/*E
+  MPID_Comm_kind_t - Name the two types of communicators
+  E*/
+typedef enum { MPID_INTRACOMM = 0, MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
+
 /*S
   MPID_Comm - Description of the Communicator data structure
 
@@ -748,7 +753,7 @@ typedef struct {
     int           local_size;    /* Value of MPI_Comm_size */
     int           rank;          /* Value of MPI_Comm_rank */
     MPID_VC *(*virtural connection)[]; /* Virtual connection table */
-    int           comm_kind;     /* MPID_INTRACOMM or MPID_INTERCOMM */
+    MPID_Comm_kind_t comm_kind;  /* MPID_INTRACOMM or MPID_INTERCOMM */
     MPID_List     attributes;    /* List of attributes */
     MPID_Group    *local_group,  /* Groups in communicator. */
                   *remote_group; /* The local and remote groups are the
