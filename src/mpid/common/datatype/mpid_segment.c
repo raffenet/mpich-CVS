@@ -12,6 +12,8 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
+#undef MPID_SP_VERBOSE
+
 /* MPID_Segment_piece_params
  *
  * This structure is used to pass function-specific parameters into our 
@@ -153,8 +155,12 @@ static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
     /* TODO: IS THIS IN ANY WAY A BAD THING TO DO? */
     struct MPID_Segment_piece_params *paramp = v_paramp;
 #ifdef MPID_SP_VERBOSE
-    dbg_printf("\t[index=%d, loc=%x, size=%d]\n", paramp->u.pack_vector.index,
-	       (unsigned) dbufp + dbufoff, size);
+    MPIU_dbg_printf("\t[index = %d, loc = (%x + %x) = %x, size = %d]\n",
+		    paramp->u.pack_vector.index,
+		    (unsigned) dbufp,
+		    (unsigned) dbufoff,
+		    (unsigned) dbufp + dbufoff,
+		    size);
 #endif
     
     /* for now we'll just be stupid about this */

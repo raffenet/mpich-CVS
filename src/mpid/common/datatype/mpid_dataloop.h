@@ -66,6 +66,9 @@
 #define DLOOP_Malloc MPIU_Malloc
 #define DLOOP_Free   MPIU_Free
 
+/* debugging output function */
+#define DLOOP_dbg_printf MPIU_dbg_printf
+
 /* Include gen_dataloop.h at the end to get the rest of the prototypes
  * and defines, in terms of the prefixes and types above.
  */

@@ -82,6 +82,15 @@ int MPID_Type_struct(int count,
 
     MPID_Datatype *new_dtp, *old_dtp;
 
+#if 0
+    MPIU_dbg_printf("MPID_Type_struct: count = %d\n", count);
+    for (i=0; i < count; i++) {
+	MPIU_dbg_printf("\t(blk, disp)[i] = (%d, %x)\n",
+			(int) blocklength_array[i],
+			(int) displacement_array[i]);
+    }
+#endif
+
     if (count == 1) {
 	/* simplest case: count == 1 */
 	/* NOTE: this could be done with a contig with an LB I think? */
@@ -346,23 +355,30 @@ int MPID_Type_struct(int count,
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
 
 		/* calculate lb and ub of this type; see mpid_datatype.h */
-		MPID_DATATYPE_CONTIG_LB_UB(old_dtp, blocklength_array[i], tmp_lb, tmp_ub);
+		MPID_DATATYPE_BLOCK_LB_UB(blocklength_array[i],
+					  displacement_array[i],
+					  old_dtp->lb,
+					  old_dtp->ub,
+					  old_dtp->extent,
+					  tmp_lb,
+					  tmp_ub);
+
 		tmp_pieces = old_dtp->n_elements;
 		if (old_dtp->has_sticky_lb) {
 		    if (!found_lb) {
 			found_lb = 1;
-			lb_disp = tmp_lb + displacement_array[i];
+			lb_disp = tmp_lb;
 		    }
-		    else if (tmp_lb + displacement_array[i] < lb_disp)
-			lb_disp = tmp_lb + displacement_array[i];
+		    else if (tmp_lb < lb_disp)
+			lb_disp = tmp_lb;
 		}
 		if (old_dtp->has_sticky_ub) {
 		    if (!found_ub) {
 			found_ub = 1;
-			ub_disp = tmp_ub + displacement_array[i];
+			ub_disp = tmp_ub;
 		    }
-		    else if (tmp_ub + displacement_array[i] > ub_disp)
-			ub_disp = tmp_ub + displacement_array[i];
+		    else if (tmp_ub > ub_disp)
+			ub_disp = tmp_ub;
 		}
 	    }
 	    nr_pieces += tmp_pieces * blocklength_array[i];

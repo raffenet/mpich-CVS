@@ -65,6 +65,12 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
      * - derived type, count > 1; use builtin for contig of derived type
      */
 
+#ifdef DLOOP_M_VERBOSE
+    DLOOP_dbg_printf("DLOOP_Segment_init: count = %d, buf = %x\n",
+		    count,
+		    buf);
+#endif DLOOP_M_VERBOSE
+
     if (!DLOOP_Handle_hasloop_macro(handle)) {
 	/* simplest case; datatype has no loop (basic) */
 
@@ -257,7 +263,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	int tmp_last;
 
 #ifdef DLOOP_M_VERBOSE
-	MPIU_dbg_printf("first=%d; stream_off=%ld; resetting.\n", first, stream_off);
+	DLOOP_dbg_printf("first=%d; stream_off=%ld; resetting.\n", first, stream_off);
 #endif
 
 	/* TODO: BE SMARTER AND DON'T RESET IF STREAM_OFF IS BEFORE FIRST */
@@ -283,7 +289,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 	/* continue processing... */
 #ifdef DLOOP_M_VERBOSE
-	MPIU_dbg_printf("done repositioning stream_off; first=%d, stream_off=%ld, last=%d\n",
+	DLOOP_dbg_printf("done repositioning stream_off; first=%d, stream_off=%ld, last=%d\n",
 		   first, stream_off, last);
 #endif
     }
@@ -295,7 +301,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	if ((cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT) assert(0);
 
 #ifdef DLOOP_M_VERBOSE
-        MPIU_dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n", cur_sp, (unsigned) cur_elmp);
+        DLOOP_dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n", cur_sp, (unsigned) cur_elmp);
 #endif
 
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
@@ -334,7 +340,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    }
 
 #ifdef DLOOP_M_VERBOSE
-	    MPIU_dbg_printf("\thit leaf; cur_sp=%d, elmp=%x, piece_sz=%d\n", cur_sp,
+	    DLOOP_dbg_printf("\thit leaf; cur_sp=%d, elmp=%x, piece_sz=%d\n", cur_sp,
 		       (unsigned) cur_elmp, piece_size);
 #endif
 
@@ -343,7 +349,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		/* Cannot process the entire "piece" -- round down */
 		piece_size = ((last - stream_off) / basic_size) * basic_size;
 #ifdef DLOOP_M_VERBOSE
-		MPIU_dbg_printf("\tpartial piece_size=%d\n", piece_size);
+		DLOOP_dbg_printf("\tpartial piece_size=%d\n", piece_size);
 #endif
 		partial_flag = 1;
 	    }
@@ -358,7 +364,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    else {
 		ret = 0;
 #ifdef DLOOP_M_VERBOSE
-		MPIU_dbg_printf("\tNULL piecefn for this piece\n");
+		DLOOP_dbg_printf("\tNULL piecefn for this piece\n");
 #endif
 	    }
 	    stream_off += piece_size;
@@ -387,7 +393,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			assert(0);
 		}
 #ifdef DLOOP_M_VERBOSE
-		MPIU_dbg_printf("partial flag, returning sooner than expected.\n");
+		DLOOP_dbg_printf("partial flag, returning sooner than expected.\n");
 #endif
 		ret = 1; /* forces return below */
 	    }
@@ -417,7 +423,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			    cur_elmp->curoffset  = cur_elmp->orig_offset +
 				DLOOP_Stackelm_offset(cur_elmp);
 #ifdef DLOOP_M_VERBOSE
-			    MPIU_dbg_printf("\tnew region: origoff = %d; curoff = %d; blksz = %d\n",
+			    DLOOP_dbg_printf("\tnew region: origoff = %d; curoff = %d; blksz = %d\n",
 					    (int) cur_elmp->orig_offset,
 					    (int) cur_elmp->curoffset,
 					    (int) cur_elmp->curblock);
@@ -429,7 +435,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			if (cur_elmp->curcount == 0) cur_sp--;
 			else {
 #ifdef DLOOP_M_VERBOSE
-			    MPIU_dbg_printf("end of vec block; incrementing curoffset by %d\n",
+			    DLOOP_dbg_printf("end of vec block; incrementing curoffset by %d\n",
 					    cur_elmp->loop_p->loop_params.v_t.stride -
 					    (cur_elmp->orig_block * cur_elmp->loop_p->el_size));
 #endif
@@ -461,15 +467,15 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	     * hit end of block.
 	     */
 #ifdef DLOOP_M_VERBOSE
-	    MPIU_dbg_printf("\thit end of block; elmp=%x\n",
-			    (unsigned) cur_elmp);
+	    DLOOP_dbg_printf("\thit end of block; elmp=%x [%d]\n",
+			    (unsigned) cur_elmp, cur_sp);
 #endif
 	    cur_elmp->curcount--;
 	    if (cur_elmp->curcount == 0) {
 		/* We also hit end of count; pop this type. */
 #ifdef DLOOP_M_VERBOSE
-		MPIU_dbg_printf("\thit end of count; elmp=%x\n",
-				(unsigned) cur_elmp);
+		DLOOP_dbg_printf("\talso hit end of count; elmp=%x [%d]\n",
+				(unsigned) cur_elmp, cur_sp);
 #endif
 		cur_sp--;
 		/* NOTE: CRITICAL THAT WE HIT TOP OF LOOP FROM HERE! */
@@ -500,8 +506,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    block_index = cur_elmp->orig_block - cur_elmp->curblock;
 
 #ifdef DLOOP_M_VERBOSE
-	    MPIU_dbg_printf("\tpushing type, elmp=%x, count=%d, block=%d\n",
-			    (unsigned) cur_elmp, count_index, block_index);
+	    DLOOP_dbg_printf("\tpushing type, elmp=%x [%d], count=%d, block=%d\n",
+			    (unsigned) cur_elmp, cur_sp, count_index, block_index);
 #endif
 	    /* This is a two-step process; some items are dependent on
 	     * the current type, while others are dependent on the next
@@ -517,7 +523,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    next_elmp->orig_offset = cur_elmp->curoffset +
 			count_index * cur_elmp->loop_p->el_extent;
 #ifdef DLOOP_M_VERBOSE
-		    MPIU_dbg_printf("outer contig el_size = %d, el_extent = %d\n",
+		    DLOOP_dbg_printf("outer contig el_size = %d, el_extent = %d\n",
 				    (int) cur_elmp->loop_p->el_size,
 				    (int) cur_elmp->loop_p->el_extent);
 #endif
@@ -528,7 +534,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			count_index * cur_elmp->loop_p->loop_params.v_t.stride +
 			block_index * cur_elmp->loop_p->el_extent;
 #ifdef DLOOP_M_VERBOSE
-		    MPIU_dbg_printf("outer vec el_size = %d, el_extent = %d, stride = %d\n",
+		    DLOOP_dbg_printf("outer vec el_size = %d, el_extent = %d, stride = %d\n",
 				    (int) cur_elmp->loop_p->el_size,
 				    (int) cur_elmp->loop_p->el_extent,
 				    (int) cur_elmp->loop_p->loop_params.v_t.stride);
@@ -542,13 +548,19 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		     * through a collection of blocks, plus the displacement
 		     * for this count.
 		     */
-		    next_elmp->orig_offset = cur_elmp->curoffset +
+		    next_elmp->orig_offset = cur_elmp->orig_offset +
 			block_index * cur_elmp->loop_p->el_extent +
 			DLOOP_Stackelm_offset(cur_elmp);
 		    break;
 		default:
 		    assert(0);
 	    } /* end of switch */
+
+#ifdef DLOOP_M_VERBOSE
+	    DLOOP_dbg_printf("\tstep 1: next orig_offset = %d (0x%x)\n",
+			     next_elmp->orig_offset,
+			     next_elmp->orig_offset);
+#endif
 
 	    /* now we update the curoffset based on the next type */
 	    switch (next_elmp->loop_p->kind & DLOOP_KIND_MASK) {
@@ -571,7 +583,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			DLOOP_Stackelm_offset(next_elmp);
 		    next_elmp->curblock  = DLOOP_Stackelm_blocksize(next_elmp);
 #ifdef DLOOP_M_VERBOSE
-		    MPIU_dbg_printf("\treadying region: origoff = %d; curoff = %d; blksz = %d\n",
+		    DLOOP_dbg_printf("\treadying region: origoff = %d; curoff = %d; blksz = %d\n",
 				    (int) next_elmp->orig_offset,
 				    (int) next_elmp->curoffset,
 				    (int) next_elmp->curblock);
@@ -582,6 +594,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    } /* end of switch */
 	    /* TODO: HANDLE NON-ZERO OFFSETS IN NEXT_ELMP HERE? */
 
+#ifdef DLOOP_M_VERBOSE
+	    DLOOP_dbg_printf("\tstep 2: next curoffset = %d (0x%x)\n",
+			     next_elmp->curoffset,
+			     next_elmp->curoffset);
+#endif
 
 	    cur_elmp->curblock--;
 	    cur_sp++; /* let cur_elmp be reset at top of loop */
@@ -589,7 +606,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
     } /* end of while cur_sp >= 0 */
 
 #ifdef DLOOP_M_VERBOSE
-    MPIU_dbg_printf("hit end of datatype\n");
+    DLOOP_dbg_printf("hit end of datatype\n");
 #endif
 
     DLOOP_SEGMENT_SAVE_LOCAL_VALUES;
@@ -662,7 +679,7 @@ static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
 	case DLOOP_KIND_INDEXED:
 	    datatype_index = elmp->loop_p->loop_params.count - elmp->curcount;
 #ifdef DLOOP_M_VERBOSE
-	    MPIU_dbg_printf("     DLOOP_Stackelm_offset: offset = %d\n",
+	    DLOOP_dbg_printf("     DLOOP_Stackelm_offset: offset = %x\n",
 			    dlp->loop_params.i_t.offset_array[datatype_index]);
 #endif
 	    return dlp->loop_params.i_t.offset_array[datatype_index];

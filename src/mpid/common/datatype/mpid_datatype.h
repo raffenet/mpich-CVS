@@ -34,16 +34,68 @@
 
 /* LB/UB calculation helper macros */
 
-#define MPID_DATATYPE_CONTIG_LB_UB(__olddtp, __count, __lb, __ub)	\
-do {									\
-    if ((__olddtp)->extent >= 0) {					\
-        __lb = (__olddtp)->lb;						\
-        __ub = (__olddtp)->ub + (__olddtp)->extent * (__count - 1);	\
-    }									\
-    else /* negative extent */ {					\
-	__lb = __olddtp->lb + (__olddtp)->extent * (__count - 1);	\
-	__ub = __olddtp->ub;						\
-    }									\
+#define MPID_DATATYPE_CONTIG_LB_UB(__cnt, __old_lb, __old_ub, __old_extent, __lb, __ub)	\
+do {											\
+    if (__cnt == 0) {									\
+	__lb = __old_lb;								\
+	__ub = __old_ub;								\
+    }											\
+    else if (__old_ub >= __old_lb) {							\
+        __lb = __old_lb;								\
+        __ub = __old_ub + (__old_extent) * (__cnt - 1);					\
+    }											\
+    else /* negative extent */ {							\
+	__lb = __old_lb + (__old_extent) * (__cnt - 1);					\
+	__ub = __old_ub;								\
+    }											\
+} while (0)
+
+/* MPID_DATATYPE_VECTOR_LB_UB()
+ *
+ */
+#define MPID_DATATYPE_VECTOR_LB_UB(__cnt, __stride, __blklen, __old_lb, __old_ub, __old_extent, __lb, __ub) \
+do {													    \
+    if (__cnt == 0 || __blklen == 0) {									    \
+	__lb = __old_lb;										    \
+	__ub = __old_ub;										    \
+    }													    \
+    else if (__stride >= 0 && (__old_ub >= __old_lb)) {							    \
+	__lb = __old_lb;										    \
+	__ub = __old_ub + (__old_extent) * ((__blklen) - 1) + (__stride) * ((__cnt) - 1);		    \
+    }													    \
+    else if (__stride < 0 && (__old_ub >= __old_lb)) {							    \
+	__lb = __old_lb + (__stride) * ((__cnt) - 1);							    \
+	__ub = __old_ub + (__old_extent) * ((__blklen) - 1);						    \
+    }													    \
+    else if (__stride < 0 && (__old_ub < __old_lb)) {							    \
+	__lb = __old_lb + (__old_extent) * ((__blklen) - 1);						    \
+	__ub = __old_ub + (__stride) * ((__cnt) - 1);							    \
+    }													    \
+    else {												    \
+	__lb = __old_lb + (__old_extent) * ((__blklen) - 1) + (__stride) * ((__cnt) - 1);		    \
+	__ub = __old_ub;										    \
+    }													    \
+} while (0)
+
+/* MPID_DATATYPE_BLOCK_LB_UB()
+ *
+ * Note: we need the extent here in addition to the lb and ub because the
+ * extent might have some padding in it that we need to take into account.
+ */
+#define MPID_DATATYPE_BLOCK_LB_UB(__cnt, __disp, __old_lb, __old_ub, __old_extent, __lb, __ub)	\
+do {												\
+    if (__cnt == 0) {										\
+	__lb = __old_lb + (__disp);								\
+	__ub = __old_ub + (__disp);								\
+    }												\
+    else if (__old_ub >= __old_lb) {								\
+        __lb = __old_lb + (__disp);								\
+        __ub = __old_ub + (__disp) + (__old_extent) * ((__cnt) - 1);				\
+    }												\
+    else /* negative extent */ {								\
+	__lb = __old_lb + (__disp) + (__old_extent) * ((__cnt) - 1);				\
+	__ub = __old_ub + (__disp);								\
+    }												\
 } while (0)
 
 /* Datatype functions */

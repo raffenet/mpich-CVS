@@ -85,7 +85,13 @@ int MPID_Type_vector(int count,
 	new_dtp->loopinfo_depth = 1;
 
 	/* calculate lb, ub, true_lb, and true_ub, which vary widely based on +/- stride */
-	if (stride >= 0) {
+	if (count == 0 || blocklength == 0) {
+	    new_dtp->true_lb = 0;
+	    new_dtp->true_ub = 0;
+	    new_dtp->lb      = 0;
+	    new_dtp->ub      = 0;
+	}
+	else if (stride >= 0) {
 	    new_dtp->true_lb     = 0;
 	    new_dtp->lb          = 0;
 	    if (strideinbytes) 
@@ -154,6 +160,16 @@ int MPID_Type_vector(int count,
 	else eff_stride = stride * old_dtp->extent;
 
 	/* calculate lb, ub, true_lb, and true_ub */
+	/* MPID_DATATYPE_VECTOR_LB_UB() defined in mpid_datatype.h */
+	MPID_DATATYPE_VECTOR_LB_UB(count,
+				   eff_stride,
+				   blocklength,
+				   old_dtp->lb,
+				   old_dtp->ub,
+				   old_dtp->extent,
+				   new_dtp->lb,
+				   new_dtp->ub);
+#if 0
 	if (eff_stride >= 0 && old_dtp->extent >= 0) {
 	    /* easiest case -- stride and extent are non-negative */
 	    new_dtp->lb      = old_dtp->lb;
@@ -173,6 +189,7 @@ int MPID_Type_vector(int count,
 	    new_dtp->lb      = old_dtp->lb + old_dtp->extent * (blocklength-1) + eff_stride * (count-1);
 	    new_dtp->ub      = old_dtp->ub;
 	}
+#endif
 	new_dtp->true_lb     = new_dtp->lb + (old_dtp->true_lb - old_dtp->lb);
 	new_dtp->true_ub     = new_dtp->ub + (old_dtp->true_ub - old_dtp->ub);
 	new_dtp->extent      = new_dtp->ub - new_dtp->lb;
