@@ -1,0 +1,7 @@
+INCLUDES = -I../../../../src/include -I${top_srcdir}/src/include -I../../include \
+	 -I${srcdir}/../../include
+LDADD = -L../../../../lib ../util/mtest.o 
+DEPADD = ../../../../lib/lib${MPILIBNAME}.a
+smvar_do_sharedlibs = 0
+
+uallreduce_SOURCES = uallreduce.cxx
