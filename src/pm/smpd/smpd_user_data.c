@@ -337,7 +337,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     int len;
     struct stat s;
     smpd_data_t *list = NULL, *node;
-    char *iter;
+    const char *iter;
     char name[SMPD_MAX_NAME_LENGTH];
     char equal_str[SMPD_MAX_NAME_LENGTH];
     char data[SMPD_MAX_VALUE_LENGTH];
