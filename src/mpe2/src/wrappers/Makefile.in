@@ -59,14 +59,12 @@ linktest_F77:
 	@echo
 
 ########  Cleaning
+# This is always a VPATH build, cleaning up the MPE_HEADERS
 clean_include:
-	@-if [ -n "$(includebuild_dir)" -a "$(top_srcdir)" != "." \
-	       -a "$(includebuild_dir)" != "$(top_srcdir)/include" ] ; then \
-	      cd $(includebuild_dir) && \
-	      for file in $(MPE_HEADERS) ; do \
-	          $(RM) -f $$file ; \
-	      done ; \
-	  fi
+	@-cd $(includebuild_dir) && \
+	  for file in $(MPE_HEADERS) ; do \
+	      $(RM) -f $$file ; \
+	  done
 
 clean_lib:
 
