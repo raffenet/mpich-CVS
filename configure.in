@@ -941,11 +941,9 @@ dnl
 #   LIBS="$LIBS -lmywierdlib",
 # not
 #   LIBS="-lmywierdlib"
-if test -x $use_top_srcdir/src/mpid/$device_name/setup_device ; then
+if test -f $use_top_srcdir/src/mpid/$device_name/setup_device ; then
     echo sourcing $use_top_srcdir/src/mpid/$device_name/setup_device
     . $use_top_srcdir/src/mpid/$device_name/setup_device
-elif test -f $use_top_srcdir/src/mpid/$device_name/setup_device ; then
-     AC_MSG_WARN([$use_top_srcdir/src/mpid/$device_name/setup_device is not executable])
 fi
 dnl Configure any subdirectories.  Note that config.status will *not* 
 dnl reexecute these!

@@ -24,11 +24,8 @@ fi
 
 dnl Extract the device and channel name
 file=${master_top_srcdir}/src/mpid/${device_name}/setup_device.args
-if test -x ${file} ; then 
+if test -f ${file} ; then 
     . ${file}
-elif test -f ${file} ; then
-    echo "ERROR: ${file} not is executable"
-    exit 1
 else
     echo "ERROR: ${file} not found"
     exit 1

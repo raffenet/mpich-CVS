@@ -17,11 +17,7 @@ master_top_builddir="`pwd`"
 #
 
 file=${master_top_srcdir}/src/mpid/${device_name}/setup_device.args
-if test -x ${file} ; then 
-    . ${file}
-elif test -f ${file} ; then
-#    echo "ERROR: ${file} not is executable"
-#    exit 1
+if test -f ${file} ; then 
     . ${file}
 else
     echo "ERROR: ${file} not found"
@@ -42,7 +38,7 @@ if test ! -d $dir ; then
     exit 1
 fi
 file=${dir}/setup_channel
-if test -x $file ; then
+if test -f $file ; then
     echo sourcing $file
     . $file
 fi
