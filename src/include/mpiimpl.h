@@ -170,6 +170,7 @@ typedef enum {
   MPID_WIN        = 0x8,
   MPID_KEYVAL     = 0x9,
   MPID_ATTR       = 0xa,
+  MPID_REQUEST    = 0xb,
   } MPID_Object_kind;
 /* The above objects should correspond to MPI objects only. */
 #define HANDLE_MPI_KIND_SHIFT 26
@@ -776,7 +777,9 @@ typedef struct MPID_Collops_struct {
     int (*Exscan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
     
 } MPID_Collops;
-        
+
+#define MPIR_BARRIER_TAG 1
+
 /* Files */
 typedef struct {
     int           handle;             /* value of MPI_File for this structure */
