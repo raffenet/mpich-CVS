@@ -4,8 +4,6 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#if 0
-
 #include "mpiimpl.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Type_create_subarray */
@@ -96,15 +94,41 @@ int MPI_Type_create_subarray(int ndims,
 		MPIR_ERRTEST_ARGNONPOS(array_of_subsizes[i], "subsize", mpi_errno);
 		MPIR_ERRTEST_ARGNEG(array_of_starts[i], "start", mpi_errno);
 		if (array_of_subsizes[i] > array_of_sizes[i]) {
-		    /* TODO: THIS IS AN ERROR */
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						     MPIR_ERR_RECOVERABLE,
+						     FCNAME,
+						     __LINE__,
+						     MPI_ERR_ARG,
+						     "**argrange",
+						     "**argrange %s %d %d",
+						     "array_of_subsizes",
+						     array_of_subsizes[i],
+						     array_of_sizes[i]);
 		}
 		if (array_of_starts[i] > (array_of_sizes[i] - array_of_subsizes[i]))
 		{
-		    /* TODO: THIS IS AN ERROR */
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						     MPIR_ERR_RECOVERABLE,
+						     FCNAME,
+						     __LINE__,
+						     MPI_ERR_ARG,
+						     "**argrange",
+						     "**argrange %s %d %d",
+						     "array_of_starts",
+						     array_of_starts[i],
+						     array_of_sizes[i] -
+						     array_of_subsizes[i]);
 		}
-		if (order != MPI_ORDER_FORTRAN && order != MPI_ORDER_C) {
-		    /* TODO: THIS IS AN ERROR */
-		}
+	    }
+	    if (order != MPI_ORDER_FORTRAN && order != MPI_ORDER_C) {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						 MPIR_ERR_RECOVERABLE,
+						 FCNAME,
+						 __LINE__,
+						 MPI_ERR_ARG,
+						 "**arg",
+						 "**arg %s",
+						 "order");
 	    }
 
 #if 0
@@ -127,7 +151,7 @@ int MPI_Type_create_subarray(int ndims,
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If datatype_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
 		goto fn_exit;
             }
         }
@@ -287,4 +311,3 @@ int MPI_Type_create_subarray(int ndims,
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
-#endif
