@@ -319,6 +319,9 @@ do {						\
 #define DLOOP_STACKELM_STRUCT_BLOCKSIZE(__elmp, __curcount) \
 (__elmp)->loop_p->loop_params.s_t.blocksize_array[(__curcount)]
 
+#define DLOOP_STACKELM_STRUCT_EL_EXTENT(__elmp, __curcount) \
+(__elmp)->loop_p->loop_params.s_t.el_extent_array[(__curcount)]
+
 #define DLOOP_STACKELM_STRUCT_DATALOOP(__elmp, __curcount) \
 (__elmp)->loop_p->loop_params.s_t.dataloop_array[(__curcount)]
 
@@ -727,6 +730,13 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			break;
 		}
 
+#ifdef DEBUG_DLOOP_MANIPULATE
+		DLOOP_dbg_printf("\tloading dlp=%x, elmp=%x [%d]\n",
+				 (unsigned) load_dlp,
+				 (unsigned) next_elmp,
+				 cur_sp+1);
+#endif
+
 		DLOOP_Stackelm_load(next_elmp,
 				    load_dlp,
 				    1);
@@ -761,6 +771,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			block_index * cur_elmp->loop_p->el_extent +
 			DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
 		    break;
+		case DLOOP_KIND_STRUCT:
+		    next_elmp->orig_offset = cur_elmp->orig_offset +
+			block_index * DLOOP_STACKELM_STRUCT_EL_EXTENT(cur_elmp, count_index) +
+			DLOOP_STACKELM_STRUCT_OFFSET(cur_elmp, count_index);
+		    break;
+		default:
+		    assert(0);
+		    break;
 	    }
 
 #ifdef DEBUG_DLOOP_MANIPULATE
@@ -786,6 +804,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    next_elmp->curcount  = next_elmp->orig_count;
 		    next_elmp->curblock  = DLOOP_STACKELM_INDEXED_BLOCKSIZE(next_elmp, 0);
 		    next_elmp->curoffset = next_elmp->orig_offset + DLOOP_STACKELM_INDEXED_OFFSET(next_elmp, 0);
+		    break;
+		case DLOOP_KIND_STRUCT:
+		    next_elmp->curcount = next_elmp->orig_count;
+		    next_elmp->curblock = DLOOP_STACKELM_STRUCT_BLOCKSIZE(next_elmp, 0);
+		    next_elmp->curoffset = next_elmp->orig_offset + DLOOP_STACKELM_STRUCT_OFFSET(next_elmp, 0);
+		    break;
+		default:
+		    assert(0);
 		    break;
 	    }
 

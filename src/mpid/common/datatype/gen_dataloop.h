@@ -152,8 +152,9 @@ typedef struct DLOOP_Dataloop_indexed {
 typedef struct DLOOP_Dataloop_struct {
     DLOOP_Count count;
     struct DLOOP_Dataloop **dataloop_array;
-    DLOOP_Count *blocksize_array;
-    DLOOP_Offset *offset_array;
+    DLOOP_Count            *blocksize_array;
+    DLOOP_Offset           *offset_array;
+    DLOOP_Offset           *el_extent_array; /* need more than one */
 } DLOOP_Dataloop_struct;
 
 /* In many cases, we need the count and the next dataloop item. This
@@ -205,7 +206,7 @@ typedef struct DLOOP_Dataloop {
 				  or struct) and a bit that indicates 
 				  whether the dataloop is a leaf type. */
     union {
-	DLOOP_Count                        count;
+	DLOOP_Count                 count;
 	DLOOP_Dataloop_contig       c_t;
 	DLOOP_Dataloop_vector       v_t;
 	DLOOP_Dataloop_blockindexed bi_t;
@@ -213,9 +214,6 @@ typedef struct DLOOP_Dataloop {
 	DLOOP_Dataloop_struct       s_t;
 	DLOOP_Dataloop_common       cm_t;
     } loop_params;
-#if 0
-    DLOOP_Handle handle;
-#endif
     DLOOP_Offset el_size; /* I don't feel like dealing with the bit manip. 
 			   * needed to get the packed size right at the moment.
 			   */

@@ -592,7 +592,7 @@ void MPID_Dataloop_create_struct(int count,
 	return;
     }
     else /* general case, allow branches */ {
-	int loop_idx = 0, new_loop_sz = 0, new_loop_depth = 2;
+	int loop_idx = 0, new_loop_sz = 0, new_loop_depth, old_loop_depth = 0;
 	char *curpos;
 	MPID_Datatype *old_dtp;
 	struct MPID_Dataloop *new_dlp;
@@ -602,41 +602,57 @@ void MPID_Dataloop_create_struct(int count,
 	    if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
 
-		if (old_dtp->loopinfo_depth + 1 > new_loop_depth) {
-		    new_loop_depth = old_dtp->loopinfo_depth;
+		if (old_dtp->loopinfo_depth > old_loop_depth) {
+		    old_loop_depth = old_dtp->loopinfo_depth;
 		}
 		new_loop_sz += old_dtp->loopsize;
 	    }
 	}
 
+	if (nr_basics > 0) {
+	    new_loop_depth = ((old_loop_depth+1) > 2) ? (old_loop_depth+1) : 2;
+	}
+	else {
+	    new_loop_depth = old_loop_depth + 1;
+	}
+
+	/* components of new dataloop structure:
+	 * - 1 dataloop
+	 * - (nr_basics * nr_derived) offset, el_extent, blocksize, and ptr
+	 * - nr_basics dataloops (for contigs)
+	 */
 	new_loop_sz += sizeof(struct MPID_Dataloop) +
 	    ((nr_basics + nr_derived) *
-	     (sizeof(int) + sizeof(MPI_Aint) + sizeof(MPID_Dataloop))) +
+	     (sizeof(int) + 2*sizeof(MPI_Aint) + sizeof(struct MPID_Dataloop *))) +
 	    (nr_basics * sizeof(struct MPID_Dataloop));
 
 	new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
 	assert(new_dlp != NULL);
 
 	new_dlp->kind = DLOOP_KIND_STRUCT;
-	new_dlp->el_size = -1; /* ????? */
-	new_dlp->el_extent = -1; /* ????? */
-	new_dlp->el_type = MPI_DATATYPE_NULL; /* ????? */
+	new_dlp->el_size = -1; /* not valid for struct */
+	new_dlp->el_extent = -1; /* not valid for struct; see el_extent_array */
+	new_dlp->el_type = MPI_DATATYPE_NULL; /* not valid for struct */
 
 	new_dlp->loop_params.s_t.count = nr_basics + nr_derived;
 
 	/* TODO: ALIGNMENT!!! */
-	new_dlp->loop_params.s_t.dataloop_array = (struct DLOOP_Dataloop **)
-	    (((char *) new_dlp) + sizeof(DLOOP_Dataloop));
-	new_dlp->loop_params.s_t.blocksize_array = (DLOOP_Count *)
-	    ((char *) new_dlp->loop_params.s_t.dataloop_array) +
-	    (nr_basics + nr_derived) * sizeof(struct DLOOP_Dataloop *);
-	new_dlp->loop_params.s_t.offset_array = (DLOOP_Offset *)
-	    ((char *) new_dlp->loop_params.s_t.blocksize_array) +
-	    (nr_basics + nr_derived) * sizeof(DLOOP_Count);
+	new_dlp->loop_params.s_t.dataloop_array = (struct MPID_Dataloop **)
+	    (((char *) new_dlp) + sizeof(struct MPID_Dataloop));
+	new_dlp->loop_params.s_t.blocksize_array = (int *)
+	    (((char *) new_dlp->loop_params.s_t.dataloop_array) +
+	    (nr_basics + nr_derived) * sizeof(struct MPID_Dataloop *));
+	new_dlp->loop_params.s_t.offset_array = (MPI_Aint *)
+	    (((char *) new_dlp->loop_params.s_t.blocksize_array) +
+	    (nr_basics + nr_derived) * sizeof(int));
+	new_dlp->loop_params.s_t.el_extent_array = (MPI_Aint *)
+	    (((char *) new_dlp->loop_params.s_t.offset_array) +
+	    (nr_basics + nr_derived) * sizeof(MPI_Aint));
 
+	/* position curpos for adding dataloops */
 	curpos = (char *) new_dlp;
 	curpos += sizeof(struct MPID_Dataloop) + (nr_basics + nr_derived) *
-	    (sizeof(int) + sizeof(MPI_Aint) + sizeof(MPID_Dataloop));
+	    (sizeof(int) + 2*sizeof(MPI_Aint) + sizeof(struct MPID_Dataloop *));
 
 	for (i=0; i < count; i++) {
 	    if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) {
@@ -661,13 +677,15 @@ void MPID_Dataloop_create_struct(int count,
 		       (dummy_depth == 1));
 
 		MPID_Dataloop_copy(curpos, dummy_dlp, dummy_sz);
-		MPIU_Free(dummy_dlp);
 		new_dlp->loop_params.s_t.dataloop_array[loop_idx] =
 		    (struct MPID_Dataloop *) curpos;
 		curpos += dummy_sz;
 
 		/* we stored the block size in the contig -- use 1 here */
 		new_dlp->loop_params.s_t.blocksize_array[loop_idx] = 1;
+		new_dlp->loop_params.s_t.el_extent_array[loop_idx] =
+		    blklen_array[i] * dummy_dlp->el_extent;
+		MPIU_Free(dummy_dlp);
 	    }
 	    else {
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
@@ -678,6 +696,8 @@ void MPID_Dataloop_create_struct(int count,
 		curpos += old_dtp->loopsize;
 		new_dlp->loop_params.s_t.blocksize_array[loop_idx] =
 		    blklen_array[i];
+		new_dlp->loop_params.s_t.el_extent_array[loop_idx] =
+		    old_dtp->extent;
 	    }
 	    new_dlp->loop_params.s_t.offset_array[loop_idx] = disp_array[i];
 	    loop_idx++;
@@ -686,6 +706,7 @@ void MPID_Dataloop_create_struct(int count,
 	*dlp_p     = new_dlp;
 	*dlsz_p    = new_loop_sz;
 	*dldepth_p = new_loop_depth;
+
 	return;
     }
 }
