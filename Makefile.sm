@@ -55,7 +55,7 @@ MPICVSHOME = @MPICVSHOME@
 #  Extract the mpe files into the directory (this way we avoid the 
 #     updatefile with code check on the older MPE directories)
 #  Tar it up
-dist:
+dist: dist-check
 	@version=${VERSION} ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
 	if test "$$prever" = "-CVS" ; then version=$${version}-`date "+%Y%m%d"` ; fi ; \
@@ -122,6 +122,17 @@ snap:
 	( cd tmpdir && tar cf ${PACKAGE}-snap.tar ${PACKAGE}-snap )
 	mv -f tmpdir/${PACKAGE}-snap.tar ${PACKAGE}-snap-`date "+%Y%m%d"`.tar 
 	rm -rf tmpdir
+
+# Check that all modules are present in the development version
+MODULE_DIRS = doc/adi3 doc/mpich2 doc/notes src/mpi/romio src/pm/winmpd \
+    src/pm/mpd src/util/slog2sdk
+dist-check:
+	for dir in $(MODULE_DIRS) ; do \
+	    if [ ! -d $(master_top_srcdir)/$$dir ] ; then \
+		echo "Missing $$dir in $(master_top_srcdir) !" ; \
+		exit 1 ; \
+	    fi ; \
+	done
 
 # Set the document sources and types (empty lists still cause recursion)
 doc_HTML_SOURCES  =
