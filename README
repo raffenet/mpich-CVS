@@ -1,34 +1,34 @@
 
 
-			  MPICH2 Release 0.97
+                         MPICH2 Release 0.971
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
 no actual code.  It is intended to become a portable, high-performance
 implementation of the entire MPI-2 standard.  This release has most
-MPI-2 features but is not quite complete (see below for the status of MPI-2 
-features in MPICH2).  It also currently supports only a few communication
-methods. 
+MPI-2 features but is not quite complete (see below for the status of
+MPI-2 features in MPICH2).  It also currently supports only a few
+communication methods.
 
 This is an early release of MPICH2.  It has been tested by us on a
 variety of machines in our own environment, but not extensively tested
 by outside users.  If you have problems, please report them to
 mpich2-maint@mcs.anl.gov; we are interested in incorporating user
-experiences as quickly as possible.  The web site 
-http://www.mcs.anl.gov/mpi/mpich2 will also have information on 
-bug fixes and new releases.  This README should be enough to get you
+experiences as quickly as possible.  The web site
+http://www.mcs.anl.gov/mpi/mpich2 will also have information on bug
+fixes and new releases.  This README should be enough to get you
 started; more extensive intstallation and user guides are in progress.
 
-New since the last release (0.96p2, in January, 2004), besides a number of
-bug fixes, are a subset of the dynamic process functions, and improved
-functionality and performance in the one-sided operations.  There is also a
-simple parallel debugger based on gdb, usable for programs started by the
-mpd process manager (the default).  More information can be found at the end
-of this README under "Status of MPI-2 Features in MPICH2", in the CHANGES
-file in this directory, and in the RELEASE_NOTES file, where certain
-restriction are detailed.
+In addition to several bug fixes, the 0.971 release includes new end
+user documentation in the form of a User Guide and an Installation
+Guide.  These guides are located in the files doc/userguide/user.pdf and
+doc/installguide/install.pdf respectively.  More information can be
+found at the end of this README under "Status of MPI-2 Features in
+MPICH2", in the CHANGES file in the top-level directory, and in the
+RELEASE_NOTES file, where certain restrictions are detailed.
 
-Windows users should see the file README.windows in this directory.	 
+Windows users should see the file README.windows in this directory. 
+
 
 Getting Started
 ===============
@@ -40,16 +40,22 @@ later, in the section "Alternative configurations".
 
 1.  You will need the following prerequisites.
 
-      This tar file mpich2.tar.gz
-      A C compiler (gcc is sufficient)
-      A Fortran compiler if Fortran applications are to be used (g77 is
-	sufficient) 
-      A C++ compiler for the C++ MPI bindings (g++ is sufficient)
-      Python 2.2 or later (for the default MPD process manager)
-      PyXML and an XML parser like expat (in order to use mpiexec with
+    - This tar file mpich2-0.971.tar.gz
+
+    - A C compiler (gcc is sufficient)
+
+    - A Fortran compiler if Fortran applications are to be used (g77 is
+      sufficient) 
+
+    - A C++ compiler for the C++ MPI bindings (g++ is sufficient)
+
+    - Python 2.2 or later (for the default MPD process manager)
+
+    - PyXML and an XML parser like expat (in order to use mpiexec with
       the MPD process manager)
-      A Fortran-90 compiler if you configure with --enable-f90 .  Only
-        MPI-2 "basic" support is provided at this time (no F90 module).  
+
+    -  A Fortran-90 compiler if you configure with --enable-f90 .  Only
+       MPI-2 "basic" support is provided at this time (no F90 module).  
 
     Configure will check for these prerequisites and try to work around
     deficiencies if possible.  (If you don't have Fortran, you will
@@ -58,13 +64,13 @@ later, in the section "Alternative configurations".
 2.  Unpack the tar file and go to the top level directory:
 
       tar xfz mpich2.tar.gz
-      cd mpich2-0.97
+      cd mpich2-0.971
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-0.97
+      cd mpich2-0.971
 
 3.  Choose an installation directory (the default is /usr/local/bin):
 
@@ -126,7 +132,7 @@ later, in the section "Alternative configurations".
     MPD, which is a ring of daemons on the machines where you will run
     your MPI programs.  In the next few steps, you will get his ring up
     and tested.  More details on interacting with MPD can be found in
-    the README file in mpich2-0.97/src/pm/mpd, such as how to list
+    the README file in mpich2-0.971/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     use the mpigdb debugger.  The instructions given here should be
     enough to get you started.
@@ -136,9 +142,9 @@ later, in the section "Alternative configurations".
 
       secretword=<secretword>
 
-    where <secretword> is a string known only to yourself.  It should not be
-    your normal Unix password.  Make this file readable and writable
-    only by you:
+    where <secretword> is a string known only to yourself.  It should
+    not be your normal Unix password.  Make this file readable and
+    writable only by you:
 
       chmod 600 .mpd.conf
 
@@ -200,7 +206,7 @@ later, in the section "Alternative configurations".
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-0.97/src/pm/mpd/README.
+    mpich2-0.971/src/pm/mpd/README.
 
 
 12. Test the ring you have just created:
@@ -237,7 +243,7 @@ later, in the section "Alternative configurations".
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-0.97/examples.  One of them is the classic cpi
+    the directory mpich2-0.971/examples.  One of them is the classic cpi
     example, which computes the value of pi by numerical integration in
     parallel.   
 
@@ -296,43 +302,44 @@ alternatives with
 in the mpich2 directory.  The alternatives described below are
 configured by adding arguments to the configure step
 
-Alternative process managers
-----------------------------
+
+Alternative Process Managers
+============================
 
 mpd
 ---
 
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-0.97/src/pm/mpd/README has more 
+described above.  The file mpich2-0.971/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of mpds.
-
 
 smpd
 ---- 
 
-SMPD is a process management system for both Microsoft Windows and UNIX.  SMPD
-is capable of starting a job where some processes are running on Windows and
-others are running on a variant of UNIX.  For more information, please see
-mpich2-0.97/src/pm/smpd/README.
+SMPD is a process management system for both Microsoft Windows and UNIX.
+SMPD is capable of starting a job where some processes are running on
+Windows and others are running on a variant of UNIX.  For more
+information, please see mpich2-0.971/src/pm/smpd/README.
 
 
-Alternative channels and devices
---------------------------------
+Alternative Channels and Devices
+================================
 
 The communication mechanisms in MPICH2 are called "devices", paired with
-specific "channels".  The most thoroughly tested device is the "ch3" device.
-The default configuration chooses the "sock" channel in the ch3 device (all
-communication goes over TCP sockets), which would be specified explicitly by
-putting
+specific "channels".  The most thoroughly tested device is the "ch3"
+device.  The default configuration chooses the "sock" channel in the ch3
+device (all communication goes over TCP sockets), which would be
+specified explicitly by putting
 
   --with-device=ch3:sock
 
-on the configure command line.  The ch3 device has two other channels which are
-rigorouly tested: "shm" (shared memory) for use on SMPs (all communication goes
-through shared memory instead of over TCP sockets) and "ssm" (sockets and
-shared memory) for use on clusters of SMPs (communication between processes on
-the same machine goes through shared memory; communication between processes on
-different machines goes over sockets).  Configure these by putting
+on the configure command line.  The ch3 device has two other channels
+which are rigorouly tested: "shm" (shared memory) for use on SMPs (all
+communication goes through shared memory instead of over TCP sockets)
+and "ssm" (sockets and shared memory) for use on clusters of SMPs
+(communication between processes on the same machine goes through shared
+memory; communication between processes on different machines goes over
+sockets).  Configure these by putting
 
   --with-device=ch3:shm
 
@@ -342,34 +349,35 @@ or
 
 on the configure command line.
 
-In addition to the channels listed above, the ch3 device includes a scalable
-shared memory channel (sshm), an Infiniband channel (ib) and a GASNet channel
-(gasnet).  These channels have been tested by their authors, but are not run
-through the nightly test suites.
+In addition to the channels listed above, the ch3 device includes a
+scalable shared memory channel (sshm), an Infiniband channel (ib) and a
+GASNet channel (gasnet).  These channels have been tested by their
+authors, but are not run through the nightly test suites.
 
-The scalable shared channel, like the shm channel, uses shared memory for
-communication.  However, unlike the shm channel which allocates a NxN array of
-queues in shared memory during MPI_INIT, the sshm channel only allocates a
-queue in shared memory when a pair of processes communicate for the first time.
-Since the communication patterns in most programs does no involve all processes
-communicating with all other processes, this channel will scale to a larger
-number of process than the shm channel.  Hence it's name.  The sshm channel may
-be selected by putting
+The scalable shared channel, like the shm channel, uses shared memory
+for communication.  However, unlike the shm channel which allocates a
+NxN array of queues in shared memory during MPI_INIT, the sshm channel
+only allocates a queue in shared memory when a pair of processes
+communicate for the first time.  Since the communication patterns in
+most programs does no involve all processes communicating with all other
+processes, this channel will scale to a larger number of process than
+the shm channel.  Hence it's name.  The sshm channel may be selected by
+putting
 
   --with-device=ch3:sshm
 
 on the configure command line.
 
-The InfiniBand (ib) channel performs communication using an InfinBand network
-with HBAs that use a Mellanox chipset.  The ib channel may be selected by
-putting
+The InfiniBand (ib) channel performs communication using an InfinBand
+network with HBAs that use a Mellanox chipset.  The ib channel may be
+selected by putting
 
   --with-device=ch3:ib --with-ib=vapi
 
 on the configure command line.  The channel presently only supports the
-Mellanox Verbs API, although support for the open source InfiniBand Access
-Layer (IBAL) API is nearly complete.  The Mellanox Verbs API is typically
-installed in /usr/mellanox.  The configure option
+Mellanox Verbs API, although support for the open source InfiniBand
+Access Layer (IBAL) API is nearly complete.  The Mellanox Verbs API is
+typically installed in /usr/mellanox.  The configure option
 
   --with-ib-path=<vapi-path>
 
@@ -384,8 +392,8 @@ Here are the configure flags for the GASNet channel:
 
   --with-device=ch3:gasnet
 
-If the GASNet library and include files are not in the standard library and
-include paths, you should use the following flags:
+If the GASNet library and include files are not in the standard library
+and include paths, you should use the following flags:
 
   --with-gasnet=<GASNet install directory>
 
@@ -406,14 +414,14 @@ or
   --with-gm-include=<directory where gm.h can be found>
   --with-gm-lib=<directory where libgm.a can be found>
 
-Though we have only tested this with the GM conduit we expect this to work with
-any conduit.  If you need to specify include and lib paths for the other
-conduits (e.g., Quadrics, or IBA) you should be able to use the --with-gm= flag
-for those too.
+Though we have only tested this with the GM conduit we expect this to
+work with any conduit.  If you need to specify include and lib paths for
+the other conduits (e.g., Quadrics, or IBA) you should be able to use
+the --with-gm= flag for those too.
 
-Because GASNet doesn't support dynamic process creation, The dynamic process
-features of MPI are not supported.  Also, you will have to use the GASNet job
-launcher to launch your MPI program.
+Because GASNet doesn't support dynamic process creation, The dynamic
+process features of MPI are not supported.  Also, you will have to use
+the GASNet job launcher to launch your MPI program.
 
 GASNet can be downloaded from the GASNet homepage: 
 http://www.cs.berkeley.edu/~bonachea/gasnet/
@@ -427,8 +435,9 @@ one where the MPICH2 source is installed.  This often allows faster
 building, as the sources can be placed in a shared filesystem and the
 builds done in a local (and hence usually much faster) filesystem.  To
 make this clear, the following example assumes that the sources are
-placed in /home/me/mpich2-<VERSION>, the build is done in /tmp/me/mpich2,
-and the installed version goes into /usr/local/mpich2-<VERSION>:
+placed in /home/me/mpich2-<VERSION>, the build is done in
+/tmp/me/mpich2, and the installed version goes into
+/usr/local/mpich2-<VERSION>:
 
   cd /home/me
   tar xzf mpich2-<VERSION>.tar.gz
@@ -442,7 +451,7 @@ and the installed version goes into /usr/local/mpich2-<VERSION>:
 
 
 Optional Features
------------------
+=================
 
 MPICH2 has a number of optional features.  If you are exploring MPICH2
 as part of a development project the following configure options are
@@ -450,24 +459,29 @@ important:
 
 Performance Options:
 
- --enable-fast - Turns off error checking and collection of internal 
+ --enable-fast - Turns off error checking and collection of internal
                  timing information
+
  --enable-timing=no - Turns off just the collection of internal timing
                  information
+
 MPI Features:
+
   --enable-romio - Build the ROMIO implementation of MPI-IO.  This is
                  the default
 
-  --with-file-system - When used with --enable-romio, specifies filesystems
-                 ROMIO should support.  See README.romio
+  --with-file-system - When used with --enable-romio, specifies
+                 filesystems ROMIO should support.  See README.romio.
 
 Language bindings:
 
-  --enable-f77 - Build the Fortran 77 bindings.  This is the default.  
+  --enable-f77 - Build the Fortran 77 bindings.  This is the default.
                  It has been tested with the Fortran parts of the Intel
-		 test suite.
+                 test suite.
+
   --enable-f90 - Build the Fortran 90 bindings.  This is not on by
-                 default, since these have not yet been tested. 
+                 default, since these have not yet been tested.
+
   --enable-cxx - Build the C++ bindings.  This has been tested with the
                  Notre Dame C++ test suite and some additional tests.
 
@@ -475,46 +489,55 @@ Cross compilation:
 
   --with-cross=filename - Provide values for the tests that required
                  running a program, such as the tests that configure
-		 uses to determine the sizes of the basic types.
-		 This should be a fine in Bourne shell format containing
-		 varable assignment of the form
-                       CROSS_SIZEOF_INT=2
-                 for all of the CROSS_xxx variables.  A list will
-		 be provided in later releases; for now, look at the 
-		 configure.in files.  This has not been completely tested.
+                 uses to determine the sizes of the basic types.  This
+                 should be a fine in Bourne shell format containing
+                 varable assignment of the form
+
+                     CROSS_SIZEOF_INT=2
+
+                 for all of the CROSS_xxx variables.  A list will be
+                 provided in later releases; for now, look at the
+                 configure.in files.  This has not been completely
+                 tested.
 
 Error checking and reporting:
 
   --enable-error-checking=level - Control the amount of error checking.
-                 Currently, only "no" and "all" is supported; all is the 
-		 default.
+                 Currently, only "no" and "all" is supported; all is the
+                 default.
+
   --enable-error-messages=level - Control the aount of detail in error
-                 messages.  By default, MPICH2 provides instance-specific
-		 error messages, but with this option, MPICH2 can be
-		 configured to provide less detailed messages.  This
-		 may be deesirable on small systems, such as clusters
-		 built from game consoles or high-density massively
-		 parallel systems.  This is still under active development.
+                 messages.  By default, MPICH2 provides
+                 instance-specific error messages; but, with this
+                 option, MPICH2 can be configured to provide less
+                 detailed messages.  This may be deesirable on small
+                 systems, such as clusters built from game consoles or
+                 high-density massively parallel systems.  This is still
+                 under active development.
 
 Compilation options for development:
 
   --enable-g=value - Controls the amount of debugging information
                  collected by the code.  The most useful choice here is
-		 dbg, which compiles with -g.
+                 dbg, which compiles with -g.
+
   --enable-coverage - An experimental option that enables GNU coverage
                  analysis.
-  --with-logging=name - Select a logging library for recording the 
-                 timings of the internal routines.  We have used this
-		 to understand the performance of the internals of MPICH2.
-		 Wait for the next release for detailed instructions.
-                 This option has been temporarily disabled in 0.97.
+
+  --with-logging=name - Select a logging library for recording the
+                 timings of the internal routines.  We have used this to
+                 understand the performance of the internals of MPICH2.
+                 More information on the logging options, capabilities
+                 and usage can be found in doc/logging/logging.pdf.
+
 
 Status of MPI-2 Features in MPICH2
 ==================================
+
 MPICH2 includes all of MPI-1 and the following parts of MPI-2:
 
-MPI-I/O, except for the external data representations (e.g., MPICH2 includes
-    all of ROMIO)
+MPI-I/O, except for the external data representations (e.g., MPICH2
+includes all of ROMIO)
 
 The active target remote memory access (one-sided) routines are working
 (MPI_Put, MPI_Get, and the related routines).  The passive-target
@@ -525,7 +548,7 @@ until an MPI call is made at the target.
 Some of the dynamic process routines (MPI_Comm_spawn, MPI_Comm_connect,
 MPI_Comm_accept) are working, but some restrictions apply (See the
 RELEASE_NOTES file in the top-level directory).  MPI_Comm_join is not
-implemented. 
+implemented.
 
 Name publishing is supported on shared file systems (other name publishers
 are under development)
@@ -533,15 +556,18 @@ are under development)
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
 
+
 Other Changes
 =============
-Previous releases of MPICH2 supported the "forker" process manager.  This
-process manager is still available but is unsupported and untested.  It does
-not support the dynamic-process operations in MPI-2 and thus will fail many of
-the tests included with MPICH2.  We plan to support additional process
-managers (probably including a new version of forker) at some future time,
-but we do not have a scheduled for it yet.  
-Information on forker from previous versions of the README is included below.  
+
+Previous releases of MPICH2 supported the "forker" process manager.
+This process manager is still available but is unsupported and untested.
+It does not support the dynamic-process operations in MPI-2 and thus
+will fail many of the tests included with MPICH2.  We plan to support
+additional process managers (probably including a new version of forker)
+at some future time, but we do not have a scheduled for it yet.
+Information on forker from previous versions of the README is included
+below.
 
 forker
 ------
@@ -560,5 +586,3 @@ specify that you want to use forker by doing
   --with-pm=forker  
 
 on the configure command line.
-
-
