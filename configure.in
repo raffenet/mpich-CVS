@@ -1004,8 +1004,18 @@ dnl AC_SEARCH_LIBS(gethostbyname,nsl)
 dnl
 dnl Look for Standard headers
 AC_HEADER_STDC
-dnl Check for a specific header
-AC_CHECK_HEADERS(stdarg.h sys/types.h sys/uio.h pthread.h)
+# Check for a specific header
+# Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
+# to compile.  Thus, we'll make that a separate test
+AC_CHECK_HEADERS(stdarg.h sys/types.h pthread.h)
+AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/uio.h>
+],[int a;],ac_cv_header_sys_uio_h=yes,ac_cv_header_sys_uio_h=no)])
+if test "$ac_cv_header_sys_uio_h" = yes ; then
+    AC_DEFINE(HAVE_SYS_UIO_H,1,[Define if you have the <sys/uio.h> header file.])
+fi
 dnl
 dnl Check for functions.  This invokes another test if the function is 
 dnl found.  The braces around the second test are essential. 
@@ -1198,8 +1208,9 @@ if test -s src/mpid/$device_name/Makefile ; then
     # we just run make in the device directory
     #
     # Check that this is a number
-    val=`expr $maxproc - $maxprox 2>&1 >/dev/null`
-    if test $? != 0 -o "$val" != "0" ; then
+    # expr is supposed to set the return code to 1 if the result is 0
+    val=`expr $maxproc - $maxproc 2>/dev/null`
+    if test $? != 1 -o "$val" != "0" ; then
         AC_MSG_WARN([Could not determine size of MPI_MAX_PROCESSOR_NAME, using 128])
         maxproc=128
     fi
