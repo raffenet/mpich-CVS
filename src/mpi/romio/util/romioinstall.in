@@ -35,8 +35,8 @@ WANT_INSTALL=1
 #top_srcdir=@top_srcdir@
 #
 # File access mode
-MODE=0664
-XMODE=0775
+MODE=0644
+XMODE=0755
 replace=1
 
 # Shell procedures to copy files and create directories
