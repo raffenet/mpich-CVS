@@ -87,6 +87,7 @@ extern volatile int MPIDI_Outstanding_close_ops;
 {								\
     MPID_Request_construct(req_);				\
     MPIU_Object_set_ref((req_), 1);				\
+    (req_)->kind = MPID_REQUEST_UNDEFINED;			\
     (req_)->cc = 1;						\
     (req_)->cc_ptr = &(req_)->cc;				\
     (req_)->status.MPI_SOURCE = MPI_UNDEFINED;			\
@@ -104,6 +105,8 @@ extern volatile int MPIDI_Outstanding_close_ops;
     (req_)->dev.lock_queue_entry = NULL;                        \
     (req_)->dev.dtype_info = NULL;				\
     (req_)->dev.dataloop = NULL;				\
+    (req_)->dev.rdma_iov_count = 0;				\
+    (req_)->dev.rdma_iov_offset = 0;				\
 }
 
 #define MPIDI_CH3U_Request_destroy(req_)			\

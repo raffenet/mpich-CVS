@@ -353,52 +353,6 @@ int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr, MPI
 
 
 /*E
-  MPIDI_CH3_do_rts - This function is used to initiate a rendezvous
-  send.
-
-  NOTE: An "rts packet" is provided which must be passed to
-  handle_recv_pkt on the remote side.  The first iov is also provided
-  so the channel can register buffers, etc., if neccessary.
-
-  Input Parameters:
-+ vc - virtual connection over which the rendezvous will be performed
-. sreq - pointer to the send request object
-. rts_pkt - CH3 packet to be delivered to CH3 on remote side
-. iov - the first vector of a structure contains a buffer pointer and length
-- n_iov - number of elements in the vector
-
-  Return value:
-  An mpi error code.
-
-  IMPLEMENTORS:
-E*/
-int MPIDI_CH3_do_rts (MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_pkt, MPID_IOV * iov, int n_iov);
-
-/*E
-  MPIDI_CH3_do_cts - This function is used to indicate that a previous
-  rendezvous rts has been matched and data transfer can commence.
-
-  NOTE: The sreq_id is provided so that handle_send_req can be called
-  with the corresponding send request on the remote side to reload the
-  iov, if necessary, and to complete the request once the transfer has
-  finished.
-
-  Input Parameters:
-+ vc - virtual connection over which the rendezvous will be performed
-. rreq - pointer to the receive request object
-. sreq_id - handle to the send request on the remote side
-. iov - the first vector of a structure contains a buffer pointer and length
-- n_iov - number of elements in the vector
-
-  Return value:
-  An mpi error code.
-
-  IMPLEMENTORS:
-E*/
-int MPIDI_CH3_do_cts (MPIDI_VC_t * vc, MPID_Request * rreq, MPI_Request sreq_id, MPID_IOV * iov, int n_iov);
-
-
-/*E
   MPIDI_CH3_Connection_terminate - terminate the underlying connection associated with the specified VC
 
   Input Parameters:
@@ -444,7 +398,6 @@ int MPIDI_CH3_Abort(int exit_code, char * error_msg);
   if the channel has made guarantees about ordering.
 E*/
 int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
-
 
 /*E
   MPIDI_CH3U_Handle_recv_req - Process a receive request for which all of the data has been received (and copied) into the
@@ -509,6 +462,69 @@ void MPIDI_CH3U_Request_create(MPID_Request * req);
   This routine must be called by MPIDI_CH3_Request_destroy().
 E*/
 void MPIDI_CH3U_Request_destroy(MPID_Request * req);
+
+
+/* BEGIN EXPERIMENTAL BLOCK */
+
+/* The following functions enable RDMA capabilities in the CH3 device.
+ * These functions may change in future releases.
+ * There usage is protected in the code by #ifdef MPIDI_CH3_CHANNEL_RNDV
+ */
+
+/*E
+  MPIDI_CH3U_Handle_recv_rndv_pkt - This function is used by RDMA enabled channels to handle an rts packet.
+
+  Input Parameters:
++ vc - virtual connection over which the packet was received
+. pkt - pointer to the CH3 packet
+. rreq - the request returned by FOA
+- found - the found parameter returned by FOA
+
+  Return value:
+  An mpi error code.
+
+  Notes:
+  This is the handler function to be called when the channel receives a rndv rts packet.
+  This function is called after the channel has called FOA and set any channel specific data in the request.
+E*/
+int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request * rreq, int found);
+
+/*E
+  MPIDI_CH3_iStartRndvMsg - This function is used to initiate a rendezvous
+  send.
+
+  NOTE: An "rts packet" is provided which must be passed to
+  handle_recv_rndv_pkt on the remote side.  The first iov is also provided
+  so the channel can register buffers, etc., if neccessary.
+
+  Input Parameters:
++ vc - virtual connection over which the rendezvous will be performed
+. sreq - pointer to the send request object
+- rts_pkt - CH3 packet to be delivered to CH3 on remote side
+
+  Return value:
+  An mpi error code.
+
+  IMPLEMENTORS:
+E*/
+int MPIDI_CH3_iStartRndvMsg (MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_pkt);
+
+/*E
+  MPIDI_CH3_iStartRndvTransfer - This function is used to indicate that a previous
+  rendezvous rts has been matched and data transfer can commence.
+
+  Input Parameters:
++ vc - virtual connection over which the rendezvous will be performed
+- rreq - pointer to the receive request object
+
+  Return value:
+  An mpi error code.
+
+  IMPLEMENTORS:
+E*/
+int MPIDI_CH3_iStartRndvTransfer (MPIDI_VC_t * vc, MPID_Request * rreq);
+
+/* END EXPERIMENTAL BLOCK */
 
 
 /*

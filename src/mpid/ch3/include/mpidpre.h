@@ -452,6 +452,10 @@ struct MPIDI_Request														\
     /* iov and iov_count define the data to be transferred/received */								\
     MPID_IOV iov[MPID_IOV_LIMIT];												\
     int iov_count;														\
+    MPID_IOV rdma_iov[MPID_IOV_LIMIT];												\
+    int rdma_iov_count;														\
+    int rdma_iov_offset;													\
+    MPI_Request rdma_request;													\
 																\
     /* ca (completion action) identifies the action to take once the operation described by the iov has completed */		\
     MPIDI_CA_t ca;														\
@@ -477,9 +481,9 @@ struct MPIDI_Request														\
     MPIDI_RMA_dtype_info *dtype_info;												\
     void *dataloop;													        \
     /* req. handle needed to implement derived datatype gets  */					                        \
-    MPI_Request request_handle;										                        \
-    MPI_Win target_win_handle;   									                        \
-    MPI_Win source_win_handle;   									                        \
+    MPI_Request request_handle;											                        \
+    MPI_Win target_win_handle;   										                        \
+    MPI_Win source_win_handle;   										                        \
     int single_op_opt;   /* to indicate a lock-put-unlock optimization case */                                                  \
     MPIDI_Win_lock_queue *lock_queue_entry; /* for single lock-put-unlock optimization */		                        \
 																\
@@ -497,6 +501,11 @@ MPIDI_CH3_REQUEST_DECL
 MPID_REQUEST_DECL
 #endif
 
+#ifdef MPIDI_CH3_REQUEST_KIND_DECL
+#define MPID_DEV_REQUEST_KIND_DECL MPIDI_CH3_REQUEST_KIND_DECL
+#else
+#define MPID_DEV_REQUEST_KIND_DECL
+#endif
 
 #if defined(MPIDI_CH3_PROGRESS_STATE_DECL)
 #   define MPID_PROGRESS_STATE_DECL MPIDI_CH3_PROGRESS_STATE_DECL
@@ -554,5 +563,6 @@ typedef struct MPIDI_Win_lock_queue {
     MPIDI_VC_t * vc;
     struct MPIDI_PT_single_op *pt_single_op;  /* to store info for lock-put-unlock optimization */
 } MPIDI_Win_lock_queue;
+
 
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */
