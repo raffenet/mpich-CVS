@@ -1011,6 +1011,9 @@ typedef struct MPICH_PerProcess_t {
     int (*type_attr_dup)( MPID_Datatype *, MPID_Attribute **new_attr );
     int (*type_attr_free)( MPID_Datatype *, MPID_Attribute *attr_p );
     int (*win_attr_free)( MPID_Win *, MPID_Attribute *attr_p );
+    /* Routine to get the messages corresponding to dynamically created
+       error messages */
+    int (*errcode_to_string)( int, char *, int * );
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
@@ -1151,7 +1154,7 @@ extern int MPID_THREAD_LEVEL;
  * and codes.  Note that MPI object reference counts are handled with
  * their own routines.
  */
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL < MPI_THREAD_FUNNELED
 #define MPIR_Setmax(a_ptr,b) if (b>*(a_ptr)) { *(a_ptr) = b; }
 #define MPIR_Fetch_and_increment(count_ptr,value_ptr) \
     { *value_ptr = *count_ptr; *count_ptr += 1; }
