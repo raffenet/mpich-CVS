@@ -95,6 +95,8 @@ int smpd_register_spn(const char *dc, const char *dn, const char *dh)
     if (really)
     {
 	printf("registering: %s\n", spns[0]);
+	len = SMPD_MAX_HOST_LENGTH;
+	GetComputerObjectName(NameFullyQualifiedDN, domain_host, &len);
 	printf("on account: %s\n", domain_host);
 	result = DsWriteAccountSpn(ds, DS_SPN_ADD_SPN_OP, domain_host, 1, spns);
 	if (result != ERROR_SUCCESS)
@@ -138,7 +140,7 @@ int smpd_lookup_spn(char *target, int length, const char * host, int port)
 {
     int result;
     char err_msg[256];
-    ULONG len = length/*SMPD_MAX_ACCOUNT_LENGTH*/;
+    ULONG len = length/*SMPD_MAX_NAME_LENGTH*/;
     char *env;
 
     env = getenv("MPICH_SPN");
@@ -146,7 +148,7 @@ int smpd_lookup_spn(char *target, int length, const char * host, int port)
     {
 	if (strlen(env) > 1)
 	{
-	    strncpy(target, env, SMPD_MAX_ACCOUNT_LENGTH);
+	    strncpy(target, env, SMPD_MAX_NAME_LENGTH);
 	}
 	else
 	{
@@ -189,10 +191,10 @@ int smpd_lookup_spn(char *target, int length, const char * host, int port)
 	    smpd_err_printf("DsGetSpn failed: %s\n", err_msg);
 	    return SMPD_FAIL;
 	}
-	MPIU_Strncpy(target, spns[0], SMPD_MAX_ACCOUNT_LENGTH);
+	MPIU_Strncpy(target, spns[0], SMPD_MAX_NAME_LENGTH);
 	DsFreeSpnArray(1, spns);
 	*/
-	/*MPIU_Snprintf(target, SMPD_MAX_ACCOUNT_LENGTH, "%s/%s:%d", SMPD_SERVICE_NAME, host, port);*/
+	/*MPIU_Snprintf(target, SMPD_MAX_NAME_LENGTH, "%s/%s:%d", SMPD_SERVICE_NAME, host, port);*/
 	/*GetUserNameEx(NameUserPrincipal, target, &len);*/
 	/*GetUserNameEx(NameDnsDomain, target, &len);*/
 	/*GetUserNameEx(NameSamCompatible, target, &len);*/
