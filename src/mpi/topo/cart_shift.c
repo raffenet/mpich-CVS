@@ -35,11 +35,11 @@ MPI_Cart_shift - Returns the shifted source and destination ranks, given a
 Input Parameters:
 + comm - communicator with cartesian structure (handle) 
 . direction - coordinate dimension of shift (integer) 
-- disp - displacement (> 0: upwards shift, < 0: downwards shift) (integer) 
+- displ - displacement (> 0: upwards shift, < 0: downwards shift) (integer) 
 
 Output Parameters:
-+ rank_source - rank of source process (integer) 
-- rank_dest - rank of destination process (integer) 
++ source - rank of source process (integer) 
+- dest - rank of destination process (integer) 
 
 Notes:
 The 'direction' argument is in the range '[0,n-1]' for an n-dimensional 
