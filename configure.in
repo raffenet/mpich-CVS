@@ -79,18 +79,10 @@ MPICH implementation.  level may be
     multiple - Multithreaded (MPI_THREAD_SERIAL and MPI_THREAD_MULTIPLE)],,
 enable_threads=single)
 dnl
-dnl NOT YET COMPLETE: make use of this value to turn MPI_Wtime into
-dnl a macro in mpi.h.  
-AC_ARG_ENABLE(mpi-macros,
-[--enable-mpi-macros - Implement MPI_Wtime and MPI_Wtick as C macros
-The default is no.],
-,enable_mpi_macros=no)
-dnl
 AC_ARG_ENABLE(g,
 [--enable-g=option - Control the level of debugging support in the MPICH
 implementation.  option may be a list of common separated names including
     none   - No debugging
-    mem    - Memory usage tracing
     handle - Trace handle operations
     dbg    - Add compiler -g flags
     all    - All of the above choices],,enable_g=none)
@@ -112,10 +104,6 @@ AC_ARG_ENABLE(f77,
 [--enable-f77 - Enable Fortran 77 bindings],,enable_f77=yes)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Enable C++ bindings],,enable_cxx=yes)
-AC_ARG_ENABLE(csharp,
-[--enable-cxx - Enable C# bindings],,enable_csharp=no)
-AC_ARG_ENABLE(f90,
-[--enable-f90 - Enable Fortran 90 bindings],,enable_f90=no)
 dnl
 AC_ARG_ENABLE(romio,
 [--enable-romio - Enable ROMIO MPI I/O implementation],
@@ -388,11 +376,9 @@ for option in $enable_g ; do
 	handle)
 	AC_DEFINE(MPICH_DEBUG_HANDLES,1,[Define to enable handle checking])
 	;;
-	mem|all|yes)
-	AC_DEFINE(USE_MEMORY_TRACING,1,[Define to enable memory tracing])
+	all|yes)
 	AC_DEFINE(MPICH_DEBUG_INTERNAL,1,[Define to compile in optional debugging tests and output])
 	AC_DEFINE(MPICH_DEBUG_NESTING,1,[Define to check nesting level on exit])
-	enable_g_mem=yes
 	CFLAGS="$CFLAGS -g"
 	;;
 	*)
@@ -455,11 +441,6 @@ fi
 if test "$enable_nmpi_as_mpi" = yes ; then
    AC_DEFINE(USE_MPI_FOR_NMPI,1,[Define if the NMPI names should use MPI instead of PMPI])
 fi
-
-if test "$enable_mpi_macros" = yes ; then
-    AC_DEFINE(USE_MACROS_FOR_WTIME,1,[Define if macros may be used for MPI_Wtime and MPI_Wtick])
-fi
-
 #
 # Set the defaults for directories that are not included in configure's
 # repetoire
@@ -685,27 +666,12 @@ if test "$enable_f77" = "yes" ; then
    bindings="$bindings f77"
    bindings_dirs="$bindings_dirs src/binding/f77"
 fi
-if test "$enable_f90" = "yes" ; then
-   bindingsubsystems="$bindingsubsystems src/binding/f90"
-   bindings="$bindings f90"
-   bindings_dirs="$bindings_dirs src/binding/f90"
-fi
-if test "$enable_f90" = yes -o "$enable_f77" = yes ; then
-   AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
-fi
 
 if test "$enable_cxx" = "yes" ; then
    bindingsubsystems="$bindingsubsystems src/binding/cxx"
    bindings="$bindings cxx"
    bindings_dirs="$bindings_dirs src/binding/cxx"
    AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
-fi
-
-if test "$enable_csharp" = "yes" ; then
-   bindingsubsystems="$bindingsubsystems src/binding/csharp"
-   bindings="$bindings csharp"
-   bindings_dirs="$bindings_dirs src/binding/csharp"
-   AC_DEFINE(HAVE_CSHARP_BINDING,1,[Define if C# is supported])
 fi
 
 AC_SUBST(bindings)
@@ -1453,7 +1419,10 @@ if test -n "$thread_type" ; then
 fi
 dnl
 dnl Check for special compile characteristics
-if test "$ac_cv_prog_gcc" = "yes" ; then
+# If we are either gcc or icc, see if we can use __asm__
+# We test on prog_gcc to allow gcc by any name; if we are using
+# icc, the value of CC must be icc for this test to pass
+if test "$ac_cv_prog_gcc" = "yes" -o "$ac_cv_prog_CC" = "icc" ; then
 AC_MSG_CHECKING([for gcc __asm__ and pentium cmpxchgl instruction])
 AC_TRY_RUN([
 int main(int argc, char *argv[])
@@ -1641,34 +1610,10 @@ if test "$enable_internat" = "yes" ; then
     fi
 fi
 dnl
-if test "$enable_g_mem" != "yes" ; then
-    dnl Strdup is needed only if memory tracing is not enabled.
-    AC_CHECK_FUNCS(strdup)
-    if test "$ac_cv_func_strdup" = "yes" ; then
-        # Do we need to declare strdup?
-        PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
-    fi
-else
-    dnl search.h is used for fancier output from trmem.  Disabled for now,
-    dnl since the tsearch routines have problematic prototypes.
-    AC_CHECK_HEADERS(search)
-    AC_CHECK_FUNCS(tsearch)
-    dnl Check that we can compile tsearch without error.  Try to compile
-    dnl it with the header and the char * args
-    if test "$ac_cv_func_tsearch" = "yes" ; then
-        AC_CACHE_CHECK([whether tsearch requires char* args],
-	               pac_cv_tsearch_charp,[
-        AC_TRY_COMPILE([#include <search.h>
-    char *tsearch( char *k, char **r, (int (*)())compare ) { return k; }],
-    [int f=0;],pac_cv_tsearch_charp=yes,pac_cv_tsearch_charp=no)])
-        if test "$pac_cv_tsearch_charp" = "yes" ; then
-	    # this should consider defining a name with the argument type
-	    # so that no further ifdefs are needed
-	    AC_DEFINE(USE_TSEARCH_WITH_CHARP,1,[Define if tsearch requires char pointers])
-	fi
-    fi
-    dnl Note that HPUX and AIX may require _INCLUDE_XOPEN_SOURCE or
-    dnl _XOPEN_SOURCE be defined respectively.
+AC_CHECK_FUNCS(strdup)
+if test "$ac_cv_func_strdup" = "yes" ; then
+    # Do we need to declare strdup?
+    PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
 fi
 dnl
 dnl Specific checks that a function works correctly
@@ -2018,7 +1963,6 @@ AC_OUTPUT(Makefile src/Makefile \
 	  src/util/instrm/Makefile \
 	  src/util/mem/Makefile \
 	  src/util/msgs/Makefile \
-	  src/util/param/Makefile \
 	  src/util/thread/Makefile \
           src/util/dbg/Makefile \
           src/include/mpi.h \
@@ -2027,7 +1971,6 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpid/ch3/Makefile \
 	  examples/Makefile \
 	  examples/f77/Makefile \
-	  examples/f90/Makefile \
 	  examples/cxx/Makefile \
           examples/mpiexec/Makefile \
           src/util/logging/Makefile \
