@@ -309,6 +309,9 @@ typedef struct {
   MPID_Object_kind   kind;
   MPID_Errhandler_fn errfn;
   /* Other, device-specific information */
+#ifdef MPID_DEV_ERRHANDLER_DECL
+    MPID_DEV_ERRHANDLER_DECL
+#endif
 } MPID_Errhandler;
 
 /* Lists and attributes */
@@ -364,7 +367,10 @@ typedef struct {
     int          size;           /* Size of a group */
     int          *lrank_to_lpid; /* Array mapping a local rank to local 
 				    process number */
-  /* other, device-specific information */
+  /* Other, device-specific information */
+#ifdef MPID_DEV_GROUP_DECL
+    MPID_DEV_GROUP_DECL
+#endif
 } MPID_Group;
 
 extern MPIU_Object_alloc_t MPID_Group_mem;
@@ -390,7 +396,7 @@ typedef struct {
 #ifndef MPICH_SINGLE_THREADED
     MPID_Thread_lock_t access_lock;
 #endif
-  /* other, device-specific information */
+  /* Other, device-specific information */
 #ifdef MPID_DEV_COMM_DECL
     MPID_DEV_COMM_DECL
 #endif
@@ -399,6 +405,20 @@ extern MPIU_Object_alloc_t MPID_Comm_mem;
 /* Preallocated comm objects */
 extern MPID_Comm MPID_Comm_direct[];
 
+/* Requests */
+typedef struct {
+    int           id;
+    volatile int ref_count;
+    volatile int busy;
+    /* A comm is needed to find the proper error handler */
+    MPID_Comm *comm;
+    /* Status is needed for wait/test/recv */
+    MPI_Status status;
+    /* Other, device-specific information */
+#ifdef MPID_DEV_REQUEST_DECL
+    MPID_DEV_REQUEST_DECL
+#endif
+} MPID_Request;
 
 /* Windows */
 typedef struct {
@@ -410,6 +430,10 @@ typedef struct {
     MPID_List    attributes;
     MPID_Comm    *comm;         /* communicator of window */
     char          name[MPI_MAX_OBJECT_NAME];  
+  /* Other, device-specific information */
+#ifdef MPID_DEV_WIN_DECL
+    MPID_DEV_WIN_DECL
+#endif
 } MPID_Win;
 extern MPIU_Object_alloc_t MPID_Win_mem;
 /* Preallocated win objects */
@@ -467,7 +491,10 @@ typedef struct MPID_Datatype_st {
     MPI_Aint      element_size; /* Size of each element or -1 if elements are
 				   not all the same size */
 
-    /* other, device-specific information */
+    /* Other, device-specific information */
+#ifdef MPID_DEV_DATATYPE_DECL
+    MPID_DEV_DATATYPE_DECL
+#endif
 } MPID_Datatype;
 extern MPIU_Object_alloc_t MPID_Datatype_mem;
 /* Preallocated datatype objects */
@@ -513,6 +540,10 @@ typedef struct {
     int           id;             /* value of MPI_File for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+  /* Other, device-specific information */
+#ifdef MPID_DEV_FILE_DECL
+    MPID_DEV_FILE_DECL
+#endif
 } MPID_File;
 extern MPIU_Object_alloc_t MPID_File_mem;
 /* Preallocated file objects */
