@@ -132,88 +132,88 @@ static char *get_random_color_str()
 int Sock_describe_timer_states()
 {
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_INIT,
-	"sock_init",
+	MPID_STATE_MPIDU_SOCK_INIT,
+	"mpidu_sock_init",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_FINALIZE,
-	"sock_finalize",
+	MPID_STATE_MPIDU_SOCK_FINALIZE,
+	"mpidu_sock_finalize",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_CREATE_SET,
-	"sock_create_set",
+	MPID_STATE_MPIDU_SOCK_CREATE_SET,
+	"mpidu_sock_create_set",
         get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_DESTROY_SET,
-	"sock_destroy_set",
+	MPID_STATE_MPIDU_SOCK_DESTROY_SET,
+	"mpidu_sock_destroy_set",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_LISTEN,
-	"sock_listen",
+	MPID_STATE_MPIDU_SOCK_LISTEN,
+	"mpidu_sock_listen",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_POST_CONNECT,
-	"sock_post_connect",
+	MPID_STATE_MPIDU_SOCK_POST_CONNECT,
+	"mpidu_sock_post_connect",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_ACCEPT,
-	"sock_accept",
+	MPID_STATE_MPIDU_SOCK_ACCEPT,
+	"mpidu_sock_accept",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_POST_CLOSE,
-	"sock_post_close",
+	MPID_STATE_MPIDU_SOCK_POST_CLOSE,
+	"mpidu_sock_post_close",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_WAIT,
-	"sock_wait",
+	MPID_STATE_MPIDU_SOCK_WAIT,
+	"mpidu_sock_wait",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_SET_USER_PTR,
-	"sock_set_user_ptr",
+	MPID_STATE_MPIDU_SOCK_SET_USER_PTR,
+	"mpidu_sock_set_user_ptr",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_READ,
-	"sock_read",
+	MPID_STATE_MPIDU_SOCK_READ,
+	"mpidu_sock_read",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_READV,
-	"sock_readv",
+	MPID_STATE_MPIDU_SOCK_READV,
+	"mpidu_sock_readv",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_WRITE,
-	"sock_write",
+	MPID_STATE_MPIDU_SOCK_WRITE,
+	"mpidu_sock_write",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_WRITEV,
-	"sock_writev",
+	MPID_STATE_MPIDU_SOCK_WRITEV,
+	"mpidu_sock_writev",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_POST_READ,
-	"sock_post_read",
+	MPID_STATE_MPIDU_SOCK_POST_READ,
+	"mpidu_sock_post_read",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_POST_READV,
-	"sock_post_readv",
+	MPID_STATE_MPIDU_SOCK_POST_READV,
+	"mpidu_sock_post_readv",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_POST_WRITE,
-	"sock_post_write",
+	MPID_STATE_MPIDU_SOCK_POST_WRITE,
+	"mpidu_sock_post_write",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_POST_WRITEV,
-	"sock_post_writev",
+	MPID_STATE_MPIDU_SOCK_POST_WRITEV,
+	"mpidu_sock_post_writev",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_GETID,
-	"sock_getid",
+	MPID_STATE_MPIDU_SOCK_GETID,
+	"mpidu_sock_getid",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_GETSETID,
-	"sock_getsetid",
+	MPID_STATE_MPIDU_SOCK_GETSETID,
+	"mpidu_sock_getsetid",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_NATIVE_TO_SOCK,
-	"sock_native_to_sock",
+	MPID_STATE_MPIDU_SOCK_NATIVE_TO_SOCK,
+	"mpidu_sock_native_to_sock",
 	get_random_color_str());
     return Socki_describe_timer_states();
 }
