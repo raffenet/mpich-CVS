@@ -125,18 +125,27 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
                 MPIU_Object_set_ref(newreq, 1);
                 MPIDI_Request_set_type(newreq, MPIDI_REQUEST_TYPE_ACCUM_RESP);
 
+		MPIR_Nest_incr();
                 mpi_errno = NMPI_Type_get_true_extent(new_dtp->handle, 
                                                       &true_lb, &true_extent);
-                if (mpi_errno) goto fn_exit;
+		MPIR_Nest_decr();
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno) {
+		    goto fn_exit;
+		}
+		/* --END ERROR HANDLING-- */
 
                 MPID_Datatype_get_extent_macro(new_dtp->handle, extent); 
 
                 tmp_buf = MPIU_Malloc(rreq->ch3.user_count * 
                                       (MPIR_MAX(extent,true_extent)));  
+		/* --BEGIN ERROR HANDLING-- */
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     goto fn_exit;
                 }
+		/* --END ERROR HANDLING-- */
+
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
