@@ -45,6 +45,7 @@ static int fstack_max_priority = 0;
 
 void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 {
+    /* --BEGIN ERROR HANDLING-- */
     if (fstack_sp >= MAX_FINALIZE_FUNC) {
 	/* This is a little tricky.  We may want to check the state of
 	   MPIR_Process.initialized to decide how to signal the error */
@@ -56,6 +57,7 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 	    exit(1);
 	}
     }
+    /* --END ERROR HANDLING-- */
     fstack[fstack_sp].f            = f;
     fstack[fstack_sp].priority     = priority;
     fstack[fstack_sp++].extra_data = extra_data;

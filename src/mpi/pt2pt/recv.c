@@ -140,10 +140,12 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 		if ((*(request_ptr)->cc_ptr) != 0)
 		{
 		    mpi_errno = MPID_Progress_wait();
+		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			goto fn_exit;
 		    }
+		    /* --END ERROR HANDLING-- */
 		}
 		else
 		{

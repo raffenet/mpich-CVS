@@ -132,11 +132,13 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
     else
     {
 	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
+	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
 	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     n_completed = 0;

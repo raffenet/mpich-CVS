@@ -139,11 +139,13 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 	
 	/* Allocate a new group and lrank_to_lpid array */
 	mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
+	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno) {
 	    MPID_Common_thread_unlock();
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
+	/* --END ERROR HANDLING-- */
 	/* If this process is in group1, then we can set the rank now. 
 	   If we are not in this group, this assignment will set the
 	   current rank to MPI_UNDEFINED */

@@ -78,10 +78,12 @@ static int *MPIR_Copy_array( int n, const int a[], int *err )
     int *new_p = (int *)MPIU_Malloc( n * sizeof(int) );
     int i;
     
+    /* --BEGIN ERROR HANDLING-- */
     if (!new_p) {
 	*err = MPI_ERR_OTHER;
 	return 0;
     }
+    /* --END ERROR HANDLING-- */
     for (i=0; i<n; i++) {
 	new_p[i] = a[i];
     }
@@ -103,9 +105,11 @@ static int MPIR_Topology_copy_fn ( MPI_Comm comm, int keyval, void *extra_data,
     MPIR_Topology *copy_topology = (MPIR_Topology *)MPIU_Malloc( sizeof( MPIR_Topology) );
     int mpi_errno = 0;
 
+    /* --BEGIN ERROR HANDLING-- */
     if (!copy_topology) {
 	return MPI_ERR_OTHER;
     }
+    /* --END ERROR HANDLING-- */
 
     copy_topology->kind = old_topology->kind;
     if (old_topology->kind == MPI_CART) {
@@ -131,10 +135,13 @@ static int MPIR_Topology_copy_fn ( MPI_Comm comm, int keyval, void *extra_data,
 				 old_topology->topo.graph.nedges, 
 				 old_topology->topo.graph.edges, &mpi_errno );
     }
+    /* --BEGIN ERROR HANDLING-- */
     else {
 	/* Unknown topology */
 	return MPI_ERR_TOPOLOGY;
     }
+    /* --END ERROR HANDLING-- */
+
     *(void **)attr_out = (void *)copy_topology;
     *flag = 1;
     /* Return mpi_errno in case one of the copy array functions failed */
@@ -158,9 +165,11 @@ static int MPIR_Topology_delete_fn ( MPI_Comm comm, int keyval,
 	MPIU_Free( topology->topo.graph.edges );
 	MPIU_Free( topology );
     }
+    /* --BEGIN ERROR HANDLING-- */
     else {
 	return MPI_ERR_TOPOLOGY;
     }
+    /* --END ERROR HANDLING-- */
     return MPI_SUCCESS;
 }
 

@@ -153,10 +153,12 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 /* check if MPI itself has been initialized. If not, flag an error.
    Can't initialize it here, because don't know argc, argv */
 	MPI_Initialized(&flag);
+	/* --BEGIN ERROR HANDLING-- */
 	if (!flag) {
 	    FPRINTF(stderr, "Error: MPI_Init() must be called before using MPI-IO\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
+	/* --END ERROR HANDLING-- */
 
 	MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_End_call, &ADIO_Init_keyval,
 			  (void *) 0);  

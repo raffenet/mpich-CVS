@@ -106,11 +106,13 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
     else
     {
 	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
+	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
 	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     for (i = 0; i < count; i++)

@@ -120,11 +120,13 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
     else
     {
 	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
+	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
 	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
     }
 
     n_inactive = 0;

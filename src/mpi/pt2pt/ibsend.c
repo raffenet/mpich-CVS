@@ -105,10 +105,12 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	   been copied, so we can return a created request here */
 	/* Create a completed request */
 	request_ptr = MPID_Request_create();
+	/* --BEGIN ERROR HANDLING-- */
 	if (!request_ptr) {
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
 	    return MPIR_ERR_MEMALLOCFAILED;
 	}
+	/* --END ERROR HANDLING-- */
 	request_ptr->kind                 = MPID_REQUEST_SEND;
 	MPIU_Object_set_ref( request_ptr, 1 );
 	request_ptr->cc_ptr               = &request_ptr->cc;

@@ -133,19 +133,23 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     /* FIXME - Performance for small messages might be better if MPID_Send() were used here instead of MPID_Isend() */
     mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &sreq);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	/* FIXME: should we cancel the pending (possibly completed) receive request or wait for it to complete? */
 	MPID_Request_release(rreq);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     while(1)
     {
@@ -154,10 +158,12 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	{
 	    mpi_errno = MPID_Progress_wait();
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		goto fn_exit;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	else
 	{
