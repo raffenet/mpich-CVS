@@ -11,12 +11,15 @@
 #include "rlog.h"
 #include "mpichtimer.h"
 
+/* structures, global variables */
 extern RLOG_Struct *g_pRLOG;
 
+/* state declaration macros */
 #define MPIDU_STATE_DECL(a) MPID_Time_t time_stamp_in##a , time_stamp_out##a
 #define MPIDU_INIT_STATE_DECL(a)
 #define MPIDU_FINALIZE_STATE_DECL(a)
 
+/* function enter and exit macros */
 #define MPIDU_FUNC_ENTER(a) \
 if (g_pRLOG) \
 { \
@@ -67,6 +70,7 @@ if (g_pRLOG) \
 #define MPIDU_FINALIZE_FUNC_ENTER(a)
 #define MPIDU_FINALIZE_FUNC_EXIT(a)
 
+/* arrow generating enter and exit macros */
 #define MPIDU_PT2PT_FUNC_ENTER_FRONT(a) \
 if (g_pRLOG) \
 { \
