@@ -117,7 +117,7 @@ typedef enum MPIU_dbg_state_t
     MPIU_DBG_STATE_NONE = 0,
     MPIU_DBG_STATE_UNINIT = 1,
     MPIU_DBG_STATE_STDOUT = 2,
-    MPIU_DBG_STATE_MEMLOG = 4,
+    MPIU_DBG_STATE_MEMLOG = 4
 }
 MPIU_dbg_state_t;
 int MPIU_dbg_printf(char *str, ...);
@@ -231,7 +231,7 @@ typedef enum MPID_Lang_t { MPID_LANG_C,
 			   MPID_LANG_FORTRAN90,
 #endif
 #ifdef HAVE_CXX_BINDING
-			   MPID_LANG_CXX, 
+			   MPID_LANG_CXX
 #endif
 } MPID_Lang_t;
 
@@ -249,7 +249,7 @@ typedef enum MPID_Object_kind {
   MPID_WIN        = 0x8,
   MPID_KEYVAL     = 0x9,
   MPID_ATTR       = 0xa,
-  MPID_REQUEST    = 0xb,
+  MPID_REQUEST    = 0xb
   } MPID_Object_kind;
 /* The above objects should correspond to MPI objects only. */
 #define HANDLE_MPI_KIND_SHIFT 26
@@ -519,9 +519,11 @@ int MPIU_Handle_free( void *((*)[]), int );
 
 /* Parameter handling.  These functions have not been implemented yet.
    See src/util/param.[ch] */
-typedef enum MPIU_Param_result_t { MPIU_PARAM_FOUND = 0, 
-               MPIU_PARAM_OK = 1, 
-               MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
+typedef enum MPIU_Param_result_t { 
+    MPIU_PARAM_FOUND = 0, 
+    MPIU_PARAM_OK = 1, 
+    MPIU_PARAM_ERROR = 2 
+} MPIU_Param_result_t;
 int MPIU_Param_init( int *, char *[], const char [] );
 int MPIU_Param_bcast( void );
 int MPIU_Param_register( const char [], const char [], const char [] );
@@ -662,7 +664,9 @@ extern MPID_Group MPID_Group_direct[];
 typedef struct MPIDI_VCRT * MPID_VCRT;
 typedef struct MPIDI_VC   * MPID_VCR;
 
-typedef enum MPID_Comm_kind_t { MPID_INTRACOMM = 0, MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
+typedef enum MPID_Comm_kind_t { 
+    MPID_INTRACOMM = 0, 
+    MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
 /* Communicators */
 typedef struct MPID_Comm { 
     int           handle;        /* value of MPI_Comm for this structure */
@@ -820,7 +824,8 @@ extern MPID_Win MPID_Win_direct[];
   Module:
   Collective-DS
   E*/
-typedef enum MPID_Op_kind { MPID_OP_MAX=1, MPID_OP_MIN=2, MPID_OP_SUM=3, MPID_OP_PROD=4, 
+typedef enum MPID_Op_kind { MPID_OP_MAX=1, MPID_OP_MIN=2, 
+			    MPID_OP_SUM=3, MPID_OP_PROD=4, 
 	       MPID_OP_LAND=5, MPID_OP_BAND=6, MPID_OP_LOR=7, MPID_OP_BOR=8,
 	       MPID_OP_LXOR=9, MPID_OP_BXOR=10, MPID_OP_MAXLOC=11, 
                MPID_OP_MINLOC=12, MPID_OP_REPLACE=13, 
