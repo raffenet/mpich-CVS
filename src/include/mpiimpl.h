@@ -1238,6 +1238,20 @@ void MPIR_Wait(MPID_Request *);
     }						\
 }
 
+#define MPIR_Request_extract_status(_request_ptr, _status)								\
+{															\
+    if ((_status) != MPI_STATUS_IGNORE)											\
+    {															\
+	int __error;													\
+															\
+	/* According to the MPI 1.1 standard page 22 lines 9-12, the MPI_ERROR field may not be modified except by the	\
+	   functions in section 3.7.5 which return MPI_ERR_IN_STATUSES (MPI_Wait{all,some} and MPI_Test{all,some}). */	\
+	__error = (_status)->MPI_ERROR;											\
+	*(_status) = (_request_ptr)->status;										\
+	(_status)->MPI_ERROR = __error;											\
+    }															\
+}
+
 /* Bindings for internal routines */
 void MPIR_Add_finalize( int (*)( void * ), void *, int );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
