@@ -1,0 +1,45 @@
+Goals
+
+* Define semantics of all routines so that others can write to the interface
+
+* Primary design is for MPICH2, but should also be useable by SMPD, etc.
+
+* Allow implementation of passive target OSC (asynchronous progress engine)
+
+* Allow fault tolerant implementation of dynamic process interface
+
+--------------------
+
+Requirements
+
+* sock_post_close() must be able to interrupt a posted read and/or write.  What
+  about a connect?  What about a listener with accepted socks in the queue?
+
+* Error codes must be both descriptive of the problem and allow programatic
+  decisions to be made.
+
+* It would be useful if post_read/write() could handle a byte range (min/max)
+
+* Restrict connections and listeners to a range of ports (req #125)
+
+* Must be reasonably thread-safe and thread supportive.  For example, it must
+  be possible to wake up sock_wait().  It should also be possible to post a new
+  read or write while a thread is blocked in sock_wait().
+
+* Do we need anything special for proxy communication?  Do we even want to
+  support it?
+
+--------------------
+
+Issues
+
+* sock_get_last_os_error()?  portability?  thread safety?
+
+* if we use MPI error codes, we will need to link part of MPICH2 into SMPD.
+  this could cause initialization problems.
+
+* MPI error codes are not descriptive enough to allow programatic response to
+  errors.  we could extend the MPI error classes to better define internal
+  errors.  the top-level routine (or maybe ADI3 routine) would be responsible
+  for returning a proper error class.
+
