@@ -359,6 +359,13 @@ static int FindGenericMsgIndex( const char *msg )
 {
     int i, c;
     for (i=0; i<generic_msgs_len; i++) {
+	/* Check the sentinals to insure that the values are ok first */
+	if (generic_err_msgs[i].sentinal1 != 0xacebad03 ||
+	    generic_err_msgs[i].sentinal2 != 0xcb0bfa11) {
+	    /* Something bad has happened! Don't risk trying the
+	       short_name pointer; it may have been corrupted */
+	    break;
+	}
 	c = strcmp( generic_err_msgs[i].short_name, msg );
 	if (c == 0) return i;
 	if (c > 0) return -1;

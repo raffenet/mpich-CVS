@@ -76,7 +76,9 @@ sub CreateErrmsgsHeader {
  * DO NOT EDIT\
  */\n";
     print $FD "typedef struct msgpair {\
-        const char *short_name, *long_name; } msgpair;\n"
+        const int sentinal1;\
+        const char *short_name, *long_name; 
+        const int sentinal2; } msgpair;\n"
 }
 #
 # We also need a way to create the records
@@ -190,9 +192,13 @@ sub CreateErrMsgMapping {
     # Generate the mapping of short to long names
     print $OUTFD "\nstatic const int generic_msgs_len = $num;\n";
     my $i = 0;
-    print $OUTFD "static msgpair generic_err_msgs[] = {\n";
+    # The sentinals should be hardcoded into the source file that
+    # uses this file to ensure that the sentinal tests are ok.
+    my $sentinal1 = "0xacebad03";
+    my $sentinal2 = "0xcb0bfa11";
+    print $OUTFD "static const msgpair generic_err_msgs[] = {\n";
     for (my $i = 0; $i < $num; $i ++) {
-	print $OUTFD "{ short_gen$i, long_gen$i }";
+	print $OUTFD "{ $sentinal1, short_gen$i, long_gen$i, $sentinal2 }";
 	print $OUTFD "," if ($i < $num - 1);
 	print $OUTFD "\n";
     }
@@ -223,9 +229,9 @@ sub CreateErrMsgMapping {
     # Generate the mapping of short to long names
     my $i = 0;
     print $OUTFD "\nstatic const int specific_msgs_len = $num;\n";
-    print $OUTFD "static msgpair specific_err_msgs[] = {\n";
+    print $OUTFD "static const msgpair specific_err_msgs[] = {\n";
     for ($i = 0; $i < $num ; $i ++) {
-	print $OUTFD "{ short_spc$i, long_spc$i }";
+	print $OUTFD "{ $sentinal1, short_spc$i, long_spc$i, $sentinal2 }";
 	print $OUTFD "," if ($i < $num - 1);
 	print $OUTFD "\n";
     }
