@@ -17,7 +17,7 @@
 #define SOCKI_TCP_BUFFER_SIZE       32*1024
 #define SOCKI_STREAM_PACKET_LENGTH  8*1024
 
-typedef enum SOCK_TYPE { SOCK_INVALID, SOCK_LISTENER, SOCK_SOCKET } SOCK_TYPE;
+typedef enum SOCK_TYPE { SOCK_INVALID, SOCK_LISTENER, SOCK_SOCKET, SOCK_NATIVE } SOCK_TYPE;
 
 typedef int SOCK_STATE;
 #define SOCK_ACCEPTING  0x0001
@@ -541,7 +541,7 @@ static inline int post_next_accept(sock_state_t * listen_state)
 	error = WSAGetLastError();
 	if (error == ERROR_IO_PENDING)
 	    return TRUE;
-	printf("AcceptEx failed with error %d\n", error);
+	printf("AcceptEx failed with error %d\n", error);fflush(stdout);
 	return FALSE;
     }
     return TRUE;
@@ -562,7 +562,7 @@ SOCKET socki_get_handle(sock_t sock)
 
 int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_t *sock_ptr)
 {
-    int ret_val;
+    /*int ret_val;*/
     sock_state_t *sock_state;
     /*u_long optval;*/
     MPIDI_STATE_DECL(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
@@ -571,6 +571,10 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
 
     /* setup the structures */
     sock_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
+    if (sock_state == NULL)
+    {
+	return SOCK_ERR_NOMEM;
+    }
     init_state_struct(sock_state);
     sock_state->sock = (SOCKET)fd;
 
@@ -589,10 +593,20 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
     /*printf("CreateIOCompletionPort(%d, %p, %p, %d)\n", sock_state->sock, set, sock_state, g_num_cp_threads);fflush(stdout);*/
     if (CreateIoCompletionPort((HANDLE)sock_state->sock, set, (ULONG_PTR)sock_state, g_num_cp_threads) == NULL)
     {
+	printf("Unable to associate native handle with the completion port, setting NATIVE mode.\n");fflush(stdout);
+	/* If it cannot be associated with the completion port, use the callback interface */
+	sock_state->type = SOCK_NATIVE;
+	/* the hEvent fields are not used by the OS so use them to save a pointer to the sock structure */
+	CloseHandle(sock_state->read.ovl.hEvent);
+	CloseHandle(sock_state->write.ovl.hEvent);
+	sock_state->read.ovl.hEvent = sock_state;
+	sock_state->write.ovl.hEvent = sock_state;
+	/*
 	ret_val = WinToSockError(GetLastError());
 	MPIU_Error_printf("CreateIOCompletionPort failed, error %d\n", GetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_SOCK_FROM_SOCKET);
 	return ret_val;
+	*/
     }
 
     *sock_ptr = sock_state;
@@ -902,6 +916,8 @@ int sock_post_close(sock_t sock)
     sock->closing = TRUE;
     if (sock->pending_operations == 0)
     {
+	/*printf("flushing socket buffer before closing\n");fflush(stdout);*/
+	FlushFileBuffers((HANDLE)sock->sock);
 	shutdown(sock->sock, SD_BOTH);
 	closesocket(sock->sock);
 	sock->sock = INVALID_SOCKET;
@@ -909,6 +925,40 @@ int sock_post_close(sock_t sock)
     }
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
     return SOCK_SUCCESS;
+}
+
+static volatile LONG g_nPostedIO = 0;
+
+VOID CALLBACK socki_read(DWORD error, DWORD num_bytes, OVERLAPPED *ovl)
+{
+    sock_t sock;
+    sock = (sock_t)ovl->hEvent;
+    InterlockedDecrement(&g_nPostedIO);
+    PostQueuedCompletionStatus(sock->set, num_bytes, (ULONG_PTR)sock, &sock->read.ovl);
+}
+
+void CALLBACK socki_wsaread(IN DWORD error, IN DWORD num_bytes, IN LPWSAOVERLAPPED ovl, IN DWORD flags)
+{
+    sock_t sock;
+    sock = (sock_t)ovl->hEvent;
+    InterlockedDecrement(&g_nPostedIO);
+    PostQueuedCompletionStatus(sock->set, num_bytes, (ULONG_PTR)sock, &sock->read.ovl);
+}
+
+VOID CALLBACK socki_written(DWORD error, DWORD num_bytes, OVERLAPPED *ovl)
+{
+    sock_t sock;
+    sock = (sock_t)ovl->hEvent;
+    InterlockedDecrement(&g_nPostedIO);
+    PostQueuedCompletionStatus(sock->set, num_bytes, (ULONG_PTR)sock, &sock->write.ovl);
+}
+
+void CALLBACK socki_wsawritten(IN DWORD error, IN DWORD num_bytes, IN LPWSAOVERLAPPED ovl, IN DWORD flags)
+{
+    sock_t sock;
+    sock = (sock_t)ovl->hEvent;
+    InterlockedDecrement(&g_nPostedIO);
+    PostQueuedCompletionStatus(sock->set, num_bytes, (ULONG_PTR)sock, &sock->write.ovl);
 }
 
 int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
@@ -925,6 +975,8 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 
     for (;;) 
     {
+	if (g_nPostedIO > 0)
+	    SleepEx(0, TRUE); /* allow the completion routines finish */
 	MPIDI_FUNC_ENTER(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	/* initialize to NULL so we can compare the output of GetQueuedCompletionStatus */
 	sock = NULL;
@@ -932,7 +984,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	if (GetQueuedCompletionStatus(set, &num_bytes, (DWORD*)&sock, &ovl, millisecond_timeout))
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
-	    if (sock->type == SOCK_SOCKET)
+	    if (sock->type == SOCK_SOCKET || sock->type == SOCK_NATIVE)
 	    {
 		if (sock->closing && sock->pending_operations == 0)
 		{
@@ -981,6 +1033,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
 				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+				FlushFileBuffers((HANDLE)sock->sock);
 				shutdown(sock->sock, SD_BOTH);
 				closesocket(sock->sock);
 				sock->sock = INVALID_SOCKET;
@@ -1010,6 +1063,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    if (sock->closing && sock->pending_operations == 0)
 			    {
 				MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple read completed.\n", sock_getid(sock)));
+				FlushFileBuffers((HANDLE)sock->sock);
 				shutdown(sock->sock, SD_BOTH);
 				closesocket(sock->sock);
 				sock->sock = INVALID_SOCKET;
@@ -1039,6 +1093,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			if (sock->closing && sock->pending_operations == 0)
 			{
 			    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after connect completed.\n", sock_getid(sock)));
+			    FlushFileBuffers((HANDLE)sock->sock);
 			    shutdown(sock->sock, SD_BOTH);
 			    closesocket(sock->sock);
 			    sock->sock = INVALID_SOCKET;
@@ -1086,6 +1141,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				if (sock->closing && sock->pending_operations == 0)
 				{
 				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov write completed.\n", sock_getid(sock)));
+				    FlushFileBuffers((HANDLE)sock->sock);
 				    shutdown(sock->sock, SD_BOTH);
 				    closesocket(sock->sock);
 				    sock->sock = INVALID_SOCKET;
@@ -1120,6 +1176,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				if (sock->closing && sock->pending_operations == 0)
 				{
 				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after simple write completed.\n", sock_getid(sock)));
+				    FlushFileBuffers((HANDLE)sock->sock);
 				    shutdown(sock->sock, SD_BOTH);
 				    closesocket(sock->sock);
 				    sock->sock = INVALID_SOCKET;
@@ -1172,7 +1229,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    }
 	    if (sock != NULL)
 	    {
-		if (sock->type == SOCK_SOCKET)
+		if (sock->type == SOCK_SOCKET || sock->type == SOCK_NATIVE)
 		{
 		    out->num_bytes = 0;
 		    out->error = error;
@@ -1391,21 +1448,47 @@ int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size
     sock->read.progress_update = rfn;
     sock->state |= SOCK_READING;
     sock->pending_operations++;
+    if (sock->type == SOCK_NATIVE)
+    {
+	InterlockedIncrement(&g_nPostedIO);
+	if (!ReadFileEx((HANDLE)(sock->sock), buf, len, &sock->read.ovl, (LPOVERLAPPED_COMPLETION_ROUTINE)socki_read))
+	{
+	    switch (e = GetLastError())
+	    {
+	    case ERROR_HANDLE_EOF:
+		e = SOCK_EOF;
+		InterlockedDecrement(&g_nPostedIO);
+		break;
+	    case ERROR_IO_PENDING:
+		e = SOCK_SUCCESS;
+		break;
+	    default:
+		e = WinToSockError(e);
+		InterlockedDecrement(&g_nPostedIO);
+		break;
+	    }
+	}
+    }
+    else
+    {
     MPIU_DBG_PRINTF(("sock_post_read - %d bytes\n", len));
     if (!ReadFile((HANDLE)(sock->sock), buf, len, &sock->read.num_bytes, &sock->read.ovl))
     {
 	switch (e = GetLastError())
 	{
 	case ERROR_HANDLE_EOF:
+	    printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
 	    e = SOCK_EOF;
 	    break;
         case ERROR_IO_PENDING:
 	    e = SOCK_SUCCESS;
 	    break;
 	default:
+	    printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
 	    e = WinToSockError(e);
 	    break;
 	}
+    }
     }
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_READ);
     return e;
@@ -1415,9 +1498,9 @@ int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(sock_size_t, v
 {
     int iter;
     int e = SOCK_SUCCESS;
-#ifdef MPICH_DBG_OUTPUT
+//#ifdef MPICH_DBG_OUTPUT
     int i;
-#endif
+//#endif
     DWORD flags = 0;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_READV);
 #ifdef USE_SOCK_IOV_COPY
@@ -1445,9 +1528,12 @@ int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(sock_size_t, v
 	MPIU_DBG_PRINTF(("sock_post_readv - iov[%d].len = %d\n", i, iov[i].MPID_IOV_LEN));
     }
 #endif
+    if (sock->type == SOCK_NATIVE)
+        InterlockedIncrement(&g_nPostedIO);
     for (iter=0; iter<10; iter++)
     {
-	if (WSARecv(sock->sock, sock->read.iov, n, &sock->read.num_bytes, &flags, &sock->read.ovl, NULL) != SOCKET_ERROR)
+	if (WSARecv(sock->sock, sock->read.iov, n, &sock->read.num_bytes, &flags, &sock->read.ovl, 
+	    (sock->type == SOCK_NATIVE) ? socki_wsaread : NULL) != SOCKET_ERROR)
 	    break;
 
 	e = WSAGetLastError();
@@ -1458,6 +1544,8 @@ int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(sock_size_t, v
 	}
 	if (e != WSAEWOULDBLOCK)
 	{
+	    if (sock->type == SOCK_NATIVE)
+		InterlockedDecrement(&g_nPostedIO);
 	    e = WinToSockError(e);
 	    break;
 	}
@@ -1486,6 +1574,29 @@ int sock_post_write(sock_t sock, void *buf, sock_size_t len, int (*wfn)(sock_siz
     sock->state |= SOCK_WRITING;
     sock->pending_operations++;
     MPIU_DBG_PRINTF(("sock_post_write - %d bytes\n", len));
+    if (sock->type == SOCK_NATIVE)
+    {
+        InterlockedIncrement(&g_nPostedIO);
+	if (!WriteFileEx((HANDLE)(sock->sock), buf, len, &sock->write.ovl, (LPOVERLAPPED_COMPLETION_ROUTINE)socki_written))
+	{
+	    switch (e = GetLastError())
+	    {
+	    case ERROR_HANDLE_EOF:
+		e = SOCK_EOF;
+		InterlockedDecrement(&g_nPostedIO);
+		break;
+	    case ERROR_IO_PENDING:
+		e = SOCK_SUCCESS;
+		break;
+	    default:
+		e = WinToSockError(e);
+		InterlockedDecrement(&g_nPostedIO);
+		break;
+	    }
+	}
+    }
+    else
+    {
     if (!WriteFile((HANDLE)(sock->sock), buf, len, &sock->write.num_bytes, &sock->write.ovl))
     {
 	switch (e = GetLastError())
@@ -1500,6 +1611,7 @@ int sock_post_write(sock_t sock, void *buf, sock_size_t len, int (*wfn)(sock_siz
 	    e = WinToSockError(e);
 	    break;
 	}
+    }
     }
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_WRITE);
     return e;
@@ -1554,9 +1666,12 @@ int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(sock_size_t, 
 	fflush(stdout);
     }
 #endif
+    if (sock->type == SOCK_NATIVE)
+	InterlockedIncrement(&g_nPostedIO);
     for (iter=0; iter<10; iter++)
     {
-	if (WSASend(sock->sock, sock->write.iov, n, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) != SOCKET_ERROR)
+	if (WSASend(sock->sock, sock->write.iov, n, &sock->write.num_bytes, 0, &sock->write.ovl, 
+	    (sock->type == SOCK_NATIVE) ? socki_wsawritten : NULL) != SOCKET_ERROR)
 	    break;
 
 	e = WSAGetLastError();
@@ -1567,6 +1682,8 @@ int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(sock_size_t, 
 	}
 	if (e != WSAEWOULDBLOCK)
 	{
+	    if (sock->type == SOCK_NATIVE)
+		InterlockedDecrement(&g_nPostedIO);
 	    e = WinToSockError(e);
 	    break;
 	}
