@@ -17,6 +17,8 @@
 #include <termios.h>
 #endif
 
+int g_bUseProcessSession = 0;
+
 int mp_dbg_printf(char *str, ...)
 {
     int n;
@@ -550,8 +552,14 @@ int mp_console(char *host)
 
     /* create a session with the host */
     set = SOCK_INVALID_SET;
-    /*result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_SMPD_SESSION_STR, 1, &set, &sock);*/
-    result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_PROCESS_SESSION_STR, 1, &set, &sock);
+    if (g_bUseProcessSession)
+    {
+	result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_PROCESS_SESSION_STR, 1, &set, &sock);
+    }
+    else
+    {
+	result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_SMPD_SESSION_STR, 1, &set, &sock);
+    }
     if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("Unable to connect to smpd on %s\n", host);

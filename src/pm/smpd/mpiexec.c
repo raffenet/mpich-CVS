@@ -31,6 +31,10 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	g_bDoConsole = 1;
 	gethostname(g_pszConsoleHost, SMPD_MAX_HOST_LENGTH);
     }
+    if (smpd_get_opt(argcp, argvp, "-p"))
+    {
+	g_bUseProcessSession = 1;
+    }
     
     /* check for mpi options */
     /*

@@ -28,6 +28,8 @@ extern HANDLE g_hCloseStdinThreadEvent;
 extern HANDLE g_hStdinThread;
 #endif
 
+extern int g_bUseProcessSession;
+
 int mp_dbg_printf(char *str, ...);
 int mp_err_printf(char *str, ...);
 int mp_enter_fn(char *fcname);
