@@ -77,7 +77,8 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 # at the top level, particularly for installation.  srcdir is needed only for
 # VPATH builds
 # We must build the srcdir and top_srcdir specially because autoconf
-# insists on replacing this text.
+# insists on replacing this text.  The rest we had to do to allow the
+# maint/configure to work under Cygwin
 $srcdir_name =               'srcdir      =@' . "srcdir"      . '@';
 $topsrcdir_name =            'top_srcdir  =@' . "top_srcdir"  . '@';
 $prefix_name =               'prefix      =@' . "prefix"      . '@'; 
@@ -1068,7 +1069,7 @@ sub AddDependency {
 	$include = $include_list;
     }
     print "Trying gcc -MM $include $target\n" if $debug;
-    open( DEPFD, "gcc -MM $include $target |" ) || return;
+    open( DEPFD, "gcc -MM $include $target 2>/dev/null |" ) || return;
     while (<DEPFD>) {
 	print FD $_;
     }
