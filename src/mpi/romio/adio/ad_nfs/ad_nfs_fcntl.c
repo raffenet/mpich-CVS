@@ -47,7 +47,7 @@ void ADIOI_NFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__,
 					   MPI_ERR_ARG, 
-					   "**flag", "**flag %s", flag);
+					   "**flag", "**flag %d", flag);
 	return;
 	/* --END ERROR HANDLING-- */
     }
