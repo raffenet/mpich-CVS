@@ -656,6 +656,10 @@ Sub AddDefinitions( fout, filename )
 			comment = RegExpFind("/\*.*\*/", Match.Value)
 			define = RegExpFind("#undef.*", Match.Value)
 			define = Mid(define, 8)
+			define = Replace(define, vbNewLine, " ")
+			define = Replace(define, vbCr, " ")
+			define = Replace(define, vbLf, " ")
+			define = Trim(define)
 			fout.WriteLine(comment)
 			Select Case define
 				Case "HAVE_INT16_T"
