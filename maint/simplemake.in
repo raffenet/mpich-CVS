@@ -1076,9 +1076,10 @@ sub TargetClean {
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
     print FD "$newline";
     print FD "\t-rm -f *.o \${srcdir}/*.o $programnames$newline";
-    if ($do_sharedlibs) {
+    #if ($do_sharedlibs) {
+        # Output this in all cases to clear any old files.  
 	print FD "\t-rm -f *.lo \${srcdir}/*.lo$newline";
-    }
+    #}
     if ($do_profilelibs && $found_profilelib) {
 	print FD "\t-rm -f *.pf \${srcdir}/*.pf$newline";
     }
