@@ -18,6 +18,9 @@
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
+#ifdef HAVE__SW_INCLUDE_SYS_POLL_H
+#include "/sw/include/sys/poll.h"
+#endif
 #include <netdb.h>
 #include <errno.h>
 
