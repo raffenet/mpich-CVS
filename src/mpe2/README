@@ -139,7 +139,8 @@ order to create a tightly integrated environment for user, it is recommended
 that user should do a "make install" to install the MPE in a separate directory
 after the build is done.  The benefit is that all utility programs will be in
 bin/, all libraries will be in lib/ and all graphic tools will be nicely 
-organized in share/ ...
+organized in share/ ...  Finally, to test if the MPE installation is working
+correctly, user is urged to do "make installcheck" in the build directory.
 
 There are 2 types of configure options.
 
@@ -312,6 +313,7 @@ For SGI MPI, e.g. denali.mcs.anl.gov, do the following for default ABI, -n32
                              --with-java=/usr/java-1.1.6/usr/java
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 for 64 bits ABI, add options --with-cflags=-64 and --with-fflags=-64 to the
 configure options.
@@ -324,6 +326,7 @@ For IBM MPI, e.g. quad.mcs.anl.gov, do
     ${MPE_SRC_DIR}/configure --with-java=/homes/chan/pkgs/java/J1.1.8
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 
 For SUN MPI, do
@@ -333,6 +336,7 @@ For SUN MPI, do
     ${MPE_SRC_DIR}/configure --with-mpilibs=-lmpi
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 
 For HP-UX's MPI implementation,
@@ -342,6 +346,7 @@ For HP-UX's MPI implementation,
                              --with-flib_path_leader="-Wl,-L"
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 
 MPE's Fortran support on HP-UX's MPI is NOT working yet.  So to get MPI 
@@ -354,6 +359,7 @@ is there.  Here is the configure options.
                              --with-f2cmpilibs=-lfmpi
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 
 For LAM, do
@@ -364,6 +370,7 @@ For LAM, do
                              --with-java=/sandbox/jdk1.3.1
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 Using MPE with LAM for fortran MPI program is not working until recently.  
 Configure options listed above enable MPE's internal Fortran to C MPI library.
@@ -377,6 +384,7 @@ do
                              --with-java2=/sandbox/jdk1.3.1
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 LAM 6.5.6 to 6.5.9 has a bug that interferes with MPE's configure and make
 in enabling byte swapping on little endian machine, e.g. intel box.  For 
@@ -400,6 +408,7 @@ For prebuilt version of MPICH-1.1.2 or MPICH-1.2.0, e.g. donner, do
                               --with-java=/sandbox/j2sdk1.4.2
     make
     make install PREFIX=${MPE_INSTALL_DIR}
+    make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 It is important to use the configure option --with-mpelibname to specify a 
 different MPE library name than the default "mpe" when configuring MPE for
