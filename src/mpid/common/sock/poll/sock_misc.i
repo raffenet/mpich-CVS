@@ -34,6 +34,7 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_host_description(char * host_description, int len)
 {
+    char * env_hostname;
     int rc;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
@@ -45,6 +46,20 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
 					 "**sock|badhdmax", NULL);
+	goto fn_exit;
+    }
+
+    /* Use hostname supplied in environment variable, if it exists */
+    env_hostname = getenv("MPICH_INTERFACE_HOSTNAME");
+    if (env_hostname != NULL)
+    {
+	rc = MPIU_Strncpy(host_description, env_hostname, len);
+	if (rc != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_HOST,
+					     "**sock|badhdlen", NULL);
+	}
+
 	goto fn_exit;
     }
 
@@ -71,7 +86,6 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
     return mpi_errno;
-    
 }
 
 
