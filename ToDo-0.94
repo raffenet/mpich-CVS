@@ -1,137 +1,71 @@
-Discussion items:
+Open Items:
 
-- IPC resource registration/allocation and failure recovery
+* POSIX shared memory and message queues [David/Brian]
 
-- SSM performance tuning: highest performance for N=P, or reasonable peformance
-  for all N?
+* number of parameters for MPID_Abort(), fix MPI_Abort() [Brian]
 
-- other issues described below
+* sock and ssm connection formation code should not fail after the
+  first attempt since the listener has a limited queue of pending
+  connections [Brian/David]
 
-- documentation: need detailed outline for user/installation document(s)
+* protocol specification for multi-method implementations for ssm
+  [Rusty/David/Brian] (important for release???)
 
+* documentation: installation and usage document(s) [Rusty]
+  (see below)
 
-================================================================================
-Datatypes
+* slog2sdk integration (configure) and testing [David/Brian]
+  (the code is now being checked out into src/util/slog2sdk)
 
-issue:		test suite failures
-importance:	critical
-assigned to:	Rob R.
-description:	(to be expounded upon when Rob R. task switches back to MPICH2)
+----
 
-================================================================================
-CH3 device
+Finished Items:
 
-issue:		flow control
-importance:	useful, but not critical for most applications
-assigned to:	Brian
-status:		not started
-description:	add flow control for eager messages into the CH3 device
+* datatype test suite failures [Rob R.]
 
+* majority of the tests passing for the shm and ssm channels
+  [Brian/David]
 
-issue:		MPIDI_CH3_Abort()
-importance:	useful, but not critical
-assigned to:	Brian
-status:		not started
-description:	MPID_Abort() current just calls exit(), relying on the process
-		manager to notice that a process exited without properly
-		ending (calling PMI_Finalize() if PMI is used by the channel).
-		MPID_Abort() should call MPIDI_CH3_Abort(), allowing the
-		channel to properly terminate the job, and supply the process
-		manager with the exit code.
+* split CH3_Progress() into CH3_Progress_wait() and
+  CH3_Progress_test() to avoid extra overhead associated with checking
+  blocking flag and branching [David/Brian]
 
-issue:		MPID_Abort()
-assigned to:	Brian
-importance:	must fix to be MPI-1 compliant
-status:		not started
-description:	The current version of MPID_Abort() takes an MPI error code.
-		It should take an exit code that is reported to the process
-		manager.  Ideally it should call MPIDI_CH3_Abort(), but at the
-		very least it should call exit() with the supplied exit code.
-		The current MPID_Abort() prints error messages based on the
-		MPI code.  This needs to be moved to the routines that call
-		MPID_Abort(), of which there are many.
+* improved distribution cutting script [Brian]
 
-================================================================================
-sock channel
+-----
 
-issue:		connection formation
-importance:	critical
-assigned to:	Brian/David?
-status:		not started
-description:	Connection to a process may fail due to a backlog of accepted
-		connections at the connectee.  The connector should perform
-		so number of reties before reporting an error to the user.
+Deferred Items:
 
-issue:		MPID_Abort()
-importance:	must be fixed to be MPI-1 compliant
-assigned to:	Brian
-status:		not started
-description:	All calls to MPID_Abort() must be updated so that a useful
-		error message is printed before MPI_Abort() is called with an
-		exit code (not an MPI error code).
+* CH3 flow control [Brian]
 
-issue:		error handling
-importance:	useful
-assigned to:	Brian
-status:		not started
-description:	The calls to abort(), MPID_Abort() and many calls to assert()
-		should be replaced with the generation of error codes which are
-		then return to the CH3 device.  This may be somewhat difficult
-		as it will require some code reorganization including that of
-		the progress engine.
+* add MPIDI_CH3_Abort() [Brian]
 
-================================================================================
-shm channel
+* support for non-x86 architectures in the shm and ssm channels [David/Brian]
 
-issue:		test suite runs
-importance:	critical
-assigned to:	Bill or Brian/David ???
-status:		not started
-description:	The MPICH1, MPICH2 and Intel test suites need to be run.
+* SysV IPC resource recovery for all systems (not just Linux)
+  [David/Brian]
 
-issue:		test suite failures (if any)
-importance:	critical
-assigned to:	David/Brian
-status:		not started
-description:	(waiting for tests)
+* replace abort(), assert() and MPID_Abort() calls in sock channel
+  with proper error handling (require reworking progress engine which
+  has to be done anyway for MPI-2 support) [Brian]
 
-issue:		MPID_Abort()
-importance:	must be fixed to be MPI-1 compliant
-assigned to:	David
-status:		not started
-description:	All calls to MPID_Abort() must be updated so that a useful
-		error message is printed before MPI_Abort() is called with an
-		exit code (not an MPI error code).
+* performance tuning of ssm and shm progress engines [David/Brian]
+
+* more complete test suite for ROMIO [???]
+
 
 ================================================================================
 
-issue:		test suite runs
-importance:	critical
-assigned to:	Bill or Brian/David ???
-status:		not started
-description:	The MPICH1, MPICH2 and Intel test suites need to be run.
+Documentation - Rusty
 
-issue:		test suite failures (if any)
-importance:	critical
-status:		not started
-assigned to:	David/Brian
+- building (configure/make/make install)
+  - platforms
+    - UNIX/Linux
+    - Windows
+  - channels
+    - sock
+    - shm
+    - ssm
+  - process managers
 
-issue:		MPID_Abort()
-importance:	must be fixed to be MPI-1 compliant
-assigned to:	David
-status:		not started
-description:	All calls to MPID_Abort() must be updated so that a useful
-		error message is printed before MPI_Abort() is called with an
-		exit code (not an MPI error code).
-
-================================================================================
-SMPD
-
-what state does this need to be in for the release?
-
-================================================================================
-MPD
-
-???
-
-================================================================================
+- using process managers
