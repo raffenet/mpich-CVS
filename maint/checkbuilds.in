@@ -245,7 +245,7 @@ sub RunTest {
 #	$enable_args .= " --enable-echo";
 	print $OUTFD $TestStart;
 	my $host = `uname -n`;
-	print $OUTFD "TestHostStart$host$TestHostEnd";
+	print $OUTFD "$TestHostStart$host$TestHostEnd";
 	unlink "Makefile";
 	print $OUTFD $ConfigStart;
 	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args $config_args" );
@@ -578,6 +578,11 @@ if ($outfile ne "") {
     # correctly ordered when child processes also write to the file.
     # All of the shells get this right but unfortunately perl does not.
     #autoflush $OUTFD 1;
+    if ($is_xml) {
+	print $OUTFD "<?xml version='1.0' ?>\n";
+	print $OUTFD "<?xml-stylesheet href="build.xsl" type="text/xsl" ?>\n";
+	print $OUTFD "<MPICH2BUILD>\n";
+    }
 }
 else {
     $OUTFD = STDOUT;
@@ -591,6 +596,14 @@ else {
 for ($test_count = 0; 
      ($max_count < 0 || $test_count < $max_count) && &time_left;
      $test_count++) {
-    print $OUTFD "\nRunning test $test_count\n\n";
+    if ($is_xml) {
+    }
+    else {
+	print $OUTFD "\nRunning test $test_count\n\n";
+    }
     &RunTest;
 }
+if ($is_xml) {
+    print $OUTFD "</MPICH2BUILD>\n";
+}
+close $OUTFD;
