@@ -70,9 +70,7 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 #endif
 void MPID_Wtime( MPID_Time_t *tval )
 {
-    struct timezone tzp;
-
-    gettimeofday(tval,&tzp);
+    gettimeofday(tval,NULL);
 }
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 {
