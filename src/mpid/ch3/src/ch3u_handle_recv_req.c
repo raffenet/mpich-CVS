@@ -35,11 +35,11 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
     {
 	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    /* mark data transfer as complete and decrement CC */
-            rreq->dev.iov_count = 0;
-            
             if (MPIDI_Request_get_type(rreq) ==
                                  MPIDI_REQUEST_TYPE_PUT_RESP) { 
+                /* mark data transfer as complete and decrement CC */
+                rreq->dev.iov_count = 0;
+            
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
                 if (rreq->dev.decr_ctr != NULL)
@@ -53,6 +53,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
                 mpi_errno = do_accumulate_op(rreq);
                 if (mpi_errno) goto fn_exit;
 
+                /* mark data transfer as complete and decrement CC */
+                rreq->dev.iov_count = 0;
+            
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
                 if (rreq->dev.decr_ctr != NULL)
@@ -61,58 +64,49 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 
             if (MPIDI_Request_get_type(rreq) ==
                 MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT) {
-                MPID_Request *newreq;
                 MPID_Datatype *new_dtp;
                 
                 /* create derived datatype */
                 create_derived_datatype(rreq, &new_dtp);
 
-                /* create new request to get the data */
-                newreq = MPID_Request_create();
-                MPIU_Object_set_ref(newreq, 1);
-                MPIDI_Request_set_type(newreq, MPIDI_REQUEST_TYPE_PUT_RESP);
-
-                newreq->dev.user_buf = rreq->dev.user_buf;
-                newreq->dev.user_count = rreq->dev.user_count;
-                newreq->dev.datatype = new_dtp->handle;
-                newreq->dev.decr_ctr = rreq->dev.decr_ctr;
-                newreq->dev.recv_data_sz = new_dtp->size *
+                /* update request to get the data */
+                MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_PUT_RESP);
+                rreq->dev.datatype = new_dtp->handle;
+                rreq->dev.recv_data_sz = new_dtp->size *
                                            rreq->dev.user_count; 
                 
-                newreq->dev.datatype_ptr = new_dtp;
+                rreq->dev.datatype_ptr = new_dtp;
                 /* this will cause the datatype to be freed when the
-                   request is freed. */  
+                   request is freed. free dtype_info here. */
+                MPIU_Free(rreq->dev.dtype_info);
 
-                MPID_Segment_init(newreq->dev.user_buf,
-                                  newreq->dev.user_count,
-                                  newreq->dev.datatype,
-                                  &newreq->dev.segment);
-                newreq->dev.segment_first = 0;
-                newreq->dev.segment_size = newreq->dev.recv_data_sz;
+                MPID_Segment_init(rreq->dev.user_buf,
+                                  rreq->dev.user_count,
+                                  rreq->dev.datatype,
+                                  &rreq->dev.segment);
+                rreq->dev.segment_first = 0;
+                rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
-                mpi_errno = MPIDI_CH3U_Request_load_recv_iov(newreq);
+                mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov", 0);
                     goto fn_exit;
                 }
 
-                mpi_errno = MPIDI_CH3_iRead(vc, newreq);
+                mpi_errno = MPIDI_CH3_iRead(vc, rreq);
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|recvdata", 0);
                     goto fn_exit;
                 }
-
-                /* free dtype_info here. the dataloop gets freed
-                   when the datatype gets freed (ie when the new request
-                   gets freed. */
-                MPIU_Free(rreq->dev.dtype_info);
+                /* the request should not be marked as complete.
+                 * Therefore, break here. */ 
+                break;
             }
 
             if (MPIDI_Request_get_type(rreq) ==
                              MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT) { 
-                MPID_Request *newreq;
                 MPID_Datatype *new_dtp;
                 MPI_Aint true_lb, true_extent, extent;
                 void *tmp_buf;
@@ -120,10 +114,10 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
                 /* create derived datatype */
                 create_derived_datatype(rreq, &new_dtp);
 
-                /* create new request to get the data */
-                newreq = MPID_Request_create();
-                MPIU_Object_set_ref(newreq, 1);
-                MPIDI_Request_set_type(newreq, MPIDI_REQUEST_TYPE_ACCUM_RESP);
+                /* update new request to get the data */
+                MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_ACCUM_RESP);
+
+                /* first need to allocate tmp_buf to recv the data into */
 
 		MPIR_Nest_incr();
                 mpi_errno = NMPI_Type_get_true_extent(new_dtp->handle, 
@@ -149,50 +143,42 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
-                newreq->dev.user_buf = tmp_buf;
-                newreq->dev.user_count = rreq->dev.user_count;
-                newreq->dev.datatype = new_dtp->handle;
-                newreq->dev.op = rreq->dev.op;
-                newreq->dev.decr_ctr = rreq->dev.decr_ctr;
-                newreq->dev.recv_data_sz = new_dtp->size *
+                rreq->dev.user_buf = tmp_buf;
+                rreq->dev.datatype = new_dtp->handle;
+                rreq->dev.recv_data_sz = new_dtp->size *
                                            rreq->dev.user_count; 
-                newreq->dev.real_user_buf = rreq->dev.real_user_buf;
- 
-                newreq->dev.datatype_ptr = new_dtp;
+                rreq->dev.datatype_ptr = new_dtp;
                 /* this will cause the datatype to be freed when the
-                   request is freed. */  
+                   request is freed. free dtype_info here. */
+                MPIU_Free(rreq->dev.dtype_info);
 
-                MPID_Segment_init(newreq->dev.user_buf,
-                                  newreq->dev.user_count,
-                                  newreq->dev.datatype,
-                                  &newreq->dev.segment);
-                newreq->dev.segment_first = 0;
-                newreq->dev.segment_size = newreq->dev.recv_data_sz;
+                MPID_Segment_init(rreq->dev.user_buf,
+                                  rreq->dev.user_count,
+                                  rreq->dev.datatype,
+                                  &rreq->dev.segment);
+                rreq->dev.segment_first = 0;
+                rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
-                mpi_errno = MPIDI_CH3U_Request_load_recv_iov(newreq);
+                mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov", 0);
                     goto fn_exit;
                 }
 
-                mpi_errno = MPIDI_CH3_iRead(vc, newreq);
+                mpi_errno = MPIDI_CH3_iRead(vc, rreq);
                 if (mpi_errno != MPI_SUCCESS)
                 {
                     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|recvdata", 0);
                     goto fn_exit;
                 }
-
-                /* free dtype_info here. the dataloop gets freed
-                   when the datatype gets freed (ie when the new request
-                   gets freed. */
-                MPIU_Free(rreq->dev.dtype_info);
+                /* the request should not be marked as complete.
+                 * Therefore, break here. */ 
+                break;
             }
-
 
             if (MPIDI_Request_get_type(rreq) ==
                              MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT) { 
-                MPID_Request *newreq;
                 MPID_Datatype *new_dtp;
                 MPIDI_CH3_Pkt_t upkt;
                 MPIDI_CH3_Pkt_get_resp_t * get_resp_pkt = &upkt.get_resp;
@@ -202,22 +188,16 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
                 /* create derived datatype */
                 create_derived_datatype(rreq, &new_dtp);
 
-                /* create new request for sending data */
-                newreq = MPID_Request_create();
-                MPIU_Object_set_ref(newreq, 1);
-                newreq->kind = MPID_REQUEST_SEND;
-                MPIDI_Request_set_type(newreq, MPIDI_REQUEST_TYPE_GET_RESP);
-
-                newreq->dev.user_buf = rreq->dev.user_buf;
-                newreq->dev.user_count = rreq->dev.user_count;
-                newreq->dev.datatype = new_dtp->handle;
-                newreq->dev.decr_ctr = rreq->dev.decr_ctr;
-                newreq->dev.recv_data_sz = new_dtp->size *
+                /* update request for sending data */
+                rreq->kind = MPID_REQUEST_SEND;
+                MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_GET_RESP);
+                rreq->dev.datatype = new_dtp->handle;
+                rreq->dev.recv_data_sz = new_dtp->size *
                                            rreq->dev.user_count; 
-                
-                newreq->dev.datatype_ptr = new_dtp;
+                rreq->dev.datatype_ptr = new_dtp;
                 /* this will cause the datatype to be freed when the
-                   request is freed. */  
+                   request is freed. free dtype_info here. */
+                MPIU_Free(rreq->dev.dtype_info);
 
                 get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
                 get_resp_pkt->request = rreq->dev.request;
@@ -225,34 +205,32 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
                 iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
                 iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
 
-                MPID_Segment_init(newreq->dev.user_buf,
-                                  newreq->dev.user_count,
-                                  newreq->dev.datatype,
-                                  &newreq->dev.segment);
-                newreq->dev.segment_first = 0;
-                newreq->dev.segment_size = newreq->dev.recv_data_sz;
+                MPID_Segment_init(rreq->dev.user_buf,
+                                  rreq->dev.user_count,
+                                  rreq->dev.datatype,
+                                  &rreq->dev.segment);
+                rreq->dev.segment_first = 0;
+                rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
                 iov_n = MPID_IOV_LIMIT - 1;
-                mpi_errno = MPIDI_CH3U_Request_load_send_iov(newreq, &iov[1], &iov_n);
+                mpi_errno = MPIDI_CH3U_Request_load_send_iov(rreq, &iov[1], &iov_n);
                 if (mpi_errno == MPI_SUCCESS)
                 {
                     iov_n += 1;
 		
-                    mpi_errno = MPIDI_CH3_iSendv(vc, newreq, iov, iov_n);
+                    mpi_errno = MPIDI_CH3_iSendv(vc, rreq, iov, iov_n);
                     if (mpi_errno != MPI_SUCCESS)
                     {
-                        MPIU_Object_set_ref(newreq, 0);
-                        MPIDI_CH3_Request_destroy(newreq);
-                        newreq = NULL;
+                        MPIU_Object_set_ref(rreq, 0);
+                        MPIDI_CH3_Request_destroy(rreq);
+                        rreq = NULL;
                         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
                         goto fn_exit;
                     }
                 }
-
-                /* free dtype_info here. the dataloop gets freed
-                   when the datatype gets freed (ie when the new request
-                   gets freed. */
-                MPIU_Free(rreq->dev.dtype_info);
+                /* the request should not be marked as complete.
+                 * Therefore, break here. */ 
+                break;
             }
 
 	    MPIDI_CH3U_Request_complete(rreq);
