@@ -82,6 +82,8 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    int rc;
 	    sock_size_t nb;
 
+	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
+	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
 	    rc = sock_writev(vc->sc.sock, iov, n_iov, &nb);

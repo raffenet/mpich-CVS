@@ -60,6 +60,8 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr
 	    sock_size_t nb;
 	    int rc;
 
+	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
+	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
 	    rc = sock_write(vc->sc.sock, hdr, hdr_sz, &nb);
