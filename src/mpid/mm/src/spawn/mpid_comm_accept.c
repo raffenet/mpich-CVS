@@ -39,7 +39,7 @@ int MPID_Comm_accept(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *
     if (comm_ptr->rank == root)
     {
 	conn = MM_Accept(info_ptr, port_name);
-//	PMPI_Info_get(info, MPICH_BNR_SAME_DOMAIN_KEY, 10, value, &same_domain);
+//	PMPI_Info_get(info, MPICH_PMI_SAME_DOMAIN_KEY, 10, value, &same_domain);
 
 	/* Transfer stuff */
 

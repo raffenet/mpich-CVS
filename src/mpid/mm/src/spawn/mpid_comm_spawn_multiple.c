@@ -5,7 +5,7 @@
  */
 
 #include "mpidimpl.h"
-#include "bnr.h"
+#include "pmi.h"
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Comm_spawn_multiple
@@ -51,13 +51,13 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
 	PMPI_Open_port(MPI_INFO_NULL, pszPortName);
 	PMPI_Info_set(prepost_info, MPICH_PARENT_PORT_KEY, pszPortName);
 	//if (g_bSpawnCalledFromMPIExec) PMPI_Info_set(prepost_info, MPICH_EXEC_IS_PARENT_KEY, "yes");
-	BNR_Spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, array_of_errcodes, 
+	PMI_Spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, array_of_errcodes, 
 	    &same_domain, (void*)prepost_info);
 	PMPI_Info_free(&prepost_info);
 	if (same_domain)
 	{
 	    // set same domain for accept
-	    PMPI_Info_set(info, MPICH_BNR_SAME_DOMAIN_KEY, "yes");
+	    PMPI_Info_set(info, MPICH_PMI_SAME_DOMAIN_KEY, "yes");
 	}
     }
 //    PMPI_Comm_accept(pszPortName, info, root, comm, intercomm);

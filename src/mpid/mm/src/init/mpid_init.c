@@ -6,7 +6,7 @@
  */
 
 #include "mpidimpl.h"
-#include "bnr.h"
+#include "pmi.h"
 
 MPID_PerProcess_t MPID_Process;
 
@@ -26,18 +26,18 @@ int MPID_Init( void )
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_INIT);
 
-    MPID_Process.bnr_dbname[0] = '\0';
+    MPID_Process.pmi_dbname[0] = '\0';
     MPID_Process.comm_parent = (MPID_Comm *)0;
     //MPID_Process.lock
     MPID_Process.port_list = (OpenPortNode_t *)0;
 
-    BNR_Init(&spawned);
-    BNR_KM_Get_my_name(MPID_Process.bnr_dbname);
-    BNR_Barrier();
+    PMI_Init(&spawned);
+    PMI_KVS_Get_my_name(MPID_Process.pmi_dbname);
+    PMI_Barrier();
 
     if (spawned)
     {
-	BNR_KM_Get(MPID_Process.bnr_dbname, MPICH_PARENT_PORT_KEY, pszPortName);
+	PMI_KVS_Get(MPID_Process.pmi_dbname, MPICH_PARENT_PORT_KEY, pszPortName);
 	//PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPID_Process.comm_parent);
     }
     else
