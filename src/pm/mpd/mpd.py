@@ -4,7 +4,7 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-from sys       import stdout, argv, settrace, exit, __stdout__, __stderr__
+from sys       import stdout, argv, settrace, exit, excepthook, __stdout__, __stderr__
 from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
                       umask, close, access, path, stat, unlink, strerror, \
@@ -28,7 +28,7 @@ from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_set_procedures_to_trace, mpd_trace_calls, mpd_raise, mpdError, \
                       mpd_get_my_username, mpd_get_groups_for_username, \
                       mpd_set_my_id, mpd_check_python_version, mpd_version, \
-                      mpd_socketpair, mpd_same_ips
+                      mpd_socketpair, mpd_same_ips, mpd_uncaught_except_tb
 from mpdman    import mpdman
 
 class _ActiveSockInfo:
@@ -50,6 +50,8 @@ def _mpd_init():
     mpd_set_my_id(g.myId)
 
     # setup syslog
+    import sys    # to get access to excepthook in next line
+    sys.excepthook = mpd_uncaught_except_tb
     openlog("mpd",0,LOG_DAEMON)
     syslog(LOG_INFO,"mpdid=%s (port=%d)" % (g.myId,g.myPort) )
 

@@ -10,7 +10,7 @@ from re         import sub, split
 from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
 from exceptions import Exception
-from syslog     import syslog, LOG_INFO
+from syslog     import syslog, LOG_INFO, LOG_ERR
 from os         import getuid
 from grp        import getgrall
 from pwd        import getpwnam, getpwuid
@@ -89,6 +89,15 @@ def mpd_get_tb():
         splitLine[2] = sub(' in ','',splitLine[2])
         tb.append(tuple(splitLine))
     return tb
+
+def mpd_uncaught_except_tb(arg1,arg2,arg3):
+    errstr = ""
+    for line in extract_tb(arg3):
+        errstr += '  File "%s", line %i, in %s\n    %s\n'%line
+    errstr += "%s: %s\n"%(arg1,arg2)
+    print errstr
+    syslog(LOG_ERR,errstr)
+
 
 def mpd_raise(errmsg):
     raise_msg = errmsg + '\n    traceback: %s' % (mpd_get_tb()[1:])
