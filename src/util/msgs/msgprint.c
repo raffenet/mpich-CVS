@@ -11,7 +11,7 @@
 
 /* style: allow:vprintf:2 sig:0 */
 
-int MPIU_usage_printf(char *str, ...)
+int MPIU_Usage_printf(char *str, ...)
 {
     int n;
     va_list list;
@@ -33,7 +33,7 @@ int MPIU_usage_printf(char *str, ...)
     return n;
 }
 
-int MPIU_error_printf(char *str, ...)
+int MPIU_Error_printf(char *str, ...)
 {
     int n;
     va_list list;
