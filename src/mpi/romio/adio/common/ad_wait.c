@@ -2,13 +2,19 @@
 /* 
  *   $Id$    
  *
- *   Copyright (C) 1997 University of Chicago. 
+ *   Copyright (C) 2004 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#include "ad_hfs.h"
+#include "adio.h"
 
-void ADIOI_HFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+/* Generic implementation of ReadComplete/WriteComplete simply sets the
+ * bytes field in the status structure and frees the request.
+ *
+ * Same function is used for both reads and writes.
+ */
+void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
+			  int *error_code)
 {
     if (*request == ADIO_REQUEST_NULL) {
         *error_code = MPI_SUCCESS;
@@ -18,13 +24,10 @@ void ADIOI_HFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 #ifdef HAVE_STATUS_SET_BYTES
     MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
+
     (*request)->fd->async_count--;
+
     ADIOI_Free_request((ADIOI_Req_node *) (*request));
     *request = ADIO_REQUEST_NULL;
     *error_code = MPI_SUCCESS;
-}
-
-void ADIOI_HFS_WriteComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
-{
-    ADIOI_HFS_ReadComplete(request, status, error_code);
 }

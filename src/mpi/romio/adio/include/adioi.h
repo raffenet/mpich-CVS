@@ -337,6 +337,10 @@ void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count,
 			     MPI_Datatype datatype, int file_ptr_type,
 			     ADIO_Offset offset, ADIO_Request *request, int
 			     *error_code);
+int ADIOI_GEN_IODone(ADIO_Request *request, ADIO_Status *status,
+		     int *error_code);
+void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
+			  int *error_code);
 void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
                        MPI_Datatype buftype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
