@@ -41,7 +41,7 @@ Input Parameters:
 Output Parameters:
 + index - index of handle for operation that completed (integer).  In the
 range '0' to 'count-1'.  In Fortran, the range is '1' to 'count'.
-- status - status object (Status).  May be 'MPI_STATUS_NULL'.
+- status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 
 Notes:
 If all of the requests are 'MPI_REQUEST_NULL', then 'index' is returned as 

@@ -43,7 +43,7 @@ Output Parameters:
 + index - index of operation that completed, or 'MPI_UNDEFINED'  if none 
   completed (integer) 
 . flag - true if one of the operations is complete (logical) 
-- status - status object (Status).  May be 'MPI_STATUS_NULL'.
+- status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 
 Notes:
 

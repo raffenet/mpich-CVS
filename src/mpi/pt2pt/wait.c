@@ -34,7 +34,7 @@ Input Parameter:
 . request - request (handle) 
 
 Output Parameter:
-. status - status object (Status) .  May be 'MPI_STATUS_NULL'.
+. status - status object (Status) .  May be 'MPI_STATUS_IGNORE'.
 
 .N waitstatus
 

@@ -35,7 +35,7 @@ Input Parameter:
 
 Output Parameter:
 + flag - true if operation completed (logical) 
-- status - status object (Status).  May be 'MPI_STATUS_NULL'.
+- status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 
 .N waitstatus
 

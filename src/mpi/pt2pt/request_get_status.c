@@ -35,7 +35,7 @@ Input Parameter:
 
 Output Parameters:
 +  int *flag - true if operation has completed (logical)
--  MPI_Status *status - status object (Status).  May be 'MPI_STATUS_NULL'.
+-  MPI_Status *status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 
    Notes:
 
