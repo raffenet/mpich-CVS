@@ -26,12 +26,20 @@
    
    Algorithm: MPI_Allgather
 
-   For short and medium-size messages, we use a recursive doubling
-   algorithm, which takes lgp steps. In each step, pairs of processes
-   exchange all the data they have. We take care of non-power-of-two
-   situations. 
+   For short and medium-size messages, we use the algorithm from the
+   Jehoshua Bruck et al IEEE TPDS Nov 97 paper. It is a variant of the
+   disemmination algorithm for barrier. It takes ceiling(lg p) steps.
+
    Cost = lgp.alpha + n.((p-1)/p).beta
    where n is total size of data gathered on each process.
+
+   Another algorithm that we previously used is the recursive doubling
+   algorithm. For non-power-of-two no. of processes, however, it
+   requires extra steps. It might still be a better algorithm on TCP
+   because it does pairwise exchanges (see Benson et al paper Euro
+   PVM/MPI 2003). We are currently disabling this algorithm. We need a
+   way to enable it specifically for TCP.
+   Cost = lgp.alpha + n.((p-1)/p).beta
    (The cost may be slightly more in the non-power-of-two case, but
    it's still a logarithmic algorithm.) 
 
@@ -68,19 +76,22 @@ PMPI_LOCAL int MPIR_Allgather (
 {
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
-    MPI_Status status;
-    MPI_Aint   recv_extent;
-    int        j, i, is_homogeneous;
-    int curr_cnt, mask, dst, dst_tree_root, my_tree_root, 
-        send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
-        offset, tmp_mask, tree_root, type_size,
-        left, right, jnext;
-#ifdef MPID_HAS_HETERO
+    MPI_Aint   recvtype_extent;
+    MPI_Aint recvtype_true_extent, recvbuf_extent, recvtype_true_lb;
+    int        j, i, pof2, src, rem;
     static const char FCNAME[] = "MPIR_Allgather";
-    int position, tmp_buf_size, nbytes;
     void *tmp_buf;
-#endif
+    int curr_cnt, dst, type_size, left, right, jnext;
     MPI_Comm comm;
+#ifdef OLD
+    MPI_Status status;
+    int mask, dst_tree_root, my_tree_root, is_homogeneous,  
+        send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
+        offset, tmp_mask, tree_root;
+#ifdef MPID_HAS_HETERO
+    int position, tmp_buf_size, nbytes;
+#endif
+#endif
 
     if (((sendcount == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount == 0))
         return MPI_SUCCESS;
@@ -88,29 +99,131 @@ PMPI_LOCAL int MPIR_Allgather (
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
-    
-    is_homogeneous = 1;
-#ifdef MPID_HAS_HETERO
-    if (comm_ptr->is_hetero)
-        is_homogeneous = 0;
-#endif
-    
-    MPID_Datatype_get_extent_macro( recvtype, recv_extent );
+
+    MPID_Datatype_get_extent_macro( recvtype, recvtype_extent );
     MPID_Datatype_get_size_macro( recvtype, type_size );
 
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
     if (recvcount*comm_size*type_size < MPIR_ALLGATHER_LONG_MSG) {
-        /* short message. use recursive doubling algorithm */
+        /* Short message. We use variant of dissemination algorithm
+           from Bruck et al TPDS Nov. 97 paper. This is better for
+           non-power-of-two comm_size. On TCP, the recursive doubling
+           algo.  may be faster as decribed in Benson et al Euro
+           PVM/MPI 03 paper because it uses pairwise
+           exchange. However, we are currently commenting out the
+           recursive doubling algorithm below. We need a way to enable it 
+           when the transport is TCP. */
+
+        /* allocate a temporary buffer of the same size as
+         * recvbuf. copy local data to the top of recvbuf */ 
+
+        /* get true extent of recvtype */
+        mpi_errno = NMPI_Type_get_true_extent(recvtype, &recvtype_true_lb,
+                                              &recvtype_true_extent);  
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno) return mpi_errno;
+        /* --END ERROR HANDLING-- */
+            
+        recvbuf_extent = recvcount * comm_size *
+            (MPIR_MAX(recvtype_true_extent, recvtype_extent));
+
+        tmp_buf = MPIU_Malloc(recvbuf_extent);
+        /* --BEGIN ERROR HANDLING-- */
+        if (!tmp_buf) {
+            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
+            
+        /* adjust for potential negative lower bound in datatype */
+        tmp_buf = (void *)((char*)tmp_buf - recvtype_true_lb);
+
+        if (sendbuf != MPI_IN_PLACE) {
+            mpi_errno = MPIR_Localcopy (sendbuf, sendcount, sendtype,
+                                        tmp_buf, recvcount, recvtype);
+            if (mpi_errno) return mpi_errno;
+        }
+        else {
+            mpi_errno = MPIR_Localcopy (((char *)recvbuf +
+                                         rank * recvcount * recvtype_extent), 
+                                        recvcount, recvtype, tmp_buf, 
+                                        recvcount, recvtype);
+            if (mpi_errno) return mpi_errno;
+        }
         
+        /* do the first \floor(\lg p) steps */
+
+        curr_cnt = recvcount;
+        pof2 = 1;
+        while (pof2 <= comm_size/2) {
+            src = (rank + pof2) % comm_size;
+            dst = (rank - pof2 + comm_size) % comm_size;
+            
+            mpi_errno = MPIC_Sendrecv(tmp_buf, curr_cnt, recvtype, dst,
+                                      MPIR_ALLGATHER_TAG,
+                                  ((char *)tmp_buf + curr_cnt*recvtype_extent),
+                                      curr_cnt, recvtype,
+                                      src, MPIR_ALLGATHER_TAG, comm,
+                                      MPI_STATUS_IGNORE);
+            if (mpi_errno) return mpi_errno;
+
+            curr_cnt *= 2;
+            pof2 *= 2;
+        }
+
+        /* if comm_size is not a power of two, one more step is needed */
+
+        rem = comm_size - pof2;
+        if (rem) {
+            src = (rank + pof2) % comm_size;
+            dst = (rank - pof2 + comm_size) % comm_size;
+            
+            mpi_errno = MPIC_Sendrecv(tmp_buf, rem * recvcount, recvtype,
+                                      dst, MPIR_ALLGATHER_TAG,
+                                  ((char *)tmp_buf + curr_cnt*recvtype_extent),
+                                      rem * recvcount, recvtype,
+                                      src, MPIR_ALLGATHER_TAG, comm,
+                                      MPI_STATUS_IGNORE);
+            if (mpi_errno) return mpi_errno;
+        }
+
+        /* Rotate blocks in tmp_buf down by (rank) blocks and store
+         * result in recvbuf. */
+        
+        mpi_errno = MPIR_Localcopy(tmp_buf, (comm_size-rank)*recvcount,
+                  recvtype, (char *) recvbuf + rank*recvcount*recvtype_extent, 
+                                       (comm_size-rank)*recvcount, recvtype); 
+        if (mpi_errno) return mpi_errno;
+
+        if (rank) {
+            mpi_errno = MPIR_Localcopy((char *) tmp_buf + 
+                                   (comm_size-rank)*recvcount*recvtype_extent, 
+                                       rank*recvcount, recvtype, recvbuf,
+                                       rank*recvcount, recvtype); 
+            if (mpi_errno) return mpi_errno;
+        }
+
+        MPIU_Free((char*)tmp_buf + recvtype_true_lb);
+
+
+#ifdef OLD
+/* This is the recursive doubling algorithm, which my perform better on TCP. 
+   Currently disabled. */
+
+    is_homogeneous = 1;
+#ifdef MPID_HAS_HETERO
+    if (comm_ptr->is_hetero)
+        is_homogeneous = 0;
+#endif
+    
         if (is_homogeneous) {
             /* homogeneous. no need to pack into tmp_buf on each node. copy
                local data into recvbuf */ 
             if (sendbuf != MPI_IN_PLACE) {
                 mpi_errno = MPIR_Localcopy (sendbuf, sendcount, sendtype,
                                             ((char *)recvbuf +
-                                             rank*recvcount*recv_extent), 
+                                             rank*recvcount*recvtype_extent), 
                                             recvcount, recvtype);
                 if (mpi_errno) return mpi_errno;
             }
@@ -133,8 +246,8 @@ PMPI_LOCAL int MPIR_Allgather (
                 my_tree_root = rank >> i;
                 my_tree_root <<= i;
                 
-                send_offset = my_tree_root * recvcount * recv_extent;
-                recv_offset = dst_tree_root * recvcount * recv_extent;
+                send_offset = my_tree_root * recvcount * recvtype_extent;
+                recv_offset = dst_tree_root * recvcount * recvtype_extent;
                 
                 if (dst < comm_size) {
                     mpi_errno = MPIC_Sendrecv(((char *)recvbuf + send_offset),
@@ -173,7 +286,7 @@ PMPI_LOCAL int MPIR_Allgather (
                     }
                     k--;
                     
-                    offset = recvcount * (my_tree_root + mask) * recv_extent;
+                    offset = recvcount * (my_tree_root + mask) * recvtype_extent;
                     tmp_mask = mask >> 1;
                     
                     while (tmp_mask) {
@@ -258,7 +371,7 @@ PMPI_LOCAL int MPIR_Allgather (
             }
             else {
                 /* if in_place specified, local data is found in recvbuf */
-                NMPI_Pack(((char *)recvbuf + recv_extent*rank), recvcount,
+                NMPI_Pack(((char *)recvbuf + recvtype_extent*rank), recvcount,
                           recvtype, tmp_buf, tmp_buf_size, 
                           &position, comm);
             }
@@ -377,16 +490,18 @@ PMPI_LOCAL int MPIR_Allgather (
             MPIU_Free(tmp_buf);
         }
 #endif /* MPID_HAS_HETERO */
+
+#endif /* OLD */
+
     }
 
-    else {
-        /* long message. use ring algorithm. */
+    else {  /* long message. use ring algorithm. */
       
         /* First, load the "local" version in the recvbuf. */
         if (sendbuf != MPI_IN_PLACE) {
             mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, 
                                        ((char *)recvbuf +
-                                        rank*recvcount*recv_extent),  
+                                        rank*recvcount*recvtype_extent),  
                                        recvcount, recvtype);
             if (mpi_errno) return mpi_errno;
         }
@@ -402,11 +517,11 @@ PMPI_LOCAL int MPIR_Allgather (
         jnext = left;
         for (i=1; i<comm_size; i++) {
             mpi_errno = MPIC_Sendrecv(((char *)recvbuf +
-                                       j*recvcount*recv_extent), 
+                                       j*recvcount*recvtype_extent), 
                                       recvcount, recvtype, right,
                                       MPIR_ALLGATHER_TAG, 
                                       ((char *)recvbuf +
-                                       jnext*recvcount*recv_extent), 
+                                       jnext*recvcount*recvtype_extent), 
                                       recvcount, recvtype, left, 
                                       MPIR_ALLGATHER_TAG, comm,
                                       MPI_STATUS_IGNORE);
