@@ -12,11 +12,23 @@
 #include "clog_merger.h"
 #include "clog_record.h"
 
-/* keep this larger than predefined event ids; it is for users */
-#define CLOG_USER_EVENTID_START 500
+/*
+   keep this less than user event IDs;
+   it is for MPI implementation, i.e., src/wrapper/log_mpi_core.c
+*/
+#define CLOG_KNOWN_EVENTID_START 0
 
-/* keep this larger than predefined state ids; it is for users */
-#define CLOG_USER_STATEID_START 200
+/*
+   keep this less than user state IDs;
+   it is for MPI implementation, i.e., src/wrapper/log_mpi_core.c
+*/
+#define CLOG_KNOWN_STATEID_START 0
+
+/* keep this larger than predefined event IDs; it is for users */
+#define CLOG_USER_EVENTID_START 600
+
+/* keep this larger than predefined state IDs; it is for users */
+#define CLOG_USER_STATEID_START 300
 
 #define CLOG_COMM_NULL          -1
 
@@ -24,8 +36,10 @@ typedef struct {
     CLOG_Buffer_t     *buffer;
     CLOG_Sync_t       *syncer;
     CLOG_Merger_t     *merger;
-    int                next_eventID;
-    int                next_stateID;
+    int                known_eventID;
+    int                known_stateID;
+    int                user_eventID;
+    int                user_stateID;
 } CLOG_Stream_t;
 
 CLOG_Stream_t *CLOG_Open( void );
@@ -36,9 +50,15 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name );
 
 void CLOG_Local_finalize( CLOG_Stream_t *stream );
 
-int  CLOG_Get_new_eventID( CLOG_Stream_t *stream );
+int  CLOG_Get_user_eventID( CLOG_Stream_t *stream );
 
-int  CLOG_Get_new_stateID( CLOG_Stream_t *stream );
+int  CLOG_Get_user_stateID( CLOG_Stream_t *stream );
+
+int  CLOG_Get_known_stateID( CLOG_Stream_t *stream );
+
+int  CLOG_Get_known_eventID( CLOG_Stream_t *stream );
+
+int  CLOG_Check_known_stateID( CLOG_Stream_t *stream, int stateID );
 
 void CLOG_Converge_init(       CLOG_Stream_t *stream,
                          const char          *merged_file_prefix );

@@ -55,8 +55,10 @@ void CLOG_Close( CLOG_Stream_t *stream )
 */
 void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
 {
-    stream->next_eventID = CLOG_USER_EVENTID_START;
-    stream->next_stateID = CLOG_USER_STATEID_START;
+    stream->known_eventID  = CLOG_KNOWN_EVENTID_START;
+    stream->known_stateID  = CLOG_KNOWN_STATEID_START;
+    stream->user_eventID   = CLOG_USER_EVENTID_START;
+    stream->user_stateID   = CLOG_USER_STATEID_START;
 
     CLOG_Rec_sizes_init();
     CLOG_Buffer_init( stream->buffer, local_tmpfile_name );
@@ -97,14 +99,49 @@ void CLOG_Local_finalize( CLOG_Stream_t *stream )
     CLOG_Buffer_localIO_flush( stream->buffer );
 }
 
-int  CLOG_Get_new_eventID( CLOG_Stream_t *stream )
+int  CLOG_Get_user_eventID( CLOG_Stream_t *stream )
 {
-    return (stream->next_eventID)++;
+    return (stream->user_eventID)++;
 }
 
-int  CLOG_Get_new_stateID( CLOG_Stream_t *stream )
+int  CLOG_Get_user_stateID( CLOG_Stream_t *stream )
 {
-    return (stream->next_stateID)++;
+    return (stream->user_stateID)++;
+}
+
+int  CLOG_Get_known_eventID( CLOG_Stream_t *stream )
+{
+    if ( stream->known_eventID < CLOG_USER_EVENTID_START )
+        return (stream->known_eventID)++;
+    else {
+        fprintf( stderr, __FILE__":CLOG_Get_known_eventID() - \n"
+                         "\t""CLOG internal eventID have been used up, "
+                         "use CLOG user eventID %d.\n", stream->user_eventID );
+        fflush( stderr );
+        return (stream->user_eventID)++;
+    }
+}
+
+int  CLOG_Get_known_stateID( CLOG_Stream_t *stream )
+{
+    if ( stream->known_stateID < CLOG_USER_STATEID_START )
+        return (stream->known_stateID)++;
+    else {
+        fprintf( stderr, __FILE__":CLOG_Get_known_stateID() - \n"
+                         "\t""CLOG internal stateID have been used up, "
+                         "use CLOG user stateID %d.\n", stream->user_stateID );
+        fflush( stderr );
+        return (stream->user_stateID)++;
+    }
+}
+
+int  CLOG_Check_known_stateID( CLOG_Stream_t *stream, int stateID )
+{
+    if (    stateID >= CLOG_KNOWN_STATEID_START
+         && stateID <  CLOG_USER_STATEID_START )
+        return CLOG_BOOL_TRUE;
+    else
+        return CLOG_BOOL_FALSE;
 }
 
 void CLOG_Converge_init(       CLOG_Stream_t *stream,
