@@ -97,7 +97,10 @@ MPI_Intercomm_create - Creates an intercommuncator from two intracommunicators
 Input Paramters:
 + local_comm - Local (intra)communicator
 . local_leader - Rank in local_comm of leader (often 0)
-. peer_comm - Remote communicator
+. peer_comm - Communicator used to communicate between a 
+              designated process in the other communicator.  
+              Significant only at the process in 'local_comm' with
+	      rank 'local_leader'.
 . remote_leader - Rank in peer_comm of remote leader (often 0)
 - tag - Message tag to use in constructing intercommunicator; if multiple
   'MPI_Intercomm_creates' are being made, they should use different tags (more
@@ -108,6 +111,9 @@ Output Parameter:
 . comm_out - Created intercommunicator
 
 Notes:
+   'peer_comm' is significant only for the process designated the 
+   'local_leader' in the 'local_comm'.
+
   The MPI 1.1 Standard contains two mutually exclusive comments on the
   input intracommunicators.  One says that their repective groups must be
   disjoint; the other that the leaders can be the same process.  After
@@ -128,11 +134,6 @@ Notes:
 
 .seealso: MPI_Intercomm_merge, MPI_Comm_free, MPI_Comm_remote_group, 
           MPI_Comm_remote_size
-
-   Notes:
-
-   'peer_comm' is significant only for the process designated the 
-   'local_leader' in the 'local_comm'.
 
 @*/
 int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, 
@@ -200,13 +201,20 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	    MPID_BEGIN_ERROR_CHECKS;
 	    {
 		MPID_Comm_valid_ptr( peer_comm_ptr, mpi_errno );
+		/* FIXME: In MPI 1.0, peer_comm was restricted to 
+		   intracommunicators.  In 1.1, it may be any communicator */
 		/* peer comm must be an intracommunicator */
-		if( peer_comm_ptr) {
+/*		
+	        if( peer_comm_ptr) {
 		    MPIR_ERRTEST_COMM_INTRA(peer_comm_ptr, mpi_errno );
 		}
+*/
+		/* In checking the rank of the remote leader, 
+		   allow the peer_comm to be in intercommunicator
+		   by checking against the remote size */
 		if (!mpi_errno && peer_comm_ptr && 
 		    (remote_leader < 0 || 
-		     remote_leader >= peer_comm_ptr->local_size)) {
+		     remote_leader >= peer_comm_ptr->remote_size)) {
 		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK, 
 						      "**rankremote", 
 					  "**rankremote %d %d", 
