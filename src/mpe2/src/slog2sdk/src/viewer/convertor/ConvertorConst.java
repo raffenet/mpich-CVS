@@ -138,12 +138,15 @@ public class ConvertorConst
 
         path2jvm = JavaHome + FileSeparator + "bin" + FileSeparator + JVM;
         jvm_file = new File( path2jvm );
+        if ( ! FileSeparator.equals( "/" ) ) {
+            //  Assume MS Windows, executable needs ".exe" suffix.
+            if ( ! path2jvm.endsWith( ".exe" ) ) {
+                path2jvm = path2jvm + ".exe";
+                jvm_file = new File( path2jvm );
+            }
+        }
         if ( ! jvm_file.exists() ) {
-            // Maybe this is MS Windows name
-            path2jvm = path2jvm + ".exe";
-            jvm_file = new File( path2jvm );
-            if ( ! jvm_file.exists() )
-                path2jvm = JVM;
+            path2jvm = JVM;
         }
         return path2jvm;
     }
@@ -167,6 +170,21 @@ public class ConvertorConst
         return path2jardir;
     }
 
+    /*
+    private static boolean isAbsolutePathname( String name )
+    {
+        if ( name.startsWith( FileSeparator ) )
+            return true;
+
+        File[] filesystems = File.listRoots();
+        for ( int idx = 0; idx < filesystems.length; idx++ )
+             if ( name.startsWith( filesystems[ idx ].getPath() ) )
+                 return true;
+
+        return false;
+    }
+    */
+
     private static String updateLibraryPath( String  prefix_path,
                                              String  old_libpath )
     {
@@ -178,8 +196,7 @@ public class ConvertorConst
         paths        = new StringTokenizer( old_libpath, PathSeparator );
         while ( paths.hasMoreTokens() ) {
             path     = paths.nextToken();
-            if (    path.startsWith( FileSeparator )
-                 || ( path.length() > 1 && path.charAt( 1 ) == ':' ) )
+            if ( ( new File( path ) ).isAbsolute() )
                 // Assume it is full path
                 new_libpath.append( path );
             else if ( path.equals( "." ) )

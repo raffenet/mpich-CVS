@@ -582,6 +582,10 @@ public class ConvertorPanel extends JPanel
             Dialogs.error( top_window, jar_path + " does not exist!" );
             return;
         }
+        if ( ! jar_file.canRead() ) {
+            Dialogs.error( top_window, jar_path + " is NOT readable!\n" );
+            return;
+        }
 
         exec_cmd = new StringBuffer( cmd_path2jvm.getText() + " "
                                    + cmd_option4jvm.getText() );
@@ -646,7 +650,7 @@ public class ConvertorPanel extends JPanel
         }
         if ( ! infile.canRead() ) {
             Dialogs.error( top_window,
-                           "File " + infile_name + " cannot be read!\n"
+                           "File " + infile_name + " is NOT readable!\n"
                          + "No conversion will take place." );
             return;
         }
