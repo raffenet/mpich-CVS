@@ -590,8 +590,11 @@ for var in CHARACTER INTEGER REAL LOGICAL DOUBLE_PRECISION COMPLEX \
     eval fullvarvalue=\$$fullvar
     #echo "$fullvar = $fullvarvalue"
     value=0
+    # expr substr is not universal, so we use the : form instead
+    fullvarvalue=`expr $fullvarvalue : '..\(.*\)'`
     for pos in 3 4 5 6 7 8 9 10 ; do
-        char=`expr substr $fullvarvalue $pos 1`
+        char=`expr $fullvarvalue : '\(.\)'`
+	fullvarvalue=`expr $fullvarvalue : '.\(.*\)'`
         case $char in 
             a) char=10 ;;
 	    b) char=11 ;;
@@ -706,8 +709,12 @@ for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
     fi
     #echo "$fullvar = $fullvarvalue"
     value=0
+    # expr substr is not universal, so we use the : form instead
+    fullvarvalue=`expr $fullvarvalue : '..\(.*\)'`
     for pos in 3 4 5 6 7 8 9 10 ; do
-        char=`expr substr $fullvarvalue $pos 1`
+        #char=`expr substr $fullvarvalue $pos 1`
+        char=`expr $fullvarvalue : '\(.\)'`
+	fullvarvalue=`expr $fullvarvalue : '.\(.*\)'`
         case $char in 
             a) char=10 ;;
 	    b) char=11 ;;
