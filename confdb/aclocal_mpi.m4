@@ -147,6 +147,7 @@ case $ac_mpi_type in
   	    MPILIBNAME="mpich"
         else 
 	    # All of the above should have been passed in the environment!
+	    :
         fi
 	;;
 	ibmmpi)
