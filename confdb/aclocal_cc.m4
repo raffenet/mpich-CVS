@@ -990,10 +990,12 @@ if test "$enable_strict_done" != "yes" ; then
 	:
 	;;
 	*)
-	AC_MSG_WARN([Unrecognized value for enable-strict:$enable_strict])
+	# Silently accept blank values for enable strict
+	if test -n "$enable_strict" ; then
+  	    AC_MSG_WARN([Unrecognized value for enable-strict:$enable_strict])
+	fi
 	;;
     esac
-    fi
 fi
 ])
 dnl
@@ -1038,7 +1040,9 @@ if test "$enable_strict_done" != "yes" ; then
 	:
 	;;
 	*)
-	AC_MSG_WARN([Unrecognized value for enable-strict:$enable_strict])
+	if test -n "$enable_strict" ; then
+  	    AC_MSG_WARN([Unrecognized value for enable-strict:$enable_strict])
+	fi
 	;;
     esac	
 fi
