@@ -111,7 +111,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
     
     error = (request_ptr->status.MPI_ERROR != MPI_SUCCESS);
-    if (status != NULL)
+    if (status != MPI_STATUS_IGNORE)
     {
 	*status = request_ptr->status;
     }

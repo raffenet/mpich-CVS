@@ -86,8 +86,11 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	for (i = 0; i < count; i++)
 	{
 	    int rc;
-	    
-	    rc = NMPI_Wait(&array_of_requests[i], &array_of_statuses[i]);
+	    MPI_Status * status_ptr;
+
+	    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ?
+		&array_of_statuses[i] : MPI_STATUS_IGNORE;
+	    rc = NMPI_Wait(&array_of_requests[i], status_ptr);
 	    if (rc != MPI_SUCCESS)
 	    {
 		if (rc != MPI_ERR_IN_STATUS)
