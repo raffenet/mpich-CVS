@@ -23,6 +23,7 @@ import java.util.Iterator;
 
 import logformat.slog2.LineIDMap;
 import logformat.slog2.input.InputLog;
+import viewer.common.Const;
 import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 import viewer.common.Parameters;
@@ -33,11 +34,16 @@ import viewer.timelines.TimelineFrame;
 public class FirstPanel extends JPanel
                                 implements ActionListener, ItemListener
 {
-    private static String       open_icon_path   = "/images/Open24.gif";
-    private static String       show_icon_path   = "/images/New24.gif";
-    private static String       close_icon_path  = "/images/Stop24.gif";
-    private static String       legend_icon_path = "/images/Properties24.gif";
-    private static String       prefer_icon_path = "/images/Preferences24.gif";
+    private static String       open_icon_path   = Const.IMG_PATH
+                                                 + "Open24.gif";
+    private static String       show_icon_path   = Const.IMG_PATH
+                                                 + "New24.gif";
+    private static String       close_icon_path  = Const.IMG_PATH
+                                                 + "Stop24.gif";
+    private static String       legend_icon_path = Const.IMG_PATH
+                                                 + "Properties24.gif";
+    private static String       prefer_icon_path = Const.IMG_PATH
+                                                 + "Preferences24.gif";
 
     private        JTextField   logname_fld;
     private        JButton      file_open_btn;
