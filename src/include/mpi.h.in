@@ -83,7 +83,7 @@ typedef int MPI_Comm;
 
 /* Groups */
 typedef int MPI_Group;
-#define MPI_GROUP_EMPTY ((MPI_Comm)0x48000000)
+#define MPI_GROUP_EMPTY ((MPI_Group)0x48000000)
 
 /* RMA and Windows */
 typedef int MPI_Win;
