@@ -64,6 +64,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
             MPID_Group_valid_ptr( group_ptr2, mpi_errno );
+	    MPID_ERRTEST_ARGNULL( result, "result", mpi_errno );
 	    /* If group_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
