@@ -38,11 +38,13 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 			     eager_pkt->match.rank, eager_pkt->match.tag,
 			     eager_pkt->match.context_id);
 	    
-	    rreq = MPIDI_CH3U_Request_FPOAU(&eager_pkt->match, &found);
+	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&eager_pkt->match, &found);
 	    assert(rreq != NULL);
 	    
 	    rreq->status.MPI_SOURCE = eager_pkt->match.rank;
 	    rreq->status.MPI_TAG = eager_pkt->match.tag;
+	    rreq->status.MPI_ERROR = MPI_SUCCESS;
+	    rreq->status.count = eager_pkt->data_sz;
 	    rreq->ch3.vc = vc;
 	    rreq->ch3.sender_req_id = eager_pkt->sender_req_id;
 	    rreq->ch3.recv_data_sz = eager_pkt->data_sz;
@@ -61,7 +63,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		if (cc == 0)
 		{
 		    completion = TRUE;
-		    MPID_Request_free(rreq);
+		    MPID_Request_release(rreq);
 		}
 	    }
 	    else if (found)
@@ -144,11 +146,13 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 			     rts_pkt->match.rank, rts_pkt->match.tag,
 			     rts_pkt->match.context_id);
 	    
-	    rreq = MPIDI_CH3U_Request_FPOAU(&rts_pkt->match, &found);
+	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&rts_pkt->match, &found);
 	    assert(rreq != NULL);
 	    
 	    rreq->status.MPI_SOURCE = rts_pkt->match.rank;
 	    rreq->status.MPI_TAG = rts_pkt->match.tag;
+	    rreq->status.MPI_ERROR = MPI_SUCCESS;
+	    rreq->status.count = rts_pkt->data_sz;
 	    rreq->ch3.vc = vc;
 	    rreq->ch3.sender_req_id = rts_pkt->sender_req_id;
 	    rreq->ch3.recv_data_sz = rts_pkt->data_sz;
@@ -173,7 +177,7 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		cts_req = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt));
 		if (cts_req != NULL)
 		{
-		    MPID_Request_free(cts_req);
+		    MPID_Request_release(cts_req);
 		}
 	    }
 	    else
