@@ -22,7 +22,7 @@ dnl
 dnlD*/
 AC_DEFUN(PAC_PROG_CC,[
 AC_PROVIDE([AC_PROG_CC])
-AC_CHECK_PROGS(CC, cc xlC xlc pgcc gcc )
+AC_CHECK_PROGS(CC, cc xlC xlc pgcc icc gcc )
 test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
 PAC_PROG_CC_WORKS
 AC_PROG_CC_GNU
@@ -936,4 +936,45 @@ dnl   AC_MSG_RESULT($alt_argv)
 dnl fi
 dnl 
 dnl
+dnl Check whether we need -fno-common to correctly compile the source code.
+dnl This is necessary if global variables are defined without values in
+dnl gcc.  Here is the test
+dnl conftest1.c:
+dnl extern int a; int a;
+dnl conftest2.c:
+dnl extern int a; int main(int argc; char *argv[] ){ return a; }
+dnl Make a library out of conftest1.c and try to link with it.
+dnl If that fails, recompile it with -fno-common and see if that works.
+dnl If so, add -fno-common to CFLAGS
+dnl An alternative is to use, on some systems, ranlib -c to force 
+dnl the system to find common symbols.
 dnl
+dnl NOT TESTED
+AC_DEFUN(PAC_PROG_C_BROKEN_COMMON,[
+AC_MSG_CHECKING([whether global variables handled properly])
+ac_cv_prog_cc_globals_work=no
+echo 'extern int a; int a;' > conftest1.c
+echo 'extern int a; int main( ){ return a; }' > conftest2.c
+if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
+    if ${AR-ar} cr libconftest.a conftest1.o ; then
+        if ${RANLIB-:} libconftest.a ; then
+            if ${CC-cc} $CFLAGS -o conftest conftest2.c libconftest.a ; then
+		# Success!  C works
+		ac_cv_prog_cc_globals_work=yes
+	    else
+	        # Failure!  Do we need -fno-common?
+	        ${CC-cc} $CFLAGS -fno-common -c conftest1.c > conftest.out 2>&1
+		rm -f libconftest.a
+		${AR-ar} cr libconftest.a conftest1.o
+	        ${RANLIB-:} libconftest.a
+	        if ${CC-cc} $CFLAGS -o conftest conftest2.c libconftest.a ; then
+		    ac_cv_prob_cc_globals_work="needs -fno-common"
+		    CFLAGS="$CFLAGS -fno-common"
+		fi
+	    fi
+        fi
+    fi
+fi
+rm -f conftest* libconftest*
+AC_MSG_RESULT($ac_cv_prog_cc_globals_work)
+])
