@@ -11,9 +11,7 @@
 
 void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *error_code)
 {
-    MPI_Datatype copy_etype, copy_filetype;
-    int combiner, i, j, k, filetype_is_contig, err;
-    ADIOI_Flatlist_node *flat_file;
+    int i, err;
     int iomod, np_total, np_comm;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_FCNTL";
