@@ -100,7 +100,21 @@ can log very short intervals on the order of 100's of nanoseconds.
 Specify the logging library to use.  Currently the only logger option is \texttt{rlog}.
 
 \item[\texttt{--enable-timer-type=<timer\_type>}]\mbox{}\\
-Specify the timer type.  The options are \texttt{linux86\_cycle}, \texttt{foobar}, and \texttt{bazz}.
+Specify the timer type.  The options are
+\begin{itemize}
+\item \texttt{gethrtime}
+Solaris timer (Solaris systems only)
+\item \texttt{clock\_gettime}
+Posix timer (where available)
+\item \texttt{gettimeofday}
+Most Unix systems
+\item \texttt{linux86\_cycle}
+Linux x86; uses cycle counts to approximate time in seconds
+\item \texttt{linuxalpha\_cycle}
+Like linux86\_cycle, but for Linux Alpha
+\item \texttt{gcc\_ia64\_cycle}
+IPF ar.itc timer
+\end{itemize}
 \end{description}
 
 Here is an example:
