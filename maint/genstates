@@ -1,0 +1,40 @@
+#!/bin/csh
+
+find ../ -iname "*.[c,i]" | xargs -n 1 grep -v "#define" | grep "_STATE_DECL(" | sed -e 's/.*STATE_DECL(//' | sed -e 's/);.*$//' | sort | uniq > .statestmp
+
+#foreach NAME ( `cat .statestmp` )
+#  grep -q ${NAME} `find . -name "*describe*states.c"`
+#  # if ($? == 1) echo ${NAME} missing in describe states.
+#  if ($? == 1) echo RLOG_DescribeState\(g_pRLOG, ${NAME}, \"${NAME}\", get_random_color_str\(\)\)\;
+#end
+
+echo '/* -*- Mode: C; c-basic-offset:4 ; -*- */'
+echo '/*'
+echo ' *  (C) 2001 by Argonne National Laboratory.'
+echo ' *      See COPYRIGHT in top-level directory.'
+echo ' */'
+echo '#ifndef MPIALLSTATES_H'
+echo '#define MPIALLSTATES_H'
+echo ''
+echo '/* Insert all the states to be logged here */'
+echo ''
+echo '/* Note to package writers:'
+echo ' * If you insert your timer states here, you'
+echo ' * also need to insert a function call in '
+echo ' * MPIU_Timer_init to describe your states'
+echo ' * to the logging library.'
+echo ' * MPIU_Timer_init is probably found in:'
+echo ' * mpich2/src/util/timing/timer.c'
+echo ' */'
+echo ''
+echo 'enum MPID_TIMER_STATE'
+echo '{'
+foreach NAME ( `cat .statestmp` )
+  echo ${NAME},
+end
+echo 'MPID_NUM_TIMER_STATES'
+echo '};'
+echo ' '
+echo '#endif'
+
+rm .statestmp
