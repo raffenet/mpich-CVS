@@ -1,10 +1,7 @@
-# LIBS includes -lmpich and other libraries (e.g., -lpmpich if
-# weak symbols are not supported)
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
-	 -I${srcdir}/../include
+INCLUDES = -I../include -I${srcdir}/../include
 EXTERNAL_LIBS = m
-LDADD = -L../../../lib
-DEPADD = ../../../lib/lib${MPILIBNAME}.a
+LDADD = 
+DEPADD = @MPILIBLOC@
 smvar_do_sharedlibs = 0
 #
 bcasttest_SOURCES = bcasttest.c

@@ -1,5 +1,6 @@
 INCLUDES = -I../../include -I${srcdir}/../../include
 LDADD = ../util/mtest.o 
+DEPADD = @MPILIBLOC@ ../util/mtest.o
 smvar_do_sharedlibs = 0
 
 infodupx_SOURCES = infodupx.cxx

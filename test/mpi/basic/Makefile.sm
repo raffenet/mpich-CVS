@@ -1,7 +1,10 @@
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
-LDADD = -L../../../lib
-DEPADD = ../../../lib/lib${MPILIBNAME}.a
+INCLUDES = -I../include -I${srcdir}/../include
+LDADD = 
+DEPADD = @MPILIBLOC@
 smvar_do_sharedlibs = 0
+
+# The allmpi program uses MPICH internal header files
+EXTRA_PROGRAMS = allmpi
 
 self_SOURCES = self.c
 simple_SOURCES = simple.c

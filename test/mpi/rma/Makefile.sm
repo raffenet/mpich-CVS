@@ -2,8 +2,8 @@
 # weak symbols are not supported)
 INCLUDES = -I../include -I${top_srcdir}/include
 EXTERNAL_LIBS = m
-LDADD = -L../../../lib ../util/mtest.o
-DEPADD = ../../../lib/lib${MPILIBNAME}.a ../util/mtest.o
+LDADD = ../util/mtest.o
+DEPADD = @MPILIBLOC@ ../util/mtest.o
 smvar_do_sharedlibs = 0
 #
 allocmem_SOURCES = allocmem.c

@@ -1,8 +1,7 @@
 smvar_do_sharedlibs = 0
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../../include \
-	 -I${srcdir}/../../include
+INCLUDES = -I../../include -I${srcdir}/../../include
 LDADD = ../util/mtest.o 
-DEPADD = ../util/mtest.o
+DEPADD = @MPILIBLOC@ ../util/mtest.o
 
 winnamex_SOURCES = winnamex.cxx
 getgroupx_SOURCES = getgroupx.cxx

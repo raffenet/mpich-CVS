@@ -21,33 +21,67 @@ dnl AC_ARG_ENABLE(f90,
 dnl [--enable-f90 - Turn on Fortran 90 tests (default)],,enable_f90=no)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Turn on C++ tests (default)],,enable_cxx=yes)
+AC_ARG_WITH(mpi,
+[--with-mpi=dir - Use the selected MPI; compilation scripts for mpicc, mpif77
+                  and mpicxx should be in dir/bin],,)
 
 PAC_VPATH_CHECK()
 
 PAC_PROG_MAKE
-if test -z "$top_build_dir" ; then 
-    top_build_dir=`cd ../.. ; pwd`
-fi
-# The following choices can cause problems if we configure as part of a 
-# MPICH2 configure, because the libraries may not yet exist.  In 
-# that case, we wait to make these definitions until after the
-# tests, since the environment variables for the compilers is set 
-# as part of the initial build
-if test "$FROM_MPICH2" != yes ; then
-    if test -z "$BASECC" ; then 
+
+MPILIBLOC=""
+AC_SUBST(MPILIBLOC)
+if test -n "$with_mpi" ; then
+    if test -z "$BASECC" ; then
+        AC_PROG_CC
         BASECC=$CC
-    fi     
-    BASEF77=$F77
-    CC=$top_build_dir/bin/mpicc
-    FC=$top_build_dir/bin/mpif77
-    F77=$FC
-dnl    F90=$top_build_dir/bin/mpif90
-    CXX=$top_build_dir/bin/mpicxx
+    fi
+    if test -z "$BASEF77" ; then
+        AC_PROG_F77
+        BASEF77=$F77
+    fi
+    if test -z "$MPICC" ; then
+        CC=$with_mpi/bin/mpicc
+    else 
+        CC=$MPICC
+    fi	
+    if test -z "$MPIF77" ; then
+        F77=$with_mpi/bin/mpif77
+    else
+        F77=$MPIF77
+    fi
+    if test -z "$MPICXX" ; then
+        CXX=$with_mpi/bin/mpicxx
+    else
+        CXX=$MPICXX
+    fi
 else
-    # Remove the libraries, since they will not be needed for the
-    # few tests that we do
-    saveLIBS=$LIBS
-    LIBS=
+
+    if test -z "$top_build_dir" ; then 
+        top_build_dir=`cd ../.. ; pwd`
+    fi
+
+    # The following choices can cause problems if we configure as part of a 
+    # MPICH2 configure, because the libraries may not yet exist.  In 
+    # that case, we wait to make these definitions until after the
+    # tests, since the environment variables for the compilers is set 
+    # as part of the initial build
+    if test "$FROM_MPICH2" != yes ; then
+        if test -z "$BASECC" ; then 
+            BASECC=$CC
+        fi     
+        BASEF77=$F77
+        CC=$top_build_dir/bin/mpicc
+        FC=$top_build_dir/bin/mpif77
+        F77=$FC
+dnl        F90=$top_build_dir/bin/mpif90
+        CXX=$top_build_dir/bin/mpicxx
+    else
+        # Remove the libraries, since they will not be needed for the
+        # few tests that we do
+        saveLIBS=$LIBS
+        LIBS=
+    fi
 fi
 # Clear the CPPFLAGS, since the MPI configure will have added many items
 # that are not required for user MPI programs.
@@ -99,6 +133,7 @@ if test "$FROM_MPICH2" = yes ; then
         F77=$FC
         CXX=$top_build_dir/bin/mpicxx
 dnl        F90=$top_build_dir/bin/mpif90
+        MPILIBLOC=$top_build_dir/lib/libmpich.a
     else
         # note that the default definition of bindir is 
 	#    '${exec_prefix}/bin'
