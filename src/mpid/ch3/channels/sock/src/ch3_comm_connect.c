@@ -748,7 +748,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     {
         for (p = 0; p < remote_pgs_array[i]->size; p++)
         {
-	    MPIDI_PG_Get_vcr(remote_pgs_array[i], i, &vc);
+	    MPIDI_PG_Get_vcr(remote_pgs_array[i], p, &vc);
 	    
             vc->ch.sendq_head = NULL;
             vc->ch.sendq_tail = NULL;

@@ -139,6 +139,9 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 
 	    goto fn_exit;
 	}
+
+	pg_prev = pg_cur;
+	pg_cur = pg_cur->next;
     }
 
     /* --BEGIN ERROR HANDLING-- */

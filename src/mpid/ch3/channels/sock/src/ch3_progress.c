@@ -778,9 +778,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    }
 		    /* FIXME - where does this vc get freed? */
 
-		    vc->pg = NULL;
-		    vc->pg_rank = 0;
-		    
+		    MPIDI_VC_Init(vc, NULL, 0);
 		    vc->ch.sendq_head = NULL;
 		    vc->ch.sendq_tail = NULL;
 		    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
@@ -1432,9 +1430,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
 
     *new_vc = vc;
 
-    vc->pg = NULL; /* not used */
-    vc->pg_rank = 0;
-    
+    MPIDI_VC_Init(vc, NULL, 0);
     vc->ch.sendq_head = NULL;
     vc->ch.sendq_tail = NULL;
     vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
