@@ -106,6 +106,54 @@ SOURCE=..\..\util\dbg\dbg_printf.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ib\ib_can_connect.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_get_business_card.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_init.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_make_progress.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_merge_unexpected_data.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_merge_with_posted.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_merge_with_unexpected.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_post_connect.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_post_read.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_post_write.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_queue.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ib\ib_reset_car.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\mm\mm_accept.c
 # End Source File
 # Begin Source File
