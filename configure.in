@@ -631,12 +631,17 @@ dnl
 dnl Configure any subdirectories.  Note that config.status will *not* 
 dnl reexecute these!
 dnl Export any important variables first:
+dnl 
+dnl Gastly problem.  CONFIG_SUBDIRS only adds the directories to the
+dnl list of directories to be configured.  It does NOT control the
+dnl timing of the configuration.  For that, we must do something different.
 export AR
 export RANLIB
 export MPILIBNAME
 export CC
 PAC_SUBDIR_CACHE
-AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems)
+dnl AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems)
+PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $subsystems)
 dnl
 dnl Once the subsystems are configured, we can inquire about what
 dnl they have been found.  For example, we need the values for the
