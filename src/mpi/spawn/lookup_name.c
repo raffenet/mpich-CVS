@@ -97,8 +97,12 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
     if (mpi_errno)
     {
+	/* THIS CAUSES THE ROUTINE TO RETURN NO USEFUL INFORMATION ABOUT
+	   THE REASON FOR FAILURE */
+#if 0
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
+#endif
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
     return MPI_SUCCESS;

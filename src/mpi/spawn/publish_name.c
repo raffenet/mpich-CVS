@@ -89,8 +89,12 @@ int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 
     if (mpi_errno != MPI_SUCCESS)
     {
+	/* THIS CAUSES THE ROUTINE TO RETURN NO USEFUL INFORMATION ABOUT
+	   THE REASON FOR FAILURE */
+#if 0
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_publish_name", "**mpi_publish_name %s %I %s", service_name, info, port_name);
+#endif
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
