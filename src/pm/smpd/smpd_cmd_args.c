@@ -86,6 +86,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     {
 	char first_host[SMPD_MAX_HOST_LENGTH], host[SMPD_MAX_HOST_LENGTH];
 
+	smpd_get_default_hosts();
+
 	result = smpd_get_next_hostname(first_host);
 	if (result != SMPD_SUCCESS)
 	    smpd_exit(result);
