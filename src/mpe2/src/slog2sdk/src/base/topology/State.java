@@ -10,7 +10,7 @@
 package base.topology;
 
 import java.awt.Graphics2D;
-import java.awt.Stroke;
+import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Point;
 import base.drawable.CoordPixelXform;
@@ -31,7 +31,7 @@ public class State
         Assume caller guarantees the order of timestamps and ypos, such that
         start_time <= final_time  and  start_ypos <= final_ypos.
     */
-    private static int  drawForward( Graphics2D g, Color color, Stroke stroke,
+    private static int  drawForward( Graphics2D g, Color color, Insets insets,
                                      CoordPixelXform    coord_xform,
                                      DrawnBox           last_drawn_pos,
                                      double start_time, float start_ypos,
@@ -48,6 +48,13 @@ public class State
 
         jStart   = coord_xform.convertRowToPixel( start_ypos );
         jFinal   = coord_xform.convertRowToPixel( final_ypos );
+
+        if ( insets != null ) {
+            iStart += insets.left;
+            iFinal -= insets.right;
+            jStart += insets.top;
+            jFinal -= insets.bottom;
+        }
 
         boolean  isStartVtxInImg, isFinalVtxInImg;
         isStartVtxInImg = ( iStart >= 0 ) ;
@@ -117,7 +124,7 @@ public class State
     }
 
 
-    public static int  draw( Graphics2D g, Color color, Stroke stroke,
+    public static int  draw( Graphics2D g, Color color, Insets insets,
                              CoordPixelXform    coord_xform,
                              DrawnBox           last_drawn_pos,
                              double start_time, float start_ypos,
@@ -125,24 +132,24 @@ public class State
     {
          if ( start_time < final_time ) {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, color, stroke,
+                 return drawForward( g, color, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, start_ypos,
                                      final_time, final_ypos );
              else
-                 return drawForward( g, color, stroke,
+                 return drawForward( g, color, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, final_ypos,
                                      final_time, start_ypos );
          }
          else {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, color, stroke,
+                 return drawForward( g, color, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, start_ypos,
                                      start_time, final_ypos );
              else
-                 return drawForward( g, color, stroke,
+                 return drawForward( g, color, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, final_ypos,
                                      start_time, start_ypos );
