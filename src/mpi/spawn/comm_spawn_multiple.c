@@ -5,6 +5,7 @@
  */
 
 #include "mpiimpl.h"
+#include "bnr.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_spawn_multiple */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -55,6 +56,9 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
     static const char FCNAME[] = "MPI_Comm_spawn_multiple";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    char pszPortName[MPI_MAX_PORT_NAME];
+    MPI_Info info, prepost_info;
+    bool_t same_domain;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
     /* Get handles to MPI objects. */
@@ -79,10 +83,32 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /*
     MPID_Comm_thread_lock( comm_ptr );
+
+    PMPI_Info_create(&info);
+    if (comm_ptr->rank == root)
+    {
+	PMPI_Info_create(&prepost_info);
+	PMPI_Open_port(MPI_INFO_NULL, pszPortName);
+	PMPI_Info_set(prepost_info, MPICH_PARENT_PORT_KEY, pszPortName);
+	//if (g_bSpawnCalledFromMPIExec) PMPI_Info_set(prepost_info, MPICH_EXEC_IS_PARENT_KEY, "yes");
+	BNR_Spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, array_of_errcodes, 
+	    &same_domain, (void*)prepost_info);
+	PMPI_Info_free(&prepost_info);
+	if (same_domain)
+	{
+	    // set same domain for accept
+	    PMPI_Info_set(info, MPICH_BNR_SAME_DOMAIN_KEY, "yes");
+	}
+    }
+    PMPI_Comm_accept(pszPortName, info, root, comm, intercomm);
+    if (comm_ptr->rank == root)
+    {
+	PMPI_Close_port(pszPortName);
+    }
+    PMPI_Info_free(&info);
+
     MPID_Comm_thread_unlock( comm_ptr );
-    */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
     return MPI_SUCCESS;

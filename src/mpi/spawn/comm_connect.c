@@ -52,10 +52,13 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
     static const char FCNAME[] = "MPI_Comm_connect";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_Info *info_ptr = NULL;
+    int conn;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CONNECT);
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Info_get_ptr( info, info_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -66,6 +69,7 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
             }
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+	    MPID_Info_valid_ptr( info_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);
@@ -75,6 +79,21 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    if (comm_ptr->rank == root)
+    {
+	conn = MM_Connect(info_ptr, port_name);
+
+	/* Transfer stuff */
+
+	MM_Close(conn);
+
+	/* Bcast resulting intercommunicator stuff to the rest of this communicator */
+    }
+    else
+    {
+	/* Bcast resulting intercommunicator stuff */
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);
     return MPI_SUCCESS;

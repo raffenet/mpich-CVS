@@ -32,6 +32,13 @@
  */
 /* ... to do ... */
 
+/* key used by spawners and spawnees to get the port by which they can connect to each other */
+#define MPICH_PARENT_PORT_KEY     "MPI_Parent_port"
+/* key used to tell comm_accept that it doesn't need to transfer bnr databases */
+#define MPICH_BNR_SAME_DOMAIN_KEY "BNR_SAME_DOMAIN"
+/* key used to inform spawned processes that their parent is mpiexec and not another mpi application */
+#define MPICH_EXEC_IS_PARENT_KEY  "MPIEXECSpawned"
+
 /* Basic typedefs */
 #ifndef HAVE_INT16_T 
 /* Fix me (short may not be correct) */
@@ -506,6 +513,12 @@ typedef struct {
     int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
 } PreDefined_attrs;
 
+typedef struct OpenPortNode {
+    char port_name[MPI_MAX_PORT_NAME];
+    int bfd;
+    struct OpenPortNode *next;
+} OpenPortNode_t;
+
 typedef struct {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
     int               thread_provided;  /* Provided level of thread support */
@@ -522,6 +535,8 @@ typedef struct {
     double            timer_frequency;  /* High performance counter frequency */
 #endif
     char              bnr_dbname[100];
+    MPI_Comm          comm_parent;
+    OpenPortNode_t    *port_list;
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
@@ -580,4 +595,11 @@ int MPIR_Err_create_code( int, const char [], ... );
 void MPIR_Nest_incr( void );
 void MPIR_Nest_decr( void );
 int MPIR_Nest_value( void );
+int MM_Open_port(MPID_Info *, char *);
+int MM_Close_port(char *);
+int MM_Accept(MPID_Info *, char *);
+int MM_Connect(MPID_Info *, char *);
+int MM_Send(int, char *, int);
+int MM_Recv(int, char *, int);
+int MM_Close(int);
 #endif /* MPIIMPL_INCLUDED */

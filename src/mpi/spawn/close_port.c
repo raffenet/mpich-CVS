@@ -63,6 +63,8 @@ int MPI_Close_port(char *port_name)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MM_Close_port(port_name);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
     return MPI_SUCCESS;
 }

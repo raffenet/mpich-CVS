@@ -45,8 +45,11 @@ int MPI_Open_port(MPI_Info info, char *port_name)
 {
     static const char FCNAME[] = "MPI_Open_port";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Info *info_ptr = NULL;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OPEN_PORT);
+    /* Get handles to MPI objects. */
+    MPID_Info_get_ptr( info, info_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -55,6 +58,8 @@ int MPI_Open_port(MPI_Info info, char *port_name)
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
+            /* Validate info_ptr */
+	    MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -64,6 +69,8 @@ int MPI_Open_port(MPI_Info info, char *port_name)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    MM_Open_port(info_ptr, port_name);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
     return MPI_SUCCESS;
