@@ -199,7 +199,7 @@ typedef struct {
   Attribute
 
   Question:
-  Do we really want to mandate this this is a linked list, or do we want
+  Do we really want to mandate that this is a linked list, or do we want
   to make use of the 'MPID_List'?
   S*/
 typedef struct MPID_Info_s {

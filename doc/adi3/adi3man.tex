@@ -13,10 +13,14 @@
 \newread\testfile
 
 %
+% For now, let findex be the same as index.  This will allow us to
+% more easily separate function and nonfunction index entries later.
+\let\findex=\index
+%
 % Modify the way titles are handled for no breaks between pages
 \def\mantitle#1#2#3{\pagerule\nobreak
 \ifmancontents\addcontentsline{toc}{subsection}{#1}\fi
-\index{#1}}
+\findex{#1}}
 
 \makeindex
 
@@ -885,6 +889,16 @@ tolerant of communication failure can use these to
 
 \section{Extensions}
 \input Extension-list.tex
+
+\subsection{Other Extensions}
+In some applications, it isn't necessary to communicate floating point values
+to their full precision.  Some groups (see, for example,
+\url{http://nemo.physics.ncsu.edu/~briggs/software}) have experimented with 40
+and 48 bit versions of 64 bit floating point data.  For slow networks (and
+slow memory systems), this can lead to significant communication performance
+improvements.  This may seem like a niche extension, but MPI almost specifies
+this for I/O in the form of
+\code{MPI_Register_datarep}\findex{MPI_Register_datarep}.   
 
 \openin\testfile{None-list.tex}
 \ifeof\testfile\else
