@@ -23,6 +23,48 @@ MPIDI_VC_functions g_ib_vc_functions =
 
 int ib_setup_connections()
 {
+    MPID_Comm *comm_ptr;
+    int mpi_errno;
+    MPIDI_VC *vc_ptr;
+    int i;
+    char key[100], value[100];
+
+    /* setup the vc's on comm_world */
+    comm_ptr = MPIR_Process.comm_world;
+
+    /* allocate a vc reference table */
+    mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
+	return -1;
+    }
+    /* get an alias to the array of vc pointers */
+    mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_MM_VC_FROM_COMMUNICATOR);
+	return -1;
+    }
+
+    for (i=0; i<comm_ptr->remote_size; i++)
+    {
+	if ( i == comm_ptr->rank)
+	    continue;
+	vc_ptr = comm_ptr->vcr[i];
+	if (vc_ptr == NULL)
+	{
+	    /* allocate and connect a virtual connection */
+	    comm_ptr->vcr[i] = vc_ptr = mm_vc_alloc(MM_IB_METHOD);
+	    /* copy the kvs name and rank into the vc. this may not be necessary */
+	    vc_ptr->pmi_kvsname = comm_ptr->mm.pmi_kvsname;
+	    vc_ptr->rank = i;
+	}
+	sprintf(key, "ib_lid_%d", i);
+	PMI_KVS_Get(vc_ptr->pmi_kvsname, key, value);
+	MPIU_dbg_printf("key: %s, value: %s\n", key, value);
+    }
+
     return MPI_SUCCESS;
 }
 
