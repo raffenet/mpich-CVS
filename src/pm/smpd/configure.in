@@ -97,6 +97,8 @@ AC_CHECK_HEADERS( sys/types.h sys/wait.h signal.h unistd.h stdlib.h errno.h stda
 AC_CHECK_HEADERS( math.h stdio.h termios.h string.h sys/stat.h malloc.h uuid/uuid.h )
 AC_CHECK_FUNCS( sigaction usleep CFUUIDCreate uuid_generate)
 AC_SEARCH_LIBS( uuid_generate, uuid, SMPD_LIBS=-luuid )
+AC_SEARCH_LIBS( MD5, ssl, SMPD_LIBS="$SMPD_LIBS -lssl" )
+AC_SEARCH_LIBS( MD5, crypto, SMPD_LIBS="$SMPD_LIBS -lcrypto" )
 AC_SUBST(SMPD_LIBS)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
