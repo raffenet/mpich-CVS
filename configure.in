@@ -271,6 +271,8 @@ AC_OUTPUT(Makefile src/Makefile \
 	  src/mpi/datatype/Makefile \
           src/mpi/init/Makefile src/mpi/errhan/Makefile \
           src/mpi/spawn/Makefile \
+          src/mpi/pt2pt/Makefile \
+          src/mpi/topo/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/mem/Makefile \
