@@ -199,20 +199,36 @@ if test -z "$top_build_dir" ; then
     top_build_dir=`cd ../../.. ; pwd`
 fi
 if test -z "$includebuild_dir" ; then
-    includebuild_dir=$top_build_dir/src/include
+   includebuild_dir=$top_build_dir/src/include
+fi
+if test -z "$modincbuild_dir" ; then
+   # The include files may be in a different directory from the mpif.h file
+   modincbuild_dir=$top_build_dir/src/binding/f90
 fi
 if test -z "$libbuild_dir" ; then
-    libbuild_dir=$top_build_dir/lib
+   libbuild_dir=$top_build_dir/lib
 fi
-
+if test -z "$modincdir" ; then
+   # The default module include dir is the same as the include dir
+   modincdir=$includedir
+fi
+AC_SUBST(modincdir)
+#
+# Put a version of mpif90 into the build bin directory.  Note that
+# because the mod file is *not* copied into the src/include directory
+# (partly because the module extension is not standardized and some compilers
+# (particularly early versions of the Intel Fortran 90 compiler) require
+# additional files
 AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ;
    chmod a+x mpif90 ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+       -e 's%modincdir=.*%modincdir='$modincbuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% mpif90 > ../../../bin/mpif90 ;
    chmod a+x ../../../bin/mpif90 ],
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
+modincbuild_dir=$modincbuild_dir
 enable_echo=$enable_echo
 )
 

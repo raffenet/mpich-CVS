@@ -31,6 +31,7 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 sysconfdir=@sysconfdir@
 includedir=@includedir@
+modincdir=@modincdir@
 libdir=@libdir@
 #
 # Default settings for compiler, flags, and libraries
@@ -47,7 +48,7 @@ F90INC="@F90INC@"
 # a specific list of files that contain module names and directories.
 # The F90MODINCSPEC is a more general approach that uses <dir> and <file>
 # for the directory and file respectively.
-F90MODINC="@F90_MODINCFLAG@"
+F90MODINC="@F90MODINCFLAG@"
 F90MODINCSPEC="@F90MODINCSPEC@"
 #
 MPI_F90FLAGS="@MPI_F90FLAGS@"
@@ -259,7 +260,7 @@ fi
 
 # Handle the specification of the directory containing the modules
 # For now, these are in the includedir (no choice argument supported)
-moduledir=$includedir
+moduledir=$modincdir
 modulelib=${MPILIBNAME}f90
 if [ -n "$F90MODINCSPEC" ] ; then
     newarg=`echo A"$F90MODINCSPEC" | \
