@@ -9,7 +9,8 @@ all: simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll large_file fperf \
      fcoll_test fmisc
 
-default: all
+
+default: simple
 
 .c.o:
 	$(CC) $(USER_CFLAGS) -c $*.c

@@ -1,5 +1,5 @@
 #! /bin/sh
-mpirun="/nfs/mcs-homes28/gropp/tmp/cvstesting/mpich/bin/mpirun"
+mpirun="/homes/gropp/tmp/cvstesting/mpich/bin/mpirun"
 #
 # If the programs are not available, run make.
 runtests=1
