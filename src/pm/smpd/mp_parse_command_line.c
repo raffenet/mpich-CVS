@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "mpiexec.h"
 #include "smpd.h"
+#include <stdlib.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -459,9 +460,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char configfilename[SMPD_MAX_FILENAME];
     int use_configfile;
     char exe[SMPD_MAX_EXE_LENGTH]/*, args[SMPD_MAX_ARGS_LENGTH]*/;
-#ifdef HAVE_WINDOWS_H
     char temp_exe[SMPD_MAX_EXE_LENGTH], *namepart;
-#endif
     smpd_launch_node_t *launch_node, *launch_node_iter;
     int total;
 
