@@ -3705,7 +3705,10 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 	    result = smpd_handle_op_accept(context, &event, set);
 	    if (result != SMPD_SUCCESS || event.error != MPI_SUCCESS)
 	    {
-		smpd_dbg_printf("SOCK_OP_ACCEPT failed, closing %s context.\n", smpd_get_context_str(context));
+		if (result != SMPD_SUCCESS)
+		    smpd_dbg_printf("SOCK_OP_ACCEPT failed, result = %d, closing %s context.\n", result, smpd_get_context_str(context));
+		else
+		    smpd_dbg_printf("SOCK_OP_ACCEPT failed, event.error = %d, closing %s context.\n", event.error, smpd_get_context_str(context));
 		context->state = SMPD_CLOSING;
 		result = MPIDU_Sock_post_close(context->sock);
 		if (result != MPI_SUCCESS)
