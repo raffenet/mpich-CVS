@@ -576,14 +576,17 @@ if ("$buildMakefile") {
     }
     &print_endline( MAKEFD );
 
+    print MAKEFD "MPIFLIBNAME = \@MPIFLIBNAME\@\n";
     # FWRAPNAME is the name of a library that contains ONLY the 
     # Fortran wrappers
     print MAKEFD "FWRAPNAME = \@FWRAPNAME\@\n";
-    print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} setbotf.f \
+    print MAKEFD "\
+lib\${MPIFLIBNAME}_a_DIR = ROOTDIR/lib\
+lib\${MPIFLIBNAME}_a_SOURCES = \${mpi_sources} setbotf.f \
 lib\${FWRAPNAME}_a_DIR = ROOTDIR/lib\
 lib\${FWRAPNAME}_a_SOURCES = \${mpi_sources}\
 \
-profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
+profilelib_\${MPIFLIBNAME} = p\${MPIFLIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
 maint-clean:\
 \trm -f \${mpi_sources} $prototype_header_file\n";
