@@ -8,25 +8,20 @@
 #include <mach-o/dyld.h>
 #endif
 
-/* global variables */
-static ipmi_functions_t fn =
-{
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-int PMI_Init(int *spawned)
-{
-    char *dll_name;
 #ifdef HAVE_WINDOWS_H
+
 #define PMILoadLibrary(a,b) a = LoadLibrary( b )
 #define PMIGetProcAddress GetProcAddress
-    HMODULE hModule;
+#define PMIModule HMODULE
+
 #elif defined(HAVE_DLOPEN)
+
 #define PMILoadLibrary(a, b) a = dlopen( b , RTLD_LAZY /* or RTLD_NOW */)
 #define PMIGetProcAddress dlsym
-    void *hModule;
+#define PMIModule void *
+
 #elif defined(HAVE_NSLINKMODULE)
-    NSModule hModule;
+
 #define PMILoadLibrary(a, b) \
 { \
     NSObjectFileImage fileImage; \
@@ -43,9 +38,22 @@ int PMI_Init(int *spawned)
     } \
 }
 #define PMIGetProcAddress(a, b) NSAddressOfSymbol( NSLookupSymbolInModule( a, b ) )
+#define PMIModule NSModule
+
 #else
-#error PMILoadLibrary function needed
+#error PMILoadLibrary functions needed
 #endif
+
+/* global variables */
+static ipmi_functions_t fn =
+{
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+};
+
+int PMI_Init(int *spawned)
+{
+    char *dll_name;
+    PMIModule hModule;
 
     if (fn.PMI_Init != NULL)
     {
