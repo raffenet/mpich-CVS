@@ -1207,9 +1207,43 @@ sub FindSrcTypes {
 # This is only approximate.
 # We want to allow source files to be specified through other 
 # variables (e.g., ${Foo_sources}).
+# Globals: regular_sources, regular_headers
 sub SaveSrcNames {
-    $source = $_[0];
+    my $source = $_[0];
+    my @files;
+    my $file;
+    # First, expand the source variable
+    #print STDERR "Got $source ...\n";
     foreach $file (split(/\s+/,$source)) {
+	#print STDERR "Checking $file ...\n";
+	# Substitute for any make variables (1 level of substitution)
+	$file = &ExpandMakeVars( $file );
+	foreach $name (split(/\s+/,$file)) {
+	    $files[$#files+1] = $name;
+	}
+# 	if ($file =~ /\$[{\(](.*)[}\)]/) {
+# 	    #print STDERR "Adding $file to src list\n";
+# 	    $varname = $1;
+# 	    if (defined($makevars{$varname})) {
+# 		$file = $makevars{$varname};
+# 		foreach my $name (split(/\s+/,$file)) {
+# 		    if ($name =~ /\$/) {
+# 			print STDERR "Nested variables in source names unsupported\n";
+# 		    }
+# 		    $files[$#files+1] = $name;
+# 		}
+# 	    }
+# 	    else {
+# 		$files[$#files+1] = $file;
+# 	    }
+# 	}
+# 	else {
+# 	    # Just keep the file.
+# 	    $files[$#files+1] = $file;
+# 	}
+    }
+    
+    foreach $file (@files) {
 	($name,$ext) = split( '\.',$file);
 	if (defined($ext)) {
 	    if (defined($extrules{"$ext:o"})) {
