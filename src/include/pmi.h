@@ -285,6 +285,18 @@ mechanisms.
 @*/
 int PMI_Get_clique_ranks( int ranks[], int length );
 
+/*@
+PMI_Abort - abort the process group associated with this process
+
+Input Parameters:
++ exit_code - exit code to be returned by this process
+- error_msg - error message to be printed
+
+Return values:
+. none - this function should not return
+@*/
+int PMI_Abort(int exit_code, const char error_msg[]);
+
 /* PMI Keymap functions */
 /*@
 PMI_KVS_Get_my_name - obtain the name of the keyval space the local process group has access to
