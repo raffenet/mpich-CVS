@@ -79,7 +79,19 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
-    return MPI_SUCCESS;
-}
+    mpi_errno = MPID_Win_create(base, size, disp_unit, info_ptr,
+                                comm_ptr, &win_ptr);
 
+    if (!mpi_errno)
+    {
+	/* return the handle of the window object to the user */
+	*win = win_ptr->handle;
+	
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
+	return MPI_SUCCESS;
+    }
+    
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+
+}

@@ -76,7 +76,17 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype, i
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Get(origin_addr, origin_count, origin_datatype,
+                         target_rank, target_disp, target_count,
+                         target_datatype, win_ptr);
+
+    if (!mpi_errno)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET);
+	return MPI_SUCCESS;
+    }
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
 }
 

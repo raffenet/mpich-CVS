@@ -70,7 +70,15 @@ int MPI_Win_fence(int assert, MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Fence(assert, win_ptr);
+
+    if (!mpi_errno)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_FENCE);
+	return MPI_SUCCESS;
+    }
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_FENCE);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
 }
 
