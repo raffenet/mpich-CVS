@@ -538,14 +538,13 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
-#if 0
-		    next_elmp->orig_offset = cur_elmp->curoffset +
-			DLOOP_Stackelm_offset(next_elmp);
-#endif
 		    /* Accounting for additional offset from being partway
-		     * through a collection of blocks.
+		     * through a collection of blocks, plus the displacement
+		     * for this count.
 		     */
-		    next_elmp->orig_offset = cur_elmp->curoffset + block_index * cur_elmp->loop_p->el_extent;
+		    next_elmp->orig_offset = cur_elmp->curoffset +
+			block_index * cur_elmp->loop_p->el_extent +
+			DLOOP_Stackelm_offset(cur_elmp);
 		    break;
 		default:
 		    assert(0);
@@ -662,6 +661,10 @@ static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
 	    break;
 	case DLOOP_KIND_INDEXED:
 	    datatype_index = elmp->loop_p->loop_params.count - elmp->curcount;
+#ifdef DLOOP_M_VERBOSE
+	    MPIU_dbg_printf("     DLOOP_Stackelm_offset: offset = %d\n",
+			    dlp->loop_params.i_t.offset_array[datatype_index]);
+#endif
 	    return dlp->loop_params.i_t.offset_array[datatype_index];
 	    break;
 	case DLOOP_KIND_STRUCT:
