@@ -174,17 +174,21 @@ int smpd_entry_point()
     /* put myself in the background if flag is set */
     if (smpd_process.bNoTTY)
     {
-	int fd;
+	int fd, maxfd;
 
-        if (fork() != 0)  /* parent exits; child in background */
+        if (fork() != 0)
+	{
+	    /* parent exits */
 	    exit(0);
-	setsid();           /* become session leader; no controlling tty */
-	smpd_signal(SIGHUP, SIG_IGN); /* make sure no sighup when leader ends */
+	}
+	/* become session leader; no controlling tty */
+	setsid();
+	/* make sure no sighup when leader ends */
+	smpd_signal(SIGHUP, SIG_IGN);
 	/* leader exits; svr4: make sure do not get another controlling tty */
         if (fork() != 0)
 	    exit(0);
 
-	/* How do I make stdout and stderr go away? */
 	/* redirect stdout/err to nothing */
 	fd = open("/dev/null", O_APPEND);
 	if (fd != -1)
@@ -195,11 +199,31 @@ int smpd_entry_point()
 	    dup2(fd, 2);
 	    close(fd);
 	}
-	/*
-        freopen("/dev/null", "a", stdout);
-        freopen("/dev/null", "a", stderr);
-	*/
+
+	/* the stdin file descriptor 0 needs to be occupied so it doesn't get used by socketpair */
 	/*close(0);*/
+	/* maybe 0 should be redirected to "/dev/null" just like 1 and 2?
+	fd = open("/dev/null", O_READ);
+	if (fd != -1)
+	{
+	    close(0);
+	    dup2(fd, 0);
+	    close(fd);
+	}
+	*/
+
+	/* get out of the current directory to get out of the way of possibly mounted directories */
+	chdir("/");
+
+	/* close all open file descriptors */
+	/* We don't want to close the listener sock.  This code should be moved to the very beginning of main */
+	/*
+	maxfd = sysconf(_SC_OPEN_MAX);
+	if (maxfd < 0)
+	    maxfd = 255;
+	for (i=3; i<maxfd; i++)
+	    close(i);
+	*/
     }
 #endif
 
