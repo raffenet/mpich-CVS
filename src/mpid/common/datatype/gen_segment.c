@@ -409,10 +409,9 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		case DLOOP_KIND_CONTIG:
 		    break;
          	case DLOOP_KIND_BLOCKINDEXED:
-		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
-		    /* only use the index piecefn if at the start of the index type */
+		    /* only use index piecefn if at start of the index type */
 		    if (indexfn &&
 			cur_elmp->orig_block == cur_elmp->curblock &&
 			cur_elmp->orig_count == cur_elmp->curcount)
@@ -580,7 +579,26 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			break;
 		    case DLOOP_KIND_BLOCKINDEXED:
-			assert(0);
+			while (myblocks > 0 && myblocks >= cur_elmp->curblock) {
+			    myblocks -= cur_elmp->curblock;
+			    cur_elmp->curcount--;
+			    assert(cur_elmp->curcount >= 0);
+
+			    count_index = cur_elmp->orig_count - cur_elmp->curcount;
+			    cur_elmp->curblock = cur_elmp->orig_block;
+			}
+			if (cur_elmp->curcount == 0) {
+			    /* popping */
+			    assert(myblocks == 0);
+			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
+			}
+			else {
+			    /* cur_elmp->orig_block = cur_elmp->curblock; */
+			    cur_elmp->curoffset = cur_elmp->orig_offset +
+				DLOOP_STACKELM_BLOCKINDEXED_OFFSET(cur_elmp, count_index);
+			    cur_elmp->curblock  -= myblocks;
+			    cur_elmp->curoffset += myblocks * local_el_size;
+			}
 			break;
 		}
 	    }
@@ -656,7 +674,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    next_elmp->orig_offset = cur_elmp->orig_offset +
 			block_index * cur_elmp->loop_p->el_extent +
 			DLOOP_STACKELM_BLOCKINDEXED_OFFSET(cur_elmp, count_index);
-		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
 		    next_elmp->orig_offset = cur_elmp->orig_offset +
@@ -681,8 +698,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		case DLOOP_KIND_BLOCKINDEXED:
 		    next_elmp->curcount  = next_elmp->orig_count;
 		    next_elmp->curblock  = next_elmp->orig_block;
-		    next_elmp->curoffset = next_elmp->orig_offset + DLOOP_STACKELM_BLOCKINDEXED_OFFSET(next_elmp, 0);
-		    assert(0);
+		    next_elmp->curoffset = next_elmp->orig_offset +
+			DLOOP_STACKELM_BLOCKINDEXED_OFFSET(next_elmp, 0);
 		    break;
 		case DLOOP_KIND_INDEXED:
 		    next_elmp->curcount  = next_elmp->orig_count;

@@ -353,7 +353,7 @@ void MPID_Dataloop_create_struct(int count,
 		cur_pos++;
 	    }
 	}
-	
+
 	MPID_Dataloop_create_indexed(cur_pos,
 				     tmp_blklen_array,
 				     tmp_disp_array,

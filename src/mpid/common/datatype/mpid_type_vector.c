@@ -39,7 +39,7 @@ int MPID_Type_vector(int count,
 {
     int mpi_errno = MPI_SUCCESS;
     int is_builtin, old_is_contig;
-    int el_sz;
+    MPI_Aint el_sz;
     MPI_Datatype el_type;
     MPI_Aint old_lb, old_ub, old_extent, old_true_lb, old_true_ub, eff_stride;
 
@@ -81,8 +81,8 @@ int MPID_Type_vector(int count,
 	old_is_contig = 1;
 
 	new_dtp->size           = count * blocklength * el_sz;
-	new_dtp->has_sticky_ub  = 0;
 	new_dtp->has_sticky_lb  = 0;
+	new_dtp->has_sticky_ub  = 0;
 
 	new_dtp->alignsize    = el_sz; /* ??? */
 	new_dtp->n_elements   = count * blocklength;
@@ -106,8 +106,8 @@ int MPID_Type_vector(int count,
 	old_is_contig = old_dtp->is_contig;
 
 	new_dtp->size           = count * blocklength * old_dtp->size;
-	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
+	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 
 	new_dtp->alignsize    = old_dtp->alignsize;
 	new_dtp->n_elements   = count * blocklength * old_dtp->n_elements;
@@ -173,6 +173,20 @@ void MPID_Dataloop_create_vector(int count,
 
     MPID_Datatype *old_dtp = NULL;
     struct MPID_Dataloop *new_dlp;
+
+    /* optimization:
+     *
+     * if count == 1, store as a contiguous rather than a vector dataloop.
+     */
+    if (count == 1) {
+	MPID_Dataloop_create_contiguous(blocklength,
+					oldtype,
+					dlp_p,
+					dlsz_p,
+					dldepth_p,
+					flags);
+	return;
+    }
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 

@@ -90,6 +90,31 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 			    loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_BLOCKINDEXED:
+	    MPIU_dbg_printf("      dl%d [shape = record, label = \"blockindexed |{ ct = %d; blk = %d; regions = ",
+			    depth,
+			    loop_p->loop_params.bi_t.count,
+			    loop_p->loop_params.bi_t.blocksize);
+	    
+	    /* 3 picked as arbitrary cutoff */
+	    for (i=0; i < 3 && i < loop_p->loop_params.bi_t.count; i++) {
+		if (i + 1 < loop_p->loop_params.bi_t.count) {
+		    /* more regions after this one */
+		    MPIU_dbg_printf("%d, ",
+				    loop_p->loop_params.bi_t.offset_array[i]);
+		}
+		else {
+		    MPIU_dbg_printf("%d; ",
+				    loop_p->loop_params.bi_t.offset_array[i]);
+		}
+	    }
+	    if (i < loop_p->loop_params.bi_t.count) {
+		MPIU_dbg_printf("...; ");
+	    }
+
+	    MPIU_dbg_printf("el_sz = %d; el_ext = %d }\"];\n",
+			    loop_p->el_size,
+			    loop_p->el_extent);
+	    break;
 	case DLOOP_KIND_STRUCT:
 	default:
 	    assert(0);

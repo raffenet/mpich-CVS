@@ -30,23 +30,19 @@ static void MPIDI_Type_indexed_array_copy(int count,
   MPID_Type_indexed - create an indexed datatype
  
   Input Parameters:
-+ count - number of blocks in vector
++ count - number of blocks in type
 . blocklength_array - number of elements in each block
 . displacement_array - offsets of blocks from start of type (see next
   parameter for units)
 . dispinbytes - if nonzero, then displacements are in bytes, otherwise
   they in terms of extent of oldtype
-- oldtype - type (using handle) of datatype on which vector is based
+- oldtype - type (using handle) of datatype on which new type is based
 
   Output Parameters:
 . newtype - handle of new indexed datatype
 
   Return Value:
   0 on success, -1 on failure.
-
-  This routine calls MPID_Dataloop_copy() to create the loops for this
-  new datatype.  It calls MPIU_Handle_obj_alloc() to allocate space for the new
-  datatype.
 @*/
 
 int MPID_Type_indexed(int count,
@@ -89,7 +85,6 @@ int MPID_Type_indexed(int count,
     new_dtp->loopinfo_depth = -1;
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
-
 
     /* builtins are handled differently than user-defined types because they
      * have no associated dataloop or datatype structure.
@@ -156,7 +151,7 @@ int MPID_Type_indexed(int count,
 	old_ct += blocklength_array[i]; /* add more oldtypes */
 	
 	eff_disp = (dispinbytes) ? ((MPI_Aint *) displacement_array)[i] :
-	    (((MPI_Aint) ((int *) displacement_array)[0]) * old_extent);
+	    (((MPI_Aint) ((int *) displacement_array)[i]) * old_extent);
 	
 	/* calculate ub and lb for this block */
 	MPID_DATATYPE_BLOCK_LB_UB((MPI_Aint) blocklength_array[i],
@@ -228,7 +223,7 @@ void MPID_Dataloop_create_indexed(int count,
 				  int flags)
 {
     int is_builtin;
-    int i, old_loop_sz, new_loop_sz, old_loop_depth;
+    int i, old_loop_sz, new_loop_sz, old_loop_depth, blksz;
     int contig_count, old_type_count = 0;
 
     MPI_Aint old_extent;
@@ -271,51 +266,42 @@ void MPID_Dataloop_create_indexed(int count,
 	((!dispinbytes && ((int *) displacement_array)[0] == 0) ||
 	 (dispinbytes && ((MPI_Aint *) displacement_array)[0] == 0)))
     {
-	new_loop_sz = sizeof(struct MPID_Dataloop) + old_loop_sz;
-	new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
-	assert(new_dlp != NULL);
 
-	new_dlp->loop_params.c_t.count = old_type_count;
-
-	if (is_builtin) {
-	    new_dlp->kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-#if 0
-	    new_dlp->handle = new_dtp->handle;
-#endif
-	    new_dlp->el_size   = old_extent;
-	    new_dlp->el_extent = old_extent;
-	    new_dlp->el_type   = oldtype;
-
-	    new_dlp->loop_params.c_t.dataloop = NULL;
-	}
-	else {
-	    new_dlp->kind = DLOOP_KIND_CONTIG;
-#if 0
-	    new_dlp->handle = new_dtp->handle;
-#endif
-	    new_dlp->el_size   = old_dtp->size;
-	    new_dlp->el_extent = old_dtp->extent;
-	    new_dlp->el_type   = old_dtp->eltype;
-
-
-	    curpos = (char *) new_dlp;
-	    curpos += sizeof(struct MPID_Dataloop);
-	    /* TODO: ACCOUNT FOR PADDING HERE */
-
-	    /* copy old dataloop and set pointer to it */
-	    MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
-	    new_dlp->loop_params.c_t.dataloop =
-		(struct MPID_Dataloop *) curpos;
-	}
-
-	*dlp_p     = new_dlp;
-	*dlsz_p    = new_loop_sz;
-	*dldepth_p = old_loop_depth + 1;
-
+	MPID_Dataloop_create_contiguous(old_type_count,
+					oldtype,
+					dlp_p,
+					dlsz_p,
+					dldepth_p,
+					flags);
 	return;
     }
 
-    /* note: could look for a blockindexed or a vector here... */
+    /* optimization:
+     *
+     * if block length is the same for all blocks, store it as a
+     * blockindexed rather than an indexed dataloop.
+     */
+    blksz = blocklength_array[0];
+    for (i=1; i < count; i++) {
+	if (blocklength_array[i] != blksz) {
+	    blksz--;
+	    break;
+	}
+    }
+    if (blksz == blocklength_array[0]) {
+	MPID_Dataloop_create_blockindexed(count,
+					  blocklength_array[0],
+					  displacement_array,
+					  dispinbytes,
+					  oldtype,
+					  dlp_p,
+					  dlsz_p,
+					  dldepth_p,
+					  flags);
+	return;
+    }
+
+    /* note: blockindexed looks for the vector optimization */
 
     /* otherwise storing as an indexed dataloop */
 

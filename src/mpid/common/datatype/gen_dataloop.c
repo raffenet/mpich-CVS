@@ -160,10 +160,12 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
 #endif
 		    break;
 		case DLOOP_KIND_BLOCKINDEXED:
-		    tmp_ct *= dl_p->loop_params.bi_t.total_blocks;
+		    tmp_ct *= dl_p->loop_params.bi_t.count *
+			dl_p->loop_params.bi_t.blocksize;
 #ifdef DEBUG_DLOOP_SIZE
 		    DLOOP_dbg_printf("stream_size: blkindexed: blks = %d; new tot_ct = %d\n",
-				     dl_p->loop_params.bi_t.total_blocks,
+				     dl_p->loop_params.bi_t.count *
+				     dl_p->loop_params.bi_t.blocksize,
 				     tmp_ct);
 #endif
 		    break;

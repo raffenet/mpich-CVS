@@ -11,6 +11,7 @@ lib${MPILIBNAME}_a_SOURCES = gen_segment.c \
 	mpid_type_vector.c \
 	mpid_type_contiguous.c \
 	mpid_type_create_resized.c \
+	mpid_type_blockindexed.c \
 	mpid_type_indexed.c \
 	mpid_type_struct.c \
 	mpid_type_get_envelope.c \
