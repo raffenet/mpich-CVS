@@ -605,7 +605,7 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
         {
 	    MPID_Datatype *datatype_ptr = NULL;
             MPID_Op *op_ptr = NULL;
-            int rank;
+            int rank, i, size;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
@@ -613,8 +613,12 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 
+	    /* FIXME: Intracomm collective (MPI-1) only */
+	    size = comm_ptr->local_size;
+	    for (i=0; i<size; i++) {
+		MPIR_ERRTEST_COUNT(recvcnts[i],mpi_errno);
+	    }
             rank = comm_ptr->rank;
-	    MPIR_ERRTEST_COUNT(recvcnts[rank], mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(recvcnts[rank], datatype, mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);
 	    
