@@ -131,9 +131,10 @@ else
 fi
 if [ $build_cxx = "yes" ] ; then
     echo "Building C++ interface"
-    if [ ! -d src/mpi/romio ] ; then
+#    File code still needs work
+#    if [ ! -d src/mpi/romio ] ; then
         otherarg="-noromio"
-    fi
+#    fi
     (cd src/binding/cxx ; ./buildiface -nosep $otherarg )
 fi
 # Build simplemake if necessary
