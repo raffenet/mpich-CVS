@@ -1,5 +1,18 @@
 LDADD = -L ../../../lib
-typename_SOURCES = typename.c
-# segtest_SOURCES = segtest.c
-segtest_LDADD = ../util/mtest.o
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
+
+typename_SOURCES = typename.c
+typename_LDADD = -L ../../../lib -lmpich
+
+contents_SOURCES = contents.c
+contents_LDADD = -L ../../../lib -lmpich
+
+slice-pack_SOURCES = slice-pack.c
+slice-pack_LDADD = -L ../../../lib -lmpich
+
+simple-pack_SOURCES = simple-pack.c
+simple-pack_LDADD = -L ../../../lib -lmpich
+
+transpose-pack_SOURCES = transpose-pack.c
+transpose-pack_LDADD = -L ../../../lib -lmpich
+
