@@ -125,6 +125,9 @@ int MPI_Type_indexed(int count,
 	MPID_Datatype *new_dtp;
 	int i, *ints;
 
+	/* copy all integer values into a temporary buffer; this
+	 * includes the count, the blocklengths, and the displacements.
+	 */
 	ints = (int *) MPIU_Malloc((2*count + 1) * sizeof(int));
 	assert(ints != NULL);
 
@@ -139,8 +142,8 @@ int MPI_Type_indexed(int count,
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	mpi_errno = MPID_Datatype_set_contents(new_dtp,
 					       MPI_COMBINER_INDEXED,
-					       2*count + 1, /* ints (count, blocklengths, displacements) */
-					       0, /* aints (displacements) */
+					       2*count + 1, /* ints */
+					       0, /* aints  */
 					       1, /* types */
 					       ints,
 					       NULL,

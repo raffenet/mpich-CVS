@@ -33,7 +33,7 @@
 Input Parameters:
 + count - number of blocks (nonnegative integer) 
 . blocklength - number of elements in each block 
-(nonnegative integer) 
+  (nonnegative integer)
 . stride - number of elements between start of each block (integer) 
 - oldtype - old datatype (handle) 
 
@@ -85,7 +85,7 @@ int MPI_Type_vector(int count,
     mpi_errno = MPID_Type_vector(count,
 				 blocklength,
 				 (MPI_Aint) stride,
-				 0, /* stride not in bytes, but in terms of type extent */
+				 0, /* stride not in bytes, in extents */
 				 old_type,
 				 newtype_p);
 
@@ -99,7 +99,7 @@ int MPI_Type_vector(int count,
 	MPID_Datatype_get_ptr(*newtype_p, new_dtp);
 	mpi_errno = MPID_Datatype_set_contents(new_dtp,
 					       MPI_COMBINER_VECTOR,
-					       3, /* ints (count, blocklength, stride) */
+					       3, /* ints (cnt, blklen, str) */
 					       0, /* aints */
 					       1, /* types */
 					       ints,
@@ -114,11 +114,18 @@ int MPI_Type_vector(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
-				     __LINE__, MPI_ERR_OTHER,
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
 				     "**mpi_type_vector",
-				     "**mpi_type_vector %d %d %d %D %p", count,
-				     blocklength, stride, old_type, newtype_p);
+				     "**mpi_type_vector %d %d %d %D %p",
+				     count,
+				     blocklength,
+				     stride,
+				     old_type,
+				     newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

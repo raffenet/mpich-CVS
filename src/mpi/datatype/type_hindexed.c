@@ -111,21 +111,30 @@ int MPI_Type_hindexed(int count,
 	/* --BEGIN ERROR HANDLING-- */
 	if (ints == NULL)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", (count+1) * sizeof(int));
-	    goto fn_exit;
+	    mpi_errno = MPIR_Err_create_code(mpi_errno,
+					     MPIR_ERR_RECOVERABLE,
+					     FCNAME,
+					     __LINE__,
+					     MPI_ERR_OTHER,
+					     "**nomem",
+					     "**nomem %d",
+					     (count+1) * sizeof(int));
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
+	    return mpi_errno;
 	}
 	/* --END ERROR HANDLING-- */
 
+	/* copy ints into temporary buffer (count and blocklengths) */
 	ints[0] = count;
-
 	for (i=0; i < count; i++) {
 	    ints[i+1] = blocklens[i];
 	}
+
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	mpi_errno = MPID_Datatype_set_contents(new_dtp,
 					       MPI_COMBINER_HINDEXED,
-					       count+1, /* ints (count, blocklengths) */
-					       count, /* aints (displacements) */
+					       count+1, /* ints */
+					       count, /* aints (displs) */
 					       1, /* types */
 					       ints,
 					       indices,
@@ -133,16 +142,26 @@ int MPI_Type_hindexed(int count,
 	MPIU_Free(ints);
     }
 
-fn_exit:
-    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
 	return MPI_SUCCESS;
     }
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_hindexed", "**mpi_type_hindexed %d %p %p %D %p", count, blocklens, indices, old_type, newtype);
-    /* --END ERROR HANDLING-- */
+
+    /* --BEGIN ERROR HANDLING-- */
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_type_hindexed",
+				     "**mpi_type_hindexed %d %p %p %D %p",
+				     count,
+				     blocklens,
+				     indices,
+				     old_type,
+				     newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }
