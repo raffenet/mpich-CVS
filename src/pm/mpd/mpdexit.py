@@ -4,6 +4,16 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage: mpdexit mpdid
+    mpdid may be obtained via mpdtrace -l (or may be "localmpd")
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
 from sys    import argv, exit
 from os     import environ, getuid, close
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
@@ -16,8 +26,7 @@ def mpdexit():
     mpd_set_my_id('mpdexit_')
     if (len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help')) or \
        (len(argv) < 2):
-        print 'usage: mpdexit mpdid'
-        print '    mpdid may be obtained via mpdtrace -l (or may be "localmpd")'
+	print __doc__
         exit(-1)
     username = mpd_get_my_username()
     if environ.has_key('UNIX_SOCKET'):
