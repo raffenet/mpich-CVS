@@ -22,6 +22,8 @@ mpiexec [global args] [local args] executable [args]
       -wdir <dirname>              # working directory to start in
       -path <dirname>              # place to look for executables
       -host <hostname>             # host to start on
+      -soft <spec>                 # modifier of -n value
+      -arch <arch>                 # arch type to start on (not implemented)
 mpiexec [global args] [local args] executable args : [local args] executable...
 mpiexec -configfile filename       # filename contains cmd line segs as lines
   (See User Guide for more details)
@@ -54,10 +56,11 @@ def mpiexec():
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
     validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
-                        '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1, '-gexec' : 1,
-                        '-genv' : 2, '-genvnone' : 0, '-genvlist' : 1 }
-    validLocalArgs  = { '-n' : 1, '-np' : 1, '-host' : 1, '-path' : 1, '-wdir' : 1, '-soft' : 0,
-                        '-env' : 2, '-envnone' : 0, '-envlist' : 1 }
+                        '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
+                        '-gexec' : 1, '-genv' : 2, '-genvnone' : 0, '-genvlist' : 1 }
+    validLocalArgs  = { '-n' : 1, '-np' : 1, '-host' : 1, '-path' : 1, '-wdir' : 1,
+                        '-soft' : 1, '-arch' : 1, '-env' : 2, '-envnone' : 0,
+                        '-envlist' : 1 }
 
     globalArgs   = {}
     localArgSets = {}
@@ -179,6 +182,7 @@ def collect_args(args):
 def handle_argset(argset,xmlDOC,xmlPROCSPEC):
     global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
+
     host   = globalArgs['-ghost']
     wdir   = globalArgs['-gwdir']
     wpath  = globalArgs['-gpath']
@@ -193,12 +197,17 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         globalArgs['-genvlist'] = globalArgs['-genvlist'].split(',')
     localEnvlist = []
     localEnv  = {}
-
+    softness = ''
+    
     argidx = 0
     while argidx < len(argset):
         if argset[argidx] not in validLocalArgs:
             if argset[argidx][0] == '-':
-                print 'unknown option: %s' % argset[argidx]
+                if validGlobalArgs.has_key(argset[argidx]):
+                    print 'global arg %s must not appear among local args' % \
+                          (argset[argidx])
+                else:
+                    print 'unknown option: %s' % argset[argidx]
                 usage()
             break                       # since now at executable
         if argset[argidx] == '-n' or argset[argidx] == '-np':
@@ -230,8 +239,17 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
             wdir = argset[argidx+1]
             argidx += 2
         elif argset[argidx] == '-soft':
-            print '** -soft is accepted but not used'
-            argidx += 1
+            if len(argset) < (argidx+2):
+                print '** missing arg to -soft'
+                usage()
+            softness = argset[argidx+1]
+            argidx += 2
+        elif argset[argidx] == '-arch':
+            if len(argset) < (argidx+2):
+                print '** missing arg to -arch'
+                usage()
+            print '** -arch is accepted but not used'
+            argidx += 2
         elif argset[argidx] == '-envall':
             envall = 1
             argidx += 1
@@ -252,6 +270,10 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         else:
             print 'unknown option: %s' % argset[argidx]
             usage()
+
+    if softness:
+        nProcs = adjust_nprocs(nProcs,softness)
+
     cmdAndArgs = []
     if argidx < len(argset):
         while argidx < len(argset):
@@ -313,6 +335,49 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
     xmlENVVAR.setAttribute('value', '%s' % str(appnum))
 
     appnum += 1
+
+# Adjust nProcs (called maxprocs in the Standard) according to soft:
+# Our interpretation is that we need the largest number <= nProcs that is
+# consistent with the list of possible values described by soft.  I.e.
+# if the user says
+#
+#   mpiexec -n 10 -soft 5 a.out
+#
+# we adjust the 10 down to 5.  This may not be what was intended in the Standard,
+# but it seems to be what it says.
+
+def adjust_nprocs(nProcs,softness):
+    biglist = []
+    list1 = softness.split(',')
+    for triple in list1:                # triple is a or a:b or a:b:c
+        thingy = triple.split(':')     
+        if len(thingy) == 1:
+            a = int(thingy[0])
+            if a <= nProcs and a >= 0:
+                biglist.append(a)
+        elif len(thingy) == 2:
+            a = int(thingy[0])
+            b = int(thingy[1])
+            for i in range(a,b+1):
+                if i <= nProcs and i >= 0:
+                    biglist.append(i)
+        elif len(thingy) == 3:
+            a = int(thingy[0])
+            b = int(thingy[1])
+            c = int(thingy[2])
+            for i in range(a,b+1,c):
+                if i <= nProcs and i >= 0:
+                    biglist.append(i)                
+        else:
+            print 'invalid subargument to -soft: %s' % (softness)
+            print 'should be a or a:b or a:b:c'
+            usage()
+
+        if len(biglist) == 0:
+            print '-soft argument %s allows no valid number of processes' % (softness)
+            usage()
+        else:
+            return max(biglist)
 
 
 def usage():
