@@ -126,7 +126,7 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
 
 int main( int argc, char **argv )
 {
-    MPID_Dataloop *vecloop;
+    /* MPID_Dataloop *vecloop; */
     MPI_Datatype vectype;
     int count=200, blocksize=4, stride = 7*4;
     char *src_buf, *dest_buf;
