@@ -391,7 +391,7 @@ AC_CONFIG_SUBDIRS($PKGS)
 AC_SUBST(PKGS)
 
 # Define bindir's executables, and pass them down to sbindir's install-package
-BASIC_PGMS="clogprint clogTOslog2 slog2navigator slog2print jumpshot"
+BASIC_PGMS="clogprint clogTOslog2 slog2navigator slog2print logconvertor jumpshot"
 TRACE_PGMS="traceprint traceTOslog2"
 
 if test "x$TRACE_LIBDIR" != "x" ; then

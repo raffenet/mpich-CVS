@@ -24,6 +24,7 @@ which are located in the bin/ directory after the package is configured
 and installed.  The programs are 
 
 jumpshot:        A visualization tool for SLOG-2 file.
+logconvertor     A GUI front end for all the logfile convertor.
 slog2print:      A SLOG-2 printing program.  Only useful for small slog2 file.
 slog2navigator:  Another SLOG-2 printing program with navigation feature.
                  aka. baby jumpshot.
@@ -150,7 +151,7 @@ base/drawable: this directory contains all the definitions of drawable
                related classes.  The Java interface of TRACE-API is 
                defined here and is in file src/base/drawable/InputAPI.java
 
-viewer/timelines: this directory is the bulk of the new Jumpshot for SLOG-2.
+viewer/*: this directories are the bulk of the new Jumpshot for SLOG-2.
 
 
 The next important directory is probably the top level lib/ directory

@@ -36,3 +36,9 @@ of TRACE-API in trace_sample/
         
 6/23/03 updated the popup menu of the legend name in the Legend window.
         The new sort menu should be more intuitive. 
+
+8/15/03 added a zoomable window to display statistics collected by
+        right dragging a duration.
+
+9/9/03  added a GUI logfile convertor to convert non-slog2 file.  The 
+        supported logfile formats for the logfile convertor are clog and rlog.
