@@ -27,7 +27,7 @@
 /* The following routines provide a callback facility for modules that need 
    some code called on exit.  This method allows us to avoid forcing 
    MPI_Finalize to know the routine names a priori.  Any module that wants to 
-   have a callback calls MPIR_Add_finalize( routine, extra ).
+   have a callback calls MPIR_Add_finalize( routine, extra, priority ).
    
  */
 PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
