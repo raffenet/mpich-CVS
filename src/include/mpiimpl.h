@@ -827,8 +827,10 @@ extern void MPID_TimerStateEnd( int, MPID_Time_t * );
 #if HAVE_ERROR_CHECKING == MPID_ERROR_LEVEL_ALL
 #define MPID_BEGIN_ERROR_CHECKS
 #define MPID_END_ERROR_CHECKS
+#define MPID_ELSE_ERROR_CHECKS
 #elif HAVE_ERROR_CHECKING == MPID_ERROR_LEVEL_RUNTIME
 #DEFINE MPID_BEGIN_ERROR_CHECKS IF (MPIR_Process.do_error_checks) {
+#define MPID_ELSE_ERROR_CHECKS }else{
 #define MPID_END_ERROR_CHECKS }
 #else
 #error "Unknown value for error checking"
