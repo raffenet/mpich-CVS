@@ -48,7 +48,9 @@ foreach $arg (@ARGV) {
 sub ProcessFile {
     my $filename = $_[0];
     %AllowedRoutines = ();
-    %AllowedDefines = ();
+    # Include system defined names
+    %AllowedDefines = ( 'SA_RESETHAND' => 'sys', 
+		        'WORDS_BIGENDIAN' => 'autoconf');
     my $cxx_comments_found = 0;
     my $cxx_header = 0;
 
