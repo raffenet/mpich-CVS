@@ -591,6 +591,11 @@ int MPE_Finish_log( char *filename )
             CLOG_Converge_init( clog_stream, env_logfile_prefix );
         else
             CLOG_Converge_init( clog_stream, filename );
+        /*
+           Update the "filename" with the real output filename
+           Assuming the filename[]'s length = merger->out_filename[]'s length.
+        */
+        strcpy( filename, clog_stream->merger->out_filename );
         CLOG_Converge_sort( clog_stream );
         CLOG_Converge_finalize( clog_stream );
 
