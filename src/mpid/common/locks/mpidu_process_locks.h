@@ -18,7 +18,7 @@ extern int g_nLockSpinCount;
 #elif defined (HAVE_SLEEP)
 #define MPIDU_Yield() sleep(0)
 #else
-#error Yield function needed
+#error *** No yield function specified ***
 #endif
 
 #ifdef HAVE_MUTEX_INIT
@@ -58,7 +58,7 @@ typedef HANDLE MPIDU_Process_lock_t;
 #elif defined(HAVE_PTHREAD_H)
 typedef pthread_mutex_t MPIDU_Process_lock_t;  
 #else
-#error You must have some sort of locking mechanism for shared memory.
+#error *** No locking mechanism for shared memory.specified ***
 #endif
 #endif
 
@@ -119,7 +119,7 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
                     return;
                 }
 #else
-#error Atomic memory operation needed to implement busy locks
+#error *** No atomic memory operation specified to implement busy locks ***
 #endif
             }
         }
@@ -239,7 +239,7 @@ static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_
 
     MPIDU_Process_unlock( lock );
 #else
-#error Locking functions not defined
+#error *** No locking functions specified ***
 #endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_COMPARE_SWAP);
