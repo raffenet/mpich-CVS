@@ -164,3 +164,10 @@ htmldoc:
 	(cd mpi-io && $(MAKE) htmldoc )
 latexdoc:
 	(cd mpi-io && $(MAKE) latexdoc )
+
+
+tags: TAGS
+TAGS:
+	for dir in mpi-io adio/common - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} TAGS ; ) ; done

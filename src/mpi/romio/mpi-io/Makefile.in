@@ -148,3 +148,9 @@ master_top_srcdir = @master_top_srcdir@
 mandoc: ${mpi_sources:.c=.man}
 latexdoc: ${mpi_sources:.c=.latex}
 htmldoc: ${mpi_sources:.c=.html}
+
+tags: TAGS
+SOURCES = ${mpi_sources}
+HEADERS = 
+TAGS:${HEADERS} ${SOURCES}
+	here=`cd ../../../.. && pwd` ; cd ${srcdir} && etags -o $$here/TAGS --append ${HEADERS} ${SOURCES}
