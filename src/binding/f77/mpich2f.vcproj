@@ -487,7 +487,16 @@
 				RelativePath=".\dims_createf.c">
 			</File>
 			<File
+				RelativePath=".\dup_comm_fnf.c">
+			</File>
+			<File
 				RelativePath=".\dup_fnf.c">
+			</File>
+			<File
+				RelativePath=".\dup_type_fnf.c">
+			</File>
+			<File
+				RelativePath=".\dup_win_fnf.c">
 			</File>
 			<File
 				RelativePath=".\errhcreatef.c">
@@ -886,10 +895,28 @@
 				RelativePath=".\mpich2fs.def">
 			</File>
 			<File
+				RelativePath=".\null_comm_copy_fnf.c">
+			</File>
+			<File
+				RelativePath=".\null_comm_del_fnf.c">
+			</File>
+			<File
 				RelativePath=".\null_copy_fnf.c">
 			</File>
 			<File
 				RelativePath=".\null_del_fnf.c">
+			</File>
+			<File
+				RelativePath=".\null_type_copy_fnf.c">
+			</File>
+			<File
+				RelativePath=".\null_type_del_fnf.c">
+			</File>
+			<File
+				RelativePath=".\null_win_copy_fnf.c">
+			</File>
+			<File
+				RelativePath=".\null_win_del_fnf.c">
 			</File>
 			<File
 				RelativePath=".\op_createf.c">
@@ -1081,9 +1108,6 @@
 				RelativePath=".\typedelattrf.c">
 			</File>
 			<File
-				RelativePath=".\typeextentf.c">
-			</File>
-			<File
 				RelativePath=".\typefreekeyf.c">
 			</File>
 			<File
@@ -1091,6 +1115,9 @@
 			</File>
 			<File
 				RelativePath=".\typegetenvf.c">
+			</File>
+			<File
+				RelativePath=".\typegetextentf.c">
 			</File>
 			<File
 				RelativePath=".\typegnamef.c">

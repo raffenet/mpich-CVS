@@ -706,3 +706,21 @@ EXPORTS
         mpi_null_delete_fn__=pmpi_null_delete_fn__
         pmpi_null_copy_fn__
         mpi_null_copy_fn__=pmpi_null_copy_fn__
+        pmpi_comm_dup_fn__
+	mpi_comm_dup_fn__=pmpi_comm_dup_fn__
+        pmpi_comm_null_delete_fn__
+        mpi_comm_null_delete_fn__=pmpi_comm_null_delete_fn__
+        pmpi_comm_null_copy_fn__
+        mpi_comm_null_copy_fn__=pmpi_comm_null_copy_fn__
+	pmpi_win_dup_fn__
+	mpi_win_dup_fn__=pmpi_win_dup_fn__
+        pmpi_win_null_delete_fn__
+        mpi_win_null_delete_fn__=pmpi_win_null_delete_fn__
+        pmpi_win_null_copy_fn__
+        mpi_win_null_copy_fn__=pmpi_win_null_copy_fn__
+	pmpi_type_dup_fn__
+	mpi_type_dup_fn__=pmpi_type_dup_fn__
+        pmpi_type_null_delete_fn__
+        mpi_type_null_delete_fn__=pmpi_type_null_delete_fn__
+        pmpi_type_null_copy_fn__
+        mpi_type_null_copy_fn__=pmpi_type_null_copy_fn__
