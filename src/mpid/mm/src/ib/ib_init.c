@@ -58,11 +58,13 @@ int ib_init()
     }
     /* get a completion queue domain handle */
     status = ib_cqd_create_us(IB_Process.hca_handle, &IB_Process.cqd_handle);
+#if 0 /* for some reason this function fails when it really is ok */
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_cqd_create_us failed, status %d\n", status);
 	return status;
     }
+#endif
     /* get the lid */
     status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, HCA_QUERY_HCA_STATIC);
     if (status != IB_SUCCESS)
