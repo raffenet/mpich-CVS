@@ -4752,6 +4752,16 @@ copy into the buffer until the wait/test.  Maybe in 2008.
 % Note that the flow control check may require a lock so that another
 % thread doesn't also try to send and change the flow control state.
 
+\begin{figure}
+\centerline{\includegraphics{bsend.eps}}
+\caption{Explanation of \texttt{size} and \texttt{total_size} fields in the
+\texttt{BsendData_t} header.  In (a), an unallocated element, pointed at by
+\texttt{p} is shown.  The difference between the two sizes is just the size of
+the header.  In (b), an allocated element is shown.  Here, the \texttt{size}
+is smaller, reflecting the need to align the \texttt{BsendData_t} header on a
+suitable boundary.}
+\label{fig:bsend-buffers}
+\end{figure}
 
 \subsubsection{\mpifunc{MPI_IBSEND}}
 See Buffered send.

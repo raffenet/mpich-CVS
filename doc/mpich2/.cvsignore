@@ -26,3 +26,5 @@ mpich2pdf*
 *.bbg
 *.da
 *.gcov
+bsend.eps
+*.pdf
