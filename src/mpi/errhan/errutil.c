@@ -1,4 +1,5 @@
 #include "mpiimpl.h"
+#include <stdio.h>
 
 /* void for now until error handlers are defined */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 

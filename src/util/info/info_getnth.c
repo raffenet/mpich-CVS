@@ -47,8 +47,8 @@ Output Argument:
 @*/
 int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 {
-    MPID_Info *curr_ptr, *info_ptr;
-    int       nkeys, i;
+    MPID_Info *curr_ptr, *info_ptr=0;
+    int       nkeys;
     static const char FCNAME[] = "MPI_Info_get_nthkey";
     int mpi_errno = MPI_SUCCESS;
 

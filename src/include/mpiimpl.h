@@ -44,11 +44,6 @@ typedef short int16_t;
     MPIU_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
 #define MPIU_Free(a)      MPIU_trfree(a,__LINE__,__FILE__)
 #define MPIU_Strdup(a)    MPIU_trstrdup(a,__LINE__,__FILE__)
-void *MPIU_trmalloc ( unsigned int, int, char * );
-void MPIU_trfree ( void *, int, char * );
-void *MPIU_trstrdup( const char *, int, const char * );
-void *MPIU_trcalloc ( unsigned, unsigned, int, char * );
-void *MPIU_trrealloc ( void *, int, int, char * );
 /* Define these as invalid C to catch their use in the code */
 #define malloc(a)         'Error use MPIU_Malloc'
 #define calloc(a,b)       'Error use MPIU_Calloc'
@@ -67,6 +62,23 @@ void *MPIU_trrealloc ( void *, int, int, char * );
 #define MPIU_Strdup(a)    ?????
 #endif
 #endif
+void MPIU_trinit ( int );
+void *MPIU_trmalloc ( unsigned int, int, const char * );
+void MPIU_trfree ( void *, int, const char * );
+int MPIU_trvalid ( const char * );
+void MPIU_trspace ( int *, int * );
+void MPIU_trid ( int );
+void MPIU_trlevel ( int );
+void MPIU_trpush ( int );
+void MPIU_trpop (void);
+void MPIU_trDebugLevel ( int );
+void *MPIU_trstrdup( const char *, int, const char * );
+void *MPIU_trcalloc ( unsigned, unsigned, int, const char * );
+void *MPIU_trrealloc ( void *, int, int, const char * );
+void MPIU_TrSetMaxMem ( int );
+/* void MPIU_trdump ( FILE * );
+void MPIU_trSummary ( FILE * );
+void MPIU_trdumpGrouped ( FILE * ); */
 
 /* Memory allocation stack */
 #define MAX_MEM_STACK 16
@@ -121,6 +133,8 @@ typedef enum {
 #define HANDLE_BLOCK_INDEX_SIZE 1024
 
 /* Handles conversion */
+/* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
+   complication? */
 #define MPID_Get_ptr(kind,a,ptr) \
      switch (CONSTRUCT_TYPE(a)) {\
          case CONSTRUCT_INVALID: ptr=0; break;\

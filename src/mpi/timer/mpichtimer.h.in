@@ -2,9 +2,10 @@
 #define USE_GETHRTIME 1
 #define USE_CLOCK_GETTIME 2
 #define USE_GETTIMEOFDAY 3
-#define USE_LINUX86 4
-#define USE_LINUXALPHA 5
+#define USE_LINUX86_COUNTER 4
+#define USE_LINUXALPHA_COUNTER 5
 #define MPICH_TIMER_KIND @MPICH_TIMER_KIND@
+
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
 #include <sys/time.h>
 #elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
@@ -12,9 +13,33 @@
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
 #include <sys/types.h>
 #include <sys/time.h>
-#elif MPICH_TIMER_KIND == USE_LINUX86
-#elif MPICH_TIMER_KIND == USE_LINUXALPHA
+#elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
+#elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 #endif
 
 /* Define a time stamp */
 typedef @MPID_TIMER_TYPE@ MPID_Time_t;
+
+/* Prototypes */
+void MPID_Wtime( MPID_Time_t * );
+void MPID_Wtime_diff( MPID_Time_t *, MPID_Time_t *, double * );
+void MPID_Wtime_todouble( MPID_Time_t *, double * );
+
+/* Inlined timers */
+
+#if MPICH_TIMER_KIND == USE_GETHRTIME 
+#include <sys/time.h>
+#elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
+#include <time.h>
+#elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
+#include <sys/types.h>
+#include <sys/time.h>
+#elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
+#define MPID_Wtime(var) {long long t1;\
+  __asm__ volatile (".byte 0x0f, 0x31" : "=A" (t1));\
+   *(var) = t1;}
+#elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
+#endif
+#if MPICH_TIMER_KIND == USE_LINUX86_CYCLE
+
+#endif

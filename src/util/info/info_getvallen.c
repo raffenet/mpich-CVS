@@ -49,7 +49,7 @@
 @*/
 int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
 {
-    MPID_Info *curr_ptr, *info_ptr;
+    MPID_Info *curr_ptr, *info_ptr=0;
     static const char FCNAME[] = "MPI_Info_get_valuelen";
     int mpi_errno = MPI_SUCCESS;
 

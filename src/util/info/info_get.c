@@ -50,7 +50,7 @@ Output Parameters:
 int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
 		 int *flag)
 {
-    MPID_Info *curr_ptr, *info_ptr;
+    MPID_Info *curr_ptr, *info_ptr=0;
     static const char FCNAME[] = "MPI_Info_Get";
     int mpi_errno = MPI_SUCCESS;
 

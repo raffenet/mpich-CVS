@@ -46,7 +46,7 @@ Output Arguments:
 @*/
 int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
 {
-    MPID_Info *info_ptr;
+    MPID_Info *info_ptr=0;
     int      n;
     static const char FCNAME[] = "MPI_Info_get_nkeys";
     int mpi_errno = MPI_SUCCESS;

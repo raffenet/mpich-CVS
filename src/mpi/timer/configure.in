@@ -73,7 +73,7 @@ dnl    Linux-alpha cycle counter
 dnl
 dnl We also allow --enable-timer-type=name to select a timer type
 AC_ARG_ENABLE(timer-type,[--enable-timer-type=name - Select the timer to use
-for MPI_Wtime and internal timestamps],,timer_type=$enable_timer_type)
+for MPI_Wtime and internal timestamps],timer_type=$enable_timer_type)
 dnl
 if test -z "$timer_type" ; then 
     if test "$ac_cv_func_gethrtime" = "yes" ; then
@@ -99,14 +99,14 @@ case "$timer_type" in
     gettimeofday)
     MPID_TIMER_TYPE="struct timeval"
     ;;
-    linux86)
+    linux86_cycle)
     MPID_TIMER_TYPE="long long"
     ;;
-    linuxalpha)
+    linuxalpha_cycle)
     MPID_TIMER_TYPE="long"
     ;;
     *)
-    AC_MSG_ERROR([Invalid timer type $time_type])
+    AC_MSG_ERROR([Invalid timer type $timer_type])
     ;;
 esac
 dnl Convert timer type to upper case

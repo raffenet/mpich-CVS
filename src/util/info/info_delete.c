@@ -46,7 +46,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
 {
     static const char FCNAME[] = "MPI_Info_delete";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Info *info_ptr, *prev_ptr, *curr_ptr;
+    MPID_Info *info_ptr=0, *prev_ptr, *curr_ptr;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_DELETE);
     /* Get handles to MPI objects. */
@@ -101,8 +101,8 @@ int MPI_Info_delete( MPI_Info info, char *key )
 
     if (!curr_ptr) {
 	/* If curr_ptr is not defined, we never found the key */
-	mpi_errno = MPIR_Err_setmsg( MPI_ERR_INFO_NOKEY, "**infonokey",
-				     "**infonokey %s", 1, key );
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_NOKEY, "**infonokey",
+					  "**infonokey %s", 1, key );
 	
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DELETE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

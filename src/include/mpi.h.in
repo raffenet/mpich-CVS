@@ -504,6 +504,8 @@ EXPORT_MPI_API int MPI_DUP_FN ( MPI_Comm, int, void *, void *, void *, int * );
 EXPORT_MPI_API int MPI_Status_f2c( MPI_Fint *, MPI_Status * );
 EXPORT_MPI_API int MPI_Status_c2f( MPI_Status *, MPI_Fint * );
 EXPORT_MPI_API int MPI_Finalized( int * );
+EXPORT_MPI_API int MPI_Is_thread_main( int * );
+EXPORT_MPI_API int MPI_Query_thread( int * );
 EXPORT_MPI_API int MPI_Type_create_indexed_block(int, int, int *, MPI_Datatype, MPI_Datatype *);
 EXPORT_MPI_API int MPI_Type_get_envelope(MPI_Datatype, int *, int *, int *, int *); 
 EXPORT_MPI_API int MPI_Type_get_contents(MPI_Datatype, int, int, int, int *, MPI_Aint *, MPI_Datatype *);
@@ -682,6 +684,21 @@ EXPORT_MPI_API int PMPI_Abort(MPI_Comm, int);
 EXPORT_MPI_API int PMPI_Comm_set_name(MPI_Comm, char *);
 EXPORT_MPI_API int PMPI_Comm_get_name(MPI_Comm, char *, int *); 
 EXPORT_MPI_API int PMPI_Pcontrol(const int, ...);
+
+/* Misc 2 */
+EXPORT_MPI_API int PMPI_Is_thread_main( int * );
+EXPORT_MPI_API int PMPI_Query_thread( int * );
+EXPORT_MPI_API int PMPI_Finalized( int * );
+
+EXPORT_MPI_API int PMPI_Info_create(MPI_Info *);
+EXPORT_MPI_API int PMPI_Info_set(MPI_Info, char *, char *);
+EXPORT_MPI_API int PMPI_Info_delete(MPI_Info, char *);
+EXPORT_MPI_API int PMPI_Info_get(MPI_Info, char *, int, char *, int *);
+EXPORT_MPI_API int PMPI_Info_get_valuelen(MPI_Info, char *, int *, int *);
+EXPORT_MPI_API int PMPI_Info_get_nkeys(MPI_Info, int *);
+EXPORT_MPI_API int PMPI_Info_get_nthkey(MPI_Info, int, char *);
+EXPORT_MPI_API int PMPI_Info_dup(MPI_Info, MPI_Info *);
+EXPORT_MPI_API int PMPI_Info_free(MPI_Info *info);
 
 /* external */
 EXPORT_MPI_API int PMPI_Status_set_cancelled( MPI_Status *, int );

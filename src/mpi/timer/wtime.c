@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-
 /* -- Begin Profiling Symbol Block for routine MPI_Wtime */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Wtime = PMPI_Wtime
@@ -21,10 +20,9 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Wtime PMPI_Wtime
-
-/* Any internal routines can go here.  Make them static if possible */
 #endif
 
+#include "timerconf.h"
 
 /*@
   MPI_Wtime - Returns an elapsed time on the calling processor
@@ -46,6 +44,9 @@
 double MPI_Wtime( void )
 {
     double t1;
-    MPID_Wtime( &t1 );
+    MPID_Time_t t;
+
+    MPID_Wtime( &t );
+    MPID_Wtime_todouble( &t, &t1 );
     return t1;
 }
