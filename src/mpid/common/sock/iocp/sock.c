@@ -470,13 +470,12 @@ int MPIDU_Sock_finalize()
 }
 
 #undef FUNCNAME
-#define FUNCNAME MPIDU_Sock_get_host_description
+#define FUNCNAME MPIDU_Sock_hostname_to_host_description
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDU_Sock_get_host_description(char * host_description, int len)
+int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_description, int len)
 {
     int mpi_errno;
-    char hostname[100];
 #if 0
     char **hlist;
     struct hostent *h = NULL;
@@ -484,20 +483,13 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 #endif
     ADDRINFO *res, *iter, hint;
     char host[256];
-    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
     if (!g_init_called)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
-	return mpi_errno;
-    }
-
-    if (gethostname(hostname, 100) == SOCKET_ERROR)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_gethost", "**sock_gethost %d", WSAGetLastError());
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 	return mpi_errno;
     }
 
@@ -512,7 +504,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     if (getaddrinfo(hostname, NULL, NULL, &res))
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**getinfo", "**getinfo %d", WSAGetLastError());
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 	return mpi_errno;
     }
 
@@ -527,7 +519,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 	    if (mpi_errno)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 		return mpi_errno;
 	    }
 	}
@@ -544,7 +536,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 		    if (mpi_errno)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 			return mpi_errno;
 		    }
 		}
@@ -568,7 +560,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 		if (mpi_errno)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**desc_len", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 		    return mpi_errno;
 		}
 	    }
@@ -584,7 +576,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     if (h == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_byname", "**sock_byname %d", WSAGetLastError());
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
 	return mpi_errno;
     }
     
@@ -606,7 +598,43 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 	n++;
     }
 #endif
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
     return MPI_SUCCESS;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Sock_get_host_description
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDU_Sock_get_host_description(char * host_description, int len)
+{
+    int mpi_errno;
+    char hostname[100];
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+    if (!g_init_called)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+	return mpi_errno;
+    }
+
+    if (gethostname(hostname, 100) == SOCKET_ERROR)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_gethost", "**sock_gethost %d", WSAGetLastError());
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+	return mpi_errno;
+    }
+
+    mpi_errno = MPIDU_Sock_hostname_to_host_description(hostname, host_description, len);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
+    return mpi_errno;
 }
 
 #undef FUNCNAME

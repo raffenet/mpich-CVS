@@ -43,16 +43,17 @@ D*/
 #define MPIDU_SOCK_ERR_BAD_SET		MPICH_ERR_LAST_CLASS + 4
 #define MPIDU_SOCK_ERR_BAD_SOCK		MPICH_ERR_LAST_CLASS + 5
 #define MPIDU_SOCK_ERR_BAD_HOST		MPICH_ERR_LAST_CLASS + 6
-#define MPIDU_SOCK_ERR_BAD_PORT		MPICH_ERR_LAST_CLASS + 7
-#define MPIDU_SOCK_ERR_BAD_BUF		MPICH_ERR_LAST_CLASS + 8
-#define MPIDU_SOCK_ERR_BAD_LEN		MPICH_ERR_LAST_CLASS + 9
-#define MPIDU_SOCK_ERR_SOCK_CLOSED	MPICH_ERR_LAST_CLASS + 10
-#define MPIDU_SOCK_ERR_CONN_CLOSED	MPICH_ERR_LAST_CLASS + 11
-#define MPIDU_SOCK_ERR_CONN_FAILED	MPICH_ERR_LAST_CLASS + 12
-#define MPIDU_SOCK_ERR_INPROGRESS	MPICH_ERR_LAST_CLASS + 13
-#define MPIDU_SOCK_ERR_TIMEOUT		MPICH_ERR_LAST_CLASS + 14
-#define MPIDU_SOCK_ERR_INTR		MPICH_ERR_LAST_CLASS + 15
-#define MPIDU_SOCK_ERR_NO_NEW_SOCK	MPICH_ERR_LAST_CLASS + 16
+#define MPIDU_SOCK_ERR_BAD_HOSTNAME     MPICH_ERR_LAST_CLASS + 7
+#define MPIDU_SOCK_ERR_BAD_PORT		MPICH_ERR_LAST_CLASS + 8
+#define MPIDU_SOCK_ERR_BAD_BUF		MPICH_ERR_LAST_CLASS + 9
+#define MPIDU_SOCK_ERR_BAD_LEN		MPICH_ERR_LAST_CLASS + 10
+#define MPIDU_SOCK_ERR_SOCK_CLOSED	MPICH_ERR_LAST_CLASS + 11
+#define MPIDU_SOCK_ERR_CONN_CLOSED	MPICH_ERR_LAST_CLASS + 12
+#define MPIDU_SOCK_ERR_CONN_FAILED	MPICH_ERR_LAST_CLASS + 13
+#define MPIDU_SOCK_ERR_INPROGRESS	MPICH_ERR_LAST_CLASS + 14
+#define MPIDU_SOCK_ERR_TIMEOUT		MPICH_ERR_LAST_CLASS + 15
+#define MPIDU_SOCK_ERR_INTR		MPICH_ERR_LAST_CLASS + 16
+#define MPIDU_SOCK_ERR_NO_NEW_SOCK	MPICH_ERR_LAST_CLASS + 17
 
 
 /*E
@@ -160,6 +161,33 @@ Utility-Sock
 @*/
 int MPIDU_Sock_get_host_description(char * host_description, int len);
 
+
+/*@
+MPIDU_Sock_hostname_to_host_description - convert a host name to a description of the host's communication capabilities
+
+Input Parameters:
++ hostname - host name string
+. host_description - character array in which the function can store a string describing the communication capabilities of the host
+- len - length of host_description
+
+Return value: a MPI error code with a Sock extended error class
++ MPI_SUCCESS - description successfully obtained and placed in host_description
+. MPIDU_SOCK_ERR_INIT - Sock module not initialized
+. MPIDU_SOCK_ERR_BAD_LEN - len parameter is less than zero
+. MPIDU_SOCK_ERR_BAD_HOSTNAME - hostname parameter not valid
+. MPIDU_SOCK_ERR_BAD_HOST - host_description parameter not big enough to store required information
+. MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
+- MPIDU_SOCK_ERR_FAIL - unable to obtain network interface information from OS
+
+Notes:
+The host description string returned by the function is defined by the implementation and should not be interpreted by the
+application.  This string is to be supplied to MPIDU_Sock_post_connect() when one wishes to form a connection with the host
+specified by hostname.
+
+Module:
+Utility-Sock
+@*/
+int MPIDU_Sock_hostname_to_host_description(char *hostname, char * host_description, int len);
 
 /*@
 MPIDU_Sock_create_set - create a new sock set object
