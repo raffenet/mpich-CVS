@@ -81,10 +81,10 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		types[0]    = MPI_FLOAT;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
-		type_extent = sizeof(foo);
+		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
 		    sizeof(foo.a) : -1;
-		true_ub     = disps[1] + sizeof(foo.b);
+		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
 	case MPI_DOUBLE_INT:
@@ -96,10 +96,10 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		types[0]    = MPI_DOUBLE;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
-		type_extent = sizeof(foo);
+		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
 		    sizeof(foo.a) : -1;
-		true_ub     = disps[1] + sizeof(foo.b);
+		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
 	case MPI_LONG_INT:
@@ -111,10 +111,10 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		types[0]    = MPI_LONG;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
-		type_extent = sizeof(foo);
+		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
 		    sizeof(foo.a) : -1;
-		true_ub     = disps[1] + sizeof(foo.b);
+		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
 	case MPI_SHORT_INT:
@@ -126,10 +126,10 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		types[0]    = MPI_SHORT;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
-		type_extent = sizeof(foo);
+		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
 		    sizeof(foo.a) : -1;
-		true_ub     = disps[1] + sizeof(foo.b);
+		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
 	case MPI_LONG_DOUBLE_INT:
@@ -141,10 +141,10 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 		types[0]    = MPI_LONG_DOUBLE;
 		types[1]    = MPI_INT;
 		type_size   = sizeof(foo.a) + sizeof(foo.b);
-		type_extent = sizeof(foo);
+		type_extent = (MPI_Aint) sizeof(foo);
 		el_size     = (sizeof(foo.a) == sizeof(foo.b)) ?
 		    sizeof(foo.a) : -1;
-		true_ub     = disps[1] + sizeof(foo.b);
+		true_ub     = disps[1] + (MPI_Aint) sizeof(foo.b);
 	    }
 	    break;
 	default:

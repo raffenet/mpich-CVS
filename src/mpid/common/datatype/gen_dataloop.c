@@ -477,7 +477,7 @@ void PREPEND_PREFIX(Dataloop_struct_alloc)(int count,
     extent_sz = count * sizeof(DLOOP_Offset);
     blk_sz    = count * sizeof(DLOOP_Count);
     off_sz    = count * sizeof(DLOOP_Offset);
-    basic_sz  = basic_ct * sizeof(DLOOP_Dataloop);
+    basic_sz  = sizeof(DLOOP_Dataloop);
 
     /* pad everything that we're going to allocate */
     if ((epsilon = loop_sz % align_sz)) {
@@ -499,8 +499,13 @@ void PREPEND_PREFIX(Dataloop_struct_alloc)(int count,
 	basic_sz += align_sz - epsilon;
     }
 
+    /* note: we pad *each* basic type dataloop, because the
+     * code used to create them assumes that we're going to
+     * do that.
+     */
+
     new_loop_sz += loop_sz + off_sz + blk_sz + ptr_sz +
-	extent_sz + basic_sz + old_loop_sz;
+	extent_sz + (basic_ct * basic_sz) + old_loop_sz;
 
     /* allocate space */
     new_loop = (DLOOP_Dataloop *) DLOOP_Malloc(new_loop_sz);

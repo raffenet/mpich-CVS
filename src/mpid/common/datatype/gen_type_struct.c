@@ -8,6 +8,10 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
+#ifndef GEN_DATALOOP_H
+#error "You must explicitly include a header that sets the PREPEND_PREFIX and includes gen_dataloop.h"
+#endif
+
 static int DLOOP_Dataloop_create_struct_memory_error(void);
 static int DLOOP_Dataloop_create_unique_type_struct(int count,
 						    int *blklens,
@@ -404,7 +408,7 @@ static int DLOOP_Dataloop_create_unique_type_struct(int count,
     DLOOP_Offset *tmp_disps;
 
     /* count is an upper bound on number of type instances */
-    tmp_blklens = (int *) MPIU_Malloc(count * sizeof(int));
+    tmp_blklens = (int *) DLOOP_Malloc(count * sizeof(int));
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_blklens) {
 	/* TODO: ??? */
@@ -413,10 +417,10 @@ static int DLOOP_Dataloop_create_unique_type_struct(int count,
     /* --END ERROR HANDLING-- */
 
     tmp_disps = (DLOOP_Offset *)
-	MPIU_Malloc(count * sizeof(DLOOP_Offset));
+	DLOOP_Malloc(count * sizeof(DLOOP_Offset));
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_disps) {
-	MPIU_Free(tmp_blklens);
+	DLOOP_Free(tmp_blklens);
 	/* TODO: ??? */
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
@@ -463,7 +467,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
     DLOOP_Offset *tmp_disps;
 
     /* count is an upper bound on number of type instances */
-    tmp_blklens = (int *) MPIU_Malloc(count * sizeof(int));
+    tmp_blklens = (int *) DLOOP_Malloc(count * sizeof(int));
 
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_blklens) {
@@ -471,7 +475,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
     }
     /* --END ERROR HANDLING-- */
 
-    tmp_disps = (DLOOP_Offset *) MPIU_Malloc(count * sizeof(DLOOP_Offset));
+    tmp_disps = (DLOOP_Offset *) DLOOP_Malloc(count * sizeof(DLOOP_Offset));
 
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_disps) {
@@ -565,28 +569,28 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 
     nr_blks += 2; /* safety measure */
 
-    iov_array = (MPID_IOV *) MPIU_Malloc(nr_blks * sizeof(MPID_IOV));
+    iov_array = (MPID_IOV *) DLOOP_Malloc(nr_blks * sizeof(MPID_IOV));
     /* --BEGIN ERROR HANDLING-- */
     if (!iov_array) {
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
 
-    tmp_blklens = (int *) MPIU_Malloc(nr_blks * sizeof(int));
+    tmp_blklens = (int *) DLOOP_Malloc(nr_blks * sizeof(int));
 
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_blklens) {
-	MPIU_Free(iov_array);
+	DLOOP_Free(iov_array);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
 
-    tmp_disps = (DLOOP_Offset *) MPIU_Malloc(nr_blks * sizeof(DLOOP_Offset));
+    tmp_disps = (DLOOP_Offset *) DLOOP_Malloc(nr_blks * sizeof(DLOOP_Offset));
 
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_disps) {
-	MPIU_Free(iov_array);
-	MPIU_Free(tmp_blklens);
+	DLOOP_Free(iov_array);
+	DLOOP_Free(tmp_blklens);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
