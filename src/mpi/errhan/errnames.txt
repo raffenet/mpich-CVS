@@ -144,6 +144,9 @@ be in the range 0 to %d
 MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **typematchsize:No MPI datatype available for the given typeclass and size
 **typematchsize %s %d:No MPI datatype available for typeclass %s and size %d
+**nouniquehigh:Could not determine which group to place first in merged \
+ intracommunicator.  Please use the parameter high to choose which group \
+ should be placed first.
 #
 #---- The messages below this line haven't been used yet.
 #
