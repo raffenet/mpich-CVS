@@ -267,7 +267,6 @@ void MPID_Dataloop_create_indexed(int count,
     /* if count is zero, handle with contig code, call it a int */
     if (count == 0)
     {
-
 	MPID_Dataloop_create_contiguous(0,
 					MPI_INT,
 					dlp_p,
