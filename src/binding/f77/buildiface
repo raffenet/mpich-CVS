@@ -179,6 +179,10 @@ foreach $_ (@ARGV) {
 # or different behavior.
 %special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1',
 		      'Address' => 1, 'Get_address' => 1 );
+# 
+# Note that wtime and wtick aren't found because they don't match the 
+# int MPI_xxx format.  They're handled directly by the special routine
+# code below
 
 #
 # Most routines can be processed automatically.  However, some
@@ -966,6 +970,11 @@ print MPIFFD "       INTEGER MPI_SOURCE, MPI_TAG, MPI_ERROR\n";
 print MPIFFD "       PARAMETER (MPI_SOURCE=2,MPI_TAG=3,MPI_ERROR=4)\n";
 print MPIFFD "       INTEGER MPI_STATUS_SIZE\n";
 print MPIFFD "       PARAMETER (MPI_STATUS_SIZE=\@MPI_STATUS_SIZE\@)\n";
+# Temporary until configure handles these.  Define as arrays to keep
+# Fortran compilers from complaining excessively.
+print MPIFFD "       INTEGER MPI_STATUS_IGNORE(MPI_STATUS_SIZE)\n";
+print MPIFFD "       INTEGER MPI_STATUSES_IGNORE(MPI_STATUS_SIZE,1)\n";
+
 #
 # Error Classes
 print MPIFFD "       INTEGER MPI_SUCCESS\n";
@@ -1045,6 +1054,8 @@ print MPIFFD "       INTEGER MPI_ADDRESS_KIND, MPI_OFFSET_KIND\n";
 print MPIFFD "       PARAMETER (MPI_ADDRESS_KIND=\@ADDRESS_KIND\@)\n";
 print MPIFFD "       PARAMETER (MPI_OFFSET_KIND=\@OFFSET_KIND\@)\n";
 # 
+# Finally, the special symbols
+print MPIFFD "       INTEGER MPI_BOTTOM\n";
 
 close( MPIFFD );
 
@@ -1188,6 +1199,41 @@ void *MPIR_F_MPI_BOTTOM = 0;
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
+
+    $OUTFD = "WTIMEFD";
+    open( $OUTFD, ">wtimef.c" ) || die "Cannot open wtimef.c\n";
+    $files[$#files+1] = "wtimef.c";
+    &print_header( "MPI_Wtime", "wtime" );
+    print $OUTFD "double mpi_wtime_( void )";
+    &print_attr;
+    print $OUTFD "{\n";
+    print $OUTFD "    double d; MPID_Time_t t;\n
+    MPID_Wtime( &t );
+    MPID_Wtime_todouble( &t, &d );
+    return d;\n";
+    print $OUTFD "}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	print PROTOFD "double mpi_wtime_( void );\n";
+    }
+
+    $OUTFD = "WTICKFD";
+    open( $OUTFD, ">wtickf.c" ) || die "Cannot open wtickf.c\n";
+    $files[$#files+1] = "wtickf.c";
+    &print_header( "MPI_Wtick", "wtick" );
+    print $OUTFD "double mpi_wtick_( void )";
+    &print_attr;
+    print $OUTFD "{\n";
+    print $OUTFD "    double d; 
+    d = MPID_Wtick( );
+    return d;\n";
+    print $OUTFD "}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	print PROTOFD "double mpi_wtick_( void );\n";
+    }
+
+
 }
 #
 # ISSUES NOT YET HANDLED
