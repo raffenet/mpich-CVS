@@ -1216,7 +1216,8 @@ fout.Close()
 '
 ' mpitestconf.h
 '
-Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
+'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
+Set fout = f.CreateTextFile("src\include\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
 Call WriteHeader(fout, "mpitest")
 Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in")
 Call WriteFooter(fout)
