@@ -29,7 +29,14 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     if ((data_sz == 0) || (target_rank == MPI_PROC_NULL))
         goto fn_exit;
 
+    /* FIXME: It makes sense to save the rank (and size) of the
+       communicator in the window structure to speed up these operations,
+       or to save a pointer to the communicator structure, rather than
+       just the handle 
+    */
+    MPIR_Nest_incr();
     NMPI_Comm_rank(win_ptr->comm, &rank);
+    MPIR_Nest_decr();
 
     if (target_rank == rank) {
         MPI_User_function *uop;
