@@ -11,6 +11,6 @@ autom4te.cache
 *.ncb
 *.opt
 *.plg
-Debug
-Release
+*ebug*
+*elease*
 .deps
