@@ -665,7 +665,7 @@ This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
 
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
 
-\subsubsection{Info}
+\subsection{Info}
 There are two ways to handle \code{MPI_Info}.  One is to implement a general
 mechanism for handling key/value pairs, much like the code that is part of
 \file{mpich/src/misc2}.  The other is to implement only the defined keys that
@@ -783,8 +783,18 @@ The ADI defines a datatype structure that is believed to be a good
 choice for implementing operatoins that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
 
+
 \subsubsection{\mpifunc{MPI_ADDRESS}}
 Deprecated.  Use \mpifunc{MPI_GET_ADDRESS}.
+
+\subsubsection{\mpifunc{MPI_GET_COUNT}}
+How does this get the value?
+
+\subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
+How does this get the value?
+
+\subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
+Where are the values defined for the count field(s) in the status?
 
 \subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
 Deprecated.  However, we can't easily use \code{MPI_TYPE_CREATE_HINDEXED}
@@ -1374,14 +1384,6 @@ indicates whether the cancel succeeded or failed.
 \end{mmadi}
 \end{adi3}
 
-\subsubsection{\mpifunc{MPI_GET_COUNT}}
-How does this get the value?
-Question: Does this belong with datatypes? (Yes)
-
-\subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
-How does this get the value?
-Question: Does this belong with datatypes? (Yes)
-
 \subsubsection{\mpifunc{MPI_IPROBE}}
 \begin{adi3}\mpidfunc{MPID_Request_iprobe}
 \end{adi3}
@@ -1507,10 +1509,6 @@ routine that is used to start the operation?
 \subsubsection{\mpifunc{MPI_STATUS_SET_CANCELLED}}
 Where are the values defined for indicating cancelled message?
 A \mpidconst{MPID_TAG_MSG_CANCELLED} for the tag field in the status?
-
-\subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
-Where are the values defined for the count field(s) in the status?
-Should this be with the datatype?
 
 \subsubsection{\mpifunc{MPI_TEST}}
 Call \mpifunc{MPI_Testall}.
@@ -1742,7 +1740,7 @@ for long data as well.  To avoid excessive memory consumption, the
 \subsubsection{\mpifunc{MPI_SCATTERV}}
 For short data, use an MST. 
 
-\subsubsection{Intercommunicator Collective Operations}
+\subsection{Intercommunicator Collective Operations}
 \subsubsection{\mpifunc{MPI_ALLGATHER}}
 \subsubsection{\mpifunc{MPI_ALLGATHERV}}
 \subsubsection{\mpifunc{MPI_ALLTOALL}}
@@ -2056,7 +2054,9 @@ Otherwise, use \tcpname\ approach.
 \begin{tcp}
 This can be viewed as a special case of the post/start/complete/wait
 synchronization, with a carefully chosen set of neighbors (e.g., the usual
-barrier tree).
+barrier tree).  Or it just use \mpifunc{MPI_BARRIER}.  
+
+Question: do VIA-like remote memory access require any cache flush operations?
 \end{tcp}
 
 \begin{shmem}
@@ -2124,14 +2124,40 @@ for \mpifunc{MPI_WIN_CREATE} that asks for the blocking lock?
 \begin{via}
 \end{via}
 
+\subsubsection{Scalable Active Target Synchronization}
+The scalable active target synchronization routines (\mpifunc{MPI_WIN_POST},
+\mpifunc{MPI_WIN_START}, \mpifunc{MPI_WIN_COMPLETE}, \mpifunc{MPI_WIN_WAIT})
+can be implemented by keeping two counts at each process.  One count is
+incremented by \mpifunc{MPI_WIN_POST} for each process in the group.  
+The other is incremented by \mpifunc{MPI_WIN_WAIT} for each process in the
+group specified by \mpifunc{MPI_WIN_POST}.  These counts are zeroed by
+\mpifunc{MPI_WIN_START} and \mpifunc{MPI_WIN_COMPLETE} respectively once all
+processes have checked in.
+
+This approach is a conmpromise between letting each target process check in
+separately (allowing some RMA operations to proceed even before all processes
+in the group are ready) and the simplicity of waiting until all are ready to
+proceed.  This approach is scalable since the time is independent on the size
+of the group of the window object and scales linearly with the size of the
+group in the post and start calls.  
+
+
+
 \subsubsection{\mpifunc{MPI_WIN_POST}}
 Begin an exposure epoch for the local window.
-\begin{tcp}
-\end{tcp}
-\begin{shmem}
-\end{shmem}
-\begin{via}
-\end{via}
+
+For each member of the group, use \mpidfunc{MPID_Rhcv} with type
+\mpidconst{MPID_Hid_access_cnt} to increment the start counter of that
+process.  (Each window object has a separate start and complete counter for
+each process.)
+Save the group (increment reference count and save in the window object's data structure).
+
+% \begin{tcp}
+% \end{tcp}
+% \begin{shmem}
+% \end{shmem}
+% \begin{via}
+% \end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_START}}
 Start creates an access epoch for the processes in the specified group.  The
@@ -2140,33 +2166,59 @@ made (implementations that defer communicating can proceed through
 \mpifunc{MPI_WIN_START} as long as the matching post occurs before and RMA
 actions are taken).
 
-\begin{tcp}
-\end{tcp}
-\begin{shmem}
+Note that it is incorrect to spinwait on the counter.  Consider the following
+correct MPI program:
+\begin{verbatim}
+    Process 0                       Process 1
+---------------------        ----------------------
+                              MPI_Irecv (...)
+                              MPI_Win_post(...)
+                              MPI_Win_start(...)
+MPI_Ssend( to 1 )
+MPI_Win_post(...)
+MPI_Win_start(...)
+\end{verbatim}
+In the above, time runs down the page.  In other words, process 1 posts an
+irecv, then performs the win post step, followed by the
+\mpifunc{MPI_Win_start}.  If \mpifunc{MPI_Win_start} enters a tight spin loop
+on the counter, the \mpifunc{MPI_Ssend} started by process 0 will be unable to
+match with the \mpifunc{MPI_Irecv} in process 1, and this correct code would
+hang.  
 
-\end{shmem}
-\begin{via}
-\end{via}
+Implementation:
+See \mpifunc{MPI_WIN_POST}.  Wait for the start counter to reach the size of
+the group provided to this function.  When it is reached, set it back to zero
+and return.  
+% \begin{tcp}
+% \end{tcp}
+% \begin{shmem}
+
+% \end{shmem}
+% \begin{via}
+% \end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_COMPLETE}}
 Complete ends an access epoch for the processes in the group specified with
 \mpifunc{MPI_Win_start}.
 
-\begin{tcp}
-\end{tcp}
-\begin{shmem}
-\end{shmem}
-\begin{via}
-\end{via}
+Like \mpifunc{MPI_WIN_START}, but for the complete counter.
+% \begin{tcp}
+% \end{tcp}
+% \begin{shmem}
+% \end{shmem}
+% \begin{via}
+% \end{via}
 
 \subsubsection{\mpifunc{MPI_WIN_WAIT}}
 End an exposure epoch for the local window.
-\begin{tcp}
-\end{tcp}
-\begin{shmem}
-\end{shmem}
-\begin{via}
-\end{via}
+
+Like \mpifunc{MPI_WIN_POST}, but for the complete counter.
+% \begin{tcp}
+% \end{tcp}
+% \begin{shmem}
+% \end{shmem}
+% \begin{via}
+% \end{via}
 
 \subsection{Starting and Ending MPI}
 
