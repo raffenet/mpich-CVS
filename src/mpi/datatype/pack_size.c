@@ -44,7 +44,7 @@ The MPI standard document describes this in terms of 'MPI_Pack', but it
 applies to both 'MPI_Pack' and 'MPI_Unpack'.  That is, the value 'size' is 
 the maximum that is needed by either 'MPI_Pack' or 'MPI_Unpack'.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
