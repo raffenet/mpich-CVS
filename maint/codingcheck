@@ -213,7 +213,8 @@ sub ProcessFile {
 #
 # Subroutines that we want to avoid
 @avoidsubs = ( "fprintf", "fputs", "puts", "printf", 
-               "malloc", "calloc", "free", "strdup", "realloc" );
+               "malloc", "calloc", "free", "strdup", "realloc",
+	       "assert" );
 # Guarded subs maps the routines being guarded to the guard definition
 # (we may eventually use colon separated values if multiple definitions are
 # allowed)
