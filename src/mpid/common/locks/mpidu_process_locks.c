@@ -32,7 +32,7 @@ int MPIDI_Sleep_yield_counts[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1000 };
 
 int g_nLockSpinCount = 100;
 
-#ifndef USE_BUSY_LOCKS
+#if !defined(USE_BUSY_LOCKS) && !defined(HAVE_MUTEX_INIT)
 /*@
    MPIDU_Process_lock_init - 
 
