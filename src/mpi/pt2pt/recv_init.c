@@ -122,29 +122,7 @@ int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int t
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-#if 0
-    /* Allow recv_init to create the correct persistent request.  */
-    if (source == MPI_PROC_NULL)
-    {
-	request_ptr = MPID_Request_create();
-	if (request_ptr != NULL)
-	{
-	    request_ptr->status.MPI_SOURCE = MPI_PROC_NULL;
-	    request_ptr->status.MPI_TAG = MPI_ANY_TAG;
-	    request_ptr->kind = MPID_REQUEST_RECV;
-	    request_ptr->cc = 0;
-	    *request = request_ptr->handle;
-	
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
-	    return MPI_SUCCESS;
-	}
-	
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
-	return MPIR_ERR_MEMALLOCFAILED;
-    }
-#endif
-    mpi_errno = MPID_Recv_init(buf, count, datatype, source, tag, comm_ptr,
-			       MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
+    mpi_errno = MPID_Recv_init(buf, count, datatype, source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
     if (mpi_errno == MPI_SUCCESS)
     {
