@@ -121,7 +121,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         }
         
         /* After the target grants the lock, it sends a lock_granted
-         * packet. This packet is received in ch3u_handle_receive_pkt.c.
+         * packet. This packet is received in ch3u_handle_recv_pkt.c.
          * The handler for the packet sets the win_ptr->lock_granted flag to 1. */
     
         /* poke the progress engine until lock_granted flag is set to 1 */

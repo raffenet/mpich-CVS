@@ -19,6 +19,35 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_POST);
 
+    /* In case this process was previously the target of passive target rma
+     * operations, we need to take care of the following...
+     * Since we allow MPI_Win_unlock to return without a done ack from
+     * the target in the case of multiple rma ops and exclusive lock,
+     * we need to check whether there is a lock on the window, and if
+     * there is a lock, poke the progress engine until the operartions
+     * have completed and the lock is therefore released. */
+    while (win_ptr->current_lock_type != MPID_LOCK_NONE) {
+        /* poke the progress engine */
+        MPID_Progress_start();
+            
+        if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+        {
+            mpi_errno = MPID_Progress_wait();
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+        }
+        else
+        {
+            MPID_Progress_end();
+            break;
+        }
+    }
+
     post_grp_size = group_ptr->size;
 
     /* initialize the completion counter */
@@ -42,7 +71,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
         if (!ranks_in_post_grp)
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            return mpi_errno;
+            goto fn_exit;
         }
 	/* --END ERROR HANDLING-- */
         
@@ -51,7 +80,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
         if (!ranks_in_win_grp)
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            return mpi_errno;
+            goto fn_exit;
         }
 	/* --END ERROR HANDLING-- */
         
@@ -73,7 +102,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
             if (mpi_errno)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		return mpi_errno;
+                goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
         }
@@ -84,6 +113,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
         MPIU_Free(ranks_in_post_grp);
     }    
 
+ fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_POST);
     return mpi_errno;
 }

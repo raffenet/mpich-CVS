@@ -25,12 +25,39 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
 
+    /* In case this process was previously the target of passive target rma
+     * operations, we need to take care of the following...
+     * Since we allow MPI_Win_unlock to return without a done ack from
+     * the target in the case of multiple rma ops and exclusive lock,
+     * we need to check whether there is a lock on the window, and if
+     * there is a lock, poke the progress engine until the operartions
+     * have completed and the lock is released. */
+    while (win_ptr->current_lock_type != MPID_LOCK_NONE) {
+        /* poke the progress engine */
+        MPID_Progress_start();
+            
+        if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+        {
+            mpi_errno = MPID_Progress_wait();
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+        }
+        else
+        {
+            MPID_Progress_end();
+            break;
+        }
+    }
+
     if (assert & MPI_MODE_NOPRECEDE)
     {
         win_ptr->fence_cnt = (assert & MPI_MODE_NOSUCCEED) ? 0 : 1;
-
-        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-        return MPI_SUCCESS;
+        goto fn_exit;
     }
 
     if ((win_ptr->fence_cnt == 0) && ((assert & MPI_MODE_NOSUCCEED) != 1))
@@ -55,8 +82,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         if (!rma_target_proc)
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-            return mpi_errno;
+            goto fn_exit;
         }
 	/* --END ERROR HANDLING-- */
 
@@ -69,8 +95,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         if (!nops_to_proc)
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-            return mpi_errno;
+            goto fn_exit;
         }
 	/* --END ERROR HANDLING-- */
 
@@ -91,8 +116,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         if (!curr_ops_cnt)
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-            return mpi_errno;
+            goto fn_exit;
         }
 	/* --END ERROR HANDLING-- */
 
@@ -104,8 +128,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             if (!requests)
 	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-                return mpi_errno;
+                goto fn_exit;
             }
 	    /* --END ERROR HANDLING-- */
             
@@ -115,8 +138,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             if (!dtype_infos)
 	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-                return mpi_errno;
+                goto fn_exit;
             }
 	    /* --END ERROR HANDLING-- */
             
@@ -126,8 +148,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             if (!dataloops)
 	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-                return mpi_errno;
+                goto fn_exit;
             }
 	    /* --END ERROR HANDLING-- */
             for (i=0; i<total_op_count; i++)
@@ -150,8 +171,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         if (!recvcnts)
 	{
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-            return mpi_errno;
+            goto fn_exit;
         }
 	/* --END ERROR HANDLING-- */
         for (i=0; i<comm_size; i++)
@@ -168,8 +188,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "The reduce_scatter to send out the data to all the nodes in the fence failed");
-	    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-	    return mpi_errno;
+            goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -209,8 +228,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "sending the rma message failed");
-		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-		    return mpi_errno;
+                    goto fn_exit;
 		}
 		/* --END ERROR HANDLING-- */
                 break;
@@ -222,8 +240,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "receiving the rma message failed");
-		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-		    return mpi_errno;
+                    goto fn_exit;
 		}
 		/* --END ERROR HANDLING-- */
                 break;
@@ -231,9 +248,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 		/* --BEGIN ERROR HANDLING-- */
                 /* FIXME - return some error code here */
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "invalid RMA operation");
-		MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-		return mpi_errno;
-                break;
+                goto fn_exit;
 		/* --END ERROR HANDLING-- */
             }
             i++;
@@ -264,8 +279,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
-                            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-                            return mpi_errno;
+                            goto fn_exit;
                         }
 			/* --END ERROR HANDLING-- */
                         /* if origin datatype was a derived
@@ -283,8 +297,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
-		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-		    return mpi_errno;
+                    goto fn_exit;
 		}
 		/* --END ERROR HANDLING-- */
                 done = 1;
@@ -331,8 +344,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
-		    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-		    return mpi_errno;
+                    goto fn_exit;
                 }
 		/* --END ERROR HANDLING-- */
             }
@@ -348,6 +360,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 	}
     }
 
+ fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
     return mpi_errno;
 }
