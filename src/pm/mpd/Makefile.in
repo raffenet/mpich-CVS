@@ -92,7 +92,7 @@ install: all
 	    echo "mkdir -p ${bindir} " ;\
 	    mkdir -p ${bindir} ;\
 	fi   
-	@if [ -n "`id | grep uid=0`" ] ; then \
+	-@if [ -n "`id | grep uid=0`" ] ; then \
 	    ${INSTALL} -m 4755 mpdroot ${bindir}/mpdroot ;\
         else \
 	    ${INSTALL} -m  755 mpdroot ${bindir}/mpdroot ;\
@@ -120,7 +120,7 @@ install: all
 
 
 mpich2-build-install: mpich2-mpdroot install
-	@if [ -n "`id | grep uid=0`" ] ; then \
+	-@if [ -n "`id | grep uid=0`" ] ; then \
             ${INSTALL} -m 4755 mpich2-mpdroot ${bindir}/mpdroot ;\
 	else \
             ${INSTALL} -m  755 mpich2-mpdroot ${bindir}/mpdroot ;\
