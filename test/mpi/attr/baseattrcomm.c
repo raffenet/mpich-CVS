@@ -20,7 +20,7 @@ int main( int argc, char **argv)
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    MPI_Attr_get( MPI_COMM_WORLD, MPI_TAG_UB, &v, &flag );
+    MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_TAG_UB, &v, &flag );
     if (!flag) {
 	errs++;
 	fprintf( stderr, "Could not get TAG_UB\n" );
@@ -33,7 +33,7 @@ int main( int argc, char **argv)
 	}
     }
 
-    MPI_Attr_get( MPI_COMM_WORLD, MPI_HOST, &v, &flag );
+    MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_HOST, &v, &flag );
     if (!flag) {
 	errs++;
 	fprintf( stderr, "Could not get HOST\n" );
@@ -45,7 +45,7 @@ int main( int argc, char **argv)
 	    fprintf( stderr, "Got invalid value %d for HOST\n", vval );
 	}
     }
-    MPI_Attr_get( MPI_COMM_WORLD, MPI_IO, &v, &flag );
+    MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_IO, &v, &flag );
     if (!flag) {
 	errs++;
 	fprintf( stderr, "Could not get IO\n" );
@@ -59,7 +59,7 @@ int main( int argc, char **argv)
 	}
     }
 
-    MPI_Attr_get( MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL, &v, &flag );
+    MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL, &v, &flag );
     if (flag) {
 	/* Wtime need not be set */
 	vval = *(int*)v;
@@ -70,7 +70,7 @@ int main( int argc, char **argv)
 	}
     }
 
-    MPI_Attr_get( MPI_COMM_WORLD, MPI_APPNUM, &v, &flag );
+    MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_APPNUM, &v, &flag );
     /* appnum need not be set */
     if (flag) {
 	vval = *(int *)v;
@@ -80,7 +80,7 @@ int main( int argc, char **argv)
 	}
     }
 
-    MPI_Attr_get( MPI_COMM_WORLD, MPI_UNIVERSE_SIZE, &v, &flag );
+    MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_UNIVERSE_SIZE, &v, &flag );
     /* MPI_UNIVERSE_SIZE need not be set */
     if (flag) {
 	vval = *(int *)v;
@@ -90,7 +90,7 @@ int main( int argc, char **argv)
 	}
     }
     
-    MPI_Attr_get( MPI_COMM_WORLD, MPI_LASTUSEDCODE, &v, &flag );
+    MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_LASTUSEDCODE, &v, &flag );
     /* Last used code must be defined and >= MPI_ERR_LASTCODE */
     if (flag) {
 	vval = *(int*)v;
