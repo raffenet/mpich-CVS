@@ -45,11 +45,13 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+	      MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Bsend";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_BSEND);
     /* Get handles to MPI objects. */
@@ -58,13 +60,16 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COUNT(count,mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    if (comm_ptr) {
+		MPIR_ERRTEST_SEND_TAG(comm_ptr,tag,mpi_errno);
+		MPIR_ERRTEST_SEND_RANK(comm_ptr,tag,mpi_errno)
+	    }
+
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BSEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -73,6 +78,18 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+#ifdef MPID_HAS_TBSEND
+    mpi_errno = MPID_tBsend( buf, count, datatype, dest, tag, comm_ptr, 0 );
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BSEND);
+	return MPI_SUCCESS;
+    }
+    /* Check for MPID_WOULD_BLOCK? */
+#endif    
+    
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BSEND);
     return MPI_SUCCESS;
