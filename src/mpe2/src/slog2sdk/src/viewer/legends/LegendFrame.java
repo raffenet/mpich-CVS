@@ -60,13 +60,25 @@ public class LegendFrame extends JFrame
         in_slog_ins  = new InputLog( in_filename );
         System.out.println( "Done." );
         String err_msg;
+        if ( in_slog_ins == null ) {
+            Dialogs.error( null, "Null InputLog!!" );
+            in_slog_ins = null;
+            System.exit( 1 );
+        }
+        if ( ! in_slog_ins.isSLOG2() ) {
+            Dialogs.error( null, in_filename + " is NOT a SLOG-2 file!" );
+            in_slog_ins = null;
+            System.exit( 1 );
+        }
         if ( (err_msg = in_slog_ins.getCompatibleHeader() ) != null ) {
             if ( ! Dialogs.confirm( null, err_msg
-                                  + logformat.slog2.Const.VERSION_HISTORY
+                                  + "Check the following version history "
+                                  + "for compatibility.\n\n"
+                                  + logformat.slog2.Const.VERSION_HISTORY + "\n"
                                   + "Do you still want to continue reading "
                                   + "the logfile ?" ) ) {
                 in_slog_ins = null;
-                return;
+                System.exit( 1 );
             }
         }
 
