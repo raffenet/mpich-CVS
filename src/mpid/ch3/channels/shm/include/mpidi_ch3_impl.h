@@ -89,6 +89,12 @@ __attribute__ ((unused))
 #define MPIDI_CH3I_PKT_USED             1
 #define MPIDI_CH3I_SPIN_COUNT_DEFAULT   100
 #define MPIDI_CH3I_YIELD_COUNT_DEFAULT  5000
+#define MPIDI_SHM_EAGER_LIMIT           10240
+#ifdef HAVE_SHARED_PROCESS_READ
+#define MPIDI_SHM_RNDV_LIMIT            10240
+#endif
+#define MPID_SHMEM_PER_PROCESS          1048576
+
 
 /* This structure uses the avail field to signal that the data is available for reading.
    The code fills the data and then sets the avail field.
@@ -168,13 +174,6 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 #define MPIDI_CH3I_SendQ_head(vc) (vc->shm.sendq_head)
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->shm.sendq_head == NULL)
-
-#define MPIDI_SHM_EAGER_LIMIT 10240
-#ifdef HAVE_SHARED_PROCESS_READ
-#define MPIDI_SHM_RNDV_LIMIT 10240
-#endif
-
-#define MPID_SHMEM_PER_PROCESS 1048576
 
 typedef enum shm_wait_e
 {
