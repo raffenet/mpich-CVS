@@ -1,1 +1,0 @@
-/* Empty MPE X Graphics header to be replaced by the real one if available */
