@@ -27,8 +27,6 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     VAPI_ret_t status;
     VAPI_sg_lst_entry_t data;
     VAPI_sr_desc_t work_req;
-    void *mem_ptr;
-    int length;
     int total = 0;
 #ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
@@ -84,7 +82,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
 	fflush(stdout);
     }
     */
-    MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma VAPI_post_sr(%d bytes)", length));
+    MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma VAPI_post_sr(%d bytes)", len));
     status = VAPI_post_sr( IBU_Process.hca_handle,
 			   ibu->qp_handle, 
 			   &work_req);
@@ -103,8 +101,6 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     VAPI_ret_t status;
     VAPI_sg_lst_entry_t data;
     VAPI_sr_desc_t work_req;
-    void *mem_ptr;
-    int length;
     int total = 0;
 #ifndef HAVE_32BIT_POINTERS
     ibu_work_id_handle_t *id_ptr;
@@ -160,7 +156,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
 	fflush(stdout);
     }
     */
-    MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma VAPI_post_sr(%d bytes)", length));
+    MPIDI_DBG_PRINTF((60, FCNAME, "calling rdma VAPI_post_sr(%d bytes)", len));
     status = VAPI_post_sr( IBU_Process.hca_handle,
 			   ibu->qp_handle, 
 			   &work_req);
@@ -190,10 +186,8 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     int num_written;
     MPID_IOV *send_iov, *recv_iov;
     int send_count, recv_count;
-    int complete;
     MPIDI_CH3_Pkt_t pkt;
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
-    MPID_Request * reload_sreq;
     int signalled = 1;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
 
@@ -322,7 +316,7 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
     return mpi_errno;
 #endif
@@ -344,10 +338,8 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     int num_read;
     MPID_IOV *send_iov, *recv_iov;
     int send_count, recv_count;
-    int complete;
     MPIDI_CH3_Pkt_t pkt;
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
-    MPID_Request * reload_rreq;
     int signalled = 1;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_READV);
 
@@ -477,7 +469,7 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_READV);
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
     return mpi_errno;
 #endif
