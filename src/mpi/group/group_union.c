@@ -50,7 +50,7 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     MPID_Group *group_ptr1 = NULL;
     MPID_Group *group_ptr2 = NULL;
     MPID_Group *new_group_ptr;
-    int g1_idx, g2_idx, nnew, i, k, size1, size2;
+    int g1_idx, g2_idx, nnew, i, k, size1, size2, mylpid;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_UNION);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_UNION);
@@ -139,6 +139,9 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
+	/* If this process is in group1, then we can set the rank now. 
+	   If we are not in this group, this assignment will set the
+	   current rank to MPI_UNDEFINED */
 	new_group_ptr->rank = group_ptr1->rank;
     
 	/* Add group1 */
@@ -150,12 +153,20 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 	}
 
 	/* Add members of group2 that are not in group 1 */
+	
+	if (group_ptr1->rank == MPI_UNDEFINED &&
+	    group_ptr2->rank >= 0) {
+	    mylpid = group_ptr2->lrank_to_lpid[group_ptr2->rank].lpid;
+	}
 	k = size1;
 	for (i=0; i<size2; i++) {
 	    if (group_ptr2->lrank_to_lpid[i].flag) {
 		new_group_ptr->lrank_to_lpid[k].lrank = k;
 		new_group_ptr->lrank_to_lpid[k].lpid = 
 		    group_ptr2->lrank_to_lpid[i].lpid;
+		if (new_group_ptr->rank == MPI_UNDEFINED &&
+		    group_ptr2->lrank_to_lpid[i].lpid == mylpid)
+		    new_group_ptr->rank = k;
 		k++;
 	    }
 	}
