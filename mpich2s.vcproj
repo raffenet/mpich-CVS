@@ -776,6 +776,9 @@
 				RelativePath="src\mpi\coll\alltoallw.c">
 			</File>
 			<File
+				RelativePath=".\src\util\mem\argstr.c">
+			</File>
+			<File
 				RelativePath="src\mpi\romio\adio\common\async_list.c">
 			</File>
 			<File
