@@ -16,6 +16,7 @@
 #define MP_MAX_NAME_LENGTH    256
 #define MP_MAX_VALUE_LENGTH  1024
 #define MP_MAX_FILENAME      1024
+#define MP_MAX_STDOUT_LENGTH 1024
 
 typedef struct mp_host_node_t
 {

@@ -236,6 +236,34 @@ int handle_result(smpd_context_t *context)
     return SMPD_FAIL;
 }
 
+int handle_stdout_command(smpd_context_t *context)
+{
+    int rank;
+    char data[MP_MAX_STDOUT_LENGTH];
+    smpd_command_t *cmd;
+
+    mp_enter_fn("handle_stdout_command");
+
+    cmd = &context->read_cmd;
+    if (!smpd_get_int_arg(cmd->cmd, "rank", &rank))
+    {
+	rank = -1;
+	mp_err_printf("no rank in the stdout command: '%s'\n", cmd->cmd);
+    }
+    if (smpd_get_string_arg(cmd->cmd, "data", data, MP_MAX_STDOUT_LENGTH))
+    {
+	printf("[%d]%s", rank, data);
+	fflush(stdout);
+    }
+    else
+    {
+	mp_err_printf("unable to get the data from the stdout command: '%s'\n", cmd->cmd);
+    }
+
+    mp_exit_fn("handle_stdout_command");
+    return SMPD_SUCCESS;
+}
+
 int handle_command(smpd_context_t *context)
 {
     int result;
@@ -332,7 +360,7 @@ int handle_command(smpd_context_t *context)
 	{
 	    mp_err_printf("no exit code in exit command: '%s'\n", cmd->cmd);
 	}
-	if (!smpd_get_int_arg(cmd->cmd, "iproc", &iproc))
+	if (!smpd_get_int_arg(cmd->cmd, "rank", &iproc))
 	{
 	    mp_err_printf("no iproc in exit command: '%s'\n", cmd->cmd);
 	}
@@ -347,6 +375,12 @@ int handle_command(smpd_context_t *context)
 	}
 	mp_exit_fn("handle_command");
 	return SMPD_SUCCESS;
+    }
+    else if (strcmp(cmd->cmd_str, "stdout") == 0)
+    {
+	result = handle_stdout_command(context);
+	mp_exit_fn("handle_command");
+	return result;
     }
 
     mp_err_printf("ignoring unknown command from the session: '%s'\n", cmd->cmd);

@@ -65,6 +65,38 @@ int handle_launch_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
+    /* create some bogus stdout */
+    result = smpd_create_command("stdout", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create an exit command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "rank", iproc);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the rank to the stdout command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "data", "Jeremiah was a bullfrog.\n");
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the data to the stdout command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+
+    /* send the stdout command */
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the stdout command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("handle_launch_command");
+	return SMPD_FAIL;
+    }
+
     /* create the process exited command */
     result = smpd_create_command("exit", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
     if (result != SMPD_SUCCESS)
@@ -73,10 +105,10 @@ int handle_launch_command(smpd_context_t *context)
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
-    result = smpd_add_command_int_arg(temp_cmd, "iproc", iproc);
+    result = smpd_add_command_int_arg(temp_cmd, "rank", iproc);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to add the iproc to the exit command in response to launch command: '%s'\n", cmd->cmd);
+	smpd_err_printf("unable to add the rank to the exit command in response to launch command: '%s'\n", cmd->cmd);
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
