@@ -399,12 +399,14 @@ def process_cmdline_args():
     if len(argv) < 3:
         usage()
     if argv[1] == '-delxmlfile':  # special case for mpiexec
-        argsFilename = argv[2]   # initialized to '' in main
-	argidx = 3
 	delArgsFile = 1
-    elif argv[1] == '-f':
         argsFilename = argv[2]   # initialized to '' in main
 	argidx = 3
+    elif argv[1] == '-f':
+	if len(argv) > 3:
+            print 'cannot use -f with other args'
+	    usage()
+        argsFilename = argv[2]   # initialized to '' in main
     else:
         argidx = 1
     if not argsFilename:
@@ -412,11 +414,9 @@ def process_cmdline_args():
 	    if argidx >= len(argv):
 	        usage()
             if argv[argidx][0] == '-':
-	        if argsFilename:
-	            print 'Cannot use other args with -f'
-		    usage()
                 if argv[argidx] == '-np' or argv[argidx] == '-n':
                     if not argv[argidx+1].isdigit():
+	                print 'non-numeric arg to -n or -np'
                         usage()
                     else:
                         nprocs = int(argv[argidx+1])
@@ -425,9 +425,8 @@ def process_cmdline_args():
                         else:
                             argidx += 2
                 elif argv[argidx] == '-f':
-                    argsFilename = argv[argidx+1]
-                    argidx += 2
-		    np_or_filename += 1
+	            print 'cannot use -f with other args'
+		    usage()
                 elif argv[argidx] == '-a':
                     jobalias = argv[argidx+1]
                     argidx += 2
