@@ -1007,7 +1007,8 @@ def mpdman():
                     if totspawns == spawnssofar:    # This is the last in the spawn sequence
                         spawnedCnt += 1    # non-zero to use for creating kvsname in msg below
                         msgToSend = { 'cmd'          : 'spawn',
-                                      'conhost'      : gethostname(),
+                                      'conhost'      : myHost,
+                                      'conip'        : myIP,
                                       'conport'      : myPort,
                                       'spawned'      : spawnedCnt,
                                       'nstarted'     : 0,
