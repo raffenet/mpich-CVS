@@ -56,6 +56,7 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INFO_GET_VALUELEN);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_GET_VALUELEN);
+    MPID_Info_get_ptr( info, info_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;

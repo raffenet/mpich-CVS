@@ -106,7 +106,10 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
     while (curr_ptr) {
 	if (!strncmp(curr_ptr->key, key, MPI_MAX_INFO_KEY)) {
 	    MPIU_Strncpy(value, curr_ptr->value, valuelen);
-	    value[valuelen] = '\0';
+	    /* The following is problematic - if the user passes the
+	       declared length, then this will access memory one
+	       passed that point */
+	    /* value[valuelen] = '\0'; */
 	    *flag = 1;
 	    break;
 	}
