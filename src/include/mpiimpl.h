@@ -2294,7 +2294,7 @@ int MPIR_Request_get_error(MPID_Request *);
   will need to use different algorithms and most fatal errors detected by the 
   MPI implementation should abort only the affected process, not all processes.
   @*/
-int MPID_Init( int *argc_p, char *(*argv_p)[], 
+int MPID_Init( int *argc_p, char ***argv_p, 
 	       int requested, int *provided,
 	       /* MPID_Comm **parent_comm,*/ int *has_args, int *has_env );
 

@@ -18,7 +18,7 @@ MPIDI_Process_t MPIDI_Process;
 #define FUNCNAME MPID_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Init(int * argc, char *(* argv)[], int requested, int * provided, int * has_args, int * has_env)
+int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * has_args, int * has_env)
 {
     int mpi_errno = MPI_SUCCESS;
     int has_parent;
