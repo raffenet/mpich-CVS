@@ -81,6 +81,7 @@ bf77_name_lower_2uscore = False
 bf77_name_upper = True
 bf77_name_mixed = False
 b77_name_mixed_uscore = False
+unhandled_definitions = ""
 
 ' Process arguments
 argCount = WScript.Arguments.Count
@@ -558,102 +559,6 @@ Else
 
 End IF
 
-'If bForce Or Not f.FileExists("src\binding\f77\mpi_fortconf.h") Then
-'
-'set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
-'fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
-'fout.WriteLine("/*")
-'fout.WriteLine(" *  (C) 2001 by Argonne National Laboratory.")
-'fout.WriteLine(" *      See COPYRIGHT in top-level directory.")
-'fout.WriteLine(" */")
-'fout.WriteLine("#ifndef MPI_FORTCONF_H")
-'fout.WriteLine("#define MPI_FORTCONF_H")
-'fout.WriteLine("")
-'fout.WriteLine("/* mpi_fortconf.h.  Generated automatically by winconfigure.  */")
-'fout.WriteLine("/* Define to empty if keyword does not work. */")
-'fout.WriteLine("/* #undef const */")
-'fout.WriteLine("/* Define if you have the ANSI C header files.  */")
-'fout.WriteLine("#define STDC_HEADERS 1")
-'fout.WriteLine("/* The number of bytes in a char.  */")
-'fout.WriteLine("#define SIZEOF_CHAR 1")
-'fout.WriteLine("/* The number of bytes in a double.  */")
-'fout.WriteLine("#define SIZEOF_DOUBLE 8")
-'fout.WriteLine("/* The number of bytes in a float.  */")
-'fout.WriteLine("#define SIZEOF_FLOAT 4")
-'fout.WriteLine("/* The number of bytes in a int.  */")
-'fout.WriteLine("#define SIZEOF_INT 4")
-'fout.WriteLine("/* The number of bytes in a long.  */")
-'fout.WriteLine("#define SIZEOF_LONG 4")
-'fout.WriteLine("/* The number of bytes in a long double.  */")
-'fout.WriteLine("#define SIZEOF_LONG_DOUBLE 12")
-'fout.WriteLine("/* The number of bytes in a long long.  */")
-'fout.WriteLine("#define SIZEOF_LONG_LONG 8")
-'fout.WriteLine("/* The number of bytes in a short.  */")
-'fout.WriteLine("#define SIZEOF_SHORT 2")
-'fout.WriteLine("/* The number of bytes in a void*.  */")
-'fout.WriteLine("#define SIZEOF_VOIDP 4")
-'fout.WriteLine("/* Define if you have the <stdlib.h> header file.  */")
-'fout.WriteLine("#define HAVE_STDLIB_H 1")
-'fout.WriteLine("/* Define if you have the <string.h> header file.  */")
-'fout.WriteLine("#define HAVE_STRING_H 1")
-'fout.WriteLine("/* Define if Fortran environment should be determined at runtime */")
-'fout.WriteLine("/* #undef F77_RUNTIME_VALUES */")
-'fout.WriteLine("/* Define if long double is supported */")
-'fout.WriteLine("#define HAVE_LONG_DOUBLE 1")
-'fout.WriteLine("/* Define if long long is supported */")
-'fout.WriteLine("/*#undef HAVE_LONG_LONG_INT */")
-'fout.WriteLine("/* Define if long long allowed */")
-'fout.WriteLine("/*#undef HAVE_LONG_LONG ")
-'fout.WriteLine("/* Define if Fortran names are lowercase */")
-'fout.WriteLine("/* #undef F77_NAME_LOWER */")
-'fout.WriteLine("/* Define if Fortran names are lowercase with a trailing underscore */")
-'fout.WriteLine("/* #undef F77_NAME_LOWER_USCORE */")
-'fout.WriteLine("/* Define if Fortran names containing an underscore have two trailing underscores */")
-'fout.WriteLine("#define F77_NAME_LOWER_2USCORE 1")
-'fout.WriteLine("/* Define if Fortran names are uppercase */")
-'fout.WriteLine("/* #undef F77_NAME_UPPER */")
-'fout.WriteLine("/* Define if Fortran names preserve the original case */")
-'fout.WriteLine("/* #undef F77_NAME_MIXED */")
-'fout.WriteLine("/* Define if Fortran names preserve the original case and add a trailing underscore */")
-'fout.WriteLine("/* #undef F77_NAME_MIXED_USCORE */")
-'fout.WriteLine("/* Define if we want to use nonstandard Fortran Pointer feature */")
-'fout.WriteLine("/* #undef USE_POINTER_FOR_BOTTOM */")
-'fout.WriteLine("/* Define size of SIZEOF_F77_INTEGER */")
-'fout.WriteLine("#define SIZEOF_F77_INTEGER 4")
-'fout.WriteLine("/* Define size of SIZEOF_F77_REAL */")
-'fout.WriteLine("#define SIZEOF_F77_REAL 4")
-'fout.WriteLine("/* Define size of SIZEOF_F77_DOUBLE_PRECISION */")
-'fout.WriteLine("#define SIZEOF_F77_DOUBLE_PRECISION 8")
-'fout.WriteLine("/* Define if addresses are larger than Fortran integers */")
-'fout.WriteLine("/* #undef HAVE_AINT_LARGER_THAN_FINT */")
-'fout.WriteLine("/* Define if Fortran integer are the same size as C ints */")
-'fout.WriteLine("#define HAVE_FINT_IS_INT 1")
-'fout.WriteLine("/* Supports weak pragma */")
-'fout.WriteLine("/* #undef HAVE_PRAGMA_WEAK */")
-'fout.WriteLine("/* HP style weak pragma */")
-'fout.WriteLine("/* #undef HAVE_PRAGMA_HP_SEC_DEF */")
-'fout.WriteLine("/* Cray style weak pragma */")
-'fout.WriteLine("/* #undef HAVE_PRAGMA_CRI_DUP */")
-'fout.WriteLine("/* Define if weak symbols supported */")
-'fout.WriteLine("/* #undef HAVE_WEAK_SYMBOLS */")
-'fout.WriteLine("/* Define if we know the value of Fortran true and false */")
-'fout.WriteLine("#define F77_TRUE_VALUE_SET 1")
-'fout.WriteLine("/* The value of true in Fortran */")
-'fout.WriteLine("#define F77_TRUE_VALUE 1")
-'fout.WriteLine("/* The value of false in Fortran */")
-'fout.WriteLine("#define F77_FALSE_VALUE 0")
-'fout.WriteLine("/* Define if characters use two-word descriptors */")
-'fout.WriteLine("/* #undef _TWO_WORD_FCD */")
-'fout.WriteLine("/* Define if Fortran functions are passed by passing the address of the pointer to the function */")
-'fout.WriteLine("/* #undef FORTRAN_SPECIAL_FUNCTION_PTR */")
-'fout.WriteLine("/* Define if using gcc and g77 together */")
-'fout.WriteLine("/* #undef USE_GCC_G77_DECLS */")
-'fout.WriteLine("")
-'fout.WriteLine("#endif")
-'fout.Close()
-'
-'End IF
-
 '
 ' Generate F90 module files
 '
@@ -1122,7 +1027,8 @@ Sub AddDefinitions( fout, filename )
 				Case "HAVE_MACH_O_DYLD_H"
 					fout.WriteLine("/* #undef HAVE_MACH_O_DYLD_H */")
 				Case Else
-					MsgBox("Unhandled definition <" & define & ">")
+					'MsgBox("Unhandled definition <" & define & ">")
+					unhandled_definitions = unhandled_definitions & define & vbNewLine
 			End Select
 			fout.WriteLine("")
 		Next
@@ -1409,6 +1315,13 @@ fout.WriteLine(vbLessThan & "/script" & vbGreaterThan)
 fout.WriteLine(vbLessThan & "/job" & vbGreaterThan)
 fout.WriteLine(vbLessThan & "/package" & vbGreaterThan)
 fout.Close()
+
+'
+' Report any errors
+'
+If unhandled_definitions <> "" Then
+	MsgBox "Unhandled definitions:" & vbNewLine & unhandled_definitions
+End If
 
 </script>
 </job>
