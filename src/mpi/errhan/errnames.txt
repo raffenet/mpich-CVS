@@ -493,6 +493,8 @@ with MPI_Alloc_mem.
 **ch3|sock|openlsend:[ch3:sock] failed to handle open lsend packet
 **ch3|sock|open_lrecv_data:[ch3:sock] failed to handle open lrecv data packet
 **ch3|sock|scconnaccept:[ch3:sock] failed to handle connection accept packet
+**ch3|sock|badhost:[ch3:soc] invalid host description
+**ch3|sock|badhost %s %d %s:[ch3:sock] invalid host description, %s:%d (%s)
 
 #
 # CH3:ssm
