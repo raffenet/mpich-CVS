@@ -3,3 +3,4 @@ all-local:
 	if [ ! -d lib ] ; then mkdir lib ; fi
 distclean-local:
 	-@rm -f lib/libmpich.a
+	-@rm -f src/include/mpichconf.h
