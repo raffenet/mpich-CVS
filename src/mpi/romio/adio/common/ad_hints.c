@@ -20,7 +20,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
     char *value;
     int flag, intval, tmp_val, nprocs;
 
-    if (!(fd->info)) MPI_Info_create(&(fd->info));
+    if (fd->info == MPI_INFO_NULL) MPI_Info_create(&(fd->info));
     info = fd->info;
 
     /* Note that fd->hints is allocated at file open time; thus it is
