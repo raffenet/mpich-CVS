@@ -37,7 +37,7 @@ Currently not possible; the anonymous cvs server is considered a security
 risk. 
 
 
-To update the code in an existign CVS working directory, do the following from
+To update the code in an existing CVS working directory, do the following from
 the top-level mpich2 directory:
 
     make distclean

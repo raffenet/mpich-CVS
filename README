@@ -1,19 +1,58 @@
 
         		 MPICH2 Early Release
 
-This tarball contains an early release of MPICH2.  It has been
-tested by us in our own environment, but not extensively tested
-by outside users (This is where you come in!).  Depending
-on your system, it may not even compile.  If you are interested in
-what the next generation of MPICH will look like, or for helping us
-harden this version for wider distribution, this tarball is for
-you.  If you are looking for an implementation of MPI for use in
-building and running your favorite application(s), please obtain the
-MPICH 1.2.X distribution from http://www.mcs.anl.gov/mpi/mpich.
+This tarball contains an early release of MPICH2.  It has been tested by us in
+our own environment, but not extensively tested by outside users (This is where
+you come in!).  Depending on your system, it may not even compile.  If you are
+interested in what the next generation of MPICH will look like, or for helping
+us harden this version for wider distribution, this tarball is for you.  If you
+are looking for an implementation of MPI for use in building and running your
+favorite application(s), please obtain the MPICH 1.2.X distribution from
+http://www.mcs.anl.gov/mpi/mpich.
 
-If you have difficulties with this release of MPICH2, please send
-mail to mpich2-maint@mcs.anl.gov.
+If you have difficulties with this release of MPICH2, please send mail to
+mpich2-maint@mcs.anl.gov.
 
+
+Changes in 0.93
+---------------
+Version 0.93 has undergone extensive changes to provide better error reporting.
+Part of these changes involved modifications to the ADI3 and CH3 interfaces.
+The following routines now return MPI error codes:
+
+MPID_Cancel_send()
+MPID_Cancel_recv()
+MPID_Progress_poke()
+MPID_Progress_test()
+MPID_Progress_wait()
+MPIDI_CH3_Cancel_send()
+MPIDI_CH3_Progress()
+MPIDI_CH3_Progress_poke()
+MPIDI_CH3_iRead()
+MPIDI_CH3_iSend()
+MPIDI_CH3_iSendv()
+MPIDI_CH3_iStartmsg()
+MPIDI_CH3_iStartmsgv()
+MPIDI_CH3_iWrite()
+MPIDI_CH3U_Handle_recv_pkt()
+MPIDI_CH3U_Handle_recv_req()
+MPIDI_CH3U_Handle_send_req()
+
+*******************************************************************************
+Of special note are MPID_Progress_test(), MPID_Progress_wait() and
+MPIDI_CH3_Progress() which previously returned an integer value indicating if
+one or more requests had completed.  They no longer return this value and
+instead return an MPI error code (also an integer).  The implication being that
+while the semantics changed, the type signatures did not.
+*******************************************************************************
+
+A RDMA channel has been added and includes communication methods for shared
+memory and shmem.  This is recent development and the RDMA interface is still
+in flux.
+
+
+Building MPICH2
+---------------
 The default communication layer supported in MPICH2 is the "sock channel
 device".  This channel device communicates using TCP on both Unix and
 Windows platforms.  At present, this device only supports homogenous
@@ -33,58 +72,68 @@ To build MPICH2 with the sock channel device, do the following:
 
 for the first line).  (VPATH builds are supported as well; see below).
 
-You should now have a complete build of MPICH2, and the executable
-commands needed to start MPI processes are in mpich2-<VERSION>/bin.  You
-should add that directory to your PATH.
+You should now have a complete build of MPICH2, and the executable commands
+needed to start MPI processes are in mpich2-<VERSION>/bin.  You should add that
+directory to your PATH.
 
-If you wish to install MPICH2 in a directory other than the one you
-build it in, you should build MPICH2 as follows.
+If you wish to install MPICH2 in a directory other than the one you build it
+in, you should build MPICH2 as follows.
 
     ./configure --prefix=<INSTALL_DIR>
     make
     make install
 
-Then the necessary executables will be in <INSTALL_DIR>/bin, and you
-should add it to your PATH.
+Then the necessary executables will be in <INSTALL_DIR>/bin, and you should add
+it to your PATH.
 
-In addition to the sock channel, we now have a shared memory channel
-which uses system V shared memory for communication on SMP style
-systems.  To build the shm channel, add --with-device=ch3:shm to the
-configure command line.
 
+Other Channels
+--------------
+In addition to the sock channel, we now have a shared memory channel which uses
+system V shared memory for communication on SMP style systems.  To build the
+shm channel, add --with-device=ch3:shm to the configure command line.  NOTE: at
+present, this channel only works on x86 processors.  To support another
+processor, three macros must be defined to identify that processor's memory
+barrier instruction(s).
+
+To build the RDMA channel, add --with-device=ch3:rdma and
+--with-rmda=<rdma_method> to the configure command line.  At present,
+<rdma_method> can be replaced with either shm or shmem.
+
+
+Running programs (using MPD)
+----------------------------
 Example and test programs (both source and executables) can be found in
-./examples and ./test/mpi/basic, respectively.  To run any of these
-programs, you will need to start the MPD process management daemon.
-More on MPD can be found in mpich2/src/pm/mpd/README.  An important
-prerequisite is that you need to have Python 2.2 installed.  (MPICH2
-will work with multiple process managers; the version of MPD implemented
-using Python is just one such example.  Later versions of MPICH2 will
-provide additional process managers).
+./examples and ./test/mpi/basic, respectively.  To run any of these programs,
+you will need to start the MPD process management daemon.  More on MPD can be
+found in mpich2/src/pm/mpd/README.  An important prerequisite is that you need
+to have Python 2.2 installed.  (MPICH2 will work with multiple process
+managers; the version of MPD implemented using Python is just one such example.
+Later versions of MPICH2 will provide additional process managers).
 
-To use some features of MPD, such as the MPI-2 standard form of mpiexec
-or mpdrun/mpirun with XML file arguments, you will need PyXML and an XML
-parser such as expat installed.  
+To use some features of MPD, such as the MPI-2 standard form of mpiexec or
+mpdrun/mpirun with XML file arguments, you will need PyXML and an XML parser
+such as expat installed.
 
-Python 2.2 is available from www.python.org.  PyXML and expat are
-available from pyxml.sourceforge.net.
+Python 2.2 is available from www.python.org.  PyXML and expat are available
+from pyxml.sourceforge.net.
 
-Before running MPD you need to set up the following file in your home
-directory on all the machines where you will be running (or in your home
-directory on a file system shared by all the nodes).
+Before running MPD you need to set up the following file in your home directory
+on all the machines where you will be running (or in your home directory on a
+file system shared by all the nodes).
 
    touch ~/.mpd.conf
    chmod 600 ~/.mpd.conf
    echo "password=<YOUR_MPD_PASSWORD_HERE>" >>~/.mpd.conf
    ./bin/mpd &
 
-The password should *not* be the same as any other password that you use;
-this password is used exclusively within the MPD system.
+The password should *not* be the same as any other password that you use; this
+password is used exclusively within the MPD system.
 
-Should you wish to setup a MPD ring across multiple machines, more
-advanced instructions for MPD can be found in mpich2/src/pm/mpd/README.
+Should you wish to setup a MPD ring across multiple machines, more advanced
+instructions for MPD can be found in mpich2/src/pm/mpd/README.
 
-Once you have MPD running, you may run the hello world program as
-follows.
+Once you have MPD running, you may run the hello world program as follows.
 
     cd examples
     mpiexec -n 2 hellow
@@ -93,32 +142,38 @@ To shut MPD down, run
 
     mpdallexit
 
+
 What compiles but doesn't work
 ------------------------------
-We don't guarantee that *anything* works yet.  However, we have run
-MPICH2 against both the MPICH-1 test suite and an updated and correct
-version of the Intel test suite.  MPICH2 passes most of these tests,
-including most error handling.  Among the routines that compile but that
-are known not to work yet are:
+
+We don't guarantee that *anything* works yet.  However, we have run MPICH2
+against both the MPICH-1 test suite and an updated and correct version of the
+Intel test suite.  MPICH2 passes most of these tests, including most error
+handling.  Among the routines that compile but that are known not to work yet
+are:
 
 MPI_Get_elements for partial types
 
+
 Testing Status
 --------------
-We run regular tests of the MPI-1 functions on a variety of platforms.
-We are using both the MPICH-1 test suite and the Intel test suite (with
-corrections).  The current status is available at
+
+We run regular tests of the MPI-1 functions on a variety of platforms.  We are
+using both the MPICH-1 test suite and the Intel test suite (with corrections).
+The current status is available at
 http://www.mcs.anl.gov/mpi/mpich/micronotes/mpich2-status/index.htm.
+
 
 VPATH Builds
 ------------
-MPICH2 supports building MPICH in a different directory tree than the
-one where the MPICH2 source is installed.  This often allows faster
-building, as the sources can be placed in a shared filesystem and the
-builds done in a local (and hence usually much faster) filesystem.  To
-make this clear, the following example assumes that the sources are
-placed in /usr/me/mpich2-10-25-02, the build is done in /tmp/me/mpich2,
-and the installed version goes into /usr/local/mpich2-test:
+
+MPICH2 supports building MPICH in a different directory tree than the one where
+the MPICH2 source is installed.  This often allows faster building, as the
+sources can be placed in a shared filesystem and the builds done in a local
+(and hence usually much faster) filesystem.  To make this clear, the following
+example assumes that the sources are placed in /usr/me/mpich2-10-25-02, the
+build is done in /tmp/me/mpich2, and the installed version goes into
+/usr/local/mpich2-test:
 
     cd /usr/me
     tar xzf mpich2-<VERSION>.tar.gz
@@ -130,10 +185,12 @@ and the installed version goes into /usr/local/mpich2-test:
     make
     make install
 
+
 Optional Features
 -----------------
-There are many features built into MPICH2.  If you are exploring MPICH2 as
-part of a development project the following configure options are important:
+
+There are many features built into MPICH2.  If you are exploring MPICH2 as part
+of a development project the following configure options are important:
 
 Performance Options:
  --enable-fast - Turns off error checking and collection of internal 

@@ -41,7 +41,7 @@ PACKAGE = mpich2
 # Version < 1 is pre MPI-1 release.
 # Version >= 2 contains MPI-2
 # Version between 1 and 2 contains all of MPI1 and parts of MPI-2
-VERSION = 0.92
+VERSION = 0.93
 dist:
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi
 #	if [ ! -d tmpdir/${PACKAGE}-${VERSION} ] ; then mkdir tmpdir/${PACKAGE}-${VERSION} ; fi
