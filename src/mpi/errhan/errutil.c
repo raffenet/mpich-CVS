@@ -386,6 +386,207 @@ int MPIR_Err_is_fatal(int errcode)
     return (errcode & ERROR_FATAL_MASK) ? TRUE : FALSE;
 }
 
+#if 0
+char * simplify_fmt_string(const char *str)
+{
+    char *result;
+    char *p;
+
+    result = MPIU_Strdup(str);
+
+    /* communicator */
+    p = strstr(result, "%C");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%C");
+    }
+
+    /* info */
+    p = strstr(result, "%I");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%I");
+    }
+
+    /* datatype */
+    p = strstr(result, "%D");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%D");
+    }
+
+    /* file */
+    p = strstr(result, "%F");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%F");
+    }
+
+    /* window */
+    p = strstr(result, "%W");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%W");
+    }
+
+    /* group */
+    p = strstr(result, "%G");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%G");
+    }
+
+    /* op */
+    p = strstr(result, "%O");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%O");
+    }
+
+    /* request */
+    p = strstr(result, "%R");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%R");
+    }
+
+    /* errhandler */
+    p = strstr(result, "%E");
+    while (p)
+    {
+	p++;
+	*p = 'd';
+	p = strstr(p, "%E");
+    }
+
+    return result;
+}
+#endif
+
+int vsnprintf_ex(char *str, size_t maxlen, const char *fmt_orig, va_list list)
+{
+    char *begin, *end, *fmt;
+    size_t len;
+    MPI_Comm C;
+    MPI_Info I;
+    MPI_Datatype D;
+    /*MPI_File F;*/
+    MPI_Win W;
+    MPI_Group G;
+    MPI_Op O;
+    MPI_Request R;
+    MPI_Errhandler E;
+    char *s;
+    int d;
+    void *p;
+
+    fmt = MPIU_Strdup(fmt_orig);
+
+    begin = fmt;
+    end = strchr(fmt, '%');
+    while (end)
+    {
+	len = min(maxlen, (size_t)(end - begin));
+	if (len)
+	{
+	    memcpy(str, begin, len);
+	    str += len;
+	    maxlen -= len;
+	}
+	end++;
+	begin = end+1;
+	switch ((int)(*end))
+	{
+	case (int)'s':
+	    s = va_arg(list, char *);
+	    MPIU_Strncpy(str, s, maxlen);
+	    break;
+	case (int)'d':
+	    d = va_arg(list, int);
+	    MPIU_Snprintf(str, maxlen, "%d", d);
+	    break;
+	case (int)'p':
+	    p = va_arg(list, void *);
+	    MPIU_Snprintf(str, maxlen, "%p", p);
+	    break;
+	case (int)'C':
+	    C = va_arg(list, MPI_Comm);
+	    if (C == MPI_COMM_WORLD)
+	    {
+		MPIU_Strncpy(str, "MPI_COMM_WORLD", sizeof("MPI_COMM_WORLD"));
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "%d", C);
+	    }
+	    break;
+	case (int)'I':
+	    I = va_arg(list, MPI_Info);
+	    MPIU_Snprintf(str, maxlen, "%d", I);
+	    break;
+	case (int)'D':
+	    D = va_arg(list, MPI_Datatype);
+	    MPIU_Snprintf(str, maxlen, "%d", D);
+	    break;
+#if 0
+	case (int)'F':
+	    F = va_arg(list, MPI_File);
+	    MPIU_Snprintf(str, maxlen, "%d", F);
+	    break;
+#endif
+	case (int)'W':
+	    W = va_arg(list, MPI_Win);
+	    MPIU_Snprintf(str, maxlen, "%d", W);
+	    break;
+	case (int)'G':
+	    G = va_arg(list, MPI_Group);
+	    MPIU_Snprintf(str, maxlen, "%d", G);
+	    break;
+	case (int)'O':
+	    O = va_arg(list, MPI_Op);
+	    MPIU_Snprintf(str, maxlen, "%d", O);
+	    break;
+	case (int)'R':
+	    R = va_arg(list, MPI_Request);
+	    MPIU_Snprintf(str, maxlen, "%d", R);
+	    break;
+	case (int)'E':
+	    E = va_arg(list, MPI_Errhandler);
+	    MPIU_Snprintf(str, maxlen, "%d", E);
+	    break;
+	default:
+	    /* Error: unhandled output type */
+	    return 0;
+	    break;
+	}
+	len = strlen(str);
+	maxlen -= len;
+	str += len;
+	end = strchr(begin, '%');
+    }
+    if (*begin != '\0')
+    {
+	MPIU_Strncpy(str, begin, maxlen);
+    }
+    return 0;
+}
+
 int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line, int error_class, const char generic_msg[],
 			  const char specific_msg[], ... )
 {
@@ -458,6 +659,9 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 		    specific_fmt = specific_msg;
 		}
 
+		vsnprintf_ex( ring_msg, MPI_MAX_ERROR_STRING, specific_fmt, Argp );
+#if 0
+		specific_fmt = simplify_fmt_string(specific_fmt);
 #               ifdef HAVE_VSNPRINTF
 		{
 		    vsnprintf( ring_msg, MPI_MAX_ERROR_STRING, specific_fmt, Argp );
@@ -479,6 +683,8 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 		    }
 		}
 #               endif
+		MPIU_Free(specific_fmt);
+#endif
 	    }
 	    else if (generic_idx >= 0)
 	    {
