@@ -91,12 +91,22 @@ int MPIR_ROMIO_Set_file_errhand( MPI_File file_ptr, MPI_Errhandler e )
 }
 int MPIR_ROMIO_Get_file_errhand( MPI_File file_ptr, MPI_Errhandler *e )
 {
-    if (file_ptr == MPI_FILE_NULL) *e = ADIOI_DFLT_ERR_HANDLER;
+    if (file_ptr == MPI_FILE_NULL) {
+	if (ADIOI_DFLT_ERR_HANDLER == MPI_ERRORS_RETURN)
+	    *e = 0;
+	else {
+	    *e = ADIOI_DFLT_ERR_HANDLER;
+	}
+    }
     else if (file_ptr->cookie != ADIOI_FILE_COOKIE) {
 	return MPI_ERR_FILE;
     }
-    else 
-	*e = file_ptr->err_handler;
+    else {
+	if (file_ptr->err_handler == MPI_ERRORS_RETURN) 
+	    *e = 0;
+	else
+	    *e = file_ptr->err_handler;
+    }
     return 0;
 }
 

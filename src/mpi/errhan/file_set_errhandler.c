@@ -72,6 +72,12 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 
 	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
 		MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+		/* Also check for a valid errhandler kind */
+		if (!mpi_errno) {
+		    if (errhan_ptr->kind != MPID_FILE) {
+			mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**errhandnotfile", 0 );
+		    }
+		}
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
@@ -90,6 +96,9 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
 #ifdef USE_ROMIO_FILE
 	MPIR_ROMIO_Get_file_errhand( file, &old_errhandler );
+	if (!old_errhandler) {
+	    MPID_Errhandler_get_ptr( MPI_ERRORS_RETURN, old_errhandler );
+	}
 #else
 	old_errhandler = file_ptr->errhandler;
 #endif

@@ -199,6 +199,8 @@ Fortran integer (value is %ld)
 **errhandlernull:Null errhandler 
 **errhandlerperm:Cannot free permanent error handler
 **errhandlerperm %s:Cannot free permanent error handler %s
+**errhandnotfile:Error handler is not a file error handler
+**errhandnotwin:Error handler is not a win error handler
 **statusignore:Invalid use of MPI_STATUS_IGNORE or MPI_STATUSES_IGNORE
 **argarray:Invalid value in array
 **argarray %s %d %d:Invalid value in %s[%d] = %d

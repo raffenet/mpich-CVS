@@ -85,6 +85,9 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
  {
      MPID_Errhandler *e;
      MPIR_ROMIO_Get_file_errhand( file, (MPI_Errhandler *)&e );
+     if (!e) {
+	 MPID_Errhandler_get_ptr( MPI_ERRORS_RETURN, e );
+     }
      MPIU_Object_add_ref( e );
      *errhandler = e->handle;
  }
