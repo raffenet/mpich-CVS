@@ -5,18 +5,28 @@
 #ifndef _MPE_LOG_H_
 #define _MPE_LOG_H_
 
+/*
+  Constants, MPE_Log_XXX, are for backward compatibility reasons.
+  MPE is currently returning MPE_LOG_XXX status.
+*/
 /* function return values */
-#define MPE_Log_OK         0
+#define MPE_LOG_OK                0
+#define MPE_Log_OK                MPE_LOG_OK
   /* no problems */
-#define MPE_Log_LOCKED_OUT 1
+#define MPE_LOG_LOCKED_OUT        1
+#define MPE_Log_LOCKED_OUT        MPE_LOG_LOCKED_OUT
   /* logs are are being worked on, cannot insert any new entries */
-#define MPE_Log_NO_MEMORY  2
+#define MPE_LOG_NO_MEMORY         2
+#define MPE_Log_NO_MEMORY         MPE_LOG_NO_MEMORY
   /* could not allocate memory for logging data */
-#define MPE_Log_FILE_PROB  3
+#define MPE_LOG_FILE_PROB         3
+#define MPE_Log_FILE_PROB         MPE_LOG_FILE_PROB
   /* cound not open file for writing out the logged info */
-#define MPE_Log_NOT_INITIALIZED 4
+#define MPE_LOG_NOT_INITIALIZED   4
+#define MPE_Log_NOT_INITIALIZED   MPE_LOG_NOT_INITIALIZED
   /* logging not initialized */
-#define MPE_Log_PACK_FAIL  5
+#define MPE_LOG_PACK_FAIL         5
+#define MPE_Log_PACK_FAIL         MPE_LOG_PACK_FAIL
 
 
 int MPE_Init_log( void );
@@ -28,6 +38,11 @@ int MPE_Describe_info_state( int start_etype, int final_etype,
                              const char *name, const char *color,
                              const char *format );
   /* create state with byte info data description lines */
+
+int MPE_Describe_known_state( int stateID, int start_etype, int final_etype,
+                              const char *name, const char *color,
+                              const char *format );
+  /* Internal MPE routine for MPI logging */
 
 int MPE_Describe_state( int start_etype, int final_etype,
                         const char *name, const char *color );
@@ -41,7 +56,13 @@ int MPE_Describe_event( int event, const char *name, const char *color );
   /* create event description lines */
 
 int MPE_Log_get_event_number( void );
-  /* Get a new event number */
+  /* Get a new user-space event number */
+
+  /* Internal MPE routine for MPI logging */
+int MPE_Log_get_known_eventID( void );
+  /* Get a new event number for MPE Logging system */
+int MPE_Log_get_known_stateID( void );
+  /* Get a new state number for MPE Logging system */
 
 int MPE_Start_log( void );
   /* set timer to 0 */

@@ -33,14 +33,8 @@
 #include "mpiprof.h"
 #endif
 
-/* temporarily borrowed from mpe_log_genproc.h */ /* try to replace by CLOG */
 int    MPE_Log_hasBeenInit = 0;
 int    MPE_Log_hasBeenClosed = 0;
-int    MPE_Log_clockIsRunning = 0;
-int    MPE_Log_isLockedOut = 0;
-int    MPE_Log_AdjustedTimes = 0;
-#define MPE_HAS_PROCID
-int    MPE_Log_procid;
 /* end of borrowing */
 
 CLOG_Stream_t *clog_stream;
@@ -61,7 +55,7 @@ CLOG_Buffer_t *clog_buffer;
     mpicc -mpe=log
 
     Returns:
-    Always return MPE_Log_OK.
+    Always return MPE_LOG_OK.
 
 .seealso: MPE_Finish_log
 @*/
@@ -74,8 +68,7 @@ int MPE_Init_log( void )
 #if !defined( CLOG_NOMPI )
         CLOG_Buffer_save_commevt( clog_buffer, CLOG_COMM_INIT,
                                   CLOG_COMM_NULL, (int) MPI_COMM_WORLD );
-        PMPI_Comm_rank( MPI_COMM_WORLD, &MPE_Log_procid ); /* get process ID */
-        if ( MPE_Log_procid == 0 ) {
+        if ( clog_buffer->local_mpi_rank == 0 ) {
             CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
                                        MPI_PROC_NULL, "MPI_PROC_NULL" );
             CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
@@ -86,9 +79,8 @@ int MPE_Init_log( void )
 #endif
         MPE_Log_hasBeenInit = 1;        /* set MPE_Log as being initialized */
         MPE_Log_hasBeenClosed = 0;
-        MPE_Log_isLockedOut = 0;
     }
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -97,10 +89,9 @@ int MPE_Init_log( void )
 int MPE_Start_log( void )
 {
     if (!MPE_Log_hasBeenInit)
-        return MPE_Log_NOT_INITIALIZED;
+        return MPE_LOG_NOT_INITIALIZED;
     clog_buffer->status = CLOG_INIT_AND_ON;
-    MPE_Log_isLockedOut = 0;
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -109,10 +100,9 @@ int MPE_Start_log( void )
 int MPE_Stop_log( void )
 {
     if (!MPE_Log_hasBeenInit)
-        return MPE_Log_NOT_INITIALIZED;
-    MPE_Log_isLockedOut = 1;
+        return MPE_LOG_NOT_INITIALIZED;
     clog_buffer->status = CLOG_INIT_AND_OFF;
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -188,14 +178,46 @@ int MPE_Describe_info_state( int start_etype, int final_etype,
     int stateID;
 
     if (!MPE_Log_hasBeenInit)
-        return MPE_Log_NOT_INITIALIZED;
+        return MPE_LOG_NOT_INITIALIZED;
 
-    stateID = CLOG_Get_new_stateID( clog_stream );
+    stateID = CLOG_Get_user_stateID( clog_stream );
     CLOG_Buffer_save_statedef( clog_buffer, stateID,
                                start_etype, final_etype,
                                color, name, format );
 
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
+}
+
+/*
+    This is an MPE internal function to describe MPI states.
+    It is not meant for user application.
+    stateID should be fetched from CLOG_Get_known_stateID()
+    i.e, MPE_Log_get_known_stateID()
+*/
+int MPE_Describe_known_state( int stateID, int start_etype, int final_etype,
+                              const char *name, const char *color,
+                              const char *format )
+{
+    if (!MPE_Log_hasBeenInit)
+        return MPE_LOG_NOT_INITIALIZED;
+
+    if ( CLOG_Check_known_stateID( clog_stream, stateID ) != CLOG_BOOL_TRUE ) {
+        fprintf( stderr, __FILE__":MPE_Describe_known_state() - \n"
+                         "\t""The input stateID, %d, for state %s "
+                         "is out of known range [%d..%d].\n"
+                         "\t""Use user-space stateID instead.\n",
+                         stateID, name, CLOG_KNOWN_STATEID_START,
+                         CLOG_USER_STATEID_START-1 );
+        fflush( stderr );
+        stateID = CLOG_Get_user_stateID( clog_stream );
+    }
+
+    CLOG_Buffer_save_statedef( clog_buffer, stateID,
+                               start_etype, final_etype,
+                               color, name, format );
+
+    return MPE_LOG_OK;
+
 }
 
 /*@
@@ -258,11 +280,11 @@ int MPE_Describe_info_event( int event, const char *name, const char *color,
                              const char *format )
 {
     if (!MPE_Log_hasBeenInit)
-        return MPE_Log_NOT_INITIALIZED;
+        return MPE_LOG_NOT_INITIALIZED;
 
     CLOG_Buffer_save_eventdef( clog_buffer, event, color, name, format );
 
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -304,7 +326,25 @@ int MPE_Describe_event( int event, const char *name, const char *color )
 @*/
 int MPE_Log_get_event_number( void )
 {
-    return CLOG_Get_new_eventID( clog_stream );
+    return CLOG_Get_user_eventID( clog_stream );
+}
+
+/*
+    This is an MPE internal function in defining MPE_state[] evtID components.
+    It is not meant for user application.
+*/
+int MPE_Log_get_known_eventID( void )
+{
+    return CLOG_Get_known_eventID( clog_stream );
+}
+
+/*
+    This is an MPE internal function in defining MPE_state[] stateID component.
+    It is not meant for user application.
+*/
+int MPE_Log_get_known_stateID( void )
+{
+    return CLOG_Get_known_stateID( clog_stream );
 }
 
 /*@
@@ -323,7 +363,7 @@ int MPE_Log_send( int other_party, int tag, int size )
 #endif
         CLOG_Buffer_save_msgevt( clog_buffer, CLOG_EVT_SENDMSG,
                                  tag, other_party, 0, size );
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -341,7 +381,7 @@ int MPE_Log_receive( int other_party, int tag, int size )
 #endif
         CLOG_Buffer_save_msgevt( clog_buffer, CLOG_EVT_RECVMSG,
                                  tag, other_party, 0, size );
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -390,7 +430,7 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
                 vptr = (void *)( (char *) vptr + sizeof( short ) );
                 memcpy( vptr, data, count );
                 *position += tot_sz;
-                return MPE_Log_OK;
+                return MPE_LOG_OK;
             }
             break;
         case 'h':  /* INT2 */
@@ -401,7 +441,7 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
                 CLOG_Util_swap_bytes( vptr, 2 , count );
 #endif
                 *position += tot_sz;
-                return MPE_Log_OK;
+                return MPE_LOG_OK;
             }
             break;
         case 'd': /* INT4 */
@@ -414,7 +454,7 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
                 CLOG_Util_swap_bytes( vptr, 4, count );
 #endif
                 *position += tot_sz;
-                return MPE_Log_OK;
+                return MPE_LOG_OK;
             }
             break;
         case 'l': /* INT8 */
@@ -427,14 +467,14 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
                 CLOG_Util_swap_bytes( vptr, 8, count );
 #endif
                 *position += tot_sz;
-                return MPE_Log_OK;
+                return MPE_LOG_OK;
             }
             break;
         default:
             fprintf( stderr, "MPE_Log_pack(): Unknown tokentype %c\n",
                              tokentype );
     }
-    return MPE_Log_PACK_FAIL;
+    return MPE_LOG_PACK_FAIL;
 }
 
 /*@
@@ -449,7 +489,7 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
               an zero-length string, i.e. "", is equivalent to NULL in C.
 
     Returns:
-    alway returns MPE_Log_OK
+    alway returns MPE_LOG_OK
 @*/
 int MPE_Log_event( int event, int data, const char *bytebuf )
 {
@@ -457,7 +497,7 @@ int MPE_Log_event( int event, int data, const char *bytebuf )
         CLOG_Buffer_save_cargoevt( clog_buffer, event, bytebuf );
     else
         CLOG_Buffer_save_bareevt( clog_buffer, event );
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -467,12 +507,12 @@ int MPE_Log_event( int event, int data, const char *bytebuf )
 .   event   - event number
 
     Returns:
-    alway returns MPE_Log_OK
+    alway returns MPE_LOG_OK
 @*/
 int MPE_Log_bare_event( int event )
 {
     CLOG_Buffer_save_bareevt( clog_buffer, event );
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -484,12 +524,12 @@ int MPE_Log_bare_event( int event )
               use MPE_Log_bare_event() instead.
 
     Returns:
-    alway returns MPE_Log_OK
+    alway returns MPE_LOG_OK
 @*/
 int MPE_Log_info_event( int event, const char *bytebuf )
 {
     CLOG_Buffer_save_cargoevt( clog_buffer, event, bytebuf );
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 /*@
@@ -498,7 +538,7 @@ int MPE_Log_info_event( int event, const char *bytebuf )
                           longer version of MPI_Comm_barrier( MPI_COMM_WORLD );
 
     Returns:
-    alway returns MPE_Log_OK
+    alway returns MPE_LOG_OK
 @*/
 int MPE_Log_sync_clocks( void )
 {
@@ -511,7 +551,7 @@ int MPE_Log_sync_clocks( void )
         CLOG_Buffer_set_timeshift( clog_buffer, local_timediff,
                                    CLOG_BOOL_TRUE );
     }
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }
 
 
@@ -551,5 +591,5 @@ int MPE_Finish_log( char *filename )
         MPE_Log_hasBeenClosed = 1;
         MPE_Stop_log();
     }
-    return MPE_Log_OK;
+    return MPE_LOG_OK;
 }

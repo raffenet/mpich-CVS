@@ -6,12 +6,12 @@ C
 C
 C  MPE Logging Return Codes
 C
-      integer MPE_Log_OK, MPE_Log_LOCKED_OUT,
-     &        MPE_Log_NO_MEMORY, MPE_Log_FILE_PROB,
-     &        MPE_Log_NOT_INITIALIZED, MPE_Log_PACK_FAIL
-      parameter ( MPE_Log_OK = 0, MPE_Log_LOCKED_OUT = 1,
-     &            MPE_Log_NO_MEMORY = 2,  MPE_Log_FILE_PROB = 3,
-     &            MPE_Log_NOT_INITIALIZED = 4, MPE_Log_PACK_FAIL = 5 )
+      integer MPE_LOG_OK, MPE_LOG_LOCKED_OUT,
+     &        MPE_LOG_NO_MEMORY, MPE_LOG_FILE_PROB,
+     &        MPE_LOG_NOT_INITIALIZED, MPE_LOG_PACK_FAIL
+      parameter ( MPE_LOG_OK = 0, MPE_LOG_LOCKED_OUT = 1,
+     &            MPE_LOG_NO_MEMORY = 2,  MPE_LOG_FILE_PROB = 3,
+     &            MPE_LOG_NOT_INITIALIZED = 4, MPE_LOG_PACK_FAIL = 5 )
 C
 C  MPE Logging Function Prototypes
 C
