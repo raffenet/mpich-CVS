@@ -16,7 +16,6 @@ int main( int argc, char *argv[] )
     int rank, size, source, dest;
     int minsize = 2, count; 
     MPI_Comm      comm;
-    MPI_Status    status;
     MPI_Win       win;
     MPI_Aint      extent;
     MTestDatatype sendtype, recvtype;
@@ -42,13 +41,13 @@ int main( int argc, char *argv[] )
 		sendtype.InitBuf( &sendtype );
 
 		MPI_Type_extent( sendtype.datatype, &extent );
-		MPI_Win_create( sendtypee.buf, sendtype.count * extent, 
+		MPI_Win_create( sendtype.buf, sendtype.count * extent, 
 				extent, MPI_INFO_NULL, comm, &win );
-
+		MPI_Win_fence( 0, win );
 		if (rank == source) {
 		    /* The source does not need to do anything besides the
 		       fence */
-		    MPI_Win_fence( 0, win )
+		    MPI_Win_fence( 0, win );
 		}
 		else if (rank == dest) {
 		    /* This should have the same effect, in terms of
@@ -65,6 +64,9 @@ int main( int argc, char *argv[] )
 		    if (err) {
 			errs += errs;
 		    }
+		}
+		else {
+		    MPI_Win_fence( 0, win );
 		}
 		MTestFreeDatatype( &recvtype );
 		MTestFreeDatatype( &sendtype );

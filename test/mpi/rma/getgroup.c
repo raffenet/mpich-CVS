@@ -14,6 +14,8 @@ int main( int argc, char *argv[] )
 {
     int errs = 0, err;
     int result;
+    int buf[10];
+    MPI_Win   win;
     MPI_Group group, wingroup;
     int minsize = 2;
     MPI_Comm      comm;
@@ -30,7 +32,7 @@ int main( int argc, char *argv[] )
 	MPI_Win_create( buf, sizeof(int) * 10, sizeof(int), 
 			MPI_INFO_NULL, comm, &win );
 	MPI_Win_get_group( win, &wingroup );
-	MPI_Comm_Group( comm, &group );
+	MPI_Comm_group( comm, &group );
 	MPI_Group_compare( group, wingroup, &result );
 	if (result != MPI_IDENT) {
 	    errs++;
@@ -39,7 +41,6 @@ int main( int argc, char *argv[] )
 	MPI_Group_free( &wingroup );
 	MPI_Group_free( &group );
 	MPI_Win_free( &win );
-	}
     }
 
     MTest_Finalize( errs );

@@ -6,15 +6,16 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "Test MPI_Accumulate with fence";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int rank, size, source, dest;
-    int minsize = 2, count; 
+    int minsize = 2, count, i; 
     MPI_Comm      comm;
     MPI_Win       win;
     MPI_Datatype  datatype;
@@ -43,17 +44,18 @@ int main( int argc, char *argv[] )
 	    for (i=0; i<count; i++) sbuf[i] = rank + i * count;
 	    MPI_Win_create( winbuf, count * sizeof(int), sizeof(int),
 			    MPI_INFO_NULL, comm, &win );
-	    MPI_Win_accumulate( sbuf, count, MPI_INT, 0, 0, count, MPI_INT,
+	    MPI_Win_fence( 0, win );
+	    MPI_Accumulate( sbuf, count, MPI_INT, source, 0, count, MPI_INT,
 				MPI_SUM, win );
 	    MPI_Win_fence( 0, win );
 	    if (rank == source) {
 		/* Check the results */
 		for (i=0; i<count; i++) {
-		    int result = i * count * size + (rank*(rank+1))/2;
+		    int result = i * count * size + (size*(size-1))/2;
 		    if (winbuf[i] != result) {
 			if (errs < 10) {
-			    fprintf( stderr, "Winbuf[%d] = %d, expected %d\n",
-				     i, winbuf[i], result );
+			    fprintf( stderr, "Winbuf[%d] = %d, expected %d (count = %d, size = %d)\n",
+				     i, winbuf[i], result, count, size );
 			}
 			errs++;
 		    }

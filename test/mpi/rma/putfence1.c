@@ -43,7 +43,7 @@ int main( int argc, char *argv[] )
 		MPI_Type_extent( recvtype.datatype, &extent );
 		MPI_Win_create( recvtype.buf, recvtype.count * extent, 
 				extent, MPI_INFO_NULL, comm, &win );
-
+		MPI_Win_fence( 0, win );
 		if (rank == source) {
 		    sendtype.InitBuf( &sendtype );
 		    
@@ -54,7 +54,7 @@ int main( int argc, char *argv[] )
 			errs++;
 			MTestPrintError( err );
 		    }
-		    MPI_Win_fence( 0, win )
+		    MPI_Win_fence( 0, win );
 		    MTestFreeDatatype( &sendtype );
 		}
 		else if (rank == dest) {
@@ -65,6 +65,9 @@ int main( int argc, char *argv[] )
 		    if (err) {
 			errs += errs;
 		    }
+		}
+		else {
+		    MPI_Win_fence( 0, win );
 		}
 		MTestFreeDatatype( &recvtype );
 		MPI_Win_free( &win );
