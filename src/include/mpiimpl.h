@@ -104,6 +104,8 @@ typedef enum MPIU_dbg_state_t
 }
 MPIU_dbg_state_t;
 int MPIU_dbg_printf(char *str, ...);
+int MPIU_dbglog_printf(char *str, ...);
+int MPIU_dbglog_vprintf(char *str, va_list ap);
 #if defined(MPICH_DBG_OUTPUT)
 extern MPIU_dbg_state_t MPIUI_dbg_state;
 #define MPIU_DBG_PRINTF(e)			\

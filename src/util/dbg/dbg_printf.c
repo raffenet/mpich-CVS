@@ -81,7 +81,7 @@ static void dbg_init(void)
     }
 }
 
-int MPIU_dbg_printf(char *str, ...)
+int MPIU_dbglog_printf(char *str, ...)
 {
     int n = 0;
     va_list list;
@@ -93,6 +93,8 @@ int MPIU_dbg_printf(char *str, ...)
 
     if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
+	/* FIXME: put everything on one line until a \n is found */
+	
 	dbg_memlog[dbg_memlog_next][0] = '\0';
 	va_start(list, str);
 	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size,
@@ -123,14 +125,77 @@ int MPIU_dbg_printf(char *str, ...)
 
     if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
     {
-	printf("[%d]", MPIR_Process.comm_world->rank);
 	va_start(list, str);
 	n = vprintf(str, list);
 	va_end(list);
-    
-	fflush(stdout);
     }
 
+    return n;
+}
+
+int MPIU_dbglog_vprintf(char *str, va_list ap)
+{
+    int n = 0;
+    va_list list;
+
+    if (MPIUI_dbg_state == MPIU_DBG_STATE_UNINIT)
+    {
+	dbg_init();
+    }
+
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
+    {
+	list = ap;
+	dbg_memlog[dbg_memlog_next][0] = '\0';
+	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size,
+		      str, list);
+
+	/* if the output was truncated, we null terminate the end of the
+	   string, on the off chance that vsnprintf() didn't do that.  we also
+	   check to see if any data has been written over the null we set at
+	   the beginning of the string.  this is mostly paranoia, but the man
+	   page does not clearly state what happens when truncation occurs.  if
+	   data was written to the string, we would like to output it, but we
+	   want to avoid reading past the end of the array or outputing garbage
+	   data. */
+
+	if (n < 0 || n >= dbg_memlog_line_size)
+	{
+	    dbg_memlog[dbg_memlog_next][dbg_memlog_line_size - 1] = '\0';
+	    n = strlen(dbg_memlog[dbg_memlog_next]);
+	}
+
+	if (dbg_memlog[dbg_memlog_next][0] != '\0')
+	{
+	    dbg_memlog_next = (dbg_memlog_next + 1) % dbg_memlog_num_lines;
+	    dbg_memlog_count++;
+	}
+    }
+
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
+    {
+	list = ap;
+	n = vprintf(str, list);
+    }
+
+    return n;
+}
+
+int MPIU_dbg_printf(char * str, ...)
+{
+    int n;
+    va_list list;
+
+    MPIU_dbglog_printf("[%d]", MPIR_Process.comm_world->rank);
+    va_start(list, str);
+    n = MPIU_dbglog_vprintf(str, list);
+    va_end(list);
+
+    if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
+    {
+	fflush(stdout);
+    }
+    
     return n;
 }
 

@@ -301,29 +301,36 @@ void MPIDI_dbg_printf(int, char *, char *, ...);
 void MPIDI_err_printf(char *, char *, ...);
 
 #if defined(MPICH_DBG_OUTPUT)
-#define MPIDI_DBG_PRINTF(_e) MPIDI_dbg_printf _e
-#define MPIDI_dbg_printf(level, func, fmt, args...)							\
-{													\
-    MPIU_DBG_PRINTF(("%d (%d) %s(): " fmt "\n", MPIR_Process.comm_world->rank, level, func, ## args));	\
+#define MPIDI_DBG_PRINTF(_e)				\
+{                                               	\
+    if (MPIUI_dbg_state != MPIU_DBG_STATE_NONE)		\
+    {							\
+	MPIDI_dbg_printf _e;				\
+    }							\
 }
 #else
 #define MPIDI_DBG_PRINTF(e)
-#define MPIDI_dbg_printf(level, func, fmt, args)
 #endif
 
 #define MPIDI_ERR_PRINTF(e) MPIDI_err_printf e
-#define MPIDI_err_printf(func, fmt, args...)						\
-{											\
-    printf("%d ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
-    fflush(stdout);									\
+
+#if defined(HAVE_CPP_VARARGS)
+#define MPIDI_dbg_printf(level, func, fmt, args...)						\
+{												\
+    MPIU_dbglog_printf("[%d] %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
 }
+#define MPIDI_err_printf(func, fmt, args...)							\
+{												\
+    printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
+    fflush(stdout);										\
+}
+#endif
 
 #define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
 #define MPIDI_QUOTE2(A) #A
 
 /* Prototypes for internal device routines */
 int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int, int, MPID_Request **);
-int MPIDI_Irecv_self(void *, int, MPI_Datatype, int, int, MPID_Comm *, int, MPID_Request **);
 
 
 /* Prototypes for collective operations supplied by the device (or channel) */

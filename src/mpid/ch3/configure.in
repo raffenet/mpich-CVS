@@ -52,6 +52,17 @@ AC_CHECK_HEADERS(				\
 
 AC_CHECK_FUNCS(gethostname)
 
+AC_TRY_COMPILE([
+#include <stdio.h>
+#define MY_PRINTF(rank, fmt, args...)  printf("%d: " fmt, rank, ## args)
+],[
+MY_PRINTF(0, "hello");
+MY_PRINTF(1, "world %d", 3);
+], pac_cv_have_cpp_varargs=yes, pac_cv_have_cpp_varargs=no)
+if test $pac_cv_have_cpp_varargs = "yes" ; then
+    AC_DEFINE(HAVE_CPP_VARARGS,,[Define if CPP supports macros with a variable number arguments])
+fi
+
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
