@@ -2359,6 +2359,31 @@ End Function
 
 GenerateMPICC()
 
+Function ReplaceBetweenTags(str, tag1, find_str, tag2, replace_str)
+	Dim index, left_str, right_str, start_index, end_index
+	index = InStr(str, find_str)
+	If index = 0 Then
+		'MsgBox find_str & " not found in: " & str
+		ReplaceBetweenTags = str
+		Exit Function
+	End If
+	left_str = Left(str, index)
+	right_str = Right(str, Len(str) - index)
+	start_index = InStrRev(left_str, tag1)
+	If start_index = 0 Then
+		'MsgBox tag1 & " not found in: " & left_str
+		ReplaceBetweenTags = str
+		Exit Function
+	End If
+	end_index = index + InStr(right_str, tag2)
+	If end_index = 0 Then
+		'MsgBox tag2 & " not found in: " & right_str
+		ReplaceBetweenTags = str
+		Exit Function
+	End If
+	ReplaceBetweenTags = Left(str, start_index-1) & replace_str & Right(str, Len(str) - end_index - Len(tag2) + 1)
+End Function
+
 If bRemoveFortran Then
 	'Dim regEx, Match, Matches
 	Set regEx = New RegExp
@@ -2379,6 +2404,20 @@ If bRemoveFortran Then
 	regEx.Pattern = "(.*MPIR_Keyval_set_fortran)"
 	contents = regEx.Replace(contents, ";$1")
 	regEx.Pattern = "(.*MPIR_Grequest_set_lang_f77)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*MPIR_F_MPI_BOTTOM)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*MPI_F_STATUS_IGNORE)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*MPI_F_STATUSES_IGNORE)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*MPI_F_ERRCODES_IGNORE)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*MPI_F_ARGVS_NULL)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*[P]?MPI_Status_c2f)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*[P]?MPI_Status_f2c)"
 	contents = regEx.Replace(contents, ";$1")
 	Set fout = f.CreateTextFile( "mpich2.def" )
 	fout.Write(contents)
@@ -2438,6 +2477,15 @@ If bRemoveFortran Then
 	contents = Replace(contents, ",HAVE_FORTRAN_BINDING", "")
 	contents = Replace(contents, "mpich2ffd.lib", "")
 	contents = Replace(contents, "mpich2ff.lib", "")
+	'regEx.Pattern = ".*<File.*\s*.*c2f\.c\s*.*</File>.*[\r\n]*"
+	'contents = regEx.Replace(contents, "")
+	'regEx.Pattern = ".*<File.*\s*.*f2c\.c\s*.*</File>.*[\r\n]*"
+	'contents = regEx.Replace(contents, "")
+	'regEx.Pattern = ".*<File.*\s*.*setbot\.c.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*</File>.*[\r\n]+"
+	'contents = regEx.Replace(contents, "")
+	contents = ReplaceBetweenTags(contents, "<File", "statusc2f.c", "</File>", "")
+	contents = ReplaceBetweenTags(contents, "<File", "statusf2c.c", "</File>", "")
+	contents = ReplaceBetweenTags(contents, "<File", "setbot.c", "</File>", "")
 	Set fout = f.CreateTextFile( "mpich2.vcproj" )
 	fout.Write(contents)
 	fout.Close()
@@ -2449,8 +2497,17 @@ If bRemoveFortran Then
 	Set fin = f.OpenTextFile( "mpich2s.vcproj" )
 	contents = fin.ReadAll()
 	fin.Close()
-	contents = Replace(contents, "lib\\mpich2ffd.lib", "")
-	contents = Replace(contents, "lib\\mpich2ff.lib", "")
+	contents = Replace(contents, "lib\mpich2ffd.lib", "")
+	contents = Replace(contents, "lib\mpich2ff.lib", "")
+	'regEx.Pattern = ".*<File.*\s*.*c2f\.c\s*.*</File>.*[\r\n]*"
+	'contents = regEx.Replace(contents, "")
+	'regEx.Pattern = ".*<File.*\s*.*f2c\.c\s*.*</File>.*[\r\n]*"
+	'contents = regEx.Replace(contents, "")
+	'regEx.Pattern = ".*<File.*\s*.*setbot\.c.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*[\r\n]+.*</File>.*[\r\n]+"
+	'contents = regEx.Replace(contents, "")
+	contents = ReplaceBetweenTags(contents, "<File", "statusc2f.c", "</File>", "")
+	contents = ReplaceBetweenTags(contents, "<File", "statusf2c.c", "</File>", "")
+	contents = ReplaceBetweenTags(contents, "<File", "setbot.c", "</File>", "")
 	Set fout = f.CreateTextFile( "mpich2s.vcproj" )
 	fout.Write(contents)
 	fout.Close()
