@@ -1,4 +1,6 @@
-SUBDIRS = . src examples test
+SUBDIRS = . src examples
+# Do not include test in the basic build.
+OTHER_DIRS = test
 DOC_SUBDIRS = doc
 # The all-local target makes sure that when different subsystems are selected
 # for the configure step, the libraries are removed and the object files 
@@ -9,6 +11,8 @@ all-local:
 	if [ ! -d lib ] ; then mkdir lib ; \
 	else \
 	    echo "@subsystems@" > lib/pkglist.new ; \
+	    echo "@CC@" >>lib/pkglist.new ;\
+	    echo "@CONFIGURE_ARGUMENTS@" >>lib/pkglist.new ; \
 	    if diff lib/pkglist lib/pkglist.new >/dev/null 2>&1 ; then \
 	        rm -f lib/pkglist.new ; \
             else \
@@ -31,6 +35,7 @@ distclean-local:
 	-@rm -f src/include/${MPILIBNAME}conf.h
 	-@rm -f src/include/mpio.h
 	-@rm -f bin/mpicc
+	-@cd test && $(MAKE) distclean
 
 PACKAGE = mpich2
 # Version < 1 is pre MPI-1 release.
@@ -92,6 +97,27 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 
+	rm -rf tmpdir
+
+# snap creates a simple snapshot of the currently checked in MPICH2 sources.
+# No documentation is included.
+snap:
+	@echo "Cutting a snapshot of the MPICH2 distribution"
+	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
+	rm -f cvsexp.log 
+	( cd tmpdir && \
+	    cvs -d $(MPICVSHOME) export -D 'now' mpich2all >cvsexp.log 2>&1 )
+	cp -rp ${srcdir}/confdb tmpdir/mpich2
+	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = snap/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
+	mv tmpdir/mpich2 tmpdir/${PACKAGE}-snap
+	(cd tmpdir/${PACKAGE}-snap && maint/updatefiles --without-codecheck )
+	(cd tmpdir/${PACKAGE}-snap/src && cvs -d $(MPICVSHOME) export -D 'now' mpe >>cvsexp.log 2>&1 && \
+	rm -rf mpe/slog_api mpe/viewers mpe/profiling )
+	( cd tmpdir/${PACKAGE}-snap && maint/updatefiles -distrib --without-codecheck )
+	(cd tmpdir/${PACKAGE}-snap/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk >>cvsexp.log 2>&1 )
+	( cd tmpdir/${PACKAGE}-snap/doc && /bin/rm -rf notes )
+	( cd tmpdir && tar cf ${PACKAGE}-snap.tar ${PACKAGE}-snap )
+	mv -f tmpdir/${PACKAGE}-snap.tar ${PACKAGE}-snap-`date "+%Y%m%d"`.tar 
 	rm -rf tmpdir
 
 # Set the document sources and types (empty lists still cause recursion)

@@ -5,6 +5,8 @@ dnl bugs in autoconf caching.
 dnl
 dnl The file name here refers to a file in the source being configured
 AC_INIT(src/include/mpiimpl.h)
+CONFIGURE_ARGUMENTS="$*"
+AC_SUBST(CONFIGURE_ARGUMENTS)
 dnl
 echo "Configuring MPICH2 with $@"
 dnl
