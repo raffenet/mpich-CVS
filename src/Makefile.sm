@@ -1,1 +1,2 @@
-SUBDIRS = mpid mpi util nameserv pmi pm binding env .
+SUBDIRS_mpe_dir = mpe
+SUBDIRS = mpid mpi util nameserv pmi pm binding env @mpe_dir@ .

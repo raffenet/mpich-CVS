@@ -29,6 +29,13 @@
 /* style: allow:fputs:1 sig:0 */
 /* style: allow:printf:2 sig:0 */
 
+#ifdef HAVE_VA_COPY
+#define va_copy_end(a) va_end(a)
+#else
+#define va_copy(a,b) a = b
+#define va_copy_end(a)
+#endif
+
 #if !defined(MPICH_DBG_MEMLOG_NUM_LINES)
 #define MPICH_DBG_MEMLOG_NUM_LINES 1024
 #endif
@@ -164,10 +171,11 @@ int MPIU_dbglog_vprintf(char *str, va_list ap)
 
     if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
-	list = ap;
+	va_copy(list,ap);
 	dbg_memlog[dbg_memlog_next][0] = '\0';
 	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size,
 		      str, list);
+        va_copy_end(list);
 
 	/* if the output was truncated, we null terminate the end of the
 	   string, on the off chance that vsnprintf() didn't do that.  we also
@@ -193,8 +201,9 @@ int MPIU_dbglog_vprintf(char *str, va_list ap)
 
     if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
     {
-	list = ap;
+	va_copy(list,ap);
 	n = vprintf(str, list);
+	va_copy_end(list);
     }
 
     return n;

@@ -570,6 +570,7 @@ if test $with_mpe != no ; then
         fi
     else
         subsystems="$subsystems src/mpe"
+	mpe_dir=mpe
 	# Make sure that MPE knows that we're building from MPICH
         # (similar to ROMIO)
         FROM_MPICH2=yes
@@ -579,6 +580,7 @@ if test $with_mpe != no ; then
         export top_build_dir
     fi
 fi
+AC_SUBST(mpe_dir)
 #
 # The bindings must be the *last* subsystems configured, since they may
 # need to inherit libraries and/or options required by the other subsystems
@@ -1217,6 +1219,23 @@ if test "$ac_cv_func_snprintf" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
 fi
 dnl
+# if we are using stdarg, we may need va_copy .  Test to see if we have it
+# Since it may be a built-in instead of a function, we must try to 
+# compile and link a program that uses it.
+AC_CACHE_CHECK([for va_copy],pac_cv_func_va_copy,[
+AC_TRY_LINK([
+#include <stdarg.h>
+void foo1( char *fmt, ... ) {
+    va_list ap, list;
+    va_start(ap,fmt);
+    va_copy(list,ap);
+    va_end(list);
+    va_end(ap);
+}
+],[foo1("a test %d", 3);],pac_cv_func_va_copy=yes,pac_cv_func_va_copy=no)])
+if test "$pac_cv_func_va_copy" = "yes" ; then
+    AC_DEFINE(HAVE_VA_COPY,1,[Define if we have va_copy])
+fi
 dnl If internationalization selected, try to find the needed functions
 if test "$enable_internat" = "yes" ; then
     AC_CHECK_HEADERS(libintl.h)
