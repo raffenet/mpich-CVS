@@ -1,2 +1,4 @@
+INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
+lib${MPILIBNAME}_a_SOURCES = sock_describe_states.c
 SUBDIRS_sock_name = iocp poll
 SUBDIRS = @sock_name@ .
