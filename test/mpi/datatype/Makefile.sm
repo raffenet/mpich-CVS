@@ -11,6 +11,8 @@ struct-pack_SOURCES = struct-pack.c
 
 triangular-pack_SOURCES = triangular-pack.c
 
+simple-commit_SOURCES = simple-commit.c
+
 slice-pack_SOURCES = slice-pack.c
 
 slice-pack-external_SOURCES = slice-pack-external.c
