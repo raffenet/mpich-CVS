@@ -1080,7 +1080,7 @@ pac_cv_prog_f77_new_char_decl,[
 AC_LANG_SAVE
 AC_LANG_FORTRAN77
 AC_TRY_COMPILE(,[
-character (len=10) s
+       character (len=10) s
 ],pac_cv_prog_f77_new_char_decl="yes",
 pac_cv_prog_f77_new_char_decl="no")
 AC_LANG_RESTORE
