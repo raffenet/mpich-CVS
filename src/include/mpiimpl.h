@@ -643,7 +643,11 @@ typedef struct MPID_Comm {
     int           remote_size;   /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
     MPID_VCRT     vcrt;          /* virtual connecton reference table */
-    MPID_VCR     *vcr;           /* alias to the array of virtual connections in vcrt */
+    MPID_VCR *    vcr;           /* alias to the array of virtual connections
+				    in vcrt */
+    MPID_VCRT     local_vcrt;    /* local virtual connecton reference table */
+    MPID_VCR *    local_vcr;     /* alias to the array of local virtual
+				    connections in local vcrt */
     MPID_Attribute *attributes;    /* List of attributes */
     int           local_size;    /* Value of MPI_Comm_size for local group */
     MPID_Group   *local_group,   /* Groups in communicator. */
