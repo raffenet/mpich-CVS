@@ -49,7 +49,7 @@ int main( int argc, char *argv[] )
 	    for (j=0; j < i; j++) {
 		int k;
 		for (k=0; k < 129; k++) {
-		    buf[j*k] = (char) j;
+		    buf[129*j + k] = (char) j;
 		}
 	    }
 
@@ -64,16 +64,16 @@ int main( int argc, char *argv[] )
 	    for (j=0; j < i; j++) {
 		int k;
 		for (k=0; k < 129; k++) {
-		    if (k < 128 && buf[j*k] != (char) j) {
+		    if (k < 128 && buf[129*j + k] != (char) j) {
 			if (verbose) fprintf(stderr,
 					     "(i=%d, pos=%d) should be %d but is %d\n",
-					     i, j*k, j, (int) buf[j*k]);
+					     i, 129*j + k, j, (int) buf[129*j + k]);
 			errs++;
 		    }
-		    else if (k == 128 && buf[j*k] != (char) 0) {
+		    else if (k == 128 && buf[129*j + k] != (char) 0) {
 			if (verbose) fprintf(stderr,
 					     "(i=%d, pos=%d) should be %d but is %d\n",
-					     i, j*k, 0, (int) buf[j*k]);
+					     i, 129*j + k, 0, (int) buf[129*j + k]);
 			errs++;
 		    }
 		}
@@ -83,15 +83,30 @@ int main( int argc, char *argv[] )
 	MPI_Type_free(&newtype);
     }
 
+    if (rank == 0) {
+	int recv_errs = 0;
+
+	err = MPI_Recv(&recv_errs, 1, MPI_INT, 1, 0, MPI_COMM_WORLD,
+		       MPI_STATUS_IGNORE);
+	if (recv_errs) {
+	    if (verbose) fprintf(stderr, "%d errors reported from receiver\n",
+				 recv_errs);
+	    errs += recv_errs;
+	}
+    }
+    else if (rank == 1) {
+	err = MPI_Send(&errs, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+    }
+	
  fn_exit:
 
     free(buf);
     /* print message and exit */
     if (errs) {
-	fprintf(stderr, "Found %d errors\n", errs);
+	if (rank == 0) fprintf(stderr, "Found %d errors\n", errs);
     }
     else {
-	printf("No errors\n");
+	if (rank == 0) printf("No errors\n");
     }
     MPI_Finalize();
     return 0;
