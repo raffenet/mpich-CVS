@@ -5,11 +5,12 @@ Makefile.in
 Makefile.sm
 configure
 config.*
-autom4ate.cache
+autom4te.cache
 mpi.f90
 mpi_base.f90
 mpi_constants.f90
 mpi_t1.f90
 .deps
+autom4ate.cache
 *.mod
 *.MOD

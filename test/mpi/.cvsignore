@@ -2,4 +2,5 @@ Makefile.in
 Makefile
 config.*
 configure
+autom4te.cache
 .deps
