@@ -14,7 +14,7 @@
 /* Preallocated group objects */
 MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN] = {
     { MPI_GROUP_EMPTY, 1, 0, MPI_UNDEFINED, -1, 0, } };
-MPID_Group MPID_Group_direct[MPID_GROUP_PREALLOC];
+MPID_Group MPID_Group_direct[MPID_GROUP_PREALLOC] = { 0 };
 MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP, 
 				      sizeof(MPID_Group), MPID_Group_direct,
 				       MPID_GROUP_PREALLOC};
@@ -265,6 +265,8 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 	group_ptr->lrank_to_lpid[i].flag = 0;
     }
     for (i=0; i<n; i++) {
+	int act_last;
+
 	first = ranges[i][0]; last = ranges[i][1]; 
 	stride = ranges[i][2];
 	if (first < 0 || first >= size) {
@@ -274,27 +276,35 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 					      i, first, size );
 	    break;
 	}
-	if (last < 0 || last >= size) {
+	if (stride == 0) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+					      "**stridezero", 0 );
+	    break;
+	}
+
+	/* We must compute the actual last value, taking into account
+	   the stride value.  At this point, we know that the stride is
+	   non-zero
+	*/
+	act_last = first + stride * ((last - first) / stride);
+
+	if (last < 0 || act_last >= size) {
+	    /* Use last instead of act_last in the error message since
+	       the last value is the one that the user provided */
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
 					      "**rangeendinvalid", 
 					      "**rangeendinvalid %d %d %d", 
 					      i, last, size );
 	    break;
 	}
-	if (stride != 0) {
-	    if ( (stride > 0 && first > last) ||
-		 (stride < 0 && first < last) ) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-						  "**stride", "**stride %d %d %d", 
-						  first, last, stride );
-		break;
-	    }
-	}
-	else {
+	if ( (stride > 0 && first > last) ||
+	     (stride < 0 && first < last) ) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-					      "**stridezero", 0 );
+					      "**stride", "**stride %d %d %d", 
+					      first, last, stride );
 	    break;
 	}
+
 	/* range is valid.  Mark flags */
 	if (stride > 0) {
 	    for (j=first; j<=last; j+=stride) {
