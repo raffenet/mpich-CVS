@@ -37,6 +37,7 @@ BEGIN_MESSAGE_MAP(Cpman_visView, CView)
 	ON_WM_LBUTTONUP()
 	ON_WM_ERASEBKGND()
 	ON_WM_MOUSEMOVE()
+	ON_WM_RBUTTONUP()
 END_MESSAGE_MAP()
 
 // Cpman_visView construction/destruction
@@ -290,4 +291,19 @@ BOOL Cpman_visView::OnEraseBkgnd(CDC* pDC)
 {
     return TRUE;
     //return CView::OnEraseBkgnd(pDC);
+}
+
+void Cpman_visView::OnRButtonUp(UINT nFlags, CPoint point)
+{
+    if (!g_bDrawing && m_hThread)
+    {
+	CloseHandle(m_hThread);
+	g_xmin = -1;
+	g_xmax = 1;
+	g_ymin = -1;
+	g_ymax = 1;
+	g_bDrawing = true;
+ 	m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
+    }
+    CView::OnRButtonUp(nFlags, point);
 }
