@@ -577,6 +577,24 @@ AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
+# Check on support for long double and long long types.  Do this before the
+# structure alignment test because it will test for including those
+# types as well
+AC_CACHE_CHECK([whether long double is supported],
+pac_cv_have_long_double,[
+AC_TRY_COMPILE(,[long double a;],
+pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
+if test "$pac_cv_have_long_double" = "yes" ; then
+    AC_DEFINE(HAVE_LONG_DOUBLE,,[Define if long double is supported])
+fi
+AC_CACHE_CHECK([whether long long is supported],
+pac_cv_have_long_long,[
+AC_TRY_COMPILE(,[long double a;],
+pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
+if test "$pac_cv_have_long_long" = "yes" ; then
+    AC_DEFINE(HAVE_LONG_LONG_INT,,[Define if long long is supported])
+fi
+# Get default structure alignment
 dnl PAC_C_STRUCT_ALIGNMENT places the default alignment into
 dnl pac_cv_c_struct_align, with possible values including
 dnl packed (byte), largest, two, four, eight.
