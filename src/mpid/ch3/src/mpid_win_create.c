@@ -54,7 +54,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->disp_unit = disp_unit;
     (*win_ptr)->start_group_ptr = NULL; 
     (*win_ptr)->post_group_ptr = NULL; 
-
+    (*win_ptr)->attributes = NULL;
     mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &((*win_ptr)->comm));
 
 #ifdef HAVE_PTHREAD_H
