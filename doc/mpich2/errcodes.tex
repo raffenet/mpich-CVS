@@ -36,6 +36,9 @@ code (see \mpidfunc{MPID_Err_create_code}).
       (optional args: names of two arguments (string))
     \item[\mpidconst{MPIi_ERR_BUFFER_SIZE}]Invalid buffer size (optional arg:
       size (int))
+    \item[\mpidconst{MPIi_ERR_BUFFER_BSEND_SMALL}]Buffer size is smaller than
+      \mpiconst{MPI_BSEND_OVERHEAD} (optional argument: size, value of
+      \code{MPI_BSEND_OVERHEAD} (int)) 
     \end{description}
 \item[\mpiconst{MPI_ERR_COUNT}]Invalid count (optional argument value (int))
     \begin{description}
@@ -52,7 +55,7 @@ code (see \mpidfunc{MPID_Err_create_code}).
     \item[\mpidconst{MPIi_ERR_TYPE_FREE_PERM}]Cannot free permanent data type
       (optional argument: name (string))
     \item[\mpidconst{MPIi_ERR_TYPE_PERM_CONTENTS]}]Cannot get contents of a
-      permanent data type (optional argument: name (string))
+      permanent or basic data type (optional argument: name (string))
     \item[\mpidconst{MPIi_ERR_TYPE_NAME}]Cannot set name in data type
     \end{description}
 \item[\mpiconst{MPI_ERR_TAG}]Invalid tag (optional argument: value (int) )
@@ -65,6 +68,9 @@ code (see \mpidfunc{MPID_Err_create_code}).
     \item[\mpidconst{MPIi_ERR_COMM_INTER}]Intercommunicator is not allowed
     \item[\mpidconst{MPIi_ERR_COMM_INTRA}]Intracommunicator is not allowed
     \item[\mpidconst{MPIi_ERR_COMM_NAME}]Cannot set name in communicator
+    \item[\mpidconst{MPIi_ERR_COMM_PEER}]Peer communicator is not valid
+    \item[\mpidconst{MPIi_ERR_COMM_LOCAL_NULL}]Local communicator must not be
+      \mpiconst{MPI_COMM_NULL}
     \end{description}
 \item[\mpiconst{MPI_ERR_RANK}]Invalid rank (optional argument: value (int))
     \begin{description}
@@ -72,6 +78,10 @@ code (see \mpidfunc{MPID_Err_create_code}).
       arguments: index, value, size-1 (int))
     \item[\mpidconst{MPIi_ERR_RANK_DUP}]Duplicate ranks in rank array
       (optional arguments: index, value, other index (int))
+    \item[\mpidconst{MPIi_ERR_RANK_LOCAL}]Error specifying local_leader
+      (optional arguments: value, size-1 (int))
+    \item[\mpidconst{MPIi_ERR_RANK_REMOTE}]Error specifying remote_leader
+      (optional arguments: value, size-1 (int))
     \end{description}
 \item[\mpiconst{MPI_ERR_ROOT}]Invalid root (optional arg: value (int))
     \begin{description}
@@ -82,23 +92,33 @@ code (see \mpidfunc{MPID_Err_create_code}).
     \begin{description}
     \item[\mpidconst{MPIi_ERR_GROUP_NULL}]Null group
     \end{description}
-\item[\mpiconst{MPI_ERR_OP}]Invalid MPI_Op
+\item[\mpiconst{MPI_ERR_OP}]Invalid \mpiconst{MPI_Op}
     \begin{description}
-    \item[\mpidconst{MPIi_ERR_OP_NULL}]Null MPI_Op
-    \item[\mpidconst{MPIi_ERR_OP_UNDEFINED}]MPI_Op operation not defined for
+    \item[\mpidconst{MPIi_ERR_OP_NULL}]Null \mpiconst{MPI_Op}
+    \item[\mpidconst{MPIi_ERR_OP_UNDEFINED}]\mpiconst{MPI_Op} operation not
+      defined for 
       this datatype (optional argument: name of datatype (string))
-    \item[\mpidconst{MPIi_ERR_OP_FREE_PERM}]Cannot free permanent MPI_Op
+    \item[\mpidconst{MPIi_ERR_OP_FREE_PERM}]Cannot free permanent
+      \mpiconst{MPI_Op} 
     \end{description}
 \item[\mpiconst{MPI_ERR_TOPOLOGY}]Invalid topology
-%    \begin{description}
-%    \item[\mpidconst{MPIi_ERR_TOPOLOGY_}]
-%    \end{description}
+    \begin{description}
+    \item[\mpidconst{MPIi_ERR_TOPOLOGY_SIZE}]Topology size is greater than
+      communicator size (optional arguments: topology size and communicator
+      size (int))
+    \item[\mpidconst{MPIi_ERR_TOPOLOGY_GRAPH_ARRAY_SIZE}]Specified edge $<$ 0
+      or $>$ nnodes (optional arguments: index, value, nnodes (int))
+    \end{description}
 \item[\mpiconst{MPI_ERR_DIMS}]Invalid dimension argument (optional arg: value (int))
     \begin{description}
     \item[\mpidconst{MPIi_ERR_DIMS_ARRAY}]Invalid dimension argument in array
       (optional arguments: index, value (int))
     \item[\mpidconst{MPIi_ERR_DIMS_MANY}]Number of dimensions is too large
       (optional arguments: value, maxvalue (int))
+    \item[\mpidconst{MPIi_ERR_DIMS_TENSOR_SIZE}]Tensor product size does not
+      match nnodes (optional arguments: tensor product size and nnodes (int))
+    \item[\mpidconst{MPIi_ERR_DIMS_PARTITION}]Can not partition nodes as
+      requested 
     \end{description}
 \item[\mpiconst{MPI_ERR_ARG}]Invalid argument (optional arg: name (string))
     \begin{description}
@@ -115,6 +135,36 @@ code (see \mpidfunc{MPID_Err_create_code}).
       error handler (optional argument: name (string))
     \item[\mpidconst{MPIi_ERR_ARG_STATUS_IGNORE}]Invalid use of
       \mpiconst{MPI_STATUS_IGNORE} or \mpiconst{MPI_STATUSES_IGNORE}
+    \item[\mpidconst{MPIi_ERR_ARG_STRIDE}]Range does not terminate (optional
+      arguments: start, end, stride (int))
+    \item[\mpidconst{MPIi_ERR_ARG_STRIDE_ZERO}]Zero stride is incorrect
+    \item[\mpidconst{MPIi_ERR_ARG_ARRAY_VAL}]Invalid value in array (optional
+      arguments: name of variable (string), index (int), value (int))
+    \item[\mpidconst{MPIi_ERR_ARG_NAMED}]Invalid argument (optional arguments:
+      name (string), value (int))
+    \item[\mpidconst{MPIi_ERR_ARG_NEGATIVE}]Invalid argument; must be
+      nonnegative (optional arguments: name (string), value (int))
+    \item[\mpidconst{MPIi_ERR_ARG_ARRAY_VAL_NEG}]Negative value in array
+      (optional arguments: name of variable (string), index (int), value
+      (int)) 
+    \item[\mpidconst{MPIi_ERR_ARG_DARRAY_DIST_NONE}]For
+      \mpiconst{MPI_DISTRIBUTE_NONE}, the number of processes in that
+      dimension of the grid must be 1 (optional arguments: index of
+      array_of_psizes, value (int))
+    \item[\mpidconst{MPIi_ERR_ARG_DARRAY_DIST_UNKNOWN}]Unknown distribution
+      type 
+    \item[\mpidconst{MPIi_ERR_ARG_DARRAY_INVALID_BLOCK}]Value of m must be
+      positive for block(m) distribution (optional argument: value of m (int))
+    \item[\mpidconst{MPIi_ERR_ARG_DARRAY_INVALID_BLOCK2}]\code{m * nprocs} is
+      $<$ \code{array_size} and is not valid for block(m) distribution
+      (optional arguments: \code{m*nprocs}, \code{array_size} (int))
+    \item[\mpidconst{MPIi_ERR_ARG_DARRAY_INVALID_CYCLIC}]Value of m must be
+      positive for a cyclic(m) distribution (optional argument: m (int))
+    \item[\mpidconst{MPIi_ERR_ARG_POSITION_NEG}]Value of position must be
+      nonnegative (optional argument: value (int))
+    \item[\mpidconst{MPIi_ERR_ARG_INFO_NKEY}]n is invalid (optional arguments:
+      n, number of keys in info (int))
+   
     \end{description}
 \item[\mpiconst{MPI_ERR_UNKNOWN}]Unknown error.  Note that this should
   \emph{never} be used.
@@ -134,14 +184,21 @@ code (see \mpidfunc{MPID_Err_create_code}).
       (optional arguments: source, destination, tag (int))
     \item[\mpidconst{MPIi_ERR_OTHER_INIT_TWICE}]Cannot call \mpifunc{MPI_INIT}
       or \mpifunc{MPI_INIT_THREAD} more than once
+    \item[\mpidconst{MPIi_ERR_OTHER_INIT_BEFORE}]\mpifunc{MPI_Init} must be
+      called first (optional argument: name of calling routine (string))
     \item[\mpidconst{MPIi_ERR_OTHER_STARTUP}]Error on startup, such as a
       mismatch between \code{mpiexec} and the MPI libraries (optional
       argument: text with detailed reason (string))
     \item[\mpidconst{MPIi_ERR_OTHER_NOMEM}]Out of memory (optional arguments:
       requested and available (int))
+    \item[\mpidconst{MPIi_ERR_OTHER_ATTR_COPY}]User defined attribute copy
+      routine returned a non-zero return code (optional argument: return code
+      (int)) 
     \end{description}
 \item[\mpiconst{MPI_ERR_INTERN}]Internal MPI error!  (optional argument:
   detailed text (string))
+These provide English-only strings because they are for internal errors and
+should never be seen by users.
 %    \begin{description}
 %    \item[\mpidconst{MPIi_ERR_INTERN}]
 %    \end{description}
@@ -166,9 +223,16 @@ code (see \mpidfunc{MPID_Err_create_code}).
 %    \end{description}
 \item[\mpiconst{MPI_ERR_AMODE}]Invalid amode value in \mpifunc{MPI_File_open}
   (optional argument: amode (int))
-%    \begin{description}
-%    \item[\mpidconst{MPIi_ERR_}]
-%    \end{description}
+    \begin{description}
+    \item[\mpidconst{MPIi_ERR_AMODE_ONLY_ONE}]Exactly one of
+      \mpiconst{MPI_MODE_RDONLY}, \mpiconst{MPI_MODE_WRONLY}, or
+      \mpiconst{MPI_MODE_RDWR} must be specified
+    \item[\mpidconst{MPIi_ERR_AMODE_RDONLY}]Cannot use
+      \mpiconst{MPI_MODE_CREATE} or \mpiconst{MPI_MODE_EXCL} with
+      \mpiconst{MPI_MODE_RDONLY} 
+    \item[\mpidconst{MPIi_ERR_AMODE_SEQ}]Cannot specify
+      \mpiconst{MPI_MODE_SEQUENTIAL} with \code{MPI_MODE_RDWR}
+    \end{description}
 \item[\mpiconst{MPI_ERR_BAD_FILE}]Invalid file name (optional arg: name
   (string)) 
     \begin{description}
@@ -224,9 +288,34 @@ code (see \mpidfunc{MPID_Err_create_code}).
 %    \item[\mpidconst{MPIi_ERR_}]
 %    \end{description}
 \item[\mpiconst{MPI_ERR_IO}]Other I/O error (optional argument: text (string))
-%    \begin{description}
-%    \item[\mpidconst{MPIi_ERR_}]
-%    \end{description}
+    \begin{description}
+    \item[\mpidconst{MPIi_ERR_IO_ETYPE_FRACTIONAL}]Only an integral number of
+      etypes can be accessed
+    \item[\mpidconst{MPIi_ERR_IO_NO_FSTYPE}]Cannot determine filesystem type
+      (optional argument: name of file (string))
+    \item[\mpidconst{MPIi_ERR_IO_UNAVAILABLE_FSTYPE}]Specified filesystem is
+      not available (optional argument: name of filesystem (string))
+    \item[\mpidconst{MPIi_ERR_IO_MULTIPLE_SPLIT_COLL}]Only one active split
+      collective I/O operation is allowed per file handle
+    \item[\mpidconst{MPIi_ERR_IO_NO_SPLIT_COLL}]No split collective I/O
+      operation is active
+    \item[\mpidconst{MPIi_ERR_IO_ASYNC_OUTSTANDING}]There are outstanding
+      nonblocking I/O operations on this file
+    \item[\mpidconst{MPIi_ERR_IO_NEED_RDWR}]Read/write access is required to
+      this file
+    \item[\mpidconst{MPIi_ERR_IO_FILETYPE}]Filetype must be constructed out of
+      one or more etypes
+    \item[\mpidconst{MPIi_ERR_IO_NO_SHARED_FP}]Shared file pointers not
+      supported (optional argument: name of file system (string))
+    \item[\mpidconst{MPIi_ERR_IO_AMODE_SEQ}]Cannot use this function when the
+      file is opened with amode \mpiconst{MPI_MODE_SEQUENTIAL} (optional
+      argument: name of routine (string))
+    \item[\mpidconst{MPIi_ERR_IO_MORE_WRONLY}]Cannot read from a file opened
+      with amode \mpiconst{MPI_MODE_WRONLY}
+    \item[\mpidconst{MPIi_ERR_IO_NO_MODE_SEQ}]\mpiconst{MPI_MODE_SEQUENTIAL}
+      not supported on this file system (optional argument: name of file
+      system (string))
+    \end{description}
 \item[\mpiconst{MPI_ERR_NAME}]Attempt to lookup an unknown service name
   (optional arg: name (string))
 %    \begin{description}
@@ -242,6 +331,10 @@ code (see \mpidfunc{MPID_Err_create_code}).
 (optional arguments: name of collective routine (string), name of argument
 that is not consistent (string))
     \begin{description}
+    \item[\mpidconst{MPIi_ERR_NOT_SAME_VALUE}]Arguments to collective routine
+      must be the same (optional arguments: name of collective routine
+      (string), name of argument (string), null terminated array of values
+      (array of int))
     \item[\mpidconst{MPIi_ERR_NOT_SAME_ROOT}]Inconsistent root
     \item[\mpidconst{MPIi_ERR_NOT_SAME_COLLECTIVE_ORDER}]Collective routines
       called in an inconsistent order (optional arguments: null terminated
@@ -286,7 +379,7 @@ that is not consistent (string))
     \item[\mpidconst{MPIi_ERR_SPAWN_PROCESS_MNGER}]The process manager
       returned an error (optional arg: text from process manager (string))
     \end{description}
-\item[\mpiconst{MPI_ERR_INSUPPORTED_DATAREP}]Unsupported datarep passed to
+\item[\mpiconst{MPI_ERR_UNSUPPORTED_DATAREP}]Unsupported datarep passed to
   \mpifunc{MPI_File_set_view} (optional arg: name of datarep (string))
 %    \begin{description}
 %    \item[\mpidconst{MPIi_ERR_}]
@@ -314,6 +407,9 @@ that is not consistent (string))
     \item[\mpidconst{MPIi_ERR_KEYVAL_NULL}]Null keyval
     \item[\mpidconst{MPIi_ERR_KEYVAL_FREE_PERM}]Cannot free permanent
       attribute key
+    \item[\mpidconst{MPIi_ERR_KEYVAL_NOT_IN_COMM}]Keyval is not in communicator
+    \item[\mpidconst{MPIi_ERR_KEYVAL_NOT_IN_TYPE}]Keyval is not in datatype
+    \item[\mpidconst{MPIi_ERR_KEYVAL_NOT_IN_WIN}]Keyval is not in window object
     \end{description}
 \item[\mpiconst{MPI_ERR_RMA_CONFLICT}]Conflicting accesses to window
 %    \begin{description}

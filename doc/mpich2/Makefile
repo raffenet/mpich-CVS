@@ -11,7 +11,9 @@ SHELL = /bin/sh
 #	-latex $*
 #	-latex $*
 
+# We touch mpich2.ind to work around a LaTeX bug in accessing the index file
 mpich2.ps: mpich2.tex Makefile fixupindex
+	touch mpich2.ind
 	latex mpich2
 	-bibtex mpich2
 	-rm -f tmp.idx tmp.ind

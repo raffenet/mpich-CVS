@@ -162,6 +162,10 @@ was invoked.  It could return an error code if it finds a problem.
 \subsubsection{Choosing Error Handlers and Classes}
 Error handlers should be chosen using the following decision tree:
 \begin{enumerate}
+\item Check if executing inside a layered routine (i.e., an MPI routine called
+  within the implementation of another MPI routine).  If so, return error
+  code; do not invoke the error handler.  See
+  Section~\ref{sec:err-handling-nested}. 
 \item If the routine has a valid \code{MPI_Comm}, \code{MPI_File}, or
   \code{MPI_Win}, use the error handler from that object.  (Question: do we
   have a common way to extract the error handler?  It isn't part of the
@@ -1643,6 +1647,7 @@ Return a copy of the \mpids{MPI_Comm}{name} field.
 Set the \mpids{MPI_Comm}{name} field.  Check for valid length.
 
 \subsection{Point to Point Communication}
+\label{sec:pt-2-pt}
 
 The ADI provides a relatively close match to the point-to-point
 communication routines.  
@@ -1654,6 +1659,11 @@ requests?
 Since requests are allocated by the \mpidfunc{MPID_Request_xxx_FOA} routines,
 should a persistent request simply have a pointer to the active request?  The
 request pointer could be null to indicate an inactive persistent request.
+
+Question:  There are a number of flags that we may want to check in order to
+drop into a special optimized case.  Should we set things up so that a single
+int of flags, where the ``good'' case is a zero bit for each flag, can be
+tested with a single compare against zero?
 
 \subsubsection{\mpifunc{MPI_PROBE}}
 \begin{adi3}
