@@ -606,10 +606,13 @@ sub print_profiling_block {
     my $ucname = uc($lcname);
 
     if ($do_weak) {
+	# We do the multiple pragma only for the gcc-style names for now 
+        # This simplifies the generation of the names for the output;
+	# Later, we can add support for other name mappings.
 	print $OUTFD "\
 /* Begin MPI profiling block */\
 #if defined(HAVE_WEAK_SYMBOLS)\
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)\n";
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)\n";
         &print_weak_decl( $OUTFD, "MPI_$ucname", $args, $lcname ); 
 	&print_weak_decl( $OUTFD, "mpi_${lcname}__", $args, $lcname );
 	&print_weak_decl( $OUTFD, "mpi_${lcname}", $args, $lcname );
