@@ -18,7 +18,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
     MPI_Info info;
     char *value;
-    int flag, intval, tmp_val, nprocs;
+    int flag, intval, tmp_val, nprocs, nprocs_is_valid = 0;
 
     if (fd->info == MPI_INFO_NULL) MPI_Info_create(&(fd->info));
     info = fd->info;
@@ -52,6 +52,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 
 	/* number of processes that perform I/O in collective I/O */
 	MPI_Comm_size(fd->comm, &nprocs);
+	nprocs_is_valid = 1;
 	sprintf(value, "%d", nprocs);
 	MPI_Info_set(info, "cb_nodes", value);
 	fd->hints->cb_nodes = nprocs;
@@ -235,6 +236,13 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
 	    else {
+		if (!nprocs_is_valid) {
+		    /* if hints were already initialized, we might not
+		     * have already gotten this?
+		     */
+		    MPI_Comm_size(fd->comm, &nprocs);
+		    nprocs_is_valid = 1;
+		}
 		if (intval < nprocs) {
 		    MPI_Info_set(info, "cb_nodes", value);
 		    fd->hints->cb_nodes = intval;
