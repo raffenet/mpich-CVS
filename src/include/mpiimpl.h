@@ -7,6 +7,12 @@
 #ifndef MPIIMPL_INCLUDED
 #define MPIIMPL_INCLUDED
 
+/*
+ * This file is the temporary home of most of the definitions used to 
+ * implement MPICH.  We will eventually divide this file into logical
+ * pieces once we are certain of the relationships between the components.
+ */
+
 /* Include the mpi definitions */
 #include "mpi.h"
 
@@ -133,6 +139,11 @@ int err_printf(char *str, ...);
 /* style: define:__strdup:1 sig:0 */
 /* style: define:strdup:1 sig:0 */
 
+/* Define the string copy and duplication functions */
+/* Safer string routines */
+int MPIU_Strncpy( char *, const char *, size_t );
+char *MPIU_Strdup( const char * );
+
 #ifdef USE_MEMORY_TRACING
 #define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
 #define MPIU_Calloc(a,b)  \
@@ -155,7 +166,6 @@ int err_printf(char *str, ...);
 #define MPIU_Strdup(a)    strdup(a)
 #else
 /* Don't define MPIU_Strdup, provide it in safestr.c */
-char *MPIU_Strdup( const char *a )
 #endif
 #endif
 void MPIU_trinit ( int );
@@ -175,9 +185,6 @@ void MPIU_TrSetMaxMem ( int );
 void MPIU_trdump ( FILE * );
 void MPIU_trSummary ( FILE * );
 void MPIU_trdumpGrouped ( FILE * );
-
-/* Safer string routines */
-int MPIU_Strncpy( char *, const char *, size_t );
 
 /* Memory allocation stack */
 #define MAX_MEM_STACK 16
@@ -1128,10 +1135,10 @@ extern int MPID_THREAD_LEVEL;
       err = MPIR_Err_create_code( MPI_ERR_TAG, "**tag", "**tag %d", tag );}
 #define MPIR_ERRTEST_SEND_RANK(comm_ptr,rank,err) \
   if ((rank) < MPI_PROC_NULL || (rank) >= (comm_ptr)->remote_size) {\
-      err = MPIR_Err_create_code( MPI_ERR_RANK, "**rank", "**rank %d", rank );}
+      err = MPIR_Err_create_code( MPI_ERR_RANK, "**rank", "**rank %d %d", rank, (comm_ptr)->remote_size );}
 #define MPIR_ERRTEST_RECV_RANK(comm_ptr,rank,err) \
   if ((rank) < MPI_ANY_SOURCE || (rank) >= (comm_ptr)->remote_size) {\
-      err = MPIR_Err_create_code( MPI_ERR_RANK, "**rank", "**rank %d", rank );}
+      err = MPIR_Err_create_code( MPI_ERR_RANK, "**rank", "**rank %d %d", rank, (comm_ptr)->remote_size );}
 #define MPIR_ERRTEST_COUNT(count,err) \
     if ((count) < 0) {\
         err = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg", "**countneg %d", count );}
@@ -1139,22 +1146,24 @@ extern int MPID_THREAD_LEVEL;
     if ((ptr1)==(ptr2) && (ptr1) != MPI_BOTTOM) {\
         err = MPIR_Err_create_code( MPI_ERR_BUFFER, "**bufalias", 0 );}
 #define MPIR_ERRTEST_ARGNULL(arg,arg_name,err) \
-   if (!arg) {\
+   if (!(arg)) {\
        err = MPIR_Err_create_code( MPI_ERR_ARG, "**nullptr", "**nullptr %s", arg_name ); } 
 #define MPIR_ERRTEST_ARGNEG(arg,arg_name,err) \
-   if (!arg) {\
+   if ((arg) < 0) {\
        err = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg", "**argneg %s %d", arg_name, arg ); } 
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \
   if ((root) <= MPI_PROC_NULL || (root) >= (comm_ptr)->local_size) {\
       err = MPIR_Err_create_code( MPI_ERR_ROOT, "**root", "**root %d", root );}
 #define MPIR_ERRTEST_PERSISTENT(reqp,err) \
-  if (reqp->kind != MPID_PREQUEST_SEND && reqp->kind != MPID_PREQUEST_RECV) { \
-      mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestnotpersist", 0 ); }
+  if ((reqp)->kind != MPID_PREQUEST_SEND && reqp->kind != MPID_PREQUEST_RECV) { \
+      err = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestnotpersist", 0 ); }
 #define MPIR_ERRTEST_PERSISTENT_ACTIVE(reqp,err) \
-  if ((reqp->kind == MPID_PREQUEST_SEND || \
+  if (((reqp)->kind == MPID_PREQUEST_SEND || \
       reqp->kind == MPID_PREQUEST_RECV) && reqp->partner_request != NULL) { \
-      mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestpersistactive", 0 ); }
-
+      err = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestpersistactive", 0 ); }
+#define MPIR_ERRTEST_COMM_INTRA(comm_ptr, err ) \
+    if ((comm_ptr)->comm_kind != MPID_INTRACOMM) {\
+       err = MPIR_Err_create_code(MPI_ERR_COMM,"**commnotintra",0);}
 
 /* The following are placeholders.  We haven't decided yet whether these
    should take a handle or pointer, or if they should take a handle and return 
@@ -1241,6 +1250,8 @@ int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
 int MPIR_Err_return_file( MPID_File *, const char [], int );
 int MPIR_Err_create_code( int, const char [], ... );
+void MPIR_Err_preinit( void );
+const char *MPIR_Err_get_generic_string( int );
 #ifdef MPICH_SINGLE_THREADED
 #define MPIR_Nest_incr() MPIR_Thread.nest_count++
 #define MPIR_Nest_decr() MPIR_Thread.nest_count--
@@ -1252,8 +1263,13 @@ int MPIR_Nest_value( void );
 #endif
 void MPIR_Wait(MPID_Request *);
 int MPIR_Test(MPID_Request *);
-int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
-int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);
+/*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
+  int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
+int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
+
+int MPIR_Group_create( int, MPID_Group ** );
+
+int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
 
 /* ADI Bindings */
 int MPID_Init(int *, char ***, int, int *, int *, int *);
