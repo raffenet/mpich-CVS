@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
+#elif MPICH_TIMER_KIND == USE_GCC_IA64_CYCLE
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
 #include <winsock2.h>
@@ -234,6 +235,11 @@ extern double g_timer_frequency;
 #if 0
 #define MPIDM_Wtime_todouble(t, d) *d = (double)*t
 #endif
+
+#elif MPICH_TIMER_KIND == USE_GCC_IA64_CYCLE
+#define MPID_Wtime(var_ptr) { __asm__ __volatile__("mov %0=ar.itc" : "=r" (var_ptr)); }
+extern double g_timer_frequency;
+#define MPIDM_Wtime_todouble(t, d) *d = (double)*t / g_timer_frequency
 
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 #define MPID_Wtime_init()
