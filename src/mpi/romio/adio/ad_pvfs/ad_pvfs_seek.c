@@ -20,10 +20,7 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
    routine. */
 /* offset is in units of etype relative to the filetype */
 
-#ifndef PRINT_ERR_MSG
-    static char myname[] = "ADIOI_PVFS_SEEKINDIVIDUAL";
-#endif
-    ADIO_Offset off, err;
+    ADIO_Offset off;
     ADIOI_Flatlist_node *flat_file;
 
     int i, n_etypes_in_filetype, n_filetypes, etype_in_filetype;
@@ -67,28 +64,14 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
                 abs_off_in_filetype;
     }
 
-#ifdef PROFILE
-    MPE_Log_event(11, 0, "start seek");
-#endif
-    err = pvfs_lseek64(fd->fd_sys, off, SEEK_SET);
-#ifdef PROFILE
-    MPE_Log_event(12, 0, "end seek");
-#endif
     fd->fp_ind = off;
-    fd->fp_sys_posn = off;
+/*
+ * we used to do a seek here, but the fs-specifc ReadContig and
+ * WriteContig will seek to the correct place in the file before
+ * reading/writing.  to see how we used to do things, check out
+ * adio/common/ad_seek.c, where the old code still lives in commented-out form.
+ */
 
-    if (err == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	*error_code = MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
-    }
-    else *error_code = MPI_SUCCESS;
+    *error_code = MPI_SUCCESS;
     return off;
 }

@@ -32,10 +32,7 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
    routine. */
 /* offset is in units of etype relative to the filetype */
 
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
-    static char myname[] = "ADIOI_GEN_SEEKINDIVIDUAL";
-#endif
-    ADIO_Offset off, err;
+    ADIO_Offset off;
     ADIOI_Flatlist_node *flat_file;
 
     int i, n_etypes_in_filetype, n_filetypes, etype_in_filetype;
@@ -82,6 +79,13 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
                 abs_off_in_filetype;
     }
 
+    fd->fp_ind = off;
+/*
+ * we used to do a seek here, but the fs-specifc ReadContig and
+ * WriteContig will seek to the correct place in the file before
+ * reading/writing.  
+ */
+#if 0
 #ifdef PROFILE
     MPE_Log_event(11, 0, "start seek");
 #endif
@@ -104,7 +108,9 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 	ADIOI_Error(MPI_FILE_NULL, *error_code, myname);	    
 #endif
     }
-    else *error_code = MPI_SUCCESS;
+    else *error_code = MPI_SUCCESS;    
+#endif
+    *error_code = MPI_SUCCESS;
 
     return off;
 }

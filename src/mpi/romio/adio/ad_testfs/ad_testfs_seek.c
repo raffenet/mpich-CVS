@@ -76,7 +76,7 @@ ADIO_Offset ADIOI_TESTFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     }
 
     fd->fp_ind = off;
-    fd->fp_sys_posn = off;
+    fd->fp_sys_posn = -1;
 
     return off;
 }
