@@ -124,6 +124,8 @@ info_setf.c
 infognkf.c
 infognthkf.c
 infovallenf.c
+initf.c
+initthreadf.c
 initializedf.c
 iprobef.c
 irecvf.c

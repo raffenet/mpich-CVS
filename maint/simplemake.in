@@ -436,6 +436,8 @@ sub ReadMfile {
 	    # causes simplemake to replace "autoconf" with "/foo/bar/fixedac"
 	    $varname = $1;
 	    $value   = $2;
+	    # Save old values
+	    $simplemake_vars{$varname} = $$varname;
 	    $$varname = $value;
 	    print STDERR "setting $varname to $value\n" if $debug;
 	}
@@ -580,6 +582,12 @@ sub WriteMfile {
     # Modifiy $mode to remove write permissions
     # use chmod $mode $output_filename
     # to change permissions
+
+    # If the user overrode any variables, restore them here
+    foreach $varname (keys(%simplemake_vars)) {
+	print STDERR "Restoring $varname to $simplemake_vars{$varname}\n" if $debug;
+	$$varname = $simplemake_vars{$varname}
+    }
 }
 
 #
@@ -738,7 +746,7 @@ sub DefaultRules {
 	# We may want to make this conditional, only generating it
 	# when desired.
 	if (defined($extrules{$extkey})) {
-	    print FD "$extkey$newline";
+	    print FD ".$extkey$newline";
 	    print FD "\t$extrules{$extkey}$newline";
 	}
     }
@@ -818,8 +826,14 @@ sub FindSrcTypes {
     $source = $_[0];
     $files = "";
     foreach $sym (split(/\s\s*/,$source)) {
-	if (defined($makevars{$sym})) {
-	    $files .= " $makevars{$sym}";
+	print STDERR "Is $sym a make variable?\n" if $debug;
+	$vsym = $sym;
+	if ($vsym =~ /\$[\{\(]?([A-Za-z0-9_]*)[\}\)]?/) {
+	    $vsym = $1;
+	}
+	if (defined($makevars{$vsym})) {
+	    print STDERR "yes, value is $makevars{$vsym}\n" if $debug;
+	    $files .= " $makevars{$vsym}";
 	}
 	else {
 	    $files .= " $sym";
@@ -900,6 +914,7 @@ sub ClearVars {
     %docsrc = ();
     # These may be overriden on a file by file basis
     $autoconf = "autoconf"; # Name of autoconf program to use
+    %simplemake_vars = ();
 }	
 
 #

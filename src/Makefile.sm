@@ -1,2 +1,1 @@
-#SUBDIRS = mpid mpi util pmi binding . ### put binding back in once it can compile
-SUBDIRS = mpid mpi util pmi .
+SUBDIRS = mpid mpi util pmi binding .

@@ -599,14 +599,14 @@ int MPI_Get(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype,
 int MPI_Put(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, 
 	    MPI_Win);
 int MPI_Win_complete(MPI_Win);
-int MPI_Win_create(void *, MPI_Aint, int, MPI_Info info, MPI_Comm, MPI_Win *);
+int MPI_Win_create(void *, MPI_Aint, int, MPI_Info, MPI_Comm, MPI_Win *);
 int MPI_Win_fence(int, MPI_Win);
 int MPI_Win_free(MPI_Win *);
 int MPI_Win_get_group(MPI_Win, MPI_Group *);
 int MPI_Win_lock(int, int, int, MPI_Win);
 int MPI_Win_post(MPI_Group, int, MPI_Win);
 int MPI_Win_start(MPI_Group, int, MPI_Win);
-int MPI_Win_test(MPI_Win win, int *);
+int MPI_Win_test(MPI_Win, int *);
 int MPI_Win_unlock(int, MPI_Win);
 int MPI_Win_wait(MPI_Win);
  
@@ -928,14 +928,14 @@ int PMPI_Get(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype,
 int PMPI_Put(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, 
 	    MPI_Win);
 int PMPI_Win_complete(MPI_Win);
-int PMPI_Win_create(void *, MPI_Aint, int, MPI_Info info, MPI_Comm, MPI_Win *);
+int PMPI_Win_create(void *, MPI_Aint, int, MPI_Info, MPI_Comm, MPI_Win *);
 int PMPI_Win_fence(int, MPI_Win);
 int PMPI_Win_free(MPI_Win *);
 int PMPI_Win_get_group(MPI_Win, MPI_Group *);
 int PMPI_Win_lock(int, int, int, MPI_Win);
 int PMPI_Win_post(MPI_Group, int, MPI_Win);
 int PMPI_Win_start(MPI_Group, int, MPI_Win);
-int PMPI_Win_test(MPI_Win win, int *);
+int PMPI_Win_test(MPI_Win, int *);
 int PMPI_Win_unlock(int, MPI_Win);
 int PMPI_Win_wait(MPI_Win);
  

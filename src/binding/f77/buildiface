@@ -87,7 +87,10 @@ foreach $_ (@ARGV) {
 	   'MPI_Errhandler *' => 'MPI_Fint *',
 	   );
 
-%argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)' );
+%argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)',
+		  'MPI_Status *'  => '(MPI_Status *)(ARG)',
+		  'int [][3]' => '(int (*)[3])(ARG)'
+);
 
 # name_map maps the filenames.  Most filenames are created automatically
 # from the routine name, but some names have too many characters (15, 
@@ -173,7 +176,7 @@ foreach $_ (@ARGV) {
 
 #
 # Special routines have very different calling seqences in C and Fortran
-%special_routines = ( 'Init' => 1, 'Init_thread' => 1 );
+%special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1' );
 
 #
 # Most routines can be processed automatically.  However, some
@@ -230,8 +233,7 @@ foreach $_ (@ARGV) {
 $arg_string = join( ' ', @ARGV );
 if ($build_prototypes) {
     open( PROTOFD, ">fproto.h" ) || die "Cannot open fproto.h\n";
-    print PROTOFD "\
-/* -*- Mode: C; c-basic-offset:4 ; -*- */\
+    print PROTOFD "/* -*- Mode: C; c-basic-offset:4 ; -*- */\
 /*  \
  *  (C) 2001 by Argonne National Laboratory.\
  *      See COPYRIGHT in top-level directory.\
@@ -270,6 +272,7 @@ while (<FD>) {
 	else {
 	    # Clear variables
 	    $clean_up = "";
+	    &clean_args;
 	    if ($buildfiles) {
 		if (defined($name_map{$lcname})) {
 		    $filename = $name_map{$lcname} . "f.c";
@@ -312,13 +315,20 @@ while (<FD>) {
 		close ($OUTFD);
 	    }
 	    if ($build_prototypes) {
-		print PROTOFD "FORTRAN_API void FORT_CALL mpi_${lcname}_ ";
+		if ($do_subdecls) {
+		    print PROTOFD "FORTRAN_API void FORT_CALL mpi_${lcname}_ ";
+		}
+		else {
+		    print PROTOFD "void mpi_${lcname}_ ";
+		}
 		&print_args( PROTOFD, $args );
 		print PROTOFD ";\n";
 	    }
 	}
     }
 }
+# Build the special routines
+&build_specials;
 
 #
 # This block can be used to create the Makefile
@@ -327,6 +337,8 @@ print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 # This line is unfortunately necessary to ensure that a working
 # autoconf is used.
 print MAKEFD "smvar_autoconf = /home/gropp/bin/linux/autoconf\n";
+#print MAKEFD "smvar_debug = 1\n";
+print MAKEFD "smvar_do_dependencies = 0\n";
 &print_line(  MAKEFD, "mpi_sources = ", 80, "\\\n\t", 8 );
 for ($i=0; $i<=$#files; $i++) {
     $name = $files[$i];
@@ -337,7 +349,7 @@ for ($i=0; $i<=$#files; $i++) {
 print MAKEFD "lib\${MPILIBMAME}_a_SOURCES = \${mpi_sources}\
 \
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
-INCLUDES = -I../../../include -I\${top_srcdir}/src/include\
+INCLUDES = -I../../include -I\${top_srcdir}/src/include\
 maint-clean:\
 \trm -f \${mpi_sources} fproto.h\n";
 
@@ -375,8 +387,7 @@ sub print_endline {
 sub print_header {
     my $routine_name = $_[0];
     my $lcname = $_[1];
-    print $OUTFD "\
-/* -*- Mode: C; c-basic-offset:4 ; -*- */\
+    print $OUTFD "/* -*- Mode: C; c-basic-offset:4 ; -*- */\
 /*  \
  *  (C) 2001 by Argonne National Laboratory.\
  *      See COPYRIGHT in top-level directory.\
@@ -449,6 +460,11 @@ sub print_args {
     # Clear the @arg_addresses array.
     $#arg_addresses = 0;
 
+    # Special case: if the only parm is "void", remove it from the list
+    print STDERR "Nparms = $#parms, parms = " . join(',',@parms) . "\n" if $debug;
+    if ($#parms == 0 && $parms[0] eq "void") {
+	$#parms = -1;
+    }
     print $OUTFD "( ";
     foreach $parm (@parms) {
 	# Match type to replacement
@@ -460,6 +476,26 @@ sub print_args {
 	    # if they are prsent at all.
 	    print $OUTFD "char *v$count FORT_MIXED_LEN(d$count), ";
 	    $last_args .= "FORT_END_LEN(d$count) ";
+	}
+	elsif ($parm =~/\[/) {
+	    # Argument type is array, so we need to 
+	    #  a) mark as containing a star
+	    #  b) place parameter correctly
+	    $star_count = 1;
+	    $arg_addresses[$count] = $star_count;
+	    # Split into raw type and []
+	    $parm =~ /\s*([^\s]*)\s*(\[\s*\])/;
+	    $basetype = $1;
+	    $foundbrack = $2;
+	    if (defined($tof77{$basetype})) {
+		$nstar_before = ($basetype =~ /\*/);
+		$basetype = $tof77{$basetype};
+		$nstar_after = ($basetype =~ /\*/);
+		if ($nstar_before != $nstar_after) {
+		    $star_count++;
+		}
+	    }
+	    print $OUTFD "$basetype v$count\[\], ";
 	}
 	else {
 	    $nstar_before = ($parm =~ /\*/);
@@ -490,6 +526,11 @@ sub print_call_args {
     my $count = 1;
     my $first = 1;
     print $OUTFD "( ";
+    # Special case: if the only parm is "void", remove it from the list
+    if ($#parms == 0 && $parms[0] eq "void") {
+	$#parms = -1;
+    }
+
     foreach $parm (@parms) {
 	if (!$first) { print $OUTFD ", "; } else { $first = 0; }
 
@@ -598,8 +639,10 @@ sub logical_out_arg {
 # Array args can use the global $Array_size and $Array_typedef if necessary
 sub logical_array_ftoc {
     print $OUTFD "\
-    for (li=0; li<$Array_size; li++) {
+    {int li; 
+     for (li=0; li<$Array_size; li++) {
         l$count\[li\] = MPIR_FROM_FLOG(v$count\[li\]);
+     }
     }
 ";
 }
@@ -616,13 +659,14 @@ sub logical_array_ctof {
     my $coutvar = $_[0];
     my $outvar  = $_[1];
     print $OUTFD "\
-    for (li=0; li<$Array_size; li++) {
+    {int li;
+     for (li=0; li<$Array_size; li++) {
         $outvar\[li\] = MPIR_TO_FLOG($outvar\[li\]);
+     }
     }
 ";
 }
 sub logical_array_out_decl {
-    print $OUTFD "    int li;\n";
 }
 sub logical_array_out_arg {
     my $count = $_[0];
@@ -657,13 +701,14 @@ sub index_array_ctof {
     my $coutvar = $_[0];
     my $outvar  = $_[1];
     print $OUTFD "\
-    for (li=0; li<$Array_size; li++) {
+    {int li;
+     for (li=0; li<$Array_size; li++) {
         if ($outvar\[li\] >= 0) $outvar\[li\] += 1;
+     }
     }
 "
 }
 sub index_array_out_decl {
-    print $OUTFD "    int li;\n";
 }
 sub index_array_out_arg {
     my $count = $_[0];
@@ -909,9 +954,9 @@ foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER,
 
 # Optional types
 foreach $key (INTEGER1, INTEGER2, INTEGER4, INTEGER8, INTEGER16,
-              REAL4, REAL8, REAL16, COMPLEX8, OOMPLEX16, COMPLEX32) {
+              REAL4, REAL8, REAL16, COMPLEX8, COMPLEX16, COMPLEX32) {
     print MPIFFD "       INTEGER MPI_$key\n";
-    print MPIFFD "       PARAMETER (MPI_$key=\*F77_$key\@)\n";
+    print MPIFFD "       PARAMETER (MPI_$key=\@F77_$key\@)\n";
 }
 #
 # Fortran 90 types
@@ -921,3 +966,81 @@ print MPIFFD "       PARAMETER (MPI_OFFSET_KIND=\@OFFSET_KIND\@)\n";
 # 
 
 close( MPIFFD );
+
+
+#
+# Look through $args for parameter names (foo\s\s*name)
+# and remove them
+sub clean_args {
+    my $newargs = "";
+    my $comma = "";
+    for $parm (split(',',$args)) {
+	if ( ($parm =~ /^\s*([A-Za-z0-9_]+)\s+[A-Za-z0-9_]+$/) ) {
+	    $parm = $1;
+	}
+	elsif ( ($parm =~ /\s*([A-Za-z0-9_]+\s*\*)\s*[A-Za-z0-9_]+$/) ) {
+	    $parm = $1;
+	}
+	elsif ( ($parm =~ /^\s+([^\s].*)\s*$/) ) {
+	    $parm = $1;
+	}
+	$newargs .= "$comma$parm";
+	$comma = ",";
+    }
+    print STDERR "$newargs\n" if $debug;
+    $args = $newargs;
+}
+
+# print_type_decl( $FD, $lcname )
+
+sub print_routine_type_decl {
+    my $OUTFD = $_[0];
+    my $lcname = $_[1];
+    if ($do_subdecls) {
+	print $OUTFD "FORTRAN_API void FORT_CALL ";
+    }
+    else {
+	print $OUTFD "void ";
+    }
+    print $OUTFD "mpi_${lcname}_ ";
+}
+
+#
+# Build the special routines
+sub build_specials {
+    open( $OUTFD, ">initf.c" ) || die "Cannot open initf.c\n";
+    @files[$#files+1] = "initf.c";
+    &print_header( "MPI_Init", "mpi_init" );
+    &print_routine_type_decl( $OUTFD, "mpi_init" );
+    $args = "";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{\n";
+    print $OUTFD "    *ierr = MPI_Init( 0, 0 );\n";
+    print $OUTFD "}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "mpi_init" );
+	&print_args( PROTOFD, $args );
+	print PROTOFD ";\n";
+    }
+    close( $OUTFD );
+    
+    open( $OUTFD, ">pcontrolf.c" ) || die "Cannot open pcontrolf.c\n";
+    @files[$#files+1] = "pcontrolf.c";
+    &print_header( "MPI_Pcontrol", "mpi_pcontrol" );
+    &print_routine_type_decl( $OUTFD, "mpi_pcontrol" );
+    $args = "int";
+    &print_args( $OUTFD, $args );
+    &print_attr;
+    print $OUTFD "{\n";
+    print $OUTFD "    *ierr = MPI_Pcontrol( v1 );\n";
+    print $OUTFD "}\n";
+    close ($OUTFD);
+    if ($build_prototypes) {
+	&print_routine_type_decl( PROTOFD, "mpi_pcontrol" );
+	&print_args( PROTOFD, $args );
+	print PROTOFD ";\n";
+    }
+    close( $OUTFD );
+}
