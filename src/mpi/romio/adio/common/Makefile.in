@@ -3,9 +3,13 @@ AR          = @AR@
 LIBNAME     = @LIBNAME@
 MPI         = @MPI@
 srcdir      = @srcdir@
+CC_SHL      = @CC_SHL@
+SHLIBNAME   = @SHLIBNAME@
 
 INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include
 CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
+
+C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INLUCDE_DIR)
 
 @VPATH@
 
@@ -18,9 +22,20 @@ AD_OBJECTS = ad_close.o ad_init.o ad_end.o ad_open.o setfn.o flatten.o \
       ad_read_str_naive.o gencheck.o ad_set_view.o ad_iopen.o
 
 all: $(LIBNAME)
+	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
+	    $(MAKE) $(SHLIBNAME).la ;\
+	fi
 
 .c.o:
 	$(CC) $(CFLAGS) $(INC) -c $<
+.c.lo:
+	$(C_COMPILE_SHL) -c $<
+	@mv -f $*.o $*.lo
 
 $(LIBNAME): $(AD_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_OBJECTS)
+
+AD_LOOBJECTS = $(AD_OBJECTS:.o=.lo)
+
+$(SHLIBNAME): $(AD_LOOBJECTS)
+	$(AR) $(SHLIBNAME) $(AD_LOOBJECTS)
