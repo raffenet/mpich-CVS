@@ -1095,7 +1095,7 @@ install_ETC     = mpicxx.conf\n";
     # Add the documentation
     print MAKEFD "# Documentation sources
 doc_sources = mpicxx.txt
-DOCDESTDIRS = html:www/www1,man:man/man1,latex:refman
+DOCDESTDIRS = html:www/www1,man:man/man1,latex:doc/refman
 doc_HTML_SOURCES  = \${doc_sources}
 doc_MAN_SOURCES   = \${doc_sources}
 doc_LATEX_SOURCES = \${doc_sources}

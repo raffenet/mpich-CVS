@@ -35,7 +35,7 @@
     Environment Variables:
     The environment variables 'MPICH_CC' may be used
     to select different C compiler and linker.  Note that since
-    MPICH is built with a particular C and Fortran compiler, change the
+    MPICH is built with a particular C and Fortran compiler, changing the
     compilers used can cause problems.  Use this only if you could intermix
     code compiled with the different compilers.
 
