@@ -174,7 +174,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     MPIDI_DBG_Print_packet(pkt);
 
-    assert(pkt->type < MPIDI_CH3_PKT_END_CH3);
+    /*assert(pkt->type < MPIDI_CH3_PKT_END_CH3);*/
     
     switch(pkt->type)
     {
