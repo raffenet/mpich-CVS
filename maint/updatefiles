@@ -230,7 +230,26 @@ if [ "$has_unix_find" = "yes" ] ; then
 		# Version 2.62 breaks the Fortran 90 extensions
 		# to TRY_COMPILE, and stock 2.13 generates bogus 
 		# code for language FORTRAN.
-		continue
+
+		# See if autoconf works
+		rm -rf .ctmp
+		mkdir .ctmp
+		cd .ctmp
+		cat >>configure.in <<EOF
+AC_INIT(configure.in)
+AC_LANG_FORTRAN77
+AC_TRY_COMPILE(,[integer a],a=1,a=0)
+EOF
+		autoconf
+		# The bug is that the EOF doesn't go onto the next line
+		if grep endEOF configure 2>&1 >/dev/null ; then
+		    cd ..
+		    rm -rf .ctmp
+		    continue
+		else
+		    rm -rf .ctmp
+		    cd ..
+		fi
 	    fi
 	    if [ -s "$dir/configure2.in" ] ; then
 	        # There is a version 1 and version 2 configure in this
