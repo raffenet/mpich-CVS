@@ -470,7 +470,10 @@ AC_ARG_ENABLE( wrappers,
 , enable_wrappers=yes )
 dnl  src/wrappers requires at least src/logging
 if test "$enable_wrappers" = "yes" ; then
-    enable_logging=yes
+    if test "$enable_logging" != "yes" ; then
+        enable_logging=yes
+        AC_MSG_WARN( [Enabling Logging which is required by Wrappers.] ); 
+    fi
 fi
 
 dnl  Determine if the X graphics is going to be configured
