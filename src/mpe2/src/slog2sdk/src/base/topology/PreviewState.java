@@ -19,6 +19,7 @@ import base.drawable.CoordPixelXform;
 import base.drawable.CategoryWeight;
 import base.drawable.DrawnBox;
 import base.drawable.Category;
+import base.drawable.Shadow;
 
 public class PreviewState
 {
@@ -30,21 +31,25 @@ public class PreviewState
         BorderStyle = state_border;
     }
 
+    // The constant String's should be the same as those in SummaryState
     public  static final String FIT_MOST_LEGENDS
                                 = "FitMostLegends";
-    private static final int    FIT_MOST_LEGENDS_ID     = 0;
+    private static final int    FIT_MOST_LEGENDS_ID          = 0;
     public  static final String OVERLAP_INCLUSION
                                 = "OverlapInclusionRatio";
-    private static final int    OVERLAP_INCLUSION_ID    = 1;
+    private static final int    OVERLAP_INCLUSION_ID         = 1;
     public  static final String CUMULATIVE_INCLUSION
                                 = "CumulativeInclusionRatio";
-    private static final int    CUMULATIVE_INCLUSION_ID = 2;
+    private static final int    CUMULATIVE_INCLUSION_ID      = 2;
     public  static final String OVERLAP_EXCLUSION
                                 = "OverlapExclusionRatio";
-    private static final int    OVERLAP_EXCLUSION_ID    = 3;
+    private static final int    OVERLAP_EXCLUSION_ID         = 3;
     public  static final String CUMULATIVE_EXCLUSION
                                 = "CumulativeExclusionRatio";
-    private static final int    CUMULATIVE_EXCLUSION_ID = 4;
+    private static final int    CUMULATIVE_EXCLUSION_ID      = 4;
+    public  static final String CUMULATIVE_EXCLUSION_BASE
+                                = "BaseAlignedCumulativeExclusionRatio";
+    private static final int    CUMULATIVE_EXCLUSION_BASE_ID = 5;
 
     private static       int    DisplayType             = OVERLAP_INCLUSION_ID;
 
@@ -60,6 +65,8 @@ public class PreviewState
             DisplayType = OVERLAP_EXCLUSION_ID;
         else if ( new_display_type.equals( CUMULATIVE_EXCLUSION ) )
             DisplayType = CUMULATIVE_EXCLUSION_ID;
+        else if ( new_display_type.equals( CUMULATIVE_EXCLUSION_BASE ) )
+            DisplayType = CUMULATIVE_EXCLUSION_BASE_ID;
         else
             DisplayType = OVERLAP_INCLUSION_ID;
     }
@@ -79,7 +86,7 @@ public class PreviewState
         start_time <= final_time  and  start_ypos <= final_ypos.
     */
     private static int  drawForward( Graphics2D g, Color color,
-                                     CategoryWeight[] twgts, Insets insets,
+                                     Shadow shade, Insets insets,
                                      CoordPixelXform    coord_xform,
                                      DrawnBox           last_drawn_pos,
                                      double start_time, float start_ypos,
@@ -130,23 +137,25 @@ public class PreviewState
         int iWidth  = iTail-iHead+1;    // width possibly cut by the image
         int jHeight = jTail-jHead+1;
 
-        CategoryWeight  twgt = null;
-        int             idx, twgts_length;
-        float           tot_wgt, height_per_wgt;
-        int             jLevel, jDelta, jCenter;
-        int             iLevel, iDelta, iCenter;
-        boolean         isInclusive;
+        CategoryWeight[]  twgts;
+        CategoryWeight    twgt = null;
+        int               idx, twgts_length;
+        float             tot_wgt, height_per_wgt;
+        int               iLevel, iDelta, iCenter;
+        int               jLevel, jDelta, jCenter;
+        int               jDeltaTotal;
+        boolean           isInclusive;
 
+        jDeltaTotal  = 0;
+        twgts        = shade.arrayOfCategoryWeights();
         twgts_length = twgts.length;
         if (    DisplayType == CUMULATIVE_INCLUSION_ID
-             || DisplayType == CUMULATIVE_EXCLUSION_ID ) {
+             || DisplayType == CUMULATIVE_EXCLUSION_ID
+             || DisplayType == CUMULATIVE_EXCLUSION_BASE_ID ) {
             isInclusive = ( DisplayType == CUMULATIVE_INCLUSION_ID );
-            if ( isInclusive )
-                Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
-            else
-                Arrays.sort( twgts, CategoryWeight.EXCL_RATIO_ORDER );
  
-            if ( DisplayType == CUMULATIVE_INCLUSION_ID ) {
+            if ( isInclusive ) {
+                Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
                 // Compute the pixel height per unit weight
                 tot_wgt = 0.0f;
                 for ( idx = 0; idx < twgts_length; idx++ ) {
@@ -156,8 +165,10 @@ public class PreviewState
                 }
                 height_per_wgt = (float) jHeight / tot_wgt;
             }
-            else
+            else {
+                Arrays.sort( twgts, CategoryWeight.EXCL_RATIO_ORDER );
                 height_per_wgt = jHeight;
+            }
 
             // set sub-rectangles' height from the bottom, ie. jHead+jTail
             jLevel = jHead + jHeight;  // jLevel = jTail + 1
@@ -185,7 +196,9 @@ public class PreviewState
                 }
                 else
                     twgt.setPixelHeight( 0 );
+                jDeltaTotal += twgt.getPixelHeight();
             }
+            shade.setTotalPixelHeight( jDeltaTotal );  // for isPixelIn()
         }
         else if (    DisplayType == OVERLAP_INCLUSION_ID
                   || DisplayType == OVERLAP_EXCLUSION_ID ) {
@@ -269,7 +282,15 @@ public class PreviewState
             }
         }
         else {
+            /*
+            if (    DisplayType == FIT_MOST_LEGENDS_ID )
+                 || DisplayType == CUMULATIVE_INCLUSION_ID
+                 || DisplayType == CUMULATIVE_EXCLUSION_ID
+                 || DisplayType == CUMULATIVE_EXCLUSION_BASE_ID )
+            */
             jLevel = jHead + jHeight;  // jLevel = jTail + 1
+            if ( DisplayType == CUMULATIVE_EXCLUSION_ID )
+                jLevel -= ( jHeight - jDeltaTotal ) / 2;
             for ( idx = twgts_length-1; idx >= 0; idx-- ) {
                 twgt     = twgts[ idx ];
                 jDelta   = twgt.getPixelHeight();
@@ -296,7 +317,7 @@ public class PreviewState
         Assume caller guarantees the order of timestamps and ypos, such that
         start_time <= final_time  and  start_ypos <= final_ypos
     */
-    private static Category isPixelIn( CategoryWeight[] twgts, Insets insets,
+    private static Category isPixelIn( Shadow shade, Insets insets,
                                        CoordPixelXform coord_xform, Point pt,
                                        double start_time, float start_ypos,
                                        double final_time, float final_ypos )
@@ -337,13 +358,16 @@ public class PreviewState
         jTail    = jFinal;
         jHeight  = jTail-jHead+1;
 
-        CategoryWeight  twgt = null;
-        int             idx, twgts_length;
+        CategoryWeight[]  twgts;
+        CategoryWeight    twgt = null;
+        int               idx, twgts_length;
+
+        twgts        = shade.arrayOfCategoryWeights();
         twgts_length = twgts.length;
 
         // Locate the sub-rectangle from the bottom, ie. jHead+jTail
-        int jLevel, jDelta, jCenter;
         int iLevel, iDelta, iCenter;
+        int jLevel, jDelta, jCenter;
         if (    DisplayType == OVERLAP_INCLUSION_ID
              || DisplayType == OVERLAP_EXCLUSION_ID ) {
             int iImageWidth, iRange;
@@ -372,13 +396,21 @@ public class PreviewState
             }
         }
         else {
+            /*
+            if (    DisplayType == FIT_MOST_LEGENDS_ID 
+                 || DisplayType == CUMULATIVE_INCLUSION_ID
+                 || DisplayType == CUMULATIVE_EXCLUSION_ID
+                 || DisplayType == CUMULATIVE_EXCLUSION_BASE_ID )
+            */
             jLevel = jHead + jHeight;  // jLevel = jTail + 1
+            if ( DisplayType == CUMULATIVE_EXCLUSION_ID )
+                jLevel -= ( jHeight - shade.getTotalPixelHeight() ) / 2;
             for ( idx = twgts_length-1; idx >= 0; idx-- ) {
                 twgt     = twgts[ idx ];
                 jDelta   = twgt.getPixelHeight(); 
                 if ( jDelta > 0 ) {
                     jLevel  -= jDelta;
-                    if ( pt_y >= jLevel )
+                    if ( pt_y >= jLevel && pt_y < jLevel+jDelta )
                         return twgt.getCategory();
                 }
             }
@@ -389,7 +421,7 @@ public class PreviewState
 
 
     public static int  draw( Graphics2D g, Color color,
-                             CategoryWeight[] twgts, Insets insets,
+                             Shadow shade, Insets insets,
                              CoordPixelXform    coord_xform,
                              DrawnBox           last_drawn_pos,
                              double start_time, float start_ypos,
@@ -397,52 +429,52 @@ public class PreviewState
     {
          if ( start_time < final_time ) {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, color, twgts, insets,
+                 return drawForward( g, color, shade, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, start_ypos,
                                      final_time, final_ypos );
              else
-                 return drawForward( g, color, twgts, insets,
+                 return drawForward( g, color, shade, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, final_ypos,
                                      final_time, start_ypos );
          }
          else {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, color, twgts, insets,
+                 return drawForward( g, color, shade, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, start_ypos,
                                      start_time, final_ypos );
              else
-                 return drawForward( g, color, twgts, insets,
+                 return drawForward( g, color, shade, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, final_ypos,
                                      start_time, start_ypos );
          }
     }
 
-    public static Category containsPixel( CategoryWeight[] twgts, Insets insets,
+    public static Category containsPixel( Shadow shade, Insets insets,
                                           CoordPixelXform coord_xform, Point pt,
                                           double start_time, float start_ypos,
                                           double final_time, float final_ypos )
     {
          if ( start_time < final_time ) {
              if ( start_ypos < final_ypos )
-                 return isPixelIn( twgts, insets, coord_xform, pt,
+                 return isPixelIn( shade, insets, coord_xform, pt,
                                    start_time, start_ypos,
                                    final_time, final_ypos );
              else
-                 return isPixelIn( twgts, insets, coord_xform, pt,
+                 return isPixelIn( shade, insets, coord_xform, pt,
                                    start_time, final_ypos,
                                    final_time, start_ypos );
          }
          else {
              if ( start_ypos < final_ypos )
-                 return isPixelIn( twgts, insets, coord_xform, pt,
+                 return isPixelIn( shade, insets, coord_xform, pt,
                                    final_time, start_ypos,
                                    start_time, final_ypos );
              else
-                 return isPixelIn( twgts, insets, coord_xform, pt,
+                 return isPixelIn( shade, insets, coord_xform, pt,
                                    final_time, final_ypos,
                                    start_time, start_ypos );
          }

@@ -16,32 +16,48 @@ import java.awt.Point;
 import java.util.Arrays;
 
 import base.drawable.CoordPixelXform;
+import base.drawable.TimeBoundingBox;
 import base.statistics.CategoryTimeBox;
+import base.statistics.TimeAveBox;
 
 public class SummaryState
 {
     // private static StateBorder BorderStyle = StateBorder.COLOR_XOR_BORDER;
-    private static StateBorder BorderStyle = StateBorder.WHITE_RAISED_BORDER;
+    private static StateBorder BorderStyle  = StateBorder.WHITE_RAISED_BORDER;
+    private static StateBorder BackBorder   = StateBorder.COLOR_XOR_BORDER;
+    private static Color       BackColor    = Color.black;
+    public  static Color       ForeColor    = Color.white;
 
     public static void setBorderStyle( final StateBorder state_border )
+    { BorderStyle = state_border; }
+
+    public static void setBackgroundColor( Color color )
     {
-        BorderStyle = state_border;
+        BackColor   = color;
+        if ( BackColor == Color.black )
+            ForeColor = Color.lightGray;
+        else if ( BackColor == Color.white )
+            ForeColor = Color.darkGray;
+        else if ( BackColor == Color.darkGray )
+            ForeColor = Color.white;
+        else if ( BackColor == Color.lightGray )
+            ForeColor = Color.darkGray;
+        else
+            ForeColor = Color.white;
     }
 
+    // The constant String's should be the same as those in PreviewState
     public  static final String FIT_MOST_LEGENDS
-                                = "FitMostLegends";
+                                = PreviewState.FIT_MOST_LEGENDS;
     private static final int    FIT_MOST_LEGENDS_ID     = 0;
     public  static final String OVERLAP_INCLUSION
-                                = "OverlapInclusionRatio";
+                                = PreviewState.OVERLAP_INCLUSION;
     private static final int    OVERLAP_INCLUSION_ID    = 1;
-    public  static final String CUMULATIVE_INCLUSION
-                                = "CumulativeInclusionRatio";
-    private static final int    CUMULATIVE_INCLUSION_ID = 2;
     public  static final String OVERLAP_EXCLUSION
-                                = "OverlapExclusionRatio";
+                                = PreviewState.OVERLAP_EXCLUSION;
     private static final int    OVERLAP_EXCLUSION_ID    = 3;
     public  static final String CUMULATIVE_EXCLUSION
-                                = "CumulativeExclusionRatio";
+                                = PreviewState.CUMULATIVE_EXCLUSION;
     private static final int    CUMULATIVE_EXCLUSION_ID = 4;
 
     private static       int    DisplayType             = OVERLAP_INCLUSION_ID;
@@ -52,8 +68,6 @@ public class SummaryState
             DisplayType = FIT_MOST_LEGENDS_ID;
         else if ( new_display_type.equals( OVERLAP_INCLUSION ) )
             DisplayType = OVERLAP_INCLUSION_ID;
-        else if ( new_display_type.equals( CUMULATIVE_INCLUSION ) )
-            DisplayType = CUMULATIVE_INCLUSION_ID;
         else if ( new_display_type.equals( OVERLAP_EXCLUSION ) )
             DisplayType = OVERLAP_EXCLUSION_ID;
         else if ( new_display_type.equals( CUMULATIVE_EXCLUSION ) )
@@ -75,8 +89,7 @@ public class SummaryState
 
     public static boolean isDisplayTypeCumulative()
     {
-        return    DisplayType == CUMULATIVE_INCLUSION_ID
-               || DisplayType == CUMULATIVE_EXCLUSION_ID;
+        return    DisplayType == CUMULATIVE_EXCLUSION_ID;
     }
 
     private static        int    MinCategoryHeight          = 2;  
@@ -93,8 +106,7 @@ public class SummaryState
         Assume caller guarantees the order of timestamps and ypos, such that
         start_time <= final_time  and  start_ypos <= final_ypos.
     */
-    private static int  drawForward( Graphics2D g,
-                                     Color color, Insets insets,
+    private static int  drawForward( Graphics2D g, Color color,
                                      CoordPixelXform coord_xform,
                                      double start_time, float start_ypos,
                                      double final_time, float final_ypos )
@@ -105,13 +117,6 @@ public class SummaryState
 
         jStart   = coord_xform.convertRowToPixel( start_ypos );
         jFinal   = coord_xform.convertRowToPixel( final_ypos );
-
-        if ( insets != null ) {
-            iStart += insets.left;
-            iFinal -= insets.right;
-            jStart += insets.top;
-            jFinal -= insets.bottom;
-        }
 
         boolean  isStartVtxInImg, isFinalVtxInImg;
         isStartVtxInImg = ( iStart >= 0 ) ;
@@ -134,6 +139,9 @@ public class SummaryState
             // iTail = coord_xform.getImageWidth();
         jTail    = jFinal;
 
+        if ( color == null )
+            color = ForeColor;
+      
         // Fill the color of the rectangle
         g.setColor( color );
         g.fillRect( iHead, jHead, iTail-iHead+1, jTail-jHead+1 );
@@ -185,15 +193,18 @@ public class SummaryState
 
 
 
-    public static void setTimeBoundingBox( CategoryTimeBox[]  typeboxes,
-                                           double             starttime,
-                                           double             finaltime )
+    public static void setTimeBoundingBox( TimeAveBox  avebox,
+                                           double      starttime,
+                                           double      finaltime )
     {
-        CategoryTimeBox typebox;
-        boolean         isInclusive;
-        double          prev_time, interval, duration;
-        int             idx;
+        CategoryTimeBox[]  typeboxes;
+        CategoryTimeBox    typebox;
+        TimeBoundingBox    curr_timebox;
+        boolean            isInclusive;
+        double             prev_time, interval, duration;
+        int                vis_typeboxes_length, idx;
 
+        typeboxes  = avebox.arrayOfCategoryTimeBoxes();
         if ( isDisplayTypeExclusiveRatio() )
             Arrays.sort( typeboxes, CategoryTimeBox.EXCL_RATIO_ORDER );
         else // OverlapInclusionRatio, CumulativeInclusionRatio, FitMostLegends
@@ -204,14 +215,24 @@ public class SummaryState
            set TimeBoundingBox of CategoryTimeBox[] in descending ratio order
         */
 
+        curr_timebox  = avebox.getCurrentTimeBoundingBox();
+        curr_timebox.reinitialize();
         if ( isDisplayTypeEqualWeighted() ) {
+            vis_typeboxes_length = 0;
+            for ( idx = typeboxes.length-1; idx >= 0; idx-- ) {
+                 if ( typeboxes[ idx ].isCategoryVisiblySearchable() )
+                     vis_typeboxes_length++ ;
+            }
             prev_time  = starttime;
-            interval   = ( finaltime - starttime ) / typeboxes.length;
+            interval   = ( finaltime - starttime ) / vis_typeboxes_length;
             for ( idx = typeboxes.length-1; idx >= 0; idx-- ) {
                 typebox   = typeboxes[ idx ];
-                typebox.setEarliestTime( prev_time );
-                typebox.setLatestFromEarliest( interval );
-                prev_time = typebox.getLatestTime();
+                if ( typebox.isCategoryVisiblySearchable() ) {
+                    typebox.setEarliestTime( prev_time );
+                    typebox.setLatestFromEarliest( interval );
+                    prev_time = typebox.getLatestTime();
+                    curr_timebox.affectTimeBounds( typebox );
+                }
             }
         }
         else {
@@ -221,36 +242,44 @@ public class SummaryState
                 duration   = finaltime - starttime;
                 for ( idx = typeboxes.length-1; idx >= 0; idx-- ) {
                     typebox   = typeboxes[ idx ];
-                    interval  = duration
-                              * typebox.getCategoryRatio( isInclusive ) ;
-                    typebox.setEarliestTime( prev_time );
-                    typebox.setLatestFromEarliest( interval );
-                    prev_time = typebox.getLatestTime();
+                    if ( typebox.isCategoryVisiblySearchable() ) {
+                        interval  = duration
+                                  * typebox.getCategoryRatio( isInclusive );
+                        typebox.setEarliestTime( prev_time );
+                        typebox.setLatestFromEarliest( interval );
+                        prev_time = typebox.getLatestTime();
+                        curr_timebox.affectTimeBounds( typebox );
+                    }
                }
             }
             else {  // OverlapInclusionRatio, OverlapExclusiveRatio
                 duration   = finaltime - starttime;
                 for ( idx = typeboxes.length-1; idx >= 0; idx-- ) {
                     typebox   = typeboxes[ idx ];
-                    interval  = duration
-                              * typebox.getCategoryRatio( isInclusive ) ;
-                    typebox.setEarliestTime( starttime );
-                    typebox.setLatestFromEarliest( interval );
+                    if ( typebox.isCategoryVisiblySearchable() ) {
+                        interval  = duration
+                                  * typebox.getCategoryRatio( isInclusive );
+                        typebox.setEarliestTime( starttime );
+                        typebox.setLatestFromEarliest( interval );
+                        curr_timebox.affectTimeBounds( typebox );
+                    }
                }
             }
         }
     }
 
-    public  static int  draw( Graphics2D  g, Insets  insets,
-                              CategoryTimeBox[]  typeboxes,
+    public  static int  draw( Graphics2D  g, TimeAveBox  avebox,
                               CoordPixelXform  coord_xform,
-                              float start_ypos, float final_ypos )
+                              float  start_ypos, float  final_ypos,
+                              float  avebox_height )
     {
-        CategoryTimeBox  typebox;
-        Color            color;
-        double           head_time, tail_time;
-        float            head_ypos, tail_ypos, gap_ypos;
-        int              count, idx;
+        CategoryTimeBox[]  typeboxes;
+        CategoryTimeBox    typebox;
+        TimeBoundingBox    curr_timebox;
+        Color              color;
+        double             head_time, tail_time;
+        float              head_ypos, tail_ypos, gap_ypos;
+        int                count, idx;
 
         if ( start_ypos < final_ypos ) {
             head_ypos  = start_ypos;
@@ -262,27 +291,49 @@ public class SummaryState
         }
 
         // Draw CategoryTimeBox[] in descending ratio order
-        count = 0;
+        count         = 0;
+        curr_timebox  = avebox.getCurrentTimeBoundingBox();
+        typeboxes     = avebox.arrayOfCategoryTimeBoxes();
         if (    isDisplayTypeEqualWeighted()
              || isDisplayTypeCumulative() ) {
+            if (   head_ypos + avebox_height
+                 < tail_ypos - avebox_height ) {
+                head_time  = curr_timebox.getEarliestTime();
+                tail_time  = curr_timebox.getLatestTime();
+                count += drawForward( g, null, coord_xform,
+                                      head_time, head_ypos,
+                                      tail_time, tail_ypos );
+                head_ypos += avebox_height;
+                tail_ypos -= avebox_height;
+            }
             for ( idx = typeboxes.length-1; idx >= 0; idx-- ) {
                 typebox    = typeboxes[ idx ];
                 color      = typebox.getCategoryColor();
                 head_time  = typebox.getEarliestTime();
                 tail_time  = typebox.getLatestTime();
-                count += drawForward( g, color, insets, coord_xform,
+                count += drawForward( g, color, coord_xform,
                                       head_time, head_ypos,
                                       tail_time, tail_ypos );
             } 
         }
         else { // OverlapXXclusionRatio
+            if (   head_ypos + avebox_height
+                 < tail_ypos - avebox_height ) {
+                head_time  = curr_timebox.getEarliestTime();
+                tail_time  = curr_timebox.getLatestTime();
+                count += drawForward( g, null, coord_xform,
+                                      head_time, head_ypos,
+                                      tail_time, tail_ypos );
+                head_ypos += avebox_height;
+                tail_ypos -= avebox_height;
+            }
             gap_ypos = ( tail_ypos - head_ypos ) / ( typeboxes.length * 2 );
             for ( idx = typeboxes.length-1; idx >= 0; idx-- ) {
                 typebox    = typeboxes[ idx ];
                 color      = typebox.getCategoryColor();
                 head_time  = typebox.getEarliestTime();
                 tail_time  = typebox.getLatestTime();
-                count += drawForward( g, color, insets, coord_xform,
+                count += drawForward( g, color, coord_xform,
                                       head_time, head_ypos,
                                       tail_time, tail_ypos );
                 head_ypos += gap_ypos;
@@ -292,15 +343,18 @@ public class SummaryState
         return count;
     }
 
-    public static
-    CategoryTimeBox containsPixel( CategoryTimeBox[] typeboxes, Insets insets,
-                                   CoordPixelXform coord_xform, Point pt,
-                                   float start_ypos, float final_ypos )
+    public static Object containsPixel( TimeAveBox  avebox,
+                                        CoordPixelXform coord_xform, Point pt,
+                                        float start_ypos, float final_ypos,
+                                        float avebox_height )
     {
-        CategoryTimeBox  typebox;
-        double           head_time, tail_time;
-        float            head_ypos, tail_ypos, gap_ypos;
-        int              idx;
+        CategoryTimeBox[]  typeboxes;
+        CategoryTimeBox    typebox;
+        TimeBoundingBox    curr_timebox;
+        double             head_time, tail_time;
+        float              head_ypos, tail_ypos, gap_ypos;
+        boolean            hasBoundary;
+        int                idx;
 
         if ( start_ypos < final_ypos ) {
             head_ypos  = start_ypos;
@@ -318,8 +372,18 @@ public class SummaryState
             return null;
 
         // Search CategoryTimeBox[] in ascending ratio order
+        curr_timebox  = avebox.getCurrentTimeBoundingBox();
+        typeboxes     = avebox.arrayOfCategoryTimeBoxes();
         if (    isDisplayTypeEqualWeighted()
              || isDisplayTypeCumulative() ) {
+            if (   head_ypos + avebox_height
+                 < tail_ypos - avebox_height ) {
+                head_ypos  += avebox_height;
+                tail_ypos  -= avebox_height;
+                hasBoundary = true;
+            }
+            else
+                hasBoundary = false;
             for ( idx = 0; idx < typeboxes.length; idx++ ) {
                 typebox    = typeboxes[ idx ];
                 head_time  = typebox.getEarliestTime();
@@ -329,9 +393,27 @@ public class SummaryState
                                 tail_time, tail_ypos ) )
                     return typebox;
             }
+            if ( hasBoundary ) {
+                head_ypos -= avebox_height;
+                tail_ypos += avebox_height;
+                head_time  = curr_timebox.getEarliestTime();
+                tail_time  = curr_timebox.getLatestTime();
+                if ( isPixelIn( coord_xform, pt,
+                                head_time, head_ypos,
+                                tail_time, tail_ypos ) )
+                    return avebox;
+            }
         }
         else { // OverlapXXclusionRatio
-            gap_ypos = ( tail_ypos - head_ypos ) / ( typeboxes.length * 2 );
+            if (   head_ypos + avebox_height
+                 < tail_ypos - avebox_height ) {
+                head_ypos  += avebox_height;
+                tail_ypos  -= avebox_height;
+                hasBoundary = true;
+            }
+            else
+                hasBoundary = false;
+            gap_ypos   = ( tail_ypos - head_ypos ) / ( typeboxes.length * 2 );
             head_ypos += gap_ypos * (typeboxes.length-1);
             tail_ypos -= gap_ypos * (typeboxes.length-1);
             for ( idx = 0; idx < typeboxes.length; idx++ ) {
@@ -344,6 +426,18 @@ public class SummaryState
                     return typebox;
                 head_ypos -= gap_ypos;
                 tail_ypos += gap_ypos;
+            }
+            if ( hasBoundary ) {
+                head_ypos += gap_ypos;
+                tail_ypos -= gap_ypos;
+                head_ypos -= avebox_height;
+                tail_ypos += avebox_height;
+                head_time  = curr_timebox.getEarliestTime();
+                tail_time  = curr_timebox.getLatestTime();
+                if ( isPixelIn( coord_xform, pt,
+                                head_time, head_ypos,
+                                tail_time, tail_ypos ) )
+                    return avebox;
             }
         }
 
