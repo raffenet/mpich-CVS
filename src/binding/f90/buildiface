@@ -158,12 +158,9 @@ open (MPIFD, ">mpi.f90" ) || die "Could not open mpi.f90\n";
 #     &      BASE_MPI_WTIME => MPI_WTIME, BASE_MPI_WTICK => MPI_WTICK
 # but this caused problems with the pg compiler.  Need to understand and fix
 print MPIFD "       MODULE MPI
-       IMPLICIT NONE
-       INTERFACE
 !      This module was created by the script buildiface
        USE MPI_CONSTANTS
        USE MPI_BASE
-       END INTERFACE
        END MODULE MPI\n";
   
 close (MPIFD);
@@ -279,6 +276,7 @@ close MPIBASEFD;
 
 open ( MPIFD, ">mpi_constants.f90" ) || die "Cannot open mpi_constants.f90\n";
 print MPIFD "        MODULE MPI_CONSTANTS
+        IMPLICIT NONE
         INCLUDE 'mpif.h'
         END MODULE MPI_CONSTANTS\n";
 close MPIFD;
@@ -383,17 +381,23 @@ print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 
 print MAKEFD "smvar_do_dependencies = ignore\n";
 print MAKEFD "MOD = \@F90MODEXT\@\n";
+print MAKEFD "F90INCFLAG = \@F90INCFLAG\@\n";
+print MAKEFD "F90_COMPILE_MODS = \$(F90_COMPILE) \$(F90INCFLAG)\$(top_srcdir)/src/include\n";
 
 print MAKEFD "all-preamble: mpi.\$(MOD)\n";
 
 print MAKEFD "mpi_constants.\$(MOD): \$(srcdir)/mpi_constants.f90\
-\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi_constants.f90\n";
+\t\$(F90_COMPILE_MODS) -c \$(srcdir)/mpi_constants.f90\n";
 
 print MAKEFD "mpi_base.\$(MOD): \$(srcdir)/mpi_base.f90\
-\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi_base.f90\n";
+\t\$(F90_COMPILE_MODS)  -c \$(srcdir)/mpi_base.f90\n";
 
+print MAKEFD "# Thes copy line in this step makes the F90 modules available to \n";
+print MAKEFD "# the mpif90 script before an install takes place\n";
 print MAKEFD "mpi.\$(MOD): \$(srcdir)/mpi.f90 mpi_constants.\$(MOD) mpi_base.\$(MOD)\
-\t\$(F90) -c \$(F90FLAGS) \$(srcdir)/mpi.f90\n";
+\t\$(F90_COMPILE_MODS) -c \$(srcdir)/mpi.f90\n";
+print MAKEFD "\tcp mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD) ../../../src/include\n";
+
 
 print MAKEFD "clean-local:\n";
 print MAKEFD "\trm -f *.\$(MOD)\n";
@@ -409,6 +413,10 @@ print MAKEFD "install_INCLUDE = mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MO
 # in a distclean step.
 print MAKEFD "distclean-local:\n";
 print MAKEFD "\trm -f ../../../bin/mpif90\n";
+print MAKEFD "\trm -f ../../../src/include/mpi.\$(MOD)\n";
+print MAKEFD "\trm -f ../../../src/include/mpi_base.\$(MOD)\n";
+print MAKEFD "\trm -f ../../../src/include/mpi_constants.\$(MOD)\n";
+
 
 close( MAKEFD );
 
