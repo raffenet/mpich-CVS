@@ -733,20 +733,23 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
     {
 	size_t total;
 	size_t num_written;
+	char *buffer;
 
-	total = num_read;
+	total = num_read+1;
+	buffer = context->read_cmd.cmd;
 	while (total > 0)
 	{
-	    num_written = fwrite(context->read_cmd.cmd, 1, total, context->type == SMPD_CONTEXT_STDOUT_RSH ? stdout : stderr);
+	    num_written = fwrite(buffer, 1, total, context->type == SMPD_CONTEXT_STDOUT_RSH ? stdout : stderr);
 	    if (num_written < 1)
 	    {
 		num_read = 0;
 		total = 0;
-		smpd_dbg_printf("fwrite failed: error %d\n", ferror(context->type == SMPD_CONTEXT_STDOUT_RSH ? stdout : stderr));
+		smpd_err_printf("fwrite failed: error %d\n", ferror(context->type == SMPD_CONTEXT_STDOUT_RSH ? stdout : stderr));
 	    }
 	    else
 	    {
 		total = total - num_written;
+		buffer = buffer + num_written;
 	    }
 	}
     }
