@@ -217,54 +217,6 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
 		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
-#if 0
-		if (ca == MPIDI_CH3_CA_COMPLETE)
-		{
-		    MPIDI_DBG_PRINTF((65, FCNAME, "sent requested data, decrementing CC"));
-		    MPIDI_CH3I_SendQ_dequeue(vc);
-		    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
-		    /* mark data transfer as complete and decrment CC */
-		    req->dev.iov_count = 0;
-		    MPIDI_CH3U_Request_complete(req);
-		}
-		else if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
-		{
-		    MPIDI_CH3_Pkt_t * pkt = &req->ch.pkt;
-		    
-		    if (pkt->type < MPIDI_CH3_PKT_END_CH3)
-		    {
-			MPIDI_DBG_PRINTF((65, FCNAME, "setting ch.send_active"));
-			vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
-		    }
-		    else
-		    {
-			MPIDI_DBG_PRINTF((71, FCNAME, "unknown packet type %d", pkt->type));
-		    }
-		}
-		else if (ca < MPIDI_CH3_CA_END_CH3)
-		{
-		    MPIDI_DBG_PRINTF((65, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
-		    MPIDI_CH3U_Handle_send_req(vc, req);
-		    if (req->dev.iov_count == 0)
-		    {
-			/* NOTE: This code assumes that if another write is not posted by the device during the callback, then the
-			   device has completed the current request.  As a result, the current request is dequeded and next request
-			   in the queue is processed. */
-			MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete"));
-			MPIDI_DBG_PRINTF((65, FCNAME, "dequeuing req and posting next send"));
-			if (MPIDI_CH3I_SendQ_head(vc) == req)
-			{
-			    MPIDI_CH3I_SendQ_dequeue(vc);
-			}
-			vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
-		    }
-		}
-		else
-		{
-		    MPIDI_DBG_PRINTF((65, FCNAME, "ca = %d", ca));
-		    assert(ca < MPIDI_CH3I_CA_END_SSHM_CHANNEL);
-		}
-#endif
 	    }
 	    else
 	    {

@@ -181,7 +181,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->cc = 0;
 	/* TODO: Create an appropriate error message */
-	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INTERN, "**connfailed", 0);
     }
 
     *sreq_ptr = sreq;

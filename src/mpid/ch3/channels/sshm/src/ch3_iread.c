@@ -112,21 +112,6 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     {
 	vc->ch.shm_reading_pkt = TRUE;
     }
-#if 0
-    if (rreq->dev.ca == MPIDI_CH3_CA_COMPLETE)
-    {
-	/* mark data transfer as complete and decrement CC */
-	rreq->dev.iov_count = 0;
-	MPIDI_CH3U_Request_complete(rreq);
-	MPIDI_DBG_PRINTF((60, FCNAME, "called request complete"));
-    }
-    else
-    {
-	/* FIXME: excessive recursion... */
-	MPIDI_CH3U_Handle_recv_req(vc, rreq);
-	MPIDI_DBG_PRINTF((60, FCNAME, "called handle_recv_req"));
-    }
-#endif
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting from main block"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
