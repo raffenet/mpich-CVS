@@ -20,7 +20,7 @@ public class SwingProcessWorker extends SwingWorker
     private WaitingContainer   container;
     private AdvancingTextArea  textarea;
 
-    private String             exec_cmd;
+    private String[]           exec_cmd_ary;
     private Timer              process_timer;
     private ActionListener     process_progress;
     private Process            process;
@@ -43,20 +43,26 @@ public class SwingProcessWorker extends SwingWorker
         process_out_task  = null;
     }
 
-    public void initialize( String          command_str,
+    public void initialize( String[]        command_strs,
                             ActionListener  progress_action )
     {
-        exec_cmd          = command_str;
+        StringBuffer  cmd_strbuf; 
+
+        exec_cmd_ary          = command_strs;
 
         if ( process_progress != null )
             process_timer.removeActionListener( process_progress );
         process_progress  = progress_action;
         process_timer.addActionListener( process_progress );
 
-        textarea.append( "Executing " + exec_cmd + " ...." );
+        cmd_strbuf = new StringBuffer( "Executing " );
+        for ( int idx = 0; idx < exec_cmd_ary.length; idx++ )
+            cmd_strbuf.append( exec_cmd_ary[ idx ] + " " );
+        cmd_strbuf.append( "...."  );
+        textarea.append( cmd_strbuf.toString() );
         Runtime  runtime = Runtime.getRuntime();
         try {
-            process = runtime.exec( exec_cmd );
+            process = runtime.exec( exec_cmd_ary );
             process_err_task = new InputStreamThread( process.getErrorStream(),
                                                       "Error", textarea );
             process_out_task = new InputStreamThread( process.getInputStream(),

@@ -34,7 +34,6 @@ import javax.swing.border.TitledBorder;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,6 +48,7 @@ import viewer.common.Routines;
 import viewer.common.CustomCursor;
 import viewer.common.ActableTextField;
 import viewer.common.LogFileChooser;
+import viewer.common.RuntimeExecCommand;
 
 public class ConvertorPanel extends JPanel
                             implements WaitingContainer
@@ -563,15 +563,15 @@ public class ConvertorPanel extends JPanel
 
     private void printSelectedConvertorHelp()
     {
-        String             convertor;
-        String             path2jardir;
-        String             path2tracelib;
-        String             jar_path;
-        StringBuffer       exec_cmd;
-        File               jar_file;
-        Runtime            runtime;
-        Process            proc;
-        InputStreamThread  proc_err_task, proc_out_task;
+        String              convertor;
+        String              path2jardir;
+        String              path2tracelib;
+        String              jar_path;
+        RuntimeExecCommand  exec_cmd;
+        File                jar_file;
+        Runtime             runtime;
+        Process             proc;
+        InputStreamThread   proc_err_task, proc_out_task;
 
         convertor = (String) cmd_pulldown.getSelectedItem();
 
@@ -588,18 +588,23 @@ public class ConvertorPanel extends JPanel
             return;
         }
 
-        exec_cmd = new StringBuffer( cmd_path2jvm.getText() + " "
-                                   + cmd_option4jvm.getText() );
+        exec_cmd = new RuntimeExecCommand();
+        exec_cmd.addWholeString( cmd_path2jvm.getText() );
+        exec_cmd.addTokenizedString( cmd_option4jvm.getText() );
+
         path2tracelib = cmd_path2tracelib.getText();
         if ( path2tracelib != null && path2tracelib.length() > 0 )
-            exec_cmd.append( " -Djava.library.path=" + path2tracelib );
-        exec_cmd.append( " -jar " + jar_path + " -h" );
+            exec_cmd.addWholeString( "-Djava.library.path=" + path2tracelib );
 
-        cmd_textarea.append( "Executing " + exec_cmd.toString()
-                           + " ...." );
+        exec_cmd.addWholeString( "-jar" );
+        exec_cmd.addWholeString( jar_path );
+        exec_cmd.addWholeString( "-h" );
+
+        cmd_textarea.append( "Executing " + exec_cmd.toString() + "...." );
+        
         runtime  = Runtime.getRuntime();
         try {
-            proc = runtime.exec( exec_cmd.toString() );
+            proc = runtime.exec( exec_cmd.toStringArray() );
             proc_err_task = new InputStreamThread( proc.getErrorStream(),
                                                    "Error", cmd_textarea );
             proc_out_task = new InputStreamThread( proc.getInputStream(),
@@ -625,14 +630,14 @@ public class ConvertorPanel extends JPanel
 
     private void convertSelectedLogFile()
     {
-        String             convertor;
-        String             path2jardir, path2tracelib;
-        String             infile_name, outfile_name, jar_path;
-        String             option4jar;
-        File               infile, outfile, jar_file;
-        InputLog           slog_ins;
-        StringBuffer       exec_cmd;
-        ProgressAction     logconv_progress;
+        String              convertor;
+        String              path2jardir, path2tracelib;
+        String              infile_name, outfile_name, jar_path;
+        String              option4jar;
+        File                infile, outfile, jar_file;
+        InputLog            slog_ins;
+        RuntimeExecCommand  exec_cmd;
+        ProgressAction      logconv_progress;
 
         // Check the validity of the Input File
         infile_name   = cmd_infile.getText();
@@ -710,18 +715,24 @@ public class ConvertorPanel extends JPanel
             return;
         }
 
-        exec_cmd = new StringBuffer( cmd_path2jvm.getText() + " "
-                                   + cmd_option4jvm.getText() );
+        exec_cmd = new RuntimeExecCommand();
+        exec_cmd.addWholeString( cmd_path2jvm.getText() );
+        exec_cmd.addTokenizedString( cmd_option4jvm.getText() );
+
         path2tracelib = cmd_path2tracelib.getText();
         if ( path2tracelib != null && path2tracelib.length() > 0 )
-            exec_cmd.append( " -Djava.library.path=" + path2tracelib );
-        exec_cmd.append( " -jar " + jar_path );
+            exec_cmd.addWholeString( "-Djava.library.path=" + path2tracelib );
+
+        exec_cmd.addWholeString( "-jar" );
+        exec_cmd.addWholeString( jar_path );
 
         option4jar  = cmd_option4jar.getText();
         if ( option4jar != null && option4jar.length() > 0 )
-            exec_cmd.append( " " + option4jar );
+            exec_cmd.addTokenizedString( option4jar );
 
-        exec_cmd.append( " -o " + outfile_name + " " + infile_name );
+        exec_cmd.addWholeString( "-o" );
+        exec_cmd.addWholeString( outfile_name );
+        exec_cmd.addWholeString( infile_name );
 
         /*
            Start a SwingWorker thread to execute the process:
@@ -730,7 +741,7 @@ public class ConvertorPanel extends JPanel
         logconv_progress = new ProgressAction( cmd_outfile_size, cmd_progress );
         logconv_progress.initialize( infile, outfile );
         logconv_worker = new SwingProcessWorker( this, cmd_textarea );
-        logconv_worker.initialize( exec_cmd.toString(), logconv_progress );
+        logconv_worker.initialize( exec_cmd.toStringArray(), logconv_progress );
         logconv_worker.start();
     }
 

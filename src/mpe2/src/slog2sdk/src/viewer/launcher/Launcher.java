@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import viewer.common.Dialogs;
+import viewer.common.RuntimeExecCommand;
 
 public class Launcher
 {
@@ -148,7 +149,7 @@ public class Launcher
             return VIEWER_JAR;
     }
 
-    private String exec( String exec_cmd )
+    private String exec( String[] exec_cmd_ary )
     {
         Runtime            runtime;
         Process            proc;
@@ -161,7 +162,7 @@ public class Launcher
         proc_istatus  = 0;
         runtime       = Runtime.getRuntime();
         try {
-            proc = runtime.exec( exec_cmd );
+            proc = runtime.exec( exec_cmd_ary );
             proc_err_task = new InputStreamThread( proc.getErrorStream(),
                                                    "Error", proc_err_buf );
             proc_out_task = new InputStreamThread( proc.getInputStream(),
@@ -188,15 +189,15 @@ public class Launcher
     
     public static final void main( String[] argv )
     {
-        String        path2jardir;
-        String        path2jvm;
-        String        opt4jvm;
-        String        jar_path;
-        String        exec_cmd;
-        File          jar_file;
-        File          jvm_file;
-        Launcher      launcher;
-        String        exec_err_msg;
+        String              path2jardir;
+        String              path2jvm;
+        String              opt4jvm;
+        String              jar_path;
+        RuntimeExecCommand  exec_cmd;
+        File                jar_file;
+        File                jvm_file;
+        Launcher            launcher;
+        String              exec_err_msg;
 
         Launcher.initializeSystemProperties();
         Launcher.initializeLauncherConstants();
@@ -242,11 +243,17 @@ public class Launcher
         }
 
         opt4jvm  = JVM_OPTIONS;
-        exec_cmd = path2jvm + " " + opt4jvm + " -jar " + jar_path;
-        launcher = new  Launcher();
-        if ( ( exec_err_msg = launcher.exec( exec_cmd ) ) != null ) {
+        exec_cmd = new RuntimeExecCommand();
+        exec_cmd.addWholeString( path2jvm );
+        exec_cmd.addTokenizedString( opt4jvm );
+        exec_cmd.addWholeString( "-jar" );
+        exec_cmd.addWholeString( jar_path );
+
+        launcher = new Launcher();
+        if (    ( exec_err_msg = launcher.exec( exec_cmd.toStringArray() ) )
+             != null ) {
             Dialogs.error( null, "The following process exits with error:\n"
-                               + exec_cmd + "\n" + exec_err_msg );
+                               + exec_cmd.toString() + "\n" + exec_err_msg );
             System.exit( 1 );
         }
 
