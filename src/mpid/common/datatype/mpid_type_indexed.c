@@ -38,20 +38,21 @@
  */
 int MPID_Type_indexed(int count,
 		      int *blocklength_array,
-		      int *displacement_array,
+		      void *displacement_array,
 		      int dispinbytes,
 		      MPI_Datatype oldtype,
 		      MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, new_loopsize, el_extent, total_count, *iptr;
+    int i, new_loopsize, total_count, *iptr;
     char *curpos;
+    MPI_Aint el_extent;
 
     MPID_Datatype *new_dtp, *old_dtp = NULL;
     struct MPID_Dataloop *dlp;
     MPI_Aint *aptr;
 
-    int min_disp = 0, max_disp = 0;
+    MPI_Aint min_disp = 0, max_disp = 0;
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
@@ -83,12 +84,12 @@ int MPID_Type_indexed(int count,
 
     /* count # of elements and find min and max displacements */
     if (dispinbytes) {
-	min_disp = displacement_array[0];
-	max_disp = min_disp + blocklength_array[0] * el_extent;
+	min_disp = ((MPI_Aint *) displacement_array)[0];
+	max_disp = min_disp + (MPI_Aint) blocklength_array[0] * el_extent;
     }
     else {
-	min_disp = displacement_array[0] * el_extent;
-	max_disp = (min_disp + blocklength_array[0]) * el_extent;
+	min_disp = (MPI_Aint) ((int *) displacement_array)[0] * el_extent;
+	max_disp = (min_disp + (MPI_Aint) blocklength_array[0]) * el_extent;
     }
     total_count = blocklength_array[0];
 
@@ -98,17 +99,17 @@ int MPID_Type_indexed(int count,
     for (i=1; i < count; i++) {
 	total_count += blocklength_array[i];
 
-	if (dispinbytes) {
-	    if (displacement_array[i] < min_disp)
-		min_disp = displacement_array[i];
-	    else if (displacement_array[i] + blocklength_array[i] * el_extent > max_disp)
-		max_disp = displacement_array[i] + blocklength_array[i] * el_extent;
+	if (dispinbytes) /* hindexed */ {
+	    if (((MPI_Aint *) displacement_array)[i] < min_disp)
+		min_disp = ((MPI_Aint *) displacement_array)[i];
+	    else if (((MPI_Aint *) displacement_array)[i] + blocklength_array[i] * el_extent > max_disp)
+		max_disp = ((MPI_Aint *) displacement_array)[i] + blocklength_array[i] * el_extent;
 	}
 	else {
-	    if (displacement_array[i] * el_extent < min_disp)
-		min_disp = displacement_array[i];
-	    else if ((displacement_array[i] + blocklength_array[i]) * el_extent > max_disp)
-		max_disp = (displacement_array[i] + blocklength_array[i]) * el_extent;
+	    if ((MPI_Aint) ((int *) displacement_array)[i] * el_extent < min_disp)
+		min_disp = ((int *) displacement_array)[i];
+	    else if ((MPI_Aint) (((int *) displacement_array)[i] + blocklength_array[i]) * el_extent > max_disp)
+		max_disp = (MPI_Aint) (((int *) displacement_array)[i] + blocklength_array[i]) * el_extent;
 	}
     }
 
@@ -211,10 +212,10 @@ int MPID_Type_indexed(int count,
     dlp->loop_params.i_t.offset_array = (MPI_Aint *) curpos;
     aptr = (MPI_Aint *) curpos;
     for (i=0; i < count; i++) {
-	if (dispinbytes)
-	    aptr[i] = (MPI_Aint) displacement_array[i];
-	else 
-	    aptr[i] = (MPI_Aint) displacement_array[i] * el_extent;
+	if (dispinbytes) /* hindexed */
+	    aptr[i] = (MPI_Aint) ((MPI_Aint *) displacement_array)[i];
+	else /* indexed */
+	    aptr[i] = ((MPI_Aint) ((int *) displacement_array)[i]) * el_extent;
     }
 
     /* return handle to new datatype in last parameter */
