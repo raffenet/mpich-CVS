@@ -9,6 +9,12 @@ $no_lib_steps = 1;
 # -W options for gcc, and successful compiles.
 $last_line = "";
 
+#
+# We accumulate lines into "last_line" until we believe that we have reached 
+# a new command.  This allows us to output the command and any 
+# subsequent warning messages, e.g., the compilation command followed
+# by all messages.  A blank line or a known command are among the
+# input that clears the "last_line" field.
 while (<>) {
     # skip lines that start with for and are continued.
     if (/^\s*for dir in .*\\$/) {
@@ -49,6 +55,10 @@ while (<>) {
 	}
 	next;
     }
+    # skip lines that have conditional mkdirs
+    if (/\s*if\s.*then mkdir\s.*fi/) {
+	next;
+    }
 
     # Clean up compiler output
     if (/^[agi]?cc\s/ || /^pgcc\s/) {
@@ -60,7 +70,7 @@ while (<>) {
 	s/-I[^\s]*\s*//g;
 	s/-DHAVE_CONFIG_H\s*//g;
     }
-    if (/^[agi]?c\+\+\s/ || /^CC\s/) {
+    if (/^[agi]?c\+\+\s/ || /^CC\s/ || /^pgCC\s/) {
 	s/-I[^\s]*\s*//g;
 	s/-DHAVE_CONFIG_H\s*//g;
     }
@@ -97,14 +107,16 @@ while (<>) {
 	$last_line = "";
 	next;
     }
+    # Skip rm and mv lines
     if (/^\s*rm /) { next; }
+    if (/\s*mv /) { next; }
 
     if (/WARNING 84.*not used for resolving any symbol/) { next; }
     if (/Info: File not optimized/) { next; }
 
     if ($no_lib_steps) {
 	if (/^\s*ar\s/ || /^\s*ranlib\s/ || /^\s*true\s/) { 
-	    $lastline = ""; 
+	    $last_line = ""; 
 	    next; }
     }
     else {
@@ -141,6 +153,7 @@ while (<>) {
 	    print $last_line;
 	}
     }
+    # If we reach this point, we're ready to reset the last_line field
     $last_line = $_;
 }
 print $last_line;
