@@ -1075,7 +1075,7 @@ if test "$runs" = "no" ; then
 fi
 ])
 AC_DEFUN(PAC_PROG_F77_NEW_CHAR_DECL,[
-AC_CACHE_CHECK([whether Fortran new-style character declarations],
+AC_CACHE_CHECK([whether Fortran supports new-style character declarations],
 pac_cv_prog_f77_new_char_decl,[
 AC_LANG_SAVE
 AC_LANG_FORTRAN77
