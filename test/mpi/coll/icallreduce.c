@@ -27,7 +27,7 @@ int main( int argc, char *argv[] )
 	MPI_Comm_rank( comm, &rank );
 /*	for (count = 1; count < 65000; count = 2 * count) { */
 	count = 1; {
-	    printf( "rank = %d(%d)\n", rank, leftGroup ); fflush(stdout);
+	    /* printf( "rank = %d(%d)\n", rank, leftGroup ); fflush(stdout); */
 	    sendbuf = (int *)malloc( count * sizeof(int) );
 	    recvbuf = (int *)malloc( count * sizeof(int) );
 	    /* Get an intercommunicator */
