@@ -1893,7 +1893,10 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
     &print_header( "MPI_Address", "address", $args );
     # Add the definitions needed for error reporting
     # (We could use mpiimpl.h, but mpierrs.h should be sufficient)
+    # mpierror.h references FILE *, so needs stdio.h
     print $OUTFD "#include \"mpierrs.h\"\n"; 
+    print $OUTFD "#include <stdio.h>\n"; 
+    print $OUTFD "#include \"mpierror.h\"\n"; 
     &print_routine_type_decl( $OUTFD, "address" );
     &print_args( $OUTFD, $args, 0, "address" );
     #&print_attr;
