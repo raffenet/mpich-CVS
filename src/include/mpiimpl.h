@@ -1334,4 +1334,24 @@ extern MPI_User_function *MPIR_Op_table[];
 #define MPIR_MAX(a,b) (((b)>(a))?(b):(a))
 #endif
 
+/* Fortran logicals */
+#ifndef _CRAY
+extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
+#define MPIR_TO_FLOG(a) ((a) ? MPIR_F_TRUE : MPIR_F_FALSE)
+/* 
+   Note on true and false.  This code is only an approximation.
+   Some systems define either true or false, and allow some or ALL other
+   patterns for the other.  This is just like C, where 0 is false and 
+   anything not zero is true.  Modify this test as necessary for your
+   system.
+ */
+#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_TRUE ? 1 : 0 )
+
+#else
+/* CRAY Vector processors only; these are defined in /usr/include/fortran.h 
+   Thanks to lmc@cray.com */
+#define MPIR_TO_FLOG(a) (_btol(a))
+#define MPIR_FROM_FLOG(a) ( _ltob(&(a)) )    /*(a) must be a pointer */
+#endif
+
 #endif /* MPIIMPL_INCLUDED */

@@ -19,13 +19,15 @@ void MPIR_BOR (
     int i, len = *Len;
     
     switch (*type) {
-    case MPI_LOGICAL: {
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_LOGICAL: case MPI_INTEGER: {
         MPI_Fint * restrict a = (MPI_Fint *)inoutvec; 
         MPI_Fint * restrict b = (MPI_Fint *)invec;
         for ( i=0; i<len; i++ )
             a[i] = MPIR_LBOR(a[i],b[i]);
         break;
     }
+#endif
     case MPI_INT: {
         int * restrict a = (int *)inoutvec; int * restrict b = (int *)invec;
         for ( i=0; i<len; i++ )
@@ -47,7 +49,7 @@ void MPIR_BOR (
         break;
     }
 #if defined(HAVE_LONG_LONG_INT)
-    case MPI_LONGLONGINT: {
+    case MPI_LONG_LONG: case MPI_LONG_LONG_INT: {
         long long * restrict a = (long long *)inoutvec; 
         long long * restrict b = (long long *)invec;
         for ( i=0; i<len; i++ )
@@ -76,7 +78,11 @@ void MPIR_BOR (
             a[i] = MPIR_LBOR(a[i],b[i]);
         break;
     }
-    case MPI_CHAR: {
+    case MPI_CHAR: 
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_CHARACTER: 
+#endif
+    {
         char * restrict a = (char *)inoutvec; 
         char * restrict b = (char *)invec;
         for ( i=0; i<len; i++ )
@@ -99,7 +105,7 @@ void MPIR_BOR (
     }
     default:
         /* TEMPORARY ERROR MESSAGE. NEED TO RETURN PROPER ERROR CODE */
-        printf("MPI_BAND operation not supported for this datatype\n");
+        printf("MPI_BOR operation not supported for this datatype\n");
         NMPI_Abort(MPI_COMM_WORLD, 1);
        break;
     }

@@ -19,13 +19,15 @@ void MPIR_BXOR (
     int i, len = *Len;
     
     switch (*type) {
-    case MPI_LOGICAL: {
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_LOGICAL: case MPI_INTEGER: {
         MPI_Fint * restrict a = (MPI_Fint *)inoutvec; 
         MPI_Fint * restrict b = (MPI_Fint *)invec;
         for ( i=0; i<len; i++ )
             a[i] = MPIR_LBXOR(a[i],b[i]);
         break;
     }
+#endif
     case MPI_INT: {
         int * restrict a = (int *)inoutvec; 
         int * restrict b = (int *)invec;
@@ -77,7 +79,11 @@ void MPIR_BXOR (
             a[i] = MPIR_LBXOR(a[i],b[i]);
         break;
     }
-    case MPI_CHAR: {
+    case MPI_CHAR: 
+#ifdef HAVE_FORTRAN_BINDING
+    case MPI_CHARACTER: 
+#endif
+    {
         char * restrict a = (char *)inoutvec; 
         char * restrict b = (char *)invec;
         for ( i=0; i<len; i++ )
