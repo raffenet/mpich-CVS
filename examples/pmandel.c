@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 	    len = sizeof(addr);
 	    getsockname(listener, &addr, &len);
 	    
-	    printf("listening on port %d\n", addr.sin_port);
+	    printf("%s listening on port %d\n", processor_name, addr.sin_port);
 	    fflush(stdout);
 
 	    sock = accept(listener, NULL, NULL);
@@ -531,8 +531,10 @@ void PrintUsage()
 {
     printf("usage: mpiexec -n x pmandel [options]\n");
     printf("options:\n -xmin # -xmax #\n -ymin # -ymax #\n -depth #\n -xscale # -yscale #\n -out filename\n -i\n");
-    printf("all options are optional.\n");
-    printf("default:\n xmin %f, xmax %f\n ymin %f, ymax %f\n depth %d\n xscale %d, yscale %d\n %s\n",
+    printf("All options are optional.\n");
+    printf("-i will allow you to input the min/max parameters from stdin and output the resulting image to a ppm file.");
+    printf("  Otherwise the root process will listen for a separate visualizer program to connect to it.\n");
+    printf("The defaults are:\n xmin %f, xmax %f\n ymin %f, ymax %f\n depth %d\n xscale %d, yscale %d\n %s\n",
 	IDEAL_MIN_X_VALUE, IDEAL_MAX_X_VALUE, IDEAL_MIN_Y_VALUE, IDEAL_MAX_Y_VALUE, IDEAL_ITERATIONS,
 	IDEAL_WIDTH, IDEAL_HEIGHT, default_filename);
     fflush(stdout);
