@@ -1,4 +1,4 @@
 # SUBDIRS_logging_name are the names that @ logging_name @ can take in SUBDIRS
-SUBDIRS_logging_name = dlog
-SUBDIRS = @logging_name@ dlog2slog .
+SUBDIRS_logging_subdirs = dlog dlog2slog
+SUBDIRS = @logging_subdirs@ .
 

@@ -95,6 +95,10 @@ dnl
 AC_ARG_WITH(pmi, [--with-pmi=name - Specify the pmi interface for MPICH.],,
 with_pmi=default)
 dnl
+AC_ARG_WITH(logging,
+[--with-logging=name - Specify the logging library for MPICH.],,
+with_logging=default)
+dnl
 AC_ARG_ENABLE(weak-symbols,
 [--enable-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
 enable_weak_symbols=yes)
@@ -269,10 +273,10 @@ else
     # Add the device to the configure list
     subsystems="$subsystems src/mpid/$device_name"
     dnl Make device_name available to subdirs
-    AC_SUBST(device_name)
 fi
+AC_SUBST(device_name)
 dnl with-pmi
-if test "$with_pmi" = "default" ; then
+if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
     with_pmi=forker
 fi
 pmi_name=$with_pmi
@@ -284,23 +288,30 @@ elif test ! -x $use_top_srcdir/src/pmi/impls/$pmi_name/configure ; then
     pmi_name=""
 else
     subsystems="$subsystems src/pmi/impls/$pmi_name"
-    AC_SUBST(pmi_name)
 fi
+AC_SUBST(pmi_name)
 dnl with-logging
-if test "$with_logging" = "default" ; then
+if test "$with_logging" = "default" -o "$with_logging" = "yes" ; then
     with_logging=dlog
 fi
 logging_name=$with_logging
 dnl
-if test ! -d $use_top_srcdir/src/util/logging/$logging_name ; then
+if test "$with_logging" = "no" ; then
+    logging_name = ""
+elif test ! -d $use_top_srcdir/src/util/logging/$logging_name ; then
     AC_MSG_WARN([$use_top_srcdir/src/util/logging/$logging_name does not exist.  Logging library is unknown])
 elif test ! -x $use_top_srcdir/src/util/logging/$logging_name/configure ; then
     AC_MSG_WARN([logging library $logging_name has no configure])
     logging_name=""
 else
     subsystems="$subsystems src/util/logging/$logging_name"
-    AC_SUBST(logging_name)
 fi
+logging_subdirs=""
+if test "$logging_name" = "dlog" ; then
+    logging_subdirs="dlog dlog2slog"
+fi
+AC_SUBST(logging_name)
+AC_SUBST(logging_subdirs)
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries
