@@ -1523,7 +1523,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    &completion_data);
 	if (status == IBA_CQ_EMPTY)
 	{
-	    printf("empty");fflush(stdout);
 	    /* ibu_wait polls until there is something in the queue */
 	    /* or the timeout has expired */
 	    if (millisecond_timeout == 0)
