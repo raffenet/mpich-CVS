@@ -142,7 +142,7 @@ if test "$with_cross" != "no" ; then
 fi
 
 if test "$use_runtimevalues" = "yes" ; then
-    AC_DEFINE(F77_RUNTIME_VALUES,,[Define if Fortran environment should be determined at runtime])
+    AC_DEFINE(F77_RUNTIME_VALUES,1,[Define if Fortran environment should be determined at runtime])
 fi
 
 if test -n "$subname" -a -z "$mpichconfig_file" ; then
@@ -204,14 +204,14 @@ pac_cv_have_long_double,[
 AC_TRY_COMPILE(,[long double a;],
 pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
 if test "$pac_cv_have_long_double" = "yes" ; then
-    AC_DEFINE(HAVE_LONG_DOUBLE,,[Define if long double is supported])
+    AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
 fi
 AC_CACHE_CHECK([whether long long is supported],
 pac_cv_have_long_long,[
 AC_TRY_COMPILE(,[long double a;],
 pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
 if test "$pac_cv_have_long_long" = "yes" ; then
-    AC_DEFINE(HAVE_LONG_LONG_INT,,[Define if long long is supported])
+    AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
 fi
 dnl
 dnl Autoconf bug: AC_PROG_F77 sets FFLAGS 
@@ -402,7 +402,7 @@ if test "$f77_has_pointer" = "yes" -a "$use_pointer_in_f77" = "yes" ; then
         data MPI_BOTTOM_PTR/0/, MPI_STATUS_IG_PTR/0/
 	data MPI_STATUSES_IG_PTR/0/
 EOF
-    AC_DEFINE(USE_POINTER_FOR_BOTTOM,,[Define if we want to use nonstandard Fortran Pointer feature])
+    AC_DEFINE(USE_POINTER_FOR_BOTTOM,1,[Define if we want to use nonstandard Fortran Pointer feature])
     dnl Note that with this, we do not need the call to mpir_init_fcm
     dnl in initfcmn.f .
 else
@@ -785,13 +785,13 @@ dnl define AINT_LARGER_THAN_FINT if aint is larger (this
 dnl affects code in MPI_Address)
 if test "$ac_cv_sizeof_voidp" != "0" -a \
         "$ac_cv_sizeof_voidp" -gt "$pac_cv_f77_sizeof_integer" ; then
-    AC_DEFINE(HAVE_AINT_LARGER_THAN_FINT,,[Define if addresses are larger than Fortran integers])
+    AC_DEFINE(HAVE_AINT_LARGER_THAN_FINT,1,[Define if addresses are larger than Fortran integers])
 fi
 dnl
 dnl
 dnl Include a defined value for Fint is int
 if test "$MPI_FINT" = "int" ; then
-    AC_DEFINE(HAVE_FINT_IS_INT,,[Define if Fortran integer are the same size as C ints])
+    AC_DEFINE(HAVE_FINT_IS_INT,1,[Define if Fortran integer are the same size as C ints])
 fi
 
 #
@@ -829,7 +829,7 @@ AC_SUBST(MPI_MAX_PROCESSOR_NAME)
 #
 # Try for weak symbols for the profiling interface.
 if test "$enable_weak" = "yes" ; then
-    PAC_PROG_C_WEAK_SYMBOLS(AC_DEFINE(HAVE_WEAK_SYMBOLS,,[Define if weak symbols supported]))
+    PAC_PROG_C_WEAK_SYMBOLS(AC_DEFINE(HAVE_WEAK_SYMBOLS,1,[Define if weak symbols supported]))
 fi
 # These values are exported from the upper-layer configure.
 AC_SUBST(PROFILE_DEF_MPI)
@@ -870,7 +870,7 @@ int main()
     true_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/ .*//g'`"
     false_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/.*  *//g'`"
     if test -n "$true_val" -a -n "$false_val" ; then
-        AC_DEFINE(F77_TRUE_VALUE_SET,,[Define if we know the value of Fortran true and false])
+        AC_DEFINE(F77_TRUE_VALUE_SET,1,[Define if we know the value of Fortran true and false])
         AC_DEFINE_UNQUOTED(F77_TRUE_VALUE,$true_val,[The value of true in Fortran])
         AC_DEFINE_UNQUOTED(F77_FALSE_VALUE,$false_val,[The value of false in Fortran])
 	AC_MSG_RESULT([True is $true_val and False is $false_val])
@@ -902,7 +902,7 @@ compile_check=yes,compile_check=no)
 	    AC_MSG_WARN([You may have problems compiling the Fortran interface
 specifically calls to  _fcdtocp])
         elif test "$compile_check" = "yes" ; then
-            AC_DEFINE(_TWO_WORD_FCD,,[Define if characters use two-word descriptors])
+            AC_DEFINE(_TWO_WORD_FCD,1,[Define if characters use two-word descriptors])
         fi
         CFLAGS=$TEMP_CFLAGS
     fi
@@ -912,7 +912,7 @@ if test -n "$arch_UXPM" -o -n "$arch_uxpv" ; then
     # This asserts that Fortran passes functions by passing the address of the
     # pointer to the function.
     # We really need a TEST for this
-    AC_DEFINE(FORTRAN_SPECIAL_FUNCTION_PTR,,[Define if Fortran functions are passed by passing the address of the pointer to the function])
+    AC_DEFINE(FORTRAN_SPECIAL_FUNCTION_PTR,1,[Define if Fortran functions are passed by passing the address of the pointer to the function])
     # Suggested values for these are
     dnl CFLAGS=-O
     dnl    #FFLAGS=-Oe,-U -Aabe ( Parameter e is not supported on  uxp/m )
