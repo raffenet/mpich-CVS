@@ -101,6 +101,21 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
     ADIO_Status status1;
     int new_bwr_size, new_fwr_size, max_bufsize;
 
+    if (fd->hints->ds_write == ADIOI_HINT_DISABLE) {
+    	/* if user has disabled data sieving on reads, use naive
+	 * approach instead.
+	 */
+	ADIOI_GEN_WriteStrided_naive(fd, 
+				    buf,
+				    count,
+				    datatype,
+				    file_ptr_type,
+				    offset,
+				    status,
+				    error_code);
+    	return;
+    }
+
     *error_code = MPI_SUCCESS;  /* changed below if error */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
