@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include <assert.h>
 #include "mpiimpl.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Get_elements */
