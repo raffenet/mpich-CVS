@@ -7,6 +7,13 @@
 #include "mpidi_ch3_impl.h"
 #include <stdio.h>
 
+#undef USE_SHM_WRITE_FOR_SHM_WRITEV
+#undef USE_IOV_LEN_2_SHORTCUT
+/*
+#define USE_SHM_WRITE_FOR_SHM_WRITEV
+#define USE_IOV_LEN_2_SHORTCUT
+*/
+
 typedef int SHM_STATE;
 #define SHM_READING    0x0008
 #define SHM_WRITING    0x0010
@@ -56,8 +63,6 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
     return total;
 }
-
-#define USE_SHM_WRITE_FOR_SHM_WRITEV
 
 #ifdef USE_SHM_WRITE_FOR_SHM_WRITEV
 
@@ -121,7 +126,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	return 0;
     }
 
-#if 0
+#ifdef USE_IOV_LEN_2_SHORTCUT
     if (n == 2 && 
 	iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_eager_send_t) && 
 	iov[1].MPID_IOV_LEN < 16*1024-sizeof(MPIDI_CH3_Pkt_eager_send_t))
@@ -154,7 +159,6 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	    total += iov[i].MPID_IOV_LEN;
 	    vc->shm.shm->packet[index].num_bytes += iov[i].MPID_IOV_LEN;
 	    dest_avail -= iov[i].MPID_IOV_LEN;
-	    /*if (i == 0)*/
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
 	    dest_pos += iov[i].MPID_IOV_LEN;
 	    if (dest_avail == 0)
