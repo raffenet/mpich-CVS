@@ -351,7 +351,7 @@ def _handle_lhs_input():
                     or g.activeJobs[jobid][manPid]['username'] == 'root':
                         manSocket = g.activeJobs[jobid][manPid]['socktoman']
                         mpd_send_one_msg(manSocket, { 'cmd' : 'signal_to_handle',
-                                                      'sigtype' : sigtype } )
+                                                      'sigtype' : msg['sigtype'] } )
     elif msg['cmd'] == 'mpdkilljob':
         if msg['src'] == g.myId:
             mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdkilljob_ack' })

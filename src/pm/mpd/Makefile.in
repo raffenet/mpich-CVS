@@ -82,7 +82,7 @@ Makefile: ${srcdir}/Makefile.in config.status
 .c.o:	
 	${C_COMPILE} -c $<
 
-install:
+install: all
 	@if [ ! -d ${bindir} ] ; then \
 	    echo "mkdir -p ${bindir} " ;\
 	    mkdir -p ${bindir} ;\
