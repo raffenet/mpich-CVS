@@ -42,6 +42,7 @@ global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
 global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
 global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
 global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
+global singinitPID, singinitPORT
 
 
 def mpdrun():
@@ -50,6 +51,7 @@ def mpdrun():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
+    global singinitPID, singinitPORT
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -70,6 +72,8 @@ def mpdrun():
     hostList = []
     gdb = 0
     gdbAttachJobid = ''
+    singinitPID  = 0
+    singinitPORT = 0
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
     username = mpd_get_my_username()
@@ -193,7 +197,9 @@ def mpdrun():
                   'envvars'  : envvars,
                   'limits'   : limits,
                   'gdb'      : gdb,
-                  'host_spec_pool' : hostList
+                  'singinitpid'    : singinitPID,
+                  'singinitport'   : singinitPORT,
+                  'host_spec_pool' : hostList,
                 }
     if try0Locally:
         msgToSend['try_0_locally'] = 1
@@ -521,6 +527,7 @@ def get_args_from_cmdline():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
            lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput
     global outXmlDoc, outXmlEC, outXmlFile, gdb, gdbAttachJobid
+    global singinitPID, singinitPORT
 
     hostsFile = ''
     if len(argv) < 3:
@@ -553,6 +560,14 @@ def get_args_from_cmdline():
         lineLabels = 1      # implied
         stdinGoesToWho = 'all'    # chgd to 0 - nprocs-1 when nprocs avail
         gdbAttachJobid = argv[2]
+        return
+    elif argv[1] == '-p':
+        singinitPID = argv[2]
+        singinitPORT = argv[3]
+        pgm = argv[4]
+        nprocs = 1
+        pgmArgs = []
+        try0Locally = 1
         return
     if not argsFilename:
         while pgm == '':
@@ -632,6 +647,7 @@ def get_args_from_file():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
+    global singinitPID, singinitPORT
 
     try:
         argsFile = open(argsFilename,'r')
@@ -821,6 +837,8 @@ def get_vals_for_attach():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
+    global singinitPID, singinitPORT
+
     sjobid = gdbAttachJobid.split('@')    # jobnum and originating host
     msgToSend = { 'cmd' : 'mpdlistjobs' }
     mpd_send_one_msg(conSocket,msgToSend)

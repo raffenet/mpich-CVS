@@ -677,6 +677,8 @@ def _do_mpdrun(msg):
             environ['MPDMAN_GDB'] = str(msg['gdb'])
             fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
             environ['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
+            environ['MPDMAN_SINGINIT_PID']  = str(msg['singinitpid'])
+            environ['MPDMAN_SINGINIT_PORT'] = str(msg['singinitport'])
             if msg.has_key('line_labels'):
                 environ['MPDMAN_LINE_LABELS'] = '1'
             else:

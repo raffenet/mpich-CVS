@@ -79,6 +79,8 @@ def mpdman():
         myLineLabel = str(myRank) + ',' + str(spawned) + ': '
     else:
         myLineLabel = str(myRank) + ': '
+    singinitPID  = int(environ['MPDMAN_SINGINIT_PID'])
+    singinitPORT = int(environ['MPDMAN_SINGINIT_PORT'])
 
     # set up pmi stuff early in case I was spawned
     KVSs = {}
@@ -98,7 +100,7 @@ def mpdman():
     pmiCollectiveJob = 0
     spawnedCnt = 0
     doingBNR = 0  ## BNR
-    pmiSocket = 0   # obtained in later
+    pmiSocket = 0   # obtained later
 
     if nprocs == 1:  # one-man ring
         lhsSocket = mpd_get_inet_socket_and_connect(host0,port0)  # to myself
@@ -178,13 +180,26 @@ def mpdman():
         if not environ.has_key('MPI_UNIVERSE_SIZE'):
             universeSize = msg['ringsize']
 
-    (clientListenSocket,clientListenPort) = mpd_get_inet_listen_socket('',0)
-    (pipe_read_cli_stdin, pipe_write_cli_stdin )  = pipe()
-    (pipe_read_cli_stdout,pipe_write_cli_stdout) = pipe()
-    (pipe_read_cli_stderr,pipe_write_cli_stderr) = pipe()
-    (pipe_cli_end,pipe_man_end) = pipe()
-    (pmiListenSocket,pmiPort) = mpd_get_inet_listen_socket(myHost,0)
-    clientPid = fork()
+    if singinitPORT:
+        pmiListenSocket = 0
+        pmiSocket = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
+        sock_write_cli_stdin  = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
+        fd_write_cli_stdin = sock_write_cli_stdin.fileno()
+        sock_read_cli_stdout = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
+        fd_read_cli_stdout = sock_read_cli_stdout.fileno()
+        sock_read_cli_stderr = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
+        fd_read_cli_stderr = sock_read_cli_stderr.fileno()
+    else:
+        (clientListenSocket,clientListenPort) = mpd_get_inet_listen_socket('',0)
+        (fd_read_cli_stdin, fd_write_cli_stdin ) = pipe()
+        (fd_read_cli_stdout,fd_write_cli_stdout) = pipe()
+        (fd_read_cli_stderr,fd_write_cli_stderr) = pipe()
+        (pipe_cli_end,pipe_man_end) = pipe()
+        (pmiListenSocket,pmiPort) = mpd_get_inet_listen_socket(myHost,0)
+    if singinitPID:
+        clientPid = singinitPID
+    else:
+        clientPid = fork()
     if clientPid == 0:
         mpd_set_my_id(gethostname() + '_man_before_exec_client_' + `getpid()`)
         lhsSocket.close()
@@ -195,17 +210,17 @@ def mpdman():
         pmiListenSocket.close()
         setpgrp()
 
-        close(pipe_write_cli_stdin)
-        dup2(pipe_read_cli_stdin,0)  # closes fd 0 (stdin) if open
+        close(fd_write_cli_stdin)
+        dup2(fd_read_cli_stdin,0)  # closes fd 0 (stdin) if open
 
         # to simply print on the mpd's tty:
         #     comment out the next lines
-        close(pipe_read_cli_stdout)
-        dup2(pipe_write_cli_stdout,1)  # closes fd 1 (stdout) if open
-        close(pipe_write_cli_stdout)
-        close(pipe_read_cli_stderr)
-        dup2(pipe_write_cli_stderr,2)  # closes fd 2 (stderr) if open
-        close(pipe_write_cli_stderr)
+        close(fd_read_cli_stdout)
+        dup2(fd_write_cli_stdout,1)  # closes fd 1 (stdout) if open
+        close(fd_write_cli_stdout)
+        close(fd_read_cli_stderr)
+        dup2(fd_write_cli_stderr,2)  # closes fd 2 (stderr) if open
+        close(fd_write_cli_stderr)
 
         msg = read(pipe_cli_end,2)
         if msg != 'go':
@@ -213,10 +228,10 @@ def mpdman():
         close(pipe_cli_end)
 
         clientPgmArgs = [clientPgm] + clientPgmArgs
-        cli_environ['PATH'] = environ['MPDMAN_CLI_PATH']
-        cli_environ['PMI_PORT'] = '%s:%s' % (myHost,pmiPort)
-        cli_environ['PMI_SIZE'] = str(nprocs)
-        cli_environ['PMI_RANK'] = str(myRank)
+        cli_environ['PATH']      = environ['MPDMAN_CLI_PATH']
+        cli_environ['PMI_PORT']  = '%s:%s' % (myHost,pmiPort)
+        cli_environ['PMI_SIZE']  = str(nprocs)
+        cli_environ['PMI_RANK']  = str(myRank)
         cli_environ['PMI_DEBUG'] = str(0)
         if spawned:
             cli_environ['PMI_SPAWNED'] = '1'
@@ -259,21 +274,23 @@ def mpdman():
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
                   'manpid' : getpid(), 'clipid' : clientPid, 'rank' : myRank }
     mpd_send_one_msg(mpdSocket,msgToSend)
-    close(pipe_read_cli_stdin)
-    close(pipe_write_cli_stdout)
-    close(pipe_write_cli_stderr)
-    clientStdoutFD = pipe_read_cli_stdout
+    if not singinitPORT:
+        close(fd_read_cli_stdin)
+        close(fd_write_cli_stdout)
+        close(fd_write_cli_stderr)
+        clientListenSocket.close()
+    clientStdoutFD = fd_read_cli_stdout
     # clientStdoutFile = fdopen(clientStdoutFD,'r')
     socketsToSelect[clientStdoutFD] = 1
-    clientStderrFD = pipe_read_cli_stderr
+    clientStderrFD = fd_read_cli_stderr
     # clientStderrFile = fdopen(clientStderrFD,'r')
     socketsToSelect[clientStderrFD] = 1
-    clientListenSocket.close()
     numWithIO = 2    # stdout and stderr so far
     numConndWithIO = 2
     waitPids = [clientPid]
 
-    socketsToSelect[pmiListenSocket] = 1
+    if pmiListenSocket:
+        socketsToSelect[pmiListenSocket] = 1
 
     # begin setup of stdio tree
     (parent,lchild,rchild) = mpd_get_ranks_in_binary_tree(myRank,nprocs)
@@ -333,6 +350,9 @@ def mpdman():
     endBarrierDone = 0
     numDone = 0
     while not endBarrierDone:
+        if numDone >= numWithIO  and  singinitPID:
+            clientExited = 1
+            clientExitStatus = 0
         if holdingJobgoLoop1 or clientExited:
             selectTime = 0.05
         else:
@@ -417,8 +437,9 @@ def mpdman():
                 elif msg['cmd'] == 'jobgo_loop_2':
                     if myRank != 0:
                        mpd_send_one_msg(rhsSocket,msg)  # forward it on
-                    write(pipe_man_end,'go')
-                    close(pipe_man_end)
+                    if not singinitPID:
+                        write(pipe_man_end,'go')
+                        close(pipe_man_end)
                     jobStarted = 1
                 elif msg['cmd'] == 'info_from_parent_in_tree':
                     if int(msg['to_rank']) == myRank:
@@ -599,7 +620,7 @@ def mpdman():
                     if msg['src'] != myId:
                         mpd_send_one_msg(rhsSocket,msg)
                         if in_stdinRcvrs(myRank,stdinGoesToWho):
-                            write(pipe_write_cli_stdin,msg['line'])
+                            write(fd_write_cli_stdin,msg['line'])
                 elif msg['cmd'] == 'stdin_goes_to_who':
                     if msg['src'] != myId:
                         stdinGoesToWho = msg['stdin_procs']
@@ -742,6 +763,13 @@ def mpdman():
                         msgToSend = { 'cmd' : 'job_aborted_early', 'jobid' : msg['jobid'],
                                       'rank' : msg['rank'], 
                                       'exit_status' : msg['exit_status'] }
+                        mpd_send_one_msg_noprint(conSocket,msgToSend)
+                elif msg['cmd'] == 'execution_problem':
+                    msgToSend = { 'cmd' : 'execution_problem', 'src' : myId, 'jobid' : jobid,
+                                  'rank' : myRank, 'exec' : clientPgm,
+                                  'reason' : msg['reason']  }
+                    mpd_send_one_msg(rhsSocket,msgToSend)
+                    if conSocket:
                         mpd_send_one_msg_noprint(conSocket,msgToSend)
                 else:
                     mpd_print(1, "unrecognized msg from spawned child :%s:" % msg )
@@ -919,20 +947,22 @@ def mpdman():
                     
                     if totspawns == spawnssofar:    # This is the last in the spawn sequence
                         spawnedCnt += 1    # non-zero to use for creating kvsname in msg below
-                        msgToSend = { 'cmd'         : 'spawn',
-                                      'conhost'     : gethostname(),
-                                      'conport'     : myPort,
-                                      'spawned'     : spawnedCnt,
-                                      'nstarted'    : 0,
-                                      'nprocs'      : tpsf,
-                                      'hosts'       : spawnHosts,
-                                      'execs'       : spawnExecs,
-                                      'users'       : spawnUsers,
-                                      'cwds'        : spawnCwds,
-                                      'paths'       : spawnPaths,
-                                      'args'        : spawnArgs,
-                                      'envvars'     : spawnEnvvars,
-                                      'limits'      : spawnLimits,
+                        msgToSend = { 'cmd'          : 'spawn',
+                                      'conhost'      : gethostname(),
+                                      'conport'      : myPort,
+                                      'spawned'      : spawnedCnt,
+                                      'nstarted'     : 0,
+                                      'nprocs'       : tpsf,
+                                      'hosts'        : spawnHosts,
+                                      'execs'        : spawnExecs,
+                                      'users'        : spawnUsers,
+                                      'cwds'         : spawnCwds,
+                                      'paths'        : spawnPaths,
+                                      'args'         : spawnArgs,
+                                      'envvars'      : spawnEnvvars,
+                                      'limits'       : spawnLimits,
+                                      'singinitpid'  : singinitPID,
+                                      'singinitport' : singinitPORT,
                                     }
                         if lineLabels:
                             msgToSend['line_labels'] = str(lineLabels),
@@ -1063,7 +1093,7 @@ def mpdman():
                     mpd_send_one_msg(rhsSocket,msg)
                     if in_stdinRcvrs(myRank,stdinGoesToWho):
                         try:
-                            write(pipe_write_cli_stdin,msg['line'])
+                            write(fd_write_cli_stdin,msg['line'])
                         except:
                             mpd_print(1, 'cannot send stdin to client')
                 elif msg['cmd'] == 'stdin_goes_to_who':
@@ -1115,7 +1145,7 @@ def mpdman():
                 msg = mpd_recv_one_msg(readySocket)
                 mpd_print(1, 'recvd msg :%s: on unknown socket :%s:' % (msg,readySocket) )
                 del socketsToSelect[readySocket]
-    mpd_print(0000, "out of loop" )
+    mpd_print(0000, "out of loop")
     # may want to wait for waitPids here
 
 def in_stdinRcvrs(myRank,stdinGoesToWho):
