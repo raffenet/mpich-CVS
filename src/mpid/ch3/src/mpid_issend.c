@@ -40,7 +40,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     }
     
     MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
-    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
+    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SSEND);
     
     if (rank == MPI_PROC_NULL)
     {
@@ -61,6 +61,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
 
 	sreq->cc = 2;
+	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	es_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_SEND;
@@ -89,6 +90,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	MPID_IOV iov[MPID_IOV_LIMIT];
 	    
 	sreq->cc = 2;
+	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	es_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_SEND;
@@ -152,6 +154,8 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
+	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_RNDV_MSG);
+	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	rts_pkt->match.rank = comm->rank;
 	rts_pkt->match.tag = tag;
