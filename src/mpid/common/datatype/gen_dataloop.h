@@ -302,6 +302,8 @@ typedef struct DLOOP_Segment {
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,
 				   int size);
+void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
+				     DLOOP_Offset ptrdiff);
 
 void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 				    int depth);

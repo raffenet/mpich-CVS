@@ -44,10 +44,6 @@
  * Don't have locks in place at this time!
  */
 
-static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
-				  int ptrdiff);
-
-
 /*@
   Dataloop_alloc - allocate the resources used to store a dataloop
 
@@ -123,8 +119,8 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
   This function is used to recursively update all the pointers in a
   dataloop tree.
 @*/
-static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
-				  int ptrdiff)
+void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
+			   DLOOP_Offset ptrdiff)
 {
     /* OPT: only declare these variables down in the Struct case */
     int i;
