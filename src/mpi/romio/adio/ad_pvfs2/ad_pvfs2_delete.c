@@ -37,7 +37,8 @@ void ADIOI_PVFS2_Delete(char *filename, int *error_code)
 	    resp_getparent.parent_refn, credentials);
     if (ret < 0) {
 	/* XXX: better error handling */
-	fprintf(stderr, "remove failed with error %s\n", strerror(ret));
+	fprintf(stderr, "remove of %s failed with error %s\n", 
+		filename, strerror(ret));
 	*error_code = MPI_UNDEFINED;
 	return;
     }
