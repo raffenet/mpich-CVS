@@ -915,7 +915,7 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	return mpi_errno;
     }
-    /* --BEGIN ERROR HANDLING-- */
+    /* --END ERROR HANDLING-- */
 
     return mpi_errno;
 }
