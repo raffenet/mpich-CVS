@@ -493,7 +493,9 @@ if test "$enable_romio" = "yes" ; then
    top_build_dir=`pwd`
    export top_build_dir
    # if there is no $top_build_dir/lib, romio puts lib in wrong place
-   if test ! -e lib ; then mkdir lib ; fi
+   dnl This test used -e under Linux, but not all test programs understand
+   dnl -e
+   if test ! -d lib ; then mkdir lib ; fi
    # tell mpi.h to include mpio.h
    PAC_HAVE_ROMIO
 fi
