@@ -578,6 +578,9 @@
 				RelativePath="src\mpi\romio\adio\common\ad_init.c">
 			</File>
 			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_iopen.c">
+			</File>
+			<File
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs.c">
 			</File>
 			<File
