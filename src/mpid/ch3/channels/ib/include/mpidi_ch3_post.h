@@ -71,10 +71,12 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 #define MPIDI_CH3_Progress_end(progress_state_)
 #define MPIDI_CH3_Progress_poke() (MPIDI_CH3_Progress_test())
 
+/*
 #if defined(MPICH_SINGLE_THREADED)
 #define MPIDI_CH3_Progress_start(state)
 #define MPIDI_CH3_Progress_end(state)
 #endif
+*/
 
 int MPIDI_CH3I_Progress(int blocking, MPID_Progress_state *state);
 #define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE, NULL)
