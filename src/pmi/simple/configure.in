@@ -29,6 +29,11 @@ AC_ARG_ENABLE(pmiport,
 PAC_PROG_MAKE
 
 AC_CHECK_HEADERS(unistd.h string.h stdlib.h)
+dnl Use snprintf if possible when creating messages
+AC_CHECK_FUNCS(snprintf)
+if test "$ac_cv_func_snprintf" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
+fi
 #
 # PM's that need support for a port can set the environment variable
 # NEED_PMIPORT in their setup_pm script.

@@ -24,6 +24,9 @@
 #define MAXHOSTNAME 256
 #endif
 #endif
+/* mpimem includes the definitions for MPIU_Snprintfl, MPIU_Malloc, and 
+   MPIU_Free */
+#include "mpimem.h"
 
 /* Temporary debug definitions */
 #define DBG_PRINTF printf
@@ -303,7 +306,7 @@ int PMI_KVS_Destroy( const char kvsname[] )
 	return 0;
     }
 
-    snprintf( buf, PMIU_MAXLINE, "cmd=destroy_kvs kvsname=%s\n", kvsname );
+    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=destroy_kvs kvsname=%s\n", kvsname );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
@@ -335,7 +338,7 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
 	/* Ignore the put */
 	return 0;
     }
-    snprintf( buf, PMIU_MAXLINE, "cmd=put kvsname=%s key=%s value=%s\n",
+    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=put kvsname=%s key=%s value=%s\n",
 	      kvsname, key, value);
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
@@ -368,7 +371,7 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int lengt
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
 
-    snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", kvsname, key );
+    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", kvsname, key );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf ); 
@@ -416,7 +419,7 @@ int PMI_Spawn(const char *command, const char *argv[],
     int  rc;
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-    snprintf( buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s arg=%s\n",
+    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s arg=%s\n",
 	      maxprocs, command, argv[0] );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
@@ -467,44 +470,44 @@ int PMI_Spawn_multiple(int count,
     /* PMIU_printf( 1, "PMI_Spawn_multiple not implemented yet\n" ); */
     /* printf("CMD0 = :%s:\n",cmds[0]);  fflush(stdout);  */
        /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
-    /* snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
+    /* MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
     for (spawncnt=0; spawncnt < count; spawncnt++)
     {
-        snprintf(buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s ",
+        MPIU_Snprintf(buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s ",
 	          maxprocs[spawncnt], cmds[spawncnt] );
     
         argcnt = 0;
         if ((argvs != NULL) && (argvs[spawncnt] != NULL)) {
             for (i=0; argvs[spawncnt][i] != NULL; i++)
             {
-                snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s ",i+1,argvs[spawncnt][i]);
-                strcat(buf,tempbuf);
+                MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s ",i+1,argvs[spawncnt][i]);
+                MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
                 argcnt++;
             }
         }
-        snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d ",argcnt);
+        MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d ",argcnt);
         strcat(buf,tempbuf);
     
 /*        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ",preput_num);
         strcat(buf,tempbuf);
         for (i=0; i < preput_num; i++)
         {
-	    sprintf(tempbuf,"preput_%d=%s:%s ",i,preput_keys[i],preput_vals[i]);
-	    strcat(buf,tempbuf);
+	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_%d=%s:%s ",i,preput_keys[i],preput_vals[i]);
+	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
         }
 */
 
-        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ", preput_keyval_size);
-        strcat(buf,tempbuf);
+        MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ", preput_keyval_size);
+        MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
         for (i=0; i < preput_keyval_size; i++)
         { 
-	    sprintf(tempbuf,"preput_key_%d=%s ",i,preput_keyval_vector[i].key);
-	    strcat(buf,tempbuf); 
-	    sprintf(tempbuf,"preput_val_%d=%s ",i,preput_keyval_vector[i].val);
-	    strcat(buf,tempbuf); 
+	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_key_%d=%s ",i,preput_keyval_vector[i].key);
+	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_val_%d=%s ",i,preput_keyval_vector[i].val);
+	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
         } 
 
-        strcat(buf, "\n");
+        MPIU_Strnapp(buf, "\n", PMIU_MAXLINE);
         PMIU_writeline( PMI_fd, buf );
         PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
         PMIU_parse_keyvals( buf ); 
@@ -540,7 +543,7 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *k
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
 
-    snprintf( buf, PMIU_MAXLINE, "cmd=getbyidx kvsname=%s idx=%d\n", kvsname, idx  );
+    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=getbyidx kvsname=%s idx=%d\n", kvsname, idx  );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     PMIU_parse_keyvals( buf );
