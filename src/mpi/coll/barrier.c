@@ -85,23 +85,9 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	/* Second step: recursive doubling exchange */
 	for (gap=1; gap<twon_within; gap <<= 1) {
 	    partner = (rank ^ gap);
-	    if (rank < partner) {
-		MPID_Recv( 0, 0, MPI_BYTE, partner, MPIR_BARRIER_TAG, 
-			   comm_ptr, MPID_CONTEXT_INTRA_COLL,
-			   MPI_STATUS_IGNORE, &request_ptr );
-		if (request_ptr) {
-		    MPIR_Wait(request_ptr);
-		    MPID_Request_release(request_ptr);
-		}
-	    }
-	    else {
-		MPID_Send( 0, 0, MPI_BYTE, partner, MPIR_BARRIER_TAG,
-			   comm_ptr, MPID_CONTEXT_INTRA_COLL, &request_ptr );
-		if (request_ptr) {
-		    MPIR_Wait(request_ptr);
-		    MPID_Request_release(request_ptr);
-		}
-	    }
+	    MPIC_Sendrecv( 0, 0, MPI_BYTE, partner, MPIR_BARRIER_TAG,
+			   0, 0, MPI_BYTE, partner, MPIR_BARRIER_TAG,
+			   comm_ptr->handle, MPI_STATUS_IGNORE );
 	}
 
 	/* Third step: send to the upper group */

@@ -64,7 +64,8 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     }
     if (request_ptr) {
         MPIR_Wait(request_ptr);
-        if (status != NULL)
+	/* FIXME : use only STATUS_IGNORE */
+        if (status != NULL && status != MPI_STATUS_IGNORE)
             *status = request_ptr->status;
         mpi_errno = request_ptr->status.MPI_ERROR;
         MPID_Request_release(request_ptr);
@@ -108,7 +109,8 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPID_Request_release(send_req_ptr);
 
     MPIR_Wait(recv_req_ptr);
-    if (status != NULL)
+    /* FIXME : use only STATUS_IGNORE */
+    if (status != NULL && status != MPI_STATUS_IGNORE)
         *status = recv_req_ptr->status;
     mpi_errno = recv_req_ptr->status.MPI_ERROR;
     MPID_Request_release(recv_req_ptr);
