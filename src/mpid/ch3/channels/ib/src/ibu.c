@@ -846,7 +846,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
-    MPIU_dbg_printf("ibu_wait\n");
+    /*MPIU_dbg_printf("ibu_wait\n");*/
     for (;;) 
     {
 	status = ib_completion_poll_us(
