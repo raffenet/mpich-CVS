@@ -73,25 +73,25 @@ typedef MPIU_SIZE_T MPIU_Size_t;
  */
 
 /* PtrToLong converts a pointer to a long type, truncating bits if necessary */
-#ifdef PtrToLong
+#ifdef HAVE_PTRTOLONG
 #define MPIU_PtrToLong PtrToLong
 #else
 #define MPIU_PtrToLong(a) (long)(a)
 #endif
 /* PtrToInt converts a pointer to a int type, truncating bits if necessary */
-#ifdef PtrToInt
+#ifdef HAVE_PTRTOINT
 #define MPIU_PtrToInt PtrToInt
 #else
 #define MPIU_PtrToInt(a) (int)(a)
 #endif
 /* LongToPtr converts a long to a pointer type, extending bits if necessary */
-#ifdef LongToPtr
+#ifdef HAVE_LONGTOPTR
 #define MPIU_LongToPtr LongToPtr
 #else
 #define MPIU_LongToPtr(a) (void*)(a)
 #endif
 /* IntToPtr converts a int to a pointer type, extending bits if necessary */
-#ifdef IntToPtr
+#ifdef HAVE_INTTOPTR
 #define MPIU_IntToPtr IntToPtr
 #else
 #define MPIU_IntToPtr(a) (void*)(a)
