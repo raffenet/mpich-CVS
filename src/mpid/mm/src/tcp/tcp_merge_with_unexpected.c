@@ -8,7 +8,7 @@
 int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 {
     int num_left, num_updated;
-    char *unex_data_ptr, *orig_unex_data_ptr;
+    char *unex_data_ptr;
 
     MM_ENTER_FUNC(TCP_MERGE_WITH_UNEXPECTED);
 
@@ -51,7 +51,7 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
     unex_car_ptr = unex_car_ptr->next_ptr;
     /* get the tmp buffer and number of bytes read */
     num_left = unex_car_ptr->buf_ptr->tmp.num_read;
-    orig_unex_data_ptr = unex_data_ptr = unex_car_ptr->buf_ptr->tmp.buf;
+    unex_data_ptr = unex_car_ptr->buf_ptr->tmp.buf;
 
     if (unex_car_ptr->buf_ptr->tmp.num_read != unex_car_ptr->buf_ptr->tmp.len)
     {
@@ -72,7 +72,6 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
     }
 
     /* free the temporary buffer and request */
-    MPIU_Free(orig_unex_data_ptr);
     mm_request_free(unex_car_ptr->request_ptr);
 
     MM_EXIT_FUNC(TCP_MERGE_WITH_UNEXPECTED);

@@ -107,7 +107,6 @@ static void log_warning(char *str, ...)
     char pszStr[4096];
     va_list list;
 
-    /* Write to a temporary string */
     va_start(list, str);
     vsprintf(pszStr, str, list);
     va_end(list);
@@ -164,7 +163,11 @@ int bsocket_init(void)
 
     szNum = getenv("BSOCKET_CONN_TRIES");
     if (szNum != NULL)
+    {
 	g_beasy_connection_attempts = atoi(szNum);
+	if (g_beasy_connection_attempts < 1)
+	    g_beasy_connection_attempts = 5;
+    }
 
     g_nInitRefCount++;
 
@@ -207,8 +210,8 @@ int bwritev(int bfd, B_VECTOR *pIOVec, int n)
 
 int breadv(int bfd, B_VECTOR *vec, int veclen)
 {
-    int k;
 #ifdef HAVE_WINSOCK2_H
+    /*int k;*/
     DWORD    n = 0;
     DWORD    nFlags = 0;
 #else
@@ -222,10 +225,13 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
     {
 	if (WSAGetLastError() != WSAEWOULDBLOCK)
 	{
+	    /*
 	    for (k=0; k<veclen; k++)
 		msg_printf("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k, vec[k].B_VECTOR_LEN, k, vec[k].B_VECTOR_BUF);
-	    n = 0; /* Set this to zero so it can be added to num_read */
+	    */
+	    return SOCKET_ERROR;
 	}
+	n = 0;
     }
 #else
     n = readv(bfd, vec, veclen);
@@ -269,7 +275,10 @@ int bmake_blocking(int bfd)
 
 #else /* #ifdef NO_BSOCKETS */
 
-static int g_bbuflen = 1024;
+#define BBUF_LOWER_LIMIT 100
+#define BBUF_DEFAULT_LEN 1024
+
+static int g_bbuflen = BBUF_DEFAULT_LEN;
 static int g_buf_pool_size = FD_SETSIZE;
 
 /*@
@@ -375,11 +384,19 @@ int bsocket_init(void)
 
     szNum = getenv("BSOCKET_CONN_TRIES");
     if (szNum != NULL)
+    {
 	g_beasy_connection_attempts = atoi(szNum);
+	if (g_beasy_connection_attempts < 1)
+	    g_beasy_connection_attempts = 5;
+    }
 
     pszEnvVar = getenv("BSOCKET_BBUFLEN");
     if (pszEnvVar != NULL)
+    {
 	g_bbuflen = atoi(pszEnvVar);
+	if (g_bbuflen < BBUF_LOWER_LIMIT)
+	    g_bbuflen = BBUF_DEFAULT_LEN;
+    }
 
     Bsocket_mem = BlockAllocInit(sizeof(BFD_Buffer) + g_bbuflen, 64, 64, malloc, free);
 
@@ -990,7 +1007,7 @@ int bclose(int bfd)
     DBG_MSG("Enter bclose\n");
     /*dbg_printf("bclose\n");*/
 
-    close(((BFD_Buffer*)bfd)->real_fd);
+    bfd_close(((BFD_Buffer*)bfd)->real_fd);
     memset((void*)bfd, 0, sizeof(BFD_Buffer));
     BlockFree( Bsocket_mem, (BFD_Buffer*)bfd );
 
@@ -1111,6 +1128,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     linger.l_linger = 60;
     bsetsockopt(*bfd, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
 
+#ifdef HAVE_WINSOCK2_H
     /* set the socket buffer size to 64k */
     len = sizeof(int);
     if (!getsockopt(bget_fd((*bfd)), SOL_SOCKET, SO_RCVBUF, (char*)&optval, &len))
@@ -1124,6 +1142,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
 	optval = 64*1024;
 	bsetsockopt(*bfd, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
+#endif
     return 0;
 }
 
@@ -1519,7 +1538,6 @@ int beasy_receive_some(int bfd, char *buffer, int len)
 	    {
 		/*BPRINTF("beasy_receive_some: socket closed\n");*/
 		/*bmake_blocking(bfd);*/
-		return 0;
 	    }
 	    return num_received;
 	}

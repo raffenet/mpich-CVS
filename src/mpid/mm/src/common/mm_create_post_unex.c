@@ -79,10 +79,18 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     mm_inc_cc(request_ptr);
 
     buf_ptr = car_ptr->buf_ptr = &request_ptr->mm.buf;
+
+    /* be generic */
+    tmp_buffer_init(request_ptr);
+    request_ptr->mm.get_buffers = NULL; /*mm_get_buffers_tmp;*/
+    request_ptr->mm.release_buffers = mm_release_buffers_tmp;
+    mm_get_buffers_tmp(request_ptr);
+/* or insert the code directly
     buf_ptr->type = MM_TMP_BUFFER;
     buf_ptr->tmp.buf = MPIU_Malloc(hdr_ptr->size);
     buf_ptr->tmp.len = hdr_ptr->size;
     buf_ptr->tmp.num_read = 0;
+*/
 
     /* enqueue the head car in the unexpected queue so it can be matched */
     if (MPID_Process.unex_q_tail == NULL)

@@ -32,7 +32,7 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
     {
 	if (tcp_read_connecting(vc_ptr) != MPI_SUCCESS)
 	{
-	    err_printf("tcp_read_connecting failed.\n");
+	    err_printf("Error:tcp_merge_unexpected_data: tcp_read_connecting failed.\n");
 	}
 	MM_EXIT_FUNC(TCP_MERGE_UNEXPECTED_DATA);
 	return 0;
