@@ -538,6 +538,7 @@ static const char * GetDTypeString(MPI_Datatype d)
 	return "MPI_2INT";
     case MPI_LONG_DOUBLE_INT:
 	return "MPI_LONG_DOUBLE_INT";
+/*
     case MPI_COMPLEX:
 	return "MPI_COMPLEX";
     case MPI_DOUBLE_COMPLEX:
@@ -562,6 +563,7 @@ static const char * GetDTypeString(MPI_Datatype d)
 	return "MPI_2DOUBLE_PRECISION";
     case MPI_CHARACTER:
 	return "MPI_CHARACTER";
+*/
     case MPI_DATATYPE_NULL:
 	return "MPI_DATATYPE_NULL";
     }
