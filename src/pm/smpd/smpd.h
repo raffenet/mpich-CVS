@@ -12,6 +12,9 @@
 #define SMPD_SUCCESS                        0
 #define SMPD_FAIL                          -1
 
+#define SMPD_TRUE                           1
+#define SMPD_FALSE                          0
+
 #define SMPD_SERVER_AUTHENTICATION          0
 #define SMPD_CLIENT_AUTHENTICATION          1
 

@@ -1,6 +1,6 @@
 lib${MPILIBNAME}_a_SOURCES = crypt.c smpd_authenticate.c smpd_printf.c smpd_read_write.c smpd_user_data.c
 mpiexec_SOURCES = mpiexec.c 
-smpd_sources = smpd.c smpd_cmd_args.c smpd_session.c smpd_start_mgr.c
+smpd_SOURCES = smpd.c smpd_cmd_args.c smpd_session.c smpd_start_mgr.c
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/smpd -I${master_top_srcdir}/src/pmi/smpd
 mpiexec_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich

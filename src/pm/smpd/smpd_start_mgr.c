@@ -5,8 +5,10 @@
  */
 
 #include "smpd.h"
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
 
-#ifdef HAVE_WINDOWS_H
 static int close_connection(sock_set_t set, sock_t sock)
 {
     int result;
@@ -38,17 +40,16 @@ static int close_connection(sock_set_t set, sock_t sock)
     }
     return SMPD_SUCCESS;
 }
-#endif
 
 int smpd_start_mgr(sock_set_t set, sock_t sock)
 {
     char password[100];
+    int result;
 #ifdef HAVE_WINDOWS_H
     char account[100], port_str[20];
     char cmd[8192];
     PROCESS_INFORMATION pInfo;
     STARTUPINFO sInfo;
-    int result;
     SECURITY_ATTRIBUTES security;
     HANDLE hRead, hWrite;
     DWORD num_read;
