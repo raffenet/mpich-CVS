@@ -3165,8 +3165,10 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
 	}
 	else
 	{
+#ifdef HAVE_WINDOWS_H
 	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
 	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+#endif
 	    smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
 	    context->state = SMPD_CLOSING;
 	    result = MPIDU_Sock_post_close(context->sock);

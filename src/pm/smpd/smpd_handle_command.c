@@ -1138,8 +1138,10 @@ int smpd_handle_result(smpd_context_t *context)
 			}
 			else
 			{
+#ifdef HAVE_WINDOWS_H
 			    smpd_process.sec_fn->DeleteSecurityContext(&sspi_context->sspi_context);
 			    smpd_process.sec_fn->FreeCredentialsHandle(&sspi_context->sspi_credential);
+#endif
 			    smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
 			    sspi_context->state = SMPD_CLOSING;
 			    result = MPIDU_Sock_post_close(sspi_context->sock);
@@ -1180,8 +1182,10 @@ int smpd_handle_result(smpd_context_t *context)
 			}
 			else
 			{
+#ifdef HAVE_WINDOWS_H
 			    smpd_process.sec_fn->DeleteSecurityContext(&sspi_context->sspi_context);
 			    smpd_process.sec_fn->FreeCredentialsHandle(&sspi_context->sspi_credential);
+#endif
 			    smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
 			    sspi_context->state = SMPD_CLOSING;
 			    result = MPIDU_Sock_post_close(sspi_context->sock);
