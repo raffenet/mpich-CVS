@@ -58,16 +58,31 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
     int err, error_code;
     struct flock lock;
 
-    lock.l_type = type;
-    lock.l_start = offset;
+    /* Depending on the compiler flags and options, struct flock 
+       may not be defined with types that are the same size as
+       ADIO_Offsets.  */
+/* FIXME: This NEEDS is a temporary hack until we use flock64 where
+   available. It also doesn't fix the broken Solaris header sys/types.h
+   header file, which declars off_t as a UNION ! */
+#ifdef NEEDS_INT_CAST_WITH_FLOCK
+    lock.l_type	  = type;
+    lock.l_start  = (int)offset;
     lock.l_whence = whence;
-    lock.l_len = len;
+    lock.l_len	  = (int)len;
+#else
+    lock.l_type	  = type;
+    lock.l_start  = offset;
+    lock.l_whence = whence;
+    lock.l_len	  = len;
+#endif
 
     do {
 	err = fcntl(fd, cmd, &lock);
     } while (err && (errno == EINTR));
 
     if (err && (errno != EBADF)) {
+	/* FIXME: This should use the error message system, 
+	   especially for MPICH2 */
 	FPRINTF(stderr, "File locking failed in ADIOI_Set_lock. If the file system is NFS, you need to use NFS version 3 and mount the directory with the 'noac' option (no attribute caching).\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }

@@ -1121,6 +1121,33 @@ if test -z "$FILE_SYSTEM" ; then
     AC_MSG_RESULT([configuring for file systems ufs and nfs])
 fi
 #
+# Check whether the MPI Offset type is compatible with struct flock
+AC_MSG_CHECKING([whether struct flock compatible with MPI_Offset])
+AC_TRY_COMPILE([#include <fcntl.h>],
+[struct flock l;
+ $MPI_OFFSET_TYPE a=1;
+ l.l_start = a; 
+ l.l_len   = a;
+],pac_cv_struct_flock_and_mpi_offset=yes,pac_cv_struct_flock_and_mpi_offset=no)
+AC_MSG_RESULT($pac_cv_struct_flock_and_mpi_offset)
+# FIXME: We should look for struct flock64 and the F_SETLK64/F_GETLK64
+# ADIOI_Set_lock could use these instead.
+if test "$pac_cv_struct_flock_and_mpi_offset" = no ; then
+    AC_MSG_CHECKING([whether struct flock compatible with int])
+    AC_TRY_COMPILE([#include <fcntl.h>],
+[struct flock l;
+ int a=1;
+ l.l_start = a; 
+ l.l_len   = a;
+],pac_cv_struct_flock_and_int=yes,pac_cv_struct_flock_and_int=no)
+    AC_MSG_RESULT($pac_cv_struct_flock_and_int)
+    if test "$pac_cv_struct_flock_and_int" = yes ; then
+        AC_DEFINE(NEEDS_INT_CAST_WITH_FLOCK,1,[Define if l_start and l_len data should be cast as int])
+    fi
+    # FIXME.  Solaris header files define off_t as a UNION if 64bit file
+    # sizes are selected.  Gah!
+fi
+
 if test -n "$file_system_nfs" ; then
    # Check for problems with locks
    AC_MSG_CHECKING([whether file locks work with NFS])
