@@ -231,6 +231,12 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 {
     int i, j, size, first, last, stride, mpi_errno = MPI_SUCCESS;
 
+    if (n < 0) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg",
+					  "**argneg %s %d", "n", n );
+	return mpi_errno;
+    }
+
     /* Lock in case another thread is accessing the group 
        data structures */
     MPID_Common_thread_lock();
@@ -245,14 +251,14 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 	stride = ranges[i][2];
 	if (first < 0 || first >= size) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-					      "**rangeinvalid", 
+					      "**rangestartinvalid", 
 					      "**rangestartinvalid %d %d %d", 
 					      i, first, size );
 	    break;
 	}
 	if (last < 0 || last >= size) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
-					      "**rangeinvalid", 
+					      "**rangeendinvalid", 
 					      "**rangeendinvalid %d %d %d", 
 					      i, last, size );
 	    break;

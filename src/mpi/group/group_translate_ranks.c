@@ -69,8 +69,9 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
             MPID_Group_valid_ptr( group_ptr2, mpi_errno );
-	    /* If group_ptr is not valid, it will be reset to null */
+	    /* If either group_ptr is not valid, it will be reset to null */
 
+	    MPIR_ERRTEST_ARGNEG(n,"n",mpi_errno);
 	    if (group_ptr1) {
 		/* Check that the rank entries are valid */
 		size1 = group_ptr1->size;
