@@ -107,10 +107,12 @@ int MPIR_Gather (
                    will not be in the right order. We will need to
                    reorder it into the recv_buf. */
                 tmp_buf = MPIU_Malloc(nbytes*comm_size);
+		/* --BEGIN ERROR HANDLING-- */
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
+		/* --END ERROR HANDLING-- */
 
                 if (sendbuf != MPI_IN_PLACE) {
                     /* copy root's sendbuf into tmpbuf just so that it is
@@ -136,10 +138,12 @@ int MPIR_Gather (
             /* allocate temporary buffer for nodes other than leaf
                nodes. max size needed is (nbytes*comm_size)/2. */
             tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
+	    /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf) {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             /* copy from sendbuf into tmp_buf */
             mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                        tmp_buf, nbytes, MPI_BYTE);
@@ -231,10 +235,12 @@ int MPIR_Gather (
                            &tmp_buf_size);
 
         tmp_buf = MPIU_Malloc(tmp_buf_size);
+	/* --BEGIN ERROR HANDLING-- */
         if (!tmp_buf) { 
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
 
         position = 0;
         if (sendbuf != MPI_IN_PLACE) {
@@ -386,10 +392,12 @@ PMPI_LOCAL int MPIR_Gather_inter (
  
                 tmp_buf =
                     MPIU_Malloc(sendcnt*local_size*(MPIR_MAX(extent,true_extent)));  
+		/* --BEGIN ERROR HANDLING-- */
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
+		/* --END ERROR HANDLING-- */
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
             }

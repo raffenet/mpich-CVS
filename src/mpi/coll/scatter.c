@@ -111,10 +111,12 @@ PMPI_LOCAL int MPIR_Scatter (
            receive data of max size (nbytes*comm_size)/2 */
         if (relative_rank && !(relative_rank % 2)) {
             tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
+	    /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf) {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
         }
         
         /* if the root is not rank 0, we reorder the sendbuf in order of
@@ -124,10 +126,12 @@ PMPI_LOCAL int MPIR_Scatter (
         if (rank == root) {
             if (root != 0) {
                 tmp_buf = MPIU_Malloc(nbytes*comm_size);
+		/* --BEGIN ERROR HANDLING-- */
                 if (!tmp_buf) { 
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
+		/* --END ERROR HANDLING-- */
 
                 position = 0;
 
@@ -241,10 +245,12 @@ PMPI_LOCAL int MPIR_Scatter (
             NMPI_Pack_size(sendcnt*comm_size, sendtype, comm,
                           &tmp_buf_size); 
             tmp_buf = MPIU_Malloc(tmp_buf_size);
+	    /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
 
           /* calculate the value of nbytes, the number of bytes in packed
              representation that each process receives. We can't
@@ -294,10 +300,12 @@ PMPI_LOCAL int MPIR_Scatter (
         else {
             NMPI_Pack_size(recvcnt*(comm_size/2), recvtype, comm, &tmp_buf_size);
             tmp_buf = MPIU_Malloc(tmp_buf_size);
+	    /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
 
             /* calculate nbytes */
             position = 0;
@@ -434,10 +442,12 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                 MPID_Datatype_get_extent_macro(recvtype, extent);
                 tmp_buf =
                     MPIU_Malloc(recvcnt*local_size*(MPIR_MAX(extent,true_extent)));  
+		/* --BEGIN ERROR HANDLING-- */
                 if (!tmp_buf) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
+		/* --END ERROR HANDLING-- */
                 /* adjust for potential negative lower bound in datatype */
                 tmp_buf = (void *)((char*)tmp_buf - true_lb);
 

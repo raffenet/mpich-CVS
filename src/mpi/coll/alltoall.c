@@ -277,13 +277,14 @@ PMPI_LOCAL int MPIR_Alltoall(
   
         /* ... then wait for *all* of them to finish: */
         mpi_errno = NMPI_Waitall(2*comm_size,reqarray,starray);
+	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno == MPI_ERR_IN_STATUS) {
             for (j=0; j<2*comm_size; j++) {
                 if (starray[j].MPI_ERROR != MPI_SUCCESS) 
                     mpi_errno = starray[j].MPI_ERROR;
             }
         }
-
+	/* --END ERROR HANDLING-- */
         MPIU_Free(starray);
         MPIU_Free(reqarray);
     }
