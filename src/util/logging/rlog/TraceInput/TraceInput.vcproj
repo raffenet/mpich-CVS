@@ -22,8 +22,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\..\..\include,c:\j2sdk1.4.0\include,c:\j2sdk1.4.0\include\win32"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
+				AdditionalIncludeDirectories="..\..\..\slog2sdk\src\logformat\trace,..\..\..\..\include,c:\j2sdk1.4.0\include,c:\j2sdk1.4.0\include\win32"
+				PreprocessorDefinitions="USE_WINCONF_H;WIN32;NDEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -81,8 +81,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\..\include,c:\j2sdk1.4.0\include,c:\j2sdk1.4.0\include\win32"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
+				AdditionalIncludeDirectories="..\..\..\slog2sdk\src\logformat\trace,..\..\..\..\include,c:\j2sdk1.4.0\include,c:\j2sdk1.4.0\include\win32"
+				PreprocessorDefinitions="USE_WINCONF_H;WIN32;_DEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -140,8 +140,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\..\..\include,c:\j2sdk1.4.0\include,c:\j2sdk1.4.0\include\win32"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
+				AdditionalIncludeDirectories="..\..\..\slog2sdk\src\logformat\trace,..\..\..\..\include,c:\j2sdk1.4.0\include,c:\j2sdk1.4.0\include\win32"
+				PreprocessorDefinitions="USE_WINCONF_H;WIN32;NDEBUG;_WINDOWS;_USRDLL;TRACEINPUT_EXPORTS"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -205,9 +205,6 @@
 			Filter="h;hpp;hxx;hm;inl;fi;fd">
 			<File
 				RelativePath="..\logformat_trace_InputLog.h">
-			</File>
-			<File
-				RelativePath="..\trace_input.h">
 			</File>
 		</Filter>
 		<Filter

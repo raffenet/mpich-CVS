@@ -5,13 +5,22 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/* TraceInput.cpp : Defines the entry point for the DLL application. */
-
-#include "trace_input.h"
+#ifdef USE_WINCONF_H
+#include "wintrace_impl.h"
+#else
+#include "trace_impl.h"
+#endif
 #include "rlog.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#include "trace_API.h"
 
 #define TRACEINPUT_SUCCESS 0
 #define TRACEINPUT_FAIL    -1
@@ -207,11 +216,11 @@ TRACE_EXPORT int TRACE_Peek_next_category( const TRACE_file fp,
 
 TRACE_EXPORT int TRACE_Get_next_category( const TRACE_file fp, 
                              TRACE_Category_head_t *head,
-                             int *n_legend, char *legend_base,
+                             int *n_legend, char legend_base[],
                              int *legend_pos, const int legend_max,
-                             int *n_label, char *label_base,
+                             int *n_label, char label_base[],
                              int *label_pos, const int label_max,
-                             int *n_methodIDs, int *methodID_base,
+                             int *n_methodIDs, int methodID_base[],
                              int *methodID_pos, const int methodID_max )
 {
     char *pColorStr = fp->state.color;
@@ -258,9 +267,9 @@ TRACE_EXPORT int TRACE_Peek_next_ycoordmap( TRACE_file fp,
 TRACE_EXPORT int TRACE_Get_next_ycoordmap( TRACE_file fp,
                               char *title_name,
                               char **column_names,
-                              int *coordmap_sz, int *coordmap_base,
+                              int *coordmap_sz, int coordmap_base[],
                               int *coordmap_pos, const int coordmap_max,
-                              int *n_methodIDs, int *methodID_base,
+                              int *n_methodIDs, int methodID_base[],
                               int *methodID_pos, const int methodID_max )
 {
     return TRACEINPUT_FAIL;
@@ -331,11 +340,11 @@ TRACE_EXPORT int TRACE_Peek_next_primitive( const TRACE_file fp,
 
 TRACE_EXPORT int TRACE_Get_next_primitive( const TRACE_file fp, 
                               int *category_index, 
-                              int *n_tcoords, double *tcoord_base,
+                              int *n_tcoords, double tcoord_base[],
                               int *tcoord_pos, const int tcoord_max, 
-                              int *n_ycoords, int *ycoord_base, 
+                              int *n_ycoords, int ycoord_base[], 
                               int *ycoord_pos, const int ycoord_max,
-                              int *n_bytes, char *byte_base,
+                              int *n_bytes, char byte_base[],
                               int *byte_pos, const int byte_max )
 {
     int i, j, rank = 1, level = -1;
@@ -453,7 +462,7 @@ TRACE_EXPORT int TRACE_Peek_next_composite( const TRACE_file fp,
 
 TRACE_EXPORT int TRACE_Get_next_composite( const TRACE_file fp,
                               int *category_index,
-                              int *n_bytes, char *byte_base,
+                              int *n_bytes, char byte_base[],
                               int *byte_pos, const int byte_max )
 {
     return TRACEINPUT_FAIL;

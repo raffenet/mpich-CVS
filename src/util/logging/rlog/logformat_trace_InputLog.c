@@ -12,7 +12,7 @@
 #include <jni.h>
 #include <stdio.h>
 #include "logformat_trace_InputLog.h"
-#include "trace_input.h"
+#include "trace_API.h"
 #include <stdlib.h>
 
 #define ACHAR_LENGTH   256

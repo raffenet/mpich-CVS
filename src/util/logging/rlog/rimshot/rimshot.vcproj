@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.00"
 	Name="rimshot"
+	ProjectGUID="{A5B3B52D-DFE7-4F84-AF10-3E39B2E9455E}"
 	SccProjectName=""
 	SccLocalPath=""
 	Keyword="MFCProj">
