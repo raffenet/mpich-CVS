@@ -312,6 +312,11 @@ sub AddTestCall {
 		print TESTFD "    char s$narg\[\] = \"string$narg\";\n";
 		$args[$#args+1] = "s$narg";
 	    }
+	    elsif ($type eq "p")
+	    {
+		print TESTFD "    char s$narg\[\] = \"string$narg\";\n";
+		$args[$#args+1] = "s$narg";
+	    }
 	    else
 	    {
 		print STDERR "Unrecognized format type $type for $fullformat in $filename\n";
