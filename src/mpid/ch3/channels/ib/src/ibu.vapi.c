@@ -15,6 +15,14 @@
 
 #ifdef USE_IB_VAPI
 
+#define GETLKEY(p) ((((ibmem_t*)p) - 1)->lkey)
+typedef struct ibmem_t
+{
+    VAPI_mr_hndl_t handle;
+    VAPI_lkey_t lkey;
+    VAPI_rkey_t rkey;
+} ibmem_t;
+
 struct ibuBlockAllocator_struct
 {
     void **pNextFree;
@@ -86,12 +94,12 @@ typedef struct ibu_num_written_node_t
 typedef struct ibu_state_t
 {
     IBU_STATE state;
-    VAPI_lkey_t lkey;
+    /*VAPI_lkey_t lkey;*/
     VAPI_qp_hndl_t qp_handle;
     ibuBlockAllocator allocator;
 
     IB_lid_t dlid;
-    VAPI_mr_hndl_t mr_handle;
+    /*VAPI_mr_hndl_t mr_handle;*/
     VAPI_qp_num_t qp_num, dest_qp_num;
 
     int closing;
@@ -151,6 +159,7 @@ static int ibui_post_ack_write(ibu_t ibu);
 /* utility allocator functions */
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
+static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp), void (* free_fn)(void *p));
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
 static void * ibuBlockAlloc(ibuBlockAllocator p);
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
@@ -182,6 +191,44 @@ static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, in
     return p;
 }
 
+static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp), void (* free_fn)(void *p))
+{
+    ibuBlockAllocator p;
+    void **ppVoid;
+    int i;
+    VAPI_mr_hndl_t handle;
+    VAPI_lkey_t lkey;
+    VAPI_rkey_t rkey;
+    ibmem_t *mem_ptr;
+
+    blocksize += sizeof(ibmem_t);
+    incrementsize += sizeof(ibmem_t);
+
+    p = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count), &handle, &lkey, &rkey );
+
+    p->alloc_fn = (void*(*)(size_t ))alloc_fn;
+    p->free_fn = free_fn;
+    p->nIncrementSize = incrementsize;
+    p->pNextAllocation = NULL;
+    p->nCount = count;
+    p->nBlockSize = blocksize;
+    p->pNextFree = (void**)(p + 1);
+
+    ppVoid = (void**)(p + 1);
+    for (i=0; i<count-1; i++)
+    {
+	*ppVoid = (void*)((char*)ppVoid + sizeof(void**) + blocksize);
+	mem_ptr = (ibmem_t*)(ppVoid + 1);
+	mem_ptr->handle = handle;
+	mem_ptr->lkey = lkey;
+	mem_ptr->rkey = rkey;
+	ppVoid = *ppVoid;
+    }
+    *ppVoid = NULL;
+
+    return p;
+}
+
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p)
 {
     if (*p == NULL)
@@ -204,6 +251,22 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
     }
 
     pVoid = p->pNextFree + 1;
+    p->pNextFree = *(p->pNextFree);
+
+    return pVoid;
+}
+
+static void * ibuBlockAllocIB(ibuBlockAllocator p)
+{
+    void *pVoid;
+    
+    if (p->pNextFree == NULL)
+    {
+	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
+	return NULL;
+    }
+
+    pVoid = ((ibmem_t*)(p->pNextFree + 1)) + 1;
     p->pNextFree = *(p->pNextFree);
 
     return pVoid;
@@ -356,9 +419,11 @@ static VAPI_ret_t createQP(ibu_t ibu, ibu_set_t set)
 #define FUNCNAME ib_malloc_register
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
+/*
 static VAPI_mr_hndl_t s_mr_handle;
 static VAPI_lkey_t    s_lkey;
-static void *ib_malloc_register(size_t size)
+*/
+static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp)
 {
     VAPI_ret_t status;
     void *ptr;
@@ -387,7 +452,8 @@ static void *ib_malloc_register(size_t size)
     status = VAPI_register_mr(
 	IBU_Process.hca_handle,
 	&mem,
-	&s_mr_handle,
+	/*&s_mr_handle,*/
+	hp,
 	&mem_out);
     if (status != IBU_SUCCESS)
     {
@@ -395,7 +461,9 @@ static void *ib_malloc_register(size_t size)
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
-    s_lkey = mem_out.l_key;
+    /*s_lkey = mem_out.l_key;*/
+    *lp = mem_out.l_key;
+    *rp = mem_out.r_key;
 
     MPIU_DBG_PRINTF(("exiting ib_malloc_register\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
@@ -440,12 +508,12 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
     p->state = 0;
     /* In ibuBlockAllocInit, ib_malloc_register is called which sets the
        global variable s_mr_handle */
-    p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
+    p->allocator = ibuBlockAllocInitIB(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
 				     IBU_PACKET_COUNT,
 				     ib_malloc_register, ib_free_deregister);
-    p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
+    /* p->mr_handle = s_mr_handle;*/ /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
     /* save the lkey for posting sends and receives */
-    p->lkey = s_lkey;
+    /*p->lkey = s_lkey;*/
 
     /*MPIDI_DBG_PRINTF((60, FCNAME, "creating the queue pair\n"));*/
     /* Create the queue pair */
@@ -543,7 +611,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 
     MPIU_DBG_PRINTF(("entering ibui_post_receive_unacked\n"));
-    mem_ptr = ibuBlockAlloc(ibu->allocator);
+    mem_ptr = ibuBlockAllocIB(ibu->allocator);
     if (mem_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
@@ -572,7 +640,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     work_req.sg_lst_len = 1;
     data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
-    data.lkey = ibu->lkey;
+    data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -610,7 +678,7 @@ static int ibui_post_receive(ibu_t ibu)
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
 
     MPIU_DBG_PRINTF(("entering ibui_post_receive\n"));
-    mem_ptr = ibuBlockAlloc(ibu->allocator);
+    mem_ptr = ibuBlockAllocIB(ibu->allocator);
     if (mem_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
@@ -639,7 +707,7 @@ static int ibui_post_receive(ibu_t ibu)
     work_req.sg_lst_len = 1;
     data.addr = (VAPI_virt_addr_t)mem_ptr;
     data.len = IBU_PACKET_SIZE;
-    data.lkey = ibu->lkey;
+    data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
 
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
 
@@ -759,7 +827,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	    return total;
 	}
 
-	mem_ptr = ibuBlockAlloc(ibu->allocator);
+	mem_ptr = ibuBlockAllocIB(ibu->allocator);
 	if (mem_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL\n"));
@@ -776,7 +844,7 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 
 	data.len = length;
 	data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)mem_ptr;
-	data.lkey = ibu->lkey;
+	data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
 	
 	work_req.opcode = VAPI_SEND;
 	work_req.comp_type = VAPI_SIGNALED;
@@ -870,7 +938,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return total;
 	}
-	mem_ptr = ibuBlockAlloc(ibu->allocator);
+	mem_ptr = ibuBlockAllocIB(ibu->allocator);
 	if (mem_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL."));
@@ -910,7 +978,7 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	
 	data.len = msg_size;
 	data.addr = (VAPI_virt_addr_t)mem_ptr;
-	data.lkey = ibu->lkey;
+	data.lkey = GETLKEY(mem_ptr);/*ibu->lkey;*/
 	
 	work_req.opcode = VAPI_SEND;
 	work_req.comp_type = VAPI_SIGNALED;
