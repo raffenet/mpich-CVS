@@ -28,7 +28,6 @@ int MPID_Type_vector(int count,
 		     MPI_Datatype oldtype,
 		     MPI_Datatype *newtype)
 {
-    static const char FCNAME[] = "MPID_Type_vector";
     int mpi_errno = MPI_SUCCESS;
 
     MPID_Datatype *new_dtp;
@@ -37,8 +36,8 @@ int MPID_Type_vector(int count,
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
     if (!new_dtp) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+	return mpi_errno;
     }
 
     /* Note: handle and ref_count, the first two parameters in the datatype
