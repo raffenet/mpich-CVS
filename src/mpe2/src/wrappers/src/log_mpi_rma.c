@@ -45,12 +45,12 @@ void MPE_Init_MPIRMA( void )
   state = &states[MPE_GET_ID];
   state->kind_mask = MPE_KIND_RMA;
   state->name = "GET";
-  state->color = "purple";
+  state->color = "LightGreen";
 
   state = &states[MPE_PUT_ID];
   state->kind_mask = MPE_KIND_RMA;
   state->name = "PUT";
-  state->color = "purple";
+  state->color = "LightBlue";
 
   state = &states[MPE_WIN_COMPLETE_ID];
   state->kind_mask = MPE_KIND_RMA;
@@ -65,7 +65,7 @@ void MPE_Init_MPIRMA( void )
   state = &states[MPE_WIN_FENCE_ID];
   state->kind_mask = MPE_KIND_RMA;
   state->name = "WIN_FENCE";
-  state->color = "purple";
+  state->color = "tomato";
 
   state = &states[MPE_WIN_FREE_ID];
   state->kind_mask = MPE_KIND_RMA;
@@ -90,7 +90,7 @@ void MPE_Init_MPIRMA( void )
   state = &states[MPE_WIN_POST_ID];
   state->kind_mask = MPE_KIND_RMA;
   state->name = "WIN_POST";
-  state->color = "purple";
+  state->color = "DarkGreen";
 
   state = &states[MPE_WIN_SET_NAME_ID];
   state->kind_mask = MPE_KIND_RMA;
@@ -105,7 +105,7 @@ void MPE_Init_MPIRMA( void )
   state = &states[MPE_WIN_TEST_ID];
   state->kind_mask = MPE_KIND_RMA;
   state->name = "WIN_TEST";
-  state->color = "purple";
+  state->color = "DarkOrange";
 
   state = &states[MPE_WIN_UNLOCK_ID];
   state->kind_mask = MPE_KIND_RMA;
@@ -115,7 +115,7 @@ void MPE_Init_MPIRMA( void )
   state = &states[MPE_WIN_WAIT_ID];
   state->kind_mask = MPE_KIND_RMA;
   state->name = "WIN_WAIT";
-  state->color = "purple";
+  state->color = "maroon";
 }
 
 int MPI_Accumulate( void *origin_addr, int origin_count,
