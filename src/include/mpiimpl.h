@@ -152,6 +152,14 @@ typedef long long int64_t;
 #endif
 #define MPID_IOV_LIMIT   16
 
+#ifdef HAVE_WINDOWS_H
+#define POINTER_TO_AINT(a)   ( ( MPI_Aint )( 0xffffffff & (__int64) ( a ) ) )
+#define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( (__int64) ( a ) ) )
+#else
+#define POINTER_TO_AINT(a)   ( ( MPI_Aint )( a ) )
+#define POINTER_TO_OFFSET(a) ( ( MPI_Offset ) ( a ) )
+#endif
+
 /* Include definitions from the device which must exist before items in this
    file (mpiimpl.h) can be defined. */
 #include "mpidpre.h"
@@ -1334,12 +1342,14 @@ void MPIR_Wait(MPID_Request *);
 void MPIR_Add_finalize( int (*)( void * ), void *, int );
 int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
-int MPIR_Err_return_file( MPID_File *, const char [], int );
+/*int MPIR_Err_return_file( MPID_File *, const char [], int );*/
+int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
 int MPIR_Err_create_code( int, const char [], ... ) /* ATTRIBUTE((format(printf,3,4))) */;
 int MPIR_Err_append_code( int, int, int, const char [], ... );
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
 const char * MPIR_Err_get_string(int);
+int MPIR_Err_set_msg( int code, const char *msg_string );
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED
