@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <string.h>
 #include "mpitest.h"
 
 #define NKEYS 3

@@ -24,7 +24,7 @@ typedef int BOOL;
 #ifdef HAVE_WINDOWS_H
 #define POINTER_TO_INT(a)   ( ( int )( 0xffffffff & (__int64) ( a ) ) )
 #else
-#define POINTER_TO_INT(a)   ( ( int )( a ) )
+#define POINTER_TO_INT(a)   ( ( MPI_Aint )( a ) )
 #endif
 
 #define CREATE_DIFFERENCE_CURVES
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
 		if (bufalign != 0)
 		{
 		    args01.sbuff += (bufalign - (POINTER_TO_INT(args01.sbuff) % bufalign) + bufoffset) % bufalign;
-		    /* args01.rbuff += (bufalign - ((int)args01.rbuff % bufalign) + bufoffset) % bufalign; */
+		    /* args01.rbuff += (bufalign - ((MPI_Aint)args01.rbuff % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
 	    args01.rbuff += (bufalign - (POINTER_TO_INT(args01.rbuff) % bufalign) + bufoffset) % bufalign;
@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
 			if (bufalign != 0)
 			{
 			    args01.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args01.sbuff) % bufalign) + bufoffset) % bufalign);
-			    /* args01.rbuff = memtmp1 + ((bufalign - ((int)args01.rbuff % bufalign) + bufoffset) % bufalign); */
+			    /* args01.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args01.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
 			if (bufalign != 0)
 			{
 			    args01.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args01.sbuff) % bufalign) + bufoffset) % bufalign);
-			    /* args01.rbuff = memtmp1 + ((bufalign - ((int)args01.rbuff % bufalign) + bufoffset) % bufalign); */
+			    /* args01.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args01.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
@@ -544,7 +544,7 @@ skip_01_trial:
 		if (bufalign != 0)
 		{
 		    args12.sbuff += (bufalign - (POINTER_TO_INT(args12.sbuff) % bufalign) + bufoffset) % bufalign;
-		    /* args12.rbuff += (bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign; */
+		    /* args12.rbuff += (bufalign - ((MPI_Aint)args12.rbuff % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
 	    args12.rbuff += (bufalign - (POINTER_TO_INT(args12.rbuff) % bufalign) + bufoffset) % bufalign;
@@ -567,7 +567,7 @@ skip_01_trial:
 			if (bufalign != 0)
 			{
 			    args12.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args12.sbuff) % bufalign) + bufoffset) % bufalign);
-			    /* args12.rbuff = memtmp1 + ((bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign); */
+			    /* args12.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args12.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
@@ -606,7 +606,7 @@ skip_01_trial:
 			if (bufalign != 0)
 			{
 			    args12.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args12.sbuff) % bufalign) + bufoffset) % bufalign);
-			    /* args12.rbuff = memtmp1 + ((bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign); */
+			    /* args12.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args12.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
@@ -743,7 +743,7 @@ skip_12_trial:
 		if (bufalign != 0)
 		{
 		    args012.sbuff += (bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign;
-		    /* args12.rbuff += (bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign; */
+		    /* args12.rbuff += (bufalign - ((MPI_Aint)args12.rbuff % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
 	    args012.rbuff += (bufalign - (POINTER_TO_INT(args012.rbuff) % bufalign) + bufoffset) % bufalign;
@@ -769,7 +769,7 @@ skip_12_trial:
 			    if (bufalign != 0)
 			    {
 				args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
-				/* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+				/* args012.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			    }
 			    else
 			    {
@@ -807,7 +807,7 @@ skip_12_trial:
 			    if (bufalign != 0)
 			    {
 				args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
-				/* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+				/* args012.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			    }
 			    else
 			    {
@@ -866,7 +866,7 @@ skip_12_trial:
 			    if (bufalign != 0)
 			    {
 				args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
-				/* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+				/* args012.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			    }
 			    else
 			    {
@@ -995,7 +995,7 @@ skip_12_trial:
 		if (bufalign != 0)
 		{
 		    args012.sbuff += (bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign;
-		    /* args12.rbuff += (bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign; */
+		    /* args12.rbuff += (bufalign - ((MPI_Aint)args12.rbuff % bufalign) + bufoffset) % bufalign; */
 		}
 	    }
 	    args012.rbuff += (bufalign - (POINTER_TO_INT(args012.rbuff) % bufalign) + bufoffset) % bufalign;
@@ -1019,7 +1019,7 @@ skip_12_trial:
 			if (bufalign != 0)
 			{
 			    args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
-			    /* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+			    /* args012.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
@@ -1057,7 +1057,7 @@ skip_12_trial:
 			if (bufalign != 0)
 			{
 			    args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
-			    /* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+			    /* args012.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
@@ -1094,7 +1094,7 @@ skip_12_trial:
 			if (bufalign != 0)
 			{
 			    args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
-			    /* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+			    /* args012.rbuff = memtmp1 + ((bufalign - ((MPI_Aint)args012.rbuff % bufalign) + bufoffset) % bufalign); */
 			}
 			else
 			{
