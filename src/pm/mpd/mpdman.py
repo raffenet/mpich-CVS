@@ -68,6 +68,7 @@ def mpdman():
     kvsname_template = 'kvs_' + host0 + '_' + str(port0) + '_'
     default_kvsname = kvsname_template + '0'
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
+    default_kvsname = sub('\-','_',default_kvsname)  # chg node-0 to node_0
     exec('%s = {}' % (default_kvsname) )
     kvs_next_id = 1
     jobEndingEarly = 0
