@@ -80,3 +80,13 @@ void MPID_Request_release(MPID_Request *request_ptr)
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_REQUEST_RELEASE);
 }
+
+MPID_Request * MPID_Request_create(void)
+{
+    return mm_request_alloc();
+}
+
+void MPID_Request_set_completed(MPID_Request *req)
+{
+    *req->cc_ptr = 0;
+}
