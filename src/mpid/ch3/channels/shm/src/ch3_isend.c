@@ -6,16 +6,16 @@
 
 #include "mpidi_ch3_impl.h"
 
-/* static void update_request(MPID_Request * sreq, void * hdr, int hdr_sz, int nb) */
+/* static void update_request(MPID_Request * sreq, void * pkt, int pkt_sz, int nb) */
 #undef update_request
-#define update_request(sreq, hdr, hdr_sz, nb) \
+#define update_request(sreq, pkt, pkt_sz, nb) \
 { \
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
-    assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t)); \
-    sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) hdr; \
+    assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
+    sreq->shm.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
     sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->shm.pkt + nb; \
-    sreq->ch3.iov[0].MPID_IOV_LEN = hdr_sz - nb; \
+    sreq->ch3.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->ch3.iov_count = 1; \
     sreq->shm.iov_offset = 0; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
@@ -25,7 +25,7 @@
 #define FUNCNAME MPIDI_CH3_iSend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
+void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
@@ -33,10 +33,10 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 
     MPIU_DBG_PRINTF(("ch3_isend\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* The SHM implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
-    hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
+    pkt_sz = sizeof(MPIDI_CH3_Pkt_t);
     
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
@@ -47,12 +47,12 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	/* MT: need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
 	   also try to write */
 	
-	MPIU_DBG_PRINTF(("shm_write(%d bytes)\n", hdr_sz));
-	nb = MPIDI_CH3I_SHM_write(vc, hdr, hdr_sz);
+	MPIU_DBG_PRINTF(("shm_write(%d bytes)\n", pkt_sz));
+	nb = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz);
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 	
-	if (nb == hdr_sz)
+	if (nb == pkt_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 	    MPIDI_CH3U_Handle_send_req(vc, sreq);
@@ -64,17 +64,17 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		vc->shm.send_active = sreq;
 	    }
 	}
-	else if (nb < hdr_sz)
+	else if (nb < pkt_sz)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
-	    update_request(sreq, hdr, hdr_sz, nb);
+	    update_request(sreq, pkt, pkt_sz, nb);
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 	    vc->shm.send_active = sreq;
 	}
 	else if (nb == 0)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
-	    update_request(sreq, hdr, hdr_sz, 0);
+	    update_request(sreq, pkt, pkt_sz, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	    vc->shm.send_active = sreq;
 	}
@@ -91,7 +91,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
     else
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "send queue not empty, enqueuing"));
-	update_request(sreq, hdr, hdr_sz, 0);
+	update_request(sreq, pkt, pkt_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     
