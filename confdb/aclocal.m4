@@ -76,6 +76,7 @@ if mkdir -p .tmp/.foo 1>/dev/null 2>&1 ; then
         pac_cv_mkdir_p=yes
     fi
 fi
+rm -rf .tmp
 ])
 if test "$pac_cv_mkdir_p" = "yes" ; then
    MKDIR_P="mkdir -p"
