@@ -107,7 +107,8 @@ void MPIR_Err_preinit( void )
  * This is the routine that is invoked by most MPI routines to 
  * report an error 
  */
-int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode )
+int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
+			  int errcode )
 {
     const int error_class = ERROR_GET_CLASS(errcode);
     
@@ -115,14 +116,14 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
 			      "Please file a bug report.  The error stack follows:\n", error_class);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
-			      "Please file a bug report.  No error stack is available.\n");
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
+			      "Please file a bug report.  No error stack is available.\n", class);
 	}
 	
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
@@ -201,14 +202,14 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
 			      "Please file a bug report.  The error stack follows:\n", error_class);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
-			      "Please file a bug report.  No error stack is available.\n");
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
+			      "Please file a bug report.  No error stack is available.\n", class);
 	}
 	
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
@@ -564,13 +565,17 @@ void MPIR_Err_get_string( int errorcode, char * msg )
     if (errorcode & ERROR_DYN_MASK)
     {
 	/* This is a dynamically created error code (e.g., with MPI_Err_add_class) */
+	/* If a dynamic error code was created, the function to convert
+	   them into strings has been set.  Check to see that it was; this 
+	   is a safeguard against a bogus error code */
 	if (!MPIR_Process.errcode_to_string)
 	{
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (MPIU_Strncpy(msg, "Undefined dynamic error code", MPI_MAX_ERROR_STRING))
 	    {
 		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
 	    }
-	    
+	    /* --END ERROR HANDLING-- */
 	}
 	else
 	{
@@ -634,6 +639,8 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	}
 #       endif
 	
+	/* We reach this code only if we did not find the instance message
+	   above (the message in the ring) */
 #       if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
 	{
 	    if (generic_idx >= 0)
