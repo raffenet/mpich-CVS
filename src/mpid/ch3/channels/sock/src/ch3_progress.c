@@ -90,11 +90,6 @@ int MPIDI_CH3_Progress(int is_blocking)
 
 	switch (event.op_type)
 	{
-	    case SOCK_OP_TIMEOUT:
-	    {
-		goto fn_exit;
-	    }
-	    
 	    case SOCK_OP_READ:
 	    {
 		MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event.user_ptr;
@@ -329,7 +324,6 @@ int MPIDI_CH3_Progress(int is_blocking)
     }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 
-  fn_exit:
     count = MPIDI_CH3I_progress_completions - completions;
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
