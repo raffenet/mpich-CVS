@@ -397,7 +397,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);

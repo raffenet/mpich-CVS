@@ -375,28 +375,23 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);
-	    
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
-                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                }
             }
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
                 MPID_Op_get_ptr(op, op_ptr);
                 MPID_Op_valid_ptr( op_ptr, mpi_errno );
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
-                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                }
+            }
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

@@ -550,7 +550,7 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 
             rank = comm_ptr->rank;
@@ -560,10 +560,6 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                 if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
                     MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                     MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
-                    if (mpi_errno != MPI_SUCCESS) {
-                        MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
-                        return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                    }
                 }
             }
 
@@ -574,10 +570,11 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
             if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                 MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
-                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                }
+            }
+
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;

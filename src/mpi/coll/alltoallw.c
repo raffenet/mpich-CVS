@@ -233,7 +233,7 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *send
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
             comm_size = comm_ptr->local_size;
             for (i=0; i<comm_size; i++) {
@@ -245,19 +245,15 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *send
                 if (HANDLE_GET_KIND(sendtypes[i]) != HANDLE_KIND_BUILTIN) {
                     MPID_Datatype_get_ptr(sendtypes[i], sendtype_ptr);
                     MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
-                    if (mpi_errno != MPI_SUCCESS) {
-                        MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
-                        return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                    }
                 }
                 if (HANDLE_GET_KIND(recvtypes[i]) != HANDLE_KIND_BUILTIN) {
                     MPID_Datatype_get_ptr(recvtypes[i], recvtype_ptr);
                     MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
-                    if (mpi_errno != MPI_SUCCESS) {
-                        MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
-                        return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                    }
                 }
+            }
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
