@@ -56,6 +56,9 @@ AC_ARG_ENABLE(sharedlibs,
     libtool - GNU libtool 
 This option is currently ignored])
 dnl
+AC_ARG_WITH(bsocket,
+[--with-bsocket - Control the use of the bsocket library],,with_bsocket=yes)
+
 dnl Process any enable or with values
 dnl error-checking
 case "$enable_error_checking" in 
@@ -119,6 +122,16 @@ case "$enable_g" in
     ;;
 esac
 dnl
+case "$with_bsocket" in 
+     no|none)
+     AC_DEFINE(NO_BSOCKET,,[Define to use native sockets instead])
+     ;;
+     yes)
+     ;;
+     *)
+     AC_MSG_WARN([Unknown value $with_bsocket for --with-bsocket])
+     ;;
+esac
 dnl This test is complicated by the fact that top_srcdir is not set until
 dnl the very end of configure.  Instead, we get it ourselves
 if test -z "$top_srcdir" ; then

@@ -33,6 +33,7 @@ also the value at index %d
 **notgraphtopo:No Graph topology associated with this communicator
 **dimsmany:Number of dimensions is too large 
 **dimsmany %d %d:Number of dimensions %d is too large (maximum is %d)
+**dimspartition:Can not partition nodes as requested 
 **cartcoordinvalid:Cartesian coordinate is invalid (not in range)
 **cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate \
  is %d but must be between 0 and %d
