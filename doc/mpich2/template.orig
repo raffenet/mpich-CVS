@@ -17,6 +17,8 @@
 \markright{MPICH Design Document}
 
 \raggedright
+% raggedright resets parindent
+\parindent 1em
 \pagenumbering{arabic}
 \pagestyle{headings}
 
