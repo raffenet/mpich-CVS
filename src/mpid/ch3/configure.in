@@ -71,7 +71,7 @@ dnl
 dnl bring in the default implementation of the MPID_Thread package
 dnl
 MPID_THREAD_SRCDIR="../common/thread"
-builtin(include,../common/thread/configure.inc)
+builtin(include,../common/thread/mpid_thread.m4)
 
 AC_SUBST(AR)
 AC_SUBST(RANLIB)

@@ -1226,6 +1226,24 @@ sub DefaultRules {
 		close (AFD);
 	    }
 	}
+	# Extract includes from configure.in
+	open (AFD, "<configure.in" );
+	while (<AFD>) {
+	    if (/^\s*builtin\(include,([\w\-\/\.]*\.m4)\)\s*$/)
+	    {
+		$filename = $1;
+		if (-s "$filename")
+		{
+		    $autoconf_deps .= " $filename";
+		}
+		elsif (($filename =~ /[^\.\/]+/) && defined($macroloc) && -s "$macroloc/$filename")
+		{
+		    $autoconf_deps .= " $macroloc/$filename";
+		}
+	    }
+	}
+	close (AFD);
+	#
 	print FD "$newline";
 	&print_make_longline( FD,  "\${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
 	&print_make_setpos( 8 );
