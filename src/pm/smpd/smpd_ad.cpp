@@ -164,6 +164,7 @@ static int smpd_build_spn_list()
     char temp_str[SMPD_MAX_NAME_LENGTH];
     char temp_str2[SMPD_MAX_NAME_LENGTH];
     smpd_host_spn_node_t *iter;
+    double t1, t2;
     static int initialized = 0;
 
     if (initialized)
@@ -171,6 +172,8 @@ static int smpd_build_spn_list()
 	return SMPD_SUCCESS;
     }
     initialized = 1;
+
+    t1 = PMPI_Wtime();
 
     CoInitialize(NULL);
 
@@ -387,6 +390,9 @@ Cleanup:
 	pSearch = NULL;
     }
     CoUninitialize();
+
+    t2 = PMPI_Wtime();
+    smpd_dbg_printf("build_spn_list took %0.6f seconds\n", t2-t1);
 
     return SMPD_SUCCESS;
 }
