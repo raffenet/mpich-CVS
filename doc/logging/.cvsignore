@@ -1,0 +1,10 @@
+*.log
+*.aux
+*.blg
+*.bbl
+*.dvi
+*.toc
+*.ind
+*.idx
+Makefile
+logging.pdf

@@ -1,0 +1,157 @@
+\documentclass[dvipdfm,11pt]{article}
+\usepackage[dvipdfm]{hyperref} % Upgraded url package
+\parskip=.1in
+
+\begin{document}
+\markright{MPICH2 Logging}
+\title{MPICH2 Logging\\
+Version 0.1\\
+DRAFT of \today\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}
+
+\author{David Ashton}
+
+
+\maketitle
+
+\cleardoublepage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+
+\section{Introduction}
+\label{sec:introduction}
+
+This manual assumes that MPICH2 has already been installed.  For
+instructions on how to install MPICH2, see the MPICH2 Installation Guide,
+or the README in the top-level MPICH2 directory.  This manual will
+explain how the internal logging macros are generated and how the user
+can generate log files viewable in jumpshot.
+
+
+\section{Logging state code generation}
+\label{sec:genstates}
+
+This section can be skipped by users.  It describes the internal scripts used
+to develop the logging macros.
+
+This is how the maint/genstates logging script works:
+
+\begin{enumerate}
+\item maint/updatefiles creates genstates from genstates.in replacing @PERL@
+
+\item genstates finds all .i, .h and .c files in the mpich2 directory tree,
+ searches for \_STATE\_DECL in each file and builds a list of all the MPID\_STATEs.
+
+\item genstates finds all the "describe\_states.txt" files anywhere in the mpich2
+ tree.
+
+\item genstates matches the states in the describe\_states.txt files with the 
+ states it found in the .i, .h and .c files.  It warns if states are described
+ without being declared and discards these descriptions.  It produces errors
+ if states are declared without being described in a describe\_states.txt file.
+
+\item The describe\_states.txt file format is this:
+\begin{verbatim}
+MPID_STATE_XXX <user string for the state> <optional rgb color>
+\end{verbatim}
+ Here is an example line:
+\begin{verbatim}
+ MPID_STATE_MPI_SEND MPI_Send 0 0 255
+\end{verbatim}
+ 
+\item genstates ouputs mpich2/src/include/mpiallstates.h with this enum in it:
+\begin{verbatim}
+enum MPID_TIMER_STATE
+{
+    MPID_STATE_XXX,
+    ...
+};
+\end{verbatim}
+
+\item genstates outputs mpich2/src/util/logging/describe\_states.c with the
+ MPIR\_Describe\_timer\_states() function in it.  Currently, only the rlog
+ version of MPIR\_Describe\_timer\_states() is generated.
+
+\end{enumerate}
+
+\section{Configuring mpich2 to create log files}
+\label{sec:configuring}
+
+When users run configure they can specify logging options.  There are three configure
+options to control logging.
+
+\begin{description}
+\item[\texttt{--enable-timing=<timing\_type>}]\mbox{}\\
+Add this option to enable timing.  The two options for timing\_type are \texttt{log}
+and \texttt{log\_detailed}.  The \texttt{log} option will log only the MPI functions just
+like the MPE logging interface does.  The \texttt{log\_detailed} will log every
+function in mpich2.  This option gives fine grained logging information and
+also creates large log files.
+
+\item[\texttt{--with-logging=<logger>}]\mbox{}\\
+Specify the logging library to use.  Currently the only logger option is \texttt{rlog}.
+
+\item[\texttt{--enable-timer-type=<timer\_type>}]\mbox{}\\
+Specify the timer type.  The options are \texttt{linux86\_cycle}, \texttt{foobar}, and \texttt{bazz}.
+\end{description}
+
+Here is an example:
+\begin{verbatim}
+mpich2/configure
+    --enable-timing=log
+    --with-logging=rlog
+    --enable-timer-type=linux86_cycle
+\end{verbatim}
+
+\section{Generating log files}
+\label{sec:genlogs}
+Run your mpi application to create intermediate .irlog files.
+
+\begin{verbatim}
+mpicc myapp.c -o myapp
+mpiexec -n 3 myapp
+There will be .irlog files created for each process:
+log0.irlog
+log1.irlog
+log2.irlog
+\end{verbatim}
+
+\section{RLOG tools}
+\label{sec:tools}
+Use the rlog tools to merge the .irlog files into an .rlog file.
+
+\begin{description}
+\item[\texttt{irlog2rlog}]\mbox{}\\
+This tool combines the intermediate .irlog files to a single .rlog file.
+The usage is: irlog2rlog outname.rlog input0.irlog input1.irlog ...
+A shortcut is provided: irlog2rlog outname.rlog num\_files.
+
+\item[\texttt{printrlog}]\mbox{}\\
+This tool prints the contents of an .rlog file.
+
+\item[\texttt{printirlog}]\mbox{}\\
+This tool prints the contents of an .irlog file.
+\end{description}
+
+``\texttt{irlog2rlog myapp.rlog 3}'' will convert log0.irlog, log1.irlog and log2.irlog
+to myapp.rlog.
+
+\section{Viewing log files}
+This section describes how to view a log file
+
+.rlog files can be printed from a command shell using the printrlog tool but
+the more interesting way to view the log files is from jumpshot.  jumpshot
+displays slog2 files and has a built in convertor to convert .rlog files to
+.slog2 files.
+
+\bibliographystyle{plain}
+\bibliography{logging}
+
+\end{document}
