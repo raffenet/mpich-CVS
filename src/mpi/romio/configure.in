@@ -28,6 +28,7 @@ print_error() {
 usage_msg="
 Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
                 [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
+		[-mpibindir=MPI_BIN_DIR]
                 [-cc=C_COMPILER] [-fc=FORTRAN_COMPILER] [-nof77] 
                 [-cflags=CFLAGS] [-fflags=FFLAGS] [-f90=F90_COMPILER] [-debug] 
                 [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
@@ -61,6 +62,10 @@ where
    MPI_LIBRARY  = name of the file containing the MPI library (full path).
                   Not needed if the library is in the compiler's default
                   list of libraries
+   MPI_BIN_DIR  = the full path of the directory that contains the MPI
+                  versions of the compilers, such as mpicc and mpif77.
+                  Use only if the ROMIO configure cannot find the
+                  necessary commands
    C_COMPILER   = the C compiler to use. If not specified, ROMIO uses a 
                   default compiler depending on the machine.
    FORTRAN_COMPILER = the Fortran compiler to use. If not specified, ROMIO 
@@ -197,6 +202,9 @@ case $arg in
      ;;
   -mpiincdir=* | --mpiincdir=*)  
      MPI_INCLUDE_DIR=`echo $arg|sed 's/-*mpiincdir=//'`
+     ;;
+  -mpibindir=* | --mpibindir=*)  
+     MPI_BIN_DIR=`echo $arg|sed 's/-*mpibindir=//'`
      ;;
   -mpilib=* | --mpilib=*)  
      MPI_LIB=`echo $arg|sed 's/-*mpilib=//'`
@@ -1030,19 +1038,20 @@ MPIRUN=mpirun
 #
 if test $FROM_MPICH = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
-   TEST_CC=$MPICH_HOME/bin/mpicc
+   if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin/mpicc ; fi
+   TEST_CC=$MPI_BIN_DIR/mpicc
    MPI_LIB=""
    ROMIO_INCLUDE=""
    USER_CFLAGS=""
    USER_FFLAGS=""
    TEST_LIBNAME=""
-   MPIRUN=$MPICH_HOME/bin/mpirun
+   MPIRUN=$MPI_BIN_DIR/mpirun
    if test -n "$arch_SX4" || test -n "$arch_hpux" ; then
-      TEST_F77=$MPICH_HOME/bin/mpif90
+      TEST_F77=$MPI_BIN_DIR/mpif90
    else
-      TEST_F77=$MPICH_HOME/bin/mpif77
+      TEST_F77=$MPI_BIN_DIR/mpif77
    fi
-   CC=$MPICH_HOME/bin/mpicc
+   CC=$MPI_BIN_DIR/mpicc
 fi
 #
 if test -z "$TEST_CC" ; then

@@ -1,7 +1,4 @@
-
-
-
-#!/bin/sh
+#! /bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
@@ -27,6 +24,7 @@ print_error() {
 usage_msg="
 Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
                 [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
+		[-mpibindir=MPI_BIN_DIR]
                 [-cc=C_COMPILER] [-fc=FORTRAN_COMPILER] [-nof77] 
                 [-cflags=CFLAGS] [-fflags=FFLAGS] [-f90=F90_COMPILER] [-debug] 
                 [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
@@ -60,6 +58,10 @@ where
    MPI_LIBRARY  = name of the file containing the MPI library (full path).
                   Not needed if the library is in the compiler's default
                   list of libraries
+   MPI_BIN_DIR  = the full path of the directory that contains the MPI
+                  versions of the compilers, such as mpicc and mpif77.
+                  Use only if the ROMIO configure cannot find the
+                  necessary commands
    C_COMPILER   = the C compiler to use. If not specified, ROMIO uses a 
                   default compiler depending on the machine.
    FORTRAN_COMPILER = the Fortran compiler to use. If not specified, ROMIO 
@@ -196,6 +198,9 @@ case $arg in
      ;;
   -mpiincdir=* | --mpiincdir=*)  
      MPI_INCLUDE_DIR=`echo $arg|sed 's/-*mpiincdir=//'`
+     ;;
+  -mpibindir=* | --mpibindir=*)  
+     MPI_BIN_DIR=`echo $arg|sed 's/-*mpibindir=//'`
      ;;
   -mpilib=* | --mpilib=*)  
      MPI_LIB=`echo $arg|sed 's/-*mpilib=//'`
@@ -3109,19 +3114,20 @@ MPIRUN=mpirun
 #
 if test $FROM_MPICH = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
-   TEST_CC=$MPICH_HOME/bin/mpicc
+   if test -z "$MPI_BIN_DIR" ; then MPI_BIN_DIR=$MPICH_HOME/bin/mpicc ; fi
+   TEST_CC=$MPI_BIN_DIR/mpicc
    MPI_LIB=""
    ROMIO_INCLUDE=""
    USER_CFLAGS=""
    USER_FFLAGS=""
    TEST_LIBNAME=""
-   MPIRUN=$MPICH_HOME/bin/mpirun
+   MPIRUN=$MPI_BIN_DIR/mpirun
    if test -n "$arch_SX4" || test -n "$arch_hpux" ; then
-      TEST_F77=$MPICH_HOME/bin/mpif90
+      TEST_F77=$MPI_BIN_DIR/mpif90
    else
-      TEST_F77=$MPICH_HOME/bin/mpif77
+      TEST_F77=$MPI_BIN_DIR/mpif77
    fi
-   CC=$MPICH_HOME/bin/mpicc
+   CC=$MPI_BIN_DIR/mpicc
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -3324,7 +3330,7 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-  sed -e "
+cat $top_srcdir/${file}.in | sed -e "
 $prsub
 $extrasub
 s%@VPATH@%$VPATH%g
@@ -3366,7 +3372,7 @@ s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
 s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
 s%@MPI_FINFO1@%$MPI_FINFO1%g
 s%@MPI_FINFO2@%$MPI_FINFO2%g
-s%@MPI_FINFO3@%$MPI_FINFO3%g
+s%@MPI_FINFO3@%$MPI_FINFO3%g" | sed -e "
 s%@MPI_FINFO4@%$MPI_FINFO4%g
 s%@MPI_FARRAY1@%$MPI_FARRAY1%g
 s%@MPI_FARRAY2@%$MPI_FARRAY2%g
@@ -3389,14 +3395,14 @@ s%@MPIRUN@%$MPIRUN%g
 s%@FORTRAN_TEST@%$FORTRAN_TEST%g
 s%@LIBS@%$LIBS%g
 s%@DEFS@%$DEFS%
-" $top_srcdir/${file}.in >> $file
+" >> $file
 fi; done
 
 
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} config.status
+${CONFIG_SHELL-/bin/sh} ./config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"
