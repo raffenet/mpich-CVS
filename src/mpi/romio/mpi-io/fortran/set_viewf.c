@@ -140,11 +140,11 @@ void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
    int str_len = _fcdlen(datarep_fcd);
 #else
 /* Prototype to keep compiler happy */
-void FORT_CALL mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
+FORTRAN_API void FORT_CALL mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
    MPI_Datatype *filetype,char *datarep,MPI_Fint *info, int *ierr,
 			int str_len );
 
-void FORT_CALL mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
+FORTRAN_API void FORT_CALL mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
    MPI_Datatype *filetype,char *datarep,MPI_Fint *info, int *ierr,
    int str_len )
 {

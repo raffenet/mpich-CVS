@@ -85,9 +85,9 @@
 #endif
 
 /* Prototype to keep compiler happy */
-void FORT_CALL mpi_file_set_info_(MPI_Fint *fh, MPI_Fint *info, int *ierr );
+FORTRAN_API void FORT_CALL mpi_file_set_info_(MPI_Fint *fh, MPI_Fint *info, int *ierr );
 
-void FORT_CALL mpi_file_set_info_(MPI_Fint *fh, MPI_Fint *info, int *ierr )
+FORTRAN_API void FORT_CALL mpi_file_set_info_(MPI_Fint *fh, MPI_Fint *info, int *ierr )
 {
     MPI_File fh_c;
     MPI_Info info_c;

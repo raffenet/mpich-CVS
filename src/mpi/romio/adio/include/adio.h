@@ -46,6 +46,16 @@
 #define FORT_END_LEN(a)       , int a
 #endif
 
+#ifdef HAVE_FORTRAN_API
+# ifdef FORTRAN_EXPORTS
+#  define FORTRAN_API __declspec(dllexport)
+# else
+#  define FORTRAN_API __declspec(dllimport)
+# endif
+#else
+# define FORTRAN_API
+#endif
+
 #include "romioconf.h"
 
 #include "mpi.h"

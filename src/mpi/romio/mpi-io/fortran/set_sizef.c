@@ -85,9 +85,9 @@
 #endif
 
 /* Prototype to keep compiler happy */
-void FORT_CALL mpi_file_set_size_(MPI_Fint *fh,MPI_Offset *size, int *ierr );
+FORTRAN_API void FORT_CALL mpi_file_set_size_(MPI_Fint *fh,MPI_Offset *size, int *ierr );
 
-void FORT_CALL mpi_file_set_size_(MPI_Fint *fh,MPI_Offset *size, int *ierr )
+FORTRAN_API void FORT_CALL mpi_file_set_size_(MPI_Fint *fh,MPI_Offset *size, int *ierr )
 {
     MPI_File fh_c;
     

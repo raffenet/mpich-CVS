@@ -85,10 +85,10 @@
 #endif
 
 /* Prototype to keep compiler happy */
-void FORT_CALL mpi_file_get_position_shared_(MPI_Fint *fh, MPI_Offset *offset, 
+FORTRAN_API void FORT_CALL mpi_file_get_position_shared_(MPI_Fint *fh, MPI_Offset *offset, 
 				   int *ierr );
 
-void FORT_CALL mpi_file_get_position_shared_(MPI_Fint *fh, MPI_Offset *offset, int *ierr )
+FORTRAN_API void FORT_CALL mpi_file_get_position_shared_(MPI_Fint *fh, MPI_Offset *offset, int *ierr )
 {
     MPI_File fh_c;
     

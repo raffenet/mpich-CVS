@@ -102,10 +102,10 @@ void mpi_file_read_all_(MPI_Fint *fh,void *buf,int *count,
 }
 #else
 /* Prototype to keep compiler happy */
-void FORT_CALL mpi_file_read_all_(MPI_Fint *fh,void *buf,int *count,
+FORTRAN_API void FORT_CALL mpi_file_read_all_(MPI_Fint *fh,void *buf,int *count,
 			MPI_Datatype *datatype,MPI_Status *status, int *ierr );
 
-void FORT_CALL mpi_file_read_all_(MPI_Fint *fh,void *buf,int *count,
+FORTRAN_API void FORT_CALL mpi_file_read_all_(MPI_Fint *fh,void *buf,int *count,
                       MPI_Datatype *datatype,MPI_Status *status, int *ierr ){
     MPI_File fh_c;
     

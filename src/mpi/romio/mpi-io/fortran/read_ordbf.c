@@ -102,10 +102,10 @@ void mpi_file_read_ordered_begin_(MPI_Fint *fh,void *buf,int *count,
 }
 #else
 /* Prototype to keep compiler happy */
-void FORT_CALL mpi_file_read_ordered_begin_(MPI_Fint *fh,void *buf,int *count,
+FORTRAN_API void FORT_CALL mpi_file_read_ordered_begin_(MPI_Fint *fh,void *buf,int *count,
 				  MPI_Datatype *datatype,int *ierr );
 
-void FORT_CALL mpi_file_read_ordered_begin_(MPI_Fint *fh,void *buf,int *count,
+FORTRAN_API void FORT_CALL mpi_file_read_ordered_begin_(MPI_Fint *fh,void *buf,int *count,
                       MPI_Datatype *datatype,int *ierr ){
     MPI_File fh_c;
     

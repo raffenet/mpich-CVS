@@ -106,11 +106,11 @@ void mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
 }
 #else
 /* Prototype to keep compiler happy */
-void FORT_CALL mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
+FORTRAN_API void FORT_CALL mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                        int *count,MPI_Datatype *datatype,
 			 MPI_Fint *request, int *ierr );
 
-void FORT_CALL mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
+FORTRAN_API void FORT_CALL mpi_file_iwrite_at_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                        int *count,MPI_Datatype *datatype,
                        MPI_Fint *request, int *ierr )
 {
