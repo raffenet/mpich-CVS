@@ -339,6 +339,65 @@ proprietary libraries have vanished, and advances in interconnect technology
 have changed the API used to access high-performance interprocess
 communication.  ADI-3 adapts to these changes.
 
+
+\subsection{Our Plans for Using ADI-3 to Implement MPI-2}
+\label{sec:plans}
+
+This subsection describes our implementation plans at Argonne.  The next
+subsection describes how collaborators (vendors, researchers, and others) can
+use the structure of ADI-3 to leverage our implementation work and their own
+high-speed communication methodologies to produce a particular MPI
+implememtation.
+
+As discussed above, ADI-3 contains a large number of functions in order to
+accomodate collaborators who want to themselves optimize a large part of the
+data structures and algorithms needed in a complet MPI implementation.  At the
+same time there is a much smaller number of routines, called the ``ADI Core''
+in this document, that capture that part of the ADI that is closest to the
+communication method. It is possible (but not required) that the full ADI be
+implemented in terms of the core.
+
+We intend to implement all of MPI in terms of the full ADI-3 interface (not
+just the core).  Since the full ADI-3 is relatively rich, this will be the
+simplest part of the implementation.  The most difficult part will be the
+implementation of the collective operations, which will be in terms of some of
+the low-level ADI-3 functions, not in terms of the MPI point-to-point
+operations or their ADI-3 ``equivalents''.
+
+We then intend to provide two implementations of the full ADI-3 interface.
+The first, already under way, is what we call the RMQ Device.  It will be 
+multimethod, multi-threaded, and will be optimized for peak performance within
+those constraints.  Inside this device implementation there will be a furhter
+interface level, not yet defined, allowing new methods to be incorporated into
+the RMQ device in addition to the methods we will initially support:  TCP/IP,
+shared memory, and VIA.  We also intend to implement another device, called 
+the Channel Device, which will consist of an implementation of all of ADI-3 in
+terms of the small number of core functions.  We will also supply a number of
+sample implementations of the core.  It is expected that the RMQ Device will
+be in some cases faster than the Channel Device, for example in the shared
+memory case, where the core routines may not provide the optimal communication
+model. 
+
+
+\subsection{How Collaborators May Participate}
+\label{sec:collaborators}
+
+Thus ther are several options for collaborators, depending on their
+objectives.
+\begin{enumerate}
+\item A collaborator might implement all of ADI-3 in his own way, using his
+  own data structures, handling datatypes, etc., but taking advantage of our
+  collective operations, for example, and argument-checking checking code in
+  the MPI-over-ADI-3 implementation.
+\item A collaborator might implement only the routines in MPI Core, taking
+  advantage of our data structures for communicators, datatypes, and other
+  objects making up our Channel Device implementation.
+\item A collaborator might do something in between the above two options,
+  using only parts of the Channel Device implementation.
+\item A collaborator might add a method to the RMQ Device, using its internal
+  interface and library routines, and not implement any of the ADI-3 functions.
+\end{enumerate}
+
 \section{Things Left to do}
 What relationship does the ADI interface to dynamic processes 
 have to the BNR interface?  Should there be a connection between BNR groups
