@@ -392,13 +392,54 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		}
 		smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
 		smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-		smpd_process.validate = SMPD_TRUE;
+		smpd_process.builtin_cmd = SMPD_CMD_VALIDATE;
 		smpd_do_console();
 	    }
 	    else
 	    {
 		printf("FAIL: Unable to read the credentials from the registry.\n");fflush(stdout);
 	    }
+	    fflush(stdout);
+	    smpd_exit(0);
+	}
+	if (smpd_get_opt_two_strings(argcp, argvp, "-add_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
+	{
+	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    {
+		smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	    }
+	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+	    smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_KEY;
+	    smpd_do_console();
+	    fflush(stdout);
+	    smpd_exit(0);
+	}
+
+	if (smpd_get_opt_string(argcp, argvp, "-remove_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	{
+	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    {
+		smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	    }
+	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+	    smpd_process.builtin_cmd = SMPD_CMD_REMOVE_JOB_KEY;
+	    smpd_do_console();
+	    fflush(stdout);
+	    smpd_exit(0);
+	}
+
+	if (smpd_get_opt_string(argcp, argvp, "-associate_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+	{
+	    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    {
+		smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	    }
+	    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+	    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+	    smpd_process.builtin_cmd = SMPD_CMD_ASSOCIATE_JOB_KEY;
+	    smpd_do_console();
 	    fflush(stdout);
 	    smpd_exit(0);
 	}
@@ -1019,6 +1060,19 @@ configfile_loop:
 	    {
 		smpd_process.use_sspi = SMPD_TRUE;
 		smpd_process.use_delegation = SMPD_TRUE;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "job") == 0)
+	    {
+		smpd_process.use_delegation = SMPD_FALSE;
+		smpd_process.use_sspi_job_key = SMPD_TRUE;
+		if (argc < 3)
+		{
+		    printf("Error: no job key specified after the -job option\n");
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_FAIL;
+		}
+		strncpy(smpd_process.job_key, (*argvp)[2], SMPD_SSPI_JOB_KEY_LENGTH);
+		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "dbg") == 0)
 	    {

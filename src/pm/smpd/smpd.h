@@ -114,8 +114,10 @@ typedef int SMPD_BOOL;
 #define SMPD_CRED_REQUEST                 "credentials"
 #define SMPD_NO_CRED_REQUEST              "nocredentials"
 #define SMPD_CRED_ACK_SSPI                "sspi"
+#define SMPD_CRED_ACK_SSPI_JOB_KEY        "sspi_job"
 #define SMPD_PWD_REQUEST                  "pwd"
 #define SMPD_NO_PWD_REQUEST               "nopwd"
+#define SMPD_SSPI_REQUEST                 "sspi"
 #define SMPD_NO_RECONNECT_PORT_STR        "-1"
 #define SMPD_SUCCESS_STR                  "SUCCESS"
 #define SMPD_FAIL_STR                     "FAIL"
@@ -126,10 +128,10 @@ typedef int SMPD_BOOL;
 #define SMPD_PLAINTEXT_PREFIX             'y'
 #define SMPD_ENCRYPTED_PREFIX             'x'
 #define SMPD_SSPI_HEADER_LENGTH           SMPD_CMD_HDR_LENGTH
+#define SMPD_SSPI_JOB_KEY_LENGTH          100
 #define SMPD_SSPI_MAX_BUFFER_SIZE         (64*1024)
-/*#define SMPD_SECURITY_PACKAGE             "NTLM"*/
-#define SMPD_SECURITY_PACKAGE             "Kerberos"
-/*#define SMPD_SECURITY_PACKAGE             "Negotiate"*/
+/*#define SMPD_SECURITY_PACKAGE             "Kerberos"*/
+#define SMPD_SECURITY_PACKAGE             "Negotiate"
 #define SMPD_ENV_OPTION_PREFIX            "SMPD_OPTION_"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
@@ -208,6 +210,7 @@ typedef enum smpd_state_t
     SMPD_READING_PWD_REQUEST,
     SMPD_WRITING_PWD_REQUEST,
     SMPD_WRITING_NO_PWD_REQUEST,
+    SMPD_WRITING_SSPI_REQUEST,
     SMPD_READING_SMPD_PASSWORD,
     SMPD_WRITING_SMPD_PASSWORD,
     SMPD_READING_CRED_REQUEST,
@@ -245,6 +248,9 @@ typedef enum smpd_state_t
     SMPD_WRITING_IMPERSONATE_RESULT,
     SMPD_READING_IMPERSONATE_RESULT,
     SMPD_WRITING_CRED_ACK_SSPI,
+    SMPD_WRITING_CRED_ACK_SSPI_JOB_KEY,
+    SMPD_WRITING_SSPI_JOB_KEY,
+    SMPD_READING_SSPI_JOB_KEY,
     SMPD_READING_CLIENT_SSPI_HEADER,
     SMPD_READING_CLIENT_SSPI_BUFFER,
     SMPD_WRITING_CLIENT_SSPI_HEADER,
@@ -275,6 +281,14 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_UNDETERMINED,
     SMPD_CONTEXT_FREED
 } smpd_context_type_t;
+
+typedef enum smpd_context_target_t
+{
+    SMPD_TARGET_UNDETERMINED,
+    SMPD_TARGET_SMPD,
+    SMPD_TARGET_PROCESS,
+    SMPD_TARGET_PMI
+} smpd_context_target_t;
 
 typedef enum smpd_command_state_t
 {
@@ -332,6 +346,8 @@ typedef struct smpd_sspi_client_context_t
     CredHandle credential;
     TimeStamp expiration_time;
     HANDLE user_handle;
+    DWORD flags;
+    SMPD_BOOL close_handle;
 #endif
     char target[SMPD_MAX_NAME_LENGTH];
     void *buffer;
@@ -342,9 +358,25 @@ typedef struct smpd_sspi_client_context_t
     struct smpd_sspi_client_context_t *next;
 } smpd_sspi_client_context_t;
 
+typedef enum smpd_sspi_type_t
+{
+    SMPD_SSPI_IDENTIFY,
+    SMPD_SSPI_DELEGATE
+} smpd_sspi_type_t;
+
+typedef enum smpd_access_t
+{
+    SMPD_ACCESS_NONE,
+    SMPD_ACCESS_ADMIN,
+    SMPD_ACCESS_USER,
+    SMPD_ACCESS_USER_PROCESS
+} smpd_access_t;
+
 typedef struct smpd_context_t
 {
     smpd_context_type_t type;
+    smpd_context_target_t target;
+    smpd_access_t access;
     char host[SMPD_MAX_HOST_LENGTH];
     int id, rank;
     smpd_pwait_t wait;
@@ -372,19 +404,9 @@ typedef struct smpd_context_t
     int connect_return_id, connect_return_tag;
     struct smpd_process_t *process;
     char sspi_header[SMPD_SSPI_HEADER_LENGTH];
+    char sspi_job_key[SMPD_SSPI_JOB_KEY_LENGTH];
     smpd_sspi_client_context_t *sspi_context;
-    /*
-    int sspi_max_buffer_size;
-    int sspi_buffer_length;
-    void *sspi_buffer, *sspi_outbound_buffer;
-    int sspi_id;
-#ifdef HAVE_WINDOWS_H
-    CredHandle sspi_credential;
-    CtxtHandle sspi_context;
-    TimeStamp sspi_expiration_time;
-    HANDLE sspi_user_handle;
-#endif
-    */
+    smpd_sspi_type_t sspi_type;
     struct smpd_context_t *next;
 } smpd_context_t;
 
@@ -525,6 +547,18 @@ typedef struct smpd_process_group_t
     struct smpd_process_group_t *next;
 } smpd_process_group_t;
 
+typedef enum smpd_builtin_commands_t
+{
+    SMPD_CMD_NONE,
+    SMPD_CMD_SHUTDOWN,
+    SMPD_CMD_RESTART,
+    SMPD_CMD_VALIDATE,
+    SMPD_CMD_DO_STATUS,
+    SMPD_CMD_ADD_JOB_KEY,
+    SMPD_CMD_REMOVE_JOB_KEY,
+    SMPD_CMD_ASSOCIATE_JOB_KEY
+} smpd_builtin_commands_t;
+
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */
 typedef struct smpd_global_t
@@ -542,7 +576,7 @@ typedef struct smpd_global_t
     char pszExe[SMPD_MAX_EXE_LENGTH];
     int  bService;
     int  bNoTTY;
-    int  bPasswordProtect;
+    SMPD_BOOL bPasswordProtect;
     char SMPDPassword[100];
     char passphrase[SMPD_PASSPHRASE_MAX_LENGTH];
     SMPD_BOOL logon;
@@ -572,8 +606,9 @@ typedef struct smpd_global_t
     int use_iproot;
     int use_process_session;
     int nproc, nproc_launched, nproc_exited;
-    int verbose;
-    SMPD_BOOL shutdown, restart, validate, do_status; /* built in commands */
+    SMPD_BOOL verbose;
+    /*SMPD_BOOL shutdown, restart, validate, do_status;*/ /* built in commands */
+    smpd_builtin_commands_t builtin_cmd;
 #ifdef HAVE_WINDOWS_H
     BOOL bOutputInitialized;
     HANDLE hOutputMutex;
@@ -584,7 +619,6 @@ typedef struct smpd_global_t
 #endif
     smpd_database_node_t *pDatabase;
     smpd_database_node_t *pDatabaseIter;
-    /*int nNextAvailableDBSID;*/
     int nInitDBSRefCount;
     smpd_barrier_node_t *barrier_list;
 #ifdef HAVE_WINDOWS_H
@@ -633,11 +667,13 @@ typedef struct smpd_global_t
     char *mpiexec_argv0;
     char encrypt_prefix[SMPD_MAX_PASSWORD_LENGTH];
     SMPD_BOOL plaintext;
-    SMPD_BOOL use_sspi, use_delegation;
+    SMPD_BOOL use_sspi, use_delegation, use_sspi_job_key;
 #ifdef HAVE_WINDOWS_H
     PSecurityFunctionTable sec_fn;
 #endif
     smpd_sspi_client_context_t *sspi_context_list;
+    char job_key[SMPD_SSPI_JOB_KEY_LENGTH];
+    char job_key_account[SMPD_MAX_ACCOUNT_LENGTH];
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -800,7 +836,7 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 int smpd_get_all_smpd_data(smpd_data_t **data);
 int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context);
 int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context);
-int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, short port);
+int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, short port, smpd_sspi_type_t type);
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr);
 SMPD_BOOL smpd_setup_scp();
 SMPD_BOOL smpd_remove_scp();
@@ -810,6 +846,12 @@ SMPD_BOOL smpd_map_user_drives(char *pszMap, char *pszAccount, char *pszPassword
 SMPD_BOOL smpd_unmap_user_drives(char *pszMap);
 void smpd_finalize_drive_maps();
 int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val);
+#ifdef HAVE_WINDOWS_H
+int smpd_add_job_key(const char *key, const char *username);
+int smpd_remove_job_key(const char *key);
+int smpd_associate_job_key(const char *key, const char *username, HANDLE user_handle);
+int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle);
+#endif
 
 #if defined(__cplusplus)
 }

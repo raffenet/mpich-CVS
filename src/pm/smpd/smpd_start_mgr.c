@@ -221,13 +221,17 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
     if (smpd_process.bService)
     {
 	RevertToSelf();
-	CloseHandle(user_handle);
-	if (use_context_user_handle)
+	if (use_context_user_handle && context->sspi_context != NULL)
 	{
-	    if (context->sspi_context)
+	    if (context->sspi_context->close_handle)
 	    {
+		CloseHandle(context->sspi_context->user_handle);
 		context->sspi_context->user_handle = INVALID_HANDLE_VALUE;
 	    }
+	}
+	else
+	{
+	    CloseHandle(user_handle);
 	}
     }
     if (result != SMPD_SUCCESS)

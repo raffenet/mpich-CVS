@@ -47,7 +47,7 @@ int smpd_do_console()
     smpd_process.id = 0;
 
     /* turn off output if do_status is selected to supress error messages */
-    if (smpd_process.do_status)
+    if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS)
     {
 	saved_state = smpd_process.dbg_state;
 	smpd_process.dbg_state = 0;
@@ -63,7 +63,7 @@ int smpd_do_console()
 	goto quit_job;
     }
     /* turn output back on */
-    if (smpd_process.do_status)
+    if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS)
 	smpd_process.dbg_state = saved_state;
 
     result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
@@ -82,7 +82,7 @@ int smpd_do_console()
 	goto quit_job;
     }
     /* turn off output if do_status is selected to supress error messages */
-    if (smpd_process.do_status)
+    if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS)
 	smpd_process.dbg_state = 0;
     result = smpd_enter_at_state(set, SMPD_MPIEXEC_CONNECTING_SMPD);
     if (result != SMPD_SUCCESS)
@@ -92,12 +92,12 @@ int smpd_do_console()
 	goto quit_job;
     }
     /* turn output back on */
-    if (smpd_process.do_status)
+    if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS)
 	smpd_process.dbg_state = saved_state;
 
 quit_job:
 
-    if (smpd_process.do_status && (no_smpd || smpd_process.state_machine_ret_val != SMPD_SUCCESS))
+    if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS && (no_smpd || smpd_process.state_machine_ret_val != SMPD_SUCCESS))
     {
 	printf("no smpd running on %s\n", smpd_process.console_host);
 	smpd_process.dbg_state = saved_state;

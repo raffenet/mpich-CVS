@@ -568,13 +568,15 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_get_opt_string(argcp, argvp, "-status", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
     {
 	smpd_process.do_console = 1;
-	smpd_process.do_status = 1;
+	/*smpd_process.do_status = 1;*/
+	smpd_process.builtin_cmd = SMPD_CMD_DO_STATUS;
     }
     else if (smpd_get_opt(argcp, argvp, "-status"))
     {
 	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
-	smpd_process.do_status = 1;
+	/*smpd_process.do_status = 1;*/
+	smpd_process.builtin_cmd = SMPD_CMD_DO_STATUS;
     }
 
     /* check for console options */
@@ -599,19 +601,22 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_get_opt_string(argcp, argvp, "-shutdown", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
     {
 	smpd_process.do_console = 1;
-	smpd_process.shutdown = 1;
+	/*smpd_process.shutdown = 1;*/
+	smpd_process.builtin_cmd = SMPD_CMD_SHUTDOWN;
     }
     else if (smpd_get_opt(argcp, argvp, "-shutdown"))
     {
 	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
-	smpd_process.shutdown = 1;
+	/*smpd_process.shutdown = 1;*/
+	smpd_process.builtin_cmd = SMPD_CMD_SHUTDOWN;
     }
 
     if (smpd_get_opt_string(argcp, argvp, "-restart", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
     {
 	smpd_process.do_console = 1;
-	smpd_process.restart = 1;
+	/*smpd_process.restart = 1;*/
+	smpd_process.builtin_cmd = SMPD_CMD_RESTART;
     }
     else if (smpd_get_opt(argcp, argvp, "-restart"))
     {
@@ -624,9 +629,36 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 #else
 	smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
 	smpd_process.do_console = 1;
-	smpd_process.restart = 1;
+	/*smpd_process.restart = 1;*/
+	smpd_process.builtin_cmd = SMPD_CMD_RESTART;
 #endif
     }
+
+    /* These commands are handled by mpiexec although doing them here probably wouldn't do any harm.
+    if (smpd_get_opt_two_strings(argcp, argvp, "-add_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
+    {
+	if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_process.do_console = 1;
+	smpd_process.builtin_cmd = SMPD_CMD_ADD_JOB_KEY;
+    }
+
+    if (smpd_get_opt_string(argcp, argvp, "-remove_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+    {
+	if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_process.do_console = 1;
+	smpd_process.builtin_cmd = SMPD_CMD_REMOVE_JOB_KEY;
+    }
+
+    if (smpd_get_opt_string(argcp, argvp, "-associate_job_key", smpd_process.job_key, SMPD_MAX_NAME_LENGTH))
+    {
+	if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	    smpd_get_hostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_process.do_console = 1;
+	smpd_process.builtin_cmd = SMPD_CMD_ASSOCIATE_JOB_KEY;
+    }
+    */
 
     smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
     if (smpd_get_opt(argcp, argvp, "-getphrase"))

@@ -90,10 +90,11 @@ smpd_global_t smpd_process =
       0,                /* nproc_launched         */
       0,                /* nproc_exited           */
       SMPD_FALSE,       /* verbose                */
-      SMPD_FALSE,       /* shutdown               */
-      SMPD_FALSE,       /* restart                */
-      SMPD_FALSE,       /* validate               */
-      SMPD_FALSE,       /* do_status              */
+      /*SMPD_FALSE,*/       /* shutdown               */
+      /*SMPD_FALSE,*/       /* restart                */
+      /*SMPD_FALSE,*/       /* validate               */
+      /*SMPD_FALSE,*/       /* do_status              */
+      SMPD_CMD_NONE,    /* builtin_cmd            */
 #ifdef HAVE_WINDOWS_H
       FALSE,            /* bOutputInitialized     */
       NULL,             /* hOutputMutex           */
@@ -166,10 +167,12 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* plaintext               */
       SMPD_FALSE,       /* use_sspi                */
       SMPD_FALSE,       /* use_delegation          */
+      SMPD_FALSE,       /* use_sspi_job_key        */
 #ifdef HAVE_WINDOWS_H
       NULL,             /* sec_fn                  */
 #endif
-      NULL              /* sspi_context_list       */
+      NULL,             /* sspi_context_list       */
+      ""                /* job_key                 */
     };
 
 #undef FCNAME
@@ -591,6 +594,8 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
 
     smpd_enter_fn(FCNAME);
     context->type = type;
+    context->target = SMPD_TARGET_UNDETERMINED;
+    context->access = SMPD_ACCESS_USER_PROCESS;/*SMPD_ACCESS_NONE;*/
     context->host[0] = '\0';
     context->id = id;
     context->rank = 0;
@@ -627,6 +632,8 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->process = NULL;
     context->sspi_header[0] = '\0';
     context->sspi_context = NULL;
+    context->sspi_type = SMPD_SSPI_DELEGATE;
+    context->sspi_job_key[0] = '\0';
 
     if (sock != MPIDU_SOCK_INVALID_SOCK)
     {
@@ -667,6 +674,8 @@ int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context)
     SecInvalidateHandle(&context->context);
     memset(&context->expiration_time, 0, sizeof(TimeStamp));
     context->user_handle = INVALID_HANDLE_VALUE;
+    context->flags = 0;
+    context->close_handle = SMPD_TRUE;
 #endif
     /* FIXME: this insertion needs to be thread safe */
     if (smpd_process.sspi_context_list == NULL)

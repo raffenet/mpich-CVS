@@ -88,6 +88,7 @@ namespace wmpiconfig
 			hash["localonly"] = new Setting("localonly", "", "no", "yes,no");
 			hash["nocache"] = new Setting("nocache", "", "no", "yes,no");
 			hash["delegate"] = new Setting("delegate", "", "no", "yes,no");
+			hash["sspi_protect"] = new Setting("sspi_protect", "", "no", "yes,no");
 
 			UpdateHash(get_settings(host_textBox.Text));
 			UpdateListBox();
