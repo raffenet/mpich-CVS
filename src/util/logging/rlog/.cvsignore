@@ -24,3 +24,4 @@ irlog2rlog
 *.suo
 .deps
 trace_impl.h
+*.user

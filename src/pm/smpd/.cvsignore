@@ -20,3 +20,4 @@ smpdconf.h
 *elease*
 .deps
 *.aps
+*.user

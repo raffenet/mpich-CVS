@@ -16,3 +16,4 @@ pmiconf.h
 *Debug*
 *Release*
 .deps
+*.user

@@ -59,3 +59,4 @@ mpi1cart-cpp.h
 mpi2cart-cpp.h
 .deps
 .libs
+*.user

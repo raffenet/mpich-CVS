@@ -12,3 +12,4 @@ Makefile
 *.la
 *.plg
 .deps
+*.user

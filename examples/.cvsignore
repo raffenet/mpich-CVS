@@ -31,3 +31,4 @@ spawn_merge_parent
 *.exe
 *.ncb
 *.suo
+*.user

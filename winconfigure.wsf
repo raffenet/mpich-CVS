@@ -117,6 +117,11 @@
 			helpstring = "Generate the stub MPI functions"
 			require = "false"
 		/>
+		<unnamed
+			name = "--vs05"
+			helpstring = "apply settings to the Visual Studio 2005 project files"
+			require = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -141,6 +146,7 @@ Function cEcho(str)
 	End If
 End Function
 
+bVS2005 = False
 bUseIbRDMA = False
 bUsePinCache = False
 bRemoveFortran = False
@@ -258,6 +264,8 @@ For arg = 0 To argCount - 1
   ElseIf argValue = "--gen-sfort" Then
 	CreateStdcallFortranInterface()
 	WScript.Quit
+  ElseIf argValue = "--vs05" Then
+    bVS2005 = True
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -2878,7 +2886,11 @@ Function GenerateMPICC()
 	fout.WriteLine("' Create a new instance of Visual Studio .NET.")
 	fout.WriteLine("Set DTE = WScript.CreateObject(""VisualStudio.DTE.7.1"")")
 	fout.WriteLine("Set solution = DTE.Solution")
-	fout.WriteLine("solution.Open(""" & path_to_mpich & "examples\windows\skeleton\skeleton.sln"")")
+	if bVS2005 then
+	    fout.WriteLine("solution.Open(""" & path_to_mpich & "examples\windows\skeleton\skeleton.vs05.sln"")")
+	else
+	    fout.WriteLine("solution.Open(""" & path_to_mpich & "examples\windows\skeleton\skeleton.sln"")")
+	end if
 	fout.WriteLine("Set project = solution.Projects.Item(1)")
 	fout.WriteLine("")
 	fout.WriteLine("' Add the C files to the project")
@@ -3022,7 +3034,11 @@ If bRemoveFortran Then
 	'   *= gfortRelease|Win32
 	'   *= sfortDebug|Win32
 	'   *= sfortRelease|Win32
-	Set fin = f.OpenTextFile( "mpich2.sln" )
+	if bVS2005 then
+	    Set fin = f.OpenTextFile( "mpich2.vs05.sln" )
+	else
+	    Set fin = f.OpenTextFile( "mpich2.sln" )
+	end if
 	contents = fin.ReadAll()
 	fin.Close()
 	regEx.Pattern = "Project\(.*""mpich2ff?"".*\s*.*\s*.*\s*.*EndProject[\r\n]*"
@@ -3039,7 +3055,11 @@ If bRemoveFortran Then
 	contents = regEx.Replace(contents, "")
 	regEx.Pattern = ".*= [gs]?fortRelease\|Win32[\r\n]*"
 	contents = regEx.Replace(contents, "")
-	Set fout = f.CreateTextFile( "mpich2.sln" )
+	if bVS2005 then
+	    Set fout = f.CreateTextFile( "mpich2.vs05.sln" )
+	else
+	    Set fout = f.CreateTextFile( "mpich2.sln" )
+	end if
 	fout.Write(contents)
 	fout.Close()
 	
@@ -3048,10 +3068,15 @@ If bRemoveFortran Then
 	'   ,HAVE_FORTRAN_BINDING
 	'   mpich2ffd.lib
 	'   mpich2ff.lib
-	Set fin = f.OpenTextFile( "mpich2.vcproj" )
+	if bVS2005 then
+	    Set fin = f.OpenTextFile( "mpich2.vs05.vcproj" )
+	else
+	    Set fin = f.OpenTextFile( "mpich2.vcproj" )
+	end if
 	contents = fin.ReadAll()
 	fin.Close()
 	contents = Replace(contents, ",HAVE_FORTRAN_BINDING", "")
+	contents = Replace(contents, ";HAVE_FORTRAN_BINDING", "")
 	contents = Replace(contents, "mpich2ffd.lib", "")
 	contents = Replace(contents, "mpich2ff.lib", "")
 	'regEx.Pattern = ".*<File.*\s*.*c2f\.c\s*.*</File>.*[\r\n]*"
@@ -3063,7 +3088,11 @@ If bRemoveFortran Then
 	contents = ReplaceBetweenTags(contents, "<File", "statusc2f.c", "</File>", "")
 	contents = ReplaceBetweenTags(contents, "<File", "statusf2c.c", "</File>", "")
 	contents = ReplaceBetweenTags(contents, "<File", "setbot.c", "</File>", "")
-	Set fout = f.CreateTextFile( "mpich2.vcproj" )
+	if bVS2005 then
+	    Set fout = f.CreateTextFile( "mpich2.vs05.vcproj" )
+	else
+	    Set fout = f.CreateTextFile( "mpich2.vcproj" )
+	end if
 	fout.Write(contents)
 	fout.Close()
 
@@ -3071,7 +3100,11 @@ If bRemoveFortran Then
 	'  remove:
 	'   lib\mpich2ffd.lib
 	'   lib\mpich2ff.lib
-	Set fin = f.OpenTextFile( "mpich2s.vcproj" )
+	if bVS2005 then
+	    Set fin = f.OpenTextFile( "mpich2s.vs05.vcproj" )
+	else
+	    Set fin = f.OpenTextFile( "mpich2s.vcproj" )
+	end if
 	contents = fin.ReadAll()
 	fin.Close()
 	contents = Replace(contents, "lib\mpich2ffd.lib", "")
@@ -3085,7 +3118,11 @@ If bRemoveFortran Then
 	contents = ReplaceBetweenTags(contents, "<File", "statusc2f.c", "</File>", "")
 	contents = ReplaceBetweenTags(contents, "<File", "statusf2c.c", "</File>", "")
 	contents = ReplaceBetweenTags(contents, "<File", "setbot.c", "</File>", "")
-	Set fout = f.CreateTextFile( "mpich2s.vcproj" )
+	if bVS2005 then
+	    Set fout = f.CreateTextFile( "mpich2s.vs05.vcproj" )
+	else
+	    Set fout = f.CreateTextFile( "mpich2s.vcproj" )
+	end if
 	fout.Write(contents)
 	fout.Close()
 
