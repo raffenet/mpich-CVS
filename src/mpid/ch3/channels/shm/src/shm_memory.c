@@ -72,6 +72,7 @@ static int InitSharedProcesses(MPIDI_PG_t *pg, int nRank)
             {
                 int err = GetLastError();
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", i, err); /*"unable to open process %d, error %d\n", i, err);*/
+		return mpi_errno;
             }
 #else
             sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
