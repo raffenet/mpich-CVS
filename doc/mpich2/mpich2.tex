@@ -76,14 +76,42 @@ approach is taken here; the details are described in
 Section~\ref{sec:mpi-operations}.
 
 % Outline:
+This document is structured as follows.  Section~\ref{sec:general} discusses
+the general layout of MPICH project and recommendations for coding the
+routines.  Section~\ref{sec:mpi-operations} describes the implementation of
+MPI on a routine-by-routine basis.  Section~\ref{sec:portability} covers some
+of the more subtle issues in achieving a highly portable implementation.
+Section~\ref{sec:testing} describes the new MPI test suite.  The appendices
+include a list of all errors codes (Appendix~\ref{sec:error-codes}) and
+miscellaneous rationale for the decisions in this document
+(Appendix~\ref{sec:rationale}). 
+
 \section{General}
 \label{sec:general}
 
 This section contains general recommendations are requirements for
-writing the code.
+writing the code.  
+
+This section starts with a discussion of the directory structure for the
+MPICH2 project; this introduces the logical decomposition of components of the
+MPICH implementation.  This decomposition makes it easier to experiment with
+alternative implementations of various parts of MPI, and it makes it easier to
+write and test subsets.
+Following the directory structure is a sketch of a typical source file,
+showing the various features that each file should have.  This is followed
+with more detailed discussion of some of the issues that arise in writing the
+implementation of the MPI routines for MPICH.
 
 \subsection{Source Directory Structure}
 \label{sec:dir-structure}
+This describes the directory structure of the MPICH development tree. 
+This does not include some of the independent packages such as \code{MPE} and
+the performance tests (\code{perftest}), nor does it include various
+contributed programs.  These already exist in the MPICH CVS repository, and
+will continue to reside there.
+
+Both the MPICH distribution and the MPICH2 CVS module will contain additional
+items, including the MPE and perftest modules.  
 
 \begin{description}
 \item[src]Source files for the MPI implementation
@@ -108,20 +136,32 @@ writing the code.
     \item[init]Starting and ending MPI (Section~\ref{sec:init})
     \item[spawn]Dynamic processes (Section~\ref{sec:spawn})
       \textbf{Question: spawn separate from attach/connect/lookup?}
+      Rusty votes no.
     \item[grequest]User-defined requests (Section~\ref{sec:grequest})
-      \textbf{Question: Part of point-2-point?}
+      \textbf{Question: Part of point-2-point?} Rusty votes yes.  Bill votes
+      no.
     \item[errhan]Error handlers (Section~\ref{sec:errhand})
-    \item[handle]Handle transfers (Section~\ref{sec:handle-transfer})
-    \item[timer]Timers (Section~\ref{sec:timer})
+    \item[handle]Handle transfers (Section~\ref{sec:handle-transfer}).  This
+      includes handle to pointer transfers.
+    \item[timer]Timers (Section~\ref{sec:timer}).  This is separate from the
+      \file{misc} directory because timers are very system dependent; this
+      directory will have its own \code{configure}.
     \item[misc]Runtime (Section~\ref{sec:runtime-env}) and profiling
       (Section~\ref{sec:profile}) 
     \item[io]ROMIO implementation, possibly minus the miscellaneous MPI-2
-      routines such as the info support
+      routines such as the info support that are in other directories already
+      \begin{description}
+      \item[src]Note ROMIO currently has no specific \file{src} directory;
+        instead, it has \file{adio}, \file{mpi-io}, and \file{mpi2-other}.
+      \item[include]
+      \item[...]Other directories
+      \end{description}
     \end{description}
   \item[util]Various utilities
     \begin{description}
     \item[param]Runtime parameter routines (e.g., like PETSc options database)
-    \item[mem]Memory allocation and management
+    \item[mem]Memory allocation and management.  These include the tracing
+      malloc routines (\file{tr2} in the MPICH implementation).
     \item[thread]Thread portability layer.  Supports at least pthreads,
       openmp, and Windows.  Possibly also Solaris threads.
     \end{description}
@@ -130,24 +170,30 @@ writing the code.
     \begin{description}
       \item[include]BNR header files
       \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}
+        \begin{description}
+          \item[src]Source files for mpd
+          \item[include]Include files for mpd
+        \end{description}
     \end{description}
   \item[binding]Language bindings
     \begin{description}
-    \item[c++]
+    \item[c++]C++ binding (includes \file{configure})
       \begin{description}
       \item[src]
+      \item[include]
       \end{description}
-    \item[fortran]
+    \item[fortran]Fortran 77 binding (includes \file{configure})
       \begin{description}
       \item[src]
+      %\item[include]
       \end{description}
-    \item[fortran90]
+    \item[fortran90]Fortran 90 binding (includes \file{configure})
       \begin{description}
       \item[src]
+      %\item[include]
       \end{description}
     \end{description}
   \item[env]Commands like \code{mpiexec} and \code{mpicc}
-  \item[mpe]
   \end{description}
   
 \item[include]Main MPI includes (like \file{mpi.h} and \file{mpiimpl.h}).  
@@ -182,241 +228,256 @@ writing the code.
     \item[mpi]Test of MPI.  Must work with \emph{any} MPI implementation.
       \begin{description}
         \item[xxx]The directory structure should match that for the
-          \file{src/mpi}.
+          \file{src/mpi}, at least for the major sections.  A \file{misc}
+          directory is acceptable for the more minor sections.
       \end{description}
     \item[mpid]Test of the MPID routines
   \end{description}
-\item[example]
+\item[examples]Example programs.  Only the most solid examples are included.
 \end{description}
 
+\subsection{Sample Implementation Template}
+\label{sec:template}
 
-\subsection{Error reporting}
-\label{sec:error-reporting}
-
-MPI routines should check as many error conditions as possible before
-calling any ADI routines.  The ADI routines assume that most arguments are
-valid; exceptions will be noted in the documentation of the ADI3 routines.
-To allow error handling to be enabled or disabled both at compile
-time 
-and at runtime, the tests should be placed within the following block:
-\begin{verbatim}
-#ifdef HAVE_ERROR_CHECKING
-BEGIN_ERROR_CHECKS
-...
-END_ERROR_CHECKS
-#endif
-\end{verbatim}
-The macros \code{BEGIN_ERROR_CHECKS} and \code{END_ERROR_CHECKS} can
-expand, depending on configuration settings, into either null (i.e.,
-no runtime control) or 
-\begin{verbatim}
-#define BEGIN_ERROR_CHECK if (MPIR_Process.do_error_checks) {
-#define END_ERROR_CHECKS }
-\end{verbatim}
-(See Section~\ref{sec:perthread} for \code{MPIR_Process}.)
-
-There must be a configure option,
-\cfgoption{--disable-error-checking},  
-that prevents \code{HAVE_ERROR_CHECKING} from being defined.  The
-\cfgoption{--enable-error-checking} 
-takes the argument \texttt{all} (and \texttt{runtime} as a synonym) to allow
-runtime control (otherwise, error checking is always on).
-
-\subsubsection{Errors to test for}
-Most values should be tested to ensure that they are in-range.  For example,
-tags must be nonnegative for sending (and nonnegative or
-\mpiconst{MPI_ANY_TAG} for receiving). 
-
-Some of the error conditions to test for include
-\begin{itemize}
-\item Is MPI Initialized?
-\item Are parameter values in range, including tag values, ranks, counts?
-\item Are input and output parameters improperly aliased (e.g., inbuf and
-  outbuf of   \code{MPI_Allreduce})?
-\item Are MPI objects valid (see opaque object discussion)?
-\item Are output parameter pointers valid?  The macro
-  \code{MPID_Pointer_is_invalid(void *p)} returns one for invalid pointers.
-  Note that this may be as simple as \code{((p) == 0)} or
-  \code{(long(p)<=0)} or \code{9!(p) || (unsigned long)(p) > STACKLIMIT)}, or
-  even call a routine that attempts to access the pointer with a
-  \code{SIGSEGV} handler set.
-\end{itemize}
-Note that message buffer pointers depend on the datatype; if the datatype is a
-struct type, then a null pointer or otherwise invalid value for the message
-buffer may in fact be valid when combined with the datatype.
-
-\subsubsection{Choosing Error Handlers and Classes}
-\label{sec:chosing-errhandler}
-Error handlers should be chosen using the following decision tree:
+The following is a sample implementation template for an MPI routine.
+A few comments first:
 \begin{enumerate}
-\item If still in the initialization step (e.g., within
-\mpifunc{MPI_Init_thread}), errors invoke a special pre-initialization error
-handler.  This handler may either abort or return; by default, it will abort.
-A return may be prefered for some fault-tolerant applications.
-
-\item Check if executing inside a layered routine (i.e., an MPI routine called
-  within the implementation of another MPI routine).  If so, return error
-  code; do not invoke the error handler.  See
-  Section~\ref{sec:err-handling-nested}. 
-
-\item If the routine has a valid \code{MPI_Comm}, \code{MPI_File}, or
-  \code{MPI_Win}, use the error handler from that object.  Note that there is
-  a common errorhandler member (\code{errhandler}) in the related structures;
-  the \code{errfn} of this structure is the actual function.
-  Note that ROMIO currently uses an \code{MPI_Errhandler err_handler} member
-  in \code{ADIOI_FileD}; this is not the same as the \code{errhandler} member
-  of the \code{MPID_Comm} and \code{MPID_Win} structures.
-
-\item If the error relates to a request, and the request refers to a valid
-  communicator, use that communicator's error handler (e.g., \code{MPI_Wait}).
-  Note that this implies that we must be able to determine the communicator
-  from the request.
-
-\item Otherwise, for everything except MPI-IO, use the error handler attached
-  to \mpiconst{MPI_COMM_WORLD}  
-  (see Section 7.2 in the MPI-1 Standard: ``MPI calls that are not related to
-  any communicator are considered to be attached to the communicator
-  \code{MPI_COMM_WORLD}.'' ).  Ensure that the manual pages on error handlers
-  include this information.
-
-\item For MPI-IO, the default error handler is attached to
-  \code{MPI_FILE_NULL} (see Section 9.7 in the MPI-2 standard: ``The default
-  file error handler can be changed by specifying \code{MPI_FILE_NULL} as the
-  \code{fh} argument to \mpifunc{MPI_FILE_SET_ERRHANDLER}'').  Note that this
-  requires \mpifunc{MPI_FILE_SET_ERRHANDLER} and
-  \mpifunc{MPI_FILE_GET_ERRHANDLER} to handle this special case for
-  \mpiconst{MPI_FILE_NULL}.  We also need either a full
-  \mpiconst{MPI_File} object associated with \mpiconst{MPI_FILE_NULL} or
-  the various associated properties.  It might be eaiser for the
-  implementation of \mpifunc{PMPI_File_set_errhandler} and
-  \mpifunc{PMPI_File_get_errhandler} to be in the same file and share a
-  static variable (see Section~\ref{sec:pmpi-routines}) such as
-  \mpidconst{MPIi_File_errhandler}. 
-
+\item The first line must set the C style to mpich so that there is a common
+      style for the code.  Unfortunately, there is no style variable, so an
+      \code{eval} line must be used.  An \code{mpich} style was chosen so that 
+      we can specify the behavior; another (riskier) approach is to adopt one
+      of the predefined styles (riskier because it might change).
+\item The comment block includes the copyright statement
+\item The first C statement must be the include of \file{mpiimpl.h}.  This
+  ensures that the configuration switches (in \file{mpichconf.h}) as well as
+  all include files defining the various MPICH internals.
+\item The profiling block comes next.  The comments must not be modified
+  because they will be used if it is necessary to update this block of text (a
+  program will look for these lines and update appropriately).
+\item The block after the profiling block (on \code{MPICH_MPI_FROM_PMPI})
+  servies two purposes.  One is to define the MPI version of the routines if
+  weak symbols are not supported.  The other is to include a single definition
+  of an internal routine (included with the PMPI definition).
+\item The structured comment block uses predefined text for the possible error
+  classes.  These are specified as \code{.N name}, along with common text on
+  errors \code{.N Errors}.
+\item The first executable statement starts the timer for the routine.  This
+  is a macro that will expand into the appropriate code (including no code for
+  the fastest production version).
+\item The actual error checks are guarded by both a compile-time test and a
+  runtime test.  Note that only at the end of the list is an error return
+  issued (this allows us to consider adding code to catch \emph{all} errors).
+\item Error codes are generated with \code{MPIR_Err_create_code}.  These use
+  predefined name strings (see error reporting in the ADI manual).
+\item The return always gives \code{MPI_SUCCESS} explicitly.  Any return that
+  might return an error code should use \code{MPIR_Return} instead.  
 \end{enumerate}
 
-\subsubsection{Error handling and Fault Tolerance}
-\label{sec:errs-and-faults}
-In order to support fault tolerance, errors should be handled as
-gracefully as possible.  If it is possible to remain in a consistent
-state, the process should not abort (unless, of course, the error
-handler requires it, as the default \mpiconst{MPI_ERRORS_FATAL} does).  
-If it is not possible to recover from an error, then the process
-should call \mpidfunc{MPID_Abort} but specify \mpiconst{MPI_COMM_SELF} as the
-communicator.  
-
-\subsubsection{Error Handling for Layered Routines}
-\label{sec:err-handling-nested}
-In many cases, MPI routines are implemented in terms of other MPI (or
-PMPI) routines.  In these cases, it is important for any error handler
-(other than \mpiconst{MPI_ERRORS_RETURN}) to be invoked only by the
-``top-level'' routine.  
-This is managed by maintaining a per-thread nesting level.  Before an error
-handler is invoked, the nesting level is tested.  If the level is different
-from zero, the error code is returned.  The interface is
-\index{MPID_Nest_incr}\index{MPID_Nest_decr}\index{MPID_Nest_value}
 \begin{verbatim}
-void MPID_Nest_incr()
-void MPID_Nest_decr()
-int MPID_Nest_value()
-\end{verbatim}
-The macro \code{MPIR_Return} can be used:
-\begin{verbatim}
-    MPIR_Return( errhandler, error_code )
-\end{verbatim}
+/* -*- Mode: C; eval: (c-set-style "mpich"); -*-
+ *  $Id$
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 
-See Section~\ref{sec:perthread} for details on the thread-specific storage.
+#include "mpiimpl.h"
 
-\subsection{Memory Allocation}
-As a software package, MPICH should minimize the perturbation of the user's
-environment.  In 
-particular, it should have bounded memory usage and should strive not to
-allocate memory outside of the initialization routine.  
+/* -- Begin Profiling Symbol Block for routine MPI_Foo */
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_Foo = PMPI_Foo
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_Foo  MPI_Foo
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_Foo as PMPI_Foo
+#endif
+/* -- End Profiling Symbol Block */
 
-Where it is necessary to allocate memory, the function \mpidfunc{MPID_Malloc}
-(and corresponding \code{MPID_Calloc}, etc.) must be used instead of
-\code{malloc}, as described in the ADI-3 manual \cite{adi3man}.  Uses of a
-bare \code{malloc} and related memory allocation and freeing routines will be
-flagged as an error by the code style checkers.  Note that \code{MPID_Malloc}
-and friends may be implemented as macros directly in terms of the
-corresponding \code{malloc} etc. routines, so there is no performance penalty
-to using the \code{MPID_malloc} routines.
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#define MPI_Foo PMPI_Foo
+/* Any internal routines can go here */
+int MPIR_Foo_util( int a, MPID_Comm *comm )
+{
+...
+}
+#endif
 
-Memory allocation follows the usual rules for a separate subpackage: there are
-initialization routines and a registered routine to be called in
-\mpifunc{MPI_Finalize}. (See Section~\ref{sec:finalize}.)  This end-of-job
-handler must call the 
-routine \mpidfunc{MPID_Trdump} if the runtime parameter
-\code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
+/*@
+   MPI_Foo - short description
 
-% Question: Should there be separate per-thread and per-process memory
-% allocators? (answer: Per process only)
+   Input Arguments:
++  first - 
+.  middle - 
+-  last - 
 
-% Question: Should we use the same calling sequence as PETSc uses for the memory
-% allocators?  This will make it easier to use the PETSc options database.
-% No, the PETSc form is int Petsc_Malloc( int size, void ** ptr ).  We want
-% void *malloc(size_t)
+   Output Arguments:
 
-\subsubsection{Multiple Memory Allocation}
-In some routines, there may be multiple memory allocations (e.g.,
-\code{MPI_Type_create_struct}).  If an error is 
-detected after some of these (either an out-of-memory error or some other
-error), it can be difficult to recover all of the allocated memory before
-returning.  To simplify this case, we define a simple, stack-based system that
-remembers the allocated memory and provides a simple way to ensure that all
-allocations are freed before an error return.
+   Notes:
 
-% Question: Should there be a memory allocator that remembers allocations within
-% a routine so that out-of-memory errors can be cleanly handled (e.g., freeing
-% all memory allocated within the routine)?  
+.N Errors
+.N MPI_SUCCESS
+.N ... others
+@*/
+int MPI_Foo( MPI_Comm comm, int a ) 
+{
+    static const char FCNAME[] = "MPI_Foo";
+    int mpi_errno = MPI_SUCCESS;
 
-This could have something like
-\begin{verbatim}
-#define MAX_MEM_STACK 16
-typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPID_Mem_stack;
-\end{verbatim}
-defined in \file{mpiimpl.h} 
-and a memory allocation macro that updated a routine-local version of a
-local instance (for thread-safety) of \code{MPID_Mem_stack} 
-with every allocation.  Then on an error, we could easily free any allocated
-memory.  The memory allocator could be
-\begin{verbatim}
-#define MALLOC_STK(n,a) {a=MPID_Malloc(n);\
-               if (_memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
-               _memstack.ptrs[_memstack.n_alloc++] = a;}
-#define FREE_STK     {int i; for (i=_memstack.n_alloc-1;i>=0;i--) {\
-               MPID_Free(_memstack.ptrs[i]);}}
+    MPID_TimerStateBegin(MPID_STATE_MPI_FOO);
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+#ifdef HAVE_ERROR_CHECKING
+    MPID_BEGIN_ERROR_CHECKS;
+        if (MPIR_Process.initialized != MPIR_WITHIN_MPI) {
+            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+                        "**initialized", 0 );
+        if (a < 0) {
+            mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+                        "**negarg", "**negarg %d", a );
+        }
+        /* Validate comm_ptr */
+        MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+        if (!comm_ptr) { comm_ptr = MPIR_Process.comm_world; }
+        if (mpi_errno) {
+            MPID_TimerStateEnd(MPID_STATE_MPI_FOO);
+            return MPIR_Return( comm_ptr->errhandler, mpi_errno );
+        }
+    MPID_END_ERROR_CHECKS;
+#endif
+
+    /* ... body of routine ...  */
+    /* Some routines must ensure only one thread modifies a communicator
+       at a time, e.g., MPI_Comm_set_attr.  */
+    MPID_Comm_thread_lock( comm_ptr );
+    ... actual code ...
+    MPID_Comm_thread_unlock( comm_ptr );
+    /* ... end of body of routine ... */
+
+    MPID_TimerStateEnd(MPID_STATE_MPI_FOO);
+    return MPI_SUCCESS;
+}
 \end{verbatim}
 
-% Comment [BRT]: _memstack needs to be allocated in thread specific
-% storage in order for the MPI implementation to be thread safe.
+The rest of this section discusses some of the coding practices and
+suggestions in more detail.
 
-To ensure that the usuage is thread-safe, the \code{_memstack} should be
-declared within the routine.  A typical use might be
+\subsection{Include Files}
+The include file \file{mpi.h} should not require any \code{-Dxxx}
+definitions by the compiler.  This will require generating the
+\file{mpi.h} from another file (and probably not using \code{configure} and an
+\file{mpi.h.in}).  It should not include any other
+files, with the (possible) exception of \file{mpi++.h} for C++
+support and \file{mpio.h} for ROMIO.
+
+The \file{mpif.h} (or \file{mpif.h.in}) should be created from
+\file{mpi.h} so that the various integer values (e.g., error classes,
+datatypes, etc.) are guaranteed consistent.  This can be done prior to
+distribution, similar to the way \file{configure} is generated from
+\file{configure.in}.  The point is to automate this and ensure that,
+at least in the development Makefiles, the \file{mpif.h.in} file
+should be created from the \file{mpi.h} automatically, at least with
+respect to any values. 
+
+%Question: Is there an easy Perl script for this, particularly, for the values?
+
+For module-dependent includes, comments in \file{mpiimpl.h} should explain the
+search rules expected (e.g., link or copy in the same directory; file in
+search path).  Module-dependent includes should be used for any complex
+subsystem, particularly one that includes its own \code{configure}.
+
+\subsection{MPI and PMPI Routines}
+\label{sec:pmpi-routines}
+Each routine should implement the \code{PMPI} version of the routine.
+Where possible, a weak symbol pragma may be used to define the
+\code{MPI} version of the routine.  If weak symbol support is not
+available, the \file{Makefile}s will support recompiling each file
+with the definition \code{MPICH_MPI_FROM_PMPI} made.  This value
+can also be used to protect code that is used by the \code{PMPI}
+version of the routine.  This is shown in the sample implementation template
+(Section~\ref{sec:template}).
+
+To allow a single library to contain all of the files, it is necessary to
+nameshift the object files for either the PMPI or MPI routines.  
+Here is a sample \file{Makefile} target that creates the profiling routines
+with a separate name.  The suffix \code{pf} is used instead of \code{po}
+because \code{po} is used by the GNU \code{gettext} facility for
+internationalization.  These use a different suffix (\code{pf}) from that used
+for the normal object files so that there is no confusion over whether
+\code{foo.o} represents the regular file or the file built with the separate
+profiling switch \code{-DMPICH_MPI_FROM_PMPI}\footnote{Without this, rerunning
+  make might decide that the object files already exist.  It would be better
+  to have make see these as different filenames, but make prefers to work with
+  suffix-based rules}.
+
 \begin{verbatim}
-    MPID_Mem_stack _memstack;
-    _memstack.n_alloc = 0;
-
-    ...
-    MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
-    if (!new->dataloops) {
-        FREE_STK;
-        MPIR_Return( ... );
-    }
-    MALLOC_STK(m,new->other);
-    if (!new->other) {
-        FREE_STK;
-        MPIR_Return( ... );
-    }
-    ...
-    if (count < 0) {
-        FREE_STK; 
-        MPIR_Return( ... );
-    }
+.SUFFIXES:
+.SUFFIXES: .o .pf .c .f
+# Instead, we define the PMPI_OBJECTS as having suffix pf:
+PMPI_OBJECTS = ${OBJECTS:.o=.pf}
+# Convert foo.pf to _foo.o, then archive all at once
+${libbuild_dir}/lib@PMPILIBNAME@.a: ${PMPI_OBJECTS}
+        @echo "Rename xxx.pf to _xxx.o for profiling interface."
+        @if [ ! -d .tmp ] ; then mkdir .tmp ; else rm -f .tmp/*.o ; fi
+        @for file in $? ; do \
+            bname=`basename $$file .pf`; \
+            cp $$file .tmp/_$${bname}.o ; \
+        done
+        @cd .tmp && ${AR} cr $@ *.o && rm -f *.o
+        -@rmdir .tmp
+# Note that the Solaris SunPro cc (4.0 98/12/15) does not allow the file
+# named with -o to have any suffix other than .o !
+.c.pf:
+        ${C_COMPILE} -c -DMPICH_MPI_FROM_PMPI $< -o $*.o
+        @mv -f $*.o $*.pf
+.f.pf:
+        ${F77_COMPILE} -c $<
+        @mv -f $*.o $*.pf
 \end{verbatim}
+
+If it is necessary to create the \code{MPI} versions separately, the
+object files should be renamed, allowing them to be placed into the
+same library.  To handle the event that the library cannot hold over
+500 files (250 for PMPI MPI 1 and 2, plus a version for the MPI
+routines), the name of the library containing the profiling versions
+should be separate.  That is, there are separate configure names
+\code{MPILIBNAME} and \code{PMPILIBNAME} that are usually the same but that
+can be set to different names.  These names may be set using environment
+variables \code{MPILIBNAME} and \code{PMPILIBNAME}, just like the C compiler
+is set in \code{configure}.
+
+Some sets of routines need a variable that persists between calls.
+Rather than make the variable a global variable, it should become a
+\code{static} variable in a file, where if possible the variable is used
+entirely within that file (e.g., a file of utility routines).  If that is not
+possible, then it should be accessed through \code{MPIR_} or \code{MPID_}
+routines.  
+
+% Rather than 
+% make the variable truly global, we could use \code{static} to
+% restrict it to file scope.   Examples are handling of the bsend
+% buffers, the keyval used for topologies, and the error handler on
+% \mpiconst{MPI_FILE_NULL}.  In order to provide the profiling
+% interface, this can be implemented as is if weak symbols are
+% provided.  Otherwise, the MPI version of the routines would simply
+% call the PMPI routines.  Alternately the value could be accessed
+% through a utility routine.
+
+\subsection{Internal Routine Names}
+\label{sec:routine-names}
+All global symbols, such as internal routines, must have a prefix that
+identifies it as part of the MPICH implementation.  There are several
+prefixes:
+\begin{description}
+\item[MPIR]Routines used only within the MPI implementation (outside of the
+  ADI).
+\item[MPID]Routines defined either in the ADI or used within the ADI
+\end{description}
+Many routines will have the \code{MPID} prefix.
 
 \subsection{MPI Opaque Objects}
-
+\label{sec:mpi-opaque}
 Most objects in MPI (with the exception of \mpifunc{MPI_Status}) are
 opaque.  In the MPICH2 implementation, opaque objects are represented
 by integers.  This simplifies the implementation of the functions for
@@ -523,192 +584,164 @@ to be statically calculable; the \code{_SC_PAGE_SIZE} value in the
 \code{sysconf} call is a starting point, or we can  do a configure test and
 define \code{MPID_BLOCK_SIZE}). 
 
-\subsection{MPI and PMPI Routines}
-\label{sec:pmpi-routines}
-Each routine should implement the \code{PMPI} version of the routine.
-Where possible, a weak symbol pragma may be used to define the
-\code{MPI} version of the routine.  If weak symbol support is not
-available, the \file{Makefile}s will support recompiling each file
-with the definition \code{MPICH_MPI_FROM_PMPI} made.  This value
-can also be used to protect code that is used by the \code{PMPI}
-version of the routine.  This is shown in the sample implementation template
-(Section~\ref{sec:template}).
+\subsubsection{Converting Handles To Pointers}
+\label{sec:handle-to-ptr}
+For each handle, there is a macro \code{MPID_<type>_get_ptr} that converts a
+handle into a pointer to the corresponding structure.  For example,
+\code{MPID_Comm_get_ptr} converts an \code{MPI_Comm} handle to a pointer to an
+\code{MPID_Comm *} pointer.  The macro \code{MPID_<type>_valid_ptr} confirms
+that the pointer points to a valid object (for example, by checking a
+``cookie'' value).  A null pointer is returned by either macro if the handle
+is (known to be) invalid.
 
-To allow a single library to contain all of the files, it is necessary to
-nameshift the object files for either the PMPI or MPI routines.  
-Here is a sample \file{Makefile} target that creates the profiling routines
-with a separate name.  The suffix \code{pf} is used instead of \code{po}
-because \code{po} is used by the GNU \code{gettext} facility for
-internationalization. 
+\subsection{Error reporting}
+\label{sec:error-reporting}
 
+MPI routines should check as many error conditions as possible before
+calling any ADI routines.  The ADI routines assume that most arguments are
+valid; exceptions will be noted in the documentation of the ADI3 routines.
+To allow error handling to be enabled or disabled both at compile
+time 
+and at runtime, the tests should be placed within the following block:
 \begin{verbatim}
-.SUFFIXES:
-.SUFFIXES: .o .pf .c .f
-# Instead, we define the PMPI_OBJECTS as having suffix pf:
-PMPI_OBJECTS = ${OBJECTS:.o=.pf}
-# Convert foo.pf to _foo.o, then archive all at once
-${libbuild_dir}/lib@PMPILIBNAME@.a: ${PMPI_OBJECTS}
-        @echo "Rename xxx.pf to _xxx.o for profiling interface."
-        @if [ ! -d .tmp ] ; then mkdir .tmp ; else rm -f .tmp/*.o ; fi
-        @for file in $? ; do \
-            bname=`basename $$file .pf`; \
-            cp $$file .tmp/_$${bname}.o ; \
-        done
-        @cd .tmp && ${AR} cr $@ *.o && rm -f *.o
-        -@rmdir .tmp
-# Note that the Solaris SunPro cc (4.0 98/12/15) does not allow the file
-# named with -o to have any suffix other than .o !
-.c.pf:
-        ${C_COMPILE} -c -DMPI_BUILD_PROFILING $< -o $*.o
-        @mv $*.o $*.pf
-.f.pf:
-        ${F77_COMPILE} -c $<
-        @mv $*.o $*.pf
+#ifdef HAVE_ERROR_CHECKING
+BEGIN_ERROR_CHECKS
+...
+END_ERROR_CHECKS
+#endif
 \end{verbatim}
-
-If it is necessary to create the \code{MPI} versions separately, the
-object files should be renamed, allowing them to be placed into the
-same library.  To handle the event that the library cannot hold over
-500 files (250 for PMPI MPI 1 and 2, plus a version for the MPI
-routines), the name of the library containing the profiling versions
-should be separate.  That is, there are separate configure names
-\code{MPILIBNAME} and \code{PMPILIBNAME} that are usually the same but that
-can be set to different names.
-
-Some sets of routines need a variable that persists between calls.
-Rather than make the variable a global variable, it should become a
-\code{static} variable in a file, where if possible the variable is used
-entirely within that file (e.g., a file of utility routines).  If that is not
-possible, then it should be accessed through \code{MPIR_} or \code{MPID_}
-routines.  
-
-% Rather than 
-% make the variable truly global, we could use \code{static} to
-% restrict it to file scope.   Examples are handling of the bsend
-% buffers, the keyval used for topologies, and the error handler on
-% \mpiconst{MPI_FILE_NULL}.  In order to provide the profiling
-% interface, this can be implemented as is if weak symbols are
-% provided.  Otherwise, the MPI version of the routines would simply
-% call the PMPI routines.  Alternately the value could be accessed
-% through a utility routine.
-
-\subsection{Deprecated Routines}
-
-The MPI-2 standard deprecated some routines (see Section~2.6.1 in the MPI-2
-Standard).  The manual pages for the deprecated routines should make clear
-that they are deprecated and what functions should be used instead.  In
-addition, we should provide a library created with \code{wrappergen} that
-generates a single warning message for each deprecated routine used in an
-application (and of course document this).
-
-\subsection{Runtime Parameters}
-\label{sec:runtime-params}
-MPICH-1 suffers from having many compile-time parameters that could just as
-easily be either runtime or at least initialization-time.  These parameters
-include search paths and buffer sizes.  These should have a compile-time
-default (particularly the search paths) but have an easy way to override at
-initialization and/or run time.  While environment variables are one way to do
-this, we should not rely on them, since not all environments guarantee that
-environment variables are propagated to all processes.
-
-Question: What should the routines be?  For 
-example,\index{MPIi_Param_init}\index{MPIi_Param_get_int}\index{MPIi_Param_get_string}\index{MPIi_Param_finalize}
+The macros \code{BEGIN_ERROR_CHECKS} and \code{END_ERROR_CHECKS} can
+expand, depending on configuration settings, into either null (i.e.,
+no runtime control) or 
 \begin{verbatim}
-int MPIi_Param_init( int *argc, char **argv[] );
-int MPIi_Param_get_int( const char name[], int default_val, int *value );
-int MPIi_Param_get_string( const char name[], const char *default val,
-                           char **value );
-void MPIi_Param_finalize( void );
+#define BEGIN_ERROR_CHECK if (MPIR_Process.do_error_checks) {
+#define END_ERROR_CHECKS }
 \end{verbatim}
-We use pointers to \code{argc} and \code{argv} to allow parameters to be
-removed.  The return code indicates success or failure; an example of a
-failure is a non-integer value provided to the parameter accessed with
-\code{MPIi_Param_get_int}. 
+(See Section~\ref{sec:perthread} for \code{MPIR_Process}.)
 
-The simplest implementation of these might be
-\begin{verbatim}
-int MPIi_Param_init( int *argc, char **argv[] ) {return 0}
-int MPIi_Param_get_int( const char name[], int default_val, int *value ) 
-    { char *tmp = getenv{name); 
-      if (tmp) { 
-          char *endp;
-          *value = strtol(name,&endp,10); 
-          /* if name not an integer, return 1 */
-          return (*endp != '\0'); }
-      *value = default_val; 
-      return 0; }
-int MPIi_Param_get_string( const char name[], const char *default_val,
-                           char **value ) 
-    { char *tmp = getenv(name); 
-      if (!tmp) tmp = default_val; 
-      else { *value = MPID_Strdup( tmp );
-             return 0; }
-     return 0; }
-void MPIi_Param_finalize( void ){}
-\end{verbatim}
-The \mpidfunc{MPIi_Param_init} and \mpidfunc{MPIi_Param_free} allows
-values to also be passed via the command line.  BNR routines could be
-used instead of \code{getenv} to get values.  Even more complex
-routines could read a \file{.mpichrc} file and remember parameter
-values in a table, looking them up when requested (this is closest to
-the PETSc options database).
-In fact, we may want to enforce the following order:
+There must be a configure option,
+\cfgoption{--disable-error-checking},  
+that prevents \code{HAVE_ERROR_CHECKING} from being defined.  The
+\cfgoption{--enable-error-checking} 
+takes the argument \texttt{all} (and \texttt{runtime} as a synonym) to allow
+runtime control (otherwise, error checking is always on).
+
+\subsubsection{Errors to test for}
+Most values should be tested to ensure that they are in-range.  For example,
+tags must be nonnegative for sending (and nonnegative or
+\mpiconst{MPI_ANY_TAG} for receiving). 
+
+Some of the error conditions to test for include
+\begin{itemize}
+\item Is MPI Initialized?
+\item Are parameter values in range, including tag values, ranks, counts?
+\item Are input and output parameters improperly aliased (e.g., inbuf and
+  outbuf of   \code{MPI_Allreduce})?
+\item Are MPI objects valid (see opaque object discussion)?
+\item Are output parameter pointers valid?  The macro
+  \code{MPID_Pointer_is_invalid(void *p)} returns one for invalid pointers.
+  Note that this may be as simple as \code{((p) == 0)} or
+  \code{(long(p)<=0)} or \code{(!(p) || (unsigned long)(p) > STACKLIMIT)}, or
+  even call a routine that attempts to access the pointer with a
+  \code{SIGSEGV} handler set.
+\end{itemize}
+Note that message buffer pointers depend on the datatype; if the datatype is a
+struct type, then a null pointer or otherwise invalid value for the message
+buffer may in fact be valid when combined with the datatype.
+The test \code{MPIR_Check_user_buffer( buf, count, datatype )} checks that the
+specified user buffer represents a valid address.  This can be as simple as
+testing that \code{buf + datatype->real_lower_bound} is not null.  If we use
+this routine for testing, then the test on the message buffer can be made
+within the MPI routine rather than in the ADI routine.
+
+\subsubsection{Choosing Error Handlers and Classes}
+\label{sec:chosing-errhandler}
+
+The MPI standard specifies which error handler is invoked when an error is
+detected.  The following describes the process for selecting the appropriate
+error handler.
+
 \begin{enumerate}
-\item Check for an override value (e.g., a priority environment variable)
-\item Use any info or attribute value
-\item Use environment value
-\item Use configure file value (\file{.mpichrc}, followed by
-  \file{~/.mpichrc}).  There should be an environment variable and command
-  line option to suppress reading of the configuration files.
-\item Use default (compile-time) value
+\item If still in the initialization step (e.g., within
+\mpifunc{MPI_Init_thread}), errors invoke a special pre-initialization error
+handler.  This handler may either abort or return; by default, it will abort.
+A return may be prefered for some fault-tolerant applications.
+
+\item Check if executing inside a layered routine (i.e., an MPI routine called
+  within the implementation of another MPI routine).  If so, return error
+  code; do not invoke the error handler.  See
+  Section~\ref{sec:err-handling-nested}. 
+
+\item If the routine has a valid \code{MPI_Comm}, \code{MPI_File}, or
+  \code{MPI_Win}, use the error handler from that object.  Note that there is
+  a common errorhandler member (\code{errhandler}) in the related structures;
+  the \code{errfn} of this structure is the actual function.
+  Note that ROMIO currently uses an \code{MPI_Errhandler err_handler} member
+  in \code{ADIOI_FileD}; this is not the same as the \code{errhandler} member
+  of the \code{MPID_Comm} and \code{MPID_Win} structures.
+
+\item If the error relates to a request, and the request refers to a valid
+  communicator, use that communicator's error handler (e.g., \code{MPI_Wait}).
+  Note that this implies that we must be able to determine the communicator
+  from the request.
+
+\item Otherwise, for everything except MPI-IO, use the error handler attached
+  to \mpiconst{MPI_COMM_WORLD}  
+  (see Section 7.2 in the MPI-1 Standard: ``MPI calls that are not related to
+  any communicator are considered to be attached to the communicator
+  \code{MPI_COMM_WORLD}.'' ).  Ensure that the manual pages on error handlers
+  include this information.
+
+\item For MPI-IO, the default error handler is attached to
+  \code{MPI_FILE_NULL} (see Section 9.7 in the MPI-2 standard: ``The default
+  file error handler can be changed by specifying \code{MPI_FILE_NULL} as the
+  \code{fh} argument to \mpifunc{MPI_FILE_SET_ERRHANDLER}'').  Note that this
+  requires \mpifunc{MPI_FILE_SET_ERRHANDLER} and
+  \mpifunc{MPI_FILE_GET_ERRHANDLER} to handle this special case for
+  \mpiconst{MPI_FILE_NULL}.  We also need either a full
+  \mpiconst{MPI_File} object associated with \mpiconst{MPI_FILE_NULL} or
+  the various associated properties.  It might be eaiser for the
+  implementation of \mpifunc{PMPI_File_set_errhandler} and
+  \mpifunc{PMPI_File_get_errhandler} to be in the same file and share a
+  static variable (see Section~\ref{sec:pmpi-routines}) such as
+  \mpidconst{MPIi_File_errhandler}. 
 \end{enumerate}
-The configuration file is read once, by one process (at
-\code{MPI_Init} time).  
 
-Note that errors are indicated by a non-zero return from the routine.
-For example, if \mpidfunc{MPIi_Param_get_int} is called but the value
-is \code{"big"}, it will return one.
+When the error handler has been determined, it should be invoked with the
+\code{MPIR_Return} handler:
+\begin{verbatim}
+    return MPIR_Return( errhandler, error_code );
+\end{verbatim}
+This allows nested MPI calls to invoke the correct error handler (see
+Section~\ref{sec:err-handling-nested}).  
 
-Question: should parameters be registered?  This allows the runtime
-system to find them (e.g., with BNR put/fence/get), and simplifies the
-generation of help text.  It 
-would also allow text describing the parameter to be provided from
-within the code.
+\subsubsection{Error handling and Fault Tolerance}
+\label{sec:errs-and-faults}
+In order to support fault tolerance, errors should be handled as
+gracefully as possible.  If it is possible to remain in a consistent
+state, the process should not abort (unless, of course, the error
+handler requires it, as the default \mpiconst{MPI_ERRORS_FATAL} does).  
+If it is not possible to recover from an error, then the process
+should call \mpidfunc{MPID_Abort} but specify \mpiconst{MPI_COMM_SELF} as the
+communicator.  
 
-An alternative is to use a tool, similar to that for error reporting, that
-finds all uses of the parameter routines.
+\subsubsection{Error Handling for Layered Routines}
+\label{sec:err-handling-nested}
+In many cases, MPI routines are implemented in terms of other MPI (or
+PMPI) routines.  In these cases, it is important for any error handler
+(other than \mpiconst{MPI_ERRORS_RETURN}) to be invoked only by the
+``top-level'' routine.  
+This is managed by maintaining a per-thread nesting level.  Before an error
+handler is invoked, the nesting level is tested.  If the level is different
+from zero, the error code is returned.  The interface is
+\index{MPIR_Nest_incr}\index{MPIR_Nest_decr}\index{MPIR_Nest_value}
+\begin{verbatim}
+void MPIR_Nest_incr()
+void MPIR_Nest_decr()
+int MPIR_Nest_value()
+\end{verbatim}
 
-Question: How do we find out that no value was specified?  This is different
-from having a default value.
-
-Question: the file read operation is a potential problem.  Do we want to have
-a separate pre-init and post-init (that can use \code{MPI_Bcast}) to get data?
-
-For example, the pre-init routine code read just a few environment variables
-for any preinitialization code.  The post-init routine would be collective,
-ensuring that all processes created the same database (and allowing a single
-process to read any configuration files).
-
-\subsection{Threads}
-\label{sec:threads}
-All thread-related operations must not assume a particular thread
-package.  At least three different packages are of interest:
-\begin{enumerate}
-\item pthreads.  This provides a powerful model with reasonable
-portability to most Unix platforms, including Linux.  
-\item Windows threads.  
-\item OpenMP threads.  OpenMP has a small set of thread runtime
-routines (such as lock/unlock), including the ability to run different blocks
-of code in different threads.
-\end{enumerate}
-Solaris LWP (light-weight processes) may also be of interest.
-There are some operations, such as condition variables, monitors, and
-thread-scheduling control, that may not be available (e.g., OpenMP
-has no condition variables)  
-
-Question: do we just want to emulate the missing operations, or (and?)
-do we want to know that they are missing so that an alternative
-approach can be taken?
+See Section~\ref{sec:perthread} for details on the thread-specific storage.
 
 \subsection{Per Thread and Per Process Data}
 \label{sec:perthread}
@@ -732,7 +765,6 @@ typedef struct {
     MPID_Stateinfo_t timestamps[MPICH_MAX_STATES];  /* per thread state info */
     } MPICH_PerThread_t;
 \end{verbatim}
-
 Similarly, there is a per-process type
 \begin{verbatim}
 typedef struct {
@@ -740,6 +772,8 @@ typedef struct {
     MPID_Thread_key_t thread_key;       /* Id for perthread data */
     MPID_Thread_id_t  master_thread;    /* Thread that started MPI */
     int               do_error_checks;  /* runtime error check control */
+    MPID_Comm         *comm_world;      /* Easy access to comm_world for
+                                           error handler */
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 \end{verbatim}
@@ -758,104 +792,10 @@ extern MPICH_PerThread_t MPIR_Thread;
 #else /* Assumes pthreads for simplicity */
 #define MPIR_GetPerThread(p) {\
      p = pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!p) { p = MPID_Calloc( sizeof(MPID_PerThread_t ) );\
+     if (!p) { p = MPID_Calloc( 1, sizeof(MPID_PerThread_t ) );\
                pthread_setspecific( MPIR_Process.thread_key, p );}}
 #endif
 \end{verbatim}
-
-\subsection{Coding Practices}
-\label{sec:coding-practices}
-This section reviews some coding practices for the MPICH code.
-
-\begin{description}
-\item[Function prototypes.]
-All routines should be prototyped.  The prototypes should be in the
-smallest scope possible.  For example, if the routine is used only
-within the files in a subdirectory, the prototype should be in an
-include file within that directory.
-
-\item[Static functions.]
-Functions used entirely within a single file should be declared
-\code{static}.  Functions that are not static must follow the naming
-convention of starting with \code{MPI_} or \code{PMPI_} (for routines
-implementing the MPI Standard) or \code{MPIR_} for internal routines.  
-Global symbols, such as keyvals, should use \code{MPICH_} as the
-prefix.  Also consider the use of \code{inline}, along with the
-autoconf macro \code{AC_C_INLINE} to test for this feature.
-
-\item[Parameter declarations.]
-Parameters (with the exception of the MPI routines defined by the
-standard) should follow the guidelines in \code{coding}
-\cite{coding-standards}.  In 
-particular, \code{const} and \code{restrict} should be used.
-Parameters that are semantically arrays should be declared as arrays
-(using \code{[]}).  
-
-\item[Indentation style.]
-A common indentation style, \code{mpich}, is specified for all files.
-%specify it at the top of each file (as an emacs command) so that emacs
-%will use the correct style for users with other styles or projects.
-All C source files (including header files) begin with 
-\begin{verbatim}
-/* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
-\end{verbatim}
-This is interrepted by Emacs and allows us to set a style for MPICH
-that can be different from each developer's personnal style.
-The style \code{mpich} is defined in \file{maint/mpich.el}.
-
-% Comment [BRT]: Yes.  Having a style standard makes it much easier to
-% read and modify code written by others.
-
-\item[File header.]
-There is a standard file header, \file{topfile.c}, containing the copyright and
-standardized includes (e.g., \file{mpiimpl.h}).  This header
-template is part of the development environment and is located in directory
-\file{util}. 
-
-\item[Function Name.]
-The function name is available as \code{FCNAME}.  A configure test will
-determine if \code{__FUNCTION__} is available as the value of this (e.g.,
-\code{gcc} sets this value).  Note that PETSc uses \code{__FUNCTION__} on a
-wide variety of platforms.
-
-% There should be a macro, \code{__FUNCTION__}, containing the name of the
-% function.  This name is chosen because some versions of \code{gcc} will set it
-% for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
-% in the declarations part of the program \emph{or} we should include the
-% appropriate \code{\#define} line (as PETSc does) before the function
-% declaration. 
-
-% Alternately, we could use \code{FCNAME} and include optional code to
-% set it to either \code{__FUNCTION__} for systems that define that or
-% explicitly to the name.
-
-% Comment [BRT]: Names beginning with an underscore are reserved for the
-% compiler and runtime system.  Use of \code{__FUNCTION__} could affect
-% portability.  So, I prefer the use of \code{FCNAME}.
-
-\item[Boolean Flags.]
-Data structures that contain a number of flags should store them
-together in a flag vector and use special macros to check and set
-them.  This is done to keep the structures tighter and to provide better cache
-and instruction utilization (load and store are much more expensive than
-bitwise-and).  
-
-Question: should the flag values be defined or enums that are assigned
-special values?
-
-Question: Are the following acceptable for working with flags?  These
-assume that several data structures use flags.
-\begin{verbatim}
-#define MPID_FLAG_DECL             int _flag
-#define MPID_IS_FLAG_SET(ds,field) ((ds)->_flag & (field))
-#define MPID_SET_FLAG(ds,field)    (ds)->_flag |= (field)
-#define MPID_CLR_FLAG(ds,field)    (ds)->_flag &= ~(field)
-\end{verbatim}
-\mpiconst{MPI_Datatype}s need multiple boolean flags (e.g., has a
-sticky upper bound marker, lower bound marker).  Window objects also
-have multiple flags.
-
-\end{description}
 
 \subsection{Integral Profiling}
 \label{sec:builtin-timing}
@@ -892,8 +832,8 @@ pointers or if values are prefered.)
 \subsubsection{Instrumenting the MPI code.}
 Each major routine will contain references to 
 \begin{verbatim}
-MPID_TimerStateBegin( stateid )
-MPID_TimerStateEnd( stateid )
+MPID_TimerStateBegin( stateid );
+MPID_TimerStateEnd( stateid );
 \end{verbatim}
 The value of \code{stateid} is \code{MPID_STATE_functionname}, for example,
 \code{MPID_STATE_MPI_SEND}.  The timer code will accumulate the sum of
@@ -949,153 +889,347 @@ There are three levels to the state timers:
 If state timers are enabled (with \cfgoption{--enable-timing}), these are
 controlled by the runtime parameter code.
 
-\subsection{Sample Implementation Template}
-\label{sec:template}
+\subsection{Memory Allocation}
+As a software package, MPICH should minimize the perturbation of the user's
+environment.  In 
+particular, it should have bounded memory usage and should strive not to
+allocate memory outside of the initialization routine.  
 
-The following is a sample implementation template for an MPI routine.
-A few comments first:
-\begin{enumerate}
-\item The first line must set the C style to mpich so that there is a common
-      style for the code.
-\item The comment block includes the copyright statement
-\item The first C statement must be the include of \file{mpiimpl.h}.  This
-  ensures that the configuration switches (in \file{mpichconf.h}) as well as
-  all include files defining the various MPICH internals.
-\item The profiling block comes next.  The comments must not be modified
-  because they will be used if it is necessary to update this block of text (a
-  program will look for these lines and update appropriately).
-\item The block after the profiling block (on \code{MPICH_MPI_FROM_PMPI})
-  servies two purposes.  One is to define the MPI version of the routines if
-  weak symbols are not supported.  The other is to include a single definition
-  of an internal routine (included with the PMPI definition).
-\item The structured comment block uses predefined text for the possible error
-  classes.  These are specified as \code{.N name}, along with common text on
-  errors \code{.N Errors}.
-\item The first executable statement starts the timer for the routine.  This
-  is a macro that will expand into the appropriate code (including no code for
-  the fastest production version).
-\item The actual error checks are guarded by both a compile-time test and a
-  runtime test.  Note that only at the end of the list is an error return
-  issued (this allows us to consider adding code to catch \emph{all} errors).
-\item Error codes are generated with \code{MPIR_Err_create_code}.  These use
-  predefined name strings (see error reporting in the ADI manual).
-\item The return always gives \code{MPI_SUCCESS} explicitly.  Any return that
-  might return an error code should use \code{MPIR_Return} instead.  
-\end{enumerate}
+Where it is necessary to allocate memory, the function \mpidfunc{MPID_Malloc}
+(and corresponding \code{MPID_Calloc}, etc.) must be used instead of
+\code{malloc}, as described in the ADI-3 manual \cite{adi3man}.  Uses of a
+bare \code{malloc} and related memory allocation and freeing routines will be
+flagged as an error by the code style checkers.  Note that \code{MPID_Malloc}
+and friends may be implemented as macros directly in terms of the
+corresponding \code{malloc} etc. routines, so there is no performance penalty
+to using the \code{MPID_Malloc} routines.
 
+Memory allocation follows the usual rules for a separate subpackage: there are
+initialization routines and a registered routine to be called in
+\mpifunc{MPI_Finalize}. (See Section~\ref{sec:finalize}.)  This end-of-job
+handler must call the 
+routine \mpidfunc{MPID_Trdump} if the runtime parameter
+\code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
+
+% Question: Should there be separate per-thread and per-process memory
+% allocators? (answer: Per process only)
+
+% Question: Should we use the same calling sequence as PETSc uses for the memory
+% allocators?  This will make it easier to use the PETSc options database.
+% No, the PETSc form is int Petsc_Malloc( int size, void ** ptr ).  We want
+% void *malloc(size_t)
+
+\subsubsection{Multiple Memory Allocation}
+In some routines, there may be multiple memory allocations (e.g.,
+\code{MPI_Type_create_struct}).  If an error is 
+detected after some of these (either an out-of-memory error or some other
+error), it can be difficult to recover all of the allocated memory before
+returning.  To simplify this case, we define a simple, stack-based system that
+remembers the allocated memory and provides a simple way to ensure that all
+allocations are freed before an error return.
+
+% Question: Should there be a memory allocator that remembers allocations within
+% a routine so that out-of-memory errors can be cleanly handled (e.g., freeing
+% all memory allocated within the routine)?  
+
+This could have something like
 \begin{verbatim}
-/* -*- Mode: C; c-set-style: mpich -*-
- *  $Id$
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-
-#include "mpiimpl.h"
-
-/* -- Begin Profiling Symbol Block for routine MPI_Foo */
-#if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPI_Foo = PMPI_Foo
-#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Foo  MPI_Foo
-#elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPI_Foo as PMPI_Foo
-#endif
-/* -- End Profiling Symbol Block */
-
-/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
-   the MPI routines */
-#ifndef MPICH_MPI_FROM_PMPI
-#define MPI_Foo PMPI_Foo
-/* Any internal routines can go here */
-int MPIR_Foo_util( int a, MPID_Comm *comm )
-{
-...
-}
-#endif
-
-/*@
-   MPI_Foo - short description
-
-   Input Arguments:
-+  first - 
-.  middle - 
--  last - 
-
-   Output Arguments:
-
-   Notes:
-
-.N Errors
-.N MPI_SUCCESS
-.N ... others
-@*/
-int MPI_Foo( MPI_Comm comm, int a ) 
-{
-    #ifndef __FUNCTION__
-    #define __FUNCTION__ "MPI_Foo"
-    #endif
-
-    MPID_TimerStateBegin(MPID_STATE_MPI_FOO);
-#ifdef HAVE_ERROR_CHECKING
-    MPID_BEGIN_ERROR_CHECKS;
-        mpi_errno = 0;
-        if (MPIR_Process.initialized != MPIR_WITHIN_MPI) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                        "**initialized", 0 );
-        if (a < 0) {
-            mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                        "**negarg", "**negarg %d", a );
-        }
-        if (mpi_errno) {
-            MPID_TimerStateEnd(MPID_STATE_MPI_FOO);
-            return MPIR_Return( comm_ptr->errhandler, mpi_errno );
-        }
-    MPID_END_ERROR_CHECKS;
-#endif
-
-    ... body of routine ...
-
-    MPID_TimerStateEnd(MPID_STATE_MPI_FOO);
-    return MPI_SUCCESS;
-}
+#define MAX_MEM_STACK 16
+typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPID_Mem_stack;
 \end{verbatim}
+defined in \file{mpiimpl.h} 
+and a memory allocation macro that updated a routine-local version of a
+local instance (for thread-safety) of \code{MPID_Mem_stack} 
+with every allocation.  Then on an error, we could easily free any allocated
+memory.  The memory allocator could be
+\begin{verbatim}
+#define MALLOC_STK(n,a) {a=MPID_Malloc(n);\
+               if (_memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
+               _memstack.ptrs[_memstack.n_alloc++] = a;}
+#define FREE_STK     {int i; for (i=_memstack.n_alloc-1;i>=0;i--) {\
+               MPID_Free(_memstack.ptrs[i]);}}
+\end{verbatim}
+
+% Comment [BRT]: _memstack needs to be allocated in thread specific
+% storage in order for the MPI implementation to be thread safe.
+
+To ensure that the usuage is thread-safe, the \code{_memstack} should be
+declared within the routine.  A typical use might be
+\begin{verbatim}
+    MPID_Mem_stack _memstack;
+    _memstack.n_alloc = 0;
+
+    ...
+    MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
+    if (!new->dataloops) {
+        FREE_STK;
+        MPIR_Return( ... );
+    }
+    MALLOC_STK(m,new->other);
+    if (!new->other) {
+        FREE_STK;
+        MPIR_Return( ... );
+    }
+    ...
+    if (count < 0) {
+        FREE_STK; 
+        MPIR_Return( ... );
+    }
+\end{verbatim}
+
+\subsection{Runtime Parameters}
+\label{sec:runtime-params}
+MPICH-1 suffers from having many compile-time parameters that could just as
+easily be either runtime or at least initialization-time.  These parameters
+include search paths and buffer sizes.  These should have a compile-time
+default (particularly the search paths) but have an easy way to override at
+initialization and/or run time.  While environment variables are one way to do
+this, we should not rely on them, since not all environments guarantee that
+environment variables are propagated to all processes.
+
+Question: What should the routines be?  For 
+example,\index{MPIi_Param_init}\index{MPIi_Param_get_int}%
+\index{MPIi_Param_get_string}\index{MPIi_Param_finalize}%
+\index{MPIi_Param_bcast}\index{MPIi_Param_register}
+\begin{verbatim}
+int MPIi_Param_init( int *argc, char **argv[] );
+int MPIi_Param_bcast( );
+int MPIi_Param_register( const char name[], const char envname[], 
+                         const char description[] );
+int MPIi_Param_get_int( const char name[], int default_val, int *value );
+int MPIi_Param_get_string( const char name[], const char *default val,
+                           char **value );
+void MPIi_Param_finalize( void );
+\end{verbatim}
+We use pointers to \code{argc} and \code{argv} to allow parameters to be
+removed.  The return code indicates success or failure; an example of a
+failure is a non-integer value provided to the parameter accessed with
+\code{MPIi_Param_get_int}. 
+The routine \code{MPIi_Param_init} is called by the master process (the one
+that will be rank zero in \code{MPI_COMM_WORLD}); this should happen early
+enough that any startup parameters are available to the master process.  The
+routine \code{MPIi_Param_bcast} is called within \code{MPI_Init} or
+\code{MPI_Init_thread} after all processes have started and is a collective
+call across \code{MPI_COMM_WORLD}.  This allows an implementation to use one
+process to read the environment and any initialization file and then use MPI
+communication to communicate the parameters to other processes.  
+
+The routine \code{MPIi_Param_register} allows the MPICH implementation to
+indicate which parameters are used and to provide a help string for each one.
+This allows an automated tool to compile a listing of such parameters and
+allows \code{MPIi_Param_finalize} to identify unused command-line arguments
+(often misspellings of valid arguments).
+
+These routines return zero on success.  The routines that return the values of
+parameters return one if no value was specified (this allows an routine to
+determine if the default value was provided) and two on an error (such as an
+integer value containing a non-digit).  These values are provided by
+\begin{verbatim}
+typedef enum { MPID_PARAM_FOUND = 0, 
+               MPID_PARAM_OK = 1, 
+               MPID_PARAM_ERROR = 2 } MPID_Param_result_t;
+\end{verbatim}
+
+The \mpidfunc{MPIi_Param_init} and \mpidfunc{MPIi_Param_free} allows
+values to also be passed via the command line.  BNR routines could be
+used instead of \code{getenv} to get values.  Even more complex
+routines could read a \file{.mpichrc} file and remember parameter
+values in a table, looking them up when requested (this is closest to
+the PETSc options database).
+In fact, we may want to enforce the following order:
+\begin{enumerate}
+\item Check for an override value (e.g., a priority environment variable)
+\item Use any info or attribute value
+\item Use environment value
+\item Use configure file value (\file{.mpichrc}, followed by
+  \file{~/.mpichrc}).  There should be an environment variable and command
+  line option to suppress reading of the configuration files.
+\item Use default (compile-time) value
+\end{enumerate}
+The configuration file is read once, by one process (at
+\code{MPI_Init} time).  
+
+Note that errors are indicated by a non-zero return from the routine.
+For example, if \mpidfunc{MPIi_Param_get_int} is called but the value
+is \code{"big"}, it will return one.
+
+Question: should parameters be registered?  This allows the runtime
+system to find them (e.g., with BNR put/fence/get), and simplifies the
+generation of help text.  It 
+would also allow text describing the parameter to be provided from
+within the code.
+
+An alternative is to use a tool, similar to that for error reporting, that
+finds all uses of the parameter routines.
+
+Question: How do we find out that no value was specified?  This is different
+from having a default value.
+
+Question: the file read operation is a potential problem.  Do we want to have
+a separate pre-init and post-init (that can use \code{MPI_Bcast}) to get data?
+
+For example, the pre-init routine code could read just a few environment
+variables 
+for any preinitialization code.  The post-init routine would be collective,
+ensuring that all processes created the same database (and allowing a single
+process to read any configuration files).
+
+The format of the configuration file has not been defined.  Bill is leaning
+towards an XML format to allow for simple use of tools to manage the file and
+a standard way to organize parameters in hierarchies.
+
+\subsection{Threads}
+\label{sec:threads}
+All thread-related operations must not assume a particular thread
+package.  At least four different packages are of interest:
+\begin{enumerate}
+\item pthreads.  This provides a powerful model with reasonable
+portability to most Unix platforms, including Linux.  
+\item Windows threads.  
+\item OpenMP threads.  OpenMP has a small set of thread runtime
+routines (such as lock/unlock), including the ability to run different blocks
+of code in different threads.
+\item No threads.  That is, a single-threaded implementation.  
+\end{enumerate}
+Solaris LWP (light-weight processes) may also be of interest.
+There are some operations, such as condition variables, monitors, and
+thread-scheduling control, that may not be available (e.g., OpenMP
+has no condition variables)  
+
+Question: do we just want to emulate the missing operations, or (and?)
+do we want to know that they are missing so that an alternative
+approach can be taken?
+
+\subsection{Coding Practices}
+\label{sec:coding-practices}
+This section reviews some coding practices for the MPICH code.
+
+\begin{description}
+\item[Function prototypes.]
+All routines should be prototyped.  The prototypes should be in the
+smallest scope possible.  For example, if the routine is used only
+within the files in a subdirectory, the prototype should be in an
+include file within that directory.  This helps identify functions that are
+used outside of their intended scope.
+
+\item[Static functions.]
+Functions used entirely within a single file should be declared
+\code{static}.  Functions that are not static must follow the naming
+convention of starting with \code{MPI_} or \code{PMPI_} (for routines
+implementing the MPI Standard) or \code{MPIR_} for internal routines.  
+Global symbols, such as keyvals, should use \code{MPICH_} as the
+prefix.  Also consider the use of \code{inline}, along with the
+autoconf macro \code{AC_C_INLINE} to test for this feature.
+
+\item[Parameter declarations.]
+Parameters (with the exception of the MPI routines defined by the
+standard) should follow the guidelines in \code{coding}
+\cite{coding-standards}.  In 
+particular, \code{const} and \code{restrict} should be used.
+Parameters that are semantically arrays should be declared as arrays
+(using \code{[]}).  
+
+\item[Indentation style.]
+A common indentation style, \code{mpich}, is specified for all files.
+%specify it at the top of each file (as an emacs command) so that emacs
+%will use the correct style for users with other styles or projects.
+All C source files (including header files) begin with 
+\begin{verbatim}
+/* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
+\end{verbatim}
+This is interrepted by Emacs and allows us to set a style for MPICH
+that can be different from each developer's personnal style.
+The style \code{mpich} is defined in \file{maint/mpich.el}.
+
+Question: Is there a predefined style that we can agree on?  Is there a
+variable (rather than a function to eval) that we can use to set the style?
+
+% Comment [BRT]: Yes.  Having a style standard makes it much easier to
+% read and modify code written by others.
+
+\item[File header.]
+There is a standard file header, \file{topfile.c}, containing the copyright and
+standardized includes (e.g., \file{mpiimpl.h}).  This header
+template is part of the development environment and is located in directory
+\file{util}. 
+
+\item[Function Name.]
+The function name is available as \code{FCNAME}.  Each routine is responsible
+for setting this variable; it should be of type \code{static const char[]}.
+% A configure test will
+% determine if \code{__FUNCTION__} is available as the value of this (e.g.,
+% \code{gcc} sets this value).  Note that PETSc uses \code{__FUNCTION__} on a
+% wide variety of platforms.
+
+% There should be a macro, \code{__FUNCTION__}, containing the name of the
+% function.  This name is chosen because some versions of \code{gcc} will set it
+% for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
+% in the declarations part of the program \emph{or} we should include the
+% appropriate \code{\#define} line (as PETSc does) before the function
+% declaration. 
+
+% Alternately, we could use \code{FCNAME} and include optional code to
+% set it to either \code{__FUNCTION__} for systems that define that or
+% explicitly to the name.
+
+% Comment [BRT]: Names beginning with an underscore are reserved for the
+% compiler and runtime system.  Use of \code{__FUNCTION__} could affect
+% portability.  So, I prefer the use of \code{FCNAME}.
+
+\item[Boolean Flags.]
+Data structures that contain a number of flags should store them
+together in a flag vector and use special macros to check and set
+them.  This is done to keep the structures tighter and to provide better cache
+and instruction utilization (load and store are much more expensive than
+bitwise-and).  
+
+Question: should the flag values be defined or enums that are assigned
+special values?
+
+Question: Are the following acceptable for working with flags?  These
+assume that several data structures use flags.
+\begin{verbatim}
+#define MPID_FLAG_DECL             int _flag
+#define MPID_CLR_ALL_FLAGS(ds)     (ds)->_flag = 0
+#define MPID_IS_FLAG_SET(ds,field) ((ds)->_flag & (field))
+#define MPID_SET_FLAG(ds,field)    (ds)->_flag |= (field)
+#define MPID_CLR_FLAG(ds,field)    (ds)->_flag &= ~(field)
+\end{verbatim}
+\mpiconst{MPI_Datatype}s need multiple boolean flags (e.g., has a
+sticky upper bound marker, lower bound marker).  Window objects also
+have multiple flags.
+
+\end{description}
 
 \subsection{Other Subsystems}
 In MPICH, there is code that is not directly part of the MPI
-implementation, such as the MPE and test suite code.  For MPICH2,
-these should be cleanly separated.  To simplify the construction of a
+implementation, such as the MPE and test suite code.  These are intended to
+operate with any MPI implementation, not just MPICH.
+For MPICH2, these should be cleanly separated.  Of course, the full MPICH
+distribution will contain these and know how to build them.
+
+To simplify the construction of a
 full MPICH distribution, there should be a Makefile (and configure
-options) that know how to build MPICH2 with MPE, perftest, the test
+options) that knows how to build MPICH2 with MPE, perftest, the test
 suite, and other options.  These should \emph{not} be part of the base
 MPICH2 project (as far as CVS is concerned).  This will encourage
-better separation of the projects.
+better separation of the projects.  Note that these will be distributed with
+an MPICH distribution and will 
 
+In addition, subsystems that are part of the MPICH distribution that have
+nontrivial configuration requirements must have their own \code{configure}
+programs.  This is necessary to properly modularize the often complex and
+subsystem-dependent tests.
 
-\subsection{Include Files}
-The include file \file{mpi.h} should not require any \code{-Dxxx}
-definitions by the compiler.  This will require generating the
-\file{mpi.h} from another file (and probably not using \code{configure} and an
-\file{mpi.h.in}).  It should not include any other
-files, with the (possible) exception of \file{mpi++.h} for C++
-support.
+\subsection{Deprecated Routines}
 
-Question: what about \file{mpio.h}?
+The MPI-2 standard deprecated some routines (see Section~2.6.1 in the MPI-2
+Standard).  The manual pages for the deprecated routines should make clear
+that they are deprecated and what functions should be used instead.  In
+addition, we should provide a library created with \code{wrappergen} that
+generates a single warning message for each deprecated routine used in an
+application (and of course document this).
 
-The \file{mpif.h} (or \file{mpif.h.in}) should be created from
-\file{mpi.h} so that the various integer values (e.g., error classes,
-datatypes, etc.) are guaranteed consistent.  This can be done prior to
-distribution, similar to the way \file{configure} is generated from
-\file{configure.in}.  The point is to automate this and ensure that,
-at least in the development Makefiles, the \file{mpif.h.in} file
-should be created from the \file{mpi.h} automatically, at least with
-respect to any values. 
-
-Question: Is there an easy Perl script for this, particularly, for the values?
-
-For module-dependent includes, comments in \file{mpiimpl.h} should explain the
-search rules expected (e.g., link or copy in the same directory; file in
-search path).
 
 % Scenarios (move to ADI doc?)
 \input{pt2ptdesc}
@@ -5908,6 +6042,13 @@ Question: This is not trivially parseable.  Another option is one value per
 line, or tab-separated values.  We should write perl or C code to parse it and
 adjust the format for easy handling.
 
+\subsection{Makefile Structure}
+\label{sec:makefiles}
+Question: Should there be a single shared makefile with most of the rules that
+is included by the others, or should configure make makefiles in each
+directory?  Bill is leaning toward fewer (configure) constructed Makefiles,
+and using the \code{include} command (now the FreeBSD supports it).
+
 \subsection{Coding Rules}
 We will attempt to enforce the coding rules by building tools that
 check for conformance to these rules.
@@ -6753,12 +6894,53 @@ The reason that we may not do this is that the PETSc code makes heavy use of
 the PETSc flavors of the memory allocation and error reporting routines and
 also does not have the concept of pre/post initialization.
 
+The simplest implementation of these might be
+\begin{verbatim}
+int MPIi_Param_init( int *argc, char **argv[] ) {return 0; }
+int MPIi_Param_bcast( void ) { return 0; }
+int MPIi_Param_get_int( const char name[], int default_val, int *value ) 
+    { char *tmp = getenv{name); 
+      if (tmp) { 
+          char *endp;
+          *value = strtol(name,&endp,10); 
+          /* if name not an integer, return 2 */
+          if (*endp != '\0') return MPID_PARAM_ERROR;
+          return MPID_PARAM_FOUND;
+      *value = default_val; 
+      return MPID_PARAM_OK; }
+int MPIi_Param_get_string( const char name[], const char *default_val,
+                           char **value ) 
+    { char *tmp = getenv(name); 
+      if (!tmp) {
+          tmp = default_val; 
+          return MPID_PARAM_OK;
+      }
+      *value = MPID_Strdup( tmp );
+      return MPID_PARAM_FOUND;
+      }
+void MPIi_Param_finalize( void ){}
+\end{verbatim}
+
 \subsection{Other Subsystems}
 Question: What about Fortran and C++?  These are required for full MPI support
 (unlike MPE or the performance tests), but have many unique requirements
 during configurations.  I believe that these should continue to have a
 separate configure, though it is not necessary to make them standalone (e.g.,
 work with other implementations of MPI).
+
+There are two major reasons for making the non-MPICH packages separate CVS
+projects:
+\begin{enumerate}
+\item These projects are intended to work with any MPI implementation.  They
+  must thus work in an enviroment that does not include any of the MPICH
+  components.  This is particularly important for the test suite and
+  performance test codes.  The close integration of the source trees has led
+  to serious problems in maintaining the portability to other MPI
+  implementations.  
+\item They can have separate release cycles as separate projects.  This makes
+  it easier to distribute updates for the tests and for the MPE functionality.
+\end{enumerate}
+
 
 \subsection{Performance and Tracing Data}
 \label{sec:tracing}
