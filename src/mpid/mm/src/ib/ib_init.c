@@ -473,7 +473,6 @@ int ib_init()
     /*MPIU_dbg_printf("ib lid %d\n", IB_Process.lid);*/
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
     PMI_Barrier();
-    PMI_Barrier();
 
     ib_setup_connections();
     MPIU_dbg_printf("ib_setup_connections returned\n");
