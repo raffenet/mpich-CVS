@@ -22,6 +22,8 @@ fi
 
 PAC_PROG_MAKE
 
+AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
+
 AC_CHECK_HEADERS(assert.h)
 
 dnl AC_CHECK_HEADERS(sys/types.h sys/socket.h net/if.h netinet/in.h sys/ioctl.h sys/sockio.h errno.h)
