@@ -73,12 +73,12 @@ typedef int MPI_Datatype;
 
 /* Communicators */
 typedef int MPI_Comm;
-#define MPI_COMM_WORLD 1
-#define MPI_COMM_SELF  2
+#define MPI_COMM_WORLD ((MPI_Comm)0x44000000)
+#define MPI_COMM_SELF  ((MPI_Comm)0x44000001)
 
 /* Groups */
 typedef int MPI_Group;
-#define MPI_GROUP_EMPTY 1
+#define MPI_GROUP_EMPTY ((MPI_Comm)0x48000000)
 
 /* RMA and Windows */
 typedef int MPI_Win;
@@ -618,7 +618,7 @@ int MPI_Grequest_complete(MPI_Request);
 int MPI_Grequest_start(MPI_Grequest_query_function *, 
                        MPI_Grequest_free_function *, 
                        MPI_Grequest_cancel_function *, void *, MPI_Request *);
-int MPI_Init_thread(int *, char *((*)[]), int, int *);
+int MPI_Init_thread(int *, char ***, int, int *);
 int MPI_Is_thread_main(int *);
 int MPI_Query_thread(int *);
 int MPI_Status_set_cancelled(MPI_Status *, int);
@@ -946,7 +946,7 @@ int PMPI_Grequest_complete(MPI_Request);
 int PMPI_Grequest_start(MPI_Grequest_query_function *, 
                        MPI_Grequest_free_function *, 
                        MPI_Grequest_cancel_function *, void *, MPI_Request *);
-int PMPI_Init_thread(int *, char *((*)[]), int, int *);
+int PMPI_Init_thread(int *, char ***, int, int *);
 int PMPI_Is_thread_main(int *);
 int PMPI_Query_thread(int *);
 int PMPI_Status_set_cancelled(MPI_Status *, int);

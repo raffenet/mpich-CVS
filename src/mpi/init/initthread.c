@@ -29,8 +29,13 @@ MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevan
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread;
 #endif
-int MPIR_Init_thread( int required, int *provided )
+int MPIR_Init_thread(int * argc, char ***argv, int required,
+		     int * provided)
 {
+    int mpi_errno = MPI_SUCCESS;
+    int has_args;
+    int has_env;
+    
     if (required > MPID_MAX_THREAD_LEVEL) {
 	MPIR_Process.thread_provided = MPID_MAX_THREAD_LEVEL;
     }
@@ -63,16 +68,43 @@ int MPIR_Init_thread( int required, int *provided )
     MPIR_Process.attrs.universe        = 1;
     MPIR_Process.attrs.wtime_is_global = 0;
 
-    /* Create the initial communicators */
-    /* 
-    MPI_COMM_WORLD = PREDEFINED_HANDLE(COMM,0);
-    MPI_COMM_SELF  = PREDEFINED_HANDLE(COMM,1);
-    */
+    /* "Allocate" from the reserved space for builtin communicators and
+       (partially) initialize predefined communicators.  comm_parent is
+       intially NULL and will be allocated by the device if the process group
+       was started using one of the MPI_Comm_spawn functions. */
+    MPIR_Process.comm_world = MPID_Comm_builtin + 0;
+    MPIR_Process.comm_world->id = MPI_COMM_WORLD;
+    MPIR_Process.comm_world->ref_count = 1;
+    MPIR_Process.comm_world->context_id = 0; /* XXX */
+    MPIR_Process.comm_world->attributes.item = NULL;
+    MPIR_Process.comm_world->attributes.next = NULL;
+    MPIR_Process.comm_world->local_group = NULL;
+    MPIR_Process.comm_world->remote_group = NULL;
+    strncpy(MPIR_Process.comm_world->name, "MPI_COMM_WORLD",
+	    MPI_MAX_OBJECT_NAME);
+    MPIR_Process.comm_world->errhandler = NULL; /* XXX */
+    MPIR_Process.comm_world->coll_fns = NULL; /* XXX */
+    
+    MPIR_Process.comm_self = MPID_Comm_builtin + 1;
+    MPIR_Process.comm_self->id = MPI_COMM_SELF;
+    MPIR_Process.comm_self->ref_count = 1;
+    MPIR_Process.comm_self->context_id = 4; /* XXX */
+    MPIR_Process.comm_self->attributes.item = NULL;
+    MPIR_Process.comm_self->attributes.next = NULL;
+    MPIR_Process.comm_self->local_group = NULL;
+    MPIR_Process.comm_self->remote_group = NULL;
+    strncpy(MPIR_Process.comm_self->name, "MPI_COMM_SELF",
+	    MPI_MAX_OBJECT_NAME);
+    MPIR_Process.comm_self->errhandler = NULL; /* XXX */
+    MPIR_Process.comm_self->coll_fns = NULL; /* XXX */
 
-    MPID_Init();
+    MPIR_Process.comm_parent = NULL;
 
-    MPIR_Process.initialized           = MPICH_WITHIN_MPI;
-    return 0;
+    mpi_errno = MPID_Init(argc, argv, required, provided, &has_args, &has_env);
+
+    MPIR_Process.initialized = MPICH_WITHIN_MPI;
+    
+    return mpi_errno;
 }
 #endif
 
@@ -103,8 +135,7 @@ int MPIR_Init_thread( int required, int *provided )
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Init_thread( int *argc, char *((*argv)[]), int required, 
-		     int *provided )
+int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     static const char FCNAME[] = "MPI_Init_thread";
     int mpi_errno = MPI_SUCCESS;
@@ -127,7 +158,20 @@ int MPI_Init_thread( int *argc, char *((*argv)[]), int required,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPIR_Init_thread( required, provided );
+    mpi_errno = MPIR_Init_thread( argc, argv, required, provided );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
     return MPI_SUCCESS;
 }
