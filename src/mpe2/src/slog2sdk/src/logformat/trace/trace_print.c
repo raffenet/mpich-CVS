@@ -112,7 +112,7 @@ main( int argc, char **argv )
                 fflush( stderr );
                 exit( 1 );
             }
-            if ( cmplx_info_sz > 0 ) {
+            if ( cmplx_info_sz >= 0 ) {
                 /* Allocate the space and get common_info */
                 cmplx_info_pos = 0;
                 ierr = TRACE_Get_next_composite( tf, &cmplx_type_idx,

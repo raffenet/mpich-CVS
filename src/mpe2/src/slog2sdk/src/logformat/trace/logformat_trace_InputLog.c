@@ -223,7 +223,7 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     }
 
     legend_pos  = 0;
-    if ( legend_sz ) {
+    if ( legend_sz > 0 ) {
         legend_max  = legend_sz+1;
         legend_base = (char *) malloc( legend_max * sizeof( char ) );
     }
@@ -632,10 +632,13 @@ Java_logformat_trace_InputLog_getNextComposite( JNIEnv *env, jobject this )
         return NULL;
 
     j_cm_infos = NULL;
-    if ( cm_info_sz > 0 ) {
+    if ( cm_info_sz >= 0 ) {
         cm_info_pos    = 0;
         cm_info_max    = cm_info_sz;
-        cm_info_base   = (char *)   malloc( cm_info_max * sizeof( char ) );
+        if ( cm_info_max > 0 )
+            cm_info_base   = (char *)   malloc( cm_info_max * sizeof( char ) );
+        else
+            cm_info_base   = NULL;
         ierr = TRACE_Get_next_composite( tracefile, &cmplx_type_idx,
                                          &cm_info_sz, cm_info_base,
                                          &cm_info_pos, cm_info_max );
