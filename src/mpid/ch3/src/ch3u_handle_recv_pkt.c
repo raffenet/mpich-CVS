@@ -364,7 +364,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    
 	    rs_pkt->type = MPIDI_CH3_PKT_RNDV_SEND;
 	    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
-	    iov[0].MPID_IOV_BUF = rs_pkt;
+	    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
 
 	    MPIDI_CH3U_Datatype_get_info(sreq->ch3.user_count, sreq->ch3.datatype, dt_contig, data_sz);

@@ -111,7 +111,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	es_pkt->sender_req_id = sreq->handle;
 	es_pkt->data_sz = data_sz;
 
-	iov[0].MPID_IOV_BUF = es_pkt;
+	iov[0].MPID_IOV_BUF = (void*)es_pkt;
 	iov[0].MPID_IOV_LEN = sizeof(*es_pkt);
 
 	if (dt_contig)

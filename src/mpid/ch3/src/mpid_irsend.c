@@ -82,7 +82,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
     /* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
     
-    iov[0].MPID_IOV_BUF = ready_pkt;
+    iov[0].MPID_IOV_BUF = (void*)ready_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
 
     if (dt_contig)
