@@ -4,9 +4,9 @@ This tarball contains a development snapshot of MPICH2.  This is not
 an official release.  It has not been extensively tested.  Depending
 on your system, it may not even compile.  If you are interested in
 what the next generation of MPICH will look like, this tarball is for
-you.  If you are looking for a MPI implementation to build and run
-your favorite application, please obtain a copy of MPICH 1.2.X from
-http://www.mcs.anl.gov/mpi/mpich.
+you.  If you are looking for an implementation of MPI for use in
+building and running your favorite application(s), please obtain the
+MPICH 1.2.X distribution from http://www.mcs.anl.gov/mpi/mpich.
 
 To build MPICH2 with the TCP channel, do the following:
 
@@ -25,7 +25,7 @@ will need to start MPD.
    chmod 600 ~/.mpd.conf
    ./bin/mpd &
 
-Should you wish to set up a MPD ring across multiple machines, more
+Should you wish to setup a MPD ring across multiple machines, more
 advanced instructions for MPD can be found in ./src/pm/mpd/README.
 
 Once you have MPD running, you may run the hello world program as
