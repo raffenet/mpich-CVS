@@ -15,7 +15,6 @@
 #include <sys/types.h>
 #endif
 
-#include "mpid_datatype.h"
 #include "mpid_dataloop.h"
 
 typedef int MPIDI_msg_sz_t;

@@ -88,6 +88,23 @@ typedef int int32_t;
 #define FALSE 0
 #endif
 
+/* IOVs */
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#define MPID_IOV         WSABUF
+#define MPID_IOV_LEN     len
+#define MPID_IOV_BUF     buf
+#else
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+#define MPID_IOV         struct iovec
+#define MPID_IOV_LEN     iov_len
+#define MPID_IOV_BUF     iov_base
+#endif
+#define MPID_IOV_LIMIT   16
+
+
 /* Debugging and printf control */
 /* Use these *only* for debugging output intended for the implementors
    and maintainers of MPICH.  Do *not* use these for any output that
@@ -435,8 +452,6 @@ int MPIU_Handle_free( void *((*)[]), int );
 
 #define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,0x03ffffff,ptr)
 #define MPID_Group_get_ptr(a,ptr)      MPID_Getb_ptr(Group,a,0x03ffffff,ptr)
-#define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,0x000000ff,ptr)
-#define MPID_Datatype_get_basic_size(a) (((a)&0x0000ff00)>>8)
 #define MPID_File_get_ptr(a,ptr)       MPID_Get_ptr(File,a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr) MPID_Getb_ptr(Errhandler,a,0x3,ptr)
 #define MPID_Op_get_ptr(a,ptr)         MPID_Getb_ptr(Op,a,0x000000ff,ptr)
@@ -466,95 +481,6 @@ int MPIU_Handle_free( void *((*)[]), int );
     }                                                                   \
 }
 
-
-/* Note: Probably there is some clever way to build all of these from a macro.
- */
-#define MPID_Datatype_get_size_macro(a,__size)				\
-do {									\
-    void *ptr;								\
-    switch (HANDLE_GET_KIND(a)) {					\
-        case HANDLE_KIND_DIRECT:					\
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
-            __size = ((MPID_Datatype *) ptr)->size;			\
-            break;							\
-        case HANDLE_KIND_INDIRECT:					\
-            ptr = ((MPID_Datatype *)					\
-		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
-            __size = ((MPID_Datatype *) ptr)->size;			\
-            break;							\
-        case HANDLE_KIND_BUILTIN:					\
-            __size = MPID_Datatype_get_basic_size(a);			\
-            break;							\
-        case HANDLE_KIND_INVALID:					\
-        default:							\
-	    __size = 0;							\
-	    break;							\
- 									\
-    }									\
-} while (0)
-
-#define MPID_Datatype_get_loopdepth_macro(a,__depth)                    \
-do {                                                                    \
-    void *ptr;                                                          \
-    switch (HANDLE_GET_KIND(a)) {                                       \
-        case HANDLE_KIND_DIRECT:                                        \
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            __depth = ((MPID_Datatype *) ptr)->loopinfo_depth;          \
-            break;                                                      \
-        case HANDLE_KIND_INDIRECT:                                      \
-            ptr = ((MPID_Datatype *)                                    \
-		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            __depth = ((MPID_Datatype *) ptr)->loopinfo_depth;          \
-            break;                                                      \
-        case HANDLE_KIND_INVALID:                                       \
-        case HANDLE_KIND_BUILTIN:                                       \
-        default:                                                        \
-            __depth = 0;                                                \
-            break;                                                      \
-    }                                                                   \
-} while (0)
-#define MPID_Datatype_get_loopptr_macro(a,__lptr)                       \
-do {                                                                    \
-    void *ptr;                                                          \
-    switch (HANDLE_GET_KIND(a)) {                                       \
-        case HANDLE_KIND_DIRECT:                                        \
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            __lptr = ((MPID_Datatype *) ptr)->loopinfo;                 \
-            break;                                                      \
-        case HANDLE_KIND_INDIRECT:                                      \
-            ptr = ((MPID_Datatype *)                                    \
-		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            __lptr = ((MPID_Datatype *) ptr)->loopinfo;                 \
-            break;                                                      \
-        case HANDLE_KIND_INVALID:                                       \
-        case HANDLE_KIND_BUILTIN:                                       \
-        default:                                                        \
-            __lptr = 0;                                                 \
-            break;                                                      \
-    }                                                                   \
-} while (0)
-        
-#define MPID_Datatype_get_extent_macro(a,__extent)                      \
-do {                                                                    \
-    void *ptr;                                                          \
-    switch (HANDLE_GET_KIND(a)) {                                       \
-        case HANDLE_KIND_DIRECT:                                        \
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            __extent = ((MPID_Datatype *) ptr)->extent;                 \
-            break;                                                      \
-        case HANDLE_KIND_INDIRECT:                                      \
-            ptr = ((MPID_Datatype *)                                    \
-		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            __extent = ((MPID_Datatype *) ptr)->extent;                 \
-            break;                                                      \
-        case HANDLE_KIND_INVALID:                                       \
-        case HANDLE_KIND_BUILTIN:                                       \
-        default:                                                        \
-            __extent = MPID_Datatype_get_basic_size(a);  /* same as size */   \
-            break;                                                      \
-    }                                                                   \
-} while (0)
-
 /* Valid pointer checks */
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
@@ -571,7 +497,6 @@ do {                                                                    \
      MPID_Valid_ptr_class(Comm,ptr,MPI_ERR_COMM,err);       \
      if ((ptr) && (ptr)->ref_count == 0) {                      \
         err = MPIR_Err_create_code(MPI_ERR_COMM,"**comm", 0);ptr=0;}}
-#define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr_class(Datatype,ptr,MPI_ERR_TYPE,err)
 #define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr_class(Group,ptr,MPI_ERR_GROUP,err)
 #define MPID_Win_valid_ptr(ptr,err) MPID_Valid_ptr_class(Win,ptr,MPI_ERR_WIN,err)
 #define MPID_Op_valid_ptr(ptr,err) MPID_Valid_ptr_class(Op,ptr,MPI_ERR_OP,err)
@@ -579,17 +504,6 @@ do {                                                                    \
 #define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr_class(File,ptr,MPI_ERR_FILE,err)
 #define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr_class(Request,ptr,MPI_ERR_REQUEST,err)
 #define MPID_Keyval_valid_ptr(ptr,err) MPID_Valid_ptr_class(Keyval,ptr,MPI_ERR_KEYVAL,err)
-
-/* to be used only after MPID_Datatype_valid_ptr(); the check on
- * err == MPI_SUCCESS ensures that we won't try to dereference the
- * pointer if something has already been detected as wrong.
- */
-#define MPID_Datatype_committed_ptr(ptr,err)				\
-do {									\
-    if ((err == MPI_SUCCESS) && !((ptr)->is_committed))			\
-        err = MPIR_Err_create_code(MPI_ERR_TYPE, "**dtypecommit", 0);	\
-} while (0)
-
 
 /* Generic pointer test.  This is applied to any address, not just one from
    an MPI object.
@@ -890,69 +804,6 @@ extern MPIU_Object_alloc_t MPID_Win_mem;
 /* Preallocated win objects */
 extern MPID_Win MPID_Win_direct[];
 
-/* Datatypes */
-
-typedef struct MPID_Datatype_contents {
-    int combiner;
-    int nr_ints;
-    int nr_aints;
-    int nr_types;
-    /* space allocated beyond structure used to store the types[], ints[], aints[], in that order */
-} MPID_Datatype_contents;
-
-typedef struct MPID_Datatype { 
-    int           handle;            /* value of MPI_Datatype for structure */
-    volatile int  ref_count;
-    int           is_contig;     /* True if data is contiguous (even with 
-                                    a (count,datatype) pair) */
-    int           size;          /* Q: maybe this should be in the dataloop? */
-    MPI_Aint      extent;        /* MPI-2 allows a type to be created by
-                                    resizing (the extent of) an existing 
-                                    type */
-    MPI_Aint      ub, lb,        /* MPI-1 upper and lower bounds */
-                  true_ub, true_lb; /* MPI-2 true upper and lower bounds */
-    int           alignsize;     /* size of datatype to align (affects pad) */
-    /* The remaining fields are required but less frequently used, and
-       are placed after the more commonly used fields */
-    int loopsize; /* size of loops for this datatype in bytes; derived value */
-    /* int           combiner; */     /* MPI call that was used to create this
-                                    datatype */
-    struct MPID_Dataloop *loopinfo; /* Original loopinfo, used when 
-                                          creating and when getting contents */
-    int           has_sticky_ub;   /* The MPI_UB and MPI_LB are sticky */
-    int           has_sticky_lb;
-    int           is_permanent;  /* True if datatype is a predefined type */
-    int           is_committed;  /* */
-
-    int           loopinfo_depth; /* Depth of dataloop stack needed
-                                     to process this datatype.  This 
-                                     information is used to ensure that
-                                     no datatype is constructed that
-                                     cannot be processed (see MPID_Segment) */
-
-    MPID_Attribute   *attributes;    /* MPI-2 adds datatype attributes */
-
-    int32_t       cache_id;      /* These are used to track which processes */
-    /* MPID_Lpidmask mask; */         /* have cached values of this datatype */
-
-    char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
-
-    /* The following is needed to efficiently implement MPI_Get_elements */
-    int           n_elements;   /* Number of basic elements in this datatype */
-    MPI_Aint      element_size; /* Size of each element or -1 if elements are
-                                   not all the same size */
-    MPID_Datatype_contents *contents;
-    /* int (*free_fn)( struct MPID_Datatype * ); */ /* Function to free this datatype */
-    /* Other, device-specific information */
-#ifdef MPID_DEV_DATATYPE_DECL
-    MPID_DEV_DATATYPE_DECL
-#endif
-} MPID_Datatype;
-extern MPIU_Object_alloc_t MPID_Datatype_mem;
-/* Preallocated datatype objects */
-#define MPID_DATATYPE_N_BUILTIN 36
-extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN];
-extern MPID_Datatype MPID_Datatype_direct[];
 
 /* Reduction and accumulate operations */
 /*E
@@ -1147,6 +998,8 @@ typedef struct PreDefined_attrs {
     int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
 } PreDefined_attrs;
 
+struct MPID_Datatype;
+
 typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
     int               thread_provided;  /* Provided level of thread support */
@@ -1166,8 +1019,8 @@ typedef struct MPICH_PerProcess_t {
     /* Attribute dup functions.  Here for lazy initialization */
     int (*comm_attr_dup)( MPID_Comm *, MPID_Attribute **new_attr );
     int (*comm_attr_free)( MPID_Comm *, MPID_Attribute *attr_p );
-    int (*type_attr_dup)( MPID_Datatype *, MPID_Attribute **new_attr );
-    int (*type_attr_free)( MPID_Datatype *, MPID_Attribute *attr_p );
+    int (*type_attr_dup)( struct MPID_Datatype *, MPID_Attribute **new_attr );
+    int (*type_attr_free)( struct MPID_Datatype *, MPID_Attribute *attr_p );
     int (*win_attr_free)( MPID_Win *, MPID_Attribute *attr_p );
     /* Routine to get the messages corresponding to dynamically created
        error messages */
@@ -1278,6 +1131,20 @@ extern int MPID_THREAD_LEVEL;
     if ((comm_ptr)->comm_kind != MPID_INTRACOMM) {\
        err = MPIR_Err_create_code(MPI_ERR_COMM,"**commnotintra",0);}
 
+#define MPIR_ERRTEST_DATATYPE(count, datatype,err)			    \
+{									    \
+    if (HANDLE_GET_MPI_KIND(datatype) != MPID_DATATYPE ||		    \
+	(HANDLE_GET_KIND(datatype) == HANDLE_KIND_INVALID &&		    \
+	 datatype != MPI_DATATYPE_NULL))				    \
+    {									    \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**dtype", 0 );	    \
+    }									    \
+    if (count > 0 && datatype == MPI_DATATYPE_NULL)			    \
+    {									    \
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**dtypenull", 0 ); \
+    }									    \
+}
+
 /*
  * Check that the tripple (buf,count,datatype) does not specify a null
  * buffer.  This does not guarantee that the buffer is valid but does
@@ -1326,19 +1193,6 @@ extern int MPID_THREAD_LEVEL;
     }									   \
 }
 #define MPIR_ERRTEST_REQUEST(request,err)
-#define MPIR_ERRTEST_DATATYPE(count, datatype,err)			    \
-{									    \
-    if (HANDLE_GET_MPI_KIND(datatype) != MPID_DATATYPE ||		    \
-	(HANDLE_GET_KIND(datatype) == HANDLE_KIND_INVALID &&		    \
-	 datatype != MPI_DATATYPE_NULL))				    \
-    {									    \
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**dtype", 0 );	    \
-    }									    \
-    if (count > 0 && datatype == MPI_DATATYPE_NULL)			    \
-    {									    \
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE, "**dtypenull", 0 ); \
-    }									    \
-}
 #define MPIR_ERRTEST_ERRHANDLER(errhandler,err)
 
 /* Special MPI error "class/code" for out of memory */
@@ -1435,8 +1289,6 @@ int MPIR_Err_return_file( MPID_File *, const char [], int );
 int MPIR_Err_create_code( int, const char [], ... );
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
-
-void MPIR_Datatype_iscontig( MPI_Datatype, int * );
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED
@@ -1669,5 +1521,7 @@ int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
                    *comm_ptr );
 
 int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
+
+#include <mpid_datatype.h>
 
 #endif /* MPIIMPL_INCLUDED */
