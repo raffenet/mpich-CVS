@@ -421,58 +421,42 @@ with MPI_Alloc_mem.
 #
 # CH3:mm
 #
-**ch3|mm|pmi_finalize:PMI_Finalize failed
-**ch3|mm|pmi_finalize %d:PMI_Finalize failed, error %d
-**ch3|mm|MPIDI_CH3I_SHM_Attach_to_mem:MPIDI_CH3I_SHM_Attach_to_mem failed
-**ch3|mm|MPIDI_CH3I_SHM_Attach_to_mem %d:MPIDI_CH3I_SHM_Attach_to_mem failed, error %d
-**ch3|mm|MPIU_Strdup:MPIU_Strdup failed
-**ch3|mm|business_card:Invalid business card
-**ch3|mm|business_card %s:Invalid business card (%s)
-**ch3|mm|hostlookup:Host lookup failed
-**ch3|mm|hostlookup %d %d %s:Host lookup failed for process group %d, rank %d, business card <%s>
-**ch3|mm|connrefused:Connection refused
-**ch3|mm|connrefused %d %d %s:Connection refused for process group %d, rank %d, business card <%s>
-**ch3|mm|connallocfailed:Connection failed
-**ch3|mm|badpacket:Received a packet of unknown type
-**ch3|mm|badpacket %d:Received a packet of unknown type (%d)
-**ch3|mm|connfailed:Failed to connect to remote process
-**ch3|mm|connfailed %d %d:Failed to connect to remote process %d-%d
-**ch3|mm|OpenProcess:OpenProcess failed
-**ch3|mm|OpenProcess %d %d:OpenProcess failed for process %d, error %d
-**ch3|mm|open:open failed
-**ch3|mm|open %s %d %d:open(%s) failed for process %d, error %d
-**ch3|mm|CreateFileMapping:CreateFileMapping failed
-**ch3|mm|CreateFileMapping %d:CreateFileMapping failed, error %d
-**ch3|mm|shmat:shmat failed
-**ch3|mm|shmat %d:shmat failed, error %d
-**ch3|mm|shmget:shmget failed
-**ch3|mm|shmget %d:shmget failed, error %d
-**ch3|mm|MapViewOfFileEx:MapViewOfFileEx failed
-**ch3|mm|MapViewOfFileEx %d:MapViewOfFileEx failed, error %d
-**ch3|mm|connclose:active connection unexpectedly closed
-**ch3|mm|connterm:active connection unexpectedly terminated
-**ch3|mm|badsock:internal error - bad sock
-**ch3|mm|failure:unknown failure
-**ch3|mm|failure %d:unknown failure, error %d
+**MPIDI_CH3I_SHM_Attach_to_mem:MPIDI_CH3I_SHM_Attach_to_mem failed
+**MPIDI_CH3I_SHM_Attach_to_mem %d:MPIDI_CH3I_SHM_Attach_to_mem failed, error %d
+**MPIU_Strdup:MPIU_Strdup failed
+**business_card:Invalid business card
+**business_card %s:Invalid business card (%s)
+**hostlookup:Host lookup failed
+**hostlookup %d %d %s:Host lookup failed for process group %d, rank %d, business card <%s>
+**connrefused:Connection refused
+**connrefused %d %d %s:Connection refused for process group %d, rank %d, business card <%s>
+**connallocfailed:Connection failed
+**badpacket:Received a packet of unknown type
+**badpacket %d:Received a packet of unknown type (%d)
+**connfailed:Failed to connect to remote process
+**connfailed %d %d:Failed to connect to remote process %d-%d
+**OpenProcess:OpenProcess failed
+**OpenProcess %d %d:OpenProcess failed for process %d, error %d
+**open:open failed
+**open %s %d %d:open(%s) failed for process %d, error %d
+**CreateFileMapping:CreateFileMapping failed
+**CreateFileMapping %d:CreateFileMapping failed, error %d
+**shmat:shmat failed
+**shmat %d:shmat failed, error %d
+**shmget:shmget failed
+**shmget %d:shmget failed, error %d
+**MapViewOfFileEx:MapViewOfFileEx failed
+**MapViewOfFileEx %d:MapViewOfFileEx failed, error %d
+**connclose:active connection unexpectedly closed
+**connterm:active connection unexpectedly terminated
+**badsock:internal error - bad sock
+**failure:unknown failure
+**failure %d:unknown failure, error %d
 
 #
 # CH3:shm
 #
-**ch3|shm|pmi_finalize:PMI_Finalize failed
-**ch3|shm|pmi_finalize %d:PMI_Finalize failed, error %d
-**ch3|shm|OpenProcess:OpenProcess failed
-**ch3|shm|OpenProcess %d %d:OpenProcess failed for process %d, error %d
-**ch3|shm|open:open failed
-**ch3|shm|open %s %d %d:open(%s) failed for process %d, error %d
-**ch3|shm|CreateFileMapping:CreateFileMapping failed
-**ch3|shm|CreateFileMapping %d:CreateFileMapping failed, error %d
-**ch3|shm|shmat:shmat failed
-**ch3|shm|shmat %d:shmat failed, error %d
-**ch3|shm|shmget:shmget failed
-**ch3|shm|shmget %d:shmget failed, error %d
-**ch3|shm|MapViewOfFileEx:MapViewOfFileEx failed
-**ch3|shm|MapViewOfFileEx %d:MapViewOfFileEx failed, error %d
-**ch3|shm|GetMemTwice:Global shared memory initializer called more than once
+**GetMemTwice:Global shared memory initializer called more than once
 
 #
 # Sock:poll
