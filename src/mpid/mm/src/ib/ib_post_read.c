@@ -38,6 +38,7 @@ int ib_post_read_pkt(MPIDI_VC *vc_ptr)
 
 static void PrintHeader(MPID_Header_pkt *p)
 {
+    char *type;
     /*
     MPIU_dbg_printf("Header Packet:\n");
     MPIU_dbg_printf(" context: %d\n", p->context);
@@ -47,8 +48,46 @@ static void PrintHeader(MPID_Header_pkt *p)
     MPIU_dbg_printf(" tag: %d\n", p->tag);
     MPIU_dbg_printf(" type: %d\n", p->type);
     */
-    MPIU_dbg_printf("Header Packet: ctx %d, car 0x%x, sz %d, src %d, tag %d, type %d\n", 
-	p->context, p->sender_car_ptr, p->size, p->src, p->tag, p->type);
+
+    switch (p->type)
+    {
+    case MPID_INVALID_PKT:
+	type = "MPID_INVALID_PKT";
+	break;
+    case MPID_EAGER_PKT:
+	type = "MPID_EAGER_PKT";
+	break;
+    case MPID_RNDV_REQUEST_TO_SEND_PKT:
+	type = "MPID_RNDV_REQUEST_TO_SEND_PKT";
+	break;
+    case MPID_RNDV_CLEAR_TO_SEND_PKT:
+	type = "MPID_RNDV_CLEAR_TO_SEND_PKT";
+	break;
+    case MPID_RNDV_DATA_PKT:
+	type = "MPID_RNDV_DATA_PKT";
+	break;
+    case MPID_RDMA_ACK_PKT:
+	type = "MPID_RDMA_ACK_PKT";
+	break;
+    case MPID_RDMA_DATA_ACK_PKT:
+	type = "MPID_RDMA_DATA_ACK_PKT";
+	break;
+    case MPID_RDMA_REQUEST_DATA_ACK_PKT:
+	type = "MPID_RDMA_REQUEST_DATA_ACK_PKT";
+	break;
+    case MPID_CONTEXT_PKT:
+	type = "MPID_CONTEXT_PKT";
+	break;
+    case MPID_ACK_PKT:
+	type = "MPID_ACK_PKT";
+	break;
+    default:
+	type = "unknown";
+	break;
+    }
+
+    MPIU_dbg_printf("Header Packet: %s, src %d, tag %d, size %d, ctx %d, car 0x%x\n", 
+	type, p->src, p->tag, p->size, p->context, p->sender_car_ptr);
 }
 
 int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
