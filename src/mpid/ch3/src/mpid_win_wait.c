@@ -5,6 +5,54 @@
  */
 
 #include "mpidimpl.h"
+
+#undef FUNCNAME
+#define FUNCNAME MPID_Win_wait
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_Win_wait(MPID_Win *win_ptr)
+{
+    int mpi_errno=MPI_SUCCESS;
+
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_WAIT);
+
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
+
+    /* wait for all operations from other processes to finish */
+    while (win_ptr->my_counter) {
+        MPID_Progress_start();
+        if (win_ptr->my_counter) {
+            mpi_errno = MPID_Progress_wait();
+            if (mpi_errno != MPI_SUCCESS) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
+                return mpi_errno;
+            }
+        }
+        else 
+            MPID_Progress_end();
+    } 
+
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
+    return mpi_errno;
+}
+
+
+
+
+
+
+
+
+
+#ifdef OLDSTUFF
+
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#include "mpidimpl.h"
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
@@ -251,4 +299,5 @@ int MPID_Win_wait(MPID_Win *win_ptr)
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
 
     return mpi_errno;
+#endif
 #endif

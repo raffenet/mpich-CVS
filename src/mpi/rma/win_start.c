@@ -80,12 +80,6 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-#ifdef MPICH_SINGLE_THREADED
-    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**needthreads", 0 );
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
-    return mpi_errno;
-#endif
-
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
     MPID_Group_get_ptr(group, group_ptr);
@@ -114,7 +108,7 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 
     win_ptr->start_group_ptr = group_ptr;
     MPIU_Object_add_ref( group_ptr );
-
+    win_ptr->start_assert = assert;
 
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
     return MPI_SUCCESS;

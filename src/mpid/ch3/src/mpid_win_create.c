@@ -35,11 +35,15 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 #if defined(HAVE_WINTHREADS) && !defined(MPICH_SINGLE_THREADED)
     DWORD dwThreadID;
 #endif
-    int mpi_errno;
+    int mpi_errno, i, comm_size, rank;
+    void **tmp_buf;
 
     MPIDI_STATE_DECL(MPID_STATE_MPI_WIN_CREATE);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_CREATE);
+    
+    comm_size = comm_ptr->local_size;
+    rank = comm_ptr->rank;
 
     *win_ptr = (MPID_Win *)MPIU_Handle_obj_alloc( &MPID_Win_mem );
     if (!(*win_ptr)) {
@@ -53,9 +57,65 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->size = size;
     (*win_ptr)->disp_unit = disp_unit;
     (*win_ptr)->start_group_ptr = NULL; 
-    (*win_ptr)->post_group_ptr = NULL; 
+    (*win_ptr)->start_assert = 0; 
     (*win_ptr)->attributes = NULL;
+    
+    MPIR_Nest_incr();
+
     mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &((*win_ptr)->comm));
+    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+    /* allocate memory for the base addresses, disp_units, and
+       completion counters of all processes */ 
+    (*win_ptr)->base_addrs = (void **) MPIU_Malloc(comm_size *
+                                                   sizeof(int *));   
+    if (!(*win_ptr)->base_addrs) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        return (THREAD_RETURN_TYPE)mpi_errno;
+    }
+
+    (*win_ptr)->disp_units = (int *) MPIU_Malloc(comm_size * sizeof(int));   
+    if (!(*win_ptr)->disp_units) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        return (THREAD_RETURN_TYPE)mpi_errno;
+    }
+
+    (*win_ptr)->all_counters = (int **) MPIU_Malloc(comm_size *
+                                                    sizeof(int *));   
+    if (!(*win_ptr)->all_counters) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        return (THREAD_RETURN_TYPE)mpi_errno;
+    }
+
+    /* get the addresses of the window objects and completion counters
+       of all processes */  
+
+    /* allocate temp. buffer for communication */
+    tmp_buf = (void **) MPIU_Malloc(3*comm_size*sizeof(void*));
+    if (!tmp_buf) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        return (THREAD_RETURN_TYPE)mpi_errno;
+    }
+
+    tmp_buf[3*rank] = base;
+    tmp_buf[3*rank+1] = (void *) disp_unit;
+    tmp_buf[3*rank+2] = (void *) &((*win_ptr)->my_counter);
+
+    mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                               tmp_buf, 3, MPI_LONG, comm_ptr->handle); 
+    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+    MPIR_Nest_decr();
+
+    for (i=0; i<comm_size; i++) {
+        (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
+        (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
+        (*win_ptr)->all_counters[i] = tmp_buf[3*i+2];
+    }
+
+    MPIU_Free(tmp_buf);
+
+#ifdef FOOOOOOOOOOOOOOO
 
 #ifndef MPICH_SINGLE_THREADED
 #ifdef HAVE_PTHREAD_H
@@ -66,6 +126,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 #else
 #error Error: No thread package specified.
 #endif
+#endif
+
 #endif
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);

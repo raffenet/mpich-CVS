@@ -430,6 +430,7 @@ with MPI_Alloc_mem.
 **ch3|badmsgtype:request contained an invalid message type
 **ch3|badmsgtype %d:request contained an invalid message type (%d)
 **ch3|eagermsg:failure occurred while attempting to send an eager message
+**ch3|rmamsg:failure occurred while attempting to send an RMA message
 **ch3|selfsenddeadlock:DEADLOCK: attempting to send a message to the local process without a prior matching receive
 **ch3|ooocancelreq:UNIMPLEMENTED: unable to process out-of-order cancellation requests
 

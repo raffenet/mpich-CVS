@@ -82,7 +82,8 @@ PMPI_LOCAL int MPIR_Allgather (
 #endif
     MPI_Comm comm;
 
-    if (sendcount == 0) return MPI_SUCCESS;
+    if (((sendcount == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount == 0))
+        return MPI_SUCCESS;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -95,12 +96,12 @@ PMPI_LOCAL int MPIR_Allgather (
 #endif
     
     MPID_Datatype_get_extent_macro( recvtype, recv_extent );
-    MPID_Datatype_get_size_macro( sendtype, type_size );
+    MPID_Datatype_get_size_macro( recvtype, type_size );
 
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
     
-    if (sendcount*type_size < MPIR_ALLGATHER_LONG_MSG) {
+    if (recvcount*comm_size*type_size < MPIR_ALLGATHER_LONG_MSG) {
         /* short message. use recursive doubling algorithm */
         
         if (is_homogeneous) {
@@ -380,11 +381,13 @@ PMPI_LOCAL int MPIR_Allgather (
         /* long message. use ring algorithm. */
       
         /* First, load the "local" version in the recvbuf. */
-        mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, 
-                                   ((char *)recvbuf +
-                                    rank*recvcount*recv_extent),  
-                                   recvcount, recvtype);
-        if (mpi_errno) return mpi_errno;
+        if (sendbuf != MPI_IN_PLACE) {
+            mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, 
+                                       ((char *)recvbuf +
+                                        rank*recvcount*recv_extent),  
+                                       recvcount, recvtype);
+            if (mpi_errno) return mpi_errno;
+        }
         
         /* 
            Now, send left to right.  This fills in the receive area in 
@@ -587,14 +590,16 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *rec
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 
-            MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
-	    MPIR_ERRTEST_COUNT(recvcount, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(recvcount, recvtype, mpi_errno);
-            if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
-                MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
-                MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+            if (sendbuf != MPI_IN_PLACE) {
+                MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
+                if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+                    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+                    MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                }
             }
+	    MPIR_ERRTEST_COUNT(recvcount, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(recvcount, recvtype, mpi_errno);
             if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                 MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );

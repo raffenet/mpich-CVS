@@ -166,6 +166,7 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 {
+    int type_size;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 
@@ -564,11 +565,177 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	
 	case MPIDI_CH3_PKT_PUT:
 	{
+	    MPIDI_CH3_Pkt_put_t * put_pkt = &pkt->put;
+            MPID_Request *req;
+
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received put pkt"));
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|putpkt", 0);
-	    break;
-	}
+
+            if (put_pkt->count == 0) {
+                /* it's a 0-byte message sent just to decrement the
+                   completion counter */
+                /* FIXME: MT: this has to be done atomically */
+                if (put_pkt->decr_ctr != NULL)
+                    *(put_pkt->decr_ctr) -= 1;
+                MPIDI_CH3_Progress_signal_completion();	
+            }
+            else {
+                req = MPID_Request_create();
+                MPIU_Object_set_ref(req, 1);
+                MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PUT_RESP);
+                
+                req->ch3.user_buf = put_pkt->addr;
+                req->ch3.user_count = put_pkt->count;
+                req->ch3.datatype = put_pkt->datatype;
+                req->ch3.decr_ctr = put_pkt->decr_ctr;
+                
+                if (HANDLE_GET_KIND(put_pkt->datatype) == HANDLE_KIND_BUILTIN) {
+                    MPID_Datatype_get_size_macro(put_pkt->datatype,
+                                                 type_size);
+                    req->ch3.recv_data_sz = type_size * put_pkt->count;
+                }
+                else {
+                    printf("put derived datatype\n");
+                    exit(1);
+                }
+                
+                mpi_errno = post_data_receive(vc, req, 1);
+                if (mpi_errno != MPI_SUCCESS)
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_RMA");
+            }
+            break;
+        }
 	
+	case MPIDI_CH3_PKT_ACCUMULATE:
+	{
+	    MPIDI_CH3_Pkt_accum_t * accum_pkt = &pkt->accum;
+            MPID_Request *req;
+            MPI_Aint true_lb, true_extent, extent;
+            void *tmp_buf;
+
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received accumulate pkt"));
+
+            req = MPID_Request_create();
+            MPIU_Object_set_ref(req, 1);
+            MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_ACCUM_RESP);
+
+            mpi_errno = NMPI_Type_get_true_extent(accum_pkt->datatype, 
+                                                  &true_lb, &true_extent);  
+            if (mpi_errno) return mpi_errno;
+
+            MPID_Datatype_get_extent_macro(accum_pkt->datatype, extent); 
+            tmp_buf = MPIU_Malloc(accum_pkt->count * 
+                                  (MPIR_MAX(extent,true_extent)));  
+            if (!tmp_buf) {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                return mpi_errno;
+            }
+            /* adjust for potential negative lower bound in datatype */
+            tmp_buf = (void *)((char*)tmp_buf - true_lb);
+
+            req->ch3.user_buf = tmp_buf;
+            req->ch3.user_count = accum_pkt->count;
+            req->ch3.datatype = accum_pkt->datatype;
+            req->ch3.op = accum_pkt->op;
+            req->ch3.decr_ctr = accum_pkt->decr_ctr;
+            req->ch3.real_user_buf = accum_pkt->addr;
+
+            if (HANDLE_GET_KIND(accum_pkt->datatype) == HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_size_macro(accum_pkt->datatype,
+                                             type_size);
+                req->ch3.recv_data_sz = type_size * accum_pkt->count;
+            }
+            else {
+                printf("accum derived datatype\n");
+                exit(1);
+            }
+
+            mpi_errno = post_data_receive(vc, req, 1);
+	    if (mpi_errno != MPI_SUCCESS)
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_RMA");
+            break;
+        }
+
+	case MPIDI_CH3_PKT_GET:
+	{
+	    MPIDI_CH3_Pkt_get_t * get_pkt = &pkt->get;
+	    MPIDI_CH3_Pkt_t upkt;
+	    MPIDI_CH3_Pkt_get_resp_t * get_resp_pkt = &upkt.get_resp;
+            MPID_Request *req;
+            MPID_IOV iov[MPID_IOV_LIMIT];
+
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received get pkt"));
+
+            get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
+            get_resp_pkt->request = get_pkt->request;
+
+            iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
+            iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
+
+            if (HANDLE_GET_KIND(get_pkt->datatype) == HANDLE_KIND_BUILTIN) {
+                iov[1].MPID_IOV_BUF = get_pkt->addr;
+                MPID_Datatype_get_size_macro(get_pkt->datatype, type_size);
+                iov[1].MPID_IOV_LEN = get_pkt->count * type_size;
+	    
+                mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &req);
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
+                    return mpi_errno;
+                }
+                if (req != NULL) {
+                    /* operation not complete. */
+                    MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
+                    req->ch3.decr_ctr = get_pkt->decr_ctr;
+                    /* FIXME: MT: In the multithreaded case, there is a
+                       potential race condition here. The decr_ctr may
+                       get set after the request completed (and the
+                       completion action was called on the
+                       request). As a result the counter may never get
+                       decremented */
+                    MPID_Request_release(req);
+                }
+                else {
+                    /* operation complete. decrement counter */
+                    /* FIXME: MT: this has to be done atomically */
+                    if (get_pkt->decr_ctr != NULL)
+                        *(get_pkt->decr_ctr) -= 1;
+                    MPIDI_CH3_Progress_signal_completion();	
+                }
+            }
+            else {
+                printf("get: derived datatype\n");
+                exit(1);
+            }
+
+            break;
+        }
+
+	case MPIDI_CH3_PKT_GET_RESP:
+	{
+	    MPIDI_CH3_Pkt_get_resp_t * get_resp_pkt = &pkt->get_resp;
+            MPID_Request *req;
+
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received get response pkt"));
+
+            req = get_resp_pkt->request;
+
+            if (HANDLE_GET_KIND(req->ch3.datatype) == HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_size_macro(req->ch3.datatype,
+                                             type_size);
+                req->ch3.recv_data_sz = type_size * req->ch3.user_count;
+            }
+            else {
+                printf("get: derived datatype\n");
+                exit(1);
+            }
+
+            mpi_errno = post_data_receive(vc, req, 1);
+	    if (mpi_errno != MPI_SUCCESS)
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_RMA");
+
+            break;
+        }
+
 	case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 	{
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received flow control update pkt"));

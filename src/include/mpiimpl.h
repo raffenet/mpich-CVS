@@ -1393,8 +1393,15 @@ typedef struct MPID_Win {
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_Attribute *attributes;
     MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */
-    MPID_Group *post_group_ptr; /* group passed in MPI_Win_post */
+    int start_assert;            /* assert passed to MPI_Win_start */
     MPI_Comm    comm;         /* communicator of window (dup) */
+    volatile int my_counter;  /* completion counter for operations
+                                 targeting this window */
+    void **base_addrs;     /* array of base addresses of the windows of
+                              all processes */
+    int *disp_units;      /* array of displacement units of all windows */
+    int **all_counters;    /* array of addresses of the completion
+                                 counters of all processes */
 #ifdef HAVE_PTHREAD_H
     pthread_t wait_thread_id; /* id of thread handling MPI_Win_wait */
     pthread_t passive_target_thread_id; /* thread for passive target RMA */

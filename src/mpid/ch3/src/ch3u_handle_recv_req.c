@@ -34,6 +34,55 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	{
 	    /* mark data transfer as complete and decrement CC */
 	    rreq->ch3.iov_count = 0;
+            
+            if ((MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP)
+                  || (MPIDI_Request_get_type(rreq) ==
+                            MPIDI_REQUEST_TYPE_GET_RESP)) { 
+                /* atomically decrement RMA completion counter */
+                /* FIXME: MT: this has to be done atomically */
+                if (rreq->ch3.decr_ctr != NULL)
+                    *(rreq->ch3.decr_ctr) -= 1;
+            }
+
+            if (MPIDI_Request_get_type(rreq) ==
+                       MPIDI_REQUEST_TYPE_ACCUM_RESP) { 
+                MPI_Aint true_lb, true_extent;
+                MPI_User_function *uop;
+
+                /* do the accumulate operation */
+                if (HANDLE_GET_KIND(rreq->ch3.op) == HANDLE_KIND_BUILTIN) {
+                    /* get the function by indexing into the op table */
+                    uop = MPIR_Op_table[(rreq->ch3.op)%16 - 1];
+                }
+                else {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP,
+                                                      "**opnotpredefined", "**opnotpredefined %d", rreq->ch3.op );
+                    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
+                    return mpi_errno;
+                }
+
+                if (HANDLE_GET_KIND(rreq->ch3.datatype) ==
+                    HANDLE_KIND_BUILTIN) {
+                    (*uop)(rreq->ch3.user_buf, rreq->ch3.real_user_buf,
+                           &(rreq->ch3.user_count), &(rreq->ch3.datatype));
+                }
+                else { /* derived datatype */
+                    printf("derived datatype\n");
+                    exit(1);
+                }
+                /* free the temporary buffer */
+                mpi_errno = NMPI_Type_get_true_extent(rreq->ch3.datatype, 
+                                                      &true_lb, &true_extent); 
+                if (mpi_errno) return mpi_errno;
+                
+                MPIU_Free((char *) rreq->ch3.user_buf + true_lb);
+
+                /* atomically decrement RMA completion counter */
+                /* FIXME: MT: this has to be done atomically */
+                if (rreq->ch3.decr_ctr != NULL)
+                    *(rreq->ch3.decr_ctr) -= 1;
+            }
+
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
 	}

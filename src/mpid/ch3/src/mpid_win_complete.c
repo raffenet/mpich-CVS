@@ -12,6 +12,257 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_complete(MPID_Win *win_ptr)
 {
+    int mpi_errno = MPI_SUCCESS, comm_size, *nops_to_proc, src;
+    int i, j, dst, done, total_op_count, *curr_ops_cnt;
+    MPIU_RMA_ops *curr_ptr, *next_ptr;
+    MPID_Comm *comm_ptr;
+    MPID_Request **requests; /* array of requests */
+    int *decr_addr;
+
+    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
+        int           is_contig; 
+        int           n_contig_blocks;
+        int           size;     
+        MPI_Aint      extent;   
+        int           loopsize; 
+        void          *loopinfo;  /* pointer needed to update pointers
+                                     within dataloop on remote side */
+        int           loopinfo_depth; 
+        int           eltype;
+        MPI_Aint ub, lb, true_ub, true_lb;
+        int has_sticky_ub, has_sticky_lb;
+    } MPIU_RMA_dtype_info;
+    MPIU_RMA_dtype_info *dtype_infos;
+    void **dataloops;    /* to store dataloops for each datatype */
+    MPI_Group win_grp, start_grp;
+    int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp;
+    MPID_Datatype *dtp;
+
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_COMPLETE);
+
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_COMPLETE);
+
+    MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
+    comm_size = comm_ptr->local_size;
+
+    /* Translate the ranks of the processes in
+       start_group to ranks in win_ptr->comm */
+
+    MPIR_Nest_incr();
+    
+    NMPI_Comm_group(win_ptr->comm, &win_grp);
+
+    start_grp_size = win_ptr->start_group_ptr->size;
+    
+    ranks_in_start_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
+    if (!ranks_in_start_grp) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
+    ranks_in_win_grp = (int *) MPIU_Malloc(start_grp_size * sizeof(int));
+    if (!ranks_in_win_grp) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
+    
+    for (i=0; i<start_grp_size; i++)
+        ranks_in_start_grp[i] = i;
+    
+    start_grp = win_ptr->start_group_ptr->handle;
+    NMPI_Group_translate_ranks(start_grp, start_grp_size,
+                               ranks_in_start_grp, win_grp, ranks_in_win_grp);
+    
+
+    /* If MPI_MODE_NOCHECK was not specified, we need to check if
+       Win_post was called on the target processes. Wait for a 0-byte sync
+       message from each target process */
+    if ((win_ptr->start_assert & MPI_MODE_NOCHECK) == 0) {
+        for (i=0; i<start_grp_size; i++) {
+            src = ranks_in_win_grp[i];
+            mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100,
+                                  win_ptr->comm, MPI_STATUS_IGNORE);
+            if (mpi_errno) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+                return mpi_errno;
+            }
+        }
+    }
+
+    MPIR_Nest_decr();
+
+    /* keep track of no. of ops to each proc. Needed for knowing
+       whether or not to decrement the completion counter. The
+       completion counter is decremented only on the last
+       operation. */
+
+    nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
+    if (!nops_to_proc) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
+    
+    total_op_count = 0;
+    curr_ptr = MPIU_RMA_ops_list;
+    while (curr_ptr != NULL) {
+        nops_to_proc[curr_ptr->target_rank]++;
+        total_op_count++;
+        curr_ptr = curr_ptr->next;
+    }
+
+    requests = (MPID_Request **) MPIU_Malloc((total_op_count+start_grp_size) *
+                                             sizeof(MPID_Request*));
+    /* We allocate a few extra requests because if there are no RMA
+       ops to a target process, we need to send a 0-byte message just
+       to decrement the completion counter. */
+
+    if (!requests) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
+    
+    curr_ops_cnt = (int *) MPIU_Calloc(comm_size, sizeof(int));
+    if (!curr_ops_cnt) {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
+
+    i = 0;
+    curr_ptr = MPIU_RMA_ops_list;
+    while (curr_ptr != NULL) {
+        /* The completion counter at the target is decremented
+           only on the last operation on the target. Otherwise, we
+           pass NULL */
+        if (curr_ops_cnt[curr_ptr->target_rank] ==
+            nops_to_proc[curr_ptr->target_rank] - 1) 
+            decr_addr = win_ptr->all_counters[curr_ptr->target_rank];
+        else 
+            decr_addr = NULL;
+
+        switch (curr_ptr->type) {
+        case (MPID_REQUEST_PUT):
+        case (MPID_REQUEST_ACCUMULATE):
+            mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
+                                                decr_addr, &requests[i]); 
+            if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+            break;
+        case (MPID_REQUEST_GET):
+            mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
+                                                decr_addr, &requests[i]);
+            if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+            break;
+        default:
+            /* FIXME - return some error code here */
+            break;
+        }
+        i++;
+        curr_ops_cnt[curr_ptr->target_rank]++;
+        curr_ptr = curr_ptr->next;
+    }
+
+    /* If the start_group included some processes that did not end up
+       becoming targets of  RMA operations from this process, we need
+       to send a dummy message to those processes just to decrement
+       the completion counter */
+
+    j = i;
+    for (i=0; i<start_grp_size; i++) {
+        dst = ranks_in_win_grp[i];
+        if (nops_to_proc[dst] == 0) {
+            MPIDI_CH3_Pkt_t upkt;
+            MPIDI_CH3_Pkt_put_t *put_pkt = &upkt.put;
+            MPIDI_VC *vc;
+
+            put_pkt->type = MPIDI_CH3_PKT_PUT;
+            put_pkt->addr = NULL;
+            put_pkt->count = 0;
+            put_pkt->datatype = MPI_INT;
+            put_pkt->decr_ctr = win_ptr->all_counters[dst];
+
+            vc = comm_ptr->vcr[dst];
+
+            mpi_errno = MPIDI_CH3_iStartMsg(vc, put_pkt,
+                                            sizeof(*put_pkt),
+                                            &requests[j]); 
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
+                return mpi_errno;
+            }
+            j++;
+            total_op_count++;
+        }
+    }
+
+    MPIU_Free(ranks_in_win_grp);
+    MPIU_Free(ranks_in_start_grp);
+    MPIU_Free(nops_to_proc);
+    MPIU_Free(curr_ops_cnt);
+
+    done = 1;
+    while (total_op_count) {
+        MPID_Progress_start();
+        for (i=0; i<total_op_count; i++) {
+            if (requests[i] != NULL) {
+                if (*(requests[i]->cc_ptr) != 0)
+                    done = 0;
+                else {
+                        mpi_errno = requests[i]->status.MPI_ERROR;
+                        if (mpi_errno != MPI_SUCCESS) {
+                            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+                            return mpi_errno;
+                        }
+                        MPID_Request_release(requests[i]);
+                        requests[i] = NULL;
+                }
+            }
+        }
+        if (!done) {
+            mpi_errno = MPID_Progress_wait();
+            done = 1;
+        }
+        else {
+            MPID_Progress_end();
+            break;
+        }
+    } 
+
+    MPIU_Free(requests);
+
+    /* free MPIU_RMA_ops_list */
+    curr_ptr = MPIU_RMA_ops_list;
+    while (curr_ptr != NULL) {
+        next_ptr = curr_ptr->next;
+        MPIU_Free(curr_ptr);
+        curr_ptr = next_ptr;
+    }
+    MPIU_RMA_ops_list = NULL;
+    
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+    return mpi_errno;
+}
+
+
+
+#ifdef OLDSTUFF
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#include "mpidimpl.h"
+
+#undef FUNCNAME
+#define FUNCNAME MPID_Win_complete
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_Win_complete(MPID_Win *win_ptr)
+{
     int mpi_errno = MPI_SUCCESS, comm_size, *nops_to_proc, dest;
     int i, *tags, total_op_count, req_cnt;
     MPIU_RMA_ops *curr_ptr, *next_ptr;
@@ -328,3 +579,4 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
     return mpi_errno;
 }
+#endif

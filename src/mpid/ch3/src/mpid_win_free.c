@@ -40,8 +40,12 @@ int MPID_Win_free(MPID_Win **win_ptr)
     NMPI_Comm_free(&((*win_ptr)->comm));
 
     MPIR_Nest_decr();
+
+    MPIU_Free((*win_ptr)->base_addrs);
+    MPIU_Free((*win_ptr)->disp_units);
+    MPIU_Free((*win_ptr)->all_counters);
  
-    /* check if refcount needs to be decremented here as in group_free */
+    /* check whether refcount needs to be decremented here as in group_free */
     MPIU_Handle_obj_free( &MPID_Win_mem, *win_ptr );
  
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE);

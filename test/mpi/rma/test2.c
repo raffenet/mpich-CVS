@@ -30,9 +30,10 @@ int main(int argc, char *argv[])
         MPI_Group_incl(comm_group, 1, &destrank, &group);
         MPI_Win_start(group, 0, win);
         for (i=0; i<SIZE1; i++)
-            MPI_Put(A+i, 1, MPI_INT, 1, i, 1, MPI_INT, win);
+            MPI_Put(A+i, 1, MPI_INT, 1, i, 1, MPI_INT, win); 
         for (i=0; i<SIZE1; i++)
             MPI_Get(B+i, 1, MPI_INT, 1, SIZE1+i, 1, MPI_INT, win);
+
         MPI_Win_complete(win);
 
         for (i=0; i<SIZE1; i++) 
@@ -48,7 +49,7 @@ int main(int argc, char *argv[])
         MPI_Group_incl(comm_group, 1, &destrank, &group);
         MPI_Win_post(group, 0, win);
         MPI_Win_wait(win);
-        
+    
         for (i=0; i<SIZE1; i++) {
             if (B[i] != i)
                 printf("Put Error: B[i] is %d, should be %d\n", B[i], i);

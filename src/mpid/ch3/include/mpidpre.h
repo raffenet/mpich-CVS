@@ -64,6 +64,9 @@ typedef enum MPIDI_CH3_Pkt_type
     MPIDI_CH3_PKT_CANCEL_SEND_REQ,
     MPIDI_CH3_PKT_CANCEL_SEND_RESP,
     MPIDI_CH3_PKT_PUT,
+    MPIDI_CH3_PKT_GET,
+    MPIDI_CH3_PKT_GET_RESP,
+    MPIDI_CH3_PKT_ACCUMULATE,
     MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,
     MPIDI_CH3_PKT_END_CH3
 # if defined(MPIDI_CH3_PKT_ENUM)
@@ -134,6 +137,48 @@ MPIDI_CH3_Pkt_cancel_send_resp_t;
 MPIDI_CH3_PKT_DEFS
 #endif
 
+typedef struct MPIDI_CH3_Pkt_put
+{
+    MPIDI_CH3_Pkt_type_t type;
+    void *addr;
+    int count;
+    MPI_Datatype datatype;
+    int *decr_ctr; /* address of counter to be decremented on remote
+                       side. could be NULL */ 
+}
+MPIDI_CH3_Pkt_put_t;
+
+typedef struct MPIDI_CH3_Pkt_get
+{
+    MPIDI_CH3_Pkt_type_t type;
+    void *addr;
+    int count;
+    MPI_Datatype datatype;
+    struct MPID_Request *request;
+    int *decr_ctr; /* address of counter to be decremented on remote
+                       side. could be NULL */ 
+}
+MPIDI_CH3_Pkt_get_t;
+
+typedef struct MPIDI_CH3_Pkt_get_resp
+{
+    MPIDI_CH3_Pkt_type_t type;
+    struct MPID_Request *request;
+}
+MPIDI_CH3_Pkt_get_resp_t;
+
+typedef struct MPIDI_CH3_Pkt_accum
+{
+    MPIDI_CH3_Pkt_type_t type;
+    void *addr;
+    int count;
+    MPI_Datatype datatype;
+    MPI_Op op;
+    int *decr_ctr; /* address of counter to be decremented on remote
+                       side. could be NULL */ 
+}
+MPIDI_CH3_Pkt_accum_t;
+
 typedef union MPIDI_CH3_Pkt
 {
     MPIDI_CH3_Pkt_type_t type;
@@ -146,6 +191,10 @@ typedef union MPIDI_CH3_Pkt
     MPIDI_CH3_Pkt_rndv_send_t rndv_send;
     MPIDI_CH3_Pkt_cancel_send_req_t cancel_send_req;
     MPIDI_CH3_Pkt_cancel_send_resp_t cancel_send_resp;
+    MPIDI_CH3_Pkt_put_t put;
+    MPIDI_CH3_Pkt_get_t get;
+    MPIDI_CH3_Pkt_get_resp_t get_resp;
+    MPIDI_CH3_Pkt_accum_t accum;
 # if defined(MPIDI_CH3_PKT_DECL)
     MPIDI_CH3_PKT_DECL
 # endif
@@ -266,6 +315,12 @@ struct MPIDI_Request														\
     unsigned state;														\
     int cancel_pending;													        \
     int recv_pending_count;												        \
+																\
+    /* The next 3 are for RMA */                                                                                                \
+    MPI_Op op;												                        \
+    int *decr_ctr;														\
+    /* For accumulate, since data is first read into a tmp_buf */								\
+    void *real_user_buf;													\
 																\
     MPIDI_REQUEST_SEQNUM													\
 																\

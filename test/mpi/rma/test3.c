@@ -2,8 +2,12 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-/* tests the example in Fig 6.8, pg 142, MPI-2 standard. This test DOES NOT RUN
-   currently because of lack of thread-safety in the progress engine. */
+/* Tests the example in Fig 6.8, pg 142, MPI-2 standard. Process 1 has
+   a blocking MPI_Recv between the Post and Wait. Therefore, this
+   example will not run if the one-sided operations are simply
+   implemented on top of MPI_Isends and Irecvs. They either need to be
+   implemented inside the progress engine or using threads with Isends
+   and Irecvs. In MPICH-2, they are implemented in the progress engine. */
 
 #define SIZE 1048576
 

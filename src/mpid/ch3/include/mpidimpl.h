@@ -102,6 +102,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->ch3.datatype_ptr = NULL;				\
     MPIDI_Request_state_init((_req));				\
     (_req)->ch3.cancel_pending = FALSE;				\
+    (_req)->ch3.decr_ctr = NULL;				\
 }
 
 #define MPIDI_CH3U_Request_destroy(_req)			\
@@ -235,6 +236,10 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPIDI_REQUEST_TYPE_SSEND 3
 /* We need a BSEND type for persistent bsends (see mpid_startall.c) */
 #define MPIDI_REQUEST_TYPE_BSEND 4
+#define MPIDI_REQUEST_TYPE_PUT_RESP 5
+#define MPIDI_REQUEST_TYPE_GET_RESP 6
+#define MPIDI_REQUEST_TYPE_ACCUM_RESP 7
+
 #define MPIDI_Request_get_type(_req)						\
 (((_req)->ch3.state & MPIDI_REQUEST_TYPE_MASK) >> MPIDI_REQUEST_TYPE_SHIFT)
 
@@ -432,6 +437,12 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt);
 #else
 #define MPIDI_DBG_Print_packet(a)
 #endif
+
+int MPIDI_CH3I_Send_rma_msg(MPIU_RMA_ops *rma_op, MPID_Win *win_ptr,
+                            int *decr_addr, MPID_Request **request);
+
+int MPIDI_CH3I_Recv_rma_msg(MPIU_RMA_ops *rma_op, MPID_Win *win_ptr,
+                            int *decr_addr, MPID_Request **request);
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
 
