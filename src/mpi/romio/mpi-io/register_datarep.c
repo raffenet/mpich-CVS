@@ -36,10 +36,11 @@ int MPI_Register_datarep(char *name,
     static char myname[] = "MPI_REGISTER_DATAREP";
 
     /* --BEGIN ERROR HANDLING-- */
-    /* check datarep name */
+    /* check datarep name (use strlen instead of strnlen because
+       strnlen is not portable) */
     if (name == NULL ||
-	strnlen(name, 2) < 1 || 
-	strnlen(name, MPI_MAX_DATAREP_STRING+1) > MPI_MAX_DATAREP_STRING)
+	strlen(name) < 1 || 
+	strlen(name) > MPI_MAX_DATAREP_STRING)
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					  MPIR_ERR_RECOVERABLE,
@@ -77,7 +78,7 @@ int MPI_Register_datarep(char *name,
 
     datarep = ADIOI_Malloc(sizeof(ADIOI_Datarep));
     /* until we get this ansi thing figured out, prototypes are missing */
-    datarep->name          = (char *) strdup(datarep);
+    datarep->name          = (char *) strdup(name);
     datarep->state         = state;
     datarep->read_conv_fn  = read_conv_fn;
     datarep->write_conv_fn = write_conv_fn;
