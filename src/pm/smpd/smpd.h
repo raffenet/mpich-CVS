@@ -338,6 +338,13 @@ typedef struct smpd_barrier_node_t
     struct smpd_barrier_node_t *next;
 } smpd_barrier_node_t;
 
+typedef struct smpd_data_t
+{
+    char name[SMPD_MAX_NAME_LENGTH];
+    char value[SMPD_MAX_VALUE_LENGTH];
+    struct smpd_data_t *next;
+} smpd_data_t;
+
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */
 typedef struct smpd_global_t
@@ -405,6 +412,7 @@ typedef struct smpd_global_t
 #endif
     SMPD_BOOL service_stop;
     SMPD_BOOL noprompt;
+    char smpd_filename[SMPD_MAX_FILENAME];
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -529,5 +537,6 @@ char * smpd_get_state_string(smpd_state_t state);
 char * smpd_get_cmd_state_string(smpd_command_state_t state);
 SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd_command_t *cmd_ptr);
 SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd_process_t *process);
+SMPD_BOOL smpd_is_affirmative(const char *str);
 
 #endif

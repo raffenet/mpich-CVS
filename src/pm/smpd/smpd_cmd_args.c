@@ -27,7 +27,6 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     DWORD num_written, num_read;
 #endif
     int dbg_flag;
-    char pwdfile[SMPD_MAX_FILENAME];
 
     smpd_enter_fn("smpd_parse_command_args");
 
@@ -287,22 +286,21 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
 
-    if (smpd_get_opt_string(argcp, argvp, "-pwdfile", pwdfile, SMPD_MAX_FILENAME) ||
-	smpd_get_opt_string(argcp, argvp, "-smpdpwdfile", pwdfile, SMPD_MAX_FILENAME))
+    if (smpd_get_opt_string(argcp, argvp, "-smpdfile", smpd_process.smpd_filename, SMPD_MAX_FILENAME))
     {
 	FILE *fin;
 	char line[SMPD_PASSPHRASE_MAX_LENGTH+3];
 	struct stat s;
 
-	if (stat(pwdfile, &s) == 0)
+	if (stat(smpd_process.smpd_filename, &s) == 0)
 	{
 	    if (s.st_mode & 00077)
 	    {
-		printf("pwdfile cannot be readable by anyone other than the current user.\n");
+		printf(".smpd file cannot be readable by anyone other than the current user.\n");
 		smpd_exit_fn("smpd_parse_command_args");
 		return SMPD_FAIL;
 	    }
-	    fin = fopen(pwdfile, "r");
+	    fin = fopen(smpd_process.smpd_filename, "r");
 	    if (fin != NULL)
 	    {
 		fgets(line, SMPD_PASSPHRASE_MAX_LENGTH+2, fin);

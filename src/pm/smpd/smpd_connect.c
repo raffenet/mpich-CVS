@@ -109,7 +109,8 @@ smpd_global_t smpd_process =
       NULL,             /* hBombThread             */
 #endif
       SMPD_FALSE,       /* service_stop            */
-      SMPD_FALSE        /* noprompt                */
+      SMPD_FALSE,       /* noprompt                */
+      ""                /* smpd_filename           */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -400,6 +401,9 @@ int smpd_init_process(void)
 {
 #ifdef HAVE_WINDOWS_H
     HMODULE hModule;
+#else
+    char *homedir;
+    struct stat s;
 #endif
 #ifdef HAVE_SIGACTION
     struct sigaction act;
@@ -446,6 +450,25 @@ int smpd_init_process(void)
 
 #ifdef HAVE_WINDOWS_H
     smpd_process.hBombDiffuseEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+#else
+    homedir = getenv("HOME");
+    strcpy(smpd_process.smpd_filename, homedir);
+    if (smpd_procsss.smpd_filename[strlen(smpd_process.smpd_filename)-1] != '/')
+	strcat(smpd_process.smpd_filename, "/.smpd");
+    else
+	strcat(smpd_process.smpd_filename, ".smpd");
+    if (stat(smpd_process.smpd_filename, &s) == 0)
+    {
+	if (s.st_mode & 00077)
+	{
+	    /*printf("smpd file, %s, cannot be readable by anyone other than the current user, please set the permissions accordingly (0600).\n", smpd_process.smpd_filename);*/
+	    smpd_process.smpd_filename[0] = '\0';
+	}
+    }
+    else
+    {
+	smpd_process.smpd_filename[0] = '\0';
+    }
 #endif
 
     smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);

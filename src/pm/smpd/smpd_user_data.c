@@ -16,6 +16,17 @@
 #endif
 #include <stdlib.h>
 
+SMPD_BOOL smpd_is_affirmative(const char *str)
+{
+    if (strcmp(str, "yes\n") == 0 ||
+	strcmp(str, "Yes\n") == 0 ||
+	strcmp(str, "YES\n") == 0 ||
+	strcmp(str, "Y\n") == 0 ||
+	strcmp(str, "y\n") == 0)
+	return SMPD_TRUE;
+    return SMPD_FALSE;
+}
+
 SMPD_BOOL smpd_option_on(const char *option)
 {
     char val[SMPD_MAX_VALUE_LENGTH];
@@ -320,13 +331,103 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     return SMPD_SUCCESS;
 #else
     int result;
-    char smpd_filename[SMPD_MAX_FILENAME] = "";
     char *homedir;
     FILE *fin;
-    char line[SMPD_PASSPHRASE_MAX_LENGTH+3];
+    char *buffer;
+    int len;
     struct stat s;
+    smpd_data_t *list = NULL, *node;
+    char *iter;
+    char name[SMPD_MAX_NAME_LENGTH];
+    char equal_str[SMPD_MAX_NAME_LENGTH];
+    char data[SMPD_MAX_VALUE_LENGTH];
+    int num_chars;
 
     smpd_enter_fn("smpd_get_smpd_data");
+
+    if (smpd_process.smpd_filename[0] == '\0')
+    {
+	homedir = getenv("HOME");
+	strcpy(smpd_process.smpd_filename, homedir);
+	if (smpd_process.smpd_filename[strlen(smpd_process.smpd_filename)-1] != '/')
+	    strcat(smpd_process.smpd_filename, "/.smpd");
+	else
+	    strcat(smpd_process.smpd_filename, ".smpd");
+    }
+    if (stat(smpd_process.smpd_filename, &s) == 0)
+    {
+	if (s.st_mode & 00077)
+	{
+	    printf(".smpd file, %s, cannot be readable by anyone other than the current user, please set the permissions accordingly (0600).\n", smpd_process.smpd_filename);
+	}
+	else
+	{
+	    fin = fopen(smpd_process.smpd_filename, "r+");
+	    if (fin != NULL)
+	    {
+		fseek(fin, 0, SEEK_END);
+		len = ftell(fin);
+		if (len > 0)
+		{
+		    buffer = (char*)malloc(len+1);
+		    iter = buffer;
+		    if (fread(buffer, 1, len, fin) == len)
+		    {
+			buffer[len] = '\0';
+			while (iter)
+			{
+			    iter = smpd_get_string(iter, name, SMPD_MAX_NAME_LENGTH, &num_chars);
+			    equal_str[0] = '\0';
+			    iter = smpd_get_string(iter, equal_str, SMPD_MAX_NAME_LENGTH, &num_chars);
+			    while (iter && equal_str[0] != '=')
+			    {
+				strcpy(name, equal_str);
+				iter = smpd_get_string(iter, equal_str, SMPD_MAX_NAME_LENGTH, &num_chars);
+			    }
+			    iter = smpd_get_string(iter, data, SMPD_MAX_VALUE_LENGTH, &num_chars);
+			    if (num_chars > 0)
+			    {
+				node = (smpd_data_t*)malloc(sizeof(smpd_data_t));
+				strcpy(node->name, name);
+				strcpy(node->value, data);
+				node->next = list;
+				list = node;
+			    }
+			}
+		    }
+		    free(buffer);
+		}
+		fclose(fin);
+	    }
+	    node = list;
+	    while (node)
+	    {
+		printf("%s = %s\n", node->name, node->value);
+		node = node->next;
+	    }
+	}
+    }
+    if (list)
+    {
+	int found = 0;
+	while (list)
+	{
+	    node = list;
+	    list = list->next;
+	    if (strcmp(key, node->name) == 0)
+	    {
+		strncpy(value, node->value, value_len);
+		found = 1;
+	    }
+	    free(node);
+	}
+	if (found)
+	{
+	    smpd_exit_fn("smpd_get_smpd_data");
+	    return SMPD_SUCCESS;
+	}
+    }
+    /*
     if (strcmp(key, "phrase") == 0)
     {
 	homedir = getenv("HOME");
@@ -366,6 +467,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	    }
 	}
     }
+    */
     result = smpd_get_smpd_data_default(key, value, value_len);
     smpd_exit_fn("smpd_get_smpd_data");
     return result;

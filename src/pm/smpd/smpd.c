@@ -98,6 +98,8 @@ int main(int argc, char* argv[])
 #endif
 
     if (smpd_process.passphrase[0] == '\0')
+	smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+    if (smpd_process.passphrase[0] == '\0')
     {
 	if (smpd_process.noprompt)
 	{
@@ -118,8 +120,7 @@ int main(int argc, char* argv[])
 	printf("Would you like to save this passphrase in '%s'? ", smpd_filename);
 	fflush(stdout);
 	fgets(response, 100, stdin);
-	if (strcmp(response, "yes\n") == 0 || strcmp(response, "Yes\n") == 0 || strcmp(response, "YES\n") == 0 ||
-	    strcmp(response, "Y\n") == 0 || strcmp(response, "y\n") == 0)
+	if (smpd_is_affirmative(response))
 	{
 	    FILE *fout;
 	    umask(0077);
@@ -130,7 +131,7 @@ int main(int argc, char* argv[])
 		smpd_exit_fn("main");
 		return errno;
 	    }
-	    fprintf(fout, "%s\n", smpd_process.passphrase);
+	    fprintf(fout, "phrase=%s\n", smpd_process.passphrase);
 	    fclose(fout);
 	}
 #endif
