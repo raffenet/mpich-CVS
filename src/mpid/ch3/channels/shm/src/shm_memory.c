@@ -8,7 +8,7 @@
 
 #define ZERO_RANK 0x10101010
 
-#undef SYNCHRONIZE_SHMAPPING
+#undef USE_SYNCHRONIZE_SHMAPPING
 
 #ifdef HAVE_SHARED_PROCESS_READ
 #undef FUNCNAME
@@ -139,7 +139,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 #ifdef HAVE_SHARED_PROCESS_READ
     int shp_offset;
 #endif
-#if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
+#if defined(HAVE_WINDOWS_H) && defined(USE_SYNCHRONIZE_SHMAPPING)
     HANDLE hSyncEvent1, hSyncEvent2;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
@@ -152,7 +152,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
     nTotalSize += nNproc * sizeof(MPIDI_CH3I_Shared_process_t);
 #endif
 
-#if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
+#if defined(HAVE_WINDOWS_H) && defined(USE_SYNCHRONIZE_SHMAPPING)
     hSyncEvent1 = CreateEvent(NULL, TRUE, FALSE, "mpich2shmsyncevent1");
     hSyncEvent2 = CreateEvent(NULL, TRUE, FALSE, "mpich2shmsyncevent2");
 #endif
@@ -198,7 +198,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 #endif
 
 	/* Get the shmem pointer */
-#if defined(HAVE_WINDOWS_H) && defined(SYNCHRONIZE_SHMAPPING)
+#if defined(HAVE_WINDOWS_H) && defined(USE_SYNCHRONIZE_SHMAPPING)
 	if (nRank == 0)
 	{
 	    ResetEvent(hSyncEvent2);
