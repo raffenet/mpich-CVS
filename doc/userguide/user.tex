@@ -145,8 +145,24 @@ the Fortran environment you are using.
 
 The arguments to \texttt{configure} are different in MPICH1 and MPICH2;
 the \texttt{Installer's Guide} discusses \texttt{configure}.  In
-particular, MPICH2 is aware of newer compilers.
-
+particular, the newer \texttt{configure} in MPICH2 does not support the
+\verb+-cc=<compiler-name>+ (or \texttt{-fc}, \texttt{-c++}, or
+\texttt{-f90}) options.  Instead, many of the items that could be
+specified in the command line to configure in MPICH1 must now be set by
+defining an environment variable.  E.g., while MPICH1 allowed
+\begin{verbatim}
+    ./configure -cc=pgcc
+\end{verbatim}
+MPICH2 requires
+\begin{verbatim}
+    setenv CC pgcc
+\end{verbatim}
+(or \verb+export CC=pgcc+ for \texttt{ksh} or \verb+CC=pgcc ; export CC+
+for strict \texttt{sh}) before \texttt{./configure}.  Basically, every
+option to the MPICH-1 configure that does not start with
+\texttt{--enable} or \texttt{--with} is not available as a configure
+option in MPICH2.  Instead, environment variables must be used.  This is
+consistent (and required) for use of version 2 GNU \texttt{autoconf}.
 
 \section{Setting Paths}
 \label{sec:paths}
