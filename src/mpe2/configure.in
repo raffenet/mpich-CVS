@@ -518,7 +518,6 @@ enable_slog2=yes )
 dnl if SLOG-2 is here, configure it
 if test -s $srcdir/$slog2_dirname/configure ; then
     if test "$enable_slog2" = "yes" -o "$enable_slog2" = "build" ; then
-        SLOG2TOOLS=1
         if test "$enable_slog2" = "build" ; then
             slog2_enable_source=yes
         else
@@ -532,14 +531,13 @@ if test -s $srcdir/$slog2_dirname/configure ; then
         selected_pkgs="$selected_pkgs slog2"
     else
         slog2_dirname=
-        SLOG2TOOLS=0
     fi
 else
     slog2_dirname=
-    SLOG2TOOLS=0
 fi
 AC_CONFIG_SUBDIRS($PKGS)
-AC_SUBST(SLOG2TOOLS)
+
+
 
 AC_OUTPUT_COMMANDS( [
 if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall; then

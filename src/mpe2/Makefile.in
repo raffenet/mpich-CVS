@@ -75,12 +75,6 @@ linktest: linktest_C
 fortran_test: linktest_F77
 ########
 
-#  Tagets to build all the SLOG-2 related tools, i.e. jumpshot-4 ...  
-slog2tools:
-	@-if [ -s ./slog2sdk/Makefile ] ; then \
-	      ( cd ./slog2sdk && $(MAKE) ) \
-	  fi
-
 ########  Installing
 install:
 	@if [ -n "$(PREFIX)" ] ; then \
@@ -96,9 +90,8 @@ uninstall:
 clean_include:
 	@-if [ -n "$(includebuild_dir)" \
 	       -a "$(includebuild_dir)" != "$(top_srcdir)/include" ] ; then \
-	      cd $(includebuild_dir) ; \
 	      for file in $(MPE_HEADERS) ; do \
-	          $(RM) -f $$file ; \
+	          $(RM) -f $(includebuild_dir)/$$file ; \
 	      done ; \
 	  fi
 
