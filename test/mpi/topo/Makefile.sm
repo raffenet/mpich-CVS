@@ -1,0 +1,13 @@
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
+	 -I${srcdir}/../include
+LDADD = -L../../../lib ../util/mtest.o 
+DEPADD = ../../../lib/lib${MPILIBNAME}.a
+smvar_do_sharedlibs = 0
+
+cartmap1_SOURCES = cartmap1.c
+cartshift1_SOURCES = cartshift1.c
+cartsuball_SOURCES = cartsuball.c
+dims1_SOURCES = dims1.c
+graphmap1_SOURCES = graphmap1.c
+topotest_SOURCES = topotest.c
+topodup_SOURCES = topodup.c
