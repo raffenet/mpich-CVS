@@ -26,6 +26,7 @@ __ufs_
 __pfs_
 __piofs_
 __pvfs_
+__testfs_
 __xfs_
 __hfs_
 __sfs_

@@ -3132,6 +3132,9 @@ fi
 if test -n "$file_system_pfs"; then
     CFLAGS="$CFLAGS -DPFS"
 fi
+if test -n "$file_system_testfs"; then
+    CFLAGS="$CFLAGS -DROMIO_TESTFS"
+fi
 if test -n "$file_system_piofs"; then
     CFLAGS="$CFLAGS -DPIOFS"
     USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
@@ -3806,6 +3809,9 @@ if test -n "$file_system_sfs"; then
 fi
 if test -n "$file_system_pfs"; then
     CONFIG_FILES="$CONFIG_FILES adio/ad_pfs/Makefile"
+fi
+if test -n "$file_system_testfs"; then
+    CONFIG_FILES="$CONFIG_FILES adio/ad_testfs/Makefile"
 fi
 if test -n "$file_system_pvfs"; then
     CONFIG_FILES="$CONFIG_FILES adio/ad_pvfs/Makefile"
