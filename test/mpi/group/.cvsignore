@@ -2,3 +2,5 @@ Makefile.in
 Makefile
 errstring
 grouptest
+groupcreate
+grouptest2

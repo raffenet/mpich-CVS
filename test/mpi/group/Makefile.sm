@@ -1,4 +1,8 @@
 # This is temporary until the tests have their own configure
 grouptest_SOURCES = grouptest.c
+grouptest2_SOURCES = grouptest2.c
+groupcreate_SOURCES = groupcreate.c
 grouptest_LDADD = -L ../../../lib
+grouptest2_LDADD = -L ../../../lib
+groupcreate_LDADD = -L ../../../lib
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
