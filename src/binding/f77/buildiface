@@ -36,6 +36,14 @@ $free   = "MPIU_Free";
 $header_file = "mpi_fortimpl.h";
 $debug = 0;
 @arg_addresses = ();
+#
+# Error return handling
+$errparmtype = "MPI_Fint *";
+$errparm = "MPI_Fint *ierr";
+$errparmlval = "*ierr";
+$errparmrval = "*ierr";
+$returnErrval = 0;
+$returnType   = "void";
 
 %altweak = ();    # Alternate weak declarations
 %altweakrtype = ();
@@ -713,6 +721,9 @@ sub print_args {
     if ($#parms == 0 && $parms[0] eq "void") {
 	$#parms = -1;
     }
+    # argsep is used to add a comma before every argument, except for the 
+    # first
+    $argsep = "";
     print $OUTFD "( ";
     foreach $parm (@parms) {
 	# Match type to replacement
@@ -748,10 +759,10 @@ sub print_args {
 	    print "    Using declarg{$routine} for this parm\n" if $debug;
 	    $parm = $declarg{"$routine-$count"};
 	    if ($prototype_only) {
-		print $OUTFD "$parm, ";
+		print $OUTFD "$argsep$parm";
 	    }
 	    else {
-		print $OUTFD "$parm v$count, ";
+		print $OUTFD "$argsep$parm v$count";
 	    }
 	}
 	elsif ($parm =~ /char\s*\*/) {
@@ -764,11 +775,11 @@ sub print_args {
 	    # if they are prsent at all.
 	    print "    parm is a character string\n" if $debug;
 	    if ($prototype_only) {
-		print $OUTFD "char * FORT_MIXED_LEN_DECL, ";
+		print $OUTFD "${argsep}char * FORT_MIXED_LEN_DECL";
 		$last_args .= "FORT_END_LEN_DECL ";
 	    }
 	    else {
-		print $OUTFD "char *v$count FORT_MIXED_LEN(d$count), ";
+		print $OUTFD "${argsep}char *v$count FORT_MIXED_LEN(d$count)";
 		$last_args .= "FORT_END_LEN(d$count) ";
 	    }
 	}
@@ -813,10 +824,10 @@ sub print_args {
 		}
 	    }
 	    if ($prototype_only) {
-		print $OUTFD "$basetype \[\], ";
+		print $OUTFD "$argsep$basetype \[\]";
 	    }
 	    else {
-		print $OUTFD "$basetype v$count\[\], ";
+		print $OUTFD "$argsep$basetype v$count\[\]";
 	    }
 	}
 	else {
@@ -832,10 +843,10 @@ sub print_args {
 		$leadspace = " ";
 	    }
 	    if ($prototype_only) {
-		print $OUTFD "${parm}, ";
+		print $OUTFD "${argsep}${parm}";
 	    }
 	    else {
-		print $OUTFD "${parm}${leadspace}v$count, ";
+		print $OUTFD "${argsep}${parm}${leadspace}v$count";
 	    }
 	    $star_count = 0;
 	    if ($nstar_before != $nstar_after) {
@@ -844,14 +855,20 @@ sub print_args {
 	    $arg_addresses[$count] = $star_count;
 	}
 	$count++;
+	$argsep = ", ";
     }
-    # Add the new error return code
-    if ($prototype_only) {
-	print $OUTFD "MPI_Fint * ${last_args}";
+    # Add the new error return code if necessary
+    $tmpargs= $errparm;
+    $tmpargs =~ s/\s*//g;
+    if ($tmpargs ne "") {
+	if ($prototype_only) {
+	    print $OUTFD "$argsep$errparmtype";
+	}
+	else {
+	    print $OUTFD "$argsep$errparm";
+	}
     }
-    else {
-	print $OUTFD "MPI_Fint *ierr ${last_args}";
-    }
+    print $OUTFD " $last_args";
     print $OUTFD ")";
 }
 
@@ -942,7 +959,7 @@ sub print_weak_decl {
 	print $OUTFD "extern FORTRAN_API $altweakrtype{$basename} FORT_CALL $name($altweak{$basename});\n";
     }
     else {
-	print $OUTFD "extern FORTRAN_API void FORT_CALL $name";
+	print $OUTFD "extern FORTRAN_API $returnType FORT_CALL $name";
 	&print_args( $OUTFD, $args, 1, $lcname );
 	print $OUTFD ";\n";
     }
@@ -1506,6 +1523,9 @@ sub print_special_call_arg {
 sub print_special_decls {
     my $routine_name = $_[0];
 
+    if ($returnErrval) {
+	print $OUTFD "    int $errparmrval;\n";
+    }
     if (defined($special_args{$routine_name})) {
 	# First do the declarations
 	foreach $count (split(/:/,$special_args{$routine_name})) {
@@ -1740,10 +1760,10 @@ sub print_routine_type_decl {
     my $OUTFD = $_[0];
     my $lcname = $_[1];
     if ($do_subdecls) {
-	print $OUTFD "FORTRAN_API void FORT_CALL ";
+	print $OUTFD "FORTRAN_API $returnType FORT_CALL ";
     }
     else {
-	print $OUTFD "void ";
+	print $OUTFD "$returnType ";
     }
     print $OUTFD "${out_prefix}${lcname}_ ";
 }
@@ -2176,10 +2196,10 @@ sub ReadAndProcessInterface {
 		}
 		&print_header( $routine_name, $lcname, $args );
 		if ($do_subdecls) {
-		    print $OUTFD "FORTRAN_API void FORT_CALL ";
+		    print $OUTFD "FORTRAN_API $returnType FORT_CALL ";
 		}
 		else {
-		    print $OUTFD "void ";
+		    print $OUTFD "$returnType ";
 		}
 		print $OUTFD "${out_prefix}${lcname}_ ";
 		# Print args not only prints the arguments but fills the
@@ -2194,21 +2214,24 @@ sub ReadAndProcessInterface {
 		#&print_attr;
 		print $OUTFD "{\n";
 		&print_special_decls( $routine_name );
-		print $OUTFD "    *ierr = $routine_prefix$routine_name";
+		print $OUTFD "    $errparmlval = $routine_prefix$routine_name";
 		print "Printing call arguments for mpi_${lcname}_\n" if $debug;
 		&print_call_args( $args );
 		# Print any post call processing
 		&print_post_call( $routine_name, $args );
+		if ($returnErrval) {
+		    print $OUTFD "    return $errparmrval;\n";
+		}
 		print $OUTFD "}\n";
 		if ($buildfiles) {
 		    close ($OUTFD);
 		}
 		if ($build_prototypes) {
 		    if ($do_subdecls) {
-			print PROTOFD "extern FORTRAN_API void FORT_CALL ${out_prefix}${lcname}_ ";
+			print PROTOFD "extern FORTRAN_API $returnType FORT_CALL ${out_prefix}${lcname}_ ";
 		    }
 		    else {
-			print PROTOFD "extern void ${out_prefix}${lcname}_ ";
+			print PROTOFD "extern $returnType ${out_prefix}${lcname}_ ";
 		    }
 		    &print_args( PROTOFD, $args, 0, $lcname );
 		    &print_attr( PROTOFD, "${out_prefix}${lcname}_" );
