@@ -236,7 +236,7 @@ sub PrintAsHtml {
 		$done_count++;
 		$finished = "done";
 		if ($limits ne "") {
-		    $color = "D0D000";
+		    $color = "D9D919";
 		}
 		else {
 		    $color = "00D010";
