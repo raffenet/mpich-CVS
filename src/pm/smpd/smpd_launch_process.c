@@ -657,11 +657,6 @@ void smpd_parse_account_domain(char *domain_account, char *account, char *domain
 
 /* Unix code */
 
-/*
-int smpd_launch_process(char *cmd, char *search_path, char *env, char *dir,
-			int priorityClass, int priority, int dbg,
-			sock_set_t set, sock_t *sock_in, sock_t *sock_out, sock_t *sock_err, int *pid_ptr)
-			*/
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set)
 {
     int result;
@@ -672,9 +667,14 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     smpd_enter_fn("smpd_launch_process");
 
     /* create pipes for redirecting I/O */
+    /*
     pipe(stdin_pipe_fds);
     pipe(stdout_pipe_fds);
     pipe(stderr_pipe_fds);
+    */
+    socketpair(AF_UNIX, SOCK_STREAM, 0, stdin_pipe_fds);
+    socketpair(AF_UNIX, SOCK_STREAM, 0, stdout_pipe_fds);
+    socketpair(AF_UNIX, SOCK_STREAM, 0, stderr_pipe_fds);
 
     pid = fork();
     if (pid < 0)
