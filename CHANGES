@@ -1,4 +1,47 @@
 ===============================================================================
+			       Changes in 0.96p2
+===============================================================================
+The shm and ssm channels have been added back into the distribution.
+Officially, these channels are supported only on x86 platforms using the gcc
+compiler.  The necessary assembly instructions to guarantee proper ordering of
+memory operations are lacking for other platforms and compilers.  That said, we
+have seen a high success rate when testing these channels on unsupported
+systems.
+
+This patch release also includes a new unsupported channel.  The scalable shared
+memory, or sshm, channel is similar to the shm channel except that it allocates
+shared memory communication queues only when necessary instead of preallocating
+N-squared queues.
+
+
+===============================================================================
+			       Changes in 0.96p1
+===============================================================================
+This patch release fixes a problem with building MPICH2 on Microsoft Windows
+platforms.  It also corrects a serious bug in the poll implementation of the
+Sock interface.
+
+
+===============================================================================
+				Changes in 0.96
+===============================================================================
+The 0.96 distribution is largely a bug fix release.  In addition to the many
+bug fixes, major improvements have been made to the code that supports the
+dynamic process management routines (MPI_Comm_{connect,accept,spawn,...}()).
+Additional changes are still required to support MPI_Comm_disconnect().
+
+We also added an experimental (and thus completely unsupported) rdma device.
+The internal interface is similar to the CH3 interface except that it contains
+a couple of extra routines to inform the device about data transfers using the
+rendezvous protocol.  The channel can use this extra information to pin memory
+and perform a zero-copy transfer.  If all goes well, the results will be rolled
+back into the CH3 device.
+
+Due to last minute difficulties, this release does not contain the shm or
+ssm channels.  These channels will be included in a subsequent patch release.
+
+
+===============================================================================
 				Changes in 0.94
 ===============================================================================
 Active target one-sided communication is now available for the ch3:sock channel.
