@@ -554,8 +554,9 @@ if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
 fi
 pmi_name=$with_pmi
 dnl
+dnl FIXME: Details like this should not be in the top-level configure
 if test "$with_pmi" = "smpd" ; then
-AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
+    AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
 fi
 dnl
 if test ! -d $use_top_srcdir/src/pmi/$pmi_name ; then
