@@ -25,7 +25,7 @@
 /* If you change this, you must change the format spec (%lx) to match */
 typedef long PointerInt;
 
-#if HAVE_STDLIB_H
+#if defined(HAVE_STDLIB_H) || defined(STDC_HEADERS)
 #include <stdlib.h>
 #else
 #ifdef __STDC__
@@ -120,8 +120,7 @@ static long    TRMaxMemAllow = 0;
    MPIU_trinit - Setup the space package.  Only needed for 
    error messages and flags.
 +*/
-void MPIU_trinit( rank )
-int rank;
+void MPIU_trinit( int rank )
 {
     world_rank = rank;
 }
