@@ -166,10 +166,10 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 # Rules to build shared libraries (these are like programs
 # Question: Do we want a common rule or separate rules for each language?
 # These are out-of-date.
-%shlibdefs = ( 'c' =>   'C_LINK_SHL      = @C_LINK_SHL@',
-	       'cxx' => 'CXX_LINK_SHL    = @CXX_LINK_SHL@',
-	       'cpp' => 'CXX_LINK_SHL    = @CXX_LINK_SHL@',
-	       'f'   => 'F77_LINK_SHL    = @F77_LINK_SHL@',
+%shlibdefs = ( 'c' =>   'C_LINK_SHL  = @C_LINK_SHL@',
+	       'cxx' => 'CXX_LINK_SHL= @CXX_LINK_SHL@',
+	       'cpp' => 'CXX_LINK_SHL= @CXX_LINK_SHL@',
+	       'f'   => 'F77_LINK_SHL= @F77_LINK_SHL@',
 	     );
 %shlibrules = ( 'c' => '$(C_LINK_SHL) $(LDFLAGS)',
 	       'cxx' => '$(CXX_LINK_SHL) $(LDFLAGS)',
@@ -183,7 +183,7 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 # We must build the srcdir and top_srcdir specially because autoconf
 # insists on replacing this text.  The rest we had to do to allow the
 # maint/configure to work under Cygwin
-$srcdir_name =               'srcdir          = @' . "srcdir"      . '@';
+$srcdir_name =               'srcdir      = @' . "srcdir"      . '@';
 $master_topsrcdir_name =     
                'master_top_srcdir  = @' . "master_top_srcdir"  . '@';
 $topsrcdir_name =            'top_srcdir      = @' . "top_srcdir"  . '@';
@@ -775,8 +775,6 @@ sub DefaultRules {
 	print FD "$dirdefs{$dir}$newline";
     }
 
-    &InstallDocDirs;
-
     # Miscellaneous.  This needs to be improved.  This is really needed
     # only for some targets
     # The definition of DEFS is the same as for Automake
@@ -786,18 +784,18 @@ sub DefaultRules {
 	# What to do about includes?  If they were set explicitly,
 	# don't use the default.
 	if (!defined($makevars{"INCLUDES"})) {
-	    print FD "INCLUDES        = $include_list$newline";
+	    print FD "INCLUDES    = $include_list$newline";
         }
-	print FD "CPPFLAGS        = \@CPPFLAGS\@$newline";
+	print FD "CPPFLAGS    = \@CPPFLAGS\@$newline";
     }
     # Add the LIBS if there are any programs to build
     if (scalar(%pgmlinktypes)) {
-	print FD "LIBS            = \@LIBS\@$newline";
+	print FD "LIBS        = \@LIBS\@$newline";
     }
 
     # If there are subdirs, we need make
     if ($#subdirs >= 0 && ! defined($makevars{"MAKE"})) {
-	print FD "MAKE            = \@MAKE\@$newline";
+	print FD "MAKE        = \@MAKE\@$newline";
     }
 
     # Add any standard definitions
@@ -1876,12 +1874,10 @@ sub InstallDocs {
     # Each document type is different.  In addition, we want the install
     # to work even if the documents have not been built.
     if ((!$didkind{"html"}) && $globaldockind{"html"}) {
-        print FD "\tif [ ! -d $(htmldir) ] ; then mkdir $(htmldir) ; fi\n";
 	print FD "\tif [ -d www/www3 ] ; then \\$newline";
 	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/ ; fi$newline";
     }
     if ((!$didkind{"man"}) && $globaldockind{"man"}) {
-        print FD "\tif [ ! -d $(mandir) ] ; then mkdir $(mandir) ; fi\n";
 	print FD "\tif [ -d man/man3 ] ; then \\$newline";
 	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/ ; fi $newline";
     }
@@ -1893,7 +1889,7 @@ sub InstallDocDirs {
     # Add target only at the top
     if (!$doc_attop) { return; }
 
-    print FD "htmldir         = \@htmldir\@\nmandir          = \@mandir\@\n";
+    print FD "htmldir = \@htmldir\@\nmandir = \@mandir\@\n";
 }
 
 #
@@ -2348,11 +2344,6 @@ sub FindWorkingAutoconf {
 #     coverage analysis.
 #
 # ToDo: 
-# In the install step, mkdir isn't right, since it will make only one
-# directory level, and mkdir -p isn't universally available.  We probably
-# need either a MKDIR_P command, determined byu configure, or an
-# mkinstalldirs script.  I'd prefer a mkdirp script, used only if mkdir -p
-# did not work, and chosen by configure in that case.
 # ----------------------------------------------------------------------------
 # Add the clean target for the coverage analyzer
 sub GcovClean {
