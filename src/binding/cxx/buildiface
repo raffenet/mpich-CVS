@@ -47,7 +47,6 @@
 #
 # Setup global variables
 $buildfiles = 1;
-$build_sep_files = 0; # If false, build one huge mpicxx.h file
 $build_io = 1;        # If false, exclude the MPI-IO routines
 $indent = "    ";
 $print_line_len = 0;
@@ -82,8 +81,7 @@ foreach $_ (@ARGV) {
 	    $$varname = $value;
 	}
     }
-    elsif (/-nosep/) { $build_sep_files = 0; $indent = "    "; }
-    elsif (/-sep/) { $build_sep_files = 1; $indent = ""; }
+    elsif (/-nosep/ || /-sep/) { ; }   # Old argument; ignore
     elsif (/-noromio/) { $build_io = 0; }
     elsif (/-debug/) { $debug = 1; }
     elsif (/-routines=(.*)/) {
@@ -848,18 +846,17 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # These use the Full class name
 %class_has_no_default = ( 'Status' => 1 );
 
-# If we aren't building separate files, create the master file
-if (!$build_sep_files) {
-    $filename = "mpicxx.h.in";
-    $OUTFD = OUTFILEHANDLE;
-    open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
-    # Use the derived file as a source
-    $files[$#files+1] = "mpicxx.h";
-    &print_header;
-    &printDefineChecks;
-    print $OUTFD "namespace MPI {\n";
+# create the master file
+$filename = "mpicxx.h.in";
+$OUTFD = OUTFILEHANDLE;
+open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
+# Use the derived file as a source
+$files[$#files+1] = "mpicxx.h";
+&print_header;
+&printDefineChecks;
+print $OUTFD "namespace MPI {\n";
 
-    print $OUTFD "#if \@HAVE_CXX_EXCEPTIONS\@
+print $OUTFD "#if \@HAVE_CXX_EXCEPTIONS\@
 #define MPIX_CALL( fnc ) \\
 {int err; err = fnc ; if (err) throw Exception(err);}
 #else
@@ -875,7 +872,6 @@ typedef MPI_Offset Offset;
 typedef MPI_Aint   Aint;
 typedef MPI_Fint   Fint;\n";
 
-}
 
 #
 # Add the base routines.  Since these are not in any class, we
@@ -2088,32 +2084,16 @@ sub Datatype_methods {
 # ----------------------------------------------------------------------------
 sub BeginClass {
     my $class = $_[0];
-    if ($build_sep_files) {
-	$filename = "${class}-cpp.h";
-	open ( $OUTFD, ">$filename" ) || die "Could not open $filename\n";
-	$files[$#files+1] = $filename;
-	&print_header;
-	&printDefineChecks;
-	print $OUTFD "namespace MPI {\n";
-    }
-    else {
-	# Here is where we add (some) of the code to write the
-	# class definition, including the destructor, assignment,
-	# and compare operations.
-	my $Class = $fullclassname{$class};
-	my $mpi_type = $class_type{$class};
-        &PrintClassHead( $OUTFD, $Class, $mpi_type, $class_friends{$class} );
-    }
+    # Here is where we add (some) of the code to write the
+    # class definition, including the destructor, assignment,
+    # and compare operations.
+    my $Class = $fullclassname{$class};
+    my $mpi_type = $class_type{$class};
+    &PrintClassHead( $OUTFD, $Class, $mpi_type, $class_friends{$class} );
 }
 
 sub EndClass {
-    if ($build_sep_files) {
-	print $OUTFD "} // namespace MPI\n";
-	close( $OUTFD );
-    }
-    else {
-	&PrintClassTail( $OUTFD );
-    }
+    &PrintClassTail( $OUTFD );
 }
 # ----------------------------------------------------------------------------
 # Build the replacement functions:
