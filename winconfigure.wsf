@@ -97,6 +97,16 @@
 			helpstring = "Use the rdma interface in the infiniband channel"
 			required = "false"
 		/>
+		<unnamed
+			name = "--cleancode"
+			helpstring = "Clean up the code"
+			required = "false"
+		/>
+		<unnamed
+			name = "--dlldec"
+			helpstring = "Add dll decoration to the mpi function prototypes"
+			required = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -106,6 +116,8 @@ bRemoveFortran = False
 bWin64 = False
 bUseCycleCounter = False
 bForce = True
+bCleanCode = False
+bAddDllDecoration = False
 bMcxx = False
 bf77_name_lower = False
 bf77_name_lower_uscore = False
@@ -162,6 +174,10 @@ For arg = 0 To argCount - 1
     bForce = True
   ElseIf argValue = "--force=no" Then
     bForce = False
+  ElseIf argValue = "--cleancode" Then
+    bCleanCode = True
+  ElseIf argValue = "--dlldec" Then
+    bAddDllDecoration = True
   ElseIf argValue = "--with-mcxx" Then
 	bMcxx = True
   ElseIf argValue = "--f77_name_lower" Then
@@ -840,10 +856,36 @@ set fout = f.CreateTextFile("src\include\mpi.h")
 set fin = f.OpenTextFile("src\include\mpi.h.in")
 
 contents = fin.ReadAll()
-contents = ReplaceAts(contents, false)
-fout.Write(contents)
 fin.Close()
-fout.Close()
+contents = ReplaceAts(contents, false)
+if bAddDllDecoration then
+	' uncomment out the HAVE_EXPORTS_MPI_API block
+	contents = ReplaceBetweenTags(contents, "/*", "HAVE_EXPORT_MPI_API", "*/", "#ifdef MPICH2_STATIC_LIBRARY" & vbCrLf & "#define EXPORT_MPI_API" & vbCrLf & "#else" & vbCrLf & "#ifdef MPICH2_EXPORTS" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllexport)" & vbCrLf & "#else" & vbCrLf & "#define EXPORT_MPI_API __declspec(dllimport)" & vbCrLf & "#endif" & vbCrLf & "#endif" & vbCrLf & "#ifndef MPI_CALL" & vbCrLf & "#define MPI_CALL __cdecl" & vbCrLf & "#endif" & vbCrLf)
+	' add dllspec and calling convention to the MPI api
+	first_index = InStr(contents, "#ifndef MPICH_SUPPRESS_PROTOTYPES")
+	last_index = InStr(contents, "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
+	if first_index <> 0 and last_index <> 0 then
+		prototypes = Mid(contents, first_index, last_index - first_index)
+		prototypes = Replace(prototypes, "int MPI_", "EXPORT_MPI_API int MPI_CALL MPI_")
+		prototypes = Replace(prototypes, "double PMPI_Wtime", "EXPORT_MPI_API double MPI_CALL PMPI_Wtime")
+		prototypes = Replace(prototypes, "double PMPI_Wtick", "EXPORT_MPI_API double MPI_CALL PMPI_Wtick")
+		prototypes = Replace(prototypes, "double MPI_Wtime", "EXPORT_MPI_API double MPI_CALL MPI_Wtime")
+		prototypes = Replace(prototypes, "double MPI_Wtick", "EXPORT_MPI_API double MPI_CALL MPI_Wtick")
+		contents = ReplaceBetweenTags(contents, "#ifndef MPICH_SUPPRESS_PROTOTYPES", "MPI_Send", "#endif /* MPICH_SUPPRESS_PROTOTYPES */", prototypes & "#endif /* MPICH_SUPPRESS_PROTOTYPES */")
+	end if
+	' add dllspec and calling convention to the PMPI api
+	first_index = InStr(contents, "#if !defined(MPI_BUILD_PROFILING)")
+	last_index = InStr(contents, "#endif  /* MPI_BUILD_PROFILING */")
+	if first_index <> 0 and last_index <> 0 then
+		prototypes = Mid(contents, first_index, last_index - first_index)
+		prototypes = Replace(prototypes, "int PMPI_", "EXPORT_MPI_API int MPI_CALL PMPI_")
+		prototypes = Replace(prototypes, "double PMPI_Wtime", "EXPORT_MPI_API double MPI_CALL PMPI_Wtime")
+		prototypes = Replace(prototypes, "double PMPI_Wtick", "EXPORT_MPI_API double MPI_CALL PMPI_Wtick")
+		contents = ReplaceBetweenTags(contents, "#if", "MPI_BUILD_PROFILING", "#endif  /* MPI_BUILD_PROFILING */", prototypes & "#endif  /* MPI_BUILD_PROFILING */")
+	end if
+	fout.Write(contents)
+	fout.Close()
+end if
 
 '
 ' Generate mpichtimer.h
@@ -868,6 +910,9 @@ set fin = f.OpenTextFile("src\mpi\romio\include\mpio.h.in")
 
 contents = fin.ReadAll()
 contents = ReplaceAts(contents, false)
+if bAddDllDecoration then
+	contents = ReplaceBetweenTags(contents, "/* MPI-IO function prototypes */", "HAVE_PRAGMA_HP_SEC_DEF", "#if defined(__cplusplus)", "#if defined(__cplusplus)")
+end if
 fout.Write(contents)
 fin.Close()
 fout.Close()
@@ -987,9 +1032,12 @@ Function BuildIFaces()
 	  set fout = f.CreateTextFile("src\include\mpicxx.h")
 	  contents = fin.ReadAll()
 	  contents = ReplaceAts(contents, false)
-	  contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN", "}", "int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
-	  contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN", "}", "int NULL_DELETE_FN( Comm &comm, int keyval, void * attr, void *ex ) { comm; keyval; attr; ex; return 0; }")
-	  contents = ReplaceBetweenTags(contents, "int", "DUP_FN", "}", "int DUP_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+	  if bCleanCode then
+		' This only works if there is only one NULL_COPY_FN in the file.
+		contents = ReplaceBetweenTags(contents, "int", "NULL_COPY_FN", "}", "int NULL_COPY_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; attr_in; attr_out; flag = 1; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "NULL_DELETE_FN", "}", "int NULL_DELETE_FN( Comm &comm, int keyval, void * attr, void *ex ) { comm; keyval; attr; ex; return 0; }")
+		contents = ReplaceBetweenTags(contents, "int", "DUP_FN", "}", "int DUP_FN( const Comm &oldcomm, int keyval, void *ex, void *attr_in, void *attr_out, bool &flag ) { oldcomm; keyval; ex; flag = 1; *(void **)attr_out = attr_in; return 0; }")
+	  end if	
 	  fout.Write(contents)
 	  fin.Close()
 	  fout.Close()
@@ -2329,6 +2377,56 @@ End If
 'fout.WriteLine("foo specific stuff")
 'Call WriteFooter(fout)
 'fout.Close()
+
+Function ReplaceDoWhiles(str)
+	' This should be changed to find the do, match the { }, find the while (0) and then remove the do and the while (0)
+	str = Replace(str, "do {", "{")
+	str = Replace(str, "} while (0)", "}")
+	ReplaceDoWhiles = str
+End Function
+
+if bCleanCode then
+
+	'
+	' gen_segment.c
+	'
+	If f.FileExists("src\mpid\common\datatype\gen_segment.c") Then
+		Set fin = f.OpenTextFile("src\mpid\common\datatype\gen_segment.c")
+		contents = fin.ReadAll()
+		fin.Close()
+		Set fout = f.CreateTextFile("src\mpid\common\datatype\gen_segment.c")
+		contents = ReplaceDoWhiles(contents)
+		fout.Write(contents)
+		fout.Close()
+	End If
+
+	'
+	' mpid_segment.c
+	'
+	If f.FileExists("src\mpid\common\datatype\mpid_segment.c") Then
+		Set fin = f.OpenTextFile("src\mpid\common\datatype\mpid_segment.c")
+		contents = fin.ReadAll()
+		fin.Close()
+		Set fout = f.CreateTextFile("src\mpid\common\datatype\mpid_segment.c")
+		contents = ReplaceDoWhiles(contents)
+		fout.Write(contents)
+		fout.Close()
+	End If
+
+	'
+	' mpid_datatype.h
+	'
+	If f.FileExists("src\mpid\common\datatype\mpid_datatype.h") Then
+		Set fin = f.OpenTextFile("src\mpid\common\datatype\mpid_datatype.h")
+		contents = fin.ReadAll()
+		fin.Close()
+		Set fout = f.CreateTextFile("src\mpid\common\datatype\mpid_datatype.h")
+		contents = ReplaceDoWhiles(contents)
+		fout.Write(contents)
+		fout.Close()
+	End If
+
+end if
 
 '
 ' Generate mpicc
