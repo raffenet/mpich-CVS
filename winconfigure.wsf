@@ -1926,6 +1926,8 @@ Sub AddDefinitions( fout, filename )
 				Case "MPID_IBU_TYPE_UNIX"
 					fout.WriteLine("/* #undef MPID_IBU_TYPE_UNIX */")
 					'fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS 1")
+				Case "HAVE_MALLOC_H"
+					fout.WriteLine("#define HAVE_MALLOC_H 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
