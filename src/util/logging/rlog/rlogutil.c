@@ -206,7 +206,10 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     int error;
     double temp_time;
 
+    fseek(f, 0, SEEK_CUR);
     arrow_pos = ftell(f);
+    if (arrow_pos == -1)
+	return errno;
     pArray = (RLOG_ARROW*)malloc(nNumArrows * sizeof(RLOG_ARROW));
     if (pArray)
     {
@@ -399,6 +402,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
     /*int j;*/
     RLOG_IOStruct *pInput;
     int type, length;
+    int error;
 
     /* allocate an input structure */
     pInput = (RLOG_IOStruct*)malloc(sizeof(RLOG_IOStruct));
@@ -469,7 +473,13 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    /*printf("type: RLOG_ARROW_SECTION, length: %d\n", length);*/
 	    pInput->nNumArrows = length / sizeof(RLOG_ARROW);
 	    pInput->nArrowOffset = ftell(pInput->f);
-	    ModifyArrows(pInput->f, pInput->nNumArrows, pInput->header.nMinRank, pOffsets, n);
+	    error = ModifyArrows(pInput->f, pInput->nNumArrows, pInput->header.nMinRank, pOffsets, n);
+	    if (error)
+	    {
+		printf("Modifying the arrow section failed, error %d\n", error);
+		RLOG_CloseInputStruct(&pInput);
+		return -1;
+	    }
 	    /* fseek(pInput->f, length, SEEK_CUR); */
 	    break;
 	case RLOG_EVENT_SECTION:
@@ -478,7 +488,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    if (cur_rank - min_rank >= pInput->nNumRanks)
 	    {
 		printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
-		free(pInput);
+		RLOG_CloseInputStruct(&pInput);
 		return -1;
 	    }
 	    rank_index = cur_rank - min_rank;
