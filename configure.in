@@ -279,7 +279,7 @@ if test "$logging_name" != "none" ; then
     done
     for dir in $logging_subsystems ; do
         if test ! -x $srcdir/$dir/configure ; then
-	    AC_MSG_WARN([$logdir/$dir does has no configure.  Logging library $logging_name has been disabled.])
+	    AC_MSG_WARN([$logdir/$dir has no configure.  Logging library $logging_name has been disabled.])
 	    logging_name=none
         fi
     done
@@ -1323,7 +1323,6 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
 	  test/util/info/Makefile \
-	  test/util/timer/Makefile \
 	  examples/Makefile \
           src/util/logging/Makefile \
           src/util/timing/Makefile )

@@ -13,5 +13,7 @@ mm_via_pre.h
 mm_via_rdma_pre.h
 dlogconf.h
 rlogconf.h
+lwlogconf.h
+lwlog.h
 *Debug*
 *Release*

@@ -93,7 +93,7 @@ if test "$ac_cv_header_jni_h" != "yes" ; then
    AC_MSG_WARN([cannot compile trace code])
 fi
 dnl
-MPILIBNAME=mpich
+MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
 
 dnl
