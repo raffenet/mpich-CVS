@@ -60,3 +60,7 @@ rmlib:
 	cd input  && $(MAKE) rmlib
 
 realclean: clean rmlib
+
+distclean: realclean
+	@-$(RM) output/Makefile input/Makefile
+	@-$(RM) Makefile

@@ -31,7 +31,7 @@ OBJ       = $(SRC:.java=.class)
 SRCDIR     = $(top_srcdir)
 CLASSDIR   = ../..
 CLASSPATH  = ../..
-PKGDIR     = viewer/statistics
+PKGDIR     = base/statistics
 
 JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START@$(CLASSPATH)@JPATH_FINAL@ -d @JPATH_START@$(CLASSDIR)@JPATH_FINAL@ @JFLAGS@
 
@@ -47,3 +47,6 @@ clean:
 rmlib:
 
 realclean: clean rmlib
+
+distclean: realclean
+	@-$(RM) Makefile

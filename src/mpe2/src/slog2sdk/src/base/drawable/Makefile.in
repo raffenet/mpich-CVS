@@ -61,3 +61,6 @@ rmlib:
 	$(RM) $(TARGET)
 
 realclean: clean rmlib
+
+distclean: realclean
+	@-$(RM) Makefile

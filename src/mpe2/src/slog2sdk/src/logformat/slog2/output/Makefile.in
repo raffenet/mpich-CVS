@@ -85,6 +85,9 @@ clean:
 	$(RM) $(PACKAGE).manifest $(PKGDIR)/*.class 
 
 rmlib:
-	$(RM) $(TARGET1) $(TARGET2)
+	$(RM) $(TARGET1) $(TARGET2) $(TARGET3)
 
 realclean: clean rmlib
+
+distclean: realclean
+	@-$(RM) Makefile

@@ -51,3 +51,6 @@ clean:
 rmlib:
 
 realclean: clean rmlib
+
+distclean: realclean
+	@-$(RM) Makefile

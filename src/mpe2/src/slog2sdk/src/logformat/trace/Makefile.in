@@ -60,9 +60,12 @@ $(TARGET): $(CLS) $(CLS4C)
 
 clean:
 	cd $(CLASSDIR) && \
-	$(RM) $(PACKAGE).manifest $(PKGDIR)/*.class
+	$(RM) $(PACKAGE).manifest $(PKGDIR)/*.class $(PKGDIR)/*.h
 
 rmlib:
 	$(RM) $(TARGET)
 
 realclean: clean rmlib
+
+distclean: realclean
+	@-$(RM) Makefile
