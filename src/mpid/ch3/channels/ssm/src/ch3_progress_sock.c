@@ -302,7 +302,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    vc->ch.conn = conn;
 		    conn->vc = vc;
                         
-		    conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
+		    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 		    conn->pkt.sc_open_resp.ack = TRUE;
 		}
 		else
@@ -319,13 +319,13 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    vc->ch.conn = conn;
 			    conn->vc = vc;
                                 
-			    conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
+			    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 			    conn->pkt.sc_open_resp.ack = TRUE;
 			}
 			else
 			{
 			    /* refuse connection */
-			    conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
+			    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 			    conn->pkt.sc_open_resp.ack = FALSE;
 			}
 		    }
@@ -340,13 +340,13 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    vc->ch.conn = conn;
 			    conn->vc = vc;
                                 
-			    conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
+			    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 			    conn->pkt.sc_open_resp.ack = TRUE;
 			}
 			else
 			{
 			    /* refuse connection */
-			    conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
+			    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 			    conn->pkt.sc_open_resp.ack = FALSE;
 			}
 		    }
@@ -397,7 +397,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    vc->ch.conn = conn;
 		    conn->vc = vc;
                         
-		    conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_RESP;
+		    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 		    conn->pkt.sc_open_resp.ack = TRUE;
                         
 		    conn->state = CONN_STATE_OPEN_LSEND;
@@ -659,7 +659,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    if (conn->state == CONN_STATE_CONNECTING)
 	    {
 		conn->state = CONN_STATE_OPEN_CSEND;
-		conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_REQ;
+		MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_REQ);
 		conn->pkt.sc_open_req.pg_id_len = (int) strlen(MPIDI_Process.my_pg->id) + 1;
 		conn->pkt.sc_open_req.pg_rank = MPIR_Process.comm_world->rank;
 
@@ -669,7 +669,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    {
 		/* CONN_STATE_CONNECT_ACCEPT */
 		conn->state = CONN_STATE_OPEN_CSEND;
-		conn->pkt.type = MPIDI_CH3I_PKT_SC_CONN_ACCEPT;
+		MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT);
 		/* pkt contains nothing */
 		mpi_errno = connection_post_send_pkt(conn);
 		if (mpi_errno != MPI_SUCCESS)
