@@ -192,11 +192,10 @@ case "$enable_error_checking" in
     no)
     ;;
     all|yes|runtime)
-    changequote(<<,>>)
-    error_checking_kind=`echo $enable_error_checking | tr '[a-z]' '[A-Z]'`
-    changequote([,])
+    error_checking_kind=`echo $enable_error_checking | \
+    tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
     error_checking_kind=MPID_ERROR_LEVEL_$error_checking_kind
-    AC_DEFINE_UNQUOTED(HAVE_ERROR_CHECKING,$error_checking_kind,[define to enable error checking])
+    AC_DEFINE_UNQUOTED(HAVE_ERROR_CHECKING,$error_checking_kind,[Define to enable error checking])
     ;;
     *)
     AC_MSG_WARN([Unknown value $enable_error_checking for enable-error-checking])
@@ -323,9 +322,8 @@ else
     logging_subdirs=
 fi
 if test "$timing_name" != "none" ; then
-    changequote(<<,>>)
-    timing_kind=`echo $timing_name | tr '[a-z]' '[A-Z]'`
-    changequote([,])
+    timing_kind=`echo $timing_name | \
+       tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
     timing_kind=MPID_TIMING_KIND_$timing_kind
     AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
     if test "$collect_stats" = "true" ; then
@@ -335,7 +333,7 @@ fi
 AC_SUBST(logging_dir)
 AC_SUBST(logging_name)
 AC_SUBST(logging_subdirs)
-use_logging_variable="MPID_LOGGING_`echo $logging_name | tr a-z A-Z`"
+use_logging_variable="MPID_LOGGING_`echo $logging_name | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
 AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging library])
 dnl
 dnl threads
