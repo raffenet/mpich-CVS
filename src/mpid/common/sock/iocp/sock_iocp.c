@@ -795,7 +795,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
 	else
 	{
 	    ret_val = WinToSockError(WSAGetLastError());
-	    MPIU_Error_printf("sock_post_connect", "gethostbyname failed, error %d\n", WSAGetLastError());
+	    MPIU_Error_printf("In sock_post_connect(), gethostbyname failed, error %d\n", WSAGetLastError());
 	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	    return ret_val;
 	}
@@ -807,7 +807,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     if (easy_create(&connect_state->sock, ADDR_ANY, INADDR_ANY) == SOCKET_ERROR)
     {
 	ret_val = WinToSockError(WSAGetLastError());
-	MPIU_Error_printf("sock_post_connect", "easy_create failed, error %d\n", WSAGetLastError());
+	MPIU_Error_printf("In sock_post_connect(), easy_create failed, error %d\n", WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	return ret_val;
     }
@@ -816,7 +816,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     if (connect(connect_state->sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
     {
 	ret_val = WinToSockError(WSAGetLastError());
-	MPIU_Error_printf("sock_post_conect", "connect failed, error %d\n", WSAGetLastError());
+	MPIU_Error_printf("In sock_post_connect(), connect failed, error %d\n", WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	return ret_val;
     }
@@ -834,7 +834,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     if (CreateIoCompletionPort((HANDLE)connect_state->sock, set, (ULONG_PTR)connect_state, g_num_cp_threads) == NULL)
     {
 	ret_val = WinToSockError(GetLastError());
-	MPIU_Error_printf("sock_post_connect", "CreateIOCompletionPort failed, error %d\n", GetLastError());
+	MPIU_Error_printf("In sock_post_connect(), CreateIOCompletionPort failed, error %d\n", GetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
 	return ret_val;
     }
@@ -1552,7 +1552,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		    if (sock->sock != INVALID_SOCKET)
 		    {
 			MPIU_DBG_PRINTF(("unmatched ovl: pending: %d, state = %d\n", sock->pending_operations, sock->state));
-			MPIU_Error_printf("returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);
+			MPIU_Error_printf("In sock_wait(), returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);
 			MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 			return SOCK_FAIL;
 		    }
