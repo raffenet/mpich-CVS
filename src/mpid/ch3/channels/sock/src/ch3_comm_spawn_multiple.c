@@ -105,12 +105,13 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
         if (mpi_errno != PMI_SUCCESS)
         {
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
+	    MPIU_Free(info_keyval_sizes);
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", mpi_errno);
             goto fn_exit;
         }
 
-        MPIU_Free(info_keyval_sizes);
 	free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
+        MPIU_Free(info_keyval_sizes);
     }
 
     mpi_errno = MPIDI_CH3_Comm_accept(port_name, root, comm_ptr, intercomm); 
