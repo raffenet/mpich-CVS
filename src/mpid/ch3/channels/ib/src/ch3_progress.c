@@ -11,7 +11,9 @@
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
-static inline void make_progress(int is_blocking);
+//static inline void make_progress(int is_blocking);
+static inline void handle_read(MPIDI_VC *vc, int nb);
+static inline void handle_written(MPIDI_VC * vc);
 
 void MPIDI_CH3_Progress_start()
 {
@@ -24,6 +26,8 @@ void MPIDI_CH3_Progress_start()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Progress(int is_blocking)
 {
+    ibu_wait_t out;
+    int rc;
     unsigned register count;
     unsigned completions = MPIDI_CH3I_progress_completions;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
@@ -33,7 +37,30 @@ int MPIDI_CH3_Progress(int is_blocking)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-	make_progress(is_blocking);
+	//make_progress(is_blocking);
+	rc = ibu_wait(MPIDI_CH3I_Process.set, 0, &out);
+	if (rc == IBU_FAIL)
+	    err_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
+	assert(rc != IBU_FAIL);
+	switch (out.op_type)
+	{
+	case IBU_OP_TIMEOUT:
+	    break;
+	case IBU_OP_READ:
+	    MPIU_dbg_printf("make_progress: ibu_wait reported %d bytes read\n", out.num_bytes);
+	    handle_read(out.user_ptr, out.num_bytes);
+	    break;
+	case IBU_OP_WRITE:
+	    MPIU_dbg_printf("make_progress: ibu reported %d bytes written\n", out.num_bytes);
+	    //handle_written(out.user_ptr, out.num_bytes);
+	    handle_written(out.user_ptr);
+	    break;
+	case IBU_OP_CLOSE:
+	    break;
+	default:
+	    assert(FALSE);
+	    break;
+	}
     }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 
@@ -51,7 +78,8 @@ void MPIDI_CH3_Progress_poke()
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    make_progress(0);
+    //make_progress(0);
+    MPIDI_CH3_Progress(0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
 }
 
@@ -101,6 +129,7 @@ void MPIDI_CH3I_IB_post_read(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_IB_POST_READ);
 }
 
+#if 0
 void MPIDI_CH3I_IB_post_write(MPIDI_VC * vc, MPID_Request * req)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_IB_POST_WRITE);
@@ -113,6 +142,7 @@ void MPIDI_CH3I_IB_post_write(MPIDI_VC * vc, MPID_Request * req)
     */
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_IB_POST_WRITE);
 }
+#endif
 
 /*
  * MPIDI_CH3I_Request_adjust_iov()
@@ -494,11 +524,8 @@ static inline void handle_written(MPIDI_VC * vc)
 	}
 	else
 	{
-	    /*assert(nb != 0);*/
-	    /*handle_error(elem, req);*/
 	    break;
 	}
-	nb = 0;
     }
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -506,6 +533,7 @@ static inline void handle_written(MPIDI_VC * vc)
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
 }
 
+#if 0
 #undef FUNCNAME
 #define FUNCNAME make_progress
 #undef FCNAME
@@ -551,3 +579,4 @@ static inline void make_progress(int is_blocking)
 
     MPIDI_FUNC_EXIT(MPID_STATE_MAKE_PROGRESS);
 }
+#endif
