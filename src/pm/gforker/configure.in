@@ -96,10 +96,20 @@ dnl AC_CHECK_PROGS(AR,ar)
 dnl AC_PROG_RANLIB
 # Turn off creating shared libraries for any utility routines.  If we *are*
 # building shared libaries, make sure that we create a static executable
+# (to avoid problems with other libraries that -lmpich may need for routines
+# that we're not using in mpiexec).
 case "$ENABLE_SHLIB" in 
     none) ;;
     gcc) 
     LDFLAGS="$LDFLAGS -static"    
+    ;;
+    solaris)
+    # Gahh.  We'd like to use -Bstatic, but on some of our Solaris systems,
+    # that gives you things like "-lc: not found" (!!!!)
+    #LDFLAGS="$LDFLAGS -Bstatic"
+    # Instead, we link directly with the .a file in ../../../lib (see
+    # the definition in the Makefile.sm).  This works for other 
+    # systems as well.
     ;;
     libtool)
     ;;
