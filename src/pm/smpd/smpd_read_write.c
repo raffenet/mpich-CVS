@@ -36,10 +36,14 @@ int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded)
     hex[2] = '\0';
     while (*str != '\0')
     {
-	hex[0] = *str++;
-	hex[1] = *str++;
+	hex[0] = *str;
+	str++;
+	hex[1] = *str;
+	str++;
 	sscanf(hex, "%X", &value);
-	*dest++ = (char)value;
+	*dest = (char)value;
+	smpd_dbg_printf(" %s = %c\n", hex, *dest);
+	dest++;
     }
     return SMPD_SUCCESS;
 }
