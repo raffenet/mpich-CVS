@@ -77,6 +77,7 @@ dnl
 dnl Find a C compiler (choose gcc first)
 AC_PROG_CC
 AC_PROG_INSTALL
+PAC_PROG_MKDIR_P
 PAC_PROG_MAKE
 dnl
 dnl     check for compiler characteristics

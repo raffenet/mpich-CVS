@@ -259,6 +259,7 @@ else
 fi
 AC_SUBST(AR)
 AC_PROG_INSTALL
+PAC_PROG_MKDIR_P
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
 AC_CHECK_PROGS(RANLIB,ranlib,true)

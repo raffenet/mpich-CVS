@@ -54,3 +54,25 @@ subdirs="$SAVE_subdirs"
 INSTALL="$SAVE_INSTALL"
 ])
 
+dnl
+dnl Find something to use for mkdir -p.  Eventually, this will 
+dnl have a script for backup
+AC_DEFUN(PAC_PROG_MKDIR_P,[
+AC_CACHE_CHECK([whether mkdir -p works],
+pac_cv_mkdir_p,[
+pac_cv_mkdir_p=no
+rm -rf .tmp
+if mkdir -p .tmp/.foo 1>/dev/null 2>&1 ; then 
+    if test -d .tmp/.foo ; then 
+        pac_cv_mkdir_p=yes
+    fi
+fi
+])
+if test "$pac_cv_mkdir_p" = "yes" ; then
+   MKDIR_P="mkdir -p"
+   export MKDIR_P
+else
+   AC_MSG_WARN([mkdir -p does not work; the install step may fail])
+fi
+AC_SUBST(MKDIR_P)
+])
