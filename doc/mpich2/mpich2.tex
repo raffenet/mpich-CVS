@@ -716,6 +716,17 @@ int MPI_Foo( MPI_Comm comm, int a )
 % Sun explodes :) .  Some prefer if/endif etc. because anonymous blocks
 % have their own drawbacks; placing the brace with the controlling
 % clause emphasizes the connection.
+
+Header (``\texttt{.h}''} files follow similar rules, including the copyright
+block.  Header files that will be used \emph{only} with C++ compilers should
+also include the comment
+\begin{verbatim}
+/* style: c++ header */
+\end{verbatim}
+after the copyright block.  This allows certain common C++ constructions, such
+as \texttt{//} for comments, in the header file.  Header files that may be
+used by both C and C++ compilers must \emph{not} use this comment.
+
 The rest of this section discusses some of the coding practices and
 suggestions in more detail.
 
