@@ -1,0 +1,140 @@
+\documentclass{article}
+
+\usepackage{epsf}
+
+\begin{document}
+\title{A Third Generation Abstract Device Interface for MPICH}
+\author{David Ashton, William Gropp, Ewing Lusk, and Debbie Swider}
+\maketitle
+
+\section{Introduction}
+
+\subsection{Related Work}
+It is useful to consider other MPI implementations.
+
+Tony and Boris argue for a single protocol that moves small blocks fast is
+better than a multi-level protocol \cite{techreport}.
+
+\section{Requirements}
+This section lists requirements that we address in the ADI-3 design.
+
+\subsection{General Capabilities}
+\begin{enumerate}
+\item Thread-safe
+\item Full MPI-2
+\item Support multimethod, including IMPI
+\end{enumerate}
+
+\subsection{Performance Issues}
+\begin{enumerate}
+\item Collective implementations should allow pipelining optimizations (store
+  and forward).  This optimizes the long-data case
+\item Collective short-cuts for join/copy/concatenate; this optimizes the
+  short-data case.
+\item Scalable and low latency (in shared-memory case, this means no locks)
+\item Direct (and short) path for common operations
+\item Asymptotically fast bandwidth
+\item Fast and efficient non-contiguous datatypes
+\item Fast one-sided support
+\end{enumerate}
+
+\subsection{Job Startup and Rundown}
+\begin{enumerate}
+\item Abort must be rock solid.
+\item Process creation through an API that allows use of third-party job
+  managers and schedulers.
+\end{enumerate}
+
+\subsection{Interoperability (IMPI and Java)}
+\begin{enumerate}
+\item We would like to support IMPI which is a TCP protocol with specific
+  requirements for job start, connection, and data transfer, without impacting
+  performance when IMPI is not used.
+\end{enumerate}
+
+\subsection{Communication and Flow Control}
+\begin{enumerate}
+\item Communication buffers must be managed to avoid out-of-memory errors
+  because of buffer limits.
+\item Support pipelined collective algorithms (this requires a byte-stream
+  data model for implemententing the collective algorithms, not MPI
+  point-to-point) 
+\item Fast datatype support
+\end{enumerate}
+
+\subsection{Device-Specific Issues}
+
+\subsubsection{TCP}
+\begin{enumerate}
+\item Lost connections must be restartable.  This will require keeping track
+  of message progress in case a connection is dropped during a message
+  transfer. 
+\end{enumerate}
+
+\subsubsection{Shared Memory}
+\begin{enumerate}
+\item Support MIMD as well as SPMD
+\end{enumerate}
+
+\subsubsection{VIA}
+\begin{enumerate}
+\item 
+\end{enumerate}
+
+\section{Technology Issues}
+
+\subsection{Shared Memory}
+\begin{enumerate}
+\item Memory synchronization and ordering.  We want to make this as
+  light-weight as possible, issuing assembler instructions when possible
+\item Lock-free code: there quite a bit of literature on lock-free systems.
+  We want to avoid locks as much as possible.  We probably want to use
+  abstractions like queue insert and remove for various kinds of queues
+  (multi-reader/multi-writer, single-reader/single-writer).  We may need to
+  implement these with operations like load-link/store-conditional (note that
+  compare-and-swap is what much of the literature uses).  An issue in using
+  LL/SC is fairness (these algorithms aren't wait-free, just lock-free).
+\end{enumerate}
+
+\section{Design}
+
+This section contains ideas.  As we evaluate them, we will keep the reasons
+why design choices were made.
+
+\subsection{Queue-based ADI}
+The building blocks for this approach are queue operations combined with
+remote memory operations.  Any method (TCP, VIA, shared-memory) is implemented
+as insert data into queue and remote data copies.
+
+One question is ``how many queues should there be?''  
+
+\begin{enumerate}
+\item One for everything (most ADI2 implementations)
+\item One per communicator (allows single-threaded communicator optimizations)
+\item One per remote process (Tony/Boris approach)
+\end{enumerate}
+
+\subsection{Thread Safety Issues}
+The biggest problem is the implementation of \texttt{MPI\_Comm\_dup}.  The
+usual implementation uses an \texttt{MPI\_Allreduce} to find a free integer
+context id.  The problem is that two overlapping communicators could perform a
+\texttt{MPI\_Comm\_dup} (still properly ordered); in this case, the two
+different dup operations might share the same context id, thus introducing a
+bug.  Fixing this is hard.  One approach is to use a two-phase algorithm (like
+a load-link/store-conditional):
+\begin{enumerate}
+\item Read available context ids and set a bit to indicate that a dup is in
+  progress\label{dup:step1}
+\item Perform an allreduce (of the bitvector of available values or a range of
+  values)
+\item Attempt to set value (if read-bit not set, success, else failure)
+\item Allreduce of success flag.  If failure, return to \ref{dup:step1}.
+In any case, clear read-bit.
+\end{enumerate}
+This won't dead lock, but it can live-lock.  
+\section{Evaluation}
+
+\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp}
+\bibliographystyle{plain}
+
+\end{document}
