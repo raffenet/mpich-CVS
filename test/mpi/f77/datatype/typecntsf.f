@@ -7,6 +7,7 @@ C
        implicit none
        include 'mpif.h'
        integer errs, ierr
+       integer ntype1, ntype2
 C
 C This is a very simple test that just tests that the contents/envelope
 C routines can be called.  This should be upgraded to test the new 
@@ -18,6 +19,14 @@ C
 
        call explore( MPI_INTEGER, MPI_COMBINER_NAMED, errs )
        call explore( MPI_BYTE, MPI_COMBINER_NAMED, errs )
+       call mpi_type_vector( 10, 1, 30, MPI_DOUBLE_PRECISION, ntype1, 
+     &                       ierr )
+       call explore( ntype1, MPI_COMBINER_VECTOR, errs )
+       call mpi_type_dup( ntype1, ntype2, ierr )
+       call explore( ntype2, MPI_COMBINER_DUP, errs )
+       call mpi_type_free( ntype2, ierr )
+       call mpi_type_free( ntype1, ierr )
+       
 C
        call mtest_finalize( errs )
        call mpi_finalize( ierr )
@@ -47,6 +56,8 @@ C
           print *, ' Expected combiner ', mycomb, ' but got ',
      &             combiner
        endif
+C
+C List all combiner types to check that they are defined in mpif.h
        if (combiner .eq. MPI_COMBINER_NAMED) then
        else if (combiner .eq. MPI_COMBINER_DUP) then
        else if (combiner .eq. MPI_COMBINER_CONTIGUOUS) then

@@ -83,13 +83,33 @@ C Test the delete function
          print *, ' did not get expected value of delcount ', 
      &          delcount, curcount + 1
       endif
-
+C
+C Test the attr delete function
+      call mpi_comm_dup( comm1, comm2, ierr )
+      valin      = 6001
+      extrastate = 1001
+      call mpi_comm_set_attr( comm2, keyval, valin, ierr )
+      delcount   = 0
+      call mpi_comm_delete_attr( comm2, keyval, ierr )
+      if (delcount .ne. 1) then
+         errs = errs + 1
+         print *, ' Delete_attr did not call delete function'
+      endif
+      flag = .true.
+      call mpi_comm_get_attr( comm2, keyval, valout, flag, ierr )
+      if (flag) then
+         errs = errs + 1
+         print *, ' Delete_attr did not delete attribute'
+      endif
+      call mpi_comm_free( comm2, ierr )
+C
       ierr = -1
       call mpi_comm_free_keyval( keyval, ierr )
       if (ierr .ne. MPI_SUCCESS) then
          errs = errs + 1
          call mtestprinterror( ierr )
       endif
+      call mpi_comm_free( comm1, ierr )
 
       call mtest_finalize( errs )
       call mpi_finalize( ierr )

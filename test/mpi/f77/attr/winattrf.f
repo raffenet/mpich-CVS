@@ -61,8 +61,24 @@ C
          print *, 'Unexpected value (should be 2001)', valout, 
      &            ' from attr'
       endif
+C
+C Test the attr delete function
+      delcount   = 0
+      call mpi_win_delete_attr( win, keyval, ierr )
+      if (delcount .ne. 1) then
+         errs = errs + 1
+         print *, ' Delete_attr did not call delete function'
+      endif
+      flag = .true.
+      call mpi_win_get_attr( win, keyval, valout, flag, ierr )
+      if (flag) then
+         errs = errs + 1
+         print *, ' Delete_attr did not delete attribute'
+      endif
       
-C Test the delete function      
+C Test the delete function on window free
+      valin = 2001
+      call mpi_win_set_attr( win, keyval, valin, ierr )
       curcount = delcount
       call mpi_win_free( win, ierr )
       if (delcount .ne. curcount + 1) then
