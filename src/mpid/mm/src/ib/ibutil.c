@@ -99,7 +99,6 @@ int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_up
 	
 	mem_ptr = BlockAlloc(vc_ptr->data.ib.info.m_allocator);
 	memcpy(mem_ptr, buf, length);
-	mem_ptr = (char*)mem_ptr + length;
 	
 	sg_list.data_seg_p = &data;
 	sg_list.data_seg_num = 1;
@@ -135,6 +134,8 @@ int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_up
 	    err_printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
 	    return status;
 	}
+
+	mem_ptr = (char*)mem_ptr + length;
     }
 
     return MPI_SUCCESS;
