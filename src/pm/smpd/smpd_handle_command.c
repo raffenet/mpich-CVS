@@ -1702,6 +1702,7 @@ invalid_dbs_command:
 int smpd_handle_launch_command(smpd_context_t *context)
 {
     int result;
+    char err_msg[256];
     int iproc;
     int i, nmaps;
     char drive_arg_str[20];
@@ -1766,6 +1767,14 @@ int smpd_handle_launch_command(smpd_context_t *context)
 
 	    /* map the drive */
 	    /* FIXME: username and password needed to map a drive */
+	    result = smpd_map_user_drives(share, NULL, NULL, err_msg, 256);
+	    if (result != SMPD_TRUE)
+	    {
+		smpd_err_printf("mapping drive failed: input string - %s, error - %s\n", share, err_msg);
+		smpd_free_process_struct(process);
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
 	}
 	else
 	{

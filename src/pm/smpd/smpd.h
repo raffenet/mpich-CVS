@@ -795,5 +795,8 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr);
 int smpd_register_spn(const char *dc, const char *dn, const char *dh);
 int smpd_lookup_spn(char *target, int length, const char * host, int port);
+SMPD_BOOL smpd_map_user_drives(char *pszMap, char *pszAccount, char *pszPassword, char *pszError, int maxerrlength);
+SMPD_BOOL smpd_unmap_user_drives(char *pszMap);
+void smpd_finalize_drive_maps();
 
 #endif

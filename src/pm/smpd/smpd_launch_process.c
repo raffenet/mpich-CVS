@@ -1938,6 +1938,7 @@ int smpd_exit(int exitcode)
 {
     smpd_enter_fn("smpd_exit");
     smpd_kill_all_processes();
+    smpd_finalize_drive_maps();
     smpd_finalize_printf();
     PMPI_Finalize();
     /* If we're exiting due to a user abort, use the exit code supplied by the abort call */

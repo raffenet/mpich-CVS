@@ -143,6 +143,9 @@
 				RelativePath="smpd_launch_process.c">
 			</File>
 			<File
+				RelativePath=".\smpd_mapdrive.c">
+			</File>
+			<File
 				RelativePath="smpd_printf.c">
 			</File>
 			<File
