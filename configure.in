@@ -375,7 +375,7 @@ esac
 logging_subsystems=
 if test "$logging_name" != "none" ; then
     # Check for an external name (directory containing a /)
-    hasSlash=`echo A$logging_name | sed -e 's%[^/]%%g'`
+    hasSlash=`echo A$logging_name | sed -e 's%[[^/]]%%g'`
     if test -n "$hasSlash" ; then
         # Check that the external logging system is complete.
 	# Any failure will cause configure to abort
