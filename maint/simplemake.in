@@ -16,6 +16,8 @@ $am_a = "";          # set to _a for automake style input
 $do_dependencies = 1;# set to 1 to attempt to generate dependency information
 $autoconf_args = ""; # Extra arguments for autoconf
 $do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
+$found_sharedlib = 0;# set to 1 if a specific shared library target is found
+
 $root_tags = 1;      # set to 1 to create a tags file in the root dir
 $local_tags = 0;     # set to 1 to create a tags file in the local dir
 $do_libmember = 0;   # set to 1 to generate library member rules in makefiles
@@ -368,6 +370,27 @@ sub ReadMfile {
 	    # Keep track of source files
 	    &SaveSrcNames( $libsource );
         }
+	# Using the _so_ in the library lines is necessary to distinguish
+	# between libraries and programs that start with lib...
+        # This target is used for libraries that are *always* needed
+	# as shared libraries (e.g., they are used only in a dynamic
+	# link context).  No _so_DIR for these yet because stand-alone
+	# shared libraries are usually contained within a single
+	# directory.
+        elsif (/^lib([@\${}\(\)\w-]*)_so_SOURCES\s*=\s*(.*)$/) {
+	    $found_sharedlib = 1;
+            $libname = "$1";
+            $libsource = $2;
+            $shared_libraries{ $libname } = $libsource;
+	    # Add to targets
+	    $libloc = &GetLibLoc( $libname );
+	    $alltargets[$#alltargets+1] = "${libloc}lib$libname.so";
+	    # Keep track of source types
+	    &FindSrcTypes( $libsource );
+	    # Keep track of source files
+	    &SaveSrcNames( $libsource );
+	    # We need to include .lo as a necessary suffix.
+        }
         elsif (/^lib([@\${}\(\)\w-]*)_a_DIR\s*=\s*(.*)\s*$/) {
 	    # This is an extension over automake.  It makes it easy
 	    # to modify a library in a different directory
@@ -490,7 +513,7 @@ sub WriteMfile {
     # Output the generated targets.  First, the libraries
     &TargetLibraries;
     if ($do_sharedlibs) {
-	&TargetSharedLibraries;
+	&TargetSharedLibraries( \%libraries );
 	if (defined($optinstall_files{'SHLIB'})) {
 	    foreach $libspec (split(/\s\s*/,$optinstall_files{'SHLIB'})) {
 		$libspec =~ /(.*)\/([^\/]*)/;
@@ -500,6 +523,13 @@ sub WriteMfile {
 		$libsrc =~ s/\.so/\.la/;
 		&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
 	    }
+	}
+    }
+    if (%shared_libraries) {
+	# If any shared libraries were requested...
+	&TargetSharedLibraries( \%shared_libraries );
+	foreach $libname (keys(%shared_libraries)) {
+	    &TargetSharedLibraryFinal( "lib$libname.la", "lib$libname.so", "." );
 	}
     }
     if ($do_profilelibs && $found_profilelib) {
@@ -635,7 +665,7 @@ sub DefaultRules {
 	if (defined($pgmlinktypes{$ext})) {
 	    print FD "$progdefs{$ext}$newline";
 	}
-	if ($do_sharedlibs) {
+	if ($do_sharedlibs || $found_sharedlib) {
 	    $extkey = "$ext:lo";
 	    print FD "$extdef{$extkey}$newline";
 	}
@@ -655,7 +685,7 @@ sub DefaultRules {
     # given files.  Remove all default suffix rules
     if (scalar(%ext_seen)) {
 	$suffixes = ".o";
-	if ($do_sharedlibs) { 
+	if ($do_sharedlibs || $found_sharedlib) { 
 	    $suffixes .= " .lo";
 	}
 	if ($do_profilelibs && $found_profilelib) {
@@ -683,7 +713,7 @@ sub DefaultRules {
 	    $extkey = "$ext:o";
 	    print FD "\t$extrules{$extkey}$newline";
 	}
-	if ($do_sharedlibs) {
+	if ($do_sharedlibs || $found_sharedlib) {
 	    $extkey = "$ext:lo";
 	    print FD ".$ext.lo:$newline";
 	    print FD "\t$extrules{$extkey}$newline";
@@ -842,6 +872,7 @@ sub ClearVars {
     %install_files = ();
     %optinstall_files = ();
     $found_profilelib = 0;
+    $found_sharedlib  = 0;
     %programs = ();
     %pgm_ldadd = ();
     # Variables
@@ -1210,6 +1241,7 @@ sub TargetLibraries {
     }
 }
 
+
 # This code is similar to TargetLibraries.
 sub TargetProfileLibraries {
     $found_source_files = 0;
@@ -1252,10 +1284,20 @@ sub TargetProfileLibraries {
 # This routine creates the library of shared objects.  There is a separate
 # step that builds the shared library (which is really a kind of partially
 # linked executable).
+# Pass in the name (by reference) of the list of libraries.  This allows
+# us to use this routine for both the general list of libraries (for -shared, 
+# which makes both static and dynamic libraries) and for the list of libraries
+# that are only needed as shared libraries (e.g., Totalview and Java/SLOG
+# interface libraries).
 sub TargetSharedLibraries {
-    foreach $lib (keys(%libraries)) {
+    # This provides a *reference* to the hash that is passed into the routine
+    # See the perlsub and perlref manpages for this, and the %$libraries and
+    # $$libraries used below.
+    my $libraries = @_[0];
+
+    foreach $lib (keys(%$libraries)) {
 	$libloc = &GetLibLoc( $lib );
-	$sourcefiles = &ExpandMakeVars($libraries{$lib});
+	$sourcefiles = &ExpandMakeVars($$libraries{$lib});
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "la", "lo" );
 	# no ranlib step here because we can't "link" the shared library
 	# until all members are added.
@@ -1522,7 +1564,7 @@ sub AddDependency {
 	if ($do_profilelibs && $found_profilelib) {
 	    s/^(.*)\.o:(.*)/\1.o \1.pf:\2/;
 	}
-	if ($do_sharedlibs) {
+	if ($do_sharedlibs || $found_sharedlib) {
 	    s/^(.*)\.o(.*)/\1.o \1.lo\2/;
 	}
 	print FD $_ ;

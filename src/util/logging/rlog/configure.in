@@ -75,6 +75,14 @@ dnl PAC_C_STRUCT_ALIGNMENT
 dnl
 dnl Look for Standard headers
 AC_HEADER_STDC
+AC_CHECK_HEADER(jni.h)
+if test "$ac_cv_header_jni_h" != "yes" ; then
+   # Try to find the java include path.  For now, just generate warning
+   # At ANL, places to look include /soft/com/packages/j2sdk1.4.0/include
+   # and /soft/com/packages/jdk-1.3.1/include (and /soft/com/jdk*)
+   # May also want to look in $JAVA_HOME/include
+   AC_MSG_WARN([cannot compile trace code])
+fi
 dnl
 MPILIBNAME=mpich
 AC_SUBST(MPILIBNAME)
@@ -88,5 +96,6 @@ AC_OUTPUT_COMMANDS(cp ./rlogconf.h ../../../include)
 
 dnl Generate the Makefiles from Makefile.in
 
-#AC_OUTPUT(Makefile TraceInput/Makefile)
+dnl AC_OUTPUT(Makefile TraceInput/Makefile)
 AC_OUTPUT(Makefile)
+
