@@ -2948,7 +2948,22 @@ sub TargetInstall {
 	    print FD "\t-rm -f \${$dir}/$destfile$newline";
 	}
     }
-    # Still doesn't handle install files added by subdir installs
+    # Handle uninstalls controlled by subdirs
+    if ($#install_subdirs >= 0) {
+	&RecursiveOp( "uninstall", "install_subdirs" );
+    }
+
+    # also add the recursive installcheck target
+    print FD "installcheck:";
+    if (defined($usertargets{"installcheck-local"})) {
+	print FD " installcheck-local"; 
+    }
+    &TargetPreamble( "installcheck" );
+    print FD $newline;
+    if ($#install_subdirs >= 0) {
+	&RecursiveOp( "installcheck", "install_subdirs" );
+    }
+    &TargetPostamble( "installcheck" );
 }
 #
 # ===========================================================================
