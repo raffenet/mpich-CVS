@@ -209,7 +209,15 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	if (car_ptr->data.tcp.buf.vec_write.total_num_written == buf_ptr->vec.segment_last)
 	{
 	    tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
-	    mm_cq_enqueue(car_ptr);
+	    //mm_cq_enqueue(car_ptr);
+	    if (car_ptr->next_ptr && (*num_written_ptr == num_written))
+	    {
+		/* if this is the last car written and it has a next car pointer,
+		 * enqueue the next car for writing */
+		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
+	    }
+	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_car_free(car_ptr);
 	}
 	break;
     case MM_TMP_BUFFER:
@@ -228,7 +236,15 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    dbg_printf("num_written: %d\n", car_ptr->data.tcp.buf.tmp.num_written);
 	    /* remove from write queue and insert in completion queue */
 	    tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
-	    mm_cq_enqueue(car_ptr);
+	    //mm_cq_enqueue(car_ptr);
+	    if (car_ptr->next_ptr && (*num_written_ptr == num_written))
+	    {
+		/* if this is the last car written and it has a next car pointer,
+		 * enqueue the next car for writing */
+		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
+	    }
+	    mm_dec_cc(car_ptr->request_ptr);
+	    mm_car_free(car_ptr);
 	}
 	break;
 #ifdef WITH_METHOD_NEW

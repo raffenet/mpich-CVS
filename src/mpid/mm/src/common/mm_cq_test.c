@@ -126,7 +126,6 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
 
 int cq_handle_write_data_car(MM_Car *car_ptr)
 {
-    /* for now, all writes are eager - no rndv */
     if (car_ptr->next_ptr)
     {
 	car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
