@@ -345,11 +345,11 @@ if test -n "$arch_sun4" ; then
     fi
     if test "$enable_aio" != "no" ; then
         # Check for aio
-	AC_SEARCH_LIBS(aio_write,aio rt)
-	if test "$ac_cv_search_aio_write" = "no" ; then
+	AC_SEARCH_LIBS(aiowrite,aio rt)
+	if test "$ac_cv_search_aiowrite" = "no" ; then
 	    enable_aio=no
-	elif test "$ac_cv_search_aio_write" != "none required" ; then
-	    ROMIO_LIBLIST="$ROMIO_LIBLIST $ac_cv_search_aio_write"
+	elif test "$ac_cv_search_aiowrite" != "none required" ; then
+	    ROMIO_LIBLIST="$ROMIO_LIBLIST $ac_cv_search_aiowrite"
         fi
     fi
     if test "$enable_aio" = "no" ; then
@@ -384,11 +384,11 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     fi
     if test "$enable_aio" != "no" ; then
         # Check for aio
-	AC_SEARCH_LIBS(aio_write,aio rt)
-	if test "$ac_cv_search_aio_write" = "no" ; then
+	AC_SEARCH_LIBS(aiowrite,aio rt)
+	if test "$ac_cv_search_aiowrite" = "no" ; then
 	    enable_aio=no
-	elif test "$ac_cv_search_aio_write" != "none required" ; then
-	    ROMIO_LIBLIST="$ROMIO_LIBLIST $ac_cv_search_aio_write"
+	elif test "$ac_cv_search_aiowrite" != "none required" ; then
+	    ROMIO_LIBLIST="$ROMIO_LIBLIST $ac_cv_search_aiowrite"
 	    MPI_LIB="$MPI_LIB -laio"
         fi
     fi
