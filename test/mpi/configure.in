@@ -214,6 +214,8 @@ AC_OUTPUT(Makefile \
 	  f77/datatype/Makefile \
 	  f77/util/Makefile \
 	  f77/coll/Makefile \
+	  f77/pt2pt/Makefile \
+	  f77/spawn/Makefile \
 	  f77/rma/Makefile \
 	  f90/Makefile \
 	  f90/misc/Makefile \
