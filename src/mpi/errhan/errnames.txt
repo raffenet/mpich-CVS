@@ -840,7 +840,7 @@ with MPI_Alloc_mem.
 **mpi_send:MPI_Send failed
 **mpi_send %p %d %D %d %d %C:MPI_Send(%p, %d, %D, %d, %d, %C) failed
 **mpi_recv:MPI_Recv failed
-**mpi_recv %p %d %D %d %d %C %p:MPI_Recv(%p, %d %D, %d, %C, %p) failed
+**mpi_recv %p %d %D %d %d %C %p:MPI_Recv(%p, %d, %D, %d, %C, %p) failed
 **mpi_get_count:MPI_Get_count failed
 **mpi_get_count %p %D %p:MPI_Get_count(%p, %D, %p) failed
 **mpi_bsend:MPI_Bsend failed
@@ -890,7 +890,7 @@ with MPI_Alloc_mem.
 **mpi_test_cancelled:MPI_Test_cancelled failed
 **mpi_test_cancelled %p %p:MPI_Test_cancelled(%p, %p) failed
 **mpi_send_init:MPI_Send_init failed
-**mpi_send_init %p %d %D %d %d %C %p:MPI_Send_init(%p %d %D %d %d %C %p) failed
+**mpi_send_init %p %d %D %d %d %C %p:MPI_Send_init(%p, %d, %D, %d, %d, %C, %p) failed
 **mpi_bsend_init:MPI_Bsend_init failed
 **mpi_bsend_init %p %d %D %d %d %C %p:MPI_Bsend_init(%p, %d, %D, %d, %d, %C, %p) failed
 **mpi_ssend_init:MPI_Ssend_init failed
