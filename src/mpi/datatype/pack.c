@@ -64,8 +64,9 @@ int MPI_Pack(void *inbuf,
 {
     static const char FCNAME[] = "MPI_Pack";
     int mpi_errno = MPI_SUCCESS, first, last;
-    MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_Comm *comm_ptr = NULL;
+
     MPID_Segment *segp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK);
 
@@ -75,34 +76,29 @@ int MPI_Pack(void *inbuf,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            /* Validate comm_ptr */
-	    /* If comm_ptr is not valid, it will be reset to null */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
-		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
-	    }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+	    /* NOTE: inbuf could be null (MPI_BOTTOM) */
+	    MPIR_ERRTEST_ARGNULL(outbuf, "output buffer", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(position, "position", mpi_errno);
+            /* Validate comm_ptr */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    MPID_Comm_get_ptr( comm, comm_ptr );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+
+	    MPIR_ERRTEST_DATATYPE_NULL(datatype, "datatype", mpi_errno);
+	    if (mpi_errno == MPI_SUCCESS) {
+		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+		    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+		    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+		    MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+		}
+		if (mpi_errno) {
+		    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
+		    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		}
+	    }
         }
         MPID_END_ERROR_CHECKS;
     }
