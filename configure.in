@@ -192,9 +192,8 @@ case "$enable_error_checking" in
     no)
     ;;
     all|yes|runtime)
-    changequote(<<,>>)
-    error_checking_kind=`echo $enable_error_checking | tr '[a-z]' '[A-Z]'`
-    changequote([,])
+    error_checking_kind=`echo $enable_error_checking | \
+    tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
     error_checking_kind=MPID_ERROR_LEVEL_$error_checking_kind
     AC_DEFINE_UNQUOTED(HAVE_ERROR_CHECKING,$error_checking_kind,[define to enable error checking])
     ;;
@@ -323,9 +322,8 @@ else
     logging_subdirs=
 fi
 if test "$timing_name" != "none" ; then
-    changequote(<<,>>)
-    timing_kind=`echo $timing_name | tr '[a-z]' '[A-Z]'`
-    changequote([,])
+    timing_kind=`echo $timing_name | \
+       tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
     timing_kind=MPID_TIMING_KIND_$timing_kind
     AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
     if test "$collect_stats" = "true" ; then
@@ -335,7 +333,7 @@ fi
 AC_SUBST(logging_dir)
 AC_SUBST(logging_name)
 AC_SUBST(logging_subdirs)
-use_logging_variable="MPID_LOGGING_`echo $logging_name | tr a-z A-Z`"
+use_logging_variable="MPID_LOGGING_`echo $logging_name | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
 AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging library])
 dnl
 dnl threads
@@ -1570,13 +1568,8 @@ top_srcdir=$top_srcdir)
 # we must generate the dependency directories.  We do this by detecting 
 # the dependencies target.  Note that this refers to the Makefile,
 # in case we are building with VPATH
-# Grr. Finds differ on how they handle {} in a string.  We could use
-# xargs, but that may not be standard enough.  Instead we fall back on 
-# the old standby of using find with -print, then sed to
-# construct the line, which is fed to sh
-#    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
 AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
-    find . -type d -print | sed -e 's%\(.*\)%(cd \1 \&\& grep MAKE_DEPEND_C Makefile >/dev/null 2>\&1 \&\& ( test -d .deps || mkdir .deps) \&\& touch .deps/alldeps)%g' | sh
+    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
 fi],enable_dependencies=$enable_dependencies)
 
 AC_OUTPUT(Makefile src/Makefile \

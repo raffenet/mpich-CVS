@@ -209,9 +209,8 @@ pac_cv_linuxalpha_cycle,[
     ;;
 esac
 dnl Convert timer type to upper case
-changequote(<<,>>)
-timer_type=`echo $timer_type | tr '[a-z]' '[A-Z]'`
-changequote([,])
+timer_type=`echo $timer_type | \
+    tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
 MPICH_TIMER_KIND=USE_$timer_type
 AC_SUBST(MPICH_TIMER_KIND)
 dnl

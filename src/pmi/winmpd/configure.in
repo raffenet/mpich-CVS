@@ -65,9 +65,8 @@ case "$enable_error_checking" in
     no)
     ;;
     all|yes|runtime)
-    changequote(<<,>>)
-    error_checking_kind=`echo $enable_error_checking | tr '[a-z]' '[A-Z]'`
-    changequote([,])
+    error_checking_kind=`echo $enable_error_checking | \
+    tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
     error_checking_kind=MPID_ERROR_LEVEL_$error_checking_kind
     AC_DEFINE_UNQUOTED(HAVE_ERROR_CHECKING,$error_checking_kind,[define to enable error checking])
     ;;
@@ -88,9 +87,8 @@ case "$enable_timing" in
     no|none)
     ;;
     all|log|yes|time|runtime)
-    changequote(<<,>>)
-    timing_kind=`echo $enable_timing | tr '[a-z]' '[A-Z]'`
-    changequote([,])
+    timing_kind=`echo $enable_timing | \
+    tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
     timing_kind=MPID_TIMING_KIND_$timing_kind
     AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
     ;;
