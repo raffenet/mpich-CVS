@@ -44,12 +44,12 @@ dnl is null.  Just in case autoconf ever fixes this, we test both cases.
 if test "X$enable_cache" = "Xnotgiven" -o "X$enable_cache" = "X" ; then
     # check for valid cache file
     if uname -srm >/dev/null 2>&1 ; then
-        testval=`uname -srm`
-        if test -f $cache_system -a -n "$testval" ; then
+        testval="`uname -srm`"
+        if test -f "$cache_system" -a -n "$testval" ; then
 	    if test "$testval" = "`cat $cache_system`" ; then
 	        enable_cache="yes"
 	    fi
-        elif test ! -f $cache_system -a -n "$testval" ; then
+        elif test ! -f "$cache_system" -a -n "$testval" ; then
 	    echo "$testval" > $cache_system
 	    # remove the cache file because it may not correspond to our
 	    # system
