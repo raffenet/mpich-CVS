@@ -2177,7 +2177,6 @@ if (errcnt > 0)
 errcnt = 0;
 
 
-#ifdef UNIMPLEMENTED
 /* Test Maxloc */
 #ifdef DEBUG
     if (rank == 0) printf( "Testing MPI_MAXLOC...\n" );
@@ -2458,10 +2457,6 @@ gerr += errcnt;
 if (errcnt > 0)
 	printf( "Found %d errors on %d for MPI_MINLOC\n", errcnt, rank );
 errcnt = 0;
-
-}
-
-#endif
 
 if (gerr > 0) {
 	MPI_Comm_rank( MPI_COMM_WORLD, &rank );

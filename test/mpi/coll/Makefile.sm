@@ -23,5 +23,6 @@ scantst_SOURCES = scantst.c
 longuser_SOURCES = longuser.c
 coll10_SOURCES = coll10.c
 coll11_SOURCES = coll11.c
+coll12_SOURCES = coll12.c
 
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include
