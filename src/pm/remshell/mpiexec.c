@@ -107,6 +107,9 @@ typedef struct {
 
 ProcessTable_t processTable;
 
+/* Eventually, we'd like to move the PMI state into a separate file, along 
+   with the PMI calls */
+   
 /* ----------------------------------------------------------------------- */
 /* PMIState                                                                */
 /* Many of the objects here are preallocated rather than being dynamically */
@@ -198,7 +201,7 @@ int main( int argc, char *argv[] )
     rc = mpiexecStartProcesses( &processTable, myname, portnum );
 
     /* Poll on the active FDs and handle each input type */
-    /* FIXME: NOT DONE */
+    rc = mpiexecPollFDs( &processTable );
 
     /* Clean up and determine the return code.  Log any anomolous events */
     /* FIXME: NOT DONE */
@@ -509,13 +512,13 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	MPIU_Error_printf( "Could not open machines file %s\n", machinesfile );
 	return 0;
     }
-    mt = (MachineTable *)malloc( sizeof(MachineTable) );
+    mt = (MachineTable *)MPIU_Malloc( sizeof(MachineTable) );
     if (!mt) {
 	MPIU_Error_printf( "Internal error: could not allocate machine table\n" );
 	return 0;
 	}
     
-    mt->hname = (char **)malloc( nNeeded * sizeof(char *) );
+    mt->hname = (char **)MPIU_Malloc( nNeeded * sizeof(char *) );
     if (!mt->hname) {
 	return 0;
     }
@@ -532,7 +535,7 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	len = strlen( p );
 	if (p[len-1] == '\n') p[--len] = 0;
 	if (p[len-1] == '\r') p[--len] = 0;   /* Handle DOS files */
-	mt->hname[nFound] = (char *)malloc( len + 1 );
+	mt->hname[nFound] = (char *)MPIU_Malloc( len + 1 );
 	if (!mt->hname[nFound]) return 0;
 	MPIU_Strncpy( mt->hname[nFound], p, len+1 );
 	nFound++;
@@ -543,7 +546,10 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 }
 /* ----------------------------------------------------------------------- */
 /* Get a port for the PMI interface                                        */
-/* Ports can be allocated within a requested range
+/* Ports can be allocated within a requested range using the runtime       */
+/* parameter value MPIEXEC_PORTRANGE, which has the format low:high,       */
+/* where both low and high are positive integers.  Unless this program is  */
+/* privaledged, the numbers must be greater than 1023.                     */
 /* ----------------------------------------------------------------------- */
 #include <errno.h>
 #include <netinet/in.h>
@@ -664,13 +670,55 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 {
     int i;
     int pid;
+    char port_as_string[1024];
+
+    /* All processes use the same connection port back to the master 
+       process */
+    snprintf( port_as_string, 1024, "%s:%d", myname, port );
 
     for (i=0; i<ptable->nProcesses; i++) {
 	int read_out_pipe[2], write_in_pipe[2], read_err_pipe[2];
 	ProcessState *ps;
+	char **myargv;
+	int rshNargs, j, rc;
+
 
 	ps = &ptable->table[i];
 
+	/* Build the array to pass to exec before calling fork.  
+	   This makes it easier to generate good error messages for the
+	   user, and makes it easier to debug the code that creates the
+	   argument vector */
+
+	/* Note that each process has its OWN myargv */
+	myargv = (char **)MPIU_Malloc( (ps->nArgs + 30) * sizeof(char *) );
+	/* FIXME: remote shell command may have multiple args */
+	rshNargs = mpiexecGetRemshellArgv( myargv, 30 );
+	/* Look for %h (hostname) and %e (executable).  If not
+	   found, then use the following.  
+	   FIXME: Assume no %h and %e */
+	myargv[rshNargs++] = (char *)(ps->hostname);
+	/* FIXME: no option for user name (e.g., -l username) */
+	/* FIXME: Do we start with -n, or do we let mpiexec handle that? */
+	/* myargv[rshNargs++] = "-n"; */
+	/* FIXME: this assumes a particular shell syntax (csh) */
+	myargv[rshNargs++] = "setenv";
+	myargv[rshNargs++] = "MPIEXEC_PORT";
+	myargv[rshNargs++] = port_as_string;
+	myargv[rshNargs++] = "\\;";
+	myargv[rshNargs++] = (char *)(ps->exename);
+	for (j=0; j<ps->nArgs; j++) 
+	    myargv[rshNargs++] = (char *)(ps->args[j]);
+	myargv[rshNargs++] = 0;
+#ifdef DEBUG
+	{ int k;
+	for (k=0; myargv[k]; k++) {
+	    DBG_PRINTF( "%s ", myargv[k] );
+	}
+	DBG_PRINTF( "\n" );
+	}
+#endif
+	
 	/* Create the pipes for the stdin/out/err replacements */
 	if (pipe(read_out_pipe)) return -1;
 	if (pipe(write_in_pipe)) return -1;
@@ -680,7 +728,8 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    DBG_PRINTF( "About to fork process %d\n", i );
 	}
 
-	pid = fork();
+	    pid = fork();
+	}
 	if (pid > 0) {
 	    /* We are (and remain) the parent */
 	    /* Close unused portion of pipes */
@@ -719,38 +768,10 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    dup2(write_in_pipe[0],0);
 	    close(write_in_pipe[0]); 
 
-	    /* Now we are ready to run the program. */
-	    myargv = (char **)malloc( (ps->nArgs + 30) * sizeof(char *) );
-	    /* FIXME: remote shell command may have multiple args */
-	    rshNargs = mpiexecGetRemshellArgv( myargv, 30 );
-	    /* Look for %h (hostname) and %e (executable).  If not
-	       found, then use the following.  
-	       FIXME: Assume no %h and %e */
-	    myargv[rshNargs++] = (char *)(ps->hostname);
-	    /* FIXME: no option for user name (e.g., -l username) */
-	    /* FIXME: Do we start with -n, or do we let mpiexec handle that? */
-	    /* myargv[rshNargs++] = "-n"; */
-	    /* FIXME: this assumes a particular shell syntax (csh) */
-	    myargv[rshNargs++] = "setenv";
-	    myargv[rshNargs++] = "MPIEXEC_PORT";
-	    sprintf( port_as_string, "%s:%d", myname, port );
-	    myargv[rshNargs++] = port_as_string;
-	    myargv[rshNargs++] = "\\;";
-	    myargv[rshNargs++] = (char *)(ps->exename);
-	    for (j=0; j<ps->nArgs; j++) 
-		myargv[rshNargs++] = (char *)(ps->args[j]);
-	    myargv[rshNargs++] = 0;
-#ifdef DEBUG
-	    { int k;
-	    for (k=0; myargv[k]; k++) {
-		DBG_PRINTF( "%s ", myargv[k] );
-	    }
-	    DBG_PRINTF( "\n" );
-	    }
-#endif
 	    rc = execvp( myargv[0], myargv );
-	    if (rc) 
+	    if (rc) {
 		MPIU_Error_printf( "Error from execvp: %d\n", errno );
+	    }
 	    /* should never return */
 	}
 	else {
@@ -794,7 +815,7 @@ int mpiexecGetRemshellArgv( char *argv[], int nargv )
 	    else 
 		len = strlen(rem);
 
-	    remshell[remargs] = (char *)malloc( len + 1 ); /* Add the null */
+	    remshell[remargs] = (char *)MPIU_Malloc( len + 1 ); /* Add the null */
 	    MPIU_Strncpy( remshell[remargs], rem, len );
 	    remshell[remargs][len] = 0;
 	    remargs++;
@@ -868,7 +889,8 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 
     /* Fill to poll array.  We'll exploit the fact that there are four
        fd's per process 
-       Questoin: should we arrange these differently? */
+       Question: should we arrange these differently to make it easier to
+       process any events?
     */
     j = 0;
     for (i=0; i<nprocess; i++) {
@@ -896,8 +918,10 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
     pollarray[j].events = POLLOUT;
 
     while (1) {
-	/* what is the INFTIM for the timeout field */
-	rc = poll( pollarray, nfds, 0 );
+	int timeout;
+	/* Compute the timeout until we must abort this run */
+	/* (A negative value is infinite) */
+	rc = poll( pollarray, nfds, timeout );
 
 	/* loop through the entries, looking at the processes first */
 	j = 0;
@@ -907,6 +931,13 @@ int mpiexecPollFDs( ProcessTable_t *ptable )
 	    }
 	    
 	}
+
+	/* If the mpiexec stdout or stdin becomes full, turn off 
+	   the check for data available from the processes on 
+	   those fds */
+	
+	/* Similarly, do the same if the designated stdin process
+	   is not accepting input (don't read any more) */
 	
     }
 }
