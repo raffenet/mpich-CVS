@@ -19,7 +19,5 @@ int main(int argc, char *argv[])
     MPI_Finalize( );
     fprintf( stdout,"out: Process %d after finalize\n", myid); fflush(stdout);
     fprintf( stderr,"err: Process %d after finalize\n", myid); fflush(stderr);
-    sleep(1);
-    /* return( -myid ); */
-    return( 0 );
+    return( -myid );
 }
