@@ -957,8 +957,10 @@ if AC_TRY_EVAL(ac_compile) ; then
    dnl Look for module name
    dnl First, try to find known names.  This avoids confusion caused by
    dnl additional files (like <name>.stb created by some versions of pgf90)
+   dnl Early versions of the Intel compiler used "d" as the module extension;
+   dnl we include that just to finish the test as early as possible.
    for name in conftest CONFTEST ; do
-       for ext in mod MOD ; do
+       for ext in mod MOD d ; do
            if test -s $name.$ext ; then
                if test $name = conftest ; then
                    pac_cv_f90_module_case=lower
@@ -980,9 +982,12 @@ if AC_TRY_EVAL(ac_compile) ; then
        if test "X$pac_MOD" = "X" ; then
 	   pac_MOD=`ls CONFTEST* 2>&1 | grep -v CONFTEST.f | grep -v CONFTEST.o`
            pac_MOD=`echo $pac_MOD | sed -e 's/CONFTEST\.//g'`
-	   if test -n "$pac_MOD" ; then
+	   if test -n "$pac_MOD" -a -s "CONFTEST.$pac_MOD" ; then
 	       testname="CONFTEST"
 	       pac_cv_f90_module_case="upper"
+	   else
+	       # Clear because we must have gotten an error message
+	       pac_MOD=""
 	   fi
        fi
        if test -z "$pac_MOD" ; then 
