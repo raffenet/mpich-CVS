@@ -55,7 +55,6 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
     rank = comm_ptr->rank;
     comm = comm_ptr->handle;
 
-    MPIR_Nest_incr();
     /* Only one collective operation per communicator can be active at any
        time */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
@@ -73,11 +72,9 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
     }
 
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
-    MPIR_Nest_decr();
 
     return mpi_errno;
 }
-
 
 
 #if 0
@@ -201,6 +198,57 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 }
 #endif
 
+
+PMPI_LOCAL int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
+{
+    int rank, mpi_errno, i, root;
+    MPID_Comm *newcomm_ptr = NULL;
+
+    rank = comm_ptr->rank;
+
+    /* Get the local intracommunicator */
+    if (!comm_ptr->local_comm)
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
+
+    newcomm_ptr = comm_ptr->local_comm;
+
+    /* do a barrier on the local intracommunicator */
+    mpi_errno = MPIR_Barrier(newcomm_ptr);
+    if (mpi_errno) return mpi_errno;
+
+    /* rank 0 on each group does an intercommunicator broadcast to the
+       remote group to indicate that all processes in the local group
+       have reached the barrier. We do a 1-byte bcast because a 0-byte
+       bcast will just return without doing anything. */
+    
+    /* first broadcast from left to right group, then from right to
+       left group */
+    if (comm_ptr->is_low_group) {
+        /* bcast to right*/
+        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+        mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
+        if (mpi_errno) return mpi_errno;
+        /* receive bcast from right */
+        root = 0;
+        mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
+        if (mpi_errno) return mpi_errno;
+    }
+    else {
+        /* receive bcast from left */
+        root = 0;
+        mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
+        if (mpi_errno) return mpi_errno;
+        /* bcast to left */
+        root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
+        mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr);  
+        if (mpi_errno) return mpi_errno;
+    }
+
+    return mpi_errno;
+}
+
+
+
 #endif
 
 #undef FUNCNAME
@@ -272,15 +320,20 @@ int MPI_Barrier( MPI_Comm comm )
     }
     else
     {
-        if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-            /* intercommunicator */ 
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
-					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-	}
-	else {
+        MPIR_Nest_incr();
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) {
 	    mpi_errno = MPIR_Barrier( comm_ptr );
+        }
+        else {
+            /* intercommunicator */ 
+	    /* mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s",
+                                              FCNAME ); */
+            mpi_errno = MPIR_Barrier_inter( comm_ptr );
+
 	}
+        MPIR_Nest_decr();
     }
     if (mpi_errno == MPI_SUCCESS)
     {
