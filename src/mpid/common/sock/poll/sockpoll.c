@@ -134,8 +134,11 @@ int sock_create_set(sock_set_t * sock_set)
     if (sock_set == NULL) return SOCK_FAIL;
     set->poll_arr_sz = 0;
     set->poll_n_elem = -1;
+    set->starting_elem = 0;
     set->pollfds = NULL;
     set->pollinfos = NULL;
+    set->eventq_head = NULL;
+    set->eventq_tail = NULL;
     *sock_set = set;
     
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_CREATE_SET);
@@ -914,6 +917,8 @@ static void socki_handle_connect(struct pollfd * const pollfd, struct pollinfo *
     MPIDI_STATE_DECL(MPID_STATE_SOCKI_HANDLE_CONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_HANDLE_CONNECT);
+
+    pollfd->events &= ~POLLOUT;
     
     rc = getpeername(pollfd->fd, (struct sockaddr *) &addr, &addr_len);
     if (rc == 0)
