@@ -81,11 +81,13 @@ int MPIDI_CH3I_mqshm_create(const char *name, const int initialize, int *id)
     }
     /*printf("[%d] allocated %d bytes for a mqshm_node_t\n", MPIR_Process.comm_world->rank, sizeof(mqshm_node_t));fflush(stdout);*/
 #ifdef USE_POSIX_SHM
-    sprintf(node->shm_info.name, "/"MPICH_MSG_QUEUE_PREFIX"%s", name);
+    MPIU_Snprintf(node->shm_info.name, MPIDI_MAX_SHM_NAME_LENGTH, 
+		  "/"MPICH_MSG_QUEUE_PREFIX"%s", name);
 #elif defined(USE_SYSV_SHM)
-    sprintf(node->shm_info.name, "/tmp/"MPICH_MSG_QUEUE_PREFIX"%s", name);
+    MPIU_Snprintf(node->shm_info.name, MPIDI_MAX_SHM_NAME_LENGTH, 
+		  "/tmp/"MPICH_MSG_QUEUE_PREFIX"%s", name);
 #else
-    strcpy(node->shm_info.name, name);
+    MPIU_Strncpy(node->shm_info.name, name, MPIDI_MAX_SHM_NAME_LENGTH);
 #endif
     /* allocate the shared memory for the queue */
     mpi_errno = MPIDI_CH3I_SHM_Get_mem_named(sizeof(mqshm_t), &node->shm_info);
