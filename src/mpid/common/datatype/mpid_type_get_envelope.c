@@ -42,6 +42,8 @@ int MPID_Type_get_envelope(MPI_Datatype datatype,
 	*num_integers  = 0;
 	*num_addresses = 0;
 	*num_datatypes = 0;
+
+	return MPI_SUCCESS;
     }
 
     MPID_Datatype_get_ptr(datatype, dtp);
