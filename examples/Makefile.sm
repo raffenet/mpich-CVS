@@ -4,6 +4,10 @@ INCLUDES = -I../src/include -I${top_srcdir}/src/include
 LDADD = -L../lib
 DEPADD = ../lib/lib${MPILIBNAME}.a
 
+# pmandel requires a separate set of socket calls (its a long story)
+# and may not build on most platforms
+EXTRA_PROGRAMS = pmandel
+
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
 hellow_SOURCES = hellow.c
