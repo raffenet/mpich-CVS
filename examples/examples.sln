@@ -27,10 +27,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spawntest", "spawntest.vcpr
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pmitest", "windows\pmitest\pmitest.vcproj", "{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pman_vis", "windows\pmandel_vis\pman_vis.vcproj", "{29D7A10A-E306-413E-A87E-5A2BCCE0848C}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
@@ -40,6 +36,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MandelViewer", "windows\pma
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpiexec", "mpiexec\mpiexec.vcproj", "{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{6989167D-11E4-40FE-8C1A-2192A86A7E90}") = "fpi", "f77\fpi.vfproj", "{8E333EAC-3206-42CD-B401-FE1921D21D83}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -77,10 +77,6 @@ Global
 		{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}.Debug.Build.0 = Debug|Win32
 		{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}.Release.ActiveCfg = Release|Win32
 		{6BB16851-FDFE-4654-8F1A-DCAC63EBE11A}.Release.Build.0 = Release|Win32
-		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Debug.ActiveCfg = Debug|Win32
-		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Debug.Build.0 = Debug|Win32
-		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Release.ActiveCfg = Release|Win32
-		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Release.Build.0 = Release|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Debug.ActiveCfg = Debug|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Debug.Build.0 = Debug|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Release.ActiveCfg = Release|Win32
@@ -93,6 +89,10 @@ Global
 		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Debug.Build.0 = Debug|Win32
 		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Release.ActiveCfg = Release|Win32
 		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Release.Build.0 = Release|Win32
+		{8E333EAC-3206-42CD-B401-FE1921D21D83}.Debug.ActiveCfg = Debug|Win32
+		{8E333EAC-3206-42CD-B401-FE1921D21D83}.Debug.Build.0 = Debug|Win32
+		{8E333EAC-3206-42CD-B401-FE1921D21D83}.Release.ActiveCfg = Release|Win32
+		{8E333EAC-3206-42CD-B401-FE1921D21D83}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
