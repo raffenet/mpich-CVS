@@ -16,6 +16,7 @@
 #ifdef HAVE_SHARED_PROCESS_READ
 static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 {
+    int mpi_errno;
 #ifndef HAVE_WINDOWS_H
     char filename[256];
 #endif
@@ -62,21 +63,23 @@ static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 		    MPIDU_Yield();
 	    }
 #ifdef HAVE_WINDOWS_H
-            /*printf("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid);*/
+            /*MPIU_DBG_PRINTF(("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid));*/
             pg->pSharedProcessHandles[i] =
                 OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
                             FALSE, pSharedProcess[i].nPid);
             if (pg->pSharedProcessHandles[i] == NULL)
             {
                 int err = GetLastError();
-                printf("unable to open process %d, error %d\n", i, err);
+                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "OpenProcess", "unable to open process %d, error %d\n", i, err);
             }
 #else
             sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
             pg->pSharedProcessIDs[i] = pSharedProcess[i].nPid;
             pg->pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
             if (pg->pSharedProcessFileDescriptors[i] == -1)
-                printf("failed to open mem file, '%s', for process %d\n", filename, pSharedProcess[i].nPid);
+	    {
+                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "open", "failed to open mem file, '%s', for process %d\n", filename, pSharedProcess[i].nPid);
+	    }
 #endif
         }
         else
@@ -125,6 +128,7 @@ static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
 @*/
 void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
 {
+    int mpi_errno;
 #ifdef HAVE_SHARED_PROCESS_READ
     int shp_offset;
 #endif
@@ -160,9 +164,9 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 	pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
 	if (pg->id == -1) 
 	{
-	    printf("Error in shmget\n");
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "shmget", "Error in shmget\n");
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
-	    exit(0);
+	    return mpi_errno;
 	}
 #elif defined (HAVE_CREATEFILEMAPPING)
 	pg->id = CreateFileMapping(
@@ -174,9 +178,9 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 	    pg->key);
 	if (pg->id == NULL) 
 	{
-	    printf("Error in CreateFileMapping, %d\n", GetLastError());
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "CreateFileMapping", "Error in CreateFileMapping, %d\n", GetLastError());
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
-	    exit(0);
+	    return mpi_errno;
 	}
 #else
 #error *** No shared memory allocation function specified ***
@@ -203,7 +207,7 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 	pg->addr = shmat(pg->id, NULL, SHM_RND);
 	if (pg->addr == (void*)-1)
 	{
-	    printf("Error from shmat %d\n", errno);
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "shmat", "Error from shmat %d\n", errno);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return NULL;
 	}
@@ -256,6 +260,7 @@ static BOOL g_bGetMemSyncCalled = FALSE;
 @*/
 void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm)
 {
+    int mpi_errno;
     struct ShmemRankAndAddressStruct
     {
         int nRank;
@@ -300,7 +305,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     /*if (nRank == 0) pLastAddr = malloc(1024000); */
     if (g_bGetMemSyncCalled)
     {
-        printf("Error: Global shared memory initializer called more than once.\n");
+        mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "twice", "Error: Global shared memory initializer called more than once.\n");
     }
     g_bGetMemSyncCalled = TRUE;
     if (nTotalSize < 1)
@@ -317,9 +322,9 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
         pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
         if (pg->id == -1) 
         {
-            printf("Error in shmget\n");
+            mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "shmget", "Error in shmget\n");
             MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
-            exit(0);
+            return mpi_errno;
         }
 #elif defined (HAVE_CREATEFILEMAPPING)
         pg->id = CreateFileMapping(
@@ -331,9 +336,9 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
             pg->key);
         if (pg->id == NULL) 
         {
-            printf("Error in CreateFileMapping, %d\n", GetLastError());
+            mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "CreateFileMapping", "Error in CreateFileMapping, %d\n", GetLastError());
             MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);
-            exit(0);
+            return mpi_errno;
         }
 #else
 #error *** No shared memory allocation function specified ***
@@ -427,7 +432,7 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
                         bAllEqual = FALSE;
                     /*pLowAddr = MPIDU_MIN(pLowAddr, pRankAddr[i].pAddress); */
                     pHighAddr = MPIDU_MAX(pHighAddr, pRankAddr[i].pAddress);
-                    /*printf("pHighAddr = %x\n", pHighAddr); */
+                    /*MPIU_DBG_PRINTF(("pHighAddr = %x\n", pHighAddr)); */
                     MPIU_DBG_PRINTF(("[%d] shm[%d].pAddress = %x\n", nRank, i, pRankAddr[i].pAddress));
                 }
                 MPIU_DBG_PRINTF(("[%d] all ranks valid\n", nRank));
