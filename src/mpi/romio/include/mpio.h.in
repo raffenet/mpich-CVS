@@ -86,6 +86,7 @@ typedef int MPI_Fint;
 #ifndef HAVE_PRAGMA_HP_SEC_DEF
 
 /* Section 9.2 */
+/* Begin Prototypes */
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, 
                           MPI_Info info, MPI_File *fh);
 int MPI_File_close(MPI_File *fh);
@@ -195,6 +196,7 @@ int MPI_File_sync(MPI_File fh);
 /* Section 4.13.3 */
 int MPI_File_set_errhandler( MPI_File, MPI_Errhandler );
 int MPI_File_get_errhandler( MPI_File, MPI_Errhandler * );
+/* End Prototypes */
 
 #ifndef HAVE_MPI_DARRAY_SUBARRAY
 /* Section 4.14.4 */
