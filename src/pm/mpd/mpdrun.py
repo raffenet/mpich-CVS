@@ -275,6 +275,10 @@ def mpdrun():
     if (msg['cmd'] == 'job_started'):
         # print 'mpdrun: job %s started' % (msg['jobid'])
         pass
+    elif msg['cmd'] == 'invalid_executable':
+        print 'rank %d (%s) in job %s failed to find executable %s' % \
+              ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
+        # keep going until all man's finish
     else:
 	mpd_raise('mpdrun: from man, unknown msg=:%s:' % (msg) )
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from os      import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                    chdir, execvpe, kill, waitpid, _exit
+                    chdir, execvpe, kill, waitpid, access, X_OK, _exit
 from sys     import exit
 from socket  import gethostname, fromfd, AF_INET, SOCK_STREAM
 from select  import select, error
@@ -114,6 +114,18 @@ def mpdman():
             mpd_send_one_msg(stderrToConSocket,msgToSend)
     else:
         conSocket = 0
+
+    # this code is strange in that we send an error msg on to the mpdrun and then
+    # keep going; this fits with mpdman philosopy that we stay up until all is done
+    if access(clientPgm,X_OK):
+        goodExecutable = 1
+    else:
+        goodExecutable = 0
+        msgToSend = { 'cmd' : 'invalid_executable', 'src' : myId, 'jobid' : jobid,
+                      'rank' : myRank, 'exec' : clientPgm }
+        mpd_send_one_msg(rhsSocket,msgToSend)
+        if conSocket:
+            mpd_send_one_msg(conSocket,msgToSend)
 
     (clientListenSocket,clientListenPort) = mpd_get_inet_listen_socket('',0)
     (pipe_read_cli_stdin, pipe_write_cli_stdin )  = pipe()
@@ -275,17 +287,18 @@ def mpdman():
             elif readySocket == lhsSocket:
                 msg = mpd_recv_one_msg(lhsSocket)
                 if not msg:
-                    mpd_print(1, 'lhs died' )
+                    mpd_print(0000, 'lhs died' )
                     del socketsToSelect[lhsSocket]
                     lhsSocket.close()
                 elif msg['cmd'] == 'jobgo':
-                    if myRank == 0:
-                        msgToSend = { 'cmd' : 'job_started', 'jobid' : jobid }
-                        mpd_send_one_msg(conSocket,msgToSend)
-                    else:
-                        mpd_send_one_msg(rhsSocket,msg)  # forward it on
-                    write(pipe_man_end,'go')
-                    close(pipe_man_end)
+                    if goodExecutable:
+                        if myRank == 0:
+                            msgToSend = { 'cmd' : 'job_started', 'jobid' : jobid }
+                            mpd_send_one_msg(conSocket,msgToSend)
+                        else:
+                            mpd_send_one_msg(rhsSocket,msg)  # forward it on
+                        write(pipe_man_end,'go')
+                        close(pipe_man_end)
                 elif msg['cmd'] == 'info_for_parent_in_tree':
                     if int(msg['to_rank']) == myRank:
                         parentHost = msg['parent_host']
@@ -403,6 +416,15 @@ def mpdman():
                                       'rank' : msg['rank'], 
                                       'exit_status' : msg['exit_status'] }
                         mpd_send_one_msg(conSocket,msgToSend)
+                    try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
+                    except: pass
+                elif msg['cmd'] == 'invalid_executable':
+                    jobEndingEarly = 1
+                    if msg['src'] != myId:
+                        if rhsSocket:  # still alive ?
+                            mpd_send_one_msg(rhsSocket,msg)
+                    if conSocket and goodExecutable:   # I had a good exec, but other is bad
+                        mpd_send_one_msg(conSocket,msg)
                     try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
                     except: pass
                 elif msg['cmd'] == 'stdin_from_user':
@@ -770,8 +792,9 @@ def mpdman():
                     if parentStderrSocket:
                         parentStderrSocket.close()
                         parentStderrSocket = 0
-	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
-                    mpd_send_one_msg(rhsSocket,msgToSend)
+                    if rhsSocket:
+	                msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+                        mpd_send_one_msg(rhsSocket,msgToSend)
                     try:    kill(clientPid,SIGKILL)    # may reaped by sighandler
                     except: pass
                 elif msg['cmd'] == 'signal':
