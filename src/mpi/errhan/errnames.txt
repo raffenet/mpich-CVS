@@ -392,6 +392,7 @@ with MPI_Alloc_mem.
 #
 # CH3:sock errors
 #
+**ch3|sock|strdup:[ch3:sock] MPIU_Strdup failed
 **ch3|sock|connclose:[ch3:sock] active connection unexpectedly closed
 **ch3|sock|hostlookup:[ch3:sock] hostname lookup failed
 **ch3|sock|hostlookup %d %d %s:[ch3:sock] failed to obtain host information for process %d:%d (%s)
