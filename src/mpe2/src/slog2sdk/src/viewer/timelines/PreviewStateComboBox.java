@@ -30,10 +30,11 @@ public class PreviewStateComboBox extends JComboBox
         super();
         super.setFont( Const.FONT );
         super.setEditable( false );
-        super.addItem( PreviewState.OVERLAP_RATIOS );
-        super.addItem( PreviewState.CUMULATIVE_RATIOS );
-        super.addItem( PreviewState.CUMULATIVE_EXCLUSION );
         super.addItem( PreviewState.FIT_MOST_LEGENDS );
+        super.addItem( PreviewState.OVERLAP_INCLUSION );
+        super.addItem( PreviewState.CUMULATIVE_INCLUSION );
+        super.addItem( PreviewState.OVERLAP_EXCLUSION );
+        super.addItem( PreviewState.CUMULATIVE_EXCLUSION );
         super.setToolTipText( "Display option for Preview state." );
         canvas_redraw_btn  = null;
         pref_frame         = null;

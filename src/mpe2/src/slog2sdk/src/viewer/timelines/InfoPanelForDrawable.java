@@ -24,8 +24,10 @@ import base.drawable.Primitive;
 import base.drawable.Composite;
 import base.drawable.Shadow;
 import base.drawable.CategoryWeight;
+import base.topology.PreviewState;
 import viewer.common.Const;
 import viewer.common.Routines;
+import viewer.common.Parameters;
 import viewer.legends.CategoryLabel;
 
 
@@ -347,9 +349,21 @@ public class InfoPanelForDrawable extends JPanel
             CategoryWeight[]  twgts;
             String            twgt_str;
             int               idx;
+            int               print_status;
+            if (    Parameters.PREVIEW_STATE_DISPLAY.equals( 
+                    PreviewState.CUMULATIVE_EXCLUSION )
+                 || Parameters.PREVIEW_STATE_DISPLAY.equals(
+                    PreviewState.OVERLAP_EXCLUSION ) ) {
+                print_status = CategoryWeight.PRINT_EXCL_RATIO;
+                strbuf.append( "\n*** Exclusive Duration Ratios:" );
+            }
+            else {
+                strbuf.append( "\n*** Inclusive Duration Ratios:" );
+                print_status = CategoryWeight.PRINT_INCL_RATIO;
+            }
             twgts = shade.arrayOfCategoryWeights();
             for ( idx = 0; idx < twgts.length; idx++ ) {
-                twgt_str = twgts[ idx ].toInfoBoxString();
+                twgt_str = twgts[ idx ].toInfoBoxString( print_status );
                 if ( num_cols < twgt_str.length() )
                     num_cols = twgt_str.length();
                 num_rows++;

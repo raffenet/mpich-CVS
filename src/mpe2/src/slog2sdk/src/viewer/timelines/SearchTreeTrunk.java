@@ -175,6 +175,19 @@ public class SearchTreeTrunk
         buf2statboxes   = new BufForTimeAveBoxes( timebox );
         criteria.initMatch();
 
+        // Merge Nestable Shadows
+        sobjs = treetrunk.iteratorOfLowestFloorShadows( timebox,
+                                                        INCRE_STARTTIME_ORDER,
+                                                        IS_NESTABLE );
+        while ( sobjs.hasNext() ) {
+            sobj = (Shadow) sobjs.next();
+            if (    sobj.getCategory().isVisiblySearchable()
+                 && sobj.containSearchable()
+                 && criteria.isMatched( sobj ) ) {
+                buf2statboxes.mergeWithNestable( sobj );
+            }
+        }
+
         // Merge Nestable Real Drawables
         dobjs = treetrunk.iteratorOfRealDrawables( timebox,
                                                    isConnectedComposite,
@@ -185,9 +198,12 @@ public class SearchTreeTrunk
             if (    dobj.getCategory().isVisiblySearchable()
                  && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) {
-                buf2statboxes.merge( dobj );
+                buf2statboxes.mergeWithNestable( dobj );
             }
         }
+
+        // Compute ExclusiveDurationRatio of CategoryWeights in buf2statboxes
+        buf2statboxes.setNestingExclusion();
 
         // Merge Nestless Real Drawables
         dobjs = treetrunk.iteratorOfRealDrawables( timebox,
@@ -199,20 +215,7 @@ public class SearchTreeTrunk
             if (    dobj.getCategory().isVisiblySearchable()
                  && dobj.containSearchable()
                  && criteria.isMatched( dobj ) ) {
-                buf2statboxes.merge( dobj );
-            }
-        }
-
-        // Merge Nestable Shadows
-        sobjs = treetrunk.iteratorOfLowestFloorShadows( timebox,
-                                                        INCRE_STARTTIME_ORDER,
-                                                        IS_NESTABLE );
-        while ( sobjs.hasNext() ) {
-            sobj = (Shadow) sobjs.next();
-            if (    sobj.getCategory().isVisiblySearchable()
-                 && sobj.containSearchable()
-                 && criteria.isMatched( sobj ) ) {
-                buf2statboxes.merge( sobj );
+                buf2statboxes.mergeWithNestless( dobj );
             }
         }
 
@@ -225,7 +228,7 @@ public class SearchTreeTrunk
             if (    sobj.getCategory().isVisiblySearchable()
                  && sobj.containSearchable()
                  && criteria.isMatched( sobj ) ) {
-                buf2statboxes.merge( sobj );
+                buf2statboxes.mergeWithNestless( sobj );
             }
         }
 
