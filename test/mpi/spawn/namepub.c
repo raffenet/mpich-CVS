@@ -39,7 +39,7 @@ int main( int argc, char *argv[] )
 	if (merr) {
 	    errs++;
 	    MPI_Error_string( merr, errmsg, &msglen );
-	    printf( "Error in Publish_name %s\n", errmsg );
+	    printf( "Error in Publish_name: \"%s\"\n", errmsg );
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -49,7 +49,7 @@ int main( int argc, char *argv[] )
 	if (merr) {
 	    errs++;
 	    MPI_Error_string( merr, errmsg, &msglen );
-	    printf( "Error in Unpublish name %s\n", errmsg );
+	    printf( "Error in Unpublish name: \"%s\"\n", errmsg );
 	}
 
     }
@@ -61,7 +61,7 @@ int main( int argc, char *argv[] )
 	if (merr) {
 	    errs++;
 	    MPI_Error_string( merr, errmsg, &msglen );
-	    printf( "Error in Lookup name %s\n", errmsg );
+	    printf( "Error in Lookup name: \"%s\"\n", errmsg );
 	}
 	else {
 	    if (strcmp( port_name, port_name_out )) {
@@ -88,7 +88,7 @@ int main( int argc, char *argv[] )
 	if (mclass != MPI_ERR_NAME) {
 	    errs++;
 	    MPI_Error_string( merr, errmsg, &msglen );
-	    printf( "Lookup name returned the wrong error class (%d), msg %s\n", 
+	    printf( "Lookup name returned the wrong error class (%d), msg: \"%s\"\n", 
 		    mclass, errmsg );
 	}
     }
