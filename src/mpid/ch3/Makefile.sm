@@ -1,81 +1,8 @@
-SUBDIRS = . channels src
-
-#
-# the current directory, "dot", must be listed first in order to have
-# the header files verify before make recurses into the source directory
-# and attempts to build files with a broken header files
-#
-all-local:  ../../include/mpidpre.h ../../include/mpidimpl.h \
-	   ../../include/mpidpost.h \
-	   ../../include/mpid_datatype.h ../../include/mpid_dataloop.h \
-	   ../../include/gen_dataloop.h
-
-../../include/mpidpre.h: ${srcdir}/include/mpidpre.h
-	@echo " " ;							      \
-	 echo "ERROR: src/include/mpidpre.h is out of date." ;		      \
-	 echo "Running config.status and cleaning build tree." ;	      \
-	 echo " " ;							      \
-	 ./config.status &&						      \
-	 cd ../../.. &&							      \
-	 make clean 2>&1 >/dev/null ;					      \
-	 exit 1
-
-../../include/mpidimpl.h: ${srcdir}/include/mpidimpl.h
-	@echo " " ;							      \
-	 echo "ERROR: src/include/mpidimpl.h is out of date." ;		      \
-	 echo "Running config.status and cleaning build tree." ;	      \
-	 echo " " ;							      \
-	 ./config.status &&						      \
-	 cd ../../.. &&							      \
-	 make clean 2>&1 >/dev/null ;					      \
-	 exit 1
-
-../../include/mpidpost.h: ${srcdir}/include/mpidpost.h
-	@echo " " ;							      \
-	 echo "ERROR: src/include/mpidpost.h is out of date." ;		      \
-	 echo "Running config.status and cleaning build tree." ;	      \
-	 echo " " ;							      \
-	 ./config.status &&						      \
-	 cd ../../.. &&							      \
-	 make clean 2>&1 >/dev/null ;					      \
-	 exit 1
-
-../../include/mpid_datatype.h: ${srcdir}/../common/datatype/mpid_datatype.h
-	@echo " " ;							      \
-	 echo "ERROR: src/include/mpid_datatype.h is out of date." ;	      \
-	 echo "Running config.status and cleaning build tree." ;	      \
-	 echo " " ;							      \
-	 ./config.status &&						      \
-	 cd ../../.. &&							      \
-	 make clean 2>&1 >/dev/null ;					      \
-	 exit 1
-
-../../include/mpid_dataloop.h: ${srcdir}/../common/datatype/mpid_dataloop.h
-	@echo " " ;							      \
-	 echo "ERROR: src/include/mpid_dataloop.h is out of date." ;	      \
-	 echo "Running config.status and cleaning build tree." ;	      \
-	 echo " " ;							      \
-	 ./config.status &&						      \
-	 cd ../../.. &&							      \
-	 make clean 2>&1 >/dev/null ;					      \
-	 exit 1
-
-../../include/gen_dataloop.h: ${srcdir}/../common/datatype/gen_dataloop.h
-	@echo " " ;							      \
-	 echo "ERROR: src/include/gen_dataloop.h is out of date." ;	      \
-	 echo "Running config.status and cleaning build tree." ;	      \
-	 echo " " ;							      \
-	 ./config.status &&						      \
-	 cd ../../.. &&							      \
-	 make clean 2>&1 >/dev/null ;					      \
-	 exit 1
+SUBDIRS = channels src .
 
 distclean-local:
-	-rm -f ../../include/mpidpre.h ../../include/mpidimpl.h \
-	       ../../include/mpidpost.h \
-	       ../../include/mpid_datatype.h ../../include/mpid_dataloop.h \
-	       ../../include/gen_dataloop.h \
-	       ../../include/mpidi_ch3_conf.h
+	-rm -f include/mpidi_ch3_conf.h
+
 #
 # echomaxprocname gives the maximum lenght of a processor name, as used
 # by MPI_GET_PROCESSOR_NAME.  This is initialized in mpid_init

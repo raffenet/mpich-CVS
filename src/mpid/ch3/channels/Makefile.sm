@@ -1,5 +1,5 @@
-# SUBDIRS_CHANNEL contains the list of all possible channel
+# SUBDIRS_channel_name contains the list of all possible channel
 # implementations
-SUBDIRS_CHANNEL = tcp singleton
-SUBDIRS = @CHANNEL@ .
+SUBDIRS_channel_name = tcp singleton
+SUBDIRS = @channel_name@ .
 

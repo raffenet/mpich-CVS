@@ -9,38 +9,39 @@ AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
-AC_CONFIG_HEADER(../../include/mpidi_ch3_conf.h:include/mpidi_ch3_conf.h.in)
+AC_CONFIG_HEADER(include/mpidi_ch3_conf.h)
 
 
-echo "RUNNING CONFIGURE FOR DEVICE CH3"
-
-AC_ARG_WITH(device,
-[--with-device=name - Specify the communication device for MPICH.],,
-with_device=default)
+echo "RUNNING CONFIGURE FOR CH3 DEVICE"
 
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
-if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
+if test "`cd $srcdir && pwd`" != "`pwd`" && \
+   test -f $srcdir/config.status ; then
     AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
-dnl Extract the device and channel name from the --with-device argument
-DEVICE=`echo $with_device | sed -e 's/:.*//'`
-changequote(<<,>>)
-CHANNEL=`echo $with_device | sed -e 's/^[^:]*:*//'`
-changequote([,])
-if test -z "$CHANNEL" ; then
-    DEVICE=ch3
-    CHANNEL=tcp
+dnl Extract the device and channel name
+file=${master_top_srcdir}/src/mpid/${device_name}/setup_device.args
+if test -x ${file} ; then 
+    . ${file}
+elif test -f ${file} ; then
+    echo "ERROR: ${file} not is executable"
+    exit 1
+else
+    echo "ERROR: ${file} not found"
+    exit 1
 fi
-AC_SUBST(DEVICE)
-AC_SUBST(CHANNEL)
+export channel_name
+export channel_args
+AC_SUBST(device_name)
+AC_SUBST(channel_name)
 
-if test ! -d $srcdir/channels/$CHANNEL ; then
-    AC_MSG_ERROR([Channel $CHANNEL is unknown])
-elif test ! -x $srcdir/channels/$CHANNEL/configure ; then
-    AC_MSG_ERROR([Channel $CHANNEL has no configure])
+if test ! -d $srcdir/channels/${channel_name} ; then
+    AC_MSG_ERROR([Channel ${channel_name} is unknown])
+elif test ! -x $srcdir/channels/${channel_name}/configure ; then
+    AC_MSG_ERROR([Channel ${channel_name} has no configure])
 fi
 
 PAC_PROG_MAKE
@@ -59,29 +60,14 @@ AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
 AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(master_top_srcdir)
 
 PAC_SUBDIR_CACHE
-AC_CONFIG_SUBDIRS(channels/$CHANNEL)
+AC_CONFIG_SUBDIRS(channels/${channel_name})
 
-AC_OUTPUT_COMMANDS(echo "copying mpidpre.h to src/include" ;
-                   cp $topdir/include/mpidpre.h ../../include/,
-		   topdir=$srcdir)
-AC_OUTPUT_COMMANDS(echo "copying mpidimpl.h to src/include" ;
-                   cp $topdir/include/mpidimpl.h ../../include/)
-AC_OUTPUT_COMMANDS(echo "copying mpidpost.h to src/include" ;
-                   cp $topdir/include/mpidpost.h ../../include/)
-AC_OUTPUT_COMMANDS(echo "copying mpid_datatype.h to src/include" ;
-                   cp $topdir/../common/datatype/mpid_datatype.h \
-		       ../../include/)
-AC_OUTPUT_COMMANDS(echo "copying mpid_dataloop.h to src/include" ;
-                   cp $topdir/../common/datatype/mpid_dataloop.h \
-		       ../../include/)
-AC_OUTPUT_COMMANDS(echo "copying gen_dataloop.h to src/include" ;
-                   cp $topdir/../common/datatype/gen_dataloop.h \
-		       ../../include/)
 AC_OUTPUT(Makefile src/Makefile channels/Makefile)
 
 PAC_SUBDIR_CACHE_CLEANUP

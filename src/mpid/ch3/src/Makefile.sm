@@ -1,3 +1,4 @@
+INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 lib${MPILIBNAME}_a_SOURCES = \
     ch3u_buffer.c ch3u_handle_recv_pkt.c ch3u_handle_recv_req.c \
     ch3u_handle_send_req.c ch3u_request.c mpid_abort.c mpid_cancel_recv.c \
@@ -7,8 +8,3 @@ lib${MPILIBNAME}_a_SOURCES = \
     mpid_recv.c mpid_recv_init.c mpid_rsend.c mpid_rsend_init.c \
     mpid_send.c mpid_send_init.c mpid_ssend.c mpid_ssend_init.c \
     mpid_startall.c mpid_vc.c 
-
-# INCLUDES = -I../include -I${top_srcdir}/include \
-# 	     -I../../../include -I${master_top_srcdir}/src/include
-
-INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
