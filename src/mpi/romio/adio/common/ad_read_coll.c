@@ -13,42 +13,47 @@
 
 /* prototypes of functions used for collective reads only. */
 static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
-			 datatype, int nprocs, int
-			 nprocs_for_coll, int myrank, ADIOI_Access
-			 *others_req, ADIO_Offset *offset_list,
-			 int *len_list, int contig_access_count, ADIO_Offset
-                         min_st_offset, ADIO_Offset fd_size,
-			 ADIO_Offset *fd_start, ADIO_Offset *fd_end,
-                         int *buf_idx, int *error_code);
+				datatype, int nprocs,
+				int myrank, ADIOI_Access
+				*others_req, ADIO_Offset *offset_list,
+				int *len_list, int contig_access_count, 
+				ADIO_Offset
+				min_st_offset, ADIO_Offset fd_size,
+				ADIO_Offset *fd_start, ADIO_Offset *fd_end,
+				int *buf_idx, int *error_code);
 static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
-			 *flat_buf, ADIO_Offset *offset_list, int
-                         *len_list, int *send_size, int *recv_size,
-			 int *count, int *start_pos, int *partial_send, 
-			 int *recd_from_proc, int nprocs, 
-			 int nprocs_for_coll, int myrank, int
-			 buftype_is_contig, int contig_access_count,
-			 ADIO_Offset min_st_offset, ADIO_Offset fd_size,
-			 ADIO_Offset *fd_start, ADIO_Offset *fd_end, 
-			 ADIOI_Access *others_req, 
-                         int *recv_buf_idx, int *curr_from_proc,
-                         int *done_from_proc, int iter, 
-			 MPI_Aint buftype_extent, int *buf_idx);
+				  *flat_buf, ADIO_Offset *offset_list, int
+				  *len_list, int *send_size, int *recv_size,
+				  int *count, int *start_pos, 
+				  int *partial_send, 
+				  int *recd_from_proc, int nprocs, 
+				  int myrank, int
+				  buftype_is_contig, int contig_access_count,
+				  ADIO_Offset min_st_offset, 
+				  ADIO_Offset fd_size,
+				  ADIO_Offset *fd_start, ADIO_Offset *fd_end, 
+				  ADIOI_Access *others_req, 
+				  int *recv_buf_idx, int *curr_from_proc,
+				  int *done_from_proc, int iter, 
+				  MPI_Aint buftype_extent, int *buf_idx);
 static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
-                           *flat_buf, char **recv_buf, ADIO_Offset 
-                           *offset_list, int *len_list, int *recv_size, 
-                           MPI_Request *requests, MPI_Status *statuses,
-                           int *recd_from_proc, int nprocs_for_coll, 
-                           int contig_access_count, ADIO_Offset min_st_offset, 
-                           ADIO_Offset fd_size, ADIO_Offset *fd_start, 
-                           ADIO_Offset *fd_end, int *recv_buf_idx, 
-                           int *curr_from_proc, int *done_from_proc,
-                           MPI_Aint buftype_extent);
+				   *flat_buf, char **recv_buf, ADIO_Offset 
+				   *offset_list, int *len_list, 
+				   int *recv_size, 
+				   MPI_Request *requests, MPI_Status *statuses,
+				   int *recd_from_proc, int nprocs,
+				   int contig_access_count, 
+				   ADIO_Offset min_st_offset, 
+				   ADIO_Offset fd_size, ADIO_Offset *fd_start, 
+				   ADIO_Offset *fd_end, int *recv_buf_idx, 
+				   int *curr_from_proc, int *done_from_proc,
+				   MPI_Aint buftype_extent);
 
 
 void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
-                       MPI_Datatype datatype, int file_ptr_type,
-                       ADIO_Offset offset, ADIO_Status *status, int
-                       *error_code)
+			       MPI_Datatype datatype, int file_ptr_type,
+			       ADIO_Offset offset, ADIO_Status *status, int
+			       *error_code)
 {
 /* Uses a generalized version of the extended two-phase method described
    in "An Extended Two-Phase Method for Accessing Sections of 
@@ -71,7 +76,6 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
     ADIO_Offset *offset_list, start_offset, end_offset, *st_offsets, orig_fp;
     ADIO_Offset *fd_start, *fd_end, fd_size, min_st_offset, *end_offsets;
     ADIO_Offset off;
-    char *value;
 #ifdef HAVE_STATUS_SET_BYTES
     int bufsize, size;
 #endif
@@ -83,14 +87,8 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
     MPI_Comm_size(fd->comm, &nprocs);
     MPI_Comm_rank(fd->comm, &myrank);
 
-/* the number of processes that actually perform I/O, nprocs_for_coll,
-   is stored in the info object. it is either = nprocs or a smaller number
-   set by the user. get it from info. */
-
-    value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
-    MPI_Info_get(fd->info, "cb_nodes", MPI_MAX_INFO_VAL, value, &info_flag);
-    nprocs_for_coll = atoi(value);
-    ADIOI_Free(value);
+    /* number of aggregators, cb_nodes, is stored in the hints */
+    nprocs_for_coll = fd->hints->cb_nodes;
 
 /* For this process's request, calculate the list of offsets and
    lengths in the file and determine the start and end offsets. */
@@ -104,7 +102,8 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
 			   &end_offset, &contig_access_count); 
     
 /*    for (i=0; i<contig_access_count; i++) {
-	FPRINTF(stderr, "rank %d  off %ld  len %d\n", myrank, offset_list[i], len_list[i]);
+	FPRINTF(stderr, "rank %d  off %ld  len %d\n", myrank, offset_list[i], 
+	        len_list[i]);
     }*/
 
 /* each process communicates its start and end offsets to other 
@@ -128,8 +127,10 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
 
-    if (!interleave_count) {
-/* no interleaving of requests. noncollective is good enough */
+    if (fd->hints->cb_read == ADIOI_HINT_DISABLE
+	|| (!interleave_count && (fd->hints->cb_read == ADIOI_HINT_UNSPEC))) 
+    {
+	/* don't do aggregation */
 	ADIOI_Free(offset_list);
 	ADIOI_Free(len_list);
 	ADIOI_Free(st_offsets);
@@ -153,38 +154,61 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
 	return;
     }
 
-/* Divide the I/O workload among "nprocs_for_coll" processes. This is
-   done by (logically) dividing the file into file domains (FDs); each
-   process may directly access only its own file domain. */
-
+    /* We're going to perform aggregation of I/O.  Here we call
+     * ADIOI_Calc_file_domains() to determine what processes will handle I/O
+     * to what regions.  We pass nprocs_for_coll into this function; it is
+     * used to determine how many processes will perform I/O, which is also
+     * the number of regions into which the range of bytes must be divided.
+     * These regions are called "file domains", or FDs.
+     *
+     * When this function returns, fd_start, fd_end, fd_size, and
+     * min_st_offset will be filled in.  fd_start holds the starting byte
+     * location for each file domain.  fd_end holds the ending byte location.
+     * min_st_offset holds the minimum byte location that will be accessed.
+     *
+     * Both fd_start[] and fd_end[] are indexed by an aggregator number; this
+     * needs to be mapped to an actual rank in the communicator later.
+     *
+     */
     ADIOI_Calc_file_domains(st_offsets, end_offsets, nprocs,
 			    nprocs_for_coll, &min_st_offset,
-			    &fd_start, &fd_end, &fd_size);   
+			    &fd_start, &fd_end, &fd_size);
 
+    /* calculate where the portions of the access requests of this process 
+     * are located in terms of the file domains.  this could be on the same
+     * process or on other processes.  this function fills in:
+     * count_my_req_procs - number of processes (including this one) for which
+     *     this process has requests in their file domain
+     * count_my_req_per_proc - count of requests for each process, indexed
+     *     by rank of the process
+     * my_req[] - array of data structures describing the requests to be
+     *     performed by each process (including self).  indexed by rank.
+     * buf_idx[] - array of locations into which data can be directly moved;
+     *     this is only valid for contiguous buffer case
+     */
+    ADIOI_Calc_my_req(fd, offset_list, len_list, contig_access_count,
+		      min_st_offset, fd_start, fd_end, fd_size,
+		      nprocs, &count_my_req_procs, 
+		      &count_my_req_per_proc, &my_req,
+		      &buf_idx);
 
-/* calculate what portions of the access requests of this process are
-   located in the file domains of other processes */
-
-    ADIOI_Calc_my_req(offset_list, len_list, contig_access_count,
-			   min_st_offset, fd_start, fd_end, fd_size,
-			   nprocs, nprocs_for_coll, &count_my_req_procs, 
-			   &count_my_req_per_proc, &my_req,
-			   &buf_idx);
-
-/* based on everyone's my_req, calculate what requests of other
-   processes lie in this process's file domain.
-   count_others_req_procs = number of processes whose requests lie in
-   this process's file domain (including this process itself) 
-   count_others_req_per_proc[i] indicates how many separate contiguous
-   requests of proc. i lie in this process's file domain. */
-
+    /* perform a collective communication in order to distribute the
+     * data calculated above.  fills in the following:
+     * count_others_req_procs - number of processes (including this
+     *     one) which have requests in this process's file domain.
+     * count_others_req_per_proc[] - number of separate contiguous
+     *     requests from proc i lie in this process's file domain.
+     */
     ADIOI_Calc_others_req(fd, count_my_req_procs, 
-			       count_my_req_per_proc, my_req, 
-			       nprocs, myrank, nprocs_for_coll,
-			       &count_others_req_procs, &others_req); 
+			  count_my_req_per_proc, my_req, 
+			  nprocs, myrank, &count_others_req_procs, 
+			  &others_req); 
 
+    /* my_req[] and count_my_req_per_proc aren't needed at this point, so 
+     * let's free the memory 
+     */
     ADIOI_Free(count_my_req_per_proc);
-    for (i=0; i<nprocs_for_coll; i++) {
+    for (i=0; i<nprocs; i++) {
 	if (my_req[i].count) {
 	    ADIOI_Free(my_req[i].offsets);
 	    ADIOI_Free(my_req[i].lens);
@@ -193,17 +217,17 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
     ADIOI_Free(my_req);
 
 
-/* read data in sizes of no more than ADIOI_Coll_bufsize, 
-   communicate, and fill user buf. */
-    ADIOI_Read_and_exch(fd, buf, datatype, nprocs, nprocs_for_coll, myrank,
+    /* read data in sizes of no more than ADIOI_Coll_bufsize, 
+     * communicate, and fill user buf. 
+     */
+    ADIOI_Read_and_exch(fd, buf, datatype, nprocs, myrank,
                         others_req, offset_list,
 			len_list, contig_access_count, min_st_offset,
 			fd_size, fd_start, fd_end, buf_idx, error_code);
 
     if (!buftype_is_contig) ADIOI_Delete_flattened(datatype);
 
-/* free all memory allocated for collective I/O */
-
+    /* free all memory allocated for collective I/O */
     for (i=0; i<nprocs; i++) {
 	if (others_req[i].count) {
 	    ADIOI_Free(others_req[i].offsets);
@@ -232,7 +256,6 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
 
     fd->fp_sys_posn = -1;   /* set it to null. */
 }
-
 
 void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
 			    datatype, int file_ptr_type, ADIO_Offset
@@ -314,8 +337,9 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
 		n_filetypes++;
 		for (i=0; i<flat_file->count; i++) {
 		    if (disp + flat_file->indices[i] + 
-			(ADIO_Offset) n_filetypes*filetype_extent + flat_file->blocklens[i] 
-                            >= offset) {
+			(ADIO_Offset) n_filetypes*filetype_extent + 
+			flat_file->blocklens[i] >= offset) 
+		    {
 			st_index = i;
 			frd_size = (int) (disp + flat_file->indices[i] + 
 			    (ADIO_Offset) n_filetypes*filetype_extent
@@ -345,7 +369,8 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
 	    }
 
 	    /* abs. offset in bytes in the file */
-	    offset = disp + (ADIO_Offset) n_filetypes*filetype_extent + abs_off_in_filetype;
+	    offset = disp + (ADIO_Offset) n_filetypes*filetype_extent + 
+		abs_off_in_filetype;
 	}
 
          /* calculate how much space to allocate for offset_list, len_list */
@@ -393,17 +418,25 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
          e.g., if start_offset=0 and 100 bytes to be read, end_offset=99*/
 
 	    if (off + frd_size < disp + flat_file->indices[j] +
-		   flat_file->blocklens[j] + (ADIO_Offset) n_filetypes*filetype_extent)
+		flat_file->blocklens[j] + 
+		(ADIO_Offset) n_filetypes*filetype_extent)
+	    {
 		off += frd_size;
-	    /* did not reach end of contiguous block in filetype.
-	       no more I/O needed. off is incremented by frd_size. */
+		/* did not reach end of contiguous block in filetype.
+		 * no more I/O needed. off is incremented by frd_size. 
+		 */
+	    }
 	    else {
 		if (j < (flat_file->count - 1)) j++;
 		else {
+		    /* hit end of flattened filetype; 
+		     * start at beginning again 
+		     */
 		    j = 0;
 		    n_filetypes++;
 		}
-		off = disp + flat_file->indices[j] + (ADIO_Offset) n_filetypes*filetype_extent;
+		off = disp + flat_file->indices[j] + 
+		    (ADIO_Offset) n_filetypes*filetype_extent;
 		frd_size = ADIOI_MIN(flat_file->blocklens[j], bufsize-i);
 	    }
 	}
@@ -416,305 +449,9 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
     }
 }
 
-
-
-void ADIOI_Calc_file_domains(ADIO_Offset *st_offsets, ADIO_Offset
-			     *end_offsets, int nprocs, int nprocs_for_coll,
-			     ADIO_Offset *min_st_offset_ptr,
-			     ADIO_Offset **fd_start_ptr, ADIO_Offset 
-			     **fd_end_ptr, ADIO_Offset *fd_size_ptr)
-{
-/* Divide the I/O workload among "nprocs_for_coll" processes. This is
-   done by (logically) dividing the file into file domains (FDs); each
-   process may directly access only its own file domain. */
-
-    ADIO_Offset min_st_offset, max_end_offset, *fd_start, *fd_end, fd_size;
-    int i;
-
-/* find min of start offsets and max of end offsets of all processes */
-
-    min_st_offset = st_offsets[0];
-    max_end_offset = end_offsets[0];
-
-    for (i=1; i<nprocs; i++) {
-	min_st_offset = ADIOI_MIN(min_st_offset, st_offsets[i]);
-	max_end_offset = ADIOI_MAX(max_end_offset, end_offsets[i]);
-    }
-
-/* determine the "file domain (FD)" of each process, i.e., the portion of
-   the file that will be "owned" by each process */
-
-/* partition the total file access range equally among nprocs_for_coll
-   processes */ 
-    fd_size = ((max_end_offset - min_st_offset + 1) + nprocs_for_coll -
-	       1)/nprocs_for_coll; 
-    /* ceiling division as in HPF block distribution */
-
-    *fd_start_ptr = (ADIO_Offset *)
-	ADIOI_Malloc(nprocs_for_coll*sizeof(ADIO_Offset)); 
-    *fd_end_ptr = (ADIO_Offset *)
-	ADIOI_Malloc(nprocs_for_coll*sizeof(ADIO_Offset)); 
-
-    fd_start = *fd_start_ptr;
-    fd_end = *fd_end_ptr;
-
-    fd_start[0] = min_st_offset;
-    fd_end[0] = min_st_offset + fd_size - 1;
-
-    for (i=1; i<nprocs_for_coll; i++) {
-	fd_start[i] = fd_end[i-1] + 1;
-	fd_end[i] = fd_start[i] + fd_size - 1;
-    }
-
-/* take care of cases in which the total file access range is not
-   divisible by the number of processes. In such cases, the last
-   process, or the last few processes, may have unequal load (even 0).
-   For example, a range of 97 divided among 16 processes.
-   Note that the division is ceiling division. */
-
-    for (i=0; i<nprocs_for_coll; i++) {
-	if (fd_start[i] > max_end_offset)
-	    fd_start[i] = fd_end[i] = -1;
-	if (fd_end[i] > max_end_offset)
-	    fd_end[i] = max_end_offset;
-    }
-
-    *fd_size_ptr = fd_size;
-    *min_st_offset_ptr = min_st_offset;
-}
-
-
-
-void ADIOI_Calc_my_req(ADIO_Offset *offset_list, int *len_list, int
-			    contig_access_count, ADIO_Offset 
-			    min_st_offset, ADIO_Offset *fd_start,
-			    ADIO_Offset *fd_end, ADIO_Offset fd_size,
-                            int nprocs, int nprocs_for_coll, 
-                            int *count_my_req_procs_ptr,
-			    int **count_my_req_per_proc_ptr,
-			    ADIOI_Access **my_req_ptr,
-			    int **buf_idx_ptr)
-{
-/* calculate what portions of the access requests of this process are
-   located in the file domains of other processes */
-
-    int *count_my_req_per_proc, count_my_req_procs, *buf_idx;
-    int i, l, proc, len, rem_len, curr_idx;
-    ADIO_Offset off;
-    ADIOI_Access *my_req;
-
-    *count_my_req_per_proc_ptr = (int *) ADIOI_Calloc(nprocs,sizeof(int)); 
-    count_my_req_per_proc = *count_my_req_per_proc_ptr;
-/* count_my_req_per_proc[i] gives the no. of contig. requests of this
-   process in process i's file domain. calloc initializes to zero.
-   I'm allocating memory of size nprocs, so that I can do an 
-   MPI_Alltoall later on.*/
-
-    buf_idx = (int *) ADIOI_Malloc(nprocs_for_coll*sizeof(int));
-/* buf_idx is relevant only if buftype_is_contig.
-   buf_idx[i] gives the index into user_buf where data received
-   from proc. i should be placed. This allows receives to be done
-   without extra buffer. This can't be done if buftype is not contig. */
-   
-/* initialize buf_idx to -1 */
-    for (i=0; i<nprocs_for_coll; i++) buf_idx[i] = -1;
-
-/* one pass just to calculate how much space to allocate for
-   my_req */
-    for (i=0; i<contig_access_count; i++) { 
-
-/* proc_no = CD(offset_list[i]-min_st_offset+1, fd_size) - 1 */
-/* CD = ceiling division. CD(j,k) = (j+k-1)/k */
-
-	proc = (int) ((offset_list[i] - min_st_offset + fd_size)/fd_size - 1);
-        /* sanity check */
-	if (proc >= nprocs_for_coll) {
-	    FPRINTF(stderr, "Error: proc >= nprocs_for_coll, file %s, line %d\n", __FILE__, __LINE__);
-	    MPI_Abort(MPI_COMM_WORLD, 1);
-	}
-
-	off = offset_list[i];
-	len = (int) (((off+len_list[i]-1) <= fd_end[proc]) ? len_list[i] : 
-	                           (fd_end[proc] - off + 1));
-	rem_len = len_list[i] - len;
-	count_my_req_per_proc[proc]++;
-
-	while (rem_len != 0) {
-	    proc++;
-	    off = fd_start[proc];
-	    len = (int) (((off+rem_len-1) <= fd_end[proc]) ? rem_len : 
-	                           (fd_end[proc] - off + 1));
-	    rem_len -= len;
-	    count_my_req_per_proc[proc]++;
-	}
-    }
-
-/* now allocate space for my_req, offset, and len */
-
-    *my_req_ptr = (ADIOI_Access *)
-	ADIOI_Malloc(nprocs_for_coll*sizeof(ADIOI_Access)); 
-    my_req = *my_req_ptr;
-
-    count_my_req_procs = 0;
-    for (i=0; i<nprocs_for_coll; i++) {
-	if (count_my_req_per_proc[i]) {
-	    my_req[i].offsets = (ADIO_Offset *)
-		ADIOI_Malloc(count_my_req_per_proc[i] * sizeof(ADIO_Offset));
-	    my_req[i].lens = (int *)
-		ADIOI_Malloc(count_my_req_per_proc[i] * sizeof(int));
-	    count_my_req_procs++;
-	}	    
-	my_req[i].count = 0;  /* will be incremented where needed
-				      later */
-    }
-
-/* now fill in my_req */
-    curr_idx = 0;
-    for (i=0; i<contig_access_count; i++) { 
-
-	/* for each separate contiguous request from this process */
-
-	proc = (int) ((offset_list[i] - min_st_offset + fd_size)/fd_size - 1);
-	if (buf_idx[proc] == -1) buf_idx[proc] = curr_idx;
-
-	l = my_req[proc].count;
-	off = offset_list[i];
-	len = (int) (((off+len_list[i]-1) <= fd_end[proc]) ? len_list[i] : 
-	                           (fd_end[proc] - off + 1));
-	curr_idx += len;
-	/* the length may go beyond proc's file domain */
-	rem_len = len_list[i] - len;
-
-	/* store the proc, offset, and len information in an array
-         of structures, my_req. Each structure contains the 
-         offsets and lengths located in that process's FD, 
-	 and the associated count. */
-
-	my_req[proc].offsets[l] = off;
-	my_req[proc].lens[l] = len;
-	my_req[proc].count++;
-
-	/* this request may span the file domains of more than one
-	   process */
-	while (rem_len != 0) {
-	    proc++;
-	    if (buf_idx[proc] == -1) buf_idx[proc] = curr_idx;
-	    l = my_req[proc].count;
-	    off = fd_start[proc];
-	    len = (int) (((off+rem_len-1) <= fd_end[proc]) ? rem_len : 
-	                           (fd_end[proc] - off + 1));
-	    curr_idx += len;
-	    rem_len -= len;
-	    my_req[proc].offsets[l] = off;
-	    my_req[proc].lens[l] = len;
-	    my_req[proc].count++;
-	}
-    }
-    *count_my_req_procs_ptr = count_my_req_procs;
-    *buf_idx_ptr = buf_idx;
-}
-
-
-
-void ADIOI_Calc_others_req(ADIO_File fd, int count_my_req_procs, 
-				int *count_my_req_per_proc,
-				ADIOI_Access *my_req, 
-				int nprocs, int myrank, int nprocs_for_coll, 
-				int *count_others_req_procs_ptr,
-				ADIOI_Access **others_req_ptr)  
-{
-/* determine what requests of other processes lie in this process's
-   file domain */
-
-/* count_others_req_procs = number of processes whose requests lie in
-   this process's file domain (including this process itself) 
-   count_others_req_per_proc[i] indicates how many separate contiguous
-   requests of proc. i lie in this process's file domain. */
-
-    int *count_others_req_per_proc, count_others_req_procs;
-    int i, j;
-    MPI_Request *send_requests, *recv_requests;
-    MPI_Status *statuses;
-    ADIOI_Access *others_req;
-
-/* first find out how much to send/recv and from/to whom */
-
-    count_others_req_per_proc = (int *) ADIOI_Malloc(nprocs*sizeof(int));
-
-    MPI_Alltoall(count_my_req_per_proc, 1, MPI_INT,
-		 count_others_req_per_proc, 1, MPI_INT, fd->comm);
-
-    *others_req_ptr = (ADIOI_Access *)
-	ADIOI_Malloc(nprocs*sizeof(ADIOI_Access)); 
-    others_req = *others_req_ptr;
-
-    count_others_req_procs = 0;
-    for (i=0; i<nprocs; i++) {
-	if (count_others_req_per_proc[i]) {
-	    others_req[i].count = count_others_req_per_proc[i];
-	    others_req[i].offsets = (ADIO_Offset *)
-		ADIOI_Malloc(count_others_req_per_proc[i]*sizeof(ADIO_Offset));
-	    others_req[i].lens = (int *)
-		ADIOI_Malloc(count_others_req_per_proc[i]*sizeof(int)); 
-	    others_req[i].mem_ptrs = (MPI_Aint *)
-		ADIOI_Malloc(count_others_req_per_proc[i]*sizeof(MPI_Aint)); 
-	    count_others_req_procs++;
-	}
-	else others_req[i].count = 0;
-    }
-    
-/* now send the calculated offsets and lengths to respective processes */
-
-    send_requests = (MPI_Request *)
-	ADIOI_Malloc(2*(count_my_req_procs+1)*sizeof(MPI_Request)); 
-    recv_requests = (MPI_Request *)
-	ADIOI_Malloc(2*(count_others_req_procs+1)*sizeof(MPI_Request)); 
-/* +1 to avoid a 0-size malloc */
-
-    j = 0;
-    for (i=0; i<nprocs; i++) {
-	if (others_req[i].count) {
-	    MPI_Irecv(others_req[i].offsets, others_req[i].count, 
-                      ADIO_OFFSET, i, i+myrank, fd->comm, &recv_requests[j]);
-	    j++;
-	    MPI_Irecv(others_req[i].lens, others_req[i].count, 
-                      MPI_INT, i, i+myrank+1, fd->comm, &recv_requests[j]);
-	    j++;
-	}
-    }
-
-    j = 0;
-    for (i=0; i<nprocs_for_coll; i++) {
-	if (my_req[i].count) {
-	    MPI_Isend(my_req[i].offsets, my_req[i].count, 
-                      ADIO_OFFSET, i, i+myrank, fd->comm, &send_requests[j]);
-	    j++;
-	    MPI_Isend(my_req[i].lens, my_req[i].count, 
-                      MPI_INT, i, i+myrank+1, fd->comm, &send_requests[j]);
-	    j++;
-	}
-    }
-
-    statuses = (MPI_Status *) ADIOI_Malloc((1 + 2* \
-                   ADIOI_MAX(count_my_req_procs,count_others_req_procs)) * \
-                       sizeof(MPI_Status));
-/* +1 to avoid a 0-size malloc */
-
-    MPI_Waitall(2*count_my_req_procs, send_requests, statuses);
-    MPI_Waitall(2*count_others_req_procs, recv_requests, statuses);
-
-    ADIOI_Free(send_requests);
-    ADIOI_Free(recv_requests);	    
-    ADIOI_Free(statuses);
-    ADIOI_Free(count_others_req_per_proc);
-
-    *count_others_req_procs_ptr = count_others_req_procs;
-}
-
-
 static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
-			 datatype, int nprocs, int
-			 nprocs_for_coll, int myrank, ADIOI_Access
+			 datatype, int nprocs,
+			 int myrank, ADIOI_Access
 			 *others_req, ADIO_Offset *offset_list,
 			 int *len_list, int contig_access_count, ADIO_Offset
                          min_st_offset, ADIO_Offset fd_size,
@@ -750,15 +487,12 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 /* calculate the number of reads of size coll_bufsize
    to be done by each process and the max among all processes.
    That gives the no. of communication phases as well.
-   coll_bufsize is obtained from the info object. */
+   coll_bufsize is obtained from the hints object. */
 
-    value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
-    MPI_Info_get(fd->info, "cb_buffer_size", MPI_MAX_INFO_VAL, value, 
-		 &info_flag);
-    coll_bufsize = atoi(value);
-    ADIOI_Free(value);
+    coll_bufsize = fd->hints->cb_buffer_size;
 
-    for (i=0; i<nprocs; i++) {
+    /* grab some initial values for st_loc and end_loc */
+    for (i=0; i < nprocs; i++) {
 	if (others_req[i].count) {
 	    st_loc = others_req[i].offsets[0];
 	    end_loc = others_req[i].offsets[0];
@@ -766,19 +500,27 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 	}
     }
 
-    for (i=0; i<nprocs; i++)
+    /* now find the real values */
+    for (i=0; i < nprocs; i++)
 	for (j=0; j<others_req[i].count; j++) {
 	    st_loc = ADIOI_MIN(st_loc, others_req[i].offsets[j]);
 	    end_loc = ADIOI_MAX(end_loc, (others_req[i].offsets[j]
-				       + others_req[i].lens[j] - 1));
+					  + others_req[i].lens[j] - 1));
 	}
 
-
-    /* ntimes=ceiling_div(end_loc - st_loc + 1, coll_bufsize)*/
-
-    ntimes = (int) ((end_loc - st_loc + coll_bufsize)/coll_bufsize);
-
-    if ((st_loc==-1) && (end_loc==-1)) ntimes = 0; /* this process does no I/O. */
+    /* calculate ntimes, the number of times this process must perform I/O
+     * operations in order to complete all the requests it has received.
+     * the need for multiple I/O operations comes from the restriction that
+     * we only use coll_bufsize bytes of memory for internal buffering.
+     */
+    if ((st_loc==-1) && (end_loc==-1)) {
+	/* this process does no I/O. */
+	ntimes = 0;
+    }
+    else {
+	/* ntimes=ceiling_div(end_loc - st_loc + 1, coll_bufsize)*/
+	ntimes = (int) ((end_loc - st_loc + coll_bufsize)/coll_bufsize);
+    }
 
     MPI_Allreduce(&ntimes, &max_ntimes, 1, MPI_INT, MPI_MAX, fd->comm); 
 
@@ -787,7 +529,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     curr_offlen_ptr = (int *) ADIOI_Calloc(nprocs, sizeof(int)); 
     /* its use is explained below. calloc initializes to 0. */
 
-    count = (int *) ADIOI_Malloc(nprocs*sizeof(int));
+    count = (int *) ADIOI_Malloc(nprocs * sizeof(int));
     /* to store count of how many off-len pairs per proc are satisfied
        in an iteration. */
 
@@ -796,20 +538,20 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
        in a particular iteration, the length sent is stored here.
        calloc initializes to 0. */
 
-    send_size = (int *) ADIOI_Malloc(nprocs*sizeof(int));
+    send_size = (int *) ADIOI_Malloc(nprocs * sizeof(int));
     /* total size of data to be sent to each proc. in an iteration */
 
-    recv_size = (int *) ADIOI_Malloc(nprocs*sizeof(int));
+    recv_size = (int *) ADIOI_Malloc(nprocs * sizeof(int));
     /* total size of data to be recd. from each proc. in an iteration.
        Of size nprocs so that I can use MPI_Alltoall later. */
 
-    recd_from_proc = (int *) ADIOI_Calloc(nprocs_for_coll, sizeof(int));
+    recd_from_proc = (int *) ADIOI_Calloc(nprocs, sizeof(int));
     /* amount of data recd. so far from each proc. Used in
        ADIOI_Fill_user_buffer. initialized to 0 here. */
 
-    recv_buf_idx = (int *) ADIOI_Malloc(nprocs_for_coll*sizeof(int));
-    curr_from_proc = (int *) ADIOI_Malloc(nprocs_for_coll*sizeof(int));
-    done_from_proc = (int *) ADIOI_Malloc(nprocs_for_coll*sizeof(int));
+    recv_buf_idx = (int *) ADIOI_Malloc(nprocs * sizeof(int));
+    curr_from_proc = (int *) ADIOI_Malloc(nprocs * sizeof(int));
+    done_from_proc = (int *) ADIOI_Malloc(nprocs * sizeof(int));
     /* Above three are used in ADIOI_Fill_user_buffer*/
 
     start_pos = (int *) ADIOI_Malloc(nprocs*sizeof(int));
@@ -912,7 +654,8 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 						  req_off, req_len));
 
 			if (real_off+real_size-req_off < req_len) {
-			    partial_send[i] = (int) (real_off+real_size-req_off);
+			    partial_send[i] = (int) (real_off+real_size-
+						     req_off);
 			    if ((j+1 < others_req[i].count) && 
                                  (others_req[i].offsets[j+1] < 
                                      real_off+real_size)) { 
@@ -954,7 +697,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 	ADIOI_R_Exchange_data(fd, buf, flat_buf, offset_list, len_list,
 			    send_size, recv_size, count, 
        			    start_pos, partial_send, recd_from_proc, nprocs,
-			    nprocs_for_coll, myrank, 
+			    myrank, 
 			    buftype_is_contig, contig_access_count,
 			    min_st_offset, fd_size, fd_start, fd_end,
 			    others_req, recv_buf_idx, 
@@ -987,7 +730,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 	ADIOI_R_Exchange_data(fd, buf, flat_buf, offset_list, len_list,
 			    send_size, recv_size, count, 
 			    start_pos, partial_send, recd_from_proc, nprocs,
-			    nprocs_for_coll, myrank, 
+			    myrank, 
 			    buftype_is_contig, contig_access_count,
 			    min_st_offset, fd_size, fd_start, fd_end,
 			    others_req, recv_buf_idx, 
@@ -1010,13 +753,12 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     ADIOI_Free(done_from_proc);
 }
 
-
 static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 			 *flat_buf, ADIO_Offset *offset_list, int
                          *len_list, int *send_size, int *recv_size,
 			 int *count, int *start_pos, int *partial_send, 
 			 int *recd_from_proc, int nprocs, 
-			 int nprocs_for_coll, int myrank, int
+			 int myrank, int
 			 buftype_is_contig, int contig_access_count,
 			 ADIO_Offset min_st_offset, ADIO_Offset fd_size,
 			 ADIO_Offset *fd_start, ADIO_Offset *fd_end, 
@@ -1037,7 +779,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
     MPI_Alltoall(send_size, 1, MPI_INT, recv_size, 1, MPI_INT, fd->comm);
 
     nprocs_recv = 0;
-    for (i=0; i<nprocs_for_coll; i++) if (recv_size[i]) nprocs_recv++;
+    for (i=0; i < nprocs; i++) if (recv_size[i]) nprocs_recv++;
 
     nprocs_send = 0;
     for (i=0; i<nprocs; i++) if (send_size[i]) nprocs_send++;
@@ -1051,7 +793,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 
     if (buftype_is_contig) {
 	j = 0;
-	for (i=0; i<nprocs_for_coll; i++) 
+	for (i=0; i < nprocs; i++) 
 	    if (recv_size[i]) {
 		MPI_Irecv(((char *) buf) + buf_idx[i], recv_size[i], 
 		  MPI_BYTE, i, myrank+i+100*iter, fd->comm, requests+j);
@@ -1061,18 +803,19 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
     }
     else {
 /* allocate memory for recv_buf and post receives */
-	recv_buf = (char **) ADIOI_Malloc(nprocs_for_coll*sizeof(char*));
-	for (i=0; i<nprocs_for_coll; i++) 
+	recv_buf = (char **) ADIOI_Malloc(nprocs * sizeof(char*));
+	for (i=0; i < nprocs; i++) 
 	    if (recv_size[i]) recv_buf[i] = 
                                   (char *) ADIOI_Malloc(recv_size[i]);
 
 	    j = 0;
-	    for (i=0; i<nprocs_for_coll; i++) 
+	    for (i=0; i < nprocs; i++) 
 		if (recv_size[i]) {
 		    MPI_Irecv(recv_buf[i], recv_size[i], MPI_BYTE, i, 
 			      myrank+i+100*iter, fd->comm, requests+j);
 		    j++;
-		    /* FPRINTF(stderr, "node %d, recv_size %d, tag %d \n", myrank, recv_size[i], myrank+i+100*iter); */
+		    /* FPRINTF(stderr, "node %d, recv_size %d, tag %d \n", 
+		       myrank, recv_size[i], myrank+i+100*iter); */
 		}
     }
 
@@ -1109,7 +852,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 	ADIOI_Fill_user_buffer(buf, flat_buf, recv_buf,
 			       offset_list, len_list, recv_size, 
 			       requests, statuses, recd_from_proc, 
-			       nprocs_for_coll, contig_access_count,
+			       nprocs, contig_access_count,
 			       min_st_offset, fd_size, fd_start, fd_end,
 			       recv_buf_idx, curr_from_proc, done_from_proc,
 			       buftype_extent);
@@ -1130,12 +873,11 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
     ADIOI_Free(requests);
 
     if (!buftype_is_contig) {
-	for (i=0; i<nprocs_for_coll; i++) 
+	for (i=0; i < nprocs; i++) 
 	    if (recv_size[i]) ADIOI_Free(recv_buf[i]);
 	ADIOI_Free(recv_buf);
     }
 }
-
 
 
 #define ADIOI_BUF_INCR \
@@ -1186,15 +928,17 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 
 
 static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
-                           *flat_buf, char **recv_buf, ADIO_Offset 
-                           *offset_list, int *len_list, int *recv_size, 
-                           MPI_Request *requests, MPI_Status *statuses,
-                           int *recd_from_proc, int nprocs_for_coll, 
-                           int contig_access_count, ADIO_Offset min_st_offset, 
-                           ADIO_Offset fd_size, ADIO_Offset *fd_start, 
-                           ADIO_Offset *fd_end, int *recv_buf_idx, 
-                           int *curr_from_proc, int *done_from_proc,
-                           MPI_Aint buftype_extent)
+				   *flat_buf, char **recv_buf, ADIO_Offset 
+				   *offset_list, int *len_list, 
+				   int *recv_size, 
+				   MPI_Request *requests, MPI_Status *statuses,
+				   int *recd_from_proc, int nprocs,
+				   int contig_access_count, 
+				   ADIO_Offset min_st_offset, 
+				   ADIO_Offset fd_size, ADIO_Offset *fd_start, 
+				   ADIO_Offset *fd_end, int *recv_buf_idx, 
+				   int *curr_from_proc, int *done_from_proc,
+				   MPI_Aint buftype_extent)
 {
 /* this function is only called if buftype is not contig */
 
@@ -1212,7 +956,7 @@ static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
     user_buf_idx = current location in user buffer 
     recv_buf_idx[p] = current location in recv_buf of proc. p  */
 
-    for (i=0; i<nprocs_for_coll; i++) {
+    for (i=0; i < nprocs; i++) {
 	recv_buf_idx[i] = curr_from_proc[i] = 0;
 	done_from_proc[i] = recd_from_proc[i];
     }
@@ -1320,6 +1064,6 @@ static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
 	    rem_len -= len;
 	}
     }
-    for (i=0; i<nprocs_for_coll; i++) 
+    for (i=0; i < nprocs; i++) 
 	if (recv_size[i]) recd_from_proc[i] = curr_from_proc[i];
 }

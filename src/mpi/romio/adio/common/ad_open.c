@@ -7,19 +7,34 @@
 
 #include "adio.h"
 #include "adio_extern.h"
+#include "adio_cb_config_list.h"
 #ifdef MPISGI
 #include "mpisgi2.h"
 #endif
 
-ADIO_File ADIO_Open(MPI_Comm comm, char *filename, int file_system,
+ADIO_File ADIO_Open(MPI_Comm orig_comm,
+		    MPI_Comm comm, char *filename, int file_system,
 		    int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
 		    MPI_Datatype filetype, int iomode,
                     MPI_Info info, int perm, int *error_code)
 {
     ADIO_File fd;
-    int orig_amode, err;
+    ADIO_cb_name_array array;
+    int orig_amode, err, rank, procs, i;
+    char *value;
+#ifndef PRINT_ERR_MSG
+    static char myname[] = "ADIO_OPEN";
+#endif
+
+    int rank_ct;
+    int *tmp_ranklist;
+
+    *error_code = MPI_SUCCESS;
 
     fd = (ADIO_File) ADIOI_Malloc(sizeof(struct ADIOI_FileD));
+    if (fd == NULL) {
+	/* NEED TO HANDLE ENOMEM ERRORS */
+    }
 
     fd->cookie = ADIOI_FILE_COOKIE;
     fd->fp_ind = disp;
@@ -47,8 +62,68 @@ ADIO_File ADIO_Open(MPI_Comm comm, char *filename, int file_system,
     ADIOI_SetFunctions(fd);
 
 /* create and initialize info object */
+    fd->hints = ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));
+    if (fd->hints == NULL) {
+	/* NEED TO HANDLE ENOMEM ERRORS */
+    }
+    fd->hints->cb_config_list = NULL;
+    fd->hints->ranklist = NULL;
+    fd->hints->initialized = 0;
     fd->info = MPI_INFO_NULL;
     ADIO_SetInfo(fd, info, &err);
+
+/* gather the processor name array if we don't already have it */
+
+/* this has to be done here so that we can cache the name array in both
+ * the dup'd communicator (in case we want it later) and the original
+ * communicator
+ */
+    ADIOI_cb_gather_name_array(orig_comm, comm, &array);
+
+/* parse the cb_config_list and create a rank map on rank 0 */
+    MPI_Comm_rank(comm, &rank);
+    if (rank == 0) {
+	MPI_Comm_size(comm, &procs);
+	tmp_ranklist = ADIOI_Malloc(sizeof(int) * procs);
+	if (tmp_ranklist == NULL) {
+	    /* NEED TO HANDLE ENOMEM ERRORS */
+	}
+
+	rank_ct = ADIOI_cb_config_list_parse(fd->hints->cb_config_list, 
+					     array, tmp_ranklist,
+					     fd->hints->cb_nodes);
+
+	/* store the ranklist using the minimum amount of memory */
+	if (rank_ct > 0) {
+	    fd->hints->ranklist = ADIOI_Malloc(sizeof(int) * rank_ct);
+	    for (i=0; i < rank_ct; i++) {
+		fd->hints->ranklist[i] = tmp_ranklist[i];
+	    }
+	}
+	ADIOI_Free(tmp_ranklist);
+	fd->hints->cb_nodes = rank_ct;
+	/* TEMPORARY -- REMOVE WHEN NO LONGER UPDATING INFO FOR FS-INDEP. */
+	value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
+	sprintf(value, "%d", rank_ct);
+	MPI_Info_set(fd->info, "cb_nodes", value);
+	ADIOI_Free(value);
+    }
+/* bcast the rank map (could do an allgather above and avoid
+ * this...would that really be any better?)
+ */
+    ADIOI_cb_bcast_rank_map(fd);
+    if (fd->hints->cb_nodes <= 0) {
+#ifdef PRINT_ERR_MSG
+	*error_code = MPI_ERR_UNKNOWN;
+#else
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR, myname,
+				      "Open Error", "%s", 
+				      "No aggregators match");
+	ADIOI_Error(MPI_FILE_NULL, *error_code, myname);
+#endif
+	fd = ADIO_FILE_NULL;
+	return fd;
+    }
 
 /* For writing with data sieving, a read-modify-write is needed. If 
    the file is opened for write_only, the read will fail. Therefore,
