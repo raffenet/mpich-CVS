@@ -97,6 +97,18 @@ static int class_to_index[] = { 0, };
 EOF
     fi
 fi
+#
+# Create the bindings if necessary 
+if [ ! -s src/binding/f77/abortf.c ] ; then 
+    build_f77=yes
+elif find -name 'src/binding/buildiface' -newer 'src/binding/f77/abortf.c' ; then
+    build_f77=yes
+else
+    build_f77=no
+fi
+if [ $build_f77 = "yes" ] ; then
+    (cd src/binding/f77 ; ./buildiface )
+fi
 # Build simplemake if necessary
 made_simplemake=no
 if [ ! -x maint/configure ] ; then

@@ -85,6 +85,9 @@ AC_ARG_ENABLE(fast,
                 turns off error checking and timing collection],,
 enable_fast=no)
 dnl
+AC_ARG_ENABLE(f77,
+[--enable-f77 - Enable Fortran 77 bindings],,enable_f77=no)
+
 dnl With options
 dnl "default" is a special device that allows MPICH to choose one based on 
 dnl the environment.
@@ -201,6 +204,10 @@ case "$enable_g" in
     AC_MSG_WARN([Unknown value $enable_g for enable-g])
     ;;
 esac
+
+if test "$enable_f77" = "yes" ; then
+   subsystems="$subsystems src/binding/f77"
+fi
 dnl
 dnl
 PAC_ARG_SHAREDLIBS
@@ -653,6 +660,7 @@ dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
 
 AC_OUTPUT(Makefile src/Makefile \
+          src/binding/Makefile \
           src/mpi/Makefile \
           src/mpi/attr/Makefile \
 	  src/mpi/coll/Makefile \

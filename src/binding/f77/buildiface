@@ -45,8 +45,11 @@ foreach $_ (@ARGV) {
 	foreach $feature (split(/:/,$1)) {
 	    # Feature values are foo=on,off
 	    ($name,$value) = split(/=/,$feature);
-	    if ($value eq "on") { $value = 1; } else { $value = 0; }
-	    $do_$name = $value;
+	    if ($value eq "on") { $value = 1; } 
+	    elsif ($value eq "off") { $value = 0; }
+	    # Set the variable based on the string
+	    $varname = "do_$name";
+	    $$varname = $value;
 	}
     }
     else {
@@ -294,6 +297,10 @@ while (<FD>) {
 #
 # This block can be used to create the Makefile
 open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
+print MAKEFD "# DO NOT EDIT\n# This file created by buildiface\n";
+# This line is unfortunately necessary to ensure that a working
+# autoconf is used.
+print MAKEFD "smvar_autoconf = /home/gropp/bin/linux/autoconf\n";
 &print_line(  MAKEFD, "mpi_sources = ", 80, "\\\n\t", 8 );
 for ($i=0; $i<=$#files; $i++) {
     $name = $files[$i];
@@ -602,7 +609,7 @@ sub print_post_call {
     foreach $count (split(/:/,$special_args{$routine_name})) {
 	$rule = $special_args{"${routine_name}-$count"};
 	($direction,$method) = split(/:/,$rule);
-	print STDERR "$routine_name: dir = $direction, method = $method\n";
+	print STDERR "$routine_name: dir = $direction, method = $method\n" if $debug;
 	if ($direction eq "out") {
 	    $processing_routine = "${method}_ctof";
 	    &$processing_routine( "l$count", "v$count" );

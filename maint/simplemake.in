@@ -27,6 +27,7 @@ $convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib
 $make_depend = "gcc -MM";  # Set to command to create dependency list
 $fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
                         # pathnames that contain blanks
+$autoconf = "autoconf"; # Name of autoconf program to use
 #
 # Defaults for building MPICH
 $doc_heading = "MPI";
@@ -428,6 +429,15 @@ sub ReadMfile {
 	elsif ($nocomments && /^\s*#/) {
 	       ;
 	   }
+	elsif (/smvar_(.*)\s*=\s*(.*)/) {
+	    # Allow the user to override any simplemake variable 
+	    # E.g.,
+	    # smvar_autoconf = /foo/bar/fixedac
+	    # causes simplemake to replace "autoconf" with "/foo/bar/fixedac"
+	    $varname = $1;
+	    $value   = $2;
+	    $$varname = $value;
+	}
 	elsif (/^noinst/) {
 	    # Automake target to identify some programs/libraries as
 	    # not to be installed.
@@ -765,7 +775,7 @@ sub DefaultRules {
 	print FD "$newline";
 	&print_make_longline( FD,  "configure: configure.in $autoconf_deps" );
 	&print_make_setpos( 8 );
-	&print_make_longline( FD,  "\tautoheader $aargs$newline\tautoconf $aargs" );
+	&print_make_longline( FD,  "\tautoheader $aargs$newline\t$autoconf $aargs" );
 	if ($fixup_autoconf_cd) {
 	    # This is needed for DOS in case the pwd contains blanks
 	    print FD "\tsed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure$newline";
@@ -887,6 +897,8 @@ sub ClearVars {
     # Document sources and directories
     %docdir = ();
     %docsrc = ();
+    # These may be overriden on a file by file basis
+    $autoconf = "autoconf"; # Name of autoconf program to use
 }	
 
 #

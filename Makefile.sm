@@ -1,4 +1,4 @@
-SUBDIRS = . src examples test
+SUBDIRS = . src binding examples test
 all-local:
 	if [ ! -d lib ] ; then mkdir lib ; fi
 all-preamble:
