@@ -7,6 +7,26 @@
 #include "mpidimpl.h"
 
 /*
+static const char * get_state_str(int state)
+{
+    switch (state)
+    {
+    case MPIDI_VC_STATE_INACTIVE:
+	return "MPIDI_VC_STATE_INACTIVE";
+    case MPIDI_VC_STATE_ACTIVE:
+	return "MPIDI_VC_STATE_ACTIVE";
+    case MPIDI_VC_STATE_LOCAL_CLOSE:
+	return "MPIDI_VC_STATE_LOCAL_CLOSE";
+    case MPIDI_VC_STATE_REMOTE_CLOSE:
+	return "MPIDI_VC_STATE_REMOTE_CLOSE";
+    case MPIDI_VC_STATE_CLOSE_ACKED:
+	return "MPIDI_VC_STATE_CLOSE_ACKED";
+    }
+    return "unknown";
+}
+*/
+
+/*
  * MPIDI_VCRT - virtual connection reference table
  *
  * handle - this element is not used, but exists so that we may use the MPIU_Object routines for reference counting
@@ -120,6 +140,11 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 
 		    /* MT: this is not thread safe */
 		    MPIDI_Outstanding_close_ops += 1;
+		    /*
+		    printf("[%d] release close(%s) to %d, ops = %d\n", MPIDI_Process.my_pg_rank,
+			close_pkt->ack == TRUE ? "TRUE" : "FALSE", i, MPIDI_Outstanding_close_ops);
+		    fflush(stdout);
+		    */
 
 		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		    { 
@@ -130,9 +155,16 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		    }
 		}
+		/*
+		else if (!(vc->pg == MPIDI_Process.my_pg && vc->pg_rank == MPIDI_Process.my_pg_rank))
+		{
+		    printf("[%d] release not sending a close to %d, vc in state %s\n", MPIDI_Process.my_pg_rank, i, get_state_str(vc->state));
+		    fflush(stdout);
+		}
+		*/
 	    }
 	}
-	
+
 	MPIU_Free(vcrt);
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
