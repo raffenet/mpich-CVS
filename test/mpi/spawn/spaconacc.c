@@ -5,8 +5,8 @@
 
 void check_error(int error, char *fcname)
 {
-    char err_string[1024];
-    int length = 1024;
+    char err_string[MPI_MAX_ERROR_STRING];
+    int length;
     if (error != MPI_SUCCESS)
     {
 	MPI_Error_string(error, err_string, &length);
