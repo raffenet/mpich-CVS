@@ -11,11 +11,11 @@
 #ifdef HAVE_WEAK_SYMBOLS
 
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIO_Testany = PMPIO_Testany
+#pragma weak MPIO_Testsome = PMPIO_Testsome
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIO_Testany MPIO_Testany
+#pragma _HP_SECONDARY_DEF PMPIO_Testsome MPIO_Testsome
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIO_Testany as PMPIO_Testany
+#pragma _CRI duplicate MPIO_Testsome as PMPIO_Testsome
 /* end of weak pragmas */
 #endif
 
@@ -29,14 +29,23 @@
   requests.
 */
 
-int MPIO_Testany(int count, MPIO_Request requests[], int *index, 
-		 int *flag, MPI_Status *status)
+int MPIO_Testsome(int count, MPIO_Request requests[], int *outcount,
+		  int indices[], MPI_Status *statuses)
 {
-    int notdone, i, err; 
+    int i, err; 
+    int flag;
 
     if (count == 1) {
-	err = MPIO_Test( requests, flag, status );
-	if (!err) *index = 0;
+	err = MPIO_Test( requests, &flag, statuses );
+	if (!err) {
+	    if (flag) {
+		indices[0] = 0;
+		*outcount = 1;
+	    }
+	    else {
+		*outcount = 0;
+	    }
+	}
 	return err;
     }
 
@@ -47,26 +56,22 @@ int MPIO_Testany(int count, MPIO_Request requests[], int *index,
 	}
     }
     if (i == count) {
-	*index = MPI_UNDEFINED;
-#ifdef MPICH2
-	/* need to set empty status */
-	if (status != MPI_STATUS_IGNORE) {
-	    status->MPI_SOURCE = MPI_ANY_SOURCE;
-	    status->MPI_TAG    = MPI_ANY_TAG;
-	    status->count      = 0;
-	    status->cancelled  = 0;
-	}
-#endif
+	*outcount = MPI_UNDEFINED;
 	return MPI_SUCCESS;
     }
 
     err = MPI_SUCCESS;
+    *outcount = 0;
     for (i=0; i<count; i++) {
       if (requests[i] != MPI_REQUEST_NULL) {
-	err = MPIO_Test( &requests[i], flag, status );
-	if (*flag) {
-	  if (!err) *index = i;
-	  break;
+	err = MPIO_Test( &requests[i], &flag, statuses );
+	if (flag) {
+	  if (!err) {
+	      indices[0] = i;
+	      indices++;
+	      statuses++;
+	      *outcount = *outcount + 1;
+	  }
 	}
       }
     }

@@ -15,6 +15,7 @@ MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       iread.o iwrite.o iotest.o iowait.o \
 	iowaitall.o iowaitany.o \
 	iotestall.o iotestany.o \
+	iowaitsome.o iotestsome.o \
       seek.o get_posn.o \
       delete.o read_all.o read_at.o \
       read_atall.o iread_at.o iwrite_at.o write_all.o get_bytoff.o \
@@ -28,12 +29,13 @@ MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       iwrite_sh.o seek_sh.o read_ord.o read_orde.o write_ordb.o \
       read_ordb.o write_ord.o write_orde.o mpiu_greq.o mpich2_fileutil.o
 
-MPIO_EXTRA_OBJECTS = get_errh.o set_errh.o
+#MPIO_EXTRA_OBJECTS = get_errh.o set_errh.o
 
 MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
       iread.p iwrite.p iotest.p iowait.p \
 	iowaitall.p iowaitany.p \
 	iotestall.p iotestany.p \
+	iowaitsome.p iotestsome.p \
       seek.p \
       delete.p read_all.p read_at.p \
       read_atall.p iread_at.p iwrite_at.p get_posn.p \
@@ -47,13 +49,14 @@ MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
       iwrite_sh.p seek_sh.p read_ord.p read_orde.p write_ordb.p \
       read_ordb.p write_ord.p write_orde.p mpich2_fileutil.p
 
-MPIO_EXTRA_TMP_POBJECTS = get_errh.p set_errh.p
+#MPIO_EXTRA_TMP_POBJECTS = get_errh.p set_errh.p
 
 MPIO_REAL_POBJECTS = _close.o _read.o _open.o _get_extent.o \
       _write.o _set_view.o _seek.o _read_at.o _prealloc.o \
       _iread.o _iwrite.o _iotest.o _iowait.o \
 	_iowaitall.o _iowaitany.o \
 	_iotestall.o _iotestany.o \
+	_iowaitsome.o _iotestsome.o \
 	_get_posn.o \
       _delete.o _read_all.o _get_bytoff.o \
       _read_atall.o _iread_at.o _iwrite_at.o _get_group.o _get_amode.o \

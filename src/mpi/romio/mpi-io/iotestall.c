@@ -48,6 +48,19 @@ int MPIO_Testall( int count, MPIO_Request requests[], int *flag, MPI_Status stat
 	if (!*flag) done = 0;
 	if (err) return err;
       }
+      else {
+#ifdef MPICH2
+	  /* need to set empty status */
+	  if (statuses != MPI_STATUSES_IGNORE) {
+	      statuses[i].MPI_SOURCE = MPI_ANY_SOURCE;
+	      statuses[i].MPI_TAG    = MPI_ANY_TAG;
+	      statuses[i].count      = 0;
+	      statuses[i].cancelled  = 0;
+	  }
+#else
+	  ;
+#endif
+      }
     }
     
     *flag = done;

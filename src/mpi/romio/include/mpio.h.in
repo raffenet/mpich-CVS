@@ -247,6 +247,8 @@ int MPIO_Testall(int count, MPIO_Request *request, int *flag, MPI_Status *status
 int MPIO_Waitall(int count, MPIO_Request *request, MPI_Status *status);
 int MPIO_Testany(int count, MPIO_Request *request, int *index, int *flag, MPI_Status *status);
 int MPIO_Waitany(int count, MPIO_Request *request, int *index, MPI_Status *status);
+int MPIO_Waitsome(int, MPIO_Request *, int *, int *, MPI_Status *);
+int MPIO_Testsome(int, MPIO_Request *, int *, int *, MPI_Status *);
 
 MPI_Fint MPIO_Request_c2f(MPIO_Request request);
 MPIO_Request MPIO_Request_f2c(MPI_Fint request);
@@ -422,6 +424,12 @@ MPI_Fint PMPI_File_c2f(MPI_File fh);
    after generalized requests are implemented. */
 int PMPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status);
 int PMPIO_Wait(MPIO_Request *request, MPI_Status *status);
+int PMPIO_Testall(int count, MPIO_Request *request, int *flag, MPI_Status *status);
+int PMPIO_Waitall(int count, MPIO_Request *request, MPI_Status *status);
+int PMPIO_Testany(int count, MPIO_Request *request, int *index, int *flag, MPI_Status *status);
+int PMPIO_Waitany(int count, MPIO_Request *request, int *index, MPI_Status *status);
+int PMPIO_Waitsome(int, MPIO_Request *, int *, int *, MPI_Status *);
+int PMPIO_Testsome(int, MPIO_Request *, int *, int *, MPI_Status *);
 MPI_Fint PMPIO_Request_c2f(MPIO_Request request);
 MPIO_Request PMPIO_Request_f2c(MPI_Fint request);
 

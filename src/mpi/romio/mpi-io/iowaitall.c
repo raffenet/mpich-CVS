@@ -44,6 +44,19 @@ int MPIO_Waitall( int count, MPIO_Request requests[], MPI_Status statuses[] )
 		if (!flag) notdone = 1;
 		if (err) return err;
 	    }
+	    else {
+#ifdef MPICH2
+		/* need to set empty status */
+		if (statuses != MPI_STATUSES_IGNORE) {
+		    statuses[i].MPI_SOURCE = MPI_ANY_SOURCE;
+		    statuses[i].MPI_TAG    = MPI_ANY_TAG;
+		    statuses[i].count      = 0;
+		    statuses[i].cancelled  = 0;
+		}
+#else
+		;
+#endif
+	    }
 	}
     } while (notdone);
 
