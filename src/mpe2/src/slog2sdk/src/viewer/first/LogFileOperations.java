@@ -93,7 +93,10 @@ public class LogFileOperations
             return slog;
         }
         else {
-            Dialogs.error( window, "Null pathname!" );
+            if ( logname == null )
+                Dialogs.error( window, "Null pathname!" );
+            else // if ( logname.length() == 0 )
+                Dialogs.error( window, "pathname is empty!" );
             return null;
         }
 
@@ -159,8 +162,16 @@ public class LogFileOperations
                 new_filename = ConvertorDialog.convertLogFile(
                                                TopWindow.First.getWindow(),
                                                file_chooser, filename );
-                logname_txtfld.setText( new_filename );
-                return openLogFile( logname_txtfld );
+                // Since ConvertorDialog can return null if ConvertorPanel's
+                // Cancel button is clicked, needs to check for null return.
+                // But don't check for new_filename.length()==0, so subsequent
+                // createInputLog() can emit a warning message for zero-length.
+                if ( new_filename != null ) {
+                    logname_txtfld.setText( new_filename );
+                    return openLogFile( logname_txtfld );
+                }
+                else
+                    return null;
             }
             else
                 return null;
