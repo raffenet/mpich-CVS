@@ -708,14 +708,16 @@ void MPIE_PrintFailureReasons( FILE *fp )
     ProcessWorld      *world;
     ProcessApp        *app;
     ProcessState      *pState;
+    int                worldnum, wrank;
 
     world = pUniv.worlds;
     while (world) {
+	worldnum = world->worldNum;
 	app = world->apps;
 	while (app) {
-	    app    = app->nextApp;
 	    pState = app->pState;
 	    for (i=0; i<app->nProcess; i++) {
+		wrank      = pState[i].wRank;
 		rc         = pState[i].exitStatus.exitStatus;
 		sig        = pState[i].exitStatus.exitSig;
 		order      = pState[i].exitStatus.exitOrder;
@@ -726,18 +728,20 @@ void MPIE_PrintFailureReasons( FILE *fp )
 			    (sig != SIGKILL && sig != SIGINT))) {
 #ifdef HAVE_STRSIGNAL
 		    MPIU_Error_printf( 
-				      "Return code = %d, signaled with %s\n", 
-				      rc, strsignal(sig) );
+				      "[%d]%d:Return code = %d, signaled with %s\n", 
+				      worldnum, wrank, rc, strsignal(sig) );
 #else
 		    MPIU_Error_printf( 
-				      "Return code = %d, signaled with %d\n", 
-				      rc, sig );
+				      "[%d]%d:Return code = %d, signaled with %d\n", 
+				      worldnum, wrank, rc, sig );
 #endif
 		}
 		else if (MPIE_Debug || rc) {
-		    MPIU_Error_printf( "Return code = %d\n", rc );
+		    MPIU_Error_printf( "[%d]%d:Return code = %d\n", 
+				       worldnum, wrank, rc );
 		}
 	    }
+	    app    = app->nextApp;
 	}
 	world = world->nextWorld;
     }
