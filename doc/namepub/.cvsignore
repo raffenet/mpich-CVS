@@ -1,5 +1,6 @@
 *.pdf
 namepub.ps
+namepub.dvi
 twopm.eps
 *.log
 *.blg

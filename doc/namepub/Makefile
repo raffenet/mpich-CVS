@@ -6,7 +6,7 @@ SHELL = /bin/sh
 DOCTEXT = doctext
 .SUFFIXES: .ps .pdf .dvi .tex .eps .fig
 
-namepub.dvi: namepub.tex
+namepub.dvi: namepub.tex code.sty twopm.eps
 
 .dvi.ps:
 	dvips $*
@@ -17,6 +17,9 @@ namepub.dvi: namepub.tex
 	-bibtex $*
 	-latex $* </dev/null 2>&1 >/dev/null
 	-latex $*
+
+code.sty: ../adi3/code.sty
+	ln -s ../adi3/code.sty
 
 clean:
 	rm -f *.log *.aux *.dvi *.bbl 
