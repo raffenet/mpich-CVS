@@ -104,6 +104,7 @@ mpiolib:
          do \
             echo " " ;\
             echo compiling ROMIO in directory $$dir ;\
+	    sleep 1;\
             (cd $$dir && $(MAKE) ;) ;\
             if [ $$? != 0 ] ; then \
                 echo "Make failed in directory $$dir" ; exit 1 ;\
@@ -132,6 +133,7 @@ profile:
             do \
                echo " " ;\
                echo building profiling interface in directory $$dir ;\
+               sleep 1;\
                (cd $$dir; \
                 $(MAKE) profile MPIOPROFILE="-DMPIO_BUILD_PROFILING";) ;\
                 if [ $$? != 0 ] ; then \
