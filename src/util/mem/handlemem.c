@@ -42,7 +42,7 @@
    the space.   
 
    Note that these routines are designed for the MPI objects, and include the
-   creation of a "handle id" that is appropriate for the MPI object value.
+   creation of a "handle" that is appropriate for the MPI object value.
    
    The following routines are provided:
    void *MPIU_Handle_direct_init( void *direct, int direct_size, int obj_size,
@@ -136,7 +136,7 @@ static void *MPIU_Handle_direct_init( void *direct, int direct_size,
 	hptr = (MPIU_Handle_common *)ptr;
 	ptr  = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->id   = (HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
+	hptr->handle   = (HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | i;
 	}
     hptr->next = 0;
@@ -183,7 +183,7 @@ static void *MPIU_Handle_indirect_init( void *(**indirect)[],
 	hptr       = (MPIU_Handle_common *)ptr;
 	ptr        = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->id   = (HANDLE_KIND_INDIRECT << HANDLE_KIND_SHIFT) | 
+	hptr->handle   = (HANDLE_KIND_INDIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | 
 	    (*indirect_size << HANDLE_INDIRECT_SHIFT) | i;
     }
@@ -242,7 +242,7 @@ void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
 	ptr->next	    = 0;
 	/* Unlock */
 	MPID_Allocation_unlock();
-	/* printf ("returning info %x\n", ptr->id ); */
+	/* printf ("returning info %x\n", ptr->handle ); */
 	return ptr;
     }
 

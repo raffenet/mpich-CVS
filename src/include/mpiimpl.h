@@ -176,20 +176,20 @@ typedef enum {
 #define HANDLE_MASK 0x03FFFFFF
 #define HANDLE_INDEX(a) ((a)& HANDLE_MASK)
 
-/* ALL objects have the id as the first value. */
+/* ALL objects have the handle as the first value. */
 /* Inactive (unused and stored on the appropriate avail list) objects 
    have MPIU_Handle_common as the head */
 typedef struct {
-    int  id;
+    int  handle;
     void *next;   /* Free handles use this field to point to the next
 		     free object */
 } MPIU_Handle_common;
 
-/* All *active* (in use) objects have the id as the first value; objects
+/* All *active* (in use) objects have the handle as the first value; objects
    with referene counts have the reference count as the second value.
    See MPIU_Object_add_ref and MPIU_Object_release_ref. */
 typedef struct {
-    int id;
+    int handle;
     volatile int ref_count;
 } MPIU_Handle_head;
 
@@ -316,7 +316,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 
 /* Info */
 typedef struct MPID_Info_s {
-    int                id;
+    int                handle;
     struct MPID_Info_s *next;
     char               *key;
     char               *value;
@@ -334,7 +334,7 @@ typedef union {
 } MPID_Errhandler_fn;
 
 typedef struct {
-  int                id;
+  int                handle;
   volatile int       ref_count;
   MPID_Lang_t        language;
   MPID_Object_kind   kind;
@@ -376,7 +376,7 @@ typedef union {
 } MPID_Delete_function;
 
 typedef struct {
-    int                  id;
+    int                  handle;
     volatile int         ref_count;
     MPID_Lang_t          language;
     MPID_Object_kind     kind;
@@ -399,7 +399,7 @@ typedef struct {
 } MPID_Group_pmap_t;
 
 typedef struct {
-    int          id;
+    int          handle;
     volatile int ref_count;
     int          size;           /* Size of a group */
     int          *lrank_to_lpid; /* Array mapping a local rank to local 
@@ -419,7 +419,7 @@ extern MPID_Group MPID_Group_direct[];
 
 /* Communicators */
 typedef struct MPID_Comm { 
-    int           id;            /* value of MPI_Comm for this structure */
+    int           handle;            /* value of MPI_Comm for this structure */
     volatile int  ref_count;
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
@@ -462,7 +462,7 @@ extern MPID_Comm MPID_Comm_direct[];
 
 /* Requests */
 typedef struct MPID_Request {
-    int           id;
+    int           handle;
     volatile int ref_count;
     volatile int busy;
     /* A comm is needed to find the proper error handler */
@@ -480,7 +480,7 @@ extern MPID_Request MPID_Request_direct[];
 
 /* Windows */
 typedef struct {
-    int           id;             /* value of MPI_Win for this structure */
+    int           handle;             /* value of MPI_Win for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     MPI_Aint    length;        
@@ -500,7 +500,7 @@ extern MPID_Win MPID_Win_direct[];
 /* Datatypes */
 
 typedef struct MPID_Datatype_st { 
-    int           id;            /* value of MPI_Datatype for structure */
+    int           handle;            /* value of MPI_Datatype for structure */
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
                                     a (count,datatype) pair) */
@@ -597,7 +597,7 @@ typedef struct MPID_Collops_struct {
         
 /* Files */
 typedef struct {
-    int           id;             /* value of MPI_File for this structure */
+    int           handle;             /* value of MPI_File for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
   /* Other, device-specific information */

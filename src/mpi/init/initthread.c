@@ -81,7 +81,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        intially NULL and will be allocated by the device if the process group
        was started using one of the MPI_Comm_spawn functions. */
     MPIR_Process.comm_world = MPID_Comm_builtin + 0;
-    MPIR_Process.comm_world->id = MPI_COMM_WORLD;
+    MPIR_Process.comm_world->handle = MPI_COMM_WORLD;
     MPIR_Process.comm_world->ref_count = 1;
     MPIR_Process.comm_world->context_id = 0; /* XXX */
     MPIR_Process.comm_world->attributes.item = NULL;
@@ -94,7 +94,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_world->coll_fns = NULL; /* XXX */
     
     MPIR_Process.comm_self = MPID_Comm_builtin + 1;
-    MPIR_Process.comm_self->id = MPI_COMM_SELF;
+    MPIR_Process.comm_self->handle = MPI_COMM_SELF;
     MPIR_Process.comm_self->ref_count = 1;
     MPIR_Process.comm_self->context_id = 4; /* XXX */
     MPIR_Process.comm_self->attributes.item = NULL;

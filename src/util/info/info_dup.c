@@ -98,7 +98,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
 	
 	curr_old	 = curr_old->next;
     }
-    *newinfo = curr_new->id;
+    *newinfo = curr_new->handle;
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DUP);

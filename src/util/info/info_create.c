@@ -72,7 +72,7 @@ int MPI_Info_create( MPI_Info *info )
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
-    *info	    = info_ptr->id;
+    *info	    = info_ptr->handle;
     /* (info_ptr)->cookie = MPIR_INFO_COOKIE; */
     info_ptr->key    = 0;
     info_ptr->value  = 0;

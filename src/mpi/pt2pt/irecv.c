@@ -114,7 +114,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 	}
 
 	/* return the handle of the request to the user */
-	*request = request_ptr->id;
+	*request = request_ptr->handle;
 	
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRECV);
 	return MPI_SUCCESS;

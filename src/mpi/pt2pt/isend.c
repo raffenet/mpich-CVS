@@ -113,7 +113,7 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
 	}
 
 	/* return the handle of the request to the user */
-	*request = request_ptr->id;
+	*request = request_ptr->handle;
 	
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ISEND);
 	return MPI_SUCCESS;
