@@ -97,7 +97,7 @@ IRLOG_IOStruct *IRLOG_CreateInputStruct(const char *filename)
 
 IRLOG_IOStruct *IRLOG_CreateOutputStruct(const char *filename)
 {
-    IRLOG_IOStruct *pOutput;
+    IRLOG_IOStruct *pOutput = NULL;
 
     /* allocate a data structure */
     pOutput = (IRLOG_IOStruct*)malloc(sizeof(IRLOG_IOStruct));

@@ -62,6 +62,7 @@ RLOG_Struct* RLOG_InitLog(int rank, int size)
     pRLOG->dFirstTimestamp = 0.0;
     sprintf(pRLOG->pszFileName, "log%d.irlog", rank);
 
+    pRLOG->pOutput = NULL;
     pRLOG->pOutput = IRLOG_CreateOutputStruct(pRLOG->pszFileName);
     if (pRLOG->pOutput == NULL)
     {
