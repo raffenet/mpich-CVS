@@ -46,8 +46,11 @@ dnl Check for support of enable-coverage.  Put this near the end of the tests
 dnl because the coverage options may affect the other tests.
 if test "$enable_coverage" = "yes" ; then
     if test "$ac_cv_prog_gxx" = "yes" ; then
-        # g++ does not recognize -fprofile-arcs
-        CXXFLAGS="$CXXFLAGS -ftest-coverage"
+        CXXFLAGS="$CXXFLAGS -ftest-coverage -fprofile-arcs"
+        # To get coverage data, we need to include these options
+	# in the mpicxx script
+        MPI_CXXFLAGS="$MPI_CXXFLAGS -ftest-coverage -fprofile-arcs"
+
     else
         AC_MSG_WARN([--enable-coverage only supported for G++])
     fi
