@@ -6,6 +6,9 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
@@ -242,10 +245,20 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         if (info.dwNumberOfProcessors == 1)
             pg->nShmWaitSpinCount = 1;
         else if (info.dwNumberOfProcessors < (DWORD) pg_size)
-            pg->nShmWaitSpinCount = ( 100 * info.dwNumberOfProcessors ) / pg_size;
+            pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / pg_size;
     }
 #else
     /* figure out how many processors are available and set the spin count accordingly */
+#ifdef HAVE_SYSCONF
+    {
+	int num_cpus;
+	num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+	if (num_cpus == 1)
+	    pg->nShmWaitSpinCount = 1;
+	else if (num_cpus > 0 && num_cpus < pg_size)
+	    pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / pg_size;
+    }
+#endif
 #endif
 
     rc = PMI_KVS_Commit(pg->kvs_name);
