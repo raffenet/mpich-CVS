@@ -166,6 +166,9 @@
 				RelativePath="..\..\src\ch3u_buffer.c">
 			</File>
 			<File
+				RelativePath="..\..\src\ch3u_handle_connection.c">
+			</File>
+			<File
 				RelativePath="..\..\src\ch3u_handle_recv_pkt.c">
 			</File>
 			<File
@@ -307,10 +310,10 @@
 				RelativePath="..\..\src\mpid_win_wait.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpidi_barrier.c">
+				RelativePath="..\..\src\mpidi_isend_self.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpidi_isend_self.c">
+				RelativePath="..\..\src\mpidi_pg.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_printf.c">

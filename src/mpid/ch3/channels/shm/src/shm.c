@@ -26,7 +26,7 @@ typedef int SHM_STATE;
 #define FUNCNAME MPIDI_CH3I_SHM_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len, int *num_bytes_ptr)
+int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr)
 {
     int total = 0;
     int length;
@@ -84,7 +84,7 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len, int *num_bytes_ptr)
 #define FUNCNAME MPIDI_CH3I_SHM_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
+int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -128,7 +128,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 #define FUNCNAME MPIDI_CH3I_SHM_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
+int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
 {
     int i;
     unsigned int total = 0;
@@ -274,7 +274,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 #define FUNCNAME shmi_buffer_unex_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int shmi_buffer_unex_read(MPIDI_VC *vc_ptr, MPIDI_CH3I_SHM_Packet_t *pkt_ptr, void *mem_ptr, unsigned int offset, unsigned int num_bytes)
+static int shmi_buffer_unex_read(MPIDI_VC_t *vc_ptr, MPIDI_CH3I_SHM_Packet_t *pkt_ptr, void *mem_ptr, unsigned int offset, unsigned int num_bytes)
 {
     MPIDI_CH3I_SHM_Unex_read_t *p;
     MPIDI_STATE_DECL(MPID_STATE_SHMI_BUFFER_UNEX_READ);
@@ -298,7 +298,7 @@ static int shmi_buffer_unex_read(MPIDI_VC *vc_ptr, MPIDI_CH3I_SHM_Packet_t *pkt_
 #define FUNCNAME shmi_read_unex
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int shmi_read_unex(MPIDI_VC *vc_ptr)
+static int shmi_read_unex(MPIDI_VC_t *vc_ptr)
 {
     unsigned int len;
     MPIDI_CH3I_SHM_Unex_read_t *temp;
@@ -358,7 +358,7 @@ static int shmi_read_unex(MPIDI_VC *vc_ptr)
 #define FUNCNAME shmi_readv_unex
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shmi_readv_unex(MPIDI_VC *vc_ptr)
+int shmi_readv_unex(MPIDI_VC_t *vc_ptr)
 {
     unsigned int num_bytes;
     MPIDI_CH3I_SHM_Unex_read_t *temp;
@@ -426,19 +426,19 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 #define FUNCNAME MPIDI_CH3I_SHM_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out)
+int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out)
 {
     int mpi_errno;
     void *mem_ptr;
     char *iter_ptr;
     int num_bytes;
     unsigned int offset;
-    MPIDI_VC *recv_vc_ptr;
+    MPIDI_VC_t *recv_vc_ptr;
     MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
     int i;
     register int index, working;
 #ifdef USE_SHM_UNEX
-    MPIDI_VC *temp_vc_ptr;
+    MPIDI_VC_t *temp_vc_ptr;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
@@ -467,10 +467,10 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 
 	working = FALSE;
 
-	for (i=0; i<vc->ch.pg->size; i++)
+	for (i=0; i<MPIDI_PG_Get_size(vc->pg); i++)
 	{
 	    /* skip over the vc to myself */
-	    if (vc->ch.pg_rank == i)
+	    if (vc->pg_rank == i)
 		continue;
 
 	    index = vc->ch.shm[i].head_index;
@@ -486,7 +486,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 	    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
 	    /*mem_ptr = (void*)vc->ch.shm[i].packet[index].cur_pos;*/
 	    num_bytes = vc->ch.shm[i].packet[index].num_bytes;
-	    recv_vc_ptr = &vc->ch.pg->vc_table[i]; /* This should be some GetVC function with a complete context */
+	    MPIDI_PG_Get_vc(vc->pg, i, &recv_vc_ptr);
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
@@ -666,7 +666,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 #define FUNCNAME MPIDI_CH3I_SHM_post_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*rfn)(int, void*))
+int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*rfn)(int, void*))
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
 
@@ -690,7 +690,7 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*rfn)(int, v
 #define FUNCNAME MPIDI_CH3I_SHM_post_readv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int, void*))
+int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*rfn)(int, void*))
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
 #ifdef USE_SHM_IOV_COPY

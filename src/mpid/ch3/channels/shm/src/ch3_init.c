@@ -12,6 +12,30 @@
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
+static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
+static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
+
+static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
+{
+    return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
+}
+
+
+static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
+{
+    if (pg->ch.kvs_name != NULL)
+    {
+	MPIU_Free(pg->ch.kvs_name);
+    }
+
+    if (id != NULL)
+    { 
+	MPIU_Free(id);
+    }
+    
+    return MPI_SUCCESS;
+}
+
 static void generate_shm_string(char *str)
 {
 #ifdef USE_WINDOWS_SHM
@@ -35,22 +59,24 @@ static void generate_shm_string(char *str)
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_pptr, int * pg_rank_ptr)
 {
-    int mpi_errno;
-    MPIDI_CH3I_Process_group_t * pg;
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno = PMI_SUCCESS;
+    MPIDI_PG_t * pg = NULL;
+    MPIDI_VC_t * vc;
     
     int pg_rank;
     int pg_size;
-    MPIDI_VC * vc_table;
-    MPID_Comm * comm, *intercomm, *commworld;
     int p;
+    char * pg_id;
+    int pg_id_sz;
 	
     char * key;
     char * val;
     int key_max_sz;
     int val_max_sz;
-    int name_sz;
+    int kvs_name_sz;
 
     char shmemkey[MPIDI_MAX_SHM_NAME_LENGTH];
     int i, j, k;
@@ -87,143 +113,144 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /*MPIU_Timer_init(pg_rank, pg_size);*/
     MPIU_dbg_init(pg_rank);
 
-    /* Allocate process group data structure and populate */
-    pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
-    if (pg == NULL)
+    /*
+     * Get the process group id
+     */
+    pmi_errno = PMI_Get_id_length_max(&pg_id_sz);
+    if (pmi_errno != PMI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", pmi_errno);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
     }
-    pg->size = pg_size;
-    pg->rank = pg_rank;
-    mpi_errno = PMI_KVS_Get_name_length_max(&name_sz);
-    if (mpi_errno != PMI_SUCCESS)
+
+    pg_id = MPIU_Malloc(pg_id_sz + 1);
+    if (pg_id == NULL)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
-	return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
     }
-    pg->kvs_name = MPIU_Malloc(name_sz + 1);
-    if (pg->kvs_name == NULL)
+    
+    pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
+    if (pmi_errno != PMI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id",
+					 "**pmi_get_id %d", pmi_errno);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
     }
-    mpi_errno = PMI_KVS_Get_my_name(pg->kvs_name, name_sz);
-    if (mpi_errno != 0)
+
+
+    /*
+     * Initialize the process group tracking subsystem
+     */
+    mpi_errno = MPIDI_PG_Init(MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", mpi_errno);
-	return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**ch3|pg_init", NULL);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
     }
-    pg->ref_count = 1;
-    MPIDI_CH3I_Process.pg = pg;
+    
+    /*
+     * Create a new structure to track the process group
+     */
+    mpi_errno = MPIDI_PG_Create(pg_size, pg_id, &pg);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**ch3|pg_create", NULL);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    pg->ch.kvs_name = NULL;
+    
+    /*
+     * Get the name of the key-value space (KVS)
+     */
+    pmi_errno = PMI_KVS_Get_name_length_max(&kvs_name_sz);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_kvs_get_name_length_max", "**pmi_kvs_get_name_length_max %d", pmi_errno);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    
+    pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
+    if (pg->ch.kvs_name == NULL)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    
+    pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", pmi_errno);
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+
 
     /* set the global variable defaults */
-    pg->nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
+    pg->ch.nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
 #ifdef HAVE_SHARED_PROCESS_READ
-    pg->nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
+    pg->ch.nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
 #endif
-    pg->addr = NULL;
+    pg->ch.addr = NULL;
 #ifdef USE_POSIX_SHM
-    pg->key[0] = '\0';
-    pg->id = -1;
+    pg->ch.key[0] = '\0';
+    pg->ch.id = -1;
 #elif defined (USE_SYSV_SHM)
-    pg->key = -1;
-    pg->id = -1;
+    pg->ch.key = -1;
+    pg->ch.id = -1;
 #elif defined (USE_WINDOWS_SHM)
-    pg->key[0] = '\0';
-    pg->id = NULL;
+    pg->ch.key[0] = '\0';
+    pg->ch.id = NULL;
 #else
 #error No shared memory subsystem defined
 #endif
-    pg->nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
-    pg->nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
+    pg->ch.nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
+    pg->ch.nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
 
-    /* Allocate and initialize the VC table associated with this process
+    /* Initialize the VC table associated with this process
        group (and thus COMM_WORLD) */
-    vc_table = MPIU_Malloc(sizeof(MPIDI_VC) * pg_size);
-    if (vc_table == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
-    }
-    pg->ref_count += pg_size;
     for (p = 0; p < pg_size; p++)
     {
-	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].ch.pg = pg;
-	vc_table[p].ch.pg_rank = p;
-	vc_table[p].ch.sendq_head = NULL;
-	vc_table[p].ch.sendq_tail = NULL;
-	vc_table[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
-	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_IDLE;
-	vc_table[p].ch.shm_reading_pkt = TRUE;
-	vc_table[p].ch.shm_state = 0;
-	vc_table[p].ch.recv_active = NULL;
-	vc_table[p].ch.send_active = NULL;
+	pg->vct[p].ch.sendq_head = NULL;
+	pg->vct[p].ch.sendq_tail = NULL;
+	pg->vct[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
+	/* FIXME: the vc's must be set to active for the close protocol to work in the shm channel */
+	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
+	pg->vct[p].ch.shm_reading_pkt = TRUE;
+	pg->vct[p].ch.shm_state = 0;
+	pg->vct[p].ch.recv_active = NULL;
+	pg->vct[p].ch.send_active = NULL;
 #ifdef USE_SHM_UNEX
-	vc_table[p].ch.unex_finished_next = NULL;
-	vc_table[p].ch.unex_list = NULL;
+	pg->vct[p].ch.unex_finished_next = NULL;
+	pg->vct[p].ch.unex_list = NULL;
 #endif
-	vc_table[p].ch.shm = NULL;
-	vc_table[p].ch.read_shmq = NULL;
-	vc_table[p].ch.write_shmq = NULL;
+	pg->vct[p].ch.shm = NULL;
+	pg->vct[p].ch.read_shmq = NULL;
+	pg->vct[p].ch.write_shmq = NULL;
     }
-    pg->vc_table = vc_table;
     
     /* save my vc_ptr for easy access */
-    MPIDI_CH3I_Process.vc = &vc_table[pg_rank];
-
-    /* set MPIDI_Process->lpid_counter to pg_size */
-    MPIDI_Process.lpid_counter = pg_size;
-
-    /* Initialize MPI_COMM_WORLD object */
-    comm = MPIR_Process.comm_world;
-    comm->rank = pg_rank;
-    comm->remote_size = comm->local_size = pg_size;
-    mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrt", 0);
-	return mpi_errno;
-    }
-    mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_getptr", 0);
-	return mpi_errno;
-    }
-    for (p = 0; p < pg_size; p++)
-    {
-	mpi_errno = MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
-	    return mpi_errno;
-	}
-    }
-
-    /* Initialize MPI_COMM_SELF object */
-    comm = MPIR_Process.comm_self;
-    comm->rank = 0;
-    comm->remote_size = comm->local_size = 1;
-    mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrt", 0);
-	return mpi_errno;
-    }
-    mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_getptr", 0);
-	return mpi_errno;
-    }
-    mpi_errno = MPID_VCR_Dup(&vc_table[pg_rank], &comm->vcr[0]);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
-	return mpi_errno;
-    }
+    MPIDI_PG_Get_vcr(pg, pg_rank, &MPIDI_CH3I_Process.vc);
 
     /* Initialize Progress Engine */
     mpi_errno = MPIDI_CH3I_Progress_init();
@@ -280,7 +307,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	    mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
@@ -299,14 +326,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #else
 	    gethostname(val, val_max_sz); /* Don't call this under Windows because it requires the socket library */
 #endif
-	    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	    mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 		return mpi_errno;
 	    }
 
-	    mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+	    mpi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
@@ -333,7 +360,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+	    mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
@@ -350,7 +377,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+	    mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
@@ -371,13 +398,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
 #if defined(USE_POSIX_SHM) || defined(USE_WINDOWS_SHM)
-	if (MPIU_Strncpy(pg->key, shmemkey, MPIDI_MAX_SHM_NAME_LENGTH))
+	if (MPIU_Strncpy(pg->ch.key, shmemkey, MPIDI_MAX_SHM_NAME_LENGTH))
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 	    return mpi_errno;
 	}
 #elif defined (USE_SYSV_SHM)
-	pg->key = atoi(shmemkey);
+	pg->ch.key = atoi(shmemkey);
 #else
 #error No shared memory subsystem defined
 #endif
@@ -402,28 +429,29 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* initialize each shared memory queue */
     for (i=0; i<pg_size; i++)
     {
+	MPIDI_PG_Get_vcr(pg, i, &vc);
 	if (i == pg_rank)
 	{
-	    vc_table[i].ch.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
+	    vc->ch.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * i));
 	    for (j=0; j<pg_size; j++)
 	    {
-		vc_table[i].ch.shm[j].head_index = 0;
-		vc_table[i].ch.shm[j].tail_index = 0;
+		vc->ch.shm[j].head_index = 0;
+		vc->ch.shm[j].tail_index = 0;
 		for (k=0; k<MPIDI_CH3I_NUM_PACKETS; k++)
 		{
-		    vc_table[i].ch.shm[j].packet[k].offset = 0;
-		    vc_table[i].ch.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vc->ch.shm[j].packet[k].offset = 0;
+		    vc->ch.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		}
 	    }
 	}
 	else
 	{
-	    /*vc_table[i].ch.shm += pg_rank;*/
-	    vc_table[i].ch.shm = NULL;
-	    vc_table[i].ch.write_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i)) + pg_rank;
-	    vc_table[i].ch.read_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * pg_rank)) + i;
+	    /*vc->ch.shm += pg_rank;*/
+	    vc->ch.shm = NULL;
+	    vc->ch.write_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * i)) + pg_rank;
+	    vc->ch.read_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * pg_rank)) + i;
 	    /* post a read of the first packet header */
-	    vc_table[i].ch.shm_reading_pkt = TRUE;
+	    vc->ch.shm_reading_pkt = TRUE;
 	}
     }
 
@@ -433,9 +461,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         SYSTEM_INFO info;
         GetSystemInfo(&info);
         if (info.dwNumberOfProcessors == 1)
-            pg->nShmWaitSpinCount = 1;
+            pg->ch.nShmWaitSpinCount = 1;
         else if (info.dwNumberOfProcessors < (DWORD) pg_size)
-            pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / pg_size;
+            pg->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / pg_size;
     }
 #else
     /* figure out how many processors are available and set the spin count accordingly */
@@ -444,18 +472,18 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	int num_cpus;
 	num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 	if (num_cpus == 1)
-	    pg->nShmWaitSpinCount = 1;
+	    pg->ch.nShmWaitSpinCount = 1;
 	else if (num_cpus > 0 && num_cpus < pg_size)
-            pg->nShmWaitSpinCount = 1;
-	    /* pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / pg_size; */
+            pg->ch.nShmWaitSpinCount = 1;
+	    /* pg->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / pg_size; */
     }
 #else
     /* if the number of cpus cannot be determined, set the spin count to 1 */
-    pg->nShmWaitSpinCount = 1;
+    pg->ch.nShmWaitSpinCount = 1;
 #endif
 #endif
 
-    mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+    mpi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
@@ -468,21 +496,21 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
 #ifdef USE_POSIX_SHM
-    if (shm_unlink(pg->key))
+    if (shm_unlink(pg->ch.key))
     {
 	/* Everyone is unlinking the same object so failure is ok? */
 	/*
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_unlink", "**shm_unlink %s %d", pg->key, errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_unlink", "**shm_unlink %s %d", pg->ch.key, errno);
 	return mpi_errno;
 	*/
     }
 #elif defined (USE_SYSV_SHM)
-    if (shmctl(pg->id, IPC_RMID, NULL))
+    if (shmctl(pg->ch.id, IPC_RMID, NULL))
     {
 	/* Everyone is removing the same object so failure is ok? */
 	if (errno != EINVAL)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmctl", "**shmctl %d %d", pg->id, errno);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmctl", "**shmctl %d %d", pg->ch.id, errno);
 	    return mpi_errno;
 	}
     }
@@ -492,6 +520,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     *has_args = TRUE;
     *has_env = TRUE;
 
+    *pg_pptr = pg;
+    *pg_rank_ptr = pg_rank;
+
+#if 0
     if (*has_parent)
     {
         /* This process was spawned. Create intercommunicator with parents. */
@@ -499,7 +531,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         if (pg_rank == 0)
 	{
             /* get the port name of the root of the parents */
-            mpi_errno = PMI_KVS_Get(pg->kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
+            mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
             if (mpi_errno != 0)
             {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get_parent %d", mpi_errno);
@@ -522,9 +554,24 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         /* TODO: Check that this intercommunicator gets freed in
            MPI_Finalize if not already freed.  */
     }
+#endif
 
-    MPIU_Free(val);
-    MPIU_Free(key);
+fn_exit:
+    if (val != NULL)
+    { 
+	MPIU_Free(val);
+    }
+    if (key != NULL)
+    { 
+	MPIU_Free(key);
+    }
     
     return MPI_SUCCESS;
+
+fn_fail:
+    if (pg != NULL)
+    {
+	MPIDI_PG_Destroy(pg);
+    }
+    goto fn_exit;
 }

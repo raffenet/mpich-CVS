@@ -63,7 +63,7 @@
 #define FUNCNAME MPIDI_CH3_iSendv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
     int complete;
@@ -146,7 +146,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	else
 	{
 	    /* Connection just failed.  Mark the request complete and return an error. */
-	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    /*vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;*/
 	    /* TODO: Create an appropriate error message based on the value of errno */
 	    sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
 	    /* MT - CH3U_Request_complete performs write barrier */

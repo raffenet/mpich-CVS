@@ -68,7 +68,7 @@
 #define FUNCNAME MPIDI_CH3_iStartMsgv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request **sreq_ptr)
+int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Request **sreq_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * sreq = NULL;
