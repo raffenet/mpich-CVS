@@ -2551,7 +2551,9 @@ Sub AddDefinitions( fout, filename, b64 )
 				Case "USE_HUMAN_READABLE_TOKENS"
 					fout.WriteLine("#define USE_HUMAN_READABLE_TOKENS 1")
 				Case "HAVE_STRERROR"
+					fout.WriteLine("#ifndef HAVE_STRERROR")
 					fout.WriteLine("#define HAVE_STRERROR 1")
+					fout.WriteLine("#endif")
 				Case "HAVE_ASM_AND_X86_LFENCE"
 					fout.WriteLine("/* #undef HAVE_ASM_AND_X86_LFENCE */")
 				Case "HAVE_ASM_AND_X86_MFENCE"
