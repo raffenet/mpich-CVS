@@ -43,14 +43,17 @@ int MPIDI_CH3_iRead(MPIDI_VC_t * vc, MPID_Request * rreq)
 	    {
 		memcpy (rreq->dev.iov[i].MPID_IOV_BUF, vc->gasnet.data,
 			rreq->dev.iov[i].MPID_IOV_LEN);
-		vc->gasnet.data += rreq->dev.iov[i].MPID_IOV_LEN;
+		vc->gasnet.data = (void *)((char *)vc->gasnet.data +
+		    rreq->dev.iov[i].MPID_IOV_LEN);
 		vc->gasnet.data_sz -= rreq->dev.iov[i].MPID_IOV_LEN;
 	    }
 	    else
 	    {
 		memcpy (rreq->dev.iov[i].MPID_IOV_BUF, vc->gasnet.data,
 			vc->gasnet.data_sz);
-		rreq->dev.iov[i].MPID_IOV_BUF += vc->gasnet.data_sz;
+		rreq->dev.iov[i].MPID_IOV_BUF =
+		    (void *)((char *) rreq->dev.iov[i].MPID_IOV_BUF +
+			     vc->gasnet.data_sz);
 		rreq->dev.iov[i].MPID_IOV_LEN -= vc->gasnet.data_sz;
 		rreq->dev.iov_count -= i - rreq->gasnet.iov_offset;
 		rreq->gasnet.iov_offset = i;

@@ -62,8 +62,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 
 	    sreq->dev.iov[0].MPID_IOV_LEN = tmp_iov.MPID_IOV_LEN -
 		iov[i].MPID_IOV_LEN;
-	    sreq->dev.iov[0].MPID_IOV_BUF = tmp_iov.MPID_IOV_BUF +
-		iov[i].MPID_IOV_LEN;
+	    sreq->dev.iov[0].MPID_IOV_BUF = (void *)((char *) tmp_iov.MPID_IOV_BUF
+						     + iov[i].MPID_IOV_LEN);
 	    
 	    for (j = 1; j < n_iov - i - 1; j++)
 	    {

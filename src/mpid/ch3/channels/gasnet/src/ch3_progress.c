@@ -223,7 +223,7 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     }
     MPIDI_DBG_PRINTF((55, FCNAME, "  sender = %d\n", sender));
     MPIDI_PG_Get_vc(MPIDI_Process.my_pg, sender, &vc);
-    vc->gasnet.data = buf + sizeof (MPIDI_CH3_Pkt_t);
+    vc->gasnet.data = (void *) ((char *)buf + sizeof (MPIDI_CH3_Pkt_t));
     vc->gasnet.data_sz = data_sz - sizeof (MPIDI_CH3_Pkt_t);
     
     mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)buf, &rreq);
@@ -565,8 +565,8 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
 	    MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet send failed");
 	}
 
-	sreq->dev.iov[i].MPID_IOV_BUF = tmp_iov.MPID_IOV_BUF +
-	    iov[i].MPID_IOV_LEN;
+	sreq->dev.iov[i].MPID_IOV_BUF = (void *)((char *)tmp_iov.MPID_IOV_BUF +
+						 iov[i].MPID_IOV_LEN);
 	sreq->dev.iov[i].MPID_IOV_LEN = tmp_iov.MPID_IOV_LEN -
 	    iov[i].MPID_IOV_LEN;
 	    
@@ -635,8 +635,8 @@ static int do_put (MPIDI_VC_t *vc, MPID_Request *sreq)
 	    len = r_iov[r].MPID_IOV_LEN - r_bytes;
 	}
 	
-	gasnet_put_nbi_bulk (vc->lpid, r_iov[r].MPID_IOV_BUF + r_bytes,
-			     s_iov[s].MPID_IOV_BUF + s_bytes, len);
+	gasnet_put_nbi_bulk (vc->lpid, (char *)r_iov[r].MPID_IOV_BUF + r_bytes,
+			     (char *)s_iov[s].MPID_IOV_BUF + s_bytes, len);
 	s_bytes += len;
 	r_bytes += len;
 

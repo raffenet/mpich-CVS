@@ -56,8 +56,8 @@ int MPIDI_CH3_iWrite(MPIDI_VC_t * vc, MPID_Request * req)
 	}
 
 	/* update iov to reflect sent data */
-	req->dev.iov[i].MPID_IOV_BUF = tmp_iov.MPID_IOV_BUF +
-	    iov[i].MPID_IOV_LEN;
+	req->dev.iov[i].MPID_IOV_BUF = (void *) ((char *)tmp_iov.MPID_IOV_BUF +
+						 iov[i].MPID_IOV_LEN);
 	req->dev.iov[i].MPID_IOV_LEN = tmp_iov.MPID_IOV_LEN -
 	    iov[i].MPID_IOV_LEN;
 	    
