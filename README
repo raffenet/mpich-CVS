@@ -10,11 +10,13 @@ features required by the standard with the exeption of support for the
 "external32" portable I/O format.  It also currently supports only a
 few communication methods.
 
-This is the first complete release of MPICH2.  It has been tested by us
-on a variety of machines in our own environment, but not all of it has
-yet been extensively tested by outside users.  If you have problems,
-please report them to mpich2-maint@mcs.anl.gov; we are interested in
-incorporating user experiences as quickly as possible.
+This distribution of MPICH is largely a bug fix release, although it
+does contains some new features such a preliminary thread support.  The
+distribution has been tested by us on a variety of machines in our own
+environment, but not all of it has yet been extensively tested by
+outside users.  If you have problems, please report them to
+mpich2-maint@mcs.anl.gov; we are interested in incorporating user
+experiences as quickly as possible.
 
 This README file should contain enough information to get you started
 with MPICH2.  More extensive intstallation and user guides can be found
@@ -573,9 +575,9 @@ ring.
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
 
-As of the 1.0.1 release, MPICH2 now supports MPI_THREAD_SERIALIZED and
-MPI_THREAD_MULTIPLE (see --enable-threads option above).  While we have
-performed preliminary testing, support for multi-threaded applications
-has not been rigorously tested.  We expect to provide a suite of
-multi-threaded tests, similar in nature to the existing tests, in the
-next major release.
+The sock channel now has preliminary support for MPI_THREAD_SERIALIZED
+and MPI_THREAD_MULTIPLE on both UNIX and Microsoft Windows.  We have
+performed rudimentary testing; and while overall the results were very
+positive, known issues do exist.  ROMIO in particular experiences hangs
+in several places.  We plan to correct those issues in the next release.
+As always, please report any difficulties you encounter.
