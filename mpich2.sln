@@ -96,6 +96,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiregister", "src\pm\smpd
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiconfig", "src\pm\smpd\wmpiconfig\wmpiconfig.csproj", "{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ch3ibDebug = ch3ibDebug
@@ -997,6 +1001,37 @@ Global
 		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.Release.Build.0 = Release|.NET
 		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.sfortDebug.ActiveCfg = Debug|.NET
 		{8E126FE2-6F09-42FF-B17C-9C73BF3B74B9}.sfortRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3ibDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3ibPRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3ibRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3shmDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3shmPRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3shmRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sockDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sockPliteRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sockPRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sockRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sshmDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sshmPDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sshmPRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3sshmRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3ssmDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3ssmPDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3ssmPRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.ch3ssmRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.Debug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.Debug.Build.0 = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.DebugStatic.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.DebugStatic.Build.0 = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.fortDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.fortRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.gfortDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.gfortRelease.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.Installer.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.Release.ActiveCfg = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.Release.Build.0 = Release|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.sfortDebug.ActiveCfg = Debug|.NET
+		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.sfortRelease.ActiveCfg = Release|.NET
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
