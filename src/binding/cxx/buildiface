@@ -67,7 +67,8 @@ $buildfiles = 1;
 $build_io = 1;        # If false, exclude the MPI-IO routines
 $indent = "    ";
 $print_line_len = 0;
-$debug = 0;
+$gDebug = 0;
+$gDebugRoutine = "NONE";
 @mpilevels = ( 'mpi1' , 'mpi2' );
 #feature variables
 $do_subdecls = 1;
@@ -94,7 +95,7 @@ $routine_list = "";
 foreach $_ (@ARGV) {
     if (/-feature=(.*)/) {
 	foreach $feature (split(/:/,$1)) {
-	    print STDERR "Processing feature $feature\n" if $debug;
+	    print STDERR "Processing feature $feature\n" if $gDebug;
 	    # Feature values are foo=on,off
 	    ($name,$value) = split(/=/,$feature);
 	    if ($value eq "on") { $value = 1; } 
@@ -106,7 +107,11 @@ foreach $_ (@ARGV) {
     }
     elsif (/-nosep/ || /-sep/) { ; }   # Old argument; ignore
     elsif (/-noromio/) { $build_io = 0; }
-    elsif (/-debug/) { $debug = 1; }
+    elsif (/-debug=(.*)/) {
+	$gDebug = 0;
+	$gDebugRoutine = $1;
+    }
+    elsif (/-debug/) { $gDebug = 1; }
     elsif (/-routines=(.*)/) {
 	$routine_list = $1;
     }
@@ -642,7 +647,7 @@ if ($build_io) {
 %newclasses = ();
 if ($routine_list ne "") {
     for $routine (split(/\s+/,$routine_list)) {
-	print "$routine\n" if $debug;
+	print "$routine\n" if $gDebug;
 	($class,$rname) = split(/-/,$routine);
 	# Look up name in the class list
 	$classvar = "class-mpi1$class";
@@ -670,7 +675,7 @@ if ($routine_list ne "") {
 	$class_name = "class_mpi1$class";
 	foreach $rpair (split(/\s+/,$newclasses{$class})) {
 	    if ($rpair eq "") { next; }
-	    print "$rpair\n" if $debug;
+	    print "$rpair\n" if $gDebug;
 	    ($routine, $rval) = split(/=>/,$rpair);
 	    $$class_name{$routine} = $rval;
 	}
@@ -1064,7 +1069,7 @@ typedef int MPI_File;\
         $mpiclass = "$mpilevel$class";
         $class_hash = "class_$mpiclass";
 	foreach $routine (keys(%$class_hash)) {
-	    print STDERR "processing $routine\n" if $debug;
+	    print STDERR "processing $routine\n" if $gDebug;
 
 	    # info describes the return parameter and any special
 	    # processing for this routine.
@@ -1274,7 +1279,7 @@ sub print_args {
     my $class_type = $_[2];                # Is this a Comm, Info, or othe 
                                            # class?  Use to find the position
                                            # of the "this" entry in the C 
-                                           # verison of the routine.
+                                           # version of the routine.
     my $arginfo = $_[3];                   # Value of <class>_hash{routine)}
 
     my $count = 1;
@@ -1283,6 +1288,7 @@ sub print_args {
     my $args_printed = 0;
     my $is_static = 0;           # set to true if function is static
 
+    &debugPrint( $routine, "In print_args" );
     my $special_args = "::";
     if ($arginfo =~ /^static:/) {
 	$arginfo =~ s/^static://;
@@ -1291,18 +1297,20 @@ sub print_args {
     if ($arginfo =~ /(^[^:]+):(.*)/) {
 	$returnarg = $1;
 	$special_args = ":".$2.":";  # makes the numbers :\d+:...
-	print "Routine $routine special args $special_args\n" if $debug;
+	&debugPrint( $routine, "Routine $routine special args $special_args" );
     }
 
     # Special case: if the only parm is "void", remove it from the list
-    print STDERR "Nparms = $#parms, parms = " . join(',',@parms) . "\n" if $debug;
+    print STDERR "Nparms = $#parms, parms = " . join(',',@parms) . "\n" if $gDebug;
     if ($#parms == 0 && $parms[0] eq "void") {
+	&debugPrint( $routine, "Setting nparms to -1" );
 	$#parms = -1;
     }
     # class_pos is the position of the class variable in the argument list.
     # If specified by parm type, we must find it
-    $class_pos = "";
-    if ($class_pos eq "" && $class_type ne "" && !$is_static) {
+    $class_pos = -1;
+    if ($class_pos == -1 && $class_type ne "" && !$is_static) {
+	&debugPrint( $routine, "Looking for class $class_type" );
 	$class_pos = 0;
 	$pos = 1;
 	foreach $parm (@parms) {
@@ -1319,7 +1327,7 @@ sub print_args {
     print $OUTFD "( ";
     foreach $parm (@parms) {
 	$pos_check = ":" . $count . ":";
-	print "parm = :$parm:\n" if $debug;
+	print "parm = :$parm:\n" if $gDebug;
 
 	# Check whether this argument has special processing
 	# Otherwise, apply standardized rules (currently, this
@@ -1335,7 +1343,7 @@ sub print_args {
 	}
 	# Match type to replacement
 	if ($count == $class_pos || $count == $return_parm_pos) {
-	    print "Skipping parm $parm because of position or return\n" if $debug;
+	    &debugPrint( $routine, "Skipping parm $parm because of position or return" );
 	    # Skip this arg in the definition 
 	    ;
 	}
@@ -1437,7 +1445,7 @@ sub print_call_args {
     if (defined($mytopclass{$lcclass})) {
 	$lctopclass = $mytopclass{$lcclass};
     }
-    print "$routine-$count\n" if $debug;
+    print "$routine-$count\n" if $gDebug;
     foreach $parm (@parms) {
 	if (!$first) { print $OUTFD ", "; } else { $first = 0; }
 
@@ -1531,7 +1539,7 @@ sub clean_args {
 	$newargs .= "$comma$parm";
 	$comma = ",";
     }
-    print STDERR "$newargs\n" if $debug;
+    print STDERR "$newargs\n" if $gDebug;
     $args = $newargs;
 }
 
@@ -1758,7 +1766,9 @@ sub build_specials {
     print $OUTFD "}\n";
 
     print $OUTFD "int Init_thread";
+    $routine = "Init_thread"; # So we'll know for debugging
     # The two args are needed to tell print_args that one is the output
+    $return_parm_pos = 2;
     #$args = "int,int";
     # Grr.  Under Cygwin, we needed two...
     $args = "int";
@@ -2453,14 +2463,14 @@ sub ReadInterface {
 	    $args =~ s/MPIO_Request/MPI_Request/g;
 	    $lcname = lc($routine_name);
 	    if (defined($special_routines{$routine_name})) {
-		print "Skipping $routine_name\n" if $debug;
+		print "Skipping $routine_name\n" if $gDebug;
 	    }
 	    else {
 		# Clear variables
 		$clean_up = "";
 		&clean_args;
 		$mpi_routine{$routine_name} = $args;
-		print "Saving $routine_name ( $args )\n" if $debug;
+		print "Saving $routine_name ( $args )\n" if $gDebug;
 	    }			
 	}
     }
@@ -2691,7 +2701,7 @@ sub PrintRoutineDef {
 	$returnarg = $1;
 	$special_args = $2;
 	$special_args = ":" . $special_args . ":";
-	print "special args for $routine is $special_args\n" if $debug;
+	print "special args for $routine is $special_args\n" if $gDebug;
     }
 
     ($cArgs, $Croutine) = &GetCArgs( $class, $routine );
@@ -2863,7 +2873,7 @@ sub GetCArgs {
     my $routine = $_[1];
     my $Class = $fullclassname{$class};
 
-    print "Routine $routine in Class $class\n" if $debug;
+    print "Routine $routine in Class $class\n" if $gDebug;
 
     # Find the corresponding args.  Some C++ routines don't use the
     # natural names, so we check for that here
@@ -2878,7 +2888,7 @@ sub GetCArgs {
 #	}
 	$args = $mpi_routine{$trial_name};
 	$mpi_routine_name = $trial_name;
-	print "Matched $trial_name to $mpi_routine_name in mpi_routine{}\n" if $debug;
+	print "Matched $trial_name to $mpi_routine_name in mpi_routine{}\n" if $gDebug;
 	return ($args,$mpi_routine_name);
     }
 
@@ -2891,8 +2901,8 @@ sub GetCArgs {
     $mpi_routine_name = $routine;
     if ($args eq "") {
 	# Check for an alternate name
-	print STDERR "Checking for $class-$routine\n" if $debug;
-	print STDERR "Trial = $trial_name\n" if $debug;
+	print STDERR "Checking for $class-$routine\n" if $gDebug;
+	print STDERR "Trial = $trial_name\n" if $gDebug;
 	if (defined($mpi_routine{$trial_name})) {
 	    $mpi_routine_name = $trial_name;
 	    $args = $mpi_routine{$mpi_routine_name};
@@ -2911,7 +2921,7 @@ sub GetCArgs {
 	    print STDERR "Name $routine in class $class has no known MPI routine\n";
 	}
     }
-    print "Matched $trial_name to $mpi_routine_name\n" if $debug;
+    print "Matched $trial_name to $mpi_routine_name\n" if $gDebug;
     return ($args,$mpi_routine_name);
 }
 
@@ -2981,7 +2991,7 @@ sub RoutineTempIn {
     foreach $parm (@parms) {
 	my $pos_check = ":" . $count . ":";
 	if ($special_args =~ /$pos_check/) {
-	    print "expecting $routine-$count cxxtoc\n" if $debug;
+	    print "expecting $routine-$count cxxtoc\n" if $gDebug;
 	    &DoSpecialArgProcessing( $OUTFD, $routine, $count, "cxxtoc" );
 	}
 	$count ++;
@@ -3015,7 +3025,7 @@ sub RoutineTempOut {
     foreach $parm (@parms) {
 	my $pos_check = ":" . $count . ":";
 	if ($special_args =~ /$pos_check/) {
-	    print "expecting $routine-$count ctocxx\n" if $debug;
+	    print "expecting $routine-$count ctocxx\n" if $gDebug;
 	    &DoSpecialArgProcessing( $OUTFD, $routine, $count, "ctocxx" );
 	}
 	$count ++;
@@ -3035,7 +3045,7 @@ sub DoSpecialArgProcessing {
     my $op      = $_[3];   # decl, arg, cxxtoc, ctocxx
     my $argdir;            # either in, out, inout
 
-    print "Checking for $routine - $count\n" if $debug;
+    print "Checking for $routine - $count\n" if $gDebug;
     $subname = $funcArgMap{"${routine}-$count"};
     if ($subname eq "") {
 	$subname = $funcArgMap{"${class}-${routine}-$count"};
@@ -3043,14 +3053,14 @@ sub DoSpecialArgProcessing {
 	    # try base
 	    $subname = $funcArgMap{"base-${routine}-$count"};
 	}
-	print "Found class $class $routine $count\n" if $debug;
+	print "Found class $class $routine $count\n" if $gDebug;
     }
     if ($subname =~ /([^:]*):([^:]*)(.*)/) {
 	$argdir = $1;
 	$subname = $2 . "_${argdir}_${op}";
 	$otherarg = $3; 
 	$otherarg =~ s/^://;
-	print "expecting to find routine $subname\n" if $debug;
+	print "expecting to find routine $subname\n" if $gDebug;
 	if (defined(&$subname)) {
 #	    if (op eq "methoddecl" || op eq "arg") {
 		&$subname( $count );
@@ -3805,7 +3815,7 @@ sub ReadFuncSpec {
 		    }
 		    my $oldval = $$classVar{$routine};
 		    if ($oldval ne $newval) {
-			print STDERR "Changing $classVar\{$routine\} from $oldval to $newval\n" if $debug;
+			print STDERR "Changing $classVar\{$routine\} from $oldval to $newval\n" if $gDebug;
 		    }
 		}
 		$$classVar{$routine} = $funcops . $specialPos;
@@ -3818,6 +3828,17 @@ sub ReadFuncSpec {
     }
 
     close SFD;
+}
+# ----------------------------------------------------------------------------
+# Special debugging:
+# Somethimes it is valuable to debug just a single routine.  This interface
+# makes that relatively easy
+sub debugPrint {
+    my ($routine, $str) = @_;
+
+    if ($gDebugRoutine ne "NONE" && $routine eq $gDebugRoutine) {
+	print $str . "\n";
+    }
 }
 # ----------------------------------------------------------------------------
 #
