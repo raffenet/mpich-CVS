@@ -13,7 +13,8 @@
 # by the lead programmer.  (currently implemented without the signature 
 # check).
 #
-# Add line-length check.  Optionally warn of >80 character lines.
+# Add line-length check.  Optionally warn of >80 character lines (or
+# perhaps 80 + epsilon)
 #
 # Add option to output all of the "allow" styles encountered, with the file
 # name and user (from the sig).
@@ -248,7 +249,28 @@ sub ProcessFile {
 %avoidsubs = ( "fprintf" => 2, "fputs" => 1, "puts" => 1, "printf" => 2, 
                "malloc" => 1, "calloc" => 1, "free" => 1, "strdup" => 1, 
 	       "realloc" => 1,
-	       "assert" => 3, "perror" => 3 );
+	       "assert" => 3, "perror" => 3, "getenv" => 3 );
+
+# avoidSubsReasons gives the reasons for avoiding each of these 
+$AvoidPrint = "For internationalization, messages must be indirected through a routine such as gettext.  Marking the print routines makes it possible to catch oversights in writing messages for the user.  Alternate routines are provided to providing printed output for debugging or for the developer";
+$AvoidMalloc = ""
+%avoidSubsReasons = ( "fprintf" => $AvoidPrint,
+		      "fputs" => $AvoidPrint,
+		      "puts" => $AvoidPrint,
+		      "printf" => $AvoidPrint,
+		      "malloc" => $AvoidMalloc,
+		      "calloc" => $AvoidMalloc,
+		      "free" => $AvoidFree,
+		      "strdup" => $AvoidFree,
+		      "realloc" => $AvoidFree,
+		      "assert" => "Assert is a handy way to check code while developing, but in released code, these cases should be handled with more attention to the message the the user will receive.",
+		      "perror" => "For internationalization reasons, messages should use the internationalization support instead of perror.", 
+		      "getenv" => "In parallel program environments, there is no guarantee that environment variables will be available to all processes." ); 
+
+# avoidSubsSeen keeps track of which of these routines were seen (including
+# the count).
+%avoidSubsSeen = ();
+#
 # Guarded subs maps the routines being guarded to the guard definition
 # (we may eventually use colon separated values if multiple definitions are
 # allowed)
@@ -290,6 +312,7 @@ sub CheckForBadSubs {
 	    $routineLevel = $avoidsubs{$subname};
 	    if ($routineLevel >= $avoidLevel) { next; }
 	    $msg = "Warning: found $subname in $filename";
+	    $avoidSubsSeen{$subname} = $avoidSubsSeen{$subname} + 1;
 	    if (defined($warningmsgs{$msg})) { 
 		$warningmsgs{$msg} = $warningmsgs{$msg} + 1;
 	    }
@@ -529,6 +552,12 @@ foreach $file (@files) {
     else {
         &ProcessFile( $file );
     }
+}
+
+# Summarize the reason for any avoid subs
+foreach $key (keys(%avoidSubsSeen)) {
+    my $reason = $avoidSubsReason{$key};
+    print "$key: $reason\n";
 }
 
 if ($missingCopyright) {
