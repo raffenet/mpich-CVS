@@ -100,6 +100,25 @@ void MPIR_Err_preinit( void )
  */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode )
 {
+    const int class = ERROR_GET_CLASS(errcode);
+    
+    if (class > MPICH_ERR_LAST_CLASS)
+    {
+	if (errcode & ~ERROR_CLASS_MASK)
+	{
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+			      "Please file a bug report.  The error stack follows:\n", class);
+	    MPIR_Err_print_stack(stderr, errcode);
+	}
+	else
+	{
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+			      "Please file a bug report.  No error stack is available.\n");
+	}
+	
+	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
+    }
+    
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
     
@@ -167,6 +186,25 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], 
 			  int errcode )
 {
+    const int class = ERROR_GET_CLASS(errcode);
+    
+    if (class > MPICH_ERR_LAST_CLASS)
+    {
+	if (errcode & ~ERROR_CLASS_MASK)
+	{
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+			      "Please file a bug report.  The error stack follows:\n", class);
+	    MPIR_Err_print_stack(stderr, errcode);
+	}
+	else
+	{
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+			      "Please file a bug report.  No error stack is available.\n");
+	}
+	
+	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
+    }
+    
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
 
@@ -216,6 +254,25 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[], 
 			  int errcode )
 {
+    const int class = ERROR_GET_CLASS(errcode);
+    
+    if (class > MPICH_ERR_LAST_CLASS)
+    {
+	if (errcode & ~ERROR_CLASS_MASK)
+	{
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+			      "Please file a bug report.  The error stack follows:\n", class);
+	    MPIR_Err_print_stack(stderr, errcode);
+	}
+	else
+	{
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
+			      "Please file a bug report.  No error stack is available.\n");
+	}
+	
+	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
+    }
+    
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
 
@@ -522,6 +579,7 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	   error message ring).  If the seq number is *not* valid,
 	   use the generic message.
 	 */
+	int class;
 	int ring_idx;
 	int ring_seq;
 	int generic_idx;
@@ -574,9 +632,18 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 	}
 #       endif
 
-	if (MPIU_Strncpy(msg, get_class_msg( ERROR_GET_CLASS(errorcode) ), MPI_MAX_ERROR_STRING))
+	class = ERROR_GET_CLASS(errorcode);
+
+	if (class <= MPICH_ERR_LAST_CLASS)
 	{
-	    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    if (MPIU_Strncpy(msg, get_class_msg(class), MPI_MAX_ERROR_STRING))
+	    {
+		msg[MPI_MAX_ERROR_STRING - 1] = '\0';
+	    }
+	}
+	else
+	{
+	    MPIU_Snprintf(msg, MPI_MAX_ERROR_STRING, "Error code contains an invalid class (%d)\n", class);
 	}
     }
 
@@ -639,8 +706,21 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 	}
     }
 #   endif
+    
+    {
+	int class;
 
-    fprintf(fp, "(unknown)(): %s\n", get_class_msg(ERROR_GET_CLASS(errcode)));
+	class = ERROR_GET_CLASS(errcode);
+	
+	if (class <= MPICH_ERR_LAST_CLASS)
+	{
+	    fprintf(fp, "(unknown)(): %s\n", get_class_msg(ERROR_GET_CLASS(errcode)));
+	}
+	else
+	{
+	    fprintf(fp, "Error code contains an invalid class (%d)\n", class);
+	}
+    }
     
   fn_exit:
     return;
