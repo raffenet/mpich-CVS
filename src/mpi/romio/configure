@@ -4777,6 +4777,21 @@ SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\
 }
 
 fi
+if test "$FROM_MPICH2" = "yes" ; theh
+         
+{
+test -n "$verbose" && \
+echo "	defining HAVE_MPI_GREQUEST"
+echo "#define" HAVE_MPI_GREQUEST 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_GREQUEST=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_GREQUEST\${SEDdB}HAVE_MPI_GREQUEST\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_GREQUEST\${SEDuB}HAVE_MPI_GREQUEST\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_GREQUEST\${SEDeB}HAVE_MPI_GREQUEST\${SEDeC}1\${SEDeD}
+"
+}
+
+fi
+
 #
 if test $MPI != "mpich" ; then
       

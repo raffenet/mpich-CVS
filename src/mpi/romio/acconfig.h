@@ -52,3 +52,4 @@
 #undef UFS
 #undef XFS
 #undef NEEDS_AIOCB_T
+#undef HAVE_MPI_GREQUEST
