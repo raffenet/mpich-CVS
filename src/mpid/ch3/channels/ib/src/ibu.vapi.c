@@ -79,7 +79,6 @@ typedef struct ibu_buffer_t
     int iovlen;
     int index;
     int total;
-    int (*progress_update)(int,void*);
 } ibu_buffer_t;
 
 typedef struct ibu_unex_read_t
@@ -154,8 +153,8 @@ static int g_cur_write_stack_index = 0;
 static int ibui_post_receive(ibu_t ibu);
 static int ibui_post_receive_unacked(ibu_t ibu);
 #if 0
-static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(int, void*));
-static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*));
+static int ibui_post_write(ibu_t ibu, void *buf, int len);
+static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n);
 #endif
 static int ibui_post_ack_write(ibu_t ibu);
 
@@ -819,7 +818,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 #define FUNCNAME ibu_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_write(ibu_t ibu, void *buf, int len)
+int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 {
     VAPI_ret_t status;
     VAPI_sg_lst_entry_t data;
@@ -843,16 +842,18 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	{
 	    /*printf("ibu_write: no remote packets available\n");fflush(stdout);*/
 	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available"));
+	    *num_bytes_ptr = total;
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
-	    return total;
+	    return IBU_SUCCESS;
 	}
 
 	mem_ptr = ibuBlockAllocIB(ibu->allocator);
 	if (mem_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL\n"));
+	    *num_bytes_ptr = total;
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
-	    return total;
+	    return IBU_SUCCESS;
 	}
 	memcpy(mem_ptr, buf, length);
 	total += length;
@@ -917,16 +918,18 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	buf = (char*)buf + length;
     }
 
+    *num_bytes_ptr = total;
+
     MPIU_DBG_PRINTF(("exiting ibu_write\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
-    return total;
+    return IBU_SUCCESS;
 }
 
 #undef FUNCNAME
 #define FUNCNAME ibu_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
+int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_bytes_ptr)
 {
     VAPI_ret_t status;
     VAPI_sg_lst_entry_t data;
@@ -956,15 +959,17 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	{
 	    /*printf("ibu_writev: no remote packets available\n");fflush(stdout);*/
 	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available."));
+	    *num_bytes_ptr = total;
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-	    return total;
+	    return IBU_SUCCESS;
 	}
 	mem_ptr = ibuBlockAllocIB(ibu->allocator);
 	if (mem_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL."));
+	    *num_bytes_ptr = total;
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-	    return total;
+	    return IBU_SUCCESS;
 	}
 	buf = mem_ptr;
 	num_avail = IBU_PACKET_SIZE;
@@ -1045,15 +1050,17 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	    MPIU_DBG_PRINTF(("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked));
 	    MPIU_Internal_error_printf("%s: Error: failed to post ib send, status = %s\n", FCNAME, VAPI_strerror(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-	    return -1;
+	    return IBU_FAIL;
 	}
 	ibu->nAvailRemote--;
 	
     } while (cur_index < n);
 
+    *num_bytes_ptr = total;
+
     MPIU_DBG_PRINTF(("exiting ibu_writev\n"));    
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
-    return total;
+    return IBU_SUCCESS;
 }
 
 #undef FUNCNAME
@@ -1324,11 +1331,6 @@ static int ibui_read_unex(ibu_t ibu)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
 	    return IBU_SUCCESS;
 	}
-	/* make the user upcall */
-	/*
-	if (ibu->read.progress_update != NULL)
-	ibu->read.progress_update(num_bytes, ibu->user_ptr);
-	*/
     }
     MPIU_DBG_PRINTF(("exiting ibui_read_unex\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READ_UNEX);
@@ -1397,11 +1399,6 @@ int ibui_readv_unex(ibu_t ibu)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
 	    return IBU_SUCCESS;
 	}
-	/* make the user upcall */
-	/*
-	if (ibu->read.progress_update != NULL)
-	ibu->read.progress_update(num_bytes, ibu->user_ptr);
-	*/
     }
     MPIU_DBG_PRINTF(("exiting ibui_readv_unex\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
@@ -1691,9 +1688,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		    return IBU_SUCCESS;
 		}
-		/* make the user upcall */
-		if (ibu->read.progress_update != NULL)
-		    ibu->read.progress_update(num_bytes, ibu->user_ptr);
 	    }
 	    else
 	    {
@@ -1741,9 +1735,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    MPIU_DBG_PRINTFX(("exiting ibu_wait 7\n"));
 		    return IBU_SUCCESS;
 		}
-		/* make the user upcall */
-		if (ibu->read.progress_update != NULL)
-		    ibu->read.progress_update(num_bytes, ibu->user_ptr);
 	    }
 	    break;
 	default:
@@ -1785,7 +1776,7 @@ int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)
 #define FUNCNAME ibu_post_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
+int ibu_post_read(ibu_t ibu, void *buf, int len)
 {
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READ);
 
@@ -1795,7 +1786,6 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
     ibu->read.buffer = buf;
     ibu->read.bufflen = len;
     ibu->read.use_iov = FALSE;
-    ibu->read.progress_update = rfn;
     ibu->state |= IBU_READING;
 #ifdef USE_INLINE_PKT_RECEIVE
     ((MPIDI_VC*)(ibu->user_ptr))->ch.reading_pkt = FALSE;
@@ -1813,7 +1803,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
 #define FUNCNAME ibu_post_readv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
+int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n)
 {
 #ifdef MPICH_DBG_OUTPUT
     char str[1024] = "ibu_post_readv: ";
@@ -1839,7 +1829,6 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     ibu->read.iovlen = n;
     ibu->read.index = 0;
     ibu->read.use_iov = TRUE;
-    ibu->read.progress_update = rfn;
     ibu->state |= IBU_READING;
 #ifdef USE_INLINE_PKT_RECEIVE
     ((MPIDI_VC*)(ibu->user_ptr))->ch.reading_pkt = FALSE;
@@ -1858,7 +1847,7 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
 #define FUNCNAME ibu_post_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
+int ibu_post_write(ibu_t ibu, void *buf, int len)
 {
     int num_bytes;
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITE);
@@ -1870,7 +1859,6 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
     ibu->write.buffer = buf;
     ibu->write.bufflen = len;
     ibu->write.use_iov = FALSE;
-    ibu->write.progress_update = wfn;
     ibu->state |= IBU_WRITING;
     ibu->pending_operations++;
     */
@@ -1888,7 +1876,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
 #define FUNCNAME ibu_post_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
+int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n)
 {
     int num_bytes;
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITEV);
@@ -1902,7 +1890,6 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     ibu->write.iovlen = n;
     ibu->write.index = 0;
     ibu->write.use_iov = TRUE;
-    ibu->write.progress_update = wfn;
     */
     ibu->state |= IBU_WRITING;
     /*

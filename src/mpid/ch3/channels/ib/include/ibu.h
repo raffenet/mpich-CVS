@@ -94,16 +94,6 @@ typedef struct ibu_wait_t
 } ibu_wait_t;
 
 
-/* user callback function */
-
-/* If a user function is passed to one of the ibu_post_... functions the following applies:
-   1) The ibu progress engine will call this function when partial data has been read or
-      written for the posted operation.
-   2) All progress_update calls must complete before completion notification is signalled.
-      In other words, ibu_wait will not return until all progress_update calls have completed.
-*/
-int progress_update(int num_bytes, void *user_ptr);
-
 /* function prototypes */
 int ibu_init(void);
 int ibu_finalize(void);
@@ -114,15 +104,17 @@ int ibu_create_set(ibu_set_t *set);
 int ibu_destroy_set(ibu_set_t set);
 
 int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);
+/*int ibu_set_vc_ptr(ibu_t ibu, MPIDI_VC *vc_ptr);*/
 
 ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr);
 int ibu_finish_qp(ibu_t ibu, int dest_lid, int dest_qpnum);
-int ibu_post_read(ibu_t ibu, void *buf, int len, int (*read_progress_update)(int, void*));
-int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*read_progress_update)(int, void*));
-int ibu_write(ibu_t ibu, void *buf, int len);
-int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n);
+int ibu_post_read(ibu_t ibu, void *buf, int len);
+int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n);
+int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr);
+int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_bytes_ptr);
 
 int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out);
+/*int ibu_wait(ibu_set_t set, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, IBU_OP *op_ptr);*/
 
 #ifdef __cplusplus
 }
