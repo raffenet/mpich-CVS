@@ -88,7 +88,8 @@ int mm_connector_vc_alloc(MPID_Comm *comm_ptr, int rank)
     vc_ptr->method = MM_CONNECTOR_METHOD;
     vc_ptr->ref_count = 1;
 #ifdef MPICH_DEV_BUILD
-    vc_ptr->recvq = NULL;
+    vc_ptr->readq_head = NULL;
+    vc_ptr->readq_tail = NULL;
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
 #endif
@@ -113,7 +114,8 @@ MPIDI_VC *mm_packer_vc_alloc()
 #ifdef MPICH_DEV_BUILD
     vc_ptr->pmi_kvsname[0] = '\0';
     vc_ptr->rank = -1;
-    vc_ptr->recvq = NULL;
+    vc_ptr->readq_head = NULL;
+    vc_ptr->readq_tail = NULL;
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
 #endif
@@ -137,7 +139,8 @@ MPIDI_VC *mm_unpacker_vc_alloc()
 #ifdef MPICH_DEV_BUILD
     vc_ptr->pmi_kvsname[0] = '\0';
     vc_ptr->rank = -1;
-    vc_ptr->recvq = NULL;
+    vc_ptr->readq_head = NULL;
+    vc_ptr->readq_tail = NULL;
     vc_ptr->writeq_head = NULL;
     vc_ptr->writeq_tail = NULL;
 #endif

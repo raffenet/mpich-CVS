@@ -3,6 +3,7 @@
 
 #include "mpi.h"
 #include "mpidconf.h"
+#include "mpid_datatype.h"
 
 #ifdef HAVE_NEW_METHOD
 #include "new_method_pre.h"
@@ -10,18 +11,18 @@
 
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#define MM_VECTOR         WSABUF
-#define MM_VECTOR_LEN     len
-#define MM_VECTOR_BUF     buf
+#define MPID_VECTOR         WSABUF
+#define MPID_VECTOR_LEN     len
+#define MPID_VECTOR_BUF     buf
 #else
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
-#define MM_VECTOR         struct iovec
-#define MM_VECTOR_LEN     iov_len
-#define MM_VECTOR_BUF     iov_base
+#define MPID_VECTOR         struct iovec
+#define MPID_VECTOR_LEN     iov_len
+#define MPID_VECTOR_BUF     iov_base
 #endif
-#define MM_VECTOR_LIMIT   16
+#define MPID_VECTOR_LIMIT   16
 
 typedef enum MM_BUFFER_TYPE {
     MM_NULL_BUFFER,
@@ -56,14 +57,35 @@ typedef struct MM_Car
     int src, dest;
     MM_CAR_TYPE type;
     union data {
-	int dummy;
+	struct packer
+	{
+	    int first;
+	    int last;
+	} packer;
+	struct unpacker
+	{
+	    int first;
+	    int last;
+	} unpacker;
 #ifdef WITH_METHOD_SHM
+	struct shm 
+	{
+	} shm;
 #endif
 #ifdef WITH_METHOD_TCP
+	struct tcp
+	{
+	} tcp;
 #endif
 #ifdef WITH_METHOD_VIA
+	struct 
+	{
+	} via;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
+	struct
+	{
+	} viardma;
 #endif
 #ifdef HAVE_NEW_METHOD
 #ifdef WITH_METHOD_NEW
@@ -85,6 +107,7 @@ typedef struct MM_Segment
     MPI_Datatype dtype;
     int first;
     int last;
+    MPID_Segment segment;
     MM_Car *write_list;
     MM_Car wcar;
     MM_Car rcar;
@@ -101,7 +124,7 @@ typedef struct MM_Segment
 	} tmp;
 	struct mpi
 	{
-	    MM_VECTOR vec[MM_VECTOR_LIMIT];
+	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
 	    int size;
 	    int num_read;
 	    int min_num_written;

@@ -238,6 +238,7 @@ AC_CHECK_FUNCS(pthread_mutexattr_setpshared pthread_mutexattr_init)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidconf.h ../../include,use_top_srcdir=$use_top_srcdir)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidpre.h ../../include)
 AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidpost.h ../../include)
+AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/../common/datatype/mpid_datatype.h ../../include)
 
 dnl Generate the Makefiles from Makefile.in
 

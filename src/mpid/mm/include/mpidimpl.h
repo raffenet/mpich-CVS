@@ -72,14 +72,14 @@ typedef enum MM_METHOD {
     MM_END_MARKER_METHOD
 } MM_METHOD;
 
-
 typedef struct MPIDI_VC
 {
     MM_METHOD method;
     volatile int ref_count;
     struct MM_Car * writeq_head;
     struct MM_Car * writeq_tail;
-    struct MM_Car * recvq;
+    struct MM_Car * readq_head;
+    struct MM_Car * readq_tail;
     char *pmi_kvsname; /* name of the key_value database where the remote process put its business card */
     int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
     int (*write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
@@ -92,40 +92,41 @@ typedef struct MPIDI_VCRT
     MPIDI_VC **table_ptr;
 } MPIDI_VCRT;
 
-int mm_open_port(MPID_Info *, char *);
-int mm_close_port(char *);
-int mm_accept(MPID_Info *, char *);
-int mm_connect(MPID_Info *, char *);
-int mm_send(int, char *, int);
-int mm_recv(int, char *, int);
-int mm_close(int);
+/* multi-method prototypes */
+           int mm_open_port(MPID_Info *, char *);
+           int mm_close_port(char *);
+           int mm_accept(MPID_Info *, char *);
+           int mm_connect(MPID_Info *, char *);
+           int mm_send(int, char *, int);
+           int mm_recv(int, char *, int);
+           int mm_close(int);
 MPID_Request * mm_request_alloc();
-void mm_request_free(MPID_Request *request_ptr);
-void mm_car_init();
-void mm_car_finalize();
-MM_Car* mm_car_alloc();
-void mm_car_free(MM_Car *car_ptr);
-int mm_choose_buffer(MPID_Request *request_ptr);
-MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank);
-MPIDI_VC *mm_get_packer_vc();
-MPIDI_VC *mm_get_unpacker_vc();
-void mm_vcutil_init();
-void mm_vcutil_finalize();
-int mm_connector_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-int mm_connector_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-int mm_connector_connect(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-int mm_connector_vc_alloc(MPID_Comm *comm_ptr, int rank);
-int mm_connector_vc_free(MPIDI_VC *ptr);
-int mm_packer_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-int mm_packer_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-MPIDI_VC *mm_packer_vc_alloc();
-int mm_packer_vc_free(MPIDI_VC *ptr);
-int mm_unpacker_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-int mm_unpacker_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-MPIDI_VC *mm_unpacker_vc_alloc();
-int mm_unpacker_vc_free(MPIDI_VC *ptr);
-int mm_car_enqueue(MM_Car *car_ptr);
-int mm_car_dequeue(MM_Car *car_ptr);
+          void mm_request_free(MPID_Request *request_ptr);
+          void mm_car_init();
+          void mm_car_finalize();
+       MM_Car* mm_car_alloc();
+          void mm_car_free(MM_Car *car_ptr);
+           int mm_choose_buffer(MPID_Request *request_ptr);
+    MPIDI_VC * mm_get_vc(MPID_Comm *comm_ptr, int rank);
+    MPIDI_VC * mm_get_packer_vc();
+    MPIDI_VC * mm_get_unpacker_vc();
+          void mm_vcutil_init();
+          void mm_vcutil_finalize();
+           int mm_connector_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+           int mm_connector_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+           int mm_connector_connect(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+           int mm_connector_vc_alloc(MPID_Comm *comm_ptr, int rank);
+           int mm_connector_vc_free(MPIDI_VC *ptr);
+           int mm_packer_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+           int mm_packer_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+    MPIDI_VC * mm_packer_vc_alloc();
+           int mm_packer_vc_free(MPIDI_VC *ptr);
+           int mm_unpacker_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+           int mm_unpacker_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+    MPIDI_VC * mm_unpacker_vc_alloc();
+           int mm_unpacker_vc_free(MPIDI_VC *ptr);
+           int mm_car_enqueue(MM_Car *car_ptr);
+           int mm_car_dequeue(MM_Car *car_ptr);
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more
