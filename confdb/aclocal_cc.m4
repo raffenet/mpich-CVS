@@ -1412,6 +1412,36 @@ AC_MSG_RESULT($AC_CV_NAME)
 dnl AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
 undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
 ])
+dnl
+dnl /*D
+dnl PAC_CHECK_SIZEOF_2TYPES - Get the size of a pair of types
+dnl
+dnl PAC_CHECK_SIZEOF_2TYPES(shortname,type1,type2,defaultsize)
+dnl Like AC_CHECK_SIZEOF, but handles pairs of types.
+dnl Unlike AC_CHECK_SIZEOF, does not define SIZEOF_xxx (because
+dnl autoheader can''t handle this case)
+dnl D*/
+AC_DEFUN(PAC_CHECK_SIZEOF_2TYPES,[
+changequote(<<,>>)dnl
+define(<<AC_TYPE_NAME>>,translit(sizeof_$1,[a-z *], [A-Z_P]))dnl
+define(<<AC_CV_NAME>>,translit(pac_cv_sizeof_$1,[ *], [_p]))dnl
+changequote([,])dnl
+AC_MSG_CHECKING([for size of $1])
+AC_CACHE_VAL(AC_CV_NAME,
+[AC_TRY_RUN([#include <stdio.h>
+main()
+{
+  $2 a;
+  $3 b;
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof(a) + sizeof(b));
+  exit(0);
+}],AC_CV_NAME=`cat conftestval`,AC_CV_NAME=0,ifelse([$4],,,AC_CV_NAME=$4))])
+AC_MSG_RESULT($AC_CV_NAME)
+dnl AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
+undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
+])
 
 dnl
 dnl PAC_C_GNU_ATTRIBUTE - See if the GCC __attribute__ specifier is allow.

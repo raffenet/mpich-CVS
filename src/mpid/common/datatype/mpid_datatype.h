@@ -125,6 +125,31 @@ do {									\
     }                                                                   \
 } while (0)
 
+#define MPID_Datatype_get_loopsize_macro(a,__depth,__hetero)		\
+do {									\
+    void *ptr;								\
+    switch (HANDLE_GET_KIND(a)) {					\
+        case HANDLE_KIND_DIRECT:					\
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
+            if (!(__hetero))						\
+                __depth = ((MPID_Datatype *)ptr)->dataloop_size;	\
+            else __depth = ((MPID_Datatype *) ptr)->hetero_dloop_size;	\
+            break;							\
+        case HANDLE_KIND_INDIRECT:					\
+            ptr = ((MPID_Datatype *)					\
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
+            if (!(__hetero))						\
+                __depth = ((MPID_Datatype *)ptr)->dataloop_size;	\
+            else __depth = ((MPID_Datatype *) ptr)->hetero_dloop_size;	\
+            break;							\
+        case HANDLE_KIND_INVALID:					\
+        case HANDLE_KIND_BUILTIN:					\
+        default:							\
+            __depth = 0;						\
+            break;							\
+    }                                                                   \
+} while (0)
+
 #define MPID_Datatype_get_loopptr_macro(a,__lptr,__hetero)		\
 do {									\
     void *ptr;								\

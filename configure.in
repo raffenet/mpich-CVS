@@ -1164,12 +1164,20 @@ main()
   rm -f conftestval
 fi
 AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
-PAC_CHECK_SIZEOF_DERIVED(float int,[struct { float a; int b; }],$CROSS_SIZEOF_FLOAT_INT)
-PAC_CHECK_SIZEOF_DERIVED(double int,[struct { double a; int b; }],$CROSS_SIZEOF_DOUBLE_INT)
-PAC_CHECK_SIZEOF_DERIVED(long int,[struct { long a; int b; }],$CROSS_SIZEOF_LONG_INT)
-PAC_CHECK_SIZEOF_DERIVED(short int,[struct { short a; int b; }],$CROSS_SIZEOF_SHORT_INT)
-PAC_CHECK_SIZEOF_DERIVED(2 int,[struct { int a; int b; }],$CROSS_SIZEOF_2_INT)
-PAC_CHECK_SIZEOF_DERIVED(long double int,[struct { long double a; int b; }],$CROSS_SIZEOF_LONG_DOUBLE_INT)
+PAC_CHECK_SIZEOF_2TYPES(float int, float, int, $CROSS_SIZEOF_FLOAT_INT)
+PAC_CHECK_SIZEOF_2TYPES(double int, double, int, $CROSS_SIZEOF_DOUBLE_INT)
+PAC_CHECK_SIZEOF_2TYPES(long int, long, int, $CROSS_SIZEOF_LONG_INT)
+PAC_CHECK_SIZEOF_2TYPES(short int, short, int, $CROSS_SIZEOF_SHORT_INT)
+PAC_CHECK_SIZEOF_2TYPES(2 int, int, int, $CROSS_SIZEOF_2_INT)
+PAC_CHECK_SIZEOF_2TYPES(long double int, long double, int, $CROSS_SIZEOF_LONG_DOUBLE_INT)
+
+dnl PAC_CHECK_SIZEOF_DERIVED(float int,[struct { float a; int b; }],$CROSS_EXTENTOF_FLOAT_INT)
+dnl PAC_CHECK_SIZEOF_DERIVED(double int,[struct { double a; int b; }],$CROSS_EXTENTOF_DOUBLE_INT)
+dnl PAC_CHECK_SIZEOF_DERIVED(long int,[struct { long a; int b; }],$CROSS_EXTENTOF_LONG_INT) 
+dnl PAC_CHECK_SIZEOF_DERIVED(short int,[struct { short a; int b; }],$CROSS_EXTENTOF_SHORT_INT)
+dnl PAC_CHECK_SIZEOF_DERIVED(2 int,[struct { int a; int b; }],$CROSS_EXTENTOF_2_INT)
+dnl PAC_CHECK_SIZEOF_DERIVED(long double int,[struct { long double a; int b; }],$CROSS_EXTENTOF_LONG_DOUBLE_INT)
+
 dnl
 # sys/bitypes.h defines the int16_t etc. on some systems (e.g., OSF1).
 # Include it when testing for these types

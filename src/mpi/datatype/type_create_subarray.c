@@ -85,7 +85,7 @@ int MPI_Type_create_subarray(int ndims,
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 
 	    /* Check parameters */
-	    MPIR_ERRTEST_COUNT(ndims, mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(ndims, "ndims", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(array_of_sizes, "array_of_sizes", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(array_of_subsizes, "array_of_subsizes", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(array_of_starts, "array_of_starts", mpi_errno);

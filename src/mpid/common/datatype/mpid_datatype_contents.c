@@ -25,6 +25,7 @@ int MPID_Datatype_set_contents(MPID_Datatype *new_dtp,
     MPID_Datatype *old_dtp;
     char *ptr;
 
+    /* TODO: PADDING */
     contents_size = (4 + nr_ints) * sizeof(int) +
 	nr_aints * sizeof(MPI_Aint) + nr_types * sizeof(MPI_Datatype);
 

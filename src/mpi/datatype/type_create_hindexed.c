@@ -32,9 +32,9 @@
 
    Input Parameters:
 + count - number of blocks --- also number of entries in 
-  array_of_displacements and array_of_blocklengths (integer) 
-. array_of_blocklengths - number of elements in each block (array of nonnegative integers) 
-. array_of_displacements - byte displacement of each block (array of integer) 
+  displacements and blocklengths (integer) 
+. blocklengths - number of elements in each block (array of nonnegative integers) 
+. displacements - byte displacement of each block (array of integer) 
 - oldtype - old datatype (handle) 
 
    Output Parameter:
@@ -48,8 +48,8 @@
 .N MPI_ERR_ARG
 @*/
 int MPI_Type_create_hindexed(int count,
-			     int array_of_blocklengths[],
-			     MPI_Aint array_of_displacements[],
+			     int blocklengths[],
+			     MPI_Aint displacements[],
 			     MPI_Datatype oldtype,
 			     MPI_Datatype *newtype)
 {
@@ -70,15 +70,19 @@ int MPI_Type_create_hindexed(int count,
 
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(array_of_blocklengths, "blocklens", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(array_of_displacements, "indices", mpi_errno);
+	    if (count > 0) {
+		MPIR_ERRTEST_ARGNULL(blocklengths, "blocklens", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(displacements, "indices", mpi_errno);
+	    }
 	    MPIR_ERRTEST_DATATYPE_NULL(oldtype, "datatype", mpi_errno);
 	    if (mpi_errno == MPI_SUCCESS) {
 		if (HANDLE_GET_KIND(oldtype) != HANDLE_KIND_BUILTIN) {
 		    MPID_Datatype_get_ptr( oldtype, datatype_ptr );
 		    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 		}
-		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNEG(array_of_blocklengths[i], "blocklen", mpi_errno);
+		for (i=0; i < count; i++) {
+		    MPIR_ERRTEST_ARGNEG(blocklengths[i], "blocklen", mpi_errno);
+		}
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
@@ -87,8 +91,8 @@ int MPI_Type_create_hindexed(int count,
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Type_indexed(count,
-				  array_of_blocklengths,
-				  array_of_displacements,
+				  blocklengths,
+				  displacements,
 				  1, /* displacements in bytes */
 				  oldtype,
 				  newtype);
@@ -109,7 +113,7 @@ int MPI_Type_create_hindexed(int count,
 
     for (i=0; i < count; i++)
     {
-	ints[i+1] = array_of_blocklengths[i];
+	ints[i+1] = blocklengths[i];
     }
     MPID_Datatype_get_ptr(*newtype, new_dtp);
     mpi_errno = MPID_Datatype_set_contents(new_dtp,
@@ -118,7 +122,7 @@ int MPI_Type_create_hindexed(int count,
 				           count, /* aints (displacements) */
 				           1, /* types */
 				           ints,
-				           array_of_displacements,
+				           displacements,
 				           &oldtype);
     MPIU_Free(ints);
 
@@ -138,8 +142,8 @@ fn_fail:
 				     "**mpi_type_create_hindexed",
 				     "**mpi_type_create_hindexed %d %p %p %D %p",
 				     count,
-				     array_of_blocklengths,
-				     array_of_displacements,
+				     blocklengths,
+				     displacements,
 				     oldtype,
 				     newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
