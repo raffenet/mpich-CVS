@@ -393,7 +393,7 @@ PMPI_LOCAL int MPIR_Gather_inter (
                                       MPIR_GATHER_TAG, comm); 
                 MPID_Comm_thread_unlock( comm_ptr ); 
                 if (mpi_errno) return mpi_errno;
-                MPIU_Free(tmp_buf+true_lb);
+                MPIU_Free(((char*)tmp_buf+true_lb));
             }
         }
     }

@@ -449,7 +449,7 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                                      recvbuf, recvcnt, recvtype, 0,
                                      newcomm_ptr); 
             if (rank == 0) 
-                MPIU_Free(tmp_buf+true_lb);
+                MPIU_Free(((char*)tmp_buf+true_lb));
         }
     }
     else {
