@@ -90,7 +90,7 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	else *fstype = ADIO_UFS;
 	*error_code = MPI_SUCCESS;
     }
-#elif defined(__FREEBSD)
+#elif (defined(__FREEBSD) && defined(__HAVE_MOUNT_NFS))
     err = statfs(filename, &fsbuf);
     if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
     free(dir);
