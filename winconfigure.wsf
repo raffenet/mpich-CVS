@@ -1110,6 +1110,18 @@ Function RunCmd(cmd_line)
     RunCmd = results
 End Function
 
+Function RemoveWarnings(str)
+	lines = Split(str, vbCrLf)
+	result = ""
+	for each line in lines
+		line = Trim(line)
+		if Len(line) > 0 and (not Left(line, 7) = "Warning") then
+			result = result & line & vbCrLf
+		end if
+	next
+	RemoveWarnings = result
+End Function
+
 Function GenerateDefmsg()
 	set f = WScript.CreateObject("Scripting.FileSystemObject")
 	set fin = f.OpenTextFile("maint\errmsgdirs")
@@ -1121,7 +1133,9 @@ Function GenerateDefmsg()
 	cmd_line = "perl maint\extracterrmsgs " & contents
 	'WScript.Echo(cmd_line)
 	output = RunCmd(cmd_line)
+	output(1) = RemoveWarnings(output(1))
 	If Len(output(1)) > 0 Then
+		WScript.Echo(output(1))
 		WScript.Echo("Because of errors in extracting error messages, the file src\mpi\errhan\defmsg.h was not updated.")
 	Else
 		set fout = f.OpenTextFile("src\mpi\errhan\defmsg.h", 2, True)
