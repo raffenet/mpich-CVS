@@ -201,6 +201,7 @@ AC_OUTPUT(Makefile \
 	  f90/util/Makefile \
 	  f90/attr/Makefile \
 	  f90/coll/Makefile \
+	  f90/datatype/Makefile \
 	  f90/rma/Makefile \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
