@@ -203,7 +203,7 @@ void *MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int
 	pg->addr = shmat(pg->id, NULL, SHM_RND);
 	if (pg->addr == (void*)-1)
 	{
-	    printf("Error from shmat %d\n", errno());
+	    printf("Error from shmat %d\n", errno);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return NULL;
 	}
