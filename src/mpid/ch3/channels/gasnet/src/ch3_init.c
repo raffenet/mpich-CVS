@@ -210,6 +210,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
 	pg->vct[p].gasnet.data_sz = 0;
 	pg->vct[p].gasnet.data = NULL;
 	pg->vct[p].gasnet.recv_active = NULL;
+	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
     }
 
     if (*has_parent) 

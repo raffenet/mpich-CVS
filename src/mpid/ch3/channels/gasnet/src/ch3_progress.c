@@ -646,7 +646,9 @@ static int do_put (MPIDI_VC_t *vc, MPID_Request *sreq)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 {
-    return MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS;
+    mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
+    return mpi_errno;
 }
 /* end MPIDI_CH3_Connection_terminate() */
 
