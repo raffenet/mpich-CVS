@@ -26,10 +26,15 @@ fi
 
 PAC_PROG_MAKE
 
+AC_C_INLINE
+
 dnl
 dnl _XOPEN_SOURCE_EXTENDED=1 is required for Solaris to build properly */
-dnl
-CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"
+dnl (TEMPORARY - Setting the Unix source type must happen before 
+dnl any tests are performed to ensure that all configure tests use the
+dnl same environment.  In particular, under AIX, this causes 
+dnl struct timespec to *not* be defined, 
+dnl CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"
 
 AC_CHECK_FUNC(poll,pac_cv_have_func_poll=yes,pac_cv_have_func_poll=no)
 if test "$pac_cv_have_func_poll" != yes ; then
