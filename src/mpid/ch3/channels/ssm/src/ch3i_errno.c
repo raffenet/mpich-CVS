@@ -33,6 +33,9 @@ int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname)
 	case SOCK_ERR_BAD_BUFFER:
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_FATAL, fcname, __LINE__, MPI_ERR_BUFFER, "**buffer", 0 );
 	    break;
+	case SOCK_ERR_ADDR_INUSE:
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, fcname, __LINE__, MPI_ERR_OTHER, "**ch3|sock|addrinuse", 0);
+	    break;
 	default:
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_FATAL, fcname, __LINE__, MPI_ERR_OTHER, "**failure", "**failure %d", sock_errno );
 	    break;

@@ -48,6 +48,7 @@ typedef enum sock_op
 #define SOCK_SUCCESS            0
 #define SOCK_FAIL              -1
 #define SOCK_EOF	        1 
+#define SOCK_ERR_OS_SPECIFIC   -2
 #define SOCK_ERR_NOMEM          1000
 #define SOCK_ERR_TIMEOUT        1001
 #define SOCK_ERR_HOST_LOOKUP    1002
@@ -58,7 +59,7 @@ typedef enum sock_op
 #define SOCK_ERR_BAD_BUFFER     1007
 #define SOCK_ERR_OP_IN_PROGRESS 1008
 #define SOCK_ERR_OP_ABORTED     1009
-#define SOCK_ERR_OS_SPECIFIC    1010
+#define SOCK_ERR_ADDR_INUSE     1010
 
 /*
  * structures

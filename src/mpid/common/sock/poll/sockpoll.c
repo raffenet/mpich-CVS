@@ -294,7 +294,18 @@ int sock_listen(sock_set_t sock_set, void * user_ptr, int * port, sock_t * sockp
     rc = bind(fd, (struct sockaddr *) &addr, sizeof(addr));
     if (rc == -1)
     {
+#ifdef EADDRINUSE
+	if (errno == EADDRINUSE)
+	{
+	    sock_errno = SOCK_ERR_ADDR_INUSE;
+	}
+	else
+	{
+	    sock_errno = SOCK_FAIL;
+	}
+#else
 	sock_errno = SOCK_FAIL;
+#endif
 	goto fail_close;
     }
     

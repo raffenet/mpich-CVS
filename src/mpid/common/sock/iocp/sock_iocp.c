@@ -331,6 +331,7 @@ int WinToSockError(int error)
     case WSAEAFNOSUPPORT:
 	break;
     case WSAEADDRINUSE:
+	return SOCK_ERR_ADDR_INUSE;
 	break;
     case WSAEADDRNOTAVAIL:
 	break;
@@ -426,7 +427,9 @@ static int easy_create(SOCKET *sock, int port, unsigned long addr)
     /* create the non-blocking socket */
     temp_sock = WSASocket(PF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
     if (temp_sock == INVALID_SOCKET)
-	return SOCK_FAIL;
+    {
+	return WinToSockError(WSAGetLastError());
+    }
     
     memset(&sockAddr,0,sizeof(sockAddr));
     
@@ -435,7 +438,9 @@ static int easy_create(SOCKET *sock, int port, unsigned long addr)
     sockAddr.sin_port = htons((unsigned short)port);
 
     if (bind(temp_sock, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
-	    return SOCK_FAIL;
+    {
+	return WinToSockError(WSAGetLastError());
+    }
     
     /* Set the linger on close option */
     /*
@@ -465,10 +470,13 @@ static int easy_create(SOCKET *sock, int port, unsigned long addr)
     }
 
     /* prevent the socket from being inherited by child processes */
-    DuplicateHandle(
+    if (!DuplicateHandle(
 	GetCurrentProcess(), (HANDLE)temp_sock,
 	GetCurrentProcess(), (HANDLE*)sock,
-	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS);
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	return WinToSockError(GetLastError());
+    }
 
     /* Set the no-delay option */
     setsockopt(*sock, IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval));
