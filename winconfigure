@@ -5,20 +5,20 @@ mpi_datatype_prefix="4c00"
 #
 # C datatype sizes
 #
-len_short="00"
-len_int="00"
-len_long="00"
-len_long_long="00"
-len_float="00"
-len_double="00"
-len_long_double="00"
-len_wchar_t="00"
-len_float_int="00"
-len_double_int="00"
-len_long_int="00"
-len_short_int="00"
-len_2_int="00"
-len_long_double_int="00"
+len_short="02"
+len_int="04"
+len_long="04"
+len_long_long="08"
+len_float="04"
+len_double="08"
+len_long_double="08"
+len_wchar_t="02"
+len_float_int="08"
+len_double_int="10"
+len_long_int="08"
+len_short_int="08"
+len_2_int="08"
+len_long_double_int="10"
 
 MPI_CHAR="0x${mpi_datatype_prefix}0101"
 MPI_UNSIGNED_CHAR="0x${mpi_datatype_prefix}0102"
@@ -52,10 +52,10 @@ MPI_LONG_DOUBLE_INT="0x${mpi_datatype_prefix}${len_long_double_int}1c"
 #
 # Fortran datatype sizes
 #
-len_integer="00"
-len_double="00"
-len_doublecplx="00"
-len_2dc="00"
+len_integer="08"
+len_double="08"
+len_doublecplx="10"
+len_2dc="20"
 
 MPI_CHARACTER=0x${mpi_datatype_prefix}0120
 MPI_INTEGER=0x${mpi_datatype_prefix}${len_integer}21
@@ -77,7 +77,7 @@ MPI_MAX_PROCESSOR_NAME=128
 BSEND_OVERHEAD=52
 MPI_AINT="int"
 MPI_FINT="int"
-MPI_OFFSET="long long"
+MPI_OFFSET="__int64"
 EXTRA_STATUS_DECL=
 HAVE_ROMIO=1
 
