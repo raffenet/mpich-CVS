@@ -208,9 +208,10 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
 	if (!rank) {
 	    MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
-	    /* this dup is freed either in ADIO_Open if the open fails,
-               or in ADIO_Close */
-	    *fh = ADIO_Open(comm, dupcommself, filename, file_system, amode, 
+	    /* NOTE: dupcommself is freed either in ADIO_Open if the open fails,
+             * or in ADIO_Close.
+	     */
+	    *fh = ADIO_Open(MPI_COMM_SELF, dupcommself, filename, file_system, amode, 
 			    0, MPI_BYTE, MPI_BYTE, M_ASYNC, info, 
 			    ADIO_PERM_NULL, &error_code);
 	    /* broadcast the error code to other processes */
