@@ -203,7 +203,7 @@ static char * g_XColors[] = {
 void random_X_color_string(char *str)
 {
     int i = (int)(((double)rand() / (double)RAND_MAX) * (double)(NUM_X_COLORS-1));
-    strcpy(str, g_XColors[i]);
+    MPIU_Strncpy(str, g_XColors[i], 40);
 }
 
 static void init_state_strings()
