@@ -54,7 +54,7 @@ int MPIR_Gather (
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
-    int mask, sendtype_size, src, dst, position, pack_size;
+    int mask, sendtype_size, src, dst, position, tmp_buf_size;
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent;            /* Datatype extent */
@@ -211,38 +211,36 @@ int MPIR_Gather (
         printf("ERROR: MPI_Gather not implemented for heterogeneous case\n");
         NMPI_Abort(MPI_COMM_WORLD, 1);     
             
-        if (rank == root) {
 #ifdef UNIMPLEMENTED
+        if (rank == root)
             NMPI_Pack_size(recvcnt*comm_size, recvtype, comm,
-                           &pack_size); 
+                           &tmp_buf_size); 
+        else
+            NMPI_Pack_size(sendcnt*(comm_size/2), sendtype, comm,
+                           &tmp_buf_size);
 #endif
-            tmp_buf = MPIU_Malloc(pack_size);
-            if (!tmp_buf) { 
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-                return mpi_errno;
-            }
 
-            position = 0;
-#ifdef UNIMPLEMENTED
-            if (sendbuf != MPI_IN_PLACE)
-                NMPI_Pack(sendbuf, sendcnt, sendtype, tmp_buf,
-                          pack_size, &position, comm);
-#endif
-            nbytes = pack_size/comm_size;
+        tmp_buf = MPIU_Malloc(tmp_buf_size);
+        if (!tmp_buf) { 
+            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
         }
-        else {
-#ifdef UNIMPLEMENTED
-            NMPI_Pack_size(recvcnt, recvtype, comm, &nbytes);
-#endif
-            tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
-            if (!tmp_buf) { 
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-                return mpi_errno;
-            }
+
+        position = 0;
+        if (sendbuf != MPI_IN_PLACE) {
 #ifdef UNIMPLEMENTED
             NMPI_Pack(sendbuf, sendcnt, sendtype, tmp_buf,
-                     (nbytes*comm_size)/2, &position, comm);
+                      tmp_buf_size, &position, comm);
 #endif
+            nbytes = position;
+        }
+        else {
+            /* do a dummy pack just to calculate nbytes */
+#ifdef UNIMPLEMENTED
+            NMPI_Pack(recvbuf, 1, recvtype, tmp_buf,
+                      tmp_buf_size, &position, comm);
+#endif
+            nbytes = position*recvcnt;
         }
         
         curr_cnt = nbytes;
@@ -280,19 +278,19 @@ int MPIR_Gather (
 #ifdef UNIMPLEMENTED
             if (sendbuf != MPI_IN_PLACE) {
                 position = 0;
-                NMPI_Unpack(tmp_buf, nbytes*comm_size, &position,
+                NMPI_Unpack(tmp_buf, tmp_buf_size, &position,
                             ((char *) recvbuf + extent*recvcnt*rank),
                             recvcnt*(comm_size-rank), recvtype, comm); 
             }
             else {
                 position = nbytes;
-                NMPI_Unpack(tmp_buf, nbytes*comm_size, &position,
+                NMPI_Unpack(tmp_buf, tmp_buf_size, &position,
                             ((char *) recvbuf + extent*recvcnt*(rank+1)),
                             recvcnt*(comm_size-rank-1), recvtype,
                             comm);
             }
             if (root != 0)
-                NMPI_Unpack(tmp_buf, nbytes*comm_size, &position, recvbuf,
+                NMPI_Unpack(tmp_buf, tmp_buf_size, &position, recvbuf,
                             recvcnt*rank, recvtype, comm); 
 #endif
         }

@@ -56,7 +56,7 @@ PMPI_LOCAL int MPIR_Allgather (
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     MPI_Aint   recv_extent;
-    int        j, i, is_homogeneous;
+    int        j, i, is_homogeneous, tmp_buf_size;
     int curr_cnt, mask, dst, dst_tree_root, my_tree_root, 
         send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
         offset, tmp_mask, tree_root, position, nbytes;
@@ -205,19 +205,34 @@ PMPI_LOCAL int MPIR_Allgather (
         NMPI_Abort(MPI_COMM_WORLD, 1);     
  
 #ifdef UNIMPLEMENTED
-        NMPI_Pack_size(recvcount, recvtype, comm, &nbytes);
+        NMPI_Pack_size(recvcount*size, recvtype, comm, &tmp_buf_size);
 #endif
-        tmp_buf = MPIU_Malloc(nbytes*comm_size);
+        tmp_buf = MPIU_Malloc(tmp_buf_size);
         if (!tmp_buf) { 
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
 
+      /* calculate the value of nbytes, the number of bytes in packed
+         representation that each process contributes. We can't simply divide
+         tmp_buf_size by comm_size because tmp_buf_size is an upper
+         bound on the amount of memory required. (For example, for
+         a single integer, MPICH-1 returns pack_size=12.) Therefore, we
+         actually pack some data into tmp_buf and see by how much
+         'position' is incremented. */
+
+        position = 0;
+#ifdef UNIMPLEMENTED
+        NMPI_Pack(recvbuf, 1, recvtype, tmp_buf, tmp_buf_size,
+                  &position, comm);
+#endif
+        nbytes = position*recvcount;
+
         /* pack local data into right location in tmp_buf */
         position = rank * nbytes;
         if (sendbuf != MPI_IN_PLACE) {
 #ifdef UNIMPLEMENTED
-            NMPI_Pack(sendbuf, sendcount, sendtype, tmp_buf, nbytes*comm_size,
+            NMPI_Pack(sendbuf, sendcount, sendtype, tmp_buf, tmp_buf_size,
                       &position, comm);
 #endif
         }
@@ -225,7 +240,7 @@ PMPI_LOCAL int MPIR_Allgather (
             /* if in_place specified, local data is found in recvbuf */
 #ifdef UNIMPLEMENTED
             NMPI_Pack(((char *)recvbuf + recv_extent*rank), recvcount,
-                       recvtype, tmp_buf, nbytes*comm_size, 
+                       recvtype, tmp_buf, tmp_buf_size, 
                        &position, comm);
 #endif
         }
@@ -339,8 +354,8 @@ PMPI_LOCAL int MPIR_Allgather (
         
         position = 0;
 #ifdef UNIMPLEMENTED
-        NMPI_Unpack(tmp_buf, nbytes*comm_size, &position, recvbuf, recvcount,
-                    recvtype, comm);
+        NMPI_Unpack(tmp_buf, tmp_buf_size, &position, recvbuf,
+                    recvcount*comm_size, recvtype, comm);
 #endif
         
         MPIU_Free(tmp_buf);

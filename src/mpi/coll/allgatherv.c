@@ -42,7 +42,7 @@
 
 PMPI_LOCAL int MPIR_Allgatherv ( 
     void *sendbuf, 
-    int sendcount,  
+    int sendcount,   
     MPI_Datatype sendtype, 
     void *recvbuf, 
     int *recvcounts, 
@@ -50,7 +50,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
     MPI_Datatype recvtype, 
     MPID_Comm *comm_ptr )
 {
-    int        comm_size, rank, j, i;
+    int        comm_size, rank, j, i, tmp_buf_size;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     MPI_Aint   recv_extent;
@@ -208,24 +208,34 @@ PMPI_LOCAL int MPIR_Allgatherv (
         NMPI_Abort(MPI_COMM_WORLD, 1);     
  
 #ifdef UNIMPLEMENTED
-        NMPI_Pack_size(1, recvtype, comm, &nbytes);
+        NMPI_Pack_size(total_count, recvtype, comm, &tmp_buf_size);
 #endif
-        tmp_buf = MPIU_Malloc(nbytes*total_count);
+        tmp_buf = MPIU_Malloc(tmp_buf_size);
         if (!tmp_buf) { 
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
 
+        /* calculate the value of nbytes, the number of bytes in packed
+           representation corresponding to a single recvtype. Since
+           MPI_Pack_size returns only an upper bound on 
+           the size, to get the real size we actually pack some data
+           into tmp_buf and see by how much 'position' is incremented. */
+
+        position = 0;
+        NMPI_Pack(recvbuf, 1, recvtype, tmp_buf, tmp_buf_size,
+                  &position, comm);
+        nbytes = position;
+
         /* pack local data into right location in tmp_buf */
         position = 0;
-        for (i=0; i<rank; i++)
-            position += recvcounts[i];
+        for (i=0; i<rank; i++) position += recvcounts[i];
         position *= nbytes;
 
         if (sendbuf != MPI_IN_PLACE) {
 #ifdef UNIMPLEMENTED
             NMPI_Pack(sendbuf, sendcount, sendtype, tmp_buf,
-                      nbytes*total_count, &position, comm);
+                      tmp_buf_size, &position, comm);
 #endif
         }
         else {
@@ -233,7 +243,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
 #ifdef UNIMPLEMENTED
             NMPI_Pack(((char *)recvbuf + displs[rank]*recv_extent, 
                       recvcounts[rank], recvtype, tmp_buf,
-                      nbytes*total_count, &position, comm);
+                      tmp_buf_size, &position, comm);
 #endif
         }
 
@@ -362,7 +372,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
             if ((sendbuf != MPI_IN_PLACE) || (j != rank)) {
                 /* not necessary to unpack if in_place and
                    j==rank. otherwise unpack. */
-                NMPI_Unpack(tmp_buf, nbytes*total_count, &position, 
+                NMPI_Unpack(tmp_buf, tmp_buf_size, &position, 
                             ((char *)recvbuf + displs[j]*recv_extent),
                             recvcounts[j], recvtype, comm);
             }

@@ -68,7 +68,7 @@ int MPIR_Bcast (
 {
   MPI_Status status;
   int        rank, comm_size, src, dst;
-  int        relative_rank, mask;
+  int        relative_rank, mask, tmp_buf_size;
   int        mpi_errno = MPI_SUCCESS;
   int scatter_size, nbytes=0, curr_size, recv_size, send_size;
   int type_size, j, k, i, tmp_mask, is_contig, is_homogeneous;
@@ -108,8 +108,28 @@ int MPIR_Bcast (
       printf("ERROR: MPI_Bcast not implemented for noncontiguous and heterogeneous cases.\n");
       NMPI_Abort(MPI_COMM_WORLD, 1);     
 #ifdef UNIMPLEMENTED
-      NMPI_Pack_size(count, datatype, comm, &nbytes);
+      NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
 #endif
+      /* calculate the value of nbytes, the size in packed
+         representation of the buffer to be broadcasted. We can't
+         simply multiply tmp_buf_size by count because tmp_buf_size
+         is an upper bound on the amount of memory required. (For
+         example, for a single integer, MPICH-1 returns pack_size=12.)
+         Therefore, we actually pack some data into tmp_buf, see by
+         how much 'position' is incremented, and multiply that by count. */
+      tmp_buf = MPIU_Malloc(tmp_buf_size);
+      if (!tmp_buf) {
+          mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+          return mpi_errno;
+      }
+
+      position = 0;
+#ifdef UNIMPLEMENTED
+      NMPI_Pack(buffer, 1, datatype, tmp_buf, tmp_buf_size,
+                &position, comm);
+#endif
+      MPIU_Free(tmp_buf);
+      nbytes = position * count;
   }
 
   relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
@@ -393,7 +413,7 @@ int MPIR_Bcast (
           mask <<= 1;
           i++;
       }
-
+ 
       if (!is_contig || !is_homogeneous) {
           if (rank != root) {
               position = 0;
@@ -413,7 +433,7 @@ int MPIR_Bcast (
 }
 
 
-PMPI_LOCAL MPIR_Bcast_inter ( 
+PMPI_LOCAL int MPIR_Bcast_inter ( 
     void *buffer, 
     int count, 
     MPI_Datatype datatype, 

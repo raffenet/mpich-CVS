@@ -57,7 +57,7 @@ PMPI_LOCAL int MPIR_Scatter (
     MPI_Aint   extent;
     int        rank, comm_size, is_homogeneous, sendtype_size;
     int curr_cnt, relative_rank, nbytes, send_subtree_cnt;
-    int mask, recvtype_size, src, dst, position, pack_size;
+    int mask, recvtype_size, src, dst, position, tmp_buf_size;
     void *tmp_buf=NULL;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Comm comm, newcomm;
@@ -235,29 +235,41 @@ PMPI_LOCAL int MPIR_Scatter (
         if (rank == root) {
 #ifdef UNIMPLEMENTED
             NMPI_Pack_size(sendcnt*comm_size, sendtype, comm,
-                          &pack_size); 
+                          &tmp_buf_size); 
 #endif
-            tmp_buf = MPIU_Malloc(pack_size);
+            tmp_buf = MPIU_Malloc(tmp_buf_size);
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
 
-            nbytes = pack_size/comm_size;
-            curr_cnt = pack_size;
+          /* calculate the value of nbytes, the number of bytes in packed
+             representation that each process receives. We can't
+             accurately calculate that from tmp_buf_size because
+             MPI_Pack_size returns an upper bound on the amount of memory
+             required. (For example, for a single integer, MPICH-1 returns
+             pack_size=12.) Therefore, we actually pack some data into
+             tmp_buf and see by how much 'position' is incremented. */
+
+            position = 0;
+            MPI_Pack(sendbuf, 1, sendtype, tmp_buf, tmp_buf_size,
+                     &position, comm);
+            nbytes = position*sendcnt;
+
+            curr_cnt = nbytes*comm_size;
             
 #ifdef UNIMPLEMENTED
             if (root == 0) {
                 if (recvbuf != MPI_IN_PLACE) {
                     position = 0;
                     NMPI_Pack(sendbuf, sendcnt*comm_size, sendtype, tmp_buf,
-                              pack_size, &position, comm);
+                              tmp_buf_size, &position, comm);
                 }
                 else {
                     position = nbytes;
                     NMPI_Pack(((char *) sendbuf + extent*sendcnt), 
                               sendcnt*(comm_size-1), sendtype, tmp_buf,
-                              pack_size, &position, comm);
+                              tmp_buf_size, &position, comm);
                 }
             }
             else {
@@ -265,28 +277,35 @@ PMPI_LOCAL int MPIR_Scatter (
                     position = 0;
                     NMPI_Pack(((char *) sendbuf + extent*sendcnt*rank),
                               sendcnt*(comm_size-rank), sendtype, tmp_buf,
-                              pack_size, &position, comm); 
+                              tmp_buf_size, &position, comm); 
                 }
                 else {
                     position = nbytes;
                     NMPI_Pack(((char *) sendbuf + extent*sendcnt*(rank+1)),
                               sendcnt*(comm_size-rank-1), sendtype, tmp_buf,
-                              pack_size, &position, comm); 
+                              tmp_buf_size, &position, comm); 
                 }
                 NMPI_Pack(sendbuf, sendcnt*rank, sendtype, tmp_buf,
-                          pack_size, &position, comm); 
+                          tmp_buf_size, &position, comm); 
             }
 #endif
         }
         else {
 #ifdef UNIMPLEMENTED
-            NMPI_Pack_size(recvcnt, recvtype, comm, &nbytes);
+            NMPI_Pack_size(recvcnt*(size/2), recvtype, comm, &tmp_buf_size);
 #endif
-            tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
+            tmp_buf = MPIU_Malloc(tmp_buf_size);
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
+
+            /* calculate nbytes */
+            position = 0;
+            MPI_Pack(recvbuf, 1, recvtype, tmp_buf, tmp_buf_size,
+                     &position, comm);
+            nbytes = position*recvcnt;
+
             curr_cnt = 0;
         }
         
@@ -333,7 +352,7 @@ PMPI_LOCAL int MPIR_Scatter (
         position = 0;
 #ifdef UNIMPLEMENTED
         if (recvbuf != MPI_IN_PLACE)
-            NMPI_Unpack(tmp_buf, nbytes, &position, recvbuf, recvcnt,
+            NMPI_Unpack(tmp_buf, tmp_buf_size, &position, recvbuf, recvcnt,
                         recvtype, comm);
 #endif
         MPIU_Free(tmp_buf);
