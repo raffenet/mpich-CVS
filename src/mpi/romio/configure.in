@@ -1017,9 +1017,12 @@ fi
 #
 # check if darray and subarray constructors are defined in the MPI 
 # implementation 
-if test $WITHIN_KNOWN_MPI_IMPL = no -o $FROM_MPICH2 != no ; then
+if test $WITHIN_KNOWN_MPI_IMPL = no ; then
    PAC_MPI_DARRAY_SUBARRAY
-else
+fi
+if test $FROM_MPICH2 = yes ; then
+   AC_MSG_WARN("Overriding Array test for MPICH2")
+   unset BUILD_MPI_ARRAY
    AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,1,[Define if Darray is available])
    HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
    MPI_FARRAY1="!"
