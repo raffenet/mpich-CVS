@@ -9,5 +9,5 @@ profilelib_${MPILIBNAME} = p${MPILIBNAME}
 # This is a test for the document generation
 doc_HTML_SOURCES = ${mpi_sources}
 
-# c_create, c_shift, c_sub, dims, 
+# c_create, c_sub, dims, 
 # g_map, g_create, cdims_get

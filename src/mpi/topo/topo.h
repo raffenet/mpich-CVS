@@ -7,7 +7,7 @@ typedef struct {
 } MPIR_Graph_topology;
 
 typedef struct {
-  int nnodes;     /* Produce of dims[*], gives the size of the topology */
+  int nnodes;     /* Product of dims[*], gives the size of the topology */
   int ndims;
   int *dims;
   int *periodic;
@@ -23,3 +23,5 @@ typedef struct {
 } MPIR_Topology;
 
 MPIR_Topology *MPIR_Topology_get( MPID_Comm * );
+
+#define MAX_CART_DIM 16

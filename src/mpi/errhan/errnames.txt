@@ -49,6 +49,9 @@ also the value at index %d
  but must be nonnegative and less than %d
 **argrange:Argument is not within valid range
 **argrange %s %d %d:Argument %s has value %d but must be within [0,%d]
+**argarrayneg:Negative value in array 
+**argarrayneg %s %d %d:Negative value in array %s[%d] (value is %d)
+(string), index (int), value (int)) 
 **bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
 **bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
 **bsendbufsmall %d %d:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
@@ -132,8 +135,6 @@ Fortran integer (optional       argument: address (long int))
 **statusignore:Invalid use of MPI_STATUS_IGNORE} or MPI_STATUSES_IGNORE
 **argarray:Invalid value in array (optional arguments: name of variable (string), index (int), value (int))
 **argnamed:Invalid argument (optional arguments: name (string), value (int))
-**argarrayneg:Negative value in array (optional arguments: name of variable\
-(string), index (int), value (int)) 
 **darraydist:For MPI_DISTRIBUTE_NONE, the number of processes in that\
       dimension of the grid must be 1 (optional arguments: index of\
       array_of_psizes, value (int))

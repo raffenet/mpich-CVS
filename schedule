@@ -174,18 +174,18 @@ MPI_Attr_delete,1,1,1,2,Bill,MPI_Comm_delete_attr,.05/3/29/02
 Process Topologies
 
 MPI_Cart_create,1,1,1,2,Bill,MPI_Comm_create_keyval and MPI_Comm_split,,
-MPI_Dims_create,,,,,Bill,,,
+MPI_Dims_create,1,2,3,,Bill,,,
 MPI_Graph_create,1,1,1,2,Bill,MPI_Comm_create_keyval and MPI_Comm_split,,
 MPI_Topo_test,1,1,1,2,Bill,MPI_Comm_get_attr,.1,3/25/02
 MPI_Graphdims_get,1,1,1,2,Bill,MPI_Comm_get_attr,.1,3/25/02
 MPI_Graph_get,1,1,1,2,Bill,MPI_Comm_get_attr,.1,3/25/02
-MPI_Cartdim_get,1,1,1,2,Bill,MPI_Comm_get_attr,,.1,3/31/02
+MPI_Cartdim_get,1,1,1,2,Bill,MPI_Comm_get_attr,.1,3/31/02
 MPI_Cart_get,1,1,1,2,Bill,MPI_Comm_get_attr,.1,3/25/02
 MPI_Cart_rank,1,1,1,2,Bill,MPI_Comm_get_attr,.05,3/26/02
 MPI_Cart_coords,1,1,1,2,Bill,MPI_Comm_get_attr,.05,3/26/02
 MPI_Graph_neighbors_count,1,1,1,2,Bill,MPI_Comm_get_attr,.05,3/26/02
 MPI_Graph_neighbors,1,1,1,2,Bill,MPI_Comm_get_attr,.05,3/26/02
-MPI_Cart_shift,1,1,1,2,Bill,MPI_Comm_get_attr,,
+MPI_Cart_shift,1,1,1,2,Bill,MPI_Comm_get_attr,.1,4/23/02
 MPI_Cart_sub,1,1,1,2,Bill,MPI_Comm_get_attr,,
 MPI_Cart_map,1,1,1,2,Bill,MPI_Comm_get_attr,.05,3/26/02
 MPI_Graph_map,1,1,1,2,Bill,MPI_Comm_get_attr,,
