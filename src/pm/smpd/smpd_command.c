@@ -261,6 +261,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
+    memset(cmd_ptr, 0, sizeof(smpd_command_t));
     smpd_init_command(cmd_ptr);
     cmd_ptr->src = src;
     cmd_ptr->dest = dest;
@@ -366,6 +367,7 @@ int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, i
     {
 	return SMPD_FAIL;
     }
+    memset(context, 0, sizeof(smpd_context_t));
     result = smpd_init_context(context, type, set, sock, id);
     if (result != SMPD_SUCCESS)
     {
@@ -428,6 +430,7 @@ int smpd_free_context(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 	/* erase the contents to help track down use of freed structures */
+	memset(context, 0, sizeof(smpd_context_t));
 	smpd_init_context(context, SMPD_CONTEXT_FREED, SOCK_INVALID_SET, SOCK_INVALID_SOCK, -1);
 	free(context);
     }
