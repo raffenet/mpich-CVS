@@ -52,7 +52,7 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len)
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(vc->shm.shm->packet[index].data, buf, length);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-	WRITE_BARRIER();
+	MPID_WRITE_BARRIER();
 	vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	total += length;
 	len -= length;
@@ -142,7 +142,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	vc->shm.shm->packet[index].num_bytes = 
 	    iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN;
 	total = vc->shm.shm->packet[index].num_bytes;
-	WRITE_BARRIER();
+	MPID_WRITE_BARRIER();
 	vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	vc->shm.shm->tail_index =
 	    (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
@@ -175,7 +175,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, dest_avail);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-	    WRITE_BARRIER();
+	    MPID_WRITE_BARRIER();
 	    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	    cur_pos = iov[i].MPID_IOV_BUF + dest_avail;
 	    cur_avail = iov[i].MPID_IOV_LEN - dest_avail;
@@ -199,7 +199,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 		cur_avail -= num_bytes;
 		if (cur_avail)
 		{
-		    WRITE_BARRIER();
+		    MPID_WRITE_BARRIER();
 		    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 		}
 	    }
@@ -208,7 +208,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
 	}
 	if (dest_avail == 0)
 	{
-	    WRITE_BARRIER();
+	    MPID_WRITE_BARRIER();
 	    vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	    index = vc->shm.shm->tail_index = 
 		(vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
@@ -225,7 +225,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n)
     }
     if (dest_avail < MPIDI_CH3I_PACKET_SIZE)
     {
-	WRITE_BARRIER();
+	MPID_WRITE_BARRIER();
 	vc->shm.shm->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	vc->shm.shm->tail_index = 
 	    (vc->shm.shm->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
