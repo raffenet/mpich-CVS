@@ -570,6 +570,8 @@ int smpd_handle_result(smpd_context_t *context)
 			    smpd_get_string_arg(context->read_cmd.cmd, "password", smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH))
 			{
 			    smpd_dbg_printf("cred_request succeeded, account: '%s'\n", smpd_process.UserAccount);
+			    strcpy(iter->context->account, smpd_process.UserAccount);
+			    strcpy(iter->context->password, smpd_process.UserPassword);
 			    strcpy(iter->context->cred_request, "yes");
 			    iter->context->read_state = SMPD_IDLE;
 			    iter->context->write_state = SMPD_WRITING_CRED_ACK_YES;
