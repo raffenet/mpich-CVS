@@ -278,6 +278,10 @@ typedef struct MPID_Segment_st {
 				 * to handle it
 				 */
     /* other, device-specific information */
+    /* use these two bogus members for contiguous datatypes until the real code is available */
+    void *bogus_user_buffer;
+    int bogus_length;
+    int bogus_dtype_extent;
 } MPID_Segment;
 
 #ifdef HAVE_WINSOCK2_H
@@ -295,9 +299,9 @@ typedef struct MPID_Segment_st {
 #endif
 #define MPID_VECTOR_LIMIT   16
 
-int MPID_Segment_init(const void *buf, int count, MPI_Datatype handle, MPID_Segment *segp);
+int MPID_Segment_init(void *buf, int count, MPI_Datatype handle, MPID_Segment *segp);
 void MPID_Segment_pack(MPID_Segment *segp, int first, int *lastp, void *pack_buffer);
-void MPID_Segment_unpack(MPID_Segment *segp, int first, int *lastp, void *unpack_buffer);
+void MPID_Segment_unpack(MPID_Segment *segp, int first, int *lastp, const void *unpack_buffer);
 void MPID_Segment_pack_vector(MPID_Segment *segp, int first, int *lastp, MPID_VECTOR *vector, int *lengthp);
 void MPID_Segment_unpack_vector(MPID_Segment *segp, int first, int *lastp, MPID_VECTOR *vector, int *lengthp);
 
