@@ -14,6 +14,25 @@
 int ADIOI_PVFS2_Initialized = MPI_KEYVAL_INVALID;
 PVFS_fs_id * ADIOI_PVFS2_fs_id_list;
 
+void ADIOI_PVFS2_End(int *error_code)
+{
+    int ret;
+    ret = PVFS_sys_finalize();
+    if (ret < 0 ) {
+	*error_code = MPI_UNDEFINED;
+    } else {
+	*error_code = MPI_SUCCESS;
+    }
+}
+
+int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval, 
+	void *attribute_val, void *extra_state)
+{
+    int error_code;
+    ADIOI_PVFS2_End(&error_code);
+    return error_code;
+}
+
 void ADIOI_PVFS2_Init(int *error_code )
 {
 	pvfs_mntlist mnt = {0,NULL};
@@ -41,12 +60,17 @@ void ADIOI_PVFS2_Init(int *error_code )
 	    return;
 	}
 	ADIOI_PVFS2_fs_id_list = resp_init.fsid_list;
-	MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_End_call,
+	MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_PVFS2_End_call,
 		&ADIOI_PVFS2_Initialized, (void *)0); 
+	/* just like romio does, we make a dummy attribute so we 
+	 * get cleaned up */
+	MPI_Attr_put(MPI_COMM_WORLD, ADIOI_PVFS2_Initialized, (void *)0);
 }
 
 void ADIOI_PVFS2_makeattribs(PVFS_object_attr * attribs)
 {
+    memset(attribs, 0, sizeof(PVFS_object_attr));
+
     attribs->owner = geteuid();
     attribs->group = getegid();
     attribs->perms = 1877;
@@ -57,6 +81,8 @@ void ADIOI_PVFS2_makeattribs(PVFS_object_attr * attribs)
 
 void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials)
 {
+    memset(credentials, 0, sizeof(PVFS_credentials));
+
     credentials->uid = geteuid();
     credentials->gid = getegid();
     /* XXX: are there any good default credentials? */
