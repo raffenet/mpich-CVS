@@ -1,20 +1,20 @@
 
 
-                         MPICH2 Release 0.971
+                         MPICH2 Release 1.0
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
-no actual code.  It is intended to become a portable, high-performance
-implementation of the entire MPI-2 standard.  This release has most
-MPI-2 features but is not quite complete (see below for the status of
-MPI-2 features in MPICH2).  It also currently supports only a few
-communication methods.
+no actual code.  It is portable, high-performance
+implementation of the entire MPI-2 standard.  This release has 
+all MPI-2 functions and features required by the standard with the
+exeption of support for the "external32" portable I/O format.
+It also currently supports only a few communication methods.
 
-This is an early release of MPICH2.  It has been tested by us on a
-variety of machines in our own environment, but not extensively tested
-by outside users.  If you have problems, please report them to
-mpich2-maint@mcs.anl.gov; we are interested in incorporating user
-experiences as quickly as possible.
+This is the first complete release of MPICH2.  It has been tested by us
+on a variety of machines in our own environment, but not all of it has
+yet been extensively tested by outside users.  If you have problems,
+please report them to mpich2-maint@mcs.anl.gov; we are interested in
+incorporating user experiences as quickly as possible.
 
 This README file should contain enough information to get you started
 with MPICH2.  More extensive intstallation and user guides can be found
@@ -39,7 +39,7 @@ later, in the section "Alternative configurations".
 
 1.  You will need the following prerequisites.
 
-    - This tar file mpich2-0.971.tar.gz
+    - This tar file mpich2-1.0.tar.gz
 
     - A C compiler (gcc is sufficient)
 
@@ -63,13 +63,13 @@ later, in the section "Alternative configurations".
 2.  Unpack the tar file and go to the top level directory:
 
       tar xfz mpich2.tar.gz
-      cd mpich2-0.971
+      cd mpich2-1.0
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-0.971
+      cd mpich2-1.0
 
 3.  Choose an installation directory (the default is /usr/local/bin):
 
@@ -131,7 +131,7 @@ later, in the section "Alternative configurations".
     MPD, which is a ring of daemons on the machines where you will run
     your MPI programs.  In the next few steps, you will get his ring up
     and tested.  More details on interacting with MPD can be found in
-    the README file in mpich2-0.971/src/pm/mpd, such as how to list
+    the README file in mpich2-1.0/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     use the mpigdb debugger.  The instructions given here should be
     enough to get you started.
@@ -205,7 +205,7 @@ later, in the section "Alternative configurations".
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-0.971/src/pm/mpd/README.
+    mpich2-1.0/src/pm/mpd/README.
 
 
 12. Test the ring you have just created:
@@ -242,7 +242,7 @@ later, in the section "Alternative configurations".
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-0.971/examples.  One of them is the classic cpi
+    the directory mpich2-1.0/examples.  One of them is the classic cpi
     example, which computes the value of pi by numerical integration in
     parallel.   
 
@@ -273,12 +273,13 @@ later, in the section "Alternative configurations".
     to ensure that the process with rank 0 runs on your workstation.
 
     The arguments between ':'s in this syntax are called "argument
-    sets", since they apply to a set of processes.  There is an extra
-    argument set for arguments that apply to all the processes,
-    introduced by the -default argument.  For example, to get rank
-    labels on standard output, use
+    sets", since they apply to a set of processes.  Some arguments,
+    called "global", apply across all argument sets and must appear
+    first.  For example, to get rank labels on standard output, use
 
-      mpiexec -default -l : -n 3 cpi
+      mpiexec -l -n 3 cpi
+
+    See the User's Guide for much more detail on arguments to mpiexec.
 
     The mpirun command from the original MPICH is still available,
     although it does not support as many options as mpiexec.  You might
@@ -309,7 +310,7 @@ mpd
 ---
 
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-0.971/src/pm/mpd/README has more 
+described above.  The file mpich2-1.0/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of mpds.
 
 smpd
@@ -318,7 +319,7 @@ smpd
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-0.971/src/pm/smpd/README.
+information, please see mpich2-1.0/src/pm/smpd/README.
 
 
 Alternative Channels and Devices
@@ -548,13 +549,8 @@ routines (MPI_Win_Lock, MPI_Win_Unlock) are working according to the MPI
 standard, but may not perform as expected, since they will not complete
 until an MPI call is made at the target.
 
-Some of the dynamic process routines (MPI_Comm_spawn, MPI_Comm_connect,
-MPI_Comm_accept) are working, but some restrictions apply (See the
-RELEASE_NOTES file in the top-level directory).  MPI_Comm_join is not
-implemented.
-
-Name publishing is supported on shared file systems (other name publishers
-are under development)
+Name publishing is supported on shared file systems and within an mpd
+ring.
 
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
@@ -563,29 +559,19 @@ collective routines, have not been extensively tested.
 Other Changes
 =============
 
-Previous releases of MPICH2 supported the "forker" process manager.
-This process manager is still available but is unsupported and untested.
-It does not support the dynamic-process operations in MPI-2 and thus
-will fail many of the tests included with MPICH2.  We plan to support
-additional process managers (probably including a new version of forker)
-at some future time, but we do not have a scheduled for it yet.
-Information on forker from previous versions of the README is included
-below.
-
-forker
-------
+forker and gforker
+------------------
 
 Forker is a process manager that creates processes on a single machine,
 by having mpiexec itself fork and exec them.  It is useful for
 shared-memory multiprocessors (SMPs) where you want to create all the
 processes on the same machine, and also for debugging, where it is often
 convenient to run all the processes on a single machine, since parallel
-performance is less important.  The forker version of mpiexec may not
-support all the standard options and arguments.  It also does not yet
-support the dynamic process management functions.
+performance is less important.  The new version of the forker is called
+gforker. 
 
-specify that you want to use forker by doing 
+specify that you want to use gforker by doing 
 
-  --with-pm=forker  
+  --with-pm=gforker  
 
 on the configure command line.
