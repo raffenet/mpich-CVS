@@ -17,7 +17,6 @@ cygwin, not the cvs for windows) and that drive f: is mapped to
 
     cvs -d /cygdrive/f/MPI/cvsMaster checkout mpich2all
     cd mpich2
-    cvs -d /cygdrive/f/MPI/cvsMaster_z checkout confdb
     maint/updatefiles
 
 Note that the cygwin cvs may not properly handle the defined modules; in that 
@@ -33,7 +32,6 @@ MCS login name):
  
     cvs -d :ext:yourname@shakey.mcs.anl.gov:/home/MPI/cvsMaster checkout mpich2all
     cd mpich2
-    cvs -d :ext:yourname@shakey.mcs.anl.gov:/home/MPI/cvsMaster_z checkout confdb
     maint/updatefiles
 
 
