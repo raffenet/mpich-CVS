@@ -208,7 +208,12 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                 }
             }
 
-	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    }
+	    else {
+		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
+	    }
 
             rank = comm_ptr->rank;
             if (rank == root) {

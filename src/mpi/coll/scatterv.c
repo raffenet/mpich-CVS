@@ -218,7 +218,12 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
                 }
             }
 
-	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    }
+	    else {
+		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
+	    }
     
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTERV);

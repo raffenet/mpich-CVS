@@ -703,13 +703,13 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                                         recvtype, comm_ptr); 
         else {
             /* intracommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-            /* mpi_errno = MPIR_Allgatherv_inter(sendbuf, sendcount, 
-                                        sendtype, recvbuf,
-                                        recvcounts, displs,
-                                        recvtype, comm_ptr); */
+					      "**intercommcoll %s", FCNAME );*/
+            mpi_errno = MPIR_Allgatherv_inter(sendbuf, sendcount, 
+					      sendtype, recvbuf,
+					      recvcounts, displs,
+					      recvtype, comm_ptr); 
         }
 	MPIR_Nest_decr();
     }
