@@ -16,6 +16,10 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
     *val = 1.0e-9 * t;
 }
+void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+{
+    *t3 += (*t2 - *t1);
+}
 #elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
 void MPID_Wtime( MPID_Time_t *timeval )
 {
@@ -30,6 +34,19 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
     *val = ((double) t->tv_sec + 1.0e-9 * (double) t->tv_nsec );
+}
+void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+{
+  int nsec, sec;
+
+  nsec = t1->tv_nsec + t2->tv_nsec;
+  sec  = t1->tv_sec + t2->tv_sec;
+  if (nsec > 1.0e9) {
+    nsec -= 1.0e9;
+    sec++;
+  }
+  t3->sec = sec;
+  t3->nsec = nsec;
 }
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
 void MPID_Wtime( MPID_Time_t *tval )
@@ -47,6 +64,19 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
     *val = (double) t->tv_sec + .000001 * (double) t->tv_usec;
 }
+void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+{
+  int usec, sec;
+
+  usec = t2->tv_usec - t1->tv_usec;
+  sec  = t2->tv_sec - t1->tv_sec;
+  t3->usec += usec;
+  t3->sec += sec;
+  if (t3->usec > 1.0e6) {
+    t3->usec -= 1.0e6;
+    t3->sec++;
+  }
+}
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
 /* Time stamps created by a macro */
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
@@ -60,6 +90,10 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
        counters into test programs */
     *val = (double)*t;
 }
+void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+{
+  *t3 += (*t2 - *t1);
+}
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 /* Code from LinuxJournal #42 (Oct-97), p50; 
    thanks to Dave Covey dnc@gi.alaska.edu
@@ -72,6 +106,9 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
     *diff = 1024.0 * ((double)(cc/1024) / (double)CLOCK_FREQ_HZ);
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
+{
+}
+void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
 }
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
@@ -99,6 +136,10 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
     LARGE_INTEGER n;
     n.QuadPart = t2->QuadPart - t1->QuadPart;
     *diff = (double)n.QuadPart / timer_frequency;
+}
+void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+{
+  /* ??? */
 }
 #endif
 

@@ -47,6 +47,7 @@ typedef @MPID_TIMER_TYPE@ MPID_Time_t;
  */
 void MPID_Wtime( MPID_Time_t * );
 void MPID_Wtime_diff( MPID_Time_t *, MPID_Time_t *, double * );
+void MPID_Wtime_acc( MPID_Time_t *, MPID_Time_t *, MPID_Time_t * );
 void MPID_Wtime_todouble( MPID_Time_t *, double * );
 double MPID_Wtick( void );
 void MPID_Wtime_init(void);
