@@ -1015,8 +1015,10 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    }
 	    else
 	    {
+		/*
 		iov->IBU_IOV_LEN -= len;
 		iov->IBU_IOV_BUF = (unsigned char *)(iov->IBU_IOV_BUF) + len;
+		*/
 	    }
 	}
 	msg_size = IBU_PACKET_SIZE - num_avail;

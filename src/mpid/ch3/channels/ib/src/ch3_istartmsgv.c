@@ -81,73 +81,60 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
        the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     
-    if (vc->ib.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
+    /* Connection already formed.  If send queue is empty attempt to send
+    data, queuing any unsent data. */
+    if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
-	/* Connection already formed.  If send queue is empty attempt to send
-           data, queuing any unsent data. */
-	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
+	int nb;
+	
+	/* MT - need some signalling to lock down our right to use the
+	channel, thus insuring that the progress engine does also try to
+	write */
+	
+	nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
+	
+	MPIU_dbg_printf("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb);
+	if (nb > 0)
 	{
-	    int nb;
-
-	    /* MT - need some signalling to lock down our right to use the
-               channel, thus insuring that the progress engine does also try to
-               write */
-
-	    nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
-
-	    MPIU_dbg_printf("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb);
-	    if (nb > 0)
+	    int offset = 0;
+	    
+	    while (offset < n_iov)
 	    {
-		int offset = 0;
-    
-		while (offset < n_iov)
+		if (nb >= (int)iov[offset].MPID_IOV_LEN)
 		{
-		    if (nb >= (int)iov[offset].MPID_IOV_LEN)
-		    {
-			nb -= iov[offset].MPID_IOV_LEN;
-			offset++;
-		    }
-		    else
-		    {
-			MPIU_dbg_printf("ch3_istartmsgv: ibu_post_writev did not complete the send, allocating request\n");
-			sreq = create_request(iov, n_iov, offset, nb);
-			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			/*MPIDI_CH3I_IB_post_write(vc, sreq);*/
-			break;
-		    }
+		    nb -= iov[offset].MPID_IOV_LEN;
+		    offset++;
+		}
+		else
+		{
+		    MPIU_dbg_printf("ch3_istartmsgv: ibu_post_writev did not complete the send, allocating request\n");
+		    sreq = create_request(iov, n_iov, offset, nb);
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/
+		    break;
 		}
 	    }
-	    else if (nb == 0)
-	    {
-		sreq = create_request(iov, n_iov, 0, 0);
-		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-		/*MPIDI_CH3I_IB_post_write(vc, sreq);*/
-	    }
-	    else
-	    {
-		sreq = MPIDI_CH3_Request_create();
-		assert(sreq != NULL);
-		sreq->kind = MPID_REQUEST_SEND;
-		sreq->cc = 0;
-		/* TODO: Create an appropriate error message based on the value of errno */
-		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
-	    }
 	}
-	else
+	else if (nb == 0)
 	{
 	    sreq = create_request(iov, n_iov, 0, 0);
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
+	    /*MPIDI_CH3I_IB_post_write(vc, sreq);*/
+	}
+	else
+	{
+	    sreq = MPIDI_CH3_Request_create();
+	    assert(sreq != NULL);
+	    sreq->kind = MPID_REQUEST_SEND;
+	    sreq->cc = 0;
+	    /* TODO: Create an appropriate error message based on the value of errno */
+	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	}
     }
     else
     {
-	/* Connection failed, so allocate a request and return an error. */
-	sreq = MPIDI_CH3_Request_create();
-	assert(sreq != NULL);
-	sreq->kind = MPID_REQUEST_SEND;
-	sreq->cc = 0;
-	/* TODO: Create an appropriate error message */
-	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	sreq = create_request(iov, n_iov, 0, 0);
+	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
