@@ -76,10 +76,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 	    /* FIXME: Add a check that this is a comm errhandler.
 	       This test should be a macro so that it can be used
 	       in all calls, along with similar calls for win and file */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -101,5 +98,12 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_set_errhandler", "**mpi_comm_set_errhandler %C %E", comm, errhandler);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

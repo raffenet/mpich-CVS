@@ -7,6 +7,18 @@
 
 #include "mpiimpl.h"
 
+#ifdef USE_ROMIO_FILE
+/* Forward ref for the routine to extract and set the error handler
+   in a ROMIO File structure.  FIXME: These should be imported from a common
+   header file that is also used in mpich2_fileutil.c
+ */
+int MPIR_ROMIO_Get_file_errhand( MPI_File, MPID_Errhandler ** );
+int MPIR_ROMIO_Set_file_errhand( MPI_File, MPID_Errhandler * );
+void MPIR_Get_file_error_routine( MPID_Errhandler *, 
+				  void (**)(MPI_File *, int *, ...), 
+				  int * );
+#endif
+
 /* -- Begin Profiling Symbol Block for routine MPI_File_get_errhandler */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_get_errhandler = PMPI_File_get_errhandler
@@ -65,16 +77,9 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
 #ifndef USE_ROMIO_FILE
             /* Validate file_ptr */
             MPID_File_valid_ptr( file_ptr, mpi_errno );
-	    /* If file_ptr is not valdi, it will be reset to null */
+	    /* If file_ptr is not valid, it will be reset to null */
 #endif
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_GET_ERRHANDLER);
-#ifdef USE_ROMIO_FILE
-		return MPIR_Err_return_file( file, FCNAME, mpi_errno );
-#else
-                return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
-#endif
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -99,5 +104,16 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_GET_ERRHANDLER);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_file_get_errhandler", "**mpi_file_get_errhandler %F %p", file, errhandler);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_GET_ERRHANDLER);
+#ifdef USE_ROMIO_FILE
+    return MPIR_Err_return_file( file, FCNAME, mpi_errno );
+#else
+    return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
+#endif
+    /* --END ERROR HANDLING-- */
 }
 

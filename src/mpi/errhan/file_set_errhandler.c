@@ -91,14 +91,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 		    }
 		}
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
-#ifdef USE_ROMIO_FILE
-                return MPIR_Err_return_file( file, FCNAME, mpi_errno );
-#else
-                return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
-#endif
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -132,6 +125,17 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_file_set_errhandler", "**mpi_file_set_errhandler %F %E", file, errhandler);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
+#ifdef USE_ROMIO_FILE
+    return MPIR_Err_return_file( file, FCNAME, mpi_errno );
+#else
+    return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
+#endif
+    /* --END ERROR HANDLING-- */
 }
 
 #ifndef MPICH_MPI_FROM_PMPI

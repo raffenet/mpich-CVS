@@ -59,10 +59,7 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_SET);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -70,17 +67,20 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
 
     /* ... body of routine ...  */
     MPIR_Nest_incr();
-    mpi_errno = PMPI_Comm_set_errhandler( comm, errhandler );
+    mpi_errno = NMPI_Comm_set_errhandler( comm, errhandler );
     MPIR_Nest_decr();
-    if (mpi_errno)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_errhandler_set", "**mpi_errhandler_set %C %E", comm, errhandler);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_SET);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    }
     /* ... end of body of routine ... */
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_SET);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_errhandler_set", "**mpi_errhandler_set %C %E", comm, errhandler);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_SET);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

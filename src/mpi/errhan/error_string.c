@@ -62,10 +62,7 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(string,"string",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -73,12 +70,19 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 
     /* ... body of routine ...  */
 
-    MPIR_Err_get_string( errorcode, string );
+    MPIR_Err_get_string( errorcode, string, MPI_MAX_ERROR_STRING, NULL );
     *resultlen = (int)strlen( string );
 
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_error_string", "**mpi_error_string %d %s %p", errorcode, string, resultlen);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

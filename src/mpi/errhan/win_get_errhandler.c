@@ -62,10 +62,7 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ERRHANDLER);
-                return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -84,5 +81,8 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ERRHANDLER);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_get_errhandler", "**mpi_win_get_errhandler %W %p", win, errhandler);
+    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }
-

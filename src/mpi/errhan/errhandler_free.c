@@ -58,11 +58,7 @@ int MPI_Errhandler_free(MPI_Errhandler *errhandler)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    
 	    MPID_Errhandler_valid_ptr( errhan_ptr, mpi_errno );
-
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_FREE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -78,5 +74,12 @@ int MPI_Errhandler_free(MPI_Errhandler *errhandler)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_FREE);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_errhandler_free", "**mpi_errhandler_free %p", errhandler);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_FREE);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

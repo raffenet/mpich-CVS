@@ -7,6 +7,18 @@
 
 #include "mpiimpl.h"
 
+#ifdef USE_ROMIO_FILE
+/* Forward ref for the routine to extract and set the error handler
+   in a ROMIO File structure.  FIXME: These should be imported from a common
+   header file that is also used in mpich2_fileutil.c
+ */
+int MPIR_ROMIO_Get_file_errhand( MPI_File, MPID_Errhandler ** );
+int MPIR_ROMIO_Set_file_errhand( MPI_File, MPID_Errhandler * );
+void MPIR_Get_file_error_routine( MPID_Errhandler *, 
+				  void (**)(MPI_File *, int *, ...), 
+				  int * );
+#endif
+
 /* -- Begin Profiling Symbol Block for routine MPI_File_call_errhandler */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_File_call_errhandler = PMPI_File_call_errhandler
@@ -65,14 +77,7 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
             MPID_File_valid_ptr( file_ptr, mpi_errno );
 	    /* If file_ptr is not value, it will be reset to null */
 #endif
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
-#ifdef USE_ROMIO_FILE
-                return MPIR_Err_return_file( fh, FCNAME, mpi_errno );
-#else
-                return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
-#endif
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -110,4 +115,15 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_file_call_errhandler", "**mpi_file_call_errhandler %F %d", fh, errorcode);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
+#ifdef USE_ROMIO_FILE
+    return MPIR_Err_return_file( fh, FCNAME, mpi_errno );
+#else
+    return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
+#endif
+    /* --END ERROR HANDLING-- */
 }

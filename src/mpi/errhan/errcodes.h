@@ -11,7 +11,6 @@
 /* Prototypes for internal routines for the errhandling module */
 
 /* Routine to return the error message for an error code.  Null on failure */
-void MPIR_Err_get_string( int, char * );
 int MPIR_Err_set_msg( int, const char * );
 int MPIR_Err_add_class( const char * );
 int MPIR_Err_add_code( int, const char * );

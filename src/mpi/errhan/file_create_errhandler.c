@@ -54,10 +54,7 @@ int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler 
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -68,10 +65,7 @@ int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler 
     if (!errhan_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_file_create_errhandler", "**mpi_file_create_errhandler %p %p", function, errhandler);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     *errhandler		 = errhan_ptr->handle;
     errhan_ptr->language = MPID_LANG_C;
@@ -82,4 +76,11 @@ int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, MPI_Errhandler 
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_file_create_errhandler", "**mpi_file_create_errhandler %p %p", function, errhandler);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CREATE_ERRHANDLER);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
