@@ -1312,7 +1312,7 @@ sub ProcessFile {
     $file = $_[0];
 
     &ResetFileName( "$curdir$file" );
-    print "Processing $curdir$file\n" if (!$quiet || $debug_dirs);
+    print "Processing $curdir$file\n" if (!$quiet && $debug_dirs);
     $configure_has_config_headers = "no";
     if (-s "configure.in") {
 	&ReadAutoconf;
@@ -1428,10 +1428,10 @@ sub RecursiveOp {
     $target = $_[0];
     $subdirname = $_[1];
     if ($subdirname ne "") {
-	my @dirs = @$subdirname;
+	@dirs = @$subdirname;
     }
     else {
-	my @dirs = (@extra_dirs, @subdirs);
+	@dirs = (@extra_dirs, @subdirs);
     }
     print "n dirs = $#dirs\n" if $debug;
     if ($#dirs == 0 && $dirs[0] eq ".") { return; }
