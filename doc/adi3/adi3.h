@@ -562,8 +562,8 @@ typedef struct dataloop_ {
   with each MPI object type having a separate routine.  Since reference
   count changes are always up or down one, and since all MPI objects 
   are defined to have the 'ref_count' field in the same place, the current
-  ADI3 API uses two routines, 'MPID_Object_add_ref' and 
-  'MPID_Object_release_ref', to increment and decrement the reference count.
+  ADI3 API uses two routines, 'MPIU_Object_add_ref' and 
+  'MPIU_Object_release_ref', to increment and decrement the reference count.
 
   S*/
 typedef struct { 
