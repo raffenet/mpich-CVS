@@ -19,9 +19,9 @@ typedef struct MPIDI_Process_group_s
 MPIDI_CH3I_Process_group_t;
 
 #define MPIDI_CH3_PKT_ENUM			\
-MPIDI_CH3I_PKT_SOCK_OPEN_REQ,			\
-MPIDI_CH3I_PKT_SOCK_OPEN_RESP,			\
-MPIDI_CH3I_PKT_SOCK_CLOSE
+MPIDI_CH3I_PKT_SC_OPEN_REQ,			\
+MPIDI_CH3I_PKT_SC_OPEN_RESP,			\
+MPIDI_CH3I_PKT_SC_CLOSE
 
 #define MPIDI_CH3_PKT_DEFS													  \
 typedef struct															  \
@@ -35,25 +35,25 @@ typedef struct															  \
     int pg_id;															  \
     int pg_rank;														  \
 }																  \
-MPIDI_CH3I_Pkt_sock_open_req_t;													  \
+MPIDI_CH3I_Pkt_sc_open_req_t;													  \
 																  \
 typedef struct															  \
 {																  \
     MPIDI_CH3_Pkt_type_t type;													  \
     int ack;															  \
 }																  \
-MPIDI_CH3I_Pkt_sock_open_resp_t;												  \
+MPIDI_CH3I_Pkt_sc_open_resp_t;													  \
 																  \
 typedef struct															  \
 {																  \
     MPIDI_CH3_Pkt_type_t type;													  \
 }																  \
-MPIDI_CH3I_Pkt_sock_close_t;
+MPIDI_CH3I_Pkt_sc_close_t;
 
 #define MPIDI_CH3_PKT_DECL			\
-MPIDI_CH3I_Pkt_sock_open_req_t sock_open_req;	\
-MPIDI_CH3I_Pkt_sock_open_resp_t sock_open_resp;	\
-MPIDI_CH3I_Pkt_sock_close_t sock_close;
+MPIDI_CH3I_Pkt_sc_open_req_t sc_open_req;	\
+MPIDI_CH3I_Pkt_sc_open_resp_t sc_open_resp;	\
+MPIDI_CH3I_Pkt_sc_close_t sc_close;
 
 typedef enum MPIDI_CH3I_VC_state
 {
@@ -73,7 +73,7 @@ struct MPIDI_CH3I_VC				\
     struct MPID_Request * sendq_tail;		\
     MPIDI_CH3I_VC_state_t state;		\
     sock_t sock;				\
-    struct MPIDI_CH3I_conn_info *info;          \
+    struct MPIDI_CH3I_Connection * conn;	\
 } sc;
 
 
@@ -101,38 +101,38 @@ struct MPIDI_CH3I_Request									\
 } sc;
 
 #define MPID_STATE_LIST_CH3 \
-MPID_STATE_MAKE_PROGRESS, \
-MPID_STATE_HANDLE_POLLIN, \
-MPID_STATE_HANDLE_POLLOUT, \
+MPID_STATE_MPIDI_CH3_CANCEL_SEND, \
+MPID_STATE_MPIDI_CH3_COMM_SPAWN, \
+MPID_STATE_MPIDI_CH3_FINALIZE, \
+MPID_STATE_MPIDI_CH3_INIT, \
 MPID_STATE_MPIDI_CH3_IREAD, \
 MPID_STATE_MPIDI_CH3_ISEND, \
 MPID_STATE_MPIDI_CH3_ISENDV, \
 MPID_STATE_MPIDI_CH3_ISTARTMSG, \
 MPID_STATE_MPIDI_CH3_ISTARTMSGV, \
 MPID_STATE_MPIDI_CH3_IWRITE, \
+MPID_STATE_MPIDI_CH3_PROGRESS_START, \
+MPID_STATE_MPIDI_CH3_PROGRESS_END, \
 MPID_STATE_MPIDI_CH3_PROGRESS, \
-MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE, \
-MPID_STATE_MPIDI_CH3_PROGRESS_INIT, \
 MPID_STATE_MPIDI_CH3_PROGRESS_POKE, \
-MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF, \
 MPID_STATE_MPIDI_CH3_REQUEST_CREATE, \
-MPID_STATE_MPIDI_CH3_REQUEST_DESTROY, \
+MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF, \
 MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF, \
+MPID_STATE_MPIDI_CH3_REQUEST_DESTROY, \
+MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE, \
+MPID_STATE_MPIDI_CH3I_PROGRESS_INIT, \
 MPID_STATE_MPIDI_CH3I_LISTENER_GET_PORT, \
-MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV, \
-MPID_STATE_MPIDI_CH3I_POST_CONNECT, \
-MPID_STATE_MPIDI_CH3I_POST_READ, \
-MPID_STATE_MPIDI_CH3I_POST_WRITE, \
-MPID_STATE_POST_PKT_RECV, \
-MPID_STATE_POST_PKT_SEND, \
-MPID_STATE_POST_QUEUED_SEND, \
-MPID_STATE_UPDATE_REQUEST, \
-MPID_STATE_POLL, \
-MPID_STATE_SOCK_READ, \
-MPID_STATE_SOCK_READV, \
-MPID_STATE_SOCK_WRITE, \
-MPID_STATE_SOCK_WRITEV, \
+MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT, \
+MPID_STATE_MPIDI_CH3I_VC_POST_READ, \
+MPID_STATE_MPIDI_CH3I_VC_POST_WRITE, \
 MPID_STATE_MPIDI_CH3U_BUFFER_COPY, \
-MPID_STATE_MPIDI_CH3_COMM_SPAWN,
+MPID_STATE_CONNECTION_ALLOC, \
+MPID_STATE_CONNECTION_FREE, \
+MPID_STATE_CONNECTION_POST_SENDQ_REQ, \
+MPID_STATE_CONNECTION_POST_SEND_PKT, \
+MPID_STATE_CONNECTION_POST_RECV_PKT, \
+MPID_STATE_CONNECTION_SEND_FAIL, \
+MPID_STATE_CONNECTION_RECV_FAIL, \
+MPID_STATE_UPDATE_REQUEST,
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

@@ -131,17 +131,21 @@ static char *get_random_color_str()
 
 int CH3U_Describe_timer_states()
 {
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MAKE_PROGRESS,
-		       "make_progress",
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3_CANCEL_SEND,
+		       "MPIDI_CH3_Cancel_send",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3_COMM_SPAWN,
+		       "MPIDI_CH3_Comm_spawn",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_HANDLE_POLLIN,
-		       "handle_pollin",
+		       MPID_STATE_MPIDI_CH3_FINALIZE,
+		       "MPIDI_CH3_Finalize",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_HANDLE_POLLOUT,
-		       "handle_pollout",
+		       MPID_STATE_MPIDI_CH3_Init,
+		       "MPIDI_CH3_Init",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_IREAD,
@@ -168,8 +172,20 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3_iWrite",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3_PROGRESS_START,
+		       "MPIDI_CH3_Progress_start",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3_PROGRESS_END,
+		       "MPIDI_CH3_Progress_end",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_PROGRESS,
 		       "MPIDI_CH3_Progress",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3_PROGRESS_POKE,
+		       "MPIDI_CH3_Progress_poke",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE,
@@ -180,32 +196,24 @@ int CH3U_Describe_timer_states()
 		       "MPIDI_CH3_Progress_init",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3_PROGRESS_POKE,
-		       "MPIDI_CH3_Progress_poke",
+		       MPID_STATE_MPIDI_CH3_REQUEST_CREATE,
+		       "MPIDI_CH3_Request_create",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF,
 		       "MPIDI_CH3_Request_add_ref",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3_REQUEST_CREATE,
-		       "MPIDI_CH3_Request_create",
+		       MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF,
+		       "MPIDI_CH3_Request_release_ref",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3_REQUEST_DESTROY,
 		       "MPIDI_CH3_Request_destroy",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF,
-		       "MPIDI_CH3_Request_release_ref",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3I_LISTENER_GET_PORT,
 		       "MPIDI_CH3I_Listener_get_port",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV,
-		       "MPIDI_CH3I_Request_adjust_iov",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT,
@@ -219,49 +227,9 @@ int CH3U_Describe_timer_states()
 		       MPID_STATE_MPIDI_CH3I_VC_POST_WRITE,
 		       "MPIDI_CH3I_VC_post_write",
 		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_POST_PKT_RECV,
-		       "post_pkt_recv",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_POST_PKT_SEND,
-		       "post_pkt_send",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_POST_QUEUED_SEND,
-		       "post_queued_send",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, 
-		       MPID_STATE_UPDATE_REQUEST,
-		       "update_request",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_POLL,
-		       "poll",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCK_READ,
-		       "sock_read",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCK_READV,
-		       "sock_readv",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCK_WRITE,
-		       "sock_write",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_SOCK_WRITEV,
-		       "sock_writev",
-		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3U_BUFFER_COPY,
 		       "MPIDI_CH3U_buffer_copy",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_MPIDI_CH3_COMM_SPAWN,
-		       "MPIDI_CH3U_Comm_spawn",
 		       get_random_color_str());
     return Sock_describe_timer_states();
 }
