@@ -52,5 +52,8 @@ int MPI_File_get_group(MPI_File fh, MPI_Group *group)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
+    /* note: this will return the group of processes that called open, but with
+     * deferred open this might not be the group of processes that actually
+     * opened the file */
     return MPI_Comm_group(fh->comm, group);
 }

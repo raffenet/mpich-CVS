@@ -225,6 +225,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     orig_amode = amode;
     MPI_Comm_rank(dupcomm, &rank);
 
+    /* XXX: this will not be compatible with deferred open */
     if ((amode & MPI_MODE_CREATE) && (amode & MPI_MODE_EXCL)) {
 	/* the open should fail if the file exists. Only process 0 should
            check this. Otherwise, if all processes try to check and the file 

@@ -90,6 +90,8 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
 
     if (size == 0) return MPI_SUCCESS;
 
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_preallocate");
+
     MPI_Comm_rank(fh->comm, &mynod);
     if (!mynod) {
 	fcntl_struct = (ADIO_Fcntl_t *) ADIOI_Malloc(sizeof(ADIO_Fcntl_t));

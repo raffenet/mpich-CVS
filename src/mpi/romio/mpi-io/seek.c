@@ -71,6 +71,8 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 #endif
     }
 
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_seek");
+
     switch(whence) {
     case MPI_SEEK_SET:
 	if (offset < 0) {

@@ -114,6 +114,8 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 #endif
     }
 
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_seek_shared");
+
     MPI_Comm_rank(fh->comm, &myrank);
 
     if (!myrank) {

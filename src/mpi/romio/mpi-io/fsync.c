@@ -54,6 +54,8 @@ int MPI_File_sync(MPI_File fh)
     ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
+    ADIOI_TEST_DEFERRED(fh, myname);
+
     ADIO_Flush(fh, &error_code);
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);

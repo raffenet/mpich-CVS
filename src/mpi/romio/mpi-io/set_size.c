@@ -87,6 +87,8 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
 #endif
     }
 
+    ADIOI_TEST_DEFERRED(fh, "MPI_File_set_size");
+
     ADIO_Resize(fh, size, &error_code);
     
 #ifdef MPI_hpux
