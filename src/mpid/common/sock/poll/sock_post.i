@@ -113,6 +113,61 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     addr.sin_port = htons(port);
 
     /*
+     * Set and verify the socket buffer size
+     */
+    if (MPIDU_Socki_socket_bufsz > 0)
+    {
+	int bufsz;
+	socklen_t bufsz_len;
+
+	bufsz = MPIDU_Socki_socket_bufsz;
+	bufsz_len = sizeof(bufsz);
+	rc = setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, bufsz_len);
+	if (rc == -1)
+	{
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|poll|setsndbufsz",
+		"**sock|poll|setsndbufsz %d %d %s", bufsz, errno, MPIU_Strerror(errno));
+	    goto fn_fail;
+	    
+	}
+	
+	bufsz = MPIDU_Socki_socket_bufsz;
+	bufsz_len = sizeof(bufsz);
+	rc = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, bufsz_len);
+	if (rc == -1)
+	{
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|poll|setrcvbufsz",
+		"**sock|poll|setrcvbufsz %d %d %s", bufsz, errno, MPIU_Strerror(errno));
+	    goto fn_fail;
+	    
+	}
+	
+	bufsz_len = sizeof(bufsz);
+	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
+	if (rc == 0)
+	{
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    {
+		MPIU_Msg_printf("WARNING: send socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+				MPIDU_Socki_socket_bufsz, bufsz);
+	    }
+	}
+
+    	bufsz_len = sizeof(bufsz);
+	rc = getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, &bufsz_len);
+	if (rc == 0)
+	{
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    {
+		MPIU_Msg_printf("WARNING: receive socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+				MPIDU_Socki_socket_bufsz, bufsz);
+	    }
+	}
+    }
+    
+    /*
      * Attempt to establish the connection
      */
     do
@@ -262,6 +317,61 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
 	goto fn_fail;
     }
 
+    /*
+     * Set and verify the socket buffer size
+     */
+    if (MPIDU_Socki_socket_bufsz > 0)
+    {
+	int bufsz;
+	socklen_t bufsz_len;
+
+	bufsz = MPIDU_Socki_socket_bufsz;
+	bufsz_len = sizeof(bufsz);
+	rc = setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, bufsz_len);
+	if (rc == -1)
+	{
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|poll|setsndbufsz",
+		"**sock|poll|setsndbufsz %d %d %s", bufsz, errno, MPIU_Strerror(errno));
+	    goto fn_fail;
+	    
+	}
+	
+	bufsz = MPIDU_Socki_socket_bufsz;
+	bufsz_len = sizeof(bufsz);
+	rc = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, bufsz_len);
+	if (rc == -1)
+	{
+	    mpi_errno = MPIR_Err_create_code(
+		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|poll|setrcvbufsz",
+		"**sock|poll|setrcvbufsz %d %d %s", bufsz, errno, MPIU_Strerror(errno));
+	    goto fn_fail;
+	    
+	}
+	
+	bufsz_len = sizeof(bufsz);
+	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
+	if (rc == 0)
+	{
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    {
+		MPIU_Msg_printf("WARNING: send socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+				MPIDU_Socki_socket_bufsz, bufsz);
+	    }
+	}
+
+    	bufsz_len = sizeof(bufsz);
+	rc = getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, &bufsz_len);
+	if (rc == 0)
+	{
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    {
+		MPIU_Msg_printf("WARNING: receive socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+				MPIDU_Socki_socket_bufsz, bufsz);
+	    }
+	}
+    }
+    
     /*
      * Start listening for incoming connections...
      */

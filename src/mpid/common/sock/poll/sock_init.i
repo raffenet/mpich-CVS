@@ -11,11 +11,28 @@
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIDU_Sock_init(void)
 {
+    char * env;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_INIT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_INIT);
+
+    if (MPIDU_Socki_initialized == 0)
+    { 
+	env = getenv("MPICH_SOCKET_BUFFER_SIZE");
+	if (env)
+	{
+	    int tmp;
+	    
+	    tmp = atoi(env);
+	    if (tmp > 0)
+	    {
+		MPIDU_Socki_socket_bufsz = tmp;
+	    }
+	}
+    }
+    
     MPIDU_Socki_initialized++;
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_INIT);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_INIT);
     return MPI_SUCCESS;
 }
@@ -31,10 +48,11 @@ int MPIDU_Sock_finalize(void)
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_FINALIZE);
 
     MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
-    MPIDU_Socki_initialized--;
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_FINALIZE);
 
+    MPIDU_Socki_initialized--;
+    
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_FINALIZE);
     return mpi_errno;

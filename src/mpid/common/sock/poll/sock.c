@@ -211,6 +211,7 @@ struct MPIDU_Sock
 
 
 int MPIDU_Socki_initialized = 0;
+int MPIDU_Socki_socket_bufsz = 0;
 
 static struct MPIDU_Socki_eventq_elem * MPIDU_Socki_eventq_pool = NULL;
 

@@ -911,6 +911,10 @@ with MPI_Alloc_mem.
 **sock|poll|pipenonblock %d %s:unable to set wakeup pipe to nonblocking (errno=%d:%s)
 **sock|poll|reuseaddr:unable to set reuseaddr attribute on socket
 **sock|poll|reuseaddr %d %s:unable to set reuseaddr attribute on socket (errno=%d:%s)
+**sock|poll|setrcvbufsz: unable to set the receive socket buffer size
+**sock|poll|setrcvbufsz %d %d %s: unable to set the receive socket buffer size (size=%d,errno=%d:%s)
+**sock|poll|setsndbufsz: unable to set the send socket buffer size
+**sock|poll|setsndbufsz %d %d %s: unable to set the send socket buffer size (size=%d,errno=%d:%s)
 **sock|poll|socket:unable to obtain new socket
 **sock|poll|socket %d %s:unable to obtain new socket (errno=%d:%s)
 **sock|poll|unhandledstate:encountered an unexpected state

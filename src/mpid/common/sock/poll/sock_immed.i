@@ -116,6 +116,37 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
     }
 
     /*
+     * Verify that the socket buffer size is correct
+     */
+    if (MPIDU_Socki_socket_bufsz > 0)
+    {
+	int bufsz;
+	socklen_t bufsz_len;
+
+	bufsz_len = sizeof(bufsz);
+	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
+	if (rc == 0)
+	{
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    {
+		MPIU_Msg_printf("WARNING: send socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+				MPIDU_Socki_socket_bufsz, bufsz);
+	    }
+	}
+
+    	bufsz_len = sizeof(bufsz);
+	rc = getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, &bufsz_len);
+	if (rc == 0)
+	{
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    {
+		MPIU_Msg_printf("WARNING: receive socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+				MPIDU_Socki_socket_bufsz, bufsz);
+	    }
+	}
+    }
+    
+    /*
      * Allocate and initialize sock and poll structures.
      *
      * NOTE: pollfd->fd is initialized to -1.  It is only set to the true fd value when an operation is posted on the sock.  This
