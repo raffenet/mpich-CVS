@@ -75,7 +75,7 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
 void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat, 
 		  ADIO_Offset st_offset, int *curr_index)  
 {
-    int i, j, m, n, num, basic_num, prev_index;
+    int i, j, k, m, n, num, basic_num, prev_index;
     int top_count, combiner, old_combiner, old_is_contig;
     int old_size, nints, nadds, ntypes, old_nints, old_nadds, old_ntypes;
     MPI_Aint old_extent;
@@ -278,16 +278,18 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 		prev_index = *curr_index;
 		for (m=0; m<basic_num; m++) {
 		    flat->indices[j] = flat->indices[j-num] + 
-                              ints[top_count+1+i]*old_extent;
+                        (ints[top_count+1+i]-ints[top_count+i])*old_extent;
 		    flat->blocklens[j] = flat->blocklens[j-num];
 		    j++;
 		}
 		*curr_index = j;
 		for (m=1; m<ints[1+i]; m++) {
-		    flat->indices[j] = flat->indices[j-basic_num] + old_extent;
-		    flat->blocklens[j] = flat->blocklens[j-basic_num];
-		    j++;
-		}
+                    for (k=0; k<basic_num; k++) {
+                        flat->indices[j] = flat->indices[j-basic_num] + old_extent;
+                        flat->blocklens[j] = flat->blocklens[j-basic_num];
+                        j++;
+                    }
+                }
 		*curr_index = j;
 	    }
 	}
@@ -337,15 +339,17 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 		num = *curr_index - prev_index;
 		prev_index = *curr_index;
 		for (m=0; m<basic_num; m++) {
-		    flat->indices[j] = flat->indices[j-num] + adds[i];
+		    flat->indices[j] = flat->indices[j-num] + adds[i] - adds[i-1];
 		    flat->blocklens[j] = flat->blocklens[j-num];
 		    j++;
 		}
 		*curr_index = j;
 		for (m=1; m<ints[1+i]; m++) {
-		    flat->indices[j] = flat->indices[j-basic_num] + old_extent;
-		    flat->blocklens[j] = flat->blocklens[j-basic_num];
+                    for (k=0; k<basic_num; k++) {
+                        flat->indices[j] = flat->indices[j-basic_num] + old_extent;
+                        flat->blocklens[j] = flat->blocklens[j-basic_num];
 		    j++;
+                    }
 		}
 		*curr_index = j;
 	    }
