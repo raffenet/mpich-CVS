@@ -110,6 +110,8 @@ PMPI_LOCAL int MPIR_Bcast (
       nbytes = type_size * count;
   }
   else {
+      printf("ERROR: MPI_Bcast not implemented for noncontiguous and heterogeneous cases.\n");
+      NMPI_Abort(MPI_COMM_WORLD, 1);     
 #ifdef UNIMPLEMENTED
       NMPI_Pack_size(count, datatype, comm, &nbytes);
 #endif

@@ -22,6 +22,179 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Exscan PMPI_Exscan
 
+/* This is the default implementation of exscan. The algorithm is:
+   
+   Algorithm: MPI_Exscan
+
+   We use a lgp recursive doubling algorithm. The basic algorithm is
+   given below. (You can replace "+" with any other scan operator.)
+   The result is stored in recvbuf.
+
+   partial_scan = sendbuf;
+   mask = 0x1;
+   while (mask < size) {
+      dst = rank^mask;
+      if (dst < size) {
+         send partial_scan to dst;
+         recv from dst into tmp_buf;
+         if (rank > dst) {
+            partial_scan = tmp_buf + partial_scan;
+            if ((rank==1) && (dst==0))
+               recv_buf = tmp_buf;
+            else if (rank != 0)
+               recvbuf = tmp_buf + recvbuf;
+         }
+         else {
+            if (op is commutative)
+               partial_scan = tmp_buf + partial_scan;
+            else {
+               tmp_buf = partial_scan + tmp_buf;
+               partial_scan = tmp_buf;
+            }
+         }
+      }
+      mask <<= 1;
+   }  
+
+   End Algorithm: MPI_Exscan
+*/
+
+
+PMPI_LOCAL int MPIR_Exscan ( 
+    void *sendbuf, 
+    void *recvbuf, 
+    int count, 
+    MPI_Datatype datatype, 
+    MPI_Op op, 
+    MPID_Comm *comm_ptr )
+{
+    MPI_Status status;
+    int        rank, comm_size;
+    int        mpi_errno = MPI_SUCCESS;
+    int mask, dst, is_commutative; 
+    MPI_Aint extent, lb=0;
+    void *partial_scan, *tmp_buf;
+    MPI_User_function *uop;
+    MPID_Op *op_ptr;
+    MPI_Comm comm;
+    
+    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+        printf("ERROR: MPI_Exscan for intercommunicators not yet implemented.\n");
+        NMPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    comm = comm_ptr->handle;
+    comm_size = comm_ptr->local_size;
+    rank = comm_ptr->rank;
+    
+    if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+        is_commutative = 1;
+        /* get the function by indexing into the op table */
+        uop = MPIR_Op_table[op%16 - 1];
+    }
+    else {
+        MPID_Op_get_ptr(op, op_ptr);
+        if (op_ptr->kind == MPID_OP_USER_NONCOMMUTE)
+            is_commutative = 0;
+        else
+            is_commutative = 1;
+        
+        if ((op_ptr->language == MPID_LANG_C) || (op_ptr->language ==
+                                                  MPID_LANG_CXX)) 
+            uop = (MPI_User_function *) op_ptr->function.c_function;
+        else
+            uop = (MPI_User_function *) op_ptr->function.f77_function;
+    }
+    
+    /* need to allocate temporary buffer to store partial scan*/
+    MPID_Datatype_get_extent_macro(datatype, extent);
+    partial_scan = MPIU_Malloc(extent*count);
+    if (!partial_scan) {
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return mpi_errno;
+    }
+    /* adjust for potential negative lower bound in datatype */
+        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
+           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
+           SO IT'S OK */
+#ifdef UNIMPLEMENTED
+    MPI_Type_lb( datatype, &lb );
+#endif
+    partial_scan = (void *)((char*)partial_scan - lb);
+    
+    /* need to allocate temporary buffer to store incoming data*/
+    tmp_buf = MPIU_Malloc(extent*count);
+    if (!tmp_buf) {
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return mpi_errno;
+    }
+    /* adjust for potential negative lower bound in datatype */
+        /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
+           INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
+           SO IT'S OK */
+#ifdef UNIMPLEMENTED
+    MPI_Type_lb( datatype, &lb );
+#endif
+    tmp_buf = (void *)((char*)tmp_buf - lb);
+    
+    mpi_errno = MPIR_Localcopy(sendbuf, count, datatype,
+                              partial_scan, count, datatype);
+    if (mpi_errno) return mpi_errno;
+
+    /* Lock for collective operation */
+    MPID_Comm_thread_lock( comm_ptr );
+
+    mask = 0x1;
+    while (mask < comm_size) {
+        dst = rank ^ mask;
+        if (dst < comm_size) {
+            /* Send partial_scan to dst. Recv into tmp_buf */
+            mpi_errno = MPIC_Sendrecv(partial_scan, count, datatype,
+                                      dst, MPIR_EXSCAN_TAG, tmp_buf,
+                                      count, datatype, dst,
+                                      MPIR_EXSCAN_TAG, comm,
+                                      &status); 
+            if (mpi_errno) return mpi_errno;
+            
+            if (rank > dst) {
+                (*uop)(tmp_buf, partial_scan, &count, &datatype);
+                /* On rank 0, recvbuf is not defined.
+                   On rank 1, recvbuf is to be set equal to the value
+                   in sendbuf on rank 0.
+                   On others, recvbuf is the scan of values in the
+                   sendbufs on lower ranks. */ 
+                if ((rank == 1) && (dst == 0)) {
+                    /* simply copy data recd from rank 0 into recvbuf */
+                    mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
+                                               recvbuf, count, datatype);
+                    if (mpi_errno) return mpi_errno;
+                }
+                else if (rank != 0)
+                    (*uop)(tmp_buf, recvbuf, &count, &datatype);
+            }
+            else {
+                if (is_commutative)
+                    (*uop)(tmp_buf, partial_scan, &count, &datatype);
+                else {
+                    (*uop)(partial_scan, tmp_buf, &count, &datatype);
+                    mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
+                                               partial_scan,
+                                               count, datatype);
+                    if (mpi_errno) return mpi_errno;
+                }
+            }
+        }
+        mask <<= 1;
+    }
+    
+    MPIU_Free((char *)partial_scan+lb); 
+    MPIU_Free((char *)tmp_buf+lb); 
+    
+    /* Unlock for collective operation */
+    MPID_Comm_thread_unlock( comm_ptr );
+    
+    return (mpi_errno);
+}
 #endif
 
 #undef FUNCNAME
@@ -50,31 +223,84 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
     static const char FCNAME[] = "MPI_Exscan";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_Op *op_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_EXSCAN);
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_EXSCAN);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
-            /* Validate comm_ptr */
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPID_Datatype *datatype_ptr = NULL;
+	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    MPIR_ERRTEST_OP(op, mpi_errno);
+	    
+	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+
+            /* MPID_Op_get_ptr(op, op_ptr);
+            MPID_Op_valid_ptr( op_ptr, mpi_errno );
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                } */
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
-    return MPI_SUCCESS;
-}
+    /* ... body of routine ...  */
 
+    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Exscan != NULL)
+    {
+	mpi_errno = comm_ptr->coll_fns->Exscan(sendbuf, recvbuf, count,
+                                             datatype, op, comm_ptr);
+    }
+    else
+    {
+	mpi_errno = MPIR_Exscan(sendbuf, recvbuf, count, datatype,
+                              op, comm_ptr); 
+    }
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
+	return MPI_SUCCESS;
+    }
+    else
+    {
+	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+
+    /* ... end of body of routine ... */
+}

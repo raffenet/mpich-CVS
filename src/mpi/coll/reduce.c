@@ -119,6 +119,10 @@ PMPI_LOCAL int MPIR_Reduce (
     MPID_Datatype_get_extent_macro(datatype, m_extent);
     
     buffer = MPIU_Malloc(m_extent * count);
+    if (!buffer) {
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        return mpi_errno;
+    }
     /* adjust for potential negative lower bound in datatype */
     /* MPI_Type_lb HAS NOT BEEN IMPLEMENTED YET. BUT lb IS
        INITIALIZED TO 0, AND DERIVED DATATYPES AREN'T SUPPORTED YET,
@@ -132,6 +136,10 @@ PMPI_LOCAL int MPIR_Reduce (
        I have to allocate a temporary one */
     if (rank != root) {
         recvbuf = MPIU_Malloc(m_extent * count);
+        if (!recvbuf) {
+            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            return mpi_errno;
+        }
         recvbuf = (void *)((char*)recvbuf - lb);
     }
     
@@ -235,7 +243,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
     static const char FCNAME[] = "MPI_Reduce";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_Op *op_ptr = 0;
+    MPID_Op *op_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_REDUCE);
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_REDUCE);
@@ -281,8 +289,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 
-            /*  MPID_Op_get_ptr(op, op_ptr);
-            if (op_ptr == NULL) printf("error\n");
+            /* MPID_Op_get_ptr(op, op_ptr);
             MPID_Op_valid_ptr( op_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
@@ -295,7 +302,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
 
     /* ... body of routine ...  */
 
-    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Allreduce != NULL)
+    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Reduce != NULL)
     {
 	mpi_errno = comm_ptr->coll_fns->Reduce(sendbuf, recvbuf, count,
                                                datatype, op, root, comm_ptr);

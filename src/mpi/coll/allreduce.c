@@ -130,13 +130,13 @@ PMPI_LOCAL int MPIR_Allreduce (
 #endif
         tmp_buf = (void *)((char*)tmp_buf - lb);
         
-        /* Lock for collective operation */
-        MPID_Comm_thread_lock( comm_ptr );
-        
         /* copy local data into recvbuf */
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf,
                                    count, datatype);
         if (mpi_errno) return mpi_errno;
+        
+        /* Lock for collective operation */
+        MPID_Comm_thread_lock( comm_ptr );
         
         mask = 0x1;
         i = 0;
@@ -325,13 +325,13 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
 
-            /*  MPID_Op_get_ptr(op, op_ptr);
-            if (op_ptr == NULL) printf("error\n");
+            /* MPID_Op_get_ptr(op, op_ptr);
+            if (!op_ptr) printf("error\n");
             MPID_Op_valid_ptr( op_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                } */
+                }*/
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -361,7 +361,4 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     }
 
     /* ... end of body of routine ... */
-
-    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
-    return MPI_SUCCESS;
 }
