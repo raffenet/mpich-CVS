@@ -41,8 +41,9 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	return;
     }
 
-    mem_ptr = (void*)vc->shm.read_shmq->packet[index].cur_pos;
     pkt_ptr = &vc->shm.read_shmq->packet[index];
+    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
+    /*mem_ptr = (void*)vc->shm.read_shmq->packet[index].cur_pos;*/
     num_bytes = vc->shm.read_shmq->packet[index].num_bytes;
     assert(num_bytes > 0);
 
@@ -66,7 +67,7 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	    memcpy(rreq->ch3.iov[rreq->shm.iov_offset].MPID_IOV_BUF, iter_ptr, num_bytes);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 
-	    pkt_ptr->cur_pos = pkt_ptr->data;
+	    pkt_ptr->offset = 0;
 	    pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 	    vc->shm.read_shmq->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 
@@ -81,14 +82,14 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     if (num_bytes == 0)
     {
 	pkt_ptr->num_bytes = 0;
-	pkt_ptr->cur_pos = pkt_ptr->data;
+	pkt_ptr->offset = 0;
 	MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 	pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 	vc->shm.read_shmq->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
     }
     else
     {
-	pkt_ptr->cur_pos += (pkt_ptr->num_bytes - num_bytes);
+	pkt_ptr->offset += (pkt_ptr->num_bytes - num_bytes);
 	pkt_ptr->num_bytes = num_bytes;
     }
 

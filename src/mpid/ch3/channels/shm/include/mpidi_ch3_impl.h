@@ -124,7 +124,7 @@ typedef struct MPIDI_CH3I_SHM_Packet_t
     volatile int avail;
     /*char pad_avail[60];*/ /* keep the avail flag on a separate cache line */
     int num_bytes;
-    char *cur_pos;
+    int offset;
     /* insert stuff here to align data? */
     int pad;/*char pad_data[56];*/ /* cache align the data */
     char data[MPIDI_CH3I_PACKET_SIZE];
@@ -208,7 +208,6 @@ int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
 
 int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm);
-int MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc, BOOL bUseShm);
 int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm);
 
 int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out, int *error_ptr);

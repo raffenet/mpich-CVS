@@ -460,15 +460,16 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 
 	    working = TRUE;
 
-	    mem_ptr = (void*)vc->shm.shm[i].packet[index].cur_pos; /*(void*)vc->shm.shm[i].packet[index].data;*/
 	    pkt_ptr = &vc->shm.shm[i].packet[index];
+	    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
+	    /*mem_ptr = (void*)vc->shm.shm[i].packet[index].cur_pos;*/
 	    num_bytes = vc->shm.shm[i].packet[index].num_bytes;
 	    recv_vc_ptr = &vc->shm.pg->vc_table[i]; /* This should be some GetVC function with a complete context */
 
 	    if (recv_vc_ptr->shm.shm_reading_pkt)
 	    {
 		/*assert(num_bytes > sizeof(packet));*/
-		pkt_ptr->cur_pos += sizeof(MPIDI_CH3_Pkt_t);
+		pkt_ptr->offset += sizeof(MPIDI_CH3_Pkt_t);
 		pkt_ptr->num_bytes = num_bytes - sizeof(MPIDI_CH3_Pkt_t);
 		bSetPacket = pkt_ptr->num_bytes == 0 ? TRUE : FALSE;
 		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
@@ -488,7 +489,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		}
 		if (bSetPacket)
 		{
-		    pkt_ptr->cur_pos = pkt_ptr->data;
+		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
@@ -551,7 +552,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		if (num_bytes == 0)
 		{
 		    /* put the shm buffer back in the queue */
-		    vc->shm.shm[i].packet[index].cur_pos = vc->shm.shm[i].packet[index].data;
+		    vc->shm.shm[i].packet[index].offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
@@ -562,7 +563,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, offset, num_bytes);*/
 		    /* OR */
 		    /* update the head of the shmem queue */
-		    pkt_ptr->cur_pos += (pkt_ptr->num_bytes - num_bytes);
+		    pkt_ptr->offset += (pkt_ptr->num_bytes - num_bytes);
 		    pkt_ptr->num_bytes = num_bytes;
 		}
 		if (recv_vc_ptr->shm.read.iovlen == 0)
@@ -586,7 +587,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 		    recv_vc_ptr->shm.read.total = recv_vc_ptr->shm.read.bufflen;
 		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, recv_vc_ptr->shm.read.bufflen, num_bytes - recv_vc_ptr->shm.read.bufflen);*/
-		    pkt_ptr->cur_pos += recv_vc_ptr->shm.read.bufflen;
+		    pkt_ptr->offset += recv_vc_ptr->shm.read.bufflen;
 		    pkt_ptr->num_bytes = num_bytes - recv_vc_ptr->shm.read.bufflen;
 		    recv_vc_ptr->shm.read.bufflen = 0;
 		}
@@ -601,7 +602,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 		    recv_vc_ptr->shm.read.buffer = (char*)(recv_vc_ptr->shm.read.buffer) + num_bytes;
 		    recv_vc_ptr->shm.read.bufflen -= num_bytes;
 		    /* put the shm buffer back in the queue */
-		    vc->shm.shm[i].packet[index].cur_pos = vc->shm.shm[i].packet[index].data;
+		    vc->shm.shm[i].packet[index].offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    vc->shm.shm[i].packet[index].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		    vc->shm.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;

@@ -189,11 +189,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #error *** No shared memory variables specified ***
 #endif
 
-#ifdef USE_SAME_ADDR_ON_ALL_PROCESSES
-	rc = MPIDI_CH3I_SHM_Get_mem_sync( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
-#else
 	rc = MPIDI_CH3I_SHM_Get_mem( pg, pg_size * shm_block, pg_rank, pg_size, TRUE );
-#endif
 	if (rc != MPI_SUCCESS)
 	{
 	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**getmem", 0);
@@ -202,11 +198,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
     else
     {
-#ifdef USE_SAME_ADDR_ON_ALL_PROCESSES
-	rc = MPIDI_CH3I_SHM_Get_mem_sync( pg, shm_block, 0, 1, FALSE );
-#else
 	rc = MPIDI_CH3I_SHM_Get_mem( pg, shm_block, 0, 1, FALSE );
-#endif
 	if (rc != MPI_SUCCESS)
 	{
 	    rc = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, MPI_ERR_OTHER, "**nomem", 0);
@@ -226,7 +218,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 		vc_table[i].shm.shm[j].tail_index = 0;
 		for (k=0; k<MPIDI_CH3I_NUM_PACKETS; k++)
 		{
-		    vc_table[i].shm.shm[j].packet[k].cur_pos = vc_table[i].shm.shm[j].packet[k].data;
+		    vc_table[i].shm.shm[j].packet[k].offset = 0;
 		    vc_table[i].shm.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		}
 	    }
