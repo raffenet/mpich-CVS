@@ -404,6 +404,15 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		case DLOOP_KIND_CONTIG:
 		    break;
          	case DLOOP_KIND_BLOCKINDEXED:
+		    /* only use blkidx piecefn if at start of blkidx type */
+		    if (blkidxfn &&
+			cur_elmp->orig_block == cur_elmp->curblock &&
+			cur_elmp->orig_count == cur_elmp->curcount)
+		    {
+			/* TODO: RELAX CONSTRAINTS */
+			myblocks = cur_elmp->curblock * cur_elmp->curcount;
+			piecefn_type = PF_BLOCKINDEXED;
+		    }
 		    break;
 		case DLOOP_KIND_INDEXED:
 		    /* only use index piecefn if at start of the index type */
@@ -477,7 +486,15 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 				 pieceparams);
 		    break;
 		case PF_BLOCKINDEXED:
-		    assert(0);
+		    piecefn_indicated_exit =
+			blkidxfn(&myblocks,
+				 cur_elmp->curcount,
+				 cur_elmp->orig_block,
+				 cur_elmp->loop_p->loop_params.bi_t.offset_array,
+				 el_type,
+				 cur_elmp->orig_offset, /* blkidxfn adds offset */
+				 segp->ptr,
+				 pieceparams);				 
 		    break;
 		case PF_INDEXED:
 		    piecefn_indicated_exit =
