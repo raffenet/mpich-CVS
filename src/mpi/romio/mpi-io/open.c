@@ -46,7 +46,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 #ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_OPEN";
 #endif
-    int err, min_code;
+    int min_code;
     char *tmp;
     MPI_Comm dupcomm, dupcommself;
 #ifdef MPI_hpux
@@ -157,8 +157,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     tmp = strchr(filename, ':');
     if (!tmp) {
 	/* no prefix; use system-dependent function call to determine type */
-	ADIO_FileSysType_fncall(filename, &file_system, &err);
-	if (err != MPI_SUCCESS) {
+	ADIO_FileSysType_fncall(filename, &file_system, &error_code);
+	if (error_code != MPI_SUCCESS) {
 #ifdef PRINT_ERR_MSG
 	    FPRINTF(stderr, "MPI_File_open: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:).\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
@@ -175,8 +175,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     }
     else {
 	/* prefix specified; just match via prefix, assume everyone has same */
-	ADIO_FileSysType_prefix(filename, &file_system, &err);
-	if (err != MPI_SUCCESS) {
+	ADIO_FileSysType_prefix(filename, &file_system, &error_code);
+	if (error_code != MPI_SUCCESS) {
 #ifdef PRINT_ERR_MSG
 	    FPRINTF(stderr, "MPI_File_open: Can't determine the file-system type from the specified prefix. Check the filename/path and prefix you provided and try again.\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
