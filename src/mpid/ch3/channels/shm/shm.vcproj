@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="shmDebug|Win32"
-			OutputDirectory=".\shmDebug"
-			IntermediateDirectory=".\shmDebug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -64,8 +64,8 @@
 		</Configuration>
 		<Configuration
 			Name="shmRelease|Win32"
-			OutputDirectory="shmRelease"
-			IntermediateDirectory="shmRelease"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
