@@ -134,8 +134,9 @@ fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_file_set_errhandler", "**mpi_file_set_errhandler %F %E", file, errhandler);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
-#ifdef USE_ROMIO_FILE
+#if defined(USE_ROMIO_FILE)
     return MPIO_Err_return_file( file, mpi_errno );
+/*     return MPIR_Err_return_file( file, FCNAME, mpi_errno ); */
 #else
     return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
 #endif

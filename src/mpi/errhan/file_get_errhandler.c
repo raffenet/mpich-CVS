@@ -120,7 +120,7 @@ fn_fail:
 	"**mpi_file_get_errhandler", "**mpi_file_get_errhandler %F %p", file, errhandler);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_GET_ERRHANDLER);
 #ifdef USE_ROMIO_FILE
-    return MPIR_Err_return_file( file, FCNAME, mpi_errno );
+    return MPIO_Err_return_file( file, mpi_errno );
 #else
     return MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
 #endif
