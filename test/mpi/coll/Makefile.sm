@@ -2,6 +2,7 @@
 # weak symbols are not supported)
 EXTERNAL_LIBS = m
 LDADD = -L ../../../lib
+DEPADD = ../../../lib/libmpich.a
 #
 bcasttest_SOURCES = bcasttest.c
 allred_SOURCES = allred.c
