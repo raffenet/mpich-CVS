@@ -182,6 +182,9 @@
 				RelativePath="..\..\src\ch3u_handle_send_req.c">
 			</File>
 			<File
+				RelativePath="..\..\src\ch3u_recvq.c">
+			</File>
+			<File
 				RelativePath="..\..\src\ch3u_request.c">
 			</File>
 			<File
