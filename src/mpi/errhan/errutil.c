@@ -578,7 +578,7 @@ static const char * GetDTypeString(MPI_Datatype d)
 	return "MPI_DATATYPE_NULL";
     }
     /* default is not thread safe */
-    MPIU_Snprintf(default_str, 64, "0x%x", d);
+    MPIU_Snprintf(default_str, 64, "dtype=0x%x", d);
     return default_str;
 }
 
@@ -652,7 +652,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	    break;
 	case (int)'I':
 	    I = va_arg(list, MPI_Info);
-	    MPIU_Snprintf(str, maxlen, "0x%x", I);
+	    MPIU_Snprintf(str, maxlen, "info=0x%x", I);
 	    break;
 	case (int)'D':
 	    D = va_arg(list, MPI_Datatype);
@@ -661,28 +661,28 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 #if 0
 	case (int)'F':
 	    F = va_arg(list, MPI_File);
-	    MPIU_Snprintf(str, maxlen, "0x%x", F);
+	    MPIU_Snprintf(str, maxlen, "file=0x%x", F);
 	    break;
 #endif
 	case (int)'W':
 	    W = va_arg(list, MPI_Win);
-	    MPIU_Snprintf(str, maxlen, "0x%x", W);
+	    MPIU_Snprintf(str, maxlen, "win=0x%x", W);
 	    break;
 	case (int)'G':
 	    G = va_arg(list, MPI_Group);
-	    MPIU_Snprintf(str, maxlen, "0x%x", G);
+	    MPIU_Snprintf(str, maxlen, "group=0x%x", G);
 	    break;
 	case (int)'O':
 	    O = va_arg(list, MPI_Op);
-	    MPIU_Snprintf(str, maxlen, "0x%x", O);
+	    MPIU_Snprintf(str, maxlen, "op=0x%x", O);
 	    break;
 	case (int)'R':
 	    R = va_arg(list, MPI_Request);
-	    MPIU_Snprintf(str, maxlen, "0x%x", R);
+	    MPIU_Snprintf(str, maxlen, "req=0x%x", R);
 	    break;
 	case (int)'E':
 	    E = va_arg(list, MPI_Errhandler);
-	    MPIU_Snprintf(str, maxlen, "0x%x", E);
+	    MPIU_Snprintf(str, maxlen, "errh=0x%x", E);
 	    break;
 	default:
 	    /* Error: unhandled output type */
