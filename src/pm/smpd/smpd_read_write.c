@@ -113,7 +113,8 @@ int smpd_write(sock_t sock, void *buf, sock_size_t len)
 	result = sock_write(sock, buf, len, &num_written);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("Unable to write %d bytes,\nsock error: %s\n", len, get_sock_error_string(result));
+	    smpd_err_printf("Unable to write %d bytes,\nsock error: %s\n",
+			    len, get_sock_error_string(result));
 	    smpd_exit_fn("smpd_write");
 	    return SMPD_FAIL;
 	}
@@ -125,6 +126,7 @@ int smpd_write(sock_t sock, void *buf, sock_size_t len)
 
 	if (num_written == 0)
 	{
+	    smpd_dbg_printf("0 bytes written.\n");
 #ifdef HAVE_WINDOWS_H
 	    Sleep(1);
 #elif defined(HAVE_USLEEP)
@@ -133,6 +135,7 @@ int smpd_write(sock_t sock, void *buf, sock_size_t len)
 	}
 	else
 	{
+	    smpd_dbg_printf("wrote %d bytes\n", num_written);
 	    buf = (char*)buf + num_written;
 	    len -= num_written;
 	}
