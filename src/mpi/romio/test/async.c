@@ -66,7 +66,11 @@ int main(int argc, char **argv)
                   MPI_INFO_NULL, &fh);
     MPI_File_set_view(fh, 0, MPI_INT, MPI_INT, "native", MPI_INFO_NULL);
     MPI_File_iwrite(fh, buf, nints, MPI_INT, &request);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait( &request, &status );
+#else    
     MPIO_Wait(&request, &status);
+#endif
     MPI_File_close(&fh);
 
     /* reopen the file and read the data back */
@@ -76,7 +80,12 @@ int main(int argc, char **argv)
                   MPI_INFO_NULL, &fh);
     MPI_File_set_view(fh, 0, MPI_INT, MPI_INT, "native", MPI_INFO_NULL);
     MPI_File_iread(fh, buf, nints, MPI_INT, &request);
+#ifdef MPIO_USES_MPI_REQUEST
+    MPI_Wait( &request, &status );
+#else
     MPIO_Wait(&request, &status);
+#endif
+
     MPI_File_close(&fh);
 
     /* check if the data read is correct */
