@@ -897,9 +897,10 @@ AC_OUTPUT_COMMANDS([if test "$has_exclaim" = "yes" ; then
     rm -f .tmp
 fi
 ],[has_exclaim=$has_exclaim])
-AC_OUTPUT_COMMANDS([chmod a+x mpif77])
-AC_OUTPUT_COMMANDS([chmod a+x mpif90])
-AC_OUTPUT(Makefile mpif.h mpi_fortdefs.h mpif77 mpif77.conf mpif90 mpif90.conf initfcmn.f)
+dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77])
+dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
+dnl AC_OUTPUT(Makefile mpif.h mpi_fortdefs.h mpif77 mpif77.conf mpif90 mpif90.conf initfcmn.f)
+AC_OUTPUT(Makefile mpif.h mpif77.conf)
 exit 0
 dnl
 dnl Add the following to the output step after the AC_OUTPUT

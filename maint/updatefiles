@@ -53,9 +53,18 @@ set -- $temp_args
 if [ $at_top = "yes" -a ! -d confdb ] ; then
     # setup to allow CVSROOT instead of an absolute directory path
     if [ -n "$CVSROOT" -a -d "$CVSROOT/fpmpi" ] ; then
-        cvs -q checkout confdb
+        if [ ! -d CVS ] ; then
+            cvs -q export -D now confdb
+	else
+            cvs -q checkout confdb
+	fi
     elif [ -d /home/gropp/cvsMaster_z ] ; then 
-        cvs -q -d /home/gropp/cvsMaster_z checkout confdb
+        # export if doing a distribution build
+        if [ ! -d CVS ] ; then
+            cvs -q -d /home/gropp/cvsMaster_z export -D now confdb
+	else
+            cvs -q -d /home/gropp/cvsMaster_z checkout confdb
+	fi
     else
         echo "Checkout confdb from /home/gropp/cvsMaster_z and rerun"
 	exit 1

@@ -28,6 +28,7 @@ $make_depend = "gcc -MM";  # Set to command to create dependency list
 $fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
                         # pathnames that contain blanks
 $autoconf = "autoconf"; # Name of autoconf program to use
+$autoconf_version = ""; # Require a specific version
 #
 # Defaults for building MPICH
 $doc_heading = "MPI";
@@ -802,6 +803,7 @@ sub DefaultRules {
 	print FD "$newline";
 	&print_make_longline( FD,  "\${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
 	&print_make_setpos( 8 );
+	&FindWorkingAutoconf ;
 	&print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs ; \\$newline\t$autoconf $aargs )" );
 	if ($fixup_autoconf_cd) {
 	    # This is needed for DOS in case the pwd contains blanks
@@ -944,6 +946,7 @@ sub ClearVars {
     %docsrc = ();
     # These may be overriden on a file by file basis
     $autoconf = "autoconf"; # Name of autoconf program to use
+    $autoconf_version = ""; # Any version is allowed
     %simplemake_vars = ();
 }	
 
@@ -1790,6 +1793,40 @@ ${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
 ";
 }
 #
+# Find a working autoconf.
+# If the variables autoconf and autoconf_version are set, try to
+# find one that works in the user's path.  The format for these
+# variables is
+#   autoconf = name:name:...:lasthope
+#   autoconf_version = number
+#   Check each autoconf name for handling version.  If all else fails,
+#   unconditionally accept lasthope
+sub FindWorkingAutoconf {
+    if ($autoconf_version ne "") {
+	foreach $file (split(/:/,$autoconf)) {
+	    $lastfile = $file;
+	    if (open( ACFD, "$file --version |" ) ) {
+		$found_version = "";
+		while (<ACFD>) {
+		    print STDERR "$_";
+		    if (/[Aa]utoconf\s.*([12]\.[0-9]+)/) {
+			$found_version = $1;
+			last;
+		    }
+		}
+		close( ACFD );
+		print STDERR "Autoconf $file is version $found_version\n" if $debug;
+		if ($found_version >= $autoconf_version) {
+		    $autoconf = $file;
+		    print STDERR "Using autoconf $file\n" if $debug;
+		    return;
+		}
+	    }
+	}
+	# If we got here, use the lastchance
+	$autoconf = $lastfile;
+    }
+}
 #
 # ToDo
 # Shoule we add a target to strip debugging information from the object files?
