@@ -55,10 +55,10 @@ int main( int argc, char *argv[] )
 	exit(-1);
     }
     *****/
-    PMI_Spawn_multiple(nprocs,cmds,args,&maxprocs,spawned_kvsname,&errs,&same_domain,NULL);
+/*    PMI_Spawn_multiple(nprocs,cmds,args,&maxprocs,spawned_kvsname,&errs,&same_domain,NULL);
     printf("spawned kvs name=:%s:\n",spawned_kvsname);
     PMI_KVS_Get( spawned_kvsname, "rmb_test", value);
-    printf("spawned kvs has dummy_for_test=:%s:\n",value);
+    printf("spawned kvs has dummy_for_test=:%s:\n",value); */
     MPI_Finalize();
     return 0;
 }
