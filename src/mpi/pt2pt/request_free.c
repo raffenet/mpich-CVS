@@ -140,12 +140,12 @@ int MPI_Request_free(MPI_Request *request)
 	{
 	    switch (request_ptr->greq_lang) {
 	    case MPID_LANG_C:
-#ifdef HAVE_CXX_BINDING:
+#ifdef HAVE_CXX_BINDING
 	    case MPID_LANG_CXX:
 #endif
 	    mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
 	    break;
-#ifdef HAVE_FORTRAN_BINDING:
+#ifdef HAVE_FORTRAN_BINDING
 	    case MPID_LANG_FORTRAN:
 	    case MPID_LANG_FORTRAN90:
 	    {
