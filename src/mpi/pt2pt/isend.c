@@ -103,7 +103,7 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
     mpi_errno = MPID_Isend(buf, count, datatype, dest, tag, comm_ptr,
 			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
-    if (!mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
 	if (request_ptr == NULL)
 	{
