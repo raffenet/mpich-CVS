@@ -14,7 +14,7 @@ static int MPIR_Topology_keyval = MPI_KEYVAL_INVALID;
 static int MPIR_Topology_copy_fn ( MPI_Comm, int, void *, void *, void *, 
 				   int * );
 static int MPIR_Topology_delete_fn ( MPI_Comm, int, void *, void * );
-static void MPIR_Topology_finalize ( void * );
+static int MPIR_Topology_finalize ( void * );
 
 /*
   Return a poiner to the topology structure on a communicator.
@@ -49,7 +49,7 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 	MPIR_Nest_decr();
 	/* Register the finalize handler */
 	if (mpi_errno) return mpi_errno;
-	MPIR_Add_finalize( MPIR_Topology_finalize, 0 );
+	MPIR_Add_finalize( MPIR_Topology_finalize, (void*)0 );
     }
     MPIR_Nest_incr();
     mpi_errno = NMPI_Comm_set_attr(comm_ptr->handle, MPIR_Topology_keyval, 
@@ -59,12 +59,13 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 }
 
 /* Ignore p */
-static void MPIR_Topology_finalize( void *p )
+static int MPIR_Topology_finalize( void *p )
 {
     if (MPIR_Topology_keyval == MPI_KEYVAL_INVALID) {
 	/* Just in case */
 	NMPI_Comm_free_keyval( &MPIR_Topology_keyval );
     }
+    return 0;
 }
 
 static int *MPIR_Copy_array( int n, const int a[], int *err )
