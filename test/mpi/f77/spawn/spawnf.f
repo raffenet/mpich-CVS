@@ -20,7 +20,6 @@ C
 
 	if (parentcomm .eq. MPI_COMM_NULL) then
 C 	   Create 2 more processes 
-	   MPI_ARGV_NULL(1) = ' '
 	   call MPI_Comm_spawn( "./spawnf", MPI_ARGV_NULL, np,
 	1	MPI_INFO_NULL, 0, MPI_COMM_WORLD, intercomm, errcodes,
 	1	ierr ) 
