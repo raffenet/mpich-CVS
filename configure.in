@@ -394,6 +394,21 @@ fi
 if test "$enable_debugger" = "yes" ; then
     debugger_dir=debugger
     AC_DEFINE(HAVE_DEBUGGER_SUPPORT,1,[Define if debugger support is included])
+    # The debugger support requires a shared library.  This is handled 
+    # below, after we check for compiler support for shared libraries
+    # Note: if libdir contains exec_prefix, handle the fact that the
+    # default exec_prefix is NONE, which (much later in configure)
+    # gets turned into the value of prefix
+    if test "x$exec_prefix" = xNONE ; then
+        saveExecPrefix=$exec_prefix
+	exec_prefix=$prefix
+        eval dlldir=$libdir/libtvmpich.so
+	exec_prefix=$saveExecPrefix
+    else
+        eval dlldir=$libdir/libtvmpich.so
+    fi
+    dlldir='"'$dlldir'"'
+    AC_DEFINE_UNQUOTED(MPICH_INFODLL_LOC,$dlldir,[Define as the name of the debugger support library])
 fi
 AC_SUBST(debugger_dir)
 dnl
@@ -675,12 +690,27 @@ BUILD_TVDLL=no
 if test "$enable_debugger" = "yes" ; then
    # We can build the Totalview interface DLL only if we know how to build
    # shared libraries.  For now, require that enable_sharedlibs is not none
+   # Also, we may want to put some of this into a configure in the debugger
+   # directory
    if test "$ENABLE_SHLIB" != "none" ; then
         BUILD_TVDLL=yes
+	CC_SHL_DBG="$CC_SHL"
+	C_LINK_SHL_DBG="$C_LINK_SHL"
    else
-	AC_MSG_WARN([Debugger support requires shared libraries])      
+        # Try to determine how to build the tv shared library
+	AC_MSG_CHECKING([for how to build shared library for debugger interface])
+        PAC_CC_SHAREDLIBS(,CC_SHL_DBG,C_LINK_SHL_DBG)
+	if test "$CC_SHL_DBG" = true ; then
+	    AC_MSG_RESULT([none found])
+            AC_MSG_WARN([Debugger support requires shared libraries])      
+	else
+	    AC_MSG_RESULT($CC_SHL_DBG)
+	    BUILD_TVDLL=yes
+        fi
    fi
    AC_SUBST(BUILD_TVDLL)
+   AC_SUBST(CC_SHL_DBG)
+   AC_SUBST(C_LINK_SHL_DBG)
 fi
 
 # We need the full path to perl since we'll use it as the interpreter for
@@ -963,7 +993,7 @@ for type in short int long long_long float double long_double wchar_t \
        else
            # check for a non-optional type
 	   if test $type != long_long -a $type != long_double -a \
-	           $tyep != long_double_int ; then 
+	           $type != long_double_int ; then 
                AC_MSG_ERROR([Configure was unable to determine the size of $type ; if cross compiling,
 use the environment variables CROSS_SIZEOF_typename, e.g., CROSS_SIZEOF_SHORT,
 or use the --with-cross=file configure option to specify a file containing

@@ -101,6 +101,10 @@
 #ifndef _MPI_INTERFACE_INCLUDED
 #define _MPI_INTERFACE_INCLUDED
 
+#ifndef FOR_MPI2
+#define FOR_MPI2 0
+#endif
+
 #include <stdio.h>				/* For FILENAME_MAX */
 
 #ifdef	__cplusplus
