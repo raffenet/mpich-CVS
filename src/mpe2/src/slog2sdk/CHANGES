@@ -9,3 +9,17 @@ of TRACE-API in trace_sample/
 
 5/6/03 added an extra filter in traceTOslog2 and clogTOslog2 to remove
        unused categories
+
+6/9/03 fixed some bugs related to the Join method.
+
+6/9/03 modified slog2print so it is scalable.  It used to be slog2print
+       read in the whole logfile recursively, this requires huge amount
+       of memory.  The updated slog2print uses a new iterator to read in
+       the logfile in a more scalable fashion.
+
+6/9/03 added OverlapRatios PREVIEW_STATE_DISPLAY view and
+       removed the DecreLegend view.  Added CumulativeExclusion tag
+       but it is not implemented yet.
+
+6/9/03 duplicate the control on PREVIEW_STATE_DISPLAY inside the Timeline
+       window.  It is an active control.
