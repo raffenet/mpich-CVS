@@ -43,10 +43,17 @@ CLOG_Stream_t *CLOG_Open( void )
     return stream;
 }
 
-void CLOG_Close( CLOG_Stream_t *stream )
+void CLOG_Close( CLOG_Stream_t **stream_handle )
 {
-    CLOG_Buffer_localIO_finalize( stream->buffer );
-    CLOG_Buffer_free( &(stream->buffer) );
+    CLOG_Stream_t *stream;
+
+    stream = *stream_handle;
+    if ( stream != NULL ) {
+        CLOG_Buffer_localIO_finalize( stream->buffer );
+        CLOG_Buffer_free( &(stream->buffer) );
+        FREE( stream );
+    }
+    *stream_handle = NULL;
 }
 
 /*

@@ -44,7 +44,7 @@ typedef struct {
 
 CLOG_Stream_t *CLOG_Open( void );
 
-void CLOG_Close( CLOG_Stream_t *stream );
+void CLOG_Close( CLOG_Stream_t **stream );
 
 void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name );
 
