@@ -73,7 +73,8 @@ int MPID_Type_struct(int count,
 {
     int mpi_errno = MPI_SUCCESS;
     int i, old_are_contig = 1;
-    int found_sticky_lb = 0, found_sticky_ub = 0;
+    int found_sticky_lb = 0, found_sticky_ub = 0, found_true_lb = 0,
+	found_true_ub = 0;
     int el_sz = 0, size = 0;
     MPI_Datatype el_type = MPI_DATATYPE_NULL;
     MPI_Aint true_lb_disp = 0, true_ub_disp = 0, sticky_lb_disp = 0,
@@ -162,8 +163,13 @@ int MPID_Type_struct(int count,
 	    tmp_el_sz   = MPID_Datatype_get_basic_size(oldtype_array[i]);
 	    tmp_el_type = oldtype_array[i];
 
-	    tmp_lb      = displacement_array[i];
-	    tmp_ub      = displacement_array[i] + tmp_el_sz;
+	    MPID_DATATYPE_BLOCK_LB_UB(blocklength_array[i],
+				      displacement_array[i],
+				      0,
+				      tmp_el_sz,
+				      tmp_el_sz,
+				      tmp_lb,
+				      tmp_ub);
 	    tmp_true_lb = tmp_lb;
 	    tmp_true_ub = tmp_ub;
 
@@ -182,13 +188,8 @@ int MPID_Type_struct(int count,
 				      old_dtp->extent,
 				      tmp_lb,
 				      tmp_ub);
-	    MPID_DATATYPE_BLOCK_LB_UB(blocklength_array[i],
-				      displacement_array[i],
-				      old_dtp->true_lb,
-				      old_dtp->true_ub,
-				      old_dtp->extent,
-				      tmp_true_lb,
-				      tmp_true_ub);
+	    tmp_true_lb = tmp_lb + (old_dtp->true_lb - old_dtp->lb);
+	    tmp_true_ub = tmp_ub + (old_dtp->true_ub - old_dtp->ub);
 
 	    size += old_dtp->size * blocklength_array[i];
 	}
@@ -214,7 +215,7 @@ int MPID_Type_struct(int count,
 	{
 	    if (!found_sticky_lb) {
 		found_sticky_lb = 1;
-		sticky_lb_disp = tmp_lb;
+		sticky_lb_disp  = tmp_lb;
 	    }
 	    else if (sticky_lb_disp > tmp_lb) {
 		sticky_lb_disp = tmp_lb;
@@ -225,7 +226,7 @@ int MPID_Type_struct(int count,
 	{
 	    if (!found_sticky_ub) {
 		found_sticky_ub = 1;
-		sticky_ub_disp = tmp_ub;
+		sticky_ub_disp  = tmp_ub;
 	    }
 	    else if (sticky_ub_disp < tmp_ub) {
 		sticky_ub_disp = tmp_ub;
@@ -233,13 +234,25 @@ int MPID_Type_struct(int count,
 	}
 
 	/* save lowest true lb and highest true ub */
-	if ((i == 0) || (true_lb_disp > tmp_true_lb))
-	{
-	    true_lb_disp = tmp_true_lb;
-	}
-	if ((i == 0) || (true_ub_disp < tmp_true_ub))
-	{
-	    true_ub_disp = tmp_true_ub;
+	if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB) {
+	    if (!found_true_lb)
+	    {
+		found_true_lb = 1;
+		true_lb_disp  = tmp_true_lb;
+	    }
+	    else if (true_lb_disp > tmp_true_lb)
+	    {
+		true_lb_disp = tmp_true_lb;
+	    }
+	    if (!found_true_ub)
+	    {
+		found_true_ub = 1;
+		true_ub_disp  = tmp_true_ub;
+	    }
+	    else if (true_ub_disp < tmp_true_ub)
+	    {
+		true_ub_disp = tmp_true_ub;
+	    }
 	}
 
 	if (!is_builtin && !old_dtp->is_contig) {
