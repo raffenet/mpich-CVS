@@ -19,9 +19,6 @@ Open Items:
 * (req #77) test that logging compiles (all states are defined) before
   releasing tarball [Bill/David/Brian]
 
-* (req #65) add configure checks for va_copy(), etc. and update dbg_printf.c
-  [Brian]
-
 * measure and compare performance of sock and ssm (using sock) [David]
 
 * measure and compare performance of shm and ssm (using shm) [David]
@@ -29,6 +26,9 @@ Open Items:
 ----
 
 Finished Items:
+
+* (req #65) add configure checks for va_copy(), etc. and update dbg_printf.c
+  [Brian] (Bill took while fixing opteron nightlies)
 
 * (ch3:shm/ssm) POSIX shared memory [David/Brian]
 
@@ -65,6 +65,9 @@ Deferred Items:
 
 * MPE full integration and testing (slog2sdk is now being checked out into
   src/util/slog2sdk to support rlog) [Bill/Anthony/David/Brian]
+  -- partially done (Bill and Anthony); mpe directory under src/mpe (not 
+  the final location) and top-level configure knows how to build mpe if
+  mpe directory is present and mpe selected.
 
 * (ch3) active target OSC for all channels (includes moving code from existing
   CAs to special OSC CAs) [Rajeev/Brian]
