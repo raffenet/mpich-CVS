@@ -32,6 +32,7 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	case MPIDI_CH3_CA_COMPLETE:
 	{
 	    MPIDI_CH3U_Request_complete(sreq);
+	    sreq->ch3.iov_count = 0;
 	    break;
 	}
 	
