@@ -24,7 +24,8 @@ int main( int argc, char **argv )
     int      *sbuf, *rbuf;
     int      rank, size;
     int      *sendcounts, *recvcounts, *rdispls, *sdispls;
-    int      i, j, *p, err, toterr;
+    int      i, j, *p, err;
+    MPI_Datatype *sendtypes, *recvtypes;
     
     MTest_Init( &argc, &argv );
     err = 0;
@@ -53,7 +54,9 @@ int main( int argc, char **argv )
       recvcounts = (int *)malloc( size * sizeof(int) );
       rdispls    = (int *)malloc( size * sizeof(int) );
       sdispls    = (int *)malloc( size * sizeof(int) );
-      if (!sendcounts || !recvcounts || !rdispls || !sdispls) {
+      sendtypes    = (MPI_Datatype *)malloc( size * sizeof(MPI_Datatype) );
+      recvtypes    = (MPI_Datatype *)malloc( size * sizeof(MPI_Datatype) );
+      if (!sendcounts || !recvcounts || !rdispls || !sdispls || !sendtypes || !recvtypes) {
 	fprintf( stderr, "Could not allocate arg items!\n" );
 	MPI_Abort( comm, 1 );
       }
@@ -62,14 +65,15 @@ int main( int argc, char **argv )
 	sendcounts[i] = i;
 	recvcounts[i] = rank;
 	rdispls[i]    = i * rank * sizeof(int);
-	sdispls[i]    = (((i-1) * (i))/2) * sizeof(int);
+	sdispls[i]    = (((i+1) * (i))/2) * sizeof(int);
+        sendtypes[i] = recvtypes[i] = MPI_INT;
       }
-      MPI_Alltoallw( sbuf, sendcounts, sdispls, MPI_INT,
-		     rbuf, recvcounts, rdispls, MPI_INT, comm );
+      MPI_Alltoallw( sbuf, sendcounts, sdispls, sendtypes,
+		     rbuf, recvcounts, rdispls, recvtypes, comm );
       
       /* Check rbuf */
       for (i=0; i<size; i++) {
-	p = rbuf + rdispls[i];
+	p = rbuf + rdispls[i]/sizeof(int);
 	for (j=0; j<rank; j++) {
 	  if (p[j] != i * 100 + (rank*(rank+1))/2 + j) {
 	    fprintf( stderr, "[%d] got %d expected %d for %dth\n",
@@ -78,7 +82,9 @@ int main( int argc, char **argv )
 	  }
 	}
       }
-      
+
+      free(sendtypes);
+      free(recvtypes);
       free( sdispls );
       free( rdispls );
       free( recvcounts );
