@@ -16,6 +16,9 @@
 #if defined( HAVE_UNISTD_H )
 #include <unistd.h>
 #endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 
 #if !defined( CLOG_NOMPI )
 #include "mpi.h"
@@ -174,7 +177,7 @@ char *CLOG_Util_strbuf_put(       char *buf_ptr, const char *buf_tail,
                             const char *val_str, const char *err_str )
 {
     int size;
-    size = strlen( val_str ) + 1;
+    size = (int)strlen( val_str ) + 1;
     if ( buf_ptr + size - 1 <= buf_tail )
         strcpy( buf_ptr, val_str );
     else {
@@ -199,7 +202,7 @@ char *CLOG_Util_strbuf_get(       char *val_ptr, const char *val_tail,
                             const char *buf_str, const char *err_str )
 {
     int size;
-    size = strlen( buf_str ) + 1;
+    size = (int)strlen( buf_str ) + 1;
     if ( val_ptr + size - 1 <= val_tail )
         strcpy( val_ptr, buf_str );
     else {

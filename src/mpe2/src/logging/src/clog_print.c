@@ -16,6 +16,9 @@
 #if defined( HAVE_FCNTL_H )
 #include <fcntl.h>
 #endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 
 #include "clog_common.h"
 #include "clog_record.h"

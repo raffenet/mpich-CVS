@@ -19,6 +19,9 @@
 #if defined( HAVE_UNISTD_H )
 #include <unistd.h>
 #endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 
 #include "clog.h"
 #include "clog_common.h"
