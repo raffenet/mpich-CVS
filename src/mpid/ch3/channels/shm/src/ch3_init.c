@@ -155,7 +155,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     assert(val != NULL);
 
     /* initialize the shared memory */
-    shm_block = sizeof(MPIDI_CH3I_SHM_Queue_t) * pg_size; //+ MPID_SHMEM_PER_PROCESS;
+    shm_block = sizeof(MPIDI_CH3I_SHM_Queue_t) * pg_size; 
+
+    /* UNDER NO CIRCUMSTANCES USE C++ COMMENTS IN C FILES !!! */
+    /* + MPID_SHMEM_PER_PROCESS; */
+
     if (pg_size > 1)
     {
 	if (pg_rank == 0)
