@@ -1,8 +1,9 @@
 ===============================================================================
 				Changes in 0.9x
 ===============================================================================
+- MPI_Type_create_darray() and MPI_Type_create_subarray() implemented including
+  the right contents and envelope data.
 - ROMIO flattening code now supports subarray and darray combiners.
-
 
 
 ===============================================================================
