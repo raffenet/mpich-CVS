@@ -12,6 +12,8 @@
 #define TCP_ACCEPT_CONNECTION 0
 #define TCP_REJECT_CONNECTION 1
 
+#define TCP_EAGER_LIMIT (1024 * 20)
+
 #define TCP_ERROR_MSG_LENGTH 256
 
 typedef struct TCP_PerProcess {
@@ -33,5 +35,6 @@ extern TCP_PerProcess TCP_Process;
 int tcp_read(MPIDI_VC *vc_ptr);
 int tcp_write(MPIDI_VC *vc_ptr);
 int tcp_write_aggressive(MPIDI_VC *vc_ptr);
+int tcp_setup_packet_car(MM_Car *car_ptr, MM_CAR_TYPE read_write, int src_dest, MPIDI_VC *vc_ptr);
 
 #endif

@@ -37,17 +37,44 @@ int tcp_stuff_vector_via_rdma(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, M
 }
 #endif
 
-int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
+    int cur_pos, cur_index, num_avail, final_segment;
     MM_ENTER_FUNC(TCP_STUFF_VECTOR_VEC);
 
     /* check to see that there is data available and space in the vector to put it */
-    if ((*cur_pos == MPID_VECTOR_LIMIT) ||
+    if ((*cur_pos_ptr == MPID_VECTOR_LIMIT) ||
         (car_ptr->data.tcp.buf.vec_write.num_read_copy == buf_ptr->vec.num_read))
     {
 	MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
 	return FALSE;
     }
+    
+    cur_pos = *cur_pos_ptr;
+    cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;
+    num_avail = buf_ptr->vec.num_read - car_ptr->data.tcp.buf.vec_write.cur_num_written;
+    final_segment = (num_avail + car_ptr->data.tcp.buf.vec_write.total_num_written) == buf_ptr->vec.segment_last;
+
+    vec[cur_pos].MPID_VECTOR_BUF = 
+	(char*)buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+    vec[cur_pos].MPID_VECTOR_LEN = buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+    num_avail -= vec[cur_pos].MPID_VECTOR_LEN;
+    cur_pos++;
+    cur_index++;
+
+    while ((cur_pos < MPID_VECTOR_LIMIT) && num_avail)
+    {
+	vec[cur_pos].MPID_VECTOR_BUF = buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF;
+	vec[cur_pos].MPID_VECTOR_LEN = buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN;
+	num_avail -= buf_ptr->vec.vec[cur_index].MPID_VECTOR_LEN;
+	cur_index++;
+	cur_pos++;
+    }
+    *cur_pos_ptr = cur_pos;
+
+    MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
+    return (num_avail == 0 && final_segment)
+    /*
     if (buf_ptr->vec.vec_size == 1)
     {
 	car_ptr->data.tcp.buf.vec_write.num_read_copy = buf_ptr->vec.num_read;
@@ -57,6 +84,7 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos, MM_Car *car_ptr, MM_Seg
 	MM_EXIT_FUNC(TCP_STUFF_VECTOR_TMP);
 	return TRUE;
     }
+    */
 #ifdef FOO
     if (car_ptr->data.tcp.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
     {

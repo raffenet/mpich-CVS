@@ -17,6 +17,8 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int tcp_make_progress();
 int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+int tcp_car_queue_replace_head(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+int tcp_car_head_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int tcp_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int tcp_reset_car(MM_Car *car_ptr);
 int tcp_post_read_pkt(MPIDI_VC *vc_ptr);

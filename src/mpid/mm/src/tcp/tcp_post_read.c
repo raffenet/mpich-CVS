@@ -47,7 +47,7 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 	}
 	*/
 	if (car_ptr)
-	    tcp_post_read(car_ptr->vc_ptr, car_ptr);
+	    tcp_car_head_enqueue(car_ptr->vc_ptr, car_ptr);
     }
 
     MM_EXIT_FUNC(TCP_MERGE_WITH_UNEXPECTED);
@@ -56,11 +56,17 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 
 int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
 {
+    /*
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
+    */
 
     MM_ENTER_FUNC(TCP_POST_READ_PKT);
 
+    tcp_setup_packet_car(&vc_ptr->pkt_car, MM_READ_CAR, vc_ptr->rank, vc_ptr);
+    tcp_post_read(vc_ptr, &vc_ptr->pkt_car);
+
+    /*
     car_ptr = &vc_ptr->pkt_car;
     buf_ptr = &vc_ptr->pkt_car.msg_header.buf;
     
@@ -95,6 +101,7 @@ int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
     buf_ptr->vec.num_cars_outstanding = 1;
 
     tcp_post_read(vc_ptr, car_ptr);
+    */
 
     MM_EXIT_FUNC(TCP_POST_READ_PKT);
     return MPI_SUCCESS;

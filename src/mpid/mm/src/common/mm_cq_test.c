@@ -51,7 +51,6 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
     switch (car_ptr->msg_header.pkt.u.type)
     {
     case MPID_EAGER_PKT:
-    case MPID_RNDV_REQUEST_TO_SEND_PKT:
 	MPID_Thread_lock(MPID_Process.qlock);
 	qcar_ptr = find_in_queue(&MPID_Process.posted_q_head, &MPID_Process.posted_q_tail, car_ptr);
 	if (qcar_ptr)
@@ -62,16 +61,31 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 	else
 	{
 	    /* else allocate a temp buffer, place in the unex_q, and post a read */
-	    if (car_ptr->msg_header.pkt.u.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
-		mm_post_unex_rndv(car_ptr);
-	    else
-		mm_create_post_unex(car_ptr);
+	    mm_create_post_unex(car_ptr);
+	}
+	MPID_Thread_unlock(MPID_Process.qlock);
+	break;
+    case MPID_RNDV_REQUEST_TO_SEND_PKT:
+	MPID_Thread_lock(MPID_Process.qlock);
+	qcar_ptr = find_in_queue(&MPID_Process.posted_q_head, &MPID_Process.posted_q_tail, car_ptr);
+	if (qcar_ptr)
+	{
+	    /* send cts header packet */
+	    mm_post_rndv_clear_to_send(qcar_ptr, car_ptr);
+	}
+	else
+	{
+	    /* post car in unex queue */
+	    mm_post_unex_rndv(car_ptr);
 	}
 	MPID_Thread_unlock(MPID_Process.qlock);
 	break;
     case MPID_RNDV_CLEAR_TO_SEND_PKT:
+	/* post the rndv_data head packet for writing */
+	mm_post_rndv_data_send(car_ptr);
 	break;
     case MPID_RNDV_DATA_PKT:
+	err_printf("Help me, I'm melting.\n");
 	break;
     case MPID_RDMA_ACK_PKT:
 	break;
@@ -90,7 +104,8 @@ int cq_handle_read_data_car(MM_Car *car_ptr)
 {
     if (car_ptr->next_ptr)
     {
-	car_ptr->vc_ptr->post_read(car_ptr->vc_ptr, car_ptr->next_ptr);
+	/* enqueue next car to be read before any other pending cars */
+	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
     else
     {
@@ -114,10 +129,14 @@ int cq_handle_read_car(MM_Car *car_ptr)
 
 int cq_handle_write_head_car(MM_Car *car_ptr)
 {
-    /* for now, all writes are eager - no rndv */
+    /* rndv */
+    if (car_ptr->msg_header.pkt.u.hdr.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
+	return MPI_SUCCESS;
+
+    /* eager */
     if (car_ptr->next_ptr)
     {
-	car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
+	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
@@ -128,7 +147,8 @@ int cq_handle_write_data_car(MM_Car *car_ptr)
 {
     if (car_ptr->next_ptr)
     {
-	car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
+	/* enqueue next car to be written before any other pending cars */
+	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
@@ -212,6 +232,61 @@ int mm_cq_test()
     return MPI_SUCCESS;
 }
 
+int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr)
+{
+    MM_Car *rndv_car_ptr;
+    MPID_Rndv_data_pkt *rndv_data_ptr;
+    MM_Car *sender_car_ptr;
+
+    MM_ENTER_FUNC(MM_POST_RNDV_DATA_SEND);
+
+    rndv_car_ptr = mm_car_alloc();
+
+    sender_car_ptr = rndv_cts_car_ptr->msg_header.pkt.u.cts.sender_car_ptr;
+    /* this implies that we need a setup_packet_car() function in the vc */
+    tcp_setup_packet_car(rndv_car_ptr, MM_WRITE_CAR, 
+	sender_car_ptr->src, /* this could be an error because src could be MPI_ANY_SRC */
+	sender_car_ptr->vc_ptr);
+    
+    /* set up the rndv data header packet */
+    rndv_data_ptr = &rndv_car_ptr->msg_header.pkt.u.rdata;
+    rndv_data_ptr->receiver_car_ptr = rndv_cts_car_ptr->msg_header.pkt.u.cts.receiver_car_ptr;
+    rndv_data_ptr->size = 0; /* is this necessary? */
+    rndv_data_ptr->type = MPID_RNDV_DATA_PKT;
+
+    rndv_car_ptr->next_ptr = sender_car_ptr->next_ptr;
+
+    sender_car_ptr->vc_ptr->post_write(sender_car_ptr->vc_ptr, rndv_car_ptr);
+
+    MM_EXIT_FUNC(MM_POST_RNDV_DATA_SEND);
+    return MPI_SUCCESS;
+}
+
+int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
+{
+    MM_Car *rndv_car_ptr;
+    MPID_Rndv_clear_to_send_pkt *rndv_cts_ptr;
+
+    MM_ENTER_FUNC(MM_POST_RNDV_CLEAR_TO_SEND);
+
+    rndv_car_ptr = mm_car_alloc();
+    
+    tcp_setup_packet_car(rndv_car_ptr, MM_WRITE_CAR, 
+	posted_car_ptr->src, /* this could be an error because src could be MPI_ANY_SRC */
+	posted_car_ptr->vc_ptr);
+    
+    /* set up the cts header packet */
+    rndv_cts_ptr = &rndv_car_ptr->msg_header.pkt.u.cts;
+    rndv_cts_ptr->receiver_car_ptr = posted_car_ptr;
+    rndv_cts_ptr->sender_car_ptr = rndv_rts_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr;
+    rndv_cts_ptr->type = MPID_RNDV_CLEAR_TO_SEND_PKT;
+
+    posted_car_ptr->vc_ptr->post_write(posted_car_ptr->vc_ptr, rndv_car_ptr);
+
+    MM_EXIT_FUNC(MM_POST_RNDV_CLEAR_TO_SEND);
+    return MPI_SUCCESS;
+}
+
 int mm_post_unex_rndv(MM_Car *unex_head_car_ptr)
 {
     MM_Car *car_ptr;
@@ -222,6 +297,7 @@ int mm_post_unex_rndv(MM_Car *unex_head_car_ptr)
     car_ptr = mm_car_alloc();
 
     car_ptr->msg_header = unex_head_car_ptr->msg_header;
+    car_ptr->buf_ptr = &car_ptr->msg_header.buf;
     car_ptr->qnext_ptr = NULL;
 
     /* enqueue the car in the unexpected queue */
@@ -299,7 +375,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     MPID_Process.unex_q_tail = &request_ptr->mm.rcar[0];
     
     /* post a read of the unexpected data */
-    car_ptr->vc_ptr->post_read(car_ptr->vc_ptr, car_ptr);
+    car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr);
 
     MM_EXIT_FUNC(MM_CREATE_POST_UNEX);
     return MPI_SUCCESS;

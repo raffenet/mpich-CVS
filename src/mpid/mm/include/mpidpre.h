@@ -122,21 +122,21 @@ typedef struct MPID_Header_pkt
     int tag;
     int src;
     int size;
-    struct MPID_Request *sender_req_ptr;
+    struct MM_Car *sender_car_ptr;
 } MPID_Header_pkt;
 
-typedef struct MPID_Clear_to_send_pkt
+typedef struct MPID_Rndv_clear_to_send_pkt
 {
     MPID_Packet_type type;
-    struct MPID_Request *sender_req_ptr;
-    struct MPID_Request *receiver_req_ptr;
-} MPID_Clear_to_send_pkt;
+    struct MM_Car *sender_car_ptr;
+    struct MM_Car *receiver_car_ptr;
+} MPID_Rndv_clear_to_send_pkt;
 
 typedef struct MPID_Rndv_data_pkt
 {
     MPID_Packet_type type;
     int size;
-    struct MPID_Request *receiver_req_ptr;
+    struct MM_Car *receiver_car_ptr;
 } MPID_Rndv_data_pkt;
 
 #ifdef WITH_VIA_RDMA_METHOD
@@ -162,7 +162,7 @@ typedef struct MPID_Packet
     {
 	MPID_Packet_type type;
 	MPID_Header_pkt hdr;
-	MPID_Clear_to_send_pkt cts;
+	MPID_Rndv_clear_to_send_pkt cts;
 	MPID_Rndv_data_pkt rdata;
 #ifdef WITH_VIA_RDMA_METHOD
 	MPID_Rdma_ack_pkt rdma_ack;

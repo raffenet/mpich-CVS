@@ -183,6 +183,8 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->post_write = tcp_post_write;
 	vc_ptr->reset_car = tcp_reset_car;
 	vc_ptr->post_read_pkt = tcp_post_read_pkt;
+	vc_ptr->enqueue_read_at_head = tcp_car_head_enqueue;
+	vc_ptr->enqueue_write_at_head = tcp_car_head_enqueue;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA

@@ -123,8 +123,10 @@ typedef struct MPIDI_VC
              char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
                 int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
               int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+	      int (*enqueue_read_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
               int (*merge_with_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
               int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+	      int (*enqueue_write_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
               int (*reset_car)(struct MM_Car *car_ptr);
 	      int (*post_read_pkt)(struct MPIDI_VC *vc_ptr);
   struct MPIDI_VC * read_next_ptr;
@@ -203,6 +205,8 @@ MPID_Request * mm_request_alloc();
            int mm_cq_enqueue(MM_Car *car_ptr);
 	   int mm_create_post_unex(MM_Car *unex_head_car_ptr);
 	   int mm_post_unex_rndv(MM_Car *unex_head_car_ptr);
+	   int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr);
+	   int mm_post_rndv_data_send(MM_Car *rndv_cts_car_ptr);
 
 /* requests */
 /*

@@ -34,6 +34,7 @@ int mm_choose_buffer(MPID_Request *request_ptr)
     if (request_ptr->mm.rcar[0].type != MM_NULL_CAR)
     {
 	/* choose the tmp buffer type */
+#ifdef CHOOSE_TMP_BUFFER
 	tmp_buffer_init(request_ptr);
 	/* count the cars that read/write data */
 	/*
@@ -46,8 +47,7 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	}
 	*/
 
-#ifdef FOO
-	/* choose the vector buffer type */
+#else
 	vec_buffer_init(request_ptr);
 	/* count the cars that read/write data */
 	car_ptr = request_ptr->mm.wcar;
@@ -81,12 +81,13 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	    car_ptr = car_ptr->opnext_ptr;
 	}
 
-#ifdef FOO
+#ifdef CHOOSE_TMP_BUFFER
+	request_ptr->mm.get_buffers = mm_get_buffers_tmp;
+	request_ptr->mm.release_buffers = mm_release_buffers_tmp;
+#else
 	request_ptr->mm.get_buffers = mm_get_buffers_vec;
 	request_ptr->mm.release_buffers = NULL;
 #endif
-	request_ptr->mm.get_buffers = mm_get_buffers_tmp;
-	request_ptr->mm.release_buffers = mm_release_buffers_tmp;
     }
     else
     {

@@ -148,7 +148,6 @@ int tcp_accept_connection()
 
    Notes:
 @*/
-static tcp_last_microsecond = 0;
 int tcp_make_progress()
 {
     int nready = 0;
@@ -159,15 +158,12 @@ int tcp_make_progress()
     MM_ENTER_FUNC(TCP_MAKE_PROGRESS);
 
     tv.tv_sec = 0;
-    //tv.tv_usec = tcp_last_microsecond;
     tv.tv_usec = 1;
     
     readset = TCP_Process.readset;
     writeset = TCP_Process.writeset;
 
     nready = bselect(TCP_Process.max_bfd, &readset, &writeset, NULL, &tv);
-
-    tcp_last_microsecond = nready ? 1 : tcp_last_microsecond+1;
 
     if (nready == 0)
     {
