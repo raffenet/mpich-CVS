@@ -485,7 +485,7 @@ PMPI_LOCAL int MPIR_Allreduce (
 }
 
 
-#ifdef OLD
+#if 0
 PMPI_LOCAL int MPIR_Allreduce ( 
     void *sendbuf, 
     void *recvbuf, 

@@ -80,7 +80,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 
 
 
-#ifdef OLD
+#if 0
 
 /* This is the default implementation of the barrier operation.  The
    algorithm is:
