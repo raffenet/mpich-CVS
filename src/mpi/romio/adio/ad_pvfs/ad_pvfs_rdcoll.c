@@ -7,6 +7,8 @@
 
 #include "ad_pvfs.h"
 
+/* not referenced from operations table */
+
 void ADIOI_PVFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
