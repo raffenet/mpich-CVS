@@ -91,7 +91,7 @@ int MPI_File_write_shared(MPI_File fh, void *buf, int count,
 	return ADIOI_Error(fh, error_code, myname);	    
 #endif
     }
-    /* --BEGIN ERROR HANDLING-- */
+    /* --END ERROR HANDLING-- */
 
     MPI_Type_size(datatype, &datatype_size);
     if (count*datatype_size == 0) {
