@@ -86,8 +86,8 @@ if test "$lac_cv_have_gcc_asm_and_x86_lfence" = "yes" ; then
     AC_DEFINE(HAVE_GCC_ASM_AND_X86_LFENCE, 1, [Define if using gcc on a x86 system with the lfence instruction])
 fi
 
-AC_SUBST(DEVICE)
-AC_SUBST(CHANNEL)
+AC_SUBST(device_name)
+AC_SUBST(channel_name)
 
 if test -z "$ENABLE_SHLIB" ; then
     CC_SHL="$CC"
