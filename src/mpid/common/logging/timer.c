@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidimpl.h"
+#include "mpiimpl.h"
 #ifdef HAVE_TIMING
 
 #include <math.h>
