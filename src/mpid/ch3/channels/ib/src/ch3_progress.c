@@ -413,10 +413,12 @@ static inline void make_progress(int is_blocking)
 	case IBU_OP_TIMEOUT:
 	    break;
 	case IBU_OP_READ:
+	    MPIU_dbg_printf("make_progress: read finished %d bytes\n", out.num_bytes);
 	    handle_read(out.user_ptr, out.num_bytes);
 	    return;
 	    break;
 	case IBU_OP_WRITE:
+	    MPIU_dbg_printf("make_progress: write finished %d bytes\n", out.num_bytes);
 	    handle_written(out.user_ptr, out.num_bytes);
 	    return;
 	    break;
