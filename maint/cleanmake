@@ -24,6 +24,13 @@ while (<>) {
 	}
 	if (/^\s*fi\s*$/) { next; }
     }
+    # skip lines that start with "for file in .tmp"
+    if (/^\s*for file in \.tmp/) {
+	while (/\\$/) {
+	    $_ = <>;
+	}
+	next;
+    }
     if (/^\s*if \[ \"/) {
 	while (/\\$/) {
 	    $_ = <>;
@@ -95,10 +102,12 @@ while (<>) {
     if (/WARNING 84.*not used for resolving any symbol/) { next; }
 
     if ($no_lib_steps) {
-	if (/^\s*ar\s/ || /^\s*ranlib\s/ || /^\s*true\s/) { next; }
+	if (/^\s*ar\s/ || /^\s*ranlib\s/ || /^\s*true\s/) { 
+	    $lastline = ""; 
+	    next; }
     }
     else {
-	if (/^\s*ar\s/) { $_ = "...ar step\n"; }
+	if (/^\s*ar\s/) { $_ = "...ar step\n"; $last_line = ""; }
     }
 
     # Skip the time adjust step
