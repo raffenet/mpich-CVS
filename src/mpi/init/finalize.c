@@ -128,7 +128,8 @@ int MPI_Finalize( void )
     MPID_Finalize();
 
     /* delete local and remote groups on comm_world and comm_self if
-       they had been created */
+       they had been created (shoule we use a function pointer here
+       as well to avoid loading the group code?) */
     if (MPIR_Process.comm_world->local_group)
         MPIR_Group_release(MPIR_Process.comm_world->local_group);
     if (MPIR_Process.comm_world->remote_group)
