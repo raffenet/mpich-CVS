@@ -58,6 +58,8 @@
 #define SMPD_SUCCESS_STR                  "SUCCESS"
 #define SMPD_FAIL_STR                     "FAIL"
 
+#define SMPD_FREE_COOKIE           0x00BEEF00
+
 #define SMPD_DBG_STATE_STDOUT             0x1
 #define SMPD_DBG_STATE_ERROUT             0x2
 #define SMPD_DBG_STATE_LOGFILE            0x4
@@ -93,7 +95,8 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_PARENT,
     SMPD_CONTEXT_LEFT_CHILD,
     SMPD_CONTEXT_RIGHT_CHILD,
-    SMPD_CONTEXT_CHILD
+    SMPD_CONTEXT_CHILD,
+    SMPD_CONTEXT_FREED
 } smpd_context_type_t;
 
 typedef enum smpd_command_state_t
@@ -117,6 +120,7 @@ typedef struct smpd_command_t
     int src, dest, tag;
     int wait;
     struct smpd_command_t *next;
+    int freed; /* debugging to see if freed more than once */
 } smpd_command_t;
 
 typedef struct smpd_context_t
@@ -170,9 +174,11 @@ int smpd_init_process(void);
 int smpd_init_printf(void);
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
 int smpd_init_command(smpd_command_t *cmd);
+int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, int id, smpd_context_t **context_pptr);
 int smpd_create_command(char *cmd_str, int src, int dest, int want_reply, smpd_command_t **cmd_pptr);
 int smpd_create_command_copy(smpd_command_t *src_ptr, smpd_command_t **cmd_pptr);
 int smpd_free_command(smpd_command_t *cmd_ptr);
+int smpd_free_context(smpd_context_t *context);
 int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value);
 int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value);
 int smpd_parse_command(smpd_command_t *cmd_ptr);

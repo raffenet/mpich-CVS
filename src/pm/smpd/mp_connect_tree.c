@@ -69,6 +69,14 @@ int mp_connect_tree(mp_host_node_t *node)
     smpd_process.set = set;
 
     /* create a context for the session */
+    result = smpd_create_context(SMPD_CONTEXT_CHILD, set, sock, 1, &context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a new context.\n");
+	smpd_exit_fn("mp_connect_tree");
+	return SMPD_FAIL;
+    }
+    /*
     context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
     if (context == NULL)
     {
@@ -77,6 +85,7 @@ int mp_connect_tree(mp_host_node_t *node)
 	return SMPD_FAIL;
     }
     smpd_init_context(context, SMPD_CONTEXT_CHILD, set, sock, 1);
+    */
     strcpy(context->host, node->host);
     sock_set_user_ptr(sock, context);
     smpd_process.left_context = context;
@@ -182,7 +191,7 @@ int mp_connect_tree(mp_host_node_t *node)
 		break;
 	    case SOCK_OP_CLOSE:
 		mp_err_printf("unexpected close event returned by sock_wait.\n");
-		free(context);
+		smpd_free_context(context);
 		mp_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(set);
 		if (result != SOCK_SUCCESS)

@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 		break;
 	    case SOCK_OP_CLOSE:
 		mp_err_printf("unexpected close event returned by sock_wait.\n");
-		free(smpd_process.left_context);
+		smpd_free_context(smpd_process.left_context);
 		mp_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(smpd_process.set);
 		if (result != SOCK_SUCCESS)
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
 		break;
 	    case SOCK_OP_CLOSE:
 		mp_err_printf("unexpected close event returned by sock_wait.\n");
-		free(smpd_process.left_context);
+		smpd_free_context(smpd_process.left_context);
 		mp_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(smpd_process.set);
 		if (result != SOCK_SUCCESS)

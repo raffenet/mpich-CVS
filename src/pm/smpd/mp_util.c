@@ -869,7 +869,7 @@ int shutdown_console(sock_set_t set, sock_t sock, smpd_context_t *context)
 	    if (event.user_ptr == smpd_process.left_context)
 	    {
 		mp_dbg_printf("child context closed.\n");
-		free(smpd_process.left_context);
+		smpd_free_context(smpd_process.left_context);
 		mp_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(set);
 		if (result != SOCK_SUCCESS)
@@ -942,6 +942,14 @@ int mp_console(char *host)
     }
 
     /* create a context for the session */
+    result = smpd_create_context(SMPD_CONTEXT_CHILD, set, sock, 1, &context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a new context.\n");
+	mp_exit_fn("mp_console");
+	return SMPD_FAIL;
+    }
+    /*
     context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
     if (context == NULL)
     {
@@ -950,6 +958,7 @@ int mp_console(char *host)
 	return SMPD_FAIL;
     }
     smpd_init_context(context, SMPD_CONTEXT_CHILD, set, sock, 1);
+    */
     strcpy(context->host, host);
     sock_set_user_ptr(sock, context);
     session_context = context;
@@ -972,15 +981,6 @@ int mp_console(char *host)
 	return result;
     }
 
-    /* create a context for reading from stdin */
-    context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
-    if (context == NULL)
-    {
-	mp_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
-	mp_exit_fn("mp_console");
-	return SMPD_FAIL;
-    }
-
     /* get a handle to stdin */
 #ifdef HAVE_WINDOWS_H
     result = smpd_make_socket_loop(&stdin_fd, &hWrite);
@@ -995,14 +995,32 @@ int mp_console(char *host)
 #endif
 
     /* convert the native handle to a sock */
-    result = sock_native_to_sock(set, stdin_fd, context, &insock);
+    result = sock_native_to_sock(set, stdin_fd, NULL, &insock);
     if (result != SOCK_SUCCESS)
     {
 	mp_err_printf("unable to create a sock from stdin, sock error:\n%s\n", get_sock_error_string(result));
 	mp_exit_fn("mp_console");
 	return SMPD_FAIL;
     }
+    /* create a context for reading from stdin */
+    result = smpd_create_context(SMPD_CONTEXT_STDIN, set, insock, -1, &context);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("unable to create a context for stdin.\n");
+	mp_exit_fn("mp_console");
+	return SMPD_FAIL;
+    }
+    /*
+    context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
+    if (context == NULL)
+    {
+	mp_err_printf("malloc failed to allocate an smpd_context_t, size %d\n", sizeof(smpd_context_t));
+	mp_exit_fn("mp_console");
+	return SMPD_FAIL;
+    }
     smpd_init_context(context, SMPD_CONTEXT_STDIN, set, insock, -1);
+    */
+    sock_set_user_ptr(insock, context);
 
 #ifdef HAVE_WINDOWS_H
     /* unfortunately, we cannot use stdin directly as a sock.  So, use a thread to read and forward
@@ -1085,7 +1103,7 @@ int mp_console(char *host)
 	    if (event.user_ptr == smpd_process.left_context)
 	    {
 		mp_dbg_printf("child context closed.\n");
-		free(smpd_process.left_context);
+		smpd_free_context(smpd_process.left_context);
 		mp_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(set);
 		if (result != SOCK_SUCCESS)

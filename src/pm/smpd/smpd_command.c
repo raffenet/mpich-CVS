@@ -118,6 +118,7 @@ int smpd_init_command(smpd_command_t *cmd)
     cmd->length = 0;
     cmd->wait = SMPD_FALSE;
     cmd->state = SMPD_CMD_INVALID;
+    cmd->freed = 0;
 
     smpd_exit_fn("smpd_init_command");
     return SMPD_SUCCESS;
@@ -261,7 +262,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create the command.\n");
-	free(cmd_ptr);
+	smpd_free_command(cmd_ptr);
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
@@ -269,7 +270,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the src to the command.\n");
-	free(cmd_ptr);
+	smpd_free_command(cmd_ptr);
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
@@ -277,7 +278,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the dest to the command.\n");
-	free(cmd_ptr);
+	smpd_free_command(cmd_ptr);
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
@@ -285,7 +286,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the command.\n");
-	free(cmd_ptr);
+	smpd_free_command(cmd_ptr);
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
@@ -322,8 +323,58 @@ int smpd_free_command(smpd_command_t *cmd_ptr)
 {
     smpd_enter_fn("smpd_free_command");
     if (cmd_ptr)
+    {
+	/* this check isn't full-proof because random data might match SMPD_FREE_COOKIE */
+	if (cmd_ptr->freed == SMPD_FREE_COOKIE)
+	{
+	    smpd_err_printf("attempt to free a command more than once.\n");
+	    return SMPD_FAIL;
+	}
+	/* erase the contents to help track down use of freed structures */
+	smpd_init_command(cmd_ptr);
 	free(cmd_ptr);
+    }
     smpd_exit_fn("smpd_free_command");
+    return SMPD_SUCCESS;
+}
+
+int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, int id, smpd_context_t **context_pptr)
+{
+    int result;
+    smpd_context_t *context;
+    
+    context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
+    if (context == NULL)
+    {
+	return SMPD_FAIL;
+    }
+    result = smpd_init_context(context, type, set, sock, id);
+    if (result != SMPD_SUCCESS)
+    {
+	*context_pptr = NULL;
+	free(context);
+	return SMPD_FAIL;
+    }
+    *context_pptr = context;
+    return result;
+}
+
+int smpd_free_context(smpd_context_t *context)
+{
+    smpd_enter_fn("smpd_free_context");
+    if (context)
+    {
+	/* this check isn't full-proof because random data might match SMPD_CONTEXT_FREED */
+	if (context->type == SMPD_CONTEXT_FREED)
+	{
+	    smpd_err_printf("attempt to free context more than once.\n");
+	    return SMPD_FAIL;
+	}
+	/* erase the contents to help track down use of freed structures */
+	smpd_init_context(context, SMPD_CONTEXT_FREED, SOCK_INVALID_SET, SOCK_INVALID_SOCK, -1);
+	free(context);
+    }
+    smpd_exit_fn("smpd_free_context");
     return SMPD_SUCCESS;
 }
 

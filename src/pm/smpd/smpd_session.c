@@ -83,6 +83,7 @@ int handle_launch_command(smpd_context_t *context)
     }
 
     /* create contexts for each of the three conduits to the launched process */
+    /*
     cin = (smpd_context_t*)malloc(sizeof(smpd_context_t));
     cout = (smpd_context_t*)malloc(sizeof(smpd_context_t));
     cerr = (smpd_context_t*)malloc(sizeof(smpd_context_t));
@@ -92,24 +93,25 @@ int handle_launch_command(smpd_context_t *context)
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
-    result = smpd_init_context(cin, SMPD_CONTEXT_STDIN, smpd_process.set, sock_in, pid);
+    */
+    result = smpd_create_context(SMPD_CONTEXT_STDIN, smpd_process.set, sock_in, pid, &cin);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to initialize context.\n");
+	smpd_err_printf("unable to create stdin context.\n");
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
-    result = smpd_init_context(cout, SMPD_CONTEXT_STDOUT, smpd_process.set, sock_out, pid);
+    result = smpd_create_context(SMPD_CONTEXT_STDOUT, smpd_process.set, sock_out, pid, &cout);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to initialize context.\n");
+	smpd_err_printf("unable to create stdout context.\n");
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
-    result = smpd_init_context(cerr, SMPD_CONTEXT_STDERR, smpd_process.set, sock_err, pid);
+    result = smpd_create_context(SMPD_CONTEXT_STDERR, smpd_process.set, sock_err, pid, &cerr);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to initialize context.\n");
+	smpd_err_printf("unable to create stderr context.\n");
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
@@ -392,8 +394,6 @@ int handle_command(smpd_context_t *context)
 	    smpd_dbg_printf("closed command received from left child, closing sock.\n");
 	    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.left_context->sock));
 	    sock_post_close(smpd_process.left_context->sock);
-	    /*free(smpd_process.left_context);*/ /* can't free the context because it is used when sock_wait returns sock_op_close */
-	    /*smpd_process.left_context = NULL;*/
 	    if (smpd_process.right_context)
 	    {
 		smpd_exit_fn("handle_command");
@@ -405,8 +405,6 @@ int handle_command(smpd_context_t *context)
 	    smpd_dbg_printf("closed command received from right child, closing sock.\n");
 	    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.right_context->sock));
 	    sock_post_close(smpd_process.right_context->sock);
-	    /*free(smpd_process.right_context);*/ /* can't free the context because it is used when sock_wait returns sock_op_close */
-	    /*smpd_process.right_context = NULL;*/
 	    if (smpd_process.left_context)
 	    {
 		smpd_exit_fn("handle_command");
@@ -572,6 +570,14 @@ int handle_command(smpd_context_t *context)
 	}
 	smpd_dbg_printf("now connecting to %s\n", host);
 	/* create a new context */
+	result = smpd_create_context(SMPD_CONTEXT_INVALID, SOCK_INVALID_SET, SOCK_INVALID_SOCK, -1, &dest);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a new context.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	/*
 	dest = (smpd_context_t*)malloc(sizeof(smpd_context_t));
 	if (dest == NULL)
 	{
@@ -579,6 +585,7 @@ int handle_command(smpd_context_t *context)
 	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
+	*/
 	dest_set = smpd_process.set;
 	result = smpd_connect_to_smpd(smpd_process.parent_context->set, smpd_process.parent_context->sock,
 	    host, SMPD_PROCESS_SESSION_STR, dest_id, &dest_set, &dest_sock);
@@ -1134,17 +1141,17 @@ int smpd_post_close_context(smpd_context_t *context)
     {
 	if (context == smpd_process.left_context)
 	{
-	    free(smpd_process.left_context);
+	    smpd_free_context(smpd_process.left_context);
 	    smpd_process.left_context = NULL;
 	}
 	else if (context == smpd_process.right_context)
 	{
-	    free(smpd_process.right_context);
+	    smpd_free_context(smpd_process.right_context);
 	    smpd_process.right_context = NULL;
 	}
 	else if (context == smpd_process.parent_context)
 	{
-	    free(smpd_process.parent_context);
+	    smpd_free_context(smpd_process.parent_context);
 	    smpd_exit_fn("smpd_close_context");
 	    return SMPD_FAIL;
 	}
@@ -1193,6 +1200,14 @@ int smpd_session(sock_set_t set, sock_t sock)
     smpd_process.set = set;
 
     /* allocate and initialize a context */
+    result = smpd_create_context(SMPD_CONTEXT_PARENT, set, sock, smpd_process.parent_id, &context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a new context.\n");
+	smpd_exit_fn("smpd_session");
+	return SMPD_FAIL;
+    }
+    /*
     context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
     if (context == NULL)
     {
@@ -1202,6 +1217,7 @@ int smpd_session(sock_set_t set, sock_t sock)
 	return SMPD_FAIL;
     }
     smpd_init_context(context, SMPD_CONTEXT_PARENT, set, sock, smpd_process.parent_id);
+    */
     smpd_process.parent_context = context;
     sock_set_user_ptr(sock, context);
 
@@ -1383,7 +1399,7 @@ int smpd_session(sock_set_t set, sock_t sock)
 	    if (context == smpd_process.parent_context)
 	    {
 		smpd_dbg_printf("sock_wait returned op_close, freeing parent context\n");
-		free(context);
+		smpd_free_context(context);
 		smpd_dbg_printf("closing the session.\n");
 		result = sock_destroy_set(set);
 		if (result != SOCK_SUCCESS)
@@ -1399,19 +1415,19 @@ int smpd_session(sock_set_t set, sock_t sock)
 	    else if (context == smpd_process.left_context)
 	    {
 		smpd_dbg_printf("sock_wait returned op_close, freeing left context\n");
-		free(context);
+		smpd_free_context(context);
 		smpd_process.left_context = NULL;
 	    }
 	    else if (context == smpd_process.right_context)
 	    {
 		smpd_dbg_printf("sock_wait returned op_close, freeing right context\n");
-		free(context);
+		smpd_free_context(context);
 		smpd_process.right_context = NULL;
 	    }
 	    else
 	    {
 		smpd_err_printf("sock_wait returned op_close for an unknown context, freeing context\n");
-		free(context);
+		smpd_free_context(context);
 	    }
 	    if (smpd_process.closing)
 	    {
