@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# example usage from Makefile.in
-# ${INSTALL} -m 4755 mpdroot ${bindir}/mpdroot ;\
+#  example usage from Makefile.in
+#  ${INSTALL} -m 4755 mpdroot ${bindir}/mpdroot ;\
 
 if [ "$1" = "-c" ]
 then
