@@ -5,3 +5,6 @@ DEPADD = ../util/mtest.o
 
 typecntsx_SOURCES  = typecntsx.cxx
 typenamex_SOURCES  = typenamex.cxx
+
+../util/mtest.o:
+	cd ../util && $(MAKE) mtest.o

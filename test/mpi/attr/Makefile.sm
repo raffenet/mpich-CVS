@@ -21,4 +21,5 @@ fkeyvalcomm_SOURCES = fkeyvalcomm.c
 fkeyvaltype_SOURCES = fkeyvaltype.c
 fkeyvalwin_SOURCES = fkeyvalwin.c 
 
-
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o)

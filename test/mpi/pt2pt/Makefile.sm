@@ -33,3 +33,6 @@ waitany-null_SOURCES = waitany-null.c
 pingping_SOURCES     = pingping.c
 probe-unexp_SOURCES  = probe-unexp.c
 threaded_sr_SOURCES  = threaded_sr.c
+
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o)

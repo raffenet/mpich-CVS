@@ -14,3 +14,6 @@ initstat_SOURCES = initstat.c
 version_SOURCES = version.c
 timeout_SOURCES = timeout.c
 finalized_SOURCES = finalized.c
+
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o)

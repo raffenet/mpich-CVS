@@ -10,3 +10,6 @@ infovallen_SOURCES = infovallen.c
 infoorder_SOURCES = infoorder.c
 infomany_SOURCES = infomany.c
 infotest_SOURCES = infotest.c
+
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o)
