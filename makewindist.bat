@@ -45,10 +45,10 @@ GOTO AFTERCHECKOUT
 :CHECKOUT
 set CVS_RSH=ssh
 IF "%2" == "" GOTO CHECKOUT_HEAD
-cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r %2 mpich2all
+cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r %2 mpich2allWithMPE
 GOTO AFTER_CHECKOUT_HEAD
 :CHECKOUT_HEAD
-cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r HEAD mpich2all
+cvs -d :ext:%USERNAME%@petagate.mcs.anl.gov:/home/MPI/cvsMaster export -r HEAD mpich2allWithMPE
 :AFTER_CHECKOUT_HEAD
 if %errorlevel% NEQ 0 goto CVSERROR
 pushd mpich2
@@ -79,7 +79,7 @@ ssh -l %USERNAME% petagate.mcs.anl.gov rm -rf /sandbox/%USERNAME%/dotintmp
 del sshcmds.txt
 tar xvfz dotin.tar.gz
 del dotin.tar.gz
-cscript winconfigure.wsf --enable-timer-type=queryperformancecounter
+cscript winconfigure.wsf --cleancode --enable-timer-type=queryperformancecounter
 GOTO BUILD
 :AFTERCONFIGURE
 IF "%1" == "--with-curdir" GOTO BUILD
