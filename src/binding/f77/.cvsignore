@@ -141,7 +141,6 @@ isthrmainf.c
 keyval_createf.c
 keyval_freef.c
 lookup_namef.c
-mpi_fortimpl.h
 mpif.h.in
 mpif.h
 op_createf.c

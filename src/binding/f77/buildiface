@@ -368,21 +368,20 @@ while (<FD>) {
 # This block can be used to create the Makefile
 open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
-# This line is unfortunately necessary to ensure that a working
-# autoconf is used.
-#
-# Try the following first
-# in a new directory, create configure.in containing:
-# AC_INIT(configure.in)
-# AC_LANG_FORTRAN77
-# AC_TRY_COMPILE(,[integer a],a=1,a=0)
-# Then run autoconf
-# Then grep endEOF configure.  If found (status 0), then autoconf is
-# broken.
-# We do this to make it easier for others to use this file to create
-# MPICH builds.
-print MAKEFD "smvar_autoconf = autoconf:autoconf-2.52:/home/gropp/bin/linux/autoconf\n";
-print MAKEFD "smvar_autoconf_version = 2.52\n";
+
+# Check to see if autoconf works.  Autoconf 2.13 has a bug in the Fortran 
+# language support that will break this module.  Since some sites have 
+# corrected the bug in autoconf 2.13, CheckAutoconf test for this bug.
+if (&CheckAutoconf) {
+    # Autoconf does not work
+    print MAKEFD "smvar_autoconf = autoconf:autoconf-2.52:/home/gropp/bin/linux/autoconf\n";
+    print MAKEFD "smvar_autoconf_version = 2.52\n";
+}
+else {
+    # just use the regular autoconf
+    ;
+}
+
 #print MAKEFD "smvar_debug = 1\n";
 print MAKEFD "smvar_do_dependencies = 0\n";
 &print_line(  MAKEFD, "mpi_sources = ", 80, "\\\n\t", 8 );
@@ -1218,7 +1217,7 @@ void *MPIR_F_MPI_BOTTOM = 0;
     &print_header( "MPI_Wtime", "wtime" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
-    print $OUTFD "double mpi_wtime_( void )";
+    print $OUTFD "double mpi_wtime_( void ) ";
     &print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; MPID_Time_t t;\n
@@ -1237,7 +1236,7 @@ void *MPIR_F_MPI_BOTTOM = 0;
     &print_header( "MPI_Wtick", "wtick" );
     # mpiimpl.h is needed for the timer definitions
     print $OUTFD "#include \"mpiimpl.h\"\n";
-    print $OUTFD "double mpi_wtick_( void )";
+    print $OUTFD "double mpi_wtick_( void ) ";
     &print_attr;
     print $OUTFD "{\n";
     print $OUTFD "    double d; 
@@ -1250,6 +1249,37 @@ void *MPIR_F_MPI_BOTTOM = 0;
     }
 
 
+}
+# ----------------------------------------------------------------------------
+# Check for a working autoconf
+#
+# Try the following first
+# in a new directory, create configure.in containing:
+# AC_INIT(configure.in)
+# AC_LANG_FORTRAN77
+# AC_TRY_COMPILE(,[integer a],a=1,a=0)
+# Then run autoconf
+# Then grep endEOF configure.  If found (status 0), then autoconf is
+# broken.
+#
+# CheckAutoconf - returns 0 if autoconf works, 1 if broken.
+sub CheckAutoconf {
+    if (! -d "tmp") {
+        mkdir "tmp" || die "Cannot create temporary directory\n";
+    }
+    open (ACFD, ">tmp/configure.in" ) || die "Cannot create test configure.in\n";
+    print ACFD "AC_INIT(configure.in)\nAC_LANG_FORTRAN77\n";
+    print ACFD "AC_TRY_COMPILE(,[integer a],a=1,a=0)\n";
+    close ACFD;
+
+    chdir tmp;
+    $rc = system "autoconf 2>&1 >/dev/null";
+    $rc = system "grep endEOF configure 2>&1 >/dev/null";
+    $rc = !$rc;
+    chdir "..";
+
+    system "rm -rf tmp";
+    return $rc;
 }
 #
 # ISSUES NOT YET HANDLED

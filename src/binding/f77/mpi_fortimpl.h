@@ -49,7 +49,7 @@
 
 /* Fortran logical values */
 #ifndef _CRAY
-#if !defined(F77RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
+#if !defined(F77_RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
 extern const MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #else
 extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
