@@ -50,4 +50,12 @@ void MPID_Cancel_send(MPID_Request * sreq)
        receiver. */
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_SEND);
 #endif
+
+    {
+	int mpi_errno;
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**cancelsend", 0 );
+	MPIR_Err_return_comm( 0, "MPI_Cancel", mpi_errno );
+	/* fall back */
+	MPID_Abort( 0, mpi_errno );
+    }
 }
