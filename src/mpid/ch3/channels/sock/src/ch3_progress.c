@@ -282,6 +282,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 		}
 		
 		conn->state = CONN_STATE_OPEN_CSEND;
+		conn->pkt.type = MPIDI_CH3I_PKT_SC_OPEN_REQ;
 		conn->pkt.sc_open_req.pg_id = -1; /* FIXME: multiple process groups may exist */
 		conn->pkt.sc_open_req.pg_rank = MPIR_Process.comm_world->rank;
 		connection_post_send_pkt(conn);
