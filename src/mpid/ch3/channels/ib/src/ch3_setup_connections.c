@@ -31,7 +31,14 @@ int MPIDI_CH3I_Setup_connections()
     pg_rank = MPIR_Process.comm_world->rank;
     pg = MPIDI_CH3I_Process.pg;
 
-    key_max_sz = PMI_KVS_Get_key_length_max();
+    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
+					 __LINE__, MPI_ERR_OTHER, "**fail",
+					 "**fail %d", mpi_errno);
+	return mpi_errno;
+    }
     key = MPIU_Malloc(key_max_sz);
     if (key == NULL)
     {
@@ -39,7 +46,14 @@ int MPIDI_CH3I_Setup_connections()
 				       __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
-    val_max_sz = PMI_KVS_Get_value_length_max();
+    mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
+					 __LINE__, MPI_ERR_OTHER, "**fail",
+					 "**fail %d", mpi_errno);
+	return mpi_errno;
+    }
     val = MPIU_Malloc(val_max_sz);
     if (val == NULL)
     {
@@ -137,7 +151,7 @@ int MPIDI_CH3I_Setup_connections()
 					     mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Get(vc->ib.pg->kvs_name, key, val);
+	mpi_errno = PMI_KVS_Get(vc->ib.pg->kvs_name, key, val, val_max_sz);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
@@ -165,7 +179,7 @@ int MPIDI_CH3I_Setup_connections()
 					     mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Get(vc->ib.pg->kvs_name, key, val);
+	mpi_errno = PMI_KVS_Get(vc->ib.pg->kvs_name, key, val, val_max_sz);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
