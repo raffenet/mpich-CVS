@@ -20,6 +20,9 @@
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
 
 #include "smpd_database.h"
 
@@ -104,6 +107,9 @@ typedef int SMPD_BOOL;
 #ifdef HAVE_WINDOWS_H
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
+#define smpd_get_last_error GetLastError
+#else
+#define smpd_get_last_error errno
 #endif
 
 typedef enum smpd_state_t

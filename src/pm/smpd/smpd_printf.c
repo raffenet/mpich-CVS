@@ -161,7 +161,7 @@ int smpd_init_printf(void)
 	    smpd_process.dbg_fout = fopen(envstr, "a+");
 	    if (smpd_process.dbg_fout == NULL)
 	    {
-		smpd_err_printf("unable to open log file '%s', error %d\n", envstr, GetLastError());
+		smpd_err_printf("unable to open log file '%s', error %d\n", envstr, smpd_get_last_error());
 	    }
 	}
 	if (smpd_process.dbg_fout == NULL)
@@ -171,7 +171,7 @@ int smpd_init_printf(void)
 		smpd_process.dbg_fout = fopen(filename, "a+");
 		if (smpd_process.dbg_fout == NULL)
 		{
-		    smpd_err_printf("unable to open log file '%s', error %d\n", filename, GetLastError());
+		    smpd_err_printf("unable to open log file '%s', error %d\n", filename, smpd_get_last_error());
 		}
 	    }
 	}

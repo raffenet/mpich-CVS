@@ -93,6 +93,7 @@ int main(int argc, char* argv[])
 
     smpd_finalize_printf();
 
+    smpd_exit(result);
     smpd_exit_fn("main");
     return result;
 }
