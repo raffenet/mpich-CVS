@@ -117,8 +117,6 @@ int MPI_Request_free(MPI_Request *request)
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
-
     switch (request_ptr->kind)
     {
 	case MPID_REQUEST_SEND:
