@@ -8,6 +8,7 @@ define([AC_CACHE_SAVE], )dnl
 dnl
 dnl
 AC_INIT()
+AC_PREREQ(2.52)
 AC_CONFIG_HEADER(mpe_conf.h)
 #
 echo "Configuring MPE Profiling Libraries with $ac_configure_args"
@@ -183,12 +184,12 @@ dnl
 dnl  Get the user supplied CFLAGS and FFLAGS
 dnl
 AC_ARG_WITH( cflags,
-[--with-cflags=MPE_CFLAGS           - supply extra MPE CFLAGS to the CC
+[--with-cflags=MPE_CFLAGS           - Supply extra MPE CFLAGS to the CC
                                      compiler],
 MPE_CFLAGS="$withval" )
 
 AC_ARG_WITH( fflags,
-[--with-fflags=MPE_FFLAGS           - supply extra MPE FFLAGS to the Fortran
+[--with-fflags=MPE_FFLAGS           - Supply extra MPE FFLAGS to the Fortran
                                      compiler],
 MPE_FFLAGS="$withval" )
 
@@ -258,14 +259,14 @@ AC_ARG_WITH( mpif77,
 MPI_F77="$withval" )
  
 AC_ARG_WITH( mpiinc,
-[--with-mpiinc=MPI_INC              - compiler's include flag with prefix
+[--with-mpiinc=MPI_INC              - MPI compiler's include flag with prefix
                                      -I used in the MPI implementation, usually
                                      it specifies where mpi.h and mpif.h are
                                      located, e.g. -I/pkgs/MPI/include.],
 MPI_INC="$withval" )
  
 AC_ARG_WITH( mpilibs,
-[--with-mpilibs=MPI_LIBS            - compiler's full library flags with prefix
+[--with-mpilibs=MPI_LIBS            - MPI compiler's library flags with prefix
                                      -L to the library path and prefix -l to
                                      the name of the libraries used in the MPI
                                      implementation, usually specify where MPI
@@ -273,7 +274,7 @@ AC_ARG_WITH( mpilibs,
                                      e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.],
 MPI_LIBS="$withval" )
 
-PAC_PROG_CC
+AC_PROG_CC
 dnl Check for broken handling of common symbols
 dnl PAC_PROG_C_BROKEN_COMMON
 
@@ -447,7 +448,7 @@ trial_pkgs="misc logging wrappers graphics"
 
 dnl
 AC_ARG_ENABLE( misc,
-[--enable-misc                      - build MPE miscellaneous routines, e.g.
+[--enable-misc                      - Build MPE miscellaneous routines, e.g.
                                      MPE_Errors_xxx(), MPE_Seq_xxx(),
                                      MPE_xxxTags() and MPE_GetHostName()....
                                      The default enable=yes.],
@@ -455,14 +456,14 @@ AC_ARG_ENABLE( misc,
 
 dnl
 AC_ARG_ENABLE( logging,
-[--enable-logging                   - build MPE logging routines for 
+[--enable-logging                   - Build MPE logging routines for 
                                      CLOG-2, e.g.  MPE_Log_xxx()...
                                      The default enable=yes.],
 , enable_logging=yes )
 
 dnl
 AC_ARG_ENABLE( wrappers,
-[--enable-wrappers                  - build various MPI wrapper libraries.
+[--enable-wrappers                  - Build various MPI wrapper libraries.
                                      MPI logging library, liblmpe.a;
                                      MPI tracing library, libtmpe.a;
                                      MPI Fortran to C library, libmpe_f2cmpi.a],
@@ -474,7 +475,7 @@ fi
 
 dnl  Determine if the X graphics is going to be configured
 AC_ARG_ENABLE( graphics,
-[--enable-graphics                  - build MPE graphics routines and MPI
+[--enable-graphics                  - Build MPE graphics routines and MPI
                                      animation library, libampe.a.  If disabled
                                      then the MPE routines that make use of X11
                                      graphics will NOT be built.  This is
@@ -491,22 +492,28 @@ if test "$enable_graphics" = "yes" -a "$enable_misc" != "yes" ; then
 	If you need libmpe_nompi.a, reconfigure with --enable-misc.] )
 fi
 
-PKGS=""
 selected_pkgs=""
-for pkg in $trial_pkgs ; do
-    dirname=${pkg}_dirname
-    eval dirvalue=\$"$dirname"
-    flagname=enable_${pkg}
-    eval flagvalue=\$"$flagname"
-    if test "$flagvalue" = "yes" -a -s $srcdir/$dirvalue/configure ; then
-        PKGS="$PKGS $dirvalue"
-        selected_pkgs="$selected_pkgs $pkg"
-    fi
-done
+
+if test "$enable_misc" = "yes" -a -s $srcdir/src/misc/configure ; then
+    selected_pkgs="$selected_pkgs misc"
+    AC_CONFIG_SUBDIRS(src/misc)
+fi
+if test "$enable_logging" = "yes" -a -s $srcdir/src/logging/configure ; then
+    selected_pkgs="$selected_pkgs logging"
+    AC_CONFIG_SUBDIRS(src/logging)
+fi
+if test "$enable_wrappers" = "yes" -a -s $srcdir/src/wrappers/configure ; then
+    selected_pkgs="$selected_pkgs wrappers"
+    AC_CONFIG_SUBDIRS(src/wrappers)
+fi
+if test "$enable_graphics" = "yes" -a -s $srcdir/src/graphics/configure ; then
+    selected_pkgs="$selected_pkgs graphics"
+    AC_CONFIG_SUBDIRS(src/graphics)
+fi
 
 dnl  Determine if the slog2sdk directory is going to be configured.
 AC_ARG_ENABLE( slog2,
-[--enable-slog2[=build]             - Configure all the SLOG-2 tools.
+[--enable-slog2{=build}             - Configure all the SLOG-2 tools.
                                      --enable-slog2 without any argument will
                                      use the prebuilt jar files.
                                      --enable-slog2=build will rebuild all the
@@ -527,15 +534,10 @@ if test -s $srcdir/$slog2_dirname/configure ; then
         dnl  Enable softerror in SLOG2 configure won't abort the entire process
         slog2_enable_softerror=yes
         export slog2_enable_softerror
-        PKGS="$PKGS $slog2_dirname"
         selected_pkgs="$selected_pkgs slog2"
-    else
-        slog2_dirname=
+        AC_CONFIG_SUBDIRS(src/slog2sdk)
     fi
-else
-    slog2_dirname=
 fi
-AC_CONFIG_SUBDIRS($PKGS)
 
 
 

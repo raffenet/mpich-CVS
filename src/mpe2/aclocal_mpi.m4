@@ -75,16 +75,13 @@ dnl - set the parallel compiler environment for TRY_LINK
     F77="$pac_MPI_F77"
     FFLAGS="$pac_MPI_FFLAGS"
     LIBS="$pac_MPI_LIBS"
-    AC_TRY_LINK( , [ mpiftest()
-      end
-	subroutine mpiftest()
+    AC_TRY_LINK( , [
 	include 'mpif.h'
 	integer pac_ierr
 	$4
 	call MPI_Init( pac_ierr )
 	$5
 	call MPI_Finalize( pac_ierr )
-	return
                  ], pac_mpi_working=yes, pac_mpi_working=no )
     F77="$pac_saved_F77"
     FFLAGS="$pac_saved_FFLAGS"
