@@ -78,6 +78,11 @@
 #define SMPD_DBG_STATE_LOGFILE            0x4
 #define SMPD_DBG_STATE_PREPEND_RANK       0x8
 
+#define SMPD_QUOTE_CHAR                   '\''
+#define SMPD_DELIM_CHAR                   '='
+#define SMPD_DELIM_STR                    "="
+#define SMPD_ESCAPE_CHAR                  '\\'
+
 #define DBS_SUCCESS_STR	                  "DBS_SUCCESS"
 #define DBS_FAIL_STR	                  "DBS_FAIL"
 #define DBS_END_STR	                  "DBS_END"
@@ -431,8 +436,8 @@ int smpd_generate_session_header(char *str, int session_id);
 int smpd_interpret_session_header(char *str);
 int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val);
 int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, char *flag, int val);
-int smpd_get_string_arg(char *str, char *flag, char *val, int maxlen);
-int smpd_get_int_arg(char *str, char *flag, int *val_ptr);
+int smpd_get_string_arg(const char *str, char *flag, char *val, int maxlen);
+int smpd_get_int_arg(const char *str, char *flag, int *val_ptr);
 int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set);
