@@ -171,13 +171,13 @@ if test "$with_pmi" = "default" ; then
 fi
 pmi_name=$with_pmi
 dnl
-if test ! -d $use_top_srcdir/src/pmi/impls/pmi_name ; then
-    AC_MSG_WARN([pmi $pmi_name is unknown])
+if test ! -d $use_top_srcdir/src/pmi/impls/$pmi_name ; then
+    AC_MSG_WARN([$use_top_srcdir/src/pmi/impls/$pmi_name does not exist. PMI is unknown])
 elif test ! -x $use_top_srcdir/src/pmi/impls/$pmi_name/configure ; then
     AC_MSG_WARN([pmi $pmi_name has no configure])
     pmi_name=""
 else
-    subsystems="$subsystems src/pmi/$pmi_name"
+    subsystems="$subsystems src/pmi/impls/$pmi_name"
     AC_SUBST(pmi_name)
 fi
 dnl The recommended order for items in a configure.in file is
