@@ -1375,7 +1375,7 @@ sub TargetAll {
 	}
 	if (defined($optinstall_files{'SHLIB'})) {
 	    # Conditionally create the shared libraries.
-	    print FD "\tif [ \"\@ENABLE_SHLIB\@\" != \"no\" ] ; then \\\n";
+	    print FD "\tif [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $libspec (split(/\s+/,$optinstall_files{'SHLIB'})) {
 		print FD "\t    \${MAKE} $libspec ; \\\n";
 	    }
@@ -1395,7 +1395,7 @@ sub TargetAll {
 	if ($do_sharedlibs && $#allshlibtargets >= 0) {
 	    # Add a conditional step
 	    print_make_endline( FD );
-	    print FD "\tif [ \"\@ENABLE_SHLIB\@\" != \"no\" ] ; then \\\n";
+	    print FD "\tif [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $shlib (@allshlibtargets) {
 		print FD "\t    \${MAKE} $shlib ; \\\n";
 	    }

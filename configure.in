@@ -407,7 +407,7 @@ dnl
 PAC_ARG_SHAREDLIBS
 ENABLE_SHLIB=$enable_sharedlibs
 if test -z "$ENABLE_SHLIB" ; then
-    ENABLE_SHLIB=no
+    ENABLE_SHLIB=none
 fi
 AC_SUBST(ENABLE_SHLIB)
 dnl
