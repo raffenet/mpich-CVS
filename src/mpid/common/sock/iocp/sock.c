@@ -1786,6 +1786,38 @@ int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_So
 	    mpi_errno = MPI_SUCCESS;
 	    break;
 	}
+	if (mpi_errno == WSAENOBUFS)
+	{
+	    WSABUF tmp;
+	    tmp.buf = sock->read.iov[0].buf;
+	    tmp.len = sock->read.iov[0].len;
+	    MPIU_Assert(tmp.len > 0);
+	    while (mpi_errno == WSAENOBUFS)
+	    {
+		/*printf("[%d] receiving %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+		if (WSARecv(sock->sock, &tmp, 1, &sock->read.num_bytes, &flags, &sock->read.ovl, NULL) != SOCKET_ERROR)
+		{
+		    mpi_errno = MPI_SUCCESS;
+		    break;
+		}
+		mpi_errno = WSAGetLastError();
+		if (mpi_errno == WSA_IO_PENDING)
+		{
+		    mpi_errno = MPI_SUCCESS;
+		    break;
+		}
+		/*printf("[%d] reducing recv length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+		tmp.len = tmp.len / 2;
+		if (tmp.len == 0 && mpi_errno == WSAENOBUFS)
+		{
+		    break;
+		}
+	    }
+	    if (mpi_errno == MPI_SUCCESS)
+	    {
+		break;
+	    }
+	}
 	if (mpi_errno != WSAEWOULDBLOCK)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
@@ -1893,6 +1925,38 @@ int MPIDU_Sock_post_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_S
 	{
 	    mpi_errno = MPI_SUCCESS;
 	    break;
+	}
+	if (mpi_errno == WSAENOBUFS)
+	{
+	    WSABUF tmp;
+	    tmp.buf = sock->write.iov[0].buf;
+	    tmp.len = sock->write.iov[0].len;
+	    while (mpi_errno == WSAENOBUFS)
+	    {
+		/*printf("[%d] sending %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+		if (WSASend(sock->sock, &tmp, 1, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) != SOCKET_ERROR)
+		{
+		    mpi_errno = MPI_SUCCESS;
+		    break;
+		}
+		mpi_errno = WSAGetLastError();
+		if (mpi_errno == WSA_IO_PENDING)
+		{
+		    mpi_errno = MPI_SUCCESS;
+		    break;
+		}
+		/*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+		tmp.len = tmp.len / 2;
+		if (tmp.len == 0)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", 0);
+		    break;
+		}
+	    }
+	    if (mpi_errno == MPI_SUCCESS)
+	    {
+		break;
+	    }
 	}
 	if (mpi_errno != WSAEWOULDBLOCK)
 	{
@@ -2044,6 +2108,32 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				}
 				MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 				return MPI_SUCCESS;
+			    }
+			    if (mpi_errno == WSAENOBUFS)
+			    {
+				WSABUF tmp;
+				tmp.buf = sock->read.iov[sock->read.index].buf;
+				tmp.len = sock->read.iov[sock->read.index].len;
+				while (mpi_errno == WSAENOBUFS)
+				{
+				    /*printf("[%d] receiving %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+				    if (WSARecv(sock->sock, &tmp, 1, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL) != SOCKET_ERROR)
+				    {
+					mpi_errno = WSA_IO_PENDING;
+					break;
+				    }
+				    mpi_errno = WSAGetLastError();
+				    if (mpi_errno == WSA_IO_PENDING)
+				    {
+					break;
+				    }
+				    /*printf("[%d] reducing recv length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+				    tmp.len = tmp.len / 2;
+				    if (tmp.len == 0 && mpi_errno == WSAENOBUFS)
+				    {
+					break;
+				    }
+				}
 			    }
 			    if (mpi_errno != WSA_IO_PENDING)
 			    {
@@ -2261,6 +2351,29 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				    }
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 				    return MPI_SUCCESS;
+				}
+				if (mpi_errno == WSAENOBUFS)
+				{
+				    WSABUF tmp;
+				    tmp.buf = sock->write.iov[0].buf;
+				    tmp.len = sock->write.iov[0].len;
+				    while (mpi_errno == WSAENOBUFS)
+				    {
+					/*printf("[%d] sending %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+					if (WSASend(sock->sock, &tmp, 1, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) != SOCKET_ERROR)
+					{
+					    /* FIXME: does this data need to be handled immediately? */
+					    mpi_errno = WSA_IO_PENDING;
+					    break;
+					}
+					mpi_errno = WSAGetLastError();
+					if (mpi_errno == WSA_IO_PENDING)
+					{
+					    break;
+					}
+					/*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+					tmp.len = tmp.len / 2;
+				    }
 				}
 				if (mpi_errno != WSA_IO_PENDING)
 				{
@@ -2635,9 +2748,40 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
 	mpi_errno = WSAGetLastError();
 	*num_read = 0;
 	if (mpi_errno == WSAEWOULDBLOCK)
+	{
 	    mpi_errno = MPI_SUCCESS;
+	}
 	else
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
+	{
+	    if (mpi_errno == WSAENOBUFS)
+	    {
+		WSABUF tmp;
+		tmp.buf = iov[0].buf;
+		tmp.len = iov[0].len;
+		while (mpi_errno == WSAENOBUFS)
+		{
+		    /*printf("[%d] receiving %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+		    if (WSARecv(sock->sock, &tmp, 1, &num_read_local, &nFlags, NULL, NULL) != SOCKET_ERROR)
+		    {
+			/*printf("[%d] read %d bytes\n", __LINE__, num_read_local);fflush(stdout);*/
+			*num_read = num_read_local;
+			mpi_errno = MPI_SUCCESS;
+			break;
+		    }
+		    /*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+		    mpi_errno = WSAGetLastError();
+		    tmp.len = tmp.len / 2;
+		}
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
+		}
+	    }
+	    else
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
+	    }
+	}
     }
     else
     {
@@ -2761,6 +2905,31 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 	if (WSASend(sock->sock, iov, iov_n, &num_written_local, 0, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
 	{
 	    mpi_errno = WSAGetLastError();
+	    *num_written = 0;
+	    if (mpi_errno == WSAENOBUFS)
+	    {
+		WSABUF tmp;
+		tmp.buf = iov[0].buf;
+		tmp.len = iov[0].len;
+		while (mpi_errno == WSAENOBUFS)
+		{
+		    /*printf("[%d] sending %d bytes\n", __LINE__, tmp.len);fflush(stdout);*/
+		    if (WSASend(sock->sock, &tmp, 1, &num_written_local, 0, NULL, NULL) != SOCKET_ERROR)
+		    {
+			/*printf("[%d] wrote %d bytes\n", __LINE__, num_written_local);fflush(stdout);*/
+			*num_written = num_written_local;
+			mpi_errno = MPI_SUCCESS;
+			break;
+		    }
+		    mpi_errno = WSAGetLastError();
+		    /*printf("[%d] reducing send length from %d to %d\n", __LINE__, tmp.len, tmp.len / 2);fflush(stdout);*/
+		    tmp.len = tmp.len / 2;
+		    if (tmp.len == 0 && mpi_errno == WSAENOBUFS)
+		    {
+			break;
+		    }
+		}
+	    }
 	    if (mpi_errno != WSAEWOULDBLOCK)
 	    {
 		MPIU_DBG_PRINTF(("WSASend failed: error %d\n", mpi_errno));
@@ -2768,7 +2937,6 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITEV);
 		return mpi_errno;
 	    }
-	    *num_written = 0;
 	}
 	else
 	{
