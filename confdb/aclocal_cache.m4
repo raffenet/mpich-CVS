@@ -156,6 +156,16 @@ if test "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; the
     ac_cv_env_CPPFLAGS_value=$CPPFLAGS
     ac_cv_env_LDFLAGS_set=set
     ac_cv_env_LDFLAGS_value=$LDFLAGS
+    ac_cv_env_LIBS_set=set
+    ac_cv_env_LIBS_value=$LIBS
+    ac_cv_env_FC_set=set
+    ac_cv_env_FC_value=$FC
+    ac_cv_env_F77_set=set
+    ac_cv_env_F77_value=$F77
+    ac_cv_env_FFLAGS_set=set
+    ac_cv_env_FFLAGS_value=$FFLAGS
+    ac_cv_env_CXX_set=set
+    ac_cv_env_CXX_value=$CXX
     dnl other parameters are
     dnl build_alias, host_alias, target_alias
     AC_CACHE_SAVE
@@ -165,8 +175,14 @@ dnl Unconditionally export these values.  Subdir configures break otherwise
 export CC
 export CFLAGS
 export LDFLAGS
+export LIBS
 export CPPFLAGS
 export CPP
+export FC
+export F77
+export CXX
+export FFLAGS
+export CCFLAGS
 ])
 AC_DEFUN(PAC_SUBDIR_CACHE_CLEANUP,[
 if test "$cache_file" != "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; then
