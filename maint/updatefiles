@@ -327,6 +327,11 @@ EOF
 		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
 		rm -f $dir/configure
 		mv c.tmp $dir/configure
+	    elif grep 'attr/Makefile \\ util' $dir/configure 2>&1 >/dev/null ; then 
+		rm -f c.tmp 
+		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
+		rm -f $dir/configure
+		mv c.tmp $dir/configure
             fi
         fi
     done
