@@ -31,7 +31,7 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
     {
 	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    /* mark data transfer as complete adn decrment CC */
+	    /* mark data transfer as complete and decrement CC */
 	    sreq->ch3.iov_count = 0;
 	    MPIDI_CH3U_Request_complete(sreq);
 	    break;
@@ -39,20 +39,18 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	
 	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
-	    int rc;
+	    int mpi_errno;
 
 	    sreq->ch3.iov_count = MPID_IOV_LIMIT;
-	    rc = MPIDI_CH3U_Request_load_send_iov(
-		sreq, sreq->ch3.iov, &sreq->ch3.iov_count);
-	    if (rc == MPI_SUCCESS)
+	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, sreq->ch3.iov, &sreq->ch3.iov_count);
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		MPIDI_CH3_iWrite(vc, sreq);
 	    }
 	    else
 	    {
-		/* XXX - handle MPIR_ERR_MEMALLOCFAILED? */
 		MPIDI_ERR_PRINTF((FCNAME, "MPIDI_CH3_CA_RELOAD_IOV failed"));
-		abort();
+		MPID_Abort(NULL, mpi_errno);
 	    }
 	    
 	    break;
@@ -61,7 +59,7 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	default:
 	{
 	    MPIDI_ERR_PRINTF((FCNAME, "action %d UNIMPLEMENTED", sreq->ch3.ca));
-	    abort();
+	    MPID_Abort(NULL, MPI_ERR_INTERN);
 	}
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);

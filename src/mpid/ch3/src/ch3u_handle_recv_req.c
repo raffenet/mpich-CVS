@@ -31,7 +31,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
     {
 	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    /* mark data transfer as complete and decrment CC */
+	    /* mark data transfer as complete and decrement CC */
 	    rreq->ch3.iov_count = 0;
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
@@ -45,7 +45,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 		MPIU_Free(rreq->ch3.tmpbuf);
 	    }
 	    
-	    /* mark data transfer as complete and decrment CC */
+	    /* mark data transfer as complete and decrement CC */
 	    rreq->ch3.iov_count = 0;
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
@@ -54,7 +54,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE:
 	{
 	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
-	    /* mark data transfer as complete and decrment CC */
+	    /* mark data transfer as complete and decrement CC */
 	    rreq->ch3.iov_count = 0;
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
@@ -78,7 +78,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	default:
 	{
 	    MPIDI_ERR_PRINTF((FCNAME, "action %d UNIMPLEMENTED", rreq->ch3.ca));
-	    abort();
+	    MPID_Abort(NULL, MPI_ERR_INTERN);
 	}
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
