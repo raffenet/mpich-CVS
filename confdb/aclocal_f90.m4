@@ -119,7 +119,9 @@ if AC_TRY_EVAL(ac_f90compile) ; then
         mv $pac_module conftestdir
 	# Remove any temporary files, and hide the work.pc file (if
 	# the compiler generates them)
-	mv -f work.pc conftest.pc
+	if test -f work.pc ; then 
+	    mv -f work.pc conftest.pc
+        fi
 	rm -f work.pcl
     else
 	AC_MSG_WARN([Unable to build a simple F90 module])
@@ -358,6 +360,98 @@ AC_MSG_CHECKING([whether the Fortran 90 compiler ($F90 $F90FLAGS $LDFLAGS) is a 
 AC_MSG_RESULT($pac_cv_prog_f90_cross)
 cross_compiling=$pac_cv_prog_f90_cross
 ])
+dnl
+dnl This version uses a Fortran program to link programs.
+dnl This is necessary because some compilers provide shared libraries
+dnl that are not within the default linker paths (e.g., our installation
+dnl of the Portland Group compilers).
+dnl We assume a naming convention consistent with the Fortran 77 one.
+dnl
+AC_DEFUN(PAC_PROG_F90_CHECK_SIZEOF,[
+changequote(<<,>>)dnl
+dnl The name to #define.
+dnl If the arg value contains a variable, we need to update that
+define(<<PAC_TYPE_NAME>>, translit(sizeof_f90_$1, [a-z *], [A-Z__]))dnl
+dnl The cache variable name.
+define(<<PAC_CV_NAME>>, translit(pac_cv_f90_sizeof_$1, [ *], [__]))dnl
+changequote([,])dnl
+AC_CACHE_CHECK([for size of Fortran type $1],PAC_CV_NAME,[
+AC_REQUIRE([PAC_PROG_F77_NAME_MANGLE])
+if test "$cross_compiling" = yes ; then
+    ifelse([$2],,[AC_MSG_WARN([No value provided for size of $1 when cross-compiling])]
+,eval PAC_CV_NAME=$2)
+else
+    /bin/rm -f conftest*
+    cat <<EOF > conftestc.c
+#include <stdio.h>
+#include "confdefs.h"
+#ifdef F77_NAME_UPPER
+#define cisize_ CISIZE
+#define isize_ ISIZE
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define cisize_ cisize
+#define isize_ isize
+#endif
+int cisize_(char *,char*);
+int cisize_(char *i1p, char *i2p)
+{ 
+    int isize_val=0;
+    FILE *f = fopen("conftestval", "w");
+    if (!f) return 1;
+    isize_val = (int)(i2p - i1p);
+    fprintf(f,"%d\n", isize_val );
+    fclose(f);
+    return 0;
+}
+EOF
+    pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&5'
+    if AC_TRY_EVAL(pac_tmp_compile) && test -s conftestc.o ; then
+        AC_LANG_SAVE
+        AC_LANG_FORTRAN77
+        saveLIBS=$LIBS
+        LIBS="conftestc.o $LIBS"
+        dnl TRY_RUN does not work correctly for autoconf 2.13 (the
+        dnl macro includes C-preprocessor directives that are not 
+        dnl valid in Fortran.  Instead, we do this by hand
+        cat >conftest.f <<EOF
+         program main
+         $1 a(2)
+         integer irc
+         irc = cisize(a(1),a(2))
+         end
+EOF
+        rm -f conftest$ac_exeext
+        rm -f conftestval
+        if AC_TRY_EVAL(ac_link) && test -s conftest$ac_exeext ; then
+	    if ./conftest$ac_exeext ; then
+	        # success
+                :
+            else
+	        # failure 
+                :
+	    fi
+        else
+	    # failure
+            AC_MSG_WARN([Unable to build program to determine size of $1])
+        fi
+        AC_LANG_RESTORE
+        if test -s conftestval ; then
+            eval PAC_CV_NAME=`cat conftestval`
+        else
+	    eval PAC_CV_NAME=0
+        fi
+        rm -f conftest*
+        LIBS=$saveLIBS
+    else
+        AC_MSG_WARN([Unable to compile the C routine for finding the size of a $1])
+    fi
+fi # cross-compiling
+])
+AC_DEFINE_UNQUOTED(PAC_TYPE_NAME,$PAC_CV_NAME,[Define size of PAC_TYPE_NAME])
+undefine([PAC_TYPE_NAME])
+undefine([PAC_CV_NAME])
+])
+
 dnl
 dnl The following looks for F90 options to enable th specified f90 compiler
 dnl to work with the f77 compiler, particularly for accessing command-line
