@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include "mpitest.h"
 
-static char MTestDescrip[] = "Test freeing keyvals while still attached to 
-a communicator, then make sure that the keyval delete and copy code are still 
+static char MTestDescrip[] = "Test freeing keyvals while still attached to \
+a communicator, then make sure that the keyval delete and copy code are still \
 executed";
 
 /* Copy increments the attribute value */
