@@ -86,7 +86,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     lrequest_ptr = MPID_Request_create();
     if (!lrequest_ptr) {
         MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
-	return mpi_errno;
+	return MPI_ERR_NOMEM;
     }
     lrequest_ptr->kind                 = MPID_UREQUEST;
     lrequest_ptr->ref_count            = 2;
