@@ -100,7 +100,7 @@ dist-with-version:
 	    cp tmpdir2/doc/userguide/user.pdf tmpdir/${PACKAGE}-${version}/doc/userguide/user.pdf ; \
 	    cp tmpdir2/doc/installguide/install.pdf tmpdir/${PACKAGE}-${version}/doc/installguide/install.pdf ; \
 	    cp tmpdir2/doc/smpd/smpd_pmi.pdf tmpdir/${PACKAGE}-${version}/doc/smpd/smpd_pmi.pdf ; \
-	    cp tmpdir2/doc/logging/logging.pdf tmpdir/${PACKAGE}-${version}/logging/logging.pdf ; \
+	    cp tmpdir2/doc/logging/logging.pdf tmpdir/${PACKAGE}-${version}/doc/logging/logging.pdf ; \
 	    rm -rf tmpdir2 ; \
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
