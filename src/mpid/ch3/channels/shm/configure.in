@@ -13,6 +13,9 @@ AC_CONFIG_HEADER(include/mpidi_ch3i_shm_conf.h)
 
 echo "RUNNING CONFIGURE FOR THE SHARED MEMORY CHANNEL"
 
+save_libs=$LIBS
+LIBS=
+
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
@@ -26,11 +29,7 @@ AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
 dnl AC_DEFINE(HAVE_SHARED_PROCESS_READ,,[Define to use /proc directory for shared process reads])
 
 AC_CHECK_FUNCS( sysconf shmget shmat shmdt shmctl mmap shm_unlink )
-AC_SEARCH_LIBS( shm_open, rt)
-if test "$ac_cv_search_shm_open" != "none required" ; then
-    SHM_LIBS="$SHM_LIBS $ac_cv_search_shm_open"
-    AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) 
-fi
+AC_SEARCH_LIBS( shm_open, rt, AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]))
 
 AC_CHECK_HEADERS(				\
     assert.h					\
@@ -98,6 +97,10 @@ if test -z "$ENABLE_SHLIB" ; then
     CC_SHL="$CC"
     ENABLE_SHLIB=none
 fi
+
+SHM_LIBS=$LIBS
+LIBS=$save_libs
+
 AC_SUBST(SHM_LIBS)
 AC_SUBST(CC_SHL)
 AC_SUBST(AR)

@@ -13,6 +13,9 @@ AC_CONFIG_HEADER(include/mpidi_ch3i_ssm_conf.h)
 
 echo "RUNNING CONFIGURE FOR THE SOCK-SHARED_MEMORY CHANNEL"
 
+save_libs=$LIBS
+LIBS=
+
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
@@ -29,28 +32,16 @@ AC_CHECK_HEADERS(assert.h)
 dnl AC_CHECK_HEADERS(sys/types.h sys/socket.h net/if.h netinet/in.h sys/ioctl.h sys/sockio.h errno.h)
 
 AC_SEARCH_LIBS(socket, socket)
-if test "$ac_cv_search_socket" != "none required" ; then
-    SSM_LIBS="$SSM_LIBS $ac_cv_search_socket" 
-fi
 AC_CHECK_LIB(thread, mutex_init)
 AC_CHECK_HEADERS(pthread.h fcntl.h string.h strings.h sys/time.h sys/sem.h sys/ipc.h sys/shm.h unistd.h sys/param.h sys/ioctl.h netinet/in.h netinet/tcp.h netdb.h sys/uio.h sys/select.h sys/types.h stdlib.h sys/socket.h sys/filio.h netinet/in.h values.h sys/uio.h sched.h arpa/inet.h sys/sockio.h net/if.h)
 AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h ctype.h process.h sys/mman.h uuid/uuid.h mqueue.h)
 AC_CHECK_FUNCS(msgget yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
 AC_CHECK_FUNCS(sysconf pthread_mutexattr_setpshared pthread_mutexattr_init)
-AC_CHECK_FUNCS( mmap shm_unlink )
+AC_CHECK_FUNCS( mmap )
 AC_SEARCH_LIBS( mq_open, rt, AC_DEFINE(HAVE_MQ_OPEN,,[Define if mq_open is available]) )
 AC_SEARCH_LIBS( shm_open, rt, AC_DEFINE(HAVE_SHM_OPEN,,[Define if shm_open is available]) )
-if test "$ac_cv_search_shm_open" != "none required" ; then
-    SSM_LIBS="$SSM_LIBS $ac_cv_search_shm_open" 
-else
- if test "$ac_cv_search_mq_open" != "none required" ; then
-     SSM_LIBS="$SSM_LIBS $ac_cv_search_mq_open" 
- fi
-fi
+AC_SEARCH_LIBS( shm_unlink, rt, AC_DEFINE(HAVE_SHM_UNLINK,,[Define if shm_unlink is available]) )
 AC_SEARCH_LIBS( uuid_generate, uuid )
-if test "$ac_cv_search_uuid_generate" != "none required" ; then
-    SSM_LIBS="$SSM_LIBS $ac_cv_search_uuid_generate" 
-fi
 
 cpu_gcc_x86_cycle=no
 AC_TRY_COMPILE(,[
@@ -65,6 +56,9 @@ if test "$cpu_gcc_x86_cycle" = "yes" ; then
 else
   AC_MSG_ERROR([gcc x86 cycle counter is not available on this system])
 fi
+
+SSM_LIBS=$LIBS
+LIBS=$save_libs
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)

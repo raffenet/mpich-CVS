@@ -13,6 +13,9 @@ AC_CONFIG_HEADER(include/mpidi_ch3i_ib_conf.h)
 
 echo "RUNNING CONFIGURE FOR THE INFINIBAND CHANNEL"
 
+save_libs=$LIBS
+LIBS=
+
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
@@ -39,17 +42,15 @@ AC_CHECK_HEADERS(				\
     unistd.h)
 
 AC_SEARCH_LIBS(socket,socket)
-if test "$ac_cv_search_socket" != "none required" ; then
-    IB_LIBS="$IB_LIBS $ac_cv_search_socket" 
-fi
 AC_SEARCH_LIBS(gethostbyname,nsl)
-if test "$ac_cv_search_gethostbyname" != "none required" ; then
-    IB_LIBS="$IB_LIBS $ac_cv_search_gethostbyname" 
-fi
-IB_LIBS="$IB_LIBS -lmtl_common -lvapi -lmpga -lpthread"
+
+IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
+LIBS=$save_libs
 AC_SUBST(IB_LIBS)
+
 dnl IB_CPPFLAGS="$IB_CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
 dnl AC_SUBST(IB_CPPFLAGS)
+
 IB_LDFLAGS="$IB_LDFLAGS -L/usr/mellanox/lib"
 AC_SUBST(IB_LDFLAGS)
 
