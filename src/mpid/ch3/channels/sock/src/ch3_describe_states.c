@@ -263,7 +263,7 @@ int CH3U_Describe_timer_states()
 		       MPID_STATE_MPIDI_CH3_COMM_SPAWN,
 		       "MPIDI_CH3U_Comm_spawn",
 		       get_random_color_str());
-    return 0;
+    return Sock_describe_timer_states();
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */
