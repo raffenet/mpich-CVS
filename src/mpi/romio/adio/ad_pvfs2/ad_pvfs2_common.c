@@ -75,8 +75,7 @@ void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials)
 {
     memset(credentials, 0, sizeof(PVFS_credentials));
 
-    credentials->uid = geteuid();
-    credentials->gid = getegid();
+    PVFS_util_gen_credentials(credentials);
 }
 
 /* pvfs_error_convert: given a pvfs error code, make it into the appropriate
