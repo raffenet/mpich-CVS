@@ -248,6 +248,8 @@ case $arg in
      ;;
   -prefix=* | --prefix=*)
      PREFIX=`echo $arg|sed 's/-*prefix=//'`
+     # Use new variable name for prefix
+     prefix=$PREFIX
      ;;
   -f90nag | --f90nag)
      FC=f90
@@ -331,6 +333,30 @@ grep _"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
 if test $? != 0 ; then
    echo "Unknown architecture $arch... proceeding anyway"
 fi
+#
+#
+# Create the "autoconf" style directory names...
+#
+includedir="${prefix}/include"
+AC_SUBST(includedir)
+# bindir is for executable programs for the USER
+if test -z "$bindir" ; then bindir='${exec_prefix}/bin' ; fi
+AC_SUBST(bindir)
+# sbindir is for executable programs for the ADMINISTRATOR
+if test -z "$sbindir" ; then sbindir='${exec_prefix}/sbin' ; fi
+AC_SUBST(sbindir)
+# libdir is for libraries for the USER
+if test -z "$libdir" ; then libdir='${exec_prefix}/lib' ; fi
+AC_SUBST(libdir)
+if test -z "$prefix" ; then prefix=$PREFIX ; fi
+AC_SUBST(prefix)
+# mandir is the root for the man pages
+if test -z "$mandir" ; then mandir='${prefix}/man' ; fi
+AC_SUBST(mandir)
+if test -z "$docdir" ; then docdir='${prefix}/doc' ; fi
+AC_SUBST(docdir)
+if test -z "$htmldir" ; then htmldir='${prefix}/www' ; fi
+AC_SUBST(htmldir) 
 #
 # check for valid file system
 if test -n "$FILE_SYSTEM" ; then
