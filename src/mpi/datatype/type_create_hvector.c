@@ -86,6 +86,24 @@ int MPI_Type_create_hvector(int count,
 				 1, /* stride in bytes */
 				 oldtype,
 				 newtype);
+
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Datatype *new_dtp;
+	int ints[2];
+
+	ints[0] = count;
+	ints[1] = blocklength;
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_HVECTOR,
+					       3, /* ints (count, blocklength) */
+					       1, /* aints */
+					       1, /* types */
+					       ints,
+					       &stride,
+					       &oldtype);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);

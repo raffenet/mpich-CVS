@@ -71,6 +71,30 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+	/* make a contig out of it so that we have a placeholder type, since
+         * now we have to keep up with the contents and envelope data
+	 */
+	mpi_errno = MPID_Type_contiguous(1, datatype, newtype);
+    }
+    else {
+	mpi_errno = MPID_Type_dup(datatype, newtype);
+    }
+
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Datatype *new_dtp;
+
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_DUP,
+					       0, /* ints */
+					       0, /* aints */
+					       1, /* types */
+					       NULL,
+					       NULL,
+					       &datatype);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
     return MPI_SUCCESS;
 }

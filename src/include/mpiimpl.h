@@ -507,12 +507,12 @@ do {                                                                    \
     switch (HANDLE_GET_KIND(a)) {                                       \
         case HANDLE_KIND_DIRECT:                                        \
             ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            __lptr = ((MPID_Datatype *) ptr)->opt_loopinfo;             \
+            __lptr = ((MPID_Datatype *) ptr)->loopinfo;                 \
             break;                                                      \
         case HANDLE_KIND_INDIRECT:                                      \
             ptr = ((MPID_Datatype *)                                    \
 		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            __lptr = ((MPID_Datatype *) ptr)->opt_loopinfo;             \
+            __lptr = ((MPID_Datatype *) ptr)->loopinfo;                 \
             break;                                                      \
         case HANDLE_KIND_INVALID:                                       \
         case HANDLE_KIND_BUILTIN:                                       \
@@ -880,17 +880,19 @@ extern MPID_Win MPID_Win_direct[];
 
 /* Datatypes */
 
+typedef struct MPID_Datatype_contents {
+    int combiner;
+    int nr_ints;
+    int nr_aints;
+    int nr_types;
+    /* space allocated beyond structure used to store the types[], ints[], aints[], in that order */
+} MPID_Datatype_contents;
+
 typedef struct MPID_Datatype { 
     int           handle;            /* value of MPI_Datatype for structure */
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
                                     a (count,datatype) pair) */
-    struct MPID_Dataloop *opt_loopinfo;  /* "optimized" loopinfo.  
-                                    Filled in at create
-                                    time; not touched by MPI calls.  This will
-                                    be for the homogeneous case until further
-                                    notice */
-
     int           size;          /* Q: maybe this should be in the dataloop? */
     MPI_Aint      extent;        /* MPI-2 allows a type to be created by
                                     resizing (the extent of) an existing 
@@ -915,7 +917,6 @@ typedef struct MPID_Datatype {
                                      information is used to ensure that
                                      no datatype is constructed that
                                      cannot be processed (see MPID_Segment) */
-    /* int opt_loopinfo_depth ??? */
 
     MPID_Attribute   *attributes;    /* MPI-2 adds datatype attributes */
 
@@ -928,6 +929,7 @@ typedef struct MPID_Datatype {
     int           n_elements;   /* Number of basic elements in this datatype */
     MPI_Aint      element_size; /* Size of each element or -1 if elements are
                                    not all the same size */
+    MPID_Datatype_contents *contents;
     int (*free_fn)( struct MPID_Datatype * ); /* Function to free this datatype */
     /* Other, device-specific information */
 #ifdef MPID_DEV_DATATYPE_DECL

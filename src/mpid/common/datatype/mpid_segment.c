@@ -165,14 +165,14 @@ static int MPID_Segment_piece_pack_vector(DLOOP_Handle handle,
     
     /* for now we'll just be stupid about this */
     if (paramp->u.pack_vector.index > 0 && ((char *)dbufp + dbufoff) ==
-	(paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF +
+	(((char *) paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_BUF) +
 	 paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN))
     {
 	/* add this size to the last vector rather than using up another one */
 	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index - 1].DLOOP_VECTOR_LEN += size;
     }
     else {
-	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char*)dbufp + dbufoff;
+	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF = (char*) dbufp + dbufoff;
 	paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN = size;
 	paramp->u.pack_vector.index++;
 	/* check to see if we have used our entire vector buffer, and if so return 1 to stop processing */

@@ -132,7 +132,6 @@ int MPID_Type_indexed(int count,
 	dlp = (struct MPID_Dataloop *)MPIU_Malloc(new_loopsize);
 	if (dlp == NULL) assert(0);
 
-	new_dtp->opt_loopinfo   = dlp;
 	new_dtp->loopinfo       = dlp;
 	new_dtp->loopsize       = new_loopsize;
 
@@ -218,7 +217,6 @@ int MPID_Type_indexed(int count,
 	if (dlp == NULL) assert(0);
 
 	new_dtp->loopinfo = dlp;
-	new_dtp->opt_loopinfo = dlp;
 	new_dtp->loopsize = new_loopsize;
 
 	/* fill in top part of dataloop */

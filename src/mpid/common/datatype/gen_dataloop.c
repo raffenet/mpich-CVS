@@ -67,6 +67,7 @@ struct DLOOP_Dataloop * PREPEND_PREFIX(Dataloop_alloc)(void)
 @*/
 void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop)
 {
+    memset(dataloop, 0, sizeof(DLOOP_Dataloop_common));
     DLOOP_Free(dataloop);
     return;
 }

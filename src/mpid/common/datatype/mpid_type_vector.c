@@ -120,7 +120,6 @@ int MPID_Type_vector(int count,
 	 */
 	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(sizeof(struct MPID_Dataloop));
 	if (dlp == NULL) assert(0);
-	new_dtp->opt_loopinfo   = dlp;
 	new_dtp->loopinfo       = dlp;
 
 	/* fill in dataloop, noting that this is a leaf.  no need to copy. */
@@ -183,7 +182,6 @@ int MPID_Type_vector(int count,
 	if (dlp == NULL) assert(0);
 
 	new_dtp->loopinfo = dlp;
-	new_dtp->opt_loopinfo = dlp;
 	new_dtp->loopsize = new_loopsize;
 
 	/* fill in top part of dataloop */

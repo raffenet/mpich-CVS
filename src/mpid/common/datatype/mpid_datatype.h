@@ -6,6 +6,7 @@
 #ifndef MPID_DATATYPE_H
 #define MPID_DATATYPE_H
 
+#include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
 /* NOTE: 
@@ -166,8 +167,6 @@ void MPID_Dataloop_free(struct MPID_Dataloop *dataloop);
 
 typedef struct MPID_Segment * MPID_Segment_foo; /* HACK */
 
-#if 0
-/* NOTE: THESE PROTOTYPES IN DLOOP FORM ARE BELOW.  WHICH IS BETTER? */
 void MPID_Segment_pack(struct MPID_Segment *segp,
 		       int first,
 		       int *lastp,
@@ -190,28 +189,20 @@ void MPID_Segment_unpack_vector(struct MPID_Segment *segp,
 				MPID_IOV *vector,
 				int *lengthp);
 
-#endif
+/* misc */
 
-void MPID_Segment_pack(struct DLOOP_Segment *segp,
-		       DLOOP_Offset first,
-		       DLOOP_Offset *lastp,
-		       DLOOP_Buffer pack_buffer);
 
-void MPID_Segment_unpack(struct DLOOP_Segment *segp,
-			 DLOOP_Offset first,
-			 DLOOP_Offset *lastp,
-			 const DLOOP_Buffer unpack_buffer);
+typedef struct MPID_Datatype * MPID_Datatype_foo; /* HACK */
 
-void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
-			      DLOOP_Offset first,
-			      DLOOP_Offset *lastp,
-			      DLOOP_VECTOR *vector,
-			      DLOOP_Offset *lengthp);
+int MPID_Datatype_set_contents(struct MPID_Datatype *ptr,
+			       int combiner,
+			       int nr_ints,
+			       int nr_aints,
+			       int nr_types,
+			       int *ints,
+			       MPI_Aint *aints,
+			       MPI_Datatype *types);
 
-void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
-				DLOOP_Offset first,
-				DLOOP_Offset *lastp,
-				DLOOP_VECTOR *vector,
-				DLOOP_Offset *lengthp);
-
+void MPID_Datatype_free_contents(struct MPID_Datatype *ptr);
+/* end of file */
 #endif

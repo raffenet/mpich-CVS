@@ -73,7 +73,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 
     new_dtp->loopinfo       = dlp;
     new_dtp->loopinfo_depth = old_dtp->loopinfo_depth;
-    new_dtp->opt_loopinfo   = dlp;
     new_dtp->loopsize       = old_dtp->loopsize;
 
     /* copy old dataloop */

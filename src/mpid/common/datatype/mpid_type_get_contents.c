@@ -36,7 +36,7 @@ static int create_error_to_return(void);
  *   if we think that would make things faster.
  * - Fix stride and related values on all but vector type; leaving these alone
  *   until we figure out exactly what we want to do with the loopinfo vs.
- *   opt_loopinfo.
+ *   opt_loopinfo (now gone).
  */
 int MPID_Type_get_contents(MPI_Datatype datatype, 
 			   int max_integers, 

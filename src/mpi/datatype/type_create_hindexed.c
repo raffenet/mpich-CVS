@@ -92,6 +92,30 @@ int MPI_Type_create_hindexed(int count,
 				  oldtype,
 				  newtype);
 
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Datatype *new_dtp;
+	int i, *ints;
+
+	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
+	if (ints == NULL) assert(0);
+
+	ints[0] = count;
+
+	for (i=0; i < count; i++) {
+	    ints[i+1] = array_of_blocklengths[i];
+	}
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_HINDEXED,
+					       count+1, /* ints (count, blocklengths) */
+					       count, /* aints (displacements) */
+					       1, /* types */
+					       ints,
+					       array_of_displacements,
+					       &oldtype);
+	MPIU_Free(ints);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);

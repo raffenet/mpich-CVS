@@ -73,7 +73,6 @@ int MPID_Type_contiguous(int count,
 	new_dtp->loopsize       = sizeof(struct MPID_Dataloop);
 	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(sizeof(struct MPID_Dataloop));
 	if (dlp == NULL) assert(0);
-	new_dtp->opt_loopinfo   = dlp; /* TODO: DO OPTIMIZED LOOPS */
 	new_dtp->loopinfo       = dlp;
 
 	/* fill in dataloop */
@@ -118,7 +117,6 @@ int MPID_Type_contiguous(int count,
 	if (dlp == NULL) assert(0);
 
 	new_dtp->loopinfo       = dlp;
-	new_dtp->opt_loopinfo   = dlp;
 	new_dtp->loopsize       = new_loopsize;
 
 	/* fill in top part of dataloop */
@@ -140,6 +138,7 @@ int MPID_Type_contiguous(int count,
     }
 
     *newtype = new_dtp->handle;
+
     return MPI_SUCCESS;
 }
 

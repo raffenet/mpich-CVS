@@ -92,6 +92,34 @@ int MPI_Type_indexed(int count,
 				  0, /* displacements not in bytes */
 				  old_type,
 				  newtype);
+
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Datatype *new_dtp;
+	int i, *ints;
+
+	ints = (int *) MPIU_Malloc((2*count + 1) * sizeof(int));
+	if (ints == NULL) assert(0);
+
+	ints[0] = count;
+
+	for (i=0; i < count; i++) {
+	    ints[i+1] = blocklens[i];
+	}
+	for (i=count; i < 2*count; i++) {
+	    ints[i+1] = indices[i];
+	}
+	MPID_Datatype_get_ptr(*newtype, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_INDEXED,
+					       2*count + 1, /* ints (count, blocklengths, displacements) */
+					       0, /* aints (displacements) */
+					       1, /* types */
+					       ints,
+					       NULL,
+					       &old_type);
+	MPIU_Free(ints);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_INDEXED);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);

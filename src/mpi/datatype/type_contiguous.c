@@ -79,8 +79,21 @@ int MPI_Type_contiguous(int count,
 				     old_type,
 				     new_type_p);
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Datatype *new_dtp;
 
+	MPID_Datatype_get_ptr(*new_type_p, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_CONTIGUOUS,
+					       1, /* ints (count) */
+					       0,
+					       1,
+					       &count,
+					       NULL,
+					       &old_type);
+    }
+
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

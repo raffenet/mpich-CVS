@@ -70,12 +70,12 @@ int MPI_Type_vector(int count,
 	    MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
 	    if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
-		MPID_Datatype_get_ptr( old_type, old_ptr );
-		MPID_Datatype_valid_ptr( old_ptr, mpi_errno );
+		MPID_Datatype_get_ptr(old_type, old_ptr);
+		MPID_Datatype_valid_ptr(old_ptr, mpi_errno);
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -88,6 +88,25 @@ int MPI_Type_vector(int count,
 				 0, /* stride not in bytes, but in terms of type extent */
 				 old_type,
 				 newtype_p);
+
+    if (mpi_errno == MPI_SUCCESS) {
+	MPID_Datatype *new_dtp;
+	int ints[3];
+
+	ints[0] = count;
+	ints[1] = blocklength;
+	ints[2] = stride;
+	MPID_Datatype_get_ptr(*newtype_p, new_dtp);
+	mpi_errno = MPID_Datatype_set_contents(new_dtp,
+					       MPI_COMBINER_VECTOR,
+					       3, /* ints (count, blocklength, stride) */
+					       0, /* aints */
+					       1, /* types */
+					       ints,
+					       NULL,
+					       &old_type);
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
