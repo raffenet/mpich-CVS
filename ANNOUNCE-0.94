@@ -4,7 +4,7 @@
 
 The MPICH group at Argonne National Laboratory is pleased to announce
 the availability of MPICH-2, version 0.94.  MPICH-2 is complete rewrite
-of the MPICH portable implementation of MPI, the Message-Padding
+of the MPICH portable implementation of MPI, the Message-Passing
 Interface Standard.
 
 MPICH-2 offers higher performance and greater robustness than the
