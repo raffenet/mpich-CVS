@@ -1863,6 +1863,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    ibui_post_receive(ibu);
 		    break;
 		}
+		if (recv_vc_ptr->ch.recv_active == NULL)
+		    break;
 	    }
 #endif
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
