@@ -1,0 +1,13 @@
+
+Anthony Chan:
+
+9/21:  added MPI_Finalize() call, added fprintf to MPI_Init() and MPI_Finalize()       to indicate that Collective Checking is being used.
+
+9/22:  added matching free() to the corresponding malloc() in all *.c files to
+       the memory leak.
+
+9/25:  added checking statements for the return of MPI_Type_get_envelope() in
+       cff_prof_hash_dtype() before malloc().
+
+10/11: fixed returned type of malloc() pointer to match the arguments used in
+       MPI_Type_get_contents() in cff_prof_hash_dtype().

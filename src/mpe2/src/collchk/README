@@ -1,0 +1,6 @@
+
+Anthony Chan on 10/15/2004
+
+The code seems to run fine with collective operations with MPI primitive
+datatypes like MPI_INT, but it hangs when used with MPI user-defined
+datatype, like vector.
