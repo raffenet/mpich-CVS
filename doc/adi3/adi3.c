@@ -1100,7 +1100,7 @@ void MPID_Cancel_send( MPID_Request *request )
   Request
 
   @*/
-void MPID_Cancel_send( MPID_Request *request )
+void MPID_Cancel_recv( MPID_Request *request )
 {
 }
 
