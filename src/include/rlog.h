@@ -10,7 +10,10 @@
 
 #include <stdio.h>
 
+/*
 #include "mpi.h"
+#define RLOG_timestamp PMPI_Wtime
+*/
 
 #if defined(__cplusplus)
 extern "C" {
@@ -223,8 +226,6 @@ int RLOG_HitTest(RLOG_IOStruct *pInput, int rank, int level, double timestamp, R
 int RLOG_PrintGlobalState(RLOG_IOStruct *pInput);
 
 /* macros */
-
-#define RLOG_timestamp PMPI_Wtime
 
 #define RLOG_HEADER_CAST() ((RLOG_HEADER*)pRLOG->pOutput->pCurHeader)
 #define RLOG_EVENT_CAST()  ((RLOG_EVENT*)((char*)pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER)))
