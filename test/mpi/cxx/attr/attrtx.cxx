@@ -7,27 +7,40 @@
 
   Exercise communicator routines.
 
-  This C version derived from a Fortran test program from ....
+  This C++ version derived from a Fortran test program from ....
+*/
 
- */
-#include <stdio.h>
 #include "mpi.h"
-#include "mpitest.h"
+
+#include "mpitestconf.h"
+#ifdef HAVE_IOSTREAM
+// Not all C++ compilers have iostream instead of iostream.h
+#include <iostream>
+#ifdef HAVE_NAMESPACE_STD
+// Those that do often need the std namespace; otherwise, a bare "cout"
+// is likely to fail to compile
+using namespace std;
+#endif
+#else
+#include <iostream.h>
+#endif
+#include <stdio.h>
+#include "mpitestcxx.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 /* #define DEBUG */
+
 int test_communicators ( void );
-int copy_fn ( MPI::Comm, int, void *, void *, void *, int * );
-int delete_fn ( MPI::Comm, int, void *, void * );
-#ifdef DEBUG
-#define FFLUSH fflush(stdout);
-#else
-#define FFLUSH
-#endif
+int copy_fn ( const MPI::Comm &, int, void *, void *, void *, bool & );
+int delete_fn ( MPI::Comm &, int, void *, void * );
 
 int main( int argc, char **argv )
 {
     int errs = 0;
-    MTest_Init( &argc, &argv );
+
+    MTest_Init();
     
     errs = test_communicators();
     MTest_Finalize( errs );
@@ -35,32 +48,32 @@ int main( int argc, char **argv )
     return 0;
 }
 
-int copy_fn( MPI::Comm oldcomm, int keyval, void *extra_state,
-	     void *attribute_val_in, void *attribute_val_out, int *flag)
+int copy_fn( const MPI::Comm &oldcomm, int keyval, void *extra_state,
+	     void *attribute_val_in, void *attribute_val_out, bool &flag)
 {
     /* Note that if (sizeof(int) < sizeof(void *), just setting the int
        part of attribute_val_out may leave some dirty bits
     */
     *(MPI::Aint *)attribute_val_out = (MPI::Aint)attribute_val_in;
-    *flag = 1;
+    flag = 1;
     return MPI::SUCCESS;
 }
 
-int delete_fn( MPI::Comm comm, int keyval, void *attribute_val, 
+int delete_fn( MPI::Comm &comm, int keyval, void *attribute_val, 
 	       void *extra_state)
 {
     int world_rank;
-    MPI::Comm_rank( MPI::COMM_WORLD, &world_rank );
+    world_rank = MPI::COMM_WORLD.Get_rank();
     if ((MPI::Aint)attribute_val != (MPI::Aint)world_rank) {
-	printf( "incorrect attribute value %d\n", *(int*)attribute_val );
-	MPI::Abort(MPI::COMM_WORLD, 1005 );
+	cout << "incorrect attribute value " << *(int*)attribute_val << "\n";
+	MPI::COMM_WORLD.Abort( 1005 );
     }
     return MPI::SUCCESS;
 }
 
 int test_communicators( void )
 {
-    MPI::Comm dup_comm_world, lo_comm, rev_comm, dup_comm, 
+    MPI::Intracomm dup_comm_world, lo_comm, rev_comm, dup_comm, 
 	split_comm, world_comm;
     MPI::Group world_group, lo_group, rev_group;
     void *vvalue;
@@ -74,15 +87,15 @@ int test_communicators( void )
     */
     MPI::Aint value;
 
-    MPI::Comm_rank( MPI::COMM_WORLD, &world_rank );
-    MPI::Comm_size( MPI::COMM_WORLD, &world_size );
+    world_rank = MPI::COMM_WORLD.Get_rank();
+    world_size = MPI::COMM_WORLD.Get_size();
 #ifdef DEBUG
     if (world_rank == 0) {
-	printf( "*** Communicators ***\n" ); fflush(stdout);
+	cout << "*** Communicators ***\n";
     }
 #endif
 
-    MPI::Comm_dup( MPI::COMM_WORLD, &dup_comm_world );
+    dup_comm_world = MPI::COMM_WORLD.Dup();
 
     /*
       Exercise Comm_create by creating an equivalent to dup_comm_world
@@ -91,17 +104,17 @@ int test_communicators( void )
 
 #ifdef DEBUG
     if (world_rank == 0) {
-	printf( "    Comm_create\n" ); fflush(stdout);
+	cout << "    Comm_create\n";
     }
 #endif
 
-    MPI::Comm_group( dup_comm_world, &world_group );
-    MPI::Comm_create( dup_comm_world, world_group, &world_comm );
-    MPI::Comm_rank( world_comm, &rank );
+    world_group = dup_comm_world.Get_group();
+    world_comm  = dup_comm_world.Create( world_group );
+    rank = world_comm.Get_rank();
     if (rank != world_rank) {
 	errs++;
-	printf( "incorrect rank in world comm: %d\n", rank );
-	MPI::Abort(MPI::COMM_WORLD, 3001 );
+	cout << "incorrect rank in world comm: " << rank << "\n";
+	MPI::COMM_WORLD.Abort( 3001 );
     }
 
     n = world_size / 2;
@@ -111,176 +124,147 @@ int test_communicators( void )
     ranges[0][2] = 1;
 
 #ifdef DEBUG
-    printf( "world rank = %d before range incl\n", world_rank );FFLUSH;
+    cout << "world rank = " << world_rank << " before range incl\n";
 #endif
-    MPI::Group_range_incl(world_group, 1, ranges, &lo_group );
+    lo_group = world_group.Range_incl( 1, ranges );
 #ifdef DEBUG
-    printf( "world rank = %d after range incl\n", world_rank );FFLUSH;
+    cout << "world rank = " << world_rank << " after range incl\n";
 #endif
-    MPI::Comm_create(world_comm, lo_group, &lo_comm );
+    lo_comm = world_comm.Create( lo_group );
 #ifdef DEBUG
-    printf( "world rank = %d before group free\n", world_rank );FFLUSH;
+    cout << "world rank = " << world_rank << " before group free\n";
 #endif
-    MPI::Group_free( &lo_group );
-
+    lo_group.Free();
+    
 #ifdef DEBUG
-    printf( "world rank = %d after group free\n", world_rank );FFLUSH;
+    cout << "world rank = " << world_rank << " after group free\n";
 #endif
 
     if (world_rank < (world_size - n)) {
-	MPI::Comm_rank(lo_comm, &rank );
+	rank = lo_comm.Get_rank();
 	if (rank == MPI::UNDEFINED) {
 	    errs++;
-	    printf( "incorrect lo group rank: %d\n", rank ); fflush(stdout);
-	    MPI::Abort(MPI::COMM_WORLD, 3002 );
+	    cout << "incorrect lo group rank: " << rank << "\n";
+	    MPI::COMM_WORLD.Abort( 3002 );
 	}
 	else {
-	    /* printf( "lo in\n" );FFLUSH; */
-	    MPI::Barrier(lo_comm );
-	    /* printf( "lo out\n" );FFLUSH; */
+	    lo_comm.Barrier();
 	}
     }
     else {
 	if (lo_comm != MPI::COMM_NULL) {
 	    errs++;
-	    printf( "incorrect lo comm:\n" ); fflush(stdout);
-	    MPI::Abort(MPI::COMM_WORLD, 3003 );
+	    cout << "incorrect lo comm:\n";
+	    MPI::COMM_WORLD.Abort( 3003 );
 	}
     }
-
+    
 #ifdef DEBUG
-    printf( "worldrank = %d\n", world_rank );FFLUSH;
+    cout << "worldrank = " << world_rank << "\n";
 #endif
-    MPI::Barrier(world_comm);
-
+    world_comm.Barrier();
+    
 #ifdef DEBUG
-    printf( "bar!\n" );FFLUSH;
+    cout << "bar!\n";
 #endif
     /*
       Check Comm_dup by adding attributes to lo_comm & duplicating
     */
 #ifdef DEBUG
     if (world_rank == 0) {
-	printf( "    Comm_dup\n" );
-	fflush(stdout);
+	cout << "    Comm_dup\n";
     }
 #endif
     
     if (lo_comm != MPI::COMM_NULL) {
 	value = 9;
-	MPI::Keyval_create(copy_fn,     delete_fn,   &key_1, &value );
+	key_1 = MPI::Comm::Create_keyval(copy_fn, delete_fn, &value );
 	value = 8;
-	/*     MPI::Keyval_create(MPI::DUP_FN,  MPI::NULL_DELETE_FN,
-	                         &key_2, &value );  */
 	value = 7;
-	MPI::Keyval_create(MPI::NULL_COPY_FN, MPI::NULL_DELETE_FN,
-			  &key_3, &value ); 
-
+	key_3 = MPI::Comm::Create_keyval(MPI::Comm::NULL_COPY_FN, 
+					 MPI::Comm::NULL_DELETE_FN, &value ); 
+	
 	/* This may generate a compilation warning; it is, however, an
 	   easy way to cache a value instead of a pointer */
-	/* printf( "key1 = %x key3 = %x\n", key_1, key_3 ); */
-	MPI::Attr_put(lo_comm, key_1, (void *)world_rank );
-	/*         MPI::Attr_put(lo_comm, key_2, world_size ) */
-	MPI::Attr_put(lo_comm, key_3, (void *)0 );
+	lo_comm.Set_attr( key_1, (void *)world_rank );
+	lo_comm.Set_attr( key_3, (void *)0 );
 	
-	MPI::Comm_dup(lo_comm, &dup_comm );
+	dup_comm = lo_comm.Dup();
 
 	/* Note that if sizeof(int) < sizeof(void *), we can't use
 	   (void **)&value to get the value we passed into Attr_put.  To avoid 
 	   problems (e.g., alignment errors), we recover the value into 
 	   a (void *) and cast to int. Note that this may generate warning
 	   messages from the compiler.  */
-	MPI::Attr_get(dup_comm, key_1, (void **)&vvalue, &flag );
+	flag = dup_comm.Get_attr( key_1, (void **)&vvalue );
 	value = (MPI::Aint)vvalue;
 	
 	if (! flag) {
 	    errs++;
-	    printf( "dup_comm key_1 not found on %d\n", world_rank );
-	    fflush( stdout );
-	    MPI::Abort(MPI::COMM_WORLD, 3004 );
+	    cout << "dup_comm key_1 not found on " << world_rank << "\n";
+	    MPI::COMM_WORLD.Abort( 3004 );
 	}
 	
 	if (value != world_rank) {
 	    errs++;
-	    printf( "dup_comm key_1 value incorrect: %ld\n", (long)value );
-	    fflush( stdout );
-	    MPI::Abort(MPI::COMM_WORLD, 3005 );
+	    cout << "dup_comm key_1 value incorrect: " << (long)value << "\n";
+	    MPI::COMM_WORLD.Abort( 3005 );
 	}
 
-	/*         MPI::Attr_get(dup_comm, key_2, (int *)&value, &flag ); */
-	/*
-	  if (! flag) {
-	     printf( "dup_comm key_2 not found\n" );
-	     fflush( stdout );
-             MPI::Abort(MPI::COMM_WORLD, 3006 );
-           }
-
-	  if (value != world_size) {
-             printf( "dup_comm key_2 value incorrect: %d\n", value );
-	     fflush( stdout );
-             MPI::Abort(MPI::COMM_WORLD, 3007 );
-	   }
-	*/
-	MPI::Attr_get(dup_comm, key_3, (void **)&vvalue, &flag );
+	flag = dup_comm.Get_attr( key_3, (void **)&vvalue );
 	value = (int)vvalue;
 	if (flag) {
 	    errs++;
-	    printf( "dup_comm key_3 found!\n" );
-	    fflush( stdout );
-	    MPI::Abort(MPI::COMM_WORLD, 3008 );
+	    cout << "dup_comm key_3 found!\n";
+	    MPI::COMM_WORLD.Abort( 3008 );
 	}
-	MPI::Keyval_free(&key_1 );
-	/* 
-	   c        MPI::Keyval_free(&key_2 )
-	*/
-	MPI::Keyval_free(&key_3 );
+	MPI::Comm::Free_keyval( key_1 );
+	MPI::Comm::Free_keyval( key_3 );
     }
     /* 
        Split the world into even & odd communicators with reversed ranks.
     */
 #ifdef DEBUG
     if (world_rank == 0) {
-	printf( "    Comm_split\n" );
-	fflush(stdout);
+	cout << "    Comm_split\n";
     }
 #endif
     
     color = world_rank % 2;
     key   = world_size - world_rank;
     
-    MPI::Comm_split(dup_comm_world, color, key, &split_comm );
-    MPI::Comm_size(split_comm, &size );
-    MPI::Comm_rank(split_comm, &rank );
+    split_comm = dup_comm_world.Split( color, key );
+    size = split_comm.Get_size();
+    rank = split_comm.Get_rank();
     if (rank != ((size - world_rank/2) - 1)) {
 	errs++;
-	printf( "incorrect split rank: %d\n", rank ); fflush(stdout);
-	MPI::Abort(MPI::COMM_WORLD, 3009 );
+	cout << "incorrect split rank: " << rank << "\n";
+	MPI::COMM_WORLD.Abort( 3009 );
     }
     
-    MPI::Barrier(split_comm );
+    split_comm.Barrier();
     /*
       Test each possible Comm_compare result
     */
 #ifdef DEBUG
     if (world_rank == 0) {
-	printf( "    Comm_compare\n" );
-	fflush(stdout);
+	cout << "    Comm_compare\n";
     }
 #endif
     
-    MPI::Comm_compare(world_comm, world_comm, &result );
+    result = MPI::Comm::Compare(world_comm, world_comm );
     if (result != MPI::IDENT) {
 	errs++;
-	printf( "incorrect ident result: %d\n", result );
-	MPI::Abort(MPI::COMM_WORLD, 3010 );
+	cout << "incorrect ident result: " << result << "\n";
+	MPI::COMM_WORLD.Abort( 3010 );
     }
     
     if (lo_comm != MPI::COMM_NULL) {
-	MPI::Comm_compare(lo_comm, dup_comm, &result );
+	result = MPI::Comm::Compare(lo_comm, dup_comm );
 	if (result != MPI::CONGRUENT) {
 	    errs++;
-            printf( "incorrect congruent result: %d\n", result );
-            MPI::Abort(MPI::COMM_WORLD, 3011 );
+            cout << "incorrect congruent result: " << result << "\n";
+            MPI::COMM_WORLD.Abort( 3011 );
 	}
     }
     
@@ -288,29 +272,29 @@ int test_communicators( void )
     ranges[0][1] = 0;
     ranges[0][2] = -1;
 
-    MPI::Group_range_incl(world_group, 1, ranges, &rev_group );
-    MPI::Comm_create(world_comm, rev_group, &rev_comm );
+    rev_group = world_group.Range_incl( 1, ranges );
+    rev_comm  = world_comm.Create( rev_group );
 
 #ifdef DEBUG
-    printf ("[%d] reverse group\n", world_rank );
+    cout << "[" << world_rank << "] reverse group\n";
     MPITEST_Group_print( rev_group );
-    printf ("[%d] world group\n", world_rank );
+    cout << "[" << world_rank << "] world group\n";
     MPITEST_Group_print( world_group );
 #endif
 
-    MPI::Comm_compare(world_comm, rev_comm, &result );
+    result = MPI::Comm::Compare(world_comm, rev_comm );
     if (result != MPI::SIMILAR && world_size != 1) {
 	errs++;
-	printf( "incorrect similar result: %d\n", result );
-	MPI::Abort(MPI::COMM_WORLD, 3012 );
+	cout << "incorrect similar result: " << result << "\n";
+	MPI::COMM_WORLD.Abort( 3012 );
     }
     
     if (lo_comm != MPI::COMM_NULL) {
-	MPI::Comm_compare(world_comm, lo_comm, &result );
+	result = MPI::Comm::Compare(world_comm, lo_comm );
 	if (result != MPI::UNEQUAL && world_size != 1) {
 	    errs++;
-	    printf( "incorrect unequal result: %d\n", result );
-	    MPI::Abort(MPI::COMM_WORLD, 3013 );
+	    cout << "incorrect unequal result: " << result << "\n";
+	    MPI::COMM_WORLD.Abort( 3013 );
 	}
     }
     /*
@@ -318,21 +302,21 @@ int test_communicators( void )
     */
 #ifdef DEBUG
     if (world_rank == 0) 
-	printf( "    Comm_free\n" );
+	cout << "    Comm_free\n";
 #endif
-    
-    MPI::Comm_free( &world_comm );
-    MPI::Comm_free( &dup_comm_world );
-    
-    MPI::Comm_free( &rev_comm );
-    MPI::Comm_free( &split_comm );
-    
-    MPI::Group_free( &world_group );
-    MPI::Group_free( &rev_group );
+
+    world_comm.Free();
+    dup_comm_world.Free();
+
+    rev_comm.Free();
+    split_comm.Free();
+
+    world_group.Free();
+    rev_group.Free();
     
     if (lo_comm != MPI::COMM_NULL) {
-        MPI::Comm_free( &lo_comm );
-        MPI::Comm_free( &dup_comm );
+	lo_comm.Free();
+	dup_comm.Free();
     }
     
     return errs;
