@@ -128,7 +128,7 @@ snap:
 
 # Check that all modules are present in the development version
 MODULE_DIRS = doc/adi3 doc/mpich2 doc/notes src/mpi/romio src/pm/winmpd \
-    src/pm/mpd src/util/slog2sdk
+    src/pm/mpd
 dist-check:
 	@for dir in $(MODULE_DIRS) ; do \
 	    if [ ! -d $(master_top_srcdir)/$$dir ] ; then \
