@@ -268,6 +268,8 @@ Fortran integer (value is %ld)
 **instatus:See the MPI_ERROR field in MPI_Status for the error code
 **inpending:Pending request (no error)
 **request:Invalid MPI_Request
+**request_invalid_kind:The supplied request was invalid
+**request_invalid_kind %d:The supplied request was invalid (kind=%d)
 **requestnull:Null MPI_Request 
 **requestnotpersist:Request is not persistent in MPI_Start or MPI_Startall.
 **requestpersistactive:Persistent request passed to MPI_Start or MPI_Startall is already active.

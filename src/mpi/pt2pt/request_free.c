@@ -110,6 +110,8 @@ int MPI_Request_free(MPI_Request *request)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    MPID_Progress_poke();
     
     switch (request_ptr->kind)
     {
@@ -132,30 +134,41 @@ int MPI_Request_free(MPI_Request *request)
 	
 	case MPID_UREQUEST:
 	{
-	    switch (request_ptr->greq_lang) {
-	    case MPID_LANG_C:
-#ifdef HAVE_CXX_BINDING
-	    case MPID_LANG_CXX:
-#endif
-		mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
-	    break;
-#ifdef HAVE_FORTRAN_BINDING
-	    case MPID_LANG_FORTRAN:
-	    case MPID_LANG_FORTRAN90:
+	    switch (request_ptr->greq_lang)
 	    {
-		MPI_Fint ierr;
-		( (MPIR_Grequest_f77_free_function*)(request_ptr->free_fn))(
-		    request_ptr->grequest_extra_state, 
-		    &ierr );
-		mpi_errno = (int) ierr;
+		case MPID_LANG_C:
+#             ifdef HAVE_CXX_BINDING
+		case MPID_LANG_CXX:
+#             endif
+		{
+		    mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+		    break;
+		}
+		
+#             ifdef HAVE_FORTRAN_BINDING
+		case MPID_LANG_FORTRAN:
+		case MPID_LANG_FORTRAN90:
+		{
+		    MPI_Fint ierr;
+		    ( (MPIR_Grequest_f77_free_function*)(request_ptr->free_fn))(request_ptr->grequest_extra_state, &ierr );
+		    mpi_errno = (int) ierr;
+		    break;
+		}
+#             endif	    
 	    }
-	    break;
-#endif	    
-	    }
+	    
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userfree %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**user", "**userfree %d", mpi_errno);
 	    }
+	    break;
+	}
+
+	default:
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					     "**request_invalid_kind", "**request_invalid_kind %d", request_ptr->kind);
 	    break;
 	}
     }
