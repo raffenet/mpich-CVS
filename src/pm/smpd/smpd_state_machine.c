@@ -2434,7 +2434,7 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     if (first_call)
     {
 	smpd_dbg_printf("calling AcquireCredentialsHandle\n");
-	sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_INBOUND, NULL, NULL, NULL, NULL, &context->sspi_context->credential, &context->sspi_context->expiration_time);
+	sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_BOTH/*SECPKG_CRED_INBOUND*/, NULL, NULL, NULL, NULL, &context->sspi_context->credential, &context->sspi_context->expiration_time);
 	if (sec_result != SEC_E_OK)
 	{
 	    smpd_err_printf("unable to acquire the security package credential, error %d.\n", sec_result);
@@ -2478,7 +2478,9 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	&context->sspi_context->credential,
 	first_call ? NULL : &context->sspi_context->context,
 	&inbound_descriptor,
-	0, //ASC_REQ_MUTUAL_AUTH | ASC_REQ_DELEGATE,
+	/*0,*/
+	/*ASC_REQ_MUTUAL_AUTH | ASC_REQ_DELEGATE,*/
+	ASC_REQ_REPLAY_DETECT | ASC_REQ_SEQUENCE_DETECT | ASC_REQ_CONFIDENTIALITY /*| ASC_REQ_MUTUAL_AUTH | ASC_REQ_DELEGATE*/,
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
 	&context->sspi_context->context,
 	&outbound_descriptor,
@@ -2851,6 +2853,7 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 {
 #ifdef HAVE_WINDOWS_H
     int result;
+    char err_msg[256];
     const char *result_str = SMPD_SUCCESS_STR;
     SECURITY_STATUS sec_result;
     HANDLE user_handle;
@@ -2879,11 +2882,13 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	if (strcmp(context->sspi_header, "yes") == 0)
 	{
 	    /* full delegation requested */
+	    smpd_dbg_printf("calling DuplicateTokenEx with SecurityDelegation\n");
 	    duplicate_result = DuplicateTokenEx(context->sspi_context->user_handle, MAXIMUM_ALLOWED, NULL, SecurityDelegation, TokenPrimary, &user_handle);
 	}
 	else
 	{
 	    /* impersonate only */
+	    smpd_dbg_printf("calling DuplicateTokenEx with SecurityImpersonation\n");
 	    duplicate_result = DuplicateTokenEx(context->sspi_context->user_handle, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary, &user_handle);
 	}
 	if (duplicate_result)
@@ -2893,6 +2898,9 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	}
 	else
 	{
+	    result = GetLastError();
+	    smpd_translate_win_error(result, err_msg, 256, NULL);
+	    smpd_err_printf("DuplicateTokenEx failed: error %d, %s\n", result, err_msg);
 	    CloseHandle(context->sspi_context->user_handle);
 	    result_str = SMPD_FAIL_STR;
 	}
