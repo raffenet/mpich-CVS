@@ -286,6 +286,21 @@ else
     subsystems="$subsystems src/pmi/impls/$pmi_name"
     AC_SUBST(pmi_name)
 fi
+dnl with-logging
+if test "$with_logging" = "default" ; then
+    with_logging=dlog
+fi
+logging_name=$with_logging
+dnl
+if test ! -d $use_top_srcdir/src/util/logging/$logging_name ; then
+    AC_MSG_WARN([$use_top_srcdir/src/util/logging/$logging_name does not exist.  Logging library is unknown])
+elif test ! -x $use_top_srcdir/src/util/logging/$logging_name/configure ; then
+    AC_MSG_WARN([logging library $logging_name has no configure])
+    logging_name=""
+else
+    subsystems="$subsystems src/util/logging/$logging_name"
+    AC_SUBST(logging_name)
+fi
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries
@@ -652,7 +667,8 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpi/datatype/Makefile \
 	  test/mpi/errhan/Makefile \
 	  test/mpi/group/Makefile \
-	  examples/Makefile )
+	  examples/Makefile\
+          src/util/logging/Makefile )
 
 dnl The following files should be created by the appropriate configure within
 dnl the device.
