@@ -64,7 +64,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
             MPID_Group_valid_ptr( group_ptr2, mpi_errno );
-	    /* If group_ptr is not value, it will be reset to null */
+	    /* If group_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -98,12 +98,12 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     while (g1_idx >= 0 && g2_idx >= 0) {
 	if (group_ptr1->lrank_to_lpid[g1_idx].lpid !=
 	    group_ptr2->lrank_to_lpid[g2_idx].lpid) {
-	    g1_idx = group_ptr1->lrank_to_lpid[g1_idx].next_lpid;
-	    g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
 	    *result = MPI_UNEQUAL;
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
 	    return MPI_SUCCESS;
 	}
+	g1_idx = group_ptr1->lrank_to_lpid[g1_idx].next_lpid;
+	g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
     }
 
     /* See if the processes are in the same order by rank */

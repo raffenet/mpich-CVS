@@ -40,6 +40,7 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    (*new_group_ptr)->size = nproc;
     return mpi_errno;
 }
 /*
@@ -70,6 +71,8 @@ static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 	maparray[0].next_lpid = -1;
 	return 0;
     }
+    if (n == 0) 
+	return -1;
 
     /* Sort each half */
     idx2_offset = n/2;

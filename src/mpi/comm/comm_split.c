@@ -40,9 +40,9 @@ PMPI_LOCAL void MPIU_Sort_inttable( splittype *keytable, int size )
 
     /* FIXME Bubble sort */
     for (i=0; i<size; i++) {
-	for (j=i; j<size; j++) {
+	for (j=i+1; j<size; j++) {
 	    if (keytable[i].key > keytable[j].key) {
-		tmp = keytable[i];
+		tmp	    = keytable[i];
 		keytable[i] = keytable[j];
 		keytable[j] = tmp;
 	    }
@@ -111,7 +111,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     rank = comm_ptr->rank;
     size = comm_ptr->local_size;
 
-    /* Step 1: Find out what all of the processes have */
+    /* Step 1: Find out what color and keys all of the processes have */
     table = (splittype *) MPIU_Malloc( size * sizeof(splittype) );
     table[rank].color = color;
     table[rank].key   = key;
@@ -132,10 +132,12 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	    if (table[i].color == color) {
 		new_size++;
 		*last_ptr = i;
-		last_ptr = &table[i].color;
+		last_ptr  = &table[i].color;
 	    }
 	}
     }
+    /* We don't need to set the last value to -1 because we loop through
+       the list for only the known size of the group */
 
     /* Step 3: Create the communicator */
     mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
@@ -143,15 +145,19 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
+    newcomm_ptr->remote_size = new_size;
+    newcomm_ptr->local_size  = new_size;
     
     /* Step 4: Order the processes by their key values.  Sort the
        list that is stored in table.  To simplify the sort, we 
-       extract the table into a smaller array and sort that */
+       extract the table into a smaller array and sort that.
+       Also, store in the "color" entry the rank in the input communicator
+       of the entry. */
     keytable = (splittype *) MPIU_Malloc( new_size * sizeof(splittype) );
     for (i=0; i<new_size; i++) {
-	keytable[i].key = table[first_entry].key;
-	keytable[i].color = i;
-	first_entry = table[first_entry].color;
+	keytable[i].key	  = table[first_entry].key;
+	keytable[i].color = first_entry;
+	first_entry	  = table[first_entry].color;
     }
 
     /* sort key table.  The "color" entry is the rank of the corresponding
@@ -162,6 +168,9 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
     for (i=0; i<new_size; i++) {
 	MPID_VCR_Dup( comm_ptr->vcr[keytable[i].color], &newcomm_ptr->vcr[i] );
+	if (keytable[i].color == comm_ptr->rank) {
+	    newcomm_ptr->rank = i;
+	}
     }
 
     /* Free all storage */

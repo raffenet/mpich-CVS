@@ -23,6 +23,7 @@ void MPITEST_Group_create( int nproc, int myrank, MPI_Group *new_group )
 	fprintf( stderr, "Could not create a new group\n" );
 	MPI_Abort( MPI_COMM_WORLD, 1 );
     }
+    new_group_ptr->ref_count = 1;
     new_group_ptr->lrank_to_lpid = (MPID_Group_pmap_t *)MPIU_Malloc( nproc * sizeof(MPID_Group_pmap_t) );
     if (!new_group_ptr) {
 	fprintf( stderr, "Could not create lrank map for new group\n" );
@@ -39,4 +40,33 @@ void MPITEST_Group_create( int nproc, int myrank, MPI_Group *new_group )
     new_group_ptr->idx_of_first_lpid = -1;
 
     *new_group = new_group_ptr->handle;
+}
+
+void MPITEST_Group_print( MPI_Group g )
+{
+    MPID_Group *g_ptr;
+    int g_idx, size, i;
+
+    MPID_Group_get_ptr( g, g_ptr );
+
+    g_idx = g_ptr->idx_of_first_lpid;
+    if (g_idx < 0) { 
+	MPIR_Group_setup_lpid_list( g_ptr ); 
+	g_idx = g_ptr->idx_of_first_lpid;
+    }
+    
+    /* Loop through these, printing the lpids by rank and in order */
+    size = g_ptr->size;
+    fprintf( stdout, "Lpids in rank order\n" );
+    for (i=0; i<size; i++) {
+	fprintf( stdout, "Rank %d has lpid %d\n", 
+		 i, g_ptr->lrank_to_lpid[i].lpid );
+    }
+    
+    fprintf( stdout, "Ranks in lpid order\n" );
+    while (g_idx >= 0) {
+	fprintf( stdout, "Rank %d has lpid %d\n", g_idx, 
+		 g_ptr->lrank_to_lpid[g_idx].lpid );
+	g_idx = g_ptr->lrank_to_lpid[g_idx].next_lpid;
+    }
 }

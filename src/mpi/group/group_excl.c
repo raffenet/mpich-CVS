@@ -62,7 +62,7 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
-	    /* If group_ptr is not value, it will be reset to null */
+	    /* If group_ptr is not valid, it will be reset to null */
 	    if (group_ptr) {
 		mpi_errno = MPIR_Group_check_valid_ranks( group_ptr, 
 							  ranks, n );
@@ -93,6 +93,7 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     MPID_Common_thread_lock();
     {
 	int newi;
+
 	for (i=0; i<size; i++) {
 	    group_ptr->lrank_to_lpid[i].flag = 0;
 	}
@@ -113,11 +114,12 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     }
     MPID_Common_thread_unlock();
 
-    new_group_ptr->size = n;
+    new_group_ptr->size = size - n;
     new_group_ptr->idx_of_first_lpid = -1;
 
     *newgroup = new_group_ptr->handle;
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_EXCL);
+
     return MPI_SUCCESS;
 }

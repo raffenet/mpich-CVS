@@ -65,7 +65,7 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
 	    MPID_Group_valid_ptr( group_ptr2, mpi_errno );
-	    /* If group_ptr is not value, it will be reset to null */
+	    /* If group_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -81,6 +81,7 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     */
     g1_idx = group_ptr1->idx_of_first_lpid;
     g2_idx = group_ptr2->idx_of_first_lpid;
+
     /* If the lpid list hasn't been created, do it now */
     if (g1_idx < 0) { 
 	MPIR_Group_setup_lpid_list( group_ptr1 ); 
@@ -92,17 +93,24 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     }
     nnew = group_ptr1->size;
 
-    /* Must lock against other threads because we need the flag elements */
+    /* Must lock against other threads because we need the flag elements 
+       (which are part of the lpid_list of thie group) 
+     */
     MPID_Common_thread_lock();
     {
+	/* Clear the flag bits on the second group.  The flag is set if
+	   a member of the second group belongs to the union */
 	size2 = group_ptr2->size;
 	for (i=0; i<size2; i++) {
 	    group_ptr2->lrank_to_lpid[i].flag = 0;
 	}
+	/* Loop through the lists that are ordered by lpid (local process
+	   id) to detect which processes in group 2 are not in group 1
+	*/
 	while (g1_idx >= 0 && g2_idx >= 0) {
 	    int l1_pid, l2_pid;
 	    l1_pid = group_ptr1->lrank_to_lpid[g1_idx].lpid;
-	    l2_pid = group_ptr1->lrank_to_lpid[g2_idx].lpid;
+	    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
 	    if (l1_pid > l2_pid) {
 		nnew++;
 		group_ptr2->lrank_to_lpid[g2_idx].flag = 1;
