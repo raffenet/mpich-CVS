@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Graph_create */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -28,28 +29,43 @@
 #define FUNCNAME MPI_Graph_create
 
 /*@
-   MPI_Graph_create - graph_create
+MPI_Graph_create - Makes a new communicator to which topology information
+                 has been attached
 
-   Arguments:
-+  MPI_Comm comm_old - communicator
-.  int nnodes - nnodes
-.  int *index - index
-.  int *edges - edges
-.  int reorder - reorder
--  MPI_Comm *comm_graph - communicator
+Input Parameters:
++ comm_old - input communicator without topology (handle) 
+. nnodes - number of nodes in graph (integer) 
+. index - array of integers describing node degrees (see below) 
+. edges - array of integers describing graph edges (see below) 
+- reorder - ranking may be reordered (true) or not (false) (logical) 
 
-   Notes:
+Output Parameter:
+. comm_graph - communicator with graph topology added (handle) 
 
-.N Fortran
+Notes:
+Each process must provide a description of the entire graph, not just the
+neigbors of the calling process.  
+
+Algorithm:
+We ignore the 'reorder' info currently.
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
+
 @*/
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,int reorder, MPI_Comm *comm_graph)
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges, 
+		     int reorder, MPI_Comm *comm_graph)
 {
     static const char FCNAME[] = "MPI_Graph_create";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
+    int i, nedges;
+    MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
+    MPIR_Topology *graph_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_CREATE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_CREATE);
@@ -59,13 +75,17 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,int r
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
+	    if (comm_ptr) {
+		MPIR_ERRTEST_COMM_INTRA(comm_ptr,mpi_errno);
+	    }
+	    MPIR_ERRTEST_ARGNULL(index,"index",mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(comm_graph,"comm_graph",mpi_errno);
+	    MPIR_ERRTEST_ARGNEG(nnodes,"nnodes",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -76,7 +96,100 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,int r
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Check that index is monotone nondecreasing */
+	    for (i=0; i<nnodes; i++) {
+		if (index[i] < 0) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+			      "**indexneg", "**indexneg %d %d", i, index[i] );
+		}
+		if (i+1<nnodes && index[i] > index[i+1]) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+			   "**indexnonmonotone", "**indexnonmonotone %d %d %d",
+					      i, index[i], index[i+1] );
+		}
+	    }
+
+	    /* Check that edge number is in range */
+	    for (i=0; i<index[nnodes-1]; i++) {
+		if (edges[i] > nnodes || edges[i] < 0) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+			      "**edgeoutrange", "**edgeoutrange %d %d %d", 
+						      i, edges[i], nnodes );
+		}
+	    }
+	    /* Check that the communicator is large enough */
+	    if (nnodes > comm_ptr->remote_size) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY,
+				  "**topotoolarge", "**topotoolarge %d %d",
+					  nnodes, comm_ptr->remote_size );
+	    }
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+
+    /* Test for empty communicator */
+    if (nnodes == 0) {
+	*comm_graph = MPI_COMM_NULL;
+	return MPI_SUCCESS;
+    }
+
+    /* Create a new communicator */
+    mpi_errno = MPIR_Comm_copy( comm_ptr, nnodes, &newcomm_ptr );
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+
+    /* If this process is not in the resulting communicator, return a 
+       null communicator and exit */
+    if (!newcomm_ptr) {
+	*comm_graph = MPI_COMM_NULL;
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
+	return MPI_SUCCESS;
+    }
+
+    nedges = index[nnodes-1];
+    graph_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof(MPIR_Topology) );
+    if (!graph_ptr) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+    
+    graph_ptr->kind = MPI_GRAPH;
+    graph_ptr->topo.graph.nnodes = nnodes;
+    graph_ptr->topo.graph.nedges = nedges;
+    graph_ptr->topo.graph.index = (int *)MPIU_Malloc( nnodes * sizeof(int) );
+    graph_ptr->topo.graph.edges = (int *)MPIU_Malloc( nedges * sizeof(int) );
+    if (!graph_ptr->topo.graph.index || !graph_ptr->topo.graph.edges) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+    for (i=0; i<nnodes; i++) 
+	graph_ptr->topo.graph.index[i] = index[i];
+    for (i=0; i<nedges; i++) 
+	graph_ptr->topo.graph.edges[i] = edges[i];
+
+    /* Finally, place the topology onto the new communicator and return the
+       handle */
+    mpi_errno = MPIR_Topology_put( newcomm_ptr, graph_ptr );
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+    
+    *comm_graph = newcomm_ptr->handle;
     /* ... end of body of routine ... */
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
     return MPI_SUCCESS;
 }
