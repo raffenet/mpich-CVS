@@ -7,7 +7,6 @@
 
 #include "mpiimpl.h"
 #include "mpi_init.h"
-#include "bnr.h"
 
 
 /* -- Begin Profiling Symbol Block for routine MPI_Init */
@@ -65,15 +64,6 @@ int MPI_Init( int *argc, char ***argv )
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-
-    /* 
-     * This routine and MPI_Init_thread should share the same code; there 
-     * should be no BNR calls in this file.  Most likely, all BNR calls
-     * should be within the device's implementation of MPID_Init, which 
-     * either this routine or a common routine called by both MPI_Init
-     * and MPI_Init_thread use.  The routine MPIR_Init_thread is
-     * the intended common routine.
-     */
 
     MPIR_Init_thread( MPI_THREAD_SINGLE, (int *)0 );
 

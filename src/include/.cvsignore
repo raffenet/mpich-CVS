@@ -2,7 +2,7 @@ mpi.h
 mpichconf.h
 mpichconf.h.in
 mpichtimer.h
-bnr.h
+pmi.h
 mpidconf.h
 winmpichconf.h
 winmpidconf.h
