@@ -9,7 +9,8 @@
 #include <errno.h>
 #endif
 
-#ifdef HAVE_WINDOWS_H
+int close_connection(sock_set_t, sock_t);
+
 static int close_connection(sock_set_t set, sock_t sock)
 {
     int result;
@@ -41,7 +42,6 @@ static int close_connection(sock_set_t set, sock_t sock)
     }
     return SMPD_SUCCESS;
 }
-#endif
 
 int smpd_start_mgr(sock_set_t set, sock_t sock)
 {
