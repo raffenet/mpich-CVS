@@ -95,13 +95,23 @@ typedef struct {
 /* Number of MPI routines; increase to allow user extensions */
 #ifdef HAVE_MPI_RMA
 #define MPE_MAX_STATES 200
-void MPE_Init_MPIRMA( void );
+#else
 #ifdef HAVE_MPI_IO
 #define MPE_MAX_STATES 180
-void MPE_Init_MPIIO( void );
 #else
 #define MPE_MAX_STATES 128
 #endif
+#endif
+
+#ifdef HAVE_MPI_RMA
+void MPE_Init_MPIRMA( void );
+#endif
+
+#ifdef HAVE_MPI_IO
+void MPE_Init_MPIIO( void );
+#endif
+
+
 static MPE_State states[MPE_MAX_STATES];
 /* Global trace control */
 static int trace_on = 0;
@@ -4287,4 +4297,8 @@ int MPI_Pcontrol(const int level, ...)
 #ifdef HAVE_MPI_IO
 #include "mpio.h"
 #include "log_mpi_io.c"
+#endif
+
+#ifdef HAVE_MPI_RMA
+#include "log_mpi_rma.c"
 #endif
