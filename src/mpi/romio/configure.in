@@ -1170,6 +1170,7 @@ if test $TRY_WEAK_SYMBOLS = 1 ; then
   AC_MSG_CHECKING(for weak symbol support)
   AC_TRY_LINK([
 #pragma weak PFoo = Foo
+extern int PFoo(int);
 int Foo(a) { return a; }
 ],[return PFoo(1);],has_pragma_weak=1)
   #
@@ -1180,11 +1181,13 @@ int Foo(a) { return a; }
     AC_MSG_CHECKING([that weak symbols are visible to other files])
     rm -f conftest*
     cat >>conftest1.c <<EOF
+extern int PFoo(int);
 #pragma weak PFoo = Foo
 int Foo(int);
 int Foo(a) { return a; }
 EOF
     cat >>conftest2.c <<EOF
+extern int PFoo(int);
 int main() {
 return PFoo(0);}
 EOF

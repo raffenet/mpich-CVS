@@ -1,9 +1,4 @@
-
-
-
-
-
-#!/bin/sh
+#! /bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
@@ -3829,6 +3824,7 @@ cat > conftest.$ac_ext <<EOF
 #include "confdefs.h"
 
 #pragma weak PFoo = Foo
+extern int PFoo(int);
 int Foo(a) { return a; }
 
 int main() { return 0; }
@@ -3884,11 +3880,13 @@ echo $ac_n "checking that weak symbols are visible to other files""... $ac_c" 1>
 fi
     rm -f conftest*
     cat >>conftest1.c <<EOF
+extern int PFoo(int);
 #pragma weak PFoo = Foo
 int Foo(int);
 int Foo(a) { return a; }
 EOF
     cat >>conftest2.c <<EOF
+extern int PFoo(int);
 int main() {
 return PFoo(0);}
 EOF
@@ -5030,7 +5028,7 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-  sed -e "
+cat $top_srcdir/${file}.in | sed -e "
 $prsub
 $extrasub
 s%@VPATH@%$VPATH%g
@@ -5072,7 +5070,7 @@ s%@LL@%$LL%g
 s%@F77GETARG@%$F77GETARG%g
 s%@F77IARGC@%$F77IARGC%g
 s%@FTESTDEFINE@%$FTESTDEFINE%g
-s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g
+s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g" | sed -e "
 s%@FROM_MPICH@%$FROM_MPICH%g
 s%@NEEDS_MPI_FINT@%$NEEDS_MPI_FINT%g
 s%@HAVE_MPI_INFO@%$HAVE_MPI_INFO%g
@@ -5104,7 +5102,7 @@ s%@ROMIO_TFFLAGS@%$ROMIO_TFFLAGS%g
 s%@MPIRUN@%$MPIRUN%g
 s%@FORTRAN_TEST@%$FORTRAN_TEST%g
 s%@LIBS@%$LIBS%g
-s%@DEFS@%-DHAVE_CONFIG_H%" $top_srcdir/${file}.in >> $file
+s%@DEFS@%-DHAVE_CONFIG_H%" >> $file
 fi; done
 
 CONFIG_HEADERS=${CONFIG_HEADERS-"adio/include/romioconf.h"}
@@ -5207,7 +5205,7 @@ fi; done
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} config.status
+${CONFIG_SHELL-/bin/sh} ./config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"
