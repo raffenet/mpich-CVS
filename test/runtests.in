@@ -245,8 +245,9 @@ sub RunList {
 	}
 	else {
 	    $total_count++;
-	    &BuildMPIProgram( $programname );
-	    &RunMPIProgram( $programname, $np, $ResultTest, $InitForRun );
+	    if (&BuildMPIProgram( $programname ) == 0) {
+		&RunMPIProgram( $programname, $np, $ResultTest, $InitForRun );
+	    }
 	    &CleanUpAfterRun( $programname );
 	}
     }
@@ -307,8 +308,9 @@ sub ProcessImplicitList {
 	    if (! -s $programname) { next; }
 	    $programname =~ s/\.c//;
 	    $total_count++;
-	    &BuildMPIProgram( $programname );
-	    &RunMPIProgram( $programname, $np_default, "", "" );
+	    if (&BuildMPIProgram( $programname ) == 0) {
+		&RunMPIProgram( $programname, $np_default, "", "" );
+	    }
 	    &CleanUpAfterRun( $programname );
 	}
 	close PGMS;
@@ -396,15 +398,24 @@ sub RunMPIProgram {
     &RunPostMsg;
 }
 
+# 
+# Return value is 0 on success, non zero on failure
 sub BuildMPIProgram {
     my $programname = $_[0];
+    my $rc = 0;
     if ($verbose) { print STDERR "making $programname\n"; }
     if (! -x $programname) { $remove_this_pgm = 1; }
     else { $remove_this_pgm = 0; }
     my $output = `make $programname 2>&1`;
+    $rc = $?;
+    if ($rc > 255) { $rc >>= 8; }
     if (! -x $programname) {
 	print STDERR "Failed to build $programname; $output\n";
+	if ($rc == 0) {
+	    $rc = 1;
+	}
     }
+    return $rc;
 }
 
 sub CleanUpAfterRun {
@@ -496,6 +507,36 @@ sub TestTimeout {
     #     
     # }
     # close PFD;
+    return ($found_error,$inline);
+}
+#
+# TestErrFatal is a special test that reports success *only* when the 
+# status return is NONZERO; it ignores error messages
+sub TestErrFatal {
+    my $MPIOUT = $_[0];
+    my $programname = $_[1];
+    my $found_error = 0;
+
+    my $inline = "";
+    while (<$MPIOUT>) {
+	#print STDOUT $_ if $verbose;
+	# Skip FORTRAN STOP
+	if (/FORTRAN STOP/) { next; }
+	$inline .= $_;
+	# ALL output is allowed.
+    }
+    $rc = close ( MPIOUT );
+    if ($rc == 0) {
+	$run_status = $?;
+	$signal_num = $run_status & 127;
+	if ($run_status > 255) { $run_status >>= 8; }
+    }
+    else {
+	# This test *requires* non-zero return codes
+	$found_error = 1;
+	$err_count ++;
+	$inline .= "$mpiexec returned a zero status but the program returned a nonzero status\n";
+    }
     return ($found_error,$inline);
 }
 
