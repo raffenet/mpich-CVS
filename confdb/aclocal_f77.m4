@@ -282,6 +282,7 @@ EOF
 	    # failure
             AC_MSG_WARN([Unable to build program to determine size of $1])
         fi
+        LIBS=$saveLIBS
         AC_LANG_RESTORE
         if test -s conftestval ; then
             eval PAC_CV_NAME=`cat conftestval`
@@ -289,7 +290,6 @@ EOF
 	    eval PAC_CV_NAME=0
         fi
         rm -f conftest*
-        LIBS=$saveLIBS
     else
         AC_MSG_WARN([Unable to compile the C routine for finding the size of a $1])
     fi
