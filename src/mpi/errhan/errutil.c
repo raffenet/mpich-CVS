@@ -479,6 +479,10 @@ char * simplify_fmt_string(const char *str)
 }
 #endif
 
+#ifndef min(a,b)
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 int vsnprintf_ex(char *str, size_t maxlen, const char *fmt_orig, va_list list)
 {
     char *begin, *end, *fmt;
