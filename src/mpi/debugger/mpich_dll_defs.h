@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /**********************************************************************
  * Copyright (C) 1997-1998 Dolphin Interconnect Solutions Inc.
  *

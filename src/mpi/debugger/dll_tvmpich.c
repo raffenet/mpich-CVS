@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /**********************************************************************
  * Copyright (C) 1997-1998 Dolphin Interconnect Solutions Inc.
  * Copyright (C) 1999-2001 Etnus LLC.
@@ -18,6 +19,8 @@
  * James Cownie: Dolphin Interconnect Solutions. <jcownie@dolphinics.com>
  *               Etnus LLC <jcownie@etnus.com>
  **********************************************************************/
+/* style: allow:strcpy:1 sig:0 */
+/* style: allow:strncpy:2 sig:0 */
 
 /* Update log
  *
