@@ -15,7 +15,7 @@
 #include "mpi.h"
 #include "mpitest.h"
 
-#define DEBUG
+/* #define DEBUG */
 int test_communicators ( void );
 int copy_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int delete_fn ( MPI_Comm, int, void *, void * );

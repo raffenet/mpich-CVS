@@ -40,6 +40,8 @@ $newline = "\r\n";       # Set to \r\n for Windows-friendly, \n for Unix only
 
 $debug = 1;
 
+$depth = 0;              # This is used to manage multiple open list files
+
 # Build flags
 $remove_this_pgm = 0;
 $clean_pgms      = 1;
@@ -63,7 +65,77 @@ foreach $_ (@ARGV) {
     }
 }
 
+#
+# Process any files
 if ($listfiles eq "") {
+    &ProcessImplicitList;
+}
+elsif (-d $listfiles) { 
+    print STDERR "Testing by directories not yet supported\n";
+}
+else {
+    &RunList( $listfiles );
+}
+
+if ($xmloutput) { close XMLOUT; }
+#
+# ---------------------------------------------------------------------------
+# Routines
+# 
+# Enter a new directory and process a list file.  
+#  ProcessDir( directory-name, list-file-name )
+sub ProcessDir {
+    my $dir = $_[0]; $dir =~ s/\/$//;
+    my $listfile = $_[1];
+    my $savedir = `pwd`;
+    
+    chop $savedir;
+
+    print "Processing directory $dir\n" if ($verbose || $debug);
+    chdir $dir;
+
+    &RunList( $listfile );
+
+    chdir $savedir;
+}
+# ---------------------------------------------------------------------------
+# Run the programs listed in the file given as the argument. 
+# This file describes the tests in the format
+#  programname number-of-processes
+# If the second value is not given, the default value is used.
+# 
+sub RunList { 
+    my $LIST = "LIST$depth"; $depth++;
+    my $listfile = $_[0];
+    
+    open( $LIST, "<$listfile" ) || die "Could not open $listfile\n";
+    while (<$LIST>) {
+	# Skip comments
+	s/#.*//g;
+	# Remove any trailing newlines/returns
+	s/\r?\n//;
+	# List files are "program <optional-np>"
+	my ($programname,$np,$ResultTest) = split(/\s+/,$_);
+	if ($np eq "") { $np = $np_default; }
+	# skip empty lines
+	if ($programname eq "") { next; }
+	if (-d $programname) {
+	    # If a directory, go into the that directory and 
+	    # look for a new list file
+	    &ProcessDir( $programname, $listfile );
+	}
+	else {
+	    &BuildMPIProgram( $programname );
+	    &RunMPIProgram( $programname, $np, $ResultTest );
+	    &CleanUpAfterRun( $programname );
+	}
+    }
+    close( $LIST );
+}
+#
+# This routine tries to run all of the files in the current
+# directory
+sub ProcessImplicitList {
     # The default is to run every file in the current directory.
     # If there are no built programs, build and run every file
     $found_exec = 0;
@@ -88,7 +160,7 @@ if ($listfiles eq "") {
 	    if (-d $programname) { next; }  # Ignore directories
 	    if ($programname eq "runtests") { next; } # Ignore self
 	    if (-x $programname) {
-		&RunMPIProgram( $programname, $np_default );
+		&RunMPIProgram( $programname, $np_default, "" );
 	    }
 	}
 	close PGMS;
@@ -103,62 +175,59 @@ if ($listfiles eq "") {
 	    if (! -s $programname) { next; }
 	    $programname =~ s/\.c//;
 	    &BuildMPIProgram( $programname );
-	    &RunMPIProgram( $programname, $np_default );
+	    &RunMPIProgram( $programname, $np_default, "" );
 	    &CleanUpAfterRun( $programname );
 	}
 	close PGMS;
     }
 }
-elsif (-d $listfiles) { 
-    print STDERR "Testing by directories not yet supported\n";
-}
-else {
-    &RunList( $listfiles );
-}
-
-if ($xmloutput) { close XMLOUT; }
-#
-# ---------------------------------------------------------------------------
-# Routines
-# ---------------------------------------------------------------------------
-sub RunList { 
-    my $files = $_[0];
-    
-    open( LIST, "<$files" ) || die "Could not open $files\n";
-    while (<LIST>) {
-	s/\r?\n//;
-	my ($programname,$np) = split(/\s+/,$_);
-	if ($np eq "") { $np = $np_default; }
-	&BuildMPIProgram( $programname );
-	&RunMPIProgram( $programname, $np );
-	&CleanUpAfterRun( $programname );
-    }
-    close( LIST );
-}
-#
 # Run the program.  
 # ToDo: Add a way to limit the time that any particular program may run.
+# The arguments are
+#    name of program, number of processes, name of routine to check results
+# If the 3rd arg is not present, the a default that simply checks that the
+# return status is 0 and that the output is " No Errors" is used.
 sub RunMPIProgram {
-    my ($programname,$np) = @_;
+    my ($programname,$np,$ResultTest) = @_;
     my $found_error = 0;
+    my $inline = "";
 
     &RunPreMsg( $programname );
     if ($verbose) {
-	print STDERR "$mpiexec $np_arg $np $programname\n";
+	print STDERR "$mpiexec $np_arg $np ./$programname\n";
     }
     unlink "err";
-    open ( MPIOUT, "$mpiexec $np_arg $np $programname 2>&1 |" ) ||
+    # Set a timeout on tests (3 minutes for now)
+    $ENV{"MPIEXEC_TIMEOUT"} = 180;
+    open ( MPIOUT, "$mpiexec $np_arg $np ./$programname 2>&1 |" ) ||
 	 die "Could not run $programname\n";
-    $inline = "";
-    while (<MPIOUT>) {
-	#print STDOUT $_ if $verbose;
-	# Skip FORTRAN STOP
-	if (/FORTRAN STOP/) { next; }
-	$inline .= $_;
-	if (! /^\s*No Errors\s*$/ && !/^\s*Test Passed\s*$/) {
-	    print STDERR "Unexpected output in $programname: $_";
+    if ($ResultTest ne "") {
+	# Read and process the output
+	($found_errors, $inline) = &$ResultTest( MPIOUT );
+    }
+    else {
+	$inline = "";
+	while (<MPIOUT>) {
+	    #print STDOUT $_ if $verbose;
+	    # Skip FORTRAN STOP
+	    if (/FORTRAN STOP/) { next; }
+	    $inline .= $_;
+	    if (! /^\s*No Errors\s*$/ && !/^\s*Test Passed\s*$/) {
+		print STDERR "Unexpected output in $programname: $_";
+		if (!$found_error) {
+		    $found_error = 1;
+		    $err_count ++;
+		}
+	    }
+	}
+	$rc = close ( MPIOUT );
+	if ($rc == 0) {
+	    # Only generate a message if we think that the program
+	    # passed the test.
 	    if (!$found_error) {
-		$found_error = 1;
+		$run_status = $?;
+		print STDERR "Program exited with non-zero status $run_status\n";
+		$round_error = 1;
 		$err_count ++;
 	    }
 	}
@@ -169,7 +238,6 @@ sub RunMPIProgram {
     else { 
 	&RunTestPassed;
     }
-    close ( MPIOUT );
     &RunPostMsg;
 }
 
@@ -191,7 +259,41 @@ sub CleanUpAfterRun {
     }
     $remove_this_pgm = 0;
 }
+
 #
+# TestStatus is a special test that reports success *only* when the 
+# status return is NONZERO
+sub TestStatus {
+    my $MPIOUT = $_[0];
+    my $found_error = 0;
+
+    my $inline = "";
+    while (<$MPIOUT>) {
+	#print STDOUT $_ if $verbose;
+	# Skip FORTRAN STOP
+	if (/FORTRAN STOP/) { next; }
+	$inline .= $_;
+	# ANY output is an error.
+	if (! /^\s*$/) {
+	    print STDERR "Unexpected output in $programname: $_";
+	    if (!$found_error) {
+		$found_error = 1;
+		$err_count ++;
+	    }
+	}
+    }
+    $rc = close ( MPIOUT );
+    if ($rc == 0) {
+	$run_status = $?;
+    }
+    else {
+	# This test *requires* non-zero return codes
+	$found_error = 1;
+	$err_count ++;
+    }
+    return ($found_error,$inline);
+}
+
 # ----------------------------------------------------------------------------
 # Output routines:
 #  RunPreMsg( programname ) - Call before running a program
