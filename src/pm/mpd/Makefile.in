@@ -102,4 +102,23 @@ install:
 	cp -f ${srcdir}/mpdman.py ${bindir}/mpdman.py ; \
 	cp -f ${srcdir}/mpdlib.py ${bindir}/mpdlib.py ; \
 	done
-	cd ${bindir} && @LN_S@ -f mpdrun.py mpiexec
+	cd ${bindir} && @LN_S@ -f mpdrun mpiexec
+
+
+mpich2-build-install: mpich2-mpdroot install
+	/bin/cp -f mpich2-mpdroot ${bindir}/mpdroot
+	@if [ "`whoami`" = "root" ] ; then \
+	    echo "chmod 4755 ${bindir}/mpdroot" ;\
+	    chmod 4755 ${bindir}/mpdroot ;\
+	fi
+	/bin/rm -f mpich2-mpdroot
+
+mpich2-mpdroot: mpich2-mpdroot.o
+	$(C_LINK) -o mpich2-mpdroot mpich2-mpdroot.o $(LIBS)
+	/bin/rm -f mpich2-mpdroot.o
+
+mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
+	/bin/cp $< mpich2-mpdroot.c
+	${C_COMPILE} -c -DBINDIR=\"${bindir}/\" mpich2-mpdroot.c
+	/bin/rm -f mpich2-mpdroot.c
+

@@ -2,4 +2,5 @@
 SUBDIRS_pm_name = mpd forker
 SUBDIRS = @pm_name@ .
 all-postamble:
-	cd @pm_name@ && ${MAKE} prefix=../../.. install
+	build_prefix=`cd ../.. && pwd` && cd @pm_name@ && \
+	${MAKE} prefix=$$build_prefix mpich2-build-install
