@@ -375,25 +375,28 @@ int MPIU_Handle_free( void *((*)[]), int );
 
 /* Note: Probably there is some clever way to build all of these from a macro.
  */
-#define MPID_Datatype_get_size_macro(a,__size)                          \
-do {                                                                    \
-    void *ptr;                                                          \
-    switch (HANDLE_GET_KIND(a)) {                                       \
-        case HANDLE_KIND_DIRECT:                                        \
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            __size = ((MPID_Datatype *) ptr)->size;                     \
-            break;                                                      \
-        case HANDLE_KIND_INDIRECT:                                      \
-            ptr = ((MPID_Datatype *)                                    \
-		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            __size = ((MPID_Datatype *) ptr)->size;                     \
-            break;                                                      \
-        case HANDLE_KIND_INVALID:                                       \
-        case HANDLE_KIND_BUILTIN:                                       \
-        default:                                                        \
-            __size = MPID_Datatype_get_basic_size(a);                   \
-            break;                                                      \
-    }                                                                   \
+#define MPID_Datatype_get_size_macro(a,__size)				\
+do {									\
+    void *ptr;								\
+    switch (HANDLE_GET_KIND(a)) {					\
+        case HANDLE_KIND_DIRECT:					\
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
+            __size = ((MPID_Datatype *) ptr)->size;			\
+            break;							\
+        case HANDLE_KIND_INDIRECT:					\
+            ptr = ((MPID_Datatype *)					\
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
+            __size = ((MPID_Datatype *) ptr)->size;			\
+            break;							\
+        case HANDLE_KIND_BUILTIN:					\
+            __size = MPID_Datatype_get_basic_size(a);			\
+            break;							\
+        case HANDLE_KIND_INVALID:					\
+        default:							\
+	    __size = 0;							\
+	    break;							\
+ 									\
+    }									\
 } while (0)
 
 #define MPID_Datatype_get_loopdepth_macro(a,__depth)                    \
@@ -651,6 +654,9 @@ typedef struct MPID_Comm {
                                               routines */
 #ifndef MPICH_SINGLE_THREADED
     MPID_Thread_lock_t access_lock;
+#endif
+#ifdef MPID_HAS_HETERO
+    int is_hetero;
 #endif
   /* Other, device-specific information */
 #ifdef MPID_DEV_COMM_DECL
