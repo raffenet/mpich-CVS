@@ -21,7 +21,6 @@ Long parameter names may be abbreviated to their first letters by using
 --noconsole is useful for running 2 mpds on the same machine; only one of
   them will accept mpd commands
 --trace yields lots of traces thru mpd routines; currently too verbose
-  them can have a unix socket which a console program can connect to
 --echo causes the mpd echo its listener port by which other mpds may connect
 --daemon causes mpd to run backgrounded, with no controlling tty
 --bulletproof says to turn bulletproofing on (experimental)
