@@ -41,19 +41,23 @@ Output Parameters:
 #ifdef HAVE_MPI_GREQUEST
 #include "mpiu_greq.h"
 
-int MPI_File_iread_shared(MPI_File fh, void *buf, int count, 
-		MPI_Datatype datatype, MPIO_Request *request)
+int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count, 
+			  MPI_Datatype datatype, MPIO_Request *request)
 {
+	int error_code;
+	ADIO_File fh;
 	MPI_Status *status;
-	int errcode;
 
-	status = (MPI_Status*)malloc(sizeof(MPI_Status));
+	fh = MPIO_File_resolve(mpi_fh);
+
+	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */
-	errcode = MPI_File_read_shared(fh, buf, count, datatype, status); 
+	error_code = MPI_File_read_shared(mpi_fh, buf, count, datatype,
+					  status); 
 	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
-	status->MPI_ERROR = errcode;
+	status->MPI_ERROR = error_code;
 
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
@@ -65,112 +69,47 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 	return MPI_SUCCESS;
 }
 #else
-int MPI_File_iread_shared(MPI_File fh, void *buf, int count, 
+int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count, 
                           MPI_Datatype datatype, MPIO_Request *request)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
+    ADIO_File fh;
     static char myname[] = "MPI_FILE_IREAD_SHARED";
-#endif
     int datatype_size, incr;
     ADIO_Status status;
     ADIO_Offset off, shared_fp;
 
+    fh = MPIO_File_resolve(mpi_fh);
+
     /* --BEGIN ERROR HANDLING-- */
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE))
-    {
-	FPRINTF(stderr, "MPI_File_iread_shared: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
-
-    if (count < 0)
-    {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, "**iobadcount", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_iread_shared: Invalid count argument\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_COUNT_ARG,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
-
-    if (datatype == MPI_DATATYPE_NULL)
-    {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE, 
-	    "**dtypenull", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "MPI_File_iread_shared: Invalid datatype\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_TYPE, MPIR_ERR_TYPE_NULL,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
-    }
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    MPIO_CHECK_COUNT(fh, count, myname, error_code);
+    MPIO_CHECK_DATATYPE(fh, count, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     MPI_Type_size(datatype, &datatype_size);
 
     /* --BEGIN ERROR HANDLING-- */
-    if ((count*datatype_size) % fh->etype_size != 0)
-    {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
-	    "**ioetype", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "MPI_File_iread_shared: Only an integral number of etypes can be accessed\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_ETYPE_FRACTIONAL,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
-    }
-
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) || (fh->file_system == ADIO_PVFS2))
-    {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
-	    "**iosharedunsupported", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_iread_shared: Shared file pointer not supported on PIOFS and PVFS\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
-                    MPIR_ERR_NO_SHARED_FP, myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
+    MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
+    MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_iread_sh", &error_code);
+    ADIOI_TEST_DEFERRED(fh, myname, &error_code);
 
     incr = (count*datatype_size)/fh->etype_size;
     ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);
+
     /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS)
     {
-	FPRINTF(stderr, "MPI_File_iread_shared: Error! Could not access shared file pointer.\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	/* note: ADIO_Get_shared_fp should have set up error code already? */
+	MPIO_Err_return_file(fh, error_code);
     }
     /* --END ERROR HANDLING-- */
 
-    /* contiguous or strided? */
     if (buftype_is_contig && filetype_is_contig)
     {
     /* convert count and shared_fp to bytes */
@@ -198,8 +137,8 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
                 ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 	    }
 
-            ADIO_ReadContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET, off, 
-                    &status, &error_code);  
+            ADIO_ReadContig(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
+			    off, &status, &error_code);  
 
             if (fh->file_system != ADIO_NFS)
 	    {
@@ -207,8 +146,8 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 	    }
 
             fh->async_count++;
-            /* status info. must be linked to the request structure, so that it
-               can be accessed later from a wait */
+            /* status info. must be linked to the request structure, so that
+               it can be accessed later from a wait */
         }
     }
     else

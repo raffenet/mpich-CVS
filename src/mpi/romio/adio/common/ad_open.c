@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
+ *   $Id$
  *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
@@ -9,25 +9,23 @@
 #include "adio.h"
 #include "adio_extern.h"
 #include "adio_cb_config_list.h"
-/* #ifdef MPISGI
-#include "mpisgi2.h"
-#endif */
 
 static int is_aggregator(int rank, ADIO_File fd);
 
-ADIO_File ADIO_Open(MPI_Comm orig_comm,
-		    MPI_Comm comm, char *filename, int file_system,
-		    int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
-		    MPI_Datatype filetype, int iomode,
-                    MPI_Info info, int perm, int *error_code)
+MPI_File ADIO_Open(MPI_Comm orig_comm,
+		   MPI_Comm comm, char *filename, int file_system,
+		   ADIOI_Fns *ops,
+		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
+		   MPI_Datatype filetype,
+		   int iomode /* ignored */,
+		   MPI_Info info, int perm, int *error_code)
 {
+    MPI_File mpi_fh;
     ADIO_File fd;
     ADIO_cb_name_array array;
     int orig_amode_excl, orig_amode_wronly, err, rank, procs, agg_rank;
     char *value;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIO_OPEN";
-#endif
 
     int rank_ct, max_error_code;
     int *tmp_ranklist;
@@ -35,10 +33,11 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 
     *error_code = MPI_SUCCESS;
 
-    fd = (ADIO_File) ADIOI_Malloc(sizeof(struct ADIOI_FileD));
-    if (fd == NULL) {
-	/* NEED TO HANDLE ENOMEM ERRORS */
+    /* obtain MPI_File handle */
+    mpi_fh = MPIO_File_create(sizeof(struct ADIOI_FileD));
+    if (mpi_fh == MPI_FILE_NULL) {
     }
+    fd = MPIO_File_resolve(mpi_fh);
 
     fd->cookie = ADIOI_FILE_COOKIE;
     fd->fp_ind = disp;
@@ -46,24 +45,24 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     fd->comm = comm;       /* dup'ed in MPI_File_open */
     fd->filename = strdup(filename);
     fd->file_system = file_system;
+
+    /* TODO: VERIFY THAT WE DON'T NEED TO ALLOCATE THESE, THEN DON'T. */
+    fd->fns = (ADIOI_Fns *) ADIOI_Malloc(sizeof(ADIOI_Fns));
+    *fd->fns = *ops;
+
     fd->disp = disp;
     fd->split_coll_count = 0;
     fd->shared_fp_fd = ADIO_FILE_NULL;
     fd->atomicity = 0;
-
     fd->etype = etype;          /* MPI_BYTE by default */
     fd->filetype = filetype;    /* MPI_BYTE by default */
     fd->etype_size = 1;  /* default etype is MPI_BYTE */
 
     fd->perm = perm;
 
-    fd->iomode = iomode;
     fd->async_count = 0;
 
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
-
-/* set I/O function pointers */
-    ADIOI_SetFunctions(fd);
 
 /* create and initialize info object */
     fd->hints = (ADIOI_Hints *)ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));
@@ -115,16 +114,9 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
  */
     ADIOI_cb_bcast_rank_map(fd);
     if (fd->hints->cb_nodes <= 0) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**ioagnomatch", 0);
-#elif defined(PRINT_ERR_MSG)
-	*error_code = MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR, myname,
-				      "Open Error", "%s", 
-				      "No aggregators match");
-	ADIOI_Error(MPI_FILE_NULL, *error_code, myname);
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**ioagnomatch", 0);
 	fd = ADIO_FILE_NULL;
         goto fn_exit;
     }
@@ -265,16 +257,10 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
         fd = ADIO_FILE_NULL;
 	if (*error_code == MPI_SUCCESS)
 	{
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**oremote_fail", 0);
-#elif defined(PRINT_ERR_MSG)
-	    *error_code = MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR, myname,
-		"Open Error", "%s", 
-		"Open failed on a remote node");
-	    ADIOI_Error(MPI_FILE_NULL, *error_code, myname);
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO,
+					       "**oremote_fail", 0);
 	}
     }
 

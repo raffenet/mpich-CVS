@@ -13,8 +13,8 @@
 
 struct ADIOI_Fns_struct ADIO_UFS_operations = {
     ADIOI_UFS_Open, /* Open */
-    ADIOI_UFS_ReadContig, /* ReadContig */
-    ADIOI_UFS_WriteContig, /* WriteContig */
+    ADIOI_GEN_ReadContig, /* ReadContig */
+    ADIOI_GEN_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
     ADIOI_GEN_SeekIndividual, /* SeekIndividual */
@@ -22,16 +22,16 @@ struct ADIOI_Fns_struct ADIO_UFS_operations = {
     ADIOI_GEN_SetInfo, /* SetInfo */
     ADIOI_GEN_ReadStrided, /* ReadStrided */
     ADIOI_GEN_WriteStrided, /* WriteStrided */
-    ADIOI_UFS_Close, /* Close */
+    ADIOI_GEN_Close, /* Close */
     ADIOI_UFS_IreadContig, /* IreadContig */
     ADIOI_UFS_IwriteContig, /* IwriteContig */
     ADIOI_UFS_ReadDone, /* ReadDone */
     ADIOI_UFS_WriteDone, /* WriteDone */
     ADIOI_UFS_ReadComplete, /* ReadComplete */
     ADIOI_UFS_WriteComplete, /* WriteComplete */
-    ADIOI_UFS_IreadStrided, /* IreadStrided */
-    ADIOI_UFS_IwriteStrided, /* IwriteStrided */
+    ADIOI_GEN_IreadStrided, /* IreadStrided */
+    ADIOI_GEN_IwriteStrided, /* IwriteStrided */
     ADIOI_GEN_Flush, /* Flush */
-    ADIOI_UFS_Resize, /* Resize */
+    ADIOI_GEN_Resize, /* Resize */
     ADIOI_GEN_Delete, /* Delete */
 };

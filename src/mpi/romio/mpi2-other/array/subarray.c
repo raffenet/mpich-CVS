@@ -50,51 +50,85 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
     MPI_Datatype tmp1, tmp2, types[3];
     MPI_Offset size_with_offset;
 
+    /* --BEGIN ERROR HANDLING-- */
     if (ndims <= 0) {
-	FPRINTF(stderr, "MPI_Type_create_subarray: Invalid ndims argument\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "Invalid ndims argument", 0);
+	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
     if (array_of_sizes <= (int *) 0) {
-	FPRINTF(stderr, "MPI_Type_create_subarray: array_of_sizes is an invalid address\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "Invalid array_of_sizes argument",
+					  0);
+	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
     if (array_of_subsizes <= (int *) 0) {
-	FPRINTF(stderr, "MPI_Type_create_subarray: array_of_subsizes is an invalid address\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "Invalid array_of_subsizes argument",
+					  0);
+	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
     if (array_of_starts <= (int *) 0) {
-	FPRINTF(stderr, "MPI_Type_create_subarray: array_of_starts is an invalid address\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "Invalid array_of_starts argument",
+					  0);
+	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
 
     for (i=0; i<ndims; i++) {
         if (array_of_sizes[i] <= 0) {
-            FPRINTF(stderr, "MPI_Type_create_subarray: Invalid value in array_of_sizes\n");
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					      MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__, MPI_ERR_ARG,
+					      "Invalid size argument", 0);
+	    return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
         }
         if (array_of_subsizes[i] <= 0) {
-            FPRINTF(stderr, "MPI_Type_create_subarray: Invalid value in array_of_subsizes\n");
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					      MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__, MPI_ERR_ARG,
+					      "Invalid subsize argument", 0);
+	    return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
         }
         if (array_of_starts[i] < 0) {
-            FPRINTF(stderr, "MPI_Type_create_subarray: Invalid value in array_of_starts\n");
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					      MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__, MPI_ERR_ARG,
+					      "Invalid start argument", 0);
+	    return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
         }
         if (array_of_subsizes[i] > array_of_sizes[i]) {
-            FPRINTF(stderr, "MPI_Type_create_subarray: Error! array_of_subsizes[%d] > array_of_sizes[%d]\n", i, i);
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					      MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__, MPI_ERR_ARG,
+					      "Invalid subsize argument", 0);
+	    return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
         }
         if (array_of_starts[i] > (array_of_sizes[i] - array_of_subsizes[i])) {
-            FPRINTF(stderr, "MPI_Type_create_subarray: Error! array_of_starts[%d] > (array_of_sizes[%d] - array_of_subsizes[%d])\n", i, i, i);
-            MPI_Abort(MPI_COMM_WORLD, 1);
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					      MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__, MPI_ERR_ARG,
+					      "Invalid start argument", 0);
+	    return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
         }
     }
 
     /* order argument checked below */
 
     if (oldtype == MPI_DATATYPE_NULL) {
-        FPRINTF(stderr, "MPI_Type_create_subarray: oldtype is an invalid datatype\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "Invalid type argument", 0);
+	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
 
     MPI_Type_extent(oldtype, &extent);
@@ -107,8 +141,11 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
     size_with_offset = extent;
     for (i=0; i<ndims; i++) size_with_offset *= array_of_sizes[i];
     if (size_with_aint != size_with_offset) {
-	FPRINTF(stderr, "MPI_Type_create_subarray: Can't use an array of this size unless the MPI implementation defines a 64-bit MPI_Aint\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "Invalid size argument", 0);
+	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
 
     if (order == MPI_ORDER_FORTRAN) {
@@ -167,8 +204,11 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
 	}
     }
     else {
-	FPRINTF(stderr, "MPI_Type_create_subarray: Invalid order argument\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					  MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "Invalid order argument", 0);
+	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
     
     disps[1] *= extent;

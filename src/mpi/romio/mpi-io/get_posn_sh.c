@@ -36,56 +36,21 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_position_shared(MPI_File fh, MPI_Offset *offset)
+int MPI_File_get_position_shared(MPI_File mpi_fh, MPI_Offset *offset)
 {
     int error_code;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
+    ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_POSITION_SHARED";
-#endif
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_get_position_shared: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL)
-    {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, 
-	    "**ioamodeseq", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "MPI_File_get_position_shared: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, MPIR_ERR_AMODE_SEQ,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
-
-    if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS) || (fh->file_system == ADIO_PVFS2))
-    {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION, "**iosharedunsupported", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_get_position_shared: Shared file pointer not supported on PIOFS and PVFS\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
-                    MPIR_ERR_NO_SHARED_FP, myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
+    MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_get_position_shared", &error_code);
+    ADIOI_TEST_DEFERRED(fh, myname, &error_code);
 
     ADIO_Get_shared_fp(fh, 0, offset, &error_code);
     return error_code;

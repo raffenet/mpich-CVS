@@ -7,7 +7,6 @@
  */
 
 #include "ad_pvfs.h"
-#include "pvfs_config.h"
 
 void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 {
@@ -15,15 +14,8 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
     char *value;
     /* some really old versions of pvfs may not have a release nr */
     /* we changed the structure of pvfs_filestat in pvfs-1.5.7 */
-#if defined(PVFS_RELEASE_NR) && PVFS_RELEASE_NR > 10506
     struct pvfs_filestat pstat = {-1,-1,-1};
-#else
-    struct pvfs_filestat pstat = {-1,-1,-1,0,0};
-#endif
-
-#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_OPEN";
-#endif
 
     if (fd->perm == ADIO_PERM_NULL) {
 	old_mask = umask(022);
@@ -47,15 +39,15 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
     value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
 
     MPI_Info_get(fd->info, "striping_factor", MPI_MAX_INFO_VAL, 
-                         value, &flag);
+		 value, &flag);
     if (flag && (atoi(value) > 0)) pstat.pcount = atoi(value);
 
     MPI_Info_get(fd->info, "striping_unit", MPI_MAX_INFO_VAL, 
-                         value, &flag);
+		 value, &flag);
     if (flag && (atoi(value) > 0)) pstat.ssize = atoi(value);
 
     MPI_Info_get(fd->info, "start_iodevice", MPI_MAX_INFO_VAL, 
-                         value, &flag);
+		 value, &flag);
     if (flag && (atoi(value) >= 0)) pstat.base = atoi(value);
 
     fd->fd_sys = pvfs_open64(fd->filename, amode, perm, &pstat, NULL);
@@ -76,16 +68,10 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
     ADIOI_Free(value);
 
     if (fd->fd_sys == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	*error_code = MPI_ERR_UNKNOWN;
-#else /* MPICH-1 */
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;
 }

@@ -14,4 +14,9 @@
 #include <fcntl.h>
 #include "adio.h"
 
+void ADIOI_SFS_Open(ADIO_File fd, int *error_code);
+void ADIOI_SFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
+		*error_code); 
+void ADIOI_SFS_Flush(ADIO_File fd, int *error_code);
+
 #endif

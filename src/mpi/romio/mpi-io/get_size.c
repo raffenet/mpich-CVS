@@ -35,13 +35,12 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_size(MPI_File fh, MPI_Offset *size)
+int MPI_File_get_size(MPI_File mpi_fh, MPI_Offset *size)
 {
-    ADIO_Fcntl_t *fcntl_struct;
     int error_code;
-#ifndef PRINT_ERR_MSG
+    ADIO_File fh;
+    ADIO_Fcntl_t *fcntl_struct;
     static char myname[] = "MPI_FILE_GET_SIZE";
-#endif
 #ifdef MPI_hpux
     int fl_xmpi;
 
@@ -49,16 +48,13 @@ int MPI_File_get_size(MPI_File fh, MPI_Offset *size)
 		  MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_get_size: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    fh = MPIO_File_resolve(mpi_fh);
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_get_size", &error_code);
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    /* --END ERROR HANDLING-- */
+
+    ADIOI_TEST_DEFERRED(fh, myname, &error_code);
 
     fcntl_struct = (ADIO_Fcntl_t *) ADIOI_Malloc(sizeof(ADIO_Fcntl_t));
     ADIO_Fcntl(fh, ADIO_FCNTL_GET_FSIZE, fcntl_struct, &error_code);
@@ -68,5 +64,6 @@ int MPI_File_get_size(MPI_File fh, MPI_Offset *size)
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
     return error_code;
 }

@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
+ *   $Id$
  *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
@@ -510,6 +510,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
  	break;
 
     default:
+	/* TODO: FIXME (requires changing prototypes to return errors...) */
 	FPRINTF(stderr, "Error: Unsupported datatype passed to ADIOI_Flatten\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -755,6 +756,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 	}
 	break;
     default:
+	/* TODO: FIXME */
 	FPRINTF(stderr, "Error: Unsupported datatype passed to ADIOI_Count_contiguous_blocks\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }

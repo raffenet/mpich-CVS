@@ -90,7 +90,7 @@ MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall
 #
 have_aio=no
 #
-known_filesystems="nfs ufs pfs piofs pvfs pvfs2 testfs xfs hfs sfs"
+known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs sfs"
 known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
@@ -278,7 +278,7 @@ fi
 # --------------------------------------------------------------------------
 # We must first select the C and Fortran compilers.  Because of the 
 # way that the PROG_CC autoconf macro works (and all of the macros that
-# require it, includint CHECK_HEADERS), that macro must occur exactly
+# require it, including CHECK_HEADERS), that macro must occur exactly
 # once in the configure.in file, at least as of autoconf 2.57 .  
 # Unfortunately, this requirement is not enforced.  To handle this,
 # we first case on the architecture; then use PROG_CC, then case on the
@@ -306,11 +306,6 @@ if test -n "$OPTFLAGSC" ; then
     C_OPT_FLAG="$C_OPT_FLAG $OPTFLAGSC"
 fi
 case $ARCH in 
-     sun4)
-     CC=${CC:-gcc}
-     F77=${FC:-f77}
-     ;;
-
      solaris|solaris86)
      CC=${CC:-cc}
      F77=${FC:-f77}
@@ -325,14 +320,6 @@ case $ARCH in
      AC_PROGRAMS_CHECK(CC, mpcc, cc)
      if test $NOF77 = 0 && test -z "$F77"; then 
         AC_PROGRAMS_CHECK(F77, mpxlf, f77)
-     fi
-     ;;
-
-     paragon)
-     CC=${CC:-icc}
-     F77=${FC:-if77}
-     if test "$CC" = "icc"; then
-         C_OPT_FLAG="-Knoieee -Mvect -O3"
      fi
      ;;
 
@@ -409,65 +396,15 @@ if test $DEBUG = "yes" ; then
 else 
     CFLAGS="$CFLAGS $C_OPT_FLAG"
 fi
+
 # ---------------------------------------------------------------------------
 # Here go the rest of the tests
 # ---------------------------------------------------------------------------
-if test -n "$arch_sun4" ; then 
-    if test "$enable_aio" != "no" ; then
-        # Check for aio
-	save_libs=$LIBS
-	LIBS=
-	AC_SEARCH_LIBS(aiowrite,aio rt,,[enable_aio=no])
-	ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-	LIBS=$save_libs
-    fi
-    if test "$enable_aio" = "no" ; then
-        have_aio=no
-    else 
-        AC_DEFINE(AIO_SUN,1,[Define for SUN0S 4])
-	have_aio=yes
-    fi
-
-    if test -z "$MPI" ; then
-        MPI=mpich
-        mpi_mpich=1
-    fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="ufs nfs"
-        AC_MSG_RESULT([configuring for file systems ufs and nfs])
-    fi
-fi
-#
 if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
-    if test "$enable_aio" != "no" ; then
-        # Check for aio
-	save_libs=$LIBS
-	LIBS=
-	AC_SEARCH_LIBS(aiowrite,aio rt,,[enable_aio=no])
-	ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-	MPI_LIB="$MPI_LIB $LIBS"
-	LIBS=$save_libs
-    fi
-    if test "$enable_aio" = "no" ; then
-        have_aio=no
-    else 
-        AC_DEFINE(AIO_SUN,1,[Define for SUN0S 4])
-	have_aio=yes
-    fi
-
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
     fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="ufs nfs"
-        AC_MSG_RESULT([configuring for file systems ufs and nfs])
-    fi
-    AC_DEFINE(SOLARIS,1,[Define for Solaris])
     if test $MPI = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
@@ -477,50 +414,13 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     fi
     AR="ar cr"
 # solaris does not have l option to ar
-# solaris f90 does not have 8-byte integer type
-# (it does now!!!! 11/29/01)
 fi
-#
+
+
 if test -n "$arch_rs6000"; then
-    # Check that aio is available (many systems appear to have aio
-    # either installed improperly or turned off).
-    # The test is the following: if not cross compiling, try to run a 
-    # program that includes a *reference* to aio_write but does not call it
-    # If the libraries are not set up correctly, then this will fail.
-    AC_MSG_CHECKING([whether aio routines can be used])
-    AC_TRY_RUN([
-int main( int argc, char **argv )
-{
-    if (argc > 10) aio_write();
-    return 0;
-}
-],aio_runs=yes,aio_runs=no,aio_runs=unknown)
-    AC_MSG_RESULT($aio_runs)						 
-    if test "$enable_aio" != "no" -a "$aio_runs" = "no" ; then
-        enable_aio=no
-    fi
-    if test "$enable_aio" = "no" ; then
-        have_aio=no
-    else
-        AC_DEFINE(NO_FD_IN_AIOCB,1,[Define for no fd in the aiocb])
-        AC_DEFINE(AIO_HANDLE_IN_AIOCB,1,[Define for aio handle in aiocb])
-	have_aio=yes
-    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
-    fi
-    if test -z "$FILE_SYSTEM" ; then
-        if test "$CC" = "mpcc" || test "$CC" = "mpCC" ; then
-            file_system_piofs=1
-            FILE_SYSTEM="piofs"
-            AC_MSG_RESULT([configuring for file systems piofs, ufs, and nfs])
-        else 
-            AC_MSG_RESULT([configuring for file systems ufs and nfs])
-        fi
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="$FILE_SYSTEM ufs nfs"
     fi
     AC_DEFINE(AIX,1,[Define for AIX])
 # assume long long exists.
@@ -529,30 +429,9 @@ int main( int argc, char **argv )
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi    
 #
-if test -n "$arch_paragon"; then
-    AR="ar860 cr$AR_LOCAL"
-    MPI_LIB="$MPI_LIB -nx"
-    if test -z "$MPI" ; then
-        MPI=mpich
-        mpi_mpich=1
-    fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_pfs=1
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="pfs ufs nfs"
-        AC_MSG_RESULT([configuring for file systems pfs, ufs, and nfs])
-    fi
-    AC_DEFINE(PARAGON,1,[Define for Intel Paragon])
-    have_aio=no
-# NO_AIO is if configuring for NFS/UFS. It doesn't affect PFS asynch. I/O.
-# long long does not exist
-    longlongsize=${longlongsize:-0} 
-fi    
-#
+
 if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     # TFLOP_FLAGS="-cougar -D__PUMA"
-    have_aio=no
     AR="xar cr$AR_LOCAL"
     RANLIB="xranlib"
     MPI_LIB="$MPI_LIB"
@@ -563,111 +442,19 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     if test -z "$FILE_SYSTEM" ; then
         file_system_ufs=1
         FILE_SYSTEM="ufs"
-        AC_MSG_RESULT([configuring for file system ufs])
     fi
 fi
 #
 if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" || test -n "$arch_openbsd" ; then
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
-       AC_DEFINE(FREEBSD,1,[Define for FreeBSD])
-       PAC_HAVE_MOUNT_NFS
-       if test "$ROMIO_HAVE_MOUNT_NFS" = "1"; then
-	  # Gaaa.  The Intel V7.1 compiler replaces types.h (!!) with
-	  # a version that *DOES NOT CONTAIN THE DEFINITIONS NEEDED BY OTHER
-	  # INCLUDE FILES*!!!!  (Specifically, __SWORD_TYPE, used 
-	  # by statfs.h .  This problem was observed on Redhat 8.0 .
-	  AC_CHECK_HEADERS(sys/vfs.h sys/param.h sys/mount.h sys/statvfs.h)
-	  AC_MSG_CHECKING([whether struct statfs properly defined])
-	  AC_TRY_COMPILE([
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#endif
-#ifdef HAVE_SYS_VFS_H
-#include <sys/vfs.h>
-#endif
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-#ifdef HAVE_SYS_MOUNT_H
-#include <sys/mount.h>
-#endif],[
-     struct statfs f;],pac_cv_have_statfs=yes,pac_cv_have_statfs=no)
-          AC_MSG_RESULT($pac_cv_have_statfs)
-	  # At this point, we could check for whether defining 
-	  # __SWORD_TYPE as sizet_t or int/long (size of pointer)
-	  # would help.  FIXME
-
-	  if test "$pac_cv_have_statfs" = yes ; then
-	      AC_DEFINE(HAVE_STRUCT_STATFS,1,[Define if struct statfs can be compiled])
-	  fi
-	  
-       		AC_MSG_CHECKING([for struct statfs.f_fstypename])
-		AC_TRY_COMPILE([
-			#include <sys/param.h>
-			#include <sys/mount.h>
-			#include <string.h>],[
-			struct statfs f;
-			memset(&f, 0, sizeof(f));
-			strncmp("nfs", f.f_fstypename, 3);],
-			pac_cv_have_statfs_f_fstypename=yes,
-			pac_cv_have_statfs_f_fstypename=no)
-		AC_MSG_RESULT($pac_cv_have_statfs_f_fstypename)
-		if test $pac_cv_have_statfs_f_fstypename = yes ; then
-		    AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 1,[Define if statfs has f_fstypename])
-		else
-		    AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 0,[Define if statfs has f_fstypename])
-		fi
-       fi
-       longlongsize=${longlongsize:-0}
-# printf doesn't work properly and no integer*8 as far as I can tell
-    else 
-       AC_DEFINE(LINUX,1,[Define for Linux])
+        longlongsize=${longlongsize:-0}
+	# printf doesn't work properly and no integer*8 as far as I can tell
     fi
     # Find the CPP before the header check
     AC_PROG_CPP
-    if test "$enable_aio" != "yes" ; then
-        have_aio=no
-    else
-	save_libs=$LIBS
-	LIBS=
-        # Try to find the aio routines
-	use_aio=no
-        AC_HEADER_CHECK(aio.h,has_aio_h=yes,has_aio_h=no)
-	AC_SEARCH_LIBS(aio_write,aio)
-	# What function do we want -lrt for?  In recent Linux, aio_write64
-	# is here, as is lio_listio
-	AC_SEARCH_LIBS(aio_write64,rt)
-	AC_SEARCH_LIBS(pthread_create,pthread,[has_pthread=yes],[has_pthread=no])
-        AC_FUNC_CHECK(aio_write,has_aio_write=yes,has_aio_write=no)
-	if test "$has_aio_h" = "yes" -a "$has_aio_write" = "yes" -a \
-	        "$has_pthread" = "yes" ; then
-	    use_aio=yes	
-	fi    
-	# Check for aiocb_t as a shorthand for struct aiocb
-	AC_MSG_CHECKING([for aiocb_t])
-	AC_TRY_COMPILE([#include <aio.h>],
-[aiocb_t a;],has_aiocb_t=yes,has_aiocb_t=no)
-	AC_MSG_RESULT($has_aiocb_t)
-	if test "$has_aiocb_t" = "no" ; then 
-	    AC_DEFINE(NEEDS_AIOCB_T,1,[Define for aiocb_t definition needed])
-        fi
-	if test "$use_aio" = "yes" ; then
-	    ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-	    have_aio=yes
-	else
-	    have_aio=no
-	fi
-	LIBS=$save_libs
-    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
-    fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="ufs nfs"
-        AC_MSG_RESULT([configuring for file systems ufs and nfs])
     fi
 fi    
 #
@@ -682,7 +469,6 @@ if test -n "$arch_SX4" ; then
         file_system_sfs=1
         file_system_nfs=1
         FILE_SYSTEM="sfs nfs"
-        AC_MSG_RESULT([configuring for file systems sfs and nfs])
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
@@ -726,27 +512,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     else
         AC_DEFINE(SPPUX,1,[Define for SPPUX (Convex)])
     fi
-    if test -z "$FILE_SYSTEM" ; then
-        if test -n "$arch_hpux" ; then
-	   AC_MSG_CHECKING([for struct flock64])
-           AC_TRY_COMPILE([#include <fcntl.h>],[
-struct flock64 fl; int i=F_SETLKW64;],flock64_ok="yes",flock64_ok="no")
-           AC_MSG_RESULT($flock64_ok)
-        else
-            flock64_ok="yes"
-        fi
-        if test $flock64_ok = "yes" ; then
-            file_system_hfs=1
-            file_system_nfs=1
-            FILE_SYSTEM="hfs nfs"
-            AC_MSG_RESULT([configuring for file systems hfs and nfs])
-        else
-            file_system_ufs=1
-            file_system_nfs=1
-            FILE_SYSTEM="ufs nfs"
-            AC_MSG_RESULT([no flock64; configuring for file systems ufs and nfs])
-        fi
-    fi
+
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     if test "$CC" != "gcc" ; then
@@ -758,18 +524,11 @@ struct flock64 fl; int i=F_SETLKW64;],flock64_ok="yes",flock64_ok="no")
 fi
 #
 if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
-    AC_DEFINE(AIO_PRIORITY_DEFAULT,1,[Define for AIO priority is default])
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
     fi
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="ufs nfs"
-        AC_MSG_RESULT([configuring for file systems ufs and nfs])
-    fi
-    AC_DEFINE(DEC,1,[Define for DEC/Compaq/HP Alpha])
+
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_LIBLIST="$ROMIO_LIBLIST -laio"
@@ -794,12 +553,7 @@ if test -n "$arch_CRAY" ; then
 #       MPISGI needed because of error in Cray's and SGI's 
 #       MPI_Type_get_contents (does not increment reference count).
 #       Others needed because MPISGI needed.
-    if test -z "$FILE_SYSTEM" ; then
-        file_system_ufs=1
-        file_system_nfs=1
-        FILE_SYSTEM="ufs nfs"
-        AC_MSG_RESULT([configuring for file systems ufs and nfs])
-    fi
+
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
@@ -808,13 +562,7 @@ if test -n "$arch_sgi" ; then
     arch_IRIX=1
     ARCH=IRIX
 fi
-if test -n "$arch_IRIX64" ; then
-    arch_IRIX=1
-fi
-if test -n "$arch_IRIX32" ; then
-    arch_IRIX=1
-fi
-if test -n "$arch_IRIXN32" ; then
+if test -n "$arch_IRIX64" || test -n "$arch_IRIX32" || test -n "$arch_IRIXN32" ; then
     arch_IRIX=1
 fi
 if test -n "$arch_sgi5" ; then
@@ -892,19 +640,11 @@ if test -n "$arch_IRIX"; then
           file_system_ufs=1
           FILE_SYSTEM="ufs $FILE_SYSTEM"
        fi
-       AC_MSG_RESULT([configuring for file systems $FILE_SYSTEM])
    fi
    AC_DEFINE(IRIX,1,[Define if IRIX])
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
-
-# 
-# If no system selected, turn of AIO
-if test "$have_aio" != yes ; then
-    AC_DEFINE(NO_AIO,1,[Define if AIO should not be used])
-fi
-
 
 AC_HAVE_FUNCS(memalign)
 
@@ -1030,9 +770,9 @@ else
 fi   
 #
 if test -n "$mpi_sgi"; then
-dnl   if test -z "$HAVE_MPI_INFO" ; then
-dnl      PAC_CHECK_MPI_SGI_INFO_NULL  # is MPI_INFO_NULL defined in mpi.h?
-dnl   fi
+#   if test -z "$HAVE_MPI_INFO" ; then
+#      PAC_CHECK_MPI_SGI_INFO_NULL  # is MPI_INFO_NULL defined in mpi.h?
+#   fi
    PAC_TEST_MPI_SGI_type_is_contig
    PAC_TEST_MPI_COMBINERS
    PAC_TEST_MPI_HAVE_OFFSET_KIND
@@ -1146,15 +886,9 @@ if test "$HAVE_WEAK_SYMBOLS" = 1 ; then
     AC_DEFINE(HAVE_WEAK_SYMBOLS,1,[Define if weak symbols available])
 fi
 AC_SUBST(HAVE_WEAK_SYMBOLS)
-#
-# if FILE_SYSTEM is not set above, use ufs and nfs as default
-#
-if test -z "$FILE_SYSTEM" ; then
-    file_system_ufs=1
-    file_system_nfs=1
-    FILE_SYSTEM="ufs nfs"
-    AC_MSG_RESULT([configuring for file systems ufs and nfs])
-fi
+
+
+
 #
 # Check whether the MPI Offset type is compatible with struct flock
 AC_MSG_CHECKING([whether struct flock compatible with MPI_Offset])
@@ -1183,52 +917,79 @@ if test "$pac_cv_struct_flock_and_mpi_offset" = no ; then
     # sizes are selected.  Gah!
 fi
 
+#
+# if FILE_SYSTEM is not set above, use ufs and nfs as default
+#
+if test -z "$FILE_SYSTEM" ; then
+    file_system_ufs=1
+    file_system_nfs=1
+    FILE_SYSTEM="ufs nfs"
+fi
+
+#
+# Print list of configured file systems
+#
+# TODO: REMOVE BAD ONES FROM THE LIST SOMEHOW?
+#
+AC_MSG_CHECKING([configured file systems])
+AC_MSG_RESULT([$FILE_SYSTEM])
+
 if test -n "$file_system_nfs" ; then
-   # Check for problems with locks
-   # We no longer do this within the configure test.  Instead,
-   # we suggest tha the user run maint/nfslock.c
-   AC_MSG_WARN([File locks may not work with NFS.  See the Installation and
+    AC_DEFINE(ROMIO_NFS,1,[Define for ROMIO with NFS])
+    AC_MSG_WARN([File locks may not work with NFS.  See the Installation and
 users manual for instructions on testing and if necessary fixing this])
 fi
-if test -n "$file_system_nfs"; then
-    AC_DEFINE(NFS,1,[Define for NFS])
-fi
+
 if test -n "$file_system_ufs"; then
-    AC_DEFINE(UFS,1,[Define for UFS])
+    AC_DEFINE(ROMIO_UFS,1,[Define for ROMIO with UFS])
 fi
 if test -n "$file_system_hfs"; then
-    AC_DEFINE(HFS,1,[Define for HFS])
+    AC_DEFINE(ROMIO_HFS,1,[Define for ROMIO with HFS])
 fi
 if test -n "$file_system_sfs"; then
-    AC_DEFINE(SFS,1,[Define for SFS])
+    AC_DEFINE(ROMIO_SFS,1,[Define for ROMIO with SFS])
 fi
+
+if test -n "$file_system_pfs"; then
+    AC_DEFINE(ROMIO_PFS,1,[Define for ROMIO with PFS])
+fi
+
+if test -n "$file_system_testfs"; then
+    AC_DEFINE(ROMIO_TESTFS,1,[Define for ROMIO with TESTFS])
+fi
+
 if test -n "$file_system_xfs"; then
-    AC_DEFINE(XFS,1,[Define for XFS])
-    # Check for memalign value (this was P A C_GET_XFS_MEMALIGN,
-    # switched to autoconf 2)
+    AC_DEFINE(ROMIO_XFS,1,[Define for ROMIO with XFS])
+    # Check for memalign value
     AC_CACHE_CHECK([for memory alignment needed for direct I/O],
-pac_cv_memalignval,[
-rm -f confmemalignval
-rm -f /tmp/romio_tmp.bin
-AC_TRY_RUN([#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-main() { 
-  struct dioattr st;
-  int fd = open("/tmp/romio_tmp.bin", O_RDWR | O_CREAT, 0644);
-  FILE *f=fopen("confmemalignval","w");
-  if (fd == -1) exit(1);
-  if (!f) exit(1);
-  fcntl(fd, F_DIOINFO, &st);
-  fprintf( f, "%u\n", st.d_mem);
-  exit(0);
-}],pac_cv_memalignval=`cat confmemalignval`,pac_cv_memalignval="unknown",pac_cv_memalignval="unknown")
-    rm -f confmemalignval
-    rm -f /tmp/romio_tmp.bin
-])
+    pac_cv_memalignval,
+    [
+    /bin/rm -f confmemalignval
+    /bin/rm -f /tmp/romio_tmp.bin
+    AC_TRY_RUN([
+	#include <stdio.h>
+	#include <unistd.h>
+	#include <fcntl.h>
+	#include <stdio.h>
+	main() { 
+	struct dioattr st;
+	int fd = open("/tmp/romio_tmp.bin", O_RDWR | O_CREAT, 0644);
+	FILE *f=fopen("confmemalignval","w");
+	if (fd == -1) exit(1);
+	if (!f) exit(1);
+	fcntl(fd, F_DIOINFO, &st);
+	fprintf( f, "%u\n", st.d_mem);
+	exit(0);
+	}
+	],
+	pac_cv_memalignval=`cat confmemalignval`,
+	pac_cv_memalignval="unknown",pac_cv_memalignval="unknown"
+    )
+    /bin/rm -f confmemalignval
+    /bin/rm -f /tmp/romio_tmp.bin
+    ])
     if test -n "$pac_cv_memalignval" -a "$pac_cv_memalignval" != 0 -a \
-    "$pac_cv_memalignval" != "unknown" ; then
+	"$pac_cv_memalignval" != "unknown" ; then
         CFLAGS="$CFLAGS -DXFS_MEMALIGN=$pac_cv_memalignval"
     else
         AC_MSG_RESULT(assuming 128 for memory alignment)
@@ -1236,46 +997,325 @@ main() {
     fi
 fi
 
+#
+# Verify presence of pvfs.h, issue with int64
+#
 if test -n "$file_system_pvfs"; then
+    CPPFLAGS="$CPPFLAGS $CFLAGS"
+    AC_CHECK_HEADERS(pvfs.h)
     # Check for missing int64_t (intel version 8 compiler and -no-gcc
     # selected)
     AC_MSG_CHECKING([that pvfs.h can be compiled])
     AC_TRY_COMPILE([
-#include <pvfs.h>
-],[],pvfs_header_ok=yes,pvfs_header_ok=no)
+        #include <pvfs.h>
+        ],[
+        ],pvfs_header_ok=yes,pvfs_header_ok=no
+    )
     AC_MSG_RESULT($pvfs_header_ok)
     if test "$pvfs_header_ok" = no -a "$ac_cv_sizeof_long_long" = 8 ; then
         AC_MSG_CHECKING([if pvfs.h can be compiled if we define int64_t])
         # Try again, but with int64_t
         AC_TRY_COMPILE([
-typedef long long int int64_t;
-#include <pvfs.h>
-],[],pvfs_header_ok="yes with int64 definition")
+            typedef long long int int64_t;
+            #include <pvfs.h>
+            ],[
+            ],
+            pvfs_header_ok="yes with int64 definition"
+        )
         AC_MSG_RESULT($pvfs_header_ok)
     fi
     if test "$pvfs_header_ok" = "yes with int64 definition" ; then
         AC_DEFINE(ROMIO_PVFS_NEEDS_INT64_DEFINITION,1,[Define if int64_t must be defined for PVFS])
     fi
     if test "$pvfs_header_ok" != "no" ; then
-        # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
-        AC_DEFINE(ROMIO_PVFS,1,[Define for Romio with PVFS])
+        AC_DEFINE(ROMIO_PVFS,1,[Define for ROMIO with PVFS])
+	AC_DEFINE(HAVE_PVFS_SUPER_MAGIC, 1, [Define if PVFS_SUPER_MAGIC defined.])
+    else
+	AC_MSG_WARN(missing or broken pvfs.h header file; disabling ROMIO PVFS support)
     fi
 fi
+
+#
+# Verify presence of pvfs2.h
+#
 if test -n "$file_system_pvfs2"; then
-    AC_DEFINE(ROMIO_PVFS2,1,[Define for Romio with PVFS2])
+    CPPFLAGS="$CPPFLAGS $CFLAGS"
+    AC_CHECK_HEADERS(pvfs2.h,
+	AC_DEFINE(ROMIO_PVFS2,1,[Define for ROMIO with PVFS2])
+	AC_DEFINE(HAVE_PVFS2_SUPER_MAGIC, 1, [Define if PVFS2_SUPER_MAGIC defined.]),
+	AC_MSG_WARN(missing pvfs2.h header file; disabling ROMIO PVFS2 support)
+    )
 fi
-if test -n "$file_system_pfs"; then
-    AC_DEFINE(PFS,1,[Define for PFS])
+
+
+#
+# Check for presence and characteristics of async. I/O calls
+#
+# Q: Do we need to list some "other libs" to get things to link?
+# Q: Do we only want to do this if the user asked for aio?
+save_libs=$LIBS
+LIBS=
+#
+# Some systems need pthreads to get AIO to work
+#
+AC_SEARCH_LIBS(pthread_create,pthread,
+    ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
+    MPI_LIB="$MPI_LIB $LIBS"
+    )
+LIBS=
+AC_SEARCH_LIBS(aio_write,aio rt,
+    ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
+    MPI_LIB="$MPI_LIB $LIBS"
+    aio_write_found=yes
+)
+LIBS=$save_libs
+if test -n "$aio_write_found" ; then
+    # Check that aio is available (many systems appear to have aio
+    # either installed improperly or turned off).
+    # The test is the following: if not cross compiling, try to run a 
+    # program that includes a *reference* to aio_write but does not call it
+    # If the libraries are not set up correctly, then this will fail.
+    save_libs=$LIBS
+    LIBS="$LIBS $ROMIO_LIBLIST"
+    AC_MSG_CHECKING([whether aio routines can be used])
+    AC_TRY_RUN([
+	int main(int argc, char **argv)
+	{
+	    if (argc > 10) aio_write();
+	    return 0;
+	}
+	],
+	aio_runs=yes
+	AC_MSG_RESULT(yes),
+	aio_runs=no
+	AC_MSG_RESULT(no),
+	aio_runs=unknown
+	AC_MSG_RESULT(unknown)
+    )
+    LIBS=$save_libs
+    if test "$aio_runs" != "no" ; then
+	AC_DEFINE(ROMIO_HAVE_WORKING_AIO, 1, Define if AIO calls seem to work)
+    fi
+
+    AC_CHECK_HEADERS(aio.h signal.h)
+    AC_MSG_CHECKING(for aio_fildes member of aiocb structure)
+    AC_TRY_COMPILE([
+	#ifdef HAVE_SIGNAL_H
+	#include <signal.h>
+	#endif
+	#ifdef HAVE_AIO_H
+	#include <aio.h>
+	#endif
+	],[
+	struct aiocb a;
+	a.aio_fildes = 0;
+	],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES, 1, [Define if aiocb has aio_fildes member]),
+	AC_MSG_RESULT(no)
+    )
+    AC_MSG_CHECKING(for aio_whence member of aiocb structure)
+    AC_TRY_COMPILE([
+	#ifdef HAVE_SIGNAL_H
+	#include <signal.h>
+	#endif
+	#ifdef HAVE_AIO_H
+	#include <aio.h>
+	#endif
+	#include <sys/types.h>
+	#include <unistd.h>
+	],[
+	struct aiocb a;
+	a.aio_whence = SEEK_SET;
+	],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_WHENCE, 1, [Define if aiocb has aio_whence member]),
+	AC_MSG_RESULT(no)
+    )
+    AC_MSG_CHECKING(for aio_handle member of aiocb structure)
+    AC_TRY_COMPILE([
+	#ifdef HAVE_SIGNAL_H
+	#include <signal.h>
+	#endif
+	#ifdef HAVE_AIO_H
+	#include <aio.h>
+	#endif
+	],[
+	struct aiocb a;
+	aio_handle_t h;
+
+	a.aio_handle = h;
+	],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE, 1, [Define if aiocb has aio_handle member]),
+	AC_MSG_RESULT(no)
+    )
+    AC_MSG_CHECKING(for aio_reqprio member of aiocb structure)
+    AC_TRY_COMPILE([
+	#ifdef HAVE_SIGNAL_H
+	#include <signal.h>
+	#endif
+	#ifdef HAVE_AIO_H
+	#include <aio.h>
+	#endif
+	],[
+	struct aiocb a;
+
+	a.aio_reqprio = 0;
+	],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_REQPRIO, 1, [Define if aiocb has aio_reqprio member]),
+	AC_MSG_RESULT(no)
+    )	
+    AC_MSG_CHECKING(for aio_sigevent member of aiocb structure)
+    AC_TRY_COMPILE([
+	#ifdef HAVE_SIGNAL_H
+	#include <signal.h>
+	#endif
+	#ifdef HAVE_AIO_H
+	#include <aio.h>
+	#endif
+	],[
+	struct aiocb a;
+
+	a.aio_sigevent.sigev_signo = 0;
+	],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_SIGEVENT, 1, [Define if aiocb has aio_sigevent member]),
+	AC_MSG_RESULT(no)
+    )
+	
 fi
-if test -n "$file_system_testfs"; then
-    AC_DEFINE(ROMIO_TESTFS,1,[Define for TESTFS])
+
+#
+# Check for statfs (many) and specifically f_fstypename field (BSD)
+#
+AC_CHECK_HEADERS(sys/vfs.h sys/param.h sys/mount.h sys/statvfs.h)
+AC_MSG_CHECKING([whether struct statfs properly defined])
+AC_TRY_COMPILE([
+    #ifdef HAVE_SYS_VFS_H
+    #include <sys/vfs.h>
+    #endif
+    #ifdef HAVE_SYS_STATVFS_H
+    #include <sys/statvfs.h>
+    #endif
+    #ifdef HAVE_SYS_PARAM_H
+    #include <sys/param.h>
+    #endif
+    #ifdef HAVE_SYS_MOUNT_H
+    #include <sys/mount.h>
+    #endif
+    ],[
+    struct statfs f;
+    ],
+    pac_cv_have_statfs=yes,pac_cv_have_statfs=no
+)
+AC_MSG_RESULT($pac_cv_have_statfs)
+# At this point, we could check for whether defining 
+# __SWORD_TYPE as sizet_t or int/long (size of pointer)
+# would help.  FIXME
+
+if test "$pac_cv_have_statfs" = yes ; then
+    AC_DEFINE(HAVE_STRUCT_STATFS,1,[Define if struct statfs can be compiled])
 fi
-if test -n "$file_system_piofs"; then
-    AC_DEFINE(PIOFS,1,[Define for PIOFS])
-    USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
-    ROMIO_LFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
-    USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
+	  
+AC_MSG_CHECKING([for f_fstypename member of statfs structure])
+AC_TRY_COMPILE([
+    #include <sys/param.h>
+    #include <sys/mount.h>
+    #include <string.h>
+    ],[
+    struct statfs f;
+    memset(&f, 0, sizeof(f));
+    strncmp("nfs", f.f_fstypename, 3);
+    ],
+    pac_cv_have_statfs_f_fstypename=yes,
+    pac_cv_have_statfs_f_fstypename=no
+)
+AC_MSG_RESULT($pac_cv_have_statfs_f_fstypename)
+if test $pac_cv_have_statfs_f_fstypename = yes ; then
+    AC_DEFINE(ROMIO_HAVE_STRUCT_STATFS_WITH_F_FSTYPENAME, 1,[Define if statfs has f_fstypename])
 fi
+
+#
+# Check for stat and st_fstype field (NEC SX4)
+#
+AC_CHECK_HEADERS(sys/stat.h sys/types.h unistd.h)
+AC_CHECK_FUNCS(stat,
+    AC_DEFINE(HAVE_STAT, 1, Define if stat function is present)
+    AC_MSG_CHECKING([for st_fstype member of stat structure])
+    AC_TRY_COMPILE([
+	#ifdef HAVE_SYS_TYPES_H
+	#include <sys/types.h>
+	#endif
+	#ifdef HAVE_SYS_STAT_H
+	#include <sys/stat.h>
+	#endif
+	#ifdef HAVE_UNISTD_H
+	#include <unistd.h>
+	#endif
+	],[
+	struct stat s;
+
+	s.st_fstype = NULL;
+	],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE, 1, Define if struct stat has a st_fstype member),
+	AC_MSG_RESULT(no)
+    )
+)
+
+#
+# Check for statvfs and f_basetype field (Solaris, Irix, AIX, etc.)
+#
+AC_CHECK_HEADERS(sys/types.h sys/statvfs.h sys/vfs.h)
+AC_CHECK_FUNCS(statvfs,
+    AC_DEFINE(HAVE_STATVFS, 1, Define if statvfs function is present)
+    AC_MSG_CHECKING([for f_basetype member of statvfs structure])
+    AC_TRY_COMPILE([
+	#ifdef HAVE_SYS_TYPES_H
+	#include <sys/types.h>
+	#endif
+        #ifdef HAVE_SYS_VFS_H
+        #include <sys/vfs.h>
+        #endif
+	#ifdef HAVE_SYS_STATVFS_H
+	#include <sys/statvfs.h>
+	#endif
+	], [
+	struct statvfs foo;
+
+	foo.f_basetype = NULL;
+	],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE, 1, defined if struct statvfs has a f_basetype member),
+	AC_MSG_RESULT(no)
+    )
+)
+
+#
+# Check for large file support
+#
+AC_CHECK_HEADERS(unistd.h,
+    AC_MSG_CHECKING([for large file defines])
+    AC_TRY_COMPILE([
+        #include <unistd.h>
+        ], [
+        #ifndef _LFS64_LARGEFILE
+        #error no largefile defines
+        #endif
+        ],
+        CFLAGS="${CFLAGS} -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+        AC_MSG_RESULT(yes),
+        AC_MSG_RESULT(none)
+    )
+)
+
+####################################################################
+# We're about to mess with CC etc.  No more feature tests past here,
+# because we may set CC to something that does not yet exist!
+####################################################################
+
 if test -n "$mpi_mpich"; then
    if test -z "$arch_SX4" ; then
       MPIOF_H_INCLUDED=1
@@ -1285,12 +1325,15 @@ if test -n "$mpi_mpich"; then
       AC_DEFINE(MPICH,1,[Define if using MPICH])
    fi
 fi
+
 if test -n "$mpi_sgi"; then
    AC_DEFINE(MPISGI,1,[Define if SGI MPI])
 fi
+
 if test -n "$mpi_lam"; then
    AC_DEFINE(MPILAM,1,[Define if using LAM/MPI])
 fi
+
 if test -n "$mpi_hp"; then
    AC_DEFINE(MPIHP,1,[Define if using HP MPI])
    if test "$NOF77" = 0; then
@@ -1484,6 +1527,9 @@ for dir in $FILE_SYSTEM ; do
     FILE_SYS_DIRS="$FILE_SYS_DIRS adio/ad_$dir"
 done
 EXTRA_SRC_DIRS=""
+if test "$FROM_MPICH2" = yes ; then
+    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich2"
+fi
 if test "$BUILD_MPI_INFO" = 1 ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info"
     if test "$NOF77" = 0 -a "$FROM_MPICH2" != yes ; then
@@ -1511,20 +1557,6 @@ if test -n "$MPIOF_H_INCLUDED"; then
 else 
    F77MPIOINC="include 'mpiof.h'"
 fi
-
-AC_CHECK_HEADERS(unistd.h,
-        AC_MSG_CHECKING([for large file defines])
-        AC_TRY_COMPILE([
-                #include <unistd.h>
-                ], [
-                #ifndef _LFS64_LARGEFILE
-                #error no largefile defines
-                #endif
-                ],
-                CFLAGS="${CFLAGS} -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
-                AC_MSG_RESULT(yes),
-                AC_MSG_RESULT(none) )
-        )
 
 echo "setting CC to $CC"
 echo "setting F77 to $F77"
@@ -1618,6 +1650,8 @@ dnl
 if test ! -d adio ; then mkdir adio ; fi
 if test ! -d adio/include ; then mkdir adio/include ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
+if test ! -d mpi-io ; then mkdir mpi-io ; fi
+if test ! -d mpi-io/glue ; then mkdir mpi-io/glue ; fi
 # 
 # Make sure we remove any configuration file incase there is out-of-date data.
 # We remove the version in include in case this is a vpath build
@@ -1632,13 +1666,14 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
 		   test/runtests util/romioinstall include/mpio.h \
 		   include/mpiof.h \
 		   adio/ad_nfs/Makefile adio/ad_ufs/Makefile \
-		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
+		   adio/ad_xfs/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
 		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
-		   adio/ad_pvfs2/Makefile adio/ad_piofs/Makefile \
+		   adio/ad_pvfs2/Makefile \
                    mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile \
                    mpi2-other/array/fortran/Makefile test/fmisc.f \
-                   test/fcoll_test.f test/pfcoll_test.f test/fperf.f )
+                   test/fcoll_test.f test/pfcoll_test.f test/fperf.f \
+		   mpi-io/glue/mpich2/Makefile)
 #
 rm -f *.o
 if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = no -a \

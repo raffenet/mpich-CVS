@@ -8,68 +8,23 @@
 
 #include "ad_ufs.h"
 
-void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
+			    int *error_code)  
 {
-#ifndef NO_AIO
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
-    static char myname[] = "ADIOI_UFS_READCOMPLETE";
-#endif
-#ifdef AIO_SUN 
-    aio_result_t *result=0, *tmp;
-#else
+#ifdef ROMIO_HAVE_WORKING_AIO
     int err;
-#endif
-#ifdef AIO_HANDLE_IN_AIOCB
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
     struct aiocb *tmp1;
 #endif
 #endif
+    static char myname[] = "ADIOI_UFS_READCOMPLETE";
 
     if (*request == ADIO_REQUEST_NULL) {
 	*error_code = MPI_SUCCESS;
 	return;
     }
-
-#ifdef AIO_SUN
-    if ((*request)->queued) {  /* dequeue it */
-	tmp = (aio_result_t *) (*request)->handle;
-	while (tmp->aio_return == AIO_INPROGRESS) usleep(1000); 
-	/* sleep for 1 ms., until done. Is 1 ms. a good number? */
-	/* when done, dequeue any one request */
-	result = (aio_result_t *) aiowait(0);
-
-        (*request)->nbytes = tmp->aio_return;
-
-	if (tmp->aio_return == -1) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(tmp->aio_errno));
-	    return;
-#elif defined(PRINT_ERR_MSG)
-			*error_code = MPI_ERR_UNKNOWN;
-#else /* MPICH-1 */
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			  myname, "I/O Error", "%s", strerror(tmp->aio_errno));
-	    ADIOI_Error((*request)->fd, *error_code, myname);	    
-#endif
-	}
-	else *error_code = MPI_SUCCESS;
-
-/* aiowait only dequeues a request. The completion of a request can be
-   checked by just checking the aio_return flag in the handle passed
-   to the original aioread()/aiowrite(). Therefore, I need to ensure
-   that aiowait() is called exactly once for each previous
-   aioread()/aiowrite(). This is also taken care of in ADIOI_xxxDone */
-    }
-    else *error_code = MPI_SUCCESS;
-
-#ifdef HAVE_STATUS_SET_BYTES
-    if ((*request)->nbytes != -1)
-	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
-#endif
-
-#endif
     
-#ifdef AIO_HANDLE_IN_AIOCB
+#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE
 /* IBM */
     if ((*request)->queued) {
 	do {
@@ -90,17 +45,11 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
    only once on a given handle. */
 
 	if (err == -1) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	    return;
-#elif defined(PRINT_ERR_MSG)
-			*error_code = MPI_ERR_UNKNOWN;
-#else /* MPICH-1 */
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-             myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error((*request)->fd, *error_code, myname);	    
-#endif
 	}
 	else *error_code = MPI_SUCCESS;
     } /* if ((*request)->queued)  */
@@ -111,11 +60,11 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
-#elif (!defined(NO_AIO) && !defined(AIO_SUN))
+#elif defined(ROMIO_HAVE_WORKING_AIO)
 /* DEC, SGI IRIX 5 and 6 */
     if ((*request)->queued) {
 	do {
-	    err = aio_suspend((const aiocb_t **) &((*request)->handle), 1, 0);
+	    err = aio_suspend((const struct aiocb **) &((*request)->handle), 1, 0);
 	} while ((err == -1) && (errno == EINTR));
 
 	if (err != -1) {
@@ -126,17 +75,11 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	else (*request)->nbytes = -1;
 
 	if (err == -1) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	    return;
-#elif defined(PRINT_ERR_MSG)
-			*error_code = MPI_ERR_UNKNOWN;
-#else /* MPICH-1 */
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-	 	            myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error((*request)->fd, *error_code, myname);	    
-#endif
 	}
 	else *error_code = MPI_SUCCESS;
     } /* if ((*request)->queued) */
@@ -147,7 +90,7 @@ void ADIOI_UFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 #endif
 #endif
 
-#ifndef NO_AIO
+#ifdef ROMIO_HAVE_WORKING_AIO
     if ((*request)->queued != -1) {
 
 	/* queued = -1 is an internal hack used when the request must

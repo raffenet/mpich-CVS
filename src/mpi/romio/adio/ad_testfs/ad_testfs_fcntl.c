@@ -14,6 +14,7 @@ void ADIOI_TESTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 			int *error_code)
 {
     int myrank, nprocs;
+    static char myname[] = "ADIOI_TESTFS_FCNTL";
 
     *error_code = MPI_SUCCESS;
 
@@ -32,23 +33,17 @@ void ADIOI_TESTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	*error_code = MPI_SUCCESS;
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
-        /* for implementing PFS I/O modes. will not occur in MPI-IO
-           implementation.*/
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    MPI_Barrier(MPI_COMM_WORLD);
-	}
-	*error_code = MPI_SUCCESS;
-	break;
-
     case ADIO_FCNTL_SET_ATOMICITY:
 	fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1;
 	*error_code = MPI_SUCCESS;
 	break;
 
     default:
-	FPRINTF(stderr, "Unknown flag passed to ADIOI_TESTFS_Fcntl\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	/* --BEGIN ERROR HANDLING-- */
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "Unknown flag", 0);
+	return;
+	/* --END ERROR HANDLING-- */
     }
 }

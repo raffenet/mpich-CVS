@@ -21,9 +21,7 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
     ADIO_Offset curr_fsize, alloc_size, size, len, done;
     ADIO_Status status;
     char *buf;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NTFS_FCNTL";
-#endif
 
     switch(flag) {
     case ADIO_FCNTL_GET_FSIZE:
@@ -34,17 +32,11 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 		SetFilePointer(fd->fd_sys, DWORDLOW(fd->fp_sys_posn), &dwTemp, FILE_BEGIN);
 	}
 	if (fcntl_struct->fsize == -1) {
-#ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-							"**io %s", strerror(errno));
-			return;
-#elif defined(PRINT_ERR_MSG)
-			*error_code =  MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
+	    return;
 	}
 	else *error_code = MPI_SUCCESS;
 	break;
@@ -73,19 +65,12 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	    ADIO_ReadContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, (ADIO_Offset)done,
 			    &status, error_code);
 	    if (*error_code != MPI_SUCCESS) {
-#ifdef MPICH2
-				*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-								"**io %s", strerror(errno));
-				return;
-#elif defined(PRINT_ERR_MSG)
-		FPRINTF(stderr, "ADIOI_NTFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_PREALLOC_PERM,
-			      myname, (char *) 0, (char *) 0);
-		ADIOI_Error(fd, *error_code, myname);
-#endif
-                return;  
+		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+						   MPIR_ERR_RECOVERABLE,
+						   myname, __LINE__,
+						   MPI_ERR_IO, "**io",
+						   "**io %s", strerror(errno));
+		return;
 	    }
 	    ADIO_WriteContig(fd, buf, (int)len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
                              (ADIO_Offset)done, &status, error_code);
@@ -114,16 +99,6 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	*error_code = MPI_SUCCESS;
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
-        /* for implementing PFS I/O modes. will not occur in MPI-IO
-           implementation.*/
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    MPI_Barrier(MPI_COMM_WORLD);
-	}
-	*error_code = MPI_SUCCESS;
-	break;
-
     case ADIO_FCNTL_SET_ATOMICITY:
 	/* fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1; */
 	/* *error_code = MPI_SUCCESS; */
@@ -132,7 +107,13 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	break;
 
     default:
-	FPRINTF(stderr, "Unknown flag passed to ADIOI_NTFS_Fcntl\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	/* --BEGIN ERROR HANDLING-- */
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   MPI_ERR_IO,
+					   "Unknown flag passed to ADIOI_NTFS_Fcntl", 0);
+	return;
+	/* --END ERROR HANDLING-- */
     }
 }

@@ -24,8 +24,11 @@
 	ADIO_ReadContig(fd, writebuf, writebuf_len, MPI_BYTE, \
                  ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
 	if (*error_code != MPI_SUCCESS) { \
-	    FPRINTF(stderr, "ADIOI_GEN_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n"); \
-	    MPI_Abort(MPI_COMM_WORLD, 1); \
+	    *error_code = MPIO_Err_create_code(*error_code, \
+					       MPIR_ERR_RECOVERABLE, myname, \
+					       __LINE__, MPI_ERR_IO, \
+					       "**ioRMWrdwr", 0); \
+	    return; \
 	} \
     } \
     write_sz = (int) (ADIOI_MIN(req_len, writebuf_off + writebuf_len - req_off)); \
@@ -43,8 +46,11 @@
         ADIO_ReadContig(fd, writebuf, writebuf_len, MPI_BYTE, \
                   ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code); \
 	if (*error_code != MPI_SUCCESS) { \
-	    FPRINTF(stderr, "ADIOI_GEN_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n"); \
-	    MPI_Abort(MPI_COMM_WORLD, 1); \
+	    *error_code = MPIO_Err_create_code(*error_code, \
+					       MPIR_ERR_RECOVERABLE, myname, \
+					       __LINE__, MPI_ERR_IO, \
+					       "**ioRMWrdwr", 0); \
+	    return; \
 	} \
         write_sz = ADIOI_MIN(req_len, writebuf_len); \
         memcpy(writebuf, (char *)buf + userbuf_off, write_sz);\
@@ -100,6 +106,7 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
     int flag, st_fwr_size, st_n_filetypes, writebuf_len, write_sz;
     ADIO_Status status1;
     int new_bwr_size, new_fwr_size, max_bufsize;
+    static char myname[] = "ADIOI_GEN_WriteStrided";
 
     if (fd->hints->ds_write == ADIOI_HINT_DISABLE) {
     	/* if user has disabled data sieving on reads, use naive

@@ -19,16 +19,26 @@ int ADIOI_PVFS2_Initialized = MPI_KEYVAL_INVALID;
 void ADIOI_PVFS2_End(int *error_code)
 {
     int ret;
+    static char myname[] = "ADIOI_PVFS2_END";
+
     ret = PVFS_sys_finalize();
-    if (ret < 0 ) {
-	ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
-    } else {
-	*error_code = MPI_SUCCESS;
+
+    /* --BEGIN ERROR HANDLING-- */
+    if (ret != 0 ) {
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   ADIOI_PVFS2_error_convert(ret),
+					   "Error in PVFS_sys_finalize", 0);
+	return;
     }
+    /* --END ERROR HANDLING-- */
+
+    *error_code = MPI_SUCCESS;
 }
 
 int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval, 
-	void *attribute_val, void *extra_state)
+			 void *attribute_val, void *extra_state)
 {
     int error_code;
     ADIOI_PVFS2_End(&error_code);
@@ -37,33 +47,39 @@ int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval,
 
 void ADIOI_PVFS2_Init(int *error_code )
 {
-	int ret;
+    int ret;
+    static char myname[] = "ADIOI_PVFS2_INIT";
 
-	/* do nothing if we've already fired up the pvfs2 interface */
-	if (ADIOI_PVFS2_Initialized != MPI_KEYVAL_INVALID) {
-		*error_code = MPI_SUCCESS;
-		return;
-	}
+    /* do nothing if we've already fired up the pvfs2 interface */
+    if (ADIOI_PVFS2_Initialized != MPI_KEYVAL_INVALID) {
+	*error_code = MPI_SUCCESS;
+	return;
+    }
 
-	ret = PVFS_util_init_defaults();
-	if (ret < 0 ) {
-	    /* XXX: better error handling */
-	    PVFS_perror("PVFS_util_init_defaults", ret);
-	    ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
-	    return;
-	}
+    ret = PVFS_util_init_defaults();
+    if (ret < 0 ) {
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					   MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__,
+					   ADIOI_PVFS2_error_convert(ret),
+					   "Error in PVFS_util_init_defaults",
+					   0);
+	PVFS_perror("PVFS_util_init_defaults", ret);
 
-	MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_PVFS2_End_call,
-		&ADIOI_PVFS2_Initialized, (void *)0); 
-	/* just like romio does, we make a dummy attribute so we 
-	 * get cleaned up */
-	MPI_Attr_put(MPI_COMM_WORLD, ADIOI_PVFS2_Initialized, (void *)0);
+	return;
+    }
+    
+    MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_PVFS2_End_call,
+		      &ADIOI_PVFS2_Initialized, (void *)0); 
+    /* just like romio does, we make a dummy attribute so we 
+     * get cleaned up */
+    MPI_Attr_put(MPI_COMM_WORLD, ADIOI_PVFS2_Initialized, (void *)0);
 }
 
 void ADIOI_PVFS2_makeattribs(PVFS_sys_attr * attribs)
 {
     memset(attribs, 0, sizeof(PVFS_sys_attr));
-
+    
     attribs->owner = geteuid();
     attribs->group = getegid();
     attribs->perms = 1877;
@@ -78,13 +94,11 @@ void ADIOI_PVFS2_makecredentials(PVFS_credentials * credentials)
     PVFS_util_gen_credentials(credentials);
 }
 
-/* pvfs_error_convert: given a pvfs error code, make it into the appropriate
- * mpi error code */ 
-int ADIOI_PVFS2_pvfs_error_convert(int pvfs_error, int *mpi_error)
+int ADIOI_PVFS2_error_convert(int pvfs_error)
 {
-    *mpi_error = MPI_UNDEFINED;
-    return 0;
+    return MPI_UNDEFINED;
 }
+
 /* 
  * vim: ts=8 sts=4 sw=4 noexpandtab 
  */

@@ -36,28 +36,30 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_errhandler(MPI_File fh, MPI_Errhandler *errhandler)
+int MPI_File_get_errhandler(MPI_File mpi_fh, MPI_Errhandler *errhandler)
 {
     int error_code = MPI_SUCCESS;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
+    ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_ERRHANDLER";
-#endif
 
-    if (fh == MPI_FILE_NULL) *errhandler = ADIOI_DFLT_ERR_HANDLER;
-    else if (fh->cookie != ADIOI_FILE_COOKIE) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_FILE, "**iobadfh", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_FILE, MPIR_ERR_FILE_CORRUPT, 
-              myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
-#endif
+
+    if (fh == MPI_FILE_NULL) {
+	*errhandler = ADIOI_DFLT_ERR_HANDLER;
     }
-    else *errhandler = fh->err_handler;
+    else {
+	fh = MPIO_File_resolve(mpi_fh);
+	/* --BEGIN ERROR HANDLING-- */
+	if ((fh <= (MPI_File) 0) || ((fh)->cookie != ADIOI_FILE_COOKIE))
+	{
+	    error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					      myname, __LINE__, MPI_ERR_ARG,
+					      "**iobadfh", 0);
+	    return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
+	}
+	/* --END ERROR HANDLING-- */
 
-    return error_code;
+	*errhandler = fh->err_handler;
+    }
+
+    return MPI_SUCCESS;
 }

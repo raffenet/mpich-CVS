@@ -8,12 +8,11 @@
 
 #include "ad_ntfs.h"
 
-void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
+			     int *error_code)  
 {
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
+    DWORD ret_val;
     static char myname[] = "ADIOI_NTFS_READCOMPLETE";
-#endif
-	DWORD ret_val;
 
     if (*request == ADIO_REQUEST_NULL) {
 	*error_code = MPI_SUCCESS;
@@ -21,30 +20,25 @@ void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *er
     }
     
     if ((*request)->queued) {
-		ret_val = GetOverlappedResult((*request)->fd, (*request)->handle, &(*request)->nbytes, TRUE);
+	ret_val = GetOverlappedResult((*request)->fd, (*request)->handle,
+				      &(*request)->nbytes, TRUE);
 
-		/*
-		// Is this a busy wait on the aio handle?
+	/*
+	// Is this a busy wait on the aio handle?
 	do {
 	    err = aio_suspend((const aiocb_t **) &((*request)->handle), 1, 0);
 	} while ((err == -1) && (errno == EINTR));
 	//*/
 
-		if (!ret_val)
-			(*request)->nbytes = -1;
+	if (!ret_val)
+	    (*request)->nbytes = -1;
 
 	if (ret_val == FALSE) {
-#ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-							"**io %s", strerror(errno));
-			return;
-#elif defined(PRINT_ERR_MSG)
-			*error_code =  MPI_ERR_UNKNOWN;
-#else
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-	 	            myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error((*request)->fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
+	    return;
 	}
 	else *error_code = MPI_SUCCESS;
     } /* if ((*request)->queued) ... */
@@ -71,8 +65,8 @@ void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *er
 	(*request)->fd->async_count--;
 	if ((*request)->handle)
 	{
-		CloseHandle(((OVERLAPPED*)((*request)->handle))->hEvent);
-		ADIOI_Free((*request)->handle);
+	    CloseHandle(((OVERLAPPED*)((*request)->handle))->hEvent);
+	    ADIOI_Free((*request)->handle);
 	}
 	ADIOI_Free_request((ADIOI_Req_node *) (*request));
 	*request = ADIO_REQUEST_NULL;
@@ -81,7 +75,8 @@ void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *er
 }
 
 
-void ADIOI_NTFS_WriteComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+void ADIOI_NTFS_WriteComplete(ADIO_Request *request, ADIO_Status *status,
+			      int *error_code)
 {
     ADIOI_NTFS_ReadComplete(request, status, error_code);
 }

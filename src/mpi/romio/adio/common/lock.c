@@ -92,9 +92,10 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
 }
 #endif
 
-#if (defined(HFS) || defined(XFS))
-int ADIOI_Set_lock64(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
-	     ADIO_Offset len) 
+#if (defined(ROMIO_HFS) || defined(ROMIO_XFS))
+int ADIOI_Set_lock64(FDTYPE fd, int cmd, int type, ADIO_Offset offset,
+                     int whence,
+	             ADIO_Offset len) 
 {
     int err, error_code;
     struct flock64 lock;

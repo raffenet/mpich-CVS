@@ -1,7 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
- *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
@@ -26,7 +24,6 @@
 
 /* status object not filled currently */
 
-
 /*@
     MPI_File_read - Read using individual file pointer
 
@@ -41,147 +38,113 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_read(MPI_File fh, void *buf, int count, 
+int MPI_File_read(MPI_File mpi_fh, void *buf, int count, 
                   MPI_Datatype datatype, MPI_Status *status)
 {
-    int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
+    int error_code;
     static char myname[] = "MPI_FILE_READ";
-#endif
-    int datatype_size;
-    ADIO_Offset off;
 #ifdef MPI_hpux
     int fl_xmpi;
 
-    HPMP_IO_START(fl_xmpi, BLKMPIFILEREAD, TRDTBLOCK, fh, datatype, count);
+    HPMP_IO_START(fl_xmpi, BLKMPIFILEREAD, TRDTBLOCK, mpi_fh, datatype, count);
 #endif /* MPI_hpux */
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_read: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
 
-    if (count < 0) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ARG, 
-	    "**iobadcount", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_read: Invalid count argument\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_COUNT_ARG,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
+    error_code = MPIOI_File_read(mpi_fh, (MPI_Offset) 0, ADIO_INDIVIDUAL, buf,
+				 count, datatype, myname, status);
 
-    if (datatype == MPI_DATATYPE_NULL) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE, 
-	    "**dtypenull", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "MPI_File_read: Invalid datatype\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_TYPE, MPIR_ERR_TYPE_NULL,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
+#ifdef MPI_hpux
+    HPMP_IO_END(fl_xmpi, mpi_fh, datatype, count);
+#endif /* MPI_hpux */
+    return error_code;
+}
+
+int MPIOI_File_read(MPI_File mpi_fh,
+		    MPI_Offset offset,
+		    int file_ptr_type,
+		    void *buf,
+		    int count,
+		    MPI_Datatype datatype,
+		    char *myname,
+		    MPI_Status *status)
+{
+    int error_code, bufsize, buftype_is_contig, filetype_is_contig;
+    int datatype_size;
+    ADIO_File fh;
+    ADIO_Offset off;
+
+    fh = MPIO_File_resolve(mpi_fh);
+
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    MPIO_CHECK_COUNT(fh, count, myname, error_code);
+    MPIO_CHECK_DATATYPE(fh, datatype, myname, error_code);
+
+    if (file_ptr_type == ADIO_EXPLICIT_OFFSET && offset < 0)
+    {
+	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_ARG,
+					  "**iobadoffset", 0);
+	return MPIO_Err_return_file(fh, error_code);
     }
+    /* --END ERROR HANDLING-- */
 
     MPI_Type_size(datatype, &datatype_size);
-    if (count*datatype_size == 0) {
-#ifdef MPI_hpux
-	HPMP_IO_END(fl_xmpi, fh, datatype, count);
-#endif /* MPI_hpux */
+    if (count*datatype_size == 0)
+    {
 #ifdef HAVE_STATUS_SET_BYTES
        MPIR_Status_set_bytes(status, datatype, 0);
 #endif
 	return MPI_SUCCESS;
     }
 
-    if ((count*datatype_size) % fh->etype_size != 0) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, 
-	    "**ioetype", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_read: Only an integral number of etypes can be accessed\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_ETYPE_FRACTIONAL,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
-    }
-
-    if (fh->access_mode & MPI_MODE_WRONLY) {
-#ifdef MPICH2
-	error_code=  MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_ACCESS, 
-	    "**ioneedrd", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_read: Can't read from a file opened with MPI_MODE_WRONLY\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
- 		MPIR_ERR_MODE_WRONLY, myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
-    }
-
-    if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_UNSUPPORTED_OPERATION,
-	    "**ioamodeseq", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "MPI_File_read: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
-                        MPIR_ERR_AMODE_SEQ, myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
-    }
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
+    MPIO_CHECK_READABLE(fh, myname, error_code);
+    MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
+    /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fh->filetype, &filetype_is_contig);
 
-    ADIOI_TEST_DEFERRED(fh, "MPI_File_read", &error_code);
-    /* contiguous or strided? */
+    ADIOI_TEST_DEFERRED(fh, myname, &error_code);
 
-    if (buftype_is_contig && filetype_is_contig) {
+    if (buftype_is_contig && filetype_is_contig)
+    {
+    /* convert count and offset to bytes */
 	bufsize = datatype_size * count;
-	/* if atomic mode requested, lock (exclusive) the region, because there
-           could be a concurrent noncontiguous request. Locking doesn't 
-           work on PIOFS and PVFS, and on NFS it is done in the ADIO_ReadContig.*/
-	off = fh->fp_ind;
-	if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
+	if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
+	    off = fh->disp + fh->etype_size * offset;
+	}
+	else /* ADIO_INDIVIDUAL */ {
+	    off = fh->fp_ind;
+	}
+
+        /* if atomic mode requested, lock (exclusive) the region, because
+           there could be a concurrent noncontiguous request. Locking doesn't
+           work on PIOFS and PVFS, and on NFS it is done in the
+           ADIO_ReadContig.
+	 */
+
+        if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
+            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS) && 
+	   	 (fh->file_system != ADIO_PVFS2))
+            ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
+
+	ADIO_ReadContig(fh, buf, count, datatype, file_ptr_type,
+			off, status, &error_code); 
+
+        if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
             (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS) &&
 	    	(fh->file_system != ADIO_PVFS2))
-	    ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
-
-	ADIO_ReadContig(fh, buf, count, datatype, ADIO_INDIVIDUAL, 0,
-			status, &error_code);
-
-	if ((fh->atomicity) && (fh->file_system != ADIO_PIOFS) && 
-            (fh->file_system != ADIO_NFS) && (fh->file_system != ADIO_PVFS) &&
-	    	(fh->file_system != ADIO_PVFS2))
-	    ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
+            ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
     }
-    else ADIO_ReadStrided(fh, buf, count, datatype, ADIO_INDIVIDUAL,
-			  0, status, &error_code); 
-    /* For strided and atomic mode, locking is done in ADIO_ReadStrided */
+    else
+    {
+	ADIO_ReadStrided(fh, buf, count, datatype, file_ptr_type,
+			  offset, status, &error_code);
+	/* For strided and atomic mode, locking is done in ADIO_ReadStrided */
+    }
 
-#ifdef MPI_hpux
-    HPMP_IO_END(fl_xmpi, fh, datatype, count);
-#endif /* MPI_hpux */
     return error_code;
 }

@@ -7,6 +7,7 @@
  */
 
 #include "adio.h"
+#include "adio_extern.h"
 
 void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 {
@@ -19,6 +20,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
     MPI_Info info;
     char *value;
     int flag, intval, tmp_val, nprocs, nprocs_is_valid = 0;
+    static char myname[] = "ADIOI_GEN_SETINFO";
 
     if (fd->info == MPI_INFO_NULL) MPI_Info_create(&(fd->info));
     info = fd->info;
@@ -88,15 +90,20 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		     value, &flag);
 	if (flag && ((intval=atoi(value)) > 0)) {
 	    tmp_val = intval;
+
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (tmp_val != intval) {
-		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"cb_buffer_size\" must be the same on all processes\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
+		MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+						   "cb_buffer_size",
+						   error_code);
+		return;
 	    }
-	    else {
-		MPI_Info_set(info, "cb_buffer_size", value);
-		fd->hints->cb_buffer_size = intval;
-	    }
+	    /* --END ERROR HANDLING-- */
+
+	    MPI_Info_set(info, "cb_buffer_size", value);
+	    fd->hints->cb_buffer_size = intval;
+
 	}
 
 	/* new hints for enabling/disabling coll. buffering on
@@ -122,37 +129,50 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    }
 
 	    tmp_val = fd->hints->cb_read;
+
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (tmp_val != fd->hints->cb_read) {
-		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"romio_cb_read\" must be the same on all processes\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
+		MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+						   "romio_cb_read",
+						   error_code);
+		return;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
-	MPI_Info_get(users_info, "romio_cb_write", MPI_MAX_INFO_VAL, value, &flag);
+	MPI_Info_get(users_info, "romio_cb_write", MPI_MAX_INFO_VAL, value,
+		     &flag);
 	if (flag) {
 	    if (!strcmp(value, "enable") || !strcmp(value, "ENABLE")) {
 		MPI_Info_set(info, "romio_cb_write", value);
 		fd->hints->cb_write = ADIOI_HINT_ENABLE;
 	    }
-	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE")) {
-		    /* romio_cb_write overrides no_indep_rw, too */
+	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE"))
+	    {
+		/* romio_cb_write overrides no_indep_rw, too */
 		MPI_Info_set(info, "romio_cb_write", value);
 		MPI_Info_set(info, "romio_no_indep_rw", "false");
 		fd->hints->cb_write = ADIOI_HINT_DISABLE;
 		fd->hints->no_indep_rw = ADIOI_HINT_DISABLE;
 	    }
-	    else if (!strcmp(value, "automatic") || !strcmp(value, "AUTOMATIC"))
+	    else if (!strcmp(value, "automatic") ||
+		     !strcmp(value, "AUTOMATIC"))
 	    {
 		MPI_Info_set(info, "romio_cb_write", value);
 		fd->hints->cb_write = ADIOI_HINT_AUTO;
 	    }
 	
 	    tmp_val = fd->hints->cb_write;
+
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (tmp_val != fd->hints->cb_write) {
-		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"romio_cb_write\" must be the same on all processes\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
+		MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+						   "romio_cb_write",
+						   error_code);
+		return;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 
 	/* new hint for specifying no indep. read/write will be performed */
@@ -180,11 +200,16 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		/* default is above */
 		tmp_val = 0;
 	    }
+
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (tmp_val != fd->hints->no_indep_rw) {
-		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"romio_no_indep_rw\" must be the same on all processes\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
+		MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+						   "romio_no_indep_rw",
+						   error_code);
+		return;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 	/* new hints for enabling/disabling data sieving on
 	 * reads/writes
@@ -230,23 +255,27 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		     value, &flag);
 	if (flag && ((intval=atoi(value)) > 0)) {
 	    tmp_val = intval;
+
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (tmp_val != intval) {
-		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"cb_nodes\" must be the same on all processes\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
+		    MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+						       "cb_nodes",
+						       error_code);
+		    return;
 	    }
-	    else {
-		if (!nprocs_is_valid) {
-		    /* if hints were already initialized, we might not
-		     * have already gotten this?
-		     */
-		    MPI_Comm_size(fd->comm, &nprocs);
-		    nprocs_is_valid = 1;
-		}
-		if (intval < nprocs) {
-		    MPI_Info_set(info, "cb_nodes", value);
-		    fd->hints->cb_nodes = intval;
-		}
+	    /* --END ERROR HANDLING-- */
+
+	    if (!nprocs_is_valid) {
+		/* if hints were already initialized, we might not
+		 * have already gotten this?
+		 */
+		MPI_Comm_size(fd->comm, &nprocs);
+		nprocs_is_valid = 1;
+	    }
+	    if (intval < nprocs) {
+		MPI_Info_set(info, "cb_nodes", value);
+		fd->hints->cb_nodes = intval;
 	    }
 	}
 

@@ -12,9 +12,7 @@ void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
     int err;
     int ret, rank;
-#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_RESIZE";
-#endif
 
     /* because MPI_File_set_size is a collective operation, and PVFS1 clients
      * do not cache metadata locally, one client can resize and broadcast the
@@ -26,16 +24,10 @@ void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
     MPI_Bcast(&err, 1, MPI_INT, 0, fd->comm);
 
     if (err == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	*error_code = MPI_ERR_UNKNOWN;
-#else /* MPICH-1 */
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;
 }

@@ -15,16 +15,16 @@ void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
 {
     int err;
     MPI_Comm dupcommself;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_SET_SHARED_FP";
-#endif
 
     if (fd->shared_fp_fd == ADIO_FILE_NULL) {
 	MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
-	fd->shared_fp_fd = ADIO_Open(MPI_COMM_SELF, dupcommself, fd->shared_fp_fname, 
-             fd->file_system, ADIO_CREATE | ADIO_RDWR | ADIO_DELETE_ON_CLOSE, 
-             0, MPI_BYTE, MPI_BYTE, M_ASYNC, MPI_INFO_NULL, 
-             ADIO_PERM_NULL, error_code);
+	fd->shared_fp_fd = ADIO_Open(MPI_COMM_SELF, dupcommself,
+				     fd->shared_fp_fname, 
+				     fd->file_system, fd->fns,
+				     ADIO_CREATE | ADIO_RDWR | ADIO_DELETE_ON_CLOSE, 
+				     0, MPI_BYTE, MPI_BYTE, 0, MPI_INFO_NULL, 
+				     ADIO_PERM_NULL, error_code);
     }
 
     if (*error_code != MPI_SUCCESS) return;
@@ -35,16 +35,10 @@ void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
     ADIOI_UNLOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
 
     if (err == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	*error_code = MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;
 }

@@ -168,7 +168,7 @@ typedef struct ADIOI_Hints_struct ADIOI_Hints;
 typedef struct ADIOI_FileD {
     int cookie;              /* for error checking */
     FDTYPE fd_sys;              /* system file descriptor */
-#ifdef XFS
+#ifdef ROMIO_XFS
     int fd_direct;           /* On XFS, this is used for direct I/O; 
                                 fd_sys is used for buffered I/O */
     int direct_read;         /* flag; 1 means use direct read */
@@ -209,7 +209,6 @@ typedef struct ADIOI_FileD {
     int async_count;         /* count of outstanding nonblocking operations */
     int perm;
     int atomicity;          /* true=atomic, false=nonatomic */
-    int iomode;             /* reqd. to implement Intel PFS modes */
     MPI_Errhandler err_handler;
     void *fs_ptr;            /* file-system specific information */
 } ADIOI_FileD;
@@ -233,12 +232,10 @@ typedef struct ADIOI_RequestD *ADIO_Request;
 
 /* fcntl structure */
 typedef struct {
-    ADIO_Offset disp; 
+    ADIO_Offset disp;
     MPI_Datatype etype;
     MPI_Datatype filetype;
-    MPI_Info info;   
-    int iomode;              /* to change PFS I/O mode. for MPI-IO
-				implementation, just set it to M_ASYNC. */  
+    MPI_Info info;
     int atomicity;
     ADIO_Offset fsize;       /* for get_fsize only */
     ADIO_Offset diskspace;   /* for file preallocation */
@@ -282,22 +279,11 @@ typedef struct {
 #define ADIO_SEEK_END            SEEK_END
 
 #define ADIO_FCNTL_SET_ATOMICITY 180
-#define ADIO_FCNTL_SET_IOMODE    184
 #define ADIO_FCNTL_SET_DISKSPACE 188
 #define ADIO_FCNTL_GET_FSIZE     200
 
 /* for default file permissions */
 #define ADIO_PERM_NULL           -1
-
-/* PFS file-pointer modes */
-#ifndef M_ASYNC 
-#define M_UNIX                    0
-/*#define M_LOG                     1  redefined in malloc.h on SGI! */
-#define M_SYNC                    2
-#define M_RECORD                  3
-#define M_GLOBAL                  4
-#define M_ASYNC                   5
-#endif
 
 #define ADIOI_FILE_COOKIE 2487376
 #define ADIOI_REQ_COOKIE 3493740
@@ -309,11 +295,11 @@ typedef struct {
 
 void ADIO_Init(int *argc, char ***argv, int *error_code);
 void ADIO_End(int *error_code);
-ADIO_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
-		    int file_system,
-                    int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
-                    MPI_Datatype filetype, int iomode, 
-                    MPI_Info info, int perm, int *error_code);
+MPI_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
+		   int file_system, ADIOI_Fns *ops,
+		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
+		   MPI_Datatype filetype, int iomode, 
+		   MPI_Info info, int perm, int *error_code);
 void ADIO_ImmediateOpen(ADIO_File fd, int *error_code);
 void ADIO_Close(ADIO_File fd, int *error_code);
 void ADIO_ReadContig(ADIO_File fd, void *buf, int count, MPI_Datatype datatype,
@@ -383,6 +369,17 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype, 
 		MPI_Datatype filetype, MPI_Info info,  int *error_code);
 
+/* MPI_File management functions (in mpio_file.c) */
+MPI_File MPIO_File_create(int size);
+ADIO_File MPIO_File_resolve(MPI_File mpi_fh);
+void MPIO_File_free(MPI_File *mpi_fh);
+MPI_File MPIO_File_f2c(MPI_Fint fh);
+MPI_Fint MPIO_File_c2f(MPI_File fh);
+int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
+			 int line, int error_class, const char generic_msg[],
+			 const char specific_msg[], ... );
+int MPIO_Err_return_file(MPI_File mpi_fh, int error_code);
+int MPIO_Err_return_comm(MPI_Comm mpi_comm, int error_code);
 
 #include "adioi.h"
 #include "adioi_fs_proto.h"
@@ -394,9 +391,7 @@ void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype,
 /* handling header file can be included. */
 #define MPIR_ERR_FATAL 1
 #define MPIR_ERR_RECOVERABLE 0
-int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode );
-int MPIR_Err_create_code( int, int, const char [], int, int, const char [], const char [], ... );
-int MPIR_Err_is_fatal(int);
+
 typedef int (* MPIR_Err_get_class_string_func_t)(int error, char *str, int length);
 void MPIR_Err_get_string(int, char *, int, MPIR_Err_get_class_string_func_t );
 void MPIR_Err_print_stack(FILE *, int);

@@ -36,37 +36,35 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_write_all_end(MPI_File fh, void *buf, MPI_Status *status)
+int MPI_File_write_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
     static char myname[] = "MPI_FILE_WRITE_ALL_END";
-#endif
+
+    error_code = MPIOI_File_write_all_end(mpi_fh, buf, myname, status);
+
+    return error_code;
+}
+
+int MPIOI_File_write_all_end(MPI_File mpi_fh,
+			     void *buf,
+			     char *myname,
+			     MPI_Status *status)
+{
+    int error_code;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_write_all_end: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
 
     if (!(fh->split_coll_count))
     {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO,
-	    "**iosplitcollnone", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "MPI_File_write_all_end: Does not match a previous MPI_File_write_all_begin\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_SPLIT_COLL,
-                              myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);
-#endif
+	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_IO, 
+					  "**iosplitcollnone", 0);
+	return MPIO_Err_return_file(fh, error_code);
     }
     /* --END ERROR HANDLING-- */
 

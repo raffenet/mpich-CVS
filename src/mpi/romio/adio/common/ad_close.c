@@ -1,37 +1,31 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$    
+ *   $Id$
  *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
 
 #include "adio.h"
-/* #ifdef MPISGI
-#include "mpisgi2.h"
-#endif */
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef PROFILE
+#include "mpe.h"
+#endif
 
 void ADIO_Close(ADIO_File fd, int *error_code)
 {
     int i, j, k, combiner, myrank, err, is_contig;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIO_CLOSE";
-#endif
 
     if (fd->async_count) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO, "**io",
+					   "**io %s", strerror(errno));
 	return;
-#elif defined(PRINT_ERR_MSG)
-	FPRINTF(stderr, "ADIO_Close: Error! There are outstanding nonblocking I/O operations on this file.\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_ASYNC_OUTSTANDING,
-				     myname, (char *) 0, (char *) 0);
-	ADIOI_Error(fd, *error_code, myname);
-#endif
-        return;
     }
 
     /* because of deferred open, this warants a bit of explaining.  First, if
@@ -92,5 +86,31 @@ void ADIO_Close(ADIO_File fd, int *error_code)
 
     MPI_Info_free(&(fd->info));
 
-    ADIOI_Free(fd);
+    /* memory for fd is freed in MPI_File_close */
+}
+
+void ADIOI_GEN_Close(ADIO_File fd, int *error_code)
+{
+    int err;
+    static char myname[] = "ADIOI_GEN_CLOSE";
+
+#ifdef PROFILE
+    MPE_Log_event(9, 0, "start close");
+#endif
+
+    err = close(fd->fd_sys);
+
+#ifdef PROFILE
+    MPE_Log_event(10, 0, "end close");
+#endif
+
+    fd->fd_sys = -1;
+
+    if (err == -1) {
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
+    }
+    else *error_code = MPI_SUCCESS;
 }

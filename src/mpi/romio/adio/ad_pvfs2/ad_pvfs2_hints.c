@@ -12,6 +12,8 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 {
     char *value;
     int flag, tmp_mask;
+    static char myname[] = "ADIOI_PVFS_SETINFO";
+
     if ((fd->info) == MPI_INFO_NULL) {
 	/* part of the open call */
 	MPI_Info_create(&(fd->info));
@@ -26,12 +28,18 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    if (flag) {
 		tmp_mask = fd->hints->fs_hints.pvfs2.debugmask = 
 		    PVFS_debug_eventlog_to_mask(value);
+
 		MPI_Bcast(&tmp_mask, 1, MPI_INT, 0, fd->comm);
+		/* --BEGIN ERROR HANDLING-- */
 		if (tmp_mask != fd->hints->fs_hints.pvfs2.debugmask) {
-		    FPRINTF(stderr, "ADIOI_PVFS_SetInfo: the value for key \"romio_pvfs2_debugmask\" must be the same on all processes\n");
-		    MPI_Abort(MPI_COMM_WORLD, 1);
+		    MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+						       "romio_pvfs2_debugmask",
+						       error_code);
+		    return;
 		}
-		else MPI_Info_set(fd->info, "romio_pvfs2_debugmask", value);
+		/* --END ERROR HANDLING-- */
+		
+		MPI_Info_set(fd->info, "romio_pvfs2_debugmask", value);
 	    }
 	}
     }

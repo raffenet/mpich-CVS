@@ -36,36 +36,19 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype, 
+int MPI_File_get_type_extent(MPI_File mpi_fh, MPI_Datatype datatype, 
                              MPI_Aint *extent)
 {
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
+    ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_TYPE_EXTENT";
-#endif
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_get_type_extent: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    fh = MPIO_File_resolve(mpi_fh);
 
-    if (datatype == MPI_DATATYPE_NULL) {
-#ifdef MPICH2
-	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_TYPE, "**dtypenull", 0);
-	return MPIR_Err_return_file(fh, myname, error_code);
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "MPI_File_get_type_extent: Invalid datatype\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	error_code = MPIR_Err_setmsg(MPI_ERR_TYPE, MPIR_ERR_TYPE_NULL,
-				     myname, (char *) 0, (char *) 0);
-	return ADIOI_Error(fh, error_code, myname);	    
-#endif
-    }
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    MPIO_CHECK_DATATYPE(fh, datatype, myname, error_code);
+    /* --END ERROR HANDLING-- */
 
     /* FIXME: handle other file data representations */
     return MPI_Type_extent(datatype, extent);

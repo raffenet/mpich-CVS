@@ -9,15 +9,14 @@
 #include "ad_pfs.h"
 
 void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int count, 
-                MPI_Datatype datatype, int file_ptr_type,
-                ADIO_Offset offset, ADIO_Request *request, int *error_code)  
+			   MPI_Datatype datatype, int file_ptr_type,
+			   ADIO_Offset offset, ADIO_Request *request,
+			   int *error_code)
 {
     long *id_sys;
     int len, typesize, err=-1;
     ADIO_Offset off;
-#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PFS_IREADCONTIG";
-#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_READ;
@@ -41,38 +40,25 @@ void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int count,
         /* exceeded the max. no. of outstanding requests. */
 
         /* complete all previous async. requests */
-        ADIOI_Complete_async(&err);
+        ADIOI_Complete_async(error_code);
+	if (*error_code != MPI_SUCCESS) return;
 
         /* try again */
         *id_sys = _iread(fd->fd_sys, buf, len);
 
         if ((*id_sys == -1) && (errno == EQNOMID)) {
-#ifdef MPICH2
-	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-		"**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-            FPRINTF(stderr, "Error in asynchronous I/O\n");
-            MPI_Abort(MPI_COMM_WORLD, 1);
-#else /* MPICH-1 */
-	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	    ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE, myname,
+					       __LINE__, MPI_ERR_IO, "**io",
+					       "**io %s", strerror(errno));
 	    return;
         }
     }
     else if (*id_sys == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-        FPRINTF(stderr, "Unknown errno %d in ADIOI_PFS_IreadContig\n", errno);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
 	return;
     }
 
@@ -86,48 +72,10 @@ void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int count,
     fd->fp_sys_posn = -1;   /* set it to null. */
 
     if (*id_sys == -1) {
-#ifdef MPICH2
-	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
-	    "**io %s", strerror(errno));
-#elif defined(PRINT_ERR_MSG)
-	*error_code =  MPI_ERR_UNKNOWN;
-#else
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-#endif
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
     }
     else *error_code = MPI_SUCCESS;
-}
-
-
-
-void ADIOI_PFS_IreadStrided(ADIO_File fd, void *buf, int count, 
-		       MPI_Datatype datatype, int file_ptr_type,
-                       ADIO_Offset offset, ADIO_Request *request, int
-                       *error_code)
-{
-    ADIO_Status status;
-#ifdef HAVE_STATUS_SET_BYTES
-    int typesize;
-#endif
-
-    *request = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_READ;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-    (*request)->queued = 0;
-    (*request)->handle = 0;
-
-/* call the blocking version. It is faster because it does data sieving. */
-    ADIOI_PFS_ReadStrided(fd, buf, count, datatype, file_ptr_type, 
-                            offset, &status, error_code);  
-
-    fd->async_count++;
-#ifdef HAVE_STATUS_SET_BYTES
-    if (*error_code == MPI_SUCCESS) {
-	MPI_Type_size(datatype, &typesize);
-	(*request)->nbytes = count * typesize;
-    }
-#endif
 }

@@ -96,7 +96,9 @@ void ADIOI_Add_req_to_list(ADIO_Request *request)
     }
 }
 	
-
+/* Sets error_code to MPI_SUCCESS on success, creates an error code on
+ * failure.
+ */
 void ADIOI_Complete_async(int *error_code)
 {
 /* complete all outstanding async I/O operations so that new ones can be
@@ -105,8 +107,10 @@ void ADIOI_Complete_async(int *error_code)
     ADIO_Status status;
     ADIO_Request *request;
     ADIOI_Async_node *tmp;
+    static char myname[] = "ADIOI_Complete_async";
 
-    if (!ADIOI_Async_list_head) *error_code = MPI_SUCCESS;
+    *error_code = MPI_SUCCESS;
+
     while (ADIOI_Async_list_head) {
 	request = ADIOI_Async_list_head->request;
 	(*request)->queued = -1; /* ugly internal hack that prevents
@@ -125,8 +129,14 @@ void ADIOI_Complete_async(int *error_code)
 	    ADIO_WriteComplete(request, &status, error_code);
 	    break;
 	default:
-	    FPRINTF(stderr, "Error in ADIOI_Complete_Async\n");
-	    break;
+	    /* --BEGIN ERROR HANDLING-- */
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE,
+					       myname, __LINE__,
+					       MPI_ERR_INTERN,
+					       "Unknown request optype", 0);
+	    return;
+	    /* --END ERROR HANDLING-- */
 	}
 	(*request)->queued = 0;  /* dequeued, but request object not
 				    freed */

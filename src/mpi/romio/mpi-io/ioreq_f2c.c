@@ -36,10 +36,14 @@ Return Value:
   C I/O-request handle (handle)
 @*/
 #ifdef HAVE_MPI_GREQUEST
-MPIO_Request MPIO_Request_f2c(MPI_Fint request) {return((MPIO_Request)request);}
+MPIO_Request MPIO_Request_f2c(MPI_Fint request) {
+    return((MPIO_Request) request);
+}
 #else
 MPIO_Request MPIO_Request_f2c(MPI_Fint request)
 {
+    int error_code;
+    static char myname[] = "MPIO_REQUEST_F2C";
 
 #ifndef INT_LT_POINTER
     return (MPIO_Request) request;
@@ -47,8 +51,10 @@ MPIO_Request MPIO_Request_f2c(MPI_Fint request)
     /* --BEGIN ERROR HANDLING-- */
     if (!request) return MPIO_REQUEST_NULL;
     if ((request < 0) || (request > ADIOI_Reqtable_ptr)) {
-	FPRINTF(stderr, "MPIO_Request_f2c: Invalid request\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					  myname, __LINE__, MPI_ERR_REQUEST,
+					  "**request", 0);
+	return MPIO_Err_return_file(MPI_FILE_NULL, error_code);
     }
     /* --END ERROR HANDLING-- */
     return ADIOI_Reqtable[request];

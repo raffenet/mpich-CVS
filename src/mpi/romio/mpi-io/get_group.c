@@ -36,24 +36,22 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_group(MPI_File fh, MPI_Group *group)
+int MPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
 {
-#ifndef PRINT_ERR_MSG
     int error_code;
+    ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_GROUP";
-#endif
 
-#ifdef PRINT_ERR_MSG
-    if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	FPRINTF(stderr, "MPI_File_get_group: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-#else
-    ADIOI_TEST_FILE_HANDLE(fh, myname);
-#endif
+    fh = MPIO_File_resolve(mpi_fh);
 
-    /* note: this will return the group of processes that called open, but with
-     * deferred open this might not be the group of processes that actually
-     * opened the file */
+    /* --BEGIN ERROR HANDLING-- */
+    MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
+    /* --END ERROR HANDLING-- */
+
+
+    /* note: this will return the group of processes that called open, but
+     * with deferred open this might not be the group of processes that
+     * actually opened the file from the file system's perspective
+     */
     return MPI_Comm_group(fh->comm, group);
 }
