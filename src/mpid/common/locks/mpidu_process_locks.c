@@ -41,6 +41,7 @@ int g_nLockSpinCount = 100;
 
    Notes:
 @*/
+#ifndef MPIDU_Process_lock_init
 void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_NT_LOCKS
@@ -78,6 +79,7 @@ void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_INIT);
 }
+#endif /* MPIDU_Process_lock_init */
 
 /*@
    MPIDU_Process_lock - 
@@ -87,6 +89,7 @@ void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
 
    Notes:
 @*/
+#ifndef MPIDU_Process_lock
 void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_NT_LOCKS
@@ -116,6 +119,7 @@ void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
 }
+#endif /* MPIDU_Process_lock */
 
 /*@
    MPIDU_Process_unlock - 
@@ -125,6 +129,7 @@ void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
 
    Notes:
 @*/
+#ifndef MPIDU_Process_unlock
 void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_NT_LOCKS
@@ -148,6 +153,7 @@ void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_UNLOCK);
 }
+#endif /* MPIDU_Process_unlock */
 
 /*@
    MPIDU_Process_lock_busy_wait - 
@@ -174,6 +180,7 @@ void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock )
 
    Notes:
 @*/
+#ifndef MPIDU_Process_lock_free
 void MPIDU_Process_lock_free( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_NT_LOCKS
@@ -194,6 +201,8 @@ void MPIDU_Process_lock_free( MPIDU_Process_lock_t *lock )
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_FREE);
 }
+#endif /* MPIDU_Process_lock_free */
+
 #endif /* #ifndef USE_BUSY_LOCKS */
 
 #endif /* USE_PROCESS_LOCKS */
