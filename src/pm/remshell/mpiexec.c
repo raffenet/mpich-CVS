@@ -17,12 +17,6 @@
 #include "remshellconf.h"
 
 #include <stdio.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -69,6 +63,7 @@ int mpiexecArgs( int, char *[], ProcessTable_t *,
 int mpiexecPrintTable( ProcessTable_t * );
 int mpiexecChooseHosts( ProcessTable_t * );
 int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] );
+int mpiexecGetPort( int *, int * );
 
 /* ----------------------------------------------------------------------- */
 
@@ -541,7 +536,7 @@ int mpiexecPrintTable( ProcessTable_t *ptable )
    Another alternative is to keep an array that maps from the pollarray 
    (in groups of 4) to the process table.  This would allow us to compress
    the pollarray as processes are removed.
-   
+*/   
 /* ----------------------------------------------------------------------- */
 #include <sys/poll.h>
 

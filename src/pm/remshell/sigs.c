@@ -181,7 +181,7 @@ void KillChildren( ProcessTable_t *ptable )
      * then brutally 
      */
 
-#if defined(HAVE_PTRACE) && defined(HAVE_PTRACE_CONT) 
+#if defined(HAVE_PTRACE) && defined(HAVE_PTRACE_CONT) && 0
     KillTracedProcesses( );
 #endif
 

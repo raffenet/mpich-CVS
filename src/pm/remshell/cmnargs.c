@@ -6,21 +6,13 @@
  */
 
 #include "remshellconf.h"
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-
 #include "remshell.h"
 
 /* ----------------------------------------------------------------------- */
 /* Process options                                                         */
 /* The process options steps loads up the processTable with entries,       */
 /* including the hostname, for each process.  If no host is specified,     */
-/* one will be provided in a subsequent step
+/* one will be provided in a subsequent step                               */
 /* ----------------------------------------------------------------------- */
 /*
 -host hostname

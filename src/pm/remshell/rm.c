@@ -24,12 +24,7 @@
 #include "remshellconf.h"
 
 #include <stdio.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <ctype.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -48,11 +43,12 @@ typedef struct {
     int nHosts; 
     char **hname;
 } MachineTable;
+
 static MachineTable *mpiexecReadMachines( const char *, int );
 
 int mpiexecChooseHosts( ProcessTable_t *ptable )
 {
-    int i, j, k, nNeeded=0, ntest;
+    int i, k, nNeeded=0, ntest;
     const char *arch;
     MachineTable *mt;
 
@@ -130,7 +126,7 @@ static const char defaultMachinesPath[] = DEFAULT_MACHINES_PATH;
 */
 static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 {
-    FILE *fp;
+    FILE *fp=0;
     char buf[MAXLINE+1];
     char machinesfile[PATH_MAX];
     char dirname[PATH_MAX];

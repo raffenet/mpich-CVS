@@ -10,6 +10,9 @@
 /* #undef HAVE_PTRACE */
 
 #if defined(HAVE_PTRACE) && defined(HAVE_PTRACE_CONT) 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
 #include <sys/ptrace.h>
 /* 
  * Ptrace to control execution for handling failures.
@@ -41,8 +44,8 @@
  *    
  */
 #define MAX_COMMAND_LEN 1024
-char commandOnStopped[MAX_COMMAND_LEN];
-int onStopped = 0;
+static char commandOnStopped[MAX_COMMAND_LEN];
+static int onStopped = 0;
 /* Set the default command */
 void SetDefaultCommandOnStopped( void )
 {

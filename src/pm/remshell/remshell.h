@@ -18,6 +18,14 @@
  * PMI interface.  
  */
 
+#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
 #define MAXNAMELEN  256		/* max length of vairous names */
 #ifndef PATH_MAX
 #define PATH_MAX 2048		/* max length of PATH */
@@ -110,6 +118,11 @@ typedef struct {
 					set to MAXPROCESSES */
     ProcessState table[MAXPROCESSES];
 } ProcessTable_t;
+
+/* Function prototypes */
+
+/* Functions to process arguments */
+int mpiexecRMProcessArg( int argc, char *argv[], void *extra );
 
 /* Temporary debug value */
 extern int debug;

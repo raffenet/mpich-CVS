@@ -41,6 +41,8 @@
 /* allocated as needed.  This ensures that no program fails because a      */
 /* malloc fails.                                                           */
 /* ----------------------------------------------------------------------- */
+#include <sys/types.h>
+
 #define MAXGROUPS   256		/* max number of groups */
 #define MAXKEYLEN    64		/* max length of key in keyval space */
 #define MAXVALLEN   128		/* max length of value in keyval space */
