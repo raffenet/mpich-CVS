@@ -646,11 +646,42 @@ int RLOG_FindGlobalEventBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp,
     return 0;
 }
 
-int RLOG_FindArrowBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_ARROW *pArrow)
+int RLOG_FindArrowBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_ARROW *pArrow, int *pIndex)
 {
+    RLOG_ARROW arrow;
+    int low, high, mid;
+
     if (pInput == NULL || pArrow == NULL)
 	return -1;
-    return 0;
+
+    low = 0;
+    high = pInput->nNumArrows - 1;
+    mid = high/2;
+
+    for (;;)
+    {
+	RLOG_GetArrow(pInput, mid, &arrow);
+	if (arrow.end_time < timestamp)
+	{
+	    low = mid;
+	}
+	else
+	    high = mid;
+	mid = (low + high) / 2;
+	if (low == mid)
+	{
+	    if (arrow.end_time < timestamp)
+	    {
+		RLOG_GetArrow(pInput, low+1, &arrow);
+		if (arrow.end_time < timestamp)
+		    low++;
+	    }
+	    break;
+	}
+    }
+    if (pIndex != NULL)
+	*pIndex = low;
+    return RLOG_GetArrow(pInput, low, pArrow);
 }
 
 int RLOG_HitTest(RLOG_IOStruct *pInput, int rank, int level, double timestamp, RLOG_EVENT *pEvent)

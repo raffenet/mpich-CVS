@@ -206,7 +206,7 @@ int RLOG_GetNextGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent);
 int RLOG_GetPreviousGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent);
 int RLOG_GetCurrentGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent);
 int RLOG_FindGlobalEventBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_EVENT *pEvent);
-int RLOG_FindArrowBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_ARROW *pArrow);
+int RLOG_FindArrowBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_ARROW *pArrow, int *pIndex);
 int RLOG_HitTest(RLOG_IOStruct *pInput, int rank, int level, double timestamp, RLOG_EVENT *pEvent);
 
 #if defined(__cplusplus)

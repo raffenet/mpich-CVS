@@ -10,8 +10,12 @@
 #include <jni.h>
 #include <stdio.h>
 #include "logformat_trace_InputLog.h"
-#include "TraceInput.h"
+#include "trace_input.h"
 #include <stdlib.h>
+
+#define ACHAR_LENGTH   256
+#define AINT_LENGTH    100
+#define ADOUBLE_LENGTH 100
 
 /* File descriptor for the output stream */
 #define  outfile  stdout 
@@ -187,6 +191,9 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     jclass                  cid_local;
     jobject                 objdef;
     int                     ierr;
+    char slegend_base[ACHAR_LENGTH];
+    char slabel_base[ACHAR_LENGTH];
+    int smethods_base[AINT_LENGTH];
 
     filehandle = (*env)->GetLongField( env, this, fid4filehandle );
     if ( filehandle == 0 ) {
@@ -210,7 +217,10 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     legend_pos  = 0;
     if ( legend_sz ) {
         legend_max  = legend_sz+1;
-        legend_base = (char *) malloc( legend_max * sizeof( char ) );
+	if (legend_max > ACHAR_LENGTH)
+	    legend_base = (char *) malloc( legend_max * sizeof( char ) );
+	else
+	    legend_base = slegend_base;
     }
     else
         legend_base = NULL;
@@ -218,7 +228,10 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     label_pos   = 0;
     if ( label_sz > 0 ) {
         label_max   = label_sz+1;
-        label_base  = (char *) malloc( label_max * sizeof( char ) );
+	if (label_max > ACHAR_LENGTH)
+	    label_base  = (char *) malloc( label_max * sizeof( char ) );
+	else
+	    label_base = slabel_base;
     }
     else
         label_base  = NULL;
@@ -226,7 +239,10 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
    	methods_pos  = 0;
     if ( methods_sz > 0 ) {
         methods_max  = methods_sz;
-        methods_base = (int *)  malloc( methods_max * sizeof( int ) );
+	if (methods_max > AINT_LENGTH)
+	    methods_base = (int *)  malloc( methods_max * sizeof( int ) );
+	else
+	    methods_base = smethods_base;
     }
     else
         methods_base = NULL;
@@ -241,6 +257,12 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     if ( ierr != 0 || legend_pos <= 0 ) {
         fprintf( errfile, "%s\n", TRACE_Get_err_string( ierr ) );
         fflush( errfile );
+	if ( legend_base != NULL && legend_base != slegend_base )
+	    free( legend_base );
+	if ( label_base != NULL && label_base != slabel_base )
+	    free( label_base );
+	if ( methods_base != NULL && methods_base != smethods_base )
+	    free( methods_base );
         return NULL;
     }
 
@@ -288,17 +310,17 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     /* Clean up the unused reference and free local memory */
     if ( jlegend != NULL )
         (*env)->DeleteLocalRef( env, jlegend );
-    if ( legend_base != NULL )
+    if ( legend_base != NULL && legend_base != slegend_base )
         free( legend_base );
 
     if ( jlabel != NULL )
         (*env)->DeleteLocalRef( env, jlabel );
-    if ( label_base != NULL )
+    if ( label_base != NULL && label_base != slabel_base )
         free( label_base );
 
     if ( jmethods != NULL )
         (*env)->DeleteLocalRef( env, jmethods );
-    if ( methods_base != NULL )
+    if ( methods_base != NULL && methods_base != smethods_base )
         free( methods_base );
 
     return objdef;
@@ -378,6 +400,18 @@ Java_logformat_trace_InputLog_getNextYCoordMap( JNIEnv *env, jobject this )
     if ( ierr != 0 ) {
         fprintf( errfile, "Error: %s\n", TRACE_Get_err_string( ierr ) );
         fflush( errfile );
+	if ( coordmap_base != NULL )
+	    free( coordmap_base );
+	if ( title_name != NULL )
+	    free( title_name );
+	if ( column_names != NULL ) {
+	    for ( icol = 0; icol < ncolumns-1; icol++ )
+		if ( column_names[ icol ] != NULL )
+		    free( column_names[ icol ] );
+		free( column_names );
+	}
+	if ( methods_base != NULL )
+	    free( methods_base );
         return NULL;
     }
 
@@ -475,6 +509,9 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
     jclass                  cid_local;
     jobject                 prime;
     int                     ierr;
+    double stcoord_base[ADOUBLE_LENGTH];
+    int sycoord_base[AINT_LENGTH];
+    char sinfo_base[ACHAR_LENGTH];
 
     filehandle = (*env)->GetLongField( env, this, fid4filehandle );
     if ( filehandle == 0 ) {
@@ -497,13 +534,22 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
 
     tcoord_pos  = 0;
     tcoord_max  = tcoord_sz;
-    tcoord_base = (double *) malloc( tcoord_max * sizeof( double ) );
+    if (tcoord_max > ADOUBLE_LENGTH)
+	tcoord_base = (double *) malloc( tcoord_max * sizeof( double ) );
+    else
+	tcoord_base = stcoord_base;
     ycoord_pos  = 0;
     ycoord_max  = ycoord_sz;
-    ycoord_base = (int *)    malloc( ycoord_max * sizeof( int ) );
+    if (ycoord_max > AINT_LENGTH)
+	ycoord_base = (int *)    malloc( ycoord_max * sizeof( int ) );
+    else
+	ycoord_base = sycoord_base;
     info_pos    = 0;
     info_max    = info_sz;
-    info_base   = (char *)   malloc( info_max * sizeof( char ) );
+    if (info_max > AINT_LENGTH)
+	info_base   = (char *)   malloc( info_max * sizeof( char ) );
+    else
+	info_base = sinfo_base;
     ierr = TRACE_Get_next_primitive( tracefile, &type_idx,
                                      &tcoord_sz, tcoord_base,
                                      &tcoord_pos, tcoord_max,
@@ -514,6 +560,12 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
     if ( ierr != 0 || ( tcoord_pos <= 0 || ycoord_pos <= 0 ) ) {
         fprintf( errfile, "%s\n", TRACE_Get_err_string( ierr ) );
         fflush( errfile );
+	if ( tcoord_base != NULL && tcoord_base != stcoord_base )
+	    free( tcoord_base );
+	if ( ycoord_base != NULL && ycoord_base != sycoord_base )
+	    free( ycoord_base );
+	if ( info_base != NULL && info_base != sinfo_base )
+	    free( info_base );
         return NULL;
     }
 
@@ -560,17 +612,17 @@ Java_logformat_trace_InputLog_getNextPrimitive( JNIEnv *env, jobject this )
     /* Clean up the unused reference and free local memory */
     if ( tcoord_pos > 0 )
         (*env)->DeleteLocalRef( env, j_tcoords );
-    if ( tcoord_base != NULL )
+    if ( tcoord_base != NULL && tcoord_base != stcoord_base )
         free( tcoord_base );
 
     if ( ycoord_pos > 0 )
         (*env)->DeleteLocalRef( env, j_ycoords );
-    if ( ycoord_base != NULL )
+    if ( ycoord_base != NULL && ycoord_base != sycoord_base )
         free( ycoord_base );
 
     if ( info_pos > 0 )
         (*env)->DeleteLocalRef( env, j_infos );
-    if ( info_base != NULL )
+    if ( info_base != NULL && info_base != sinfo_base )
         free( info_base );
 
     return prime;
