@@ -640,8 +640,10 @@ int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
                 if (requested_lock == MPI_LOCK_EXCLUSIVE)
                     break;
             }
-            else 
+            else {
+                lock_queue_ptr = &(lock_queue->next);
                 lock_queue = lock_queue->next;
+            }
         }
     }
 

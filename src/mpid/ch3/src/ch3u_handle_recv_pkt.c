@@ -1189,8 +1189,8 @@ int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock)
     Requested          Existing             Action
     --------           --------             ------
     Shared             Exclusive            Queue it
-    Shared             NoLock/Shared        Grant and incr. counter
-    Exclusive          NoLock               Grant and incr. counter 
+    Shared             NoLock/Shared        Grant it
+    Exclusive          NoLock               Grant it
     Exclusive          Exclusive/Shared     Queue it
     */
 
