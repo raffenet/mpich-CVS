@@ -4,7 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidimpl.h"
+#include "mpiimpl.h"
+#include "mpid_datatype.h"
 
 int MPID_Segment_init(const void *buf, int count, MPI_Datatype handle, MPID_Segment *segp)
 {
