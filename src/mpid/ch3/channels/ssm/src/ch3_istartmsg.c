@@ -57,8 +57,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
     if (pkt_sz > sizeof(MPIDI_CH3_Pkt_t))
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-	return mpi_errno;
+	goto fn_exit;
     }
 #endif
 
@@ -108,9 +107,24 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 		    */
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    if (vc->ch.bShm)
+		    {
 			vc->ch.send_active = sreq;
+		    }
 		    else
-			MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
+		    {
+			/*MPIDI_CH3I_SSM_VC_post_write(vc, sreq);*/
+			MPIDI_DBG_PRINTF((55, FCNAME, "posting write, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+			vc->ch.conn->send_active = sreq;
+			mpi_errno = MPIDU_Sock_post_write(vc->ch.conn->sock, sreq->dev.iov[0].MPID_IOV_BUF,
+			    sreq->dev.iov[0].MPID_IOV_LEN, sreq->dev.iov[0].MPID_IOV_LEN, NULL);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+				"**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+				sreq, vc->ch.conn, vc);
+			    goto fn_exit;
+			}
+		    }
 		}
 	    }
 	    else
@@ -119,8 +133,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 		if (sreq == NULL)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-		    return mpi_errno;
+		    goto fn_exit;
 		}
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
@@ -187,8 +200,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-	    return mpi_errno;
+	    goto fn_exit;
 	}
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->cc = 0;
@@ -196,6 +208,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
     }
 
+fn_exit:
     *sreq_ptr = sreq;
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));

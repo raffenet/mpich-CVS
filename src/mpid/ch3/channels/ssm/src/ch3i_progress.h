@@ -44,29 +44,33 @@ typedef unsigned __int64 MPID_CPU_Tick_t;
 
 extern volatile unsigned int MPIDI_CH3I_progress_completions;
 
-typedef enum conn_state
+typedef enum MPIDI_CH3I_Conn_state
 {
     CONN_STATE_UNCONNECTED,
     CONN_STATE_LISTENING,
     CONN_STATE_CONNECTING,
+    CONN_STATE_CONNECT_ACCEPT, 
     CONN_STATE_OPEN_CSEND,
     CONN_STATE_OPEN_CRECV,
-    CONN_STATE_OPEN_LRECV,
+    CONN_STATE_OPEN_LRECV_PKT,
+    CONN_STATE_OPEN_LRECV_DATA,
     CONN_STATE_OPEN_LSEND,
     CONN_STATE_CONNECTED,
     CONN_STATE_CLOSING,
     CONN_STATE_CLOSED,
     CONN_STATE_FAILED
-} conn_state;
+} MPIDI_CH3I_Conn_state;
 
 typedef struct MPIDI_CH3I_Connection
 {
     MPIDI_VC * vc;
     MPIDU_Sock_t sock;
-    enum conn_state state;
+    MPIDI_CH3I_Conn_state state;
     MPID_Request * send_active;
     MPID_Request * recv_active;
     MPIDI_CH3_Pkt_t pkt;
+    char * pg_id;
+    MPID_IOV iov[2];
 } MPIDI_CH3I_Connection_t;
 
 extern MPIDU_Sock_set_t sock_set;

@@ -28,6 +28,7 @@
 int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz)
 {
     int mpi_errno = MPI_SUCCESS;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
@@ -74,23 +75,26 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 		if (nb == pkt_sz)
 		{ 
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
-		    /* */
-		    MPIDI_CH3U_Handle_send_req(vc, sreq);
-		    if (sreq->dev.iov_count != 0 && MPIDI_CH3I_SendQ_head(vc) != sreq)
+		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+		    if (!complete)
 		    {
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    }
-		    /*
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    MPIDI_CH3U_Handle_send_req(vc, sreq);
-		    if (sreq->dev.iov_count == 0)
-		    {
-			if (MPIDI_CH3I_SendQ_head(vc) == sreq)
+			if (vc->ch.bShm)
 			{
-			    MPIDI_CH3I_SendQ_dequeue(vc);
+			    vc->ch.send_active = sreq;
+			}
+			else
+			{
+			    vc->ch.conn->send_active = sreq;
+			    mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+				    "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+				    sreq, vc->ch.conn, vc);
+			    }
 			}
 		    }
-		    */
 		}
 		else
 		{
@@ -98,9 +102,21 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 		    update_request(sreq, pkt, pkt_sz, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    if (vc->ch.bShm)
+		    {
 			vc->ch.send_active = sreq;
+		    }
 		    else
-			MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
+		    {
+			vc->ch.conn->send_active = sreq;
+			mpi_errno = MPIDU_Sock_post_write(vc->ch.conn->sock, sreq->dev.iov[0].MPID_IOV_BUF,
+			    sreq->dev.iov[0].MPID_IOV_LEN, sreq->dev.iov[0].MPID_IOV_LEN, NULL);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+				"**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+				sreq, vc->ch.conn, vc);
+			}
+		    }
 		}
 	    }
 	    else

@@ -164,9 +164,6 @@
 				RelativePath="src\ch3_init.c">
 			</File>
 			<File
-				RelativePath="src\ch3_iread.c">
-			</File>
-			<File
 				RelativePath="src\ch3_isend.c">
 			</File>
 			<File
@@ -177,9 +174,6 @@
 			</File>
 			<File
 				RelativePath="src\ch3_istartmsgv.c">
-			</File>
-			<File
-				RelativePath="src\ch3_iwrite.c">
 			</File>
 			<File
 				RelativePath=".\src\ch3_open_port.c">
@@ -204,6 +198,9 @@
 			</File>
 			<File
 				RelativePath="src\ch3_shm_memory.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3i_acceptq.c">
 			</File>
 			<File
 				RelativePath="src\ch3i_bootstrapq.c">

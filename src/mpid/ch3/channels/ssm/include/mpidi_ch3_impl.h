@@ -147,6 +147,11 @@ typedef struct MPIDI_CH3I_Process_s
     MPIDI_CH3I_Process_group_t * pg;
     MPIDI_VC *shm_reading_list, *shm_writing_list;
     int num_cpus;
+    MPIDI_CH3I_Acceptq_t * acceptq_head;
+    MPIDI_CH3I_Acceptq_t * acceptq_tail;
+#if !defined(MPICH_SINGLE_THREADED)
+    MPID_Thread_lock_t acceptq_mutex;
+#endif
 }
 MPIDI_CH3I_Process_t;
 
@@ -275,6 +280,9 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 #define MPIDI_CH3I_SendQ_head(vc) (vc->ch.sendq_head)
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
+
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC *vc);
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC **vc);
 
 #define MPIDU_MAX_SHM_BLOCK_SIZE ((unsigned int)2*1024*1024*1024)
 

@@ -44,6 +44,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
     srand(getpid());
 
+    MPIDI_CH3I_Process.acceptq_head = NULL;
+    MPIDI_CH3I_Process.acceptq_tail = NULL;
+    MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
+
     /*
      * Extract process group related information from PMI and initialize structures that track the process group connections,
      * MPI_COMM_WORLD, and MPI_COMM_SELF

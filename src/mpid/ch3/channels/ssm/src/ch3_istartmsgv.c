@@ -19,8 +19,7 @@
     { \
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0); \
 	MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV); \
-	return mpi_errno; \
+	goto fn_exit; \
     } \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
@@ -35,8 +34,8 @@
     } \
     sreq->dev.iov[offset].MPID_IOV_BUF = (char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb; \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
-    sreq->ch.iov_offset = offset; \
     sreq->dev.iov_count = count; \
+    sreq->ch.iov_offset = offset; \
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
     /*return sreq;*/ \
@@ -74,14 +73,12 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
     if (n_iov > MPID_IOV_LIMIT)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-	return mpi_errno;
+	goto fn_exit;
     }
     if (iov[0].MPID_IOV_LEN > sizeof(MPIDI_CH3_Pkt_t))
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-	return mpi_errno;
+	goto fn_exit;
     }
 #endif
 
@@ -134,9 +131,23 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 			*/
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 			if (vc->ch.bShm)
+			{
 			    vc->ch.send_active = sreq;
+			}
 			else
-			    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
+			{
+			    /*MPIDI_CH3I_SSM_VC_post_write(vc, sreq);*/
+			    MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+			    vc->ch.conn->send_active = sreq;
+			    mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov + offset,
+				sreq->dev.iov_count - offset, NULL);
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+				    "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+				    sreq, vc->ch.conn, vc);
+			    }
+			}
 			break;
 		    }
 		}
@@ -153,8 +164,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 		if (sreq == NULL)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-		    return mpi_errno;
+		    goto fn_exit;
 		}
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
@@ -221,8 +231,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-	    return mpi_errno;
+	    goto fn_exit;
 	}
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->cc = 0;
@@ -230,6 +239,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
     }
 
+fn_exit:
     *sreq_ptr = sreq;
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
