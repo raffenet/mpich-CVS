@@ -123,6 +123,7 @@ static unsigned long random_color(unsigned char *r, unsigned char *g, unsigned c
 
 
 /* This section of code is for the DLOG logging library */
+/* This is temporary - it will be moved into the dlog directory */
 #if (USE_LOGGING == MPID_LOGGING_DLOG)
 
 #define NUM_X_COLORS 744
