@@ -18,3 +18,5 @@ transpose3_SOURCES = transpose3.c
 transpose4_SOURCES = transpose4.c
 fetchandadd_SOURCES = fetchandadd.c
 fetchandadd_tree_SOURCES = fetchandadd_tree.c
+winname_SOURCES = winname.c
+winname_LDADD = ../util/mtest.o
