@@ -2078,7 +2078,7 @@
 				RelativePath="src\mpi\misc\pcontrol.c">
 			</File>
 			<File
-				RelativePath=".\src\nameserv\file\pmi_nameserv.c">
+				RelativePath=".\src\nameserv\pmi\pmi_nameserv.c">
 			</File>
 			<File
 				RelativePath="src\mpi\romio\mpi-io\prealloc.c">
