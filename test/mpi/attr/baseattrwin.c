@@ -13,10 +13,10 @@ int main( int argc, char **argv)
     int    errs = 0;
     void *v;
     int  flag;
-    int  vval;
     int  rank, size;
     int base[1024];
-    int n, disp;
+    MPI_Aint n;
+    int     disp;
     MPI_Win win;
 
     MTest_Init( &argc, &argv );
@@ -47,7 +47,7 @@ int main( int argc, char **argv)
 	fprintf( stderr, "Could not get WIN_SIZE\n" );
     }
     else {
-	vval = *(int*)v;
+	MPI_Aint vval = *(MPI_Aint*)v;
 	if (vval != n) {
 	    errs++;
 	    fprintf( stderr, "Got wrong value for WIN_SIZE (%d, should be %d)\n", 
@@ -61,7 +61,7 @@ int main( int argc, char **argv)
 	fprintf( stderr, "Could not get WIN_DISP_UNIT\n" );
     }
     else {
-	vval = *(int*)v;
+	int vval = *(int*)v;
 	if (vval != disp) {
 	    errs++;
 	    fprintf( stderr, "Got wrong value for WIN_DISP_UNIT (%d, should be %d)\n",
