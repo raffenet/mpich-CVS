@@ -419,7 +419,10 @@ static inline void handle_written(MPIDI_VC * vc)
 			   in the queue is processed. */
 			MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete"));
 			MPIDI_DBG_PRINTF((65, FCNAME, "dequeuing req and posting next send"));
-			MPIDI_CH3I_SendQ_dequeue(vc);
+			if (MPIDI_CH3I_SendQ_head(vc) == req)
+			{
+			    MPIDI_CH3I_SendQ_dequeue(vc);
+			}
 			vc->shm.send_active = MPIDI_CH3I_SendQ_head(vc);
 		    }
 		}
