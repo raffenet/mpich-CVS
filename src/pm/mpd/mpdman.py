@@ -12,8 +12,7 @@ from select  import select, error
 from re      import findall, sub
 from signal  import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
 from md5     import new
-from cPickle import dumps, loads
-# from marshal    import dumps, loads
+from cPickle import loads
 from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                    mpd_send_one_msg, mpd_recv_one_msg, \
                    mpd_send_one_line, mpd_recv_one_line, \
