@@ -1105,7 +1105,7 @@ extern int MPID_THREAD_LEVEL;
       mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestnotpersist", 0 ); }
 #define MPIR_ERRTEST_PERSISTENT_ACTIVE(reqp,err) \
   if ((reqp->kind == MPID_PREQUEST_SEND || \
-      reqp->kind == MPID_PREQUEST_RECV) && reqp->partner_request == NULL) { \
+      reqp->kind == MPID_PREQUEST_RECV) && reqp->partner_request != NULL) { \
       mpi_errno = MPIR_Err_create_code(MPI_ERR_REQUEST, "**requestpersistactive", 0 ); }
 
 
