@@ -1358,7 +1358,7 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib dbgd.lib sockd.lib ch3essmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="netapi32.lib ntdsapi.lib secur32.lib mpich2ffd.lib smpd_utild.lib dbgmtd.lib sockmtd.lib ch3essmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2essmd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -1429,7 +1429,7 @@ copy $(ConfigurationName)\mpich2essmd.lib lib\mpich2essmd.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="netapi32.lib ntdsapi.lib secur32.lib pthreadVC.lib mpich2ff.lib smpd_util.lib dbg.lib sock.lib ch3essm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="netapi32.lib ntdsapi.lib secur32.lib mpich2ff.lib smpd_util.lib dbgmt.lib sockmt.lib ch3essm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2essm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -1449,6 +1449,76 @@ copy $(ConfigurationName)\mpich2essmd.lib lib\mpich2essmd.lib
 				Description="copying mpich2essm.dll to system32 directory"
 				CommandLine="copy lib\mpich2essm.dll %SystemRoot%\system32\mpich2essm.dll
 copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ch3essmPRelease|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\include\win32,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\essm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG,MPICH_MULTITHREADED"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\$(ConfigurationName)/mpich2.pch"
+				AssemblerListingLocation=".\$(ConfigurationName)/"
+				ObjectFile=".\$(ConfigurationName)/"
+				ProgramDataBaseFileName=".\$(ConfigurationName)/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="netapi32.lib ntdsapi.lib secur32.lib rlog.lib mpich2ff.lib smpd_util.lib dbgmt.lib sockp3.lib ch3essmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				OutputFile="lib/mpich2essmp.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				ProgramDatabaseFile=".\$(ConfigurationName)/mpich2.pdb"
+				ImportLibrary=".\$(ConfigurationName)/mpich2essmp.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\$(ConfigurationName)/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2essmp.dll to system32 directory"
+				CommandLine="copy lib\mpich2essmp.dll %SystemRoot%\system32\mpich2essmp.dll
+copy $(ConfigurationName)\mpich2essmp.lib lib\mpich2essmp.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1859,6 +1929,11 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\dims_create.c">
@@ -2240,6 +2315,12 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\intercomm_create.c">
@@ -2534,6 +2615,12 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\oplor.c">
@@ -2657,6 +2744,12 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\oplxor.c">
@@ -2776,6 +2869,12 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3essmRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -2951,6 +3050,13 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3essmRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"
@@ -3195,6 +3301,12 @@ copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3essmRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmPRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>

@@ -548,7 +548,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\dbgd.lib"/>
+				OutputFile="..\..\..\lib\dbgmtd.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -592,7 +592,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\..\..\lib\dbg.lib"/>
+				OutputFile="..\..\..\lib\dbgmt.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
