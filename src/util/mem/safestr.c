@@ -61,3 +61,87 @@ char *MPIU_Strdup( const char *str )
     return p;
 }
 #endif
+
+/* 
+ * We need an snprintf replacement for systems without one
+ */
+#ifndef HAVE_SNPRINTF
+/* 
+ * This is an approximate form which is suitable for most uses within
+ * the MPICH code
+ */
+int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
+{
+    int n;
+    const char *p;
+    char *out_str = str;
+    va_list list;
+
+    va_start(list, format);
+
+    p = format;
+    while (p && size > 0) {
+	char *nf;
+
+	nf = strchr(p, '%');
+	if (!nf) {
+	    /* No more format characters */
+	    while (size-- > 0 && *p) {
+		*out_str++ = *p++;
+	    }
+	}
+	else {
+	    int nc = nf[1];
+	    
+	    /* Copy until nf */
+	    while (p < nf && size-- > 0) {
+		*out_str++ = *p++;
+	    }
+	    /* Handle the format character */
+	    switch nf {
+	    case '%':
+		*out_str++ = '%';
+		size--;
+		p += 2;
+		break;
+
+	    case 'd':
+	    {
+		int val;
+		char tmp[20];
+		char *t = tmp;
+		p += 2;
+		/* Get the argument, of integer type */
+		val = va_arg( list, int );
+		sprintf( tmp, "%d", val );
+		while (size-- > 0 && *t) {
+		    *out_str++ = *t++;
+		}
+	    }
+	    break;
+
+	    case 's':
+	    {
+		char *s_arg;
+		p += 2;
+		/* Get the argument, of pointer to char type */
+		s_arg = va_arg( list, char * );
+		while (size-- > 0 && s_arg && *s_arg) {
+		    *out_str++ = *s_arg++;
+		}
+	    }
+	    break;
+	    default:
+		/* Error, unknown case */
+		return -1;
+		break;
+	    }
+	}
+    }
+
+    va_end(list);
+
+    n = out_str - str;
+    return n;
+}
+#endif
