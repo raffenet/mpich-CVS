@@ -49,6 +49,6 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 
     MPID_Segment_free(segp);
 
-    MPIU_dbg_printf("# contig blocks = %d\n", (int) datatype_ptr->n_contig_blocks);
+    MPIU_DBG_PRINTF(("# contig blocks = %d\n", (int) datatype_ptr->n_contig_blocks));
     return 0;
 }
