@@ -14,13 +14,16 @@
 
 - Improve scalability and performance of some ROMIO PVFS and PVFS2 routines 
 
-- Removed MPIDI_CH3_{iRead,iWrite} from the CH3 interface.
-  MPIDI_CH3U_Handle_recv_pkt() now returns a receive request with a populated
-  iovec to receive data associated with the request.
-  MPIDU_CH3U_Handle_{recv,send}_req() reload the iovec in the request and
-  return and set the complete argument to TRUE if more data is to read or
-  written.  If data transfer for the request is complete, the coomplete
-  argument must be set to FALSE.
+- An error message string parameter was added to MPID_Abort().  If the parameter
+  is non-NULL this string will be used as the message with the abort output.
+  Otherwise, the output message will be base on the error message associated
+  with the mpi_errno parameter.
+
+- MPID_Segment_init() now takes an additional boolean parameter that specifies
+  if the segment processing code is to produce/consume homogenous (FALSE) or
+  heterogeneous (TRUE) data.
+
+- The definitions of MPID_VCR and MPID_VCRT are now defined by the device.
 
 - The semantics of MPID_Progress_{Start,Wait,End}() have changed.  A typical
   blocking progress loop now looks like the following.
@@ -87,7 +90,14 @@
   the device will change dramaticly in a future release.  A few more changes to
   the CH3 interface are also quite likely.
 
-- The definitions of MPID_VCR and MPID_VCRT are now defined by the device.
+- MPIDI_CH3_{iRead,iWrite}() have been removed from the CH3 interface.
+  MPIDI_CH3U_Handle_recv_pkt() now returns a receive request with a populated
+  iovec to receive data associated with the request.
+  MPIDU_CH3U_Handle_{recv,send}_req() reload the iovec in the request and
+  return and set the complete argument to TRUE if more data is to read or
+  written.  If data transfer for the request is complete, the coomplete
+  argument must be set to FALSE.
+
 
 =============================================================================== 
                                Changes in 0.96p2
