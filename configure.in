@@ -41,7 +41,6 @@ dnl
 dnl # MPICH-1 used -Wshadow as well.
 dnl 
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],,enable_strict=no)
-dnl CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi")
 dnl
 AC_ARG_ENABLE(coverage,
 [--enable-coverage - Turn on coverage analysis using gcc and gcov],,
