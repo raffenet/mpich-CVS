@@ -2701,7 +2701,7 @@ sub TargetInstall {
 	    # install should be constrained.  If there is a reason for an 
 	    # install with three levels of directories, either install the 
 	    # subdirectories separately or modify this code.
-	    print FD "\t\@test -d $srcdir && cd $srcdir && for name in * ; do \\
+	    print FD "\t\@-test -d $srcdir && cd $srcdir && for name in * ; do \\
 \t if [ -f \$\$name ] ; then \\
 \t    echo \"$this_install_choice \$\$name \${$dir}/\$\$name\" ; \\
 \t    $this_install_choice \$\$name \${$dir}/\$\$name ; \\
