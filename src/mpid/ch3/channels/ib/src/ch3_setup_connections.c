@@ -57,8 +57,6 @@ int MPIDI_CH3I_Setup_connections()
 	vc->ib.recv_active = vc->ib.req;
     }
 
-    PMI_Barrier();
-
     MPIU_Free(val);
     MPIU_Free(key);
 
