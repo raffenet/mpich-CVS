@@ -12,660 +12,675 @@ typedef struct {
 /* The names are in sorted order, allowing the use of a simple
   linear search or bisection algorithm to find the message corresponding to
   a particular message */
-static const char short0[] = "**allocmem";
-static const char long0[]  = "Unable to allocate memory for MPI_Alloc_mem";
-static const char short1[] = "**arg";
-static const char long1[]  = "Invalid argument";
-static const char short2[] = "**argarrayneg";
-static const char long2[]  = "Negative value in array ";
-static const char short3[] = "**argneg";
-static const char long3[]  = "Invalid argument; must be non-negative";
-static const char short4[] = "**argrange";
-static const char long4[]  = "Argument is not within valid range";
-static const char short5[] = "**assert";
-static const char long5[]  = "Invalid assert argument";
-static const char short6[] = "**attrsentinal";
-static const char long6[]  = "Internal fields in an attribute have been overwritten;possible errors in using the attribute value in user code.";
-static const char short7[] = "**base";
-static const char long7[]  = "Invalid base address";
-static const char short8[] = "**bsendbufsmall";
-static const char long8[]  = "Buffer size is smaller than MPI_BSEND_OVERHEAD";
-static const char short9[] = "**bsendnobuf";
-static const char long9[]  = "No buffer to detach. ";
-static const char short10[] = "**bufbsend";
-static const char long10[]  = "Insufficient space in Bsend buffer";
-static const char short11[] = "**bufexists";
-static const char long11[]  = "Buffer already attached with MPI_BUFFER_ATTACH.";
-static const char short12[] = "**buffer";
-static const char long12[]  = "Invalid buffer pointer";
-static const char short13[] = "**cancelunknown";
-static const char long13[]  = "Attempt to cancel an unknown type of request";
-static const char short14[] = "**cartcoordinvalid";
-static const char long14[]  = "Cartesian coordinate is invalid (not in range)";
-static const char short15[] = "**cartdim";
-static const char long15[]  = "Size of Cartesian grid is larger than the size of the communicator";
-static const char short16[] = "**cartshiftzero";
-static const char long16[]  = "Displacement must be non-zero";
-static const char short17[] = "**ch3|mm|CreateFileMapping";
-static const char long17[]  = "CreateFileMapping failed";
-static const char short18[] = "**ch3|mm|MPIDI_CH3I_SHM_Attach_to_mem";
-static const char long18[]  = "MPIDI_CH3I_SHM_Attach_to_mem failed";
-static const char short19[] = "**ch3|mm|MPIU_Strdup";
-static const char long19[]  = "MPIU_Strdup failed";
-static const char short20[] = "**ch3|mm|MapViewOfFileEx";
-static const char long20[]  = "MapViewOfFileEx failed";
-static const char short21[] = "**ch3|mm|OpenProcess";
-static const char long21[]  = "OpenProcess failed";
-static const char short22[] = "**ch3|mm|badpacket";
-static const char long22[]  = "Received a packet of unknown type";
-static const char short23[] = "**ch3|mm|badsock";
-static const char long23[]  = "internal error - bad sock";
-static const char short24[] = "**ch3|mm|business_card";
-static const char long24[]  = "Invalid business card";
-static const char short25[] = "**ch3|mm|connallocfailed";
-static const char long25[]  = "Connection failed";
-static const char short26[] = "**ch3|mm|connclose";
-static const char long26[]  = "active connection unexpectedly closed";
-static const char short27[] = "**ch3|mm|connfailed";
-static const char long27[]  = "Failed to connect to remote process";
-static const char short28[] = "**ch3|mm|connrefused";
-static const char long28[]  = "Connection refused";
-static const char short29[] = "**ch3|mm|connterm";
-static const char long29[]  = "active connection unexpectedly terminated";
-static const char short30[] = "**ch3|mm|failure";
-static const char long30[]  = "unknown failure";
-static const char short31[] = "**ch3|mm|hostlookup";
-static const char long31[]  = "Host lookup failed";
-static const char short32[] = "**ch3|mm|open";
-static const char long32[]  = "open failed";
-static const char short33[] = "**ch3|mm|pmi_finalize";
-static const char long33[]  = "PMI_Finalize failed";
-static const char short34[] = "**ch3|mm|shmat";
-static const char long34[]  = "shmat failed";
-static const char short35[] = "**ch3|mm|shmget";
-static const char long35[]  = "shmget failed";
-static const char short36[] = "**ch3|shm|CreateFileMapping";
-static const char long36[]  = "CreateFileMapping failed";
-static const char short37[] = "**ch3|shm|GetMemTwice";
-static const char long37[]  = "Global shared memory initializer called more than once";
-static const char short38[] = "**ch3|shm|OpenProcess";
-static const char long38[]  = "OpenProcess failed";
-static const char short39[] = "**ch3|shm|open";
-static const char long39[]  = "open failed";
-static const char short40[] = "**ch3|shm|pmi_finalize";
-static const char long40[]  = "PMI_Finalize failed";
-static const char short41[] = "**ch3|shm|shmat";
-static const char long41[]  = "shmat failed";
-static const char short42[] = "**ch3|shm|shmget";
-static const char long42[]  = "shmget failed";
-static const char short43[] = "**ch3|sock|badbuscard";
-static const char long43[]  = "[ch3_sock] GetHostAndPort - Invalid business card";
-static const char short44[] = "**ch3|sock|badpacket";
-static const char long44[]  = "[ch3_sock] received packet of unknow type";
-static const char short45[] = "**ch3|sock|badsock";
-static const char long45[]  = "[ch3_sock] internal error - bad sock";
-static const char short46[] = "**ch3|sock|connallocfailed";
-static const char long46[]  = "[ch3_sock] unable to allocate a connection structure";
-static const char short47[] = "**ch3|sock|connclose";
-static const char long47[]  = "[ch3_sock] active connection unexpectedly closed";
-static const char short48[] = "**ch3|sock|connfailed";
-static const char long48[]  = "[ch3_sock] failed to connnect to remote process";
-static const char short49[] = "**ch3|sock|connrefused";
-static const char long49[]  = "[ch3_sock] connection refused";
-static const char short50[] = "**ch3|sock|connterm";
-static const char long50[]  = "[ch3_sock] active connection unexpectedly terminated";
-static const char short51[] = "**ch3|sock|eqmalloc";
-static const char long51[]  = "MPIU_Malloc failed to allocate memory for an event queue structure";
-static const char short52[] = "**ch3|sock|failure";
-static const char long52[]  = "[ch3_sock] unknown failure";
-static const char short53[] = "**ch3|sock|hostlookup";
-static const char long53[]  = "[ch3_sock] hostname lookup failed";
-static const char short54[] = "**ch3|sock|pmi_finalize";
-static const char long54[]  = "PMI_Finalize failed";
-static const char short55[] = "**ch3|sock|strdup";
-static const char long55[]  = "[ch3_sock] MPIU_Strdup failed";
-static const char short56[] = "**comm";
-static const char long56[]  = "Invalid communicator";
-static const char short57[] = "**commnotinter";
-static const char long57[]  = "An intercommunicator is required but an intracommunicatorwas provided.";
-static const char short58[] = "**commperm";
-static const char long58[]  = "Cannot free permanent communicator";
-static const char short59[] = "**conversion";
-static const char long59[]  = "An error occurred in a user-defined data conversion function";
-static const char short60[] = "**count";
-static const char long60[]  = "Invalid count";
-static const char short61[] = "**datarep";
-static const char long61[]  = "The requested datarep name has already been specified toMPI_REGISTER_DATAREP";
-static const char short62[] = "**datarepunsupported";
-static const char long62[]  = "Unsupported datarep passed to MPI_File_set_view ";
-static const char short63[] = "**dims";
-static const char long63[]  = "Invalid dimension argument";
-static const char short64[] = "**dimsmany";
-static const char long64[]  = "Number of dimensions is too large ";
-static const char short65[] = "**dimspartition";
-static const char long65[]  = "Cannot partition nodes as requested ";
-static const char short66[] = "**dtype";
-static const char long66[]  = "Invalid datatype";
-static const char short67[] = "**dtypecommit";
-static const char long67[]  = "Datatype has not been committed ";
-static const char short68[] = "**dtypeperm";
-static const char long68[]  = "Cannot free permanent data type ";
-static const char short69[] = "**dupprocesses";
-static const char long69[]  = "Local and remote groups in MPI_Intercomm_create must notcontain the same processes";
-static const char short70[] = "**edgeoutrange";
-static const char long70[]  = "Edge index in graph topology is out of range";
-static const char short71[] = "**file";
-static const char long71[]  = "Invalid MPI_File";
-static const char short72[] = "**fileaccess";
-static const char long72[]  = "Access denied to file";
-static const char short73[] = "**fileamode";
-static const char long73[]  = "Invalid amode value in MPI_File_open ";
-static const char short74[] = "**fileexist";
-static const char long74[]  = "File exists";
-static const char short75[] = "**fileinuse";
-static const char long75[]  = "File in use by some process";
-static const char short76[] = "**filename";
-static const char long76[]  = "Invalid file name";
-static const char short77[] = "**filenoexist";
-static const char long77[]  = "File does not exist";
-static const char short78[] = "**filenospace";
-static const char long78[]  = "Not enough space for file ";
-static const char short79[] = "**fileopunsupported";
-static const char long79[]  = "Unsupported file operation ";
-static const char short80[] = "**filequota";
-static const char long80[]  = "Quota exceeded for files";
-static const char short81[] = "**filerdonly";
-static const char long81[]  = "Read-only file or filesystem name";
-static const char short82[] = "**graphnnodes";
-static const char long82[]  = "Number of graph nodes exceeds size of communicator.";
-static const char short83[] = "**group";
-static const char long83[]  = "Invalid group";
-static const char short84[] = "**groupnotincomm";
-static const char long84[]  = "Specified group is not within the communicator";
-static const char short85[] = "**indexneg";
-static const char long85[]  = "Index value in graph topology must be nonnegative";
-static const char short86[] = "**indexnonmonotone";
-static const char long86[]  = "Index values in graph topology must be monotone nondecreasing";
-static const char short87[] = "**info";
-static const char long87[]  = "Invalid MPI_Info";
-static const char short88[] = "**infokey";
-static const char long88[]  = "Invalid key for MPI_Info ";
-static const char short89[] = "**infokeyempty";
-static const char long89[]  = "Empty or blank key ";
-static const char short90[] = "**infokeylong";
-static const char long90[]  = "Key is too long";
-static const char short91[] = "**infokeynull";
-static const char long91[]  = "Null key";
-static const char short92[] = "**infonkey";
-static const char long92[]  = "Requested nth key does not exist";
-static const char short93[] = "**infonokey";
-static const char long93[]  = "MPI_Info key is not defined ";
-static const char short94[] = "**infoval";
-static const char long94[]  = "Invalid MPI_Info value ";
-static const char short95[] = "**infovallong";
-static const char long95[]  = "Value is too long ";
-static const char short96[] = "**infovalnull";
-static const char long96[]  = "Null value";
-static const char short97[] = "**initialized";
-static const char long97[]  = "MPI not initialized. Call MPI_Init or MPI_Init_thread first";
-static const char short98[] = "**inittwice";
-static const char long98[]  = "Cannot call MPI_INIT or MPI_INIT_THREAD more than once";
-static const char short99[] = "**inpending";
-static const char long99[]  = "Pending request (no error)";
-static const char short100[] = "**instatus";
-static const char long100[]  = "See the MPI_ERROR field in MPI_Status for the error code";
-static const char short101[] = "**intercommcoll";
-static const char long101[]  = "Intercommunicator collective operations have not been implemented";
-static const char short102[] = "**intern";
-static const char long102[]  = "Internal MPI error!";
-static const char short103[] = "**io";
-static const char long103[]  = "Other I/O error ";
-static const char short104[] = "**keyval";
-static const char long104[]  = "Invalid keyval";
-static const char short105[] = "**keyvalinvalid";
-static const char long105[]  = "Attribute key was MPI_KEYVAL_INVALID";
-static const char short106[] = "**keyvalnotcomm";
-static const char long106[]  = "Keyval was not defined for communicators";
-static const char short107[] = "**keyvalnotdatatype";
-static const char long107[]  = "Keyval was not defined for datatype";
-static const char short108[] = "**locktype";
-static const char long108[]  = "Invalid locktype";
-static const char short109[] = "**namepublish";
-static const char long109[]  = "Unable to publish service name";
-static const char short110[] = "**namepubnotpub";
-static const char long110[]  = "Lookup failed for service name ";
-static const char short111[] = "**nameservice";
-static const char long111[]  = "Invalid service name (see MPI_Publish_name)";
-static const char short112[] = "**noerrclasses";
-static const char long112[]  = "No more user-defined error classes";
-static const char short113[] = "**noerrcodes";
-static const char long113[]  = "No more user-defined error codes";
-static const char short114[] = "**nomem";
-static const char long114[]  = "Out of memory";
-static const char short115[] = "**nonamepub";
-static const char long115[]  = "No name publishing service available";
-static const char short116[] = "**notcarttopo";
-static const char long116[]  = "No Cartesian topology associated with this communicator";
-static const char short117[] = "**notgenreq";
-static const char long117[]  = "Attempt to complete a request with MPI_GREQUEST_COMPLETE thatwas not started with MPI_GREQUEST_START";
-static const char short118[] = "**notgraphtopo";
-static const char long118[]  = "No Graph topology associated with this communicator";
-static const char short119[] = "**notimpl";
-static const char long119[]  = "Function not implemented";
-static const char short120[] = "**notopology";
-static const char long120[]  = "No topology associated with this communicator";
-static const char short121[] = "**notsame";
-static const char long121[]  = "Inconsistent arguments to collective routine ";
-static const char short122[] = "**nulledge";
-static const char long122[]  = "Edge detected from a node to the same node";
-static const char short123[] = "**nullptr";
-static const char long123[]  = "Null pointer";
-static const char short124[] = "**op";
-static const char long124[]  = "Invalid MPI_Op";
-static const char short125[] = "**opundefined";
-static const char long125[]  = "only predefined ops valid";
-static const char short126[] = "**opundefined_rma";
-static const char long126[]  = "RMA target received unknown RMA operation";
-static const char short127[] = "**other";
-static const char long127[]  = "Other MPI error";
-static const char short128[] = "**permattr";
-static const char long128[]  = "Cannot set permanent attribute";
-static const char short129[] = "**permop";
-static const char long129[]  = "Cannot free permanent MPI_Op ";
-static const char short130[] = "**pmi_finalize";
-static const char long130[]  = "PMI_Finalize failed";
-static const char short131[] = "**port";
-static const char long131[]  = "Invalid port";
-static const char short132[] = "**rangedup";
-static const char long132[]  = "The range array specifies duplicate entries";
-static const char short133[] = "**rangeendinvalid";
-static const char long133[]  = "Some element of a range array is either negative or too large";
-static const char short134[] = "**rangestartinvalid";
-static const char long134[]  = "Some element of a range array is either negative or too large";
-static const char short135[] = "**rank";
-static const char long135[]  = "Invalid rank";
-static const char short136[] = "**rankarray";
-static const char long136[]  = "Invalid rank in rank array";
-static const char short137[] = "**rankdup";
-static const char long137[]  = "Duplicate ranks in rank array ";
-static const char short138[] = "**ranklocal";
-static const char long138[]  = "Error specifying local_leader ";
-static const char short139[] = "**rankremote";
-static const char long139[]  = "Error specifying remote_leader ";
-static const char short140[] = "**request";
-static const char long140[]  = "Invalid MPI_Request";
-static const char short141[] = "**requestpersistactive";
-static const char long141[]  = "Persistent request passed to MPI_Start or MPI_Startall is already active.";
-static const char short142[] = "**rmaconflict";
-static const char long142[]  = "Conflicting accesses to window ";
-static const char short143[] = "**rmadisp";
-static const char long143[]  = "Invalid displacement argument in RMA call ";
-static const char short144[] = "**rmasize";
-static const char long144[]  = "Invalid size argument in RMA call";
-static const char short145[] = "**rmasync";
-static const char long145[]  = "Wrong synchronization of RMA calls ";
-static const char short146[] = "**root";
-static const char long146[]  = "Invalid root";
-static const char short147[] = "**servicename";
-static const char long147[]  = "Attempt to lookup an unknown service name ";
-static const char short148[] = "**spawn";
-static const char long148[]  = "Error in spawn call";
-static const char short149[] = "**stride";
-static const char long149[]  = "Range does not terminate";
-static const char short150[] = "**stridezero";
-static const char long150[]  = "Zero stride is invalid";
-static const char short151[] = "**success";
-static const char long151[]  = "No MPI error";
-static const char short152[] = "**tag";
-static const char long152[]  = "Invalid tag";
-static const char short153[] = "**toomanycomm";
-static const char long153[]  = "Too many communicators";
-static const char short154[] = "**topology";
-static const char long154[]  = "Invalid topology";
-static const char short155[] = "**topotoolarge";
-static const char long155[]  = "Topology size is greater than communicator size";
-static const char short156[] = "**truncate";
-static const char long156[]  = "Message truncated";
-static const char short157[] = "**typenamelen";
-static const char long157[]  = " Specified datatype name is too long";
-static const char short158[] = "**unknown";
-static const char long158[]  = "Unknown error.  Please file a bug report.";
-static const char short159[] = "**win";
-static const char long159[]  = "Invalid MPI_Win";
-static const int generic_msgs_len = 160;
+static const char short_gen0[] = "**CreateFileMapping";
+static const char long_gen0[]  = "CreateFileMapping failed";
+static const char short_gen1[] = "**GetMemTwice";
+static const char long_gen1[]  = "Global shared memory initializer called more than once";
+static const char short_gen2[] = "**MPIDI_CH3I_SHM_Attach_to_mem";
+static const char long_gen2[]  = "MPIDI_CH3I_SHM_Attach_to_mem failed";
+static const char short_gen3[] = "**MPIU_Strdup";
+static const char long_gen3[]  = "MPIU_Strdup failed";
+static const char short_gen4[] = "**MapViewOfFileEx";
+static const char long_gen4[]  = "MapViewOfFileEx failed";
+static const char short_gen5[] = "**OpenProcess";
+static const char long_gen5[]  = "OpenProcess failed";
+static const char short_gen6[] = "**allocmem";
+static const char long_gen6[]  = "Unable to allocate memory for MPI_Alloc_mem";
+static const char short_gen7[] = "**arg";
+static const char long_gen7[]  = "Invalid argument";
+static const char short_gen8[] = "**argarrayneg";
+static const char long_gen8[]  = "Negative value in array ";
+static const char short_gen9[] = "**argneg";
+static const char long_gen9[]  = "Invalid argument; must be non-negative";
+static const char short_gen10[] = "**argnonpos";
+static const char long_gen10[]  = "Invalid argument; must be positive";
+static const char short_gen11[] = "**argrange";
+static const char long_gen11[]  = "Argument is not within valid range";
+static const char short_gen12[] = "**assert";
+static const char long_gen12[]  = "Invalid assert argument";
+static const char short_gen13[] = "**attrsentinal";
+static const char long_gen13[]  = "Internal fields in an attribute have been overwritten; possible errors in using the attribute value in user code.";
+static const char short_gen14[] = "**badpacket";
+static const char long_gen14[]  = "Received a packet of unknown type";
+static const char short_gen15[] = "**badsock";
+static const char long_gen15[]  = "internal error - bad sock";
+static const char short_gen16[] = "**base";
+static const char long_gen16[]  = "Invalid base address";
+static const char short_gen17[] = "**bsendbufsmall";
+static const char long_gen17[]  = "Buffer size is smaller than MPI_BSEND_OVERHEAD";
+static const char short_gen18[] = "**bsendnobuf";
+static const char long_gen18[]  = "No buffer to detach. ";
+static const char short_gen19[] = "**bufalias";
+static const char long_gen19[]  = "Buffers must not be aliased";
+static const char short_gen20[] = "**bufbsend";
+static const char long_gen20[]  = "Insufficient space in Bsend buffer";
+static const char short_gen21[] = "**bufexists";
+static const char long_gen21[]  = "Buffer already attached with MPI_BUFFER_ATTACH.";
+static const char short_gen22[] = "**buffer";
+static const char long_gen22[]  = "Invalid buffer pointer";
+static const char short_gen23[] = "**bufnull";
+static const char long_gen23[]  = "Null buffer pointer";
+static const char short_gen24[] = "**business_card";
+static const char long_gen24[]  = "Invalid business card";
+static const char short_gen25[] = "**cancelunknown";
+static const char long_gen25[]  = "Attempt to cancel an unknown type of request";
+static const char short_gen26[] = "**cartcoordinvalid";
+static const char long_gen26[]  = "Cartesian coordinate is invalid (not in range)";
+static const char short_gen27[] = "**cartdim";
+static const char long_gen27[]  = "Size of Cartesian grid is larger than the size of the communicator";
+static const char short_gen28[] = "**cartshiftzero";
+static const char long_gen28[]  = "Displacement must be non-zero";
+static const char short_gen29[] = "**ch3|sock|badbuscard";
+static const char long_gen29[]  = "[ch3:sock] GetHostAndPort - Invalid business card";
+static const char short_gen30[] = "**ch3|sock|badpacket";
+static const char long_gen30[]  = "[ch3:sock] received packet of unknow type";
+static const char short_gen31[] = "**ch3|sock|badsock";
+static const char long_gen31[]  = "[ch3:sock] internal error - bad sock";
+static const char short_gen32[] = "**ch3|sock|connallocfailed";
+static const char long_gen32[]  = "[ch3:sock] unable to allocate a connection structure";
+static const char short_gen33[] = "**ch3|sock|connclose";
+static const char long_gen33[]  = "[ch3:sock] active connection unexpectedly closed";
+static const char short_gen34[] = "**ch3|sock|connfailed";
+static const char long_gen34[]  = "[ch3:sock] failed to connnect to remote process";
+static const char short_gen35[] = "**ch3|sock|connrefused";
+static const char long_gen35[]  = "[ch3:sock] connection refused";
+static const char short_gen36[] = "**ch3|sock|connterm";
+static const char long_gen36[]  = "[ch3:sock] active connection unexpectedly terminated";
+static const char short_gen37[] = "**ch3|sock|failure";
+static const char long_gen37[]  = "[ch3:sock] unknown failure";
+static const char short_gen38[] = "**ch3|sock|hostlookup";
+static const char long_gen38[]  = "[ch3:sock] hostname lookup failed";
+static const char short_gen39[] = "**ch3|sock|pmi_finalize";
+static const char long_gen39[]  = "PMI_Finalize failed";
+static const char short_gen40[] = "**ch3|sock|strdup";
+static const char long_gen40[]  = "[ch3:sock] MPIU_Strdup failed";
+static const char short_gen41[] = "**comm";
+static const char long_gen41[]  = "Invalid communicator";
+static const char short_gen42[] = "**commnotinter";
+static const char long_gen42[]  = "An intercommunicator is required but an intracommunicator was provided.";
+static const char short_gen43[] = "**commnotintra";
+static const char long_gen43[]  = "An intracommunicator is required but an intercommunicator was provided.";
+static const char short_gen44[] = "**commnull";
+static const char long_gen44[]  = "Null communicator";
+static const char short_gen45[] = "**commperm";
+static const char long_gen45[]  = "Cannot free permanent communicator";
+static const char short_gen46[] = "**connallocfailed";
+static const char long_gen46[]  = "Connection failed";
+static const char short_gen47[] = "**connclose";
+static const char long_gen47[]  = "active connection unexpectedly closed";
+static const char short_gen48[] = "**connfailed";
+static const char long_gen48[]  = "Failed to connect to remote process";
+static const char short_gen49[] = "**connrefused";
+static const char long_gen49[]  = "Connection refused";
+static const char short_gen50[] = "**connterm";
+static const char long_gen50[]  = "active connection unexpectedly terminated";
+static const char short_gen51[] = "**conversion";
+static const char long_gen51[]  = "An error occurred in a user-defined data conversion function";
+static const char short_gen52[] = "**count";
+static const char long_gen52[]  = "Invalid count";
+static const char short_gen53[] = "**countneg";
+static const char long_gen53[]  = "Negative count";
+static const char short_gen54[] = "**datarep";
+static const char long_gen54[]  = "The requested datarep name has already been specified to MPI_REGISTER_DATAREP";
+static const char short_gen55[] = "**datarepunsupported";
+static const char long_gen55[]  = "Unsupported datarep passed to MPI_File_set_view ";
+static const char short_gen56[] = "**dims";
+static const char long_gen56[]  = "Invalid dimension argument";
+static const char short_gen57[] = "**dimsmany";
+static const char long_gen57[]  = "Number of dimensions is too large ";
+static const char short_gen58[] = "**dimspartition";
+static const char long_gen58[]  = "Cannot partition nodes as requested ";
+static const char short_gen59[] = "**dtype";
+static const char long_gen59[]  = "Invalid datatype";
+static const char short_gen60[] = "**dtypecommit";
+static const char long_gen60[]  = "Datatype has not been committed ";
+static const char short_gen61[] = "**dtypenull";
+static const char long_gen61[]  = "Null datatype";
+static const char short_gen62[] = "**dtypeperm";
+static const char long_gen62[]  = "Cannot free permanent data type ";
+static const char short_gen63[] = "**dupprocesses";
+static const char long_gen63[]  = "Local and remote groups in MPI_Intercomm_create must not contain the same processes";
+static const char short_gen64[] = "**edgeoutrange";
+static const char long_gen64[]  = "Edge index in graph topology is out of range";
+static const char short_gen65[] = "**failure";
+static const char long_gen65[]  = "unknown failure";
+static const char short_gen66[] = "**file";
+static const char long_gen66[]  = "Invalid MPI_File";
+static const char short_gen67[] = "**fileaccess";
+static const char long_gen67[]  = "Access denied to file";
+static const char short_gen68[] = "**fileamode";
+static const char long_gen68[]  = "Invalid amode value in MPI_File_open ";
+static const char short_gen69[] = "**fileexist";
+static const char long_gen69[]  = "File exists";
+static const char short_gen70[] = "**fileinuse";
+static const char long_gen70[]  = "File in use by some process";
+static const char short_gen71[] = "**filename";
+static const char long_gen71[]  = "Invalid file name";
+static const char short_gen72[] = "**filenoexist";
+static const char long_gen72[]  = "File does not exist";
+static const char short_gen73[] = "**filenospace";
+static const char long_gen73[]  = "Not enough space for file ";
+static const char short_gen74[] = "**fileopunsupported";
+static const char long_gen74[]  = "Unsupported file operation ";
+static const char short_gen75[] = "**filequota";
+static const char long_gen75[]  = "Quota exceeded for files";
+static const char short_gen76[] = "**filerdonly";
+static const char long_gen76[]  = "Read-only file or filesystem name";
+static const char short_gen77[] = "**graphnnodes";
+static const char long_gen77[]  = "Number of graph nodes exceeds size of communicator.";
+static const char short_gen78[] = "**group";
+static const char long_gen78[]  = "Invalid group";
+static const char short_gen79[] = "**groupnotincomm";
+static const char long_gen79[]  = "Specified group is not within the communicator";
+static const char short_gen80[] = "**hostlookup";
+static const char long_gen80[]  = "Host lookup failed";
+static const char short_gen81[] = "**indexneg";
+static const char long_gen81[]  = "Index value in graph topology must be nonnegative";
+static const char short_gen82[] = "**indexnonmonotone";
+static const char long_gen82[]  = "Index values in graph topology must be monotone nondecreasing";
+static const char short_gen83[] = "**info";
+static const char long_gen83[]  = "Invalid MPI_Info";
+static const char short_gen84[] = "**infokey";
+static const char long_gen84[]  = "Invalid key for MPI_Info ";
+static const char short_gen85[] = "**infokeyempty";
+static const char long_gen85[]  = "Empty or blank key ";
+static const char short_gen86[] = "**infokeylong";
+static const char long_gen86[]  = "Key is too long";
+static const char short_gen87[] = "**infokeynull";
+static const char long_gen87[]  = "Null key";
+static const char short_gen88[] = "**infonkey";
+static const char long_gen88[]  = "Requested nth key does not exist";
+static const char short_gen89[] = "**infonokey";
+static const char long_gen89[]  = "MPI_Info key is not defined ";
+static const char short_gen90[] = "**infoval";
+static const char long_gen90[]  = "Invalid MPI_Info value ";
+static const char short_gen91[] = "**infovallong";
+static const char long_gen91[]  = "Value is too long ";
+static const char short_gen92[] = "**infovalnull";
+static const char long_gen92[]  = "Null value";
+static const char short_gen93[] = "**initialized";
+static const char long_gen93[]  = "MPI not initialized. Call MPI_Init or MPI_Init_thread first";
+static const char short_gen94[] = "**inittwice";
+static const char long_gen94[]  = "Cannot call MPI_INIT or MPI_INIT_THREAD more than once";
+static const char short_gen95[] = "**inpending";
+static const char long_gen95[]  = "Pending request (no error)";
+static const char short_gen96[] = "**instatus";
+static const char long_gen96[]  = "See the MPI_ERROR field in MPI_Status for the error code";
+static const char short_gen97[] = "**intercommcoll";
+static const char long_gen97[]  = "Intercommunicator collective operations have not been implemented";
+static const char short_gen98[] = "**intern";
+static const char long_gen98[]  = "Internal MPI error!";
+static const char short_gen99[] = "**io";
+static const char long_gen99[]  = "Other I/O error ";
+static const char short_gen100[] = "**keyval";
+static const char long_gen100[]  = "Invalid keyval";
+static const char short_gen101[] = "**keyvalinvalid";
+static const char long_gen101[]  = "Attribute key was MPI_KEYVAL_INVALID";
+static const char short_gen102[] = "**keyvalnotcomm";
+static const char long_gen102[]  = "Keyval was not defined for communicators";
+static const char short_gen103[] = "**keyvalnotdatatype";
+static const char long_gen103[]  = "Keyval was not defined for datatype";
+static const char short_gen104[] = "**locktype";
+static const char long_gen104[]  = "Invalid locktype";
+static const char short_gen105[] = "**namepublish";
+static const char long_gen105[]  = "Unable to publish service name";
+static const char short_gen106[] = "**namepubnotpub";
+static const char long_gen106[]  = "Lookup failed for service name ";
+static const char short_gen107[] = "**nameservice";
+static const char long_gen107[]  = "Invalid service name (see MPI_Publish_name)";
+static const char short_gen108[] = "**noerrclasses";
+static const char long_gen108[]  = "No more user-defined error classes";
+static const char short_gen109[] = "**noerrcodes";
+static const char long_gen109[]  = "No more user-defined error codes";
+static const char short_gen110[] = "**nomem";
+static const char long_gen110[]  = "Out of memory";
+static const char short_gen111[] = "**nonamepub";
+static const char long_gen111[]  = "No name publishing service available";
+static const char short_gen112[] = "**notcarttopo";
+static const char long_gen112[]  = "No Cartesian topology associated with this communicator";
+static const char short_gen113[] = "**notgenreq";
+static const char long_gen113[]  = "Attempt to complete a request with MPI_GREQUEST_COMPLETE that was not started with MPI_GREQUEST_START";
+static const char short_gen114[] = "**notgraphtopo";
+static const char long_gen114[]  = "No Graph topology associated with this communicator";
+static const char short_gen115[] = "**notimpl";
+static const char long_gen115[]  = "Function not implemented";
+static const char short_gen116[] = "**notopology";
+static const char long_gen116[]  = "No topology associated with this communicator";
+static const char short_gen117[] = "**notsame";
+static const char long_gen117[]  = "Inconsistent arguments to collective routine ";
+static const char short_gen118[] = "**nulledge";
+static const char long_gen118[]  = "Edge detected from a node to the same node";
+static const char short_gen119[] = "**nullptr";
+static const char long_gen119[]  = "Null pointer";
+static const char short_gen120[] = "**nullptrtype";
+static const char long_gen120[]  = "Null pointer";
+static const char short_gen121[] = "**op";
+static const char long_gen121[]  = "Invalid MPI_Op";
+static const char short_gen122[] = "**open";
+static const char long_gen122[]  = "open failed";
+static const char short_gen123[] = "**opnotpredefined";
+static const char long_gen123[]  = "only predefined ops are valid";
+static const char short_gen124[] = "**opundefined";
+static const char long_gen124[]  = "MPI_Op operation not defined for this datatype ";
+static const char short_gen125[] = "**opundefined_rma";
+static const char long_gen125[]  = "RMA target received unknown RMA operation";
+static const char short_gen126[] = "**other";
+static const char long_gen126[]  = "Other MPI error";
+static const char short_gen127[] = "**permattr";
+static const char long_gen127[]  = "Cannot set permanent attribute";
+static const char short_gen128[] = "**permop";
+static const char long_gen128[]  = "Cannot free permanent MPI_Op ";
+static const char short_gen129[] = "**pmi_finalize";
+static const char long_gen129[]  = "PMI_Finalize failed";
+static const char short_gen130[] = "**port";
+static const char long_gen130[]  = "Invalid port";
+static const char short_gen131[] = "**rangedup";
+static const char long_gen131[]  = "The range array specifies duplicate entries";
+static const char short_gen132[] = "**rangeendinvalid";
+static const char long_gen132[]  = "Some element of a range array is either negative or too large";
+static const char short_gen133[] = "**rangestartinvalid";
+static const char long_gen133[]  = "Some element of a range array is either negative or too large";
+static const char short_gen134[] = "**rank";
+static const char long_gen134[]  = "Invalid rank";
+static const char short_gen135[] = "**rankarray";
+static const char long_gen135[]  = "Invalid rank in rank array";
+static const char short_gen136[] = "**rankdup";
+static const char long_gen136[]  = "Duplicate ranks in rank array ";
+static const char short_gen137[] = "**ranklocal";
+static const char long_gen137[]  = "Error specifying local_leader ";
+static const char short_gen138[] = "**rankremote";
+static const char long_gen138[]  = "Error specifying remote_leader ";
+static const char short_gen139[] = "**request";
+static const char long_gen139[]  = "Invalid MPI_Request";
+static const char short_gen140[] = "**requestnotpersist";
+static const char long_gen140[]  = "Request is not persistent in MPI_Start or MPI_Startall.";
+static const char short_gen141[] = "**requestpersistactive";
+static const char long_gen141[]  = "Persistent request passed to MPI_Start or MPI_Startall is already active.";
+static const char short_gen142[] = "**rmaconflict";
+static const char long_gen142[]  = "Conflicting accesses to window ";
+static const char short_gen143[] = "**rmadisp";
+static const char long_gen143[]  = "Invalid displacement argument in RMA call ";
+static const char short_gen144[] = "**rmasize";
+static const char long_gen144[]  = "Invalid size argument in RMA call";
+static const char short_gen145[] = "**rmasync";
+static const char long_gen145[]  = "Wrong synchronization of RMA calls ";
+static const char short_gen146[] = "**root";
+static const char long_gen146[]  = "Invalid root";
+static const char short_gen147[] = "**servicename";
+static const char long_gen147[]  = "Attempt to lookup an unknown service name ";
+static const char short_gen148[] = "**shmat";
+static const char long_gen148[]  = "shmat failed";
+static const char short_gen149[] = "**shmget";
+static const char long_gen149[]  = "shmget failed";
+static const char short_gen150[] = "**sock|poll|eqmalloc";
+static const char long_gen150[]  = "MPIU_Malloc failed to allocate memory for an event queue structure";
+static const char short_gen151[] = "**spawn";
+static const char long_gen151[]  = "Error in spawn call";
+static const char short_gen152[] = "**stride";
+static const char long_gen152[]  = "Range does not terminate";
+static const char short_gen153[] = "**stridezero";
+static const char long_gen153[]  = "Zero stride is invalid";
+static const char short_gen154[] = "**success";
+static const char long_gen154[]  = "No MPI error";
+static const char short_gen155[] = "**tag";
+static const char long_gen155[]  = "Invalid tag";
+static const char short_gen156[] = "**toomanycomm";
+static const char long_gen156[]  = "Too many communicators";
+static const char short_gen157[] = "**topology";
+static const char long_gen157[]  = "Invalid topology";
+static const char short_gen158[] = "**topotoolarge";
+static const char long_gen158[]  = "Topology size is greater than communicator size";
+static const char short_gen159[] = "**truncate";
+static const char long_gen159[]  = "Message truncated";
+static const char short_gen160[] = "**typenamelen";
+static const char long_gen160[]  = " Specified datatype name is too long";
+static const char short_gen161[] = "**unknown";
+static const char long_gen161[]  = "Unknown error.  Please file a bug report.";
+static const char short_gen162[] = "**win";
+static const char long_gen162[]  = "Invalid MPI_Win";
+
+static const int generic_msgs_len = 163;
 static msgpair generic_err_msgs[] = {
-{ short0, long0 },
-{ short1, long1 },
-{ short2, long2 },
-{ short3, long3 },
-{ short4, long4 },
-{ short5, long5 },
-{ short6, long6 },
-{ short7, long7 },
-{ short8, long8 },
-{ short9, long9 },
-{ short10, long10 },
-{ short11, long11 },
-{ short12, long12 },
-{ short13, long13 },
-{ short14, long14 },
-{ short15, long15 },
-{ short16, long16 },
-{ short17, long17 },
-{ short18, long18 },
-{ short19, long19 },
-{ short20, long20 },
-{ short21, long21 },
-{ short22, long22 },
-{ short23, long23 },
-{ short24, long24 },
-{ short25, long25 },
-{ short26, long26 },
-{ short27, long27 },
-{ short28, long28 },
-{ short29, long29 },
-{ short30, long30 },
-{ short31, long31 },
-{ short32, long32 },
-{ short33, long33 },
-{ short34, long34 },
-{ short35, long35 },
-{ short36, long36 },
-{ short37, long37 },
-{ short38, long38 },
-{ short39, long39 },
-{ short40, long40 },
-{ short41, long41 },
-{ short42, long42 },
-{ short43, long43 },
-{ short44, long44 },
-{ short45, long45 },
-{ short46, long46 },
-{ short47, long47 },
-{ short48, long48 },
-{ short49, long49 },
-{ short50, long50 },
-{ short51, long51 },
-{ short52, long52 },
-{ short53, long53 },
-{ short54, long54 },
-{ short55, long55 },
-{ short56, long56 },
-{ short57, long57 },
-{ short58, long58 },
-{ short59, long59 },
-{ short60, long60 },
-{ short61, long61 },
-{ short62, long62 },
-{ short63, long63 },
-{ short64, long64 },
-{ short65, long65 },
-{ short66, long66 },
-{ short67, long67 },
-{ short68, long68 },
-{ short69, long69 },
-{ short70, long70 },
-{ short71, long71 },
-{ short72, long72 },
-{ short73, long73 },
-{ short74, long74 },
-{ short75, long75 },
-{ short76, long76 },
-{ short77, long77 },
-{ short78, long78 },
-{ short79, long79 },
-{ short80, long80 },
-{ short81, long81 },
-{ short82, long82 },
-{ short83, long83 },
-{ short84, long84 },
-{ short85, long85 },
-{ short86, long86 },
-{ short87, long87 },
-{ short88, long88 },
-{ short89, long89 },
-{ short90, long90 },
-{ short91, long91 },
-{ short92, long92 },
-{ short93, long93 },
-{ short94, long94 },
-{ short95, long95 },
-{ short96, long96 },
-{ short97, long97 },
-{ short98, long98 },
-{ short99, long99 },
-{ short100, long100 },
-{ short101, long101 },
-{ short102, long102 },
-{ short103, long103 },
-{ short104, long104 },
-{ short105, long105 },
-{ short106, long106 },
-{ short107, long107 },
-{ short108, long108 },
-{ short109, long109 },
-{ short110, long110 },
-{ short111, long111 },
-{ short112, long112 },
-{ short113, long113 },
-{ short114, long114 },
-{ short115, long115 },
-{ short116, long116 },
-{ short117, long117 },
-{ short118, long118 },
-{ short119, long119 },
-{ short120, long120 },
-{ short121, long121 },
-{ short122, long122 },
-{ short123, long123 },
-{ short124, long124 },
-{ short125, long125 },
-{ short126, long126 },
-{ short127, long127 },
-{ short128, long128 },
-{ short129, long129 },
-{ short130, long130 },
-{ short131, long131 },
-{ short132, long132 },
-{ short133, long133 },
-{ short134, long134 },
-{ short135, long135 },
-{ short136, long136 },
-{ short137, long137 },
-{ short138, long138 },
-{ short139, long139 },
-{ short140, long140 },
-{ short141, long141 },
-{ short142, long142 },
-{ short143, long143 },
-{ short144, long144 },
-{ short145, long145 },
-{ short146, long146 },
-{ short147, long147 },
-{ short148, long148 },
-{ short149, long149 },
-{ short150, long150 },
-{ short151, long151 },
-{ short152, long152 },
-{ short153, long153 },
-{ short154, long154 },
-{ short155, long155 },
-{ short156, long156 },
-{ short157, long157 },
-{ short158, long158 },
-{ short159, long159 },
+{ short_gen0, long_gen0 },
+{ short_gen1, long_gen1 },
+{ short_gen2, long_gen2 },
+{ short_gen3, long_gen3 },
+{ short_gen4, long_gen4 },
+{ short_gen5, long_gen5 },
+{ short_gen6, long_gen6 },
+{ short_gen7, long_gen7 },
+{ short_gen8, long_gen8 },
+{ short_gen9, long_gen9 },
+{ short_gen10, long_gen10 },
+{ short_gen11, long_gen11 },
+{ short_gen12, long_gen12 },
+{ short_gen13, long_gen13 },
+{ short_gen14, long_gen14 },
+{ short_gen15, long_gen15 },
+{ short_gen16, long_gen16 },
+{ short_gen17, long_gen17 },
+{ short_gen18, long_gen18 },
+{ short_gen19, long_gen19 },
+{ short_gen20, long_gen20 },
+{ short_gen21, long_gen21 },
+{ short_gen22, long_gen22 },
+{ short_gen23, long_gen23 },
+{ short_gen24, long_gen24 },
+{ short_gen25, long_gen25 },
+{ short_gen26, long_gen26 },
+{ short_gen27, long_gen27 },
+{ short_gen28, long_gen28 },
+{ short_gen29, long_gen29 },
+{ short_gen30, long_gen30 },
+{ short_gen31, long_gen31 },
+{ short_gen32, long_gen32 },
+{ short_gen33, long_gen33 },
+{ short_gen34, long_gen34 },
+{ short_gen35, long_gen35 },
+{ short_gen36, long_gen36 },
+{ short_gen37, long_gen37 },
+{ short_gen38, long_gen38 },
+{ short_gen39, long_gen39 },
+{ short_gen40, long_gen40 },
+{ short_gen41, long_gen41 },
+{ short_gen42, long_gen42 },
+{ short_gen43, long_gen43 },
+{ short_gen44, long_gen44 },
+{ short_gen45, long_gen45 },
+{ short_gen46, long_gen46 },
+{ short_gen47, long_gen47 },
+{ short_gen48, long_gen48 },
+{ short_gen49, long_gen49 },
+{ short_gen50, long_gen50 },
+{ short_gen51, long_gen51 },
+{ short_gen52, long_gen52 },
+{ short_gen53, long_gen53 },
+{ short_gen54, long_gen54 },
+{ short_gen55, long_gen55 },
+{ short_gen56, long_gen56 },
+{ short_gen57, long_gen57 },
+{ short_gen58, long_gen58 },
+{ short_gen59, long_gen59 },
+{ short_gen60, long_gen60 },
+{ short_gen61, long_gen61 },
+{ short_gen62, long_gen62 },
+{ short_gen63, long_gen63 },
+{ short_gen64, long_gen64 },
+{ short_gen65, long_gen65 },
+{ short_gen66, long_gen66 },
+{ short_gen67, long_gen67 },
+{ short_gen68, long_gen68 },
+{ short_gen69, long_gen69 },
+{ short_gen70, long_gen70 },
+{ short_gen71, long_gen71 },
+{ short_gen72, long_gen72 },
+{ short_gen73, long_gen73 },
+{ short_gen74, long_gen74 },
+{ short_gen75, long_gen75 },
+{ short_gen76, long_gen76 },
+{ short_gen77, long_gen77 },
+{ short_gen78, long_gen78 },
+{ short_gen79, long_gen79 },
+{ short_gen80, long_gen80 },
+{ short_gen81, long_gen81 },
+{ short_gen82, long_gen82 },
+{ short_gen83, long_gen83 },
+{ short_gen84, long_gen84 },
+{ short_gen85, long_gen85 },
+{ short_gen86, long_gen86 },
+{ short_gen87, long_gen87 },
+{ short_gen88, long_gen88 },
+{ short_gen89, long_gen89 },
+{ short_gen90, long_gen90 },
+{ short_gen91, long_gen91 },
+{ short_gen92, long_gen92 },
+{ short_gen93, long_gen93 },
+{ short_gen94, long_gen94 },
+{ short_gen95, long_gen95 },
+{ short_gen96, long_gen96 },
+{ short_gen97, long_gen97 },
+{ short_gen98, long_gen98 },
+{ short_gen99, long_gen99 },
+{ short_gen100, long_gen100 },
+{ short_gen101, long_gen101 },
+{ short_gen102, long_gen102 },
+{ short_gen103, long_gen103 },
+{ short_gen104, long_gen104 },
+{ short_gen105, long_gen105 },
+{ short_gen106, long_gen106 },
+{ short_gen107, long_gen107 },
+{ short_gen108, long_gen108 },
+{ short_gen109, long_gen109 },
+{ short_gen110, long_gen110 },
+{ short_gen111, long_gen111 },
+{ short_gen112, long_gen112 },
+{ short_gen113, long_gen113 },
+{ short_gen114, long_gen114 },
+{ short_gen115, long_gen115 },
+{ short_gen116, long_gen116 },
+{ short_gen117, long_gen117 },
+{ short_gen118, long_gen118 },
+{ short_gen119, long_gen119 },
+{ short_gen120, long_gen120 },
+{ short_gen121, long_gen121 },
+{ short_gen122, long_gen122 },
+{ short_gen123, long_gen123 },
+{ short_gen124, long_gen124 },
+{ short_gen125, long_gen125 },
+{ short_gen126, long_gen126 },
+{ short_gen127, long_gen127 },
+{ short_gen128, long_gen128 },
+{ short_gen129, long_gen129 },
+{ short_gen130, long_gen130 },
+{ short_gen131, long_gen131 },
+{ short_gen132, long_gen132 },
+{ short_gen133, long_gen133 },
+{ short_gen134, long_gen134 },
+{ short_gen135, long_gen135 },
+{ short_gen136, long_gen136 },
+{ short_gen137, long_gen137 },
+{ short_gen138, long_gen138 },
+{ short_gen139, long_gen139 },
+{ short_gen140, long_gen140 },
+{ short_gen141, long_gen141 },
+{ short_gen142, long_gen142 },
+{ short_gen143, long_gen143 },
+{ short_gen144, long_gen144 },
+{ short_gen145, long_gen145 },
+{ short_gen146, long_gen146 },
+{ short_gen147, long_gen147 },
+{ short_gen148, long_gen148 },
+{ short_gen149, long_gen149 },
+{ short_gen150, long_gen150 },
+{ short_gen151, long_gen151 },
+{ short_gen152, long_gen152 },
+{ short_gen153, long_gen153 },
+{ short_gen154, long_gen154 },
+{ short_gen155, long_gen155 },
+{ short_gen156, long_gen156 },
+{ short_gen157, long_gen157 },
+{ short_gen158, long_gen158 },
+{ short_gen159, long_gen159 },
+{ short_gen160, long_gen160 },
+{ short_gen161, long_gen161 },
+{ short_gen162, long_gen162 }
 };
 #endif
+
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC
-static const char short_spc2[] = "**argarrayneg %s %d %d";
-static const char long_spc2[]  = "Negative value in array %s[%d] (value is %d)";
-static const char short_spc3[] = "**argneg %s %d";
-static const char long_spc3[]  = "Invalid value for %s, must be non-negative but is %d";
-static const char short_spc4[] = "**argrange %s %d %d";
-static const char long_spc4[]  = "Argument %s has value %d but must be within [0,%d]";
-static const char short_spc8[] = "**bsendbufsmall %d %d";
-static const char long_spc8[]  = "Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)";
-static const char short_spc10[] = "**bufbsend %d %d";
-static const char long_spc10[]  = "Insufficient space in Bsend buffer; requested %d; totalbuffer size is %d";
-static const char short_spc14[] = "**cartcoordinvalid %d %d %d";
-static const char long_spc14[]  = " Cartesian coordinate for the %d coordinateis %d but must be between 0 and %d";
-static const char short_spc15[] = "**cartdim %d %d";
-static const char long_spc15[]  = "Size of the communicator (%d) is smaller than the size of theCartesian topology (%d)";
-static const char short_spc17[] = "**ch3|mm|CreateFileMapping %d";
-static const char long_spc17[]  = "CreateFileMapping failed, error %d";
-static const char short_spc18[] = "**ch3|mm|MPIDI_CH3I_SHM_Attach_to_mem %d";
-static const char long_spc18[]  = "MPIDI_CH3I_SHM_Attach_to_mem failed, error %d";
-static const char short_spc20[] = "**ch3|mm|MapViewOfFileEx %d";
-static const char long_spc20[]  = "MapViewOfFileEx failed, error %d";
-static const char short_spc21[] = "**ch3|mm|OpenProcess %d %d";
-static const char long_spc21[]  = "OpenProcess failed for process %d, error %d";
-static const char short_spc22[] = "**ch3|mm|badpacket %d";
-static const char long_spc22[]  = "Received a packet of unknown type (%d)";
-static const char short_spc24[] = "**ch3|mm|business_card %s";
-static const char long_spc24[]  = "Invalid business card (%s)";
-static const char short_spc27[] = "**ch3|mm|connfailed %d %d";
-static const char long_spc27[]  = "Failed to connect to remote process %d-%d";
-static const char short_spc30[] = "**ch3|mm|failure %d";
+static const char short_spc0[] = "**CreateFileMapping %d";
+static const char long_spc0[]  = "CreateFileMapping failed, error %d";
+static const char short_spc1[] = "**MPIDI_CH3I_SHM_Attach_to_mem %d";
+static const char long_spc1[]  = "MPIDI_CH3I_SHM_Attach_to_mem failed, error %d";
+static const char short_spc2[] = "**MapViewOfFileEx %d";
+static const char long_spc2[]  = "MapViewOfFileEx failed, error %d";
+static const char short_spc3[] = "**OpenProcess %d %d";
+static const char long_spc3[]  = "OpenProcess failed for process %d, error %d";
+static const char short_spc4[] = "**arg %s";
+static const char long_spc4[]  = "Invalid argument %s";
+static const char short_spc5[] = "**argarrayneg %s %d %d";
+static const char long_spc5[]  = "Negative value in array %s[%d] (value is %d)";
+static const char short_spc6[] = "**argneg %s %d";
+static const char long_spc6[]  = "Invalid value for %s, must be non-negative but is %d";
+static const char short_spc7[] = "**argnonpos %s %d";
+static const char long_spc7[]  = "Invalid value for %s; must be positive but is %d";
+static const char short_spc8[] = "**argrange %s %d %d";
+static const char long_spc8[]  = "Argument %s has value %d but must be within [0,%d]";
+static const char short_spc9[] = "**badpacket %d";
+static const char long_spc9[]  = "Received a packet of unknown type (%d)";
+static const char short_spc10[] = "**bsendbufsmall %d %d";
+static const char long_spc10[]  = "Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)";
+static const char short_spc11[] = "**bufbsend %d %d";
+static const char long_spc11[]  = "Insufficient space in Bsend buffer; requested %d; total buffer size is %d";
+static const char short_spc12[] = "**business_card %s";
+static const char long_spc12[]  = "Invalid business card (%s)";
+static const char short_spc13[] = "**cartcoordinvalid %d %d %d";
+static const char long_spc13[]  = " Cartesian coordinate for the %d coordinate is %d but must be between 0 and %d";
+static const char short_spc14[] = "**cartdim %d %d";
+static const char long_spc14[]  = "Size of the communicator (%d) is smaller than the size of the Cartesian topology (%d)";
+static const char short_spc15[] = "**ch3|sock|badbuscard %s";
+static const char long_spc15[]  = "[ch3:sock] GetHostAndPort - Invalid business card (%s)";
+static const char short_spc16[] = "**ch3|sock|badpacket %d";
+static const char long_spc16[]  = "[ch3:sock] received packet of unknown type (%d)";
+static const char short_spc17[] = "**ch3|sock|connfailed %d %d";
+static const char long_spc17[]  = "[ch3:sock] failed to connnect to remote process %d:%d";
+static const char short_spc18[] = "**ch3|sock|connrefused %d %d %s";
+static const char long_spc18[]  = "[ch3:sock] failed to connect to process %d:%d (%s)";
+static const char short_spc19[] = "**ch3|sock|failure %d";
+static const char long_spc19[]  = "[ch3:sock] unknown failure, sock_errno=%d";
+static const char short_spc20[] = "**ch3|sock|hostlookup %d %d %s";
+static const char long_spc20[]  = "[ch3:sock] failed to obtain host information for process %d:%d (%s)";
+static const char short_spc21[] = "**ch3|sock|pmi_finalize %d";
+static const char long_spc21[]  = "PMI_Finalize failed, error %d";
+static const char short_spc22[] = "**commperm %s";
+static const char long_spc22[]  = "Cannot free permanent communicator %s";
+static const char short_spc23[] = "**connfailed %d %d";
+static const char long_spc23[]  = "Failed to connect to remote process %d-%d";
+static const char short_spc24[] = "**connrefused %d %d %s";
+static const char long_spc24[]  = "Connection refused for process group %d, rank %d, business card <%s>";
+static const char short_spc25[] = "**countneg %d";
+static const char long_spc25[]  = "Negative count, value is %d";
+static const char short_spc26[] = "**dims %d";
+static const char long_spc26[]  = "Invalid dimension argument (value is %d)";
+static const char short_spc27[] = "**dimsmany %d %d";
+static const char long_spc27[]  = "Number of dimensions %d is too large (maximum is %d)";
+static const char short_spc28[] = "**dupprocesses %d";
+static const char long_spc28[]  = "Local and remote groups in MPI_Intercomm_create must not contain the same processes; both contain process %d";
+static const char short_spc29[] = "**edgeoutrange %d %d %d";
+static const char long_spc29[]  = "Edge index edges[%d] is %d but must be nonnegative and less than %d";
+static const char short_spc30[] = "**failure %d";
 static const char long_spc30[]  = "unknown failure, error %d";
-static const char short_spc32[] = "**ch3|mm|open %s %d %d";
-static const char long_spc32[]  = "open(%s) failed for process %d, error %d";
-static const char short_spc33[] = "**ch3|mm|pmi_finalize %d";
-static const char long_spc33[]  = "PMI_Finalize failed, error %d";
-static const char short_spc34[] = "**ch3|mm|shmat %d";
-static const char long_spc34[]  = "shmat failed, error %d";
-static const char short_spc35[] = "**ch3|mm|shmget %d";
-static const char long_spc35[]  = "shmget failed, error %d";
-static const char short_spc36[] = "**ch3|shm|CreateFileMapping %d";
-static const char long_spc36[]  = "CreateFileMapping failed, error %d";
-static const char short_spc38[] = "**ch3|shm|OpenProcess %d %d";
-static const char long_spc38[]  = "OpenProcess failed for process %d, error %d";
-static const char short_spc39[] = "**ch3|shm|open %s %d %d";
-static const char long_spc39[]  = "open(%s) failed for process %d, error %d";
-static const char short_spc40[] = "**ch3|shm|pmi_finalize %d";
-static const char long_spc40[]  = "PMI_Finalize failed, error %d";
-static const char short_spc41[] = "**ch3|shm|shmat %d";
-static const char long_spc41[]  = "shmat failed, error %d";
-static const char short_spc42[] = "**ch3|shm|shmget %d";
-static const char long_spc42[]  = "shmget failed, error %d";
-static const char short_spc43[] = "**ch3|sock|badbuscard %s";
-static const char long_spc43[]  = "[ch3_sock] GetHostAndPort - Invalid business card (%s)";
-static const char short_spc44[] = "**ch3|sock|badpacket %d";
-static const char long_spc44[]  = "[ch3_sock] received packet of unknown type (%d)";
-static const char short_spc48[] = "**ch3|sock|connfailed %d %d";
-static const char long_spc48[]  = "[ch3_sock] failed to connnect to remote process %d-%d";
-static const char short_spc49[] = "**ch3|sock|connrefused %d %d %s";
-static const char long_spc49[]  = "[ch3_sock] failed to connect to process %d-%d (%s)";
-static const char short_spc52[] = "**ch3|sock|failure %d";
-static const char long_spc52[]  = "[ch3_sock] unknown failure, sock_errno=%d";
-static const char short_spc53[] = "**ch3|sock|hostlookup %d %d %s";
-static const char long_spc53[]  = "[ch3_sock] failed to obtain host information for process %d-%d (%s)";
-static const char short_spc54[] = "**ch3|sock|pmi_finalize %d";
-static const char long_spc54[]  = "PMI_Finalize failed, error %d";
-static const char short_spc58[] = "**commperm %s";
-static const char long_spc58[]  = "Cannot free permanent communicator %s";
-static const char short_spc63[] = "**dims %d";
-static const char long_spc63[]  = "Invalid dimension argument (value is %d)";
-static const char short_spc64[] = "**dimsmany %d %d";
-static const char long_spc64[]  = "Number of dimensions %d is too large (maximum is %d)";
-static const char short_spc69[] = "**dupprocesses %d";
-static const char long_spc69[]  = "Local and remote groups in MPI_Intercomm_create must notcontain the same processes; both contain process %d";
-static const char short_spc70[] = "**edgeoutrange %d %d %d";
-static const char long_spc70[]  = "Edge index edges[%d] is %d but must be nonnegativeand less than %d";
-static const char short_spc84[] = "**groupnotincomm %d";
-static const char long_spc84[]  = "Rank %d of the specified group is not a member of this communicator";
-static const char short_spc85[] = "**indexneg %d %d";
-static const char long_spc85[]  = "Index value for index[%d] is %d but must be nonnegative";
-static const char short_spc86[] = "**indexnonmonotone %d %d %d";
-static const char long_spc86[]  = "Index values in graph topology must be monotone nondecreasing but index[%d] is %d but the next index value is %d";
-static const char short_spc92[] = "**infonkey %d %d";
-static const char long_spc92[]  = "Requested %dth key but this MPI_Info only has %d keys";
-static const char short_spc93[] = "**infonokey %s";
-static const char long_spc93[]  = "MPI_Info key %s is not defined ";
-static const char short_spc101[] = "**intercommcoll %s";
-static const char long_spc101[]  = "Intercommunicator collective operation for %s has not been implemented";
-static const char short_spc102[] = "**intern %s";
-static const char long_spc102[]  = "Internal MPI error!  %s";
-static const char short_spc109[] = "**namepublish %s";
-static const char long_spc109[]  = "Unable to publish service name %s";
-static const char short_spc110[] = "**namepubnotpub %s";
-static const char long_spc110[]  = "Lookup failed for service name %s";
-static const char short_spc121[] = "**notsame %s %s";
-static const char long_spc121[]  = "Inconsistent arguments %s to collective routine %s";
-static const char short_spc122[] = "**nulledge %d %d";
-static const char long_spc122[]  = "Edge for node %d (entry edges[%d]) is to itself";
-static const char short_spc123[] = "**nullptr %s";
-static const char long_spc123[]  = "Null pointer in parameter %s";
-static const char short_spc125[] = "**opundefined %d";
-static const char long_spc125[]  = "only predefined ops valid (op = %d)";
-static const char short_spc126[] = "**opundefined_rma %d";
-static const char long_spc126[]  = "RMA target received unknown RMA operation type %d";
-static const char short_spc130[] = "**pmi_finalize %d";
-static const char long_spc130[]  = "PMI_Finalize failed, error %d";
-static const char short_spc132[] = "**rangedup %d %d %d";
-static const char long_spc132[]  = "The range array specifies duplicate entries; process %d specified in range array %d was previously specified in range array %d";
-static const char short_spc133[] = "**rangeendinvalid %d %d %d";
-static const char long_spc133[]  = "The %dth element of a range array ends at %d but must be nonnegative and less than %d";
-static const char short_spc134[] = "**rangestartinvalid %d %d %d";
-static const char long_spc134[]  = "The %dth element of a range array starts at %d but must be nonnegative and less than %d";
-static const char short_spc135[] = "**rank %d %d";
-static const char long_spc135[]  = "Invalid rank has value %d but must be nonnegative and less than %d";
-static const char short_spc136[] = "**rankarray %d %d %d";
-static const char long_spc136[]  = "Invalid rank in rank array[%d], value is %d but must be in 0 to %d.";
-static const char short_spc137[] = "**rankdup %d %d %d";
-static const char long_spc137[]  = "Duplicate ranks in rank array at index %d, has value %d which isalso the value at index %d";
-static const char short_spc138[] = "**ranklocal %d %d";
-static const char long_spc138[]  = "Error specifying local_leader; rank given was %d but mustbe in the range 0 to %d";
-static const char short_spc139[] = "**rankremote %d %d";
-static const char long_spc139[]  = "Error specifying remote_leader; rank given was %d but mustbe in the range 0 to %d";
-static const char short_spc144[] = "**rmasize %d";
-static const char long_spc144[]  = "Invalid size argument in RMA call (value is %d)";
-static const char short_spc149[] = "**stride %d %d %d";
-static const char long_spc149[]  = "Range (start = %d, end = %d, stride = %d) does not terminate";
-static const char short_spc155[] = "**topotoolarge %d %d";
-static const char long_spc155[]  = "Topology size %d is larger than communicator size (%d)";
-static const char short_spc157[] = "**typenamelen %d";
-static const char long_spc157[]  = " Specified datatype name is too long (%d characters)";
-/* This array parallels the generic_err_msgs array, with
- null entries where there is no special instance-specific message */
+static const char short_spc31[] = "**groupnotincomm %d";
+static const char long_spc31[]  = "Rank %d of the specified group is not a member of this communicator";
+static const char short_spc32[] = "**hostlookup %d %d %s";
+static const char long_spc32[]  = "Host lookup failed for process group %d, rank %d, business card <%s>";
+static const char short_spc33[] = "**indexneg %d %d";
+static const char long_spc33[]  = "Index value for index[%d] is %d but must be nonnegative";
+static const char short_spc34[] = "**indexnonmonotone %d %d %d";
+static const char long_spc34[]  = "Index values in graph topology must be monotone nondecreasing but index[%d] is %d but the next index value is %d";
+static const char short_spc35[] = "**infonkey %d %d";
+static const char long_spc35[]  = "Requested key %d but this MPI_Info only has %d keys";
+static const char short_spc36[] = "**infonokey %s";
+static const char long_spc36[]  = "MPI_Info key %s is not defined ";
+static const char short_spc37[] = "**intercommcoll %s";
+static const char long_spc37[]  = "Intercommunicator collective operation for %s has not been implemented";
+static const char short_spc38[] = "**intern %s";
+static const char long_spc38[]  = "Internal MPI error!  %s";
+static const char short_spc39[] = "**namepublish %s";
+static const char long_spc39[]  = "Unable to publish service name %s";
+static const char short_spc40[] = "**namepubnotpub %s";
+static const char long_spc40[]  = "Lookup failed for service name %s";
+static const char short_spc41[] = "**notsame %s %s";
+static const char long_spc41[]  = "Inconsistent arguments %s to collective routine %s";
+static const char short_spc42[] = "**nulledge %d %d";
+static const char long_spc42[]  = "Edge for node %d (entry edges[%d]) is to itself";
+static const char short_spc43[] = "**nullptr %s";
+static const char long_spc43[]  = "Null pointer in parameter %s";
+static const char short_spc44[] = "**nullptrtype %s";
+static const char long_spc44[]  = "Null %s pointer";
+static const char short_spc45[] = "**open %s %d %d";
+static const char long_spc45[]  = "open(%s) failed for process %d, error %d";
+static const char short_spc46[] = "**opnotpredefined %d";
+static const char long_spc46[]  = "only predefined ops are valid (op = %d)";
+static const char short_spc47[] = "**opundefined %s";
+static const char long_spc47[]  = "MPI_Op %s operation not defined for this datatype ";
+static const char short_spc48[] = "**opundefined_rma %d";
+static const char long_spc48[]  = "RMA target received unknown RMA operation type %d";
+static const char short_spc49[] = "**pmi_finalize %d";
+static const char long_spc49[]  = "PMI_Finalize failed, error %d";
+static const char short_spc50[] = "**rangedup %d %d %d";
+static const char long_spc50[]  = "The range array specifies duplicate entries; process %d specified in range array %d was previously specified in range array %d";
+static const char short_spc51[] = "**rangeendinvalid %d %d %d";
+static const char long_spc51[]  = "The %dth element of a range array ends at %d but must be nonnegative and less than %d";
+static const char short_spc52[] = "**rangestartinvalid %d %d %d";
+static const char long_spc52[]  = "The %dth element of a range array starts at %d but must be nonnegative and less than %d";
+static const char short_spc53[] = "**rank %d %d";
+static const char long_spc53[]  = "Invalid rank has value %d but must be nonnegative and less than %d";
+static const char short_spc54[] = "**rankarray %d %d %d";
+static const char long_spc54[]  = "Invalid rank in rank array at index %d; value is %d but must be in the range 0 to %d";
+static const char short_spc55[] = "**rankdup %d %d %d";
+static const char long_spc55[]  = "Duplicate ranks in rank array at index %d, has value %d which is also the value at index %d";
+static const char short_spc56[] = "**ranklocal %d %d";
+static const char long_spc56[]  = "Error specifying local_leader; rank given was %d but must be in the range 0 to %d";
+static const char short_spc57[] = "**rankremote %d %d";
+static const char long_spc57[]  = "Error specifying remote_leader; rank given was %d but must be in the range 0 to %d";
+static const char short_spc58[] = "**rmasize %d";
+static const char long_spc58[]  = "Invalid size argument in RMA call (value is %d)";
+static const char short_spc59[] = "**root %d";
+static const char long_spc59[]  = "Invalid root (value given was %d)";
+static const char short_spc60[] = "**shmat %d";
+static const char long_spc60[]  = "shmat failed, error %d";
+static const char short_spc61[] = "**shmget %d";
+static const char long_spc61[]  = "shmget failed, error %d";
+static const char short_spc62[] = "**stride %d %d %d";
+static const char long_spc62[]  = "Range (start = %d, end = %d, stride = %d) does not terminate";
+static const char short_spc63[] = "**tag %d";
+static const char long_spc63[]  = "Invalid tag, value is %d";
+static const char short_spc64[] = "**topotoolarge %d %d";
+static const char long_spc64[]  = "Topology size %d is larger than communicator size (%d)";
+static const char short_spc65[] = "**typenamelen %d";
+static const char long_spc65[]  = " Specified datatype name is too long (%d characters)";
+
+static const int specific_msgs_len = 66;
 static msgpair specific_err_msgs[] = {
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc0, long_spc0 },
+{ short_spc1, long_spc1 },
 { short_spc2, long_spc2 },
 { short_spc3, long_spc3 },
 { short_spc4, long_spc4 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc5, long_spc5 },
+{ short_spc6, long_spc6 },
+{ short_spc7, long_spc7 },
 { short_spc8, long_spc8 },
-{ 0, 0 },
+{ short_spc9, long_spc9 },
 { short_spc10, long_spc10 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc11, long_spc11 },
+{ short_spc12, long_spc12 },
+{ short_spc13, long_spc13 },
 { short_spc14, long_spc14 },
 { short_spc15, long_spc15 },
-{ 0, 0 },
+{ short_spc16, long_spc16 },
 { short_spc17, long_spc17 },
 { short_spc18, long_spc18 },
-{ 0, 0 },
+{ short_spc19, long_spc19 },
 { short_spc20, long_spc20 },
 { short_spc21, long_spc21 },
 { short_spc22, long_spc22 },
-{ 0, 0 },
+{ short_spc23, long_spc23 },
 { short_spc24, long_spc24 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc25, long_spc25 },
+{ short_spc26, long_spc26 },
 { short_spc27, long_spc27 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc28, long_spc28 },
+{ short_spc29, long_spc29 },
 { short_spc30, long_spc30 },
-{ 0, 0 },
+{ short_spc31, long_spc31 },
 { short_spc32, long_spc32 },
 { short_spc33, long_spc33 },
 { short_spc34, long_spc34 },
 { short_spc35, long_spc35 },
 { short_spc36, long_spc36 },
-{ 0, 0 },
+{ short_spc37, long_spc37 },
 { short_spc38, long_spc38 },
 { short_spc39, long_spc39 },
 { short_spc40, long_spc40 },
@@ -673,130 +688,37 @@ static msgpair specific_err_msgs[] = {
 { short_spc42, long_spc42 },
 { short_spc43, long_spc43 },
 { short_spc44, long_spc44 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc45, long_spc45 },
+{ short_spc46, long_spc46 },
+{ short_spc47, long_spc47 },
 { short_spc48, long_spc48 },
 { short_spc49, long_spc49 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc50, long_spc50 },
+{ short_spc51, long_spc51 },
 { short_spc52, long_spc52 },
 { short_spc53, long_spc53 },
 { short_spc54, long_spc54 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc55, long_spc55 },
+{ short_spc56, long_spc56 },
+{ short_spc57, long_spc57 },
 { short_spc58, long_spc58 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc59, long_spc59 },
+{ short_spc60, long_spc60 },
+{ short_spc61, long_spc61 },
+{ short_spc62, long_spc62 },
 { short_spc63, long_spc63 },
 { short_spc64, long_spc64 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc69, long_spc69 },
-{ short_spc70, long_spc70 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc84, long_spc84 },
-{ short_spc85, long_spc85 },
-{ short_spc86, long_spc86 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc92, long_spc92 },
-{ short_spc93, long_spc93 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc101, long_spc101 },
-{ short_spc102, long_spc102 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc109, long_spc109 },
-{ short_spc110, long_spc110 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc121, long_spc121 },
-{ short_spc122, long_spc122 },
-{ short_spc123, long_spc123 },
-{ 0, 0 },
-{ short_spc125, long_spc125 },
-{ short_spc126, long_spc126 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc130, long_spc130 },
-{ 0, 0 },
-{ short_spc132, long_spc132 },
-{ short_spc133, long_spc133 },
-{ short_spc134, long_spc134 },
-{ short_spc135, long_spc135 },
-{ short_spc136, long_spc136 },
-{ short_spc137, long_spc137 },
-{ short_spc138, long_spc138 },
-{ short_spc139, long_spc139 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc144, long_spc144 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc149, long_spc149 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ 0, 0 },
-{ short_spc155, long_spc155 },
-{ 0, 0 },
-{ short_spc157, long_spc157 },
-{ 0, 0 },
-{ 0, 0 },
+{ short_spc65, long_spc65 }
 };
 #endif
+
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
 #define MPIR_MAX_ERROR_CLASS_INDEX 54
 static int class_to_index[] = {
-151,12,60,66,152,56,135,146,83,124,
-154,63,1,158,156,127,102,100,99,140,
-72,73,76,59,61,74,75,71,87,88,
-94,93,103,111,0,121,78,77,131,80,
-81,147,148,62,79,159,7,108,104,142,
-145,144,143,5,};
+154,22,52,59,155,41,134,146,78,121,
+157,56,7,161,159,126,98,96,95,139,
+67,68,71,51,54,69,70,66,83,84,
+90,89,99,107,6,117,73,72,130,75,
+76,147,151,55,74,162,16,104,100,142,
+145,144,143,12};
 #endif
