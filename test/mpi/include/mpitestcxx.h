@@ -35,15 +35,16 @@ void MTestResetDatatypes( void );
 void MTestFreeDatatype( MTestDatatype * );
 const char *MTestGetDatatypeName( MTestDatatype * );
 
-int MTestGetIntracomm( MPI::Comm *, int );
-int MTestGetIntracommGeneral( MPI::Comm *, int, int );
-int MTestGetIntercomm( MPI::Intercomm *, int *, int );
+int MTestGetIntracomm( MPI::Intracomm &, int );
+int MTestGetIntracommGeneral( MPI::Intracomm &, int, bool );
+int MTestGetIntercomm( MPI::Intercomm &, int &, int );
 int MTestGetComm( MPI::Comm *, int );
 const char *MTestGetIntracommName( void );
 const char *MTestGetIntercommName( void );
+void MTestFreeComm( MPI::Comm &comm );
 
 #ifdef HAVE_MPI_WIN_CREATE
-int MTestGetWin( MPI::Win *, int );
+int MTestGetWin( MPI::Win &, bool );
 const char *MTestGetWinName( void );
 #endif
 
