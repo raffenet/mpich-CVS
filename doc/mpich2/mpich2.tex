@@ -1,0 +1,740 @@
+%
+% Design document for MPICH2
+%
+% This document should be used with the ADI3 document
+\documentclass{article}
+\usepackage{/home/gropp/data/share/refman}
+\usepackage{/home/gropp/sowing-proj/sowing/docs/doctext/tpage}
+\usepackage{epsf}
+\textheight=9in
+\textwidth=6.1in
+\oddsidemargin=.2in
+\topmargin=-.50in
+\newread\testfile
+
+%
+% Modify the way titles are handled for no breaks between pages
+\def\mantitle#1#2#3{\pagerule\nobreak
+\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi}
+
+\begin{document}
+
+\markright{MPICH Design Document}
+
+\def\nopound{\catcode`\#=13}
+{\nopound\gdef#{{\tt \char`\#}}}
+\catcode`\_=13
+\def_{{\tt \char`\_}}
+\catcode`\_=11
+\def\code#1{{\tt #1}}
+
+%\tpageoneskip
+\ANLTMTitle{MPICH2 Design Document\\
+Draft}{\em 
+William Gropp\\
+Ewing Lusk\\
+Mathematics and Computer Science Division\\
+Argonne National Laboratory}{00}{\today}
+
+\clearpage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+\section{Introduction}
+This document discusses how the MPICH2 implementation is written using
+the ADI-3 \cite{adi3ref} for the supporting functions.  This document
+contains guidelines for the MPICH2 implementation.  
+
+See also the Coding Standards docment \cite{coding}.
+
+% Outline:
+\section{General}
+
+\subsection{Error reporting}
+
+MPI routines should check all possible error conditions early, before
+calling and ADI routines.  The ADI routines perform little error
+checking.  To allow error handling to be enabled both at compile time
+and at runtime, the tests should be placed within the following block:
+\begin{verbatim}
+#ifdef HAVE_ERROR_CHECKING
+BEGIN_ERROR_CHECKS
+...
+END_ERROR_CHECKS
+#endif
+\end{verbatim}
+The macros \code{BEGIN_ERROR_CHECKS} and \code{END_ERROR_CHECKS} can
+expand, depending on configuration settings, into either null (i.e.,
+no runtime control) or 
+\begin{verbatim}
+#define BEGIN_ERROR_CHECK if (mpir_perform_error_tests) {
+#define END_ERROR_CHECKS }
+\end{verbatim}
+
+There must be a configure option, \code{--disable-error-checking},
+that prevents \code{HAVE_ERROR_CHECKING} from being defined.
+
+\subsection{Error handling and Fault Tolerance}
+In order to support fault tolerance, errors should be handled as
+gracefully as possible.  If it is possible to remain in a consistent
+state, the process should not abort (unless, of course, the error
+handler requires it, as the default \code{MPI_ERRORS_FATAL} does).  
+If it is not possible to recover from an error, then the process
+should call \code{MPID_Abort_process}, not \code{MPID_Abort}.
+
+\subsection{Memory Allocation}
+Avoid memory allocation wherever pratical.  Use \code{MALLOC}
+etc. instead of \code{malloc}, as described in the ADI-3 manual
+\cite{adi3man}. 
+
+At normal exit from the MPI library in \code{MPI_Finalize}, the
+routine \code{mpir_trdump} must be called if the environment variable
+\code{MPICH_TRDUMP} is set.  
+
+Question:
+Should we call these \code{MPIR_MALLOC} etc. instead?  
+
+\subsection{MPI Opaque Objects}
+
+Most objects in MPI (with the exception of \code{MPI_Status}) are
+opaque.  In the MPICH2 implementation, opaque objects are represented
+by integers.  This simplifies the implementation of the functions for
+transfering handles between C/C++ and Fortran.  
+
+Question:  One interesting idea is to encode information in the opaque
+handle.  For example, the \code{sizeof} a basic datatype, and whether
+a type is basic, could be part of the handle for an
+\code{MPI_Datatype}. In that case, an implementation can avoid looking
+up the datatype (e.g., by using the integer of the opaque type as an
+array index) and instead perform a few simple operations on the handle
+(e.g., mask and test and mask and shift).  Similarly, for
+communicators that are dups of \code{MPI_COMM_WORLD}, the handle could
+contain the \code{context_id}, again avoiding the need to look up the
+communicator, since in addition the mapping from rank to local pid for 
+communicators similar to \code{MPI_COMM_WORLD} is the identity
+mapping.  Thus a single bit test on the opaque handle could eliminate
+a number of tests and memory references for an important common case.
+
+The questions are: do we want to make this possible?  If so, do we
+want to implement it from the beginning?
+
+\subsection{Coding Practices}
+
+All routines should be prototyped.  The prototypes should be in the
+smallest scope possible.  For example, if the routine is used only
+within the files in a subdirectory, the prototype should be in an
+include file within that directory.
+Question: do we really want this?
+
+Functions used entirely within a single file should be declared
+\code{static}.  Functions that are not static must follow the naming
+convention of starting with \code{MPI_} or \code{PMPI_} (for routines
+implementing the MPI Standard) or \code{MPIR_} for internal routines.  
+Global symbols, such as keyvals, should use \code{MPICH_} as the
+prefix.  
+
+Parameters (with the exception of the MPI routines defined by the
+standard) should follow the guidelines in \code{coding}.  In
+particular, \code{const} and \code{restrict} should be used.
+Parameters that are semantically arrays should be declared as arrays
+(using \code{[]}).  
+
+Question: should we specify an indentation style?  If so, we need to
+specify it at the top of each file so that emacs will use the correct
+style for users with other styles.
+
+Questions:
+
+The pragma code is very ugly and hard to read.  It is also hard to
+update.
+It would be relatively
+easy to create the correct form on the fly, using configure (or
+another program, run by configure).  But that
+would require at least an include file for each MPI routine.
+An alternate approach is to make the inclusion entirely machine
+generated.  In that case, updating it requires only re-running the
+update editor.  In this case, the pragmas for implementing the
+profiling interface should be placed between two clear markers, such
+as 
+\begin{verbatim}
+/* -- begin profiling interface -- */
+/* DO NOT EDIT.  Use the program xxx to update */
+...
+/* -- end profiling interface -- */
+\end{verbatim}
+
+Questions:
+There should be a standard file header, containing the copyright and
+standardized includes (e.g., something like "mpiimpl.h").  This header
+template should be part of the development environment.
+
+\subsection{Other Subsystems}
+In MPICH, there is code that is not directly part of the MPI
+implementation, such as the MPE and test suite code.  For MPICH2,
+these should be cleanly separated.  To simplify the construction of a
+full MPICH distribution, there should be a Makefile (and configure
+options) that know how to build MPICH2 with MPE, perftest, the test
+suite, and other options.  These should \emph{not} be part of the base
+MPICH2 project (as far as CVS is concerned).  This will encourage
+better separation of the projects.
+
+\section{Include Files}
+The include file \code{mpi.h} should not require any \code{-Dxxx}
+definitions by the compiler.  This will require generating the
+\file{mpi.h} from another file.  
+
+The \file{mpif.h} (of \file{mpif.h.in} should be created from
+\file{mpi.h} so that the various integer values (e.g., error classes,
+datatypes, etc.) are guaranteed consistent.
+
+\section{MPI Operations}
+This section describes the implementation of the MPI operations.
+These are split up according to function, and roughly (but not
+exactly) match the MPI standard.  Each of these has a corresponding
+directory in the MPI source tree.  Note that this means that the
+directory structure does not exactly match the chapter structure of
+the MPI Standard.
+
+Each routine should implement the \code{PMPI} version of the routine.
+Where possible, a weak symbol pragma may be used to define the
+\code{MPI} version of the routine.  If weak symbol support is not
+available, the \file{Makefile}s will support recompiling each file
+with the definition \code{MPICH_MPI_FROM_PMPI} made.  This can value
+can also be used to protect code that is used by the \code{PMPI}
+version of the routine.  For example, 
+\begin{verbatim}
+#include "mpich_impl.h"
+
+#ifdef MPICH_MPI_FROM_PMPI
+#define PMPI_Attr_get MPI_Attr_get
+#else
+int MPIR_Attr_get_util( int keyval, MPID_Comm *comm, void *attr )
+{
+...
+}
+#endif
+int PMPI_Attr_get( ... etc ... )
+\end{verbatim}
+
+If it is necessary to create the \code{MPI} versions separately, the
+object files should be renamed, allowing them to be placed into the
+same library.  To handle the event that the library cannot hold over
+500 files (250 for PMPI MPI 1 and 2, plus a version for the MPI
+routines), the name of the library containing the profiling versions
+should be separate.
+
+Question: If we do have two libraries, then we must link with both,
+even when the profiling routines are not otherwise used because any
+internal functions may be defined in the PMPI versions.  We may need
+to do this anyway, because any function that calls an MPI routine will
+actually be calling the PMPI version.  Is this what we want to do?  Is
+it the best thing to do?  Note that we do this now, but through the
+confusing approach of using the MPI names, but redefining them as PMPI
+with a file containing a redefinition of every single MPI routine.
+
+\subsection{Datatypes}
+
+\subsubsection{Heterogeneity}
+Optimizing for the common case of machines or clusters with a common
+data representation is important.  
+
+In MPICH, macros were used to include code that handled heterogeneous
+systems.  For MPICH2, I'd prefer to use clearer blocks of code rather
+than special macros.  For example,
+\begin{verbatim}
+#define MPICH_IS_HETERO
+...
+#else
+...
+#endif
+\end{verbatim}
+
+Questions about the implementation of datatypes
+
+\begin{enumerate}
+\item Should we require alignment of data when packing/unpacking?  The
+   problem is in the heterogeneous case, where we'd need to communicate
+   the alignment rules, along with byte ordering and data lengths.
+
+\item For nested datatypes, should we allow loop interchange (as NEC did
+   in their ``flattening on the fly'' paper)?  We can implement this
+   within the current representation by creating new dataloop
+   structures for the re-ordered loops.  
+
+\item We need to provide for the important special cases of aligned moves
+   of sizes 1, 2, 4, 8, and perhaps 16.
+
+\item We could even compile code to pack and unpack the given datatype
+   and dynamically load the code.  PETSc has code for this for some
+   user-interface convenience functions.  In general, we could
+   consider allowing the pack and unpack functions to be specified as
+   part of the datatype, with defaults based on the dataloop
+   structures.  A datatype attribute could be used to decide when to
+   create a datatype-specific routine.
+
+\item We need to include instrumentation on the pack/unpack functions
+   themselves so that we can gather information about the performance
+   of the pack/unpack.  Should this be stored by datatype instance?
+   Datatype kind (e.g., vector, indexed, struct)?  pack/unpack?
+
+\item Do we need separate pack and unpack descriptions (e.g., if we
+   optimize for the transfers by reordering loops, will we want
+   different versions for each direction)?
+
+\item In dataloop, kind should include information on basic alignment
+   and/or length (to allow fast loops using wide moves based on long
+   or double instead of char).
+
+\item For types that do not contain struct, we can preload the entire
+   processing stack, since the elements never change (just the
+   position on the stack).  This is close to creating a simple nested
+   loop structure for an interpreter.  We may want the datatype to
+   have a field indicating that it has this feature; alternately, we
+   might encode this by specifying a different pack/unpack routine,
+   one that preloads the stack and eliminates any code to fill the
+   stack during processing.  Another approach that would apply to the
+   more general case would be to cause datatypes that have simple
+   nested structure to load the entire stack and switch the stack
+   interpreter into a mode that knew that the stack had been loaded.
+
+\item Struct alignment (pad) should have optional rules.  That is, we
+   need to support all alignment options that a compiler might pick
+   (we currently test for this in the MPICH configure).  For systems
+   where different padding rules can be specified (e.g., xlc has 4
+   different choices), we should allow an environment variable to
+   select a different padding rule.  We might implement this by using
+   a separate routine for each type of padding, and call a routine to
+   compute the padding towards the end of creating a struct datatype.
+
+\item For pack and unpack code, we need to handle the tests for sizes of
+    the output buffers efficiently, hoisting the tests out of the
+    loops where possible.  
+
+\item For the homogeneous case, some struct types (those that contain
+    only basic datatypes) can be changed into indexed types (as if
+    they were all \code{MPI_BYTE}).
+
+\item Structs with no gaps (except at the ends, possibly because of 
+    structure padding, an \code{MPI_UB}, or an explicit resize,
+    should be replaced with a strided type.  In the heterogeneous
+    case, this can only be done when the struct contains a single
+    basic type.
+
+\item In the heterogeneous case, we may want two different
+    representations: one for homogenous communication and one for
+    heterogeneous communication.  Thus the datatype structure needs
+    several dataloop entries, at least in the heterogeneous case.
+
+\end{enumerate}
+
+\subsection{Groups}
+
+Groups are simple.  The key point here is to make sure that the use of
+groups to map from ranks in a communicator to particular destination
+process is fast.
+To provide a fast implementation of \code{MPI_COMM_GROUP}, groups must
+have reference counts.  
+
+Question: Do we want a special case for the groups of self and comm
+world?  This would eliminate a lookup in the group table for the a very
+common case.  Should there be a \code{MPID_GROUP_WORLD}?  
+
+\subsection{Communicators}
+
+\subsection{Point to Point Communication}
+
+\subsection{Collective Communication and Computation}
+
+\subsubsection{Redution functions}
+The reduction functions must use the \code{restrict} qualifier.
+
+Question:
+The MPICH code uses one gigantic file, \file{global_ops.c}, to implement
+all of the reduction functions.  There are two problems with this.
+First, some compilers become unhappy with it and do not optimize it
+very well.  Second, all applications must load all of the routines
+even though only a few (typically one) reduction function is used.  We
+could break this into separate routines for each operation.  Those
+could further be broken down by basic datatype, since the datatype is
+known by the routine that calls the specific reduction function.  
+For example, we could have \code{MPIR_SUM_Double},
+\code{MPIR_SUM_Int}, etc.  This would also allow us to use Fortran
+code for some or all of these routines, since Fortran compilers
+typically produce better code for this kind of operation (though the
+new definitions, using 'restrict', may be much better).
+
+The down side of this is that, particularly in unstripped code, each
+file (particularly if it includes any significant header files)
+includes a significant amount of information.  A latency, if you will,
+for each file.  That is, if putting all of the routines into a single
+file takes $n$ bytes, putting them into $k$ files takes $n + (k-1)m$,
+where $m$ is the size of the header.  
+
+If we want to use the Fortran compiler for some or all of these, we'll
+need a Fortran compiler and a backup when there is no Fortran compiler.
+
+\subsubsection{Implementation of the Collective functions}
+
+The MPICH code uses one gigantic file, \file{interops.c}, to provide a
+generic implementation of each collective operation.  Each
+communicator has a structure of pointers to functions.  Unless
+otherwise set, each communicator points to the predefined structure
+'MPIR_intra_collops' which is initialized to point to \emph{all} of
+these functions.  
+
+For MPICH2, I'd prefer that the default case have no structure, and
+each of the MPI functions (in its file) contains the generic
+implementation of the collective operation, based (most likely) on the
+stream operations.  This will simplify the process of tuning each
+operation; it will also reduce the size of executables since few if
+any programs use all of the collective operations.
+See the discussion of the implementation of PMPI.
+
+\subsection{Topology}
+
+How do we implement \code{MPI_Cart_create} with the MPID routines?  
+Do we need an \code{MPID_Topology_cart}?  Constructing a mesh from the
+hierarchical description that we've included can only be done
+approximately.
+
+\subsection{RMA}
+
+My original plan was to implement this using the \code{Segment},
+\code{Rhcv}, \code{Put_contig} and \code{Get_contig} routines.  We
+will need code to support datatype caching at the destination process.
+We may want to provide a way to define datatypes in globally shared
+memory for systems like large SMPs that provide global access to at
+least some memory.  Currently, there is no ADI interface for that.
+I have since added additional put/get for the case where the origin
+and target datatypes are the same.  
+
+Question:  Should there be a model of remotely-defined datatypes that
+would allow processes to avoid caching the description?  How would
+this work in the multi-method case where some processes might have
+shared memory and others might not?
+
+For systems with ordered deliverery, we may want a simpler completion
+model, one that has completion per destination process (or per process
+per window) rather than per RMA operation.  This is a further reason
+to require that completion flags be created, and that this creation
+contain both destination process and window.  Where operations are
+ordered, this flag can simply count the number of started but not
+completed operations, or it could contain a sequence number of some
+sort for the most recent operation.  
+
+Question:  For this to work with the waitflags and testflags, we
+really need a flag set for the RMA window, which each RMA operation
+takes (instead of a separate flag address).  How should the API for
+both the flag set creation, reference, and completion work?  
+
+\subsection{Dynamic Processes}
+
+\subsection{User-Defined Requests}
+
+Question:  What ADI support is required for these?  Note that the
+request is under the control of the device, so many of the fields
+aren't defined yet.
+
+Note that if \code{MPID_Waitsome} is implemented in the ADI, then the
+ADI must understand these requests (or at least be able to ignore
+them).
+Note that a user-defined request is started with callbacks (functions
+to call for query, cancel, and free); these need to be associated with
+the request.  
+
+\section{Portability}
+
+Question: What about shared libraries?  Using libtool is awkward for
+development, but not using it is awkward for portability (libtool
+knows a \emph{lot} about making shared libraries).  However, we
+\emph{must} have support for shared libraries.
+
+\subsection{Configure}
+We will use autoconf version 2.  The top-level configure will only
+test for items used in the implementation of the MPI routines.  For
+other parts of the package, such as the ADI implementation, the
+top-level configure will invoke a configure or other setup script for
+each package.
+
+Question: configure understands how to invoke configure for other
+packages.  If we use a level of indirection between the ADI configure
+(e.g., a setup script), the top-level configure won't know about
+this.  Do we care?  If we don't care, how do we ensure that
+re-executing \file{config.status} executes the correct routines?
+
+For each test that requires running a program, a variable of the form
+\code{CROSS_xxx} must be defined and documented.  For example, for
+variable sizes, \code{CROSS_SIZEOF_INT} will give the size of an
+integer in bytes.
+
+We need to document all \code{CROSS_xxx} variables.  Here is a start at that
+list:
+\begin{description}
+\item[\texttt{CROSS_BYTE_ORDERING}]
+\item[\texttt{CROSS_F90_INTEGER_KIND}]
+\end{description}
+
+Other items, such as the allowed types for the f90 modules, also needs
+to be speicfieable from the environment.
+
+See also mpi-maint request 5556 for the values needed by the Intel
+Tflops system.  It should be possible to specify these with a special
+site file.  Also note the need to export variables; we may want to
+create a step that does something like '\code{set | grep 'CROSS_' | 
+sed ...}'.  
+
+\subsubsection{Complex Configuration Data}
+Much of the complexity in the current configure system comes from
+handling special cases, particularly for compiler and linker options.
+I propose replacing this code with a separate (yet simple) data list
+that can be edited separately from the configure script, and which
+contains information on various compilers and linkers.
+This file can be considered a very simple database, where each record
+contains the following information (some of the information is used
+only by compile steps; other by link or shared library steps.  There
+is enough overlap that the combined list is given).
+\begin{description}
+\item[kind]C, C++, Fortran 77, or Fortran 90.  Perhaps Java as well.
+\item[action]compile, link, create static library, or create shared library
+\item[name]E.g., cc, xlc, pgcc, gcc
+\item[ostype]OS that has this compiler.  For some compilers, this is *
+(e.g., gcc, pgcc, cc)
+\item[optimize]Options for optimizing.
+\item[debug]Options for debugging.
+\item[ansi]Options to force ANSI (or a superset)
+\item[posix]Options to force Posix
+\item[threads]Options to allow threads
+\item[sharedobject]Options to create a shared object
+\item[version]Options to generate a version and name string.  See signature
+\item[signature]A regular expression that should match the value
+generated by version.  This may be slightly extended to allow a
+particular line of the output to be matched.
+\item[size32]Options for 32bit pointers
+\item[size64]Options for 64bit pointers
+\item[size=xx]Options for other sizes (128 bit pointers, anyone?) or
+for special versions (e.g., IRIX n32)
+\item[searchdir]Options to specify search directories for shared
+libraries
+\item[sharedlib]Options to create a shared library
+\item[cross]Specify values for CROSS_xxx for cross-compiler case
+\item[verbose]Options to generate verbose output, particularly showing
+the command-line options passed to other tools such as ld when a
+compiler command is used to link a program.  This is useful in
+determining the libraries needed for multilanguage programs.
+\item[verboseoptionsep]Option separator for the output from verbose.
+Often either space or comma.
+\item[strict]Options for strict (lint-like) compilation
+\end{description}
+Question: are these enough?  We should check what libtool uses.
+We may also want a option that says ``check for a clean compile before
+accepting these values''.  Compiler version numbers may also be
+important; for that, there needs to be a command specified to extract and
+compare the version number.
+
+This file should have both specific rules and generic rules.  For
+example, a generic description of \code{cc} would specify \code{-g}
+for debugging, \code{-O} for optimization, and little else.  
+
+In some cases, we may want to try several options.  For example, for
+optimization, we may want to try \code{-Ofast} or \code{-O2} before \code{-O}.
+Question:
+what should the syntax for this be?
+
+I recommend that the syntax for this file be key=value pairs, using a
+trailing backslash to continue lines:
+\begin{verbatim}
+# comment describing compiler
+kind=c action=compile name=xlc system=AIX \
+  optimize="-O3 -qarch=native" \
+  etc.
+kind=c action=compile name=cc system=* \
+  optimize=-O \
+  debug=-g \
+  etc.
+\end{verbatim}
+This is most easily processed using perl or (possibly) python, though
+another alternative is to bootstrap by using the usual configure
+macros to find a C compiler and then compile a simple program to read
+this file.  In the cross compilation case, either a different compiler
+may be used, the user can prebuild the program, or all of the
+necessary data can be supplied through environment variables.
+
+\subsection{Coding Rules}
+We will attempt to enforce the coding rules by building tools that
+check for conformance to these rules.
+
+Tools already available:
+\begin{description}
+\item[?]Check for global symbol names
+\item[?]Check for use of banned routines (e.g., \code{printf},
+\code{alloca})
+\item[gcc -Wall etc.]Missing prototypes, return values, etc.
+\item[?]Check for OS name or system type in a preprocessor statement
+\end{description}
+
+We also need tools for the following:
+\begin{itemize}
+\item Look for functions and header files that are not universal and
+ensure that they are properly guarded.
+\item Look for functions that are not universal (e.g., \code{rindex}).
+\end{itemize}
+
+\subsubsection{Printing and Other Messages}
+Rule: do not use \code{printf} or \code{fprintf} except (possibly) for
+messages intended only the for the developers of MPICH2.
+
+Even for developer messages, using \code{printf} is not a good idea.
+It is better to call a routine that can handle recording the results.
+
+% See PETSc approach for printing.  
+
+Question: Should we define \code{PRINTF} etc. as we have in MPICH, or
+ban those values entirely?
+
+\subsection{NT Friendly}
+
+Declare all user-visible routines \code{EXPORT_MPI_API}.  This is a
+macro that is defined as empty for UNIX and as the appropriate
+Microsoft-specific extension for Windows.
+
+Avoiding \code{printf} is important for Windows applications.
+
+\subsection{Fortran Support}
+
+\subsection{C++ Support}
+
+I'd like to consider adding more native C++ support.  While the Notre
+Dame C++ code is valuable and helpful, there are some difficulties:
+\begin{enumerate}
+\item Supports only MPI-1.
+\item Their configure is based too much on particular systems rather than on
+capabilities. 
+\item Because it is a separate package, the build process is awkward.
+\item Testing is separate from the MPICH testing, causing inadequate
+testing of the MPICH/C++ combination.
+\item Layering makes some things difficult. 
+\item Does not pass our (sometimes stricter) coding standards. 
+\end{enumerate}
+
+\section{Standard Features}
+(this section contains the standard features, such as command line
+handling, environment variables, configure options for error checking,
+etc.)
+
+The implementation must provide the \emph{service} of providing
+command-line arguments to each process.  If the startup environment
+does not do so, the implementation must (see the discussion of
+\code{MPID_Thread_init}).  
+
+\section{Testing}
+
+The tests for MPICH2 need to be more organized that for MPICH. They
+should follow these principles:
+\begin{enumerate}
+\item Require no user intervention (e.g., to inspect the results)
+\item Should be implementation independent (i.e., useful for
+\emph{any} MPI implementation) unless they are testing \emph{only}
+features specific to MPICH2.  An example is a test of error messages
+and error class/code values; any test that expects a particular
+message must not be combined with a general test of standard
+conformance.
+\item Require no extra files (the \file{.std} files in the MPICH
+version).
+\item Testing should be applied to a range of communicators and
+datatypes, not just \code{MPI_COMM_WORLD}.  
+\item Testing should be controlled by a file listing the tests rather
+than a script.  That is, the script \code{runtests} should be generic,
+working with a file in each testing directory that lists the test
+programs and any special options (e.g., number of processes, command
+line arguments, environment variables).
+\item Testing that enables memory tracing should be simple and
+organized so that it can be run regularly.
+\item Should have short duration, so that the testing program can
+signal failure because a program has not completed within the given
+time.
+\end{enumerate}
+
+Results should be maintained in a database which should include
+\begin{enumerate}
+\item Configuration options
+\item System description (including compiler version and machines file)
+\item CVS tag (or nearest value, e.g., weekly tag + date that source
+cut was made).
+\item Results summary (success or failure; if failure, reason).
+\item We should consider an XML format for the output.
+\end{enumerate}
+
+Testing should also contain performances tests.
+\begin{enumerate}
+\item Configuration options
+\item System description (including compiler version and machines file)
+\item CVS tag (or nearest value, e.g., weekly tag + date that source
+cut was made).
+\item Results for the following tests:
+    \begin{enumerate}
+    \item \code{mpptest -logscale} To get the general trend in performance
+    \item \code{mpptest -autodx} To get details for the short message
+performance. 
+    \item bisection bandwidth test for a large number of processes.
+    We may want to use beff instead of mpptest.
+    \item \code{mpptest -logscale -halo -npartner 8} To get more
+    realistic communication performance
+    \item \code{mpptest -logscale -gop dsum} This isn't quite right.
+    We need both the scaling and the performance as a function of
+    message size.
+    \item Similar test for alltoallv. 
+    \item Tests for I/O (Rajeev and Rob to identify)
+    \item Tests for put/get/accumulate as those become available.
+    Start with \code{mpptest -logscale -put} and \code{mpptest
+-logscale -halo -npartner 8}
+    \end{enumerate}
+\item This should also be in XML format.
+\end{enumerate}
+We should maintain the same data for vendor and other MPI
+implementations, and we should ask for a standard set of tests.  
+
+\subsection{Debugger Interface}
+We need a test that the DLL that provides access to the internal
+symbols is correct, as well as a test that the MPICH library correctly
+identifies the location of the DLL.
+
+To test the DLL, we need a program \file{mpichdlltest.c} that can
+load the dll and call the routines, ensuring that it runs correctly.
+This program should use the ADI's include files to provide the data
+structures that the DLL accesses.
+
+Note that the debugger interface must be compiled in 32-bit mode on
+platforms with mixed 32 and 64-bit modes.  We don't currently do this
+(which is a bug) but we need to.  To do this, we need a configure step
+that may need to know that a system has both options (in the case that
+\code{sizeof(void *)} is 64.  See the ``complex configuration
+options'' above.
+
+\subsection{Performance and Tracing Data}
+
+One critical piece of information that is hard currently to acquire is
+the amount of idle time spent in completing a communication operation.
+This is information that a tracing library would like to have.  Should
+there be an 'MPID_xxx' call that could be made available to a tracing
+package?  For example, it could have semantics roughly like
+'MPI_Wtime', except that it would contain cumulative idle time.  In a
+multithreaded environment, it could give a per-thread cumulative idle
+time (or could it)?  Should we define 'MPID_Idle_time', and modify MPE
+to look for that name in the MPI library?
+
+To tune the layered routines, including the collective routines, we
+should include from the beginning standardized tracing for:
+\begin{enumerate}
+\item All (major?) MPID calls
+\item Idle time
+\item Context switches (if using threads)
+\item Resource usage
+\item Flow control
+\end{enumerate}
+
+\end{document}
