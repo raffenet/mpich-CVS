@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 	goto quit_job;
     }
 
-quit_job: /* use a goto label to avoid deep indenting in the above code */
+quit_job:
 
     /* finalize */
     smpd_dbg_printf("calling sock_finalize\n");
@@ -137,7 +137,10 @@ quit_job: /* use a goto label to avoid deep indenting in the above code */
 	SetEvent(smpd_process.hCloseStdinThreadEvent);
     if (smpd_process.hStdinThread != NULL)
     {
-	WaitForSingleObject(smpd_process.hStdinThread, 3000);
+	if (WaitForSingleObject(smpd_process.hStdinThread, 3000) != WAIT_OBJECT_0)
+	{
+	    TerminateThread(smpd_process.hStdinThread, 321);
+	}
 	CloseHandle(smpd_process.hStdinThread);
     }
     if (smpd_process.hCloseStdinThreadEvent)

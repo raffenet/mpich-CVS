@@ -356,7 +356,6 @@ typedef struct smpd_global_t
     int local_root;
     int use_iproot;
     int use_process_session;
-    int shutdown_console;
     int nproc;
     int verbose;
     int shutdown, restart; /* built in commands */

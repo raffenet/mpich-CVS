@@ -75,7 +75,6 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* local_root             */
       SMPD_FALSE,       /* use_iproot             */
       SMPD_FALSE,       /* use_process_session    */
-      SMPD_FALSE,       /* shutdown_console       */
       0,                /* nproc                  */
       SMPD_FALSE,       /* verbose                */
       SMPD_FALSE,       /* shutdown               */
