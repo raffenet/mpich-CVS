@@ -1,4 +1,139 @@
 ===============================================================================
+			       Changes in 1.0.1
+===============================================================================
+
+- Copyright statements have been added to all code files, clearly identifying
+  that all code in the distribution is covered by the extremely flexible
+  copyright described in the COPYRIGHT file.
+
+- The MPICH2 test suite (mpich2/test) can now be run against any MPI
+  implementation, not just MPICH2.
+
+- The send and receive socket buffers sizes may now be changed by setting
+  MPICH_SOCKET_BUFFER_SIZE.  Note: the operating system may impose a maximum
+  socket buffer size that prohibits MPICH2 from increasing the buffers to the
+  desire size.  To raise the maximum allowable buffer size, please contact your
+  system administrator.
+
+- Error handling throughout the MPI routines has been improved.  The error
+  handling in some internal routines has been simplified as well, making the
+  routines easier to read.
+
+- MPE (Jumpshot and CLOG logging) is now supported on Microsoft Windows.
+
+- C applications built for Microsoft Windows may select the desired channels at
+  runtime.
+
+- The dynamic process routines may now be used with programs that were *not*
+  started with mpiexec.
+
+- Memory leaks in communicator allocation and the C++ binding have been fixed.
+
+- Following GNU guidelines, the parts of the install step that checked the
+  installation have been moved to an installcheck target.  Much of the
+  installation now supports the DESTDIR prefix.
+
+- Microsoft Visual Studio projects have been added to make it possible to build
+  x86-64 version
+
+- Problems with compilers and linkers that do not support weak symbols, which
+  are used to support the PMPI profiling interface, have been corrected.
+
+- Handling of Fortran 77 and Fortran 90 compilers has been improved, including
+  support for g95.
+
+- The Fortran stdcall interface on Microsoft Windows now supports character*.
+
+- A bug in the OS X implementation of poll() caused the sock channel to hang.
+  A work around has been put in place.
+
+- Problems with installation under OS/X are now detected and corrected.
+  (Install breaks libraries that are more than 10 seconds old!)
+
+- The following changes have been made to MPD:
+
+  - Sending a SIGINT to mpiexec/mpdrun, such as by typing control-C, now causes
+    SIGINT to be sent to the processes within the job.  Previously, SIGKILL was
+    sent to the processes, preventing .
+
+  - The process for merging output has been improved.
+
+  - A new option, -ifhn, has been added to the machine file, allowing the user
+    to select the destination interface to be used for TCP communication.  See
+    the User's Manual for details.
+
+  - The user may now select, via the "-s" option to mpiexec/mpdrun, which
+    processes receive input through stdin.  stdin is immediately closed for all
+    processes not in set receiving input.  This prevents processes not in the
+    set from hanging should they attempt to read from stdin.
+
+  - The MPICH2 Installer's Guide now contains an appendix on troubleshooting
+    problems with MPD.
+
+- The following changes have been made to SMPD:
+
+  - On Windows machines, passwordless authentication (via SSPI) can now be used
+    to start processes on machines within a domain.
+
+  - On Windows machines, the -localroot option was added to mpiexec, allowing
+    processes on the local machines to perform GUI operations on the local
+    desktop.
+
+  - On Windows machines, network drive mapping is now supported via the -map
+    option to mpiexec.
+
+  - Three new GUI tools have been added for Microsoft Windows.  These tools are
+    wrappers to the command line tools, mpiexec.exe and smpd.exe.  wmpiexec
+    allows the user to run a job much in the way they with mpiexec.  wmpiconfig
+    provides a means of setting various global options to the SMPD process
+    manager environment.  wmpiregister encrypts the user's credentials and
+    saves them to the Windows Registry.
+
+- The following changes have been made to MPE2:
+
+  - MPE2 no longer attempt to compile or link code during 'make install' to
+    validate the installation.  Instead, 'make installcheck' may now be used to
+    verify that the MPE installation.
+
+  - MPE2 now supports DESTDIR.
+
+- The sock channel now has preliminary support for MPI_THREAD_SERIALIZED and
+  MPI_THREAD_MULTIPLE on both UNIX and Microsoft Windows.  We have performed
+  rudimentary testing; and while overall the results were very positive, known
+  issues do exist.  ROMIO is particular experiences hangs in several places.
+  We plan to correct that in the next release.  As always, please report any
+  difficulties you encounter.
+
+- Another channel capable of communicating with both over sockets and shared
+  memory has been added.  Unlike the ssm channel which waits for new data to
+  arrive by continuously polling the system in a busy loop, the essm channel
+  waits by blocking on an operating system event object.  This channel is
+  experimental, and is only available for Microsoft Windows.
+
+- The topology routines have been modified to allow the device to override the
+  implementation.
+
+- New memory allocation macros, MPIU_CHK[PL]MEM_*(), have been added to help
+  prevent memory leaks.  See mpich2/src/include/mpimem.h.
+
+- New error reporting macros, MPIU_ERR_*, have been added to simplify the error
+  handling throughout the code, making the code easier to read.  See
+  mpich2/src/include/mpierrs.h.
+
+- Interprocess communication using the Sock interface (sock and ssm channels)
+  may now be bound to a particular destination interface using the environment
+  variable MPICH_INTERFACE_HOSTNAME.  The variable needs to be set for each
+  process for which the destination interface is not the default interface.
+  (Other mechanisms for destination interface selection will be provided in
+  future releases.)  Both MPD and SMPD provide a more simplistic mechanism for
+  specifying the interface.  See the user documentation.
+
+- Too many bug fixes to describe.  Much thanks goes to the users who reported
+  bugs.  Their patience and understanding as we attempted to recreate the
+  problems and solve them is greatly appreciated.
+
+
+===============================================================================
 				Changes in 1.0
 ===============================================================================
 
