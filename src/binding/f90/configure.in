@@ -68,13 +68,22 @@ AC_SUBST(NEEDSPLIB)
 
 # Find a Fortran 90 compiler.  Sets F90
 PAC_PROG_F90
+PAC_PROG_F90_WORKS
 if test "$pac_cv_prog_f90_works" = no ; then 
    # Reject this compiler
-   F90=""
+   if test -n "$F90" ; then
+       f90_rejected=yes
+       oldF90="$F90"
+       F90=""
+   fi
 fi
 
 if test -z "$F90" ; then
-   AC_MSG_ERROR([Could not find a usable F90 compiler])
+   if test "$f90_rejected" = "yes" ; then
+       AC_MSG_ERROR([Could not find a usable F90 compiler.  The compiler $oldF90 may be incompatible with the Fortran 77 compiler $F77; check the output of configure and consult the installation manuals])
+   else
+       AC_MSG_ERROR([Could not find a usable F90 compiler.])
+   fi
 fi
 
 # Find the extension that this compiler uses for modules.
