@@ -21,6 +21,8 @@ sub GetBalancedParen {
     my $maxcount = 200;
     $FD = $_[0];
     $curline = $_[1];
+    # Remove escaped newlines
+    $curline =~ s/\\$//;
     
     if ($curline =~ /^([^\(]*)\((.*)$/) {
 	$leading = $1;
@@ -53,6 +55,8 @@ sub GetBalancedParen {
 	    $result .= $curline;
 	    $curline = <$FD>;
 	    $curline =~ s/[\r]*\n//;
+	    # Remove escaped newlines
+	    $curline =~ s/\\$//;
 	}
 	$count ++;
     }
