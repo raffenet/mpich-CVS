@@ -73,10 +73,11 @@
 
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
-#define SMPD_DBG_STATE_STDOUT             0x1
-#define SMPD_DBG_STATE_ERROUT             0x2
-#define SMPD_DBG_STATE_LOGFILE            0x4
-#define SMPD_DBG_STATE_PREPEND_RANK       0x8
+#define SMPD_DBG_STATE_STDOUT             0x01
+#define SMPD_DBG_STATE_ERROUT             0x02
+#define SMPD_DBG_STATE_LOGFILE            0x04
+#define SMPD_DBG_STATE_PREPEND_RANK       0x08
+#define SMPD_DBG_STATE_TRACE              0x10
 
 #define SMPD_QUOTE_CHAR                   '\''
 #define SMPD_DELIM_CHAR                   '='
@@ -97,11 +98,7 @@
 #endif
 
 #ifdef HAVE_WINDOWS_H
-/* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
-/* The correct solution is to signal the thread to exit */
-#define smpd_exit ExitProcess
-#else
-#define smpd_exit exit
+#define vsnprintf _vsnprintf
 #endif
 
 typedef enum smpd_state_t
@@ -415,7 +412,7 @@ int smpd_get_user_data_default(char *key, char *value, int value_len);
 int smpd_get_smpd_data_default(char *key, char *value, int value_len);
 int smpd_set_user_data(char *key, char *value);
 int smpd_set_smpd_data(char *key, char *value);
-int smpd_getpid();
+int smpd_getpid(void);
 char * get_sock_error_string(int error);
 void smpd_get_password(char *password);
 void smpd_get_account_and_password(char *account, char *password);
@@ -458,5 +455,8 @@ void StdinThread(SOCKET hWrite);
 int smpd_handle_command(smpd_context_t *context);
 int smpd_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);
 int smpd_handle_barrier_command(smpd_context_t *context);
+int smpd_post_abort_command(char *fmt, ...);
+int smpd_kill_all_processes(void);
+int smpd_exit(int exitcode);
 
 #endif
