@@ -20,8 +20,6 @@ DOCTEXTSTYLE = @DOCTEXTSTYLE@
 
 .SUFFIXES: .ps .pdf .dvi .tex .eps .fig .idx .ind
 
-paper.dvi: paper.tex
-
 .dvi.ps:
 	dvips $*
 .dvi.pdf:
@@ -128,11 +126,6 @@ adi3new/adi3new.htm: adi3new.tex adi3.c adi3.h Makefile
 	tohtml -default -dosnl $(srcdir)/adi3new.tex
 	tohtml -default -dosnl $(srcdir)/adi3new.tex
 
-core.dvi: core.tex adi3.c adi3.h
-	touch core-list.ind
-	-latex core </dev/null 2>&1 >/dev/null
-	-latex core
-
 tcpadi3.pdf: tcpadi3.tex
 	rm -f tcpadi3pdf.tex
 	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
@@ -170,7 +163,7 @@ install-web-old: adi3man.ps adi3man.pdf
 	rm -f .foo
 
 clean:
-	rm -f *.log *.aux *.dvi *.bbl paper.ps findmod adi3man.ps
+	rm -f *.log *.aux *.dvi *.bbl findmod adi3man.ps
 	rm -f *.ilg adi3man.ind adi3new.ind *.blg *.toc *.out 
 	rm -f adi3newpdf.idx adi3newpdf.ind adi3new.idx 
 distclean: clean
@@ -203,8 +196,6 @@ lists: findmod
 	-fig2dev -L eps -l landscape $*.fig > $*.eps
 	if [ ! -s $*.eps ] ; then \
 		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
-
-goals.dvi: goals.tex adi-ov.eps
 
 install-devdocs: adi3new.pdf tcpadi3.pdf
 	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \
