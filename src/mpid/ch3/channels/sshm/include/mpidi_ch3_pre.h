@@ -217,6 +217,10 @@ extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
            starting from locks->addr contain the MPIDU_Process_lock_t type for each process.
            The next comm_size entries contain the shared lock state for each process.
    pt_rma_excl_lock - set to 1 if this process has called MPI_Win_lock(exclusive)
+   pscw_shm_structs - array of shm structs containing the shm keys and base addresses of 
+                      the shared memory (of size 2*comm_size bytes) used by other processes 
+                      for pscw synchronization. The first comm_size bytes is used to synchronize 
+                      the start epoch, and the next comm_size bytes for the end epoch
    epoch_grp_ptr, epoch_grp_ranks_in_win - used for post-start-complete-wait 
 */
 
@@ -225,6 +229,7 @@ MPIDI_CH3I_Shmem_block_request_result *shm_structs;						\
 void **offsets;									                \
 MPIDI_CH3I_Shmem_block_request_result *locks;							\
 int pt_rma_excl_lock;								                \
+MPIDI_CH3I_Shmem_block_request_result *pscw_shm_structs;					\
 MPID_Group *access_epoch_grp_ptr;								\
 int *access_epoch_grp_ranks_in_win;								\
 MPID_Group *exposure_epoch_grp_ptr;								\

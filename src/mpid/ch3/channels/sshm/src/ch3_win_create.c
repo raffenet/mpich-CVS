@@ -21,6 +21,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     MPIDI_CH3I_Alloc_mem_list_t *curr_ptr;
     MPIDU_Process_lock_t *locks_base_addr;
     int *shared_lock_state_baseaddr;
+    volatile char *pscw_sync_addr;
         
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_WIN_CREATE);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
@@ -348,6 +349,66 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
+        }
+
+
+        /* allocate memory for the shm struct needed to allocate shared memory
+           for synchronizing post-start-complete-wait. */
+        (*win_ptr)->pscw_shm_structs = (MPIDI_CH3I_Shmem_block_request_result *) 
+            MPIU_Malloc(comm_size * sizeof(MPIDI_CH3I_Shmem_block_request_result));
+
+        /* --BEGIN ERROR HANDLING-- */
+        if ((*win_ptr)->pscw_shm_structs == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+        
+        mpi_errno = MPIDI_CH3I_SHM_Get_mem(2 * comm_size, 
+                                           &(*win_ptr)->pscw_shm_structs[rank]);
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS) {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+
+        /* initialize it */
+        pscw_sync_addr = (*win_ptr)->pscw_shm_structs[rank].addr;
+
+        for (i=0; i<2*comm_size; i++)
+            pscw_sync_addr[i] = '0';
+
+        /* collect everyone's pscw_shm_structs*/
+        mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                                   (*win_ptr)->pscw_shm_structs, 
+                                   sizeof(MPIDI_CH3I_Shmem_block_request_result), 
+                                   MPI_BYTE, comm_ptr->handle);   
+        
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+
+        /* each process now attaches to the shared memory for pscw sync
+           of other processes. */ 
+
+        for (i=0; i<comm_size; i++) {
+            if (i != rank) {
+                mpi_errno = MPIDI_CH3I_SHM_Attach_notunlink_mem( &((*win_ptr)->pscw_shm_structs[i]) );
+
+                /* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+            }
         }
     }
 

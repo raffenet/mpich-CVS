@@ -16,7 +16,8 @@
 int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, src, dst, *ranks_in_win, grp_size, rank;
+    int i, src, dst, *ranks_in_win, grp_size, rank, comm_size;
+    volatile char *pscw_sync_addr;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_END_EPOCH);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_END_EPOCH);
@@ -24,6 +25,7 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
     MPIR_Nest_incr();
 
     NMPI_Comm_rank(win_ptr->comm, &rank);
+    NMPI_Comm_size(win_ptr->comm, &comm_size);
 
     if (access_or_exposure == MPIDI_CH3_ACCESS_EPOCH) {
         /* this is a Win_complete. Send a 0-byte sync message to each target process */
@@ -35,7 +37,15 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
         {
             dst = ranks_in_win[i];
             if (dst != rank) {
-                mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
+
+                /* Write a '1' in the sync array of the target process at the location
+                   indexed by the rank of this process */
+                
+                pscw_sync_addr = (char *) win_ptr->pscw_shm_structs[dst].addr + comm_size;
+                pscw_sync_addr[rank] = '1';
+
+/*                mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
+ */
                 /* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno)
                 {
@@ -58,7 +68,23 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
         {
             src = ranks_in_win[i];
             if (src != rank) {
-                mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100, win_ptr->comm, MPI_STATUS_IGNORE);
+
+                /* Wait until a '1' is written in the sync array by the origin
+                   at the location indexed by the rank of the origin */
+
+                pscw_sync_addr = (char *) win_ptr->pscw_shm_structs[rank].addr + comm_size;
+                while (1) {
+                    if (pscw_sync_addr[src] == '1') {
+                        /* reset it and break */
+                        pscw_sync_addr[src] == '0';
+                        break;
+                    }
+                }
+
+
+
+/*                mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100, win_ptr->comm, MPI_STATUS_IGNORE);
+ */
                 /* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno)
                 {

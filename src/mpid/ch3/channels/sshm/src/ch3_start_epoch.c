@@ -39,6 +39,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
 
         MPI_Group win_grp, grp;
         int i, grp_size, *ranks_in_grp, *ranks_in_win, dst, src, rank;
+        volatile char *pscw_sync_addr;
 
         /* First translate the ranks of the processes in
            group_ptr to ranks in win_ptr->comm. Save the translated ranks
@@ -102,12 +103,26 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
                    we need to check if Win_post was called on the target processes. 
                    Wait for a 0-byte sync  message from each target process */
 
+
                 for (i=0; i<grp_size; i++)
                 {
                     src = ranks_in_win[i];
                     if (src != rank) {
-                        mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100,
-                                              win_ptr->comm, MPI_STATUS_IGNORE);
+
+                        /* Wait until a '1' is written in the sync array by the target 
+                           at the location indexed by the rank of the target */
+
+                        pscw_sync_addr = win_ptr->pscw_shm_structs[rank].addr;
+                        while (1) {
+                            if (pscw_sync_addr[src] == '1') {
+                                /* reset it and break */
+                                pscw_sync_addr[src] == '0';
+                                break;
+                            }
+                        }
+
+/*                        mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100,
+                          win_ptr->comm, MPI_STATUS_IGNORE); */
                         /* --BEGIN ERROR HANDLING-- */
                         if (mpi_errno)
                         {
@@ -123,12 +138,18 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
                 /* This is a Win_post. Since NOCHECK was not specified. We need to notify the 
                    source processes that Post has been called. */  
                         
-                /* Send a 0-byte message to the source processes */
+                /* Send a 0-byte message to the origin processes */
                 for (i=0; i<grp_size; i++)
                 {
                     dst = ranks_in_win[i];
                     if (dst != rank) {
-                        mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
+                        /* Write a '1' in the sync array of the origin process at the location
+                           indexed by the rank of this process */
+
+                        pscw_sync_addr = win_ptr->pscw_shm_structs[dst].addr;
+                        pscw_sync_addr[rank] = '1';
+
+/*                        mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm); */
                         /* --BEGIN ERROR HANDLING-- */
                         if (mpi_errno)
                         {
@@ -136,6 +157,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
                             goto fn_exit;
                         }
                         /* --END ERROR HANDLING-- */
+
                     }
                 }
             }

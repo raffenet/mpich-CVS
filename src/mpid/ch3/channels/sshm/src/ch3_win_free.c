@@ -79,9 +79,35 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
         mpi_errno = MPIDI_CH3I_SHM_Unlink_and_detach_mem( (*win_ptr)->locks );
     }
 
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+
+    for (i=0; i<comm_size; i++) {
+        if (i != rank) {
+            mpi_errno = MPIDI_CH3I_SHM_Release_mem( &((*win_ptr)->pscw_shm_structs[i]) );
+        }
+        else {
+            mpi_errno = 
+                MPIDI_CH3I_SHM_Unlink_and_detach_mem( &((*win_ptr)->pscw_shm_structs[i]) );
+        }
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+    }
+
     MPIU_Free((*win_ptr)->locks);
     MPIU_Free((*win_ptr)->shm_structs);
     MPIU_Free((*win_ptr)->offsets);
+    MPIU_Free((*win_ptr)->pscw_shm_structs);
 
     /* check whether refcount needs to be decremented here as in group_free */
     MPIU_Handle_obj_free( &MPID_Win_mem, *win_ptr );
