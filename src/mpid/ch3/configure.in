@@ -9,31 +9,18 @@ AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
-AC_CONFIG_HEADER(../../include/mpid_ch3_conf.h)
+AC_CONFIG_HEADER(include/mpidi_ch3_conf.h)
 
 
 echo "RUNNING CONFIGURE FOR DEVICE CH3"
-echo "PASSED: $*"
 
 AC_ARG_WITH(device,
 [--with-device=name - Specify the communication device for MPICH.],,
 with_device=default)
 
-dnl This test is complicated by the fact that top_srcdir is not set until
-dnl the very end of configure.  Instead, we get it ourselves
-if test -z "$top_srcdir" ; then
-    use_top_srcdir=$srcdir   
-else
-    use_top_srcdir=$top_srcdir
-fi
-if test -z "$master_top_srcdir" ; then 
-    master_top_srcdir=$use_top_srcdir
-fi
-AC_SUBST(master_top_srcdir)
-export master_top_srcdir
-dnl
 dnl Extract the device and channel name from the --with-device argument
 if test "$with_device" = "default" ; then
+dnl XXX this is wrong!  this should come from the top level configure.
 DEVICE=ch3
 CHANNEL=tcp
 AC_SUBST(DEVICE)
@@ -61,9 +48,19 @@ AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
+AC_SUBST(CC_SHL)
+AC_SUBST(C_LINK_SHL)
+AC_SUBST(master_top_srcdir)
 
+PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(channels/$CHANNEL)
 
-AC_OUTPUT_COMMANDS(cp $srcdir/include/mpidpre.h ../../include/)
-AC_OUTPUT_COMMANDS(cp $srcdir/include/mpidpost.h ../../include/)
+AC_OUTPUT_COMMANDS(echo "copying mpidpre.h to src/include" ;
+                   cp $topdir/include/mpidpre.h ../../include/,
+		   topdir=$srcdir)
+AC_OUTPUT_COMMANDS(echo "copying mpidpre.h to src/include" ;
+                   cp $topdir/include/mpidpost.h ../../include/)
+AC_OUTPUT_COMMANDS(echo "copying mpid_datatype.h to src/include" ;
+                   cp $topdir/../common/datatype/mpid_datatype.h \
+		       ../../include/)
 AC_OUTPUT(Makefile src/Makefile channels/Makefile)

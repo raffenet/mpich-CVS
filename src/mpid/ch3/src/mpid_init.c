@@ -6,13 +6,20 @@
 
 #include "mpidimpl.h"
 
+MPIDI_Process_t MPIDI_Process;
+
 int MPID_Init(int * argc, char *** argp, int requested, int * provided,
 	      int * has_args, int * has_env)
 {
     int mpi_errno = MPI_SUCCESS;
     int has_parent;
+
+    MPIDI_Process.recv_posted_head = NULL;
+    MPIDI_Process.recv_posted_tail = NULL;
+    MPIDI_Process.recv_unexpected_head = NULL;
+    MPIDI_Process.recv_unexpected_tail = NULL;
     
-    mpi_errno = MPID_CH3_Init(has_args, has_env, &has_parent);
+    mpi_errno = MPIDI_CH3_Init(has_args, has_env, &has_parent);
     if (mpi_errno != MPI_SUCCESS)
     {
 	return mpi_errno;
@@ -23,12 +30,14 @@ int MPID_Init(int * argc, char *** argp, int requested, int * provided,
        MPI_Comm_spawn_multiple. */
     if (has_parent)
     {
+	assert(!has_parent);
 	abort();  /* XXX - this functionality is not yet supported; also this
 		     should be a MPID_Abort() but we don't have support for
-		     that yet either... */
+		     that yet either.  Fortunately, every process should
+		     fail the same condition. */
     }
     
-    /* only single threaded applications are supported for the moment... */
+    /* MT - only single threaded applications are supported at the moment... */
     if (provided != NULL)
     {
 	*provided = MPI_THREAD_SINGLE;
