@@ -12,7 +12,7 @@
 #include "mpioimpl.h"
 #include "adio_extern.h"
 
-/* MPICH2 error handling implementation */
+/* MPICH1 error handling implementation */
 
 int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
 			 int line, int error_class, const char generic_msg[],
