@@ -549,7 +549,7 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
     
     if (rank == 0) {
         MPIU_Free(displs);
-        MPIU_Free(tmp_buf+lb);
+        MPIU_Free((char*)tmp_buf+lb);
     }
 
     return mpi_errno;
