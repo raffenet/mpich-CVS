@@ -76,11 +76,9 @@ int smpd_get_pwd_from_file(char *file_name)
     return SMPD_SUCCESS;
 }
 
-static smpd_host_node_t *s_host_list = NULL, *s_cur_host = NULL;
-static int s_cur_count = 0;
 int smpd_get_next_hostname(char *host)
 {
-    if (s_host_list == NULL)
+    if (smpd_process.s_host_list == NULL)
     {
 	if (smpd_process.cur_default_host)
 	{
@@ -101,17 +99,17 @@ int smpd_get_next_hostname(char *host)
 	}
 	return SMPD_SUCCESS;
     }
-    if (s_cur_host == NULL)
+    if (smpd_process.s_cur_host == NULL)
     {
-	s_cur_host = s_host_list;
-	s_cur_count = 0;
+	smpd_process.s_cur_host = smpd_process.s_host_list;
+	smpd_process.s_cur_count = 0;
     }
-    strcpy(host, s_cur_host->host);
-    s_cur_count++;
-    if (s_cur_count >= s_cur_host->nproc)
+    strcpy(host, smpd_process.s_cur_host->host);
+    smpd_process.s_cur_count++;
+    if (smpd_process.s_cur_count >= smpd_process.s_cur_host->nproc)
     {
-	s_cur_host = s_cur_host->next;
-	s_cur_count = 0;
+	smpd_process.s_cur_host = smpd_process.s_cur_host->next;
+	smpd_process.s_cur_count = 0;
     }
     return SMPD_SUCCESS;
 }
@@ -124,9 +122,9 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
     char *hostname, *iter;
     int nproc;
 
-    s_host_list = NULL;
-    s_cur_host = NULL;
-    s_cur_count = 0;
+    smpd_process.s_host_list = NULL;
+    smpd_process.s_cur_host = NULL;
+    smpd_process.s_cur_count = 0;
 
     /* open the file */
     fin = fopen(file_name, "r");
@@ -171,20 +169,20 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 	    node->parent = -1;
 	    node->nproc = nproc;
 	    node->next = NULL;
-	    if (s_host_list == NULL)
-		s_host_list = node;
+	    if (smpd_process.s_host_list == NULL)
+		smpd_process.s_host_list = node;
 	    else
 	    {
-		node_iter = s_host_list;
+		node_iter = smpd_process.s_host_list;
 		while (node_iter->next != NULL)
 		    node_iter = node_iter->next;
 		node_iter->next = node;
 	    }
 	}
     }
-    if (s_host_list != NULL)
+    if (smpd_process.s_host_list != NULL)
     {
-	node = s_host_list;
+	node = smpd_process.s_host_list;
 	while (node)
 	{
 	    smpd_dbg_printf("host = %s, nproc = %d\n", node->host, node->nproc);

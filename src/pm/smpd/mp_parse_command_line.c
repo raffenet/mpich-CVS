@@ -484,7 +484,7 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "machinefile") == 0)
 	    {
-		if (s_host_list != NULL)
+		if (smpd_process.s_host_list != NULL)
 		{
 		    printf("Error: -machinefile can only be specified once per section.\n");
 		    smpd_exit_fn("mp_parse_command_args");
@@ -1035,13 +1035,13 @@ configfile_loop:
 #endif
 	}
 
-	if (s_host_list)
+	if (smpd_process.s_host_list)
 	{
 	    /* free the current host list */
-	    while (s_host_list)
+	    while (smpd_process.s_host_list)
 	    {
-		host_node_iter = s_host_list;
-		s_host_list = s_host_list->next;
+		host_node_iter = smpd_process.s_host_list;
+		smpd_process.s_host_list = smpd_process.s_host_list->next;
 		free(host_node_iter);
 	    }
 	}

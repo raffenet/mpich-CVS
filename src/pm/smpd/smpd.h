@@ -466,6 +466,8 @@ typedef struct smpd_global_t
     SMPD_BOOL exit_on_done;
     int tree_parent;
     int tree_id;
+    smpd_host_node_t *s_host_list, *s_cur_host;
+    int s_cur_count;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

@@ -133,7 +133,10 @@ smpd_global_t smpd_process =
       SMPD_SUCCESS,     /* state_machine_ret_val   */
       SMPD_FALSE,       /* exit_on_done            */
       0,                /* tree_parent             */
-      1                 /* tree_id                 */
+      1,                /* tree_id                 */
+      NULL,             /* s_host_list             */
+      NULL,             /* s_cur_host              */
+      0                 /* s_cur_count             */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
