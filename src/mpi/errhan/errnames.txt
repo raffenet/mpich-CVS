@@ -397,6 +397,8 @@ with MPI_Alloc_mem.
 **opundefined %d:only predefined ops valid (op = %d)
 **opundefined_rma:RMA target received unknown RMA operation
 **opundefined_rma %d:RMA target received unknown RMA operation type %d
+**pmi_finalize:PMI_Finalize failed
+**pmi_finalize %d:PMI_Finalize failed, error %d
 
 #
 # CH3:sock errors
@@ -406,10 +408,10 @@ with MPI_Alloc_mem.
 **ch3|sock|hostlookup:[ch3_sock] hostname lookup failed
 **ch3|sock|hostlookup %d %d %s:[ch3_sock] failed to obtain host information for process %d-%d (%s)
 **ch3|sock|connrefused:[ch3_sock] connection refused
-**ch3|sock|connrefused %d %d %s:[ch3_sock] failed to connect to process %d:%d (%s)
+**ch3|sock|connrefused %d %d %s:[ch3_sock] failed to connect to process %d-%d (%s)
 **ch3|sock|connterm:[ch3_sock] active connection unexpectedly terminated
 **ch3|sock|connfailed:[ch3_sock] failed to connnect to remote process
-**ch3|sock|connfailed %d %d:[ch3_sock] failed to connnect to remote process %d:%d
+**ch3|sock|connfailed %d %d:[ch3_sock] failed to connnect to remote process %d-%d
 **ch3|sock|badsock:[ch3_sock] internal error - bad sock
 **ch3|sock|failure:[ch3_sock] unknown failure
 **ch3|sock|failure %d:[ch3_sock] unknown failure, sock_errno=%d
@@ -420,6 +422,7 @@ with MPI_Alloc_mem.
 **ch3|sock|connallocfailed:[ch3_sock] unable to allocate a connection structure
 **ch3|sock|pmi_finalize:PMI_Finalize failed
 **ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
+**ch3|sock|eqmalloc:MPIU_Malloc failed to allocate memory for an event queue structure
 
 #
 # CH3:mm
