@@ -28,7 +28,7 @@ MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
 
-/* Masks and flags for MPID state in an MPID_Request */
+/* Masks and flags for channel device state in an MPID_Request */
 #define MPIDI_REQUEST_STATE_MSG_MASK 1
 #define MPIDI_REQUEST_STATE_MSG_SHIFT 0
 #define MPIDI_REQUEST_EAGER_MSG 0

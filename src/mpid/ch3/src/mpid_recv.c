@@ -40,19 +40,17 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
-	    /* This is an eager send message.  Assuming all of the data has
-	       arrived, we need to copy the data and then free the buffer and
-	       the request. */
-		
+	    /* This is an eager message. */
 	    MPIDI_dbg_printf(15, FCNAME, "eager message in the request");
 	    
+	    /* MT - this check needs to be thread safe */
 	    /* NOTE - rreq->cc is used here instead of rreq->cc_ptr.  We are
 	       assuming that for simple sends and receives the request's
 	       internal completion counter will always be used. */
-	    /* MT - this check needs to be thread safe; it may be already
-	       assuming rreq->cc is declared volatile */
 	    if (rreq->cc == 0)
 	    {
+		/* All of the data has arrived, we need to copy the data and
+	           then free the buffer and the request. */
 		if (count > 0)
 		{
 		    MPIDI_CH3U_Request_copy_tmp_data(rreq);
@@ -76,6 +74,8 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	}
 	else
 	{
+	    /* A rendezvous request-to-send (RTS) message has arrived.  We need
+	       to send a clear-to-send message to the remote process. */
 	    MPID_Request * cts_req;
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt =
@@ -84,8 +84,6 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	    MPIDI_dbg_printf(15, FCNAME, "rndv RTS in the request, "
 			     "sending rndv CTS");
 	    
-	    /* A rendezvous request-to-send (RTS) message has arrived.  We need
-	       to send a clear-to-send message to the remote process. */
 	    cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
 	    cts_pkt->req_id_sender = rreq->ch3.rndv_req_id;
 	    cts_pkt->req_id_receiver = rreq->handle;

@@ -83,9 +83,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    sreq = MPIDI_CH3_iStartMsgv(comm->vcr[rank], iov, 2);
 	    if (sreq != NULL)
 	    {
-		/* XXX - is there a race condition here? */
 		sreq->comm = comm;
-		/* XXX - what other infor needs to go into the request? */
 	    }
 	}
 	else
@@ -115,8 +113,6 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	sreq->ch3.datatype = datatype;
 	sreq->ch3.vc = comm->vcr[rank];
 	sreq->ch3.ca = MPIDI_CH3_CA_NONE;
-	
-	/* XXX - what other information needs to go into the request? */
 	
 	pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	pkt->match.rank = comm->rank;
