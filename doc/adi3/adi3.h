@@ -386,7 +386,7 @@ typedef struct {
   Datatype
 
   S*/
-typedef struct datatloop_ { 
+typedef struct dataloop_ { 
     int kind;                  /* Contains both the loop type 
 				  (contig, vector, blockindexed, indexed,
 				  or struct) and a bit that indicates 
@@ -713,8 +713,8 @@ typedef struct {
   the various array references)\:
 .vb
   cur_sp=valid_sp=0;
-  stackelm.loopinfo[cur_sp].cur_count = 0;
-  stackelm.loopinfo[cur_sp].loopinfo  = datatype->loopinfo;
+  stackelm[cur_sp].loopinfo  = datatype->loopinfo;
+  stackelm[cur_sp].loopinfo.curcount = 0;
   while (cur_sp >= 0) {
      if stackelm[cur_sp].loopinfo.kind is final then
         // final means simple, consisting of basic datatypes, such 
@@ -726,27 +726,27 @@ typedef struct {
 	    We can also choose to stop and return here when, for example,
 	    we have filled an output buffer.
         cur_sp--;
-     else if stackelm[cur_sp].cur_count == stackelm[cur_sp].loopinfo.cm_t.count
+     else if stackelm[cur_sp].curcount == stackelm[cur_sp].loopinfo.cm_t.count
          then {
          // We are done with the datatype.
          cur_sp--;
          }
      else {
         // need to push a datatype.  Two cases: struct or other
-        if (stack_elm[cur_sp].loopinfo.kind == struct_type) {
-           stack_elm[cur_sp+1].loopinfo = 
-           stack_elm[cur_sp].loopinfo.s_t.dataloop[stackelm[cur_sp].cur_count];
+        if (stackelm[cur_sp].loopinfo.kind == struct_type) {
+           stackelm[cur_sp+1].loopinfo = 
+           stackelm[cur_sp].loopinfo.s_t.dataloop[stackelm[cur_sp].curcount];
            }
         else {
            if (valid_sp <= cur_sp) {
-               stack_elm[cur_sp+1].loopinfo = 
-               stack_elm[cur_sp].loopinfo.cm_t.dataloop;
+               stackelm[cur_sp+1].loopinfo = 
+               stackelm[cur_sp].loopinfo.cm_t.dataloop;
                valid_sp = cur_sp + 1;
            }
         }
-        stack_elm[cur_sp].cur_count++;
+        stackelm[cur_sp].curcount++;
         cur_sp ++;
-        stack_elm[cur_sp].cur_count = 0;
+        stackelm[cur_sp].curcount = 0;
      }
   }
 .ve 
