@@ -495,5 +495,9 @@ smpd_sig_fn_t *smpd_signal( int signo, smpd_sig_fn_t func );
 #endif
 SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *path, char **namepart);
 SMPD_BOOL smpd_search_path(const char *path, const char *exe, int maxlen, char *str);
+#ifdef HAVE_WINDOWS_H
+int smpd_process_from_registry(smpd_process_t *process);
+int smpd_process_to_registry(smpd_process_t *process, char *actual_exe);
+#endif
 
 #endif

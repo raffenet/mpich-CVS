@@ -2263,6 +2263,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    {
 			smpd_process_t *trailer, *iter;
 
+#ifdef HAVE_WINDOWS_H
+			smpd_process_from_registry(context->process);
+#endif
 			result = smpd_wait_process(context->process->wait, &context->process->exitcode);
 			if (result != SMPD_SUCCESS)
 			{

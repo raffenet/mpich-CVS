@@ -23,6 +23,77 @@
 
 #ifdef HAVE_WINDOWS_H
 
+int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
+{
+    HKEY tkey;
+    DWORD len, result;
+    char name[1024];
+
+    smpd_enter_fn("smpd_process_to_registry");
+
+    if (process == NULL)
+    {
+	smpd_dbg_printf("NULL process passed to smpd_process_to_registry.\n");
+	return SMPD_FAIL;
+    }
+
+    len = snprintf(name, 1024, SMPD_REGISTRY_KEY "\\process\\%d", process->pid);
+    if (len < 0 || len > 1024)
+    {
+	smpd_dbg_printf("unable to create a string of the registry key.\n");
+	return SMPD_FAIL;
+    }
+
+    result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, name,
+	0, NULL, REG_OPTION_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result);
+	smpd_exit_fn("smpd_process_to_registry");
+	return SMPD_FAIL;
+    }
+
+    len = (DWORD)(strlen(actual_exe)+1);
+    result = RegSetValueEx(tkey, "exe", 0, REG_SZ, actual_exe, len);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to write the process registry value 'exe:%s', error %d\n", process->exe, result);
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_process_to_registry");
+	return SMPD_FAIL;
+    }
+
+    RegCloseKey(tkey);
+    smpd_exit_fn("smpd_process_to_registry");
+    return SMPD_SUCCESS;
+}
+
+int smpd_process_from_registry(smpd_process_t *process)
+{
+    DWORD len, result;
+    char name[1024];
+
+    smpd_enter_fn("smpd_process_from_registry");
+
+    if (process == NULL)
+	return SMPD_FAIL;
+
+    len = snprintf(name, 1024, SMPD_REGISTRY_KEY "\\process\\%d", process->pid);
+    if (len < 0 || len > 1024)
+	return SMPD_FAIL;
+
+    result = RegDeleteKey(HKEY_LOCAL_MACHINE, name);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to delete the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result);
+	smpd_exit_fn("smpd_process_from_registry");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_process_from_registry");
+    return SMPD_SUCCESS;
+}
+
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr)
 {
     HANDLE hUser;
@@ -638,8 +709,9 @@ CLEANUP:
 	    smpd_exit_fn("smpd_launch_process");
 	    return SMPD_FAIL;
 	}
-	ResumeThread(psInfo.hThread);
 	process->wait = process->in->wait = process->out->wait = process->err->wait = psInfo.hProcess;
+	smpd_process_to_registry(process, actual_exe);
+	ResumeThread(psInfo.hThread);
 	CloseHandle(psInfo.hThread);
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_SUCCESS;
@@ -1221,6 +1293,7 @@ int smpd_kill_all_processes(void)
     while (iter)
     {
 #ifdef HAVE_WINDOWS_H
+	smpd_process_from_registry(iter);
 	TerminateProcess(iter->wait, 8676);
 #else
 	kill(iter->wait, SIGKILL);
