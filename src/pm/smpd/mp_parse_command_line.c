@@ -1368,7 +1368,8 @@ configfile_loop:
 		}
 		strncpy(env_node->name, "MPI_WRAP_DLL_NAME", SMPD_MAX_NAME_LENGTH);
 		/* FIXME: How do we know to use the debug or release version? */
-		strncpy(env_node->value, "mpich2mpe.dll", SMPD_MAX_VALUE_LENGTH);
+		/*strncpy(env_node->value, "mpich2mpe.dll", SMPD_MAX_VALUE_LENGTH);*/
+		strncpy(env_node->value, "mpe", SMPD_MAX_VALUE_LENGTH);
 		env_node->next = env_list;
 		env_list = env_node;
 	    }
