@@ -68,6 +68,7 @@ AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
 
 # Now, select the proper compilers for the tests
 if test "$FROM_MPICH2" = yes ; then
+    AC_MSG_RESULT([Configuring tests for MPICH2])
     if test "$enable_in_place" = yes ; then
         LIBS=$saveLIBS
 	#BASECC=$CC
