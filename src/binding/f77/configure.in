@@ -142,7 +142,7 @@ if test "$with_cross" != "no" ; then
 fi
 
 if test "$use_runtimevalues" = "yes" ; then
-    AC_DEFINE(F77RUNTIME_VALUES,,[Define if Fortran environment should be determined at runtime])
+    AC_DEFINE(F77_RUNTIME_VALUES,,[Define if Fortran environment should be determined at runtime])
 fi
 
 dnl PAC_ARG_MPICH_BUILDING

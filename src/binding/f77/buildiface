@@ -730,7 +730,8 @@ sub logical_array_ftoc {
 }
 sub logical_array_in_decl {
     my $count = $_[0];
-    print $OUTFD "    int *l$count = (int *)malloc($Array_size * sizeof(int));\n";
+    print $OUTFD "    int *l$count = (int *)MPIU_Malloc($Array_size * sizeof(int));\n";
+    $clean_up .= "    MPIU_Free( l$count );\n";
 }
 sub logical_array_in_arg {
     my $count = $_[0];
@@ -864,12 +865,12 @@ sub addnull_ftoc {
     {char *p = v$count + $strlen - 1;
      int  li;
         while (*p == ' ') p--;
-        p2 = (char *)malloc( p-v$count + 1 );
+        p2 = (char *)MPIU_Malloc( p-v$count + 1 );
         for (li=0; li<(p-v$count); li++) { p$count\[li\] = v$count\[li\]; }
         p$count\[li\] = 0; 
     }
 ";
-    $clean_up .= "    free( p$count );\n";
+    $clean_up .= "    MPIU_Free( p$count );\n";
 }
 
 # This routine handles the special arguments in the *call*
@@ -1115,7 +1116,7 @@ sub build_specials {
     # external symbols that don't have a value assigned at compile time 
     # (so called common symbols)
     print $OUTFD "
-#if !defined(F77RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
+#if !defined(F77_RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
 const MPI_Fint MPIR_F_TRUE= F77_TRUE_VALUE, MPIR_F_FALSE= F77_FALSE_VALUE;
 #else
 MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
@@ -1131,7 +1132,7 @@ void *MPIR_F_MPI_BOTTOM = 0;
     &print_args( $OUTFD, $args );
     &print_attr;
     print $OUTFD "{\n";
-    print $OUTFD "#ifndef F77RUNTIME_VALUES
+    print $OUTFD "#ifndef F77_RUNTIME_VALUES
     /* any compile/link time values go here */
 #else
 #   abort \"Fortran values must be determined at configure time\"

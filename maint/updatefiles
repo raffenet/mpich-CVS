@@ -254,19 +254,23 @@ fi
 if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
     echo "Running coding check"
     echo ""
-    echo "checking mpi code"
-    echo ""
-    maint/codingcheck src/mpi/*/*.c src/include/*.h src/util/*/*.c
-    echo ""
-    echo "checking mm device code"
-    echo ""
-    maint/codingcheck src/mpid/mm/src/*/*.c src/mpid/mm/include/*.h
-    echo ""
-    echo "checking ch3 device code"
-    echo ""
-    maint/codingcheck src/mpid/ch3/channels/*/src/*.c src/mpid/ch3/src/*.c
-    echo ""    
-    echo "checking pmi code"
-    echo ""
-    maint/codingcheck src/pmi/impls/*/*.c
+    # codingcheck now understands directories.
+    # skip *only* files provided by an outside source
+    maint/codingcheck -skipfile=./src/pmi/impls/winmpd/crypt.c \
+		      -skipfile=./src/pmi/impls/winmpd/des.c src
+#      echo "checking mpi code"
+#      echo ""
+#      maint/codingcheck src/mpi/*/*.c src/include/*.h src/util/*/*.c
+#      echo ""
+#      echo "checking mm device code"
+#      echo ""
+#      maint/codingcheck src/mpid/mm/src/*/*.c src/mpid/mm/include/*.h
+#      echo ""
+#      echo "checking ch3 device code"
+#      echo ""
+#      maint/codingcheck src/mpid/ch3/channels/*/src/*.c src/mpid/ch3/src/*.c
+#      echo ""    
+#      echo "checking pmi code"
+#      echo ""
+#      maint/codingcheck src/pmi/impls/*/*.c
 fi

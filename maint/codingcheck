@@ -9,9 +9,13 @@
 # /* style: allow:routine-name:count sig:value */
 # where routine-name is the name of a routine that is on the warning list
 # and value is a digital signature computed from the filename and routine-name
-# by the lead programmer.
+# by the lead programmer.  (currently implemented without the signature 
+# check).
 #
 # Add line-length check.  Optionally warn of >80 character lines.
+#
+# Add option to output all of the "allow" styles encountered, with the file
+# name and user (from the sig).
 
 require "maint/parse.sub";
 
@@ -20,13 +24,14 @@ $debug = 0;
 $showfiles = 0;
 $depth = 1;
 $curdir = ".";
-
+%skipfiles = ();
 # Check for special args
 @files = ();
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
     elsif( $arg =~ /-debug/) { $debug = 1; }
     elsif ( $arg =~ /-verbose/) { $verbose = 1; }
+    elsif ( $arg =~ /-skipfile=(.*)/) { $skipfiles{$1} = 1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
@@ -35,21 +40,26 @@ foreach $arg (@ARGV) {
 
 # Call once for each file
 sub ProcessFile {
-    $filename = $_[0];
+    my $filename = $_[0];
     %AllowedRoutines = ();
     %AllowedDefines = ();
-    $cxx_comments_found = 0;
+    my $cxx_comments_found = 0;
+    my $cxx_header = 0;
+
+    # Check for files that we should skip
+    if (defined($skipfiles{$filename})) { 
+	return;
+    }
+
     &ClearPreamble;
     %warningmsgs = ();
     &ClearMismatchedStates;
+    
     open( FD, "<$filename" ) || die "Could not open $filename";
     while (<FD>) {
-#	if (/\/\*-ALLOW-PRINTF-\*\//) {
-#	    
-#	}
 	$errsrc = " in $filename";
 	# Check for special comments
-	if (/\/\* style: *allow:(\w*):(\d*) *sig:(\d*)/) {
+	if (/\/\*\s*style:\s*allow:(\w*):(\d*) *sig:(\d*)/) {
 	    # Found a style comment.  Add the routine name to this 
 	    # list of allowed routines.  Eventually, this may require
 	    # a signed key
@@ -60,9 +70,12 @@ sub ProcessFile {
             # But for now, we do:
 	    $AllowedRoutines{$1} = $2;
 	}
-	elsif ( /\/\* style: *define:([_\w]*):(\d*) *sig:(\d*)/) {
+	elsif ( /\/\*\s*style:\s*define:([_\w]*):(\d*) *sig:(\d*)/) {
 	    # This style comment permits special definitions
 	    $AllowedDefines{$1} = $2;
+	}
+	elsif (/\/\*\s*style:\s*c\+\+ header/) {
+	    $cxx_header = 1;
 	}
 	# The preamble is within a comment
 	&CheckForPreamble( $_ );
@@ -71,7 +84,7 @@ sub ProcessFile {
 	# Check for C++ style comments
 	if (/\/\//) {
 	    $cxx_comments_found ++;
-	    if ($cxx_comments_found == 1) {
+	    if ($cxx_comments_found == 1 && ! $cxx_header) {
 		print "C++ comment found in $filename:\n";
 		my $line = $_;
 		if (/(.*)\n/) {
@@ -92,7 +105,7 @@ sub ProcessFile {
     foreach $key (keys(%warningmsgs)) {
 	print "$key ($warningmsgs{$key} times)\n";
     }
-    if ($cxx_comments_found > 1) {
+    if ($cxx_comments_found > 1 && !$cxx_header) {
 	print "$cxx_comments_found C++ comments found in $filename\n";
     }
     &ReportOnPreamble( $filename );
@@ -228,8 +241,9 @@ foreach $file (@files) {
 
 sub ProcessDir {
     my $DIR = "DIR$depth"; $depth++;
-    my $dir = $_[0];
+    my $dir = $_[0]; $dir =~ s/\/$//;
     my $savedir = $curdir;
+    $curdir =~ s/\/$//;
     $curdir = "$curdir/$dir";
     print "Processing directory $curdir\n" if ($verbose);
     opendir( $DIR, "$curdir" ) || die "Cannot open directory $curdir\n";
@@ -243,7 +257,7 @@ sub ProcessDir {
 	print "processing $file\n" if ($verbose);
 	if (-d "$curdir/$file") {
 	    if (! ($file =~ /^\./) && ! ($file =~ /CVS/) ) { 
-		print "Directory $file\n";
+		print "Directory $curdir/$file\n";
 		&ProcessDir( $file );
 	    }
 	}
@@ -257,7 +271,7 @@ sub ProcessDir {
 }
 #
 # Look for mismatched names in the state definitions 
-# MPID_MPI_FUNC_EXIT, MPID_MPI_FUNC_ENTER
+# MPID_MPI_<optionalmode_>FUNC_EXIT, MPID_MPI_<optionalmode_>FUNC_ENTER
 $statename = "";
 $funcname  = "";
 sub ClearMismatchedStates {
@@ -274,14 +288,14 @@ sub CheckForMismatchedStates {
 	$funcname =~ tr/a-z/A-Z/;
     }
     elsif ($curline =~ /\s*#define/) { return; }
-    elsif ($curline =~ /MPID_MPI_FUNC_ENTER\(\s*(.*)\s*\)/) {
+    elsif ($curline =~ /MPID_MPI_[A-Z_]*FUNC_ENTER\(\s*(.*)\s*\)/) {
 	$statename = $1;
 	$funcstatename = "MPID_STATE_".$funcname;
 	if ($funcname ne "" && $statename ne $funcstatename) {
 	    print "Warning: State name \"$statename\" does not match function name \"$funcname\"\n";
 	}
     }
-    elsif ($curline =~ /MPID_MPI_FUNC_EXIT\(\s*(.*)\s*\)/) {
+    elsif ($curline =~ /MPID_MPI_[A-Z_]*FUNC_EXIT\(\s*([^\s]*)\s*\)/) {
 	$endname = $1;
 	if ($statename ne $endname && $endname ne "stateid") {
 	    print "Warning: State $statename ended with $endname in $filename\n";

@@ -112,7 +112,14 @@ generic is $arg2 and specific is $arg3\r\n";
 # This is a temporary routine; the exact output form will be defined later
 sub CreateErrmsgsHeader {
     $FD = $_[0];
-    print $FD "/* This file automatically created by extracterrmsgs */\n";
+    print $FD "/* -*- Mode: C; c-basic-offset:4 ; -*- */\
+/*  \
+ *  (C) 2001 by Argonne National Laboratory.\
+ *      See COPYRIGHT in top-level directory.\
+ *\
+ * This file automatically created by extracterrmsgs\
+ * DO NOT EDIT\
+ */\n";
     print $FD "typedef struct {\
         const char *short_name, *long_name; } msgpair;\n"
 }
