@@ -1,4 +1,4 @@
 lib${MPILIBNAME}_a_SOURCES = close_port.c comm_connect.c comm_disconnect.c \
  comm_get_parent.c comm_join.c comm_spawn.c comm_spawn_multiple.c lookup_name.c \
- open_port.c publish_name.c unpublish_name.c
+ open_port.c publish_name.c unpublish_name.c comm_accept.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include

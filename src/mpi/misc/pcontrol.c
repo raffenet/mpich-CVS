@@ -7,32 +7,32 @@
 
 #include "mpiimpl.h"
 
-/* -- Begin Profiling Symbol Block for routine MPI_Win_create_errhandler */
+/* -- Begin Profiling Symbol Block for routine MPI_Pcontrol */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPI_Win_create_errhandler = PMPI_Win_create_errhandler
+#pragma weak MPI_Pcontrol = PMPI_Pcontrol
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Win_create_errhandler  MPI_Win_create_errhandler
+#pragma _HP_SECONDARY_DEF PMPI_Pcontrol  MPI_Pcontrol
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPI_Win_create_errhandler as PMPI_Win_create_errhandler
+#pragma _CRI duplicate MPI_Pcontrol as PMPI_Pcontrol
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#define MPI_Win_create_errhandler PMPI_Win_create_errhandler
+#define MPI_Pcontrol PMPI_Pcontrol
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPI_Win_create_errhandler
+#define FUNCNAME MPI_Pcontrol
 
 /*@
-   MPI_Win_create_errhandler - create a window error handler
+   MPI_Pcontrol - profiling control
 
    Arguments:
-+  MPI_Win_errhandler_fn *function - function
--  MPI_Errhandler *errhandler - error handler
++  const int level - level
+-  ... - other arguments
 
    Notes:
 
@@ -41,12 +41,12 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-EXPORT_MPI_API int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MPI_Errhandler *errhandler)
+EXPORT_MPI_API int MPI_Pcontrol(const int level, ...)
 {
-    static const char FCNAME[] = "MPI_Win_create_errhandler";
+    static const char FCNAME[] = "MPI_Pcontrol";
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PCONTROL);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -56,7 +56,7 @@ EXPORT_MPI_API int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MP
                             "**initialized", 0 );
             }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -64,6 +64,6 @@ EXPORT_MPI_API int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MP
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
     return MPI_SUCCESS;
 }

@@ -1,4 +1,3 @@
-#if 0
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *
@@ -44,7 +43,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_delete_attr_function *win_delete_attr_fn, int *win_keyval, void *extra_state)
+EXPORT_MPI_API int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_delete_attr_function *win_delete_attr_fn, int *win_keyval, void *extra_state)
 {
     static const char FCNAME[] = "MPI_Win_create_keyval";
     int mpi_errno = MPI_SUCCESS;
@@ -70,4 +69,3 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
     return MPI_SUCCESS;
 }
-#endif

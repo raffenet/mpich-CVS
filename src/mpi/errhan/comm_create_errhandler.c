@@ -1,4 +1,3 @@
-#if 0
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *
@@ -42,7 +41,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *function, MPI_Errhandler *errhandler)
+EXPORT_MPI_API int MPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *function, MPI_Errhandler *errhandler)
 {
     static const char FCNAME[] = "MPI_Comm_create_errhandler";
     int mpi_errno = MPI_SUCCESS;
@@ -68,4 +67,3 @@ int MPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *function, MPI_Errhandler 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE_ERRHANDLER);
     return MPI_SUCCESS;
 }
-#endif

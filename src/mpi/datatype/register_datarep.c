@@ -1,4 +1,3 @@
-#if 0
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *
@@ -45,7 +44,7 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_conversion_fn, MPI_Datarep_conversion_function *write_conversion_fn, MPI_Datarep_extent_function *dtype_file_extent_fn, void *extra_state)
+EXPORT_MPI_API int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_conversion_fn, MPI_Datarep_conversion_function *write_conversion_fn, MPI_Datarep_extent_function *dtype_file_extent_fn, void *extra_state)
 {
     static const char FCNAME[] = "MPI_Register_datarep";
     int mpi_errno = MPI_SUCCESS;
@@ -71,4 +70,3 @@ int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_co
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REGISTER_DATAREP);
     return MPI_SUCCESS;
 }
-#endif

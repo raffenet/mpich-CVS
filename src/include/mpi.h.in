@@ -372,7 +372,7 @@ typedef int (MPI_Grequest_query_function)(void *, MPI_Status *);
    both Unix and Windows NT versions of MPICH.  For Unix users, the 
    definition is empty */
 #ifdef HAVE_EXPORT_MPI_API
-#ifdef NT_TCP_DLL_EXPORTS
+#ifdef MPICH2_EXPORTS
 #define EXPORT_MPI_API __declspec(dllexport)
 #else
 #define EXPORT_MPI_API __declspec(dllimport)
