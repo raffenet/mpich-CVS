@@ -44,7 +44,7 @@ PACKAGE = mpich2
 VERSION = 0.94-CVS
 MPICVSHOME = @MPICVSHOME@
 dist:
-	export version=${VERSION} ; \
+	version=${VERSION} ; export version ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
 	if test "$$prever" = "-CVS" ; then version=$${version}-`date "+%Y%m%d"` ; fi ; \
 	echo "Cutting version $${version} of the MPICH2 distribution" ; \
