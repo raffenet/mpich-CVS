@@ -11,7 +11,7 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 {
     int perm, amode, old_mask, err, flag;
     char *value;
-    struct pvfs_stat pstat = {-1,-1,65536,0,0};
+    struct pvfs_stat pstat = {-1,-1,-1,0,0};
 
     if (fd->perm == ADIO_PERM_NULL) {
 	old_mask = umask(022);
