@@ -1,4 +1,4 @@
-#! /usr/local/bin/perl
+#! @PERL@
 #
 # Set some defaults
 $includedir = ".";
@@ -207,7 +207,8 @@ sub ReadMfile {
 	elsif (/^doc_(\w*)_DIR\s*=\s*(.*)\s*$/) {
 	    $docdir{$1} = $2;
 	}
-        elsif (/^SUBDIRS\s*=\s*(.*)\s*$/) {
+        elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
+	    # The \r is used to remove any \r in DOS-style files
             @subdirs = split(/ /,$1);
         }
         elsif (/^EXTRA_PROGRAMS\s*=\s*(.*)\s*$/) {
@@ -562,6 +563,9 @@ sub ExpandMakeVars {
 sub ProcessFile {
     $file = $_[0];
     print "Processing $curdir$file\n";
+    if (-s "configure.in") {
+	&ReadAutoconf;
+    }
     &ReadMfile( $file );
     $output_name = $file;
     if ($create_configure_input) {
@@ -711,7 +715,7 @@ sub TargetClean {
     $programnames = join( ' ', keys(%programs));
     print FD "clean:";
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
-    print FD "\n\trm -f *.o \${srcdir}/*.o *~ $programnames\n";
+    print FD "\n\t-rm -f *.o \${srcdir}/*.o *~ $programnames\n";
     &RecursiveOp( "clean" );
     print FD "distclean: clean";
     if (defined($usertargets{"distclean-local"})) { 
@@ -719,6 +723,29 @@ sub TargetClean {
     }
     print FD "\n";
     &RecursiveOp( "distclean" );
+    # Remove any local files last (in case this file is one of them)
+    $rmfile = "";
+    $lcurdir = "$curdir";
+    $lcurdir =~ s/\/$//;
+    #print "|$lcurdir|\n";
+    if (defined($autoconf_files_by_dir{$lcurdir})) {
+	$rmfile = $autoconf_files_by_dir{$lcurdir};
+	print FD "\t-rm -f $rmfile\n";
+    }
+    if ($maint_targets) {
+	print FD "maintainerclean:";
+	if (defined($usertargets{"maintainerclean-local"})) {
+	    print FD " maintainerclean-local";
+	}
+	print FD "\n";
+	&RecursiveOp( "maintainerclean" );
+	# Remove The file that simplemake creates
+	print FD "\t-rm -f $output_name\n";
+	# eventually, this should also invoke distclean, but it must
+	# do that only once (not recursively) and only after all other
+	# uses of the Makefile, since distclean removes the Makefile
+	# Directories containing autoconf should include an rm of configure
+    }
 }
 
 #
@@ -1004,6 +1031,51 @@ sub TargetDependencies {
     }
 }
 
+
+# Extract derived files from autoconf
+sub ReadAutoconf {
+    open FDCONF, "configure.in" || die "Could not open configure.in file";
+    while (<FDCONF>) {
+	#if (/^\s*#/) { next; }
+	if (/^\s*AC_OUTPUT\(/) {
+	    # First, read past all continued lines
+	    $line = "";
+	    while (/\\\s*$/) {
+		chop($_); chop($_);
+		$line .= $_;
+		$_ = <FDCONF>;
+	    }
+	    $line .= $_; chop $line; 
+	    #print $line;
+	    $line =~ /^\s*AC_OUTPUT\((.*)\)\s*$/;
+	    $files = $1;
+	    @autoconf_files = split(/\s\s*/,$files);
+	    # Create a hash by directory
+	    $lcurdir = $curdir;
+	    $lcurdir =~ s/\/$//;
+	    foreach $file (@autoconf_files) {
+		if ($file =~ /^(.*)\/([^\/]*)$/) {
+		    $autoconf_files_by_dir{"$curdir$1"} .= " $2";
+		    #print "{$curdir$1} .= $2\n";
+		    # Also add files that are in directories with no simplemake
+		    # input (e.g., in include directories with no makefile)
+		    if (! -s "$curdir$1/Makefile.sm") {
+			$autoconf_files_by_dir{$lcurdir} .= " $file";
+		    }
+		}
+		elsif ($file =~ /^.*$/) {
+		    $autoconf_files_by_dir{"$lcurdir"} .= " $file";
+		    #print "{$lcurdir} .= $file\n";
+		}
+	    }
+	    # Add files that configure generates in the current directory
+	    $autoconf_files_by_dir{$lcurdir} .= " config.status config.log config.cache config.system";
+	    #print "$files\n";
+	    last;
+	}
+    }
+    close FDCONF;
+}
 # Eventually we will use this to generate the profiling targets.
 sub ProfileTargets {
     print FD "\
@@ -1029,8 +1101,3 @@ ${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
         \@mv -f \$*.o \$*.pf\
 ";
 }
-
-
-
-
-
