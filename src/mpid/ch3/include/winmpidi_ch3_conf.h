@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 /* include/mpidi_ch3_conf.h.  Generated automatically by configure.  */
 /* include/mpidi_ch3_conf.h.in.  Generated automatically from configure.in by autoheader.  */
 
