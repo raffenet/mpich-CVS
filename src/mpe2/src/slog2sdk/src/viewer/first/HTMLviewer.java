@@ -18,6 +18,7 @@ import javax.swing.text.*;
 import javax.swing.event.*;
 
 import viewer.common.Dialogs;
+import viewer.common.TopWindow;
 
 public class HTMLviewer extends JDialog
                         implements ActionListener, HyperlinkListener
@@ -26,9 +27,15 @@ public class HTMLviewer extends JDialog
     private JEditorPane  html_panel;
     private URL          docu_URL;
 
-    public HTMLviewer()
+    private JButton      open_btn;
+
+    public HTMLviewer( String title_str )
     {
-        setTitle( "HTML viewer" );
+        super( TopWindow.First.getWindow() );
+        if ( title_str != null )
+            setTitle( title_str );
+        else
+            setTitle( "HTML viewer" );
         setSize( 600, 300 );
         setBackground( Color.gray );
         getContentPane().setLayout( new BorderLayout() );
@@ -54,31 +61,40 @@ public class HTMLviewer extends JDialog
         input_fld.addActionListener( this );
         html_panel.addHyperlinkListener( this );
 
-        addWindowListener( new WindowAdapter()
-        {
+        open_btn = null;
+
+        addWindowListener( new WindowAdapter() {
             public void windowClosing( WindowEvent evt )
-            { setVisible( false ); }
+            { HTMLviewer.this.setVisible( false ); }
         } );
     }
 
-    public HTMLviewer( URL init_URL )
+    public HTMLviewer( String title_str, JButton button )
     {
-        this();
-        Init( init_URL );
+        this( title_str );
+        open_btn = button;
     }
 
-    public void Init( URL init_URL )
+    // Overriden setVisible to enable/disable the open_btm
+    public void setVisible( boolean val )
+    {
+        super.setVisible( val );
+        if ( open_btn != null )
+            open_btn.setEnabled( !val );
+    }
+
+    public void init( URL init_URL )
     {
         docu_URL = init_URL;
         // System.out.println( "docu_URL = " + docu_URL );
 
         if ( docu_URL != null ) {
             input_fld.setText( docu_URL.toString() ); 
-            UpdateHTMLpanel();
+            this.updateHTMLpanel();
         }    
     }
 
-    private void UpdateHTMLpanel()
+    private void updateHTMLpanel()
     {
         try {
             docu_URL = new URL( input_fld.getText() );
@@ -121,15 +137,16 @@ public class HTMLviewer extends JDialog
     public void actionPerformed( ActionEvent evt )
     {
         if ( evt.getActionCommand().equals( "Close" ) )
-            setVisible( false );
+            this.setVisible( false );
         else
-            UpdateHTMLpanel();
+            this.updateHTMLpanel();
     }
 
     public static void main( String args[] )
     {
         URL init_URL = ClassLoader.getSystemResource( "doc/html/index.html" );
-        HTMLviewer htmlview = new HTMLviewer( init_URL );
+        HTMLviewer htmlview = new HTMLviewer( null );
+        htmlview.init( init_URL );
         htmlview.setVisible( true );
     }
 }

@@ -29,8 +29,10 @@ public class FirstPanel extends JPanel
     private static String       about_str = "Jumpshot-4, the SLOG-2 viewer.\n"
                                           + "bug-reports/questions:\n"
                                           + "            chan@mcs.anl.gov";
-    private static String       manuel_path      = "manuel_index.html";
-    private static String       faq_path         = "faq_index.html";
+    private static String       manual_path      = Const.DOC_PATH
+                                                 + "manual_index.html";
+    private static String       faq_path         = Const.DOC_PATH
+                                                 + "faq_index.html";
     private static String       js_icon_path     = Const.IMG_PATH
                                                  + "jumpshot.gif";
 
@@ -44,7 +46,7 @@ public class FirstPanel extends JPanel
                                                  + "Properties24.gif";
     private static String       prefer_icon_path = Const.IMG_PATH
                                                  + "Preferences24.gif";
-    private static String       manuel_icon_path = Const.IMG_PATH
+    private static String       manual_icon_path = Const.IMG_PATH
                                                  + "Help24.gif";
     private static String       faq_icon_path    = Const.IMG_PATH
                                                  + "Information24.gif";
@@ -56,13 +58,16 @@ public class FirstPanel extends JPanel
 
     /*  some of these are hidden buttons */
     private        JButton      file_select_btn;
-    private        JButton      file_show_btn;
     private        JButton      file_close_btn;
-    private        JButton      edit_legend_btn;
+    private        JButton      show_timeline_btn;
+    private        JButton      show_legend_btn;
     private        JButton      edit_prefer_btn;
-    private        JButton      help_manuel_btn;
+    private        JButton      help_manual_btn;
     private        JButton      help_faq_btn;
     private        JButton      help_about_btn;
+
+    private        HTMLviewer   manual_viewer;
+    private        HTMLviewer   faq_viewer;
 
     private        LogFileOperations   file_ops;
     private        int                 view_ID;
@@ -182,34 +187,35 @@ public class FirstPanel extends JPanel
                             new FileSelectButtonListener() );
         toolbar.add( file_select_btn );
 
-            icon_URL = null;
-            icon_URL = getURL( show_icon_path );
-            if ( icon_URL != null )
-                file_show_btn = new JButton( new ImageIcon( icon_URL ) );
-            else
-                file_show_btn = new JButton( "SHOW" );
-            file_show_btn.setToolTipText( "Display the Timeline window" );
-            // file_show_btn.setBorder( empty_border );
-            file_show_btn.setMargin( btn_insets );
-            file_show_btn.addActionListener(
-                          new ViewMapComboBoxListener() );
-                          // new FileShowButtonListener() );
-        toolbar.add( file_show_btn );
-
         toolbar.addSeparator();
 
             icon_URL = null;
             icon_URL = getURL( legend_icon_path );
             if ( icon_URL != null )
-                edit_legend_btn = new JButton( new ImageIcon( icon_URL ) );
+                show_legend_btn = new JButton( new ImageIcon( icon_URL ) );
             else
-                edit_legend_btn = new JButton( "LEGEND" );
-            edit_legend_btn.setToolTipText( "Open Legend window" );
-            // edit_legend_btn.setBorder( empty_border );
-            edit_legend_btn.setMargin( btn_insets );
-            edit_legend_btn.addActionListener( 
-                            new EditLegendButtonListener() );
-        toolbar.add( edit_legend_btn );
+                show_legend_btn = new JButton( "LEGEND" );
+            show_legend_btn.setToolTipText( "Display the Legend window" );
+            // show_legend_btn.setBorder( empty_border );
+            show_legend_btn.setMargin( btn_insets );
+            show_legend_btn.addActionListener( 
+                            new ShowLegendButtonListener() );
+        toolbar.add( show_legend_btn );
+
+            icon_URL = null;
+            icon_URL = getURL( show_icon_path );
+            if ( icon_URL != null )
+                show_timeline_btn = new JButton( new ImageIcon( icon_URL ) );
+            else
+                show_timeline_btn = new JButton( "TIMELINE" );
+            show_timeline_btn.setToolTipText( "Display the Timeline window" );
+            // show_timeline_btn.setBorder( empty_border );
+            show_timeline_btn.setMargin( btn_insets );
+            show_timeline_btn.addActionListener(
+                              new ViewMapComboBoxListener() );
+        toolbar.add( show_timeline_btn );
+
+        toolbar.addSeparator();
 
             icon_URL = null;
             icon_URL = getURL( prefer_icon_path );
@@ -217,7 +223,7 @@ public class FirstPanel extends JPanel
                 edit_prefer_btn = new JButton( new ImageIcon( icon_URL ) );
             else
                 edit_prefer_btn = new JButton( "PREFERENCE" );
-            edit_prefer_btn.setToolTipText( "Open Preference window" );
+            edit_prefer_btn.setToolTipText( "Open the Preference window" );
             // edit_prefer_btn.setBorder( empty_border );
             edit_prefer_btn.setMargin( btn_insets );
             edit_prefer_btn.addActionListener(
@@ -227,17 +233,17 @@ public class FirstPanel extends JPanel
         toolbar.addSeparator();
 
             icon_URL = null;
-            icon_URL = getURL( manuel_icon_path );
+            icon_URL = getURL( manual_icon_path );
             if ( icon_URL != null )
-                help_manuel_btn = new JButton( new ImageIcon( icon_URL ) );
+                help_manual_btn = new JButton( new ImageIcon( icon_URL ) );
             else
-                help_manuel_btn = new JButton( "MANUEL" );
-            help_manuel_btn.setToolTipText( "Open user's manuel window" );
-            // help_manuel_btn.setBorder( empty_border );
-            help_manuel_btn.setMargin( btn_insets );
-            help_manuel_btn.addActionListener(
-                            new HelpManuelButtonListener() );
-        toolbar.add( help_manuel_btn );
+                help_manual_btn = new JButton( "MANUAL" );
+            help_manual_btn.setToolTipText( "Open the user's manual window" );
+            // help_manual_btn.setBorder( empty_border );
+            help_manual_btn.setMargin( btn_insets );
+            help_manual_btn.addActionListener(
+                            new HelpManualButtonListener() );
+        toolbar.add( help_manual_btn );
 
             icon_URL = null;
             icon_URL = getURL( faq_icon_path );
@@ -245,7 +251,7 @@ public class FirstPanel extends JPanel
                 help_faq_btn = new JButton( new ImageIcon( icon_URL ) );
             else
                 help_faq_btn = new JButton( "FAQ" );
-            help_faq_btn.setToolTipText( "Open FAQ window" );
+            help_faq_btn.setToolTipText( "Open the FAQ window" );
             // help_faq_btn.setBorder( empty_border );
             help_faq_btn.setMargin( btn_insets );
             help_faq_btn.addActionListener(
@@ -259,7 +265,7 @@ public class FirstPanel extends JPanel
                 help_about_btn = new JButton( new ImageIcon( icon_URL ) );
             else
                 help_about_btn = new JButton( "ABOUT" );
-            help_about_btn.setToolTipText( "Open About-This window" );
+            help_about_btn.setToolTipText( "Open the About-This window" );
             // help_about_btn.setBorder( empty_border );
             help_about_btn.setMargin( btn_insets );
             help_about_btn.addActionListener(
@@ -277,6 +283,9 @@ public class FirstPanel extends JPanel
             file_close_btn.setMargin( btn_insets );
             file_close_btn.addActionListener(
                            new FileCloseButtonListener() );
+
+            manual_viewer = new HTMLviewer( "Manual", help_manual_btn );
+            faq_viewer    = new HTMLviewer( "FAQs", help_faq_btn );
 
         return toolbar;
     }
@@ -314,9 +323,14 @@ public class FirstPanel extends JPanel
         return file_close_btn;
     }
 
-    public JButton getEditLegendButton()
+    public JButton getShowLegendButton()
     {
-        return edit_legend_btn;
+        return show_legend_btn;
+    }
+
+    public JButton getShowTimelineButton()
+    {
+        return show_timeline_btn;
     }
 
     public JButton getEditPreferenceButton()
@@ -324,9 +338,9 @@ public class FirstPanel extends JPanel
         return edit_prefer_btn;
     }
 
-    public JButton getHelpManuelButton()
+    public JButton getHelpManualButton()
     {
-        return help_manuel_btn;
+        return help_manual_btn;
     }
 
     public JButton getHelpFAQsButton()
@@ -359,7 +373,6 @@ public class FirstPanel extends JPanel
                     // if ( lineIDmaps.size() == 1 )
                     //     file_ops.createTimelineWindow( view_ID=0 );
                 }
-
             }
         }
     }
@@ -375,12 +388,13 @@ public class FirstPanel extends JPanel
             if ( lineIDmaps != null ) {
                 FirstPanel.this.setMapPullDownMenu( lineIDmaps );
                 // Timeline window is created by ViewMapComboBoxListener
-                // if ( lineIDmaps.size() == 1 ) {
+                // if ( lineIDmaps.size() == 1 )
                 //     file_ops.createTimelineWindow( view_ID=0 );
             }
         }
     }
 
+    //  This is essentially ShowTimelineButtonListener
     private class ViewMapComboBoxListener implements ActionListener
     {
         public void actionPerformed( ActionEvent evt )
@@ -391,12 +405,13 @@ public class FirstPanel extends JPanel
                JComboBox.removeAllItems() seems to trigger a selected index=-1 
                action event.  So filter only the relevant selection event.
             */
-            if ( view_ID >= 0 && view_ID < pulldown_list.getItemCount() )
+            if ( view_ID >= 0 && view_ID < pulldown_list.getItemCount() ) {
                 file_ops.createTimelineWindow( view_ID );
+            }
         }
     }
 
-    private class EditLegendButtonListener implements ActionListener
+    private class ShowLegendButtonListener implements ActionListener
     {
         public void actionPerformed( ActionEvent evt )
         {
@@ -412,19 +427,18 @@ public class FirstPanel extends JPanel
         }
     }
 
-    private class HelpManuelButtonListener implements ActionListener
+    private class HelpManualButtonListener implements ActionListener
     {
         public void actionPerformed( ActionEvent evt )
         {
-            URL manuel_URL = getURL( manuel_path );
-            if ( manuel_URL != null ) {
-                HTMLviewer  manuel_viewer;
-                manuel_viewer = new HTMLviewer( manuel_URL );
-                manuel_viewer.setVisible( true );
+            URL manual_URL = getURL( manual_path );
+            if ( manual_URL != null ) {
+                manual_viewer.init( manual_URL );
+                manual_viewer.setVisible( true );
             }
             else
                 Dialogs.warn( TopWindow.First.getWindow(),
-                              "Cannot locate " + manuel_path + "." );
+                              "Cannot locate " + manual_path + "." );
         }
     }
 
@@ -433,9 +447,8 @@ public class FirstPanel extends JPanel
         public void actionPerformed( ActionEvent evt )
         {
            URL faq_URL = getURL( faq_path );
-            if ( faq_URL != null ) {
-                HTMLviewer  faq_viewer;
-                faq_viewer = new HTMLviewer( faq_URL );
+            if ( faq_URL != null ) { 
+                faq_viewer.init( faq_URL );
                 faq_viewer.setVisible( true );
             }
             else

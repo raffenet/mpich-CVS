@@ -15,8 +15,10 @@ import javax.swing.*;
 
 import viewer.common.Dialogs;
 import viewer.common.TopWindow;
+import viewer.common.TopControl;
 
 public class FirstFrame extends JFrame
+                        implements TopControl
 {
     private static boolean        isApplet = false;
     private static String         filename = null;
@@ -51,6 +53,21 @@ public class FirstFrame extends JFrame
     public void init()
     {
         top_panel.init();
+    }
+
+    public void setEditPreferenceButtonEnabled( boolean val )
+    {
+        top_panel.getEditPreferenceButton().setEnabled( val );
+    }
+
+    public void setShowLegendButtonEnabled( boolean val )
+    {
+        top_panel.getShowLegendButton().setEnabled( val );
+    }
+
+    public void setShowTimelineButtonEnabled( boolean val )
+    {
+        top_panel.getShowTimelineButton().setEnabled( val );
     }
 
     public static void checkVersion()

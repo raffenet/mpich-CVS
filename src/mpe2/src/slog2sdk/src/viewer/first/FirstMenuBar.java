@@ -19,7 +19,6 @@ import javax.swing.border.EtchedBorder;
 import viewer.common.TopWindow;
 
 public class FirstMenuBar extends JMenuBar
-                          implements ActionListener
 {
     private        boolean         isApplet;
     private        FirstPanel      first_panel;
@@ -27,9 +26,10 @@ public class FirstMenuBar extends JMenuBar
     private        JMenuItem       file_select_item;
     private        JMenuItem       file_close_item;
     private        JMenuItem       file_exit_item;
-    private        JMenuItem       edit_legends_item;
-    private        JMenuItem       edit_preferences_item;
-    private        JMenuItem       help_manuel_item;
+    private        JMenuItem       show_legend_item;
+    private        JMenuItem       show_timeline_item;
+    private        JMenuItem       edit_prefer_item;
+    private        JMenuItem       help_manual_item;
     private        JMenuItem       help_faq_item;
     private        JMenuItem       help_about_item;
 
@@ -41,76 +41,88 @@ public class FirstMenuBar extends JMenuBar
         isApplet       = isTopApplet;
         first_panel    = in_panel;
 
-        JMenu      menu;
+        JMenu      menu, submenu;
             menu = new JMenu( "File" );
                 file_select_item = new JMenuItem( "Select ..." );
-                file_select_item.addActionListener( this );
+                file_select_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        first_panel.getLogFileSelectButton().doClick();
+                    }
+                } );
             menu.add( file_select_item );
                 file_close_item  = new JMenuItem( "Close" );
-                file_close_item.addActionListener( this );
+                file_close_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        first_panel.getLogFileCloseButton().doClick();
+                    }
+                } );
             menu.add( file_close_item );
             menu.addSeparator();
                 file_exit_item   = new JMenuItem( "Exit" );
-                file_exit_item.addActionListener( this );
+                file_exit_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        if ( isApplet )
+                            TopWindow.Legend.disposeAll();
+                        else
+                            TopWindow.First.disposeAll();
+                    }
+                } );
             menu.add( file_exit_item );
         super.add( menu );
             
             menu = new JMenu( "Edit" );
-                edit_preferences_item = new JMenuItem( "Preferences ..." );
-                edit_preferences_item.addActionListener( this );
-            menu.add( edit_preferences_item );
-                edit_legends_item = new JMenuItem( "Legends ..." );
-                edit_legends_item.addActionListener( this );
-            menu.add( edit_legends_item );
+                edit_prefer_item = new JMenuItem( "Preferences ..." );
+                edit_prefer_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        first_panel.getEditPreferenceButton().doClick();
+                    }
+                } );
+            menu.add( edit_prefer_item );
 
         super.add( menu );
 
             menu = new JMenu( "View" );
+                submenu = new JMenu( "Reload" );
+                    show_legend_item = new JMenuItem( "Legend window" );
+                    show_legend_item.addActionListener( new ActionListener() {
+                        public void actionPerformed( ActionEvent evt ) {
+                            first_panel.getShowLegendButton().doClick();
+                        }
+                    } );
+                submenu.add( show_legend_item );
+                    show_timeline_item = new JMenuItem( "Timeline window" );
+                    show_timeline_item.addActionListener( new ActionListener() {
+                        public void actionPerformed( ActionEvent evt ) {
+                            first_panel.getShowTimelineButton().doClick();
+                        }
+                    } );
+                submenu.add( show_timeline_item );
+            menu.add( submenu );
         super.add( menu );
             
             menu = new JMenu( "Help" );
-                help_manuel_item = new JMenuItem( "Manuel" );
-                help_manuel_item.addActionListener( this );
-            menu.add( help_manuel_item );
+                help_manual_item = new JMenuItem( "Manual" );
+                help_manual_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        first_panel.getHelpManualButton().doClick();
+                    }
+                } );
+            menu.add( help_manual_item );
                 help_faq_item = new JMenuItem( "FAQ" );
-                help_faq_item.addActionListener( this );
+                help_faq_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        first_panel.getHelpFAQsButton().doClick();
+                    }
+                } );
             menu.add( help_faq_item );
                 help_about_item = new JMenuItem( "About" );
-                help_about_item.addActionListener( this );
+                help_about_item.addActionListener( new ActionListener() {
+                    public void actionPerformed( ActionEvent evt ) {
+                        first_panel.getHelpAboutButton().doClick();
+                    }
+                } );
             menu.add( help_about_item );
         super.add( menu );
         // super.setAlignmentX( Component.LEFT_ALIGNMENT );
-    }
-
-    public void actionPerformed( ActionEvent evt )
-    {
-        Object evt_src = evt.getSource();
-        if ( evt_src == this.file_exit_item ) {
-            if ( isApplet )
-                TopWindow.Legend.disposeAll();
-            else
-                TopWindow.First.disposeAll();
-        }
-        else if ( evt_src == this.file_select_item ) {
-            first_panel.getLogFileSelectButton().doClick();
-        }
-        else if ( evt_src == this.file_close_item ) {
-            first_panel.getLogFileCloseButton().doClick();
-        }
-        else if ( evt_src == this.edit_legends_item ) {
-            first_panel.getEditLegendButton().doClick();
-        }
-        else if ( evt_src == this.edit_preferences_item ) {
-            first_panel.getEditPreferenceButton().doClick();
-        }
-        else if ( evt_src == this.help_manuel_item ) {
-            first_panel.getHelpManuelButton().doClick();
-        }
-        else if ( evt_src == this.help_faq_item ) {
-            first_panel.getHelpFAQsButton().doClick();
-        }
-        else if ( evt_src == this.help_about_item ) {
-            first_panel.getHelpAboutButton().doClick();
-        }
     }
 }
