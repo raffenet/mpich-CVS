@@ -84,14 +84,14 @@ doc_<type>_SOURCES  = Source files for building documentation using doctext.
                       Type may be MAN, HTML, or LATEX.
 doc_<type>_DIR      = Installation directory for documentation (some 
                       documentation formats require directory names
+profilelib_<oldname> = <newname>
+                    - Create a profile version of <oldname> with name 
+                      <newname>
 
 Other lines are copied as provided.  Variables (e.g., name = ...) are placed
 before other targets.  
 
 Proposed but not yet implemented rules:
-profilelib_<oldname> = <newname>
-                    - Create a profile version of <oldname> with name 
-                      <newname>
 doc_<type>_FLAGS    = Flags to pass doctext when building <type>.
                       (We also need a way to make a common rule of this type
                       for all files.  Perhaps a DOC_<TYPE>_FLAGS make variable?
@@ -110,6 +110,15 @@ for each @name@ that appears in a SUBDIRS list.  For example,
 
 SUBDIRS_device_name = mm tcp shmem
 SUBDIRS = util @device_name@ .
+
+Profile libs targets:
+These are not yet complete.  We need to set these up so that generation
+of the profile libs is controlled by autoconf detecting weak symbols.
+One possible approach is a special target for no-weak-symbols.  Then the
+profiling library targets are added to the no_weak_symbols target, and
+no_weak_symbols is added to all-redirect as @NO_WEAK_SYMS@ (but only if
+profiling libs are detected).  Thus, most simple make files and configure
+files don't need to worry about this.
 
 Implicit Rules:
 Simplemake recognizes rules for building object files (.o) and programs 

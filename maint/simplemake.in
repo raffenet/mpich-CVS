@@ -65,6 +65,11 @@ $debug = 0;
 		 's' => '$(AS_COMPILE_SHL) $<',
 		 'f90' => '$(F77_COMPILE_SHL) -c $<',
 		 );
+# Similarly, but for profiling library versions.
+# This has an MPICH-specific definition that we should eventually generalize
+%extrules_pf = ( 'c' => '${C_COMPILE} -c -DMPICH_MPI_FROM_PMPI $< 
+	@mv -f $*.o $*.pf' );
+
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
 %extdef = ( 'c'   => 'CC          = @CC@
@@ -151,8 +156,9 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 #
 # Need a way to substitute for additional or replacement default rules
 # Other global data
-$do_profilelib  = 0; # Set to one if a profiling version of the library 
-                     # should be created (required for MPI)
+$do_profilelibs   = 1; # Set to one if a profiling version of the library 
+                       # should be created (required for MPI)
+$found_profilelib = 0;
 
 @subdirs = ();
 @keepargs = ();    # Used to recreate simplemake invocation for make target
@@ -265,20 +271,19 @@ sub ReadMfile {
     open (MFILE,"<$Mfile" ) || die "Could not open $Mfile\n";
     &ClearVars;
     while (<MFILE>) {
+	s/\r//g;              # Remove \r for DOS
 	$origline = $_;
-	$origline =~ s/\r//g; # Remove \r for DOS
-        # Handle continuation lines
+	# Remove trailing newline (we had trouble with chomp on DOS)
         #chomp;
-        s/[\r\n]*$//; # David added
-		#strip;
+        s/[\r\n]*$//;
+
+        # Handle continuation lines
         while (s/\\$//) {  # Match and remove a trailing \
 	    $nextline = <MFILE>;
-	    $nline = $nextline;
-	    $nline =~ s/\r//g; # Remove \r for DOS
-	    $origline .= $nline;
+	    $nextline =~ s/\r//g; # Remove \r for DOS
+	    $origline .= $nextline;
 	    #chomp $nextline;
-	    $nextline =~ s/[\r\n]*$//; # David added
-		#strip $nextline;
+	    $nextline =~ s/[\r\n]*$//; 
             $_ .= $nextline;
         }
 
@@ -320,6 +325,11 @@ sub ReadMfile {
 	}
 	elsif (/^doc_(\w*)_DIR\s*=\s*(.*)\s*$/) {
 	    $docdir{$1} = $2;
+	}
+	elsif (/^profilelib_([@\${}\(\)\w-]*)\s*=\s*(.*)\s*$/) {
+	    # proflib_<oldname> = <newname>
+	    $profile_libraries{$1} = $2;
+	    $found_profilelib = 1;
 	}
         elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
@@ -419,7 +429,14 @@ sub WriteMfile {
     if ($do_sharedlibs) {
 	&TargetSharedLibraries;
     }
-    if ($do_profilelibs) {
+    if ($do_profilelibs && $found_profilelib) {
+	&print_make_line( FD, "@" . "NO_WEAK_SYM_TARGET\@:" );
+	foreach $lib (keys(%profile_libraries)) {
+	    $libloc = &GetLibLoc( $lib );
+	    $proflib_name = $profile_libraries{$lib};
+	    print_make_line( FD, " ${libloc}lib$proflib_name.a" );
+	}
+	print_make_endline( FD );
 	&TargetProfileLibraries;
     }
 
@@ -530,6 +547,9 @@ sub DefaultRules {
 	if ($do_sharedlibs) { 
 	    $suffixes .= " .lo";
 	}
+	if ($do_profilelibs && $found_profilelib) {
+	    $suffixes .= " .pf";
+	}
     }
     foreach $ext (keys(%ext_seen)) {
 	$suffixes .= " .$ext";
@@ -545,6 +565,10 @@ sub DefaultRules {
 	if ($do_sharedlibs) {
 	    print FD ".$ext.lo:$newline";
 	    print FD "\t$extrules_sh{$ext}$newline";
+	}
+	if ($found_profilelib && $ext eq "c" && $do_profilelibs) {
+	    print FD ".c.pf:$newline";
+	    print FD "\t$extrules_pf{$ext}$newline";
 	}
     }
 
@@ -673,6 +697,8 @@ sub ClearVars {
     %usertargets = ();  # explicit, user-defined targets
     %extra_programs = ();
     %libraries = ();
+    %profile_libraries = ();
+    $found_profilelib = 0;
     %programs = ();
     %pgm_ldadd = ();
     # Variables
@@ -765,8 +791,13 @@ sub ListTargets {
   T: foreach $target (@alltargets) {
       # Skip the extra programs
       if (defined($extra_programs{$target})) { next T; }
-      print FD " $target";
+      print_make_line( FD,  " $target" );
   }
+    if ($found_profilelib) { 
+	# Add the special configure name that is used for building extra
+	# code when weak symbols are not supported.
+	print_make_line( FD,  " @" . "NO_WEAK_SYM@" );
+    }
 }			       
 
 #
@@ -853,9 +884,9 @@ sub LookForSuffixes {
 # for both pre and post implicit target values
 #
 sub TargetAll {
-    print FD "all-redirect:";
+    print_make_line( FD,  "all-redirect:" );
     if ($#subdirs > -1) {
-	print FD "$newline";
+	print_make_endline( FD );
 	$has_dot = 0;
 	foreach $dir (@subdirs) {
 	    if ($dir eq ".") {
@@ -883,18 +914,18 @@ sub TargetAll {
 	    }
 	}
 	if ($has_dot && !defined($usertargets{"all-local"})) {
-	    print FD "all-local:";
+	    print_make_line( FD, "all-local:" );
 	    &ListTargets;
 	}
     }
     else {
 	if (defined($usertargets{"all-local"})) {
 	    # Add all-local as a target
-	    print FD " all-local ";
+	    print_make_line( FD, " all-local " );
 	}
 	&ListTargets;
     }
-    print FD "$newline";
+    print_make_endline( FD );
 }
 
 #
@@ -912,6 +943,9 @@ sub TargetClean {
     print FD "\t-rm -f *.o \${srcdir}/*.o *~ $programnames$newline";
     if ($do_sharedlibs) {
 	print FD "\t-rm -f *.lo \${srcdir}/*.lo$newline";
+    }
+    if ($do_profilelibs && $found_profilelib) {
+	print FD "\t-rm -f *.pf \${srcdir}/*.pf$newline";
     }
     &RecursiveOp( "clean" );
     print FD "distclean: clean";
@@ -983,20 +1017,19 @@ sub TargetLibraries {
     }
 }
 
-# if ($do_profilelib) {
-# This code is similar to TargetLibraries.  It is also not yet complete;
-# DO NOT USE YET
+# This code is similar to TargetLibraries.
 sub TargetProfileLibraries {
-    foreach $lib (keys(%libraries)) {
+    foreach $lib (keys(%profile_libraries)) {
+	$proflib_name = $profile_libraries{$lib};
 	$libloc = &GetLibLoc( $lib );
-	&print_make_line( FD, "${libloc}lib$lib.a: " );
+	&print_make_line( FD, "${libloc}lib$proflib_name.a: " );
         foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
             $obj = $sourcefile;
             # Convert to object file
 	    $ext = $sourcefile;
 	    $ext =~ s/^.*\.//g;
 	    if (defined($extrules{$ext})) {
-		$obj =~ s/\.$ext/\.lo/g;
+		$obj =~ s/\.$ext/\.pf/g;
 	    }
 	    else {
 		print "Unknown extension $ext for $sourcefile\n";
@@ -1004,7 +1037,16 @@ sub TargetProfileLibraries {
 	    &print_make_line( FD, "$obj " );
         }
 	&print_make_endline( FD );
-        print FD "\t\${AR} cr ${libloc}lib$lib.a \$?$newline";
+	# Add these files as objects to the archive
+	print FD "\t-mkdir .tmp ; rm -f .tmp/* ; cp \$? .tmp $newline";
+	print FD "\t-(cd .tmp && for file in *.pf ; do \\$newline";
+	print FD "\tbname=`basename \$\$file .pf`; mv -f \$\$file \$\${bname}.o ; done;)$newline";
+	print FD "\tfor file in .tmp/*.o ; do \\$newline";
+	print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
+        if ($ranliblib) { 
+	    print FD "\t\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
+	}
+	print FD "\t-rm -rf .tmp$newline";
     }
 }
 
@@ -1058,7 +1100,7 @@ sub TargetPrograms {
 	    $libdir = $1;
 	    $libname = $2;
 	    if ($libdir != "" && $libname != "") { 
-	        &print_make_line( FD,  " $libdir/lib$libname.a" );
+	        &print_make_line( FD, " $libdir/lib$libname.a" );
             }
 	}
 	# Use the link rule appropriate for this program type
@@ -1310,7 +1352,8 @@ sub ReadAutoconf {
 #
 # ===========================================================================
 # Pretty print output lines.  These routines insert line breaks and tabs
-# to keep the generated makefile from being too ugly
+# to keep the generated makefile from being too ugly.  These also use
+# tabs after a continuation line.
 $linelen = 0;
 sub print_make_line {
     my $FD = $_[0];

@@ -257,7 +257,12 @@ dnl AC_PROG_MAKE_SET
 PAC_PROG_MAKE
 dnl
 dnl     check for compiler characteristics
-PAC_PROG_C_WEAK_SYMBOLS
+dnl Check for support for weak symbols.  If not found, set NO_WEAK_SYM
+dnl to the Make target name understood by simplemake.
+NO_WEAK_SYM_TARGET=build_proflib
+PAC_PROG_C_WEAK_SYMBOLS(,NO_WEAK_SYM=build_proflib)
+AC_SUBST(NO_WEAK_SYM)
+AC_SUBST(NO_WEAK_SYM_TARGET)
 AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
