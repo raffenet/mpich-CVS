@@ -44,8 +44,16 @@ Output Parameter:
 
 Notes:
 
-XXX - MPI_ERR_PENDING should be explained here.  It should not have been listed
-as a possible error return code.
+If one or more of the requests completes with an error, MPI_ERR_IN_STATUS is
+returned.  An error value will be present is elements of array_of_status
+associated with the requests.  Likewise, the MPI_ERROR field in the status
+elements associated with requests that have successfully completed will be
+MPI_SUCCESS.  Finally, those requests that have not completed will have a value
+of MPI_ERR_PENDING.
+
+While it is possible to list a request handle more than once in the
+array_of_requests, such an action is considered erroneous and may cause the
+program to unexecpectedly terminate or produce incorrect results.
 
 .N waitstatus
 
@@ -95,6 +103,7 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
 	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests",
 				 mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
+	    /* NOTE: MPI_STATUSES_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses",
 				 mpi_errno);
 	    if (array_of_requests != NULL && count > 0)

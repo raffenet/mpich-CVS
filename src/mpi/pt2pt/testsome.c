@@ -45,6 +45,12 @@ completed (array of integers)
 - array_of_statuses - array of status objects for 
     operations that completed (array of Status).  May be 'MPI_STATUSES_NULL'.
 
+Notes:
+
+While it is possible to list a request handle more than once in the
+array_of_requests, such an action is considered erroneous and may cause the
+program to unexecpectedly terminate or produce incorrect results.
+
 .N waitstatus
 
 .N fortran
@@ -95,6 +101,7 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	    MPIR_ERRTEST_ARGNULL(outcount, "outcount", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(array_of_indices, "array_of_indices",
 				 mpi_errno);
+	    /* NOTE: MPI_STATUSES_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses",
 				 mpi_errno);
 	    if (array_of_requests != NULL && incount > 0)

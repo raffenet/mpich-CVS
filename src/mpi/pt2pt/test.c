@@ -77,7 +77,8 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
         {
 	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
-	    /* Status may be MPI_STATUS_IGNORE, so we don't test that one */
+	    /* NOTE: MPI_STATUS_IGNORE != NULL */
+	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    if (mpi_errno) {
 		goto fn_exit;
             }

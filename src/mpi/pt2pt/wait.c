@@ -79,7 +79,8 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
-	    /* Status may be MPI_STATUS_IGNORE, so we don't check for it */
+	    /* NOTE: MPI_STATUS_IGNORE != NULL */
+	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    if (mpi_errno) {
 		goto fn_exit;
             }
