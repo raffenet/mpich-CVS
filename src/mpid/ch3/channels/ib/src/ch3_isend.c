@@ -35,7 +35,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
     MPIU_DBG_PRINTF(("ch3_isend\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 #ifdef MPICH_DBG_OUTPUT
-    if (pkt_sz > sizeof(MPIDI_CH3_Pkt_t)
+    if (pkt_sz > sizeof(MPIDI_CH3_Pkt_t))
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
