@@ -143,7 +143,7 @@ int main( int argc, char *argv[] )
 #endif
     {
 	if (errs == 0) {
-	    printf( "No errors\n" );
+	    printf( " No Errors\n" );
 	}
 	else {
 	    printf( "Found %d errors\n", errs );

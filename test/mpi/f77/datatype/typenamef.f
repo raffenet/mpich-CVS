@@ -198,7 +198,7 @@ C See the C version (typename.c) for the relevant MPI sections
       if (errs .gt. 0) then
           print *, ' Found ', errs, ' errors'
       else
-          print *, ' No errors'
+          print *, ' No Errors'
       endif
 
       call MPI_Finalize( ierr )
