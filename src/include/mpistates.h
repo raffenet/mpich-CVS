@@ -9,6 +9,15 @@
 
 /* Insert all the states to be logged here */
 
+/* Note to package writers:
+ * If you insert your timer states here, you
+ * also need to insert a function call in 
+ * MPIU_Timer_init to describe your states
+ * to the logging library.
+ * MPIU_Timer_init is probably found in:
+ * mpich2/src/util/timing/timer.c
+ */
+
 enum MPID_TIMER_STATE
 {
 /* device states */
