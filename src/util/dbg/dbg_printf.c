@@ -13,6 +13,7 @@
 /* Temporary.  sig values will change */
 /* style: allow:vprintf:3 sig:0 */
 /* style: allow:fputs:1 sig:0 */
+/* style: allow:printf:2 sig:0 */
 
 #if !defined(MPICH_DBG_MEMLOG_NUM_LINES)
 #define MPICH_DBG_MEMLOG_NUM_LINES 1024

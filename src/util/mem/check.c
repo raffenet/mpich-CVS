@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+/* This is a test program, so we allow printf */
+/* style: allow:printf:3 sig:0 */
+
 extern int MPIU_Snprintf( char *, size_t, const char *, ... );
 
 int main( int argc, char *argv[] )
