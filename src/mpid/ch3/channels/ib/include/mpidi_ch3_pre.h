@@ -7,6 +7,8 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
+#define MPICH_DBG_OUTPUT
+
 #include "ibu.h"
 #include "blockallocator.h"
 

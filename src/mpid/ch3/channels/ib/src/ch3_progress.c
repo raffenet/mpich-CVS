@@ -140,6 +140,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 	    (char *) req->ch3.iov[offset].MPID_IOV_BUF += nb;
 	    req->ch3.iov[offset].MPID_IOV_LEN -= nb;
 	    req->ib.iov_offset = offset;
+	    MPIU_dbg_printf("adjust_iov returning FALSE\n");
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
 	    return FALSE;
 	}
@@ -147,6 +148,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     
     req->ib.iov_offset = offset;
 
+    MPIU_dbg_printf("adjust_iov returning TRUE\n");
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
     return TRUE;
 }

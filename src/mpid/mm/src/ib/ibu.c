@@ -4,10 +4,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/*
-#include <winsock2.h>
-#include <windows.h>
-*/
 #include "ibimpl.h"
 #include "ibu.h"
 #include "iba.h"
