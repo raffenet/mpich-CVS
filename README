@@ -1,6 +1,6 @@
 
 
-			  MPICH2 Release 0.96
+			  MPICH2 Release 0.9x
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
@@ -18,15 +18,6 @@ experiences as quickly as possible.  The web site
 http://www.mcs.anl.gov/mpi/mpich2 will also have information on 
 bug fixes and new releases.  This release does not include user or 
 installation manuals.
-
-The only supported device in this release is ch3 (which is the default)
-and the only channel is the socket channel (also the default).  This 
-version does not support the shared-memory (shm) or shared-memory and socket
-(ssm) channels.  Support for these channels, and additional channels and
-devices, will be included in a subsequent release.  
-
-This release adds support for dynamic process management and contains many
-bug fixes from the 0.94n and the 0.95 Supercomputing'03 release.
 
 Getting Started
 ===============
