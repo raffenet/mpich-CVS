@@ -33,33 +33,41 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len, int *num_bytes_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    MPIU_DBG_PRINTF(("writing to write_shmq %p\n", vc->ssm.write_shmq));
+    index = vc->ssm.write_shmq->tail_index;
+    if (vc->ssm.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
+    {
+	*num_bytes_ptr = total;
+	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
+	return MPI_SUCCESS;
+    }
+    
     while (len)
     {
-	index = vc->ssm.write_shmq->tail_index;
-
-	if (vc->ssm.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
-	{
-	    * num_bytes_ptr = total;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
-	    return MPI_SUCCESS;
-	}
 	length = min(len, MPIDI_CH3I_PACKET_SIZE);
+	/*vc->ssm.write_shmq->packet[index].offset = 0; the reader guarantees this is reset to zero */
 	vc->ssm.write_shmq->packet[index].num_bytes = length;
-	MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", length, vc->ssm.write_shmq, index));
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(vc->ssm.write_shmq->packet[index].data, buf, length);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	MPID_WRITE_BARRIER();
 	vc->ssm.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
+	buf = (char *) buf + length;
 	total += length;
 	len -= length;
-	vc->ssm.write_shmq->tail_index = 
-	    (vc->ssm.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", vc->ssm.write_shmq->tail_index));
+
+	index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+	if (vc->ssm.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
+	{
+	    vc->ssm.write_shmq->tail_index = index;
+	    *num_bytes_ptr = total;
+	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
+	    return MPI_SUCCESS;
+	}
     }
 
+    vc->ssm.write_shmq->tail_index = index;
     *num_bytes_ptr = total;
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
