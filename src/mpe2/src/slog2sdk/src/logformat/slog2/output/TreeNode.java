@@ -125,10 +125,15 @@ public class TreeNode extends BufForDrawables
         if ( shadowbuf != null ) {
             // After setting the LatestTime, seal the shadows' category weights
             shadowbuf.setLatestTime( super.getLatestTime() );
-            shadowbuf.setMapOfCategoryWeights();
+            shadowbuf.initializeMapOfCategoryWeights();
         }
     }
 
+    /*
+       mergeVerticalShadowBufs() should be called AFTER finalizeLatestTime()
+       but BEFORE shiftHorizontalShadowBuf(), because the current shadowbuf
+       needs to be updated with the childnode's shadowbufs[] before finalization
+    */
     public void mergeVerticalShadowBufs()
     {
         BufForShadows   buf;
@@ -149,9 +154,14 @@ public class TreeNode extends BufForDrawables
         }
     }
 
+    /*
+       shiftHorizontalShadowBuf() should be called AFTER both
+       mergeVerticalShadowBufs() and finalizeLatestTime().
+    */
     public void shiftHorizontalShadowBuf()
     {
         if ( shadowbuf != null ) {
+            shadowbuf.finalizeMapOfCategoryWeights();
             shadowbufs.add( shadowbuf );
             shadowbuf   = null;
         }

@@ -107,7 +107,10 @@ public class OutputLog
         treenode.setFileBlockPtr( node_blockptr.getFilePointer(),
                                   node_blockptr.getBlockSize() );
 
-        // Merge vertical ShadowBufs
+        // treenode's mergeVerticalShadowBufs() and shiftHorizontalShadowBuf()
+        // updates ShadowBufs which are NOT being saved to disk in this call.
+
+        // Merge ShadowBufs Vertically from childnode's
         treenode.mergeVerticalShadowBufs();
         // The TreeNode.shiftHorizontalShadowBuf() has to be called
         // after TreeNode.setFileBlockPtr( node_blockptr )
