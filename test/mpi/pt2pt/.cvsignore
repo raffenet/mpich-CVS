@@ -6,3 +6,9 @@
 Makefile.in
 Makefile
 dup
+bsend1
+bsend2
+bsend3
+bsend4
+isendself
+
