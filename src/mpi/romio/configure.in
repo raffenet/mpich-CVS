@@ -1696,7 +1696,8 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
                    mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile \
                    mpi2-other/array/fortran/Makefile test/fmisc.f \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f \
-		   mpi-io/glue/mpich2/Makefile)
+		   mpi-io/glue/mpich2/Makefile \
+		   mpi-io/glue/mpich1/Makefile )
 #
 rm -f *.o
 if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = no -a \
