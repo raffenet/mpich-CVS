@@ -69,7 +69,7 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeynull", 0 );
 	    }
-	    else if ((keylen = strlen(key)) > MPI_MAX_INFO_KEY) {
+	    else if ((keylen = (int)strlen(key)) > MPI_MAX_INFO_KEY) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
 						  "**infokeylong", 0 );
 	    } else if (keylen == 0) {
@@ -93,7 +93,7 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
 
     while (curr_ptr) {
 	if (!strncmp(curr_ptr->key, key, MPI_MAX_INFO_KEY)) {
-	    *valuelen = strlen(curr_ptr->value);
+	    *valuelen = (int)strlen(curr_ptr->value);
 	    *flag = 1;
 	    break;
 	}

@@ -32,7 +32,7 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
     const char * restrict s_ptr = src;
     register int i;
 
-    i = n;
+    i = (int)n;
     while (i-- > 0 && *s_ptr) {
 	*d_ptr++ = *s_ptr++;
     }
@@ -56,7 +56,7 @@ int MPIU_Strnapp( char *dest, const char *src, size_t n )
     register int i;
 
     /* Get to the end of dest */
-    i = n;
+    i = (int)n;
     while (i-- > 0 && *d_ptr++) ;
     /* The last ++ moved us past the null */
     d_ptr--;
@@ -179,7 +179,7 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 
     if (size-- > 0) *out_str++ = '\0';
 
-    n = out_str - str;
+    n = (int)(out_str - str);
     return n;
 }
 #endif

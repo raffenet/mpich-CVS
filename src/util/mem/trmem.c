@@ -189,7 +189,7 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     head->size     = nsize;
     head->id       = TRid;
     head->lineno   = lineno;
-    if ((l = strlen( fname )) > TR_FNAME_LEN-1 ) fname += (l - (TR_FNAME_LEN-1));
+    if ((l = (int)strlen( fname )) > TR_FNAME_LEN-1 ) fname += (l - (TR_FNAME_LEN-1));
     strncpy( head->fname, fname, (TR_FNAME_LEN-1) );
     head->fname[TR_FNAME_LEN-1]= 0;
     head->cookie   = COOKIE_VALUE;
@@ -204,8 +204,8 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     frags     ++;
 
     if (TRlevel & TR_MALLOC) 
-	MPIU_Error_printf( "[%d] Allocating %d bytes at %lx in %s:%d\n", 
-		     world_rank, a, (PointerInt)new, fname, lineno );
+	MPIU_Error_printf( "[%d] Allocating %d bytes at %08p in %s:%d\n", 
+		     world_rank, a, new, fname, lineno );
     return (void *)new;
 }
 
@@ -238,9 +238,9 @@ void MPIU_trfree( void *a_ptr, int line, const char file[] )
     if (head->cookie != COOKIE_VALUE) {
 	/* Damaged header */
 	MPIU_Error_printf( 
-		     "[%d] Block at address %lx is corrupted; cannot free;\n\
+		     "[%d] Block at address %08p is corrupted; cannot free;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n\
-called in %s at line %d\n", world_rank, (PointerInt)a, file, line );
+called in %s at line %d\n", world_rank, a, file, line );
 	return;
     }
     nend = (unsigned long *)(ahead + head->size);
@@ -282,7 +282,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
 /* Mark the location freed */
     *nend		   = ALREADY_FREED;
     head->freed_lineno = line;
-    if ((l = strlen( file )) > TR_FNAME_LEN-1 ) file += (l - (TR_FNAME_LEN-1));
+    if ((l = (int)strlen( file )) > TR_FNAME_LEN-1 ) file += (l - (TR_FNAME_LEN-1));
     strncpy( head->freed_fname, file, (TR_FNAME_LEN-1) );
 
     allocated -= head->size;
@@ -650,7 +650,7 @@ may be block not allocated with MPIU_trmalloc or MALLOC\n",
 void *MPIU_trstrdup( const char *str, int lineno, const char *fname )
 {
     void *p;
-    unsigned len = strlen( str ) + 1;
+    unsigned len = (unsigned)strlen( str ) + 1;
 
     p = MPIU_trmalloc( len, lineno, (char *)fname );
     if (p) {
