@@ -223,9 +223,6 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
 	    return mpi_errno;
 	}
-#ifdef HAVE_SHMCTL
-        shmctl(pg->id, IPC_RMID, NULL);
-#endif
 #elif defined(HAVE_MAPVIEWOFFILE)
 	pg->addr = MapViewOfFileEx(
 	    pg->id,

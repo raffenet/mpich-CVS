@@ -330,6 +330,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 	return mpi_errno;
     }
+#ifdef HAVE_SHMCTL
+    shmctl(pg->id, IPC_RMID, NULL);
+#endif
 
     MPIU_Free(val);
     MPIU_Free(key);
