@@ -859,67 +859,92 @@ def mpdman():
                             pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'spawn':
+                    ## mpd_print(1111, 'message from pmi: ', parsedMsg )
+                    ## This code really is handling PMI_Spawn_multiple.  It translates a
+                    ## sequence of separate spawn messages into a single message to send
+                    ## to the mpd.  It keeps track by the "totspawns" and "spawnssofar"
+                    ## parameters in the incoming message.  The first message has
+                    ## "spawnssofar" set to 1. 
+                    ##
                     ## This proc may produce stdout and stderr; do this early so I
                     ## won't exit before child sets up its conns with me.
                     ## NOTE: if you spawn a non-MPI job, it may not send these msgs
                     ## in which case adding 2 to numWithIO will cause the pgm to hang.
-                    numWithIO += 2
-                    nprocs  = int(parsedMsg['nprocs'])
+                    totspawns = int(parsedMsg['totspawns'])
+                    spawnssofar = int(parsedMsg['spawnssofar'])
+                    if spawnssofar == 1: # this is the first of possibly several spawns
+                        numWithIO += 2
+                        tpsf = 0             # total processes spawned so far
+                        spawnExecs = {}      # part of MPI_Spawn_multiple args
+                        spawnHosts = {}      # comes from info
+                        spawnUsers = {}      # always the current user
+                        spawnCwds  = {}      # could come from info, but doesn't yet
+                        spawnPaths = {}      # could come from info, but doesn't yet
+                        spawnEnvvars = {}    # whole environment from mpiexec, plus appnum
+                        spawnLimits = {}
+                        spawnArgs = {}
+                    spawnNprocs  = int(parsedMsg['nprocs']) # num procs in this spawn
+
                     pmiInfo = {}
                     for i in range(0,int(parsedMsg['info_num'])):
                         info_key = parsedMsg['info_key_%d' % i]
                         info_val = parsedMsg['info_val_%d' % i]
                         pmiInfo[info_key] = info_val
+
                     if pmiInfo.has_key('host'):
-                        hosts = { (0,nprocs-1) : pmiInfo['host'] }
+                        spawnHosts[(tpsf,tpsf+spawnNprocs-1)] = pmiInfo['host']
                     else:
-                        hosts   = { (0,nprocs-1) : '_any_' }
-                    execs   = { (0,nprocs-1) : parsedMsg['execname'] }
-                    users   = { (0,nprocs-1) : mpd_get_my_username() }
-                    cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
-                    paths   = { (0,nprocs-1) : '' }
+                        spawnHosts[(tpsf,tpsf+spawnNprocs-1)] = '_any_'
+                    spawnExecs[(tpsf,tpsf+spawnNprocs-1)] = parsedMsg['execname']
+                    spawnUsers[(tpsf,tpsf+spawnNprocs-1)] = mpd_get_my_username()
+                    spawnCwds[(tpsf,tpsf+spawnNprocs-1)]  = environ['MPDMAN_CWD']
+                    spawnPaths[(tpsf,tpsf+spawnNprocs-1)] = ''
 
 		    spawnEnv = {}
 		    spawnEnv.update(environ)
-		    spawnEnv['MPI_APPNUM'] = '736'    # dummy for now
-                    envvars = { (0,nprocs-1) : spawnEnv }
+		    spawnEnv['MPI_APPNUM'] = str(spawnssofar-1)
+                    spawnEnvvars[(tpsf,tpsf+spawnNprocs-1)] = spawnEnv
 
-                    limits  = { (0,nprocs-1) : {} }
-                    ##### args    = { (0,nprocs-1) : [ parsedMsg['args'] ] }
-                    ##### args    = { (0,nprocs-1) : [ 'AA', 'BB', 'CC' ] }
+                    spawnLimits[(tpsf,tpsf+spawnNprocs-1)] = {} # not implemented yet
+                    ##### args[(tpsf,tpsf+spawnNprocs-1) = [ parsedMsg['args'] ]
+                    ##### args[(tpsf,tpsf+spawnNprocs-1) = [ 'AA', 'BB', 'CC' ]
                     cliArgs = []
                     cliArgcnt = int(parsedMsg['argcnt'])
                     for i in range(1,cliArgcnt+1):    # start at 1
                         cliArgs.append(parsedMsg['arg%d' % i])
-                    args = { (0,nprocs-1) : cliArgs }
-                    spawnedCnt += 1    # non-zero to use in msg below
-                    msgToSend = { 'cmd' : 'spawn',
-                                  'conhost'  : gethostname(),
-                                  'conport'  : myPort,
-                                  'spawned'  : spawnedCnt,
-                                  'nstarted' : 0,
-                                  'nprocs'   : nprocs,
-                                  'hosts'    : hosts,
-                                  'execs'    : execs,
-                                  'users'    : users,
-                                  'cwds'     : cwds,
-                                  'paths'    : paths,
-                                  'args'     : args,
-                                  'envvars'  : envvars,
-                                  'limits'   : limits
-                                }
-                    mpd_send_one_msg(mpdSocket,msgToSend)
-                    # I could send the preput_info along but will keep it here
-                    # and let the spawnee call me up and ask for it; he will
-                    # call me anyway since I am his parent in the tree.  So, I
-                    # will create a KVS to hold the info until he calls
-                    spawnedKVSname = 'mpdman_kvs_for_spawned_' + str(spawnedCnt)
-                    KVSs[spawnedKVSname] = {}
-                    preput_num = int(parsedMsg['preput_num'])
-                    for i in range(0,preput_num):
-                        preput_key = parsedMsg['preput_key_%d' % i]
-                        preput_val = parsedMsg['preput_val_%d' % i]
-                        KVSs[spawnedKVSname][preput_key] = preput_val
+                    spawnArgs[(tpsf,tpsf+spawnNprocs-1)] = cliArgs
+                    tpsf += spawnNprocs
+                    
+                    if totspawns == spawnssofar:    # This is the last in the spawn sequence
+                        spawnedCnt += 1    # non-zero to use for creating kvsname in msg below
+                        msgToSend = { 'cmd' : 'spawn',
+                                      'conhost'  : gethostname(),
+                                      'conport'  : myPort,
+                                      'spawned'  : spawnedCnt,
+                                      'nstarted' : 0,
+                                      'nprocs'   : tpsf,
+                                      'hosts'    : spawnHosts,
+                                      'execs'    : spawnExecs,
+                                      'users'    : spawnUsers,
+                                      'cwds'     : spawnCwds,
+                                      'paths'    : spawnPaths,
+                                      'args'     : spawnArgs,
+                                      'envvars'  : spawnEnvvars,
+                                      'limits'   : spawnLimits
+                                    }
+                        ## mpd_print(1111, 'message from man to mpd: ', msgToSend)
+                        mpd_send_one_msg(mpdSocket,msgToSend)
+                        # I could send the preput_info along but will keep it here
+                        # and let the spawnee call me up and ask for it; he will
+                        # call me anyway since I am his parent in the tree.  So, I
+                        # will create a KVS to hold the info until he calls
+                        spawnedKVSname = 'mpdman_kvs_for_spawned_' + str(spawnedCnt)
+                        KVSs[spawnedKVSname] = {}
+                        preput_num = int(parsedMsg['preput_num'])
+                        for i in range(0,preput_num):
+                            preput_key = parsedMsg['preput_key_%d' % i]
+                            preput_val = parsedMsg['preput_val_%d' % i]
+                            KVSs[spawnedKVSname][preput_key] = preput_val
                 elif parsedMsg['cmd'] == 'finalize':
                     pmiCollectiveJob = 0
                     # the following lines are present to support a process that runs
