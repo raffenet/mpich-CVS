@@ -378,12 +378,16 @@ dnl It may call 'AC_PROG_MAKE_SET', which sets 'SET_MAKE' to 'MAKE = @MAKE@'
 dnl if the make program does not set the value of make, otherwise 'SET_MAKE'
 dnl is set to empty; if the make program echos the directory name, then 
 dnl 'SET_MAKE' is set to 'MAKE = $MAKE'.
+dnl
+dnl A recent change has been to remove the test on make echoing 
+dnl directories.  This was done to make the build process behave more
+dnl like other builds that do not work around this behavior in gnumake.
 dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE,[
 PAC_PROG_MAKE_PROGRAM
 PAC_PROG_MAKE_CLOCK_SKEW
-PAC_PROG_MAKE_ECHOS_DIR
+dnl PAC_PROG_MAKE_ECHOS_DIR
 PAC_PROG_MAKE_INCLUDE
 PAC_PROG_MAKE_ALLOWS_COMMENTS
 PAC_PROG_MAKE_VPATH
