@@ -57,7 +57,7 @@ typedef int SMPD_BOOL;
 #define SMPD_CLIENT_AUTHENTICATION          1
 
 #define SMPD_MAX_NAME_LENGTH              256
-#define SMPD_MAX_VALUE_LENGTH            1024
+#define SMPD_MAX_VALUE_LENGTH            8192
 #define SMPD_MAX_FILENAME                1024
 #define SMPD_MAX_STDOUT_LENGTH           1024
 #define SMPD_MAX_SESSION_HEADER_LENGTH   1024
@@ -432,7 +432,7 @@ typedef struct smpd_global_t
 #endif
     smpd_database_node_t *pDatabase;
     smpd_database_node_t *pDatabaseIter;
-    int nNextAvailableDBSID;
+    /*int nNextAvailableDBSID;*/
     int nInitDBSRefCount;
     smpd_barrier_node_t *barrier_list;
 #ifdef HAVE_WINDOWS_H

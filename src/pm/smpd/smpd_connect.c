@@ -101,7 +101,7 @@ smpd_global_t smpd_process =
 #endif
       NULL,             /* pDatabase              */
       NULL,             /* pDatabaseIter          */
-      0,                /* nNextAvailableDBSID    */
+      /*0,*/                /* nNextAvailableDBSID    */
       0,                /* nInitDBSRefCount       */
       NULL,             /* barrier_list           */
 #ifdef HAVE_WINDOWS_H

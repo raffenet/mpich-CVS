@@ -1085,7 +1085,7 @@ static void set_environment_variables(char *bEnv)
 		*pChar = '\0';
 		pChar = name;
 		smpd_dbg_printf("env: %s=%s\n", name, value);
-		setenv(name, value);
+		setenv(name, value, 1);
 	    }
 	    else
 	    {
@@ -1099,7 +1099,7 @@ static void set_environment_variables(char *bEnv)
     if (name[0] != '\0')
     {
 	smpd_dbg_printf("env: %s=%s\n", name, value);
-	setenv(name, value);
+	setenv(name, value, 1);
     }
 }
 

@@ -82,7 +82,7 @@ static void get_uuid(char *str)
 
 int smpd_dbs_create(char *name)
 {
-    char guid_str[100];
+    /*char guid_str[100];*/
     smpd_database_node_t *pNode, *pNodeTest;
 
     smpd_enter_fn("smpd_dbs_create");
@@ -110,8 +110,11 @@ int smpd_dbs_create(char *name)
     pNode->pIter = NULL;
     do
     {
+	/*
 	sprintf(pNode->pszName, "%d", smpd_process.nNextAvailableDBSID);
 	smpd_process.nNextAvailableDBSID++;
+	*/
+	get_uuid(pNode->pszName);
 	pNodeTest = smpd_process.pDatabase;
 	while (strcmp(pNodeTest->pszName, pNode->pszName) != 0)
 	    pNodeTest = pNodeTest->pNext;
@@ -124,8 +127,10 @@ int smpd_dbs_create(char *name)
 #endif
 
     /* put a unique id in the kvs database */
+    /*
     get_uuid(guid_str);
     smpd_dbs_put(name, PMI_KVS_ID_KEY, guid_str);
+    */
 
     smpd_exit_fn("smpd_dbs_create");
     return SMPD_DBS_SUCCESS;
@@ -133,7 +138,7 @@ int smpd_dbs_create(char *name)
 
 int smpd_dbs_create_name_in(char *name)
 {
-    char guid_str[100];
+    /*char guid_str[100];*/
     smpd_database_node_t *pNode;
 
     smpd_enter_fn("smpd_dbs_create_name_in");
@@ -191,8 +196,10 @@ int smpd_dbs_create_name_in(char *name)
 #endif
 
     /* put a unique id in the kvs database */
+    /*
     get_uuid(guid_str);
     smpd_dbs_put(name, PMI_KVS_ID_KEY, guid_str);
+    */
 
     smpd_exit_fn("smpd_dbs_create_name_in");
     return SMPD_DBS_SUCCESS;
