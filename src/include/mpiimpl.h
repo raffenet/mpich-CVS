@@ -1940,7 +1940,10 @@ extern MPICH_PerProcess_t MPIR_Process;
 
 /* Record the level of thread support */
 /* FIXME: Where is this used, and why isn't in the PerProcess structure? */
-extern int MPID_THREAD_LEVEL;
+/* [BRT] MPID_THREAD_LEVEL appears not to used, nor is it ever defined.
+   I had to remove the external declaration because the insure linker
+   failed, complaining that the symbol could not be resolved. */
+/* extern int MPID_THREAD_LEVEL; */
 
 /*D
   MPID_MAX_THREAD_LEVEL - Indicates the maximum level of thread
