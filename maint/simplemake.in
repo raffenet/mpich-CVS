@@ -1041,11 +1041,12 @@ sub ReadAutoconf {
 	    # First, read past all continued lines
 	    $line = "";
 	    while (/\\\s*$/) {
-		chop($_); chop($_);
+		chomp;    # remove trailing EOL (\n on Unix, \r\n on DOS)
+		chop($_); # remove the backslash
 		$line .= $_;
 		$_ = <FDCONF>;
 	    }
-	    $line .= $_; chop $line; 
+	    $line .= $_; chomp( $line );
 	    #print $line;
 	    $line =~ /^\s*AC_OUTPUT\((.*)\)\s*$/;
 	    $files = $1;
