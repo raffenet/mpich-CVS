@@ -1102,6 +1102,10 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef HAVE___ASM_AND_X86_SFENCE */")
 				Case "HAVE__INTERLOCKEDEXCHANGE"
 					fout.WriteLine("/* #undef HAVE__INTERLOCKEDEXCHANGE */")
+				Case "HAVE_GCC_AND_X86_64_ASM"
+					fout.WriteLine("/* #undef HAVE_GCC_AND_X86_64_ASM */")
+				Case "HAVE_GCC_AND_IA64_ASM"
+					fout.WriteLine("/* #undef HAVE_GCC_AND_IA64_ASM */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
