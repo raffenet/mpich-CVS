@@ -107,6 +107,7 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 	pollfd = MPIDU_Socki_sock_get_pollfd(sock);
 	pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
     
+	pollfd->fd = sock_set->intr_fds[0];
 	pollinfo->fd = sock_set->intr_fds[0];
 	pollinfo->user_ptr = NULL;
 	pollinfo->type = MPIDU_SOCKI_TYPE_INTERRUPTER;
