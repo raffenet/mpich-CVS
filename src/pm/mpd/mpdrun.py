@@ -103,7 +103,8 @@ def mpdrun():
             argsFile = open(argsFilename,'r')
         except:
             print 'could not open job specification file %s' % (argsFilename)
-            exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
         args = argsFile.read()
 	if delArgsFile:
 	    unlink(argsFilename)
@@ -111,18 +112,21 @@ def mpdrun():
             from xml.dom.minidom import parseString   #import only if needed
         except:
             print 'need xml parser like xml.dom.minidom'
-            exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
         parsedArgs = parseString(args)
         if parsedArgs.documentElement.tagName != 'create-process-group':
             print 'expecting create-process-group; got unrecognized doctype: %s' % \
                   (parsedArgs.documentElement.tagName)
-            exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
         createReq = parsedArgs.getElementsByTagName('create-process-group')[0]
         if createReq.hasAttribute('totalprocs'):
             nprocs = int(createReq.getAttribute('totalprocs'))
         else:
             print '** totalprocs not specified in %s' % argsFilename
-            exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
         if createReq.hasAttribute('dont_try_0_locally'):
 	    try0Locally = 0
         if createReq.hasAttribute('output')  and  \
@@ -145,7 +149,8 @@ def mpdrun():
                             ipaddr = gethostbyname_ex(hostname)[2][0]
                         except:
                             print 'unable to determine IP info for host %s' % (hostname)
-                            exit(-1)
+                            myExitStatus = -1  # used in main
+                            exit(myExitStatus) # really forces jump back into main
                         if ipaddr.startswith('127.0.0'):
                             hostList.append(gethostname())
                         else:
@@ -167,7 +172,8 @@ def mpdrun():
                             print '    %s (%s)' % (gethostbyaddr(host)[0],host)  # ip addr
                         else:
                             print '    %s' % (host)
-                    exit(-1)
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
 
         execs   = {}
         users   = {}
@@ -196,23 +202,27 @@ def mpdrun():
             for i in xrange(loRange,hiRange+1):
                 if i >= nprocs:
                     print '*** exiting; rank %d is greater than nprocs for args'
-                    exit(-1)
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
                 if covered[i]:
                     print '*** exiting; rank %d is doubly used in proc specs'
-                    exit(-1)
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
                 covered[i] = 1
             if p.hasAttribute('exec'):
                 execs[(loRange,hiRange)] = p.getAttribute('exec')
             else:
                 print '*** exiting; range %d-%d has no exec' % (loRange,hiRange)
-                exit(-1)
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
             if p.hasAttribute('user'):
                 tempuser = p.getAttribute('user')
                 if tempuser == username  or  getuid() == 0:
                     users[(loRange,hiRange)] = p.getAttribute('user')
                 else:
                     print tempuser, 'username does not match yours and you are not root'
-                    exit(-1)
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
             else:
                 users[(loRange,hiRange)] = username
             if p.hasAttribute('cwd'):
@@ -327,14 +337,16 @@ def mpdrun():
     elif msg['cmd'] != 'mpdrun_ack':
         if msg['cmd'] == 'already_have_a_console':
             print 'mpd already has a console (e.g. for long ringtest); try later'
-            exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
         elif msg['cmd'] == 'job_failed'  and  msg['reason'] == 'some_procs_not_started':
             print 'mpdrun: unable to start all procs; may have invalid machine names'
             print '    remaining specified hosts:'
             for host in msg['remaining_hosts'].values():
 		if host != '_any_':
                     print '        %s' % (host)
-            exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
         else:
             mpd_raise('unexpected message from mpd: %s' % (msg) )
     conSocket.close()
@@ -534,7 +546,8 @@ def mpdrun():
                     mpd_raise('unrecognized ready socket :%s:' % (readySocket) )
         except mpdError, errmsg:
             print 'mpdrun failed: %s' % (errmsg)
-	    exit(-1)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
         except mpdrunInterrupted, errmsg:
 	    if errmsg.args == 'SIGINT':
 	        if manSocket:
@@ -669,7 +682,8 @@ def process_cmdline_args():
                         hostsFile = open(hostsFilename,'r')
                     except:
                         print 'unable to open hosts file: %s' % (hostsFilename)
-                        exit(-1)
+                        myExitStatus = -1  # used in main
+                        exit(myExitStatus) # really forces jump back into main
                 elif argv[argidx] == '-cpm':
                     mship = argv[argidx+1]
                     argidx += 2
@@ -708,6 +722,7 @@ def process_cmdline_args():
         argidx += 1
 
 def usage():
+    global myExitStatus
     print 'mpdrun for mpd version: %s' % str(mpd_version)
     print 'usage: mpdrun [args] pgm_to_execute [pgm_args]'
     print '   where args may be: -a alias -np nprocs -hf hostsfile -cpm master_copgm -cpr remote_copgm -l -m -1 -s'
@@ -724,7 +739,8 @@ def usage():
     print '           implies -m and -l and initially -s );'
     print 'or:    mpdrun -f input_xml_filename [-r output_xml_exit_codes_filename]'
     print '   where filename contains all the arguments in xml format'
-    exit(-1)
+    myExitStatus = -1  # used in main
+    exit(myExitStatus) # really forces jump back into main
 
 
 if __name__ == '__main__':
