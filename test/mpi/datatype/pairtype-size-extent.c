@@ -24,6 +24,47 @@ pairtypes[] =
 
 int parse_args(int argc, char **argv);
 
+MPI_Aint pairtype_displacement(MPI_Datatype type)
+{
+    MPI_Aint disp;
+
+    switch(type) {
+	case MPI_FLOAT_INT:
+	    {
+		struct { float a; int b; } foo;
+		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+	    }
+	    break;
+	case MPI_DOUBLE_INT:
+	    {
+		struct { double a; int b; } foo;
+		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+	    }
+	    break;
+	case MPI_LONG_INT:
+	    {
+		struct { long a; int b; } foo;
+		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+	    }
+	    break;
+	case MPI_SHORT_INT:
+	    {
+		struct { short a; int b; } foo;
+		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+	    }
+	    break;
+	case MPI_LONG_DOUBLE_INT:
+	    {
+		struct { long double a; int b; } foo;
+		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+	    }
+	    break;
+	default:
+	    disp = -1;
+    }
+    return disp;
+}
+
 int main(int argc, char *argv[])
 {
     int errs = 0;
@@ -44,7 +85,7 @@ int main(int argc, char *argv[])
 	types[0] = pairtypes[i].atype;
 
 	MPI_Type_size(types[0], &atype_size);
-	disps[1] = atype_size;
+	disps[1] = pairtype_displacement(pairtypes[i].ptype);
 
 	MPI_Type_create_struct(2, blks, disps, types, &stype);
 
