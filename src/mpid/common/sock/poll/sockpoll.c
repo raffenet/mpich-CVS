@@ -1239,7 +1239,7 @@ static void socki_event_enqueue(struct sock_set * sock_set, sock_op_t op, sock_s
 	{
 	    int mpi_errno;
 	    
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|sock|eqmalloc", 0); /*FCNAME "() unable to allocate an event queue element");*/
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**sock|poll|eqmalloc", 0);
 	    MPID_Abort(NULL, mpi_errno);
 	}
 
