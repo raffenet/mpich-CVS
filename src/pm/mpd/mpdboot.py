@@ -46,9 +46,9 @@ def mpdboot():
     while argidx < len(argv):
         if   argv[argidx] == '-h' or argv[argidx] == '--help':
             usage()
-        elif argv[argidx] == '-e' or argv[argidx] == '--entry':
+        elif argv[argidx] == '-zentry':    # entry host and port
             if ':' not in argv[argidx+1]:
-                print 'invalid pair of entry host and entry port for -e option'
+                print 'invalid pair of entry host and entry port for -zentry option'
                 usage()
             (entryHost,entryPort) = argv[argidx+1].split(':')
             try:
@@ -70,21 +70,61 @@ def mpdboot():
 	    hosts = argv[argidx+1]
 	    hosts = hosts.split(',')
             argidx += 2
-        elif argv[argidx] == '-r' or argv[argidx] == '--rsh':
+        elif argv[argidx] == '-r':    # or --rsh=
             rshCmd = argv[argidx+1]
             argidx += 2
-        elif argv[argidx] == '-u' or argv[argidx] == '--user':
-            user   = argv[argidx+1]
+        elif argv[argidx].startswith('--rsh'):
+            splitArg = argv[argidx].split('=')
+            try:
+                rshCmd = splitArg[1]
+            except:
+                print 'mpdboot: invalid argument:', argv[argidx]
+                usage()
+            argidx += 1
+        elif argv[argidx] == '-u':    # or --user=
+            user = argv[argidx+1]
             argidx += 2
-        elif argv[argidx] == '-m' or argv[argidx] == '--mpd':
+        elif argv[argidx].startswith('--user'):
+            splitArg = argv[argidx].split('=')
+            try:
+                user = splitArg[1]
+            except:
+                print 'mpdboot: invalid argument:', argv[argidx]
+                usage()
+            argidx += 1
+        elif argv[argidx] == '-m':    # or --mpd=
             mpdCmd = argv[argidx+1]
             argidx += 2
-        elif argv[argidx] == '-f' or argv[argidx] == '--file':
+        elif argv[argidx].startswith('--mpd'):
+            splitArg = argv[argidx].split('=')
+            try:
+                mpdCmd = splitArg[1]
+            except:
+                print 'mpdboot: invalid argument:', argv[argidx]
+                usage()
+            argidx += 1
+        elif argv[argidx] == '-f':    # or --file=
             hostsFile = argv[argidx+1]
             argidx += 2
-        elif argv[argidx] == '-n' or argv[argidx] == '--totalnum':
+        elif argv[argidx].startswith('--file'):
+            splitArg = argv[argidx].split('=')
+            try:
+                hostsFile = splitArg[1]
+            except:
+                print 'mpdboot: invalid argument:', argv[argidx]
+                usage()
+            argidx += 1
+        elif argv[argidx] == '-n':    # or --totalnum=
             totalNum = int(argv[argidx+1])
             argidx += 2
+        elif argv[argidx].startswith('--totalnum'):
+            splitArg = argv[argidx].split('=')
+            try:
+                totalNum = int(splitArg[1])
+            except:
+                print 'mpdboot: invalid argument:', argv[argidx]
+                usage()
+            argidx += 1
         elif argv[argidx] == '-d' or argv[argidx] == '--debug':
             debug = 1
             argidx += 1
@@ -104,7 +144,7 @@ def mpdboot():
             remoteConsoleArg = '--remcons'
             argidx += 1
         else:
-            print 'unrecognized argument:', argv[argidx]
+            print 'mpdboot: unrecognized argument:', argv[argidx]
             usage()
 
     if topMPDBoot:
@@ -212,9 +252,9 @@ def mpdboot():
     else:
         verboseArg = ''
     if lchild >= 0:
-        cmd = "%s %s %s -n '%s -r %s -m %s -n %d %s %s -e %s:%s %s -zrank %s -zhosts %s </dev/null ' " % \
+        cmd = "%s %s %s -n '%s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
               (rshCmd, xOpt, hosts[lchild], mpdbootCmd, rshCmd, mpdCmd, totalNum,
-               debugArg, verboseArg, entryHost, entryPort, remoteConsoleArg, lchild,
+               debugArg, verboseArg, remoteConsoleArg, entryHost, entryPort, lchild,
 	       ','.join(hosts) )
         if verbosity:
             mpd_print(1, 'starting remote mpd on %s' % (hosts[lchild]) )
@@ -224,9 +264,9 @@ def mpdboot():
         lfd = lchildMPDBoot.fromchild
         fdsToSelect.append(lfd)
     if rchild >= 0:
-        cmd = "%s %s %s -n '%s -r %s -m %s -n %d %s %s -e %s:%s %s -zrank %s -zhosts %s </dev/null ' " % \
+        cmd = "%s %s %s -n '%s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
               (rshCmd, xOpt, hosts[rchild], mpdbootCmd, rshCmd, mpdCmd, totalNum,
-               debugArg, verboseArg, entryHost, entryPort, remoteConsoleArg, rchild,
+               debugArg, verboseArg, remoteConsoleArg, entryHost, entryPort, rchild,
 	       ','.join(hosts) )
         if verbosity:
             mpd_print(1, 'starting remote mpd on %s' % (hosts[rchild]) )
