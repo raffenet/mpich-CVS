@@ -54,7 +54,8 @@ $ConfigStart = " -- Begin Configure Step -- \n";
 $ConfigEnd   = " -- End   Configure Step -- \n";
 $MakeStart   = " -- Begin Make Step --\n";
 $MakeEnd     = " -- End   Make Step --\n";
-
+$MakeInstStart = " -- Begin Make Install Step --\n";
+$MakeInstEnd   = " -- End   Make Install Step --\n";
 
 # Read the arguments
 foreach $_ (@ARGV) {
@@ -195,6 +196,9 @@ sub RunTest {
 	print $OUTFD $MakeStart;
 	system "make";
 	print $OUTFD $MakeEnd;
+	print $OUTFD $MakeInstStart;
+	system split( /\s+/,"make install");
+	print $OUTFD $MakeInstEnd;
 	print $OUTFD $TestEnd;
     }
 }
@@ -253,6 +257,8 @@ sub XMLStyle {
     $ConfigEnd   = "</CONFIG>\n";
     $MakeStart   = "<MAKE>\n";
     $MakeEnd     = "</MAKE>\n";
+    $MakeInstStart = "<MAKEINST>\n";
+    $MakeInstEnd   = "</MAKEINST>\n";
 }
 # ---------------------------------------------------------------------------
 #
