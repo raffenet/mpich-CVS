@@ -113,6 +113,7 @@ if test "$enable_fast" = "yes" ; then
     enable_error_messages=no
     enable_timing=no
     enable_g=no
+    AC_DEFINE(NDEBUG,,[Define to suppress assertions])
 fi
 dnl error-checking
 case "$enable_error_checking" in 
