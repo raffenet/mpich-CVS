@@ -788,7 +788,7 @@ sub print_args {
 	    $arg_qualifiers[$count] .= "restrict ";
 	}
 	# Remove arg names from array types
-	if ($parm =~ /(\w+)\s+(\w+)\[\]/) {
+	if ($parm =~ /(\w+)\s+(\w+)\s*\[\]/) {
 	    # Assume that this is <type> <name>[]; convert to
 	    # <type>[]
 	    print "    Removing argname $2 from parm array $parm\n" if $debug;
@@ -878,19 +878,26 @@ sub print_args {
 		$basetype = $tof77{"$basetype\[\]"};
 	    }
 	    elsif (defined($tof77{$basetype})) {
-		# Is this code correct?  It isn't for ints
-		$nstar_before = ($basetype =~ /\*/);
-		$basetype = $tof77{$basetype};
-		# The following fixes the case where the underlying type 
-		# is a simple int.
-		if ($basetype eq "int") {
-		    $arg_addresses[$count] = 0;
-		}
-		print "\tparm has defined type of $basetype\n" if $debug;
-		$nstar_after = ($basetype =~ /\*/);
-		if ($nstar_before != $nstar_after) {
-		    $star_count++;
-		}
+		# FIXME: This code (now commented out) is not correct
+		print STDERR "Using fall through for $basetype in $routine\n" if #debug;
+# 		if ($useOldCode eq "yes") {
+# 		$nstar_before = ($basetype =~ /\*/);
+# 		$basetype = $tof77{$basetype};
+# 		# The following fixes the case where the underlying type 
+# 		# is a simple int.
+# 		if ($basetype eq "int") {
+# 		    $arg_addresses[$count] = 0;
+# 		}
+# 		print "\tparm has defined type of $basetype\n" if $debug;
+# 		$nstar_after = ($basetype =~ /\*/);
+# 		if ($nstar_before != $nstar_after) {
+# 		    $star_count++;
+# 		}
+		# If we have an array, and a type mapping to fortran
+		# We want to simply pretend that all is well (like int
+		# above)
+		$star_count = 0;
+		$arg_addresses[$count] = $star_count;
 	    }
 	    if ($prototype_only) {
 		print $OUTFD "$argsep$basetype \[\]";
