@@ -96,7 +96,12 @@ AC_ARG_ENABLE(f77,
 [--enable-f77 - Enable Fortran 77 bindings],,enable_f77=no)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Enable C++ bindings],,enable_cxx=no)
-
+dnl
+dnl FIXME: Make the default yes
+AC_ARG_ENABLE(romio,
+[--enable-romio - Enable ROMIO MPI I/O implementation],
+,enable_romio=no)
+dnl
 dnl With options
 dnl "default" is a special device that allows MPICH to choose one based on 
 dnl the environment.
@@ -343,6 +348,10 @@ if test "$enable_cxx" = "yes" ; then
    AC_DEFINE(HAVE_CXX_BINDING,,[Define if C++ is supported])
 fi
 AC_SUBST(bindings)
+dnl
+if test "$enable_romio" = "yes" ; then
+   subsystems="$subsystems src/mpi/romio"
+fi
 dnl
 pac_cross_compiling=no
 if test "$with_cross" != "no" ; then
