@@ -84,7 +84,7 @@ int smpd_start_win_mgr(smpd_context_t *context)
 	return SMPD_FAIL;
     }
     /* encode the command line */
-    if (smpd_process.dbg_state == (SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK))
+    if (smpd_process.dbg_state == (SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE))
 	dbg_str = "-d";
     else
 	dbg_str = "";

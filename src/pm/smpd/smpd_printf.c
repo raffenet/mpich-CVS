@@ -129,9 +129,15 @@ int smpd_err_printf(char *str, ...)
     int n = 0;
     va_list list;
     char *format_str;
+    char *indent_str;
 
     if (smpd_process.dbg_state == 0)
 	return 0;
+
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_TRACE)
+	indent_str = indent;
+    else
+	indent_str = "";
 
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
@@ -151,11 +157,11 @@ int smpd_err_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(stdout, "[%02d]%sERROR:", smpd_process.id, indent);
+	    fprintf(stdout, "[%02d]%sERROR:", smpd_process.id, indent_str);
 	}
 	else
 	{
-	    fprintf(stdout, "%s", indent);
+	    fprintf(stdout, "%s", indent_str);
 	}
 
 	/* print the formatted string */
@@ -169,11 +175,11 @@ int smpd_err_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%02d]%sERROR:", smpd_process.id, indent);
+	    fprintf(smpd_process.dbg_fout, "[%02d]%sERROR:", smpd_process.id, indent_str);
 	}
 	else
 	{
-	    fprintf(smpd_process.dbg_fout, "%sERROR:", indent);
+	    fprintf(smpd_process.dbg_fout, "%sERROR:", indent_str);
 	}
 
 	/* print the formatted string */
@@ -196,9 +202,15 @@ int smpd_dbg_printf(char *str, ...)
     int n = 0;
     va_list list;
     char *format_str;
+    char *indent_str;
 
-    if (smpd_process.dbg_state == SMPD_DBG_STATE_ERROUT)
+    if (smpd_process.dbg_state == 0)
 	return 0;
+
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_TRACE)
+	indent_str = indent;
+    else
+	indent_str = "";
 
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.bOutputInitialized)
@@ -216,11 +228,11 @@ int smpd_dbg_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the tree node id */
-	    printf("[%02d]%s", smpd_process.id, indent);
+	    printf("[%02d]%s", smpd_process.id, indent_str);
 	}
 	else
 	{
-	    printf("%s", indent);
+	    printf("%s", indent_str);
 	}
 
 	/* print the formatted string */
@@ -234,11 +246,11 @@ int smpd_dbg_printf(char *str, ...)
 	if (smpd_process.dbg_state & SMPD_DBG_STATE_PREPEND_RANK)
 	{
 	    /* prepend output with the process tree node id */
-	    fprintf(smpd_process.dbg_fout, "[%02d]%s", smpd_process.id, indent);
+	    fprintf(smpd_process.dbg_fout, "[%02d]%s", smpd_process.id, indent_str);
 	}
 	else
 	{
-	    fprintf(smpd_process.dbg_fout, "%s", indent);
+	    fprintf(smpd_process.dbg_fout, "%s", indent_str);
 	}
 
 	/* print the formatted string */
@@ -259,7 +271,10 @@ int smpd_dbg_printf(char *str, ...)
 
 int smpd_enter_fn(char *fcname)
 {
-    smpd_dbg_printf("\\%s\n", fcname);
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_TRACE)
+    {
+	smpd_dbg_printf("\\%s\n", fcname);
+    }
     if (cur_indent >= 0 && cur_indent < SMPD_MAX_INDENT)
     {
 	indent[cur_indent] = '.';
@@ -276,6 +291,9 @@ int smpd_exit_fn(char *fcname)
 	indent[cur_indent-1] = '\0';
     }
     cur_indent--;
-    smpd_dbg_printf("/%s\n", fcname);
+    if (smpd_process.dbg_state & SMPD_DBG_STATE_TRACE)
+    {
+	smpd_dbg_printf("/%s\n", fcname);
+    }
     return SMPD_SUCCESS;
 }
