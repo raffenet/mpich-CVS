@@ -807,6 +807,12 @@ AC_SUBST(PROFILE_DEF_MPI)
 AC_SUBST(NO_WEAK_SYM)
 AC_SUBST(NO_WEAK_SYM_TARGET)
 #
+# If weak symbols are *not* supported, we may want to be careful
+# about including 
+# external pmpi_wtime, pmpi_wtick
+# in the mpif.h file .  For now, we'll just declare them as 
+# double precision without including an external declaration for them.
+#
 # Try to get values for Fortran logical variables.
 if test "$cross_compiling" = "no" ; then
     AC_MSG_CHECKING([for values of Fortran logicals])

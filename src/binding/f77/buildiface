@@ -1212,6 +1212,11 @@ $cchar       This file created by buildiface $arg_string\n";
     print MPIFFD "       EXTERNAL MPI_DUP_FN, MPI_NULL_DELETE_FN, MPI_NULL_COPY_FN\n";
     # the time/tick functions
     print MPIFFD "       DOUBLE PRECISION MPI_WTIME, MPI_WTICK\n";
+    print MPIFFD "       DOUBLE PRECISION PMPI_WTIME, PMPI_WTICK\n";
+    # We avoid adding the external declarations because some Fortran
+    # compilers then insist on linking with the routines, even if 
+    # they are not used.  Combined with systems that do not have weak
+    # symbols, and you can get some strange link failures.
 
     close( MPIFFD );
 } # if write_mpif
