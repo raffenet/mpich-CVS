@@ -163,7 +163,11 @@ def collect_args(args):
                 argidx += 3
             else:
 		if garg == '-usize'  or  garg == '-gn':
-                    globalArgs[garg] = int(args[argidx+1])
+                    if args[argidx+1].isdigit():
+                        globalArgs[garg] = int(args[argidx+1])
+                    else:
+                        print 'argument to %s must be numeric' % (garg)
+                        usage()
 		else:
                     globalArgs[garg] = args[argidx+1]
                 argidx += 2
