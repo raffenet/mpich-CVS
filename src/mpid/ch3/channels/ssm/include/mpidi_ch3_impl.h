@@ -263,4 +263,12 @@ extern int MPIDI_CH3I_active_flag;
 extern int MPIDI_CH3I_shm_read_active, MPIDI_CH3I_shm_write_active;
 extern int MPIDI_CH3I_sock_read_active, MPIDI_CH3I_sock_write_active;
 
+#ifdef USE_MQSHM
+int MPIDI_CH3I_mqshm_create(const char *name, int *id);
+int MPIDI_CH3I_mqshm_close(int id);
+int MPIDI_CH3I_mqshm_unlink(int id);
+int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, const int tag, int *num_sent, int blocking);
+int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const int maxlen, int *length, const int blocking);
+#endif
+
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

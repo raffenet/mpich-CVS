@@ -160,7 +160,7 @@ int MPIDI_CH3I_mqshm_unlink(int id)
 #define FUNCNAME MPIDI_CH3I_mqshm_send
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, const int tag)
+int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, const int tag, int *num_sent, int blocking)
 {
     int mpi_errno = MPI_SUCCESS;
     mqshm_t *q_ptr;
@@ -180,29 +180,35 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
 	return mpi_errno;
     }
-    MPIDU_Process_lock(&q_ptr->lock);
-    index = q_ptr->next_free;
-    if (index == MQSHM_END)
+    do
     {
+	MPIDU_Process_lock(&q_ptr->lock);
+	index = q_ptr->next_free;
+	if (index != MQSHM_END)
+	{
+	    memcpy(q_ptr->msg[index].data, buffer, length);
+	    q_ptr->msg[index].tag = tag;
+	    q_ptr->msg[index].length = length;
+	    q_ptr->msg[index].next = MQSHM_END;
+	    if (q_ptr->first == MQSHM_END)
+	    {
+		q_ptr->first = index;
+		q_ptr->last = index;
+	    }
+	    else
+	    {
+		q_ptr->msg[q_ptr->last].next = index;
+		q_ptr->last = index;
+	    }
+	    *num_sent = length;
+	    MPIDU_Process_unlock(&q_ptr->lock);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
+	    return MPI_SUCCESS;
+	}
 	MPIDU_Process_unlock(&q_ptr->lock);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
-	return -1;
-    }
-    memcpy(q_ptr->msg[index].data, buffer, length);
-    q_ptr->msg[index].tag = tag;
-    q_ptr->msg[index].length = length;
-    q_ptr->msg[index].next = MQSHM_END;
-    if (q_ptr->first == MQSHM_END)
-    {
-	q_ptr->first = index;
-	q_ptr->last = index;
-    }
-    else
-    {
-	q_ptr->msg[q_ptr->last].next = index;
-	q_ptr->last = index;
-    }
-    MPIDU_Process_unlock(&q_ptr->lock);
+	MPIDU_Yield();
+    } while (blocking);
+    *num_sent = 0;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
     return MPI_SUCCESS;
 }
@@ -225,9 +231,9 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
 	return mpi_errno;
     }
-    MPIDU_Process_lock(&q_ptr->lock);
     do
     {
+	MPIDU_Process_lock(&q_ptr->lock);
 	index = q_ptr->first;
 	while (index != MQSHM_END)
 	{
@@ -263,8 +269,9 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 	    last_index = index;
 	    index = q_ptr->msg[index].next;
 	}
+	MPIDU_Process_unlock(&q_ptr->lock);
+	MPIDU_Yield();
     } while (blocking);
-    MPIDU_Process_unlock(&q_ptr->lock);
     *length = 0; /* zero length signals no message received? */
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
     return MPI_SUCCESS;
