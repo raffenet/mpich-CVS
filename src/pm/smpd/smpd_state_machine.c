@@ -2471,7 +2471,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		    return result;
 		}
 
-		result = smpd_add_command_int_arg(cmd_ptr, "preput", context->spawn_context->preput);
+		result = smpd_add_command_arg(cmd_ptr, "preput", context->spawn_context->preput);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the npreput value to the start_dbs command for a spawn command.\n");
