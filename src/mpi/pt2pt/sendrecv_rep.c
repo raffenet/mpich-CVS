@@ -62,6 +62,10 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
     static const char FCNAME[] = "MPI_Sendrecv_replace";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+#ifdef LOG_ARROWS
+    /* This isn't the right test, but it is close enough for now */
+    int sendcount = count, recvcount = count;
+#endif
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SENDRECV_REPLACE);
     
     /* Verify that MPI has been initialized */
@@ -78,12 +82,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-#ifdef LOG_ARROWS
-    /* This isn't the right test, but it is close enough for now */
-    { int sendcount = count, recvcount = count;
     MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
-    }
-#endif
     
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr(comm, comm_ptr);
