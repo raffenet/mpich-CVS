@@ -11,6 +11,8 @@
 #include <assert.h>
 #include <limits.h>
 
+#undef MPID_STRUCT_FLATTEN_DEBUG
+
 int MPID_Type_struct_alignsize(int count,
 			       MPI_Datatype *oldtype_array);
 
@@ -165,6 +167,8 @@ int MPID_Type_struct(int count,
 	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
 	}
 
+	new_dtp->element_size = -1; /* not all the same size */
+
 	return mpi_errno;
     } /* end of all basics w/out lb or ub case */
     /* TODO: Catch case of a single basic with an LB and/or UB; this can be done
@@ -297,6 +301,7 @@ int MPID_Type_struct(int count,
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
 	MPID_Datatype_get_ptr(oldtype_array[real_type_idx], old_dtp);
 
+	new_dtp->is_committed = 0; /* especially for dup'd type */
 	if (has_lb) {
 	    new_dtp->has_sticky_lb = 1;
 	    if (old_dtp->has_sticky_lb && old_dtp->lb < lb_disp) lb_disp = old_dtp->lb;
@@ -380,6 +385,9 @@ int MPID_Type_struct(int count,
 			ub_disp = tmp_ub;
 		}
 	    }
+	    /* nr_pieces is an upper bound only; for example, a contig will only
+	     * take up one slot regardless of the blocklength
+	     */
 	    nr_pieces += tmp_pieces * blocklength_array[i];
 	}
 
@@ -394,6 +402,7 @@ int MPID_Type_struct(int count,
 
 	segp = MPID_Segment_alloc();
 
+	first = 0;
 	for (i=0; i < count; i++) {
 	    /* we're going to use the segment code to flatten the type.
 	     * we put in our displacement as the buffer location, and use
@@ -404,13 +413,12 @@ int MPID_Type_struct(int count,
 	     * be our new element type.
 	     */
 	    if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB) {
-		int j;
 		MPID_Segment_init((char *) displacement_array[i],
 				  blocklength_array[i],
 				  oldtype_array[i],
 				  segp);
 	    
-		last = nr_pieces;
+		last  = nr_pieces - first;
 		bytes = INT_MAX;
 		/* TODO: CREATE MANIPULATION ROUTINES THAT TAKE THE LEN AND DISP
 		 * ARRAYS AND FILL THEM IN DIRECTLY.
@@ -420,16 +428,22 @@ int MPID_Type_struct(int count,
 					 &bytes, /* don't care, just want it to go */
 					 &iov_array[first],
 					 &last);
-	        for (j=0; j < last; j++) {
-		    MPIU_dbg_printf("a[%d] = (%d, %d)\n", j,
-				    iov_array[i].MPID_IOV_BUF,
-				    iov_array[i].MPID_IOV_LEN);
-		}
-		first = last;
+		first += last;
 	    }
 	}
+	nr_pieces = first;
 
-	for (i=0; i < last; i++) {
+#ifdef MPID_STRUCT_FLATTEN_DEBUG
+	MPIU_dbg_printf("--- start of flattened type ---\n");
+	for (i=0; i < nr_pieces; i++) {
+	    MPIU_dbg_printf("a[%d] = (%d, %d)\n", i,
+			    iov_array[i].MPID_IOV_BUF,
+			    iov_array[i].MPID_IOV_LEN);
+	}
+	MPIU_dbg_printf("--- end of flattened type ---\n");
+#endif
+
+	for (i=0; i < nr_pieces; i++) {
 	    tmp_blocklength_array[i]  = iov_array[i].MPID_IOV_LEN;
 	    tmp_displacement_array[i] = (MPI_Aint) iov_array[i].MPID_IOV_BUF;
 	}
@@ -437,7 +451,7 @@ int MPID_Type_struct(int count,
 	MPID_Segment_free(segp);
 	MPIU_Free(iov_array);
 
-	mpi_errno = MPID_Type_indexed(last,
+	mpi_errno = MPID_Type_indexed(nr_pieces,
 				      tmp_blocklength_array,
 				      tmp_displacement_array,
 				      1,
@@ -468,6 +482,8 @@ int MPID_Type_struct(int count,
 	    new_dtp->ub += (alignsize - epsilon);
 	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
 	}
+	
+	new_dtp->element_size = -1;
 
 	return mpi_errno;
     } /* end of general case */

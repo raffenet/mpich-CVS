@@ -210,49 +210,49 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 {
     int i;
 
-    dbg_printf("loc=%x, treedepth=%d, kind=%d, el_extent=%d\n",
-	       (int) dataloop, depth, dataloop->kind, dataloop->el_extent);
+    DLOOP_dbg_printf("loc=%x, treedepth=%d, kind=%d, el_extent=%d\n",
+		     (int) dataloop, depth, dataloop->kind, dataloop->el_extent);
     switch(dataloop->kind) {
 	case DLOOP_KIND_CONTIG:
-	    dbg_printf("\tcount=%d, datatype=%x\n", 
-		       dataloop->loop_params.c_t.count, 
-		       (int) dataloop->loop_params.c_t.u.dataloop);
+	    DLOOP_dbg_printf("\tcount=%d, datatype=%x\n", 
+			     dataloop->loop_params.c_t.count, 
+			     (int) dataloop->loop_params.c_t.u.dataloop);
 	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.c_t.u.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_VECTOR:
-	    dbg_printf("\tcount=%d, blksz=%d, stride=%d, datatype=%x\n",
-		       dataloop->loop_params.v_t.count, 
-		       dataloop->loop_params.v_t.blocksize, 
-		       dataloop->loop_params.v_t.stride,
-		       (int) dataloop->loop_params.v_t.u.dataloop);
+	    DLOOP_dbg_printf("\tcount=%d, blksz=%d, stride=%d, datatype=%x\n",
+			     dataloop->loop_params.v_t.count, 
+			     dataloop->loop_params.v_t.blocksize, 
+			     dataloop->loop_params.v_t.stride,
+			     (int) dataloop->loop_params.v_t.u.dataloop);
 	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.v_t.u.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_BLOCKINDEXED:
-	    dbg_printf("\tcount=%d, blksz=%d, datatype=%x\n",
-		       dataloop->loop_params.bi_t.count, 
-		       dataloop->loop_params.bi_t.blocksize, 
-		       (int) dataloop->loop_params.bi_t.u.dataloop);
+	    DLOOP_dbg_printf("\tcount=%d, blksz=%d, datatype=%x\n",
+			     dataloop->loop_params.bi_t.count, 
+			     dataloop->loop_params.bi_t.blocksize, 
+			     (int) dataloop->loop_params.bi_t.u.dataloop);
 	    /* print out offsets later */
 	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.bi_t.u.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_INDEXED:
-	    dbg_printf("\tcount=%d, datatype=%x\n",
-		       dataloop->loop_params.i_t.count,
-		       (int) dataloop->loop_params.i_t.u.dataloop);
+	    DLOOP_dbg_printf("\tcount=%d, datatype=%x\n",
+			     dataloop->loop_params.i_t.count,
+			     (int) dataloop->loop_params.i_t.u.dataloop);
 	    /* print out blocksizes and offsets later */
 	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.i_t.u.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_STRUCT:
-	    dbg_printf("\tcount=%d\n\tblocksizes: ", dataloop->loop_params.s_t.count);
+	    DLOOP_dbg_printf("\tcount=%d\n\tblocksizes: ", dataloop->loop_params.s_t.count);
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++)
-		dbg_printf("%d ", dataloop->loop_params.s_t.blocksize_array[i]);
-	    dbg_printf("\n\toffsets: ");
+		DLOOP_dbg_printf("%d ", dataloop->loop_params.s_t.blocksize_array[i]);
+	    DLOOP_dbg_printf("\n\toffsets: ");
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++)
-		dbg_printf("%d ", dataloop->loop_params.s_t.offset_array[i]);
-	    dbg_printf("\n\tdatatypes: ");
+		DLOOP_dbg_printf("%d ", dataloop->loop_params.s_t.offset_array[i]);
+	    DLOOP_dbg_printf("\n\tdatatypes: ");
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++)
-		dbg_printf("%x ", (int) dataloop->loop_params.s_t.dataloop_array[i]);
-	    dbg_printf("\n");
+		DLOOP_dbg_printf("%x ", (int) dataloop->loop_params.s_t.dataloop_array[i]);
+	    DLOOP_dbg_printf("\n");
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
 		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.s_t.dataloop_array[i],depth+1);
 	    }
