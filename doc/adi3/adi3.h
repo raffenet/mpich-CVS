@@ -128,14 +128,14 @@ typedef enum {
 
   E*/
 typedef union {
-  int  (*C_CommCopyFunction)  (MPI_Comm, int, void *, void *, void *, int *);
-  void (*F77_CopyFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-			   MPI_Fint *, MPI_Fint *, MPI_Fint *);
-  void (*F90_CopyFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *
-			   MPI_Aint *, MPI_Fint *, MPI_Fint *);
-  int (*C_FileCopyFunction)  (MPI_Comm, int, void *, void *, void *, int *);
-  int (*C_TypeCopyFunction)  (MPI_Datatype, int, 
-			      void *, void *, void *, int *);
+  int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
+  void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
+			      MPI_Fint *, MPI_Fint *, MPI_Fint * );
+  void (*F90_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *
+			      MPI_Aint *, MPI_Fint *, MPI_Fint * );
+  int (*C_FileCopyFunction) ( MPI_Comm, int, void *, void *, void *, int * );
+  int (*C_TypeCopyFunction) ( MPI_Datatype, int, 
+			      void *, void *, void *, int * );
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
 
@@ -280,7 +280,7 @@ typedef struct {
  */
 
 /*S
-  MPID_datatype_contig - Description of a contiguous datatype
+  MPID_Datatype_contig - Description of a contiguous datatype
 
   Fields:
 + count - Number of elements
@@ -292,10 +292,10 @@ typedef struct {
 typedef struct {
     int count;
     struct dataloop_ *datatype;
-} MPID_datatype_contig;
+} MPID_Datatype_contig;
 
 /*S
-  MPID_datatype_vector - Description of a vector or strided datatype
+  MPID_Datatype_vector - Description of a vector or strided datatype
 
   Fields:
 + count - Number of elements
@@ -311,10 +311,10 @@ typedef struct {
     int blocksize;
     int stride;
     struct dataloop_ *datatype;
-} MPID_datatype_vector;
+} MPID_Datatype_vector;
 
 /*S
-  MPID_datatype_blockindexed - Description of a block-indexed datatype
+  MPID_Datatype_blockindexed - Description of a block-indexed datatype
 
   Fields:
 + count - Number of blocks
@@ -331,10 +331,10 @@ typedef struct {
     int blocksize;
     int *offset;
     struct dataloop_ *datatype;
-} MPID_datatype_blockindexed;
+} MPID_Datatype_blockindexed;
 
 /*S
-  MPID_datatype_indexed - Description of an indexed datatype
+  MPID_Datatype_indexed - Description of an indexed datatype
 
   Fields:
 + count - Number of blocks
@@ -351,10 +351,10 @@ typedef struct {
     int *blocksize;
     int *offset;
     struct dataloop_ *datatype;
-} MPID_datatype_indexed;
+} MPID_Datatype_indexed;
 
 /*S
-  MPID_datatype_struct - Description of a structure datatype
+  MPID_Datatype_struct - Description of a structure datatype
 
   Fields:
 + count - Number of blocks
@@ -371,7 +371,7 @@ typedef struct {
     int *blocksize;
     int *offset;
     struct dataloop_ *datatype;
-} MPID_datatype_struct;
+} MPID_Datatype_struct;
 
 /*S
   MPID_Dataloop - Description of the structure used to hold a datatype
@@ -382,7 +382,7 @@ typedef struct {
   'MPID_Contig', 'MPID_Vector', 'MPID_BlockIndexed', 'MPID_Indexed', or
   'MPID_Struct'.  
 . loop_parms - A union containing the 5 datatype structures, e.g., 
-  'MPID_datatype_contig', 'MPID_datatype_vector', etc.  A sixth element in
+  'MPID_Datatype_contig', 'MPID_Datatype_vector', etc.  A sixth element in
   this union, 'count', allows quick access to the shared 'count' field in the
   five datatype structure.
 . extent - The extent of the datatype
@@ -399,11 +399,11 @@ typedef struct datatloop_ {
 				  whether the datatype is a leaf type. */
     union {
 	int                        count;
-	MPID_datatype_contig       c_t;
-	MPID_datatype_vector       v_t;
-	MPID_datatype_blockindexed bi_t;
-	MPID_datatype_indexed      i_t;
-	MPID_datatype_struct       s_t;
+	MPID_Datatype_contig       c_t;
+	MPID_Datatype_vector       v_t;
+	MPID_Datatype_blockindexed bi_t;
+	MPID_Datatype_indexed      i_t;
+	MPID_Datatype_struct       s_t;
     } loop_params;
     MPI_Aint extent;
     int id;                       /* Having the id here allows us to find the
@@ -650,15 +650,18 @@ typedef struct {
   What is the communicator of the window?  Is this the same communicator passed
   to 'MPI_Win_create'?  Is it a (shallow) copy; that is, a dup without 
   carrying the (user) attributes?
+
+  Should there be a separate 'MPID_Group', or will we use the group of 
+  the communicator?
   S*/
 typedef struct {
-    int  id;                     /* value of MPI_Win for this structure */
+    int          id;             /* value of MPI_Win for this structure */
     volatile int ref_count;
-    void *start_address;         /* Address and length of *local* window */
-    int  length;
-    MPID_List     attributes;
-    MPID_Comm     *comm;         /* communicator of window */
-    char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
+    void         *start_address; /* Address and length of *local* window */
+    MPID_Aint    length;
+    MPID_List    attributes;
+    MPID_Comm    *comm;         /* communicator of window */
+    char         name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     /* other, device-specific information 
        This is likely to include a list of pending RMA operations
        (i.e., MPI_Put, MPI_Get, and MPI_Accumulate)
@@ -682,7 +685,8 @@ typedef struct {
              loopinfo.loop_params.count-1) 
 . cufoffset - Offset for relative offsets in datatypes 
 - loopinfo  - Loop-based description of the datatype
-  S*/
+
+S*/
 typedef struct {
     int           curcount;
     MPI_Aint      curoffset;
@@ -884,14 +888,14 @@ typedef struct {
  * Other Datastructures
  */
 /*E
-  MPID_Op_kind - Enumerates types of MPI_OP types
+  MPID_Op_kind - Enumerates types of MPI_Op types
 
   Notes:
   These are needed for implementing 'MPI_Accumulate', since only predefined
   operations are allowed for that operation.  
 
-  A gap in the enum values was made allow additional predefine operations
-  to be inserted.  This might include future aditions to MPI or experimental
+  A gap in the enum values was made allow additional predefined operations
+  to be inserted.  This might include future additions to MPI or experimental
   extensions (such as a Read-Modify-Write operation).
 
   Module:
@@ -901,7 +905,7 @@ typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4,
 	       MPID_LAND_OP=5, MPID_BAND_OP=6, MPID_LOR_OP=7, MPID_BOR_OP=8,
 	       MPID_LXOR_OP=9, MPID_BXOR_OP=10, MPID_MAXLOC_OP=11, 
                MPID_MINLOC_OP=12, MPID_REPLACE_OP=13, 
-               MPID_USER_COMMUTE_OP=20, MPID_USER_OP=21 }
+               MPID_USER_COMMUTE_OP=32, MPID_USER_OP=33 }
   MPID_Op_kind;
 
 /*S
@@ -927,8 +931,14 @@ typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4,
   support 'restrict' should be able to generate code that is as good as a
   Fortran compiler would for these functions.
 
+  We should note on the manual pages for user-defined operations that
+  'restrict' should be used when available, and that a cast may be 
+  required when passing such a function to 'MPI_Op_create'.
+
   Question:
   Should each of these function types have an associated typedef?
+
+  Should there be a C++ function here?
 
   Module:
   Collective
