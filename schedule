@@ -307,7 +307,7 @@ MPI_Win_post,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_start,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_complete,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_wait,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
-MPI_Win_test,,,,,Rajeev,for ch3 channel - works on sock not shmem
+MPI_Win_test,,,,,Rajeev,,done,for ch3 channel - works on sock not shmem
 MPI_Win_get_group,,,,,Rajeev,,done
 
 MPI_Win_lock,1,1,1,1,Rajeev,MPID_Win_lock
