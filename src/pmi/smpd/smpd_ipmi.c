@@ -1255,16 +1255,13 @@ int iPMI_Spawn_multiple(int count,
 	}
 	if (argvs)
 	{
-	    printf("argvs is not NULL.\n");fflush(stdout);
 	    buffer[0] = '\0';
 	    iter = buffer;
 	    maxlen = SMPD_MAX_CMD_LENGTH;
 	    if (argvs[i] != NULL)
 	    {
-		printf("argvs[%d] is not NULL.\n", i);fflush(stdout);
 		for (j=0; argvs[i][j] != NULL; j++)
 		{
-		    printf("adding argv[%d][%d] = %s\n", i, j, argvs[i][j]);fflush(stdout);
 		    result = MPIU_Str_add_string(&iter, &maxlen, argvs[i][j]);
 		}
 	    }
@@ -1328,6 +1325,8 @@ int iPMI_Spawn_multiple(int count,
 		result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
 		if (result != MPIU_STR_SUCCESS)
 		{
+		    pmi_err_printf("unable to add %s=%s to the spawn command.\n", info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
+		    return PMI_FAIL;
 		}
 		iter2--;
 		*iter2 = '\0'; /* remove the trailing space */
@@ -1335,6 +1334,8 @@ int iPMI_Spawn_multiple(int count,
 		result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
 		if (result != MPIU_STR_SUCCESS)
 		{
+		    pmi_err_printf("unable to add %s=%s to the spawn command.\n", key, keyval_buf);
+		    return PMI_FAIL;
 		}
 	    }
 	    sprintf(key, "keyvals%d", i);
@@ -1366,6 +1367,8 @@ int iPMI_Spawn_multiple(int count,
 	    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, preput_keyval_vector[i].key, preput_keyval_vector[i].val);
 	    if (result != MPIU_STR_SUCCESS)
 	    {
+		pmi_err_printf("unable to add %s=%s to the spawn command.\n", preput_keyval_vector[i].key, preput_keyval_vector[i].val);
+		return PMI_FAIL;
 	    }
 	    iter2--;
 	    *iter2 = '\0'; /* remove the trailing space */
@@ -1373,6 +1376,8 @@ int iPMI_Spawn_multiple(int count,
 	    result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
 	    if (result != MPIU_STR_SUCCESS)
 	    {
+		pmi_err_printf("unable to add %s=%s to the spawn command.\n", key, keyval_buf);
+		return PMI_FAIL;
 	    }
 	}
 	result = smpd_add_command_arg(cmd_ptr, "preput", buffer);
@@ -1383,7 +1388,7 @@ int iPMI_Spawn_multiple(int count,
 	}
     }	
 
-    printf("spawn command: <%s>\n", cmd_ptr->cmd);
+    /*printf("spawn command: <%s>\n", cmd_ptr->cmd);*/
 
     /* post the write of the command */
     /*
