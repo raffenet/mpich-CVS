@@ -1252,14 +1252,23 @@ int MPIR_Comm_release(MPID_Comm *);
 extern MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN];
 extern MPID_Comm MPID_Comm_direct[];
 
+/*
+ * The order of the context offsets is important.  The collective routines
+ * in the case of intercommunicator operations use offsets 2 and 3 for
+ * the local intracommunicator; thus it is vital that the offsets used 
+ * for communication between processes in the intercommunicator in a
+ * collective operation (MPID_CONTEXT_INTER_COLL) be distinct from the 
+ * offsets uses for communication on the local intracommunicator (2+
+ * MPID_CONTEXT_INTRA_COLL)
+ */
 #define MPID_CONTEXT_INTRA_PT2PT 0
 #define MPID_CONTEXT_INTRA_COLL  1
 #define MPID_CONTEXT_INTRA_FILE  2
 #define MPID_CONTEXT_INTRA_WIN   3
 #define MPID_CONTEXT_INTER_PT2PT 0
-#define MPID_CONTEXT_INTER_COLLA 1
-#define MPID_CONTEXT_INTER_COLLB 2
-#define MPID_CONTEXT_INTER_COLL  3
+#define MPID_CONTEXT_INTER_COLL  1
+#define MPID_CONTEXT_INTER_COLLA 2
+#define MPID_CONTEXT_INTER_COLLB 3
 /* ------------------------------------------------------------------------- */
 
 /* Requests */
@@ -3178,7 +3187,7 @@ void MPIR_WaitForDebugger( void );
 /* These functions are used in the implementation of collective
    operations. They are wrappers around MPID send/recv functions. They do
    sends/receives by setting the context offset to
-   MPID_INTRA_CONTEXT_COLL. */
+   MPID_CONTEXT_INTRA_COLL. */
 int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm);
 int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
