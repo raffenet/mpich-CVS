@@ -127,7 +127,6 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     {
 	mpi_errno = request_ptr->status.MPI_ERROR;
     }
-    MPID_Request_release(request_ptr);
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
