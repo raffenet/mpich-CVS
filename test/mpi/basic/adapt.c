@@ -28,6 +28,11 @@ double	 g_STOPTM = 	0.1;
 #define  MAXINT 	2147483647
 int      g_latency012_reps = 1000;
 #define  MAX_LAT_TIME   2
+#define  LEFT_PROCESS   0
+#define  MIDDLE_PROCESS 1
+#define  RIGHT_PROCESS  2
+int      g_left_rank =  -1;
+int      g_proc_loc =   -1;
 
 #define MIN(x, y)	(((x) < (y))?(x):(y))
 #define MAX(x, y)	(((x) > (y))?(x):(y))
@@ -48,7 +53,7 @@ struct argstruct
     char *sbuff;        /* Send buffer      */
     char *rbuff;        /* Recv buffer      */
     int  bufflen;       /* Length of buffer */
-    int  nbor,          /* neighbor */
+    int  nbor, nbor2,   /* neighbor */
 	 iproc,         /* rank */
 	 tr,            /* transmitter/receiver flag */
 	 latency_reps;  /* reps needed to time latency */
@@ -63,9 +68,9 @@ struct data
     int    repeat;
 };
 
-int Setup(ArgStruct *p01, ArgStruct *p12);
+int Setup(int middle_rank, ArgStruct *p01, ArgStruct *p12, ArgStruct *p012);
 void Sync(ArgStruct *p);
-void Sync012();
+void Sync012(ArgStruct *p);
 #define SendData( p ) MPI_Send( p . sbuff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD)
 #define RecvData( p ) MPI_Recv( p . rbuff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD, &status)
 void SendTime(ArgStruct *p, double *t);
@@ -73,10 +78,10 @@ void RecvTime(ArgStruct *p, double *t);
 void SendReps(ArgStruct *p, int *rpt);
 void RecvReps(ArgStruct *p, int *rpt);
 double TestLatency(ArgStruct *p);
-double TestLatency012();
+double TestLatency012(ArgStruct *p);
 void PrintOptions(void);
 int DetermineLatencyReps(ArgStruct *p);
-int DetermineLatencyReps012();
+int DetermineLatencyReps012(ArgStruct *p);
 
 void PrintOptions()
 {
@@ -91,6 +96,7 @@ void PrintOptions()
     printf("       -nocache\n");
     printf("       -pert\n");
     printf("       -noprint\n");
+    printf("       -middle rank_0_1_or_2\n");
     printf("Requires exactly three processes\n");
     printf("\n");
 }
@@ -113,7 +119,8 @@ int main(int argc, char *argv[])
         ipert,                  /* index of the perturbation loop		*/
 	start = 0,		/* Starting value for signature curve 		*/
 	end = MAXINT,		/* Ending value for signature curve		*/
-	printopt = 1;		/* Debug print statements flag			*/
+	printopt = 1,		/* Debug print statements flag			*/
+	middle_rank = 0;        /* rank 0, 1 or 2 where 2-0-1 or 0-1-2 or 1-2-0 */
     
     ArgStruct	args01, args12, args012;/* Argumentsfor all the calls		*/
     
@@ -150,7 +157,10 @@ int main(int argc, char *argv[])
     if (GetOpt(&argc, &argv, "-noprint"))
 	printopt = 0;
     bSavePert = GetOpt(&argc, &argv, "-pert");
-    
+    GetOptInt(&argc, &argv, "-middle", &middle_rank);
+    if (middle_rank < 0 || middle_rank > 2)
+	middle_rank = 0;
+
     bwdata01 = malloc((g_NSAMP+1) * sizeof(Data));
     bwdata12 = malloc((g_NSAMP+1) * sizeof(Data));
     bwdata012 = malloc((g_NSAMP+1) * sizeof(Data));
@@ -165,7 +175,7 @@ int main(int argc, char *argv[])
 	exit(420132);
     }
 
-    Setup(&args01, &args12);
+    Setup(middle_rank, &args01, &args12, &args012);
 
     if (g_nIproc == 0)
     {
@@ -177,15 +187,15 @@ int main(int argc, char *argv[])
     }
 
     /* Calculate latency */
-    switch (g_nIproc)
+    switch (g_proc_loc)
     {
-    case 0:
+    case LEFT_PROCESS:
 	latency01 = TestLatency(&args01);
 	/*printf("[0] latency01 = %0.9f\n", latency01);fflush(stdout);*/
 	RecvTime(&args01, &latency12);
 	/*printf("[0] latency12 = %0.9f\n", latency12);fflush(stdout);*/
 	break;
-    case 1:
+    case MIDDLE_PROCESS:
 	latency01 = TestLatency(&args01);
 	/*printf("[1] latency01 = %0.9f\n", latency01);fflush(stdout);*/
 	SendTime(&args12, &latency01);
@@ -193,7 +203,7 @@ int main(int argc, char *argv[])
 	/*printf("[1] latency12 = %0.9f\n", latency12);fflush(stdout);*/
 	SendTime(&args01, &latency12);
 	break;
-    case 2:
+    case RIGHT_PROCESS:
 	RecvTime(&args12, &latency01);
 	/*printf("[2] latency01 = %0.9f\n", latency01);fflush(stdout);*/
 	latency12 = TestLatency(&args12);
@@ -201,7 +211,7 @@ int main(int argc, char *argv[])
 	break;
     }
 
-    latency012 = TestLatency012();
+    latency012 = TestLatency012(&args012);
 
     if ((g_nIproc == 0) && printopt)
     {
@@ -242,7 +252,7 @@ int main(int argc, char *argv[])
 	    MPI_Barrier(MPI_COMM_WORLD);
 
 
-	    if (g_nIproc == 2)
+	    if (g_proc_loc == RIGHT_PROCESS)
 		goto skip_01_trial;
 
 	    /* Calculate howmany times to repeat the experiment. */
@@ -426,7 +436,7 @@ skip_01_trial:
 	    MPI_Barrier(MPI_COMM_WORLD);
 
 
-	    if (g_nIproc == 0)
+	    if (g_proc_loc == LEFT_PROCESS)
 		goto skip_12_trial;
 
 	    /* Calculate howmany times to repeat the experiment. */
@@ -677,9 +687,9 @@ skip_12_trial:
 	    }
 	    
 	    /* Finally, we get to transmit or receive and time */
-	    switch (g_nIproc)
+	    switch (g_proc_loc)
 	    {
-	    case 0:
+	    case LEFT_PROCESS:
 		bwdata012[n].t = LONGTIME;
 		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
@@ -698,12 +708,12 @@ skip_12_trial:
 			}
 		    }
 		    
-		    Sync012();
+		    Sync012(&args012);
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
 			if (bNoCache)
 			{
 			    args012.sbuff += args012.bufflen;
@@ -715,9 +725,9 @@ skip_12_trial:
 		    t1 += t;
 		    bwdata012[n].t = MIN(bwdata012[n].t, t);
 		}
-		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
 		break;
-	    case 1:
+	    case MIDDLE_PROCESS:
 		bwdata012[n].t = LONGTIME;
 		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
@@ -736,14 +746,14 @@ skip_12_trial:
 			}
 		    }
 		    
-		    Sync012();
+		    Sync012(&args012);
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 2, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 0, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args012.sbuff += args012.bufflen;
@@ -752,9 +762,9 @@ skip_12_trial:
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
 		}
-		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
 		break;
-	    case 2:
+	    case RIGHT_PROCESS:
 		bwdata012[n].t = LONGTIME;
 		t1 = 0;
 		for (i = 0; i < TRIALS; i++)
@@ -773,12 +783,12 @@ skip_12_trial:
 			}
 		    }
 		    
-		    Sync012();
+		    Sync012(&args012);
 		    t0 = When();
 		    for (j = 0; j < nrepeat; j++)
 		    {
-			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
-			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args012.sbuff += args012.bufflen;
@@ -787,7 +797,7 @@ skip_12_trial:
 		    }
 		    t = (When() - t0)/(2 * nrepeat);
 		}
-		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
 		break;
 	    }
 	    tlast012 = bwdata012[n].t;
@@ -873,40 +883,118 @@ skip_12_trial:
     return 0;
 }
 
-int Setup(ArgStruct *p01, ArgStruct *p12)
+int Setup(int middle_rank, ArgStruct *p01, ArgStruct *p12, ArgStruct *p012)
 {
     char s[255];
     int len = 255;
     
-    p01->iproc = p12->iproc = g_nIproc;
+    p01->iproc = p12->iproc = p012->iproc = g_nIproc;
     
     MPI_Get_processor_name(s, &len);
     /*gethostname(s, len);*/
     printf("%d: %s\n", p01->iproc, s);
     fflush(stdout);
 
-    switch (g_nIproc)
+    switch (middle_rank)
     {
     case 0:
-	p01->nbor = 1;
-	p01->tr = TRUE;
-	p12->nbor = -1;
-	p12->tr = FALSE;
+	switch (g_nIproc)
+	{
+	case 0:
+	    g_proc_loc = MIDDLE_PROCESS;
+	    p01->nbor = 2;
+	    p01->tr = FALSE;
+	    p12->nbor = 1;
+	    p12->tr = TRUE;
+	    p012->nbor = 2;
+	    p012->nbor2 = 1;
+	    break;
+	case 1:
+	    g_proc_loc = RIGHT_PROCESS;
+	    p01->nbor = -1;
+	    p01->tr = FALSE;
+	    p12->nbor = 0;
+	    p12->tr = FALSE;
+	    p012->nbor = 0;
+	    p012->nbor2 = -1;
+	    break;
+	case 2:
+	    g_proc_loc = LEFT_PROCESS;
+	    p01->nbor = 0;
+	    p01->tr = TRUE;
+	    p12->nbor = -1;
+	    p12->tr = FALSE;
+	    p012->nbor = 0;
+	    p012->nbor2 = -1;
+	    break;
+	}
+	g_left_rank = 2;
 	break;
     case 1:
-	p01->nbor = 0;
-	p01->tr = FALSE;
-	p12->nbor = 2;
-	p12->tr = TRUE;
+	switch (g_nIproc)
+	{
+	case 0:
+	    g_proc_loc = LEFT_PROCESS;
+	    p01->nbor = 1;
+	    p01->tr = TRUE;
+	    p12->nbor = -1;
+	    p12->tr = FALSE;
+	    p012->nbor = 1;
+	    p012->nbor2 = -1;
+	    break;
+	case 1:
+	    g_proc_loc = MIDDLE_PROCESS;
+	    p01->nbor = 0;
+	    p01->tr = FALSE;
+	    p12->nbor = 2;
+	    p12->tr = TRUE;
+	    p012->nbor = 0;
+	    p012->nbor2 = 2;
+	    break;
+	case 2:
+	    g_proc_loc = RIGHT_PROCESS;
+	    p01->nbor = -1;
+	    p01->tr = FALSE;
+	    p12->nbor = 1;
+	    p12->tr = FALSE;
+	    p012->nbor = 1;
+	    p012->nbor2 = -1;
+	    break;
+	}
+	g_left_rank = 0;
 	break;
     case 2:
-	p01->nbor = -1;
-	p01->tr = FALSE;
-	p12->nbor = 1;
-	p12->tr = FALSE;
-	break;
-    default:
-	MPI_Abort(MPI_COMM_WORLD, 0);
+	switch (g_nIproc)
+	{
+	case 0:
+	    g_proc_loc = RIGHT_PROCESS;
+	    p01->nbor = -1;
+	    p01->tr = FALSE;
+	    p12->nbor = 2;
+	    p12->tr = FALSE;
+	    p012->nbor = 2;
+	    p012->nbor2 = -1;
+	    break;
+	case 1:
+	    g_proc_loc = LEFT_PROCESS;
+	    p01->nbor = 2;
+	    p01->tr = TRUE;
+	    p12->nbor = -1;
+	    p12->tr = FALSE;
+	    p012->nbor = 2;
+	    p012->nbor2 = -1;
+	    break;
+	case 2:
+	    g_proc_loc = MIDDLE_PROCESS;
+	    p01->nbor = 1;
+	    p01->tr = FALSE;
+	    p12->nbor = 0;
+	    p12->tr = TRUE;
+	    p012->nbor = 1;
+	    p012->nbor2 = 0;
+	    break;
+	}
+	g_left_rank = 1;
 	break;
     }
 
@@ -930,28 +1018,28 @@ void Sync(ArgStruct *p)
     }
 }
 
-void Sync012()
+void Sync012(ArgStruct *p)
 {
     MPI_Status status;
-    switch (g_nIproc)
+    switch (g_proc_loc)
     {
-    case 0:
-	MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-	MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
-	MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+    case LEFT_PROCESS:
+	MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+	MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+	MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
 	break;
-    case 1:
-	MPI_Recv(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
-	MPI_Send(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
-	MPI_Recv(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD, &status);
-	MPI_Send(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD);
-	MPI_Recv(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
-	MPI_Send(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
+    case MIDDLE_PROCESS:
+	MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+	MPI_Send(NULL, 0, MPI_BYTE, p->nbor2, 1, MPI_COMM_WORLD);
+	MPI_Recv(NULL, 0, MPI_BYTE, p->nbor2, 1, MPI_COMM_WORLD, &status);
+	MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+	MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+	MPI_Send(NULL, 0, MPI_BYTE, p->nbor2, 1, MPI_COMM_WORLD);
 	break;
-    case 2:
-	MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
-	MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-	MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+    case RIGHT_PROCESS:
+	MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+	MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+	MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
 	break;
     }
 }
@@ -996,16 +1084,16 @@ int DetermineLatencyReps(ArgStruct *p)
     return reps;
 }
 
-int DetermineLatencyReps012()
+int DetermineLatencyReps012(ArgStruct *p)
 {
     double t0, duration = 0;
     int reps = 1, prev_reps = 0;
     int i;
 
     /* prime the send/receive pipes */
-    Sync012();
-    Sync012();
-    Sync012();
+    Sync012(p);
+    Sync012(p);
+    Sync012(p);
 
     /* test how long it takes to send n messages 
      * where n = 1, 2, 4, 8, 16, 32, ...
@@ -1019,14 +1107,14 @@ int DetermineLatencyReps012()
 	t0 = When();
 	for (i=0; i<reps-prev_reps; i++)
 	{
-	    Sync012();
+	    Sync012(p);
 	}
 	duration += When() - t0;
 	prev_reps = reps;
 	reps = reps * 2;
 
 	/* use duration from the root only */
-	MPI_Bcast(&duration, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&duration, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
     }
 
     return reps;
@@ -1037,12 +1125,22 @@ double TestLatency(ArgStruct *p)
     double latency, t0, min_latency = LONGTIME;
     int i, j;
     MPI_Status status;
+    char str[100];
 
     /* calculate the latency between rank 0 and rank 1 */
     p->latency_reps = DetermineLatencyReps(p);
     if (/*p->latency_reps < 1024 &&*/ p->tr)
     {
-	printf("To determine %s latency, using %d reps\n", p->iproc == 0 ? "0 -> 1     " : "     1 -> 2", p->latency_reps);
+	if (g_proc_loc == LEFT_PROCESS)
+	{
+	    sprintf(str, "%d -> %d     ", p->iproc, p->nbor);
+	}
+	else
+	{
+	    sprintf(str, "     %d -> %d", p->iproc, p->nbor);
+	}
+	/*printf("To determine %s latency, using %d reps\n", p->iproc == 0 ? "0 -> 1     " : "     1 -> 2", p->latency_reps);*/
+	printf("To determine %s latency, using %d reps\n", str, p->latency_reps);
 	fflush(stdout);
     }
 
@@ -1073,44 +1171,43 @@ double TestLatency(ArgStruct *p)
     return min_latency;
 }
 
-double TestLatency012()
+double TestLatency012(ArgStruct *p)
 {
     double latency, t0, min_latency = LONGTIME;
     int i, j;
     MPI_Status status;
 
-    /* calculate the latency between rank 0 and rank 1 */
-    g_latency012_reps = DetermineLatencyReps012();
-    if (/*g_latency012_reps < 1024 &&*/ g_nIproc == 0)
+    g_latency012_reps = DetermineLatencyReps012(p);
+    if (g_proc_loc == MIDDLE_PROCESS)
     {
-	printf("To determine 0 -> 1 -> 2 latency, using %d reps\n", g_latency012_reps);
+	printf("To determine %d -> %d -> %d latency, using %d reps\n", p->nbor, p->iproc, p->nbor2, g_latency012_reps);
 	fflush(stdout);
     }
 
     for (j=0; j<TRIALS; j++)
     {
-	Sync012();
+	Sync012(p);
 	t0 = When();
 	t0 = When();
 	t0 = When();
 	t0 = When();
 	for (i = 0; i < g_latency012_reps; i++)
 	{
-	    switch (g_nIproc)
+	    switch (g_proc_loc)
 	    {
-	    case 0:
-		MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
-		MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
+	    case LEFT_PROCESS:
+		MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
+		MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
 		break;
-	    case 1:
-		MPI_Recv(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status);
-		MPI_Send(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD);
-		MPI_Recv(NULL, 0, MPI_BYTE, 2, 1, MPI_COMM_WORLD, &status);
-		MPI_Send(NULL, 0, MPI_BYTE, 0, 1, MPI_COMM_WORLD);
+	    case MIDDLE_PROCESS:
+		MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+		MPI_Send(NULL, 0, MPI_BYTE, p->nbor2, 1, MPI_COMM_WORLD);
+		MPI_Recv(NULL, 0, MPI_BYTE, p->nbor2, 1, MPI_COMM_WORLD, &status);
+		MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
 		break;
-	    case 2:
-		MPI_Recv(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD, &status);
-		MPI_Send(NULL, 0, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+	    case RIGHT_PROCESS:
+		MPI_Recv(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD, &status);
+		MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
 		break;
 	    }
 	}
