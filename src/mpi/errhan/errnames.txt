@@ -645,6 +645,7 @@ with MPI_Alloc_mem.
 **fail:failure
 **fail %d:failure (errno %d)
 **fail %s:failure - %s
+**fail %s %d:failure - %s (errno %d)
 **gethostbyname:gethostbyname failed
 **gethostbyname %d:gethostbyname failed (errno %d)
 **getinfo:getaddrinfo failed
