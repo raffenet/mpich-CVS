@@ -57,6 +57,9 @@
 \newenvironment{shmem}{\begin{quote}\textbf{\shmemname:}\\}{\end{quote}}
 \newenvironment{via}{\begin{quote}\textbf{\vianame:}\\}{\end{quote}}
 
+%
+% Algorithm
+\newenvironment{algorithm}{\begin{obeylines}\obeyspaces}{\end{obeylines}}
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
@@ -161,23 +164,26 @@ Error handlers should be chosen using the following decision tree:
 \item If the error relates to a request, and the request refers to a valid
   communicator, use that communicator's error handler (e.g., \code{MPI_Wait}).
 \item Otherwise, for everything except MPI-IO, use the error handler attached
-  to \mpifunc{MPI_COMM_WORLD}  
+  to \mpiconst{MPI_COMM_WORLD}  
   (see Section 7.2 in the MPI-1 Standard:: ``MPI calls that are not related to
   any communicator are considered to be attached to the communicator
   \code{MPI_COMM_WORLD}.'' ).
 \item For MPI-IO, the default error handler is attached to
   \code{MPI_FILE_NULL} (see Section 9.7 in the MPI-2 standard: ``The default
   file error handler can be changed by specifying \code{MPI_FILE_NULL} as the
-  \code{fh} argument to \code{MPI_FILE_SET_ERRHANDLER}''). 
+  \code{fh} argument to \mpifunc{MPI_FILE_SET_ERRHANDLER}'').  Note that this
+  requires \mpifunc{MPI_FILE_SET_ERRHANDLER} and
+  \mpifunc{MPI_FILE_GET_ERRHANDLER} to handle this special case for
+  \mpiconst{MPI_FILE_NULL}. 
 \end{enumerate}
 
 \subsection{Error handling and Fault Tolerance}
 In order to support fault tolerance, errors should be handled as
 gracefully as possible.  If it is possible to remain in a consistent
 state, the process should not abort (unless, of course, the error
-handler requires it, as the default \mpifunc{MPI_ERRORS_FATAL} does).  
+handler requires it, as the default \mpiconst{MPI_ERRORS_FATAL} does).  
 If it is not possible to recover from an error, then the process
-should call \mpidfunc{MPID_Abort} but specify \mpifunc{MPI_COMM_SELF} as the
+should call \mpidfunc{MPID_Abort} but specify \mpiconst{MPI_COMM_SELF} as the
 communicator.  
 
 \subsection{Memory Allocation}
@@ -728,7 +734,7 @@ or even a single lock for \emph{all} info objects is probably adequate.
 
 
 \subsubsection{\mpifunc{MPI_INFO_FREE}}
-Delete an info object.  Uses an MPID object creator.
+Delete an info object.  Uses an MPID object deleter.
 
 \subsubsection{\mpifunc{MPI_INFO_GET}}
 \begin{verbatim}
@@ -788,10 +794,38 @@ choice for implementing operatoins that involve datatypes, such as
 Deprecated.  Use \mpifunc{MPI_GET_ADDRESS}.
 
 \subsubsection{\mpifunc{MPI_GET_COUNT}}
-How does this get the value?
+Uses the \code{size} field of the datatype.  Note the special case of a
+datatype of size zero and a message of size zero; this should return a count
+of zero (see the MPI errata discussion) and the \code{count} field of
+\mpiconst{MPI_Status}.  
+
+Question: should this call an MPID function for this for systems that want to
+manage the count field differently, that is, not use it to store the number of
+bytes in the message?  
 
 \subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
-How does this get the value?
+This requires some care.  This should return the number of basic datatypes in
+a message.  So, to start with, each datatype should keep track of the number
+of basic datatypes.  Then a quick version of this is:
+\begin{algorithm}
+If sizeof datatype is zero, then
+    If size of message is zero, return zero
+    else return \mpiconst{MPI_UNDEFINED}
+Compute sizeof message / sizeof datatype.  
+If remainder is zero, then 
+    the number of elements is this quotient times the number of element in 
+    the datatype
+Else if all elements in the datatype are the same size then
+    (e.g., an indexed case)
+    the number of elements is sizeof(message) / sizeof(one element)
+Else 
+    (It is hard.)
+    Take the remainder from sizeof message / sizeof datatype.
+    Execute the dataloop algorithm, but with no data movement, keeping track
+    of the basic elements.  Note that this requires a version of the 
+    dataloop that preserves the original element sizes.  
+    Add this count to elements-per-datatype times the quotient.
+\end{algorithm}
 
 \subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
 Where are the values defined for the count field(s) in the status?
@@ -924,6 +958,8 @@ of the get/set name routines.  What is it?
 
 \subsubsection{\mpifunc{MPI_TYPE_SET_NAME}}
 Sets the \code{name} field.  Returns error if supplied name is too long.
+Note that the name may be set for all datatypes, including the predefined
+names.
 
 \subsubsection{\mpifunc{MPI_PACK}}
 Call \mpidfunc{MPID_Pack} with a \code{rank} of \code{MPI_ANY_SOURCE}.
@@ -1421,6 +1457,11 @@ Otherwise, send a \mpidconst{MPID_Hid_request_to_send} with
 
 \subsubsection{\mpifunc{MPI_ISSEND}}
 Same as \code{MPI_ISEND}, but with the synchronous mode set.
+
+\begin{core}
+For all sizes, use \mpidconst{MPID_Hid_request_to_send} with
+\mpidfunc{MPID_Rhcv}.  Note that this includes messages of size zero.
+\end{core}
 
 \subsubsection{\mpifunc{MPI_RECV}}
 This can simply be \code{MPI_IRECV} followed by an \code{MPI_WAIT}.  However,
