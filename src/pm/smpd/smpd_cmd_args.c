@@ -30,6 +30,8 @@ void smpd_print_options(void)
     printf(" -anyport\n");
     printf(" -hosts\n");
     printf(" -sethosts\n");
+    printf(" -set <option_name> <option_value>\n");
+    printf(" -get <option_name>\n");
     printf(" -query [domain]\n");
     printf(" -help\n");
     printf("unix only options:\n");
@@ -67,6 +69,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 #endif
     int dbg_flag;
     char domain[SMPD_MAX_HOST_LENGTH];
+    char opt[SMPD_MAX_NAME_LENGTH];
+    char opt_val[SMPD_MAX_VALUE_LENGTH];
 
     smpd_enter_fn("smpd_parse_command_args");
 
@@ -145,6 +149,51 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    printf("Error: unable to save the hosts data.\n");
 	}
 	MPIU_Free(buffer);
+	smpd_exit(0);
+    }
+
+    if (smpd_get_opt_two_strings(argcp, argvp, "-set", opt, SMPD_MAX_NAME_LENGTH, opt_val, SMPD_MAX_VALUE_LENGTH))
+    {
+	if (strlen(opt) == 0)
+	{
+	    printf("invalid option specified.\n");
+	    smpd_exit(-1);
+	}
+	if (strlen(opt_val) == 0)
+	{
+	    result = smpd_delete_smpd_data(opt);
+	}
+	else
+	{
+	    result = smpd_set_smpd_data(opt, opt_val);
+	}
+	if (result == SMPD_SUCCESS)
+	{
+	    printf("%s option updated.\n", opt);
+	}
+	else
+	{
+	    printf("unable to update %s option.\n", opt);
+	}
+	smpd_exit(0);
+    }
+
+    if (smpd_get_opt_string(argcp, argvp, "-get", opt, SMPD_MAX_NAME_LENGTH))
+    {
+	if (strlen(opt) == 0)
+	{
+	    printf("invalid option specified.\n");
+	    smpd_exit(-1);
+	}
+	result = smpd_get_smpd_data(opt, opt_val, SMPD_MAX_VALUE_LENGTH);
+	if (result == SMPD_SUCCESS)
+	{
+	    printf("%s\n", opt_val);
+	}
+	else
+	{
+	    printf("default\n");
+	}
 	smpd_exit(0);
     }
 

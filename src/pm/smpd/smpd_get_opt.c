@@ -604,6 +604,40 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
     return 0;
 }
 
+int smpd_get_opt_two_strings(int *argc, char ***argv, char * flag, char *str1, int len1, char *str2, int len2)
+{
+    int i, j;
+
+    if (flag == NULL)
+	return 0;
+
+    for (i=0; i<*argc; i++)
+    {
+	if (strcmp((*argv)[i], flag) == 0)
+	{
+	    if (i+1 == (*argc))
+		return 0;
+	    if ((*argv)[i+1][0] == '-')
+		return 0;
+	    if (i+2 == (*argc))
+		return 0;
+	    if ((*argv)[i+2][0] == '-')
+		return 0;
+	    strncpy(str1, (*argv)[i+1], len1);
+	    str1[len1-1] = '\0';
+	    strncpy(str2, (*argv)[i+2], len2);
+	    str2[len2-1] = '\0';
+	    for (j=i; j<(*argc)-2; j++)
+	    {
+		(*argv)[j] = (*argv)[j+3];
+	    }
+	    *argc -= 3;
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 int smpd_get_win_opt_string(int *argc, char ***argv, char * flag, char *str, int len)
 {
     int i,j;
