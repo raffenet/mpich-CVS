@@ -58,7 +58,8 @@ $debug = 0;
 	      'f:s' => '$(F77_COMPILE) -S $<'
 	     );
 # Similarly, but for shared-library versions
-%extrules_sh = ( 'c' => '$(C_COMPILE_SHL) -c $<', 
+%extrules_sh = ( 'c' => '$(C_COMPILE_SHL) -c $<
+	mv -f $*.o $*.lo', 
 		 'f' => '$(F77_COMPILE_SHL) -c $<',
 		 'cxx' => '$(CXX_COMPILE_SHL) -c $<',
 		 's' => '$(AS_COMPILE_SHL) $<',
@@ -390,6 +391,7 @@ sub WriteMfile {
     $maxline = 80;
     $output_filename = $_[0];
     # Write out the generated Makefile
+    unlink $output_filename;
     open( FD, ">$output_filename" ) || die "Could not open $output_filename\n";
 
     print FD "# This $output_filename created by simplemake.  Do not edit$newline$newline";
@@ -441,7 +443,10 @@ sub WriteMfile {
     close FD;
 
     # Make the file read only
-    `chmod a-w $output_filename`
+    # ($dev,$ino,$mode) = stat $output_filename
+    # Modifiy $mode to remove write permissions
+    # use chmod $mode $output_filename
+    # to change permissions
 }
 
 #
@@ -905,6 +910,9 @@ sub TargetClean {
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
     print FD "$newline";
     print FD "\t-rm -f *.o \${srcdir}/*.o *~ $programnames$newline";
+    if ($do_sharedlibs) {
+	print FD "\t-rm -f *.lo \${srcdir}/*.lo$newline";
+    }
     &RecursiveOp( "clean" );
     print FD "distclean: clean";
     if (defined($usertargets{"distclean-local"})) { 
@@ -1207,10 +1215,11 @@ sub AddDependency {
     }
     print "Trying gcc -MM $include $target\n" if $debug;
     $cmdline = "gcc -MM $include $target";
-    if ($debug) {
+    if (! $debug) {
 	$cmdline .= " 2>/dev/null";
     }
     $cmdline .= " |";
+    print "Depend commandline = $cmdline\n" if $debug;
     open( DEPFD, $cmdline ) || return;
     while (<DEPFD>) {
 	print FD $_;
