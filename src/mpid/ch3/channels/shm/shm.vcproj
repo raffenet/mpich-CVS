@@ -176,7 +176,22 @@
 				RelativePath="..\..\src\mpid_cancel_send.c">
 			</File>
 			<File
+				RelativePath="..\..\src\mpid_close_port.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_accept.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_connect.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_disconnect.c">
+			</File>
+			<File
 				RelativePath="..\..\src\mpid_comm_spawn.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_comm_spawn_multiple.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_describe_states.c">
@@ -207,6 +222,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_issend.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_open_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_probe.c">
@@ -245,7 +263,28 @@
 				RelativePath="..\..\src\mpid_vc.c">
 			</File>
 			<File
+				RelativePath="..\..\src\mpid_win_complete.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_win_create.c">
+			</File>
+			<File
 				RelativePath="..\..\src\mpid_win_fence.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_win_free.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_win_lock.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_win_post.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_win_unlock.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_win_wait.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_barrier.c">

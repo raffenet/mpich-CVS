@@ -23,7 +23,7 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
@@ -60,7 +60,7 @@
 				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,..\..\..\common\sock,,..\..\..\common\sock\iocp"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
 				StringPooling="TRUE"
-				RuntimeLibrary="4"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -98,7 +98,7 @@
 				AdditionalIncludeDirectories="include,..\..\include,..\..\..\..\include,..\..\..\common\datatype,..\..\..\common\locks,..\..\..\common\sock,,..\..\..\common\sock\iocp"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="TRUE"
-				RuntimeLibrary="4"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -291,84 +291,24 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_win_create.c">
-				<FileConfiguration
-					Name="ch3sockDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_win_fence.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_win_free.c">
-				<FileConfiguration
-					Name="ch3sockDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_win_lock.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_win_post.c">
-				<FileConfiguration
-					Name="ch3sockDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_win_unlock.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_win_wait.c">
-				<FileConfiguration
-					Name="ch3sockDebug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ch3sockPRelease|Win32">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_barrier.c">
