@@ -13,6 +13,8 @@ $debug = 0;
 	      "mpicc", "mpicxx",
 	      "compiling ROMIO in", 
 	      "Make completed",
+	      "cd\s+\$dir\s+\&\&\s+make.*\s+clean",
+	      "^\s*echo\s",
 	      "\\(cd .tmp", 
 	      "building profiling interface in directory",
 	      "/usr/bin/install",
