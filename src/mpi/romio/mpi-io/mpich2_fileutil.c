@@ -6,7 +6,6 @@
 #include "mpioimpl.h"
 
 #ifdef MPICH2
-#include "mpiimpl.h"
 
 int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
 {

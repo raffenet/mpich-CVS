@@ -11,9 +11,6 @@
 #ifdef PROFILE
 #include "mpe.h"
 #endif
-#ifdef MPICH2
-#include "mpiimpl.h"
-#endif
 
 /* prototypes of functions used for collective writes only. */
 static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype

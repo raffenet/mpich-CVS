@@ -8,9 +8,6 @@
 
 #include "mpioimpl.h"
 #include "adio_extern.h"
-#ifdef MPICH2
-#include "mpiimpl.h"
-#endif
 
 #ifdef HAVE_WEAK_SYMBOLS
 

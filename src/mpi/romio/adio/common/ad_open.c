@@ -12,9 +12,6 @@
 #ifdef MPISGI
 #include "mpisgi2.h"
 #endif
-#ifdef MPICH2
-#include "mpiimpl.h"
-#endif
 
 ADIO_File ADIO_Open(MPI_Comm orig_comm,
 		    MPI_Comm comm, char *filename, int file_system,

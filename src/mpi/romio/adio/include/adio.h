@@ -374,4 +374,16 @@ void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype,
 #include "mpio_error.h"
 #include "mpipr.h"
 
+/* Copied from mpiimpl.h because mpiimpl.h cannot be included from romio. */
+/* Remove these prototypes when mpiimpl.h is broken up and a specific error */
+/* handling header file can be included. */
+#define MPIR_ERR_FATAL 1
+#define MPIR_ERR_RECOVERABLE 0
+int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode );
+int MPIR_Err_create_code( int, int, const char [], int, const char [], const char [], ... );
+int MPIR_Err_is_fatal(int);
+void MPIR_Err_get_string(int, char *);
+void MPIR_Err_print_stack(FILE *, int);
+extern int MPIR_Err_print_stack_flag;
+
 #endif

@@ -10,9 +10,6 @@
 #ifdef MPISGI
 #include "mpisgi2.h"
 #endif
-#ifdef MPICH2
-#include "mpiimpl.h"
-#endif
 
 void ADIO_Close(ADIO_File fd, int *error_code)
 {

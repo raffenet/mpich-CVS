@@ -12,9 +12,6 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "adio.h"
-#ifdef MPICH2
-#include "mpiimpl.h"
-#endif
 
 #ifdef HAVE_INT64
 #define DWORDLOW(x)        ( (DWORD) ( x & (__int64) 0xFFFFFFFF ) )
