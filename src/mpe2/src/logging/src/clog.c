@@ -138,7 +138,7 @@ void CLOG_nodebuffer2disk( void )
             fprintf( stderr, __FILE__":CLOG_nodebuffer2disk() - \n"
                              "\t""Unable to open temporary log file %s.\n"
                              "\t""Check if the directory where the logfile "
-                             "is at exists\n"
+                             "resides exists\n"
                              "\t""and the corresponding file system is "
                              "NOT full\n."
                              "If not so, set environmental variable TMPDIR to "
@@ -155,7 +155,7 @@ void CLOG_nodebuffer2disk( void )
             fprintf( stderr, __FILE__":CLOG_nodebuffer2disk() - \n"
                              "\t""Unable to write temporary log file %s.\n"
                              "\t""Check if the filesystem where the logfile "
-                             "is at is full\n."
+                             "resides is full\n."
                              "If so, set environmental variable TMPDIR to "
                              "a bigger filesystem.", CLOG_tmpfilename );
             fflush( stderr );
