@@ -121,6 +121,21 @@ dist-check:
 	    fi ; \
 	done
 
+# 
+# We skip the mpid/mm directories because mm is no longer active
+# mpe2 is an outside project and is tested against the default
+# checks
+coding-check: 
+	if [ -z $(CODINGCHECK) ] ;then \
+	    echo "You must define CODINGCHECK for this target" ; \
+	else \
+	   $(CODINGCHECK) -addchecks=mpich2,funcstates,funcnests \
+		-skipfiles=src/mpe2,src/mpid/mm src examples test ;\
+	   if [ -d src/mpe2 ] ; then \
+		$(CODINGCHECK) src/mpe2 ; \
+	   fi ; \
+	fi
+
 # Set the document sources and types (empty lists still cause recursion)
 # These should be empty; any source files should be described in the
 # directory that contains those source files.  The presence of these
