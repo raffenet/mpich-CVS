@@ -3,6 +3,7 @@ Makefile
 config.status
 config.log
 config.cache
+configure2
 lib
 bin
 misc
