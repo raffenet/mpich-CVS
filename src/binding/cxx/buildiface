@@ -250,7 +250,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 
 		     'Put-1' => 'in:const',
 		     'Accumulate-1' => 'in:const',
-		     'Alloc_mem-2' => 'in:const',
+		     'Alloc_mem-2' => 'in:constref:Info',
 
 		     'Detach_buffer-1' => 'inout:ptrref', 
 		     'Get_version-1' => 'in:refint',
@@ -850,13 +850,14 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # MPI_Comm_rank becomes 'comm-rank'.  Routines that are part of the MPI
 # namespace but not in any class leave the class field blank, i.e., 
 # -Attach_buffer .
-%altname = ( '-Attach_buffer' => 'Buffer_attach',
-	     '-Detach_buffer' => 'Buffer_detach',
-	     '-Compute_dims' => 'Dims_create',
-	     '-Get_error_class' => 'Error_class',
-	     '-Get_error_string' => 'Error_string',
-	     '-Is_initialized' => 'Initialized',
-	     '-Is_finalized' => 'Finalized',
+%altname = ( 'base-Attach_buffer' => 'Buffer_attach',
+	     'base-Detach_buffer' => 'Buffer_detach',
+	     'base-Compute_dims' => 'Dims_create',
+	     'base-Get_error_class' => 'Error_class',
+	     'base-Get_error_string' => 'Error_string',
+	     'base-Is_initialized' => 'Initialized',
+	     'base-Is_finalized' => 'Finalized',
+	     'base-Register_datarep' => 'Register_datarep',
 	     'comm-Sendrecv_replace' => 'Sendrecv_replace',
 	     'comm-Get_topology' => 'Topo_test',
 	     'comm-Get_rank' => 'Comm_rank',
@@ -1018,7 +1019,7 @@ foreach $routine (keys(%class_mpi1base)) {
     # These aren't really a class, so they don't use Begin/EndClass
     $arginfo = $class_mpi1base{$routine};
     print $OUTFD "extern ";
-    &PrintRoutineDef( $OUTFD, "", $routine, $arginfo, 1 );
+    &PrintRoutineDef( $OUTFD, "base", $routine, $arginfo, 1 );
 }
 
 # mpi2base adds a few routines which need definitions (Info), so
@@ -1104,7 +1105,8 @@ typedef int MPI_File;\
         # These aren't really a class, so they don't use Begin/EndClass
         $arginfo = $class_mpi2base{$routine};
         print $OUTFD "extern ";
-        &PrintRoutineDef( $OUTFD, "", $routine, $arginfo, 1 );
+	print "$routine - $arginfo\n";
+        &PrintRoutineDef( $OUTFD, "base", $routine, $arginfo, 1 );
     }
 
     print $OUTFD "\n";
@@ -1267,7 +1269,10 @@ sub printDefineChecks {
 sub print_args { 
     my $OUTFD = $_[0];
     my @parms = split(/\s*,\s*/, $_[1] );  # the original parameter list
-    my $class_type = $_[2];                # ??
+    my $class_type = $_[2];                # Is this a Comm, Info, or othe 
+                                           # class?  Use to find the position
+                                           # of the "this" entry in the C 
+                                           # verison of the routine.
     my $arginfo = $_[3];                   # Value of <class>_hash{routine)}
 
     my $count = 1;
@@ -1851,9 +1856,7 @@ sub build_specials {
     }\n";
 
     
-    # The 2.0 standard has &info, while the C version has no *.  
-    # Is the reference an error?
-    print $OUTFD "void *Alloc_mem( Aint size, const Info info )
+    print $OUTFD "void *Alloc_mem( Aint size, const Info &info )
     {
         void *result;\n";
      &printCoverageStart( $OUTFD, "Alloc_mem", 2 );
@@ -2081,10 +2084,6 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
                    "provided" );
     &PrintWrapper( $OUTFD, "bool", "Is_thread_main", "void",
                    "int flag;", "Is_thread_main", "&flag", "(flag == 1)" );
-    &PrintWrapper( $OUTFD, "void", "Publish_name", 
-                  "const char *sn, const Info&info, const char*pn",
-                  "", "Publish_name", 
-                  "(char *)sn, (MPI_Info)(info), (char*)pn" );
     &PrintWrapper( $OUTFD, "void", "Get_version", "int &v, int&sv",
                   "", "", "&v,&sv", "" );
 
@@ -2096,6 +2095,17 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
                    "int ecode, const char *estring", 
                    "", "", "ecode, (char *)estring", "" );
 
+    &PrintWrapper( $OUTFD, "void", "Lookup_name", 
+                    "const char *sn, const Info &info, char *pn",
+                    "", "", "(char *)sn, (MPI_Info)info, pn", "" );
+    &PrintWrapper( $OUTFD, "void", "Publish_name",
+                    "const char *sn, const Info &info, const char *pn",
+                    "", "", "(char *)sn, (MPI_Info)info, (char *)pn", "");
+    &PrintWrapper( $OUTFD, "void", "Unpublish_name", 
+                    "const char *sn, const Info &info, const char *pn",
+                    "", "", "(char *)sn, (MPI_Info)info, (char *)pn", "");
+
+
     print $OUTFD "} // namespace MPI\n";
     close ($OUTFD);
 }
@@ -2103,7 +2113,7 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
 # ------------------------------------------------------------------------
 # A special routine to add code to call an mpi routine:
 # PrintWrapper ( fd, returntype, c++name, c++args, 
-#                cdecls, mpiroutine, cArgs), return-exp )
+#                cdecls, mpiroutine, cArgs, return-exp )
 # if mpiroutine is empty, use the C++ name
 sub PrintWrapper {
     my ($OUTFD, $returntype, $cxxname, $cxxargs,
@@ -2604,6 +2614,9 @@ sub PrintRoutineDef {
 
     ($cArgs, $Croutine) = &GetCArgs( $class, $routine );
 
+#    if ($routine eq "Lookup_name" ) {
+#	print "$class - $routine - $arginfo - $cArgs\n";
+#    }
     &PrintMethodDef( $OUTFD, $class, $routine, $arginfo, $cArgs );    
 
     # This inserts a modifier, such as const or =0 (for pure virtual)
@@ -2934,6 +2947,10 @@ sub DoSpecialArgProcessing {
     $subname = $funcArgMap{"${routine}-$count"};
     if ($subname eq "") {
 	$subname = $funcArgMap{"${class}-${routine}-$count"};
+	if ($class eq "" && $subname eq "") {
+	    # try base
+	    $subname = $funcArgMap{"base-${routine}-$count"};
+	}
 	print "Found class $class $routine $count\n" if $debug;
     }
     if ($subname =~ /([^:]*):([^:]*)(.*)/) {
@@ -3600,6 +3617,7 @@ sub ReadFuncSpec {
 	    my $class   = $1;
 	    my $routine = $2;
 	    my $line    = $3;
+	    if ($class eq "") { $class = "base"; }
 	    my $fnchash = "$class-$routine";
 	    my $specialPos = "";
 	    my $needsReturn = 0;
@@ -3613,7 +3631,7 @@ sub ReadFuncSpec {
 		$line =~ s/^\s*static\s+//;
 	    }
 	    # Possible returning
-	    if ($line =~ /^(\w*)\s+(.*)/) {
+	    if ($line =~ /^(\w*\*?)\s+(.*)/) {
 		$funcReturnType{$fnchash} = $1;
 		my $endline = $2;
 		if ($1 ne "void") {

@@ -3,7 +3,7 @@
 # handle every feature of the bindings, so the final changes 
 # were made by hand.
 <mpi2>
--Alloc_mem  ( ,in:constref:Info ,return)
+-Alloc_mem  void* ( ,in:constref:Info ,return)
 dtype-Create_darray Datatype (, , ,in:const ,in:const ,in:const ,in:const , , ,return) const
 dtype-Create_hindexed Datatype (,in:const ,in:const , ,return) const
 dtype-Create_hvector Datatype (, , , ,return) const
@@ -170,7 +170,8 @@ file-Write_ordered void (,in:const , ,in:constref:Datatype , )
 file-Write_ordered_begin void (,in:const , ,in:constref:Datatype )
 file-Write_ordered_end void (,in:const , )
 file-Write_shared void (,in:const , ,in:constref:Datatype , )
--Register_datarep void (in:const ,Datarep_conversion_function* read_conversion_fn ,Datarep_conversion_function* write_conversion_fn ,Datarep_extent_function* dtype_file_extent_fn , )
+# Datarep not yet available
+#-Register_datarep void (in:const ,Datarep_conversion_function* read_conversion_fn ,Datarep_conversion_function* write_conversion_fn ,Datarep_extent_function* dtype_file_extent_fn , )
 #dtype-Create_f90_complex static Datatype ( , ,return)
 #dtype-Create_f90_integer static Datatype ( ,return)
 #dtype-Create_f90_real static Datatype ( , ,return)
@@ -299,8 +300,9 @@ graph-Map int (, ,in:const ,in:const ,return) const
 errh-Free void ()
 -Get_error_string void ( , ,in:refint )
 -Get_error_class int ( ,return)
--Wtime double (return)
--Wtick double (return)
+# Wtime and tick are special
+#-Wtime double ()
+#-Wtick double ()
 -Finalize void ()
 -Is_initialized bool (return)
 comm-Abort void ( )
