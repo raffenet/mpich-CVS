@@ -40,15 +40,44 @@ int main( int argc, char *argv[] )
 		fprintf( stderr, "Unable to allocate %d bytes\n", n );
 		MPI_Abort( MPI_COMM_WORLD, 1 );
 	    }
-	    MPI_Isend( buf, n, MPI_CHAR, dest, cs, comm, &req );
+	    MPI_Isend( buf, n, MPI_CHAR, dest, cs+n+1, comm, &req );
 	    MPI_Cancel( &req );
 	    MPI_Wait( &req, &status );
 	    MPI_Test_cancelled( &status, &flag );
 	    if (!flag) {
 		errs ++;
 		printf( "Failed to cancel a Isend request\n" );
+		fflush(stdout);
 	    }
+	    else
+	    {
+		n = 0;
+	    }
+	    /* Send the size, zero for successfully cancelled */
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
+	    /* Send the tag so the message can be received */
+	    n = cs+n+1;
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
+	}
+	else if (rank == dest)
+	{
+	    int n, tag;
+	    char *btemp;
+	    MPI_Recv( &n, 1, MPI_INT, 0, 123, comm, &status );
+	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
+	    if (n > 0)
+	    {
+		/* If the message was not cancelled, receive it here */
+		btemp = (char*)malloc( n );
+		if (!btemp)
+		{
+		    fprintf( stderr, "Unable to allocate %d bytes\n", n);
+		    MPI_Abort( MPI_COMM_WORLD, 1 );
+		}
+		MPI_Recv( btemp, n, MPI_CHAR, 0, tag, comm, &status );
+		free(btemp);
+	    }
 	}
 	MPI_Barrier( comm );
 
@@ -69,17 +98,46 @@ int main( int argc, char *argv[] )
 		MPI_Abort( MPI_COMM_WORLD, 1 );
 	    }
 	    MPI_Buffer_attach( bsendbuf, bsendbufsize );
-	    MPI_Ibsend( buf, n, MPI_CHAR, dest, cs, comm, &req );
+	    MPI_Ibsend( buf, n, MPI_CHAR, dest, cs+n+2, comm, &req );
 	    MPI_Cancel( &req );
 	    MPI_Wait( &req, &status );
 	    MPI_Test_cancelled( &status, &flag );
 	    if (!flag) {
 		errs ++;
 		printf( "Failed to cancel a Ibsend request\n" );
+		fflush(stdout);
 	    }
+	    else
+	    {
+		n = 0;
+	    }
+	    /* Send the size, zero for successfully cancelled */
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
+	    /* Send the tag so the message can be received */
+	    n = cs+n+2;
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
 	    MPI_Buffer_detach( &bf, &bs );
 	    free( bsendbuf );
+	}
+	else if (rank == dest)
+	{
+	    int n, tag;
+	    char *btemp;
+	    MPI_Recv( &n, 1, MPI_INT, 0, 123, comm, &status );
+	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
+	    if (n > 0)
+	    {
+		/* If the message was not cancelled, receive it here */
+		btemp = (char*)malloc( n );
+		if (!btemp)
+		{
+		    fprintf( stderr, "Unable to allocate %d bytes\n", n);
+		    MPI_Abort( MPI_COMM_WORLD, 1 );
+		}
+		MPI_Recv( btemp, n, MPI_CHAR, 0, tag, comm, &status );
+		free(btemp);
+	    }
 	}
 	MPI_Barrier( comm );
 
@@ -94,7 +152,7 @@ int main( int argc, char *argv[] )
 		fprintf( stderr, "Unable to allocate %d bytes\n", n );
 		MPI_Abort( MPI_COMM_WORLD, 1 );
 	    }
-	    MPI_Irsend( buf, n, MPI_CHAR, dest, cs, comm, &req );
+	    MPI_Irsend( buf, n, MPI_CHAR, dest, cs+n+3, comm, &req );
 	    MPI_Cancel( &req );
 	    MPI_Wait( &req, &status );
 	    MPI_Test_cancelled( &status, &flag );
@@ -110,8 +168,37 @@ int main( int argc, char *argv[] )
 	    if (!flag && veryPicky) {
 		errs ++;
 		printf( "Failed to cancel a Irsend request\n" );
+		fflush(stdout);
 	    }
+	    if (flag)
+	    {
+		n = 0;
+	    }
+	    /* Send the size, zero for successfully cancelled */
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
+	    /* Send the tag so the message can be received */
+	    n = cs+n+3;
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
+	}
+	else if (rank == dest)
+	{
+	    int n, tag;
+	    char *btemp;
+	    MPI_Recv( &n, 1, MPI_INT, 0, 123, comm, &status );
+	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
+	    if (n > 0)
+	    {
+		/* If the message was not cancelled, receive it here */
+		btemp = (char*)malloc( n );
+		if (!btemp)
+		{
+		    fprintf( stderr, "Unable to allocate %d bytes\n", n);
+		    MPI_Abort( MPI_COMM_WORLD, 1 );
+		}
+		MPI_Recv( btemp, n, MPI_CHAR, 0, tag, comm, &status );
+		free(btemp);
+	    }
 	}
 	MPI_Barrier( comm );
 
@@ -122,15 +209,44 @@ int main( int argc, char *argv[] )
 		fprintf( stderr, "Unable to allocate %d bytes\n", n );
 		MPI_Abort( MPI_COMM_WORLD, 1 );
 	    }
-	    MPI_Issend( buf, n, MPI_CHAR, dest, cs, comm, &req );
+	    MPI_Issend( buf, n, MPI_CHAR, dest, cs+n+4, comm, &req );
 	    MPI_Cancel( &req );
 	    MPI_Wait( &req, &status );
 	    MPI_Test_cancelled( &status, &flag );
 	    if (!flag) {
 		errs ++;
 		printf( "Failed to cancel a Issend request\n" );
+		fflush(stdout);
 	    }
+	    else
+	    {
+		n = 0;
+	    }
+	    /* Send the size, zero for successfully cancelled */
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
+	    /* Send the tag so the message can be received */
+	    n = cs+n+4;
+	    MPI_Send( &n, 1, MPI_INT, dest, 123, comm );
 	    free( buf );
+	}
+	else if (rank == dest)
+	{
+	    int n, tag;
+	    char *btemp;
+	    MPI_Recv( &n, 1, MPI_INT, 0, 123, comm, &status );
+	    MPI_Recv( &tag, 1, MPI_INT, 0, 123, comm, &status );
+	    if (n > 0)
+	    {
+		/* If the message was not cancelled, receive it here */
+		btemp = (char*)malloc( n );
+		if (!btemp)
+		{
+		    fprintf( stderr, "Unable to allocate %d bytes\n", n);
+		    MPI_Abort( MPI_COMM_WORLD, 1 );
+		}
+		MPI_Recv( btemp, n, MPI_CHAR, 0, tag, comm, &status );
+		free(btemp);
+	    }
 	}
 	MPI_Barrier( comm );
 
