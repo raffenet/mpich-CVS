@@ -319,25 +319,26 @@ typedef struct smpd_barrier_node_t
 typedef struct smpd_global_t
 {
     smpd_state_t state;
-    int id, parent_id;
-    int level;
+    int  id, parent_id;
+    int  level;
     smpd_context_t *left_context, *right_context, *parent_context, *context_list;
     smpd_context_t *listener_context;
     smpd_process_t *process_list;
-    int closing;
-    int root_smpd;
+    int  closing;
+    int  root_smpd;
     sock_set_t set;
     char host[SMPD_MAX_HOST_LENGTH];
     char pszExe[SMPD_MAX_EXE_LENGTH];
     int  bService;
+    int  bNoTTY;
     int  bPasswordProtect;
     char SMPDPassword[100];
     char UserAccount[100];
     char UserPassword[100];
-    int cur_tag;
-    int dbg_state;
+    int  cur_tag;
+    int  dbg_state;
     FILE *dbg_fout;
-    int have_dbs;
+    int  have_dbs;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
 #ifdef HAVE_WINDOWS_H
     HANDLE hCloseStdinThreadEvent;
@@ -463,6 +464,9 @@ int smpd_kill_all_processes(void);
 int smpd_exit(int exitcode);
 #ifdef HAVE_WINDOWS_H
 void smpd_translate_win_error(int error, char *msg, int maxlen, char *prepend, ...);
+#else
+typedef void smpd_sig_fn_t( int );
+smpd_sig_fn_t *smpd_signal( int signo, smpd_sig_fn_t func );
 #endif
 
 #endif
