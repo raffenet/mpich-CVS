@@ -13,9 +13,9 @@ int MPID_Win_free(MPID_Win **win_ptr)
     int err;
 #endif
 
-    MPIDI_STATE_DECL(MPID_STATE_MPI_WIN_FREE);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_FREE);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_FREE);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FREE);
 
     MPIR_Nest_incr();
 
@@ -52,7 +52,7 @@ int MPID_Win_free(MPID_Win **win_ptr)
     /* check whether refcount needs to be decremented here as in group_free */
     MPIU_Handle_obj_free( &MPID_Win_mem, *win_ptr );
  
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FREE);
 
     return mpi_errno;
 }
