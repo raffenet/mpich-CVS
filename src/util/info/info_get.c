@@ -8,24 +8,24 @@
 #include "mpiimpl.h"
 #include "mpiinfo.h"
 
-/* -- Begin Profiling Symbol Block for routine MPI_Info_Get */
+/* -- Begin Profiling Symbol Block for routine MPI_Info_get */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPI_Info_Get = PMPI_Info_Get
+#pragma weak MPI_Info_get = PMPI_Info_get
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Info_Get  MPI_Info_Get
+#pragma _HP_SECONDARY_DEF PMPI_Info_get  MPI_Info_get
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPI_Info_Get as PMPI_Info_Get
+#pragma _CRI duplicate MPI_Info_get as PMPI_Info_get
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#define MPI_Info_Get PMPI_Info_Get
+#define MPI_Info_get PMPI_Info_get
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPI_Info_Get
+#define FUNCNAME MPI_Info_get
 
 /*@
     MPI_Info_get - Retrieves the value associated with a key
@@ -51,7 +51,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
 		 int *flag)
 {
     MPID_Info *curr_ptr, *info_ptr=0;
-    static const char FCNAME[] = "MPI_Info_Get";
+    static const char FCNAME[] = "MPI_Info_get";
     int mpi_errno = MPI_SUCCESS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_GET);
