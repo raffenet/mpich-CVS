@@ -18,6 +18,8 @@ int smpd_do_console()
 
     /* make sure we have a passphrase to authenticate connections to the smpds */
     if (smpd_process.passphrase[0] == '\0')
+	smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+    if (smpd_process.passphrase[0] == '\0')
     {
 	if (smpd_process.noprompt)
 	{
