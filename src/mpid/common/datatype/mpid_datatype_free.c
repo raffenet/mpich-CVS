@@ -42,8 +42,9 @@ void MPID_Datatype_free(MPID_Datatype *ptr)
     /* before freeing the contents, check whether the pointer is not
        null because it is null in the case of a datatype shipped to the target
        for RMA ops */  
-    if (ptr->contents)
+    if (ptr->contents) {
         MPID_Datatype_free_contents(ptr);
+    }
     MPID_Dataloop_free(&(ptr->dataloop));
     if (ptr->hetero_dloop) {
 	MPID_Dataloop_free(&(ptr->hetero_dloop));
