@@ -279,16 +279,20 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    mpi_errno = MPID_Isend(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
 				   dest, tag, comm_ptr,
 				   MPID_CONTEXT_INTRA_PT2PT, &p->request );
-	    if(mpi_errno) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    if(mpi_errno)
+	    {
 		/* This is a printf (instead of an MPIU_Error_printf) because
 		   this is a bug that needs to be fixed! */
 		MPIU_Internal_error_printf ("Bsend internal error: isend returned err = %d\n", mpi_errno );
 	    }
+	    /* --END ERROR HANDLING-- */
 	    /* If the error is "request not available", put this on the
 	       pending list */
 	    /* FIXME (gropp): Add request to pending list NOT YET DONE */
-	    if (mpi_errno == -1) {  /* -1 is a temporary place holder for
-				       request-not-available */
+	    if (mpi_errno == -1) /* -1 is a temporary place holder for request-not-available */
+	    /*if (MPIR_ERR_GET_CLASS(mpi_errno) == MPI_ERR_NO_MEM, MPI_ERR_OTHER, ???)*/
+	    {
 		p->msg.dtype     = MPI_PACKED;
 		p->msg.tag       = tag;
 		p->msg.comm_ptr  = comm_ptr;
@@ -300,7 +304,8 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		   Use a generalized request here? */
 		p->kind = kind;
 	    }
-	    else if (p->request) {
+	    else if (p->request)
+	    {
 		MPIU_DBG_PRINTF(("saving request %x in %x\n",p->request,p));
 		/* Only remove this block from the avail list if the 
 		   message has not been sent (MPID_Send may have already 
@@ -319,7 +324,9 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		p->kind  = kind;
 		*request = p->request;
 	    }
-	    else {
+	    else
+	    {
+		/* This code cannot execute - either the request is returned or there is an mpi_errno returned. */
 		*request = 0;
 	    }
 	    break;

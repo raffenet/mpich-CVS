@@ -145,6 +145,9 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 		}
 		else
 		{
+		    /* This code only executes if the MPID_Rsend returns an unfinished request and then finishes
+		       it before this thread checks the completion flag.  It is almost impossible to happen, even
+		       if the progress engine were in another thread. */
 		    MPID_Progress_end();
 		    break;
 		}

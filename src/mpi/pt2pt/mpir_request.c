@@ -94,6 +94,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	    else
 	    {
 		MPIR_Status_set_empty(status);
+		/* --BEGIN ERROR HANDLING-- */
 		if (request_ptr->status.MPI_ERROR != MPI_SUCCESS)
 		{
 		    /* if the persistent request failed to start then make the error code available */
@@ -103,6 +104,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		{
 		    *active = FALSE;
 		}
+		/* --END ERROR HANDLING-- */
 	    }
 	    
 	    break;
@@ -116,10 +118,12 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 	    MPIR_Request_extract_status(request_ptr, status);
 	    
 	    rc = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (rc != MPI_SUCCESS)
 	    {
 		mpi_errno = rc;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    
 	    MPID_Request_release(request_ptr);
 	    *request = MPI_REQUEST_NULL;
