@@ -54,6 +54,7 @@
 Draft of \today}{\em 
 William Gropp\\
 Ewing Lusk\\
+Rob Ross\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}{00}{\today}
 
@@ -221,6 +222,85 @@ The questions are: do we want to make this possible?  If so, do we
 want to implement it from the beginning?  Note that encoding
 information into the opaque handle makes that handle conversion
 functions more complex.
+
+\subsubsection{Proposed Opaque Handle Format}
+
+We're going to use ints as handles to datatypes and to other constructs such
+as communicators.  Some of the considerations in this are:
+\begin{itemize}
+\item fast resolution for some number of user-created constructs
+\item particularly fast resolution for built-ins
+\item minimal added limitations on number of user-defined constructs 
+\end{itemize}
+
+Using the same system for storing all these constructs should be more
+space-efficient.
+
+The MPI opaque objects include \mpiconst{MPI_Comm}, \mpiconst{MPI_Group},
+\mpiconst{MPI_Datatype}, \mpiconst{MPI_Errhandler}, \mpiconst{MPI_File},
+\mpiconst{MPI_Info}, \mpiconst{MPI_Op}, and \mpiconst{MPI_Win}.
+
+Nomenclature is subject to change.
+
+Different architectures have ints of varied sizes, so we must rely on
+\code{sizeof(int)} to determine what we have to work with.
+
+We will use the 2 highest bits to encode a type of construct.  These are:
+\begin{description}
+\item[\code{CONSTRUCT_INVALID}]  (00)
+\item[\code{CONSTRUCT_BUILTIN}]  (01)
+\item[\code{CONSTRUCT_DIRECT}]   (10)
+\item[\code{CONSTRUCT_INDIRECT}] (11)
+\end{description}
+
+Using 00 as invalid, especially in the two high bits, will help detect
+bad parameters passed to us (although negative ints won't be caught).
+
+\code{CONSTRUCT_BUILTIN} types include the predefined datatypes such as
+\code{MPI_BYTE} and \code{MPI_DOUBLE} as well as the predefined communicators
+\code{MPI_COMM_WORLD} and \code{MPI_COMM_SELF}.
+
+The next three highest bits will encode the MPI type stored:
+\begin{description}
+\item[\code{MPI_Comm}]     (000)
+\item[\code{MPI_Group}]    (001)
+\item[\code{MPI_Datatype}] (010)
+\item[\code{MPI_File}]     (011)
+\item[\code{MPI_Errhandler}](100)
+\item[\code{MPI_Op}]       (101)
+\item[\code{MPI_Info}]     (110)
+\item[\code{MPI_Win}]      (111)
+\end{description}
+
+At this point we can reasonably expect to have at least 11 bits remaining
+to work with, usually 27 and for some architectures 59.
+
+There are more than 32 but less than 64 predefined datatypes, so 6 bits are
+adequate to encode all of the predefined datatypes.
+That leaves us at least 5 bits
+(usually 21) to specify the size.  We'll be specifying size in bytes,
+which will be adequate (if long double is 16 bytes, then the long complex and
+long-double-int types may be 32 bytes, but on these systems, sizeof(int) will
+be at least 32 bits, leaving us enough room for the size of these longer
+types. 
+
+For predefined Groups and Communicators we simply use the remaining bits
+to specify the particular group/communicator (e.g. MPI_COMM_WORLD) and 
+either the rank of the process or the size.  Actually, for small integers we
+might not have enough bits, so we should think about this a little more.
+
+For the direct accessed values the remaining bits are used as indices into
+a table of pointers or an array of preallocated objects (using the array
+removes one indirect reference and ensures that storage is available at init
+time).  This table should be 
+a memory page or two in size, 
+minus estimated malloc overhead (if we dynamically allocate).
+
+For indirectly accessed values the remaining bits specify an allocated block
+for storing pointers and an index into that block.  We'll split the bits
+based on the number of pointers we can store in a block (which will need
+to be statically calculable; \code{_SC_PAGE_SIZE} is a starting point, or we
+can  do a configure test and define...).
 
 \subsection{MPI and PMPI Routines}
 Each routine should implement the \code{PMPI} version of the routine.
