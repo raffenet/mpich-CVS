@@ -269,7 +269,7 @@ def usage():
     print '    note: cmd must be specfied for each argset; it can not be a default arg'
     print '    other default arguments can be -l (line labels on stdout, stderr) and'
     print '    -setenvall (pass entire environment of mpiexec to all processes),'
-    print '    -env KEY1=VALUE1 -env KEY2=VALUE2 ...'
+    print '    -env KEY1 VALUE1 -env KEY2 VALUE2 ...'
     print '    defaultArgs are passed to all processes unless overridden'
     print 'sample executions:'
     print '    mpiexec -n 1 pwd : -wdir /tmp pwd : printenv'
