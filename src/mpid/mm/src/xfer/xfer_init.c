@@ -25,7 +25,6 @@ int xfer_init(int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr)
     pRequest->comm = comm_ptr;
     pRequest->mm.tag = tag;
     pRequest->mm.op_valid = FALSE;
-    pRequest->mm.read_buf_type = MM_NULL_BUFFER;
     pRequest->cc = 0;
     pRequest->cc_ptr = &pRequest->cc;
 

@@ -42,7 +42,28 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
 	mpi_errno = mm_connector_vc_alloc(comm_ptr, rank);
 	if (mpi_errno != MPI_SUCCESS)
 	    return NULL;
+	vc_ptr = comm_ptr->vcr[rank];
     }
 
     return vc_ptr;
+}
+
+/*@
+   *mm_get_packer_vc - get the packer virtual connection
+
+   Notes:
+@*/
+MPIDI_VC *mm_get_packer_vc()
+{
+    return mm_packer_vc_alloc();
+}
+
+/*@
+   *mm_get_unpacker_vc - get the unpacker virtual connection
+
+   Notes:
+@*/
+MPIDI_VC *mm_get_unpacker_vc()
+{
+    return mm_unpacker_vc_alloc();
 }

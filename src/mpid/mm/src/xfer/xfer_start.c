@@ -18,6 +18,7 @@ int xfer_start(MPID_Request *request_ptr)
 {
     int mpi_errno;
     MPID_Request *pRequest;
+    MM_Car *pCar;
 
     /* choose the buffers scheme to complete this operation */
     pRequest = request_ptr;
@@ -32,6 +33,18 @@ int xfer_start(MPID_Request *request_ptr)
     }
 
     /* enqueue the cars */
+    pRequest = request_ptr;
+    while (pRequest)
+    {
+	mm_car_enqueue(&pRequest->mm.rcar);
+	pCar = pRequest->mm.write_list;
+	while (pCar)
+	{
+	    mm_car_enqueue(pCar);
+	    pCar = pCar->next_ptr;
+	}
+	pRequest = pRequest->mm.next_ptr;
+    }
 
     return MPI_SUCCESS;
 }

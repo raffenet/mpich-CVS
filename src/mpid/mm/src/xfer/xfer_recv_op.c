@@ -41,6 +41,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 
     pRequest->mm.op_valid = TRUE;
     pRequest->cc_ptr = &request_ptr->cc;
+    (*(pRequest->cc_ptr))++;
     pRequest->mm.next_ptr = NULL;
 
     /* Save the mpi segment */
@@ -53,7 +54,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     /* setup the read car */
     pRequest->mm.rcar.request_ptr = request_ptr;
     pRequest->mm.rcar.src = src;
-    pRequest->mm.rcar.type = MM_UNBOUND_READ_CAR;
+    pRequest->mm.rcar.type = MM_READ_CAR;
     pRequest->mm.rcar.vc_ptr = mm_get_vc(request_ptr->comm, src);
     pRequest->mm.rcar.next_ptr = NULL;
 
@@ -73,8 +74,8 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     }
     
     pCar->request_ptr = request_ptr;
-    pCar->type = MM_UNBOUND_UNPACK_CAR;
-    pCar->vc_ptr = NULL;
+    pCar->type = MM_WRITE_CAR;
+    pCar->vc_ptr = mm_get_unpacker_vc();
     pCar->next_ptr = NULL;
 
     return MPI_SUCCESS;
