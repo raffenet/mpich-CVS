@@ -2466,6 +2466,15 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\init\mpi_init.h">
 			</File>
 			<File
+				RelativePath=".\src\include\mpiallstates.h">
+			</File>
+			<File
+				RelativePath=".\src\include\mpichconf.h">
+			</File>
+			<File
+				RelativePath=".\src\include\mpichtimer.h">
+			</File>
+			<File
 				RelativePath=".\src\mpi\comm\mpicomm.h">
 			</File>
 			<File
@@ -2479,6 +2488,9 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\util\info\mpiinfo.h">
+			</File>
+			<File
+				RelativePath=".\src\include\mpimem.h">
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\mpir_pt2pt.h">
