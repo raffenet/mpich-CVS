@@ -1625,7 +1625,7 @@ int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
 {
 }
 
-/*@
+/* @
   MPID_Waitsome - MPID entry point for MPI_Waitsome
 
   Notes:
@@ -1636,13 +1636,13 @@ int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
 
   Module:
   Communication
-  @*/
+  @ */
 int MPID_Waitsome( int incount, MPID_Request *(array_of_requests[]),
 		   int *outcount, int array_of_indices[],
 		   MPI_Status array_of_statuses[] )
 {}
 
-/*@
+/* @
   MPID_Testsome - MPID entry point for MPI_Testsome
 
   Notes:
@@ -1653,7 +1653,7 @@ int MPID_Waitsome( int incount, MPID_Request *(array_of_requests[]),
 
   Module:
   Communication
-  @*/
+  @ */
 int MPID_Testsome( int incount, MPID_Request *(array_of_requests[]),
 		   int *outcount, int array_of_indices[],
 		   MPI_Status array_of_statuses[] )
