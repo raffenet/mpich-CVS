@@ -25,6 +25,30 @@ extern int g_nLockSpinCount;
 #endif
 
 /* Define MPIDU_Sleep_yield() */
+extern int MPIDI_Sleep_yield_count;
+extern int MPIDI_Sleep_yield_counts[10];
+static inline void MPIDU_Sleep_yield()
+{
+#ifdef HAVE_WIN32_SLEEP
+    Sleep(MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count]);
+#elif defined(HAVE_USLEEP)
+    usleep(MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count]);
+#elif defined(HAVE_SELECT)
+    struct timeval t;
+    t.tv_sec = 0;
+    t.tv_usec = MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count];
+    select(0,0,0,0,&t);
+#elif defined(HAVE_SLEEP)
+    sleep(MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count]);
+#else
+#error *** No function available to implement sleep_yield ***
+#endif
+
+    if (MPIDI_Sleep_yield_count < 9)
+	MPIDI_Sleep_yield_count++;
+}
+
+/*
 #ifdef HAVE_WIN32_SLEEP
 #define MPIDU_Sleep_yield() Sleep(200)
 #elif defined(HAVE_USLEEP)
@@ -36,6 +60,7 @@ extern int g_nLockSpinCount;
 #else
 #error *** No function available to implement sleep_yield ***
 #endif
+*/
 
 #ifdef HAVE_MUTEX_INIT
 /*   Only known system is Solaris */

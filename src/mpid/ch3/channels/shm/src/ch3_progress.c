@@ -62,11 +62,13 @@ int MPIDI_CH3_Progress(int is_blocking)
 	case SHM_WAIT_READ:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes read", num_bytes));
 	    spin_count = 1;
+	    MPIDI_Sleep_yield_count = 0;
 	    handle_read(vc_ptr, num_bytes);
 	    break;
 	case SHM_WAIT_WRITE:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes written", num_bytes));
 	    spin_count = 1;
+	    MPIDI_Sleep_yield_count = 0;
 	    handle_written(vc_ptr);
 	    break;
 	case SHM_WAIT_ERROR:
