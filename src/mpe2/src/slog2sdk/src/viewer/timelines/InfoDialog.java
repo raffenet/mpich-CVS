@@ -17,6 +17,7 @@ import viewer.common.Dialogs;
 
 public class InfoDialog extends JDialog
 {
+    private JPanel   btn_panel;
     private JButton  close_btn;
     private double   clicked_time;
 
@@ -29,8 +30,15 @@ public class InfoDialog extends JDialog
 
         clicked_time = time;
 
+        btn_panel = new JPanel();
         close_btn = new JButton( "close" );
         close_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
+        btn_panel.add( close_btn );
+        btn_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
+        Dimension  panel_max_size;
+        panel_max_size        = btn_panel.getPreferredSize();
+        panel_max_size.width  = Short.MAX_VALUE;
+        btn_panel.setMaximumSize( panel_max_size );
 
         // addWindowListener( new InfoDialogWindowListener( this ) );
     }
@@ -38,6 +46,11 @@ public class InfoDialog extends JDialog
     public JButton getCloseButton()
     {
         return close_btn;
+    }
+
+    public JPanel getCloseButtonPanel()
+    {
+        return btn_panel;
     }
 
     public double getClickedTime()

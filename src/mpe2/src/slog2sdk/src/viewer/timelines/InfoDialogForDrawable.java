@@ -31,6 +31,6 @@ public class InfoDialogForDrawable extends InfoDialog
         root_panel.add( new InfoPanelForDrawable( map_line2treenodes,
                                                   y_colnames, dobj ) );
 
-        root_panel.add( super.getCloseButton() );
+        root_panel.add( super.getCloseButtonPanel() );
     }
 }

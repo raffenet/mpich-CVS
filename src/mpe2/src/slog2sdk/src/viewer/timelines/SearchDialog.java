@@ -23,6 +23,7 @@ public class SearchDialog extends JDialog
     private ViewportTimeYaxis  viewport;
 
     private Container          root_panel;
+    private JPanel             btn_panel;
     private JButton            close_btn;
 
     public SearchDialog( final JFrame frame, ViewportTimeYaxis  vport )
@@ -36,9 +37,16 @@ public class SearchDialog extends JDialog
         root_panel = super.getContentPane();
         root_panel.setLayout( new BoxLayout( root_panel, BoxLayout.Y_AXIS ) );
 
+        btn_panel = new JPanel();
         close_btn = new JButton( "close" );
         close_btn.addActionListener( this );
         close_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
+        btn_panel.add( close_btn );
+        btn_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
+        Dimension  panel_max_size;
+        panel_max_size        = btn_panel.getPreferredSize();
+        panel_max_size.width  = Short.MAX_VALUE;
+        btn_panel.setMaximumSize( panel_max_size );
 
         super.addWindowListener( new WindowAdapter()
         {
@@ -77,11 +85,11 @@ public class SearchDialog extends JDialog
         this.setVisibleAtLocation( loc_pt );
     }
 
-    public void replace( Component panel )
+    public void replace( Component cmpo_panel )
     {
         root_panel.removeAll();
-        root_panel.add( panel );
-        root_panel.add( close_btn );
+        root_panel.add( cmpo_panel );
+        root_panel.add( btn_panel );
         super.invalidate();
         super.validate();
     }

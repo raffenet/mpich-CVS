@@ -55,6 +55,6 @@ public class InfoDialogForTime extends InfoDialog
             text_area.setLineWrap( true );
         root_panel.add( new JScrollPane( text_area ) );
 
-        root_panel.add( super.getCloseButton() );
+        root_panel.add( super.getCloseButtonPanel() );
     }
 }

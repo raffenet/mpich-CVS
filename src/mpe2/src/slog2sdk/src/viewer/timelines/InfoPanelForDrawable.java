@@ -14,13 +14,16 @@ import java.text.DecimalFormat;
 import java.text.ChoiceFormat;
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.*;
 import javax.swing.tree.TreeNode;
 import java.util.Map;
+import java.util.Iterator;
 
 import base.drawable.Coord;
 import base.drawable.Drawable;
 import base.drawable.Primitive;
 import base.drawable.Shadow;
+import base.drawable.CategoryWeight;
 import viewer.common.Const;
 import viewer.common.Routines;
 import viewer.legends.CategoryLabel;
@@ -28,14 +31,16 @@ import viewer.legends.CategoryLabel;
 
 public class InfoPanelForDrawable extends JPanel
 {
-    private static final Component      STRUT = Box.createHorizontalStrut( 5 );
+    private static final Component      STRUT = Box.createHorizontalStrut( 10 );
     private static final Component      GLUE  = Box.createHorizontalGlue();
     private static final String         FORMAT = Const.INFOBOX_TIME_FORMAT;
 
-    private static       DecimalFormat   fmt = null;
-    private static       TimeInSecFormat tsfmt = null;
+    private static       Border           Normal_Border = null;
+    private static       Border           Shadow_Border = null;
+    private static       DecimalFormat    fmt           = null;
+    private static       TimeInSecFormat  tsfmt         = null;
 
-    private              Drawable       drawable;
+    private              Drawable         drawable;
 
     public InfoPanelForDrawable( final Map       map_line2treenodes,
                                  final String[]  y_colnames,
@@ -53,16 +58,51 @@ public class InfoPanelForDrawable extends JPanel
         }
         if ( tsfmt == null )
             tsfmt = new TimeInSecFormat();
+        if ( Normal_Border == null ) {
+            /*
+            Normal_Border = BorderFactory.createCompoundBorder(
+                            BorderFactory.createRaisedBevelBorder(),
+                            BorderFactory.createLoweredBevelBorder() );
+            */
+            Normal_Border = BorderFactory.createEtchedBorder();
+        }
+        if ( Shadow_Border == null ) {
+            Shadow_Border = BorderFactory.createTitledBorder(
+                                          Normal_Border, " Preview State ",
+                                          TitledBorder.LEFT, TitledBorder.TOP,
+                                          Const.FONT, Color.BLUE );
+        }
 
-            JPanel       top_panel = new JPanel();
-            top_panel.setLayout( new BoxLayout( top_panel, BoxLayout.X_AXIS ) );
-            CategoryLabel label_type = new CategoryLabel( dobj.getCategory() );
+        Primitive  prime  = (Primitive) dobj;
+        Shadow     shade  = null;
+        if ( prime instanceof Shadow )
+            shade    = (Shadow) prime;
+
+        Dimension     panel_max_size;
+        CategoryLabel label_type = null;
+        JPanel        top_panel  = new JPanel();
+        top_panel.setLayout( new BoxLayout( top_panel, BoxLayout.X_AXIS ) );
+        if (    prime instanceof Shadow 
+             && shade.getSelectedSubCategory() != null ) {
+            label_type = new CategoryLabel( shade.getSelectedSubCategory() );
+            shade.clearSelectedSubCategory();
             top_panel.add( STRUT );
             top_panel.add( label_type );
             top_panel.add( GLUE );
+            top_panel.setBorder( Shadow_Border );
+        }
+        else {
+            label_type = new CategoryLabel( dobj.getCategory() );
+            top_panel.add( STRUT );
+            top_panel.add( label_type );
+            top_panel.add( GLUE );
+            top_panel.setBorder( Normal_Border );
+        }
+        top_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
+        panel_max_size        = top_panel.getPreferredSize();
+        panel_max_size.width  = Short.MAX_VALUE;
+        top_panel.setMaximumSize( panel_max_size );
         super.add( top_panel );
-
-            Primitive  prime  = (Primitive) dobj;
 
             Coord[]        coords = prime.getVertices();
             int            coords_length = coords.length;
@@ -80,7 +120,6 @@ public class InfoPanelForDrawable extends JPanel
             if ( prime instanceof Shadow ) {
                 num_cols = 0;
                 num_rows = 3;
-                Shadow shade = (Shadow) prime;
                 duration = shade.getLatestTime() - shade.getEarliestTime();
                 linebuf = new StringBuffer();
                 linebuf.append( "duration = (max)" + tsfmt.format(duration) );
@@ -132,13 +171,26 @@ public class InfoPanelForDrawable extends JPanel
                     if ( num_cols < linebuf.length() )
                         num_cols = linebuf.length();
                     textbuf.append( "\n" + linebuf.toString() );
+                    textbuf.append( "\n" );
 
                 linebuf = new StringBuffer( "Number of Real Drawables = " );
                 linebuf.append( shade.getNumOfRealObjects() );
                 if ( num_cols < linebuf.length() )
                     num_cols = linebuf.length();
                 textbuf.append( "\n" + linebuf.toString() );
+                textbuf.append( "\n" );
                 num_rows++;
+
+                    CategoryWeight  twgt;
+                    String          twgt_str;
+                    Iterator  twgts_itr = shade.iteratorOfCategoryWeights();
+                    while ( twgts_itr.hasNext() ) {
+                        twgt = (CategoryWeight) twgts_itr.next();
+                        twgt_str = twgt.toInfoBoxString();
+                        if ( num_cols < twgt_str.length() )
+                            num_cols = twgt_str.length();
+                        textbuf.append( "\n" + twgt_str );
+                    }
             }
             else {
                 num_cols = 0;
@@ -177,7 +229,9 @@ public class InfoPanelForDrawable extends JPanel
             text_area.setRows( num_rows );
             text_area.setEditable( false );
             text_area.setLineWrap( true );
-        super.add( new JScrollPane( text_area ) );
+            JScrollPane scroller = new JScrollPane( text_area );
+            scroller.setAlignmentX( Component.LEFT_ALIGNMENT );
+        super.add( scroller );
     }
 
     public Drawable getDrawable()
@@ -188,10 +242,10 @@ public class InfoPanelForDrawable extends JPanel
     private static class TimeInSecFormat
     {
         private        final double[] LIMITS  = {Double.NEGATIVE_INFINITY, 0.0d,
-                                                 1.0E-9, 1.0E-6, 1.0E-3, 1.0d};
+                                                 0.1E-9, 0.1E-6, 0.1E-3, 0.1d};
         private        final String[] UNITS   = {"-ve", "ps", "ns",
                                                  "us", "ms", "s" };
-        private        final String   PATTERN = "#,##0.0##";
+        private        final String   PATTERN = "#,##0.00###";
 
         private              DecimalFormat decfmt   = null;
         private              ChoiceFormat  unitfmt  = null;
