@@ -186,6 +186,7 @@ int main( int argc, char *argv[] )
 	free( buf );
 	free( bufout );
 
+	MPI_Datatype_free( &mattype );
 	MTestFreeComm( &comm );
     }
 
