@@ -21,6 +21,7 @@ int mm_cq_test()
      */
     if (MPID_Process.cq_head == NULL)
     {
+	packer_make_progress();
 #ifdef WITH_METHOD_TCP
 	tcp_make_progress();
 #endif
@@ -36,6 +37,7 @@ int mm_cq_test()
 #ifdef WITH_METHOD_NEW
 	new_make_progress();
 #endif
+	unpacker_make_progress();
     }
 
     MPID_Thread_lock(MPID_Process.cqlock);

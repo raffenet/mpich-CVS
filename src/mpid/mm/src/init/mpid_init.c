@@ -64,6 +64,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     mm_car_init();
     mm_vc_init();
 
+    /* initialize the methods */
+    packer_init();
+    unpacker_init();
 #ifdef WITH_METHOD_SHM
     shm_init();
 #endif

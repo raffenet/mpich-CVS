@@ -43,6 +43,8 @@ typedef struct MPID_PerProcess {
           OpenPortNode * port_list;
           BlockAllocator VCTable_allocator; /* memory allocator for vc tables */
           BlockAllocator VC_allocator;      /* memory allocator for vc's */
+       struct MPIDI_VC * packer_vc_ptr;
+       struct MPIDI_VC * unpacker_vc_ptr;
 } MPID_PerProcess;
 
 extern MPID_PerProcess MPID_Process;
@@ -50,6 +52,8 @@ extern MPID_PerProcess MPID_Process;
 typedef enum MM_METHOD { 
     MM_NULL_METHOD,
     MM_UNBOUND_METHOD,
+    MM_PACKER_METHOD,
+    MM_UNPACKER_METHOD,
 #ifdef WITH_METHOD_SHM
     MM_SHM_METHOD, 
 #endif
@@ -140,6 +144,8 @@ typedef struct MPIDI_VCRT
 } MPIDI_VCRT;
 
 /*** multi-method prototypes ***/
+#include "mm_packer.h"
+#include "mm_unpacker.h"
 #ifdef WITH_METHOD_SHM
 #include "mm_shm.h"
 #endif

@@ -4,9 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "tcpimpl.h"
+#include "mpidimpl.h"
 
-int tcp_reset_car(MM_Car *car_ptr)
+int unpacker_reset_car(MM_Car *car_ptr)
 {
     MM_Segment_buffer *buf_ptr;
 

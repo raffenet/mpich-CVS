@@ -146,6 +146,18 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	break;
     case MM_UNBOUND_METHOD:
 	break;
+    case MM_PACKER_METHOD:
+	vc_ptr->post_read = NULL; /*packer_post_read;*/
+	vc_ptr->merge_with_unexpected = NULL; /*packer_merge_with_unexpected; */
+	vc_ptr->post_write = NULL; /*packer_post_write;*/
+	vc_ptr->reset_car = packer_reset_car;
+	break;
+    case MM_UNPACKER_METHOD:
+	vc_ptr->post_read = NULL; /*unpacker_post_read;*/
+	vc_ptr->merge_with_unexpected = NULL; /*unpacker_merge_with_unexpected; */
+	vc_ptr->post_write = NULL; /*unpacker_post_write;*/
+	vc_ptr->reset_car = unpacker_reset_car;
+	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:
 	vc_ptr->merge_with_unexpected = shm_merge_with_unexpected;
@@ -357,6 +369,9 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
 @*/
 int mm_vc_free(MPIDI_VC *ptr)
 {
+    if (ptr->method == MM_PACKER_METHOD || ptr->method == MM_UNPACKER_METHOD)
+	return MPI_SUCCESS;
+
     BlockFree(MPID_Process.VC_allocator, ptr);
     return MPI_SUCCESS;
 }
