@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="mpich2f"
 	ProjectGUID="{D45A7472-5ECD-481D-A26D-98D88ED44305}"
+	RootNamespace="mpich2f"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -25,6 +26,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="0"
+				BrowseInformation="1"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"/>
@@ -35,7 +37,8 @@
 				AdditionalDependencies="mpich2d.lib"
 				OutputFile="../../../lib/fmpich2sd.dll"
 				AdditionalLibraryDirectories="../../../lib"
-				ModuleDefinitionFile="mpich2fs.def"/>
+				ModuleDefinitionFile="mpich2fs.def"
+				GenerateDebugInformation="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -166,9 +169,10 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="0"
+				BrowseInformation="1"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -176,7 +180,9 @@
 				AdditionalDependencies="mpich2d.lib"
 				OutputFile="../../../lib/fmpich2d.dll"
 				AdditionalLibraryDirectories="../../../lib"
-				ModuleDefinitionFile="mpich2f.def"/>
+				ModuleDefinitionFile="mpich2f.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/$(ProjectName).pdb"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -215,6 +221,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="0"
+				BrowseInformation="1"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"/>
@@ -225,7 +232,8 @@
 				AdditionalDependencies="mpich2d.lib"
 				OutputFile="../../../lib/fmpich2gd.dll"
 				AdditionalLibraryDirectories="../../../lib"
-				ModuleDefinitionFile="mpich2fg.def"/>
+				ModuleDefinitionFile="mpich2fg.def"
+				GenerateDebugInformation="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
