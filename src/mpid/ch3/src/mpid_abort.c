@@ -31,7 +31,7 @@ int MPID_Abort(MPID_Comm * comm, int errorcode)
 	fflush(stderr);
     }
     
-    abort();
+    exit(1);
     
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
 
