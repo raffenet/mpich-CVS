@@ -1520,7 +1520,7 @@ sub TargetAll {
 	if ($do_sharedlibs && $#allshlibtargets >= 0) {
 	    # Add a conditional step
 	    print_make_endline( FD );
-	    print FD "\tif [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
+	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $shlib (@allshlibtargets) {
 		print FD "\t    \${MAKE} $shlib ; \\\n";
 	    }
