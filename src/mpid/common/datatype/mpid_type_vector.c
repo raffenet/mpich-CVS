@@ -97,7 +97,7 @@ int MPID_Type_vector(int count,
 	new_dtp->loopinfo       = dlp;
 
 	/* fill in dataloop, noting that this is a leaf.  no need to copy. */
-	/* NOTE: element size is off. */
+	/* NOTE: element size in kind is off. */
 	dlp->kind                       = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK | (oldsize << DLOOP_ELMSIZE_SHIFT);
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.v_t.count      = count;

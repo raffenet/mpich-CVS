@@ -73,6 +73,7 @@ int MPIR_Describe_mpi_timer_states()
     g_timer_state[MPID_STATE_MPI_TEST].name = "MPI_Test";
     g_timer_state[MPID_STATE_MPI_WAIT].name = "MPI_Wait";
     g_timer_state[MPID_STATE_MPI_TYPE_VECTOR].name = "MPI_Type_vector";
+    g_timer_state[MPID_STATE_MPI_TYPE_CONTIGUOUS].name = "MPI_Type_contiguous";
     g_timer_state[MPID_STATE_MPI_WIN_CALL_ERRHANDLER].name = "MPI_Win_call_errhandler";
     g_timer_state[MPID_STATE_MPI_WIN_CREATE_ERRHANDLER].name = "MPI_Win_create_errhandler";
     g_timer_state[MPID_STATE_MPI_WIN_GET_ERRHANDLER].name = "MPI_Win_get_errhandler";
@@ -259,6 +260,7 @@ int MPIR_Describe_mpi_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_TEST, "MPI_Test", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WAIT, "MPI_Wait", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_TYPE_VECTOR, "MPI_Type_vector", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_TYPE_CONTIGUOUS, "MPI_Type_contiguous", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_CALL_ERRHANDLER, "MPI_Win_call_errhandler", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_CREATE_ERRHANDLER, "MPI_Win_create_errhandler", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPI_WIN_GET_ERRHANDLER, "MPI_Win_get_errhandler", get_random_color_str());

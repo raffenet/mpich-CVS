@@ -54,9 +54,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
     int ret;
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *old_ptr = NULL;
-#if 0
-    MPID_Datatype *new_ptr;
-#endif
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_VECTOR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_VECTOR);
@@ -100,80 +98,14 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 
     ret = MPID_Type_vector(count, blocklength, stride, old_type, newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
-    if (ret == MPI_SUCCESS) return ret;
+    if (ret == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, ret);
 
-#if 0
-    /* ... body of routine ...  */
-    new_ptr = (MPID_Datatype *)MPIU_Handle_obj_alloc( &MPID_Datatype_mem );
-    if (!new_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    }
-
-    new_ptr->ref_count	     = 1;
-    new_ptr->is_contig	     = 0;
-    new_ptr->opt_loopinfo    = (struct MPID_Dataloop_st *)MPIU_Calloc( 1, 
-				       sizeof(struct MPID_Dataloop_st) );
-    new_ptr->loopsize	     = 1;
-    new_ptr->combiner	     = MPI_COMBINER_VECTOR;
-    new_ptr->loopinfo	     = new_ptr->opt_loopinfo;
-    new_ptr->is_permanent    = 0;
-    new_ptr->is_committed    = 0;
-    new_ptr->attributes      = 0;
-    new_ptr->cache_id	     = 0;
-    new_ptr->name[0]	     = 0;
-    if (HANDLE_GET_KIND(old_type) == HANDLE_KIND_BUILTIN) {
-	/* Avoid using an explicit object for the predefined types */
-	int oldsize = (old_type & 0x000000ff);
-	new_ptr->size		= oldsize * count * blocklength;
-	new_ptr->extent		= 
-	    ((count - 1) * stride + blocklength) * oldsize;
-	new_ptr->has_mpi1_ub	= 0;
-	new_ptr->has_mpi1_lb	= 0;
-	new_ptr->loopinfo_depth	= 1;
-	new_ptr->true_lb	= 0;
-	new_ptr->alignsize	= oldsize;
-	new_ptr->n_elements	= count * blocklength;
-	new_ptr->element_size	= oldsize;
-	new_ptr->opt_loopinfo->kind = MPID_DTYPE_VECTOR | DATALOOP_FINAL_MASK | 
-	    (oldsize << DATALOOP_ELMSIZE_SHIFT);
-	new_ptr->opt_loopinfo->loop_params.v_t.count	 = count;
-	new_ptr->opt_loopinfo->loop_params.v_t.blocksize = blocklength;
-	new_ptr->opt_loopinfo->loop_params.v_t.stride	 = stride;
-	new_ptr->opt_loopinfo->loop_params.v_t.dataloop	 = 0;
-	new_ptr->opt_loopinfo->extent			 = new_ptr->extent;
-	new_ptr->opt_loopinfo->handle			 = new_ptr->handle;
-    }
-    else {
-	new_ptr->size = old_ptr->size * count * blocklength;
-	/* This computation of extent is not correct */
-	new_ptr->extent		= 
-	    ((count - 1) * stride + blocklength) * old_ptr->extent;
-	new_ptr->has_mpi1_ub	= old_ptr->has_mpi1_ub;
-	new_ptr->has_mpi1_lb	= old_ptr->has_mpi1_lb;
-	new_ptr->loopinfo_depth	= old_ptr->loopinfo_depth + 1;
-	new_ptr->true_lb	= old_ptr->true_lb;
-	new_ptr->alignsize	= old_ptr->alignsize;
-	new_ptr->n_elements	= old_ptr->n_elements * count * blocklength;
-	new_ptr->element_size	= old_ptr->element_size;
-	/* FIX ME: final only if old type is contiguous */
-	if (1) {
-	    new_ptr->opt_loopinfo->kind = MPID_DTYPE_VECTOR | DATALOOP_FINAL_MASK | 
-	    (old_ptr->size << DATALOOP_ELMSIZE_SHIFT);
-	}
-	new_ptr->opt_loopinfo->loop_params.v_t.count	 = count;
-	new_ptr->opt_loopinfo->loop_params.v_t.blocksize = blocklength;
-	new_ptr->opt_loopinfo->loop_params.v_t.stride	 = stride;
-	new_ptr->opt_loopinfo->loop_params.v_t.dataloop	 = 0;
-	new_ptr->opt_loopinfo->extent			 = new_ptr->extent;
-	new_ptr->opt_loopinfo->handle			 = new_ptr->handle;
-    }
-
-    *newtype = new_ptr->handle;
-    /* ... end of body of routine ... */
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
-    return MPI_SUCCESS;
-#endif
 }
+
+
+
+
+
+
+
