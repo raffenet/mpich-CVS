@@ -31,11 +31,14 @@ int xfer_start(MPID_Request *request_ptr)
 	    return mpi_errno;
 	}
 	/* get the initial buffers */
+	/* optimization to get the first batch of buffers immediately
 	mpi_errno = pRequest->mm.get_buffers(pRequest);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    return mpi_errno;
 	}
+	pRequest->mm.buf.vec.num_cars_outstanding = pRequest->mm.buf.vec.num_cars;
+	*/
 	/* reset the cars */
 	mpi_errno = mm_reset_cars(pRequest);
 	if (mpi_errno != MPI_SUCCESS)

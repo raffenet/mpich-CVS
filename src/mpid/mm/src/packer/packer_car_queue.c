@@ -21,7 +21,7 @@ int packer_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     {
 	/* enqueue the write car in the vc_ptr write queue */
 	if (vc_ptr->writeq_tail != NULL)
-	    vc_ptr->writeq_tail->mnext_ptr = car_ptr;
+	    vc_ptr->writeq_tail->vcqnext_ptr = car_ptr;
 	else
 	    vc_ptr->writeq_head = car_ptr;
 	vc_ptr->writeq_tail = car_ptr;
@@ -30,13 +30,13 @@ int packer_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     {
 	/* enqueue the read car in the vc_ptr read queue */
 	if (vc_ptr->readq_tail != NULL)
-	    vc_ptr->readq_tail->mnext_ptr = car_ptr;
+	    vc_ptr->readq_tail->vcqnext_ptr = car_ptr;
 	else
 	    vc_ptr->readq_head = car_ptr;
 	vc_ptr->readq_tail = car_ptr;
     }
 
-    car_ptr->mnext_ptr = NULL;
+    car_ptr->vcqnext_ptr = NULL;
 
     return MPI_SUCCESS;
 }
@@ -61,23 +61,23 @@ int packer_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	    return MPI_SUCCESS;
 	if (vc_ptr->writeq_head == car_ptr)
 	{
-	    vc_ptr->writeq_head = vc_ptr->writeq_head->mnext_ptr;
+	    vc_ptr->writeq_head = vc_ptr->writeq_head->vcqnext_ptr;
 	    if (vc_ptr->writeq_head == NULL)
 		vc_ptr->writeq_tail = NULL;
 	}
 	else 
 	{
 	    iter_ptr = vc_ptr->writeq_head;
-	    while (iter_ptr->mnext_ptr)
+	    while (iter_ptr->vcqnext_ptr)
 	    {
-		if (iter_ptr->mnext_ptr == car_ptr)
+		if (iter_ptr->vcqnext_ptr == car_ptr)
 		{
-		    if (iter_ptr->mnext_ptr == vc_ptr->writeq_tail)
+		    if (iter_ptr->vcqnext_ptr == vc_ptr->writeq_tail)
 			vc_ptr->writeq_tail = iter_ptr;
-		    iter_ptr->mnext_ptr = iter_ptr->mnext_ptr->mnext_ptr;
+		    iter_ptr->vcqnext_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;
 		    break;
 		}
-		iter_ptr = iter_ptr->mnext_ptr;
+		iter_ptr = iter_ptr->vcqnext_ptr;
 	    }
 	}
     }
@@ -88,28 +88,28 @@ int packer_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	    return MPI_SUCCESS;
 	if (vc_ptr->readq_head == car_ptr)
 	{
-	    vc_ptr->readq_head = vc_ptr->readq_head->mnext_ptr;
+	    vc_ptr->readq_head = vc_ptr->readq_head->vcqnext_ptr;
 	    if (vc_ptr->readq_head == NULL)
 		vc_ptr->readq_tail = NULL;
 	}
 	else
 	{
 	    iter_ptr = vc_ptr->readq_head;
-	    while (iter_ptr->mnext_ptr)
+	    while (iter_ptr->vcqnext_ptr)
 	    {
-		if (iter_ptr->mnext_ptr == car_ptr)
+		if (iter_ptr->vcqnext_ptr == car_ptr)
 		{
-		    if (iter_ptr->mnext_ptr == vc_ptr->readq_tail)
+		    if (iter_ptr->vcqnext_ptr == vc_ptr->readq_tail)
 			vc_ptr->readq_tail = iter_ptr;
-		    iter_ptr->mnext_ptr = iter_ptr->mnext_ptr->mnext_ptr;
+		    iter_ptr->vcqnext_ptr = iter_ptr->vcqnext_ptr->vcqnext_ptr;
 		    break;
 		}
-		iter_ptr = iter_ptr->mnext_ptr;
+		iter_ptr = iter_ptr->vcqnext_ptr;
 	    }
 	}
     }
 
-    car_ptr->mnext_ptr = NULL;
+    car_ptr->vcqnext_ptr = NULL;
 
     return MPI_SUCCESS;
 }

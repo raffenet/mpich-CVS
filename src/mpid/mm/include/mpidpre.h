@@ -189,7 +189,7 @@ typedef struct MM_Car
     int src, dest;
     MM_CAR_TYPE type;
     MM_Car_data data;
-    struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr, *mnext_ptr;
+    struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr, *vcqnext_ptr;
 } MM_Car;
 
 /* multi-method segment */

@@ -35,6 +35,9 @@ int tcp_write(MPIDI_VC *vc_ptr)
 		car_vec = car_ptr->data.tcp.buf.vec_write.vec;
 		buf_vec = car_ptr->buf_ptr->vec.vec;
 
+		/* update num_read_copy */
+		car_ptr->data.tcp.buf.vec_write.num_read_copy = car_ptr->buf_ptr->vec.num_read;
+
 		/* copy the buf vector into the car vector from the current index to the end */
 		memcpy(&car_vec[cur_index], &buf_vec[cur_index], 
 		    (car_ptr->buf_ptr->vec.vec_size - cur_index) * sizeof(MPID_VECTOR));
@@ -62,9 +65,6 @@ int tcp_write(MPIDI_VC *vc_ptr)
 		}
 
 		/* at this point the vec in the car describes all the currently read data */
-
-		/* update num_read_copy */
-		car_ptr->data.tcp.buf.vec_write.num_read_copy = car_ptr->buf_ptr->vec.num_read;
 	    }
 
 	    if (car_ptr->data.tcp.buf.vec_write.cur_num_written < car_ptr->data.tcp.buf.vec_write.num_read_copy)
@@ -103,7 +103,14 @@ int tcp_write(MPIDI_VC *vc_ptr)
 		car_ptr->data.tcp.buf.vec_write.total_num_written += num_written;
 		if (car_ptr->data.tcp.buf.vec_write.cur_num_written == car_ptr->buf_ptr->vec.buf_size)
 		{
-		    tcp_reset_car(car_ptr);
+		    /* reset this car */
+		    car_ptr->data.tcp.buf.vec_write.cur_index = 0;
+		    car_ptr->data.tcp.buf.vec_write.num_read_copy = 0;
+		    car_ptr->data.tcp.buf.vec_write.cur_num_written = 0;
+		    car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index = 0;
+		    car_ptr->data.tcp.buf.vec_write.vec_size = 0;
+		    /* signal that we have finished writing the current vector */
+		    mm_dec_atomic(&(car_ptr->buf_ptr->vec.num_cars_outstanding));
 		}
 		else
 		{
@@ -123,12 +130,6 @@ int tcp_write(MPIDI_VC *vc_ptr)
 			}
 		    }
 		    car_ptr->data.tcp.buf.vec_write.cur_index = i;
-		}
-
-		if (car_ptr->data.tcp.buf.vec_write.cur_num_written == car_ptr->buf_ptr->vec.buf_size)
-		{
-		    /* signal that we have finished writing the current vector */
-		    mm_dec_atomic(&(car_ptr->buf_ptr->vec.num_cars_outstanding));
 		}
 	    }
 

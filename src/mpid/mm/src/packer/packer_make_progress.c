@@ -17,6 +17,13 @@ int packer_make_progress()
     MM_Segment_buffer *buf_ptr;
     BOOL finished;
 
+    if (MPID_Process.packer_vc_ptr->readq_head == NULL &&
+	MPID_Process.packer_vc_ptr->writeq_head == NULL)
+    {
+	/* shortcut out if the queues are empty */
+	return MPI_SUCCESS;
+    }
+
     for (i=0; i<2; i++)
     {
 	if (i==0)
@@ -42,17 +49,14 @@ int packer_make_progress()
 		    );
 		break;
 	    case MM_VEC_BUFFER:
+		if (car_ptr->buf_ptr->vec.num_cars_outstanding == 0)
+		{
+		    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
+		    car_ptr->buf_ptr->vec.num_read = car_ptr->buf_ptr->vec.last - car_ptr->buf_ptr->vec.first;
+		    car_ptr->buf_ptr->vec.num_cars_outstanding = car_ptr->buf_ptr->vec.num_cars;
+		}
 		if (car_ptr->buf_ptr->vec.last == car_ptr->request_ptr->mm.last)
 		    finished = TRUE;
-		else
-		{
-		    if (car_ptr->buf_ptr->vec.num_cars_outstanding == 0)
-		    {
-			car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
-			car_ptr->buf_ptr->vec.num_read = car_ptr->buf_ptr->vec.last - car_ptr->buf_ptr->vec.first;
-			car_ptr->buf_ptr->vec.num_cars_outstanding = car_ptr->buf_ptr->vec.num_cars;
-		    }
-		}
 		break;
 #ifdef WITH_METHOD_SHM
 	    case MM_SHM_BUFFER:

@@ -7,5 +7,10 @@
 
 int via_get_business_card(char *value, int length)
 {
+    if (length < 1)
+    {
+	return -1;
+    }
+    *value = '\0';
     return MPI_SUCCESS;
 }

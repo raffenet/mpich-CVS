@@ -37,11 +37,11 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	request_ptr->mm.buf.vec.buf_size = 0;
 	request_ptr->mm.buf.vec.num_cars_outstanding = 0;
 	request_ptr->mm.buf.vec.num_cars = 0;
-	/* count the data cars */
+	/* count the cars that read/write data */
 	car_ptr = request_ptr->mm.wcar;
 	while (car_ptr)
 	{
-	    if (!(car_ptr->type & MM_HEAD_CAR))
+	    if (!(car_ptr->type & MM_HEAD_CAR) || (car_ptr->type & MM_PACKER_CAR) || (car_ptr->type & MM_UNPACKER_CAR))
 		request_ptr->mm.buf.vec.num_cars++;
 	    car_ptr = car_ptr->opnext_ptr;
 	}

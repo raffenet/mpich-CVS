@@ -38,7 +38,6 @@ int tcp_reset_car(MM_Car *car_ptr)
 	{
 	    car_ptr->data.tcp.buf.vec_read.cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
-	    car_ptr->data.tcp.buf.vec_read.total_num_read = 0;
 	    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_read.vec_size = 0;
 	}

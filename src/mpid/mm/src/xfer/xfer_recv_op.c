@@ -82,8 +82,11 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pRequest->mm.count = count;
     pRequest->mm.dtype = dtype;
     pRequest->mm.first = first;
-    pRequest->mm.last = last;
     pRequest->mm.size = count * MPID_Datatype_get_size(dtype);
+    if (last == MPID_DTYPE_END)
+	pRequest->mm.last = pRequest->mm.size;
+    else
+	pRequest->mm.last = last;
 
     MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
 
@@ -98,8 +101,8 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	pRequest->mm.rcar[0].data.pkt.context = request_ptr->comm->context_id;
 	pRequest->mm.rcar[0].data.pkt.tag = request_ptr->mm.tag;
 	pRequest->mm.rcar[0].data.pkt.size = 0;
-	pRequest->mm.rcar[0].next_ptr = &pRequest->mm.rcar[1];
-	pRequest->mm.rcar[0].opnext_ptr = NULL;
+	pRequest->mm.rcar[0].opnext_ptr = &pRequest->mm.rcar[1];
+	pRequest->mm.rcar[0].next_ptr = NULL;
 	pRequest->mm.rcar[0].qnext_ptr = NULL;
 	mm_inc_cc(pRequest);
 

@@ -11,6 +11,7 @@ int tcp_read(MPIDI_VC *vc_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     char ack;
+    int num_left, i;
 
     if (vc_ptr->data.tcp.connecting)
     {
@@ -40,7 +41,7 @@ int tcp_read(MPIDI_VC *vc_ptr)
     car_ptr = vc_ptr->readq_head;
     buf_ptr = car_ptr->buf_ptr;
 
-    switch (car_ptr->buf_ptr->type)
+    switch (buf_ptr->type)
     {
     case MM_NULL_BUFFER:
 	err_printf("Error: tcp_read called on a null buffer\n");
@@ -56,31 +57,81 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	car_ptr->data.tcp.buf.tmp.num_read += num_read;
 	break;
     case MM_VEC_BUFFER:
-	if (car_ptr->data.tcp.buf.vec_read.vec_size == 1)
+	if (buf_ptr->vec.num_cars_outstanding == 0)
 	{
-	    num_read = bread(vc_ptr->data.tcp.bfd,
-		car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_BUF,
-		car_ptr->data.tcp.buf.vec_read.vec[0].MPID_VECTOR_LEN);
-	    if (num_read == SOCKET_ERROR)
+	    /* get more buffers */
+	    car_ptr->request_ptr->mm.get_buffers(car_ptr->request_ptr);
+	    tcp_reset_car(car_ptr);
+	    buf_ptr->vec.num_read = 0;
+	    buf_ptr->vec.num_cars_outstanding = buf_ptr->vec.num_cars;
+	}
+	
+	if (car_ptr->data.tcp.buf.vec_read.cur_num_read < buf_ptr->vec.buf_size)
+	{
+	    /* read */
+	    if (car_ptr->data.tcp.buf.vec_read.vec_size == 1) /* optimization for single buffer reads */
 	    {
-		TCP_Process.error = beasy_getlasterror();
-		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		err_printf("tcp_read: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		return -1;
+		num_read = bread(vc_ptr->data.tcp.bfd,
+		    car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_VECTOR_BUF,
+		    car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index].MPID_VECTOR_LEN);
+		if (num_read == SOCKET_ERROR)
+		{
+		    TCP_Process.error = beasy_getlasterror();
+		    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+		    err_printf("tcp_read: bread failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		    return -1;
+		}
+	    }
+	    else
+	    {
+		num_read = breadv(vc_ptr->data.tcp.bfd,
+		    &car_ptr->data.tcp.buf.vec_read.vec[car_ptr->data.tcp.buf.vec_read.cur_index],
+		    car_ptr->data.tcp.buf.vec_read.vec_size);
+		if (num_read == SOCKET_ERROR)
+		{
+		    TCP_Process.error = beasy_getlasterror();
+		    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+		    err_printf("tcp_read: breadv failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+		    return -1;
+		}
+	    }
+	    
+	    /* update vector */
+	    car_ptr->data.tcp.buf.vec_read.cur_num_read += num_read;
+	    if (car_ptr->data.tcp.buf.vec_read.cur_num_read == buf_ptr->vec.buf_size)
+	    {
+		/* reset the car */
+		car_ptr->data.tcp.buf.vec_read.cur_index = 0;
+		car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
+		car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
+		car_ptr->data.tcp.buf.vec_read.vec_size = 0;
+	    }
+	    else
+	    {
+		num_left = num_read;
+		i = car_ptr->data.tcp.buf.vec_read.cur_index;
+		while (num_left > 0)
+		{
+		    num_left -= car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN;
+		    if (num_left > 0)
+		    {
+			i++;
+		    }
+		    else
+		    {
+			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF = car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_BUF - num_left;
+			car_ptr->data.tcp.buf.vec_read.vec[i].MPID_VECTOR_LEN += num_left;
+		    }
+		}
+		car_ptr->data.tcp.buf.vec_read.cur_index = i;
 	    }
 	}
-	else
+	
+	if ((car_ptr->data.tcp.buf.vec_read.cur_num_read == buf_ptr->vec.buf_size) &&
+	    (buf_ptr->vec.last == car_ptr->request_ptr->mm.last))
 	{
-	    num_read = breadv(vc_ptr->data.tcp.bfd,
-		car_ptr->data.tcp.buf.vec_read.vec,
-		car_ptr->data.tcp.buf.vec_read.vec_size);
-	    if (num_read == SOCKET_ERROR)
-	    {
-		TCP_Process.error = beasy_getlasterror();
-		beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		err_printf("tcp_read: breadv failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		return -1;
-	    }
+	    tcp_car_dequeue(vc_ptr, car_ptr);
+	    mm_cq_enqueue(car_ptr);
 	}
 	break;
 #ifdef WITH_METHOD_SHM
@@ -100,7 +151,7 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	break;
 #endif
     default:
-	err_printf("Error: tcp_read: unknown or unsupported buffer type: %d\n", car_ptr->buf_ptr->type);
+	err_printf("Error: tcp_read: unknown or unsupported buffer type: %d\n", buf_ptr->type);
 	break;
     }
 

@@ -17,6 +17,13 @@ int unpacker_make_progress()
     MM_Segment_buffer *buf_ptr;
     BOOL finished;
 
+    if (MPID_Process.unpacker_vc_ptr->readq_head == NULL &&
+	MPID_Process.unpacker_vc_ptr->writeq_head == NULL)
+    {
+	/* shortcut out if the queues are empty */
+	return MPI_SUCCESS;
+    }
+
     for (i=0; i<2; i++)
     {
 	if (i==0)

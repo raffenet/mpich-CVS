@@ -26,6 +26,7 @@ MPID_Request * mm_request_alloc()
     p->mm.rcar[1].freeme = FALSE;
     p->mm.wcar[0].freeme = FALSE;
     p->mm.wcar[1].freeme = FALSE;
+    p->mm.next_ptr = NULL;
     return p;
 }
 
