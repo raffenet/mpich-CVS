@@ -29,6 +29,8 @@ int main( int argc, char *argv[] )
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm, errcodes );
     }
+    else 
+	intercomm = parentcomm;
 
     /* We now have a valid intercomm */
 
@@ -68,6 +70,9 @@ int main( int argc, char *argv[] )
 	/* Send the errs back to the master process */
 	MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );
     }
+
+    /* It isn't necessary to free the intercomm, but it should not hurt */
+    MPI_Comm_free( &intercomm );
 
     /* Note that the MTest_Finalize get errs only over COMM_WORLD */
     MTest_Finalize( errs );
