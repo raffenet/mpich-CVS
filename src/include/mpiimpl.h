@@ -267,9 +267,6 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Getb_ptr(kind,a,bmsk,ptr)                                  \
 {                                                                       \
    switch (HANDLE_GET_KIND(a)) {                                        \
-      case HANDLE_KIND_INVALID:                                         \
-          ptr=0;                                                        \
-          break;                                                        \
       case HANDLE_KIND_BUILTIN:                                         \
           ptr=MPID_##kind##_builtin+((a)&(bmsk));                       \
           break;                                                        \
@@ -280,6 +277,10 @@ int MPIU_Handle_free( void *((*)[]), int );
           ptr=((MPID_##kind*)                                           \
                MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));     \
           break;                                                        \
+      case HANDLE_KIND_INVALID:                                         \
+      default:								\
+          ptr=0;							\
+          break;							\
     }                                                                   \
 }
 
@@ -287,23 +288,22 @@ int MPIU_Handle_free( void *((*)[]), int );
    objects */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
-#define MPID_Get_ptr(kind,a,ptr)                                        \
-{                                                                       \
-   switch (HANDLE_GET_KIND(a)) {                                        \
-      case HANDLE_KIND_INVALID:                                         \
-          ptr=0;                                                        \
-          break;                                                        \
-      case HANDLE_KIND_BUILTIN:                                         \
-          ptr=0;                                                        \
-          break;                                                        \
-      case HANDLE_KIND_DIRECT:                                          \
-          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);                     \
-          break;                                                        \
-      case HANDLE_KIND_INDIRECT:                                        \
-          ptr=((MPID_##kind*)                                           \
-               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));     \
-          break;                                                        \
-    }                                                                   \
+#define MPID_Get_ptr(kind,a,ptr)					\
+{									\
+   switch (HANDLE_GET_KIND(a)) {					\
+      case HANDLE_KIND_DIRECT:						\
+          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);			\
+          break;							\
+      case HANDLE_KIND_INDIRECT:					\
+          ptr=((MPID_##kind*)						\
+               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));	\
+          break;							\
+      case HANDLE_KIND_INVALID:						\
+      case HANDLE_KIND_BUILTIN:						\
+      default:								\
+          ptr=0;							\
+          break;							\
+     }									\
 }
 
 #define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,0x03ffffff,ptr)
