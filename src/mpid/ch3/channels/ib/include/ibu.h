@@ -12,6 +12,7 @@ extern "C" {
 
 /* config header file */
 #include "mpidi_ch3i_ib_conf.h"
+#include "mpidi_ch3_impl.h"
 
 #ifdef MPID_IBU_TYPE_WINDOWS
 #include <winsock2.h>
@@ -36,15 +37,13 @@ typedef ib_cq_handle_t ibu_set_t;
 
 /* definitions */
 
-typedef enum IBU_OP
+typedef enum ibu_op_e
 {
     IBU_OP_TIMEOUT,
     IBU_OP_READ,
     IBU_OP_WRITE,
     IBU_OP_CLOSE
-} IBU_OP;
-
-#define IBU_IOV_LIMIT   16
+} ibu_op_t;
 
 /* insert error codes here */
 #define IBU_SUCCESS           0
@@ -56,23 +55,12 @@ typedef enum IBU_OP
 /* definitions/structures specific to Windows */
 #ifdef MPID_IBU_TYPE_WINDOWS
 
-#define IBU_IOV             WSABUF
-#define IBU_IOV_LEN         len
-#define IBU_IOV_BUF         buf
-#define IBU_IOV_MAXLEN      16
 #define IBU_INFINITE        INFINITE
 #define IBU_INVALID_QP      0
 
 /* definitions/structures specific to Unix */
 #elif defined(MPID_IBU_TYPE_UNIX)
 
-#ifdef HAVE_SYS_UIO_H
-#include <sys/uio.h>
-#endif
-#define IBU_IOV             struct iovec
-#define IBU_IOV_LEN         iov_len
-#define IBU_IOV_BUF         iov_base
-#define IBU_IOV_MAXLEN      16
 #define IBU_INFINITE        -1
 #define IBU_INVALID_QP      0
 
@@ -81,17 +69,6 @@ typedef enum IBU_OP
 #endif
 
 typedef struct ibu_state_t * ibu_t;
-
-
-/* common structures */
-
-typedef struct ibu_wait_t
-{
-    IBU_OP op_type;
-    int num_bytes;
-    void *user_ptr;
-    int error;
-} ibu_wait_t;
 
 
 /* function prototypes */
@@ -103,18 +80,18 @@ int ibu_get_lid();
 int ibu_create_set(ibu_set_t *set);
 int ibu_destroy_set(ibu_set_t set);
 
-int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);
-/*int ibu_set_vc_ptr(ibu_t ibu, MPIDI_VC *vc_ptr);*/
+/*int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);*/
+int ibu_set_vc_ptr(ibu_t ibu, MPIDI_VC *vc_ptr);
 
 ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr);
 int ibu_finish_qp(ibu_t ibu, int dest_lid, int dest_qpnum);
 int ibu_post_read(ibu_t ibu, void *buf, int len);
-int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n);
+int ibu_post_readv(ibu_t ibu, MPID_IOV *iov, int n);
 int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr);
-int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_bytes_ptr);
+int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr);
 
-int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out);
-/*int ibu_wait(ibu_set_t set, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, IBU_OP *op_ptr);*/
+/*int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out);*/
+int ibu_wait(ibu_set_t set, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr);
 
 #ifdef __cplusplus
 }

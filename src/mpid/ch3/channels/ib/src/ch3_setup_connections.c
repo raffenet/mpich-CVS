@@ -81,7 +81,7 @@ int MPIDI_CH3I_Setup_connections()
 	    return mpi_errno;
 	}
 	/* set the user pointer to be a pointer to the VC */
-	ibu_set_user_ptr(vc->ch.ibu, &MPIDI_CH3I_Process.pg->vc_table[i]);
+	ibu_set_vc_ptr(vc->ch.ibu, &MPIDI_CH3I_Process.pg->vc_table[i]);
 	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-qp", pg_rank, i);
 	if (mpi_errno < 0 || mpi_errno > key_max_sz)
 	{

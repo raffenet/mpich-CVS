@@ -25,7 +25,9 @@ void MPIDI_CH3_Progress_start()
 int MPIDI_CH3I_Progress(int is_blocking)
 {
     int mpi_errno = MPI_SUCCESS;
-    ibu_wait_t out;
+    MPIDI_VC *vc_ptr;
+    int num_bytes;
+    ibu_op_t wait_result;
     unsigned register count;
     unsigned completions = MPIDI_CH3I_progress_completions;
     int i;
@@ -36,14 +38,14 @@ int MPIDI_CH3I_Progress(int is_blocking)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, &out);
+	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, &vc_ptr, &num_bytes, &wait_result);
 	if (mpi_errno != IBU_SUCCESS)
 	{
 	    MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_wait", "**ibu_wait %d", mpi_errno);
 	    goto fn_exit;
 	}
-	switch (out.op_type)
+	switch (wait_result)
 	{
 	case IBU_OP_TIMEOUT:
 	    /*MPIDU_Yield();*/
@@ -51,7 +53,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    break;
 	case IBU_OP_READ:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read", out.num_bytes));
-	    mpi_errno = handle_read(out.user_ptr, out.num_bytes);
+	    mpi_errno = handle_read(vc_ptr, num_bytes);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
@@ -60,7 +62,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    break;
 	case IBU_OP_WRITE:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes written", out.num_bytes));
-	    mpi_errno = handle_written(out.user_ptr);
+	    mpi_errno = handle_written(vc_ptr);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
@@ -282,7 +284,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 		post_pkt_recv(vc);
 		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
-		return mpi_errno;
+		return MPI_SUCCESS;
 	    }
 	    else if (ca < MPIDI_CH3_CA_END_CH3)
 	    {
@@ -297,7 +299,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 		    post_pkt_recv(vc);
 		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
-		    return mpi_errno;
+		    return MPI_SUCCESS;
 		}
 	    }
 	    else

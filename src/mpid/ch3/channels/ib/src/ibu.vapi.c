@@ -17,10 +17,6 @@
 #ifdef USE_IB_VAPI
 
 #define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
-/*
-VAPI_mr_hndl_t s_mr_handle;
-VAPI_lkey_t s_lkey;
-*/
 typedef struct ibmem_t
 {
     VAPI_mr_hndl_t handle;
@@ -75,7 +71,7 @@ typedef struct ibu_buffer_t
     unsigned int num_bytes;
     void *buffer;
     unsigned int bufflen;
-    IBU_IOV iov[IBU_IOV_MAXLEN];
+    MPID_IOV iov[MPID_IOV_LIMIT];
     int iovlen;
     int index;
     int total;
@@ -111,8 +107,9 @@ typedef struct ibu_state_t
     ibu_unex_read_t *unex_list;
     ibu_buffer_t write;
     int nAvailRemote, nUnacked;
-    /* user pointer */
-    void *user_ptr;
+    /* vc pointer */
+    MPIDI_VC *vc_ptr;
+    /*void *user_ptr;*/
     /* unexpected queue pointer */
     struct ibu_state_t *unex_finished_queue;
 } ibu_state_t;
@@ -154,7 +151,7 @@ static int ibui_post_receive(ibu_t ibu);
 static int ibui_post_receive_unacked(ibu_t ibu);
 #if 0
 static int ibui_post_write(ibu_t ibu, void *buf, int len);
-static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n);
+static int ibui_post_writev(ibu_t ibu, MPID_IOV *iov, int n);
 #endif
 static int ibui_post_ack_write(ibu_t ibu);
 
@@ -929,7 +926,7 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 #define FUNCNAME ibu_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_bytes_ptr)
+int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 {
     VAPI_ret_t status;
     VAPI_sg_lst_entry_t data;
@@ -951,8 +948,8 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_bytes_ptr)
     MPIU_DBG_PRINTF(("entering ibu_writev\n"));
 
     cur_index = 0;
-    cur_len = iov[0].IBU_IOV_LEN;
-    cur_buf = iov[0].IBU_IOV_BUF;
+    cur_len = iov[0].MPID_IOV_LEN;
+    cur_buf = iov[0].MPID_IOV_BUF;
     do
     {
 	if (ibu->nAvailRemote < 1)
@@ -986,8 +983,8 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n, int *num_bytes_ptr)
 	    if (cur_len == len)
 	    {
 		cur_index++;
-		cur_len = iov[cur_index].IBU_IOV_LEN;
-		cur_buf = iov[cur_index].IBU_IOV_BUF;
+		cur_len = iov[cur_index].MPID_IOV_LEN;
+		cur_buf = iov[cur_index].MPID_IOV_BUF;
 	    }
 	    else
 	    {
@@ -1155,7 +1152,7 @@ int ibu_finalize()
 #ifdef HAVE_32BIT_POINTERS
     ibuBlockAllocFinalize(&g_workAllocator);
 #endif
-    VAPI_close_hca(IBU_Process.hca_handle);
+    /*VAPI_close_hca(IBU_Process.hca_handle);*/ /* This never returns on the macs */
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
@@ -1354,7 +1351,7 @@ int ibui_readv_unex(ibu_t ibu)
     {
 	while (ibu->unex_list->length && ibu->read.iovlen)
 	{
-	    num_bytes = min(ibu->unex_list->length, ibu->read.iov[ibu->read.index].IBU_IOV_LEN);
+	    num_bytes = min(ibu->unex_list->length, ibu->read.iov[ibu->read.index].MPID_IOV_LEN);
 	    MPIDI_DBG_PRINTF((60, FCNAME, "copying %d bytes\n", num_bytes));
 	    /* copy the received data */
 	    memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, ibu->unex_list->buf, num_bytes);
@@ -1362,10 +1359,10 @@ int ibui_readv_unex(ibu_t ibu)
 	    ibu->unex_list->buf += num_bytes;
 	    ibu->unex_list->length -= num_bytes;
 	    /* update the iov */
-	    ibu->read.iov[ibu->read.index].IBU_IOV_LEN -= num_bytes;
+	    ibu->read.iov[ibu->read.index].MPID_IOV_LEN -= num_bytes;
 	    ibu->read.iov[ibu->read.index].IBU_IOV_BUF = 
 		(char*)(ibu->read.iov[ibu->read.index].IBU_IOV_BUF) + num_bytes;
-	    if (ibu->read.iov[ibu->read.index].IBU_IOV_LEN == 0)
+	    if (ibu->read.iov[ibu->read.index].MPID_IOV_LEN == 0)
 	    {
 		ibu->read.index++;
 		ibu->read.iovlen--;
@@ -1444,7 +1441,8 @@ char * op2str(int opcode)
 #define FUNCNAME ibu_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
+/*int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)*/
+int ibu_wait(ibu_set_t set, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr)
 {
     int i;
     VAPI_ret_t status;
@@ -1475,9 +1473,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    IBU_Process.unex_finished_list = IBU_Process.unex_finished_list->unex_finished_queue;
 	    ibu->unex_finished_queue = NULL;
 
-	    out->num_bytes = ibu->read.total;
-	    out->op_type = IBU_OP_READ;
-	    out->user_ptr = ibu->user_ptr;
+	    *num_bytes_ptr = ibu->read.total;
+	    *op_ptr = IBU_OP_READ;
+	    *vc_pptr = ibu->vc_ptr;
 	    ibu->pending_operations--;
 	    if (ibu->closing && ibu->pending_operations == 0)
 	    {
@@ -1498,10 +1496,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    /* or the timeout has expired */
 	    if (millisecond_timeout == 0)
 	    {
-		out->num_bytes = 0;
-		out->error = 0;
-		out->user_ptr = NULL;
-		out->op_type = IBU_OP_TIMEOUT;
+		*num_bytes_ptr = 0;
+		*vc_pptr = NULL;
+		*op_ptr = IBU_OP_TIMEOUT;
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 2\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		return IBU_SUCCESS;
@@ -1515,6 +1512,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
+	/*
 	if (completion_data.status != VAPI_SUCCESS)
 	{
 	    MPIU_Internal_error_printf("%s: error: status = %s != VAPI_SUCCESS\n", 
@@ -1523,6 +1521,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
+	*/
 
 #ifdef HAVE_32BIT_POINTERS
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.id)->data.ptr);
@@ -1539,6 +1538,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	switch (completion_data.opcode)
 	{
 	case VAPI_CQE_SQ_SEND_DATA:
+	    if (completion_data.status != VAPI_SUCCESS)
+	    {
+		MPIU_Internal_error_printf("%s: send completion status = %s != VAPI_SUCCESS\n", 
+		    FCNAME, VAPI_strerror(completion_data.status));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		return IBU_FAIL;
+	    }
 	    if (mem_ptr == (void*)-1)
 	    {
 		/* flow control ack completed, no user data so break out here */
@@ -1570,14 +1577,22 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		ibuBlockFreeIB(ibu->allocator, mem_ptr);
 	    }
 
-	    out->num_bytes = num_bytes;
-	    out->op_type = IBU_OP_WRITE;
-	    out->user_ptr = ibu->user_ptr;
+	    *num_bytes_ptr = num_bytes;
+	    *op_ptr = IBU_OP_WRITE;
+	    *vc_pptr = ibu->vc_ptr;
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 5\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_SUCCESS;
 	    break;
 	case VAPI_CQE_RQ_SEND_DATA:
+	    if (completion_data.status != VAPI_SUCCESS)
+	    {
+		MPIU_Internal_error_printf("%s: recv completion status = %s != VAPI_SUCCESS\n", 
+		    FCNAME, VAPI_strerror(completion_data.status));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		return IBU_FAIL;
+	    }
 	    if (completion_data.imm_data_valid)
 	    {
 		ibu->nAvailRemote += completion_data.imm_data;
@@ -1589,17 +1604,26 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    num_bytes = completion_data.byte_len;
 #ifdef USE_INLINE_PKT_RECEIVE
-	    recv_vc_ptr = (MPIDI_VC *)(ibu->user_ptr);
+	    recv_vc_ptr = ibu->vc_ptr;
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
-		/*printf("P");fflush(stdout);*/
-		MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
-		if (recv_vc_ptr->ch.recv_active == NULL)
+		if (((MPIDI_CH3_Pkt_t *)mem_ptr)->type < MPIDI_CH3_PKT_END_CH3)
 		{
-		    recv_vc_ptr->ch.reading_pkt = TRUE;
+		    /*printf("P");fflush(stdout);*/
+		    MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, mem_ptr);
+		    if (recv_vc_ptr->ch.recv_active == NULL)
+		    {
+			recv_vc_ptr->ch.reading_pkt = TRUE;
+		    }
+		}
+		else
+		{
+		    MPIDI_err_printf("MPIDI_CH3I_ibu_wait", "unhandled packet type: %d\n", ((MPIDI_CH3_Pkt_t*)mem_ptr)->type);
 		}
 		mem_ptr = (unsigned char *)mem_ptr + sizeof(MPIDI_CH3_Pkt_t);
 		num_bytes -= sizeof(MPIDI_CH3_Pkt_t);
+
+		continue;
 	    }
 /*
 	    else
@@ -1625,26 +1649,26 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		iter_ptr = mem_ptr;
 		while (num_bytes && ibu->read.iovlen > 0)
 		{
-		    if ((int)ibu->read.iov[ibu->read.index].IBU_IOV_LEN <= num_bytes)
+		    if ((int)ibu->read.iov[ibu->read.index].MPID_IOV_LEN <= num_bytes)
 		    {
 			/* copy the received data */
 			memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, iter_ptr,
-			    ibu->read.iov[ibu->read.index].IBU_IOV_LEN);
-			iter_ptr += ibu->read.iov[ibu->read.index].IBU_IOV_LEN;
+			    ibu->read.iov[ibu->read.index].MPID_IOV_LEN);
+			iter_ptr += ibu->read.iov[ibu->read.index].MPID_IOV_LEN;
 			/* update the iov */
-			num_bytes -= ibu->read.iov[ibu->read.index].IBU_IOV_LEN;
+			num_bytes -= ibu->read.iov[ibu->read.index].MPID_IOV_LEN;
 			ibu->read.index++;
 			ibu->read.iovlen--;
 		    }
 		    else
 		    {
 			/* copy the received data */
-			memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, iter_ptr, num_bytes);
+			memcpy(ibu->read.iov[ibu->read.index].MPID_IOV_BUF, iter_ptr, num_bytes);
 			iter_ptr += num_bytes;
 			/* update the iov */
-			ibu->read.iov[ibu->read.index].IBU_IOV_LEN -= num_bytes;
-			ibu->read.iov[ibu->read.index].IBU_IOV_BUF = 
-			    (char*)(ibu->read.iov[ibu->read.index].IBU_IOV_BUF) + num_bytes;
+			ibu->read.iov[ibu->read.index].MPID_IOV_LEN -= num_bytes;
+			ibu->read.iov[ibu->read.index].MPID_IOV_BUF = 
+			    (char*)(ibu->read.iov[ibu->read.index].MPID_IOV_BUF) + num_bytes;
 			num_bytes = 0;
 		    }
 		}
@@ -1675,9 +1699,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		if (ibu->read.iovlen == 0)
 		{
 		    ibu->state &= ~IBU_READING;
-		    out->num_bytes = ibu->read.total;
-		    out->op_type = IBU_OP_READ;
-		    out->user_ptr = ibu->user_ptr;
+		    *num_bytes_ptr = ibu->read.total;
+		    *op_ptr = IBU_OP_READ;
+		    *vc_pptr = ibu->vc_ptr;
 		    ibu->pending_operations--;
 		    if (ibu->closing && ibu->pending_operations == 0)
 		    {
@@ -1722,9 +1746,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		if (ibu->read.bufflen == 0)
 		{
 		    ibu->state &= ~IBU_READING;
-		    out->num_bytes = ibu->read.total;
-		    out->op_type = IBU_OP_READ;
-		    out->user_ptr = ibu->user_ptr;
+		    *num_bytes_ptr = ibu->read.total;
+		    *op_ptr = IBU_OP_READ;
+		    *vc_pptr = ibu->vc_ptr;
 		    ibu->pending_operations--;
 		    if (ibu->closing && ibu->pending_operations == 0)
 		    {
@@ -1738,6 +1762,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    break;
 	default:
+	    if (completion_data.status != VAPI_SUCCESS)
+	    {
+		MPIU_Internal_error_printf("%s: unknown completion status = %s != VAPI_SUCCESS\n", 
+		    FCNAME, VAPI_strerror(completion_data.status));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		return IBU_FAIL;
+	    }
 	    MPIU_Internal_error_printf("%s: unknown ib opcode: %s\n", FCNAME, op2str(completion_data.opcode));
 	    return IBU_FAIL;
 	    break;
@@ -1750,22 +1782,23 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 }
 
 #undef FUNCNAME
-#define FUNCNAME ibu_set_user_ptr
+#define FUNCNAME ibu_set_vc_ptr
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)
+/*int ibu_set_user_ptr(ibu_t ibu, void *user_ptr)*/
+int ibu_set_vc_ptr(ibu_t ibu, MPIDI_VC *vc_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IBU_SET_USER_PTR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_SET_USER_PTR);
-    MPIU_DBG_PRINTF(("entering ibu_set_user_ptr\n"));
+    MPIU_DBG_PRINTF(("entering ibu_set_vc_ptr\n"));
     if (ibu == IBU_INVALID_QP)
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_SET_USER_PTR);
 	return IBU_FAIL;
     }
-    ibu->user_ptr = user_ptr;
-    MPIU_DBG_PRINTF(("exiting ibu_set_user_ptr\n"));
+    ibu->vc_ptr = vc_ptr;
+    MPIU_DBG_PRINTF(("exiting ibu_set_vc_ptr\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_SET_USER_PTR);
     return IBU_SUCCESS;
 }
@@ -1788,7 +1821,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len)
     ibu->read.use_iov = FALSE;
     ibu->state |= IBU_READING;
 #ifdef USE_INLINE_PKT_RECEIVE
-    ((MPIDI_VC*)(ibu->user_ptr))->ch.reading_pkt = FALSE;
+    ibu->vc_ptr->ch.reading_pkt = FALSE;
 #endif
     ibu->pending_operations++;
     /* copy any pre-received data into the buffer */
@@ -1803,7 +1836,7 @@ int ibu_post_read(ibu_t ibu, void *buf, int len)
 #define FUNCNAME ibu_post_readv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n)
+int ibu_post_readv(ibu_t ibu, MPID_IOV *iov, int n)
 {
 #ifdef MPICH_DBG_OUTPUT
     char str[1024] = "ibu_post_readv: ";
@@ -1818,20 +1851,20 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n)
     s = &str[16];
     for (i=0; i<n; i++)
     {
-	s += sprintf(s, "%d,", iov[i].IBU_IOV_LEN);
+	s += sprintf(s, "%d,", iov[i].MPID_IOV_LEN);
     }
     MPIDI_DBG_PRINTF((60, FCNAME, "%s\n", str));
 #endif
     ibu->read.total = 0;
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*ibu->read.iov = iov;*/
-    memcpy(ibu->read.iov, iov, sizeof(IBU_IOV) * n);
+    memcpy(ibu->read.iov, iov, sizeof(MPID_IOV) * n);
     ibu->read.iovlen = n;
     ibu->read.index = 0;
     ibu->read.use_iov = TRUE;
     ibu->state |= IBU_READING;
 #ifdef USE_INLINE_PKT_RECEIVE
-    ((MPIDI_VC*)(ibu->user_ptr))->ch.reading_pkt = FALSE;
+    ibu->vc_ptr->ch.reading_pkt = FALSE;
 #endif
     ibu->pending_operations++;
     /* copy any pre-received data into the iov */
@@ -1876,7 +1909,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len)
 #define FUNCNAME ibu_post_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n)
+int ibu_post_writev(ibu_t ibu, MPID_IOV *iov, int n)
 {
     int num_bytes;
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_WRITEV);
@@ -1886,7 +1919,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n)
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */
     /*ibu->write.iov = iov;*/
     /*
-    memcpy(ibu->write.iov, iov, sizeof(IBU_IOV) * n);
+    memcpy(ibu->write.iov, iov, sizeof(MPID_IOV) * n);
     ibu->write.iovlen = n;
     ibu->write.index = 0;
     ibu->write.use_iov = TRUE;
@@ -1898,7 +1931,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	int i;
 	s += sprintf(s, "ibu_post_writev(");
 	for (i=0; i<n; i++)
-	    s += sprintf(s, "%d,", iov[i].IBU_IOV_LEN);
+	    s += sprintf(s, "%d,", iov[i].MPID_IOV_LEN);
 	sprintf(s, ")\n");
 	MPIU_DBG_PRINTF(("%s", str));
     }

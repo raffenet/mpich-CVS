@@ -55,7 +55,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	/* MT: need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
 	   also try to write */
 	
-	MPIU_DBG_PRINTF(("ibu_post_write(%d bytes)\n", pkt_sz));
+	MPIU_DBG_PRINTF(("ibu_write(%d bytes)\n", pkt_sz));
 	mpi_errno = ibu_write(vc->ch.ibu, pkt, pkt_sz, &nb);
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -70,7 +70,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 	    MPIDI_CH3U_Handle_send_req(vc, sreq);
-	    if (sreq->dev.iov_count == 0)
+	    if (sreq->dev.iov_count != 0)
 	    {
 		/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but the
 		   request may still be active (see MPI_Ssend()) */

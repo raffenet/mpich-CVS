@@ -208,7 +208,7 @@ int CH3U_Describe_timer_states()
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBU_SET_USER_PTR,
-	"ibu_set_user_ptr",
+	"ibu_set_vc_ptr",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBU_POST_READ,
