@@ -107,11 +107,11 @@ void testAll(void)
     char *type_name = NULL;
 #ifdef ROMIO_VERSION
     MPI_File file = MPI_FILE_NULL;
-#endif
     char *filename = NULL;
     int amode = 0;
     MPI_Offset size = 0, offset = 0;
     MPIO_Request iorequest;
+#endif
 
     MPI_Send(vbuf, i, dtype, i, i, comm);
     MPI_Recv(vbuf, i, dtype, rank, tag, comm, &status);
