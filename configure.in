@@ -98,6 +98,8 @@ AC_ARG_ENABLE(f77,
 [--enable-f77 - Enable Fortran 77 bindings],,enable_f77=no)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Enable C++ bindings],,enable_cxx=no)
+AC_ARG_ENABLE(f90,
+[--enable-f90 - Enable Fortran 90 bindings],,enable_f90=no)
 dnl
 dnl FIXME: Make the default yes
 AC_ARG_ENABLE(romio,
@@ -368,6 +370,11 @@ for option in $enable_g ; do
 done
 IFS="$save_IFS"
 
+if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
+   # Fortran 90 support requires compatible Fortran 77 support
+   AC_MSG_WARN([Fortran 90 support requires compatible Fortran 77 support])
+   enable_f77=yes
+fi
 if test "$enable_f77" = "yes" ; then
    subsystems="$subsystems src/binding/f77"
    bindings="$bindings f77"
@@ -381,6 +388,7 @@ fi
 if test "$enable_f90" = yes -o "$enable_f77" = yes ; then
    AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
 fi
+
 if test "$enable_cxx" = "yes" ; then
    subsystems="$subsystems src/binding/cxx"
    bindings="$bindings cxx"
