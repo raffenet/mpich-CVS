@@ -87,6 +87,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpewrap", "src\mpe2\mpewrap
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiexec", "src\pm\smpd\wmpiexec\wmpiexec.csproj", "{B0365633-1495-4C2C-8FD6-6943F5208D5C}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ch3ibDebug = ch3ibDebug
@@ -926,6 +930,37 @@ Global
 		{AA0AAB17-BDC9-45DD-8FF0-01F8D384FB18}.Release.Build.0 = Release|Win32
 		{AA0AAB17-BDC9-45DD-8FF0-01F8D384FB18}.sfortDebug.ActiveCfg = Debug|Win32
 		{AA0AAB17-BDC9-45DD-8FF0-01F8D384FB18}.sfortRelease.ActiveCfg = Release|Win32
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3ibDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3ibPRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3ibRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3shmDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3shmPRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3shmRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sockDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sockPliteRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sockPRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sockRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sshmDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sshmPDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sshmPRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3sshmRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3ssmDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3ssmPDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3ssmPRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.ch3ssmRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.Debug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.Debug.Build.0 = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.DebugStatic.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.DebugStatic.Build.0 = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.fortDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.fortRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.gfortDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.gfortRelease.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.Installer.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.Release.ActiveCfg = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.Release.Build.0 = Release|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.sfortDebug.ActiveCfg = Debug|.NET
+		{B0365633-1495-4C2C-8FD6-6943F5208D5C}.sfortRelease.ActiveCfg = Release|.NET
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
