@@ -170,21 +170,36 @@ End If
 
 MPI_CHAR           = "0x" + mpi_datatype_prefix                 + "0101"
 MPI_UNSIGNED_CHAR  = "0x" + mpi_datatype_prefix                 + "0102"
+MPI_BYTE           = "0x" + mpi_datatype_prefix                 + "010d"
+MPI_WCHAR_T        = "0x" + mpi_datatype_prefix + len_wchar_t     + "0e"
 MPI_SHORT          = "0x" + mpi_datatype_prefix + len_short       + "03"
 MPI_UNSIGNED_SHORT = "0x" + mpi_datatype_prefix + len_short       + "04"
 MPI_INT            = "0x" + mpi_datatype_prefix + len_int         + "05"
-MPI_UNSIGNED_INT   = "0x" + mpi_datatype_prefix + len_int         + "06"
+MPI_UNSIGNED       = "0x" + mpi_datatype_prefix + len_int         + "06"
 MPI_LONG           = "0x" + mpi_datatype_prefix + len_long        + "07"
 MPI_UNSIGNED_LONG  = "0x" + mpi_datatype_prefix + len_long        + "08"
 MPI_LONG_LONG      = "0x" + mpi_datatype_prefix + len_long_long   + "09"
-MPI_FLOAT          = "0x" + mpi_datatype_prefix + len_float       + "0b"
-MPI_DOUBLE         = "0x" + mpi_datatype_prefix + len_double      + "0d"
-MPI_LONG_DOUBLE    = "0x" + mpi_datatype_prefix + len_long_double + "0f"
-MPI_BYTE           = "0x" + mpi_datatype_prefix                 + "0111"
-MPI_WCHAR_T        = "0x" + mpi_datatype_prefix + len_wchar_t     + "13"
+MPI_FLOAT          = "0x" + mpi_datatype_prefix + len_float       + "0a"
+MPI_DOUBLE         = "0x" + mpi_datatype_prefix + len_double      + "0b"
+MPI_LONG_DOUBLE    = "0x" + mpi_datatype_prefix + len_long_double + "0c"
 MPI_PACKED         = "0x" + mpi_datatype_prefix                 + "0114"
 MPI_LB             = "0x" + mpi_datatype_prefix                 + "0015"
 MPI_UB             = "0x" + mpi_datatype_prefix                 + "0016"
+
+MPI_REAL4          = "0x" + mpi_datatype_prefix                 + "0425"
+MPI_REAL8          = "0x" + mpi_datatype_prefix                 + "0827"
+'MPI_REAL16         = "0x" + mpi_datatype_prefix                 + "1029"
+MPI_REAL16         = "MPI_DATATYPE_NULL"
+MPI_COMPLEX8       = "0x" + mpi_datatype_prefix                 + "0826"
+MPI_COMPLEX16      = "0x" + mpi_datatype_prefix                 + "1028"
+'MPI_COMPLEX32      = "0x" + mpi_datatype_prefix                 + "2030"
+MPI_COMPLEX32      = "MPI_DATATYPE_NULL"
+MPI_INTEGER1       = "0x" + mpi_datatype_prefix                 + "012b"
+MPI_INTEGER2       = "0x" + mpi_datatype_prefix                 + "022c"
+MPI_INTEGER4       = "0x" + mpi_datatype_prefix                 + "042d"
+MPI_INTEGER8       = "0x" + mpi_datatype_prefix                 + "082e"
+'MPI_INTEGER16      = "0x" + mpi_datatype_prefix                 + "102f"
+MPI_INTEGER16      = "MPI_DATATYPE_NULL"
 
 '
 ' These should define the mixed types *only* for contiguous data.
@@ -264,7 +279,8 @@ contents = Replace(contents, "@MPI_UNSIGNED_CHAR@", MPI_UNSIGNED_CHAR)
 contents = Replace(contents, "@MPI_SHORT@", MPI_SHORT)
 contents = Replace(contents, "@MPI_UNSIGNED_SHORT@", MPI_UNSIGNED_SHORT)
 contents = Replace(contents, "@MPI_INT@", MPI_INT)
-contents = Replace(contents, "@MPI_UNSIGNED_INT@", MPI_UNSIGNED_INT)
+contents = Replace(contents, "@MPI_UNSIGNED@", MPI_UNSIGNED)
+contents = Replace(contents, "@MPI_UNSIGNED_INT@", MPI_UNSIGNED)
 contents = Replace(contents, "@MPI_LONG@", MPI_LONG)
 contents = Replace(contents, "@MPI_UNSIGNED_LONG@", MPI_UNSIGNED_LONG)
 contents = Replace(contents, "@MPI_LONG_LONG@", MPI_LONG_LONG)
@@ -301,6 +317,17 @@ contents = Replace(contents, "@MPI_FINT@", MPI_FINT)
 contents = Replace(contents, "@MPI_OFFSET@", MPI_OFFSET)
 contents = Replace(contents, "@EXTRA_STATUS_DECL@", EXTRA_STATUS_DECL)
 contents = Replace(contents, "@HAVE_ROMIO@", HAVE_ROMIO)
+contents = Replace(contents, "@MPI_REAL4@", MPI_REAL4)
+contents = Replace(contents, "@MPI_REAL8@", MPI_REAL8)
+contents = Replace(contents, "@MPI_REAL16@", MPI_REAL16)
+contents = Replace(contents, "@MPI_COMPLEX8@", MPI_COMPLEX8)
+contents = Replace(contents, "@MPI_COMPLEX16@", MPI_COMPLEX16)
+contents = Replace(contents, "@MPI_COMPLEX32@", MPI_COMPLEX32)
+contents = Replace(contents, "@MPI_INTEGER1@", MPI_INTEGER1)
+contents = Replace(contents, "@MPI_INTEGER2@", MPI_INTEGER2)
+contents = Replace(contents, "@MPI_INTEGER4@", MPI_INTEGER4)
+contents = Replace(contents, "@MPI_INTEGER8@", MPI_INTEGER8)
+contents = Replace(contents, "@MPI_INTEGER16@", MPI_INTEGER16)
 
 fout.Write(contents)
 fin.Close()
