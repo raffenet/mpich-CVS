@@ -439,6 +439,14 @@ print MAKEFD "MOD = \@F90MODEXT\@\n";
 print MAKEFD "F90INCFLAG = \@F90INCFLAG\@\n";
 print MAKEFD "F90_COMPILE_MODS = \$(F90_COMPILE) \$(F90INCFLAG)../f77\n";
 
+print MAKEFD "mpi_sources = create_f90_int.c create_f90_real.c \\\
+	create_f90_complex.c\n";
+
+# Add the C versions to the C library
+print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} \
+profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
+INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
+
 print MAKEFD "all-preamble: mpi.\$(MOD)\n";
 
 print MAKEFD "mpi_constants.\$(MOD): \$(srcdir)/mpi_constants.f90\
