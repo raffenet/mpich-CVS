@@ -21,12 +21,29 @@
 
 #define MPID_Datatype_add_ref(datatype_ptr) MPIU_Object_add_ref((datatype_ptr))
 
-#define MPID_Datatype_get_basic_type(a, __eltype)				\
-do {										\
-    void *ptr;									\
-    ptr = MPID_Datatype_direct+HANDLE_INDEX(a);					\
-    __eltype = ((MPID_Datatype *) ptr)->eltype;					\
-} while(0)
+#define MPID_Datatype_get_basic_type(a,__eltype)			\
+do {									\
+    void *ptr;								\
+    switch (HANDLE_GET_KIND(a)) {					\
+        case HANDLE_KIND_DIRECT:					\
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
+            __eltype = ((MPID_Datatype *) ptr)->eltype;			\
+            break;							\
+        case HANDLE_KIND_INDIRECT:					\
+            ptr = ((MPID_Datatype *)					\
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
+            __eltype = ((MPID_Datatype *) ptr)->eltype;			\
+            break;							\
+        case HANDLE_KIND_BUILTIN:					\
+            __eltype = a;						\
+            break;							\
+        case HANDLE_KIND_INVALID:					\
+        default:							\
+	    __eltype = 0;						\
+	    break;							\
+ 									\
+    }									\
+} while (0)
 
 /* MPID_Datatype_release decrements the reference count on the MPID_Datatype
  * and, if the refct is then zero, frees the MPID_Datatype and associated
