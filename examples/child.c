@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "mpi.h"
-#include "mpiimpl.h"
 
 int main( int argc, char *argv[] )
 {
@@ -27,8 +26,6 @@ int main( int argc, char *argv[] )
         printf("Child sleeping for 5 sec; ignore errors after this\n");
         fflush(stdout);
     }
-
-    sleep(5);
 
     MPI_Finalize();
     return 0;
