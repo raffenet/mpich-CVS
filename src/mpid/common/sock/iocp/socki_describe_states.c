@@ -131,18 +131,12 @@ static char *get_random_color_str()
 
 int MPIDU_Socki_describe_timer_states()
 {
-    RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_EASY_RECEIVE,
-	"sock_easy_receive",
-	get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-	MPID_STATE_SOCK_EASY_SEND,
-	"sock_easy_send",
-	get_random_color_str());
+    /*
     RLOG_DescribeState(g_pRLOG,
 	MPID_STATE_GETQUEUEDCOMPLETIONSTATUS,
 	"GetQueuedCompletionStatus",
 	get_random_color_str());
+	*/
     return 0;
 }
 
