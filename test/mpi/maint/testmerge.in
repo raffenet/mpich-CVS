@@ -156,7 +156,7 @@ sub MergeTemplate {
 	    }
 	    else {
 		# Unknown name!
-		print STDERR "Unknown name $name in template file!\n";
+		print STDERR "Unknown name $name in template file when creating $outputFilename!\n";
 		last;
 	    }
 	}
@@ -201,6 +201,7 @@ sub ReadAndMerge {
 		s/\r//;
 		$defn .= $_;
 	    }
+	    if (eof($DFD)) { print STDERR "found EOF before end of $name\n"; }
 	    $GlobalDefinitions{$name} = $defn;
 	}
     }
