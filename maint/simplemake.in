@@ -242,10 +242,19 @@ $docdir_name =               'docdir          = @' . "docdir"      . '@';
 %globaldockind = ( "html" => 0, "man" => 0, "latex" => 0 );
 # Set globaldocdir to the location to use if no specific directory is
 # chosen.  It may contain ROOTDIR.
-$globaldocdir  = 'ROOTDIR/$dockinddirval'; 
+$globaldocdir  = 'ROOTDIR/$dockinddirval';
+# Directories for documentation 
 %dockinddir = ( "html" => "www/www3", 
 	        "man" => "man/man3", 
 	        "latex" => "doc/refman" );
+# man targets for documentation
+%docTargetName = ( "html" => "htmldoc",
+		   "man" => "mandoc",
+		  "latex" => "latexdoc" );
+# doctext name to produce documentation
+%doctextOptionName = ( "html" => "-html",
+		       "man" => "",
+		      "latex" => "-latex" );
 $docnamedefs   = "";
 $doc_attop = 1;
 #
@@ -655,6 +664,11 @@ sub WriteMfile {
     }
 
     &TargetInstall;
+
+    # This is ugly, but we need to tell the install target when we're at
+    # the top for the documentation.  This should be promoted to 
+    # a more general sense of "at the top" for all areas.
+    $doc_attop = 0;
 
     if ($do_dependencies) {
 	&TargetDependencies;
@@ -1690,7 +1704,7 @@ sub RuleDocs {
 	    $docargs =~ s/ROOTDIR/$rootdir/g;
 	    $docargs =~ s/\/\//\//g;
 	    print FD ".c.$kind:$newline";
-	    print FD "\tdoctext -$kind -mpath $docdestdir -heading $doc_heading \\$newline";
+	    print FD "\tdoctext $doctextOptionName{$kind} -mpath $docdestdir -heading $doc_heading \\$newline";
 	    print FD "\t\t-quotefmt $docargs \$<$newline";
 	}
     }
@@ -1700,7 +1714,8 @@ sub TargetDocs {
     if (! $do_docs) { return; }
     my %didkind = ( "html" => 0, "man" => 0, "latex" => 0 );
     foreach my $kind (keys(%docsrc)) {
-	print FD "$kind: ";
+	$targetKind = $docTargetName{$kind};
+	print FD "$targetKind: ";
 	my $src = $docsrc{$kind};
 	if ($src ne "") {
 	    if ($src =~ /^\s*\$[\{\(][_\w]*[\}\)]\s*$/) {
@@ -1741,17 +1756,17 @@ sub TargetDocs {
 		print STDERR "Unrecognized document type $kind\n";
 	    }
 	}
-	&RecursiveOp( $kind );
+	&RecursiveOp( $targetKind );
 	$didkind{$kind} = 1;
     }
-    $doc_attop = 0;
     # 
     # For any directory that does not have any source files, we must still
     # generate a target *if* any directory set the source.
     foreach $kind ("html", "man", "latex") { 
+	$targetKind = $docTargetName{$kind};
 	if (! $didkind{$kind} && $globaldockind{$kind}) {
-	    print FD "$kind:$newline";
-	    &RecursiveOp( $kind );
+	    print FD "$targetKind:$newline";
+	    &RecursiveOp( $targetKind );
 	}
     }
 }
@@ -1763,12 +1778,16 @@ sub InstallDocs {
     # Add target only at the top
     if (!$doc_attop) { return; }
     
-    # Each document type is different:
-    if (! $didkind{"html"} && $globaldockind{"html"}) {
-	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/$newline";
+    print FD "install-docs:$newline";
+    # Each document type is different.  In addition, we want the install
+    # to work even if the documents have not been built.
+    if ((!$didkind{"html"}) && $globaldockind{"html"}) {
+	print FD "\tif [ -d www/www3 ] ; then \\$newline";
+	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/ ; fi$newline";
     }
-    if (! $didkind{"man"} && $globaldockind{"man"}) {
-	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/$newline";
+    if ((!$didkind{"man"}) && $globaldockind{"man"}) {
+	print FD "\tif [ -d man/man3 ] ; then \\$newline";
+	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/ ; fi $newline";
     }
     # LaTeX manual is different and requires a special case
 }
