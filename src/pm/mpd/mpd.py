@@ -275,6 +275,12 @@ def _handle_console_input():
             msg['mpdid'] = g.myId
         mpd_send_one_msg(g.rhsSocket, msg)
         # send ack to console after I get this msg back
+    elif msg['cmd'] == 'verify_hosts_in_ring':
+        msgToSend = { 'cmd'  : 'verify_hosts_in_ring',
+                      'dest' : g.myId,
+                      'host_list' : msg['host_list'] }
+        mpd_send_one_msg(g.rhsSocket,msgToSend)
+        # do not send an ack to console now; will send trace info later
     else:
         msgToSend = { 'cmd' : 'invalid_msg_received_from_you' }
         mpd_send_one_msg(g.conSocket,msgToSend)
@@ -435,6 +441,18 @@ def _handle_lhs_input():
                 # del g.activeJobs[jobid]  ## handled when child goes away
     elif msg['cmd'] == 'pulse':
         mpd_send_one_msg(g.lhsSocket,{'cmd':'pulse_ack'})
+    elif msg['cmd'] == 'verify_hosts_in_ring':
+        while g.myIP in msg['host_list']  or  g.myHost in msg['host_list']:
+            if g.myIP in msg['host_list']:
+                msg['host_list'].remove(g.myIP)
+            elif g.myHost in msg['host_list']:
+                msg['host_list'].remove(g.myHost)
+        if msg['dest'] == g.myId:
+            msgToSend = { 'cmd' : 'verify_hosts_in_ring_response',
+                          'host_list' : msg['host_list'] }
+            mpd_send_one_msg(g.conSocket,msgToSend)
+        else:
+            mpd_send_one_msg(g.rhsSocket,msg)
     else:
         mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
 

@@ -19,7 +19,7 @@ from os              import environ, fork, execvpe, getuid, getpid, path, getcwd
                             close, wait, waitpid, kill, unlink, _exit,  \
 			    WIFSIGNALED, WEXITSTATUS
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname, \
-                            gethostbyname_ex
+                            gethostbyname_ex, gethostbyaddr
 from select          import select
 from exceptions      import Exception
 from re              import findall
@@ -124,18 +124,38 @@ def mpdrun():
         nextHost = 0
         hostSpec = createReq.getElementsByTagName('host-spec')
         if hostSpec:
-            for hostname in hostSpec[0].childNodes:
-                hostname = hostname.data.strip()
-                if hostname:
-                    try:
-                        ipaddr = gethostbyname_ex(hostname)[2][0]
-                    except:
-                        print 'unable to determine IP info for host %s' % (hostname)
-                        exit(-1)
-                    if ipaddr.startswith('127.0.0'):
-                        hostList.append(gethostname())
-                    else:
-                        hostList.append(ipaddr)
+            for node in hostSpec[0].childNodes:
+                node = node.data.strip()
+                hostnames = findall(r'\S+',node)
+                for hostname in hostnames:
+                    if hostname:    # some may be the empty string
+                        try:
+                            ipaddr = gethostbyname_ex(hostname)[2][0]
+                        except:
+                            print 'unable to determine IP info for host %s' % (hostname)
+                            exit(-1)
+                        if ipaddr.startswith('127.0.0'):
+                            hostList.append(gethostname())
+                        else:
+                            hostList.append(ipaddr)
+        if hostSpec[0].hasAttribute('check'):
+            hostSpecMode = hostSpec[0].getAttribute('check')
+            if hostSpecMode == 'yes':
+                msgToSend = { 'cmd' : 'verify_hosts_in_ring', 'host_list' : hostList }
+                mpd_send_one_msg(conSocket,msgToSend)
+                msg = mpd_recv_one_msg(conSocket)
+                if not msg:
+                    mpd_raise('mpd unexpectedly closed connection during chk hosts up')
+                elif msg['cmd'] != 'verify_hosts_in_ring_response':
+                    mpd_raise('unexpected msg from mpd :%s:' % (msg) )
+                if msg['host_list']:
+                    print 'These hosts are not in the mpd ring:'
+                    for host in  msg['host_list']:
+                        if host[0].isdigit():
+                            print '    %s (%s)' % (gethostbyaddr(host)[0],host)  # ip addr
+                        else:
+                            print '    %s' % (host)
+                    exit(-1)
 
         execs   = {}
         users   = {}
