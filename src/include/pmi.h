@@ -36,6 +36,9 @@ typedef int PMI_BOOL;
 /*@
 PMI_Init - initialize the Process Manager Interface
 
+Output Parameter:
+. spawned - spawned flag
+
 Return values:
 + PMI_SUCCESS - initialization completed successfully
 . PMI_INVALID_ARG - invalid argument
