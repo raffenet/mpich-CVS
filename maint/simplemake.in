@@ -2222,6 +2222,11 @@ sub TargetGcov {
 # ----------------------------------------------------------------------------
 #
 # ToDo
-# Shoule we add a target to strip debugging information from the object files?
+# Should we add a target to strip debugging information from the object files?
 # For example, strip -S *.o .  Ths usually isn't necessary if -g is not
 # selected when building the object files.
+#
+# David Ashton suggests an option to print a warning message for 
+# each source file (e.g., *.c, *.cxx, *.f, *.f90) that has no corresponding
+# entry in the Makefile.sm 
+#
