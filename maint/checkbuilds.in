@@ -94,6 +94,8 @@ $TestDateStart = "Run on ";
 $TestDateEnd   = "\n";
 $TestHostStart = "Run on host ";
 $TestHostEnd   = "\n";
+$TestUserStart = "Run by ";
+$TestUserEnd   = "\n";
 $ConfigStart = " -- Begin Configure Step -- \n";
 $ConfigEnd   = " -- End   Configure Step -- \n";
 $MakeStart   = " -- Begin Make Step --\n";
@@ -320,6 +322,8 @@ sub RunTest {
 	print $OUTFD $TestStart;
 	my $host = `uname -n`;
 	print $OUTFD "$TestHostStart$host$TestHostEnd";
+	my $user = $ENV{"LOGNAME"};
+	print $OUTFD "$TestUserStart$user$TestUserEnd";
 	my $date = `date "+%Y-%m-%d-%H-%M"`;
 	print $OUTFD "$TestDateStart$date$TestDateEnd";
 	unlink "Makefile";
@@ -961,6 +965,8 @@ sub XMLStyle {
     $TestDateEnd   = "</DATE>\n";
     $TestHostStart = "<HOST>\n";
     $TestHostEnd   = "</HOST>\n";
+    $TestUserStart = "<USER>\n";
+    $TestUserEnd   = "</USER>\n";
     $ConfigStart   = "<CONFIG>\n";
     $ConfigEnd     = "</CONFIG>\n";
     $MakeStart     = "<MAKE>\n";
