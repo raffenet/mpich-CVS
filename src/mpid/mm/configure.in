@@ -232,9 +232,9 @@ AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h)
 AC_CHECK_FUNCS(yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
 AC_CHECK_FUNCS(pthread_mutexattr_setpshared pthread_mutexattr_init)
 
-AC_OUTPUT_COMMANDS(cp include/mpidconf.h ../../include)
-AC_OUTPUT_COMMANDS(cp include/mpidpre.h ../../include)
-AC_OUTPUT_COMMANDS(cp include/mpidpost.h ../../include)
+AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidconf.h ../../include,use_top_srcdir=$use_top_srcdir)
+AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidpre.h ../../include)
+AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/mpidpost.h ../../include)
 
 dnl Generate the Makefiles from Makefile.in
 

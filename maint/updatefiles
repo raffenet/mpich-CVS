@@ -71,6 +71,9 @@ if [ $made_simplemake != "no" ] ; then
 fi
 #
 # Create the Makefile.in files
+# Make sure that these files exist so that the gcc dependency creation
+# can work
+touch src/include/mpidpre.h src/include/mpidpost.h
 otherargs="$@"
 if [ ! -s src/include/mpi.h ] ; then 
     otherargs="$otherargs -nodepend"
