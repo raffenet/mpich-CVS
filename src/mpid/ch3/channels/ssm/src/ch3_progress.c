@@ -528,6 +528,7 @@ skip_shm_loop:
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_sock_wait", 0);
 		    goto fn_exit;
 		}
+		/* comment out this line to test the error functions */
 		mpi_errno = MPI_SUCCESS;
 		MPIDU_Yield();
 	    }
