@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /* This is a temporary test program that uses a special testing routine
    to create a group that contains more processes than are in comm_world,
