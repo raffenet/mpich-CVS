@@ -120,6 +120,9 @@ typedef char *MPID_FCHAR_T;
 
 /* Temporary patch for the space routines.  Eventually, this should use
    (FIXME) *just* the memory definitions currently in mpiimpl.h */
+/* style: allow:malloc:1 sig:0 */
+/* style: allow:free:1 sig:0 */
+/* style: allow:calloc:1 sig:0 */
 #define MPIU_Malloc(a)    malloc((unsigned)(a))
 #define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
 #define MPIU_Free(a)      free((void *)(a))

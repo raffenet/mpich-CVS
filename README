@@ -54,17 +54,23 @@ To shut MPD down, run
 
 What compiles but doesn't work
 ------------------------------
-We don't guarantee that *anything* works yet.  However, we have run parts of 
-the MPICH-1 test suite and some of the tests included with this release.
+We don't guarantee that *anything* works yet.  However, we have run MPICH2 
+against both the MPICH-1 test suite and an updated and correct version of the 
+Intel test suite.  MPICH2 passes most of these tests, including most error 
+handling.  Tests that do not yet pass include cancelling sends and some
+intercommunicator operations.
 Among the routines that compile but that are known not to work yet are:
 
 MPI_Cancel for sends, persistent requests
-MPI_Get_elements
+MPI_Get_elements for partial types
 
 Routines not yet available include
 
 MPI_Bsend_init
-MPI_Sendrecv_replace
+
+Other known issues:
+The various free routines do not yet free all internal objects, so memory
+leaks are certain.  However, most MPI programs should not have any problems.
 
 Testing Status
 --------------

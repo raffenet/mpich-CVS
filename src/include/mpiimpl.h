@@ -138,6 +138,7 @@ int err_printf(char *str, ...);
 /* style: allow:calloc:2 sig:0 */
 /* style: define:__strdup:1 sig:0 */
 /* style: define:strdup:1 sig:0 */
+/* style: allow:fprintf:5 sig:0 */   /* For handle debugging ONLY */
 
 /* Define the string copy and duplication functions */
 /* Safer string routines */
@@ -1412,6 +1413,8 @@ int MPIR_Err_return_file( MPID_File *, const char [], int );
 int MPIR_Err_create_code( int, const char [], ... );
 void MPIR_Err_preinit( void );
 const char *MPIR_Err_get_generic_string( int );
+
+/* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 #ifdef MPICH_SINGLE_THREADED
 #define MPIR_Nest_incr() MPIR_Thread.nest_count++
 #define MPIR_Nest_decr() MPIR_Thread.nest_count--

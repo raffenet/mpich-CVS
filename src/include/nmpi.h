@@ -43,4 +43,5 @@
 #define NMPI_Type_indexed PMPI_Type_indexed 
 #define NMPI_Type_commit PMPI_Type_commit
 #define NMPI_Type_free PMPI_Type_free
+#define NMPI_Cart_rank PMPI_Cart_rank
 #endif /* MPICH_NMPI_H_INCLUDED */
