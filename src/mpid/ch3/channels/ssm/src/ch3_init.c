@@ -193,7 +193,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
             pg->ch.nShmWaitSpinCount = 1;
 	/*
         else if (info.dwNumberOfProcessors < (DWORD) num_procs_per_node)
-            pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / num_procs_per_node;
+            pg->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / num_procs_per_node;
 	*/
 	if (info.dwNumberOfProcessors > 0)
 	    MPIDI_CH3I_Process.num_cpus = info.dwNumberOfProcessors;
@@ -207,7 +207,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    pg->ch.nShmWaitSpinCount = 1;
 	/*
 	else if (num_cpus > 0 && num_cpus < num_procs_per_node)
-	    pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / num_procs_per_node;
+	    pg->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / num_procs_per_node;
 	*/
 	if (num_cpus > 0)
 	    MPIDI_CH3I_Process.num_cpus = num_cpus;
@@ -330,7 +330,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
 	return mpi_errno;
     }
-    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+    mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
@@ -338,7 +338,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     }
     */
     /* FIXME: Note that gethostname is not in POSIX */
-    /* FIXME: consider using sizeof(pg->shm_hostname) instead of
+    /* FIXME: consider using sizeof(pg->ch.shm_hostname) instead of
        MAXHOSTNAMELEN, in case the system and the ssm/include header files
        have a different interpretation of the size of MAXHOSTNAMELEN */
 #ifdef HAVE_WINDOWS_H
@@ -361,7 +361,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
 	    return mpi_errno;
 	}
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name, 1);
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->ch.bootstrapQ, queue_name, 1);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
@@ -369,13 +369,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	}
 	/*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
 	MPIU_Strncpy(val, queue_name, val_max_sz);
-	mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+	mpi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
@@ -396,7 +396,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+	mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
@@ -404,7 +404,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	}
 	MPIU_Strncpy(queue_name, val, val_max_sz);
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->bootstrapQ, queue_name, 1);
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg->ch.bootstrapQ, queue_name, 1);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
@@ -417,7 +417,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 	return mpi_errno;
     }
-    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg->bootstrapQ);
+    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_unlink", 0);
@@ -449,9 +449,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
-    MPIU_Snprintf(val, val_max_sz, "%s:%s", pg->shm_hostname, queue_name);
-    /*printf("putting kvs_name: %s, key: %s, val: %s\n", pg->kvs_name, key, val);fflush(stdout);*/
-    mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+    MPIU_Snprintf(val, val_max_sz, "%s:%s", pg->ch.shm_hostname, queue_name);
+    /*printf("putting kvs_name: %s, key: %s, val: %s\n", pg->ch.kvs_name, key, val);fflush(stdout);*/
+    mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
@@ -518,7 +518,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
 #if 0
 /* test */
-    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+    mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
     printf("got <%s> = <%s>\n", key, val);fflush(stdout);
 /* end test */
 #endif
@@ -529,7 +529,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	{
 	    rc = snprintf(key, key_max_sz, "P%d-businesscard", p);
 	    assert(rc > -1 && rc < key_max_sz);
-	    rc = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
+	    rc = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	    assert(rc == 0);
 
 	    dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
@@ -551,7 +551,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
         if (pg_rank == 0)
 	{
             /* get the port name of the root of the parents */
-            mpi_errno = PMI_KVS_Get(pg->kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
+            mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
             if (mpi_errno != 0)
             {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get_parent %d", mpi_errno);
