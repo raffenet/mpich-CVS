@@ -8,12 +8,17 @@
 /*********************** PMI implementation ********************************/
 
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 #include "pmi.h"
 #include "simple_pmiutil.h"
-
 
 char PMIU_print_id[PMIU_IDSIZE];
 
@@ -44,11 +49,28 @@ int PMI_Init( int *spawned )
 
     if ( ( p = getenv( "PMI_FD" ) ) )
 	PMI_fd = atoi( p );
+#ifdef USE_PMI_PORT
     else if ( ( p = getenv( "PMI_PORT" ) ) ) {
+	int portnum;
+	char hostname[MAXHOSTNAME];
+	char *pn;
 	/* Not yet implemented.  Connect to the indicated port (in
 	   format hostname:portnumber) and get the fd for the socket */
-	PMI_fd = -1;
+	
+	/* Split p into host and port */
+	pn = strchr( ":", p );
+	if (pn) {
+	    strncpy( hostname, p, (pn - p) );
+	    hostname[(pn-p)] = 0;
+	    portnum = atoi( pn+1 );
+	    /* FIXME: Check for valid integer after : */
+	    PMI_fd = PMI_Connect_to_pm( hostname, portnum );
+	}
+	/* FIXME: If PMI_PORT specified but either no valid value of
+	   fd is -1, give an error return */
+	if (PMI_fd < 0) return -1;
     }
+#endif
     else {
 	PMI_fd = -1;
     }
@@ -467,7 +489,10 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
     }
 }
 
-#if 0
+#ifdef USE_PMI_PORT
+/*
+ * This code allows a program to contact a host/port for the PMI socket.
+ */
 #include <errno.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -500,8 +525,9 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
     int                fd;
     int                optval = 1;
     int                flags;
+    int                q_wait = 1;
     
-    hp = gethostbyname( server_hostname );
+    hp = gethostbyname( hostname );
     if (!hp) {
 	return -1;
     }
@@ -521,9 +547,9 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
 	perror( "Error calling setsockopt:" );
     }
 
-/* If a non-blocking socket, then can use select on write to test for
-   connect would succeed.  Thus, we mark the socket as non-blocking now */
-/* Mark this fd as non-blocking */
+    / * If a non-blocking socket, then can use select on write to test for
+	connect would succeed.  Thus, we mark the socket as non-blocking now */
+    /* Mark this fd as non-blocking */
     if (!q_wait) {
 	flags = fcntl( fd, F_GETFL, 0 );
 	if (flags >= 0) {
@@ -532,7 +558,6 @@ int PMI_Connect_to_pm( char *hostname, int portnum )
 	}
     }
 
-    if (is_ready) *is_ready = 1;
     if (connect( fd, &sa, sizeof(sa) ) < 0) {
 	switch (errno) {
 	case ECONNREFUSED:
