@@ -359,7 +359,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 typedef enum { MPIU_PARAM_FOUND = 0, 
                MPIU_PARAM_OK = 1, 
                MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
-int MPIU_Param_init( int *, char **[] );
+int MPIU_Param_init( int *, char *[], const char [] );
 int MPIU_Param_bcast( void );
 int MPIU_Param_register( const char [], const char [], const char [] );
 int MPIU_Param_get_int( const char [], int, int * );

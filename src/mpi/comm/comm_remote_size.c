@@ -46,6 +46,7 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
     static const char FCNAME[] = "MPI_Comm_remote_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_REMOTE_SIZE);
     /* Get handles to MPI objects. */
@@ -69,6 +70,10 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    *size = comm_ptr->remote_size;
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_SIZE);
     return MPI_SUCCESS;

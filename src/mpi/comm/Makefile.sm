@@ -1,6 +1,7 @@
-lib${MPILIBNAME}_a_SOURCES = comm_rank.c comm_size.c commutil.c
+lib${MPILIBNAME}_a_SOURCES = comm_rank.c comm_size.c comm_remote_size.c \
+			   commutil.c
 #lib${MPILIBNAME}_a_SOURCES = comm_compare.c comm_create.c comm_dup.c \
- comm_free.c comm_group.c comm_remote_group.c comm_remote_size.c comm_split.c \
+ comm_free.c comm_group.c comm_remote_group.c comm_split.c \
  comm_test_inter.c comm_get_name.c comm_set_name.c intercomm_create.c \
  intercomm_merge.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}

@@ -31,6 +31,6 @@
   MPIU_Param_bcast, MPIU_Param_get_int, MPIU_Param_get_string,
   MPIU_Param_finalize
   @*/
-int MPIU_Param_init( int *argc_p, char *argv_p[], const char *def_file )
+int MPIU_Param_init( int *argc_p, char *argv_p[], const char def_file[] )
 {
 }
