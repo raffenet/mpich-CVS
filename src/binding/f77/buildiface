@@ -370,6 +370,17 @@ open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 # This line is unfortunately necessary to ensure that a working
 # autoconf is used.
+#
+# Try the following first
+# in a new directory, create configure.in containing:
+# AC_INIT(configure.in)
+# AC_LANG_FORTRAN77
+# AC_TRY_COMPILE(,[integer a],a=1,a=0)
+# Then run autoconf
+# Then grep endEOF configure.  If found (status 0), then autoconf is
+# broken.
+# We do this to make it easier for others to use this file to create
+# MPICH builds.
 print MAKEFD "smvar_autoconf = autoconf:autoconf-2.52:/home/gropp/bin/linux/autoconf\n";
 print MAKEFD "smvar_autoconf_version = 2.52\n";
 #print MAKEFD "smvar_debug = 1\n";
