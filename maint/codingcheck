@@ -22,6 +22,17 @@
 # E.g., if mpiimpl.h defines malloc/free, then make sure that mpiimpl.h
 # (or a file that includes it) is used.  This could alternately use the
 # 
+# Add a check for literal lengths to routines that take string lengths.
+# These should always use a constant (if statically declared, as in
+# char foo[MAXNAME] or a variable if dynamically declared, as in 
+# char *foo = (char *)malloc(size)).  The routines that should be checked
+# include gethostname( x, len ) and strncpy( a, x, len )
+#
+# Add a summary that gives specific suggestions and reasons (e.g., 
+# buffer overwrites in strxxx and sprintf a major and unnecessary source
+# of errors in codes).  We could implement by having each error save the
+# fact in $errorFound{name}, and a routine &${name}Explanation( fd ) that
+# writes the explanation out to the given file.
 
 require "maint/parse.sub";
 
@@ -213,10 +224,10 @@ sub ProcessFile {
 	        "strncpy" => "MPIU_Strncpy",
 #		"strcmp" => "strncmp",
 		"strcat" => "MPIU_Strnapp",
-		);
 # We can't recommend snprintf because it isn't standard.  We need an 
-# MPIU_Snprintf instead.
-#		"sprintf" => "snprintf" );
+# MPIU_Snprintf instead.  We can since we have one now
+		"sprintf" => "snprintf", 
+		);
 
 sub CheckForBadSubs {
     my $curline = $_[0];
@@ -284,6 +295,7 @@ sub CheckForBadSubs {
 	       'STDC_HEADERS', '__cplusplus', 'IOV_MAX', 'S_ISLNK', 
 	       'MPIR_[A-Za-z0-9_]*',
 	       'MPID_[A-Za-z0-9_]*',
+	       'MPIDU_[A-Za-z0-9_]*',   # More internal MPID names
 	       'MPIU_[A-Za-z0-9_]*',
 	       'MPIDI_[A-Za-z0-9_]*',   # Internal MPID names
 	       'MPICH_[A-Za-z0-9_]*', 
@@ -329,7 +341,17 @@ sub CheckName {
     foreach $bad (@BadNames) {
 	if ($name =~ /$bad/) { return 1; }
     }
-    # Check for defining a __ name (not allowed by users)
+    if ($name eq "__DATE__") {
+	# We allow this because some older C compilers don't set it.
+	# We should really check that it is not set withing an 
+	#  #ifndef __DATE__... 
+	return 0;
+    }
+
+    # Check for defining a __ name (not allowed by ``users'', only
+    # by the environment.  In the case of GCC, instead of setting
+    # things like __USE_MISC, you should set the appropriate _xxx_SOURCE
+    # variable.)
     if ($name =~ /^__.*/) { return 1; }
 
     return 1;
@@ -466,7 +488,9 @@ sub ProcessDir {
 		&ProcessDir( $file );
 	    }
 	}
-	elsif ($file =~ /\.[ch]$/) {
+	elsif ($file =~ /\.[chi]$/) {
+	    # Some included C source files in MPICH2 use suffix i,
+	    # probably to exclude them from *.c-style compiles.
 	    print "File $file\n" if ($verbose);
 	    &ProcessFile( "$curdir/$file" );
 	}
