@@ -75,8 +75,8 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 			if (ranks[i] < 0 ||
 			    ranks[i] >= group_ptr->size) {
 			    mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
-					"**rankarray", "**rankarray %d %d",
-							      i, ranks[i] );
+					"**rankarray", "**rankarray %d %d %d",
+					      i, ranks[i], group_ptr->size );
 			}
 			if (group_ptr->lrank_to_lpid[ranks[i]].flag) {
 			mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
