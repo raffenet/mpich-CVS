@@ -78,15 +78,27 @@ lib<name>_a_DIR     = directory in which lib<name> will exist
 <name>_SOURCES      = source file names for program <name>
 <name>_LDADD        = additional files and flags used for 
                       linking program <name>
-SUBDIRS = names of subsidiary directories
-EXTRA_PROGRAMS = names of programs that should *not* be built by default
+SUBDIRS             = names of subsidiary directories
+EXTRA_PROGRAMS      = names of programs that should *not* be built by default
+doc_<type>_SOURCES  = Source files for building documentation using doctext.
+                      Type may be MAN, HTML, or LATEX.
+doc_<type>_DIR      = Installation directory for documentation (some 
+                      documentation formats require directory names
 
 Other lines are copied as provided.  Variables (e.g., name = ...) are placed
 before other targets.  
 
+Proposed but not yet implemented rules:
+profilelib_<oldname> = <newname>
+                    - Create a profile version of <oldname> with name 
+                      <newname>
+doc_<type>_FLAGS    = Flags to pass doctext when building <type>.
+                      (We also need a way to make a common rule of this type
+                      for all files.  Perhaps a DOC_<TYPE>_FLAGS make variable?
+
 Details
 -------
-SUBDIRS
+SUBDIRS:
 The variables SUBDIRS instructs simplemake which subdirectories to
 process.  Normally, this is a list of directories, but in some cases,
 some of the directory names may be created by configure.  That is,
@@ -99,6 +111,14 @@ for each @name@ that appears in a SUBDIRS list.  For example,
 SUBDIRS_device_name = mm tcp shmem
 SUBDIRS = util @device_name@ .
 
+Implicit Rules:
+Simplemake recognizes rules for building object files (.o) and programs 
+from source files in C, C++, Fortran, Fortran 90, and assembler.
+
+Maintenance Targets:
+These are targets included for use by the developer of the package.  They 
+include targets to rebuild files created by simplemake or by autoheader
+and autoconf.
 
 Commandline Options to Simplemake
 ---------------------------------

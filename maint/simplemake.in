@@ -25,6 +25,9 @@ $fixup_for_timestamps = 1; # make is broken
 $SleepSlow = "sleep 1";
 $SleepFast = "perl -e \'\$\$now=time;\$\$now-=10;utime \$\$now, \$\$now, \"LIB\";\'";
 $Sleep = $SleepFast;
+#
+# Output File end-of-line character
+$newline = "\n";
 
 $create_configure_input = 1;  # Changes file.sm to file.in .  Set to 0
                               # for file.sm to file .
@@ -44,15 +47,23 @@ $debug = 0;
 %libdir = ();
 #
 # Not yet good enough.  These are ext->o *ONLY*.
+# While simplemake doesn't support ext->other (e.g., .c to .s), 
+# the rules have been added.
 %extrules = ( 'c' => '$(C_COMPILE) -c $<', 
 	      'f' => '$(F77_COMPILE) -c $<',
-	     'cxx' => '$(CXX_COMPILE) -c $<' 
+	      'cxx' => '$(CXX_COMPILE) -c $<',
+	      's' => '$(AS_COMPILE) $<',
+	      'f90' => '$(F90_COMPILE) -c $<',
+	      'c:s' => '$(C_COMPILE) -S $<',
+	      'f:s' => '$(F77_COMPILE) -S $<'
 	     );
 # Similarly, but for shared-library versions
 %extrules_sh = ( 'c' => '$(C_COMPILE_SHL) -c $<', 
-	      'f' => '$(F77_COMPILE_SHL) -c $<',
-	     'cxx' => '$(CXX_COMPILE_SHL) -c $<' 
-	     );
+		 'f' => '$(F77_COMPILE_SHL) -c $<',
+		 'cxx' => '$(CXX_COMPILE_SHL) -c $<',
+		 's' => '$(AS_COMPILE_SHL) $<',
+		 'f90' => '$(F77_COMPILE_SHL) -c $<',
+		 );
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
 %extdef = ( 'c'   => 'CC          = @CC@
@@ -63,7 +74,12 @@ FFLAGS      = @FFLAGS@
 F77_COMPILE = $(FC) $(FFLAGS)',
 	    'cxx' => 'CXX         = @CXX@
 CXXFLAGS    = @CXXFLAGS@
-CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
+CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
+	    's'   => 'AS          = @AS@
+AS_COMPILE  = $(AS)',
+	    'f90'   => 'F90          = @F90@
+F90FLAGS    = @F90FLAGS@
+F90_COMPILE = $(F90) $(F90FLAGS)',
 	   );
 # Similarly, but for shared-library versions
 %extdef_sh = ( 'c'   => 'CC_SHL      = @CC_SHL@
@@ -110,6 +126,10 @@ $bindir_name =               'bindir      = @' . "bindir"      . '@';
 $sbindir_name =              'sbindir     = @' . "sbindir"     . '@';
 $libdir_name =               'libdir      = @' . "libdir"      . '@';
 $includedir_name =           'includedir  = @' . "includedir"  . '@';
+$mandir_name =               'mandir      = @' . "mandir"      . '@';
+$htmldir_name =              'htmldir     = @' . "htmldir"     . '@';
+$docdir_name =               'docdir      = @' . "docdir"      . '@';
+
 %dirdefs = ( 'srcdir'     => $srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
 	     'prefix'     => $prefix_name,
@@ -119,6 +139,9 @@ $includedir_name =           'includedir  = @' . "includedir"  . '@';
 	     'libdir'     => $libdir_name,
 	     'includedir' => $includedir_name,
 	     'master_top_srcdir' => $master_topsrcdir_name,
+	     'mandir'     => $mandir_name,
+	     'htmldir'    => $htmldir_name,
+	     'docdir'     => $docdir_name,
 	    );
 # etc.
 #
@@ -126,6 +149,9 @@ $includedir_name =           'includedir  = @' . "includedir"  . '@';
 # (need a way to quote the rule here and unquote it when used)
 #
 # Need a way to substitute for additional or replacement default rules
+# Other global data
+$do_profilelib  = 0; # Set to one if a profiling version of the library 
+                     # should be created (required for MPI)
 
 @subdirs = ();
 @keepargs = ();    # Used to recreate simplemake invocation for make target
@@ -135,7 +161,7 @@ foreach $_ (@ARGV) {
     elsif (/-v/) { $verbose = 1; }
     elsif (/-am/) { $am_a = "_a"; }
     elsif (/-libdir=([^=]*)=(.*)$/) {
-	print "libdir{$1} = $2\n";
+	print "libdir{$1} = $2$newline";
 	$libdir{$1}  = "$2/";
     }
     elsif (/-common=(.*)$/) {
@@ -162,6 +188,9 @@ foreach $_ (@ARGV) {
 	$maint_targets = 0;
 	# Use the robust sleep, not the fast perl version
 	$Sleep = $SleepSlow;
+    }
+    elsif (/-dos/) {
+	$newline = "\r\n";
     }
     elsif (/-shared/) {
 	$do_sharedlibs = 1;
@@ -221,6 +250,14 @@ sub strip {
     }
 }
 
+# Try this one soon:
+# sub strip_newline {
+#   my $line = $_[0];
+#   $line =~ s/\r\n$//;
+#   return $line;
+#}
+
+# =========================================================================
 # Read Makefile.sm
 sub ReadMfile {
     $Mfile = $_[0];
@@ -355,12 +392,12 @@ sub WriteMfile {
     # Write out the generated Makefile
     open( FD, ">$output_filename" ) || die "Could not open $output_filename\n";
 
-    print FD "# This $output_filename created by simplemake.  Do not edit\n\n";
+    print FD "# This $output_filename created by simplemake.  Do not edit$newline$newline";
     # Ensure that the default target takes us to "all"
-    print FD "all: all-redirect\n\n";
+    print FD "all: all-redirect$newline$newline";
     if ($useinclude) {
-        print FD "SHELL = \@SHELL\@\n";
-        print FD "include $includedir/$makefilebase\n";
+        print FD "SHELL = \@SHELL\@$newline";
+        print FD "include $includedir/$makefilebase$newline";
     }
     else {
 	# We may want to break DefaultRules into a pre and post version
@@ -369,7 +406,7 @@ sub WriteMfile {
 
     # Print out variables before generated targets
     print FD $other_vars;
-    print FD "\n";
+    print FD "$newline";
 
     # Generate the all-redirect: target (libraries, programs, and 
     # anything specified by all-local)
@@ -379,6 +416,9 @@ sub WriteMfile {
     &TargetLibraries;
     if ($do_sharedlibs) {
 	&TargetSharedLibraries;
+    }
+    if ($do_profilelibs) {
+	&TargetProfileLibraries;
     }
 
     # Next, the programs
@@ -399,6 +439,9 @@ sub WriteMfile {
     # Unrecognized lines go here
     print FD $other_text;
     close FD;
+
+    # Make the file read only
+    `chmod a-w $output_filename`
 }
 
 #
@@ -407,16 +450,17 @@ sub WriteMfile {
 # routine, or an include of a set of base rules.
 #
 sub DefaultRules {
-    print FD "shell       = \@SHELL\@\n";
+    print FD "shell       = \@SHELL\@$newline";
 
     # Library definitions
     if (scalar(%libraries)) {
 	# Add ar, ranlib definitions if there are any library targets.
-        print FD "AR          = \@AR\@\nRANLIB      = \@RANLIB\@\n";
+        print FD "AR          = \@AR\@$newline";
+	print FD "RANLIB      = \@RANLIB\@$newline";
 	if ($do_sharedlibs) {
 	    foreach $ext (keys(%ext_seen)) {
 		if (defined($shlibdefs{$ext})) {
-		    print FD "$shlibdefs{$ext}\n";
+		    print FD "$shlibdefs{$ext}$newline";
 		}
 	    }
 	}
@@ -424,54 +468,54 @@ sub DefaultRules {
 
     # Directory definitions
     foreach $dir (keys(%dirs_seen)) {
-	print FD "$dirdefs{$dir}\n";
+	print FD "$dirdefs{$dir}$newline";
     }
 
     # Miscellaneous.  This needs to be improved.  This is really needed
     # only for some targets
     # The definition of DEFS is the same as for Automake
     if (defined($ext_seen{"c"}) || defined($ext_seen{"cxx"})) {
-	print FD "DEFS        = \@DEFS\@ -I. -I\${srcdir}\n";
+	print FD "DEFS        = \@DEFS\@ -I. -I\${srcdir}$newline";
 	# What to do about includes?  If they were set explicitly,
 	# don't use the default.
 	if (!defined($makevars{"INCLUDES"})) {
-	    print FD "INCLUDES    = $include_list\n";
+	    print FD "INCLUDES    = $include_list$newline";
         }
     }
     # Add the LIBS if there are any programs to build
     if (scalar(%pgmlinktypes)) {
-	print FD "LIBS        = \@LIBS\@\n";
+	print FD "LIBS        = \@LIBS\@$newline";
     }
 
     # If there are subdirs, we need make
     if ($#subdirs >= 0 && ! defined($makevars{"MAKE"})) {
-	print FD "MAKE        = \@MAKE\@\n";
+	print FD "MAKE        = \@MAKE\@$newline";
     }
 
     # Add any standard definitions
     if ($commonmake ne "") {
-	print FD "$commonmake\n";
+	print FD "$commonmake$newline";
     }
 
     # Definitions for each possible program type seen
     foreach $ext (keys(%ext_seen)) {
-	print FD "$extdef{$ext}\n";
+	print FD "$extdef{$ext}$newline";
 	if (defined($pgmlinktypes{$ext})) {
-	    print FD "$progdefs{$ext}\n";
+	    print FD "$progdefs{$ext}$newline";
 	}
 	if ($do_sharedlibs) { 
-	    print FD "$extdef_sh{$ext}\n";
+	    print FD "$extdef_sh{$ext}$newline";
 	}
     }
-    print FD "\n";
+    print FD "$newline";
 #    foreach $ext (keys(%pgmlinktypes)) {
 #    }
 
     if ($vpath_config) {
-        print FD '@VPATH@'; print FD "\n";
+        print FD '@VPATH@'; print FD "$newline";
     }
     else {
-        print FD 'VPATH = .:${srcdir}'; print FD "\n";
+        print FD 'VPATH = .:${srcdir}'; print FD "$newline";
     }
 
     # Add the compilation rules.  Include only those needed for the
@@ -485,17 +529,17 @@ sub DefaultRules {
     foreach $ext (keys(%ext_seen)) {
 	$suffixes .= " .$ext";
     }
-    print FD ".SUFFIXES:\n";
+    print FD ".SUFFIXES:$newline";
     if ("$suffixes $ExplicitSuffixes" ne " ") {
-	print FD ".SUFFIXES: $suffixes $ExplicitSuffixes\n";
+	print FD ".SUFFIXES: $suffixes $ExplicitSuffixes$newline";
     }
 
     foreach $ext (keys(%ext_seen)) {
-	print FD ".$ext.o:\n";
-	print FD "\t$extrules{$ext}\n";
+	print FD ".$ext.o:$newline";
+	print FD "\t$extrules{$ext}$newline";
 	if ($do_sharedlibs) {
-	    print FD ".$ext.lo:\n";
-	    print FD "\t$extrules_sh{$ext}\n";
+	    print FD ".$ext.lo:$newline";
+	    print FD "\t$extrules_sh{$ext}$newline";
 	}
     }
 
@@ -519,47 +563,44 @@ sub DefaultRules {
 	if ($aargs =~ /-l\s*([\.\/\w]*)/) {
 	    $macroloc = $1;
 	    $autoconf_deps .= "$macroloc/aclocal.m4";
-	    $linelen = length($autoconf_deps) + 24;
 	    # Extract includes from aclocal.m4
 	    open (AFD, "<$macroloc/aclocal.m4" );
 	    while (<AFD>) {
 		if (/^\s*builtin\(include,(\w*\.m4)\)\s*$/) {
 		    $filename = "$macroloc/$1";
-		    if ($linelen + length(" $filename" ) + 2 > $maxline ) { 
-			$autoconf_deps .= " \\\n        ";
-			$linelen = 8;
-		    }
 		    $autoconf_deps .= " $filename";
-		    $linelen += length($filename) + 1;
 		}
 	    }
 	    close (AFD);
 	}
-	print FD "\nconfigure: configure.in $autoconf_deps\n";
-	print FD "\tautoheader $aargs\n\tautoconf $aargs\n";
+	print FD "$newline";
+	&print_make_longline( FD,  "configure: configure.in $autoconf_deps" );
+	&print_make_setpos( 8 );
+	&print_make_longline( FD,  "\tautoheader $aargs$newline\tautoconf $aargs" );
 	if ($fixup_autoconf_cd) {
 	    # This is needed for DOS in case the pwd contains blanks
-	    print FD "\tsed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure\n";
+	    print FD "\tsed -e 's/cd *\$\$ac_popdir/cd \"\$\$ac_popdir\"/g' configure > c.tmp ; mv -f c.tmp configure ; chmod a+x configure$newline";
 	}
     }
     if ($maint_targets && "$smdir" ne "") {
-	print FD "\nMakefile.in: Makefile.sm\n";
-	print FD "\t$smdir/simplemake -rootdir=$rootdir \\\n";
+	print FD "$newline";
+	print FD "Makefile.in: Makefile.sm$newline";
+	print FD "\t$smdir/simplemake -rootdir=$rootdir \\$newline";
 	foreach $curarg (@keepargs) {
 	    # Must handle $ specially
 	    $tmparg = $curarg;
 	    $tmparg =~ s/\$/\1\\\$\$/;
 	    if ($tmparg =~ /\s/) {
-		print FD "\t\"$tmparg\" \\\n";
+		print FD "\t\"$tmparg\" \\$newline";
 	    }
 	    else {
-		print FD "\t$tmparg \\\n";
+		print FD "\t$tmparg \\$newline";
 	    }
 	}
 	if (defined($autoconf_files_by_dir{$lcurdir})) {
-	    print FD "\t-distcleanfiles=\"$autoconf_files_by_dir{$lcurdir}\" \\\n";
+	    print FD "\t-distcleanfiles=\"$autoconf_files_by_dir{$lcurdir}\" \\$newline";
 	}
-	print FD "\t\tMakefile.sm\n";
+	print FD "\t\tMakefile.sm$newline";
     }
     # Clean targets
     &TargetClean;
@@ -740,13 +781,13 @@ sub RecursiveOp {
         }
 	if ($subdirs_has_autoconf) {
 	    # Add a - incase there is a problem
-          print FD " - ; do \\\n";
-	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ;\\\n";
-	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; done\n";
+          print FD " - ; do \\$newline";
+	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ;\\$newline";
+	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; done$newline";
         }	
 	else {
-          print FD " ; do \\\n\t\t(cd \$\$dir && \${MAKE} $target ; ) ; " .
-	    "done\n";
+          print FD " ; do \\$newline\t\t(cd \$\$dir && \${MAKE} $target ; ) ; " .
+	    "done$newline";
         }
     }
 }
@@ -809,31 +850,31 @@ sub LookForSuffixes {
 sub TargetAll {
     print FD "all-redirect:";
     if ($#subdirs > -1) {
-	print FD "\n";
+	print FD "$newline";
 	$has_dot = 0;
 	foreach $dir (@subdirs) {
 	    if ($dir eq ".") {
 		if (scalar(@alltargets) || 
 		    defined($usertargets{"all-local"})) {
 		    $has_dot = 1;
-		    print FD "\t\${MAKE} all-local\n";
+		    print FD "\t\${MAKE} all-local$newline";
 		}
 	    }
 	    elsif ($dir =~ /@([^@]*)@/) {
 		# May be a replaced variable
-		print FD "\tfor dir in $dir - ; do\\\n";
-		print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\\n";
-		print FD "\t\t(cd \$\$dir && \${MAKE} all ) ;\\\n";
-		print FD "\tdone\n";
+		print FD "\tfor dir in $dir - ; do\\$newline";
+		print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
+		print FD "\t\t(cd \$\$dir && \${MAKE} all ) ;\\$newline";
+		print FD "\tdone$newline";
 	    }
 	    else {
-		print FD "\t(cd $dir && \${MAKE} all )\n";
+		print FD "\t(cd $dir && \${MAKE} all )$newline";
 	    }
 	    # If subdirs has no dot but there are local targets, add an 
 	    # implicit dot to the end.
 	    if (!$has_dot && $#alltargets > -1) {
 		$has_dot = 1;
-		print FD "\t\${MAKE} all-local\n";
+		print FD "\t\${MAKE} all-local$newline";
 	    }
 	}
 	if ($has_dot && !defined($usertargets{"all-local"})) {
@@ -848,7 +889,7 @@ sub TargetAll {
 	}
 	&ListTargets;
     }
-    print FD "\n";
+    print FD "$newline";
 }
 
 #
@@ -862,13 +903,14 @@ sub TargetClean {
     $programnames = join( ' ', keys(%programs));
     print FD "clean:";
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
-    print FD "\n\t-rm -f *.o \${srcdir}/*.o *~ $programnames\n";
+    print FD "$newline";
+    print FD "\t-rm -f *.o \${srcdir}/*.o *~ $programnames$newline";
     &RecursiveOp( "clean" );
     print FD "distclean: clean";
     if (defined($usertargets{"distclean-local"})) { 
 	print FD " distclean-local";
     }
-    print FD "\n";
+    print FD "$newline";
     &RecursiveOp( "distclean" );
     # Remove any local files last (in case this file is one of them)
     $rmfile = "";
@@ -877,20 +919,20 @@ sub TargetClean {
     #print "|$lcurdir|\n";
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
-	print FD "\t-rm -f $rmfile\n";
+	print FD "\t-rm -f $rmfile$newline";
     }
     if ($distcleanfiles ne "") {
-	print FD "\t-rm -f $distcleanfiles\n";
+	print FD "\t-rm -f $distcleanfiles$newline";
     }
     if ($maint_targets) {
 	print FD "maintainerclean:";
 	if (defined($usertargets{"maintainerclean-local"})) {
 	    print FD " maintainerclean-local";
 	}
-	print FD "\n";
+	print FD "$newline";
 	&RecursiveOp( "maintainerclean" );
 	# Remove The file that simplemake creates
-	print FD "\t-rm -f $output_name\n";
+	print FD "\t-rm -f $output_name$newline";
 	# eventually, this should also invoke distclean, but it must
 	# do that only once (not recursively) and only after all other
 	# uses of the Makefile, since distclean removes the Makefile
@@ -904,8 +946,7 @@ sub TargetClean {
 sub TargetLibraries {
     foreach $lib (keys(%libraries)) {
 	$libloc = &GetLibLoc( $lib );
-        print FD "${libloc}lib$lib.a: ";
-        $linelen = length("${libloc}$lib.a: ");
+	&print_make_line( FD, "${libloc}lib$lib.a: " );
         foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
             $obj = $sourcefile;
             # Convert to object file
@@ -917,37 +958,30 @@ sub TargetLibraries {
 	    else {
 		print "Unknown extension $ext for $sourcefile\n";
 	    }
-	    
-            if (length($obj) + $linelen + 2 >= $maxline) {
-	        print FD "\\\n\t";
-                $linelen = 8;
-            }
-            print FD "$obj ";
-            $linelen += length($obj) + 1;
+	    &print_make_line( FD, "$obj " );
         }
-        print FD "\n";
-        print FD "\t\${AR} cr ${libloc}lib$lib.a \$?\n";
+	&print_make_endline( FD );
+        print FD "\t\${AR} cr ${libloc}lib$lib.a \$?$newline";
         if ($ranliblib) { 
-	    print FD "\t\${RANLIB} ${libloc}lib$lib.a\n"; 
+	    print FD "\t\${RANLIB} ${libloc}lib$lib.a$newline"; 
 	}
 	# To handle timestamp problems with recursive makes, add a delay
 	if ($libloc =~ /^\.\./ && $fixup_for_timestamps) {
  	    $SleepText = $Sleep;
 	    $SleepText =~ s/LIB/${libloc}lib$lib.a/;
-	    print FD "\t$SleepText\n"; 
+	    print FD "\t$SleepText$newline"; 
         }
 
-#        if ($doprofilelib) {
-#            print FD "$libdir{P$lib}P$lib.a:";
-#        }
     }
 }
 
-sub TargetSharedLibraries {
+# if ($do_profilelib) {
+# This code is similar to TargetLibraries.  It is also not yet complete;
+# DO NOT USE YET
+sub TargetProfileLibraries {
     foreach $lib (keys(%libraries)) {
 	$libloc = &GetLibLoc( $lib );
-        print FD "${libloc}lib$lib.so: ";
-        $linelen = length("${libloc}$lib.so: ");
+	&print_make_line( FD, "${libloc}lib$lib.a: " );
         foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
             $obj = $sourcefile;
             # Convert to object file
@@ -959,16 +993,32 @@ sub TargetSharedLibraries {
 	    else {
 		print "Unknown extension $ext for $sourcefile\n";
 	    }
-	    
-            if (length($obj) + $linelen + 2 >= $maxline) {
-	        print FD "\\\n\t";
-                $linelen = 8;
-            }
-            print FD "$obj ";
-            $linelen += length($obj) + 1;
+	    &print_make_line( FD, "$obj " );
         }
-        print FD "\n";
-        print FD "\t\${C_LINK_SHL} -o ${libloc}lib$lib.so \$?\n";
+	&print_make_endline( FD );
+        print FD "\t\${AR} cr ${libloc}lib$lib.a \$?$newline";
+    }
+}
+
+sub TargetSharedLibraries {
+    foreach $lib (keys(%libraries)) {
+	$libloc = &GetLibLoc( $lib );
+        &print_make_line( FD, "${libloc}lib$lib.so: " );
+        foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
+            $obj = $sourcefile;
+            # Convert to object file
+	    $ext = $sourcefile;
+	    $ext =~ s/^.*\.//g;
+	    if (defined($extrules{$ext})) {
+		$obj =~ s/\.$ext/\.lo/g;
+	    }
+	    else {
+		print "Unknown extension $ext for $sourcefile\n";
+	    }
+	    &print_make_line( FD, "$obj " );
+        }
+        &print_make_endline( FD );
+        print FD "\t\${C_LINK_SHL} -o ${libloc}lib$lib.so \$?$newline";
     }
 }
 
@@ -976,8 +1026,7 @@ sub TargetSharedLibraries {
 # ===========================================================================
 sub TargetPrograms {
     foreach $pgm (keys(%programs)) {
-	print FD "$pgm: ";
-	$linelen = length( $pgm ) + 2;
+	&print_make_line( FD,  "$pgm: " );
 	$pgmobjs = "";
 	foreach $sourcefile (split(/\s\s*/,$programs{$pgm})) {
             $obj = $sourcefile;
@@ -990,13 +1039,8 @@ sub TargetPrograms {
 	    else {
 		print "Unknown extension $ext for $sourcefile\n";
 	    }
-            if (length($obj) + $linelen + 2 >= $maxline) {
-	        print FD "\\\n\t";
-                $linelen = 8;
-            }
-            print FD "$obj ";
+	    &print_make_line( FD, "$obj " );
 	    $pgmobjs .= "$obj ";
-            $linelen += length($obj) + 1;
         }
 	# Add dependencies on libraries if requested
 	if (1) {
@@ -1006,12 +1050,14 @@ sub TargetPrograms {
 	    $libdir = $1;
 	    $libname = $2;
 	    if ($libdir != "" && $libname != "") { 
-	        print FD " $libdir/lib$libname.a";
+	        &print_make_line( FD,  " $libdir/lib$libname.a" );
             }
 	}
 	# Use the link rule appropriate for this program type
 	$pgmtype = $pgmsrctype{$pgm};
-	print FD "\n\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs $pgmlibs{$pgm} $pgm_ldadd{$pgm} \${LIBS}\n";
+	&print_make_endline( FD );
+	&print_make_setpos( 8 );
+	&print_make_longline( FD, "\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs $pgmlibs{$pgm} $pgm_ldadd{$pgm} \${LIBS}" );
     }
 
 }
@@ -1025,11 +1071,11 @@ sub TargetTags {
     $has_sources = 0;
     $has_headers = 0;
     if ($regular_sources ne "") {
-	print FD "SOURCES = $regular_sources\n";
+	&print_make_longline( FD, "SOURCES = $regular_sources" );
 	$has_sources = 1;
     }
     if ($regular_headers ne "") {
-	print FD "HEADERS = $regular_headers\n";
+	&print_make_longline( FD, "HEADERS = $regular_headers" );
 	$has_headers = 1;
     }
     print FD "TAGS:";
@@ -1044,50 +1090,45 @@ sub TargetTags {
 ';
         }
         elsif ($root_tags) {
-	    print FD "\${HEADERS} \${SOURCES}\n";
+	    print FD "\${HEADERS} \${SOURCES}$newline";
 	    $rpath = $rootdirpath;
 	    $rpath =~ s/\/$//;
-	    print FD "\tetags -o $rpath/TAGS --append \${HEADERS} \${SOURCES}\n";
+	    print FD "\tetags -o $rpath/TAGS --append \${HEADERS} \${SOURCES}$newline";
         }
         else {
-	    print FD "\n";
+	    print FD "$newline";
         }
     }
     else {
-	print FD "\n";
+	print FD "$newline";
     }
     &RecursiveOp( "TAGS" );
 }
 
 sub TargetDocs {
     foreach $kind (keys(%docsrc)) {
-	print FD "$kind:\n";
+	print FD "$kind:$newline";
 	if (defined($docdir{$kind})) { 
 	    $loc = "-mpath $docdir{$kind}";
 	}
 	else {
 	    $loc = "";
 	}
-	print FD "\tdoctext -$kind $loc -heading MPI -quotefmt \\\n\t";
+	print FD "\tdoctext -$kind $loc -heading MPI -quotefmt \\$newline\t";
 	# Eventually need to add default files (e.g., fortnotes, errnotes)
 	# Web version needs indexdir, defn, mapref, ...
-	$linelen = 8;
+	&print_make_setpos( 8 );
 	foreach $sourcefile (split(/\s\s*/,$docsrc{$kind})) {
-            if (length($sourcefile) + $linelen + 2 >= $maxline) {
-	        print FD "\\\n\t";
-                $linelen = 8;
-            }
-            print FD "sourcefile ";
+	    &print_make_line( FD, "$sourcefile " );
 	    $pgmobjs .= "$sourcefile ";
-            $linelen += length($sourcefile) + 1;
         }
+	&print_make_endline( FD );
     }
 }
 
 #
 # ===========================================================================
 # Other targets and stuff to be added:
-#   Support for .s -> .o (AS)
 #   CPP
 #   Including common headers (e.g., all file.sm's get a common header of
 #       variables defined by configure.  This is cleaner than the automake 
@@ -1095,9 +1136,6 @@ sub TargetDocs {
 #   Support for shared libraries.  Unlike automake, we will not require
 #       separate rules (automake uses lib_LTLIBRARIES and la extensions)
 #       for shared library support.
-#   Dependencies on the file.sm's (e.g., rerun simplemake when source
-#   Makefile.sm's change, including updating the Makefile from the
-#       Makefile.in) 
 #   Handling files to be installed (e.g., automake's sbin_PROGRAMS = ...)
 #      (automake understands <dir>_PROGRAMS and <dir>_LIBRARIES)
 #   LDADD (automake has target_LDADD; we want a general LD_ADD as well)
@@ -1105,7 +1143,7 @@ sub TargetDocs {
 #       (e.g., before or after LIBS?)
 #   target_LDFLAGS and general LDFLAGS
 #   INCLUDES (automake variable that we've adopted) needs better control.
-#   Support for .F and .F90 extensions
+#   Support for .F and .F90 extensions (Fortran with preprocessor)
 #   FLIBS
 #   Linker choice.  simplemake uses the file type of the *first* source file.
 #       automake has a matrix that depends on the source files referred to.
@@ -1124,7 +1162,19 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
     -am              - Automake style target names\
     -include=LIST    - CPP style list of include directories (e.g., -Ia -Ib)\
                        These define INCLUDES unless a Makefile.sm defines\
-                       that value\n";
+                       that value\
+    -v               - verbose output\
+    -common=file     - Read text to include in every output file\
+    -distrib         - Turn off all maintenance targets (make a distribution\
+                       version)\
+    -vpath=[yes|no]  - Create VPATH targets\
+    -depend          - Generate dependency information\
+    -nodepend        - Do not generate dependency information\
+    -rootdir=PATH    - Set the root directory for all Makefiles\
+    -debug           - Turn on debugging output\
+    -dos             - Use DOS-style newlines on output files\
+    -help            - This output\
+    \n";
     print STDERR "\
     Recognized target forms\
     libname_a_SOURCES = source files for library \"name\"\
@@ -1168,7 +1218,7 @@ sub AddDependency {
     close( DEPFD );
 }
 sub TargetDependencies {
-    print FD "# Dependencies\n";
+    print FD "# Dependencies$newline";
     # Libraries first
     foreach $lib (keys(%libraries)) {
         foreach $sourcefile (split(/\s\s*/,&ExpandMakeVars($libraries{$lib}))) {
@@ -1247,7 +1297,50 @@ sub ReadAutoconf {
     }
     close FDCONF;
 }
-# Eventually we will use this to generate the profiling targets.
+
+#
+# ===========================================================================
+# Pretty print output lines.  These routines insert line breaks and tabs
+# to keep the generated makefile from being too ugly
+$linelen = 0;
+sub print_make_line {
+    my $FD = $_[0];
+    my $line = "$_[1]";
+    my $len = length($line);
+    if ($linelen + $len + 2 > $maxline) {
+	print $FD "\\$newline\t";
+	$linelen = 8;
+    }
+    print $FD $line;
+    $linelen += $len;
+    }
+sub print_make_endline {
+    my $FD = $_[0];
+    print $FD $newline;
+    $linelen = 0;
+}
+sub print_make_setpos {
+    $linelen = $_[0];
+}
+# print_make_longline is intended for printing long lines that contains blanks
+# This adds the newline at the end
+sub print_make_longline {
+    my $FD = $_[0];
+    my $line = $_[1];
+    my $len = length( $line );
+    if ($linelen + $len + 2 < $maxline) {
+	print $FD $line;
+    }
+    else {
+	# Use space, not \s, because we want tabs to remain tabs
+	foreach my $token (split(/ /,$line)) {
+	    &print_make_line( $FD, "$token " )
+	}
+    }
+    &print_make_endline( $FD );
+}
+
+# Eventually we will use this to generate the profiling targets.
 sub ProfileTargets {
     print FD "\
 # Instead, we define the PMPI_OBJECTS as having suffix pf:\
