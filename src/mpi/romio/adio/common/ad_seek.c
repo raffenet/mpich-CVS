@@ -80,7 +80,7 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
  * the file before reading/writing if the 'offset' parameter doesn't match
  * fp_sys_posn
  */
-    fd->fp_ind = offset;
+    fd->fp_ind = off;
 
     *error_code = MPI_SUCCESS;
 
