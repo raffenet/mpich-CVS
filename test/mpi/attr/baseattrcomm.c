@@ -83,6 +83,7 @@ int main( int argc, char **argv)
     MPI_Comm_get_attr( MPI_COMM_WORLD, MPI_UNIVERSE_SIZE, &v, &flag );
     /* MPI_UNIVERSE_SIZE need not be set */
     if (flag) {
+	/* But if it is set, it must be at least the size of comm_world */
 	vval = *(int *)v;
 	if (vval < size) {
 	    errs++;
