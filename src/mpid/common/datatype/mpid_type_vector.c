@@ -85,7 +85,7 @@ int MPID_Type_vector(int count,
 	new_dtp->loopinfo_depth = 1;
 
 	/* calculate lb, ub, true_lb, and true_ub, which vary widely based on +/- stride */
-	if (stride > 0) {
+	if (stride >= 0) {
 	    new_dtp->true_lb     = 0;
 	    new_dtp->lb          = 0;
 	    if (strideinbytes) 
@@ -148,11 +148,33 @@ int MPID_Type_vector(int count,
 	new_dtp->has_sticky_ub  = old_dtp->has_sticky_ub;
 	new_dtp->has_sticky_lb  = old_dtp->has_sticky_lb;
 	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
-	if (new_dtp->has_sticky_lb) new_dtp->lb = old_dtp->lb; /* ??? */
-	else new_dtp->lb = 
-	new_dtp->true_lb        = old_dtp->true_lb; /* no! */
+
+
+	/* calculate lb, ub, true_lb, and true_ub */
+	if (stride >= 0 && old_dtp->extent >= 0) {
+	    new_dtp->lb         = old_dtp->lb;
+	    new_dtp->true_lb    = old_dtp->true_lb;
+	    if (strideinbytes) {
+		/* FIXME */
+	    }
+	    else {
+		/* FIXME */
+	    }
+	}
+	else if (stride < 0 && old_dtp->extent >= 0) {
+	}
+	else if (stride > 0 && old_dtp->extent < 0) {
+	    assert(0);
+	}
+	else /* stride < 0 && old_dtp->extent < 0 */ {
+	    assert(0);
+	}
+
+	new_dtp->extent         = new_dtp->ub - new_dtp->lb;
+
 	new_dtp->alignsize      = old_dtp->alignsize;
 	new_dtp->n_elements     = old_dtp->n_elements * count * blocklength; /* ??? */
+
 
 	if (old_dtp->is_contig && (stride == blocklength || count == 1)) new_dtp->is_contig = 1;
 	else new_dtp->is_contig = 0;
