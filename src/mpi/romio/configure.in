@@ -1416,7 +1416,7 @@ if test -n "$mpi_hp"; then
    fi
 fi
 #
-PAC_FUNC_STRERROR
+AC_CHECK_FUNCS(strerror)
 if test -z "$srcdir" -o "$srcdir" = "." ; then srcdir="$ROMIO_HOME" ; fi
 AC_SUBST(srcdir)
 # The master_top_srcdir is the location of the source for the building
