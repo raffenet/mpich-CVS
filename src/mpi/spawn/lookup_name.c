@@ -86,7 +86,7 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
     return MPI_SUCCESS;
 #else
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-    mpi_errno = MPIR_Err_create( MPI_ERR_OTHER, "**nonamepub", 0 );
+    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nonamepub", 0 );
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 #endif    
 }
