@@ -32,7 +32,7 @@
 int MPIO_Waitany(int count, MPIO_Request requests[], int *index, 
 		 MPI_Status *status)
 {
-    int notdone, i, flag, err; 
+    int i, flag, err; 
 
     if (count == 1) {
 	err = MPIO_Wait( requests, status );

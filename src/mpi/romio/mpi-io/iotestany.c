@@ -32,7 +32,7 @@
 int MPIO_Testany(int count, MPIO_Request requests[], int *index, 
 		 int *flag, MPI_Status *status)
 {
-    int notdone, i, err; 
+    int i, err; 
 
     if (count == 1) {
 	err = MPIO_Test( requests, flag, status );

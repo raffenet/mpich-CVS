@@ -32,7 +32,7 @@
 int MPIO_Waitsome(int count, MPIO_Request requests[], int *outcount,
 		  int indices[], MPI_Status *statuses)
 {
-    int notdone, i, flag, err; 
+    int i, flag, err; 
 
     if (count == 1) {
 	err = MPIO_Wait( requests, statuses );
