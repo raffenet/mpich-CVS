@@ -729,6 +729,7 @@ int sock_destroy_set(sock_set_t set)
 static int listening = 0;
 int sock_listen(sock_set_t set, void * user_ptr, int *port, sock_t *listener)
 {
+    int error;
     char host[100];
     DWORD num_read = 0;
     sock_state_t * listen_state;
@@ -745,20 +746,23 @@ int sock_listen(sock_set_t set, void * user_ptr, int *port, sock_t *listener)
 
     listen_state = (sock_state_t*)BlockAlloc(g_StateAllocator);
     init_state_struct(listen_state);
-    if (easy_create(&listen_state->listen_sock, *port, INADDR_ANY) == SOCKET_ERROR)
+    error = easy_create(&listen_state->listen_sock, *port, INADDR_ANY);
+    if (error != SOCK_SUCCESS)
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_LISTEN);
-	return SOCK_FAIL;
+	return error;
     }
     if (listen(listen_state->listen_sock, SOMAXCONN) == SOCKET_ERROR)
     {
+	error = WinToSockError(WSAGetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_LISTEN);
-	return SOCK_FAIL;
+	return error;
     }
     if (CreateIoCompletionPort((HANDLE)listen_state->listen_sock, set, (ULONG_PTR)listen_state, g_num_cp_threads) == NULL)
     {
+	error = WinToSockError(GetLastError());
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_LISTEN);
-	return SOCK_FAIL;
+	return error;
     }
     easy_get_sock_info(listen_state->listen_sock, host, port);
     listen_state->user_ptr = user_ptr;
