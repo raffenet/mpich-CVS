@@ -57,12 +57,15 @@ Output Parameters:
 .N MPI_ERR_RANK
 
 @*/
-int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
+int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, int sendtag,
+		 void *recvbuf, int recvcount, MPI_Datatype recvtype, int source, int recvtag,
+		 MPI_Comm comm, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Sendrecv";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_Request * reqs[2];
+    MPID_Request * sreq;
+    MPID_Request * rreq;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SENDRECV);
     
     /* Verify that MPI has been initialized */
@@ -91,12 +94,10 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	    MPID_Datatype * sendtype_ptr = NULL;
 	    MPID_Datatype * recvtype_ptr = NULL;
 	    
-	    
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		goto fn_exit;
             }
 	    
             /* Validate datatypes */
@@ -124,85 +125,33 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno );
 	    }
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		goto fn_exit;
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* NOTE: we check for MPI_PROC_NULL first so if an error occurs while
-       allocating the request, we can back out without having to cancel a
-       pending send or receive. */
-    if (source == MPI_PROC_NULL)
+    mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &rreq);
+    if (mpi_errno)
     {
-	reqs[0] = MPID_Request_create();
-	
-	if (reqs[0] == NULL)
-	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	    return MPIR_ERR_MEMALLOCFAILED;
-	}
-	
-	reqs[0]->status.MPI_SOURCE = MPI_PROC_NULL;
-	reqs[0]->status.MPI_TAG = MPI_ANY_TAG;
-	reqs[0]->kind = MPID_REQUEST_RECV;
-	reqs[0]->cc = 0;
-	reqs[0]->cc_ptr = &reqs[0]->cc;
-    }
-    
-    if (dest == MPI_PROC_NULL)
-    {
-	reqs[1] = MPID_Request_create();
-	if (reqs[1] == NULL)
-	{
-	    if (source == MPI_PROC_NULL)
-	    {
-		MPID_Request_release(reqs[0]);
-	    }
-	    
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	    return MPIR_ERR_MEMALLOCFAILED;
-	}
-
-	reqs[1]->kind = MPID_REQUEST_SEND;
-	reqs[1]->cc = 0;
-	reqs[1]->cc_ptr = &reqs[1]->cc;
+	goto fn_exit;
     }
 
-    if (source != MPI_PROC_NULL)
+    /* FIXME - Performance for small messages might be better if MPID_Send() were used here instead of MPID_Isend() */
+    mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &sreq);
+    if (mpi_errno)
     {
-	mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag,
-			       comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[0]);
-	if (mpi_errno)
-	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	}
-    }
-
-    /* XXX - Performance for small messages might be better if MPID_Send() were
-       used here instead of MPID_Isend() */
-    if (dest != MPI_PROC_NULL)
-    {
-	mpi_errno = MPID_Isend(sendbuf, sendcount, sendtype, dest, sendtag,
-			       comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &reqs[1]);
-	if (mpi_errno)
-	{
-	    /* XXX - should we cancel the pending (possibly completed) receive
-               request? */
-	    MPID_Request_release(reqs[0]);
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	}
+	/* FIXME: should we cancel the pending (possibly completed) receive request or wait for it to complete? */
+	MPID_Request_release(rreq);
+	goto fn_exit;
     }
 
     while(1)
     {
 	MPID_Progress_start();
 	
-	if (*reqs[0]->cc_ptr != 0 || *reqs[1]->cc_ptr != 0)
+	if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	{
 	    MPID_Progress_wait();
 	}
@@ -215,12 +164,23 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 
     if (status != MPI_STATUS_IGNORE)
     {
-	*status = reqs[0]->status;
+	*status = rreq->status;
     }
 
-    MPID_Request_release(reqs[0]);
-    MPID_Request_release(reqs[1]);
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	mpi_errno = rreq->status.MPI_ERROR;
+    }
     
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	mpi_errno = sreq->status.MPI_ERROR;
+    }
+    
+    MPID_Request_release(sreq);
+    MPID_Request_release(rreq);
+
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SENDRECV);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
