@@ -11,8 +11,6 @@
 
 #define SHM_SUCCESS    0
 #define SHM_FAIL      -1
-#define SHM_INVALID_T  NULL
-typedef struct shm_state_t * shm_t;
 
 typedef struct MPIDI_Process_group_s
 {
@@ -20,6 +18,22 @@ typedef struct MPIDI_Process_group_s
     char * kvs_name;
     int size;
     struct MPIDI_VC * vc_table;
+    int nShmEagerLimit;
+#ifdef HAVE_SHARED_PROCESS_READ
+    int nShmRndvLimit;
+#endif
+    void *addr;
+    int rank;
+#ifdef HAVE_SHMGET
+    int key;
+    int id;
+#elif defined (HAVE_MAPVIEWOFFILE)
+    char key[MAX_PATH];
+    HANDLE id;
+#else
+#error *** No shared memory mapping variables specified ***
+#endif
+    int nShmWaitSpinCount;
 }
 MPIDI_CH3I_Process_group_t;
 
@@ -35,20 +49,43 @@ typedef enum
 }
 MPIDI_CH3I_VC_state_t;
 
-#define MPIDI_CH3_VC_DECL			\
-struct MPIDI_CH3I_VC				\
-{						\
-    MPIDI_CH3I_Process_group_t * pg;		\
-    int pg_rank;				\
-    shm_t shm;                                  \
-    struct MPID_Request * sendq_head;		\
-    struct MPID_Request * sendq_tail;		\
-    struct MPID_Request * send_active;          \
-    struct MPID_Request * recv_active;          \
-    struct MPID_Request * req;                  \
-    MPIDI_CH3I_VC_state_t state;		\
-} shm;
+/* This structure requires the iovec structure macros to be defined */
+typedef struct MPIDI_CH3I_SHM_Buffer_t
+{
+    int use_iov;
+    unsigned int num_bytes;
+    void *buffer;
+    unsigned int bufflen;
+    MPID_IOV iov[MPID_IOV_LIMIT];
+    int iovlen;
+    int index;
+    int total;
+} MPIDI_CH3I_SHM_Buffer_t;
 
+typedef struct MPIDI_CH3I_VC
+{
+    MPIDI_CH3I_Process_group_t * pg;
+    int pg_rank;
+    struct MPIDI_CH3I_SHM_Queue_t * shm;
+    struct MPID_Request * sendq_head;
+    struct MPID_Request * sendq_tail;
+    struct MPID_Request * send_active;
+    struct MPID_Request * recv_active;
+    struct MPID_Request * req;
+    MPIDI_CH3I_VC_state_t state;
+    MPIDI_CH3I_SHM_Buffer_t read;
+    MPIDI_CH3I_SHM_Buffer_t write;
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+    HANDLE hSharedProcessHandle;
+#else
+    int nSharedProcessID;
+    int nSharedProcessFileDescriptor;
+#endif
+#endif
+} MPIDI_CH3I_VC;
+
+#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC shm;
 
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
@@ -94,7 +131,6 @@ MPID_STATE_MPIDI_CH3_REQUEST_CREATE, \
 MPID_STATE_MPIDI_CH3_REQUEST_DESTROY, \
 MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF, \
 MPID_STATE_MPIDI_CH3_CANCEL_SEND, \
-MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS, \
 MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV, \
 MPID_STATE_POST_PKT_RECV, \
 MPID_STATE_POST_PKT_SEND, \
@@ -106,12 +142,8 @@ MPID_STATE_MPIDI_CH3I_SHM_POST_READ, \
 MPID_STATE_MPIDI_CH3I_SHM_POST_READV, \
 MPID_STATE_MPIDI_CH3I_SHM_WRITE, \
 MPID_STATE_MPIDI_CH3I_SHM_WRITEV, \
-MPID_STATE_MPIDI_CH3I_SHM_INIT, \
-MPID_STATE_MPIDI_CH3I_SHM_FINALIZE, \
-MPID_STATE_MPIDI_CH3I_SHM_SET_USER_PTR, \
-MPID_STATE_SHMI_BUFFER_UNEX_READ, \
-MPID_STATE_SHMI_READ_UNEX, \
-MPID_STATE_SHMI_READV_UNEX, \
+MPID_STATE_MPIDI_CH3I_SHM_READ, \
+MPID_STATE_MPIDI_CH3I_SHM_READV, \
 MPID_STATE_MPIDU_COMPARE_SWAP, \
 MPID_STATE_MPIDU_PROCESS_LOCK_INIT, \
 MPID_STATE_MPIDU_PROCESS_LOCK_FREE, \

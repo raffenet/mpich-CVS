@@ -166,7 +166,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     vc->shm.req->shm.iov_offset = 0; \
     vc->shm.req->ch3.ca = MPIDI_CH3I_CA_HANDLE_PKT; \
     vc->shm.recv_active = vc->shm.req; \
-    MPIDI_CH3I_SHM_post_read(vc->shm.shm, &vc->shm.req->shm.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
+    MPIDI_CH3I_SHM_post_read(vc, &vc->shm.req->shm.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
 }
 
@@ -293,7 +293,8 @@ static inline void handle_written(MPIDI_VC * vc)
 	*/
 	assert(req->shm.iov_offset < req->ch3.iov_count);
 	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling shm_writev"));*/
-	nb = MPIDI_CH3I_SHM_writev(vc->shm.shm, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset);
+	//nb = MPIDI_CH3I_SHM_writev(vc->shm.shm, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset);
+	nb = MPIDI_CH3I_SHM_writev(vc, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset);
 	MPIDI_DBG_PRINTF((60, FCNAME, "shm_writev returned %d", nb));
 
 	if (nb > 0)

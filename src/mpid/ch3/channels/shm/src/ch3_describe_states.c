@@ -192,6 +192,7 @@ int CH3U_Describe_timer_states()
 	MPID_STATE_MPIDI_CH3I_SHM_WRITEV,
 	"MPIDI_CH3I_SHM_writev",
 	get_random_color_str());
+    /*
     RLOG_DescribeState(g_pRLOG,
 	MPID_STATE_MPIDI_CH3I_SHM_INIT,
 	"MPIDI_CH3I_SHM_init",
@@ -216,14 +217,17 @@ int CH3U_Describe_timer_states()
 	MPID_STATE_SHMI_READV_UNEX,
 	"shmi_readv_unex",
 	get_random_color_str());
+	*/
     RLOG_DescribeState(g_pRLOG,
 	MPID_STATE_MPIDI_COMM_SPAWN,
 	"mpidi_comm_spawn",
 	get_random_color_str());
+    /*
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS,
 	"MPIDI_CH3I_Setup_connections",
 	get_random_color_str());
+	*/
     RLOG_DescribeState(g_pRLOG,
 	MPID_STATE_MPIDI_CH3_CANCEL_SEND,
 	"MPIDI_CH3_Cancel_send",

@@ -23,7 +23,8 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * req)
 
     MPIDI_DBG_PRINTF((60, "ch3_iread\n"));
     vc->shm.recv_active = req;
-    MPIDI_CH3I_SHM_post_readv(vc->shm.shm, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset, NULL);
+    //MPIDI_CH3I_SHM_post_readv(vc->shm.shm, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset, NULL);
+    MPIDI_CH3I_SHM_post_readv(vc, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset, NULL);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
 }

@@ -27,6 +27,7 @@ int MPIDI_CH3_Finalize()
     }
 
     /* Free resources allocated in CH3_Init() */
+    MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process.pg);
     MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
     MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
     MPIU_Free(MPIDI_CH3I_Process.pg->vc_table);

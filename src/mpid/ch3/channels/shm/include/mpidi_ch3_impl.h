@@ -73,75 +73,24 @@ __attribute__ ((unused))
 #define MAXHOSTNAMELEN 256
 #endif
 
-#ifdef USE_GARBAGE_COLLECTING
-typedef struct MPIDI_Shm_mem_obj_hdr_st {
-    struct MPIDI_Shm_mem_obj_hdr_st *next;
-    int inuse;
-} MPIDI_Shm_mem_obj_hdr;
-#else
-typedef struct MPIDI_Shm_mem_obj_hdr_st {
-    struct MPIDI_Shm_mem_obj_hdr_st *next;
-    int index;
-} MPIDI_Shm_mem_obj_hdr;
-#endif
+typedef struct MPIDI_CH3I_SHM_Packet_t
+{
+    struct MPIDI_CH3I_SHM_Packet_t *next;
+    int num_bytes;
+    int src;
+} MPIDI_CH3I_SHM_Packet_t;
 
-typedef struct {
-    unsigned int size;
-    MPIDU_Process_lock_t thr_lock;
-    int count;
-    int max_count;
-    MPIDI_Shm_mem_obj_hdr *ptr;
-} MPIDI_Shm_list;
-
-typedef struct MPIDU_Queue_st {
-    MPID_Request *head;
-    MPID_Request *tail;
+typedef struct MPIDI_CH3I_SHM_Queue_t
+{
     MPIDU_Process_lock_t lock;
-#ifdef CHECK_LOCKING
-    int nCount; /*Used to check the locking code */
-#endif
-} MPIDU_Queue;
+    int num_free;
+    MPIDI_CH3I_SHM_Packet_t *head;
+    MPIDI_CH3I_SHM_Packet_t *tail;
+} MPIDI_CH3I_SHM_Queue_t;
 
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;
-    int nShmEagerLimit;
-#ifdef HAVE_SHARED_PROCESS_READ
-    int nShmRndvLimit;
-#ifdef HAVE_WINDOWS_H
-    HANDLE *pSharedProcessHandles;
-#else
-    int *pSharedProcessIDs;
-    int *pSharedProcessFileDescriptors;
-#endif
-#endif
-    void *addr, *my_curr_addr;
-#ifdef HAVE_SHMGET
-    int key;
-    int id;
-#elif defined (HAVE_MAPVIEWOFFILE)
-    char key[MAX_PATH];
-    HANDLE id;
-#else
-#error *** No shared memory mapping variables specified ***
-#endif
-    unsigned int size, my_rem_size;
-#ifdef USE_GARBAGE_COLLECTING
-    int gc_count;
-    MPIDU_Process_lock_t gc_lock;     /* lock for garbage collection counter */
-#endif
-    MPIDU_Process_lock_t addr_lock;   /* lock for local (remaining) shared memory pool size */
-
-#if 0
-    MPIDU_Queue_ptr recv_queues;  /* array of recv queues of all processes that share memory */
-    MPIDU_Queue active_queue;     /* queue of active rendezvous requests that MPID_SHM_Test must cause progress on */
-#endif
-
-    MPIDI_Shm_list *free_list;
-#ifdef USE_GARBAGE_COLLECTING
-    MPIDI_Shm_list *inuse_list;
-#endif
-    int nShmWaitSpinCount;
 }
 MPIDI_CH3I_Process_t;
 
@@ -213,19 +162,15 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
-int MPIDI_CH3I_Setup_connections();
 
-void *MPIDI_CH3I_SHM_Alloc(unsigned int size);
-void MPIDI_CH3I_SHM_Free(void *address);
-void *MPIDI_CH3I_SHM_Get_mem_sync(int nTotalSize, int nRank, int nNproc);
-void MPIDI_CH3I_SHM_Release_mem();
+void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc);
+void MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg);
 
-int MPIDI_CH3I_SHM_init(void);
-int MPIDI_CH3I_SHM_finalize(void);
-int MPIDI_CH3I_SHM_set_user_ptr(shm_t shm, void *user_ptr);
-int MPIDI_CH3I_SHM_post_read(shm_t shm, void *buf, int len, int (*read_progress_update)(int, void*));
-int MPIDI_CH3I_SHM_post_readv(shm_t shm, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
-int MPIDI_CH3I_SHM_write(shm_t shm, void *buf, int len);
-int MPIDI_CH3I_SHM_writev(shm_t shm, MPID_IOV *iov, int n);
+int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*read_progress_update)(int, void*));
+int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
+int MPIDI_CH3I_SHM_write(MPIDI_VC *vc, void *buf, int len);
+int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n);
+int MPIDI_CH3I_SHM_read(MPIDI_VC *vc, void *buf, int len);
+int MPIDI_CH3I_SHM_readv(MPIDI_VC *vc, MPID_IOV *iov, int n);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

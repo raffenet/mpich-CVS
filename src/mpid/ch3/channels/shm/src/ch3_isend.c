@@ -48,7 +48,8 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	   also try to write */
 	
 	MPIU_DBG_PRINTF(("shm_write(%d bytes)\n", hdr_sz));
-	nb = MPIDI_CH3I_SHM_write(vc->shm.shm, hdr, hdr_sz);
+	//nb = MPIDI_CH3I_SHM_write(vc->shm.shm, hdr, hdr_sz);
+	nb = MPIDI_CH3I_SHM_write(vc, hdr, hdr_sz);
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 	

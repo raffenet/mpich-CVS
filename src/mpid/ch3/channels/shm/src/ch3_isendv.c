@@ -61,8 +61,10 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	   as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 	
 	nb = (n_iov > 1) ?
-	    MPIDI_CH3I_SHM_writev(vc->shm.shm, iov, n_iov) :
-	    MPIDI_CH3I_SHM_write(vc->shm.shm, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
+	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov) :
+	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
+	    //MPIDI_CH3I_SHM_writev(vc->shm.shm, iov, n_iov) :
+	    //MPIDI_CH3I_SHM_write(vc->shm.shm, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
 	
 	if (nb > 0)
 	{
