@@ -40,7 +40,8 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	
 	case MPIDI_CH3_CA_COPY_COMPLETE:
 	{
-	    MPIDI_CH3U_Request_copy_tmp_data(rreq);
+	    MPIDI_CH3U_Request_unpack_tmp_buf(rreq);
+	    MPIU_Free(rreq->ch3.tmp_buf);
 	    /* fall through into the next case */
 	}
 	

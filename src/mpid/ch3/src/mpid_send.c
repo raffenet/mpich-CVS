@@ -127,7 +127,13 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    else
 	    {
 		sreq = MPIDI_CH3_Request_create();
-		assert(sreq != NULL);
+		if (sreq == NULL)
+		{
+		    MPIDI_ERR_PRINTF((FCNAME, "unable to allocate a send "
+				      "request; exiting with error"));
+		    mpi_errno = MPI_ERR_NOMEM;
+		    goto fn_exit;
+		}
 		sreq->ref_count = 2;
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->comm = comm;
@@ -155,11 +161,17 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 		else
 		{
 		    /* allocate temporary buffer and pack */
-		    MPIDI_CH3U_SRBuf_alloc(&sreq->ch3.tmp_buf, data_sz,
-					   &sreq->ch3.tmp_sz);
-		    assert (sreq->ch3.tmp_sz > 0);
-		    MPIDI_Request_set_tmpbuf_flag(sreq, TRUE);
-
+		    MPIDI_CH3U_SRBuf_alloc(sreq, data_sz);
+		    if (sreq->ch3.tmp_sz == 0)
+		    {
+			MPIDI_DBG_PRINTF((15, FCNAME, "unable to allocate "
+					  "SRBuf; exiting with error"));
+			MPIDI_CH3_Request_destroy(sreq);
+			sreq = NULL;
+			mpi_errno = MPI_ERR_NOMEM;
+			goto fn_exit;
+		    }
+		    
 		    last = (data_sz <= sreq->ch3.tmp_sz) ? data_sz :
 			    sreq->ch3.tmp_sz;
 		    MPID_Segment_pack(&seg, 0, &last, sreq->ch3.tmp_buf);
@@ -183,7 +195,6 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 			sreq->ch3.segment_size = data_sz;
 			sreq->ch3.ca = MPIDI_CH3_CA_RELOAD_IOV;
 		    }
-			
 		}
 		
 		MPIDI_CH3_iSendv(comm->vcr[rank], sreq, iov, iov_n);
@@ -197,7 +208,13 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	    &upkt.rndv_req_to_send;
 	
 	sreq = MPIDI_CH3_Request_create();
-	assert(sreq != NULL);
+	if (sreq == NULL)
+	{
+	    MPIDI_DBG_PRINTF((15, FCNAME, "unable to allocate a send "
+			      "request; exiting with error"));
+	    mpi_errno = MPI_ERR_NOMEM;
+	    goto fn_exit;
+	}
 	sreq->ref_count = 2;
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->comm = comm;
@@ -228,20 +245,25 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	MPIDI_CH3_iSend(comm->vcr[rank], sreq, rts_pkt, sizeof(*rts_pkt));
 
 	/* TODO: fill temporary IOV or pack temporary buffer after send to hide
-           some latency */
+           some latency.  This require synchronization because CTS could arrive
+           and be processed before the above iSend completes (depending on the
+           progress engine, threads, etc.). */
     }
 
   fn_exit:
     *request = sreq;
-    if (sreq)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x",
-			  sreq->handle));
-    }
-    else
-    {
-	MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests "
-			  "allocated"));
+	if (sreq)
+	{
+	    MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x",
+			      sreq->handle));
+	}
+	else
+	{
+	    MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests "
+			      "allocated"));
+	}
     }
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     return mpi_errno;

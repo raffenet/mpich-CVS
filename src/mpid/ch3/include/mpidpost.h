@@ -44,7 +44,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int *);
 int MPIDI_CH3U_Request_FDP(MPID_Request *);
 MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match *, int *);
 int MPIDI_CH3U_Request_adjust_iov(MPID_Request *, int);
-void MPIDI_CH3U_Request_copy_tmp_data(MPID_Request *);
+int MPIDI_CH3U_Request_unpack_tmp_buf(MPID_Request *);
 void MPIDI_CH3U_Request_decrement_cc(MPID_Request *, int *);
 
 /* Include definitions from the channel which require items defined by this

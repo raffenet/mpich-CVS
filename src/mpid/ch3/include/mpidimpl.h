@@ -47,9 +47,9 @@ extern MPIDI_Process_t MPIDI_Process;
 
 #define MPIDI_CH3U_Request_destroy(req)			\
 {							\
-    if (MPIDI_Request_get_tmpbuf_flag(req))		\
+    if (MPIDI_Request_get_srbuf_flag(req))		\
     {							\
-	MPIDI_CH3U_SRBuf_free(req->ch3.tmp_buf);	\
+	MPIDI_CH3U_SRBuf_free(req);			\
     }							\
 }
 
@@ -87,17 +87,17 @@ extern MPIDI_Process_t MPIDI_Process;
 	& MPIDI_REQUEST_MSG_MASK;				\
 }
 
-#define MPIDI_REQUEST_TMPBUF_MASK 1
-#define MPIDI_REQUEST_TMPBUF_SHIFT 2
+#define MPIDI_REQUEST_SRBUF_MASK 1
+#define MPIDI_REQUEST_SRBUF_SHIFT 2
 
-#define MPIDI_Request_get_tmpbuf_flag(req)				     \
-((req->ch3.state & MPIDI_REQUEST_TMPBUF_MASK) >> MPIDI_REQUEST_TMPBUF_SHIFT)
+#define MPIDI_Request_get_srbuf_flag(req)				     \
+((req->ch3.state & MPIDI_REQUEST_SRBUF_MASK) >> MPIDI_REQUEST_SRBUF_SHIFT)
 
-#define MPIDI_Request_set_tmpbuf_flag(req, flag)		\
+#define MPIDI_Request_set_srbuf_flag(req, flag)			\
 {								\
-    req->ch3.state &= ~MPIDI_REQUEST_TMPBUF_MASK;		\
-    req->ch3.state |= (flag << MPIDI_REQUEST_TMPBUF_SHIFT)	\
-	& MPIDI_REQUEST_TMPBUF_MASK;				\
+    req->ch3.state &= ~MPIDI_REQUEST_SRBUF_MASK;		\
+    req->ch3.state |= (flag << MPIDI_REQUEST_SRBUF_SHIFT)	\
+	& MPIDI_REQUEST_SRBUF_MASK;				\
 }
 
 /*
@@ -108,15 +108,28 @@ extern MPIDI_Process_t MPIDI_Process;
 #endif
 
 #if !defined(MPIDI_CH3U_SRBuf_alloc)
-#define MPIDI_CH3U_SRBuf_alloc(bufpp, isize, osizep)		\
+#define MPIDI_CH3U_SRBuf_alloc(req, size)			\
 {								\
-    *bufpp = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);		\
-    *osizep = (*bufpp != NULL) ? MPIDI_CH3U_SRBuf_size : 0;	\
+    req->ch3.tmp_buf = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);	\
+    if (req->ch3.tmp_buf != NULL)				\
+    {								\
+	req->ch3.tmp_sz = MPIDI_CH3U_SRBuf_size;		\
+	MPIDI_Request_set_srbuf_flag(req, TRUE);		\
+    }								\
+    else							\
+    {								\
+	req->ch3.tmp_sz = 0;					\
+    }								\
 }
 #endif
 
 #if !defined(MPIDI_CH3U_SRBuf_free)
-#define MPIDI_CH3U_SRBuf_free(buf) {MPIU_Free(buf);}
+#define MPIDI_CH3U_SRBuf_free(req)		\
+{						\
+    assert(MPIDI_Request_get_srbuf_flag(req));	\
+    MPIDI_Request_set_srbuf_flag(req, FALSE);	\
+    MPIU_Free(req->ch3.tmp_buf);		\
+}
 #endif
 
 
@@ -138,6 +151,7 @@ void MPIDI_err_printf(char *, char *, ...);
 #define MPIDI_dbg_printf(level, func, fmt, args...)
 #endif
 
+#define MPIDI_ERR_PRINTF(e) MPIDI_err_printf e
 #define MPIDI_err_printf(func, fmt, args...)			\
 {								\
     printf("%d %s(): " fmt "\n",				\

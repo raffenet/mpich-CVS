@@ -55,12 +55,10 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 		size = sreq->ch3.segment_size - sreq->ch3.segment_first;
 		
 		/* allocate temporary buffer and pack */
-		if (!MPIDI_Request_get_tmpbuf_flag(sreq))
+		if (!MPIDI_Request_get_srbuf_flag(sreq))
 		{
-		    MPIDI_CH3U_SRBuf_alloc(&sreq->ch3.tmp_buf, size,
-					   &sreq->ch3.tmp_sz);
+		    MPIDI_CH3U_SRBuf_alloc(sreq, size);
 		    assert (sreq->ch3.tmp_sz > 0);
-		    MPIDI_Request_set_tmpbuf_flag(sreq, TRUE);
 		}
 
 		last = (size <= sreq->ch3.tmp_sz) ? sreq->ch3.segment_size

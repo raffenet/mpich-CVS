@@ -434,43 +434,43 @@ int MPIDI_CH3U_Request_adjust_iov(MPID_Request * req, int nb)
 #define FUNCNAME MPIDI_CH3U_Request_copy_tmp_data
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3U_Request_copy_tmp_data(MPID_Request * rreq)
+int MPIDI_CH3U_Request_unpack_tmp_buf(MPID_Request * rreq)
 {
-    long dt_sz;
-    int dt_contig;
+    long userbuf_sz;
+    long unpack_sz;
+    int mpi_errno = MPI_SUCCESS;
 	    
+    MPID_Datatype_get_size_macro(rreq->ch3.datatype, userbuf_sz);
+    userbuf_sz *= rreq->ch3.user_count;
+    
+    if (rreq->ch3.recv_data_sz <= userbuf_sz)
+    {
+	unpack_sz = rreq->ch3.recv_data_sz;
+    }
+    else
+    {
+	MPIDI_DBG_PRINTF((40, FCNAME, "receive buffer overflow; message "
+			  "truncated, msg_sz=%ld, buf_sz=%ld",
+			  rreq->ch3.recv_data_sz, userbuf_sz));
+	unpack_sz = userbuf_sz;
+	mpi_errno = MPI_ERR_TRUNCATE;
+    }
+	
     if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
     {
-	MPID_Datatype_get_size_macro(rreq->ch3.datatype, dt_sz);
-	dt_contig = TRUE;
+	memcpy(rreq->ch3.user_buf, rreq->ch3.tmp_buf, unpack_sz);
     }
     else
     {
-	MPIDI_err_printf(FCNAME, "only basic datatypes are supported");
-	abort();
-    }
-		    
-    if (dt_contig) 
-    {
-	if (rreq->ch3.recv_data_sz <= dt_sz * rreq->ch3.user_count)
-	{
-	    memcpy(rreq->ch3.user_buf, rreq->ch3.tmp_buf,
-		   rreq->ch3.recv_data_sz);
-	}
-	else
-	{
-	    MPIDI_err_printf(FCNAME, "receive buffer overflow");
-	    abort();
-	    /* TODO: handle buffer overflow properly */
-	}
-    }
-    else
-    {
-	MPIDI_err_printf(FCNAME, "only contiguous data is supported");
-	abort();
+	MPID_Segment seg;
+	int last;
+
+	MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count,
+			  rreq->ch3.datatype, &seg);
+	last = unpack_sz;
+	MPID_Segment_unpack(&seg, 0, &last, rreq->ch3.tmp_buf);
+	assert(last == unpack_sz + 1);
     }
 		
-    MPIU_Free(rreq->ch3.tmp_buf);
-    rreq->ch3.tmp_buf = NULL;
-    rreq->ch3.tmp_sz = 0;
+    return mpi_errno;
 }

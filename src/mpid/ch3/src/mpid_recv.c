@@ -49,15 +49,15 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 	       internal completion counter will always be used. */
 	    if (rreq->cc == 0)
 	    {
-		/* All of the data has arrived, we need to copy the data and
+		/* All of the data has arrived, we need to unpack the data and
 	           then free the buffer and the request. */
 		if (count > 0)
 		{
-		    MPIDI_CH3U_Request_copy_tmp_data(rreq);
+		    MPIDI_CH3U_Request_unpack_tmp_buf(rreq);
+		    MPIU_Free(rreq->ch3.tmp_buf);
 		}
 		
 		*status = rreq->status;
-		MPIU_Free(rreq->ch3.tmp_buf);
 		MPID_Request_release(rreq);
 		rreq = NULL;
 		

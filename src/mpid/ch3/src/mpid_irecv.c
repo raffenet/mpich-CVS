@@ -56,8 +56,10 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	           then free the buffer and the request. */
 		if (count > 0)
 		{
-		    MPIDI_CH3U_Request_copy_tmp_data(rreq);
+		    MPIDI_CH3U_Request_unpack_tmp_buf(rreq);
+		    MPIU_Free(rreq->ch3.tmp_buf);
 		}
+
 		
 		mpi_errno = rreq->status.MPI_ERROR;
 		goto fn_exit;
