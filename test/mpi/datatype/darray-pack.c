@@ -94,6 +94,7 @@ int darray_2d_c_test1(void)
 	}
 	
 	MPI_Type_commit(&darray);
+
 	MPI_Type_size(darray, &sizeoftype);
 	if (sizeoftype != sizeof(int)) {
 	    errs++;
