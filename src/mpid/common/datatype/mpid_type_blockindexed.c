@@ -282,7 +282,7 @@ void MPID_Dataloop_create_blockindexed(int count,
     /* optimization:
      *
      * if contig_count == 1 and block starts at displacement 0,
-     * store it as a contiguous rather than an indexed dataloop.
+     * store it as a contiguous rather than a blockindexed dataloop.
      */
     if ((contig_count == 1) &&
 	((!dispinbytes && ((int *) disp_array)[0] == 0) ||
@@ -299,12 +299,26 @@ void MPID_Dataloop_create_blockindexed(int count,
 
     /* optimization:
      *
+     * if contig_count == 1 store it as a blockindexed with one
+     * element rather than as a lot of individual blocks.
+     */
+    if (contig_count == 1)
+    {
+	/* adjust count and blklen and drop through */
+	blklen *= count;
+	count = 1;
+    }
+
+    /* optimization:
+     *
      * if displacements start at zero and result in a fixed stride,
      * store it as a vector rather than a blockindexed dataloop.
      */
     eff_disp0 = (dispinbytes) ? ((MPI_Aint *) disp_array)[0] :
 	(((MPI_Aint) ((int *) disp_array)[0]) * old_extent);
-    if (eff_disp0 == (MPI_Aint) 0) {
+
+    if (count > 1 && eff_disp0 == (MPI_Aint) 0)
+    {
 	eff_disp1 = (dispinbytes) ? ((MPI_Aint *) disp_array)[1] :
 	    (((MPI_Aint) ((int *) disp_array)[1]) * old_extent);
 	last_stride = eff_disp1 - eff_disp0;
@@ -339,7 +353,7 @@ void MPID_Dataloop_create_blockindexed(int count,
      */
 
     new_loop_sz = sizeof(struct MPID_Dataloop) + 
-	(contig_count * sizeof(MPI_Aint)) + old_loop_sz;
+	(count * sizeof(MPI_Aint)) + old_loop_sz;
     /* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
 
     new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
