@@ -20,6 +20,13 @@
 #include <unistd.h>
 #endif
 
+#ifndef SSIZE_MAX
+/* SSIZE_MAX is the maximum amount of data that we expect to be able
+   to read from a socket at one time.  If this is not defined, we
+   guess that the value is 64k */
+/* FIXME!!! */
+#define SSIZE_MAX 65536
+#endif
 #define MPIDU_SOCK_INFINITE_TIME   -1
 #define MPIDU_SOCK_INVALID_SOCK    NULL
 #define MPIDU_SOCK_INVALID_SET     NULL
