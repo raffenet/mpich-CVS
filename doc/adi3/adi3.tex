@@ -71,6 +71,9 @@ NEC (as well as us) have looked at datatype optimizations.
 
 The LAPI-based implementation uses remote-memory-access.
 
+Also relevant are other low-level communication approaches, including active
+messages \cite{isca92*256} and Nexus \cite{JPDCNexus,Nexus}.
+
 \section{Requirements}
 The focus of the first two ADI designs was on the point-to-point message
 passing.  
@@ -89,6 +92,7 @@ This section lists requirements that we address in the ADI-3 design.
 \item Support external scheduling systems
 \item Support overlap of communication and computation (using threads or
   asynchronous operations)
+\item Support fault-tolerance on a group basis (see xxx)
 \end{enumerate}
 
 \subsection{Performance Issues}
@@ -120,8 +124,7 @@ This section lists requirements that we address in the ADI-3 design.
   there be version   control when running the same, unchanged, executable?
 \item What info values should be standardized?  For queuing systems, we could
   consider host, user, queueclass.  For interconnection, proxy would be
-  useful.  (Some of these have been used by STAMPI
-  \URL{http://guide.tokai.jaeri.og.jp/program/eng/software}).
+  useful.  (Some of these have been used by STAMPI \cite{stampi}).
 \item All resources must be released at the end of a job, even if it is killed
   with an uncatchable signal.  This is so difficult as to not even be strictly
   possible (deficiencies in the OS design), but we can reduce the windows of
@@ -251,7 +254,10 @@ The operations on a Request are
 \begin{description}
 \item[Request RequestAlloc()]
 \item[RequestFree( Request * )]
+\item[RequestQueue]( Queue, Request )
+\item[RequestDequeue](Queue, Request, int tag, int dest, int contextid )
 \end{description}
+? Do we need an AllocAndEnqueue?
 
 \subsubsection{Communicators}
 Communicators are vital for the ADI but are also manipulated by a large range
@@ -362,10 +368,15 @@ In some cases, we may want to use different code depending on whether services
 such as stdin/out/err forwarding are provided.  A query interface is provided
 to discover these capabilities.
 
-One effort to define a job management interface is PSCHED \cite{psched01};
-however, this interface addresses the needs of third-party scheduling policy
-services, and does not include any services for submitting jobs into a job
-management system.
+One effort to define a job management interface is PSCHED.
+One part of the PSCHED interface, described in \cite{psched01}, addresses the
+needs of third-party scheduling 
+policy services, and does not include any services for submitting jobs into a
+job management system.  
+The other part of the PSCHED interface, described in \cite{psched01other},
+provides task management routines that can be used to create and manage
+individual processes.  An extension supports the creation of multiple
+processes with a single call (\code{tm\_spawnTaskPool}).  
 
 \begin{description}
 \item[ProcessCreate](const char *argv[], const char *env[], 
@@ -377,7 +388,11 @@ management system.
     \code{env} is of the form \code{name=value} for each environment variable.
     Both \code{argv} and \code{env} are terminated by a null string.
 \item[ProcessSignal](const ProcessGroupId\_t id[], int sig)\\
+Should this be ProcessSendEvent instead?  Events can include Stop (e.g., like
+SIGSTOP), Exit (SIGINT), or a small message (e.g., containing port to listen
+on for a connection)
 \item[ProcessKill](const ProcessGroupId\_t id[], int nproc)\\
+Should this have a request exit and force exit option?
 \item[ProcessControlQuery](const char *name, char **value)\\
       Queries include
       \begin{description}
@@ -391,6 +406,11 @@ management system.
   nranks, ProcessGroupId\_t *out )\\
   Create a process group from an existing group by selecting particular
   members.
+\item[ProcessGetMyGroupId]()\\
+Returns the process group id of the calling process.  This is needed by the
+processes that have been created.
+\item[ProcessGetMyRank]()\\
+Returns the process rank in its created group.
 \end{description}
 Question: signal is Unix-specific.  Do we want that?  What about enviroment
 variables? 
@@ -398,6 +418,8 @@ variables?
 Question: What info keys do we predefine?
 
 Question: Should \code{ProcessCreate} be non-blocking?  
+
+Question: What happens to stdio when performing multiple spawns?
 
 A sample \code{ProcessGroupId\_t} might look something like
 \begin{verbatim}
@@ -416,10 +438,11 @@ The second step, connecting the created processes, requires passing
 information between the created processes and the creating processes.  We
 provide a simple query interface for this:
 \begin{description}
-\item[QuerySet](const char *name, const char *value)\\
-\item[QueryGet](const char *name, const char **result)\\
-\item[QueryFree](const char **result)\\
+\item[QuerySet](ProcessGroupId\_t id, const char *name, const char *value)\\
+\item[QueryGet](ProcessGroupId\_t id, const char *name, const char **result)\\
+\item[QueryFree](ProcessGroupId\_t id, const char **result)\\
 \end{description}
+These are all scoped to a particular process group id.
 
 Implementations of this can range from looking at environment variables to
 contacting a distributed data server.
@@ -567,16 +590,34 @@ should be no-ops.
 
 \section{The RMQ device}
 The Remote Memory Queue device replaces the channel device as the simple,
-low-level device that is easy to implement.   These operations include:
+low-level device that is easy to implement.   The implementation of the device
+assumes only that the device can send data between processes.
+
+
+The RMQ operations include:
 \begin{description}
 \item[INIT-RMQ]
-\item[SEND-ENVELOPE]
-\item[SEND-DATA]
+\item[INIT-LINK]? Returns buffering on link?
+\item[ENQUE-ENVELOPE]
+\item[PUT-DATA]
+\item[REG-MEMORY]
+\item[POLL-RMQ]
+\item[POLL-RMQ-FREQ]
 \end{description}
+
+The \code{POLL-RMQ} routine is called by all processes either whenever there
+is I/O activity (e.g., in response to a \code{SIGIO}), during MPI calls (ADI-3
+hook for poke-progress), or in response to a timer (\code{SIGALRM}).  In a
+system with true one-sided operations, the \code{POLL-RMQ} may be undefined or
+null.  \code{POLL-RMQ-FREQ} provides a hint of the frequency at which POLL-RMQ
+should be called relative to other methods (if any).
+
+Question: Should we allow a separate \code{POLL-RMQ} for each link as well as
+a combined operation?
 
 All other ADI-3 operations are provided by generic implementations built from
 these simple operations.  Each class of ADI-3 operations, such as datatype
-handling or collectiver oeprations, is provided by code in a separate
+handling or collective communication, is provided by code in a separate
 directory, as shown in Figure~\ref{fig:mpid-dirs}.
 
 \begin{figure}
@@ -585,13 +626,87 @@ directory, as shown in Figure~\ref{fig:mpid-dirs}.
 \label{fig:mpid-dirs}
 \end{figure}
 
+\subsection{Example Implementation of the RMQ}
+The following shows how the RMQ could be implemented for communication by
+sockets.  The code shown is pseudocode and does not include error handling or
+all required arguments.
+
+\begin{verbatim}
+INIT-RMQ()
+{
+    Initialize internal data structures to nil.
+}
+INIT-LINK( int link )
+{
+    Create socket connection to link, remember fd
+    Return socket buffer size
+}
+ENQUE-ENVELOPE( Request request )
+{
+    THREAD-LOCK(request->link)
+    write( request->packet )
+    if (not all written) {
+       add to pending write queue
+    }
+    THREAD-UNLOCK(request->link)
+}
+PUT-DATA( Request request )
+{
+    THREAD-LOCK(request->link)
+    writev( send-data packet header, request->data )
+    if (not all written) {
+       add to pending write queue
+    }
+    THREAD-UNLOCK(request->link)
+}
+POLL-RMQ( blocking )
+{
+    for each link (in increasing order), THREAD-LOCK(request->link)
+    select( open fds, timeout = (blocking ? NULL:0) );
+    for each unselected link, THREAD-UNLOCK(request->link)
+    for each set fd {
+       if (read) {
+           read packet
+           // process incoming data (locking for access)
+           RMQ_Process( &packet, methodid );
+           // Use ADI3 routines to access message queues
+       }
+       if (write)
+           advance pending writes (locking for access)
+       THREAD-UNLOCK(link corresponding to fd)
+    }
+}
+\end{verbatim}
+Question: Thread locks on I/O operations.  Are they needed per fd or per OS
+call (i.e., can separate threads write to seperate fds at the same time)?
+
+Question: Add a shared-memory method and show how the RMQ uses the two
+POLL-RMQ operations.
+
+Question: Still don't know how to handle data put in the POLL-RMQ routine.
+We could define end-point handlers (which could be null for direct copy or
+could handle simultaneous copy for shared memory).  In that case, we'd have 
+a RECV-DATA( link, void *p )?
+
+\subsubsection{Notes on the TCP implementation}
+If this is part of a multimethod implementation, the TCP method may be
+required to convert requests from the canonical form to the form required by
+TCP.  For example, the TCP data may need to be send in network byte order, or
+it may require some additional data (such as TCP-specific flow control).
+
+\subsection{Implementation of the ADI by RMQ}
+In the RMQ implementation, the ADI operations are provided by selecting the
+appropriate operation from a small set.  This set provides for such ADI
+required services as flow control, cancel, and collective communication.
+
 \subsubsection{Packet Types}
 This enumerates all of the packet types supported in the queue oriented
 device.  For each type, there is a rationale for that type.  Some are
 optional, provided for performance optimizations.
 
 \begin{description}
-\item[ROUTE]? Forward packet?
+\item[ROUTE]This contains a packet of arbitrary type, and simply indicates
+  that the packet should be set on the route specified.
 \item[SHORT]
 \item[LONG]
 \item[SEND-REQ]
@@ -638,6 +753,8 @@ A major theme is the use of queue operations that can be made thread safe
 either 
 through lock-free operations or atomic lock operations provided by the
 hardware.  
+
+\subsection{MPI\_Init}
 
 \subsection{MPI\_Send}
 The steps are
@@ -690,12 +807,6 @@ all of the local windows, or do we just send the displacement?  For VIA-like
 interfaces, I believe that we need only the displacement relative to the
 (virtual) connection.
 
-Need to do:
-
-search for ``protocol translators'' in the literature
-
-work out byte vs datatype issues
-
 We must also send the datatype.  We need to optimize for the contiquous case.
 The Portugal group caches the datatype at the destination (data item for
 datatype: where cached).  We will also need a way to invalidate the cache and
@@ -724,6 +835,13 @@ The possibilities for handling multimethod communication include:
 \item A mixture of these, using polling for the very fast devices and a
   service thread for slow ones.
 \end{enumerate}
+
+\section{Need to do}
+
+search for ``protocol translators'' in the literature
+
+work out byte vs datatype issues
+
 
 \section{Coding Standards and Modularity}
 The ADI-3 design is more modular than the previous ADI designs.  Adding a new
@@ -799,7 +917,7 @@ the value of \code{--with-archfamily=xxxx}.  If it finds that file, it will
 source it.  This will allow users to add shell commands for specific
 architectures. 
 
-Other miscellaneous issues:
+Other Miscellaneous Issues:
 \begin{itemize}
 \item Signals.  The MPI standard requires that any signals used be
   documented, whether handlers are established for them or they are used with
@@ -807,6 +925,11 @@ Other miscellaneous issues:
   the documentation, each device must present this information in a common
   location so that the man pages can be correctly generated.
 \end{itemize}
+
+\subsection{Naming Conventions}
+All macros are in all upper case.  Functions have an \code{MPID} prefix
+followed by a mixed-case name.
+
 
 \subsection{Instrumentation}
 To include: time waiting, time spinning, time waiting for flow ack, time in
@@ -838,7 +961,7 @@ from an array, providing the advantages of an index-based representation, but
 the objects themselves are represented by a pointer to the object, making
 direct access faster.
 
-\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp}
+\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,adi3}
 \bibliographystyle{plain}
 
 \end{document}
