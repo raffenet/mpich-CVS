@@ -158,7 +158,7 @@ JAC_JNI_HEADERS(JNI_INC, JDK_TOPDIR)
 if test "x$JNI_INC" = "x" ; then
     PAC_MSG_ERROR($enable_softerror, [Invalid JNI include dir, exit!])
 fi
-AC_DEFINE(HAVE_JNI_H)
+AC_DEFINE(HAVE_JNI_H,1,[Define if <jni.h> is found])
 AC_SUBST(JNI_INC)
 
 JVM="$JDK_TOPDIR/bin/java"
