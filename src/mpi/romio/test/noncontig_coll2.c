@@ -36,6 +36,15 @@ struct ADIO_cb_name_arrayD {
 typedef struct ADIO_cb_name_arrayD *ADIO_cb_name_array;
 
 
+
+void handle_error(int errcode, char *str) 
+{
+	char msg[MPI_MAX_ERROR_STRING];
+	int resultlen;
+	MPI_Error_string(errcode, msg, &resultlen);
+	fprintf(stderr, "%s: %s\n", str, msg);
+	MPI_Abort(MPI_COMM_WORLD, 1);
+}
  /* cb_copy_name_array() - attribute copy routine
  */
 int cb_copy_name_array(MPI_Comm comm, 
@@ -232,7 +241,7 @@ void default_str(int mynod, int len, ADIO_cb_name_array array, char *dest)
 	    }
 	}
 	/* chop off that last comma */
-	dest[strlen(dest)] = '\0';
+	dest[strlen(dest) - 1] = '\0';
 	MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 void reverse_str(int mynod, int len, ADIO_cb_name_array array, char *dest) 
@@ -246,6 +255,7 @@ void reverse_str(int mynod, int len, ADIO_cb_name_array array, char *dest)
 		    ptr += p;
 	    }
 	}
+	dest[strlen(dest) - 1] = '\0';
 	MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
@@ -266,6 +276,7 @@ void reverse_alternating_str(int mynod, int len, ADIO_cb_name_array array, char 
 		    ptr += p;
 	    }
     }
+	dest[strlen(dest) - 1] = '\0';
     MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
 
@@ -284,9 +295,9 @@ void simple_shuffle_str(int mynod, int len, ADIO_cb_name_array array, char *dest
 		    ptr += p;
 	    }
 	}
+	dest[strlen(dest) - 1] = '\0';
 	MPI_Bcast(dest, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
 }
-
 
 int main(int argc, char **argv)
 {
@@ -329,7 +340,6 @@ int main(int argc, char **argv)
     /* want to hint the cb_config_list, but do so in a non-sequential way */
     cb_gather_name_array(MPI_COMM_WORLD,  &array);
 
-#if 0
     /* sanity check */
     if (!mynod) {
 	    if (array->namect < 2 ) {
@@ -337,7 +347,6 @@ int main(int argc, char **argv)
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
     }
-#endif
     /* get space for the permuted cb_config_string */
     if (!mynod) {
 	    cb_config_len = 0;
@@ -382,10 +391,12 @@ int main(int argc, char **argv)
     return 0;
 }
 
+#define SEEDER(x,y,z) ((x)*1000000 + (y) + (x)*(z))
+
 int test_file(char *filename, int mynod, int nprocs, char * cb_hosts) 
 {
     MPI_Datatype typevec, newtype, t[3];
-    int *buf, i, b[3];
+    int *buf, i, b[3], errcode;
     MPI_File fh;
     MPI_Aint d[3];
     MPI_Status status;
@@ -393,6 +404,8 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     MPI_Info info;
 
     buf = (int *) malloc(SIZE*sizeof(int));
+    fprintf(stderr, "[%d/%d] caller buffer: %p\n",mynod, nprocs, buf);
+
 
     if (cb_hosts != NULL ) {
 	    MPI_Info_create(&info);
@@ -421,12 +434,15 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-                  info, &fh);
+    errcode = MPI_File_open(MPI_COMM_WORLD, filename, 
+		    MPI_MODE_CREATE | MPI_MODE_RDWR, info, &fh);
+    if (errcode != MPI_SUCCESS) {
+	    handle_error(errcode, "MPI_File_open");
+    }
 
     MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", info);
 
-    for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
+    for (i=0; i<SIZE; i++) buf[i] = SEEDER(mynod,i,SIZE);
     MPI_File_write_all(fh, buf, 1, newtype, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -441,7 +457,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
      * process 1 sees: -1 34 -1 -1 37 -1 ...
      * process 2 sees: -1 -1 68 -1 -1 71 ... */
 
-    /* call the leading -1s "leaders".  verify they exist if they should */
+    /* verify those leading -1s exist if they should */
     for (i=0; i<mynod; i++ ) {
 	    if ( buf[i] != -1 ) {
 		    fprintf(stderr, "Process %d: buf is %d, should be -1\n", mynod, buf[i]);
@@ -451,13 +467,13 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
      * 3rd, 6th... elements of the buffer (assuming nprocs==3 ).  proc 1 sees
      * the data in 1st, 4th, 7th..., and proc 2 sees it in 2nd, 5th, 8th */
 
-    for(; i<SIZE; i++) {
+    for(/* 'i' set in above loop */; i<SIZE; i++) {
 	    if ( ((i-mynod)%nprocs) && buf[i] != -1) 
 		    fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", 
 				    mynod, i, buf[i]);
-	    if ( !((i-mynod)%nprocs) && buf[i] != i + mynod*SIZE )
+	    if ( !((i-mynod)%nprocs) && buf[i] != SEEDER(mynod,i,SIZE) )
 		    fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
-				    mynod, i, buf[i], i + mynod*SIZE);
+				    mynod, i, buf[i], SEEDER(mynod,i,SIZE));
     }
     MPI_File_close(&fh);
 
@@ -472,7 +488,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
                   info, &fh);
 
-    for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
+    for (i=0; i<SIZE; i++) buf[i] = SEEDER(mynod,i,SIZE);
     MPI_File_write_at_all(fh, mynod*(SIZE/nprocs)*sizeof(int), buf, 1, newtype, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -487,13 +503,13 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
 		    fprintf(stderr, "Process %d: buf is %d, should be -1\n", mynod, buf[i]);
 	    }
     }
-    for(; i<SIZE; i++) {
+    for(/* i set in above loop */; i<SIZE; i++) {
 	    if ( ((i-mynod)%nprocs) && buf[i] != -1) 
 		    fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", 
 				    mynod, i, buf[i]);
-	    if ( !((i-mynod)%nprocs) && buf[i] != i + mynod*SIZE )
+	    if ( !((i-mynod)%nprocs) && buf[i] != SEEDER(mynod,i,SIZE))
 		    fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
-				    mynod, i, buf[i], i + mynod*SIZE);
+				    mynod, i, buf[i], SEEDER(mynod,i,SIZE) );
     }
 
     MPI_File_close(&fh);
@@ -511,7 +527,7 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
 
     MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", info);
 
-    for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
+    for (i=0; i<SIZE; i++) buf[i] = SEEDER(mynod, i, SIZE);
     MPI_File_write_all(fh, buf, SIZE, MPI_INT, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -520,20 +536,17 @@ int test_file(char *filename, int mynod, int nprocs, char * cb_hosts)
 
     MPI_File_read_at_all(fh, 0, buf, SIZE, MPI_INT, &status);
 
+    /* same crazy checking */
     for (i=0; i<SIZE; i++) {
-	if (!mynod) {
-	    if (buf[i] != i)
-		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
-	}
-	else {
-	    if (buf[i] != i + mynod*SIZE)
-		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
-	}
+	    if (buf[i] != SEEDER(mynod, i, SIZE))
+		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], SEEDER(mynod, i, SIZE));
     }
 
     MPI_File_close(&fh);
+#endif 
 
     MPI_Type_free(&newtype);
     free(buf);
+    if (info != MPI_INFO_NULL) MPI_Info_free(&info);
     return 0;
 }
