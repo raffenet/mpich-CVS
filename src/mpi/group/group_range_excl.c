@@ -145,6 +145,9 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
 	}
 
     }
+    
+    *newgroup = new_group_ptr->handle;
+
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_EXCL);
     return MPI_SUCCESS;

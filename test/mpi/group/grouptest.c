@@ -14,8 +14,8 @@
 */
 int main( int argc, char *argv[] )
 {
-    MPI_Group g1, g2;
-    int ranks[16], size, rank, myrank, mysize;
+    MPI_Group g1, g2, g4, g5, g45;
+    int ranks[16], size, rank, myrank, mysize, range[1][3];
     int errs = 0;
     int i, rin[3], rout[3];
 
@@ -81,6 +81,23 @@ int main( int argc, char *argv[] )
 	   diff( w, g2 ) => g3
 	*/
 	MPI_Group_free( &g2 );
+
+	range[0][0] = 1;
+	range[0][1] = size-1;
+	range[0][2] = 2;
+	MPI_Group_range_excl( g1, 1, range, &g5 );
+
+	range[0][0] = 1;
+	range[0][1] = size-1;
+	range[0][2] = 2;
+	MPI_Group_range_incl( g1, 1, range, &g4 );
+
+	MPI_Group_union( g4, g5, &g45 );
+
+	MPI_Group_free( &g4 );
+	MPI_Group_free( &g5 );
+	MPI_Group_free( &g45 );
+
 #ifdef MPIR_TEST_GROUPS
         MPI_Group_free( &g1 );
     }
