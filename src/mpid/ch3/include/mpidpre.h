@@ -238,8 +238,10 @@ struct MPIDI_Request							\
     MPIDI_CA_t ca;							\
 									\
     /* tmpbuf and tmpbuf_sz describe temporary storage used for things	\
-       like unexpected eager messages and packing/unpacking buffers. */	\
+       like unexpected eager messages and packing/unpacking buffers.	\
+       tmpuf_off is the current offset into the temporary buffer. */	\
     void * tmpbuf;							\
+    int tmpbuf_off;							\
     MPIDI_msg_sz_t tmpbuf_sz;						\
 									\
     MPIDI_msg_sz_t recv_data_sz;					\

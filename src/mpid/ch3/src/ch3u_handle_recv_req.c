@@ -46,11 +46,6 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE:
 	{
 	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
-	    if (rreq->ch3.segment_first != rreq->ch3.recv_data_sz)
-	    {
-		rreq->status.count = rreq->ch3.segment_first;
-		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
-	    }
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
 	}
