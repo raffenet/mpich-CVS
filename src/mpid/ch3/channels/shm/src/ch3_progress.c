@@ -44,7 +44,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 	}
     }
     
-    req->ch.iov_offset = offset;
+    req->ch.iov_offset = 0;
 
     MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
@@ -167,10 +167,6 @@ static inline int handle_written(MPIDI_VC * vc)
 		if (complete)
 		{
 		    MPIDI_CH3I_SendQ_dequeue(vc);
-		}
-		else
-		{
-		    req->ch.iov_offset = 0;
 		}
 		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 	    }
