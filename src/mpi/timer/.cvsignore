@@ -17,3 +17,4 @@ timerconf.h.in
 timerconf.h
 mpichtimer.h
 .deps
+.libs
