@@ -91,6 +91,7 @@ sub ProcessFile {
     # Include system defined names
     %AllowedDefines = ( 'SA_RESETHAND' => 'sys', 
 		        'WORDS_BIGENDIAN' => 'autoconf');
+    %defsUsed = ();
     my $cxx_comments_found = 0;
     my $cxx_header = 0;
 
@@ -213,10 +214,25 @@ sub ProcessFile {
 # Subroutines that we want to avoid
 @avoidsubs = ( "fprintf", "fputs", "puts", "printf", 
                "malloc", "calloc", "free", "strdup", "realloc" );
-@guardedsubs = ( "alloca", "closedir", "fnmatch", "getloadavg", 
-		 "getmntent", "getpgrp", "memcmp", "mmap", 
-		 "setpgrp", "setvbuf", "strcoll", "strftime",
-		 "utime", "vfork", "vprintf", "wait3" );
+# Guarded subs maps the routines being guarded to the guard definition
+# (we may eventually use colon separated values if multiple definitions are
+# allowed)
+%guardedsubs = ( "alloca" => "HAVE_ALLOCA", 
+		 "closedir" => "HAVE_CLOSEDIR", 
+		 "fnmatch" => "HAVE_FNMATCH", 
+		 "getloadavg" => "HAVE_GETLOADAVG", 
+		 "getmntent" => "HAVE_GETMNTENT", 
+		 "getpgrp" => "HAVE_GETPGRP", 
+		 "memcmp" => "HAVE_MEMCMP", 
+		 "mmap" => "HAVE_MMAP",    # Not really good enough
+		 "setpgrp" => "HAVE_SETPGRP", 
+		 "setvbuf" => "HAVE_SETVBUF", 
+		 "strcoll" => "HAVE_STRCOLL", 
+		 "strftime" => "HAVE_STRFTIME",
+		 "utime" => "HAVE_UTIME", 
+		 "vfork" => "HAVE_VFORK", 
+		 "vprintf" => "HAVE_VPRINTF", 
+		 "wait3" => "HAVE_WAIT3" );
 # Removed strcmp because it is ok if one string is guaranteed to 
 # have a terminating null.  This is still touchy, but it isn't the risk
 # posed by the copy or cat routines, since it doesn't write to any memory
@@ -249,10 +265,12 @@ sub CheckForBadSubs {
     # do *not* match a single "word" (alphanumeric+_) character.  This
     # keeps us from matching MPIU_vprintf when vprintf is in the list
     # of test routines and MPIU_vprintf is in the current line.
-    foreach $subname (@guardedsubs) {
+    foreach $subname (keys(%guardedsubs)) {
 	if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
-	    &PrintCurrentDirectory;
-	    print "Caution: found reference to routine $subname in $filename\n";
+	    if (!defined($defsUsed{$guardedsubs{$subname}})) {
+		&PrintCurrentDirectory;
+		print "Caution: found reference to routine $subname in $filename\n";
+	    }
 	}
     }
     # See above for an explanation of (?<!\w)
@@ -359,6 +377,9 @@ sub CheckName {
 
     return 1;
 }
+# In the process for checking for bad definitions, we also *remember* all
+# of the definitions that we see.  This helps with the tests for 
+# guarded routines
 sub CheckForBadDefines {
     my $FD = $_[0];
     my $curline = $_[1];
@@ -372,6 +393,7 @@ sub CheckForBadDefines {
 	if ($curline =~ /^\s*#ifdef\s*(.*)\s*/) {
 	    $defname = $1;
 	    $defname =~ s/\r*\n*//g;
+	    $defsUsed{$defname} = "$filename:$curline";
 	    print "$defname\n" if $debug;
 	    if (! defined($AllowedDefines{$defname}) && 
 		&CheckName( $defname ) ) {
@@ -382,6 +404,7 @@ sub CheckForBadDefines {
 	elsif ($curline =~ /^\s*#if\s/ || $curline =~ /^\s*#elif\s/) {
 	       while ($curline =~ /defined\(([^\)]*)\)/) {
 		   $defname = $1;
+		   $defsUsed{$defname} = "$filename:$curline";
 		   print "$defname\n" if $debug;
 		   if (! defined($AllowedDefines{$defname}) && 
 		       &CheckName( $defname ) ) {
@@ -401,8 +424,15 @@ sub CheckForBadDefinitions {
     my $filename = $_[2];
     if ($curline =~ /^#\s*define\s+(__\w*)/) {
 	$defname = $1;
+	if ($defname eq "__DATE__") {
+	    # We allow this because some older C compilers don't set it.
+	    # We should really check that it is not set withing an 
+	    #  #ifndef __DATE__... 
+	    return 0;
+	}
 	print "Warning: definition of name $defname used in $filename is not allowed\n"
     }
+    return 0;
 }
 
 #
