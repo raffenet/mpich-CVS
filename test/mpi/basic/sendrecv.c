@@ -13,6 +13,13 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    if (size < 2)
+    {
+	printf("Two processes needed.\n");
+	MPI_Finalize();
+	return 0;
+    }
+
     if (rank == 0)
     {
 	printf("Rank 0: sending message to process 1.\n");
