@@ -20,6 +20,7 @@ def mpdman():
     global get_sigtype_from_mpd
     get_sigtype_from_mpd = 0
     signal(SIGUSR1,sigusr1_handler)
+    signal(SIGCHLD,SIG_IGN)  # reset mpd's values
 
     myHost = environ['MPDMAN_MYHOST']
     myRank = int(environ['MPDMAN_RANK'])
@@ -39,7 +40,6 @@ def mpdman():
     mpd_print(0000, "ARGS=", clientPgmArgs )
     clientPgmEnv = environ['MPDMAN_PGM_ENVVARS']
     clientPgmEnv = findall('\S+',clientPgmEnv)
-    signal(SIGCHLD,SIG_IGN)  # reset mpd's values
     mpd_print(0000, 'entering mpdman to exec %s' % (clientPgm) )
     jobid = environ['MPDMAN_JOBID']
     nprocs = int(environ['MPDMAN_NPROCS'])
@@ -269,7 +269,7 @@ def mpdman():
             if isinstance(errmsg,Exception)  and  errmsg[0] == 4:  # interrupted system call
                 continue
             else:
-                mpd_raise('%s: select failed: errmsg=:%s:' % (g.myId,errmsg) )
+                mpd_raise('%s: select failed: errmsg=:%s:' % (myId,errmsg) )
         for readySocket in inReadySockets:
             if readySocket not in socketsToSelect.keys():
                 continue
