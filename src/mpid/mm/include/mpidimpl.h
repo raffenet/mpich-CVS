@@ -26,13 +26,18 @@ typedef struct {
 } MPID_PerProcess_t;
 extern MPID_PerProcess_t MPID_Process;
 
-int MM_Open_port(MPID_Info *, char *);
-int MM_Close_port(char *);
-int MM_Accept(MPID_Info *, char *);
-int MM_Connect(MPID_Info *, char *);
-int MM_Send(int, char *, int);
-int MM_Recv(int, char *, int);
-int MM_Close(int);
+int mm_open_port(MPID_Info *, char *);
+int mm_close_port(char *);
+int mm_accept(MPID_Info *, char *);
+int mm_connect(MPID_Info *, char *);
+int mm_send(int, char *, int);
+int mm_recv(int, char *, int);
+int mm_close(int);
+MPID_Request * mm_request_alloc();
+void mm_request_free(MPID_Request *request_ptr);
+void mm_car_init();
+MM_Car* mm_car_alloc();
+void mm_car_free(MM_Car *car_ptr);
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more

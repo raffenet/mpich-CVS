@@ -7,7 +7,7 @@
 #include "mpidimpl.h"
 #include "bsocket.h"
 
-int MM_Accept(MPID_Info *info_ptr, char *port_name)
+int mm_accept(MPID_Info *info_ptr, char *port_name)
 {
     int error;
     int bfd;

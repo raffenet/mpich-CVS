@@ -7,7 +7,7 @@
 #include "mpidimpl.h"
 #include "bsocket.h"
 
-int MM_Close_port(char *port_name)
+int mm_close_port(char *port_name)
 {
     OpenPortNode_t *p, *pTrailer;
 

@@ -7,7 +7,7 @@
 #include "mpidimpl.h"
 #include "bsocket.h"
 
-int MM_Recv(int conn, char *buffer, int length)
+int mm_recv(int conn, char *buffer, int length)
 {
     int error;
     if (beasy_receive(conn, buffer, length) != SOCKET_ERROR)

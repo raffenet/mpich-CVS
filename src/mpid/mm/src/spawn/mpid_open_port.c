@@ -29,7 +29,7 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_OPEN_PORT);
 
-    MM_Open_port(info_ptr, port_name);
+    mm_open_port(info_ptr, port_name);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_OPEN_PORT);
     return MPI_SUCCESS;

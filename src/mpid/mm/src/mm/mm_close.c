@@ -7,7 +7,7 @@
 #include "mpidimpl.h"
 #include "bsocket.h"
 
-int MM_Close(int conn)
+int mm_close(int conn)
 {
     beasy_closesocket(conn);
     return 0;

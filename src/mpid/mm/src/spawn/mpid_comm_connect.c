@@ -38,11 +38,11 @@ int MPID_Comm_connect(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm 
 
     if (comm_ptr->rank == root)
     {
-	conn = MM_Connect(info_ptr, port_name);
+	conn = mm_connect(info_ptr, port_name);
 
 	/* Transfer stuff */
 
-	MM_Close(conn);
+	mm_close(conn);
 
 	/* Bcast resulting intercommunicator stuff to the rest of this communicator */
     }

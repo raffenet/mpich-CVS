@@ -7,7 +7,7 @@
 #include "mpidimpl.h"
 #include "bsocket.h"
 
-int MM_Connect(MPID_Info *info_ptr, char *port_name)
+int mm_connect(MPID_Info *info_ptr, char *port_name)
 {
     char host[100];
     int port;

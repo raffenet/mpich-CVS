@@ -29,7 +29,7 @@ int MPID_Close_port(char *port_name)
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_CLOSE_PORT);
 
-    MM_Close_port(port_name);
+    mm_close_port(port_name);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_CLOSE_PORT);
     return MPI_SUCCESS;

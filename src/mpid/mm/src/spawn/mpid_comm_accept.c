@@ -40,12 +40,12 @@ int MPID_Comm_accept(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *
 
     if (comm_ptr->rank == root)
     {
-	conn = MM_Accept(info_ptr, port_name);
+	conn = mm_accept(info_ptr, port_name);
 	/*PMPI_Info_get(info, MPICH_PMI_SAME_DOMAIN_KEY, 10, value, &same_domain);*/
 
 	/* Transfer stuff */
 
-	MM_Close(conn);
+	mm_close(conn);
 
 	/* Bcast resulting intercommunicator stuff to the rest of this communicator */
     }

@@ -7,7 +7,7 @@
 #include "mpidimpl.h"
 #include "bsocket.h"
 
-int MM_Open_port(MPID_Info *info_ptr, char *port_name)
+int mm_open_port(MPID_Info *info_ptr, char *port_name)
 {
     int bfd;
     int error;
@@ -30,7 +30,7 @@ int MM_Open_port(MPID_Info *info_ptr, char *port_name)
     beasy_get_sock_info(bfd, host, &port);
     beasy_get_ip_string(host);
 
-    sprintf(port_name, "%s:%d", host, port);
+    snprintf(port_name, MPI_MAX_PORT_NAME, "%s:%d", host, port);
 
     p = (OpenPortNode_t*)MPIU_Malloc(sizeof(OpenPortNode_t));
     p->bfd = bfd;

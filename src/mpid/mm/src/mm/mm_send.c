@@ -7,7 +7,7 @@
 #include "mpidimpl.h"
 #include "bsocket.h"
 
-int MM_Send(int conn, char *buffer, int length)
+int mm_send(int conn, char *buffer, int length)
 {
     int error;
     if (beasy_send(conn, buffer, length) != SOCKET_ERROR)
