@@ -7,11 +7,11 @@ National Laboratory.  It shares many goals with the original MPICH but
 no actual code.  It is a portable, high-performance implementation of
 the entire MPI-2 standard.  This release has all MPI-2 functions and
 features required by the standard with the exeption of support for the
-"external32" portable I/O format.  It also currently supports only a
-few communication methods.
+"external32" portable I/O format.  It also currently supports only a few
+communication methods.
 
 This distribution of MPICH is largely a bug fix release, although it
-does contains some new features such a preliminary thread support.  The
+does contains some new features such as preliminary thread support.  The
 distribution has been tested by us on a variety of machines in our own
 environment, but not all of it has yet been extensively tested by
 outside users.  If you have problems, please report them to
@@ -366,19 +366,20 @@ or
 on the configure command line.
 
 In addition to the channels listed above, the ch3 device includes a
-scalable shared memory channel (sshm), an Infiniband channel (ib) and a
-GASNet channel (gasnet).  These channels have been tested by their
-authors, but are not run through the nightly test suites.
+scalable shared memory channel (sshm), a channel for Microsoft Windows
+that uses events rather than busy waiting (essm), an Infiniband channel
+(ib) and a GASNet channel (gasnet).  These channels have been tested by
+their authors, but are not run through the nightly test suites.
 
-The scalable shared memory channel, like the shm channel, uses shared memory
-for communication.  However, unlike the shm channel, which allocates a
-NxN array of queues in shared memory during MPI_INIT, the sshm channel
-only allocates a queue in shared memory when a pair of processes
-communicate for the first time.  Since the communication patterns in
-most programs does no involve all processes communicating with all other
-processes, this channel will scale to a larger number of process than
-the shm channel.  Hence it's name.  The sshm channel may be selected by
-putting
+The scalable shared memory channel, like the shm channel, uses shared
+memory for communication.  However, unlike the shm channel, which
+allocates a NxN array of queues in shared memory during MPI_INIT, the
+sshm channel only allocates a queue in shared memory when a pair of
+processes communicate for the first time.  Since the communication
+patterns in most programs does no involve all processes communicating
+with all other processes, this channel will scale to a larger number of
+process than the shm channel.  Hence it's name.  The sshm channel may be
+selected by putting
 
   --with-device=ch3:sshm
 
