@@ -169,11 +169,11 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	}
 	if (result == SMPD_SUCCESS)
 	{
-	    printf("%s option updated.\n", opt);
+	    printf("%s = %s.\n", opt, opt_val);
 	}
 	else
 	{
-	    printf("unable to update %s option.\n", opt);
+	    printf("unable to set %s option.\n", opt);
 	}
 	smpd_exit(0);
     }
@@ -195,6 +195,16 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    printf("default\n");
 	}
 	smpd_exit(0);
+    }
+
+    /* If we've made it here and there still is "-set" or "-get" on the command line then the user
+     * probably didn't supply the correct number of parameters.  So print the usage message
+     * and exit.
+     */
+    if (smpd_get_opt(argcp, argvp, "-set") || smpd_get_opt(argcp, argvp, "-get"))
+    {
+	smpd_print_options();
+	smpd_exit(-1);
     }
 
     if (smpd_get_opt_string(argcp, argvp, "-query", domain, SMPD_MAX_HOST_LENGTH))
