@@ -1,13 +1,10 @@
 #include "mpi.h" 
 #include "stdio.h"
 
-/* tests passive target RMA on 2 processes. This test DOES NOT RUN by default
-   because of lack of thread-safety in the progress engine. I have
-   tested it by making temporary tweaks to the RMA code to account for
-   thread-safety issues. */
+/* tests passive target RMA on 2 processes. */
 
-#define SIZE1 10
-#define SIZE2 20
+#define SIZE1 100
+#define SIZE2 200
 
 int main(int argc, char *argv[]) 
 { 
@@ -28,26 +25,33 @@ int main(int argc, char *argv[])
         MPI_Win_create(NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win); 
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
         for (i=0; i<SIZE1; i++)
-            MPI_Put(A+i, 1, MPI_INT, 1, i, 1, MPI_INT, win);
+          MPI_Put(A+i, 1, MPI_INT, 1, i, 1, MPI_INT, win);
         for (i=0; i<SIZE1; i++)
-            MPI_Get(B+i, 1, MPI_INT, 1, SIZE1+i, 1, MPI_INT, win);
+          MPI_Get(B+i, 1, MPI_INT, 1, SIZE1+i, 1, MPI_INT, win);
         MPI_Win_unlock(1, win);
+
         MPI_Win_free(&win);
 
         for (i=0; i<SIZE1; i++) 
             if (B[i] != (-4)*(i+SIZE1)) 
-                printf("Get Error: B[i] is %d, should be %d\n", B[i], (-4)*(i+SIZE1));
+            printf("Get Error: B[%d] is %d, should be %d\n", i, B[i], (-4)*(i+SIZE1));
     }
  
     else {  /* rank=1 */
         for (i=0; i<SIZE2; i++) B[i] = (-4)*i;
         MPI_Win_create(B, SIZE2*sizeof(int), sizeof(int), MPI_INFO_NULL, 
                        MPI_COMM_WORLD, &win);
+
+        for (i=0; i<100; i++) {
+            usleep(1000);
+            MPIDI_CH3I_Progress(0);
+        }
+
         MPI_Win_free(&win); 
         
         for (i=0; i<SIZE1; i++) {
             if (B[i] != i)
-                printf("Put Error: B[i] is %d, should be %d\n", B[i], i);
+                printf("Put Error: B[%d] is %d, should be %d\n", i, B[i], i);
         }
     }
 

@@ -47,7 +47,7 @@ int MPID_Win_free(MPID_Win **win_ptr)
 
     MPIU_Free((*win_ptr)->base_addrs);
     MPIU_Free((*win_ptr)->disp_units);
-    MPIU_Free((*win_ptr)->all_counters);
+    MPIU_Free((*win_ptr)->all_win_ptrs);
  
     /* check whether refcount needs to be decremented here as in group_free */
     MPIU_Handle_obj_free( &MPID_Win_mem, *win_ptr );

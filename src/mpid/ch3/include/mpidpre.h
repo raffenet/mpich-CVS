@@ -64,6 +64,8 @@ typedef enum MPIDI_CH3_Pkt_type
     MPIDI_CH3_PKT_GET,
     MPIDI_CH3_PKT_GET_RESP,
     MPIDI_CH3_PKT_ACCUMULATE,
+    MPIDI_CH3_PKT_LOCK,
+    MPIDI_CH3_PKT_LOCK_GRANTED,
     MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,
     MPIDI_CH3_PKT_END_CH3
 # if defined(MPIDI_CH3_PKT_ENUM)
@@ -141,8 +143,10 @@ typedef struct MPIDI_CH3_Pkt_put
     int count;
     MPI_Datatype datatype;
     int dataloop_size;   /* for derived datatypes */
-    int *decr_ctr; /* address of counter to be decremented on remote
-                       side. could be NULL */ 
+    struct MPID_Win *win_ptr; /* address of window object on remote side. Used in
+                               * the last RMA operation in each epoch for
+                               * decrementing rma op counter and for unlocking
+                               * window in passive target rma. Otherwise set to NULL*/
 }
 MPIDI_CH3_Pkt_put_t;
 
@@ -154,8 +158,10 @@ typedef struct MPIDI_CH3_Pkt_get
     MPI_Datatype datatype;
     int dataloop_size;   /* for derived datatypes */
     struct MPID_Request *request;
-    int *decr_ctr; /* address of counter to be decremented on remote
-                       side. could be NULL */ 
+    struct MPID_Win *win_ptr; /* address of window object on remote side. Used in
+                               * the last RMA operation in each epoch for
+                               * decrementing rma op counter and for unlocking
+                               * window in passive target rma. Otherwise set to NULL*/
 }
 MPIDI_CH3_Pkt_get_t;
 
@@ -174,10 +180,28 @@ typedef struct MPIDI_CH3_Pkt_accum
     MPI_Datatype datatype;
     int dataloop_size;   /* for derived datatypes */
     MPI_Op op;
-    int *decr_ctr; /* address of counter to be decremented on remote
-                       side. could be NULL */ 
+    struct MPID_Win *win_ptr; /* address of window object on remote side. Used in
+                               * the last RMA operation in each epoch for
+                               * decrementing rma op counter and for unlocking
+                               * window in passive target rma. Otherwise set to NULL*/
 }
 MPIDI_CH3_Pkt_accum_t;
+
+typedef struct MPIDI_CH3_Pkt_lock
+{
+    MPIDI_CH3_Pkt_type_t type;
+    struct MPID_Win *win_ptr;
+    int lock_type;
+    int *lock_granted_flag_ptr;
+}
+MPIDI_CH3_Pkt_lock_t;
+
+typedef struct MPIDI_CH3_Pkt_lock_granted
+{
+    MPIDI_CH3_Pkt_type_t type;
+    int *lock_granted_flag_ptr;
+}
+MPIDI_CH3_Pkt_lock_granted_t;
 
 typedef union MPIDI_CH3_Pkt
 {
@@ -195,6 +219,8 @@ typedef union MPIDI_CH3_Pkt
     MPIDI_CH3_Pkt_get_t get;
     MPIDI_CH3_Pkt_get_resp_t get_resp;
     MPIDI_CH3_Pkt_accum_t accum;
+    MPIDI_CH3_Pkt_lock_t lock;
+    MPIDI_CH3_Pkt_lock_granted_t lock_granted;
 # if defined(MPIDI_CH3_PKT_DECL)
     MPIDI_CH3_PKT_DECL
 # endif
@@ -333,14 +359,15 @@ struct MPIDI_Request														\
 																\
     /* The next 6 are for RMA */                                                                                                \
     MPI_Op op;												                        \
-    int *decr_ctr;														\
     /* For accumulate, since data is first read into a tmp_buf */								\
     void *real_user_buf;													\
     /* For derived datatypes at target */								                        \
     MPIDI_RMA_dtype_info *dtype_info;												\
     void *dataloop;													        \
     /* req. handle needed to implement derived datatype gets  */					                        \
-    struct MPID_Request *request;												        \
+    struct MPID_Request *request;											        \
+    /* ptr to window object  */    					                                                        \
+    struct MPID_Win *win_ptr;   										                \
 																\
     MPIDI_REQUEST_SEQNUM													\
 																\
@@ -360,7 +387,7 @@ MPID_REQUEST_DECL
 typedef struct MPIDI_RMA_ops {
     struct MPIDI_RMA_ops *next;  /* pointer to next element in list */
     int type;  /* MPIDI_RMA_PUT, MPID_REQUEST_GET,
-		  MPIDI_RMA_ACCUMULATE */
+		  MPIDI_RMA_ACCUMULATE, MPIDI_RMA_LOCK */
     void *origin_addr;
     int origin_count;
     MPI_Datatype origin_datatype;
@@ -371,5 +398,12 @@ typedef struct MPIDI_RMA_ops {
     MPI_Op op;  /* for accumulate */
     int lock_type;  /* for win_lock */
 } MPIDI_RMA_ops;
+
+typedef struct MPIDI_Win_lock_queue {
+    struct MPIDI_Win_lock_queue *next;
+    int lock_type;
+    int *lock_granted_flag_ptr;
+    MPIDI_VC *vc;
+} MPIDI_Win_lock_queue;
 
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */

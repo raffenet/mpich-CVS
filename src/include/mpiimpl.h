@@ -1327,14 +1327,19 @@ typedef struct MPID_Win {
     int start_assert;            /* assert passed to MPI_Win_start */
     MPI_Comm    comm;         /* communicator of window (dup) */
     volatile int my_counter;  /* completion counter for operations
-                                 targeting this window, or for the source
-                                 window in the case of passive target RMA */
+                                 targeting this window */
     void **base_addrs;     /* array of base addresses of the windows of
                               all processes */
     int *disp_units;      /* array of displacement units of all windows */
-    int **all_counters;    /* array of addresses of the completion
-                                 counters of all processes */
+    struct MPID_Win **all_win_ptrs;    /* array of addresses of the window objects
+                                          of all processes */
     MPIDI_RMA_ops *rma_ops_list; /* list of outstanding RMA requests */
+    volatile int lock_granted;  /* flag to indicate whether lock has 
+                                   been granted to this process (as source) for
+                                   passive target rma */
+    int current_lock_type;   /* current lock type on this window (as target)
+                              * (none, shared, exclusive) */
+    struct MPIDI_Win_lock_queue *lock_queue;  /* list of unsatisfied locks */
 
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to

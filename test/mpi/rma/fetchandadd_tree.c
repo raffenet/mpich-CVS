@@ -4,12 +4,7 @@
 
 /* This is the tree-based scalable version of the fetch-and-add
    example from Using MPI-2, pg 206-207. The code in the book (Fig
-   6.16) has bugs that are fixed below.
-
-   This example DOES NOT RUN by default because of lack of
-   thread-safety in the progress engine. I have tested it by making
-   temporary tweaks to the RMA code to account for thread-safety
-   issues. It runs even on non-power-of-two no. of processes. */ 
+   6.16) has bugs that are fixed below. */ 
 
 
 #define NTIMES 10  /* no of times each process calls the counter
@@ -43,6 +38,12 @@ int main(int argc, char *argv[])
         counter_mem = (int *) calloc(pof2*2, sizeof(int));
         MPI_Win_create(counter_mem, pof2*2*sizeof(int), sizeof(int),
                        MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+
+        for (i=0; i<300; i++) {
+            usleep(1000);
+            MPIDI_CH3I_Progress(0);
+        }
+
         MPI_Win_free(&win); 
         free(counter_mem);
     }

@@ -9,10 +9,6 @@
 #include <pthread.h>
 #endif
 
-/* THE CALL TO MPI_IPROBE BELOW HAS BEEN COMMENTED OUT OTHERWISE EVEN THE
-   ACTIVE-TARGET RMA WILL NOT WORK BECAUSE OF THREAD-SAFETY
-   ISSUES. UNCOMMENT THE LINE BELOW FOR PASSIVE TARGET TO WORK */
-
 #ifdef HAVE_PTHREAD_H
 #define THREAD_RETURN_TYPE void *
 #elif defined(HAVE_WINTHREADS)
@@ -63,6 +59,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->start_assert = 0; 
     (*win_ptr)->attributes = NULL;
     (*win_ptr)->rma_ops_list = NULL;
+    (*win_ptr)->current_lock_type = MPID_LOCK_NONE;
+    (*win_ptr)->lock_queue = NULL;
+    (*win_ptr)->my_counter = 0;
     
     MPIR_Nest_incr();
 
@@ -78,7 +77,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     /* allocate memory for the base addresses, disp_units, and
        completion counters of all processes */ 
     (*win_ptr)->base_addrs = (void **) MPIU_Malloc(comm_size *
-                                                   sizeof(int *));   
+                                                   sizeof(void *));   
     /* --BEGIN ERROR HANDLING-- */
     if (!(*win_ptr)->base_addrs)
     {
@@ -98,10 +97,10 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
     /* --END ERROR HANDLING-- */
 
-    (*win_ptr)->all_counters = (int **) MPIU_Malloc(comm_size *
-                                                    sizeof(int *));
+    (*win_ptr)->all_win_ptrs = (struct MPID_Win **) MPIU_Malloc(comm_size *
+                                                    sizeof(struct MPID_Win *));
     /* --BEGIN ERROR HANDLING-- */
-    if (!(*win_ptr)->all_counters)
+    if (!(*win_ptr)->all_win_ptrs)
     {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
@@ -109,7 +108,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
     /* --END ERROR HANDLING-- */
 
-    /* get the addresses of the window objects and completion counters
+    /* get the addresses of the windows, window objects, and completion counters
        of all processes */  
 
     /* allocate temp. buffer for communication */
@@ -128,7 +127,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     */
     tmp_buf[3*rank] = base;
     tmp_buf[3*rank+1] = (void *) disp_unit;
-    tmp_buf[3*rank+2] = (void *) &((*win_ptr)->my_counter);
+    tmp_buf[3*rank+2] = (void *) *win_ptr; 
 
     mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                tmp_buf, 3, MPI_LONG, comm_ptr->handle);
@@ -146,7 +145,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     {
         (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
         (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
-        (*win_ptr)->all_counters[i] = tmp_buf[3*i+2];
+        (*win_ptr)->all_win_ptrs[i] = tmp_buf[3*i+2];
     }
 
     MPIU_Free(tmp_buf);
@@ -172,6 +171,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 }
 
 
+#ifdef USE_OLDSTUFF
 THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
 {
     int comm_size, src, nops_from_proc, rank, i, j, tag;
@@ -589,3 +589,4 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
     
     return (THREAD_RETURN_TYPE)mpi_errno;
 }
+#endif

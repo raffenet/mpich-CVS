@@ -29,8 +29,15 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 	    { 
                 /* atomically decrement RMA completion counter */
                 /* FIXME: MT: this has to be done atomically */
-                if (sreq->dev.decr_ctr != NULL)
-                    *(sreq->dev.decr_ctr) -= 1;
+                if (sreq->dev.win_ptr != NULL) {
+                    sreq->dev.win_ptr->my_counter -= 1;
+
+                    /* grant next lock in lock queue if there is any */
+                    if (sreq->dev.win_ptr->lock_queue != NULL)
+                        mpi_errno = MPIDI_CH3I_Grant_next_lock(sreq->dev.win_ptr);
+                    else
+                        sreq->dev.win_ptr->current_lock_type = MPID_LOCK_NONE;
+                }
             }
 
 	    /* mark data transfer as complete and decrement CC */

@@ -3,10 +3,7 @@
 #include "stdlib.h"
 
 /* Fetch and add example from Using MPI-2 (the non-scalable version,
-   Fig. 6.12). This example DOES NOT RUN by default because of lack of
-   thread-safety in the progress engine. I have tested it by making 
-   temporary tweaks to the RMA code to account for thread-safety
-   issues. */ 
+   Fig. 6.12). */ 
 
 
 #define NTIMES 10  /* no of times each process calls the counter
@@ -35,6 +32,12 @@ int main(int argc, char *argv[])
         counter_mem = (int *) calloc(nprocs, sizeof(int));
         MPI_Win_create(counter_mem, nprocs*sizeof(int), sizeof(int),
                        MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+
+        for (i=0; i<300; i++) {
+            usleep(1000);
+            MPIDI_CH3I_Progress(0);
+        }
+
         MPI_Win_free(&win); 
         free(counter_mem);
     }

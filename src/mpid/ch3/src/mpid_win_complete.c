@@ -17,7 +17,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests; /* array of requests */
-    int *decr_addr, new_total_op_count;
+    int new_total_op_count;
+    MPID_Win *dest_win_ptr;
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
     MPI_Group win_grp, start_grp;
@@ -173,20 +174,21 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     while (curr_ptr != NULL)
     {
         /* The completion counter at the target is decremented
-           only on the last operation on the target. Otherwise, we
-           pass NULL */
+           only on the last operation on the target. For that
+           purpose, we pass the dest_win_ptr only on the last
+           operation. Otherwise, we pass NULL */
         if (curr_ops_cnt[curr_ptr->target_rank] ==
             nops_to_proc[curr_ptr->target_rank] - 1) 
-            decr_addr = win_ptr->all_counters[curr_ptr->target_rank];
+            dest_win_ptr = win_ptr->all_win_ptrs[curr_ptr->target_rank];
         else 
-            decr_addr = NULL;
+            dest_win_ptr = NULL;
 
         switch (curr_ptr->type)
 	{
         case (MPIDI_RMA_PUT):
         case (MPIDI_RMA_ACCUMULATE):
             mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]); 
+                     dest_win_ptr, &dtype_infos[i], &dataloops[i], &requests[i]); 
 	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -197,7 +199,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             break;
         case (MPIDI_RMA_GET):
             mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                     decr_addr, &dtype_infos[i], &dataloops[i], &requests[i]);
+                     dest_win_ptr, &dtype_infos[i], &dataloops[i], &requests[i]);
 	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -235,7 +237,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             put_pkt->addr = NULL;
             put_pkt->count = 0;
             put_pkt->datatype = MPI_INT;
-            put_pkt->decr_ctr = win_ptr->all_counters[dst];
+            put_pkt->win_ptr = win_ptr->all_win_ptrs[dst];
 
             vc = comm_ptr->vcr[dst];
 
@@ -270,6 +272,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                 if (*(requests[i]->cc_ptr) != 0)
 		{
                     done = 0;
+                    break;
 		}
                 else
 		{
