@@ -15,7 +15,7 @@ static int s_cur_send = 0;
 int g_num_receive_posted = 0;
 int g_num_send_posted = 0;
 
-int ibu_post_receive(MPIDI_VC *vc_ptr)
+int ibr_post_receive(MPIDI_VC *vc_ptr)
 {
     ib_uint32_t status;
     ib_scatter_gather_list_t sg_list;
@@ -28,7 +28,7 @@ int ibu_post_receive(MPIDI_VC *vc_ptr)
     sg_list.data_seg_p = &data;
     sg_list.data_seg_num = 1;
     data.length = IB_PACKET_SIZE;
-    data.va = (ib_uint64_t)mem_ptr;
+    data.va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
     data.l_key = vc_ptr->data.ib.info.m_lkey;
     work_req.op_type = OP_RECEIVE;
     work_req.sg_list = sg_list;
@@ -58,7 +58,7 @@ typedef struct ibu_num_written_node_t
 
 ibu_num_written_node_t *g_write_list_head = NULL, *g_write_list_tail = NULL;
 
-int ibu_next_num_written()
+int ibr_next_num_written()
 {
     ibu_num_written_node_t *p;
     int num_bytes;
@@ -72,7 +72,7 @@ int ibu_next_num_written()
     return num_bytes;
 }
 
-int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*))
+int ibr_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
     ib_scatter_gather_list_t sg_list;
@@ -145,12 +145,12 @@ int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_up
     return MPI_SUCCESS;
 }
 
-int ibu_post_writev(MPIDI_VC *vc_ptr, MPID_IOV *iov, int n, int (*write_progress_update)(int, void*))
+int ibr_post_writev(MPIDI_VC *vc_ptr, MPID_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
     int i;
     for (i=0; i<n; i++)
     {
-	ibu_post_write(vc_ptr, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN, NULL);
+	ibr_post_write(vc_ptr, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN, NULL);
     }
     return MPI_SUCCESS;
 }

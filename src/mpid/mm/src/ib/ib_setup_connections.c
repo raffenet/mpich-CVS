@@ -311,7 +311,7 @@ int ib_setup_connections()
 	/* pre post some receives on each connection */
 	for (j=0; j<IB_NUM_PREPOSTED_RECEIVES; j++)
 	{
-	    ibu_post_receive(vc_ptr);
+	    ibr_post_receive(vc_ptr);
 	}
     }
 

@@ -84,7 +84,7 @@ int ib_make_progress()
 	g_num_send_posted--;
 	/*printf("%d:s%d ", MPIR_Process.comm_world->rank, g_num_send_posted);*/
 	/*msg_printf("s%d ", g_num_send_posted);*/
-	ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());
+	ib_handle_written(vc_ptr, mem_ptr, ibr_next_num_written());
 	/* put the send packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
 	break;
@@ -96,7 +96,7 @@ int ib_make_progress()
 	/* put the receive packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
 	/* post another receive to replace the consumed one */
-	ibu_post_receive(vc_ptr);
+	ibr_post_receive(vc_ptr);
 	break;
     default:
 	MPIU_dbg_printf("unknown ib op_type: %d\n", completion_data.op_type);

@@ -545,7 +545,7 @@ int ib_write_aggressive(MPIDI_VC *vc_ptr)
 	if (cur_pos == 1)
 	{
 	    MPIU_dbg_printf("ibu_post_write, %d bytes\n", vec[0].MPID_IOV_LEN);
-	    if ((error = ibu_post_write(vc_ptr, vec[0].MPID_IOV_BUF, vec[0].MPID_IOV_LEN, NULL)) != IB_SUCCESS)
+	    if ((error = ibr_post_write(vc_ptr, vec[0].MPID_IOV_BUF, vec[0].MPID_IOV_LEN, NULL)) != IB_SUCCESS)
 	    {
 		err_printf("ib_write_aggressive: ibu_post_write failed, error %d\n", error);
 		MPIDI_FUNC_EXIT(MPID_STATE_IB_WRITE_AGGRESSIVE);
@@ -570,7 +570,7 @@ int ib_write_aggressive(MPIDI_VC *vc_ptr)
 	    }
 	    /*** end debugging printout */
 
-	    if ((error = ibu_post_writev(vc_ptr, vec, cur_pos, NULL)) != IB_SUCCESS)
+	    if ((error = ibr_post_writev(vc_ptr, vec, cur_pos, NULL)) != IB_SUCCESS)
 	    {
 		err_printf("ib_write_aggressive: ib_writev failed, error %d\n", error);
 		MPIDI_FUNC_EXIT(MPID_STATE_IB_WRITE_AGGRESSIVE);

@@ -52,6 +52,12 @@ ib_int32_t ib_mr_register_us(ib_hca_handle_t   hca_handle,
     return IB_SUCCESS;
 }
 
+ib_int32_t ib_mr_deregister_us(ib_hca_handle_t hca_handle,
+			       ib_mr_handle_t  mr_handle)
+{
+    return IB_SUCCESS;
+}
+
 ib_int32_t ib_qp_create_us( ib_hca_handle_t hca_handle,
 			   ib_pd_handle_t  pd_handle,
 			   ib_qp_attr_list_t * attr_list,
@@ -81,6 +87,12 @@ ib_int32_t ib_cq_create_us( ib_hca_handle_t hca_handle,
 			   ib_uint32_t * num_entries_p,
 			   ib_cq_handle_t * cq_handle_p,
 			   void * user_context_async_p)
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_cq_destroy_us(ib_hca_handle_t hca_handle,
+			    ib_cq_handle_t  cq_handle)
 {
     return IB_SUCCESS;
 }
