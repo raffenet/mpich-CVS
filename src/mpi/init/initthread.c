@@ -122,6 +122,17 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIU_Timer_init(MPIR_Process.comm_world->rank,
 		    MPIR_Process.comm_world->local_size);
 
+#ifdef HAVE_FORTRAN_BINDING
+    /* Initialize Fortran special names (MPI_BOTTOM and STATUS_IGNOREs) */
+#if defined(F77_NAME_LOWER_USCORE) || defined(F77_NAME_LOWER_2USCORE)
+    mpirinitf_();
+#elif defined(F77_NAME_UPPER)
+    MPIRINITF();
+#else
+    mpirinitf();
+#endif
+#endif
+
     MPIR_Process.initialized = MPICH_WITHIN_MPI;
 
 #ifdef HAVE_DEBUGGER_SUPPORT

@@ -364,6 +364,7 @@ dnl
 PAC_PROG_F77_LINKER_WITH_C
 dnl For name mangle, we need the library flags
 PAC_PROG_F77_NAME_MANGLE
+
 dnl Once we have name mangle, we can try to limit the number of needed libs
 PAC_PROG_F77_IN_C_LIBS
 AC_SUBST(F77_IN_C_LIBS)
@@ -1042,7 +1043,7 @@ AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77])
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
 dnl AC_OUTPUT(Makefile mpif.h mpi_fortdefs.h mpif77 mpif77.conf mpif90 mpif90.conf initfcmn.f)
-AC_OUTPUT(Makefile mpif.h mpif77.conf)
+AC_OUTPUT(Makefile mpif.h mpif77.conf setbotf.f)
 exit 0
 dnl
 dnl Add the following to the output step after the AC_OUTPUT

@@ -354,12 +354,13 @@ if test "$enable_f77" = "yes" ; then
    subsystems="$subsystems src/binding/f77"
    bindings="$bindings f77"
    bindings_dirs="$bindings_dirs src/binding/f77"
-   AC_DEFINE(HAVE_FORTRAN_BINDING,,[Define if Fortran is supported])
 fi
 if test "$enable_f90" = "yes" ; then
    subsystems="$subsystems src/binding/f90"
    bindings="$bindings f90"
    bindings_dirs="$bindings_dirs src/binding/f90"
+fi
+if test "$enable_f90" = yes -o "$enable_f77" = yes ; then
    AC_DEFINE(HAVE_FORTRAN_BINDING,,[Define if Fortran is supported])
 fi
 if test "$enable_cxx" = "yes" ; then
@@ -1026,6 +1027,20 @@ if test "$enable_f77" = "yes" -a -s src/binding/f77/mpif77.conf ; then
     # Load the values from the generated configuration file
     # These set the datatypes and the other Fortran types
     . ./src/binding/f77/mpif77.conf
+    case "$F77_NAME_MANGLE"X in
+    F77_NAME_LOWERX|F77_NAME_MIXEDX) 
+    AC_DEFINE(F77_NAME_LOWER,,[Define if Fortran names are lowercase]) 
+	;;
+    F77_NAME_LOWER_USCOREX|F77_NAME_MIXED_USCOREX)
+    AC_DEFINE(F77_NAME_LOWER_USCORE,,[Define if Fortran names are lowercase with a trailing underscore])
+	 ;;
+    F77_NAME_LOWER_2USCOREX)
+    AC_DEFINE(F77_NAME_LOWER_2USCORE,,[Define if Fortran names containing an underscore have two trailing underscores])
+	 ;;
+    F77_NAME_UPPERX)
+    AC_DEFINE(F77_NAME_UPPER,,[Define if Fortran names are uppercase]) 
+	;;
+    esac
 else
     for name in CHARACTER INTEGER REAL LOGICAL COMPLEX DOUBLE_PRECISION \
 	2INTEGER 2REAL DOUBLE_COMPLEX 2COMPLEX 2DOUBLE_PRECISION \

@@ -281,7 +281,12 @@ foreach $_ (@ARGV) {
 		  'Publish_name-3' => 'in:addnull',
 #    'Comm_spawn_multiple => '2:3' are arrays and arrays of arrays
     'Initialized' => '1', 'Initialized-1' => 'out:logical',
-    'Iprobe' => '4', 'Iprobe-4' => 'out:logical',
+    'Iprobe' => '4:5', 'Iprobe-4' => 'out:logical',
+		 'Iprobe-5' => 'in:status',
+    'Probe' => '4', 'Probe-4' => 'in:status',
+    'Recv' => '7', 'Recv-7' => 'in:status',
+    'Sendrecv' => '12', 'Sendrecv-12' => 'in:status',
+    'Sendrecv_replace' => '9', 'Sendrecv_replace-9' => 'in:status',
 #    'Send' => '1', 'Send-1' => 'in:bufptr',
 #    'Ssend' => '1', 'Ssend-1' => 'in:bufptr',
 #    'Rsend' => '1', 'Rsend-1' => 'in:bufptr',
@@ -300,11 +305,15 @@ foreach $_ (@ARGV) {
 #    'Sendrecv' => '1:6', 'Sendrecv-1' => 'in:bufptr', 'Sendrecv-6' => 'in:bufptr',
 #    'Sendrecv_replace' => '1', 'Sendrecv_replace-1' => 'in:bufptr',
     'Test_cancelled' => '2', 'Test_cancelled-2' => 'out:logical',
-    'Test' => '2', 'Test-2' => 'out:logical',
-    'Testall' => '3', 'Testall-3' => 'out:logical',
-    'Testany' => '3:4', 'Testany-4' => 'out:logical',
-    'Testany-3' => 'out:index',
-    'Testsome' => '4', 'Testsome-4' => 'out:index_array:*v3',
+    'Test' => '2:3', 'Test-2' => 'out:logical',
+		 'Test-3' => 'in:status',
+    'Testall' => '3:4', 'Testall-3' => 'out:logical', 
+		 'Testall-4' => 'in:status_array',
+    'Testany' => '3:4:5', 'Testany-4' => 'out:logical',
+		 'Testany-3' => 'out:index',
+		 'Testany-5' => 'in:status',
+    'Testsome' => '4:5', 'Testsome-4' => 'out:index_array:*v3',
+		 'Testsome-5' => 'in:status_array',
     'Type_get_name' => '2', 'Type_get_name-2' => 'out:blankpad',
     'Type_set_name' => '2', 'Type_set_name-2' => 'in:addnull',
     'Unpack_external' => '1', 'Unpack_external-1' => 'in:addnull',
@@ -312,8 +321,12 @@ foreach $_ (@ARGV) {
 		  'Unpublish_name-3' => 'in:addnull',
     'Win_get_name' => '2', 'Win_get_name-2' => 'out:blankpad',
     'Win_set_name' => '2', 'Win_set_name-2' => 'in:addnull',		  
-    'Waitany' => '3', 'Waitany-3' => 'out:index',
-    'Waitsome' => '4', 'Waitsome-4' => 'out:index_array:*v3'
+    'Wait' => '2', 'Wait-2' => 'in:status',
+    'Waitall' => '3', 'Waitall-3' => 'in:status_array',		 
+    'Waitany' => '3:4', 'Waitany-3' => 'out:index',
+		 'Waitany-4' => 'in:status',
+    'Waitsome' => '4:5', 'Waitsome-4' => 'out:index_array:*v3',
+		 'Waitsome-5' => 'in:status_array',
     );
 
 $arg_string = join( ' ', @ARGV );
@@ -495,6 +508,13 @@ sub print_endline {
 sub print_header {
     my $routine_name = $_[0];
     my $lcname = $_[1];
+     
+    &print_copyright( );
+    &print_profiling_block( $routine_name, $lcname );
+    &print_name_map_block( $routine_name, $lcname );
+}
+
+sub print_copyright {
     print $OUTFD "/* -*- Mode: C; c-basic-offset:4 ; -*- */\
 /*  \
  *  (C) 2001 by Argonne National Laboratory.\
@@ -504,9 +524,6 @@ sub print_header {
  * DO NOT EDIT\
  */\
 #include \"mpi_fortimpl.h\"\n\n";
-
-    &print_profiling_block( $routine_name, $lcname );
-    &print_name_map_block( $routine_name, $lcname );
 }
 
 #
@@ -743,6 +760,7 @@ sub print_attr {
 # Special processing
 # Buffer pointers
 sub bufptr_ftoc {
+    my $count = $_[0];
 }
 sub bufptr_in_decl {
     my $count = $_[0];
@@ -848,6 +866,7 @@ sub logical_array_out_arg {
 # Index variables are not optional, since the values of the variable
 # are changed.
 sub index_ftoc {
+    my $count = $_[0];
 }
 sub index_ctof {
     my $coutvar = $_[0];
@@ -867,6 +886,7 @@ sub index_out_arg {
 # Index variables, but for an array.  
 # Array args can use the global $Array_size and $Array_typedef if necessary
 sub index_array_ftoc {
+    my $count = $_[0];
 }
 sub index_array_ctof {
     my $coutvar = $_[0];
@@ -891,6 +911,7 @@ sub index_array_out_arg {
 #in:addrint
 #out:attrint:4
 sub addrint_ftoc {
+    my $count = $_[0];
 }
 sub addrint_in_decl {
 }
@@ -941,7 +962,44 @@ sub bufaddr_ctof {
     my $cvar = $_[1];
 }
 
+# 
+# Handle MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE
+sub status_ftoc {
+    my $count = $_[0];
+    print $OUTFD "\
+    if (v$count == MPIR_F_MPI_STATUS_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
+}
+sub status_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+}
+sub status_in_decl {
+    my $count = $_[0];
+}
+sub status_in_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
+}
+#
+# Index variables, but for an array.  
+# Array args can use the global $Array_size and $Array_typedef if necessary
+sub status_array_ftoc {
+    my $count = $_[0];
+    print $OUTFD "\
+    if (v$count == MPIR_F_MPI_STATUSES_IGNORE) { v$count = MPI_STATUS_IGNORE; }\n";
+}
+sub status_array_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+}
+sub status_array_in_decl {
+}
+sub status_array_in_arg {
+    my $count = $_[0];
+    print $OUTFD "v$count";
+}
 
+# ---------------------------------------------------------------------------
 # This is the routine that handles the post-call processing
 sub print_post_call {
     my $routine_name = $_[0];
@@ -1286,8 +1344,12 @@ MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
 ";
     # This is also temporary.
     print $OUTFD "
+#ifndef USE_POINTER_FOR_BOTTOM
 void *MPIR_F_MPI_BOTTOM = 0;
-";
+void *MPIR_F_MPI_STATUS_IGNORE = 0;
+void *MPIR_F_MPI_STATUSES_IGNORE = 0;
+#endif
+\n";
 
     &print_routine_type_decl( $OUTFD, "init" );
     $args = "";
@@ -1300,8 +1362,6 @@ void *MPIR_F_MPI_BOTTOM = 0;
 #   abort \"Fortran values must be determined at configure time\"
 #endif
 ";
-    print $OUTFD "    /* still to do MPI_BOTTOM, STATUS_NULL */\n";
-
     print $OUTFD "    *ierr = MPI_Init( 0, 0 );\n";
     # Still to do:
     #   Initialize the Fortran versions of the predefined keyvals.
@@ -1316,6 +1376,32 @@ void *MPIR_F_MPI_BOTTOM = 0;
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
+
+    # Functions used by the C init process, but that must be called 
+    # from C
+    $OUTFD = "FORTTOC";
+    open( $OUTFD, ">setbot.c" ) || die "Cannot open setbot.c\n";
+    $files[$#files+1] = "setbot.c";
+    &print_copyright;
+    print $OUTFD "
+#ifdef F77_NAME_UPPER
+#define mpirinitc_ MPIRINITC
+#elif defined(F77_NAME_LOWER_2USCORE) || defined(F77_NAME_LOWER_USCORE)
+/* leave name alone */
+#else
+#define mpirinitc_ mpirinitc
+#endif
+";
+
+    print $OUTFD "
+FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
+{
+    MPIR_F_MPI_BOTTOM = a;
+    MPIR_F_MPI_STATUS_IGNORE = b;
+    MPIR_F_MPI_STATUSES_IGNORE = c;
+}
+";
+    close ($OUTFD);
     
     $OUTFD = "PCONTROLFFD";
     open( $OUTFD, ">pcontrolf.c" ) || die "Cannot open pcontrolf.c\n";
@@ -1346,7 +1432,11 @@ void *MPIR_F_MPI_BOTTOM = 0;
     print $OUTFD "{
     MPI_Aint a, b;
     *ierr = MPI_Address( v1, &a );
+#ifdef USE_POINTER_FOR_BOTTOM
+    b = a;
+#else
     b = a - (MPI_Aint) MPIR_F_MPI_BOTTOM;
+#endif
     *v2 = (MPI_Fint)( b );
 #ifdef HAVE_AINT_LARGER_THAN_FINT
     /* Check for truncation */
