@@ -1,0 +1,4 @@
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
+LDADD = -L ../../../lib 
+DEPADD = ../../../lib/libmpich.a
+reorder_SOURCES = reorder.c

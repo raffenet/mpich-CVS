@@ -1,3 +1,5 @@
+SUBDIRS = ch3
+
 # This is temporary
 # Don't build atomic by default
 EXTRA_PROGRAMS = atomic
