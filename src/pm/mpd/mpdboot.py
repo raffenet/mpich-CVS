@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
-from os     import environ, system
+from os     import environ, system, path
 from getopt import getopt
 from sys    import argv, exit
 from popen2 import Popen3
@@ -20,98 +20,145 @@ def mpdboot():
     remoteConsoleVal = ''
     shell = 'csh'
     oneLocal = 1
+    entryHost = ''
+    entryPort = ''
+    numBoots = 1    # including this one
+    mpdHostsFromHere  = []
+    bootHostsFromHere = []
     try:
-	(opts, args) = getopt(argv[1:], 'hf:r:u:m:n:dsv1',
-			      ['help', 'file=', 'rsh=', 'user=', 'mpd=', 'totalnum=',
-			       'loccons', 'remcons', 'shell', 'verbose'])
+        (opts, args) = getopt(argv[1:], 'hf:r:u:m:n:dsv1e:z:',
+                              ['help', 'file=', 'rsh=', 'user=', 'mpd=', 'totalnum=',
+                               'entry=',
+                               'loccons', 'remcons', 'shell', 'verbose'])
     except:
-	usage()
+        usage()
     else:
-	for opt in opts:
-	    if   opt[0] == '-h' or opt[0] == '--help':
-		usage()
-	    elif opt[0] == '-r' or opt[0] == '--rsh':
-		rshCmd = opt[1]
-	    elif opt[0] == '-u' or opt[0] == '--user':
-		user   = opt[1]
-	    elif opt[0] == '-m' or opt[0] == '--mpd':
-		mpdCmd = opt[1]
-	    elif opt[0] == '-f' or opt[0] == '--file':
-		hostsFile = opt[1]
-	    elif opt[0] == '-n' or opt[0] == '--totalnum':
-		totalNum = int(opt[1])
+        for opt in opts:
+            if   opt[0] == '-h' or opt[0] == '--help':
+                usage()
+            elif opt[0] == '-e' or opt[0] == '--entry':
+                (entryHost,entryPort) = opt[1].split(':')
+                entryHost = '-h ' + entryHost
+                entryPort = '-p ' + entryPort
+            elif opt[0] == '-z':
+                if opt[1].isdigit():
+                    numBoots = int(opt[1])
+                else:
+                    numBoots = 0
+		    mpdHostsFromHere = opt[1].split(',')
+            elif opt[0] == '-r' or opt[0] == '--rsh':
+                rshCmd = opt[1]
+            elif opt[0] == '-u' or opt[0] == '--user':
+                user   = opt[1]
+            elif opt[0] == '-m' or opt[0] == '--mpd':
+                mpdCmd = opt[1]
+            elif opt[0] == '-f' or opt[0] == '--file':
+                hostsFile = opt[1]
+            elif opt[0] == '-n' or opt[0] == '--totalnum':
+                totalNum = int(opt[1])
             elif opt[0] == '-d' or opt[0] == '--debug':
                 debug = 1
             elif opt[0] == '-s' or opt[0] == '--shell':
                 shell = 'bourne'
             elif opt[0] == '-v' or opt[0] == '--verbose':
                 verbosity = 1
-	    elif opt[0] == '-1':
+            elif opt[0] == '-1':
                 oneLocal = 0
-	    elif opt[0] == '--loccons':
-		localConsoleVal  = '-n'
-	    elif opt[0] == '--remcons':
-		remoteConsoleVal = '-n'
+            elif opt[0] == '--loccons':
+                localConsoleVal  = '-n'
+            elif opt[0] == '--remcons':
+                remoteConsoleVal = '-n'
     if args:
-	print 'unrecognized arguments:', ' '.join(args)
-	usage()
-
-    try:
-	f = open(hostsFile,'r')
-        hosts  = f.readlines()
-    except:
-	print 'unable to open (or read) hostsfile %s' % hostsFile
-	usage()
+        print 'unrecognized arguments:', ' '.join(args)
+        usage()
 
     myHost = gethostname()
+    if numBoots:
+        try:
+            f = open(hostsFile,'r')
+            hosts  = f.readlines()
+        except:
+            print 'unable to open (or read) hostsfile %s' % hostsFile
+            usage()
+        hosts = [ x.strip() for x in hosts if x[0] != '#' ]
+        if oneLocal:
+            hosts = [ x for x in hosts if x != myHost ]
+        if len(hosts) < (totalNum-1):    # one is local
+            print 'there are not enough hosts specified on which to start all processes'
+            exit(-1)
+        bootHostsFromHere = hosts[0:numBoots-1]
+	del hosts[0:numBoots-1]
+	numMPDsPerBoot = (totalNum - numBoots) / numBoots
+
     if debug:
-        print 'cmd=:%s %s -e: (executed on %s)' % (mpdCmd, localConsoleVal, myHost)
+        print 'cmd=:%s %s %s %s -e: (executed on %s)' % (mpdCmd, localConsoleVal, entryHost, entryPort, myHost)
     if verbosity == 1:
         print 'starting local mpd on %s' % (myHost)
-    locMPD = Popen3('%s %s -e' % (mpdCmd, localConsoleVal), 1)
+    locMPD = Popen3('%s %s %s %s -e' % (mpdCmd, localConsoleVal, entryHost, entryPort), 1)
     numStarted = 1
     myPort = locMPD.fromchild.readline().strip()
     try:
         (readyFDs,None,None) = select([locMPD.fromchild],[],[],1)
     except error, errmsg:
-	mpd_raise('mpdboot: select failed: errmsg=:%s:' % (errmsg) )
+        mpd_raise('mpdboot: select failed: errmsg=:%s:' % (errmsg) )
     if locMPD.fromchild in readyFDs:
-	print myPort
-	for line in locMPD.fromchild.readlines():
-	    print line,
-	for line in locMPD.childerr.readlines():
-	    print line,
-	exit(-1)
+        print myPort
+        for line in locMPD.fromchild.readlines():
+            print line,
+        for line in locMPD.childerr.readlines():
+            print line,
+        exit(-1)
 
     if rshCmd == 'ssh':
-	xOpt = '-x'
+        xOpt = '-x'
     else:
-	xOpt = ''
+        xOpt = ''
+    shellRedirect = ' >& /dev/null '  # default
+    if shell == 'bourne':
+	shellRedirect = ' > /dev/null 2>&1 '
 
-    for host in hosts:
-	if numStarted == totalNum:
-	    break
-	host = host.strip()
-	if oneLocal and host == myHost:
-            continue
-	if host[0] != '#':                    # ignore comment lines
-            shellRedirect = ' >& /dev/null '  # default
-            if shell == 'bourne':
-                shellRedirect = ' > /dev/null 2>&1 '
-            # cmd = "%s %s %s -n '%s    %s -h %s -p %s </dev/null %s &'" % \
-	    cmd = "%s %s %s -n '%s -d %s -h %s -p %s </dev/null %s' & " % \
-                  (rshCmd, xOpt, host, mpdCmd, remoteConsoleVal,
-                   myHost, myPort, shellRedirect)
-            if debug:
-                print 'cmd=:%s:' % (cmd)
-            if verbosity == 1:
-                print 'starting remote mpd on %s' % (host)
-	    system(cmd)
-	    numStarted += 1
+    fullDirName = path.abspath(path.split(argv[0])[0])
+    mpdbootPathName = path.normpath(fullDirName + '/mpdboot.py')
 
-    if numStarted < totalNum:
-	print ("%s only contained enough hosts to start a total of %d mpd's," + \
-	      " which were started") % (hostsFile, numStarted)
+    for host in bootHostsFromHere:
+	## may be short for last one
+	hostSet = ','.join(hosts[0:numMPDsPerBoot])
+	del hosts[0:numMPDsPerBoot]
+	if not hostSet:
+	    hostSet = 0
+        cmd = "%s %s %s -n '%s -r %s -m %s -n %d -e %s:%s -z %s </dev/null %s' & " % \
+              (rshCmd, xOpt, host,
+	       mpdbootPathName,
+	       rshCmd,
+	       mpdCmd,
+	       numMPDsPerBoot+1,
+               myHost, myPort, hostSet, shellRedirect)
+        if debug:
+            print 'cmd=:%s:' % (cmd)
+        if verbosity == 1:
+            print 'starting remote mpd on %s' % (host)
+        system(cmd)
+        numStarted = numStarted + numMPDsPerBoot + 1 
+
+    if numBoots  and  numStarted < totalNum:
+        numLeftToStart = totalNum - numStarted
+        mpdHostsFromHere = hosts[0:numLeftToStart]
+        del hosts[0:numLeftToStart]
+
+    for host in mpdHostsFromHere:
+        if numStarted >= totalNum:
+            break
+        # cmd = "%s %s %s -n '%s    %s -h %s -p %s </dev/null %s &'" % \
+        cmd = "%s %s %s -n '%s -d %s -h %s -p %s </dev/null %s' & " % \
+              (rshCmd, xOpt, host, mpdCmd, remoteConsoleVal,
+               myHost, myPort, shellRedirect)
+        if debug:
+            print 'cmd=:%s:' % (cmd)
+        if verbosity == 1:
+            print 'starting remote mpd on %s' % (host)
+        system(cmd)
+        numStarted += 1
+
 
 def usage():
     print ''
@@ -132,7 +179,8 @@ start mpd's on all the nodes in the file as well as one on the local
 machine even if the local machine occurs there and thus the result would
 be two mpd's on the local machine.  Verbose mode (-v or --verbose)
 causes the rsh attempts to be printed as they occur.  It does not
-provide confirmation that the rsh's were successful.
+provide confirmation that the rsh's were successful.  The -z N option permits
+you to parallelize the startup of mpds by starting N copies of mpdboot itself.
 """
     exit(-1)
     
