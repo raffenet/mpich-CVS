@@ -12,7 +12,7 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
-#undef MPID_SP_VERBOSE
+#define MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE
 
 /* MPID_Segment_piece_params
@@ -449,7 +449,7 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
     {
 	/* we have used up all our entries, and this region doesn't fit on
 	 * the end of the last one.  setting blocks to 0 tells manipulation
-	 * function that we are done.
+	 * function that we are done (and that we didn't process any blocks).
 	 */
 	*blocks_p = 0;
 	MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_PACK_TO_IOV);
@@ -502,11 +502,12 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
     blocks_left = *blocks_p;
 
 #ifdef MPID_SP_VERBOSE
-    MPIU_dbg_printf("\t[vector to vec: do=%d, dp=%x, ind=%d, sz=%d, blksz=%d, str=%d, blks=%d]\n",
+    MPIU_dbg_printf("\t[vector to vec: do=%d, dp=%x, len=%d, ind=%d, ct=%d, blksz=%d, str=%d, blks=%d]\n",
 		    (unsigned) rel_off,
 		    (unsigned) bufp,
+		    paramp->u.pack_vector.length,
 		    paramp->u.pack_vector.index,
-		    basic_size,
+		    count,
 		    blksz,
 		    stride,
 		    (int) *blocks_p);
@@ -538,7 +539,16 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 	    /* we have used up all our entries, and this one doesn't fit on
 	     * the end of the last one.
 	     */
-	    *blocks_p -= blocks_left;
+	    *blocks_p -= (blocks_left + (size / basic_size));
+#if 0
+	    paramp->u.pack_vector.index++;
+#endif
+#ifdef MPID_SP_VERBOSE
+	    MPIU_dbg_printf("\t[vector to vec exiting (1): next ind = %d, %d blocks processed.\n",
+			    paramp->u.pack_vector.index,
+			    (int) *blocks_p);
+#endif
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
 	    return 1;
 	}
 	else if (last_idx >= 0 && (last_end == ((char *) bufp + rel_off)))
@@ -555,6 +565,16 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 	rel_off += stride;
 
     }
+
+#ifdef MPID_SP_VERBOSE
+    MPIU_dbg_printf("\t[vector to vec exiting (2): next ind = %d, %d blocks processed.\n",
+		    paramp->u.pack_vector.index,
+		    (int) *blocks_p);
+#endif
+
+    /* if we get here then we processed ALL the blocks; don't need to update
+     * blocks_p
+     */
     assert(blocks_left == 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_IOV);
     return 0;
