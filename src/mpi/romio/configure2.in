@@ -920,10 +920,12 @@ AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
 if test "$ac_sizeof_long_long" != 0 ; then
     if test "$ac_sizeof_long_long" = "8" ; then
        AC_DEFINE(HAVE_LONG_LONG_64,,[Define if long long is 64 bits])
+       MPI_OFFSET_TYPE="long long"
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer*8"
        LL="\%lld"
     elif test "$ac_sizeof_long_long" = "$ac_sizeof_int" ; then
+       MPI_OFFSET_TYPE="int"
        DEFINE_MPI_OFFSET="typedef int MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
        AC_DEFINE(MPI_OFFSET_IS_INT,,[Define if MPI_Offset is int])
@@ -932,6 +934,7 @@ if test "$ac_sizeof_long_long" != 0 ; then
        MPI_OFFSET_KIND2="!"
     else
        echo "defining MPI_Offset as long in C and integer in Fortran" 
+       MPI_OFFSET_TYPE="long"
        DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
        FORTRAN_MPI_OFFSET="integer"
        LL="\%ld"
@@ -940,6 +943,7 @@ if test "$ac_sizeof_long_long" != 0 ; then
     fi
 else
     echo "defining MPI_Offset as long in C and integer in Fortran" 
+    MPI_OFFSET_TYPE="long"
     DEFINE_MPI_OFFSET="typedef long MPI_Offset;"
     FORTRAN_MPI_OFFSET="integer"
     LL="\%ld"
@@ -1362,6 +1366,7 @@ AC_SUBST(BUILD_MPI_INFO)
 AC_SUBST(HAVE_MPI_DARRAY_SUBARRAY)
 AC_SUBST(BUILD_MPI_ARRAY)
 AC_SUBST(DEFINE_MPI_OFFSET)
+AC_SUBST(MPI_OFFSET_TYPE)
 AC_SUBST(MPI_FINFO1)
 AC_SUBST(MPI_FINFO2)
 AC_SUBST(MPI_FINFO3)

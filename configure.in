@@ -1257,10 +1257,17 @@ AC_SUBST(MPI_2DOUBLE_COMPLEX)
 AC_SUBST(MPI_FINT)
 
 # Temporary values for MPI_Offset (need help from IO subsystem)
-if test "$ac_cv_sizeof_long_long" = 8 ; then
-    MPI_OFFSET="long long"
+if test -n "$MPI_OFFSET_TYPE" ; then
+   # We got the value from the ROMIO configure
+   MPI_OFFSET="$MPI_OFFSET_TYPE"
 else
-    MPI_OFFSET=long
+    # Make a guess at the appropriate definition for offset.  Try to 
+    # find a 64bit type.
+    if test "$ac_cv_sizeof_long_long" = 8 ; then
+        MPI_OFFSET="long long"
+    else
+        MPI_OFFSET=long
+    fi
 fi
 AC_SUBST(MPI_OFFSET)
 dnl
