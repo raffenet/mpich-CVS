@@ -14,6 +14,26 @@
 static char *MPIDI_combiner_to_string(int combiner);
 static char *MPIDI_datatype_builtin_to_string(MPI_Datatype type);
 
+void MPIDI_Datatype_dot_printf(MPI_Datatype type,
+			       int depth,
+			       int header)
+{
+    if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
+	MPIU_dbg_printf("MPIDI_Datatype_dot_printf: type is a basic\n");
+	return;
+    }
+    else {
+	MPID_Datatype *dt_p;
+	MPID_Dataloop *loop_p;
+
+	MPID_Datatype_get_ptr(type, dt_p);
+	loop_p = dt_p->loopinfo;
+
+	MPIDI_Dataloop_dot_printf(loop_p, depth, header);
+	return;
+    }
+}
+
 void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 			       int depth,
 			       int header)
@@ -302,4 +322,143 @@ static char *MPIDI_combiner_to_string(int combiner)
 #endif
     
     return NULL;
+}
+
+static char *MPIDI_Datatype_depth_spacing(depth)
+{
+    static char d0[] = "";
+    static char d1[] = "  ";
+    static char d2[] = "    ";
+    static char d3[] = "      ";
+    static char d4[] = "        ";
+    static char d5[] = "          ";
+
+    switch (depth) {
+	case 0: return d0;
+	case 1: return d1;
+	case 2: return d2;
+	case 3: return d3;
+	case 4: return d4;
+	default: return d5;
+    }
+}
+
+void MPIDI_Datatype_contents_printf(MPI_Datatype type,
+				    int depth,
+				    int acount)
+{
+    int i;
+    MPID_Datatype *dtp;
+    MPID_Datatype_contents *cp;
+
+    MPI_Aint *aints;
+    MPI_Datatype *types;
+    int *ints;
+
+    if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
+	MPIU_dbg_printf("%stype: %s\n",
+			MPIDI_Datatype_depth_spacing(depth),
+			MPIDI_datatype_builtin_to_string(type));
+	return;
+    }
+
+    MPID_Datatype_get_ptr(type, dtp);
+    cp = dtp->contents;
+
+    types = (MPI_Datatype *) (((char *) cp) +
+			      sizeof(MPID_Datatype_contents));
+    ints  = (int *) (((char *) types) +
+		     cp->nr_types * sizeof(MPI_Datatype));
+    aints = (MPI_Aint *) (((char *) ints) +
+			  cp->nr_ints * sizeof(int));
+
+    MPIU_dbg_printf("%scombiner: %s\n",
+		    MPIDI_Datatype_depth_spacing(depth),
+		    MPIDI_combiner_to_string(cp->combiner));
+
+    switch (cp->combiner) {
+	case MPI_COMBINER_NAMED:
+	case MPI_COMBINER_DUP:
+	    return;
+	case MPI_COMBINER_RESIZED:
+	    /* not done */
+	    return;
+	case MPI_COMBINER_CONTIGUOUS:
+	    MPIU_dbg_printf("%scontig ct = %d\n", 
+			    MPIDI_Datatype_depth_spacing(depth),
+			    *ints);
+	    MPIDI_Datatype_contents_printf(*types,
+					   depth + 1,
+					   acount);
+	    return;
+	case MPI_COMBINER_VECTOR:
+	    MPIU_dbg_printf("%svector ct = %d, blk = %d, str = %d\n",
+			    MPIDI_Datatype_depth_spacing(depth),
+			    ints[0],
+			    ints[1],
+			    ints[2]);
+	    MPIDI_Datatype_contents_printf(*types,
+					   depth + 1,
+					   acount);
+	    return;
+	case MPI_COMBINER_HVECTOR:
+	    MPIU_dbg_printf("%shvector ct = %d, blk = %d, str = %d\n",
+			    MPIDI_Datatype_depth_spacing(depth),
+			    ints[0],
+			    ints[1],
+			    aints[0]);
+	    MPIDI_Datatype_contents_printf(*types,
+					   depth + 1,
+					   acount);
+	    return;
+	case MPI_COMBINER_INDEXED:
+	    MPIU_dbg_printf("%sindexed ct = %d:\n",
+			    MPIDI_Datatype_depth_spacing(depth),
+			    ints[0]);
+	    for (i=0; i < acount && i < ints[0]; i++) {
+		MPIU_dbg_printf("%s  indexed [%d]: blk = %d, disp = %d\n",
+				MPIDI_Datatype_depth_spacing(depth),
+				i,
+				ints[2*i+1],
+				ints[2*i+2]);
+		MPIDI_Datatype_contents_printf(types[i],
+					       depth + 1,
+					       acount);
+	    }
+	    return;
+	case MPI_COMBINER_HINDEXED:
+	    MPIU_dbg_printf("%shindexed ct = %d:\n",
+			    MPIDI_Datatype_depth_spacing(depth),
+			    ints[0]);
+	    for (i=0; i < acount && i < ints[0]; i++) {
+		MPIU_dbg_printf("%s  hindexed [%d]: blk = %d, disp = %d\n",
+				MPIDI_Datatype_depth_spacing(depth),
+				i,
+				ints[i+1],
+				aints[i]);
+		MPIDI_Datatype_contents_printf(types[i],
+					       depth + 1,
+					       acount);
+	    }
+	    return;
+	case MPI_COMBINER_STRUCT:
+	    MPIU_dbg_printf("%sstruct ct = %d:\n",
+			    MPIDI_Datatype_depth_spacing(depth),
+			    ints[0]);
+	    for (i=0; i < acount && i < ints[0]; i++) {
+		MPIU_dbg_printf("%s  struct[%d]: blk = %d, disp = %d\n",
+				MPIDI_Datatype_depth_spacing(depth),
+				i,
+				ints[i+1],
+				aints[i]);
+		MPIDI_Datatype_contents_printf(types[i],
+					       depth + 1,
+					       acount);
+	    }
+	    return;
+	default:
+	    MPIU_dbg_printf("%sunhandled combiner\n",
+			MPIDI_Datatype_depth_spacing(depth));
+	    return;
+    }
 }

@@ -84,5 +84,3 @@ void MPID_Datatype_free_contents(MPID_Datatype *dtp)
     dtp->contents = NULL;
 }
 
-
-
