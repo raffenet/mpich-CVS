@@ -274,9 +274,9 @@ npreput=1 preput=``0=$\backslash$``port=1244$\backslash$''''}
 \section{string format}
 This describes the format of key=value elements in a stream.
 
-stream := element frame\_char | element separ\_char stream
+stream := element frame\_ char | element separ\_ char stream
 
-element := key delim\_char value
+element := key delim\_ char value
 
 key := string
 
@@ -286,20 +286,20 @@ string := literal | quoted
 
 literal := array of chars without separators, deliminators, or quotes
 
-quoted := quote\_char array of escaped characters quote\_char
+quoted := quote\_ char array of escaped characters quote\_ char
 
 chars := ascii characters
 
-escapted chars := ascii characters with escape\_char quote\_char and escape\_char escape\_char
+escapted chars := ascii characters with escape\_ char quote\_ char and escape\_ char escape\_ char
 
-quote\_char := "
+quote\_ char := "
 
-escape\_char := \
+escape\_ char := \
 
-delim\_char := =
+delim\_ char := =
 
-separ\_char := ' '
+separ\_ char := ' '
 
-frame\_char := ???
+frame\_ char := ???
 
 \end{document}
