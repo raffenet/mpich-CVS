@@ -69,7 +69,8 @@ public class FirstFrame extends JFrame
         checkVersion();
         parseCmdLineArgs( args );
 
-        // viewer.timelines.Debug.initTextArea();
+	viewer.timelines.Debug.initTextArea();
+        // viewer.timelines.Profile.initTextArea();
 
         System.out.println( "Starting the SLOG-2 Display Program ..... " );
         frame     = new FirstFrame();
@@ -86,6 +87,10 @@ public class FirstFrame extends JFrame
                                    + "Options: \n"
                                    + "\t [-h|-help|--help]                 "
                                    + "\t Display this message.\n"
+                                   + "\t [-debug]                          "
+                                   + "\t Turn on Debugging output\n"
+                                   + "\t [-profile]                        "
+                                   + "\t Turn on Profiling output\n"
                                    + "\t [-v view_ID ]                     "
                                    + "\t Default value is -1.\n" ;
 
@@ -108,6 +113,14 @@ public class FirstFrame extends JFrame
                         arg_str = argv[ ++idx ];
                         view_ID = Integer.parseInt( arg_str );
                         err_msg.append( "\n view_ID = " + arg_str );
+                        idx++;
+                    }
+                    else if ( argv[ idx ].equals( "-debug" ) ) {
+                        viewer.timelines.Debug.setActive( true );
+                        idx++;
+                    }
+                    else if ( argv[ idx ].equals( "-profile" ) ) {
+                        viewer.timelines.Profile.setActive( true );
                         idx++;
                     }
                     else {

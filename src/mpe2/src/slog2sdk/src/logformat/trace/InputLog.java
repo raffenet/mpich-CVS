@@ -32,7 +32,8 @@ public class InputLog // implements drawable.InputAPI
                 System.exit( 0 );
             }
             else {
-                System.err.println( "trace.InputLog.open() fails!" );
+                System.err.println( "trace.InputLog.open() fails!\n"
+                      + "No slog2 file is generated due to previous errors." );
                 System.exit( 1 );
             }
         }

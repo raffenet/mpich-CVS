@@ -9,5 +9,9 @@
 
 4, reorder of the category label in the Legend window
 
-5, Timeline window's layout problem, i.e. between the timeline panel
-   and ruler panel.
+5, make Drawable Info Box prettier
+
+6, Allow user to set the pixel/time, view_init_time, view_final_time in 
+   the Timeline window
+
+7, 

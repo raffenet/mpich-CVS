@@ -21,8 +21,7 @@ public class Applet extends JApplet
     {
         MainFrame.checkVersion();
 
-        // Debug.initTextArea();
-        // Debug.setMessageOn();
+        // Debug.setActive( true ); Debug.initTextArea();
     }
 
     public void start()

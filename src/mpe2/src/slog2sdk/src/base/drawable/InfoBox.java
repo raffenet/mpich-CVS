@@ -223,6 +223,45 @@ public class InfoBox extends TimeBoundingBox
     }
 */
 
+    public String toInfoBoxString()
+    {
+        String[] infokeys;
+        StringBuffer rep;
+        int  max_length, infokeys_length, infovals_length;
+
+        rep = new StringBuffer();
+        this.decodeInfoBuffer();
+        if ( type != null ) {
+            infokeys = type.getInfoKeys();
+            if (    ( infokeys != null && infokeys.length > 0 )
+                 || ( infovals != null && infovals.length > 0 ) ) {
+                if ( infokeys != null )
+                    infokeys_length = infokeys.length;
+                else
+                    infokeys_length = 0;
+                if ( infovals != null )
+                    infovals_length = infovals.length;
+                else
+                    infovals_length = 0;
+                max_length = Math.max( infokeys_length, infovals_length );
+
+                for ( int idx = 0; idx < max_length; idx++ ) {
+                    if ( idx < infokeys_length )
+                        rep.append( infokeys[ idx ] );
+                    if ( idx < infovals_length )
+                        rep.append( infovals[ idx ] );
+                }
+            }
+        }
+        else {
+            if ( infovals != null ) {
+                for ( int idx = 0; idx < infovals.length; idx++ )
+                    rep.append( infovals[ idx ] + " " );
+            }
+        }
+        return rep.toString();
+    }
+
     public String toString()
     {
         String[] infokeys;

@@ -271,7 +271,7 @@ public class TraceToSlog2
                        || argv[ idx ].equals( "-help" )
                        || argv[ idx ].equals( "--help" ) ) {
                         System.out.println( help_msg );
-                        filespec_buf.append( argv[ idx ] + " " );
+                        filespec_buf.append(  "-h " );
                         idx++;
                     }
                     else if ( argv[ idx ].equals( "-tc" ) ) {
