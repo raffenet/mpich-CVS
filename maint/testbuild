@@ -4,8 +4,9 @@
 # created and then runs it
 # The cb suffix is for "check build"
 srcdir=/home/gropp/projects/mpich2
-rundir=/sandbox/gropp/cb/mpich2
-mpichtestdir=/sandbox/gropp/cb/mpitest
+if [ -z "$tmpdir" ] ; then tmpdir=/sandbox/gropp ; fi
+if [ -z "$rundir" ] ; then rundir=$tmpdir/cb/mpich2 ; fi
+if [ -z "$mpichtestdir" ] ; then mpichtestdir=$tmpdir/cb/mpitest ; fi
 outdir=/home/gropp/projects/mpich2-tests
 date=`date "+%Y-%m-%d"`
 # default outfile
@@ -56,6 +57,6 @@ fi
 #
 $rundir/maint/checkbuilds -rundir=$rundir \
 			  -envopt="CC;cc;gcc" -envopt="FC;f77;g77" \
-			  -tests=mpich \
+			  -tests=mpich -tmpdir=$tmpdir \
 			  -xml -maxcount=1 -outfile=$outfile $other_opts
 

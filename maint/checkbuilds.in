@@ -5,11 +5,9 @@
 #
 # Set default values
 $srcdir  = "/home/gropp/projects/mpich2";
-$instdir = "/sandbox/gropp/cb/mpi2-inst";
+$tmpdir = "/sandbox/gropp";
 # rundir is the directory in which to run the tests.
 $rundir = "";
-$mpich_test_dir = "/sandbox/gropp/cb/mpitest";
-$intel_test_dir = "/sandbox/gropp/cb/MPITEST";
 $mpich1_dir = "/home/gropp/tmp/cvstesting/mpich";
 # By default, use random arguments for the tests
 $use_rand_args = 1;
@@ -122,6 +120,9 @@ foreach $_ (@ARGV) {
     elsif (/-outfile=(.*)/) {
 	$outfile = $1;
     }
+    elsif (/-tmpdir=(.*)/) {
+	$tmpdir = $1;
+    }
     elsif (/-xml/) {
 	&XMLStyle;
 	$is_xml = 1;
@@ -147,6 +148,7 @@ checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
             [-srcdir=SRCDIR] [-instdir=INSTALLDIR] 
             [-maxcount=MAXCNT] [-maxtime=MAXTIME] 
             [-norand ] [-enable=enable-args] [-with=with-args]
+            [-tmpdir=dir]
         -enable-n=d sets the number of --enable options to try
         -with=n=d set the number of --with options to try
         -envopt=name;value;... adds an environment variable with possible
@@ -164,6 +166,18 @@ checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
 	print STDERR "Unrecognized argument $_\n";
 	exit(1);
     }
+}
+
+#
+# Set directories that have not been chosen.
+if ($instdir eq "") {
+    $instdir = "$tmpdir/cb/mpi2-inst";
+}
+if ($mpich_test_dir eq "") {
+    $mpich_test_dir = "$tmpdir/cb/mpitest";
+}
+if ($intel_test_dir eq "") {
+    $intel_test_dir = "$tmpdir/cb/MPITEST";
 }
 
 # ---------------------------------------------------------------------------
@@ -406,7 +420,7 @@ sub RunTestSuites {
 		$run_status = $rc;
 		print $OUTFD "Configure step for test failed\n";
 		print $OUTFD "Could not execute " . join(" ", @config) . "\n";
-		print $OUTFD "Enviroment was ";
+		print $OUTFD "Environment was\n";
 		foreach $key (keys(%ENV)) {
 		    print $OUTFD "$key = $ENV{$key}\n";
 		}
