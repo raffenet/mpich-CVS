@@ -38,14 +38,14 @@ static int GetLocalIPs(unsigned int *pIP, int max)
     {
 	pIP[n] = *(unsigned int*)(*hlist);
 
-	/*
+	{	
 	unsigned int a, b, c, d;
 	a = ((unsigned char *)(&pIP[n]))[0];
 	b = ((unsigned char *)(&pIP[n]))[1];
 	c = ((unsigned char *)(&pIP[n]))[2];
 	d = ((unsigned char *)(&pIP[n]))[3];
 	printf("ip: %u.%u.%u.%u\n", a, b, c, d);fflush(stdout);
-	*/
+	}
 
 	hlist++;
 	n++;
@@ -76,7 +76,12 @@ int tcp_get_business_card(char *value, int length)
 
 	value += sprintf(value, "%u.%u.%u.%u:%d:", a, b, c, d, TCP_Process.port);
     }
-    printf("tcp business card:\n%s", value_orig);fflush(stdout);
+    printf("tcp business card:\n<%s>\n", value_orig);fflush(stdout);sleep(1);
+
+/*
+    sprintf(value, "192.168.113.1:%d", TCP_Process.port);
+    printf("tcp business card:\n<%s>\n", value);fflush(stdout);
+*/
 
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
