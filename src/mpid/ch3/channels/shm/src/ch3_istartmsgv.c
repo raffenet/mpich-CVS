@@ -35,7 +35,7 @@
     } \
     sreq->dev.iov[offset].MPID_IOV_BUF = (char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb; \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
-    sreq->ch.iov_offset = offset; \
+    /*sreq->ch.iov_offset = offset;*/ \
     sreq->dev.iov_count = count; \
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
