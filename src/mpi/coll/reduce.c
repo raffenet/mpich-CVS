@@ -369,6 +369,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
             }
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+	    /* FIXME: intra root only for MPI-1 */
 	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
@@ -397,10 +398,11 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
     }
     else
     {
-        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM) {
             /* intracommunicator */
             mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype,
                                     op, root, comm_ptr); 
+	}
         else {
             /* intercommunicator */
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
