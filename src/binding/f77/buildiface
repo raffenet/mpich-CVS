@@ -507,6 +507,9 @@ maint-clean:\
 \trm -f \${mpi_sources} fproto.h\n";
 
 print MAKEFD "install_INCLUDE = mpif.h\n";
+print MAKEFD "install_BIN     = mpif77\n";
+print MAKEFD "install_ETC     = mpif77.conf\n";
+
 close( MAKEFD );
 
 #

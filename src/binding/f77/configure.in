@@ -232,6 +232,7 @@ if test "$pac_cv_have_long_long" = "yes" ; then
 fi
 dnl
 dnl Autoconf bug: AC_PROG_F77 sets FFLAGS 
+dnl Autoconf "feature" AC_PROG_F77 prefers g77 to f77.
 save_FFLAGS="$FFLAGS"
 AC_PROG_F77
 FFLAGS="$save_FFLAGS"
@@ -1071,9 +1072,11 @@ AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77])
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
 dnl AC_OUTPUT(Makefile mpif.h mpi_fortdefs.h mpif77 mpif77.conf mpif90 mpif90.conf initfcmn.f)
-AC_OUTPUT(Makefile mpif.h mpif77.conf setbotf.f)
+AC_OUTPUT(Makefile mpif.h mpif77.conf mpif77 setbotf.f)
 exit 0
 dnl
+dnl The following needs to be moved into AC_OUTPUT_COMMANDS (and generally
+dnl cleaned up)
 dnl Add the following to the output step after the AC_OUTPUT
 
 if test -n "$F90" ; then
