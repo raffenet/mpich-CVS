@@ -23,6 +23,7 @@ void MPIDI_CH3_Progress_start()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Progress(int is_blocking)
 {
+    int i;
     MPIDI_VC *vc_ptr;
     int num_bytes, error;
     shm_wait_t wait_result;
@@ -54,6 +55,12 @@ int MPIDI_CH3_Progress(int is_blocking)
 	default:
 	    assert(FALSE);
 	    break;
+	}
+
+	/* pound on the write queues since shm_wait currently does not return SHM_WAIT_WRITE */
+	for (i=0; i<MPIDI_CH3I_Process.vc->shm.pg->size; i++)
+	{
+	    handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
 	}
     } 
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);

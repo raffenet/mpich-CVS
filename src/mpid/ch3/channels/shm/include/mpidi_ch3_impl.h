@@ -95,7 +95,7 @@ typedef struct MPIDI_CH3I_SHM_Queue_t
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;
-    MPIDI_VC *vc;
+    MPIDI_VC *unex_finished_list, *vc;
 }
 MPIDI_CH3I_Process_t;
 

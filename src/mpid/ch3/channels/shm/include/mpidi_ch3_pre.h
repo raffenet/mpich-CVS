@@ -67,7 +67,7 @@ typedef struct MPIDI_CH3I_SHM_Buffer_t
 
 typedef struct MPIDI_CH3I_SHM_Unex_read_s
 {
-    void *mem_ptr;
+    struct MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
     unsigned char *buf;
     unsigned int length;
     int src;
@@ -87,7 +87,7 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3I_VC_state_t state;
     MPIDI_CH3I_SHM_Buffer_t read;
     MPIDI_CH3I_SHM_Unex_read_t *unex_list;
-    MPIDI_CH3I_SHM_Unex_read_t *unex_finished_list;
+    struct MPIDI_VC *unex_finished_next;
     /*MPIDI_CH3I_SHM_Buffer_t write;*/
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef HAVE_WINDOWS_H
@@ -169,6 +169,8 @@ MPID_STATE_MPIDI_CH3I_SHM_FREE, \
 MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC, \
 MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM, \
 MPID_STATE_SHMI_BUFFER_UNEX_READ, \
-MPID_STATE_MPIDI_CH3I_SHM_WAIT,
+MPID_STATE_MPIDI_CH3I_SHM_WAIT, \
+MPID_STATE_SHMI_READ_UNEX, \
+MPID_STATE_SHMI_READV_UNEX,
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
