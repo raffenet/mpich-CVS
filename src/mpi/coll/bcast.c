@@ -83,9 +83,6 @@ PMPI_LOCAL int MPIR_Bcast (
 
   comm = comm_ptr->handle;
 
-  /* ADD BILL'S MACRO HERE TO CHANGE CONTEXT AND DISABLE CALLS TO ERR
-     HNDLRS. DELETE THREAD_LOCK/UNLOCK */
-
   if (count == 0) return MPI_SUCCESS;
 
   comm_size = comm_ptr->local_size;
@@ -107,6 +104,10 @@ PMPI_LOCAL int MPIR_Bcast (
       is_homogeneous = 0;
 #endif
 
+  /* Lock for collective operation */
+  MPID_Comm_thread_lock( comm_ptr );
+  MPIR_Nest_incr();
+
   if (is_contig && is_homogeneous) {
       /* contiguous and homogeneous */
       MPID_Datatype_get_size_macro(datatype, type_size);
@@ -119,9 +120,6 @@ PMPI_LOCAL int MPIR_Bcast (
   }
 
   relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
-
-  /* Lock for collective operation */
-  MPID_Comm_thread_lock( comm_ptr );
 
   if ((nbytes < MPIR_BCAST_SHORT_MSG) && (comm_size <= MPIR_BCAST_MIN_PROCS)) {
 
@@ -155,7 +153,7 @@ PMPI_LOCAL int MPIR_Bcast (
           if (relative_rank & mask) {
               src = rank - mask; 
               if (src < 0) src += comm_size;
-              mpi_errno = NMPI_Recv(buffer,count,datatype,src,
+              mpi_errno = MPIC_Recv(buffer,count,datatype,src,
                                    MPIR_BCAST_TAG,comm,&status);
               if (mpi_errno) return mpi_errno;
               break;
@@ -179,7 +177,7 @@ PMPI_LOCAL int MPIR_Bcast (
           if (relative_rank + mask < comm_size) {
               dst = rank + mask;
               if (dst >= comm_size) dst -= comm_size;
-              mpi_errno = NMPI_Send (buffer,count,datatype,dst,
+              mpi_errno = MPIC_Send (buffer,count,datatype,dst,
                                      MPIR_BCAST_TAG,comm); 
               if (mpi_errno) return mpi_errno;
           }
@@ -238,7 +236,7 @@ PMPI_LOCAL int MPIR_Bcast (
                   curr_size = 0; /* this process doesn't receive any data
                                     because of uneven division */
               else {
-                  mpi_errno = NMPI_Recv(((char *)tmp_buf +
+                  mpi_errno = MPIC_Recv(((char *)tmp_buf +
                                          relative_rank*scatter_size),
                                         recv_size, MPI_BYTE, src,
                                         MPIR_BCAST_TAG, comm, &status);
@@ -267,7 +265,7 @@ PMPI_LOCAL int MPIR_Bcast (
               if (send_size > 0) {
                   dst = rank + mask;
                   if (dst >= comm_size) dst -= comm_size;
-                  mpi_errno = NMPI_Send (((char *)tmp_buf +
+                  mpi_errno = MPIC_Send (((char *)tmp_buf +
                                          scatter_size*(relative_rank+mask)),
                                         send_size, MPI_BYTE, dst,
                                         MPIR_BCAST_TAG, comm);
@@ -306,7 +304,7 @@ PMPI_LOCAL int MPIR_Bcast (
           recv_offset = dst_tree_root * scatter_size;
 
           if (relative_dst < comm_size) {
-              mpi_errno = NMPI_Sendrecv(((char *)tmp_buf + send_offset),
+              mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset),
                             curr_size, MPI_BYTE, dst, MPIR_BCAST_TAG, 
                             ((char *)tmp_buf + recv_offset),
                             scatter_size*mask, MPI_BYTE, dst,
@@ -364,7 +362,7 @@ PMPI_LOCAL int MPIR_Bcast (
 
                       /* printf("Rank %d, send to %d, offset %d, size %d\n", rank, dst, offset, recv_size);
                          fflush(stdout); */
-                      mpi_errno = NMPI_Send(((char *)tmp_buf + offset),
+                      mpi_errno = MPIC_Send(((char *)tmp_buf + offset),
                                             recv_size, MPI_BYTE, dst,
                                             MPIR_BCAST_TAG, comm); 
                       /* recv_size was set in the previous
@@ -379,7 +377,7 @@ PMPI_LOCAL int MPIR_Bcast (
                            (relative_rank >= tree_root + nprocs_completed)) {
                       /* printf("Rank %d waiting to recv from rank %d\n",
                          relative_rank, dst); */
-                      mpi_errno = NMPI_Recv(((char *)tmp_buf + offset),
+                      mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
                                             scatter_size*nprocs_completed, 
                                             MPI_BYTE, dst, MPIR_BCAST_TAG,
                                             comm, &status); 
@@ -412,6 +410,7 @@ PMPI_LOCAL int MPIR_Bcast (
       }
   }
 
+  MPIR_Nest_decr();
   /* Unlock for collective operation */
   MPID_Comm_thread_unlock( comm_ptr );
 
@@ -516,4 +515,5 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     }
     /* ... end of body of routine ... */
 }
+
 

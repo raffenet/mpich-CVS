@@ -911,11 +911,11 @@ typedef struct MPID_Collops_struct {
                      int *, MPI_Datatype, MPID_Comm *);
     int (*Alltoallw) (void*, int *, int *, MPI_Datatype, void*, int *, 
                      int *, MPI_Datatype, MPID_Comm *);
-    int (*Reduce) (void*, void*, int, MPI_Datatype, MPI_Op, int, 
+    int (*Reduce) (void*, void*, int, MPI_Datatype, MPID_Op *, int, 
                    MPID_Comm *);
-    int (*Allreduce) (void*, void*, int, MPI_Datatype, MPI_Op, 
+    int (*Allreduce) (void*, void*, int, MPI_Datatype, MPID_Op *, 
                       MPID_Comm *);
-    int (*Reduce_scatter) (void*, void*, int *, MPI_Datatype, MPI_Op, 
+    int (*Reduce_scatter) (void*, void*, int *, MPI_Datatype, MPID_Op *, 
                            MPID_Comm *);
     int (*Scan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
     int (*Exscan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
@@ -1282,5 +1282,18 @@ int MPID_VCR_Set_lpid(MPID_VCR vcr, int lpid);
 #define MPIR_SCAN_TAG                 20
 #define MPIR_USER_SCAN_TAG            21
 #define MPIR_USER_SCANA_TAG           22
+
+/* These functions are used in the implementation of collective
+   operations. They are wrappers around MPID send/recv functions. They do
+   sends/receives by setting the context offset to
+   MPID_INTRA_CONTEXT_COLL. */
+int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+              MPI_Comm comm);
+int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
+              MPI_Comm comm, MPI_Status *status);
+int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  int dest, int sendtag, void *recvbuf, int recvcount,
+                  MPI_Datatype recvtype, int source, int recvtag,
+                  MPI_Comm comm, MPI_Status *status);
 
 #endif /* MPIIMPL_INCLUDED */
