@@ -48,5 +48,6 @@ int ib_setup_connections();
 int ib_read_data(MPIDI_VC *vc_ptr);
 int ib_write_aggressive(MPIDI_VC *vc_ptr);
 */
+int ibu_post_receive(MPIDI_VC *vc_ptr);
 
 #endif

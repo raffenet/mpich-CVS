@@ -199,7 +199,7 @@ int ib_setup_connections()
     MPID_Comm *comm_ptr;
     int mpi_errno;
     MPIDI_VC *vc_ptr;
-    int i, len;
+    int i, j, len;
     char *key, *value;
     IB_Info *ib;
     ib_uint32_t status;
@@ -423,6 +423,12 @@ int ib_setup_connections()
 	    free(value);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
+	}
+
+	/* pre post some receives on each connection */
+	for (j=0; j<5; j++)
+	{
+	    ibu_post_receive(vc_ptr);
 	}
     }
 
