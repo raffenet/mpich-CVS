@@ -4,11 +4,15 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+/* Allow the printf's that describe the contents of the file.  Error 
+   messages use the MPIU_Error_printf routines */
+/* style: allow:printf:12 sig:0 */
 
 #include "rlog.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "mpimem.h"
 
 void PrintState(RLOG_STATE *pState)
 {
@@ -79,14 +83,14 @@ int main(int argc, char *argv[])
 
     if (argc < 2)
     {
-	printf("minalignrlog rlogfile\n");
+	MPIU_Error_printf("minalignrlog rlogfile\n");
 	return -1;
     }
 
     pInput = RLOG_CreateInputStruct(argv[1]);
     if (pInput == NULL)
     {
-	printf("Error opening '%s'\n", argv[1]);
+	MPIU_Error_printf("Error opening '%s'\n", argv[1]);
 	return -1;
     }
 
@@ -108,12 +112,12 @@ int main(int argc, char *argv[])
 	    {
 		if (arrow.start_time > arrow.end_time)
 		{
-		    printf("start > end: %g > %g\n", arrow.start_time, arrow.end_time);
+		    MPIU_Error_printf("start > end: %g > %g\n", arrow.start_time, arrow.end_time);
 		    bInvalidArrowFound = 1;
 		}
 		if (arrow.end_time < lastarrow.end_time)
 		{
-		    printf("arrows out of order: %g < %g\n", arrow.end_time, lastarrow.end_time);
+		    MPIU_Error_printf("arrows out of order: %g < %g\n", arrow.end_time, lastarrow.end_time);
 		    bInvalidArrowFound = 1;
 		}
 		lastarrow = arrow;
@@ -122,16 +126,16 @@ int main(int argc, char *argv[])
 	RLOG_ResetArrowIter(pInput);
 	if (bInvalidArrowFound)
 	{
-	    printf("Invalid arrows found in the rlog file\n");
+	    MPIU_Error_printf("Invalid arrows found in the rlog file\n");
 	    RLOG_CloseInputStruct(&pInput);
 	    return -1;
 	}
     }
 
-    pOffset = (double*)malloc(range * sizeof(double));
+    pOffset = (double*)MPIU_Malloc(range * sizeof(double));
     if (pOffset == NULL)
     {
-	printf("malloc failed\n");
+	MPIU_Error_printf("malloc failed\n");
 	return -1;
     }
 
