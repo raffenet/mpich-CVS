@@ -131,7 +131,7 @@ typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
 
 /* Known language bindings */
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
-	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
+               MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
 /* Known MPI object types.  These are used for both the error handlers 
    and for the handles.  This is a 4 bit value.  0 is reserved for so 
@@ -183,7 +183,7 @@ typedef enum {
 typedef struct {
     int  handle;
     void *next;   /* Free handles use this field to point to the next
-		     free object */
+                     free object */
 } MPIU_Handle_common;
 
 /* All *active* (in use) objects have the handle as the first value; objects
@@ -204,7 +204,7 @@ typedef struct {
     MPID_Object_kind   kind;            /* Kind of object this is for */
     int                size;            /* Size of an individual object */
     void               *direct;         /* Pointer to direct block, used 
-					   for allocation */
+                                           for allocation */
     int                direct_size;     /* Size of direct block */
 } MPIU_Object_alloc_t;
 extern void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t * );
@@ -246,46 +246,46 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* Convert Handles to objects for MPI types that have predefined objects */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
-#define MPID_Getb_ptr(kind,a,bmsk,ptr)					\
-{									\
-   switch (HANDLE_GET_KIND(a)) {					\
-      case HANDLE_KIND_INVALID:						\
-          ptr=0;							\
-	  break;							\
-      case HANDLE_KIND_BUILTIN:						\
-          ptr=MPID_##kind##_builtin+((a)&(bmsk));			\
-          break;							\
-      case HANDLE_KIND_DIRECT:						\
-          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);			\
-          break;							\
-      case HANDLE_KIND_INDIRECT:					\
-          ptr=((MPID_##kind*)						\
-               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));	\
-          break;							\
-    }									\
+#define MPID_Getb_ptr(kind,a,bmsk,ptr)                                  \
+{                                                                       \
+   switch (HANDLE_GET_KIND(a)) {                                        \
+      case HANDLE_KIND_INVALID:                                         \
+          ptr=0;                                                        \
+          break;                                                        \
+      case HANDLE_KIND_BUILTIN:                                         \
+          ptr=MPID_##kind##_builtin+((a)&(bmsk));                       \
+          break;                                                        \
+      case HANDLE_KIND_DIRECT:                                          \
+          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);                     \
+          break;                                                        \
+      case HANDLE_KIND_INDIRECT:                                        \
+          ptr=((MPID_##kind*)                                           \
+               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));     \
+          break;                                                        \
+    }                                                                   \
 }
 
 /* Convert handles to objects for MPI types that do _not_ have any predefined
    objects */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
-#define MPID_Get_ptr(kind,a,ptr)					\
-{									\
-   switch (HANDLE_GET_KIND(a)) {					\
-      case HANDLE_KIND_INVALID:						\
-          ptr=0;							\
-	  break;							\
-      case HANDLE_KIND_BUILTIN:						\
+#define MPID_Get_ptr(kind,a,ptr)                                        \
+{                                                                       \
+   switch (HANDLE_GET_KIND(a)) {                                        \
+      case HANDLE_KIND_INVALID:                                         \
           ptr=0;                                                        \
-          break;							\
-      case HANDLE_KIND_DIRECT:						\
-          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);			\
-          break;							\
-      case HANDLE_KIND_INDIRECT:					\
-          ptr=((MPID_##kind*)						\
-               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));	\
-          break;							\
-    }									\
+          break;                                                        \
+      case HANDLE_KIND_BUILTIN:                                         \
+          ptr=0;                                                        \
+          break;                                                        \
+      case HANDLE_KIND_DIRECT:                                          \
+          ptr=MPID_##kind##_direct+HANDLE_INDEX(a);                     \
+          break;                                                        \
+      case HANDLE_KIND_INDIRECT:                                        \
+          ptr=((MPID_##kind*)                                           \
+               MPIU_Handle_get_ptr_indirect(a,&MPID_##kind##_mem));     \
+          break;                                                        \
+    }                                                                   \
 }
 
 #define MPID_Comm_get_ptr(a,ptr)       MPID_Getb_ptr(Comm,a,0x03ffffff,ptr)
@@ -380,21 +380,21 @@ typedef struct MPID_List_elm {
 typedef union {
   int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
   void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-			      MPI_Fint *, MPI_Fint *, MPI_Fint * );
+                              MPI_Fint *, MPI_Fint *, MPI_Fint * );
   void (*F90_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *,
-			      MPI_Aint *, MPI_Fint *, MPI_Fint * );
+                              MPI_Aint *, MPI_Fint *, MPI_Fint * );
   int (*C_FileCopyFunction) ( MPI_Comm, int, void *, void *, void *, int * );
   int (*C_TypeCopyFunction) ( MPI_Datatype, int, 
-			      void *, void *, void *, int * );
+                              void *, void *, void *, int * );
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
 
 typedef union {
   int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
   void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-			      MPI_Fint * );
+                              MPI_Fint * );
   void (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
-			      MPI_Fint * );
+                              MPI_Fint * );
   int  (*C_FileDeleteFunction)  ( MPI_File, int, void *, void * );
   int  (*C_TypeDeleteFunction)  ( MPI_Datatype, int, void *, void * );
   
@@ -428,7 +428,7 @@ typedef struct {
     volatile int ref_count;
     int          size;           /* Size of a group */
     int          *lrank_to_lpid; /* Array mapping a local rank to local 
-				    process number */
+                                    process number */
     MPID_Group_pmap_t *lpid_to_lrank;
   /* Other, device-specific information */
 #ifdef MPID_DEV_GROUP_DECL
@@ -458,12 +458,12 @@ typedef struct MPID_Comm {
     int           local_size;    /* Value of MPI_Comm_size for local group */
     MPID_Group   *local_group,   /* Groups in communicator. */
                  *remote_group;  /* The local and remote groups are the
-				    same for intra communicators */
+                                    same for intra communicators */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     struct MPID_Collops_struct  *coll_fns; /* Pointer to a table of functions 
-					      implementing the collective 
-					      routines */
+                                              implementing the collective 
+                                              routines */
 #ifndef MPICH_SINGLE_THREADED
     MPID_Thread_lock_t access_lock;
 #endif
@@ -491,7 +491,7 @@ extern MPID_Comm MPID_Comm_direct[];
 /* This currently defines a single structure type for all requests.  
    Eventually, we may want a union type, as used in MPICH-1 */
 typedef enum { MPID_REQUEST_SEND, MPID_REQUEST_RECV, MPID_PREQUEST_SEND, 
-	       MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
+               MPID_PREQUEST_RECV, MPID_UREQUEST } MPID_Request_kind_t;
 typedef struct MPID_Request {
     int          handle;
     volatile int ref_count;
@@ -546,7 +546,7 @@ typedef struct MPID_Datatype_st {
                                     a (count,datatype) pair) */
     int           is_perm;       /* True if datatype is a predefined type */
     struct MPID_Dataloop_st *opt_loopinfo;  /* "optimized" loopinfo.  
-				    Filled in at create
+                                    Filled in at create
                                     time; not touched by MPI calls.  This will
                                     be for the homogeneous case until further
                                     notice */
@@ -562,9 +562,9 @@ typedef struct MPID_Datatype_st {
        are placed after the more commonly used fields */
     int loopsize; /* size of loops for this datatype in bytes; derived value */
     int           combiner;      /* MPI call that was used to create this
-				    datatype */
+                                    datatype */
     struct MPID_Dataloop_st *loopinfo; /* Original loopinfo, used when 
-					  creating and when getting contents */
+                                          creating and when getting contents */
     int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
     int           has_mpi1_lb;
     int           is_permanent;  /* */
@@ -587,7 +587,7 @@ typedef struct MPID_Datatype_st {
     /* The following is needed to efficiently implement MPI_Get_elements */
     int           n_elements;   /* Number of basic elements in this datatype */
     MPI_Aint      element_size; /* Size of each element or -1 if elements are
-				   not all the same size */
+                                   not all the same size */
     int (*free_fn)( struct MPID_Datatype_st * ); /* Function to free this datatype */
     /* Other, device-specific information */
 #ifdef MPID_DEV_DATATYPE_DECL
@@ -607,29 +607,29 @@ typedef struct MPID_Collops_struct {
     int (*Barrier) (MPID_Comm *);
     int (*Bcast) (void*, int, MPID_Datatype *, int, MPID_Comm * );
     int (*Gather) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
-		   int, MPID_Comm *); 
+                   int, MPID_Comm *); 
     int (*Gatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
-		    MPID_Datatype *, int, MPID_Comm *); 
+                    MPID_Datatype *, int, MPID_Comm *); 
     int (*Scatter) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
-		    int, MPID_Comm *);
+                    int, MPID_Comm *);
     int (*Scatterv) (void*, int *, int *, MPID_Datatype *, void*, int, 
-		    MPID_Datatype *, int, MPID_Comm *);
+                    MPID_Datatype *, int, MPID_Comm *);
     int (*Allgather) (void*, int, MPID_Datatype *, void*, int, 
-		      MPID_Datatype *, MPID_Comm *);
+                      MPID_Datatype *, MPID_Comm *);
     int (*Allgatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
-		       MPID_Datatype *, MPID_Comm *);
+                       MPID_Datatype *, MPID_Comm *);
     int (*Alltoall) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
-			       MPID_Comm *);
+                               MPID_Comm *);
     int (*Alltoallv) (void*, int *, int *, MPID_Datatype *, void*, int *, 
-		     int *, MPID_Datatype *, MPID_Comm *);
+                     int *, MPID_Datatype *, MPID_Comm *);
     int (*Alltoallw) (void*, int *, int *, MPID_Datatype *, void*, int *, 
-		     int *, MPID_Datatype *, MPID_Comm *);
+                     int *, MPID_Datatype *, MPID_Comm *);
     int (*Reduce) (void*, void*, int, MPID_Datatype *, MPI_Op, int, 
-		   MPID_Comm *);
+                   MPID_Comm *);
     int (*Allreduce) (void*, void*, int, MPID_Datatype *, MPI_Op, 
-		      MPID_Comm *);
+                      MPID_Comm *);
     int (*Reduce_scatter) (void*, void*, int *, MPID_Datatype *, MPI_Op, 
-			   MPID_Comm *);
+                           MPID_Comm *);
     int (*Scan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
     int (*Exscan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
     
@@ -845,16 +845,16 @@ int MPID_Comm_accept(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_disconnect(MPID_Comm *);
 int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [],
-			     int, MPID_Comm *, MPID_Comm **, int []);
+                             int, MPID_Comm *, MPID_Comm **, int []);
 
 int MPID_Send(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-	       MPID_Request **);
+               MPID_Request **);
 int MPID_Isend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-	       MPID_Request **);
+               MPID_Request **);
 int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-	      MPI_Status *, MPID_Request **);
+              MPI_Status *, MPID_Request **);
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-	       MPID_Request **);
+               MPID_Request **);
 
 int MPID_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                     MPID_Win **);
