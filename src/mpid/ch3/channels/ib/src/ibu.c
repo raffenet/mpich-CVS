@@ -1459,6 +1459,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    {
 		i = num_bytes;
 		num_bytes = 0;
+		g_cur_write_stack_index--;
 		for (; i<0; i++)
 		{
 		    msg_printf("num_bytes += %d\n", g_num_bytes_written_stack[g_cur_write_stack_index].length);
