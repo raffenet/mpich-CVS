@@ -240,8 +240,24 @@ This section is under development.
 
 \begin{itemize}
 \item Review of basic and extended support; the Fortran 90 module.
+\item Flushing output.
+G95 requires 
+\begin{verbatim}
+setenv G95_UNBUFFERED_ALL TRUE
+\end{verbatim}
+or at least
+\begin{verbatim}
+setenv G95_UNBUFFERED_6 TRUE
+\end{verbatim}
+to have output to \texttt{stdout} appear when it is printed.  For
+example, in the example program \file{examples/f90/pi3f90}, without
+this setting, the prompt to enter the number of intervals will not
+appear until the program exits.
+
 \item Various name-mangling issues
 \end{itemize}
+
+
 \section{Running Programs with \texttt{mpiexec}}
 \label{sec:mpiexec}
 
