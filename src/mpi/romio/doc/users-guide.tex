@@ -479,6 +479,23 @@ standard, but does not try to push the data beyond this and into physical
 storage. Users should call {\tt MPI\_FILE\_SYNC} before the close if they wish
 to encourage the underlying file system to push data to permanent storage.
 
+\subsection{ROMIO and {\tt MPI\_FILE\_SET\_SIZE}}
+
+{\tt MPI\_FILE\_SET\_SIZE} is a collective routine used to resize a file.  It
+is important to remember that a MPI-IO routine being collective does not imply
+that the routine synchronizes the calling processes in any way (unless this is
+specified explicitly).
+
+As of 1.2.4, ROMIO implements {\tt MPI\_FILE\_SET\_SIZE} by calling {\tt
+ftruncate} from all processes.  Since different processes may call the
+function at different times, it means that unless external synchronization is
+used, a resize operation mixed in with writes or reads could have unexpected
+results.
+
+In short, if synchronization after a set size is needed, the user should add a
+barrier or similar operation to ensure the set size has completed.
+
+
 %
 % INSTALLATION INSTRUCTIONS
 %
