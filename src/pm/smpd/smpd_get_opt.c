@@ -622,9 +622,9 @@ int smpd_get_win_opt_string(int *argc, char ***argv, char * flag, char *str, int
 		continue;
 	    }
 	    iter = &(*argv)[i][strlen(flag)];
-	    if (*iter != '=')
+	    if ((*iter != ':') && (*iter != '=')) /* /flag=val or /flag:val */
 	    {
-		/* partial option match: /flag == /flagger */
+		/* partial option match: /flag=val == /flagger=val */
 		continue;
 	    }
 	    iter++;
