@@ -24,10 +24,11 @@
 - C applications built for Microsoft Windows may select the desired channels at
   runtime.
 
-- A program not started with mpiexec may become an MPI program by
-  calling MPI_Init.  It will have an MPI_COMM_WORLD of size one.  It may
-  then call other MPI routines, including MPI_Comm_Spawn, to become a
-  truly parallel program.
+- A program not started with mpiexec may become an MPI program by calling
+  MPI_Init.  It will have an MPI_COMM_WORLD of size one.  It may then call
+  other MPI routines, including MPI_COMM_SPAWN, to become a truly parallel
+  program.  At present, the use of MPI_COMM_SPAWN and MPI_COMM_SPAWN_MULTIPLE
+  by such a process is only supported by the MPD process manager.
 
 - Memory leaks in communicator allocation and the C++ binding have been fixed.
 
@@ -76,7 +77,8 @@
 - The following changes have been made to SMPD:
 
   - On Windows machines, passwordless authentication (via SSPI) can now be used
-    to start processes on machines within a domain.
+    to start processes on machines within a domain.  This feature is a recent
+    addition, and should be considered experimental.
 
   - On Windows machines, the -localroot option was added to mpiexec, allowing
     processes on the local machines to perform GUI operations on the local
