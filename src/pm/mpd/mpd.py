@@ -273,7 +273,8 @@ def _handle_lhs_input():
                                       'jobid' : msg['jobid']})
                 if g.conSocket:
                     mpd_send_one_msg(g.conSocket, {'cmd' : 'job_failed',
-                                                   'reason' : 'some_procs_not_started'} )
+                                                   'reason' : 'some_procs_not_started',
+                                                   'remaining_hosts' : msg['hosts'] } )
                 return
             msg['first_loop'] = 0
             msg['nstarted_on_this_loop'] = 0
@@ -830,7 +831,10 @@ def _process_cmdline_args():
         mpd_raise('host and port must be specified together')
 
 def sigchld_handler(signum,frame):
-    (donePid,status) = waitpid(-1,WNOHANG)
+    try:
+        (donePid,status) = waitpid(-1,WNOHANG)
+    except:    ## may occur if no more child processes
+        donePid = 0
     while donePid != 0:
         for jobid in g.activeJobs.keys():
             if g.activeJobs[jobid].has_key(donePid):

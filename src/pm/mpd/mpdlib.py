@@ -128,7 +128,9 @@ def mpd_send_one_line(sock,line):
     try:
         sock.sendall(line)
     except Exception, errmsg:
-        mpd_print_tb(1, 'mpd_send_one_line: errmsg=:%s:' % (errmsg) )
+        mpd_print_tb(1, 'mpd_send_one_line: sock=%s errmsg=:%s:' % (sock,errmsg) )
+        return 0
+    return 1
 
 def mpd_recv_one_line(sock):
     msg = ''
@@ -157,8 +159,11 @@ def mpd_send_one_msg(sock,msg):
         sock.sendall('%08d%s' % (len(pickledMsg),pickledMsg) )
     except StandardError, errmsg:    # any built-in exceptions
         mpd_print_tb(1, 'mpd_send_one_msg: errmsg=:%s:' % (errmsg) )
+        return 0
     except:
         mpd_print_tb(1, 'mpd_send_one_msg failed on sock %s' % sock)
+        return 0
+    return 1
 
 def mpd_recv_one_msg(sock):
     msg = {}
