@@ -137,7 +137,10 @@ int handle_sock_op(sock_event_t *event_ptr)
 		MPIDI_CH3U_Handle_send_req(conn->vc, sreq);
 		if (conn->send_active == NULL)
 		{
-		    MPIDI_CH3I_SendQ_dequeue(conn->vc);
+		    if (MPIDI_CH3I_SendQ_head(conn->vc) == sreq)
+		    {
+			MPIDI_CH3I_SendQ_dequeue(conn->vc);
+		    }
 		    connection_post_sendq_req(conn);
 		}
 	    }
