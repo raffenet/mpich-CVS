@@ -555,6 +555,7 @@ sub WriteAnnoteFileMap {
 	    $curprefix = $dirname;
 	    print IFD "<H2>$dirname</H2>\n";
 	    print IFD "<TABLE WIDTH=100%>\n";
+	    $col = 1;
 	}
 	if ($col == 1) {
 	    print IFD "<TR WIDTH=100%>\n";
