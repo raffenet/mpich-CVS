@@ -183,6 +183,7 @@ sub ProcessFile {
 	    &CheckForGuardedDefines( FD, $_, $filename );
 	    &CheckForBadDefines( FD, $_, $filename );
 	    &CheckForMismatchedStates ( FD, $_, $filename );
+	    &CheckForBadDefinitions( FD, $_, $filename );
 	}
     }
     # Output summary messages
@@ -365,6 +366,17 @@ sub CheckForBadDefines {
 		   $curline =~ s/defined\($defname\)//g;
 	       }
 	}
+    }
+}
+# This checks for definitions that the user should not make (e.g., 
+# #define __foo)
+sub CheckForBadDefinitions {
+    my $FD = $_[0];
+    my $curline = $_[1];
+    my $filename = $_[2];
+    if ($curline =~ /^#\s*define\s+(__\w*)/) {
+	$defname = $1;
+	print "Warning: definition of name $defname used in $filename is not allowed\n"
     }
 }
 
