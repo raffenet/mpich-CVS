@@ -36,6 +36,17 @@ int ib_post_read_pkt(MPIDI_VC *vc_ptr)
     return MPI_SUCCESS;
 }
 
+static void PrintHeader(MPID_Header_pkt *p)
+{
+    MPIU_dbg_printf("Header Packet:\n");
+    MPIU_dbg_printf(" context: %d\n", p->context);
+    MPIU_dbg_printf(" sender_car_ptr: 0x%x\n", p->sender_car_ptr);
+    MPIU_dbg_printf(" size: %d\n", p->size);
+    MPIU_dbg_printf(" src: %d\n", p->src);
+    MPIU_dbg_printf(" tag: %d\n", p->tag);
+    MPIU_dbg_printf(" type: %d\n", p->type);
+}
+
 int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_READ);
@@ -52,6 +63,7 @@ int ib_handle_read(MPIDI_VC *vc_ptr, void *mem_ptr, int num_bytes)
 	MPIU_dbg_printf("ib_handle_read() received header - %d bytes\n", num_bytes);
 	memcpy(&vc_ptr->pkt_car.msg_header.pkt.u.hdr, mem_ptr, num_bytes);
 	/*BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);*/
+	PrintHeader(&vc_ptr->pkt_car.msg_header.pkt.u.hdr);
 	mm_cq_enqueue(&vc_ptr->pkt_car);
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ);
 	return MPI_SUCCESS;
