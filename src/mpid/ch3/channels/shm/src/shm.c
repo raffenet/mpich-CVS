@@ -686,7 +686,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 	    return mpi_errno;
 	}
 
-	if (complete)
+	if (complete || (riov_offset == recv_count))
 	{
 	    /* send the reload/done packet to the receiver */
 	    reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
@@ -1176,13 +1176,37 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_ppt
 			    }
 			    if (!complete)
 			    {
-				/* send a cts_iov packet and the new iov */
-				mpi_errno = MPIDI_CH3_do_cts(recv_vc_ptr, rreq);
+				/* send a new iov */
+				MPID_Request * cts_sreq;
+				MPIDI_CH3_Pkt_t pkt;
+
+				/*printf("sending reloaded recv iov of length %d\n", rreq->dev.iov_count);fflush(stdout);*/
+				pkt.iov.type = MPIDI_CH3_PKT_IOV;
+				pkt.iov.send_recv = MPIDI_CH3_PKT_RELOAD_RECV;
+				pkt.iov.req = ((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq;
+				pkt.iov.iov_len = rreq->dev.iov_count;
+
+				rreq->dev.rdma_iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&pkt;
+				rreq->dev.rdma_iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+				rreq->dev.rdma_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.iov;
+				rreq->dev.rdma_iov[1].MPID_IOV_LEN = rreq->dev.iov_count * sizeof(MPID_IOV);
+
+				mpi_errno = MPIDI_CH3_iStartMsgv(recv_vc_ptr, rreq->dev.rdma_iov, 2, &cts_sreq);
+				/* --BEGIN ERROR HANDLING-- */
 				if (mpi_errno != MPI_SUCCESS)
 				{
-				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				    MPIU_Object_set_ref(rreq, 0);
+				    MPIDI_CH3_Request_destroy(rreq);
+				    rreq = NULL;
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|ctspkt", 0);
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
 				    return mpi_errno;
+				}
+				/* --END ERROR HANDLING-- */
+				if (cts_sreq != NULL)
+				{
+				    /* The sender doesn't need to know when the message has been sent.  So release the request immediately */
+				    MPID_Request_release(cts_sreq);
 				}
 			    }
 			}
