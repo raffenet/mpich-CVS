@@ -65,18 +65,33 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
     int i, ndims, coord, multiplier;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_RANK);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_RANK);
-    /* Get handles to MPI objects. */
+
+    /* Validate parameters, especially handles needing to be converted */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
+	    MPIR_ERRTEST_ARGNULL(coords,"coords",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(rank,"rank",mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
@@ -85,37 +100,25 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     cart_ptr = MPIR_Topology_get( comm_ptr );
 
+    MPIU_ERR_CHKANDJUMP((!cart_ptr || cart_ptr->kind != MPI_CART), mpi_errno, MPI_ERR_TOPOLOGY, "**notcarttopo");
+
+    /* Validate coordinates */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
-						  "**notcarttopo", 0 );
-	    }
-	    /* Validate coordinates */
-	    if (!mpi_errno) {
-		ndims = cart_ptr->topo.cart.ndims;
-		for (i=0; i<ndims; i++) {
-		    if (!cart_ptr->topo.cart.periodic[i]) {
-			coord = coords[i];
-			if (coord < 0 || 
-			    coord >= cart_ptr->topo.cart.dims[i] ) {
-			    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                           MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
-					  "**cartcoordinvalid",
-					  "**cartcoordinvalid %d %d %d",
-					  i, coords[i], 
-					  cart_ptr->topo.cart.dims[i]-1 );
-			    break;
-			}
-		    }
+	    ndims = cart_ptr->topo.cart.ndims;
+	    for (i=0; i<ndims; i++) {
+		if (!cart_ptr->topo.cart.periodic[i]) {
+		    coord = coords[i];
+		    MPIU_ERR_CHKANDJUMP3(
+			(coord < 0 || coord >= cart_ptr->topo.cart.dims[i] ), mpi_errno, MPI_ERR_ARG, "**cartcoordinvalid",
+			"**cartcoordinvalid %d %d %d",i, coords[i], cart_ptr->topo.cart.dims[i]-1 )
 		}
 	    }
-	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -137,16 +140,24 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 	*rank += multiplier * coord;
 	multiplier *= cart_ptr->topo.cart.dims[i];
     }
+    
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_cart_rank", "**mpi_cart_rank %C %p %p", comm, coords, rank);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cart_rank",
+	    "**mpi_cart_rank %C %p %p", comm, coords, rank);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -67,14 +67,31 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
     int rank;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_SHIFT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_SHIFT);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -95,29 +112,12 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     cart_ptr = MPIR_Topology_get( comm_ptr );
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    if (!cart_ptr || cart_ptr->kind != MPI_CART) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                    MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
-						  "**notcarttopo", 0 );
-	    }
-	    else if (direction >= cart_ptr->topo.cart.ndims) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
-					  "**dimsmany", "**dimsmany %d %d",
-						  cart_ptr->topo.cart.ndims,
-						  direction);
-	    }
-	    if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIU_ERR_CHKANDJUMP((!cart_ptr || cart_ptr->kind != MPI_CART), mpi_errno, MPI_ERR_TOPOLOGY, "**notcarttopo");
+    MPIU_ERR_CHKANDJUMP2((direction >= cart_ptr->topo.cart.ndims), mpi_errno, MPI_ERR_ARG, "**dimsmany",
+			 "**dimsmany %d %d", cart_ptr->topo.cart.ndims, direction);
 
     /* Check for the case of a 0 displacement */
     rank = comm_ptr->rank;
@@ -158,16 +158,22 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
     }
 
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_cart_shift", "**mpi_cart_shift %C %d %d %p %p", comm, direction, displ, source, dest);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cart_shift",
+	    "**mpi_cart_shift %C %d %d %p %p", comm, direction, displ, source, dest);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

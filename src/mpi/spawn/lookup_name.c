@@ -67,15 +67,31 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
     MPID_Info *info_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_LOOKUP_NAME);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_LOOKUP_NAME);
 
-    /* Get handles to MPI objects. */
-    MPID_Info_get_ptr( info, info_ptr );
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_INFO(info, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Info_get_ptr( info, info_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate info_ptr (only if not null) */
 	    if (info_ptr) 
 		MPID_Info_valid_ptr( info_ptr, mpi_errno );
@@ -88,58 +104,47 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-#ifdef HAVE_NAMEPUB_SERVICE
-    if (!MPIR_Namepub)
+    /* ... body of routine ...  */
+    
+#   ifdef HAVE_NAMEPUB_SERVICE
     {
-	mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
+	if (!MPIR_Namepub)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_fail;
+	    mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
+	    /* FIXME: change **fail to something more meaningful */
+	    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail");
 	}
-	/* --END ERROR HANDLING-- */
-    }
 
-    mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info_ptr,
-	(const char *)service_name, port_name );
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS && 
-	MPIR_ERR_GET_CLASS(mpi_errno) != MPI_ERR_NAME)
+	mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info_ptr,
+				    (const char *)service_name, port_name );
+	/* FIXME: change **fail to something more meaningful */
+	MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS && MPIR_ERR_GET_CLASS(mpi_errno) != MPI_ERR_NAME),
+			    mpi_errno, MPI_ERR_OTHER, "**fail");
+    }
+#   else
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_fail;
+	/* No name publishing service available */
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**nonamepub");
     }
-    /* --END ERROR HANDLING-- */
+#   endif
+    
+    /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
+    MPID_CS_EXIT();
     return mpi_errno;
 
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_lookup_name",
+	    "**mpi_lookup_name %s %I %p", service_name, info, port_name);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
-
-#else
-
-    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-		       FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
-
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    /* --END ERROR HANDLING-- */
-#endif    
 }

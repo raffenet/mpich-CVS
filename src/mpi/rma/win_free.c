@@ -51,13 +51,27 @@ int MPI_Win_free(MPI_Win *win)
     MPID_Win *win_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_FREE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_FREE);
 
-    /* Verify that MPI has been initialized */
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
-
-    /* Get handles to MPI objects. */
+    /* Validate parameters, especially handles needing to be converted */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_WIN(*win, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
     MPID_Win_get_ptr( *win, win_ptr );
+
+    /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -71,37 +85,39 @@ int MPI_Win_free(MPI_Win *win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     if (MPIR_Process.attr_free && win_ptr->attributes)
     {
 	mpi_errno = MPIR_Process.attr_free( win_ptr->handle, 
 					    win_ptr->attributes );
     }
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	mpi_errno = MPID_Win_free(&win_ptr);
-	*win = MPI_WIN_NULL;
-    }
-/*
-    else
-    {
-        If the user attribute free function returns an error, 
-	then do not free the window
-    }
-*/
+    /*
+     * If the user attribute free function returns an error, 
+     * then do not free the window
+     */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE);
-        return MPI_SUCCESS;
-    }
+    
+    mpi_errno = MPID_Win_free(&win_ptr);
+    *win = MPI_WIN_NULL;
 
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**mpi_win_free", "**mpi_win_free %p", 
-				     win);
-#endif
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE);
-    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_free", "**mpi_win_free %p", win);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

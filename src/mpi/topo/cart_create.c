@@ -69,15 +69,31 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     MPIU_CHKPMEM_DECL(4);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_CREATE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_CREATE);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm_old, comm_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm_old, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm_old, comm_ptr );
 
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -101,27 +117,15 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* Check for invalid arguments */
     newsize = 1;
     for (i=0; i<ndims; i++) 
 	newsize *= dims[i];
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    if (newsize > comm_ptr->remote_size) {
-		/* Use ERR_ARG instead of ERR_TOPOLOGY because there 
-		   is no topology yet */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
-					  "**cartdim", "**cartdim %d %d", 
-					  comm_ptr->remote_size, newsize );
-	    }
-	    if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is no topology yet */
+    MPIU_ERR_CHKANDJUMP2((newsize > comm_ptr->remote_size), mpi_errno, MPI_ERR_ARG, "**cartdim",
+			 "**cartdim %d %d", comm_ptr->remote_size, newsize);
 
     /* Create a new communicator as a duplicate of the input communicator
        (but do not duplicate the attributes) */
@@ -133,8 +137,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
        null communicator and exit */
     if (comm_ptr->rank >= newsize) {
 	*comm_cart = MPI_COMM_NULL;
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
-	return MPI_SUCCESS;
+	goto fn_exit;
     }
 
     /* Create the topololgy structure */
@@ -164,22 +167,28 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 
     /* Place this topology onto the communicator */
     mpi_errno = MPIR_Topology_put( newcomm_ptr, cart_ptr );
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	*comm_cart = newcomm_ptr->handle;
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE);
-	return MPI_SUCCESS;
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    *comm_cart = newcomm_ptr->handle;
+
+    /* ... end of body of routine ... */
+
+  fn_exit:
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
     MPIU_CHKPMEM_REAP();
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_cart_create", "**mpi_cart_create %C %d %p %p %d %p",
-	comm_old, ndims, dims, periods, reorder, comm_cart);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cart_create",
+	    "**mpi_cart_create %C %d %p %p %d %p", comm_old, ndims, dims, periods, reorder, comm_cart);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

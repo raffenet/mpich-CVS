@@ -58,16 +58,33 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm,
     MPID_Info *info_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_ACCEPT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_ACCEPT);
 
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Info_get_ptr( info, info_ptr );
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+	    MPIR_ERRTEST_INFO(info, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Info_get_ptr( info, info_ptr );
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
@@ -76,24 +93,31 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     mpi_errno = MPID_Comm_accept(port_name, info_ptr, root, comm_ptr, 
 				 &newcomm_ptr);
-    if (mpi_errno == MPI_SUCCESS)
-    {
-        *newcomm = newcomm_ptr->handle;
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-        MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_ACCEPT);
-        return MPI_SUCCESS;
-    }
+    *newcomm = newcomm_ptr->handle;
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_accept", "**mpi_comm_accept %s %I %d %C %p", port_name, info, root, comm, newcomm);
-#endif
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_ACCEPT);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_accept",
+	    "**mpi_comm_accept %s %I %d %C %p", port_name, info, root, comm, newcomm);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

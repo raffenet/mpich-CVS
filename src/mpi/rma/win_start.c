@@ -67,11 +67,24 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     MPID_Group *group_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_START);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_START);
 
-    /* Verify that MPI has been initialized */
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
-
+    /* Validate parameters, especially handles needing to be converted */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_WIN(win, mpi_errno);
+	    MPIR_ERRTEST_GROUP(group, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
     MPID_Group_get_ptr(group, group_ptr);
@@ -91,21 +104,30 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     win_ptr->start_group_ptr = group_ptr;
     MPIU_Object_add_ref( group_ptr );
     win_ptr->start_assert = assert;
 
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
-    return MPI_SUCCESS;
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**mpi_win_start", 
-				     "**mpi_win_start %G %A %W", 
-				     group, assert, win);
-#endif
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
-    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_start", 
+	    "**mpi_win_start %G %A %W", group, assert, win);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 

@@ -56,12 +56,16 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ERROR_STRING);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_STRING);
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(string,"string",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen",mpi_errno);
             if (mpi_errno) goto fn_fail;
@@ -77,17 +81,22 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_error_string", "**mpi_error_string %d %s %p", errorcode, string, resultlen);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_error_string",
+	    "**mpi_error_string %d %s %p", errorcode, string, resultlen);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

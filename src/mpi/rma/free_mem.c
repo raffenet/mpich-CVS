@@ -47,26 +47,38 @@ int MPI_Free_mem(void *base)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FREE_MEM);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FREE_MEM);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
+    /* ... body of routine ...  */
+    
+    /* FIXME: this should call MPID_Free_mem() */
     MPIU_Free(base);
 
+    /* ... end of body of routine ... */
+
+#if 0    
+  fn_exit:
+#endif    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FREE_MEM);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
 
     /* There should never be any fn_fail case; this suppresses warnings from
        compilers that object to unused labels */
 #if 0 
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_free_mem", "**mpi_free_mem %p", base);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FREE_MEM);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_free_mem", "**mpi_free_mem %p", base);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 #endif
 }

@@ -46,26 +46,33 @@ int MPI_Close_port(char *port_name)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CLOSE_PORT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CLOSE_PORT);
 
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
-
+    /* ... body of routine ...  */
+    
     mpi_errno = MPID_Close_port(port_name);
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
-	return MPI_SUCCESS;
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    
+    /* ... end of body of routine ... */
 
-    /* --BEGIN ERROR HANDLING-- */
-    /* fn_fail: */ /* this suppresses warnings from compilers that object 
-		      to unused labels */
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_close_port", "**mpi_close_port %s", port_name);
-#endif
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
+    MPID_CS_EXIT();
     return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_close_port",
+	    "**mpi_close_port %s", port_name);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -58,14 +58,31 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
     MPIR_Topology *topo_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPHDIMS_GET);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPHDIMS_GET);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -78,21 +95,10 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     topo_ptr = MPIR_Topology_get( comm_ptr );
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    if (!topo_ptr || topo_ptr->kind != MPI_GRAPH) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
-						  "**notgraphtopo", 0 );
-	    }
-	    if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIU_ERR_CHKANDJUMP((!topo_ptr || topo_ptr->kind != MPI_GRAPH), mpi_errno, MPI_ERR_TOPOLOGY, "**notgraphtopo");
 
     /* Set nnodes */
     *nnodes = topo_ptr->topo.graph.nnodes;
@@ -101,16 +107,22 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
     *nedges = topo_ptr->topo.graph.nedges;
 
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPHDIMS_GET);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
-				     __LINE__, MPI_ERR_OTHER,
-	"**mpi_graphdims_get", "**mpi_graphdims_get %C %p %p", comm, nnodes, nedges);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPHDIMS_GET);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_graphdims_get",
+	    "**mpi_graphdims_get %C %p %p", comm, nnodes, nedges);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

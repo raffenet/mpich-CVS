@@ -103,9 +103,9 @@ int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_EXTENT);
     MPID_CS_EXIT();
     return mpi_errno;
-    /* --BEGIN ERROR HANDLING-- */
 
   fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(

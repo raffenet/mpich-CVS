@@ -64,14 +64,30 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     MPID_Info *info_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OPEN_PORT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OPEN_PORT);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
-    /* Get handles to MPI objects. */
-    /* Note that a NULL info is allowed */
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
-	MPID_Info_get_ptr( info, info_ptr );
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Note that a NULL info is allowed */
+	    MPIR_ERRTEST_INFO(info, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Info_get_ptr( info, info_ptr );
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    /* FIXME: If info_ptr is non-null, we should validate it */
@@ -80,25 +96,30 @@ int MPI_Open_port(MPI_Info info, char *port_name)
         }
         MPID_END_ERROR_CHECKS;
     }
-#   else
-    MPID_Info_get_ptr( info, info_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     mpi_errno = MPID_Open_port(info_ptr, port_name);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
-	return MPI_SUCCESS;
-    }
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_open_port", "**mpi_open_port %I %p", info, port_name);
-#endif
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
-    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_open_port",
+	    "**mpi_open_port %I %p", info, port_name);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

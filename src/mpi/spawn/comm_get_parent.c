@@ -61,12 +61,15 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_GET_PARENT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GET_PARENT);
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(parent, "parent", mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
@@ -74,19 +77,28 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     *parent = (MPIR_Process.comm_parent == NULL) ? MPI_COMM_NULL :
                (MPIR_Process.comm_parent)->handle;  
 
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_get_parent", "**mpi_comm_get_parent %p", parent);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_get_parent",
+	    "**mpi_comm_get_parent %p", parent);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

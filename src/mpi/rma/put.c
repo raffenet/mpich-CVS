@@ -47,10 +47,11 @@
 
 .N Errors
 .N MPI_SUCCESS
-.N MPI_ERR_WIN
 .N MPI_ERR_ARG
-.N MPI_ERR_TYPE
 .N MPI_ERR_COUNT
+.N MPI_ERR_RANK
+.N MPI_ERR_TYPE
+.N MPI_ERR_WIN
 @*/
 int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
@@ -62,18 +63,32 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
     MPID_Win *win_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PUT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_PUT);
 
-    /* Verify that MPI has been initialized */
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
-
-    /* Get handles to MPI objects. */
-    MPID_Win_get_ptr( win, win_ptr );
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            int comm_size;
+	    MPIR_ERRTEST_WIN(win, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Win_get_ptr( win, win_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPID_Comm * comm_ptr;
 
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
@@ -103,46 +118,42 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
                 MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
             }
 
-            MPIR_Nest_incr();
-            NMPI_Comm_size(win_ptr->comm, &comm_size);
-            MPIR_Nest_decr();
-            if ((target_rank < MPI_PROC_NULL) || (target_rank >=
-                                                  comm_size))
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-		   MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
-                   "**rank", "**rank %d %d", target_rank, comm_size );
-
+	    MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
+	    MPIR_ERRTEST_SEND_RANK(comm_ptr, target_rank, mpi_errno);
+	    
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    if (target_rank == MPI_PROC_NULL)
-    {
-	return MPI_SUCCESS;
-    }
+    /* ... body of routine ...  */
+    
+    if (target_rank == MPI_PROC_NULL) goto fn_exit;
 
     mpi_errno = MPID_Put(origin_addr, origin_count, origin_datatype,
                          target_rank, target_disp, target_count,
                          target_datatype, win_ptr);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_PUT);
-	return MPI_SUCCESS;
-    }
+    /* ... end of body of routine ... */
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_put", "**mpi_put %p %d %D %d %d %d %D %W", origin_addr, origin_count, origin_datatype,
-	target_rank, target_disp, target_count, target_datatype, win);
-#endif
+  fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_PUT);
-    return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_put", "**mpi_put %p %d %D %d %d %d %D %W",
+	    origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, win);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

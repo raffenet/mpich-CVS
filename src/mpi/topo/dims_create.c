@@ -148,12 +148,16 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     int dims_needed, dims_product, nfactors, ndivisors;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIMS_CREATE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_DIMS_CREATE);
+    
+    /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(nnodes,"nnodes",mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(ndims,"ndims",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(dims,"dims",mpi_errno);
@@ -164,49 +168,24 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+
     /* Find the number of unspecified dimensions in dims and the product
        of the positive values in dims */
     dims_needed  = 0;
     dims_product = 1;
     for (i=0; i<ndims; i++) {
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    if (dims[i] < 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS,
-						  "**argarrayneg", 
-						  "**argarrayneg %s %d %d", 
-						  "dims", i, dims[i] );
-		goto fn_fail;
-	    }
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+	MPIU_ERR_CHKANDJUMP3((dims[i] < 0) , mpi_errno, MPI_ERR_DIMS, "**argarrayneg", 
+			     "**argarrayneg %s %d %d", "dims", i, dims[i]);
 	if (dims[i] == 0) dims_needed ++;
 	else dims_product *= dims[i];
     }
 
     /* Can we factor nnodes by dims_product? */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    if ( (nnodes / dims_product ) * dims_product != nnodes ) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS, 
-						  "**dimspartition", 0 );
-		goto fn_fail;
-	    }
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIU_ERR_CHKANDJUMP(((nnodes / dims_product ) * dims_product != nnodes ), mpi_errno, MPI_ERR_DIMS, "**dimspartition");
 
     if (!dims_needed) {
 	/* Special case - all dimensions provided */
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
-	return MPI_SUCCESS;
+	goto fn_exit;
     }
     nnodes /= dims_product;
 
@@ -343,13 +322,22 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     }
 
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_dims_create", "**mpi_dims_create %d %d %p", nnodes, ndims, dims);
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_dims_create",
+	    "**mpi_dims_create %d %d %p", nnodes, ndims, dims);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

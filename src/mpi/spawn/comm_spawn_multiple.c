@@ -64,16 +64,38 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *intercomm_ptr = NULL;
     MPID_Info **array_of_info_ptrs;
+    MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+	    for (i = 0; i < count; i++)
+	    {
+		MPIR_ERRTEST_INFO(array_of_info[i], mpi_errno);
+	    }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -83,12 +105,9 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    array_of_info_ptrs = (MPID_Info **) MPIU_Malloc(count * sizeof(MPID_Info*));
-    if (array_of_info_ptrs == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	goto fn_fail;
-    }
+    /* ... body of routine ...  */
+    
+    MPIU_CHKLMEM_MALLOC(array_of_info_ptrs, MPID_Info **, count * sizeof(MPID_Info*), mpi_errno, "array of info pointers");
     for (i=0; i<count; i++)
     {
         MPID_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
@@ -102,22 +121,29 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
                                          array_of_info_ptrs, root, 
                                          comm_ptr, &intercomm_ptr,
                                          array_of_errcodes);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    MPIU_Free(array_of_info_ptrs);
+    *intercomm = intercomm_ptr->handle;
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	*intercomm = intercomm_ptr->handle;
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
-	return MPI_SUCCESS;
-    }
+    /* ... end of body of routine ... */
 
-    /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_spawn_multiple", "**mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p",
-	count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes);
+  fn_exit:
+    MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_spawn_multiple",
+	    "**mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p", count, array_of_commands, array_of_argv, array_of_maxprocs,
+	    array_of_info, root, comm, intercomm, array_of_errcodes);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -35,6 +35,10 @@
 + comm - communicator with error handler (handle) 
 - errorcode - error code (integer) 
 
+ Note:
+ Assuming the input parameters are valid, when the error handler is set to
+ MPI_ERRORS_RETURN, this routine will always return MPI_SUCCESS.
+ 
 .N ThreadSafeNoUpdate
 
 .N Fortran
@@ -50,39 +54,56 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-
-            /* Validate comm_ptr */
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+            /* Validate comm_ptr; if comm_ptr is not value, it will be reset to null */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
-	    if (!mpi_errno) {
-		if (comm_ptr->errhandler) {
-		    MPIR_ERRTEST_ERRHANDLER(comm_ptr->errhandler->handle,mpi_errno);
-		}
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+	    if (comm_ptr->errhandler) {
+		MPIR_ERRTEST_ERRHANDLER(comm_ptr->errhandler->handle,mpi_errno);
+		if (mpi_errno) goto fn_fail;
 	    }
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* Check for predefined error handlers */
     if (!comm_ptr->errhandler || 
 	comm_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL) {
-	return MPIR_Err_return_comm( comm_ptr, "MPI_Comm_call_errhandler", 
-				     errorcode );
+	mpi_errno = MPIR_Err_return_comm( comm_ptr, "MPI_Comm_call_errhandler", errorcode );
+	goto fn_exit;
     }
 
     if (comm_ptr->errhandler->handle == MPI_ERRORS_RETURN) {
-	return errorcode;
+	/* MPI_ERRORS_RETURN should always return MPI_SUCCESS */
+	goto fn_exit;
     }
 
     /* Process any user-defined error handling function */
@@ -102,18 +123,24 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 	break;
 #endif
     }
+
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_call_errhandler", "**mpi_comm_call_errhandler %C %d", comm, errorcode);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_call_errhandler",
+	    "**mpi_comm_call_errhandler %C %d", comm, errorcode);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -58,14 +58,31 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
     MPIR_Topology *graph_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    MPIR_ERRTEST_ARGNULL(nneighbors, "nneighbors", mpi_errno);
@@ -78,28 +95,12 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     graph_ptr = MPIR_Topology_get( comm_ptr );
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    if (!graph_ptr || graph_ptr->kind != MPI_GRAPH) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
-						  "**notgraphtopo", 0 );
-	    }
-	    else if (rank < 0 || rank >= graph_ptr->topo.graph.nnodes) {
-		/* Must use an else because we need a valid graph_ptr 
-		   for this test */
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
-					  "**rank", "**rank %d %d",
-					  rank, graph_ptr->topo.graph.nnodes );
-	    }
-	    if (mpi_errno) goto fn_fail;
-	}
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    MPIU_ERR_CHKANDJUMP((!graph_ptr || graph_ptr->kind != MPI_GRAPH), mpi_errno, MPI_ERR_TOPOLOGY, "**notgraphtopo");
+    MPIU_ERR_CHKANDJUMP2((rank < 0 || rank >= graph_ptr->topo.graph.nnodes), mpi_errno, MPI_ERR_RANK, "**rank",
+			 "**rank %d %d", rank, graph_ptr->topo.graph.nnodes );
 
     if ( rank == 0 ) 
 	*nneighbors = graph_ptr->topo.graph.index[rank];
@@ -108,16 +109,22 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 	    graph_ptr->topo.graph.index[rank-1];
 
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_graph_neighbors_count", "**mpi_graph_neighbors_count %C %d %p", comm, rank, nneighbors);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_graph_neighbors_count",
+	    "**mpi_graph_neighbors_count %C %d %p", comm, rank, nneighbors);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

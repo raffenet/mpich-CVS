@@ -64,22 +64,25 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
     void *ap;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLOC_MEM);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ALLOC_MEM);
+    
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-            if (size < 0)
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
-                               "**argneg", "**argneg %s %d", "size", size);  
+	    MPIR_ERRTEST_ARGNEG(size, "size", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(baseptr, "baseptr", mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    
     /* FIXME: This should be MPID_Mem_alloc */
     ap = MPIU_Malloc(size);
     /* --BEGIN ERROR HANDLING-- */
@@ -91,13 +94,23 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
     /* --END ERROR HANDLING-- */
     *(void **)baseptr = ap;
 
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_alloc_mem", "**mpi_alloc_mem %d %I %p", size, info, baseptr);
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ALLOC_MEM);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_alloc_mem",
+	    "**mpi_alloc_mem %d %I %p", size, info, baseptr);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
