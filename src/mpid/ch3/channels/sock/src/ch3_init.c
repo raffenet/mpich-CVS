@@ -13,6 +13,10 @@
 #include <sys/param.h>
 #endif
 
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 /* XXX - all calls to assert() need to be turned into real error checking and
