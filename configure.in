@@ -169,7 +169,7 @@ if test "$enable_fast" = "yes" ; then
     enable_error_messages=no
     enable_timing=no
     enable_g=no
-    AC_DEFINE(NDEBUG,,[Define to suppress assertions])
+    AC_DEFINE(NDEBUG,1,[Define to suppress assertions])
 fi
 dnl error-checking
 case "$enable_error_checking" in 
@@ -313,7 +313,7 @@ if test "$timing_name" != "none" ; then
     timing_kind=MPID_TIMING_KIND_$timing_kind
     AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
     if test "$collect_stats" = "true" ; then
-        AC_DEFINE(COLLECT_STATS,,[define to enable collection of statistics])
+        AC_DEFINE(COLLECT_STATS,1,[define to enable collection of statistics])
     fi
 fi
 AC_SUBST(logging_dir)
@@ -325,7 +325,7 @@ dnl
 dnl threads
 case "$enable_threads" in
     no|single)
-    AC_DEFINE(MPICH_SINGLE_THREADED,,[define to for single threaded])
+    AC_DEFINE(MPICH_SINGLE_THREADED,1,[define to for single threaded])
     ;;
     runtime=*|multiple=*)
     thread_type=`echo $enable_threads | sed -e 's/^.*=//'g`
@@ -350,10 +350,10 @@ for option in $enable_g ; do
         no|none)
 	;;
 	handle)
-	AC_DEFINE(MPICH_DEBUG_HANDLES,,[Define to enable handle checking])
+	AC_DEFINE(MPICH_DEBUG_HANDLES,1,[Define to enable handle checking])
 	;;
 	mem|all|yes)
-	AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
+	AC_DEFINE(USE_MEMORY_TRACING,1,[Define to enable memory tracing])
 	enable_g_mem=yes
 	CFLAGS="$CFLAGS -g"
 	;;
@@ -375,13 +375,13 @@ if test "$enable_f90" = "yes" ; then
    bindings_dirs="$bindings_dirs src/binding/f90"
 fi
 if test "$enable_f90" = yes -o "$enable_f77" = yes ; then
-   AC_DEFINE(HAVE_FORTRAN_BINDING,,[Define if Fortran is supported])
+   AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
 fi
 if test "$enable_cxx" = "yes" ; then
    subsystems="$subsystems src/binding/cxx"
    bindings="$bindings cxx"
    bindings_dirs="$bindings_dirs src/binding/cxx"
-   AC_DEFINE(HAVE_CXX_BINDING,,[Define if C++ is supported])
+   AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
 fi
 AC_SUBST(bindings)
 # Bindings dirs is used for the installation target
@@ -389,7 +389,7 @@ AC_SUBST(bindings_dirs)
 #
 if test "$enable_debugger" = "yes" ; then
     debugger_dir=debugger
-    AC_DEFINE(HAVE_DEBUGGER_SUPPORT,,[Define if debugger support is included])
+    AC_DEFINE(HAVE_DEBUGGER_SUPPORT,1,[Define if debugger support is included])
 fi
 AC_SUBST(debugger_dir)
 dnl
@@ -415,34 +415,7 @@ if test "$with_cross" != "no" ; then
 	rm -f confcross      
     fi
 fi
-dnl
 
-dnl
-dnl CC_SHL=true
-dnl C_LINK_SHL=true
-dnl case "$enable_sharedlibs" in 
-dnl     no|none)
-dnl     ;;
-dnl     gcc)
-dnl     AC_MSG_RESULT([Creating shared libraries using GNU])
-dnl     # Not quite right yet.  See mpich/util/makesharedlib
-dnl     # Use syntax that works in both Make and the shell
-dnl     #C_LINK_SHL='${CC} -shared -Wl,-r'
-dnl     C_LINK_SHL='${CC} -shared'
-dnl     #C_LINK_SHL='${CC} -shared -Wl,-h,<finallibname>'
-dnl     CC_SHL='${CC} -shared -fpic'
-dnl     ;;
-dnl     libtool)
-dnl     AC_MSG_RESULT([Creating shared libraries using libtool (not yet supported)])
-dnl     ;;
-dnl     *)
-dnl     AC_MSG_WARN([Unknown value $enable_sharedlibs for enable-sharedlibs])
-dnl     ;;  
-dnl esac
-dnl AC_SUBST(CC_SHL)
-dnl AC_SUBST(C_LINK_SHL)
-dnl
-dnl
 dnl with-device
 if test "$with_device" = "default" ; then
     # Pick the device.  For now, always choose ch3
@@ -478,7 +451,7 @@ export master_top_srcdir
 dnl
 dnl This goes here because we need the top_srcdir
 if test "$enable_romio" = "yes" ; then
-   AC_DEFINE(HAVE_ROMIO,,[Define if ROMIO is enabled])
+   AC_DEFINE(HAVE_ROMIO,1,[Define if ROMIO is enabled])
    if test -d $use_top_srcdir/src/mpi/romio ; then
        subsystems="$subsystems src/mpi/romio"
    else
@@ -588,7 +561,7 @@ PAC_PROG_MKDIR_P
 
 # Don't setup the shared libraries until we know which compiler we will be
 # using
-dnl PAC_ARG_SHAREDLIBS
+PAC_ARG_SHAREDLIBS
 ENABLE_SHLIB=$enable_sharedlibs
 if test -z "$ENABLE_SHLIB" ; then
     ENABLE_SHLIB=none
@@ -612,7 +585,7 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
 	if test "$ac_cv_header_lber_h" = yes -a \
 	        "$ac_cv_header_ldap_h" = yes -a \
 		"$have_ldap_lib" = yes ; then
-	    AC_DEFINE(USE_LDAP,,[Define if ldap should be used for name publishing])
+	    AC_DEFINE(USE_LDAP,1,[Define if ldap should be used for name publishing])
 	fi
 
     ;;
@@ -645,7 +618,7 @@ if test $enable_weak_symbols = yes ; then
     PAC_PROG_C_WEAK_SYMBOLS(,enable_weak_symbols=no)
 fi
 if test $enable_weak_symbols = "yes" ; then
-    AC_DEFINE(USE_WEAK_SYMBOLS,,[Define if weak symbols should be used])
+    AC_DEFINE(USE_WEAK_SYMBOLS,1,[Define if weak symbols should be used])
 else
     NO_WEAK_SYM=build_proflib
     PROFILE_DEF_MPI="-DMPICH_PROFILE_MPI -DMPICH_MPI_FROM_PMPI"
@@ -660,7 +633,7 @@ AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
-# Check on support for long double and long long types.  Do this before the
+PAC_C_GNU_ATTRIBUTE# Check on support for long double and long long types.  Do this before the
 # structure alignment test because it will test for including those
 # types as well
 AC_CACHE_CHECK([whether long double is supported],
@@ -668,14 +641,14 @@ pac_cv_have_long_double,[
 AC_TRY_COMPILE(,[long double a;],
 pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
 if test "$pac_cv_have_long_double" = "yes" ; then
-    AC_DEFINE(HAVE_LONG_DOUBLE,,[Define if long double is supported])
+    AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
 fi
 AC_CACHE_CHECK([whether long long is supported],
 pac_cv_have_long_long,[
 AC_TRY_COMPILE(,[long double a;],
 pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
 if test "$pac_cv_have_long_long" = "yes" ; then
-    AC_DEFINE(HAVE_LONG_LONG_INT,,[Define if long long is supported])
+    AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
 fi
 # Get default structure alignment
 dnl PAC_C_STRUCT_ALIGNMENT places the default alignment into
@@ -692,7 +665,7 @@ elif test "$pac_cv_c_struct_align" = "four" ; then
 elif test "$pac_cv_c_struct_align" = "eight" ; then
     pac_cv_c_struct_align_nr=8
 elif test "$pac_cv_c_struct_align" = "largest" ; then
-    AC_DEFINE(HAVE_LARGEST_STRUCT_ALIGNMENT,,[Define when alignment of structures is based on largest component])
+    AC_DEFINE(HAVE_LARGEST_STRUCT_ALIGNMENT,1,[Define when alignment of structures is based on largest component])
 fi
 
 if test -n "$pac_cv_c_struct_align_nr" ; then
@@ -721,7 +694,7 @@ dnl
 # sys/bitypes.h defines the int16_t etc. on some systems (e.g., OSF1).
 # Include it when testing for these types
 AC_CHECK_HEADER(sys/bitypes.h,[use_bitypes="#include <sys/bitypes.h>"
-AC_DEFINE(HAVE_SYS_BITYPES_H,,[Define if sys/bitypes.h exists])])
+AC_DEFINE(HAVE_SYS_BITYPES_H,1,[Define if sys/bitypes.h exists])])
 AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
 AC_TRY_COMPILE([#include <sys/types.h>
 $use_bitypes
@@ -739,8 +712,9 @@ if test "$pac_cv_int16_t" = "no" ; then
         INT16_T=int
     fi
     AC_SUBST(INT16_T)
+    AC_DEFINE_UNQUOTED(MPIU_INT16_T,$INT16_T,[Define for the 16 bit integer type])
 else
-    AC_DEFINE(HAVE_INT16_T,,[Define if int16_t is supported by the C compiler])
+    AC_DEFINE(HAVE_INT16_T,1,[Define if int16_t is supported by the C compiler])
 fi
 AC_CACHE_CHECK([for int32_t],pac_cv_int32_t,[
 AC_TRY_COMPILE([#include <sys/types.h>
@@ -759,8 +733,9 @@ if test "$pac_cv_int32_t" = "no" ; then
         INT32_T=int
     fi
     AC_SUBST(INT32_T)
+    AC_DEFINE_UNQUOTED(MPIU_INT32_T,$INT32_T,[Define for the 32 bit integer type])
 else
-    AC_DEFINE(HAVE_INT32_T,,[Define if int32_t is supported by the C compiler])
+    AC_DEFINE(HAVE_INT32_T,1,[Define if int32_t is supported by the C compiler])
 fi
 AC_CACHE_CHECK([for int64_t],pac_cv_int64_t,[
 AC_TRY_COMPILE([#include <sys/types.h>
@@ -784,8 +759,9 @@ if test "$pac_cv_int64_t" = "no" ; then
         fi
     fi
     AC_SUBST(INT64_T)
+    AC_DEFINE_UNQUOTED(MPIU_INT64_T,$INT64_T,[Define for the 64 bit integer type])
 else
-    AC_DEFINE(HAVE_INT64_T,,[Define if int64_t is supported by the C compiler])
+    AC_DEFINE(HAVE_INT64_T,1,[Define if int64_t is supported by the C compiler])
 fi
 dnl
 dnl Generate a hex version of the size of each type
@@ -898,7 +874,7 @@ if ((long)(a-(char*)0) == (long)(a)) return 0; return 1;
 }],pac_cv_c_char_p_is_byte=yes,pac_cv_char_p_is_byte=no,
 pac_cv_char_p_is_byte=unknown)])
 if test "$pac_cv_char_p_is_byte" = "yes" ; then
-    AC_DEFINE(CHAR_PTR_IS_BYTE,,[define if char * is byte pointer])
+    AC_DEFINE(CHAR_PTR_IS_BYTE,1,[define if char * is byte pointer])
 fi
 dnl
 dnl Get the size for the bsendoverhead
@@ -969,11 +945,11 @@ if test -n "$thread_type" ; then
     case $thread_type in 
         pthread|posix)
 	AC_SEARCH_LIBS(pthread_create,pthread,
-	    AC_DEFINE(HAVE_PTHREAD_CREATE,,[Define for pthreads]))
+	    AC_DEFINE(HAVE_PTHREAD_CREATE,1,[Define for pthreads]))
 	;;
 	solaris|thr)
 	AC_SEARCH_LIBS(thr_create,thread,
-	    AC_DEFINE(HAVE_THR_CREATE,,[Define for Solaris threads]))
+	    AC_DEFINE(HAVE_THR_CREATE,1,[Define for Solaris threads]))
 	;;
 	*)
 	AC_MSG_WARN([Unknown thread type $thread type]) 
@@ -997,8 +973,8 @@ __asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
 	: "r" (newval), "m" (*p), "a" (oldval));
 return (compval == 20) ? 0 : -1;
 }
-], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,
-Define if using gcc on a system with an Intel Pentium class chip), 
+], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,[
+Define if using gcc on a system with an Intel Pentium class chip]), 
 AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
 dnl
 dnl Is there libnsl needed for gethostbyname?
@@ -1034,7 +1010,7 @@ if test "$enable_internat" = "yes" ; then
     if test "$ac_cv_header_libintl" = "yes" -a \
 	    "$ac_cv_func_gettext" = "yes" -a \
 	    "$ac_cv_func_dgettext" = "yes" ; then
-	AC_DEFINE(USE_GETTEXT,,[Define if messages should use gettext])
+	AC_DEFINE(USE_GETTEXT,1,[Define if messages should use gettext])
     fi
 fi
 dnl
@@ -1055,7 +1031,9 @@ else
     char *tsearch( char *k, char **r, (int (*)())compare ) { return k; }],
     [int f=0;],pac_cv_tsearch_charp=yes,pac_cv_tsearch_charp=no)])
         if test "$pac_cv_tsearch_charp" = "yes" ; then
-	    AC_DEFINE(USE_TSEARCH_WITH_CHARP,,[Define if tsearch requires char pointers])
+	    # this should consider defining a name with the argument type
+	    # so that no further ifdefs are needed
+	    AC_DEFINE(USE_TSEARCH_WITH_CHARP,1,[Define if tsearch requires char pointers])
 	fi
     fi
     dnl Note that HPUX and AIX may require _INCLUDE_XOPEN_SOURCE or
@@ -1083,7 +1061,7 @@ AC_SUBST(MPI_AINT)
 dnl
 dnl If sizeof(mpi_aint) = sizeof(int), set this value
 if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
-    AC_DEFINE(SIZEOF_INT_IS_AINT,,[define if sizeof(int) = sizeof(void*)])
+    AC_DEFINE(SIZEOF_INT_IS_AINT,1,[define if sizeof(int) = sizeof(void*)])
 fi
 dnl
 #
@@ -1151,16 +1129,16 @@ if test "$enable_f77" = "yes" -a -s src/binding/f77/mpif77.conf ; then
     . ./src/binding/f77/mpif77.conf
     case "$F77_NAME_MANGLE"X in
     F77_NAME_LOWERX|F77_NAME_MIXEDX) 
-    AC_DEFINE(F77_NAME_LOWER,,[Define if Fortran names are lowercase]) 
+    AC_DEFINE(F77_NAME_LOWER,1,[Define if Fortran names are lowercase]) 
 	;;
     F77_NAME_LOWER_USCOREX|F77_NAME_MIXED_USCOREX)
-    AC_DEFINE(F77_NAME_LOWER_USCORE,,[Define if Fortran names are lowercase with a trailing underscore])
+    AC_DEFINE(F77_NAME_LOWER_USCORE,1,[Define if Fortran names are lowercase with a trailing underscore])
 	 ;;
     F77_NAME_LOWER_2USCOREX)
-    AC_DEFINE(F77_NAME_LOWER_2USCORE,,[Define if Fortran names containing an underscore have two trailing underscores])
+    AC_DEFINE(F77_NAME_LOWER_2USCORE,1,[Define if Fortran names containing an underscore have two trailing underscores])
 	 ;;
     F77_NAME_UPPERX)
-    AC_DEFINE(F77_NAME_UPPER,,[Define if Fortran names are uppercase]) 
+    AC_DEFINE(F77_NAME_UPPER,1,[Define if Fortran names are uppercase]) 
 	;;
     esac
 else
@@ -1171,7 +1149,7 @@ else
 	eval $fullname=MPI_DATATYPE_NULL
     done
     AC_MSG_WARN([Could not define Fortran MPI datatypes for C])
-    AC_DEFINE(HAVE_NO_FORTRAN_MPI_TYPES_IN_C,,[Define if the Fortran types are not available in C])
+    AC_DEFINE(HAVE_NO_FORTRAN_MPI_TYPES_IN_C,1,[Define if the Fortran types are not available in C])
     # Temporary values for MPI_Fint (need help from the Fortran subsystem)
     MPI_FINT=int
 fi
