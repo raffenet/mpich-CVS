@@ -52,6 +52,15 @@ write(gdb_sin_fileno,'handle SIGPIPE nostop noprint\n')
 line = gdb_sout_serr.readline() #; print "LINE4=|%s|" % (line.rstrip()) ; stdout.flush()
 write(gdb_sin_fileno,'set confirm on\n')
 line = gdb_sout_serr.readline() #; print "LINE5=|%s|" % (line.rstrip()) ; stdout.flush()
+write(gdb_sin_fileno,'echo hi1\n')
+line = gdb_sout_serr.readline() #; print "LINE6=|%s|" % (line.rstrip()) ; stdout.flush()
+i = 0
+while i < 8  and  not line.startswith('hi1'):
+    line = gdb_sout_serr.readline() #; print "LINEx=|%s|" % (line.rstrip());stdout.flush()
+    i += 1
+if i >= 8:
+    print 'failed to drain valid input from gdb'
+    exit(-1)
 
 write(gdb_sin_fileno,'b main\n')
 gdb_line = gdb_sout_serr.readline()  # drain breakpoint response
