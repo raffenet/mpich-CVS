@@ -8,6 +8,13 @@
 
 #define DRAW_COMPLETE_MSG     WM_USER + 1
 
+struct CursorRank
+{
+    int rank;
+    bool active;
+    CRect rect;
+};
+
 struct RimshotDrawStruct
 {
     CRimshotDoc* pDoc;
@@ -18,6 +25,8 @@ struct RimshotDrawStruct
     bool bStop;
     int nCmd;
     bool bDrawArrows;
+    bool bDrawUniform;
+    CursorRank *pCursorRanks;
     CDC *pCanvas;
     CBitmap *pBitmap, *pOriginalBmp;
     CDC *pCopyCanvas;

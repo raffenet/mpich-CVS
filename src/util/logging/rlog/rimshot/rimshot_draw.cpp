@@ -16,7 +16,6 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
     double dwPixel, *pdNextPixel;
     int nMaxRecursions = 0;
     CBrush white_brush;
-    //CPen line_pen, cursor_pen;
     HPEN line_pen, cursor_pen, hOldPen;
     CString str;
     CSize size;
@@ -39,12 +38,9 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 	    
 	    big_rect.DeflateRect(25, 25);
 	    
-	    //line_pen.CreatePen(PS_SOLID, 1, RGB(100,100,100));
-	    //cursor_pen.CreatePen(PS_SOLID, 1, RGB(255,255,255));
 	    line_pen = CreatePen(PS_SOLID, 1, RGB(100,100,100));
 	    cursor_pen = CreatePen(PS_SOLID, 1, RGB(255,255,255));
 	    
-	    //pArg->pCanvas->FillSolidRect(client_rect, RGB(255,255,255));
 	    pArg->pCanvas->FillSolidRect(0,0,client_rect.Width(), big_rect.top, RGB(255,255,255));
 	    if (pArg->bStop)
 		break;
@@ -74,7 +70,6 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		pdNextPixel = new double[pArg->pDoc->m_pInput->nNumRanks];
 		
 		// draw the horizontal rank lines
-		//pArg->pCanvas->SelectObject(&line_pen);
 		hOldPen = (HPEN) pArg->pCanvas->SelectObject(line_pen);
 		for (i=0; i<pArg->pDoc->m_pInput->nNumRanks; i++)
 		{
@@ -146,7 +141,6 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 			    {
 				x = big_rect.left + (long)(dx * (arrow.start_time - pArg->pDoc->m_dLeft));
 				y = big_rect.top + (height * arrow.dest) + (height / 2);
-				//pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
 				pArg->pCanvas->MoveTo(x, y);
 				x = x + (long)(dx * (arrow.end_time - arrow.start_time));
 				y = big_rect.top + (height * arrow.src) + (height / 2);
@@ -162,17 +156,14 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 				x = x + (long)(dx * (arrow.end_time - arrow.start_time));
 				y = big_rect.top + (height * arrow.dest) + (height / 2);
 				pArg->pCanvas->LineTo(x, y);
-				//pArg->pCanvas->Ellipse(x-5, y-5, x+5, y+5);
 			    }
 			    if (RLOG_GetNextArrow(pArg->pDoc->m_pInput, &arrow) != 0)
-				//arrow.start_time = pArg->pDoc->m_dRight + 1;
 				break;
 			}
 		    }
 		}
 		
 		// draw the vertical cursor line
-		//pArg->pCanvas->SelectObject(&cursor_pen);
 		pArg->pCanvas->SelectObject(cursor_pen);
 		pArg->pCanvas->MoveTo((big_rect.right + big_rect.left) / 2, big_rect.top);
 		pArg->pCanvas->LineTo((big_rect.right + big_rect.left) / 2, big_rect.bottom);
@@ -191,7 +182,22 @@ void RimshotDrawThread(RimshotDrawStruct *pArg)
 		    y = big_rect.top + (height * i) + (height / 2);
 		    str.Format("%d", i);
 		    size = pArg->pCanvas->GetTextExtent(str);
-		    pArg->pCanvas->TextOut((big_rect.left - size.cx - 7) >= 0 ? (big_rect.left - size.cx - 7) : 0, y - (size.cy / 2), str);
+		    //pArg->pCanvas->GetOutputTextExtent(str);
+		    
+		    pArg->pCursorRanks[i].rect.left = (big_rect.left - size.cx - 7) >= 0 ? (big_rect.left - size.cx - 7) : 0;
+		    pArg->pCursorRanks[i].rect.top = y - (size.cy / 2);
+		    pArg->pCursorRanks[i].rect.right = pArg->pCursorRanks[i].rect.left + size.cx;
+		    pArg->pCursorRanks[i].rect.bottom = pArg->pCursorRanks[i].rect.top + size.cy;
+		    pArg->pCursorRanks[i].rect.InflateRect(5,5);
+		    if (pArg->pCursorRanks[i].active)
+		    {
+			pArg->pCanvas->Rectangle(&pArg->pCursorRanks[i].rect);
+		    }
+
+		    pArg->pCanvas->TextOut(
+			(big_rect.left - size.cx - 7) >= 0 ? (big_rect.left - size.cx - 7) : 0, 
+			y - (size.cy / 2), 
+			str);
 		}
 		
 		// draw the box, event description and duration

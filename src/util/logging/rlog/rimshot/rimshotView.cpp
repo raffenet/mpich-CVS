@@ -31,6 +31,7 @@ BEGIN_MESSAGE_MAP(CRimshotView, CView)
 	ON_WM_SIZE()
 	ON_WM_ERASEBKGND()
 	ON_COMMAND(ID_TOGGLE_ARROWS, OnToggleArrows)
+	ON_WM_LBUTTONDOWN()
 	//}}AFX_MSG_MAP
 	// Standard printing commands
 	ON_COMMAND(ID_FILE_PRINT, CView::OnFilePrint)
@@ -52,10 +53,14 @@ CRimshotView::CRimshotView()
     m_Draw.max_rect_size.cy = 0;
     m_Draw.max_copy_size.cx = 0;
     m_Draw.max_copy_size.cy = 0;
+    m_Draw.bDrawUniform = false;
+    m_Draw.pCursorRanks = NULL;
 }
 
 CRimshotView::~CRimshotView()
 {
+    if (m_Draw.pCursorRanks)
+	delete [] m_Draw.pCursorRanks;
 }
 
 BOOL CRimshotView::PreCreateWindow(CREATESTRUCT& cs)
@@ -467,6 +472,11 @@ void CRimshotView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	case VK_RIGHT:
 	    if (RLOG_GetNextGlobalEvent(pDoc->m_pInput, &event) == 0)
 	    {
+		while (!m_Draw.pCursorRanks[event.rank].active)
+		{
+		    if (RLOG_GetNextGlobalEvent(pDoc->m_pInput, &event) != 0)
+			break;
+		}
 		StopDrawing();
 		d = (pDoc->m_dRight - pDoc->m_dLeft) / 2;
 		pDoc->m_dLeft = event.start_time - d;
@@ -477,6 +487,11 @@ void CRimshotView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	case VK_LEFT:
 	    if (RLOG_GetPreviousGlobalEvent(pDoc->m_pInput, &event) == 0)
 	    {
+		while (!m_Draw.pCursorRanks[event.rank].active)
+		{
+		    if (RLOG_GetPreviousGlobalEvent(pDoc->m_pInput, &event) != 0)
+			break;
+		}
 		StopDrawing();
 		d = (pDoc->m_dRight - pDoc->m_dLeft) / 2;
 		pDoc->m_dLeft = event.start_time - d;
@@ -667,4 +682,30 @@ void CRimshotView::OnToggleArrows()
     StopDrawing();
     m_Draw.bDrawArrows = !m_Draw.bDrawArrows;
     StartDrawing();
+}
+
+#define PointInside(point, rect) (point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom)
+
+void CRimshotView::OnLButtonDown(UINT nFlags, CPoint point) 
+{
+    bool bHit = false;
+    CRimshotDoc* pDoc = GetDocument();
+    if (pDoc->m_pInput)
+    {
+	for (int i=0; i<pDoc->m_pInput->nNumRanks; i++)
+	{
+	    if (PointInside(point, m_Draw.pCursorRanks[i].rect))
+	    {
+		m_Draw.pCursorRanks[i].active = !m_Draw.pCursorRanks[i].active;
+		//InvalidateRect(&m_Draw.pCursorRanks[i].rect);
+		bHit = true;
+	    }
+	}
+    }
+    if (bHit)
+    {
+	StopDrawing();
+	StartDrawing();
+    }
+    CView::OnLButtonDown(nFlags, point);
 }

@@ -211,6 +211,15 @@ void CRimshotDoc::OnFileOpen()
 	    pView = (CRimshotView*)GetNextView(pos);
 	    pView->StopDrawing();
 	    pView->m_Draw.pDoc = this;
+	    if (pView->m_Draw.pCursorRanks)
+		delete [] pView->m_Draw.pCursorRanks;
+	    pView->m_Draw.pCursorRanks = new CursorRank[m_pInput->nNumRanks];
+	    for (int i=0; i<m_pInput->nNumRanks; i++)
+	    {
+		pView->m_Draw.pCursorRanks[i].active = true;
+		pView->m_Draw.pCursorRanks[i].rank = i;
+		pView->m_Draw.pCursorRanks[i].rect.SetRect(0,0,0,0);
+	    }
 	    pView->Invalidate(FALSE);
 	    SetTitle(f.GetPathName());
 	    pView->StartDrawing();
