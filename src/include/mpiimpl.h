@@ -806,6 +806,9 @@ typedef struct MPID_Win {
 #ifdef HAVE_PTHREAD_H
     pthread_t wait_thread_id; /* id of thread handling MPI_Win_wait */
     pthread_t passive_target_thread_id; /* thread for passive target RMA */
+#elif defined(HAVE_WINTHREADS)
+    HANDLE wait_thread_id;
+    HANDLE passive_target_thread_id;
 #endif
     char          name[MPI_MAX_OBJECT_NAME];  
   /* Other, device-specific information */
