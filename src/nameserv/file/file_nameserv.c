@@ -99,7 +99,9 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     }
     else {
 	/* --BEGIN ERROR HANDLING-- */
-	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				    FCNAME, __LINE__, MPI_ERR_OTHER, 
+				    "**nomem", 0 );
 	return err;
 	/* --END ERROR HANDLING-- */
     }
@@ -109,7 +111,6 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     /* --BEGIN ERROR HANDLING-- */
     if (!fp) {
 	char *reason;
-	char rbuf[50];
 	/* Generate a better error message */
 	/* Check for errno = 
  	     EACCES (access denied to file or a dir),
@@ -177,13 +178,20 @@ int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	/* --BEGIN ERROR HANDLING-- */
 	/* printf( "No file for service name %s\n", service_name ); */
 	port[0] = 0;
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NAME, "**namepubnotpub", "**namepubnotpub %s", service_name );
+	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_NAME, 
+		      "**namepubnotpub", "**namepubnotpub %s", service_name );
 	/* --END ERROR HANDLING-- */
     }
     else {
+	char *nl;
 	/* The first line is the name, the second is the
 	   process that published. We just read the name */
-	fscanf( fp, "%s", port );
+	fgets( port, MPI_MAX_PORT_NAME, fp );
+	/* Remove the newline, if any.  We use fgets instead of fscanf
+	   to allow port names to contain blanks */
+	nl = strchr( port, '\n' );
+	if (nl) *nl = 0;
 	/* printf( "Read %s from %s\n", port, filename ); */
     }
     fclose( fp );
@@ -208,7 +216,8 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 
     /* Find the filename from the list of published files */
     for (i=0; i<handle->nactive; i++) {
-	if (strcmp( filename, handle->filenames[i] ) == 0) {
+	if (handle->filenames[i] &&
+	    strcmp( filename, handle->filenames[i] ) == 0) {
 	    /* unlink the file only if we find it */
 	    unlink( filename );
 	    MPIU_Free( handle->filenames[i] );

@@ -2450,6 +2450,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/nameserv/Makefile \
 	  src/nameserv/file/Makefile \
 	  src/nameserv/mpd/Makefile \
+	  src/nameserv/test/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/instrm/Makefile \
