@@ -92,6 +92,8 @@ typedef struct {
 
 static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
 
+static int pmidebug = 1;
+
 /* Functions that handle PMI requests */
 static int  fPMI_Allocate_kvs( int *, char [] );
 static int  fPMI_Allocate_kvs_group( void );
@@ -197,6 +199,9 @@ int PMIServInit( int nprocs )
     return pmi.nextnewgroup++;   /* ++ missing in forker ? */
 }
 
+/* 
+ * Initialize an entry as empty
+ */
 int PMIServInitEntry( PMI_Process *pmientry )
 {
     pmientry->fd    = -1;
@@ -204,13 +209,19 @@ int PMIServInitEntry( PMI_Process *pmientry )
     pmientry->kvs   = -1;
 }
 
+/*
+ * Setup an entry for a created process
+ */
 int PMIServSetupEntry( int pmifd, int pmigroup, PMI_Process *pmientry )
 {
     pmientry->fd    = pmifd;
     pmientry->group = pmigroup;
-    pmientry->kvs   = -1;
+    pmientry->kvs   = pmi.kvsid;   /* Use current kvsid */
 }
 
+/*
+ * Add this process to a pmi group
+ */
 int PMIServAddtoGroup( int group, int rank, pid_t pid, int fd )
 {
     pmi.grouptable[group].fds[rank]  = fd;
@@ -219,7 +230,7 @@ int PMIServAddtoGroup( int group, int rank, pid_t pid, int fd )
 /* ------------------------------------------------------------------------- */
 /* The rest of these routines are internal                                   */
 /* ------------------------------------------------------------------------ */
-/* kvsname is output */
+/* kvsname and kvsid is output */
 static int fPMI_Allocate_kvs( int *kvsid, char kvsname[] )
 {
     int i, j;
@@ -260,6 +271,10 @@ static void fPMI_Handle_barrier( PMI_Process *pentry )
     int i;
     int group = pentry->group;
 
+    if (pmidebug) {
+	DBG_PRINTF( "Entering PMI_Handle_barrier for group %d\n", group );
+    }
+
     pmi.grouptable[group].num_in_barrier++;
     if ( pmi.grouptable[group].num_in_barrier ==
 	 pmi.grouptable[group].groupsize ) {
@@ -282,6 +297,9 @@ static void fPMI_Handle_create_kvs( PMI_Process *pentry )
     fPMI_Allocate_kvs( &kvsidx, kvsname );
     snprintf( outbuf, PMIU_MAXLINE, "cmd=newkvs kvsname=%s\n", kvsname );
     PMIU_writeline( pentry->fd, outbuf );
+    if (pmidebug) {
+	DBG_PRINTF( "Handle_create_kvs new %d name %s\n", kvsidx, kvsname );
+    }
 }
 
 /* 
@@ -328,8 +346,12 @@ static void fPMI_Handle_put( PMI_Process *pentry )
     char kvsname[MAXKVSNAME];
     char message[PMIU_MAXLINE], outbuf[PMIU_MAXLINE];
     char key[MAXKEYLEN];
-    
+
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
+    if (pmidebug) {
+	DBG_PRINTF( "Put: Finding kvs %s\n", kvsname );
+    }
+
     for ( i = 0; i < MAXKVSS; i++ ) {
 	if ( pmi.kvstable[i].active &&
 	     strncmp( pmi.kvstable[i].kvsname, kvsname, MAXKVSNAME ) == 0 ) {
@@ -378,6 +400,9 @@ static void fPMI_Handle_get( PMI_Process *pentry )
     char message[PMIU_MAXLINE], key[PMIU_MAXLINE], value[PMIU_MAXLINE];
     char outbuf[PMIU_MAXLINE];
     
+    if (pmidebug) {
+	DBG_PRINTF( "Get: Finding kvs %s\n", kvsname );
+    }
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
     for ( i = 0; i < MAXKVSS; i++ ) {
 	if ( pmi.kvstable[i].active &&
