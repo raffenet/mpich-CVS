@@ -427,9 +427,10 @@ typedef struct MPID_Comm {
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
-    MPID_VC       *((*vc_table)[]); /* pointer to the virtual connecton reference
-				    table */
-    volatile int  *vc_ref_cnt;   /* reference count for the VC ref table */
+    struct MPID_VC **vcrt;       /* pointer to the virtual connecton reference
+				    table (which is an array of pointers to
+				    virtual connections */
+    volatile int  *vcrt_ref_count;/* reference count for the VCRT */
     MPID_List     attributes;    /* List of attributes */
     MPID_Group    *local_group,  /* Groups in communicator. */
                   *remote_group; /* The local and remote groups are the
