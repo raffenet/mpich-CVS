@@ -427,22 +427,25 @@ with simple error checking
 
 Data Structures
 
-MPID_Request_kind
-MPID_Request,,,,,Brian
-MPID_Comm,,,,,Brian
-MPIDI_VC,,,,,Brian
+MPID_Request_kind,,,,,Bill?,,done
+MPID_Request,,,,,Brian/others,,done
+MPID_Comm,,,,,Brian/others,,done
+MPIDI_VC,,,,,Brian/others,,done
+MPIDI_CH3_Pkt_type_t,,,,,Brian,,done
+MPIDI_CA_t,,,,,Brian,,done
+MPIDI_Process_t,,,,,Brian,,done
 
 Basic Point-to-Point
 
-MPID_Send,,,,,Brian,,done,complex datatypes?
-MPID_Ssend,,,,,Brian,,done,not tested/complex datatypes?
-MPID_Rsend,,,,,Brian,,done,not tested/complex datatypes?
-MPID_Isend,,,,,Brian,,done,complex datatypes?
-MPID_Issend,,,,,Brian,,done,not tested/complex datatypes?
-MPID_Irsend,,,,,Brian,,done,not tested/complex datatypes?
+MPID_Send,,,,,Brian,,done
+MPID_Ssend,,,,,Brian,,done
+MPID_Rsend,,,,,Brian,,done
+MPID_Isend,,,,,Brian,,done
+MPID_Issend,,,,,Brian,,done
+MPID_Irsend,,,,,Brian,,done
 MPID_tBsend,,,,,Brian
-MPID_Recv,,,,,Brian,,,complex datatypes need work
-MPID_Irecv,,,,,Brian,,,complex datatypes need work
+MPID_Recv,,,,,Brian,,done
+MPID_Irecv,,,,,Brian,,done
 MPID_Request_free,,,,,Brian,,done
 MPID_Cancel_send,,,,,Brian,,,
 MPID_Cancel_recv,,,,,Brian,,,persistent requests
@@ -451,11 +454,17 @@ MPID_Probe,,,,,Brian,,done
 
 Persistent Point-to-Point
 
-MPID_Send_init,,,,,Brian,,
-MPID_Ssend_init,,,,,Brian,,
-MPID_Rsend_init,,,,,Brian,,
-MPID_Recv_init,,,,,Brian,,
-MPID_Startall,,,,,Brian,,
+MPID_Send_init,,,,,Brian,,done,MPI_PROC_NULL
+MPID_Ssend_init,,,,,Brian,,done,MPI_PROC_NULL
+MPID_Rsend_init,,,,,Brian,,done,MPI_PROC_NULL
+MPID_Recv_init,,,,,Brian,,done,MPI_PROC_NULL
+MPID_Startall,,,,,Brian,,done,MPI_PROC_NULL
+
+Requests
+
+MPID_Request_create,,,,,Brian,,done
+MPID_Request_set_complete,,,,,Brian,,done
+MPID_Request_release,,,,,Brian,,done
 
 Progress Engine
 
@@ -470,6 +479,38 @@ Starting and stopping
 MPID_Init,,,,,Brian,MPIDI_CH3_Init,done
 MPID_Finalize,,,,,Brian,MPIDI_CH3_Finalize,done
 MPID_Abort,,,,,Brian
+
+CH3 packet and data handlers
+
+MPIDI_CH3U_Handle_recv_pkt,,,,,Brian,,done
+MPIDI_CH3U_Handle_recv_req,,,,,Brian,,done
+MPIDI_CH3U_Handle_send_req,,,,,Brian,,done
+
+CH3 request utilities
+
+MPIDI_CH3U_Request_create,,,,,Brian,,done
+MPIDI_CH3U_Request_complete,,,,,Brian,,done
+MPIDI_CH3U_Request_destroy,,,,,Brian,,done
+MPIDI_CH3U_Request_decrement_cc,,,,,Brian,,done
+
+CH3 receive queue utilities
+
+MPIDI_CH3U_Request_FU,,,,,Brian,,done
+MPIDI_CH3U_Request_FDU,,,,,Brian,,done
+MPIDI_CH3U_Request_FDU_or_AEP,,,,,Brian,,done
+MPIDI_CH3U_Request_DP,,,,,Brian,,done
+MPIDI_CH3U_Request_FDP,,,,,Brian,,done
+MPIDI_CH3U_Request_FDP_or_AEU,,,,,Brian,,done
+
+CH3 data processing utilities
+
+MPIDI_CH3U_Request_load_send_iov,,,,,Brian,,done
+MPIDI_CH3U_Request_load_recv_iov,,,,,Brian,,done
+MPIDI_CH3U_Request_unpack_uebuf,,,,,Brian,,done
+MPIDI_CH3U_Request_unpack_srbuf,,,,,Brian,,done
+MPIDI_CH3U_Buffer_copy,,,,,Brian,,done
+MPIDI_CH3U_SRBuf_alloc,,,,,Brian,,done
+MPIDI_CH3U_SRBuf_free,,,,,Brian,,done
 
 RMA
 
@@ -524,6 +565,15 @@ MPID_Dev_xxx_destroy_hook,
 
 CH3 functions for single-threaded TCP channel without error checking
 
+Data Structures
+
+MPID_Request,,,,,Brian,,done
+MPIDI_VC,,,,,Brian,,done
+MPIDI_CA_t,,,,,Brian,,done
+MPIDI_CH3_Pkt_type_t,,,,,Brian,,done
+MPIDI_CH3I_Process_t,,,,,Brian,,done
+MPIDI_CH3I_Process_group_t,,,,,Brian,,done
+
 Requests
 
 MPIDI_CH3_Request_create,,,,,Brian,,done
@@ -542,18 +592,27 @@ MPIDI_CH3_iRead,,,,,Brian,,done,no immediate read
 
 Progress
 
-MPIDI_CH3I_Progress_init,,,,,Brian,,done
-MPIDI_CH3I_Progress_finalize,,,,,Brian
 MPIDI_CH3_Progress_start,,,,,Brian,,done
 MPIDI_CH3_Progress_end,,,,,Brian,,done
 MPIDI_CH3_Progress,,,,,Brian,,done
 MPIDI_CH3_Progress_poke,,,,,Brian,,done
+MPIDI_CH3_Progress_signal_completion,,,,,Brian,,done
 
 Startup/shutdown
 
-MPIDI_CH3_Init,,,,1,Brian,MPIDI_CH3I_Progress_init,done
-MPIDI_CH3_Finalize,,,,1,Brian,MPIDI_CH3I_Progress_finalize,done
+MPIDI_CH3_Init,,,,1,Brian,,done
+MPIDI_CH3_Finalize,,,,1,Brian,,done
 MPIDI_CH3_InitParent,,,,,Brian
+
+Internal routines
+
+MPIDI_CH3I_Progress_init,,,,,Brian,,done
+MPIDI_CH3I_Progress_finalize,,,,,Brian
+MPIDI_CH3I_Listener_get_port,,,,,Brian,,done
+MPIDI_CH3I_TCP_post_connect,,,,,Brian,,done
+MPIDI_CH3I_TCP_post_write,,,,,Brian,,done
+MPIDI_CH3I_TCP_post_read,,,,,Brian,,done
+MPIDI_CH3I_Request_adjust_iov,,,,,Brian,,done
 
 RMA
 
