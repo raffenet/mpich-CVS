@@ -22,7 +22,7 @@
 \catcode`\_=11
 \def\code#1{{\tt #1}}
 \def\makeuscore{\catcode`\_=13}
-\def\onespace{\hskip 1em}
+\def\onespace{\hskip .5em}
 {\catcode`\ =13
 \gdef\makespaceactive{\catcode`\ =13\let =\onespace}}
 \def\mpifunc#1{\code{#1}\index{#1}}
@@ -59,7 +59,7 @@
 
 %
 % Algorithm
-\newenvironment{algorithm}{\begingroup\obeylines\obeyspaces\makeuscore\noindent\makespaceactive}{\endgroup}
+\newenvironment{algorithm}{\begingroup\advance\leftskip2em\obeylines\obeyspaces\makeuscore\noindent\makespaceactive}{\endgroup}
 
 %
 % This is used to indicate a implementation of a routine.

@@ -248,7 +248,7 @@ The key needs to be a (at least file-scoped) variable such as
 Since the pthread keys are common to all pthreads, this can be allocated in
 \mpidfunc{MPID_Init}.  Question: is this handled as part of
 \mpidfunc{MPID_Err_init}, and is there a corresponding
-\mpidfunc{MPI_Err_finalize} that calls \code{pthread_key_delete}?
+\mpidfunc{MPID_Err_finalize} that calls \code{pthread_key_delete}?
 
 To implement the layered calls, the following functions may be 
 used\index{MPIi_Err_set_return}\index{MPIi_Err_restore}\index{MPIi_Err_get_handler} 
@@ -5486,6 +5486,7 @@ Avoiding \code{printf} is important for Windows applications.
 Question: What else do we need to consider here?
 
 \subsection{Fortran Support}
+\label{sec:fortran}
 Fortran support has two parts: Fortran 77 and Fortran 90/95.  
 
 There are a few functions unique to Fortran.  They include
@@ -5568,6 +5569,14 @@ MPI opaque objects, necessitating a transfer of values for each array-value
 argument.  I'd like to avoid this as well.  Can we ignore the other MPI's, or
 use special routines as part of the MPE support?  Alternately, should we
 define \code{MPICH_REQUEST_C_IS_F77} etc.?
+
+\subsubsection{Fortran Datatypes}
+There are several special Fortran datatypes.  These are
+\begin{description}
+\item[\code{LOGICAL}]Roughly like the \code{bool} type in C++, the choice of
+  value for \code{.true.} and \code{.false.} is left to the implementation.
+  In MPICH, we use \code{MPIR_F_TRUE} and \code{MPIR_F_FALSE} as values.
+\end{description}
 
 \subsection{C++ Support}
 \label{sec:c++}
@@ -5859,10 +5868,11 @@ messages in the multi-threaded case).
 % \begin{enumerate}
 % \item \code{cvs -d /home/MPI/cvsMaster checkout mpich2-coding}
 % \item \code{cvs -d /home/MPI/cvsMaster checkout mpich2all; cd doc/mpich2}
-% \item \code{cd mpich2 ; cvs -q update -d}, only if you have previously checked
+% \item \code{cd mpich2/doc ; cvs -q update -d}, only if you have previously checked
 %   \code{mpich2} out with \code{mpich2all} instead of \code{mpich2}.
 % \end{enumerate}
 % %% End of Temporary
+
 \section{ToDo List}
 \label{sec:todo}
 This section contains a ToDo list for this document; that is, the outstanding
@@ -5891,7 +5901,7 @@ infrastructure list is settled.
   These are necessary before any coding can commence.
   \begin{enumerate}
     \item Directory structure
-    \item MPI routine source code template
+    \item MPI routine source code template, including error checks
     \item Partial definitions for key structures, such as communicators and
       datatypes, and macros for thread-safe operations
     \item Coding standards (documentation, style, associated tests)
@@ -5902,10 +5912,11 @@ infrastructure list is settled.
   are needed before much coding is done.
 
 \item MPI Major Sections
+
   Each of these sections should consider
   \begin{enumerate}
     \item Thread safety,
-    \item Error handling,
+    \item Error handling and reporting,
     \item Core ADI for 3rd parties (non-multimethod),
     \item Core method ADI for 3rd parties (as part of our multimethod device),
       and 
@@ -5923,6 +5934,11 @@ infrastructure list is settled.
     will require some specification of datatypes, communicators, groups, etc.,
     but they will also drive the details of those objects (e.g., datatypes
     must be defined to support the operations needed for communication).
+
+% Rob - point to point
+% Bill - collective
+% Rusty - dynamic process
+% Rob/Brian - communication agent
 
   \begin{enumerate}
   \item Attributes. 
@@ -5943,7 +5959,7 @@ infrastructure list is settled.
     \end{enumerate}
   \item Communication agent. 
     This ensures the progress of MPI communication including passive RMA
-    access.  As such, it it closely connected to the point-to-point and RMA
+    access.  As such, it is closely connected to the point-to-point and RMA
     sections.  
   \item Collective.  
     \begin{enumerate}
@@ -5969,7 +5985,7 @@ infrastructure list is settled.
   \item Starting and Ending MPI (e.g., init, finalize, and abort).
   \item Dynamic processes.
   \item Name service.
-  \item User-defined requests (needed for I/O).
+  \item User-defined requests (also needed for ROMIO I/O).
   \item Error handlers. (These are the MPI error handlers, not the error
     reporting routines.)
   \item Handle Transfers (e.g., \code{MPI_Request_c2f})
@@ -5986,7 +6002,7 @@ infrastructure list is settled.
   \item Profiling.
   \item MPI command environment (\code{mpiexec}, \code{mpicc}, etc.)
   \end{enumerate}
-\item Source code, portability, and framework
+\item Source code, portability, and framework.
   These are miscellaneous (though important) items that need to be completed
   before much coding is done.
 
@@ -6099,6 +6115,39 @@ reader of the MPI standard.  This appendix is organized by major section.
 \subsection{Point-to-point}  
 \subsection{Communication agent}
 \subsection{Collective}  
+
+\subsubsection{Structure of the files containing the predefined operations.}
+
+The MPICH code uses one gigantic file, \file{global_ops.c}, to implement
+all of the reduction functions.  There are two problems with this.
+First, some compilers become unhappy with it and do not optimize it
+very well.  Second, all applications must load all of the routines
+even though only a few (typically one) reduction function is used.  We
+could break this into separate routines for each operation.  Those
+could further be broken down by basic datatype, since the datatype is
+known by the routine that calls the specific reduction function.  
+For example, we could have \code{MPIR_SUM_Double},
+\code{MPIR_SUM_Int}, etc.  This would also allow us to use Fortran
+code for some or all of these routines, since Fortran compilers
+typically produce better code for this kind of operation (though the
+new definitions, using \code{restrict}, may be much better than the
+current C code).
+
+The down side of this is that, particularly in unstripped code, each
+file (particularly if it includes any significant header files)
+includes a significant amount of information.  A latency, if you will,
+for each file.  That is, if putting all of the routines into a single
+file takes $n$ bytes, putting them into $k$ files takes $n + (k-1)m$,
+where $m$ is the size of the header.  In practice, the value of $m$ can be
+relatively large (several kilobytes).
+
+If we want to use the Fortran compiler for some or all of these, we'll
+need a Fortran compiler and a backup when there is no Fortran compiler.
+
+Unfortunately, there is no way to return an error value from a standard MPI
+reduction operation (there is no return value).  MPICH used an external int (
+\code{MPIR_Op_errno}).
+
 \subsection{Communicators}
 \subsection{Topology}
 \subsection{RMA}  

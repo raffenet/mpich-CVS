@@ -13,7 +13,7 @@ SHELL = /bin/sh
 
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
 mpich2.ps: mpich2.tex errcodes.tex pt2ptdesc.tex \
-	Makefile fixupindex scanpattern.eps
+	Makefile fixupindex scanpattern.eps mpidoc.sty
 	touch mpich2.ind
 	latex mpich2
 	-bibtex mpich2

@@ -4,7 +4,8 @@
 One of the major changes in MPICH2 is in the implementation of the
 collective routines.  The MPICH2 implementation will exploit
 pipelining and store and forward algorithms; these are supported by
-the \code{MPID_Stream_xxx} routines.  
+the XFER interface. 
+%\code{MPID_Stream_xxx} routines.  
 
 Since each system may have some feature that provides for even faster
 implementation of the collective routines, it will be possible to
@@ -24,32 +25,42 @@ reference but it will do for now).
 \subsubsection{Reduction functions}
 The reduction functions must use the \code{restrict}\index{restrict} qualifier.
 
-Question:
-The MPICH code uses one gigantic file, \file{global_ops.c}, to implement
-all of the reduction functions.  There are two problems with this.
-First, some compilers become unhappy with it and do not optimize it
-very well.  Second, all applications must load all of the routines
-even though only a few (typically one) reduction function is used.  We
-could break this into separate routines for each operation.  Those
-could further be broken down by basic datatype, since the datatype is
-known by the routine that calls the specific reduction function.  
-For example, we could have \code{MPIR_SUM_Double},
-\code{MPIR_SUM_Int}, etc.  This would also allow us to use Fortran
-code for some or all of these routines, since Fortran compilers
-typically produce better code for this kind of operation (though the
-new definitions, using \code{restrict}, may be much better than the
-current C code).
+Each reduction operation (e.g., \code{MPI_SUM}) has a corresponding
+implementation (e.g., \code{MPIR_Sum}) and is placed in a separate file (e.g.,
+\file{opsum.c}.  Each of these must be careful to conditionally include the
+Fortran datatypes and Fortran logical operations (see
+Section~\ref{sec:fortran}).
 
-The down side of this is that, particularly in unstripped code, each
-file (particularly if it includes any significant header files)
-includes a significant amount of information.  A latency, if you will,
-for each file.  That is, if putting all of the routines into a single
-file takes $n$ bytes, putting them into $k$ files takes $n + (k-1)m$,
-where $m$ is the size of the header.  In practice, the value of $m$ can be
-relatively large (several kilobytes).
+Some reduction functions are not defined on a particular datatype.  To
+indicate errors, the routine \code{MPID_Op_set_error} is called.
+The MPI reduction routine (reduce, allreduce, scan, exscan, and reducescatter)
+checks this with \code{MPID_Op_get_error}.
+An implementation of this might be
+\begin{verbatim}
+#ifdef MPID_HAS_THREADS
+/* Use thread private storage for the error value.  Allocate on demand */
+#extern int MPID_Op_error_key;
+void MPID_Op_error_delete( void *val ) { if (val) free(val); }
+#define MPID_Op_error_init \
+    pthread_key_create( &MPID_Op_error_key, MPID_Op_error_delete )
+#define MPID_Op_error_finalize \
+    pthread_key_delete( MPID_Op_error_key )
+#define MPID_Op_set_error(err) {\
+ int *e = (int*)pthread_get_specific(MPID_Op_error_key); \
+ if (!e) { e = (int*)malloc(sizeof(int));\
+           pthread_set_specific( MPID_Op_error_key, e );}\
+ *e = err; }
+#define MPID_Op_get_error(err_p) \
+    *err_p = *(int*)pthread_get_specific(MPID_Op_error_key)
+#else
+#extern int MPID_Op_error;
+#define MPID_Op_error_init
+#define MPID_Op_error_finalize
+#define MPID_Op_set_error(err) MPID_Op_error = err
+#define MPID_Op_get_error(err_p)  *(err_p)=  MPID_Op_error
+#endif
+\end{verbatim}
 
-If we want to use the Fortran compiler for some or all of these, we'll
-need a Fortran compiler and a backup when there is no Fortran compiler.
 
 \subsubsection{Code Structure for the Implementation of the Collective
   functions} 
@@ -74,7 +85,9 @@ Question: Now that MPI-2 defines intercommunicator collective
 routines, do we want these in the same file as the intracommunicator
 routines, or in an alternate file.  E.g., should \file{bcast.c} contain
 the intracommunicator implementation of \mpifunc{MPI_Bcast} and
-\file{ibcast.c} contain the intercommunicator implementation.
+\file{icbcast.c} contain the intercommunicator implementation.
+Also, we may select no intercommunicator collectives at configure (or run?)
+time to reduce the size of libraries and code.
 
 We may want to have multiple ``generic'' implementations and an easy
 way, say with the runtime parameter routines, to select among them at runtime.
