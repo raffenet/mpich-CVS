@@ -37,9 +37,10 @@ Input Parameter:
 . comm - communicator (handle) 
 
 Output Parameter:
-. top_type - topology type of communicator 'comm' (choice).
+. top_type - topology type of communicator 'comm' (choice).  If the 
+  communicator has no associated topology, returns 'MPI_UNDEFINED'.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
