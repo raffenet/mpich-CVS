@@ -13,6 +13,12 @@ SHELL = /bin/sh
 #	-latex $*
 #	-latex $*
 
+topo.dvi: topo.tex
+	-latex $*
+	-bibtex $*
+	-latex $*
+	-latex $*
+
 # Here is a default target for subsections as separate docs
 .tex.dvi:
 	sed -e s/@dummy@/$*.tex/ \
@@ -31,7 +37,7 @@ SHELL = /bin/sh
 	mv template.dvi $*.dvi
 
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
-MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex \
+MPICH2FILES = mpich2.tex errcodes.tex pt2ptdesc.tex topo.tex \
 	Makefile fixupindex scanpattern.eps mpidoc.sty indirect.eps \
 	sendrecv.eps handle.eps intercomm.eps bsend.eps
 

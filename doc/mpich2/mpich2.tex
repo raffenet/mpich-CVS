@@ -12,6 +12,10 @@
 %hyperref - do not remove this comment
 \usepackage{mpidoc}
 
+% Define a TeX command that can be used by files to determine whether they
+% are being used within this document or in a stand-alone fashion.
+\def\indocument{\relax}
+
 \makeindex
 
 \def\fixme#1{\marginpar{FIXME:}\textbf{FIXME: #1}}
@@ -300,12 +304,12 @@ because an MPI implementation is not complete without these components.
       \item[sock]A sockets (TCP) implementation.  This is the default.
       \item[shm]A shared-memory implementation.
       \item[sshm]A multi-method implementation supporting both sockets
-	and shared memory
+        and shared memory
       \item[gasnet]An experimental remote direct memory access device,
-	built on top of Gasnet.
+        built on top of Gasnet.
       \item[ib]An experimental Infiniband implementation.  Other
-	implementations for Infiniband are also available from other
-	groups, such as Ohio State.
+        implementations for Infiniband are also available from other
+        groups, such as Ohio State.
       \end{description}
     \item[rdma]An experimental remote direct memory access device.
     \item[mm]An experimental multimethod, not currently being worked
@@ -445,7 +449,7 @@ for generating test cases, such as collections of communicators and
 datatypes.  Also contains code for reporting results so that no
 example output files are required (as they are by the MPICH tests).
         \item[f77,f90,cxx]These directories are used for the tests in 
-	  Fortran 77, Fortran 90, and C++ respectively.
+          Fortran 77, Fortran 90, and C++ respectively.
       \end{description}
     \item[mpid]Test of the MPID routines.  This currently contains
     only a few tests for some very low-level operations.
@@ -845,12 +849,12 @@ int MPI_Foo( MPI_Comm comm, int middle, int *last, int *only )
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    /* Use predefined macros for tests where possible */
+            /* Use predefined macros for tests where possible */
             if (a < 0) {
                 mpi_errno = MPIR_Err_create_code( mpi_errno, 
-		            MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-			    MPI_ERR_ARG, 
-			    "**negarg", "**negarg %s %d", "a", a );
+                            MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                            MPI_ERR_ARG, 
+                            "**negarg", "**negarg %s %d", "a", a );
             } 
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
@@ -2051,7 +2055,7 @@ MPID_MPI_PT2PT_FUNC_BEGIN( stateid );
 MPID_MPI_PT2PT_FUNC_END( stateid );
 \end{verbatim}
 \fixme{there are a number of undocumented varients of these that need
-  to be explained or removed, such as func\_enter\_front}
+  to be explained or removed, such as {func}\_{enter}\_{front}}
 These will normally be defined as the corresponding timer calls
 \begin{verbatim}
 MPID_TimerStateBegin( stateid );
@@ -3272,7 +3276,7 @@ each package.
 %% re-executing \file{config.status} executes the correct routines?
 
 Standard \code{configure} and \code{Makefile} variables
-\begin{description}
+%% \begin{description}
 %% \item[\texttt{COPTIONS}]Use this to pass options for the C compiler that are
 %%   used by the package.  For example, the standard configure option
 %%   \cfgoption{--enable-strict} sets this to strict compilation (e.g.,
@@ -3292,7 +3296,7 @@ Standard \code{configure} and \code{Makefile} variables
 %%   There are a few exceptions in the current code for developers'
 %%   targets for operations such as coverage analysis and strict language
 %%   conformance.  
-\end{description}
+%% \end{description}
 
 \subsection{Configure Flags}
 \label{sec:config-flags}
@@ -5628,7 +5632,7 @@ while (context_id == 0) {
         local_mask = 0
     else 
         local_mask = mask
-	mask_in_use = 1
+        mask_in_use = 1
     if (mycontextid < lowestContextId) 
         lowestContextId = mycontextid
     unlock
@@ -5639,8 +5643,8 @@ while (context_id == 0) {
         lock
         unset corresponding bit in mask
         mask_in_use = 0
-	if (mycontextid != lowestContextId)
-	    lowestContextId = MAXINT;
+        if (mycontextid != lowestContextId)
+            lowestContextId = MAXINT;
         unlock
 
         break loop
@@ -7187,92 +7191,7 @@ keyval used to store the topology attributes.  We also need a
 topology (the common type is a subset of the other two that provides access
 only to the topology type).
 
-\subsubsection{Proposed Interface}
-The device may implement \code{MPID_Cart_map} and/or \code{MPID_Graph_map} .
-These are very similar to the MPI routines of the same names, and can be used
-to communication information on the topology of the underlying interconnect
-and process layout to the MPI routines.  If the device does implement these
-routines, it must define the corresponding C preprocessor value to indicate
-that the routine is available.  If the device does not provide the routine,
-then the MPICH implementation will provide a simple default.  Note that 
-the \code{MPID_Cart_map} and \code{MPID_Graph_map} routines are sufficient for
-implementing the MPI topology routines, as described in the MPI-1 standard.
-
-The specifics are
-
-Use
-\begin{verbatim}
-    #define MPID_HAVE_CART_MAP 
-\end{verbatim}
-if the device provides \code{MPID_Cart_map}.  The binding for this routine is
-\begin{verbatim}
-int MPID_Cart_map( MPID_Comm *comm_ptr, int dims, const int dims[], 
-                   const int periods[], int *newrank )
-\end{verbatim}
-Use 
-\begin{verbatim}
-#define MPID_HAVE_GRAPH_MAP
-\end{verbatim}
-if the device provides \code{MPID_Graph_map}.  The binding for this routine is
-\begin{verbatim}
-int MPID_Graph_map( MPID_Comm *comm_ptr, int nnodes, const int index[], 
-                    const int edges[], int *newrank )
-\end{verbatim}
-Use
-\begin{verbatim}
-#define MPID_HAVE_DIMS_CREATE
-\end{verbatim}
-if the device provides \code{MPID_Dims_create}.  The binding for this routine
-is 
-\begin{verbatim}
-int MPID_Dims_create( int nnodes, int ndims, int *dims )
-\end{verbatim}
-
-These routines should return valid MPI error codes (not classes!) if an error
-is detected.  They \emph{may} assume that the input communicator and output
-pointer are valid (checked in the calling routine). 
-
-These routines should perform any initialization that they require on the
-first call.  If they allocate resources (e.g., malloc memory), they must
-register a finalize handler to clean up on exit. 
-
-It is the long-term goal of the MPICH group to provide sample implementations
-of these for several important classes of machine interconnects.  However,
-until that time, these routines provide a way for a device implementor to
-communicate topology information to the MPI routines. 
-
-\subsubsection{Proposed Interface 2}
-An alternative to the above interface would be an interface that allowed
-the device to specify one of the following topology types:
-\begin{description}
-\item[cart]Cartesian; the device provides the number of dimensions, the size 
-of each dimension, and whether the dimension is periodic (i.e., a
-torus or mesh).  Systems with SMPs connected on a mesh can use a first
-dimension with size 2 and periodic.
-\item[heirarchical]The device provides, for each process, a set of
-  levels and the color and key of the process within that level.
-  These arguments have meanings similar to \mpifunc{MPI_Comm_split}.
-  Processes that belong to the same group at a particular level (e.g.,
-  an SMP or a cluster) have the same value of \code{color}; each
-  process has a distinct value of \code{key}.  The number of levels is
-  provided by the device, allowing the description of an arbitrary
-  hierarchy of processes.  In addition, at any level, the processes
-  with the same \code{color} may have additional structure; e.g., they
-  may have cartesian topology.
-\item[switched]The processes are connected by a switched network that
-  either provides or approximates a complete connection network.  This
-  is appropriate for systems with full bisection bandwidth independent
-  of the number of processes and with good handling of contention.
-  Note that most large systems will only approximate this, but it may
-  still be an appropriate choice because the details of the
-  interconnect are too complex to be exploited.
-\item[bus]The processes are connected by a shared resource, such as a
-  bus, non-switched Ethernet (e.g., using hubs), or even with switched
-  networks that do not have adequate bandwidth to handle all processes
-  at one time.  One additional parameter may be the number of
-  processes that may communicate simultaneously without significant
-  contention.
-\end{description}
+\input topo.tex
 
 \subsubsection{\mpifunc{MPI_CARTDIM_GET}}
 Access the topology description and return the number of dimensions of
