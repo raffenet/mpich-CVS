@@ -457,8 +457,9 @@ print MAKEFD "\tcp mpi.\$(MOD) mpi_constants.\$(MOD) mpi_base.\$(MOD) ../../../s
 # describe which modules to load.
 print MAKEFD "\t\@if [ -n \"\@F90_WORK_FILES_ARG\@\" ] ; then \\\
 \t    cp work.pc ../../../src/include/mpimod.pc ; \\\
-\t    echo \"mpimod.pc\" > ../../../src/include/mpimod.pcl ; \\\
-\t    echo \"\${includedir}/mpimod.pcl\" >> ../../../src/include/mpimod.pcl ;\\\
+\t    echo \"mpimod.pc\" > mpimod.pcl ; \\\
+\t    echo \"\${includedir}/mpimod.pc\" >> mpimod.pcl ;\\\
+\t    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \\\
 \tfi\n";
 
 print MAKEFD "clean-local:\n";
