@@ -166,6 +166,7 @@ int mp_get_pwd_from_file(char *file_name)
     if (!fgets(line, 1024, fin))
     {
 	printf("Error, unable to read the account in '%s'\n", file_name);
+	fclose(fin);
 	return SMPD_FAIL;
     }
 
@@ -175,6 +176,7 @@ int mp_get_pwd_from_file(char *file_name)
     if (strlen(line) == 0)
     {
 	printf("Error, first line in password file must be the account name. (%s)\n", file_name);
+	fclose(fin);
 	return SMPD_FAIL;
     }
 
@@ -185,6 +187,7 @@ int mp_get_pwd_from_file(char *file_name)
     if (!fgets(line, 1024, fin))
     {
 	printf("Error, unable to read the password in '%s'\n", file_name);
+	fclose(fin);
 	return SMPD_FAIL;
     }
     /* strip off the newline characters */
@@ -196,14 +199,114 @@ int mp_get_pwd_from_file(char *file_name)
 	strcpy(smpd_process.UserPassword, line);
     else
 	smpd_process.UserPassword[0] = '\0';
+
+    fclose(fin);
+
     return SMPD_SUCCESS;
 }
 
+static smpd_host_node_t *s_host_list = NULL, *s_cur_host = NULL;
+static int s_cur_count = 0;
 int mp_get_next_hostname(char *host)
 {
-    if (gethostname(host, SMPD_MAX_HOST_LENGTH) == 0)
-	return SMPD_SUCCESS;
-    return SMPD_FAIL;
+    if (s_host_list == NULL)
+    {
+	if (gethostname(host, SMPD_MAX_HOST_LENGTH) == 0)
+	    return SMPD_SUCCESS;
+	return SMPD_FAIL;
+    }
+    if (s_cur_host == NULL)
+    {
+	s_cur_host = s_host_list;
+	s_cur_count = 0;
+    }
+    strcpy(host, s_cur_host->host);
+    s_cur_count++;
+    if (s_cur_count >= s_cur_host->nproc)
+    {
+	s_cur_host = s_cur_host->next;
+	s_cur_count = 0;
+    }
+    return SMPD_SUCCESS;
+}
+
+SMPD_BOOL mp_parse_machine_file(char *file_name)
+{
+    char line[1024];
+    FILE *fin;
+    smpd_host_node_t *node, *node_iter;
+    char *hostname, *iter;
+    int nproc;
+
+    s_host_list = NULL;
+    s_cur_host = NULL;
+    s_cur_count = 0;
+
+    /* open the file */
+    fin = fopen(file_name, "r");
+    if (fin == NULL)
+    {
+	printf("Error, unable to open machine file '%s'\n", file_name);
+	return SMPD_FALSE;
+    }
+
+    while (fgets(line, 1024, fin))
+    {
+	/* strip off the newline characters */
+	while (strlen(line) && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
+	    line[strlen(line)-1] = '\0';
+	hostname = line;
+	/* move over any leading whitespace */
+	while (isspace(*hostname))
+	    hostname++;
+	if (strlen(hostname) != 0 && hostname[0] != '#')
+	{
+	    iter = hostname;
+	    /* move over the hostname and see if there is a number after it */
+	    while (*iter != '\0' && !isspace(*iter))
+		iter++;
+	    if (*iter != '\0')
+	    {
+		*iter = '\0';
+		iter++;
+		while (isspace(*iter))
+		    iter++;
+		nproc = atoi(iter);
+		if (nproc < 1)
+		    nproc = 1;
+	    }
+	    else
+	    {
+		nproc = 1;
+	    }
+	    node = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	    strcpy(node->host, hostname);
+	    node->id = -1;
+	    node->parent = -1;
+	    node->nproc = nproc;
+	    node->next = NULL;
+	    if (s_host_list == NULL)
+		s_host_list = node;
+	    else
+	    {
+		node_iter = s_host_list;
+		while (node_iter->next != NULL)
+		    node_iter = node_iter->next;
+		node_iter->next = node;
+	    }
+	}
+    }
+    if (s_host_list != NULL)
+    {
+	node = s_host_list;
+	while (node)
+	{
+	    smpd_dbg_printf("host = %s, nproc = %d\n", node->host, node->nproc);
+	    node = node->next;
+	}
+	return SMPD_TRUE;
+    }
+    return SMPD_FALSE;
 }
 
 int mp_get_host_id(char *host, int *id_ptr)
@@ -578,6 +681,12 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "machinefile") == 0)
 	    {
+		if (s_host_list != NULL)
+		{
+		    printf("Error: -machinefile can only be specified once per section.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
 		if (argc < 3)
 		{
 		    printf("Error: no filename specified after -machinefile option.\n");
@@ -586,6 +695,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		}
 		strncpy(machine_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
 		use_machine_file = SMPD_TRUE;
+		mp_parse_machine_file(machine_file_name);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "map") == 0)
@@ -1094,6 +1204,17 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		while (launch_node_iter->next)
 		    launch_node_iter = launch_node_iter->next;
 		launch_node_iter->next = launch_node;
+	    }
+	}
+
+	if (s_host_list)
+	{
+	    /* free the current host list */
+	    while (s_host_list)
+	    {
+		host_node_iter = s_host_list;
+		s_host_list = s_host_list->next;
+		free(host_node_iter);
 	    }
 	}
 
