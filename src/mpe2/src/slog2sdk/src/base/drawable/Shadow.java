@@ -30,6 +30,7 @@ import base.io.MixedDataOutput;
 import base.topology.Line;
 import base.topology.Arrow;
 import base.topology.State;
+import base.topology.Event;
 import base.topology.PreviewState;
 
 public class Shadow extends Primitive
@@ -609,6 +610,30 @@ public class Shadow extends Primitive
                           tStart, (float) iStart, tFinal, (float) iFinal );
     }
 
+    public  int  drawEvent( Graphics2D g, CoordPixelXform coord_xform,
+                            Map map_line2row, DrawnBoxSet drawn_boxes,
+                            ColorAlpha color )
+    {
+        Coord  vtx;
+        vtx = this.getStartVertex();
+
+        double tPoint;
+        tPoint = vtx.time;  /* different from Shadow */
+
+        int    rowID;
+        float  rPeak, rStart, rFinal;
+        rowID  = ( (Integer)
+                   map_line2row.get( new Integer(vtx.lineID) )
+                 ).intValue();
+        rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
+        rStart = (float) rowID - 0.5f;
+        rFinal = rStart + 1.0f;
+
+        return Event.draw( g, color, null, coord_xform,
+                           drawn_boxes.getLastEventPos( rowID ),
+                           tPoint, rPeak, rStart, rFinal );
+    }
+
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
@@ -669,6 +694,27 @@ public class Shadow extends Primitive
 
         return Line.containsPixel( coord_xform, pix_pt,
                                    tStart, rStart, tFinal, rFinal );
+    }
+
+    public  boolean isPixelAtEvent( CoordPixelXform coord_xform,
+                                    Map map_line2row, Point pix_pt )
+    {
+        Coord  vtx;
+        vtx = this.getStartVertex();
+
+        double tPoint;
+        tPoint = vtx.time;  /* different from Shadow */
+
+        int    rowID;
+        float  rStart, rFinal;
+        rowID  = ( (Integer)
+                   map_line2row.get( new Integer(vtx.lineID) )
+                 ).intValue();
+        rStart = (float) rowID - 0.5f;
+        rFinal = rStart + 1.0f;
+
+        return Event.containsPixel( coord_xform, pix_pt,
+                                    tPoint, rStart, rFinal );
     }
 
     public boolean containSearchable()

@@ -13,6 +13,10 @@ public class DrawnBox
 {
     private static final int   TOLERANCE = 1;
 
+    /*
+       Both head and tail are used by Arrow and State.
+       But only head is used by Event.
+    */
     private              int   head;
     private              int   tail;
 
@@ -47,10 +51,20 @@ public class DrawnBox
                && Math.abs( new_head - head ) <= TOLERANCE;
     }
 
+    public boolean coversEvent( int new_point )
+    {
+        return Math.abs( new_point - head ) <= TOLERANCE;
+    }
+
     public void set( int new_head, int new_tail )
     {
         head = new_head;
         tail = new_tail;
+    }
+
+    public void set( int new_point )
+    {
+        head = new_point;
     }
 
     public int getHead()

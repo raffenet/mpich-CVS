@@ -29,9 +29,11 @@ public class Arrow
     }
 
     //  For Viewer 
-    public static void setHeadHalfWidth( int new_half_width )
+    public static void setHeadWidth( int new_width )
     {
-        Head_Half_Width = new_half_width;
+        Head_Half_Width = new_width / 2;
+        if ( Head_Half_Width < 1 )
+            Head_Half_Width = 1;
     }
 
     /*

@@ -168,11 +168,21 @@ public abstract class Drawable extends InfoBox
                                          DrawnBoxSet      drawn_boxes,
                                          ColorAlpha       color );
 
+    public abstract int       drawEvent( Graphics2D       g,
+                                         CoordPixelXform  coord_xform,
+                                         Map              map_line2row,
+                                         DrawnBoxSet      drawn_boxes,
+                                         ColorAlpha       color );
+
     public abstract boolean   isPixelInState( CoordPixelXform  coord_xform,
                                               Map              map_line2row,
                                               Point            pix_pt );
 
     public abstract boolean   isPixelOnArrow( CoordPixelXform  coord_xform,
+                                              Map              map_line2row,
+                                              Point            pix_pt );
+
+    public abstract boolean   isPixelAtEvent( CoordPixelXform  coord_xform,
                                               Map              map_line2row,
                                               Point            pix_pt );
 
@@ -203,14 +213,18 @@ public abstract class Drawable extends InfoBox
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
-        if ( topo.isEvent() )
-            System.err.println( "Not yet supported Event Primitive type." );
-        else if ( topo.isState() )
+        if ( topo.isEvent() ) {
+            return this.drawEvent( g, coord_xform, map_line2row,
+                                   drawn_boxes, type.getColor() );
+        }
+        else if ( topo.isState() ) {
             return this.drawState( g, coord_xform, map_line2row,
                                    drawn_boxes, type.getColor() );
-        else if ( topo.isArrow() )
+        }
+        else if ( topo.isArrow() ) {
             return this.drawArrow( g, coord_xform, map_line2row,
                                    drawn_boxes, type.getColor() );
+        }
         else
             System.err.println( "Non-recognized Primitive type! " + this );
         return 0;
@@ -222,8 +236,10 @@ public abstract class Drawable extends InfoBox
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
-        if ( topo.isEvent() )
-            System.err.println( "Not yet supported Event Primitive type." );
+        if ( topo.isEvent() ) {
+            if ( this.isPixelAtEvent( coord_xform, map_line2row, pix_pt ) )
+                return this;
+        }
         else if ( topo.isState() ) {
             if ( this.isPixelInState( coord_xform, map_line2row, pix_pt ) )
                 return this;

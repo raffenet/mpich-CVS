@@ -15,9 +15,10 @@ import javax.swing.JTree;
 public class NestingStacks
 {
     //  0.0 < Nesting_Height_Reduction < 1.0
-    private static  float  Nesting_Height_Reduction = 0.8f;
-    private static  float  Initial_Nesting_Height   = 0.8f;
-    private static  float  Shadow_Nesting_Height    = 0.4f;
+    private static  float  Nesting_Height_Reduction      = 0.8f;
+    private static  float  Initial_Nesting_Height        = 0.8f;
+    private static  float  Half_Initial_Nesting_Height   = 0.4f;
+    private static  float  Shadow_Nesting_Height         = 0.4f;
 
     private JTree          tree_view;
     private Stack[]        nesting_stacks;
@@ -41,9 +42,15 @@ public class NestingStacks
     public static void  setInitialNestingHeight( float new_init_height )
     {
         if ( new_init_height > 0.0f && new_init_height < 1.0f ) {
-            Initial_Nesting_Height   = new_init_height;   
-            Shadow_Nesting_Height    = Initial_Nesting_Height;
+            Initial_Nesting_Height      = new_init_height;   
+            Half_Initial_Nesting_Height = Initial_Nesting_Height / 2.0f;
+            Shadow_Nesting_Height       = Initial_Nesting_Height;
         }
+    }
+
+    public static float getHalfInitialNestingHeight()
+    {
+        return Half_Initial_Nesting_Height;
     }
 
     public void initialize( boolean isScrolling )
