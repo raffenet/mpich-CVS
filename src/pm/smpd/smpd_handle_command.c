@@ -1646,7 +1646,7 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 	    }
 	}
 
-#	/* send the name back to the root */
+	/* send the name back to the root */
 	result = smpd_add_command_arg(temp_cmd, "kvs_name", /*smpd_process.*/kvs_name);
 	if (result != SMPD_SUCCESS)
 	{
