@@ -44,7 +44,7 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
     int mpi_errno = MPI_SUCCESS;
 
     *new_group_ptr = (MPID_Group *)MPIU_Handle_obj_alloc( &MPID_Group_mem );
-    /* --BEING ERROR HANDLING-- */
+    /* --BEGIN ERROR HANDLING-- */
     if (!*new_group_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Group_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
