@@ -263,6 +263,9 @@ sub RunTest {
 	    $value = $2;
 	    # Replace <SP> with blanks
 	    $value =~ s/<SP>/ /g;
+	    # Grrr <SP> is a bad choice, since <> are shell metacharacters.
+	    # Allow --SP-- as an alternative
+	    $value =~ s/--SP--/ /g;
 	    print "Env $name = $value\n" if $debug;
 	    # Since most of these so far are programs, we should check to 
 	    # see if they're available.  Instead, we'll make the user
