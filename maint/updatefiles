@@ -141,7 +141,7 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
            echo "src/mpi/errhan/defmsg.h was not updated."
            update_errdefs=no
        fi
-       rm -f .err .err2
+       rm -f .tmp .err .err2
     else
        # Incase it exists but has zero size
        rm -f .err
@@ -153,9 +153,17 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
         echo "Creating a dummy defmsg.h file"
 	cat > src/mpi/errhan/defmsg.h <<EOF
 typedef struct { const char *short_name, *long_name; } msgpair;
-static msgpair generic_err_msgs[] { {0,0}, };
+static const int generic_msgs_len = 0;
+static msgpair generic_err_msgs[] { {0, "no error catalog"}, };
+static const int specific_msgs_len = 0;
 static msgpair specific_err_msgs[] {  {0,0}, };
-static int class_to_index[] = { 0, };
+static int class_to_index[] = {
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0 }
 EOF
     fi
 fi
