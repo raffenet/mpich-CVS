@@ -358,472 +358,760 @@ static const char short_gen171[] = "**init";
 static const char long_gen171[]  = "Initialization failed";
 static const char short_gen172[] = "**init_buscard";
 static const char long_gen172[]  = "failed to get my business card";
-static const char short_gen173[] = "**init_comm_create";
-static const char long_gen173[]  = "unable to create an intercommunicator for the parent";
-static const char short_gen174[] = "**init_description";
-static const char long_gen174[]  = "unable to get the host description";
-static const char short_gen175[] = "**init_getptr";
-static const char long_gen175[]  = "failed to get the vcr";
-static const char short_gen176[] = "**init_ibu";
-static const char long_gen176[]  = "infiniband initialization failed";
-static const char short_gen177[] = "**init_ibu_set";
-static const char long_gen177[]  = "unable to create an infinband completion queue";
-static const char short_gen178[] = "**init_progress";
-static const char long_gen178[]  = "progress_init failed";
-static const char short_gen179[] = "**init_vcrdup";
-static const char long_gen179[]  = "failed to duplicate the virtual connection reference";
-static const char short_gen180[] = "**init_vcrt";
-static const char long_gen180[]  = "failed to create VCRT";
-static const char short_gen181[] = "**initialized";
-static const char long_gen181[]  = "MPI not initialized. Call MPI_Init or MPI_Init_thread first";
-static const char short_gen182[] = "**inittwice";
-static const char long_gen182[]  = "Cannot call MPI_INIT or MPI_INIT_THREAD more than once";
-static const char short_gen183[] = "**inpending";
-static const char long_gen183[]  = "Pending request (no error)";
-static const char short_gen184[] = "**instatus";
-static const char long_gen184[]  = "See the MPI_ERROR field in MPI_Status for the error code";
-static const char short_gen185[] = "**intern";
-static const char long_gen185[]  = "Internal MPI error!";
-static const char short_gen186[] = "**inttoosmall";
-static const char long_gen186[]  = "An address does not fit into a Fortran INTEGER.  Use MPI_Get_address instead";
-static const char short_gen187[] = "**invalid_handle";
-static const char long_gen187[]  = "invalid handle";
-static const char short_gen188[] = "**invalid_listener";
-static const char long_gen188[]  = "invalid listener";
-static const char short_gen189[] = "**invalid_refcount";
-static const char long_gen189[]  = "invalid reference count";
-static const char short_gen190[] = "**invalid_shmq";
-static const char long_gen190[]  = "invalid shm queue pointer";
-static const char short_gen191[] = "**io";
-static const char long_gen191[]  = "Other I/O error ";
-static const char short_gen192[] = "**ioRMWrdwr";
-static const char long_gen192[]  = "Must open file with MPI_MODE_RDWR for read-modify-write ";
-static const char short_gen193[] = "**ioagnomatch";
-static const char long_gen193[]  = "No aggregators match";
-static const char short_gen194[] = "**ioamodeseq";
-static const char long_gen194[]  = "Cannot use this function when the file is opened with amode MPI_MODE_SEQUENTIAL ";
-static const char short_gen195[] = "**iobadcount";
-static const char long_gen195[]  = "Invalid count argument";
-static const char short_gen196[] = "**iobaddisp";
-static const char long_gen196[]  = "Invalid displacement argument";
-static const char short_gen197[] = "**iobadfh";
-static const char long_gen197[]  = "Invalid file handle";
-static const char short_gen198[] = "**iobadoffset";
-static const char long_gen198[]  = "Invalid offset argument";
-static const char short_gen199[] = "**iobadsize";
-static const char long_gen199[]  = "Invalid size argument";
-static const char short_gen200[] = "**iobadwhence";
-static const char long_gen200[]  = "Invalid whence argument";
-static const char short_gen201[] = "**iocp";
-static const char long_gen201[]  = "unable to create an I/O completion port";
-static const char short_gen202[] = "**iodatarepnomem";
-static const char long_gen202[]  = "User must allocate memory for datarep";
-static const char short_gen203[] = "**iodispifseq";
-static const char long_gen203[]  = "disp must be set to MPI_DISPLACEMENT_CURRENT since file was opened with MPI_MODE_SEQUENTIAL";
-static const char short_gen204[] = "**ioetype";
-static const char long_gen204[]  = "Only an integral number of etypes can be accessed";
-static const char short_gen205[] = "**iofiletype";
-static const char long_gen205[]  = "Filetype must be constructed out of one or more etypes";
-static const char short_gen206[] = "**iofstype";
-static const char long_gen206[]  = "Cannot determine filesystem type";
-static const char short_gen207[] = "**iofstypeunsupported";
-static const char long_gen207[]  = "Specified filesystem is not available";
-static const char short_gen208[] = "**ioneedrd";
-static const char long_gen208[]  = "Read access is required to this file";
-static const char short_gen209[] = "**ionegoffset";
-static const char long_gen209[]  = "Negative offset argument";
-static const char short_gen210[] = "**iopreallocrdwr";
-static const char long_gen210[]  = "Must open file with MPI_MODE_RDWR to preallocate disk space";
-static const char short_gen211[] = "**iosequnsupported";
-static const char long_gen211[]  = "MPI_MODE_SEQUENTIAL not supported on this file system";
-static const char short_gen212[] = "**iosharedfailed";
-static const char long_gen212[]  = "Could not access shared file pointer";
-static const char short_gen213[] = "**iosharedunsupported";
-static const char long_gen213[]  = "Shared file pointers not supported";
-static const char short_gen214[] = "**iosplitcoll";
-static const char long_gen214[]  = "Only one active split collective I/O operation is allowed per file handle";
-static const char short_gen215[] = "**iosplitcollnone";
-static const char long_gen215[]  = "No split collective I/O operation is active";
-static const char short_gen216[] = "**iov_offset";
-static const char long_gen216[]  = "invalid iov offset";
-static const char short_gen217[] = "**keyval";
-static const char long_gen217[]  = "Invalid keyval";
-static const char short_gen218[] = "**keyvalinvalid";
-static const char long_gen218[]  = "Attribute key was MPI_KEYVAL_INVALID";
-static const char short_gen219[] = "**keyvalnotcomm";
-static const char long_gen219[]  = "Keyval was not defined for communicators";
-static const char short_gen220[] = "**keyvalnotdatatype";
-static const char long_gen220[]  = "Keyval was not defined for datatype";
-static const char short_gen221[] = "**keyvalnotwin";
-static const char long_gen221[]  = "Keyval was not defined for window objects";
-static const char short_gen222[] = "**listen";
-static const char long_gen222[]  = "listen failed";
-static const char short_gen223[] = "**locktype";
-static const char long_gen223[]  = "Invalid locktype";
-static const char short_gen224[] = "**mmap";
-static const char long_gen224[]  = "unable to map memory, mmap failed";
-static const char short_gen225[] = "**mq_close";
-static const char long_gen225[]  = "failed to close a posix message queue";
-static const char short_gen226[] = "**mq_open";
-static const char long_gen226[]  = "failed to open a posix message queue";
-static const char short_gen227[] = "**mq_receive";
-static const char long_gen227[]  = "failed to receive a posix message queue message";
-static const char short_gen228[] = "**mq_send";
-static const char long_gen228[]  = "failed to send a posix message queue message";
-static const char short_gen229[] = "**mqp_failure";
-static const char long_gen229[]  = "failed to make progress on the shared memory bootstrap message queue";
-static const char short_gen230[] = "**mqshm_create";
-static const char long_gen230[]  = "failed to create a shared memory message queue";
-static const char short_gen231[] = "**mqshm_receive";
-static const char long_gen231[]  = "failed to receive a bootstrap message";
-static const char short_gen232[] = "**mqshm_send";
-static const char long_gen232[]  = "failed to send a bootstrap message";
-static const char short_gen233[] = "**mqshm_unlink";
-static const char long_gen233[]  = "unable to unlink the shared memory message queue";
-static const char short_gen234[] = "**msgctl";
-static const char long_gen234[]  = "msgctl failed";
-static const char short_gen235[] = "**msgget";
-static const char long_gen235[]  = "msgget failed";
-static const char short_gen236[] = "**msgrcv";
-static const char long_gen236[]  = "msgrcv failed";
-static const char short_gen237[] = "**msgsnd";
-static const char long_gen237[]  = "msgsnd failed";
-static const char short_gen238[] = "**multi_post_read";
-static const char long_gen238[]  = "posting a read while a previously posted read is outstanding";
-static const char short_gen239[] = "**multi_post_write";
-static const char long_gen239[]  = "posting a write while a previously posted write is outstanding";
-static const char short_gen240[] = "**namepublish";
-static const char long_gen240[]  = "Unable to publish service name";
-static const char short_gen241[] = "**namepubnotpub";
-static const char long_gen241[]  = "Lookup failed for service name ";
-static const char short_gen242[] = "**nameservice";
-static const char long_gen242[]  = "Invalid service name (see MPI_Publish_name)";
-static const char short_gen243[] = "**needthreads";
-static const char long_gen243[]  = "This function needs threads and threads have not been enabled";
-static const char short_gen244[] = "**nextbootmsg";
-static const char long_gen244[]  = "failed to get the next bootstrap message";
-static const char short_gen245[] = "**noca";
-static const char long_gen245[]  = "unable to find an active infiniband channel adapter";
-static const char short_gen246[] = "**noerrclasses";
-static const char long_gen246[]  = "No more user-defined error classes";
-static const char short_gen247[] = "**noerrcodes";
-static const char long_gen247[]  = "No more user-defined error codes";
-static const char short_gen248[] = "**nomem";
-static const char long_gen248[]  = "Out of memory";
-static const char short_gen249[] = "**nomemreq";
-static const char long_gen249[]  = "failure occurred while allocating memory for a request object";
-static const char short_gen250[] = "**nonamepub";
-static const char long_gen250[]  = "No name publishing service available";
-static const char short_gen251[] = "**notcarttopo";
-static const char long_gen251[]  = "No Cartesian topology associated with this communicator";
-static const char short_gen252[] = "**notcstatignore";
-static const char long_gen252[]  = "MPI_STATUS_IGNORE cannot be passed to MPI_Status_c2f()";
-static const char short_gen253[] = "**notfstatignore";
-static const char long_gen253[]  = "MPI_STATUS_IGNORE cannot be passed to MPI_Status_f2c()";
-static const char short_gen254[] = "**notgenreq";
-static const char long_gen254[]  = "Attempt to complete a request with MPI_GREQUEST_COMPLETE that was not started with MPI_GREQUEST_START";
-static const char short_gen255[] = "**notgraphtopo";
-static const char long_gen255[]  = "No Graph topology associated with this communicator";
-static const char short_gen256[] = "**notimpl";
-static const char long_gen256[]  = "Function not implemented";
-static const char short_gen257[] = "**notopology";
-static const char long_gen257[]  = "No topology associated with this communicator";
-static const char short_gen258[] = "**notsame";
-static const char long_gen258[]  = "Inconsistent arguments to collective routine ";
-static const char short_gen259[] = "**nulledge";
-static const char long_gen259[]  = "Edge detected from a node to the same node";
-static const char short_gen260[] = "**nullptr";
-static const char long_gen260[]  = "Null pointer";
-static const char short_gen261[] = "**nullptrtype";
-static const char long_gen261[]  = "Null pointer";
-static const char short_gen262[] = "**op";
-static const char long_gen262[]  = "Invalid MPI_Op";
-static const char short_gen263[] = "**open";
-static const char long_gen263[]  = "open failed";
-static const char short_gen264[] = "**opnotpredefined";
-static const char long_gen264[]  = "only predefined ops are valid";
-static const char short_gen265[] = "**opundefined";
-static const char long_gen265[]  = "MPI_Op operation not defined for this datatype ";
-static const char short_gen266[] = "**opundefined_rma";
-static const char long_gen266[]  = "RMA target received unknown RMA operation";
-static const char short_gen267[] = "**other";
-static const char long_gen267[]  = "Other MPI error";
-static const char short_gen268[] = "**pctwice";
-static const char long_gen268[]  = "post connect called twice";
-static const char short_gen269[] = "**pd_alloc";
-static const char long_gen269[]  = "unable to allocate a protection domain";
-static const char short_gen270[] = "**permattr";
-static const char long_gen270[]  = "Cannot set permanent attribute";
-static const char short_gen271[] = "**permop";
-static const char long_gen271[]  = "Cannot free permanent MPI_Op ";
-static const char short_gen272[] = "**pfinal_sockclose";
-static const char long_gen272[]  = "sock_close failed";
-static const char short_gen273[] = "**pkt_ptr";
-static const char long_gen273[]  = "invalid shm queue packet pointer";
-static const char short_gen274[] = "**pmi_barrier";
-static const char long_gen274[]  = "PMI_Barrier failed";
-static const char short_gen275[] = "**pmi_finalize";
-static const char long_gen275[]  = "PMI_Finalize failed";
-static const char short_gen276[] = "**pmi_get_rank";
-static const char long_gen276[]  = "PMI_Get_rank failed";
-static const char short_gen277[] = "**pmi_get_size";
-static const char long_gen277[]  = "PMI_Get_size failed";
-static const char short_gen278[] = "**pmi_init";
-static const char long_gen278[]  = "PMI_Init failed";
-static const char short_gen279[] = "**pmi_kvs_commit";
-static const char long_gen279[]  = "PMI_KVS_Commit failed";
-static const char short_gen280[] = "**pmi_kvs_create";
-static const char long_gen280[]  = "PMI_KVS_Create failed";
-static const char short_gen281[] = "**pmi_kvs_get";
-static const char long_gen281[]  = "PMI_KVS_Get failed";
-static const char short_gen282[] = "**pmi_kvs_get_my_name";
-static const char long_gen282[]  = "PMI_KVS_Get_my_name failed";
-static const char short_gen283[] = "**pmi_kvs_put";
-static const char long_gen283[]  = "PMI_KVS_Put failed";
-static const char short_gen284[] = "**pmi_spawn_multiple";
-static const char long_gen284[]  = "PMI_Spawn_multiple failed";
-static const char short_gen285[] = "**poke";
-static const char long_gen285[]  = "progress_poke failed";
-static const char short_gen286[] = "**port";
-static const char long_gen286[]  = "Invalid port";
-static const char short_gen287[] = "**post_accept";
-static const char long_gen287[]  = "post accept failed";
-static const char short_gen288[] = "**post_connect";
-static const char long_gen288[]  = "failed to post a connection";
-static const char short_gen289[] = "**post_sock_write_on_shm";
-static const char long_gen289[]  = "posting a socket read on a shm connection";
-static const char short_gen290[] = "**postpkt";
-static const char long_gen290[]  = "Unable to post a read for the next packet header";
-static const char short_gen291[] = "**process_group";
-static const char long_gen291[]  = "Process group initialization failed";
-static const char short_gen292[] = "**progress";
-static const char long_gen292[]  = "progress engine failure";
-static const char short_gen293[] = "**progress_finalize";
-static const char long_gen293[]  = "finalization of the progress engine failed";
-static const char short_gen294[] = "**progress_handle_sock_op";
-static const char long_gen294[]  = "handle_sock_op failed";
-static const char short_gen295[] = "**progress_init";
-static const char long_gen295[]  = "unable to initialize the progress engine";
-static const char short_gen296[] = "**progress_sock_wait";
-static const char long_gen296[]  = "sock_wait failed";
-static const char short_gen297[] = "**progress_test";
-static const char long_gen297[]  = "progress_test engine failure";
-static const char short_gen298[] = "**rangedup";
-static const char long_gen298[]  = "The range array specifies duplicate entries";
-static const char short_gen299[] = "**rangeendinvalid";
-static const char long_gen299[]  = "Some element of a range array is either negative or too large";
-static const char short_gen300[] = "**rangestartinvalid";
-static const char long_gen300[]  = "Some element of a range array is either negative or too large";
-static const char short_gen301[] = "**rank";
-static const char long_gen301[]  = "Invalid rank";
-static const char short_gen302[] = "**rankarray";
-static const char long_gen302[]  = "Invalid rank in rank array";
-static const char short_gen303[] = "**rankdup";
-static const char long_gen303[]  = "Duplicate ranks in rank array ";
-static const char short_gen304[] = "**ranklocal";
-static const char long_gen304[]  = "Error specifying local_leader ";
-static const char short_gen305[] = "**rankremote";
-static const char long_gen305[]  = "Error specifying remote_leader ";
-static const char short_gen306[] = "**rdma_finalize";
-static const char long_gen306[]  = "Channel rdma finalization failed";
-static const char short_gen307[] = "**rdma_init";
-static const char long_gen307[]  = "Channel rdma initialization failed";
-static const char short_gen308[] = "**read_progress";
-static const char long_gen308[]  = "Unable to make read progress";
-static const char short_gen309[] = "**recvbuf_inplace";
-static const char long_gen309[]  = "recvbuf cannot be MPI_IN_PLACE";
-static const char short_gen310[] = "**request";
-static const char long_gen310[]  = "Invalid MPI_Request";
-static const char short_gen311[] = "**requestnotpersist";
-static const char long_gen311[]  = "Request is not persistent in MPI_Start or MPI_Startall.";
-static const char short_gen312[] = "**requestpersistactive";
-static const char long_gen312[]  = "Persistent request passed to MPI_Start or MPI_Startall is already active.";
-static const char short_gen313[] = "**rmaconflict";
-static const char long_gen313[]  = "Conflicting accesses to window ";
-static const char short_gen314[] = "**rmadisp";
-static const char long_gen314[]  = "Invalid displacement argument in RMA call ";
-static const char short_gen315[] = "**rmasize";
-static const char long_gen315[]  = "Invalid size argument in RMA call";
-static const char short_gen316[] = "**rmasync";
-static const char long_gen316[]  = "Wrong synchronization of RMA calls ";
-static const char short_gen317[] = "**root";
-static const char long_gen317[]  = "Invalid root";
-static const char short_gen318[] = "**rsendnomatch";
-static const char long_gen318[]  = "Ready send had no matching receive ";
-static const char short_gen319[] = "**sendbuf_inplace";
-static const char long_gen319[]  = "sendbuf cannot be MPI_IN_PLACE";
-static const char short_gen320[] = "**servicename";
-static const char long_gen320[]  = "Attempt to lookup an unknown service name ";
-static const char short_gen321[] = "**shm_op";
-static const char long_gen321[]  = "invalid shm operation";
-static const char short_gen322[] = "**shm_open";
-static const char long_gen322[]  = "unable to open a shared memory object";
-static const char short_gen323[] = "**shm_read_progress";
-static const char long_gen323[]  = "shared memory read progress failed";
-static const char short_gen324[] = "**shm_unlink";
-static const char long_gen324[]  = "failed to unlink shared memory";
-static const char short_gen325[] = "**shm_wait";
-static const char long_gen325[]  = "wait function failed";
-static const char short_gen326[] = "**shmat";
-static const char long_gen326[]  = "shmat failed";
-static const char short_gen327[] = "**shmconnect_getmem";
-static const char long_gen327[]  = "failed to allocate shared memory for a write queue";
-static const char short_gen328[] = "**shmctl";
-static const char long_gen328[]  = "failed to mark the sysv segment for removal";
-static const char short_gen329[] = "**shmget";
-static const char long_gen329[]  = "shmget failed";
-static const char short_gen330[] = "**shmgetmem";
-static const char long_gen330[]  = "Unable to allocate shared memory";
-static const char short_gen331[] = "**shmhost";
-static const char long_gen331[]  = "process not on the same host";
-static const char short_gen332[] = "**shmq";
-static const char long_gen332[]  = "invalid shm queue pointer";
-static const char short_gen333[] = "**shmq_index";
-static const char long_gen333[]  = "invalid shm queue index";
-static const char short_gen334[] = "**shmwrite";
-static const char long_gen334[]  = "shared memory write failed";
-static const char short_gen335[] = "**snprintf";
-static const char long_gen335[]  = "snprintf returned an invalid number";
-static const char short_gen336[] = "**sock_byname";
-static const char long_gen336[]  = "gethostbyname failed";
-static const char short_gen337[] = "**sock_closed";
-static const char long_gen337[]  = "socket closed";
-static const char short_gen338[] = "**sock_connect";
-static const char long_gen338[]  = "connect failed";
-static const char short_gen339[] = "**sock_create";
-static const char long_gen339[]  = "unable to create a socket";
-static const char short_gen340[] = "**sock_gethost";
-static const char long_gen340[]  = "gethostname failed";
-static const char short_gen341[] = "**sock_init";
-static const char long_gen341[]  = "unable to initialize the sock library";
-static const char short_gen342[] = "**sock_nop_accept";
-static const char long_gen342[]  = "accept called without having received an op_accept";
-static const char short_gen343[] = "**sock_post_close";
-static const char long_gen343[]  = "posting a close of the socket failed";
-static const char short_gen344[] = "**socket";
-static const char long_gen344[]  = "WSASocket failed";
-static const char short_gen345[] = "**sock|badbuf";
-static const char long_gen345[]  = "the supplied buffer contains invalid memory";
-static const char short_gen346[] = "**sock|badhandle";
-static const char long_gen346[]  = "sock contains an invalid handle";
-static const char short_gen347[] = "**sock|badhdbuf";
-static const char long_gen347[]  = "a memory fault occurred while accessing the host description string";
-static const char short_gen348[] = "**sock|badhdlen";
-static const char long_gen348[]  = "host description string to small to store description";
-static const char short_gen349[] = "**sock|badhdmax";
-static const char long_gen349[]  = "the length of the host description string must be non-negative";
-static const char short_gen350[] = "**sock|badiovn";
-static const char long_gen350[]  = "size of iov is invalid";
-static const char short_gen351[] = "**sock|badlen";
-static const char long_gen351[]  = "bad length parameter(s)";
-static const char short_gen352[] = "**sock|badport";
-static const char long_gen352[]  = "port number is out of range";
-static const char short_gen353[] = "**sock|badsock";
-static const char long_gen353[]  = "supplied sock is corrupt";
-static const char short_gen354[] = "**sock|closed";
-static const char long_gen354[]  = "sock has been closed locally";
-static const char short_gen355[] = "**sock|closing";
-static const char long_gen355[]  = "sock is in the process of being closed locally";
-static const char short_gen356[] = "**sock|connclosed";
-static const char long_gen356[]  = "connection closed by peer";
-static const char short_gen357[] = "**sock|connfailed";
-static const char long_gen357[]  = "connection failure";
-static const char short_gen358[] = "**sock|connrefused";
-static const char long_gen358[]  = "connection refused";
-static const char short_gen359[] = "**sock|getport";
-static const char long_gen359[]  = "failed to obtain port number of the listener";
-static const char short_gen360[] = "**sock|hostres";
-static const char long_gen360[]  = "unable to resolve host name to an address";
-static const char short_gen361[] = "**sock|nosock";
-static const char long_gen361[]  = "no new sock was available to accept";
-static const char short_gen362[] = "**sock|notconnected";
-static const char long_gen362[]  = "sock is not connected";
-static const char short_gen363[] = "**sock|oserror";
-static const char long_gen363[]  = "unknown operating system error";
-static const char short_gen364[] = "**sock|osnomem";
-static const char long_gen364[]  = "operating system routine failed due to lack of memory";
-static const char short_gen365[] = "**sock|poll|accept";
-static const char long_gen365[]  = "accept failed to acquire a new socket";
-static const char short_gen366[] = "**sock|poll|bind";
-static const char long_gen366[]  = "unable to bind socket to port";
-static const char short_gen367[] = "**sock|poll|eqfail";
-static const char long_gen367[]  = "fatal error: failed to enqueue an event; event was lost";
-static const char short_gen368[] = "**sock|poll|eqmalloc";
-static const char long_gen368[]  = "MPIU_Malloc failed to allocate memory for an event queue structure";
-static const char short_gen369[] = "**sock|poll|listen";
-static const char long_gen369[]  = "listen() failed";
-static const char short_gen370[] = "**sock|poll|nodelay";
-static const char long_gen370[]  = "unable to set TCP no delay attribute on socket";
-static const char short_gen371[] = "**sock|poll|nonblock";
-static const char long_gen371[]  = "unable to set socket to nonblocking";
-static const char short_gen372[] = "**sock|poll|pipe";
-static const char long_gen372[]  = "unable to allocate pipe to wakeup a blocking poll()";
-static const char short_gen373[] = "**sock|poll|pipenonblock";
-static const char long_gen373[]  = "unable to set wakeup pipe to nonblocking";
-static const char short_gen374[] = "**sock|poll|reuseaddr";
-static const char long_gen374[]  = "unable to set reuseaddr attribute on socket";
-static const char short_gen375[] = "**sock|poll|socket";
-static const char long_gen375[]  = "unable to obtain new socket";
-static const char short_gen376[] = "**sock|poll|unhandledstate";
-static const char long_gen376[]  = "encountered an unhandled";
-static const char short_gen377[] = "**sock|reads";
-static const char long_gen377[]  = "attempt to perform multiple simultaneous reads";
-static const char short_gen378[] = "**sock|setalloc";
-static const char long_gen378[]  = "unable to allocate a new sock set object";
-static const char short_gen379[] = "**sock|sockalloc";
-static const char long_gen379[]  = "unable to allocate a new sock object";
-static const char short_gen380[] = "**sock|uninit";
-static const char long_gen380[]  = "Sock library has not been initialized";
-static const char short_gen381[] = "**sock|writes";
-static const char long_gen381[]  = "attempt to perform multiple simultaneous writes";
-static const char short_gen382[] = "**spawn";
-static const char long_gen382[]  = "Error in spawn call";
-static const char short_gen383[] = "**ssmwrite";
-static const char long_gen383[]  = "sock/shared memory write failed";
-static const char short_gen384[] = "**ssmwritev";
-static const char long_gen384[]  = "sock/shared memory writev failed";
-static const char short_gen385[] = "**stride";
-static const char long_gen385[]  = "Range does not terminate";
-static const char short_gen386[] = "**stridezero";
-static const char long_gen386[]  = "Zero stride is invalid";
-static const char short_gen387[] = "**strncpy";
-static const char long_gen387[]  = "insufficient buffer length to complete strncpy";
-static const char short_gen388[] = "**success";
-static const char long_gen388[]  = "No MPI error";
-static const char short_gen389[] = "**tag";
-static const char long_gen389[]  = "Invalid tag";
-static const char short_gen390[] = "**test_sock_wait";
-static const char long_gen390[]  = "sock_wait failed";
-static const char short_gen391[] = "**toomanycomm";
-static const char long_gen391[]  = "Too many communicators";
-static const char short_gen392[] = "**topology";
-static const char long_gen392[]  = "Invalid topology";
-static const char short_gen393[] = "**topotoolarge";
-static const char long_gen393[]  = "Topology size is greater than communicator size";
-static const char short_gen394[] = "**truncate";
-static const char long_gen394[]  = "Message truncated";
-static const char short_gen395[] = "**typematchnoclass";
-static const char long_gen395[]  = "The value of typeclass is not one of MPI_TYPECLASS_REAL, MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX";
-static const char short_gen396[] = "**typematchsize";
-static const char long_gen396[]  = "No MPI datatype available for the given typeclass and size";
-static const char short_gen397[] = "**typenamelen";
-static const char long_gen397[]  = " Specified datatype name is too long";
-static const char short_gen398[] = "**unknown";
-static const char long_gen398[]  = "Unknown error.  Please file a bug report.";
-static const char short_gen399[] = "**unsupporteddatarep";
-static const char long_gen399[]  = "Only native data representation currently supported";
-static const char short_gen400[] = "**vc_state";
-static const char long_gen400[]  = "invalid vc state";
-static const char short_gen401[] = "**win";
-static const char long_gen401[]  = "Invalid MPI_Win";
-static const char short_gen402[] = "**winwait";
-static const char long_gen402[]  = "WaitForSingleObject failed";
-static const char short_gen403[] = "**write_progress";
-static const char long_gen403[]  = "Write progress failed";
-static const char short_gen404[] = "**wsasock";
-static const char long_gen404[]  = "WSAStartup failed";
+static const char short_gen173[] = "**init_description";
+static const char long_gen173[]  = "unable to get the host description";
+static const char short_gen174[] = "**init_getptr";
+static const char long_gen174[]  = "failed to get the vcr";
+static const char short_gen175[] = "**init_ibu";
+static const char long_gen175[]  = "infiniband initialization failed";
+static const char short_gen176[] = "**init_ibu_set";
+static const char long_gen176[]  = "unable to create an infinband completion queue";
+static const char short_gen177[] = "**init_progress";
+static const char long_gen177[]  = "progress_init failed";
+static const char short_gen178[] = "**init_vcrdup";
+static const char long_gen178[]  = "failed to duplicate the virtual connection reference";
+static const char short_gen179[] = "**init_vcrt";
+static const char long_gen179[]  = "failed to create VCRT";
+static const char short_gen180[] = "**initialized";
+static const char long_gen180[]  = "MPI not initialized. Call MPI_Init or MPI_Init_thread first";
+static const char short_gen181[] = "**inittwice";
+static const char long_gen181[]  = "Cannot call MPI_INIT or MPI_INIT_THREAD more than once";
+static const char short_gen182[] = "**inpending";
+static const char long_gen182[]  = "Pending request (no error)";
+static const char short_gen183[] = "**instatus";
+static const char long_gen183[]  = "See the MPI_ERROR field in MPI_Status for the error code";
+static const char short_gen184[] = "**intern";
+static const char long_gen184[]  = "Internal MPI error!";
+static const char short_gen185[] = "**inttoosmall";
+static const char long_gen185[]  = "An address does not fit into a Fortran INTEGER.  Use MPI_Get_address instead";
+static const char short_gen186[] = "**invalid_handle";
+static const char long_gen186[]  = "invalid handle";
+static const char short_gen187[] = "**invalid_listener";
+static const char long_gen187[]  = "invalid listener";
+static const char short_gen188[] = "**invalid_refcount";
+static const char long_gen188[]  = "invalid reference count";
+static const char short_gen189[] = "**invalid_shmq";
+static const char long_gen189[]  = "invalid shm queue pointer";
+static const char short_gen190[] = "**io";
+static const char long_gen190[]  = "Other I/O error ";
+static const char short_gen191[] = "**ioRMWrdwr";
+static const char long_gen191[]  = "Must open file with MPI_MODE_RDWR for read-modify-write ";
+static const char short_gen192[] = "**ioagnomatch";
+static const char long_gen192[]  = "No aggregators match";
+static const char short_gen193[] = "**ioamodeseq";
+static const char long_gen193[]  = "Cannot use this function when the file is opened with amode MPI_MODE_SEQUENTIAL ";
+static const char short_gen194[] = "**iobadcount";
+static const char long_gen194[]  = "Invalid count argument";
+static const char short_gen195[] = "**iobaddisp";
+static const char long_gen195[]  = "Invalid displacement argument";
+static const char short_gen196[] = "**iobadfh";
+static const char long_gen196[]  = "Invalid file handle";
+static const char short_gen197[] = "**iobadoffset";
+static const char long_gen197[]  = "Invalid offset argument";
+static const char short_gen198[] = "**iobadsize";
+static const char long_gen198[]  = "Invalid size argument";
+static const char short_gen199[] = "**iobadwhence";
+static const char long_gen199[]  = "Invalid whence argument";
+static const char short_gen200[] = "**iocp";
+static const char long_gen200[]  = "unable to create an I/O completion port";
+static const char short_gen201[] = "**iodatarepnomem";
+static const char long_gen201[]  = "User must allocate memory for datarep";
+static const char short_gen202[] = "**iodispifseq";
+static const char long_gen202[]  = "disp must be set to MPI_DISPLACEMENT_CURRENT since file was opened with MPI_MODE_SEQUENTIAL";
+static const char short_gen203[] = "**ioetype";
+static const char long_gen203[]  = "Only an integral number of etypes can be accessed";
+static const char short_gen204[] = "**iofiletype";
+static const char long_gen204[]  = "Filetype must be constructed out of one or more etypes";
+static const char short_gen205[] = "**iofstype";
+static const char long_gen205[]  = "Cannot determine filesystem type";
+static const char short_gen206[] = "**iofstypeunsupported";
+static const char long_gen206[]  = "Specified filesystem is not available";
+static const char short_gen207[] = "**ioneedrd";
+static const char long_gen207[]  = "Read access is required to this file";
+static const char short_gen208[] = "**ionegoffset";
+static const char long_gen208[]  = "Negative offset argument";
+static const char short_gen209[] = "**iopreallocrdwr";
+static const char long_gen209[]  = "Must open file with MPI_MODE_RDWR to preallocate disk space";
+static const char short_gen210[] = "**iosequnsupported";
+static const char long_gen210[]  = "MPI_MODE_SEQUENTIAL not supported on this file system";
+static const char short_gen211[] = "**iosharedfailed";
+static const char long_gen211[]  = "Could not access shared file pointer";
+static const char short_gen212[] = "**iosharedunsupported";
+static const char long_gen212[]  = "Shared file pointers not supported";
+static const char short_gen213[] = "**iosplitcoll";
+static const char long_gen213[]  = "Only one active split collective I/O operation is allowed per file handle";
+static const char short_gen214[] = "**iosplitcollnone";
+static const char long_gen214[]  = "No split collective I/O operation is active";
+static const char short_gen215[] = "**iov_offset";
+static const char long_gen215[]  = "invalid iov offset";
+static const char short_gen216[] = "**keyval";
+static const char long_gen216[]  = "Invalid keyval";
+static const char short_gen217[] = "**keyvalinvalid";
+static const char long_gen217[]  = "Attribute key was MPI_KEYVAL_INVALID";
+static const char short_gen218[] = "**keyvalnotcomm";
+static const char long_gen218[]  = "Keyval was not defined for communicators";
+static const char short_gen219[] = "**keyvalnotdatatype";
+static const char long_gen219[]  = "Keyval was not defined for datatype";
+static const char short_gen220[] = "**keyvalnotwin";
+static const char long_gen220[]  = "Keyval was not defined for window objects";
+static const char short_gen221[] = "**listen";
+static const char long_gen221[]  = "listen failed";
+static const char short_gen222[] = "**locktype";
+static const char long_gen222[]  = "Invalid locktype";
+static const char short_gen223[] = "**mmap";
+static const char long_gen223[]  = "unable to map memory, mmap failed";
+static const char short_gen224[] = "**mpi_accumulate";
+static const char long_gen224[]  = "MPI_Accumulate failed";
+static const char short_gen225[] = "**mpi_add_error_string";
+static const char long_gen225[]  = "MPI_Add_error_string failed";
+static const char short_gen226[] = "**mpi_allgather";
+static const char long_gen226[]  = "MPI_Allgather failed";
+static const char short_gen227[] = "**mpi_allgatherv";
+static const char long_gen227[]  = "MPI_Allgatherv failed";
+static const char short_gen228[] = "**mpi_allreduce";
+static const char long_gen228[]  = "MPI_Allreduce failed";
+static const char short_gen229[] = "**mpi_alltoall";
+static const char long_gen229[]  = "MPI_Alltoall failed";
+static const char short_gen230[] = "**mpi_alltoallv";
+static const char long_gen230[]  = "MPI_Alltoallv failed";
+static const char short_gen231[] = "**mpi_alltoallw";
+static const char long_gen231[]  = "MPI_Alltoallw failed";
+static const char short_gen232[] = "**mpi_attr_delete";
+static const char long_gen232[]  = "MPI_Attr_delete failed";
+static const char short_gen233[] = "**mpi_attr_get";
+static const char long_gen233[]  = "MPI_Attr_get failed";
+static const char short_gen234[] = "**mpi_attr_put";
+static const char long_gen234[]  = "MPI_Attr_put failed";
+static const char short_gen235[] = "**mpi_barrier";
+static const char long_gen235[]  = "MPI_Barrier failed";
+static const char short_gen236[] = "**mpi_bcast";
+static const char long_gen236[]  = "MPI_Bcast failed";
+static const char short_gen237[] = "**mpi_bsend";
+static const char long_gen237[]  = "MPI_Bsend failed";
+static const char short_gen238[] = "**mpi_bsend_init";
+static const char long_gen238[]  = "MPI_Bsend_init failed";
+static const char short_gen239[] = "**mpi_buffer_attach";
+static const char long_gen239[]  = "MPI_Buffer_attach failed";
+static const char short_gen240[] = "**mpi_buffer_detach";
+static const char long_gen240[]  = "MPI_Buffer_detach failed";
+static const char short_gen241[] = "**mpi_cancel";
+static const char long_gen241[]  = "MPI_Cancel failed";
+static const char short_gen242[] = "**mpi_cart_create";
+static const char long_gen242[]  = "MPI_Cart_create failed";
+static const char short_gen243[] = "**mpi_close_port";
+static const char long_gen243[]  = "MPI_Close_port failed";
+static const char short_gen244[] = "**mpi_comm_accept";
+static const char long_gen244[]  = "MPI_Comm_accept failed";
+static const char short_gen245[] = "**mpi_comm_connect";
+static const char long_gen245[]  = "MPI_Comm_connect failed";
+static const char short_gen246[] = "**mpi_comm_disconnect";
+static const char long_gen246[]  = "MPI_Comm_disconnect failed";
+static const char short_gen247[] = "**mpi_comm_dup";
+static const char long_gen247[]  = "MPI_Comm_dup failed";
+static const char short_gen248[] = "**mpi_comm_free";
+static const char long_gen248[]  = "MPI_Comm_free failed";
+static const char short_gen249[] = "**mpi_comm_group";
+static const char long_gen249[]  = "MPI_Comm_group failed";
+static const char short_gen250[] = "**mpi_comm_join";
+static const char long_gen250[]  = "MPI_Comm_join failed";
+static const char short_gen251[] = "**mpi_comm_remote_group";
+static const char long_gen251[]  = "MPI_Comm_remote_group failed";
+static const char short_gen252[] = "**mpi_comm_set_attr";
+static const char long_gen252[]  = "MPI_Comm_set_attr failed";
+static const char short_gen253[] = "**mpi_comm_spawn";
+static const char long_gen253[]  = "MPI_Comm_spawn failed";
+static const char short_gen254[] = "**mpi_comm_spawn_multiple";
+static const char long_gen254[]  = "MPI_Comm_spawn_multiple failed";
+static const char short_gen255[] = "**mpi_comm_split";
+static const char long_gen255[]  = "MPI_Comm_split failed";
+static const char short_gen256[] = "**mpi_errhandler_create";
+static const char long_gen256[]  = "MPI_Errhandler_create failed";
+static const char short_gen257[] = "**mpi_errhandler_get";
+static const char long_gen257[]  = "MPI_Errhandler_get failed";
+static const char short_gen258[] = "**mpi_errhandler_set";
+static const char long_gen258[]  = "MPI_Errhandler_set failed";
+static const char short_gen259[] = "**mpi_exscan";
+static const char long_gen259[]  = "MPI_Exscan failed";
+static const char short_gen260[] = "**mpi_file_create_errhandler";
+static const char long_gen260[]  = "MPI_File_create_errhandler failed";
+static const char short_gen261[] = "**mpi_gather";
+static const char long_gen261[]  = "MPI_Gather failed";
+static const char short_gen262[] = "**mpi_gatherv";
+static const char long_gen262[]  = "MPI_Gatherv failed";
+static const char short_gen263[] = "**mpi_get";
+static const char long_gen263[]  = "MPI_Get failed";
+static const char short_gen264[] = "**mpi_get_processor_name";
+static const char long_gen264[]  = "MPI_Get_processor_name failed";
+static const char short_gen265[] = "**mpi_graph_create";
+static const char long_gen265[]  = "MPI_Graph_create failed";
+static const char short_gen266[] = "**mpi_graph_map";
+static const char long_gen266[]  = "MPI_Graph_map failed";
+static const char short_gen267[] = "**mpi_grequest_start";
+static const char long_gen267[]  = "MPI_Grequest_start failed";
+static const char short_gen268[] = "**mpi_group_difference";
+static const char long_gen268[]  = "MPI_Group_difference failed";
+static const char short_gen269[] = "**mpi_group_excl";
+static const char long_gen269[]  = "MPI_Group_excl failed";
+static const char short_gen270[] = "**mpi_group_free";
+static const char long_gen270[]  = "MPI_Group_free failed";
+static const char short_gen271[] = "**mpi_group_incl";
+static const char long_gen271[]  = "MPI_Group_incl failed";
+static const char short_gen272[] = "**mpi_group_intersection";
+static const char long_gen272[]  = "MPI_Group_intersection failed";
+static const char short_gen273[] = "**mpi_group_range_excl";
+static const char long_gen273[]  = "MPI_Group_range_excl failed";
+static const char short_gen274[] = "**mpi_group_range_incl";
+static const char long_gen274[]  = "MPI_Group_range_incl failed";
+static const char short_gen275[] = "**mpi_group_union";
+static const char long_gen275[]  = "MPI_Group_union failed";
+static const char short_gen276[] = "**mpi_ibsend";
+static const char long_gen276[]  = "MPI_Ibsend failed";
+static const char short_gen277[] = "**mpi_info_create";
+static const char long_gen277[]  = "MPI_Info_create failed";
+static const char short_gen278[] = "**mpi_info_delete";
+static const char long_gen278[]  = "MPI_Info_delete failed";
+static const char short_gen279[] = "**mpi_info_dup";
+static const char long_gen279[]  = "MPI_Info_dup failed";
+static const char short_gen280[] = "**mpi_info_get_nthkey";
+static const char long_gen280[]  = "MPI_Info_get_nthkey failed";
+static const char short_gen281[] = "**mpi_info_set";
+static const char long_gen281[]  = "MPI_Info_set failed";
+static const char short_gen282[] = "**mpi_init";
+static const char long_gen282[]  = "MPI_Init failed";
+static const char short_gen283[] = "**mpi_init_thread";
+static const char long_gen283[]  = "MPI_Init_thread failed";
+static const char short_gen284[] = "**mpi_intercomm_create";
+static const char long_gen284[]  = "MPI_Intercomm_create failed";
+static const char short_gen285[] = "**mpi_intercomm_merge";
+static const char long_gen285[]  = "MPI_Intercomm_merge failed";
+static const char short_gen286[] = "**mpi_iprobe";
+static const char long_gen286[]  = "MPI_Iprobe failed";
+static const char short_gen287[] = "**mpi_irecv";
+static const char long_gen287[]  = "MPI_Irecv failed";
+static const char short_gen288[] = "**mpi_irsend";
+static const char long_gen288[]  = "MPI_Irsend failed";
+static const char short_gen289[] = "**mpi_isend";
+static const char long_gen289[]  = "MPI_Isend failed";
+static const char short_gen290[] = "**mpi_issend";
+static const char long_gen290[]  = "MPI_Issend failed";
+static const char short_gen291[] = "**mpi_keyval_create";
+static const char long_gen291[]  = "MPI_Keyval_create failed";
+static const char short_gen292[] = "**mpi_keyval_free";
+static const char long_gen292[]  = "MPI_Keyval_free failed";
+static const char short_gen293[] = "**mpi_lookup_name";
+static const char long_gen293[]  = "MPI_Lookup_name failed";
+static const char short_gen294[] = "**mpi_op_create";
+static const char long_gen294[]  = "MPI_Op_create failed";
+static const char short_gen295[] = "**mpi_open_port";
+static const char long_gen295[]  = "MPI_Open_port failed";
+static const char short_gen296[] = "**mpi_pack";
+static const char long_gen296[]  = "MPI_Pack failed";
+static const char short_gen297[] = "**mpi_pack_external";
+static const char long_gen297[]  = "MPI_Pack_external failed";
+static const char short_gen298[] = "**mpi_probe";
+static const char long_gen298[]  = "MPI_Probe failed";
+static const char short_gen299[] = "**mpi_publish_name";
+static const char long_gen299[]  = "MPI_Publish_name failed";
+static const char short_gen300[] = "**mpi_put";
+static const char long_gen300[]  = "MPI_Put failed";
+static const char short_gen301[] = "**mpi_recv";
+static const char long_gen301[]  = "MPI_Recv failed";
+static const char short_gen302[] = "**mpi_recv_init";
+static const char long_gen302[]  = "MPI_Recv_init failed";
+static const char short_gen303[] = "**mpi_reduce";
+static const char long_gen303[]  = "MPI_Reduce failed";
+static const char short_gen304[] = "**mpi_reduce_scatter";
+static const char long_gen304[]  = "MPI_Reduce_scatter failed";
+static const char short_gen305[] = "**mpi_register_datarep";
+static const char long_gen305[]  = "MPI_Register_datarep failed";
+static const char short_gen306[] = "**mpi_request_free";
+static const char long_gen306[]  = "MPI_Request_free failed";
+static const char short_gen307[] = "**mpi_request_get_status";
+static const char long_gen307[]  = "MPI_Request_get_status failed";
+static const char short_gen308[] = "**mpi_rsend";
+static const char long_gen308[]  = "MPI_Rsend failed";
+static const char short_gen309[] = "**mpi_rsend_init";
+static const char long_gen309[]  = "MPI_Rsend_init failed";
+static const char short_gen310[] = "**mpi_scan";
+static const char long_gen310[]  = "MPI_Scan failed";
+static const char short_gen311[] = "**mpi_scatter";
+static const char long_gen311[]  = "MPI_Scatter failed";
+static const char short_gen312[] = "**mpi_scatterv";
+static const char long_gen312[]  = "MPI_Scatterv failed";
+static const char short_gen313[] = "**mpi_send";
+static const char long_gen313[]  = "MPI_Send failed";
+static const char short_gen314[] = "**mpi_send_init";
+static const char long_gen314[]  = "MPI_Send_init failed";
+static const char short_gen315[] = "**mpi_sendrecv";
+static const char long_gen315[]  = "MPI_Sendrecv failed";
+static const char short_gen316[] = "**mpi_sendrecv_replace";
+static const char long_gen316[]  = "MPI_Sendrecv_replace failed";
+static const char short_gen317[] = "**mpi_ssend";
+static const char long_gen317[]  = "MPI_Ssend failed";
+static const char short_gen318[] = "**mpi_ssend_init";
+static const char long_gen318[]  = "MPI_Ssend_init failed";
+static const char short_gen319[] = "**mpi_start";
+static const char long_gen319[]  = "MPI_Start failed";
+static const char short_gen320[] = "**mpi_startall";
+static const char long_gen320[]  = "MPI_Start_all failed";
+static const char short_gen321[] = "**mpi_test";
+static const char long_gen321[]  = "MPI_Test failed";
+static const char short_gen322[] = "**mpi_testall";
+static const char long_gen322[]  = "MPI_Testall failed";
+static const char short_gen323[] = "**mpi_testany";
+static const char long_gen323[]  = "MPI_Testany failed";
+static const char short_gen324[] = "**mpi_testsome";
+static const char long_gen324[]  = "MPI_Testsome failed";
+static const char short_gen325[] = "**mpi_type_commit";
+static const char long_gen325[]  = "MPI_Type_commit failed";
+static const char short_gen326[] = "**mpi_type_contiguous";
+static const char long_gen326[]  = "MPI_Type_continuous failed";
+static const char short_gen327[] = "**mpi_type_create_hindexed";
+static const char long_gen327[]  = "MPI_Type_create_hindexed failed";
+static const char short_gen328[] = "**mpi_type_create_hvector";
+static const char long_gen328[]  = "MPI_Type_create_hvector failed";
+static const char short_gen329[] = "**mpi_type_create_indexed_block";
+static const char long_gen329[]  = "MPI_Type_create_indexed_block failed";
+static const char short_gen330[] = "**mpi_type_create_keyval";
+static const char long_gen330[]  = "MPI_Type_create_keyval failed";
+static const char short_gen331[] = "**mpi_type_create_resized";
+static const char long_gen331[]  = "MPI_Type_create_resized failed";
+static const char short_gen332[] = "**mpi_type_create_struct";
+static const char long_gen332[]  = "MPI_Type_create_struct failed";
+static const char short_gen333[] = "**mpi_type_delete_attr";
+static const char long_gen333[]  = "MPI_Type_delete_attr failed";
+static const char short_gen334[] = "**mpi_type_dup";
+static const char long_gen334[]  = "MPI_Type_dup failed";
+static const char short_gen335[] = "**mpi_type_get_contents";
+static const char long_gen335[]  = "MPI_Type_get_contents failed";
+static const char short_gen336[] = "**mpi_type_get_envelope";
+static const char long_gen336[]  = "MPI_Type_get_envelope failed";
+static const char short_gen337[] = "**mpi_type_hindexed";
+static const char long_gen337[]  = "MPI_Type_hindexed failed";
+static const char short_gen338[] = "**mpi_type_hvector";
+static const char long_gen338[]  = "MPI_Type_hvector failed";
+static const char short_gen339[] = "**mpi_type_indexed";
+static const char long_gen339[]  = "MPI_Type_indexed failed";
+static const char short_gen340[] = "**mpi_type_match_size";
+static const char long_gen340[]  = "MPI_Type_match_size failed";
+static const char short_gen341[] = "**mpi_type_set_attr";
+static const char long_gen341[]  = "MPI_Type_set_attr failed";
+static const char short_gen342[] = "**mpi_type_struct";
+static const char long_gen342[]  = "MPI_Type_struct failed";
+static const char short_gen343[] = "**mpi_type_vector";
+static const char long_gen343[]  = "MPI_Type_vector failed";
+static const char short_gen344[] = "**mpi_unpack_external";
+static const char long_gen344[]  = "MPI_Unpack_external failed";
+static const char short_gen345[] = "**mpi_unpublish_name";
+static const char long_gen345[]  = "MPI_Unpublish_name failed";
+static const char short_gen346[] = "**mpi_wait";
+static const char long_gen346[]  = "MPI_Wait failed";
+static const char short_gen347[] = "**mpi_waitall";
+static const char long_gen347[]  = "MPI_Waitall failed";
+static const char short_gen348[] = "**mpi_waitany";
+static const char long_gen348[]  = "MPI_Waitany failed";
+static const char short_gen349[] = "**mpi_waitsome";
+static const char long_gen349[]  = "MPI_Waitsome failed";
+static const char short_gen350[] = "**mpi_win_complete";
+static const char long_gen350[]  = "MPI_Win_complete failed";
+static const char short_gen351[] = "**mpi_win_create";
+static const char long_gen351[]  = "MPI_Win_create failed";
+static const char short_gen352[] = "**mpi_win_create_errhandler";
+static const char long_gen352[]  = "MPI_Win_create_errhandler failed";
+static const char short_gen353[] = "**mpi_win_create_keyval";
+static const char long_gen353[]  = "MPI_Win_create_keyval failed";
+static const char short_gen354[] = "**mpi_win_delete_attr";
+static const char long_gen354[]  = "MPI_Win_delete_attr failed";
+static const char short_gen355[] = "**mpi_win_fence";
+static const char long_gen355[]  = "MPI_Win_fence failed";
+static const char short_gen356[] = "**mpi_win_free";
+static const char long_gen356[]  = "MPI_Win_free failed";
+static const char short_gen357[] = "**mpi_win_get_group";
+static const char long_gen357[]  = "MPI_Win_get_group failed";
+static const char short_gen358[] = "**mpi_win_lock";
+static const char long_gen358[]  = "MPI_Win_lock failed";
+static const char short_gen359[] = "**mpi_win_post";
+static const char long_gen359[]  = "MPI_Win_post failed";
+static const char short_gen360[] = "**mpi_win_set_attr";
+static const char long_gen360[]  = "MPI_Win_set_attr failed";
+static const char short_gen361[] = "**mpi_win_test";
+static const char long_gen361[]  = "MPI_Win_test failed";
+static const char short_gen362[] = "**mpi_win_unlock";
+static const char long_gen362[]  = "MPI_Win_unlock failed";
+static const char short_gen363[] = "**mpi_win_wait";
+static const char long_gen363[]  = "MPI_Win_wait failed";
+static const char short_gen364[] = "**mq_close";
+static const char long_gen364[]  = "failed to close a posix message queue";
+static const char short_gen365[] = "**mq_open";
+static const char long_gen365[]  = "failed to open a posix message queue";
+static const char short_gen366[] = "**mq_receive";
+static const char long_gen366[]  = "failed to receive a posix message queue message";
+static const char short_gen367[] = "**mq_send";
+static const char long_gen367[]  = "failed to send a posix message queue message";
+static const char short_gen368[] = "**mqp_failure";
+static const char long_gen368[]  = "failed to make progress on the shared memory bootstrap message queue";
+static const char short_gen369[] = "**mqshm_create";
+static const char long_gen369[]  = "failed to create a shared memory message queue";
+static const char short_gen370[] = "**mqshm_receive";
+static const char long_gen370[]  = "failed to receive a bootstrap message";
+static const char short_gen371[] = "**mqshm_send";
+static const char long_gen371[]  = "failed to send a bootstrap message";
+static const char short_gen372[] = "**mqshm_unlink";
+static const char long_gen372[]  = "unable to unlink the shared memory message queue";
+static const char short_gen373[] = "**msgctl";
+static const char long_gen373[]  = "msgctl failed";
+static const char short_gen374[] = "**msgget";
+static const char long_gen374[]  = "msgget failed";
+static const char short_gen375[] = "**msgrcv";
+static const char long_gen375[]  = "msgrcv failed";
+static const char short_gen376[] = "**msgsnd";
+static const char long_gen376[]  = "msgsnd failed";
+static const char short_gen377[] = "**multi_post_read";
+static const char long_gen377[]  = "posting a read while a previously posted read is outstanding";
+static const char short_gen378[] = "**multi_post_write";
+static const char long_gen378[]  = "posting a write while a previously posted write is outstanding";
+static const char short_gen379[] = "**namepublish";
+static const char long_gen379[]  = "Unable to publish service name";
+static const char short_gen380[] = "**namepubnotpub";
+static const char long_gen380[]  = "Lookup failed for service name ";
+static const char short_gen381[] = "**nameservice";
+static const char long_gen381[]  = "Invalid service name (see MPI_Publish_name)";
+static const char short_gen382[] = "**needthreads";
+static const char long_gen382[]  = "This function needs threads and threads have not been enabled";
+static const char short_gen383[] = "**nextbootmsg";
+static const char long_gen383[]  = "failed to get the next bootstrap message";
+static const char short_gen384[] = "**noca";
+static const char long_gen384[]  = "unable to find an active infiniband channel adapter";
+static const char short_gen385[] = "**noerrclasses";
+static const char long_gen385[]  = "No more user-defined error classes";
+static const char short_gen386[] = "**noerrcodes";
+static const char long_gen386[]  = "No more user-defined error codes";
+static const char short_gen387[] = "**nomem";
+static const char long_gen387[]  = "Out of memory";
+static const char short_gen388[] = "**nomemreq";
+static const char long_gen388[]  = "failure occurred while allocating memory for a request object";
+static const char short_gen389[] = "**nonamepub";
+static const char long_gen389[]  = "No name publishing service available";
+static const char short_gen390[] = "**notcarttopo";
+static const char long_gen390[]  = "No Cartesian topology associated with this communicator";
+static const char short_gen391[] = "**notcstatignore";
+static const char long_gen391[]  = "MPI_STATUS_IGNORE cannot be passed to MPI_Status_c2f()";
+static const char short_gen392[] = "**notfstatignore";
+static const char long_gen392[]  = "MPI_STATUS_IGNORE cannot be passed to MPI_Status_f2c()";
+static const char short_gen393[] = "**notgenreq";
+static const char long_gen393[]  = "Attempt to complete a request with MPI_GREQUEST_COMPLETE that was not started with MPI_GREQUEST_START";
+static const char short_gen394[] = "**notgraphtopo";
+static const char long_gen394[]  = "No Graph topology associated with this communicator";
+static const char short_gen395[] = "**notimpl";
+static const char long_gen395[]  = "Function not implemented";
+static const char short_gen396[] = "**notopology";
+static const char long_gen396[]  = "No topology associated with this communicator";
+static const char short_gen397[] = "**notsame";
+static const char long_gen397[]  = "Inconsistent arguments to collective routine ";
+static const char short_gen398[] = "**nulledge";
+static const char long_gen398[]  = "Edge detected from a node to the same node";
+static const char short_gen399[] = "**nullptr";
+static const char long_gen399[]  = "Null pointer";
+static const char short_gen400[] = "**nullptrtype";
+static const char long_gen400[]  = "Null pointer";
+static const char short_gen401[] = "**op";
+static const char long_gen401[]  = "Invalid MPI_Op";
+static const char short_gen402[] = "**open";
+static const char long_gen402[]  = "open failed";
+static const char short_gen403[] = "**opnotpredefined";
+static const char long_gen403[]  = "only predefined ops are valid";
+static const char short_gen404[] = "**opundefined";
+static const char long_gen404[]  = "MPI_Op operation not defined for this datatype ";
+static const char short_gen405[] = "**opundefined_rma";
+static const char long_gen405[]  = "RMA target received unknown RMA operation";
+static const char short_gen406[] = "**other";
+static const char long_gen406[]  = "Other MPI error";
+static const char short_gen407[] = "**pctwice";
+static const char long_gen407[]  = "post connect called twice";
+static const char short_gen408[] = "**pd_alloc";
+static const char long_gen408[]  = "unable to allocate a protection domain";
+static const char short_gen409[] = "**permattr";
+static const char long_gen409[]  = "Cannot set permanent attribute";
+static const char short_gen410[] = "**permop";
+static const char long_gen410[]  = "Cannot free permanent MPI_Op ";
+static const char short_gen411[] = "**pfinal_sockclose";
+static const char long_gen411[]  = "sock_close failed";
+static const char short_gen412[] = "**pkt_ptr";
+static const char long_gen412[]  = "invalid shm queue packet pointer";
+static const char short_gen413[] = "**pmi_barrier";
+static const char long_gen413[]  = "PMI_Barrier failed";
+static const char short_gen414[] = "**pmi_finalize";
+static const char long_gen414[]  = "PMI_Finalize failed";
+static const char short_gen415[] = "**pmi_get_id";
+static const char long_gen415[]  = "PMI_Get_id failed";
+static const char short_gen416[] = "**pmi_get_id_length_max";
+static const char long_gen416[]  = "PMI_Get_id_length_max failed";
+static const char short_gen417[] = "**pmi_get_rank";
+static const char long_gen417[]  = "PMI_Get_rank failed";
+static const char short_gen418[] = "**pmi_get_size";
+static const char long_gen418[]  = "PMI_Get_size failed";
+static const char short_gen419[] = "**pmi_init";
+static const char long_gen419[]  = "PMI_Init failed";
+static const char short_gen420[] = "**pmi_kvs_commit";
+static const char long_gen420[]  = "PMI_KVS_Commit failed";
+static const char short_gen421[] = "**pmi_kvs_create";
+static const char long_gen421[]  = "PMI_KVS_Create failed";
+static const char short_gen422[] = "**pmi_kvs_get";
+static const char long_gen422[]  = "PMI_KVS_Get failed";
+static const char short_gen423[] = "**pmi_kvs_get_key_length_max";
+static const char long_gen423[]  = "PMI_KVS_Get_key_length_max failed";
+static const char short_gen424[] = "**pmi_kvs_get_my_name";
+static const char long_gen424[]  = "PMI_KVS_Get_my_name failed";
+static const char short_gen425[] = "**pmi_kvs_get_name_length_max";
+static const char long_gen425[]  = "PMI_KVS_Get_name_length_max failed";
+static const char short_gen426[] = "**pmi_kvs_get_value_length_max";
+static const char long_gen426[]  = "PMI_KVS_Get_value_length_max failed";
+static const char short_gen427[] = "**pmi_kvs_put";
+static const char long_gen427[]  = "PMI_KVS_Put failed";
+static const char short_gen428[] = "**pmi_spawn_multiple";
+static const char long_gen428[]  = "PMI_Spawn_multiple failed";
+static const char short_gen429[] = "**poke";
+static const char long_gen429[]  = "progress_poke failed";
+static const char short_gen430[] = "**port";
+static const char long_gen430[]  = "Invalid port";
+static const char short_gen431[] = "**post_accept";
+static const char long_gen431[]  = "post accept failed";
+static const char short_gen432[] = "**post_connect";
+static const char long_gen432[]  = "failed to post a connection";
+static const char short_gen433[] = "**post_sock_write_on_shm";
+static const char long_gen433[]  = "posting a socket read on a shm connection";
+static const char short_gen434[] = "**postpkt";
+static const char long_gen434[]  = "Unable to post a read for the next packet header";
+static const char short_gen435[] = "**process_group";
+static const char long_gen435[]  = "Process group initialization failed";
+static const char short_gen436[] = "**progress";
+static const char long_gen436[]  = "progress engine failure";
+static const char short_gen437[] = "**progress_finalize";
+static const char long_gen437[]  = "finalization of the progress engine failed";
+static const char short_gen438[] = "**progress_handle_sock_op";
+static const char long_gen438[]  = "handle_sock_op failed";
+static const char short_gen439[] = "**progress_init";
+static const char long_gen439[]  = "unable to initialize the progress engine";
+static const char short_gen440[] = "**progress_sock_wait";
+static const char long_gen440[]  = "sock_wait failed";
+static const char short_gen441[] = "**progress_test";
+static const char long_gen441[]  = "progress_test engine failure";
+static const char short_gen442[] = "**rangedup";
+static const char long_gen442[]  = "The range array specifies duplicate entries";
+static const char short_gen443[] = "**rangeendinvalid";
+static const char long_gen443[]  = "Some element of a range array is either negative or too large";
+static const char short_gen444[] = "**rangestartinvalid";
+static const char long_gen444[]  = "Some element of a range array is either negative or too large";
+static const char short_gen445[] = "**rank";
+static const char long_gen445[]  = "Invalid rank";
+static const char short_gen446[] = "**rankarray";
+static const char long_gen446[]  = "Invalid rank in rank array";
+static const char short_gen447[] = "**rankdup";
+static const char long_gen447[]  = "Duplicate ranks in rank array ";
+static const char short_gen448[] = "**ranklocal";
+static const char long_gen448[]  = "Error specifying local_leader ";
+static const char short_gen449[] = "**rankremote";
+static const char long_gen449[]  = "Error specifying remote_leader ";
+static const char short_gen450[] = "**rdma_finalize";
+static const char long_gen450[]  = "Channel rdma finalization failed";
+static const char short_gen451[] = "**rdma_init";
+static const char long_gen451[]  = "Channel rdma initialization failed";
+static const char short_gen452[] = "**read_progress";
+static const char long_gen452[]  = "Unable to make read progress";
+static const char short_gen453[] = "**recvbuf_inplace";
+static const char long_gen453[]  = "recvbuf cannot be MPI_IN_PLACE";
+static const char short_gen454[] = "**request";
+static const char long_gen454[]  = "Invalid MPI_Request";
+static const char short_gen455[] = "**requestnotpersist";
+static const char long_gen455[]  = "Request is not persistent in MPI_Start or MPI_Startall.";
+static const char short_gen456[] = "**requestpersistactive";
+static const char long_gen456[]  = "Persistent request passed to MPI_Start or MPI_Startall is already active.";
+static const char short_gen457[] = "**rmaconflict";
+static const char long_gen457[]  = "Conflicting accesses to window ";
+static const char short_gen458[] = "**rmadisp";
+static const char long_gen458[]  = "Invalid displacement argument in RMA call ";
+static const char short_gen459[] = "**rmasize";
+static const char long_gen459[]  = "Invalid size argument in RMA call";
+static const char short_gen460[] = "**rmasync";
+static const char long_gen460[]  = "Wrong synchronization of RMA calls ";
+static const char short_gen461[] = "**root";
+static const char long_gen461[]  = "Invalid root";
+static const char short_gen462[] = "**rsendnomatch";
+static const char long_gen462[]  = "Ready send had no matching receive ";
+static const char short_gen463[] = "**sendbuf_inplace";
+static const char long_gen463[]  = "sendbuf cannot be MPI_IN_PLACE";
+static const char short_gen464[] = "**servicename";
+static const char long_gen464[]  = "Attempt to lookup an unknown service name ";
+static const char short_gen465[] = "**shm_op";
+static const char long_gen465[]  = "invalid shm operation";
+static const char short_gen466[] = "**shm_open";
+static const char long_gen466[]  = "unable to open a shared memory object";
+static const char short_gen467[] = "**shm_read_progress";
+static const char long_gen467[]  = "shared memory read progress failed";
+static const char short_gen468[] = "**shm_unlink";
+static const char long_gen468[]  = "failed to unlink shared memory";
+static const char short_gen469[] = "**shm_wait";
+static const char long_gen469[]  = "wait function failed";
+static const char short_gen470[] = "**shmat";
+static const char long_gen470[]  = "shmat failed";
+static const char short_gen471[] = "**shmconnect_getmem";
+static const char long_gen471[]  = "failed to allocate shared memory for a write queue";
+static const char short_gen472[] = "**shmctl";
+static const char long_gen472[]  = "failed to mark the sysv segment for removal";
+static const char short_gen473[] = "**shmget";
+static const char long_gen473[]  = "shmget failed";
+static const char short_gen474[] = "**shmgetmem";
+static const char long_gen474[]  = "Unable to allocate shared memory";
+static const char short_gen475[] = "**shmhost";
+static const char long_gen475[]  = "process not on the same host";
+static const char short_gen476[] = "**shmq";
+static const char long_gen476[]  = "invalid shm queue pointer";
+static const char short_gen477[] = "**shmq_index";
+static const char long_gen477[]  = "invalid shm queue index";
+static const char short_gen478[] = "**shmwrite";
+static const char long_gen478[]  = "shared memory write failed";
+static const char short_gen479[] = "**snprintf";
+static const char long_gen479[]  = "snprintf returned an invalid number";
+static const char short_gen480[] = "**sock_byname";
+static const char long_gen480[]  = "gethostbyname failed";
+static const char short_gen481[] = "**sock_closed";
+static const char long_gen481[]  = "socket closed";
+static const char short_gen482[] = "**sock_connect";
+static const char long_gen482[]  = "connect failed";
+static const char short_gen483[] = "**sock_create";
+static const char long_gen483[]  = "unable to create a socket";
+static const char short_gen484[] = "**sock_gethost";
+static const char long_gen484[]  = "gethostname failed";
+static const char short_gen485[] = "**sock_init";
+static const char long_gen485[]  = "unable to initialize the sock library";
+static const char short_gen486[] = "**sock_nop_accept";
+static const char long_gen486[]  = "accept called without having received an op_accept";
+static const char short_gen487[] = "**sock_post_close";
+static const char long_gen487[]  = "posting a close of the socket failed";
+static const char short_gen488[] = "**socket";
+static const char long_gen488[]  = "WSASocket failed";
+static const char short_gen489[] = "**sock|badbuf";
+static const char long_gen489[]  = "the supplied buffer contains invalid memory";
+static const char short_gen490[] = "**sock|badhandle";
+static const char long_gen490[]  = "sock contains an invalid handle";
+static const char short_gen491[] = "**sock|badhdbuf";
+static const char long_gen491[]  = "a memory fault occurred while accessing the host description string";
+static const char short_gen492[] = "**sock|badhdlen";
+static const char long_gen492[]  = "host description string to small to store description";
+static const char short_gen493[] = "**sock|badhdmax";
+static const char long_gen493[]  = "the length of the host description string must be non-negative";
+static const char short_gen494[] = "**sock|badiovn";
+static const char long_gen494[]  = "size of iov is invalid";
+static const char short_gen495[] = "**sock|badlen";
+static const char long_gen495[]  = "bad length parameter(s)";
+static const char short_gen496[] = "**sock|badport";
+static const char long_gen496[]  = "port number is out of range";
+static const char short_gen497[] = "**sock|badsock";
+static const char long_gen497[]  = "supplied sock is corrupt";
+static const char short_gen498[] = "**sock|closed";
+static const char long_gen498[]  = "sock has been closed locally";
+static const char short_gen499[] = "**sock|closing";
+static const char long_gen499[]  = "sock is in the process of being closed locally";
+static const char short_gen500[] = "**sock|connclosed";
+static const char long_gen500[]  = "connection closed by peer";
+static const char short_gen501[] = "**sock|connfailed";
+static const char long_gen501[]  = "connection failure";
+static const char short_gen502[] = "**sock|connrefused";
+static const char long_gen502[]  = "connection refused";
+static const char short_gen503[] = "**sock|getport";
+static const char long_gen503[]  = "failed to obtain port number of the listener";
+static const char short_gen504[] = "**sock|hostres";
+static const char long_gen504[]  = "unable to resolve host name to an address";
+static const char short_gen505[] = "**sock|nosock";
+static const char long_gen505[]  = "no new sock was available to accept";
+static const char short_gen506[] = "**sock|notconnected";
+static const char long_gen506[]  = "sock is not connected";
+static const char short_gen507[] = "**sock|oserror";
+static const char long_gen507[]  = "unknown operating system error";
+static const char short_gen508[] = "**sock|osnomem";
+static const char long_gen508[]  = "operating system routine failed due to lack of memory";
+static const char short_gen509[] = "**sock|poll|accept";
+static const char long_gen509[]  = "accept failed to acquire a new socket";
+static const char short_gen510[] = "**sock|poll|bind";
+static const char long_gen510[]  = "unable to bind socket to port";
+static const char short_gen511[] = "**sock|poll|eqfail";
+static const char long_gen511[]  = "fatal error: failed to enqueue an event; event was lost";
+static const char short_gen512[] = "**sock|poll|eqmalloc";
+static const char long_gen512[]  = "MPIU_Malloc failed to allocate memory for an event queue structure";
+static const char short_gen513[] = "**sock|poll|listen";
+static const char long_gen513[]  = "listen() failed";
+static const char short_gen514[] = "**sock|poll|nodelay";
+static const char long_gen514[]  = "unable to set TCP no delay attribute on socket";
+static const char short_gen515[] = "**sock|poll|nonblock";
+static const char long_gen515[]  = "unable to set socket to nonblocking";
+static const char short_gen516[] = "**sock|poll|pipe";
+static const char long_gen516[]  = "unable to allocate pipe to wakeup a blocking poll()";
+static const char short_gen517[] = "**sock|poll|pipenonblock";
+static const char long_gen517[]  = "unable to set wakeup pipe to nonblocking";
+static const char short_gen518[] = "**sock|poll|reuseaddr";
+static const char long_gen518[]  = "unable to set reuseaddr attribute on socket";
+static const char short_gen519[] = "**sock|poll|socket";
+static const char long_gen519[]  = "unable to obtain new socket";
+static const char short_gen520[] = "**sock|poll|unhandledstate";
+static const char long_gen520[]  = "encountered an unhandled";
+static const char short_gen521[] = "**sock|reads";
+static const char long_gen521[]  = "attempt to perform multiple simultaneous reads";
+static const char short_gen522[] = "**sock|setalloc";
+static const char long_gen522[]  = "unable to allocate a new sock set object";
+static const char short_gen523[] = "**sock|sockalloc";
+static const char long_gen523[]  = "unable to allocate a new sock object";
+static const char short_gen524[] = "**sock|uninit";
+static const char long_gen524[]  = "Sock library has not been initialized";
+static const char short_gen525[] = "**sock|writes";
+static const char long_gen525[]  = "attempt to perform multiple simultaneous writes";
+static const char short_gen526[] = "**spawn";
+static const char long_gen526[]  = "Error in spawn call";
+static const char short_gen527[] = "**ssmwrite";
+static const char long_gen527[]  = "sock/shared memory write failed";
+static const char short_gen528[] = "**ssmwritev";
+static const char long_gen528[]  = "sock/shared memory writev failed";
+static const char short_gen529[] = "**stride";
+static const char long_gen529[]  = "Range does not terminate";
+static const char short_gen530[] = "**stridezero";
+static const char long_gen530[]  = "Zero stride is invalid";
+static const char short_gen531[] = "**strncpy";
+static const char long_gen531[]  = "insufficient buffer length to complete strncpy";
+static const char short_gen532[] = "**success";
+static const char long_gen532[]  = "No MPI error";
+static const char short_gen533[] = "**tag";
+static const char long_gen533[]  = "Invalid tag";
+static const char short_gen534[] = "**test_sock_wait";
+static const char long_gen534[]  = "sock_wait failed";
+static const char short_gen535[] = "**toomanycomm";
+static const char long_gen535[]  = "Too many communicators";
+static const char short_gen536[] = "**topology";
+static const char long_gen536[]  = "Invalid topology";
+static const char short_gen537[] = "**topotoolarge";
+static const char long_gen537[]  = "Topology size is greater than communicator size";
+static const char short_gen538[] = "**truncate";
+static const char long_gen538[]  = "Message truncated";
+static const char short_gen539[] = "**typematchnoclass";
+static const char long_gen539[]  = "The value of typeclass is not one of MPI_TYPECLASS_REAL, MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX";
+static const char short_gen540[] = "**typematchsize";
+static const char long_gen540[]  = "No MPI datatype available for the given typeclass and size";
+static const char short_gen541[] = "**typenamelen";
+static const char long_gen541[]  = " Specified datatype name is too long";
+static const char short_gen542[] = "**unknown";
+static const char long_gen542[]  = "Unknown error.  Please file a bug report.";
+static const char short_gen543[] = "**unsupporteddatarep";
+static const char long_gen543[]  = "Only native data representation currently supported";
+static const char short_gen544[] = "**vc_state";
+static const char long_gen544[]  = "invalid vc state";
+static const char short_gen545[] = "**win";
+static const char long_gen545[]  = "Invalid MPI_Win";
+static const char short_gen546[] = "**winwait";
+static const char long_gen546[]  = "WaitForSingleObject failed";
+static const char short_gen547[] = "**write_progress";
+static const char long_gen547[]  = "Write progress failed";
+static const char short_gen548[] = "**wsasock";
+static const char long_gen548[]  = "WSAStartup failed";
 
-static const int generic_msgs_len = 405;
+static const int generic_msgs_len = 549;
 static msgpair generic_err_msgs[] = {
 { short_gen0, long_gen0 },
 { short_gen1, long_gen1 },
@@ -1229,7 +1517,151 @@ static msgpair generic_err_msgs[] = {
 { short_gen401, long_gen401 },
 { short_gen402, long_gen402 },
 { short_gen403, long_gen403 },
-{ short_gen404, long_gen404 }
+{ short_gen404, long_gen404 },
+{ short_gen405, long_gen405 },
+{ short_gen406, long_gen406 },
+{ short_gen407, long_gen407 },
+{ short_gen408, long_gen408 },
+{ short_gen409, long_gen409 },
+{ short_gen410, long_gen410 },
+{ short_gen411, long_gen411 },
+{ short_gen412, long_gen412 },
+{ short_gen413, long_gen413 },
+{ short_gen414, long_gen414 },
+{ short_gen415, long_gen415 },
+{ short_gen416, long_gen416 },
+{ short_gen417, long_gen417 },
+{ short_gen418, long_gen418 },
+{ short_gen419, long_gen419 },
+{ short_gen420, long_gen420 },
+{ short_gen421, long_gen421 },
+{ short_gen422, long_gen422 },
+{ short_gen423, long_gen423 },
+{ short_gen424, long_gen424 },
+{ short_gen425, long_gen425 },
+{ short_gen426, long_gen426 },
+{ short_gen427, long_gen427 },
+{ short_gen428, long_gen428 },
+{ short_gen429, long_gen429 },
+{ short_gen430, long_gen430 },
+{ short_gen431, long_gen431 },
+{ short_gen432, long_gen432 },
+{ short_gen433, long_gen433 },
+{ short_gen434, long_gen434 },
+{ short_gen435, long_gen435 },
+{ short_gen436, long_gen436 },
+{ short_gen437, long_gen437 },
+{ short_gen438, long_gen438 },
+{ short_gen439, long_gen439 },
+{ short_gen440, long_gen440 },
+{ short_gen441, long_gen441 },
+{ short_gen442, long_gen442 },
+{ short_gen443, long_gen443 },
+{ short_gen444, long_gen444 },
+{ short_gen445, long_gen445 },
+{ short_gen446, long_gen446 },
+{ short_gen447, long_gen447 },
+{ short_gen448, long_gen448 },
+{ short_gen449, long_gen449 },
+{ short_gen450, long_gen450 },
+{ short_gen451, long_gen451 },
+{ short_gen452, long_gen452 },
+{ short_gen453, long_gen453 },
+{ short_gen454, long_gen454 },
+{ short_gen455, long_gen455 },
+{ short_gen456, long_gen456 },
+{ short_gen457, long_gen457 },
+{ short_gen458, long_gen458 },
+{ short_gen459, long_gen459 },
+{ short_gen460, long_gen460 },
+{ short_gen461, long_gen461 },
+{ short_gen462, long_gen462 },
+{ short_gen463, long_gen463 },
+{ short_gen464, long_gen464 },
+{ short_gen465, long_gen465 },
+{ short_gen466, long_gen466 },
+{ short_gen467, long_gen467 },
+{ short_gen468, long_gen468 },
+{ short_gen469, long_gen469 },
+{ short_gen470, long_gen470 },
+{ short_gen471, long_gen471 },
+{ short_gen472, long_gen472 },
+{ short_gen473, long_gen473 },
+{ short_gen474, long_gen474 },
+{ short_gen475, long_gen475 },
+{ short_gen476, long_gen476 },
+{ short_gen477, long_gen477 },
+{ short_gen478, long_gen478 },
+{ short_gen479, long_gen479 },
+{ short_gen480, long_gen480 },
+{ short_gen481, long_gen481 },
+{ short_gen482, long_gen482 },
+{ short_gen483, long_gen483 },
+{ short_gen484, long_gen484 },
+{ short_gen485, long_gen485 },
+{ short_gen486, long_gen486 },
+{ short_gen487, long_gen487 },
+{ short_gen488, long_gen488 },
+{ short_gen489, long_gen489 },
+{ short_gen490, long_gen490 },
+{ short_gen491, long_gen491 },
+{ short_gen492, long_gen492 },
+{ short_gen493, long_gen493 },
+{ short_gen494, long_gen494 },
+{ short_gen495, long_gen495 },
+{ short_gen496, long_gen496 },
+{ short_gen497, long_gen497 },
+{ short_gen498, long_gen498 },
+{ short_gen499, long_gen499 },
+{ short_gen500, long_gen500 },
+{ short_gen501, long_gen501 },
+{ short_gen502, long_gen502 },
+{ short_gen503, long_gen503 },
+{ short_gen504, long_gen504 },
+{ short_gen505, long_gen505 },
+{ short_gen506, long_gen506 },
+{ short_gen507, long_gen507 },
+{ short_gen508, long_gen508 },
+{ short_gen509, long_gen509 },
+{ short_gen510, long_gen510 },
+{ short_gen511, long_gen511 },
+{ short_gen512, long_gen512 },
+{ short_gen513, long_gen513 },
+{ short_gen514, long_gen514 },
+{ short_gen515, long_gen515 },
+{ short_gen516, long_gen516 },
+{ short_gen517, long_gen517 },
+{ short_gen518, long_gen518 },
+{ short_gen519, long_gen519 },
+{ short_gen520, long_gen520 },
+{ short_gen521, long_gen521 },
+{ short_gen522, long_gen522 },
+{ short_gen523, long_gen523 },
+{ short_gen524, long_gen524 },
+{ short_gen525, long_gen525 },
+{ short_gen526, long_gen526 },
+{ short_gen527, long_gen527 },
+{ short_gen528, long_gen528 },
+{ short_gen529, long_gen529 },
+{ short_gen530, long_gen530 },
+{ short_gen531, long_gen531 },
+{ short_gen532, long_gen532 },
+{ short_gen533, long_gen533 },
+{ short_gen534, long_gen534 },
+{ short_gen535, long_gen535 },
+{ short_gen536, long_gen536 },
+{ short_gen537, long_gen537 },
+{ short_gen538, long_gen538 },
+{ short_gen539, long_gen539 },
+{ short_gen540, long_gen540 },
+{ short_gen541, long_gen541 },
+{ short_gen542, long_gen542 },
+{ short_gen543, long_gen543 },
+{ short_gen544, long_gen544 },
+{ short_gen545, long_gen545 },
+{ short_gen546, long_gen546 },
+{ short_gen547, long_gen547 },
+{ short_gen548, long_gen548 }
 };
 #endif
 
@@ -1302,12 +1734,12 @@ static const char short_spc32[] = "**ch3|sock|badpacket %d";
 static const char long_spc32[]  = "[ch3:sock] received packet of unknown type (%d)";
 static const char short_spc33[] = "**ch3|sock|connfailed %d %d";
 static const char long_spc33[]  = "[ch3:sock] failed to connnect to remote process %d:%d";
-static const char short_spc34[] = "**ch3|sock|connrefused %d %d %s";
-static const char long_spc34[]  = "[ch3:sock] failed to connect to process %d:%d (%s)";
+static const char short_spc34[] = "**ch3|sock|connrefused %s %d %s";
+static const char long_spc34[]  = "[ch3:sock] failed to connect to process %s:%d (%s)";
 static const char short_spc35[] = "**ch3|sock|failure %d";
 static const char long_spc35[]  = "[ch3:sock] unknown failure, sock_errno=%d";
-static const char short_spc36[] = "**ch3|sock|hostlookup %d %d %s";
-static const char long_spc36[]  = "[ch3:sock] failed to obtain host information for process %d:%d (%s)";
+static const char short_spc36[] = "**ch3|sock|hostlookup %s %d %s";
+static const char long_spc36[]  = "[ch3:sock] failed to obtain host information for process %s:%d (%s)";
 static const char short_spc37[] = "**ch3|sock|pmi_finalize %d";
 static const char long_spc37[]  = "PMI_Finalize failed, error %d";
 static const char short_spc38[] = "**ch3|unknownpkt %d";
@@ -1366,228 +1798,518 @@ static const char short_spc64[] = "**infonkey %d %d";
 static const char long_spc64[]  = "Requested key %d but this MPI_Info only has %d keys";
 static const char short_spc65[] = "**infonokey %s";
 static const char long_spc65[]  = "MPI_Info key %s is not defined ";
-static const char short_spc66[] = "**init_comm_create %d";
-static const char long_spc66[]  = "unable to create an intercommunicator for the parent (error %d)";
-static const char short_spc67[] = "**intern %s";
-static const char long_spc67[]  = "Internal MPI error!  %s";
-static const char short_spc68[] = "**invalid_handle %d";
-static const char long_spc68[]  = "invalid handle (%d)";
-static const char short_spc69[] = "**invalid_listener %p";
-static const char long_spc69[]  = "invalid listener (%p)";
-static const char short_spc70[] = "**invalid_refcount %d";
-static const char long_spc70[]  = "invalid reference count (%d)";
-static const char short_spc71[] = "**io %s";
-static const char long_spc71[]  = "Other I/O error %s";
-static const char short_spc72[] = "**iocp %d";
-static const char long_spc72[]  = "unable to create an I/O completion port (errno %d)";
-static const char short_spc73[] = "**iov_offset %d %d";
-static const char long_spc73[]  = "invalid iov offset (%d > %d)";
-static const char short_spc74[] = "**listen %d";
-static const char long_spc74[]  = "listen failed (errno %d)";
-static const char short_spc75[] = "**mmap %d";
-static const char long_spc75[]  = " unable to map memory, mmap failed (errno %d)";
-static const char short_spc76[] = "**mq_close %d";
-static const char long_spc76[]  = "failed to close a posix message queue, error %d";
-static const char short_spc77[] = "**mq_open %d";
-static const char long_spc77[]  = "failed to open a posix message queue, error %d";
-static const char short_spc78[] = "**mq_receive %d";
-static const char long_spc78[]  = "failed to receive a posix message queue message, error %d";
-static const char short_spc79[] = "**mq_send %d";
-static const char long_spc79[]  = "failed to send a posix message queue message, error %d";
-static const char short_spc80[] = "**msgctl %d";
-static const char long_spc80[]  = "msgctl returned %d";
-static const char short_spc81[] = "**msgget %d";
-static const char long_spc81[]  = "msgget returned %d";
-static const char short_spc82[] = "**msgrcv %d";
-static const char long_spc82[]  = "msgrcv returned %d";
-static const char short_spc83[] = "**msgsnd %d";
-static const char long_spc83[]  = "msgsnd returned %d";
-static const char short_spc84[] = "**namepublish %s";
-static const char long_spc84[]  = "Unable to publish service name %s";
-static const char short_spc85[] = "**namepubnotpub %s";
-static const char long_spc85[]  = "Lookup failed for service name %s";
-static const char short_spc86[] = "**nomem %s %d";
-static const char long_spc86[]  = "Out of memory (unable to allocate a '%s' of size %d)";
-static const char short_spc87[] = "**nomem %s";
-static const char long_spc87[]  = "Out of memory (unable to allocate a '%s')";
-static const char short_spc88[] = "**notsame %s %s";
-static const char long_spc88[]  = "Inconsistent arguments %s to collective routine %s";
-static const char short_spc89[] = "**nulledge %d %d";
-static const char long_spc89[]  = "Edge for node %d (entry edges[%d]) is to itself";
-static const char short_spc90[] = "**nullptr %s";
-static const char long_spc90[]  = "Null pointer in parameter %s";
-static const char short_spc91[] = "**nullptrtype %s";
-static const char long_spc91[]  = "Null %s pointer";
-static const char short_spc92[] = "**open %s %d %d";
-static const char long_spc92[]  = "open(%s) failed for process %d, error %d";
-static const char short_spc93[] = "**opnotpredefined %d";
-static const char long_spc93[]  = "only predefined ops are valid (op = %d)";
-static const char short_spc94[] = "**opundefined %s";
-static const char long_spc94[]  = "MPI_Op %s operation not defined for this datatype ";
-static const char short_spc95[] = "**opundefined_rma %d";
-static const char long_spc95[]  = "RMA target received unknown RMA operation type %d";
-static const char short_spc96[] = "**pd_alloc %s";
-static const char long_spc96[]  = "unable to allocate a protection domain - %s";
-static const char short_spc97[] = "**pkt_ptr %p %p";
-static const char long_spc97[]  = "invalid shm queue packet pointer (%p != %p)";
-static const char short_spc98[] = "**pmi_barrier %d";
-static const char long_spc98[]  = "PMI_Barrier returned %d";
-static const char short_spc99[] = "**pmi_finalize %d";
-static const char long_spc99[]  = "PMI_Finalize returned %d";
-static const char short_spc100[] = "**pmi_get_rank %d";
-static const char long_spc100[]  = "PMI_Get_rank returned %d";
-static const char short_spc101[] = "**pmi_get_size %d";
-static const char long_spc101[]  = "PMI_Get_size returned %d";
-static const char short_spc102[] = "**pmi_init %d";
-static const char long_spc102[]  = "PMI_Init returned %d";
-static const char short_spc103[] = "**pmi_kvs_commit %d";
-static const char long_spc103[]  = "PMI_KVS_Commit returned %d";
-static const char short_spc104[] = "**pmi_kvs_create %d";
-static const char long_spc104[]  = "PMI_KVS_Create returned %d";
-static const char short_spc105[] = "**pmi_kvs_get %d";
-static const char long_spc105[]  = "PMI_KVS_Get returned %d";
-static const char short_spc106[] = "**pmi_kvs_get_my_name %d";
-static const char long_spc106[]  = "PMI_KVS_Get_my_name returned %d";
-static const char short_spc107[] = "**pmi_kvs_get_parent %d";
-static const char long_spc107[]  = "unable to get the PARENT_ROOT_PORT_NAME from the keyval space (pmi_error %d)";
-static const char short_spc108[] = "**pmi_kvs_put %d";
-static const char long_spc108[]  = "PMI_KVS_Put returned %d";
-static const char short_spc109[] = "**pmi_spawn_multiple %d";
-static const char long_spc109[]  = "PMI_Spawn_multiple returned %d";
-static const char short_spc110[] = "**post_connect %s";
-static const char long_spc110[]  = "%s failed in VC_post_connect";
-static const char short_spc111[] = "**rangedup %d %d %d";
-static const char long_spc111[]  = "The range array specifies duplicate entries; process %d specified in range array %d was previously specified in range array %d";
-static const char short_spc112[] = "**rangeendinvalid %d %d %d";
-static const char long_spc112[]  = "The %dth element of a range array ends at %d but must be nonnegative and less than %d";
-static const char short_spc113[] = "**rangestartinvalid %d %d %d";
-static const char long_spc113[]  = "The %dth element of a range array starts at %d but must be nonnegative and less than %d";
-static const char short_spc114[] = "**rank %d %d";
-static const char long_spc114[]  = "Invalid rank has value %d but must be nonnegative and less than %d";
-static const char short_spc115[] = "**rankarray %d %d %d";
-static const char long_spc115[]  = "Invalid rank in rank array at index %d; value is %d but must be in the range 0 to %d";
-static const char short_spc116[] = "**rankdup %d %d %d";
-static const char long_spc116[]  = "Duplicate ranks in rank array at index %d, has value %d which is also the value at index %d";
-static const char short_spc117[] = "**ranklocal %d %d";
-static const char long_spc117[]  = "Error specifying local_leader; rank given was %d but must be in the range 0 to %d";
-static const char short_spc118[] = "**rankremote %d %d";
-static const char long_spc118[]  = "Error specifying remote_leader; rank given was %d but must be in the range 0 to %d";
-static const char short_spc119[] = "**rmasize %d";
-static const char long_spc119[]  = "Invalid size argument in RMA call (value is %d)";
-static const char short_spc120[] = "**root %d";
-static const char long_spc120[]  = "Invalid root (value given was %d)";
-static const char short_spc121[] = "**rsendnomatch %d %d";
-static const char long_spc121[]  = "Ready send from source %d and with tag %d had no matching receive";
-static const char short_spc122[] = "**shm_op %d";
-static const char long_spc122[]  = "invalid shm operation (%d)";
-static const char short_spc123[] = "**shm_open %s %d";
-static const char long_spc123[]  = "unable to open shared memory object %s (errno %d)";
-static const char short_spc124[] = "**shm_unlink %s %d";
-static const char long_spc124[]  = "failed to unlink shared memory object %s, error %d";
-static const char short_spc125[] = "**shmat %d";
-static const char long_spc125[]  = "shmat failed, error %d";
-static const char short_spc126[] = "**shmctl %d %d";
-static const char long_spc126[]  = "failed to mark the sysv segment %d for removal, error %d";
-static const char short_spc127[] = "**shmget %d";
-static const char long_spc127[]  = "shmget failed, error %d";
-static const char short_spc128[] = "**shmhost %s %s";
-static const char long_spc128[]  = "process not on the same host (%s != %s)";
-static const char short_spc129[] = "**shmq_index %d %d";
-static const char long_spc129[]  = "invalid shm queue index (%d > %d)";
-static const char short_spc130[] = "**snprintf %d";
-static const char long_spc130[]  = "snprintf returned %d";
-static const char short_spc131[] = "**sock_byname %d";
-static const char long_spc131[]  = "gethostbyname failed (errno %d)";
-static const char short_spc132[] = "**sock_connect %d";
-static const char long_spc132[]  = "connect failed (errno %d)";
-static const char short_spc133[] = "**sock_create %d";
-static const char long_spc133[]  = "unable to create a socket (errno %d)";
-static const char short_spc134[] = "**sock_gethost %d";
-static const char long_spc134[]  = "gethostname failed (errno %d)";
-static const char short_spc135[] = "**socket %d";
-static const char long_spc135[]  = "WSASocket failed (errno %d)";
-static const char short_spc136[] = "**sock|badbuf %d %d";
-static const char long_spc136[]  = "the supplied buffer contains invalid memory (set=%d,sock=%d)";
-static const char short_spc137[] = "**sock|badiovn %d %d %d";
-static const char long_spc137[]  = "size of iov is invalid (set=%d,sock=%d,iov_n=%d)";
-static const char short_spc138[] = "**sock|badlen %d %d %d %d";
-static const char long_spc138[]  = "bad length parameter(s) (set=%d,sock=%d,min=%d,max=%d)";
-static const char short_spc139[] = "**sock|badport %d";
-static const char long_spc139[]  = "port number is out of range (sock=%d)";
-static const char short_spc140[] = "**sock|closing %d %d";
-static const char long_spc140[]  = "sock is in the process of being closed locally (set=%d,sock=%d)";
-static const char short_spc141[] = "**sock|connclosed %d %d";
-static const char long_spc141[]  = "connection closed by peer (set=%d,sock=%d)";
-static const char short_spc142[] = "**sock|connfailed %d %d";
-static const char long_spc142[]  = "connection failure (set=%d,sock=%d)";
-static const char short_spc143[] = "**sock|notconnected %d %d";
-static const char long_spc143[]  = "sock is not connected (set=%d,sock=%d)";
-static const char short_spc144[] = "**sock|osnomem %d %d";
-static const char long_spc144[]  = "operating system routine failed due to lack of memory (set=%d,sock=%d)";
-static const char short_spc145[] = "**sock|poll|accept %d";
-static const char long_spc145[]  = "accept failed to acquire a new socket (errno=%d)";
-static const char short_spc146[] = "**sock|poll|badhandle %d %d %d";
-static const char long_spc146[]  = "sock contains an invalid handle (set=%d,sock=%d,fd=%d)";
-static const char short_spc147[] = "**sock|poll|bind %d %d";
-static const char long_spc147[]  = "unable to bind socket to port (port=%d,errno=%d)";
-static const char short_spc148[] = "**sock|poll|connfailed %d %d %d";
-static const char long_spc148[]  = "connection failure (set=%d,sock=%d,errno=%d)";
-static const char short_spc149[] = "**sock|poll|connfailed %d";
-static const char long_spc149[]  = "connection failure (errno=%d)";
-static const char short_spc150[] = "**sock|poll|connrefused %d %d %s";
-static const char long_spc150[]  = "connection refused (set=%d,sock=%d,host=%s)";
-static const char short_spc151[] = "**sock|poll|eqfail %d %d %d";
-static const char long_spc151[]  = "fatal error: failed to enqueue an event; event was lost (set=%d,sock=%d,op=%d)";
-static const char short_spc152[] = "**sock|poll|eqfail %d";
-static const char long_spc152[]  = "fatal error: failed to enqueue an event; event was lost (op=%d)";
-static const char short_spc153[] = "**sock|poll|getport %d";
-static const char long_spc153[]  = "failed to obtain port number of listener (errno=%d)";
-static const char short_spc154[] = "**sock|poll|hostres %d %d %s";
-static const char long_spc154[]  = "unable to resolve host name to an address (set=%d,sock=%d,host=%s)";
-static const char short_spc155[] = "**sock|poll|listen %d";
-static const char long_spc155[]  = "listen() failed (errno=%d)";
-static const char short_spc156[] = "**sock|poll|nodelay %d";
-static const char long_spc156[]  = "unable to set TCP no delay attribute on socket (errno=%d)";
-static const char short_spc157[] = "**sock|poll|nonblock %d";
-static const char long_spc157[]  = "unable to set socket to nonblocking (errno=%d)";
-static const char short_spc158[] = "**sock|poll|oserror %d %d %d";
-static const char long_spc158[]  = "unknown operating system error (set=%d,sock=%d,errno=%d)";
-static const char short_spc159[] = "**sock|poll|oserror %d";
-static const char long_spc159[]  = "unknown operating system error (errno=%d)";
-static const char short_spc160[] = "**sock|poll|pipe %d";
-static const char long_spc160[]  = "unable to allocate pipe to wakeup a blocking poll() (errno=%d)";
-static const char short_spc161[] = "**sock|poll|pipenonblock %d";
-static const char long_spc161[]  = "unable to set wakeup pipe to nonblocking (errno=%d)";
-static const char short_spc162[] = "**sock|poll|reuseaddr %d";
-static const char long_spc162[]  = "unable to set reuseaddr attribute on socket (errno=%d)";
-static const char short_spc163[] = "**sock|poll|socket %d";
-static const char long_spc163[]  = "unable to obtain new socket (errno=%d)";
-static const char short_spc164[] = "**sock|poll|unhandledstate %d %s";
-static const char long_spc164[]  = "encountered an unhandled state (%d) while processing %s";
-static const char short_spc165[] = "**sock|reads %d %d";
-static const char long_spc165[]  = "attempt to perform multiple simultaneous reads (set=%d,sock=%d)";
-static const char short_spc166[] = "**sock|writes %d %d";
-static const char long_spc166[]  = "attempt to perform multiple simultaneous writes (set=%d,sock=%d)";
-static const char short_spc167[] = "**stride %d %d %d";
-static const char long_spc167[]  = "Range (start = %d, end = %d, stride = %d) does not terminate";
-static const char short_spc168[] = "**tag %d";
-static const char long_spc168[]  = "Invalid tag, value is %d";
-static const char short_spc169[] = "**topotoolarge %d %d";
-static const char long_spc169[]  = "Topology size %d is larger than communicator size (%d)";
-static const char short_spc170[] = "**truncate %d %d %d %d";
-static const char long_spc170[]  = "Message from rank %d and tag %d truncated %d bytes received but buffer size is %d";
-static const char short_spc171[] = "**truncate %d %d";
-static const char long_spc171[]  = "Message truncated; %d bytes received but buffer size is %d";
-static const char short_spc172[] = "**typematchsize %s %d";
-static const char long_spc172[]  = "No MPI datatype available for typeclass %s and size %d";
-static const char short_spc173[] = "**typenamelen %d";
-static const char long_spc173[]  = " Specified datatype name is too long (%d characters)";
-static const char short_spc174[] = "**vc_state %d";
-static const char long_spc174[]  = "invalid vc state (%d)";
-static const char short_spc175[] = "**wsasock %d";
-static const char long_spc175[]  = "WSAStartup failed (errno %d)";
+static const char short_spc66[] = "**intern %s";
+static const char long_spc66[]  = "Internal MPI error!  %s";
+static const char short_spc67[] = "**invalid_handle %d";
+static const char long_spc67[]  = "invalid handle (%d)";
+static const char short_spc68[] = "**invalid_listener %p";
+static const char long_spc68[]  = "invalid listener (%p)";
+static const char short_spc69[] = "**invalid_refcount %d";
+static const char long_spc69[]  = "invalid reference count (%d)";
+static const char short_spc70[] = "**io %s";
+static const char long_spc70[]  = "Other I/O error %s";
+static const char short_spc71[] = "**iocp %d";
+static const char long_spc71[]  = "unable to create an I/O completion port (errno %d)";
+static const char short_spc72[] = "**iov_offset %d %d";
+static const char long_spc72[]  = "invalid iov offset (%d > %d)";
+static const char short_spc73[] = "**listen %d";
+static const char long_spc73[]  = "listen failed (errno %d)";
+static const char short_spc74[] = "**mmap %d";
+static const char long_spc74[]  = " unable to map memory, mmap failed (errno %d)";
+static const char short_spc75[] = "**mpi_accumulate %p %d %D %d %d %d %D %O %W";
+static const char long_spc75[]  = "MPI_Accumulate(%p, %d, %D, %d, %d, %d, %D, %O, %W) failed";
+static const char short_spc76[] = "**mpi_add_error_string %d %s";
+static const char long_spc76[]  = "MPI_Add_error_string(%d, %s) failed";
+static const char short_spc77[] = "**mpi_allgather %p %d %D %p %d %D %C";
+static const char long_spc77[]  = "MPI_Allgather(%p, %d, %D, %p, %d, %D, %C) failed";
+static const char short_spc78[] = "**mpi_allgatherv %p %d %D %p %p %p %D %C";
+static const char long_spc78[]  = "MPI_Allgatherv(%p, %d, %D, %p, %p, %p, %D, %C) failed";
+static const char short_spc79[] = "**mpi_allreduce %p %p %d %D %O %C";
+static const char long_spc79[]  = "MPI_Allreduce(%p, %p, %d, %D, %O, %C) failed";
+static const char short_spc80[] = "**mpi_alltoall %p %d %D %p %d %D %C";
+static const char long_spc80[]  = "MPI_Alltoall(%p, %d, %D, %p, %d, %D, %C) failed";
+static const char short_spc81[] = "**mpi_alltoallv %p %p %p %D %p %p %p %D %C";
+static const char long_spc81[]  = "MPI_Alltoallv(%p, %p, %p, %D, %p, %p, %p, %D, %C) failed";
+static const char short_spc82[] = "**mpi_alltoallw %p %p %p %p %p %p %p %p %C";
+static const char long_spc82[]  = "MPI_Alltoallw(%p, %p, %p, %p, %p, %p, %p, %p, %C) failed";
+static const char short_spc83[] = "**mpi_attr_delete %C %d";
+static const char long_spc83[]  = "MPI_Attr_delete(%C, %d) failed";
+static const char short_spc84[] = "**mpi_attr_get %C %d %p %p";
+static const char long_spc84[]  = "MPI_Atr_get(%C, %d, %p, %p) failed";
+static const char short_spc85[] = "**mpi_attr_put %C %d %p";
+static const char long_spc85[]  = "MPI_Attr_put(%C, %d, %p) failed";
+static const char short_spc86[] = "**mpi_barrier %C";
+static const char long_spc86[]  = "MPI_Barrier(%C) failed";
+static const char short_spc87[] = "**mpi_bcast %p %d %D %d %C";
+static const char long_spc87[]  = "MPI_Bcast(%p, %d, %D, %d, %C) failed";
+static const char short_spc88[] = "**mpi_bsend %p %d %D %d %d %C";
+static const char long_spc88[]  = "MPI_Bsend(%p, %d, %D, %d, %d, %C) failed";
+static const char short_spc89[] = "**mpi_bsend_init %p %d %D %d %d %C %p";
+static const char long_spc89[]  = "MPI_Bsend_init(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc90[] = "**mpi_buffer_attach %p %d";
+static const char long_spc90[]  = "MPI_Buffer_attach(%p, %d) failed";
+static const char short_spc91[] = "**mpi_buffer_detach %p %p";
+static const char long_spc91[]  = "MPI_Buffer_detach(%p, %p) failed";
+static const char short_spc92[] = "**mpi_cancel %p";
+static const char long_spc92[]  = "MPI_Cancel(%p) failed";
+static const char short_spc93[] = "**mpi_cart_create %C %d %p %p %d %p";
+static const char long_spc93[]  = "MPI_Cart_create(%C, %d, %p, %p, %d, %p) failed";
+static const char short_spc94[] = "**mpi_close_port %s";
+static const char long_spc94[]  = "MPI_Close_port(%s) failed";
+static const char short_spc95[] = "**mpi_comm_accept %s %I %d %C %p";
+static const char long_spc95[]  = "MPI_Comm_accept(%s, %I, %d, %C, %p) failed";
+static const char short_spc96[] = "**mpi_comm_connect %s %I %d %C %p";
+static const char long_spc96[]  = "MPI_Comm_connect(%s, %I, %d, %C, %p) failed";
+static const char short_spc97[] = "**mpi_comm_disconnect %p";
+static const char long_spc97[]  = "MPI_Comm_disconnect(%p) failed";
+static const char short_spc98[] = "**mpi_comm_dup %C %p";
+static const char long_spc98[]  = "MPI_Comm_dup(%C, %p) failed";
+static const char short_spc99[] = "**mpi_comm_free %p";
+static const char long_spc99[]  = "MPI_Comm_free(%p) failed";
+static const char short_spc100[] = "**mpi_comm_group %C %p";
+static const char long_spc100[]  = "MPI_Comm_group(%C, %p) failed";
+static const char short_spc101[] = "**mpi_comm_join %d %p";
+static const char long_spc101[]  = "MPI_Comm_join(%d, %p) failed";
+static const char short_spc102[] = "**mpi_comm_remote_group %C %p";
+static const char long_spc102[]  = "MPI_Comm_remote_group(%C, %p) failed";
+static const char short_spc103[] = "**mpi_comm_set_attr %C %d %p";
+static const char long_spc103[]  = "MPI_Comm_set_attr(%C, %d, %p) failed";
+static const char short_spc104[] = "**mpi_comm_spawn %s %p %d %I %d %C %p %p";
+static const char long_spc104[]  = "MPI_Comm_spawn(%s, %p, %d, %I, %d, %C, %p, %p) failed";
+static const char short_spc105[] = "**mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p";
+static const char long_spc105[]  = "MPI_Comm_spawn_multiple(%d, %p, %p, %p, %p, %d, %C, %p, %p) failed";
+static const char short_spc106[] = "**mpi_comm_split %C %d %d %p";
+static const char long_spc106[]  = "MPI_Comm_split(%C, %d, %d, %p) failed";
+static const char short_spc107[] = "**mpi_errhandler_create %p %p";
+static const char long_spc107[]  = "MPI_Errhandler_create(%p) failed";
+static const char short_spc108[] = "**mpi_errhandler_get %C %p";
+static const char long_spc108[]  = "MPI_Errhandler_get(%C, %p) failed";
+static const char short_spc109[] = "**mpi_errhandler_set %C %E";
+static const char long_spc109[]  = "MPI_Errhandler_set(%C, %E) failed";
+static const char short_spc110[] = "**mpi_exscan %p %p %d %D %O %C";
+static const char long_spc110[]  = "MPI_Exscan(%p, %p, %d, %D, %O, %C) failed";
+static const char short_spc111[] = "**mpi_file_create_errhandler %p %p";
+static const char long_spc111[]  = "MPI_File_create_errhandler(%p, %p) failed";
+static const char short_spc112[] = "**mpi_gather %p %d %D %p %d %D %d %C";
+static const char long_spc112[]  = "MPI_Gather(%p, %d, %D, %p, %d, %D, %d, %C) failed";
+static const char short_spc113[] = "**mpi_gatherv %p %d %D %p %p %p %D %d %C";
+static const char long_spc113[]  = "MPI_Gatherv failed(%p, %d, %D, %p, %p, %p, %D, %d, %C) failed";
+static const char short_spc114[] = "**mpi_get %p %d %D %d %d %d %D %W";
+static const char long_spc114[]  = "MPI_Get(%p, %d, %D, %d, %d, %d, %D, %W) failed";
+static const char short_spc115[] = "**mpi_get_processor_name %p %p";
+static const char long_spc115[]  = "MPI_Get_processor_name(%p, %p) failed";
+static const char short_spc116[] = "**mpi_graph_create %C %d %p %p %d %p";
+static const char long_spc116[]  = "MPI_Graph_create(%C, %d, %p, %p, %d, %p) failed";
+static const char short_spc117[] = "**mpi_graph_map %C %d %p %p %p";
+static const char long_spc117[]  = "MPI_Graph_map(%C, %d, %p, %p, %p) failed";
+static const char short_spc118[] = "**mpi_grequest_start %p %p %p %p %p";
+static const char long_spc118[]  = "MPI_Grequest_start(%p, %p, %p, %p, %p) failed";
+static const char short_spc119[] = "**mpi_group_difference %G %G %p";
+static const char long_spc119[]  = "MPI_Group_difference(%G, %G, %p) failed";
+static const char short_spc120[] = "**mpi_group_excl %G %d %p %p";
+static const char long_spc120[]  = "MPI_Group_excl(%G, %d, %p, %p) failed";
+static const char short_spc121[] = "**mpi_group_free %p";
+static const char long_spc121[]  = "MPI_Group_free(%p) failed";
+static const char short_spc122[] = "**mpi_group_incl %G %d %p %p";
+static const char long_spc122[]  = "MPI_Group_incl(%G, %d, %p, %p) failed";
+static const char short_spc123[] = "**mpi_group_intersection %G %G %p";
+static const char long_spc123[]  = "MPI_Group_intersection(%G, %G, %p) failed";
+static const char short_spc124[] = "**mpi_group_range_excl %G %d %p %p";
+static const char long_spc124[]  = "MPI_Group_range_excl(%G, %d, %p, %p) failed";
+static const char short_spc125[] = "**mpi_group_range_incl %G %d %p %p";
+static const char long_spc125[]  = "MPI_Group_range_incl(%G, %d, %p, %p) failed";
+static const char short_spc126[] = "**mpi_group_union %G %G %p";
+static const char long_spc126[]  = "MPI_Group_union(%G, %G, %p) failed";
+static const char short_spc127[] = "**mpi_ibsend %p %d %D %d %d %C %p";
+static const char long_spc127[]  = "MPI_Ibsend(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc128[] = "**mpi_info_create %p";
+static const char long_spc128[]  = "MPI_Info_create(%p) failed";
+static const char short_spc129[] = "**mpi_info_delete %I %p";
+static const char long_spc129[]  = "MPI_Info_delete(%I, %p) failed";
+static const char short_spc130[] = "**mpi_info_dup %I %p";
+static const char long_spc130[]  = "MPI_Info_dup(%I, %p) failed";
+static const char short_spc131[] = "**mpi_info_get_nthkey %I %d %p";
+static const char long_spc131[]  = "MPI_Info_get_nthkey(%I, %d, %p) failed";
+static const char short_spc132[] = "**mpi_info_set %I %p %p";
+static const char long_spc132[]  = "MPI_Info_set(%I, %p, %p) failed";
+static const char short_spc133[] = "**mpi_init %p %p";
+static const char long_spc133[]  = "MPI_Init(%p, %p) failed";
+static const char short_spc134[] = "**mpi_init_thread %p %p %d %p";
+static const char long_spc134[]  = "MPI_Init_thread(%p, %p, %d, %p)";
+static const char short_spc135[] = "**mpi_intercomm_create %C %d %C %d %d %p";
+static const char long_spc135[]  = "MPI_Intercomm_create(%C, %d, %C, %d, %d, %p) failed";
+static const char short_spc136[] = "**mpi_intercomm_merge %C %d %p";
+static const char long_spc136[]  = "MPI_Intercomm_merge(%C, %d, %p) failed";
+static const char short_spc137[] = "**mpi_iprobe %d %d %C %p %p";
+static const char long_spc137[]  = "MPI_Iprobe(%d, %d, %C, %p, %p) failed";
+static const char short_spc138[] = "**mpi_irecv %p %d %D %d %d %C %p";
+static const char long_spc138[]  = "MPI_Irecv(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc139[] = "**mpi_irsend %p %d %D %d %d %C %p";
+static const char long_spc139[]  = "MPI_Irsend(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc140[] = "**mpi_isend %p %d %D %d %d %C %p";
+static const char long_spc140[]  = "MPI_Isend(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc141[] = "**mpi_issend %p %d %D %d %d %C %p";
+static const char long_spc141[]  = "MPI_Issend(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc142[] = "**mpi_keyval_create %p %p %p %p";
+static const char long_spc142[]  = "MPI_Keyval_create(%p, %p, %p, %p) failed";
+static const char short_spc143[] = "**mpi_keyval_free %p";
+static const char long_spc143[]  = "MPI_Keyval_free(%p) failed";
+static const char short_spc144[] = "**mpi_lookup_name %s %I %p";
+static const char long_spc144[]  = "MPI_Lookup_name(%s, %I, %p) failed";
+static const char short_spc145[] = "**mpi_op_create %p %d %p";
+static const char long_spc145[]  = "MPI_Op_create(%p, %d, %p) failed";
+static const char short_spc146[] = "**mpi_open_port %I %s";
+static const char long_spc146[]  = "MPI_Open_port(%I, %s) failed";
+static const char short_spc147[] = "**mpi_pack %p %d %D %p %d %p %C";
+static const char long_spc147[]  = "MPI_Pack(%p, %d, %D, %p, %d, %p, %C) failed";
+static const char short_spc148[] = "**mpi_pack_external %s %p %d %D %p %d %p";
+static const char long_spc148[]  = "MPI_Pack_external(%s, %p, %d, %D, %p, %d, %p) failed";
+static const char short_spc149[] = "**mpi_probe %d %d %C %p";
+static const char long_spc149[]  = "MPI_Probe(%d, %d, %C, %p) failed";
+static const char short_spc150[] = "**mpi_publish_name %s %I %s";
+static const char long_spc150[]  = "MPI_Publish_name(%s, %I, %s) failed";
+static const char short_spc151[] = "**mpi_put %p %d %D %d %d %d %D %W";
+static const char long_spc151[]  = "MPI_Put(%p, %d, %D, %d, %d, %d, %D, %W) failed";
+static const char short_spc152[] = "**mpi_recv %p %d %D %d %d %C %p";
+static const char long_spc152[]  = "MPI_Recv(%p, %d %D, %d, %C, %p) failed";
+static const char short_spc153[] = "**mpi_recv_init %p %d %D %d %d %C %p";
+static const char long_spc153[]  = "MPI_Recv_init(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc154[] = "**mpi_reduce %p %p %d %D %O %d %C";
+static const char long_spc154[]  = "MPI_Reduce(%p, %p, %d, %D, %O, %d, %C) failed";
+static const char short_spc155[] = "**mpi_reduce_scatter %p %p %p %D %O %C";
+static const char long_spc155[]  = "MPI_Reduce_scatter(%p, %p, %p, %D, %O, %C) failed";
+static const char short_spc156[] = "**mpi_register_datarep %s %p %p %p %p";
+static const char long_spc156[]  = "MPI_Register_Datarep(%s %p %p %p %p) failed";
+static const char short_spc157[] = "**mpi_request_free %p";
+static const char long_spc157[]  = "MPI_Request_free(%p) failed";
+static const char short_spc158[] = "**mpi_request_get_status %R %p %p";
+static const char long_spc158[]  = "MPI_Request_get_status(%R, %p, %p) failed";
+static const char short_spc159[] = "**mpi_rsend %p %d %D %d %d %C";
+static const char long_spc159[]  = "MPI_Rsend(%p, %d, %D, %d, %d, %C) failed";
+static const char short_spc160[] = "**mpi_rsend_init %p %d %D %d %d %C %p";
+static const char long_spc160[]  = "MPI_Rsend_init(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc161[] = "**mpi_scan %p %p %d %D %O %C";
+static const char long_spc161[]  = "MPI_Scan(%p, %p, %d, %D, %O, %C) failed";
+static const char short_spc162[] = "**mpi_scatter %p %d %D %p %d %D %d %C";
+static const char long_spc162[]  = "MPI_Scatter(%p, %d, %D, %p, %d, %D, %d, %C) failed";
+static const char short_spc163[] = "**mpi_scatterv %p %p %p %D %p %d %D %d %C";
+static const char long_spc163[]  = "MPI_Scatterv(%p, %p, %p, %D, %p, %d, %D, %d, %C) failed";
+static const char short_spc164[] = "**mpi_send %p %d %D %d %d %C";
+static const char long_spc164[]  = "MPI_Send(%p, %d, %D, %d, %d, %C) failed";
+static const char short_spc165[] = "**mpi_send_init %p %d %D %d %d %C %p";
+static const char long_spc165[]  = "MPI_Send_init(%p %d %D %d %d %C %p) failed";
+static const char short_spc166[] = "**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p";
+static const char long_spc166[]  = "MPI_Sendrecv(%p, %d, %D, %d, %d, %p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc167[] = "**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p";
+static const char long_spc167[]  = "MPI_Sendrecv_replace(%p, %d, %D, %d, %d, %d, %d, %C, %p) failed";
+static const char short_spc168[] = "**mpi_ssend %p %d %D %d %d %C";
+static const char long_spc168[]  = "MPI_Ssend(%p, %d, %D, %d, %d, %C) failed";
+static const char short_spc169[] = "**mpi_ssend_init %p %d %D %d %d %C %p";
+static const char long_spc169[]  = "MPI_Ssend_init(%p, %d, %D, %d, %d, %C, %p) failed";
+static const char short_spc170[] = "**mpi_start %p";
+static const char long_spc170[]  = "MPI_Start(%p) failed";
+static const char short_spc171[] = "**mpi_startall %d %p";
+static const char long_spc171[]  = "MPI_Startall(%d, %p) failed";
+static const char short_spc172[] = "**mpi_test %p %p %p";
+static const char long_spc172[]  = "MPI_Test(%p, %p, %p) failed";
+static const char short_spc173[] = "**mpi_testall %d %p %p %p";
+static const char long_spc173[]  = "MPI_Testall(%d, %p, %p, %p) failed";
+static const char short_spc174[] = "**mpi_testany %d %p %p %p %p";
+static const char long_spc174[]  = "MPI_Testany(%d, %p, %p, %p, %p) failed";
+static const char short_spc175[] = "**mpi_testsome %d %p %p %p %p";
+static const char long_spc175[]  = "MPI_Testsome(%d, %p, %p, %p, %p) failed";
+static const char short_spc176[] = "**mpi_type_commit %p";
+static const char long_spc176[]  = "MPI_Type_commit(%p) failed";
+static const char short_spc177[] = "**mpi_type_contiguous %d %D %p";
+static const char long_spc177[]  = "MPI_Type_contiguous(%d, %D, %p) failed";
+static const char short_spc178[] = "**mpi_type_create_hindexed %d %p %p %D %p";
+static const char long_spc178[]  = "MPI_Type_create_hindexed(%d, %p, %p, %D, %p) failed";
+static const char short_spc179[] = "**mpi_type_create_hvector %d %d %d %D %p";
+static const char long_spc179[]  = "MPI_Type_create_hvector(%d, %d, %d, %D, %p) failed";
+static const char short_spc180[] = "**mpi_type_create_indexed_block %d %d %p %D %p";
+static const char long_spc180[]  = "MPI_Type_create_indexed_block(%d, %d, %p, %D, %p) failed";
+static const char short_spc181[] = "**mpi_type_create_keyval %p %p %p %p";
+static const char long_spc181[]  = "MPI_Type_create_keyval(%p, %p, %p, %p) failed";
+static const char short_spc182[] = "**mpi_type_create_resized %D %d %d %p";
+static const char long_spc182[]  = "MPI_Type_create_resized(%D, %d, %d, %p) failed";
+static const char short_spc183[] = "**mpi_type_create_struct %d %p %p %p %p";
+static const char long_spc183[]  = "MPI_Type_create_struct(%d, %p, %p, %p, %p) failed";
+static const char short_spc184[] = "**mpi_type_delete_attr %D %d";
+static const char long_spc184[]  = "MPI_Type_delete_atrr(%D, %d) failed";
+static const char short_spc185[] = "**mpi_type_dup %D %p";
+static const char long_spc185[]  = "MPI_Type_dup(%D, %p) failed";
+static const char short_spc186[] = "**mpi_type_get_contents %D %d %d %d %p %p %p";
+static const char long_spc186[]  = "MPI_Type_get_contents(%D, %d, %d, %d, %p, %p, %p) failed";
+static const char short_spc187[] = "**mpi_type_get_envelope %D %p %p %p %p";
+static const char long_spc187[]  = "MPI_Type_get_envelope(%D, %p, %p, %p, %p) failed";
+static const char short_spc188[] = "**mpi_type_hindexed %d %p %p %D %p";
+static const char long_spc188[]  = "MPI_Type_hindexed(%d, %p, %p, %D, %p) failed";
+static const char short_spc189[] = "**mpi_type_hvector %d %d %d %D %p";
+static const char long_spc189[]  = "MPI_Type_hvector(%d, %d, %d, %D, %p) failed";
+static const char short_spc190[] = "**mpi_type_indexed %d %p %p %D %p";
+static const char long_spc190[]  = "MPI_Type_indexed(%d, %p, %p, %D, %p) failed";
+static const char short_spc191[] = "**mpi_type_match_size %d %d %p";
+static const char long_spc191[]  = "MPI_Type_match_size(%d, %d, %p) failed";
+static const char short_spc192[] = "**mpi_type_set_attr %D %d %p";
+static const char long_spc192[]  = "MPI_Type_set_attr(%D, %d, %p) failed";
+static const char short_spc193[] = "**mpi_type_struct %d %p %p %p %p";
+static const char long_spc193[]  = "MPI_Type_struct(%d, %p, %p, %p, %p) failed";
+static const char short_spc194[] = "**mpi_type_vector %d %d %d %D %p";
+static const char long_spc194[]  = "MPI_Type_vector(%d, %d, %d, %D, %p) failed";
+static const char short_spc195[] = "**mpi_unpack_external %s %p %d %p %p %d %D";
+static const char long_spc195[]  = "MPI_Unpack_external(%s, %p, %d, %p, %p, %d, %D) failed";
+static const char short_spc196[] = "**mpi_unpublish_name %s %I %s";
+static const char long_spc196[]  = "MPI_Unpublish_name(%s, %I, %s) failed";
+static const char short_spc197[] = "**mpi_wait %p %p";
+static const char long_spc197[]  = "MPI_Wait(%p, %p) failed";
+static const char short_spc198[] = "**mpi_waitall %d %p %p";
+static const char long_spc198[]  = "MPI_Waitall(%d, %p, %p) failed";
+static const char short_spc199[] = "**mpi_waitany %d %p %p %p";
+static const char long_spc199[]  = "MPI_Waitany(%d, %p, %p, %p) failed";
+static const char short_spc200[] = "**mpi_waitsome %d %p %p %p %p";
+static const char long_spc200[]  = "MPI_Waitsome(%d, %p, %p, %p, %p) failed";
+static const char short_spc201[] = "**mpi_win_complete %W";
+static const char long_spc201[]  = "MPI_Win_complete(%W) failed";
+static const char short_spc202[] = "**mpi_win_create %p %d %d %I %C %p";
+static const char long_spc202[]  = "MPI_Win_create(%p, %d, %d, %I, %C, %p) failed";
+static const char short_spc203[] = "**mpi_win_create_errhandler %p %p";
+static const char long_spc203[]  = "MPI_Win_create_errhandler(%p, %p) failed";
+static const char short_spc204[] = "**mpi_win_create_keyval %p %p %p %p";
+static const char long_spc204[]  = "MPI_Win_create_keyval(%p, %p, %p, %p) failed";
+static const char short_spc205[] = "**mpi_win_delete_attr %W %d";
+static const char long_spc205[]  = "MPI_Win_delete_attr(%W, %d) failed";
+static const char short_spc206[] = "**mpi_win_fence %d %W";
+static const char long_spc206[]  = "MPI_Win_fence(%d, %W) failed";
+static const char short_spc207[] = "**mpi_win_free %p";
+static const char long_spc207[]  = "MPI_Win_free(%p) failed";
+static const char short_spc208[] = "**mpi_win_get_group %W %p";
+static const char long_spc208[]  = "MPI_Win_get_group(%W, %p) failed";
+static const char short_spc209[] = "**mpi_win_lock %d %d %d %W";
+static const char long_spc209[]  = "MPI_Win_lock(%d, %d, %d, %W) failed";
+static const char short_spc210[] = "**mpi_win_post %G %d %W";
+static const char long_spc210[]  = "MPI_Win_post(%G, %d, %W) failed";
+static const char short_spc211[] = "**mpi_win_set_attr %W %d %p";
+static const char long_spc211[]  = "MPI_Win_set_attr(%W, %d, %p) failed";
+static const char short_spc212[] = "**mpi_win_test %W %p";
+static const char long_spc212[]  = "MPI_Win_test(%W, %p) failed";
+static const char short_spc213[] = "**mpi_win_unlock %d %W";
+static const char long_spc213[]  = "MPI_Win_unlock(%d, %W) failed";
+static const char short_spc214[] = "**mpi_win_wait %W";
+static const char long_spc214[]  = "MPI_Win_wait(%W) failed";
+static const char short_spc215[] = "**mq_close %d";
+static const char long_spc215[]  = "failed to close a posix message queue, error %d";
+static const char short_spc216[] = "**mq_open %d";
+static const char long_spc216[]  = "failed to open a posix message queue, error %d";
+static const char short_spc217[] = "**mq_receive %d";
+static const char long_spc217[]  = "failed to receive a posix message queue message, error %d";
+static const char short_spc218[] = "**mq_send %d";
+static const char long_spc218[]  = "failed to send a posix message queue message, error %d";
+static const char short_spc219[] = "**msgctl %d";
+static const char long_spc219[]  = "msgctl returned %d";
+static const char short_spc220[] = "**msgget %d";
+static const char long_spc220[]  = "msgget returned %d";
+static const char short_spc221[] = "**msgrcv %d";
+static const char long_spc221[]  = "msgrcv returned %d";
+static const char short_spc222[] = "**msgsnd %d";
+static const char long_spc222[]  = "msgsnd returned %d";
+static const char short_spc223[] = "**namepublish %s";
+static const char long_spc223[]  = "Unable to publish service name %s";
+static const char short_spc224[] = "**namepubnotpub %s";
+static const char long_spc224[]  = "Lookup failed for service name %s";
+static const char short_spc225[] = "**nomem %d";
+static const char long_spc225[]  = "Out of memory (unable to allocate %d bytes)";
+static const char short_spc226[] = "**nomem %s %d";
+static const char long_spc226[]  = "Out of memory (unable to allocate a '%s' of size %d)";
+static const char short_spc227[] = "**nomem %s";
+static const char long_spc227[]  = "Out of memory (unable to allocate a '%s')";
+static const char short_spc228[] = "**notsame %s %s";
+static const char long_spc228[]  = "Inconsistent arguments %s to collective routine %s";
+static const char short_spc229[] = "**nulledge %d %d";
+static const char long_spc229[]  = "Edge for node %d (entry edges[%d]) is to itself";
+static const char short_spc230[] = "**nullptr %s";
+static const char long_spc230[]  = "Null pointer in parameter %s";
+static const char short_spc231[] = "**nullptrtype %s";
+static const char long_spc231[]  = "Null %s pointer";
+static const char short_spc232[] = "**open %s %d %d";
+static const char long_spc232[]  = "open(%s) failed for process %d, error %d";
+static const char short_spc233[] = "**opnotpredefined %d";
+static const char long_spc233[]  = "only predefined ops are valid (op = %d)";
+static const char short_spc234[] = "**opundefined %s";
+static const char long_spc234[]  = "MPI_Op %s operation not defined for this datatype ";
+static const char short_spc235[] = "**opundefined_rma %d";
+static const char long_spc235[]  = "RMA target received unknown RMA operation type %d";
+static const char short_spc236[] = "**pd_alloc %s";
+static const char long_spc236[]  = "unable to allocate a protection domain - %s";
+static const char short_spc237[] = "**pkt_ptr %p %p";
+static const char long_spc237[]  = "invalid shm queue packet pointer (%p != %p)";
+static const char short_spc238[] = "**pmi_barrier %d";
+static const char long_spc238[]  = "PMI_Barrier returned %d";
+static const char short_spc239[] = "**pmi_finalize %d";
+static const char long_spc239[]  = "PMI_Finalize returned %d";
+static const char short_spc240[] = "**pmi_get_id %d";
+static const char long_spc240[]  = "PMI_Get_id returned %d";
+static const char short_spc241[] = "**pmi_get_id_length_max %d";
+static const char long_spc241[]  = "PMI_Get_id_length_max returned %d";
+static const char short_spc242[] = "**pmi_get_rank %d";
+static const char long_spc242[]  = "PMI_Get_rank returned %d";
+static const char short_spc243[] = "**pmi_get_size %d";
+static const char long_spc243[]  = "PMI_Get_size returned %d";
+static const char short_spc244[] = "**pmi_init %d";
+static const char long_spc244[]  = "PMI_Init returned %d";
+static const char short_spc245[] = "**pmi_kvs_commit %d";
+static const char long_spc245[]  = "PMI_KVS_Commit returned %d";
+static const char short_spc246[] = "**pmi_kvs_create %d";
+static const char long_spc246[]  = "PMI_KVS_Create returned %d";
+static const char short_spc247[] = "**pmi_kvs_get %d";
+static const char long_spc247[]  = "PMI_KVS_Get returned %d";
+static const char short_spc248[] = "**pmi_kvs_get_key_length_max %d";
+static const char long_spc248[]  = "PMI_KVS_Get_key_length_max returned %d";
+static const char short_spc249[] = "**pmi_kvs_get_my_name %d";
+static const char long_spc249[]  = "PMI_KVS_Get_my_name returned %d";
+static const char short_spc250[] = "**pmi_kvs_get_name_length_max %d";
+static const char long_spc250[]  = "PMI_KVS_Get_name_length_max returned %d";
+static const char short_spc251[] = "**pmi_kvs_get_parent %d";
+static const char long_spc251[]  = "unable to get the PARENT_ROOT_PORT_NAME from the keyval space (pmi_error %d)";
+static const char short_spc252[] = "**pmi_kvs_get_value_length_max %d";
+static const char long_spc252[]  = "PMI_KVS_Get_value_length_max returned %d";
+static const char short_spc253[] = "**pmi_kvs_put %d";
+static const char long_spc253[]  = "PMI_KVS_Put returned %d";
+static const char short_spc254[] = "**pmi_spawn_multiple %d";
+static const char long_spc254[]  = "PMI_Spawn_multiple returned %d";
+static const char short_spc255[] = "**post_connect %s";
+static const char long_spc255[]  = "%s failed in VC_post_connect";
+static const char short_spc256[] = "**rangedup %d %d %d";
+static const char long_spc256[]  = "The range array specifies duplicate entries; process %d specified in range array %d was previously specified in range array %d";
+static const char short_spc257[] = "**rangeendinvalid %d %d %d";
+static const char long_spc257[]  = "The %dth element of a range array ends at %d but must be nonnegative and less than %d";
+static const char short_spc258[] = "**rangestartinvalid %d %d %d";
+static const char long_spc258[]  = "The %dth element of a range array starts at %d but must be nonnegative and less than %d";
+static const char short_spc259[] = "**rank %d %d";
+static const char long_spc259[]  = "Invalid rank has value %d but must be nonnegative and less than %d";
+static const char short_spc260[] = "**rankarray %d %d %d";
+static const char long_spc260[]  = "Invalid rank in rank array at index %d; value is %d but must be in the range 0 to %d";
+static const char short_spc261[] = "**rankdup %d %d %d";
+static const char long_spc261[]  = "Duplicate ranks in rank array at index %d, has value %d which is also the value at index %d";
+static const char short_spc262[] = "**ranklocal %d %d";
+static const char long_spc262[]  = "Error specifying local_leader; rank given was %d but must be in the range 0 to %d";
+static const char short_spc263[] = "**rankremote %d %d";
+static const char long_spc263[]  = "Error specifying remote_leader; rank given was %d but must be in the range 0 to %d";
+static const char short_spc264[] = "**rmasize %d";
+static const char long_spc264[]  = "Invalid size argument in RMA call (value is %d)";
+static const char short_spc265[] = "**root %d";
+static const char long_spc265[]  = "Invalid root (value given was %d)";
+static const char short_spc266[] = "**rsendnomatch %d %d";
+static const char long_spc266[]  = "Ready send from source %d and with tag %d had no matching receive";
+static const char short_spc267[] = "**shm_op %d";
+static const char long_spc267[]  = "invalid shm operation (%d)";
+static const char short_spc268[] = "**shm_open %s %d";
+static const char long_spc268[]  = "unable to open shared memory object %s (errno %d)";
+static const char short_spc269[] = "**shm_unlink %s %d";
+static const char long_spc269[]  = "failed to unlink shared memory object %s, error %d";
+static const char short_spc270[] = "**shmat %d";
+static const char long_spc270[]  = "shmat failed, error %d";
+static const char short_spc271[] = "**shmctl %d %d";
+static const char long_spc271[]  = "failed to mark the sysv segment %d for removal, error %d";
+static const char short_spc272[] = "**shmget %d";
+static const char long_spc272[]  = "shmget failed, error %d";
+static const char short_spc273[] = "**shmhost %s %s";
+static const char long_spc273[]  = "process not on the same host (%s != %s)";
+static const char short_spc274[] = "**shmq_index %d %d";
+static const char long_spc274[]  = "invalid shm queue index (%d > %d)";
+static const char short_spc275[] = "**snprintf %d";
+static const char long_spc275[]  = "snprintf returned %d";
+static const char short_spc276[] = "**sock_byname %d";
+static const char long_spc276[]  = "gethostbyname failed (errno %d)";
+static const char short_spc277[] = "**sock_connect %d";
+static const char long_spc277[]  = "connect failed (errno %d)";
+static const char short_spc278[] = "**sock_create %d";
+static const char long_spc278[]  = "unable to create a socket (errno %d)";
+static const char short_spc279[] = "**sock_gethost %d";
+static const char long_spc279[]  = "gethostname failed (errno %d)";
+static const char short_spc280[] = "**socket %d";
+static const char long_spc280[]  = "WSASocket failed (errno %d)";
+static const char short_spc281[] = "**sock|badbuf %d %d";
+static const char long_spc281[]  = "the supplied buffer contains invalid memory (set=%d,sock=%d)";
+static const char short_spc282[] = "**sock|badiovn %d %d %d";
+static const char long_spc282[]  = "size of iov is invalid (set=%d,sock=%d,iov_n=%d)";
+static const char short_spc283[] = "**sock|badlen %d %d %d %d";
+static const char long_spc283[]  = "bad length parameter(s) (set=%d,sock=%d,min=%d,max=%d)";
+static const char short_spc284[] = "**sock|badport %d";
+static const char long_spc284[]  = "port number is out of range (sock=%d)";
+static const char short_spc285[] = "**sock|closing %d %d";
+static const char long_spc285[]  = "sock is in the process of being closed locally (set=%d,sock=%d)";
+static const char short_spc286[] = "**sock|connclosed %d %d";
+static const char long_spc286[]  = "connection closed by peer (set=%d,sock=%d)";
+static const char short_spc287[] = "**sock|connfailed %d %d";
+static const char long_spc287[]  = "connection failure (set=%d,sock=%d)";
+static const char short_spc288[] = "**sock|notconnected %d %d";
+static const char long_spc288[]  = "sock is not connected (set=%d,sock=%d)";
+static const char short_spc289[] = "**sock|osnomem %d %d";
+static const char long_spc289[]  = "operating system routine failed due to lack of memory (set=%d,sock=%d)";
+static const char short_spc290[] = "**sock|poll|accept %d";
+static const char long_spc290[]  = "accept failed to acquire a new socket (errno=%d)";
+static const char short_spc291[] = "**sock|poll|badhandle %d %d %d";
+static const char long_spc291[]  = "sock contains an invalid handle (set=%d,sock=%d,fd=%d)";
+static const char short_spc292[] = "**sock|poll|bind %d %d";
+static const char long_spc292[]  = "unable to bind socket to port (port=%d,errno=%d)";
+static const char short_spc293[] = "**sock|poll|connfailed %d %d %d";
+static const char long_spc293[]  = "connection failure (set=%d,sock=%d,errno=%d)";
+static const char short_spc294[] = "**sock|poll|connfailed %d";
+static const char long_spc294[]  = "connection failure (errno=%d)";
+static const char short_spc295[] = "**sock|poll|connrefused %d %d %s";
+static const char long_spc295[]  = "connection refused (set=%d,sock=%d,host=%s)";
+static const char short_spc296[] = "**sock|poll|eqfail %d %d %d";
+static const char long_spc296[]  = "fatal error: failed to enqueue an event; event was lost (set=%d,sock=%d,op=%d)";
+static const char short_spc297[] = "**sock|poll|eqfail %d";
+static const char long_spc297[]  = "fatal error: failed to enqueue an event; event was lost (op=%d)";
+static const char short_spc298[] = "**sock|poll|getport %d";
+static const char long_spc298[]  = "failed to obtain port number of listener (errno=%d)";
+static const char short_spc299[] = "**sock|poll|hostres %d %d %s";
+static const char long_spc299[]  = "unable to resolve host name to an address (set=%d,sock=%d,host=%s)";
+static const char short_spc300[] = "**sock|poll|listen %d";
+static const char long_spc300[]  = "listen() failed (errno=%d)";
+static const char short_spc301[] = "**sock|poll|nodelay %d";
+static const char long_spc301[]  = "unable to set TCP no delay attribute on socket (errno=%d)";
+static const char short_spc302[] = "**sock|poll|nonblock %d";
+static const char long_spc302[]  = "unable to set socket to nonblocking (errno=%d)";
+static const char short_spc303[] = "**sock|poll|oserror %d %d %d";
+static const char long_spc303[]  = "unknown operating system error (set=%d,sock=%d,errno=%d)";
+static const char short_spc304[] = "**sock|poll|oserror %d";
+static const char long_spc304[]  = "unknown operating system error (errno=%d)";
+static const char short_spc305[] = "**sock|poll|pipe %d";
+static const char long_spc305[]  = "unable to allocate pipe to wakeup a blocking poll() (errno=%d)";
+static const char short_spc306[] = "**sock|poll|pipenonblock %d";
+static const char long_spc306[]  = "unable to set wakeup pipe to nonblocking (errno=%d)";
+static const char short_spc307[] = "**sock|poll|reuseaddr %d";
+static const char long_spc307[]  = "unable to set reuseaddr attribute on socket (errno=%d)";
+static const char short_spc308[] = "**sock|poll|socket %d";
+static const char long_spc308[]  = "unable to obtain new socket (errno=%d)";
+static const char short_spc309[] = "**sock|poll|unhandledstate %d %s";
+static const char long_spc309[]  = "encountered an unhandled state (%d) while processing %s";
+static const char short_spc310[] = "**sock|reads %d %d";
+static const char long_spc310[]  = "attempt to perform multiple simultaneous reads (set=%d,sock=%d)";
+static const char short_spc311[] = "**sock|writes %d %d";
+static const char long_spc311[]  = "attempt to perform multiple simultaneous writes (set=%d,sock=%d)";
+static const char short_spc312[] = "**stride %d %d %d";
+static const char long_spc312[]  = "Range (start = %d, end = %d, stride = %d) does not terminate";
+static const char short_spc313[] = "**tag %d";
+static const char long_spc313[]  = "Invalid tag, value is %d";
+static const char short_spc314[] = "**topotoolarge %d %d";
+static const char long_spc314[]  = "Topology size %d is larger than communicator size (%d)";
+static const char short_spc315[] = "**truncate %d %d %d %d";
+static const char long_spc315[]  = "Message from rank %d and tag %d truncated %d bytes received but buffer size is %d";
+static const char short_spc316[] = "**truncate %d %d";
+static const char long_spc316[]  = "Message truncated; %d bytes received but buffer size is %d";
+static const char short_spc317[] = "**typematchsize %s %d";
+static const char long_spc317[]  = "No MPI datatype available for typeclass %s and size %d";
+static const char short_spc318[] = "**typenamelen %d";
+static const char long_spc318[]  = " Specified datatype name is too long (%d characters)";
+static const char short_spc319[] = "**vc_state %d";
+static const char long_spc319[]  = "invalid vc state (%d)";
+static const char short_spc320[] = "**wsasock %d";
+static const char long_spc320[]  = "WSAStartup failed (errno %d)";
 
-static const int specific_msgs_len = 176;
+static const int specific_msgs_len = 321;
 static msgpair specific_err_msgs[] = {
 { short_spc0, long_spc0 },
 { short_spc1, long_spc1 },
@@ -1764,17 +2486,162 @@ static msgpair specific_err_msgs[] = {
 { short_spc172, long_spc172 },
 { short_spc173, long_spc173 },
 { short_spc174, long_spc174 },
-{ short_spc175, long_spc175 }
+{ short_spc175, long_spc175 },
+{ short_spc176, long_spc176 },
+{ short_spc177, long_spc177 },
+{ short_spc178, long_spc178 },
+{ short_spc179, long_spc179 },
+{ short_spc180, long_spc180 },
+{ short_spc181, long_spc181 },
+{ short_spc182, long_spc182 },
+{ short_spc183, long_spc183 },
+{ short_spc184, long_spc184 },
+{ short_spc185, long_spc185 },
+{ short_spc186, long_spc186 },
+{ short_spc187, long_spc187 },
+{ short_spc188, long_spc188 },
+{ short_spc189, long_spc189 },
+{ short_spc190, long_spc190 },
+{ short_spc191, long_spc191 },
+{ short_spc192, long_spc192 },
+{ short_spc193, long_spc193 },
+{ short_spc194, long_spc194 },
+{ short_spc195, long_spc195 },
+{ short_spc196, long_spc196 },
+{ short_spc197, long_spc197 },
+{ short_spc198, long_spc198 },
+{ short_spc199, long_spc199 },
+{ short_spc200, long_spc200 },
+{ short_spc201, long_spc201 },
+{ short_spc202, long_spc202 },
+{ short_spc203, long_spc203 },
+{ short_spc204, long_spc204 },
+{ short_spc205, long_spc205 },
+{ short_spc206, long_spc206 },
+{ short_spc207, long_spc207 },
+{ short_spc208, long_spc208 },
+{ short_spc209, long_spc209 },
+{ short_spc210, long_spc210 },
+{ short_spc211, long_spc211 },
+{ short_spc212, long_spc212 },
+{ short_spc213, long_spc213 },
+{ short_spc214, long_spc214 },
+{ short_spc215, long_spc215 },
+{ short_spc216, long_spc216 },
+{ short_spc217, long_spc217 },
+{ short_spc218, long_spc218 },
+{ short_spc219, long_spc219 },
+{ short_spc220, long_spc220 },
+{ short_spc221, long_spc221 },
+{ short_spc222, long_spc222 },
+{ short_spc223, long_spc223 },
+{ short_spc224, long_spc224 },
+{ short_spc225, long_spc225 },
+{ short_spc226, long_spc226 },
+{ short_spc227, long_spc227 },
+{ short_spc228, long_spc228 },
+{ short_spc229, long_spc229 },
+{ short_spc230, long_spc230 },
+{ short_spc231, long_spc231 },
+{ short_spc232, long_spc232 },
+{ short_spc233, long_spc233 },
+{ short_spc234, long_spc234 },
+{ short_spc235, long_spc235 },
+{ short_spc236, long_spc236 },
+{ short_spc237, long_spc237 },
+{ short_spc238, long_spc238 },
+{ short_spc239, long_spc239 },
+{ short_spc240, long_spc240 },
+{ short_spc241, long_spc241 },
+{ short_spc242, long_spc242 },
+{ short_spc243, long_spc243 },
+{ short_spc244, long_spc244 },
+{ short_spc245, long_spc245 },
+{ short_spc246, long_spc246 },
+{ short_spc247, long_spc247 },
+{ short_spc248, long_spc248 },
+{ short_spc249, long_spc249 },
+{ short_spc250, long_spc250 },
+{ short_spc251, long_spc251 },
+{ short_spc252, long_spc252 },
+{ short_spc253, long_spc253 },
+{ short_spc254, long_spc254 },
+{ short_spc255, long_spc255 },
+{ short_spc256, long_spc256 },
+{ short_spc257, long_spc257 },
+{ short_spc258, long_spc258 },
+{ short_spc259, long_spc259 },
+{ short_spc260, long_spc260 },
+{ short_spc261, long_spc261 },
+{ short_spc262, long_spc262 },
+{ short_spc263, long_spc263 },
+{ short_spc264, long_spc264 },
+{ short_spc265, long_spc265 },
+{ short_spc266, long_spc266 },
+{ short_spc267, long_spc267 },
+{ short_spc268, long_spc268 },
+{ short_spc269, long_spc269 },
+{ short_spc270, long_spc270 },
+{ short_spc271, long_spc271 },
+{ short_spc272, long_spc272 },
+{ short_spc273, long_spc273 },
+{ short_spc274, long_spc274 },
+{ short_spc275, long_spc275 },
+{ short_spc276, long_spc276 },
+{ short_spc277, long_spc277 },
+{ short_spc278, long_spc278 },
+{ short_spc279, long_spc279 },
+{ short_spc280, long_spc280 },
+{ short_spc281, long_spc281 },
+{ short_spc282, long_spc282 },
+{ short_spc283, long_spc283 },
+{ short_spc284, long_spc284 },
+{ short_spc285, long_spc285 },
+{ short_spc286, long_spc286 },
+{ short_spc287, long_spc287 },
+{ short_spc288, long_spc288 },
+{ short_spc289, long_spc289 },
+{ short_spc290, long_spc290 },
+{ short_spc291, long_spc291 },
+{ short_spc292, long_spc292 },
+{ short_spc293, long_spc293 },
+{ short_spc294, long_spc294 },
+{ short_spc295, long_spc295 },
+{ short_spc296, long_spc296 },
+{ short_spc297, long_spc297 },
+{ short_spc298, long_spc298 },
+{ short_spc299, long_spc299 },
+{ short_spc300, long_spc300 },
+{ short_spc301, long_spc301 },
+{ short_spc302, long_spc302 },
+{ short_spc303, long_spc303 },
+{ short_spc304, long_spc304 },
+{ short_spc305, long_spc305 },
+{ short_spc306, long_spc306 },
+{ short_spc307, long_spc307 },
+{ short_spc308, long_spc308 },
+{ short_spc309, long_spc309 },
+{ short_spc310, long_spc310 },
+{ short_spc311, long_spc311 },
+{ short_spc312, long_spc312 },
+{ short_spc313, long_spc313 },
+{ short_spc314, long_spc314 },
+{ short_spc315, long_spc315 },
+{ short_spc316, long_spc316 },
+{ short_spc317, long_spc317 },
+{ short_spc318, long_spc318 },
+{ short_spc319, long_spc319 },
+{ short_spc320, long_spc320 }
 };
 #endif
 
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
 #define MPIR_MAX_ERROR_CLASS_INDEX 54
 static int class_to_index[] = {
-388,42,104,112,389,95,301,317,150,262,
-392,109,10,398,394,267,185,184,183,310,
+532,42,104,112,533,95,445,461,150,401,
+536,109,10,542,538,406,184,183,182,454,
 124,125,131,103,106,129,130,123,161,162,
-168,167,191,242,9,258,135,134,286,137,
-138,320,382,107,136,401,27,223,217,313,
-316,315,314,20};
+168,167,190,381,9,397,135,134,430,137,
+138,464,526,107,136,545,27,222,216,457,
+460,459,458,20};
 #endif
