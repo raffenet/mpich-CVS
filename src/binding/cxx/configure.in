@@ -75,6 +75,12 @@ fi
 
 AC_SUBST(MPILIBNAME)
 saveCXXFLAGS=$CXXFLAGS
+# Misfeature in autoconf.  While the macro name is PROG_CXX, it 
+# looks at the CCC environment variable, not CXX, even though it 
+# *sets* CXX!!!!
+if test -z "$CCC" -a -n "$CXX" ; then
+    CCC="$CXX"
+fi
 AC_PROG_CXX
 # Misfeature in autoconf.  When using gcc, PROG_CXX insists on setting 
 # CXXFLAGS to -g -O2 if CXXFLAGS is not set.  This may be appropriate for
