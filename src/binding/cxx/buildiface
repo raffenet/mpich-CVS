@@ -107,7 +107,10 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		    Get_rank => 'int', Free => 0, Get_topology => 2, 
 		    Get_group => MPI_Group,
 		    Compare => 'int', 
-		    Abort => 0);
+		    Abort => 0,
+		    Set_errhandler => 0,
+		    Get_errhandler => MPI_Errhandler
+		   );
 %class_mpi1cart = ( 'Dup' => MPI_Comm,
 		    'Get_dim' => 'int',
 		    'Get_topo' => 'int',
@@ -119,6 +122,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 %class_mpi1dtype = ( 'Create_contiguous' => 'MPI_Datatype',
 		     'Create_vector' => 'MPI_Datatype', 
 		     'Create_indexed' => 'MPI_Datatype', 
+#		     'Create_struct' => 'MPI_Datatype',
 		     'Get_size' => 2, 
 		     'Commit' => 0,
 		     'Free' => 0, 
@@ -193,7 +197,12 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		  # get/set source, tag, error have no C binding
 		  );
 
-%class_mpi2comm = ();
+%class_mpi2comm = ( 'Get_attr' => 'int',
+		    'Set_attr' => 0,
+		    'Delete_attr' => 0,
+#		    'Create_keyval' => 'int',
+		    'Free_keyval' =>  0,
+		   );
 %class_mpi2cart = ();
 %class_mpi2dtype = ( 'Set_name' => 0, 
 		     'Get_name' => 0
@@ -404,7 +413,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 %class_friends = ( 'comm' => 'Cartcomm,Intercomm,Intracomm,Graphcomm,Datatype',
 		   'cart' => '',
 		   'dtype' => 'Comm,Status,Intracomm,Intercomm',
-		   'errh' => '',
+		   'errh' => 'Comm',
 		   'graph' => '',
 		   'group' => 'Comm,Intracomm,Intercomm',
 		   'inter' => 'Intracomm',
@@ -448,6 +457,7 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 	     'dtype-Create_contiguous' => 'Type_contiguous',
 	     'dtype-Create_vector' => 'Type_vector',
 	     'dtype-Create_indexed' => 'Type_indexed',
+	     'dtype-Create_struct' => 'Type_struct',
 	     'dtype-Commit' => 'Type_commit',
 	     'dtype-Pack' => 'Pack',
 	     'dtype-Unpack' => 'Unpack',
@@ -708,6 +718,7 @@ if (!$build_sep_files) {
     foreach $op (@ops) {
 	print $OUTFD "extern const Op $op;\n";
     }
+    print $OUTFD "extern Op OP_NULL;\n";
 
     # Predefined communicators and groups
     print $OUTFD "extern Intracomm COMM_WORLD;\n";
@@ -728,9 +739,14 @@ if (!$build_sep_files) {
 	print $OUTFD "extern const int $int;\n";
     }
 
+    # Predefined other
+    print $OUTFD "extern const void *BOTTOM;\n";
+
     # Other routines
     print $OUTFD "extern void Init(void);\n";
+    print $OUTFD "extern void Init(int *, char **[] );\n";
     print $OUTFD "extern void Finalize(void);\n";
+    print $OUTFD "extern Aint Get_address( void * );\n";
 
     print $OUTFD "} // namespace MPI\n";
 
@@ -847,6 +863,7 @@ sub print_args {
 	print "parm = :$parm:\n" if $debug;
 	# Match type to replacement
 	if ($count == $class_pos || $count == $return_parm_pos) {
+	    print "Skipping parm $parm because of position or return\n" if $debug;
 	    # Skip this arg in the definition 
 	    ;
 	}
@@ -1068,6 +1085,7 @@ sub build_specials {
     foreach $op (@ops) {
 	print $OUTFD "const Op $op(MPI_$op);\n";
     }
+    print $OUTFD "Op OP_NULL;\n";
 
     # Predefined communicators and groups
     print $OUTFD "Intracomm COMM_WORLD(MPI_COMM_WORLD);\n";
@@ -1088,6 +1106,9 @@ sub build_specials {
 	print $OUTFD "const int $int = MPI_$int;\n";
     }
 
+    # Predefined other
+    print $OUTFD "const void *BOTTOM = MPI_BOTTOM;\n";
+
     print $OUTFD "void Init";
     $args = "";
     &print_args( $OUTFD, $args );
@@ -1096,6 +1117,17 @@ sub build_specials {
     print $OUTFD "    MPI_Init( 0, 0 );\n";
     print $OUTFD "}\n";
 
+    #
+    # The following may not be quite right because they don't include
+    # any attributes that we may include with the definitions.  However,
+    # this is easier than forcing the print_args routine to handle these
+    # simple cases.
+    #
+    print $OUTFD "void Init( int *argc, char **argv[] )
+{
+    MPI_Init( argc, argv );
+}\n";
+
     print $OUTFD "void Finalize"; 
     $args = "";
     &print_args( $OUTFD, $args );
@@ -1103,6 +1135,13 @@ sub build_specials {
     print $OUTFD "{\n";
     print $OUTFD "    MPI_Finalize( );\n";
     print $OUTFD "}\n";
+
+    print $OUTFD "Aint Get_address( void *ptr )
+{
+    MPI_Aint a;
+    MPI_Address( ptr, &a );
+    return (Aint)a;
+}\n";
 
     print $OUTFD "} // namespace MPI\n";
     close ($OUTFD);
