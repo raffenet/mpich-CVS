@@ -151,7 +151,7 @@ void MPID_Thread_cond_destroy(MPID_Thread_cond_t * cond, int * err);
 + cond - condition variable
 - mutex - mutex
 
-Notes:
+  Notes:
   This function may return even though another thread has not requested that a thread be released.  Therefore, the calling
   program must wrap the function in a while loop that verifies program state has changed in a way that warrants letting the
   thread proceed.
@@ -225,7 +225,7 @@ void MPID_Thread_tls_set(MPID_Thread_tls_t * tls, void * value);
   Output Parameter:
 . value - value associated with current thread
 @*/
-void MPID_Thread_tls_get(MPID_Thread_tls_t tls, void ** value);
+void MPID_Thread_tls_get(MPID_Thread_tls_t * tls, void ** value);
 
 
 /*
