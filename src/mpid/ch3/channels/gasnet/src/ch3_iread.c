@@ -34,7 +34,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	{
 	    memcpy (rreq->dev.iov[i].MPID_IOV_BUF, vc->gasnet.data,
 		    rreq->dev.iov[i].MPID_IOV_LEN);
-	    vc->gasnet.data += vc->gasnet.data_sz;
+	    vc->gasnet.data += rreq->dev.iov[i].MPID_IOV_LEN;
 	    vc->gasnet.data_sz -= rreq->dev.iov[i].MPID_IOV_LEN;
 	}
 	else
