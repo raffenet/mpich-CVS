@@ -131,11 +131,13 @@ int MPIDI_CH3_Progress(int is_blocking)
 		    }
 		    else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_REQ)
 		    {
+			int pg_id;
 			int pg_rank;
 			MPIDI_VC * vc;
-			
+
+			pg_id = conn->pkt.sc_open_req.pg_id;
 			pg_rank = conn->pkt.sc_open_req.pg_rank;
-			vc = &MPIDI_CH3I_Process.pg->vc_table[pg_rank];
+			vc = &MPIDI_CH3I_Process.pg->vc_table[pg_rank]; /* FIXME: need to lookup process group from pg_id */
 			assert(vc->sc.pg_rank == pg_rank);
 
 			if (vc->sc.conn == NULL || MPIR_Process.comm_world->rank < pg_rank)
@@ -267,6 +269,23 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    
 	    case SOCK_OP_CONNECT:
 	    {
+		MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event.user_ptr;
+
+		if (event.error != SOCK_SUCCESS)
+		{
+		    int mpi_errno;
+
+		    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] failed to connnect to process %d:%d",
+						     /* FIXME: pgid */ -1, conn->vc->sc.pg_rank);
+		    MPID_Abort(NULL, mpi_errno);
+
+		}
+		
+		conn->state = CONN_STATE_OPEN_CSEND;
+		conn->pkt.sc_open_req.pg_id = -1; /* FIXME: multiple process groups may exist */
+		conn->pkt.sc_open_req.pg_rank = MPIR_Process.comm_world->rank;
+		connection_post_send_pkt(conn);
+		    
 		break;
 	    }
 	    
@@ -498,11 +517,13 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     {
 	if (rc == SOCK_ERR_HOST_LOOKUP)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "ch3:sock hostname lookup failed for %s", val);
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] failed to obtain host information for process %d:%d (%s)",
+					     /* FIXME: pgid*/ -1, conn->vc->sc.pg_rank, val);
 	}
 	else if (rc == SOCK_ERR_CONN_REFUSED)
 	{ 
-	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "ch3:sock connection refused to %s", val);
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "[ch3:sock] failed to connect to process %d:%d (%s)",
+					     /* FIXME: pgid */ -1, conn->vc->sc.pg_rank, val);
 	}
 	else
 	{
