@@ -111,7 +111,7 @@ def mpdrun():
            createReq.getAttribute('output') == 'label':
 	    lineLabels = 1
         if createReq.hasAttribute('pgid'):    # our jobalias
-            jobAlias = createReq.getAttribute('jobalias')
+            jobAlias = createReq.getAttribute('pgid')
         if createReq.hasAttribute('stdin_goes_to_all'):
             stdinGoesToWho = int(createReq.getAttribute('stdin_goes_to_all'))
 
