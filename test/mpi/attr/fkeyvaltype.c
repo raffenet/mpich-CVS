@@ -43,13 +43,13 @@ int main( int argc, char *argv[] )
     int attrval;
     int i, key[32], keyval, saveKeyval;
     MPI_Datatype type, duptype;
-    MTest_Datatype mstype, mrtype;
+    MTestDatatype mstype, mrtype;
     char typename[MPI_MAX_OBJECT_NAME];
     int tnlen;
 
     MTest_Init( &argc, &argv );
 
-    while (MTestGetDatatypes( &mstype, &mrtype )) {
+    while (MTestGetDatatypes( &mstype, &mrtype, 1 )) {
 	type = mstype.datatype;
 	MPI_Type_create_keyval( copy_fn, delete_fn, &keyval, (void *)0 );
 	saveKeyval = keyval;   /* in case we need to free explicitly */

@@ -16,7 +16,7 @@ void MTestPrintError( int );
 /*
  * This structure contains the information used to test datatypes
  */
-typedef struct _MTest_Datatype {
+typedef struct _MTestDatatype {
     MPI_Datatype datatype;
     void *buf;              /* buffer to use in communication */
     int  count;             /* count to use for this datatype */
@@ -24,15 +24,16 @@ typedef struct _MTest_Datatype {
     /* The following is optional data that is used by some of
        the derived datatypes */
     int  stride, blksize, *index;
-    void *(*InitBuf)( struct _MTest_Datatype *, int );
-    void *(*FreeBuf)( struct _MTest_Datatype * );
-    int   (*CheckBuf)( struct _MTest_Datatype * );
-} MTest_Datatype;
+    void *(*InitBuf)( struct _MTestDatatype * );
+    void *(*FreeBuf)( struct _MTestDatatype * );
+    int   (*CheckBuf)( struct _MTestDatatype * );
+} MTestDatatype;
 
-int MTestCheckRecv( MPI_Status *, MTest_Datatype * );
-int MTestGetDatatypes( MTest_Datatype *, MTest_Datatype * );
+int MTestCheckRecv( MPI_Status *, MTestDatatype * );
+int MTestGetDatatypes( MTestDatatype *, MTestDatatype *, int );
 void MTestResetDatatypes( void );
-void MTestFreeDatatype( MTest_Datatype * );
+void MTestFreeDatatype( MTestDatatype * );
+const char *MTestGetDatatypeName( MTestDatatype * );
 
 int MTestGetIntracomm( MPI_Comm *, int );
 int MTestGetIntercomm( MPI_Comm *, int *, int );

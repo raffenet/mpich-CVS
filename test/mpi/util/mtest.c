@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static int dbgflag = 0;
+static int wrank = -1;
 /* 
  * Initialize and Finalize MTest
  */
@@ -19,6 +21,11 @@ void MTest_Init( int *argc, char ***argv )
     MPI_Initialized( &flag );
     if (!flag) {
 	MPI_Init( argc, argv );
+    }
+    /* Check for debugging control */
+    if (getenv( "MPITEST_DEBUG" )) {
+	dbgflag = 1;
+	MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
     }
 }
 
@@ -52,19 +59,20 @@ static int datatype_index = 0;
 /* 
  * Setup contiguous buffers of n copies of a datatype.
  */
-static void *MTestTypeContigInit( MTest_Datatype *mtype, int n )
+static void *MTestTypeContigInit( MTestDatatype *mtype )
 {
     MPI_Aint size;
-    if (n > 0) {
+    if (mtype->count > 0) {
 	signed char *p;
 	int  i, totsize;
 	MPI_Type_extent( mtype->datatype, &size );
-	totsize = size * n;
+	totsize = size * mtype->count;
 	mtype->buf = (void *) malloc( totsize );
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
-	    
+	    fprintf( stderr, "Out of memory in type buffer init\n" );
+	    MPI_Abort( MPI_COMM_WORLD, 1 );
 	}
 	for (i=0; i<totsize; i++) {
 	    p[i] = 0xff ^ (i & 0xff);
@@ -75,7 +83,7 @@ static void *MTestTypeContigInit( MTest_Datatype *mtype, int n )
     }
     return mtype->buf;
 }
-static void *MTestTypeContigFree( MTest_Datatype *mtype )
+static void *MTestTypeContigFree( MTestDatatype *mtype )
 {
     if (mtype->buf) {
 	free( mtype->buf );
@@ -83,7 +91,7 @@ static void *MTestTypeContigFree( MTest_Datatype *mtype )
     }
     return 0;
 }
-static int MTestTypeContigCheckbuf( MTest_Datatype *mtype )
+static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 {
     signed char *p;
     int  i, totsize, err = 0;
@@ -105,12 +113,12 @@ static int MTestTypeContigCheckbuf( MTest_Datatype *mtype )
  * 
  */
 
-static void *MTestTypeVectorInit( MTest_Datatype *mtype, int n )
+static void *MTestTypeVectorInit( MTestDatatype *mtype )
 {
     MPI_Aint size;
-    if (n > 0) {
+    if (mtype->count > 0) {
 	MPI_Type_extent( mtype->datatype, &size );
-	mtype->buf = (void *) malloc( n * size );
+	mtype->buf = (void *) malloc( mtype->count * size );
     }
     else {
 	mtype->buf = 0;
@@ -118,7 +126,7 @@ static void *MTestTypeVectorInit( MTest_Datatype *mtype, int n )
     return mtype->buf;
 }
 
-static void *MTestTypeVectorFree( MTest_Datatype *mtype )
+static void *MTestTypeVectorFree( MTestDatatype *mtype )
 {
     if (mtype->buf) {
 	free( mtype->buf );
@@ -127,7 +135,15 @@ static void *MTestTypeVectorFree( MTest_Datatype *mtype )
     return 0;
 }
 
-int MTestGetDatatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
+/* 
+   Create a range of datatypes with a given count elements.
+   This uses a selection of types, rather than an exhaustive collection.
+   It allocates both send and receive types so that they can have the same
+   type signature (collection of basic types) but different type maps (layouts
+   in memory) 
+ */
+int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
+		       int count )
 {
     sendtype->InitBuf  = 0;
     sendtype->FreeBuf  = 0;
@@ -138,6 +154,9 @@ int MTestGetDatatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
     recvtype->datatype = 0;
     recvtype->isBasic  = 0;
 
+    /* Set the defaults for the message lengths */
+    sendtype->count    = count;
+    recvtype->count    = count;
     /* Use datatype_index to choose a datatype to use.  If at the end of the
        list, return 0 */
     switch (datatype_index) {
@@ -158,6 +177,7 @@ int MTestGetDatatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
 	sendtype->isBasic  = 1;
 	recvtype->datatype = MPI_BYTE;
 	recvtype->isBasic  = 1;
+	recvtype->count    *= sizeof(int);
 	break;
     case 3:
 	sendtype->datatype = MPI_FLOAT_INT;
@@ -170,11 +190,12 @@ int MTestGetDatatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
 	MPI_Type_set_name( sendtype->datatype, "dup of MPI_INT" );
 	MPI_Type_dup( MPI_INT, &recvtype->datatype );
 	MPI_Type_set_name( recvtype->datatype, "dup of MPI_INT" );
+	/* dup'ed types are already committed if the original type 
+	   was committed (MPI-2, section 8.8) */
 	break;
     case 5:
 	/* vector send type and contiguous receive type */
 	sendtype->stride = 3;
-	recvtype->count  = 10;
 	MPI_Type_vector( recvtype->count, 1, sendtype->stride, MPI_INT, 
 			 &sendtype->datatype );
 	MPI_Type_set_name( sendtype->datatype, "int-vector" );
@@ -199,6 +220,18 @@ int MTestGetDatatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
 	recvtype->CheckBuf = MTestTypeContigCheckbuf;
     }
     datatype_index++;
+
+    if (dbgflag && datatype_index > 0) {
+	int typesize;
+	fprintf( stderr, "%d: sendtype is %s\n", wrank, MTestGetDatatypeName( sendtype ) );
+	MPI_Type_size( sendtype->datatype, &typesize );
+	fprintf( stderr, "%d: sendtype size = %d\n", wrank, typesize );
+	fprintf( stderr, "%d: recvtype is %s\n", wrank, MTestGetDatatypeName( recvtype ) );
+	MPI_Type_size( recvtype->datatype, &typesize );
+	fprintf( stderr, "%d: recvtype size = %d\n", wrank, typesize );
+	fflush( stderr );
+	
+    }
     return datatype_index;
 }
 
@@ -207,14 +240,14 @@ void MTestResetDatatypes( void )
     datatype_index = 0;
 }
 
-void MTestFreeDatatype( MTest_Datatype *mtype )
+void MTestFreeDatatype( MTestDatatype *mtype )
 {
     if (mtype->FreeBuf) {
 	(mtype->FreeBuf)( mtype );
     }
 }
 
-int MTestCheckRecv( MPI_Status *status, MTest_Datatype *recvtype )
+int MTestCheckRecv( MPI_Status *status, MTestDatatype *recvtype )
 {
     int count;
     int errs = 0;
@@ -233,6 +266,16 @@ int MTestCheckRecv( MPI_Status *status, MTest_Datatype *recvtype )
     return errs;
 }
 
+const char *MTestGetDatatypeName( MTestDatatype *dtype )
+{
+    static char name[MPI_MAX_OBJECT_NAME];
+    int rlen;
+
+    MPI_Type_get_name( dtype->datatype, name, &rlen );
+    return (const char *)name;
+}
+/* ----------------------------------------------------------------------- */
+
 /* 
  * Create communicators.  Use separate routines for inter and intra
  * communicators (there is a routine to give both)
@@ -249,6 +292,7 @@ int MTestGetIntracomm( MPI_Comm *comm, int min_size )
 {
     int size, rank;
     int done=0;
+    int isBasic = 0;
 
     /* The while loop allows us to skip communicators that are too small.
        MPI_COMM_NULL is always considered large enough */
@@ -256,6 +300,7 @@ int MTestGetIntracomm( MPI_Comm *comm, int min_size )
 	switch (intraCommIdx) {
 	case 0:
 	    *comm = MPI_COMM_WORLD;
+	    isBasic = 1;
 	    intraCommName = "MPI_COMM_WORLD";
 	    break;
 	case 1:
@@ -279,19 +324,28 @@ int MTestGetIntracomm( MPI_Comm *comm, int min_size )
 	    break;
 	case 4:
 	    *comm = MPI_COMM_SELF;
+	    isBasic = 1;
 	    intraCommName = "MPI_COMM_SELF";
 	    break;
 
 	    /* Other ideas: dup of self, cart comm, graph comm */
 	default:
 	    *comm = MPI_COMM_NULL;
+	    isBasic = 1;
 	    intraCommName = "MPI_COMM_NULL";
 	    intraCommIdx = -1;
 	    break;
 	}
+
 	if (*comm != MPI_COMM_NULL) {
 	    MPI_Comm_size( *comm, &size );
-	    if (size >= min_size) done = 1;
+	    if (size >= min_size) 
+		done = 1;
+	    else {
+		/* Try again */
+		if (!isBasic) MPI_Comm_free( comm );
+		intraCommIdx++;
+	    }
 	}
 	else
 	    done = 1;
@@ -393,6 +447,7 @@ int MTestGetComm( MPI_Comm *comm, int min_size )
     return idx;
 }
 
+/* ------------------------------------------------------------------------ */
 void MTestPrintError( int errcode )
 {
     int errclass, slen;
