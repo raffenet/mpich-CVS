@@ -526,7 +526,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	     * and thus potentially modifying the array.  Furthermore, the pollfd array must not be freed if it is the one
 	     * actively being used by pol().
 	     */
-#	    if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+#	    if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
 	    {
 		memcpy(pollfds, sock_set->pollfds, sock_set->poll_array_sz * sizeof(struct pollfd));
 		MPIU_Free(sock_set->pollfds);
@@ -536,11 +536,10 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 		if (sock_set->pollfds_active == NULL)
 		{ 
 		    memcpy(pollfds, sock_set->pollfds, sock_set->poll_array_sz * sizeof(struct pollfd));
-		
-		    if  (sock_set->pollfds_active != sock_set->pollfds)
-		    {
-			MPIU_Free(sock_set->pollfds);
-		    }
+		}
+		if  (sock_set->pollfds_active != sock_set->pollfds)
+		{
+		    MPIU_Free(sock_set->pollfds);
 		}
 	    }
 #           endif

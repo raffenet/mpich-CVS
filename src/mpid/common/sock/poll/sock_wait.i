@@ -78,13 +78,13 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 
 	for(;;)
 	{
-#	    if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+#	    if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_POLL);
 		n_fds = poll(sock_set->pollfds, sock_set->poll_array_elems, millisecond_timeout);
 		MPIDI_FUNC_EXIT(MPID_STATE_POLL);
 	    }
-#	    else
+#	    else /* (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) */
 	    {
 		/*
 		 * First try a non-blocking poll to see if any immediate progress can be made.  This avoids the lock manipulation
@@ -102,7 +102,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    
 #                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
 		    {
-			MPID_CS_EXIT();
+			/* Release the lock so that other threads may make progress while this thread waits for something to do */
+			MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
 		    }
 #                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
 		    {
@@ -126,7 +127,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    
 #                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
 		    {
-			MPID_CS_ENTER();
+			/* Reaquire the lock before processing any of the information returned from poll */
+			MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
 		    }
 #                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
 		    {
@@ -160,12 +162,30 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 				sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
 				sock_set->pollfds[elem].revents = sock_set->pollfds_active[elem].revents &
 				    (~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events);
-				if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) == 0)
+				if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) != 0)
+				{
+				    sock_set->pollfds[elem].fd = sock_set->pollinfos[elem].fd;
+				}
+				else
 				{
 				    sock_set->pollfds[elem].fd = -1;
 				}
 			    }
 
+			    for (elem = pollfds_active_elems; elem < sock_set->poll_array_elems; elem++)
+			    {
+				sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
+				sock_set->pollfds[elem].revents = 0;
+				if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) != 0)
+				{
+				    sock_set->pollfds[elem].fd = sock_set->pollinfos[elem].fd;
+				}
+				else
+				{
+				    sock_set->pollfds[elem].fd = -1;
+				}
+			    }
+			    
 			    MPIU_Free(sock_set->pollfds_active);
 			}
 
@@ -176,7 +196,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		    sock_set->wakeup_posted = FALSE;
 		}
 	    }
-#	    endif
+#	    endif /* (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) */
 
 	    if (n_fds > 0)
 	    {
