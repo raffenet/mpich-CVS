@@ -82,7 +82,7 @@ int main( int argc, char *argv[] )
     }
     else if (rank == dest) {
 	MPI_Status status;
-	int        buf[128], i, elms;
+	int        buf[128], i, elms, count;
 
 	/* Receiver */
 	/* Create a receive struct type */
@@ -104,6 +104,11 @@ int main( int argc, char *argv[] )
 		errs++;
 		printf( "For test %d, Get elements gave %d but should be %d\n",
 			i, elms, buf[0] + 1 );
+	    }
+	    MPI_Get_count( &status, outtype, &count );
+	    if (count != MPI_UNDEFINED) {
+		errs++;
+		printf( "For partial send, Get_count did not return MPI_UNDEFINED\n" );
 	    }
 	}
     }
