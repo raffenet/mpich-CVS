@@ -436,7 +436,7 @@ int sock_post_close(sock_t sock)
 #define FUNCNAME sock_post_read
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-int sock_post_read(sock_t sock, void * buf, int len, sock_progress_update_func_t fn)
+int sock_post_read(sock_t sock, void * buf, sock_size_t len, sock_progress_update_func_t fn)
 {
     struct pollinfo * pollinfo = sock->pollinfo;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_READ);
@@ -486,7 +486,7 @@ int sock_post_readv(sock_t sock, SOCK_IOV * iov, int n, sock_progress_update_fun
 #define FUNCNAME sock_post_write
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-int sock_post_write(sock_t sock, void * buf, int len, sock_progress_update_func_t fn)
+int sock_post_write(sock_t sock, void * buf, sock_size_t len, sock_progress_update_func_t fn)
 {
     struct pollinfo * pollinfo = sock->pollinfo;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_WRITE);
@@ -720,7 +720,7 @@ int sock_accept(sock_t listener, sock_set_t sock_set, void * user_ptr, sock_t * 
 #define FUNCNAME sock_read
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-int sock_read(sock_t sock, void * buf, int len, int * num_read)
+int sock_read(sock_t sock, void * buf, sock_size_t len, sock_size_t * num_read)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;
@@ -768,7 +768,7 @@ int sock_read(sock_t sock, void * buf, int len, int * num_read)
 #define FUNCNAME sock_readv
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-int sock_readv(sock_t sock, SOCK_IOV * iov, int n, int * num_read)
+int sock_readv(sock_t sock, SOCK_IOV * iov, int n, sock_size_t * num_read)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;
@@ -816,7 +816,7 @@ int sock_readv(sock_t sock, SOCK_IOV * iov, int n, int * num_read)
 #define FUNCNAME sock_write
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-int sock_write(sock_t sock, void * buf, int len, int * num_written)
+int sock_write(sock_t sock, void * buf, sock_size_t len, sock_size_t * num_written)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;
@@ -859,7 +859,7 @@ int sock_write(sock_t sock, void * buf, int len, int * num_written)
 #define FUNCNAME sock_writev
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
-int sock_writev(sock_t sock, SOCK_IOV * iov, int n, int * num_written)
+int sock_writev(sock_t sock, SOCK_IOV * iov, int n, sock_size_t * num_written)
 {
     int nb;
     int sock_errno = SOCK_SUCCESS;

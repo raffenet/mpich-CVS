@@ -80,7 +80,7 @@ typedef struct sock_event
  * 2) All progress_update calls must complete before completion notification is signalled.  In other words, sock_wait will not
  * return until all progress_update calls have completed.
  */
-typedef int (*sock_progress_update_func_t)(int num_bytes, void *user_ptr);
+typedef int (*sock_progress_update_func_t)(sock_size_t num_bytes, void *user_ptr);
 
 
 /*
@@ -97,18 +97,18 @@ int sock_set_user_ptr(sock_t sock, void * user_ptr);
 int sock_listen(sock_set_t set, void * user_ptr, int * port, sock_t * listener);
 int sock_post_connect(sock_set_t set, void * user_ptr, char * host, int port, sock_t * connected);
 int sock_post_close(sock_t sock);
-int sock_post_read(sock_t sock, void * buf, int len, sock_progress_update_func_t fn);
+int sock_post_read(sock_t sock, void * buf, sock_size_t len, sock_progress_update_func_t fn);
 int sock_post_readv(sock_t sock, SOCK_IOV * iov, int n, sock_progress_update_func_t fn);
-int sock_post_write(sock_t sock, void * buf, int len, sock_progress_update_func_t fn);
+int sock_post_write(sock_t sock, void * buf, sock_size_t len, sock_progress_update_func_t fn);
 int sock_post_writev(sock_t sock, SOCK_IOV * iov, int n, sock_progress_update_func_t fn);
 
 int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t * out);
 
 int sock_accept(sock_t listener, sock_set_t set, void * user_ptr, sock_t * accepted);
-int sock_read(sock_t sock, void * buf, int len, int * num_read);
-int sock_readv(sock_t sock, SOCK_IOV * iov, int n, int * num_read);
-int sock_write(sock_t sock, void * buf, int len, int * num_written);
-int sock_writev(sock_t sock, SOCK_IOV * iov, int n, int * num_written);
+int sock_read(sock_t sock, void * buf, sock_size_t len, sock_size_t * num_read);
+int sock_readv(sock_t sock, SOCK_IOV * iov, int n, sock_size_t * num_read);
+int sock_write(sock_t sock, void * buf, sock_size_t len, sock_size_t * num_written);
+int sock_writev(sock_t sock, SOCK_IOV * iov, int n, sock_size_t * num_written);
 
 /* extended functions */
 int sock_getid(sock_t sock);
