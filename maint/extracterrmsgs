@@ -161,6 +161,7 @@ sub CreateErrMsgMapping {
 	    if (!defined($generic_msgs{"\"$shortmsg\""})) {
 		$generic_msgs{"\"$shortmsg\""} = $generic_count;
 		$generic_count ++;
+		$generic_loc{"\"$shortmsg\""} = ":baseerrnames.txt";
 	    }
 	    # This isn't correct.  Because we sort the msgs, the
 	    # matching number must be computed *after* the sort.
@@ -183,7 +184,8 @@ sub CreateErrMsgMapping {
 	$longvalue = "\"\0\"";
 	if ($key =~ /^\"\*\*/) {
 	    if (!defined($longnames{$key})) {
-		print STDERR "Shortname $key has no expansion (first seen in file errnames.txt)\n";
+		$seenfile = $generic_loc{$key};
+		print STDERR "Shortname $key has no expansion (first seen in file $seenfile)\n";
 	    }
 	    else {
 		# Escape any naked quotes
