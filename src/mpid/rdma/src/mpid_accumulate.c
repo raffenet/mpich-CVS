@@ -97,7 +97,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 ); 
                 goto fn_exit;
             }
-            MPID_Segment_init(NULL, target_count, target_datatype, segp);
+            MPID_Segment_init(NULL, target_count, target_datatype, segp, 0);
             first = 0;
             last  = SEGMENT_IGNORE_LAST;
         

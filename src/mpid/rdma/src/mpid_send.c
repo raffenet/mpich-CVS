@@ -151,7 +151,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	    MPIDI_CH3M_create_sreq(sreq, mpi_errno, goto fn_exit);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
 	    
-	    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment);
+	    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
 	    sreq->dev.segment_first = 0;
 	    sreq->dev.segment_size = data_sz;
 	    
@@ -256,7 +256,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	else
 	{
 	    MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count,
-			      sreq->dev.datatype, &sreq->dev.segment);
+			      sreq->dev.datatype, &sreq->dev.segment, 0);
 	    sreq->dev.iov_count = MPID_IOV_LIMIT;
 	    sreq->dev.segment_first = 0;
 	    sreq->dev.segment_size = data_sz;

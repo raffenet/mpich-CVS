@@ -132,7 +132,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     /*printf("send(%d): count(%d) * size(%d) = %d\n", pRequest->mm.tag, count, dtype_sz, pRequest->mm.size);fflush(stdout);*/
     pRequest->mm.last = (last == MPID_DTYPE_END) ? pRequest->mm.size : last;
 
-    MPID_Segment_init((void*)buf, count, dtype, &pRequest->mm.segment);
+    MPID_Segment_init((void*)buf, count, dtype, &pRequest->mm.segment, 0);
 
     /* setup the read car for packing the mpi buffer to be sent */
     pRequest->mm.rcar[0].type = MM_READ_CAR | MM_PACKER_CAR;

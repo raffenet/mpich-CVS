@@ -48,11 +48,11 @@
  */
 #define DLOOP_Handle_get_dataloop_size_macro  MPID_Datatype_get_dataloop_size
 
-#define DLOOP_Handle_get_loopdepth_macro(__handle,__depth) \
-    MPID_Datatype_get_loopdepth_macro(__handle,__depth)
+#define DLOOP_Handle_get_loopdepth_macro(__handle,__depth,__hetero) \
+    MPID_Datatype_get_loopdepth_macro(__handle,__depth,__hetero)
 
-#define DLOOP_Handle_get_loopptr_macro(__handle,__lptr) \
-    MPID_Datatype_get_loopptr_macro(__handle,__lptr)
+#define DLOOP_Handle_get_loopptr_macro(__handle,__lptr,__hetero) \
+    MPID_Datatype_get_loopptr_macro(__handle,__lptr,__hetero)
 
 #define DLOOP_Handle_get_size_macro(__handle,__size) \
     MPID_Datatype_get_size_macro(__handle,__size)

@@ -100,10 +100,23 @@ int MPI_Unpack(void *inbuf,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* TODO: CHECK RETURN VALUES?? */
-    /* TODO: SHOULD THIS ALL BE IN A MPID_UNPACK??? */
     segp = MPID_Segment_alloc();
-    MPID_Segment_init(outbuf, outcount, datatype, segp);
+    if (segp == NULL)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+					 MPIR_ERR_RECOVERABLE,
+					 FCNAME,
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**nomem",
+					 "**nomem %s",
+					 "MPID_Segment_alloc");
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
+	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	/* --END ERROR HANDLING-- */
+    }
+    MPID_Segment_init(outbuf, outcount, datatype, segp, 0);
 
     /* NOTE: the use of buffer values and positions in MPI_Unpack and in
      * MPID_Segment_unpack are quite different.  See code or docs or something.

@@ -104,7 +104,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                 MPID_Segment_init(rreq->dev.user_buf,
                                   rreq->dev.user_count,
                                   rreq->dev.datatype,
-                                  &rreq->dev.segment);
+                                  &rreq->dev.segment, 0);
                 rreq->dev.segment_first = 0;
                 rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
@@ -174,7 +174,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                 MPID_Segment_init(rreq->dev.user_buf,
                                   rreq->dev.user_count,
                                   rreq->dev.datatype,
-                                  &rreq->dev.segment);
+                                  &rreq->dev.segment, 0);
                 rreq->dev.segment_first = 0;
                 rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
@@ -222,7 +222,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                 MPID_Segment_init(sreq->dev.user_buf,
                                   sreq->dev.user_count,
                                   sreq->dev.datatype,
-                                  &sreq->dev.segment);
+                                  &sreq->dev.segment, 0);
                 sreq->dev.segment_first = 0;
 		sreq->dev.segment_size = new_dtp->size * sreq->dev.user_count;
 
@@ -506,7 +506,8 @@ static int do_accumulate_op(MPID_Request *rreq)
             return mpi_errno;
         }
 	/* --END ERROR HANDLING-- */
-        MPID_Segment_init(NULL, rreq->dev.user_count, rreq->dev.datatype, segp);
+        MPID_Segment_init(NULL, rreq->dev.user_count,
+			  rreq->dev.datatype, segp, 0);
         first = 0;
         last  = SEGMENT_IGNORE_LAST;
         

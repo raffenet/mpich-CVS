@@ -111,7 +111,7 @@ int MPI_Unpack_external(char *datarep,
 	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 	/* --END ERROR HANDLING-- */
     }
-    mpi_errno = MPID_Segment_init(outbuf, outcount, datatype, segp);
+    mpi_errno = MPID_Segment_init(outbuf, outcount, datatype, segp, 1);
     if (mpi_errno != MPI_SUCCESS)
     {
 	goto fn_exit;

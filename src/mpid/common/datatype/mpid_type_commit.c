@@ -35,7 +35,10 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 
     /* determine number of contiguous blocks in the type */
     segp = MPID_Segment_alloc();
-    MPID_Segment_init(0, 1, *datatype_p, segp); /* 0 is bufptr, 1 is count */
+    MPID_Segment_init(0, 1, *datatype_p, segp, 0); /* first 0 is bufptr,
+						    * 1 is count
+						    * last 0 is homogeneous
+						    */
 
     first = 0;
     last  = SEGMENT_IGNORE_LAST;

@@ -333,7 +333,8 @@ void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp);
 int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Count count,
 				 DLOOP_Handle handle,
-				 struct DLOOP_Segment *segp);
+				 struct DLOOP_Segment *segp,
+				 int hetero);
 
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 

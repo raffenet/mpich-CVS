@@ -61,7 +61,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPID_Segment seg;
 	MPIDI_msg_sz_t last;
 
-	MPID_Segment_init(rbuf, rcount, rdt, &seg);
+	MPID_Segment_init(rbuf, rcount, rdt, &seg, 0);
 	last = sdata_sz;
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
 	MPID_Segment_unpack(&seg, 0, &last, (char*)sbuf + sdt_true_lb);
@@ -80,7 +80,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPID_Segment seg;
 	MPIDI_msg_sz_t last;
 
-	MPID_Segment_init(sbuf, scount, sdt, &seg);
+	MPID_Segment_init(sbuf, scount, sdt, &seg, 0);
 	last = sdata_sz;
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack last=" MPIDI_MSG_SZ_FMT, last ));
 	MPID_Segment_pack(&seg, 0, &last, (char*)rbuf + rdt_true_lb);
@@ -115,8 +115,8 @@ void MPIDI_CH3U_Buffer_copy(
 	}
 	/* --END ERROR HANDLING-- */
 
-	MPID_Segment_init(sbuf, scount, sdt, &sseg);
-	MPID_Segment_init(rbuf, rcount, rdt, &rseg);
+	MPID_Segment_init(sbuf, scount, sdt, &sseg, 0);
+	MPID_Segment_init(rbuf, rcount, rdt, &rseg, 0);
 
 	sfirst = 0;
 	rfirst = 0;

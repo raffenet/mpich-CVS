@@ -594,7 +594,8 @@ int MPID_Dataloop_create_struct(int count,
 		MPID_Segment_init(NULL,
 				  blklen_array[i],
 				  oldtype_array[i],
-				  segp);
+				  segp,
+				  0 /* homogeneous */);
 		bytes = SEGMENT_IGNORE_LAST;
 
 		MPID_Segment_count_contig_blocks(segp,
@@ -651,7 +652,8 @@ int MPID_Dataloop_create_struct(int count,
 		MPID_Segment_init((char *) disp_array[i],
 				  blklen_array[i],
 				  oldtype_array[i],
-				  segp);
+				  segp,
+				  0 /* homogeneous */);
 	    
 		last_ind = nr_blks - first_ind;
 		bytes = SEGMENT_IGNORE_LAST;

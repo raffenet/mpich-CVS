@@ -126,7 +126,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     /*printf("recv(%d): count(%d) * size(%d) = %d\n", pRequest->mm.tag, count, dtype_sz, pRequest->mm.size);fflush(stdout);*/
     pRequest->mm.last = (last == MPID_DTYPE_END) ? pRequest->mm.size : last;
 
-    MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
+    MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment, 0);
 
     /* set up the read car */
     if (bNeedHeader)

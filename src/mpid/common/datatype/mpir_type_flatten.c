@@ -45,7 +45,10 @@ int MPIR_Type_flatten(MPI_Datatype type,
     assert(*array_len_p >= datatype_ptr->n_contig_blocks);
 
     segp = MPID_Segment_alloc();
-    MPID_Segment_init(0, 1, type, segp); /* 0 is bufptr, 1 is count */
+    MPID_Segment_init(0, 1, type, segp, 0); /* first 0 is bufptr,
+					     * 1 is count
+					     * last 0 is homogeneous
+					     */
 
     first = 0;
     last  = SEGMENT_IGNORE_LAST;

@@ -120,7 +120,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	    
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	MPID_Segment_init(buf, count, datatype, &sreq->dev.segment);
+	MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;
 	    

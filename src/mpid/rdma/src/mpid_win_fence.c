@@ -385,7 +385,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
         MPID_Segment_init(rma_op->origin_addr, rma_op->origin_count,
                           rma_op->origin_datatype,
-                          &((*request)->dev.segment));
+                          &((*request)->dev.segment), 0);
         (*request)->dev.segment_first = 0;
         (*request)->dev.segment_size = rma_op->origin_count * origin_type_size;
 	    
@@ -1016,7 +1016,9 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                         segp = MPID_Segment_alloc();
                         MPID_Segment_init(NULL,
                                           rma_op_infos[total_op_count].count, 
-                                 rma_op_infos[total_op_count].datatype, segp);
+					  rma_op_infos[total_op_count].datatype,
+					  segp,
+					  0);
                         first = 0;
                         last  = SEGMENT_IGNORE_LAST;
 

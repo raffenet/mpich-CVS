@@ -39,15 +39,20 @@ static inline void DLOOP_Stackelm_load(struct DLOOP_Dataloop_stackelm *elmp,
  * count  - number of instances of the datatype in the buffer
  * handle - handle for datatype (could be derived or not)
  * segp   - pointer to previously allocated segment structure
+ * hetero - boolean indicating if we should use an alternative dataloop
  *
+ * Notes:
  * Assumes that the segment has been allocated.
  *
- * NOTE: THIS IMPLEMENTATION DOES NOT HANDLE STRUCT DATALOOPS.
+ * I'm not completely satisfied with the "hetero" flag, but it will do for
+ * the moment -- RobR.
+ *
  */
 int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Count count,
 				 DLOOP_Handle handle, 
-				 struct DLOOP_Segment *segp)
+				 struct DLOOP_Segment *segp,
+				 int hetero)
 {
     int i, elmsize = 0, depth = 0;
     int branch_detected = 0;
@@ -89,8 +94,8 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     }
     else if (count == 1) {
 	/* don't use the builtin */
-	DLOOP_Handle_get_loopptr_macro(handle, dlp);
-	DLOOP_Handle_get_loopdepth_macro(handle, depth);
+	DLOOP_Handle_get_loopptr_macro(handle, dlp, hetero);
+	DLOOP_Handle_get_loopdepth_macro(handle, depth, hetero);
     }
     else {
 	/* default: need to use builtin to handle contig; must check
@@ -100,10 +105,10 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Offset type_size, type_extent;
 	DLOOP_Type el_type;
 	
-	DLOOP_Handle_get_loopdepth_macro(handle, depth);
+	DLOOP_Handle_get_loopdepth_macro(handle, depth, hetero);
 	if (depth >= DLOOP_MAX_DATATYPE_DEPTH) return -1;
 
-	DLOOP_Handle_get_loopptr_macro(handle, oldloop);
+	DLOOP_Handle_get_loopptr_macro(handle, oldloop, hetero);
 	DLOOP_Handle_get_size_macro(handle, type_size);
 	DLOOP_Handle_get_extent_macro(handle, type_extent);
         DLOOP_Handle_get_basic_type_macro(handle, el_type);

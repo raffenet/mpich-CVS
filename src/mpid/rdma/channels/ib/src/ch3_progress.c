@@ -301,7 +301,7 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
     if (remote_data_sz < sreq->dev.segment_size)
     {
 	MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count,
-			  sreq->dev.datatype, &sreq->dev.segment);
+			  sreq->dev.datatype, &sreq->dev.segment, 0);
 	sreq->dev.iov_count = MPID_IOV_LIMIT;
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = remote_data_sz;

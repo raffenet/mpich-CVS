@@ -431,14 +431,12 @@ THREAD_RETURN_TYPE MPIDI_Win_wait_thread(void *arg)
                     segp = MPID_Segment_alloc();
                     MPID_Segment_init(NULL,
                                       rma_op_info.count, 
-                                      rma_op_info.datatype, segp);
+                                      rma_op_info.datatype, segp, 0);
                     first = 0;
                     last  = SEGMENT_IGNORE_LAST;
                     
                     vec_len = new_dtp->n_contig_blocks *
-                        rma_op_info.count + 1; /* +1 needed
-                                                  because Rob says
-                                                  so */
+                        rma_op_info.count;
                      dloop_vec = (DLOOP_VECTOR *)
                         MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
                     if (!dloop_vec) {

@@ -188,7 +188,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for non-contiguous"
 				  " rdma"));
 		MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count,
-				  rreq->dev.datatype, &rreq->dev.segment);
+				  rreq->dev.datatype, &rreq->dev.segment, 0);
 		rreq->dev.segment_first = 0;
 		rreq->dev.segment_size = data_sz;
 		mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);

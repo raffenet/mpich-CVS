@@ -398,7 +398,7 @@ THREAD_RETURN_TYPE MPIDI_Win_passive_target_thread(void *arg)
                         segp = MPID_Segment_alloc();
                         MPID_Segment_init(NULL,
                                           rma_op_info.count, 
-                                          rma_op_info.datatype, segp);
+                                          rma_op_info.datatype, segp, 0);
                         first = 0;
                         last  = SEGMENT_IGNORE_LAST;
 

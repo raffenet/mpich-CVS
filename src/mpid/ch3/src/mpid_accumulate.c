@@ -129,7 +129,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 goto fn_exit;
             }
 	    /* --END ERROR HANDLING-- */
-            MPID_Segment_init(NULL, target_count, target_datatype, segp);
+            MPID_Segment_init(NULL, target_count, target_datatype, segp, 0);
             first = 0;
             last  = SEGMENT_IGNORE_LAST;
         

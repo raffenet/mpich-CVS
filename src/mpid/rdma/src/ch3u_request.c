@@ -357,7 +357,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	    MPID_Segment seg;
 	    MPIDI_msg_sz_t last;
 
-	    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &seg);
+	    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &seg, 0);
 	    last = unpack_sz;
 	    MPID_Segment_unpack(&seg, 0, &last, rreq->dev.tmpbuf);
 	    if (last != unpack_sz)

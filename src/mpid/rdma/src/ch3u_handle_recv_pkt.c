@@ -438,7 +438,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for non-contiguous"
 				      " rdma"));
 		    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count,
-				      rreq->dev.datatype, &rreq->dev.segment);
+				      rreq->dev.datatype, &rreq->dev.segment,
+				      0);
 		    rreq->dev.segment_first = 0;
 		    rreq->dev.segment_size = data_sz;
 		    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
@@ -520,7 +521,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    }
 	    else
 	    {
-		MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment);
+		MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment, 0);
 		iov_n = MPID_IOV_LIMIT - 1;
 		sreq->dev.segment_first = 0;
 		sreq->dev.segment_size = data_sz;
@@ -962,7 +963,7 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 	    int mpi_errno;
 		    
 	    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for non-contiguous read"));
-	    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &rreq->dev.segment);
+	    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &rreq->dev.segment, 0);
 	    rreq->dev.segment_first = 0;
 	    rreq->dev.segment_size = data_sz;
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
