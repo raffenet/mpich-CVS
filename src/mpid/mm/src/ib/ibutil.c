@@ -115,7 +115,7 @@ int ibu_post_write(MPIDI_VC *vc_ptr, void *buf, int len, int (*write_progress_up
 	&work_req);
     if (status != IB_SUCCESS)
     {
-	err_printf("Error: failed to post ib send, status = %d\n", status);
+	err_printf("Error: failed to post ib send, status = %d, %s\n", status, iba_errstr(status));
 	return status;
     }
 
