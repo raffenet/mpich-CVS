@@ -22,7 +22,7 @@ environments.
 To build MPICH2 with the TCP channel device, do the following:
 
     tar xzf mpich2.tar.gz
-    cd mpich2-<SNAPSHOT_DATE>
+    cd mpich2-<VERSION>
     ./configure
     make
 
@@ -33,8 +33,8 @@ To build MPICH2 with the TCP channel device, do the following:
 for the first line).  (VPATH builds are supported as well; see below).
 
 You should now have a complete build of MPICH2, and the executable
-commands needed to start MPI processes are in mpich2-<DATE>/bin.  You should
-add that directory to your PATH.
+commands needed to start MPI processes are in mpich2-<VERSION>/bin.  You
+should add that directory to your PATH.
 
 If you wish to install MPICH2 in a directory other than the one you
 build it in, you should build MPICH2 as follows.
@@ -109,12 +109,12 @@ the following example assumes that the sources are placed in
 installed version goes into /usr/local/mpich2-test:
 
     cd /usr/me
-    tar xzf mpich2-devsnapshot.tar.gz
+    tar xzf mpich2-<VERSION>.tar.gz
     cd /tmp/me
     # Assume /tmp/me already exists
     mkdir mpich2
     cd mpich2
-    /usr/me/mpich2-10-25-02/configure --prefix=/usr/local/mpich2-test
+    /usr/me/mpich2-<VERSION>/configure --prefix=/usr/local/mpich2-test
     make
     make install
 
