@@ -245,6 +245,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_PORT);
 	qp_attr.remote_atomic_flags = VAPI_EN_REM_WRITE | VAPI_EN_REM_READ;
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_REMOTE_ATOMIC_FLAGS);
+	MPIU_DBG_PRINTF(("moving to INIT on port %d\n", IBU_Process.port));
     }
     else if (qp_state == VAPI_RTR) 
     {
@@ -286,6 +287,7 @@ static VAPI_ret_t modifyQP( ibu_t ibu, VAPI_qp_state_t qp_state )
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_RNR_RETRY);
 	qp_attr.ous_dst_rd_atom  = 1; /*255;*/
 	QP_ATTR_MASK_SET(qp_attr_mask, QP_ATTR_OUS_DST_RD_ATOM);
+	MPIU_DBG_PRINTF(("moving to RTS\n"));
     }
     else if (qp_state == VAPI_RESET)
     {
