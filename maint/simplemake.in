@@ -1461,8 +1461,8 @@ sub LibraryBuild {
 	# The special case for an extension of h handles the case where the
 	# .h files are derived, and hence have special rules for creating
 	# them
-	if (!defined($extrules{"$ext:o"} && $ext ne "h")) { 
-	    print STDERR "Unknown extension $ext for $sourcefile\n";
+	if ( (!defined($extrules{"$ext:o"}) && ($ext ne "h"))) { 
+	    print STDERR "Unknown extension $ext for $sourcefile for library $libname\n";
 	}
 	
 	if ($dolib_member) {
@@ -1526,7 +1526,7 @@ sub TargetProfileLibraries {
 	    else {
 		# Be silent on .h files
 		if ($ext ne "h") {
-		    print "Unknown extension $ext for $sourcefile\n";
+		    print STDERR "Unknown extension $ext for $sourcefile for profile library $proflib_name\n";
 		}
 	    }
 	    &print_make_line( FD, "$obj " );
@@ -1616,7 +1616,7 @@ sub TargetPrograms {
 	    }
 	    else {
 		if ($ext ne "h") {
-		    print "Unknown extension $ext for $sourcefile\n";
+		    print STDERR "Unknown extension $ext for $sourcefile for program $pgm\n";
 		}
 	    }
         }
