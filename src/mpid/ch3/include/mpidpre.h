@@ -358,7 +358,7 @@ typedef struct MPIDI_PG
 
     /* VC table.  At present this is a pointer to an array of VC structures.  Someday we may want make this a pointer to an array
        of VC references.  Thus, it is important to use MPIDI_PG_Get_vc() instead of directly referencing this field. */
-    struct MPIDI_VC_t * vct;
+    struct MPIDI_VC * vct;
 
     /* Pointer to the process group ID.  The actual ID is defined and allocated by the process group.  The pointer is kept in the
        device space because it is necessary for the device to be able to find a particular process group. */
@@ -377,7 +377,7 @@ MPIDI_PG_t;
 #define MPIDI_VC_STATE_REMOTE_CLOSE 4
 #define MPIDI_VC_STATE_CLOSE_ACKED 5
 
-typedef struct MPIDI_VC_t
+typedef struct MPIDI_VC
 {
     /* XXX - need better comment */
     /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the MPIU_Object system, but we do use the associated
@@ -420,6 +420,9 @@ typedef enum MPIDI_VC_Event
     MPIDI_VC_EVENT_TERMINATED
 }
 MPIDI_VC_Event_t;
+
+typedef struct MPIDI_VCRT * MPID_VCRT;
+typedef struct MPIDI_VC * MPID_VCR;
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_REQUEST_SEQNUM	\

@@ -1073,9 +1073,6 @@ extern MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN];
 extern MPID_Group MPID_Group_direct[];
 /* ------------------------------------------------------------------------- */
 
-typedef struct MPIDI_VCRT * MPID_VCRT;
-typedef struct MPIDI_VC_t   * MPID_VCR;
-
 /*E
   MPID_Comm_kind_t - Name the two types of communicators
   E*/
