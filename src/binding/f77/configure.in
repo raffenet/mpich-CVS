@@ -276,7 +276,9 @@ else
 fi
 AC_SUBST(AR)
 AC_PROG_INSTALL
-AC_PATH_PROG(RANLIB,ranlib)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
 AC_SUBST(RANLIB)
 # allow for a different linker for Fortran programs
 AC_SUBST(F77LINKER)
@@ -289,6 +291,17 @@ AC_SUBST(MPILIBNAME)
 # The following variables are used in mpif77.in and reflect the MPI
 # implementation that is in use.
 # 
+# Here are the commands to substitute the compilers to be used to create
+# shared libraries.  The choices for the first two come down from the
+# top-level configure.  FC_SHL must be determined in this configure
+AC_SUBST(CC_SHL)
+AC_SUBST(ENABLE_SHLIB)
+AC_SUBST(FC_SHL)
+if test "$ENABLE_SHLIB" = "gcc" ; then
+   # Assume that the compiler is g77 if gcc style shared libraries chosen
+   FC_SHL="$FC -shared -fpic"
+fi
+
 if test "$pac_lib_mpi_is_building" = "yes" ; then
     # These values are EXPORTED by the MPICH configure
     # Alternately, if we are building a *new* Fortran library for a

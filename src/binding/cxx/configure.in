@@ -15,7 +15,9 @@ if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
 AC_PROG_CXX
 AC_PATH_PROG(AR,ar)
-AC_PATH_PROG(RANLIB,ranlib)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
 AC_PROG_INSTALL
 AC_LANG_CPLUSPLUS
 dnl     checks for libraries
@@ -28,6 +30,17 @@ AC_CXX_BOOL
 AC_CXX_NAMESPACES
 if test "$ac_cv_cxx_namespaces" != "yes" ; then
     AC_MSG_ERROR([Namespaces are required for the MPI C++ interface])
+fi
+
+# Here are the commands to substitute the compilers to be used to create
+# shared libraries.  The choices for the first two come down from the
+# top-level configure.  CXX_SHL must be determined in this configure
+AC_SUBST(CC_SHL)
+AC_SUBST(ENABLE_SHLIB)
+AC_SUBST(CXX_SHL)
+if test "$ENABLE_SHLIB" = "gcc" ; then
+   # Assume that the compiler is g++ if gcc style shared libraries chosen
+   CXX_SHL="$CXX -shared -fpic"
 fi
 dnl     checks for library functions
 dnl     checks for system services

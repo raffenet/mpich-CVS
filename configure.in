@@ -405,6 +405,11 @@ if test "$with_cross" != "no" ; then
 fi
 dnl
 PAC_ARG_SHAREDLIBS
+ENABLE_SHLIB=$enable_sharedlibs
+if test -z "$ENABLE_SHLIB" ; then
+    ENABLE_SHLIB=no
+fi
+AC_SUBST(ENABLE_SHLIB)
 dnl
 dnl CC_SHL=true
 dnl C_LINK_SHL=true
@@ -576,6 +581,7 @@ dnl eval CC_SHL=$CC_SHL
 dnl Ensure that all subdir configures get this
 export CC_SHL
 export C_LINK_SHL
+export ENABLE_SHLIB
 dnl
 dnl Find SSH.  If SSH is defined, use that instead
 dnl AC_PATH_PROG(SSH,ssh)
