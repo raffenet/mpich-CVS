@@ -341,6 +341,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
+					int (*indexfn) (DLOOP_Offset *blocks_p,
+							int count,
+							int *blockarray,
+							DLOOP_Offset *offsetarray,
+							int el_size,
+							DLOOP_Offset rel_off,
+							void *bufp,
+							void *v_paramp),
 					void *pieceparams);
 
 #endif

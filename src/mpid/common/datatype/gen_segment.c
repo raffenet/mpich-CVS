@@ -330,6 +330,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
+					int (*indexfn) (DLOOP_Offset *blocks_p,
+							int count,
+							int *blockarray,
+							DLOOP_Offset *offsetarray,
+							int el_size,
+							DLOOP_Offset rel_off,
+							void *bufp,
+							void *v_paramp),
 					void *pieceparams)
 {
     int cur_sp, valid_sp;
@@ -369,7 +377,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	     * simplifies this code.
 	     */
 	    tmp_last = first;
-	    PREPEND_PREFIX(Segment_manipulate)(segp, 0, &tmp_last, NULL, NULL, NULL);
+	    PREPEND_PREFIX(Segment_manipulate)(segp, 0, &tmp_last, NULL, NULL, NULL, NULL);
 	    
 	    /* verify that we're in the right location */
 	    if (tmp_last != first) assert(0);
@@ -414,7 +422,17 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(0);
 		    break;
 		case DLOOP_KIND_INDEXED:
-		    myblocks = cur_elmp->curblock;
+		    if (indexfn &&
+			cur_elmp->orig_block == cur_elmp->curblock &&
+			cur_elmp->orig_count == cur_elmp->curcount)
+		    {
+			/* TODO: RELAX CONSTRAINT ON COUNT? */
+			myblocks = cur_elmp->loop_p->loop_params.i_t.total_blocks;
+		    }
+		    else
+		    {
+			myblocks = cur_elmp->curblock;
+		    }
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    /* If we have a vector function and we're at the start of a contiguous
@@ -455,7 +473,24 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    else {
 		partial_flag = 0; /* handling everything left for this type */
 	    }
-	    if (vectorfn
+
+	    if (indexfn
+		&& (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_INDEXED
+		&& cur_elmp->curcount > 1
+		&& cur_elmp->orig_block == cur_elmp->curblock
+		&& cur_elmp->orig_count == cur_elmp->curcount)
+	    {
+		/* TODO: RELAX CONSTRAINT ON COUNT */
+		piecefn_indicated_exit = indexfn(&myblocks,
+						 cur_elmp->curcount,
+						 cur_elmp->loop_p->loop_params.i_t.blocksize_array,
+						 cur_elmp->loop_p->loop_params.i_t.offset_array,
+						 basic_size,
+						 cur_elmp->orig_offset, /* indexfn adds in offset array value */
+						 segp->ptr,
+						 pieceparams);
+	    }
+	    else if (vectorfn
 		&& (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_VECTOR
 		&& cur_elmp->curcount > 1
 		&& cur_elmp->orig_block == cur_elmp->curblock)
@@ -470,6 +505,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 						  pieceparams);
 	    }
 	    else if (contigfn) {
+		assert(myblocks <= cur_elmp->curblock);
+
 		piecefn_indicated_exit = contigfn(&myblocks,
 						  basic_size, /* for hetero this is a type */
 						  cur_elmp->curoffset, /* relative to segp->ptr */
@@ -518,21 +555,52 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	     */
 	    if (myblocks > cur_elmp->curblock)
 	    {
-		/* This can only happen in the case of a vector, so we don't
-		 * test for that for performance reasons.
-		 */
-
+		int count_index;
 		/* recall that we only handle more than one contiguous block if
 		 * we are at the beginning of a block.  this simplifies the
 		 * calculations here.
 		 */
-		cur_elmp->curcount -= myblocks / cur_elmp->orig_block;
-		if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
-		else {
-		    /* if we didn't finish the entire type, we need to update the block and offset */
-		    cur_elmp->curblock = cur_elmp->orig_block - (myblocks % cur_elmp->orig_block);
-		    cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
-			cur_elmp->loop_p->loop_params.v_t.stride;
+
+		/* this only happens for vectors and indexed types currently */
+		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
+		    case DLOOP_KIND_INDEXED:
+			while (myblocks > 0 && myblocks >= cur_elmp->curblock) {
+			    myblocks -= cur_elmp->curblock;
+			    cur_elmp->curcount--;
+			    assert(cur_elmp->curcount >= 0);
+
+			    count_index = cur_elmp->orig_count - cur_elmp->curcount;
+			    cur_elmp->curblock = DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, count_index);
+			}
+
+			if (cur_elmp->curcount == 0) {
+			    assert(myblocks == 0);
+			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
+			}
+			else {
+			    /* update remainder of values, handling partial block processing */
+			    cur_elmp->orig_block = cur_elmp->curblock;
+			    cur_elmp->curoffset  = cur_elmp->orig_offset + DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
+			    
+			    cur_elmp->curblock  -= myblocks;
+			    cur_elmp->curoffset += myblocks * basic_size;
+			}
+			
+			break;
+		    case DLOOP_KIND_VECTOR:
+			cur_elmp->curcount -= myblocks / cur_elmp->orig_block;
+			if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
+			else {
+			    /* if we didn't finish the entire type, we need to update the block and offset */
+			    cur_elmp->curblock = cur_elmp->orig_block - (myblocks % cur_elmp->orig_block);
+			    cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
+				cur_elmp->loop_p->loop_params.v_t.stride;
+			}
+			break;
+		    case DLOOP_KIND_CONTIG:
+		    case DLOOP_KIND_BLOCKINDEXED:
+			assert(0);
+			break;
 		}
 	    }
 	    else {

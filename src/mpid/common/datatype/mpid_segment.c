@@ -204,6 +204,24 @@ static int MPID_Segment_contig_unpack_to_buf(DLOOP_Offset *blocks_p,
 					     void *bufp,
 					     void *v_paramp);
 
+static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
+					    int count,
+					    int *blockarray,
+					    DLOOP_Offset *offsetarray,
+					    int el_size,
+					    DLOOP_Offset rel_off,
+					    void *bufp,
+					    void *v_paramp);
+
+static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
+					  int count,
+					  int *blockarray,
+					  DLOOP_Offset *offsetarray,
+					  int el_size,
+					  DLOOP_Offset rel_off,
+					  void *bufp,
+					  void *v_paramp);
+
 static int MPID_Segment_vector_pack_to_buf(DLOOP_Offset *blocks_p,
 					   int count,
 					   int blksz,
@@ -282,20 +300,14 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_PACK);
 
     pack_params.u.pack.pack_buffer = pack_buffer;
-#if 1
     MPID_Segment_manipulate(segp,
 			    first,
 			    lastp,
 			    MPID_Segment_contig_pack_to_buf, 
 			    MPID_Segment_vector_pack_to_buf,
+			    MPID_Segment_index_pack_to_buf,
 			    &pack_params);
-#else
-    DLOOP_SEGMENT_MANIPULATE(segp,
-			     first,
-			     lastp,
-			     1,
-			     (&pack_params));
-#endif
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_PACK);
     return;
 }
@@ -324,6 +336,7 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 			    lastp, 
 			    MPID_Segment_contig_pack_to_iov, 
 			    MPID_Segment_vector_pack_to_iov,
+			    NULL,
 			    &packvec_params);
 
     /* last value already handled by MPID_Segment_manipulate */
@@ -366,6 +379,7 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 			    lastp, 
 			    MPID_Segment_contig_flatten, 
 			    MPID_Segment_vector_flatten,
+			    NULL,
 			    &packvec_params);
 
     /* last value already handled by MPID_Segment_manipulate */
@@ -397,6 +411,7 @@ void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
 			    lastp,
 			    MPID_Segment_contig_count_block,
 			    NULL,
+			    NULL,
 			    &packvec_params);
 
     *countp = packvec_params.u.contig_blocks.count;
@@ -421,6 +436,7 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 			    lastp, 
 			    MPID_Segment_contig_unpack_to_buf,
 			    MPID_Segment_vector_unpack_to_buf,
+			    MPID_Segment_index_unpack_to_buf,
 			    &unpack_params);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_UNPACK);
@@ -885,9 +901,93 @@ static int MPID_Segment_contig_pack_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+/* MPID_Segment_index_pack_to_buf
+ */
+static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
+					  int count,
+					  int *blockarray,
+					  DLOOP_Offset *offsetarray,
+					  int el_size,
+					  DLOOP_Offset rel_off,
+					  void *bufp,
+					  void *v_paramp)
+{
+    int curblock = 0;
+    DLOOP_Offset cur_block_sz, blocks_left = *blocks_p;
+    char *cbufp;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
 
+    while (blocks_left) {
+	assert(curblock < count);
+	cur_block_sz = blockarray[curblock];
+	cbufp = (char *) bufp + rel_off + offsetarray[curblock];
 
+	if (cur_block_sz > blocks_left) cur_block_sz = blocks_left;
 
+	if (el_size == 8) {
+	    /* note: macro updates pack buffer location */
+	    MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int64_t, cur_block_sz, 1);
+	}
+	else if (el_size == 4) {
+	    MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int32_t, cur_block_sz, 1);
+	}
+	else if (el_size == 2) {
+	    MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int16_t, cur_block_sz, 1);
+	}
+	else {
+	    DLOOP_Offset size = cur_block_sz * el_size;
+
+	    memcpy(paramp->u.pack.pack_buffer, cbufp, size);
+	    paramp->u.pack.pack_buffer += size;
+	}
+	blocks_left -= cur_block_sz;
+	curblock++;
+    }
+    return 0;
+}
+
+/* MPID_Segment_index_unpack_to_buf
+ */
+static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
+					    int count,
+					    int *blockarray,
+					    DLOOP_Offset *offsetarray,
+					    int el_size,
+					    DLOOP_Offset rel_off,
+					    void *bufp,
+					    void *v_paramp)
+{
+    int curblock = 0;
+    DLOOP_Offset cur_block_sz, blocks_left = *blocks_p;
+    char *cbufp = (char *) bufp + rel_off;
+    struct MPID_Segment_piece_params *paramp = v_paramp;
+
+    while (blocks_left) {
+	cur_block_sz = blockarray[curblock];
+	cbufp = (char *) bufp + rel_off + offsetarray[curblock];
+
+	if (cur_block_sz > blocks_left) cur_block_sz = blocks_left;
+
+	if (el_size == 8) {
+	    /* note: macro updates pack buffer location */
+	    MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, 0, int64_t, cur_block_sz, 1);
+	}
+	else if (el_size == 4) {
+	    MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, 0, int32_t, cur_block_sz, 1);
+	}
+	else if (el_size == 2) {
+	    MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, 0, int16_t, cur_block_sz, 1);
+	}
+	else {
+	    DLOOP_Offset size = cur_block_sz * el_size;
+	    memcpy(cbufp, paramp->u.unpack.unpack_buffer, size);
+	    paramp->u.unpack.unpack_buffer += size;
+	}
+	blocks_left -= cur_block_sz;
+	curblock++;
+    }
+    return 0;
+}
 
 
 
