@@ -101,7 +101,7 @@ dist-with-version:
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
 	( cd tmpdir/${PACKAGE}-${version}/src/mpid && /bin/rm -rf mm rdma)
-	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes )
+	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes develop )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 
