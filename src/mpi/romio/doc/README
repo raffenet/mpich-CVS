@@ -1,0 +1,13 @@
+This directory contains some documents relevant to ROMIO.
+
+adio.ps.gz: Describes the internal abstract-device interface, which is the
+            key component of ROMIO.
+
+dtype.ps.gz: Explains how I/O performance improves when users use derived 
+             datatypes and file views to describe noncontiguous accesses.
+
+ext2ph.ps.gz: For collective I/O, ROMIO uses a generalized version of 
+              the algorithm described in this paper.
+
+users-guide.ps.gz: User's Guide for ROMIO
+

@@ -1,0 +1,34 @@
+CC          = @CC@
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I../../mpi-io -I../../adio/include
+AR          = @AR@
+LIBNAME     = @LIBNAME@
+RANLIB      = @RANLIB@
+CFLAGS      = @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
+
+MPIO_OBJECTS = subarray.o darray.o
+
+MPIO_TMP_POBJECTS = subarray.p darray.p
+
+MPIO_REAL_POBJECTS = _subarray.o _darray.o
+
+all: $(LIBNAME)
+
+.SUFFIXES: $(SUFFIXES) .p
+
+.c.o:
+	$(CC) $(CFLAGS) -c $*.c
+
+.c.p:
+	@\cp $*.c _$*.c
+	$(CC) $(CFLAGS) -c _$*.c
+	@\rm -f _$*.c
+
+profile: $(MPIO_TMP_POBJECTS)
+	$(AR) $(LIBNAME) $(MPIO_REAL_POBJECTS)
+	@\rm -f _*.o
+
+$(LIBNAME): $(MPIO_OBJECTS)
+	$(AR) $(LIBNAME) $(MPIO_OBJECTS)
+
+clean:
+	\rm -f *.o

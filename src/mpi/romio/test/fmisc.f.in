@@ -1,0 +1,146 @@
+      program main
+      implicit none
+
+      include 'mpif.h'
+      include 'mpiof.h'
+
+!     Fortran equivalent of misc.c
+!     tests various miscellaneous functions.
+
+      integer buf(1024), amode, flag, fh, status(MPI_STATUS_SIZE)
+      integer ierr, newtype, i, group
+      integer etype, filetype, mynod, argc, iargc
+      character*7 datarep
+      character*1024 str    ! used to store the filename
+      @FORTRAN_MPI_OFFSET@ disp, offset, filesize
+      @FTESTDEFINE@
+
+      call MPI_INIT(ierr)
+      call MPI_COMM_RANK(MPI_COMM_WORLD, mynod, ierr)
+
+!     process 0 takes the file name as a command-line argument and 
+!     broadcasts it to other processes
+
+      if (mynod .eq. 0) then
+         argc = @F77IARGC@
+         i = 0
+         @F77GETARG@
+         do while ((i .lt. argc) .and. (str .ne. '-fname'))
+            i = i + 1
+            @F77GETARG@
+         end do
+         if (i .ge. argc) then
+	    print *
+            print *, '*#  Usage: fmisc -fname filename'
+            print *
+            call MPI_ABORT(MPI_COMM_WORLD, 1, ierr)
+         end if
+
+         i = i + 1
+         @F77GETARG@
+         call MPI_BCAST(str, 1024, MPI_CHARACTER, 0,                    &
+     &        MPI_COMM_WORLD, ierr)
+      else 
+         call MPI_BCAST(str, 1024, MPI_CHARACTER, 0,                    &
+     &        MPI_COMM_WORLD, ierr)
+      end if
+
+
+      call MPI_FILE_OPEN(MPI_COMM_WORLD, str,                           &
+     &     MPI_MODE_CREATE + MPI_MODE_RDWR, MPI_INFO_NULL, fh, ierr)
+
+      call MPI_FILE_WRITE(fh, buf, 1024, MPI_INTEGER, status, ierr)
+
+      call MPI_FILE_SYNC(fh, ierr)
+
+      call MPI_FILE_GET_AMODE(fh, amode, ierr)
+      print *, 'testing MPI_FILE_GET_AMODE'
+      print *, 'amode is ', amode, ', should be ', MPI_MODE_CREATE      &
+     &           + MPI_MODE_RDWR
+      print *
+
+      call MPI_FILE_GET_ATOMICITY(fh, flag, ierr)
+      print *, 'atomicity is ', flag, ', should be 0'
+      print *, 'setting atomic mode'
+      call MPI_FILE_SET_ATOMICITY(fh, 1, ierr)
+      call MPI_FILE_GET_ATOMICITY(fh, flag, ierr)
+      print *, 'atomicity is ', flag, ', should be 1'
+      call MPI_FILE_SET_ATOMICITY(fh, 0, ierr)
+      print *, 'reverting back to nonatomic mode'
+      print *
+
+      call MPI_TYPE_VECTOR(10, 10, 20, MPI_INTEGER, newtype, ierr)
+      call MPI_TYPE_COMMIT(newtype, ierr)
+
+      disp = 1000
+      call MPI_FILE_SET_VIEW(fh, disp, MPI_INTEGER, newtype, 'native',  & 
+     &     MPI_INFO_NULL, ierr)
+      print *, 'testing MPI_FILE_GET_VIEW'
+
+      disp = 0
+      call MPI_FILE_GET_VIEW(fh, disp, etype, filetype, datarep, ierr)
+      print *, 'disp = ', disp, ', datarep = ', datarep,                &
+     &     ', should be 1000, native'
+      print *
+
+      print *, 'testing MPI_FILE_GET_BYTE_OFFSET'
+      offset = 10
+      call MPI_FILE_GET_BYTE_OFFSET(fh, offset, disp, ierr)
+      print *, 'byte offset = ', disp, ', should be 1080'
+      print *
+
+      call MPI_FILE_GET_GROUP(fh, group, ierr)
+
+      print *, 'setting file size to 1060 bytes'
+      filesize = 1060
+      call MPI_FILE_SET_SIZE(fh, filesize, ierr)
+      call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+      call MPI_FILE_SYNC(fh, ierr)
+      filesize = 0
+      call MPI_FILE_GET_SIZE(fh, filesize, ierr)
+      print *, 'file size = ', filesize, ', should be 1060'
+      print *
+ 
+      print *, 'seeking to eof and testing MPI_FILE_GET_POSITION'
+      offset = 0
+      call MPI_FILE_SEEK(fh, offset, MPI_SEEK_END, ierr)
+      call MPI_FILE_GET_POSITION(fh, offset, ierr)
+      print *, 'file pointer posn = ', offset, ', should be 10'
+      print *
+
+      print *, 'testing MPI_FILE_GET_BYTE_OFFSET'
+      call MPI_FILE_GET_BYTE_OFFSET(fh, offset, disp, ierr)
+      print *, 'byte offset = ', disp, ', should be 1080'
+      print *
+      call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+
+      print *, 'testing MPI_FILE_SEEK with MPI_SEEK_CUR'
+      offset = -10
+      call MPI_FILE_SEEK(fh, offset, MPI_SEEK_CUR, ierr)
+      call MPI_FILE_GET_POSITION(fh, offset, ierr)
+      call MPI_FILE_GET_BYTE_OFFSET(fh, offset, disp, ierr)
+      print *, 'file pointer posn in bytes = ', disp,                   &
+     &     ', should be 1000'
+      print *
+
+      print *, 'preallocating disk space up to 8192 bytes'
+      print *
+      filesize = 8192
+      call MPI_FILE_PREALLOCATE(fh, filesize, ierr)
+
+      print *, 'closing the file and deleting it'
+      print *
+      call MPI_FILE_CLOSE(fh, ierr)
+
+      call MPI_BARRIER(MPI_COMM_WORLD, ierr)
+      if (mynod .eq. 0) then
+         call MPI_FILE_DELETE(str, MPI_INFO_NULL, ierr)
+      end if
+
+      call MPI_TYPE_FREE(newtype, ierr)    
+      call MPI_TYPE_FREE(filetype, ierr)    
+      call MPI_GROUP_FREE(group, ierr)
+      call MPI_FINALIZE(ierr)
+
+      stop
+      end

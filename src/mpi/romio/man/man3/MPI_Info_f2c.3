@@ -1,0 +1,35 @@
+.TH MPI_Info_f2c 3 "2/6/1998" " " "MPI-2"
+.SH NAME
+MPI_Info_f2c \-  Translates a Fortran info handle to a C info handle 
+.SH SYNOPSIS
+.nf
+#include "mpio.h"
+MPI_Info MPI_Info_f2c(MPI_Fint info)
+.fi
+.SH INPUT PARAMETERS
+.PD 0
+.TP
+.B info 
+- Fortran info handle (integer)
+.PD 1
+
+.SH RETURN VALUE
+.PD 0
+.TP
+.B C info handle (handle)
+- @*/
+.PD 1
+MPI_Info MPI_Info_f2c(MPI_Fint info)
+{
+
+#ifndef __INT_LT_POINTER
+return (MPI_Info) info;
+#else
+if (!info) return MPI_INFO_NULL;
+if ((info < 0) || (info > MPIR_Infotable_ptr)) {
+printf("MPI_Info_f2c: Invalid info handle\\n");
+MPI_Abort(MPI_COMM_WORLD, 1);
+}
+return MPIR_Infotable[info];
+#endif
+}

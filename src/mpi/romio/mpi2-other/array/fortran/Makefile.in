@@ -1,0 +1,34 @@
+CC          = @CC@
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../../include
+AR          = @AR@
+RANLIB      = @RANLIB@
+LIBNAME     = @LIBNAME@
+CFLAGS      = @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
+
+MPIO_FOBJECTS = subarrayf.o darrayf.o
+
+MPIO_TMP_PFOBJECTS = subarrayf.p darrayf.p
+
+MPIO_REAL_PFOBJECTS = _subarrayf.o _darrayf.o
+
+all: $(LIBNAME)
+
+.SUFFIXES: $(SUFFIXES) .p
+
+.c.o:
+	$(CC) $(CFLAGS) -c $*.c
+
+.c.p:
+	@\cp $*.c _$*.c
+	$(CC) $(CFLAGS) -c _$*.c
+	@\rm -f _$*.c
+
+profile: $(MPIO_TMP_PFOBJECTS)
+	$(AR) $(LIBNAME) $(MPIO_REAL_PFOBJECTS)
+	@\rm -f _*.o
+
+$(LIBNAME): $(MPIO_FOBJECTS)
+	$(AR) $(LIBNAME) $(MPIO_FOBJECTS)
+
+clean: 
+	/bin/rm -f *.o

@@ -1,0 +1,77 @@
+CC = @TEST_CC@
+F77 = @TEST_F77@
+MPI_LIB = @MPI_LIB@
+INCLUDE_DIR = -I@ROMIO_HOME@/include -I@MPI_INCLUDE_DIR@
+LIBS = @LIBNAME@ $(MPI_LIB)
+USER_CFLAGS = @USER_CFLAGS@ $(INCLUDE_DIR)
+USER_FFLAGS = @USER_FFLAGS@ $(INCLUDE_DIR)
+
+all: simple perf async coll_test coll_perf misc file_info excl large_array \
+     atomicity noncontig i_noncontig noncontig_coll large_file fperf \
+     fcoll_test fmisc
+
+.c.o:
+	$(CC) $(USER_CFLAGS) -c $*.c
+
+.f.o:
+	$(F77) $(USER_FFLAGS) -c $*.f
+
+clean: 
+	\rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity
+
+simple: simple.o
+	$(CC) $(USER_CFLAGS) -o simple simple.o $(LIBS)
+
+perf: perf.o
+	$(CC) $(USER_CFLAGS) -o perf perf.o $(LIBS)
+
+excl: excl.o
+	$(CC) $(USER_CFLAGS) -o excl excl.o $(LIBS)
+
+async: async.o
+	$(CC) $(USER_CFLAGS) -o async async.o $(LIBS)
+
+atomicity: atomicity.o
+	$(CC) $(USER_CFLAGS) -o atomicity atomicity.o $(LIBS)
+
+coll_test: coll_test.o
+	$(CC) $(USER_CFLAGS) -o coll_test coll_test.o $(LIBS)
+
+coll_perf: coll_perf.o
+	$(CC) $(USER_CFLAGS) -o coll_perf coll_perf.o $(LIBS)
+
+misc: misc.o
+	$(CC) $(USER_CFLAGS) -o misc misc.o $(LIBS)
+
+noncontig: noncontig.o
+	$(CC) $(USER_CFLAGS) -o noncontig noncontig.o $(LIBS)
+
+i_noncontig: i_noncontig.o
+	$(CC) $(USER_CFLAGS) -o i_noncontig i_noncontig.o $(LIBS)
+
+noncontig_coll: noncontig_coll.o
+	$(CC) $(USER_CFLAGS) -o noncontig_coll noncontig_coll.o $(LIBS)
+
+file_info: file_info.o
+	$(CC) $(USER_CFLAGS) -o file_info file_info.o $(LIBS)
+
+fperf: fperf.o
+	$(F77) $(USER_FFLAGS) -o fperf fperf.o $(LIBS)
+
+fcoll_test: fcoll_test.o
+	$(F77) $(USER_FFLAGS) -o fcoll_test fcoll_test.o $(LIBS)
+
+fmisc: fmisc.o
+	$(F77) $(USER_FFLAGS) -o fmisc fmisc.o $(LIBS)
+
+finfo: finfo.o
+	$(F77) $(USER_FFLAGS) -o finfo finfo.o $(LIBS)
+
+info: info.o
+	$(CC) $(USER_CFLAGS) -o info info.o $(LIBS)
+
+large_file: large_file.o
+	$(CC) $(USER_CFLAGS) -o large_file large_file.o $(LIBS)
+
+large_array: large_array.o
+	$(CC) $(USER_CFLAGS) -o large_array large_array.o $(LIBS)
