@@ -393,7 +393,7 @@ if test -n "$arch_sun4" ; then
     CC=${CC:-gcc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
-	if test $CC = "gcc"; then
+	if test "$CC" = "gcc"; then
            CFLAGS="$CFLAGS -g -D__USE_FIXED_PROTOTYPES__ -Wall -D__AIO_SUN"
 	else
            CFLAGS="$CFLAGS -g -D__AIO_SUN"
@@ -417,7 +417,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
-        if test $CC = "gcc" ; then
+        if test "$CC" = "gcc" ; then
             CFLAGS="$CFLAGS -g -Wall -D__AIO_SUN"
         else 
             CFLAGS="$CFLAGS -g -v -D__AIO_SUN"
@@ -471,7 +471,7 @@ if test -n "$arch_rs6000"; then
         mpi_mpich=1
     fi
     if test -z "$FILE_SYSTEM" ; then
-        if test $CC = "mpcc" || test $CC = "mpCC" ; then
+        if test "$CC" = "mpcc" || test "$CC" = "mpCC" ; then
             file_system_piofs=1
             FILE_SYSTEM="piofs"
             echo "configuring for file systems piofs, ufs, and nfs"
@@ -495,7 +495,7 @@ if test -n "$arch_paragon"; then
     if test $DEBUG = 1; then
         CFLAGS="$CFLAGS -g"
     else 
-	if test $CC = "icc"; then
+	if test "$CC" = "icc"; then
            CFLAGS="$CFLAGS -Knoieee -Mvect -O3"
 	else
            CFLAGS="$CFLAGS -O"
@@ -527,7 +527,7 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     if test $DEBUG = 1; then
         CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
     else
-       if test $CC = "pgcc"; then
+       if test "$CC" = "pgcc"; then
            CFLAGS="$CFLAGS -Knoieee -Mvect -O3 $TFLOP_FLAGS"
        else
            CFLAGS="$CFLAGS -O $TFLOP_FLAGS"
@@ -628,7 +628,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
         CC=${CC:-mpicc -Ae}
         F77=${FC:-mpif77 +U77}
     fi
-    if test $MPI = "lam" && test $FC != ""; then
+    if test $MPI = "lam" && test "$FC" != ""; then
         FC="$FC +U77"
     fi
     FTESTDEFINE="external iargc, getarg"
@@ -663,10 +663,10 @@ struct flock64 fl; int i=F_SETLKW64;],flock64_ok="yes",flock64_ok="no")
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
-    if test $CC != "gcc" ; then
+    if test "$CC" != "gcc" ; then
         ROMIO_TCFLAGS="-Ae"
     fi
-    if test $F77 != "g77" ; then
+    if test "$F77" != "g77" ; then
         ROMIO_TFFLAGS="+U77"
     fi
 fi
