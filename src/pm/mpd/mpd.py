@@ -360,7 +360,7 @@ def _handle_lhs_input():
                     if g.activeJobs[jobid][manPid]['username'] == msg['username']  \
                     or g.activeJobs[jobid][manPid]['username'] == 'root':
                         kill(manPid * (-1), SIGKILL)  # neg manPid -> group
-                # del g.activeJobs[jobid]  ## handled by sigchld_handler
+                # del g.activeJobs[jobid]  ## handled when child goes away
     elif msg['cmd'] == 'abortjob':
         if msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
@@ -368,7 +368,7 @@ def _handle_lhs_input():
             if jobid == msg['jobid']:
                 for manPid in g.activeJobs[jobid].keys():
                     kill(manPid * (-1), SIGKILL)  # neg manPid -> group
-                # del g.activeJobs[jobid]  ## handled by sigchld_handler
+                # del g.activeJobs[jobid]  ## handled when child goes away
     else:
         mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
 
@@ -639,6 +639,17 @@ def _handle_rhs_challenge_response(responseSocket):
 def _handle_man_msgs(manSocket):
     msg = mpd_recv_one_msg(manSocket)
     if not msg:
+        for jobid in g.activeJobs.keys():
+	    deleted = 0
+	    for manPid in g.activeJobs[jobid]:
+		if manSocket == g.activeJobs[jobid][manPid]['socktoman']:
+                    del g.activeJobs[jobid][manPid]
+		    if len(g.activeJobs[jobid]) == 0:
+		        del g.activeJobs[jobid]
+		    deleted = 1
+                    break
+	    if deleted:
+	        break
         del g.activeSockets[manSocket]
         manSocket.close()
         return
@@ -831,24 +842,14 @@ def _process_cmdline_args():
         mpd_raise('host and port must be specified together')
 
 def sigchld_handler(signum,frame):
-    try:
-        (donePid,status) = waitpid(-1,WNOHANG)
-    except:    ## may occur if no more child processes
-        donePid = 0
-    while donePid != 0:
-        for jobid in g.activeJobs.keys():
-            if g.activeJobs[jobid].has_key(donePid):
-                del g.activeJobs[jobid][donePid]
-                try:    # avoid a race (may get deleted by another donePid)
-                    if len(g.activeJobs[jobid]) == 0:
-                        del g.activeJobs[jobid]
-                except:
-                    pass
-                break
+    done = 0
+    while not done:
         try:
-            (donePid,status) = waitpid(-1,WNOHANG)
-        except:    ## may occur if no more child processes
-            donePid = 0
+            (pid,status) = waitpid(-1,WNOHANG)
+	    if pid == 0:    # no existing child process is finished
+	        done = 1
+        except:    # no more child processes to be waited for
+            done = 1
 
 def usage():
     print 'mpd version %s' % str(mpd_version)
