@@ -1405,6 +1405,8 @@ Function ReplaceAts( str, use_f77 )
 				'str = Replace(str, "@PCONTROL_LIST@", "")
 			Case "@configure_input@"
 				'str = Replace(str, "@configure_input@", "")
+			Case "@DLLIMPORT@"
+				str = Replace(str, "@DLLIMPORT@", "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIV/")
 			Case Else
 				unhandled_ats = unhandled_ats & Match & vbNewLine
 		End Select
