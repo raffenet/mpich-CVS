@@ -20,7 +20,7 @@ int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, i
 	    *num_encoded = n;
 	    return SMPD_SUCCESS;
 	}
-	smpd_dbg_printf(" %c = %c%c\n", ch, dest[0], dest[1]);
+	/*smpd_dbg_printf(" %c = %c%c\n", ch, dest[0], dest[1]);*/
 	dest += num_used;
 	dest_length -= num_used;
 	src++;
@@ -45,7 +45,7 @@ int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded)
 	str++;
 	sscanf(hex, "%X", &value);
 	*dest = (char)value;
-	smpd_dbg_printf(" %s = %c\n", hex, *dest);
+	/*smpd_dbg_printf(" %s = %c\n", hex, *dest);*/
 	dest++;
     }
     return SMPD_SUCCESS;

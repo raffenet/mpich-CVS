@@ -386,6 +386,11 @@ int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
     int cmd_length;
 
     cmd_length = (int)strlen(cmd_ptr->cmd);
+    if (cmd_length > SMPD_MAX_CMD_LENGTH)
+    {
+	smpd_err_printf("invalid cmd string length: %d\n", cmd_length);
+	return SMPD_FAIL;
+    }
 
     len = (int)(SMPD_MAX_CMD_LENGTH - cmd_length);
     str = &cmd_ptr->cmd[cmd_length];
@@ -423,6 +428,11 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
     int cmd_length;
 
     cmd_length = (int)strlen(cmd_ptr->cmd);
+    if (cmd_length > SMPD_MAX_CMD_LENGTH)
+    {
+	smpd_err_printf("invalid cmd string length: %d\n", cmd_length);
+	return SMPD_FAIL;
+    }
 
     len = (int)(SMPD_MAX_CMD_LENGTH - cmd_length);
     str = &cmd_ptr->cmd[cmd_length];
