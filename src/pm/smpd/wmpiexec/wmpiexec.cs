@@ -38,8 +38,6 @@ namespace wmpiexec
 		private System.Windows.Forms.TextBox drive_map_textBox;
 		private System.Windows.Forms.Label channel_label;
 		private System.Windows.Forms.ComboBox channel_comboBox;
-		private System.Windows.Forms.Label log_label;
-		private System.Windows.Forms.ComboBox log_comboBox;
 		private System.Windows.Forms.Button save_job_button;
 		private System.Windows.Forms.Button load_job_button;
 		private System.Windows.Forms.Button execute_button;
@@ -55,20 +53,33 @@ namespace wmpiexec
 		private System.Windows.Forms.TextBox extra_options_textBox;
 		private System.Windows.Forms.Label extra_options_label;
 		private System.Windows.Forms.CheckBox popup_checkBox;
+		private System.Windows.Forms.Button jumpshot_button;
+		private System.Windows.Forms.CheckBox log_checkBox;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
 		private System.ComponentModel.Container components = null;
 
+		private RunCommandDelegate run_command;
+		private IAsyncResult last_execute_result;
 		private Process process;
+		private string thread_command;
+		private string thread_mpiexec_command;
+		private string thread_mpiexec_command_args;
+		private bool thread_popup;
+		private TextReader thread_output_stream;
+		private TextReader thread_error_stream;
+		private TextWriter thread_input_stream;
 		delegate void RunCommandDelegate(string command, string mpiexec_command, string mpiexec_command_args, bool popup);
 		delegate void ReadOutputDelegate(TextReader stream);
+		delegate void ReadErrorDelegate(TextReader stream);
 		delegate void WriteInputDelegate(TextWriter stream);
 		delegate void AppendTextDelegate(string str);
 		delegate void SetProcessDelegate(Process p);
 		delegate void ResetButtonsDelegate();
 
 		private string mpiexec_command, mpiexec_command_args;
+		private int expanded_dialog_difference;
 
 		public wmpiexec()
 		{
@@ -77,6 +88,11 @@ namespace wmpiexec
 			//
 			InitializeComponent();
 
+			expanded_dialog_difference = mpich1_browse_button.Bottom - show_bottom_checkBox.Bottom + 8;
+			//MessageBox.Show(string.Format("difference = {0}", mpich1_browse_button.Bottom - show_bottom_checkBox.Bottom));
+
+			run_command = null;
+			last_execute_result = null;
 			UpdateExtraControls(show_bottom_checkBox.Checked);
 			EnableApplicationControls();
 			DisableConfigfileControls();
@@ -128,8 +144,6 @@ namespace wmpiexec
 			this.drive_map_textBox = new System.Windows.Forms.TextBox();
 			this.channel_label = new System.Windows.Forms.Label();
 			this.channel_comboBox = new System.Windows.Forms.ComboBox();
-			this.log_label = new System.Windows.Forms.Label();
-			this.log_comboBox = new System.Windows.Forms.ComboBox();
 			this.save_job_button = new System.Windows.Forms.Button();
 			this.load_job_button = new System.Windows.Forms.Button();
 			this.execute_button = new System.Windows.Forms.Button();
@@ -145,6 +159,8 @@ namespace wmpiexec
 			this.extra_options_textBox = new System.Windows.Forms.TextBox();
 			this.extra_options_label = new System.Windows.Forms.Label();
 			this.popup_checkBox = new System.Windows.Forms.CheckBox();
+			this.jumpshot_button = new System.Windows.Forms.Button();
+			this.log_checkBox = new System.Windows.Forms.CheckBox();
 			((System.ComponentModel.ISupportInitialize)(this.nproc_numericUpDown)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -200,7 +216,7 @@ namespace wmpiexec
 			// wdir_label
 			// 
 			this.wdir_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.wdir_label.Location = new System.Drawing.Point(24, 344);
+			this.wdir_label.Location = new System.Drawing.Point(24, 368);
 			this.wdir_label.Name = "wdir_label";
 			this.wdir_label.Size = new System.Drawing.Size(96, 24);
 			this.wdir_label.TabIndex = 5;
@@ -210,7 +226,7 @@ namespace wmpiexec
 			// 
 			this.wdir_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
-			this.wdir_textBox.Location = new System.Drawing.Point(152, 344);
+			this.wdir_textBox.Location = new System.Drawing.Point(152, 368);
 			this.wdir_textBox.Name = "wdir_textBox";
 			this.wdir_textBox.Size = new System.Drawing.Size(328, 20);
 			this.wdir_textBox.TabIndex = 13;
@@ -219,7 +235,7 @@ namespace wmpiexec
 			// wdir_browse_button
 			// 
 			this.wdir_browse_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.wdir_browse_button.Location = new System.Drawing.Point(480, 344);
+			this.wdir_browse_button.Location = new System.Drawing.Point(480, 368);
 			this.wdir_browse_button.Name = "wdir_browse_button";
 			this.wdir_browse_button.Size = new System.Drawing.Size(24, 20);
 			this.wdir_browse_button.TabIndex = 14;
@@ -229,7 +245,7 @@ namespace wmpiexec
 			// hosts_label
 			// 
 			this.hosts_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.hosts_label.Location = new System.Drawing.Point(24, 368);
+			this.hosts_label.Location = new System.Drawing.Point(24, 392);
 			this.hosts_label.Name = "hosts_label";
 			this.hosts_label.Size = new System.Drawing.Size(32, 23);
 			this.hosts_label.TabIndex = 8;
@@ -239,7 +255,7 @@ namespace wmpiexec
 			// 
 			this.hosts_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
-			this.hosts_textBox.Location = new System.Drawing.Point(152, 368);
+			this.hosts_textBox.Location = new System.Drawing.Point(152, 392);
 			this.hosts_textBox.Name = "hosts_textBox";
 			this.hosts_textBox.Size = new System.Drawing.Size(312, 20);
 			this.hosts_textBox.TabIndex = 15;
@@ -248,7 +264,7 @@ namespace wmpiexec
 			// hosts_reset_button
 			// 
 			this.hosts_reset_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.hosts_reset_button.Location = new System.Drawing.Point(464, 368);
+			this.hosts_reset_button.Location = new System.Drawing.Point(464, 392);
 			this.hosts_reset_button.Name = "hosts_reset_button";
 			this.hosts_reset_button.Size = new System.Drawing.Size(40, 20);
 			this.hosts_reset_button.TabIndex = 16;
@@ -258,7 +274,7 @@ namespace wmpiexec
 			// configfile_label
 			// 
 			this.configfile_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.configfile_label.Location = new System.Drawing.Point(24, 516);
+			this.configfile_label.Location = new System.Drawing.Point(24, 524);
 			this.configfile_label.Name = "configfile_label";
 			this.configfile_label.Size = new System.Drawing.Size(88, 16);
 			this.configfile_label.TabIndex = 11;
@@ -268,7 +284,7 @@ namespace wmpiexec
 			// 
 			this.configfile_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
-			this.configfile_textBox.Location = new System.Drawing.Point(152, 514);
+			this.configfile_textBox.Location = new System.Drawing.Point(152, 522);
 			this.configfile_textBox.Name = "configfile_textBox";
 			this.configfile_textBox.Size = new System.Drawing.Size(320, 20);
 			this.configfile_textBox.TabIndex = 22;
@@ -277,7 +293,7 @@ namespace wmpiexec
 			// configfile_browse_button
 			// 
 			this.configfile_browse_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.configfile_browse_button.Location = new System.Drawing.Point(480, 514);
+			this.configfile_browse_button.Location = new System.Drawing.Point(480, 522);
 			this.configfile_browse_button.Name = "configfile_browse_button";
 			this.configfile_browse_button.Size = new System.Drawing.Size(24, 20);
 			this.configfile_browse_button.TabIndex = 23;
@@ -287,7 +303,7 @@ namespace wmpiexec
 			// mpich1_label
 			// 
 			this.mpich1_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.mpich1_label.Location = new System.Drawing.Point(24, 540);
+			this.mpich1_label.Location = new System.Drawing.Point(24, 548);
 			this.mpich1_label.Name = "mpich1_label";
 			this.mpich1_label.Size = new System.Drawing.Size(128, 16);
 			this.mpich1_label.TabIndex = 14;
@@ -297,7 +313,7 @@ namespace wmpiexec
 			// 
 			this.mpich1_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
-			this.mpich1_textBox.Location = new System.Drawing.Point(152, 538);
+			this.mpich1_textBox.Location = new System.Drawing.Point(152, 546);
 			this.mpich1_textBox.Name = "mpich1_textBox";
 			this.mpich1_textBox.Size = new System.Drawing.Size(320, 20);
 			this.mpich1_textBox.TabIndex = 25;
@@ -306,7 +322,7 @@ namespace wmpiexec
 			// mpich1_browse_button
 			// 
 			this.mpich1_browse_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.mpich1_browse_button.Location = new System.Drawing.Point(480, 538);
+			this.mpich1_browse_button.Location = new System.Drawing.Point(480, 546);
 			this.mpich1_browse_button.Name = "mpich1_browse_button";
 			this.mpich1_browse_button.Size = new System.Drawing.Size(24, 20);
 			this.mpich1_browse_button.TabIndex = 26;
@@ -316,7 +332,7 @@ namespace wmpiexec
 			// env_label
 			// 
 			this.env_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.env_label.Location = new System.Drawing.Point(24, 392);
+			this.env_label.Location = new System.Drawing.Point(24, 416);
 			this.env_label.Name = "env_label";
 			this.env_label.Size = new System.Drawing.Size(120, 23);
 			this.env_label.TabIndex = 17;
@@ -326,7 +342,7 @@ namespace wmpiexec
 			// 
 			this.env_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
-			this.env_textBox.Location = new System.Drawing.Point(152, 392);
+			this.env_textBox.Location = new System.Drawing.Point(152, 416);
 			this.env_textBox.Name = "env_textBox";
 			this.env_textBox.Size = new System.Drawing.Size(352, 20);
 			this.env_textBox.TabIndex = 17;
@@ -335,7 +351,7 @@ namespace wmpiexec
 			// drive_map_label
 			// 
 			this.drive_map_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.drive_map_label.Location = new System.Drawing.Point(24, 416);
+			this.drive_map_label.Location = new System.Drawing.Point(24, 440);
 			this.drive_map_label.Name = "drive_map_label";
 			this.drive_map_label.Size = new System.Drawing.Size(88, 23);
 			this.drive_map_label.TabIndex = 19;
@@ -345,7 +361,7 @@ namespace wmpiexec
 			// 
 			this.drive_map_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
-			this.drive_map_textBox.Location = new System.Drawing.Point(152, 416);
+			this.drive_map_textBox.Location = new System.Drawing.Point(152, 440);
 			this.drive_map_textBox.Name = "drive_map_textBox";
 			this.drive_map_textBox.Size = new System.Drawing.Size(352, 20);
 			this.drive_map_textBox.TabIndex = 18;
@@ -354,7 +370,7 @@ namespace wmpiexec
 			// channel_label
 			// 
 			this.channel_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.channel_label.Location = new System.Drawing.Point(24, 440);
+			this.channel_label.Location = new System.Drawing.Point(24, 464);
 			this.channel_label.Name = "channel_label";
 			this.channel_label.Size = new System.Drawing.Size(48, 23);
 			this.channel_label.TabIndex = 21;
@@ -371,32 +387,11 @@ namespace wmpiexec
 																  "ib",
 																  "default",
 																  "auto"});
-			this.channel_comboBox.Location = new System.Drawing.Point(424, 440);
+			this.channel_comboBox.Location = new System.Drawing.Point(424, 464);
 			this.channel_comboBox.Name = "channel_comboBox";
 			this.channel_comboBox.Size = new System.Drawing.Size(80, 21);
 			this.channel_comboBox.TabIndex = 19;
 			this.channel_comboBox.Text = "default";
-			// 
-			// log_label
-			// 
-			this.log_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.log_label.Location = new System.Drawing.Point(24, 464);
-			this.log_label.Name = "log_label";
-			this.log_label.Size = new System.Drawing.Size(24, 23);
-			this.log_label.TabIndex = 23;
-			this.log_label.Text = "log";
-			// 
-			// log_comboBox
-			// 
-			this.log_comboBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.log_comboBox.Items.AddRange(new object[] {
-															  "yes",
-															  "no"});
-			this.log_comboBox.Location = new System.Drawing.Point(448, 464);
-			this.log_comboBox.Name = "log_comboBox";
-			this.log_comboBox.Size = new System.Drawing.Size(56, 21);
-			this.log_comboBox.TabIndex = 20;
-			this.log_comboBox.Text = "no";
 			// 
 			// save_job_button
 			// 
@@ -441,7 +436,7 @@ namespace wmpiexec
 			this.output_richTextBox.Font = new System.Drawing.Font("Lucida Console", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((System.Byte)(0)));
 			this.output_richTextBox.Location = new System.Drawing.Point(8, 104);
 			this.output_richTextBox.Name = "output_richTextBox";
-			this.output_richTextBox.Size = new System.Drawing.Size(496, 216);
+			this.output_richTextBox.Size = new System.Drawing.Size(496, 224);
 			this.output_richTextBox.TabIndex = 11;
 			this.output_richTextBox.Text = "";
 			this.output_richTextBox.WordWrap = false;
@@ -489,7 +484,7 @@ namespace wmpiexec
 			// configfile_radioButton
 			// 
 			this.configfile_radioButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.configfile_radioButton.Location = new System.Drawing.Point(8, 512);
+			this.configfile_radioButton.Location = new System.Drawing.Point(8, 520);
 			this.configfile_radioButton.Name = "configfile_radioButton";
 			this.configfile_radioButton.Size = new System.Drawing.Size(16, 24);
 			this.configfile_radioButton.TabIndex = 21;
@@ -498,7 +493,7 @@ namespace wmpiexec
 			// mpich1_radioButton
 			// 
 			this.mpich1_radioButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.mpich1_radioButton.Location = new System.Drawing.Point(8, 536);
+			this.mpich1_radioButton.Location = new System.Drawing.Point(8, 544);
 			this.mpich1_radioButton.Name = "mpich1_radioButton";
 			this.mpich1_radioButton.Size = new System.Drawing.Size(16, 24);
 			this.mpich1_radioButton.TabIndex = 24;
@@ -507,7 +502,7 @@ namespace wmpiexec
 			// show_bottom_checkBox
 			// 
 			this.show_bottom_checkBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.show_bottom_checkBox.Location = new System.Drawing.Point(8, 320);
+			this.show_bottom_checkBox.Location = new System.Drawing.Point(8, 328);
 			this.show_bottom_checkBox.Name = "show_bottom_checkBox";
 			this.show_bottom_checkBox.Size = new System.Drawing.Size(96, 16);
 			this.show_bottom_checkBox.TabIndex = 12;
@@ -518,7 +513,7 @@ namespace wmpiexec
 			// 
 			this.extra_options_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
-			this.extra_options_textBox.Location = new System.Drawing.Point(152, 488);
+			this.extra_options_textBox.Location = new System.Drawing.Point(152, 496);
 			this.extra_options_textBox.Name = "extra_options_textBox";
 			this.extra_options_textBox.Size = new System.Drawing.Size(352, 20);
 			this.extra_options_textBox.TabIndex = 27;
@@ -527,7 +522,7 @@ namespace wmpiexec
 			// extra_options_label
 			// 
 			this.extra_options_label.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-			this.extra_options_label.Location = new System.Drawing.Point(24, 488);
+			this.extra_options_label.Location = new System.Drawing.Point(24, 496);
 			this.extra_options_label.Name = "extra_options_label";
 			this.extra_options_label.Size = new System.Drawing.Size(120, 23);
 			this.extra_options_label.TabIndex = 28;
@@ -541,10 +536,31 @@ namespace wmpiexec
 			this.popup_checkBox.TabIndex = 29;
 			this.popup_checkBox.Text = "run in an separate window";
 			// 
+			// jumpshot_button
+			// 
+			this.jumpshot_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.jumpshot_button.Location = new System.Drawing.Point(432, 336);
+			this.jumpshot_button.Name = "jumpshot_button";
+			this.jumpshot_button.Size = new System.Drawing.Size(75, 24);
+			this.jumpshot_button.TabIndex = 30;
+			this.jumpshot_button.Text = "Jumpshot";
+			this.jumpshot_button.Click += new System.EventHandler(this.jumpshot_button_Click);
+			// 
+			// log_checkBox
+			// 
+			this.log_checkBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.log_checkBox.Location = new System.Drawing.Point(312, 336);
+			this.log_checkBox.Name = "log_checkBox";
+			this.log_checkBox.Size = new System.Drawing.Size(112, 24);
+			this.log_checkBox.TabIndex = 31;
+			this.log_checkBox.Text = "produce clog2 file";
+			// 
 			// wmpiexec
 			// 
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-			this.ClientSize = new System.Drawing.Size(512, 571);
+			this.ClientSize = new System.Drawing.Size(512, 579);
+			this.Controls.Add(this.log_checkBox);
+			this.Controls.Add(this.jumpshot_button);
 			this.Controls.Add(this.popup_checkBox);
 			this.Controls.Add(this.extra_options_label);
 			this.Controls.Add(this.extra_options_textBox);
@@ -566,8 +582,6 @@ namespace wmpiexec
 			this.Controls.Add(this.execute_button);
 			this.Controls.Add(this.load_job_button);
 			this.Controls.Add(this.save_job_button);
-			this.Controls.Add(this.log_comboBox);
-			this.Controls.Add(this.log_label);
 			this.Controls.Add(this.channel_comboBox);
 			this.Controls.Add(this.channel_label);
 			this.Controls.Add(this.drive_map_label);
@@ -587,6 +601,7 @@ namespace wmpiexec
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "wmpiexec";
 			this.Text = "MPIEXEC wrapper";
+			this.Closing += new System.ComponentModel.CancelEventHandler(this.wmpiexec_Closing);
 			((System.ComponentModel.ISupportInitialize)(this.nproc_numericUpDown)).EndInit();
 			this.ResumeLayout(false);
 
@@ -606,15 +621,18 @@ namespace wmpiexec
 		{
 			output_richTextBox.AppendText(str);
 		}
+
 		private void SetProcess(Process p)
 		{
 			process = p;
 		}
+
 		private void ResetButtons()
 		{
 			execute_button.Enabled = true;
 			break_button.Enabled = false;
 		}
+
 		private void application_browse_button_Click(object sender, System.EventArgs e)
 		{
 			OpenFileDialog dlg = new OpenFileDialog();
@@ -694,9 +712,9 @@ namespace wmpiexec
 					stream.WriteLine("env {0}", env_textBox.Text.Trim());
 					stream.WriteLine("map {0}", drive_map_textBox.Text.Trim());
 					stream.WriteLine("channel {0}", channel_comboBox.Text.Trim());
-					stream.WriteLine("log {0}", log_comboBox.Text.Trim());
 					stream.WriteLine("extra {0}", extra_options_textBox.Text.Trim());
 					stream.WriteLine(popup_checkBox.Checked ? "window yes" : "window no");
+					stream.WriteLine(log_checkBox.Checked ? "log yes" : "log no");
 					stream.Close();
 				}
 			}
@@ -724,9 +742,9 @@ namespace wmpiexec
 					env_textBox.Text = "";
 					drive_map_textBox.Text = "";
 					channel_comboBox.Text = "";
-					log_comboBox.Text = "";
 					extra_options_textBox.Text = "";
 					popup_checkBox.Checked = false;
+					log_checkBox.Checked = false;
 
 					line = stream.ReadLine();
 					while (line != null)
@@ -766,9 +784,6 @@ namespace wmpiexec
 								case "channel":
 									channel_comboBox.Text = val;
 									break;
-								case "log":
-									log_comboBox.Text = val;
-									break;
 								case "extra":
 									extra_options_textBox.Text = val;
 									break;
@@ -777,6 +792,12 @@ namespace wmpiexec
 										popup_checkBox.Checked = true;
 									else
 										popup_checkBox.Checked = false;
+									break;
+								case "log":
+									if (val == "yes")
+										log_checkBox.Checked = true;
+									else
+										log_checkBox.Checked = false;
 									break;
 							}
 						}
@@ -787,11 +808,45 @@ namespace wmpiexec
 			}
 		}
 
-
 		private void ReadOutput(TextReader stream)
+		{
+			thread_output_stream = stream;
+			Thread thread = new Thread(new ThreadStart(ReadOutputThread));
+			thread.Start();
+		}
+
+		private void ReadError(TextReader stream)
+		{
+			thread_error_stream = stream;
+			Thread thread = new Thread(new ThreadStart(ReadErrorThread));
+			thread.Start();
+		}
+
+		private void ReadErrorThread()
 		{
 			int num_read;
 			char [] buffer = new char[4096];
+			TextReader stream = thread_error_stream;
+			num_read = stream.Read(buffer, 0, 4096);
+			while (num_read > 0)
+			{
+				string str;
+				char [] text = new char[num_read];
+				Array.Copy(buffer, 0, text, 0, num_read);
+				str = new string(text);
+				object[] pList = { str };
+				// put the string in the edit box in a thread safe way
+				AppendTextDelegate ap = new AppendTextDelegate(AppendText);
+				output_richTextBox.Invoke(ap, pList);
+				num_read = stream.Read(buffer, 0, 1024);
+			}
+		}
+
+		private void ReadOutputThread()
+		{
+			int num_read;
+			char [] buffer = new char[4096];
+			TextReader stream = thread_output_stream;
 			num_read = stream.Read(buffer, 0, 4096);
 			while (num_read > 0)
 			{
@@ -809,11 +864,28 @@ namespace wmpiexec
 
 		ManualResetEvent char_available = new ManualResetEvent(false);
 		ManualResetEvent char_written = new ManualResetEvent(true);
+		bool quit_input = false;
 		char ch;
 		private void WriteInput(TextWriter stream)
 		{
+			thread_input_stream = stream;
+			Thread thread = new Thread(new ThreadStart(WriteInputThread));
+			thread.Start();
+		}
+
+		private void WriteInputThread()
+		{
+			WriteInputEx(thread_input_stream);
+		}
+
+		private void WriteInputEx(TextWriter stream)
+		{
 			while (char_available.WaitOne())
 			{
+				if (quit_input)
+				{
+					return;
+				}
 				stream.Write(ch);
 				stream.Flush();
 				char_available.Reset();
@@ -829,6 +901,21 @@ namespace wmpiexec
 		}
 
 		private void RunCommand(string command, string mpiexec_command, string mpiexec_command_args, bool popup)
+		{
+			thread_command = command;
+			thread_mpiexec_command = mpiexec_command;
+			thread_mpiexec_command_args = mpiexec_command_args;
+			thread_popup = popup;
+			Thread thread = new Thread(new ThreadStart(RunCommandThread));
+			thread.Start();
+		}
+
+		void RunCommandThread()
+		{
+			RunCommandEx(thread_command, thread_mpiexec_command, thread_mpiexec_command_args, thread_popup);
+		}
+
+		private void RunCommandEx(string command, string mpiexec_command, string mpiexec_command_args, bool popup)
 		{
 			if (popup)
 			{
@@ -846,6 +933,7 @@ namespace wmpiexec
 			}
 			else
 			{
+				quit_input = false;
 				// start a process to run the mpiexec command
 				Process p = new Process();
 				p.StartInfo.UseShellExecute = false;
@@ -858,13 +946,19 @@ namespace wmpiexec
 				p.Start();
 				// start a delagate to read stdout
 				ReadOutputDelegate r1 = new ReadOutputDelegate(ReadOutput);
-				IAsyncResult ar1 = r1.BeginInvoke(TextReader.Synchronized(p.StandardOutput), null, null);
+				//IAsyncResult ar1 = r1.BeginInvoke(TextReader.Synchronized(p.StandardOutput), null, null);
+				object [] list1 = { TextReader.Synchronized(p.StandardOutput) };
+				Invoke(r1, list1);
 				// start a delagate to read stderr
-				ReadOutputDelegate r2 = new ReadOutputDelegate(ReadOutput);
-				IAsyncResult ar2 = r2.BeginInvoke(TextReader.Synchronized(p.StandardError), null, null);
+				ReadErrorDelegate r2 = new ReadErrorDelegate(ReadError);
+				//IAsyncResult ar2 = r2.BeginInvoke(TextReader.Synchronized(p.StandardError), null, null);
+				object [] list2 = { TextReader.Synchronized(p.StandardError) };
+				Invoke(r2, list2);
 				// Send stdin to the process
 				WriteInputDelegate w = new WriteInputDelegate(WriteInput);
-				w.BeginInvoke(TextWriter.Synchronized(p.StandardInput), null, null);
+				//IAsyncResult ar3 = w.BeginInvoke(TextWriter.Synchronized(p.StandardInput), null, null);
+				object [] list3 = { TextWriter.Synchronized(p.StandardInput) };
+				Invoke(w, list3);
 
 				//process = p;
 				SetProcessDelegate sp = new SetProcessDelegate(SetProcess);
@@ -872,10 +966,16 @@ namespace wmpiexec
 				Invoke(sp, list);
 				// wait for the process to exit
 				p.WaitForExit();
-				r1.EndInvoke(ar1);
-				r2.EndInvoke(ar2);
+				// wait for the output and error delegates to finish
+				//r1.EndInvoke(ar1);
+				//r2.EndInvoke(ar2);
+				// set the process variable to null
 				list[0] = null;
 				Invoke(sp, list);
+				// signal the input delegate to exit after setting the process variable to null to avoid conflicts with the keypressed handler
+				quit_input = true;
+				char_available.Set();
+				//w.EndInvoke(ar3);
 			}
 			ResetButtonsDelegate d = new ResetButtonsDelegate(ResetButtons);
 			Invoke(d);
@@ -883,9 +983,14 @@ namespace wmpiexec
 
 		private void execute_button_Click(object sender, System.EventArgs e)
 		{
+			VerifyEncryptedPasswordExists();
 			execute_button.Enabled = false;
 			break_button.Enabled = true;
 			output_richTextBox.Clear();
+			if (last_execute_result != null)
+			{
+				run_command.EndInvoke(last_execute_result);
+			}
 			// Create the command line
 			command_line_textBox.Text = get_command_line();
 			// Add the command to the application drop down if it has not already been added
@@ -899,10 +1004,68 @@ namespace wmpiexec
 			{
 				application_comboBox.Items.Add(application_comboBox.Text);
 			}
-			RunCommandDelegate run_command = new RunCommandDelegate(RunCommand);
-			run_command.BeginInvoke(command_line_textBox.Text, mpiexec_command, mpiexec_command_args, popup_checkBox.Checked, null, null);
+			run_command = new RunCommandDelegate(RunCommand);
+			last_execute_result = run_command.BeginInvoke(command_line_textBox.Text, mpiexec_command, mpiexec_command_args, popup_checkBox.Checked, null, null);
 			// after starting a command move to the output box so the user can interact with the running process.
 			output_richTextBox.Focus();
+		}
+
+		private void VerifyEncryptedPasswordExists()
+		{
+			try
+			{
+				bool popup = true;
+				string mpiexec = get_mpiexec();
+
+				// Check the registry for the encrypted password
+				// This code will have to be kept synchronized with the smpd code
+				// The advantage of this approach is that the credentials don't have to be valid on the local host
+				RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\MPICH");
+				if (key != null)
+				{
+					// check to see that an encrypted password for the current user exists
+					object obj = key.GetValue("smpdPassword");
+					key.Close();
+					if (obj != null)
+					{
+						popup = false;
+					}
+				}
+
+				// Or run "mpiexec -validate" and check the output for SUCCESS
+				// This code will last longer because it doesn't rely on known information about the smpd implementation
+				// The disadvantage of this code is that the user credentials have to be valid on the local host.
+				/*
+				Process p1 = new Process();
+				p1.StartInfo.RedirectStandardOutput = true;
+				p1.StartInfo.RedirectStandardError = true;
+				p1.StartInfo.UseShellExecute = false;
+				p1.StartInfo.CreateNoWindow = true;
+				p1.StartInfo.FileName = mpiexec;
+				p1.StartInfo.Arguments = "-validate";
+				p1.Start();
+				string output = p1.StandardOutput.ReadToEnd() + p1.StandardError.ReadToEnd();
+				p1.WaitForExit();
+				p1.Close();
+				if (output.IndexOf("SUCCESS") != -1)
+				{
+					popup = false;
+				}
+				*/
+
+				if (popup)
+				{
+					string wmpiregister;
+					wmpiregister = mpiexec.Replace("mpiexec.exe", "wmpiregister.exe");
+					Process p = new Process();
+					p.StartInfo.FileName = wmpiregister;
+					p.Start();
+					p.WaitForExit();
+				}
+			}
+			catch (Exception)
+			{
+			}
 		}
 
 		private void break_button_Click(object sender, System.EventArgs e)
@@ -913,50 +1076,156 @@ namespace wmpiexec
 			}
 		}
 
+		private string get_jumpshot()
+		{
+			string jumpshot = "";
+			object obj;
+			try
+			{
+				RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\MPICH2");
+				if (key != null)
+				{
+					obj = key.GetValue("Path");
+					key.Close();
+					if (obj != null)
+					{
+						jumpshot = obj.ToString();
+						if (jumpshot.EndsWith(@"\"))
+						{
+							jumpshot = jumpshot + @"bin\jumpshot_launcher.jar";
+						}
+						else
+						{
+							jumpshot = jumpshot + @"\bin\jumpshot_launcher.jar";
+						}
+						if (!File.Exists(jumpshot))
+						{
+							jumpshot = "";
+						}
+					}
+				}
+				if (jumpshot == "")
+				{
+					key = Registry.LocalMachine.OpenSubKey(@"Software\MPICH\SMPD");
+					if (key != null)
+					{
+						obj = key.GetValue("binary");
+						key.Close();
+						if (obj != null)
+						{
+							jumpshot = obj.ToString().Replace("smpd.exe", "jumpshot_launcher.jar");
+							if (!File.Exists(jumpshot))
+							{
+								jumpshot = "";
+							}
+						}
+					}
+				}
+				if (jumpshot == "")
+				{
+					jumpshot = "jumpshot_launcher.jar";
+				}
+				jumpshot = jumpshot.Trim();
+				if (jumpshot.IndexOf(' ') != -1)
+				{
+					jumpshot = "\"" + jumpshot + "\"";
+				}
+			}
+			catch (Exception)
+			{
+				jumpshot = "jumpshot_launcher.jar";
+			}
+			//jumpshot.Replace("jumpshot_launcher", "jumpshot");
+			return jumpshot;
+		}
+
+		private string get_clog2()
+		{
+			int index, last;
+			string app = application_comboBox.Text;
+			index = app.LastIndexOf('\\');
+			if (index == -1)
+			{
+				index = 0;
+			}
+			last = index;
+			index = app.IndexOf(".exe", last);
+			if (index == -1)
+			{
+				index = app.IndexOf(' ', last);
+				if (index == -1)
+				{
+					index = app.Length;
+				}
+			}
+			app = app.Substring(0, index) + ".exe.clog2";
+			app = app.Trim();
+			if (app.IndexOf(' ') != -1)
+			{
+				app = "\"" + app + "\"";
+			}
+			return app;
+		}
+
 		private string get_mpiexec()
 		{
 			string mpiexec = "";
 			object obj;
-			RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\MPICH2");
-			obj = key.GetValue("Path");
-			if (obj != null)
+			try
 			{
-				mpiexec = obj.ToString();
-				if (mpiexec.EndsWith(@"\"))
+				RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\MPICH2");
+				if (key != null)
 				{
-					mpiexec = mpiexec + @"bin\mpiexec.exe";
-				}
-				else
-				{
-					mpiexec = mpiexec + @"\bin\mpiexec.exe";
-				}
-				if (!File.Exists(mpiexec))
-				{
-					mpiexec = "";
-				}
-			}
-			if (mpiexec == "")
-			{
-				key = Registry.LocalMachine.OpenSubKey(@"Software\MPICH\SMPD");
-				obj = key.GetValue("binary");
-				if (obj != null)
-				{
-					mpiexec = obj.ToString().Replace("smpd.exe", "mpiexec.exe");
-					if (!File.Exists(mpiexec))
+					obj = key.GetValue("Path");
+					key.Close();
+					if (obj != null)
 					{
-						mpiexec = "";
+						mpiexec = obj.ToString();
+						if (mpiexec.EndsWith(@"\"))
+						{
+							mpiexec = mpiexec + @"bin\mpiexec.exe";
+						}
+						else
+						{
+							mpiexec = mpiexec + @"\bin\mpiexec.exe";
+						}
+						if (!File.Exists(mpiexec))
+						{
+							mpiexec = "";
+						}
 					}
 				}
+				if (mpiexec == "")
+				{
+					key = Registry.LocalMachine.OpenSubKey(@"Software\MPICH\SMPD");
+					if (key != null)
+					{
+						obj = key.GetValue("binary");
+						key.Close();
+						if (obj != null)
+						{
+							mpiexec = obj.ToString().Replace("smpd.exe", "mpiexec.exe");
+							if (!File.Exists(mpiexec))
+							{
+								mpiexec = "";
+							}
+						}
+					}
+				}
+				if (mpiexec == "")
+				{
+					mpiexec = "mpiexec.exe";
+				}
+				mpiexec = mpiexec.Trim();
+				mpiexec_command = mpiexec; // save the path to mpiexec.exe without quotes
+				if (mpiexec.IndexOf(' ') != -1)
+				{
+					mpiexec = "\"" + mpiexec + "\"";
+				}
 			}
-			if (mpiexec == "")
+			catch (Exception)
 			{
 				mpiexec = "mpiexec.exe";
-			}
-			mpiexec = mpiexec.Trim();
-			mpiexec_command = mpiexec; // save the path to mpiexec.exe without quotes
-			if (mpiexec.IndexOf(' ') != -1)
-			{
-				mpiexec = "\"" + mpiexec + "\"";
 			}
 			return mpiexec;
 		}
@@ -991,7 +1260,7 @@ namespace wmpiexec
 						cmd = cmd + " -map " + drive_map_textBox.Text;
 					}
 				}
-				if (log_comboBox.Text == "yes")
+				if (log_checkBox.Checked)
 				{
 					cmd = cmd + " -log";
 				}
@@ -1136,10 +1405,9 @@ namespace wmpiexec
 			drive_map_textBox.Enabled = false;
 			channel_label.Enabled = false;
 			channel_comboBox.Enabled = false;
-			log_label.Enabled = false;
-			log_comboBox.Enabled = false;
 			extra_options_label.Enabled = false;
 			extra_options_textBox.Enabled = false;
+			log_checkBox.Enabled = false;
 		}
 
 		private void EnableApplicationControls()
@@ -1161,10 +1429,9 @@ namespace wmpiexec
 			drive_map_textBox.Enabled = true;
 			channel_label.Enabled = true;
 			channel_comboBox.Enabled = true;
-			log_label.Enabled = true;
-			log_comboBox.Enabled = true;
 			extra_options_textBox.Enabled = true;
 			extra_options_label.Enabled = true;
+			log_checkBox.Enabled = true;
 		}
 
 		private void DisableConfigfileControls()
@@ -1216,13 +1483,13 @@ namespace wmpiexec
 			drive_map_textBox.Anchor = AnchorStyles.Top;
 			channel_label.Anchor = AnchorStyles.Top;
 			channel_comboBox.Anchor = AnchorStyles.Top;
-			log_label.Anchor = AnchorStyles.Top;
-			log_comboBox.Anchor = AnchorStyles.Top;
 			output_richTextBox.Anchor = AnchorStyles.Top;
 			configfile_radioButton.Anchor = AnchorStyles.Top;
 			mpich1_radioButton.Anchor = AnchorStyles.Top;
 			extra_options_label.Anchor = AnchorStyles.Top;
 			extra_options_textBox.Anchor = AnchorStyles.Top;
+			log_checkBox.Anchor = AnchorStyles.Top;
+			jumpshot_button.Anchor = AnchorStyles.Top;
 		}
 
 		private void EnableAnchors()
@@ -1246,13 +1513,13 @@ namespace wmpiexec
 			drive_map_textBox.Anchor = ((AnchorStyles)(((AnchorStyles.Bottom | AnchorStyles.Left) | AnchorStyles.Right)));
 			channel_label.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Left)));
 			channel_comboBox.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Right)));
-			log_label.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Left)));
-			log_comboBox.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Right)));
 			output_richTextBox.Anchor = ((AnchorStyles)((((AnchorStyles.Top | AnchorStyles.Bottom) | AnchorStyles.Left) | AnchorStyles.Right)));
 			configfile_radioButton.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Left)));
 			mpich1_radioButton.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Left)));
 			extra_options_label.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Left)));
 			extra_options_textBox.Anchor = ((AnchorStyles)(((AnchorStyles.Bottom | AnchorStyles.Left) | AnchorStyles.Right)));
+			log_checkBox.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Right)));
+			jumpshot_button.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Right)));
 		}
 
 		private void HideExtraOptions()
@@ -1275,12 +1542,12 @@ namespace wmpiexec
 			drive_map_textBox.Hide();
 			channel_label.Hide();
 			channel_comboBox.Hide();
-			log_label.Hide();
-			log_comboBox.Hide();
 			configfile_radioButton.Hide();
 			mpich1_radioButton.Hide();
 			extra_options_textBox.Hide();
 			extra_options_label.Hide();
+			log_checkBox.Hide();
+			jumpshot_button.Hide();
 		}
 
 		private void ShowExtraOptions()
@@ -1303,12 +1570,12 @@ namespace wmpiexec
 			drive_map_textBox.Show();
 			channel_label.Show();
 			channel_comboBox.Show();
-			log_label.Show();
-			log_comboBox.Show();
 			configfile_radioButton.Show();
 			mpich1_radioButton.Show();
 			extra_options_label.Show();
 			extra_options_textBox.Show();
+			log_checkBox.Show();
+			jumpshot_button.Show();
 		}
 
 		private void UpdateExtraControls(bool bShow)
@@ -1317,12 +1584,12 @@ namespace wmpiexec
 			if (bShow)
 			{
 				ShowExtraOptions();
-				Height = Height + 230;
+				Height = Height + expanded_dialog_difference;//230;
 			}
 			else
 			{
 				HideExtraOptions();
-				Height = Height - 230;
+				Height = Height - expanded_dialog_difference;//230;
 			}
 			EnableAnchors();
 		}
@@ -1359,6 +1626,34 @@ namespace wmpiexec
 				DisableApplicationControls();
 				DisableConfigfileControls();
 				EnableMPICH1Controls();
+			}
+		}
+
+		private void wmpiexec_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			if (process != null)
+			{
+				process.Kill();
+			}
+			if (last_execute_result != null)
+			{
+				run_command.EndInvoke(last_execute_result);
+				last_execute_result = null;
+			}
+		}
+
+		private void jumpshot_button_Click(object sender, System.EventArgs e)
+		{
+			Process p;
+			string args = "-jar " + get_jumpshot() + " " + get_clog2();
+			//MessageBox.Show("javaw.exe " + args);
+			try
+			{
+				p = Process.Start("javaw.exe", args);
+			}
+			catch (Exception x)
+			{
+				MessageBox.Show("Unable to start: javaw.exe " + args + "\r\n" + x.Message, "Error");
 			}
 		}
 	}
