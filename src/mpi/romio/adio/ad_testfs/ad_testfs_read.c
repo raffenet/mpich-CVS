@@ -13,14 +13,29 @@ void ADIOI_TESTFS_ReadContig(ADIO_File fd, void *buf, int count,
 			     ADIO_Offset offset, ADIO_Status *status, int
 			     *error_code)
 {
-    int myrank, nprocs;
+    int myrank, nprocs, datatype_size;
 
     *error_code = MPI_SUCCESS;
 
     MPI_Comm_size(fd->comm, &nprocs);
     MPI_Comm_rank(fd->comm, &myrank);
+    MPI_Type_size(datatype, &datatype_size);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_ReadContig called on %s\n", myrank, 
 	    nprocs, fd->filename);
+    FPRINTF(stdout, "[%d/%d]    reading (buf = 0x%x, loc = %Ld, sz = %Ld)\n",
+	    myrank, nprocs, (int) buf, (long long) offset, 
+	    (long long) datatype_size * count);
+
+    if (file_ptr_type != ADIO_EXPLICIT_OFFSET)
+    {
+	fd->fp_ind += datatype_size * count;
+	FPRINTF(stdout, "[%d/%d]    new file position is %Ld\n", myrank, 
+		nprocs, (long long) fd->fp_ind);
+    }
+
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, datatype, datatype_size * count);
+#endif
 }
 
 void ADIOI_TESTFS_ReadStrided(ADIO_File fd, void *buf, int count,
@@ -36,8 +51,8 @@ void ADIOI_TESTFS_ReadStrided(ADIO_File fd, void *buf, int count,
     MPI_Comm_rank(fd->comm, &myrank);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_ReadStrided called on %s\n", myrank, 
 	    nprocs, fd->filename);
-    FPRINTF(stdout, "[%d/%d] calling ADIOI_GEN_ReadStrided\n", myrank, 
-	    nprocs, fd->filename);
+    FPRINTF(stdout, "[%d/%d]    calling ADIOI_GEN_ReadStrided\n", myrank, 
+	    nprocs);
 
     ADIOI_GEN_ReadStrided(fd, buf, count, datatype, file_ptr_type, offset,
 			  status, error_code);

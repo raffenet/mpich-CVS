@@ -15,10 +15,23 @@ void ADIOI_TESTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int
 
     *error_code = MPI_SUCCESS;
 
+    if (*request == ADIO_REQUEST_NULL) {
+	FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_ReadComplete called on ADIO_REQUEST_NULL\n", 
+	    myrank, nprocs);
+	return;
+    }
+
     MPI_Comm_size((*request)->fd->comm, &nprocs);
     MPI_Comm_rank((*request)->fd->comm, &myrank);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_ReadComplete called on %s\n", 
 	    myrank, nprocs, (*request)->fd->filename);
+
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+#endif
+    (*request)->fd->async_count--;
+    ADIOI_Free_request((ADIOI_Req_node *) (*request));
+    *request = ADIO_REQUEST_NULL;
 }
 
 void ADIOI_TESTFS_WriteComplete(ADIO_Request *request, ADIO_Status *status, int
@@ -28,8 +41,21 @@ void ADIOI_TESTFS_WriteComplete(ADIO_Request *request, ADIO_Status *status, int
 
     *error_code = MPI_SUCCESS;
 
+    if (*request == ADIO_REQUEST_NULL) {
+	FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_WriteComplete called on ADIO_REQUEST_NULL\n", 
+	    myrank, nprocs);
+	return;
+    }
+
     MPI_Comm_size((*request)->fd->comm, &nprocs);
     MPI_Comm_rank((*request)->fd->comm, &myrank);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_WriteComplete called on %s\n", 
 	    myrank, nprocs, (*request)->fd->filename);
+
+#ifdef HAVE_STATUS_SET_BYTES
+    MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+#endif
+    (*request)->fd->async_count--;
+    ADIOI_Free_request((ADIOI_Req_node *) (*request));
+    *request = ADIO_REQUEST_NULL;
 }

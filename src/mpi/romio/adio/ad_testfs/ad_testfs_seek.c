@@ -19,4 +19,6 @@ ADIO_Offset ADIOI_TESTFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     MPI_Comm_rank(fd->comm, &myrank);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_SeekIndividual called on %s\n", 
 	    myrank, nprocs, fd->filename);
+
+    return (ADIO_Offset) 0;
 }
