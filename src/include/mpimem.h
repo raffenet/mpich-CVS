@@ -237,9 +237,10 @@ void MPIU_trdumpGrouped ( FILE * );
 #define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
 #define MPIU_Free(a)      free((void *)(a))
 #ifdef HAVE_STRDUP
-#ifdef NEEDS_STRDUP_DECL
+/* Watch for the case where strdup is defined as a macro by a header include */
+# if defined(NEEDS_STRDUP_DECL) && !defined(strdup)
 extern char *strdup( const char * );
-#endif
+# endif
 #define MPIU_Strdup(a)    strdup(a)
 #else
 /* Don't define MPIU_Strdup, provide it in safestr.c */
