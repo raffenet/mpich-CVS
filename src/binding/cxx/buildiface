@@ -224,7 +224,8 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 
 		     'Put-1' => 'in:const',
 		     'Accumulate-1' => 'in:const',
-		     
+
+		     'Detach_buffer-1' => 'inout:ptrref', 
 		     );
 %class_mpi1cart = ( 'Dup' => MPI_Comm,
 		    'Get_dim' => 'int',
@@ -326,7 +327,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		    'Finalize' => 0,
 		    'Is_initialized', => '1;bool',
 		    'Attach_buffer' => 0,
-		    'Detach_buffer' => 2,
+		    'Detach_buffer' => '2:1',
 		    'Pcontrol' => '0',
 		    );
 #
@@ -1364,18 +1365,52 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     print $OUTFD "    MPI_Finalize( );\n";
     print $OUTFD "}\n";
 
-    print $OUTFD "Aint Get_address( void *ptr )
-{
-    MPI_Aint a;
-    MPI_Address( ptr, &a );
-    return (Aint)a;
-}\n";
-
     print $OUTFD "bool Is_initialized(void)
     { 
 	int flag;
 	MPI_Initialized( &flag );
 	return (flag == 1);
+    }\n";
+
+    print $OUTFD "void Compute_dims( int nnodes, int ndims, int dims[] )
+    {
+	MPIX_CALL( MPI_Dims_create( nnodes, ndims, dims ) );
+    }\n";
+
+    print $OUTFD "void Attach_buffer( void *buffer, int size )
+    {
+	MPIX_CALL( MPI_Buffer_attach( buffer, size ) );
+    }\n";
+
+    print $OUTFD "int Detach_buffer( void *&buffer )
+    {
+	int size;
+	MPIX_CALL( MPI_Buffer_detach( &buffer, &size ) );
+	return size;
+    }\n";
+
+    print $OUTFD "void Get_processor_name( char *name, int &resultlen ) 
+    {
+    MPIX_CALL( MPI_Get_processor_name( name, &resultlen ) );
+    }\n";
+
+    print $OUTFD "void Pcontrol( int v, ... )
+    {
+	MPIX_CALL( MPI_Pcontrol( v ) );
+    }\n";
+
+    print $OUTFD "int Get_error_class( int errcode ) 
+    {
+    int errclass;
+    MPIX_CALL( MPI_Error_class( errcode, &errclass ) );
+    return errclass;
+    }\n";
+
+    print $OUTFD "Aint Get_address( void *ptr )
+    {
+    MPI_Aint a;
+    MPI_Address( ptr, &a );
+    return (Aint)a;
     }\n";
 
     print $OUTFD "double Wtime(void) { return MPI_Wtime(); }\n";
@@ -2487,6 +2522,11 @@ sub refint_in_methoddecl {
 sub refint_in_call {
     my $count = $_[0];
     print $OUTFD "&v$count";
+}
+# ----------------------------------------------------------------------------
+sub ptrref_inout_methoddecl {
+    my $count = $_[0];
+    print $OUTFD "void *&v$count";
 }
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
