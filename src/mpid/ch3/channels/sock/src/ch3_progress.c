@@ -70,7 +70,7 @@ void MPIDI_CH3_Progress_start()
 #define FUNCNAME MPIDI_CH3_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress(int is_blocking)
+int MPIDI_CH3I_Progress(int is_blocking)
 {
     int rc;
     sock_event_t event;
@@ -371,7 +371,7 @@ int MPIDI_CH3_Progress_poke()
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     
-    mpi_errno = MPIDI_CH3_Progress(FALSE);
+    mpi_errno = MPIDI_CH3I_Progress(FALSE);
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     return mpi_errno;

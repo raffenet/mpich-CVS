@@ -35,7 +35,7 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, MPI_St
 	}
 	else
 	{
-	    mpi_errno = MPIDI_CH3_Progress(TRUE);
+	    mpi_errno = MPIDI_CH3_Progress_wait();
 	    
 	}
     }

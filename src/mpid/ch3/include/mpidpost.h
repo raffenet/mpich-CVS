@@ -287,17 +287,28 @@ void MPIDI_CH3_Progress_end(void);
 
 
 /*E
-  MPIDI_CH3_Progress - Give the channel implementation an opportunity to make progress on outstanding communication requests.
-
-  Input Parameters:
-. blocking - TRUE if MPIDI_CH3_Progress() should block until a request has completed; FALSE otherwise.
+  MPIDI_CH3_Progress_test - Give the channel implementation an opportunity to make progress on outstanding communication requests.
 
   Return value:
   An mpi error code.
   
   NOTE:
-  MPIDI_CH3_Progress_start/end() need only be called when blocking is TRUE.  This function implicitly marks the end of a
-  progress epoch.
+  This function implicitly marks the end of a progress epoch.
+  
+  DESIGNERS:
+  Thread specific storage could be avoided if a progress context were passed into the progress routines.
+E*/
+int MPIDI_CH3_Progress_test(void);
+
+
+/*E
+  MPIDI_CH3_Progress_wait - Give the channel implementation an opportunity to make progress on outstanding communication requests.
+
+  Return value:
+  An mpi error code.
+  
+  NOTE:
+  MPIDI_CH3_Progress_start/end() needs to be called.  This function implicitly marks the end of a progress epoch.
   
   IMPLEMENTORS:
   A multi-threaded implementation would return immediately if the request completion counter did not match the
@@ -306,8 +317,7 @@ void MPIDI_CH3_Progress_end(void);
   DESIGNERS:
   Thread specific storage could be avoided if a progress context were passed into the progress routines.
 E*/
-int MPIDI_CH3_Progress(int blocking);
-
+int MPIDI_CH3_Progress_wait();
 
 /*E
   MPIDI_CH3_Progress_poke - Give the channel implementation a moment of opportunity to make progress on outstanding communication.
@@ -316,7 +326,7 @@ int MPIDI_CH3_Progress(int blocking);
   An mpi error code.
   
   IMPLEMENTORS:
-  This routine is similar to MPIDI_CH3_Progress(FALSE) but may not be as thorough in its attempt to satisfy all outstanding
+  This routine is similar to MPIDI_CH3_Progress_test but may not be as thorough in its attempt to satisfy all outstanding
   communication.
 E*/
 int MPIDI_CH3_Progress_poke(void);
@@ -540,8 +550,8 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
  */
 #define MPID_Progress_start() {MPIDI_CH3_Progress_start();}
 #define MPID_Progress_end()   {MPIDI_CH3_Progress_end();}
-#define MPID_Progress_test()  MPIDI_CH3_Progress(FALSE)
-#define MPID_Progress_wait()  MPIDI_CH3_Progress(TRUE)
+#define MPID_Progress_test()  MPIDI_CH3_Progress_test()
+#define MPID_Progress_wait()  MPIDI_CH3_Progress_wait()
 #define MPID_Progress_poke()  MPIDI_CH3_Progress_poke()
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */
