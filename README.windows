@@ -1,7 +1,7 @@
 BUILDING MPICH2 under Windows
 
 requirements:
-a) MS Development Environment 2003, C/C++
+a) MS Development Environment 2003, C/C++ and Intel Fortran 8.0
 b) perl
 c) administrative privileges on your machines.
 
@@ -12,8 +12,10 @@ Create the directories and files:
 
 Build the libraries:
 4) open the mpich2 solution (mpich2.sln)
-5) do a solution build with the ch3sock configuration (Release or Debug)
-6) build the ch3sock(Release or Debug) configuration of the static mpich2 project (mpich2s).
+5) do a solution build with the ch3sock configuration (ch3sockRelease or ch3sockDebug)
+6) build the ch3sockRelease or ch3sockDebug configuration of the static mpich2 project (mpich2s).
+7) build the fortRelease, fortDebug, gfortRelease, gfortDebug, sfortRelease or sfortDebug configuration of 
+the mpich2f project to get various Fortran bindings.
 7) do a solution build with the Release or Debug configuration to build mpiexec and smpd
 
 Optionally build a different configuration of the mpich2 dlls:
@@ -33,6 +35,6 @@ Compile and run an MPI application:
 the mpich2 import libraries in mpich2\lib
 11) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
-12) Execute a job by running: mpiexec -n 3 myapp.exe
+12) Execute a job by running something like: mpiexec -n 3 myapp.exe
 
 Email bugs and error reports to mpich2-maint@mcs.anl.gov.
