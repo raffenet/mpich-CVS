@@ -198,6 +198,8 @@ int smpd_init_printf(void)
 
 int smpd_finalize_printf()
 {
+    fflush(stdout);
+    fflush(stderr);
     return SMPD_SUCCESS;
 }
 
