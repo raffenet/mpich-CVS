@@ -75,6 +75,7 @@ int main(int argc, char **argv)
 	    fprintf(stderr, "%s\n", string);
 #else
 	    if (strcmp( string, "Invalid displacement argument" ) != 0) {
+		fprintf( stderr, "Unexpected error message %s\n", string );
 		errs++;
 	    }
 #endif
