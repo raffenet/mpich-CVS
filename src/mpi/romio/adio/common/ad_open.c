@@ -29,7 +29,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     static char myname[] = "ADIO_OPEN";
 #endif
 
-    int rank_ct;
+    int rank_ct, max_error_code;
     int *tmp_ranklist;
     MPI_Comm aggregator_comm = MPI_COMM_NULL; /* just for deferred opens */
 
@@ -126,7 +126,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 	ADIOI_Error(MPI_FILE_NULL, *error_code, myname);
 #endif
 	fd = ADIO_FILE_NULL;
-	return fd;
+        goto fn_exit;
     }
 
     /* deferred open: 
@@ -188,18 +188,11 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
        else MPI_Bcast(error_code, 1, MPI_INT, 0, fd->comm);
 
        if (*error_code != MPI_SUCCESS) {
-	       /* copied from below */
-	       ADIOI_Free(fd->fns);
-	       MPI_Comm_free(&(fd->comm));
-	       free(fd->filename);
-	       MPI_Info_free(&(fd->info));
-	       ADIOI_Free(fd);
-	       fd = ADIO_FILE_NULL;
-	       return fd;
+           goto fn_exit;
        } 
        else {
-	       /* turn off EXCL for real open */
-	       access_mode = access_mode ^ MPI_MODE_EXCL; 
+           /* turn off EXCL for real open */
+           access_mode = access_mode ^ MPI_MODE_EXCL; 
        }
     }
 
@@ -207,14 +200,14 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     if (fd->hints->deferred_open && 
 		    ADIOI_Uses_generic_read(fd) &&
 		    ADIOI_Uses_generic_write(fd) ) {
-	    if (fd->agg_comm == MPI_COMM_NULL) {
-		    /* we might have turned off EXCL for the aggregators.
-		     * restore access_mode that non-aggregators get the right
-		     * value from get_amode */
-		    fd->access_mode = orig_amode_excl;
-		    *error_code = MPI_SUCCESS;
-		    return fd;
-	    }
+        if (fd->agg_comm == MPI_COMM_NULL) {
+            /* we might have turned off EXCL for the aggregators.
+             * restore access_mode that non-aggregators get the right
+             * value from get_amode */
+            fd->access_mode = orig_amode_excl;
+            *error_code = MPI_SUCCESS;
+            goto fn_exit;
+        }
     }
 
 /* For writing with data sieving, a read-modify-write is needed. If 
@@ -244,14 +237,33 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
      * not an aggregaor and we are doing deferred open, we returned earlier)*/
     fd->is_open = 1;
 
-    /* if error, free and set fd to NULL */
-    if (*error_code != MPI_SUCCESS) {
-	ADIOI_Free(fd->fns);
-	MPI_Comm_free(&(fd->comm));
-	free(fd->filename);
-	MPI_Info_free(&(fd->info));
+ fn_exit:
+    MPI_Allreduce(error_code, &max_error_code, 1, MPI_INT, MPI_MAX, comm);
+    if (max_error_code != MPI_SUCCESS) {
+
+        /* If the file was successfully opened, close it */
+        if (*error_code == MPI_SUCCESS) {
+        
+            /* in the deferred open case, only those who have actually
+               opened the file should close it */
+            if (fd->hints->deferred_open && 
+                ADIOI_Uses_generic_read(fd) &&
+                ADIOI_Uses_generic_write(fd) ) {
+                if (fd->agg_comm != MPI_COMM_NULL) {
+                    (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+                }
+            }
+            else {
+                (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+            }
+        }
+
+	if (fd->fns) ADIOI_Free(fd->fns);
+	if (fd->filename) free(fd->filename);
+	if (fd->info != MPI_INFO_NULL) MPI_Info_free(&(fd->info));
 	ADIOI_Free(fd);
-	fd = ADIO_FILE_NULL;
+        fd = ADIO_FILE_NULL;
+        *error_code = max_error_code;
     }
 
     return fd;
@@ -274,5 +286,3 @@ int is_aggregator(int rank, ADIO_File fd ) {
         }
         return 0;
 }
-
-

@@ -245,6 +245,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     *fh = ADIO_Open(comm, dupcomm, filename, file_system, amode, 0, MPI_BYTE,
                     MPI_BYTE, M_ASYNC, info, ADIO_PERM_NULL, &error_code);
 
+    if (error_code != MPI_SUCCESS)
+        MPI_Comm_free(&dupcomm);
+
     /* determine name of file that will hold the shared file pointer */
     /* can't support shared file pointers on a file system that doesn't
        support file locking, e.g., PIOFS, PVFS, PVFS2 */
