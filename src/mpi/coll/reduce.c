@@ -55,12 +55,17 @@ int MPIR_Reduce (
     void       *buffer;
     MPID_Op *op_ptr;
     MPI_Comm comm;
+    MPICH_PerThread_t *p;
     
     if (count == 0) return MPI_SUCCESS;
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
     
+    /* set op_errno to 0. stored in perthread structure */
+    MPID_GetPerThread(p);
+    p->op_errno = 0;
+
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
         /* get the function by indexing into the op table */
@@ -212,7 +217,9 @@ int MPIR_Reduce (
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );
-    
+
+    if (p->op_errno) mpi_errno = p->op_errno;
+
     return (mpi_errno);
 }
 
@@ -294,6 +301,7 @@ PMPI_LOCAL int MPIR_Reduce_inter (
         /* now do a local reduce on this intracommunicator */
         mpi_errno = MPIR_Reduce(sendbuf, tmp_buf, count, datatype,
                                 op, 0, newcomm_ptr);
+        if (mpi_errno) return mpi_errno;
         if (rank == 0) {
             MPID_Comm_thread_lock( comm_ptr );
             mpi_errno = MPIC_Send(tmp_buf, count, datatype, root,

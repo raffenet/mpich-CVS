@@ -103,11 +103,12 @@ void MPIR_BOR (
             a[i] = MPIR_LBOR(a[i],b[i]);
         break;
     }
-    default:
-        /* TEMPORARY ERROR MESSAGE. NEED TO RETURN PROPER ERROR CODE */
-        printf("MPI_BOR operation not supported for this datatype\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-       break;
+    default: {
+        MPICH_PerThread_t *p;
+        MPID_GetPerThread(p);
+        p->op_errno = MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_BOR" );
+        break;
+    }
     }
 }
 

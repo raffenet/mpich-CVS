@@ -64,7 +64,9 @@ PMPI_LOCAL int MPIR_Allreduce (
     MPI_User_function *uop;
     MPID_Op *op_ptr;
     MPI_Comm comm;
+    MPICH_PerThread_t *p;
     
+    if (count == 0) return MPI_SUCCESS;
     comm = comm_ptr->handle;
     
     is_homogeneous = 1;
@@ -87,6 +89,10 @@ PMPI_LOCAL int MPIR_Allreduce (
         /* homogeneous. Use recursive doubling algorithm similar to the
            one used in all_gather */
         
+        /* set op_errno to 0. stored in perthread structure */
+        MPID_GetPerThread(p);
+        p->op_errno = 0;
+
         comm_size = comm_ptr->local_size;
         rank = comm_ptr->rank;
         
@@ -239,6 +245,8 @@ PMPI_LOCAL int MPIR_Allreduce (
         
         /* Unlock for collective operation */
         MPID_Comm_thread_unlock( comm_ptr );
+
+        if (p->op_errno) mpi_errno = p->op_errno;
     }
     
     return (mpi_errno);

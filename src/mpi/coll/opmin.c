@@ -125,10 +125,11 @@ void MPIR_MINF (
         break;
     }
 #endif
-    default:
-        /* TEMPORARY ERROR MESSAGE. NEED TO RETURN PROPER ERROR CODE */
-        printf("MPI_MIN operation not supported for this datatype\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);
+    default: {
+        MPICH_PerThread_t *p;
+        MPID_GetPerThread(p);
+        p->op_errno = MPIR_Err_create_code( MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MIN" );
         break;
+    }
     }
 }

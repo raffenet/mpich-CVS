@@ -65,10 +65,15 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     MPID_Op *op_ptr;
     MPI_Status status;
     MPI_Comm comm;
+    MPICH_PerThread_t *p;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
+
+    /* set op_errno to 0. stored in perthread structure */
+    MPID_GetPerThread(p);
+    p->op_errno = 0;
 
     MPID_Datatype_get_size_macro(datatype, type_size);
     MPID_Datatype_get_extent_macro(datatype, extent);
@@ -447,6 +452,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );
+
+    if (p->op_errno) mpi_errno = p->op_errno;
 
     return (mpi_errno);
 }

@@ -75,15 +75,17 @@ PMPI_LOCAL int MPIR_Scan (
     MPI_User_function *uop;
     MPID_Op *op_ptr;
     MPI_Comm comm;
+    MPICH_PerThread_t *p;
     
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-        printf("ERROR: MPI_Scan for intercommunicators not yet implemented.\n");
-        NMPI_Abort(MPI_COMM_WORLD, 1);
-    }
+    if (count == 0) return MPI_SUCCESS;
 
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
+
+    /* set op_errno to 0. stored in perthread structure */
+    MPID_GetPerThread(p);
+    p->op_errno = 0;
 
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
@@ -196,6 +198,8 @@ PMPI_LOCAL int MPIR_Scan (
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );
     
+    if (p->op_errno) mpi_errno = p->op_errno;
+
     return (mpi_errno);
 }
 #endif
@@ -265,6 +269,8 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
+
+            MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);
