@@ -23,6 +23,10 @@
 #define SOCK_SET_DEFAULT_SIZE 16
 #endif
 
+#if !defined(SOCK_EVENTQ_POOL_SIZE)
+#define SOCK_EVENTQ_POOL_SIZE 16
+#endif
+
 #define SOCKI_QUOTE(A) SOCKI_QUOTE2(A)
 #define SOCKI_QUOTE2(A) #A
 
@@ -80,7 +84,7 @@ struct sock
     struct pollinfo * pollinfo;
 };
 
-
+static struct sock_eventq_elem * eventq_pool = NULL;
 
 static void inline socki_handle_accept(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
 static void inline socki_handle_connect(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
@@ -1202,14 +1206,32 @@ static void socki_event_enqueue(struct sock_set * sock_set, sock_op_t op, sock_s
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_EVENT_ENQUEUE);
 
-    eventq_elem = MPIU_Malloc(sizeof(struct sock_eventq_elem)); /* FIXME: use preallocated elements in sock structure */
-    if (eventq_elem == NULL)
+    if (eventq_pool != NULL)  /* MT: eventq_pool needs to be locked */
     {
-	int mpi_errno;
-	
-	mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, FCNAME "() unable to allocate an event queue element");
-	MPID_Abort(NULL, mpi_errno);
+	eventq_elem = eventq_pool;
+	eventq_pool = eventq_pool->next;
     }
+    else
+    {
+	int i;
+	
+	eventq_elem = MPIU_Malloc(sizeof(struct sock_eventq_elem) * SOCK_EVENTQ_POOL_SIZE);
+	if (eventq_elem == NULL)
+	{
+	    int mpi_errno;
+	    
+	    mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, FCNAME "() unable to allocate an event queue element");
+	    MPID_Abort(NULL, mpi_errno);
+	}
+
+	eventq_pool = &eventq_elem[1];
+	for (i = 1; i < SOCK_EVENTQ_POOL_SIZE - 2; i++)
+	{
+	    eventq_pool[i].next = &eventq_pool[i+1];
+	}
+	eventq_pool[SOCK_EVENTQ_POOL_SIZE-1].next = NULL;
+    }
+    
     eventq_elem->event.op_type = op;
     eventq_elem->event.num_bytes = num_bytes;
     eventq_elem->event.user_ptr = user_ptr;
@@ -1243,17 +1265,20 @@ static inline int socki_event_dequeue(struct sock_set * sock_set, sock_event_t *
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKI_EVENT_DEQUEUE);
 
     /* MT: eventq is not thread safe */
-    eventq_elem = sock_set->eventq_head;
-    if (eventq_elem != NULL)
+    if (sock_set->eventq_head != NULL)
     {
+	eventq_elem = sock_set->eventq_head;
+	
 	sock_set->eventq_head = eventq_elem->next;
 	if (eventq_elem->next == NULL)
 	{
 	    sock_set->eventq_tail = NULL;
 	}
-	*eventp = eventq_elem->event;
-	MPIU_Free(eventq_elem); /* FIXME: return preallocated elements to sock structure */
 	
+	*eventp = eventq_elem->event;
+	
+	eventq_elem->next = eventq_pool;  /* MT: eventq_pool needs to be locked */
+	eventq_pool = eventq_elem;
     }
     else
     {
