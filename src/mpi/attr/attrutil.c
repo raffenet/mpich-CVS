@@ -103,6 +103,7 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 		delfn.F77_DeleteFunction( &fhandle, &fkeyval, &fvalue, 
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
+		else      mpi_errno = MPI_SUCCESS;
 	    }
 	}
 	break;
@@ -118,6 +119,7 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 		delfn.F90_DeleteFunction( &fhandle, &fkeyval, &fvalue, 
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
+		else      mpi_errno = MPI_SUCCESS;
 	    }
 	}
 	break;
