@@ -26,9 +26,10 @@ public class TimelineFrame extends JFrame
 
     private        TimelinePanel  top_panel;
 
-    public TimelineFrame( final InputLog slog_ins, final int view_ID )
+    public TimelineFrame( final InputLog slog_ins, int view_ID )
     {
-        super( "TimeLine" );
+        super( "TimeLine : " + slog_ins.getPathnameSuffix()
+             + "  <" + slog_ins.getLineIDMapName( view_ID ) + ">" );
         super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
         TopWindow.Timeline.disposeAll();
         TopWindow.Timeline.setWindow( this );

@@ -327,7 +327,7 @@ public class ViewportTime extends JViewport
             Debug.println( "ViewportTime: paint()'s START: " );
 
         // Need to get the FOCUS so KeyListener will respond.
-        requestFocus();
+        // requestFocus();
 
         //  "( (Component) view_img ).repaint()" may have been invoked
         //  in JComponent's paint() method's paintChildren() ?!
@@ -471,10 +471,12 @@ public class ViewportTime extends JViewport
             icon         = new ImageIcon( icon_URL );
             icon_shaded  = new ImageIcon(
                            GrayFilter.createDisabledImage( icon.getImage() ) );
+            /*
             System.out.println( "ZoomBW16.gif: icon = (" + icon.getIconWidth()
                               + "," + icon.getIconHeight() + "),  "
                               + "icon_shaded = (" + icon_shaded.getIconWidth()
                               + "," + icon_shaded.getIconHeight() + ")" );
+            */
             zoom_btn     = new JRadioButton( icon_shaded );
             zoom_btn.setSelectedIcon( icon );
             zoom_btn.setBorderPainted( true );
@@ -539,6 +541,7 @@ public class ViewportTime extends JViewport
 
         public void mouseEntered( MouseEvent mouse_evt )
         {
+            super.requestFocus();
             if ( isLeftMouseClick4Zoom )
                 Routines.setAllCursorsToZoomPlus( this );
             else
@@ -563,11 +566,15 @@ public class ViewportTime extends JViewport
                     if ( Parameters.LEFTCLICK_INSTANT_ZOOM ) {
                         // Left clicking with Shift to Zoom Out,
                         // Left clinking to Zoom In.
-                        if ( mouse_evt.isShiftDown() )
+                        if ( mouse_evt.isShiftDown() ) {
                             time_model.zoomOut();
-                        else
+                            Routines.setAllCursorsToZoomMinus( this );
+                        }
+                        else {
                             time_model.zoomIn();
-                        Routines.setAllCursorsToZoomPlus( this );
+                            Routines.setAllCursorsToZoomPlus( this );
+                        }
+                        super.requestFocus();
                         if ( toolbar != null )
                             toolbar.resetZoomButtons();
                     }
@@ -575,6 +582,7 @@ public class ViewportTime extends JViewport
                         this.repaint();
                 }
             }
+            super.requestFocus();
         }
 
         /* 
@@ -756,14 +764,23 @@ public class ViewportTime extends JViewport
             Interface to fulfill KeyListener()
         */
 
-        public void keyTyped( KeyEvent evt )
-        {}
+        public void keyTyped( KeyEvent evt ) {}
+
         public void keyReleased( KeyEvent evt )
-        {}
+        {
+            if ( evt.getKeyCode() == KeyEvent.VK_SHIFT ) {
+                if ( Routines.isCursorSetToZoomMinus( this ) )
+                    Routines.setAllCursorsToZoomPlus( this );
+            }
+        }
 
         public void keyPressed( KeyEvent evt )
         {
-            if ( evt.getKeyCode() == KeyEvent.VK_ESCAPE ) {
+            if ( evt.getKeyCode() == KeyEvent.VK_SHIFT ) {
+                if ( Routines.isCursorSetToZoomPlus( this ) )
+                    Routines.setAllCursorsToZoomMinus( this );
+            }
+            else if ( evt.getKeyCode() == KeyEvent.VK_ESCAPE ) {
                 if ( zoom_timebox != null ) {
                     zoom_timebox = null;
                     this.repaint();

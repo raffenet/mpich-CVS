@@ -53,6 +53,7 @@ public class TimelinePanel extends JPanel
 
 
     private RowAdjustments          row_adjs;
+    private String                  err_msg;
 
     public TimelinePanel( final InputLog in_slog, int view_ID )
     {
@@ -314,18 +315,20 @@ public class TimelinePanel extends JPanel
             right_splitter = new JSplitPane( JSplitPane.HORIZONTAL_SPLIT,
                                             false, left_splitter, right_panel );
             right_splitter.setOneTouchExpandable( true );
+            err_msg = null;
             try {
                 left_splitter.setOneTouchExpandable( true );
                 right_splitter.setResizeWeight( 1.0d );
             } catch ( NoSuchMethodError err ) {
-                Dialogs.error( TopWindow.Timeline.getWindow(),
+                err_msg =
                   "Method JSplitPane.setResizeWeight() cannot be found.\n"
                 + "This indicates you are running an older Java2 RunTime,\n"
-                + "like j2sdk 1.2.2 or older. If this is the case, some\n"
-                + "features in Timeline window may not work correctly.\n"
-                + "For instance, auto-enlargement of the Timeline canvas\n"
-                + "during window resizing and autoupdate of the canvas\n"
-                + "after moving slider's knob..." );
+                + "like the one in J2SDK 1.2.2 or older. If this is the case,\n"
+                + "some features in Timeline window may not work correctly,\n"
+                + "For instance, automatic resize of the Timeline canvas\n"
+                + "during window resizing and auto-update of the canvas\n"
+                + "after adjustment of the slider's knob may fail silently,\n"
+                + "manuel refresh of the canvas will be needed.";
             }
 
         this.add( right_splitter, BorderLayout.CENTER );
@@ -353,6 +356,8 @@ public class TimelinePanel extends JPanel
         // Initialize toolbar after creation of YaxisTree view
         toolbar.init();
         row_adjs.initSlidersAndTextFields();
+        if ( err_msg != null )
+            Dialogs.error( TopWindow.Timeline.getWindow(), err_msg );
 
         if ( Debug.isActive() ) {
             Debug.println( "TimelinePanel.init(): time_model = "
