@@ -110,7 +110,7 @@
      &     MPI_COMM_WORLD, ierr)
       call MPI_WAIT(request, status, ierr)
 
-      j = 0
+      j = 1
       array_size = array_of_gsizes(1) * array_of_gsizes(2) *            &
      &     array_of_gsizes(3)
       do i=1, array_size
