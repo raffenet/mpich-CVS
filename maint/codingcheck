@@ -34,6 +34,9 @@
 # of errors in codes).  We could implement by having each error save the
 # fact in $errorFound{name}, and a routine &${name}Explanation( fd ) that
 # writes the explanation out to the given file.
+#
+# For Fortran programs (.f, .f90, and .h with style Fortran), check for 
+# tabs.
 
 # Find parse.sub; expect it in the tree or the INC array
 $topdir = ".";
