@@ -33,6 +33,7 @@ typedef struct {
     int color, key;
 } splittype;
 
+PMPI_LOCAL void MPIU_Sort_inttable( splittype *, int );
 PMPI_LOCAL void MPIU_Sort_inttable( splittype *keytable, int size )
 {
     splittype tmp;
@@ -115,8 +116,10 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     table = (splittype *) MPIU_Malloc( size * sizeof(splittype) );
     table[rank].color = color;
     table[rank].key   = key;
-
+    
+    MPIR_Nest_incr();
     NMPI_Allgather( MPI_IN_PLACE, 2, MPI_INT, table, 2, MPI_INT, comm );
+    MPIR_Nest_decr();
 
     /* Step 2: How many processes have our same color? */
     if (color == MPI_UNDEFINED) {
