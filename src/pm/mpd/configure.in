@@ -31,6 +31,9 @@ AC_OBJEXT
 AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_LN_S
+# A quick check to ensure that install-sh has the execute bit set
+# (we've had some problems with that)
+if test -f install.sh -a ! -x install.sh ; then chmod +x install.sh ; fi
 AC_PROG_INSTALL
 
 MPD_AC_PROG_CHECK_INSTALL_WORKS
