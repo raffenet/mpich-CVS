@@ -9,7 +9,9 @@ $debug = 0;
 	      "cleaning", "/bin/rm", "sleep", "g77", "f77", "f90", "pgCC",
 	      "pgf77", "CC", "g\\+\\+", "c\\+\\+",
 	      "compiling ROMIO in", 
-	      "Make completed" );
+	      "Make completed",
+	      "Copying Upshot",
+	      "Making upshot", );
 # Read lines.  Categorize lines as commands and output.  This
 # script suppresses commands that generate no extra output.
 # The approach is to read a line and then read the next line.
