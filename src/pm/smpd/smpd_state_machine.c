@@ -1339,6 +1339,17 @@ int smpd_state_reading_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
+	    if (smpd_process.plaintext)
+	    {
+		/* propagate the plaintext option to the manager doing the connect */
+		result = smpd_add_command_arg(cmd_ptr, "plaintext", "yes");
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", context->connect_to->host);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
+	    }
 
 	    /* post a write of the command */
 	    result = smpd_post_write_command(context, cmd_ptr);
@@ -4219,6 +4230,17 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
 		smpd_exit_fn(FCNAME);
 		return result;
+	    }
+	    if (smpd_process.plaintext)
+	    {
+		/* propagate the plaintext option to the manager doing the connect */
+		result = smpd_add_command_arg(cmd_ptr, "plaintext", "yes");
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", context->connect_to->host);
+		    smpd_exit_fn(FCNAME);
+		    return result;
+		}
 	    }
 
 	    /* post a write of the command */

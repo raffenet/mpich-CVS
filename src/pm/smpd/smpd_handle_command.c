@@ -2118,6 +2118,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
     MPIDU_Sock_t dest_sock;
     int dest_id;
     char host[SMPD_MAX_HOST_LENGTH];
+    char plaintext[4];
 
     smpd_enter_fn(FCNAME);
 
@@ -2221,6 +2222,14 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	/* return failure result */
 	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
+    }
+    if (MPIU_Str_get_string_arg(cmd->cmd, "plaintext", plaintext, 4) == MPIU_STR_SUCCESS)
+    {
+	if (strncmp(plaintext, "yes", 4) == 0)
+	{
+	    smpd_dbg_printf("setting smpd_process.plaintext due to plaintext option in the connect command\n");
+	    smpd_process.plaintext = SMPD_TRUE;
+	}
     }
     if (dest_id < smpd_process.id)
     {

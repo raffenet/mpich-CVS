@@ -505,6 +505,16 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		return result;
 		*/
 	    }
+	    if (smpd_process.plaintext)
+	    {
+		/* propagate the plaintext option to the manager doing the connect */
+		result = smpd_add_command_arg(cmd, "plaintext", "yes");
+		if (result != SMPD_SUCCESS)
+		{
+		    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", context->connect_to->host);
+		    goto spawn_failed;
+		}
+	    }
 
 	    smpd_dbg_printf("sending first connect command to add new hosts for the spawn command.\n");
 	    /*printf("sending first connect command to add new hosts for the spawn command.\n");fflush(stdout);*/
