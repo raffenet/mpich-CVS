@@ -308,6 +308,15 @@ done
 rm -f config.log
 AC_PREPARE()
 #
+dnl
+dnl Place the definitions into a configuration file, rather than sedding
+dnl them into Makefiles.  If you wish to force the definitions into
+dnl the Makefiles, comment out this line (with dnl!).  You will also need to
+dnl remove the dnl from CFLAGS="$CFLAGS $DEFS" near the end of the file and
+dnl comment out the line that follows it (CFLAGS="$CFLAGS -DHAVE_ROMIOCONF_H").
+dnl
+AC_CONFIG_HEADER(adio/include/romioconf.h)
+#
 PAC_FIXUP_SRCDIR
 #
 PAC_MAKE_VPATH
@@ -440,13 +449,17 @@ if test -n "$arch_sun4" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
 	if test "$CC" = "gcc"; then
-           CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
+           dnl CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
+           CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
 	else
-           CFLAGS="$CFLAGS -g -DAIO_SUN"
+           dnl CFLAGS="$CFLAGS -g -DAIO_SUN"
+           CFLAGS="$CFLAGS -g"
         fi
     else 
-        CFLAGS="$CFLAGS -O -DAIO_SUN"
+        dnl CFLAGS="$CFLAGS -O -DAIO_SUN"
+        CFLAGS="$CFLAGS -O"
     fi
+    AC_DEFINE(AIO_SUN)
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -464,13 +477,17 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
         if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
+            dnl CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
+            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
         else 
-            CFLAGS="$CFLAGS -g -v -DAIO_SUN"
+            dnl CFLAGS="$CFLAGS -g -v -DAIO_SUN"
+            CFLAGS="$CFLAGS -g -v"
         fi
     else 
-        CFLAGS="$CFLAGS -O -DAIO_SUN"
+        dnl CFLAGS="$CFLAGS -O -DAIO_SUN"
+        CFLAGS="$CFLAGS -O"
     fi
+    AC_DEFINE(AIO_SUN)
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -481,7 +498,8 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         FILE_SYSTEM="ufs nfs"
         echo "configuring for file systems ufs and nfs"
     fi
-    CFLAGS="$CFLAGS -DSOLARIS"
+    dnl CFLAGS="$CFLAGS -DSOLARIS"
+    AC_DEFINE(SOLARIS)
     if test $MPI = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
@@ -508,10 +526,14 @@ if test -n "$arch_rs6000"; then
        echo "Using $F77"
     fi
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
+        dnl CFLAGS="$CFLAGS -g -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
+        CFLAGS="$CFLAGS -g"
     else 
-        CFLAGS="$CFLAGS -O -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
+        dnl CFLAGS="$CFLAGS -O -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
+        CFLAGS="$CFLAGS -O"
     fi
+    AC_DEFINE(NO_FD_IN_AIOCB)
+    AC_DEFINE(AIO_HANDLE_IN_AIOCB)
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -528,7 +550,8 @@ if test -n "$arch_rs6000"; then
         file_system_nfs=1
         FILE_SYSTEM="$FILE_SYSTEM ufs nfs"
     fi
-    CFLAGS="$CFLAGS -DAIX"
+    dnl CFLAGS="$CFLAGS -DAIX"
+    AC_DEFINE(AIX)
 # assume long long exists.
     longlongsize=${longlongsize:-8} 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -560,7 +583,9 @@ if test -n "$arch_paragon"; then
         FILE_SYSTEM="pfs ufs nfs"
         echo "configuring for file systems pfs, ufs, and nfs"
     fi
-    CFLAGS="$CFLAGS -DPARAGON -DNO_AIO"
+    dnl CFLAGS="$CFLAGS -DPARAGON -DNO_AIO"
+    AC_DEFINE(PARAGON)
+    AC_DEFINE(NO_AIO)
 # NO_AIO is if configuring for NFS/UFS. It doesn't affect PFS asynch. I/O.
 # long long does not exist
     longlongsize=${longlongsize:-0} 
@@ -569,7 +594,9 @@ fi
 if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     CC=${CC:-pgcc}
     F77=${FC:-pgf77}
-    TFLOP_FLAGS="-cougar -D__PUMA -DNO_AIO"
+    dnl TFLOP_FLAGS="-cougar -D__PUMA -DNO_AIO"
+    TFLOP_FLAGS="-cougar -D__PUMA"
+    AC_DEFINE(NO_AIO)
     if test $DEBUG = 1; then
         CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
     else
@@ -597,23 +624,29 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
     CC=${CC:-gcc}
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
        F77=${FC:-f77}
-       CFLAGS="$CFLAGS -DFREEBSD"
+       dnl CFLAGS="$CFLAGS -DFREEBSD"
+       AC_DEFINE(FREEBSD)
        PAC_HAVE_MOUNT_NFS
        longlongsize=${longlongsize:-0}
 # printf doesn't work properly and no integer*8 as far as I can tell
     else 
        F77=${FC:-g77}
-       CFLAGS="$CFLAGS -DLINUX"
+       dnl CFLAGS="$CFLAGS -DLINUX"
+       AC_DEFINE(LINUX)
     fi
     if test $DEBUG = 1 ; then
 	if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DNO_AIO"
+            dnl CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DNO_AIO"
+            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
         else
-	    CFLAGS="$CFLAGS -g -DNO_AIO"
+	    dnl CFLAGS="$CFLAGS -g -DNO_AIO"
+	    CFLAGS="$CFLAGS -g"
         fi
     else 
-        CFLAGS="$CFLAGS -O -DNO_AIO"
+        dnl CFLAGS="$CFLAGS -O -DNO_AIO"
+        CFLAGS="$CFLAGS -O"
     fi
+    AC_DEFINE(NO_AIO)
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -630,13 +663,17 @@ if test -n "$arch_SX4" ; then
     CC=${CC:-mpicc}
     F77=${FC:-mpif90}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -DNO_AIO -DSX4"
+        dnl CFLAGS="$CFLAGS -g -DNO_AIO -DSX4"
+        CFLAGS="$CFLAGS -g"
         FFLAGS="$FFLAGS -g"
     else
         USER_FFLAGS="$FFLAGS -Chopt"
-        CFLAGS="$CFLAGS -O -DNO_AIO -DSX4"
+        dnl CFLAGS="$CFLAGS -O -DNO_AIO -DSX4"
+        CFLAGS="$CFLAGS -O"
         FFLAGS="$FFLAGS -Chopt"
     fi
+    AC_DEFINE(NO_AIO)
+    AC_DEFINE(SX4)
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -653,10 +690,13 @@ fi
 #
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g +w1 -DNO_AIO"
+        dnl CFLAGS="$CFLAGS -g +w1 -DNO_AIO"
+        CFLAGS="$CFLAGS -g +w1"
     else 
-        CFLAGS="$CFLAGS -O -DNO_AIO"
+        dnl CFLAGS="$CFLAGS -O -DNO_AIO"
+        CFLAGS="$CFLAGS -O"
     fi
+    AC_DEFINE(NO_AIO)
     RANLIB=":"
     if test -z "$MPI"; then
         if test -f "/opt/mpi/include/mpi.h" ; then
@@ -683,14 +723,17 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     fi
     FTESTDEFINE="external iargc, getarg"
     if test -n "$arch_hpux" ; then
-        CFLAGS="$CFLAGS -DHPUX -D_LARGEFILE64_SOURCE"
+        dnl CFLAGS="$CFLAGS -DHPUX -D_LARGEFILE64_SOURCE"
+        CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+        AC_DEFINE(HPUX)
         if test $MPI = "hp" ; then
            F77=${FC:-mpif90 +U77}
         else
            F77=${FC:-f90 +U77}
         fi
     else
-        CFLAGS="$CFLAGS -DSPPUX"
+        dnl CFLAGS="$CFLAGS -DSPPUX"
+        AC_DEFINE(SPPUX)
     fi
     if test -z "$FILE_SYSTEM" ; then
         if test -n "$arch_hpux" ; then
@@ -725,10 +768,13 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose -DAIO_PRIORITY_DEFAULT"
+        dnl CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose -DAIO_PRIORITY_DEFAULT"
+        CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
     else 
-        CFLAGS="$CFLAGS -O -DAIO_PRIORITY_DEFAULT"
+        dnl CFLAGS="$CFLAGS -O -DAIO_PRIORITY_DEFAULT"
+        CFLAGS="$CFLAGS -O"
     fi
+    AC_DEFINE(AIO_PRIORITY_DEFAULT)
     MPI_LIB="$MPI_LIB -laio"
     if test -z "$MPI" ; then
         MPI=mpich
@@ -740,7 +786,8 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
         FILE_SYSTEM="ufs nfs"
         echo "configuring for file systems ufs and nfs"
     fi
-    CFLAGS="$CFLAGS -DDEC"
+    dnl CFLAGS="$CFLAGS -DDEC"
+    AC_DEFINE(DEC)
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_LIBLIST="-laio"
@@ -753,18 +800,26 @@ if test -n "$arch_CRAY" ; then
     FTESTDEFINE="integer ilen"
     F77GETARG="call pxfgetarg(i, str, ilen, ierr)"
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -DNO_AIO"
+        dnl CFLAGS="$CFLAGS -g -DNO_AIO"
+        CFLAGS="$CFLAGS -g"
     else 
-        CFLAGS="$CFLAGS -O -DNO_AIO"
+        dnl CFLAGS="$CFLAGS -O -DNO_AIO"
+        CFLAGS="$CFLAGS -O"
     fi
+    AC_DEFINE(NO_AIO)
     RANLIB=":"
-    CFLAGS="$CFLAGS -DCRAY -D_UNICOS"
+    dnl CFLAGS="$CFLAGS -DCRAY -D_UNICOS"
+    CFLAGS="$CFLAGS -D_UNICOS"
+    AC_DEFINE(CRAY)
     if test -z "$MPI" || test -n "$mpi_sgi" ; then
         MPI=cray
         mpi_cray=1
         mpi_sgi=""
 # above is to disable configure tests specific to SGI MPI
-        CFLAGS="$CFLAGS -DMPISGI -DHAVE_MPI_COMBINERS -DNO_MPI_SGI_type_is_contig"
+        dnl CFLAGS="$CFLAGS -DMPISGI -DHAVE_MPI_COMBINERS -DNO_MPI_SGI_type_is_contig"
+        AC_DEFINE(MPISGI)
+        AC_DEFINE(HAVE_MPI_COMBINERS)
+        AC_DEFINE(NO_MPI_SGI_type_is_contig)
     fi
 #       MPISGI needed because of error in Cray's and SGI's 
 #       MPI_Type_get_contents (does not increment reference count).
@@ -810,7 +865,8 @@ if test -n "$arch_sgi5"; then
 # now set arch_IRIX to 1
    arch_IRIX=1
    echo "IRIX-specific architecture is $IRIXARCH"
-   CFLAGS="$CFLAGS -DIRIX"
+   dnl CFLAGS="$CFLAGS -DIRIX"
+   AC_DEFINE(IRIX)
 fi
 #
 if test -n "$arch_IRIX"; then
@@ -845,7 +901,8 @@ if test -n "$arch_IRIX"; then
             fi            
 	fi
         RANLIB=":"
-        CFLAGS="$CFLAGS -DAIO_SIGNOTIFY_NONE"
+        dnl CFLAGS="$CFLAGS -DAIO_SIGNOTIFY_NONE"
+        AC_DEFINE(AIO_SIGNOTIFY_NONE)
 	if test $cputype -ge 5000 ; then
             MIPS=4
         else 
@@ -874,7 +931,8 @@ if test -n "$arch_IRIX"; then
        fi
        echo "configuring for file systems $FILE_SYSTEM"
    fi
-   CFLAGS="$CFLAGS -DIRIX"
+   dnl CFLAGS="$CFLAGS -DIRIX"
+   AC_DEFINE(IRIX)
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
@@ -1024,51 +1082,65 @@ if test -z "$FILE_SYSTEM" ; then
 fi
 #
 if test -n "$file_system_nfs"; then
-    CFLAGS="$CFLAGS -DNFS"
+    dnl CFLAGS="$CFLAGS -DNFS"
+    AC_DEFINE(NFS)
 fi
 if test -n "$file_system_ufs"; then
-    CFLAGS="$CFLAGS -DUFS"
+    dnl CFLAGS="$CFLAGS -DUFS"
+    AC_DEFINE(UFS)
 fi
 if test -n "$file_system_hfs"; then
-    CFLAGS="$CFLAGS -DHFS"
+    dnl CFLAGS="$CFLAGS -DHFS"
+    AC_DEFINE(HFS)
 fi
 if test -n "$file_system_sfs"; then
-    CFLAGS="$CFLAGS -DSFS"
+    dnl CFLAGS="$CFLAGS -DSFS"
+    AC_DEFINE(SFS)
 fi
 if test -n "$file_system_xfs"; then
-    CFLAGS="$CFLAGS -DXFS"
+    dnl CFLAGS="$CFLAGS -DXFS"
+    AC_DEFINE(XFS)
     PAC_GET_XFS_MEMALIGN
 fi
 if test -n "$file_system_pvfs"; then
    # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
-    CFLAGS="$CFLAGS -DROMIO_PVFS"
+    dnl CFLAGS="$CFLAGS -DROMIO_PVFS"
+    AC_DEFINE(ROMIO_PVFS)
 fi
 if test -n "$file_system_pfs"; then
-    CFLAGS="$CFLAGS -DPFS"
+    dnl CFLAGS="$CFLAGS -DPFS"
+    AC_DEFINE(PFS)
 fi
 if test -n "$file_system_testfs"; then
-    CFLAGS="$CFLAGS -DROMIO_TESTFS"
+    dnl CFLAGS="$CFLAGS -DROMIO_TESTFS"
+    AC_DEFINE(ROMIO_TESTFS)
 fi
 if test -n "$file_system_piofs"; then
-    CFLAGS="$CFLAGS -DPIOFS"
+    dnl CFLAGS="$CFLAGS -DPIOFS"
+    AC_DEFINE(PIOFS)
     USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
     ROMIO_LFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
     USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
 fi
 if test -n "$mpi_mpich"; then
-   CFLAGS="$CFLAGS -DNEEDS_MPI_TEST -DMPICH"
+   dnl CFLAGS="$CFLAGS -DNEEDS_MPI_TEST -DMPICH"
+   AC_DEFINE(NEEDS_MPI_TEST)
+   AC_DEFINE(MPICH)
    if test -z "$arch_SX4" ; then
       MPIOF_H_INCLUDED=1
    fi
 fi
 if test -n "$mpi_sgi"; then
-   CFLAGS="$CFLAGS -DMPISGI"
+   dnl CFLAGS="$CFLAGS -DMPISGI"
+   AC_DEFINE(MPISGI)
 fi
 if test -n "$mpi_lam"; then
-   CFLAGS="$CFLAGS -DMPILAM"
+   dnl CFLAGS="$CFLAGS -DMPILAM"
+   AC_DEFINE(MPILAM)
 fi
 if test -n "$mpi_hp"; then
-   CFLAGS="$CFLAGS -DMPIHP"
+   dnl CFLAGS="$CFLAGS -DMPIHP"
+   AC_DEFINE(MPIHP)
    if test "$NOF77" = 0; then
       PAC_CHECK_MPIOF_H
    fi
@@ -1128,11 +1200,13 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
-   CFLAGS="$CFLAGS -DHAVE_STATUS_SET_BYTES"
+   dnl CFLAGS="$CFLAGS -DHAVE_STATUS_SET_BYTES"
+   AC_DEFINE(HAVE_STATUS_SET_BYTES)
 fi
 #
 if test $MPI != "mpich" ; then
-   CFLAGS="$CFLAGS -DPRINT_ERR_MSG"
+   dnl CFLAGS="$CFLAGS -DPRINT_ERR_MSG"
+   AC_DEFINE(PRINT_ERR_MSG)
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -1142,7 +1216,8 @@ if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
 fi
 #
-CFLAGS="$CFLAGS $DEFS"
+dnl CFLAGS="$CFLAGS $DEFS"
+CFLAGS="$CFLAGS -DHAVE_ROMIOCONF_H"
 #
 echo "setting CC to $CC"
 echo "setting F77 to $F77"

@@ -8,8 +8,8 @@
 #if _UNICOS
 #include <fortran.h>
 #endif
-#include "mpio.h"
 #include "adio.h"
+#include "mpio.h"
 
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)

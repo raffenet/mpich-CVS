@@ -1,4 +1,7 @@
-#! /bin/sh
+
+
+
+#!/bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
@@ -353,6 +356,8 @@ configure_args="$*"
 
 #
 
+#
+
 # Find the source files, if location was not specified.
 if test "$srcdirdefaulted" = "yes" ; then
   srcdir=""
@@ -678,13 +683,25 @@ if test -n "$arch_sun4" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
 	if test "$CC" = "gcc"; then
-           CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
+                      CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
 	else
-           CFLAGS="$CFLAGS -g -DAIO_SUN"
+                      CFLAGS="$CFLAGS -g"
         fi
     else 
-        CFLAGS="$CFLAGS -O -DAIO_SUN"
+                CFLAGS="$CFLAGS -O"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining AIO_SUN"
+echo "#define" AIO_SUN 1 >> confdefs.h
+DEFS="$DEFS -DAIO_SUN=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}AIO_SUN\${SEDdB}AIO_SUN\${SEDdC}1\${SEDdD}
+\${SEDuA}AIO_SUN\${SEDuB}AIO_SUN\${SEDuC}1\${SEDuD}
+\${SEDeA}AIO_SUN\${SEDeB}AIO_SUN\${SEDeC}1\${SEDeD}
+"
+}
+
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -702,13 +719,25 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
         if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
+                        CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
         else 
-            CFLAGS="$CFLAGS -g -v -DAIO_SUN"
+                        CFLAGS="$CFLAGS -g -v"
         fi
     else 
-        CFLAGS="$CFLAGS -O -DAIO_SUN"
+                CFLAGS="$CFLAGS -O"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining AIO_SUN"
+echo "#define" AIO_SUN 1 >> confdefs.h
+DEFS="$DEFS -DAIO_SUN=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}AIO_SUN\${SEDdB}AIO_SUN\${SEDdC}1\${SEDdD}
+\${SEDuA}AIO_SUN\${SEDuB}AIO_SUN\${SEDuC}1\${SEDuD}
+\${SEDeA}AIO_SUN\${SEDeB}AIO_SUN\${SEDeC}1\${SEDeD}
+"
+}
+
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -719,7 +748,18 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         FILE_SYSTEM="ufs nfs"
         echo "configuring for file systems ufs and nfs"
     fi
-    CFLAGS="$CFLAGS -DSOLARIS"
+        
+{
+test -n "$verbose" && \
+echo "	defining SOLARIS"
+echo "#define" SOLARIS 1 >> confdefs.h
+DEFS="$DEFS -DSOLARIS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}SOLARIS\${SEDdB}SOLARIS\${SEDdC}1\${SEDdD}
+\${SEDuA}SOLARIS\${SEDuB}SOLARIS\${SEDuC}1\${SEDuD}
+\${SEDeA}SOLARIS\${SEDeB}SOLARIS\${SEDeC}1\${SEDeD}
+"
+}
+
     if test $MPI = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
@@ -790,10 +830,34 @@ test -n "$F77" || F77="f77"
        echo "Using $F77"
     fi
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
+                CFLAGS="$CFLAGS -g"
     else 
-        CFLAGS="$CFLAGS -O -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
+                CFLAGS="$CFLAGS -O"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining NO_FD_IN_AIOCB"
+echo "#define" NO_FD_IN_AIOCB 1 >> confdefs.h
+DEFS="$DEFS -DNO_FD_IN_AIOCB=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_FD_IN_AIOCB\${SEDdB}NO_FD_IN_AIOCB\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_FD_IN_AIOCB\${SEDuB}NO_FD_IN_AIOCB\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_FD_IN_AIOCB\${SEDeB}NO_FD_IN_AIOCB\${SEDeC}1\${SEDeD}
+"
+}
+
+    
+{
+test -n "$verbose" && \
+echo "	defining AIO_HANDLE_IN_AIOCB"
+echo "#define" AIO_HANDLE_IN_AIOCB 1 >> confdefs.h
+DEFS="$DEFS -DAIO_HANDLE_IN_AIOCB=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}AIO_HANDLE_IN_AIOCB\${SEDdB}AIO_HANDLE_IN_AIOCB\${SEDdC}1\${SEDdD}
+\${SEDuA}AIO_HANDLE_IN_AIOCB\${SEDuB}AIO_HANDLE_IN_AIOCB\${SEDuC}1\${SEDuD}
+\${SEDeA}AIO_HANDLE_IN_AIOCB\${SEDeB}AIO_HANDLE_IN_AIOCB\${SEDeC}1\${SEDeD}
+"
+}
+
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -810,7 +874,18 @@ test -n "$F77" || F77="f77"
         file_system_nfs=1
         FILE_SYSTEM="$FILE_SYSTEM ufs nfs"
     fi
-    CFLAGS="$CFLAGS -DAIX"
+        
+{
+test -n "$verbose" && \
+echo "	defining AIX"
+echo "#define" AIX 1 >> confdefs.h
+DEFS="$DEFS -DAIX=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}AIX\${SEDdB}AIX\${SEDdC}1\${SEDdD}
+\${SEDuA}AIX\${SEDuB}AIX\${SEDuC}1\${SEDuD}
+\${SEDeA}AIX\${SEDeB}AIX\${SEDeC}1\${SEDeD}
+"
+}
+
 # assume long long exists.
     longlongsize=${longlongsize:-8} 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
@@ -842,7 +917,30 @@ if test -n "$arch_paragon"; then
         FILE_SYSTEM="pfs ufs nfs"
         echo "configuring for file systems pfs, ufs, and nfs"
     fi
-    CFLAGS="$CFLAGS -DPARAGON -DNO_AIO"
+        
+{
+test -n "$verbose" && \
+echo "	defining PARAGON"
+echo "#define" PARAGON 1 >> confdefs.h
+DEFS="$DEFS -DPARAGON=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}PARAGON\${SEDdB}PARAGON\${SEDdC}1\${SEDdD}
+\${SEDuA}PARAGON\${SEDuB}PARAGON\${SEDuC}1\${SEDuD}
+\${SEDeA}PARAGON\${SEDeB}PARAGON\${SEDeC}1\${SEDeD}
+"
+}
+
+    
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
 # NO_AIO is if configuring for NFS/UFS. It doesn't affect PFS asynch. I/O.
 # long long does not exist
     longlongsize=${longlongsize:-0} 
@@ -851,7 +949,19 @@ fi
 if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     CC=${CC:-pgcc}
     F77=${FC:-pgf77}
-    TFLOP_FLAGS="-cougar -D__PUMA -DNO_AIO"
+        TFLOP_FLAGS="-cougar -D__PUMA"
+    
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
     if test $DEBUG = 1; then
         CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
     else
@@ -879,7 +989,18 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
     CC=${CC:-gcc}
     if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
        F77=${FC:-f77}
-       CFLAGS="$CFLAGS -DFREEBSD"
+              
+{
+test -n "$verbose" && \
+echo "	defining FREEBSD"
+echo "#define" FREEBSD 1 >> confdefs.h
+DEFS="$DEFS -DFREEBSD=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}FREEBSD\${SEDdB}FREEBSD\${SEDdC}1\${SEDdD}
+\${SEDuA}FREEBSD\${SEDuB}FREEBSD\${SEDuC}1\${SEDuD}
+\${SEDeA}FREEBSD\${SEDeB}FREEBSD\${SEDeC}1\${SEDeD}
+"
+}
+
        
   if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
@@ -929,6 +1050,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MOUNT_NFS"
 echo "#define" HAVE_MOUNT_NFS 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MOUNT_NFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MOUNT_NFS\${SEDdB}HAVE_MOUNT_NFS\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MOUNT_NFS\${SEDuB}HAVE_MOUNT_NFS\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MOUNT_NFS\${SEDeB}HAVE_MOUNT_NFS\${SEDeC}1\${SEDeD}
+"
 }
 
   else
@@ -944,17 +1069,40 @@ fi
 # printf doesn't work properly and no integer*8 as far as I can tell
     else 
        F77=${FC:-g77}
-       CFLAGS="$CFLAGS -DLINUX"
+              
+{
+test -n "$verbose" && \
+echo "	defining LINUX"
+echo "#define" LINUX 1 >> confdefs.h
+DEFS="$DEFS -DLINUX=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}LINUX\${SEDdB}LINUX\${SEDdC}1\${SEDdD}
+\${SEDuA}LINUX\${SEDuB}LINUX\${SEDuC}1\${SEDuD}
+\${SEDeA}LINUX\${SEDeB}LINUX\${SEDeC}1\${SEDeD}
+"
+}
+
     fi
     if test $DEBUG = 1 ; then
 	if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DNO_AIO"
+                        CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
         else
-	    CFLAGS="$CFLAGS -g -DNO_AIO"
+	    	    CFLAGS="$CFLAGS -g"
         fi
     else 
-        CFLAGS="$CFLAGS -O -DNO_AIO"
+                CFLAGS="$CFLAGS -O"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -971,13 +1119,37 @@ if test -n "$arch_SX4" ; then
     CC=${CC:-mpicc}
     F77=${FC:-mpif90}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -DNO_AIO -DSX4"
+                CFLAGS="$CFLAGS -g"
         FFLAGS="$FFLAGS -g"
     else
         USER_FFLAGS="$FFLAGS -Chopt"
-        CFLAGS="$CFLAGS -O -DNO_AIO -DSX4"
+                CFLAGS="$CFLAGS -O"
         FFLAGS="$FFLAGS -Chopt"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
+    
+{
+test -n "$verbose" && \
+echo "	defining SX4"
+echo "#define" SX4 1 >> confdefs.h
+DEFS="$DEFS -DSX4=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}SX4\${SEDdB}SX4\${SEDdC}1\${SEDdD}
+\${SEDuA}SX4\${SEDuB}SX4\${SEDuC}1\${SEDuD}
+\${SEDeA}SX4\${SEDeB}SX4\${SEDeC}1\${SEDeD}
+"
+}
+
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -994,10 +1166,22 @@ fi
 #
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g +w1 -DNO_AIO"
+                CFLAGS="$CFLAGS -g +w1"
     else 
-        CFLAGS="$CFLAGS -O -DNO_AIO"
+                CFLAGS="$CFLAGS -O"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
     RANLIB=":"
     if test -z "$MPI"; then
         if test -f "/opt/mpi/include/mpi.h" ; then
@@ -1024,14 +1208,37 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     fi
     FTESTDEFINE="external iargc, getarg"
     if test -n "$arch_hpux" ; then
-        CFLAGS="$CFLAGS -DHPUX -D_LARGEFILE64_SOURCE"
+                CFLAGS="$CFLAGS -D_LARGEFILE64_SOURCE"
+        
+{
+test -n "$verbose" && \
+echo "	defining HPUX"
+echo "#define" HPUX 1 >> confdefs.h
+DEFS="$DEFS -DHPUX=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HPUX\${SEDdB}HPUX\${SEDdC}1\${SEDdD}
+\${SEDuA}HPUX\${SEDuB}HPUX\${SEDuC}1\${SEDuD}
+\${SEDeA}HPUX\${SEDeB}HPUX\${SEDeC}1\${SEDeD}
+"
+}
+
         if test $MPI = "hp" ; then
            F77=${FC:-mpif90 +U77}
         else
            F77=${FC:-f90 +U77}
         fi
     else
-        CFLAGS="$CFLAGS -DSPPUX"
+                
+{
+test -n "$verbose" && \
+echo "	defining SPPUX"
+echo "#define" SPPUX 1 >> confdefs.h
+DEFS="$DEFS -DSPPUX=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}SPPUX\${SEDdB}SPPUX\${SEDdC}1\${SEDdD}
+\${SEDuA}SPPUX\${SEDuB}SPPUX\${SEDuC}1\${SEDuD}
+\${SEDeA}SPPUX\${SEDeB}SPPUX\${SEDeC}1\${SEDeD}
+"
+}
+
     fi
     if test -z "$FILE_SYSTEM" ; then
         if test -n "$arch_hpux" ; then
@@ -1082,10 +1289,22 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose -DAIO_PRIORITY_DEFAULT"
+                CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
     else 
-        CFLAGS="$CFLAGS -O -DAIO_PRIORITY_DEFAULT"
+                CFLAGS="$CFLAGS -O"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining AIO_PRIORITY_DEFAULT"
+echo "#define" AIO_PRIORITY_DEFAULT 1 >> confdefs.h
+DEFS="$DEFS -DAIO_PRIORITY_DEFAULT=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}AIO_PRIORITY_DEFAULT\${SEDdB}AIO_PRIORITY_DEFAULT\${SEDdC}1\${SEDdD}
+\${SEDuA}AIO_PRIORITY_DEFAULT\${SEDuB}AIO_PRIORITY_DEFAULT\${SEDuC}1\${SEDuD}
+\${SEDeA}AIO_PRIORITY_DEFAULT\${SEDeB}AIO_PRIORITY_DEFAULT\${SEDeC}1\${SEDeD}
+"
+}
+
     MPI_LIB="$MPI_LIB -laio"
     if test -z "$MPI" ; then
         MPI=mpich
@@ -1097,7 +1316,18 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
         FILE_SYSTEM="ufs nfs"
         echo "configuring for file systems ufs and nfs"
     fi
-    CFLAGS="$CFLAGS -DDEC"
+        
+{
+test -n "$verbose" && \
+echo "	defining DEC"
+echo "#define" DEC 1 >> confdefs.h
+DEFS="$DEFS -DDEC=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}DEC\${SEDdB}DEC\${SEDdC}1\${SEDdD}
+\${SEDuA}DEC\${SEDuB}DEC\${SEDuC}1\${SEDuD}
+\${SEDeA}DEC\${SEDeB}DEC\${SEDeC}1\${SEDeD}
+"
+}
+
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     ROMIO_LIBLIST="-laio"
@@ -1110,18 +1340,77 @@ if test -n "$arch_CRAY" ; then
     FTESTDEFINE="integer ilen"
     F77GETARG="call pxfgetarg(i, str, ilen, ierr)"
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -DNO_AIO"
+                CFLAGS="$CFLAGS -g"
     else 
-        CFLAGS="$CFLAGS -O -DNO_AIO"
+                CFLAGS="$CFLAGS -O"
     fi
+    
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
     RANLIB=":"
-    CFLAGS="$CFLAGS -DCRAY -D_UNICOS"
+        CFLAGS="$CFLAGS -D_UNICOS"
+    
+{
+test -n "$verbose" && \
+echo "	defining CRAY"
+echo "#define" CRAY 1 >> confdefs.h
+DEFS="$DEFS -DCRAY=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}CRAY\${SEDdB}CRAY\${SEDdC}1\${SEDdD}
+\${SEDuA}CRAY\${SEDuB}CRAY\${SEDuC}1\${SEDuD}
+\${SEDeA}CRAY\${SEDeB}CRAY\${SEDeC}1\${SEDeD}
+"
+}
+
     if test -z "$MPI" || test -n "$mpi_sgi" ; then
         MPI=cray
         mpi_cray=1
         mpi_sgi=""
 # above is to disable configure tests specific to SGI MPI
-        CFLAGS="$CFLAGS -DMPISGI -DHAVE_MPI_COMBINERS -DNO_MPI_SGI_type_is_contig"
+                
+{
+test -n "$verbose" && \
+echo "	defining MPISGI"
+echo "#define" MPISGI 1 >> confdefs.h
+DEFS="$DEFS -DMPISGI=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}MPISGI\${SEDdB}MPISGI\${SEDdC}1\${SEDdD}
+\${SEDuA}MPISGI\${SEDuB}MPISGI\${SEDuC}1\${SEDuD}
+\${SEDeA}MPISGI\${SEDeB}MPISGI\${SEDeC}1\${SEDeD}
+"
+}
+
+        
+{
+test -n "$verbose" && \
+echo "	defining HAVE_MPI_COMBINERS"
+echo "#define" HAVE_MPI_COMBINERS 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_MPI_COMBINERS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_COMBINERS\${SEDdB}HAVE_MPI_COMBINERS\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_COMBINERS\${SEDuB}HAVE_MPI_COMBINERS\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_COMBINERS\${SEDeB}HAVE_MPI_COMBINERS\${SEDeC}1\${SEDeD}
+"
+}
+
+        
+{
+test -n "$verbose" && \
+echo "	defining NO_MPI_SGI_type_is_contig"
+echo "#define" NO_MPI_SGI_type_is_contig 1 >> confdefs.h
+DEFS="$DEFS -DNO_MPI_SGI_type_is_contig=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_MPI_SGI_type_is_contig\${SEDdB}NO_MPI_SGI_type_is_contig\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_MPI_SGI_type_is_contig\${SEDuB}NO_MPI_SGI_type_is_contig\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_MPI_SGI_type_is_contig\${SEDeB}NO_MPI_SGI_type_is_contig\${SEDeC}1\${SEDeD}
+"
+}
+
     fi
 #       MPISGI needed because of error in Cray's and SGI's 
 #       MPI_Type_get_contents (does not increment reference count).
@@ -1362,7 +1651,18 @@ if test -n "$arch_sgi5"; then
 # now set arch_IRIX to 1
    arch_IRIX=1
    echo "IRIX-specific architecture is $IRIXARCH"
-   CFLAGS="$CFLAGS -DIRIX"
+      
+{
+test -n "$verbose" && \
+echo "	defining IRIX"
+echo "#define" IRIX 1 >> confdefs.h
+DEFS="$DEFS -DIRIX=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}IRIX\${SEDdB}IRIX\${SEDdC}1\${SEDdD}
+\${SEDuA}IRIX\${SEDuB}IRIX\${SEDuC}1\${SEDuD}
+\${SEDeA}IRIX\${SEDeB}IRIX\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 #
 if test -n "$arch_IRIX"; then
@@ -1397,7 +1697,18 @@ if test -n "$arch_IRIX"; then
             fi            
 	fi
         RANLIB=":"
-        CFLAGS="$CFLAGS -DAIO_SIGNOTIFY_NONE"
+                
+{
+test -n "$verbose" && \
+echo "	defining AIO_SIGNOTIFY_NONE"
+echo "#define" AIO_SIGNOTIFY_NONE 1 >> confdefs.h
+DEFS="$DEFS -DAIO_SIGNOTIFY_NONE=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}AIO_SIGNOTIFY_NONE\${SEDdB}AIO_SIGNOTIFY_NONE\${SEDdC}1\${SEDdD}
+\${SEDuA}AIO_SIGNOTIFY_NONE\${SEDuB}AIO_SIGNOTIFY_NONE\${SEDuC}1\${SEDuD}
+\${SEDeA}AIO_SIGNOTIFY_NONE\${SEDeB}AIO_SIGNOTIFY_NONE\${SEDeC}1\${SEDeD}
+"
+}
+
 	if test $cputype -ge 5000 ; then
             MIPS=4
         else 
@@ -1458,6 +1769,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_PREAD64"
 echo "#define" HAVE_PREAD64 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_PREAD64=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_PREAD64\${SEDdB}HAVE_PREAD64\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_PREAD64\${SEDuB}HAVE_PREAD64\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_PREAD64\${SEDeB}HAVE_PREAD64\${SEDeC}1\${SEDeD}
+"
 }
 
   else
@@ -1529,7 +1844,18 @@ fi
        fi
        echo "configuring for file systems $FILE_SYSTEM"
    fi
-   CFLAGS="$CFLAGS -DIRIX"
+      
+{
+test -n "$verbose" && \
+echo "	defining IRIX"
+echo "#define" IRIX 1 >> confdefs.h
+DEFS="$DEFS -DIRIX=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}IRIX\${SEDdB}IRIX\${SEDdC}1\${SEDdD}
+\${SEDuA}IRIX\${SEDuB}IRIX\${SEDuC}1\${SEDuD}
+\${SEDeA}IRIX\${SEDeB}IRIX\${SEDeC}1\${SEDeD}
+"
+}
+
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
 fi
@@ -1662,6 +1988,10 @@ test -n "$verbose" && \
 echo "	defining" inline to be empty
 echo "#define" inline  >> confdefs.h
 DEFS="$DEFS -Dinline="
+SEDDEFS="${SEDDEFS}\${SEDdA}inline\${SEDdB}inline\${SEDdC}\${SEDdD}
+\${SEDuA}inline\${SEDuB}inline\${SEDuC}\${SEDuD}
+\${SEDeA}inline\${SEDeB}inline\${SEDeC}\${SEDeD}
+"
 }
 
 fi
@@ -1857,6 +2187,10 @@ test -n "$verbose" && \
 echo "	defining INT_LT_POINTER"
 echo "#define" INT_LT_POINTER 1 >> confdefs.h
 DEFS="$DEFS -DINT_LT_POINTER=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}INT_LT_POINTER\${SEDdB}INT_LT_POINTER\${SEDdC}1\${SEDdD}
+\${SEDuA}INT_LT_POINTER\${SEDuB}INT_LT_POINTER\${SEDuC}1\${SEDuD}
+\${SEDeA}INT_LT_POINTER\${SEDeB}INT_LT_POINTER\${SEDeC}1\${SEDeD}
+"
 }
 
        if test -z "$ac_echo_test" -a 1 = 1 ; then
@@ -1885,6 +2219,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_LONG_LONG_64"
 echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LONG_LONG_64\${SEDdB}HAVE_LONG_LONG_64\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_LONG_LONG_64\${SEDuB}HAVE_LONG_LONG_64\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_LONG_LONG_64\${SEDeB}HAVE_LONG_LONG_64\${SEDeC}1\${SEDeD}
+"
 }
 
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -1900,6 +2238,10 @@ test -n "$verbose" && \
 echo "	defining MPI_OFFSET_IS_INT"
 echo "#define" MPI_OFFSET_IS_INT 1 >> confdefs.h
 DEFS="$DEFS -DMPI_OFFSET_IS_INT=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}MPI_OFFSET_IS_INT\${SEDdB}MPI_OFFSET_IS_INT\${SEDdC}1\${SEDdD}
+\${SEDuA}MPI_OFFSET_IS_INT\${SEDuB}MPI_OFFSET_IS_INT\${SEDuC}1\${SEDuD}
+\${SEDeA}MPI_OFFSET_IS_INT\${SEDeB}MPI_OFFSET_IS_INT\${SEDeC}1\${SEDeD}
+"
 }
 
        LL="\%d"
@@ -2047,6 +2389,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_LONG_LONG_64"
 echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LONG_LONG_64\${SEDdB}HAVE_LONG_LONG_64\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_LONG_LONG_64\${SEDuB}HAVE_LONG_LONG_64\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_LONG_LONG_64\${SEDeB}HAVE_LONG_LONG_64\${SEDeC}1\${SEDeD}
+"
 }
 
     DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -2116,6 +2462,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_LONG_LONG_64"
 echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LONG_LONG_64\${SEDdB}HAVE_LONG_LONG_64\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_LONG_LONG_64\${SEDuB}HAVE_LONG_LONG_64\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_LONG_LONG_64\${SEDeB}HAVE_LONG_LONG_64\${SEDeC}1\${SEDeD}
+"
 }
 
        DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -2167,6 +2517,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_LONG_LONG_64"
 echo "#define" HAVE_LONG_LONG_64 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_LONG_LONG_64=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_LONG_LONG_64\${SEDdB}HAVE_LONG_LONG_64\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_LONG_LONG_64\${SEDuB}HAVE_LONG_LONG_64\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_LONG_LONG_64\${SEDeB}HAVE_LONG_LONG_64\${SEDeC}1\${SEDeD}
+"
 }
 
          DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
@@ -2239,6 +2593,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MPI_LONG_LONG_INT"
 echo "#define" HAVE_MPI_LONG_LONG_INT 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MPI_LONG_LONG_INT=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_LONG_LONG_INT\${SEDdB}HAVE_MPI_LONG_LONG_INT\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_LONG_LONG_INT\${SEDuB}HAVE_MPI_LONG_LONG_INT\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_LONG_LONG_INT\${SEDeB}HAVE_MPI_LONG_LONG_INT\${SEDeC}1\${SEDeD}
+"
 }
 
   else
@@ -2257,6 +2615,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MPI_LONG_LONG_INT"
 echo "#define" HAVE_MPI_LONG_LONG_INT 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MPI_LONG_LONG_INT=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_LONG_LONG_INT\${SEDdB}HAVE_MPI_LONG_LONG_INT\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_LONG_LONG_INT\${SEDuB}HAVE_MPI_LONG_LONG_INT\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_LONG_LONG_INT\${SEDeB}HAVE_MPI_LONG_LONG_INT\${SEDeC}1\${SEDeD}
+"
 }
 
    fi
@@ -2452,6 +2814,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MPI_INFO"
 echo "#define" HAVE_MPI_INFO 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MPI_INFO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_INFO\${SEDdB}HAVE_MPI_INFO\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_INFO\${SEDuB}HAVE_MPI_INFO\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_INFO\${SEDeB}HAVE_MPI_INFO\${SEDeC}1\${SEDeD}
+"
 }
 
       HAVE_MPI_INFO="#define HAVE_MPI_INFO"
@@ -2480,6 +2846,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MPI_INFO"
 echo "#define" HAVE_MPI_INFO 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MPI_INFO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_INFO\${SEDdB}HAVE_MPI_INFO\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_INFO\${SEDuB}HAVE_MPI_INFO\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_INFO\${SEDeB}HAVE_MPI_INFO\${SEDeC}1\${SEDeD}
+"
 }
 
    HAVE_MPI_INFO="#define HAVE_MPI_INFO"
@@ -2604,6 +2974,10 @@ test -n "$verbose" && \
 echo "	defining NO_MPI_SGI_type_is_contig"
 echo "#define" NO_MPI_SGI_type_is_contig 1 >> confdefs.h
 DEFS="$DEFS -DNO_MPI_SGI_type_is_contig=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_MPI_SGI_type_is_contig\${SEDdB}NO_MPI_SGI_type_is_contig\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_MPI_SGI_type_is_contig\${SEDuB}NO_MPI_SGI_type_is_contig\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_MPI_SGI_type_is_contig\${SEDeB}NO_MPI_SGI_type_is_contig\${SEDeC}1\${SEDeD}
+"
 }
 
   fi
@@ -2661,6 +3035,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MPI_COMBINERS"
 echo "#define" HAVE_MPI_COMBINERS 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MPI_COMBINERS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_COMBINERS\${SEDdB}HAVE_MPI_COMBINERS\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_COMBINERS\${SEDuB}HAVE_MPI_COMBINERS\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_COMBINERS\${SEDeB}HAVE_MPI_COMBINERS\${SEDeC}1\${SEDeD}
+"
 }
 
   else
@@ -2784,6 +3162,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MPI_DARRAY_SUBARRAY"
 echo "#define" HAVE_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MPI_DARRAY_SUBARRAY=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_DARRAY_SUBARRAY\${SEDdB}HAVE_MPI_DARRAY_SUBARRAY\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_DARRAY_SUBARRAY\${SEDuB}HAVE_MPI_DARRAY_SUBARRAY\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_DARRAY_SUBARRAY\${SEDeB}HAVE_MPI_DARRAY_SUBARRAY\${SEDeC}1\${SEDeD}
+"
 }
 
       HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
@@ -2818,6 +3200,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_MPI_DARRAY_SUBARRAY"
 echo "#define" HAVE_MPI_DARRAY_SUBARRAY 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_MPI_DARRAY_SUBARRAY=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_MPI_DARRAY_SUBARRAY\${SEDdB}HAVE_MPI_DARRAY_SUBARRAY\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_MPI_DARRAY_SUBARRAY\${SEDuB}HAVE_MPI_DARRAY_SUBARRAY\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_MPI_DARRAY_SUBARRAY\${SEDeB}HAVE_MPI_DARRAY_SUBARRAY\${SEDeC}1\${SEDeD}
+"
 }
 
    HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
@@ -2909,6 +3295,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_WEAK_SYMBOLS"
 echo "#define" HAVE_WEAK_SYMBOLS 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_WEAK_SYMBOLS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_WEAK_SYMBOLS\${SEDdB}HAVE_WEAK_SYMBOLS\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_WEAK_SYMBOLS\${SEDuB}HAVE_WEAK_SYMBOLS\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_WEAK_SYMBOLS\${SEDeB}HAVE_WEAK_SYMBOLS\${SEDeC}1\${SEDeD}
+"
 }
 
     
@@ -2917,6 +3307,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_PRAGMA_WEAK"
 echo "#define" HAVE_PRAGMA_WEAK 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_PRAGMA_WEAK=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_PRAGMA_WEAK\${SEDdB}HAVE_PRAGMA_WEAK\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_PRAGMA_WEAK\${SEDuB}HAVE_PRAGMA_WEAK\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_PRAGMA_WEAK\${SEDeB}HAVE_PRAGMA_WEAK\${SEDeC}1\${SEDeD}
+"
 }
 
   else
@@ -2959,6 +3353,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_WEAK_SYMBOLS"
 echo "#define" HAVE_WEAK_SYMBOLS 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_WEAK_SYMBOLS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_WEAK_SYMBOLS\${SEDdB}HAVE_WEAK_SYMBOLS\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_WEAK_SYMBOLS\${SEDuB}HAVE_WEAK_SYMBOLS\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_WEAK_SYMBOLS\${SEDeB}HAVE_WEAK_SYMBOLS\${SEDeC}1\${SEDeD}
+"
 }
 
         
@@ -2967,6 +3365,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_PRAGMA_HP_SEC_DEF"
 echo "#define" HAVE_PRAGMA_HP_SEC_DEF 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_PRAGMA_HP_SEC_DEF=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_PRAGMA_HP_SEC_DEF\${SEDdB}HAVE_PRAGMA_HP_SEC_DEF\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_PRAGMA_HP_SEC_DEF\${SEDuB}HAVE_PRAGMA_HP_SEC_DEF\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_PRAGMA_HP_SEC_DEF\${SEDeB}HAVE_PRAGMA_HP_SEC_DEF\${SEDeC}1\${SEDeD}
+"
 }
 
     else
@@ -3009,6 +3411,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_WEAK_SYMBOLS"
 echo "#define" HAVE_WEAK_SYMBOLS 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_WEAK_SYMBOLS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_WEAK_SYMBOLS\${SEDdB}HAVE_WEAK_SYMBOLS\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_WEAK_SYMBOLS\${SEDuB}HAVE_WEAK_SYMBOLS\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_WEAK_SYMBOLS\${SEDeB}HAVE_WEAK_SYMBOLS\${SEDeC}1\${SEDeD}
+"
 }
 
 	    
@@ -3017,6 +3423,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_PRAGMA_CRI_DUP"
 echo "#define" HAVE_PRAGMA_CRI_DUP 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_PRAGMA_CRI_DUP=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_PRAGMA_CRI_DUP\${SEDdB}HAVE_PRAGMA_CRI_DUP\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_PRAGMA_CRI_DUP\${SEDuB}HAVE_PRAGMA_CRI_DUP\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_PRAGMA_CRI_DUP\${SEDeB}HAVE_PRAGMA_CRI_DUP\${SEDeC}1\${SEDeD}
+"
 }
 
         else    
@@ -3041,19 +3451,74 @@ if test -z "$FILE_SYSTEM" ; then
 fi
 #
 if test -n "$file_system_nfs"; then
-    CFLAGS="$CFLAGS -DNFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining NFS"
+echo "#define" NFS 1 >> confdefs.h
+DEFS="$DEFS -DNFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NFS\${SEDdB}NFS\${SEDdC}1\${SEDdD}
+\${SEDuA}NFS\${SEDuB}NFS\${SEDuC}1\${SEDuD}
+\${SEDeA}NFS\${SEDeB}NFS\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$file_system_ufs"; then
-    CFLAGS="$CFLAGS -DUFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining UFS"
+echo "#define" UFS 1 >> confdefs.h
+DEFS="$DEFS -DUFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}UFS\${SEDdB}UFS\${SEDdC}1\${SEDdD}
+\${SEDuA}UFS\${SEDuB}UFS\${SEDuC}1\${SEDuD}
+\${SEDeA}UFS\${SEDeB}UFS\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$file_system_hfs"; then
-    CFLAGS="$CFLAGS -DHFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining HFS"
+echo "#define" HFS 1 >> confdefs.h
+DEFS="$DEFS -DHFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HFS\${SEDdB}HFS\${SEDdC}1\${SEDdD}
+\${SEDuA}HFS\${SEDuB}HFS\${SEDuC}1\${SEDuD}
+\${SEDeA}HFS\${SEDeB}HFS\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$file_system_sfs"; then
-    CFLAGS="$CFLAGS -DSFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining SFS"
+echo "#define" SFS 1 >> confdefs.h
+DEFS="$DEFS -DSFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}SFS\${SEDdB}SFS\${SEDdC}1\${SEDdD}
+\${SEDuA}SFS\${SEDuB}SFS\${SEDuC}1\${SEDuD}
+\${SEDeA}SFS\${SEDeB}SFS\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$file_system_xfs"; then
-    CFLAGS="$CFLAGS -DXFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining XFS"
+echo "#define" XFS 1 >> confdefs.h
+DEFS="$DEFS -DXFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}XFS\${SEDdB}XFS\${SEDdC}1\${SEDdD}
+\${SEDuA}XFS\${SEDuB}XFS\${SEDuC}1\${SEDuD}
+\${SEDeA}XFS\${SEDeB}XFS\${SEDeC}1\${SEDeD}
+"
+}
+
     if test -z "$ac_echo_n" ; then
 ac_echo_n=yes
 if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
@@ -3127,34 +3592,134 @@ fi
 fi
 if test -n "$file_system_pvfs"; then
    # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
-    CFLAGS="$CFLAGS -DROMIO_PVFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining ROMIO_PVFS"
+echo "#define" ROMIO_PVFS 1 >> confdefs.h
+DEFS="$DEFS -DROMIO_PVFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}ROMIO_PVFS\${SEDdB}ROMIO_PVFS\${SEDdC}1\${SEDdD}
+\${SEDuA}ROMIO_PVFS\${SEDuB}ROMIO_PVFS\${SEDuC}1\${SEDuD}
+\${SEDeA}ROMIO_PVFS\${SEDeB}ROMIO_PVFS\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$file_system_pfs"; then
-    CFLAGS="$CFLAGS -DPFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining PFS"
+echo "#define" PFS 1 >> confdefs.h
+DEFS="$DEFS -DPFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}PFS\${SEDdB}PFS\${SEDdC}1\${SEDdD}
+\${SEDuA}PFS\${SEDuB}PFS\${SEDuC}1\${SEDuD}
+\${SEDeA}PFS\${SEDeB}PFS\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$file_system_testfs"; then
-    CFLAGS="$CFLAGS -DROMIO_TESTFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining ROMIO_TESTFS"
+echo "#define" ROMIO_TESTFS 1 >> confdefs.h
+DEFS="$DEFS -DROMIO_TESTFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}ROMIO_TESTFS\${SEDdB}ROMIO_TESTFS\${SEDdC}1\${SEDdD}
+\${SEDuA}ROMIO_TESTFS\${SEDuB}ROMIO_TESTFS\${SEDuC}1\${SEDuD}
+\${SEDeA}ROMIO_TESTFS\${SEDeB}ROMIO_TESTFS\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$file_system_piofs"; then
-    CFLAGS="$CFLAGS -DPIOFS"
+        
+{
+test -n "$verbose" && \
+echo "	defining PIOFS"
+echo "#define" PIOFS 1 >> confdefs.h
+DEFS="$DEFS -DPIOFS=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}PIOFS\${SEDdB}PIOFS\${SEDdC}1\${SEDdD}
+\${SEDuA}PIOFS\${SEDuB}PIOFS\${SEDuC}1\${SEDuD}
+\${SEDeA}PIOFS\${SEDeB}PIOFS\${SEDeC}1\${SEDeD}
+"
+}
+
     USER_CFLAGS="$USER_CFLAGS -bI:/usr/include/piofs/piofs.exp"
     ROMIO_LFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
     USER_FFLAGS="$USER_FFLAGS -bI:/usr/include/piofs/piofs.exp"
 fi
 if test -n "$mpi_mpich"; then
-   CFLAGS="$CFLAGS -DNEEDS_MPI_TEST -DMPICH"
+      
+{
+test -n "$verbose" && \
+echo "	defining NEEDS_MPI_TEST"
+echo "#define" NEEDS_MPI_TEST 1 >> confdefs.h
+DEFS="$DEFS -DNEEDS_MPI_TEST=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NEEDS_MPI_TEST\${SEDdB}NEEDS_MPI_TEST\${SEDdC}1\${SEDdD}
+\${SEDuA}NEEDS_MPI_TEST\${SEDuB}NEEDS_MPI_TEST\${SEDuC}1\${SEDuD}
+\${SEDeA}NEEDS_MPI_TEST\${SEDeB}NEEDS_MPI_TEST\${SEDeC}1\${SEDeD}
+"
+}
+
+   
+{
+test -n "$verbose" && \
+echo "	defining MPICH"
+echo "#define" MPICH 1 >> confdefs.h
+DEFS="$DEFS -DMPICH=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}MPICH\${SEDdB}MPICH\${SEDdC}1\${SEDdD}
+\${SEDuA}MPICH\${SEDuB}MPICH\${SEDuC}1\${SEDuD}
+\${SEDeA}MPICH\${SEDeB}MPICH\${SEDeC}1\${SEDeD}
+"
+}
+
    if test -z "$arch_SX4" ; then
       MPIOF_H_INCLUDED=1
    fi
 fi
 if test -n "$mpi_sgi"; then
-   CFLAGS="$CFLAGS -DMPISGI"
+      
+{
+test -n "$verbose" && \
+echo "	defining MPISGI"
+echo "#define" MPISGI 1 >> confdefs.h
+DEFS="$DEFS -DMPISGI=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}MPISGI\${SEDdB}MPISGI\${SEDdC}1\${SEDdD}
+\${SEDuA}MPISGI\${SEDuB}MPISGI\${SEDuC}1\${SEDuD}
+\${SEDeA}MPISGI\${SEDeB}MPISGI\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$mpi_lam"; then
-   CFLAGS="$CFLAGS -DMPILAM"
+      
+{
+test -n "$verbose" && \
+echo "	defining MPILAM"
+echo "#define" MPILAM 1 >> confdefs.h
+DEFS="$DEFS -DMPILAM=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}MPILAM\${SEDdB}MPILAM\${SEDdC}1\${SEDdD}
+\${SEDuA}MPILAM\${SEDuB}MPILAM\${SEDuC}1\${SEDuD}
+\${SEDeA}MPILAM\${SEDeB}MPILAM\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 if test -n "$mpi_hp"; then
-   CFLAGS="$CFLAGS -DMPIHP"
+      
+{
+test -n "$verbose" && \
+echo "	defining MPIHP"
+echo "#define" MPIHP 1 >> confdefs.h
+DEFS="$DEFS -DMPIHP=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}MPIHP\${SEDdB}MPIHP\${SEDdC}1\${SEDdD}
+\${SEDuA}MPIHP\${SEDuB}MPIHP\${SEDuC}1\${SEDuD}
+\${SEDeA}MPIHP\${SEDeB}MPIHP\${SEDeC}1\${SEDeD}
+"
+}
+
    if test "$NOF77" = 0; then
       
   if test -z "$ac_echo_n" ; then
@@ -3261,6 +3826,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_STRERROR"
 echo "#define" HAVE_STRERROR 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_STRERROR=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STRERROR\${SEDdB}HAVE_STRERROR\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_STRERROR\${SEDuB}HAVE_STRERROR\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_STRERROR\${SEDeB}HAVE_STRERROR\${SEDeC}1\${SEDeD}
+"
 }
 
   else
@@ -3319,6 +3888,10 @@ test -n "$verbose" && \
 echo "	defining HAVE_SYSERRLIST"
 echo "#define" HAVE_SYSERRLIST 1 >> confdefs.h
 DEFS="$DEFS -DHAVE_SYSERRLIST=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_SYSERRLIST\${SEDdB}HAVE_SYSERRLIST\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_SYSERRLIST\${SEDuB}HAVE_SYSERRLIST\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_SYSERRLIST\${SEDeB}HAVE_SYSERRLIST\${SEDeC}1\${SEDeD}
+"
 }
 
      else
@@ -3490,11 +4063,33 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
-   CFLAGS="$CFLAGS -DHAVE_STATUS_SET_BYTES"
+      
+{
+test -n "$verbose" && \
+echo "	defining HAVE_STATUS_SET_BYTES"
+echo "#define" HAVE_STATUS_SET_BYTES 1 >> confdefs.h
+DEFS="$DEFS -DHAVE_STATUS_SET_BYTES=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}HAVE_STATUS_SET_BYTES\${SEDdB}HAVE_STATUS_SET_BYTES\${SEDdC}1\${SEDdD}
+\${SEDuA}HAVE_STATUS_SET_BYTES\${SEDuB}HAVE_STATUS_SET_BYTES\${SEDuC}1\${SEDuD}
+\${SEDeA}HAVE_STATUS_SET_BYTES\${SEDeB}HAVE_STATUS_SET_BYTES\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 #
 if test $MPI != "mpich" ; then
-   CFLAGS="$CFLAGS -DPRINT_ERR_MSG"
+      
+{
+test -n "$verbose" && \
+echo "	defining PRINT_ERR_MSG"
+echo "#define" PRINT_ERR_MSG 1 >> confdefs.h
+DEFS="$DEFS -DPRINT_ERR_MSG=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}PRINT_ERR_MSG\${SEDdB}PRINT_ERR_MSG\${SEDdC}1\${SEDdD}
+\${SEDuA}PRINT_ERR_MSG\${SEDuB}PRINT_ERR_MSG\${SEDuC}1\${SEDuD}
+\${SEDeA}PRINT_ERR_MSG\${SEDeB}PRINT_ERR_MSG\${SEDeC}1\${SEDeD}
+"
+}
+
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -3504,7 +4099,7 @@ if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
 fi
 #
-CFLAGS="$CFLAGS $DEFS"
+CFLAGS="$CFLAGS -DHAVE_ROMIOCONF_H"
 #
 echo "setting CC to $CC"
 echo "setting F77 to $F77"
@@ -3613,7 +4208,7 @@ do
   esac
 done
 
-trap 'rm -f Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h; exit 1' 1 3 15
+trap 'rm -fr Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h adio/include/romioconf.h conftest*; exit 1' 1 3 15
 VPATH='$VPATH'
 prefix='$prefix'
 exec_prefix='$exec_prefix'
@@ -3684,7 +4279,6 @@ ROMIO_TFFLAGS='$ROMIO_TFFLAGS'
 MPIRUN='$MPIRUN'
 FORTRAN_TEST='$FORTRAN_TEST'
 LIBS='$LIBS'
-DEFS='$DEFS'
 prefix='$prefix'
 exec_prefix='$exec_prefix'
 prsub='$prsub'
@@ -3706,7 +4300,7 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-cat $top_srcdir/${file}.in | sed -e "
+  sed -e "
 $prsub
 $extrasub
 s%@VPATH@%$VPATH%g
@@ -3748,7 +4342,7 @@ s%@F77GETARG@%$F77GETARG%g
 s%@F77IARGC@%$F77IARGC%g
 s%@FTESTDEFINE@%$FTESTDEFINE%g
 s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g
-s%@FROM_MPICH@%$FROM_MPICH%g" | sed -e "
+s%@FROM_MPICH@%$FROM_MPICH%g
 s%@NEEDS_MPI_FINT@%$NEEDS_MPI_FINT%g
 s%@HAVE_MPI_INFO@%$HAVE_MPI_INFO%g
 s%@BUILD_MPI_INFO@%$BUILD_MPI_INFO%g
@@ -3779,15 +4373,110 @@ s%@ROMIO_TFFLAGS@%$ROMIO_TFFLAGS%g
 s%@MPIRUN@%$MPIRUN%g
 s%@FORTRAN_TEST@%$FORTRAN_TEST%g
 s%@LIBS@%$LIBS%g
-s%@DEFS@%$DEFS%
-" >> $file
+s%@DEFS@%-DHAVE_CONFIG_H%" $top_srcdir/${file}.in >> $file
 fi; done
+
+CONFIG_HEADERS=${CONFIG_HEADERS-"adio/include/romioconf.h"}
+for file in .. ${CONFIG_HEADERS}; do if test "x$file" != x..; then
+echo creating $file
+
+# These sed commands are put into SEDDEFS when defining a macro.
+# They are broken into pieces to make the sed script easier to manage.
+# They are passed to sed as "A NAME B NAME C VALUE D", where NAME
+# is the cpp macro being defined and VALUE is the value it is being given.
+# Each defining turns into a single global substitution command.
+#
+# SEDd sets the value in "#define NAME VALUE" lines.
+SEDdA='s@^\([ 	]*\)#\([ 	]*define[ 	][ 	]*\)'
+SEDdB='\([ 	][ 	]*\)[^ 	]*@\1#\2'
+SEDdC='\3'
+SEDdD='@g'
+# SEDu turns "#undef NAME" with trailing blanks into "#define NAME VALUE".
+SEDuA='s@^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
+SEDuB='\([ 	]\)@\1#\2define\3'
+SEDuC=' '
+SEDuD='\4@g'
+# SEDe turns "#undef NAME" without trailing blanks into "#define NAME VALUE".
+SEDeA='s@^\([ 	]*\)#\([ 	]*\)undef\([ 	][ 	]*\)'
+SEDeB='$@\1#\2define\3'
+SEDeC=' '
+SEDeD='@g'
+rm -f conftest.sed
+EOF
+# Turn off quoting long enough to insert the sed commands.
+rm -f conftest.sh
+cat > conftest.sh <<EOF
+$SEDDEFS
+EOF
+
+# Break up $SEDDEFS (now in conftest.sh) because some shells have a limit
+# on the size of here documents.
+
+# Maximum number of lines to put in a single here document.
+maxshlines=9
+
+while :
+do
+  # wc gives bogus results for an empty file on some systems.
+  lines=`grep -c . conftest.sh`
+  if test -z "$lines" || test "$lines" -eq 0; then break; fi
+  rm -f conftest.s1 conftest.s2
+  sed ${maxshlines}q conftest.sh > conftest.s1 # Like head -20.
+  sed 1,${maxshlines}d conftest.sh > conftest.s2 # Like tail +21.
+  # Write a limited-size here document to append to conftest.sed.
+  echo 'cat >> conftest.sed <<CONFEOF' >> config.status
+  cat conftest.s1 >> config.status
+  echo 'CONFEOF' >> config.status
+  rm -f conftest.s1 conftest.sh
+  mv conftest.s2 conftest.sh
+done
+rm -f conftest.sh
+
+# Now back to your regularly scheduled config.status.
+cat >> config.status <<\EOF
+# This sed command replaces #undef's with comments.  This is necessary, for
+# example, in the case of _POSIX_SOURCE, which is predefined and required
+# on some systems where configure will not decide to define it in
+# adio/include/romioconf.h.
+cat >> conftest.sed <<\CONFEOF
+s,^[ 	]*#[ 	]*undef[ 	][ 	]*[a-zA-Z_][a-zA-Z_0-9]*,/* & */,
+CONFEOF
+rm -f conftest.h
+# Break up the sed commands because old seds have small limits.
+maxsedlines=20
+cp $top_srcdir/$file.in conftest.h1
+while :
+do
+  lines=`grep -c . conftest.sed`
+  if test -z "$lines" || test "$lines" -eq 0; then break; fi
+  rm -f conftest.s1 conftest.s2 conftest.h2
+  sed ${maxsedlines}q conftest.sed > conftest.s1 # Like head -20.
+  sed 1,${maxsedlines}d conftest.sed > conftest.s2 # Like tail +21.
+  sed -f conftest.s1 < conftest.h1 > conftest.h2
+  rm -f conftest.s1 conftest.h1 conftest.sed
+  mv conftest.h2 conftest.h1
+  mv conftest.s2 conftest.sed
+done
+rm -f conftest.sed conftest.h
+echo "/* $file.  Generated automatically by configure.  */" > conftest.h
+cat conftest.h1 >> conftest.h
+rm -f conftest.h1
+if cmp -s $file conftest.h 2>/dev/null; then
+  # The file exists and we would not be changing it.
+  echo "$file is unchanged"
+  rm -f conftest.h
+else
+  rm -f $file
+  mv conftest.h $file
+fi
+fi; done
+
 
 
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} ./config.status
+${CONFIG_SHELL-/bin/sh} config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"

@@ -26,6 +26,8 @@
 #define _POSIX_SOURCE
 #endif
 
+#include "romioconf.h"
+
 #include "mpi.h"
 #include <fcntl.h>
 #include <sys/types.h>
