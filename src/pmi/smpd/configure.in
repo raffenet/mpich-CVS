@@ -45,7 +45,7 @@ AC_SUBST(C_LINK_SHL)
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(master_top_srcdir)
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile localdefs)
 
 
 PAC_SUBDIR_CACHE_CLEANUP
