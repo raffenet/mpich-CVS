@@ -595,7 +595,7 @@ fn_exit:
 	MPIU_Free(bc_orig);
     }
     
-    return MPI_SUCCESS;
+    return mpi_errno;
 
 fn_fail:
     if (pg != NULL)

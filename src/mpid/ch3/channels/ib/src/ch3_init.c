@@ -322,7 +322,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	MPIU_Free(key);
     }
 
-    return MPI_SUCCESS;
+    return mpi_errno;
  fn_fail:
     if (pg != NULL)
     {

@@ -380,7 +380,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
-    return MPI_SUCCESS;
+    return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */

@@ -586,7 +586,7 @@ fn_exit:
 	MPIU_Free(key);
     }
     
-    return MPI_SUCCESS;
+    return mpi_errno;
 
 fn_fail:
     if (pg != NULL)
