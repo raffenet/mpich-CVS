@@ -1494,6 +1494,13 @@ sub TargetProfileLibraries {
 	    print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$\$file ; done;$newline";
 	    if ($ranliblib) { 
 		print FD "\t\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
+		# To handle timestamp problems with recursive makes, 
+		# add a delay
+		if ($libloc =~ /^\.\./ && $fixup_for_timestamps) {
+		    $SleepText = $Sleep;
+		    $SleepText =~ s/LIB/${libloc}lib$proflib_name.a/;
+		    print FD "\t$SleepText$newline"; 
+		}
 	    }
 	    print FD "\t-rm -rf .tmp$newline";
 	}
