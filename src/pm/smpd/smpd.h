@@ -552,6 +552,7 @@ int smpd_get_opt_int(int *argc, char ***argv, char * flag, int *n);
 int smpd_get_opt_long(int *argc, char ***argv, char * flag, long *n);
 int smpd_get_opt_double(int *argc, char ***argv, char * flag, double *d);
 int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len);
+int smpd_get_win_opt_string(int *argc, char ***argv, char * flag, char *str, int len);
 #ifdef HAVE_WINDOWS_H
 void smpd_parse_account_domain(char *domain_account, char *account, char *domain);
 int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *handle_ptr);

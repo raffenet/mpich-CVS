@@ -141,7 +141,8 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    ExitProcess(0);
 	}
 	
-	if (smpd_get_opt_string(argcp, argvp, "-phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH))
+	if (smpd_get_opt_string(argcp, argvp, "-phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH) ||
+	    smpd_get_win_opt_string(argcp, argvp, "/phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH))
 	{
 	    smpd_set_smpd_data("phrase", phrase);
 	}

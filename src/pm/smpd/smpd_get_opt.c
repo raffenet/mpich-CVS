@@ -603,3 +603,40 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
     }
     return 0;
 }
+
+int smpd_get_win_opt_string(int *argc, char ***argv, char * flag, char *str, int len)
+{
+    int i,j;
+    char *iter;
+
+    if (flag == NULL)
+	return 0;
+
+    for (i=0; i<*argc; i++)
+    {
+	if (strncmp((*argv)[i], flag, strlen(flag)) == 0)
+	{
+	    if (strlen(flag) == strlen((*argv)[i]))
+	    {
+		/* option specified with no value: /flag */
+		continue;
+	    }
+	    iter = &(*argv)[i][strlen(flag)];
+	    if (*iter != '=')
+	    {
+		/* partial option match: /flag == /flagger */
+		continue;
+	    }
+	    iter++;
+	    strncpy(str, iter, len);
+	    str[len-1] = '\0';
+	    for (j=i; j<(*argc); j++)
+	    {
+		(*argv)[j] = (*argv)[j+1];
+	    }
+	    *argc -= 1;
+	    return 1;
+	}
+    }
+    return 0;
+}
