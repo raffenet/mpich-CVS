@@ -30,7 +30,8 @@ typedef struct { int val, cnt; } Factors;
 #define MPI_Dims_create PMPI_Dims_create
 
 /* Return the factors of n and their multiplicity in factors; the number of 
-   factors is the return value  */
+   distinct factors is the return value and the total number of factors,
+   including multiplicities, is returned in ndivisors */
 #define NUM_PRIMES 168
   static int primes[NUM_PRIMES] = 
 	   {2,    3,    5,    7,   11,   13,   17,   19,   23,   29, 
@@ -50,7 +51,8 @@ typedef struct { int val, cnt; } Factors;
 	  811,  821,  823,  827,  829,  839,  853,  857,  859,  863, 
 	  877,  881,  883,  887,  907,  911,  919,  929,  937,  941, 
 	  947,  953,  967,  971,  977,  983,  991,  997};
-PMPI_LOCAL int factor( int n, Factors *factors, int *ndivisors )
+PMPI_LOCAL int factor( int, Factors [], int * );
+PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
 {
     int n_tmp, n_root;
     int i, nfactors=0, nall=0;
@@ -63,9 +65,9 @@ PMPI_LOCAL int factor( int n, Factors *factors, int *ndivisors )
     n_root = 0;
     while (n_tmp) {
 	n_root ++;
-	n_tmp <<= 1;
+	n_tmp >>= 1;
     }
-    n_root = 1 >> (n_root / 2);
+    n_root = 1 << (n_root / 2);
 
     /* Find the prime number that less than that value and try dividing
        out the primes.  */
@@ -81,6 +83,13 @@ PMPI_LOCAL int factor( int n, Factors *factors, int *ndivisors )
 	    n = n / primes[i];
 	}
 	if (cnt > 0) {
+	    if (nfactors + 1 == MAX_FACTORS) {
+		/* Time to panic.  This should not happen, since the
+		   smallest number that could exceed this would
+		   be the product of the first 10 primes that are
+		   greater than one, which is 6469693230 */
+		return nfactors;
+	    }
 	    factors[nfactors].val = primes[i];
 	    factors[nfactors++].cnt = cnt;
 	    nall += cnt;
@@ -196,6 +205,14 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     /* Get the factors */
     nfactors = factor( nnodes, factors, &ndivisors );
 
+    /* Divide into 3 major cases:
+       1. Fewer divisors than needed dimensions.  Just use all of the
+          factors up, setting the remaining dimensions to 1
+       2. Only one distinct factor (typically 2) but with greater 
+          multiplicity.  Give each dimension a nearly equal size
+       3. Other.  There are enough factors to divide among the dimensions.
+          This is done in an ad hoc fashion
+    */
     /* Distribute the factors among the dimensions */
     if (ndivisors <= dims_needed) {
 	/* Just use the factors as needed */
