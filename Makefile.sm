@@ -1,13 +1,22 @@
 SUBDIRS = . src examples test
 all-local:
-	if [ ! -d lib ] ; then mkdir lib ; fi
+	if [ ! -d lib ] ; then mkdir lib ; \
+	else \
+	    echo "@subsystems@" > lib/pkglist.new ; \
+	    if diff lib/pkglist lib/pkglist.new >/dev/null 2>&1 ; then \
+	        : ; \
+            else \
+	        rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a ; \
+	    fi ; \
+	    mv -f lib/pkglist.new lib/pkglist ;\
+	fi
 all-preamble:
 	@echo "Beginning make"
 all-postamble:
 	@echo "Make completed"
 distclean-local:
-	-@rm -f lib/libmpich.a
-	-@rm -f src/include/mpichconf.h
+	-@rm -f lib/lib${MPILIBNAME}.a lib/pkglist lib/pkglist.new
+	-@rm -f src/include/${MPILIBNAME}conf.h
 
 # Build a distribution tarfile
 #  Extract into a temporary directory
@@ -30,10 +39,10 @@ dist:
 # Set the document sources and types (empty lists still cause recursion)
 doc_HTML_SOURCES =
 		
-install_LIB = lib/libmpich.a
+install_LIB = lib/lib${MPILIBNAME}.a
 install_INCLUDE = src/include/mpi.h
-optinstall_LIB = lib/libpmpich.a
-optinstall_SHLIB = lib/libmpich.so
+optinstall_LIB = lib/libp${MPILIBNAME}.a
+optinstall_SHLIB = lib/lib${MPILIBNAME}.so
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
 INSTALL_SUBDIRS = src/pmi/impls/@pmi_name@

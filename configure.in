@@ -756,6 +756,9 @@ export CC
 PAC_SUBDIR_CACHE
 dnl AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems)
 PAC_CONFIG_SUBDIRS_IMMEDIATE(src/mpi/timer $subsystems)
+#
+# Make subsystems available to makefiles.
+AC_SUBST(subsystems)
 dnl
 dnl Once the subsystems are configured, we can inquire about what
 dnl they have been found.  For example, we need the values for the
