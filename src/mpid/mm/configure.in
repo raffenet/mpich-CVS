@@ -244,6 +244,7 @@ dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile \
           src/Makefile \
           src/bsocket/Makefile \
+          src/common/Makefile \
 	  src/init/Makefile \
           src/mm/Makefile \
           src/progress/Makefile \
