@@ -79,7 +79,7 @@ linktest_C:
 	    $(RM) -f cxgraphics ; \
 	else \
 	    echo "** C application CANNOT be linked with graphics library" ; \
-	fi
+	fi ; \
 	echo
 	@-$(MAKE) clean
 
