@@ -7,6 +7,9 @@
 
 #include "mpiimpl.h"
 #include "mpi_init.h"
+#ifdef HAVE_CRTDBG_H
+#include <crtdbg.h>
+#endif
 
 /* -- Begin Profiling Symbol Block for routine MPI_Init_thread */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -26,6 +29,20 @@
 /* Any internal routines can go here.  Make them static if possible */
 MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
 
+#ifdef HAVE_WINDOWS_H
+/* User-defined abort hook function.  Exiting here will prevent the system from
+ * bringing up an error dialog box.
+ */
+int assert_hook( int reportType, char *message, int *returnValue )
+{
+    fprintf(stderr, "%s", message);
+    if (returnValue != NULL)
+	exit(*returnValue);
+    exit(-1);
+    return TRUE;
+}
+#endif
+
 #ifdef MPICH_SINGLE_THREADED
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread = { 0 };
@@ -37,6 +54,13 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     int has_args;
     int has_env;
     int thread_provided;
+
+#ifdef HAVE_WINDOWS_H
+    /* prevent the process from bringing up an error message window if mpich asserts */
+    _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_FILE );
+    _CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDERR );
+    _CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, assert_hook);
+#endif
 
 #   if !defined(MPICH_SINGLE_THREADED)
     {
