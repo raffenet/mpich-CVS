@@ -53,9 +53,9 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
 #endif
 
 
-#if defined(MPIDI_CH3_IMPLEMENTS_GET_COMM_PARENT)
+#if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)
 /*E
-  MPIDI_CH3_Get_comm_parent - Create the parent intercommunicator to be returned by MPI_Comm_get_parent().
+  MPIDI_CH3_Comm_get_parent - Create the parent intercommunicator to be returned by MPI_Comm_get_parent().
 
   Output Parameters:
 . comm_parent - new inter-communicator spanning the spawning processes and the spawned processes
@@ -64,7 +64,7 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
   A MPI error code.
   
   NOTES:
-  MPIDI_CH3_Get_comm_parent() is intended for sophisticated channels.  Most channels should use MPIDI_CH3_Get_parent_port().
+  MPIDI_CH3_Comm_get_parent() is intended for sophisticated channels.  Most channels should use MPIDI_CH3_Get_parent_port().
 
   MPIDI_CH3_InitParent() should only be called if MPIDI_CH3_Init() returns with has_parent set to TRUE.
 E*/
