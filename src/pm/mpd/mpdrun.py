@@ -603,7 +603,7 @@ def usage():
 
 if __name__ == '__main__':
 
-    global manSocket, mmyExitStatus
+    global manSocket, myExitStatus
 
     manSocket = 0    # set when we get conn'd to a manager
     myExitStatus = 0
