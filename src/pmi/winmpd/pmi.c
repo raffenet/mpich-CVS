@@ -184,6 +184,42 @@ int PMI_Get_rank(int *rank)
     return PMI_SUCCESS;
 }
 
+int PMI_Get_clique_size( int *size )
+{
+    if (g_bInitFinalized == PMI_FINALIZED || size == NULL)
+	return PMI_FAIL;
+
+    *size = 1;
+
+    return PMI_SUCCESS;
+}
+
+int PMI_Get_clique_ranks( int *ranks )
+{
+    if (g_bInitFinalized == PMI_FINALIZED || ranks == NULL)
+	return PMI_FAIL;
+
+    *ranks = g_nIproc;
+
+    return PMI_SUCCESS;
+}
+
+int PMI_Get_id( char *id_str )
+{
+    UUID guid;
+    UuidCreate(&guid);
+    sprintf(id_str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+	guid.Data1, guid.Data2, guid.Data3,
+	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    return PMI_SUCCESS;
+}
+
+int PMI_Get_id_length_max()
+{
+    return 40;
+}
+
 int PMI_Barrier()
 {
     char pszStr[256];
