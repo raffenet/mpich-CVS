@@ -78,7 +78,9 @@ Section~\ref{sec:mpi-operations}.
 % Outline:
 This document is structured as follows.  Section~\ref{sec:general} discusses
 the general layout of MPICH project and recommendations for coding the
-routines.  Section~\ref{sec:mpi-operations} describes the implementation of
+routines.  Section~\ref{sec:pt-2-pt-scenarios} provides a discussion of
+point-to-point communication by looking at particular implementations.
+Section~\ref{sec:mpi-operations} describes the implementation of
 MPI on a routine-by-routine basis.  Section~\ref{sec:portability} covers some
 of the more subtle issues in achieving a highly portable implementation.
 Section~\ref{sec:testing} describes the new MPI test suite.  The appendices
@@ -114,6 +116,8 @@ Both the MPICH distribution and the MPICH2 CVS module will contain additional
 items, including the MPE and perftest modules.  
 
 \begin{description}
+\item[/]Top level directory for MPICH2, it contains the configure script,
+  top-level \file{Makefile}, \file{README}, and related files.
 \item[src]Source files for the MPI implementation
   \begin{description}
   \item[mpi]The implementation of the MPI routines
@@ -249,8 +253,9 @@ A few comments first:
       of the predefined styles (riskier because it might change).
 \item The comment block includes the copyright statement
 \item The first C statement must be the include of \file{mpiimpl.h}.  This
-  ensures that the configuration switches (in \file{mpichconf.h}) as well as
-  all include files defining the various MPICH internals.
+  ensures that the configuration switches (in \file{mpichconf.h}) are set as
+  well as all include files defining the various MPICH internals are loaded
+  before any other statements are encountered.
 \item The profiling block comes next.  The comments must not be modified
   because they will be used if it is necessary to update this block of text (a
   program will look for these lines and update appropriately).
@@ -262,13 +267,15 @@ A few comments first:
   classes.  These are specified as \code{.N name}, along with common text on
   errors \code{.N Errors}.
 \item The first executable statement starts the timer for the routine.  This
-  is a macro that will expand into the appropriate code (including no code for
-  the fastest production version).
+  is a macro that will expand into the appropriate code, including no code for
+  the fastest production version and logging code for SLOG output.
 \item The actual error checks are guarded by both a compile-time test and a
   runtime test.  Note that only at the end of the list is an error return
   issued (this allows us to consider adding code to catch \emph{all} errors).
 \item Error codes are generated with \code{MPIR_Err_create_code}.  These use
   predefined name strings (see error reporting in the ADI manual).
+\item The example shows the use of MPID routines to lock the communicator
+  against other threads.
 \item The return always gives \code{MPI_SUCCESS} explicitly.  Any return that
   might return an error code should use \code{MPIR_Return} instead.  
 \end{enumerate}
@@ -330,7 +337,7 @@ int MPI_Foo( MPI_Comm comm, int a )
     MPID_Comm_get_ptr( comm, comm_ptr );
 #ifdef HAVE_ERROR_CHECKING
     MPID_BEGIN_ERROR_CHECKS;
-        if (MPIR_Process.initialized != MPIR_WITHIN_MPI) {
+        if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                         "**initialized", 0 );
         if (a < 0) {
@@ -345,7 +352,7 @@ int MPI_Foo( MPI_Comm comm, int a )
             return MPIR_Return( comm_ptr->errhandler, mpi_errno );
         }
     MPID_END_ERROR_CHECKS;
-#endif
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
     /* Some routines must ensure only one thread modifies a communicator
@@ -368,7 +375,7 @@ The include file \file{mpi.h} should not require any \code{-Dxxx}
 definitions by the compiler.  This will require generating the
 \file{mpi.h} from another file (and probably not using \code{configure} and an
 \file{mpi.h.in}).  It should not include any other
-files, with the (possible) exception of \file{mpi++.h} for C++
+files, with the (possible) exception of \file{mpich++.h} for C++
 support and \file{mpio.h} for ROMIO.
 
 The \file{mpif.h} (or \file{mpif.h.in}) should be created from
@@ -409,7 +416,8 @@ for the normal object files so that there is no confusion over whether
 profiling switch \code{-DMPICH_MPI_FROM_PMPI}\footnote{Without this, rerunning
   make might decide that the object files already exist.  It would be better
   to have make see these as different filenames, but make prefers to work with
-  suffix-based rules}.
+  suffix-based rules.  The solution here is a hack, but it is a hack that
+  prevents accidentally using the wrong file.}.
 
 \begin{verbatim}
 .SUFFIXES:
@@ -670,7 +678,8 @@ A return may be prefered for some fault-tolerant applications.
 \item Check if executing inside a layered routine (i.e., an MPI routine called
   within the implementation of another MPI routine).  If so, return error
   code; do not invoke the error handler.  See
-  Section~\ref{sec:err-handling-nested}. 
+  Section~\ref{sec:err-handling-nested}; the \code{MPIR_Return} macro makes
+  this test.
 
 \item If the routine has a valid \code{MPI_Comm}, \code{MPI_File}, or
   \code{MPI_Win}, use the error handler from that object.  Note that there is
@@ -767,6 +776,8 @@ typedef struct {
 \end{verbatim}
 Similarly, there is a per-process type
 \begin{verbatim}
+typedef enum { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
+               MPICH_POST_FINALIZED=2 } MPIR_MPI_State_t;
 typedef struct {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
     MPID_Thread_key_t thread_key;       /* Id for perthread data */
@@ -829,6 +840,7 @@ simply
 \end{verbatim}
 (See questions in the ADI document on whether these should be explicitly
 pointers or if values are prefered.)
+
 \subsubsection{Instrumenting the MPI code.}
 Each major routine will contain references to 
 \begin{verbatim}
@@ -837,7 +849,8 @@ MPID_TimerStateEnd( stateid );
 \end{verbatim}
 The value of \code{stateid} is \code{MPID_STATE_functionname}, for example,
 \code{MPID_STATE_MPI_SEND}.  The timer code will accumulate the sum of
-timestamps, along with the number of calls.
+timestamps, along with the number of calls.  These are defined in the file
+\file{include/mpistates.h}. 
 
 Simple informational routines such as \code{MPI_Comm_size} and
 \code{MPI_Wtime} will not be timed.
@@ -856,7 +869,7 @@ controlled:
   \code{-mpich-timing} command line argument; the value is a string of timing
   class names.
 \end{description}
-\textbf{Question: do we want to allow even finer grain control?}
+%\textbf{Question: do we want to allow even finer grain control?}
 
 In addition to timing the routines, we also need to instrument important
 states.  For example, the idle time in an \code{MPI_Wait} or in a blocking
@@ -1031,11 +1044,7 @@ typedef enum { MPID_PARAM_FOUND = 0,
 \end{verbatim}
 
 The \mpidfunc{MPIi_Param_init} and \mpidfunc{MPIi_Param_free} allows
-values to also be passed via the command line.  BNR routines could be
-used instead of \code{getenv} to get values.  Even more complex
-routines could read a \file{.mpichrc} file and remember parameter
-values in a table, looking them up when requested (this is closest to
-the PETSc options database).
+values to also be passed via the command line.  
 In fact, we may want to enforce the following order:
 \begin{enumerate}
 \item Check for an override value (e.g., a priority environment variable)
@@ -1053,26 +1062,20 @@ Note that errors are indicated by a non-zero return from the routine.
 For example, if \mpidfunc{MPIi_Param_get_int} is called but the value
 is \code{"big"}, it will return one.
 
-Question: should parameters be registered?  This allows the runtime
-system to find them (e.g., with BNR put/fence/get), and simplifies the
-generation of help text.  It 
-would also allow text describing the parameter to be provided from
-within the code.
+% Question: should parameters be registered?  This allows the runtime
+% system to find them (e.g., with BNR put/fence/get), and simplifies the
+% generation of help text.  It 
+% would also allow text describing the parameter to be provided from
+% within the code.
 
-An alternative is to use a tool, similar to that for error reporting, that
-finds all uses of the parameter routines.
+An alternative to \code{MPIi_Param_register} is to use a tool, similar to that
+for error reporting, that finds all uses of the parameter routines.
 
-Question: How do we find out that no value was specified?  This is different
-from having a default value.
-
-Question: the file read operation is a potential problem.  Do we want to have
-a separate pre-init and post-init (that can use \code{MPI_Bcast}) to get data?
-
-For example, the pre-init routine code could read just a few environment
-variables 
-for any preinitialization code.  The post-init routine would be collective,
-ensuring that all processes created the same database (and allowing a single
-process to read any configuration files).
+% For example, the pre-init routine code could read just a few environment
+% variables 
+% for any preinitialization code.  The post-init routine would be collective,
+% ensuring that all processes created the same database (and allowing a single
+% process to read any configuration files).
 
 The format of the configuration file has not been defined.  Bill is leaning
 towards an XML format to allow for simple use of tools to manage the file and
@@ -1137,7 +1140,7 @@ All C source files (including header files) begin with
 \begin{verbatim}
 /* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
 \end{verbatim}
-This is interrepted by Emacs and allows us to set a style for MPICH
+This is interpreted by Emacs and allows us to set a style for MPICH
 that can be different from each developer's personnal style.
 The style \code{mpich} is defined in \file{maint/mpich.el}.
 
@@ -1539,17 +1542,6 @@ Predefined info keys are:
 \mpiconst{wdir}\index{MPI_Info!keys!wdir}, 
 \mpiconst{write_mostly}\index{MPI_Info!keys!write_mostly}, 
 \mpiconst{write_once}.
-
-\paragraph{Defining New Keys.}
-The MPI Forum has not resolved an ambiguity in the definition of
-info.  While it was clear during many of the discussions that the
-expectation was that \code{MPI_Info}\index{MPI_Info} could be used by
-layered implementations of parts of MPI, particularly the I/O part,
-IBM did not interpret the standard this way and their interpretation
-is both consistent with the standard and offers a feature not
-otherwise available (specifically, the ability to determine what info
-keys are recognized by the implementation).  Question: we don't want
-to do this, do we?
 
 Note also that the interface to access the info values is not
 thread-safe, since it has the implicit assumption that the number of
@@ -2268,7 +2260,7 @@ than special macros.  For example,
 ...
 #endif
 \end{verbatim}
-even is some code is duplicated as a result.
+even if some code is duplicated as a result.
 
 \subsection{Groups}
 \label{sec:groups}
@@ -2312,7 +2304,9 @@ scalable.  Each group will have an array that maps ranks to local process ids.
 
 Note: the MPICH-1 implementation of \mpifunc{MPI_Group_difference},
 \mpifunc{MPI_Group_union}, and \mpifunc{MPI_Group_intersection} has complexity
-that is the product of the sizes of the groups (!).
+that is the product of the sizes of the groups (!).  The MPICH-2
+implementation described in this section has lower complexity (potentially
+linear).  
 
 \subsubsection{\mpifunc{MPI_GROUP_RANK}}
 Simply return \mpids{MPI_Group}{rank} field.
@@ -4725,19 +4719,17 @@ variable within the file that implements the (PMPI version of the)
 thread-related functions. 
 
 \subsubsection{\mpifunc{MPI_IS_THREAD_MAIN}}
-This needs a thread-private variable that is set only by the thread that calls
-\mpifunc{MPI_INIT_THREAD}.  Alternately, we can use a public variable that
-holds the thread id of the thread that called \mpifunc{MPI_INIT_THREAD}.  For
-example, 
+This make use of the \mpids{MPICH_PerProcess_t}{master_thread} value in the
+per-process data block.
+
 \begin{verbatim}
-static pthread_t main_thread_id;
-...
-is_main_thread = pthread_equal( main_thread_id, pthread_self() );
+is_main_thread = pthread_equal( MPIR_Process.master_thread, pthread_self() );
 \end{verbatim}
 This does require that the thread library used by the user is the same as the
 one that the MPICH library is built for.  We may want to put this routine in a
 separate library, allowing several different thread libraries to be used with
-MPICH. 
+MPICH.  For example, the routines in the \file{thread} directory could be
+arranged so that any of them can be selected at link time.
 
 \subsubsection{\mpifunc{MPI_FINALIZED}}
 See \code{MPI_INITIALIZED}
@@ -4748,15 +4740,18 @@ requested level of thread support.
 
 \subsubsection{\mpifunc{MPI_INITIALIZED}}
 As part of the error checking code, each routine should check the
-state of the \code{is_initialized} flag.  Should there be an 
-\begin{verbatim}
-    enum { MPICH_PRE_INIT=0, MPICH_IS_INITIALIZED=1,
-           MPICH_POST_FINALIZED=2 } MPIR_Initialized;
-\end{verbatim}
-variable?  This can be used by the \mpifunc{MPI_INITIALIZED} and
-\mpifunc{MPI_FINALIZED}
-calls.\index{MPICH_PRE_INIT}\index{MPICH_IS_INITIALIZED}
-\index{MPICH_POST_FINALIZED}
+state of the \code{is_initialized} flag.  
+% Should there be an 
+% \begin{verbatim}
+%     enum { MPICH_PRE_INIT=0, MPICH_IS_INITIALIZED=1,
+%            MPICH_POST_FINALIZED=2 } MPIR_Initialized;
+% \end{verbatim}
+% variable?  This can be used by the \mpifunc{MPI_INITIALIZED} and
+% \mpifunc{MPI_FINALIZED}
+% calls.\index{MPICH_PRE_INIT}\index{MPICH_IS_INITIALIZED}
+% \index{MPICH_POST_FINALIZED}
+See the \mpids{MPICH_PerProcess_t}{initialized} field of \code{MPIR_Process}
+described in Section~\ref{sec:perthread}. 
 
 \subsubsection{\mpifunc{MPI_FINALIZE}}
 \label{sec:finalize}
@@ -5646,6 +5641,9 @@ the MPI standard.  The handle transfer routines are:
 \mpifunc{MPI_TYPE_F2C},
 \mpifunc{MPI_WIN_C2F}, and
 \mpifunc{MPI_WIN_F2C}.
+These should be defined as macros in \file{mpi.h}.  Note that if the handle is
+invalid, the error handler associated with \code{MPI_COMM_WORLD} or
+\code{MPI_FILE_NULL} (for \code{MPI_File} handles only) should be invoked.
 
 % \subsubsection{\mpifunc{MPI_COMM_C2F}}
 % \subsubsection{\mpifunc{MPI_COMM_F2C}}
@@ -5902,8 +5900,8 @@ integer in bytes.
 We need to document all \code{CROSS_xxx} variables.  Here is a start at that
 list:
 \begin{description}
-\item[\texttt{CROSS_BYTE_ORDERING}]\code{WORDS_BIGENDIAN} or empty (just like
-  \code{AC_C_BIGENDIAN})
+\item[\texttt{CROSS_BYTE_ORDERING}]Has the value \code{WORDS_BIGENDIAN} or
+  empty (just like \code{AC_C_BIGENDIAN})
 \item[\texttt{CROSS_STRUCT_ALIGNMENT}]Structure alignment.  One of 
     \begin{description}
     \item[\texttt{packed}]No padding
@@ -6055,7 +6053,8 @@ check for conformance to these rules.
 
 Tools already available:
 \begin{description}
-\item[checkforglobs]Check for global symbol names
+\item[checkforglobs]Check for global symbol names.  Currently part of the
+  \code{sowing} package in \file{sowing/bin/checkforglobs}. 
 \item[tool-to-be-created]Check for use of banned routines (e.g., \code{printf},
 \code{alloca})
 \item[gcc -Wall etc.]Missing prototypes, return values, etc.  This can be set
@@ -6562,6 +6561,18 @@ infrastructure list is settled.
   \begin{enumerate}
   \item Attributes. 
   \item Info.
+\paragraph{Defining New Keys.}
+The MPI Forum has not resolved an ambiguity in the definition of
+info.  While it was clear during many of the discussions that the
+expectation was that \code{MPI_Info}\index{MPI_Info} could be used by
+layered implementations of parts of MPI, particularly the I/O part,
+IBM did not interpret the standard this way and their interpretation
+is both consistent with the standard and offers a feature not
+otherwise available (specifically, the ability to determine what info
+keys are recognized by the implementation).  However, we have chosen to follow
+the spirit of the MPI Forum and allow users to create their own keys.
+
+
   \item Datatypes.
   \item Groups.
   \item Point-to-point.  
@@ -6920,6 +6931,11 @@ int MPIi_Param_get_string( const char name[], const char *default_val,
       }
 void MPIi_Param_finalize( void ){}
 \end{verbatim}
+BNR routines could be
+used instead of \code{getenv} to get values.  Even more complex
+routines could read a \file{.mpichrc} file and remember parameter
+values in a table, looking them up when requested (this is closest to
+the PETSc options database).
 
 \subsection{Other Subsystems}
 Question: What about Fortran and C++?  These are required for full MPI support
