@@ -9,7 +9,7 @@ $projects_dir = "/home/gropp/projects";
 if (! -d $projects_dir && -d "/homes/gropp/projects" ) {
     $projects_dir = "/homes/gropp/projects";
 }
-$srcdir  = "/home/MPI/mpich2/testing/mpich2";
+$srcdir  = "/home/MPI/testing/mpich2/mpich2";
 $logname = $ENV{"LOGNAME"};
 $tmpdir = "/sandbox/$logname";
 # rundir is the directory in which to run the tests.
