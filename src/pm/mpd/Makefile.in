@@ -101,9 +101,12 @@ install:
 	done
 	-@for cmd in ${CMDS_NO_ROOT} ; do \
 	    cp -f ${srcdir}/$$cmd.py ${bindir}/$$cmd ; \
+	    chmod 755 ${bindir}/$$cmd; \
 	done
 	-@cp -f ${srcdir}/mpdman.py ${bindir}/mpdman.py
+	-@chmod 755 ${bindir}/mpdman.py
 	-@cp -f ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
+	-@chmod 755 ${bindir}/mpdlib.py
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && @LN_S@ -f mpdrun mpirun
 
