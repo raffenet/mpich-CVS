@@ -2356,6 +2356,54 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef HAVE_ALLOCA_H */")
 				Case "HAVE_PTHREAD_YIELD"
 					fout.WriteLine("/* #undef HAVE_PTHREAD_YIELD */")
+				Case "HAVE_MKSTEMP"
+					fout.WriteLine("/* #undef HAVE_MKSTEMP */")
+				Case "HAVE_O_BINARY"
+					fout.WriteLine("#define HAVE_O_BINARY 1")
+				Case "_FILE_OFFSET_BITS"
+					fout.WriteLine("/* #undef _FILE_OFFSET_BITS */")
+				Case "_LARGEFILE64_SOURCE"
+					fout.WriteLine("/* #undef _LARGEFILE64_SOURCE */")
+				Case "HAVE_MPI_COMM_F2C"
+					fout.WriteLine("#define HAVE_MPI_COMM_F2C 1")
+				Case "HAVE_MPI_ERRHANDLER_F2C"
+					fout.WriteLine("#define HAVE_MPI_ERRHANDLER_F2C 1")
+				Case "HAVE_MPI_GROUP_F2C"
+					fout.WriteLine("#define HAVE_MPI_GROUP_F2C 1")
+				Case "HAVE_MPI_IO"
+					fout.WriteLine("#define HAVE_MPI_IO 1")
+				Case "HAVE_MPI_OP_F2C"
+					fout.WriteLine("#define HAVE_MPI_OP_F2C 1")
+				Case "HAVE_MPI_REQUEST_F2C"
+					fout.WriteLine("#define HAVE_MPI_REQUEST_F2C 1")
+				Case "HAVE_MPI_RMA"
+					fout.WriteLine("#define HAVE_MPI_RMA 1")
+				Case "HAVE_MPI_STATUSES_IGNORE"
+					fout.WriteLine("#define HAVE_MPI_STATUSES_IGNORE 1")
+				Case "HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL"
+					fout.WriteLine("/* #undef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL */")
+				Case "HAVE_MPI_STATUS_F2C"
+					fout.WriteLine("#define HAVE_MPI_STATUS_F2C 1")
+				Case "HAVE_MPI_STATUS_IGNORE"
+					fout.WriteLine("#define HAVE_MPI_STATUS_IGNORE 1")
+				Case "HAVE_MPI_TYPE_F2C"
+					fout.WriteLine("#define HAVE_MPI_TYPE_F2C 1")
+				Case "HAVE_NO_MPIO_REQUEST"
+					fout.WriteLine("/* #undef HAVE_NO_MPIO_REQUEST */")
+				Case "HAVE_PROTOTYPES"
+					fout.WriteLine("#define HAVE_PROTOTYPES 1")
+				Case "MPE_F77_FALSE_VALUE"
+					fout.WriteLine("#define MPE_F77_FALSE_VALUE 0")
+				Case "MPE_F77_TRUE_VALUE"
+					fout.WriteLine("#define MPE_F77_TRUE_VALUE -1")
+				Case "MPI_Fint"
+					fout.WriteLine("/* #undef MPI_Fint */")
+				Case "MPI_STATUS_SIZE"
+					fout.WriteLine("#define MPI_STATUS_SIZE 5")
+				Case "USE_STDARG"
+					fout.WriteLine("/* #undef USE_STDARG */")
+				Case "HAVE_MPI_WTIME"
+					fout.WriteLine("#define HAVE_MPI_WTIME 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -2595,6 +2643,62 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 		fout.WriteLine("#define USE_NO_PIN_CACHE")
 	End If
 	fout.WriteLine("#define USE_RDMA_GET")
+	Call WriteFooter(fout)
+	fout.Close()
+End If
+
+'
+' mpe_logging_conf.h
+'
+If f.FileExists("src\mpe2\src\logging\mpe_logging_conf.h.in") Then
+	Set fout = f.CreateTextFile("src\mpe2\src\logging\include\mpe_logging_conf.h")
+	Call WriteHeader(fout, "mpe_logging_")
+	Call AddDefinitions(fout, "src\mpe2\src\logging\mpe_logging_conf.h.in")
+	fout.WriteLine("#define HAVE_IO_H 1")
+	fout.WriteLine("#define read _read")
+	fout.WriteLine("#define write _write")
+	fout.WriteLine("#define open _open")
+	fout.WriteLine("#define close _close")
+	fout.WriteLine("#define mktemp _mktemp")
+	fout.WriteLine("#define lseek _lseek")
+	fout.WriteLine("#define snprintf _snprintf")
+	fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
+	Call WriteFooter(fout)
+	fout.Close()
+End If
+
+'/src/misc/mpe_misc_conf.h.in
+
+'
+' mpe_wrappers_conf.h
+'
+If f.FileExists("src\mpe2\src\wrappers\mpe_wrappers_conf.h.in") Then
+	Set fout = f.CreateTextFile("src\mpe2\include\mpe_wrappers_conf.h")
+	Call WriteHeader(fout, "mpe_wrappers_")
+	Call AddDefinitions(fout, "src\mpe2\src\wrappers\mpe_wrappers_conf.h.in")
+	Call WriteFooter(fout)
+	fout.Close()
+End If
+
+'/src/slog2sdk/trace_rlog/trace_impl.h.in
+'/src/slog2sdk/trace_sample/trace_impl.h.in
+
+'
+' mpe_conf.h
+'
+If f.FileExists("src\mpe2\mpe_conf.h.in") Then
+	Set fout = f.CreateTextFile("src\mpe2\include\mpe_conf.h")
+	Call WriteHeader(fout, "mpe_")
+	Call AddDefinitions(fout, "src\mpe2\mpe_conf.h.in")
+	fout.WriteLine("#define HAVE_IO_H 1")
+	fout.WriteLine("#define read _read")
+	fout.WriteLine("#define write _write")
+	fout.WriteLine("#define open _open")
+	fout.WriteLine("#define close _close")
+	fout.WriteLine("#define mktemp _mktemp")
+	fout.WriteLine("#define lseek _lseek")
+	fout.WriteLine("#define snprintf _snprintf")
+	fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
 	Call WriteFooter(fout)
 	fout.Close()
 End If
