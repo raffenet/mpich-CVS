@@ -12,6 +12,7 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <sys/time.h>
 #endif
 #include "mpi.h"
 
@@ -249,7 +250,7 @@ int main(int argc, char *argv[])
 	    exit(-1);
 	}
 	/* allocate an array to put the workers tasks in */
-	work = (int*)malloc((numprocs - 1) * sizeof(int) * 5);
+	work = (int*)malloc(numprocs * sizeof(int) * 5);
 	if (work == NULL)
 	{
 	    printf("Memory allocation failed for work array, aborting.\n");
