@@ -114,8 +114,8 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
-dnl
-dnl Get the "master" top srcdir if we are a subdir configure
+#
+# Get the "master" top srcdir if we are a subdir configure
 if test -z "$top_srcdir" ; then
    use_top_srcdir=$srcdir   
 else
@@ -126,6 +126,13 @@ if test -z "$master_top_srcdir" ; then
 fi
 AC_SUBST(master_top_srcdir)
 export master_top_srcdir
+#
+# Get the master builddir (which may be imported from above)
+if test -z "$master_top_builddir" ; then
+    master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
 
 if test "$with_cross" != "no" ; then
     if test -s "$with_cross" ; then
@@ -297,6 +304,7 @@ if test "$ENABLE_SHLIB" = "gcc" ; then
    FC_SHL="$FC -shared -fpic"
    FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
 fi
+AC_SUBST(LIBTOOL)
 
 if test "$pac_lib_mpi_is_building" = "yes" ; then
     # These values are EXPORTED by the MPICH configure
@@ -490,24 +498,35 @@ AC_SUBST(MPI_CHARACTER)
 
 len_integer=$pac_cv_f77_sizeof_integer
 # Convert to two digit hex
-if test $len_integer -le 0 ; then 
-     len_integer=00
-elif test $len_integer -le 9 ; then
-     len_integer=0$len_integer 
-elif test $len_integer -le 15 ; then
-     case $len_integer in 
-         10) char=a ;;
-	 11) char=b ;;
-	 12) char=c ;;
-	 13) char=d ;;
-	 14) char=e ;;
-	 15) char=f ;;
-         esac
-    len_integer="0$char"
-else
-    AC_MSG_ERROR([Integer type sizes greater than 15 are not supported])
+len=$len_integer
+#
+# Take len and turn it into two hex digits (there are 8 bits available
+# in the built-in datatype handle for the length; see
+# src/mpid/common/datatype/mpid_datatype.h).  This code is taken
+# from the code in mpich2/configure.in 
+if test "$len" -gt 255 ; then
+     AC_MSG_ERROR([Type sizes greater than 255 bytes not supported (type INTEGER is $len bytes)]) 
 fi
-
+tmplen=$len
+hexlen=""
+while test $tmplen -gt 0 ; do
+    lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
+    case $lowdigit in 
+    10) char=a ;;
+    11) char=b ;;
+    12) char=c ;;
+    13) char=d ;;
+    14) char=e ;;
+    15) char=f ;;
+     *) char=$lowdigit ;;
+    esac
+    hexlen="$char$hexlen"
+    tmplen=`expr $tmplen / 16`
+done
+if test $len -lt 16 ; then
+    hexlen="0$hexlen"
+fi
+len_integer=$hexlen
 MPI_INTEGER=0x4c00${len_integer}19
 MPI_REAL=0x4c00${len_integer}1a
 MPI_LOGICAL=0x4c00${len_integer}1b
@@ -517,27 +536,35 @@ AC_SUBST(MPI_LOGICAL)
 
 len_double=$pac_cv_f77_sizeof_double_precision
 # Convert to two digit hex
-if test $len_double -le 0 ; then 
-     len_double=00
-elif test $len_double -le 9 ; then
-     len_double=0$len_double 
-elif test $len_double -le 15 ; then
-     case $len_double in 
-         10) char=a ;;
-	 11) char=b ;;
-	 12) char=c ;;
-	 13) char=d ;;
-	 14) char=e ;;
-	 15) char=f ;;
-         esac
-    len_double="0$char"
-elif test $len_double -le 31 ; then
-    len_double=`expr $len_double - 16`
-    len_double="1$len_double"
-else
-    AC_MSG_ERROR([Double Precision type sizes greater than 31 are not supported])
+len=$len_double
+#
+# Take len and turn it into two hex digits (there are 8 bits available
+# in the built-in datatype handle for the length; see
+# src/mpid/common/datatype/mpid_datatype.h).  This code is taken
+# from the code in mpich2/configure.in 
+if test "$len" -gt 255 ; then
+     AC_MSG_ERROR([Type sizes greater than 255 bytes not supported (type DOUBLE is $len bytes)]) 
 fi
-
+tmplen=$len
+hexlen=""
+while test $tmplen -gt 0 ; do
+    lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
+    case $lowdigit in 
+    10) char=a ;;
+    11) char=b ;;
+    12) char=c ;;
+    13) char=d ;;
+    14) char=e ;;
+    15) char=f ;;
+     *) char=$lowdigit ;;
+    esac
+    hexlen="$char$hexlen"
+    tmplen=`expr $tmplen / 16`
+done
+if test $len -lt 16 ; then
+    hexlen="0$hexlen"
+fi
+len_double=$hexlen
 MPI_COMPLEX=0x4c00${len_double}1c
 MPI_DOUBLE_PRECISION=0x4c00${len_double}1d
 MPI_2INTEGER=0x4c00${len_double}1e
@@ -548,31 +575,35 @@ AC_SUBST(MPI_2INTEGER)
 AC_SUBST(MPI_2REAL)
 
 len_doublecplx=`expr $pac_cv_f77_sizeof_double_precision \* 2`
-# Convert to two digit hex
-if test $len_doublecplx -le 0 ; then 
-     len_doublecplx=00
-elif test $len_doublecplx -le 9 ; then
-     len_doublecplx=0$len_doublecplx 
-elif test $len_doublecplx -le 15 ; then
-     case $len_doublecplx in 
-         10) char=a ;;
-	 11) char=b ;;
-	 12) char=c ;;
-	 13) char=d ;;
-	 14) char=e ;;
-	 15) char=f ;;
-         esac
-    len_doublecplx="0$char"
-elif test $len_doublecplx -le 31 ; then
-    len_doublecplx=`expr $len_doublecplx - 16`
-    if test "$len_doubldcplx" = 0 ; then
-        len_doublecplx="10";
-    else
-        len_doublecplx="1$len_doublecplx";
-    fi        
-else
-    AC_MSG_ERROR([Double Complex type sizes greater than 31 are not supported])
+len=$len_doublecplx
+#
+# Take len and turn it into two hex digits (there are 8 bits available
+# in the built-in datatype handle for the length; see
+# src/mpid/common/datatype/mpid_datatype.h).  This code is taken
+# from the code in mpich2/configure.in 
+if test "$len" -gt 255 ; then
+     AC_MSG_ERROR([Type sizes greater than 255 bytes not supported (type DOUBLE COMPLEX is $len bytes)]) 
 fi
+tmplen=$len
+hexlen=""
+while test $tmplen -gt 0 ; do
+    lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
+    case $lowdigit in 
+    10) char=a ;;
+    11) char=b ;;
+    12) char=c ;;
+    13) char=d ;;
+    14) char=e ;;
+    15) char=f ;;
+     *) char=$lowdigit ;;
+    esac
+    hexlen="$char$hexlen"
+    tmplen=`expr $tmplen / 16`
+done
+if test $len -lt 16 ; then
+    hexlen="0$hexlen"
+fi
+len_doublecplx=$hexlen
 
 MPI_DOUBLE_COMPLEX=0x4c00${len_doublecplx}20
 MPI_2DOUBLE_PRECISION=0x4c00${len_doublecplx}21

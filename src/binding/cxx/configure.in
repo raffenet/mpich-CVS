@@ -53,6 +53,7 @@ if test "$ENABLE_SHLIB" = "gcc" ; then
    CXX_SHL="$CXX -shared -fpic"
    CXX_LINKPATH_SHL="-Wl,-rpath -Wl,"
 fi
+AC_SUBST(LIBTOOL)
 dnl     checks for library functions
 dnl     checks for system services
 
