@@ -103,12 +103,13 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	pkt_ptr->num_bytes = num_bytes;
     }
 
+    vc->ch.recv_active = NULL;
     mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, rreq);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
     }
-    if (rreq->dev.iov_count == 0)
+    if (rreq->dev.iov_count == 0 && vc->ch.recv_active == NULL)
     {
 	vc->ch.shm_reading_pkt = TRUE;
     }
