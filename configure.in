@@ -599,6 +599,23 @@ dnl PAC_C_STRUCT_ALIGNMENT places the default alignment into
 dnl pac_cv_c_struct_align, with possible values including
 dnl packed (byte), largest, two, four, eight (or other failure message).
 PAC_C_STRUCT_ALIGNMENT
+
+if test "$pac_cv_c_struct_align" = "packed" ; then
+    pac_cv_c_struct_align_nr=1
+elif test "$pac_cv_c_struct_align" = "two" ; then
+    pac_cv_c_struct_align_nr=2
+elif test "$pac_cv_c_struct_align" = "four" ; then
+    pac_cv_c_struct_align_nr=4
+elif test "$pac_cv_c_struct_align" = "eight" ; then
+    pac_cv_c_struct_align_nr=8
+elif test "$pac_cv_c_struct_align" = "largest" ; then
+    AC_DEFINE(HAVE_LARGEST_STRUCT_ALIGNMENT,,[Define when alignment of structures is based on largest component])
+fi
+
+if test -n "$pac_cv_c_struct_align_nr" ; then
+    AC_DEFINE_UNQUOTED(HAVE_MAX_STRUCT_ALIGNMENT,$pac_cv_c_struct_align_nr,[Controls byte alignment of structures])
+fi
+
 dnl
 dnl Get the size of the C types for encoding in the basic datatypes and for
 dnl the specific-sized integers
