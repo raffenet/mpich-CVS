@@ -1916,7 +1916,8 @@ char *** argv;
   state->kind_mask = MPE_KIND_GROUP;
   state->name = "MPI_Group_compare";
 
-  state = &states[MPE_GROUP_DIFFERENCE_ID];  state->kind_mask = MPE_KIND_GROUP;
+  state = &states[MPE_GROUP_DIFFERENCE_ID];
+  state->kind_mask = MPE_KIND_GROUP;
   state->name = "MPI_Group_difference";
 
   state = &states[MPE_GROUP_EXCL_ID];
