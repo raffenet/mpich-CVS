@@ -746,7 +746,8 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpi/errhan/Makefile \
 	  test/mpi/group/Makefile \
 	  examples/Makefile\
-          src/util/logging/Makefile )
+          src/util/logging/Makefile\
+          src/util/timing/Makefile )
 
 dnl The following files should be created by the appropriate configure within
 dnl the device.

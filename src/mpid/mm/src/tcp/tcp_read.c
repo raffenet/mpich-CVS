@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "tcpimpl.h"
+#ifndef HAVE_WINSOCK2_H
+#include <errno.h>
+#endif
 
 #ifdef WITH_METHOD_SHM
 int tcp_read_shm(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
