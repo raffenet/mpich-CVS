@@ -10,7 +10,7 @@
 #if defined(__cplusplus)
 #if !defined(CPLUSPLUS_BEGIN)
 #define CPLUSPLUS_BEGIN extern "C" {
-#define CPLUSPLUS_END {
+#define CPLUSPLUS_END }
 #endif
 #else
 #define CPLUSPLUS_BEGIN
@@ -99,7 +99,7 @@ int sock_post_writev(sock_t sock, SOCK_IOV * iov, int n, sock_progress_update_fu
 
 int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t * out);
 
-int sock_accept(sock_set_t set, void * user_ptr, sock_t listener, sock_t * accepted);
+int sock_accept(sock_t listener, sock_set_t set, void * user_ptr, sock_t * accepted);
 int sock_read(sock_t sock, void * buf, int len, int * num_read);
 int sock_readv(sock_t sock, SOCK_IOV * iov, int n, int * num_read);
 int sock_write(sock_t sock, void * buf, int len, int * num_written);
