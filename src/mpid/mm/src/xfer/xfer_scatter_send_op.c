@@ -9,6 +9,20 @@
 #undef FUNCNAME
 #define FUNCNAME xfer_scatter_send_op
 
+/*@
+   xfer_scatter_send_op - xfer_scatter_send_op
+
+   Parameters:
++  MPID_Request *request_ptr - request
+.  const void *buf - buffer
+.  int count - count
+.  MPI_Datatype dtype - datatype
+.  int first - first
+.  int last - last
+-  int dest - destination
+
+   Notes:
+@*/
 int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest)
 {
     static const char FCNAME[] = "xfer_scatter_send_op";

@@ -9,6 +9,17 @@
 #undef FUNCNAME
 #define FUNCNAME xfer_gather_init
 
+/*@
+   xfer_gather_init - xfer_gather_init
+
+   Parameters:
++  int dest - destination
+.  int tag - tag
+.  MPID_Comm *comm_ptr - communicator
+-  MPID_Request **request_pptr - request pointer
+
+   Notes:
+@*/
 int xfer_gather_init(int dest, int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr)
 {
     static const char FCNAME[] = "xfer_gather_init";

@@ -9,6 +9,14 @@
 #undef FUNCNAME
 #define FUNCNAME xfer_scatter_start
 
+/*@
+   xfer_scatter_start - xfer_scatter_start
+
+   Parameters:
++  MPID_Request *request_ptr - request
+
+   Notes:
+@*/
 int xfer_scatter_start(MPID_Request *request_ptr)
 {
     static const char FCNAME[] = "xfer_scatter_start";

@@ -9,6 +9,16 @@
 #undef FUNCNAME
 #define FUNCNAME xfer_scatter_forward_op
 
+/*@
+   xfer_scatter_forward_op - xfer_scatter_forward_op
+
+   Parameters:
++  MPID_Request *request_ptr - request
+.  int size - size
+-  int dest - destination
+
+   Notes:
+@*/
 int xfer_scatter_forward_op(MPID_Request *request_ptr, int size, int dest)
 {
     static const char FCNAME[] = "xfer_scatter_forward_op";

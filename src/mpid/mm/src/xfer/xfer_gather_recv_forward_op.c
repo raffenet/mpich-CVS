@@ -9,6 +9,20 @@
 #undef FUNCNAME
 #define FUNCNAME xfer_gather_recv_forward_op
 
+/*@
+   xfer_gather_recv_forward_op - xfer_gather_recv_forward_op
+
+   Parameters:
++  MPID_Request *request_ptr - request
+.  void *buf - buffer
+.  int count - count
+.  MPI_Datatype dtype - datatype
+.  int first - first
+.  int last - last
+-  int src - source
+
+   Notes:
+@*/
 int xfer_gather_recv_forward_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src)
 {
     static const char FCNAME[] = "xfer_gather_recv_forward_op";

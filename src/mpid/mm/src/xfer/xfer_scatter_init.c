@@ -9,6 +9,17 @@
 #undef FUNCNAME
 #define FUNCNAME xfer_scatter_init
 
+/*@
+   xfer_scatter_init - xfer_scatter_init
+
+   Parameters:
++  int src - source
+.  int tag - tag
+.  MPID_Comm *comm_ptr - communicator
+-  MPID_Request **request_pptr - request pointer
+
+   Notes:
+@*/
 int xfer_scatter_init(int src, int tag, MPID_Comm *comm_ptr, MPID_Request **request_pptr)
 {
     static const char FCNAME[] = "xfer_scatter_init";

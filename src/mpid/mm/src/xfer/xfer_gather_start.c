@@ -9,6 +9,14 @@
 #undef FUNCNAME
 #define FUNCNAME xfer_gather_start
 
+/*@
+   xfer_gather_start - xfer_gather_start
+
+   Parameters:
++  MPID_Request *request_ptr - request
+
+   Notes:
+@*/
 int xfer_gather_start(MPID_Request *request_ptr)
 {
     static const char FCNAME[] = "xfer_gather_start";
