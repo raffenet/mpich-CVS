@@ -241,6 +241,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* figure out how many processors are available and set the spin count accordingly */
 #endif
     
+    /* put the "not in MPI_Finalized" flag */
+    /*
+    MPIU_Snprintf(key, key_max_sz, "P-%d.finalized", pg_rank);
+    MPIU_Strncpy(val, "false", val_max_sz);
+    PMI_KVS_Put(pg->kvs_name, key, val);
+    */
+
     rc = PMI_KVS_Commit(pg->kvs_name);
     assert(rc == 0);
     rc = PMI_Barrier();
