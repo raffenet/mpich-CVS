@@ -988,7 +988,7 @@ AC_DEFUN(PAC_C_STRUCT_ALIGNMENT,[
 AC_CACHE_CHECK([for C struct alignment],pac_cv_c_struct_align,[
 AC_TRY_RUN([
 #include <stdio.h>
-#define DBG(a)
+#define DBG(a,b,c)
 int main( int argc, char *argv[] )
 {
     FILE *cf;
@@ -1112,7 +1112,7 @@ int main( int argc, char *argv[] )
     return 0;
 }],
 pac_cv_c_struct_align=`cat ctest.out`
-,pac_cv_c_struct_align="unknown")
+,pac_cv_c_struct_align="unknown",pac_cv_c_struct_align="unknown")
 rm -f ctest.out
 ])
 ])
