@@ -172,6 +172,7 @@ static inline void post_pkt_recv(MPIDI_VC *vc)
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
 }
 
+#if 0
 #undef FUNCNAME
 #define FUNCNAME post_queued_send
 #undef FCNAME
@@ -184,6 +185,7 @@ static inline void post_queued_send(MPIDI_VC * vc)
     
     assert(vc != NULL);
     vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc); /* MT */
+    /*
     if (vc->ib.send_active != NULL)
     {
 	MPIDI_DBG_PRINTF((75, FCNAME, "queued message, send active"));
@@ -194,9 +196,11 @@ static inline void post_queued_send(MPIDI_VC * vc)
     {
 	MPIDI_DBG_PRINTF((75, FCNAME, "queue empty, send deactivated"));
     }
+    */
 
     MPIDI_FUNC_EXIT(MPID_STATE_POST_QUEUED_SEND);
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME handle_read
@@ -444,7 +448,7 @@ static inline void handle_written(MPIDI_VC * vc)
 		{
 		    DBGMSG((65, "sent requested data, decrementing CC"));
 		    MPIDI_CH3I_SendQ_dequeue(vc);
-		    post_queued_send(vc);
+		    /*post_queued_send(vc);*/ vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
 		    /* mark data transfer as complete and decrment CC */
 		    req->ch3.iov_count = 0;
 		    MPIDI_CH3U_Request_complete(req);
@@ -455,7 +459,7 @@ static inline void handle_written(MPIDI_VC * vc)
 		    
 		    if (pkt->type < MPIDI_CH3_PKT_END_CH3)
 		    {
-			post_queued_send(vc);
+			/*post_queued_send(vc);*/ vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
 		    }
 		    else
 		    {
@@ -474,7 +478,7 @@ static inline void handle_written(MPIDI_VC * vc)
 			DBGMSG((65, "request (assumed) complete"));
 			DBGMSG((65, "dequeuing req and posting next send"));
 			MPIDI_CH3I_SendQ_dequeue(vc);
-			post_queued_send(vc);
+			/*post_queued_send(vc);*/ vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
 		    }
 		}
 		else
