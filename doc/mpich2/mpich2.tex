@@ -2504,10 +2504,95 @@ application (and of course document this).
 % Scenarios (move to ADI doc?)
 %\input{pt2ptdesc}
 
+\section{Adding a New Communication Method}
+\label{sec:adding-methods}
+MPICH2 has been designed to make it relatively easy to add support for
+additional communication methods.  In the current release, there are three
+ways to add a communication method:
+\begin{description}
+\item[Channel Device]This is a relatively simple communication device; adding
+  a method requires implementing a small number of routines.  This choice is
+  most suitable for initial ports and for single communication methods (e.g.,
+  only TCP or only Infiniband).
+\item[MultiMethod Device]This is a device designed to support both multiple
+  communication methods and more complex data management.  It is possible to
+  add a method to this device and to use the other methods as well.  For
+  example, this provides TCP, Infiniband, shared memory, and VIA methods.
+\item[Abstract Device Interface]This is the most general interface; the
+  Channel device and the Multimethod implement this interface.  The ADI gives
+  you nearly complete control over the implementation of all communication
+  functions.
+\end{description}
+
+\subsection{Adding a Method To the Channel Device}
+\label{sec:adding-channel}
+
+\begin{enumerate}
+\item Create a new directory under \file{src/mpid/ch3/channels}.  For purposes
+  of illustration, call this directory \code{newdev}.
+\item Add \code{newdev} to the list of directories in the file
+  \file{src/mpid/ch3/channels/Makefile.sm} defined by the variable
+  \code{SUBDIRS_channel_name} .  This tells the build system what directories
+  may be used by MPICH.
+\item Add a file \file{src/mpid/ch3/channels/newdev/Makefile.sm} .  This file
+  is used to create the \file{Makefile.in} file used to build this device.
+\item Add a \file{configure.in} file to
+  \file{src/mpid/ch3/channels/newdev} that will handle any configuration
+  issues; it will also create the \file{Makefile} from the \file{Makefile.in}
+  file.
+%\item (Optional) Add a \file{setup_device} file to
+%  \file{src/mpid/ch3/channels/newdev}. 
+%  This file is sourced by the top-level MPICH configure, and should contain
+%  any variable assignments (such as adding paths to the C preprocessor) needed
+%  to build that particular method.  
+\item (Optional) Add a \file{localdefs} (or a \file{localdefs.in} that will be
+  used as input by the \code{configure} in this directory).  This file will be
+  sourced by the top-level MPICH configure \emph{after} the \code{configure}
+  in this directory has been run.  This is an appropriate place to put any
+  extra libraries needed by this method.  For example, the file
+  \file{localdefs.in} may contain just
+\begin{verbatim}
+   LIBS="$LIBS @NEWDEV_LIBS@"
+\end{verbatim} 
+  where the \code{configure} program puts the libraries needed by this method
+  into the configure variable NEWDEV_LIBS.  See the \code{configure} and
+  \code{localdefs.in} file in \file{src/mpid/ch3/channels/tcp} for an example.
+\end{enumerate}
+
+Once these steps are complete, go to the top level of MPICH and execute
+\begin{verbatim}
+    maint/updatefiles 
+\end{verbatim}
+This is a shell script that executes a number of programs to rebuild the
+\file{Makefile}s and other parts of MPICH2.  As this tool is not intended for
+general use, you may need to make a few changes.  For example, several of the
+programs are Perl scripts; while \code{updatefiles} tries to find a version of
+Perl, not all of the scripts are updated to use the version of Perl that it
+finds.  
+
+Once these steps have completed, you should be able to execute
+\begin{verbatim}
+    configure --with-device=ch3:newdev --prefix=/my/mpi2-install
+\end{verbatim}
+to build MPICH2 with your new channel device.
+
+Note that no changes are made to the top-level \code{configure}.  This
+approach makes it easy for groups to develop new communication methods while
+staying sychronized with MPICH2 development.
+
+\subsection{Adding a Method To the Multimethod Device}
+\label{sec:adding-mm}
+Still to do
+
+\subsection{Creating a New ADI3 Device}
+\label{sec:creating-new-adi3}
+Still to do
+
 \section{Special Issues}
+\label{sec:special-issues}
+
 This section contains other issues that don't fit anywhere else.
 
-\label{sec:special-issues}
 
 \subsection{Heterogenity}
 \label{sec:hetero-issues}
@@ -6717,7 +6802,7 @@ register a callback that \code{MPI_Finalize} will execute using the routine
 % Finalize_func_t fstack[MAX_FINALIZE_FUNC];
 % int fstack_sp = 0;  /* First free entry */
 
-% void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
+% void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 % {
 %     if (fstack_sp >= MAX_FINALIZE_FUNC) {
 %         /* panic ! */
@@ -7407,7 +7492,7 @@ if (!ldap_handle) {
     ldap_bind_s( ldap_handle, who, cred, method );
     /* Or ldap_simple_bind_s( handle, who, passwd) 
        or ldap_kerberos_bind_s( handled, who ) */
-    MPIR_Add_finalize( MPID_Nameserver_finalize &ldap_handle );  
+    MPIR_Add_finalize( MPID_Nameserver_finalize, &ldap_handle, 9 );  
           /* See MPI_Finalize */
     }
 /* Synchronous call because MPI_LOOKUP_NAME is blocking */
