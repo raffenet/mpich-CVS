@@ -46,7 +46,7 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_CHAR, MPI_BAND, 0, comm );
     if (rank == 0) {
-	if (coutbuf[0] != 0xff) {
+	if (coutbuf[0] != (char)0xff) {
 	    errs++;
 	    fprintf( stderr, "char BAND(1) test failed\n" );
 	}
@@ -54,7 +54,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "char BAND(0) test failed\n" );
 	}
-	if (coutbuf[2] != 0xf0 && size > 1) {
+	if (coutbuf[2] != (char)0xf0 && size > 1) {
 	    errs++;
 	    fprintf( stderr, "char BAND(>) test failed\n" );
 	}
@@ -94,7 +94,7 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_BYTE, MPI_BAND, 0, comm );
     if (rank == 0) {
-	if (coutbuf[0] != 0xff) {
+	if (coutbuf[0] != (char)0xff) {
 	    errs++;
 	    fprintf( stderr, "byte BAND(1) test failed\n" );
 	}
@@ -102,7 +102,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "byte BAND(0) test failed\n" );
 	}
-	if (coutbuf[2] != 0xf0 && size > 1) {
+	if (coutbuf[2] != (char)0xf0 && size > 1) {
 	    errs++;
 	    fprintf( stderr, "byte BAND(>) test failed\n" );
 	}
@@ -118,7 +118,7 @@ int main( int argc, char *argv[] )
     soutbuf[2] = 1;
     MPI_Reduce( sinbuf, soutbuf, 3, MPI_SHORT, MPI_BAND, 0, comm );
     if (rank == 0) {
-	if (soutbuf[0] != 0xffff) {
+	if (soutbuf[0] != (short)0xffff) {
 	    errs++;
 	    fprintf( stderr, "short BAND(1) test failed\n" );
 	}
@@ -126,7 +126,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "short BAND(0) test failed\n" );
 	}
-	if (soutbuf[2] != 0xf0f0 && size > 1) {
+	if (soutbuf[2] != (short)0xf0f0 && size > 1) {
 	    errs++;
 	    fprintf( stderr, "short BAND(>) test failed\n" );
 	}
@@ -232,7 +232,7 @@ int main( int argc, char *argv[] )
     {
 	long long llinbuf[3], lloutbuf[3];
     /* long long */
-    llinbuf[0] = 0xffffffff
+    llinbuf[0] = 0xffffffff;
     llinbuf[1] = 0;
     llinbuf[2] = (rank > 0) ? 0xffffffff : 0xf0f0f0f0;
 

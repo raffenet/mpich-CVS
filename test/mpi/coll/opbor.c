@@ -47,7 +47,7 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_CHAR, MPI_BOR, 0, comm );
     if (rank == 0) {
-	if (coutbuf[0] != 0xff) {
+	if (coutbuf[0] != (char)0xff) {
 	    errs++;
 	    fprintf( stderr, "char BOR(1) test failed\n" );
 	}
@@ -55,7 +55,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "char BOR(0) test failed\n" );
 	}
-	if (coutbuf[2] != 0xff && size > 1) {
+	if (coutbuf[2] != (char)0xff && size > 1) {
 	    errs++;
 	    fprintf( stderr, "char BOR(>) test failed\n" );
 	}
@@ -95,7 +95,7 @@ int main( int argc, char *argv[] )
     coutbuf[2] = 1;
     MPI_Reduce( cinbuf, coutbuf, 3, MPI_BYTE, MPI_BOR, 0, comm );
     if (rank == 0) {
-	if (coutbuf[0] != 0xff) {
+	if (coutbuf[0] != (char)0xff) {
 	    errs++;
 	    fprintf( stderr, "byte BOR(1) test failed\n" );
 	}
@@ -103,7 +103,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "byte BOR(0) test failed\n" );
 	}
-	if (coutbuf[2] != 0xff && size > 1) {
+	if (coutbuf[2] != (char)0xff && size > 1) {
 	    errs++;
 	    fprintf( stderr, "byte BOR(>) test failed\n" );
 	}
@@ -119,7 +119,7 @@ int main( int argc, char *argv[] )
     soutbuf[2] = 1;
     MPI_Reduce( sinbuf, soutbuf, 3, MPI_SHORT, MPI_BOR, 0, comm );
     if (rank == 0) {
-	if (soutbuf[0] != 0xffff) {
+	if (soutbuf[0] != (short)0xffff) {
 	    errs++;
 	    fprintf( stderr, "short BOR(1) test failed\n" );
 	}
@@ -127,7 +127,7 @@ int main( int argc, char *argv[] )
 	    errs++;
 	    fprintf( stderr, "short BOR(0) test failed\n" );
 	}
-	if (soutbuf[2] != 0xffff && size > 1) {
+	if (soutbuf[2] != (short)0xffff && size > 1) {
 	    errs++;
 	    fprintf( stderr, "short BOR(>) test failed\n" );
 	}
@@ -165,7 +165,7 @@ int main( int argc, char *argv[] )
     uoutbuf[0] = 0;
     uoutbuf[1] = 1;
     uoutbuf[2] = 1;
-    MPI_Reduce( uinbuf, uoutbuf, 3, MPI_UNSIGNED_INT, MPI_BOR, 0, comm );
+    MPI_Reduce( uinbuf, uoutbuf, 3, MPI_UNSIGNED, MPI_BOR, 0, comm );
     if (rank == 0) {
 	if (uoutbuf[0] != 0xffffffff) {
 	    errs++;
@@ -189,7 +189,7 @@ int main( int argc, char *argv[] )
     ioutbuf[0] = 0;
     ioutbuf[1] = 1;
     ioutbuf[2] = 1;
-    MPI_Reduce( uinbuf, uoutbuf, 3, MPI_INT, MPI_BOR, 0, comm );
+    MPI_Reduce( iinbuf, ioutbuf, 3, MPI_INT, MPI_BOR, 0, comm );
     if (rank == 0) {
 	if (ioutbuf[0] != 0xffffffff) {
 	    errs++;
@@ -257,7 +257,7 @@ int main( int argc, char *argv[] )
     {
 	long long llinbuf[3], lloutbuf[3];
     /* long long */
-    llinbuf[0] = 0xffffffff
+    llinbuf[0] = 0xffffffff;
     llinbuf[1] = 0;
     llinbuf[2] = (rank > 0) ? 0x3c3c3c3c : 0xc3c3c3c3;
 

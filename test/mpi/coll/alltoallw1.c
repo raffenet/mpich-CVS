@@ -8,6 +8,7 @@
  */
 
 #include "mpi.h"
+#include "mpitest.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -23,6 +24,8 @@ void Transpose(float *localA, float *localB, int M, int N,
   int sendcounts[MAX_SIZE], recvcounts[MAX_SIZE];
   int *sdispls, *rdispls;
   MPI_Datatype xtype[2][2], stype[2][2], *sendtypes, *recvtypes;
+
+    printf( "M = %d, N = %d\n", M, N );
 
   /* compute parameters */
   MPI_Comm_size(comm, &p);
@@ -53,18 +56,20 @@ void Transpose(float *localA, float *localB, int M, int N,
   /* prepare collective operation arguments */
   lasti = myrank == p-1;
   for (j=0;  j < p; j++) {
-    lastj = j == p-1;
+    lastj	  = j == p-1;
     sendcounts[j] = 1;
-    sdispls[j] = j*n[0]*extent;
-    sendtypes[j] = xtype[lasti][lastj];
+    sdispls[j]	  = j*n[0]*extent;
+    sendtypes[j]  = xtype[lasti][lastj];
     recvcounts[j] = 1;
-    rdispls[j] = j*m[0]*extent;
-    recvtypes[j] = stype[lastj][lasti];
+    rdispls[j]	  = j*m[0]*extent;
+    recvtypes[j]  = stype[lastj][lasti];
   }
   
   /* communicate */
-  MPI_Alltoallw(&localA, sendcounts, sdispls, sendtypes, 
-                &localB, recvcounts, rdispls, recvtypes, comm);
+  /* -- Note that the book incorrectly uses &localA and &localB 
+     as arguments to MPI_Alltoallw */
+  MPI_Alltoallw(localA, sendcounts, sdispls, sendtypes, 
+                localB, recvcounts, rdispls, recvtypes, comm);
 }
 
 
@@ -100,50 +105,51 @@ MPI_Datatype transpose_type(int m, int n, MPI_Datatype type)
 
 int main( int argc, char *argv[] )
 {
-    MPI_Comm comm;
-    int M, N, lm, lmlast, ln, lnlast, i, j, errs = 0;
+    int gM, gN, lm, lmlast, ln, lnlast, i, j, errs = 0;
     int size, rank;
     float *localA, *localB;
+    MPI_Comm comm;
 
-    MTest_Init( argc, argv );
+    MTest_Init( &argc, &argv );
     comm = MPI_COMM_WORLD;
     
     MPI_Comm_size( comm, &size );
     MPI_Comm_rank( comm, &rank );
 
-    M = 20;
-    N = 30;
+    gM = 20;
+    gN = 30;
 
     /* Each block is lm x ln in size, except for the last process, 
        which has lmlast x lnlast */
-    lm = M/size;
-    lmlast = M - (size -1)*(lm);
-    ln = N/size;
-    lnlast = N - (size-1)*ln;
+    lm     = gM/size;
+    lmlast = gM - (size - 1)*lm;
+    ln     = gN/size;
+    lnlast = gN - (size - 1)*ln;
 
     /* Create the local matrices */
     if (rank == size - 1) {
-	localA = (float *)malloc( N * lmlast * sizeof(float) );
-	localB = (float *)malloc( M * lnlast * sizeof(float) );
+	localA = (float *)malloc( gN * lmlast * sizeof(float) );
+	localB = (float *)malloc( gM * lnlast * sizeof(float) );
 	for (i=0; i<lmlast; i++) {
-	    for (j=0; j<N; j++) {
-		localA[i*N+j] = i*N+j + rank * N * lm;
+	    for (j=0; j<gN; j++) {
+		localA[i*gN+j] = i*gN+j + rank * gN * lm;
 	    }
 	}
 	
     }
     else {
-	localA = (float *)malloc( N * lm * sizeof(float) );
-	localB = (float *)malloc( M * ln * sizeof(float) );
+	localA = (float *)malloc( gN * lm * sizeof(float) );
+	localB = (float *)malloc( gM * ln * sizeof(float) );
 	for (i=0; i<lm; i++) {
-	    for (j=0; j<N; j++) {
-		localA[i*N+j] = i*N+j + rank * N * lm;
+	    for (j=0; j<gN; j++) {
+		localA[i*gN+j] = i*gN+j + rank * gN * lm;
 	    }
 	}
     }
 
+    printf( "Allocated local arrays\n" );
     /* Transpose */
-    Transpose( localA, localB, M, N, comm );
+    Transpose( localA, localB, gM, gN, comm );
 
     /* check the transposed matrix */
 

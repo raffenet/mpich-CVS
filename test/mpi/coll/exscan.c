@@ -6,13 +6,14 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "Test MPI_Exscan";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int rank, size;
     int minsize = 2, count; 
     int *sendbuf, *recvbuf, i;
@@ -50,8 +51,8 @@ int main( int argc, char *argv[] )
 		    if (recvbuf[i] != result) {
 			errs++;
 			if (errs < 10) {
-			    fprintf( stderr, "Error in recvbuf[%d] on %d\n",
-				     i, rank );
+			    fprintf( stderr, "Error in recvbuf[%d] = %d on %d, expected %d\n",
+				     i, recvbuf[i], rank, result );
 			}
 		    }
 		}

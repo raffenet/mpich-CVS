@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "Test reading and writing zero bytes (set status correctly)";
@@ -13,7 +14,7 @@ static char MTEST_Descrip[] = "Test reading and writing zero bytes (set status c
 int main( int argc, char *argv[] )
 {
     int errs = 0;
-    int size, rank, i, *buf;
+    int size, rank, i, *buf, count;
     MPI_File fh;
     MPI_Comm comm;
     MPI_Status status;
@@ -41,7 +42,7 @@ int main( int argc, char *argv[] )
     MPI_File_seek( fh, 0, MPI_SEEK_SET ); 
 
     /* Read nothing (check status) */
-    memset( &status, 0xff, sizeof(MPI_Status) ) 
+    memset( &status, 0xff, sizeof(MPI_Status) );
     MPI_File_read( fh, buf, 0, MPI_INT, &status );
     MPI_Get_count( &status, MPI_INT, &count );
     if (count != 0) {
@@ -50,7 +51,7 @@ int main( int argc, char *argv[] )
     }
 
     /* Write nothing (check status) */
-    memset( &status, 0xff, sizeof(MPI_Status) ) 
+    memset( &status, 0xff, sizeof(MPI_Status) );
     MPI_File_write( fh, buf, 0, MPI_INT, &status );
     if (count != 0) {
 	errs++;
@@ -60,7 +61,7 @@ int main( int argc, char *argv[] )
     /* Read shared nothing (check status) */
     MPI_File_seek_shared( fh, 0, MPI_SEEK_SET );
     /* Read nothing (check status) */
-    memset( &status, 0xff, sizeof(MPI_Status) ) 
+    memset( &status, 0xff, sizeof(MPI_Status) );
     MPI_File_read_shared( fh, buf, 0, MPI_INT, &status );
     MPI_Get_count( &status, MPI_INT, &count );
     if (count != 0) {
@@ -69,28 +70,21 @@ int main( int argc, char *argv[] )
     }
     
     /* Write nothing (check status) */
-    memset( &status, 0xff, sizeof(MPI_Status) ) 
+    memset( &status, 0xff, sizeof(MPI_Status) );
     MPI_File_write_shared( fh, buf, 0, MPI_INT, &status );
     if (count != 0) {
 	errs++;
 	fprintf( stderr, "Count not zero (%d) on write\n", count );
     }
 
-
-	
-    for (i=0; i<size; i++) {
-	if (buf[i] != i) {
-	    errs++;
-	    fprintf( stderr, "%d: buf[%d] = %d\n", rank, i, buf[i] );
-	}
-    }
+    MPI_Barrier( comm );
 
     MPI_File_seek_shared( fh, 0, MPI_SEEK_SET );
     for (i=0; i<size; i++) buf[i] = -1;
     MPI_File_read_ordered( fh, buf, 1, MPI_INT, &status );
     if (buf[0] != rank) {
 	errs++;
-	fprintf( stderr, "%d: buf = %d\n", rank, i, buf[i] );
+	fprintf( stderr, "%d: buf = %d\n", rank, buf[0] );
     }
 
     free( buf );

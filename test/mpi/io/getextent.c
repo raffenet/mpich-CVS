@@ -13,7 +13,6 @@ static char MTEST_Descrip[] = "Test file_get_extent";
 int main( int argc, char *argv[] )
 {
     int errs = 0;
-    int size, rank, i, *buf;
     MPI_File fh;
     MPI_Comm comm;
     MPI_Aint extent, nextent;
@@ -26,7 +25,7 @@ int main( int argc, char *argv[] )
 		   MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &fh );
 
     MPI_File_get_type_extent( fh, MPI_INT, &extent );
-    MPI_Type_extent( fh, MPI_INT, &nextent );
+    MPI_Type_extent( MPI_INT, &nextent );
 
     if (nextent != extent) {
         errs++;
