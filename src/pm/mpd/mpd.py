@@ -5,7 +5,7 @@
 #
 
 from sys       import stdout, argv, settrace, exit
-from os        import environ, getpid, fork, execvpe, setpgrp, waitpid, kill, chdir, \
+from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
                       umask, close, access, path, stat, unlink, \
                       R_OK, X_OK, WNOHANG, _exit
@@ -28,6 +28,7 @@ from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_get_my_username, mpd_get_groups_for_username, \
                       mpd_set_my_id, mpd_check_python_version, mpd_version, \
                       mpd_socketpair, mpd_same_ips
+from mpdman    import mpdman
 
 
 class _ActiveSockInfo:
@@ -47,12 +48,6 @@ def _mpd_init():
         stdout.flush()
     g.myId = '%s_%d' % (g.myHost,g.myPort)
     mpd_set_my_id(g.myId)
-
-    # get manager path before doing chdir as daemon below
-    g.myOwnDir = path.abspath(path.split(argv[0])[0])  # normalize for platform also
-    g.manager = path.join(g.myOwnDir,'mpdman.py')
-    if not access(g.manager,X_OK):
-        mpd_raise('cannot execute manager %s' % (g.manager) )
 
     if g.daemon:      # see if I should become a daemon with no controlling tty
         rc = fork()
@@ -509,7 +504,7 @@ def _do_mpdrun(msg):
                 setgroups(mpd_get_groups_for_username(username))
                 setregid(gid,gid)
                 setreuid(uid,uid)
-            execvpe(g.manager,[g.manager],environ)
+            mpdman()
             _exit(0);  # do NOT do cleanup
         else:
             tempSocket.close()

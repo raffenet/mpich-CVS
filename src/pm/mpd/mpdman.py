@@ -850,14 +850,6 @@ def mpdman():
             else:
                 mpd_print(1, 'recvd msg on unknown socket :%s:' % readySocket )
     mpd_print(0000, "out of loop")
-    if myRank == 0:
-        if conSocket:    # may race with spawner to exit
-            msgToSend = { 'cmd' : 'job_terminated',
-                          'jobid' : jobid }
-            mpd_send_one_msg(conSocket,msgToSend)
-            del socketsToSelect[conSocket]
-            conSocket.close()
-            conSocket = 0
     # may want to want to wait for waitPids here
 
 def parse_pmi_msg(msg):

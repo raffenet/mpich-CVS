@@ -302,10 +302,10 @@ def mpdrun():
                 if readySocket == manSocket:
                     msg = mpd_recv_one_msg(manSocket)
                     if not msg:
-                        # mpd_raise('mpdrun: empty msg from man; it must have terminated early')
-                        print 'mpdrun: empty msg from man; it must have terminated early'
-                        del socketsToSelect[readySocket]
-                        readySocket.close()
+                        del socketsToSelect[manSocket]
+                        # manSocket.close()
+                        tempManSocket = manSocket    # keep a ref to it
+                        manSocket = 0
                         done += 1
 		    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
@@ -313,10 +313,6 @@ def mpdrun():
                         print 'rank %d (%s) in job %s failed to find executable %s' % \
                               ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
                         # keep going until all man's finish
-                    elif (msg['cmd'] == 'job_terminated'):
-                        del socketsToSelect[readySocket]
-                        readySocket.close()
-                        done += 1
                     elif msg['cmd'] == 'job_aborted_early':
                         print 'rank %d in job %s caused collective abort of all ranks' % \
                               ( msg['rank'], msg['jobid'] )
@@ -333,9 +329,6 @@ def mpdrun():
 			        myExitStatus = exit_status
 		            print '  exit status of rank %d: return code %d ' % \
                                   (msg['rank'],exit_status)
-                        # del socketsToSelect[readySocket]
-                        # readySocket.close()
-                        # done += 1
                     elif (msg['cmd'] == 'client_exit_status'):
 			status = msg['status']
 			if WIFSIGNALED(status):
@@ -354,7 +347,7 @@ def mpdrun():
                     msg = manCliStdoutSocket.recv(1024)
                     if not msg:
                         del socketsToSelect[readySocket]
-                        readySocket.close()
+                        # readySocket.close()
                         done += 1
                     else:
                         # print msg,
@@ -365,7 +358,7 @@ def mpdrun():
                     msg = manCliStderrSocket.recv(1024)
                     if not msg:
                         del socketsToSelect[readySocket]
-                        readySocket.close()
+                        # readySocket.close()
                         done += 1
                     else:
                         # print >>stderr, msg,
@@ -391,9 +384,10 @@ def mpdrun():
 	        if manSocket:
 	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
 	            mpd_send_one_msg(manSocket,msgToSend)
-	            manSocket.close()
                     # next code because no longer exiting
 	            del socketsToSelect[manSocket]
+	            # manSocket.close()
+                    tempManSocket = manSocket
 	            manSocket = 0
                     done += 1
 	        # exit(-1)
