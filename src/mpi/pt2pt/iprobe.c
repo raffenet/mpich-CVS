@@ -89,7 +89,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
 #   endif /* HAVE_ERROR_CHECKING */
     
     mpi_errno = MPID_Iprobe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
-			    status);
+			    flag, status);
     
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
     if (mpi_errno == MPI_SUCCESS)
