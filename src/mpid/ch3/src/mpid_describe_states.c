@@ -134,6 +134,22 @@ int MPIDU_Describe_timer_states()
     /* describe the states used in the ch3/src directory */
 
     RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_DP,
+		       "MPIDI_CH3U_Request_DP",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPI_ACCUMULATE,
+		       "MPI_Accumulate",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPI_GET,
+		       "MPI_Get",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPI_PUT,
+		       "MPI_Put",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPID_IRSEND,
 		       "MPID_Irsend",
 		       get_random_color_str());
@@ -316,6 +332,10 @@ int MPIDU_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, 
 			MPID_STATE_MPID_COMM_SPAWN,
 		       "MPID_Comm_spawn",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+		       MPID_STATE_MPIDI_CH3U_BUFFER_COPY,
+		       "MPIDI_CH3U_buffer_copy",
 		       get_random_color_str());
 
     /* call the channel function to describe the states found in the ch3/channels/xx/src directory */

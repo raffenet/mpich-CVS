@@ -340,9 +340,9 @@ MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match * match)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
     prev_rreq = NULL;
     rreq = MPIDI_Process.recv_posted_head;
     while (rreq != NULL)
@@ -371,7 +371,7 @@ MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match * match)
 	rreq = rreq->ch3.next;
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
     return rreq;
 }
 

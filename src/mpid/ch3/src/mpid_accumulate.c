@@ -13,9 +13,9 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 {
     int mpi_errno = MPI_SUCCESS;
     MPIU_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
-    MPIDI_STATE_DECL(MPID_STATE_MPI_PUT);
+    MPIDI_STATE_DECL(MPID_STATE_MPI_ACCUMULATE);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_PUT);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_ACCUMULATE);
 
     curr_ptr = MPIU_RMA_ops_list;
     prev_ptr = MPIU_RMA_ops_list;
@@ -45,7 +45,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     new_ptr->target_datatype = target_datatype;
     new_ptr->op = op;
 
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_PUT);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);
 
     return mpi_errno;
 }

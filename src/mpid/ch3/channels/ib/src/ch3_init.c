@@ -42,7 +42,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     rc |= PMI_Get_size(&pg_size);
     assert(rc == 0);
     
-    /* MPIU_Timer_init(pg_rank, pg_size); */
+    MPIU_Timer_init(pg_rank, pg_size);
 
     /* Allocate process group data structure and populate */
     pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));

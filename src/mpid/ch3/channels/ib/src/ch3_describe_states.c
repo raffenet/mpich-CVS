@@ -129,8 +129,15 @@ static char *get_random_color_str()
     return random_color_str;
 }
 
+/* this state should be here instead of in the common describe states function? 
+MPID_STATE_CREATE_REQUEST
+*/
 int CH3U_Describe_timer_states()
 {
+    RLOG_DescribeState(g_pRLOG,
+	MPID_STATE_MPIDI_COMM_SPAWN,
+	"mpidi_comm_spawn",
+	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBU_MODIFYQP,
 	"ibu_modifyqp",
@@ -322,10 +329,6 @@ int CH3U_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_UPDATE_REQUEST,
 		       "update_request",
-		       get_random_color_str());
-    RLOG_DescribeState(g_pRLOG,
-		       MPID_STATE_MPIDI_CH3U_BUFFER_COPY,
-		       "MPIDI_CH3U_buffer_copy",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3_COMM_SPAWN,
