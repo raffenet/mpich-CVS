@@ -82,7 +82,6 @@ int MPID_Type_contiguous(int count,
 	                                  (oldsize << DLOOP_ELMSIZE_SHIFT);
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.c_t.count      = count;
-	dlp->loop_params.c_t.u.handle   = oldtype;
 	dlp->el_size                    = oldsize;
 	dlp->el_extent                  = oldsize;
     }
@@ -135,7 +134,7 @@ int MPID_Type_contiguous(int count,
 	curpos += sizeof(struct MPID_Dataloop);
 
 	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
-	dlp->loop_params.c_t.u.dataloop = (struct MPID_Dataloop *) curpos;
+	dlp->loop_params.c_t.dataloop = (struct MPID_Dataloop *) curpos;
     }
 
     *newtype = new_dtp->handle;

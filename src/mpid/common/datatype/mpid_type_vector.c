@@ -133,7 +133,6 @@ int MPID_Type_vector(int count,
 	    dlp->loop_params.v_t.stride = stride; /* already in bytes */
 	else
 	    dlp->loop_params.v_t.stride = stride * oldsize; /* convert to bytes */
-	dlp->loop_params.v_t.u.handle   = oldtype;
 	dlp->el_extent                  = oldsize;
 	dlp->el_size                    = oldsize;
     }
@@ -202,7 +201,7 @@ int MPID_Type_vector(int count,
 	curpos += sizeof(struct MPID_Dataloop);
 
 	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
-	dlp->loop_params.v_t.u.dataloop = (struct MPID_Dataloop *) curpos;
+	dlp->loop_params.v_t.dataloop = (struct MPID_Dataloop *) curpos;
     }
 
     /* return handle to new datatype in last parameter */

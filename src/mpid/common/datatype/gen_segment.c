@@ -81,7 +81,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	    | (elmsize << DLOOP_ELMSIZE_SHIFT);
 	segp->builtin_loop.handle = handle;
 	segp->builtin_loop.loop_params.c_t.count = count;
-	segp->builtin_loop.loop_params.c_t.u.dataloop = 0;
+	segp->builtin_loop.loop_params.c_t.dataloop = 0;
 	segp->builtin_loop.el_size = elmsize;
 	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
 
@@ -106,7 +106,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	segp->builtin_loop.kind = DLOOP_KIND_CONTIG 
 	    | (elmsize << DLOOP_ELMSIZE_SHIFT);
 	segp->builtin_loop.loop_params.c_t.count = count;
-	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.u.dataloop);
+	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.dataloop);
 	segp->builtin_loop.el_size = elmsize;
 	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
 
@@ -156,7 +156,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 		dlp = dlp->loop_params.s_t.dataloop_array[0];
 	    }
 	    else {
-		dlp = dlp->loop_params.cm_t.u.dataloop;
+		dlp = dlp->loop_params.cm_t.dataloop;
 	    }
 	}
 	else {

@@ -139,7 +139,6 @@ int MPID_Type_indexed(int count,
 	dlp->kind                       = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK | (el_size << DLOOP_ELMSIZE_SHIFT);
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.i_t.count      = count;
-	dlp->loop_params.i_t.u.handle   = oldtype;
 	dlp->el_extent                  = el_size; /* extent = size for basic types */
 	dlp->el_size                    = el_size;
     }
@@ -230,7 +229,7 @@ int MPID_Type_indexed(int count,
 	curpos += new_loopsize - old_dtp->loopsize;
 
 	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
-	dlp->loop_params.i_t.u.dataloop = (struct MPID_Dataloop *) curpos;
+	dlp->loop_params.i_t.dataloop = (struct MPID_Dataloop *) curpos;
     }
 
     /* copy in blocklength and displacement parameters (in that order) */

@@ -140,26 +140,26 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	     * However, some compilers spit out warnings about casting on the
 	     * LHS, so we get this much nastier form instead: 
 	     */
-	    dataloop->loop_params.c_t.u.dataloop = (struct DLOOP_Dataloop *) 
-		((char *) dataloop->loop_params.c_t.u.dataloop + ptrdiff);
+	    dataloop->loop_params.c_t.dataloop = (struct DLOOP_Dataloop *) 
+		((char *) dataloop->loop_params.c_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.c_t.u.dataloop, ptrdiff);
+	    DLOOP_Dataloop_update(dataloop->loop_params.c_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_VECTOR:
-	    dataloop->loop_params.v_t.u.dataloop = (struct DLOOP_Dataloop *)
-		((char *) dataloop->loop_params.v_t.u.dataloop + ptrdiff);
+	    dataloop->loop_params.v_t.dataloop = (struct DLOOP_Dataloop *)
+		((char *) dataloop->loop_params.v_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.v_t.u.dataloop, ptrdiff);
+	    DLOOP_Dataloop_update(dataloop->loop_params.v_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_BLOCKINDEXED:
 	    dataloop->loop_params.bi_t.offset_array = (int *)
 		((char *) dataloop->loop_params.bi_t.offset_array + ptrdiff);
-	    dataloop->loop_params.bi_t.u.dataloop = (struct DLOOP_Dataloop *)
-		((char *) dataloop->loop_params.bi_t.u.dataloop + ptrdiff);
+	    dataloop->loop_params.bi_t.dataloop = (struct DLOOP_Dataloop *)
+		((char *) dataloop->loop_params.bi_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.bi_t.u.dataloop, ptrdiff);
+	    DLOOP_Dataloop_update(dataloop->loop_params.bi_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_INDEXED:
@@ -167,10 +167,10 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 		((char *) dataloop->loop_params.i_t.blocksize_array + ptrdiff);
 	    dataloop->loop_params.i_t.offset_array = (int *)
 		((char *) dataloop->loop_params.i_t.offset_array + ptrdiff);
-	    dataloop->loop_params.i_t.u.dataloop = (struct DLOOP_Dataloop *)
-		((char *) dataloop->loop_params.i_t.u.dataloop + ptrdiff);
+	    dataloop->loop_params.i_t.dataloop = (struct DLOOP_Dataloop *)
+		((char *) dataloop->loop_params.i_t.dataloop + ptrdiff);
 
-	    DLOOP_Dataloop_update(dataloop->loop_params.i_t.u.dataloop, ptrdiff);
+	    DLOOP_Dataloop_update(dataloop->loop_params.i_t.dataloop, ptrdiff);
 	    break;
 
 	case DLOOP_KIND_STRUCT:
@@ -217,31 +217,31 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 	case DLOOP_KIND_CONTIG:
 	    DLOOP_dbg_printf("\tcount=%d, datatype=%x\n", 
 			     dataloop->loop_params.c_t.count, 
-			     (int) dataloop->loop_params.c_t.u.dataloop);
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.c_t.u.dataloop, depth+1);
+			     (int) dataloop->loop_params.c_t.dataloop);
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.c_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_VECTOR:
 	    DLOOP_dbg_printf("\tcount=%d, blksz=%d, stride=%d, datatype=%x\n",
 			     dataloop->loop_params.v_t.count, 
 			     dataloop->loop_params.v_t.blocksize, 
 			     dataloop->loop_params.v_t.stride,
-			     (int) dataloop->loop_params.v_t.u.dataloop);
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.v_t.u.dataloop, depth+1);
+			     (int) dataloop->loop_params.v_t.dataloop);
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.v_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_BLOCKINDEXED:
 	    DLOOP_dbg_printf("\tcount=%d, blksz=%d, datatype=%x\n",
 			     dataloop->loop_params.bi_t.count, 
 			     dataloop->loop_params.bi_t.blocksize, 
-			     (int) dataloop->loop_params.bi_t.u.dataloop);
+			     (int) dataloop->loop_params.bi_t.dataloop);
 	    /* print out offsets later */
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.bi_t.u.dataloop, depth+1);
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.bi_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_INDEXED:
 	    DLOOP_dbg_printf("\tcount=%d, datatype=%x\n",
 			     dataloop->loop_params.i_t.count,
-			     (int) dataloop->loop_params.i_t.u.dataloop);
+			     (int) dataloop->loop_params.i_t.dataloop);
 	    /* print out blocksizes and offsets later */
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.i_t.u.dataloop, depth+1);
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.i_t.dataloop, depth+1);
 	    break;
 	case DLOOP_KIND_STRUCT:
 	    DLOOP_dbg_printf("\tcount=%d\n\tblocksizes: ", dataloop->loop_params.s_t.count);
