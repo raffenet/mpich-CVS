@@ -239,9 +239,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr)
 {
-#ifdef MPICH_DBG_OUTPUT
     int mpi_errno;
-#endif
     void *mem_ptr;
     char *iter_ptr;
     int num_bytes;
