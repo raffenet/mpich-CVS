@@ -243,7 +243,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Get_size' => 2, 
 		     'Commit' => 0,
 		     'Free' => 0, 
-		     'Pack' => '0:1:6', 
+#		     'Pack' => '0:1:6', 
 #		     'Unpack' => '0:1:5',
 		     'Pack_size' => 4,
 		     );
@@ -1272,6 +1272,7 @@ sub build_specials {
     &print_header;
     print $OUTFD "#include \"mpi.h\"\n";
     print $OUTFD "#include \"mpicxx.h\"\n";
+    print $OUTFD "#include <stdarg.h>\n";    # Required for pcontrol
 
     # Start the namespace
     print $OUTFD "namespace MPI {\n";
@@ -1396,7 +1397,9 @@ Datatype TWOINTEGER(MPI_2INTEGER);
 
     print $OUTFD "void Pcontrol( int v, ... )
     {
-	MPIX_CALL( MPI_Pcontrol( v ) );
+	va_list ap;
+        va_start(ap,v);
+	MPIX_CALL( MPI_Pcontrol( v, ap ) );
     }\n";
 
     print $OUTFD "int Get_error_class( int errcode ) 
@@ -1412,6 +1415,36 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     MPI_Address( ptr, &a );
     return (Aint)a;
     }\n";
+
+    # Init is a difficult function because we must allow C to call a 
+    # C++ function.  We do this by getting help from the MPI implementation
+    print $OUTFD "
+MPI::Op *MPIR_Cur_op;
+extern \"C\" 
+void MPIR_Call_op_fn( void *invec, void *outvec, int *len, MPI_Datatype *dtype )
+{
+    MPI::Datatype cxxdtype = *dtype;
+    MPIR_Cur_op->Call_user_function( invec, outvec, *len, cxxdtype );
+}
+void Op::Init( User_function *f, bool commute )
+    {
+	MPI_Op op;
+	MPIX_CALL( MPI_Op_create( MPIR_Call_op_fn, (int) commute, &the_real_op ) );
+	user_function = f;
+    }\n";
+
+    print $OUTFD "
+    void Datatype::Pack( const void *inbuf, int incount, void *outbuf, 
+			int outsize, int &position, const Comm &comm ) {
+	MPIX_CALL( MPI_Pack( (void *)inbuf, incount, the_real_datatype, outbuf, 
+			    outsize, &position, comm.the_real_comm ) );
+    }
+    void Datatype::Unpack( const void *inbuf, int insize, void *outbuf,
+			  int outcount, int &position, const Comm &comm ) {
+	MPIX_CALL( MPI_Unpack( (void *)inbuf, insize, &position, outbuf, outcount, 
+			      the_real_datatype, comm.the_real_comm ) );
+    }
+\n";
 
     print $OUTFD "double Wtime(void) { return MPI_Wtime(); }\n";
     print $OUTFD "double Wtick(void) { return MPI_Wtick(); }\n";
@@ -1479,7 +1512,12 @@ sub PrintClassHead {
     if ($lcclass eq $lctopclass) {
 	print $OUTFD "\		
   protected:
-    $mpi_type the_real_$lcclass;\n"
+    $mpi_type the_real_$lcclass;\n";
+	# Check for special declarations
+	$otherdeclfn = "$class" . "_extradecls";
+	if (defined(&$otherdeclfn)) {
+	    &$otherdeclfn( $OUTFD );
+	}
     }
   print $OUTFD "\
   public:
@@ -1753,12 +1791,23 @@ sub Intracomm_methods {
     &Clone_method( $OUTFD, "Intracomm" );
 }
 
+# We add a "Call_user_function" so that we can keep the "user_function"
+# field protected. 
 sub Op_methods {
     my $OUTFD = $_[0];
     
     print $OUTFD "
-    void Init( User_function *, bool );\n";
+    void Init( User_function *, bool );
+    void Call_user_function( void *invec, void *outvec, int l, Datatype dtype ) { 
+       (user_function)( invec, outvec, l, dtype );
+    }\n";
 }
+sub Op_extradecls {
+    my $OUTFD = $_[0];
+    
+    print $OUTFD "   User_function *user_function;\n";
+}
+    
 #
 # To properly implement Get_error_string, we need another
 # protected member in the Exception that will contain the 
@@ -1777,7 +1826,8 @@ sub Datatype_methods {
     my $OUTFD = $_[0];
     
     print $OUTFD "\
-    void Unpack( const void *, int, void *, int, int &, const Comm & );\n";
+    void Unpack( const void *, int, void *, int, int &, const Comm & );
+    void Pack( const void *, int, void *, int, int &, const Comm & );\n";
 }
 # ----------------------------------------------------------------------------
 # We may eventually want to build separate files for each class rather than
