@@ -145,6 +145,7 @@ int smpd_handle_barrier_command(smpd_context_t *context)
     }
 
     /* this is the first guy in so create a new barrier structure and add it to the list */
+    smpd_dbg_printf("initializing barrier(%s): in=1 size=%d\n", name, count);
     iter = (smpd_barrier_node_t*)malloc(sizeof(smpd_barrier_node_t));
     if (iter == NULL)
     {
