@@ -73,6 +73,7 @@ distclean: clean
 
 maintainer-clean: distclean
 	/bin/rm -f configure mpdconf.h.in
+	/bin/rm -rf autom4te.cache
 
 configure: configure.in
 	./makeconfigure
@@ -95,21 +96,21 @@ install: all
 	fi
 	@echo "copying python files/links into " ${bindir}
 	-@for cmd in ${CMDS_ROOT} ; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > /tmp/$$cmd.py ; \
-	    install /tmp/$$cmd.py ${bindir}/$$cmd.py ; \
-	    ( rm -f /tmp/$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
+	    install ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py ; \
+	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	    ( rm -f ${bindir}/$$cmd >/dev/null 2>&1 || exit 0 ) ; \
 	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
 	-@for cmd in ${CMDS_NO_ROOT} ; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > /tmp/$$cmd.py ; \
-	    install -m 755 /tmp/$$cmd.py ${bindir}/$$cmd ; \
-	    ( rm -f /tmp/$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
+	    install -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd ; \
+	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
 	-@for cmd in mpdman mpdlib mpiexec mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob; do \
-	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > /tmp/$$cmd.py ; \
-	    install -m 755 /tmp/$$cmd.py ${bindir}/$$cmd.py; \
-	    ( rm -f /tmp/$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
+	    install -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
+	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@install -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
