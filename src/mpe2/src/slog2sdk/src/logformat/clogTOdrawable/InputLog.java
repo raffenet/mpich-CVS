@@ -46,6 +46,7 @@ public class InputLog extends logformat.clog.InputLog
     private Topo_Arrow             arrowform;
     private Topo_State             stateform;
     private ObjMethod              obj_fn;
+    private Object[]               arglist;
 
     private boolean                isFirstPeekForCategory;
     private int                    num_topology_returned;
@@ -121,6 +122,9 @@ public class InputLog extends logformat.clog.InputLog
         src       = new RecSrc();
         tshift    = new RecTshift();
 
+        // Initialize argument list variable
+        arglist   = new Object[ 2 ];
+
         // Initialize the total_bytesize read from the CLOG stream
         total_bytesize = 0;
 
@@ -136,7 +140,6 @@ public class InputLog extends logformat.clog.InputLog
 
     public Kind peekNextKind()
     {
-        Object[]        arglist;
         ObjMethod       evt_pairing, obj_meth1, obj_meth2;
         int             bytes_read;
         int             raw_etype;
@@ -199,7 +202,9 @@ public class InputLog extends logformat.clog.InputLog
                         if (    raw_etype != Const.EvtType.CONSTDEF 
                              && raw_etype != Const.AllType.UNDEF ) {
                        	    evt_pairing = (ObjMethod) evtdefs.get( raw.etype );
-                            arglist = new Object[] { header, raw };
+                            // arglist = new Object[] { header, raw };
+                            arglist[ 0 ] = header;
+                            arglist[ 1 ] = raw;
                             drawobj = null;
                             try {
                                 drawobj = (Primitive) evt_pairing.method
