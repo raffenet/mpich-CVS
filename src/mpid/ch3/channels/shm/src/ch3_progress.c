@@ -5,7 +5,6 @@
  */
 
 #include "mpidi_ch3_impl.h"
-#include "pmi.h"
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
@@ -28,6 +27,7 @@ int MPIDI_CH3_Progress(int is_blocking)
     int num_bytes, error;
     shm_wait_t wait_result;
     unsigned register count;
+    int spin_count = 0;
     unsigned completions = MPIDI_CH3I_progress_completions;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
 
@@ -40,6 +40,11 @@ int MPIDI_CH3_Progress(int is_blocking)
 	switch (wait_result)
 	{
 	case SHM_WAIT_TIMEOUT:
+	    if (spin_count++ > MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
+	    {
+		spin_count = 0;
+		MPIDU_Yield();
+	    }
 	    break;
 	case SHM_WAIT_READ:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes read", num_bytes));
@@ -60,7 +65,8 @@ int MPIDI_CH3_Progress(int is_blocking)
 	/* pound on the write queues since shm_wait currently does not return SHM_WAIT_WRITE */
 	for (i=0; i<MPIDI_CH3I_Process.vc->shm.pg->size; i++)
 	{
-	    handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
+	    if (MPIDI_CH3I_Process.pg->vc_table[i].shm.send_active != NULL)
+		handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
 	}
     } 
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
