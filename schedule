@@ -90,7 +90,7 @@ MPI_Waitsome,,,,,Brian,,done
 MPI_Testsome,,,,,Brian,,done
 MPI_Iprobe,,,,,Brian,,.1,04/23/2002
 MPI_Probe,,,,,Brian,,.1,04/23/2002
-MPI_Cancel,.25,.5,1,,Brian,,,11/15/02
+MPI_Cancel,.25,.5,1,,Brian,,.1,11/15/02
 MPI_Test_cancelled,.1,.15,.2,,Brian,,.1,04/26/02
 MPI_Send_init,,,,,Brian,,done,
 MPI_Bsend_init,,,,,Bill,,done
