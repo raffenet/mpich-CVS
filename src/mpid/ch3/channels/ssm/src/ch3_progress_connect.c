@@ -234,6 +234,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     mpi_errno = MPIDI_CH3I_BootstrapQ_send_msg(queue, &shm_info, sizeof(shm_info));
     if (mpi_errno != MPI_SUCCESS)
     {
+	MPIDI_CH3I_SHM_Unlink_mem(&vc->ssm.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Release_mem(&vc->ssm.shm_write_queue_info);
 	*flag = FALSE;
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_send", 0);
 	return mpi_errno;
@@ -244,6 +246,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC *vc, char *business_card, int *flag)
     mpi_errno = MPIDI_CH3I_BootstrapQ_detach(queue);
     if (mpi_errno != MPI_SUCCESS)
     {
+	MPIDI_CH3I_SHM_Unlink_mem(&vc->ssm.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Release_mem(&vc->ssm.shm_write_queue_info);
 	*flag = FALSE;
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_detach", 0);
 	return mpi_errno;
