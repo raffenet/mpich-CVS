@@ -366,6 +366,8 @@ def mpd_recv(sock,nbytes):
         except error, data:
             if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
                 continue
+            elif data[0] == ECONNRESET:   # connection reset (treat as eof)
+                break
             else:
                 mpd_print(1, 'recv error: %s' % strerror(data[0]))
         except Exception, data:
