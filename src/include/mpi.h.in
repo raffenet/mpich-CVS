@@ -386,7 +386,7 @@ extern int MPICHX_TOPOLOGY_COLORS;
 #define MPI_ERR_INFO_NOKEY  31      /* */
 
 #define MPI_ERR_NAME        33      /* */
-#define MPI_ERR_NO_MEM       34      /* */
+#define MPI_ERR_NO_MEM      34      /* Alloc_mem could not allocate memory */
 #define MPI_ERR_NOT_SAME    35      /* */
 #define MPI_ERR_PORT        38      /* */
 #define MPI_ERR_QUOTA       39      /* */

@@ -57,7 +57,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	if (rreq == NULL)
 	{
 	    MPIDI_CH3_Request_destroy(sreq);
-	    mpi_errno = MPI_ERR_NOMEM;
+	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto fn_exit;
 	}
 	

@@ -51,7 +51,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	}
 	else
 	{
-	    mpi_errno = MPI_ERR_NOMEM;
+	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	}
 	goto fn_exit;
     }

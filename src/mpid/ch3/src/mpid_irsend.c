@@ -58,7 +58,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	rreq = MPIDI_CH3U_Request_FDP(&match);
 	if (rreq == NULL)
 	{
-	    mpi_errno = MPI_ERR_NOMEM;
+	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto fn_exit;
 	}
 	

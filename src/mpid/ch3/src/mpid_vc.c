@@ -45,7 +45,7 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     else
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
-	return MPI_ERR_NOMEM;
+	return MPIR_ERR_MEMALLOCFAILED;
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
 }

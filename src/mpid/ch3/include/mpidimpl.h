@@ -87,7 +87,7 @@ extern MPIDI_Process_t MPIDI_Process;
     else								  \
     {									  \
 	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed")); \
-	mpi_errno = MPI_ERR_NOMEM;					  \
+	mpi_errno = MPIR_ERR_MEMALLOCFAILED;                              \
 	FAIL;								  \
     }									  \
 }

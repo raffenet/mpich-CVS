@@ -39,5 +39,5 @@ int MPID_Send_init(const void * buf, int count, MPI_Datatype datatype,
     }
 
     MPIDI_DBG_PRINTF((15, FCNAME, "request allocation failed"));
-    return MPI_ERR_NOMEM;
+    return MPIR_ERR_MEMALLOCFAILED;
 }

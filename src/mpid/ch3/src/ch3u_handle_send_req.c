@@ -50,7 +50,7 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	    }
 	    else
 	    {
-		/* XXX - handle MPI_ERR_NOMEM? */
+		/* XXX - handle MPIR_ERR_MEMALLOCFAILED? */
 		MPIDI_ERR_PRINTF((FCNAME, "MPIDI_CH3_CA_RELOAD_IOV failed"));
 		abort();
 	    }

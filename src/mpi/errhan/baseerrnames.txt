@@ -57,7 +57,7 @@ MPI_ERR_INFO_KEY    29      **infokey
 MPI_ERR_INFO_VALUE  30      **infoval
 MPI_ERR_INFO_NOKEY  31      **infonokey
 MPI_ERR_NAME        33      **nameservice
-MPI_ERR_NOMEM       34      **allocmem
+MPI_ERR_NO_MEM      34      **allocmem
 MPI_ERR_NOT_SAME    35      **notsame
 MPI_ERR_PORT        38      **port
 MPI_ERR_QUOTA       39      **filequota

@@ -50,7 +50,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
 	rreq = MPIDI_CH3U_Request_FDP_or_AEU(&match, &found);
 	if (rreq == NULL)
 	{
-	    mpi_errno = MPI_ERR_NOMEM;
+	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 	    goto fn_exit;
 	}
 	

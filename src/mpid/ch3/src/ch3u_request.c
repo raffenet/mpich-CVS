@@ -527,7 +527,7 @@ int MPIDI_CH3U_Request_load_send_iov(
 	    if (sreq->ch3.tmpbuf_sz == 0)
 	    {
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPI_ERR_NOMEM;
+		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 		sreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -683,7 +683,7 @@ int MPIDI_CH3U_Request_load_recv_iov(
 		   don't have a buffer to drain it into.  should this be a
 		   fatal error? */
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPI_ERR_NOMEM;
+		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -705,7 +705,7 @@ int MPIDI_CH3U_Request_load_recv_iov(
 	    if (rreq->ch3.tmpbuf_sz == 0)
 	    {
 		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
-		mpi_errno = MPI_ERR_NOMEM;
+		mpi_errno = MPIR_ERR_MEMALLOCFAILED;
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }

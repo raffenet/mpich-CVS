@@ -1298,6 +1298,9 @@ extern int MPID_THREAD_LEVEL;
 }
 #define MPIR_ERRTEST_ERRHANDLER(errhandler,err)
 
+/* Special MPI error "class/code" for out of memory */
+/* FIXME: not yet done */
+#define MPIR_ERR_MEMALLOCFAILED MPI_ERR_INTERN
 /*
  * Standardized general-purpose atomic update routines.  Some comments:
  * Setmax atomically implements *a_ptr = max(b,*a_ptr) .  This can
