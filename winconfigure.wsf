@@ -3085,6 +3085,16 @@ If bRemoveFortran Then
 End If
 
 '
+' Move the mpi binding implementation from the smpd directory to the src\binding\mpi directory
+'
+'If Not f.FolderExists("src\binding\mpi") Then
+'	f.CreateFolder("src\binding\mpi")
+'End If
+'If Not f.FileExists("src\binding\mpi\mpi.c") Then
+'	f.CopyFile("src\pm\smpd\mpi.c", "src\binding\mpi\")
+'End If
+
+'
 ' Report any errors
 '
 If unhandled_definitions <> "" Then
