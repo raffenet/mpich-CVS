@@ -4,6 +4,17 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+mpdstdcp is a program that is not in current use by mpd.
+It is a demo of how we do some things in support of co-processes.
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
+
 import os, re, socket, select
 from mpdlib import *
 
@@ -18,7 +29,7 @@ def mpdstdcp():
         numDone = 0
         socketsToSelect = { mshipSocket : 1 }
         while numDone < 1:    # just one satellite connected to me
-            (readySockets,None,None) = select.select(socketsToSelect.keys(),[],[],30)
+            (readySockets,unused,unused) = select.select(socketsToSelect.keys(),[],[],30)
             for readySocket in readySockets:
                 if readySocket == mshipSocket:
                     (newSocket,newConnAddr) = mshipSocket.accept()
@@ -136,7 +147,7 @@ def mpdstdcp():
         endBarrierDone = 0
         numDone = 0
         while not endBarrierDone:
-            (inReadySockets,None,None) = select.select(socketsToSelect.keys(),[],[],30)
+            (inReadySockets,unused,unused) = select.select(socketsToSelect.keys(),[],[],30)
             for readySocket in inReadySockets:
                 if readySocket not in socketsToSelect.keys():
                     continue
@@ -334,5 +345,7 @@ def parse_pmi_msg(msg):
     return parsed_msg
 
 if __name__ == '__main__':
-    mpdstdcp()
+    # mpdstdcp()
+    print __doc__
+    exit(-1)
     ## raise RuntimeError, 'mpdstdcp is not a stand-alone pgm'
