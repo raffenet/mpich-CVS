@@ -24,7 +24,8 @@ import viewer.common.Routines;
 import viewer.common.TopWindow;
 import viewer.common.Dialogs;
 import viewer.common.ActableTextField;
-import viewer.convertor.ConvertorDialog;
+
+
 
 public class FirstPanel extends JPanel
 {
@@ -407,11 +408,9 @@ public class FirstPanel extends JPanel
             new_filename  = null;
             filename      = logname_fld.getText();
             if ( filename != null && filename.length() > 0 )
-                new_filename = ConvertorDialog.convertLogfile(
-                                  TopWindow.First.getWindow(), filename ); 
+                new_filename = file_ops.convertLogFile( filename );
             else
-                new_filename = ConvertorDialog.convertLogfile(
-                                  TopWindow.First.getWindow(), null );
+                new_filename = file_ops.convertLogFile( null );
             if ( new_filename != null && new_filename.length() > 0 ) {
                 logname_fld.setText( new_filename );
                 // invoke LogNameTextFieldListener.actionPerformed()

@@ -28,12 +28,12 @@ import viewer.timelines.TimelineFrame;
 
 public class LogFileOperations
 {
-    private        LogFileChooser   file_chooser;
+    private        LogFileChooser    file_chooser;
 
-    private        InputLog         slog_ins;
-    private        PreferenceFrame  pptys_frame;
-    private        LegendFrame      legend_frame;
-    private        TimelineFrame    timeline_frame;
+    private        InputLog          slog_ins;
+    private        PreferenceFrame   pptys_frame;
+    private        LegendFrame       legend_frame;
+    private        TimelineFrame     timeline_frame;
 
     public LogFileOperations( boolean isApplet )
     {
@@ -130,6 +130,12 @@ public class LogFileOperations
         return null;
     }
 
+    public String convertLogFile( String filename )
+    {
+        return ConvertorDialog.convertLogFile( TopWindow.First.getWindow(),
+                                               file_chooser, filename );
+    }
+
     /*
         this.disposeLogFileAndResources() has to be called
         before this.openLogFile() can be invoked.
@@ -150,8 +156,9 @@ public class LogFileOperations
                                   filename + " is NOT a SLOG-2 file!\n"
                                 + "Do you want to convert it to SLOG-2 format "
                                 + "readable by this viewer?" ) ) {
-                new_filename = ConvertorDialog.convertLogfile(
-                                   TopWindow.First.getWindow(), filename );
+                new_filename = ConvertorDialog.convertLogFile(
+                                               TopWindow.First.getWindow(),
+                                               file_chooser, filename );
                 logname_txtfld.setText( new_filename );
                 return openLogFile( logname_txtfld );
             }
