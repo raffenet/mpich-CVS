@@ -44,3 +44,4 @@
 #undef SX4
 #undef UFS
 #undef XFS
+#undef NEEDS_AIOCB_T

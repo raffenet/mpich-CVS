@@ -136,7 +136,7 @@ LIBNAME=""
 TEST_LIBNAME=""
 FILE_SYSTEM=""
 PREFIX=""
-DEBUG=0
+DEBUG=no
 MIPS=0
 BITS=0
 FROM_MPICH=0
@@ -179,6 +179,12 @@ TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
 #
+known_filesystems="nfs ufs pfs piofs pvfs testfs xfs hfs sfs"
+known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
+#
+# Defaults
+enable_aio=notgiven
+#
 for arg
 do
 case $arg in
@@ -186,17 +192,39 @@ case $arg in
      ARCH=`echo $arg|sed 's/-*arch=//'`
      eval "arch_`echo $ARCH`=1"
      ;;
-  -file_system=* | --file_system=*)
+
+  -with-file-system=* | --with-file-system=* )
+     FILE_SYSTEM=`echo $arg|sed 's/-*with-file-system=//' | sed -e 's/\+/ /g'`
+     for x in $FILE_SYSTEM
+     do
+        eval "file_system_`echo $x`=1"
+     done
+     ;;
+  -file_system=* | --file_system=* )
+     # DEPRECATED FORMAT
      FILE_SYSTEM=`echo $arg|sed 's/-*file_system=//' | sed -e 's/\+/ /g'`
      for x in $FILE_SYSTEM
      do
         eval "file_system_`echo $x`=1"
      done
      ;;
+
+  --enable-aio | -enable-aio)
+  enable_aio=yes
+  ;;
+  --disable-aio | -disable-aio)
+  enable_aio=no
+  ;;
+  -with-mpi=* | --with-mpi=*)
+     MPI=`echo $arg|sed 's/-*with-mpi=//'`
+     eval "mpi_`echo $MPI`=1"
+     ;;
   -mpi=* | --mpi=*)
+     # DEPRECATED FORMAT
      MPI=`echo $arg|sed 's/-*mpi=//'`
      eval "mpi_`echo $MPI`=1"
      ;;
+    # OTHER ARGS ARE DEPRECATED AND SHOULD BE PROVIDED THROUGH ENV VARIABLES
   -mpiincdir=* | --mpiincdir=*)  
      MPI_INCLUDE_DIR=`echo $arg|sed 's/-*mpiincdir=//'`
      ;;
@@ -209,11 +237,21 @@ case $arg in
   -mpiolib=* | --mpiolib=*)  
      LIBNAME=`echo $arg|sed 's/-*mpiolib=//'`
      ;;
+
+     # THE FOLLOWING SHOULD BE PROVIDED THROUGH ENV VARIABLES
   -cc=* | --cc=*)
      CC=`echo $arg|sed 's/-*cc=//'`
      ;;
   -fc=* | --fc=*)
      FC=`echo $arg|sed 's/-*fc=//'`
+     ;;
+  -f90=* | --f90=*)
+     F90=`echo A$arg|sed 's/A-*f90=//'`
+     ;;
+  -f90nag | --f90nag)
+     FC=f90
+     F77GETARG="call f90_unix_MP_getarg(i,str)"
+     F77IARGC="f90_unix_MP_iargc()"
      ;;
   -cflags=* | --cflags=*)
      package="`echo $arg|sed 's/-*cflags=//'`"
@@ -228,13 +266,16 @@ case $arg in
      package=`echo $arg|sed 's/-*make=//'`
      MAKE="$package"
      ;;
-  -nof77 | --nof77)
+   # END OF VALUES THAT SHOULD BE PROVIDED THROUGH ENV VARIABLES
+
+     -nof77 | --nof77 | -disable-f77 | --disable-f77 )
      echo "Fortran interface will not be built"
      NOF77=1
      ;;
-  -debug | --debug)
+
+  -debug | --debug | --enable-g | -enable-g)
      echo "Configuring for a debugging version"
-     DEBUG=1
+     DEBUG=yes
      ;;
   -ar_nolocal | --ar_nolocal)
      AR_LOCAL=''
@@ -242,23 +283,23 @@ case $arg in
   -noranlib | --noranlib)
      RANLIB=':'
      ;;
+
   -prefix=* | --prefix=*)
      PREFIX=`echo $arg|sed 's/-*prefix=//'`
      # Use new variable name for prefix
      prefix=$PREFIX
      ;;
-  -f90nag | --f90nag)
-     FC=f90
-     F77GETARG="call f90_unix_MP_getarg(i,str)"
-     F77IARGC="f90_unix_MP_iargc()"
-     ;;
+
   -from_mpich | --from_mpich)
      FROM_MPICH=1
      ;;
+
    -ar=* | --ar=*)
      package=`echo $arg|sed 's/-*ar=//'`
      AR="$package"
      ;;
+
+     # THESE SHOULD USE CROSS_SIZE_XXX
   -intsize=* | --intsize=*)
      package=`echo $arg|sed 's/-*intsize=//'`
      intsize="$package"
@@ -275,19 +316,25 @@ case $arg in
      package=`echo $arg|sed 's/-*longlongsize=//'`
      longlongsize="$package"
      ;;
-  -noprofile | --noprofile)
+   # END OF VARIABLE SIZES
+
+  -noprofile | --noprofile | --disable-profile | -disable-profile )
      echo "profiling interface will not be built"
      NOPROFILE=1
      ;;
-  -f90=* | --f90=*)
-     F90=`echo A$arg|sed 's/A-*f90=//'`
-     ;;
+
   -echo | --enable-echo | -enable-echo )
      set -x
      ;;
   -disable-weak-symbols|--disable-weak-symbols)
      TRY_WEAK_SYMBOLS=0
      ;;
+  -enable-* | --enable-* | -disable-* | --disable-* )
+     # ignore
+  ;;
+  -with-* | --with-* | -without-* | --without-* )
+     # ignore
+  ;;
   -h | -help | --h | --help | -u | --u)
     (echo "${usage_msg}") >& 2
     exit 1 ;;
@@ -509,6 +556,7 @@ fi
 #
 # check for valid architecture.  Use __ so that _ALPHA_ does not match
 # LINUX_ALPHA_
+#### WE SHOULD REMOVE THIS SOON
 grep __"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
 if test $? != 0 ; then
    echo "Unknown architecture $arch... proceeding anyway"
@@ -604,8 +652,14 @@ if test -z "$htmldir" ; then htmldir='${prefix}/www' ; fi
 if test -n "$FILE_SYSTEM" ; then
    for x in $FILE_SYSTEM
    do
-      grep _"$x"_ $srcdir/.config_params > /dev/null 2>&1
-      if test $? != 0 ; then
+      found=no
+      for y in $known_filesystems ; do 
+          if test $x = $y ; then
+	      found=yes
+	      break
+	  fi
+      done
+      if test "$found" = "no" ; then
          echo "Unknown file system $x... proceeding anyway"
       fi
    done
@@ -613,8 +667,14 @@ fi
 #
 # check for valid MPI implementation
 if test -n "$MPI" ; then
-   grep _"$MPI"_mpi $srcdir/.config_params > /dev/null 2>&1
-   if test $? != 0 ; then
+   found=no
+   for mpi in $known_mpi_impls ; do
+      if test "${MPI}_mpi" = "$mpi" ; then
+          found=yes
+	  break
+      fi
+   done
+   if test $found = no ; then
       echo "Unknown MPI implementation $MPI... proceeding anyway"
    fi
 fi
@@ -667,7 +727,8 @@ test -n "$RANLIB" && test -n "$verbose" && echo "	setting RANLIB to $RANLIB"
 fi
 MAKE=${MAKE:-make}
 #
-if test $DEBUG = 1; then
+# USER_CFLAGS and USER_FFLAGS are used only in test/Makefile.in
+if test $DEBUG = "yes"; then
     USER_CFLAGS="$CFLAGS -g"
     USER_FFLAGS="$FFLAGS -g"
 else
@@ -678,7 +739,7 @@ fi
 if test -n "$arch_sun4" ; then 
     CC=${CC:-gcc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
 	if test "$CC" = "gcc"; then
                       CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
 	else
@@ -687,7 +748,21 @@ if test -n "$arch_sun4" ; then
     else 
                 CFLAGS="$CFLAGS -O"
     fi
-    
+    if test "$enable_aio" = "no" ; then
+        
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
+    else
+        
 {
 test -n "$verbose" && \
 echo "	defining AIO_SUN"
@@ -699,6 +774,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}AIO_SUN\${SEDdB}AIO_SUN\${SEDdC}1\${SEDdD}
 "
 }
 
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -714,7 +790,7 @@ fi
 if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         if test "$CC" = "gcc" ; then
                         CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
         else 
@@ -723,7 +799,21 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     else 
                 CFLAGS="$CFLAGS -O"
     fi
-    
+    if test "$enable_aio" = "no" ; then
+        
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
+    else
+        
 {
 test -n "$verbose" && \
 echo "	defining AIO_SUN"
@@ -735,6 +825,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}AIO_SUN\${SEDdB}AIO_SUN\${SEDdC}1\${SEDdD}
 "
 }
 
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -760,16 +851,18 @@ SEDDEFS="${SEDDEFS}\${SEDdA}SOLARIS\${SEDdB}SOLARIS\${SEDdC}1\${SEDdD}
     if test $MPI = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
-        MPI_LIB="-laio"
     else
         TEST_CC="$CC"
         TEST_F77="$F77"
+    fi
+    if test "$enable_aio" != "no" ; then
         MPI_LIB="$MPI_LIB -laio"
+        ROMIO_LIBLIST="-laio"
     fi
     AR="ar cr"
-    ROMIO_LIBLIST="-laio"
 # solaris does not have l option to ar
 # solaris f90 does not have 8-byte integer type
+# (it does now!!!! 11/29/01)
 fi
 #
 if test -n "$arch_rs6000"; then
@@ -826,12 +919,26 @@ test -n "$F77" || F77="f77"
 
        echo "Using $F77"
     fi
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
                 CFLAGS="$CFLAGS -g"
     else 
                 CFLAGS="$CFLAGS -O"
     fi
-    
+    if test "$enable_aio" = "no" ; then
+        
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
+    else
+        
 {
 test -n "$verbose" && \
 echo "	defining NO_FD_IN_AIOCB"
@@ -843,7 +950,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}NO_FD_IN_AIOCB\${SEDdB}NO_FD_IN_AIOCB\${SEDdC}1\${SE
 "
 }
 
-    
+        
 {
 test -n "$verbose" && \
 echo "	defining AIO_HANDLE_IN_AIOCB"
@@ -855,6 +962,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}AIO_HANDLE_IN_AIOCB\${SEDdB}AIO_HANDLE_IN_AIOCB\${SE
 "
 }
 
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -892,7 +1000,7 @@ fi
 if test -n "$arch_paragon"; then
     CC=${CC:-icc}
     F77=${FC:-if77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         CFLAGS="$CFLAGS -g"
     else 
 	if test "$CC" = "icc"; then
@@ -959,7 +1067,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
 "
 }
 
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
     else
        if test "$CC" = "pgcc"; then
@@ -1079,7 +1187,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}LINUX\${SEDdB}LINUX\${SEDdC}1\${SEDdD}
 }
 
     fi
-    if test $DEBUG = 1 ; then
+    if test $DEBUG = "yes" ; then
 	if test "$CC" = "gcc" ; then
                         CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
         else
@@ -1088,7 +1196,8 @@ SEDDEFS="${SEDDEFS}\${SEDdA}LINUX\${SEDdB}LINUX\${SEDdC}1\${SEDdD}
     else 
                 CFLAGS="$CFLAGS -O"
     fi
-    
+    if test "$enable_aio" != "yes" ; then
+        
 {
 test -n "$verbose" && \
 echo "	defining NO_AIO"
@@ -1100,6 +1209,199 @@ SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
 "
 }
 
+    else
+        # Try to find the aio routines
+	use_aio=no
+        echo checking for aio.h
+echo checking how to run the C preprocessor
+if test -z "$CPP"; then
+  # This must be in double quotes, not single quotes, because CPP may get
+  # substituted into the Makefile and ``${CC-cc}'' will simply confuse
+  # make.  It must be expanded now.
+  CPP="${CC-cc} -E"
+  cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <stdio.h>
+Syntax Error
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  :
+else
+  rm -rf conftest*
+  CPP=/lib/cpp
+fi
+rm -f conftest*
+fi
+test ".${verbose}" != "." && echo "	setting CPP to $CPP"
+
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <aio.h>
+EOF
+err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
+if test -z "$err"; then
+  rm -rf conftest*
+  has_aio_h=yes
+
+else
+  rm -rf conftest*
+  has_aio_h=no
+fi
+rm -f conftest*
+
+		add_lib=""
+	LIBS_save="${LIBS}"
+LIBS="${LIBS} -laio"
+have_lib=""
+echo checking for -laio
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   :; add_lib="-laio"
+else
+   :; 
+fi
+
+	LIBS_save="${LIBS}"
+LIBS="${LIBS} -lrt"
+have_lib=""
+echo checking for -lrt
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   :; add_lib="$add_lib -lrt"
+else
+   :; 
+fi
+
+	LIBS_save="${LIBS}"
+LIBS="${LIBS} -lpthread"
+have_lib=""
+echo checking for -lpthread
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+int main() { exit(0); }
+int t() { main(); }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  have_lib="1"
+
+fi
+rm -f conftest*
+LIBS="${LIBS_save}"
+if test -n "${have_lib}"; then
+   :; add_lib="$add_lib -lpthread"
+has_pthread=yes
+else
+   :; has_pthread=no
+fi
+
+        echo checking for aio_write
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <ctype.h>
+int main() { exit(0); }
+int t() { 
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_aio_write) || defined (__stub___aio_write)
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+extern char aio_write(); aio_write();
+#endif
+ }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  has_aio_write=yes
+
+else
+  rm -rf conftest*
+  has_aio_write=no
+fi
+rm -f conftest*
+
+	if test "$has_aio_h" = "yes" -a "$has_aio_write" = "yes" -a \
+	        "$has_pthread" = "yes" ; then
+	    use_aio=yes	
+	fi    
+	# Check for aiocb_t as a shorthand for struct aiocb
+	echo checking for for aiocb_t
+cat > conftest.c <<EOF
+#include "confdefs.h"
+#include <aio.h>
+int main() { exit(0); }
+int t() { aiocb_t a; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  has_aiocb_t=yes
+
+else
+  rm -rf conftest*
+  has_aiocb_t=no
+fi
+rm -f conftest*
+
+	if test "$has_aiocb_t" = "no" ; then 
+	    
+{
+test -n "$verbose" && \
+echo "	defining NEEDS_AIOCB_T"
+echo "#define" NEEDS_AIOCB_T 1 >> confdefs.h
+DEFS="$DEFS -DNEEDS_AIOCB_T=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NEEDS_AIOCB_T\${SEDdB}NEEDS_AIOCB_T\${SEDdC}1\${SEDdD}
+\${SEDuA}NEEDS_AIOCB_T\${SEDuB}NEEDS_AIOCB_T\${SEDuC}1\${SEDuD}
+\${SEDeA}NEEDS_AIOCB_T\${SEDeB}NEEDS_AIOCB_T\${SEDeC}1\${SEDeD}
+"
+}
+
+        fi
+	if test "$use_aio" = "yes" ; then
+	    MPI_LIB="$MPI_LIB $add_lib"
+	    ROMIO_LIBLIST="$ROMIO_LIBLIST $add_lib"
+	else
+	    
+{
+test -n "$verbose" && \
+echo "	defining NO_AIO"
+echo "#define" NO_AIO 1 >> confdefs.h
+DEFS="$DEFS -DNO_AIO=1"
+SEDDEFS="${SEDDEFS}\${SEDdA}NO_AIO\${SEDdB}NO_AIO\${SEDdC}1\${SEDdD}
+\${SEDuA}NO_AIO\${SEDuB}NO_AIO\${SEDuC}1\${SEDuD}
+\${SEDeA}NO_AIO\${SEDeB}NO_AIO\${SEDeC}1\${SEDeD}
+"
+}
+
+	fi
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -1115,7 +1417,7 @@ fi
 if test -n "$arch_SX4" ; then
     CC=${CC:-mpicc}
     F77=${FC:-mpif90}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes" ; then
                 CFLAGS="$CFLAGS -g"
         FFLAGS="$FFLAGS -g"
     else
@@ -1162,7 +1464,7 @@ SEDDEFS="${SEDDEFS}\${SEDdA}SX4\${SEDdB}SX4\${SEDdC}1\${SEDdD}
 fi
 #
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
                 CFLAGS="$CFLAGS -g +w1"
     else 
                 CFLAGS="$CFLAGS -O"
@@ -1285,7 +1587,7 @@ fi
 if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
                 CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
     else 
                 CFLAGS="$CFLAGS -O"
@@ -1336,7 +1638,7 @@ if test -n "$arch_CRAY" ; then
     NOF77=1
     FTESTDEFINE="integer ilen"
     F77GETARG="call pxfgetarg(i, str, ilen, ierr)"
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
                 CFLAGS="$CFLAGS -g"
     else 
                 CFLAGS="$CFLAGS -O"
@@ -1665,7 +1967,7 @@ fi
 if test -n "$arch_IRIX"; then
     CC=${CC:-cc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         CFLAGS="$CFLAGS -g -fullwarn"
     else 
         CFLAGS="$CFLAGS -O"
@@ -4164,7 +4466,11 @@ echo "setting USER_FFLAGS to $USER_FFLAGS"
 
 
 if test ! -d adio ; then mkdir adio ; fi
+if test ! -d adio/include ; then mkdir adio/include ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
+# 
+# Create makefiles for all of the adio devices.  Only the ones that 
+# are active will be called by the top level ROMIO make
 # Set default prefixes.
 if test -n "$prefix"; then
   test -z "$exec_prefix" && exec_prefix='${prefix}'
@@ -4205,7 +4511,16 @@ do
   esac
 done
 
-trap 'rm -fr Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h adio/include/romioconf.h conftest*; exit 1' 1 3 15
+trap 'rm -fr Makefile mpi-io/Makefile mpi2-other/info/Makefile \
+		   mpi2-other/array/Makefile adio/common/Makefile \
+		   test/Makefile test/misc.c test/large_file.c \
+		   test/runtests util/romioinstall include/mpio.h \
+		   include/mpiof.h \
+		   adio/ad_nfs/Makefile adio/ad_ufs/Makefile \
+		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
+		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
+		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
+		   adio/ad_piofs/Makefile  adio/include/romioconf.h conftest*; exit 1' 1 3 15
 VPATH='$VPATH'
 prefix='$prefix'
 exec_prefix='$exec_prefix'
@@ -4219,6 +4534,7 @@ htmldir='$htmldir'
 RANLIB='$RANLIB'
 CC='$CC'
 F77='$F77'
+CPP='$CPP'
 HAVE_WEAK_SYMBOLS='$HAVE_WEAK_SYMBOLS'
 srcdir='$srcdir'
 ARCH='$ARCH'
@@ -4285,7 +4601,16 @@ cat >> config.status <<\EOF
 
 top_srcdir=$srcdir
 
-CONFIG_FILES=${CONFIG_FILES-"Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h"}
+CONFIG_FILES=${CONFIG_FILES-"Makefile mpi-io/Makefile mpi2-other/info/Makefile \
+		   mpi2-other/array/Makefile adio/common/Makefile \
+		   test/Makefile test/misc.c test/large_file.c \
+		   test/runtests util/romioinstall include/mpio.h \
+		   include/mpiof.h \
+		   adio/ad_nfs/Makefile adio/ad_ufs/Makefile \
+		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
+		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
+		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
+		   adio/ad_piofs/Makefile "}
 for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   srcdir=$top_srcdir
   # Remove last slash and all that follows it.  Not all systems have dirname.
@@ -4313,6 +4638,7 @@ s%@htmldir@%$htmldir%g
 s%@RANLIB@%$RANLIB%g
 s%@CC@%$CC%g
 s%@F77@%$F77%g
+s%@CPP@%$CPP%g
 s%@HAVE_WEAK_SYMBOLS@%$HAVE_WEAK_SYMBOLS%g
 s%@srcdir@%$srcdir%g
 s%@ARCH@%$ARCH%g
@@ -4338,8 +4664,8 @@ s%@LL@%$LL%g
 s%@F77GETARG@%$F77GETARG%g
 s%@F77IARGC@%$F77IARGC%g
 s%@FTESTDEFINE@%$FTESTDEFINE%g
-s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g
-s%@FROM_MPICH@%$FROM_MPICH%g" | sed -e "
+s%@FORTRAN_MPI_OFFSET@%$FORTRAN_MPI_OFFSET%g" | sed -e "
+s%@FROM_MPICH@%$FROM_MPICH%g
 s%@NEEDS_MPI_FINT@%$NEEDS_MPI_FINT%g
 s%@HAVE_MPI_INFO@%$HAVE_MPI_INFO%g
 s%@BUILD_MPI_INFO@%$BUILD_MPI_INFO%g
@@ -4477,33 +4803,6 @@ ${CONFIG_SHELL-/bin/sh} ./config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"
-fi
-if test -n "$file_system_nfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_nfs/Makefile"
-fi
-if test -n "$file_system_ufs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_ufs/Makefile"
-fi
-if test -n "$file_system_xfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_xfs/Makefile"
-fi
-if test -n "$file_system_hfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_hfs/Makefile"
-fi
-if test -n "$file_system_sfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_sfs/Makefile"
-fi
-if test -n "$file_system_pfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_pfs/Makefile"
-fi
-if test -n "$file_system_testfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_testfs/Makefile"
-fi
-if test -n "$file_system_pvfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_pvfs/Makefile"
-fi
-if test -n "$file_system_piofs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_piofs/Makefile"
 fi
 export CONFIG_FILES
 ./config.status

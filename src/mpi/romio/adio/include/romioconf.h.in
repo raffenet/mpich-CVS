@@ -66,3 +66,13 @@
 #undef SX4
 #undef UFS
 #undef XFS
+#undef NEEDS_AIOCB_T
+
+/* Define if you have the aio library (-laio).  */
+#undef HAVE_LIBAIO
+
+/* Define if you have the pthread library (-lpthread).  */
+#undef HAVE_LIBPTHREAD
+
+/* Define if you have the rt library (-lrt).  */
+#undef HAVE_LIBRT

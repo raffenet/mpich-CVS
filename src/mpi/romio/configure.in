@@ -140,7 +140,7 @@ LIBNAME=""
 TEST_LIBNAME=""
 FILE_SYSTEM=""
 PREFIX=""
-DEBUG=0
+DEBUG=no
 MIPS=0
 BITS=0
 FROM_MPICH=0
@@ -183,6 +183,12 @@ TEST_CC=""
 TEST_F77=""
 TRY_WEAK_SYMBOLS=1
 #
+known_filesystems="nfs ufs pfs piofs pvfs testfs xfs hfs sfs"
+known_mpi_impls="mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
+#
+# Defaults
+enable_aio=notgiven
+#
 for arg
 do
 case $arg in
@@ -190,17 +196,39 @@ case $arg in
      ARCH=`echo $arg|sed 's/-*arch=//'`
      eval "arch_`echo $ARCH`=1"
      ;;
-  -file_system=* | --file_system=*)
+
+  -with-file-system=* | --with-file-system=* )
+     FILE_SYSTEM=`echo $arg|sed 's/-*with-file-system=//' | sed -e 's/\+/ /g'`
+     for x in $FILE_SYSTEM
+     do
+        eval "file_system_`echo $x`=1"
+     done
+     ;;
+  -file_system=* | --file_system=* )
+     # DEPRECATED FORMAT
      FILE_SYSTEM=`echo $arg|sed 's/-*file_system=//' | sed -e 's/\+/ /g'`
      for x in $FILE_SYSTEM
      do
         eval "file_system_`echo $x`=1"
      done
      ;;
+
+  --enable-aio | -enable-aio)
+  enable_aio=yes
+  ;;
+  --disable-aio | -disable-aio)
+  enable_aio=no
+  ;;
+  -with-mpi=* | --with-mpi=*)
+     MPI=`echo $arg|sed 's/-*with-mpi=//'`
+     eval "mpi_`echo $MPI`=1"
+     ;;
   -mpi=* | --mpi=*)
+     # DEPRECATED FORMAT
      MPI=`echo $arg|sed 's/-*mpi=//'`
      eval "mpi_`echo $MPI`=1"
      ;;
+    # OTHER ARGS ARE DEPRECATED AND SHOULD BE PROVIDED THROUGH ENV VARIABLES
   -mpiincdir=* | --mpiincdir=*)  
      MPI_INCLUDE_DIR=`echo $arg|sed 's/-*mpiincdir=//'`
      ;;
@@ -213,11 +241,21 @@ case $arg in
   -mpiolib=* | --mpiolib=*)  
      LIBNAME=`echo $arg|sed 's/-*mpiolib=//'`
      ;;
+
+     # THE FOLLOWING SHOULD BE PROVIDED THROUGH ENV VARIABLES
   -cc=* | --cc=*)
      CC=`echo $arg|sed 's/-*cc=//'`
      ;;
   -fc=* | --fc=*)
      FC=`echo $arg|sed 's/-*fc=//'`
+     ;;
+  -f90=* | --f90=*)
+     F90=`echo A$arg|sed 's/A-*f90=//'`
+     ;;
+  -f90nag | --f90nag)
+     FC=f90
+     F77GETARG="call f90_unix_MP_getarg(i,str)"
+     F77IARGC="f90_unix_MP_iargc()"
      ;;
   -cflags=* | --cflags=*)
      package="`echo $arg|sed 's/-*cflags=//'`"
@@ -232,13 +270,16 @@ case $arg in
      package=`echo $arg|sed 's/-*make=//'`
      MAKE="$package"
      ;;
-  -nof77 | --nof77)
+   # END OF VALUES THAT SHOULD BE PROVIDED THROUGH ENV VARIABLES
+
+     -nof77 | --nof77 | -disable-f77 | --disable-f77 )
      echo "Fortran interface will not be built"
      NOF77=1
      ;;
-  -debug | --debug)
+
+  -debug | --debug | --enable-g | -enable-g)
      echo "Configuring for a debugging version"
-     DEBUG=1
+     DEBUG=yes
      ;;
   -ar_nolocal | --ar_nolocal)
      AR_LOCAL=''
@@ -246,23 +287,23 @@ case $arg in
   -noranlib | --noranlib)
      RANLIB=':'
      ;;
+
   -prefix=* | --prefix=*)
      PREFIX=`echo $arg|sed 's/-*prefix=//'`
      # Use new variable name for prefix
      prefix=$PREFIX
      ;;
-  -f90nag | --f90nag)
-     FC=f90
-     F77GETARG="call f90_unix_MP_getarg(i,str)"
-     F77IARGC="f90_unix_MP_iargc()"
-     ;;
+
   -from_mpich | --from_mpich)
      FROM_MPICH=1
      ;;
+
    -ar=* | --ar=*)
      package=`echo $arg|sed 's/-*ar=//'`
      AR="$package"
      ;;
+
+     # THESE SHOULD USE CROSS_SIZE_XXX
   -intsize=* | --intsize=*)
      package=`echo $arg|sed 's/-*intsize=//'`
      intsize="$package"
@@ -279,19 +320,25 @@ case $arg in
      package=`echo $arg|sed 's/-*longlongsize=//'`
      longlongsize="$package"
      ;;
-  -noprofile | --noprofile)
+   # END OF VARIABLE SIZES
+
+  -noprofile | --noprofile | --disable-profile | -disable-profile )
      echo "profiling interface will not be built"
      NOPROFILE=1
      ;;
-  -f90=* | --f90=*)
-     F90=`echo A$arg|sed 's/A-*f90=//'`
-     ;;
+
   -echo | --enable-echo | -enable-echo )
      set -x
      ;;
   -disable-weak-symbols|--disable-weak-symbols)
      TRY_WEAK_SYMBOLS=0
      ;;
+  -enable-* | --enable-* | -disable-* | --disable-* )
+     # ignore
+  ;;
+  -with-* | --with-* | -without-* | --without-* )
+     # ignore
+  ;;
   -h | -help | --h | --help | -u | --u)
     (echo "${usage_msg}") >& 2
     exit 1 ;;
@@ -339,6 +386,7 @@ fi
 #
 # check for valid architecture.  Use __ so that _ALPHA_ does not match
 # LINUX_ALPHA_
+#### WE SHOULD REMOVE THIS SOON
 grep __"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
 if test $? != 0 ; then
    echo "Unknown architecture $arch... proceeding anyway"
@@ -389,8 +437,14 @@ AC_SUBST(htmldir)
 if test -n "$FILE_SYSTEM" ; then
    for x in $FILE_SYSTEM
    do
-      grep _"$x"_ $srcdir/.config_params > /dev/null 2>&1
-      if test $? != 0 ; then
+      found=no
+      for y in $known_filesystems ; do 
+          if test $x = $y ; then
+	      found=yes
+	      break
+	  fi
+      done
+      if test "$found" = "no" ; then
          echo "Unknown file system $x... proceeding anyway"
       fi
    done
@@ -398,8 +452,14 @@ fi
 #
 # check for valid MPI implementation
 if test -n "$MPI" ; then
-   grep _"$MPI"_mpi $srcdir/.config_params > /dev/null 2>&1
-   if test $? != 0 ; then
+   found=no
+   for mpi in $known_mpi_impls ; do
+      if test "${MPI}_mpi" = "$mpi" ; then
+          found=yes
+	  break
+      fi
+   done
+   if test $found = no ; then
       echo "Unknown MPI implementation $MPI... proceeding anyway"
    fi
 fi
@@ -436,7 +496,8 @@ if test -z "$RANLIB" ; then
 fi
 MAKE=${MAKE:-make}
 #
-if test $DEBUG = 1; then
+# USER_CFLAGS and USER_FFLAGS are used only in test/Makefile.in
+if test $DEBUG = "yes"; then
     USER_CFLAGS="$CFLAGS -g"
     USER_FFLAGS="$FFLAGS -g"
 else
@@ -447,7 +508,7 @@ fi
 if test -n "$arch_sun4" ; then 
     CC=${CC:-gcc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
 	if test "$CC" = "gcc"; then
            dnl CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
@@ -459,7 +520,11 @@ if test -n "$arch_sun4" ; then
         dnl CFLAGS="$CFLAGS -O -DAIO_SUN"
         CFLAGS="$CFLAGS -O"
     fi
-    AC_DEFINE(AIO_SUN)
+    if test "$enable_aio" = "no" ; then
+        AC_DEFINE(NO_AIO)
+    else
+        AC_DEFINE(AIO_SUN)
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -475,7 +540,7 @@ fi
 if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         if test "$CC" = "gcc" ; then
             dnl CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DAIO_SUN"
             CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
@@ -487,7 +552,11 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
         dnl CFLAGS="$CFLAGS -O -DAIO_SUN"
         CFLAGS="$CFLAGS -O"
     fi
-    AC_DEFINE(AIO_SUN)
+    if test "$enable_aio" = "no" ; then
+        AC_DEFINE(NO_AIO)
+    else
+        AC_DEFINE(AIO_SUN)
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -503,16 +572,18 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     if test $MPI = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
-        MPI_LIB="-laio"
     else
         TEST_CC="$CC"
         TEST_F77="$F77"
+    fi
+    if test "$enable_aio" != "no" ; then
         MPI_LIB="$MPI_LIB -laio"
+        ROMIO_LIBLIST="-laio"
     fi
     AR="ar cr"
-    ROMIO_LIBLIST="-laio"
 # solaris does not have l option to ar
 # solaris f90 does not have 8-byte integer type
+# (it does now!!!! 11/29/01)
 fi
 #
 if test -n "$arch_rs6000"; then
@@ -525,15 +596,19 @@ if test -n "$arch_rs6000"; then
        AC_PROGRAMS_CHECK(F77, mpxlf, f77)
        echo "Using $F77"
     fi
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         dnl CFLAGS="$CFLAGS -g -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
         CFLAGS="$CFLAGS -g"
     else 
         dnl CFLAGS="$CFLAGS -O -DNO_FD_IN_AIOCB -DAIO_HANDLE_IN_AIOCB"
         CFLAGS="$CFLAGS -O"
     fi
-    AC_DEFINE(NO_FD_IN_AIOCB)
-    AC_DEFINE(AIO_HANDLE_IN_AIOCB)
+    if test "$enable_aio" = "no" ; then
+        AC_DEFINE(NO_AIO)
+    else
+        AC_DEFINE(NO_FD_IN_AIOCB)
+        AC_DEFINE(AIO_HANDLE_IN_AIOCB)
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -561,7 +636,7 @@ fi
 if test -n "$arch_paragon"; then
     CC=${CC:-icc}
     F77=${FC:-if77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         CFLAGS="$CFLAGS -g"
     else 
 	if test "$CC" = "icc"; then
@@ -597,7 +672,7 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     dnl TFLOP_FLAGS="-cougar -D__PUMA -DNO_AIO"
     TFLOP_FLAGS="-cougar -D__PUMA"
     AC_DEFINE(NO_AIO)
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         CFLAGS="$CFLAGS -g $TFLOP_FLAGS"
     else
        if test "$CC" = "pgcc"; then
@@ -634,7 +709,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
        dnl CFLAGS="$CFLAGS -DLINUX"
        AC_DEFINE(LINUX)
     fi
-    if test $DEBUG = 1 ; then
+    if test $DEBUG = "yes" ; then
 	if test "$CC" = "gcc" ; then
             dnl CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -DNO_AIO"
             CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
@@ -646,7 +721,37 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
         dnl CFLAGS="$CFLAGS -O -DNO_AIO"
         CFLAGS="$CFLAGS -O"
     fi
-    AC_DEFINE(NO_AIO)
+    if test "$enable_aio" != "yes" ; then
+        AC_DEFINE(NO_AIO)
+    else
+        # Try to find the aio routines
+	use_aio=no
+        AC_HEADER_CHECK(aio.h,has_aio_h=yes,has_aio_h=no)
+	dnl AC_CHECK_LIB(aio,aio_write,has_aio_write=yes,has_aio_write=no)
+	add_lib=""
+	AC_HAVE_LIBRARY(aio,add_lib="-laio")
+	AC_HAVE_LIBRARY(rt,add_lib="$add_lib -lrt")
+	AC_HAVE_LIBRARY(pthread,[add_lib="$add_lib -lpthread"
+has_pthread=yes],[has_pthread=no])
+        AC_FUNC_CHECK(aio_write,has_aio_write=yes,has_aio_write=no)
+	if test "$has_aio_h" = "yes" -a "$has_aio_write" = "yes" -a \
+	        "$has_pthread" = "yes" ; then
+	    use_aio=yes	
+	fi    
+	# Check for aiocb_t as a shorthand for struct aiocb
+	AC_COMPILE_CHECK([for aiocb_t],
+[#include <aio.h>],
+[aiocb_t a;],has_aiocb_t=yes,has_aiocb_t=no)
+	if test "$has_aiocb_t" = "no" ; then 
+	    AC_DEFINE(NEEDS_AIOCB_T)
+        fi
+	if test "$use_aio" = "yes" ; then
+	    MPI_LIB="$MPI_LIB $add_lib"
+	    ROMIO_LIBLIST="$ROMIO_LIBLIST $add_lib"
+	else
+	    AC_DEFINE(NO_AIO)
+	fi
+    fi
     if test -z "$MPI" ; then
         MPI=mpich
         mpi_mpich=1
@@ -662,7 +767,7 @@ fi
 if test -n "$arch_SX4" ; then
     CC=${CC:-mpicc}
     F77=${FC:-mpif90}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes" ; then
         dnl CFLAGS="$CFLAGS -g -DNO_AIO -DSX4"
         CFLAGS="$CFLAGS -g"
         FFLAGS="$FFLAGS -g"
@@ -689,7 +794,7 @@ if test -n "$arch_SX4" ; then
 fi
 #
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         dnl CFLAGS="$CFLAGS -g +w1 -DNO_AIO"
         CFLAGS="$CFLAGS -g +w1"
     else 
@@ -767,7 +872,7 @@ fi
 if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     CC=${CC:-cc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         dnl CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose -DAIO_PRIORITY_DEFAULT"
         CFLAGS="$CFLAGS -g -std1 -warnprotos -verbose"
     else 
@@ -799,7 +904,7 @@ if test -n "$arch_CRAY" ; then
     NOF77=1
     FTESTDEFINE="integer ilen"
     F77GETARG="call pxfgetarg(i, str, ilen, ierr)"
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         dnl CFLAGS="$CFLAGS -g -DNO_AIO"
         CFLAGS="$CFLAGS -g"
     else 
@@ -872,7 +977,7 @@ fi
 if test -n "$arch_IRIX"; then
     CC=${CC:-cc}
     F77=${FC:-f77}
-    if test $DEBUG = 1; then
+    if test $DEBUG = "yes"; then
         CFLAGS="$CFLAGS -g -fullwarn"
     else 
         CFLAGS="$CFLAGS -O"
@@ -1285,37 +1390,23 @@ AC_SUBST(ROMIO_TFFLAGS)
 AC_SUBST(MPIRUN)
 AC_SUBST(FORTRAN_TEST)
 if test ! -d adio ; then mkdir adio ; fi
+if test ! -d adio/include ; then mkdir adio/include ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
-AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h)
+# 
+# Create makefiles for all of the adio devices.  Only the ones that 
+# are active will be called by the top level ROMIO make
+AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile \
+		   mpi2-other/array/Makefile adio/common/Makefile \
+		   test/Makefile test/misc.c test/large_file.c \
+		   test/runtests util/romioinstall include/mpio.h \
+		   include/mpiof.h \
+		   adio/ad_nfs/Makefile adio/ad_ufs/Makefile \
+		   adio/ad_xfs/Makefile adio/ad_hfs/Makefile \
+		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
+		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
+		   adio/ad_piofs/Makefile )
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"
-fi
-if test -n "$file_system_nfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_nfs/Makefile"
-fi
-if test -n "$file_system_ufs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_ufs/Makefile"
-fi
-if test -n "$file_system_xfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_xfs/Makefile"
-fi
-if test -n "$file_system_hfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_hfs/Makefile"
-fi
-if test -n "$file_system_sfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_sfs/Makefile"
-fi
-if test -n "$file_system_pfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_pfs/Makefile"
-fi
-if test -n "$file_system_testfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_testfs/Makefile"
-fi
-if test -n "$file_system_pvfs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_pvfs/Makefile"
-fi
-if test -n "$file_system_piofs"; then
-    CONFIG_FILES="$CONFIG_FILES adio/ad_piofs/Makefile"
 fi
 export CONFIG_FILES
 ./config.status
