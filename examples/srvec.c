@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     int niter = 1;
     int msg_count = 0;
     int msg_blocklength = 1;
-    int msg_stride = 0;
+    int msg_stride = 1;
     int msg_sz;
     int * buf;
     int buf_sz;
@@ -38,8 +38,12 @@ int main(int argc, char **argv)
     
     if (size < 2)
     {
-	printf("ERROR: needs to be run with at least 2 procs\n");
-	fflush(stdout);
+	if (rank == 0)
+	{
+	    printf("ERROR: needs to be run with at least 2 procs\n");
+	    fflush(stdout);
+	}
+	goto main_exit;
     }
 
     if (argc > 1)
@@ -61,9 +65,21 @@ int main(int argc, char **argv)
     {
 	sscanf(argv[4], "%d", &msg_stride);
     }
+
+    if (msg_stride < msg_blocklength)
+    {
+	if (rank == 0)
+	{
+	    printf("ERROR: stride < blocklength\n");
+	    fflush(stdout);
+	}
+	goto main_exit;
+    }
     
+
     msg_sz = msg_count * msg_blocklength;
-    buf_sz = msg_sz + (msg_count > 0 ? msg_count - 1 : 0) * msg_stride;
+    buf_sz = msg_sz + (msg_count > 0 ? msg_count - 1 : 0) *
+	(msg_stride - msg_blocklength);
     
     if (rank == 0)
     {
@@ -142,6 +158,7 @@ int main(int argc, char **argv)
 	fflush(stdout);
     }
 
+  main_exit:
     MPI_Barrier(MPI_COMM_WORLD);
     printf("srvec: process %d finished\n", rank); fflush(stdout);
     
