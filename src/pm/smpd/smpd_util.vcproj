@@ -96,6 +96,9 @@
 				RelativePath="smpd_authenticate.c">
 			</File>
 			<File
+				RelativePath="smpd_connect.c">
+			</File>
+			<File
 				RelativePath="smpd_printf.c">
 			</File>
 			<File

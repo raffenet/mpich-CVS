@@ -14,6 +14,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
     char password[100];
     int result;
 #ifdef HAVE_WINDOWS_H
+    char read_handle_str[20], write_handle_str[20];
     char account[100], port_str[20];
     char cmd[8192];
     PROCESS_INFORMATION pInfo;
@@ -147,7 +148,9 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	    return SMPD_FAIL;
 	}
 	/* encode the pipes on the command line */
-	snprintf(cmd, 8192, "\"%s\" -mgr -read %d -write %d", g_pszSMPDExe, (long)hReadRemote, (long)hWriteRemote);
+	snprintf(cmd, 8192, "\"%s\" -mgr -read %s -write %s", g_pszSMPDExe, 
+	    smpd_encode_handle(read_handle_str, hReadRemote), 
+	    smpd_encode_handle(write_handle_str, hWriteRemote));
 	smpd_dbg_printf("starting command:\n%s\n", cmd);
 	GetStartupInfo(&sInfo);
 	if (g_bService)
@@ -247,7 +250,7 @@ int smpd_start_mgr(sock_set_t set, sock_t sock)
 	}
 
 	/* don't reconnect to a new sock */
-	result = smpd_write_string(set, sock, "-1");
+	result = smpd_write_string(set, sock, SMPD_NO_RECONNECT_PORT_STR);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_close_connection(set, sock);

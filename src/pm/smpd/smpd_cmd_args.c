@@ -27,6 +27,21 @@ int smpd_get_opt(int argc, char *argv[], char *opt, char *val, int len)
     return 0;
 }
 
+#ifdef HAVE_WINDOWS_H
+char *smpd_encode_handle(char *str, HANDLE h)
+{
+    sprintf(str, "%p", h);
+    return str;
+}
+
+HANDLE smpd_decode_handle(char *str)
+{
+    HANDLE p;
+    sscanf(str, "%p", &p);
+    return p;
+}
+#endif
+
 int smpd_parse_command_args(int argc, char *argv[])
 {
 #ifdef HAVE_WINDOWS_H
@@ -53,8 +68,12 @@ int smpd_parse_command_args(int argc, char *argv[])
 	    smpd_err_printf("manager started without a write pipe handle.\n");
 	    return SMPD_FAIL;
 	}
+	/*
 	hRead = (HANDLE)atol(read_handle_str);
 	hWrite = (HANDLE)atol(write_handle_str);
+	*/
+	hRead = smpd_decode_handle(read_handle_str);
+	hWrite = smpd_decode_handle(write_handle_str);
 
 	result = sock_init();
 	if (result != SOCK_SUCCESS)

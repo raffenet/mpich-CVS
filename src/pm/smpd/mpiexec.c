@@ -32,15 +32,28 @@ int main(int argc, char* argv[])
 
     gethostname(host, SMPD_MAX_HOST_LENGTH);
 
-    result = mp_connect_to_smpd(host, SMPD_PROCESS_SESSION_STR, &set, &sock);
+    /*result = mp_connect_to_smpd(host, SMPD_PROCESS_SESSION_STR, &set, &sock);*/
     /*result = mp_connect_to_smpd(host, SMPD_SMPD_SESSION_STR, &set, &sock);*/
-    if (result)
+    result = smpd_connect_to_smpd(SOCK_INVALID_SET, SOCK_INVALID_SOCK, host, SMPD_PROCESS_SESSION_STR, &set, &sock);
+    if (result != SMPD_SUCCESS)
     {
 	mp_err_printf("Unable to connect to smpd on %s\n", host);
 	return result;
     }
 
-    result = mp_close_connection(set, sock);
+    result = smpd_write_string(set, sock, "close");
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("Unable to write 'close' to the smpd\n");
+	return result;
+    }
+
+    result = smpd_close_connection(set, sock);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("Unable to close the connection to smpd\n");
+	return result;
+    }
 
     result = sock_finalize();
     if (result != SOCK_SUCCESS)
