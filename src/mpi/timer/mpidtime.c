@@ -129,7 +129,7 @@ void MPID_Wtime( MPID_Time_t *timeval )
 }
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
-    *val = (double)t->QuadPart;
+    *val = (double)t->QuadPart / timer_frequency;
 }
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 {
