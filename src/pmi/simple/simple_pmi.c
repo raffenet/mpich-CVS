@@ -214,6 +214,20 @@ int PMI_Barrier( )
 	return( 0 );
 }
 
+int PMI_Get_clique_size( int *size )
+{
+    *size = 1;
+    return PMI_SUCCESS;
+}
+
+int PMI_Get_clique_ranks( int ranks[], int length )
+{
+    if ( length < 1 )
+	return PMI_ERR_INVALID_ARG;
+    else
+	return PMI_Get_rank( &ranks[0] );
+}
+
 /* Inform the process manager that we're in finalize */
 int PMI_Finalize( )
 {
@@ -270,6 +284,27 @@ int PMI_KVS_Get_value_length_max( int *maxlen )
 	return PMI_ERR_INVALID_ARG;
     *maxlen = PMI_vallen_max;
     return PMI_SUCCESS;
+}
+
+/* We will use the default kvsname for both the kvs_domain_id and for the id */
+/* Hence the implementation of the following three functions */
+
+int PMI_Get_id_length_max( int *length )
+{
+    if (length == NULL)
+	return PMI_ERR_INVALID_ARG;
+    *length = PMI_kvsname_max;
+    return PMI_SUCCESS;
+}
+
+int PMI_Get_id( char id_str[], int length )
+{
+    return PMI_KVS_Get_my_name( id_str, length );
+}
+
+int PMI_Get_kvs_domain_id( char id_str[], int length )
+{
+    return PMI_KVS_Get_my_name( id_str, length );
 }
 
 int PMI_KVS_Create( char kvsname[], int length )
