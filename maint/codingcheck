@@ -16,6 +16,11 @@
 #
 # Add option to output all of the "allow" styles encountered, with the file
 # name and user (from the sig).
+#
+# Add an option to check that the "style" include files are used.
+# E.g., if mpiimpl.h defines malloc/free, then make sure that mpiimpl.h
+# (or a file that includes it) is used.  This could alternately use the
+# 
 
 require "maint/parse.sub";
 
@@ -59,7 +64,7 @@ sub ProcessFile {
     while (<FD>) {
 	$errsrc = " in $filename";
 	# Check for special comments
-	if (/\/\*\s*style:\s*allow:(\w*):(\d*) *sig:(\d*)/) {
+	if (/\/\*\s*style:\s*allow:(\w*):(\d*)\s+sig:(\d*)/) {
 	    # Found a style comment.  Add the routine name to this 
 	    # list of allowed routines.  Eventually, this may require
 	    # a signed key
@@ -70,7 +75,7 @@ sub ProcessFile {
             # But for now, we do:
 	    $AllowedRoutines{$1} = $2;
 	}
-	elsif ( /\/\*\s*style:\s*define:([_\w]*):(\d*) *sig:(\d*)/) {
+	elsif ( /\/\*\s*style:\s*define:([_\w]*):(\d*)\s+sig:(\d*)/) {
 	    # This style comment permits special definitions
 	    $AllowedDefines{$1} = $2;
 	}
