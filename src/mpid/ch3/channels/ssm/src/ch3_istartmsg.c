@@ -95,7 +95,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 		    if (vc->ssm.bShm)
 			vc->ssm.send_active = sreq;
 		    else
-			MPIDI_CH3I_MM_VC_post_write(vc, sreq);
+			MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
 		}
 	    }
 	    else

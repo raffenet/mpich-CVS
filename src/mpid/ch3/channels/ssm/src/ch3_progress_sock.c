@@ -258,10 +258,10 @@ int handle_sock_op(sock_event_t *event_ptr)
 }
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_MM_VC_post_read
+#define FUNCNAME MPIDI_CH3I_SSM_VC_post_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_MM_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
+int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_Connection_t * conn = vc->ssm.conn;
@@ -280,10 +280,10 @@ int MPIDI_CH3I_MM_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
 }
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_MM_VC_post_write
+#define FUNCNAME MPIDI_CH3I_SSM_VC_post_write
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_MM_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
+int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_Connection_t * conn = vc->ssm.conn;

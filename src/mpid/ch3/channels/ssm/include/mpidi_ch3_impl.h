@@ -216,8 +216,8 @@ int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Listener_get_port(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC *);
-int MPIDI_CH3I_MM_VC_post_read(MPIDI_VC *, MPID_Request *);
-int MPIDI_CH3I_MM_VC_post_write(MPIDI_VC *, MPID_Request *);
+int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC *, MPID_Request *);
+int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 
 #define BOOTSTRAP_MAX_MSG_SIZE 8192

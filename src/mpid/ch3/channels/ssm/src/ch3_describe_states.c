@@ -221,11 +221,11 @@ int CH3U_Describe_timer_states()
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3I_VC_POST_READ,
-		       "MPIDI_CH3I_MM_VC_post_read",
+		       "MPIDI_CH3I_SSM_VC_post_read",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPIDI_CH3I_VC_POST_WRITE,
-		       "MPIDI_CH3I_MM_VC_post_write",
+		       "MPIDI_CH3I_SSM_VC_post_write",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3U_BUFFER_COPY,

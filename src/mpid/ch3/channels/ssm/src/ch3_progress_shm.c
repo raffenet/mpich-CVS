@@ -217,7 +217,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		else
 		{
 		    MPIDI_DBG_PRINTF((65, FCNAME, "ca = %d", ca));
-		    assert(ca < MPIDI_CH3I_CA_END_MM_CHANNEL);
+		    assert(ca < MPIDI_CH3I_CA_END_SSM_CHANNEL);
 		}
 	    }
 	    else

@@ -123,7 +123,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		}
 		else
 		{
-		    assert(ca < MPIDI_CH3I_CA_END_MM_CHANNEL);
+		    assert(ca < MPIDI_CH3I_CA_END_SSM_CHANNEL);
 		}
 	    }
 	    else
@@ -150,7 +150,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     {
 	assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_CONNECTED);
 	req->ssm.iov_offset = 0;
-	MPIDI_CH3I_MM_VC_post_write(vc, req);
+	MPIDI_CH3I_SSM_VC_post_write(vc, req);
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);

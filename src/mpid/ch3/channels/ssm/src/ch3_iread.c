@@ -144,7 +144,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 		{
 		    rreq->ch3.iov[rreq->ssm.iov_offset].MPID_IOV_BUF = (char *) rreq->ch3.iov[rreq->ssm.iov_offset].MPID_IOV_BUF + nb;
 		    rreq->ch3.iov[rreq->ssm.iov_offset].MPID_IOV_LEN -= nb;
-		    MPIDI_CH3I_MM_VC_post_read(vc, rreq);
+		    MPIDI_CH3I_SSM_VC_post_read(vc, rreq);
 		    goto fn_exit;
 		}
 	    }
@@ -162,7 +162,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 /*
 	rreq->ssm.iov_offset = 0;
 
-	MPIDI_CH3I_MM_VC_post_read(vc, rreq);
+	MPIDI_CH3I_SSM_VC_post_read(vc, rreq);
 	MPIDI_DBG_PRINTF((60, FCNAME, "just called vc_post_read"));
 */
     }

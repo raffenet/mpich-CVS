@@ -121,7 +121,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 			if (vc->ssm.bShm)
 			    vc->ssm.send_active = sreq;
 			else
-			    MPIDI_CH3I_MM_VC_post_write(vc, sreq);
+			    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
 			break;
 		    }
 		}
