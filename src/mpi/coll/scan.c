@@ -220,6 +220,11 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_SCAN);
 
+    if ((op == MPI_MAXLOC) || (op == MPI_MINLOC)) {
+        printf("ERROR: MAXLOC and MINLOC not yet implemented\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
