@@ -137,6 +137,11 @@ MPIDI_CH3_Pkt_t;
  * The completion counter should be decremented.  If it has reached zero, then
  * the request should be "freed" by calling MPID_Request_free().
  *
+ * MPIDI_CH3_CA_COPY_COMPLETE - This is a special case of the
+ * MPIDI_CH3_CA_COMPLETE.  The data is stored has been stored into a temporary
+ * buffer and needs to be copied into the user buffer before the completion
+ * counter can be decremented, etc.
+ *
  * MPIDI_CH3_CA_END_CH3 - This not a real action, but rather a marker.  All
  * actions numerically less than MPID_CA_END are defined by channel device.
  * Any actions numerically greater than MPIDI_CA_END are internal to the
@@ -147,6 +152,7 @@ typedef enum
     MPIDI_CH3_CA_NONE,
     MPIDI_CH3_CA_RELOAD_IOV,
     MPIDI_CH3_CA_COMPLETE,
+    MPIDI_CH3_CA_COPY_COMPLETE,
     MPIDI_CH3_CA_END_CH3,
 # if defined(MPIDI_CH3_CA_ENUM)
     MPIDI_CH3_CA_ENUM
@@ -184,6 +190,9 @@ struct MPIDI_Request							\
     long tmp_sz;							\
 									\
     long recv_data_sz;							\
+    MPI_Request rndv_req_id;						\
+									\
+    unsigned state;							\
     									\
     struct MPID_Request * next;						\
 } ch3;
