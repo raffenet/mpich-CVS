@@ -106,10 +106,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
      *
      * XXX - need to check sizes of values to insure array overruns do not occur
      */
-    key_max_sz = PMI_KVS_Get_key_length_max();
+    key_max_sz = PMI_KVS_Get_key_length_max()+1;
     key = MPIU_Malloc(key_max_sz);
     assert(key != NULL);
-    val_max_sz = PMI_KVS_Get_value_length_max();
+    val_max_sz = PMI_KVS_Get_value_length_max()+1;
     val = MPIU_Malloc(val_max_sz);
     assert(val != NULL);
     
