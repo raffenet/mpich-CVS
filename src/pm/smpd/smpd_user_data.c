@@ -144,13 +144,50 @@ static smpd_data_t * smpd_parse_smpd_file()
 
 SMPD_BOOL smpd_is_affirmative(const char *str)
 {
+    const char *iter = str;
+    if (*iter != 'y' && *iter != 'Y')
+	return SMPD_FALSE;
+    iter++;
+    if (*iter == '\0')
+	return SMPD_TRUE;
+    if (*iter == '\n')
+    {
+	iter++;
+	if (*iter == '\0')
+	    return SMPD_TRUE;
+	return SMPD_FALSE;
+    }
+    if (*iter != 'e' && *iter != 'E')
+	return SMPD_FALSE;
+    iter++;
+    if (*iter != 's' && *iter != 's')
+	return SMPD_FALSE;
+    iter++;
+    if (*iter == '\n')
+    {
+	iter++;
+	if (*iter == '\0')
+	    return SMPD_TRUE;
+	return SMPD_FALSE;
+    }
+    if (*iter == '\0')
+	return SMPD_TRUE;
+    return SMPD_FALSE;
+
+    /*
     if (strcmp(str, "yes\n") == 0 ||
 	strcmp(str, "Yes\n") == 0 ||
 	strcmp(str, "YES\n") == 0 ||
 	strcmp(str, "Y\n") == 0 ||
-	strcmp(str, "y\n") == 0)
+	strcmp(str, "y\n") == 0 ||
+	strcmp(str, "yes") == 0 ||
+	strcmp(str, "Yes") == 0 ||
+	strcmp(str, "YES") == 0 ||
+	strcmp(str, "Y") == 0 ||
+	strcmp(str, "y") == 0)
 	return SMPD_TRUE;
     return SMPD_FALSE;
+    */
 }
 
 #undef FCNAME
@@ -163,7 +200,7 @@ SMPD_BOOL smpd_option_on(const char *option)
 
     if (smpd_get_smpd_data(option, val, SMPD_MAX_VALUE_LENGTH) == SMPD_SUCCESS)
     {
-	if (strcmp(val, "yes") == 0 || strcmp(val, "1") == 0)
+	if (smpd_is_affirmative(val) || (strcmp(val, "1") == 0))
 	{
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_TRUE;

@@ -666,12 +666,12 @@ int smpd_dbg_printf(char *str, ...)
     }
     if ((smpd_process.dbg_state & SMPD_DBG_STATE_LOGFILE) && (smpd_process.dbg_filename[0] != '\0'))
     {
-	FILE *fout;
+	FILE *fout = NULL;
 	smpd_trim_logfile();
 	fout = fopen(smpd_process.dbg_filename, "a+");
 	if (fout == NULL)
 	{
-	    smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;
+	    /*smpd_process.dbg_state ^= SMPD_DBG_STATE_LOGFILE;*/
 	}
 	else
 	{
