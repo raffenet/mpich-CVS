@@ -676,6 +676,7 @@ sub RunCxxTestSuite {
     if (! -x "$instdir/bin/mpicxx" || !defined($chosenEnable{"cxx"})) { 
 	# Probably built without C++ support
 	$run_status = 0;  
+	&SkipCxxTestSuite;
 	return;
     }
     $rc = chdir $mpicxx_test_dir;
