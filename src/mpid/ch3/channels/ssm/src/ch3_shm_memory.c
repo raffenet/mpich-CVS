@@ -214,7 +214,7 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
 
     /* Create the shared memory object */
 #ifdef USE_POSIX_SHM
-    pOutput->id = shm_open(pInput->key, O_RDWR | O_CREAT, 0600);
+    pOutput->id = shm_open(pInput->key, O_RDWR, 0600);
     if (pOutput->id == -1)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pInput->key, errno);
