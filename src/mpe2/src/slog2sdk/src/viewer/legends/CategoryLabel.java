@@ -20,7 +20,7 @@ public class CategoryLabel extends JLabel
     public CategoryLabel( final Category objdef )
     {
         super( objdef.getName(), new CategoryIcon( objdef ),
-               SwingConstants.LEADING );
+               SwingConstants.LEFT );
         super.setIconTextGap( 2 * Const.CELL_ICON_TEXT_GAP );
     }
 

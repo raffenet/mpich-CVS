@@ -10,8 +10,10 @@
 package viewer.legends;
 
 import java.util.Map;
+import java.util.List;
 import java.util.Vector;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.awt.Component;
 import java.awt.Color;
@@ -44,7 +46,9 @@ public class LegendList extends JList
         LegendCell  cell;
         Category    objdef;
         Vector      cells    = new Vector( map.size() );
-        Iterator    objdefs  = map.values().iterator();
+        List        objdef_list  = new ArrayList( map.values() );
+        Collections.sort( objdef_list, Category.INDEX_ORDER );
+        Iterator    objdefs  = objdef_list.iterator();
         while ( objdefs.hasNext() ) {
             objdef = (Category) objdefs.next();
             cell   = new LegendCell( objdef );
