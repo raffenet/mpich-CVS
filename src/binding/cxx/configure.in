@@ -17,7 +17,21 @@ PAC_VPATH_CHECK(mpicxx mpicxx.h mpicxx.conf cov2html)
 
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
+saveCXXFLAGS=$CXXFLAGS
 AC_PROG_CXX
+# Misfeature in autoconf.  When using gcc, PROG_CXX insists on setting 
+# CXXFLAGS to -g -O2 if CXXFLAGS is not set.  This may be appropriate for
+# many tools built with configure and gcc, but not always.  In particular,
+# there seems to be no way to get gcc to use no extra flags if that is desired.
+if test -z "$saveCXXFLAGS" -a -n "$CXXFLAGS" ; then
+    # restore CXXFLAGS
+    # Note: This may not be correct if PROG_CXX decided to add other 
+    # flags to CXXFLAGS to enforce some behavior (such as ANSI/ISO C++),
+    # But we haven't seen that in practice.  It would be better
+    # if the CXXFLAGS were decomposed into flags-that-change-the-language
+    # that the compiler accepts from optimizations
+    CXXFLAGS=$saveCXXFLAGS
+fi
 AC_PATH_PROG(AR,ar)
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)

@@ -750,6 +750,7 @@ dnl
 dnl Find a C compiler (choose gcc first).
 dnl Autoconf 2.13 has the feature that you cannot override the test for
 dnl cross-compilation made in [AC_PROG_CC].  
+saveCFLAGS=$CFLAGS
 AC_PROG_CC
 # Bug in autoconf.  Restore cross settings
 if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
@@ -759,6 +760,19 @@ if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
     ac_cv_prog_f77_cross=yes
     ac_cv_prog_f90_cross=yes
     ac_cv_prog_cxx_cross=yes
+fi
+# Misfeature in autoconf.  When using gcc, PROG_CC insists on setting 
+# CFLAGS to -g -O2 if CFLAGS is not set.  This may be appropriate for
+# many tools built with configure and gcc, but not always.  In particular,
+# there seems to be no way to get gcc to use no extra flags if that is desired.
+if test -z "$saveCFLAGS" -a -n "$CFLAGS" ; then
+    # restore CFLAGS
+    # Note: This may not be correct if PROG_CC decided to add other 
+    # flags to CFLAGS to enforce some behavior (such as ANSI/ISO C),
+    # But we haven't seen that in practice.  It would be better
+    # if the CFLAGS were decomposed into flags-that-change-the-language
+    # that the compiler accepts from optimizations
+    CFLAGS=$saveCFLAGS
 fi
 # Look for ar.  If we fail, abort
 AC_CHECK_PROGS(AR,ar)
