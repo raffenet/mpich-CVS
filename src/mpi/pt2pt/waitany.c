@@ -98,21 +98,26 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests",
-				 mpi_errno);
-	    /* NOTE: MPI_STATUS_IGNORE != NULL */
-	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-	    if (array_of_requests != NULL && count > 0)
+	    if (count != 0)
 	    {
-		for (i = 0; i < count; i++)
+		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests",
+				     mpi_errno);
+		/* NOTE: MPI_STATUS_IGNORE != NULL */
+		MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+		if (array_of_requests != NULL && count > 0)
 		{
-		    MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
+		    for (i = 0; i < count; i++)
+		    {
+			MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
+		    }
 		}
 	    }
             if (mpi_errno != MPI_SUCCESS)
 	    {
-                goto fn_fail;
-            }
+		/* --BEGIN ERROR HANDLING -- */
+		goto fn_fail;
+		/* --END ERROR HANDLING -- */
+	    }
 	}
         MPID_END_ERROR_CHECKS;
     }
