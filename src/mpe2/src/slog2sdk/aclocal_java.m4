@@ -486,7 +486,7 @@ dnl
 dnl
 dnl JAC_TRY_RUNJAR - test the execution of a java jar file
 dnl
-dnl JAC_TRY_RUNJAR( JVM, JVMFLAGS, IMPORTS, JAR-FILE
+dnl JAC_TRY_RUNJAR( JVM, JVMFLAGS, JAR-FILE
 dnl                 [, ACTION-IF-WORKING [ , ACTION-IF-NOT-WORKING ] ] )
 dnl JVM           - java virtual machine
 dnl JVMFLAGS      - jVM flags, like options: -d and -classpath, ...
