@@ -26,6 +26,14 @@
 #error No shared memory subsystem defined
 #endif
 
+#ifdef HAVE_MQ_OPEN
+#define USE_POSIX_MQ
+#elif defined(HAVE_MSGGET)
+#define USE_SYSV_MQ
+#endif
+
+#define MPIDI_MAX_SHM_NAME_LENGTH 100
+
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 256
 #endif
@@ -118,13 +126,13 @@ typedef struct MPIDI_CH3I_Shmem_block_request_result
     void *addr;
     unsigned int size;
 #ifdef USE_POSIX_SHM
-    char key[100];
+    char key[MPIDI_MAX_SHM_NAME_LENGTH];
     int id;
 #elif defined (USE_SYSV_SHM)
     int key;
     int id;
 #elif defined (USE_WINDOWS_SHM)
-    char key[MAX_PATH];
+    char key[MPIDI_MAX_SHM_NAME_LENGTH];
     HANDLE id;
 #else
 #error *** No shared memory mapping variables specified ***
@@ -260,6 +268,11 @@ MPID_STATE_HANDLE_SHM_READ, \
 MPID_STATE_HANDLE_SHM_WRITTEN, \
 MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV, \
 MPID_STATE_MPIDI_COMM_SPAWN, \
+MPID_STATE_MPIDI_CH3I_MQSHM_CREATE, \
+MPID_STATE_MPIDI_CH3I_MQSHM_CLOSE, \
+MPID_STATE_MPIDI_CH3I_MQSHM_UNLINK, \
+MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND, \
+MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE, \
 SOCK_STATE_LIST
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
