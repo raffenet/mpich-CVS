@@ -234,8 +234,8 @@ $sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
 		     'ETC'     => '$(INSTALL_DATA)',
 		    );
 # These give the directories that autoconf will require for the 
-%required_dirs = ( 'libdir'      => 'exec_prefix',
-		   'bindir'      => 'exec_prefix',
+%required_dirs = ( 'libdir'      => 'exec_prefix prefix',
+		   'bindir'      => 'exec_prefix prefix',
 		   'mandir'      => 'prefix',
 		   'htmldir'     => 'prefix',
 		   'docdir'      => 'prefix',
@@ -765,10 +765,19 @@ sub DefaultRules {
     }
 
     # Directory definitions
-    foreach $dir (keys(%dirs_seen)) {
-	print FD "$dirdefs{$dir}$newline";
-    }
     %dir_added = ();
+    foreach $dir (keys(%dirs_seen)) {
+	if (!defined($dir_added{$rdir})) {
+	    print FD "$dirdefs{$dir}$newline";
+	    $dir_added{$dir} = 1;
+	    foreach $rdir (split(/\s+/,$required_dirs{$dir})) {
+		if (!defined($dir_added{$rdir})) {
+		    print FD "$dirdefs{$rdir}$newline";
+		    $dir_added{$rdir} = 1;
+		}
+	    }
+	}
+    }
     if (scalar(%install_files)) {
 	$dir_added{'prefix'} = 1;
 	print FD "$dirdefs{'prefix'}$newline";
@@ -776,7 +785,7 @@ sub DefaultRules {
     foreach $dir (keys(%install_files)) {
 	# Handle the derived dirs for the install directories
 	$dir = $install_dir{$dir};
-	foreach $rdir ($required_dirs{$dir}) {
+	foreach $rdir (split(/\s+/,$required_dirs{$dir})) {
 	    if (!defined($dir_added{$rdir})) {
 		print FD "$dirdefs{$rdir}$newline";
 		$dir_added{$rdir} = 1;
@@ -1982,10 +1991,11 @@ sub TargetInstall {
 	}
 	if (!defined($dirschecked{$dir})) {
 	    # Check on dependent directories
-	    $checkdir = $required_dirs{$dir};
-	    if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
-		$dirschecked{$checkdir} = 1;
-		print FD "\tif [ ! -d \${$checkdir} ] ; then \$(MKDIR_P) \${$checkdir} ; fi$newline";
+	    foreach $checkdir (split(/\s+/,$required_dirs{$dir})) {
+		if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
+		    $dirschecked{$checkdir} = 1;
+		    print FD "\tif [ ! -d \${$checkdir} ] ; then \$(MKDIR_P) \${$checkdir} ; fi$newline";
+		}
 	    }
 	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;

@@ -4,4 +4,6 @@ distclean-local:
 	rm -f runtests
 
 testing:
-	./runtests -tests=testlist -mpiexec=$(bindir)/mpiexec
+	./runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml

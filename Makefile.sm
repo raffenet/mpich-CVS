@@ -70,6 +70,10 @@ doc_HTML_SOURCES  =
 doc_MAN_SOURCES   = 
 doc_LATEX_SOURCES = 
 
+# Testing requires installation first
+testing:
+	(cd test && $(MAKE) testing)
+
 install_LIB = lib/lib${MPILIBNAME}.a
 install_INCLUDE = src/include/mpi.h
 optinstall_LIB = lib/libp${MPILIBNAME}.a
