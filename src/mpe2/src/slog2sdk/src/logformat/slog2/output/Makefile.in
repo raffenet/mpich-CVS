@@ -19,10 +19,11 @@ JAR          = @JAR@
 RM           = @RM@
 
 TARGET1 = $(libbuild_dir)/clogTOslog2.jar
-TARGET2 = $(libbuild_dir)/traceTOslog2.jar
+TARGET2 = $(libbuild_dir)/clog2TOslog2.jar
+TARGET3 = $(libbuild_dir)/traceTOslog2.jar
 PACKAGE = logformat.slog2.output
 SRC     = TreeNode.java OutputLog.java TreeTrunk.java \
-          TraceToSlog2.java ClogToSlog2.java
+          TraceToSlog2.java ClogToSlog2.java Clog2ToSlog2.java
 
 OBJ     = $(SRC:.java=.class)
 
@@ -39,7 +40,7 @@ JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START
 .java.class:
 	$(JC) $(JFLAGS) @JPATH_START@$<@JPATH_FINAL@
 
-ALL: $(TARGET1) $(TARGET2)
+ALL: $(TARGET1) $(TARGET2) $(TARGET3)
 
 $(TARGET1): $(OBJ)
 	cd $(CLASSDIR) ; \
@@ -55,6 +56,19 @@ $(TARGET1): $(OBJ)
 	$(JAR) uvf $${jarfile} jumpshot.colors
 
 $(TARGET2): $(OBJ)
+	cd $(CLASSDIR) ; \
+	$(RM) $(PACKAGE).manifest ; \
+	echo "Main-Class: $(PACKAGE).Clog2ToSlog2" > $(PACKAGE).manifest ; \
+	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
+	$(JAR) cvfm $${jarfile} $(PACKAGE).manifest ; \
+	for dir in base/io/ base/drawable/ logformat/slog2/ \
+	           logformat/clog2/ logformat/clog2TOdrawable/ $(PKGDIR)/ ; do \
+	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
+	    $(JAR) uvf $${jarfile} $${classdir_prefix}*.class ; \
+	done ; \
+	$(JAR) uvf $${jarfile} jumpshot.colors
+
+$(TARGET3): $(OBJ)
 	cd $(CLASSDIR) ; \
 	$(RM) $(PACKAGE).manifest ; \
 	echo "Main-Class: $(PACKAGE).TraceToSlog2" > $(PACKAGE).manifest ; \
