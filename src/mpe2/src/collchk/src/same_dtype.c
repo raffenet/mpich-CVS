@@ -4,63 +4,246 @@
 */
 #include "collchk.h" 
 
-void CollChk_hash_add(unsigned int alpha, unsigned int n,
-                      unsigned int beta, unsigned int m,
-                      unsigned int *hash_val, unsigned int *hash_cnt)
+/* AIX requires this to be the first thing in the file.  */
+#ifndef __GNUC__
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
+# else
+#  ifdef _AIX
+ #pragma alloca
+#  else
+#   ifndef alloca /* predefined by HP cc +Olibcalls */
+char *alloca ();
+#   endif
+#  endif
+# endif
+#endif
+
+unsigned int CollChk_cirleftshift( unsigned int alpha, unsigned n );
+unsigned int CollChk_cirleftshift( unsigned int alpha, unsigned n )
 {
-    unsigned int t1, t2, cirleft;
     // Doing circular left shift of beta and save it in x
-    t1 = beta >> (sizeof(unsigned int)-n);
-    t2 = beta << n;
-    cirleft  = t1 | t2;
-    
-    *hash_val = alpha^cirleft;
-    *hash_cnt = n+m;
+    unsigned int t1, t2;
+    t1 = alpha >> (sizeof(unsigned int)-n);
+    t2 = alpha << n;
+    return t1 | t2;
+}
+
+void CollChk_hash_add(const CollChk_hash_t *alpha,
+                      const CollChk_hash_t *beta,
+                            CollChk_hash_t *lamda);
+void CollChk_hash_add(const CollChk_hash_t *alpha,
+                      const CollChk_hash_t *beta,
+                            CollChk_hash_t *lamda)
+{
+    lamda->value = (alpha->value)
+                 ^ CollChk_cirleftshift(beta->value, alpha->count);
+    lamda->count = alpha->count + beta->count;
+}
+
+int CollChk_hash_equal(const CollChk_hash_t *alpha,
+                       const CollChk_hash_t *beta)
+{
+    return alpha->count == beta->count && alpha->value == beta->value;
 }
 
 
-int CollChk_get_val(MPI_Datatype dt)
+unsigned int CollChk_basic_value(MPI_Datatype type);
+unsigned int CollChk_basic_value(MPI_Datatype type)
 {
-    switch (dt) {
+    switch (type) {
+        /* MPI_Datatype's that return 0x0 are being skipped/ignored. */
+        case MPI_DATATYPE_NULL :
+        case MPI_UB :
+        case MPI_LB :
+            return 0x0;
+
         case MPI_CHAR :
-            return 1;
+            return 0x1;
         case MPI_SIGNED_CHAR :
-            return 2;
+            return 0x3;
         case MPI_UNSIGNED_CHAR :
-            return 3;
-        case MPI_SHORT :
-            return 4;
-        case MPI_UNSIGNED_SHORT :
-            return 5;
-        case MPI_INT :
-            return 6;
-        case MPI_LONG :
-            return 7;
-        case MPI_UNSIGNED_LONG :
-            return 8;
-        case MPI_FLOAT :
-            return 9;
-        case MPI_DOUBLE :
-            return 10;
-        case MPI_LONG_DOUBLE :
-            return 11;
-        case MPI_WCHAR :
-            return 12;
+            return 0x5;
         case MPI_BYTE :
-            return 13;
-        case MPI_LONG_LONG_INT :
-            return 14;
+            return 0x7;
+        case MPI_WCHAR :
+            return 0x9;
+        case MPI_SHORT :
+            return 0xb;
+        case MPI_UNSIGNED_SHORT :
+            return 0xd;
+        case MPI_INT :
+            return 0xf;
+        case MPI_UNSIGNED :
+            return 0x11;
+        case MPI_LONG :
+            return 0x13;
+        case MPI_UNSIGNED_LONG :
+            return 0x15;
+        case MPI_FLOAT :
+            return 0x17;
+        case MPI_DOUBLE :
+            return 0x19;
+        case MPI_LONG_DOUBLE :
+            return 0x1b;
+        /* case MPI_LONG_LONG_INT : return 0x1d; */
+        case MPI_LONG_LONG :
+            return 0x1f;
+        case MPI_UNSIGNED_LONG_LONG :
+            return 0x21;
+        case MPI_PACKED :
+            return 0x23;
+
+        case MPI_FLOAT_INT :
+            return 0x8;       /* (0x17,1)@(0xf,1) */
+        case MPI_DOUBLE_INT :
+            return 0x6;       /* (0x19,1)@(0xf,1) */
+        case MPI_LONG_INT :
+            return 0xc;       /* (0x13,1)@(0xf,1) */
+        case MPI_SHORT_INT :
+            return 0x14;      /* (0xb,1)@(0xf,1) */
+        case MPI_2INT :
+            return 0x10;      /* (0xf,1)@(0xf,1) */
+        case MPI_LONG_DOUBLE_INT :
+            return 0x4;       /* (0x1b,1)@(0xf,1) */
+
+        case MPI_COMPLEX :
+            return 0x101;
+        case MPI_DOUBLE_COMPLEX :
+            return 0x103;
+        case MPI_LOGICAL :
+            return 0x105;
+        case MPI_REAL :
+            return 0x107;
+        case MPI_DOUBLE_PRECISION :
+            return 0x109;
+        case MPI_INTEGER :
+            return 0x10b;
+        case MPI_CHARACTER :
+            return 0x10d;
+
+        case MPI_2INTEGER :
+            return 0x33c;      /* (0x10b,1)@(0x10b,1) */
+        case MPI_2COMPLEX :
+            return 0x323;      /* (0x101,1)@(0x101,1) */
+        case MPI_2DOUBLE_COMPLEX :
+            return 0x325;      /* (0x103,1)@(0x103,1) */
+        case MPI_2REAL :
+            return 0x329;      /* (0x107,1)@(0x107,1) */
+        case MPI_2DOUBLE_PRECISION :
+            return 0x33a;      /* (0x109,1)@(0x109,1) */
+
+        case MPI_REAL4 :
+            return 0x201;
+        case MPI_REAL8 :
+            return 0x203;
+        /* case MPI_REAL16 : return 0x205; */
+        case MPI_COMPLEX8 :
+            return 0x207;
+        case MPI_COMPLEX16 :
+            return 0x209;
+        /* case MPI_COMPLEX32 : return 0x20b; */
+        case MPI_INTEGER1 :
+            return 0x211;
+        case MPI_INTEGER2 :
+            return 0x213;
+        case MPI_INTEGER4 :
+            return 0x215;
+        case MPI_INTEGER8 :
+            return 0x217;
+        /* case MPI_INTEGER16 : return 0x219; */
+
         default :
+            fprintf( stderr, "CollChk_basic_value(): "
+                             "Unknown basic MPI datatype %x.\n", type );
+            fflush( stderr );
+            return 0;
+    }
+}
+
+unsigned int CollChk_basic_count(MPI_Datatype type);
+unsigned int CollChk_basic_count(MPI_Datatype type)
+{
+    switch (type) {
+        /* MPI_Datatype's that return 0 are being skipped/ignored. */
+        case MPI_DATATYPE_NULL :
+        case MPI_UB :
+        case MPI_LB :
+            return 0;
+
+        case MPI_CHAR :
+        case MPI_SIGNED_CHAR :
+        case MPI_UNSIGNED_CHAR :
+        case MPI_BYTE :
+        case MPI_WCHAR :
+        case MPI_SHORT :
+        case MPI_UNSIGNED_SHORT :
+        case MPI_INT :
+        case MPI_UNSIGNED :
+        case MPI_LONG :
+        case MPI_UNSIGNED_LONG :
+        case MPI_FLOAT :
+        case MPI_DOUBLE :
+        case MPI_LONG_DOUBLE :
+        case MPI_LONG_LONG_INT :
+        /* case MPI_LONG_LONG : */
+        case MPI_UNSIGNED_LONG_LONG :
+        case MPI_PACKED :
+            return 1;
+
+        case MPI_FLOAT_INT :        
+        case MPI_DOUBLE_INT :
+        case MPI_LONG_INT :
+        case MPI_SHORT_INT :
+        case MPI_2INT :
+        case MPI_LONG_DOUBLE_INT :
+            return 2;
+
+        case MPI_COMPLEX :
+        case MPI_DOUBLE_COMPLEX :
+        case MPI_LOGICAL :
+        case MPI_REAL :
+        case MPI_DOUBLE_PRECISION :
+        case MPI_INTEGER :
+        case MPI_CHARACTER :
+            return 1;
+
+        case MPI_2INTEGER :
+        case MPI_2COMPLEX :
+        case MPI_2DOUBLE_COMPLEX :
+        case MPI_2REAL :
+        case MPI_2DOUBLE_PRECISION :
+            return 2;
+
+        case MPI_REAL4 :
+        case MPI_REAL8 :
+        /* case MPI_REAL16 : */
+        case MPI_COMPLEX8 :
+        case MPI_COMPLEX16 :
+        /* case MPI_COMPLEX32 : */
+        case MPI_INTEGER1 :
+        case MPI_INTEGER2 :
+        case MPI_INTEGER4 :
+        case MPI_INTEGER8 :
+        /* case MPI_INTEGER16 : */
+            return 1;
+
+        default :
+            fprintf( stderr, "CollChk_basic_count(): "
+                             "Unknown basic MPI datatype %x.\n", type );
+            fflush( stderr );
             return 0;
     }
 }
 
 
-int CollChk_get_cnt(int idx, int *ints, int combiner)
+int CollChk_derived_count(int idx, int *ints, int combiner);
+int CollChk_derived_count(int idx, int *ints, int combiner)
 {
     int ii, tot_cnt;
     int dim_A, dim_B;
     
+    tot_cnt = 0;
     switch(combiner) {
         case MPI_COMBINER_DUP : 
         case MPI_COMBINER_F90_REAL :
@@ -78,7 +261,6 @@ int CollChk_get_cnt(int idx, int *ints, int combiner)
         case MPI_COMBINER_INDEXED :
         case MPI_COMBINER_HINDEXED :
         case MPI_COMBINER_HINDEXED_INTEGER :
-            tot_cnt = 0;
             for ( ii = ints[0]; ii > 0; ii-- ) {
                  tot_cnt += ints[ ii ];
             }
@@ -89,13 +271,11 @@ int CollChk_get_cnt(int idx, int *ints, int combiner)
         case MPI_COMBINER_SUBARRAY :
             dim_A   = ints[ 0 ] + 1;
             dim_B   = 2 * ints[ 0 ];
-            tot_cnt = 0;
             for ( ii=dim_A; ii<=dim_B; ii++ ) {
                 tot_cnt += ints[ ii ];
             }
             return tot_cnt;
         case MPI_COMBINER_DARRAY :
-            tot_cnt = 0;
             for ( ii=3; ii<=ints[2]+2; ii++ ) {
                 tot_cnt += ints[ ii ];
             }
@@ -105,305 +285,640 @@ int CollChk_get_cnt(int idx, int *ints, int combiner)
 }
 
 
-void CollChk_hash_dtype(MPI_Datatype dt, int cnt,
-                        unsigned int *hash_val, unsigned int *hash_cnt) {
-    int nints, nadds, ntypes, combiner;
-    int *ints; 
-    MPI_Aint *adds; 
-    MPI_Datatype *types;
-    unsigned int curr_val, curr_cnt;
-    unsigned int next_val, next_cnt;
-    int type_cnt;
-    int ii;
+void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *type_hash)
+{
+    int             nints, nadds, ntypes, combiner;
+    int             *ints; 
+    MPI_Aint        *adds; 
+    MPI_Datatype    *types;
+    CollChk_hash_t  curr_hash, next_hash;
+    int             type_cnt;
+    int             ii;
     
     /*  Don't know if this makes sense or not */
     if ( cnt <= 0 ) {
-        *hash_val = 0;
-        *hash_cnt = 0;
+        type_hash->value = 0;
+        type_hash->count = 0;
         return;
     }
 
-    MPI_Type_get_envelope(dt, &nints, &nadds, &ntypes, &combiner);
+    MPI_Type_get_envelope(type, &nints, &nadds, &ntypes, &combiner);
     if (combiner != MPI_COMBINER_NAMED) {
+#if ! defined( HAVE_ALLOCA )
         ints = NULL;
         if ( nints > 0 )
-            ints = (int *) (malloc(nints * sizeof(int))); 
+            ints = (int *) malloc(nints * sizeof(int)); 
         adds = NULL;
         if ( nadds > 0 )
-            adds = (MPI_Aint *) (malloc(nadds * sizeof(MPI_Aint))); 
+            adds = (MPI_Aint *) malloc(nadds * sizeof(MPI_Aint)); 
         types = NULL;
         if ( ntypes > 0 )
             types = (MPI_Datatype *) malloc(ntypes * sizeof(MPI_Datatype));
+#else
+        ints = NULL;
+        if ( nints > 0 )
+            ints = (int *) alloca(nints * sizeof(int)); 
+        adds = NULL;
+        if ( nadds > 0 )
+            adds = (MPI_Aint *) alloca(nadds * sizeof(MPI_Aint)); 
+        types = NULL;
+        if ( ntypes > 0 )
+            types = (MPI_Datatype *) alloca(ntypes * sizeof(MPI_Datatype));
+#endif
 
-        MPI_Type_get_contents(dt, nints, nadds, ntypes, ints, adds, types);
-        type_cnt = CollChk_get_cnt(0, ints, combiner);
-        CollChk_hash_dtype(types[0], type_cnt, &curr_val, &curr_cnt);
+        MPI_Type_get_contents(type, nints, nadds, ntypes, ints, adds, types);
+        type_cnt = CollChk_derived_count(0, ints, combiner);
+        CollChk_dtype_hash(types[0], type_cnt, &curr_hash);
 
         /*
             ntypes > 1 only for MPI_COMBINER_STRUCT(_INTEGER)
         */
         for( ii=1; ii < ntypes; ii++) {
-            type_cnt = CollChk_get_cnt(ii, ints, combiner); 
-            CollChk_hash_dtype(types[ii], type_cnt, &next_val, &next_cnt);
-            CollChk_hash_add(curr_val, curr_cnt, next_val, next_cnt,
-                             &curr_val, &curr_cnt);
+            type_cnt = CollChk_derived_count(ii, ints, combiner); 
+            CollChk_dtype_hash(types[ii], type_cnt, &next_hash);
+            CollChk_hash_add(&curr_hash, &next_hash, &curr_hash);
         }
 
+#if ! defined( HAVE_ALLOCA )
         if ( ints != NULL )
             free( ints );
         if ( adds != NULL )
             free( adds );
         if ( types != NULL )
             free( types );
+#endif
     }
     else {
-        curr_val = CollChk_get_val(dt);
-        curr_cnt = 1;
+        curr_hash.value = CollChk_basic_value(type);
+        curr_hash.count = CollChk_basic_count(type);
     }
 
-    *hash_val = curr_val;
-    *hash_cnt = curr_cnt;
+    type_hash->value = curr_hash.value;
+    type_hash->count = curr_hash.count;
     for ( ii=1; ii < cnt; ii++ ) {
-        CollChk_hash_add(*hash_val, *hash_cnt, curr_val, curr_cnt,
-                         hash_val, hash_cnt);
+        CollChk_hash_add(type_hash, &curr_hash, type_hash);
     }
 }
 
 
-int CollChk_same_dtype(MPI_Comm comm, int cnt, MPI_Datatype dt, char* call)
+/*
+   Checking if (type,cnt) is the same in all processes within the communicator.
+*/
+int CollChk_dtype_bcast(MPI_Comm comm, MPI_Datatype type, int cnt, int root,
+                        char* call)
 {
-    int r, s, i, go, ok;           /* rank, size, counter, go flag, ok flag */
-    char err_str[255];             /* error string */
-    MPI_Status st;int tag=0;       /* needed for communications */
-    CollChk_hash_struct hs, buff;  /* local hash value, global hash value */
+#if 0
+    CollChk_hash_t  local_hash;        /* local hash value */
+    CollChk_hash_t  root_hash;         /* root's hash value */
+    char            err_str[COLLCHK_STD_STRLEN];
+    int             rank, size;        /* rank, size */
+    int             are_hashes_equal;  /* go flag, ok flag */
 
     /* get the rank and size */
-    MPI_Comm_rank(comm, &r);
-    MPI_Comm_size(comm, &s);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
 
     /* get the hash values */
-    CollChk_hash_dtype(dt, cnt, &(hs.hash_val), &(hs.hash_cnt));
+    CollChk_dtype_hash(type, cnt, &local_hash);
 
-    /* initialize the error string */
-    sprintf(err_str, "no error");
-
-    if (r == 0) {
-        buff = hs;
-        /* send 0s datatype hash to all other processes */
-        PMPI_Bcast(&buff, 2, MPI_INT, 0, comm);
-
-        /* check if all processes are ok to continue */
-        go = 1; /* set the go flag */
-        for (i=1; i<s; i++) {
-            MPI_Recv(&ok, 1, MPI_INT, i, tag, comm, &st);
-            /* if the process is not ok unset the go flag */
-            if (!ok) go = 0;
-        }
-
-        /* broadcast the go flag to the other processes */
-        PMPI_Bcast(&go, 1, MPI_INT, 0, comm);
+    if (rank == root) {
+        root_hash.value = local_hash.value;
+        root_hash.count = local_hash.count;
     }
-    else {
-        /* get the datatype hash from 0 */
-        PMPI_Bcast(&buff, 2, MPI_INT, 0, comm);
+    /* broadcast root's datatype hash to all other processes */
+    PMPI_Bcast(&root_hash, 2, MPI_UNSIGNED, root, comm);
 
-        /* check the hash from the local hash */
-        if ((buff.hash_val != hs.hash_val) || (buff.hash_cnt != hs.hash_cnt)) {
-            /* at this point the datatype parameter is inconsistant */
-            /* print an error message and send an unset ok flag to 0 */
-            ok = 0;
-            sprintf(err_str, "Datatype Signature used is Inconsistent with "
-                             "Rank 0s.\n");
-            MPI_Send(&ok, 1, MPI_INT, 0, tag, comm);
-        }
-        else {
-            /* at this point the datatype parameter is consistant  */
-            /* send a set ok flag to 0 */
-            ok = 1;
-            MPI_Send(&ok, 1, MPI_INT, 0, tag, comm);
-        }
+    /* Compare root's datatype hash to the local hash */
+    are_hashes_equal = CollChk_hash_equal( &local_hash, &root_hash );
+    if ( !are_hashes_equal )
+        sprintf(err_str, "Inconsistent datatype signatures detected "
+                         "between rank %d and rank %d.\n", rank, root);
+    else
+        sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
-        /* recieve the go flag from 0 */
-        PMPI_Bcast(&go, 1, MPI_INT, 0, comm);
-    }
+    /* Find out if there is unequal hashes in the communicator */
+    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
+                    MPI_LAND, comm );
 
-    /* if the go flag is not set exit else return */
-    if (!go) {
+    if ( !are_hashes_equal )
         return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
+
+    return MPI_SUCCESS;
+#endif
+    return CollChk_dtype_scatter(comm, type, cnt, type, cnt, root, 1, call );
+}
+
+
+/*
+  The (sendtype,sendcnt) is assumed to be known in root process.
+  (recvtype,recvcnt) is known in every process.  The routine checks if
+  (recvtype,recvcnt) on each process is the same as (sendtype,sendcnt)
+  on process root.
+*/
+int CollChk_dtype_scatter(MPI_Comm comm,
+                          MPI_Datatype sendtype, int sendcnt,
+                          MPI_Datatype recvtype, int recvcnt,
+                          int root, int are2buffs, char *call)
+{
+    CollChk_hash_t  root_hash;         /* root's hash value */
+    CollChk_hash_t  recv_hash;         /* local hash value */
+    char            err_str[COLLCHK_STD_STRLEN];
+    int             rank, size;
+    int             are_hashes_equal;
+
+    /* get the rank and size */
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    /*
+       Scatter() only cares root's send datatype signature,
+       i.e. ignore not-root's send datatype signatyre
+    */
+    /* Set the root's hash value */
+    if (rank == root)
+        CollChk_dtype_hash(sendtype, sendcnt, &root_hash);
+
+    /* broadcast root's datatype hash to all other processes */
+    PMPI_Bcast(&root_hash, 2, MPI_UNSIGNED, root, comm);
+
+    /* Compare root_hash with the input/local hash */
+    if ( are2buffs ) {
+        CollChk_dtype_hash( recvtype, recvcnt, &recv_hash );
+        are_hashes_equal = CollChk_hash_equal( &root_hash, &recv_hash );
     }
+    else
+        are_hashes_equal = 1;
+
+    if ( !are_hashes_equal )
+        sprintf(err_str, "Inconsistent datatype signatures detected "
+                         "between rank %d and rank %d.\n", rank, root);
+    else
+        sprintf(err_str, COLLCHK_NO_ERROR_STR);
+
+    /* Find out if there is unequal hashes in the communicator */
+    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
+                    MPI_LAND, comm );
+
+    if ( !are_hashes_equal )
+        return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
+
+    return MPI_SUCCESS;
+}
+
+/*
+  The vector of (sendtype,sendcnts[]) is assumed to be known in root process.
+  (recvtype,recvcnt) is known in every process.  The routine checks if
+  (recvtype,recvcnt) on process P is the same as (sendtype,sendcnt[P])
+  on process root. 
+*/
+int CollChk_dtype_scatterv(MPI_Comm comm,
+                           MPI_Datatype sendtype, int *sendcnts,
+                           MPI_Datatype recvtype, int recvcnt,
+                           int root, int are2buffs, char *call)
+{
+    CollChk_hash_t  *hashes;         /* hash array for (sendtype,sendcnts[]) */
+    CollChk_hash_t  root_hash;       /* root's hash value */
+    CollChk_hash_t  recv_hash;       /* local hash value */
+    char            err_str[COLLCHK_STD_STRLEN];
+    int             rank, size, idx;
+    int             are_hashes_equal;
+
+    /* get the rank and size */
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    /*
+       Scatter() only cares root's send datatype signature[],
+       i.e. ignore not-root's send datatype signatyre
+    */
+    hashes = NULL;
+    if ( rank == root ) {
+        /* Allocate hash buffer memory */
+#if ! defined( HAVE_ALLOCA )
+        hashes = (CollChk_hash_t *) malloc( size * sizeof(CollChk_hash_t) );
+#else
+        hashes = (CollChk_hash_t *) alloca( size * sizeof(CollChk_hash_t) );
+#endif
+        for ( idx = 0; idx < size; idx++ )
+            CollChk_dtype_hash( sendtype, sendcnts[idx], &(hashes[idx]) );
+    }
+
+    /* Send the root's hash array to update other processes's root_hash */
+    PMPI_Scatter(hashes, 2, MPI_UNSIGNED, &root_hash, 2, MPI_UNSIGNED,
+                 root, comm);
+
+    /* Compare root_hash with the input/local hash */
+    if ( are2buffs ) {
+        CollChk_dtype_hash( recvtype, recvcnt, &recv_hash );    
+        are_hashes_equal = CollChk_hash_equal( &root_hash, &recv_hash );
+    }
+    else
+        are_hashes_equal = 1;
+
+    if ( !are_hashes_equal )
+        sprintf(err_str, "Inconsistent datatype signatures detected "
+                         "between rank %d and rank %d.\n", rank, root);
+    else
+        sprintf(err_str, COLLCHK_NO_ERROR_STR);
+
+    /* Find out if there is unequal hashes in the communicator */
+    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
+                    MPI_LAND, comm );
+
+#if ! defined( HAVE_ALLOCA )
+    if ( hashes != NULL )
+        free( hashes );
+#endif
+
+    if ( !are_hashes_equal )
+        return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
 
     return MPI_SUCCESS;
 }
 
 
-int CollChk_same_dtype_vector(MPI_Comm comm, int root, int cnt,
-                              int *rootcnts, MPI_Datatype dt, char *call)
+/*
+   (sendtype,sendcnt) and (recvtype,recvcnt) are known in every process.
+   The routine checks if (recvtype,recvcnt) on local process is the same
+   as (sendtype,sendcnt) collected from all the other processes.
+*/
+int CollChk_dtype_allgather(MPI_Comm comm,
+                            MPI_Datatype sendtype, int sendcnt,
+                            MPI_Datatype recvtype, int recvcnt,
+                            int are2buffs, char *call)
 {
-    int r, s, i, go;               /* rank, size, counter, go flag */
-    char err_str[255];             /* error string */
-    CollChk_hash_struct hs, *buff; /* local hash value, global hash value */
-    CollChk_hash_struct curr;      /* the current hash being checked */
+    CollChk_hash_t  *hashes;      /* hashes from other senders' */
+    CollChk_hash_t  send_hash;    /* local sender's hash value */
+    CollChk_hash_t  recv_hash;    /* local receiver's hash value */
+    char            err_str[COLLCHK_STD_STRLEN];
+    char            rank_str[COLLCHK_SM_STRLEN];
+    int             *isOK2chks;   /* boolean array, true:sendbuff=\=recvbuff */
+    int             *err_ranks;   /* array of ranks that have mismatch hashes */
+    int             err_rank_size;
+    int             err_str_sz, str_sz;
+    int             rank, size, idx;
 
     /* get the rank and size */
-    MPI_Comm_rank(comm, &r);
-    MPI_Comm_size(comm, &s);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
 
-    /* get the hash values */
-    CollChk_hash_dtype(dt, cnt, &(hs.hash_val), &(hs.hash_cnt));
-    /* allocate buffer memory */
-    buff = (CollChk_hash_struct *) malloc(s*sizeof(CollChk_hash_struct));
-    /* initialize the error string */
-    sprintf(err_str, "no error");
+    CollChk_dtype_hash( sendtype, sendcnt, &send_hash );
+    /* Allocate hash buffer memory */
+#if ! defined( HAVE_ALLOCA )
+    hashes    = (CollChk_hash_t *) malloc( size * sizeof(CollChk_hash_t) );
+    err_ranks = (int *) malloc( size * sizeof(int) );
+    isOK2chks = (int *) malloc( size * sizeof(int) );
+#else
+    hashes    = (CollChk_hash_t *) alloca( size * sizeof(CollChk_hash_t) );
+    err_ranks = (int *) alloca( size * sizeof(int) );
+    isOK2chks = (int *) alloca( size * sizeof(int) );
+#endif
 
-    if (r == root) {
-        /* gather the signatures to the root process */
-        PMPI_Gather(&buff, 2, MPI_INT, &hs, 2, MPI_INT, root, comm);
+    /* Gather other senders' datatype hashes as local hash arrary */
+    PMPI_Allgather(&send_hash, 2, MPI_UNSIGNED, hashes, 2, MPI_UNSIGNED, comm);
+    PMPI_Allgather(&are2buffs, 1, MPI_INT, isOK2chks, 1, MPI_INT, comm);
 
-        /* check thier values */
-        go = 1;
-        for (i=1; i<s; i++) {
-            CollChk_hash_dtype(dt, rootcnts[i],
-                               &(curr.hash_val), &(curr.hash_cnt));
-            if(    (curr.hash_val != buff[i].hash_val)
-                || (curr.hash_cnt != buff[i].hash_cnt) ) {
-                go = 0;
-                sprintf(err_str, "The Data Type Signature on process %d "
-                                 "is not consistant with the root's (%d)",
-                                 i, root);
+    /* Compute the local datatype hash value */
+    CollChk_dtype_hash( recvtype, recvcnt, &recv_hash );
+
+    /* Compare the local datatype hash with other senders' datatype hashes */
+    /*
+       The checks are more exhaustive and redundant tests on all processes,
+       but matches what user expects
+    */
+    err_rank_size = 0;
+    for ( idx = 0; idx < size; idx++ ) {
+        if ( isOK2chks[idx] ) {
+            if ( ! CollChk_hash_equal( &recv_hash, &(hashes[idx]) ) )
+                err_ranks[ err_rank_size++ ] = idx;
+        }
+    }
+
+    if ( err_rank_size > 0 ) {
+        str_sz = sprintf(err_str, "Inconsistent datatype signatures detected "
+                                  "between local rank %d and remote ranks,",
+                                  rank);
+        /* all string size variables, *_sz, does not include NULL character */
+        err_str_sz = str_sz;
+        for ( idx = 0; idx < err_rank_size; idx++ ) {
+            str_sz = sprintf(rank_str, " %d", err_ranks[idx] );
+            /* -3 is reserved for "..." */
+            if ( str_sz + err_str_sz < COLLCHK_STD_STRLEN-3 ) {
+                strcat(err_str, rank_str);
+                err_str_sz = strlen( err_str );
+            }
+            else {
+                strcat(err_str, "..." );
                 break;
             }
         }
-
-        /* broadcast the go flag to the other processes */
-        PMPI_Bcast(&go, 1, MPI_INT, 0, comm);
     }
-    else {
-        /* send the local hash value to the root process */
-        PMPI_Gather(&buff, 2, MPI_INT, &hs, 2, MPI_INT, root, comm);
+    else
+        sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
-        /* recieve the go flag from the root process */
-        PMPI_Bcast(&go, 1, MPI_INT, 0, comm);
-    }
+    /* Find out the total number of unequal hashes in the communicator */
+    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+                    MPI_SUM, comm );
 
-    /* if the go flag is not set exit else return */
-    if (!go) {
+#if ! defined( HAVE_ALLOCA )
+    if ( hashes != NULL )
+        free( hashes );
+    if ( err_ranks != NULL )
+        free( err_ranks );
+    if ( isOK2chks != NULL )
+        free( isOK2chks );
+#endif
+
+    if ( err_rank_size > 0 )
         return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
-    }
-
-    free( buff );
 
     return MPI_SUCCESS;
 }
 
 
-int CollChk_same_dtype_vector2(MPI_Comm comm, int *cnts,
-                               MPI_Datatype dt, char *call)
+/*
+  The vector of (recvtype,recvcnts[]) is assumed to be known locally.
+  The routine checks if (recvtype,recvcnts[]) on local process is the same as
+  (sendtype,sendcnts[]) collected from all the other processes.
+*/
+int CollChk_dtype_allgatherv(MPI_Comm comm,
+                             MPI_Datatype sendtype, int sendcnt,
+                             MPI_Datatype recvtype, int *recvcnts,
+                             int are2buffs, char *call)
 {
-    int r, s, i, go, ok;           /* rank, size, counter, go flag, ok flag */
-    char err_str[255];             /* error string */
-    CollChk_hash_struct hs, *buff; /* local hash value, global hash value */
-    CollChk_hash_struct curr;      /* the current hash being checked */
+    CollChk_hash_t  *hashes;      /* hash array for (sendtype,sendcnt) */
+    CollChk_hash_t  send_hash;    /* local sender's hash value */
+    CollChk_hash_t  recv_hash;    /* local receiver's hash value */
+    char            err_str[COLLCHK_STD_STRLEN];
+    char            rank_str[COLLCHK_SM_STRLEN];
+    int             *isOK2chks;   /* boolean array, true:sendbuff=\=recvbuff */
+    int             *err_ranks;   /* array of ranks that have mismatch hashes */
+    int             err_rank_size;
+    int             err_str_sz, str_sz;
+    int             rank, size, idx;
 
     /* get the rank and size */
-    MPI_Comm_rank(comm, &r);
-    MPI_Comm_size(comm, &s);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
 
-    /* get the hash values */
-    CollChk_hash_dtype(dt, cnts[r], &(hs.hash_val), &(hs.hash_cnt));
-    /* allocate buffer memory */
-    buff = (CollChk_hash_struct *) malloc(s*sizeof(CollChk_hash_struct));
-    /* initialize the error string */
-    sprintf(err_str, "no error");
+    /* Allocate hash buffer memory */
+#if ! defined( HAVE_ALLOCA )
+    hashes    = (CollChk_hash_t *) malloc( size * sizeof(CollChk_hash_t) );
+    err_ranks = (int *) malloc( size * sizeof(int) );
+    isOK2chks = (int *) malloc( size * sizeof(int) );
+#else
+    hashes    = (CollChk_hash_t *) alloca( size * sizeof(CollChk_hash_t) );
+    err_ranks = (int *) alloca( size * sizeof(int) );
+    isOK2chks = (int *) alloca( size * sizeof(int) );
+#endif
 
-    /* gather the signatures to the processes */
-    PMPI_Allgather(&buff, 2, MPI_INT, &hs, 2, MPI_INT, comm);
+    CollChk_dtype_hash( sendtype, sendcnt, &send_hash );
 
-    /* check the values */
-    ok = 1;
-    for (i=0; i<s; i++) {
-        CollChk_hash_dtype(dt, cnts[i], &(curr.hash_val), &(curr.hash_cnt));
-        if(    (curr.hash_val != buff[i].hash_val)
-            || (curr.hash_cnt != buff[i].hash_cnt) ) {
-            sprintf(err_str, "The Data Type Signature on process %d "
-                             "is not consistent with process %d", i, r);
-            ok = 0;
-            break;
+    /* Gather other senders' datatype hashes as local hash array */
+    PMPI_Allgather(&send_hash, 2, MPI_UNSIGNED, hashes, 2, MPI_UNSIGNED, comm);
+    PMPI_Allgather(&are2buffs, 1, MPI_INT, isOK2chks, 1, MPI_INT, comm);
+
+    /* Compare the local datatype hash with other senders' datatype hashes */
+    /*
+       The checks are more exhaustive and redundant tests on all processes,
+       but matches what user expects
+    */
+    err_rank_size = 0;
+    for ( idx = 0; idx < size; idx++ ) {
+        if ( isOK2chks[idx] ) {
+            CollChk_dtype_hash( recvtype, recvcnts[idx], &recv_hash );
+            if ( ! CollChk_hash_equal( &recv_hash, &(hashes[idx]) ) )
+                err_ranks[ err_rank_size++ ] = idx;
         }
     }
 
-    /* broadcast the go flag to the other processes */
-    PMPI_Bcast(&go, 1, MPI_INT, 0, comm);
-
-    /* if the go flag is not set exit else return */
-    if (!go) {
-        return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
+    if ( err_rank_size > 0 ) {
+        str_sz = sprintf(err_str, "Inconsistent datatype signatures detected "
+                                  "between local rank %d and remote ranks,",
+                                  rank);
+        /* all string size variables, *_sz, does not include NULL character */
+        err_str_sz = str_sz;
+        for ( idx = 0; idx < err_rank_size; idx++ ) {
+            str_sz = sprintf(rank_str, " %d", err_ranks[idx] );
+            /* -3 is reserved for "..." */
+            if ( str_sz + err_str_sz < COLLCHK_STD_STRLEN-3 ) {
+                strcat(err_str, rank_str);
+                err_str_sz = strlen( err_str );
+            }
+            else {
+                strcat(err_str, "..." );
+                break;
+            }
+        }
     }
+    else
+        sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
-    free( buff );
+    /* Find out the total number of unequal hashes in the communicator */
+    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+                    MPI_SUM, comm );
+
+#if ! defined( HAVE_ALLOCA )
+    if ( hashes != NULL )
+        free( hashes );
+    if ( err_ranks != NULL )
+        free( err_ranks );
+    if ( isOK2chks != NULL )
+        free( isOK2chks );
+#endif
+
+    if ( err_rank_size > 0 )
+        return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
 
     return MPI_SUCCESS;
 }
 
 
-int CollChk_same_dtype_general(MPI_Comm comm, int *rcnts, int *scnts,
-                               MPI_Datatype *rtypes, MPI_Datatype *stypes,
-                               char *call)
+/*
+  The vector of (recvtype,recvcnts[]) is assumed to be known locally.
+  The routine checks if (recvtype,recvcnts[]) on local process is the same as
+  (sendtype,sendcnts[]) collected from all the other processes.
+*/
+int CollChk_dtype_alltoallv(MPI_Comm comm,
+                            MPI_Datatype sendtype, int *sendcnts,
+                            MPI_Datatype recvtype, int *recvcnts,
+                            char *call)
 {
-    int r, s, i, go, ok;        /* rank, size, counter, go flag, ok flag */
-    char err_str[255];          /* error string */
-    CollChk_hash_struct rhs, shs, *rbuff, *sbuff, curr;
+    CollChk_hash_t  *send_hashes;    /* hash array for (sendtype,sendcnt[]) */
+    CollChk_hash_t  *hashes;         /* hash array for (sendtype,sendcnt[]) */
+    CollChk_hash_t  recv_hash;       /* local receiver's hash value */
+    char            err_str[COLLCHK_STD_STRLEN];
+    char            rank_str[COLLCHK_SM_STRLEN];
+    int             *err_ranks;
+    int             err_rank_size;
+    int             err_str_sz, str_sz;
+    int             rank, size, idx;
 
     /* get the rank and size */
-    MPI_Comm_rank(comm, &r);
-    MPI_Comm_size(comm, &s);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
 
-    /* get the hash values */
-    CollChk_hash_dtype(rtypes[r], rcnts[r], &(rhs.hash_val), &(rhs.hash_cnt));
-    CollChk_hash_dtype(stypes[r], scnts[r], &(shs.hash_val), &(shs.hash_cnt));
+    /* Allocate hash buffer memory */
+#if ! defined( HAVE_ALLOCA )
+    send_hashes = (CollChk_hash_t *) malloc( size * sizeof(CollChk_hash_t) );
+    hashes      = (CollChk_hash_t *) malloc( size * sizeof(CollChk_hash_t) );
+    err_ranks   = (int *) malloc( size * sizeof(int) );
+#else
+    send_hashes = (CollChk_hash_t *) alloca( size * sizeof(CollChk_hash_t) );
+    hashes      = (CollChk_hash_t *) alloca( size * sizeof(CollChk_hash_t) );
+    err_ranks   = (int *) alloca( size * sizeof(int) );
+#endif
 
-    /* allocate buffer memory */
-    rbuff = (CollChk_hash_struct *) malloc(s*sizeof(CollChk_hash_struct));
-    sbuff = (CollChk_hash_struct *) malloc(s*sizeof(CollChk_hash_struct));
-    /* initialize the error string */
-    sprintf(err_str, "no error");
+    for ( idx = 0; idx < size; idx++ )
+        CollChk_dtype_hash( sendtype, sendcnts[idx], &send_hashes[idx] );
 
-    /* gather the signatures to the processes */
-    PMPI_Allgather(&rbuff, 2, MPI_INT, &rhs, 2, MPI_INT, comm);
-    PMPI_Allgather(&sbuff, 2, MPI_INT, &shs, 2, MPI_INT, comm);
+    /* Gather other senders' datatype hashes as local hash array */
+    PMPI_Alltoall(send_hashes, 2, MPI_UNSIGNED, hashes, 2, MPI_UNSIGNED, comm);
 
-    /* check the values */
-    ok = 1;
-    for (i=0; i<s; i++) {
-        CollChk_hash_dtype(rtypes[i], rcnts[i],
-                           &(curr.hash_val), &(curr.hash_cnt));
-        if(    (curr.hash_val != sbuff[i].hash_val)
-            || (curr.hash_cnt != sbuff[i].hash_cnt)) {
-            sprintf(err_str, "The Data Type Signature on process %d "
-                             "is not consistant with process %d", i, r);
-            ok = 0;
-            break;
-        }
-        CollChk_hash_dtype( stypes[i], scnts[i],
-                            &(curr.hash_val), &(curr.hash_cnt) );
-        if(    (curr.hash_val != rbuff[i].hash_val)
-            || (curr.hash_cnt != rbuff[i].hash_cnt) ) {
-            sprintf(err_str, "The Data Type Signature on process %d "
-                             "is not consistant with process %d", i, r);
-            ok = 0;
-            break;
-        }
+    /* Compare the local datatype hash with other senders' datatype hashes */
+    /*
+       The checks are more exhaustive and redundant tests on all processes,
+       but matches what user expects
+    */
+    err_rank_size = 0;
+    for ( idx = 0; idx < size; idx++ ) {
+        CollChk_dtype_hash( recvtype, recvcnts[idx], &recv_hash );
+        if ( ! CollChk_hash_equal( &recv_hash, &(hashes[idx]) ) )
+            err_ranks[ err_rank_size++ ] = idx;
     }
 
-    /* broadcast the go flag to the other processes */
-    PMPI_Bcast(&go, 1, MPI_INT, 0, comm);
+    if ( err_rank_size > 0 ) {
+        str_sz = sprintf(err_str, "Inconsistent datatype signatures detected "
+                                  "between local rank %d and remote ranks,",
+                                  rank);
+        /* all string size variables, *_sz, does not include NULL character */
+        err_str_sz = str_sz;
+        for ( idx = 0; idx < err_rank_size; idx++ ) {
+            str_sz = sprintf(rank_str, " %d", err_ranks[idx] );
+            /* -3 is reserved for "..." */
+            if ( str_sz + err_str_sz < COLLCHK_STD_STRLEN-3 ) {
+                strcat(err_str, rank_str);
+                err_str_sz = strlen( err_str );
+            }
+            else {
+                strcat(err_str, "..." );
+                break;
+            }
+        }
+    }
+    else
+        sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
-    /* if the go flag is not set exit else return */
-    if (!go) {
+    /* Find out the total number of unequal hashes in the communicator */
+    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+                    MPI_SUM, comm );
+
+#if ! defined( HAVE_ALLOCA )
+    if ( send_hashes != NULL )
+        free( send_hashes );
+    if ( hashes != NULL )
+        free( hashes );
+    if ( err_ranks != NULL )
+        free( err_ranks );
+#endif
+
+    if ( err_rank_size > 0 )
         return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
+
+    return MPI_SUCCESS;
+}
+
+
+/*
+  The vector of (recvtypes[],recvcnts[]) is assumed to be known locally.
+  The routine checks if (recvtypes[],recvcnts[]) on local process is the same as
+  (sendtype[],sendcnts[]) collected from all the other processes.
+*/
+int CollChk_dtype_alltoallw(MPI_Comm comm,
+                            MPI_Datatype *sendtypes, int *sendcnts,
+                            MPI_Datatype *recvtypes, int *recvcnts,
+                            char *call)
+{
+    CollChk_hash_t  *send_hashes;  /* hash array for (sendtypes[],sendcnt[]) */
+    CollChk_hash_t  *hashes;       /* hash array for (sendtypes[],sendcnt[]) */
+    CollChk_hash_t  recv_hash;     /* local receiver's hash value */
+    char            err_str[COLLCHK_STD_STRLEN];
+    char            rank_str[COLLCHK_SM_STRLEN];
+    int             *err_ranks;
+    int             err_rank_size;
+    int             err_str_sz, str_sz;
+    int             rank, size, idx;
+
+    /* get the rank and size */
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    /* Allocate hash buffer memory */
+#if ! defined( HAVE_ALLOCA )
+    send_hashes = (CollChk_hash_t *) malloc( size * sizeof(CollChk_hash_t) );
+    hashes      = (CollChk_hash_t *) malloc( size * sizeof(CollChk_hash_t) );
+    err_ranks   = (int *) malloc( size * sizeof(int) );
+#else
+    send_hashes = (CollChk_hash_t *) alloca( size * sizeof(CollChk_hash_t) );
+    hashes      = (CollChk_hash_t *) alloca( size * sizeof(CollChk_hash_t) );
+    err_ranks   = (int *) alloca( size * sizeof(int) );
+#endif
+
+    for ( idx = 0; idx < size; idx++ )
+        CollChk_dtype_hash( sendtypes[idx], sendcnts[idx], &send_hashes[idx] );
+
+    /* Gather other senders' datatype hashes as local hash array */
+    PMPI_Alltoall(send_hashes, 2, MPI_UNSIGNED, hashes, 2, MPI_UNSIGNED, comm);
+
+    /* Compare the local datatype hashes with other senders' datatype hashes */
+    /*
+       The checks are more exhaustive and redundant tests on all processes,
+       but matches what user expects
+    */
+    err_rank_size = 0;
+    for ( idx = 0; idx < size; idx++ ) {
+        CollChk_dtype_hash( recvtypes[idx], recvcnts[idx], &recv_hash );
+        if ( ! CollChk_hash_equal( &recv_hash, &(hashes[idx]) ) )
+            err_ranks[ err_rank_size++ ] = idx;
     }
 
-    free( rbuff );
-    free( sbuff );
+    if ( err_rank_size > 0 ) {
+        str_sz = sprintf(err_str, "Inconsistent datatype signatures detected "
+                                  "between local rank %d and remote ranks,",
+                                  rank);
+        /* all string size variables, *_sz, does not include NULL character */
+        err_str_sz = str_sz;
+        for ( idx = 0; idx < err_rank_size; idx++ ) {
+            str_sz = sprintf(rank_str, " %d", err_ranks[idx] );
+            /* -3 is reserved for "..." */
+            if ( str_sz + err_str_sz < COLLCHK_STD_STRLEN-3 ) {
+                strcat(err_str, rank_str);
+                err_str_sz = strlen( err_str );
+            }
+            else {
+                strcat(err_str, "..." );
+                break;
+            }
+        }
+    }
+    else
+        sprintf(err_str, COLLCHK_NO_ERROR_STR);
+
+    /* Find out the total number of unequal hashes in the communicator */
+    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
+                    MPI_SUM, comm );
+
+#if ! defined( HAVE_ALLOCA )
+    if ( send_hashes != NULL )
+        free( send_hashes );
+    if ( hashes != NULL )
+        free( hashes );
+    if ( err_ranks != NULL )
+        free( err_ranks );
+#endif
+
+    if ( err_rank_size > 0 )
+        return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
 
     return MPI_SUCCESS;
 }
