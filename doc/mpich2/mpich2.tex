@@ -1181,7 +1181,7 @@ extern MPICH_PerThread_t MPIR_Thread;
 #else /* Assumes pthreads for simplicity */
 #define MPID_GetPerThread(p) {\
      p = pthread_getspecific( MPIR_Process.thread_key ); \
-     if (!p) { p = MPIU_Calloc( 1, sizeof(MPID_PerThread_t ) );\
+     if (!p) { p = MPIU_Calloc( 1, sizeof(MPICH_PerThread_t ) );\
                pthread_setspecific( MPIR_Process.thread_key, p );}}
 #endif
 \end{verbatim}
@@ -1522,7 +1522,8 @@ declared within the routine.  A typical use might be
 % although it would be a nop in the implementation described above.
 
 \subsubsection{Testing for Memory Errors}
-The \file{tr2} (TRacing memory package) provides both tests for memory
+The \file{util/mem/trmem} (TRacing MEMory package) provides both tests for
+memory 
 leaks and for memory overruns by using sentinels; it can also
 pre-initialize all allocated memory to various patterns.  These tests
 should be made a part of the nightly rounds (even in MPICH).  
