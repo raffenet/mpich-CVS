@@ -21,8 +21,9 @@
 #define MPID_TIMING_KIND_NONE 0
 #define MPID_TIMING_KIND_TIME 1
 #define MPID_TIMING_KIND_LOG 2
-#define MPID_TIMING_KIND_ALL 3
-#define MPID_TIMING_KIND_RUNTIME 4
+#define MPID_TIMING_KIND_LOG_DETAILED 3
+#define MPID_TIMING_KIND_ALL 4
+#define MPID_TIMING_KIND_RUNTIME 5
 
 /* These next two include files contain the static state definitions */
 #include "mpistates.h"
@@ -86,6 +87,8 @@
 #define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #endif
 
+#if (HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED)
+
 /* device layer definitions */
 #define MPIDI_STATE_DECL(a)                MPIDU_STATE_DECL(a)
 #define MPIDI_INIT_STATE_DECL(a)           MPIDU_INIT_STATE_DECL(a)
@@ -126,6 +129,30 @@
 #define MPIDI_PT2PT_FUNC_EXIT_BACK(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)      MPIDU_PT2PT_FUNC_EXIT(a)
 #endif
+
+#else
+
+#define MPIDI_STATE_DECL(a)
+#define MPIDI_FUNC_ENTER(a)
+#define MPIDI_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_ENTER_FRONT(a)
+#define MPIDI_PT2PT_FUNC_EXIT_FRONT(a)
+#define MPIDI_PT2PT_FUNC_ENTER_BACK(a)
+#define MPIDI_PT2PT_FUNC_ENTER_BOTH(a)
+#define MPIDI_PT2PT_FUNC_EXIT(a)
+#define MPIDI_MPI_PT2PT_FUNC_EXIT_BACK(a)
+#define MPIDI_MPI_PT2PT_FUNC_EXIT_BOTH(a)
+#define MPIDI_COLL_FUNC_ENTER(a)
+#define MPIDI_COLL_FUNC_EXIT(a)
+#define MPIDI_RMA_FUNC_ENTER(a)
+#define MPIDI_RMA_FUNC_EXIT(a)
+#define MPIDI_INIT_FUNC_ENTER(a)
+#define MPIDI_INIT_FUNC_EXIT(a)
+#define MPIDI_FINALIZE_FUNC_ENTER(a)
+#define MPIDI_FINALIZE_FUNC_EXIT(a)
+
+#endif /* (HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED) */
 
 /* prototype the initialization/finalization functions */
 int MPIU_Timer_init(int rank, int size);
