@@ -230,6 +230,7 @@ dnl Extract the methods
 dnl if test "$with_device" = "default" ; then
 dnl     with_device="mm:shm,tcp"
 dnl fi
+if test "$with_device" = "mm" ; then with_device="mm:shm,tcp" ; fi
 method_subdirs=`echo $with_device | sed -e 's/mm://' | sed -e 's/,/ /g'`
 if test "$method_subdirs" = "" ; then method_subdirs="shm tcp" ; fi
 AC_SUBST(method_subdirs)
