@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         msg_recvd[n] = '\0';
     printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd); fflush(stdout);
 
-    sprintf(msg_to_send,"cmd=get kvsname=%s key=MPI_UNIVERSE_SIZE\n", kvsname);
+    sprintf(msg_to_send,"cmd=get_universe_size\n");
     write(pmi_fd,msg_to_send,strlen(msg_to_send));
     printf("sent get for universe size\n"); fflush(stdout);
     n = read(pmi_fd,msg_recvd,1024);

@@ -48,6 +48,7 @@ def _mpd_init():
         stdout.flush()
     g.myId = '%s_%d' % (g.myHost,g.myPort)
     mpd_set_my_id(g.myId)
+    g.currRingSize = 1    # just for now
 
     # setup syslog
     import sys    # to get access to excepthook in next line
@@ -224,6 +225,7 @@ def _handle_console_input():
         msg['mpdid_mpdrun_start'] = g.myId
         msg['nstarted_on_this_loop'] = 0
         msg['first_loop'] = 1
+        msg['ringsize'] = 0
         if msg.has_key('try_0_locally'):
             _do_mpdrun(msg)
         else:
@@ -311,9 +313,12 @@ def _handle_lhs_input():
         return
     if msg['cmd'] == 'mpdrun':
         if msg.has_key('mpdid_mpdrun_start')  and  msg['mpdid_mpdrun_start'] == g.myId:
+            if msg['first_loop']:
+                g.currRingSize = msg['ringsize']
             if msg['nstarted'] == msg['nprocs']:
                 if g.conSocket:
-                    mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdrun_ack', } )
+                    mpd_send_one_msg(g.conSocket, {'cmd' : 'mpdrun_ack',
+                                                   'ringsize' : g.currRingSize} )
                 return
             if not msg['first_loop']  and  msg['nstarted_on_this_loop'] == 0:
                 if msg.has_key('jobid'):
@@ -639,6 +644,7 @@ def _do_mpdrun(msg):
                                             'socktoman' : toManSocket }
             _add_active_socket(toManSocket,'man_msgs','_handle_man_msgs',
                                'localhost',tempPort)
+    msg['ringsize'] += 1
     mpd_print(0000, "FORWARDING MSG=:%s:" % msg)
     mpd_send_one_msg(g.rhsSocket,msg)  # forward it on around
 

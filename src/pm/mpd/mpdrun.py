@@ -339,7 +339,9 @@ def mpdrun():
     msg = recv_one_msg_with_timeout(conSocket,5)
     if not msg:
         mpd_raise('no msg recvd from mpd when expecting ack of request')
-    elif msg['cmd'] != 'mpdrun_ack':
+    elif msg['cmd'] == 'mpdrun_ack':
+        currRingSize = msg['ringsize']
+    else:
         if msg['cmd'] == 'already_have_a_console':
             print 'mpd already has a console (e.g. for long ringtest); try later'
             myExitStatus = -1  # used in main
@@ -360,6 +362,11 @@ def mpdrun():
 
     (manSocket,addr) = listenSocket.accept()
     msg = mpd_recv_one_msg(manSocket)
+    if (not msg  or  not msg.has_key('cmd') or msg['cmd'] != 'man_checking_in'):
+        mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
+    msgToSend = { 'cmd' : 'ringsize', 'ringsize' : currRingSize }
+    mpd_send_one_msg(manSocket,msgToSend)
+    msg = mpd_recv_one_msg(manSocket)
     if (not msg  or  not msg.has_key('cmd')):
         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
     if (msg['cmd'] == 'job_started'):
@@ -367,7 +374,6 @@ def mpdrun():
         if outXmlEC:
             outXmlEC.setAttribute('jobid',jobid.strip())
         # print 'mpdrun: job %s started' % (jobid)
-        pass
     else:
 	mpd_raise('mpdrun: from man, unknown msg=:%s:' % (msg) )
 

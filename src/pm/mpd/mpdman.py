@@ -75,10 +75,11 @@ def mpdman():
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
     default_kvsname = sub('\-','_',default_kvsname)  # chg node-0 to node_0
     KVSs[default_kvsname] = {}
-    x = [y for y in clientPgmEnv.keys() if (y.startswith('MPI_UNIVERSE_SIZE') or \
-                                            y.startswith('MPI_APPNUM'))]
-    for k in x:
-        KVSs[default_kvsname][k] = clientPgmEnv[k]
+    for k in clientPgmEnv.keys():
+        if k.startswith('MPI_APPNUM'):
+            KVSs[default_kvsname][k] = clientPgmEnv[k]
+        elif k.startswith('MPI_UNIVERSE_SIZE'):
+            environ[k] = clientPgmEnv[k]
     kvs_next_id = 1
     jobEndingEarly = 0
     pmiCollectiveJob = 0
@@ -126,6 +127,17 @@ def mpdman():
             except:
                 mpd_print(1,'failed to insert preput_info')
                 exit(-1)
+        else:
+            msgToSend = { 'cmd' : 'man_checking_in' }
+            mpd_send_one_msg(conSocket,msgToSend)
+            msg = mpd_recv_one_msg(conSocket)
+            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
+                mpd_raise(1, 'invalid msg from con; expecting ringsize got: %s' % (msg) )
+            if environ.has_key('MPI_UNIVERSE_SIZE'):
+                universeSize = int(environ['MPI_UNIVERSE_SIZE'])
+            else:
+                universeSize = msg['ringsize']
+            mpd_send_one_msg(rhsSocket,msg)
         ## NOTE: if you spawn a non-MPI job, it may not send this msg
         ## in which case the pgm will hang
         stdoutToConSocket = mpd_get_inet_socket_and_connect(conHost,conPort)
@@ -138,6 +150,12 @@ def mpdman():
             mpd_send_one_msg(stderrToConSocket,msgToSend)
     else:
         conSocket = 0
+
+    msg = mpd_recv_one_msg(lhsSocket)    # recv msg containing ringsize
+    if myRank != 0:
+        mpd_send_one_msg(rhsSocket,msg)
+        if not environ.has_key('MPI_UNIVERSE_SIZE'):
+            universeSize = msg['ringsize']
 
     (clientListenSocket,clientListenPort) = mpd_get_inet_listen_socket('',0)
     (pipe_read_cli_stdin, pipe_write_cli_stdin )  = pipe()
@@ -199,14 +217,13 @@ def mpdman():
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
-            # mpd_print(1111, 'RMB DEBUG MPDMAN: %s' % (errmsg) )
             reason = quote(str(errmsg))
 	    pmiMsgToSend = 'cmd=invalid_executable reason=%s\n' % (reason)
 	    mpd_send_one_line(pmiSocketClientEnd,pmiMsgToSend)
             exit(0)
         exit(0)
     msgToSend = { 'cmd' : 'client_pid', 'jobid' : jobid,
-                  'manpid' : getpid(), 'clipid' : clientPid }
+                  'manpid' : getpid(), 'clipid' : clientPid, 'rank' : myRank }
     mpd_send_one_msg(mpdSocket,msgToSend)
     close(pipe_read_cli_stdin)
     close(pipe_write_cli_stdout)
@@ -710,6 +727,9 @@ def mpdman():
                     pmiMsgToSend = 'cmd=maxes kvsname_max=4096 ' + \
                                    'keylen_max=4096 vallen_max=4096\n'
                     mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                elif parsedMsg['cmd'] == 'get_universe_size':
+                    pmiMsgToSend = 'cmd=universe_size size=%s\n' % (universeSize)
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'create_kvs':
                     new_kvsname = kvsname_template + str(kvs_next_id)
                     KVSs[new_kvsname] = {}
@@ -780,8 +800,7 @@ def mpdman():
                     users   = { (0,nprocs-1) : mpd_get_my_username() }
                     cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
                     paths   = { (0,nprocs-1) : '' }
-                    envvars = { (0,nprocs-1) : { 'MPI_UNIVERSE_SIZE' : '1000',
-                                                 'MPI_APPNUM' : '736' } }
+                    envvars = { (0,nprocs-1) : { 'MPI_APPNUM' : '736' } }
                     ##### args    = { (0,nprocs-1) : [ parsedMsg['args'] ] }
                     ##### args    = { (0,nprocs-1) : [ 'AA', 'BB', 'CC' ] }
                     cliArgs = []

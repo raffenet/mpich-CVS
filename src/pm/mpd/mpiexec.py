@@ -33,7 +33,7 @@ def mpiexec():
     defaultArgs   = []
     setenvall     = 0
     linelabels    = 0
-    usize         = 1                   # default universe size for MPI
+    usize         = 0 # MPI_UNIVERSE_SIZE now defaults to ringsize
     appnum        = 0                   # appnum counter for MPI
     gEnv          = {}
     gHost         = '_any_'                  # default
@@ -147,7 +147,7 @@ def mpiexec():
         xmlFilename = '/tmp/%s_tempxml_%d' % (submitter,getpid())
         xmlFile = open(xmlFilename,'w')
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
-        # print xmlDOC.toprettyxml(indent='   ')    #### RMB TEMP DEBUG
+        # print xmlDOC.toprettyxml(indent='   ')    #### TEMP DEBUG
         xmlFile.close()
     fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
     mpdrun = path.join(fullDirName,'mpdrun.py')
@@ -285,8 +285,9 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC):
         xmlENVVAR.setAttribute('value', '%s' % (lEnv[envvar]))
     xmlENVVAR = xmlDOC.createElement('env')
     xmlPROCSPEC.appendChild(xmlENVVAR)
-    xmlENVVAR.setAttribute('name', 'MPI_UNIVERSE_SIZE')
-    xmlENVVAR.setAttribute('value', '%s' % (usize))
+    if usize:
+        xmlENVVAR.setAttribute('name', 'MPI_UNIVERSE_SIZE')
+        xmlENVVAR.setAttribute('value', '%s' % (usize))
     xmlENVVAR = xmlDOC.createElement('env')
     xmlPROCSPEC.appendChild(xmlENVVAR)
     xmlENVVAR.setAttribute('name', 'MPI_APPNUM')

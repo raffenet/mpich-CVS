@@ -44,7 +44,6 @@
 static int PMI_fd = -1;
 static int PMI_size = 1;
 static int PMI_rank = 0;
-static int PMI_universe_size = -1;
 
 /* Set PMI_initialized to 1 for regular initialized and 2 for 
    the singleton init case (no MPI_Init) */
@@ -157,8 +156,6 @@ int PMI_Init( int *spawned )
 	else 
 	    PMI_debug = 0;
 
-	if ( ( p = getenv( "PMI_UNIVERSE_SIZE" ) ) ) 
-	    PMI_universe_size = atoi( p );
 	/* Leave unchanged otherwise, which indicates that no value
 	   was set */
     }
@@ -175,6 +172,14 @@ int PMI_Init( int *spawned )
 	*spawned = 0;
 
     PMI_initialized = 1;
+
+    /*****   RMB TEST BLOCK
+    {
+	int size, rc;
+	rc = PMI_Get_universe_size( &size );
+	PMIU_printf( 1, "PMI_INIT GOT RC=%d UNIVSIZE=%d\n", rc,size );
+    }
+    *****/
 
     return( 0 );
 }
@@ -205,6 +210,31 @@ int PMI_Get_rank( int *rank )
     else
 	*rank = 0;
     return( 0 );
+}
+
+int PMI_Get_universe_size( int *size)
+{
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], size_c[PMIU_MAXLINE];
+
+    if ( PMI_initialized )
+    {
+	PMIU_writeline( PMI_fd, "cmd=get_universe_size\n" );
+	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+	if ( strncmp( cmd, "universe_size", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "expecting cmd=universe_size, got %s\n", buf );
+	    return( PMI_FAIL );
+	}
+	else {
+	    PMIU_getval( "size", size_c, PMIU_MAXLINE );
+	    *size = atoi(size_c);
+	    return( PMI_SUCCESS );
+	}
+    }
+    else
+	*size = 1;
+    return( PMI_SUCCESS );
 }
 
 int PMI_Barrier( )
