@@ -118,7 +118,7 @@ void MPIR_MINLOC(
         break;
     }
 #if defined(HAVE_LONG_DOUBLE)
-    case MPI_LONG_DOUBLE: {
+    case MPI_LONG_DOUBLE_INT: {
         MPIR_longdoubleint_loctype *a = (MPIR_longdoubleint_loctype *)inoutvec;
         MPIR_longdoubleint_loctype *b = (MPIR_longdoubleint_loctype *)invec;
         for (i=0; i<len; i++) {
