@@ -5,15 +5,18 @@ C
       integer cin(*), cout(*)
       integer count, datatype
       integer i
-
+      
       do i=1, count
          cout(i) = cin(i) + cout(i)
       enddo
       end
 
       program main
+      external uop
       integer ierr, errs
-      integer count, sumop, vin(65000), vout(65000), i
+      integer count, sumop, vin(65000), vout(65000), i, size
+      integer comm
+      include 'mpif.h'
       
       errs = 0
 

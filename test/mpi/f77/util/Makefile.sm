@@ -1,3 +1,3 @@
 smvar_do_sharedlibs = 0
-mtest.o: mtest.f
-all-local: mtest.f
+mtestf.o: mtestf.f
+all-local: mtestf.o

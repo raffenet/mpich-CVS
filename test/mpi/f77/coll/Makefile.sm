@@ -3,3 +3,6 @@ DEPADD = ../../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
 
 uallreduce_SOURCES = uallreduce.f
+
+../util/mtestf.o: 
+	(cd ../util && $(MAKE) mtestf.o)
