@@ -24,8 +24,10 @@
 - C applications built for Microsoft Windows may select the desired channels at
   runtime.
 
-- The dynamic process routines may now be used with programs that were *not*
-  started with mpiexec.
+- A program not started with mpiexec may become an MPI program by
+  calling MPI_Init.  It will have an MPI_COMM_WORLD of size one.  It may
+  then call other MPI routines, including MPI_Comm_Spawn, to become a
+  truly parallel program.
 
 - Memory leaks in communicator allocation and the C++ binding have been fixed.
 
@@ -45,7 +47,7 @@
 - The Fortran stdcall interface on Microsoft Windows now supports character*.
 
 - A bug in the OS X implementation of poll() caused the sock channel to hang.
-  A work around has been put in place.
+  A workaround has been put in place.
 
 - Problems with installation under OS/X are now detected and corrected.
   (Install breaks libraries that are more than 10 seconds old!)
