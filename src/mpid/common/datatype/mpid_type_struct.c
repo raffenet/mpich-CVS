@@ -184,10 +184,9 @@ int MPID_Type_struct(int count,
 	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
 	}
 
-	new_dtp->element_size = -1; /* not all the same size */
-
-        new_dtp->eltype = MPI_DATATYPE_NULL; /* indicates different
-                                                elementary types */
+	/* mark as having more than one element size/type */
+	new_dtp->element_size = -1;
+        new_dtp->eltype = MPI_DATATYPE_NULL;
 
 #ifdef MPID_STRUCT_DEBUG
 	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
@@ -336,11 +335,11 @@ int MPID_Type_struct(int count,
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
 
-        new_dtp->eltype = eltype;
-
 	/* TODO: don't bother with alignsize because of the lb/ub (?) */
 
-	new_dtp->element_size = -1; /* mark as a mixed-up element size */
+	/* mark has having more than one element size/type */
+	new_dtp->element_size = -1;
+        new_dtp->eltype = MPI_DATATYPE_NULL;
 
 #ifdef MPID_STRUCT_DEBUG
 	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);
@@ -606,8 +605,9 @@ int MPID_Type_struct(int count,
 	    }
 	}
 
-	new_dtp->element_size = -1; /* mark as having more than one element type */
-        new_dtp->eltype = eltype;
+	/* mark as having more than one element size/type */
+	new_dtp->element_size = -1;
+        new_dtp->eltype = MPI_DATATYPE_NULL;
 
 #ifdef MPID_STRUCT_DEBUG
 	MPIDI_Datatype_printf(*newtype, 0, 0, 1, 0);

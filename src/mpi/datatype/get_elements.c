@@ -135,59 +135,37 @@ PMPI_LOCAL int MPIR_Type_get_basic_type_elements(int *bytes_p,
 
 /* MPIR_Type_get_elements
  *
- * This is called only when we encounter a type with a -1 as its element size,
- * indicating that there is more than one element type in the type.
+ * Arguments:
+ * - bytes_p - input/output byte count
+ * - count - maximum number of this type to subtract from the bytes; a count
+ *           of -1 indicates use as many as we like
+ * - datatype - input datatype
  *
- * Returns the number of elements in bytes of one of these types.
+ * Returns number of elements available given the two constraints of number of
+ * bytes and count of types.  Also reduces the byte count by the amount taken
+ * up by the types.
  *
- * TODO: MOVE THIS INTO THE MPID TREE?
+ * This is called from MPI_Get_elements() when it sees a type with multiple
+ * element types (datatype_ptr->element_sz = -1).  This function calls itself too.
  */
 PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 				      int count,
 				      MPI_Datatype datatype)
 {
-    int m_rem, m_count, type_size, type_elements, type_element_size;
     MPID_Datatype *datatype_ptr = NULL;
     
-    /* figure out the type size, count of types, and remainder */
+    MPID_Datatype_get_ptr(datatype, datatype_ptr); /* invalid if builtin */
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
-	type_size = MPID_Datatype_get_basic_size(datatype);
-	type_elements = 1;
-	type_element_size = type_size;
-    }
-    else {
-	MPID_Datatype_get_ptr(datatype, datatype_ptr);
-
-	type_size = datatype_ptr->size;
-	type_elements = datatype_ptr->n_elements;
-	type_element_size = datatype_ptr->element_size;
-    }
-	
-    m_rem   = *bytes_p % type_size;
-    m_count = *bytes_p / type_size;
-
-    if (count != -1 && m_count > count) {
-	/* no more than count of this type; add back to remainder */
-	m_rem  += (m_count - count) * type_size;
-	m_count = count;
-    }
-
-    /* -1 count is used on loop start to indicate that we want any number of types.
-     * at this point we've stripped off all the "whole" types and should be down to
-     * just a single partial of this type, so we reset the count so that we can't
-     * end up with more than one type's worth of resulting elements.
-     *
-     * Q: IS THIS NECESSARY?  I THINK SO FOR THE STRUCT CASE...
+    /* if we have gotten down to a type with only one element type,
+     * call MPIR_Type_get_basic_type_elements() and return.
      */
-    if (count == -1) count = 1; /* reset count; we are on the last of this type now */
-
-    /* based on calculated values either return or recurse */
-
-    if (m_rem == 0 || type_element_size != -1) {
-	/* if we have run out of bytes, or we know the element size, we can stop */
-	*bytes_p = m_rem;
-	return m_count * type_elements;
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+	return MPIR_Type_get_basic_type_elements(bytes_p, count, datatype);
+    }
+    else if (datatype_ptr->element_size >= 0) {
+	return MPIR_Type_get_basic_type_elements(bytes_p,
+						 count * datatype_ptr->n_elements,
+						 datatype_ptr->eltype);
     }
     else {
 	/* we have bytes left and still don't have a single element size; must
@@ -222,7 +200,9 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 		break;
 	    case MPI_COMBINER_INDEXED_BLOCK:
 		/* count is first in ints array, blocklength is second */
-		return MPIR_Type_get_elements(bytes_p, count * ints[0] * ints[1], *types);
+		return MPIR_Type_get_elements(bytes_p,
+					      count * ints[0] * ints[1],
+					      *types);
 		break;
 	    case MPI_COMBINER_INDEXED:
 	    case MPI_COMBINER_HINDEXED_INTEGER:
@@ -243,15 +223,25 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 		 * We need to keep going until we see a "0" elements returned
 		 * or we run out of bytes.
 		 */
-		last_nr_elements = 1; /* dummy value */
-		for (j=0; j < count && *bytes_p > 0 && last_nr_elements > 0; j++)
+
+
+		last_nr_elements = 1; /* seed value */
+		for (j=0;
+		     (count == -1 || j < count) &&
+			 *bytes_p > 0 && last_nr_elements > 0;
+		     j++)
 		{
-		    /* recurse on each type */
+		    /* recurse on each type; bytes are reduced in calls */
 		    for (i=0; i < (*ints); i++) {
+
 			last_nr_elements = MPIR_Type_get_elements(bytes_p,
 								  ints[i+1],
 								  types[i]);
 			nr_elements += last_nr_elements;
+
+			assert(last_nr_elements >= 0);
+
+			if (last_nr_elements == 0) break;
 		    }
 		}
 		return nr_elements;
@@ -292,7 +282,6 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
     static const char FCNAME[] = "MPI_Get_elements";
     int mpi_errno = MPI_SUCCESS, byte_count;
-    MPI_Aint type_size, type_elements, type_element_size;
     MPID_Datatype *datatype_ptr = NULL;
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_ELEMENTS);
@@ -310,7 +299,9 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype_get_ptr(datatype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
-		if (mpi_errno == MPI_SUCCESS) MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+		if (mpi_errno == MPI_SUCCESS) {
+		    MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+		}
 	    }
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
@@ -326,63 +317,58 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 
     /* ... body of routine ...  */
 
+    /* three cases:
+     * - nice, simple, single element type
+     * - derived type with a zero size
+     * - type with multiple element types (nastiest)
+     */
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN ||
 	(datatype_ptr->element_size != -1 && datatype_ptr->size > 0))
     {
-	/* either we have a basic or we have something with a
-	 * reasonable element type.
+	byte_count = status->count;
+
+	/* QUESTION: WHAT IF SOMEONE GAVE US AN MPI_UB OR MPI_LB???
 	 */
-	int bytes = status->count;
 
 	/* in both cases we do not limit the number of types that might
 	 * be in bytes
 	 */
 	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
-	    *elements = MPIR_Type_get_basic_type_elements(&bytes,
+	    *elements = MPIR_Type_get_basic_type_elements(&byte_count,
 							  -1,
 							  datatype_ptr->eltype);
 	}
 	else {
-	    *elements = MPIR_Type_get_basic_type_elements(&bytes,
+	    *elements = MPIR_Type_get_basic_type_elements(&byte_count,
 							  -1,
 							  datatype);
 	}
-	assert(bytes >= 0);
+	assert(byte_count >= 0);
+    }
+    else if (datatype_ptr->size == 0) {
+	if (status->count > 0) {
+	    (*elements) = MPI_UNDEFINED;
+	}
+	else {
+	    /* This is ambiguous.  However, discussions on MPI Forum
+	     * reached a consensus that this is the correct return 
+	     * value
+	     */
+	    (*elements) = 0;
+	}
     }
     else /* derived type with weird element type or weird size */ {
-	type_size = datatype_ptr->size;
-	type_elements = datatype_ptr->n_elements;
-	type_element_size = datatype_ptr->element_size;
-	*elements = status->count / type_element_size;
+	assert(datatype_ptr->element_size == -1);
 
-	if (type_size == 0)
-	{
-	    if (status->count > 0)
-		(*elements) = MPI_UNDEFINED;
-	    else {
-		/* This is ambiguous.  However, discussions on MPI Forum
-		   reached a consensus that this is the correct return 
-		   value
-		*/
-		(*elements) = 0;
-	    }
-	}
-	else
-	{
-	    assert(type_size == -1);
-	    
-	    byte_count = status->count;
-	    *elements = MPIR_Type_get_elements(&byte_count, -1, datatype);
-	}
+	byte_count = status->count;
+	*elements = MPIR_Type_get_elements(&byte_count, -1, datatype);
     }
-
 
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
     return MPI_SUCCESS;
 }
-
 
 
 
