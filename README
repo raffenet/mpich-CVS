@@ -172,12 +172,6 @@ later, in the section "Alternative configurations".
 
 11. Start the daemons on (some of) the hosts in the file mpd.hosts
 
-      mpdboot
-
-    By default, mpdboot starts one mpd on each of the machines in the
-    file mpd.hosts, plus one on the local machine even if it is not in
-    the file.  You can start fewer by doing:
-
       mpdboot -n <number to start>  
 
     The number to start can be less than 1 + number of hosts in the
