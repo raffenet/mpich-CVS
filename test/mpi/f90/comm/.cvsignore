@@ -1,0 +1,6 @@
+Makefile.in
+Makefile.sm
+Makefile
+commerrf.f90
+commnamef.f90
+*.o

@@ -1,0 +1,5 @@
+Makefile.sm
+Makefile.in
+Makefile
+*.o
+baseenvf.f90
