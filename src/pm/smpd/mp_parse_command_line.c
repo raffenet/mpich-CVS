@@ -741,7 +741,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    else if (strcmp(&(*argvp)[1][1], "nopopup_debug") == 0)
 	    {
 #ifdef HAVE_WINDOWS_H
-		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 #endif
 	    }
 	    /* catch -help, -?, and --help */
@@ -828,17 +828,23 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 #ifdef HAVE_WINDOWS_H
 	    /* Fix up the executable name */
-	    if (exe[0] == '\\' && exe[1] == '\\')
+	    if (exe[0] == '/')
 	    {
-		strncpy(temp_exe, exe, MP_MAX_EXE_LENGTH);
-		temp_exe[MP_MAX_EXE_LENGTH-1] = '\0';
 	    }
 	    else
 	    {
-		GetFullPathName(exe, MAX_PATH, temp_exe, &namepart);
+		if (exe[0] == '\\' && exe[1] == '\\')
+		{
+		    strncpy(temp_exe, exe, MP_MAX_EXE_LENGTH);
+		    temp_exe[MP_MAX_EXE_LENGTH-1] = '\0';
+		}
+		else
+		{
+		    GetFullPathName(exe, MAX_PATH, temp_exe, &namepart);
+		}
+		/* Quote the executable in case there are spaces in the path */
+		sprintf(exe, "\"%s\"", temp_exe);
 	    }
-	    /* Quote the executable in case there are spaces in the path */
-	    sprintf(exe, "\"%s\"", temp_exe);
 #endif
 
 	    mp_dbg_printf("handling executable:\n%s %s\n", exe, args);
