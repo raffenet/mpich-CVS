@@ -7,7 +7,7 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpio_wait_ PMPIO_WAIT
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +23,49 @@
 #endif
 #define mpio_wait_ pmpio_wait_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPIO_WAIT = PMPIO_WAIT
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpio_wait__ = pmpio_wait__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpio_wait = pmpio_wait
 #else
+#pragma weak mpio_wait_ = pmpio_wait_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPIO_WAIT = MPIO_WAIT
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpio_wait__ = mpio_wait__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpio_wait = mpio_wait
+#else
+#pragma _HP_SECONDARY_DEF pmpio_wait_ = mpio_wait_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPIO_WAIT as PMPIO_WAIT
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpio_wait__ as pmpio_wait__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpio_wait as pmpio_wait
+#else
+#pragma _CRI duplicate mpio_wait_ as pmpio_wait_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpio_wait_ MPIO_WAIT
 #elif defined(FORTRANDOUBLEUNDERSCORE)

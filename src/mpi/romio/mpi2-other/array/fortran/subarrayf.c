@@ -7,7 +7,8 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_type_create_subarray_ PMPI_TYPE_CREATE_SUBARRAY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +24,49 @@
 #endif
 #define mpi_type_create_subarray_ pmpi_type_create_subarray_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_TYPE_CREATE_SUBARRAY = PMPI_TYPE_CREATE_SUBARRAY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_type_create_subarray__ = pmpi_type_create_subarray__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_type_create_subarray = pmpi_type_create_subarray
 #else
+#pragma weak mpi_type_create_subarray_ = pmpi_type_create_subarray_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_TYPE_CREATE_SUBARRAY = MPI_TYPE_CREATE_SUBARRAY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray__ = mpi_type_create_subarray__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray = mpi_type_create_subarray
+#else
+#pragma _HP_SECONDARY_DEF pmpi_type_create_subarray_ = mpi_type_create_subarray_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_TYPE_CREATE_SUBARRAY as PMPI_TYPE_CREATE_SUBARRAY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_type_create_subarray__ as pmpi_type_create_subarray__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_type_create_subarray as pmpi_type_create_subarray
+#else
+#pragma _CRI duplicate mpi_type_create_subarray_ as pmpi_type_create_subarray_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_type_create_subarray_ MPI_TYPE_CREATE_SUBARRAY
 #elif defined(FORTRANDOUBLEUNDERSCORE)

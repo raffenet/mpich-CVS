@@ -7,6 +7,22 @@
 
 #include "mpioimpl.h"
 
+#ifdef HAVE_WEAK_SYMBOLS
+
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_File_iread = PMPI_File_iread
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_File_iread = MPI_File_iread
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_File_iread as PMPI_File_iread
+/* end of weak pragmas */
+#endif
+
+/* Include mapping from MPI->PMPI */
+#define __MPIO_BUILD_PROFILING
+#include "mpioprof.h"
+#endif
+
 /*@
     MPI_File_iread - Nonblocking read using individual file pointer
 
@@ -36,11 +52,6 @@ int MPI_File_iread(MPI_File fh, void *buf, int count,
 
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
 	printf("MPI_File_iread: Invalid file handle\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
-    if (buf < (void *) 0) {
-	printf("MPI_File_iread: buf is not a valid address\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

@@ -17,14 +17,14 @@ void ADIOI_PVFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 	    if (fd->fp_sys_posn != offset)
 		pvfs_lseek(fd->fd_sys, offset, SEEK_SET);
 	    err = pvfs_read(fd->fd_sys, buf, len);
-	    fd->fp_sys_posn = offset + len;
+	    fd->fp_sys_posn = offset + err;
          /* individual file pointer not updated */        
 	}
 	else {  /* read from curr. location of ind. file pointer */
 	    if (fd->fp_sys_posn != fd->fp_ind)
 		pvfs_lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
 	    err = pvfs_read(fd->fd_sys, buf, len);
-	    fd->fp_ind += len; 
+	    fd->fp_ind += err; 
 	    fd->fp_sys_posn = fd->fp_ind;
 	}         
     }

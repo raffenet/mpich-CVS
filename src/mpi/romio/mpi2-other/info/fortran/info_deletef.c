@@ -8,23 +8,79 @@
 #include "mpio.h"
 #include "adio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_delete_ PMPI_INFO_DELETE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_delete_ pmpi_info_delete__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_delete pmpi_info_delete_
+#endif
 #define mpi_info_delete_ pmpi_info_delete
 #else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_delete_ pmpi_info_delete
+#endif
 #define mpi_info_delete_ pmpi_info_delete_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_INFO_DELETE = PMPI_INFO_DELETE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_info_delete__ = pmpi_info_delete__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_info_delete = pmpi_info_delete
 #else
+#pragma weak mpi_info_delete_ = pmpi_info_delete_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_INFO_DELETE = MPI_INFO_DELETE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_delete__ = mpi_info_delete__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_delete = mpi_info_delete
+#else
+#pragma _HP_SECONDARY_DEF pmpi_info_delete_ = mpi_info_delete_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_INFO_DELETE as PMPI_INFO_DELETE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_info_delete__ as pmpi_info_delete__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_info_delete as pmpi_info_delete
+#else
+#pragma _CRI duplicate mpi_info_delete_ as pmpi_info_delete_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_info_delete_ MPI_INFO_DELETE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_delete_ mpi_info_delete__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_delete mpi_info_delete_
+#endif
 #define mpi_info_delete_ mpi_info_delete
+#else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_delete_ mpi_info_delete
+#endif
 #endif
 #endif
 

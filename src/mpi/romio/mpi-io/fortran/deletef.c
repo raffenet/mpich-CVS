@@ -11,7 +11,8 @@
 #include "mpio.h"
 #include "adio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_delete_ PMPI_FILE_DELETE
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -27,7 +28,49 @@
 #endif
 #define mpi_file_delete_ pmpi_file_delete_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_DELETE = PMPI_FILE_DELETE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_delete__ = pmpi_file_delete__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_delete = pmpi_file_delete
 #else
+#pragma weak mpi_file_delete_ = pmpi_file_delete_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_DELETE = MPI_FILE_DELETE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_delete__ = mpi_file_delete__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_delete = mpi_file_delete
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_delete_ = mpi_file_delete_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_DELETE as PMPI_FILE_DELETE
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_delete__ as pmpi_file_delete__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_delete as pmpi_file_delete
+#else
+#pragma _CRI duplicate mpi_file_delete_ as pmpi_file_delete_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_delete_ MPI_FILE_DELETE
 #elif defined(FORTRANDOUBLEUNDERSCORE)

@@ -7,7 +7,8 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_write_at_all_ PMPI_FILE_WRITE_AT_ALL
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +24,49 @@
 #endif
 #define mpi_file_write_at_all_ pmpi_file_write_at_all_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_WRITE_AT_ALL = PMPI_FILE_WRITE_AT_ALL
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_write_at_all__ = pmpi_file_write_at_all__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_write_at_all = pmpi_file_write_at_all
 #else
+#pragma weak mpi_file_write_at_all_ = pmpi_file_write_at_all_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_WRITE_AT_ALL = MPI_FILE_WRITE_AT_ALL
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_write_at_all__ = mpi_file_write_at_all__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_write_at_all = mpi_file_write_at_all
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_write_at_all_ = mpi_file_write_at_all_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_WRITE_AT_ALL as PMPI_FILE_WRITE_AT_ALL
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_write_at_all__ as pmpi_file_write_at_all__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_write_at_all as pmpi_file_write_at_all
+#else
+#pragma _CRI duplicate mpi_file_write_at_all_ as pmpi_file_write_at_all_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_write_at_all_ MPI_FILE_WRITE_AT_ALL
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -40,7 +83,7 @@
 #endif
 #endif
 
-#ifdef __MPIHP
+#if defined(__MPIHP) || defined(__MPILAM)
 void mpi_file_write_at_all_(MPI_Fint *fh,MPI_Offset *offset,void *buf,
                           int *count,MPI_Fint *datatype,
                           MPI_Status *status, int *__ierr )

@@ -8,23 +8,79 @@
 #include "mpio.h"
 #include "adio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_get_nthkey_ PMPI_INFO_GET_NTHKEY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_nthkey_ pmpi_info_get_nthkey__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey pmpi_info_get_nthkey_
+#endif
 #define mpi_info_get_nthkey_ pmpi_info_get_nthkey
 #else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey_ pmpi_info_get_nthkey
+#endif
 #define mpi_info_get_nthkey_ pmpi_info_get_nthkey_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_INFO_GET_NTHKEY = PMPI_INFO_GET_NTHKEY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_info_get_nthkey__ = pmpi_info_get_nthkey__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_info_get_nthkey = pmpi_info_get_nthkey
 #else
+#pragma weak mpi_info_get_nthkey_ = pmpi_info_get_nthkey_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_INFO_GET_NTHKEY = MPI_INFO_GET_NTHKEY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey__ = mpi_info_get_nthkey__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey = mpi_info_get_nthkey
+#else
+#pragma _HP_SECONDARY_DEF pmpi_info_get_nthkey_ = mpi_info_get_nthkey_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_INFO_GET_NTHKEY as PMPI_INFO_GET_NTHKEY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_info_get_nthkey__ as pmpi_info_get_nthkey__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_info_get_nthkey as pmpi_info_get_nthkey
+#else
+#pragma _CRI duplicate mpi_info_get_nthkey_ as pmpi_info_get_nthkey_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_info_get_nthkey_ MPI_INFO_GET_NTHKEY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_nthkey_ mpi_info_get_nthkey__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_get_nthkey mpi_info_get_nthkey_
+#endif
 #define mpi_info_get_nthkey_ mpi_info_get_nthkey
+#else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_get_nthkey_ mpi_info_get_nthkey
+#endif
 #endif
 #endif
 

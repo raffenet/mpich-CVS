@@ -7,7 +7,8 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_set_atomicity_ PMPI_FILE_SET_ATOMICITY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +24,49 @@
 #endif
 #define mpi_file_set_atomicity_ pmpi_file_set_atomicity_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_SET_ATOMICITY = PMPI_FILE_SET_ATOMICITY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_set_atomicity__ = pmpi_file_set_atomicity__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_set_atomicity = pmpi_file_set_atomicity
 #else
+#pragma weak mpi_file_set_atomicity_ = pmpi_file_set_atomicity_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_SET_ATOMICITY = MPI_FILE_SET_ATOMICITY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_atomicity__ = mpi_file_set_atomicity__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_atomicity = mpi_file_set_atomicity
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_set_atomicity_ = mpi_file_set_atomicity_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_SET_ATOMICITY as PMPI_FILE_SET_ATOMICITY
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_set_atomicity__ as pmpi_file_set_atomicity__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_set_atomicity as pmpi_file_set_atomicity
+#else
+#pragma _CRI duplicate mpi_file_set_atomicity_ as pmpi_file_set_atomicity_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_set_atomicity_ MPI_FILE_SET_ATOMICITY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -40,9 +83,6 @@
 #endif
 #endif
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 void mpi_file_set_atomicity_(MPI_Fint *fh,int *flag, int *__ierr )
 {
     MPI_File fh_c;
@@ -50,6 +90,4 @@ void mpi_file_set_atomicity_(MPI_Fint *fh,int *flag, int *__ierr )
     fh_c = MPI_File_f2c(*fh);
     *__ierr = MPI_File_set_atomicity(fh_c,*flag);
 }
-#if defined(__cplusplus)
-}
-#endif
+

@@ -7,6 +7,22 @@
 
 #include "mpioimpl.h"
 
+#ifdef HAVE_WEAK_SYMBOLS
+
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_File_get_position_shared = PMPI_File_get_position_shared
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_File_get_position_shared = MPI_File_get_position_shared
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_File_get_position_shared as PMPI_File_get_position_shared
+/* end of weak pragmas */
+#endif
+
+/* Include mapping from MPI->PMPI */
+#define __MPIO_BUILD_PROFILING
+#include "mpioprof.h"
+#endif
+
 /*@
     MPI_File_get_position_shared - Returns the current position of the 
                shared file pointer in etype units relative to the current view

@@ -9,11 +9,14 @@
 
 int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
-    int err, nbytes, done=0;
+    int done=0;
 #ifndef __NO_AIO
 #ifdef __AIO_SUN 
     aio_result_t *result=0, *tmp;
 #else
+    int err, nbytes;
+#endif
+#ifdef __AIO_HANDLE_IN_AIOCB
     struct aiocb *tmp1;
 #endif
 #endif

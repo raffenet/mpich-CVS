@@ -7,6 +7,22 @@
 
 #include "mpioimpl.h"
 
+#ifdef HAVE_WEAK_SYMBOLS
+
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_File_open = PMPI_File_open
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_File_open = MPI_File_open
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_File_open as PMPI_File_open
+/* end of weak pragmas */
+#endif
+
+/* Include mapping from MPI->PMPI */
+#define __MPIO_BUILD_PROFILING
+#include "mpioprof.h"
+#endif
+
 extern int ADIO_Init_keyval;
 
 /*@
@@ -27,8 +43,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
                   MPI_Info info, MPI_File *fh)
 {
     int error_code, file_system, flag, tmp_amode, rank, orig_amode;
-    int err, min_code, i, len;
-    double tm;
+    int err, min_code;
     char *tmp;
     MPI_Comm dupcomm;
 #ifdef MPI_hpux

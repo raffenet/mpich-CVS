@@ -7,7 +7,8 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_type_extent_ PMPI_FILE_GET_TYPE_EXTENT
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +24,49 @@
 #endif
 #define mpi_file_get_type_extent_ pmpi_file_get_type_extent_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_GET_TYPE_EXTENT = PMPI_FILE_GET_TYPE_EXTENT
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_get_type_extent__ = pmpi_file_get_type_extent__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_get_type_extent = pmpi_file_get_type_extent
 #else
+#pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_TYPE_EXTENT = MPI_FILE_GET_TYPE_EXTENT
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent__ = mpi_file_get_type_extent__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent = mpi_file_get_type_extent
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_get_type_extent_ = mpi_file_get_type_extent_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_GET_TYPE_EXTENT as PMPI_FILE_GET_TYPE_EXTENT
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_get_type_extent__ as pmpi_file_get_type_extent__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_get_type_extent as pmpi_file_get_type_extent
+#else
+#pragma _CRI duplicate mpi_file_get_type_extent_ as pmpi_file_get_type_extent_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_get_type_extent_ MPI_FILE_GET_TYPE_EXTENT
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -40,7 +83,7 @@
 #endif
 #endif
 
-#ifdef __MPIHP
+#if defined(__MPIHP) || defined(__MPILAM)
 void mpi_file_get_type_extent_(MPI_Fint *fh,MPI_Fint *datatype,
                              MPI_Fint *extent, int *__ierr )
 {

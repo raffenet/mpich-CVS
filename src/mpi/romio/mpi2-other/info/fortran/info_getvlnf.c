@@ -8,23 +8,79 @@
 #include "mpio.h"
 #include "adio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_get_valuelen_ PMPI_INFO_GET_VALUELEN
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_valuelen_ pmpi_info_get_valuelen__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_valuelen pmpi_info_get_valuelen_
+#endif
 #define mpi_info_get_valuelen_ pmpi_info_get_valuelen
 #else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_valuelen_ pmpi_info_get_valuelen
+#endif
 #define mpi_info_get_valuelen_ pmpi_info_get_valuelen_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_INFO_GET_VALUELEN = PMPI_INFO_GET_VALUELEN
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_info_get_valuelen__ = pmpi_info_get_valuelen__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_info_get_valuelen = pmpi_info_get_valuelen
 #else
+#pragma weak mpi_info_get_valuelen_ = pmpi_info_get_valuelen_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_INFO_GET_VALUELEN = MPI_INFO_GET_VALUELEN
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_valuelen__ = mpi_info_get_valuelen__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_get_valuelen = mpi_info_get_valuelen
+#else
+#pragma _HP_SECONDARY_DEF pmpi_info_get_valuelen_ = mpi_info_get_valuelen_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_INFO_GET_VALUELEN as PMPI_INFO_GET_VALUELEN
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_info_get_valuelen__ as pmpi_info_get_valuelen__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_info_get_valuelen as pmpi_info_get_valuelen
+#else
+#pragma _CRI duplicate mpi_info_get_valuelen_ as pmpi_info_get_valuelen_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_info_get_valuelen_ MPI_INFO_GET_VALUELEN
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_get_valuelen_ mpi_info_get_valuelen__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_get_valuelen mpi_info_get_valuelen_
+#endif
 #define mpi_info_get_valuelen_ mpi_info_get_valuelen
+#else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_get_valuelen_ mpi_info_get_valuelen
+#endif
 #endif
 #endif
 

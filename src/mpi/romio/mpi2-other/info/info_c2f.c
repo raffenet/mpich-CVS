@@ -6,6 +6,22 @@
  */
 
 #include "mpioimpl.h"
+
+#ifdef HAVE_WEAK_SYMBOLS
+
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_Info_c2f = PMPI_Info_c2f
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_Info_c2f = MPI_Info_c2f
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_Info_c2f as PMPI_Info_c2f
+/* end of weak pragmas */
+#endif
+
+/* Include mapping from MPI->PMPI */
+#define __MPIO_BUILD_PROFILING
+#include "mpioprof.h"
+#endif
 #include "adio_extern.h"
 
 /*@
@@ -19,11 +35,11 @@ Return Value:
 @*/
 MPI_Fint MPI_Info_c2f(MPI_Info info)
 {
-    int i;
-
 #ifndef __INT_LT_POINTER
     return (MPI_Fint) info;
 #else
+    int i;
+
     if ((info <= (MPI_Info) 0) || (info->cookie != MPIR_INFO_COOKIE)) 
 	return (MPI_Fint) 0;
     if (!MPIR_Infotable) {

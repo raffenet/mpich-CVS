@@ -31,3 +31,4 @@ _mpich_mpi
 _sgi_mpi
 _hp_mpi
 _cray_mpi
+_lam_mpi

@@ -28,7 +28,7 @@ void ADIOI_UFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 	    if (fd->fp_sys_posn != fd->fp_ind)
 		lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
 	    err = read(fd->fd_sys, buf, len);
-	    fd->fp_ind += len; 
+	    fd->fp_ind += err; 
 	    fd->fp_sys_posn = fd->fp_ind;
 	}         
     }

@@ -1,5 +1,5 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -14,11 +14,11 @@
 
 /* Note that the file access pattern is noncontiguous. */
    
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     MPI_Datatype newtype;
     int i, ndims, array_of_gsizes[3], array_of_distribs[3];
-    int order, filecount, nprocs, j, len, flag;
+    int order, nprocs, j, len, flag;
     int array_of_dargs[3], array_of_psizes[3];
     int *readbuf, *writebuf, bufcount, mynod, *tmpbuf, array_size;
     char *filename;
@@ -130,7 +130,7 @@ main(int argc, char **argv)
 	    printf("Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);
             flag = 1;
 	}
-    if (!flag) printf("Process %d: data read back is correct\n", mynod);
+    if (!mynod) printf("Done\n");
 
     MPI_Type_free(&newtype);
     free(readbuf);
@@ -138,4 +138,5 @@ main(int argc, char **argv)
     free(filename);
 
     MPI_Finalize();
+    return 0;
 }

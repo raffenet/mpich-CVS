@@ -32,7 +32,7 @@ void ADIOI_PFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 #ifdef __PROFILE
 	MPE_Log_event(4, 0, "end read");
 #endif
-        fd->fp_sys_posn = offset + len;
+        fd->fp_sys_posn = offset + err;
 	/* individual file pointer not updated */        
     }
     else {  /* read from curr. location of ind. file pointer */
@@ -52,7 +52,7 @@ void ADIOI_PFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 #ifdef __PROFILE
 	MPE_Log_event(4, 0, "end read");
 #endif
-	fd->fp_ind += len; 
+	fd->fp_ind += err; 
         fd->fp_sys_posn = fd->fp_ind;
     }         
 

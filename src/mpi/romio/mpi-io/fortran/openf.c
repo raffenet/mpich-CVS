@@ -11,7 +11,8 @@
 #include "mpio.h"
 #include "adio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_open_ PMPI_FILE_OPEN
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -27,7 +28,49 @@
 #endif
 #define mpi_file_open_ pmpi_file_open_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_OPEN = PMPI_FILE_OPEN
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_open__ = pmpi_file_open__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_open = pmpi_file_open
 #else
+#pragma weak mpi_file_open_ = pmpi_file_open_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_OPEN = MPI_FILE_OPEN
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_open__ = mpi_file_open__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_open = mpi_file_open
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_open_ = mpi_file_open_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_OPEN as PMPI_FILE_OPEN
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_open__ as pmpi_file_open__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_open as pmpi_file_open
+#else
+#pragma _CRI duplicate mpi_file_open_ as pmpi_file_open_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_open_ MPI_FILE_OPEN
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -44,7 +87,7 @@
 #endif
 #endif
 
-#ifdef __MPIHP
+#if defined(__MPIHP) || defined(__MPILAM)
 void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
                   MPI_Fint *info, MPI_Fint *fh, int *__ierr, int str_len )
 {

@@ -11,7 +11,8 @@
 #include "mpio.h"
 #include "adio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_set_view_ PMPI_FILE_SET_VIEW
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -27,7 +28,49 @@
 #endif
 #define mpi_file_set_view_ pmpi_file_set_view_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_SET_VIEW = PMPI_FILE_SET_VIEW
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_set_view__ = pmpi_file_set_view__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_set_view = pmpi_file_set_view
 #else
+#pragma weak mpi_file_set_view_ = pmpi_file_set_view_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_SET_VIEW = MPI_FILE_SET_VIEW
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_view__ = mpi_file_set_view__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_set_view = mpi_file_set_view
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_set_view_ = mpi_file_set_view_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_SET_VIEW as PMPI_FILE_SET_VIEW
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_set_view__ as pmpi_file_set_view__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_set_view as pmpi_file_set_view
+#else
+#pragma _CRI duplicate mpi_file_set_view_ as pmpi_file_set_view_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_set_view_ MPI_FILE_SET_VIEW
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -44,7 +87,7 @@
 #endif
 #endif
 
-#ifdef __MPIHP
+#if defined(__MPIHP) || defined(__MPILAM)
 void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
    MPI_Fint *filetype,char *datarep,MPI_Fint *info, int *__ierr,
    int str_len )

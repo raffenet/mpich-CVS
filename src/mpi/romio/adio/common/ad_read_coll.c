@@ -1179,8 +1179,11 @@ static void ADIOI_Fill_user_buffer(void *buf, ADIOI_Flatlist_node
 /* this function is only called if buftype is not contig */
 
     int i, p, flat_buf_idx, rem_len, size, buf_incr;
-    int flat_buf_sz, len, size_in_buf, j, jj, n_buftypes;
+    int flat_buf_sz, len, size_in_buf, jj, n_buftypes;
     ADIO_Offset off, user_buf_idx;
+#ifdef __NEEDS_MPI_TEST
+    int j;
+#endif
 
 /*  curr_from_proc[p] = amount of data recd from proc. p that has already
                         been accounted for so far

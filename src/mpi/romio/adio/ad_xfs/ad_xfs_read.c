@@ -33,12 +33,11 @@ void ADIOI_XFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 		err = pread(fd->fd_sys, buf, len, fd->fp_ind);
 	}
 	else err = pread(fd->fd_sys, buf, len, fd->fp_ind);
-	fd->fp_ind += len;
+	fd->fp_ind += err;
     }
 
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 }
-
 
 
 

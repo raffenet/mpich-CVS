@@ -8,23 +8,79 @@
 #include "mpio.h"
 #include "adio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_info_set_ PMPI_INFO_SET
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_set_ pmpi_info_set__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_set pmpi_info_set_
+#endif
 #define mpi_info_set_ pmpi_info_set
 #else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF pmpi_info_set_ pmpi_info_set
+#endif
 #define mpi_info_set_ pmpi_info_set_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_INFO_SET = PMPI_INFO_SET
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_info_set__ = pmpi_info_set__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_info_set = pmpi_info_set
 #else
+#pragma weak mpi_info_set_ = pmpi_info_set_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_INFO_SET = MPI_INFO_SET
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_set__ = mpi_info_set__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_info_set = mpi_info_set
+#else
+#pragma _HP_SECONDARY_DEF pmpi_info_set_ = mpi_info_set_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_INFO_SET as PMPI_INFO_SET
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_info_set__ as pmpi_info_set__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_info_set as pmpi_info_set
+#else
+#pragma _CRI duplicate mpi_info_set_ as pmpi_info_set_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_info_set_ MPI_INFO_SET
 #elif defined(FORTRANDOUBLEUNDERSCORE)
 #define mpi_info_set_ mpi_info_set__
 #elif !defined(FORTRANUNDERSCORE)
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_set mpi_info_set_
+#endif
 #define mpi_info_set_ mpi_info_set
+#else
+#if defined(__HPUX) || defined(__SPPUX)
+#pragma _HP_SECONDARY_DEF mpi_info_set_ mpi_info_set
+#endif
 #endif
 #endif
 

@@ -1004,4 +1004,38 @@ case $srcdir in
 esac
 ])
 dnl
+dnl
+dnl AC_TRY_LINK(INCLUDES, FUNCTION-BODY,
+dnl             ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND])
+define(AC_TRY_LINK,
+if test -z "$ac_ext" ; then 
+    ac_ext=c
+fi
+[cat > conftest.$ac_ext <<EOF
+dnl This sometimes fails to find confdefs.h, for some reason.
+dnl [#]line __oline__ "[$]0"
+dnl [#]line __oline__ "configure"
+#include "confdefs.h"
+[$1]
+int main() { return 0; }
+int t() {
+[$2]
+; return 0; }
+EOF
+rm -f conftest.out
+if test -z "$ac_link" ; then
+ac_link='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >conftest.out 2>&1'
+fi
+if eval $ac_link; then
+  ifelse([$3], , :, [rm -rf conftest*
+  $3])
+else
+  if test -s conftest.out ; then cat conftest.out >> config.log ; fi
+ifelse([$4], , , [rm -rf conftest*
+  $4
+])dnl
+fi
+rm -f conftest*]
+)dnl
+dnl
    

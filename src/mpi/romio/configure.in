@@ -34,7 +34,8 @@ Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
                 [-noranlib] [-ar=AR_COMMAND] [-prefix=INSTALL_DIR]  
                 [-intsize=INTSIZE] [-ptrsize=PTRSIZE] [-longsize=LONGSIZE]
                 [-longlongsize=LONGLONGSIZE] [-f90nag] [-noprofile] 
-                 
+                [-disable-weak-symbols]
+
 where
    FILE_SYSTEM  = the file system(s) for which ROMIO is to be configured.
                   Valid values are pfs, piofs, hfs, xfs, sfs, pvfs, ufs,
@@ -111,6 +112,9 @@ the temporary directory (usually '/tmp') does not have enough space.
 
 The option -noprofile prevents the compilation of the profiling interface
 of MPI-IO.
+
+The option -disable-weak-symbols disables the use of weak symbols, even if 
+available, for building the profiling interface.
 "
 #
 echo " "
@@ -162,6 +166,7 @@ ROMIO_TCFLAGS=""
 ROMIO_TCPPFLAGS=""
 ROMIO_TFFLAGS=""
 MPIRUN=""
+FORTRAN_TEST=""
 # foll. needed for f77 test programs
 F77GETARG="call getarg(i,str)"
 F77IARGC="iargc()"
@@ -173,6 +178,7 @@ MPI_OFFSET_KIND2="!"
 F90=""
 TEST_CC=""
 TEST_F77=""
+TRY_WEAK_SYMBOLS=1
 #
 for arg
 do
@@ -274,6 +280,9 @@ case $arg in
      ;;
   -echo)
      set -x
+     ;;
+  -disable-weak-symbols|--disable-weak-symbols)
+     TRY_WEAK_SYMBOLS=0
      ;;
   -h | -help | --h | --help | -u | --u)
     (echo "${usage_msg}") >& 2
@@ -591,25 +600,26 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     RANLIB=":"
     if test -z "$MPI"; then
         if test -f "/opt/mpi/include/mpi.h" ; then
-                echo "assuming that you want to use ROMIO with HP MPI"
-                MPI=hp
-            else 
-                echo "assuming that you want to use ROMIO with MPICH"
-                MPI=mpich
-            fi            
-	fi
+            echo "assuming that you want to use ROMIO with HP MPI"
+            MPI=hp
+        else 
+            echo "assuming that you want to use ROMIO with MPICH"
+            MPI=mpich
+        fi            
+    fi
     if test $MPI = "mpich" ; then
-        MPI=mpich
         mpi_mpich=1
         MPI_LIB="$MPI_LIB -lV3"
         CC=${CC:-cc -Ae}
         F77=${FC:-f77 +U77}
     fi
     if test $MPI = "hp" ; then
-        MPI=hp
         mpi_hp=1
         CC=${CC:-mpicc -Ae}
         F77=${FC:-mpif77 +U77}
+    fi
+    if test $MPI = "lam" && test $FC != ""; then
+        FC="$FC +U77"
     fi
     FTESTDEFINE="external iargc, getarg"
     if test -n "$arch_hpux" ; then
@@ -873,6 +883,58 @@ fi
 # Check to see if the compiler accepts prototypes
 dnl PAC_CHECK_CC_PROTOTYPES(AC_DEFINE(__HAVE_PROTOTYPES))
 #
+#
+# Test for weak symbol support...
+# We can't put # in the message because it causes autoconf to generate
+# incorrect code
+HAS_WEAK_SYMBOLS=0
+if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
+# multiple secondary definitions not allowed by HP compilers
+# Fortran interface for HP already uses one secondary defn. 
+# therefore, do not use this method for profiling interface.
+# build profiling interface explicitly.
+   TRY_WEAK_SYMBOLS=0
+fi
+if test $TRY_WEAK_SYMBOLS = 1 ; then
+  AC_MSG_CHECKING(for weak symbol support)
+  AC_TRY_LINK([
+#pragma weak PFoo = Foo
+int Foo(a) { return a; }
+],[return PFoo(1);],has_pragma_weak=1)
+  if test "$has_pragma_weak" = 1 ; then
+    AC_MSG_RESULT([pragma weak])
+    HAS_WEAK_SYMBOLS=1
+    AC_DEFINE(HAVE_WEAK_SYMBOLS)
+    AC_DEFINE(HAVE_PRAGMA_WEAK)
+  else
+    AC_TRY_LINK([
+#pragma _HP_SECONDARY_DEF Foo = PFoo
+int Foo(a) { return a; }
+],[return PFoo(1);],has_pragma_hp_secondary=1)
+    if test "$has_pragma_hp_secondary" = 1 ; then 
+        AC_MSG_RESULT([pragma _HP_SECONDARY_DEF])
+        HAS_WEAK_SYMBOLS=1
+        AC_DEFINE(HAVE_WEAK_SYMBOLS)
+        AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF)
+    else
+        AC_TRY_LINK([
+#pragma _CRI duplicate PFoo as Foo
+int Foo(a) { return a; }
+],[return PFoo(1);],has_pragma_cri_duplicate=1)
+        if test "$has_pragma_cri_duplicate" = 1 ; then
+	    AC_MSG_RESULT([pragma _CRI duplicate x as y])
+	    HAS_WEAK_SYMBOLS=1
+	    AC_DEFINE(HAVE_WEAK_SYMBOLS)
+	    AC_DEFINE(HAVE_PRAGMA_CRI_DUP)
+        else    
+            AC_MSG_RESULT(no)
+        fi
+    fi
+  fi
+fi
+AC_SUBST(HAS_WEAK_SYMBOLS)
+#
+#
 if test -n "$file_system_nfs"; then
     CFLAGS="$CFLAGS -D__NFS"
 fi
@@ -910,6 +972,9 @@ fi
 if test -n "$mpi_sgi"; then
    CFLAGS="$CFLAGS -D__MPISGI"
 fi
+if test -n "$mpi_lam"; then
+   CFLAGS="$CFLAGS -D__MPILAM"
+fi
 if test -n "$mpi_hp"; then
    CFLAGS="$CFLAGS -D__MPIHP"
    if test "$NOF77" = 0; then
@@ -939,6 +1004,8 @@ fi
 #
 if test $NOF77 = 1 ; then
    F77=":"
+else
+   FORTRAN_TEST="fperf fcoll_test fmisc pfcoll_test" 
 fi
 #
 if test $FROM_MPICH = 0 ; then
@@ -993,6 +1060,7 @@ echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
 #
+AC_SUBST(ARCH)
 AC_SUBST(FILE_SYSTEM)
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
@@ -1048,11 +1116,12 @@ AC_SUBST(ROMIO_TCFLAGS)
 AC_SUBST(ROMIO_TCPPFLAGS)
 AC_SUBST(ROMIO_TFFLAGS)
 AC_SUBST(MPIRUN)
+AC_SUBST(FORTRAN_TEST)
 if test ! -d adio ; then mkdir adio ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
 AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h)
 if test "$NOF77" = 0; then
-    CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/fperf.f"
+    CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f"
 fi
 if test -n "$file_system_nfs"; then
     CONFIG_FILES="$CONFIG_FILES adio/ad_nfs/Makefile"
@@ -1091,6 +1160,12 @@ if test "$NOF77" = 0; then
    if test "$MPIOF_H_INCLUDED" = 1; then
       sed 5d test/fcoll_test.f > test/tmp
       mv test/tmp test/fcoll_test.f
+   fi
+   sed 1d test/pfcoll_test.f > test/tmp
+   mv test/tmp test/pfcoll_test.f
+   if test "$MPIOF_H_INCLUDED" = 1; then
+      sed 5d test/pfcoll_test.f > test/tmp
+      mv test/tmp test/pfcoll_test.f
    fi
    sed 1d test/fperf.f > test/tmp
    mv test/tmp test/fperf.f

@@ -17,13 +17,12 @@ int main(int argc, char **argv)
 {
     MPI_Datatype newtype;
     int i, ndims, array_of_gsizes[3], array_of_distribs[3];
-    int order, filecount, nprocs, j, len, flag, err;
+    int order, nprocs, len, flag, err;
     int array_of_dargs[3], array_of_psizes[3];
     int *readbuf, *writebuf, bufcount, mynod;
     char filename[1024];
     MPI_File fh;
     MPI_Status status;
-    MPI_Request request;
     MPI_Aint size_with_aint;
     MPI_Offset size_with_offset;
 

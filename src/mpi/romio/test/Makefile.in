@@ -8,9 +8,11 @@ srcdir=@srcdir@
 
 @VPATH@
 
-all: simple perf async coll_test coll_perf misc file_info excl large_array \
+c-test: simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll split_coll shared_fp \
-     large_file fperf fcoll_test fmisc
+     large_file psimple
+
+all: c-test @FORTRAN_TEST@
 
 default: all
 
@@ -21,10 +23,13 @@ default: all
 	$(F77) $(USER_FFLAGS) -c $<
 
 clean: 
-	rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity split_coll shared_fp *.out
+	rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc psimple pfcoll_test test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity split_coll shared_fp *.out
 
 simple: simple.o
 	$(CC) $(USER_CFLAGS) -o simple simple.o $(LIBS)
+
+psimple: psimple.o
+	$(CC) $(USER_CFLAGS) -o psimple psimple.o $(LIBS)
 
 perf: perf.o
 	$(CC) $(USER_CFLAGS) -o perf perf.o $(LIBS)
@@ -70,6 +75,9 @@ fperf: fperf.o
 
 fcoll_test: fcoll_test.o
 	$(F77) $(USER_FFLAGS) -o fcoll_test fcoll_test.o $(LIBS)
+
+pfcoll_test: pfcoll_test.o
+	$(F77) $(USER_FFLAGS) -o pfcoll_test pfcoll_test.o $(LIBS)
 
 fmisc: fmisc.o
 	$(F77) $(USER_FFLAGS) -o fmisc fmisc.o $(LIBS)

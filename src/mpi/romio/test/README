@@ -11,6 +11,8 @@ program "simple" with two processes as follows:
 simple.c: Each process creates its own file, writes to it, reads it
           back, and checks the data read.
 
+psimple.c: Same as simple.c but uses the PMPI versions of all MPI routines
+
 perf.c: A simple read and write performance test. Each process writes
         4Mbytes to a file at a location determined by its rank and
         reads it back. For a different access size, change the value
@@ -61,8 +63,15 @@ noncontig_coll.c: Same as noncontig.c, but uses collective I/O
 
 i_noncontig.c: Same as noncontig.c, but uses nonblocking I/O
 
+shared_fp.c: Tests the shared file pointer functions
+
+split_coll.c: Tests the split collective I/O functions
+
 fperf.f: Fortran version of perf.c
 
 fcoll_test.f: Fortran version of coll_test.c
+
+pfcoll_test.f: Same as fcoll_test.f but uses the PMPI versions of 
+               all MPI routines
 
 fmisc.f: Fortran version of misc.c

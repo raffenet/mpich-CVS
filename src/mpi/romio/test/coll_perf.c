@@ -18,9 +18,8 @@ int main(int argc, char **argv)
 {
     MPI_Datatype newtype;
     int i, ndims, array_of_gsizes[3], array_of_distribs[3];
-    int order, filecount, nprocs, len;
+    int order, nprocs, len, *buf, bufcount, mynod;
     int array_of_dargs[3], array_of_psizes[3];
-    int *buf, bufcount, mynod;
     MPI_File fh;
     MPI_Status status;
     double stim, write_tim, new_write_tim, write_bw;

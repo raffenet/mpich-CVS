@@ -7,7 +7,8 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_read_shared_ PMPI_FILE_READ_SHARED
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +24,49 @@
 #endif
 #define mpi_file_read_shared_ pmpi_file_read_shared_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_READ_SHARED = PMPI_FILE_READ_SHARED
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_read_shared__ = pmpi_file_read_shared__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_read_shared = pmpi_file_read_shared
 #else
+#pragma weak mpi_file_read_shared_ = pmpi_file_read_shared_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_READ_SHARED = MPI_FILE_READ_SHARED
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_read_shared__ = mpi_file_read_shared__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_read_shared = mpi_file_read_shared
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_read_shared_ = mpi_file_read_shared_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_READ_SHARED as PMPI_FILE_READ_SHARED
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_read_shared__ as pmpi_file_read_shared__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_read_shared as pmpi_file_read_shared
+#else
+#pragma _CRI duplicate mpi_file_read_shared_ as pmpi_file_read_shared_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_read_shared_ MPI_FILE_READ_SHARED
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -40,7 +83,7 @@
 #endif
 #endif
 
-#ifdef __MPIHP
+#if defined(__MPIHP) || defined(__MPILAM)
 void mpi_file_read_shared_(MPI_Fint *fh,void *buf,int *count,
                   MPI_Fint *datatype,MPI_Status *status, int *__ierr )
 {

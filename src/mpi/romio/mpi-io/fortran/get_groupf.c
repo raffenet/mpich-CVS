@@ -7,7 +7,8 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpi_file_get_group_ PMPI_FILE_GET_GROUP
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +24,49 @@
 #endif
 #define mpi_file_get_group_ pmpi_file_get_group_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPI_FILE_GET_GROUP = PMPI_FILE_GET_GROUP
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpi_file_get_group__ = pmpi_file_get_group__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpi_file_get_group = pmpi_file_get_group
 #else
+#pragma weak mpi_file_get_group_ = pmpi_file_get_group_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPI_FILE_GET_GROUP = MPI_FILE_GET_GROUP
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_group__ = mpi_file_get_group__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpi_file_get_group = mpi_file_get_group
+#else
+#pragma _HP_SECONDARY_DEF pmpi_file_get_group_ = mpi_file_get_group_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPI_FILE_GET_GROUP as PMPI_FILE_GET_GROUP
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpi_file_get_group__ as pmpi_file_get_group__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpi_file_get_group as pmpi_file_get_group
+#else
+#pragma _CRI duplicate mpi_file_get_group_ as pmpi_file_get_group_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpi_file_get_group_ MPI_FILE_GET_GROUP
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -40,7 +83,7 @@
 #endif
 #endif
 
-#ifdef __MPIHP
+#if defined(__MPIHP) || defined(__MPILAM)
 void mpi_file_get_group_(MPI_Fint *fh,MPI_Fint *group, int *__ierr )
 {
     MPI_File fh_c;

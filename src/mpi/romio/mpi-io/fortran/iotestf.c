@@ -7,7 +7,7 @@
 
 #include "mpio.h"
 
-#ifdef __MPIO_BUILD_PROFILING
+#if defined(__MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 #ifdef FORTRANCAPS
 #define mpio_test_ PMPIO_TEST
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -23,7 +23,49 @@
 #endif
 #define mpio_test_ pmpio_test_
 #endif
+
+#if defined(HAVE_WEAK_SYMBOLS)
+#if defined(HAVE_PRAGMA_WEAK)
+#if defined(FORTRANCAPS)
+#pragma weak MPIO_TEST = PMPIO_TEST
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma weak mpio_test__ = pmpio_test__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma weak mpio_test = pmpio_test
 #else
+#pragma weak mpio_test_ = pmpio_test_
+#endif
+
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#if defined(FORTRANCAPS)
+#pragma _HP_SECONDARY_DEF PMPIO_TEST = MPIO_TEST
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpio_test__ = mpio_test__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _HP_SECONDARY_DEF pmpio_test = mpio_test
+#else
+#pragma _HP_SECONDARY_DEF pmpio_test_ = mpio_test_
+#endif
+
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#if defined(FORTRANCAPS)
+#pragma _CRI duplicate MPIO_TEST as PMPIO_TEST
+#elif defined(FORTRANDOUBLEUNDERSCORE)
+#pragma _CRI duplicate mpio_test__ as pmpio_test__
+#elif !defined(FORTRANUNDERSCORE)
+#pragma _CRI duplicate mpio_test as pmpio_test
+#else
+#pragma _CRI duplicate mpio_test_ as pmpio_test_
+#endif
+
+/* end of weak pragmas */
+#endif
+/* Include mapping from MPI->PMPI */
+#include "mpioprof.h"
+#endif
+
+#else
+
 #ifdef FORTRANCAPS
 #define mpio_test_ MPIO_TEST
 #elif defined(FORTRANDOUBLEUNDERSCORE)
@@ -39,6 +81,7 @@
 #endif
 #endif
 #endif
+
 
 void mpio_test_(MPI_Fint *request,int *flag,MPI_Status *status, int *__ierr )
 {

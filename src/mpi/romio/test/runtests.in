@@ -244,7 +244,6 @@ $mpirun -np 4 shared_fp -fname $FILENAME "$@" >> shared_fp.out 2>&1
 CheckOutput shared_fp
 CleanExe shared_fp
 #
-#
 OutTime
 testfiles="$testfiles split_coll.out"
 \rm -f split_coll.out
@@ -254,6 +253,16 @@ echo '**** Testing split_coll.c ****'
 $mpirun -np 4 split_coll -fname $FILENAME "$@" >> split_coll.out 2>&1
 CheckOutput split_coll
 CleanExe split_coll
+#
+OutTime
+testfiles="$testfiles psimple.out"
+\rm -f psimple.out
+MakeExe psimple
+\rm -f $FILENAME*
+echo '**** Testing psimple.c ****'
+$mpirun -np 4 psimple -fname $FILENAME "$@" >> psimple.out 2>&1
+CheckOutput psimple
+CleanExe psimple
 #
 if [ @NOF77@ = 0 ] ; then 
     echo ""
@@ -277,6 +286,16 @@ if [ @NOF77@ = 0 ] ; then
     $mpirun -np 4 fcoll_test -fname $FILENAME "$@" >> fcoll_test.out 2>&1
     CheckOutput fcoll_test
     CleanExe fcoll_test
+#
+    OutTime
+    testfiles="$testfiles pfcoll_test.out"
+    \rm -f pfcoll_test.out
+    MakeExe pfcoll_test
+    \rm -f $FILENAME*
+    echo '**** Testing pfcoll_test.f ****'
+    $mpirun -np 4 pfcoll_test -fname $FILENAME "$@" >> pfcoll_test.out 2>&1
+    CheckOutput pfcoll_test
+    CleanExe pfcoll_test
 #
 echo ""
 fi
