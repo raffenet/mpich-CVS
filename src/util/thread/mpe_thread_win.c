@@ -338,6 +338,12 @@ void MPE_Thread_cond_wait(MPE_Thread_cond_t * cond, MPE_Thread_mutex_t * mutex, 
 	    return;
 	}
     }
+    result = ResetEvent(event);
+    if (!result && err != NULL)
+    {
+	*err = GetLastError();
+	return;
+    }
     MPE_Thread_mutex_lock(mutex, err);
     /*
     if (err != NULL)
@@ -366,7 +372,12 @@ void MPE_Thread_cond_broadcast(MPE_Thread_cond_t * cond, int * err)
     /* signal each event in the fifo queue */
     while (fifo)
     {
-	SetEvent(fifo->event);
+	if (!SetEvent(fifo->event) && err != NULL)
+	{
+	    *err = GetLastError();
+	    /* lost memory */
+	    return;
+	}
 	temp = fifo;
 	fifo = fifo->next;
 	free(temp);
