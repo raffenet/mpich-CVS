@@ -318,6 +318,7 @@ int PMI_Finalize( )
 #else
 	PMIU_writeline( PMI_fd, "cmd=finalize\n" );
 #endif
+	close( PMI_fd );
     }
     return( 0 );
 }
