@@ -2398,7 +2398,7 @@ static int root_smpd(void *p)
 #endif
 
     /* unreferenced parameter */
-    p;
+    SMPD_UNREFERENCED_ARG(p);
 
     smpd_process.id = 1;
     smpd_process.root_smpd = SMPD_FALSE;
