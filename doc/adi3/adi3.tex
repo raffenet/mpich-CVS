@@ -32,12 +32,44 @@
 
 
 \section{Introduction}
+The MPICH implementation of MPI has used an abstract device interface (ADI) to
+provide an easy way to port MPI to new platforms.  The first version of the
+ADI was based on a message-passing model, and was designed to allow MPICH to
+make use of underlying message-passing systems such as Intel's NX or IBM's
+MPL.  The second version of the ADI was a relatively minor change intended to
+allow for more experimentation and to allow the device more control over the
+formats of datatypes and communicators.  The Globus device \cite{mpich-globus}
+made use of these features.
+
+With the success of MPI, most other message-passing systems (for scientific
+computing) have disappeared.  Many massively parallel computer vendors have
+also disappeared, and the remaining ones all have their own implementations of
+MPI.  At the same time, high-performance interconnects that provide some form
+of OS-bypass have emerged (Myrinet), along with proposed commodity
+standards (VIA, Infinaband).  There is increasing interest in multithreaded
+MPI applications (in fact, several vendor MPI's already support multithreaded
+applications) and in large clusters of SMPs.  Support for MPI-2, including
+process creation, one-sided communication, and high-performance I/O (though
+partially addressed with ADIO \cite{ADIO}) is also needed.
+In order to support research
+into MPI implementations, MPICH needs a new ADI that addresses the new
+features of MPI-2, high-performance user-mode interconnects, multithreaded
+environments, and experiments in performance enhancements for both
+point-to-point and collective operations.  
 
 \subsection{Related Work}
-It is useful to consider other MPI implementations.
+
+This section will cover other MPI implementation work, including:
 
 Tony and Boris argue for a single protocol that moves small blocks fast is
 better than a multi-level protocol \cite{techreport}.
+
+Several groups have looked at receiver rendezvous; this may be particularly
+helpful for wide-area networks.
+
+NEC (as well as us) have looked at datatype optimizations.
+
+The LAPI-based implementation uses remote-memory-access.
 
 \section{Requirements}
 This section lists requirements that we address in the ADI-3 design.
