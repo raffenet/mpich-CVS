@@ -113,6 +113,7 @@ struct ADIOI_Fns_struct {
 	       ADIO_Offset offset, ADIO_Request *request, int *error_code);
     void (*ADIOI_xxx_Flush) (ADIO_File fd, int *error_code); 
     void (*ADIOI_xxx_Resize) (ADIO_File fd, ADIO_Offset size, int *error_code);
+    void (*ADIOI_xxx_Delete) (char *filename, int *error_code);
 };
 
 /* optypes for ADIO_RequestD */
@@ -200,6 +201,9 @@ struct ADIOI_Fns_struct {
 #define ADIO_Resize(fd,size,error_code) \
         (*(fd->fns->ADIOI_xxx_Resize))(fd,size,error_code)
 
+#define ADIO_Delete(filename,error_code) \
+        (*(fd->fns->ADIOI_xxx_Delete))(filename,error_code)
+
 #define ADIO_SetInfo(fd, users_info, error_code) \
         (*(fd->fns->ADIOI_xxx_SetInfo))(fd, users_info, error_code)
 
@@ -242,6 +246,7 @@ void ADIOI_Get_eof_offset(ADIO_File fd, ADIO_Offset *eof_offset);
 void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset, ADIO_Offset *disp);
 
 void ADIOI_GEN_Flush(ADIO_File fd, int *error_code);
+void ADIOI_GEN_Delete(char *filename, int *error_code);
 
 void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
