@@ -848,10 +848,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		}
 		if (ibu->read.iovlen == 0)
 		{
-/* FIXME: This ifdef was added so the new code would compile with the old headers. It should be removed */
-#ifdef MPIDI_CH3_CHANNEL_RNDV
 		    if (recv_vc_ptr->ch.recv_active->kind < MPID_LAST_REQUEST_KIND)
-#endif
 		    {
 			ibu->state &= ~IBU_READING;
 			*num_bytes_ptr = ibu->read.total;
@@ -984,7 +981,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			return MPI_SUCCESS;
 			break;
 		    }
-/*#endif*/ /* MPIDI_CH3_CHANNEL_RNDV */
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "invalid request type", recv_vc_ptr->ch.recv_active->kind);
@@ -992,8 +989,6 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return mpi_errno;
 		    }
-/* FIXME this line should be removed and the above line uncommented out */
-#endif /* MPIDI_CH3_CHANNEL_RNDV */
 		}
 	    }
 	    else
