@@ -1,25 +1,32 @@
 #! /usr/bin/perl
 # -*- Mode: perl; -*-
 #
+# Set to zero if you want to see the ar/ranlib steps
+$no_lib_steps = 1;
+
 # This is a simple script to clean up the output from make by removing
 # various compilation options (such as the list of -I directories), 
 # -W options for gcc, and successful compiles.
 $last_line = "";
+
 while (<>) {
     # skip lines that start with for and are continued.
     if (/^\s*for dir in .*\\$/) {
 	while (<>) {
 	    if (! /\\$/) { last; }
 	}
+	if (/^\s*done\s*$/) { next; }
     }
     # skip line that start with if and ar continued
     if (/^\s*if \[ ! -d lib.*\\$/) {
 	while (<>) {
 	    if (! /\\$/) { last; }
 	}
+	if (/^\s*fi\s*$/) { next; }
     }
 
-    if (/^[agi]?cc\s/) {
+    # Clean up compiler outpu
+    if (/^[agi]?cc\s/ || /^pgcc\s/) {
 	s/-I[^\s]*\s*//g;
 	s/-DHAVE_CONFIG_H\s*//g;
     }
@@ -40,6 +47,7 @@ while (<>) {
     }
     
     if (/^\s*make /) { next; }
+    if (/^\s*gnumake /) { next; }
 
     if (/Nothing to be done for /) {
 	next;
@@ -48,15 +56,33 @@ while (<>) {
 	next;
     }
     if (/^\s*rm /) { next; }
-    
-    if (/^\s*ar /) { $_ = "...ar step\n"; }
+
+    if (/WARNING 84.*not used for resolving any symbol/) { next; }
+
+    if ($no_lib_steps) {
+	if (/^\s*ar\s/ || /^\s*ranlib\s/ || /^\s*true\s/) { next; }
+    }
+    else {
+	if (/^\s*ar\s/) { $_ = "...ar step\n"; }
+    }
 
     # Skip the time adjust step
     if (/^perl -e/) { next; }
     if ($last_line =~ /[^\s]/) { 
 	# Decide if we want to print this, based on the current line.
-	if ($last_line =~ /^[agi]?cc\s/ || $last_line =~ /^mpicc\s/) {
-	    if (! (/^[ag]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) ) { 
+	if ($last_line =~ /^[agi]?cc\s/ || $last_line =~ /^mpicc\s/ ||
+	    $last_line =~ /^pgcc\s/) {
+	    # The icc compiler (and perhaps others) echo the file name (!)
+	    # Try to capture that and ignore that line (reading another
+	    # line as necessary)
+	    $last_line =~ /^(.*\s+)([^\s]+)\s*$/;
+	    $srcname = $2;
+	    #print " src name = $srcname, other = $1\n";
+	    # skip line ONLY if all that is on it is the file name, 
+	    # to allow "filename: message"
+	    if (/^\s*$srcname\s*[:]*\s*$/) { next; }
+
+	    if (! (/^[aig]?cc\s/) && ! (/^mpicc\s/) && ! (/^\.\.\.ar/) ) { 
 		# Add a new line to help the compile line stand out.
 		print "\n";
 		print $last_line; 
