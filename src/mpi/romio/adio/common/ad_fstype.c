@@ -420,6 +420,11 @@ static void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code
     {
 	*fstype = ADIO_TESTFS;
     }
+    else if (!strncmp(filename, "ftp:", 4) 
+		    || !strncmp(filename, "gsiftp:", 7))
+    {
+	*fstype = ADIO_GRIDFTP;
+    }
     else {
 #ifdef ROMIO_NTFS
 	*fstype = ADIO_NTFS;
@@ -608,6 +613,21 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	return;
 #else
 	*ops = &ADIO_TESTFS_operations;
+#endif
+    }
+    if (file_system == ADIO_GRIDFTP) {
+#ifndef ROMIO_GRIDFTP
+# ifdef PRINT_ERR_MSG
+	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the GridFTP access method\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+# else
+	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_TESTFS,
+				     myname, (char *) 0, (char *) 0);
+	*error_code = ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
+	return;
+# endif
+#else
+	*ops = &ADIO_GRIDFTP_operations;
 #endif
     }
     *error_code = MPI_SUCCESS;

@@ -54,7 +54,8 @@ int MPI_File_close(MPI_File *mpi_fh)
 
     if (((fh)->file_system != ADIO_PIOFS) &&
 	((fh)->file_system != ADIO_PVFS) &&
-	((fh)->file_system != ADIO_PVFS2))
+	((fh)->file_system != ADIO_PVFS2) &&
+	((fh)->file_system != ADIO_GRIDFTP))
     {
 	ADIOI_Free((fh)->shared_fp_fname);
         /* need a barrier because the file containing the shared file

@@ -70,4 +70,9 @@ extern struct ADIOI_Fns_struct ADIO_TESTFS_operations;
 /* prototypes are in adio/ad_testfs/ad_testfs.h */
 #endif
 
+#ifdef ROMIO_GRIDFTP
+/* prototypes are in adio/ad_gridftp/ad_gridftp.h */
+extern struct ADIOI_Fns_struct ADIO_GRIDFTP_operations;
+#endif
+
 #endif

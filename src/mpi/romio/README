@@ -78,6 +78,9 @@ Major Changes in this version:
    D271   D272      D273     . . .                        . . .
    ...
 
+* Initial support for the Globus GridFTP filesystem.  Work contributed by Troy
+  Baer (troy@osc.edu).  
+
 Major Changes in Version 1.2.5:
 ------------------------------
 

@@ -90,7 +90,7 @@ MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall
 #
 have_aio=no
 #
-known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs panfs"
+known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs panfs gridftp"
 known_mpi_impls="mpich2_mpi mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
@@ -1065,6 +1065,9 @@ if test -n "$file_system_pvfs2"; then
     )
 fi
 
+if test -n "$file_system_gridftp"; then
+	AC_DEFINE(ROMIO_GRIDFTP, 1, [Define for ROMIO with gridftp])
+fi
 
 #
 # Check for presence and characteristics of async. I/O calls if
@@ -1766,6 +1769,7 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
 		   adio/ad_sfs/Makefile adio/ad_pfs/Makefile \
 		   adio/ad_testfs/Makefile adio/ad_pvfs/Makefile \
 		   adio/ad_pvfs2/Makefile \
+		   adio/ad_gridftp/Makefile \
                    mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile \
                    mpi2-other/array/fortran/Makefile test/fmisc.f \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f \
