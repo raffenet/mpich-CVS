@@ -183,7 +183,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 	    }
 	    if (event.error != SOCK_SUCCESS)
 		result = event.error;
-	    smpd_err_printf("sock_wait failed, sock error:\n%s\n", get_sock_error_string(result));
+	    smpd_err_printf("sock_wait failed,\nsock error: %s\n", get_sock_error_string(result));
 	    smpd_exit_fn("smpd_enter_at_state");
 	    return result;
 	}
@@ -251,7 +251,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a write of the encrypted response string, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a write of the encrypted response string,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -308,7 +308,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->session, SMPD_SESSION_REQUEST_LEN, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the session request '%s', sock error:\n%s\n",
+			smpd_err_printf("unable to post a write of the session request '%s',\nsock error: %s\n",
 			    context->session, get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -348,7 +348,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a send of the session header, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a send of the session header,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -370,7 +370,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a write of the connect result '%s', sock error:\n%s\n",
+		    smpd_err_printf("unable to post a write of the connect result '%s',\nsock error: %s\n",
 			context->pszChallengeResponse, get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -555,7 +555,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->read_cmd.cmd, context->read_cmd.length, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read for the command string, sock error:\n%s\n", get_sock_error_string(result));
+		    smpd_err_printf("unable to post a read for the command string,\nsock error: %s\n", get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
@@ -728,7 +728,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->pwd_request, SMPD_MAX_PWD_REQUEST_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the pwd request '%s', sock error:\n%s\n",
+			smpd_err_printf("unable to post a write of the pwd request '%s',\nsock error: %s\n",
 			    context->pwd_request, get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -751,7 +751,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the credential request string '%s', sock error:\n%s\n",
+			smpd_err_printf("unable to post a write of the credential request string '%s',\nsock error: %s\n",
 			    context->cred_request, get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -778,7 +778,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->smpd_pwd, SMPD_MAX_PASSWORD_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the smpd password, sock error:\n%s\n",
+			smpd_err_printf("unable to post a write of the smpd password,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -796,7 +796,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a send of the session header, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a send of the session header,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -817,7 +817,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->pwd_request, SMPD_AUTHENTICATION_REPLY_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the session accepted message, sock error:\n%s\n",
+			smpd_err_printf("unable to post a write of the session accepted message,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -830,7 +830,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->pwd_request, SMPD_AUTHENTICATION_REPLY_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the session rejected message, sock error:\n%s\n",
+			smpd_err_printf("unable to post a write of the session rejected message,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -848,7 +848,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->password, SMPD_MAX_PASSWORD_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the password credential, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the password credential,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -885,7 +885,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec, sock error:\n%s\n",
+		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
 			context->port_str, get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -898,7 +898,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec, sock error:\n%s\n",
+		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
 			context->port_str, get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -944,7 +944,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->account, SMPD_MAX_ACCOUNT_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the account '%s', sock error:\n%s\n",
+			smpd_err_printf("unable to post a write of the account '%s',\nsock error: %s\n",
 			    context->account, get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -955,7 +955,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the re-connect request, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the re-connect request,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -980,7 +980,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_close(context->sock);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("sock_post_close failed, sock error:\n%s\n", get_sock_error_string(result));
+			smpd_err_printf("sock_post_close failed,\nsock error: %s\n", get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
@@ -1017,9 +1017,14 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_connect(rc_context->set, rc_context, rc_context->connect_to->host, port, &rc_context->sock);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("sock_post_connect failed, sock error:\n%s\n", get_sock_error_string(result));
-			smpd_exit_fn("smpd_enter_at_state");
-			return SMPD_FAIL;
+			smpd_err_printf("Unable to post a connect to '%s:%d',\nsock error: %s\n",
+			    rc_context->connect_to->host, port, get_sock_error_string(result));
+			if (smpd_post_abort_command("Unable to connect to '%s:%d',\nsock error: %s\n",
+			    rc_context->connect_to->host, port, get_sock_error_string(result)) != SMPD_SUCCESS)
+			{
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
 		    }
 		    break;
 		}
@@ -1034,7 +1039,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a send of the session header, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a send of the session header,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1105,7 +1110,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read for the connect response, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read for the connect response,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1123,7 +1128,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("posting a read of the challenge response string failed, sock error:\n%s\n",
+		    smpd_err_printf("posting a read of the challenge response string failed,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1154,7 +1159,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->session, SMPD_SESSION_REQUEST_LEN, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read for the session header, sock error:\n%s\n", get_sock_error_string(result));
+		    smpd_err_printf("unable to post a read for the session header,\nsock error: %s\n", get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
@@ -1184,7 +1189,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_close(context->sock);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a close of the sock after writing a 'closed' command, sock error:\n%s\n",
+			smpd_err_printf("unable to post a close of the sock after writing a 'closed' command,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_free_command(cmd_ptr);
 			smpd_exit_fn("smpd_enter_at_state");
@@ -1198,7 +1203,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_close(context->sock);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a close of the sock after writing a 'down' command, sock error:\n%s\n",
+			smpd_err_printf("unable to post a close of the sock after writing a 'down' command,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_free_command(cmd_ptr);
 			smpd_exit_fn("smpd_enter_at_state");
@@ -1214,7 +1219,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_close(context->sock);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a close of the sock after writing a 'done' command, sock error:\n%s\n",
+			smpd_err_printf("unable to post a close of the sock after writing a 'done' command,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_free_command(cmd_ptr);
 			smpd_exit_fn("smpd_enter_at_state");
@@ -1266,7 +1271,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_writev(context->sock, cmd_ptr->iov, 2, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write for the next command, sock error:\n%s\n", get_sock_error_string(result));
+			smpd_err_printf("unable to post a write for the next command,\nsock error: %s\n", get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
@@ -1284,7 +1289,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->pwd_request, SMPD_MAX_PWD_REQUEST_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the pwd request, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the pwd request,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1302,7 +1307,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->cred_request, SMPD_MAX_CRED_REQUEST_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the cred request, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the cred request,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1320,7 +1325,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->password, SMPD_MAX_PASSWORD_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read for the smpd password, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read for the smpd password,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1338,7 +1343,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the session header, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the session header,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1356,7 +1361,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->pwd_request, SMPD_AUTHENTICATION_REPLY_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the session request result, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the session request result,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1374,7 +1379,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->account, SMPD_MAX_ACCOUNT_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the account credential, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the account credential,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1411,7 +1416,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec, sock error:\n%s\n",
+		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
 			context->port_str, get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1424,7 +1429,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec, sock error:\n%s\n",
+		    smpd_err_printf("Unable to post a write of the re-connect port number(%s) back to mpiexec,\nsock error: %s\n",
 			context->port_str, get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1462,7 +1467,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read for the session header, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read for the session header,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1508,7 +1513,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_close(smpd_process.listener_context->sock);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a close on the listener, sock error:\n%s\n",
+			smpd_err_printf("unable to post a close on the listener,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -1518,7 +1523,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a read for the session header, sock error:\n%s\n",
+			smpd_err_printf("unable to post a read for the session header,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -1537,7 +1542,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_write(context->sock, context->password, SMPD_MAX_PASSWORD_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a write of the password, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a write of the password,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1554,7 +1559,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->port_str, SMPD_MAX_PORT_STR_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the re-connect request, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the re-connect request,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1686,6 +1691,28 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
+
+		    /* check to see if this is a shutdown session */
+		    if (smpd_process.shutdown_console)
+		    {
+			result = smpd_create_command("shutdown", 0, 1, SMPD_FALSE, &cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to create a shutdown command.\n");
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			result = smpd_post_write_command(context, cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to post a write of the shutdown command on the %s context.\n",
+				smpd_get_context_str(context));
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			break;
+		    }
+
 		    /* get a handle to stdin */
 #ifdef HAVE_WINDOWS_H
 		    result = smpd_make_socket_loop((SOCKET*)&stdin_fd, &hWrite);
@@ -1703,7 +1730,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_native_to_sock(context->set, stdin_fd, NULL, &insock);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to create a sock from stdin, sock error:\n%s\n", get_sock_error_string(result));
+			smpd_err_printf("unable to create a sock from stdin,\nsock error: %s\n", get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
@@ -1763,7 +1790,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the session header, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the session header,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1782,7 +1809,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_close(context->sock);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a close of the sock after writing a reject message, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a close of the sock after writing a reject message,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1906,7 +1933,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(new_context->sock, new_context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the session header, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the session header,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1916,7 +1943,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_close(context->sock);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a close on the listener sock after accepting the re-connection, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a close on the listener sock after accepting the re-connection,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
@@ -1959,7 +1986,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    result = sock_post_write(context->sock, context->session_header, SMPD_MAX_SESSION_HEADER_LENGTH, NULL);
 		    if (result != SOCK_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a send of the session header, sock error:\n%s\n",
+			smpd_err_printf("unable to post a send of the session header,\nsock error: %s\n",
 			    get_sock_error_string(result));
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
@@ -1978,7 +2005,7 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		result = sock_post_read(context->sock, context->pszChallengeResponse, SMPD_AUTHENTICATION_STR_LEN, NULL);
 		if (result != SOCK_SUCCESS)
 		{
-		    smpd_err_printf("unable to post a read of the challenge string, sock error:\n%s\n",
+		    smpd_err_printf("unable to post a read of the challenge string,\nsock error: %s\n",
 			get_sock_error_string(result));
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
