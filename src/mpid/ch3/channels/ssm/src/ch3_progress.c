@@ -211,6 +211,7 @@ int MPID_CH3I_Message_queue_progress()
     int rc, mpi_errno;
 
     /* check for new shmem queue connection requests */
+    /*printf("<%dR>", MPIR_Process.comm_world->rank);fflush(stdout);*/
     rc = MPIDI_CH3I_BootstrapQ_recv_msg(
 	MPIDI_CH3I_Process.pg->bootstrapQ, &info, sizeof(info), 
 	&num_bytes, FALSE);
@@ -312,6 +313,7 @@ int MPIDI_CH3_Progress_test()
     if (msgqIter++ == MPIDI_CH3I_MSGQ_ITERATIONS)
     {
 	msgqIter = 0;
+	/*printf("[%d] calling message queue progress from test.\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
 	MPID_CH3I_Message_queue_progress();
     }
 #else
@@ -564,6 +566,7 @@ skip_sock_loop:
 	if (msgqIter++ == MPIDI_CH3I_MSGQ_ITERATIONS)
 	{
 	    msgqIter = 0;
+	    /*printf("[%d] calling message queue progress\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
 	    MPID_CH3I_Message_queue_progress();
 	}
     }
