@@ -7,9 +7,6 @@
 #include "mpidimpl.h"
 #include "pmi.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Comm_spawn_multiple
-
 /*@
    MPID_Comm_spawn_multiple - short description
 
@@ -35,12 +32,9 @@
 @*/
 int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_of_argv[], int array_of_maxprocs[], MPI_Info array_of_info[], int root, MPID_Comm *comm_ptr, MPID_Comm **intercomm, int array_of_errcodes[]) 
 {
-    static const char FCNAME[] = "MPID_Comm_spawn_multiple";
     char pszPortName[MPI_MAX_PORT_NAME];
     MPI_Info info, prepost_info;
     int same_domain;
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 
     MPID_Comm_thread_lock( comm_ptr );
 
@@ -69,6 +63,5 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
 
     MPID_Comm_thread_unlock( comm_ptr );
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
     return MPI_SUCCESS;
 }

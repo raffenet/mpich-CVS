@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Recv
-
 /*@
    MPID_Recv - recv
 
@@ -33,13 +30,9 @@
 @*/
 int MPID_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPID_Comm *comm_ptr, int mode, MPI_Status *status_ptr, MPID_Request **request_pptr)
 {
-    static const char FCNAME[] = "MPID_Recv";
     int mpi_errno;
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_RECV);
 
     mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr, mode, request_pptr);
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_RECV);
     return mpi_errno;
 }

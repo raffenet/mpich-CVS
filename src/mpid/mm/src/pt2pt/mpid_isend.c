@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Isend
-
 /*@
    MPID_Isend - isend
 
@@ -32,14 +29,9 @@
 @*/
 int MPID_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPID_Comm *comm_ptr, int mode, MPID_Request **request_pptr)
 {
-    static const char FCNAME[] = "MPID_Isend";
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_ISEND);
-
     xfer_scatter_init(comm_ptr->rank, tag, comm_ptr, request_pptr);
     xfer_scatter_send_op(*request_pptr, buf, count, datatype, 0, -1, dest);
     xfer_scatter_start(*request_pptr);
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_ISEND);
     return MPI_SUCCESS;
 }

@@ -25,11 +25,8 @@ MPID_PerProcess_t MPID_Process;
 @*/
 int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag_args, int *flag_env)
 {
-    static const char FCNAME[] = "MPID_Init";
     char pszPortName[MPI_MAX_PORT_NAME];
     int spawned;
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_INIT);
 
     MPID_Process.pmi_kvsname[0] = '\0';
     MPID_Process.comm_parent = (MPID_Comm *)0;
@@ -53,6 +50,5 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 
     mm_car_init();
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return MPI_SUCCESS;
 }

@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Progress_wait
-
 /*@
    MPID_Progress_wait - wait for an event to end a progress block
 

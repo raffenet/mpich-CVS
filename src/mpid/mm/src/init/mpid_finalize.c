@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Finalize
-
 /*@
    MPID_Finalize - Terminates mm device
 
@@ -23,10 +20,5 @@
 @*/
 int MPID_Finalize( void )
 {
-    static const char FCNAME[] = "MPID_Finalize";
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return MPI_SUCCESS;
 }

@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Progress_poke
-
 /*@
    MPID_Progress_poke - poll progress engine
 

@@ -6,9 +6,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Comm_connect
-
 /*@
    MPID_Comm_connect - connect
 
@@ -31,10 +28,7 @@
 @*/
 int MPID_Comm_connect(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
-    static const char FCNAME[] = "MPID_Comm_connect";
     int conn;
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_COMM_CONNECT);
 
     if (comm_ptr->rank == root)
     {
@@ -51,6 +45,5 @@ int MPID_Comm_connect(char *port_name, MPID_Info *info_ptr, int root, MPID_Comm 
 	/* Bcast resulting intercommunicator stuff */
     }
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_COMM_CONNECT);
     return MPI_SUCCESS;
 }

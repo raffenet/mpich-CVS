@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Progress_end
-
 /*@
    MPID_Progress_end - end a progress block
 

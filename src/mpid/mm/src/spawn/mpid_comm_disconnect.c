@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Comm_disconnect
-
 /*@
    MPID_Comm_disconnect - disconnect
 
@@ -25,11 +22,5 @@
 @*/
 int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
 {
-    static const char FCNAME[] = "MPID_Comm_disconnect";
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_COMM_DISCONNECT);
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_COMM_DISCONNECT);
-
     return MPI_SUCCESS;
 }

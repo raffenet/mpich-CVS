@@ -7,9 +7,6 @@
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Close_port
-
 /*@
    MPID_Close_port - close port
 
@@ -25,12 +22,5 @@
 @*/
 int MPID_Close_port(char *port_name)
 {
-    static const char FCNAME[] = "MPID_Close_port";
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_CLOSE_PORT);
-
-    mm_close_port(port_name);
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_CLOSE_PORT);
-    return MPI_SUCCESS;
+    return mm_close_port(port_name);
 }
