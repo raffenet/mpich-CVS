@@ -1,6 +1,10 @@
 configure
 Makefile
 Makefile.in
+config.log
+config.status
+config.system
+localdefs
 *.o
 *.lo
 *.bb

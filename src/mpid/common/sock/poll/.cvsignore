@@ -4,6 +4,7 @@ Makefile.in
 Makefile
 sockpollconf.h.in
 sockpollconf.h
+localdefs
 *.o
 *.lo
 *.bb

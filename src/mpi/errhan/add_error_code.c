@@ -43,6 +43,7 @@
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
 @*/
 int MPI_Add_error_code(int errorclass, int *errorcode)
 {
