@@ -26,13 +26,6 @@
 #undef MPID_LOG_RECV_FROM_BEGINNING
 /*#define MPID_LOG_RECV_FROM_BEGINNING*/
 
-/* These next two include files contain the static state definitions */
-#include "mpiallstates.h"
-/*
-#include "mpistates.h"
-#include "mpisysstates.h"
-*/
-
 /* Possible values for USE_LOGGING */
 #define MPID_LOGGING_NONE 0
 #define MPID_LOGGING_RLOG 1
