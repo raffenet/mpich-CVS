@@ -3,6 +3,23 @@
 #   (C) 2001 by Argonne National Laboratory.
 #       See COPYRIGHT in top-level directory.
 #
+"""
+usage: mpdsigjob  sigtype  [-j jobid OR -a jobalias] [-s|g]
+    sigtype must be the first arg
+    jobid can be obtained via mpdlistjobs and is of the form:
+        jobnum@mpdid where mpdid is mpd where first process runs, e.g.:
+            1@linux02_32996 (may need \@ in some shells)
+            1  is sufficient if you are on the machine where the job started
+    one of -j or -a must be specified (but only one)
+    -s or -g specify whether to signal the single user process or its group (default is g)
+Delivers a Unix signal to all the application processes in the job
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
 
 from os     import environ, getuid, close
 from sys    import argv, exit
@@ -110,15 +127,7 @@ def recv_one_msg_with_timeout(sock,timeout):
     return(msg)
 
 def usage():
-    print 'usage: mpdsigjob  sigtype  [-j jobid OR -a jobalias] [-s|g]'
-    print '    sigtype must be the first arg'
-    print '    jobid can be obtained via mpdlistjobs and is of the form:'
-    print '        jobnum@mpdid where mpdid is mpd where first process runs, e.g.:'
-    print '            1@linux02_32996 (may need \@ in some shells)'
-    print '            1  is sufficient if you are on the machine where the job started'
-    print '    one of -j or -a must be specified (but only one)'
-    print '    -s or -g specify whether to signal the single user process or its group (default is g)'
-    print 'Delivers a Unix signal to all the application processes in the job'
+    print __doc__
     exit(-1)
 
 
