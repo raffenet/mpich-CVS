@@ -23,16 +23,16 @@ should be performed through a \code{test} target in the device's
 \file{mpiimpl.h} (used to build the implementation of the MPI
 routines) should be \emph{copied} into \file{mpich/src/include} as
 part of the device's configure step.  Provide the files
-\file{mpiddevpre.h} and \file{mpiddevpost.h}.  The implementation of all MPI
+\file{mpidpre.h} and \file{mpidpost.h}.  The implementation of all MPI
 routines include files in this order:
 \begin{description}
 \item[mpi.h]The standard \file{mpi.h} that all MPI users include
-\item[mpiddevpre.h]Any definitions needed \emph{before} the provided
+\item[mpidpre.h]Any definitions needed \emph{before} the provided
 definitions of the contents of the internal structures.  This can
 included definitions that override parts of \file{mpiimpl.h}
 \item[contents of mpiimpl.h]The bulk of the internal definitions.
 This also includes information on the timers.
-\item[mpiddevpost.h]Any definitions needed by the device after the rest
+\item[mpidpost.h]Any definitions needed by the device after the rest
 of the definitions in \file{mpiimpl.h}.  In many cases, this file may
 be empty.
 \end{description}

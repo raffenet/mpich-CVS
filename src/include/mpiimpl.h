@@ -14,6 +14,11 @@
    do not want mpi.h to depend on any other files or configure flags */
 #include "mpichconf.h"
 
+/* Include definitions from the device which must exist before items in this
+   file (mpiimple.h) can be defined.  NOTE: This include requires the device to
+   copy mpidpre.h to the src/include directory. */
+#include "mpidpre.h"
+
 #ifdef STDC_HEADERS
 #include <stdlib.h>
 #include <stdarg.h>
@@ -724,5 +729,10 @@ int MPID_Isend(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request
 int MPID_Irecv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
 int MPID_Test(MPID_Request *, int *, MPI_Status *);
 int MPID_Wait(MPID_Request *, MPI_Status *);
+
+/* Include definitions from the device which require items defined by this file
+   (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
+   the src/include directory. */
+#include "mpidpost.h"
 
 #endif /* MPIIMPL_INCLUDED */
