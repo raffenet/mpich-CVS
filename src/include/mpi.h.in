@@ -38,9 +38,9 @@ typedef int MPI_Datatype;
 #define MPI_LONG_LONG_INT  ((MPI_Datatype)@MPI_LONG_LONG@)
 #define MPI_LONG_LONG      MPI_LONG_LONG_INT
 
-#define MPI_PACKED         ((MPI_Datatype)14)
-#define MPI_LB             ((MPI_Datatype)15)
-#define MPI_UB             ((MPI_Datatype)16)
+#define MPI_PACKED         ((MPI_Datatype)@MPI_PACKED@)
+#define MPI_LB             ((MPI_Datatype)@MPI_LB@)
+#define MPI_UB             ((MPI_Datatype)@MPI_UB@)
 
 /* 
    The layouts for the types MPI_DOUBLE_INT etc are simply
