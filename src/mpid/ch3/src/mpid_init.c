@@ -66,6 +66,20 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
      * necessary.
      */
     MPIR_Process.attrs.tag_ub          = INT_MAX;
+#   if defined(HAVE_GETHOSTNAME)
+    {
+	MPIDI_Process.processor_name = MPIU_Malloc(128);
+	if gethostname(MPIDI_Process.processor_name, 128) != 0)
+	{
+	    MPIU_Free(MPIDI_Process.processor_name);
+	    MPIDI_Process.processor_name = NULL;
+	}
+    }
+#   else
+    {
+	MPIDI_Process.processor_name = NULL;
+    }
+#   endif
     
     /*
      * Let the channel perform any necessary initialization
