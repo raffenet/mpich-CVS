@@ -14,7 +14,11 @@ void ADIOI_GEN_Flush(ADIO_File fd, int *error_code)
     static char myname[] = "ADIOI_GEN_FLUSH";
 #endif
 
+#ifdef NTFS
+	err = FlushFileBuffers(fd);
+#else
     err = fsync(fd->fd_sys);
+#endif
 
 #ifdef PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
