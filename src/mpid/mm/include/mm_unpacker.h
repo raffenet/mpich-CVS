@@ -8,6 +8,8 @@
 
 #include "mpidimpl.h"
 
+extern MPIDI_VC_functions g_unpacker_vc_functions;
+
 int unpacker_init(void);
 int unpacker_finalize(void);
 int unpacker_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr);

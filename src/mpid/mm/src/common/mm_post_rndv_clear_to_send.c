@@ -16,7 +16,7 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 
     rndv_car_ptr = mm_car_alloc();
     
-    posted_car_ptr->vc_ptr->setup_packet_car(
+    posted_car_ptr->vc_ptr->fn.setup_packet_car(
 	posted_car_ptr->vc_ptr,
 	MM_WRITE_CAR,
 	posted_car_ptr->src, /* this could be an error because src could be MPI_ANY_SRC */
@@ -42,7 +42,7 @@ int mm_post_rndv_clear_to_send(MM_Car *posted_car_ptr, MM_Car *rndv_rts_car_ptr)
 #endif
     rndv_cts_ptr->sender_car_ptr = rndv_rts_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr;
 
-    posted_car_ptr->vc_ptr->post_write(posted_car_ptr->vc_ptr, rndv_car_ptr);
+    posted_car_ptr->vc_ptr->fn.post_write(posted_car_ptr->vc_ptr, rndv_car_ptr);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MM_POST_RNDV_CLEAR_TO_SEND);
     return MPI_SUCCESS;

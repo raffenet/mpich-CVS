@@ -175,26 +175,17 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	memset(&vc_ptr->data, 0, sizeof(vc_ptr->data));
 	break;
     case MM_PACKER_METHOD:
-	vc_ptr->post_read = packer_post_read;
-	vc_ptr->merge_with_unexpected = packer_merge_with_unexpected;
-	vc_ptr->post_write = packer_post_write;
-	vc_ptr->reset_car = packer_reset_car;
-	vc_ptr->post_read_pkt = NULL;
+	vc_ptr->fn = g_packer_vc_functions;
 	break;
     case MM_UNPACKER_METHOD:
-	vc_ptr->post_read = unpacker_post_read;
-	vc_ptr->merge_with_unexpected = unpacker_merge_with_unexpected;
-	vc_ptr->post_write = unpacker_post_write;
-	vc_ptr->reset_car = unpacker_reset_car;
-	vc_ptr->post_read_pkt = NULL;
+	vc_ptr->fn = g_unpacker_vc_functions;
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:
 	/* data members */
 	vc_ptr->data.shm.shm_ptr = NULL;
 	/* function pointers */
-	vc_ptr->merge_with_unexpected = shm_merge_with_unexpected;
-	vc_ptr->post_write = shm_post_write;
+	vc_ptr->fn = g_shm_vc_functions;
 	break;
 #endif
 #ifdef WITH_METHOD_TCP
@@ -205,16 +196,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->data.tcp.connecting = FALSE;
 	/* function pointers */
 	/* mm required functions */
-	vc_ptr->post_read = tcp_post_read;
-	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
-	vc_ptr->merge_with_posted = tcp_merge_with_posted;
-	vc_ptr->merge_unexpected_data = tcp_merge_unexpected_data;
-	vc_ptr->post_write = tcp_post_write;
-	vc_ptr->reset_car = tcp_reset_car;
-	vc_ptr->post_read_pkt = tcp_post_read_pkt;
-	vc_ptr->enqueue_read_at_head = tcp_car_head_enqueue;
-	vc_ptr->enqueue_write_at_head = tcp_car_head_enqueue;
-	vc_ptr->setup_packet_car = tcp_setup_packet_car;
+	vc_ptr->fn = g_tcp_vc_functions;
 	/* tcp specific functions */
 	vc_ptr->data.tcp.read = tcp_read_connecting;
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
@@ -237,16 +219,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->data.socket.connect_vc_ptr = NULL;
 	/* function pointers */
 	/* mm required functions */
-	vc_ptr->post_read = socket_post_read;
-	vc_ptr->merge_with_unexpected = socket_merge_with_unexpected;
-	vc_ptr->merge_with_posted = socket_merge_with_posted;
-	vc_ptr->merge_unexpected_data = socket_merge_unexpected_data;
-	vc_ptr->post_write = socket_post_write;
-	vc_ptr->reset_car = socket_reset_car;
-	vc_ptr->post_read_pkt = socket_post_read_pkt;
-	vc_ptr->enqueue_read_at_head = socket_car_head_enqueue_read;
-	vc_ptr->enqueue_write_at_head = socket_car_head_enqueue_write;
-	vc_ptr->setup_packet_car = socket_setup_packet_car;
+	vc_ptr->fn = g_socket_vc_functions;
 	/* socket specific */
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
 	vc_ptr->pkt_car.vc_ptr = vc_ptr;
@@ -263,16 +236,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 #ifdef WITH_METHOD_IB
     case MM_IB_METHOD:
 	/* mm required functions */
-	vc_ptr->post_read = ib_post_read;
-	vc_ptr->merge_with_unexpected = ib_merge_with_unexpected;
-	vc_ptr->merge_with_posted = ib_merge_with_posted;
-	vc_ptr->merge_unexpected_data = ib_merge_unexpected_data;
-	vc_ptr->post_write = ib_post_write;
-	vc_ptr->reset_car = ib_reset_car;
-	vc_ptr->post_read_pkt = ib_post_read_pkt;
-	vc_ptr->enqueue_read_at_head = ib_enqueue_read_at_head;
-	vc_ptr->enqueue_write_at_head = ib_enqueue_write_at_head;
-	vc_ptr->setup_packet_car = ib_setup_packet_car;
+	vc_ptr->fn = g_ib_vc_functions;
 	/* ib specific */
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
 	vc_ptr->pkt_car.vc_ptr = vc_ptr;
@@ -295,8 +259,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	...
 	*/
 	/* function pointers */
-	vc_ptr->merge_with_unexpected = via_merge_with_unexpected;
-	vc_ptr->post_write = via_post_write;
+	vc_ptr->fn = g_via_vc_functions;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
@@ -304,14 +267,12 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	/* data members */
 	/*via_init_info_struct(&vc_ptr->data.via.info);*/
 	/* function pointers */
-	vc_ptr->merge_with_unexpected = via_rdma_merge_with_unexpected;
-	vc_ptr->post_write = via_rdma_post_write;
+	vc_ptr->fn = g_via_rdma_vc_functions;
 	break;
 #endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD:
-	vc_ptr->merge_with_unexpected = new_merge_with_unexpected;
-	vc_ptr->post_write = new_post_write;
+	vc_ptr->fn = g_new_vc_functions;
 	break;
 #endif
     default:

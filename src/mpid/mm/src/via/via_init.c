@@ -6,6 +6,19 @@
 #include "viaimpl.h"
 
 VIA_PerProcess VIA_Process;
+MPIDI_VC_functions g_via_vc_functions = 
+{
+    NULL, /*via_post_read,*/
+    NULL, /*via_car_head_enqueue_read,*/
+    via_merge_with_unexpected,
+    NULL, /*via_merge_with_posted,*/
+    NULL, /*via_merge_unexpected_data,*/
+    via_post_write,
+    NULL, /*via_car_head_enqueue_write,*/
+    NULL, /*via_reset_car,*/
+    NULL, /*via_setup_packet_car,*/
+    NULL /*via_post_read_pkt*/
+};
 
 /*@
    via_init - initialize via method

@@ -6,6 +6,36 @@
 #ifndef MM_IB_PRE_H
 #define MM_IB_PRE_H
 
+#include "ib_types.h"
+#include "ib_defs.h" 
+
+typedef struct IB_Info
+{
+    ib_uint32_t   m_message_size;
+    ib_uint32_t   m_message_segments;
+    ib_uint32_t   m_mtu_size;
+    ib_uint32_t   m_max_wqes;
+    ib_uint32_t   m_dlid;
+    ib_uint32_t   m_polling;
+
+    ib_mr_handle_t   m_mr_handle;
+    ib_cq_handle_t   m_send_cq_handle, m_recv_cq_handle;
+    ib_qp_handle_t   m_qp_handle;
+    void            *m_virtual_address;
+    ib_uint32_t      m_dest_qp_num;
+    ib_int64_t       m_snd_work_id;
+    ib_int64_t       m_rcv_work_id;
+    
+    ib_address_handle_t m_address_handle;
+    
+    ib_uint32_t      m_snd_completion_counter;
+    ib_uint32_t      m_rcv_completion_counter;
+    ib_uint32_t      m_snd_posted;
+    ib_uint32_t      m_rcv_posted;
+    
+    ib_scatter_gather_list_t  m_recv_sglist, m_send_sglist;
+} IB_Info;
+
 typedef struct MM_Car_data_ib
 {
     union mm_car_data_ib_buf

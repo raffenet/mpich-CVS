@@ -8,6 +8,8 @@
 
 #include "mpidimpl.h"
 
+extern MPIDI_VC_functions g_ib_vc_functions;
+
 int ib_init(void);
 int ib_finalize(void);
 int ib_get_business_card(char *value, int length);

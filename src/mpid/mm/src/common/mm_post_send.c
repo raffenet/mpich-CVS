@@ -12,7 +12,7 @@ int mm_post_send(MM_Car *car_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_MM_POST_SEND);
 
     dbg_printf("mm_post_send\n");
-    car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr);
+    car_ptr->vc_ptr->fn.post_write(car_ptr->vc_ptr, car_ptr);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MM_POST_SEND);
     return MPI_SUCCESS;

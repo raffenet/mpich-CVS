@@ -94,7 +94,7 @@ int xfer_start(MPID_Request *request_ptr)
 		mm_post_send(pCar);
 	    }
 	    if (pCar->type & MM_UNPACKER_CAR)
-		pCar->vc_ptr->post_write(pCar->vc_ptr, pCar);
+		pCar->vc_ptr->fn.post_write(pCar->vc_ptr, pCar);
 
 	    pCar = pCar->opnext_ptr;
 	}

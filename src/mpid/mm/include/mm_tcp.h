@@ -17,6 +17,8 @@
 #include <netdb.h>
 #endif
 
+extern MPIDI_VC_functions g_tcp_vc_functions;
+
 int tcp_init(void);
 int tcp_finalize(void);
 int tcp_get_business_card(char *value, int length);

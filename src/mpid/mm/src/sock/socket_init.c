@@ -9,6 +9,19 @@
 #endif
 
 SOCKET_PerProcess SOCKET_Process;
+MPIDI_VC_functions g_socket_vc_functions = 
+{
+    socket_post_read,
+    socket_car_head_enqueue_read,
+    socket_merge_with_unexpected,
+    socket_merge_with_posted,
+    socket_merge_unexpected_data,
+    socket_post_write,
+    socket_car_head_enqueue_write,
+    socket_reset_car,
+    socket_setup_packet_car,
+    socket_post_read_pkt
+};
 
 /*@
    socket_init - initialize the socket method

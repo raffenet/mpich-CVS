@@ -5,6 +5,20 @@
  */
 #include "mpidimpl.h"
 
+MPIDI_VC_functions g_unpacker_vc_functions = 
+{
+    unpacker_post_read,
+    NULL, /*unpacker_car_head_enqueue_read,*/
+    unpacker_merge_with_unexpected,
+    NULL, /*unpacker_merge_with_posted,*/
+    NULL, /*unpacker_merge_unexpected_data,*/
+    unpacker_post_write,
+    NULL, /*unpacker_car_head_enqueue_write,*/
+    unpacker_reset_car,
+    NULL, /*unpacker_setup_packet_car,*/
+    NULL /*unpacker_post_read_pkt*/
+};
+
 /*@
    unpacker_init - initialize the unpacker method
 

@@ -61,10 +61,10 @@ int tcp_accept_connection(void)
 	 */
 	vc_ptr->method = MM_TCP_METHOD;
 	vc_ptr->data.tcp.bfd = bfd;
-	vc_ptr->post_read = tcp_post_read;
-	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
-	vc_ptr->post_write = tcp_post_write;
-	vc_ptr->post_read_pkt = tcp_post_read_pkt;
+	vc_ptr->fn.post_read = tcp_post_read;
+	vc_ptr->fn.merge_with_unexpected = tcp_merge_with_unexpected;
+	vc_ptr->fn.post_write = tcp_post_write;
+	vc_ptr->fn.post_read_pkt = tcp_post_read_pkt;
 
 	/* send a keep acknowledgement */
 	ack = TCP_ACCEPT_CONNECTION;

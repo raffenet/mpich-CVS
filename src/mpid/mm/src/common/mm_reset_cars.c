@@ -26,7 +26,7 @@ int mm_reset_cars(MPID_Request *request_ptr)
     {
 	if (car_ptr->vc_ptr)
 	{
-	    car_ptr->vc_ptr->reset_car(car_ptr);
+	    car_ptr->vc_ptr->fn.reset_car(car_ptr);
 	}
 	else
 	{
@@ -40,7 +40,7 @@ int mm_reset_cars(MPID_Request *request_ptr)
     {
 	if (car_ptr->vc_ptr)
 	{
-	    car_ptr->vc_ptr->reset_car(car_ptr);
+	    car_ptr->vc_ptr->fn.reset_car(car_ptr);
 	}
 	else
 	{

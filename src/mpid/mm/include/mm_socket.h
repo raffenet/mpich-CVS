@@ -8,6 +8,8 @@
 
 #include "mpidimpl.h"
 
+extern MPIDI_VC_functions g_socket_vc_functions;
+
 int socket_init(void);
 int socket_finalize(void);
 int socket_get_business_card(char *value, int length);

@@ -6,6 +6,19 @@
 #include "tcpimpl.h"
 
 TCP_PerProcess TCP_Process;
+MPIDI_VC_functions g_tcp_vc_functions = 
+{
+    tcp_post_read,
+    tcp_car_head_enqueue,
+    tcp_merge_with_unexpected,
+    tcp_merge_with_posted,
+    tcp_merge_unexpected_data,
+    tcp_post_write,
+    tcp_car_head_enqueue,
+    tcp_reset_car,
+    tcp_setup_packet_car,
+    tcp_post_read_pkt
+};
 
 /*@
    tcp_init - initialize the tcp method

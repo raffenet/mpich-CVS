@@ -8,6 +8,8 @@
 
 #include "mpidimpl.h"
 
+extern MPIDI_VC_functions g_via_rdma_vc_functions;
+
 int via_rdma_init(void);
 int via_rdma_finalize(void);
 int via_rdma_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);

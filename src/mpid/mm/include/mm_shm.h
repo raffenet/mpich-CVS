@@ -8,6 +8,8 @@
 
 #include "mpidimpl.h"
 
+extern MPIDI_VC_functions g_shm_vc_functions;
+
 int shm_init(void);
 int shm_finalize(void);
 int shm_write(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);

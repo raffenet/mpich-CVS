@@ -8,6 +8,8 @@
 
 #include "mpidimpl.h"
 
+extern MPIDI_VC_functions g_via_vc_functions;
+
 int via_init();
 int via_finalize();
 int via_read(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);

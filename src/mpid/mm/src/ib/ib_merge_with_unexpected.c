@@ -33,7 +33,7 @@ int ib_merge_with_unexpected(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr)
     posted_car_ptr = posted_car_ptr->next_ptr;
     while (num_left)
     {
-	num_updated = posted_car_ptr->vc_ptr->merge_unexpected_data(posted_car_ptr->vc_ptr, posted_car_ptr, unex_data_ptr, num_left);
+	num_updated = posted_car_ptr->vc_ptr->fn.merge_unexpected_data(posted_car_ptr->vc_ptr, posted_car_ptr, unex_data_ptr, num_left);
 	num_left -= num_updated;
 	unex_data_ptr += num_updated;
 	posted_car_ptr = posted_car_ptr->next_ptr;

@@ -77,7 +77,7 @@ int mm_cq_handle_read_head_car(MM_Car *car_ptr)
 	if (qcar_ptr)
 	{
 	    /* merge the received header car with the posted car */
-	    car_ptr->vc_ptr->merge_with_posted(car_ptr, qcar_ptr);
+	    car_ptr->vc_ptr->fn.merge_with_posted(car_ptr, qcar_ptr);
 	}
 	else
 	{
@@ -101,8 +101,8 @@ int mm_cq_handle_read_head_car(MM_Car *car_ptr)
 	}
 	MPID_Thread_unlock(MPID_Process.qlock);
 	/* no data to follow this packet so post a receive for another packet */
-	if (car_ptr->vc_ptr->post_read_pkt)
-	    car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
+	if (car_ptr->vc_ptr->fn.post_read_pkt)
+	    car_ptr->vc_ptr->fn.post_read_pkt(car_ptr->vc_ptr);
 	break;
     case MPID_RNDV_CLEAR_TO_SEND_PKT:
 	/* post the rndv_data head packet for writing */
@@ -110,14 +110,14 @@ int mm_cq_handle_read_head_car(MM_Car *car_ptr)
 	/*mm_dec_cc_atomic(car_ptr->request_ptr);*/ /* decrement once for the header packet? */
 	/*mm_car_free(car_ptr);*/ /* This car doesn't need to be freed because it is static in the vc */
 	/* no data to follow this packet so post a receive for another packet */
-	if (car_ptr->vc_ptr->post_read_pkt)
-	    car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
+	if (car_ptr->vc_ptr->fn.post_read_pkt)
+	    car_ptr->vc_ptr->fn.post_read_pkt(car_ptr->vc_ptr);
 	break;
     case MPID_RNDV_DATA_PKT:
 	/* decrement the completion counter for the head receive car */
 	mm_dec_cc_atomic(car_ptr->msg_header.pkt.u.rdata.receiver_car_ptr->request_ptr);
 	/* enqueue a read for the rndv data */
-	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr->msg_header.pkt.u.rdata.receiver_car_ptr->next_ptr);
+	car_ptr->vc_ptr->fn.enqueue_read_at_head(car_ptr->vc_ptr, car_ptr->msg_header.pkt.u.rdata.receiver_car_ptr->next_ptr);
 	break;
     case MPID_RDMA_ACK_PKT:
 	err_printf("Error: RDMA_ACK_PKT not handled yet.\n");
@@ -145,12 +145,12 @@ int mm_cq_handle_read_data_car(MM_Car *car_ptr)
     if (car_ptr->next_ptr)
     {
 	/* enqueue next car to be read before any other pending cars */
-	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
+	car_ptr->vc_ptr->fn.enqueue_read_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
     else
     {
-	if (car_ptr->vc_ptr->post_read_pkt)
-	    car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
+	if (car_ptr->vc_ptr->fn.post_read_pkt)
+	    car_ptr->vc_ptr->fn.post_read_pkt(car_ptr->vc_ptr);
     }
     /*printf("dec cc: read data car\n");fflush(stdout);*/
     mm_dec_cc_atomic(car_ptr->request_ptr);
@@ -195,7 +195,7 @@ int mm_cq_handle_write_head_car(MM_Car *car_ptr)
     /* eager */
     if (car_ptr->next_ptr)
     {
-	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
+	car_ptr->vc_ptr->fn.enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
     /*printf("dec cc: written head car\n");fflush(stdout);*/
     mm_dec_cc_atomic(car_ptr->request_ptr);
@@ -213,7 +213,7 @@ int mm_cq_handle_write_data_car(MM_Car *car_ptr)
     if (car_ptr->next_ptr)
     {
 	/* enqueue next car to be written before any other pending cars */
-	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
+	car_ptr->vc_ptr->fn.enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
     /*printf("dec cc: written data car\n");fflush(stdout);*/
     mm_dec_cc_atomic(car_ptr->request_ptr);

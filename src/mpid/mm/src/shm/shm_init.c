@@ -9,6 +9,19 @@
 #endif
 
 SHM_PerProcess SHM_Process;
+MPIDI_VC_functions g_shm_vc_functions = 
+{
+    shm_post_read,
+    NULL, /*shm_car_head_enqueue_read,*/
+    shm_merge_with_unexpected,
+    NULL, /*shm_merge_with_posted,*/
+    NULL, /*shm_merge_unexpected_data,*/
+    shm_post_write,
+    NULL, /*shm_car_head_enqueue_write,*/
+    NULL, /*shm_reset_car,*/
+    NULL, /*shm_setup_packet_car,*/
+    NULL /*shm_post_read_pkt*/
+};
 
 /*@
    shm_init - initialize the shared memory method

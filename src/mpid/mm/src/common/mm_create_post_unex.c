@@ -107,7 +107,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     if (hdr_ptr->type == MPID_EAGER_PKT)
     {
 	/* post a read of the unexpected data */
-	car_ptr->vc_ptr->enqueue_read_at_head(car_ptr->vc_ptr, car_ptr);
+	car_ptr->vc_ptr->fn.enqueue_read_at_head(car_ptr->vc_ptr, car_ptr);
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MM_CREATE_POST_UNEX);

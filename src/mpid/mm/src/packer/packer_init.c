@@ -5,6 +5,20 @@
  */
 #include "mpidimpl.h"
 
+MPIDI_VC_functions g_packer_vc_functions = 
+{
+    packer_post_read,
+    NULL, /*packer_car_head_enqueue_read,*/
+    packer_merge_with_unexpected,
+    NULL, /*packer_merge_with_posted,*/
+    NULL, /*packer_merge_unexpected_data,*/
+    packer_post_write,
+    NULL, /*packer_car_head_enqueue_write,*/
+    packer_reset_car,
+    NULL, /*packer_setup_packet_car,*/
+    NULL /*packer_post_read_pkt*/
+};
+
 /*@
    packer_init - initialize the packer method
 

@@ -116,7 +116,7 @@ typedef union VC_Method_data
 #ifdef WITH_METHOD_IB
     struct vc_ib
     {
-	void *ptr;
+	IB_Info info;
     } ib;
 #endif
 #ifdef WITH_METHOD_VIA
@@ -139,6 +139,20 @@ typedef union VC_Method_data
 #endif
 } VC_Method_data;
 
+typedef struct MPIDI_VC_functions
+{
+    int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+    int (*enqueue_read_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+    int (*merge_with_unexpected)(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr);
+    int (*merge_with_posted)(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr);
+    int (*merge_unexpected_data)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, int length);
+    int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+    int (*enqueue_write_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
+    int (*reset_car)(struct MM_Car *car_ptr);
+    int (*setup_packet_car)(struct MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, struct MM_Car *car_ptr);
+    int (*post_read_pkt)(struct MPIDI_VC *vc_ptr);
+} MPIDI_VC_functions;
+
 typedef struct MPIDI_VC
 {
  MPID_Thread_lock_t lock;
@@ -150,16 +164,7 @@ typedef struct MPIDI_VC
     struct MM_Car * readq_tail;
              char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
                 int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
-              int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-	      int (*enqueue_read_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-              int (*merge_with_unexpected)(MM_Car *posted_car_ptr, MM_Car *unex_car_ptr);
-	      int (*merge_with_posted)(MM_Car *pkt_car_ptr, MM_Car *posted_car_ptr);
-	      int (*merge_unexpected_data)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, int length);
-              int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-	      int (*enqueue_write_at_head)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-              int (*reset_car)(struct MM_Car *car_ptr);
-	      int (*setup_packet_car)(struct MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest, struct MM_Car *car_ptr);
-	      int (*post_read_pkt)(struct MPIDI_VC *vc_ptr);
+ MPIDI_VC_functions fn;
   struct MPIDI_VC * read_next_ptr;
   struct MPIDI_VC * write_next_ptr;
              MM_Car pkt_car; /* used to enqueue the read of the packet */
