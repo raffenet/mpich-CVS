@@ -116,7 +116,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    if (mpi_errno) {
 		MPID_Comm_thread_unlock( comm_ptr );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	    }
 	    p->value = attribute_val;
 	    /* Does not change the reference count on the keyval */
@@ -127,7 +127,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    if (!new_p) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	    }
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->pre_sentinal	 = 0;
@@ -146,7 +146,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	if (!new_p) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;
