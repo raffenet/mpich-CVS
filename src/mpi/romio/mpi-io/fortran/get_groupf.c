@@ -13,7 +13,7 @@
 #ifdef FORTRANCAPS
 #define mpi_file_get_group_ PMPI_FILE_GET_GROUP
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-#define mpi_file_get_group_ pmpi_file_get_group
+#define mpi_file_get_group_ pmpi_file_get_group__
 #elif !defined(FORTRANUNDERSCORE)
 #if defined(HPUX) || defined(SPPUX)
 #pragma _HP_SECONDARY_DEF pmpi_file_get_group pmpi_file_get_group_
