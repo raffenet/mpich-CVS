@@ -198,9 +198,13 @@ pac_cv_posix_clock_realtime=no)
 
     gettimeofday)
     MPID_TIMER_TYPE="struct timeval"
-    AC_CHECK_FUNC(gettimeofday,,[
+    # We may have already tested for gettimeofday.  If we got a "yes",
+    # we're good to go
+    if test "$ac_cv_func_gettimeofday" != "yes" ; then
+        AC_CHECK_FUNC(gettimeofday,,[
          AC_MSG_ERROR([Requested timer gettimeofday is not available])
 ])
+    fi
     ;;
 
     linux86_cycle|linux86_cycle_2)
