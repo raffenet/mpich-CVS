@@ -35,14 +35,18 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
      * previously initialized
      */
     if (!fd->hints->initialized) {
-
 	/* buffer size for collective I/O */
 	MPI_Info_set(info, "cb_buffer_size", ADIOI_CB_BUFFER_SIZE_DFLT); 
 	fd->hints->cb_buffer_size = atoi(ADIOI_CB_BUFFER_SIZE_DFLT);
 
-	/* no default values here; let romio decide what to do */
-	fd->hints->cb_read = ADIOI_HINT_UNSPEC;
-	fd->hints->cb_write = ADIOI_HINT_UNSPEC;
+	/* default is to let romio automatically decide when to use
+	 * collective buffering
+	 */
+	MPI_Info_set(info, "romio_cb_read", "automatic"); 
+	fd->hints->cb_read = ADIOI_HINT_AUTO;
+	MPI_Info_set(info, "romio_cb_write", "automatic"); 
+	fd->hints->cb_write = ADIOI_HINT_AUTO;
+
 	fd->hints->cb_config_list = NULL;
 
 	/* number of processes that perform I/O in collective I/O */
@@ -52,8 +56,8 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	fd->hints->cb_nodes = nprocs;
 
 	/* hint indicating that no indep. I/O will be performed on this file */
-	fd->hints->no_indep_io = 0;
-	MPI_Info_set(info, "romio_no_indep_io", "false");
+	MPI_Info_set(info, "romio_no_indep_rw", "false");
+	fd->hints->no_indep_rw = 0;
 
 	/* buffer size for data sieving in independent reads */
 	MPI_Info_set(info, "ind_rd_buffer_size", ADIOI_IND_RD_BUFFER_SIZE_DFLT);
@@ -63,11 +67,13 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	MPI_Info_set(info, "ind_wr_buffer_size", ADIOI_IND_WR_BUFFER_SIZE_DFLT);
 	fd->hints->ind_wr_buffer_size = atoi(ADIOI_IND_WR_BUFFER_SIZE_DFLT);
 
-	/* don't force these into any particular value; this lets romio
-	 * make the decision on its own
+	/* default is to let romio automatically decide when to use data
+	 * sieving
 	 */
-	fd->hints->ds_read = ADIOI_HINT_UNSPEC;
-	fd->hints->ds_write = ADIOI_HINT_UNSPEC;
+	MPI_Info_set(info, "romio_ds_read", "automatic"); 
+	fd->hints->ds_read = ADIOI_HINT_AUTO;
+	MPI_Info_set(info, "romio_ds_write", "automatic"); 
+	fd->hints->ds_write = ADIOI_HINT_AUTO;
 
 	fd->hints->initialized = 1;
     }
@@ -102,6 +108,11 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		MPI_Info_set(info, "romio_cb_read", value);
 		fd->hints->cb_read = ADIOI_HINT_DISABLE;
 	    }
+	    else if (!strcmp(value, "automatic") || !strcmp(value, "AUTOMATIC"))
+	    {
+		MPI_Info_set(info, "romio_cb_read", value);
+		fd->hints->cb_read = ADIOI_HINT_AUTO;
+	    }
 
 	    tmp_val = fd->hints->cb_read;
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
@@ -120,6 +131,11 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		MPI_Info_set(info, "romio_cb_write", value);
 		fd->hints->cb_write = ADIOI_HINT_DISABLE;
 	    }
+	    else if (!strcmp(value, "automatic") || !strcmp(value, "AUTOMATIC"))
+	    {
+		MPI_Info_set(info, "romio_cb_write", value);
+		fd->hints->cb_write = ADIOI_HINT_AUTO;
+	    }
 	
 	    tmp_val = fd->hints->cb_write;
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
@@ -129,18 +145,18 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    }
 	}
 
-	/* new hint for specifying that no indep. I/O will be performed */
-	MPI_Info_get(users_info, "romio_no_indep_io", MPI_MAX_INFO_VAL, value,
+	/* new hint for specifying no indep. read/write will be performed */
+	MPI_Info_get(users_info, "romio_no_indep_rw", MPI_MAX_INFO_VAL, value,
 		     &flag);
 	if (flag) {
 	    if (!strcmp(value, "true") || !strcmp(value, "TRUE")) {
-		MPI_Info_set(info, "romio_no_indep_io", value);
-		fd->hints->no_indep_io = 1;
+		MPI_Info_set(info, "romio_no_indep_rw", value);
+		fd->hints->no_indep_rw = 1;
 		tmp_val = 1;
 	    }
 	    else if (!strcmp(value, "false") || !strcmp(value, "FALSE")) {
-		MPI_Info_set(info, "romio_no_indep_io", value);
-		fd->hints->no_indep_io = 0;
+		MPI_Info_set(info, "romio_no_indep_rw", value);
+		fd->hints->no_indep_rw = 0;
 		tmp_val = 0;
 	    }
 	    else {
@@ -148,8 +164,8 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		tmp_val = 0;
 	    }
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
-	    if (tmp_val != fd->hints->no_indep_io) {
-		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"romio_no_indep_io\" must be the same on all processes\n");
+	    if (tmp_val != fd->hints->no_indep_rw) {
+		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"romio_no_indep_rw\" must be the same on all processes\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
 	}
@@ -167,6 +183,11 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		MPI_Info_set(info, "romio_ds_read", value);
 		fd->hints->ds_read = ADIOI_HINT_DISABLE;
 	    }
+	    else if (!strcmp(value, "automatic") || !strcmp(value, "AUTOMATIC"))
+	    {
+		MPI_Info_set(info, "romio_ds_read", value);
+		fd->hints->ds_read = ADIOI_HINT_AUTO;
+	    }
 	    /* otherwise ignore */
 	}
 	MPI_Info_get(users_info, "romio_ds_write", MPI_MAX_INFO_VAL, value, 
@@ -179,6 +200,11 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    else if (!strcmp(value, "disable") || !strcmp(value, "DISABLE")) {
 		MPI_Info_set(info, "romio_ds_write", value);
 		fd->hints->ds_write = ADIOI_HINT_DISABLE;
+	    }
+	    else if (!strcmp(value, "automatic") || !strcmp(value, "AUTOMATIC"))
+	    {
+		MPI_Info_set(info, "romio_ds_write", value);
+		fd->hints->ds_write = ADIOI_HINT_AUTO;
 	    }
 	    /* otherwise ignore */
 	}
@@ -259,6 +285,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    MPI_Info_delete(info, "ind_wr_buffer_size");
 	}
 	fd->hints->ind_wr_buffer_size = -1;
+	MPI_Info_set(info, "romio_ds_write", "disable");
 	fd->hints->ds_write = ADIOI_HINT_DISABLE;
     }
 

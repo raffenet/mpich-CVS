@@ -62,7 +62,7 @@ struct ADIOI_Hints_struct {
     int cb_buffer_size;
     int ds_read;
     int ds_write;
-    int no_indep_io;
+    int no_indep_rw;
     int ind_rd_buffer_size;
     int ind_wr_buffer_size;
     char *cb_config_list;
@@ -71,9 +71,10 @@ struct ADIOI_Hints_struct {
 
 /* Values for use with cb_read, cb_write, ds_read, and ds_write 
    (IBM xlc, Compaq Tru64 compilers object to a comma after the last item)
+   (that's just wrong)
  */
 enum {
-    ADIOI_HINT_UNSPEC  = 0,
+    ADIOI_HINT_AUTO    = 0,
     ADIOI_HINT_ENABLE  = 1,
     ADIOI_HINT_DISABLE = 2
 };

@@ -121,7 +121,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
 
     if (fd->hints->cb_write == ADIOI_HINT_DISABLE ||
-	(!interleave_count && (fd->hints->cb_write == ADIOI_HINT_UNSPEC)))
+	(!interleave_count && (fd->hints->cb_write == ADIOI_HINT_AUTO)))
     {
 	/* use independent accesses */
 	ADIOI_Free(offset_list);
