@@ -1328,6 +1328,147 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="ch3essmDebug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\essm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\$(ConfigurationName)/mpich2.pch"
+				AssemblerListingLocation=".\$(ConfigurationName)/"
+				ObjectFile=".\$(ConfigurationName)/"
+				ProgramDataBaseFileName=".\$(ConfigurationName)/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="4"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="mpich2ffd.lib smpd_utild.lib dbgd.lib sockd.lib ch3essmd.lib pmid.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				OutputFile="lib/mpich2essmd.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\$(ConfigurationName)/mpich2d.pdb"
+				ImportLibrary=".\$(ConfigurationName)/mpich2essmd.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\$(ConfigurationName)/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2essmd.dll to system32 directory"
+				CommandLine="copy lib\mpich2essmd.dll %SystemRoot%\system32\mpich2essmd.dll
+copy $(ConfigurationName)\mpich2essmd.lib lib\mpich2essmd.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ch3essmRelease|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\essm\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpi\datatype"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\$(ConfigurationName)/mpich2.pch"
+				AssemblerListingLocation=".\$(ConfigurationName)/"
+				ObjectFile=".\$(ConfigurationName)/"
+				ProgramDataBaseFileName=".\$(ConfigurationName)/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="pthreadVC.lib mpich2ff.lib smpd_util.lib dbg.lib sock.lib ch3essm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				OutputFile="lib/mpich2essm.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="lib"
+				ModuleDefinitionFile=".\mpich2.def"
+				ProgramDatabaseFile=".\$(ConfigurationName)/mpich2.pdb"
+				ImportLibrary=".\$(ConfigurationName)/mpich2essm.lib"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\$(ConfigurationName)/mpich2.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="copying mpich2essm.dll to system32 directory"
+				CommandLine="copy lib\mpich2essm.dll %SystemRoot%\system32\mpich2essm.dll
+copy $(ConfigurationName)\mpich2essm.lib lib\mpich2essm.lib
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -1706,6 +1847,18 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\dims_create.c">
@@ -2075,6 +2228,18 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\intercomm_create.c">
@@ -2357,6 +2522,18 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\oplor.c">
@@ -2468,6 +2645,18 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\coll\oplxor.c">
@@ -2575,6 +2764,18 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3ibPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\binding\f77"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\binding\f77"/>
@@ -2736,6 +2937,20 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3ibPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="src\mpi\spawn"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="src\mpi\spawn"
@@ -2968,6 +3183,18 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ch3ibPRelease|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmDebug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="F77_NAME_UPPER"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ch3essmRelease|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
@@ -3303,6 +3530,9 @@ copy $(ConfigurationName)\mpich2ibp.lib lib\mpich2ibp.lib
 			</File>
 			<File
 				RelativePath=".\src\include\mpiimpl.h">
+			</File>
+			<File
+				RelativePath=".\src\include\mpiimplthread.h">
 			</File>
 			<File
 				RelativePath=".\src\util\info\mpiinfo.h">

@@ -122,6 +122,11 @@
 			helpstring = "apply settings to the Visual Studio 2005 project files"
 			require = "false"
 		/>
+		<unnamed
+			name = "--mt"
+			helpstring = "build multithreaded libraries"
+			require = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -146,6 +151,7 @@ Function cEcho(str)
 	End If
 End Function
 
+bMultiThreaded = false
 bVS2005 = False
 bUseIbRDMA = False
 bUsePinCache = False
@@ -185,6 +191,23 @@ EXTRA_STATUS_DECL      = ""
 HAVE_ROMIO             = "#include ""mpio.h"""
 
 set f = WScript.CreateObject("Scripting.FileSystemObject")
+
+'Set fin = f.OpenTextFile("src\util\thread\posix_types.i")
+Set fin = f.OpenTextFile("src\util\thread\win_types.i")
+mpe_thread_typedefs = fin.ReadAll()
+fin.Close()
+'Set fin = f.OpenTextFile("src\util\thread\posix_funcs.i")
+Set fin = f.OpenTextFile("src\util\thread\win_funcs.i")
+mpe_thread_funcs = fin.ReadAll()
+'mpe_thread_funcs = Replace(mpe_thread_funcs, "sched_yield()", "Sleep(0)")
+fin.Close()
+Set fin = f.OpenTextFile("src\mpid\common\thread\mpe_types.i")
+mpid_thread_typedefs = fin.ReadAll()
+fin.Close()
+Set fin = f.OpenTextFile("src\mpid\common\thread\mpe_funcs.i")
+mpid_thread_funcs = fin.ReadAll()
+mpid_thread_funcs = Replace(mpid_thread_funcs, "sched_yield()", "Sleep(0)")
+fin.Close()
 
 ' Process arguments
 argCount = WScript.Arguments.Count
@@ -266,6 +289,8 @@ For arg = 0 To argCount - 1
 	WScript.Quit
   ElseIf argValue = "--vs05" Then
     bVS2005 = True
+  ElseIf argValue = "--mt" Then
+    bMultiThreaded = true
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -1822,6 +1847,14 @@ Function ReplaceAts( str, use_f77 )
 				'str = Replace(str, "@configure_input@", "")
 			Case "@DLLIMPORT@"
 				str = Replace(str, "@DLLIMPORT@", "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIV1/" & vbNewLine & "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIV2/" & vbNewLine & "CDEC$ ATTRIBUTES DLLIMPORT::/MPIPRIVC/")
+			Case "@MPE_THREAD_TYPEDEFS@"
+				str = Replace(str, "@MPE_THREAD_TYPEDEFS@", mpe_thread_typedefs)
+			Case "@MPE_THREAD_FUNCS@"
+				str = Replace(str, "@MPE_THREAD_FUNCS@", mpe_thread_funcs)
+			Case "@MPID_THREAD_TYPEDEFS@"
+				str = Replace(str, "@MPID_THREAD_TYPEDEFS@", mpid_thread_typedefs)
+			Case "@MPID_THREAD_FUNCS@"
+				str = Replace(str, "@MPID_THREAD_FUNCS@", mpid_thread_funcs)
 			Case Else
 				unhandled_ats = unhandled_ats & Match & vbNewLine
 		End Select
@@ -2336,11 +2369,23 @@ Sub AddDefinitions( fout, filename )
 				Case "HAVE_STDDEF_H"
 					fout.WriteLine("#define HAVE_STDDEF_H 1")
 				Case "MPICH_THREAD_LEVEL"
-					fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
+					If bMultiThreaded Then
+						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_MULTIPLE")
+					Else
+						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
+					End If
 				Case "USE_THREAD_IMPL"
-					fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
+					If bMultiThreaded Then
+						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_GLOBAL_MUTEX")
+					Else
+						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
+					End If
 				Case "USE_THREAD_PKG"
-					fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE /*MPICH_THREAD_PKG_POSIX*/")
+					If bMultiThreaded Then
+						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_POSIX /* MPICH_THREAD_PKG_WINTHREADS */")
+					Else
+						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE")
+					End If
 				Case "_REENTRANT"
 					fout.WriteLine("/* #undef _REENTRANT */")
 				Case "_THREAD_SAFE"
@@ -2722,6 +2767,43 @@ If f.FolderExists("src\mpe2") Then
 		fout.Close()
 	End If
 
+End If
+
+'
+' mpe_thread.h
+'
+If f.FileExists("src\util\thread\mpe_thread.h.in") Then
+	Set fout = f.CreateTextFile("src\include\mpe_thread.h")
+	Set fin = f.OpenTextFile("src\util\thread\mpe_thread.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false)
+	fout.Write(contents)
+	fin.Close()
+	fout.Close()
+End If
+
+'
+' mpe_thread_conf.h
+'
+If f.FileExists("src\util\thread\mpe_thread_conf.h.in") Then
+	Set fout = f.CreateTextFile("src\include\mpe_thread_conf.h")
+	Call WriteHeader(fout, "mpe_thread_")
+	Call AddDefinitions(fout, "src\util\thread\mpe_thread_conf.h.in")
+	Call WriteFooter(fout)
+	fout.Close()
+End If
+
+'
+' mpid_thread.h
+'
+If f.FileExists("src\mpid\common\thread\mpid_thread.h.in") Then
+	Set fout = f.CreateTextFile("src\include\mpid_thread.h")
+	Set fin = f.OpenTextFile("src\mpid\common\thread\mpid_thread.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false)
+	fout.Write(contents)
+	fin.Close()
+	fout.Close()
 End If
 
 '
