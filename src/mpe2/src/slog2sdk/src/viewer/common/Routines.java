@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.net.URL;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 
 public class Routines
 {
@@ -43,6 +44,17 @@ public class Routines
             for ( int ii = 0; ii < comps.length; ii++)
                 setComponentAndChildrenCursors( comps[ ii ], csr );
         }
+    }
+
+    public static void setShortJComponentSizes( JComponent  comp,
+                                                Dimension   pref_size )
+    {
+        Dimension  min_size, max_size;
+        min_size  = new Dimension( 0, pref_size.height );
+        max_size  = new Dimension( Short.MAX_VALUE, pref_size.height );
+        comp.setMinimumSize( min_size );
+        comp.setMaximumSize( max_size );
+        comp.setPreferredSize( pref_size );
     }
 
 
@@ -121,5 +133,43 @@ public class Routines
         // quotient = Math.ceil( t_init / t_incre );
         quotient = Math.floor( t_init / t_incre );
         return quotient * t_incre;
+    }
+
+
+
+    private static final double COLOR_FACTOR = 0.85;
+
+    public static Color getSlightBrighterColor( Color color )
+    {
+        int red   = color.getRed();
+        int green = color.getGreen();
+        int blue  = color.getBlue();
+
+        /* From 2D group:
+         * 1. black.brighter() should return grey
+         * 2. applying brighter to blue will always return blue, brighter
+         * 3. non pure color (non zero rgb) will eventually return white
+         */
+        int ii = (int) ( 1.0 / (1.0-COLOR_FACTOR) );
+        if ( red == 0 && green == 0 && blue == 0)
+           return new Color( ii, ii, ii );
+
+        if ( red > 0 && red < ii )
+            red = ii;
+        if ( green > 0 && green < ii )
+            green = ii;
+        if ( blue > 0 && blue < ii )
+            blue = ii;
+
+        return new Color( Math.min( (int)(red  /COLOR_FACTOR), 255 ),
+                          Math.min( (int)(green/COLOR_FACTOR), 255 ),
+                          Math.min( (int)(blue /COLOR_FACTOR), 255 ) );
+    }
+
+    public static Color getSlightDarkerColor( Color color )
+    {
+        return new Color( Math.max( (int)(color.getRed()  *COLOR_FACTOR), 0),
+                          Math.max( (int)(color.getGreen()*COLOR_FACTOR), 0),
+                          Math.max( (int)(color.getBlue() *COLOR_FACTOR), 0) );
     }
 }

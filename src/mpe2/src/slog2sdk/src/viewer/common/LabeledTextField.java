@@ -27,7 +27,7 @@ public class LabeledTextField extends JPanel
     protected static         Font    FONT        = null;
 
     private   JLabel                 tag;
-    private   ExpandedTextField      fld;
+    private   ActableTextField       fld;
     protected DecimalFormat          fmt;
     // private int                    preferred_height;
 
@@ -59,7 +59,7 @@ public class LabeledTextField extends JPanel
             super.add( tag );
         }
 
-        fld = new ExpandedTextField();
+        fld = new ActableTextField();
         tag.setLabelFor( fld );
         fld.setAlignmentX( Component.LEFT_ALIGNMENT );
         super.add( fld );
@@ -232,16 +232,6 @@ public class LabeledTextField extends JPanel
         fld.fireActionPerformed();
     }
 
-
-
-
-    private class ExpandedTextField extends JTextField
-    {
-        public void fireActionPerformed()
-        {
-            super.fireActionPerformed();
-        }
-    }
 
 
 
