@@ -33,12 +33,16 @@ find sub
   while (<F>)
   {
    chomp;
-   /(\S*)\s+(.*)/;
+   /\s*(\S*)\s*(\S*)(\s?)(\S.*)*/;
    if (!defined($states{$1}))
    {
-       printf("Warning: described state $1 not used\n");
+       printf("Warning: described state $1 not used, consider removing it from describe_states.txt\n");
    }
    $descriptions{$1} = $2;
+   if ( !($4 eq "") )
+   {
+       $color_descriptions{$1} = $4;
+   }
   }
   close F;
  }
@@ -215,7 +219,14 @@ print F "{\n";
 print F "\n";
 while ( ($state, $description) = each %descriptions )
 {
-  print F "    RLOG_DescribeState(g_pRLOG, $state, \"$description\", get_random_color_str());\n";
+  if (defined($color_descriptions{$state}))
+  {
+    print F "    RLOG_DescribeState(g_pRLOG, $state, \"$description\", \"$color_descriptions{$state}\");\n";
+  }
+  else
+  {
+    print F "    RLOG_DescribeState(g_pRLOG, $state, \"$description\", get_random_color_str());\n";
+  }
 }
 print F "    return 0;\n";
 print F "}\n";
