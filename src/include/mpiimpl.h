@@ -260,6 +260,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Op_get_ptr(a,ptr) MPID_Get_ptr(Op,a,ptr)
 #define MPID_Info_get_ptr(a,ptr) MPID_Get_ptr(Info,a,ptr)
 #define MPID_Win_get_ptr(a,ptr) MPID_Get_ptr(Win,a,ptr)
+#define MPID_Request_get_ptr(a,ptr) MPID_Get_ptr(Request,a,ptr)
 
 /* Valid pointer checks */
 /* This test is lame.  Should eventually include cookie test 
@@ -275,6 +276,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Op_valid_ptr(ptr,err) MPID_Valid_ptr(Op,ptr,err)
 #define MPID_Errhandler_valid_ptr(ptr,err) MPID_Valid_ptr(Errhandler,ptr,err)
 #define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr(File,ptr,err)
+#define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr(Request,ptr,err)
 
 /* Info */
 typedef struct MPID_Info_s {
@@ -419,6 +421,9 @@ typedef struct {
     MPID_DEV_REQUEST_DECL
 #endif
 } MPID_Request;
+extern MPIU_Object_alloc_t MPID_Request_mem;
+/* Preallocated request objects */
+extern MPID_Request MPID_Request_direct[];
 
 /* Windows */
 typedef struct {
@@ -673,5 +678,7 @@ int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [], int,
 int MPID_Finalize(void);
 int MPID_Init(void);
 int MPID_Open_port(MPID_Info *, char *);
+int MPID_Isend(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
+int MPID_Irecv(void *, int, MPID_Datatype *, int, int, MPID_Comm *, MPID_Request **);
 
 #endif /* MPIIMPL_INCLUDED */
