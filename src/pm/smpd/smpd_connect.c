@@ -601,18 +601,6 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
 #endif
     context->process = NULL;
     context->sspi_header[0] = '\0';
-/*
-    context->sspi_buffer = NULL;
-    context->sspi_buffer_length = 0;
-    context->sspi_outbound_buffer = NULL;
-    context->sspi_max_buffer_size = 0;
-    context->sspi_id = -1;
-#ifdef HAVE_WINDOWS_H
-    memset(&context->sspi_credential, 0, sizeof(CredHandle));
-    memset(&context->sspi_expiration_time, 0, sizeof(TimeStamp));
-    context->sspi_user_handle = INVALID_HANDLE_VALUE;
-#endif
-*/
     context->sspi_context = NULL;
 
     if (sock != MPIDU_SOCK_INVALID_SOCK)
@@ -650,8 +638,8 @@ int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context)
     context->out_buffer_length = 0;
     context->max_buffer_size = 0;
 #ifdef HAVE_WINDOWS_H
-    memset(&context->credential, 0, sizeof(CredHandle));
-    memset(&context->context, 0, sizeof(CtxtHandle));
+    SecInvalidateHandle(&context->credential);
+    SecInvalidateHandle(&context->context);
     memset(&context->expiration_time, 0, sizeof(TimeStamp));
     context->user_handle = INVALID_HANDLE_VALUE;
 #endif
