@@ -1276,10 +1276,19 @@ int ibu_post_read(ibu_t ibu, void *buf, int len, int (*rfn)(int, void*))
 
 int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
 {
+    char str[1024] = "ibu_post_readv: ";
+    char *s;
+    int i;
     MPIDI_STATE_DECL(MPID_STATE_IBU_POST_READV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_POST_READV);
-    MPIU_dbg_printf("ibu_post_readv\n");
+    s = &str[16];
+    for (i=0; i<n; i++)
+    {
+	s += sprintf(s, "%d,", iov[i].IBU_IOV_LEN);
+    }
+    MPIU_dbg_printf("%s\n", s);
+    /*MPIU_dbg_printf("ibu_post_readv\n");*/
     ibu->read.total = 0;
     /*ibu->read.iov = iov;*/
     memcpy(ibu->read.iov, iov, sizeof(IBU_IOV) * n);
@@ -1289,7 +1298,6 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     ibu->read.progress_update = rfn;
     ibu->state |= IBU_READING;
     ibu->pending_operations++;
-    /*WSARecv(ibu->ibu, ibu->read.iov, n, &ibu->read.num_bytes, &flags, &ibu->read.ovl, NULL);*/
     /* copy any pre-received data into the iov */
     if (ibu->unex_list)
 	ibui_readv_unex(ibu);
