@@ -771,6 +771,21 @@ if test "$enable_debugger" = "yes" ; then
 	    BUILD_TVDLL=yes
         fi
    fi
+   # One more nasty problem.  Totalview relies on debugger symbols 
+   # being present in the executable.  Some experimental versions of
+   # gcc (3.2 20020329 for ia64) do *not* include the object symbols
+   # when debugging.  For HPUX, the necessary linking options are
+   #    +noobjdebug
+   # for C, Fortran, and C++.  We don't have a good test for this yet,
+   # so we add a warning
+   if test "$ac_cv_prog_gcc" = "yes" ; then
+       AC_MSG_WARN([Some versions of gcc do not include debugging information
+within the executable.  Totalview requires this information to detect
+an MPICH code.  If you have trouble, try linking with the additional
+option 
+    +noobjdebug
+on all link lines (consider adding it to LDFLAGS)])
+   fi
    AC_SUBST(BUILD_TVDLL)
    AC_SUBST(CC_SHL_DBG)
    AC_SUBST(C_LINK_SHL_DBG)
