@@ -14,7 +14,7 @@ int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, i
     while (src_length && dest_length)
     {
 	ch = *src;
-	num_used = snprintf(dest, dest_length, "%X", (int)*src);
+	num_used = snprintf(dest, dest_length, "%02X", (int)*src);
 	if (num_used < 0)
 	{
 	    *num_encoded = n;
