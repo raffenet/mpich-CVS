@@ -229,40 +229,44 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
     if (MPIR_Nest_value()) return errcode;
 
     /* Now, invoke the error handler for the window */
-    if (win_ptr && win_ptr->errhandler) {
-	switch (win_ptr->errhandler->language) {
-	case MPID_LANG_C:
+    if (win_ptr) {
+	if (win_ptr->errhandler) {
+	    /* We pass a final 0 (for a null pointer) to these routines
+	       because MPICH-1 expected that */
+	    switch (win_ptr->errhandler->language) {
+	    case MPID_LANG_C:
 #ifdef HAVE_CXX_BINDING
-	case MPID_LANG_CXX:
+	    case MPID_LANG_CXX:
 #endif
-	    (*win_ptr->errhandler->errfn.C_Win_Handler_function)( 
-		&win_ptr->handle, &errcode );
-	    break;
+		(*win_ptr->errhandler->errfn.C_Win_Handler_function)( 
+		    &win_ptr->handle, &errcode, 0 );
+		break;
 #ifdef HAVE_FORTRAN_BINDING
-	case MPID_LANG_FORTRAN90:
-	case MPID_LANG_FORTRAN:
-	    (*win_ptr->errhandler->errfn.F77_Handler_function)( 
-		(MPI_Fint *)&win_ptr->handle, &errcode );
-	    break;
+	    case MPID_LANG_FORTRAN90:
+	    case MPID_LANG_FORTRAN:
+		(*win_ptr->errhandler->errfn.F77_Handler_function)( 
+		    (MPI_Fint *)&win_ptr->handle, &errcode, 0 );
+		break;
 #endif
+	    }
+	}
+	else {
+	    /* Use the default error handler, which is ERRORS_ARE_FATAL 
+	       (MPI-2 section 6.6.1) */
+	    char msg[MPI_MAX_ERROR_STRING];
+	
+	    MPIR_Err_get_string( errcode, msg );
+	    fprintf( stderr, "Fatal error (code 0x%08x) in %s(): %s\n", errcode, fcname, msg);
 	}
     }
     else
     {
-	MPID_Comm * comm_ptr;
-
-	if (win_ptr != NULL)
-	{
-	    MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
-	}
-	else
-	{
-	    comm_ptr = NULL;
-	}
+	/* No valid window, so errors are fatal */
+	char msg[MPI_MAX_ERROR_STRING];
 	
-	/* No window, so errors are fatal */
-	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
-	MPID_Abort(comm_ptr, MPI_SUCCESS, 13);
+	MPIR_Err_get_string( errcode, msg );
+	fprintf( stderr, "Fatal error (code 0x%08x) in %s(): %s\n", errcode, fcname, msg);
+	MPID_Abort(0, MPI_SUCCESS, 13);
     }
     return errcode;
 }
