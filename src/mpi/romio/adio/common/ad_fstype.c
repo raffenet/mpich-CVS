@@ -89,7 +89,10 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     }
 
 #if (defined(HPUX) || defined(SPPUX) || defined(IRIX) || defined(SOLARIS) || defined(AIX) || defined(DEC) || defined(CRAY))
-    err = statvfs(filename, &vfsbuf);
+    do {
+	err = statvfs(filename, &vfsbuf);
+    } while (err && (errno == ESTALE));
+
     if (err && (errno == ENOENT)) err = statvfs(dir, &vfsbuf);
     free(dir);
 
@@ -112,7 +115,10 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	}
     }
 #elif defined(LINUX)
-    err = statfs(filename, &fsbuf);
+    do {
+	err = statfs(filename, &fsbuf);
+    } while (err && (errno == ESTALE));
+
     if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
     free(dir);
 
@@ -126,7 +132,10 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	else *fstype = ADIO_UFS;
     }
 #elif (defined(FREEBSD) && defined(HAVE_MOUNT_NFS))
-    err = statfs(filename, &fsbuf);
+    do {
+	err = statfs(filename, &fsbuf);
+    } while (err && (errno == ESTALE));
+
     if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
     free(dir);
 
@@ -140,7 +149,10 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	else *fstype = ADIO_UFS;
     }
 #elif defined(PARAGON)
-    err = statpfs(filename, &ebuf, 0, 0);
+    do {
+	err = statpfs(filename, &ebuf, 0, 0);
+    } while (err && (errno == ESTALE));
+
     if (err && (errno == ENOENT)) err = statpfs(dir, &ebuf, 0, 0);
     free(dir);
 
@@ -151,7 +163,10 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	else *fstype = ADIO_UFS;
     }
 #elif defined(tflops)
-    err = statfs(filename, &fsbuf);
+    do {
+	err = statfs(filename, &fsbuf);
+    } while (err && (errno == ESTALE));
+
     if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
     free(dir);
 
@@ -162,15 +177,18 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	else *fstype = ADIO_UFS;
     }
 #elif defined(SX4)
-     err = stat (filename, &sbuf);
-     if (err && (errno == ENOENT)) err = stat (dir, &sbuf);
-     free(dir);
- 
-     if (err) *error_code = MPI_ERR_UNKNOWN;
-     else {
-         if (!strcmp(sbuf.st_fstype, "nfs")) *fstype = ADIO_NFS;
-         else *fstype = ADIO_SFS;
-     }
+    do {
+	err = stat(filename, &sbuf);
+    } while (err && (errno == ESTALE));
+
+    if (err && (errno == ENOENT)) err = stat(dir, &sbuf);
+    free(dir);
+    
+    if (err) *error_code = MPI_ERR_UNKNOWN;
+    else {
+	if (!strcmp(sbuf.st_fstype, "nfs")) *fstype = ADIO_NFS;
+	else *fstype = ADIO_SFS;
+    }
 #else
     /* on other systems, make NFS the default */
     free(dir);
