@@ -44,7 +44,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	mpi_errno = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &wait_result);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_wait", 0);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_wait", 0);
 	    goto fn_exit;
 	}
 	switch (wait_result)
@@ -135,7 +135,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		}
 	    }
 	}
-    } 
+    }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 
 fn_exit:
