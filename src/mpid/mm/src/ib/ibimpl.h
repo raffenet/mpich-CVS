@@ -9,8 +9,10 @@
 #include "mm_ib.h"
 #include "sock.h"
 
-#include "ib_types.h"
-#include "ib_defs.h" 
+#include "iba.h"
+
+#define IB_SUCCESS 0
+#define IB_FAILURE 1
 
 #define IB_EAGER_LIMIT       (1024 * 20)
 #define IB_ERROR_MSG_LENGTH  256
@@ -21,6 +23,7 @@ typedef struct IB_PerProcess {
        ib_hca_handle_t hca_handle;
         ib_pd_handle_t pd_handle;
        ib_cqd_handle_t cqd_handle;
+                   int lid;
 		   int error;
 		  char err_msg[IB_ERROR_MSG_LENGTH];
 } IB_PerProcess;

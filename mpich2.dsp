@@ -46,7 +46,7 @@ RSC=rc.exe
 # ADD BASE F90 /compile_only /include:"Release/" /dll /nologo /warn:nofileopt
 # ADD F90 /browser /compile_only /include:"Release/" /dll /nologo /warn:nofileopt
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MPICH2_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "src\include" /I "src\mpid\mm\include" /I "src\mpid\common\datatype" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MPICH2_EXPORTS" /D FD_SETSIZE=256 /FR /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "src\include" /I "src\mpid\mm\include" /I "src\mpid\common\datatype" /I "src\mpid\mm\src\ib\paceline" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MPICH2_EXPORTS" /D FD_SETSIZE=256 /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -79,7 +79,7 @@ PostBuild_Cmds=copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll	copy Release
 # ADD BASE F90 /check:bounds /compile_only /debug:full /include:"Debug/" /dll /nologo /traceback /warn:argument_checking /warn:nofileopt
 # ADD F90 /browser /check:bounds /compile_only /debug:full /include:"Debug/" /dll /nologo /traceback /warn:argument_checking /warn:nofileopt
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MPICH2_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "src\include" /I "src\mpid\mm\include" /I "src\mpid\common\datatype" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MPICH2_EXPORTS" /D FD_SETSIZE=256 /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "src\include" /I "src\mpid\mm\include" /I "src\mpid\common\datatype" /I "src\mpid\mm\src\ib\paceline" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MPICH2_EXPORTS" /D FD_SETSIZE=256 /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
