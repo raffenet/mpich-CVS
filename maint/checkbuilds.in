@@ -478,11 +478,12 @@ sub RunTestSuites {
 	    %saveENV = %ENV;
 	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
 	    # This timeout needs to be made uniform for all mpiruns
+	    # 3 minutes is enough for some of our slower machines
 	    if ($built_for_mpd) {
-		$ENV{MPIEXEC_TIMEOUT} = "60";
+		$ENV{MPIEXEC_TIMEOUT} = "180";
 	    }
 	    else {
-		$ENV{MPIEXEC_TIMEOUT} = "1";
+		$ENV{MPIEXEC_TIMEOUT} = "3";
 	    }
 	    $rc = &RunProgram( @config );
 	    if ($rc == 0) {
