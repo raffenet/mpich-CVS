@@ -4,6 +4,41 @@
 #       See COPYRIGHT in top-level directory.
 #
 
+"""
+usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ 
+                [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>] \ 
+                [--loccons] [--remcons] [--shell] [--verbose] [-1]
+                [--ncpus=<ncpus>]
+ or, in short form, 
+        mpdboot -n n_to_start [-f <hostsfile>] [-h] [-r <rshcmd>] [-u <user>] \ 
+                [-m <mpdcmd>]  -s -v [-1]
+
+--totalnum specifies the total number of mpds to start; at least
+  one mpd will be started locally, and others on the machines specified
+  by the file argument; by default, only one mpd per host will be
+  started even if the hostname occurs multiple times in the hosts file
+-1 means remove the restriction of starting only one mpd per machine; 
+  in this case, at most the first mpd on a host will have a console
+--file specifies the file of machines to start the rest of the mpds on;
+  it defaults to mpd.hosts
+--mpd specifies the full path name of mpd on the remote hosts if it is
+  not in your path
+--rsh specifies the name of the command used to start remote mpds; it
+  defaults to ssh; an alternative is rsh
+--shell says that the Bourne shell is your default for rsh' 
+--verbose shows the ssh attempts as they occur; it does not provide
+  confirmation that the sshs were successful
+--loccons says you do not want a console available on local mpd(s)
+--remcons says you do not want consoles available on remote mpd(s)
+--ncpus indicates how many cpus you want to show for the local machine;
+  others are listed in the hosts file
+"""
+from time import ctime
+__author__ = "Ralph Butler and Rusty Lusk"
+__date__ = ctime()
+__version__ = "$Revision$"
+__credits__ = ""
+
 from os     import environ, system, path, kill, access, X_OK
 from sys    import argv, exit, stdout
 from popen2 import Popen4, popen2
@@ -360,33 +395,7 @@ def err_exit(msg):
 
 
 def usage():
-    print 'usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ '
-    print '                [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>] \ '
-    print '                [--loccons] [--remcons] [--shell] [--verbose] [-1]'
-    print '                [--ncpus=<ncpus>]'
-    print ' or, in short form, '
-    print '        mpdboot -n n_to_start [-f <hostsfile>] [-h] [-r <rshcmd>] [-u <user>] \ '
-    print '                [-m <mpdcmd>]  -s -v [-1]'
-    print ''
-    print '--totalnum specifies the total number of mpds to start; at least'
-    print '  one mpd will be started locally, and others on the machines specified'
-    print '  by the file argument; by default, only one mpd per host will be'
-    print '  started even if the hostname occurs multiple times in the hosts file'
-    print '-1 means remove the restriction of starting only one mpd per machine; '
-    print '  in this case, at most the first mpd on a host will have a console'
-    print '--file specifies the file of machines to start the rest of the mpds on;'
-    print '  it defaults to mpd.hosts'
-    print '--mpd specifies the full path name of mpd on the remote hosts if it is'
-    print '  not in your path'
-    print '--rsh specifies the name of the command used to start remote mpds; it'
-    print '  defaults to ssh; an alternative is rsh'
-    print '--shell says that the Bourne shell is your default for rsh' 
-    print '--verbose shows the ssh attempts as they occur; it does not provide'
-    print '  confirmation that the sshs were successful'
-    print '--loccons says you do not want a console available on local mpd(s)'
-    print '--remcons says you do not want consoles available on remote mpd(s)'
-    print '--ncpus indicates how many cpus you want to show for the local machine;'
-    print '  others are listed in the hosts file'
+    print __doc__
     stdout.flush()
     exit(-1)
 
