@@ -21,9 +21,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
     int dt_contig;
     MPID_Request * sreq;
 
-    MPIDI_dbg_printf(10, FCNAME, "entering");
-    MPIDI_dbg_printf(15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
-		     comm->context_id + context_offset);
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
+		      comm->context_id + context_offset));
     
     sreq = MPIDI_CH3_Request_create();
     assert(sreq != NULL);
@@ -46,7 +46,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	    MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	    
-	    MPIDI_dbg_printf(15, FCNAME, "sending zero length message");
+	    MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
 	    eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
 	    eager_pkt->match.rank = comm->rank;
 	    eager_pkt->match.tag = tag;
@@ -93,8 +93,8 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	    eager_pkt->sender_req_id = sreq->handle;
 	    eager_pkt->data_sz = count * dt_sz;
 
-	    MPIDI_dbg_printf(15, FCNAME, "sending eager contiguous message, "
-			     "data_sz=%ld", eager_pkt->data_sz);
+	    MPIDI_DBG_PRINTF((15, FCNAME, "sending eager contiguous message, "
+			      "data_sz=%ld", eager_pkt->data_sz));
 	    iov[0].iov_base = eager_pkt;
 	    iov[0].iov_len = sizeof(*eager_pkt);
 	    iov[1].iov_base = (void *) buf;
@@ -128,8 +128,10 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
     }
 
   fn_exit:
-    MPIDI_dbg_printf(10, FCNAME, "exiting");
     *request = sreq;
+    MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x",
+		      sreq->handle));
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     return MPI_SUCCESS;
 }
 

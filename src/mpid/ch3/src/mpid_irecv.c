@@ -21,9 +21,9 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
     int found;
     int mpi_errno = MPI_SUCCESS;
 
-    MPIDI_dbg_printf(10, FCNAME, "entering");
-    MPIDI_dbg_printf(15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
-		     comm->context_id + context_offset);
+    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
+		      comm->context_id + context_offset));
     
     rreq = MPIDI_CH3U_Request_FDU_or_AEP(
 	rank, tag, comm->context_id + context_offset, &found);
@@ -39,7 +39,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
     if (found)
     {
 	/* Message was found in the unexepected queue */
-	MPIDI_dbg_printf(15, FCNAME, "request found in unexpected queue");
+	MPIDI_DBG_PRINTF((15, FCNAME, "request found in unexpected queue"));
 
 	/* MT - this check needs to be thread safe */
 	/* NOTE - rreq->cc is used here instead of rreq->cc_ptr.  We are
@@ -48,7 +48,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
 	    /* This is an eager message */
-	    MPIDI_dbg_printf(15, FCNAME, "eager message in the request");
+	    MPIDI_DBG_PRINTF((15, FCNAME, "eager message in the request"));
 	    
 	    if (rreq->cc == 0)
 	    {
@@ -79,8 +79,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	    MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt =
 		&upkt.rndv_clr_to_send;
 		
-	    MPIDI_dbg_printf(15, FCNAME, "rndv RTS in the request, "
-			     "sending rndv CTS");
+	    MPIDI_DBG_PRINTF((15, FCNAME, "rndv RTS in the request, "
+			      "sending rndv CTS"));
 	    
 	    cts_pkt->type = MPIDI_CH3_PKT_RNDV_CLR_TO_SEND;
 	    cts_pkt->sender_req_id = rreq->ch3.sender_req_id;
@@ -101,12 +101,14 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	/* Message has yet to arrived.  The request has been placed on the list
            of posted receive requests and populated with information supplied
            in the arguments. */
-	MPIDI_dbg_printf(15, FCNAME, "request allocated in posted queue");
+	MPIDI_DBG_PRINTF((15, FCNAME, "request allocated in posted queue"));
     }
 
   fn_exit:
     *request = rreq;
-    MPIDI_dbg_printf(10, FCNAME, "exiting");
+    MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x",
+		      rreq->handle));
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     return mpi_errno;
 }
 
