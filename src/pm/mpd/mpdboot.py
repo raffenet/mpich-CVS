@@ -252,7 +252,7 @@ def mpdboot():
         except:
             pass
 
-    mpd_set_my_id('mpdboot_rank_%d' % (myBootRank) )
+    mpd_set_my_id('mpdboot_%s_%d' % (myHost,myBootRank) )
     if debug:
         mpd_print(1, 'starting')
     (parent,lchild,rchild) = mpd_get_ranks_in_binary_tree(myBootRank,totalNum)
@@ -339,6 +339,8 @@ def mpdboot():
         rfd = rchildMPDBoot.fromchild
         fdsToSelect.append(rfd)
 
+    lfd_first_line = 1
+    rfd_first_line = 1
     while fdsToSelect:
         try:
             (readyFDs,unused1,unused2) = select(fdsToSelect,[],[],0.1)
@@ -350,6 +352,9 @@ def mpdboot():
                 if line.find('RC=MPDBOOT_ERREXIT') >= 0:
                     err_exit('RC=MPDBOOT_ERREXIT')
                 else:
+		    if lfd_first_line:
+		        lfd_first_line = 0
+			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (lchild,hosts[lchild]))
                     print line, ; stdout.flush()
             else:
                 lfd.close()
@@ -360,6 +365,9 @@ def mpdboot():
                 if line.find('RC=MPDBOOT_ERREXIT') >= 0:
                     err_exit('RC=MPDBOOT_ERREXIT')
                 else:
+		    if rfd_first_line:
+		        rfd_first_line = 0
+			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (rchild,hosts[rchild]))
                     print line, ; stdout.flush()
             else:
                 rfd.close()
