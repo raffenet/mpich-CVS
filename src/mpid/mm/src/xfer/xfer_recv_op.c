@@ -91,6 +91,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     if (bNeedHeader)
     {
 	pRequest->mm.rcar[0].request_ptr = pRequest;
+	pRequest->mm.rcar[0].buf_ptr = &pRequest->mm.buf;
 	pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR;
 	pRequest->mm.rcar[0].vc_ptr = mm_get_vc(request_ptr->comm, src);
 	pRequest->mm.rcar[0].src = src;
@@ -112,6 +113,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     }
 
     pCar->request_ptr = pRequest;
+    pCar->buf_ptr = &pRequest->mm.buf;
     pCar->type = MM_READ_CAR;
     pCar->src = src;
     pCar->next_ptr = NULL;
@@ -122,6 +124,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     /* allocate a write car for unpacking */
     pCar = pRequest->mm.wcar;
     pCar->request_ptr = pRequest;
+    pCar->buf_ptr = &pRequest->mm.buf;
     pCar->type = MM_HEAD_CAR | MM_WRITE_CAR | MM_UNPACKER_CAR;
     pCar->vc_ptr = NULL;
     pCar->next_ptr = NULL;

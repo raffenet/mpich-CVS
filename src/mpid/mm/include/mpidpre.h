@@ -70,6 +70,7 @@ typedef int MM_CAR_TYPE;
 #define MM_PACKER_CAR    0x08
 #define MM_UNPACKER_CAR  0x10
 #define MM_UNEX_HEAD_CAR 0x20
+#define MM_UNEX_CAR      0x40
 
 /* packet definitions */
 typedef struct MPID_Packet
@@ -85,6 +86,7 @@ typedef struct MM_Car
 {
     int freeme;
     struct MPID_Request *request_ptr;
+    union MM_Segment_buffer *buf_ptr;
     struct MPIDI_VC *vc_ptr;
     int src, dest;
     MM_CAR_TYPE type;
@@ -133,6 +135,57 @@ typedef struct MM_Car
     struct MM_Car *next_ptr, *opnext_ptr, *qnext_ptr;
 } MM_Car;
 
+typedef union MM_Segment_buffer
+{
+    MM_BUFFER_TYPE type;
+    struct mm_segment_tmp
+    {
+	MM_BUFFER_TYPE type;
+	void *buf_ptr[2];
+	int cur_buf;
+	int num_read;
+	int min_num_written;
+    } tmp;
+    struct mm_segment_vec
+    {
+	MM_BUFFER_TYPE type;
+	MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	int size;
+	int num_read;
+	int min_num_written;
+    } vec;
+#ifdef WITH_METHOD_SHM
+    struct mm_segment_shm
+    {
+	MM_BUFFER_TYPE type;
+	void *shm_ptr;
+	int num_read;
+    } shm;
+#endif
+#ifdef WITH_METHOD_VIA
+    struct mm_segment_via
+    {
+	MM_BUFFER_TYPE type;
+	void *descriptor_ptr;
+	int num_descriptors;
+    } via;
+#endif
+#ifdef WITH_METHOD_VIA_RDMA
+    struct mm_segment_via_rdma
+    {
+	MM_BUFFER_TYPE type;
+	void *descriptor_ptr;
+	int num_descriptors;
+    } via_rdma;
+#endif
+#ifdef WITH_METHOD_NEW
+    struct mm_segment_new
+    {
+	MM_BUFFER_TYPE type;
+    }
+#endif
+} MM_Segment_buffer;
+
 /* multi-method segment */
 typedef struct MM_Segment
 {
@@ -152,47 +205,7 @@ typedef struct MM_Segment
     MM_Car rcar[2];
     int op_valid;
     int (*get_buffers)(struct MPID_Request *request_ptr);
-    MM_BUFFER_TYPE buf_type;
-    union MM_Segment_buffer
-    {
-	struct mm_segment_tmp
-	{
-	    void *buf_ptr[2];
-	    int cur_buf;
-	    int num_read;
-	    int min_num_written;
-	} tmp;
-	struct mm_segment_vec
-	{
-	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
-	    int size;
-	    int num_read;
-	    int min_num_written;
-	} vec;
-#ifdef WITH_METHOD_SHM
-	struct mm_segment_shm
-	{
-	    void *shm_ptr;
-	    int num_read;
-	} shm;
-#endif
-#ifdef WITH_METHOD_VIA
-	struct mm_segment_via
-	{
-	    void *descriptor_ptr;
-	    int num_descriptors;
-	} via;
-#endif
-#ifdef WITH_METHOD_VIA_RDMA
-	struct mm_segment_via_rdma
-	{
-	    void *descriptor_ptr;
-	    int num_descriptors;
-	} via_rdma;
-#endif
-#ifdef WITH_METHOD_NEW
-#endif
-    } buf;
+    MM_Segment_buffer buf, pkt_buf;
     struct MPID_Request *next_ptr;
 } MM_Segment;
 

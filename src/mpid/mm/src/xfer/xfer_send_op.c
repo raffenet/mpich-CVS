@@ -95,6 +95,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 
     /* setup the read car for packing the mpi buffer to be sent */
     pRequest->mm.rcar[0].request_ptr = pRequest;
+    pRequest->mm.rcar[0].buf_ptr = &pRequest->mm.buf;
     pRequest->mm.rcar[0].type = MM_HEAD_CAR | MM_READ_CAR | MM_PACKER_CAR;
     pRequest->mm.rcar[0].vc_ptr = NULL;
     pRequest->mm.rcar[0].next_ptr = NULL;
@@ -107,6 +108,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     if (bNeedHeader)
     {
 	pRequest->mm.wcar[0].request_ptr = pRequest;
+	pRequest->mm.wcar[0].buf_ptr = &pRequest->mm.buf;
 	pRequest->mm.wcar[0].type = MM_HEAD_CAR | MM_WRITE_CAR;
 	pRequest->mm.wcar[0].vc_ptr = mm_get_vc(request_ptr->comm, dest);
 	pRequest->mm.wcar[0].dest = dest;
@@ -128,6 +130,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     }
 
     pCar->request_ptr = pRequest;
+    pCar->buf_ptr = &pRequest->mm.buf;
     pCar->type = MM_WRITE_CAR;
     pCar->dest = dest;
     pCar->next_ptr = NULL;

@@ -17,7 +17,7 @@ int mm_unpacker_write()
     car_ptr = MPID_Process.unpkr_write_list;
     while (car_ptr)
     {
-	switch (car_ptr->request_ptr->mm.buf_type)
+	switch (car_ptr->request_ptr->mm.buf.type)
 	{
 	case MM_NULL_BUFFER:
 	    err_printf("error, cannot unpack from a null buffer\n");
@@ -58,7 +58,7 @@ int mm_unpacker_write()
 	    break;
 #endif
 	default:
-	    err_printf("illegal buffer type: %d\n", car_ptr->request_ptr->mm.buf_type);
+	    err_printf("illegal buffer type: %d\n", car_ptr->request_ptr->mm.buf.type);
 	    break;
 	}
 	car_ptr = car_ptr->qnext_ptr;
