@@ -290,7 +290,7 @@ static int intraCommIdx = 0;
 static const char *intraCommName = 0;
 static const char *interCommName = 0;
 
-int MTestGetIntracomm( MPI_Comm *comm, int min_size )
+int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 {
     int size, rank;
     int done=0;
@@ -330,6 +330,33 @@ int MTestGetIntracomm( MPI_Comm *comm, int min_size )
 	    intraCommName = "MPI_COMM_SELF";
 	    break;
 
+	case 5:
+	case 6:
+	case 7:
+	case 8:
+	{
+	    int newsize;
+	    MPI_Comm_size( MPI_COMM_WORLD, &size );
+	    newsize = size - (intraCommIdx - 4);
+	    
+	    if (allowSmaller && newsize >= min_size) {
+		MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+		MPI_Comm_split( MPI_COMM_WORLD, rank < newsize, rank, comm );
+		if (rank >= newsize) {
+		    MPI_Comm_free( comm );
+		    *comm = MPI_COMM_NULL;
+		}
+	    }
+	    else {
+		/* Act like default */
+		*comm = MPI_COMM_NULL;
+		isBasic = 1;
+		intraCommName = "MPI_COMM_NULL";
+		intraCommIdx = -1;
+	    }
+	}
+	break;
+	    
 	    /* Other ideas: dup of self, cart comm, graph comm */
 	default:
 	    *comm = MPI_COMM_NULL;
@@ -355,6 +382,11 @@ int MTestGetIntracomm( MPI_Comm *comm, int min_size )
 
     intraCommIdx++;
     return intraCommIdx;
+}
+
+int MTestGetIntracomm( MPI_Comm *comm, int min_size ) 
+{
+    return MTestGetIntracommGeneral( comm, min_size, 0 );
 }
 
 const char *MTestGetIntracommName( void )

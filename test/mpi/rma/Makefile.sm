@@ -6,6 +6,8 @@ LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
 #
+allocmem_SOURCES = allocmem.c
+allocmem_LDADD = ../util/mtest.o
 ircpi_SOURCES = ircpi.c
 ircpi_LDADD = -lm
 test1_SOURCES = test1.c

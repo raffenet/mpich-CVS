@@ -26,13 +26,13 @@ int main( int argc, char *argv[] )
        Use subsets of these for tests that do not involve combinations 
        of communicators, datatypes, and counts of datatypes */
     while (MTestGetIntracomm( &comm, minsize )) {
+	if (comm == MPI_COMM_NULL) continue;
 	/* Determine the sender and receiver */
 	MPI_Comm_rank( comm, &rank );
 	MPI_Comm_size( comm, &size );
 	source = 0;
 	dest   = size - 1;
 	
-	count = 1;
 	for (count = 1; count < 65000; count = count * 2) {
 	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
 		if (rank == source) {

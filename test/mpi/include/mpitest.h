@@ -36,6 +36,7 @@ void MTestFreeDatatype( MTestDatatype * );
 const char *MTestGetDatatypeName( MTestDatatype * );
 
 int MTestGetIntracomm( MPI_Comm *, int );
+int MTestGetIntracommGeneral( MPI_Comm *, int, int );
 int MTestGetIntercomm( MPI_Comm *, int *, int );
 int MTestGetComm( MPI_Comm *, int );
 const char *MTestGetIntracommName( void );
