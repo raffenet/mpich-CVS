@@ -28,11 +28,11 @@ SAVE_subdirs="$subdirs"
 subdirs="$1"
 #
 # Build any intermediate directories
-for $dir in $1 ; do
+for dir in $1 ; do
     saveIFS="$IFS"
     IFS="/"
     curdir=""
-    for $subdir in $dir ; do
+    for subdir in $dir ; do
 	curdir="${curdir}$subdir"
 	if test ! -d $curdir ; then mkdir $curdir ; fi
         curdir="${curdir}/"
