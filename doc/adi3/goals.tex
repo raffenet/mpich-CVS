@@ -117,7 +117,7 @@ defined fields.
 ADI routines; the implementation of the MPI routines can make these
 tests before calling the ADI routines.
 
-\item Completion of MPI operations (e.g., \code{MPI\_Wait}) is handled
+\item Completion of MPI operations (e.g., \code{MPI_Wait}) is handled
 by a combination of busy flags in requests and ADI calls to make
 progress, rather than through calls similar to the MPI wait and test
 calls. 
@@ -521,8 +521,8 @@ eliminate any race conditions.  For example,
     {
       while (1) {
         MPID_Progress_start( );   // Notes that we are about to
-                                  // check ready flags.  No busy flags
-                                  // will be cleared
+                                  // check ready flags.  No busy 
+                                  // flags will be cleared
         for (i=0; i<count; i++) {
             if (any request done) { save info on request }
         }
@@ -811,7 +811,7 @@ Section~\ref{sec:comm-types} in terms of simpler communication methods.
 Socket-based communication provides a two-party communication similar
 to the type 1 communication in Section~\ref{sec:comm-types}.  A simple
 implementation can map all four kinds of communication into simple
-\code{read} and \code{write} calls as follows (with some caveats}
+\code{read} and \code{write} calls as follows (with some caveats)
 \begin{enumerate}
 \item Point to point communication is a close match.  Some care is
 needed to handle flow control.
@@ -876,7 +876,8 @@ on memory.
 
 \section{Summary}
 \label{sec:adi-summary}
-(This section should summarize the ADI routines, giving just their prototypes)
+This section provides a short summary of the ADI routines.  Complete details
+are (will be) provided in the ADI-3 reference manual.
 
 \subsection{Point to point communication}
 Each simple MPI communication operation has its counterpart here:
@@ -887,12 +888,22 @@ MPID_Rsend
 MPID_Isend
 MPID_Issend
 MPID_Irsend
+MPID_tBsend
 MPID_Recv
 MPID_Irecv
+MPID_Request_free
+MPID_Cancel_send
+MPID_Cancel_recv
 \end{verbatim}
+Note that these do not include the buffered send nor the two send-receive
+operations (\code{MPI_Sendrecv} and \code{MPI_Sendrecv_replace}).
+Send-receive operations are described in terms of separate send and receive
+operations; buffered send may use the optional \code{MPID_tBsend} or may
+simply use \code{MPID_Isend} with the sample implementation described in the
+MPI-1 standard.
 
 \subsection{Completion of Point to point communication}
-Completion of nonblocking (and incomplete in the case of a request
+Completion of nonblocking (or incomplete in the case of a request
 returned by \code{MPID_Send}, \code{MPID_Ssend}, \code{MPID_Rsend}, or
 \code{MPID_Recv}) is handled by calling the progress engine routines
 and checking the \code{busy} value in a request.  The progress engine
@@ -927,10 +938,30 @@ caching data type descriptions (e.g., for complex MPI datatypes to be
 applied at the target process) and the corresponding ADI routines, or
 whether this should be handled entirely by the ADI.
 
+The ADI routines that support RMA include
+\begin{verbatim}
+MPID_Win_put
+MPID_Win_get
+MPID_Win_accumulate
+MPID_Win_do
+MPID_Win_fence
+MPID_Win_start
+MPID_Win_end
+MPID_Win_local_lock
+MPID_Win_local_unlock
+\end{verbatim}
+\code{MPID_Win_do} is used to send aggregated operations to the ADI.  This
+provides a pointer to a description and an indication of whether this starts,
+ends, or continues a sequence of RMA operations.  \code{MPID_Win_start} and
+\code{MPID_Win_end} are used for nonlocal uses of \code{MPI_Win_lock} and \code{MPI_Win_unlock}.
+
 \subsection{Dynamic Processes}
 The MPID routines are similar to the MPI routines.  Undecided: does
 the MPI layer or the ADI layer setup the communicator?  The ADI layer
 needs only provide the pointers to the connection structure; the MPI
 layer could build the communicators and access the context id values.
+
+%\bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,/home/gropp/papers/MPI/mpich2-coding/mpich2}
+%\bibliographystyle{plain}
 
 \end{document}
