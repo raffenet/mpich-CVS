@@ -148,7 +148,7 @@ cleanall:
         for dir in $$dirs ;\
          do \
             echo " " ;\
-	    if [ ! -d $$dir ] ; then continue ; \
+	    if [ ! -d $$dir ] ; then continue ; fi ; \
             echo cleaning directory $$dir ;\
             (cd $$dir; rm -f *.o Makefile *~) ;\
          done; \
