@@ -235,19 +235,19 @@ if test "$method_subdirs" = "" ; then method_subdirs="shm tcp" ; fi
 AC_SUBST(method_subdirs)
 for method in $method_subdirs ; do
     if test "$method" = "tcp" ; then 
-       AC_DEFINE(WITH_METHOD_TCP, 1, "tcp method enabled")
+       AC_DEFINE(WITH_METHOD_TCP, 1, [tcp method enabled])
        echo tcp method enabled.
     fi
     if test "$method" = "shm" ; then 
-       AC_DEFINE(WITH_METHOD_SHM, 1, "shared memory method enabled") 
+       AC_DEFINE(WITH_METHOD_SHM, 1, [shared memory method enabled]) 
        echo shm method enabled
     fi
     if test "$method" = "via" ; then 
-       AC_DEFINE(WITH_METHOD_VIA, 1, "via method enabled")
+       AC_DEFINE(WITH_METHOD_VIA, 1, [via method enabled])
        echo via method enabled 
     fi
     if test "$method" = "via_rdma" ; then 
-       AC_DEFINE(WITH_METHOD_VIA_RDMA, 1, "via rdma method enabled")
+       AC_DEFINE(WITH_METHOD_VIA_RDMA, 1, [via rdma method enabled])
        echo via rdma method enabled 
     fi
 done
