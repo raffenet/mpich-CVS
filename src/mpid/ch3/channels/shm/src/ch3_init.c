@@ -482,12 +482,38 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
 #endif
 
-    MPIU_Free(val);
-    MPIU_Free(key);
-    
     /* XXX - has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
     *has_env = TRUE;
 
+    if (*has_parent)
+    {
+        /* This process was spawned. Create intercommunicator with parents. */
+
+        if (pg_rank == 0)
+	{
+            /* get the port name of the root of the parents */
+            mpi_errno = PMI_KVS_Get(pg->kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
+            if (mpi_errno != 0)
+            {
+                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+                return mpi_errno;
+            }
+        }
+
+        /* do a connect with the root */
+        MPID_Comm_get_ptr(MPI_COMM_WORLD, commworld);
+        mpi_errno = MPIDI_CH3_Comm_connect(val, 0, commworld, &intercomm);
+        if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+
+        MPIR_Process.comm_parent = intercomm;
+
+        /* TODO: Check that this intercommunicator gets freed in
+           MPI_Finalize if not already freed.  */
+    }
+
+    MPIU_Free(val);
+    MPIU_Free(key);
+    
     return MPI_SUCCESS;
 }
