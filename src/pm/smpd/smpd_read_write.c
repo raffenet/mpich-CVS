@@ -216,7 +216,7 @@ static int chew_up_string(MPIDU_Sock_t sock)
     {
 	if (ch == '\0')
 	    return SMPD_SUCCESS;
-	smpd_read_string(sock, &ch, 1);
+	result = smpd_read_string(sock, &ch, 1);
     }
     smpd_err_printf("Unable to read a string,\nsock error: %s\n", get_sock_error_string(result));
     return SMPD_FAIL;
