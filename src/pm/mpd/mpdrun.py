@@ -69,7 +69,7 @@ global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
 global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
 global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
 global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-global singinitPID, singinitPORT, doingBNR, myHost, myIP
+global singinitPID, singinitPORT, doingBNR, myHost, myIP, myIfhn
 
 
 def mpdrun():
@@ -78,7 +78,7 @@ def mpdrun():
     global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd, totalview
     global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
     global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
-    global singinitPID, singinitPORT, doingBNR, myHost, myIP
+    global singinitPID, singinitPORT, doingBNR, myHost, myIP, myIfhn
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -104,6 +104,7 @@ def mpdrun():
     doingBNR = 0
     totalview = 0
     myHost = gethostname()   # default; may be chgd by -if arg
+    myIfhn = ''
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
     username = mpd_get_my_username()
@@ -214,9 +215,10 @@ def mpdrun():
     for i in range(nprocs):
         linesPerRank[i] = []
 
-    msgToSend = { 'cmd' : 'mpdrun',
+    msgToSend = { 'cmd'      : 'mpdrun',
                   'conhost'  : myHost,
                   'conip'    : myIP,
+                  'conifhn'  : myIfhn,
                   'conport'  : listenPort,
                   'spawned'  : 0,
                   'nstarted' : 0,
@@ -601,7 +603,7 @@ def get_args_from_cmdline():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
            lineLabels, jobAlias, stdinGoesToWho, jobid, mergingOutput, totalview
     global outXmlDoc, outXmlEC, outXmlFile, gdb, gdbAttachJobid
-    global singinitPID, singinitPORT, doingBNR, myHost, myIP
+    global singinitPID, singinitPORT, doingBNR, myHost, myIP, myIfhn
 
     if len(argv) < 3:
         usage()
@@ -671,6 +673,7 @@ def get_args_from_cmdline():
                     jobAlias = argv[argidx+1]
                     argidx += 2
                 elif argv[argidx] == '-if':
+                    myIfhn = argv[argidx+1]
                     myHost = argv[argidx+1]
                     argidx += 2
                 elif argv[argidx] == '-cpm':
@@ -757,6 +760,7 @@ def get_args_from_file():
         lineLabels = 1
     if createReq.hasAttribute('net_interface'):
         myHost = createReq.getAttribute('net_interface')
+        myIfhn = myHost
     if createReq.hasAttribute('pgid'):    # our jobalias
         jobAlias = createReq.getAttribute('pgid')
     if createReq.hasAttribute('stdin_goes_to_who'):
