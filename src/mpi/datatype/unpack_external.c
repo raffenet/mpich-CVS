@@ -30,21 +30,25 @@
 /*@
    MPI_Unpack_external - external unpack
 
-   Arguments:
-+  char *datarep - datarep
-.  void *inbuf - input buffer
-.  MPI_Aint insize - input size
-.  MPI_Aint *position - position
-.  void *outbuf - output buffer
-.  int outcount - output count
--  MPI_Datatype datatype - datatype
+   Input Parameters:
++ datarep - data representation (string)  
+. inbuf - input buffer start (choice)  
+. insize - input buffer size, in bytes (integer)  
+. outcount - number of output data items (integer)  
+. datatype - datatype of output data item (handle)  
 
-   Notes:
+   Input/Output Parameter:
+. position - current position in buffer, in bytes (integer)  
+
+   Output Parameter:
+. outbuf - output buffer start (choice)  
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Unpack_external(char *datarep, void *inbuf, MPI_Aint insize, MPI_Aint *position, void *outbuf, int outcount, MPI_Datatype datatype)
 {
@@ -60,13 +64,10 @@ int MPI_Unpack_external(char *datarep, void *inbuf, MPI_Aint insize, MPI_Aint *p
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatye_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -75,6 +76,8 @@ int MPI_Unpack_external(char *datarep, void *inbuf, MPI_Aint insize, MPI_Aint *p
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* FIXME - unimplemented */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
     return MPI_SUCCESS;

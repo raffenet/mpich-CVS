@@ -35,7 +35,7 @@
 /*@
    MPI_Grequest_complete - Notify MPI that a user-defined request is complete
 
-   Input Arguments:
+   Input Parameter:
 .  request - Generalized request to mark as complete
 
    Notes:

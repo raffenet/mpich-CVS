@@ -78,6 +78,7 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* FIXME: This should be MPID_Mem_alloc */
     baseptr = MPIU_Malloc(size);
     if (!baseptr) {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NO_MEM, "**allocmem", 0 );

@@ -30,21 +30,24 @@
 /*@
    MPI_Pack_external - pack external
 
-   Arguments:
-+  char *datarep - datarep
-.  void *inbuf - input buffer
-.  int incount - input count
-.  MPI_Datatype datatype - datatype
-.  void *outbuf - output buffer
-.  MPI_Aint outsize - output size
--  MPI_Aint *position - position
+   Input Parameters:
++ datarep - data representation (string)  
+. inbuf - input buffer start (choice)  
+. incount - number of input data items (integer)  
+. datatype - datatype of each input data item (handle)  
+- outsize - output buffer size, in bytes (integer)  
 
-   Notes:
+   Output Parameter:
+. outbuf - output buffer start (choice)  
+
+   Input/Output Parameter:
+. position - current position in buffer, in bytes (integer)  
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
 @*/
 int MPI_Pack_external(char *datarep, void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, MPI_Aint outsize, MPI_Aint *position)
 {
@@ -60,13 +63,10 @@ int MPI_Pack_external(char *datarep, void *inbuf, int incount, MPI_Datatype data
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -75,6 +75,8 @@ int MPI_Pack_external(char *datarep, void *inbuf, int incount, MPI_Datatype data
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+    
+    /* FIXME Unimplemented */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
     return MPI_SUCCESS;
