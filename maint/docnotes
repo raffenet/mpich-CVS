@@ -17,6 +17,17 @@ All MPI objects (e.g., 'MPI_Datatype', 'MPI_Comm') are of type 'INTEGER'
 in Fortran.  
 N*/
 
+/*N FortStatus
+ The 'status' argument must be declared as an array of size 'MPI_STATUS_SIZE',
+ as in 'integer status(MPI_STATUS_SIZE)'.
+N*/
+
+/*N FortStatusArray
+ The 'status' argument must be declared as an array of sise 'MPI_STATUS_SIZE',
+ as in 'integer status(MPI_STATUS_SIZE,10)' (assuming no more than 10 
+ requests are provided as input).
+N*/
+
 /*N collops
 Notes on collective operations:
 
