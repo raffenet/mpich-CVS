@@ -512,7 +512,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 {
     int i, j, k, *tmp_len, nprocs_recv, nprocs_send, err;
     char **send_buf = NULL; 
-    MPI_Request *requests;
+    MPI_Request *requests, *send_req;
     MPI_Datatype *recv_types;
     MPI_Status *statuses, status;
     int *srt_len, sum;
@@ -611,18 +611,27 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
     nprocs_send = 0;
     for (i=0; i < nprocs; i++) if (send_size[i]) nprocs_send++;
 
-    requests = (MPI_Request *) 	
-	ADIOI_Malloc((nprocs_send+nprocs_recv+1)*sizeof(MPI_Request)); 
-/* +1 to avoid a 0-size malloc */
+    if (fd->atomicity) {
+        /* bug fix from Wei-keng Liao and Kenin Coloma */
+        requests = (MPI_Request *) 	
+	    ADIOI_Malloc((nprocs_send+1)*sizeof(MPI_Request)); 
+        send_req = requests;
+    }
+    else {
+        requests = (MPI_Request *) 	
+            ADIOI_Malloc((nprocs_send+nprocs_recv+1)*sizeof(MPI_Request)); 
+        /* +1 to avoid a 0-size malloc */
 
-/* post receives */
-    j = 0;
-    for (i=0; i<nprocs; i++) {
-	if (recv_size[i]) {
-	    MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i, myrank+i+100*iter,
-		      fd->comm, requests+j);
-	    j++;
-	}
+        /* post receives */
+        j = 0;
+        for (i=0; i<nprocs; i++) {
+            if (recv_size[i]) {
+                MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i, myrank+i+100*iter,
+                          fd->comm, requests+j);
+                j++;
+            }
+        }
+	send_req = requests + nprocs_recv;
     }
 
 /* post sends. if buftype_is_contig, data can be directly sent from
@@ -634,7 +643,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 	    if (send_size[i]) {
 		MPI_Isend(((char *) buf) + buf_idx[i], send_size[i], 
   		            MPI_BYTE, i,  myrank+i+100*iter, fd->comm, 
-                                  requests+nprocs_recv+j);
+                                  send_req+j);
 		j++;
                 buf_idx[i] += send_size[i];
 	    }
@@ -648,7 +657,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 
 	ADIOI_Fill_send_buffer(fd, buf, flat_buf, send_buf,
                            offset_list, len_list, send_size, 
-			   requests+nprocs_recv,
+			   send_req,
                            sent_to_proc, nprocs, myrank, 
                            contig_access_count,
                            min_st_offset, fd_size, fd_start, fd_end, 
@@ -657,18 +666,49 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
         /* the send is done in ADIOI_Fill_send_buffer */
     }
 
+    if (fd->atomicity) {
+        /* bug fix from Wei-keng Liao and Kenin Coloma */
+        j = 0;
+        for (i=0; i<nprocs; i++) {
+            MPI_Status wkl_status;
+	    if (recv_size[i]) {
+	        MPI_Recv(MPI_BOTTOM, 1, recv_types[j], i, myrank+i+100*iter,
+		          fd->comm, &wkl_status);
+	        j++;
+	    }
+        }
+    }
+
     for (i=0; i<nprocs_recv; i++) MPI_Type_free(recv_types+i);
     ADIOI_Free(recv_types);
     
-    statuses = (MPI_Status *) ADIOI_Malloc((nprocs_send+nprocs_recv+1) * \
+    if (fd->atomicity) {
+        /* bug fix from Wei-keng Liao and Kenin Coloma */
+        statuses = (MPI_Status *) ADIOI_Malloc((nprocs_send+1) * \
+                                         sizeof(MPI_Status)); 
+         /* +1 to avoid a 0-size malloc */
+    }
+    else {
+        statuses = (MPI_Status *) ADIOI_Malloc((nprocs_send+nprocs_recv+1) * \
                                      sizeof(MPI_Status)); 
-     /* +1 to avoid a 0-size malloc */
+        /* +1 to avoid a 0-size malloc */
+    }
 
 #ifdef NEEDS_MPI_TEST
     i = 0;
-    while (!i) MPI_Testall(nprocs_send+nprocs_recv, requests, &i, statuses);
+    if (fd->atomicity) {
+        /* bug fix from Wei-keng Liao and Kenin Coloma */
+        while (!i) MPI_Testall(nprocs_send, send_req, &i, statuses);
+    }
+    else {
+        while (!i) MPI_Testall(nprocs_send+nprocs_recv, requests, &i, statuses);
+    }
 #else
-    MPI_Waitall(nprocs_send+nprocs_recv, requests, statuses);
+    if (fd->atomicity)
+        /* bug fix from Wei-keng Liao and Kenin Coloma */
+        MPI_Waitall(nprocs_send, send_req, statuses);
+    else
+        MPI_Waitall(nprocs_send+nprocs_recv, requests, statuses);
 #endif
 
     ADIOI_Free(statuses);
