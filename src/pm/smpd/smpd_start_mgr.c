@@ -24,7 +24,7 @@ HANDLE smpd_decode_handle(char *str)
     return p;
 }
 
-int smpd_start_win_mgr(smpd_context_t *context)
+int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handle)
 {
     int result;
     char dbg_str[20];
@@ -42,6 +42,12 @@ int smpd_start_win_mgr(smpd_context_t *context)
     DWORD num_read, num_written;
 
     smpd_enter_fn("smpd_start_win_mgr");
+
+    /* initialize to null so in the sspi case garbage isn't sent to the manager */
+    domainaccount[0] = '\0';
+    account[0] = '\0';
+    domain[0] = '\0';
+    password[0] = '\0';
 
     /* start the manager */
     security.bInheritHandle = TRUE;
@@ -113,24 +119,31 @@ int smpd_start_win_mgr(smpd_context_t *context)
     GetStartupInfo(&sInfo);
     if (smpd_process.bService)
     {
-	strcpy(domainaccount, context->account);
-	strcpy(password, context->password);
-	smpd_parse_account_domain(domainaccount, account, domain);
-	if (strlen(domain) < 1)
-	    pszDomain = NULL;
-	else
-	    pszDomain = domain;
-
-	result = smpd_get_user_handle(account, pszDomain, password, &user_handle);
-	if (user_handle == INVALID_HANDLE_VALUE)
+	if (use_context_user_handle)
 	{
-	    smpd_err_printf("smpd_get_user_handle failed, error %d.\n", result);
-	    CloseHandle(hRead);
-	    CloseHandle(hWrite);
-	    CloseHandle(hReadRemote);
-	    CloseHandle(hWriteRemote);
-	    smpd_exit_fn("smpd_start_win_mgr");
-	    return SMPD_ERR_INVALID_USER;
+	    user_handle = context->sspi_user_handle;
+	}
+	else
+	{
+	    strcpy(domainaccount, context->account);
+	    strcpy(password, context->password);
+	    smpd_parse_account_domain(domainaccount, account, domain);
+	    if (strlen(domain) < 1)
+		pszDomain = NULL;
+	    else
+		pszDomain = domain;
+
+	    result = smpd_get_user_handle(account, pszDomain, password, &user_handle);
+	    if (user_handle == INVALID_HANDLE_VALUE)
+	    {
+		smpd_err_printf("smpd_get_user_handle failed, error %d.\n", result);
+		CloseHandle(hRead);
+		CloseHandle(hWrite);
+		CloseHandle(hReadRemote);
+		CloseHandle(hWriteRemote);
+		smpd_exit_fn("smpd_start_win_mgr");
+		return SMPD_ERR_INVALID_USER;
+	    }
 	}
 
 	result = SMPD_SUCCESS;
@@ -193,6 +206,7 @@ int smpd_start_win_mgr(smpd_context_t *context)
     {
 	RevertToSelf();
 	CloseHandle(user_handle);
+	context->sspi_user_handle = INVALID_HANDLE_VALUE;
     }
     if (result != SMPD_SUCCESS)
     {

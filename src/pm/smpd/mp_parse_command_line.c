@@ -1001,6 +1001,14 @@ configfile_loop:
 	    {
 		smpd_process.logon = SMPD_TRUE;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "sspi") == 0)
+	    {
+		smpd_process.use_sspi = SMPD_TRUE;
+	    }
+	    else if ( (strcmp(&(*argvp)[1][1], "delegate") == 0) || (strcmp(&(*argvp)[1][1], "delegation") == 0) )
+	    {
+		smpd_process.use_delegation = SMPD_TRUE;
+	    }
 	    else if (strcmp(&(*argvp)[1][1], "dbg") == 0)
 	    {
 		use_debug_flag = SMPD_TRUE;

@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2socksd.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="Secur32.lib mpich2socksd.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="..\..\..\bin\mpiexec.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
@@ -86,7 +86,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2socks.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="Secur32.lib mpich2socks.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="..\..\..\bin\mpiexec.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
@@ -138,7 +138,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2ssmsd.lib smpd_utild.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="Secur32.lib mpich2ssmsd.lib smpd_utild.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="..\..\..\bin\mpiexec.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\lib"

@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
+#define SECURITY_WIN32
+#include <security.h>
 #else
 #include "smpdconf.h"
 #endif
@@ -111,6 +113,7 @@ typedef int SMPD_BOOL;
 #define MPICH_REGISTRY_KEY                "SOFTWARE\\MPICH"
 #define SMPD_CRED_REQUEST                 "credentials"
 #define SMPD_NO_CRED_REQUEST              "nocredentials"
+#define SMPD_CRED_ACK_SSPI                "sspi"
 #define SMPD_PWD_REQUEST                  "pwd"
 #define SMPD_NO_PWD_REQUEST               "nopwd"
 #define SMPD_NO_RECONNECT_PORT_STR        "-1"
@@ -122,6 +125,8 @@ typedef int SMPD_BOOL;
 #define SMPD_PATH_SPEC                    "{SMPD_PATH}"
 #define SMPD_PLAINTEXT_PREFIX             'y'
 #define SMPD_ENCRYPTED_PREFIX             'x'
+#define SMPD_SSPI_HEADER_LENGTH           SMPD_CMD_HDR_LENGTH
+#define SMPD_SECURITY_PACKAGE             "NTLM"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
@@ -225,6 +230,20 @@ typedef enum smpd_state_t
     SMPD_READING_TIMEOUT,
     SMPD_READING_PMI_ID,
     SMPD_WRITING_PMI_ID,
+    SMPD_READING_SSPI_HEADER,
+    SMPD_READING_SSPI_BUFFER,
+    SMPD_WRITING_SSPI_HEADER,
+    SMPD_WRITING_SSPI_BUFFER,
+    SMPD_WRITING_DELEGATE_REQUEST,
+    SMPD_READING_DELEGATE_REQUEST_RESULT,
+    SMPD_WRITING_DELEGATE_REQUEST_RESULT,
+    SMPD_WRITING_IMPERSONATE_RESULT,
+    SMPD_READING_IMPERSONATE_RESULT,
+    SMPD_WRITING_CRED_ACK_SSPI,
+    SMPD_READING_CLIENT_SSPI_HEADER,
+    SMPD_READING_CLIENT_SSPI_BUFFER,
+    SMPD_WRITING_CLIENT_SSPI_HEADER,
+    SMPD_WRITING_CLIENT_SSPI_BUFFER,
     SMPD_END_MARKER_NUM_STATES
 } smpd_state_t;
 
@@ -327,6 +346,16 @@ typedef struct smpd_context_t
     char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
     int connect_return_id, connect_return_tag;
     struct smpd_process_t *process;
+    char sspi_header[SMPD_SSPI_HEADER_LENGTH];
+    int sspi_max_buffer_size;
+    int sspi_buffer_length;
+    void *sspi_buffer, *sspi_outbound_buffer;
+#ifdef HAVE_WINDOWS_H
+    CredHandle sspi_credential;
+    CtxtHandle sspi_context;
+    TimeStamp sspi_expiration_time;
+    HANDLE sspi_user_handle;
+#endif
     struct smpd_context_t *next;
 } smpd_context_t;
 
@@ -466,6 +495,18 @@ typedef struct smpd_process_group_t
     struct smpd_process_group_t *next;
 } smpd_process_group_t;
 
+typedef struct smpd_sspi_client_context_t
+{
+    int id;
+#ifdef HAVE_WINDOWS_H
+    CtxtHandle context;
+    CredHandle credential;
+#endif
+    void *buffer;
+    int buffer_length;
+    struct smpd_sspi_client_context_t *next;
+} smpd_sspi_client_context_t;
+
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */
 typedef struct smpd_global_t
@@ -573,6 +614,11 @@ typedef struct smpd_global_t
     char *mpiexec_argv0;
     char encrypt_prefix[SMPD_MAX_PASSWORD_LENGTH];
     SMPD_BOOL plaintext;
+    SMPD_BOOL use_sspi, use_delegation;
+#ifdef HAVE_WINDOWS_H
+    PSecurityFunctionTable sec_fn;
+#endif
+    smpd_sspi_client_context_t *sspi_context_list;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -601,6 +647,7 @@ int smpd_free_command(smpd_command_t *cmd_ptr);
 int smpd_free_context(smpd_context_t *context);
 int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value);
 int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value);
+int smpd_add_command_binary_arg(smpd_command_t *cmd_ptr, char *param, void *buffer, int length);
 int smpd_parse_command(smpd_command_t *cmd_ptr);
 int smpd_post_read_command(smpd_context_t *context);
 int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd);
@@ -661,7 +708,7 @@ int smpd_free_process_struct(smpd_process_t *process);
 char * smpd_get_context_str(smpd_context_t *context);
 int smpd_gen_authentication_strings(char *phrase, char *append, char *crypted);
 #ifdef HAVE_WINDOWS_H
-int smpd_start_win_mgr(smpd_context_t *context);
+int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handle);
 #else
 int smpd_start_unx_mgr(smpd_context_t *context);
 #endif
@@ -729,5 +776,9 @@ int smpd_hash(char *input, int input_length, char *output, int output_length);
 int smpd_encrypt_data(char *input, int input_length, char *output, int output_length);
 int smpd_decrypt_data(char *input, int input_length, char *output, int *output_length);
 int smpd_get_all_smpd_data(smpd_data_t **data);
+int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context);
+int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context);
+int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr);
+int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr);
 
 #endif

@@ -9,6 +9,8 @@
 #include <stdarg.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_do_abort_job"
 static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_code)
 {
     int result;
@@ -16,7 +18,7 @@ static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_cod
     smpd_process_group_t *pg;
     int i;
 
-    smpd_enter_fn("smpd_do_abort_job");
+    smpd_enter_fn(FCNAME);
     pg = smpd_process.pg_list;
     while (pg)
     {
@@ -25,7 +27,7 @@ static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_cod
 	    if (rank >= pg->num_procs)
 	    {
 		smpd_err_printf("invalid abort_job command - rank %d out of range, number of processes = %d", rank, pg->num_procs);
-		smpd_exit_fn("smpd_do_abort_job");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    break;
@@ -35,7 +37,7 @@ static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_cod
     if (pg == NULL)
     {
 	smpd_err_printf("no process group structure found to match the abort_job command: pg <%s>\n", name);
-	smpd_exit_fn("smpd_do_abort_job");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* save the abort message */
@@ -43,7 +45,7 @@ static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_cod
     if (pg->aborted == SMPD_TRUE)
     {
 	smpd_dbg_printf("job already aborted.\n");
-	smpd_exit_fn("smpd_do_abort_job");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -106,13 +108,15 @@ static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_cod
 	}
     }
 
-    smpd_exit_fn("smpd_do_abort_job");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 do_abort_failure:
-    smpd_exit_fn("smpd_do_abort_job");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_abort_job"
 int smpd_abort_job(char *name, int rank, char *fmt, ...)
 {
     int result;
@@ -121,7 +125,7 @@ int smpd_abort_job(char *name, int rank, char *fmt, ...)
     smpd_context_t *context;
     va_list list;
 
-    smpd_enter_fn("smpd_abort_job");
+    smpd_enter_fn(FCNAME);
 
     va_start(list, fmt);
     vsnprintf(error_str, 2048, fmt, list);
@@ -131,7 +135,7 @@ int smpd_abort_job(char *name, int rank, char *fmt, ...)
     if (context == NULL)
     {
 	result = smpd_do_abort_job(name, rank, error_str, 123);
-	smpd_exit_fn("smpd_abort_job");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
@@ -139,28 +143,28 @@ int smpd_abort_job(char *name, int rank, char *fmt, ...)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create an abort_job command.\n");
-	smpd_exit_fn("smpd_abort_job");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(cmd_ptr, "name", name);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("Unable to add the job name to the abort_job command.\n");
-	smpd_exit_fn("smpd_abort_job");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_int_arg(cmd_ptr, "rank", rank);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("Unable to add the rank to the abort_job command.\n");
-	smpd_exit_fn("smpd_abort_job");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(cmd_ptr, "error", error_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("Unable to add the error string to the abort_job command.\n");
-	smpd_exit_fn("smpd_abort_job");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending abort_job command to %s context: \"%s\"\n", smpd_get_context_str(context), cmd_ptr->cmd);
@@ -168,13 +172,15 @@ int smpd_abort_job(char *name, int rank, char *fmt, ...)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the abort_job command to the %s context.\n", smpd_get_context_str(context));
-	smpd_exit_fn("smpd_abort_job");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("smpd_abort_job");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_stdin_command"
 int smpd_handle_stdin_command(smpd_context_t *context)
 {
     char data[SMPD_MAX_STDOUT_LENGTH];
@@ -185,7 +191,7 @@ int smpd_handle_stdin_command(smpd_context_t *context)
     MPIU_Size_t num_written, num_decoded;
     int nd;
 
-    smpd_enter_fn("handle_stdin_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     if (MPIU_Str_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH) == MPIU_STR_SUCCESS)
@@ -277,16 +283,18 @@ int smpd_handle_stdin_command(smpd_context_t *context)
 	smpd_err_printf("unable to get the data from the stdin command: '%s'\n", cmd->cmd);
     }
 
-    smpd_exit_fn("handle_stdin_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_close_stdin_command"
 int smpd_handle_close_stdin_command(smpd_context_t *context)
 {
     smpd_process_t *piter;
     int result;
 
-    smpd_enter_fn("handle_close_stdin_command");
+    smpd_enter_fn(FCNAME);
     SMPD_UNREFERENCED_ARG(context);
 
     piter = smpd_process.process_list;
@@ -299,10 +307,12 @@ int smpd_handle_close_stdin_command(smpd_context_t *context)
 	piter = piter->next;
     }
 
-    smpd_exit_fn("handle_close_stdin_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_stdout_command"
 int smpd_handle_stdout_command(smpd_context_t *context)
 {
     int rank;
@@ -314,7 +324,7 @@ int smpd_handle_stdout_command(smpd_context_t *context)
     DWORD num_written;
 #endif
 
-    smpd_enter_fn("handle_stdout_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
@@ -339,10 +349,12 @@ int smpd_handle_stdout_command(smpd_context_t *context)
 	smpd_err_printf("unable to get the data from the stdout command: '%s'\n", cmd->cmd);
     }
 
-    smpd_exit_fn("handle_stdout_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_stderr_command"
 int smpd_handle_stderr_command(smpd_context_t *context)
 {
     int rank;
@@ -354,7 +366,7 @@ int smpd_handle_stderr_command(smpd_context_t *context)
     DWORD num_written;
 #endif
 
-    smpd_enter_fn("handle_stderr_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
@@ -379,10 +391,12 @@ int smpd_handle_stderr_command(smpd_context_t *context)
 	smpd_err_printf("unable to get the data from the stderr command: '%s'\n", cmd->cmd);
     }
 
-    smpd_exit_fn("handle_stderr_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "create_process_group"
 static int create_process_group(int nproc, char *kvs_name, smpd_process_group_t **pg_pptr)
 {
     int i;
@@ -424,6 +438,8 @@ static int create_process_group(int nproc, char *kvs_name, smpd_process_group_t 
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_launch_processes"
 int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char *domain_name, smpd_spawn_context_t *spawn_context)
 {
     int result;
@@ -435,7 +451,7 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
     smpd_process_group_t *pg;
     int i;
 
-    smpd_enter_fn("smpd_launch_processes");
+    smpd_enter_fn(FCNAME);
 
     launch_node_ptr = launch_list;
     smpd_dbg_printf("creating a process group of size %d on node %d called %s\n", launch_node_ptr->nproc, smpd_process.id, kvs_name);
@@ -618,13 +634,15 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 	/* move to the next node */
 	launch_node_ptr = launch_node_ptr->next;
     }
-    smpd_exit_fn("smpd_launch_processes");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 launch_failure:
-    smpd_exit_fn("smpd_launch_processes");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_result"
 int smpd_handle_result(smpd_context_t *context)
 {
     int result, ret_val;
@@ -650,8 +668,11 @@ int smpd_handle_result(smpd_context_t *context)
     smpd_process_group_t *pg;
     char host_description[256];
     int listener_port;
+    char context_str[20];
+    smpd_context_t *sspi_context;
+    int num_decoded;
 
-    smpd_enter_fn("handle_result");
+    smpd_enter_fn(FCNAME);
 
     if (context->type != SMPD_CONTEXT_PMI && MPIU_Str_get_string_arg(context->read_cmd.cmd, "ctx_key", ctx_key, 100) == MPIU_STR_SUCCESS)
     {
@@ -671,19 +692,19 @@ int smpd_handle_result(smpd_context_t *context)
 	if (pmi_context == NULL)
 	{
 	    smpd_err_printf("received dbs result for a pmi context that doesn't exist: unmatched id = %d\n", process_id);
-	    smpd_exit_fn("smpd_handle_result");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 
 	result = smpd_forward_command(context, pmi_context);
-	smpd_exit_fn("smpd_handle_result");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
 
     if (MPIU_Str_get_int_arg(context->read_cmd.cmd, "cmd_tag", &match_tag) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("result command received without a cmd_tag field: '%s'\n", context->read_cmd.cmd);
-	smpd_exit_fn("smpd_handle_result");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -752,7 +773,7 @@ int smpd_handle_result(smpd_context_t *context)
 				if (result != SMPD_SUCCESS)
 				{
 				    smpd_err_printf("unable to add the result string to the result command.\n");
-				    smpd_exit_fn("smpd_handle_result");
+				    smpd_exit_fn(FCNAME);
 				    return result;
 				}
 				/* send the spawn result command */
@@ -760,7 +781,7 @@ int smpd_handle_result(smpd_context_t *context)
 				if (result != SMPD_SUCCESS)
 				{
 				    smpd_err_printf("unable to post a write of the spawn result command.\n");
-				    smpd_exit_fn("smpd_handle_result");
+				    smpd_exit_fn(FCNAME);
 				    return result;
 				}
 			    }
@@ -781,7 +802,7 @@ int smpd_handle_result(smpd_context_t *context)
 				    if (result)
 				    {
 					smpd_err_printf("Unable to make a local socket loop to forward stdin.\n");
-					smpd_exit_fn("smpd_handle_result");
+					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
 #else
@@ -793,7 +814,7 @@ int smpd_handle_result(smpd_context_t *context)
 				    if (result != MPI_SUCCESS)
 				    {
 					smpd_err_printf("unable to create a sock from stdin,\nsock error: %s\n", get_sock_error_string(result));
-					smpd_exit_fn("smpd_handle_result");
+					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
 				    /* create a context for reading from stdin */
@@ -801,7 +822,7 @@ int smpd_handle_result(smpd_context_t *context)
 				    if (result != SMPD_SUCCESS)
 				    {
 					smpd_err_printf("unable to create a context for stdin.\n");
-					smpd_exit_fn("smpd_handle_result");
+					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
 				    MPIDU_Sock_set_user_ptr(insock, context_in);
@@ -813,14 +834,14 @@ int smpd_handle_result(smpd_context_t *context)
 				    if (smpd_process.hCloseStdinThreadEvent == NULL)
 				    {
 					smpd_err_printf("Unable to create the stdin thread close event, error %d\n", GetLastError());
-					smpd_exit_fn("smpd_handle_result");
+					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
 				    smpd_process.hStdinThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_stdin_thread, (void*)hWrite, 0, &dwThreadID);
 				    if (smpd_process.hStdinThread == NULL)
 				    {
 					smpd_err_printf("Unable to create a thread to read stdin, error %d\n", GetLastError());
-					smpd_exit_fn("smpd_handle_result");
+					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
 #endif
@@ -833,7 +854,7 @@ int smpd_handle_result(smpd_context_t *context)
 				    {
 					smpd_err_printf("unable to post a read on stdin for an incoming user command, error:\n%s\n",
 					    get_sock_error_string(result));
-					smpd_exit_fn("smpd_handle_result");
+					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
 				}
@@ -846,7 +867,7 @@ int smpd_handle_result(smpd_context_t *context)
 			    if (result != SMPD_SUCCESS)
 			    {
 				smpd_err_printf("unable to post a write of the suspend command.\n");
-				smpd_exit_fn("smpd_handle_result");
+				smpd_exit_fn(FCNAME);
 				return result;
 			    }
 			}
@@ -1091,6 +1112,90 @@ int smpd_handle_result(smpd_context_t *context)
 			ret_val = result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 		    }
 		}
+		else if (strcmp(iter->cmd_str, "sspi_init") == 0)
+		{
+		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
+		    {
+			/* decode the sspi buffer and context pointer from the command */
+			MPIU_Str_get_string_arg(context->read_cmd.cmd, "sspi_context", context_str, 20);
+			if (sscanf(context_str, "%p", &sspi_context) != 1)
+			{
+			    smpd_err_printf("unable to decode a pointer from this string: '%s'\n", context_str);
+			    smpd_exit_fn(FCNAME);
+			    return SMPD_FAIL;
+			}
+			MPIU_Str_get_string_arg(context->read_cmd.cmd, "data", str, SMPD_MAX_CMD_LENGTH);
+			smpd_decode_buffer(str, sspi_context->sspi_buffer, sspi_context->sspi_buffer_length, &num_decoded);
+			/* send the sspi buffer to the decoded context */
+			/* move the state of that context to WRITING_SSPI_HEADER */
+			sspi_context->read_state = SMPD_IDLE;
+			sspi_context->write_state = SMPD_WRITING_CLIENT_SSPI_HEADER;
+			MPIU_Snprintf(sspi_context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", num_decoded);
+			result = MPIDU_Sock_post_write(sspi_context->sock, sspi_context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
+			if (result == MPI_SUCCESS)
+			{
+			    ret_val = SMPD_SUCCESS;
+			}
+			else
+			{
+			    smpd_process.sec_fn->DeleteSecurityContext(&sspi_context->sspi_context);
+			    smpd_process.sec_fn->FreeCredentialsHandle(&sspi_context->sspi_credential);
+			    smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
+			    sspi_context->state = SMPD_CLOSING;
+			    result = MPIDU_Sock_post_close(sspi_context->sock);
+			    smpd_exit_fn(FCNAME);
+			    ret_val = (result == MPI_SUCCESS) ? SMPD_SUCCESS : SMPD_FAIL;
+			}
+		    }
+		    else
+		    {
+			/* close the sspi context */
+			/* cleanup the sspi structures */
+			/* notify connection failure */
+		    }
+		}
+		else if (strcmp(iter->cmd_str, "sspi_iter") == 0)
+		{
+		    if (strcmp(str, SMPD_SUCCESS_STR) == 0)
+		    {
+			/* decode the sspi buffer and context pointer from the command */
+			MPIU_Str_get_string_arg(context->read_cmd.cmd, "sspi_context", context_str, 20);
+			if (sscanf(context_str, "%p", &sspi_context) != 1)
+			{
+			    smpd_err_printf("unable to decode a pointer from this string: '%s'\n", context_str);
+			    smpd_exit_fn(FCNAME);
+			    return SMPD_FAIL;
+			}
+			MPIU_Str_get_string_arg(context->read_cmd.cmd, "data", str, SMPD_MAX_CMD_LENGTH);
+			smpd_decode_buffer(str, sspi_context->sspi_buffer, sspi_context->sspi_buffer_length, &num_decoded);
+			/* send the sspi buffer to the decoded context */
+			/* move the state of that context to WRITING_SSPI_HEADER */
+			sspi_context->read_state = SMPD_IDLE;
+			sspi_context->write_state = SMPD_WRITING_CLIENT_SSPI_HEADER;
+			MPIU_Snprintf(sspi_context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", num_decoded);
+			result = MPIDU_Sock_post_write(sspi_context->sock, sspi_context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
+			if (result == MPI_SUCCESS)
+			{
+			    ret_val = SMPD_SUCCESS;
+			}
+			else
+			{
+			    smpd_process.sec_fn->DeleteSecurityContext(&sspi_context->sspi_context);
+			    smpd_process.sec_fn->FreeCredentialsHandle(&sspi_context->sspi_credential);
+			    smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
+			    sspi_context->state = SMPD_CLOSING;
+			    result = MPIDU_Sock_post_close(sspi_context->sock);
+			    smpd_exit_fn(FCNAME);
+			    ret_val = (result == MPI_SUCCESS) ? SMPD_SUCCESS : SMPD_FAIL;
+			}
+		    }
+		    else
+		    {
+			/* close the sspi context */
+			/* cleanup the sspi structures */
+			/* notify connection failure */
+		    }
+		}
 		else if (strcmp(iter->cmd_str, "exit_on_done") == 0)
 		{
 		    ret_val = SMPD_DBS_RETURN;
@@ -1133,7 +1238,7 @@ int smpd_handle_result(smpd_context_t *context)
 	    {
 		smpd_err_printf("unable to free command in the wait_list\n");
 	    }
-	    smpd_exit_fn("smpd_handle_result");
+	    smpd_exit_fn(FCNAME);
 	    return ret_val;
 	}
 	else
@@ -1152,10 +1257,12 @@ int smpd_handle_result(smpd_context_t *context)
     {
 	smpd_err_printf("result command did not match any commands in the wait_list.\n");
     }
-    smpd_exit_fn("smpd_handle_result");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "get_name_key_value"
 static int get_name_key_value(char *str, char *name, char *key, char *value)
 {
     if (str == NULL)
@@ -1185,6 +1292,8 @@ static int get_name_key_value(char *str, char *name, char *key, char *value)
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_dbs_command"
 int smpd_handle_dbs_command(smpd_context_t *context)
 {
     int result;
@@ -1195,7 +1304,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     char ctx_key[100];
     char *result_str;
 
-    smpd_enter_fn("smpd_handle_dbs_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -1209,7 +1318,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for the dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -1217,28 +1326,28 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* copy the ctx_key for pmi control channel lookup */
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in the db command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the ctx_key to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -1256,7 +1365,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_dbs_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -1264,10 +1373,10 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_dbs_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -1469,7 +1578,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -1477,11 +1586,11 @@ int smpd_handle_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_dbs_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 
 invalid_dbs_command:
@@ -1490,7 +1599,7 @@ invalid_dbs_command:
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -1498,13 +1607,15 @@ invalid_dbs_command:
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("smpd_handle_dbs_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_launch_command"
 int smpd_handle_launch_command(smpd_context_t *context)
 {
     int result;
@@ -1516,7 +1627,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
     char share[SMPD_MAX_EXE_LENGTH];
     int priority_class = SMPD_DEFAULT_PRIORITY_CLASS, priority_thread = SMPD_DEFAULT_PRIORITY;
 
-    smpd_enter_fn("handle_launch_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -1527,14 +1638,14 @@ int smpd_handle_launch_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a process structure.\n");
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "c", process->exe, SMPD_MAX_EXE_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("launch command received with no executable: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     MPIU_Str_get_string_arg(cmd->cmd, "e", process->env, SMPD_MAX_ENV_LENGTH);
@@ -1593,7 +1704,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to create a result command in response to launch command: '%s'\n", cmd->cmd);
 	    smpd_free_process_struct(process);
-	    smpd_exit_fn("handle_launch_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
@@ -1601,14 +1712,14 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to add the tag to the result command in response to launch command: '%s'\n", cmd->cmd);
 	    smpd_free_process_struct(process);
-	    smpd_exit_fn("handle_launch_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	    smpd_exit_fn("handle_launch_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	/* launch process should provide a reason for the error, for now just return FAIL */
@@ -1617,7 +1728,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", cmd->cmd);
 	    smpd_free_process_struct(process);
-	    smpd_exit_fn("handle_launch_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (process->err_msg[0] != '\0')
@@ -1627,7 +1738,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	    {
 		smpd_err_printf("unable to add the error field to the result command in response to launch command: '%s'\n", cmd->cmd);
 		smpd_free_process_struct(process);
-		smpd_exit_fn("handle_launch_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	}
@@ -1638,7 +1749,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to post a write of the result command in response to launch command: '%s'\n", cmd->cmd);
 	    smpd_free_process_struct(process);
-	    smpd_exit_fn("handle_launch_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 
@@ -1646,7 +1757,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	smpd_free_process_struct(process);
 	process = NULL;
 
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -1659,49 +1770,49 @@ int smpd_handle_launch_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command in response to launch command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command in response to launch command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result field to the result command in response to launch command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "pg_id", process->kvs_name);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the pg_id field to the result command in response to launch command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_int_arg(temp_cmd, "pg_rank", process->rank);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the pg_rank field to the result command in response to launch command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_int_arg(temp_cmd, "pg_ctx", process->id);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the pg_ctx field to the result command in response to launch command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -1710,20 +1821,22 @@ int smpd_handle_launch_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command in response to launch command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("handle_launch_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("handle_launch_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_close_command"
 int smpd_handle_close_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("handle_close_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -1736,7 +1849,7 @@ int smpd_handle_close_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a close command for the left context.\n");
-		smpd_exit_fn("handle_close_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    smpd_dbg_printf("sending close command to left child: \"%s\"\n", temp_cmd->cmd);
@@ -1744,7 +1857,7 @@ int smpd_handle_close_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to post a write of a close command for the left context.\n");
-		smpd_exit_fn("handle_close_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	}
@@ -1754,7 +1867,7 @@ int smpd_handle_close_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a close command for the right context.\n");
-		smpd_exit_fn("handle_close_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    smpd_dbg_printf("sending close command to right child: \"%s\"\n", temp_cmd->cmd);
@@ -1762,11 +1875,11 @@ int smpd_handle_close_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to post a write of a close command for the right context.\n");
-		smpd_exit_fn("handle_close_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	}
-	smpd_exit_fn("handle_close_command");
+	smpd_exit_fn(FCNAME);
 	/* If we return success here, a post_read will be made for the next command header. */
 	return SMPD_SUCCESS;
 	/*return SMPD_CLOSE;*/
@@ -1775,7 +1888,7 @@ int smpd_handle_close_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a closed command for the parent context.\n");
-	smpd_exit_fn("handle_close_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending closed command to parent: \"%s\"\n", temp_cmd->cmd);
@@ -1783,21 +1896,23 @@ int smpd_handle_close_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the closed command to the parent context.\n");
-	smpd_exit_fn("handle_close_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("posted closed command.\n");
 
-    smpd_exit_fn("handle_close_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_CLOSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_closed_command"
 int smpd_handle_closed_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("handle_closed_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -1809,7 +1924,7 @@ int smpd_handle_closed_command(smpd_context_t *context)
 	MPIDU_Sock_post_close(smpd_process.left_context->sock);
 	if (smpd_process.right_context)
 	{
-	    smpd_exit_fn("handle_closed_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_CLOSE;
 	}
     }
@@ -1821,7 +1936,7 @@ int smpd_handle_closed_command(smpd_context_t *context)
 	MPIDU_Sock_post_close(smpd_process.right_context->sock);
 	if (smpd_process.left_context)
 	{
-	    smpd_exit_fn("handle_closed_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_CLOSE;
 	}
     }
@@ -1831,27 +1946,27 @@ int smpd_handle_closed_command(smpd_context_t *context)
 	smpd_dbg_printf("MPIDU_Sock_post_close(%d)\n", MPIDU_Sock_get_sock_id(smpd_process.parent_context->sock));
 	smpd_process.parent_context->state = SMPD_CLOSING;
 	MPIDU_Sock_post_close(smpd_process.parent_context->sock);
-	smpd_exit_fn("handle_closed_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_EXITING;
     }
     else
     {
 	smpd_err_printf("closed command received from unknown context.\n");
-	smpd_exit_fn("handle_closed_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (smpd_process.parent_context == NULL)
     {
 	context->state = SMPD_EXITING;
 	smpd_dbg_printf("received a closed at node with no parent context, assuming root, returning SMPD_EXITING.\n");
-	smpd_exit_fn("handle_closed_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_EXITING;
     }
     result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, SMPD_FALSE, &temp_cmd);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a closed_request command for the parent context.\n");
-	smpd_exit_fn("handle_closed_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /*smpd_dbg_printf("posting write of closed_request command to parent: \"%s\"\n", temp_cmd->cmd);*/
@@ -1859,20 +1974,22 @@ int smpd_handle_closed_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the closed_request command to the parent context.\n");
-	smpd_exit_fn("handle_closed_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 	
-    smpd_exit_fn("handle_closed_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_CLOSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_closed_request_command"
 int smpd_handle_closed_request_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("handle_closed_request_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -1880,7 +1997,7 @@ int smpd_handle_closed_request_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a closed command for the context.\n");
-	smpd_exit_fn("handle_closed_request_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending closed command to context: \"%s\"\n", temp_cmd->cmd);
@@ -1888,14 +2005,16 @@ int smpd_handle_closed_request_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the closed command to the context.\n");
-	smpd_exit_fn("handle_closed_request_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("posted closed command to context.\n");
-    smpd_exit_fn("handle_closed_request_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_CLOSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_connect_command"
 int smpd_handle_connect_command(smpd_context_t *context)
 {
     int result;
@@ -1906,7 +2025,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
     int dest_id;
     char host[SMPD_MAX_HOST_LENGTH];
 
-    smpd_enter_fn("handle_connect_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -1918,28 +2037,28 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a result command for the connect request.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the tag to the result command.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - root smpd is not allowed to connect to other smpds.");
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to context: \"%s\"\n", temp_cmd->cmd);
@@ -1947,10 +2066,10 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (smpd_process.closing)
@@ -1960,28 +2079,28 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a result command for the connect request.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the tag to the result command.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR" - connect command received while closing.");
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to context: \"%s\"\n", temp_cmd->cmd);
@@ -1989,38 +2108,38 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context.\n");
-	    smpd_exit_fn("handle_connect_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("connect command does not have a target host argument, discarding: \"%s\"\n", cmd->cmd);
 	/* return failure result */
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (MPIU_Str_get_int_arg(cmd->cmd, "id", &dest_id) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("connect command does not have a target id argument, discarding: \"%s\"\n", cmd->cmd);
 	/* return failure result */
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (dest_id < smpd_process.id)
     {
 	smpd_dbg_printf("connect command has an invalid id, discarding: %d\n", dest_id);
 	/* return failure result */
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (smpd_process.left_context != NULL && smpd_process.right_context != NULL)
     {
 	smpd_err_printf("unable to connect to a new session, left and right sessions already exist, discarding.\n");
 	/* return failure result */
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     smpd_dbg_printf("now connecting to %s\n", host);
@@ -2029,7 +2148,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a new context.\n");
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2043,7 +2162,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
 	    get_sock_error_string(result));
 	result = smpd_post_abort_command("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    host, smpd_process.port, get_sock_error_string(result));
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	/*return SMPD_FAIL;*/
 	return result;
     }
@@ -2065,7 +2184,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
     else
     {
 	smpd_err_printf("impossible to be here, both left and right contexts are non-NULL.\n");
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     dest->state = SMPD_CONNECTING;
@@ -2073,7 +2192,7 @@ int smpd_handle_connect_command(smpd_context_t *context)
     if (dest->connect_to == NULL)
     {
 	smpd_err_printf("unable to allocate a host node structure.\n");
-	smpd_exit_fn("handle_connect_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     strcpy(dest->connect_to->host, host);
@@ -2085,10 +2204,12 @@ int smpd_handle_connect_command(smpd_context_t *context)
     dest->connect_return_id = cmd->src;
     dest->connect_return_tag = cmd->tag;
 
-    smpd_exit_fn("handle_connect_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_start_dbs_command"
 int smpd_handle_start_dbs_command(smpd_context_t *context)
 {
     int result;
@@ -2100,7 +2221,7 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
     char key[100], val[1024], val2[1024], equals_str[10];
     char *iter;
 
-    smpd_enter_fn("handle_start_dbs_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -2115,21 +2236,21 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for the dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("handle_start_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("handle_start_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("handle_start_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2151,33 +2272,33 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 		    if (MPIU_Str_get_string_arg(keyvals_str, key, val, 1024) != MPIU_STR_SUCCESS)
 		    {
 			smpd_err_printf("unable to get key %s from the preput keyval string '%s'.\n", key, keyvals_str);
-			smpd_exit_fn("handle_start_dbs_command");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    iter = val;
 		    if (MPIU_Str_get_string(&iter, key, 100) != MPIU_STR_SUCCESS)
 		    {
 			smpd_err_printf("unable to get key name from the preput keyval string '%s'.\n", val);
-			smpd_exit_fn("handle_start_dbs_command");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    if (MPIU_Str_get_string(&iter, equals_str, 10) != MPIU_STR_SUCCESS)
 		    {
 			smpd_err_printf("unable to get equals deliminator from the preput keyval string '%s'.\n", val);
-			smpd_exit_fn("handle_start_dbs_command");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    if (MPIU_Str_get_string(&iter, val2, 1024) != MPIU_STR_SUCCESS)
 		    {
 			smpd_err_printf("unable to get value from the preput keyval string '%s'.\n", val);
-			smpd_exit_fn("handle_start_dbs_command");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    result = smpd_dbs_put(/*smpd_process.*/kvs_name, key, val2);
 		    if (result != SMPD_DBS_SUCCESS)
 		    {
 			smpd_err_printf("smpd_dbs_put(%s:%s) failed.\n", key, val2);
-			smpd_exit_fn("handle_start_dbs_command");
+			smpd_exit_fn(FCNAME);
 			return SMPD_FAIL;
 		    }
 		    /*printf("preput %s = %s\n", key,val2);fflush(stdout);*/
@@ -2190,21 +2311,21 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the kvs_name string to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_start_dbs_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_arg(temp_cmd, "domain_name", smpd_process.domain_name);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the domain_name string to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_start_dbs_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_start_dbs_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -2216,7 +2337,7 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the kvs_name string to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_start_dbs_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	*/
@@ -2224,7 +2345,7 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for dbs command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("handle_start_dbs_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -2233,19 +2354,21 @@ int smpd_handle_start_dbs_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', dbs cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	smpd_exit_fn("handle_start_dbs_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("handle_start_dbs_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_print_command"
 int smpd_handle_print_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("handle_print_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -2263,14 +2386,14 @@ int smpd_handle_print_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a 'print' command for the left context.\n");
-	    smpd_exit_fn("smpd_handle_print_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_post_write_command(smpd_process.left_context, temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write for the 'print' command to the left context.\n");
-	    smpd_exit_fn("smpd_handle_print_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -2280,21 +2403,23 @@ int smpd_handle_print_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a 'print' command for the right context.\n");
-	    smpd_exit_fn("smpd_handle_print_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_post_write_command(smpd_process.right_context, temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write for the 'print' command to the right context.\n");
-	    smpd_exit_fn("smpd_handle_print_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
-    smpd_exit_fn("handle_print_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_stat_command"
 int smpd_handle_stat_command(smpd_context_t *context)
 {
     int result;
@@ -2305,14 +2430,14 @@ int smpd_handle_stat_command(smpd_context_t *context)
     char *str;
     int len;
 
-    smpd_enter_fn("smpd_handle_stat_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "param", param, 1024) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("stat command missing param parameter\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2394,7 +2519,7 @@ int smpd_handle_stat_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for the context.\n");
-	smpd_exit_fn("smpd_handle_stat_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -2402,14 +2527,14 @@ int smpd_handle_stat_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a stat command.\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the result string */
@@ -2417,7 +2542,7 @@ int smpd_handle_stat_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a stat command.\n");
-	smpd_exit_fn("smpd_handle_stat_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2427,19 +2552,21 @@ int smpd_handle_stat_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("smpd_handle_stat_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_stat_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_abort_command"
 int smpd_handle_abort_command(smpd_context_t *context)
 {
     char error_str[2048];
 
-    smpd_enter_fn("smpd_handle_abort_command");
+    smpd_enter_fn(FCNAME);
 
     if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "error", error_str, 2048) == MPIU_STR_SUCCESS)
     {
@@ -2449,14 +2576,16 @@ int smpd_handle_abort_command(smpd_context_t *context)
     {
 	/* abort without an error means return and exit peacefully */
 	/* FIXME: create a new return class, for now use SMPD_DBS_RETURN */
-	smpd_exit_fn("smpd_handle_abort_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_DBS_RETURN;
     }
 
-    smpd_exit_fn("smpd_handle_abort_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_EXIT;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_abort_job_command"
 int smpd_handle_abort_job_command(smpd_context_t *context)
 {
     char error_str[2048];
@@ -2466,43 +2595,45 @@ int smpd_handle_abort_job_command(smpd_context_t *context)
     int result;
     int exit_code;
 
-    smpd_enter_fn("smpd_handle_abort_job_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     if (MPIU_Str_get_string_arg(cmd->cmd, "error", error_str, 2048) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("invalid abort_job command, no error field in the command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_abort_job_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("invalid abort_job command, no name field in the command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_abort_job_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("invalid abort_job command, no rank field in the command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_abort_job_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     if (MPIU_Str_get_int_arg(cmd->cmd, "exit_code", &exit_code) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("invalid abort_job command, no exit_code field in the command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_abort_job_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     result = smpd_do_abort_job(name, rank, error_str, exit_code);
 
-    smpd_exit_fn("smpd_handle_abort_job_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_init_command"
 int smpd_handle_init_command(smpd_context_t *context)
 {
     int result;
@@ -2516,7 +2647,7 @@ int smpd_handle_init_command(smpd_context_t *context)
     int rank, size, node_id=0;
     smpd_process_group_t *pg;
 
-    smpd_enter_fn("smpd_handle_init_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -2525,7 +2656,7 @@ int smpd_handle_init_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for the init command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -2533,21 +2664,21 @@ int smpd_handle_init_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for the init command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* copy the ctx_key for pmi control channel lookup */
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in the db command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the ctx_key to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2561,7 +2692,7 @@ int smpd_handle_init_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for init command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_init_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -2569,10 +2700,10 @@ int smpd_handle_init_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', init cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_init_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -2586,7 +2717,7 @@ int smpd_handle_init_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for init command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_init_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -2594,10 +2725,10 @@ int smpd_handle_init_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', init cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_init_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     smpd_dbg_printf("init: %d:%d:%s\n", rank, size, name);
@@ -2640,7 +2771,7 @@ int smpd_handle_init_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for the init command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -2648,14 +2779,16 @@ int smpd_handle_init_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', init cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	smpd_exit_fn("smpd_handle_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_init_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_finalize_command"
 int smpd_handle_finalize_command(smpd_context_t *context)
 {
     int result;
@@ -2668,7 +2801,7 @@ int smpd_handle_finalize_command(smpd_context_t *context)
     int rank;
     smpd_process_group_t *pg;
 
-    smpd_enter_fn("smpd_handle_finalize_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -2677,7 +2810,7 @@ int smpd_handle_finalize_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for the finalize command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -2685,21 +2818,21 @@ int smpd_handle_finalize_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for the finalize command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* copy the ctx_key for pmi control channel lookup */
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in the db command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "ctx_key", ctx_key);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the ctx_key to the result command for dbs command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2710,7 +2843,7 @@ int smpd_handle_finalize_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for finalize command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_finalize_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -2718,10 +2851,10 @@ int smpd_handle_finalize_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', finalize cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_finalize_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     rank = atoi(key);
@@ -2731,7 +2864,7 @@ int smpd_handle_finalize_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for finalize command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_finalize_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -2739,10 +2872,10 @@ int smpd_handle_finalize_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', finalize cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_finalize_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     smpd_dbg_printf("finalize: %d:%s\n", rank, name);
@@ -2775,7 +2908,7 @@ int smpd_handle_finalize_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for the finalize command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -2783,14 +2916,16 @@ int smpd_handle_finalize_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', finalize cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	smpd_exit_fn("smpd_handle_finalize_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_finalize_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_validate_command"
 int smpd_handle_validate_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
@@ -2803,21 +2938,21 @@ int smpd_handle_validate_command(smpd_context_t *context)
     HANDLE hUser;
 #endif
 
-    smpd_enter_fn("smpd_handle_validate_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "account", fullaccount, SMPD_MAX_ACCOUNT_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("validate command missing account parameter\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* FIXME: decrypt the password */
     if (MPIU_Str_get_string_arg(cmd->cmd, "password", encrypted_password, SMPD_MAX_PASSWORD_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("validate command missing password parameter\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     length = SMPD_MAX_PASSWORD_LENGTH;
@@ -2825,7 +2960,7 @@ int smpd_handle_validate_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to decrypt the password\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2852,7 +2987,7 @@ int smpd_handle_validate_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a validate command.\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -2860,21 +2995,21 @@ int smpd_handle_validate_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a validate command.\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a validate command.\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2884,21 +3019,23 @@ int smpd_handle_validate_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("smpd_handle_validate_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_validate_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_status_command"
 int smpd_handle_status_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
     smpd_command_t *cmd, *temp_cmd;
     char dynamic_hosts[SMPD_MAX_CMD_LENGTH - 100];
 
-    smpd_enter_fn("smpd_handle_status_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -2911,7 +3048,7 @@ int smpd_handle_status_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a status command.\n");
-	smpd_exit_fn("smpd_handle_status_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -2919,21 +3056,21 @@ int smpd_handle_status_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a status command.\n");
-	smpd_exit_fn("smpd_handle_status_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_status_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "result", dynamic_hosts);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the dynamic hosts result string to the result command for a status command.\n");
-	smpd_exit_fn("smpd_handle_status_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2943,14 +3080,16 @@ int smpd_handle_status_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("smpd_handle_status_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_status_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_get_command"
 int smpd_handle_get_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
@@ -2959,14 +3098,14 @@ int smpd_handle_get_command(smpd_context_t *context)
     char key[SMPD_MAX_NAME_LENGTH];
     char value[SMPD_MAX_VALUE_LENGTH];
 
-    smpd_enter_fn("smpd_handle_get_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("get command missing key parameter\n");
-	smpd_exit_fn("smpd_handle_get_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -2976,7 +3115,7 @@ int smpd_handle_get_command(smpd_context_t *context)
     {
 	/*
 	smpd_err_printf("unable to get %s\n", key);
-	smpd_exit_fn("smpd_handle_get_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 	*/
 	strcpy(result_str, SMPD_FAIL_STR);
@@ -2991,7 +3130,7 @@ int smpd_handle_get_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a get %s=%s command.\n", key, value);
-	smpd_exit_fn("smpd_handle_get_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -2999,14 +3138,14 @@ int smpd_handle_get_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a get %s=%s command.\n", key, value);
-	smpd_exit_fn("smpd_handle_get_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_get_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (strcmp(result_str, SMPD_SUCCESS_STR) == 0)
@@ -3016,7 +3155,7 @@ int smpd_handle_get_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the value to the result command for a get %s=%s command.\n", key, value);
-	    smpd_exit_fn("smpd_handle_get_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -3025,7 +3164,7 @@ int smpd_handle_get_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a get %s=%s command.\n", key, value);
-	smpd_exit_fn("smpd_handle_get_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3035,14 +3174,16 @@ int smpd_handle_get_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("smpd_handle_get_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_get_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_set_command"
 int smpd_handle_set_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
@@ -3051,20 +3192,20 @@ int smpd_handle_set_command(smpd_context_t *context)
     char key[SMPD_MAX_NAME_LENGTH];
     char value[SMPD_MAX_VALUE_LENGTH];
 
-    smpd_enter_fn("smpd_handle_set_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("set command missing key parameter\n");
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "value", value, SMPD_MAX_VALUE_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("set command missing value parameter\n");
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3073,7 +3214,7 @@ int smpd_handle_set_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to set %s=%s\n", key, value);
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     strcpy(result_str, SMPD_SUCCESS_STR);
@@ -3083,7 +3224,7 @@ int smpd_handle_set_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a set %s=%s command.\n", key, value);
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -3091,21 +3232,21 @@ int smpd_handle_set_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a set %s=%s command.\n", key, value);
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a set %s=%s command.\n", key, value);
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3115,14 +3256,16 @@ int smpd_handle_set_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("smpd_handle_set_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_set_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_delete_command"
 int smpd_handle_delete_command(smpd_context_t *context)
 {
     int result = SMPD_SUCCESS;
@@ -3130,14 +3273,14 @@ int smpd_handle_delete_command(smpd_context_t *context)
     char result_str[100];
     char key[SMPD_MAX_NAME_LENGTH];
 
-    smpd_enter_fn("smpd_handle_delete_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_NAME_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("set command missing key parameter\n");
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3146,7 +3289,7 @@ int smpd_handle_delete_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to delete smpd data %s\n", key);
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     strcpy(result_str, SMPD_SUCCESS_STR);
@@ -3156,7 +3299,7 @@ int smpd_handle_delete_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a delete %s command.\n", key);
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -3164,21 +3307,21 @@ int smpd_handle_delete_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a delete %s command.\n", key);
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a delete %s command.\n", key);
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3188,28 +3331,30 @@ int smpd_handle_delete_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the %s context.\n", smpd_get_context_str(context));
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_delete_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_cred_request_command"
 int smpd_handle_cred_request_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
     char host[SMPD_MAX_HOST_LENGTH];
 
-    smpd_enter_fn("smpd_handle_cred_request_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
     if (MPIU_Str_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no host parameter in the cred_request command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_cred_request_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3218,7 +3363,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a cred_request command.\n");
-	smpd_exit_fn("smpd_handle_cred_request_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -3226,14 +3371,14 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a cred_request command.\n");
-	smpd_exit_fn("smpd_handle_cred_request_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_cred_request_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3253,7 +3398,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the account parameter to the result command.\n");
-		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
 		/* FIXME: encrypt the password */
@@ -3261,21 +3406,21 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to encrypt the password parameter to the result command.\n");
-		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
 		result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the password parameter to the result command.\n");
-		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
 		result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the result parameter to the result command.\n");
-		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
 	    }
@@ -3285,7 +3430,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the result parameter to the result command.\n");
-		    smpd_exit_fn("smpd_handle_cred_request_command");
+		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
 	    }
@@ -3296,7 +3441,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the account parameter to the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    /* FIXME: encrypt the password */
@@ -3304,21 +3449,21 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the password parameter to the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the result parameter to the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	}
@@ -3329,7 +3474,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the account parameter to the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	/* FIXME: encrypt the password */
@@ -3337,21 +3482,21 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the password parameter to the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result parameter to the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
     }
@@ -3366,7 +3511,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the account parameter to the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    /* FIXME: encrypt the password */
@@ -3374,21 +3519,21 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the password parameter to the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the result parameter to the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	}
@@ -3398,7 +3543,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the result parameter to the result command.\n");
-		smpd_exit_fn("smpd_handle_cred_request_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	}
@@ -3409,7 +3554,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the account parameter to the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	/* FIXME: encrypt the password */
@@ -3417,21 +3562,21 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to encrypt the password parameter for the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	result = smpd_add_command_arg(temp_cmd, "password", context->encrypted_password/*smpd_process.UserPassword*/);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the password parameter to the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
 	result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result parameter to the result command.\n");
-	    smpd_exit_fn("smpd_handle_cred_request_command");
+	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
     }
@@ -3441,19 +3586,517 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the %s context.\n", smpd_get_context_str(context));
-	smpd_exit_fn("smpd_handle_delete_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("smpd_handle_cred_request_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_sspi_context_init"
+int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr)
+{
+#ifdef HAVE_WINDOWS_H
+    int result;
+    SEC_WINNT_AUTH_IDENTITY *identity = NULL;
+    SECURITY_STATUS sec_result;
+    SecBufferDesc outbound_descriptor;
+    SecBuffer outbound_buffer;
+    ULONG attr;
+    TimeStamp ts;
+    SecPkgInfo *info;
+    smpd_sspi_client_context_t *sspi_context;
+    char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
+    char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
+
+    smpd_enter_fn(FCNAME);
+
+    if (smpd_process.sec_fn == NULL)
+    {
+	smpd_process.sec_fn = InitSecurityInterface();
+	if (smpd_process.sec_fn == NULL)
+	{
+	    smpd_err_printf("unable to initialize the sspi interface.\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+    }
+    /* FIXME: How do we determine whether to provide user credentials or impersonate the current user? */
+    if (smpd_process.logon)
+    {
+	identity = (SEC_WINNT_AUTH_IDENTITY *)malloc(sizeof(SEC_WINNT_AUTH_IDENTITY));
+	if (identity == NULL)
+	{
+	    smpd_err_printf("unable to allocate an sspi security identity.\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	smpd_parse_account_domain(smpd_process.UserAccount, account, domain);
+	if (domain[0] == '\0')
+	{
+	    identity->Domain = NULL;
+	    identity->DomainLength = 0;
+	}
+	else
+	{
+	    identity->Domain = domain;
+	    identity->DomainLength = (unsigned long)strlen(domain);
+	}
+	identity->User = account;
+	identity->UserLength = (unsigned long)strlen(account);
+	identity->Password = smpd_process.UserPassword;
+	identity->PasswordLength = (unsigned long)strlen(smpd_process.UserPassword);
+	identity->Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
+    }
+    result = smpd_create_sspi_client_context(&sspi_context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to allocate an sspi client context.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sec_result = smpd_process.sec_fn->QuerySecurityPackageInfo(SMPD_SECURITY_PACKAGE, &info);
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to query the security package, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_OUTBOUND, NULL, identity, NULL, NULL, &sspi_context->credential, &ts);
+    if (identity != NULL)
+    {
+	free(identity);
+    }
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to acquire the outbound client credential, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sspi_context->buffer = malloc(info->cbMaxToken);
+    sspi_context->buffer_length = info->cbMaxToken;
+    outbound_descriptor.ulVersion = SECBUFFER_VERSION;
+    outbound_descriptor.cBuffers = 1;
+    outbound_descriptor.pBuffers = &outbound_buffer;
+    outbound_buffer.BufferType = SECBUFFER_TOKEN;
+    outbound_buffer.cbBuffer = info->cbMaxToken;
+    outbound_buffer.pvBuffer = sspi_context->buffer;
+    sec_result = smpd_process.sec_fn->FreeContextBuffer(info);
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to free the security info structure, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sec_result = smpd_process.sec_fn->InitializeSecurityContext(&sspi_context->credential, NULL, SMPD_SECURITY_PACKAGE, ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE, 0, SECURITY_NETWORK_DREP, NULL, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
+    switch (sec_result)
+    {
+    case SEC_E_OK:
+	break;
+    case SEC_I_COMPLETE_NEEDED:
+    case SEC_I_COMPLETE_AND_CONTINUE:
+	sec_result = smpd_process.sec_fn->CompleteAuthToken(&sspi_context->context, &outbound_descriptor);
+	if (sec_result != SEC_E_OK)
+	{
+	    smpd_process.sec_fn->DeleteSecurityContext(&sspi_context->context);
+	    smpd_process.sec_fn->FreeCredentialsHandle(&sspi_context->credential);
+	    smpd_err_printf("CompleteAuthToken failed with error %d\n", sec_result);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	break;
+    case SEC_I_CONTINUE_NEEDED:
+	break;
+    default:
+	/* error occurred */
+	smpd_err_printf("InitializeSecurityContext failed with error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    *sspi_context_pptr = sspi_context;
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+#else
+    smpd_enter_fn(FCNAME);
+    smpd_err_printf("function not implemented.\n");
+    smpd_exit_fn(FCNAME);
+    return SMPD_FAIL;
+#endif
+}
+
+#undef FCNAME
+#define FCNAME "smpd_handle_sspi_init_command"
+int smpd_handle_sspi_init_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+    char context_str[20];
+    smpd_sspi_client_context_t *sspi_context;
+
+    smpd_enter_fn(FCNAME);
+
+    cmd = &context->read_cmd;
+
+    if (MPIU_Str_get_string_arg(cmd->cmd, "sspi_context", context_str, 20) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no context parameter in the sspi_init command: '%s'\n", cmd->cmd);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a cred_request command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a cred_request command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "sspi_context", context_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add context_str to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    /* create and initialize an sspi context */
+    result = smpd_sspi_context_init(&sspi_context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to initialize an sspi context\n");
+	goto fn_fail;
+    }
+
+    result = smpd_add_command_binary_arg(temp_cmd, "data", sspi_context->buffer, sspi_context->buffer_length);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the data parameter to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "sspi_id", sspi_context->id);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the sspi_id parameter to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result parameter to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+
+fn_exit:
+    /* send result back */
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the %s context.\n", smpd_get_context_str(context));
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn(FCNAME);
+    return result;
+fn_fail:
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result parameter to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    goto fn_exit;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_sspi_context_iter"
+int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr)
+{
+#ifdef HAVE_WINDOWS_H
+    SEC_WINNT_AUTH_IDENTITY *identity = NULL;
+    SECURITY_STATUS sec_result;
+    SecBufferDesc outbound_descriptor;
+    SecBuffer outbound_buffer;
+    ULONG attr;
+    TimeStamp ts;
+    SecPkgInfo *info;
+    smpd_sspi_client_context_t *sspi_context;
+    char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
+    char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
+
+    smpd_enter_fn(FCNAME);
+
+    if (smpd_process.sec_fn == NULL)
+    {
+	smpd_process.sec_fn = InitSecurityInterface();
+	if (smpd_process.sec_fn == NULL)
+	{
+	    smpd_err_printf("unable to initialize the sspi interface.\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+    }
+
+    /* look up the sspi_context based on the id */
+    sspi_context = smpd_process.sspi_context_list;
+    while (sspi_context)
+    {
+	if (sspi_context->id == sspi_id)
+	    break;
+    }
+    if (sspi_context == NULL)
+    {
+	smpd_err_printf("unable to look up the sspi_id %d\n", sspi_id);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    sec_result = smpd_process.sec_fn->QuerySecurityPackageInfo(SMPD_SECURITY_PACKAGE, &info);
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to query the security package, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_OUTBOUND, NULL, identity, NULL, NULL, &sspi_context->credential, &ts);
+    if (identity != NULL)
+    {
+	free(identity);
+    }
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to acquire the outbound client credential, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sspi_context->buffer = malloc(info->cbMaxToken);
+    sspi_context->buffer_length = info->cbMaxToken;
+    outbound_descriptor.ulVersion = SECBUFFER_VERSION;
+    outbound_descriptor.cBuffers = 1;
+    outbound_descriptor.pBuffers = &outbound_buffer;
+    outbound_buffer.BufferType = SECBUFFER_TOKEN;
+    outbound_buffer.cbBuffer = info->cbMaxToken;
+    outbound_buffer.pvBuffer = sspi_context->buffer;
+    sec_result = smpd_process.sec_fn->FreeContextBuffer(info);
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to free the security info structure, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sec_result = smpd_process.sec_fn->InitializeSecurityContext(&sspi_context->credential, NULL, SMPD_SECURITY_PACKAGE, ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_DELEGATE, 0, SECURITY_NETWORK_DREP, NULL, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
+    switch (sec_result)
+    {
+    case SEC_E_OK:
+	break;
+    case SEC_I_COMPLETE_NEEDED:
+    case SEC_I_COMPLETE_AND_CONTINUE:
+	sec_result = smpd_process.sec_fn->CompleteAuthToken(&sspi_context->context, &outbound_descriptor);
+	if (sec_result != SEC_E_OK)
+	{
+	    smpd_process.sec_fn->DeleteSecurityContext(&sspi_context->context);
+	    smpd_process.sec_fn->FreeCredentialsHandle(&sspi_context->credential);
+	    smpd_err_printf("CompleteAuthToken failed with error %d\n", sec_result);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	break;
+    case SEC_I_CONTINUE_NEEDED:
+	break;
+    default:
+	/* error occurred */
+	smpd_err_printf("InitializeSecurityContext failed with error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+#else
+    smpd_enter_fn(FCNAME);
+    smpd_err_printf("function not implemented.\n");
+    smpd_exit_fn(FCNAME);
+    return SMPD_FAIL;
+#endif
+}
+
+#undef FCNAME
+#define FCNAME "smpd_handle_sspi_iter_command"
+int smpd_handle_sspi_iter_command(smpd_context_t *context)
+{
+#ifdef HAVE_WINDOWS_H
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+    char context_str[20];
+    int sspi_id;
+    void *sspi_buffer;
+    int sspi_buffer_length;
+    SecPkgInfo *info;
+    SECURITY_STATUS sec_result;
+
+    smpd_enter_fn(FCNAME);
+
+    cmd = &context->read_cmd;
+
+    if (MPIU_Str_get_string_arg(cmd->cmd, "sspi_context", context_str, 20) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no context parameter in the sspi_init command: '%s'\n", cmd->cmd);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "sspi_id", &sspi_id) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no sspi_id parameter in the sspi_iter command: '%s'\n", cmd->cmd);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    /* get the maximum length the binary data can be */
+    if (smpd_process.sec_fn == NULL)
+    {
+	smpd_process.sec_fn = InitSecurityInterface();
+	if (smpd_process.sec_fn == NULL)
+	{
+	    smpd_err_printf("unable to initialize the sspi interface.\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+    }
+    sec_result = smpd_process.sec_fn->QuerySecurityPackageInfo(SMPD_SECURITY_PACKAGE, &info);
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to query the security package, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sspi_buffer = malloc(info->cbMaxToken);
+    if (sspi_buffer == NULL)
+    {
+	smpd_err_printf("unable to allocate an sspi buffer\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    if (MPIU_Str_get_binary_arg(cmd->cmd, "data", sspi_buffer, info->cbMaxToken, &sspi_buffer_length) != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unable to get the data parameter from the sspi_iter command: '%s'\n", cmd->cmd);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    sec_result = smpd_process.sec_fn->FreeContextBuffer(info);
+    if (sec_result != SEC_E_OK)
+    {
+	smpd_err_printf("unable to free the security info structure, error %d\n", sec_result);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a cred_request command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a cred_request command.\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "sspi_context", context_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add context_str to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    result = smpd_sspi_context_iter(sspi_id, &sspi_buffer, &sspi_buffer_length);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to iterate on the sspi buffer.\n");
+	goto fn_fail;
+    }
+
+    result = smpd_add_command_binary_arg(temp_cmd, "data", sspi_buffer, sspi_buffer_length);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the data parameter to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result parameter to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+
+fn_exit:
+    /* send result back */
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the %s context.\n", smpd_get_context_str(context));
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn(FCNAME);
+    return result;
+fn_fail:
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result parameter to the result command.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    goto fn_exit;
+#else
+    smpd_enter_fn(FCNAME);
+    smpd_err_printf("function not implemented.\n");
+    smpd_exit_fn(FCNAME);
+    return SMPD_FAIL;
+#endif
+}
+
+#undef FCNAME
+#define FCNAME "smpd_handle_exit_on_done_command"
 int smpd_handle_exit_on_done_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("smpd_handle_exit_on_done_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     smpd_process.exit_on_done = SMPD_TRUE;
@@ -3463,7 +4106,7 @@ int smpd_handle_exit_on_done_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a exit_on_done command.\n");
-	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -3471,14 +4114,14 @@ int smpd_handle_exit_on_done_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a exit_on_done command.\n");
-	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3487,7 +4130,7 @@ int smpd_handle_exit_on_done_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a exit_on_done command.\n");
-	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3497,14 +4140,16 @@ int smpd_handle_exit_on_done_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("smpd_handle_exit_on_done_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_exit_on_done_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_exit_command"
 int smpd_handle_exit_command(smpd_context_t *context)
 {
     smpd_command_t *cmd;
@@ -3518,7 +4163,7 @@ int smpd_handle_exit_command(smpd_context_t *context)
     if (MPIU_Str_get_int_arg(cmd->cmd, "code", &exitcode) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no exit code in exit command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_exit_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (exitcode != 0)
@@ -3529,13 +4174,13 @@ int smpd_handle_exit_command(smpd_context_t *context)
     if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &iproc) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no iproc in exit command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_exit_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_string_arg(cmd->cmd, "kvs", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no kvs in exit command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_exit_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     pg = smpd_process.pg_list;
@@ -3546,13 +4191,13 @@ int smpd_handle_exit_command(smpd_context_t *context)
 	    if (iproc < 0 || iproc >= pg->num_procs)
 	    {
 		smpd_err_printf("received exit code for process out of range: process %d not in group of size %d.\n", iproc, pg->num_procs);
-		smpd_exit_fn("smpd_handle_exit_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    if (pg->processes[iproc].exited)
 	    {
 		smpd_err_printf("received exit code for process %d more than once.\n", iproc);
-		smpd_exit_fn("smpd_handle_exit_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    smpd_dbg_printf("saving exit code: rank %d, exitcode %d, pg <%s>\n", iproc, exitcode, name);
@@ -3652,13 +4297,15 @@ int smpd_handle_exit_command(smpd_context_t *context)
     {
 	/*printf("last process exited, returning SMPD_EXIT.\n");fflush(stdout);*/
 	smpd_dbg_printf("last process exited, returning SMPD_EXIT.\n");
-	smpd_exit_fn("smpd_handle_exit_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_EXIT;
     }
-    smpd_exit_fn("smpd_handle_exit_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_suspend_result"
 int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str)
 {
     char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
@@ -3667,25 +4314,25 @@ int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str)
     int result;
     smpd_command_t *cmd_ptr;
 
-    smpd_enter_fn("smpd_handle_suspend_result");
+    smpd_enter_fn(FCNAME);
 
     /* get the rank and pg name out of the command */
     if (MPIU_Str_get_string_arg(cmd->cmd, "name", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no kvs in suspend command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_suspend_result");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_int_arg(cmd->cmd, "rank", &rank) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no rank in suspend command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_suspend_result");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_int_arg(cmd->cmd, "exit_code", &exit_code) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no exit code in suspend command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_suspend_result");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* look up the pg */
@@ -3701,7 +4348,7 @@ int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str)
     if (pg == NULL)
     {
 	smpd_err_printf("received suspend result for process with no matching process group: rank %d, name <%s>\n", rank, name);
-	smpd_exit_fn("smpd_handle_suspend_result");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3713,7 +4360,7 @@ int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str)
     if (rank < 0 || rank >= pg->num_procs)
     {
 	smpd_err_printf("received suspend result for process out of range: process %d not in group of size %d.\n", rank, pg->num_procs);
-	smpd_exit_fn("smpd_handle_suspend_result");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3733,21 +4380,21 @@ int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create a kill command.\n");
-		    smpd_exit_fn("smpd_handle_suspend_result");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		result = smpd_add_command_int_arg(cmd_ptr, "exit_code", exit_code);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the exit code %d to the kill command\n", exit_code);
-		    smpd_exit_fn("smpd_handle_suspend_result");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		result = smpd_add_command_arg(cmd_ptr, "ctx_key", pg->processes[i].ctx_key);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the ctx_key to the kill command: '%s'\n", pg->processes[i].ctx_key);
-		    smpd_exit_fn("smpd_handle_suspend_result");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 
@@ -3756,17 +4403,19 @@ int smpd_handle_suspend_result(smpd_command_t *cmd, char *result_str)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to post a write for the kill command: rank %d\n", i);
-		    smpd_exit_fn("smpd_handle_suspend_result");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
 	}
     }
 
-    smpd_exit_fn("smpd_handle_suspend_result");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_suspend_command"
 int smpd_handle_suspend_command(smpd_context_t *context)
 {
     smpd_command_t *cmd, *temp_cmd;
@@ -3777,7 +4426,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
     int result;
     char error_str[1024];
 
-    smpd_enter_fn("smpd_handle_suspend_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     
@@ -3786,7 +4435,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for the init command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_suspend_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -3794,7 +4443,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for the init command '%s'.\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_suspend_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3802,7 +4451,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in suspend command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_suspend_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3825,7 +4474,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_suspend_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -3833,10 +4482,10 @@ int smpd_handle_suspend_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', suspend cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_suspend_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_suspend_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -3847,7 +4496,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_suspend_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_dbg_printf("sending result command to %s context: \"%s\"\n", smpd_get_context_str(context), temp_cmd->cmd);
@@ -3855,10 +4504,10 @@ int smpd_handle_suspend_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', suspend cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	    smpd_exit_fn("smpd_handle_suspend_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_suspend_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     
@@ -3871,7 +4520,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_suspend_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -3881,7 +4530,7 @@ int smpd_handle_suspend_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the result string to the result command for a suspend command '%s'.\n", cmd->cmd);
-	    smpd_exit_fn("smpd_handle_suspend_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -3892,13 +4541,15 @@ int smpd_handle_suspend_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context: cmd '%s', suspend cmd '%s'", temp_cmd->cmd, cmd->cmd);
-	smpd_exit_fn("smpd_handle_suspend_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("smpd_handle_suspend_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_kill_command"
 int smpd_handle_kill_command(smpd_context_t *context)
 {
     smpd_command_t *cmd;
@@ -3909,20 +4560,20 @@ int smpd_handle_kill_command(smpd_context_t *context)
     int result;
     int exit_code;
 
-    smpd_enter_fn("smpd_handle_kill_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
     
     if (MPIU_Str_get_string_arg(cmd->cmd, "ctx_key", ctx_key, 100) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no ctx_key in suspend command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_kill_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (MPIU_Str_get_int_arg(cmd->cmd, "exit_code", &exit_code) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no exit code in suspend command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_kill_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3941,14 +4592,14 @@ int smpd_handle_kill_command(smpd_context_t *context)
     if (pmi_context == NULL)
     {
 	smpd_err_printf("received kill command for a pmi context that doesn't exist: unmatched id = %d\n", process_id);
-	smpd_exit_fn("smpd_handle_kill_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
     if (pmi_context->process == NULL)
     {
 	smpd_err_printf("received kill command for a pmi context that does not have a process structure.\n");
-	smpd_exit_fn("smpd_handle_kill_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     
@@ -3956,14 +4607,16 @@ int smpd_handle_kill_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to kill process.\n");
-	smpd_exit_fn("smpd_handle_kill_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
-    smpd_exit_fn("smpd_handle_kill_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_handle_pmi_listen_command"
 int smpd_handle_pmi_listen_command(smpd_context_t *context)
 {
     int result;
@@ -3975,7 +4628,7 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     /*smpd_process_t *process;*/
     char host_description[256];
 
-    smpd_enter_fn("smpd_handle_pmi_listen_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -3983,7 +4636,7 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no nproc field in the pmi_listen command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -3994,7 +4647,7 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a process structure for the pmi_listen command\n");
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     */
@@ -4005,7 +4658,7 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     {
 	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
 	smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("pmiserver listening on port %d\n", listener_port);
@@ -4014,14 +4667,14 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a context for the pmi listener.\n");
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = MPIDU_Sock_set_user_ptr(sock_pmi_listener, listener_context);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     listener_context->state = SMPD_SMPD_LISTENING/*SMPD_PMI_SERVER_LISTENING*/;
@@ -4029,14 +4682,14 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_get_hostname failed\n");
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /*result = MPIDU_Sock_get_host_description(host_description, 256);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_get_host_description failed,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     */
@@ -4049,81 +4702,85 @@ int smpd_handle_pmi_listen_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command in response to pmi_listen command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result field to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "host_description", host_description);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the host_description field to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_int_arg(temp_cmd, "listener_port", listener_port);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the listener_port field to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_post_write_command(context, temp_cmd);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_handle_pmi_listen_command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
 #if 0
 /* use this template to add new command handler functions */
+#undef FCNAME
+#define FCNAME "smpd_handle__command"
 int smpd_handle__command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("smpd_handle__command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
     result = handle command code;
 
-    smpd_exit_fn("smpd_handle__command");
+    smpd_exit_fn(FCNAME);
     return result;
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_handle_command"
 int smpd_handle_command(smpd_context_t *context)
 {
     int result;
     smpd_context_t *dest;
     smpd_command_t *cmd, *temp_cmd;
 
-    smpd_enter_fn("smpd_handle_command");
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
@@ -4143,7 +4800,7 @@ int smpd_handle_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("invalid command received, unable to determine the destination: '%s'\n", cmd->cmd);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (dest)
@@ -4153,137 +4810,149 @@ int smpd_handle_command(smpd_context_t *context)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to forward the command.\n");
-	    smpd_exit_fn("smpd_handle_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (strcmp(cmd->cmd_str, "close") == 0)
     {
 	result = smpd_handle_close_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "closed") == 0)
     {
 	result = smpd_handle_closed_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "closed_request") == 0)
     {
 	result = smpd_handle_closed_request_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "result") == 0)
     {
 	result = smpd_handle_result(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "exit") == 0)
     {
 	result = smpd_handle_exit_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "abort") == 0)
     {
 	result = smpd_handle_abort_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "abort_job") == 0)
     {
 	result = smpd_handle_abort_job_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "init") == 0)
     {
 	result = smpd_handle_init_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "finalize") == 0)
     {
 	result = smpd_handle_finalize_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "stdin") == 0)
     {
 	result = smpd_handle_stdin_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "close_stdin") == 0)
     {
 	result = smpd_handle_stdin_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "stdout") == 0)
     {
 	result = smpd_handle_stdout_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "stderr") == 0)
     {
 	result = smpd_handle_stderr_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "launch") == 0)
     {
 	result = smpd_handle_launch_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "connect") == 0)
     {
 	result = smpd_handle_connect_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "print") == 0)
     {
 	result = smpd_handle_print_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "start_dbs") == 0)
     {
 	result = smpd_handle_start_dbs_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "pmi_listen") == 0)
     {
 	result = smpd_handle_pmi_listen_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if ((cmd->cmd_str[0] == 'd') && (cmd->cmd_str[1] == 'b'))
     {
 	/* handle database command */
 	result = smpd_handle_dbs_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "barrier") == 0)
     {
 	result = smpd_handle_barrier_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "cred_request") == 0)
     {
 	result = smpd_handle_cred_request_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "sspi_init") == 0)
+    {
+	result = smpd_handle_sspi_init_command(context);
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "sspi_iter") == 0)
+    {
+	result = smpd_handle_sspi_iter_command(context);
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "down") == 0)
@@ -4294,16 +4963,16 @@ int smpd_handle_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
 		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
-	    smpd_exit_fn("smpd_handle_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_EXITING;
     }
     else if (strcmp(cmd->cmd_str, "exit_on_done") == 0)
     {
 	result = smpd_handle_exit_on_done_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "done") == 0)
@@ -4318,7 +4987,7 @@ int smpd_handle_command(smpd_context_t *context)
 	{
 	    smpd_err_printf("unable to post a close on sock %d,\nsock error: %s\n",
 		MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result));
-	    smpd_exit_fn("smpd_handle_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	if (smpd_process.exit_on_done)
@@ -4330,29 +4999,29 @@ int smpd_handle_command(smpd_context_t *context)
 		context->state = SMPD_EXITING;
 		smpd_dbg_printf("last process exited, returning SMPD_EXIT.\n");
 		/*printf("last process exited, returning SMPD_EXIT.\n");fflush(stdout);*/
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return /*SMPD_EXIT*/ SMPD_EXITING;
 	    }
 	}
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_CLOSE;
     }
     else if (strcmp(cmd->cmd_str, "spawn") == 0)
     {
 	result = smpd_handle_spawn_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "suspend") == 0)
     {
 	result = smpd_handle_suspend_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else if (strcmp(cmd->cmd_str, "kill") == 0)
     {
 	result = smpd_handle_kill_command(context);
-	smpd_exit_fn("smpd_handle_command");
+	smpd_exit_fn(FCNAME);
 	return result;
     }
     else
@@ -4368,7 +5037,7 @@ int smpd_handle_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create a closed command for the context.\n");
-		    smpd_exit_fn("smpd_handle_command");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("shutdown received, replying with down command: \"%s\"\n", temp_cmd->cmd);
@@ -4376,46 +5045,46 @@ int smpd_handle_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to post a write of the closed command to the context.\n");
-		    smpd_exit_fn("smpd_handle_command");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return SMPD_EXITING; /* return close to prevent posting another read on this context */
 	    }
 	    else if (strcmp(cmd->cmd_str, "validate") == 0)
 	    {
 		result = smpd_handle_validate_command(context);
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    else if (strcmp(cmd->cmd_str, "status") == 0)
 	    {
 		result = smpd_handle_status_command(context);
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    else if (strcmp(cmd->cmd_str, "stat") == 0)
 	    {
 		result = smpd_handle_stat_command(context);
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    else if (strcmp(cmd->cmd_str, "get") == 0)
 	    {
 		result = smpd_handle_get_command(context);
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    else if (strcmp(cmd->cmd_str, "set") == 0)
 	    {
 		result = smpd_handle_set_command(context);
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    else if (strcmp(cmd->cmd_str, "delete") == 0)
 	    {
 		result = smpd_handle_delete_command(context);
-		smpd_exit_fn("smpd_handle_command");
+		smpd_exit_fn(FCNAME);
 		return result;
 	    }
 	    else
@@ -4429,6 +5098,6 @@ int smpd_handle_command(smpd_context_t *context)
 	}
     }
 
-    smpd_exit_fn("smpd_handle_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }

@@ -162,9 +162,17 @@ smpd_global_t smpd_process =
       SMPD_TRUE,        /* use_pmi_server          */
       NULL,             /* mpiexec_argv0           */
       "dummy",          /* encrypt_prefix          */
-      SMPD_FALSE        /* plaintext               */
+      SMPD_FALSE,       /* plaintext               */
+      SMPD_FALSE,       /* use_sspi                */
+      SMPD_FALSE,       /* use_delegation          */
+#ifdef HAVE_WINDOWS_H
+      NULL,             /* sec_fn                  */
+#endif
+      NULL              /* sspi_context_list       */
     };
 
+#undef FCNAME
+#define FCNAME "smpd_post_abort_command"
 int smpd_post_abort_command(char *fmt, ...)
 {
     int result;
@@ -173,7 +181,7 @@ int smpd_post_abort_command(char *fmt, ...)
     smpd_context_t *context;
     va_list list;
 
-    smpd_enter_fn("smpd_post_abort_command");
+    smpd_enter_fn(FCNAME);
 
     va_start(list, fmt);
     vsnprintf(error_str, 2048, fmt, list);
@@ -183,14 +191,14 @@ int smpd_post_abort_command(char *fmt, ...)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create an abort command.\n");
-	smpd_exit_fn("smpd_post_abort_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(cmd_ptr, "error", error_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("Unable to add the error string to the abort command.\n");
-	smpd_exit_fn("smpd_post_abort_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_command_destination(0, &context);
@@ -200,7 +208,7 @@ int smpd_post_abort_command(char *fmt, ...)
 	{
 	    printf("Aborting: %s\n", error_str);
 	    fflush(stdout);
-	    smpd_exit_fn("smpd_post_abort_command");
+	    smpd_exit_fn(FCNAME);
 	    smpd_exit(-1);
 	}
 
@@ -209,14 +217,14 @@ int smpd_post_abort_command(char *fmt, ...)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create the close command to tear down the job tree.\n");
-	    smpd_exit_fn("smpd_enter_at_state");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the close command to tear down the job tree as part of the abort process.\n");
-	    smpd_exit_fn("smpd_enter_at_state");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -227,11 +235,11 @@ int smpd_post_abort_command(char *fmt, ...)
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to post a write of the abort command to the %s context.\n", smpd_get_context_str(context));
-	    smpd_exit_fn("smpd_post_abort_command");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
-    smpd_exit_fn("smpd_post_abort_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -462,6 +470,8 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_init_process"
 int smpd_init_process(void)
 {
 #ifdef HAVE_WINDOWS_H
@@ -474,7 +484,7 @@ int smpd_init_process(void)
     struct sigaction act;
 #endif
 
-    smpd_enter_fn("smpd_init_process");
+    smpd_enter_fn(FCNAME);
 
     /* initialize the debugging output print engine */
     smpd_init_printf();
@@ -544,15 +554,17 @@ int smpd_init_process(void)
 
     smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
 
-    smpd_exit_fn("smpd_init_process");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_init_context"
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_Sock_t sock, int id)
 {
     int result;
 
-    smpd_enter_fn("smpd_init_context");
+    smpd_enter_fn(FCNAME);
     context->type = type;
     context->host[0] = '\0';
     context->id = id;
@@ -588,6 +600,14 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->wait = 0;
 #endif
     context->process = NULL;
+    context->sspi_header[0] = '\0';
+    context->sspi_buffer = NULL;
+    context->sspi_buffer_length = 0;
+    context->sspi_outbound_buffer = NULL;
+    context->sspi_max_buffer_size = 0;
+    memset(&context->sspi_credential, 0, sizeof(CredHandle));
+    memset(&context->sspi_expiration_time, 0, sizeof(TimeStamp));
+    context->sspi_user_handle = INVALID_HANDLE_VALUE;
 
     if (sock != MPIDU_SOCK_INVALID_SOCK)
     {
@@ -599,17 +619,87 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
 	}
     }
 
-    smpd_exit_fn("smpd_init_context");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_create_sspi_client_context"
+int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context)
+{
+    smpd_sspi_client_context_t *context;
+
+    smpd_enter_fn(FCNAME);
+
+    context = (smpd_sspi_client_context_t *)malloc(sizeof(smpd_sspi_client_context_t));
+    if (context == NULL)
+    {
+	*new_context = NULL;
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    /* FIXME: this insertion needs to be thread safe */
+    if (smpd_process.sspi_context_list == NULL)
+    {
+	context->id = 0;
+    }
+    else
+    {
+	context->id = smpd_process.sspi_context_list->id + 1;
+    }
+    context->next = smpd_process.sspi_context_list;
+    smpd_process.sspi_context_list = context;
+    *new_context = context;
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_free_sspi_client_context"
+int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context)
+{
+    smpd_sspi_client_context_t *iter, *trailer;
+
+    smpd_enter_fn(FCNAME);
+
+    trailer = iter = smpd_process.sspi_context_list;
+    while (iter)
+    {
+	if (iter == *context)
+	{
+	    if (trailer != iter)
+	    {
+		trailer->next = iter->next;
+	    }
+	    else
+	    {
+		smpd_process.sspi_context_list = iter->next;
+	    }
+	    break;
+	}
+	if (trailer != iter)
+	    trailer = trailer->next;
+	iter = iter->next;
+    }
+    if (iter == NULL)
+    {
+	smpd_dbg_printf("freeing a sspi_client_context not in the global list\n");
+    }
+    /* FIXME: cleanup sspi structures */
+    free(*context);
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_generate_session_header"
 int smpd_generate_session_header(char *str, int session_id)
 {
     char * str_orig;
     int result;
     int len;
 
-    smpd_enter_fn("smpd_generate_session_header");
+    smpd_enter_fn(FCNAME);
 
     str_orig = str;
     *str = '\0';
@@ -620,21 +710,21 @@ int smpd_generate_session_header(char *str, int session_id)
     if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding session id failed.\n");
-	smpd_exit_fn("smpd_generate_session_header");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = MPIU_Str_add_int_arg(&str, &len, "parent", smpd_process.id);
     if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding parent id failed.\n");
-	smpd_exit_fn("smpd_generate_session_header");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = MPIU_Str_add_int_arg(&str, &len, "level", smpd_process.level + 1);
     if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to create session header, adding session level failed.\n");
-	smpd_exit_fn("smpd_generate_session_header");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -643,10 +733,12 @@ int smpd_generate_session_header(char *str, int session_id)
     *str = '\0';
 
     smpd_dbg_printf("session header: (%s)\n", str_orig);
-    smpd_exit_fn("smpd_generate_session_header");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_password"
 void smpd_get_password(char *password)
 {
 #ifdef HAVE_WINDOWS_H
@@ -657,7 +749,7 @@ void smpd_get_password(char *password)
 #endif
     size_t len;
 
-    smpd_enter_fn("smpd_get_password");
+    smpd_enter_fn(FCNAME);
 
 #ifdef HAVE_WINDOWS_H
 
@@ -704,14 +796,16 @@ void smpd_get_password(char *password)
 	else
 	    break;
     }
-    smpd_exit_fn("smpd_get_password");
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_account_and_password"
 void smpd_get_account_and_password(char *account, char *password)
 {
     size_t len;
 
-    smpd_enter_fn("smpd_get_account_and_password");
+    smpd_enter_fn(FCNAME);
 
     do
     {
@@ -734,27 +828,33 @@ void smpd_get_account_and_password(char *account, char *password)
     fflush(stderr);
 
     smpd_get_password(password);
-    smpd_exit_fn("smpd_get_account_and_password");
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_credentials_from_parent"
 int smpd_get_credentials_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock)
 {
-    smpd_enter_fn("smpd_get_credentials_from_parent");
+    smpd_enter_fn(FCNAME);
     SMPD_UNREFERENCED_ARG(set);
     SMPD_UNREFERENCED_ARG(sock);
-    smpd_exit_fn("smpd_get_credentials_from_parent");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_smpd_password_from_parent"
 int smpd_get_smpd_password_from_parent(MPIDU_Sock_set_t set, MPIDU_Sock_t sock)
 {
-    smpd_enter_fn("smpd_get_smpd_password_from_parent");
+    smpd_enter_fn(FCNAME);
     SMPD_UNREFERENCED_ARG(set);
     SMPD_UNREFERENCED_ARG(sock);
-    smpd_exit_fn("smpd_get_smpd_password_from_parent");
+    smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_default_hosts"
 int smpd_get_default_hosts()
 {
     char hosts[8192];
@@ -768,12 +868,12 @@ int smpd_get_default_hosts()
     int found;
 #endif
 
-    smpd_enter_fn("smpd_get_default_hosts");
+    smpd_enter_fn(FCNAME);
 
     if (smpd_process.default_host_list != NULL && smpd_process.cur_default_host != NULL)
     {
 	smpd_dbg_printf("default list already populated, returning success.\n");
-	smpd_exit_fn("smpd_get_default_hosts");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -786,7 +886,7 @@ int smpd_get_default_hosts()
 	    smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 	    if (smpd_process.default_host_list == NULL)
 	    {
-		smpd_exit_fn("smpd_get_default_hosts");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    strcpy(smpd_process.default_host_list->host, hosts);
@@ -794,10 +894,10 @@ int smpd_get_default_hosts()
 	    smpd_process.default_host_list->connected = SMPD_FALSE;
 	    smpd_process.default_host_list->next = smpd_process.default_host_list;
 	    smpd_process.cur_default_host = smpd_process.default_host_list;
-	    smpd_exit_fn("smpd_get_default_hosts");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
-	smpd_exit_fn("smpd_get_default_hosts");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 #else
 	smpd_lock_smpd_data();
@@ -809,7 +909,7 @@ int smpd_get_default_hosts()
 		smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 		if (smpd_process.default_host_list == NULL)
 		{
-		    smpd_exit_fn("smpd_get_default_hosts");
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		strcpy(smpd_process.default_host_list->host, hosts);
@@ -834,10 +934,10 @@ int smpd_get_default_hosts()
 		}
 		smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
 		smpd_unlock_smpd_data();
-		smpd_exit_fn("smpd_get_default_hosts");
+		smpd_exit_fn(FCNAME);
 		return SMPD_SUCCESS;
 	    }
-	    smpd_exit_fn("smpd_get_default_hosts");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	smpd_unlock_smpd_data();
@@ -927,10 +1027,12 @@ int smpd_get_default_hosts()
 	smpd_process.cur_default_host = smpd_process.default_host_list;
     }
 
-    smpd_exit_fn("smpd_get_default_hosts");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_insert_into_dynamic_hosts"
 int smpd_insert_into_dynamic_hosts(void)
 {
 #ifndef HAVE_WINDOWS_H
@@ -939,7 +1041,7 @@ int smpd_insert_into_dynamic_hosts(void)
     char *host;
 #endif
 
-    smpd_enter_fn("smpd_insert_into_dynamic_hosts");
+    smpd_enter_fn(FCNAME);
 
 #ifndef HAVE_WINDOWS_H
     smpd_lock_smpd_data();
@@ -950,18 +1052,18 @@ int smpd_insert_into_dynamic_hosts(void)
 	    /* add this host to the dynamic_hosts key */
 	    smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
 	    smpd_unlock_smpd_data();
-	    smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 	smpd_unlock_smpd_data();
-	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     smpd_unlock_smpd_data();
 
     if (smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
     {
-	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -971,7 +1073,7 @@ int smpd_insert_into_dynamic_hosts(void)
     {
 	if (strcmp(host, myhostname) == 0)
 	{
-	    smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 	host = strtok(NULL, " \t\r\n");
@@ -984,7 +1086,7 @@ int smpd_insert_into_dynamic_hosts(void)
     if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
     {
 	smpd_unlock_smpd_data();
-	smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (strlen(hosts) > 0)
@@ -1000,10 +1102,12 @@ int smpd_insert_into_dynamic_hosts(void)
     smpd_set_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts);
     smpd_unlock_smpd_data();
 #endif
-    smpd_exit_fn("smpd_insert_into_dynamic_hosts");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_remove_from_dynamic_hosts"
 int smpd_remove_from_dynamic_hosts(void)
 {
 #ifndef HAVE_WINDOWS_H
@@ -1013,12 +1117,12 @@ int smpd_remove_from_dynamic_hosts(void)
     char *host;
 #endif
 
-    smpd_enter_fn("smpd_remove_from_dynamic_hosts");
+    smpd_enter_fn(FCNAME);
 #ifndef HAVE_WINDOWS_H
     if (smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
     {
 	smpd_err_printf("smpd_get_hostname failed, errno = %d\n", errno);
-	smpd_exit_fn("smpd_remove_from_dynamic_hosts");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -1029,7 +1133,7 @@ int smpd_remove_from_dynamic_hosts(void)
     {
 	smpd_unlock_smpd_data();
 	smpd_dbg_printf("not removing host because "SMPD_DYNAMIC_HOSTS_KEY" does not exist\n");
-	smpd_exit_fn("smpd_remove_from_dynamic_hosts");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -1059,6 +1163,6 @@ int smpd_remove_from_dynamic_hosts(void)
     }
     smpd_unlock_smpd_data();
 #endif
-    smpd_exit_fn("smpd_remove_from_dynamic_hosts");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }

@@ -81,11 +81,13 @@ SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd
     return SMPD_TRUE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_command_destination"
 int smpd_command_destination(int dest, smpd_context_t **dest_context)
 {
     int src, level_bit, sub_tree_mask;
 
-    smpd_enter_fn("smpd_command_destination");
+    smpd_enter_fn(FCNAME);
 
     /* get the source */
     src = smpd_process.id;
@@ -97,14 +99,14 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
     {
 	*dest_context = NULL;
 	smpd_dbg_printf("%d -> %d : returning NULL context\n", src, dest);
-	smpd_exit_fn("smpd_command_destination");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (src == 1 && dest == 0 && smpd_process.map0to1)
     {
 	*dest_context = NULL;
 	smpd_dbg_printf("%d -> %d : returning NULL context\n", src, dest);
-	smpd_exit_fn("smpd_command_destination");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -113,12 +115,12 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
 	/* this assumes that the root uses the left context for it's only child. */
 	if (smpd_process.left_context == NULL)
 	{
-	    smpd_exit_fn("smpd_command_destination");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	*dest_context = smpd_process.left_context;
 	smpd_dbg_printf("%d -> %d : returning left_context\n", src, dest);
-	smpd_exit_fn("smpd_command_destination");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -126,12 +128,12 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
     {
 	if (smpd_process.parent_context == NULL)
 	{
-	    smpd_exit_fn("smpd_command_destination");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	*dest_context = smpd_process.parent_context;
 	smpd_dbg_printf("%d -> %d : returning parent_context: %d < %d\n", src, dest, dest, src);
-	smpd_exit_fn("smpd_command_destination");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -142,12 +144,12 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
     {
 	if (smpd_process.left_context == NULL)
 	{
-	    smpd_exit_fn("smpd_command_destination");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	*dest_context = smpd_process.left_context;
 	smpd_dbg_printf("returning left_context\n", src, dest);
-	smpd_exit_fn("smpd_command_destination");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -155,33 +157,35 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
     {
 	if (smpd_process.right_context == NULL)
 	{
-	    smpd_exit_fn("smpd_command_destination");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	*dest_context = smpd_process.right_context;
 	smpd_dbg_printf("%d -> %d : returning right_context\n", src, dest);
-	smpd_exit_fn("smpd_command_destination");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
     if (smpd_process.parent_context == NULL)
     {
-	smpd_exit_fn("smpd_command_destination");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     *dest_context = smpd_process.parent_context;
     smpd_dbg_printf("%d -> %d : returning parent_context: fall through\n", src, dest);
-    smpd_exit_fn("smpd_command_destination");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_init_command"
 int smpd_init_command(smpd_command_t *cmd)
 {
-    smpd_enter_fn("smpd_init_command");
+    smpd_enter_fn(FCNAME);
 
     if (cmd == NULL)
     {
-	smpd_exit_fn("smpd_init_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -199,25 +203,27 @@ int smpd_init_command(smpd_command_t *cmd)
     cmd->freed = 0;
     cmd->context = NULL;
 
-    smpd_exit_fn("smpd_init_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_parse_command"
 int smpd_parse_command(smpd_command_t *cmd_ptr)
 {
-    smpd_enter_fn("smpd_parse_command");
+    smpd_enter_fn(FCNAME);
 
     /* get the source */
     if (MPIU_Str_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no src flag in the command.\n");
-	smpd_exit_fn("smpd_parse_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (cmd_ptr->src < 0)
     {
 	smpd_err_printf("invalid command src: %d\n", cmd_ptr->src);
-	smpd_exit_fn("smpd_parse_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -225,13 +231,13 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
     if (MPIU_Str_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no dest flag in the command.\n");
-	smpd_exit_fn("smpd_parse_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (cmd_ptr->dest < 0)
     {
 	smpd_err_printf("invalid command dest: %d\n", cmd_ptr->dest);
-	smpd_exit_fn("smpd_parse_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -239,17 +245,19 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
     if (MPIU_Str_get_string_arg(cmd_ptr->cmd, "cmd", cmd_ptr->cmd_str, SMPD_MAX_CMD_STR_LENGTH) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("no cmd string in the command.\n");
-	smpd_exit_fn("smpd_parse_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
     /* get the tag */
     MPIU_Str_get_int_arg(cmd_ptr->cmd, "tag", &cmd_ptr->tag);
 
-    smpd_exit_fn("smpd_parse_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_create_command"
 int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_command_t **cmd_pptr)
 {
     smpd_command_t *cmd_ptr;
@@ -257,13 +265,13 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     int len;
     int result;
 
-    smpd_enter_fn("smpd_create_command");
+    smpd_enter_fn(FCNAME);
 
     cmd_ptr = (smpd_command_t*)malloc(sizeof(smpd_command_t));
     if (cmd_ptr == NULL)
     {
 	smpd_err_printf("unable to allocate memory for a command.\n");
-	smpd_exit_fn("smpd_create_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     memset(cmd_ptr, 0, sizeof(smpd_command_t));
@@ -275,7 +283,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     if (strlen(cmd) >= SMPD_MAX_CMD_STR_LENGTH)
     {
 	smpd_err_printf("command string too long: %s\n", cmd);
-	smpd_exit_fn("smpd_create_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     strcpy(cmd_ptr->cmd_str, cmd);
@@ -287,7 +295,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     {
 	smpd_err_printf("unable to create the command.\n");
 	smpd_free_command(cmd_ptr);
-	smpd_exit_fn("smpd_create_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = MPIU_Str_add_int_arg(&str, &len, "src", src);
@@ -295,7 +303,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     {
 	smpd_err_printf("unable to add the src to the command.\n");
 	smpd_free_command(cmd_ptr);
-	smpd_exit_fn("smpd_create_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = MPIU_Str_add_int_arg(&str, &len, "dest", dest);
@@ -303,7 +311,7 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     {
 	smpd_err_printf("unable to add the dest to the command.\n");
 	smpd_free_command(cmd_ptr);
-	smpd_exit_fn("smpd_create_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     result = MPIU_Str_add_int_arg(&str, &len, "tag", cmd_ptr->tag);
@@ -311,41 +319,45 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
     {
 	smpd_err_printf("unable to add the tag to the command.\n");
 	smpd_free_command(cmd_ptr);
-	smpd_exit_fn("smpd_create_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     if (want_reply)
 	cmd_ptr->wait = SMPD_TRUE;
 
     *cmd_pptr = cmd_ptr;
-    smpd_exit_fn("smpd_create_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_create_command_copy"
 int smpd_create_command_copy(smpd_command_t *src_ptr, smpd_command_t **cmd_pptr)
 {
     smpd_command_t *cmd_ptr;
 
-    smpd_enter_fn("smpd_create_command_copy");
+    smpd_enter_fn(FCNAME);
 
     cmd_ptr = (smpd_command_t*)malloc(sizeof(smpd_command_t));
     if (cmd_ptr == NULL)
     {
 	smpd_err_printf("unable to allocate memory for a command.\n");
-	smpd_exit_fn("smpd_create_command_copy");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     
     *cmd_ptr = *src_ptr;
     *cmd_pptr = cmd_ptr;
 
-    smpd_exit_fn("smpd_create_command_copy");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_free_command"
 int smpd_free_command(smpd_command_t *cmd_ptr)
 {
-    smpd_enter_fn("smpd_free_command");
+    smpd_enter_fn(FCNAME);
     if (cmd_ptr)
     {
 	/* this check isn't full-proof because random data might match SMPD_FREE_COOKIE */
@@ -358,7 +370,7 @@ int smpd_free_command(smpd_command_t *cmd_ptr)
 	smpd_init_command(cmd_ptr);
 	free(cmd_ptr);
     }
-    smpd_exit_fn("smpd_free_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -400,12 +412,14 @@ typedef struct cfree_t
 static cfree_t *free_list = NULL;
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_free_context"
 int smpd_free_context(smpd_context_t *context)
 {
     SMPD_BOOL found = SMPD_FALSE;
     smpd_context_t *iter, *trailer;
 
-    smpd_enter_fn("smpd_free_context");
+    smpd_enter_fn(FCNAME);
     if (context)
     {
 #ifdef DEBUG_SMPD_FREE_CONTEXT
@@ -446,7 +460,7 @@ int smpd_free_context(smpd_context_t *context)
 		smpd_get_context_str(context));
 #else
 	    smpd_dbg_printf("freeing a context not in the global list - this should be impossible.\n");
-	    smpd_exit_fn("smpd_free_context");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 #endif
 	}
@@ -457,7 +471,7 @@ int smpd_free_context(smpd_context_t *context)
 	if (context->type == SMPD_CONTEXT_FREED)
 	{
 	    smpd_err_printf("attempt to free context more than once.\n");
-	    smpd_exit_fn("smpd_free_context");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 
@@ -497,7 +511,7 @@ int smpd_free_context(smpd_context_t *context)
 	free(context);
 #endif
     }
-    smpd_exit_fn("smpd_free_context");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -585,18 +599,64 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_add_command_binary_arg"
+int smpd_add_command_binary_arg(smpd_command_t *cmd_ptr, char *param, void *buffer, int length)
+{
+    char *str;
+    int len;
+    int result;
+    int cmd_length;
+
+    cmd_length = (int)strlen(cmd_ptr->cmd);
+    if (cmd_length > SMPD_MAX_CMD_LENGTH)
+    {
+	smpd_err_printf("invalid cmd string length: %d\n", cmd_length);
+	return SMPD_FAIL;
+    }
+
+    len = (int)(SMPD_MAX_CMD_LENGTH - cmd_length);
+    str = &cmd_ptr->cmd[cmd_length];
+
+    /* make sure there is a space after the last parameter in the command */
+    if (cmd_length > 0)
+    {
+	if (cmd_ptr->cmd[cmd_length-1] != MPIU_STR_SEPAR_CHAR)
+	{
+	    if (len < 2)
+	    {
+		smpd_err_printf("unable to add the command parameter: %s=%d byte buffer\n", param, length);
+		return SMPD_FAIL;
+	    }
+	    cmd_ptr->cmd[cmd_length] = MPIU_STR_SEPAR_CHAR;
+	    len--;
+	    str++;
+	}
+    }
+
+    result = MPIU_Str_add_binary_arg(&str, &len, param, buffer, length);
+    if (result != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("unable to add the command parameter: %s=%d byte buffer\n", param, length);
+	return SMPD_FAIL;
+    }
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_forward_command"
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest)
 {
     int result;
     smpd_command_t *cmd;
 
-    smpd_enter_fn("smpd_forward_command");
+    smpd_enter_fn(FCNAME);
 
     result = smpd_create_command_copy(&src->read_cmd, &cmd);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a copy of the command to forward.\n");
-	smpd_exit_fn("smpd_forward_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -605,18 +665,20 @@ int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of a forwarded command.\n");
-	smpd_exit_fn("smpd_forward_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_exit_fn("smpd_forward_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_post_read_command"
 int smpd_post_read_command(smpd_context_t *context)
 {
     int result;
 
-    smpd_enter_fn("smpd_post_read_command");
+    smpd_enter_fn(FCNAME);
 
     /* post a read for the next command header */
     smpd_dbg_printf("posting a read for a command header on the %s context, sock %d\n", smpd_get_context_str(context), MPIDU_Sock_get_sock_id(context->sock));
@@ -626,20 +688,22 @@ int smpd_post_read_command(smpd_context_t *context)
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a read for the next command header,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_post_read_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_post_read_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_post_write_command"
 int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
 {
     int result;
     smpd_command_t *iter;
 
-    smpd_enter_fn("smpd_post_write_command");
+    smpd_enter_fn(FCNAME);
 
     if (context == NULL)
     {
@@ -664,7 +728,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
 	while (iter->next)
 	    iter = iter->next;
 	iter->next = cmd;
-	smpd_exit_fn("smpd_post_write_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -681,31 +745,33 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to post a write for the next command,\nsock error: %s\n", get_sock_error_string(result));
-	smpd_exit_fn("smpd_post_write_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("smpd_post_write_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_package_command"
 int smpd_package_command(smpd_command_t *cmd)
 {
     int length;
 
-    smpd_enter_fn("smpd_package_command");
+    smpd_enter_fn(FCNAME);
 
     /* create the command header - for now it is simply the length of the command string */
     length = (int)strlen(cmd->cmd) + 1;
     if (length > SMPD_MAX_CMD_LENGTH)
     {
 	smpd_err_printf("unable to package invalid command of length %d\n", length);
-	smpd_exit_fn("smpd_package_command");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     snprintf(cmd->cmd_hdr_str, SMPD_CMD_HDR_LENGTH, "%d", length);
     cmd->length = length;
 
-    smpd_exit_fn("smpd_package_command");
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
