@@ -7,7 +7,7 @@
  */
 void MPIDU_Process_lock_init(int * lock);
 .inline MPIDU_Process_lock_init, 4
-    clrb [%o0]
+    clr [%o0]
 .end
 
 
@@ -16,8 +16,8 @@ void MPIDU_Process_lock_init(int * lock);
  */
 void MPIDU_Process_lock_free(int * lock);
 .inline MPIDU_Process_lock_free, 4
-    set 0xaa, %o1
-    stub %o1, [%o0]
+    set 0xbad1bad2, %o1
+    stuw %o1, [%o0]
 .end
 
 
@@ -28,15 +28,18 @@ void MPIDU_Process_lock(int * lock);
 .inline MPIDU_Process_lock, 4
  1:
     /* first try to acquire the lock */
-    ldstub [%o0], %o1
+    set 1, %o1
+    cas [%o0], %g0, %o1
     tst %o1
     be 3f
     nop
 
  2:
-    /* wait for the lock to become available; this avoids unnecessary stores,
-       thereby reducing cache invalidations and extra bus traffic */
-    ldub [%o0], %o1
+    /* wait for the lock to become available; the cas operation must acquire
+       exclusive access to the memory containing the lock in order perform the
+       store atomically (if necessary); this code reduces continuous cache
+       invalidations and extra bus traffic */
+    lduw [%o0], %o1
     tst %o1
     be 1b
     nop
@@ -44,7 +47,11 @@ void MPIDU_Process_lock(int * lock);
     nop
 
  3:
-    /* lock has been acquired; return */
+    /* lock has been acquired; insure that no memory operations occuring
+       programmatically after the the lock aquistion are allowed to proceed
+       before this point; cas is treated as both a load and store, so it is not
+       necessary to specify #StoreLoad and #StoreStore as well */
+    membar #LoadLoad | #LoadStore
 .end
 
 
@@ -53,10 +60,10 @@ void MPIDU_Process_lock(int * lock);
  */
 void MPIDU_Process_unlock(int * lock);
 .inline MPIDU_Process_unlock, 4
-    /* release the lock, but only after insuring that all previous stores
-       have completed */
-    stbar
-    clrb [%o0]
+    /* release the lock, but only after insuring that all previous memory
+       operations have completed */
+    membar #StoreStore | #LoadStore
+    clr [%o0]
 .end
 
 
@@ -67,7 +74,7 @@ void MPIDU_Process_unlock(int * lock);
 void MPIDU_Process_busy_wait(int * lock);
 .inline MPIDU_Process_busy_wait, 4
  1:
-    ldub [%o0], %o1
+    lduw [%o0], %o1
     tst %o1
     bne 1b
     nop
