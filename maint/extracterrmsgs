@@ -76,9 +76,9 @@ sub CreateErrmsgsHeader {
  * DO NOT EDIT\
  */\n";
     print $FD "typedef struct msgpair {\
-        const int sentinal1;\
+        const unsigned int sentinal1;\
         const char *short_name, *long_name; 
-        const int sentinal2; } msgpair;\n"
+        const unsigned int sentinal2; } msgpair;\n"
 }
 #
 # We also need a way to create the records
