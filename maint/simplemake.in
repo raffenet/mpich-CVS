@@ -600,6 +600,16 @@ sub ReadMfile {
 	    $varvalue = $2;
 	    $PrependVar{$1} = $2;
 	}
+	elsif (/^(\w*)_ADD\s*=\s*(.*)\s*$/) {
+	    # This lets us define "nameAdd = value" by
+	    # adding "name_ADD = value" to the makefile.sm
+	    # We Could use the smvar form or the prepend form, but
+	    # this gives us a slightly cleaner and more controled
+	    # way (used for now only with docargs_ADD)
+	    $varname = $1 . "Add";
+	    $varvalue = $2;
+	    $${varname} = $varvalue;
+	}
 	elsif ($nocomments && /^\s*#/) {
 	       ;
 	   }
@@ -1222,6 +1232,7 @@ sub ClearVars {
     # Other directories
     @subdirs = ();
     @doc_subdirs = ();
+    $docargsAdd = "";
     %docthiskinddir = ();
     @extra_dirs = ();
     @other_dirs = ();
@@ -2036,6 +2047,9 @@ sub RuleDocs {
 	    #
 	    # Replace ROOTDIR etc in any doc_namedefs
 	    $docargs = $doc_namedefs;
+	    if ($docargsAdd ne "") {
+		$docargs .= " $docargsAdd";
+	    }
 	    $docargs =~ s/ROOTDIR/$rootdir/g;
 	    $docargs =~ s/\/\//\//g;
 	    
@@ -2158,6 +2172,9 @@ sub TargetDocs {
 	&RecursiveOp( $targetKind );
 	if ($#doc_subdirs >= 0) {
 	    &RecursiveOp( $targetKind, "doc_subdirs" );
+	}
+	if (defined($usertargets{"${targetKind}-local"})) {
+	    print FD "\t\${MAKE} ${targetKind}-local$newline";
 	}
 	$didkind{$kind} = 1;
     }
