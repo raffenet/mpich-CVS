@@ -670,6 +670,26 @@ This routine is blocking in the MPI sense; when
 it returns, the buffer given as input may be re-used. Question: do we want
 this, or should this be \code{ENQUEUE\_PACKET}?
 
+The first draft of RMQ discussed sending large data with streams.  I believe
+that this is the wrong model.  The RMQ device should support two kinds of
+operations: manipulate remote queues (for packets) and remote memory put/get
+operations.  Since few systems will support a fully general put/get interface,
+RMQ will provide for ``cooperative put/get:'' only the RMQ progress engine
+needs to run to complete put/get operations.  In this way, the RMQ interface
+is very different from a message-passing interface.
+
+To simplify ports, the RMQ interface will have its own generic put/get
+implementation that makes use of two-sided operations and/or streams.  The
+challenge in all of this is to maintain a simple model.  An example MPI
+implementation that, roughly, uses this approach is the LAPI MPI
+implementation \cite{lapi-mpich}.
+
+Questions: how does put/get work with copy (store and forward)?  Is put/get
+just another kind of stream?  What is the synchronization mechanism for
+put/get?  
+
+The first draft continued with:
+
 The second, \code{PUT\_STREAM}, begins sending stream data.
 
 All data is in contiguous locations.  The handling messages described by MPI
