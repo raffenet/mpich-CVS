@@ -82,6 +82,6 @@ int MPI_Type_create_f90_integer( MPI_Comm comm, MPI_Datatype dataype, int a )
 
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_F90_INTEGER);
     return MPI_SUCCESS;
 }
