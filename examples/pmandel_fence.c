@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 	error = MPI_Win_create(grid_array, big_size, sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 	if (error != MPI_SUCCESS)
 	{
-	    printf("MPI_Win_create failed, error %d\n", error);
+	    printf("MPI_Win_create failed, error 0x%x\n", error);
 	    MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 
@@ -434,7 +434,7 @@ int main(int argc, char *argv[])
 		error = MPI_Win_fence(0, win);
 		if (error != MPI_SUCCESS)
 		{
-		    printf("'handout work' fence failed, error %d\n", error);
+		    printf("'handout work' fence failed, error 0x%x\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 		/* hand out work */
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 		    error = MPI_Put(&work[i*5], 5, MPI_INT, i, 0, 5, MPI_INT, win);
 		    if (error != MPI_SUCCESS)
 		    {
-			printf("put failed, error %d\n", error);
+			printf("put failed, error 0x%x\n", error);
 			MPI_Abort(MPI_COMM_WORLD, -1);
 		    }
 		    if (k<399)
@@ -471,14 +471,14 @@ int main(int argc, char *argv[])
 		error = MPI_Win_fence(0, win);
 		if (error != MPI_SUCCESS)
 		{
-		    printf("'handout work' -> 'do work' fence failed, error %d\n", error);
+		    printf("'handout work' -> 'do work' fence failed, error 0x%x\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 		/* do work */
 		error = MPI_Win_fence(0, win);
 		if (error != MPI_SUCCESS)
 		{
-		    printf("'do work' -> 'collect results' fence failed, error %d\n", error);
+		    printf("'do work' -> 'collect results' fence failed, error 0x%x\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 		/* send the results to the visualizer */
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
 	    error = MPI_Win_fence(0, win);
 	    if (error != MPI_SUCCESS)
 	    {
-		printf("'collect results' -> 'done work' fence failed, error %d\n", error);
+		printf("'collect results' -> 'done work' fence failed, error 0x%x\n", error);
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
 	    /* hand out "done" work */
@@ -514,14 +514,14 @@ int main(int argc, char *argv[])
 		error = MPI_Put(&work[i*5], 5, MPI_INT, i, 0, 5, MPI_INT, win);
 		if (error != MPI_SUCCESS)
 		{
-		    printf("put failed, error %d\n", error);
+		    printf("put failed, error 0x%x\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 	    }
 	    error = MPI_Win_fence(0, win);
 	    if (error != MPI_SUCCESS)
 	    {
-		printf("'done work' -> 'done' fence failed, error %d\n", error);
+		printf("'done work' -> 'done' fence failed, error 0x%x\n", error);
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
 
@@ -543,7 +543,7 @@ int main(int argc, char *argv[])
 	error = MPI_Win_create(work, 5*sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 	if (error != MPI_SUCCESS)
 	{
-	    printf("MPI_Win_create failed, error %d\n", error);
+	    printf("MPI_Win_create failed, error 0x%x\n", error);
 	    MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 	for (;;)
@@ -566,14 +566,14 @@ int main(int argc, char *argv[])
 	    error = MPI_Win_fence(0, win);
 	    if (error != MPI_SUCCESS)
 	    {
-		printf("'receive work' fence failed, error %d\n", error);
+		printf("'receive work' fence failed, error 0x%x\n", error);
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
 	    /* receive work from the root */
 	    error = MPI_Win_fence(0, win);
 	    if (error != MPI_SUCCESS)
 	    {
-		printf("'receive work' -> 'do work' fence failed, error %d\n", error);
+		printf("'receive work' -> 'do work' fence failed, error 0x%x\n", error);
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
 	    while (work[0] != 0)
@@ -635,7 +635,7 @@ int main(int argc, char *argv[])
 			    error = MPI_Put(&grid_array[(j*ipixels_across) + i], 1, MPI_INT, 0, (j * ipixels_across) + i, 1, MPI_INT, win);
 			    if (error != MPI_SUCCESS)
 			    {
-				printf("put failed, error %d\n", error);
+				printf("put failed, error 0x%x\n", error);
 				MPI_Abort(MPI_COMM_WORLD, -1);
 			    }
 			}
@@ -649,7 +649,7 @@ int main(int argc, char *argv[])
 		error = MPI_Win_fence(0, win);
 		if (error != MPI_SUCCESS)
 		{
-		    printf("'do work' -> 'wait for work to be collected' fence failed, error %d\n", error);
+		    printf("'do work' -> 'wait for work to be collected' fence failed, error 0x%x\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 		if (use_datatypes)
@@ -660,14 +660,14 @@ int main(int argc, char *argv[])
 		error = MPI_Win_fence(0, win);
 		if (error != MPI_SUCCESS)
 		{
-		    printf("'wait for work to be collected' -> 'receive work' fence failed, error %d\n", error);
+		    printf("'wait for work to be collected' -> 'receive work' fence failed, error 0x%x\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 		/* fence to allow the root to put the next piece of work */
 		error = MPI_Win_fence(0, win);
 		if (error != MPI_SUCCESS)
 		{
-		    printf("'receive work' -> 'do work' fence failed, error %d\n", error);
+		    printf("'receive work' -> 'do work' fence failed, error 0x%x\n", error);
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 	    }
