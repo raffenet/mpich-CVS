@@ -62,9 +62,6 @@ int MPIR_Comm_call_attr_delete( MPI_Comm comm, MPID_Attribute *attr_p )
     language = attr_p->keyval->language;
     switch (language) {
     case MPID_LANG_C: 
-#ifdef HAVE_CXX_BINDING
-    case MPID_LANG_CXX: 
-#endif
 	if (delfn.C_CommDeleteFunction) {
 	    mpi_errno = delfn.C_CommDeleteFunction( comm, 
 						    attr_p->keyval->handle, 
@@ -72,6 +69,19 @@ int MPIR_Comm_call_attr_delete( MPI_Comm comm, MPID_Attribute *attr_p )
 						    attr_p->keyval->extra_state );
 	}
 	break;
+
+#ifdef HAVE_CXX_BINDING
+    case MPID_LANG_CXX: 
+	if (delfn.C_CommDeleteFunction) {
+	    mpi_errno = (*MPIR_Process.cxx_call_delfn)( (int)comm, 
+						attr_p->keyval->handle, 
+						attr_p->value,
+						attr_p->keyval->extra_state, 
+				(void (*)(void)) delfn.C_CommDeleteFunction );
+	}
+	break;
+#endif
+
 #ifdef HAVE_FORTRAN_BINDING
     case MPID_LANG_FORTRAN: 
 	{
@@ -255,5 +265,20 @@ void MPIR_Keyval_set_fortran( int keyval )
     MPID_Keyval_get_ptr( keyval, keyval_ptr );
     if (keyval_ptr) 
 	keyval_ptr->language = MPID_LANG_FORTRAN;
+}
+#endif
+#ifdef HAVE_CXX_BINDING
+/* This function allows the C++ interface to provide the routines that use
+   a C interface that invoke the C++ attribute copy and delete functions.
+*/
+void MPIR_Keyval_set_cxx( int keyval, void (*delfn)(void), void (*copyfn)(void) )
+{
+    MPID_Keyval *keyval_ptr;
+
+    MPID_Keyval_get_ptr( keyval, keyval_ptr );
+    
+    keyval_ptr->language	 = MPID_LANG_CXX;
+    MPIR_Process.cxx_call_delfn	 = delfn;
+    MPIR_Process.cxx_call_copyfn = copyfn;
 }
 #endif

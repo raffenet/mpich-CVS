@@ -1445,7 +1445,17 @@ extern \"C\" void MPIR_Call_delfn( MPI_Comm comm, int keyval,
     MPI::Comm cxxcomm = comm;
     (*f)( cxxcomm, keyval, value, extra_state );
 }
-extern \"C\" void MPIR_Keyval_set_cxx( int, void (*)(void) );
+extern \"C\" void MPIR_Call_copyfn( MPI_Comm comm, int keyval,
+				   void *extra_state, void *value,
+				    void *new_value, int *cflag,
+				   MPI::Comm::Copy_attr_function *f )
+{
+    MPI::Comm cxxcomm = comm;
+    bool flag;
+    (*f)( cxxcomm, keyval, extra_state, value, new_value, &flag );
+    *cflag = flag;
+}
+extern \"C\" void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
 int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, 
 			void *extra_state ) {
     int keyval;
@@ -1455,7 +1465,8 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     MPIX_CALL( MPI_Comm_create_keyval( (MPI_Comm_copy_attr_function *)cf, 
 				       (MPI_Comm_delete_attr_function *)df,
 				      &keyval, extra_state ) );
-    MPIR_Keyval_set_cxx( keyval, (void (*)(void)) MPIR_Call_delfn );
+    MPIR_Keyval_set_cxx( keyval, (void (*)(void)) MPIR_Call_delfn, 
+			         (void (*)(void)) MPIR_Call_copyfn );
     return keyval;
 }
 ";

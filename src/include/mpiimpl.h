@@ -987,6 +987,8 @@ typedef struct MPICH_PerProcess_t {
     int (*type_attr_dup)( struct MPID_Datatype *, MPID_Attribute **new_attr );
     int (*type_attr_free)( struct MPID_Datatype *, MPID_Attribute *attr_p );
     int (*win_attr_free)( MPID_Win *, MPID_Attribute *attr_p );
+    /* There is no win_attr_dup function because there can be no MPI_Win_dup
+       function */
     /* Routine to get the messages corresponding to dynamically created
        error messages */
     const char *(*errcode_to_string)( int );
@@ -995,7 +997,9 @@ typedef struct MPICH_PerProcess_t {
        MPI reduction and attribute routines */
     void (*cxx_call_op_fn)( void *, void *, int, MPI_Datatype, 
 			    MPI_User_function * );
-    int  (*cxx_call_delfn)( MPI_Comm, int, void *, void *, 
+    /* Attribute functions.  We use a single "call" function for Comm, Datatype,
+       and File, since all are ints (and we can cast in the call) */
+    int  (*cxx_call_delfn)( int, int, void *, void *, 
 			    void (*)(void) );
 #endif    
 } MPICH_PerProcess_t;
@@ -1291,6 +1295,9 @@ int MPIR_Nest_value( void );
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
 int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
 void MPIR_Keyval_set_fortran( int );
+#ifdef HAVE_CXX_BINDING
+extern void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
+#endif
 
 int MPIR_Group_create( int, MPID_Group ** );
 int MPIR_Group_release(MPID_Group *group_ptr);

@@ -23,17 +23,6 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Comm_create_keyval PMPI_Comm_create_keyval
 
-#ifdef HAVE_CXX_BINDING
-void MPIR_Keyval_set_cxx( int keyval, void (*delfn)(void) )
-{
-    MPID_Keyval *keyval_ptr;
-
-    MPID_Keyval_get_ptr( keyval, keyval_ptr );
-    
-    keyval_ptr->language	= MPID_LANG_CXX;
-    MPIR_Process.cxx_call_delfn	= delfn;
-}
-#endif
 #endif
 
 #undef FUNCNAME
