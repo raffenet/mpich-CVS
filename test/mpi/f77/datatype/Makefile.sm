@@ -1,0 +1,8 @@
+LDADD = -L../../../../lib ../util/mtestf.o 
+DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
+smvar_do_sharedlibs = 0
+
+typenamef_SOURCES = typenamef.f
+
+../util/mtestf.o: 
+	(cd ../util && $(MAKE) mtestf.o)

@@ -1,1 +1,1 @@
-SUBDIRS = util attr coll rma
+SUBDIRS = util attr datatype coll rma
