@@ -90,9 +90,9 @@ smpd_global_t smpd_process =
       NULL,             /* pDatabaseIter          */
       0,                /* nNextAvailableDBSID    */
       0,                /* nInitDBSRefCount       */
-      NULL              /* barrier_list           */
+      NULL,             /* barrier_list           */
 #ifdef HAVE_WINDOWS_H
-      , {
+      {                 /* ssStatus                    */
 	  SERVICE_WIN32_OWN_PROCESS, /* dwServiceType  */
 	  SERVICE_STOPPED,           /* dwCurrentState */
 	  SERVICE_ACCEPT_STOP,   /* dwControlsAccepted */
@@ -101,8 +101,11 @@ smpd_global_t smpd_process =
 	  0,            /* dwCheckPoint                */
 	  3000,         /* dwWaitHint                  */
       },
-      NULL
+      NULL,             /* sshStatusHandle         */
+      NULL,             /* hBombDiffuseEvent       */
+      NULL,             /* hBombThread             */
 #endif
+      SMPD_FALSE        /* service_stop            */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -435,6 +438,10 @@ int smpd_init_process(void)
     act.sa_handler = smpd_child_handler;
     act.sa_flags = SA_NOCLDSTOP | SA_NOMASK;
     sigaction(SIGCHLD, &act, NULL);
+#endif
+
+#ifdef HAVE_WINDOWS_H
+    smpd_process.hBombDiffuseEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 #endif
 
     smpd_exit_fn("smpd_init_process");

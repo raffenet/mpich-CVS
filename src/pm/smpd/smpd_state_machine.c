@@ -2044,6 +2044,29 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    smpd_exit_fn("smpd_enter_at_state");
 		    return SMPD_FAIL;
 		}
+		if (smpd_process.service_stop)
+		{
+		    smpd_process.state = SMPD_EXITING;
+		    if (smpd_process.listener_context)
+		    {
+			smpd_process.listener_context->state = SMPD_EXITING;
+			smpd_dbg_printf("closing the listener (state = %s).\n", smpd_get_state_string(smpd_process.listener_context->state));
+			result = sock_post_close(smpd_process.listener_context->sock);
+			smpd_process.listener_context = NULL;
+			if (result == SOCK_SUCCESS)
+			{
+			    break;
+			}
+			smpd_err_printf("unable to post a close of the listener sock, error:\n%s\n",
+			    get_sock_error_string(result));
+		    }
+		    smpd_free_context(context);
+#ifdef HAVE_WINDOWS_H
+		    SetEvent(smpd_process.hBombDiffuseEvent);
+#endif
+		    smpd_exit_fn("smpd_enter_at_state");
+		    return SMPD_SUCCESS;
+		}
 		smpd_dbg_printf("authenticating new connection\n");
 		result = smpd_create_context(SMPD_CONTEXT_UNDETERMINED, set, new_sock, -1, &new_context);
 		if (result != SMPD_SUCCESS)
@@ -2253,6 +2276,10 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		}
 		smpd_free_context(context);
 		/*smpd_exit(0);*/
+#ifdef HAVE_WINDOWS_H
+		if (smpd_process.bService)
+		    SetEvent(smpd_process.hBombDiffuseEvent);
+#endif
 		smpd_exit_fn("smpd_enter_at_state");
 		return SMPD_SUCCESS;
 	    case SMPD_CLOSING:

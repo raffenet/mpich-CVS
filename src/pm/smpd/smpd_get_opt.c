@@ -344,7 +344,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val)
 	return SMPD_FAIL;
 
     /* add the flag */
-    if (strstr(flag, " "))
+    if (strstr(flag, " ") || strstr(flag, SMPD_DELIM_STR))
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, flag);
     }
@@ -367,7 +367,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val)
     *maxlen_ptr = *maxlen_ptr - 1;
 
     /* add the value string */
-    if (strstr(val, " "))
+    if (strstr(val, " ") || strstr(val, SMPD_DELIM_STR))
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, val);
     }

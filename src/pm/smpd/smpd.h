@@ -392,7 +392,10 @@ typedef struct smpd_global_t
 #ifdef HAVE_WINDOWS_H
     SERVICE_STATUS ssStatus;
     SERVICE_STATUS_HANDLE sshStatusHandle;
+    HANDLE hBombDiffuseEvent;
+    HANDLE hBombThread;
 #endif
+    SMPD_BOOL service_stop;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

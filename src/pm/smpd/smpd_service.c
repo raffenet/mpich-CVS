@@ -655,19 +655,15 @@ LPTSTR GetLastErrorText( LPTSTR lpszBuf, DWORD dwSize )
     return lpszBuf;
 }
 
-/* A bomb thread can be used to guarantee that the service will exit when a stop command is processed
-HANDLE g_hBombDiffuseEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-HANDLE g_hBombThread = NULL;
-
+/* A bomb thread can be used to guarantee that the service will exit when a stop command is processed */
 void BombThread()
 {
-    if (WaitForSingleObject(g_hBombDiffuseEvent, 25000) == WAIT_TIMEOUT)
+    if (WaitForSingleObject(smpd_process.hBombDiffuseEvent, 10000) == WAIT_TIMEOUT)
     {
-	dbg_printf("BombThread timed out, exiting.\n");
+	smpd_dbg_printf("BombThread timed out, exiting.\n");
 	ExitProcess(-1);
     }
 }
-*/
 
 /*
   FUNCTION: smpd_service_stop
@@ -690,15 +686,52 @@ void BombThread()
 */    
 void smpd_service_stop()
 {
-    /*
-    for (iter=0; iter<CREATE_THREAD_RETRIES; iter++)
-    {
-	g_hBombThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BombThread, NULL, 0, &dwThreadID);
-	if (g_hBombThread != NULL)
-	    break;
-	Sleep(CREATE_THREAD_SLEEP_TIME);
-    }
-    */
+    sock_set_t set;
+    sock_t sock;
+    sock_event_t event;
+    char host[SMPD_MAX_HOST_LENGTH];
+    int iter;
+    DWORD dwThreadID;
+    int result;
 
-    /* do something to stop the main thread */
+    for (iter=0; iter<10; iter++)
+    {
+	smpd_process.hBombThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BombThread, NULL, 0, &dwThreadID);
+	if (smpd_process.hBombThread != NULL)
+	    break;
+	Sleep(250);
+    }
+
+    /* stop the main thread */
+    smpd_process.service_stop = SMPD_TRUE;
+    gethostname(host, SMPD_MAX_HOST_LENGTH);
+    result = sock_create_set(&set);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
+	SetEvent(smpd_process.hBombDiffuseEvent);
+	WaitForSingleObject(smpd_process.hBombThread, 3000);
+	CloseHandle(smpd_process.hBombThread);
+	ExitProcess(-1);
+    }
+    result = sock_post_connect(set, NULL, host, smpd_process.port, &sock);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
+	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
+	SetEvent(smpd_process.hBombDiffuseEvent);
+	WaitForSingleObject(smpd_process.hBombThread, 3000);
+	CloseHandle(smpd_process.hBombThread);
+	ExitProcess(-1);
+    }
+    result = sock_wait(set, SOCK_INFINITE_TIME, &event);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
+	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
+	SetEvent(smpd_process.hBombDiffuseEvent);
+	WaitForSingleObject(smpd_process.hBombThread, 3000);
+	CloseHandle(smpd_process.hBombThread);
+	ExitProcess(-1);
+    }
 }

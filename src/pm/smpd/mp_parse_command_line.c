@@ -282,6 +282,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int use_machine_file = SMPD_FALSE;
     smpd_map_drive_node_t *map_node, *drive_map_list;
     smpd_env_node_t *env_node, *env_list;
+    char *env_str, env_data[SMPD_MAX_ENV_LENGTH];
     char *equal_sign_pos;
     char wdir[SMPD_MAX_DIR_LENGTH];
     int logon;
@@ -968,6 +969,22 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    host_list->nproc = nproc;
 	}
 
+	env_str = env_data;
+	env_data[0] = '\0';
+	while (env_list)
+	{
+	    env_str += snprintf(env_str,
+		SMPD_MAX_ENV_LENGTH - (env_str - env_data),
+		"%s=%s", env_list->name, env_list->value);
+	    if (env_list->next)
+	    {
+		env_str += snprintf(env_str, SMPD_MAX_ENV_LENGTH - (env_str - env_data), ";");
+	    }
+	    env_node = env_list;
+	    env_list = env_list->next;
+	    free(env_node);
+	}
+
 	for (i=0; i<nproc; i++)
 	{
 	    /* create a launch_node */
@@ -981,7 +998,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    mp_get_next_host(&host_list, launch_node);
 	    launch_node->iproc = cur_rank++;
 	    launch_node->env = launch_node->env_data;
-	    launch_node->env_data[0] = '\0';
+	    strcpy(launch_node->env_data, env_data);
 	    if (wdir[0] != '\0')
 		strcpy(launch_node->dir, wdir);
 	    else
