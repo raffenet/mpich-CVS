@@ -616,6 +616,7 @@ with MPI_Alloc_mem.
 **pkt_ptr %p %p:invalid shm queue packet pointer (%p != %p)
 **bad_sock:bad sock
 **bad_sock %d %d:bad sock (%d != %d)
+**bad_listenersock:bad listener sock
 **bootqmsg:invalid bootstrap queue message size
 **bootqmsg %d:invalid bootstrap queue message size (%d bytes)
 **bootqmsg %d %d:invalid bootstrap queue message size (%d bytes > %d)
@@ -674,7 +675,7 @@ with MPI_Alloc_mem.
 **iocp %d:unable to create an I/O completion port (errno %d)
 **listen:listen failed
 **listen %d:listen failed (errno %d)
-**pctwice:post connect called twice
+**pctwice:post close called twice
 **post_accept:post accept failed
 **progress_init:unable to initialize the progress engine
 **sock_byname:gethostbyname failed
