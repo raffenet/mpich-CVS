@@ -228,6 +228,32 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
 
+    if (MPIR_Err_is_fatal(errcode) ||
+	win_ptr == NULL || win_ptr->errhandler == NULL || win_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL)
+    {
+	if (MPIR_Err_print_stack_flag)
+	{
+	    fprintf( stderr, "Fatal error (code 0x%08x) in %s():\n", errcode, fcname);
+	    MPIR_Err_print_stack(stderr, errcode);
+	}
+	else
+	{
+	    /* The default handler should try the following: Provide the rank in comm_world.  If the process is not in comm world,
+	       use something else.  If the communicator exists and has a name, provide that name */
+	    char msg[MPI_MAX_ERROR_STRING];
+	
+	    MPIR_Err_get_string( errcode, msg );
+	    fprintf( stderr, "Fatal error (code 0x%08x) in %s(): %s\n", errcode, fcname, msg);
+	}
+	
+	MPID_Abort(NULL, MPI_SUCCESS, 13);
+    }
+
+    if (win_ptr && win_ptr->errhandler && win_ptr->errhandler->handle == MPI_ERRORS_RETURN)
+    {
+	return errcode;
+    }
+
     /* Now, invoke the error handler for the window */
     if (win_ptr) {
 	if (win_ptr->errhandler) {
