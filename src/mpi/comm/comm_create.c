@@ -135,42 +135,45 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	    }
 	}
+
+	/* Get the new communicator structure and context id */
+	mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
+	if (mpi_errno) {
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
+
+	newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
+	newcomm_ptr->rank        = group_ptr->rank;
+	/* Since the group has been provided, let the new communicator know
+	   about the group */
+	newcomm_ptr->local_group  = group_ptr;
+	newcomm_ptr->remote_group = group_ptr;
+	MPIU_Object_add_ref( group_ptr );
+	MPIU_Object_add_ref( group_ptr );
+
+	/* Setup the communicator's vc table */
+	MPID_VCRT_Create( n, &newcomm_ptr->vcrt );
+	MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
+	for (i=0; i<n; i++) {
+	    /* For rank i in the new communicator, find the corresponding
+	       rank in the input communicator */
+	    MPID_VCR_Dup( comm_ptr->vcr[mapping[i]], &newcomm_ptr->vcr[i] );
+	    
+	    printf( "[%d] mapping[%d] = %d\n", comm_ptr->rank, i, mapping[i] );
+	}
+
+	/* Notify the device of this new communicator */
+	printf( "about to notify device\n" );
+	MPID_Dev_comm_create_hook( newcomm_ptr );
+	printf( "about to return from comm_create\n" );
+	
+	*newcomm = newcomm_ptr->handle;
     }
-
-    /* Get the new communicator structure and context id */
-    mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
-    if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    else {
+	/* This process is not in the group */
+	*newcomm = MPI_COMM_NULL;
     }
-
-    newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
-    newcomm_ptr->rank        = group_ptr->rank;
-    /* Since the group has been provided, let the new communicator know
-       about the group */
-    newcomm_ptr->local_group  = group_ptr;
-    newcomm_ptr->remote_group = group_ptr;
-    MPIU_Object_add_ref( group_ptr );
-    MPIU_Object_add_ref( group_ptr );
-
-    /* Setup the communicator's vc table */
-    MPID_VCRT_Create( n, &newcomm_ptr->vcrt );
-    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
-    for (i=0; i<n; i++) {
-	/* For rank i in the new communicator, find the corresponding
-	   rank in the input communicator */
-	MPID_VCR_Dup( comm_ptr->vcr[mapping[i]], &newcomm_ptr->vcr[i] );
-
-	printf( "[%d] mapping[%d] = %d\n", comm_ptr->rank, i, mapping[i] );
-    }
-
-    /* Notify the device of this new communicator */
-    printf( "about to notify device\n" );
-    MPID_Dev_comm_create_hook( newcomm_ptr );
-    printf( "about to return from comm_create\n" );
-
-    *newcomm = newcomm_ptr->handle;
-
     /* ... end of body of routine ... */
 
     /* mpi_errno = MPID_Comm_create(); */

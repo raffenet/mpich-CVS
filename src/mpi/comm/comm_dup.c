@@ -71,37 +71,11 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 
     /* ... body of routine ...  */
     /* Generate a new context value and a new communicator structure */
-    mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
+    mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->remote_size, &newcomm_ptr );
     if (mpi_errno) {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
-
-    /* Duplicate the VCRT references */
-    MPID_VCRT_Add_ref( comm_ptr->vcrt );
-    newcomm_ptr->vcrt = comm_ptr->vcrt;
-    newcomm_ptr->vcr  = comm_ptr->vcr;
-
-    /* Set the sizes and ranks */
-    newcomm_ptr->remote_size = comm_ptr->remote_size;
-    newcomm_ptr->rank        = comm_ptr->rank;
-    newcomm_ptr->local_size  = comm_ptr->local_size;
-    
-    /* More advanced version: if the group is available, dup it by 
-       increasing the reference count */
-    newcomm_ptr->local_group = 0;
-    newcomm_ptr->remote_group = 0;
-
-    /* Inherit the error handler (if any) */
-    newcomm_ptr->errhandler = comm_ptr->errhandler;
-    if (comm_ptr->errhandler) {
-	MPIU_Object_add_ref( comm_ptr->errhandler );
-    }
-    /* We could also inherit the communicator function pointer */
-    newcomm_ptr->coll_fns = 0;
-
-    /* We do *not* inherit any name */
-    newcomm_ptr->name[0] = 0;
 
     /* Copy attributes, executing the attribute copy functions */
     /* This accesses the attribute dup function through the perprocess
