@@ -43,7 +43,7 @@ int MPI_File_get_errhandler(MPI_File mpi_fh, MPI_Errhandler *errhandler)
     static char myname[] = "MPI_FILE_GET_ERRHANDLER";
 
 
-    if (fh == MPI_FILE_NULL) {
+    if (mpi_fh == MPI_FILE_NULL) {
 	*errhandler = ADIOI_DFLT_ERR_HANDLER;
     }
     else {
