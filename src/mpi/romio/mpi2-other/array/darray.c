@@ -369,6 +369,19 @@ void MPIOI_Type_cyclic(int *array_of_gsizes, int dim, int ndims, int nprocs,
 	*type_new = type_tmp;
     }
 
+    /* need to set the UB for block-cyclic to work */
+    types[0] = *type_new;
+    types[1] = MPI_UB;
+    disps[0] = 0;
+    disps[1] = orig_extent;
+    if (order == MPI_ORDER_FORTRAN)
+	for (i=0; i<=dim; i++) disps[1] *= array_of_gsizes[i];
+    else for (i=ndims-1; i>=dim; i--) disps[1] *= array_of_gsizes[i];
+    blklens[0] = blklens[1] = 1;
+    MPI_Type_struct(2, blklens, disps, types, &type_tmp);
+    MPI_Type_free(type_new);
+    *type_new = type_tmp;
+
     *st_offset = rank * blksize; 
      /* in terms of no. of elements of type oldtype in this dimension */
     if (local_size == 0) *st_offset = 0;
