@@ -120,10 +120,13 @@ because an MPI implementation is not complete without these components.
   files. 
 \item[src]Source files for the MPI implementation
   \begin{description}
-  \item[mpi]The implementation of the MPI routines
+  \item[mpi]The implementation of the MPI routines.  Routines in this
+    subtree have prefix MPI or PMPI if they implement part of the MPI
+    standard or prefix MPIR if they are internal to these routines and
+    not used outside of this directory tree (e.g., not used in
+    \file{util} or \file{mpdi}).
     \begin{description}
     \item[attr]Attributes (Section~\ref{sec:attr})
-    \item[info]Info (Section~\ref{sec:info})
     \item[datatype]Datatypes (Section~\ref{sec:datatypes}), including the
       \code{MPI_Pack}, \code{MPI_Pack_size}, \code{MPI_Unpack},
       \code{MPI_Pack_external}, \code{MPI_Pack_external_size}, and
@@ -157,7 +160,8 @@ because an MPI implementation is not complete without these components.
     \item[misc]Runtime (Section~\ref{sec:runtime-env}), profiling
       (Section~\ref{sec:profile}), and Handle transfers
       (Section~\ref{sec:handle-transfer}).  Handle transfer includes handle to
-      pointer transfers. 
+      pointer transfers. MPI Info (Section~\ref{sec:info}); note that
+      the MPID implementation of Info is provided in \file{util/info}.
     \item[io]ROMIO implementation, possibly minus the miscellaneous MPI-2
       routines such as the info support that are in other directories already.
       This contains its own \file{src} and \file{include} directories
@@ -187,8 +191,10 @@ because an MPI implementation is not complete without these components.
 % were built during the second phase, and programs were build during the third
 % phase.  While this involved multiple passes over the tree, it avoided having
 % to order the building of modules based on dependencies.
-  \item[util]Various utilities
+  \item[util]Various utilities.  These have MPIU prefixes.
     \begin{description}
+    \item[info]Info.  This is the MPIU version of info, provided so
+    that all part of MPI (including implementations of BNR) can use it.
     \item[param]Runtime parameter routines (e.g., like PETSc options database)
     \item[mem]Memory allocation and management.  These include the tracing
       malloc routines (\file{tr2} in the MPICH implementation).
@@ -203,6 +209,13 @@ because an MPI implementation is not complete without these components.
       implementation of BNR not in MPICH, or to select the
       \code{remsh} implementation for those who don't want
       free-running demons.
+
+      \textbf{This organization (with BNR here) does not provide a
+    clean separation between the functions of packages like mpd and
+    providing an implementation of BNR.  Is there a better
+    organization, perhaps with a pmi directory that contains process
+    manager tools, and bnr simply contains the implementation of bnr
+    in terms of those tools?}
     \begin{description}
       \item[include]BNR header files
       \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}, 
@@ -215,6 +228,9 @@ because an MPI implementation is not complete without these components.
         \end{description}
       \item[remsh]Implementation of \code{bnr} in terms of remote
       shell (\code{rsh}, \code{ssh}, or \code{remsh}).
+      \item[windows]Implementation of \code{bnr} for Windows (this is
+    probably not the correct name, but it is important that one or
+    more Windows implementations be included here)
     \end{description}
 % [BRT] BNR is an interface provide by a variety of process managers.
 % It should not be a directory in the MPICH2 tree; although we do need
@@ -300,6 +316,29 @@ files.  Also contains any Fortran 90 module files (but not the Fortran
 90 module libraries).
 \end{description}
 
+\subsection{The Installation Directories}
+\label{sec:install-dirs}
+This section still needs to be written.  The intent is to follow, as
+much as possible, GNU guidelines.  The major issues include support
+for different flavors of devices and compilation environments.  One
+possibility is to provide a simple way to select separate
+\code{libdir}, \code{bindir}, etc., based on the device and
+compilation environment (this could include the selected thread
+package) while maintaining a common location for man pages and example
+programs.  For example, a fully GNUish choice might be
+\begin{verbatim}
+    ./configure --prefix=/usr/local/mpich-2.0.3-pthread-m3t-gcc-pgf90
+\end{verbatim}
+but we might want
+\begin{verbatim}
+    ./configure --prefix=/usr/local/mpich-2.0.3 \
+                --with-flavor=pthread-m3t-gcc-pgf90
+\end{verbatim}
+which would generate a set of directories under the
+\file{/usr/local/mpich-2.0.3} prefix, with common data, such as man
+pages, in their natural place (e.g.,
+\file{/usr/local/mpich-2.0.3/man}).
+
 \subsection{Sample Implementation Template}
 \label{sec:template}
 
@@ -324,6 +363,11 @@ A few comments first:
   servies two purposes.  One is to define the MPI version of the routines if
   weak symbols are not supported.  The other is to include a single definition
   of an internal routine (included with the PMPI definition).
+\item The two lines the undefine \code{FUNCNAME} and then define
+\code{FUNCNAME} as \code{MPI_Foo} make it possible to create new names
+from the name of the function.  This can be helpful and is more
+general than the \code{const char FCNAME[]} that is defined to include
+the name of the routine.
 \item The structured comment block uses predefined text for the possible error
   classes.  These are specified as \code{.N name}, along with common text on
   errors \code{.N Errors}.
@@ -439,6 +483,9 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 }
 #endif
 
+#undef FUNCNAME
+#define FUNCNAME MPI_Foo
+
 /*@
    MPI_Foo - short description
 
@@ -552,6 +599,9 @@ Project-specific details such as the locations of include files and libraries
 are passed to \code{simplemake} through its command line; this is done in the
 \file{makeconfigure}\index{makeconfigure} script in the top level directory.
 
+Note: \code{simplemake} needs to move into the \file{mpich2/maint}
+directory once the directory tree is agreed to.
+
 \subsection{Include Files}
 The include file \file{mpi.h} should not require any \code{-Dxxx}
 definitions by the compiler.  This will require generating the
@@ -586,6 +636,15 @@ For module-dependent includes, comments in \file{mpiimpl.h} should explain the
 search rules expected (e.g., link or copy in the same directory; file in
 search path).  Module-dependent includes should be used for any complex
 subsystem, particularly one that includes its own \code{configure}.
+
+All preprocessor definitions should be placed in a file, such as the
+header files automatically generated by
+\code{autoheader}\index{autoheader} and \code{configure}.  Except
+where unavoidable, preprocessor definitions should not be passed on
+the complier command line (e.g., avoid \code{-DFOO_LONG_NAME} where
+possible). One exception is in the generation of MPI and PMPI symbols
+where weak symbols are not supported, as described in
+Section~\ref{sec:pmpi-routines}. 
 
 \subsection{MPI and PMPI Routines}
 \label{sec:pmpi-routines}
@@ -684,6 +743,9 @@ prefixes:
 \item[MPIR]Routines used only within the MPI implementation (outside of the
   ADI).
 \item[MPID]Routines either defined in the ADI or used within the ADI
+\item[MPIU]Routines that are defined in the \file{util} directory and
+may be used by either the ADI or the implementation of the MPI
+routines.
 \end{description}
 Many routines will have the \code{MPID} prefix.
 
@@ -809,6 +871,13 @@ Note that most of the opaque objects have reference count semantics.
 Be sure to increment and decrement the reference count as necessary,
 using the routines for atomically modifying the reference count (e.g.,
 \code{MPID_Comm_incr}). 
+
+Question: are there any objects where some elements might not have
+pointers?  For example, if basic datatypes are encoded into the
+handle, there is no need to have an object to point to.  Current
+thinking on this is that there should be such an object, even if it is
+rarely referred to, just to allow code to work with the single general
+case if it chooses to.
 
 \subsection{Error reporting}
 \label{sec:error-reporting}
@@ -988,7 +1057,11 @@ There are various data values that are common to the MPI process and values
 that are specific to a particular thread in the MPI process.  An example of
 per-thread data is the nesting level for a layered MPI routine.  An example of
 per-process data is the thread-id of the main thread (the thread that called
-\mpifunc{MPI_Init} or \mpifunc{MPI_Init_thread}). 
+\mpifunc{MPI_Init} or \mpifunc{MPI_Init_thread}).  
+The structures and routines in this section provide a mechanism for
+accessing per thread and per process data for the routines that
+implement MPI functions (e.g., MPI and MPIR).  Devices and methods may
+need to provide their own per process and per thread data structures.
 
 To simplify the management of per-thread data, there is a common data
 structure, \code{MPICH_PerThread_t}, that contains per-thread data.
@@ -1041,6 +1114,11 @@ extern MPICH_PerThread_t MPIR_Thread;
                pthread_setspecific( MPIR_Process.thread_key, p );}}
 #endif
 \end{verbatim}
+
+Note that a device is likely to have its own per process and per
+thread data blocks.  Rather than try to merge them into a single
+block, we have choosen to define the data needed in the MPI and MPIR
+routines.
 
 \subsection{Integral Profiling}
 \label{sec:builtin-timing}
@@ -1107,7 +1185,16 @@ Simple informational routines such as \code{MPI_Comm_size} and
 \code{MPI_Wtime} will not be timed.
 
 \textbf{Question: Also keep track of max/min times and either sum of squares
-  or a histogram of times?}
+  or a histogram of times?  See the discussion of the statistics routines}
+
+Question: should we allow func enter/exit at general
+locations, so that it can be used to surround other routines, rather
+than introducing another set of functions?  One answer is no, because
+the \code{MPID_MPI_FUNC_ENTER} and \code{EXIT} routines really refer
+to function entrance and exit, and using them within the body of a
+function may be confusing.  As defined here, it doesn't matter that
+much, but we may choose to add features to them that are more closely
+tied to function entrance and exit.
 
 Each state belongs to a class; there are at most 32 classes (so that we can use
 bitwise tests on a 32 bit \code{unsigned int}).  Instrumentation can be
@@ -1165,7 +1252,19 @@ complex state information is required, it should be handled by making
 direct calls to the appropriate profiling routines (suitably wrapped
 to obey the selected profiling level).
 
-\subsubsection{Instrumenting the MPI code for States.}
+\paragraph{Controlling the Collection of State Data.}
+The routine \code{MPID_TimerStateControl} can be used to control the
+collection of data.  This routine has the form
+\begin{verbatim}
+    void MPID_TimerStateControl( int onoff, int category )
+\end{verbatim}
+The first argument simply controls whether data collection is on or
+off.  The second controls the states that the first argument applies
+to.  Initially, \code{category} will be ignored and all states will be
+either on or off.  The \code{category} flag allows finer control
+should we find that we need it.
+
+\subsubsection{Instrumenting the MPI code for Statistics.}
 Statistics are collected by items, such as \code{writev} calls or
 number of times an I/O call returns with an \code{errno} of
 \code{EAGAIN}\index{EAGAIN}.  
@@ -1174,12 +1273,12 @@ The most general form is
 \begin{verbatim}
     #ifdef COLLECT_STATS
     {
-    MPID_STAT_BEGIN;
+        MPID_STAT_BEGIN;
         {
-        MPID_STAT_ACC(statid,val);
-        MPID_STAT_ACC_RANGE(statid2,rval);
+            MPID_STAT_ACC(statid,val);
+            MPID_STAT_ACC_RANGE(statid2,rval);
         }
-    MPID_STAT_END;
+        MPID_STAT_END;
     }
     #endif
 \end{verbatim}
@@ -1265,20 +1364,20 @@ environment.  In
 particular, it should have bounded memory usage and should strive not to
 allocate memory outside of the initialization routine.  
 
-Where it is necessary to allocate memory, the function \mpidfunc{MPID_Malloc}
-(and corresponding \code{MPID_Calloc}, etc.) must be used instead of
+Where it is necessary to allocate memory, the function \mpidfunc{MPIU_Malloc}
+(and corresponding \code{MPIU_Calloc}, etc.) must be used instead of
 \code{malloc}, as described in the ADI-3 manual \cite{adi3man}.  Uses of a
 bare \code{malloc} and related memory allocation and freeing routines will be
-flagged as an error by the code style checkers.  Note that \code{MPID_Malloc}
+flagged as an error by the code style checkers.  Note that \code{MPIU_Malloc}
 and friends may be implemented as macros directly in terms of the
 corresponding \code{malloc} etc. routines, so there is no performance penalty
-to using the \code{MPID_Malloc} routines.
+to using the \code{MPIU_Malloc} routines.
 
 Memory allocation follows the usual rules for a separate subpackage: there are
 initialization routines and a registered routine to be called in
 \mpifunc{MPI_Finalize}. (See Section~\ref{sec:finalize}.)  This end-of-job
 handler must call the 
-routine \mpidfunc{MPID_Trdump} if the runtime parameter
+routine \mpidfunc{MPIU_Trdump} if the runtime parameter
 \code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
 
 % Question: Should there be separate per-thread and per-process memory
@@ -1305,27 +1404,27 @@ allocations are freed before an error return.
 This could have something like
 \begin{verbatim}
 #define MAX_MEM_STACK 16
-typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPID_Mem_stack;
+typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
 \end{verbatim}
 defined in \file{mpiimpl.h} 
 and a memory allocation macro that updated a routine-local version of a
-local instance (for thread-safety) of \code{MPID_Mem_stack} 
+local instance (for thread-safety) of \code{MPIU_Mem_stack} 
 with every allocation.  Then on an error, we could easily free any allocated
 memory.  The memory allocator could be
 \begin{verbatim}
-#define MALLOC_STK(n,a) {a=MPID_Malloc(n);\
-               if (_memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
-               _memstack.ptrs[_memstack.n_alloc++] = a;}
-#define FREE_STK     {int i; for (i=_memstack.n_alloc-1;i>=0;i--) {\
-               MPID_Free(_memstack.ptrs[i]);}}
-#define MALLOC_STK_INIT _memstack.n_alloc = 0
-#define MALLOC_STK_DECL MPID_Mem_stack _memstack
+#define MALLOC_STK(n,a) {a=MPIU_Malloc(n);\
+               if (memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
+               memstack.ptrs[memstack.n_alloc++] = a;}
+#define FREE_STK     {int i; for (i=memstack.n_alloc-1;i>=0;i--) {\
+               MPIU_Free(memstack.ptrs[i]);}}
+#define MALLOC_STK_INIT memstack.n_alloc = 0
+#define MALLOC_STK_DECL MPIU_Mem_stack memstack
 \end{verbatim}
 
 % Comment [BRT]: _memstack needs to be allocated in thread specific
 % storage in order for the MPI implementation to be thread safe.
 
-To ensure that the usuage is thread-safe, the \code{_memstack} should be
+To ensure that the usuage is thread-safe, the \code{memstack} should be
 declared within the routine.  A typical use might be
 \begin{verbatim}
     MALLOC_STK_DECL;
@@ -1347,7 +1446,7 @@ declared within the routine.  A typical use might be
         MPIR_Return( ... );
     }
 \end{verbatim}
-% [BRT] The statement '_memstack.n_alloc = 0;' should be an init macro to allow
+% [BRT] The statement 'memstack.n_alloc = 0;' should be an init macro to allow
 % for future implementation changes.  A finalize macro might be useful as well,
 % although it would be a nop in the implementation described above.
 
@@ -1373,36 +1472,36 @@ this, we should not rely on them, since not all environments guarantee that
 environment variables are propagated to all processes.
 
 Question: What should the routines be?  For 
-example,\index{MPID_Param_init}\index{MPID_Param_get_int}%
-\index{MPID_Param_get_string}\index{MPID_Param_finalize}%
-\index{MPID_Param_bcast}\index{MPID_Param_register}
+example,\index{MPIU_Param_init}\index{MPIU_Param_get_int}%
+\index{MPIU_Param_get_string}\index{MPIU_Param_finalize}%
+\index{MPIU_Param_bcast}\index{MPIU_Param_register}
 \begin{verbatim}
-int MPID_Param_init( int *argc, char **argv[] );
-int MPID_Param_bcast( );
-int MPID_Param_register( const char name[], const char envname[], 
+int MPIU_Param_init( int *argc, char **argv[] );
+int MPIU_Param_bcast( );
+int MPIU_Param_register( const char name[], const char envname[], 
                          const char description[] );
-int MPID_Param_get_int( const char name[], int default_val, int *value );
-int MPID_Param_get_string( const char name[], const char *default val,
+int MPIU_Param_get_int( const char name[], int default_val, int *value );
+int MPIU_Param_get_string( const char name[], const char *default val,
                            char **value );
-void MPID_Param_finalize( void );
+void MPIU_Param_finalize( void );
 \end{verbatim}
 We use pointers to \code{argc} and \code{argv} to allow parameters to be
 removed.  The return code indicates success or failure; an example of a
 failure is a non-integer value provided to the parameter accessed with
-\code{MPID_Param_get_int}. 
-The routine \code{MPID_Param_init} is called by the master process (the one
+\code{MPIU_Param_get_int}. 
+The routine \code{MPIU_Param_init} is called by the master process (the one
 that will be rank zero in \code{MPI_COMM_WORLD}); this should happen early
 enough that any startup parameters are available to the master process.  The
-routine \code{MPID_Param_bcast} is called within \code{MPI_Init} or
+routine \code{MPIU_Param_bcast} is called within \code{MPI_Init} or
 \code{MPI_Init_thread} after all processes have started and is a collective
 call across \code{MPI_COMM_WORLD}.  This allows an implementation to use one
 process to read the environment and any initialization file and then use MPI
 communication to communicate the parameters to other processes.  
 
-The routine \code{MPID_Param_register} allows the MPICH implementation to
+The routine \code{MPIU_Param_register} allows the MPICH implementation to
 indicate which parameters are used and to provide a help string for each one.
 This allows an automated tool to compile a listing of such parameters and
-allows \code{MPID_Param_finalize} to identify unused command-line arguments
+allows \code{MPIU_Param_finalize} to identify unused command-line arguments
 (often misspellings of valid arguments).
 
 These routines return zero on success.  The routines that return the values of
@@ -1410,12 +1509,12 @@ parameters return one if no value was specified (this allows an routine to
 determine if the default value was provided) and two on an error (such as an
 integer value containing a non-digit).  These values are provided by
 \begin{verbatim}
-typedef enum { MPID_PARAM_FOUND = 0, 
-               MPID_PARAM_OK = 1, 
-               MPID_PARAM_ERROR = 2 } MPID_Param_result_t;
+typedef enum { MPIU_PARAM_FOUND = 0, 
+               MPIU_PARAM_OK = 1, 
+               MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
 \end{verbatim}
 
-The \mpidfunc{MPID_Param_init} and \mpidfunc{MPID_Param_finalize} allows
+The \mpidfunc{MPIU_Param_init} and \mpidfunc{MPIU_Param_finalize} allows
 values to also be passed via the command line.  
 In fact, we may want to enforce the following order:
 \begin{enumerate}
@@ -1431,7 +1530,7 @@ The configuration file is read once, by one process (at
 \code{MPI_Init} time).  
 
 Note that errors are indicated by a non-zero return from the routine.
-For example, if \mpidfunc{MPID_Param_get_int} is called but the value
+For example, if \mpidfunc{MPIU_Param_get_int} is called but the value
 is \code{"big"}, it will return one.
 
 Question: To support ``override'' values, should the routines also
@@ -1440,7 +1539,7 @@ the code to decide whether to accept a value from the runtime
 parameter routines or to use a value provided through an MPI Info hint
 or attribute.
 
-Question: The definition of \code{MPID_Param_bcast} given above
+Question: The definition of \code{MPIU_Param_bcast} given above
 requires that the MPI communication system be initialized.  This
 implicitly assumes that the parameter calls are not used for any
 communication setup.  This isn't adequate for initializing sockets in
@@ -1448,17 +1547,18 @@ a TCP device or allocating message-buffer space for a shared memory or
 VIA device.  It may be more appropriate to provide two separate
 phases:
 \begin{description}
-\item[\code{MPID_Param_init}]No values are available until after this call.  
+\item[\code{MPIU_Param_init}]No values are available until after this call.  
 After this call, some values are available (see below).
-\item[\code{MPID_Param_bcast}]All values are available to all processes.  This 
+\item[\code{MPIU_Param_bcast}]All values are available to all processes.  This 
 call may use MPI communication
 \end{description}
-To make this work, \code{MPID_Param_register} must indicate when the
+To make this work, \code{MPIU_Param_register} must indicate when the
 value is needed; i.e., either before or after
-\code{MPID_Param_bcast}.  All parameters that are needed before
-\code{MPID_Param_bcast} must be communicated to all processes through
+\code{MPIU_Param_bcast}.  All parameters that are needed before
+\code{MPIU_Param_bcast} must be communicated to all processes through
 a mechanism that does \emph{not} rely on MPI communication, such as
-BNR put and get calls.  
+BNR put and get calls.  This would use an ``intent'' variable as a
+fourth argument.
 
 % Question: should parameters be registered?  This allows the runtime
 % system to find them (e.g., with BNR put/fence/get), and simplifies the
@@ -1466,7 +1566,7 @@ BNR put and get calls.
 % would also allow text describing the parameter to be provided from
 % within the code.
 
-An alternative to \code{MPID_Param_register} is to use a tool, similar to that
+An alternative to \code{MPIU_Param_register} is to use a tool, similar to that
 for error reporting, that finds all uses of the parameter routines.
 
 % For example, the pre-init routine code could read just a few environment
@@ -1573,7 +1673,16 @@ that can be different from each developer's personnal style.
 The style \code{mpich} is defined in \file{maint/mpich.el}.
 
 Question: Is there a predefined style that we can agree on?  Is there a
-variable (rather than a function to eval) that we can use to set the style?
+variable (rather than a function to eval) that we can use to set the
+style?
+Note: Current homework assignment.  If we can all agree on a base
+style such as \code{k&r} or \code{bsd} and a few specific variable
+values, such as 
+\begin{verbatim}
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+\end{verbatim}
+we can avoid the eval.
+We might need to set \code{c-offsets-alist} which would be messy.
 
 % Comment [BRT]: Yes.  Having a style standard makes it much easier to
 % read and modify code written by others.
@@ -7400,19 +7509,19 @@ also does not have the concept of pre/post initialization.
 
 The simplest implementation of these might be
 \begin{verbatim}
-int MPIR_Param_init( int *argc, char **argv[] ) {return 0; }
-int MPIR_Param_bcast( void ) { return 0; }
-int MPIR_Param_get_int( const char name[], int default_val, int *value ) 
+int MPIU_Param_init( int *argc, char **argv[] ) {return 0; }
+int MPIU_Param_bcast( void ) { return 0; }
+int MPIU_Param_get_int( const char name[], int default_val, int *value ) 
     { char *tmp = getenv{name); 
       if (tmp) { 
           char *endp;
           *value = strtol(name,&endp,10); 
           /* if name not an integer, return 2 */
-          if (*endp != '\0') return MPID_PARAM_ERROR;
-          return MPID_PARAM_FOUND;
+          if (*endp != '\0') return MPIU_PARAM_ERROR;
+          return MPIU_PARAM_FOUND;
       *value = default_val; 
-      return MPID_PARAM_OK; }
-int MPIR_Param_get_string( const char name[], const char *default_val,
+      return MPIU_PARAM_OK; }
+int MPIU_Param_get_string( const char name[], const char *default_val,
                            char **value ) 
     { char *tmp = getenv(name); 
       if (!tmp) {
@@ -7420,9 +7529,9 @@ int MPIR_Param_get_string( const char name[], const char *default_val,
           return MPID_PARAM_OK;
       }
       *value = MPID_Strdup( tmp );
-      return MPID_PARAM_FOUND;
+      return MPIU_PARAM_FOUND;
       }
-void MPIR_Param_finalize( void ){}
+void MPIU_Param_finalize( void ){}
 \end{verbatim}
 BNR routines could be
 used instead of \code{getenv} to get values.  Even more complex
