@@ -69,6 +69,21 @@ Output Parameters:
 #ifndef PATH_MAX
 #define PATH_MAX 65535
 #endif
+
+/* In a strict ANSI environment, S_ISLNK may not be defined.  Fix that
+   here.  We assume that S_ISLNK is *always* defined as a macro.  If
+   that is not universally true, then add a test to the romio
+   configure that trys to link a program that references S_ISLNK */
+#if !defined(S_ISLNK) 
+#    if defined(S_IFLNK)
+     /* Check for the link bit */
+#    define S_ISLNK(mode) ((mode) & S_IFLNK)
+#    else
+     /* no way to check if it is a link, so say false */
+#    define S_ISLNK(mode) 0   
+#    endif
+#endif
+
 static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 {
     int err;
