@@ -100,8 +100,8 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
     int ptrdiff;
 
 #if 0
-    printf("copy: dest=%x, src=%x, size=%d\n", (int) dest, (int) src, 
-	   size);
+    dbg_printf("copy: dest=%x, src=%x, size=%d\n", (int) dest, (int) src, 
+	       size);
 #endif
 
     /* copy region first */
@@ -135,72 +135,72 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
     struct DLOOP_Dataloop **looparray;
 
     switch(dataloop->kind) {
-    case DLOOP_KIND_CONTIG:
-	/*
-	 * All these really ugly assignments are really of the form:
-	 *
-	 * ((char *) dataloop->loop_params.c_t.loop) += ptrdiff;
-	 *
-	 * However, some compilers spit out warnings about casting on the
-	 * LHS, so we get this much nastier form instead: 
-         */
-	dataloop->loop_params.c_t.u.dataloop = (struct DLOOP_Dataloop *) 
-	    ((char *) dataloop->loop_params.c_t.u.dataloop + ptrdiff);
+	case DLOOP_KIND_CONTIG:
+	    /*
+	     * All these really ugly assignments are really of the form:
+	     *
+	     * ((char *) dataloop->loop_params.c_t.loop) += ptrdiff;
+	     *
+	     * However, some compilers spit out warnings about casting on the
+	     * LHS, so we get this much nastier form instead: 
+	     */
+	    dataloop->loop_params.c_t.u.dataloop = (struct DLOOP_Dataloop *) 
+		((char *) dataloop->loop_params.c_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.c_t.u.dataloop, ptrdiff);
-	break;
+	    DLOOP_Dataloop_update(dataloop->loop_params.c_t.u.dataloop, ptrdiff);
+	    break;
 
-    case DLOOP_KIND_VECTOR:
-	dataloop->loop_params.v_t.u.dataloop = (struct DLOOP_Dataloop *)
-	    ((char *) dataloop->loop_params.v_t.u.dataloop + ptrdiff);
+	case DLOOP_KIND_VECTOR:
+	    dataloop->loop_params.v_t.u.dataloop = (struct DLOOP_Dataloop *)
+		((char *) dataloop->loop_params.v_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.v_t.u.dataloop, ptrdiff);
-	break;
+	    DLOOP_Dataloop_update(dataloop->loop_params.v_t.u.dataloop, ptrdiff);
+	    break;
 
-    case DLOOP_KIND_BLOCKINDEXED:
-	dataloop->loop_params.bi_t.offset_array = (int *)
-	    ((char *) dataloop->loop_params.bi_t.offset_array + ptrdiff);
-	dataloop->loop_params.bi_t.u.dataloop = (struct DLOOP_Dataloop *)
-	    ((char *) dataloop->loop_params.bi_t.u.dataloop + ptrdiff);
+	case DLOOP_KIND_BLOCKINDEXED:
+	    dataloop->loop_params.bi_t.offset_array = (int *)
+		((char *) dataloop->loop_params.bi_t.offset_array + ptrdiff);
+	    dataloop->loop_params.bi_t.u.dataloop = (struct DLOOP_Dataloop *)
+		((char *) dataloop->loop_params.bi_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.bi_t.u.dataloop, ptrdiff);
-	break;
+	    DLOOP_Dataloop_update(dataloop->loop_params.bi_t.u.dataloop, ptrdiff);
+	    break;
 
-    case DLOOP_KIND_INDEXED:
-	dataloop->loop_params.i_t.blocksize_array = (int *)
-	    ((char *) dataloop->loop_params.i_t.blocksize_array + ptrdiff);
-	dataloop->loop_params.i_t.offset_array = (int *)
-	    ((char *) dataloop->loop_params.i_t.offset_array + ptrdiff);
-	dataloop->loop_params.i_t.u.dataloop = (struct DLOOP_Dataloop *)
-	    ((char *) dataloop->loop_params.i_t.u.dataloop + ptrdiff);
+	case DLOOP_KIND_INDEXED:
+	    dataloop->loop_params.i_t.blocksize_array = (int *)
+		((char *) dataloop->loop_params.i_t.blocksize_array + ptrdiff);
+	    dataloop->loop_params.i_t.offset_array = (int *)
+		((char *) dataloop->loop_params.i_t.offset_array + ptrdiff);
+	    dataloop->loop_params.i_t.u.dataloop = (struct DLOOP_Dataloop *)
+		((char *) dataloop->loop_params.i_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.i_t.u.dataloop, ptrdiff);
-	break;
+	    DLOOP_Dataloop_update(dataloop->loop_params.i_t.u.dataloop, ptrdiff);
+	    break;
 
-    case DLOOP_KIND_STRUCT:
-	dataloop->loop_params.s_t.blocksize_array = (int *)
-	    ((char *) dataloop->loop_params.s_t.blocksize_array + ptrdiff);
-	dataloop->loop_params.s_t.offset_array = (int *)
-	    ((char *) dataloop->loop_params.s_t.offset_array + ptrdiff);
-	dataloop->loop_params.s_t.dataloop_array = (struct DLOOP_Dataloop **)
-	    ((char *) dataloop->loop_params.s_t.dataloop_array + ptrdiff);
+	case DLOOP_KIND_STRUCT:
+	    dataloop->loop_params.s_t.blocksize_array = (int *)
+		((char *) dataloop->loop_params.s_t.blocksize_array + ptrdiff);
+	    dataloop->loop_params.s_t.offset_array = (int *)
+		((char *) dataloop->loop_params.s_t.offset_array + ptrdiff);
+	    dataloop->loop_params.s_t.dataloop_array = (struct DLOOP_Dataloop **)
+		((char *) dataloop->loop_params.s_t.dataloop_array + ptrdiff);
 
-	/* fix the N dataloop pointers too */
-	looparray = dataloop->loop_params.s_t.dataloop_array;
-	for (i=0; i < dataloop->loop_params.s_t.count; i++) {
-	    looparray[i] = (struct DLOOP_Dataloop *)
-		((char *) looparray[i] + ptrdiff);
-	}
+	    /* fix the N dataloop pointers too */
+	    looparray = dataloop->loop_params.s_t.dataloop_array;
+	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
+		looparray[i] = (struct DLOOP_Dataloop *)
+		    ((char *) looparray[i] + ptrdiff);
+	    }
 
-	for (i=0; i < dataloop->loop_params.s_t.count; i++) {
-	    DLOOP_Dataloop_update(looparray[i], ptrdiff);
-	}
-	break;
+	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
+		DLOOP_Dataloop_update(looparray[i], ptrdiff);
+	    }
+	    break;
 #if 0
-    case DLOOP_KIND_BASIC:
+	case DLOOP_KIND_BASIC:
 #endif
-    default:
-	break;
+	default:
+	    break;
     }
     return;
 }
@@ -218,62 +218,62 @@ void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
 {
     int i;
 
-    printf("loc=%x, treedepth=%d, kind=%d, el_extent=%d\n",
-	   (int) dataloop, depth, dataloop->kind, dataloop->el_extent);
+    dbg_printf("loc=%x, treedepth=%d, kind=%d, el_extent=%d\n",
+	       (int) dataloop, depth, dataloop->kind, dataloop->el_extent);
     switch(dataloop->kind) {
-    case DLOOP_KIND_CONTIG:
-	printf("\tcount=%d, datatype=%x\n", 
-	       dataloop->loop_params.c_t.count, 
-	       (int) dataloop->loop_params.c_t.u.dataloop);
-	PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.c_t.u.dataloop, depth+1);
-	break;
-    case DLOOP_KIND_VECTOR:
-	printf("\tcount=%d, blksz=%d, stride=%d, datatype=%x\n",
-	       dataloop->loop_params.v_t.count, 
-	       dataloop->loop_params.v_t.blocksize, 
-	       dataloop->loop_params.v_t.stride,
-	       (int) dataloop->loop_params.v_t.u.dataloop);
-	PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.v_t.u.dataloop, depth+1);
-	break;
-    case DLOOP_KIND_BLOCKINDEXED:
-	printf("\tcount=%d, blksz=%d, datatype=%x\n",
-	       dataloop->loop_params.bi_t.count, 
-	       dataloop->loop_params.bi_t.blocksize, 
-	       (int) dataloop->loop_params.bi_t.u.dataloop);
-	/* print out offsets later */
-	PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.bi_t.u.dataloop, depth+1);
-	break;
-    case DLOOP_KIND_INDEXED:
-	printf("\tcount=%d, datatype=%x\n",
-	       dataloop->loop_params.i_t.count,
-	       (int) dataloop->loop_params.i_t.u.dataloop);
-	/* print out blocksizes and offsets later */
-	PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.i_t.u.dataloop, depth+1);
-	break;
-    case DLOOP_KIND_STRUCT:
-	printf("\tcount=%d\n\tblocksizes: ", dataloop->loop_params.s_t.count);
-	for (i=0; i < dataloop->loop_params.s_t.count; i++)
-	    printf("%d ", dataloop->loop_params.s_t.blocksize_array[i]);
-	printf("\n\toffsets: ");
-	for (i=0; i < dataloop->loop_params.s_t.count; i++)
-	    printf("%d ", dataloop->loop_params.s_t.offset_array[i]);
-	printf("\n\tdatatypes: ");
-	for (i=0; i < dataloop->loop_params.s_t.count; i++)
-	    printf("%x ", (int) dataloop->loop_params.s_t.dataloop_array[i]);
-	printf("\n");
-	for (i=0; i < dataloop->loop_params.s_t.count; i++) {
-	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.s_t.dataloop_array[i],depth+1);
-	}
-	break;
+	case DLOOP_KIND_CONTIG:
+	    dbg_printf("\tcount=%d, datatype=%x\n", 
+		       dataloop->loop_params.c_t.count, 
+		       (int) dataloop->loop_params.c_t.u.dataloop);
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.c_t.u.dataloop, depth+1);
+	    break;
+	case DLOOP_KIND_VECTOR:
+	    dbg_printf("\tcount=%d, blksz=%d, stride=%d, datatype=%x\n",
+		       dataloop->loop_params.v_t.count, 
+		       dataloop->loop_params.v_t.blocksize, 
+		       dataloop->loop_params.v_t.stride,
+		       (int) dataloop->loop_params.v_t.u.dataloop);
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.v_t.u.dataloop, depth+1);
+	    break;
+	case DLOOP_KIND_BLOCKINDEXED:
+	    dbg_printf("\tcount=%d, blksz=%d, datatype=%x\n",
+		       dataloop->loop_params.bi_t.count, 
+		       dataloop->loop_params.bi_t.blocksize, 
+		       (int) dataloop->loop_params.bi_t.u.dataloop);
+	    /* print out offsets later */
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.bi_t.u.dataloop, depth+1);
+	    break;
+	case DLOOP_KIND_INDEXED:
+	    dbg_printf("\tcount=%d, datatype=%x\n",
+		       dataloop->loop_params.i_t.count,
+		       (int) dataloop->loop_params.i_t.u.dataloop);
+	    /* print out blocksizes and offsets later */
+	    PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.i_t.u.dataloop, depth+1);
+	    break;
+	case DLOOP_KIND_STRUCT:
+	    dbg_printf("\tcount=%d\n\tblocksizes: ", dataloop->loop_params.s_t.count);
+	    for (i=0; i < dataloop->loop_params.s_t.count; i++)
+		dbg_printf("%d ", dataloop->loop_params.s_t.blocksize_array[i]);
+	    dbg_printf("\n\toffsets: ");
+	    for (i=0; i < dataloop->loop_params.s_t.count; i++)
+		dbg_printf("%d ", dataloop->loop_params.s_t.offset_array[i]);
+	    dbg_printf("\n\tdatatypes: ");
+	    for (i=0; i < dataloop->loop_params.s_t.count; i++)
+		dbg_printf("%x ", (int) dataloop->loop_params.s_t.dataloop_array[i]);
+	    dbg_printf("\n");
+	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
+		PREPEND_PREFIX(Dataloop_print)(dataloop->loop_params.s_t.dataloop_array[i],depth+1);
+	    }
+	    break;
 #if 0
-    case DLOOP_KIND_BASIC:
-	printf("\tcount = %d\n\tbasic_handle=%x\n", 
-	       dataloop->loop_params.ba_t.count,
-	       dataloop->loop_params.ba_t.handle);
-	break;
+	case DLOOP_KIND_BASIC:
+	    dbg_printf("\tcount = %d\n\tbasic_handle=%x\n", 
+		       dataloop->loop_params.ba_t.count,
+		       dataloop->loop_params.ba_t.handle);
+	    break;
 #endif
-    default:
-	break;
+	default:
+	    break;
     }
     return;
 }
