@@ -145,8 +145,133 @@ if test -z "$sizeof_mpi_offset" ; then
 fi
 PAC_PROG_F90_INT_KIND(mpi_offset_kind,$sizeof_mpi_offset,$CROSS_SIZEOF_MPI_OFFSET)
 
+#
+# Determine the precision and range of the standard Fortran types.  This
+# isn't quite enough for a full implementation of the Type_create_f90_xxx
+# routines, but will handle most programs.  We can extend this by trying to
+# find (through selected_real_kind and selected_int_kind) types with larger or
+# smaller precisions and/or ranges than the basic types.
+if test -z "$CROSS_F90_REAL_MODEL" ; then
+    AC_MSG_CHECKING([for precision and range of reals])
+    rm -f conftest*
+    cat > conftest.$ac_f90ext <<EOF
+       program main
+       real a
+       print *, precision(a), ",", range(a)
+       end
+EOF
+    if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
+        ./conftest > conftest.out 2>AC_FD_CC
+        if test -s conftest.out ; then
+            F90_REAL_MODEL=`cat conftest.out | sed -e 's/  */ /g'`
+	    AC_MSG_RESULT($F90_REAL_MODEL)
+        else
+            AC_MSG_WARN([No output from test program])
+        fi
+    else
+        AC_MSG_WARN([Could not build program to determine precision and range of reals])
+    fi
+    rm -f conftest*
+else
+    F90_REAL_MODEL=$CROSS_F90_REAL_MODEL
+fi
+AC_SUBST(F90_REAL_MODEL)
+#
+if test -z "$CROSS_F90_DOUBLE_MODEL" ; then
+    AC_MSG_CHECKING([for precision and range of double precision])
+    rm -f conftest*
+    cat > conftest.$ac_f90ext <<EOF
+       program main
+       double precision a
+       print *, precision(a), ",", range(a)
+       end
+EOF
+    if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
+        ./conftest > conftest.out 2>AC_FD_CC
+        if test -s conftest.out ; then
+            F90_DOUBLE_MODEL=`cat conftest.out | sed -e 's/  */ /g'`
+	    AC_MSG_RESULT($F90_DOUBLE_MODEL)
+        else
+            AC_MSG_WARN([No output from test program])
+        fi
+    else
+        AC_MSG_WARN([Could not build program to determine precision and range of double precision data])
+    fi
+    rm -f conftest*
+else
+    F90_DOUBLE_MODEL=$CROSS_F90_DOUBLE_MODEL
+fi
+AC_SUBST(F90_DOUBLE_MODEL)
+#
+if test -z "$CROSS_F90_INTEGER_MODEL" ; then
+    AC_MSG_CHECKING([for range of integers])
+    rm -f conftest*
+    cat > conftest.$ac_f90ext <<EOF
+       program main
+       integer a
+       print *, range(a)
+       end
+EOF
+    if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
+        ./conftest > conftest.out 2>AC_FD_CC
+        if test -s conftest.out ; then
+            F90_INTEGER_MODEL=`cat conftest.out | sed -e 's/  */ /g'`
+	    AC_MSG_RESULT($F90_INTEGER_MODEL)
+        else
+            AC_MSG_WARN([No output from test program])
+        fi
+    else
+        AC_MSG_WARN([Could not build program to determine range of integer])
+    fi
+    rm -f conftest*
+else
+    F90_INTEGER_MODEL=$CROSS_F90_INTEGER_MODEL
+fi
+AC_SUBST(F90_INTEGER_MODEL)
+#
+# Try to find the available integer kinds by using selected_int_kind
+# This produces a table of range,kind
+if test -z "$CROSS_F90_INTEGER_MODEL_MAP" ; then
+    AC_MSG_CHECKING([for available integer kinds and ranges])
+    rm -f conftest.*
+    cat >conftest.$ac_f90ext <<EOF
+      program main
+      integer r, lastkind
+      lastkind=selected_int_kind(1)
+      do r=2,30
+           k = selected_int_kind(r)
+           if (k .ne. lastkind) then
+                print *, r-1,",",lastkind,","    
+                lastkind = k
+           endif
+           if (k .le. 0) then
+               exit
+           endif
+      enddo
+      end 
+EOF
+    if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
+        ./conftest > conftest.out 2>AC_FD_CC
+        if test -s conftest.out ; then
+            F90_INTEGER_MODEL_MAP=`cat conftest.out | tr '\012' ' '  | \
+				       sed -e 's/  */ /g'`
+	    AC_MSG_RESULT($F90_INTEGER_MODEL_MAP)
+        else
+            AC_MSG_WARN([No output from test program])
+        fi
+    else
+        AC_MSG_WARN([Could not build program to determine available integer kinds and ranges])
+    fi
+    rm -f conftest*
+else
+    F90_INTEGER_MODEL_MAP="$CROSS_F90_INTEGER_MODEL_MAP"
+fi
+AC_SUBST(F90_INTEGER_MODEL_MAP)    
+
+
 dnl Check for other Fortran 90 features, such as different include/use
 dnl module directory and special flags.  Build modules if requested
+
 AC_SUBST(F90_SUFFIX)
 f90includedir='${includedir}'
 f90libdir='${libdir}'
@@ -198,5 +323,4 @@ includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 )
 
-AC_OUTPUT(Makefile mpif90.conf mpif90)
-
+AC_OUTPUT(Makefile mpif90.conf mpif90 mpif90conf.h)
