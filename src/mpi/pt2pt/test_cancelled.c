@@ -45,25 +45,27 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
 {
     static const char FCNAME[] = "MPI_Test_cancelled";
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TEST_CANCELLED);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL( status, "status", mpi_errno );
+	    MPIR_ERRTEST_ARGNULL( flag, "flag", mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    *flag = status->cancelled;
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
     return MPI_SUCCESS;
 }
