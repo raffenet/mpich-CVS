@@ -81,6 +81,12 @@ MPIO_EXTRA_OBJECTS="get_errh.o set_errh.o"
 MPIO_EXTRA_TMP_POBJECTS="get_errh.p set_errh.p"
 MPIO_EXTRA_REAL_POBJECTS="_get_errh.o _set_errh.o"
 #
+# Completion routines for MPIO_Requests.  MPI Implementations with
+# generalized requests do not need these
+MPIO_REQOBJECTS="iotest.o iowait.o iowaitall.o iowaitany.o iotestall.o iotestany.o iowaitsome.o iotestsome.o"
+MPIO_REQ_TMP_POBJECTS="iotest.p iowait.p iowaitall.p iowaitany.p iotestall.p iotestany.p iowaitsome.p iotestsome.p"
+MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall.o _iotestany.o _iowaitsome.o _iotestsome.o"
+#
 have_aio=no
 #
 known_filesystems="nfs ufs pfs piofs pvfs pvfs2 testfs xfs hfs sfs"
@@ -1264,6 +1270,14 @@ if test -z "$master_top_srcdir" ; then
     fi
 fi
 AC_SUBST(master_top_srcdir)
+#
+# Get the master builddir (which may be imported from above)
+if test -z "$master_top_builddir" ; then
+    master_top_builddir=`pwd`
+fi
+export master_top_builddir
+AC_SUBST(master_top_builddir)
+
 # The following definitions are needed within adio/common/status_setb.c
 if test "$FROM_MPICH" = yes ; then
    AC_DEFINE(MPICH,1,[Define if compiling within MPICH])
@@ -1299,11 +1313,17 @@ if test "$FROM_MPICH2" != no ; then
     MPIO_EXTRA_OBJECTS=
     MPIO_EXTRA_TMP_POBJECTS=
     MPIO_EXTRA_REAL_POBJECTS=
+    # Use generalized request to get the multiple-completion routines
+    MPIO_REQOBJECTS=
+    MPIO_REQ_TMP_POBJECTS=
+    MPIO_REQ_REAL_POBJECTS=
 fi
 AC_SUBST(MPIO_EXTRA_OBJECTS)
 AC_SUBST(MPIO_EXTRA_TMP_POBJECTS)
 AC_SUBST(MPIO_EXTRA_REAL_POBJECTS)
-
+AC_SUBST(MPIO_REQOBJECTS)
+AC_SUBST(MPIO_REQ_TMP_POBJECTS)
+AC_SUBST(MPIO_REQ_REAL_POBJECTS)
 #
 if test $NOF77 = 1 ; then
    F77=":"
@@ -1538,6 +1558,7 @@ if test -z "$ENABLE_SHLIB" ; then
 fi
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(CC_SHL)
+AC_SUBST(LIBTOOL)
 # Remove the .a from the library file name (so that we can use .so or
 # other appropriate suffix)
 SHLIBNAME=`echo $LIBNAME | sed 's/\.a//'`
