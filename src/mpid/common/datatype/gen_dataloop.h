@@ -328,6 +328,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							DLOOP_Offset rel_off,
 							void *bufp,
 							void *v_paramp),
+					int (*vectorfn) (int *blocks_p,
+							 int count,
+							 int blklen,
+							 DLOOP_Offset stride,
+							 int el_size,
+							 DLOOP_Offset rel_off,
+							 void *bufp,
+							 void *v_paramp),
 					void *pieceparams);
 
 #endif

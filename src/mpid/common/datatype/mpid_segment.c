@@ -65,7 +65,7 @@ static int MPID_Segment_contig_pack_to_buf(int *blocks_p,
  * Input Parameters:
  * segp - pointer to segment
  * pack_buffer - pointer to buffer to pack into
- * first - first byte index to be packed (or actually packed (??))
+ * first - first byte index to be packed (or actually packed (?))
  *
  * InOut Parameters:
  * last - pointer to last byte index to be packed plus 1 (makes math easier)
@@ -93,6 +93,7 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
 			    first,
 			    lastp,
 			    MPID_Segment_contig_pack_to_buf, 
+			    NULL,
 			    &pack_params);
     return;
 }
@@ -113,8 +114,11 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 
     assert(*lengthp > 0);
 
-    MPID_Segment_manipulate(segp, first, lastp, 
+    MPID_Segment_manipulate(segp,
+			    first,
+			    lastp, 
 			    MPID_Segment_contig_pack_to_iov, 
+			    NULL,
 			    &packvec_params);
 
     /* last value already handled by MPID_Segment_manipulate */
@@ -132,8 +136,11 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
     struct MPID_Segment_piece_params unpack_params;
     
     unpack_params.u.unpack.unpack_buffer = (DLOOP_Buffer) unpack_buffer;
-    MPID_Segment_manipulate(segp, first, lastp, 
-			    MPID_Segment_contig_unpack_to_buf, 
+    MPID_Segment_manipulate(segp,
+			    first,
+			    lastp, 
+			    MPID_Segment_contig_unpack_to_buf,
+			    NULL,
 			    &unpack_params);
     return;
 }
@@ -180,7 +187,7 @@ static int MPID_Segment_contig_pack_to_iov(int *blocks_p,
 
 /* MPID_Segment_unpack_vector
  *
- * Q: Should this be any different from pack vector???
+ * Q: Should this be any different from pack vector?
  */
 void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
 				DLOOP_Offset first,

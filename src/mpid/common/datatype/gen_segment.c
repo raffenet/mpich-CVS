@@ -272,11 +272,19 @@ do {						\
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 
 					DLOOP_Offset *lastp, 
-					int (*piecefn) (int *blocks_p,
-							int el_size,
-							DLOOP_Offset rel_off,
-							void *bufp,
-							void *v_paramp),
+					int (*contigfn) (int *blocks_p,
+							 int el_size,
+							 DLOOP_Offset rel_off,
+							 void *bufp,
+							 void *v_paramp),
+					int (*vectorfn) (int *blocks_p,
+							 int count,
+							 int blklen,
+							 DLOOP_Offset stride,
+							 int el_size,
+							 DLOOP_Offset rel_off,
+							 void *bufp,
+							 void *v_paramp),
 					void *pieceparams)
 {
     int cur_sp, valid_sp;
@@ -305,7 +313,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	 * simplifies this code.
 	 */
 	tmp_last = first;
-	PREPEND_PREFIX(Segment_manipulate)(segp, 0, &tmp_last, NULL, NULL);
+	PREPEND_PREFIX(Segment_manipulate)(segp, 0, &tmp_last, NULL, NULL, NULL);
 	
 	/* verify that we're in the right location */
 	if (tmp_last != first) assert(0);
@@ -344,10 +352,15 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    myblocks = cur_elmp->curblock;
 		    break;
 		case DLOOP_KIND_VECTOR:
-		    /* TODO: RECOGNIZE ABILITY TO DO STRIDED COPIES --
-		     * ONLY GOOD FOR THE NON-VECTOR CASES...
+		    /* If we have a vector function and we're at the start of a contiguous
+		     * contiguous region, call the vector function on all the blocks.
+		     *
+		     * Otherwise we'll use the contig function to try to get lined up.
 		     */
-		    myblocks = cur_elmp->curblock;
+		    if (vectorfn && cur_elmp->orig_block == cur_elmp->curblock)
+			myblocks = cur_elmp->curblock * cur_elmp->curcount;
+		    else
+			myblocks = cur_elmp->curblock;
 		    break;
 		default:
 		    assert(0);
@@ -377,12 +390,26 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    else {
 		partial_flag = 0; /* handling everything left for this type */
 	    }
-
-	    if (piecefn) piecefn_indicated_exit = piecefn(&myblocks,
-							  basic_size, /* this will become a type later probably */
-							  cur_elmp->curoffset, /* relative to bufptr */
-							  segp->ptr, /* start of buffer (from segment) */
-							  pieceparams);
+	    if (vectorfn &&
+		cur_elmp->orig_block == cur_elmp->curblock &&
+		(cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_VECTOR)
+	    {
+		piecefn_indicated_exit = vectorfn(&myblocks,
+						  cur_elmp->curcount,
+						  cur_elmp->orig_block,
+						  cur_elmp->loop_p->loop_params.v_t.stride,
+						  basic_size, /* for hetero this is a type */
+						  cur_elmp->curoffset, /* relative to segp->ptr */
+						  segp->ptr, /* start of buffer (from segment) */
+						  pieceparams);
+	    }
+	    else if (contigfn) {
+		piecefn_indicated_exit = contigfn(&myblocks,
+						  basic_size, /* for hetero this is a type */
+						  cur_elmp->curoffset, /* relative to segp->ptr */
+						  segp->ptr, /* start of buffer (from segment) */
+						  pieceparams);
+	    }
 	    else {
 		piecefn_indicated_exit = 0;
 #ifdef DLOOP_M_VERBOSE
