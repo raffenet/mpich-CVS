@@ -129,6 +129,9 @@ foreach $_ (@ARGV) {
     elsif (/-depend/) {
 	$do_dependencies = 1;
     }
+    elsif (/-nodepend/) {
+	$do_dependencies = 0;
+    }
     elsif (/-help/) {
 	&printHelp;
 	exit 0;
@@ -251,6 +254,7 @@ sub ReadMfile {
 	    if ($1 eq ".SUFFIXES") { $ExplicitSuffixes .= $2; }
 	    # Look for special autoconf directory names
 	    &LookForAutoconfDirs( $_ );
+	    &LookForSuffixes( $_ );
 	}
 	else {
 	    $other_text .= "$origline";
@@ -637,6 +641,18 @@ sub LookForAutoconfDirs {
 	}
     }
 }
+
+sub LookForSuffixes {
+    $line = $_[0]; 
+    while ($line =~ /^[^\.]*\.(\w*)\s*(.*)$/) {
+	$suffix = $1;
+	$line   = $2;
+	if (defined($extdef{$suffix})) {
+	    $ext_seen{$suffix} = 1;
+	}
+    }
+}
+
 #
 # ===========================================================================
 # The "all" target.
@@ -675,6 +691,10 @@ sub TargetAll {
 	}
     }
     else {
+	if (defined($usertargets{"all-local"})) {
+	    # Add all-local as a target
+	    print FD " all-local ";
+	}
 	&ListTargets;
     }
     print FD "\n";

@@ -10,6 +10,9 @@ fi
 #
 # Create the Makefile.in files
 otherargs="$@"
+if [ ! -s src/include/mpi.h ] ; then 
+    otherargs="$otherargs -nodepend"
+fi
 maint/simplemake -common=maint/makedefs \
     -autoconf="-l ROOTDIR/confdb" \
     -libdir='${MPILIBNAME}'=ROOTDIR/lib $otherargs \
