@@ -1065,7 +1065,48 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    sock->read.progress_update(num_bytes, sock->user_ptr);
 			/* post a read of the remaining data */
 			/*WSARecv(sock->sock, sock->read.iov, sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL);*/
-			WSARecv(sock->sock, &sock->read.iov[sock->read.index], sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL);
+			if (WSARecv(sock->sock, &sock->read.iov[sock->read.index], sock->read.iovlen, &sock->read.num_bytes, &dwFlags, &sock->read.ovl, NULL) == SOCKET_ERROR)
+			{
+			    error = WSAGetLastError();
+			    if (error == 0)
+			    {
+				out->error = SOCK_EOF;
+				out->num_bytes = sock->read.total;
+				out->op_type = SOCK_OP_READ;
+				out->user_ptr = sock->user_ptr;
+				sock->pending_operations--;
+				sock->state ^= SOCK_READING;
+				if (sock->closing && sock->pending_operations == 0)
+				{
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+				    FlushFileBuffers((HANDLE)sock->sock);
+				    shutdown(sock->sock, SD_BOTH);
+				    closesocket(sock->sock);
+				    sock->sock = INVALID_SOCKET;
+				}
+				MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				return SOCK_SUCCESS;
+			    }
+			    if (error != WSA_IO_PENDING)
+			    {
+				out->error = WinToSockError(error);
+				out->num_bytes = sock->read.total;
+				out->op_type = SOCK_OP_READ;
+				out->user_ptr = sock->user_ptr;
+				sock->pending_operations--;
+				sock->state ^= SOCK_READING;
+				if (sock->closing && sock->pending_operations == 0)
+				{
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+				    FlushFileBuffers((HANDLE)sock->sock);
+				    shutdown(sock->sock, SD_BOTH);
+				    closesocket(sock->sock);
+				    sock->sock = INVALID_SOCKET;
+				}
+				MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				return SOCK_SUCCESS;
+			    }
+			}
 		    }
 		    else
 		    {
@@ -1095,7 +1136,48 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			if (sock->read.progress_update != NULL)
 			    sock->read.progress_update(num_bytes, sock->user_ptr);
 			/* post a read of the remaining data */
-			ReadFile((HANDLE)(sock->sock), sock->read.buffer, sock->read.bufflen, &sock->read.num_bytes, &sock->read.ovl);
+			if (!ReadFile((HANDLE)(sock->sock), sock->read.buffer, sock->read.bufflen, &sock->read.num_bytes, &sock->read.ovl))
+			{
+			    error = GetLastError();
+			    if (error == ERROR_HANDLE_EOF || error == 0)
+			    {
+				out->error = SOCK_EOF;
+				out->num_bytes = sock->read.total;
+				out->op_type = SOCK_OP_READ;
+				out->user_ptr = sock->user_ptr;
+				sock->pending_operations--;
+				sock->state ^= SOCK_READING;
+				if (sock->closing && sock->pending_operations == 0)
+				{
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+				    FlushFileBuffers((HANDLE)sock->sock);
+				    shutdown(sock->sock, SD_BOTH);
+				    closesocket(sock->sock);
+				    sock->sock = INVALID_SOCKET;
+				}
+				MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				return SOCK_SUCCESS;
+			    }
+			    if (error != ERROR_IO_PENDING)
+			    {
+				out->error = WinToSockError(error);
+				out->num_bytes = sock->read.total;
+				out->op_type = SOCK_OP_READ;
+				out->user_ptr = sock->user_ptr;
+				sock->pending_operations--;
+				sock->state ^= SOCK_READING;
+				if (sock->closing && sock->pending_operations == 0)
+				{
+				    MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+				    FlushFileBuffers((HANDLE)sock->sock);
+				    shutdown(sock->sock, SD_BOTH);
+				    closesocket(sock->sock);
+				    sock->sock = INVALID_SOCKET;
+				}
+				MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				return SOCK_SUCCESS;
+			    }
+			}
 		    }
 		}
 		else if (ovl == &sock->write.ovl)
@@ -1174,7 +1256,48 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				sock->write.progress_update(num_bytes, sock->user_ptr);
 			    /* post a write of the remaining data */
 			    MPIU_DBG_PRINTF(("sock_wait: posting write of the remaining data, vec size %d\n", sock->write.iovlen));
-			    WSASend(sock->sock, sock->write.iov, sock->write.iovlen, &sock->write.num_bytes, 0, &sock->write.ovl, NULL);
+			    if (WSASend(sock->sock, sock->write.iov, sock->write.iovlen, &sock->write.num_bytes, 0, &sock->write.ovl, NULL) == SOCKET_ERROR)
+			    {
+				error = WSAGetLastError();
+				if (error == 0)
+				{
+				    out->error = SOCK_EOF;
+				    out->num_bytes = sock->write.total;
+				    out->op_type = SOCK_OP_WRITE;
+				    out->user_ptr = sock->user_ptr;
+				    sock->pending_operations--;
+				    sock->state ^= SOCK_WRITING;
+				    if (sock->closing && sock->pending_operations == 0)
+				    {
+					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+					FlushFileBuffers((HANDLE)sock->sock);
+					shutdown(sock->sock, SD_BOTH);
+					closesocket(sock->sock);
+					sock->sock = INVALID_SOCKET;
+				    }
+				    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				    return SOCK_SUCCESS;
+				}
+				if (error != WSA_IO_PENDING)
+				{
+				    out->error = WinToSockError(error);
+				    out->num_bytes = sock->write.total;
+				    out->op_type = SOCK_OP_WRITE;
+				    out->user_ptr = sock->user_ptr;
+				    sock->pending_operations--;
+				    sock->state ^= SOCK_WRITING;
+				    if (sock->closing && sock->pending_operations == 0)
+				    {
+					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+					FlushFileBuffers((HANDLE)sock->sock);
+					shutdown(sock->sock, SD_BOTH);
+					closesocket(sock->sock);
+					sock->sock = INVALID_SOCKET;
+				    }
+				    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				    return SOCK_SUCCESS;
+				}
+			    }
 			}
 			else
 			{
@@ -1209,7 +1332,48 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    if (sock->write.progress_update != NULL)
 				sock->write.progress_update(num_bytes, sock->user_ptr);
 			    /* post a write of the remaining data */
-			    WriteFile((HANDLE)(sock->sock), sock->write.buffer, sock->write.bufflen, &sock->write.num_bytes, &sock->write.ovl);
+			    if (!WriteFile((HANDLE)(sock->sock), sock->write.buffer, sock->write.bufflen, &sock->write.num_bytes, &sock->write.ovl))
+			    {
+				error = GetLastError();
+				if (error == ERROR_HANDLE_EOF || error == 0)
+				{
+				    out->error = SOCK_EOF;
+				    out->num_bytes = sock->write.total;
+				    out->op_type = SOCK_OP_WRITE;
+				    out->user_ptr = sock->user_ptr;
+				    sock->pending_operations--;
+				    sock->state ^= SOCK_WRITING;
+				    if (sock->closing && sock->pending_operations == 0)
+				    {
+					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+					FlushFileBuffers((HANDLE)sock->sock);
+					shutdown(sock->sock, SD_BOTH);
+					closesocket(sock->sock);
+					sock->sock = INVALID_SOCKET;
+				    }
+				    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				    return SOCK_SUCCESS;
+				}
+				if (error != ERROR_IO_PENDING)
+				{
+				    out->error = WinToSockError(error);
+				    out->num_bytes = sock->write.total;
+				    out->op_type = SOCK_OP_WRITE;
+				    out->user_ptr = sock->user_ptr;
+				    sock->pending_operations--;
+				    sock->state ^= SOCK_WRITING;
+				    if (sock->closing && sock->pending_operations == 0)
+				    {
+					MPIU_DBG_PRINTF(("sock_wait: closing socket(%d) after iov read completed.\n", sock_getid(sock)));
+					FlushFileBuffers((HANDLE)sock->sock);
+					shutdown(sock->sock, SD_BOTH);
+					closesocket(sock->sock);
+					sock->sock = INVALID_SOCKET;
+				    }
+				    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+				    return SOCK_SUCCESS;
+				}
+			    }
 			}
 		    }
 		}
