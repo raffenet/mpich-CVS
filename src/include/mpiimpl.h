@@ -1201,13 +1201,13 @@ extern int MPID_THREAD_LEVEL;
 #ifdef MPICH_MACROS_ARE_FUNCTIONS
 void MPIR_Wait(MPID_Request *);
 #else
-#define MPIR_Wait(request_ptr)			\
+#define MPIR_Wait(request_ptr_)			\
 {						\
-    while((*request_ptr->cc_ptr) != 0)		\
+    while((*(request_ptr_)->cc_ptr) != 0)	\
     {						\
         MPID_Progress_start();			\
 						\
-        if ((*request_ptr->cc_ptr) != 0)	\
+        if ((*(request_ptr_)->cc_ptr) != 0)	\
         {					\
             MPID_Progress_wait();		\
         }					\
@@ -1220,41 +1220,41 @@ void MPIR_Wait(MPID_Request *);
 }
 #endif
 
-#define MPIR_Status_set_empty(status)		\
-{						\
-    if ((status) != MPI_STATUS_IGNORE)		\
-    {						\
-	(status)->MPI_SOURCE = MPI_ANY_SOURCE;	\
-	(status)->MPI_TAG = MPI_ANY_TAG;	\
-	(status)->MPI_ERROR = MPI_SUCCESS;	\
-	(status)->count = 0;			\
-	(status)->cancelled = FALSE;		\
-    }						\
+#define MPIR_Status_set_empty(status_)			\
+{							\
+    if ((status_) != MPI_STATUS_IGNORE)			\
+    {							\
+	(status_)->MPI_SOURCE = MPI_ANY_SOURCE;		\
+	(status_)->MPI_TAG = MPI_ANY_TAG;		\
+	/* (status_)->MPI_ERROR = MPI_SUCCESS; */	\
+	(status_)->count = 0;				\
+	(status_)->cancelled = FALSE;			\
+    }							\
 }
 /* See MPI 1.1, section 3.11, Null Processes */
-#define MPIR_Status_set_procnull(status)	\
-{						\
-    if ((status) != MPI_STATUS_IGNORE)		\
-    {						\
-	(status)->MPI_SOURCE = MPI_PROC_NULL;	\
-	(status)->MPI_TAG = MPI_ANY_TAG;	\
-	(status)->MPI_ERROR = MPI_SUCCESS;	\
-	(status)->count = 0;			\
-	(status)->cancelled = FALSE;		\
-    }						\
+#define MPIR_Status_set_procnull(status_)		\
+{							\
+    if ((status_) != MPI_STATUS_IGNORE)			\
+    {							\
+	(status_)->MPI_SOURCE = MPI_PROC_NULL;		\
+	(status_)->MPI_TAG = MPI_ANY_TAG;		\
+	/* (status_)->MPI_ERROR = MPI_SUCCESS; */	\
+	(status_)->count = 0;				\
+	(status_)->cancelled = FALSE;			\
+    }							\
 }
 
-#define MPIR_Request_extract_status(_request_ptr, _status)								\
+#define MPIR_Request_extract_status(request_ptr_, status_)								\
 {															\
-    if ((_status) != MPI_STATUS_IGNORE)											\
+    if ((status_) != MPI_STATUS_IGNORE)											\
     {															\
-	int __error;													\
+	int error__;													\
 															\
 	/* According to the MPI 1.1 standard page 22 lines 9-12, the MPI_ERROR field may not be modified except by the	\
 	   functions in section 3.7.5 which return MPI_ERR_IN_STATUSES (MPI_Wait{all,some} and MPI_Test{all,some}). */	\
-	__error = (_status)->MPI_ERROR;											\
-	*(_status) = (_request_ptr)->status;										\
-	(_status)->MPI_ERROR = __error;											\
+	error__ = (status_)->MPI_ERROR;											\
+	*(status_) = (request_ptr_)->status;										\
+	(status_)->MPI_ERROR = error__;											\
     }															\
 }
 
@@ -1286,6 +1286,7 @@ int MPIR_Group_create( int, MPID_Group ** );
 
 int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *, int *);
+int MPIR_Request_get_error(MPID_Request *);
 
 /* ADI Bindings */
 int MPID_Init(int *, char ***, int, int *, int *, int *);
