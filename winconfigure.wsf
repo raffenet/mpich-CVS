@@ -87,10 +87,16 @@
 			helpstring = "Generate the interfaces (c++,f77,f90,etc)"
 			required = "false"
 		/>
+		<unnamed
+			name = "--remove-fortran"
+			helpstring = "Remove fortran code and interfaces"
+			required = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
 
+bRemoveFortran = False
 bWin64 = False
 bUseCycleCounter = True
 bForce = True
@@ -177,6 +183,8 @@ For arg = 0 To argCount - 1
 	' BuildIFaces needs the dictionary object to replace the @xxx@s in mpif.h
 	'BuildIFaces()
 	WScript.Quit
+  ElseIf argValue = "--remove-fortran" Then
+    bRemoveFortran = True
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -998,66 +1006,69 @@ Function BuildIFaces()
 		
 	End If
 
-	'
-	' Generate mpif.h
-	'
-	If bForce Or Not f.FileExists("src\binding\f77\mpif.h.in") Then
+	If Not bRemoveFortran Then
+		'
+		' Generate mpif.h
+		'
+		If bForce Or Not f.FileExists("src\binding\f77\mpif.h.in") Then
 
-		Set WshShell = CreateObject("WScript.Shell")
-		WshShell.CurrentDirectory = "src\binding\f77"
-		WshShell.Run "perl buildiface", 0, true
-		WshShell.CurrentDirectory = "..\..\.."
+			Set WshShell = CreateObject("WScript.Shell")
+			WshShell.CurrentDirectory = "src\binding\f77"
+			WshShell.Run "perl buildiface", 0, true
+			WshShell.CurrentDirectory = "..\..\.."
 
+		End If
+
+		If f.FileExists("src\binding\f77\mpif.h.in") Then
+
+			set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
+			set fout = f.CreateTextFile("src\include\mpif.h")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+
+		Else
+	
+			WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
+	
+		End If
+	
+		'
+		' Generate setbotf.f
+		'
+		If f.FileExists("src\binding\f77\setbotf.f.in") Then
+
+			set fin = f.OpenTextFile("src\binding\f77\setbotf.f.in")
+			set fout = f.CreateTextFile("src\binding\f77\setbotf.f")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+
+		End If
+
+		'
+		' Generate F90 module files
+		'
+		If bForce Or Not f.FileExists("src\binding\f90\mpi.f90") Then
+
+			Set WshShell = CreateObject("WScript.Shell")
+			WshShell.CurrentDirectory = "src\binding\f90"
+			WshShell.Run "perl buildiface", 0, true
+			WshShell.CurrentDirectory = "..\..\.."
+
+		End If
+
+		If Not f.FileExists("src\binding\f90\mpi.f90") Then
+
+			WScript.Echo("Run ""perl buildiface"" from the src\binding\f90 directory to generate the F90 modules")
+
+		End If
+	
 	End If
-
-	If f.FileExists("src\binding\f77\mpif.h.in") Then
-
-		set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
-		set fout = f.CreateTextFile("src\include\mpif.h")
-		contents = fin.ReadAll()
-		contents = ReplaceAts(contents, true)
-		fout.Write(contents)
-		fin.Close()
-		fout.Close()
-
-	Else
-	
-	  WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
-	
-	End IF
-	
-	'
-	' Generate setbotf.f
-	'
-	If f.FileExists("src\binding\f77\setbotf.f.in") Then
-
-		set fin = f.OpenTextFile("src\binding\f77\setbotf.f.in")
-		set fout = f.CreateTextFile("src\binding\f77\setbotf.f")
-		contents = fin.ReadAll()
-		contents = ReplaceAts(contents, true)
-		fout.Write(contents)
-		fin.Close()
-		fout.Close()
-
-	End IF
-
-	'
-	' Generate F90 module files
-	'
-	If bForce Or Not f.FileExists("src\binding\f90\mpi.f90") Then
-
-		Set WshShell = CreateObject("WScript.Shell")
-		WshShell.CurrentDirectory = "src\binding\f90"
-		WshShell.Run "perl buildiface", 0, true
-		WshShell.CurrentDirectory = "..\..\.."
-
-	End If
-
-	If Not f.FileExists("src\binding\f90\mpi.f90") Then
-
-		WScript.Echo("Run ""perl buildiface"" from the src\binding\f90 directory to generate the F90 modules")
-
-	End IF
 
 End Function
 
@@ -1124,19 +1135,20 @@ Function GenerateStatesFiles()
 		fout.Write(contents)
 		fin.Close()
 		fout.Close()
+		Set WshShell = CreateObject("WScript.Shell")
+		WshShell.Run "perl maint\genstates", 0, true
 
 	Else
+
 		If InStr(1, WScript.FullName, "cscript") > 0 Then
 			WScript.Echo("Missing file: maint\genstates.in")
 		End If
   
 	End If
-	
-	Set WshShell = CreateObject("WScript.Shell")
-	WshShell.Run "perl maint\genstates", 0, true
+
 End Function
 
-If bForce Or Not f.FileExists("maint\genstates") Then
+If bForce Then
 	GenerateStatesFiles()
 End If
 
@@ -1961,20 +1973,23 @@ Sub WriteFooter( fout )
 	fout.WriteLine("#endif")
 End Sub
 
-'
-' mpi_fortconf.h
-'
-Set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
-Call WriteHeader(fout, "mpi_fort")
-Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in")
-fout.WriteLine("#ifndef HAVE_WINDOWS_H")
-fout.WriteLine("#define HAVE_WINDOWS_H")
-fout.WriteLine("#endif")
-fout.WriteLine("")
-fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
-fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
-Call WriteFooter(fout)
-fout.Close()
+If Not bRemoveFortran Then
+	'
+	' mpi_fortconf.h
+	'
+	Set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
+	Call WriteHeader(fout, "mpi_fort")
+	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in")
+	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+	fout.WriteLine("#define HAVE_WINDOWS_H")
+	fout.WriteLine("#endif")
+	fout.WriteLine("")
+	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
+	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
+	Call WriteFooter(fout)
+	fout.Close()
+
+End If
 
 '
 ' mpichconf.h
@@ -2175,52 +2190,55 @@ If f.FileExists("test\mpi\include\mpitestconf.h.in") Then
 	fout.Close()
 End If
 
-'
-' attraints.h
-'
-If f.FileExists("test\mpi\f77\attr\attraints.h.in") Then
-	Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
-	Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
-	contents = fin.ReadAll()
-	contents = ReplaceAts(contents, false)
-	fout.Write(contents)
-	fout.Close()
-End If
+If Not bRemoveFortran Then
+	'
+	' attraints.h
+	'
+	If f.FileExists("test\mpi\f77\attr\attraints.h.in") Then
+		Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
+		Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
+		contents = fin.ReadAll()
+		contents = ReplaceAts(contents, false)
+		fout.Write(contents)
+		fout.Close()
+	End If
 
-'
-' typeaints.h
-'
-If f.FileExists("test\mpi\f77\datatype\typeaints.h.in") Then
-	Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
-	Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
-	contents = fin.ReadAll()
-	contents = ReplaceAts(contents, false)
-	fout.Write(contents)
-	fout.Close()
-End If
+	'
+	' typeaints.h
+	'
+	If f.FileExists("test\mpi\f77\datatype\typeaints.h.in") Then
+		Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
+		Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
+		contents = fin.ReadAll()
+		contents = ReplaceAts(contents, false)
+		fout.Write(contents)
+		fout.Close()
+	End If
 
-'
-' iooffset.h
-'
-If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
-	Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
-	Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
-	contents = fin.ReadAll()
-	contents = ReplaceAts(contents, false)
-	fout.Write(contents)
-	fout.Close()
-End If
+	'
+	' iooffset.h
+	'
+	If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
+		Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
+		Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
+		contents = fin.ReadAll()
+		contents = ReplaceAts(contents, false)
+		fout.Write(contents)
+		fout.Close()
+	End If
 
-'
-' addsize.h
-'
-If f.FileExists("test\mpi\f77\rma\addsize.h.in") Then
-	Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
-	Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
-	contents = fin.ReadAll()
-	contents = ReplaceAts(contents, false)
-	fout.Write(contents)
-	fout.Close()
+	'
+	' addsize.h
+	'
+	If f.FileExists("test\mpi\f77\rma\addsize.h.in") Then
+		Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
+		Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
+		contents = fin.ReadAll()
+		contents = ReplaceAts(contents, false)
+		fout.Write(contents)
+		fout.Close()
+	End If
+
 End If
 
 '
@@ -2340,6 +2358,107 @@ Function GenerateMPICC()
 End Function
 
 GenerateMPICC()
+
+If bRemoveFortran Then
+	'Dim regEx, Match, Matches
+	Set regEx = New RegExp
+	regEx.IgnoreCase = False
+	regEx.Global = True
+
+	' mpich2.def
+	'  remove:
+	'	MPIPRIV
+	'	MPIR_Keyval_set_fortran
+	'	MPIR_Keyval_set_fortran90
+	'	MPIR_Grequest_set_lang_f77
+	Set fin = f.OpenTextFile("mpich2.def")
+	contents = fin.ReadAll()
+	fin.Close()
+	regEx.Pattern = "(.*MPIPRIV)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*MPIR_Keyval_set_fortran)"
+	contents = regEx.Replace(contents, ";$1")
+	regEx.Pattern = "(.*MPIR_Grequest_set_lang_f77)"
+	contents = regEx.Replace(contents, ";$1")
+	Set fout = f.CreateTextFile( "mpich2.def" )
+	fout.Write(contents)
+	fout.Close()
+
+	' mpich2.sln
+	'  remove:
+	'	Project(..."mpich2f"...EndProject
+	'   Project(..."mpich2ff"...EndProject
+	'   fortDebug = fortDebug
+	'   fortRelease = fortRelease
+	'   gfortDebug = gfortDebug
+	'   gfortRelease = gfortRelease
+	'   sfortDebug = sfortDebug
+	'   sfortRelease = sfortRelease
+	'   *.fortDebug.*
+	'   *.fortRelease.*
+	'   *.gfortDebug.*
+	'   *.gfortRelease.*
+	'   *.sfortDebug.*
+	'   *.sfortRelease.*
+	'   *= fortDebug|Win32
+	'   *= fortRelease|Win32
+	'   *= gfortDebug|Win32
+	'   *= gfortRelease|Win32
+	'   *= sfortDebug|Win32
+	'   *= sfortRelease|Win32
+	Set fin = f.OpenTextFile( "mpich2.sln" )
+	contents = fin.ReadAll()
+	fin.Close()
+	regEx.Pattern = "Project\(.*""mpich2ff?"".*\s*.*\s*.*\s*.*EndProject[\r\n]*"
+	contents = regEx.Replace(contents, "")
+	regEx.Pattern = ".*[gs]?fortDebug = [gs]?fortDebug.*[\r\n]*"
+	contents = regEx.Replace(contents, "")
+	regEx.Pattern = ".*[gs]?fortRelease = [gs]?fortRelease.*[\r\n]*"
+	contents = regEx.Replace(contents, "")
+	regEx.Pattern = ".*\.[gs]*fortDebug\..*[\r\n]*"
+	contents = regEx.Replace(contents, "")
+	regEx.Pattern = ".*\.[gs]*fortRelease\..*[\r\n]*"
+	contents = regEx.Replace(contents, "")
+	regEx.Pattern = ".*= [gs]?fortDebug\|Win32[\r\n]*"
+	contents = regEx.Replace(contents, "")
+	regEx.Pattern = ".*= [gs]?fortRelease\|Win32[\r\n]*"
+	contents = regEx.Replace(contents, "")
+	Set fout = f.CreateTextFile( "mpich2.sln" )
+	fout.Write(contents)
+	fout.Close()
+	
+	' mpich2.vcproj
+	'  remove:
+	'   ,HAVE_FORTRAN_BINDING
+	'   mpich2ffd.lib
+	'   mpich2ff.lib
+	Set fin = f.OpenTextFile( "mpich2.vcproj" )
+	contents = fin.ReadAll()
+	fin.Close()
+	contents = Replace(contents, ",HAVE_FORTRAN_BINDING", "")
+	contents = Replace(contents, "mpich2ffd.lib", "")
+	contents = Replace(contents, "mpich2ff.lib", "")
+	Set fout = f.CreateTextFile( "mpich2.vcproj" )
+	fout.Write(contents)
+	fout.Close()
+
+	' mpich2s.vcproj
+	'  remove:
+	'   lib\mpich2ffd.lib
+	'   lib\mpich2ff.lib
+	Set fin = f.OpenTextFile( "mpich2s.vcproj" )
+	contents = fin.ReadAll()
+	fin.Close()
+	contents = Replace(contents, "lib\\mpich2ffd.lib", "")
+	contents = Replace(contents, "lib\\mpich2ff.lib", "")
+	Set fout = f.CreateTextFile( "mpich2s.vcproj" )
+	fout.Write(contents)
+	fout.Close()
+
+	' maint\mpich2i.vdproj
+	'  remove:
+	'   lots of stuff
+End If
 
 '
 ' Report any errors
