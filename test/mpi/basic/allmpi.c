@@ -295,13 +295,16 @@ void testAll(void)
     MPI_Status_c2f(&status, &fint);
     MPI_Status_f2c(&fint, &status);
 #endif
+#ifdef ROMIO_VERSION
+    /* Leave these out until they are moved out of ROMIO */
     MPI_Type_create_darray(i, i, i, &i, &i, &i, &i, i, dtype, &dtype);
+    MPI_Type_create_subarray(i, &i, &i, &i, i, dtype, &dtype);
+#endif
     MPI_Type_create_hindexed(i, &i, &aint, dtype, &dtype);
     MPI_Type_create_hvector(i, i, aint, dtype, &dtype);
     MPI_Type_create_indexed_block(i, i, &i, dtype, &dtype);
     MPI_Type_create_resized(dtype, aint, aint, &dtype);
     MPI_Type_create_struct(i, &i, &aint, &dtype, &dtype);
-    MPI_Type_create_subarray(i, &i, &i, &i, i, dtype, &dtype);
     MPI_Type_get_extent(dtype, &aint, &aint);
     MPI_Type_get_true_extent(dtype, &aint, &aint);
     MPI_Unpack_external(cbuf, vbuf, aint, &aint, vbuf, i, dtype); 
