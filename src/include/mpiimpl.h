@@ -1338,7 +1338,7 @@ typedef struct MPID_Win {
     void **base_addrs;     /* array of base addresses of the windows of
                               all processes */
     int *disp_units;      /* array of displacement units of all windows */
-    int *all_win_handles;    /* array of handles to the window objects
+    MPI_Win *all_win_handles;    /* array of handles to the window objects
                                           of all processes */
     MPIDI_RMA_ops *rma_ops_list; /* list of outstanding RMA requests */
     volatile int lock_granted;  /* flag to indicate whether lock has 
