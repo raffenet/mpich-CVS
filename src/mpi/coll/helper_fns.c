@@ -101,7 +101,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	}
-	/* -- END ERROR HANDLING-- */
+	/* --END ERROR HANDLING-- */
         MPID_Request_release(request_ptr);
     }
     MPIDI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
