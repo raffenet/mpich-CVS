@@ -79,7 +79,6 @@ int MPID_Type_contiguous(int count,
 	new_dtp->loopinfo       = dlp;
 
 	/* fill in dataloop */
-	/* NOTE: element size in kind is probably wrong */
 	dlp->kind                       = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
 	dlp->handle                     = new_dtp->handle;
 	dlp->loop_params.c_t.count      = count;
