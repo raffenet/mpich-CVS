@@ -22,111 +22,56 @@ Tasks for this state machine:
 This version of the state machine only handles receiving data into a user
 provided buffer.  It needs to be expanded to include the forwarding cases.
 
-State [Await Header Pkt]
-    Event [Pkt Short](context_id, src, tag, msg_size, msg_data)
-        get comm from context_id
-        MPICA_recv_incoming_foa(comm, src, tag, &car, &found)
+CP = control packet
+DP = data packet(s)
 
-        if (found)
-	    unpack data from packet buffer into user buffer
-	    decrement completion counter
-	    free car
-	else
-            allocate a temporary buffer
-	    copy data from packet into temporary (packed) buffer    
-	State_Change([Await Message], [short])
-
-    Event [Pkt Eager](tag, src, context_id, msg_size, msg_data)
-        get comm from context_id
-        MPID_CA_recv_incoming_foa(comm, src, tag, &car, &found)
-
-        if (found)
-	    unpack data from packet buffer into user buffer
-        else
-            allocate temporary buffers large enough to hold msg data
-	    copy data from packet into temporary (packed) buffer    
-	record car as active car in VC
-	State_Change([Await Data Pkts], [short])
-
-    Event [Pkt Rndv-RTS](context_id, src, tag, remote_liba, msg_size)
-        get comm from context_id
-        MPID_CA_recv_incoming_foa(comm, src, tag, &car, &found)
-
-	if (found)
-            enqueue Rndv-CTS message on VC send queue
-	      (message contains local and remote LIBAs)
-	else
-            store remote LIBA in car
-
-    Event [Pkt Rndv-CTS](local_liba)
-	use LIBA to locate send car
-	enqueue Rndv-Data on VC send queue
-          (reuse previously located send car)
-
-    Event [Pkt Rndv-Data](local_liba, msg_data)
-	use LIBA to locate recv car
-	unpack data from packet buffer into user buffer
-	record car as active car in VC
-	State_Change([Await Data Pkts], [rndv-data])
-
-State [Await Data Pkts]
-    Event [Pkt Data]
-	unpack data from packet buffer into user buffer
-	if more data is expected
-	    State_Change([Await Data Pkts], [!done])
-        else
-	    State_Change([Await Header Pkts], [msg recvd])
-
-
-****************************
-NEW STUFF IS DOWN HERE
-
-State [Await Incoming Ctrl Pkt]
+State [Await CP],[label="Await Incoming\nControl Packet"]
     Event [Pkt]
-        Invoke_Action[Determine Ctrl Pkt Type]
+        Invoke_Action[Determine CP Type],[label="got ctrl pkt"]
 
-Action [Determine Ctrl Pkt Type]
+Action [Determine CP Type]
     Get_Next_Packet_And_Process_Ring_Buffer()
     switch (packet type)
         case flow
-	    Invoke_Action[Process Flow Ctrl Pkt]
+	    Invoke_Action[Proc Flow CP]
         case rndv-rts
-	    Invoke_Action[Process Rndv-RTS Ctrl Pkt]
+	    Invoke_Action[Proc Rndv-RTS CP]
         case rndv-cts
-	    Invoke_Action[Process Rndv-CTS Ctrl Pkt]
+	    Invoke_Action[Proc Rndv-CTS CP]
         case short
-	    Invoke_Action[Process Short Ctrl Pkt]
+	    Invoke_Action[Proc Short CP]
         case eager
-	    Invoke_Action[Process Eager Ctrl Pkt]
+	    Invoke_Action[Proc Eager CP]
         case rndv-data
-	    Invoke_Action[Process Rndv-Data Ctrl Pkt]
+	    Invoke_Action[Proc Rndv-Data CP]
 
-Action [Process Flow Ctrl Pkt]
+Action [Proc Flow CP]
     // TODO: We need to figure out what needs to happen when we receive an
     // explicit flow control packet.  For that matter, we need to figure out
     // how to deal with flow control in general...
-    State_Change([Await Incoming Ctrl Pkt])
+    Change_State([Await CP])
 
-Action [Process Rndv-RTS Ctrl Pkt]
-    State_Change([Await Incoming Ctrl Pkt])
+Action [Proc Rndv-RTS CP]
+    Change_State([Await CP])
 
-Action [Process Rndv-CTS Ctrl Pkt]
-    State_Change([Await Incoming Ctrl Pkt])
+Action [Proc Rndv-CTS CP]
+    Change_State([Await CP])
 
-Action [Process Short Ctrl Pkt]
-    State_Change([Await Incoming Ctrl Pkt])
+Action [Proc Short CP]
+    Change_State([Await CP])
 
-Action [Process Eager Ctrl Pkt]
+Action [Proc Eager CP]
     Invoke_Action([Check For Posted Request])
 
-Action [Check for Posted Request]
+Action [Check For Posted Request]
     recv_incoming_foa(..., &found)
     if (found)
-        Change_State([Recv Posted])
+        Change_State([Recv Posted Data])
     else
-        Change_State([Recv Unexpected])
+        Invoke_Action([Proc Unexp Eager CP Data])
 
-Action [Process Eager Data in Ctrl Pkt]
+Action [Proc Unexp Eager CP Data],
+       [label="Process Unexpected\nEager CP Data"]
     decide whether to keep the data in the packets or make a temporary copy
     // this decision might be affected by the availability of buffers to 
     // serve as replacements if we were to keep the ones we receive data in.
@@ -139,15 +84,16 @@ Action [Process Eager Data in Ctrl Pkt]
         maybe allocate replacement buffers
     record in car how we decided to handle data (copy or keep in packets)
     if there are data pkts available locally
-        Invoke_Action([Process Unexpected Data Pkts])
+        Invoke_Action([Proc Unexp DP])
     else
-        Change_State([Await Unexpected Data Pkts])
+        Change_State([Await Unexp DP])
 
-State [Await Unexpected Data Pkts]
+State [Await Unexp DP]
     Event [Pkt]
-        Invoke_Action([Process Unexpected Data Pkts])
+        Invoke_Action([Proc Unexp DP])
 
-Action [Process Unexpected Data Pkts]
+Action [Proc Unexp DP],
+       [label="Process Unexpected\nData Packet(s)"]
     while there are data pkts available locally
         Get_Next_Packet_And_Process_Ring_Buffer()
         if we are copying data
@@ -158,18 +104,19 @@ Action [Process Unexpected Data Pkts]
             maybe allocate replacement buffers
     if all data pkts have been received
         if there are more packets // the first will be a ctrl pkt
-            Invoke_Action([Determine Ctrl Pkt Type])  // also grabs pkt
+            Invoke_Action([Determine CP Type],[label="more queued CPs"])  
+	    // also grabs pkt
         else
-            Change_State([Await Incoming Ctrl Pkt])
+            Change_State([Await CP])
     else
-        Change_State([Await Unexpected Data Pkts])
+        Change_State([Await Unexp DP],[label="empty incoming queue"])
 
-Action [Process Rndv-Data Ctrl Pkt]
-    Change_State([Recv Posted])
+Action [Proc Rndv-Data CP]
+    Change_State([Recv Posted Data])
 
-State [Recv Posted Data],[shape=pentagon]
+State [Recv Posted Data],[shape=polygon,sides=5]
     Event [finished]
-        Change_State([Await Incoming Ctrl Pkt])
+        Change_State([Await CP])
 
 Function Get_Next_Packet_And_Process_Ring_Buffer()
     get reference to packet so we can move it around
