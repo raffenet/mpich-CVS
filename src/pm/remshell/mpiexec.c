@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* OWNER=gropp */
 /*
  * This program provides a simple implementation of mpiexec that creates the
  * processes using a designated remote shell program.  This is intended as an 
@@ -324,6 +325,14 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    /* FIXME: Do we start with -n, or do we let mpiexec handle that? */
 	    /* myargv[rshNargs++] = "-n"; */
 	    /* FIXME: this assumes a particular shell syntax (csh) */
+	    /* FIXME: Some (all) GNU versions of remote shell are broken 
+	       because then interpret all arguments as intended for 
+	       the remote shell program, including those for the 
+	       remote command.  We may need to either escape any user
+	       argument that begins with a dash (e.g., \- instead of -)
+	       for this kind of remshell program; this must be a runtime
+	       decision so that we can all alternate choices of remote shell
+	       program */
 	    myargv[rshNargs++] = "setenv";
 	    myargv[rshNargs++] = "PMI_PORT";
 	    myargv[rshNargs++] = port_as_string;

@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* OWNER=gropp */
 #include "remshellconf.h"
 
 #include <stdio.h>
