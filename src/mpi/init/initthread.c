@@ -108,6 +108,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
     MPIR_Process.comm_parent = NULL;
 
+    /* Call any and all MPID_Init type functions */
+    MPID_Wtime_init();
     mpi_errno = MPID_Init(argc, argv, required, provided, &has_args, &has_env);
 
     MPIR_Process.initialized = MPICH_WITHIN_MPI;
