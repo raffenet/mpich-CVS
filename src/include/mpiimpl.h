@@ -943,6 +943,7 @@ int MPIR_Nest_value( void );
 /* ADI Bindings */
 int MPID_Init(int *, char ***, int, int *, int *, int *);
 int MPID_Finalize(void);
+int MPID_Abort( MPID_Comm *, int );
 
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Close_port(char *);
