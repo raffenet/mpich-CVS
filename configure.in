@@ -913,6 +913,23 @@ AC_CHECK_SIZEOF(float,$CROSS_SIZEOF_FLOAT)
 AC_CHECK_SIZEOF(double,$CROSS_SIZEOF_DOUBLE)
 AC_CHECK_SIZEOF(long double,$CROSS_SIZEOF_LONG_DOUBLE)
 AC_CHECK_SIZEOF(wchar_t,$CROSS_SIZEOF_WCHAR_T)
+# wchar_t is sometimes defined in stddef.h.  If we got a zero for its
+# size, and we have stddef.h, try again with an explicit test
+if test "$ac_cv_sizeof_wchar_t" = 0 -a "$ac_cv_header_stddef_h" = yes ; then
+    AC_CACHE_CHECK([for sizeof wchar_t],ac_cv_sizeof_wchar_t,[
+    rm -f conftestval 
+    AC_TRY_RUN([#include <stdio.h>
+#include <stddef.h>
+main()
+{
+  wchar_t a;
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof(a));
+  exit(0);
+}],ac_cv_sizeof_wchar_t=`cat conftestval`,ac_cv_sizeof_wchar_t=0,ac_cv_sizeof_wchar_t=$CROSS_SIZEOF_WCHAR_T)])
+  rm -f conftestval
+fi
 AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
 PAC_CHECK_SIZEOF_DERIVED(float int,[struct { float a; int b; }],$CROSS_SIZEOF_FLOAT_INT)
 PAC_CHECK_SIZEOF_DERIVED(double int,[struct { double a; int b; }],$CROSS_SIZEOF_DOUBLE_INT)
@@ -1461,7 +1478,8 @@ AC_HEADER_STDC
 # Check for a specific header
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
 # to compile.  Thus, we'll make that a separate test
-AC_CHECK_HEADERS(stdarg.h sys/types.h inttypes.h limits.h)
+# stddef.h is sometimes needed for types like wchar_t
+AC_CHECK_HEADERS(stdarg.h sys/types.h inttypes.h limits.h stddef.h)
 AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
 AC_TRY_COMPILE([
 #include <sys/types.h>
