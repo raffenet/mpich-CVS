@@ -515,19 +515,22 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 #ifdef HAVE_WINDOWS_H
 		if (!WriteProcessMemory(vc->ch.hSharedProcessHandle, rbuf, sbuf, len, &num_written))
 		{
-		    /*printf("WriteProcessMemory failed, error %d\n", GetLastError());*/
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "WriteProcessMemory failed", GetLastError());
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 		    return mpi_errno;
 		}
 		if (num_written == -1)
 		{
-		    /*printf("WriteProcessMemory wrote -1 bytes.\n");fflush(stdout);*/
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "WriteProcessMemory returned -1 bytes written");
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 		    return mpi_errno;
 		}
 #else
+
+#ifdef HAVE_PROC_RDMA_WRITE
+		/* write is not implemented in the /proc device. It is considered a security hole.  You can recompile a Linux
+		 * kernel with this function enabled and then define HAVE_PROC_RDMA_WRITE and this code will work.
+		 */
 		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, (loff_t)(unsigned)rbuf, &uOffset, SEEK_SET);
 		if (n != 0 || uOffset != (loff_t)(unsigned)(rbuf))
 		{
@@ -549,6 +552,60 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 		    }
 		    ptrace(PTRACE_PEEKDATA, vc->ch.nSharedProcessID, rbuf + len - num_written, 0);
 		}
+#else
+		/* Do not use this code.  Using PTRACE_POKEDATA for rdma writes gives horrible performance.
+		 * This code is only provided for correctness to show that the put model will run.
+		 */
+		do
+                {
+		    int *rbuf2;
+		    rbuf2 = (int*)rbuf;
+		    for (n=0; n<len/sizeof(int); n++)
+		    {
+			if (ptrace(PTRACE_POKEDATA, vc->ch.nSharedProcessID, rbuf2, &((int*)sbuf)[n]) != 0)
+			{
+			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace pokedata failed", errno);
+			    printf("EPERM = %d, ESRCH = %d, EIO = %d, EFAULT = %d\n", EPERM, ESRCH, EIO, EFAULT);fflush(stdout);
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+			    return mpi_errno;
+			}
+		    }
+		    n = len % sizeof(int);
+		    if (n > 0)
+		    {
+			if (len > sizeof(int))
+			{
+			    if (ptrace(PTRACE_POKEDATA, vc->ch.nSharedProcessID, rbuf + len - sizeof(int), ((int*)(sbuf + len - sizeof(int)))) != 0)
+			    {
+				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace pokedata failed", errno);
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+				return mpi_errno;
+			    }
+			}
+			else
+			{
+			    int data;
+			    data = ptrace(PTRACE_PEEKDATA, vc->ch.nSharedProcessID, rbuf + len - n, 0);
+			    if (data == -1 && errno != 0)
+			    {
+				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace peekdata failed", errno);
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+				return mpi_errno;
+			    }
+                            /* mask in the new bits */
+			    printf("FIXME!");fflush(stdout);
+			    if (ptrace(PTRACE_POKEDATA, vc->ch.nSharedProcessID, rbuf + len - n, &data) != 0)
+			    {
+				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace pokedata failed", errno);
+				MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+				return mpi_errno;
+			    }
+			}
+		    }
+		} while (0);
+		num_written = len;
+#endif
+
 #endif
 		/*printf("wrote %d bytes to remote process\n", num_written);fflush(stdout);*/
 		if (num_written < (SIZE_T)rbuf_len)
