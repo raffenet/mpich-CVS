@@ -734,8 +734,8 @@ def mpdman():
                         KVSs[spawnedKVSname] = {}
                         preput_num = int(parsedMsg['preput_num'])
                         for i in range(0,preput_num):
-                            preput_kvpair = parsedMsg['preput_%d' % i]
-                            (preput_key,preput_val) = preput_kvpair.split(':')
+                            preput_key = parsedMsg['preput_key_%d' % i]
+                            preput_val = parsedMsg['preput_val_%d' % i]
                             KVSs[spawnedKVSname][preput_key] = preput_val
                     elif parsedMsg['cmd'] == 'finalize':
                         pmiCollectiveJob = 0
