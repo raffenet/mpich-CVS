@@ -188,7 +188,8 @@ int tcp_make_progress()
     int nready = 0;
     struct timeval tv;
     MPIDI_VC *vc_iter;
-    bfd_set readset, writeset;
+    bfd_set readset;
+    bfd_set writeset;
     MPIDI_STATE_DECL(MPID_STATE_TCP_MAKE_PROGRESS);
     /*MPIDI_STATE_DECL(MPID_STATE_BSELECT);*/
 
@@ -201,6 +202,7 @@ int tcp_make_progress()
 	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
+
 
     /* This function needs a way to know if it should block or not */
     tv.tv_sec = 0;

@@ -342,6 +342,10 @@ SOURCE=.\src\shm\shm_post_write.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\sock\sock_iocp.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\tcp\tcp_can_connect.c
 # End Source File
 # Begin Source File
@@ -643,6 +647,10 @@ SOURCE=..\..\include\pmi.h
 # Begin Source File
 
 SOURCE=.\src\shm\shmimpl.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\sock.h
 # End Source File
 # Begin Source File
 

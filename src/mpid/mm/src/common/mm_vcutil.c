@@ -40,7 +40,7 @@ void mm_vc_finalize()
 }
 
 /*@
-   MPID_VCRT_create - create a vc reference table
+   MPID_VCRT_Create - create a vc reference table
 
    Parameters:
 +  int size - size
@@ -48,7 +48,7 @@ void mm_vc_finalize()
 
    Notes:
 @*/
-int MPID_VCRT_create(int size, MPID_VCRT *vcrt_ptr)
+int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 {
     MPID_VCRT p;
 
@@ -64,14 +64,14 @@ int MPID_VCRT_create(int size, MPID_VCRT *vcrt_ptr)
 }
 
 /*@
-   MPID_VCRT_add_ref - add reference count
+   MPID_VCRT_Add_ref - add reference count
 
    Parameters:
 +  MPID_VCRT vcrt - vc reference table
 
    Notes:
 @*/
-int MPID_VCRT_add_ref(MPID_VCRT vcrt)
+int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 {
     if (vcrt == NULL)
 	return MPI_ERR_ARG;
@@ -82,14 +82,14 @@ int MPID_VCRT_add_ref(MPID_VCRT vcrt)
 }
 
 /*@
-   MPID_VCRT_release - release vc reference table
+   MPID_VCRT_Release - release vc reference table
 
    Parameters:
 +  MPID_VCRT vcrt - vc reference table
 
    Notes:
 @*/
-int MPID_VCRT_release(MPID_VCRT vcrt)
+int MPID_VCRT_Release(MPID_VCRT vcrt)
 {
     if (vcrt == NULL)
 	return MPI_ERR_ARG;
@@ -106,7 +106,7 @@ int MPID_VCRT_release(MPID_VCRT vcrt)
 }
 
 /*@
-   MPID_VCRT_get_ptr - get pointer to the array of vc's in the reference table
+   MPID_VCRT_Get_ptr - get pointer to the array of vc's in the reference table
 
    Parameters:
 +  MPID_VCRT vcrt - vc reference table
@@ -114,7 +114,7 @@ int MPID_VCRT_release(MPID_VCRT vcrt)
 
    Notes:
 @*/
-int MPID_VCRT_get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
+int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 {
     if (vcrt == NULL)
 	return MPI_ERR_ARG;

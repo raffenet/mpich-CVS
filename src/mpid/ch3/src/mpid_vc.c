@@ -26,7 +26,7 @@ typedef struct MPIDI_VCRT
 MPIDI_VCRT;
 
 
-int MPID_VCRT_create(int size, MPID_VCRT *vcrt_ptr)
+int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 {
     MPIDI_VCRT * vcrt;
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_CREATE);
@@ -50,7 +50,7 @@ int MPID_VCRT_create(int size, MPID_VCRT *vcrt_ptr)
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
 }
 
-int MPID_VCRT_add_ref(MPID_VCRT vcrt)
+int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_ADD_REF);
 
@@ -60,7 +60,7 @@ int MPID_VCRT_add_ref(MPID_VCRT vcrt)
     return MPI_SUCCESS;
 }
 
-int MPID_VCRT_release(MPID_VCRT vcrt)
+int MPID_VCRT_Release(MPID_VCRT vcrt)
 {
     int count;
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_RELEASE);
@@ -83,7 +83,7 @@ int MPID_VCRT_release(MPID_VCRT vcrt)
     return MPI_SUCCESS;
 }
 
-int MPID_VCRT_get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
+int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_GET_PTR);
 
