@@ -1051,7 +1051,7 @@ int ibu_init()
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
-    IBU_Process.port = hca_cap.phys_port_num;
+    IBU_Process.port = 1;
     IBU_Process.cq_size = hca_cap.max_num_ent_cq;
     /* get a protection domain handle */
     status = VAPI_alloc_pd(IBU_Process.hca_handle, &IBU_Process.pd_handle);
