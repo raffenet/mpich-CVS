@@ -89,6 +89,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 			iter = smpd_get_string(iter, equal_str, SMPD_MAX_NAME_LENGTH, &num_chars);
 		    }
 		    iter = smpd_get_string(iter, data, SMPD_MAX_VALUE_LENGTH, &num_chars);
+		    smpd_dbg_printf("parsed <%s> <%s> <%s>\n", name, equal_str, data);
 		    if (num_chars > 0)
 		    {
 			node = (smpd_data_t*)malloc(sizeof(smpd_data_t));
@@ -126,11 +127,17 @@ SMPD_BOOL smpd_option_on(const char *option)
 {
     char val[SMPD_MAX_VALUE_LENGTH];
 
+    smpd_enter_fn("smpd_option_on");
+
     if (smpd_get_smpd_data(option, val, SMPD_MAX_VALUE_LENGTH) == SMPD_SUCCESS)
     {
 	if (strcmp(val, "yes") == 0 || strcmp(val, "1") == 0)
+	{
+	    smpd_exit_fn("smpd_option_on");
 	    return SMPD_TRUE;
+	}
     }
+    smpd_exit_fn("smpd_option_on");
     return SMPD_FALSE;
 }
 
@@ -293,6 +300,8 @@ int smpd_set_smpd_data(const char *key, const char *value)
     char *str;
     int maxlen;
     char buffer[1024];
+    char name_str[SMPD_MAX_NAME_LENGTH];
+    char value_str[SMPD_MAX_VALUE_LENGTH];
 
     smpd_enter_fn("smpd_set_smpd_data");
 
@@ -308,6 +317,7 @@ int smpd_set_smpd_data(const char *key, const char *value)
 	if (strcmp(key, node->name) == 0)
 	{
 	    smpd_add_string(node->value, SMPD_MAX_VALUE_LENGTH, value);
+	    buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
 	    found = 1;
 	}
 	if (fout)
@@ -331,13 +341,13 @@ int smpd_set_smpd_data(const char *key, const char *value)
 	    buffer[strlen(buffer)-1] = '\0'; /* remove the trailing space */
 	    fprintf(fout, "%s\n", buffer);
 	}
-	smpd_exit_fn("smpd_get_smpd_data");
+	smpd_exit_fn("smpd_set_smpd_data");
 	return SMPD_SUCCESS;
     }
     if (fout != NULL)
     {
 	fclose(fout);
-	smpd_exit_fn("smpd_get_smpd_data");
+	smpd_exit_fn("smpd_set_smpd_data");
 	return SMPD_SUCCESS;
     }
     smpd_exit_fn("smpd_set_smpd_data");
