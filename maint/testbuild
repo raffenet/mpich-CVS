@@ -1,5 +1,4 @@
 #! /bin/sh
-set -x
 #
 # This is a simple script that makes sure that checkbuilds can be 
 # created and then runs it
@@ -8,13 +7,15 @@ srcdir=/home/gropp/projects/mpich2
 rundir=/sandbox/gropp/cb/mpich2
 mpichtestdir=/sandbox/gropp/cb/mpitest
 outdir=/home/gropp/projects/mpich2-tests
-date=`date "+%Y-%M-%d"`
+date=`date "+%Y-%m-%d"`
 # default outfile
 outfile=testbuild.xml
-
+#
+# Option options to checkbuild
+other_opts=""
 #
 # Get options
-for arg ; do
+for arg in $@ ; do
     argval=""
     case $arg in 
         -*=*) argval=`echo "$arg" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
@@ -23,11 +24,13 @@ for arg ; do
     case $arg in 
     -outfile=*) outfile=$argval ;;
     -outdir=*)  outdir=$argval ;;
+    -echo) set -x ;;
+    *) other_opts="$other_opts $arg" ;;
     esac
 done
 
 # Construct the full outfile name from the dir and file
-$outfile="$outdir/$outfile";
+outfile="$outdir/$outfile"
 
 if [ ! -d $rundir ] ; then 
     # Assume that we have mkdir -p
@@ -43,7 +46,8 @@ fi
 if [ ! -d $mpichtestdir ] ; then
     mkdir $mpichtestdir
 fi
-(cd $rundir/maint && $srcdir/maint/configure )
+# Build the current version of checkbuilds
+(cd $rundir/maint && $srcdir/maint/configure 2>&1 >/dev/null)
 if [ ! -x $rundir/maint/checkbuilds ] ; then
     echo "Could not build checkbuilds"
     exit 1
@@ -53,5 +57,5 @@ fi
 $rundir/maint/checkbuilds -rundir=$rundir \
 			  -envopt="CC;cc;gcc" -envopt="FC;f77;g77" \
 			  -tests=mpich \
-			  -xml -maxcount=1 -outfile=$outfile
+			  -xml -maxcount=1 -outfile=$outfile $other_opts
 

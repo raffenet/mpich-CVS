@@ -11,6 +11,10 @@ $rundir = "";
 $mpich_test_dir = "/sandbox/gropp/cb/mpitest";
 $intel_test_dir = "/sandbox/gropp/cb/MPITEST";
 $mpich1_dir = "/home/gropp/tmp/cvstesting/mpich";
+# By default, use random arguments for the tests
+$use_rand_args = 1;
+#
+$is_xml = 0;
 #
 # Set available options.  For enable and with, the values are
 # {with,enable}-name[;possiblevalues]*
@@ -63,6 +67,8 @@ $MakeStart   = " -- Begin Make Step --\n";
 $MakeEnd     = " -- End   Make Step --\n";
 $MakeInstStart = " -- Begin Make Install Step --\n";
 $MakeInstEnd   = " -- End   Make Install Step --\n";
+$RunTestStart  = " -- Begin Run Test Step --\n";
+$RunTestEnd    = " -- End   Run Test Step --\n";
 $SumStart = "";
 $SumEnd   = "";
 $SumConfigStart = "Config status = ";
@@ -118,12 +124,29 @@ foreach $_ (@ARGV) {
     }
     elsif (/-xml/) {
 	&XMLStyle;
+	$is_xml = 1;
+    }
+    elsif (/-norand/) {
+	$use_rand_args = 0;
+    }
+    elsif (/-enable=(.*)/) {
+	$use_rand_args = 0;
+	$enable_args .= "$1 ";
+    }
+    elsif (/-with=(.*)/) {
+	$use_rand_args = 0;
+	$with_args .= "$1 ";
+    }
+    elsif (/-env=(.*)/) {
+	$use_rand_args = 0;
+	$env_args .= "--env-$1 ";
     }
     elsif (/-help/) {
 	print STDERR "\
 checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
             [-srcdir=SRCDIR] [-instdir=INSTALLDIR] 
             [-maxcount=MAXCNT] [-maxtime=MAXTIME] 
+            [-norand ] [-enable=enable-args] [-with=with-args]
         -enable-n=d sets the number of --enable options to try
         -with=n=d set the number of --with options to try
         -envopt=name;value;... adds an environment variable with possible
@@ -153,16 +176,17 @@ sub RunTest {
     # Create the with and enable options
     @enable_chosen = ();
     @with_chosen = ();
-    $enable_args = "--enable-strict";  # Only if compiler is gcc
-    $with_args = "";
+    #$enable_args = "--enable-strict";  # Only if compiler is gcc
     # Chosen *without* replacement.  If an option is chosen twice, 
     # then there will be fewer options
-    $enable_args = &RandArgs( $n_enable, "enable_array", "enable", "disable" );
-    $with_args   = &RandArgs ( $n_with, "with_array", "with", "without" );
-
-    # To set the environment, use the same code to set things up,
-    # then process the env array to set the environment
-    $env_args    = &RandArgs( $n_env, "env_array", "env" );
+    if ($use_rand_args) {
+	$enable_args = &RandArgs( $n_enable, "enable_array", "enable", "disable" );
+	$with_args   = &RandArgs ( $n_with, "with_array", "with", "without" );
+	
+	# To set the environment, use the same code to set things up,
+	# then process the env array to set the environment
+	$env_args    = &RandArgs( $n_env, "env_array", "env" );
+    }
     $envset = "";
     %saveENV = %ENV;
     foreach $_ (split(/ /,$env_args)) {
@@ -212,16 +236,22 @@ sub RunTest {
 	# print "rc = $rc\n";
 	if ($rc == 0) {
 	    print $OUTFD $MakeStart;
+	    # Remove mpd just in case (see below)
+	    unlink "bin/mpd";
 	    $rc = &RunProgram( "make" );
 	    print $OUTFD $MakeEnd;
 	    $make_status = $rc;
 	    if ($rc == 0) {
 		print $OUTFD $MakeInstStart;
+		# Clean the install directory
+		# ????
 		$install_status = &RunProgram( "make install" );
 		print $OUTFD $MakeInstEnd;
 		if ($install_status == 0) {
 		    # Get mpd status from the with args ...
-		    $built_for_mpd = 1;
+		    if (-x "bin/mpd") {
+			$built_for_mpd = 1;
+		    }
 		    $test_status = &RunTestSuites;
 		}
 	    }
@@ -323,7 +353,13 @@ sub RunTestSuites {
     my $run_status = 0;
     foreach my $testname (split(';',$tests)) {
 	if ($testname eq "") { next; }
-	print $OUTFD "Running test $testname...\n";
+	print $OUTFD $RunTestStart;
+	if ($is_xml) { 
+	    print $OUTFD "<TESTNAME>$testname</TESTNAME>\n";
+	    }
+	else {
+	    print $OUTFD "Running test $testname...\n";
+	}
 	if ($testname eq "mpich") {
 	    $cwd = `pwd`;
 	    my @config;
@@ -333,8 +369,8 @@ sub RunTestSuites {
 	    $config[2] = "-mpilibname=mpich";
 	    # Note that there are no quotes in the following because
 	    # they are not needed (no shell evaluation here)
-	    $config[3] = "-cc=\"gcc -I$instdir/include -L$instdir/lib\"";
-	    $config[4] = "-fc=\"f77 -I$instdir/include -L$instdir/lib\"";
+	    $config[3] = "-cc=gcc -I$instdir/include -L$instdir/lib";
+	    $config[4] = "-fc=f77 -I$instdir/include -L$instdir/lib";
 	    #$config[5] = "--enable-echo";
 	    %saveENV = %ENV;
 	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
@@ -357,7 +393,7 @@ sub RunTestSuites {
 		}
 		$rc = &RunProgram( "make testing" );
 		$test_status = $rc;
-		if ($run_status == 0 & &$rc != 0) { $run_status = $rc; }
+		if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
 		if ($built_for_mpd) {
 		    `$instdir/bin/mpdallexit`;
 		    kill 2, $pid;
@@ -384,6 +420,7 @@ sub RunTestSuites {
 	else {
 	    print $OUTFD "Unrecognized test $testname\n";
 	}
+	print $OUTFD $RunTestEnd;
     }
     return $run_status;
 }
@@ -428,16 +465,18 @@ sub XMLStyle {
     $MakeEnd       = "</MAKE>\n";
     $MakeInstStart = "<MAKEINST>\n";
     $MakeInstEnd   = "</MAKEINST>\n";
+    $RunTestStart  = "<RUNTEST>\n";
+    $RunTestEnd    = "</RUNTEST>\n";
     $SumStart      = "<SUMMARY>\n";
     $SumEnd        = "</SUMMARY>\n";
-    $SumConfigStart = "<CONFIGSTAT>";
-    $SumConfigEnd   = "</CONFIGSTAT>\n";
-    $SumMakeStart  = "<MAKESTAT>";
-    $SumMakeEnd    = "</MAKESTAT>\n";
-    $SumInstStart  = "<INSTALLSTAT>";
-    $SumInstEnd    = "</INSTALLSTAT>\n";
-    $SumTestRunStart = "<TESTSTAT>";
-    $SumTestRunEnd   = "</TESTSTAT>\n";
+    $SumConfigStart = "<STATUS NAME=\"configure\">";
+    $SumConfigEnd   = "</STATUS>\n";
+    $SumMakeStart  = "<STATUS NAME=\"make\">";
+    $SumMakeEnd    = "</STATUST>\n";
+    $SumInstStart  = "<STATUS NAME=\"install\">";
+    $SumInstEnd    = "</STATUS>\n";
+    $SumTestRunStart = "<STATUS NAME=\"test\">";
+    $SumTestRunEnd   = "</STATUS>\n";
 }
 # ---------------------------------------------------------------------------
 #
