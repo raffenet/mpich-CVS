@@ -1,3 +1,10 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  $Id$
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 /******************** d2s_util.c ****************************/
 /*
   This program converts a dlog file generated using DLOG Logging calls into an 
