@@ -505,6 +505,8 @@ with MPI_Alloc_mem.
 **init_strtok_host %s:failed to copy the hostname from this business card: %s
 **boot_tostring:unable to get a string representation of the boostrap queue
 **boot_create:unable to create a bootstrap message queue
+**boot_unlink:unable to unlink the shared memory message queue
+**mqshm_unlink:unable to unlink the shared memory message queue
 **ch3ireadaggressive:aggressive reading failed
 **msgctl:msgctl failed
 **msgctl %d:msgctl returned %d
@@ -549,6 +551,10 @@ with MPI_Alloc_mem.
 **mqshm_create:failed to create a shared memory message queue
 **mqshm_send:failed to send a bootstrap message
 **mqshm_receive:failed to receive a bootstrap message
+**shm_unlink:failed to unlink shared memory
+**shm_unlink %s %d:failed to unlink shared memory object %s, error %d
+**shmctl:failed to mark the sysv segment for removal
+**shmctl %d %d:failed to mark the sysv segment %d for removal, error %d
 
 #
 # CH3:shm
@@ -562,6 +568,8 @@ with MPI_Alloc_mem.
 **mmap %d: unable to map memory, mmap failed (errno %d)
 **shm_open:unable to open a shared memory object
 **shm_open %s %d:unable to open shared memory object %s (errno %d)
+**ftruncate:unable to resize the shared memory object
+**ftruncate %s %d %d:unable to resize the shared memory object %s to size %d (errno %d)
 
 #
 # Sock:poll
