@@ -1,0 +1,202 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#include "mpidimpl.h"
+
+/* This section of code is for the RLOG logging library */
+#if (USE_LOGGING == MPID_LOGGING_RLOG)
+
+#include <math.h>
+
+/* utility funcions */
+#ifndef RGB
+#define RGB(r,g,b)      ((unsigned long)(((unsigned char)(r)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(b))<<16)))
+#endif
+
+static unsigned long getColorRGB(
+				 double fraction, 
+				 double intensity, 
+				 unsigned char *r, 
+				 unsigned char *g, 
+				 unsigned char *b)
+{
+    double red, green, blue;
+    double dtemp;
+
+    fraction = fabs(modf(fraction, &dtemp));
+    
+    if (intensity > 2.0)
+	intensity = 2.0;
+    if (intensity < 0.0)
+	intensity = 0.0;
+    
+    dtemp = 1.0/6.0;
+    
+    if (fraction < 1.0/6.0)
+    {
+	red = 1.0;
+	green = fraction / dtemp;
+	blue = 0.0;
+    }
+    else
+    {
+	if (fraction < 1.0/3.0)
+	{
+	    red = 1.0 - ((fraction - dtemp) / dtemp);
+	    green = 1.0;
+	    blue = 0.0;
+	}
+	else
+	{
+	    if (fraction < 0.5)
+	    {
+		red = 0.0;
+		green = 1.0;
+		blue = (fraction - (dtemp*2.0)) / dtemp;
+	    }
+	    else
+	    {
+		if (fraction < 2.0/3.0)
+		{
+		    red = 0.0;
+		    green = 1.0 - ((fraction - (dtemp*3.0)) / dtemp);
+		    blue = 1.0;
+		}
+		else
+		{
+		    if (fraction < 5.0/6.0)
+		    {
+			red = (fraction - (dtemp*4.0)) / dtemp;
+			green = 0.0;
+			blue = 1.0;
+		    }
+		    else
+		    {
+			red = 1.0;
+			green = 0.0;
+			blue = 1.0 - ((fraction - (dtemp*5.0)) / dtemp);
+		    }
+		}
+	    }
+	}
+    }
+    
+    if (intensity > 1)
+    {
+	intensity = intensity - 1.0;
+	red = red + ((1.0 - red) * intensity);
+	green = green + ((1.0 - green) * intensity);
+	blue = blue + ((1.0 - blue) * intensity);
+    }
+    else
+    {
+	red = red * intensity;
+	green = green * intensity;
+	blue = blue * intensity;
+    }
+    
+    *r = (unsigned char)(red * 255.0);
+    *g = (unsigned char)(green * 255.0);
+    *b = (unsigned char)(blue * 255.0);
+
+    return RGB(*r,*g,*b);
+}
+
+static unsigned long random_color(
+				  unsigned char *r, 
+				  unsigned char *g, 
+				  unsigned char *b)
+{
+    double d1, d2;
+
+    d1 = (double)rand() / (double)RAND_MAX;
+    d2 = (double)rand() / (double)RAND_MAX;
+
+    return getColorRGB(d1, d2 + 0.5, r, g, b);
+}
+
+static char random_color_str[40];
+static char *get_random_color_str()
+{
+    unsigned char r,g,b;
+    random_color(&r, &g, &b);
+    sprintf(random_color_str, "%3d %3d %3d", (int)r, (int)g, (int)b);
+    return random_color_str;
+}
+
+int MPIDU_Describe_timer_states()
+{
+    /* describe the states used in the ch3/src directory */
+
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_CREATE_REQUEST, "Create_request",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_HANDLE_POLLIN, "Handle_pollin",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_HANDLE_POLLOUT, "Handle_pollout",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_ABORT, "MPID_Abort",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_CANCEL_RECV, "MPID_Cancel_recv",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_CANCEL_SEND, "MPID_Cancel_send",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_IPROBE, "MPID_Iprobe",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_IRECV, "MPID_Irecv",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_BARRIER, "MPIDI_Barrier",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_PKT, "MPIDI_CH3U_Handle_recv_pkt",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ, "MPIDI_CH3U_Handle_recv_req",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ, "MPIDI_CH3U_Handle_send_req",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP, "MPIDI_CH3U_Request_fdp",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU, "MPIDI_CH3U_Request_fdp_or_aeu",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU, "MPIDI_CH3U_Request_fdu",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP, "MPIDI_CH3U_Request_fdu_or_aep",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_FU, "MPIDI_CH3U_Request_fu",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV, "MPIDI_CH3U_Request_load_recv_iov",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV, "MPIDI_CH3U_Request_load_send_iov",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF, "MPIDI_CH3U_Request_unpack_srbuf",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF, "MPIDI_CH3U_Request_unpack_uebuf",
+		       get_random_color_str());
+
+    /* call the channel function to describe the states found in the ch3/channels/xx/src directory */
+    return CH3U_Describe_timer_states();
+}
+
+#endif /* USE_LOGGING == MPID_LOGGING_RLOG */

@@ -12,12 +12,17 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Abort(MPID_Comm * comm, int errorcode)
 {
+    MPIDI_STATE_DECL(MPID_STATE_MPID_ABORT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_ABORT);
     MPIDI_dbg_printf(10, FCNAME, "entering");
 
     MPIDI_err_printf(FCNAME, "MPID_Abort() is not properly implementated!\n");
     abort();
     
     MPIDI_dbg_printf(10, FCNAME, "exiting");
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_ABORT);
     return MPI_ERR_INTERN;
 }
 

@@ -21,6 +21,10 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 {
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
+
     assert(sreq->ch3.ca < MPIDI_CH3_CA_END_CH3);
     
     switch(sreq->ch3.ca)
@@ -64,5 +68,6 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq)
 	    abort();
 	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
 }
 

@@ -14,7 +14,10 @@ int MPIDI_Barrier(MPID_Comm * comm)
 {
     const int size = comm->remote_size;
     const int rank = comm->rank;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_BARRIER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_BARRIER);
+
     if (size > 1)
     {
 	int size_pow2;
@@ -103,6 +106,7 @@ int MPIDI_Barrier(MPID_Comm * comm)
 
 	}
     }
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_BARRIER);
     return MPI_SUCCESS;
 }

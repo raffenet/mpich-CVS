@@ -13,7 +13,6 @@
 int MPID_Finalize()
 {
     int mpi_errno;
-
     MPIDI_dbg_printf(10, FCNAME, "entering");
     
     mpi_errno = MPIDI_CH3_Finalize();

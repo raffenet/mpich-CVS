@@ -3,7 +3,7 @@ lib${MPILIBNAME}_a_SOURCES = \
     ch3u_request.c mpid_abort.c mpid_cancel_recv.c mpid_cancel_send.c \
     mpid_finalize.c mpid_init.c mpid_iprobe.c mpid_irecv.c mpid_irsend.c \
     mpid_isend.c mpid_issend.c mpid_probe.c mpid_recv.c mpid_rsend.c \
-    mpid_send.c mpid_ssend.c mpid_vc.c
+    mpid_send.c mpid_ssend.c mpid_vc.c mpid_describe_states.c
 
 # INCLUDES = -I../include -I${top_srcdir}/include \
 # 	     -I../../../include -I${master_top_srcdir}/src/include

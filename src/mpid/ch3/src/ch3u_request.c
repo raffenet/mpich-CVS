@@ -17,7 +17,10 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 {
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
     MPID_Request * rreq;
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
 
     if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE)
     {
@@ -29,6 +32,7 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 		rreq->ch3.match.tag == tag)
 	    {
 		MPIDI_CH3_Request_add_ref(rreq);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
 		return rreq;
 	    }
 	    
@@ -71,13 +75,15 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 		(rreq->ch3.match.tag & mask.tag) == match.tag)
 	    {
 		MPIDI_CH3_Request_add_ref(rreq);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
 		return rreq;
 	    }
 	    
 	    rreq = rreq->ch3.next;
 	}
     }
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FU);
     return NULL;
 }
 
@@ -98,7 +104,9 @@ MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id,
     MPID_Request * cur_rreq;
     MPID_Request * matching_prev_rreq;
     MPID_Request * matching_cur_rreq;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
     matching_prev_rreq = NULL;
     matching_cur_rreq = NULL;
     prev_rreq = NULL;
@@ -134,12 +142,15 @@ MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id,
 	    MPIDI_Process.recv_unexpected_tail = matching_prev_rreq;
 	}
 
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
 	return matching_cur_rreq;
     }
     else
     {
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
 	return NULL;
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU);
 }
 
 
@@ -158,7 +169,9 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
     if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE)
     {
 	prev_rreq = NULL;
@@ -182,6 +195,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 		    MPIDI_Process.recv_unexpected_tail = prev_rreq;
 		}
 		*found = TRUE;
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
 		return rreq;
 	    }
 	    
@@ -238,6 +252,7 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 		    MPIDI_Process.recv_unexpected_tail = prev_rreq;
 		}
 		*found = TRUE;
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
 		return rreq;
 	    }
 	    
@@ -270,6 +285,8 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
     }
     
     *found = FALSE;
+    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDU_OR_AEP);
     return rreq;
 }
 
@@ -287,7 +304,9 @@ int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
 {
     MPID_Request * cur_rreq;
     MPID_Request * prev_rreq;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
     prev_rreq = NULL;
     cur_rreq = MPIDI_Process.recv_posted_head;
     while (rreq != NULL)
@@ -307,6 +326,7 @@ int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
 	    {
 		MPIDI_Process.recv_posted_tail = prev_rreq;
 	    }
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
 	    return TRUE;
 	}
 	    
@@ -314,6 +334,7 @@ int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
 	rreq = rreq->ch3.next;
     }
 
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
     return FALSE;
 }
 
@@ -332,7 +353,9 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
     prev_rreq = NULL;
     rreq = MPIDI_Process.recv_posted_head;
     while (rreq != NULL)
@@ -356,6 +379,7 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
 		MPIDI_Process.recv_posted_tail = prev_rreq;
 	    }
 	    *found = TRUE;
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
 	    return rreq;
 	}
 	    
@@ -385,6 +409,8 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
     }
     
     *found = FALSE;
+    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
     return rreq;
 }
 
@@ -406,7 +432,9 @@ int MPIDI_CH3U_Request_load_send_iov(
 {
     MPIDI_msg_sz_t last;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
     last = sreq->ch3.segment_size;
     MPIDI_DBG_PRINTF((40, FCNAME, "pre-pv: first=" MPIDI_MSG_SZ_FMT
 		      ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
@@ -469,6 +497,8 @@ int MPIDI_CH3U_Request_load_send_iov(
     }
     
   fn_exit:
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
     return mpi_errno;
 }
 
@@ -489,7 +519,9 @@ int MPIDI_CH3U_Request_load_recv_iov(
 {
     MPIDI_msg_sz_t last;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV);
     if (rreq->ch3.segment_first < rreq->ch3.segment_size)
     {
 	/* still reading data that needs to go into the user buffer */
@@ -609,6 +641,8 @@ int MPIDI_CH3U_Request_load_recv_iov(
     }
     
   fn_exit:
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_RECV_IOV);
     return mpi_errno;
 }
 
@@ -623,6 +657,9 @@ int MPIDI_CH3U_Request_load_recv_iov(
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 {
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_SRBUF);
     return MPI_SUCCESS;
 }
 
@@ -641,6 +678,9 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     MPIDI_msg_sz_t userbuf_sz;
     MPIDI_msg_sz_t unpack_sz;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
 
     if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
     {
@@ -698,6 +738,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	}
     }
 		
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
     return mpi_errno;
 }
 

@@ -13,6 +13,9 @@
 void MPID_Cancel_send(MPID_Request * sreq)
 {
 #if 0    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_SEND);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_SEND);
     assert(sreq->kind == MPID_REQUEST_SEND);
     /* XXX - need to handle persistent requests */
 
@@ -45,5 +48,6 @@ void MPID_Cancel_send(MPID_Request * sreq)
        cancellation request does not bypass the message to be cancelled and
        erroneous cancel a previously sent message that is buffered at the
        receiver. */
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_SEND);
 #endif
 }
