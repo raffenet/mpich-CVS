@@ -105,22 +105,17 @@ int MPI_Pack(void *inbuf,
     /* NOTE: the use of buffer values and positions in MPI_Pack and in
      * MPID_Segment_pack are quite different.  See code or docs or something.
      */
-    first = *position;
+    first = 0;
     last  = outcount;
 
     MPID_Segment_pack(segp,
 		      first,
 		      &last,
-		      (void *) ((char *) outbuf + first));
+		      (void *) ((char *) outbuf + *position));
 
-    *position = last;
+    *position += last;
 
     MPID_Segment_free(segp);
-
-#if 0
-    /* This is a temporary call */
-    MPIR_Segment_pack( datatype_ptr->opt_loopinfo, inbuf, outbuf );
-#endif
 
     /* ... end of body of routine ... */
 

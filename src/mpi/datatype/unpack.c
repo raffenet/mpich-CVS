@@ -95,15 +95,15 @@ int MPI_Unpack(void *inbuf,
     /* NOTE: the use of buffer values and positions in MPI_Pack and in
      * MPID_Segment_pack are quite different.  See code or docs or something.
      */
-    first = *position;
+    first = 0;
     last  = insize;
 
     MPID_Segment_unpack(segp,
 			first,
 			&last,
-			(void *) ((char *) inbuf + first));
+			(void *) ((char *) inbuf + *position));
 
-    *position = last;
+    *position += last;
 
     MPID_Segment_free(segp);
 
