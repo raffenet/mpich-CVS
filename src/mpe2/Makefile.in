@@ -74,6 +74,7 @@ uninstall:
 	@./sbin/mpeuninstall
 
 ########  Cleaning
+# when "$(top_srcdir)" = ".", it is a non-VPATH build.
 clean_include:
 	@-if [ -n "$(includebuild_dir)" -a "$(top_srcdir)" != "." \
 	       -a "$(includebuild_dir)" != "$(top_srcdir)/include" ] ; then \
