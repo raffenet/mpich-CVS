@@ -59,7 +59,6 @@ void uop( void *cinPtr, void *coutPtr, int *count, MPI_Datatype *dtype )
    If we call this matrix P_r, we know that product of P_0 P_1 ... P_{size-1}
    is the identity I.
 */   
-
 static void initMat( MPI_Comm comm, int mat[] )
 {
     int i, size, rank;
