@@ -1,4 +1,4 @@
-ALL: paper.ps pmi.ps
+ALL: paper.ps pmi.ps pmi.pdf
 SHELL = /bin/sh
 
 DOCTEXT = doctext
@@ -32,7 +32,7 @@ pmi.dvi: pmi.tex
 
 PMI_FILES = pmi.tex ../../src/include/pmi.h Makefile
 
-pmi.ps: $(PMI_FILES)
+pmi.dvi: $(PMI_FILES)
 	touch pmi.ind
 	-if [ ! -d pmiman ] ; then mkdir pmiman ; fi
 	-rm -f pmiman/*.tex pmiman/tmp.*
@@ -51,20 +51,15 @@ pmi.ps: $(PMI_FILES)
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > pmi.ind 
 	-bibtex pmi
 	latex pmi < /dev/null
-	dvips pmi
 
-pmi.pdf: $(CH3_FILES)
-	touch pmi.ind
+pmipdf.dvi: $(PMI_FILES)
+	sed -e 's/%\\def\\foobar/\\def\\foobar/' pmi.tex > pmipdf.tex
+	touch pmipdf.ind
 	-if [ ! -d pmiman ] ; then mkdir pmiman ; fi
 	-rm -f pmiman/*.tex pmiman/tmp.*
 	(cd pmiman ; \
 	${DOCTEXT} -latex -nolocation -quotefmt ../../../src/include/pmi.h ;\
 	../manextract ../../../src/include/pmi.h > /dev/null )
-	rm -f pmipdf.tex
-	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
-	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
-	    -e '/usepackage{.*url}/d' \
-		pmi.tex > pmipdf.tex
 	latex pmipdf < /dev/null
 	-bibtex pmipdf
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
@@ -75,11 +70,16 @@ pmi.pdf: $(CH3_FILES)
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > pmipdf.ind 
-	-bibtex pmipdf 
+	-bibtex pmipdf
 	latex pmipdf < /dev/null
+
+pmi.ps: pmi.dvi
+	dvips pmi
+
+pmi.pdf: pmipdf.dvi
+	rm -f pmi.pdf pmipdf.pdf
 	dvipdfm pmipdf
-	rm -f pmi.pdf
-	mv -f pmipdf.pdf pmi.pdf
+	mv pmipdf.pdf pmi.pdf
 
 clean:
 	rm -f *.log *.aux *.dvi pmi.ps pmi.pdf *.bbl

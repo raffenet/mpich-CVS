@@ -2,10 +2,20 @@
 %   This is a latex file that generates a reference manual for 
 %   PMI
 %
+% The following tricky code lets us build clean Postscript and PDF versions
+% from the same file (see the Makefile)
+%\def\foobar{\relax}
+\ifx\unknown\foobar
+\def\texorpdfstring#1#2{#1}
 \documentclass{article}
+\usepackage{url} 
+\else
+\documentclass[dvipdfm]{article}
+\usepackage[dvipdfm]{hyperref}
+\fi
+
 \usepackage{tpage}
 \usepackage{../adi3/refman}
-\usepackage{url} 
 \usepackage{epsf}
 %\usepackage{psfig}
 %hyperref - do not remove this comment
@@ -76,6 +86,15 @@ MPICH2 includes multiple implementations.
 We are in discussions with vendors to support PMI directly.
 
 \section{Process group functions}
+This section describes the functions that provide the basic process management
+functions in PMI.  These include routines to initialize and finalize PMI,
+routines to get information about a parallel program (such as size and rank),
+and inquire about the topology of the parallel computer (specifically, whether
+it is a cluster of SMPs, and if so, which processes share the same node).
+
+It should be easy to implement the routines in this section in most process
+managers. 
+
 \input{pmiman/PMI_Init.tex}
 \input{pmiman/PMI_Initialized.tex}
 \input{pmiman/PMI_Finalize.tex}
@@ -90,6 +109,17 @@ We are in discussions with vendors to support PMI directly.
 %\input{ch3man/.tex}
 
 \section{Keyval space functions}
+This section describes the functions to provide a way for processes in a
+parallel program to exchange information.  This information may be used, for
+example, to discover the host and port of another process when TCP is used for
+communication between those processes.  These routines are included as part of
+the PMI because they are part of process management in a parallel setting and
+because a process manager is well-placed to provide these services.  However,
+a PMI implementation, particularly one built on top of an existing process
+manager, may choose to use a separate service to support these functions.
+For example, a separate process that provides a well-known host and port could
+be contacted by any process requiring these keyval space services.
+
 \input{pmiman/PMI_KVS_Get_my_name.tex}
 \input{pmiman/PMI_KVS_Get.tex}
 \input{pmiman/PMI_KVS_Put.tex}
@@ -103,6 +133,10 @@ We are in discussions with vendors to support PMI directly.
 \input{pmiman/PMI_KVS_Iter_next.tex}
 
 \section{Spawn function}
+This section describes the functions that are used to create new processes and
+to make them visible to the other processes in a parallel job.  
+
+
 \input{pmiman/PMI_keyval_t.tex}
 \input{pmiman/PMI_Spawn_multiple.tex}
 \input{pmiman/PMI_Args_to_keyval.tex}
