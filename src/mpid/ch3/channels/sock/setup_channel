@@ -27,8 +27,6 @@ done
 #
 # Use the sock implementation found in the common directory
 #
-devsubsystems="$devsubsystems src/mpid/common/sock"
-
 file=${master_top_srcdir}/src/mpid/common/sock/setup
 if test -f $file ; then
     echo "sourcing $file"
