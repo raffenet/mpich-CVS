@@ -7,7 +7,10 @@
 #if !defined(MPICH_MPIDIMPL_H_INCLUDED)
 #define MPICH_MPIDIMPL_H_INCLUDED
 
+#if defined(HAVE_ASSERT_H)
 #include <assert.h>
+#endif
+
 #include "mpiimpl.h"
 
 #define MPIDI_IOV_DENSITY_MIN 128
