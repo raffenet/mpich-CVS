@@ -93,8 +93,15 @@ f77dir="#"
 AC_SUBST(f77dir)
 # Set a default for the Fortran 77 version of MPI_Offset.
 # FIXME: Find a way to get the correct value
-F77_MPI_OFFSET="integer*8"
+if test -z "$F77_MPI_OFFSET" ; then
+    F77_MPI_OFFSET="integer*8"
+fi
 AC_SUBST(F77_MPI_OFFSET)
+# FIXME: Find a way to get the correct value
+if test -z "$F77_MPI_ADDRESS" ; then
+    F77_MPI_ADDRESS="integer"
+fi
+AC_SUBST(F77_MPI_ADDRESS)
 if test "$FROM_MPICH2" = yes ; then
     if test "$enable_f77" = yes ; then
        # Assume success
@@ -219,9 +226,14 @@ AC_OUTPUT(maint/testmerge \
 	  io/Makefile \
 	  f77/Makefile \
 	  f77/attr/Makefile \
+	  f77/attr/attraints.h \
 	  f77/datatype/Makefile \
+	  f77/datatype/typeaints.h \
 	  f77/util/Makefile \
 	  f77/coll/Makefile \
+	  f77/comm/Makefile \
+	  f77/init/Makefile \
+	  f77/rma/addsize.h \
 	  f77/pt2pt/Makefile \
 	  f77/info/Makefile \
 	  f77/spawn/Makefile \

@@ -1,4 +1,6 @@
 iwriteatf 4
+iwritef   4
+iwriteshf 4
 writef    4
 writeatf  4
 writeallf 4
@@ -8,3 +10,6 @@ writeatallf 4
 writeatallbef 4
 writeallbef 4
 writeordbef 4
+fileerrf 1
+fileinfof 3
+shpositionf 4

@@ -13,7 +13,6 @@ C
       errs = 0
 
       call MPI_Init(ierr)
-
 C
 C Check each Fortran datatype, including the size-specific ones
 C See the C version (typename.c) for the relevant MPI sections
@@ -197,7 +196,7 @@ C See the C version (typename.c) for the relevant MPI sections
       endif
 
       if (errs .gt. 0) then
-          print *, 'Found ', errs, ' errors'
+          print *, ' Found ', errs, ' errors'
       else
           print *, ' No errors'
       endif

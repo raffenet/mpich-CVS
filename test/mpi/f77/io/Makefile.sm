@@ -2,23 +2,27 @@ LDADD = -L../../../../lib ../util/mtestf.o
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 smvar_do_sharedlibs = 0
 
-iwriteatf_SOURCES = iwriteatf.f
-writef_SOURCES = writef.f
-writeatf_SOURCES = writeatf.f
-writeallf_SOURCES = writeallf.f
-writeatallf_SOURCES = writeatallf.f
-writeallbef_SOURCES = writeallbef.f
-writeordf_SOURCES = writeordf.f
-writeordbef_SOURCES = writeordbef.f
-writeshf_SOURCES = writeshf.f
+iwriteatf_SOURCES     = iwriteatf.f
+iwritef_SOURCES       = iwritef.f
+iwriteshf_SOURCES     = iwriteshf.f
+writef_SOURCES        = writef.f
+writeatf_SOURCES      = writeatf.f
+writeallf_SOURCES     = writeallf.f
+writeatallf_SOURCES   = writeatallf.f
+writeallbef_SOURCES   = writeallbef.f
+writeordf_SOURCES     = writeordf.f
+writeordbef_SOURCES   = writeordbef.f
+writeshf_SOURCES      = writeshf.f
 writeatallbef_SOURCES = writeatallbef.f
+fileerrf_SOURCES      = fileerrf.f
+fileinfof_SOURCES     = fileinfof.f
+shpositionf_SOURCES   = shpositionf.f
 
 # These IO tests are build from a template and a set of definitions.
 iwriteatf.f writef.f writeatf.f writeatallf.f writeallf.f writeallbef.f \
 writeordf.f writeordbef.f writeshf.f writeatallbef.f : ioharness.tlt ioharness.defn
 	../../maint/testmerge -defn=$(top_srcdir)/maint/common.defn \
 		$(srcdir)/ioharness.defn $(srcdir)/ioharness.tlt
-
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)

@@ -1,3 +1,8 @@
+C -*- Mode: Fortran; -*- 
+C
+C  (C) 2003 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
         subroutine MTest_Init( ierr )
 C       Place the include first so that we can automatically create a
 C       Fortran 90 version that uses the mpi module instead.  If
@@ -18,7 +23,7 @@ C       about out-of-order statements
         dbgflag = .false.
         call MPI_Comm_rank( MPI_COMM_WORLD, wrank, ierr )
         end
-
+C
         subroutine MTest_Finalize( errs )
         include 'mpif.h'
         integer errs
@@ -37,7 +42,44 @@ C       about out-of-order statements
            endif
         endif
         end
+C
+C A simple get intracomm for now
+        logical function MTestGetIntracomm( comm, min_size, qsmaller )
+        include 'mpif.h'
+        integer comm, min_size, size, rank
+        logical qsmaller
+        integer myindex
+        save myindex
+        data myindex /0/
 
+        comm = MPI_COMM_NULL
+        if (myindex .eq. 0) then
+           comm = MPI_COMM_WORLD
+        else if (myindex .eq. 1) then
+           call mpi_comm_dup( MPI_COMM_WORLD, comm, ierr )
+        else if (myindex .eq. 2) then
+           call mpi_comm_size( MPI_COMM_WORLD, size, ierr )
+           call mpi_comm_size( MPI_COMM_WORLD, rank, ierr )
+           call mpi_comm_split( MPI_COMM_WORLD, 0, size - rank, ierr )
+        else
+           if (min_size .gt. 1) then
+              comm = MPI_COMM_SELF
+           endif
+        endif
+        myindex = mod( myindex, 3 ) + 1
+        MTestGetIntracomm = comm .ne. MPI_COMM_NULL
+        end
+C
+        subroutine MTestFreeComm( comm )
+        include 'mpif.h'
+        integer comm, ierr
+        if (comm .ne. MPI_COMM_WORLD .and.
+     &      comm .ne. MPI_COMM_SELF  .and.
+     &      comm .ne. MPI_COMM_NULL) then
+           call mpi_comm_free( comm, ierr )
+        endif
+        end
+C
         subroutine MTestPrintError( errcode )
         include 'mpif.h'
         integer errcode

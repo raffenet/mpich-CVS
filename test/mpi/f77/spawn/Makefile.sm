@@ -6,6 +6,7 @@ namepubf_SOURCES = namepubf.f
 spawnf_SOURCES = spawnf.f
 spawnargvf_SOURCES = spawnargvf.f
 spawnmultf_SOURCES = spawnmultf.f
+connaccf_SOURCES = connaccf.f
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)

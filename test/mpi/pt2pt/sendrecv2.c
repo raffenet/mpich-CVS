@@ -110,7 +110,7 @@ int main( int argc, char *argv[] )
 	if (rank == 0) fprintf(stderr, "Found %d errors\n", errs);
     }
     else {
-	if (rank == 0) printf("No errors\n");
+	if (rank == 0) printf(" No Errors\n");
     }
     MPI_Finalize();
     return 0;

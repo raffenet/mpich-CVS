@@ -59,10 +59,19 @@ int main( int argc, char *argv[] )
     }
     else {
 	/* Child */
+	char cname[MPI_MAX_OBJECT_NAME];
+	int rlen;
+
 	if (size != np) {
 	    errs++;
 	    printf( "(Child) Did not create %d processes (got %d)\n", 
 		    np, size );
+	}
+	/* Check the name of the parent */
+	MPI_Comm_get_name( intercomm, cname, &rlen );
+	if (strcmp( cname, 'MPI_COMM_PARENT' ) != 0) {
+	    errs++;
+	    printf( "Name of parent is not correct\n" );
 	}
 	MPI_Recv( &i, 1, MPI_INT, 0, 0, intercomm, &status );
 	if (i != rank) {

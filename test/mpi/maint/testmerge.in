@@ -1,4 +1,8 @@
 #! @PERL@
+# -*- Mode: Perl; -*-
+#
+#  (C) 2004 by Argonne National Laboratory.
+#      See COPYRIGHT in top-level directory.
 #
 #
 # This file provides a way to merge a template file with a set of
@@ -116,10 +120,16 @@ sub MergeTemplate {
 
     while (<IFD>) {
 	s/\r//;
+	my $loopLimit = 10;
 	while (/(\s*)<(\w*)\/>/) {
 	    my $indent = $1;
 	    my $name = $2;
-	    $indent =~ s/\n//g;
+	    $indent =~ s/\s*\n//g;
+	    if ($loopLimit-- <= 0) {
+		print STDERR "Exceeded loop limit while writing $outputFilename\n";
+		print STDERR "Searching for $name in $_";
+		last;
+	    }
 	    if (defined($Definitions{$name})) {
 		my $defn = $Definitions{$name};
 		my $newdefn = "";
@@ -173,6 +183,10 @@ sub ReadAndMerge {
 	    &ReadDefinition( $DFD );
 	    # Create the merged file
 	    &MergeTemplate( $templateFile, $outputFile );
+	}
+	elsif (/<LANG>(\w*)<\/LANG>/) {
+	    # Special for language definition
+	    $lang = $1;
 	}
 	elsif (/<(\w*)>/) {
 	    my $name = $1;

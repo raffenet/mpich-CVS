@@ -3,3 +3,15 @@ DEPADD = ../../../../lib/lib${MPILIBNAME}.a
 
 baseattr_SOURCES = baseattr.f
 baseattrwin_SOURCES = baseattrwin.f
+commattrf_SOURCES = commattrf.f
+commattrf_LDADD = ../util/mtestf.o
+commattrf_DEPADD = ../util/mtestf.o
+winattrf_SOURCES = winattrf.f
+winattrf_LDADD = ../util/mtestf.o
+winattrf_DEPADD = ../util/mtestf.o
+typeattrf_SOURCES = typeattrf.f
+typeattrf_LDADD = ../util/mtestf.o
+typeattrf_DEPADD = ../util/mtestf.o
+
+../util/mtestf.o: 
+	(cd ../util && $(MAKE) mtestf.o)
