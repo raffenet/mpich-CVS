@@ -52,7 +52,10 @@ typedef struct MPIDI_Process_group_s
 #endif
     void *addr;
     int rank;
-#ifdef HAVE_SHMGET
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    char key[100];
+    int id;
+#elif defined (HAVE_SHMGET)
     int key;
     int id;
 #elif defined (HAVE_MAPVIEWOFFILE)

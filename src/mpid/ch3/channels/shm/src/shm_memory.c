@@ -169,7 +169,17 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
     if (bUseShm)
     {
 	/* Create the shared memory object */
-#ifdef HAVE_SHMGET
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+	pg->id = shm_open(pg->key, O_RDWR | O_CREAT, 0600);
+	if (pg->id == -1)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_open", "**shm_open %s %d", pg->key, errno);
+	    pg->addr = NULL;
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	    return mpi_errno;
+	}
+	ftruncate(pg->id, nTotalSize);
+#elif defined (HAVE_SHMGET)
 	pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
 	if (pg->id == -1) 
 	{
@@ -214,7 +224,16 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int n
 #endif
 	pg->addr = NULL;
 	MPIU_DBG_PRINTF(("[%d] mapping shared memory\n", nRank));
-#ifdef HAVE_SHMAT
+#if defined (HAVE_MMAP) && defined (HAVE_SHM_OPEN)
+	pg->addr = mmap(NULL, nTotalSize, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pg->id, 0);
+	if (pg->addr == MAP_FAILED)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**mmap", "**mmap %d", errno);
+	    pg->addr = NULL;
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
+	    return mpi_errno;
+	}
+#elif defined (HAVE_SHMAT)
 	pg->addr = shmat(pg->id, NULL, SHM_RND);
 	if (pg->addr == (void*)-1)
 	{
@@ -276,7 +295,10 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg, BOOL bUseShm)
     
     if (bUseShm)
     {
-#ifdef HAVE_SHMDT
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+	close(pg->id);
+	shm_unlink(pg->key);
+#elif defined (HAVE_SHMDT)
         shmdt(pg->addr);
 #endif
 #ifdef HAVE_UNMAPVIEWOFFILE

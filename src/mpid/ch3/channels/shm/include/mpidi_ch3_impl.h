@@ -54,6 +54,9 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 #define HAVE_COMPARE_AND_SWAP

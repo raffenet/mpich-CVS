@@ -22,6 +22,8 @@ static void generate_shm_string(char *str)
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
+#elif defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    sprintf(str, "/mpich_shm_%d", getpid());
 #else
     sprintf(str, "%d", getpid());
 #endif
@@ -107,7 +109,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     pg->nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
 #endif
     pg->addr = NULL;
-#ifdef HAVE_SHMGET
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+    pg->key[0] = '\0';
+    pg->id = -1;
+#elif defined (HAVE_SHMGET)
     pg->key = -1;
     pg->id = -1;
 #elif defined (HAVE_MAPVIEWOFFILE)
@@ -240,7 +245,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	}
 
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
-#ifdef HAVE_SHMGET
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+	MPIU_Strncpy(pg->key, shmemkey, 100);
+#elif defined (HAVE_SHMGET)
 	pg->key = atoi(shmemkey);
 #elif defined (HAVE_MAPVIEWOFFILE)
 	MPIU_Strncpy(pg->key, shmemkey, MAX_PATH);
