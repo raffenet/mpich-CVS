@@ -160,7 +160,7 @@ typedef struct MPIDI_CH3I_VC
     int nSharedProcessFileDescriptor;
 #endif
 #endif
-    struct MPIDI_VC_t *shm_next_reader, *shm_next_writer;
+    struct MPIDI_VC *shm_next_reader, *shm_next_writer;
 } MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;

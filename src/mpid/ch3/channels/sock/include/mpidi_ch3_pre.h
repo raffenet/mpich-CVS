@@ -21,7 +21,7 @@
 
 typedef struct MPIDI_CH3I_Acceptq_s
 {
-    struct MPIDI_VC_t *vc;
+    struct MPIDI_VC *vc;
     struct MPIDI_CH3I_Acceptq_s *next;
 }
 MPIDI_CH3I_Acceptq_t;

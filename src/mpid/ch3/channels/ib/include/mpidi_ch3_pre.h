@@ -18,7 +18,7 @@ typedef struct MPIDI_Process_group_s
     char * pg_id;
     int rank;
     int size;
-    struct MPIDI_VC_t * vc_table;
+    struct MPIDI_VC * vc_table;
     struct MPIDI_Process_group_s *next;
 }
 MPIDI_CH3I_Process_group_t;

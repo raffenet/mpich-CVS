@@ -128,7 +128,7 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3I_SHM_Buffer_t read;
 #ifdef USE_SHM_UNEX
     MPIDI_CH3I_SHM_Unex_read_t *unex_list;
-    struct MPIDI_VC_t *unex_finished_next;
+    struct MPIDI_VC *unex_finished_next;
 #endif
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef HAVE_WINDOWS_H
