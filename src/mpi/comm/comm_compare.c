@@ -28,19 +28,35 @@
 #define FUNCNAME MPI_Comm_compare
 
 /*@
-   MPI_Comm_compare - compare two communicators
 
-   Arguments:
-+  MPI_Comm comm1 - communicator
-.  MPI_Comm comm2 - communicator
--  int *result - result
+MPI_Comm_compare - Compares two communicators
 
-   Notes:
+Input Parameters:
++ comm1 - comm1 (handle) 
+- comm2 - comm2 (handle) 
 
-.N Fortran
+Output Parameter:
+. result - integer which is 'MPI_IDENT' if the contexts and groups are the
+same, 'MPI_CONGRUENT' if different contexts but identical groups, 'MPI_SIMILAR'
+if different contexts but similar groups, and 'MPI_UNEQUAL' otherwise
+
+Using 'MPI_COMM_NULL' with 'MPI_Comm_compare':
+
+It is an error to use 'MPI_COMM_NULL' as one of the arguments to
+'MPI_Comm_compare'.  The relevant sections of the MPI standard are 
+
+$(2.4.1 Opaque Objects)
+A null handle argument is an erroneous 'IN' argument in MPI calls, unless an
+exception is explicitly stated in the text that defines the function.
+
+$(5.4.1. Communicator Accessors)
+where there is no text in 'MPI_COMM_COMPARE' allowing a null handle.
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 {
@@ -61,7 +77,7 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr1, mpi_errno );
             MPID_Comm_valid_ptr( comm_ptr2, mpi_errno );
-	    /*MPID_ERRTEST_ARGNULL( result, "result", mpi_errno );*/
+	    MPIR_ERRTEST_ARGNULL( result, "result", mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);

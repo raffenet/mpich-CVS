@@ -63,6 +63,7 @@ if ($listfiles eq "") {
     while (<PGMS>) {
 	s/\r?\n//;
 	$programname = $_;
+	if (-d $programname) { ; }  # Ignore directories
 	if (-x $programname) { $found_exec++; }
 	if ($programname =~ /\.[cf]$/) { $found_src++; } 
     }
