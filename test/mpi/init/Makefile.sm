@@ -13,3 +13,4 @@ exitst3_SOURCES = exitst3.c
 initstat_SOURCES = initstat.c 
 version_SOURCES = version.c
 timeout_SOURCES = timeout.c
+finalized_SOURCES = finalized.c
