@@ -1676,6 +1676,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 #ifdef USE_INLINE_PKT_RECEIVE
     MPIDI_VC *recv_vc_ptr;
     void *mem_ptr_orig;
+    int mpi_errno;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
