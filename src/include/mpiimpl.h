@@ -70,11 +70,11 @@
 
 /* Basic typedefs */
 #ifndef HAVE_INT16_T 
-/* Fix me (short may not be correct) */
+/* FIXME (short may not be correct) */
 typedef short int16_t;
 #endif
 #ifndef HAVE_INT32_T
-/* Fix me (int may not be correct) */
+/* FIXME (int may not be correct) */
 typedef int int32_t;
 #endif
 
