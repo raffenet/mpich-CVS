@@ -20,10 +20,12 @@ mpich2.ps: mpich2.tex Makefile fixupindex
 	cat mpich2.idx | ./fixupindex > tmp.idx
 	makeindex tmp ;\
 	sed -e 's/\([A-Za-z0-9_!]*\)_MPID,/MPID_\1,/g' \
+	    -e 's/\([A-Za-z0-9_!]*\)_MPID$$/MPID_\1/g' \
+	    -e 's/\([A-Za-z0-9_!]*\)_MPIi,/MPIi_\1,/g' \
+	    -e 's/\([A-Za-z0-9_!]*\)_MPIi$$/MPIi_\1/g' \
 	    -e 's/\([A-Za-z0-9_!()]*\)_MPI,/MPI_\1,/g' \
 	    -e 's/\([A-Za-z0-9_!()]*\)_MPI$$/MPI_\1/g' \
 	    -e 's/\([A-Za-z0-9_!()]*\)_PMPI,/PMPI_\1,/g' \
-	    -e 's/\([A-Za-z0-9_!]*\)_MPIi,/MPIi_\1,/g' \
 	    -e 's/_/\\texttt{\\char`\\_}/g' \
 		tmp.ind > mpich2.ind ; \
 	latex mpich2

@@ -30,7 +30,10 @@
 \def_{{\tt \char`\_}}
 \catcode`\_=11
 \def\code#1{{\tt #1}}
-
+\def\makeuscore{\catcode`\_=13}
+\def\onespace{\hskip 1em}
+{\catcode`\ =13
+\gdef\makespaceactive{\catcode`\ =13\let =\onespace}}
 \def\mpifunc#1{\code{#1}\index{#1}}
 % We may want to separate the MPI and MPID index entries
 \def\mpidfunc#1{\code{#1}\index{#1}}
@@ -63,7 +66,7 @@
 
 %
 % Algorithm
-\newenvironment{algorithm}{\begin{obeylines}\obeyspaces\noindent}{\end{obeylines}}
+\newenvironment{algorithm}{\begingroup\obeylines\obeyspaces\makeuscore\noindent\makespaceactive}{\endgroup}
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
