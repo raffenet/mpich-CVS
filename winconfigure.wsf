@@ -137,6 +137,7 @@ For arg = 0 To argCount - 1
     bWin64 = True
     MPI_AINT = "__int64"
     BSEND_OVERHEAD = "95"
+    bUseCycleCounter = False
   ElseIf argValue = "--win32" Then
     bWin64 = False
   ElseIf argValue = "--enable-timer-type=x86cycle" Then
@@ -2228,6 +2229,18 @@ If Not bRemoveFortran Then
 	If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
 		Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
 		Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
+		contents = fin.ReadAll()
+		contents = ReplaceAts(contents, false)
+		fout.Write(contents)
+		fout.Close()
+	End If
+
+	'
+	' iodisp.h
+	'
+	If f.FileExists("test\mpi\f77\io\iodisp.h.in") Then
+		Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp.h")
+		Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
 		contents = fin.ReadAll()
 		contents = ReplaceAts(contents, false)
 		fout.Write(contents)
