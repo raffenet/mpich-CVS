@@ -38,7 +38,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     char queue_name[100];
 
     srand(getpid());
-    
+
     /*
      * Extract process group related information from PMI and initialize structures that track the process group connections,
      * MPI_COMM_WORLD, and MPI_COMM_SELF
@@ -61,6 +61,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
 	return mpi_errno;
     }
+
+    /* printf("[%d] is process %d\n", pg_rank, getpid()); */
     
     /* Allocate process group data structure and populate */
     pg = MPIU_Malloc(sizeof(MPIDI_CH3I_Process_group_t));
@@ -128,6 +130,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
 #endif
 #endif
+    g_nLockSpinCount = 1;
 
     /* Allocate and initialize the VC table associated with this process group (and thus COMM_WORLD) */
     vc_table = MPIU_Malloc(sizeof(MPIDI_VC) * pg_size);

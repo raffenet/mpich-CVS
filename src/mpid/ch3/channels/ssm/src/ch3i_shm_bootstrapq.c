@@ -6,6 +6,7 @@
 #include "mpidi_ch3_impl.h"
 
 #define MQSHM_END -1
+/* #define DBG_PRINT_SEND_RECEIVE */
 
 typedef struct mqshm_msg_t
 {
@@ -194,9 +195,14 @@ int MPIDI_CH3I_mqshm_unlink(int id)
     return mpi_errno;
 }
 
-/*#define DBG_PRINT_SEND_RECEIVE*/
-
 #ifdef DBG_PRINT_SEND_RECEIVE
+#define print_msgq(q_ptr_)									\
+{												\
+    printf("msg_q: first = %d, last = %d, next_free = %d, num=%d\n",				\
+	   (q_ptr_)->first, (q_ptr_)->last, (q_ptr_)->next_free, (q_ptr_)->cur_num_messages);	\
+}
+
+#if 0
 static void print_msgq(mqshm_t *q_ptr)
 {
     int i = q_ptr->first;
@@ -209,6 +215,7 @@ static void print_msgq(mqshm_t *q_ptr)
     }
     fflush(stdout);
 }
+#endif
 #endif
 
 #undef FUNCNAME
@@ -279,11 +286,11 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 		q_ptr->msg[q_ptr->last].next = index;
 		q_ptr->last = index;
 	    }
+	    *num_sent = length;
+	    q_ptr->cur_num_messages++;
 #ifdef DBG_PRINT_SEND_RECEIVE
 	    print_msgq(q_ptr);
 #endif
-	    *num_sent = length;
-	    q_ptr->cur_num_messages++;
 	    /*q_ptr->inuse = 0;*/
 	    MPIDU_Process_unlock(&q_ptr->lock);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
@@ -318,6 +325,14 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
 	return mpi_errno;
     }
+
+    if (!blocking && q_ptr->first == MQSHM_END)
+    {
+	*length = 0;
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
+	return MPI_SUCCESS;
+    }
+    
     do
     {
 	MPIDU_Process_lock(&q_ptr->lock);
@@ -346,13 +361,18 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		    return mpi_errno;
 		}
 		/* remove the node from the queue */
-		if (last_index == MQSHM_END)
+		if (q_ptr->first == index)
 		{
 #ifdef DBG_PRINT_SEND_RECEIVE
 		    printf("[%d] recv(%d): removing index %d from the head\n", MPIR_Process.comm_world->rank, tag, index);
 		    fflush(stdout);
 #endif
 		    q_ptr->first = q_ptr->msg[index].next;
+		    if (q_ptr->first == MQSHM_END)
+		    {
+			/* If the queue becomes empty, reset the last index. */
+			q_ptr->last = MQSHM_END;
+		    }
 		}
 		else
 		{
@@ -361,11 +381,10 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		    fflush(stdout);
 #endif
 		    q_ptr->msg[last_index].next = q_ptr->msg[index].next;
-		}
-		if (q_ptr->first == MQSHM_END)
-		{
-		    /* If the queue becomes empty, reset the last index. */
-		    q_ptr->last = MQSHM_END;
+		    if (index == q_ptr->last)
+		    {
+			q_ptr->last = last_index;
+		    }
 		}
 		/* copy the message */
 		memcpy(buffer, q_ptr->msg[index].data, q_ptr->msg[index].length);

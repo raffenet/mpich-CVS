@@ -348,7 +348,7 @@ int MPIDI_CH3_Progress_wait()
 
     /*static int active = 0;*/
     static int updateIter = 0;
-    static int msgqIter = 0;
+    static int msgqIter = MPIDI_CH3I_MSGQ_ITERATIONS;
     MPID_CPU_Tick_t start, end;
 
     static MPID_CPU_Tick_t shmTicks = 0;
@@ -519,6 +519,10 @@ skip_sock_loop:
 		    / shmTicks);
 		if (shmReps < 1)
 		    shmReps = 1;
+		if (shmReps > 256)
+		{
+		    shmReps = 256;
+		}
 		sockReps = 1;
 		/*MPIU_DBG_PRINTF(("(SHM_BIT: shmReps = %d, sockReps = %d)", shmReps, sockReps));*/
 		break;
@@ -531,6 +535,10 @@ skip_sock_loop:
 		    / sockTicks );
 		if (sockReps < 1)
 		    sockReps = 1;
+		if (sockReps > 100)
+		{
+		    sockReps = 100;
+		}
 		shmReps = 1;
 		/*MPIU_DBG_PRINTF(("(SOCK_BIT: shmReps = %d, sockReps = %d)", shmReps, sockReps));*/
 		break;
@@ -563,6 +571,12 @@ skip_sock_loop:
 		/*printf(".");*/
 		break;
 	    }
+	    /*
+	    if (shmReps > 500 || sockReps > 100)
+	    {
+		printf("[%d] SHMREPS=%d, SOCKREPS=%d\n", MPIR_Process.comm_world->rank, shmReps, sockReps);
+	    }
+	    */
 	    MPIDI_CH3I_active_flag = 0;
 	    shmTotalReps = 0;
 	    shmTicks = 0;
@@ -576,6 +590,7 @@ skip_sock_loop:
 	{
 	    msgqIter = 0;
 	    /*printf("[%d] calling message queue progress\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
+	    /* printf("%d",2*MPIR_Process.comm_world->rank); */
 	    mpi_errno = MPIDI_CH3I_Message_queue_progress();
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -583,6 +598,7 @@ skip_sock_loop:
 						 "**mqp_failure", 0);
 		goto fn_exit;
 	    }
+	    /* printf("%d",2*MPIR_Process.comm_world->rank+1); */
 	}
     }
     while (completions == MPIDI_CH3I_progress_completions);
