@@ -713,8 +713,10 @@ EXPORTS
 	MPI_F_STATUSES_IGNORE
 	MPI_F_ERRCODES_IGNORE
 	MPI_F_ARGVS_NULL
-        MPIR_Keyval_set_cxx
-        MPIR_Errhandler_set_cxx
+	MPIR_Keyval_set_cxx
+	MPIR_Errhandler_set_cxx
 	MPIR_Op_set_cxx
-        MPID_Wtick
-        MPID_Wtime_todouble
+	MPID_Wtick
+	MPID_Wtime_todouble
+	MPIR_Dup_fn
+	MPI_DUP_FN=MPIR_Dup_fn

@@ -685,6 +685,7 @@ static struct fn_table
     void (*MPIR_Op_set_cxx)(MPI_Op, void (*)(void));
     double (*MPID_Wtick)(void);
     void (*MPID_Wtime_todouble)(MPID_Time_t *, double *);
+    /*int (*MPIR_Dup_fn)(MPI_Comm, int, void *, void *, void *, int *);*/
 } fn;
 
 /* Extra exported internal symbols */
@@ -1116,8 +1117,8 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     if (fn.MPI_Abort == NULL) fn.MPI_Abort = (int (*)(MPI_Comm, int))GetProcAddress(hPMPIModule, "MPI_Abort");
     fn.MPI_Pcontrol = (int (*)(const int, ...))GetProcAddress(hMPIModule, "MPI_Pcontrol");
     if (fn.MPI_Pcontrol == NULL) fn.MPI_Pcontrol = (int (*)(const int, ...))GetProcAddress(hPMPIModule, "MPI_Pcontrol");
-    fn.MPI_DUP_FN = (int (* )( MPI_Comm, int, void *, void *, void *, int * ))GetProcAddress(hMPIModule, "MPI_DUP_FN");
-    if (fn.MPI_DUP_FN == NULL) fn.MPI_DUP_FN = (int (* )( MPI_Comm, int, void *, void *, void *, int * ))GetProcAddress(hPMPIModule, "MPI_DUP_FN");
+    fn.MPI_DUP_FN = (int (* )( MPI_Comm, int, void *, void *, void *, int * ))GetProcAddress(hMPIModule, "MPIR_Dup_fn"/*"MPI_DUP_FN"*/);
+    if (fn.MPI_DUP_FN == NULL) fn.MPI_DUP_FN = (int (* )( MPI_Comm, int, void *, void *, void *, int * ))GetProcAddress(hPMPIModule, "MPIR_Dup_fn"/*"MPI_DUP_FN"*/);
     fn.MPI_Close_port = (int (*)(char *))GetProcAddress(hMPIModule, "MPI_Close_port");
     if (fn.MPI_Close_port == NULL) fn.MPI_Close_port = (int (*)(char *))GetProcAddress(hPMPIModule, "MPI_Close_port");
     fn.MPI_Comm_accept = (int (*)(char *, MPI_Info, int, MPI_Comm, MPI_Comm *))GetProcAddress(hMPIModule, "MPI_Comm_accept");
@@ -1644,6 +1645,8 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     fn.MPIR_Op_set_cxx = (void (*)(MPI_Op, void (*)(void)))GetProcAddress(hPMPIModule, "MPIR_Op_set_cxx");
     fn.MPID_Wtick = (double (*)(void))GetProcAddress(hPMPIModule, "MPID_Wtick");
     fn.MPID_Wtime_todouble = (void (*)(MPID_Time_t *, double *))GetProcAddress(hPMPIModule, "MPID_Wtime_todouble");
+    /*fn.MPIR_Dup_fn = (int (*)(MPI_Comm, int, void *, void *, void *, int *))GetProcAddress(hPMPIModule, "MPIR_Dup_fn");*/
+
 
     return TRUE;
 }
@@ -1709,6 +1712,11 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 }
 
 /* Extra exported internal functions to mpich2 */
+int MPIR_Dup_fn(MPI_Comm comm, int keyval, void *extra_state, void *attr_in, void *attr_out, int *flag)
+{
+    return fn.MPIR_Dup_fn(comm, keyval, extra_state, attr_in, attr_out, flag);
+}
+
 void MPIR_Keyval_set_fortran(int keyval)
 {
     fn.MPIR_Keyval_set_fortran(keyval);
