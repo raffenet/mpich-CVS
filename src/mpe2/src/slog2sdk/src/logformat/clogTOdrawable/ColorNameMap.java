@@ -67,13 +67,20 @@ public class ColorNameMap
     //  Special interface for CLOG's StrCname which has ":"!
     public static ColorAlpha getColorAlpha( String in_colorname )
     {
-        String colorname;
-        int    len       = in_colorname.indexOf( ':' );
+        ColorAlpha  color;
+        String      colorname;
+
+        int  len      = in_colorname.indexOf( ':' );
         if ( len != -1 )
             colorname = in_colorname.substring( 0, len );
         else
             colorname = in_colorname;
-        return (ColorAlpha) colormap.get( colorname );
+        color = (ColorAlpha) colormap.get( colorname );
+        if ( color == null )
+            System.err.println( "ColorNameMap: Could NOT locate colorname "
+                              + colorname + " in default rgb.txt, i.e. "
+                              + "jumpshot.colors" ); 
+        return color;
     }
 
     public static String getString()

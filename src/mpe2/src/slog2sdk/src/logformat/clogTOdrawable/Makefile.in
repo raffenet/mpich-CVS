@@ -22,7 +22,7 @@ TARGET  = $(libbuild_dir)/clogTOdrawable.jar
 TARGET1 = $(libbuild_dir)/clogTOdrawable_1pass.jar
 TARGET2 = $(libbuild_dir)/clogTOdrawable_2pass.jar
 PACKAGE = logformat.clogTOdrawable
-SRC     = ObjDef.java \
+SRC     = ColorNameMap.java ObjDef.java \
           Obj_Arrow.java Obj_State.java ObjMethod.java \
           NoMatchingEventException.java TwoEventsMatching.java \
           Topo_Arrow.java Topo_State.java InputLog.java \
