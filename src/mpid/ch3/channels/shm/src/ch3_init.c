@@ -6,13 +6,22 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
-#include <process.h> /* getpid() */
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 static void generate_shm_string(char *str)
 {
+#ifdef HAVE_MAPVIEWOFFILE
+    UUID guid;
+    UuidCreate(&guid);
+    sprintf(str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+	guid.Data1, guid.Data2, guid.Data3,
+	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    MPIU_DBG_PRINTF(("GUID = %s\n", str));
+#else
     sprintf(str, "%d", getpid());
+#endif
 }
 
 int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
@@ -161,7 +170,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #ifdef HAVE_SHMGET
 	pg->key = atoi(shmemkey);
 #elif defined (HAVE_MAPVIEWOFFILE)
-	sprintf(pg->key, "shm.%s", shmemkey);
+	strcpy(pg->key, shmemkey);
 #else
 #error *** No shared memory variables specified ***
 #endif
