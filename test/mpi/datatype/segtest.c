@@ -39,7 +39,7 @@ MPID_Dataloop *MPID_Dataloop_init_contig( int count )
     MPID_Dataloop *ct;
     
     ct = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop ) );
-    ct->kind                     = MPID_CONTIG | DATALOOP_FINAL_MASK;
+    ct->kind                     = MPID_DTYPE_CONTIG | DATALOOP_FINAL_MASK;
     ct->loop_params.c_t.count    = count;
     ct->loop_params.c_t.dataloop = 0;
     ct->extent                   = count;
@@ -57,7 +57,7 @@ MPID_Dataloop *MPID_Dataloop_init_vector( int count, int blocksize,
     MPID_Dataloop *v;
 
     v = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop) );
-    v->kind                      = MPID_VECTOR | DATALOOP_FINAL_MASK;
+    v->kind                      = MPID_DTYPE_VECTOR | DATALOOP_FINAL_MASK;
     v->loop_params.v_t.count     = count;
     v->loop_params.v_t.blocksize = blocksize;
     v->loop_params.v_t.stride    = stride;
@@ -79,7 +79,7 @@ MPID_Dataloop *MPID_Dataloop_init_blockindexed( int count, int blocksize,
     int           i;
 
     bi = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop) );
-    bi->kind                       = MPID_BLOCKINDEXED | DATALOOP_FINAL_MASK;
+    bi->kind                       = MPID_DTYPE_BLOCKINDEXED | DATALOOP_FINAL_MASK;
     bi->loop_params.bi_t.count     = count;
     bi->loop_params.bi_t.blocksize = blocksize;
     bi->loop_params.bi_t.offset    = 
@@ -107,7 +107,7 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
     int           i;
 
     it = (MPID_Dataloop *)MPIU_Malloc( sizeof(MPID_Dataloop) );
-    it->kind                      = MPID_INDEXED | DATALOOP_FINAL_MASK;
+    it->kind                      = MPID_DTYPE_INDEXED | DATALOOP_FINAL_MASK;
     it->loop_params.i_t.count     = count;
     it->loop_params.i_t.blocksize = (int *)MPIU_Malloc( sizeof(int) * count );
     it->loop_params.i_t.offset    = 

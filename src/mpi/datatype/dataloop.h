@@ -165,11 +165,11 @@ typedef struct MPID_Dataloop_st {
 #define DATALOOP_FINAL_MASK 0x00000008
 #define DATALOOP_KIND_MASK  0x00000007
 #define DATALOOP_ELMSIZE_SHIFT 4
-#define MPID_CONTIG 0x1
-#define MPID_VECTOR 0x2
-#define MPID_BLOCKINDEXED 0x3
-#define MPID_INDEXED 0x4
-#define MPID_STRUCT 0x5
+#define MPID_DTYPE_CONTIG 0x1
+#define MPID_DTYPE_VECTOR 0x2
+#define MPID_DTYPE_BLOCKINDEXED 0x3
+#define MPID_DTYPE_INDEXED 0x4
+#define MPID_DTYPE_STRUCT 0x5
 #define MPID_MAX_DATATYPE_DEPTH 8
 /*S
   MPID_Dataloop_stackelm - Structure for an element of the stack used

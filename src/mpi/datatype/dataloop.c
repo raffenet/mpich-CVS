@@ -71,12 +71,12 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	    MPI_Aint *offset_array;
 	    int      *nbytes_array;
 	    switch (kind & DATALOOP_KIND_MASK) {
-	    case MPID_CONTIG:
+	    case MPID_DTYPE_CONTIG:
 		nbytes = curloopinfo->loop_params.c_t.count;
 		memcpy( dest_buf, src_buf, nbytes );
 		dest_buf += nbytes;
 		break;
-	    case MPID_VECTOR:
+	    case MPID_DTYPE_VECTOR:
 		elmsize   = curloopinfo->kind >> DATALOOP_ELMSIZE_SHIFT;
 		count     = curloopinfo->loop_params.v_t.count;
 		nbytes    = curloopinfo->loop_params.v_t.blocksize;
@@ -98,7 +98,7 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 		/* final sbuf update is extent */
 		src_buf += curloopinfo->extent;
 		break;
-	    case MPID_BLOCKINDEXED:
+	    case MPID_DTYPE_BLOCKINDEXED:
 		count     = curloopinfo->loop_params.bi_t.count;
 		nbytes    = curloopinfo->loop_params.bi_t.blocksize;
 		offset_array = curloopinfo->loop_params.bi_t.offset;
@@ -107,7 +107,7 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 		    dest_buf += nbytes;
 		}
 		break;
-	    case MPID_INDEXED:
+	    case MPID_DTYPE_INDEXED:
 		count     = curloopinfo->loop_params.i_t.count;
 		nbytes_array = curloopinfo->loop_params.i_t.blocksize;
 		offset_array = curloopinfo->loop_params.i_t.offset;
@@ -117,7 +117,7 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 		    dest_buf += nbytes;
 		}
 		break;
-	    case MPID_STRUCT:
+	    case MPID_DTYPE_STRUCT:
 		/* Should never happen; for optimized homogenous code, 
 		   STRUCT is the same as INDEXED */
 		break;
@@ -137,7 +137,7 @@ void MPID_Segment_pack( MPID_Dataloop *loopinfo,
 	    /* We need to push a datatype.  Two cases: struct or other.
 	       Note that since we know that this is not a leaf type, we do
 	       not need to mask of the leaf bit */
-	    if (kind == MPID_STRUCT) {
+	    if (kind == MPID_DTYPE_STRUCT) {
 		/* Get the next struct type and push it */
 		stackelm[cur_sp+1].loopinfo = 
 		    (curloopinfo->loop_params.s_t.dataloop[curstackelm->curcount]);
