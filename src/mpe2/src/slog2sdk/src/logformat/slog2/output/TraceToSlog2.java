@@ -173,6 +173,7 @@ public class TraceToSlog2
         }   // Endof while ( dobj_ins.peekNextKind() )
         treetrunk.flushToFile();
 
+        objdefs.removeUnusedCategories();
         slog_outs.writeCategoryMap( objdefs );
 
         lineIDmaps.add( treetrunk.getIdentityLineIDMap() );

@@ -76,15 +76,18 @@ public class ClogToSlog2
                 objdef = dobj_ins.getShadowCategoryForTopology( topo );
                 objdefs.put( new Integer( objdef.getIndex() ), objdef );
                 shadefs.put( topo, objdef );
+                // System.out.println( "TOPOLOGY: " + topo );
             }
             else if ( next_kind == Kind.CATEGORY ) {
                 objdef = dobj_ins.getNextCategory();
                 objdefs.put( new Integer( objdef.getIndex() ), objdef );
+                // System.out.println( "CATEGORY: " + objdef );
             } 
             else if ( next_kind == Kind.PRIMITIVE ) {
                 prime_obj = dobj_ins.getNextPrimitive();
                 // prime_obj's Category has been set in clogTOdrawable.InputLog
-                // prime_obj.resolveCategory( objdefs );
+                // here, resolveCategory() set Category.setUsed( TRUE )
+                prime_obj.resolveCategory( objdefs );
                 Nobjs++;
                 // System.out.println( Nobjs
                 //                   + ", bytesize=" + prime_obj.getByteSize()
@@ -118,6 +121,7 @@ public class ClogToSlog2
         }   // Endof while ( dobj_ins.peekNextKind() )
         treetrunk.flushToFile();
 
+        objdefs.removeUnusedCategories();
         slog_outs.writeCategoryMap( objdefs );
 
         LineIDMapList lineIDmaps = new LineIDMapList();
