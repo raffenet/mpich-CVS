@@ -1105,3 +1105,52 @@ else
     ifelse([$2],,:,$2)
 fi
 ])dnl
+
+AC_DEFUN([PAC_PROG_F77_CHAR_PARM],[
+#
+# We need to check on how character variables are passed.  If they 
+# are *not* passed at the end of the list, we need to know that NOW!
+case $pac_cv_prog_f77_name_mangle in 
+    mixed|lower)
+    sub1=sub
+    sub2=conffoo
+    ;;
+    upper)
+    sub1=SUB
+    sub2=CONFFOO
+    ;;
+    *)
+    sub1=sub_
+    sub2=conffoo_
+    ;;
+esac
+
+cat > conftest.c <<EOF
+#include <stdio.h>
+int loc = -1;
+void $sub1( char *a, int b, int c )
+{
+    if (b == 10) {
+    loc = 2;
+    }
+    if (c == 10) {
+    loc = 3;
+    }
+}
+int main( int argc, char **argv )
+{
+    int a, b, c;
+    $sub2();
+    printf( "%d\n", loc );
+}
+EOF
+cat > conftest1.f <<EOF
+        subroutine conffoo()
+        character a*10
+        a = "Foo"
+	call sub( a, 20 )
+        end
+EOF
+rm conftest*
+])
+
