@@ -70,17 +70,17 @@ MPI_Send,,,,,Brian,,done
 MPI_Recv,,,,,Brian,,done
 MPI_Get_count,,,,,Bill,,done
 MPI_Bsend,,,,,,MPI_Buffer_attach and MPID_tBsend,
-MPI_Ssend,
-MPI_Rsend,
+MPI_Ssend,,,,,Brian,,done,not tested
+MPI_Rsend,,,,,Brian,,done,not tested
 MPI_Buffer_attach,1,1,1,2,Bill,,.1,3/31/02
 MPI_Buffer_detach,,,,,Bill,MPI_Buffer_attach,
-MPI_Isend,
+MPI_Isend,,,,,David/Brian,,done
 MPI_Ibsend,,,,,,MPI_Buffer_attach,
-MPI_Issend,
-MPI_Irsend,
-MPI_Irecv,
-MPI_Wait,,,,,Brian,,done
-MPI_Test,,,,,David Bill Brian,MPI_Grequest_start,
+MPI_Issend,,,,,Brian,,done,not tested
+MPI_Irsend,,,,,Brian,,done,not tested
+MPI_Irecv,,,,,David/Brian,,done
+MPI_Wait,,,,,Brian,,,needs rethinking and probably rewriting
+MPI_Test,,,,,David/Bill/Brian,MPI_Grequest_start,
 MPI_Request_free,.1,.15,.2,,Brian,,.1,05/14/02
 MPI_Waitany,,,,,,MPI_Grequest_start,
 MPI_Testany,,,,,,MPI_Grequest_start,
@@ -92,13 +92,13 @@ MPI_Iprobe,,,,,Brian,,.1,04/23/2002
 MPI_Probe,,,,,Brian,,.1,04/23/2002
 MPI_Cancel,.25,.5,1,,Brian,,
 MPI_Test_cancelled,.1,.15,.2,,Brian,,.1,04/26/02
-MPI_Send_init,
-MPI_Bsend_init,
-MPI_Ssend_init,
-MPI_Rsend_init,
-MPI_Recv_init,
-MPI_Start,
-MPI_Startall,
+MPI_Send_init,,,,,Brian,,
+MPI_Bsend_init,,,,,Brian,,
+MPI_Ssend_init,,,,,Brian,,
+MPI_Rsend_init,,,,,Brian,,
+MPI_Recv_init,,,,,Brian,,
+MPI_Start,,,,,Brian,,
+MPI_Startall,,,,,Brian,,
 MPI_Sendrecv,,,,,Brian,,.1,5/1/02
 MPI_Sendrecv_replace,
 
@@ -422,7 +422,8 @@ MPI_Type_match_size,
 
 --------------------------------------------------
 
-MPID functions for single-threaded CH3 device without error checking
+MPID functions for single-threaded, homogeneous CH3 device
+with simple error checking
 
 Data Structures
 
@@ -433,36 +434,36 @@ MPIDI_VC,,,,,Brian
 
 Basic Point-to-Point
 
-MPID_Send,,,,,Brian,MPIDI_CH3_iStartMsg MPIDI_CH3_iStartMsgv MPIDI_CH3_iSend MPIDI_CH3_Request_create
-MPID_Ssend,,,,,Brian,MPIDI_CH3_iSend MPIDI_CH3_Request_create
-MPID_Rsend,,,,,Brian,MPIDI_CH3_iStartMsgv
-MPID_Isend,,,,,Brian,MPIDI_CH3_iStartMsg MPIDI_CH3_iStartMsgv MPIDI_CH3_iSend MPIDI_CH3_Request_create
-MPID_Issend,,,,,Brian,MPIDI_CH3_iSend MPIDI_CH3_Request_create
-MPID_Irsend,,,,,Brian,MPIDI_CH3_iStartMsgv
+MPID_Send,,,,,Brian,,done,complex datatypes?
+MPID_Ssend,,,,,Brian,,done,not tested/complex datatypes?
+MPID_Rsend,,,,,Brian,,done,not tested/complex datatypes?
+MPID_Isend,,,,,Brian,,done,complex datatypes?
+MPID_Issend,,,,,Brian,,done,not tested/complex datatypes?
+MPID_Irsend,,,,,Brian,,done,not tested/complex datatypes?
 MPID_tBsend,,,,,Brian
-MPID_Recv,,,,,Brian
-MPID_Irecv,,,,,Brian
-MPID_Request_free,,,,,Brian,MPIDI_CH3_Request_release_ref MPIDI_CH3_Request_destroy,done
-MPID_Cancel_send,,,,,Brian
-MPID_Cancel_recv,,,,,Brian
-MPID_Iprobe,
-MPID_Probe,
+MPID_Recv,,,,,Brian,,,complex datatypes need work
+MPID_Irecv,,,,,Brian,,,complex datatypes need work
+MPID_Request_free,,,,,Brian,,done
+MPID_Cancel_send,,,,,Brian,,,
+MPID_Cancel_recv,,,,,Brian,,,persistent requests
+MPID_Iprobe,,,,,Brian,,done
+MPID_Probe,,,,,Brian,,done
 
 Persistent Point-to-Point
 
-MPID_Send_init,
-MPID_Ssend_init,
-MPID_Rsend_init,
-MPID_Recv_init,
-MPID_Startall,
+MPID_Send_init,,,,,Brian,,
+MPID_Ssend_init,,,,,Brian,,
+MPID_Rsend_init,,,,,Brian,,
+MPID_Recv_init,,,,,Brian,,
+MPID_Startall,,,,,Brian,,
 
 Progress Engine
 
-MPID_Progress_start,,,,,Brian,MPIDI_CH3_Progress_start,done
-MPID_Progress_end,,,,,Brian,MPIDI_CH3_Progress_end,done
-MPID_Progress_test,,,,,Brian,MPIDI_CH3_Progress,done
-MPID_Progress_wait,,,,,Brian,MPIDI_CH3_Progress,done
-MPID_Progress_poke,,,,,Brian,MPIDI_CH3_Progress_poke,done
+MPID_Progress_start,,,,,Brian,,done
+MPID_Progress_end,,,,,Brian,,done
+MPID_Progress_test,,,,,Brian,,done
+MPID_Progress_wait,,,,,Brian,,done
+MPID_Progress_poke,,,,,Brian,,done
 
 Starting and stopping
 
@@ -536,8 +537,8 @@ Send/Recv
 
 MPIDI_CH3_iSend,,,,,Brian,,done
 MPIDI_CH3_iSendv,,,,,Brian,,done
-MPIDI_CH3_iWrite,,,,,Brian,
-MPIDI_CH3_iRead,,,,,Brian,
+MPIDI_CH3_iWrite,,,,,Brian,,done,no immediate write
+MPIDI_CH3_iRead,,,,,Brian,,done,no immediate read
 
 Progress
 
@@ -545,7 +546,7 @@ MPIDI_CH3I_Progress_init,,,,,Brian,,done
 MPIDI_CH3I_Progress_finalize,,,,,Brian
 MPIDI_CH3_Progress_start,,,,,Brian,,done
 MPIDI_CH3_Progress_end,,,,,Brian,,done
-MPIDI_CH3_Progress,,,,,Brian,,
+MPIDI_CH3_Progress,,,,,Brian,,done
 MPIDI_CH3_Progress_poke,,,,,Brian,,done
 
 Startup/shutdown
