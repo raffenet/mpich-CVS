@@ -225,8 +225,6 @@ Open Tasks:
 
 * (romio) more complete test suite [??? Rob R./Rob L./Rajeev]
 
-* (romio, req #112) doesn't handle --disable-f77
-
 * (mpe) full integration and testing (slog2sdk is now being checked out into
   src/util/slog2sdk to support rlog) [Bill/Anthony/David/Brian] -- partially
   done (Bill and Anthony); mpe directory under src/mpe (not the final location)
