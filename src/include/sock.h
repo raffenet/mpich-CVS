@@ -104,8 +104,8 @@ typedef struct sock_wait_t
 int progress_update(int num_bytes, void *user_ptr);
 
 /* function prototypes */
-int sock_init();
-int sock_finalize();
+int sock_init(void);
+int sock_finalize(void);
 
 int sock_create_set(sock_set_t *set);
 int sock_destroy_set(sock_set_t set);
