@@ -56,7 +56,12 @@ also the value at index %d
 **bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
 **bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
 **bsendbufsmall %d %d:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
-#----
+**notgenreq:Attempt to complete a request with MPI_GREQUEST_COMPLETE that \
+was not started with MPI_GREQUEST_START
+**cancelperrecv:Cancellation of persistent receive requests is not supported
+**cancelpersend:Cancellation of persistent send requests is not supported
+**cancelunknown:Attempt to cancel an unknown type of request
+#---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
 **bufnull:Null buffer pointer

@@ -27,10 +27,6 @@
    are used by both the MPI and PMPI versions, use PMPI_LOCAL instead of 
    static; this macro expands into "static" if weak symbols are supported and
    into nothing otherwise. */
-int MPIR_Foo_util( int a, MPID_Comm *comm )
-{
-...
-}
 #endif
 
 #undef FUNCNAME
@@ -67,7 +63,7 @@ int MPI_Grequest_complete( MPI_Request request )
 	    MPID_Request_valid_ptr(request_ptr,mpi_errno);
 	    if (request_ptr && request_ptr->kind != MPID_UREQUEST) {
  	        mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-						  "**notgenreq" 0 );
+						  "**notgenreq", 0 );
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_FOO);

@@ -93,9 +93,8 @@ int MPI_Cancel(MPI_Request *request)
 	case MPID_PREQUEST_RECV:
 	{
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-	    mpi_errno = MPIR_Err_create_code(
-		MPI_ERR_INTERN, "cancellation of persistent receive requests "
-		"is not supported", 0);
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
+					      "**cancelperrecv", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 
@@ -108,27 +107,25 @@ int MPI_Cancel(MPI_Request *request)
 	case MPID_PREQUEST_SEND:
 	{
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-	    mpi_errno = MPIR_Err_create_code(
-		MPI_ERR_INTERN, "cancellation of persistent send requests is "
-		"not supported", 0);
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, 
+					      "**cancelpersend", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 
 	case MPID_UREQUEST:
 	{
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
-	    mpi_errno = MPIR_Err_create_code(
-		MPI_ERR_INTERN, "cancellation of user requests is not "
-		"supported", 0);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    mpi_errno = (request_ptr->cancel_fn)( 
+		request_ptr->grequest_extra_state, 
+		(request_ptr->cc == 0) );
+	    break;
 	}
 
 	default:
 	{
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CANCEL);
 	    mpi_errno = MPIR_Err_create_code(
-		MPI_ERR_INTERN, "attempt to cancel an unsupported request "
-		"type", 0);
+		MPI_ERR_INTERN, "**cancelunknown", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
     }
