@@ -168,7 +168,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 		sreq, &iov[1], &iov_n);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		MPID_Request_release(sreq);
+		MPIDI_CH3_Request_destroy(sreq);
 		sreq = NULL;
 		goto fn_exit;
 	    }

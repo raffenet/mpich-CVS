@@ -195,7 +195,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype,
 	    }
 	    else
 	    {
-		MPID_Request_release(sreq);
+		MPIDI_CH3_Request_destroy(sreq);
 		sreq = NULL;
 		goto fn_exit;
 	    }

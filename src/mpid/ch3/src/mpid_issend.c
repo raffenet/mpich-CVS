@@ -170,14 +170,14 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	    iov_n = MPID_IOV_LIMIT - 1;
 	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(
 		sreq, &iov[1], &iov_n);
-	    if (mpi_errno != MPI_SUCCESS)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		iov_n += 1;
 		MPIDI_CH3_iSendv(sreq->ch3.vc, sreq, iov, iov_n);
 	    }
 	    else
 	    {
-		MPID_Request_release(sreq);
+		MPIDI_CH3_Request_destroy(sreq);
 		sreq = NULL;
 		goto fn_exit;
 	    }
