@@ -101,14 +101,36 @@ sub convert_depend {
     return $dependlist;
 }
 
-print "ID\tUnique_ID\tTask_name\tDuration\tPredecessors\tResource_Names\r\n";
+sub Earlier {
+    $date1 = $_[0];
+    $date2 = $_[1];
+    # Return 1 if $date1 is before $date2
+    ($month1,$day1,$year1) = split(/\//,$date1);
+    ($month2,$day2,$year2) = split(/\//,$date2);
+    if ($year1 < $year2) { return 1; }
+    if ($year1 > $year2) { return 0; }
+    if ($month1 < $month2) { return 1; }
+    if ($month1 > $month2) { return 0; }
+    if ($day1 < $day2) { return 1; }
+    return 0;
+}
+
+$firstdate = "3/2/02";
+
+print "ID\tUnique_ID\tTask_name\tDuration\tPredecessors\tResource_Names\tActual_Finish\r\n";
 for ($i = 1; $i <$id; $i++) {
     $routine = $idtoname[$i];
     $avg     = $nametotime{$routine};
     $depend  = $nametodepend{$routine};
     $dependlist = convert_depend( $depend );
     $owner   = $nametoowner{$routine};
+    $finished = $nametofinished{$routine};
+    # For Microsoft project, we set the earliest date to be near the 
+    # beginning of the time that we starting keeping the schedule.
+    if ($finished ne "" && Earlier( $finished, $firstdate )) {
+	$finished = $firstdate;
+    }
     $nl = "\r\n";
     $nl = "\n";
-    print "$i\t$i\t$routine\t$avg\t\"$dependlist\"\t\"$owner\"$nl";
+    print "$i\t$i\t$routine\t$avg\t\"$dependlist\"\t\"$owner\"\t\"$finished\"$nl";
 }

@@ -59,12 +59,14 @@ sub ProcessFile {
 		$arg3 = "0";
 	    }
 	    if ($arg2 =~ /^\"\*\*/) {
+		$reverse_loc{$arg2} = $filename;
 		if ($arg3 ne "0") {
 		    # Check arg3 matches
 		    $arg2 =~ /^\"\*\*(\w)/;
 		    $testarg1 = $1;
 		    $arg3 =~ /^\"\*\*(\w)/;
 		    $testarg2 = $1;
+		    $reverse_loc{$arg3} = $filename;
 		    if ($testarg1 ne $testarg2) {
 			print STDERR
                        "Possible inconsistent error msg in $filename\r\n\
@@ -181,7 +183,7 @@ sub CreateErrMsgMapping {
 	$longvalue = "\"\0\"";
 	if ($key =~ /^\"\*\*/) {
 	    if (!defined($longnames{$key})) {
-		print STDERR "Shortname $key has no expansion (first seen in file $reverse_loc{$key})\n";
+		print STDERR "Shortname $key has no expansion (first seen in file errnames.txt)\n";
 	    }
 	    else {
 		# Escape any naked quotes
@@ -213,7 +215,7 @@ sub CreateErrMsgMapping {
 	$specname = $specific_msgs[$generic_msgs{$key}];
 	if ($specname =~ /^\"\*\*/) {
 	    if (!defined($longnames{$specname})) {
-		print STDERR "Shortname $specname has no expansion (first seen in file $reverse_loc{$key})\n";
+		print STDERR "Shortname $specname has no expansion (first seen in file $reverse_loc{$specname})\n";
 	    }
 	    else {
 		# Escape any naked quotes
