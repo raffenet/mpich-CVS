@@ -501,8 +501,7 @@ int PMI_Spawn_multiple(int count,
                        const PMI_keyval_t ** info_keyval_vectors,
                        int preput_keyval_size,
                        const PMI_keyval_t * preput_keyval_vector,
-                       int * errors,
-                       int * same_domain)
+                       int * errors)
 {
     char pszStr[4096];
     int nNproc, nIproc;
