@@ -15,7 +15,8 @@ typedef struct MM_Timer_state
     int in_id, out_id;
     int num_calls;
     unsigned long color;
-    char color_str[12];
+    //char color_str[12];
+    char color_str[40];
     char *name;
 } MM_Timer_state;
 
