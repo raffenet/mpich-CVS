@@ -21,7 +21,6 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Comm_join PMPI_Comm_join
-#endif
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h> /* needed for read/write error codes */
@@ -34,6 +33,7 @@
 #include <sys/socket.h>
 #endif
 #define SOCKET_EINTR	    EINTR
+#endif
 
 /* Prototypes for local functions */
 static int fd_send(int, void *, int);
