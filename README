@@ -28,14 +28,14 @@ later, in the section "Alternative configurations".
       This tar file mpich2.tar.gz
       A C compiler (gcc is sufficient)
       A Fortran compiler if Fortran applications are to be used (g77 is
-	sufficient. 
+	sufficient) 
       A C++ compiler for the C++ MPI bindings (g++ is sufficient)
       Python 2.2 or later (for the default MPD process manager)
       PyXML and an XML parser like expat (in order to use mpiexec)
 
-    configure will check for these prerequisites and try to work around
+    Configure will check for these prerequisites and try to work around
     deficiencies if possible.  (If you don't have Fortran, you will
-    still be able to use MPICH2, just not with Fortran applications.
+    still be able to use MPICH2, just not with Fortran applications.)
 
 2.  Unpack the tar file and go to the top level directory:
 
@@ -60,6 +60,7 @@ later, in the section "Alternative configurations".
 
       ./configure -prefix=/home/you/mpich2-install >& configure.log
 
+    (On sh and its derivatives, use > configure.log 2>&1 instead of >&).
     Other configure options are described below.  You might also prefer
     to do a VPATH build (see below).  Check the configure.log file to
     make sure everything went will.  Problems should be
@@ -110,15 +111,16 @@ later, in the section "Alternative configurations".
     found in the README file in mpich2/src/pm/mpd, but the instructions
     given here should be enough to get you started.
 
-    Begin by placing in your home directory a file named mpd.config,
+    Begin by placing in your home directory a file named .mpd.conf,
     containing the line 
 
       password=<passwd>
 
     where <passwd> is a string known only to yourself.  It should not be
-    your normal Unix password.  Make this file readable only by you:
+    your normal Unix password.  Make this file readable and writable
+    only by you:
 
-      chmod og-r mpd.conf
+      chmod 600 .mpd.conf
 
 9.  The first sanity check consists of bringing up a ring of one mpd on
     the local machine, testing one mpd command, and bringing the "ring"
@@ -164,8 +166,9 @@ later, in the section "Alternative configurations".
     run, and is counted in the number to start, whether or not it occurs
     in the file.
 
-    If you cannot get mpdboot to work because of difficulties with ssh
-    or rsh setup, you can start the daemons "by hand" as follows:
+    There is a workaround if you cannot get mpdboot to work because of
+    difficulties with ssh or rsh setup.  You can start the daemons "by
+    hand" as follows:
 
        mpd &                # starts the local daemon
        mpdtrace -l          # makes the local daemon print its port
