@@ -1,1 +1,1 @@
-SUBDIRS = progress xfer bsocket mm init spawn pt2pt request .
+SUBDIRS = progress xfer bsocket mm init spawn pt2pt request util .
