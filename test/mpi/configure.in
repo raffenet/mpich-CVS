@@ -119,7 +119,8 @@ AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
 # Now, select the proper compilers for the tests
 if test "$FROM_MPICH2" = yes ; then
     AC_MSG_RESULT([Configuring tests for MPICH2])
-    if test "$enable_in_place" = yes ; then
+    # Build for testing in place if no prefix was given
+    if test "$enable_in_place" = yes -o "X$prefix" = "XNONE" ; then
         LIBS=$saveLIBS
 	if test -z "$BASECC" ; then
 	    BASECC=$CC
@@ -141,7 +142,13 @@ dnl        F90=$top_build_dir/bin/mpif90
 	# the very last moment (i.e., not here). 
 	if test "X$exec_prefix" = "XNONE" ; then
 	    saveExec_prefix=$exec_prefix
-	    exec_prefix=$prefix
+	    if test "X$prefix" = "XNONE" ; then
+	        # Use the default
+	        exec_prefix=$ac_default_prefix
+	    else
+	        exec_prefix=$prefix
+	    fi
+	    # Evaluate with the current setting of exec_prefix
 	    eval mpibindir=${bindir}
 	    exec_prefix=$saveExec_prefix
         else
