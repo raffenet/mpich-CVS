@@ -2301,7 +2301,8 @@ int MPID_Finalize(void);
 
   Input Parameters:
 + comm        - Communicator of processes to abort
-- return_code - Return code to return to the calling environment.  See notes.
+. mpi_errno   - MPI error code containing the reason for the abort
+- exit_code   - Exit code to return to the calling environment.  See notes.
 
   Return value:
   'MPI_SUCCESS' or an MPI error code.  Normally, this routine should not 
@@ -2319,9 +2320,9 @@ int MPID_Finalize(void);
   In particular, if the communicator is 'MPI_COMM_SELF', only the calling 
   process should be aborted.
 
-  The 'return_code' is the return code that this particular process will 
+  The 'exit_code' is the exit code that this particular process will 
   attempt to provide to the 'mpiexec' or other program invocation 
-  environment.  See 'mpiexec' for a discussion of how return codes from 
+  environment.  See 'mpiexec' for a discussion of how exit codes from 
   many processes may be combined.
 
   An external agent that is aborting processes can invoke this with either
@@ -2368,7 +2369,7 @@ int MPID_Finalize(void);
   Module:
   MPID_CORE
   @*/
-int MPID_Abort( MPID_Comm *comm, int return_code );
+int MPID_Abort( MPID_Comm *comm, int mpi_errno, int exit_code );
 
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Close_port(char *);

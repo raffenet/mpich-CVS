@@ -540,11 +540,11 @@ void connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
 
     if (conn->send_active)
     { 
-	MPID_Abort(conn->send_active->comm, mpi_errno);
+	MPID_Abort(conn->send_active->comm, mpi_errno, 13);
     }
     else
     {
-	MPID_Abort(NULL, mpi_errno);
+	MPID_Abort(NULL, mpi_errno, 13);
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_SEND_FAIL);
@@ -562,7 +562,7 @@ void connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_RECV_FAIL);
 
     mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(sock_errno, FCNAME);
-    MPID_Abort(NULL, mpi_errno);
+    MPID_Abort(NULL, mpi_errno, 13);
 
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_RECV_FAIL);
 }

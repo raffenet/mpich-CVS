@@ -78,7 +78,9 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
 	/* Use comm world if the communicator is not valid */
 	comm_ptr = MPIR_Process.comm_world;
     }
-    MPID_Abort( comm_ptr, errorcode );
+    
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**abort", 0);
+    MPID_Abort( comm_ptr, mpi_errno, errorcode );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ABORT);

@@ -49,7 +49,7 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 	   MPIR_Process.initialized to decide how to signal the error */
 	(void)MPIU_Internal_error_printf( "overflow in finalize stack!\n" );
 	if (MPIR_Process.initialized == MPICH_WITHIN_MPI) {
-	    MPID_Abort( 0, 1 );
+	    MPID_Abort( NULL, MPI_SUCCESS, 13 );
 	}
 	else {
 	    exit(1);

@@ -387,6 +387,7 @@ with MPI_Alloc_mem.
 **nomemreq:failure occurred while allocating memory for a request object
 **notcstatignore:MPI_STATUS_IGNORE cannot be passed to MPI_Status_c2f()
 **notfstatignore:MPI_STATUS_IGNORE cannot be passed to MPI_Status_f2c()
+**abort:application called MPI_ABORT
 
 # Duplicates?
 #**argnull:Invalid null parameter

@@ -1239,7 +1239,7 @@ Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1242: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   :
 else
@@ -1256,7 +1256,7 @@ Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1259: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   :
 else
@@ -1273,7 +1273,7 @@ Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1276: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   :
 else
@@ -1311,7 +1311,7 @@ else
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1314: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   ac_cv_header_stdc=yes
@@ -1415,7 +1415,7 @@ else
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:1418: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   eval "ac_cv_header_$ac_safe=yes"
@@ -2423,7 +2423,7 @@ else
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:2426: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   eval "ac_cv_header_$ac_safe=yes"
@@ -6263,7 +6263,7 @@ echo "configure:6257: checking for including <jni.h>" >&5
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:6266: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   jac_jni_working=yes
@@ -6354,7 +6354,7 @@ echo "configure:6348: checking for including <jni.h>" >&5
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
 { (eval echo configure:6357: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   jac_jni_working=yes
@@ -6457,6 +6457,8 @@ for dir in \
     /usr/jdk* \
     /usr/j2sdk* \
     /usr/java* \
+    /usr/java/jdk* \
+    /usr/java/j2sdk* \
     /usr/local \
     /usr/local/java* \
     /usr/local/jdk* \
@@ -6521,12 +6523,12 @@ for dir in $reverse_dirs ; do
             echo "$ac_t""found $jac_JH" 1>&6
             
                 echo $ac_n "checking if $jac_JH works""... $ac_c" 1>&6
-echo "configure:6525: checking if $jac_JH works" >&5
+echo "configure:6527: checking if $jac_JH works" >&5
                 
         echo "$ac_t""unknown!" 1>&6
                 jac_JDK_TOPDIR="`echo $jac_JH | sed -e 's%\(.*\)/[^/]*/[^/]*$%\1%'`"
                 echo $ac_n "checking if $jac_JDK_TOPDIR exists""... $ac_c" 1>&6
-echo "configure:6530: checking if $jac_JDK_TOPDIR exists" >&5
+echo "configure:6532: checking if $jac_JDK_TOPDIR exists" >&5
         if test "X$jac_JDK_TOPDIR" != "X" -a -d "$jac_JDK_TOPDIR" ; then
             jac_jni_working=yes
         else
@@ -6535,7 +6537,7 @@ echo "configure:6530: checking if $jac_JDK_TOPDIR exists" >&5
         if test "$jac_jni_working" = "yes" ; then
             echo "$ac_t""yes" 1>&6
             echo $ac_n "checking for <jni.h> include flag""... $ac_c" 1>&6
-echo "configure:6539: checking for <jni.h> include flag" >&5
+echo "configure:6541: checking for <jni.h> include flag" >&5
             jac_JDK_INCDIR="$jac_JDK_TOPDIR/include"
             if test -d "$jac_JDK_INCDIR" -a -f "$jac_JDK_INCDIR/jni.h" ; then
                 jac_JNI_INC="-I$jac_JDK_INCDIR"
@@ -6555,17 +6557,17 @@ echo "configure:6539: checking for <jni.h> include flag" >&5
         if test "$jac_jni_working" = "yes" ; then
             echo "$ac_t""found $jac_JNI_INC" 1>&6
             echo $ac_n "checking for including <jni.h>""... $ac_c" 1>&6
-echo "configure:6559: checking for including <jni.h>" >&5
+echo "configure:6561: checking for including <jni.h>" >&5
             jac_save_CPPFLAGS="$CPPFLAGS"
             CPPFLAGS="$jac_save_CPPFLAGS $jac_JNI_INC"
             cat > conftest.$ac_ext <<EOF
-#line 6563 "configure"
+#line 6565 "configure"
 #include "confdefs.h"
 #include <jni.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:6568: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+{ (eval echo configure:6570: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$" | grep -v "^conftest.${ac_ext}:\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
   jac_jni_working=yes
@@ -6594,7 +6596,7 @@ rm -f conftest*
                 else
                     echo "$ac_t""no" 1>&6
                     echo $ac_n "checking for working javah in known locations""... $ac_c" 1>&6
-echo "configure:6598: checking for working javah in known locations" >&5
+echo "configure:6600: checking for working javah in known locations" >&5
                     jac_JH=""
                 fi
             
@@ -6633,7 +6635,7 @@ JVM="$JDK_TOPDIR/bin/java"
 
 
 echo $ac_n "checking for cygpath""... $ac_c" 1>&6
-echo "configure:6637: checking for cygpath" >&5
+echo "configure:6639: checking for cygpath" >&5
 jac_hasProg=no
 IFS="${IFS=   }"; pac_saved_ifs="$IFS"; IFS=":"
 for path_elem in $PATH ; do

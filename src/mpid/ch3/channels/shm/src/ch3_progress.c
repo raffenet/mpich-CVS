@@ -90,10 +90,11 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    handle_written(vc_ptr);
 	    break;
 	case SHM_WAIT_ERROR:
-	    MPIDI_err_printf("MPIDI_CH3_Progress", "MPIDI_CH3I_SHM_wait returned error %d\n", error);
+	    MPIDI_err_printf(FCNAME, "MPIDI_CH3I_SHM_wait returned error %d\n", error);
 	    break;
 	default:
-	    MPID_Abort(MPIR_Process.comm_world, -1);
+	    MPIDI_err_printf(FCNAME, "MPIDI_CH3I_SHM_wait returned an unknown operation code\n");
+	    MPID_Abort(MPIR_Process.comm_world, MPI_SUCCESS, 13);
 	    break;
 	}
 

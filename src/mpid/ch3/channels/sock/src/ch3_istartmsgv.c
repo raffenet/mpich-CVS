@@ -111,7 +111,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 			mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
 			if (mpi_errno != MPI_SUCCESS)
 			{
-			    MPID_Abort(NULL, mpi_errno);
+			    MPID_Abort(NULL, mpi_errno,13);
 			}
 			break;
 		    }

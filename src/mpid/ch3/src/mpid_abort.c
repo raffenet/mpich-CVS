@@ -10,18 +10,18 @@
 #define FUNCNAME MPID_Abort
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Abort(MPID_Comm * comm, int errorcode)
+int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_ABORT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_ABORT);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
-    if (errorcode != MPI_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS)
     {
 	char msg[MPI_MAX_ERROR_STRING];
 	
-	MPIR_Err_get_string(errorcode, msg);
+	MPIR_Err_get_string(mpi_errno, msg);
 	fprintf(stderr, "ABORT - process %d: %s\n", MPIR_Process.comm_world->rank, msg);
 	fflush(stderr);
     }
@@ -31,7 +31,7 @@ int MPID_Abort(MPID_Comm * comm, int errorcode)
 	fflush(stderr);
     }
     
-    exit(1);
+    exit(exit_code);
     
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
 
