@@ -116,7 +116,7 @@ int MPIR_ROMIO_Get_file_errhand( MPI_File file_ptr, MPI_Errhandler *e )
     else if (file_ptr->cookie != ADIOI_FILE_COOKIE) {
 	return MPI_ERR_FILE;
     }
-    /* -- END ERROR HANDLING-- */
+    /* --END ERROR HANDLING-- */
     else {
 	if (file_ptr->err_handler == MPI_ERRORS_RETURN) 
 	    *e = 0;
