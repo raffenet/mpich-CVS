@@ -269,7 +269,7 @@ case $arg in
      NOPROFILE=1
      ;;
   -f90=* | --f90=*)
-     F90=`echo $arg|sed 's/-*fc=//'`
+     F90=`echo A$arg|sed 's/A-*f90=//'`
      ;;
   -echo)
      set -x
