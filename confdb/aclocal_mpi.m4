@@ -126,24 +126,28 @@ case $ac_mpi_type in
         dnl 
         dnl This isn't correct.  It should try to get the underlying compiler
         dnl from the mpicc and mpif77 scripts or mpireconfig
-        save_PATH="$PATH"
-        if test "$with_mpich" != "yes" -a "$with_mpich" != "no" ; then 
-            PATH=$with_mpich:${PATH}
+        if test "X$pac_lib_mpi_is_building" != "Xyes" ; then
+            save_PATH="$PATH"
+            if test "$with_mpich" != "yes" -a "$with_mpich" != "no" ; then 
+                PATH=$with_mpich:${PATH}
+            fi
+            AC_PATH_PROG(MPICC,mpicc)
+            TESTCC=${CC-cc}
+            CC="$MPICC"
+            AC_PATH_PROG(MPIF77,mpif77)
+            TESTF77=${F77-f77}
+            F77="$MPIF77"
+            AC_PATH_PROG(MPIF90,mpif90)
+            TESTF90=${F90-f90}
+            F90="$MPIF90"
+            AC_PATH_PROG(MPICXX,mpiCC)
+            TESTCXX=${CXX-CC}
+            CXX="$MPICXX"
+	    PATH="$save_PATH"
+  	    MPILIBNAME="mpich"
+        else 
+	    # All of the above should have been passed in the environment!
         fi
-        AC_PATH_PROG(MPICC,mpicc)
-        TESTCC=${CC-cc}
-        CC="$MPICC"
-        AC_PATH_PROG(MPIF77,mpif77)
-        TESTF77=${F77-f77}
-        F77="$MPIF77"
-        AC_PATH_PROG(MPIF90,mpif90)
-        TESTF90=${F90-f90}
-        F90="$MPIF90"
-        AC_PATH_PROG(MPICXX,mpiCC)
-        TESTCXX=${CXX-CC}
-        CXX="$MPICXX"
-	PATH="$save_PATH"
-	MPILIBNAME="mpich"
 	;;
 	ibmmpi)
 	TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf
