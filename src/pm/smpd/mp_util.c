@@ -254,7 +254,7 @@ int handle_stdout_command(smpd_context_t *context)
     if (smpd_get_string_arg(cmd->cmd, "data", data, MP_MAX_STDOUT_LENGTH))
     {
 	smpd_decode_buffer(data, data, MP_MAX_STDOUT_LENGTH, &num_decoded);
-	printf("[%d]", rank);
+	/*printf("[%d]", rank);*/
 	fwrite(data, 1, num_decoded, stdout);
 	fflush(stdout);
     }
@@ -285,7 +285,7 @@ int handle_stderr_command(smpd_context_t *context)
     if (smpd_get_string_arg(cmd->cmd, "data", data, MP_MAX_STDOUT_LENGTH))
     {
 	smpd_decode_buffer(data, data, MP_MAX_STDOUT_LENGTH, &num_decoded);
-	fprintf(stderr, "[%d]", rank);
+	/*fprintf(stderr, "[%d]", rank);*/
 	fwrite(data, 1, num_decoded, stderr);
 	fflush(stderr);
     }
