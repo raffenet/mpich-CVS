@@ -60,6 +60,7 @@ doc_LATEX_SOURCES =
 
 install_LIB = lib/lib${MPILIBNAME}.a
 install_INCLUDE = src/include/mpi.h
+optinstall_INCLUDE = src/mpi/romio/mpio.h src/mpi/romio/mpiof.h
 optinstall_LIB = lib/libp${MPILIBNAME}.a
 optinstall_SHLIB = lib/lib${MPILIBNAME}.so
 # Some of the subsidiary packages may need to be installed.  This target will
