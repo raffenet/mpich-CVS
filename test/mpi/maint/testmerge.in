@@ -31,6 +31,9 @@
 #      that are replaced in the generated file.
 #    
 # ----------------------------------------------------------------------------
+# Global variables
+$debug = 1;
+
 # Definitions
 %Definitions = ();
 # Global definitions are for all files, and can contain standard comments,
@@ -53,7 +56,7 @@ sub ReadDefinition {
 	    my $found = 0;
 	    while (<$DFD>) {
 		if (/<\/$name>/) { $found = 1; last; }
-		s/\r//g;
+		s/\r//g;   # Remove any extraneous characters
 		$defn .= $_;
 	    }
 	    # If we didn't close the definition, generate an error message
@@ -97,18 +100,22 @@ sub MergeTemplate {
     open OFD, ">$outputFilename" || die "Cannot open $outputFilename\n";
 
     while (<IFD>) {
-        my $indent = "";
+	s/\r//;
 	while (/(\s*)<(\w*)\/>/) {
-	    my $thisindent = $1;
+	    my $indent = $1;
 	    my $name = $2;
+	    $indent =~ s/\n//g;
 	    if (defined($Definitions{$name})) {
 		my $defn = $Definitions{$name};
 		my $newdefn = "";
 		# Add indentation to definition; substitute any defintions
 		foreach my $line (split(/\n/,$defn)) {
-		    $newdefn .= $thisindent . $line;# . "\n";
+		    print "Looking at |$line|\n" if $debug;
+		    $newdefn .= $indent . $line . "\n";
 		}
-		s/<$name\/>/$newdefn/;
+		chop $newdefn;
+		print "Replacing <$name> with |$newdefn|\n" if $debug;
+		s/<$name\/>/$newdefn/;   # Only do one at a time
 	    }
 	    elsif (defined($GlobalDefinitions{$name})) {
 		# local definitions can override any global definitions
@@ -116,9 +123,11 @@ sub MergeTemplate {
 		my $newdefn = "";
 		# Add indentation to definition
 		foreach my $line (split(/\n/,$defn)) {
-		    $newdefn .= $thisindent . $line;# . "\n";
+		    $newdefn .= $indent . $line . "\n";
 		}
-		s/<$name\/>/$newdefn/;
+		print "Replacing <$name> with |$newdefn|\n" if $debug;
+		chop $newdefn;
+		s/<$name\/>/$newdefn/;   # Only do one at a time
 	    }
 	    else {
 		# Unknown name!
