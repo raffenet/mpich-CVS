@@ -1,0 +1,46 @@
+
+
+			  MPICH-2 Version 0.94
+
+The MPICH group at Argonne National Laboratory is pleased to announce
+the availability of MPICH-2, version 0.94.  MPICH-2 is complete rewrite
+of the MPICH portable implementation of MPI, the Message-Padding
+Interface Standard.
+
+MPICH-2 offers higher performance and greater robustness than the
+original MPICH.  It will eventually provide an implementation of the
+entire MPI-2 Standard.  Currently it contains all of MPI-1, the I/O part
+of MPI-2 (sometimes called MPI-I/O), and a preliminary implementation of
+the MPI remote-memory operations (MPI_Put/MPI_Get).  Dynamic process
+management functions will be coming in the next release.
+
+At this point not as many communication devices have been implemented as
+in MPICH-1, but communication over TCP sockets, or through shared
+memory, or with a combination of the two, is currently supported.  The
+default configuration is for all communication to take place over
+sockets.
+
+You can download MPICH-2 from http://www.mcs.anl.gov/mpi/mpich.  It is
+still considered a beta release since, although we have tested it
+thoroughly in our own environment, it has not yet been tested by a wide
+range of users.  We hope that this announcement will lead to more users.
+
+Be sure and read the README in the top-level directory, since the way in
+which MPICH jobs are started has changed substantially.  All the options
+supported by the MPI-2 standard mpiexec are supported, together with a
+few extensions, such as passing environment variables to individual MPI
+processes.  Applications will have to be recompiled (since mpi.h is
+new) and relinked.
+
+If you experience problems, please report them to
+mpich2-maint@mcs.anl.gov.  This will reach all of the developers.
+
+The Windows version of MPICH2, for Windows 2000 and XP, can be obtained
+from  ____________________.
+ 
+David Ashton
+Bill Gropp
+Rusty Lusk
+Rob Ross
+Rajeev Thakur
+Brian Toonen
