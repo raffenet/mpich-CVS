@@ -62,23 +62,25 @@ dist: dist-check
 	@version=${VERSION} ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
 	if test "$$prever" = "-CVS" ; then version=$${version}-`date "+%Y%m%d"` ; fi ; \
-	if test -z "${TAG}" ; then tag=HEAD ; else tag=${TAG}; fi ; \
-	$(MAKE) version=$${version} tag=$${tag} dist-with-version
+	$(MAKE) version=$${version} dist-with-version
 
 #
 # For 0.96, we include only the socket channel and the example ib/gasnet/rdma
 # channels
 dist-with-version:
 	@if [ -z "$(version)" ] ; then \
-	    echo "Must invoke with make version=value tag=value dist-with-version" ;\
+	    echo "Must invoke with make version=value dist-with-version" ;\
 	    exit 1 ; fi 
-	@if [ -z "$(tag)" ] ; then \
-	    echo "Must invoke with make version=value tag=value dist-with-version" ;\
-	    exit 1 ; fi 
-	@echo ""; echo "Cutting version ${version} of the MPICH2 distribution from tag ${tag}" ; echo ""
+	@echo "Cutting version ${version} of the MPICH2 distribution"
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
 	rm -f cvsexp.log 
-	( cd tmpdir && cvs -d $(MPICVSHOME) export -r "${tag}" mpich2all >cvsexp.log 2>&1 ) ;\
+	if [ -n "${TAG}" ] ; then \
+	    ( cd tmpdir && \
+	    cvs -d $(MPICVSHOME) export -r "${TAG}" mpich2all >cvsexp.log 2>&1 ) ;\
+	else \
+	    ( cd tmpdir && \
+	    cvs -d $(MPICVSHOME) export -D 'now' mpich2all >cvsexp.log 2>&1 ) ;\
+	fi
 	cp -rp ${srcdir}/confdb tmpdir/mpich2
 	( cd tmpdir/mpich2 && sed -e "s/VERSION = .*/VERSION = ${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${version}
@@ -98,14 +100,12 @@ dist-with-version:
 	-cp -f tmpdir2/doc/mpich2/*.pdf tmpdir/${PACKAGE}-${version}/doc/mpich2
 	-cp -f tmpdir2/doc/refman/mpiman.pdf tmpdir/${PACKAGE}-${version}/doc/refman
 	rm -rf tmpdir2
-	(cd tmpdir/${PACKAGE}-${version}/src && cvs -d $(MPICVSHOME) export -r ${tag} mpe >>cvsexp.log 2>&1 && \
+	(cd tmpdir/${PACKAGE}-${version}/src && cvs -d $(MPICVSHOME) export -D 'now' mpe >>cvsexp.log 2>&1 && \
 	rm -rf mpe/slog_api mpe/viewers mpe/profiling )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
-	(cd tmpdir/${PACKAGE}-${version}/src/mpe && cvs -d $(MPICVSHOME) export -r ${tag} slog2sdk >>cvsexp.log 2>&1 )
+	(cd tmpdir/${PACKAGE}-${version}/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk >>cvsexp.log 2>&1 )
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
-	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpid/ch3/channels/shm)
-	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpid/ch3/channels/ssm)
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 
 	rm -rf tmpdir
