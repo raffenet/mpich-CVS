@@ -671,7 +671,7 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*rfn)(int, v
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    MPIDI_DBG_PRINTF((60, FCNAME, "posting a read of %d bytes", len));
     vc->ch.read.total = 0;
     vc->ch.read.buffer = buf;
     vc->ch.read.bufflen = len;
@@ -715,6 +715,16 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int
 #ifdef USE_SHM_UNEX
     if (vc->ch.unex_list)
 	shmi_readv_unex(vc);
+#endif
+#ifdef MPICH_DBG_OUTPUT
+    {
+	int i, total=0;
+	for (i=0; i<n; i++)
+	{
+	    total += iov[i].MPID_IOV_LEN;
+	}
+	MPIDI_DBG_PRINTF((60, FCNAME, "posting a read of %d bytes.\n", total));
+    }
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     return SHM_SUCCESS;
