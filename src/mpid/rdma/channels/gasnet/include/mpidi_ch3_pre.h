@@ -7,23 +7,12 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#if 0
-#ifdef DEBUG
-#  undef DEBUG
-#  define NDEBUG
-#  define GASNET_SEQ 
-#  include "gasnet.h"
-#  undef NDEBUG
-#  define DEBUG
+#ifndef DEBUG
+#define DEBUG //DARIUS
+#define GASNET_SEQ 
+#include "gasnet.h"
+#undef DEBUG
 #else
-#  define NDEBUG
-#  define GASNET_SEQ 
-#  include "gasnet.h"
-#  undef NDEBUG
-#endif
-#else
-#warning DARIUS
-#define DEBUG
 #define GASNET_SEQ 
 #include "gasnet.h"
 #endif
