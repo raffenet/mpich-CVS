@@ -16,4 +16,4 @@ lib${MPILIBNAME}_a_SOURCES =			\
     ch3_progress.c				\
     ch3_request.c				\
     ch3i_acceptq.c				\
-
+    ch3i_bizcard_cache.c

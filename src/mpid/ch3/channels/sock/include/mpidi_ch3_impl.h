@@ -96,6 +96,7 @@ typedef struct MPIDI_CH3I_Connection
     }																\
 }
 
+
 #define MPIDI_CH3I_SendQ_head(vc) (vc->ch.sendq_head)
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
@@ -111,5 +112,10 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
 
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc);
+
+int MPIDI_CH3I_Add_to_bizcard_cache(char *pg_id, int pg_size, int rank, char *bizcard);
+int MPIDI_CH3I_Lookup_bizcard_cache(char *pg_id, int rank, char *bizcard, int len, int *found);
+int MPIDI_CH3I_Bizcard_cache_free(void);
+
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

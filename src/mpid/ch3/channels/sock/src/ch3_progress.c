@@ -1282,6 +1282,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port;
     int rc;
+    int found;
     MPIDI_CH3I_Connection_t * conn;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
@@ -1293,20 +1294,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     assert(vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
     
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
-    
-    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", mpi_errno);
-	goto fn_exit;
-    }
-    key = MPIU_Malloc(key_max_sz);
-    if (key == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_exit;
-    }
+
     mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
@@ -1318,18 +1306,49 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	goto fn_exit;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
-    if (rc < 0 || rc > key_max_sz)
+    /* first lookup bizcard cache to see if bizcard is there. needed for spawn/connect/accept */
+    mpi_errno = MPIDI_CH3I_Lookup_bizcard_cache(vc->pg->id, vc->pg_rank, val, 
+                                                val_max_sz, &found);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_exit;
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        goto fn_exit;
     }
-    rc = PMI_KVS_Get(vc->pg->ch.kvs_name, key, val, val_max_sz);
-    if (rc != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get",
-					 "**pmi_kvs_get %d", rc);
-	goto fn_exit;
+    /* --END ERROR HANDLING-- */
+
+    if (!found) {
+        /* bizcard not found, get it from KVS space */
+
+        mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+        if (mpi_errno != PMI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                             "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", mpi_errno);
+            goto fn_exit;
+        }
+        key = MPIU_Malloc(key_max_sz);
+        if (key == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+            goto fn_exit;
+        }
+
+        rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
+        if (rc < 0 || rc > key_max_sz)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+            goto fn_exit;
+        }
+        rc = PMI_KVS_Get(vc->pg->ch.kvs_name, key, val, val_max_sz);
+        if (rc != PMI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get",
+                                             "**pmi_kvs_get %d", rc);
+            goto fn_exit;
+        }
+
+        MPIU_Free(key);
     }
 
     val_p = val;
@@ -1377,7 +1396,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     }
 
     MPIU_Free(val);
-    MPIU_Free(key);
 
   fn_exit:
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));

@@ -28,6 +28,8 @@ int MPIDI_CH3_Finalize()
 	/* --END ERROR HANDLING-- */
     }
 
+    MPIDI_CH3I_Bizcard_cache_free();
+
     /* Let PMI know the process is about to exit */
     rc = PMI_Finalize();
     if (rc != 0)
