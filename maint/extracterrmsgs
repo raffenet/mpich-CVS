@@ -1,7 +1,20 @@
-#! /usr/bin/perl
-# (Tested with -w; 9/7/04)
+#! /usr/bin/perl 
+# (Tested with -w; 10/5/04)
 # 
-require "maint/parse.sub";
+# Find the parse.sub routine.
+my $maintdir = "maint";
+my $rootdir  = ".";
+if ( ! -s "maint/parse.sub" ) {
+    my $program = $0;
+    $program =~ s/extracterrmsgs//;
+    if (-s "$program/parse.sub") {
+	$maintdir = $program;
+	$rootdir  = $program;
+	$rootdir  =~ s/\/maint//g;
+	print "Rootdir = $rootdir\n" if $debug;
+    }
+}
+require "$maintdir/parse.sub";
 
 $debug = 0;
 $careful = 0;        # Set careful to 1 to flag unused messages
@@ -45,7 +58,7 @@ else {
     $OUTFD = STDOUT;
 }
 # Setup before processing the files
-if ($build_test_pgm) {
+if ($build_test_pgm && -d "test/mpi/errhan") {
     open( TESTFD, ">test/mpi/errhan/errcode.c" ) || die "Cannot create test program\n";
     print TESTFD "#include <stdio.h>\n#include <stdlib.h>\n#include \"mpi.h\"\n";
     print TESTFD "#define MPIR_ERR_FATAL 1\n";
@@ -64,8 +77,9 @@ foreach $file (@files) {
 &CreateErrmsgsHeader( $OUTFD );
 &CreateErrMsgMapping( $OUTFD );
 
-if ($build_test_pgm) {
+if ($build_test_pgm && -d "test/mpi/errhan") {
     print TESTFD "    MPI_Finalize();\n    return 0;\n}\n";
+    close TESTFD;
 }    
 
 #
@@ -114,7 +128,7 @@ sub CreateErrmsgsHeader {
 # static const namemap[] = { {short1, long1}, {...} }
 sub CreateErrMsgMapping {
     my $OUTFD = $_[0];
-    my $sourcefile = "src/mpi/errhan/errnames.txt";
+    my $sourcefile = "$rootdir/src/mpi/errhan/errnames.txt";
     #
     # Read the file with the long names
     # Create the hash %longnames that maps the short names to the long names,
@@ -171,8 +185,8 @@ sub CreateErrMsgMapping {
     # We must do this here because we must ensure that all MPI error
     # classes have been added to the generic messages
     @class_msgs = ();
-    open (FD, "<src/mpi/errhan/baseerrnames.txt" ) || 
-	die "Could not open src/mpi/errhan/baseerrnames.txt";
+    open (FD, "<$rootdir/src/mpi/errhan/baseerrnames.txt" ) || 
+	die "Could not open $rootdir/src/mpi/errhan/baseerrnames.txt\n";
     while (<FD>)
     {
 	s/#.*$//;
@@ -271,7 +285,7 @@ sub CreateErrMsgMapping {
 	}
 
 	# Escape any naked quotes
-	$longvalue = s/(?<!\\)\"/\\\"/;
+	$longvalue =~ s/(?<!\\)\"/\\\"/;
 	$longvalue = "\"" . $longnames{$key} . "\"";
 
 	print $OUTFD "static const char short_spc$num\[\] = \"$key\";\n";
@@ -309,13 +323,17 @@ sub CreateErrMsgMapping {
 #
 sub AddTestCall {
 
-    my $last_errcode = $_[0];
-    my $fatal_flag = $_[1];
-    my $fcname = $_[2];
-    my $linenum = $_[3];
-    my $errclass = $_[4];
-    my $generic_msg = $_[5];
-    my $specific_msg = $_[6];
+    my $genericArgLoc = $_[0];
+    
+    my $last_errcode = "MPI_SUCCESS";  # $_[0];
+    my $fatal_flag   = "MPIR_ERR_RECOVERABLE"; # $_[1];
+    my $fcname       = "unknown"; # $_[2];
+    my $linenum      = "__LINE__"; # $_[3];
+    my $errclass     = "MPI_ERR_OTHER"; # $_[4];
+
+    my $generic_msg = $_[$genericArgLoc+1];
+    my $specific_msg = $_[$genericArgLoc+2];
+    if ($#_ < $genericArgLoc+2) { $specific_msg = "0"; }
 
     # Ensure that the last_errcode, class and fatal flag are specified.  There are a few places where these are variables.
     if (!($last_errcode =~ /MPI_ERR_/) )
@@ -431,7 +449,7 @@ sub AddTestCall {
 		print STDERR "Unrecognized format type $type for $fullformat in $filename\n";
 	    }
 	}   
-	$actargs = $#_ - 6;
+	$actargs = $#_ - $genericArgLoc - 2;
 	if ($actargs != $narg)
 	{
 	    print STDERR "Error: Format $fullformat provides $narg arguments but call has $actargs in $filename\n";
@@ -463,16 +481,64 @@ sub AddTestCall {
 $filename = "";    # Make global so that other routines can echo filename
 sub ProcessFile
 { 
+    # Leave filename global for AddTest
     $filename = $_[0];
+    my $linecount = 0;
     open (FD, "<$filename" ) || die "Could not open $filename\n";
 
     while (<FD>) {
-	# First, remove any comments
+	$linecount++;
+	# Skip code that is marked as ignore (e.g., for
+	# macros that are used to simplify the use of MPIR_Err_create_code
+	# (such macros must also be recognized and processed)
+	if (/\/\*\s+--BEGIN ERROR MACROS--\s+\*\//) {
+	    while (<FD>) {
+		$linecount++;
+		if (/\/\*\s+--END ERROR MACROS--\s+\*\//) { last; }
+	    }
+	    $remainder = "";
+	    next;
+	}
+	# Next, remove any comments
 	$_ = StripComments( FD, $_ );
 	# Skip the definition of the function
-	if (/int\s*MPIR_Err_create_code/) { $remainder = ""; next; }
-	while (/MPIR_Err_create_code\s*(\(.*$)/) {
-	    ($leader, $remainder, @args ) = &GetSubArgs( FD, $1 );
+	if (/int\s+MPIR_Err_create_code/) { $remainder = ""; next; }
+	# Match the known routines and macros.
+	# Then check that the arguments match if there is a 
+	# specific string (number of args matches the number present)
+	# (MPIU_CHKERRANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
+	# (MPIU_SETERRANDJUMP[0-4]?(cond,code,class,gmsg[,smsg,args])
+	# (MPIU_CHKERRANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
+	# (MPIU_SETERRANDSTMT[0-4]?(cond,code,class,gmsg[,smsg,args],stmt)
+	# Value is a tuple of:
+	#  the count of args where the generic msg begins (starting from 0)
+	#  location of __LINE__ (-1 for none)
+	#  specific msg arg required (0 for no, > 0 for yes)
+	%KnownErrRoutines = ( 'MPIR_Err_create_code'      => '5:3:1', 
+			      'MPIO_Err_create_code'      => '5:3:1', 
+			      'MPIU_ERR_SETANDSTMT'       => '3:-1:0',
+			      'MPIU_ERR_SETFATALANDSTMT'  => '3:-1:0',
+			      'MPIU_ERR_SETANDSTMT1'      => '3:-1:1', 
+			      'MPIU_ERR_SETFATALANDSTMT1' => '3:-1:1', 
+			      'MPIU_ERR_SETANDJUMP'       => '2:-1:0',
+			      'MPIU_ERR_SETANDJUMP1'      => '2:-1:1', 
+			      'MPIU_ERR_CHKANDSTMT'       => '3:-1:0', 
+			      'MPIU_ERR_CHKANDSTMT1'      => '3:-1:1', 
+			      'MPIU_ERR_CHKANDJUMP'       => '3:-1:0',
+			      'MPIU_ERR_CHKANDJUMP1'      => '3:-1:1',
+			      );
+	while (/(MPI[OUR]_[A-Za-z0-9_]+)\s*(\(.*)$/) {
+	    my $routineName = $1;
+	    my $arglist     = $2;
+	    if (!defined($KnownErrRoutines{$routineName})) {
+		print "Skipping $routineName\n" if $debug;
+		last;
+	    }
+	    print "Found $routineName\n" if $debug;
+	    my ($genericArgLoc,$hasLine,$hasSpecific) = 
+		split(/:/,$KnownErrRoutines{$routineName});
+
+	    ($leader, $remainder, @args ) = &GetSubArgs( FD, $arglist );
 	    # Discard leader 
 	    if ($debug) {
 		print "Line begins with $leader\n";   # Use $leader to keep -w happy
@@ -480,45 +546,51 @@ sub ProcessFile
 		    print "|$arg|\n";
 		}
 	    }
+	    # Process the signature
 	    
 	    # if signature does not match new function prototype, then skip it
-	    if ($#args < 6 || ($args[3] ne "__LINE__" && $args[3] ne "line"))
-	    {
-		if (!defined($bad_syntax_in_file{$filename}))
-		{
+	    if ($#args < $genericArgLoc) {
+		if (!defined($bad_syntax_in_file{$filename})) {
 		    $bad_syntax_in_file{$filename} = 1;
-		    if ($args[3] ne "__LINE__" && $args[3] ne "line") {
-			print STDERR "Warning: Expected __LINE__ or line as 4th argument of MPIR_Err_create_code() in $filename\n";
-		    }
-		    else {
-			print STDERR "Warning: MPIR_Err_create_code() call with too few arguments in $filename\n";
-		    }
+		    print STDERR "Warning: $routineName call with too few arguments in $filename\n";
+		}
+		next;
+	    }
+	    if ($hasLine >= 0 && 
+		($args[$hasLine] ne "__LINE__" && $args[$hasLine] ne "line")) {
+		if (!defined($bad_syntax_in_file{$filename})) {
+		    $bad_syntax_in_file{$filename} = 1;
+		    my $tmpi = $hasLine + 1;
+		    print STDERR "Warning: Expected __LINE__ or line as ${tmpi}th argument of $routineName in $filename\n";
 		}
 		next;
 	    }
 	    
-	    my $last_errcode = $args[0];
-	    my $fatal_flag = $args[1];
-	    my $fcname = $args[2];
-	    my $linenum = $args[3];
-	    my $errclass = $args[4];
-	    my $generic_msg = $args[5];
-	    my $specific_msg = $args[6];
+	    #my $last_errcode = $args[0];
+	    #my $fatal_flag = $args[1];
+	    #my $fcname = $args[2];
+	    #my $linenum = $args[3];
+	    #my $errclass = $args[4];
+	    my $generic_msg = $args[$genericArgLoc];
+	    my $specific_msg = "0";
+	    if ($hasSpecific) {
+		$specific_msg = $args[$genericArgLoc+1];
+	    }
 
 	    # Check the generic and specific message arguments
 	    if ($generic_msg =~ /\s$/)
 	    {
 		print STDERR "Warning: trailing blank on arg $generic_msg in $filename!\n"; 
 	    }
-	    if (!($generic_msg =~ /^\"\*\*\S+\"$/))
-	    {
+	    if (!($generic_msg =~ /^\"\*\*\S+\"$/)) {
+
 		print STDERR "Error: generic message $generic_msg has incorrect format in $filename\n";
 		next;
 	    }
 	    if ($generic_msg =~ /%/) {
 		print STDERR "Warning: generic message $generic_msg in $filename contains a format control\n";
 	    }
-
+		 
 	    $specific_msg = "0" if ($specific_msg =~ /^\s*NULL\s*$/);
 	    if ($specific_msg =~ /^[1-9]/)
 	    {
@@ -554,15 +626,15 @@ sub ProcessFile
 			print STDERR "Warning: Unrecognized format specifier in specific message $specific_msg in $filename\n";
 		    }
 		}
-		if ($nargs != $#args - 6) {
-		    my $actargs = $#args - 6;
+		if ($nargs != $#args - $genericArgLoc - 1) {
+		    my $actargs = $#args - $genericArgLoc - 1;
 		    print STDERR "Warning: wrong number of arguments for instance specific message $specific_msg in $filename; expected $nargs but found $actargs\n";
 		}
 		elsif ($#stringLocs >= 0 && $gStrict) {
 		    # Check for reasonable strings if strict checking requested
 		    for (my $i=0; $i<=$#stringLocs; $i++) {
 			my $index = $stringLocs[$i];
-			my $string = $args[7+$index];
+			my $string = $args[$genericArgLoc+2+$index];
 			if ($string =~ /\"/) {
 			    # Allow a few special cases:
 			    # Always: all uppercase and _, single word
@@ -582,7 +654,7 @@ sub ProcessFile
 	    }
 
 	    if ($build_test_pgm) {
-		&AddTestCall( @args )
+		&AddTestCall( $genericArgLoc, @args )
 	    }
 
 	    if ($generic_msg =~ /^\"(.*)\"$/) {
