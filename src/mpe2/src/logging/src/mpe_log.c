@@ -387,7 +387,7 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
 #if !defined( WORDS_BIGENDIAN )
                 CLOG_Util_swap_bytes( vptr, sizeof( short ) , 1 );
 #endif
-                vptr += sizeof( short );
+                vptr = (void *)( (char *) vptr + sizeof( short ) );
                 memcpy( vptr, data, count );
                 *position += tot_sz;
                 return MPE_Log_OK;
