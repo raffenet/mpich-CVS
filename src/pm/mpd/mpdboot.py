@@ -236,7 +236,7 @@ def mpdboot():
         mpd_print(1, 'cmd to run local mpd = :%s:' % (cmd) )
 
     if not access(mpdCmd,X_OK):
-        err_exit('invalid mpd cmd')
+        err_exit('cannot access mpd cmd :%s:' % (mpdCmd) )
     locMPD = Popen4(cmd, 0)
     locMPDFD = locMPD.fromchild
     locMPDPort = locMPDFD.readline().strip()
@@ -253,7 +253,7 @@ def mpdboot():
         else:
             err_exit('failed to connect to mpd' )
     else:
-        err_exit('did not get a valid port from mpd' % (myBootRank) )
+        err_exit('invalid port from mpd :%s:' % (str(locMPDPort)) )
 
     if not entryHost:
         entryHost = myHost
