@@ -333,7 +333,7 @@ void TIMER_INIT()
 
 
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
-static double g_seconds_per_tick=0.0;  /* High performance counter frequency */
+double g_seconds_per_tick=0.0;  /* High performance counter frequency */
 void MPID_Wtime_init(void)
 {
     LARGE_INTEGER n;
