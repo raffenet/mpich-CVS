@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "errcodes.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Error_string */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -22,6 +23,9 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Error_string PMPI_Error_string
 
+/* This global is used to decouple the code for the predefined from the
+   dynamically defined error codes and classes */
+int (*MPIR_dnyErr_to_string)( int, char *, int ) = 0;
 #endif
 
 #undef FUNCNAME
@@ -65,6 +69,16 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* Convert the code to a string.  The cases are:
+       simple class.  Find the corresponding string.
+       <not done>
+       if (user code) { go to code that extracts user error messages }
+       else {
+           is specific message code set and available?  if so, use it
+	   else use generic code (lookup index in table of messages)
+       }
+     */
+    /* Not implemented */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
     return MPI_SUCCESS;
 }

@@ -75,7 +75,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
             }
             if (count < 0) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                            "**negarg", "**negarg %s %d", "count", count );
+                            "**argneg", "**argneg %s %d", "count", count );
             } 
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );

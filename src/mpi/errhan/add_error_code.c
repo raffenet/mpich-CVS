@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "errcodes.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Add_error_code */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -45,6 +46,7 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
 {
     static const char FCNAME[] = "MPI_Add_error_code";
     int mpi_errno = MPI_SUCCESS;
+    int new_code;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ADD_ERROR_CODE);
 #   ifdef HAVE_ERROR_CHECKING
@@ -64,6 +66,16 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    new_code = MPIR_Err_add_code( 0, 0 );
+    if (new_code < 0) {
+	/* Error return.  */
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
+			  "No more user-defined error codes", 0 );
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_CODE);
+	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    }
+
+    *errorclass = ERROR_DYN_MASK | errorclass | (new_code < 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_CODE);
     return MPI_SUCCESS;
 }

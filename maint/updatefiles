@@ -27,6 +27,22 @@ if [ $at_top = "no" ] ; then
     exit 1
 fi
 #
+# Capture the error messages
+if [ -x maint/extracterrmsgs ] ; then
+    echo "Extracting the error messages..."
+    maint/extracterrmsgs src/mpi/*/*.c src/util/*/*.c > .tmp 2>.err
+    # (error here is ok)
+    if [ -s .err ] ; then 
+       cat .err
+       rm .err
+       echo "Because of errors in extracting error messages, the file"
+       echo "src/mpi/errhan/defmsg.h was not updated."
+    else 
+        if [ -s .tmp ] ; then
+            mv .tmp src/mpi/errhan/defmsg.h
+	fi
+    fi
+fi
 # Build simplemake if necessary
 made_simplemake=no
 if [ ! -x maint/configure ] ; then
@@ -109,4 +125,9 @@ else
 fi
 if [ $rm_prepost = yes ] ; then
     rm -f src/include/mpidpre.h src/include/mpidpost.h
+fi
+#
+if [ -x maint/codingcheck ] ; then
+    echo "Running coding check"
+    maint/codingcheck src/mpi/*/*.c src/include/*.h src/util/*/*.c
 fi

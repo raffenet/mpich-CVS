@@ -223,7 +223,7 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
    on most processors.  If no such operation is available, then each
    object, in addition to the ref_count field, must have a thread-lock. 
    
-   We also need the old value when decrementing so that we can see if
+   We also need to know if the decremented value is zero so that we can see if
    we must deallocate the object.  This fetch and decrement must be 
    atomic so that multiple threads don't decide that they were 
    responsible for setting the value to zero.
@@ -684,9 +684,24 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_Allocation_unlock() MPID_Thread_unlock( &MPIR_Procss.allocation_lock )
 #endif
 
-/* Routine tracing */
+/* Routine tracing (see --enable-timing for control of this) */
+#ifdef HAVE_TIMING
+/* Possible values for timing */
+#define MPID_TIMING_KIND_OFF 0
+#define MPID_TIMING_KIND_TIME 1
+#define MPID_TIMING_KIND_LOG 2
+#define MPID_TIMING_KIND_ALL 3
+#define MPID_TIMING_KIND_RUNTIME 4
+
+/* These next two include files contain the static state definitions */
+#include "mpistates.h"
+#include "mpisysstates.h"
+#define MPID_MPI_FUNC_EXIT(a) MPID_TimerStateBegin( a )
+#define MPID_MPI_FUNC_ENTER(a) MPID_TimerStateEnd( a )
+#else
 #define MPID_MPI_FUNC_EXIT(a)
 #define MPID_MPI_FUNC_ENTER(a)
+#endif
 
 /* Error checking (see --enable-error-checking for control of this) */
 #ifdef HAVE_ERROR_CHECKING
@@ -708,6 +723,38 @@ extern int MPID_THREAD_LEVEL;
 #define MPID_BEGIN_ERROR_CHECKS
 #define MPID_END_ERROR_CHECKS
 #endif /* HAVE_ERROR_CHECKING */
+
+/*
+ * Standardized general-purpose atomic update routines.  Some comments:
+ * Setmax atomically implements *a_ptr = max(b,*a_ptr) .  This can
+ * be implemented using compare-and-swap (form max, if new max is 
+ * larger, compare-and-swap against old max.  if failure, restart).
+ * Fetch_and_increment can be implemented in a similar way.
+ * Implementations using LoadLink/StoreConditional are similar.
+ *
+ * Question: can we use the simple code for MPI_THREAD_SERIALIZED?
+ * If not, do we want a separate set of definitions that can be used
+ * in the code where serialized is ok.
+ *
+ * Currently, these are used in the routines to create new error classes
+ * and codes.  Note that MPI object reference counts are handled with
+ * their own routines.
+ */
+#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#define MPIR_Setmax(a_ptr,b) if (b>*(a_ptr)) { *(a_ptr) = b; }
+#define MPIR_Fetch_and_increment(count_ptr,value_ptr) \
+    { *value_ptr = *count_ptr; *count_ptr += 1; }
+/* Here should go assembly language versions for various architectures */
+#else
+#define MPIR_Setmax(a_ptr,b) \
+    {MPID_Thread_lock(&MPIR_Process.common_lock);\
+    if (b > *(a_ptr)) *(a_ptr)=b;\
+    MPID_Thread_unlock(&MPIR_Process.common_lock);}
+#define MPIR_Fetch_and_increment(count_ptr,value_ptr) \
+    {MPID_Thread_lock(&MPIR_Process.common_lock);\
+    *value_ptr = *count_ptr; *count_ptr += 1; \
+    MPID_Thread_unlock(&MPIR_Process.common_lock);}
+#endif
 
 /* Include definitions from the device which require items defined by this file
    (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
@@ -746,7 +793,6 @@ int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	      MPI_Status *, MPID_Request **);
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	       MPID_Request **);
-
 #if !defined(MPID_Progress_start)
 void MPID_Progress_start();
 #endif

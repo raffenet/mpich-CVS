@@ -1,0 +1,270 @@
+**argneg:Invalid argument; must be non-negative
+**argneg %s %d:Invalid value for %s, must be non-negative but is %d
+**countneg:Negative count
+**countneg %d:Negative count, value is %d
+**initialized:MPI not initialized. Call MPI_Init or MPI_Init_thread first
+**inittwice:Cannot call MPI_INIT or MPI_INIT_THREAD more than once
+**nomem:Out of memory
+**notimpl:Function not implemented
+**nullptr:Null pointer
+**nullptr %s:Null pointer in parameter %s
+----
+**success:No MPI error
+**buffer:Invalid buffer pointer
+**bufnull:Null buffer pointer
+**bufbsend:Insufficient space in Bsend buffer
+**bufbsend %d %d:Insufficient space in Bsend buffer; requested %d but only %d \
+available.
+**bufalias:Buffers must not be aliased
+**bufalias %s %s:Buffer parameters %s and %s must not be aliased 
+**bufsize:Invalid buffer size
+**bufsize %d:Invalid buffer size (value is %d)
+**bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
+**bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
+**bsendbufsmall:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
+**bsendnobuf:No buffer to detach. 
+**count:Invalid count
+**count %d:Invalid count (value = %d)
+**countarray:Invalid count in count array 
+**countarray %d %d:Invalid count in the %d element of the count array; value\
+is %d
+**dtype:Invalid datatype
+**dtypenull:Null datatype
+**dtypenullarray:Null datatype in array of datatypes
+**dtypenullarray %s %d:Null datatype in array of datatypes %s[%d]
+**dtypecommit:Datatype has not been committed 
+**dtypeperm:Cannot free permanent data type 
+**dtypeperm %s:Cannot free permanent data type %s
+**dtypepermcontents:Cannot get contents of a permanent or basic data type 
+**dtypepermcontents %s:Cannot get contents of a permanent or basic data type %s
+**dtypename:Cannot set name in data type 
+**dtypenomatch:Type signatures do not match in communication
+**dtypecomm:Pack buffer not packed for this communicator.  
+**tag:Invalid tag
+**tag %d:Invalid tag (value is %d)
+**comm:Invalid communicator
+**commnull:Null communicator
+**intercomm:Intercommunicator is not allowed 
+**intracomm:Intracommunicator is not allowed 
+**commname:Cannot set name in communicator 
+**commpeer:Peer communicator is not valid 
+**commlocalnull:Local communicator must not be MPI_COMM_NULL
+**rank:Invalid rank
+**rank %d:Invalid rank (value is %d)
+**rankarray:Invalid rank in rank array
+**rankarray %d %d %d:Invalid rank in rank array at index %d, has value %d but must\
+be in the range 0 to %d
+**rankarray %d %d %d:Invalid rank in rank array[%d], value is %d but must be in 0 to %d.
+**rankdup:Duplicate ranks in rank array 
+**rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is \
+also the value at index %d
+**ranklocal:Error specifying local_leader 
+**ranklocal %d %d:Error specifying local_leader; rank given was %d but must\
+be in the range 0 to %d
+**rankremote:Error specifying remote_leader 
+**rankremote %d %d:Error specifying remote_leader; rank given was %d but must\
+be in the range 0 to %d
+**root:Invalid root
+**root %d:Invalid root (value given was %d)
+**rootlarge:Root is too large (optional 
+      arguments: value and size-1 (int))
+**group:Invalid group
+**groupnull:Null group
+**op:Invalid MPI_Op
+**opnull:Null MPI_Op
+**opundefined:MPI_Op operation not defined for this datatype (optional argument: name of datatype (string))
+**opperm:Cannot free permanent MPI_Op 
+**topology:Invalid topology
+**topologysize:Topology size is greater than communicator size (optional arguments: topology size and communicator       size (int))
+**grapharraysize:Specified edge less than zero or greater than nnodes
+ (optional arguments: index, value, nnodes (int))
+**dims:Invalid dimension argument
+**dims %d:Invalid dimension argument (value is %d)
+**dimsarray:Invalid dimension argument in array 
+      (optional arguments: index, value (int))
+**dimsmany:Number of dimensions is too large 
+      (optional arguments: value, maxvalue (int))
+**dimstensor:Tensor product size does not 
+      match nnodes (optional arguments: tensor product size and nnodes (int))
+**dimspartition:Can not partition nodes as requested 
+**arg:Invalid argument
+**arg %s:Invalid argument %s
+**argerrcode:Invalid error code (optional arg:       value (int))
+**argnull:Invalid null parameter (optional arg: 
+      name of argument (string))
+**argaddress:Address of location given to MPI_ADDRESS does not fix in a \
+Fortran integer (optional       argument: address (long int))
+**errhandler:Invalid errhandler
+**errhandlernull:Null errhandler 
+**errhandlerperm:Cannot free permanent error handler
+**errhandlerperm %s:Cannot free permanent error handler %s
+**statusignore:Invalid use of MPI_STATUS_IGNORE} or MPI_STATUSES_IGNORE
+**stride:Range does not terminate (optional 
+      arguments: start, end, stride (int))
+**stridezero:Zero stride is incorrect 
+**argarray:Invalid value in array (optional 
+      arguments: name of variable (string), index (int), value (int))
+**argnamed:Invalid argument (optional arguments: 
+      name (string), value (int))
+**argarrayneg:Negative value in array 
+      (optional arguments: name of variable (string), index (int), value
+      (int)) 
+**darraydist:For MPI_DISTRIBUTE_NONE, the number of processes in that\
+      dimension of the grid must be 1 (optional arguments: index of
+      array_of_psizes, value (int))
+**darrayunknown:Unknown distribution type 
+**darrayblock:Value of m must be positive for block(m) distribution (optional argument: value of m (int))
+**darrayblock2:m * nprocs is less than array_size and is not valid for \
+block(m) distribution
+      (optional arguments: \code{m*nprocs}, \code{array_size} (int))
+**darraycyclic:Value of m must be positive for a cyclic(m) distribution (optional argument: m (int))
+**argposneg:Value of position must be nonnegative (optional argument: value (int))
+**infonkey:n (for nth key/value) is invalid (optional arguments: 
+      n, number of keys in info (int))
+**unknown:Unknown error.  Please file a bug report.
+**truncate:Message truncated
+**truncate %d %d:Message truncated; %d bytes received but buffer size is %d
+**other:Other MPI error
+**othersys:System resource limit exceeded 
+**othersys %s:System resource (%s) limit exceeded 
+**rsendnomatch:Ready send had no matching receive 
+      (optional arguments: source, destination, tag (int))
+**preinit:MPI_Init must be 
+      called first (optional argument: name of calling routine (string))
+**startup:Error on
+    startup, such as a 
+      mismatch between \code{mpiexec} and the MPI libraries (optional
+      argument: text with detailed reason (string))
+**nomem:Out of memory
+    (optional arguments: 
+      requested and available (int))
+**attrcopy:User defined attribute copy routine returned a non-zero return code
+**attrcopy %d:User defined attribute copy routine returned a non-zero return code %d
+**intern:Internal MPI error!
+**intern %s:Internal MPI error!  %s
+**instatus:See the MPI_ERROR field in MPI_Status for the error code
+**inpending:Pending request (no error)
+**request:Invalid MPI_Request
+**requestnull:Null MPI_Request 
+**requestnotpersist:Request is not persistent in MPI_Start or \mpifunc{MPI_Startall.
+**fileaccess:Access denied to file
+**fileaccess %s:Access denied to file %s
+**fileamode:Invalid amode value in MPI_File_open 
+**fileamode:Invalid amode value of $d in MPI_File_open 
+**fileamodeone:Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or \
+ MPI_MODE_RDWR must be specified
+**fileamoderead:Cannot use MPI_MODE_CREATE or MPI_MODE_EXCL with \
+ MPI_MODE_RDONLY 
+**fileamodeseq:Cannot specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR
+**filename:Invalid file name
+**filename %s:Invalid file name %s
+**filenamelong:Pathname too long (optional 
+      arguments: name, length, and maximum length (string, int, int))
+**filenamedir:Invalid or missing directory 
+      (optional argument: name (string))
+**conversion:An error occurred in a user-defined data conversion function
+**datarep:The requested datarep name has already 
+  been specified to MPI_REGISTER_DATAREP (optional arg: name
+  (string))
+**fileexist:File exists
+  (optional arg: name (string)) 
+**fileinuse:File in use by some process
+**fileinuse %s:File %s is in use by some process (optional 
+**file:Invalid MPI_File
+**filenull:Null MPI_File 
+**info:Invalid MPI_Info
+**infonull:Null MPI_Info 
+**infokey:Invalid key for MPI_Info 
+**infokeynull:Null key
+**infokeylong:Key is too long
+**infokeylong:Key %s is too long (length is %d but maximum allowed is %d)
+**infokeyempty:Empty or blank key 
+**infoval:Invalid MPI_Info value 
+**infovalnull:Null value
+**infovallong:Value is too long 
+**infovallong:Value %s is too long (length is %d but maximum length is %d)
+**infonokey:MPI_Info key is not defined 
+**infonokey %s:MPI_Info key %s is not defined 
+**infonkey:Requested nth key does not exist
+**infonkey %d %d:Requested %dth key but this MPI_Info only has %d keys
+**io:Other I/O error 
+**io %s:Other I/O error %s
+**ioetype:Only an integral number of etypes can be accessed
+**iofstype:Cannot determine filesystem type 
+      (optional argument: name of file (string))
+**iofstypeunsupported:Specified filesystem is not available (optional argument: name of filesystem (string))
+**iosplitcoll:Only one active split collective I/O operation is allowed per file handle
+**iosplitcollnone:No split collective I/O operation is active
+**ioasyncwaiting:There are outstanding nonblocking I/O operations on this file
+**ioneedrdwr:Read/write access is required to this file
+**iofiletype:Filetype must be constructed out of one or more etypes
+**iosharedunsupported:Shared file pointers not supported (optional argument: name of file system (string))
+**ioamodeseq:Cannot use this function when the file is opened with amode MPI_MODE_SEQUENTIAL (optional
+      argument: name of routine (string))
+**iowronly:Cannot read from a file opened with amode MPI_MODE_WRONLY
+**iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system (optional argument: name of file       system (string))
+**servicename:Attempt to lookup an unknown service name 
+**servicename %s:Attempt to lookup an unknown service name %s
+**allocmem:Unable to allocate memory for MPI_Alloc_mem
+**allocmem %d %d:Unable to allocate %d memory for MPI_Alloc_mem; only %d available
+**notsame:Inconsistent arguments to collective routine 
+(optional arguments: name of collective routine (string), name of argument
+that is not consistent (string))
+**notsamevalue:Arguments to collective routine must be the same (optional arguments: name of collective routine
+      (string), name of argument (string), null terminated array of values
+      (array of int))
+**notsameroot:Inconsistent root 
+**notsameorder:Collective routines called in an inconsistent order (optional arguments: null terminated
+      array of names (array of string))
+**filenospace:Not enough space for file 
+**filenospace:Not enough space for file %s; %d needed but only %d available
+**filenoexist:File does not exist
+**filenoexist %s:File %s does not exist
+**port:Invalid port
+**portexist:Named port does not exist
+**portexist %s:Named port %s does not exist
+**porttimeout:Time out attempting an MPI_Comm_connect to a port
+**porttimeout %s:Time out attempting an MPI_Comm_connect to a port named %s
+**filequota:Quota exceeded for files
+**filequota %s:Quota %s exceeded for files
+**filerdonly:Read-only file or filesystem name
+**filerdonly:Read-only file or filesystem name %s
+**nameservice:Invalid service name (see MPI_Publish_name)
+**nameservice %s:Invalid service name %s (see MPI_Publish_name)
+**servicenameunpublish:Attempt to unpublish an unknown service name (optional arg: name (string))
+**spawn:Error in spawn call
+**spawnfail:Could not spawn all requested processes 
+**spawnpgm:The named program could not be found (optional arg: name (spawn))
+**spawnmanager:The process manager returned an error (optional arg: text from process manager (string))
+**datarepunsupported:Unsupported datarep passed to MPI_File_set_view 
+**datarepunsupported:Unsupported datarep %s passed to MPI_File_set_view
+**fileopunsupported:Unsupported file operation 
+**fileopunsupported %s:Unsupported file operation %s
+**win:Invalid MPI_Win
+**winnull:Null MPI_Win
+**winname:Cannot set window object name 
+**winpassive:Attempt to use passive target access with a window not allocated\
+with MPI_Alloc_mem. 
+**freemembase:Invalid base address in MPI_Free_mem 
+**base:Invalid base address
+**base %d:Invalid base address %d
+**locktype:Invalid locktype
+**keyval:Invalid keyval
+**keyvalnull:Null keyval 
+**keyvalperm:Cannot free permanent attribute key
+**keyvalcomm:Keyval is not in communicator 
+**keyvaldtype:Keyval is not in datatype 
+**keyvalwin:Keyval is not in window object 
+**rmaconflict:Conflicting accesses to window 
+**rmasync:Wrong synchronization of RMA calls 
+**rmasize:Invalid size argument in RMA call
+**rmasize %d:Invalid size argument in RMA call (value is %d)
+**rmadisp:Invalid displacement argument in RMA call 
+**assert:Invalid assert argument
+
+
+
+
+
+
+

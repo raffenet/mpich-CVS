@@ -56,10 +56,15 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #endif    
     /* Remember level of thread support promised */
 
+#ifdef HAVE_ERROR_CHECKING
     /* Eventually this will support commandline and environment options
-     for controlling error checks.  It will use a common routine (pre init 
-     version) */
+     for controlling error checks.  It will use the routine 
+     MPIR_Err_init, which does as little as possible (e.g., it only 
+     determines the value of do_error_checks) */
     MPIR_Process.do_error_checks = 1;
+#else
+    MPIR_Process.do_error_checks = 0;
+#endif
 
     /* Initialize necessary subsystems and setup the predefined attribute
        values.  Subsystems may change these values. */

@@ -92,7 +92,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 	/* n is invalid */
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
 					  "**infonkey", "**infonkey %d %d", 
-					  nkeys );
+					  n, nkeys );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

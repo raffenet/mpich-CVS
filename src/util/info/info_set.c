@@ -112,7 +112,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	curr_ptr         = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
 	if (!curr_ptr) {
 	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
-					      "**nomem" );
+					      "**nomem", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 	/*printf( "Inserting new elm %x at %x\n", curr_ptr->id, prev_ptr->id );*/

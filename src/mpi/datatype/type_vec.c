@@ -94,8 +94,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
     /* ... body of routine ...  */
     new_ptr = (MPID_Datatype *)MPIU_Handle_obj_alloc( &MPID_Datatype_mem );
     if (!new_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
-					  "**nomem" );
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
 

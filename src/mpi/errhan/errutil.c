@@ -1,4 +1,16 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #include "mpiimpl.h"
+
+/* defmsg is generated automatically from the source files and contains
+   all of the error messages */
+#include "defmsg.h"
+
 
 /* void for now until error handlers are defined */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
@@ -87,6 +99,32 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     }
     return errcode;
 }
+
+#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
+/* Given a generic message string, return the corresponding index */
+static int FindMsgIndex( const char *msg )
+{
+    int i, c;
+    for (i=0; i<generic_msgs_len; i++) {
+	c = strcmp( generic_msg[i].short_name, msg );
+	if (c == 0) return i;
+	if (c < 0) return -1;
+    }
+    return -1;
+}
+/* Here is an alternate search routine based on bisection.
+   int i_low, i_mid, i_high, c;
+   i_low = 0; i_high = generic_msg_len - 1;
+   while (i_high - i_low >= 0) {
+       i_mid = (i_high + i_low) / 2;
+       c = strcmp( generic_msg[i].short_name, msg );
+       if (c == 0) return i_mid;
+       if (c < 0) { i_low = i_mid + 1; }
+       else       { i_high = i_mid - 1; }
+   }
+   return -1;
+*/
+#endif
 
 int MPIR_Err_create_code( int class, const char def_string[], ... )
 {

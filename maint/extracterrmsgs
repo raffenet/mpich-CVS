@@ -1,0 +1,244 @@
+#! /usr/bin/perl
+# 
+require "maint/parse.sub";
+
+$debug = 0;
+$entrycount = 0;
+%defined_args = ();
+$showfiles = 0;
+
+# Check for special args
+@files = ();
+foreach $arg (@ARGV) {
+    if ($arg =~ /^-showfiles/) { $showfiles = 1; }
+    elsif( $arg =~ /-debug/) { $debug = 1; }
+    else {
+	print "Adding $arg to files\n" if $debug;
+	$files[$#files+1] = $arg;
+    }
+}
+
+# Call this for each file
+# This reads a file and adds does the following:
+#   add the generic message to the hash generic_msgs with value i.
+#   add the specific message to the array specific_msgs in the ith location
+#   adds the location to the hash generic_loc{msg} as the value (: separated)
+#       and the hash specific_loc{msg}.
+#   The last two are used to provide better error reporting.
+#
+$generic_count = 0;
+sub ProcessFile { 
+    my $filename = $_[0];
+    open (FD, "<$filename" ) || die "Could not open $filename\n";
+
+    while (<FD>) {
+	# Skip the definition of the function
+	if (/int\s*MPIR_Err_create_code/) { next; }
+	while (/MPIR_Err_create_code\s*(\(.*$)/) {
+	    ($leader, $remainder, @args ) = &GetSubArgs( FD, $1 );
+	    if ($debug) {
+		foreach $arg (@args) {
+		    print "|$arg|\n";
+		}
+	    }
+	    # Check the 2nd and third arguments
+	    $arg2 = $args[1];
+	    if ($arg2 =~ /\s$/) {
+		print "trailing blank on arg $arg2 in $filename!\n"; 
+	    }
+	    if ($#args >1) {
+		$arg3 = $args[2];
+#		if ($arg3 =~ /^\s*0\s*$/) { $arg3 = $arg2; }
+	    }
+	    else {
+		print STDERR "Warning: third argument to Create_code missing in $filename\n";
+		$arg3 = "0";
+	    }
+	    if ($arg2 =~ /^\"\*\*/) {
+		if ($arg3 ne "0") {
+		    # Check arg3 matches
+		    $arg2 =~ /^\"\*\*(\w)/;
+		    $testarg1 = $1;
+		    $arg3 =~ /^\"\*\*(\w)/;
+		    $testarg2 = $1;
+		    if ($testarg1 ne $testarg2) {
+			print STDERR
+                       "Possible inconsistent error msg in $filename\r\n\
+generic is $arg2 and specific is $arg3\r\n";
+		    }
+		}
+	    }
+	    else {
+		# NonStandard arg
+		print "NonStandard arg $arg2 in $filename\n";
+	    }
+	    if (!defined($generic_msgs{$arg2})) {
+		if ($arg3 ne "0" && $arg3 ne $arg2) {
+		    print "Adding specific short msg $arg3\n" if $debug;
+		    $specific_msgs[$generic_count] = $arg3;
+		}
+		else {
+		    $specific_msgs[$generic_count] = "";
+		}
+		$generic_msgs{$arg2} = $generic_count++;
+	    }
+	    $generic_loc{$arg2} .= ":$filename";
+	    $specific_loc{$arg3} .= ":$filename";
+	    $_ = $remainder;
+	}
+    }		
+    close FD;
+}
+
+# From the data collected above, generate the file containing the error message
+# text.
+# This is a temporary routine; the exact output form will be defined later
+sub CreateErrmsgsHeader {
+    $FD = $_[0];
+    print $FD "/* This file automatically created by extracterrmsgs */\n";
+    print $FD "typedef struct {\
+        const char *short_name, *long_name; } msgpair;\n"
+}
+
+# Process the definitions
+foreach $file (@files) {
+    print "$file\n" if $showfiles;
+    &ProcessFile( $file );
+}
+&CreateErrmsgsHeader( STDOUT );
+&CreateErrMsgMapping( STDOUT );
+
+#
+# We also need a way to create the records
+# We then hash these on the first occurance (or precompute the hashes?)
+#
+# The error messages are output in the following form:
+# typedef struct {const char short[], const long[]} namemap;
+# Generic messages
+# static const char[] short1 = "";
+# static const char[] long1 = "";
+# ...
+# static const namemap[] = { {short1, long1}, {...} }
+sub CreateErrMsgMapping {
+    #
+    # Read the file with the long names
+    #...
+    open( FD, "<src/mpi/errhan/errnames.txt" ) || return 0;
+    while (<FD>) {
+	if (/^\s*\#/) { next; }
+	if (/^\s*(\*\*.*):(.*)$/) {
+	    $name = $1;
+	    $repl = $2;
+	    $repl =~ s/\r*\n*$//g;
+	    while ($repl =~ /\\\s*$/) {
+		$repl .= <FD>;
+	    }
+	    $longnames{"\"$name\""} = $repl;
+	}
+    }
+    close( FD );
+
+    # Create a mapping of MPI error classes to the specific error
+    # message by index into generic_err_msgs.  This reads the file
+    # baseerrnames, looks up the generic message, and maps the MPI error
+    # class to the corresponding index.
+    # We must do this here because we must ensure that all MPI error
+    # classes have been added to the generic messages
+    @mpimsgs = ();
+    open (FD, "<src/mpi/errhan/baseerrnames.txt" ) || 
+	die "Could not open src/mpi/errhan/baseerrnames.txt";
+    while (<FD>) {
+	s/#.*$//;
+	($mpiname,$num,$shortmsg) = split(/\s\s*/);
+	if ($shortmsg ne "") {
+	    if (!defined($generic_msgs{"\"$shortmsg\""})) {
+		$generic_msgs{"\"$shortmsg\""} = $generic_count;
+		$generic_count ++;
+	    }
+	    $mpimsg[$num] = $generic_msgs{"\"$shortmsg\""};
+	}
+    }
+    close (FD);
+
+    # Now, output each short,long key
+    # Do the generic, followed by the specific, messages
+    print "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS\n";
+    print "/* The names are in sorted order, allowing the use of a simple\
+  linear search or bisection algorithm to find the message corresponding to\
+  a particular message */\n";
+    my $num = 0;
+    foreach $key (sort keys %generic_msgs) {
+	$longvalue = "\"\0\"";
+	if ($key =~ /^\"\*\*/) {
+	    if (!defined($longnames{$key})) {
+		print STDERR "Shortname $key has no expansion (first seen in file $reverse_loc{$key})\n";
+	    }
+	    else {
+		# Escape any naked quotes
+		$longvalue = s/(?<!\\)\"/\\\"/;
+		$longvalue = "\"" . $longnames{$key} . "\"";
+	    }
+	}
+	print "static const char short$num\[\] = $key;\n";
+	print "static const char long$num\[\]  = $longvalue;\n";
+	$num ++;
+    }
+    # Generate the mapping of short to long names
+    print "static const int generic_msgs_len = $num;\n";
+    my $i = 0;
+    print "static msgpair generic_err_msgs[] {\n";
+    for (my $i = 0; $i < $num ; $i ++) {
+	print "{ short$i, long$i },\n";
+    }
+    print "};\n";
+    print "#endif\n";
+
+    my $num = 0;
+    # Do in exactly the same order as the generic messages
+    print "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC\n";
+    foreach $key (sort keys %generic_msgs) {
+	$longvalue = "\"\0\"";
+	$specname = $specific_msgs[$generic_msgs{$key}];
+	if ($specname =~ /^\"\*\*/) {
+	    if (!defined($longnames{$specname})) {
+		print STDERR "Shortname $specname has no expansion (first seen in file $reverse_loc{$key})\n";
+	    }
+	    else {
+		# Escape any naked quotes
+		$longvalue = s/(?<!\\)\"/\\\"/;
+		$longvalue = "\"" . $longnames{$specname} . "\"";
+	    }
+	}
+	if ($specname ne "" && $specname ne "0") {
+	    print "static const char short_spc$num\[\] = $specname;\n";
+	    print "static const char long_spc$num\[\]  = $longvalue;\n";
+	    $has_spec[$num] = 1;
+	}
+	else {
+	    $has_spec[$num] = 0;
+	}
+	$num ++;
+    }
+    # Generate the mapping of short to long names
+    my $i = 0;
+    print "static msgpair specific_err_msgs[] {\n";
+    for (my $i = 0; $i < $num ; $i ++) {
+	if ($has_spec[$i]) {
+	    print "{ short_spc$i, long_spc$i },\n";
+	}
+	else {
+	    print "{ 0, 0 },\n";
+	}
+    }
+    print "};\n";
+    print "#endif\n";
+
+    print "#ifdef MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
+    print "static int class_to_index[] = {\n";
+    for ($i=0; $i<=$#mpimsg; $i++) {
+	print "$mpimsg[$i],";
+	print "\n" if !(($i + 1) % 10);
+    }
+    print "};\n";
+    print "#endif\n";
+}

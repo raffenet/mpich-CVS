@@ -1,0 +1,121 @@
+#! /usr/bin/perl
+#
+# Check that coding standards have been followed.  This checks for common
+# and easy to overlook errors, such as the use of non-portable system routines
+
+require "maint/parse.sub";
+
+$debug = 0;
+$showfiles = 0;
+
+# Check for special args
+@files = ();
+foreach $arg (@ARGV) {
+    if ($arg =~ /^-showfiles/) { $showfiles = 1; }
+    elsif( $arg =~ /-debug/) { $debug = 1; }
+    else {
+	print "Adding $arg to files\n" if $debug;
+	$files[$#files+1] = $arg;
+    }
+}
+
+# Call once for each file
+sub ProcessFile {
+    $filename = $_[0];
+    open( FD, "<$filename" ) || die "Could not open $filename";
+    while (<FD>) {
+	$_ = StripComments( FD, $_ );
+	# Check for C++ style comments
+	if (/\/\//) {
+	    print "C++ comment found in $filename:\n";
+	    print $_;
+	    s/\/\/.*//;
+	}
+	&CheckForBadSubs( $_, $filename );
+        &CheckForBadDefines( FD, $_, $filename );
+    }
+}
+
+#
+# Subroutines that we want to avoid
+@avoidsubs = ( "printf" );
+@guardedsubs = ( "alloca", "closedir", "fnmatch", "getloadavg", 
+		 "getmntent", "getpgrp", "memcmp", "mmap", 
+		 "setpgrp", "setvbuf", "strcoll", "strftime",
+		 "utime", "vfork", "vprintf", "wait3" );
+%bettersubs = ( "strcpy" => "strncpy",
+		"strcmp" => "strncmp",
+		"strcat" => "strncat",
+		"sprintf" => "snprintf" );
+
+sub CheckForBadSubs {
+    my $curline = $_[0];
+    my $filename = $_[1];
+    foreach $subname (@avoidsubs) {
+	if (/$subname\s*\(/) {
+	    print "Warning: found reference to routine $subname in $filename\n";
+	}
+    }
+    foreach $subname (@guardedsubs) {
+	if (/$subname\s*\(/) {
+	    print "Caution: found reference to routine $subname in $filename\n";
+	}
+    }
+    foreach $subname (keys %bettersubs) {
+	if (/$subname\s*\(/) {
+	    print "Caution: found reference to routine $subname in $filename\n";
+	    print "Consider using $bettersubs{$subname} instead\n";
+	}
+    }
+}
+
+@GoodNames = ( 'HAVE_[A-Za-z0-9_]*', 'USE_[A-Za-z0-9_]*',
+	       'MPICH_SINGLE_THREADED', 'CHAR_PTR_IS_ADDRESS', 'FOO',
+	       'STDC_HEADERS', '__cplusplus',
+	       'MPID_[A-Za-z0-9_]*',
+	       'MPICH_[A-Za-z0-9_]*', );
+@BadNames = ( 'rs6000', 'solaris', 'hpux', 'linux', 'HPUX', 'IRIX' );
+sub CheckName {
+    my $name = $_[0];
+    foreach $good (@GoodNames) {
+	if ($name =~ /$good/) { return 0; }
+    }
+    foreach $bad (@BadNames) {
+	if ($name =~ /$bad/) { return 1; }
+    }
+    return 1;
+}
+sub CheckForBadDefines {
+    my $FD = $_[0];
+    my $curline = $_[1];
+    my $filename = $_[2];
+    if ($curline =~ /^\s*#if/) {
+	while ($curline =~ /\/$/) {
+	    $curline .= <$FD>;
+	}
+	# Search for either ifdef or defined(...)
+	if ($curline =~ /^\s*#ifdef\s*(.*)\s*/) {
+	    $defname = $1;
+	    $defname =~ s/\r*\n*//g;
+	    print "$defname\n" if $debug;
+	    if (&CheckName( $defname ) ) {
+		print "Warning: ifdef name $defname used in $filename is nonstandard\n"
+	    }
+	}
+	elsif ($curline =~ /^\s*#if\s/ || $curline =~ /^\s*#elif\s/) {
+	       while ($curline =~ /defined\(([^\)]*)\)/) {
+		   $defname = $1;
+		   print "$defname\n" if $debug;
+		   if (&CheckName( $defname ) ) {
+		       print "Warning: ifdef name $defname used in $filename is nonstandard\n"
+		       }
+		   $curline =~ s/defined\($defname\)//g;
+	       }
+	}
+    }
+}
+
+foreach $file (@files) {
+    print "$file\n" if $showfiles;
+    &ProcessFile( $file );
+}

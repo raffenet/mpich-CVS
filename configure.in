@@ -33,6 +33,15 @@ level may be
                 variables
     all       - error checking always enabled],,enable_error_checking=all)
 dnl
+AC_ARG_ENABLE(error-messages,
+[--enable-error-messages=level - Control the amount of detail in error 
+  messages.  Level may be
+    all       - Maximum amount of information
+    generic   - Only generic messages (no information about the specific
+                instance)
+    class     - One message per MPI error class
+    none      - No messages],,enable_error_messages=all)
+dnl
 AC_ARG_ENABLE(timing,
 [--enable-timing=level - Control the amount of timing information 
 collected by the MPICH implementation.  level may be
@@ -97,7 +106,27 @@ case "$enable_error_checking" in
     ;;
 esac
 dnl
+dnl error-messages
+case "$enable_error_messages" in 
+    no|none)
+        error_message_kind="MPICH_ERROR_MSG_NONE"
+    ;;
+    all|yes)
+	error_message_kind="MPICH_ERROR_MSG_ALL"
+    ;;
+    generic)
+	error_message_kind="MPICH_ERROR_MSG_GENERIC"
+    ;;
+    class)
+	error_message_kind="MPICH_ERROR_MSG_CLASS"
+    ;;
+    *)
+    AC_MSG_WARN([Unknown value $enable_error_messages for enable-error-messages])
+    ;;
+esac
+AC_DEFINE_UNQUOTED(MPICH_ERROR_MSG_LEVEL,$error_message_kind,[define to enable error messages])
 dnl timing
+dnl Still to do: add subsets: e.g., class=pt2pt,class=coll.  See mpich2 doc
 case "$enable_timing" in
     no|none)
     ;;

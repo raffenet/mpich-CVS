@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "errcodes.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Error_class */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,6 +65,7 @@ int MPI_Error_class(int errorcode, int *errorclass)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    *errorclass = errorcode & ERROR_CLASS_MASK;
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_CLASS);
     return MPI_SUCCESS;
 }
