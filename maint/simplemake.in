@@ -2441,6 +2441,7 @@ sub TargetDependenciesDynamic {
     # -include is gnumake for "include if file exists, ignore otherwise"
     if ($makeInclude eq "") { $makeInclude = "-include"; }
 
+    print FD "# --------------------------------------------------------$newline";
     print FD "# Dependencies$newline";
     # This definition follows the cone for COMPILE_C
     if ($has_sources) {
@@ -2484,6 +2485,7 @@ sub TargetDependenciesDynamic {
 	print FD "$makeInclude .deps/alldeps$newline";
     }
     print FD "# End of Dependencies$newline";
+    print FD "# --------------------------------------------------------$newline";
 }
 
 sub DistCleanDependencies {
@@ -2495,8 +2497,17 @@ sub DistCleanDependencies {
 
 # Extract derived files from autoconf
 # Also record whether there is an AC_CONFIG_HEADER
+# If AC_OUTOUT contains any shell variables, you can use
+#   <variable_name>_VALUES=vals 
+# (all on one line!) to provide the set of possible values.
+# Otherwise, no special code will be generated for those output files,
+# and a warning message will be issued.
+# FIXME: the name is recorded and added to the files, but simplemake
+# may not be careful about the file or about directory paths involving the
+# xxx_VALUE variable.  Still experimental
 sub ReadAutoconf {
     $configure_has_config_headers = "no";
+    %confvars = ();
     open FDCONF, "configure.in" || die "Could not open configure.in file";
     while (<FDCONF>) {
 	#if (/^\s*#/) { next; }
@@ -2505,6 +2516,10 @@ sub ReadAutoconf {
 	    # We also need to add this to the list of files to remove
 	    # in the distclean target
 	    $configure_has_config_headers = $1;
+	}
+	if (/^\s*(\w*)_VALUES=(.*)/) {
+	    # This is a special case, used below
+	    $confvars{$1}=$2
 	}
 	if (/^\s*AC_OUTPUT\(/) {
 	    # First, read past all continued lines
@@ -2548,13 +2563,24 @@ sub ReadAutoconf {
 		    # Another special case.  The name is actually
 		    # a shell variable.  This is too hard for us right now,
 		    # so generate a warning and do NOT add it to the list
-		    print STDERR "Shell variable $1 will not be added to the list\n";
-		    print STDERR "of known autoconf file files for ";
-		    if ($lcurdir ne "") {
-			print STDERR "$lcurdir\n";
+		    # To handle this case, you can provide
+		    # <variable-name>_VALUES
+		    $varname = $1;
+		    if (defined($confvars{$varname})) {
+			# add to autoconf_files_by_dir
+			foreach $filename (split(/\s+/,$confvars{$varname})) {
+			    $autoconf_files_by_dir{$lcurdir} .= " $file";
+			}
 		    }
 		    else {
-			print STDERR "top directory\n";
+			print STDERR "Shell variable $varname will not be added to the list\n\
+of known autoconf file files for ";
+			if ($lcurdir ne "") {
+			    print STDERR "$lcurdir.\n";
+			}
+			else {
+			    print STDERR "the top directory.\n";
+			}
 		    }
 		}
 		elsif ($file =~ /^.*$/) {
