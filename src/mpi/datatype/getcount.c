@@ -52,6 +52,7 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
     static const char FCNAME[] = "MPI_Get_count";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    int size;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_COUNT);
@@ -83,7 +84,14 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 
     /* ... body of routine ...  */
     /* Check for correct number of bytes */
-    if (datatype_ptr->size == 0) {
+    MPID_Datatype_get_size_macro(datatype, size);
+    if (size != 0) {
+	if ((status->count % size) != 0)
+	    (*count) = MPI_UNDEFINED;
+	else
+	    (*count) = status->count / size;
+    }
+    else {
 	if (status->count > 0)
 	    (*count) = MPI_UNDEFINED;
 	else {
@@ -93,12 +101,6 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 	    */
 	    (*count) = 0;
 	}
-    }
-    else {
-	if ((status->count % (datatype_ptr->size)) != 0)
-	    (*count) = MPI_UNDEFINED;
-	else
-	    (*count) = status->count / (datatype_ptr->size);
     }
     /* ... end of body of routine ... */
 
