@@ -141,7 +141,8 @@ public class CategoryIcon implements Icon
     {
         int x1, y1, x2, y2, x3, y3;
 
-        g.setColor( Color.black );
+        // g.setColor( Color.black );
+        g.setColor( (Color) Parameters.BACKGROUND_COLOR.toValue() );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
         g.setColor( color_shown );
@@ -164,7 +165,8 @@ public class CategoryIcon implements Icon
     {
         int x1, y1, x2, y2, x3, y3;
 
-        g.setColor( Color.black );
+        // g.setColor( Color.black );
+        g.setColor( (Color) Parameters.BACKGROUND_COLOR.toValue() );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
         g.setColor( color_shown );
@@ -181,7 +183,8 @@ public class CategoryIcon implements Icon
 
     private void paintBlankIcon( Graphics g, int x, int y )
     {
-        g.setColor( Color.black );
+        // g.setColor( Color.black );
+        g.setColor( (Color) Parameters.BACKGROUND_COLOR.toValue() );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
     }
 

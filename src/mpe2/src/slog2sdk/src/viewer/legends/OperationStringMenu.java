@@ -67,16 +67,31 @@ public class OperationStringMenu extends JPopupMenu
         Icon       icon;
 
             icon_URL = null;
-            icon_URL = getURL( index_order_icon_path );
+            icon_URL = getURL( case_sensitive_topo_order_icon_path );
             if ( icon_URL != null )
                 icon = new ImageIcon( icon_URL );
             else
                 icon = null;
-            menu_item   = new JMenuItem( "Creation Order", icon );
-            menu_item.addActionListener(
-            new ActionListener() {
+            menu_item = new JMenuItem( "A...Z a...z", icon );
+            menu_item.addActionListener( new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder( LegendComparators.INDEX_ORDER ); }
+                { table_model.arrangeOrder(
+                              LegendComparators.CASE_SENSITIVE_ORDER ); }
+            } );
+        super.add( menu_item );
+
+           icon_URL = null;
+            icon_URL = getURL( case_sensitive_topo_order_icon_path );
+            if ( icon_URL != null )
+                icon = new ImageIcon( icon_URL );
+            else
+                icon = null;
+            menu_item = new JMenuItem( "z...a Z...A", icon );
+            menu_item.addActionListener( new ActionListener() {
+                public void actionPerformed( ActionEvent evt )
+                { table_model.reverseOrder(
+                              LegendComparators.CASE_SENSITIVE_ORDER );
+                }
             } );
         super.add( menu_item );
 
@@ -86,66 +101,54 @@ public class OperationStringMenu extends JPopupMenu
                 icon = new ImageIcon( icon_URL );
             else
                 icon = null;
-            menu_item = new JMenuItem( "Case Sensitive Topo Order", icon );
+            menu_item = new JMenuItem( "Aa...Zz", icon );
             menu_item.addActionListener( new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder(
-                              LegendComparators.CASE_SENSITIVE_TOPO_ORDER ); }
-            } );
-        super.add( menu_item );
-
-            icon_URL = null;
-            icon_URL = getURL( case_insensitive_topo_order_icon_path );
-            if ( icon_URL != null )
-                icon = new ImageIcon( icon_URL );
-            else
-                icon = null;
-            menu_item = new JMenuItem( "Case Insensitive Topo Order", icon );
-            menu_item.addActionListener( new ActionListener() {
-                public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder(
-                              LegendComparators.CASE_INSENSITIVE_TOPO_ORDER ); }
-            } );
-        super.add( menu_item );
-
-            icon_URL = null;
-            icon_URL = getURL( case_sensitive_order_icon_path );
-            if ( icon_URL != null )
-                icon = new ImageIcon( icon_URL );
-            else
-                icon = null;
-            menu_item = new JMenuItem( "Case Sensitive Order", icon );
-            menu_item.addActionListener( new ActionListener() {
-                public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder(
-                              LegendComparators.CASE_SENSITIVE_ORDER ); }
-            } );
-        super.add( menu_item );
-
-            icon_URL = null;
-            icon_URL = getURL( case_insensitive_order_icon_path );
-            if ( icon_URL != null )
-                icon = new ImageIcon( icon_URL );
-            else
-                icon = null;
-            menu_item = new JMenuItem( "Case Insensitive Order", icon );
-            menu_item.addActionListener( new ActionListener() {
-                public void actionPerformed( ActionEvent evt )
-                { table_model.refreshOrder(
+                { table_model.arrangeOrder(
                               LegendComparators.CASE_INSENSITIVE_ORDER ); }
             } );
         super.add( menu_item );
 
-            icon_URL = null;
-            icon_URL = getURL( reverse_order_icon_path );
+           icon_URL = null;
+            icon_URL = getURL( case_sensitive_topo_order_icon_path );
             if ( icon_URL != null )
                 icon = new ImageIcon( icon_URL );
             else
                 icon = null;
-            menu_item = new JMenuItem( "Reverse Order", icon );
+            menu_item = new JMenuItem( "zZ...aA", icon );
             menu_item.addActionListener( new ActionListener() {
                 public void actionPerformed( ActionEvent evt )
-                { table_model.reverseOrder(); }
+                { table_model.reverseOrder(
+                              LegendComparators.CASE_INSENSITIVE_ORDER );
+                }
+            } );
+        super.add( menu_item );
+
+            icon_URL = null;
+            icon_URL = getURL( index_order_icon_path );
+            if ( icon_URL != null )
+                icon = new ImageIcon( icon_URL );
+            else
+                icon = null;
+            menu_item   = new JMenuItem( "Creation Order", icon );
+            menu_item.addActionListener(
+            new ActionListener() {
+                public void actionPerformed( ActionEvent evt )
+                { table_model.arrangeOrder( LegendComparators.INDEX_ORDER ); }
+            } );
+        super.add( menu_item );
+
+            icon_URL = null;
+            icon_URL = getURL( index_order_icon_path );
+            if ( icon_URL != null )
+                icon = new ImageIcon( icon_URL );
+            else
+                icon = null;
+            menu_item   = new JMenuItem( "Reverse Creation Order", icon );
+            menu_item.addActionListener(
+            new ActionListener() {
+                public void actionPerformed( ActionEvent evt )
+                { table_model.reverseOrder( LegendComparators.INDEX_ORDER ); }
             } );
         super.add( menu_item );
     }

@@ -66,7 +66,7 @@ public class LegendTableModel extends AbstractTableModel
         super();
 
         objdef_list  = new ArrayList( map.values() );
-        this.sort( LegendComparators.INDEX_ORDER );
+        this.sortNormally( LegendComparators.CASE_SENSITIVE_ORDER );
     }
 
 
@@ -87,27 +87,28 @@ public class LegendTableModel extends AbstractTableModel
         }
     }
 
-    private void sort( Comparator comparator )
+    private void sortNormally( Comparator comparator )
     {
         Collections.sort( objdef_list, comparator );
         this.initIconListFromCategoryList();        
     }
 
-    private void reverse()
+    private void sortReversely( Comparator comparator )
     {
+        Collections.sort( objdef_list, comparator );
         Collections.reverse( objdef_list );
         this.initIconListFromCategoryList();        
     }
 
-    public void refreshOrder( Comparator comparator )
+    public void arrangeOrder( Comparator comparator )
     {
-        this.sort( comparator );
+        this.sortNormally( comparator );
         super.fireTableDataChanged(); 
     }
 
-    public void reverseOrder()
+    public void reverseOrder( Comparator comparator )
     {
-        this.reverse();
+        this.sortReversely( comparator );
         super.fireTableDataChanged(); 
     }
 
