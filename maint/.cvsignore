@@ -9,6 +9,7 @@ showsizes
 getcross
 f77tof90
 makerpm
+clmake
 config.log
 config.cache
 config.status
