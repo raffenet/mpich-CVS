@@ -39,7 +39,7 @@ Input Parameters:
 Output Parameter:
 . newgroup - union group (handle) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

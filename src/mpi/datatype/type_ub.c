@@ -37,7 +37,7 @@ Output Parameter:
 . displacement - displacement of upper bound from origin, 
                              in bytes (integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

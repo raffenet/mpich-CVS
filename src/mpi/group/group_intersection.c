@@ -40,7 +40,7 @@ Input Parameters:
 Output Parameter:
 . newgroup - intersection group (handle) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

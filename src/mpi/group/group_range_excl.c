@@ -51,7 +51,7 @@ The MPI standard requires that each of the ranks to be excluded must be
 a valid rank in the group and all elements must be distinct or the
 function is erroneous.  
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

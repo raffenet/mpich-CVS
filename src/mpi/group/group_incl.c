@@ -47,7 +47,7 @@ Note:
 This implementation does not currently check to see that the list of
 ranks to ensure that there are no duplicates.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

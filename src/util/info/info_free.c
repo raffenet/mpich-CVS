@@ -30,15 +30,14 @@
 /*@
     MPI_Info_free - Frees an info object
 
-Input Parameters:
+Input Parameter:
 . info - info object (handle)
 
-   Notes:
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
-.N fortran
+.N MPI_ERR_OTHER
 @*/
 int MPI_Info_free( MPI_Info *info )
 {

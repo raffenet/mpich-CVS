@@ -37,7 +37,7 @@ Input Parameters:
 Output Parameter:
 . size - datatype size (integer) 
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS

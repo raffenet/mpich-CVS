@@ -36,11 +36,11 @@
 
    Notes:
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
+.N 
 @*/
 int MPI_Info_delete( MPI_Info info, char *key )
 {

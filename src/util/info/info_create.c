@@ -30,15 +30,14 @@
 /*@
     MPI_Info_create - Creates a new info object
 
-   Output Arguments:
+   Output Argument:
 . info - info object (handle)
 
-   Notes:
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
-.N 
 @*/
 int MPI_Info_create( MPI_Info *info )
 {
