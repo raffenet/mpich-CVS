@@ -499,7 +499,14 @@ main()
             AC_MSG_RESULT( [${mpe_MPI_STATUS_SIZE}] )
             rm -f ${mpe_tmpfile}
         else
-            PAC_MSG_ERROR( $enable_softerror, [could NOT determine!] )
+            if test "X$CROSS_MPI_STATUS_SIZE" != "X" ; then
+                mpe_MPI_STATUS_SIZE="$CROSS_MPI_STATUS_SIZE"
+                AC_DEFINE_UNQUOTED( MPI_STATUS_SIZE, $mpe_MPI_STATUS_SIZE,
+                                    [Define as the size of MPI_STATUS_SIZE] )
+                AC_MSG_RESULT( [use supplied value: ${mpe_MPI_STATUS_SIZE}] )
+            else
+                PAC_MSG_ERROR( $enable_softerror, [could NOT determine!] )
+            fi
         fi
     fi
 
@@ -614,8 +621,8 @@ main()
         AC_MSG_CHECKING( [for the Fortran logical values in MPI C program] )
         mpe_tmpfile=mpe_f77logicals
         PAC_MPI_RUN_F77_FUNC_FROM_C( $F77, $FFLAGS,
-                                     $MPI_CC, [$CFLAGS $MPI_INC],
-                                     $CC, $CFLAGS, $LIBS, [
+                                     $MPI_CC, [-I../.. $CFLAGS $MPI_INC],
+                                     $CC, [$CFLAGS], $LIBS, [
       subroutine ftest( itrue, ifalse )
       logical itrue, ifalse
       itrue  = .TRUE.
@@ -623,6 +630,8 @@ main()
       return
       end
                                  ], [
+/* mpe_conf.h defines the needed F77_NAME_XXX, and is located in -I../.. */
+#include "mpe_conf.h"
 #ifdef F77_NAME_UPPER
 #define ftest_ FTEST
 #elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
@@ -657,7 +666,16 @@ int main()
             fi
             rm -f ${mpe_tmpfile}
         else
-            PAC_MSG_ERROR( $enable_softerror, [could NOT determine!] )
+            if test "X$CROSS_FORTRAN2C_TRUE" != "X" \
+                 -a "X$CROSS_FORTRAN2C_FALSE" != "X" ; then
+                AC_DEFINE_UNQUOTED( MPE_F77_TRUE_VALUE, $CROSS_FORTRAN2C_TRUE,
+                          [Define as the value for Fortran logical true] )
+                AC_DEFINE_UNQUOTED( MPE_F77_FALSE_VALUE, $CROSS_FORTRAN2C_FALSE,
+                          [Define as the value for Fortran logical false] )
+                AC_MSG_RESULT( [use supplied values: True=$CROSS_FORTRAN2C_TRUE and False=$CROSS_FORTRAN2C_FALSE] )
+            else
+                PAC_MSG_ERROR( $enable_softerror, [could NOT determine!] )
+            fi
         fi
     fi
 
