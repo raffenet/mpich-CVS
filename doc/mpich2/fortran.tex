@@ -1,0 +1,38 @@
+% 
+% Sketch of why the Fortran code is the way it is.
+%
+There are many constraints, particularly in MPI-2
+
+1.  All C and Fortran constants (e.g., things in mpi.h or mpif.h) must
+    be available, independent of which language MPI_Init or MPI_Init_thread 
+    was called from
+
+2.  Some Fortran constants cannot be set at compile time.  These include
+    the objects that fill in for pointers in C, such as MPI_BOTTOM,
+    MPI_STATUS_IGNORE, and MPI_ARGVS_NULL.  It also appears to 
+    be difficult to set MPI_ARGV_NULL without using a data statement,
+    which cannot be used within mpif.h because of restrictions on the
+    order of declarations
+
+keyvals - Can't use C routines directly
+
+logicals - allows multiple compilers that do not have the same values 
+for true/false (need to confirm)
+
+    (consider special case: compile-time limit on value, then can #define)
+
+r.  Avoid unnecessary overhead in the timer (MPI_Wtime)
+
+w.  Error messages should make use of the full power of the MPICH2 error 
+    reporting system.  
+
+u.  Memory allocation should make use of the tracing allocators (MPIU_Malloc,
+    etc.)
+
+x.  Fortran does provide a way to initialize items at link time, with
+    a construction called ``block data''.  However, it can be difficult to 
+    ensure that this object is loaded when the program is built, short of 
+    including it as a raw .o file on the link line.  We don't want to do that
+    because (a) the result is undefined data (b) users who insist on 
+    using their own compile and link lines will have trouble that will 
+    appear to be a flaw in the MPI library, not their code.
