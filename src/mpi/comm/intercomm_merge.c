@@ -263,6 +263,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     newcomm_ptr->local_group  = 0;
     newcomm_ptr->remote_group = 0;
     newcomm_ptr->comm_kind    = MPID_INTRACOMM;
+    newcomm_ptr->attributes   = 0;
 
     /* Now we know which group comes first.  Build the new vcr 
        from the existing vcrs */
