@@ -248,12 +248,12 @@ def mpdboot():
             mpd_send_one_msg(locMPDSocket, { 'cmd' : 'ping', 'host' : myHost, 'port' : 0} )
             msg = mpd_recv_one_msg(locMPDSocket)    # RMB: WITH TIMEOUT ??
             if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ping_ack':
-                err_exit('invalid msg from mpd :%s:' % (msg) )
+                err_exit('%d: invalid msg from mpd :%s:' % (myBootRank,msg) )
             locMPDSocket.close()
         else:
             err_exit('failed to connect to mpd' )
     else:
-        err_exit('invalid port from mpd :%s:' % (str(locMPDPort)) )
+        err_exit('%d: invalid port from mpd %s' % (myBootRank,str(locMPDPort)) )
 
     if not entryHost:
         entryHost = myHost
