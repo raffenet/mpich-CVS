@@ -42,6 +42,9 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
 	return mpi_errno;
     }
     (*new_group_ptr)->size = nproc;
+    /* Make sure that there is no question that the list of ranks sorted
+       by pids is marked as uninitialized */
+    (*new_group_ptr)->idx_of_first_lpid = -1;
     return mpi_errno;
 }
 /*
