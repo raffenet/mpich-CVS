@@ -71,6 +71,8 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     {
 	if (type != MPIDI_REQUEST_TYPE_RSEND)
 	{
+	    int dt_sz;
+	
 	    /* FIXME: Insert code here to buffer small sends in a temporary buffer? */
 
 	    MPIDI_DBG_PRINTF((15, FCNAME, "added receive request to unexpected queue; attaching send request"));
@@ -81,6 +83,8 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	    }
 	    rreq->partner_request = sreq;
 	    rreq->dev.sender_req_id = sreq->handle;
+	    MPID_Datatype_get_size_macro(datatype, dt_sz);
+	    rreq->status.count = count * dt_sz;
 	}
 	else
 	{
