@@ -1053,7 +1053,7 @@ int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
                MPID_Request **);
 
 int MPID_Probe(int, int, MPID_Comm *, int, MPI_Status *);
-int MPID_Iprobe(int, int, MPID_Comm *, int, MPI_Status *);
+int MPID_Iprobe(int, int, MPID_Comm *, int, int *, MPI_Status *);
 
 int MPID_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                     MPID_Win **);
