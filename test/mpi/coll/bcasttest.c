@@ -13,6 +13,7 @@ int main( int argc, char **argv)
     int i, rank, reps, n;
     int bVerify = 1;
     int sizes[NUM_SIZES] = { 100, 64*1024, 128*1024 };
+    int num_errors;
     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -55,10 +56,23 @@ int main( int argc, char **argv)
 
 	    if (bVerify)
 	    {
+	        num_errors = 0;
 		for (i=0; i<sizes[n]; i++)
 		{
 		    if (buf[i] != i)
-			printf("Error: Rank=%d, i=%d, buf[i]=%d\n", rank, i, buf[i]);
+		    {
+		        num_errors++;
+			if (num_errors < 10)
+			{
+			    printf("Error: Rank=%d, i=%d, buf[i]=%d\n", rank, i, buf[i]);
+			    fflush(stdout);
+			}
+		    }
+		}
+		if (num_errors > 10)
+		{
+		    printf("Error: Rank=%d, num_errors = %d\n", rank, num_errors);
+		    fflush(stdout);
 		}
 	    }
 	}
