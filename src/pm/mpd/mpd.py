@@ -971,10 +971,10 @@ def _enter_existing_ring():
     g.lhsPort  = g.entryPort
     inRing = 0
     numEnterTries = 0
-    numConnTries = 0
     while not inRing  and  numEnterTries < 8:
         numEnterTries += 1
         connected = 0
+        numConnTries = 0
         while not connected  and  numConnTries < 8:
             numConnTries += 1
             g.lhsSocket = mpd_get_inet_socket_and_connect(g.lhsHost,g.lhsPort)
