@@ -4,23 +4,26 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-from os      import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                    chdir, execvpe, kill, waitpid, strerror, setpgrp
-from errno   import EINTR
-from sys     import exit
-from socket  import gethostname, fromfd, AF_INET, SOCK_STREAM
-from select  import select, error
-from re      import findall, sub
-from signal  import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
-from md5     import new
-from cPickle import loads
-from urllib  import quote
-from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
-                    mpd_send_one_msg, mpd_send_one_msg_noprint, mpd_recv_one_msg, \
-                    mpd_send_one_line, mpd_send_one_line_noprint, mpd_recv_one_line, \
-                    mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
-                    mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
-                    mpd_socketpair
+from os       import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
+                     chdir, execvpe, kill, waitpid, strerror, setpgrp
+from errno    import EINTR
+from sys      import exit
+from socket   import gethostname, fromfd, AF_INET, SOCK_STREAM
+from select   import select, error
+from re       import findall, sub
+from signal   import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
+from md5      import new
+from cPickle  import loads
+from urllib   import quote
+from resource import setrlimit, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_FSIZE, RLIMIT_DATA, \
+                     RLIMIT_STACK, RLIMIT_RSS, RLIMIT_NPROC, RLIMIT_NOFILE, RLIMIT_OFILE, \
+                     RLIMIT_MEMLOCK
+from mpdlib   import mpd_set_my_id, mpd_print, mpd_print_tb, \
+                     mpd_send_one_msg, mpd_send_one_msg_noprint, mpd_recv_one_msg, \
+                     mpd_send_one_line, mpd_send_one_line_noprint, mpd_recv_one_line, \
+                     mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
+                     mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
+                     mpd_socketpair, mpd_get_ranks_in_binary_tree
 
 def mpdman():
     signal(SIGCHLD,SIG_DFL)  # reset mpd's values
@@ -40,6 +43,7 @@ def mpdman():
     clientPgm = environ['MPDMAN_CLI_PGM']
     clientPgmArgs = loads(environ['MPDMAN_PGM_ARGS'])
     clientPgmEnv = loads(environ['MPDMAN_PGM_ENVVARS'])
+    clientPgmLimits = loads(environ['MPDMAN_PGM_LIMITS'])
     mpd_print(0000, 'entering mpdman to exec %s' % (clientPgm) )
     jobid = environ['MPDMAN_JOBID']
     nprocs = int(environ['MPDMAN_NPROCS'])
@@ -208,6 +212,7 @@ def mpdman():
         cli_environ['MPD_JRANK'] = str(myRank)                                 ## BNR
         cli_environ['MAN_MSGS_FD'] = cli_environ['PMI_FD'] # same as PMI_FD    ## BNR
         cli_environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
+        set_limits(clientPgmLimits)
         try:
             mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
             execvpe(clientPgm,clientPgmArgs,cli_environ)    # client
@@ -988,6 +993,34 @@ def parse_pmi_msg(msg):
     except:
         print 'unable to parse pmi msg :%s:' % msg
     return parsed_msg
+
+def set_limits(limits):
+    print "RMB MAN LIMITS=", limits
+    for type in limits.keys():
+        limit = int(limits[type])
+        if   type == 'core':
+            setrlimit(RLIMIT_CORE,(limit,limit))
+        elif type == 'cpu':
+            setrlimit(RLIMIT_CPU,(limit,limit))
+        elif type == 'fsize':
+            setrlimit(RLIMIT_FSIZE,(limit,limit))
+        elif type == 'data':
+            setrlimit(RLIMIT_DATA,(limit,limit))
+        elif type == 'stack':
+            setrlimit(RLIMIT_STACK,(limit,limit))
+        elif type == 'rss':
+            setrlimit(RLIMIT_RSS,(limit,limit))
+        elif type == 'nproc':
+            setrlimit(RLIMIT_NPROC,(limit,limit))
+        elif type == 'nofile':
+            setrlimit(RLIMIT_NOFILE,(limit,limit))
+        elif type == 'ofile':
+            setrlimit(RLIMIT_OFILE,(limit,limit))
+        elif type == 'memloc':
+            setrlimit(RLIMIT_MEMLOC,(limit,limit))
+        elif  type == 'as':
+            setrlimit(RLIMIT_AS,(limit,limit))
+
 
 if __name__ == '__main__':
     if not environ.has_key('MPDMAN_CLI_PGM'):    # assume invoked from keyboard

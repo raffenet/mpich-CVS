@@ -575,6 +575,12 @@ def _do_mpdrun(msg):
             if currRank >= lo  and  currRank <= hi:
                 pgmEnvVars = dumps(envvars[ranks])
                 break
+        limits = msg['limits']
+        for ranks in limits.keys():
+            (lo,hi) = ranks
+            if currRank >= lo  and  currRank <= hi:
+                pgmLimits = dumps(limits[ranks])
+                break
         cwds = msg['cwds']
         for ranks in cwds.keys():
             (lo,hi) = ranks
@@ -595,6 +601,7 @@ def _do_mpdrun(msg):
             environ['MPDMAN_CLI_PATH'] = pathForExec
             environ['MPDMAN_PGM_ARGS'] = pgmArgs
             environ['MPDMAN_PGM_ENVVARS'] = pgmEnvVars
+            environ['MPDMAN_PGM_LIMITS'] = pgmLimits
             environ['MPDMAN_CWD'] = cwd
             environ['MPDMAN_SPAWNED'] = str(msg['spawned'])
             environ['MPDMAN_NPROCS'] = str(msg['nprocs'])

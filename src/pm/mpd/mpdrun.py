@@ -186,6 +186,7 @@ def mpdrun():
         paths   = {}
         args    = {}
         envvars = {}
+        limits  = {}
         hosts   = {}
 
         covered = [0] * nprocs 
@@ -259,6 +260,18 @@ def mpdrun():
                 argVals[i-1] = unquote(argDict[i])
             args[(loRange,hiRange)] = argVals
 
+            limitDict = {}
+            limitList = p.getElementsByTagName('limit')
+            for limitElem in limitList:
+                type = limitElem.getAttribute('type')
+                if valid_limit_type(type):
+                    limitDict[type] = limitElem.getAttribute('value')
+                else:
+                    print 'mpdrun: invalid type in limit: %s' % (type)
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
+            limits[(loRange,hiRange)] = limitDict
+
             envVals = {}
             envVarList = p.getElementsByTagName('env')
             for envVarElem in envVarList:
@@ -278,6 +291,7 @@ def mpdrun():
         cwds    = { (0,nprocs-1) : cwd }
         paths   = { (0,nprocs-1) : environ['PATH'] }
         args    = { (0,nprocs-1) : pgmArgs }
+        limits  = { (0,nprocs-1) : {} }
         cli_environ = {} ; cli_environ.update(environ)
         envvars = { (0,nprocs-1) : cli_environ }
         if hostsFile:
@@ -325,6 +339,7 @@ def mpdrun():
                   'paths'    : paths,
                   'args'     : args,
                   'envvars'  : envvars,
+                  'limits'   : limits,
                   'host_spec_pool' : hostList
 		}
     if try0Locally:
@@ -752,6 +767,13 @@ def process_cmdline_args():
     while argidx < len(argv):
         pgmArgs.append(argv[argidx])
         argidx += 1
+
+def valid_limit_type(type):
+    if type == 'core'   or  type == 'cpu'    or  type == 'fsize'  or  type == 'data'   \
+    or type == 'stack'  or  type == 'rss'    or  type == 'nproc'  or  type == 'nofile' \
+    or type == 'ofile'  or  type == 'memloc' or  type == 'as':
+        return 1
+    return 0
 
 def usage():
     global myExitStatus
