@@ -35,7 +35,7 @@ Input Parameters:
 Return Value:
   Fortran I/O-request handle (integer)
 @*/
-#ifdef HAVE_GREQUEST
+#ifdef HAVE_MPI_GREQUEST
 MPI_Fint MPIO_Request_c2f(MPIO_Request request) { return ((MPI_Fint)request); }
 #else
 

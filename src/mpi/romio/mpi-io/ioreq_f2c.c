@@ -35,8 +35,8 @@ Input Parameters:
 Return Value:
   C I/O-request handle (handle)
 @*/
-#ifdef HAVE_GREQUEST
-MPIO_Request MPIO_Request_f2c(MPI_Fint request) {return((MPIO_Requst)request)}
+#ifdef HAVE_MPI_GREQUEST
+MPIO_Request MPIO_Request_f2c(MPI_Fint request) {return((MPIO_Request)request);}
 #else
 MPIO_Request MPIO_Request_f2c(MPI_Fint request)
 {
