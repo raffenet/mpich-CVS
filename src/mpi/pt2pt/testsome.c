@@ -43,7 +43,7 @@ Output Parameters:
 . array_of_indices - array of indices of operations that 
 completed (array of integers) 
 - array_of_statuses - array of status objects for 
-    operations that completed (array of Status).  May be 'MPI_STATUSES_NULL'.
+    operations that completed (array of Status).  May be 'MPI_STATUSES_IGNORE'.
 
 Notes:
 
