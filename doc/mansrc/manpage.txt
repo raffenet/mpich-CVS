@@ -24,7 +24,7 @@ Compute pi to a given resolution on 8 processors or threads
 .ve
 
 You can compile and link your own MPI programs with the commands 'mpicc',
-'mpif77', and 'mpicxx':
+'mpif77', and 'mpicxx'\:
 .vb
         % mpicc -o cpi cpi.c
         % mpif77 -o fpi fpi.f
