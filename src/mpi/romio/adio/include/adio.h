@@ -363,6 +363,8 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 void ADIO_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
 			 int *error_code);
 void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
+void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype, 
+		MPI_Datatype filetype, MPI_Info info,  int *error_code);
 
 
 #include "adioi.h"
