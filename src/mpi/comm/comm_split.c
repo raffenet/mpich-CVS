@@ -182,6 +182,18 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	    }
 	}
 
+	/* Inherit the error handler (if any) */
+	newcomm_ptr->errhandler = comm_ptr->errhandler;
+	if (comm_ptr->errhandler) {
+	    MPIU_Object_add_ref( comm_ptr->errhandler );
+	}
+
+	/* Clear other items */
+	newcomm_ptr->remote_group = 0;
+	newcomm_ptr->local_group  = 0;
+	newcomm_ptr->coll_fns	  = 0;
+	newcomm_ptr->name[0]	  = 0;
+
 	/* Free all storage */
 	MPIU_Free( keytable );
 	*newcomm = newcomm_ptr->handle;
