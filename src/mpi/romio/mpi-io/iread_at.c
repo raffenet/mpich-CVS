@@ -81,7 +81,7 @@ int MPI_File_iread_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 		  count);
 #endif /* MPI_hpux */
 
-    error_code = MPIOI_File_iread(mpi_fh, offset, ADIOI_EXPLICIT_OFFSET, buf,
+    error_code = MPIOI_File_iread(mpi_fh, offset, ADIO_EXPLICIT_OFFSET, buf,
 				  count, datatype, myname, request);
 
 #ifdef MPI_hpux
