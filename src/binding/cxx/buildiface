@@ -114,7 +114,9 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 #   in:array, out:array    - Convert array of class members to/from
 #                            arrays of the_real_xxx.  Question: for
 #                            simplicity, should we have just in:reqarray,
-#                            inout:reqarray, out:reqarray?
+#                            inout:reqarray, out:reqarray?  Answer: the 
+#                            current approach uses separate routines for
+#                            each array type.
 #   in:const               - Add const in the C++ declaration (e.g., 
 #                            in send, make the buf const void * instead
 #                            of just void *)
@@ -197,6 +199,32 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'cart-Map-4' => 'in:boolarray:2',
 
 		     'Get_processor_name-2' => 'in:refint',
+
+		     'info-Set-2' => 'in:const',
+		     'info-Set-3' => 'in:const',
+		     'info-Get-2' => 'in:const',
+		     'Get_valuelen-2' => 'in:const',
+
+		     'file-Open-2' => 'in:const',
+		     'file-Delete-1' => 'in:const',
+		     'Set_view-4' => 'in:const',
+		     'Write-1' => 'in:const',
+		     'Write_all-1' => 'in:const',
+		     'Iwrite_at-2' => 'in:const',
+		     'Iwrite-1' => 'in:const',
+		     'Write_at-2' => 'in:const',
+		     'Write_at_all-2' => 'in:const',
+		     'Write_at_all_begin-2' => 'in:const',
+		     'Write_at_all_end-1' => 'in:const',
+		     'Write_all_begin-1' => 'in:const',
+		     'Write_all_end-1' => 'in:const',
+		     'Write_ordered_begin-1' => 'in:const',
+		     'Write_ordered_end-1' => 'in:const',
+		     'Set_atomicity-2' => 'in:bool',
+
+		     'Put-1' => 'in:const',
+		     'Accumulate-1' => 'in:const',
+		     
 		     );
 %class_mpi1cart = ( 'Dup' => MPI_Comm,
 		    'Get_dim' => 'int',
@@ -318,21 +346,37 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 %class_mpi2errh = ();
 %class_mpi2graph = ();
 %class_mpi2group = ();
-%class_mpi2inter = ();
+%class_mpi2inter = ( 'Barrier' => 0, # MPI-2 adds intercomm collective
+		     'Bcast' => 0, 
+		     'Gather' => 0,
+		     'Gatherv' => 0,
+		     'Scatter' => 0,
+		     'Scatterv' => 0,
+		     'Allgather' => 0,
+		     'Allgatherv' => 0,
+		     'Alltoall' => 0,
+		     'Alltoallv' => 0,
+		     'Reduce' => 0,
+		     'Allreduce' => 0,
+		     'Reduce_scatter' => 0,
+		     'Scan' => 0,
+		     'Exscan' => 0,
+);
+
 # Alltoallw uses an array of datatypes, which requires special handling
 %class_mpi2intra = ( #'Alltoallw' => 0, 
 		     'Exscan' => 0 );
 %class_mpi2op = ();
-%class_mpi2ppreq = ();
+%class_mpi2preq = ();
 %class_mpi2req = ();
+%class_mpi2greq = ( 'Complete' => 0 );
 %class_mpi2st = ();
 %class_mpi2file = ();
 if ($build_io) {
-    # WARNING: The return types of some of these may be wrong.
     %class_mpi2file = ( 
-		   'File_open' => 'MPI_File',
+		   'File_open' => 'static:MPI_File:2',
 		   'File_close' => 0,
-		   'File_delete' => 0,
+		   'File_delete' => 'static:0:1',
 		   'File_set_size' => 0,
 		   'File_preallocate' => 0,
 		   'File_get_size' => 'MPI_Offset',
@@ -340,53 +384,76 @@ if ($build_io) {
 		   'File_get_amode' => 'int',
 		   'File_set_info' => 0,
 		   'File_get_info' => 'MPI_Info',
-		   'File_set_view' => 0,
+		   'File_set_view' => '0:4',
 		   'File_get_view' => 0,
 		   'File_read_at' => 0,
 		   'File_read_at_all' => 0,
-		   'File_write_at' => 0,
-		   'File_write_at_all' => 0,
+		   'File_write_at' => '0:2',
+		   'File_write_at_all' => '0:2',
 		   'File_iread_at' => 'MPI_Request', 
-		   'File_iwrite_at' => 'MPI_Request',
+		   'File_iwrite_at' => 'MPI_Request:1',
 		   'File_read' => 0,
 		   'File_read_all' => 0,
-		   'File_write' => 0,
-		   'File_write_all' => 0,
+		   'File_write' => '0:1',
+		   'File_write_all' => '0:1',
 		   'File_iread' => 'MPI_Request',
-		   'File_iwrite' => 'MPI_Request',
+		   'File_iwrite' => 'MPI_Request:1',
 		   'File_seek' => 0,
 		   'File_get_position' => 'MPI_Offset',
 		   'File_get_byte_offset' => 'MPI_Offset',
 		   'File_read_shared' => 0,
 		   'File_write_shared' => 0,
 		   'File_iread_shared' => 'MPI_Request',
-		   'File_iwrite_shared' => 'MPI_Request',
+		   'File_iwrite_shared' => 'MPI_Request:1',
 		   'File_read_ordered' => 0,
-		   'File_write_ordered' => 0,
+		   'File_write_ordered' => '0:1',
 		   'File_seek_shared' => 0,
 		   'File_get_position_shared' => 'MPI_Offset',
 		   'File_read_at_all_begin' => 0,
 		   'File_read_at_all_end' => 0,
-		   'File_write_at_all_begin' => 0,
-		   'File_write_at_all_end' => 0,
+		   'File_write_at_all_begin' => '0:2',
+		   'File_write_at_all_end' => '0:1',
 		   'File_read_all_begin' => 0,
 		   'File_read_all_end' => 0,
-		   'File_write_all_begin' => 0,
-		   'File_write_all_end' => 0,
+		   'File_write_all_begin' => '0:1',
+		   'File_write_all_end' => '0:1',
 		   'File_read_ordered_begin' => 0,
 		   'File_read_ordered_end' => 0,
-		   'File_write_ordered_begin' => 0,
-		   'File_write_ordered_end' => 0,
+		   'File_write_ordered_begin' => '0:1',
+		   'File_write_ordered_end' => '0:1',
 		   'File_get_type_extent' => 'MPI_Aint',
-		   'File_set_atomicity' => 0,
+		   'File_set_atomicity' => '0:1',
 		   'File_get_atomicity' => 'bool',
 		   'File_sync' => 0,
 		   'File_set_errhandler' => 'MPI_Errhandler',
 		   'File_get_errhandler' => 0,
 		   );		
 }
-%class_mpi2win = ( );
-%class_mpi2info = ( );
+%class_mpi2win = (  'Put' => '0:1', 'Get' => 0, 
+		    'Accumulate' => '0', 
+		    'Create' => 'static:MPI_Win', 
+		    'Free' => '0',
+		    'Fence' => '0', 
+		    'Get_group' => 'MPI_Group',
+		    # 'Get_attr' => '?',
+		    # 'Start' => '0',
+		    # 'Complete' => '0',
+		    # 'Post' => '0',
+		    # 'Wait' => '0',
+		    # 'Lock' => '0',
+		    # 'Unlock' => '0',
+		    # Others left until later
+		    );
+%class_mpi2info = ( 'Create' => 'static:1',
+		    'Set' => '0:2:3',
+		    'Delete' => '0:2',
+		    'Get' => '5;bool:2',
+		    'Get_valuelen' => '4;bool:2',
+		    'Get_nkeys' => '2',
+		    'Get_nthkey' => '0', 
+		    'Dup' => '2',
+		    'Free' => '0', 
+		    );
 
 # Name of classes, in the order in which they must be declared.  This
 # includes all classes, by their short names
@@ -488,14 +555,25 @@ if ($routine_list ne "") {
 # ops is like dtypes
 @ops = ( 'MAX', 'MIN', 'SUM', 'PROD', 'LAND', 'BAND', 'LOR', 'BOR', 
 	 'LXOR', 'BXOR', 'MINLOC', 'MAXLOC', 'REPLACE' );
-# errclasses is like dtypes
-# WARNING: Contains only MPI-1 error classes for now.
+# errclasses is like dtypes.  Contains both MPI-1 and MPI-2 classes
 @errclasses = ( 'SUCCESS', 'ERR_BUFFER', 'ERR_COUNT', 'ERR_TYPE',
 		'ERR_TAG', 'ERR_COMM', 'ERR_RANK', 'ERR_REQUEST',
 		'ERR_ROOT', 'ERR_GROUP', 'ERR_OP', 'ERR_TOPOLOGY',
 		'ERR_DIMS', 'ERR_ARG', 'ERR_UNKNOWN', 'ERR_TRUNCATE',
 		'ERR_OTHER', 'ERR_INTERN', 'ERR_PENDING', 'ERR_IN_STATUS',
-		'ERR_LASTCODE' );
+		'ERR_LASTCODE', 
+		'ERR_FILE', 'ERR_ACCESS', 'ERR_AMODE', 'ERR_BAD_FILE',
+		'ERR_FILE_EXISTS', 'ERR_FILE_IN_USE', 'ERR_NO_SPACE',
+		'ERR_NO_SUCH_FILE', 'ERR_IO', 'ERR_READ_ONLY', 
+		'ERR_CONVERSION', 'ERR_DUP_DATAREP', 'ERR_UNSUPPORTED_DATAREP',
+		'ERR_INFO', 'ERR_INFO_KEY', 'ERR_INFO_VALUE', 'ERR_INFO_NOKEY',
+		'ERR_NAME', 'ERR_NO_MEM', 'ERR_NOT_SAME', 'ERR_PORT',
+		'ERR_QUOTA', 'ERR_SERVICE', 'ERR_SPAWN',
+		'ERR_UNSUPPORTED_OPERATION', 'ERR_WIN', 'ERR_BASE',
+		'ERR_LOCKTYPE', 'ERR_KEYVAL', 'ERR_RMA_CONFLICT', 
+		'ERR_RMA_SYNC', 'ERR_SIZE', 'ERR_DISP', 'ERR_ASSERT',
+		);
+
 #
 # Special routines require special processing in C++
 %special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1' );
@@ -566,22 +644,22 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # This has gives the list of friends for each class (i.e., the
 # classes that are allowed to directly access the protected members).
 # The friends are the full class names
-%class_friends = ( 'comm' => 'Cartcomm,Intercomm,Intracomm,Graphcomm,Datatype',
+%class_friends = ( 'comm' => 'Cartcomm,Intercomm,Intracomm,Graphcomm,Datatype,Win,File',
 		   'cart' => '',
-		   'dtype' => 'Comm,Status,Intracomm,Intercomm',
+		   'dtype' => 'Comm,Status,Intracomm,Intercomm,Win',
 		   'errh' => 'Comm',
 		   'graph' => '',
-		   'group' => 'Comm,Intracomm,Intercomm',
+		   'group' => 'Comm,Intracomm,Intercomm,Win,File',
 		   'inter' => 'Intracomm',
 		   'intra' => 'Cartcomm,Graphcomm,Datatype',
-		   'op' => 'Intracomm',
+		   'op' => 'Intracomm,Intercomm,Win',
 		   'preq' => '',
 		   'req' => 'Comm',
 		   'st' => 'Comm,File,Request',
 		   'greq' => '',
-		   'info' => '',
-		   'win' => 'Datatype',
-		   'file' => 'Datatype,Info,Group',
+		   'info' => 'File,Win,Comm',
+		   'win' => '',
+		   'file' => '',
  );
 
 #
@@ -589,9 +667,9 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # a class is derived from.  Base classes are not included here.
 %derived_class = ( 'graph' => 'Intracomm', 
 		   'preq' => 'Request',
+		   'greq' => 'Request',
 		   'inter' => 'Comm',
 		   'intra' => 'Comm',
-		   'greq' => 'Request',
 		   'cart' => 'Intracomm',
 		   );
 
@@ -600,11 +678,15 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # used to find the name of the correct protected element (the_real_xxx),
 # used to store the C version of the class handle.
 %mytopclass = ( 'graph'     => 'comm', 
+		'graphcomm' => 'comm',
 	        'intracomm' => 'comm', 
 	        'intercomm' => 'comm',
 	        'intra'     => 'comm', 
 	        'inter'     => 'comm',
 	        'cart'      => 'comm',
+		'cartcomm'  => 'comm',
+		'grequest'  => 'request',
+		'prequest'  => 'request',
 	        'greq'      => 'request',
   	        'preq'      => 'request' );
 
@@ -843,6 +925,7 @@ extern Datatype TWOINTEGER;
                   UNIVERSE, LASTUSEDCODE, APPNUM, 
 		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
 		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
+                  MAX_INFO_VAL, MAX_INFO_KEY, 
 		  UNDEFINED, @errclasses ) {
 	print $OUTFD "extern const int $int;\n";
     }
@@ -1246,6 +1329,7 @@ Datatype TWOINTEGER(MPI_2INTEGER);
                   UNIVERSE, LASTUSEDCODE, APPNUM, 
 		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
 		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
+                  MAX_INFO_VAL, MAX_INFO_KEY, 
 		  UNDEFINED, @errclasses ) {
 	print $OUTFD "const int $int = MPI_$int;\n";
     }
@@ -1510,6 +1594,7 @@ sub HandleObjectParm {
 #   const Group MPI::GROUP_EMPTY(MPI_GROUP_EMPTY);
 #   const Op MPI::<op>(MPI_<op>)
 #   const int MPI::IDENT,CONGRUENT,SIMILAR,UNEQUAL
+# (DONE!)
 #
 # static functions that are in no class  (init already done)
 # Get_error_class, Wtime, Wtick, Finalize, Is_initialized
@@ -1872,23 +1957,30 @@ sub PrintMethodDef {
 sub GetCArgs {
     my $class = $_[0];
     my $routine = $_[1];
+    my $Class = $fullclassname{$class};
 
     print "Routine $routine in Class $class\n" if $debug;
 
     # Find the corresponding args.  Some C++ routines don't use the
     # natural names, so we check for that here
     $args = "";
+
+    # Check for $Class_$routine
+    my $trial_name = "${Class}_" . lc($routine);
+    # We need to do this to separate MPI_Get from MPI_Info_get.
+    if (defined($mpi_routine{$trial_name})) {
+	$args = $mpi_routine{$trial_name};
+	$mpi_routine_name = $trial_name;
+	return ($args,$mpi_routine_name);
+    }
+
     if (defined($mpi_routine{$routine})) {
 	$args = $mpi_routine{$routine};
     }
     $mpi_routine_name = $routine;
     if ($args eq "") {
-	my $Class = $fullclassname{$class};
-
 	# Check for an alternate name
 	print STDERR "Checking for $class-$routine\n" if $debug;
-	# Check for $Class_$routine
-	my $trial_name = "${Class}_" . lc($routine);
 	print STDERR "Trial = $trial_name\n" if $debug;
 	if (defined($mpi_routine{$trial_name})) {
 	    $mpi_routine_name = $trial_name;
@@ -2040,12 +2132,13 @@ sub DoSpecialArgProcessing {
 # $parm is defined outside
 sub const_in_methoddecl {
     my $count = $_[0];
+    if (!$first) { print $OUTFD ", "; }
     print $OUTFD "const $parm v$count";
 }
 # We have to explicitly remove the cast
 sub const_in_call {
     my $count = $_[0];
-    print $OUTFD "(void *)v$count";
+    print $OUTFD "($parm)v$count";
 }
 #
 # bool
@@ -2313,7 +2406,7 @@ sub preqarray_inout_cxxtoc {
     print $OUTFD "$indent    { 
             int i$count; 
             for (i$count=0;i$count<$n;i$count++) {
-                l$count\[i$count] = v$count\[i$count].the_real_prequest;
+                l$count\[i$count] = v$count\[i$count].the_real_request;
             }
         }\n";
 }
@@ -2328,7 +2421,7 @@ sub preqarray_inout_ctocxx {
     print $OUTFD "$indent    { 
             int i$count; 
             for (i$count=0;i$count<$n;i$count++) {
-                v$count\[i$count].the_real_prequest = l$count\[i$count];
+                v$count\[i$count].the_real_request = l$count\[i$count];
             }
             delete[] l$count;
         }\n";
