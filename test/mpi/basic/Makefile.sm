@@ -6,4 +6,6 @@ wtime_SOURCES = wtime.c
 wtime_LDADD = -L ../../../lib -lmpich
 netpipe_SOURCES = netmpi.c GetOpt.c
 netpipe_LDADD = -L ../../../lib -lmpich
+patterns_SOURCES = patterns.c
+patterns_LDADD = -L ../../../lib -lmpich
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
