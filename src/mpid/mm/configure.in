@@ -1,7 +1,5 @@
-dnl Process this file with autoconf to produce a configure script.
-dnl
-dnl The file name here refers to a file in the source being configured
-AC_INIT(include/mpidimpl.h)
+AC_INIT(configure.in)
+AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(include/mpidconf.h)
@@ -9,53 +7,7 @@ dnl
 echo "RUNNING CONFIGURE FOR THE MultiMethod DEVICE"
 dnl
 dnl
-dnl Enable better caching control
 PAC_ARG_CACHING
-dnl
-AC_ARG_ENABLE(echo, 
-[--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
-dnl
-AC_ARG_ENABLE(strict,
-[--enable-strict - Turn on strict debugging with gcc],
-CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes")
-dnl
-AC_ARG_ENABLE(error-checking,
-[--enable-error-checking=level - Control the amount of error checking.  
-level may be 
-    no        - no error checking
-    runtime   - error checking controlable at runtime through environment 
-                variables
-    all       - error checking always enabled],,enable_error_checking=all)
-dnl
-AC_ARG_ENABLE(timing,
-[--enable-timing=level - Control the amount of timing information 
-collected by the MPICH implementation.  level may be
-    none    - Collect no data
-    all     - Collect lots of data
-    runtime - Runtime control of data collected
-The default is none.],,enable_timing=none)
-dnl
-dnl Set single for now
-AC_ARG_ENABLE(threads,
-[--enable-threads=level - Control the level of thread support in the 
-MPICH implementation.  level may be 
-    single - Single threaded (MPI_THREAD_SINGLE and MPI_THREAD_FUNNELED)
-    multiple - Multithreaded (MPI_THREAD_SERIAL and MPI_THREAD_MULTIPLE)],,
-enable_threads=single)
-dnl
-AC_ARG_ENABLE(g,
-[--enable-g=option - Control the level of debugging support in the MPID
-implementation.  option may be a list of common separated names including
-    none  - No debugging
-    mem   - Memory usage tracing
-    all   - All of the above choices],,enable_g=none)
-dnl
-dnl
-AC_ARG_ENABLE(sharedlibs,
-[--enable-sharedlibs=kind - Enable shared libraries.  kind may be
-    gnu     - Standard gcc and GNU ld options for creating shared libraries
-    libtool - GNU libtool 
-This option is currently ignored])
 dnl
 AC_ARG_WITH(bsocket,
 [--with-bsocket - Control the use of the bsocket library],,with_bsocket=yes)
@@ -64,68 +16,6 @@ AC_ARG_WITH(sock_type,
 [--with-sock_type=name - Specify the socket type,  poll or iocp.],,
 with_sock_type=poll)
 
-dnl Process any enable or with values
-dnl error-checking
-case "$enable_error_checking" in 
-    no)
-    ;;
-    all|yes|runtime)
-    changequote(<<,>>)
-    error_checking_kind=`echo $enable_error_checking | tr '[a-z]' '[A-Z]'`
-    changequote([,])
-    error_checking_kind=MPID_ERROR_LEVEL_$error_checking_kind
-    AC_DEFINE_UNQUOTED(HAVE_ERROR_CHECKING,$error_checking_kind,[define to enable error checking])
-    ;;
-    *)
-    AC_MSG_WARN([Unknown value $enable_error_checking for enable-error-checking])
-    ;;
-esac
-dnl
-dnl timing
-case "$enable_timing" in
-    no|none)
-    ;;
-    all|log|yes|time|runtime)
-    changequote(<<,>>)
-    timing_kind=`echo $enable_timing | tr '[a-z]' '[A-Z]'`
-    changequote([,])
-    timing_kind=MPID_TIMING_KIND_$timing_kind
-    AC_DEFINE_UNQUOTED(HAVE_TIMING,$timing_kind,[define to enable timing collection])
-    ;;
-    *)
-    AC_MSG_WARN([Unknown value $enable_timing for enable-timing])
-    ;; 
-esac
-dnl
-dnl threads
-case "$enable_threads" in
-    no|single)
-    AC_DEFINE(MPICH_SINGLE_THREADED,,[define to for single threaded])
-    ;;
-    runtime=*|multiple=*)
-    thread_type=`echo $enable_threads | sed -e 's/^.*=//'g`
-    ;;
-    all|yes|multiple|runtime)
-    thread_type=pthread
-    ;;
-    *)
-    AC_MSG_WARN([Unknown value $enable_threads for enable-threads])
-    ;; 
-esac
-dnl
-dnl enable-g
-case "$enable_g" in 
-    no|none)
-    ;;
-    mem|all)
-    AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
-    enable_g_mem=yes
-    CFLAGS="$CFLAGS -g"
-    ;;
-    *)
-    AC_MSG_WARN([Unknown value $enable_g for enable-g])
-    ;;
-esac
 dnl
 case "$with_bsocket" in 
      no|none)
@@ -141,110 +31,8 @@ dnl
 dnl case "$with_sock_type" in
 dnl      poll)
 dnl      AC_DEFINE(WITH_SOCK_TYPE
-dnl This test is complicated by the fact that top_srcdir is not set until
-dnl the very end of configure.  Instead, we get it ourselves
-if test -z "$top_srcdir" ; then
-   use_top_srcdir=$srcdir   
-else
-   use_top_srcdir=$top_srcdir
-fi
-if test -z "$master_top_srcdir" ; then 
-    master_top_srcdir=$use_top_srcdir
-fi
-AC_SUBST(master_top_srcdir)
-export master_top_srcdir
-dnl
-dnl The recommended order for items in a configure.in file is
-dnl     check for programs
-dnl     check for libraries
-dnl     check for header files
-dnl     check for typedefs
-dnl     check for structures
-dnl     check for compiler characteristics
-dnl     check for library functions
-dnl     check for system services
-dnl Here are some sample tests
-dnl
-dnl Find a C compiler (choose gcc first)
-AC_PROG_CC
-AC_PATH_PROG(AR,ar)
-AC_PATH_PROG(RANLIB,ranlib)
-dnl
-dnl Find SSH.  If SSH is defined, use that instead
-dnl AC_PATH_PROG(SSH,ssh)
-dnl
-dnl AC_PROG_MAKE_SET
-PAC_PROG_MAKE
-dnl
-dnl     check for compiler characteristics
-dnl PAC_PROG_C_WEAK_SYMBOLS
-AC_C_CONST
-PAC_C_VOLATILE
-PAC_C_RESTRICT
-AC_C_INLINE
-dnl PAC_C_STRUCT_ALIGNMENT
-dnl
-dnl check for library functions
-if test -n "$thread_type" ; then
-    case $thread_type in 
-        pthread|posix)
-	AC_SEARCH_LIBS(pthread_create,pthread,
-	    AC_DEFINE(HAVE_PTHREAD_CREATE,,[Define for pthreads]))
-	;;
-	solaris|thr)
-	AC_SEARCH_LIBS(thr_create,thread,
-	    AC_DEFINE(HAVE_THR_CREATE,,[Define for Solaris threads]))
-	;;
-	*)
-	AC_MSG_WARN([Unknown thread type $thread type]) 
-	;;
-    esac
-fi
-dnl
-dnl Check for special compile characteristics
-AC_MSG_CHECKING([for gcc __asm__ and pentium cmpxchgl instruction])
-AC_TRY_RUN([
-int main(int argc, char *argv[])
-{
-long int compval = 10;
-volatile long int *p = &compval;
-long int oldval = 10;
-long int newval = 20;
-char ret;
-long int readval;
-__asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
-	: "=q" (ret), "=m" (*p), "=a" (readval)
-	: "r" (newval), "m" (*p), "a" (oldval));
-return (compval == 20) ? 0 : -1;
-}
-], AC_MSG_RESULT(yes); AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,
-Define if using gcc on a system with an Intel Pentium class chip), 
-AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
-dnl
-dnl Is there libnsl needed for gethostbyname?
-dnl AC_SEARCH_LIBS(gethostbyname,nsl)
-dnl
-dnl Look for Standard headers
-AC_HEADER_STDC
-dnl Check for a specific header
-AC_CHECK_HEADERS(sys/types.h)
-dnl
-dnl Check for functions.  This invokes another test if the function is 
-dnl found.  The braces around the second test are essential. 
-dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
-if test "$enable_g_mem" != "yes" ; then
-    dnl Strdup is needed only if memory tracing is not enabled.
-    AC_CHECK_FUNCS(strdup)
-else
-    dnl search.h is used for fancier output from trmem.  Disabled for now,
-    dnl since the tsearch routines have problematic prototypes.
-    dnl AC_CHECK_HEADERS(search)
-    dnl AC_CHECK_FUNCS(tsearch)
-    dnl Check that we can compile tsearch without error
-    dnl (not done yet)
-    :
-fi
-dnl
+dnl ...
+dnl esac
 dnl
 dnl Setup other replaceable values
 dnl
@@ -287,7 +75,7 @@ for method in $method_subdirs ; do
        echo infiniband method enabled
     fi
 done
-AC_SUBST(ib_method_yes_no)
+dnl AC_SUBST(ib_method_yes_no)
 dnl
 dnl Choose the socket type
 dnl
@@ -301,6 +89,26 @@ dnl echo socket type = iocp
 dnl fi
 dnl
 dnl
+if test -z "$top_srcdir" ; then
+   use_top_srcdir=$srcdir
+else
+   use_top_srcdir=$top_srcdir
+fi
+if test -z "$master_top_srcdir" ; then
+   master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+
+AC_PROG_CC
+AC_PATH_PROG(AR,ar)
+AC_PATH_PROG(RANLIB,ranlib)
+PAC_PROG_MAKE
+AC_C_CONST
+PAC_C_VOLATILE
+PAC_C_RESTRICT
+AC_C_INLINE
+AC_HEADER_STDC
 MPILIBNAME=mpich
 AC_SUBST(MPILIBNAME)
 
@@ -322,7 +130,6 @@ AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/*_pre.h ../../include)
 dnl Generate the Makefiles from Makefile.in
 
 AC_OUTPUT(Makefile \
- setup_device \
  src/Makefile \
  src/bsocket/Makefile \
  src/common/Makefile \
@@ -342,5 +149,4 @@ AC_OUTPUT(Makefile \
  src/viardma/Makefile \
  src/packer/Makefile \
  src/unpacker/Makefile \
-, chmod a+x setup_device \
 )
