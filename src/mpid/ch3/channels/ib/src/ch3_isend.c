@@ -53,6 +53,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
 		/*************nb = write(vc->ib.fd, hdr, hdr_sz);***************/
+		ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
 		nb = 0;
 		MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
 	    }
@@ -69,7 +70,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		    /* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete, but the
 		       request may still be active (see MPI_Ssend()) */
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    MPIDI_CH3I_TCP_post_write(vc, sreq);
+		    MPIDI_CH3I_IB_post_write(vc, sreq);
 		}
 	    }
 	    else if (nb < hdr_sz)
@@ -77,7 +78,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		MPIDI_DBG_PRINTF((55, FCNAME, "partial write, enqueuing at head"));
 		update_request(sreq, hdr, hdr_sz, nb);
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		MPIDI_CH3I_TCP_post_write(vc, sreq);
+		MPIDI_CH3I_IB_post_write(vc, sreq);
 	    }
 	    else if (nb == 0 || errno == EAGAIN ||
 		     errno == EWOULDBLOCK || errno == ENOMEM)
@@ -85,7 +86,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
 		update_request(sreq, hdr, hdr_sz, 0);
 		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-		MPIDI_CH3I_TCP_post_write(vc, sreq);
+		MPIDI_CH3I_IB_post_write(vc, sreq);
 	    }
 	    else
 	    {
@@ -106,6 +107,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
+#if 0
     else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
@@ -121,6 +123,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	update_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
+#endif
     else
     {
 	/* Connection failed.  Mark the request complete and return an error. */

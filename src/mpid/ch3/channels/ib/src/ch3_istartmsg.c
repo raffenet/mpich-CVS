@@ -72,6 +72,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
 		/*********************nb = write(vc->ib.fd, hdr, hdr_sz);********************************/
+		ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
 		nb = 0;
 		MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
 	    }
@@ -88,7 +89,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 				  "send delayed, request enqueued"));
 		sreq = create_request(hdr, hdr_sz, nb);
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		MPIDI_CH3I_TCP_post_write(vc, sreq);
+		MPIDI_CH3I_IB_post_write(vc, sreq);
 	    }
 	    else if (errno == EAGAIN || errno == EWOULDBLOCK ||
 		     errno == ENOMEM)
@@ -97,7 +98,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 				  "request enqueued", errno, strerror(errno)));
 		sreq = create_request(hdr, hdr_sz, 0);
 		MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-		MPIDI_CH3I_TCP_post_write(vc, sreq);
+		MPIDI_CH3I_IB_post_write(vc, sreq);
 	    }
 	    else
 	    {

@@ -100,10 +100,8 @@ int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 short MPIDI_CH3I_get_lid(void);
 /*int MPIDI_CH3I_TCP_post_connect(MPIDI_VC *);*/
-/*
-void MPIDI_CH3I_TCP_post_read(MPIDI_VC *, MPID_Request *);
-void MPIDI_CH3I_TCP_post_write(MPIDI_VC *, MPID_Request *);
-*/
+void MPIDI_CH3I_IB_post_read(MPIDI_VC *, MPID_Request *);
+void MPIDI_CH3I_IB_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
 int MPIDI_CH3I_Setup_connections();
 
