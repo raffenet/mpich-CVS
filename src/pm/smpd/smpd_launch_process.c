@@ -804,6 +804,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	argv[i] = token;
 	token = strtok(NULL, " ");
 	i++;
+	if (i > 1022)
+	    break;
     }
     argv[i] = NULL;
 
@@ -828,7 +830,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     if (pid == 0)
     {
 	/* child process */
-	smpd_dbg_printf("client is alive and about to redirect io\n");
+	smpd_dbg_printf("client is alive and about to exec '%s'\n", argv[0]);
 
 	close(0); 		  /* close stdin     */
 	dup(stdin_pipe_fds[0]);   /* dup a new stdin */

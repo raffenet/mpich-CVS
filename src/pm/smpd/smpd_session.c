@@ -124,7 +124,6 @@ int handle_launch_command(smpd_context_t *context)
 	smpd_exit_fn("handle_launch_command");
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("i'm everywhere.\n");
     smpd_get_string_arg(cmd->cmd, "e", process->env, SMPD_MAX_ENV_LENGTH);
     smpd_get_string_arg(cmd->cmd, "d", process->dir, SMPD_MAX_EXE_LENGTH);
     smpd_get_string_arg(cmd->cmd, "p", process->path, SMPD_MAX_EXE_LENGTH);
