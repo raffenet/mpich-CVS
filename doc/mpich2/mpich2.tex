@@ -202,7 +202,7 @@ communicator.
 \label{sec:err-handling-nested}
 In many cases, MPI routines are implemented in terms of other MPI (or
 PMPI) routines.  In these cases, it is important for any error handler
-(other than \mpiconst{MPI_ERRORS_RETURN} to be invoked only by the
+(other than \mpiconst{MPI_ERRORS_RETURN}) to be invoked only by the
 ``top-level'' routine.  In the case of a single-threaded MPI (from the
 user's perspective; that is, the user's code is single-threaded),
 implementing this is not difficult.  The ``top-level'' routine needs
@@ -233,11 +233,12 @@ needs to know which thread package is being used.  This suggests that
 the function that provides the thread id by well isolated and perhaps
 dynamically loaded.
 
-To implement the layered calls, the following functions may be used
+To implement the layered calls, the following functions may be 
+used\index{MPIi_Err_set_return}\index{MPIi_Err_restore}\index{MPIi_Err_get_handler} 
 \begin{verbatim}
-void MPIi_Set_err_return(void);
-void MPIi_Restore_err(void);
-MPID_Errhandler *MPIi_Get_err_handler(ds);
+void MPIi_Err_set_return(void);
+void MPIi_Err_restore(void);
+MPID_Errhandler *MPIi_Err_get_handler(ds);
 \end{verbatim}
 The last routine returns the error handler to use; it first checks the
 global current error handler (\code{int}
@@ -259,7 +260,7 @@ etc. instead of \code{malloc}, as described in the ADI-3 manual
 \cite{adi3man}. 
 
 At normal exit from the MPI library in \mpifunc{MPI_Finalize}, the
-routine \mpidfunc{MPID_Trdump} must be called if the environment variable
+routine \mpidfunc{MPID_Trdump} must be called if the runtime parameter
 \code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
 
 Question: Should there be separate per-thread and per-process memory
@@ -371,19 +372,20 @@ That leaves us at least 5 bits
 which will be adequate (if long double is 16 bytes, then the long complex and
 long-double-int types may be 32 bytes, but on these systems, sizeof(int) will
 be at least 32 bits, leaving us enough room for the size of these longer
-types. 
+types). 
 
 For predefined Groups and Communicators we simply use the remaining bits
-to specify the particular group/communicator (e.g. MPI_COMM_WORLD) and 
-either the rank of the process or the size.  Actually, for small integers we
+to specify the particular group/communicator (e.g. \code{MPI_COMM_WORLD}) and 
+either the rank of the process or the size (or both!).  Actually, for
+small integers we  
 might not have enough bits, so we should think about this a little more.
 
-For the direct accessed values the remaining bits are used as indices into
+For the directly accessed values the remaining bits are used as indices into
 a table of pointers or an array of preallocated objects (using the array
 removes one indirect reference and ensures that storage is available at init
 time).  This table should be 
 a memory page or two in size, 
-minus estimated malloc overhead (if we dynamically allocate).
+minus estimated \code{malloc} overhead (if we dynamically allocate).
 
 For indirectly accessed values the remaining bits specify an allocated block
 for storing pointers and an index into that block.  We'll split the bits
@@ -426,7 +428,7 @@ internal functions may be defined in the PMPI versions.  We may need
 to do this anyway, because any function that calls an MPI routine will
 actually be calling the PMPI version.  Is this what we want to do?  Is
 it the best thing to do?  Note that we do this now, but through the
-confusing approach of using the MPI names, but redefining them as PMPI
+confusing approach of using the MPI file names, but redefining them as PMPI
 with a file containing a redefinition of every single MPI routine.
 
 Question: The pragma code is very ugly and hard to read.  It is also hard to
@@ -441,11 +443,14 @@ update editor.  In this case, the pragmas for implementing the
 profiling interface should be placed between two clear markers, such
 as 
 \begin{verbatim}
-/* -- begin profiling interface -- */
+/* -- begin profiling interface for routine xxxx -- */
 /* DO NOT EDIT.  Use the program xxx to update */
 ...
 /* -- end profiling interface -- */
 \end{verbatim}
+
+Placing the routine name in the comment header makes it easy to
+extract the correct name and generate the appropriate text.
 
 \subsection{Deprecated Routines}
 Question:  How should deprecated routines be handled?  At the very
@@ -465,7 +470,8 @@ environment variables are propagated to all processes.
 Question: Should we use the PETSc options database code or something similar
 to provide uniform access to runtime parameters?  
 
-Question: What should the routines be?  For example,
+Question: What should the routines be?  For 
+example,\index{MPIi_Param_init}\index{MPIi_Param_get_int}\index{MPIi_Param_get_string}\index{MPIi_Param_free}
 \begin{verbatim}
 int MPIi_Param_init( int argc, char *argv[] );
 int MPIi_Param_get_int( const char name[] );
@@ -491,6 +497,15 @@ routines could read a \file{.mpichrc} file and remember parameter
 values in a table, looking them up when requested (this is closest to
 the PETSc options database).
 
+Question: how are errors indicated?  For example if
+\mpidfunc{MPIi_Param_get_int} is called but the value is \code{"big"}?
+
+Question: should parameters be registered?  This allows the runtime
+system to find them (e.g., with BNR put/fence/get), and simplifies the
+generation of help text.  It 
+would also allow text describing the parameter to be provided from
+within the code.
+
 \subsection{Coding Practices}
 This section reviews some coding practices for the MPICH code.
 
@@ -508,7 +523,8 @@ Functions used entirely within a single file should be declared
 convention of starting with \code{MPI_} or \code{PMPI_} (for routines
 implementing the MPI Standard) or \code{MPIR_} for internal routines.  
 Global symbols, such as keyvals, should use \code{MPICH_} as the
-prefix.  
+prefix.  Also consider the use of \code{inline}, along with the
+autoconf macro to test for this feature.
 
 \item[Parameter declarations.]
 Parameters (with the exception of the MPI routines defined by the
@@ -524,7 +540,7 @@ will use the correct style for users with other styles or projects.
 
 \item[File header.]
 There should be a standard file header, containing the copyright and
-standardized includes (e.g., something like "mpiimpl.h").  This header
+standardized includes (e.g., something like "\file{mpiimpl.h}").  This header
 template should be part of the development environment.  Question:
 what should this header be?
 
@@ -535,6 +551,10 @@ for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
 in the declarations part of the program \emph{or} we should include the
 appropriate \code{\#define} line (as PETSc does) before the function
 declaration. 
+
+Alternately, we could use \code{FCNAME} and include optional code to
+set it to either \code{__FUNCTION__} for systems that define that or
+explicitly to the name.
 
 \item[Boolean Flags.]
 Data structures that contain a number of flags should store them
@@ -553,8 +573,8 @@ assume that several data structures use flags.
 #define MPID_CLR_FLAG(ds,field)    (ds)->_flag &= ~(field)
 \end{verbatim}
 \mpiconst{MPI_Datatype}s need multiple boolean flags (e.g., has a
-sticky upper bound marker, lower bound marker).  Do any other
-data structures need multiple flags?
+sticky upper bound marker, lower bound marker).  Window objects also
+have multiple flags.
 
 \end{description}
 
@@ -579,7 +599,8 @@ The include file \file{mpi.h} should not require any \code{-Dxxx}
 definitions by the compiler.  This will require generating the
 \file{mpi.h} from another file (and probably not using \code{configure} and an
 \file{mpi.h.in}).  It should not include any other
-files, with the (possible) exception of \file{mpi++.h} for C++ support.
+files, with the (possible) exception of \file{mpi++.h} for C++
+support.
 
 The \file{mpif.h} (or \file{mpif.h.in}) should be created from
 \file{mpi.h} so that the various integer values (e.g., error classes,
@@ -622,17 +643,17 @@ underlying communication layer, the different implementations are
 shown.  For the purposes of illustration in this document, there are
 three different classes of communication layers:
 \begin{description}
-\item[\tcpname]Conventional, two-sided (e.g., send/receive)
+\item[\tcpname.]Conventional, two-sided (e.g., send/receive)
 messaging.  Examples are TCP, UDP, and MPI-1.  
 
-\item[\shmemname]Shared memory.  This assumes separate processes that
+\item[\shmemname.]Shared memory.  This assumes separate processes that
 can share some memory.  Operations on this shared memory are
 accomplished using the usual language-defined methods for accessing
 memory.  However, most user memory (e.g., user-declared
 variables) is not shared.  Examples are Unix System V shared memory
 segments and shared \code{mmap} regions.  
 
-\item[\vianame]Distributed memory.  This assumes that there is a
+\item[\vianame.]Distributed memory.  This assumes that there is a
 method for remotely accessing memory in another process.  Operations
 on remote memory are \emph{not} accomplished with language features;
 instead, routine calls implement remote memory operations.  Examples
@@ -641,8 +662,8 @@ of this include VIA, Cray SHMEM, and IBM LAPI.
 
 \subsection{Attributes}
 
-Error values defined for keyvals and attributes:
-\mpiconst{MPI_ERR_KEYVAL}
+Error classes defined for keyvals and attributes:
+\mpiconst{MPI_ERR_KEYVAL} (note that this is new in MPI-2).
 
 
 \paragraph{MPI-1 Attribute Functions.}
@@ -677,15 +698,16 @@ Calls \mpifunc{PMPI_COMM_CREATE_KEYVAL}.
 Calls \mpifunc{PMPI_COMM_FREE_KEYVAL}.
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE_KEYVAL}}
-This should use a common MPID routine to create keyvals.  This routine, along
-with others to allocate MPID objects, has not yet been defined in the ADI.
+Calls \mpidfunc{MPID_Keyval_create} with object type
+\mpidconst{MPID_Comm_t}. 
 
-Question: To help catch user errors, should this try no to reuse the
+Question: To help catch user errors, should this try not to reuse the
 same keyval (i.e., the integer corresponding to the keyval structure)
-that was recently freed by \mpifunc{MPI_COMM_FREE_KEYVAL}.
+that was recently freed by \mpifunc{MPI_COMM_FREE_KEYVAL}?
 
 \subsubsection{\mpifunc{MPI_COMM_FREE_KEYVAL}}
-Call the MPID routine to free keyvals (not yet defined).  
+Test that the keyval belongs to communicators.  Call
+\mpidfunc{MPID_Keyval_free}. 
 
 %\subsubsection{\mpifunc{MPI_COMM_NULL_COPY_FN}}
 
@@ -700,69 +722,97 @@ we want to have the ability to detect thread races (e.g., a flag to indicate
 that another thread has touched the list)?  Note that a valid MPI
 program could have a (deliberate) race condition here, so any checking
 for thread races should be an optional debugging feature.
+
+This suggests the following
+\begin{algorithm}
+lock (attribute list)
+find 
+access value
+unlock
+return value
+\end{algorithm}
+
+The \code{lock} and \code{unlock} may be defined as follows:
+\begin{verbatim}
+#if defined(MPICH_ENABLE_USER_THREADS}
+#define DS_LOCK(comm,ds) \
+    if (comm->multi_threaded) mutex_lock(&ds->mutex);
+#define DS_UNLOCK(comm,ds) \
+    if (comm->multi_threaded) mutex_unlock(&ds->mutex);
+#else
+#define DS_LOCK(comm,ds)
+#define DS_UNLOCK(comm,ds)
+#endif
+\end{verbatim}
+This allows each communicator support different levels of
+threadedness, providing more modular control of threadedness.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_COMM_SET_ATTR}}
 \begin{adi3}
-\mpidfunc{MPID_Attr_find}, followed by access to the value.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
+\mpidfunc{MPID_Attr_find}, followed by access to the value:
+\begin{algorithm}
+lock
+find
+if not present, add
+set
+unlock
+\end{algorithm}
+Attributes are also used to control special characteristics.  Within
+the lock, it must also call \mpidfunc{MPID_Attr_extension} with the
+communicator, keyval, and attribute.  
+
+Question: should the device be responsible for setting fields such as
+\mpids{MPI_Comm}{multi_threaded} or should the MPI routine first check
+the attribute keys?
+
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_COMM_DELETE_ATTR}}
 \begin{adi3}
 \mpidfunc{MPID_Attr_delete}.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
+\begin{algorithm}
+lock
+find
+remove
+unlock
+\end{algorithm}
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_ATTR}}
-\begin{adi3}
-\mpidfunc{MPID_Attr_find}, followed by access to the value.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
-\end{adi3}
+See \mpifunc{MPI_COMM_GET_ATTR}.
 
 \subsubsection{\mpifunc{MPI_TYPE_SET_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_find}, followed by access to the value.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
-\end{adi3}
+See \mpifunc{MPI_COMM_SET_ATTR}.
 
 \subsubsection{\mpifunc{MPI_TYPE_DELETE_ATTR}}
-\begin{adi3}\mpidfunc{MPID_Attr_delete}.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
-\end{adi3}
+See \mpifunc{MPI_COMM_DELETE_ATTR}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_KEYVAL}}
-This should use a common MPID routine to create keyvals.  
+See \mpifunc{MPI_COMM_CREATE_KEYVAL} with object type
+\mpidconst{MPID_Datatype_t}. 
 
 \subsubsection{\mpifunc{MPI_TYPE_FREE_KEYVAL}}
-Call a common MPID routine to free keyvals.
+See \mpifunc{MPI_COMM_FREE_KEYVAL}.
 
 %\subsubsection{\mpifunc{MPI_TYPE_NULL_COPY_FN}}
 %\subsubsection{\mpifunc{MPI_TYPE_DUP_FN}}
 
 \subsubsection{\mpifunc{MPI_WIN_CREATE_KEYVAL}}
-This should use a common MPID routine to create keyvals.  
+See \mpifunc{MPI_COMM_CREATE_KEYVAL}.
 
 \subsubsection{\mpifunc{MPI_WIN_FREE_KEYVAL}}
-Call a common MPID routine to free keyvals.
+See \mpifunc{MPI_COMM_FREE_KEYVAL}.
 
 \subsubsection{\mpifunc{MPI_WIN_SET_ATTR}}
-\begin{adi3}
-\mpidfunc{MPID_Attr_find}, followed by access to the value.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
-\end{adi3}
+See \mpifunc{MPI_COMM_SET_ATTR}.
 
 \subsubsection{\mpifunc{MPI_WIN_GET_ATTR}}
-\begin{adi3}
-\mpidfunc{MPID_Attr_find}, followed by access to the value.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
-\end{adi3}
+See \mpifunc{MPI_COMM_GET_ATTR}.
 
 \subsubsection{\mpifunc{MPI_WIN_DELETE_ATTR}}
-\begin{adi3}
-\mpidfunc{MPID_Attr_delete}.
-This has the same thread issues as \code{MPI_COMM_GET_ATTR}.
-\end{adi3}
-
+See \mpifunc{MPI_COMM_DELETE_ATTR}.
+ 
 %\subsubsection{\mpifunc{MPI_WIN_NULL_COPY_FN}}
 
 \subsection{Info}
@@ -825,11 +875,12 @@ layered implementations of parts of MPI, particularly the I/O part,
 IBM did not interpret the standard this way and their interpretation
 is both consistent with the standard and offers a feature not
 otherwise available (specifically, the ability to determine what info
-keys are recognized by the implementation).
+keys are recognized by the implementation).  Question: we don't want
+to do this, do we?
 
 Note also that the interface to access the info values is not
 thread-safe, since it has the implicit assumption that the number of
-keys in an info object does not change unless ...
+keys in an info object does not change unless the same thread changes it.
 For example, consider this sequence:
 \begin{verbatim}
     MPI_Info_get_nkeys( info, &nkeys );
@@ -847,7 +898,7 @@ extension that raises a special error code if a different thread
 modifies an \code{MPI_Info} while any of the routines with a notion of
 the ``current'' state of info are operating on it.
 
-\paragraph{Implementing Info}
+\paragraph{Implementing Info.}
 There are two ways to handle \code{MPI_Info}.  One is to implement a general
 mechanism for handling key/value pairs, much like the code that is part of
 \file{mpich/src/misc2}.  The other is to implement only the defined keys that
@@ -893,15 +944,18 @@ Question: Do we want the list to be sorted by key name?  The current
 implementation uses a linear list, which is probably ok for most uses.
 
 \subsubsection{\mpifunc{MPI_INFO_CREATE}}
-Create an info object.  Does this use an MPID object creator?
+Call \mpidfunc{MPID_Info_create}.
 
 \subsubsection{\mpifunc{MPI_INFO_DELETE}}
 Remove a key from an info object:
 \begin{algorithm}
 lock info
 find key and remove key and associated value
+decrement count.
 unlock info
 \end{algorithm}
+Note that this lock must look at the global threadedness to decide if
+the lock is necessary.  
 
 \subsubsection{\mpifunc{MPI_INFO_DUP}}
 Note that this routine must be thread-safe.  This requires info routines that
@@ -909,10 +963,18 @@ modify the info structure or the list of key/value pairs to operate safely.
 Because none of the info routines are performance critical, and because none
 of these operations is very complex, using a single lock per \code{MPI_Info}
 or even a single lock for \emph{all} info objects is probably adequate.
-
+\begin{algorithm}
+Create a new info object
+lock
+walk list, copying each entry
+unlock
+\end{algorithm}
 
 \subsubsection{\mpifunc{MPI_INFO_FREE}}
-Delete an info object.  Uses an MPID object deleter.
+Call \mpidfunc{MPID_Info_free}.  We may want to lock the info object
+while removing the individual entries.  While inside the lock, we
+could also mark the object as invalid by clearing the objects
+``\mpids{MPI_Info}{cookie}''. 
 
 \subsubsection{\mpifunc{MPI_INFO_GET}}
 \begin{algorithm}
@@ -924,7 +986,7 @@ unlock info
 
 \subsubsection{\mpifunc{MPI_INFO_GET_NKEYS}}
 Question:  Should we keep a count of the number of keys, or just count them?
-If we count them, then
+(Yes, I think so).  If instead we count them, then
 \begin{algorithm}
 lock info
 run through list to count all keys
@@ -957,28 +1019,39 @@ Note that the returned length does not include the end-of-string character.
 lock info
 find indicated key.  
 If found, set the value,
-else add the key and value.
+else add the key and value; also increment count of keys
 unlock info
 \end{algorithm}
 
 
 \subsection{Datatypes}
+\label{sec:datatypes}
+
+Error classes include \mpiconst{MPI_ERR_TYPE} and
+\mpiconst{MPI_ERR_ARG}. 
+
 The ADI defines a datatype structure that is believed to be a good
 choice for implementing operatoins that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
 
-All datatypes should call a function to compute the extent because the
+All datatypes should call a function
+(\mpidfunc{MPIi_Type_compute_extent} to compute the extent because the
 computation is a bit complex.  Here is the rule for the extent:
 \begin{algorithm}
 /* Compute the \mpids{MPI_Datatype}{ub} */
 If a sticky ub exists for the old datatype (datatypes for struct), then
-    use the sticky ub and set the sticky ub flag
+    use the \mpids{MPI_Datatype}{sticky_ub} and set the sticky ub flag
+    (\mpids{MPI_Datatype}{MPID_TYPE_STICKY_UB}).
 else
     use the \mpids{MPI_Datatype}{true_ub}
-/* Similar for the \mpids{MPI_Datatype}{lb} and
+/* Similar for the \mpids{MPI_Datatype}{lb},
+   \mpids{MPI_Datatype}{sticky_lb},
+   \mpids{MPI_Datatype}{MPID_TYPE_STICKY_LB}   and
    \mpids{MPI_Datatype}{true_lb}. */
 \mpids{MPI_Datatype}{extent} = \mpids{MPI_Datatype}{ub} - \mpids{MPI_Datatype}{lb} + PAD.
 where PAD is determined by alignment rules.  
+/* Similar for \mpids{MPI_Datatype}{true_extent} */
+
 For the alignment rules, each datatype keeps track of the largest
 alignment obect in \mpids{MPI_Datatype}{alignment_size}; these are the
 sizes of the predefined language datatypes such as \code{char} and
@@ -1008,7 +1081,7 @@ This requires some care.  This should return the number of basic datatypes in
 a message.  So, to start with, each datatype should keep track of the number
 of basic datatypes.  Then a quick version of this is:
 \begin{algorithm}
-If sizeof datatype is zero, then
+If sizeof datatype (\mpids{MPI_datatype}{size}) is zero, then
     If size of message is zero, return zero
     else return \mpiconst{MPI_UNDEFINED}
 Compute sizeof message / sizeof datatype.  
