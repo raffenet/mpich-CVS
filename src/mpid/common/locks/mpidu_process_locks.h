@@ -49,8 +49,7 @@ __attribute__ ((unused))
 static inline unsigned long _InterlockedExchange(volatile void *ptr, unsigned long x)
 {
    unsigned long result;
-   __asm__ __volatile ("xchg4 %0=[%1],%2" : "=r" (result)
-       : "r" (ptr), "r" (x) : "memory");
+   __asm__ __volatile ("xchg4 %0=[%1],%2" : "=r" (result) : "r" (ptr), "r" (x) : "memory");
    return result;
 }
 #endif
