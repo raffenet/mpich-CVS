@@ -10,6 +10,7 @@
 \usepackage{/home/gropp/BOOKS/Beowulf/tex/url}
 \usepackage{epsf}
 \usepackage{mpidoc}
+\usepackage{graphics}
 
 \makeindex
 
@@ -87,14 +88,14 @@ writing the code.
 \begin{description}
 \item[src]Source files for the MPI implementation
   \begin{description}
-  \item[mpi]
+  \item[mpi]The implementation of the MPI routines
     \begin{description}
     \item[attr]Attributes (Section~\ref{sec:attr})
-    \item[info]Info (Section\ref{sec:info})
+    \item[info]Info (Section~\ref{sec:info})
     \item[datatype]Datatypes (Section~\ref{sec:datatypes})
     \item[group]Groups (Section~\ref{sec:groups})
     \item[comm]Communicators (Section~\ref{sec:communicators})
-      \textbf{intercomm separate?}
+      \textbf{Question: intercomm separate?}
     \item[pt2pt]Point-to-point (Section~\ref{sec:pt-2-pt})
     \item[coll]Collective communication and computation
       (Section~\ref{sec:collective-comm}) 
@@ -103,9 +104,9 @@ writing the code.
     \item[rma]Remote memory access (Section~\ref{sec:rma})
     \item[init]Starting and ending MPI (Section~\ref{sec:init})
     \item[spawn]Dynamic processes (Section~\ref{sec:spawn})
-      \textbf{spawn separate from attach/connect/lookup?}
+      \textbf{Question: spawn separate from attach/connect/lookup?}
     \item[grequest]User-defined requests (Section~\ref{sec:grequest})
-      \textbf{Part of point-2-point?}
+      \textbf{Question: Part of point-2-point?}
     \item[errhan]Error handlers (Section~\ref{sec:errhand})
     \item[handle]Handle transfers (Section~\ref{sec:handle-transfer})
     \item[timer]Timers (Section~\ref{sec:timer})
@@ -115,7 +116,7 @@ writing the code.
       routines such as the info support
     \end{description}
   \item[mpid]Implementation of the ADI3
-  \item[bnr]
+  \item[bnr]Process manager interface
     \begin{description}
       \item[include]BNR header files
       \item[mpd]Implementation of \code{bnr} in terms of \code{mpd}
@@ -134,7 +135,7 @@ writing the code.
 \textbf{Should most include files go here?  What about replacable modules,
   such as alternative datatype implementations?}
 
-\item[doc]
+\item[doc]Documentation
   \begin{description}
     \item[mpich2]
     \item[adi3]
@@ -150,10 +151,10 @@ writing the code.
   \item[config]\code{autoconf} macro files
   \end{description}
 
-\item[test]
+\item[test]Testing tools and programs
   \begin{description}
     \item[util]Contains utilities for running the tests
-    \item[mpi]
+    \item[mpi]Test of MPI.  Must work with \emph{any} MPI implementation.
       \begin{description}
         \item[xxx]The directory structure should match that for the
           \file{src/mpi}.
@@ -745,6 +746,117 @@ sticky upper bound marker, lower bound marker).  Window objects also
 have multiple flags.
 
 \end{description}
+
+\subsection{Integral Profiling}
+\label{sec:builtin-timing}
+
+\subsubsection{Basic Timer Routines.}
+These provide a basic mechanism for accessing a fast timer.  The value of the
+timer is an opaque \emph{timestamp}; for example, it may be a simple cycle
+counter.  The routine \mpidfunc{MPID_TimerConvert} converts the difference
+between two timestamps into a number of seconds (a \code{double}).  These
+provide the basic support for timing on a process.  
+
+\textbf{Question: compare this to the ADI timers}
+
+\begin{verbatim}
+typedef ... MPID_Timestamp_t;
+MPID_TimerStamp( MPID_Timestamp_t timestamp)
+MPID_TimerConvert( MPID_Timestamp_t timestamp1, 
+                   MPID_Timestamp_t timestamp2, 
+                   double *seconds)
+MPID_TimerAcc( MPID_Timestamp_t t1, MPID_Timestamp_t t2, 
+               MPID_Timestamp_t t3 )
+MPID_TimerInit( )
+MPID_TimerEnd( )
+\end{verbatim}
+\code{MPID_TimerAcc} is an accumulate function; if the time stamps are numeric
+types (e.g., \code{long} or \code{double}), then \code{MPID_TimerAcc} is
+simply
+\begin{verbatim}
+    t3  += (t2 - t1);
+\end{verbatim}
+
+\subsubsection{Instrumenting the MPI code.}
+Each routine will contain references to 
+\begin{verbatim}
+MPID_TimerStateBegin( stateid )
+MPID_TimerStateEnd( stateid )
+\end{verbatim}
+The value of \code{stateid} is \code{MPID_STATE_functionname}, for example,
+\code{MPID_STATE_MPI_SEND}.  The timer code will accumulate the sum of
+timestamps, along with the number of calls.
+
+\textbf{Question: Also keep track of max/min times and either sum of squares
+  or a histogram of times?}
+
+\textbf{Question: thread safety}
+
+Each state belongs to a class; there are 32 classes (so that we can use
+bitwise tests on a 32 bit \code{unsigned int}).  Instrumentation can be
+controlled:
+\begin{description}
+\item[at compile time]with the \code{--enable-timing} configure flag
+\item[at run time]with the \code{MPICH_TIMING} environment variable or
+  \code{-mpich-timing} command line argument; the value is a string of timing
+  class names.
+\end{description}
+\textbf{Question: do we want to allow even finer grain control?}
+
+\subsection{Sample Implementation Template}
+\begin{verbatim}
+/*
+ *  $Id$
+ *
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#include "mpiimpl.h"
+
+/* -- Begin Profiling Symbol Block */
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_Foo = PMPI_Foo
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_Foo  MPI_Foo
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_Foo as PMPI_Foo
+#endif
+/* -- End Profiling Symbol Block */
+
+/*@
+   MPI_Foo - short description
+
+   Input Arguments:
++  first - 
+.  middle - 
+-  last - 
+
+   Output Arguments:
+
+   Notes:
+
+.N Errors
+.N MPI_SUCCESS
+.N ... others
+@*/
+int PMPI_Foo( int a ) 
+{
+    #ifndef __FUNCTION__
+    #define __FUNCTION__ "MPI_Foo"
+    #endif
+
+    MPID_TimerStateBegin(MPID_STATE_MPI_FOO);
+    MPID_BEGIN_ERROR_CHECKS;
+        if (a < 0) {
+            mpi_errno = MPIR_Err_setmsg( MPIi_ERR_NEGATIVE, a );
+        }
+    MPID_END_ERROR_CHECKS;
+
+    MPID_TimerStateEnd(MPID_STATE_MPI_FOO);
+    MPIR_RETURN( errhandler, mpi_errno );
+}
+\end{verbatim}
 
 \subsection{Other Subsystems}
 In MPICH, there is code that is not directly part of the MPI

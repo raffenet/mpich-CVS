@@ -10,6 +10,7 @@
 \usepackage{/home/gropp/BOOKS/Beowulf/tex/url}
 \usepackage{epsf}
 \usepackage{mpidoc}
+\usepackage{graphics}
 \makeindex
 
 \begin{document}
