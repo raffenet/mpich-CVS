@@ -154,7 +154,8 @@ is %d
 **dtypepermcontents %s:Cannot get contents of a permanent or basic data type %s
 **dtypename:Cannot set name in data type 
 **dtypenomatch:Type signatures do not match in communication
-**dtypecomm:Pack buffer not packed for this communicator.  
+**dtypecomm:Pack buffer not packed for this communicator.
+**dtypemismatch:Receiving data with a datatype whose signature does not match that of the sending datatype.
 **comm:Invalid communicator
 **commnull:Null communicator
 **intercomm:Intercommunicator is not allowed 
@@ -396,23 +397,33 @@ with MPI_Alloc_mem.
 **opnotpredefined %d:only predefined ops are valid (op = %d)
 **opundefined_rma:RMA target received unknown RMA operation
 **opundefined_rma %d:RMA target received unknown RMA operation type %d
-**ch3|mpid_cancel_send|cancelrndv:failure occurred while performing local cancellation of a rendezvous message
-**ch3|mpid_cancel_send|canceleager:failure occurred while performing local cancellation of a eager message
-**ch3|mpid_cancel_send|cancelmsg:failure occurred while sending remote cancellation request packet
-**ch3|ch3u_handle_recv_pkt|nopktcontainermem:failed to allocate memory for a packet reorder container
-**ch3|ch3u_handle_recv_pkt|pktordered:failure occurred while processing a reordered packet
-**ch3|ch3u_handle_recv_pkt|postrecv:failure occurred while posting a receive for message data
-**ch3|ch3u_handle_recv_pkt|syncack:failure occurred while attempting to send eager synchronization packet
-**ch3|ch3u_handle_recv_pkt|ctsreq:failure occurred while attempting to send CTS request packet
-**ch3|ch3u_handle_recv_pkt|cancelresp:failure occurred while attempting to send cancel response packet
-**ch3|ch3u_handle_recv_pkt|putpkt:handling for put packets not implemented
-**ch3|ch3u_handle_recv_pkt|flowcntlpkt:handling for flow control packets not implemented
-**ch3|ch3u_handle_recv_pkt|unknownpkt:received unknown packet type
-**ch3|ch3u_handle_recv_pkt|unknownpkt %d:received unknown packet type (type=%d)
+**ch3|cancelrndv:failure occurred while performing local cancellation of a rendezvous message
+**ch3|canceleager:failure occurred while performing local cancellation of a eager message
+**ch3|cancelreq:failure occurred while sending remote cancellation request packet
+**ch3|nopktcontainermem:failed to allocate memory for a packet reorder container
+**ch3|pktordered:failure occurred while processing a reordered packet
+**ch3|postrecv:failure occurred while posting a receive for message data
+**ch3|postrecv %s:failure occurred while posting a receive for message data (%s)
+**ch3|syncack:failure occurred while attempting to send eager synchronization packet
+**ch3|cancelresp:failure occurred while attempting to send cancel response packet
+**ch3|putpkt:handling for put packets not implemented
+**ch3|flowcntlpkt:handling for flow control packets not implemented
+**ch3|unknownpkt:received unknown packet type
+**ch3|unknownpkt %d:received unknown packet type (type=%d)
+**ch3|rtspkt:failure occurred while attempting to send RTS packet
+**ch3|ctspkt:failure occurred while attempting to send CTS packet
 **ch3|loadrecviov:failure occurred while loading the receive I/O vector
+**ch3|loadrecviov %s:failure occurred while loading the receive I/O vector (%s)
 **ch3|loadsendiov:failure occurred while loading the send I/O vector
 **ch3|recvdata:failure occurred while attempting to receive message data
+**ch3|recvdata %s:failure occurred while attempting to receive message data (%s)
 **ch3|senddata:failure occurred while attempting to send message data
+**ch3|badca:specified completion action in not known
+**ch3|badca %d:specified completion action in not known (%d)
+**ch3|badreqtype:request contained an invalid request type
+**ch3|badreqtype %d:request contained an invalid request type (%d)
+**ch3|eagermsg:failure occurred while attempting to send an eager message
+
 
 #
 # CH3:sock errors
