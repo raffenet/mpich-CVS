@@ -11,7 +11,6 @@
 typedef int color_t;
 
 int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax);
-int mpi_read_data(MPI_Comm comm, char *buffer, int length);
 
 extern HWND g_hWnd;
 extern HDC g_hDC;
@@ -134,18 +133,21 @@ static void getRGB(color_t color, int *r, int *g, int *b)
 int mpi_connect_to_pmandel(const char *port, int &width, int &height)
 {
     int result;
+    MPI_Status status;
+    MPI_Info info;
     /*char err[100];*/
 
-    result = MPI_Comm_connect((char*)port, MPI_INFO_NULL, 0, MPI_COMM_SELF, &comm);
+    MPI_Info_create(&info);
+    result = MPI_Comm_connect((char*)port, info, 0, MPI_COMM_WORLD, &comm);
     if (result != MPI_SUCCESS)
     {
 	MessageBox(NULL, "MPI_Comm_connect failed", "Error", MB_OK);
 	return -1;
     }
 
-    mpi_read_data(comm, (char*)&width, sizeof(int));
-    mpi_read_data(comm, (char*)&height, sizeof(int));
-    mpi_read_data(comm, (char*)&g_num_colors, sizeof(int));
+    MPI_Recv(&width, 1, MPI_INT, 0, 0, comm, &status);
+    MPI_Recv(&height, 1, MPI_INT, 0, 0, comm, &status);
+    MPI_Recv(&g_num_colors, 1, MPI_INT, 0, 0, comm, &status);
     g_width = width;
     g_height = height;
     colors = new color_t[g_num_colors+1];
@@ -160,8 +162,7 @@ int mpi_connect_to_pmandel(const char *port, int &width, int &height)
 
 int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax)
 {
-    double temp[4];
-    int result, total;
+    int result;
     char err[100];
     RECT r;
 
@@ -174,34 +175,33 @@ int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax)
 	FillRect(g_hDC, &r, (HBRUSH)GetStockObject(BLACK_BRUSH));
     }
 
-    total = 4 * sizeof(double);
-    temp[0] = xmin;
-    temp[1] = ymin;
-    temp[2] = xmax;
-    temp[3] = ymax;
-
-    result = MPI_Send(temp, 4, MPI_DOUBLE, 0, 0, comm);
+    result = MPI_Send(&xmin, 1, MPI_DOUBLE, 0, 0, comm);
     if (result != MPI_SUCCESS)
     {
 	sprintf(err, "send failed: error %d", result);
 	MessageBox(NULL, err, "Error", MB_OK);
 	return -1;
     }
-    return 0;
-}
-
-int mpi_read_data(MPI_Comm comm, char *buffer, int length)
-{
-    int result;
-    char err[100];
-    MPI_Status status;
-
-    result = MPI_Recv(buffer, length, MPI_CHAR, 0, 0, comm, &status);
+    result = MPI_Send(&ymin, 1, MPI_DOUBLE, 0, 0, comm);
     if (result != MPI_SUCCESS)
     {
-	sprintf(err, "recv failed: error %d", result);
+	sprintf(err, "send failed: error %d", result);
 	MessageBox(NULL, err, "Error", MB_OK);
-	return result;
+	return -1;
+    }
+    result = MPI_Send(&xmax, 1, MPI_DOUBLE, 0, 0, comm);
+    if (result != MPI_SUCCESS)
+    {
+	sprintf(err, "send failed: error %d", result);
+	MessageBox(NULL, err, "Error", MB_OK);
+	return -1;
+    }
+    result = MPI_Send(&ymax, 1, MPI_DOUBLE, 0, 0, comm);
+    if (result != MPI_SUCCESS)
+    {
+	sprintf(err, "send failed: error %d", result);
+	MessageBox(NULL, err, "Error", MB_OK);
+	return -1;
     }
     return 0;
 }
@@ -214,18 +214,19 @@ int mpi_get_pmandel_data()
     int result;
     int i, j, k;
     RECT r;
+    MPI_Status status;
 
     for (;;)
     {
-	result = mpi_read_data(comm, (char*)temp, 4*sizeof(int));
-	if (result)
+	result = MPI_Recv(&temp, 4, MPI_INT, 0, 0, comm, &status);
+	if (result != MPI_SUCCESS)
 	    return 0;
 	if (temp[0] == 0 && temp[1] == 0 && temp[2] == 0 && temp[3] == 0)
 	    return 0;
 	size = (temp[1] + 1 - temp[0]) * (temp[3] + 1 - temp[2]);
 	buffer = new int[size];
-	result = mpi_read_data(comm, (char *)buffer, size * sizeof(int));
-	if (result)
+	result = MPI_Recv(buffer, size, MPI_INT, 0, 0, comm, &status);
+	if (result != MPI_SUCCESS)
 	{
 	    delete buffer;
 	    return 0;

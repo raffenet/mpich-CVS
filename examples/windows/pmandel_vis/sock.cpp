@@ -160,7 +160,7 @@ int connect_to_pmandel(const char *host, int port, int &width, int &height)
 	MessageBox(NULL, err, "Error", MB_OK);
 	return -1;
     }
-    addr.sin_port = port;
+    addr.sin_port = htons(port);
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (connect(sock, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR)
     {
