@@ -1089,6 +1089,7 @@ AC_SUBST(MPI_LDFLAGS)
 AC_OUTPUT_COMMANDS([chmod a+x mpif77])
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
 AC_OUTPUT_COMMANDS([cp -p mpif77 ../../../bin])
+AC_OUTPUT_COMMANDS([cp mpif.h ../../../src/include])
 AC_OUTPUT(Makefile mpif.h mpif77.conf mpif77 setbotf.f)
 exit 0
 dnl

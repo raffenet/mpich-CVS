@@ -8,7 +8,7 @@
 #include "mpi_fortconf.h"
 #endif
 
-/* Support Windows extension to specify calling convention *?
+/* Support Windows extension to specify calling convention */
 #ifdef USE_FORT_STDCALL
 #define FORT_CALL __stdcall
 #elif defined (USE_FORT_CDECL)
