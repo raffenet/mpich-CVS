@@ -460,6 +460,9 @@
 			<File
 				RelativePath=".\mpidu_sock.h">
 			</File>
+			<File
+				RelativePath=".\iocp\mpidu_socki.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

@@ -374,14 +374,18 @@ int smpd_free_command(smpd_command_t *cmd_ptr)
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_create_context"
 int smpd_create_context(smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_Sock_t sock, int id, smpd_context_t **context_pptr)
 {
     int result;
     smpd_context_t *context;
     
+    smpd_enter_fn(FCNAME);
     context = (smpd_context_t*)malloc(sizeof(smpd_context_t));
     if (context == NULL)
     {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     memset(context, 0, sizeof(smpd_context_t));
@@ -390,6 +394,7 @@ int smpd_create_context(smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_So
     {
 	*context_pptr = NULL;
 	free(context);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     
@@ -398,6 +403,7 @@ int smpd_create_context(smpd_context_type_t type, MPIDU_Sock_set_t set, MPIDU_So
     smpd_process.context_list = context;
 
     *context_pptr = context;
+    smpd_exit_fn(FCNAME);
     return result;
 }
 
