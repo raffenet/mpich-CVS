@@ -31,6 +31,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     char * val;
     int key_max_sz;
     int val_max_sz;
+    int name_sz;
 
     MPIU_DBG_PRINTF(("entering ch3_init.\n"));
     /*
@@ -68,13 +69,19 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
     pg->size = pg_size;
-    pg->kvs_name = MPIU_Malloc(PMI_KVS_Get_name_length_max() + 1);
+    mpi_errno = PMI_KVS_Get_name_length_max(&name_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAMe, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+	return mpi_errno;
+    }
+    pg->kvs_name = MPIU_Malloc(name_sz + 1);
     if (pg->kvs_name == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
-    mpi_errno = PMI_KVS_Get_my_name(pg->kvs_name);
+    mpi_errno = PMI_KVS_Get_my_name(pg->kvs_name, name_sz);
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", mpi_errno);
@@ -158,14 +165,26 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
      *
      * XXX - need to check sizes of values to insure array overruns do not occur
      */
-    key_max_sz = PMI_KVS_Get_key_length_max()+1;
+    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+	return mpi_errno;
+    }
+    key_max_sz++;
     key = MPIU_Malloc(key_max_sz);
     if (key == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
-    val_max_sz = PMI_KVS_Get_value_length_max()+1;
+    mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
+    if (mpi_errno != PMI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+	return mpi_errno;
+    }
+    val_max_sz++;
     val = MPIU_Malloc(val_max_sz);
     if (val == NULL)
     {
@@ -230,7 +249,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	{
 	    mpi_errno = snprintf(key, key_max_sz, "P%d-lid", p);
 	    assert(mpi_errno > -1 && mpi_errno < key_max_sz);
-	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
+	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
 	    assert(mpi_errno == 0);
 	    
 	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, val);
@@ -250,7 +269,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         if (pg_rank == 0)
 	{
             /* get the port name of the root of the parents */
-            mpi_errno = PMI_KVS_Get(pg->kvs_name, "PARENT_ROOT_PORT_NAME", val);
+            mpi_errno = PMI_KVS_Get(pg->kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
             if (mpi_errno != 0)
             {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
