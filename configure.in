@@ -28,7 +28,7 @@ AC_ARG_ENABLE(echo,
 dnl
 dnl # MPICH-1 used -Wshadow as well.
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
-CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi")
+CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast")
 dnl
 AC_ARG_ENABLE(coverage,
 [--enable-coverage - Turn on coverage analysis using gcc and gcov],,
@@ -680,9 +680,14 @@ fi
 dnl
 dnl Check for strict.  Do this *first* because the -ansi switch changes what
 dnl gcc will accept
+dnl
+dnl [BRT] I removed the -ansi option.  It caused some necessary functions to
+dnl not be defined, which resulted in the code failing to compile and
+dnl the developers not to use --enable-strict.
+dnl
 if test "$enable_strict" = "yes" ; then
     if test "$ac_cv_prog_gcc" = "yes" ; then
-       CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi"
+       CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast"
     else 
         AC_MSG_WARN([--enable-strict only supported for GCC])
     fi
