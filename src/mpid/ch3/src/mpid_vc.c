@@ -20,6 +20,7 @@ typedef struct MPIDI_VCRT
 {
     int handle;
     volatile int ref_count;
+    int size;
     MPIDI_VC * vcr_table[1];
 }
 MPIDI_VCRT;
@@ -33,6 +34,7 @@ int MPID_VCRT_create(int size, MPID_VCRT *vcrt_ptr)
     if (vcrt != NULL)
     {
 	vcrt->ref_count = 1;
+	vcrt->size = size;
 	*vcrt_ptr = vcrt;
 	return MPI_SUCCESS;
     }
@@ -55,6 +57,13 @@ int MPID_VCRT_release(MPID_VCRT vcrt)
     MPIU_Object_release_ref(vcrt, &count);
     if (count == 0)
     {
+	int i;
+
+	for (i = 0; i < vcrt->size; i++)
+	{
+	    MPID_VCR_release(vcrt->vcr_table[i]);
+	}
+	
 	MPIU_Free(vcrt);
     }
     return MPI_SUCCESS;
