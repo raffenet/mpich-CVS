@@ -1326,6 +1326,7 @@ int ibui_readv_unex(ibu_t ibu)
 	while (ibu->unex_list->length && ibu->read.iovlen)
 	{
 	    num_bytes = min(ibu->unex_list->length, ibu->read.iov[ibu->read.index].IBU_IOV_LEN);
+	    msg_printf("ibui_readv_unex: copying %d bytes\n", num_bytes);
 	    /* copy the received data */
 	    memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, ibu->unex_list->buf, num_bytes);
 	    ibu->unex_list->buf += num_bytes;
@@ -1349,6 +1350,7 @@ int ibui_readv_unex(ibu_t ibu)
 		err_printf("ibui_read_unex: mem_ptr == NULL\n");
 	    }
 	    assert(ibu->unex_list->mem_ptr != NULL);
+	    msg_printf("ibui_readv_unex: ibuBlockFree(mem_ptr)\n");
 	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* free the unexpected data node */
 	    temp = ibu->unex_list;
