@@ -49,7 +49,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    handle_read(out.user_ptr, out.num_bytes);
 	    break;
 	case IBU_OP_WRITE:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu reported %d bytes written", out.num_bytes));
+	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes written", out.num_bytes));
 	    //handle_written(out.user_ptr, out.num_bytes);
 	    handle_written(out.user_ptr);
 	    break;
@@ -463,7 +463,7 @@ static inline void handle_written(MPIDI_VC * vc)
 	assert(req->ib.iov_offset < req->ch3.iov_count);
 	//nb = writev(poll_fds[elem].fd, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset);
 	nb = ibu_post_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
-	MPIDI_DBG_PRINTF((60, FCNAME, "ibu_post_writev returned %d"));
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibu_post_writev returned %d", nb));
 
 	if (nb > 0)
 	{
