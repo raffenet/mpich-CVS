@@ -318,6 +318,23 @@ typedef struct smpd_host_node_t
 
 struct smpd_spawn_context_t;
 
+typedef struct smpd_sspi_client_context_t
+{
+    int id;
+#ifdef HAVE_WINDOWS_H
+    CtxtHandle context;
+    CredHandle credential;
+    TimeStamp expiration_time;
+    HANDLE user_handle;
+#endif
+    void *buffer;
+    int buffer_length;
+    void *out_buffer;
+    int out_buffer_length;
+    int max_buffer_size;
+    struct smpd_sspi_client_context_t *next;
+} smpd_sspi_client_context_t;
+
 typedef struct smpd_context_t
 {
     smpd_context_type_t type;
@@ -348,6 +365,8 @@ typedef struct smpd_context_t
     int connect_return_id, connect_return_tag;
     struct smpd_process_t *process;
     char sspi_header[SMPD_SSPI_HEADER_LENGTH];
+    smpd_sspi_client_context_t *sspi_context;
+    /*
     int sspi_max_buffer_size;
     int sspi_buffer_length;
     void *sspi_buffer, *sspi_outbound_buffer;
@@ -358,6 +377,7 @@ typedef struct smpd_context_t
     TimeStamp sspi_expiration_time;
     HANDLE sspi_user_handle;
 #endif
+    */
     struct smpd_context_t *next;
 } smpd_context_t;
 
@@ -496,18 +516,6 @@ typedef struct smpd_process_group_t
     smpd_exit_process_t *processes;
     struct smpd_process_group_t *next;
 } smpd_process_group_t;
-
-typedef struct smpd_sspi_client_context_t
-{
-    int id;
-#ifdef HAVE_WINDOWS_H
-    CtxtHandle context;
-    CredHandle credential;
-#endif
-    void *buffer;
-    int buffer_length;
-    struct smpd_sspi_client_context_t *next;
-} smpd_sspi_client_context_t;
 
 /* If you add elements to the process structure you must add the appropriate
    initializer in smpd_connect.c where the global variable, smpd_process, lives */

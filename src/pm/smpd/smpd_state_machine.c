@@ -2310,32 +2310,41 @@ int smpd_state_reading_sspi_header(smpd_context_t *context, MPIDU_Sock_event_t *
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
     smpd_dbg_printf("read sspi header: '%s'\n", context->sspi_header);
-    context->sspi_buffer_length = atoi(context->sspi_header);
-    if (context->sspi_buffer_length < 1)
+    if (context->sspi_context == NULL)
+    {
+	result = smpd_create_sspi_client_context(&context->sspi_context);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+    }
+    context->sspi_context->buffer_length = atoi(context->sspi_header);
+    if (context->sspi_context->buffer_length < 1)
     {
 	/* FIXME: Add code to cleanup sspi structures */
-	smpd_err_printf("invalid sspi buffer length %d\n", context->sspi_buffer_length);
+	smpd_err_printf("invalid sspi buffer length %d\n", context->sspi_context->buffer_length);
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
 	smpd_exit_fn(FCNAME);
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
-    if (context->sspi_buffer != NULL)
+    if (context->sspi_context->buffer != NULL)
     {
-	free(context->sspi_buffer);
+	free(context->sspi_context->buffer);
     }
-    context->sspi_buffer = malloc(context->sspi_buffer_length);
-    if (context->sspi_buffer == NULL)
+    context->sspi_context->buffer = malloc(context->sspi_context->buffer_length);
+    if (context->sspi_context->buffer == NULL)
     {
 	/* FIXME: Add code to cleanup sspi structures */
-	smpd_err_printf("unable to allocate a sspi buffer of length %d\n", context->sspi_buffer_length);
+	smpd_err_printf("unable to allocate a sspi buffer of length %d\n", context->sspi_context->buffer_length);
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
 	smpd_exit_fn(FCNAME);
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
     context->read_state = SMPD_READING_SSPI_BUFFER;
-    result = MPIDU_Sock_post_read(context->sock, context->sspi_buffer, context->sspi_buffer_length, context->sspi_buffer_length, NULL);
+    result = MPIDU_Sock_post_read(context->sock, context->sspi_context->buffer, context->sspi_context->buffer_length, context->sspi_context->buffer_length, NULL);
     if (result != MPI_SUCCESS)
     {
 	/* FIXME: Add code to cleanup sspi structures */
@@ -2390,7 +2399,7 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	}
     }
     /* Query the max token size so the output buffer can be allocated */
-    if (context->sspi_max_buffer_size == 0)
+    if (context->sspi_context->max_buffer_size == 0)
     {
 	PSecPkgInfo info;
 	first_call = SMPD_TRUE;
@@ -2406,10 +2415,10 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	}
 	smpd_dbg_printf("%s package, %s, with: max %d byte token, capabilities bitmask 0x%x\n",
 	    info->Name, info->Comment, info->cbMaxToken, info->fCapabilities);
-	context->sspi_max_buffer_size = info->cbMaxToken;
-	if (context->sspi_max_buffer_size < 0)
+	context->sspi_context->max_buffer_size = info->cbMaxToken;
+	if (context->sspi_context->max_buffer_size < 0)
 	{
-	    context->sspi_max_buffer_size = SMPD_SSPI_MAX_BUFFER_SIZE;
+	    context->sspi_context->max_buffer_size = SMPD_SSPI_MAX_BUFFER_SIZE;
 	}
 	smpd_dbg_printf("calling FreeContextBuffer\n");
 	sec_result = smpd_process.sec_fn->FreeContextBuffer(info);
@@ -2425,7 +2434,7 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     if (first_call)
     {
 	smpd_dbg_printf("calling AcquireCredentialsHandle\n");
-	sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_INBOUND, NULL, NULL, NULL, NULL, &context->sspi_credential, &context->sspi_expiration_time);
+	sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_INBOUND, NULL, NULL, NULL, NULL, &context->sspi_context->credential, &context->sspi_context->expiration_time);
 	if (sec_result != SEC_E_OK)
 	{
 	    smpd_err_printf("unable to acquire the security package credential, error %d.\n", sec_result);
@@ -2440,49 +2449,58 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     inbound_descriptor.cBuffers = 1;
     inbound_descriptor.pBuffers = &inbound_buffer;
     inbound_buffer.BufferType = SECBUFFER_TOKEN;
-    inbound_buffer.cbBuffer = context->sspi_buffer_length;
-    inbound_buffer.pvBuffer = context->sspi_buffer;
+    inbound_buffer.cbBuffer = context->sspi_context->buffer_length;
+    inbound_buffer.pvBuffer = context->sspi_context->buffer;
 
     outbound_descriptor.ulVersion = SECBUFFER_VERSION;
     outbound_descriptor.cBuffers = 1;
     outbound_descriptor.pBuffers = &outbound_buffer;
     outbound_buffer.BufferType = SECBUFFER_TOKEN;
-    outbound_buffer.cbBuffer = context->sspi_max_buffer_size;
-    if (context->sspi_outbound_buffer != NULL)
+    outbound_buffer.cbBuffer = context->sspi_context->max_buffer_size;
+    if (context->sspi_context->out_buffer != NULL)
     {
-	free(context->sspi_outbound_buffer);
+	free(context->sspi_context->out_buffer);
     }
-    context->sspi_outbound_buffer = malloc(context->sspi_max_buffer_size);
-    if (context->sspi_outbound_buffer == NULL)
+    context->sspi_context->out_buffer = malloc(context->sspi_context->max_buffer_size);
+    if (context->sspi_context->out_buffer == NULL)
     {
-	smpd_err_printf("unable to allocate a sspi buffer of length %d\n", context->sspi_max_buffer_size);
+	smpd_err_printf("unable to allocate a sspi buffer of length %d\n", context->sspi_context->max_buffer_size);
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
 	smpd_exit_fn(FCNAME);
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
-    outbound_buffer.pvBuffer = context->sspi_outbound_buffer;
+    outbound_buffer.pvBuffer = context->sspi_context->out_buffer;
     smpd_dbg_printf("inbound buffer %d bytes, outbound %d bytes\n", inbound_buffer.cbBuffer, outbound_buffer.cbBuffer);
 
     smpd_dbg_printf("calling AcceptSecurityContext\n");
-    sec_result = sec_result_copy = smpd_process.sec_fn->AcceptSecurityContext(&context->sspi_credential,
-	first_call ? NULL : &context->sspi_context,
+    sec_result = sec_result_copy = smpd_process.sec_fn->AcceptSecurityContext(
+	&context->sspi_context->credential,
+	first_call ? NULL : &context->sspi_context->context,
 	&inbound_descriptor,
 	0, //ASC_REQ_MUTUAL_AUTH | ASC_REQ_DELEGATE,
-	SECURITY_NATIVE_DREP, //SECURITY_NETWORK_DREP,
-	&context->sspi_context, &outbound_descriptor, &attr, &ts);
+	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
+	&context->sspi_context->context,
+	&outbound_descriptor,
+	&attr, &ts);
     switch (sec_result)
     {
     case SEC_E_OK:
+	smpd_dbg_printf("SEC_E_OK\n");
 	break;
     case SEC_I_COMPLETE_NEEDED:
+	smpd_dbg_printf("SEC_I_COMPLETE_NEEDED\n");
     case SEC_I_COMPLETE_AND_CONTINUE:
+	if (sec_result == SEC_I_COMPLETE_AND_CONTINUE)
+	{
+	    smpd_dbg_printf("SEC_I_COMPLETE_AND_CONTINUE\n");
+	}
 	smpd_dbg_printf("calling CompleteAuthToken\n");
-	sec_result = smpd_process.sec_fn->CompleteAuthToken(&context->sspi_context, &outbound_descriptor);
+	sec_result = smpd_process.sec_fn->CompleteAuthToken(&context->sspi_context->context, &outbound_descriptor);
 	if (sec_result != SEC_E_OK)
 	{
-	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 	    smpd_err_printf("CompleteAuthToken failed with error %d\n", sec_result);
 	    context->state = SMPD_CLOSING;
 	    result = MPIDU_Sock_post_close(context->sock);
@@ -2492,16 +2510,20 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	if (sec_result_copy == SEC_I_COMPLETE_NEEDED)
 	    break;
     case SEC_I_CONTINUE_NEEDED:
+	if (sec_result_copy == SEC_I_CONTINUE_NEEDED)
+	{
+	    smpd_dbg_printf("SEC_I_CONTINUE_NEEDED\n");
+	}
 	context->read_state = SMPD_IDLE;
 	context->write_state = SMPD_WRITING_SSPI_HEADER;
 	MPIU_Snprintf(context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", outbound_buffer.cbBuffer);
-	context->sspi_buffer_length = outbound_buffer.cbBuffer;
-	smpd_dbg_printf("continuation buffer of length %d bytes\n", context->sspi_buffer_length);
+	context->sspi_context->out_buffer_length = outbound_buffer.cbBuffer;
+	smpd_dbg_printf("continuation buffer of length %d bytes\n", context->sspi_context->out_buffer_length);
 	result = MPIDU_Sock_post_write(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
 	if (result != MPI_SUCCESS)
 	{
-	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 	    smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
 	    context->state = SMPD_CLOSING;
 	    result = MPIDU_Sock_post_close(context->sock);
@@ -2527,8 +2549,8 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     result = MPIDU_Sock_post_write(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
     if (result != MPI_SUCCESS)
     {
-	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 	smpd_err_printf("unable to post a write of the delegate request,\nsock error: %s\n", get_sock_error_string(result));
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
@@ -2583,32 +2605,32 @@ int smpd_state_reading_client_sspi_header(smpd_context_t *context, MPIDU_Sock_ev
     else
     {
 	/* sspi iteration buffer length sent, receive the buffer */
-	context->sspi_buffer_length = atoi(context->sspi_header);
-	if (context->sspi_buffer_length < 1)
+	context->sspi_context->buffer_length = atoi(context->sspi_header);
+	if (context->sspi_context->buffer_length < 1)
 	{
 	    /* FIXME: Add code to cleanup sspi structures */
-	    smpd_err_printf("invalid sspi buffer length %d\n", context->sspi_buffer_length);
+	    smpd_err_printf("invalid sspi buffer length %d\n", context->sspi_context->buffer_length);
 	    context->state = SMPD_CLOSING;
 	    result = MPIDU_Sock_post_close(context->sock);
 	    smpd_exit_fn(FCNAME);
 	    return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 	}
-	if (context->sspi_buffer != NULL)
+	if (context->sspi_context->buffer != NULL)
 	{
-	    free(context->sspi_buffer);
+	    free(context->sspi_context->buffer);
 	}
-	context->sspi_buffer = malloc(context->sspi_buffer_length);
-	if (context->sspi_buffer == NULL)
+	context->sspi_context->buffer = malloc(context->sspi_context->buffer_length);
+	if (context->sspi_context->buffer == NULL)
 	{
 	    /* FIXME: Add code to cleanup sspi structures */
-	    smpd_err_printf("unable to allocate a sspi buffer of length %d\n", context->sspi_buffer_length);
+	    smpd_err_printf("unable to allocate a sspi buffer of length %d\n", context->sspi_context->buffer_length);
 	    context->state = SMPD_CLOSING;
 	    result = MPIDU_Sock_post_close(context->sock);
 	    smpd_exit_fn(FCNAME);
 	    return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
 	}
 	context->read_state = SMPD_READING_CLIENT_SSPI_BUFFER;
-	result = MPIDU_Sock_post_read(context->sock, context->sspi_buffer, context->sspi_buffer_length, context->sspi_buffer_length, NULL);
+	result = MPIDU_Sock_post_read(context->sock, context->sspi_context->buffer, context->sspi_context->buffer_length, context->sspi_context->buffer_length, NULL);
 	if (result != MPI_SUCCESS)
 	{
 	    /* FIXME: Add code to cleanup sspi structures */
@@ -2659,14 +2681,14 @@ int smpd_state_reading_client_sspi_buffer(smpd_context_t *context, MPIDU_Sock_ev
     {
 	/* I am node 0 so handle the command here. */
 	/* FIXME: insert code here. */
-	result = smpd_sspi_context_iter(context->sspi_id, &context->sspi_buffer, &context->sspi_buffer_length);
+	result = smpd_sspi_context_iter(context->sspi_context->id, &context->sspi_context->buffer, &context->sspi_context->buffer_length);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to process the sspi iteration buffer\n");
 	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
-	if (context->sspi_buffer_length == 0)
+	if (context->sspi_context->buffer_length == 0)
 	{
 	    /* FIXME: This assumes that the server knows to post a write of the delegate command because it knows that no buffer will be returned by the iter command */
 	    context->write_state = SMPD_IDLE;
@@ -2682,17 +2704,17 @@ int smpd_state_reading_client_sspi_buffer(smpd_context_t *context, MPIDU_Sock_ev
 		return (result == MPI_SUCCESS) ? SMPD_SUCCESS : SMPD_FAIL;
 	    }
 	}
-	else if (context->sspi_buffer_length > 0)
+	else if (context->sspi_context->buffer_length > 0)
 	{
 	    context->read_state = SMPD_IDLE;
 	    context->write_state = SMPD_WRITING_CLIENT_SSPI_HEADER;
-	    MPIU_Snprintf(context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", context->sspi_buffer_length);
+	    MPIU_Snprintf(context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", context->sspi_context->buffer_length);
 	    result = MPIDU_Sock_post_write(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
 	    if (result != MPI_SUCCESS)
 	    {
 #ifdef HAVE_WINDOWS_H
-		smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-		smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+		smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+		smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 #endif
 		smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
 		context->state = SMPD_CLOSING;
@@ -2703,7 +2725,7 @@ int smpd_state_reading_client_sspi_buffer(smpd_context_t *context, MPIDU_Sock_ev
 	}
 	else
 	{
-	    smpd_err_printf("invalid buffer length returned: %d\n", context->sspi_buffer_length);
+	    smpd_err_printf("invalid buffer length returned: %d\n", context->sspi_context->buffer_length);
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
@@ -2734,14 +2756,14 @@ int smpd_state_reading_client_sspi_buffer(smpd_context_t *context, MPIDU_Sock_ev
 	smpd_exit_fn(FCNAME);
 	return result;
     }
-    result = smpd_add_command_int_arg(cmd_ptr, "sspi_id", context->sspi_id);
+    result = smpd_add_command_int_arg(cmd_ptr, "sspi_id", context->sspi_context->id);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the sspi_id parameter to the sspi_iter command for host %s\n", context->connect_to->host);
 	smpd_exit_fn(FCNAME);
 	return result;
     }
-    encoded_max_length = context->sspi_buffer_length * 2 + 10;
+    encoded_max_length = context->sspi_context->buffer_length * 2 + 10;
     encoded = (char*)malloc(encoded_max_length);
     if (encoded == NULL)
     {
@@ -2749,16 +2771,16 @@ int smpd_state_reading_client_sspi_buffer(smpd_context_t *context, MPIDU_Sock_ev
 	smpd_exit_fn(FCNAME);
 	return result;
     }
-    result = smpd_encode_buffer(encoded, encoded_max_length, context->sspi_buffer, context->sspi_buffer_length, &num_encoded);
+    result = smpd_encode_buffer(encoded, encoded_max_length, context->sspi_context->buffer, context->sspi_context->buffer_length, &num_encoded);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to encode the sspi buffer.\n");
 	smpd_exit_fn(FCNAME);
 	return result;
     }
-    if (num_encoded != context->sspi_buffer_length)
+    if (num_encoded != context->sspi_context->buffer_length)
     {
-	smpd_err_printf("unable to encode the sspi buffer, only %d bytes of %d encoded.\n", num_encoded, context->sspi_buffer_length);
+	smpd_err_printf("unable to encode the sspi buffer, only %d bytes of %d encoded.\n", num_encoded, context->sspi_context->buffer_length);
 	smpd_exit_fn(FCNAME);
 	return result;
     }
@@ -2794,8 +2816,8 @@ int smpd_state_writing_delegate_request(smpd_context_t *context, MPIDU_Sock_even
     if (event_ptr->error != MPI_SUCCESS)
     {
 #ifdef HAVE_WINDOWS_H
-	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 #endif
 	smpd_err_printf("unable to write the delegate request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
@@ -2810,8 +2832,8 @@ int smpd_state_writing_delegate_request(smpd_context_t *context, MPIDU_Sock_even
     if (result != MPI_SUCCESS)
     {
 #ifdef HAVE_WINDOWS_H
-	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 #endif
 	smpd_err_printf("unable to post a read of the delegate request result,\nsock error: %s\n", get_sock_error_string(result));
 	context->state = SMPD_CLOSING;
@@ -2837,8 +2859,8 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
     smpd_enter_fn(FCNAME);
     if (event_ptr->error != MPI_SUCCESS)
     {
-	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 	smpd_err_printf("unable to read the delegate request result, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
@@ -2848,34 +2870,34 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
     smpd_dbg_printf("delegate request result: '%s'\n", context->sspi_header);
 
     /*smpd_dbg_printf("calling ImpersonateSecurityContext\n");*/
-    /*sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context);*/
+    /*sec_result = smpd_process.sec_fn->ImpersonateSecurityContext(&context->sspi_context->context);*/
     smpd_dbg_printf("calling QuerySecurityContextToken\n");
-    sec_result = smpd_process.sec_fn->QuerySecurityContextToken(&context->sspi_context, &context->sspi_user_handle);
+    sec_result = smpd_process.sec_fn->QuerySecurityContextToken(&context->sspi_context->context, &context->sspi_context->user_handle);
     if (sec_result == SEC_E_OK)
     {
 	/* Create a primary token to be used to start the manager process */
 	if (strcmp(context->sspi_header, "yes") == 0)
 	{
 	    /* full delegation requested */
-	    duplicate_result = DuplicateTokenEx(context->sspi_user_handle, MAXIMUM_ALLOWED, NULL, SecurityDelegation, TokenPrimary, &user_handle);
+	    duplicate_result = DuplicateTokenEx(context->sspi_context->user_handle, MAXIMUM_ALLOWED, NULL, SecurityDelegation, TokenPrimary, &user_handle);
 	}
 	else
 	{
 	    /* impersonate only */
-	    duplicate_result = DuplicateTokenEx(context->sspi_user_handle, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary, &user_handle);
+	    duplicate_result = DuplicateTokenEx(context->sspi_context->user_handle, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary, &user_handle);
 	}
 	if (duplicate_result)
 	{
-	    CloseHandle(context->sspi_user_handle);
-	    context->sspi_user_handle = user_handle;
+	    CloseHandle(context->sspi_context->user_handle);
+	    context->sspi_context->user_handle = user_handle;
 	}
 	else
 	{
-	    CloseHandle(context->sspi_user_handle);
+	    CloseHandle(context->sspi_context->user_handle);
 	    result_str = SMPD_FAIL_STR;
 	}
 	/*smpd_dbg_printf("calling RevertSecurityContext\n");*/
-	/*smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context);*/
+	/*smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);*/
     }
     else
     {
@@ -2883,8 +2905,8 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
     }
 
     /* Clean up the sspi structures */
-    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_WRITING_IMPERSONATE_RESULT;
@@ -3075,7 +3097,7 @@ int smpd_state_writing_sspi_header(smpd_context_t *context, MPIDU_Sock_event_t *
 
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_WRITING_SSPI_BUFFER;
-    result = MPIDU_Sock_post_write(context->sock, context->sspi_outbound_buffer, context->sspi_buffer_length, context->sspi_buffer_length, NULL);
+    result = MPIDU_Sock_post_write(context->sock, context->sspi_context->out_buffer, context->sspi_context->out_buffer_length, context->sspi_context->out_buffer_length, NULL);
     if (result != MPI_SUCCESS)
     {
 	/* FIXME: Add code to cleanup sspi structures */
@@ -3108,6 +3130,12 @@ int smpd_state_writing_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 
     smpd_dbg_printf("wrote sspi buffer.\n");
 
+    if (context->sspi_context->out_buffer != NULL)
+    {
+	free(context->sspi_context->out_buffer);
+	context->sspi_context->out_buffer = NULL;
+	context->sspi_context->out_buffer_length = 0;
+    }
     context->write_state = SMPD_IDLE;
     context->read_state = SMPD_READING_SSPI_HEADER;
     result = MPIDU_Sock_post_read(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
@@ -3145,7 +3173,7 @@ int smpd_state_writing_client_sspi_header(smpd_context_t *context, MPIDU_Sock_ev
 
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_WRITING_CLIENT_SSPI_BUFFER;
-    result = MPIDU_Sock_post_write(context->sock, context->sspi_buffer, context->sspi_buffer_length, context->sspi_buffer_length, NULL);
+    result = MPIDU_Sock_post_write(context->sock, context->sspi_context->buffer, context->sspi_context->buffer_length, context->sspi_context->buffer_length, NULL);
     if (result != MPI_SUCCESS)
     {
 	/* FIXME: Add code to cleanup sspi structures */
@@ -3202,7 +3230,7 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
     smpd_command_t *cmd_ptr;
     char context_str[20];
     smpd_context_t *dest_context;
-    smpd_sspi_client_context_t *sspi_context;
+    /*smpd_sspi_client_context_t *sspi_context;*/
 
     smpd_enter_fn(FCNAME);
     if (event_ptr->error != MPI_SUCCESS)
@@ -3226,30 +3254,16 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
     if (dest_context == NULL)
     {
 	/* I am node 0 so handle the command here. */
-	result = smpd_sspi_context_init(&sspi_context);
+	result = smpd_sspi_context_init(&context->sspi_context);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to initialize an sspi context command.\n");
 	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
-	if (context->sspi_buffer != NULL)
-	{
-	    free(context->sspi_buffer);
-	}
-	context->sspi_buffer = malloc(sspi_context->buffer_length);
-	if (context->sspi_buffer == NULL)
-	{
-	    smpd_err_printf("unable to allocate an sspi buffer.\n");
-	    smpd_exit_fn(FCNAME);
-	    return result;
-	}
-	memcpy(context->sspi_buffer, sspi_context->buffer, sspi_context->buffer_length);
-	context->sspi_buffer_length = sspi_context->buffer_length;
-	context->sspi_id = sspi_context->id;
 	context->read_state = SMPD_IDLE;
 	context->write_state = SMPD_WRITING_CLIENT_SSPI_HEADER;
-	MPIU_Snprintf(context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", sspi_context->buffer_length);
+	MPIU_Snprintf(context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", context->sspi_context->buffer_length);
 	result = MPIDU_Sock_post_write(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
 	if (result == MPI_SUCCESS)
 	{
@@ -3258,8 +3272,8 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
 	else
 	{
 #ifdef HAVE_WINDOWS_H
-	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
-	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+	    smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context->context);
+	    smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_context->credential);
 #endif
 	    smpd_err_printf("unable to post a write of the sspi header,\nsock error: %s\n", get_sock_error_string(result));
 	    context->state = SMPD_CLOSING;
@@ -3274,6 +3288,13 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
     context->read_state = SMPD_IDLE;
     context->write_state = SMPD_IDLE;
 
+    result = smpd_create_sspi_client_context(&context->sspi_context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create an sspi_context.\n");
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
     /* create a sspi_init command to be sent to root (mpiexec) */
     result = smpd_create_command("sspi_init", smpd_process.id, 0, SMPD_TRUE, &cmd_ptr);
     if (result != SMPD_SUCCESS)

@@ -601,6 +601,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
 #endif
     context->process = NULL;
     context->sspi_header[0] = '\0';
+/*
     context->sspi_buffer = NULL;
     context->sspi_buffer_length = 0;
     context->sspi_outbound_buffer = NULL;
@@ -611,6 +612,8 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     memset(&context->sspi_expiration_time, 0, sizeof(TimeStamp));
     context->sspi_user_handle = INVALID_HANDLE_VALUE;
 #endif
+*/
+    context->sspi_context = NULL;
 
     if (sock != MPIDU_SOCK_INVALID_SOCK)
     {
@@ -641,6 +644,17 @@ int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    context->buffer = NULL;
+    context->buffer_length = 0;
+    context->out_buffer = NULL;
+    context->out_buffer_length = 0;
+    context->max_buffer_size = 0;
+#ifdef HAVE_WINDOWS_H
+    memset(&context->credential, 0, sizeof(CredHandle));
+    memset(&context->context, 0, sizeof(CtxtHandle));
+    memset(&context->expiration_time, 0, sizeof(TimeStamp));
+    context->user_handle = INVALID_HANDLE_VALUE;
+#endif
     /* FIXME: this insertion needs to be thread safe */
     if (smpd_process.sspi_context_list == NULL)
     {
@@ -690,6 +704,7 @@ int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context)
     }
     /* FIXME: cleanup sspi structures */
     free(*context);
+    *context = NULL;
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
