@@ -40,6 +40,7 @@ public class BufForShadows extends BufForObjects
     */
     private List              buf4nestable;   /* state and composite */
     private List              buf4nestless;   /* arrow/event */
+    private Drawable.Order    buf4dobj_order; /* buf4nestxxx's storage order */
 
     /*  
         isOutputBuf = true  when BufForShadows is used in Output API
@@ -53,15 +54,20 @@ public class BufForShadows extends BufForObjects
     {
         super();
         isOutputBuf          = isForOutput;
+        // TRACE-API passes drawables in Drawable.INCRE_FINALTIME_ORDER.
+        // At writeObject(), drawables are saved in INCRE_STARTTIME_ORDER.
+        // At readObject(), drawables are read/stored in INCRE_STARTTIME_ORDER.
         if ( isOutputBuf ) {
-            buf4shadows          = new HashMap();
-            buf4nestable         = new ArrayList();
-            buf4nestless         = new ArrayList();
+            buf4shadows        = new HashMap();
+            buf4nestable       = new ArrayList();
+            buf4nestless       = new ArrayList();
+            buf4dobj_order     = Drawable.INCRE_FINALTIME_ORDER;
         }
         else {
-            buf4shadows          = null;   // Not used in Input API
-            buf4nestable         = null;
-            buf4nestless         = null;
+            buf4shadows        = null;   // Not used in Input API
+            buf4nestable       = null;
+            buf4nestless       = null;
+            buf4dobj_order     = Drawable.INCRE_STARTTIME_ORDER;
         }
 
         shadowdefs_map       = null;
@@ -111,6 +117,7 @@ public class BufForShadows extends BufForObjects
         if ( haveObjectsBeenSaved ) {
             buf4nestable.clear();
             buf4nestless.clear();
+            buf4dobj_order       = Drawable.INCRE_FINALTIME_ORDER;
             buf4shadows.clear();
             haveObjectsBeenSaved = false;
             total_bytesize       = INIT_BYTESIZE;
@@ -233,6 +240,18 @@ public class BufForShadows extends BufForObjects
         return super.toIdentityLineIDMap( buf4shadows.values() );
     }
 
+
+    // For SLOG-2 Input/Output API
+    public void reorderDrawables( final Drawable.Order dobj_order )
+    {
+        if ( ! buf4dobj_order.equals( dobj_order ) ) {
+            buf4dobj_order = dobj_order;
+            // Save the Lists in the specified Drawable.Order
+            Collections.sort( buf4nestable, buf4dobj_order );
+            Collections.sort( buf4nestless, buf4dobj_order );
+        }
+    }
+
     public void writeObject( MixedDataOutput outs )
     throws java.io.IOException
     {
@@ -250,8 +269,7 @@ public class BufForShadows extends BufForObjects
             else
                 buf4nestless.add( sobj );
         }
-        Collections.sort( buf4nestable, Drawable.DRAWING_ORDER );
-        Collections.sort( buf4nestless, Drawable.DRAWING_ORDER );
+        this.reorderDrawables( Drawable.INCRE_STARTTIME_ORDER );
 
         Nobjs  = buf4nestless.size();
         outs.writeInt( Nobjs );
@@ -352,8 +370,9 @@ public class BufForShadows extends BufForObjects
         else {
             nestable_itr  = new IteratorOfForeDrawables( buf4nestable, this );
             nestless_itr  = new IteratorOfForeDrawables( buf4nestless, this );
-            sobjs_itr     = new IteratorOfForeDrawablesOfAll( nestable_itr,
-                                                              nestless_itr );
+            sobjs_itr     = new IteratorOfAllDrawables( nestable_itr,
+                                                        nestless_itr,
+                                                        buf4dobj_order );
         }
         for ( idx = 1; sobjs_itr.hasNext(); idx++ )
             rep.append( idx + ": " + sobjs_itr.next() + "\n" );

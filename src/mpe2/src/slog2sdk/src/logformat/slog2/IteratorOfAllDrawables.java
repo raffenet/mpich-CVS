@@ -9,7 +9,6 @@
 
 package logformat.slog2;
 
-import java.util.Comparator;
 import java.util.Iterator;
 
 import base.drawable.TimeBoundingBox;
@@ -18,26 +17,33 @@ import base.drawable.Drawable;
 
 /*
    Iterators to return Drawables of all type (Shadow/Primitive/Composite)
-   in Increasing StartTime Order(1st) and then Decreasing EndTime Order(2nd)
+   in the given Drawable.Order.
 */
-public class IteratorOfForeDrawablesOfAll implements Iterator
+public class IteratorOfAllDrawables implements Iterator
 {
-    // Drawable.DRAWING_ORDER defines the drawing order of drawables
+    // Drawable.INCRE_STARTTIME_ORDER defines the drawing order of drawables
     // (especially for State), i.e.first Increasing Starttime and
     // then Decreasing EndTime.
-    private static final Comparator    DRAWING_ORDER = Drawable.DRAWING_ORDER;
+    // Drawable.INCRE_FINALTIME_ORDER define the order of drawables to
+    // be passed through TRACE-API., i.e. first Increasing Endtime and
+    // then Increaing Starttime.
 
     private Iterator         nestable_itr;
     private Iterator         nestless_itr;
+    private Drawable.Order   dobj_order;
     private Drawable         nestable_dobj;
     private Drawable         nestless_dobj;
     private Drawable         next_drawable;
 
-    public IteratorOfForeDrawablesOfAll( final Iterator  in_nestable_itr,
-                                         final Iterator  in_nestless_itr )
+    // The 2 input Iterators are assumed to in the same order as the
+    // specified Drawable.Order.
+    public IteratorOfAllDrawables( final Iterator       in_nestable_itr,
+                                   final Iterator       in_nestless_itr,
+                                   final Drawable.Order in_dobj_order )
     {
         nestable_itr   = in_nestable_itr;
         nestless_itr   = in_nestless_itr;
+        dobj_order     = in_dobj_order;
         nestable_dobj  = null;
         nestless_dobj  = null;
         next_drawable  = this.getNextInQueue();
@@ -57,7 +63,7 @@ public class IteratorOfForeDrawablesOfAll implements Iterator
         }
 
         if ( nestable_dobj != null && nestless_dobj != null ) {
-            if ( DRAWING_ORDER.compare( nestable_dobj, nestless_dobj ) <= 0 ) {
+            if ( dobj_order.compare( nestable_dobj, nestless_dobj ) <= 0 ) {
                 next_dobj = nestable_dobj;
                 nestable_dobj = null;
                 return next_dobj;

@@ -9,13 +9,17 @@
 
 package logformat.slog2;
 
+import java.util.Comparator;
 import java.io.DataOutput;
 import java.io.DataInput;
 
-public class TreeNodeID implements Comparable
+public class TreeNodeID // implements Comparable
 {
     public static final int BYTESIZE = 2  /* depth */
                                      + 4  /* xpos  */ ;
+
+    public static final Order  INCRE_INDEX_ORDER = new IncreasingIndexOrder();
+    public static final Order  DECRE_INDEX_ORDER = new DecreasingIndexOrder();
 
     public short depth;
     public int   xpos;
@@ -76,30 +80,23 @@ public class TreeNodeID implements Comparable
     }
 
     /*
-       Define the "natural ordering" imposed by Comparable used in SortedMap
-       The ordering here needs to be consistent with the primitive time order
-       (i.e. increasing or decreasing not the starttime or finaltime part)
-       defined in Drawable.DRAWING_ORDER (TimeBoundingBox.INCRE_STARTTIME_ORDER)
-       which is first determined by increasing startime then
-       decreasing endtime order.
-    */
-    public int compareTo( final TreeNodeID ID )
-    {
-        if ( this.depth == ID.depth )
-            if ( this.xpos == ID.xpos )
-                return 0;
-            else
-                return ( this.xpos < ID.xpos ? -1 : 1 ); // increasing starttime
-             // return ( this.xpos > ID.xpos ? -1 : 1 ); // decreasing endtime
-        else
-            return ( this.depth > ID.depth ? -1 : 1 );
-    }
-
     // If obj.getClass() != TreeNodeID.class, throws ClassCastException
     public int compareTo( Object obj )
     {
         return this.compareTo( (TreeNodeID) obj );
     }
+
+    // Define the "natural ordering" imposed by Comparable used in SortedMap
+    // The ordering here needs to be consistent with the primary time order
+    // (i.e. increasing or decreasing part not the starttime or finaltime part)
+    // defined in storage order of the drawable in the logfile, i.e.
+    // Drawable.INCRE_STARTTIME_ORDER which is first determined by increasing
+    // startime then decreasing finaltime order.
+    public int compareTo( final TreeNodeID ID )
+    {
+        return INCRE_INDEX_ORDER.compare( this, ID );
+    }
+    */
 
     public void writeObject( DataOutput outs )
     throws java.io.IOException
@@ -126,6 +123,64 @@ public class TreeNodeID implements Comparable
         return( "ID(" + depth + "," + xpos + ")" );
     }
 
+    /*
+        Define TreeNodeID.Order as an alias of java.util.Comparator
+    */
+    public interface Order extends Comparator
+    {
+        public boolean isIncreasingIndexOrdered();
+    }
+
+    /*
+       Define the "natural ordering" imposed by Comparable used in SortedMap
+       The ordering here needs to be consistent with the primary time order
+       (i.e. increasing or decreasing part not the starttime or finaltime part)
+       defined in storage order of the drawable in the logfile, i.e.
+       Drawable.INCRE_STARTTIME_ORDER which is first determined by increasing
+       startime then decreasing finaltime order.
+    */
+    private static class IncreasingIndexOrder implements Order
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            TreeNodeID ID1, ID2;
+            ID1  = (TreeNodeID) o1;
+            ID2  = (TreeNodeID) o2;
+            if ( ID1.depth == ID2.depth ) {
+                if ( ID1.xpos == ID2.xpos )
+                    return 0;
+                else
+                    return ( ID1.xpos < ID2.xpos ? -1 : 1 ); // increasing time
+            }
+            else
+                return ( ID1.depth > ID2.depth ? -1 : 1 );
+        }
+
+        public boolean isIncreasingIndexOrdered() {return true;}
+    }
+
+    private static class DecreasingIndexOrder implements Order
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            TreeNodeID ID1, ID2;
+            ID1  = (TreeNodeID) o1;
+            ID2  = (TreeNodeID) o2;
+            if ( ID1.depth == ID2.depth ) {
+                if ( ID1.xpos == ID2.xpos )
+                    return 0;
+                else
+                    return ( ID1.xpos > ID2.xpos ? -1 : 1 ); // decreasing time
+            }
+            else
+                return ( ID1.depth > ID2.depth ? -1 : 1 );
+        }
+
+        public boolean isIncreasingIndexOrdered() {return false;}
+    }
+
+
+
     public final static void main( String[] args )
     {
         final short ll_max = 4;
@@ -142,12 +197,50 @@ public class TreeNodeID implements Comparable
                          new String( "_" + ll + ", " + xp + "_" ) );
         }
 
-        TreeNodeID ID;
-        java.util.Iterator itr = map.entrySet().iterator();
+        TreeNodeID         ID;
+        java.util.Iterator itr;
+        itr = map.entrySet().iterator();
         while ( itr.hasNext() ) {
             ID = (TreeNodeID) ( (java.util.Map.Entry) itr.next() ).getKey();
             if ( ID.isPossibleRoot() ) 
                 System.out.println( "\n" + ID );
+            else
+                System.out.println( ID );
+        }
+        System.out.println("\n\n" );
+
+        java.util.Set set;
+        set = new java.util.TreeSet( TreeNodeID.INCRE_INDEX_ORDER );
+        for ( ll = 0 ; ll <= ll_max; ll++ ) {
+            dd = (short) ( ll_max - ll );
+            xp_max = (int) Math.pow( (double) 2, (double) ll );
+            for ( xp = xp_max-1; xp >= 0; xp-- )
+                set.add( new TreeNodeID( dd, xp ) );
+        }
+
+        itr = set.iterator();
+        while ( itr.hasNext() ) {
+            ID = (TreeNodeID) itr.next();
+            if ( ID.isPossibleRoot() )
+                System.out.println( "\n" + ID );
+            else
+                System.out.println( ID );
+        }
+        System.out.println("\n\n" );
+
+        set = new java.util.TreeSet( TreeNodeID.DECRE_INDEX_ORDER );
+        for ( ll = 0 ; ll <= ll_max; ll++ ) {
+            dd = (short) ( ll_max - ll );
+            xp_max = (int) Math.pow( (double) 2, (double) ll );
+            for ( xp = xp_max-1; xp >= 0; xp-- )
+                set.add( new TreeNodeID( dd, xp ) );
+        }
+
+        itr = set.iterator();
+        while ( itr.hasNext() ) {
+            ID = (TreeNodeID) itr.next();
+            if ( ID.isPossibleRoot() )
+                System.out.println( ID + "\n" );
             else
                 System.out.println( ID );
         }

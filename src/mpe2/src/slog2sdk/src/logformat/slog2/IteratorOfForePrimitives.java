@@ -26,7 +26,7 @@ import base.drawable.Primitive;
  */
 public class IteratorOfForePrimitives implements Iterator
 {
-    // Drawable.DRAWING_ORDER defines the drawing order of drawables
+    // Drawable.INCRE_STARTTIME_ORDER defines the drawing order of drawables
     // (especially for State), i.e.first Increasing Starttime and
     // then Decreasing EndTime.
     private ListIterator     drawables_itr;
@@ -40,7 +40,7 @@ public class IteratorOfForePrimitives implements Iterator
     {
         drawables_itr  = dobjs_list.listIterator( 0 );
         timeframe      = tframe;
-        set_primes     = new TreeSet( Drawable.DRAWING_ORDER );
+        set_primes     = new TreeSet( Drawable.INCRE_STARTTIME_ORDER );
         next_primitive = this.getNextInQueue();
     }
 

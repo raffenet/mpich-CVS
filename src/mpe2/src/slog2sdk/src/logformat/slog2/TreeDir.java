@@ -21,6 +21,8 @@ import base.io.MixedDataOutput;
 import base.io.DataIO;
 import base.io.MixedDataIO;
 
+// TreeNodeID will be stored in TreeNodeID.INCRE_INDEX_ORDER.
+// .i.e. equivalent to Drawable.INCRE_STARTTIME_ORDER.
 public class TreeDir extends TreeMap
                      implements DataIO, MixedDataIO
 {
@@ -28,7 +30,7 @@ public class TreeDir extends TreeMap
 
     public TreeDir()
     {
-        super();
+        super( TreeNodeID.INCRE_INDEX_ORDER );
         root = new TreeNodeID( (short) 0, 0 );
     }
 
