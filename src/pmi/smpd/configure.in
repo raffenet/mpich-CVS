@@ -31,6 +31,13 @@ AC_CHECK_HEADERS(stdarg.h unistd.h string.h stdlib.h dlfcn.h uuid/uuid.h mach-o/
 AC_CHECK_FUNCS( dlopen NSLinkModule )
 AC_SEARCH_LIBS( dlopen, dl )
 
+AC_TRY_COMPILE([
+#include <dlfcn.h>
+],[int a;],ac_cv_func_dlopen=yes,ac_cv_func_dlopen=no)
+if test "$ac_cv_func_dlopen" = yes ; then
+    AC_DEFINE(HAVE_DLOPEN,1,[Define if you have the dlopen function.])
+fi
+
 SMPD_PMI_LIBS=$LIBS
 LIBS=$save_libs
 
