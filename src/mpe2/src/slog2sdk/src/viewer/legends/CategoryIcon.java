@@ -11,24 +11,27 @@ package viewer.legends;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Component;
 import javax.swing.Icon;
 
 import base.drawable.Category;
 import base.drawable.Topology;
 import base.drawable.ColorAlpha;
+import base.topology.StateBorder;
 import viewer.common.Dialogs;
+import viewer.common.Parameters;
 
 public class CategoryIcon implements Icon
 {
-    private static final int  ICON_WIDTH           = Const.ICON_WIDTH;
-    private static final int  ICON_HEIGHT          = Const.ICON_HEIGHT;
-    private static final int  ICON_HALF_WIDTH      = Const.ICON_WIDTH / 2;
-    private static final int  ICON_QUARTER_WIDTH   = Const.ICON_WIDTH / 4;
-    private static final int  ICON_HALF_HEIGHT     = Const.ICON_HEIGHT / 2;
-    private static final int  ICON_QUARTER_HEIGHT  = Const.ICON_HEIGHT / 4;
-    private static final int  XOFF                 = 3;
-    private static final int  YOFF                 = 2;
+    private static final int    ICON_WIDTH           = Const.ICON_WIDTH;
+    private static final int    ICON_HEIGHT          = Const.ICON_HEIGHT;
+    private static final int    ICON_HALF_WIDTH      = Const.ICON_WIDTH / 2;
+    private static final int    ICON_QUARTER_WIDTH   = Const.ICON_WIDTH / 4;
+    private static final int    ICON_HALF_HEIGHT     = Const.ICON_HEIGHT / 2;
+    private static final int    ICON_QUARTER_HEIGHT  = Const.ICON_HEIGHT / 4;
+    private static final int    XOFF                 = 3;
+    private static final int    YOFF                 = 2;
 
     private Topology    topo;
     private Color       color;
@@ -78,25 +81,43 @@ public class CategoryIcon implements Icon
     private void paintStateIcon( Graphics g, int x, int y )
     {
         int x1, y1, x2, y2;
-        g.setColor( Color.black );
+
+        // Paint the background
+        g.setColor( (Color) Parameters.BACKGROUND_COLOR.toValue() );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
+        // Paint middle timeline
         x1 = x ;                       y1 = y + ICON_HALF_HEIGHT;
         x2 = x + ICON_WIDTH - 1;       y2 = y1;
-        g.setColor( Color.red );
+        g.setColor( Color.RED );
         g.drawLine( x1, y1, x2, y2 );
 
+        x1 = x + XOFF;                   y1 = y + YOFF;
+        x2 = x1 + ICON_WIDTH-1-2*XOFF;   y2 = y1 + ICON_HEIGHT-1-2*YOFF;
+
+        // Paint the state's color
         g.setColor( color_shown );
-        g.fillRect( x+XOFF, y+YOFF, ICON_WIDTH-2*XOFF, ICON_HEIGHT-2*YOFF );
-        g.setColor( Color.white );
-        g.drawRect( x+XOFF, y+YOFF, ICON_WIDTH-1-2*XOFF, ICON_HEIGHT-1-2*YOFF );
+        g.fillRect( x1, y1, ICON_WIDTH-2*XOFF, ICON_HEIGHT-2*YOFF );
+
+        // Paint the border
+        /*
+        g.setColor( Color.WHITE );
+        g.drawLine( x1, y1, x1, y2 );     // left
+        g.drawLine( x1, y1, x2, y1 );     // top
+        g.setColor( Color.LIGHT_GRAY );
+        g.drawLine( x2, y1, x2, y2 );     // right
+        g.drawLine( x1, y2, x2, y2 );     // bottom
+        */
+        Parameters.STATE_BORDER_STYLE.paintStateBorder( (Graphics2D) g,
+                                                        x1, y1, true,
+                                                        x2, y2, true );
     }
 
     private void paintArrowIcon( Graphics g, int x, int y )
     {
         int x1, y1, x2, y2, x3, y3;
 
-        g.setColor( Color.black );
+        g.setColor( Color.BLACK );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
         g.setColor( color_shown );
@@ -119,7 +140,7 @@ public class CategoryIcon implements Icon
     {
         int x1, y1, x2, y2, x3, y3;
 
-        g.setColor( Color.black );
+        g.setColor( Color.BLACK );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
         g.setColor( color_shown );

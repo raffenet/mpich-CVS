@@ -23,7 +23,8 @@ public class LegendPanel extends JPanel
 {
     private LegendList   legend_list;
 
-    private JButton      hide_btn;
+    private JButton      clear_btn;
+    private JButton      close_btn;
 
     public LegendPanel( final InputLog  slog_ins )
     {
@@ -43,15 +44,35 @@ public class LegendPanel extends JPanel
                                             empty_border, etched_border ) ) );
         super.add( scroller );
  
-        hide_btn = new JButton( "hide" );
-        hide_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
-        hide_btn.addActionListener( this );
-        super.add( hide_btn );
+        JPanel  end_panel = new JPanel();
+        end_panel.setLayout( new BoxLayout( end_panel, BoxLayout.X_AXIS ) );
+            end_panel.add( Box.createHorizontalGlue() );
+
+            clear_btn = new JButton( "clear" );
+            clear_btn.setToolTipText(
+            "Clear all selections, i.e. display all" );
+            // clear_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
+            clear_btn.addActionListener( this );
+            end_panel.add( clear_btn );
+
+            end_panel.add( Box.createHorizontalGlue() );
+
+            close_btn = new JButton( "close" );
+            close_btn.setToolTipText( "Hide this panel" );
+            // close_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
+            close_btn.addActionListener( this );
+            end_panel.add( close_btn );
+
+            end_panel.add( Box.createHorizontalGlue() );
+        super.add( end_panel );
     }
 
     public void actionPerformed( ActionEvent evt )
     {
-        if ( evt.getSource() == hide_btn )
+        Object evt_src = evt.getSource();
+        if ( evt_src == close_btn )
             TopWindow.Legend.setVisible( false );
+        else if ( evt_src == clear_btn )
+            legend_list.clearSelection();
     }
 }

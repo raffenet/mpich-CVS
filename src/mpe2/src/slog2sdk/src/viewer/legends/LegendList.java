@@ -47,8 +47,7 @@ public class LegendList extends JList
         Iterator    objdefs  = map.values().iterator();
         while ( objdefs.hasNext() ) {
             objdef = (Category) objdefs.next();
-            cell = new LegendCell( objdef.getName(),
-                                   new CategoryIcon( objdef ) );
+            cell   = new LegendCell( objdef );
             cells.add( cell );
         }
         super.setListData( cells );
@@ -62,13 +61,20 @@ public class LegendList extends JList
 
     private class LegendCell
     {
-        private Icon   icon;
-        private String text;
+        private Category  type;
+        private Icon      icon;
+        private String    text;
 
-        public LegendCell( String in_text, Icon in_icon )
+        public LegendCell( Category new_type )
         {
-            text = in_text;
-            icon = in_icon;
+            type = new_type;
+            text = type.getName();
+            icon = new CategoryIcon( type );
+        }
+
+        public void setCategoryVisible( boolean new_value )
+        {
+            type.setVisible( new_value );
         }
 
         public String getText()
@@ -120,6 +126,7 @@ public class LegendList extends JList
                 super.setBackground( CELL_BACKCOLOR );
                 super.setBorder( raised_border );
             }
+            cell.setCategoryVisible( ! isSelected );
             repaint();
             return this;
         }
