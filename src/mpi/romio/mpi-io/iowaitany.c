@@ -62,7 +62,7 @@ int MPIO_Waitany(int count, MPIO_Request requests[], int *index,
 	}
 #endif
 	err = MPI_SUCCESS;
-	goto fn_exit
+	goto fn_exit;
     }
 
     err = MPI_SUCCESS;
