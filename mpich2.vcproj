@@ -4735,6 +4735,9 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\include\mpimem.h">
 			</File>
 			<File
+				RelativePath=".\src\include\mpio.h">
+			</File>
+			<File
 				RelativePath=".\src\mpi\pt2pt\mpir_pt2pt.h">
 			</File>
 			<File
