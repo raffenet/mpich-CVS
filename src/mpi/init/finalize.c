@@ -179,8 +179,15 @@ int MPI_Finalize( void )
     if (1) {
 	/* Check for an error in the nesting level */
 	if (MPIR_Nest_value()) {
-	    fprintf( stderr, "Unexpected value for nesting level = %d\n", 
-		     MPIR_Nest_value() );
+	    int i,n;
+	    n = MPIR_Nest_value();
+	    fprintf( stderr, "Unexpected value for nesting level = %d\n", n );
+	    fprintf( stderr, "Nest stack is:\n" );
+	    for (i=n-1; i>=0; i--) {
+		fprintf( stderr, "\t[%d] %s:%d\n", i, 
+			 MPIR_Thread.nestinfo[i].file, 
+			 MPIR_Thread.nestinfo[i].line );
+	    }
 	}
     }
 #endif

@@ -1695,9 +1695,20 @@ typedef struct MPID_Stateinfo_t {
 /* Thread types */
 /* Temporary; this will include "mpichthread.h" eventually */
 
+#ifdef MPICH_DEBUG_NESTING
+#define MPICH_MAX_NESTFILENAME 256
+typedef struct MPICH_Nestinfo { 
+    char file[MPICH_MAX_NESTFILENAME];
+    int  line;
+} MPICH_Nestinfo_t;
+#define MPICH_MAX_NESTINFO 16
+#endif
 typedef struct MPICH_PerThread_t {
     int              nest_count;   /* For layered MPI implementation */
     int              op_errno;     /* For errors in predefined MPI_Ops */
+#ifdef MPICH_DEBUG_NESTING
+    MPICH_Nestinfo_t nestinfo[MPICH_MAX_NESTINFO];
+#endif
 #ifdef HAVE_TIMING
     MPID_Stateinfo_t timestamps[MPICH_MAX_STATES];  /* per thread state info */
 #endif
@@ -2061,9 +2072,38 @@ void MPIR_Nest_incr(void);
 void MPIR_Nest_decr(void);
 int MPIR_Nest_value(void);
 #if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+/* Eventually, we can make this work independent of thread level */
+#ifdef MPICH_DEBUG_NESTING
+#define MPIR_Nest_init() {\
+   int _i;\
+   for (_i=0;_i<MPICH_MAX_NESTINFO;_i++) {\
+      MPIR_Thread.nestinfo[_i].file[0] = 0;\
+      MPIR_Thread.nestinfo[_i].line = 0;}}
+#define MPIR_Nest_incr() {\
+     if (MPIR_Thread.nest_count >= MPICH_MAX_NESTINFO) {\
+     MPIU_Internal_error_printf("nest stack exceeded at %s:%d\n",\
+          __FILE__,__LINE__);\
+     }else{\
+     MPIU_Strncpy(MPIR_Thread.nestinfo[MPIR_Thread.nest_count].file,__FILE__,\
+                  MPICH_MAX_NESTFILENAME);\
+     MPIR_Thread.nestinfo[MPIR_Thread.nest_count].line=__LINE__;}\
+     MPIR_Thread.nest_count++; }
+#define MPIR_Nest_decr() {MPIR_Thread.nest_count--; \
+     if (MPIR_Thread.nest_count < MPICH_MAX_NESTINFO && \
+    strcmp(MPIR_Thread.nestinfo[MPIR_Thread.nest_count].file,__FILE__) != 0) {\
+         MPIU_Msg_printf( "Decremented nest count int file %s:%d but incremented in different file (%s:%d)\n",\
+                          __FILE__,__LINE__,\
+                          MPIR_Thread.nestinfo[MPIR_Thread.nest_count].file,\
+                          MPIR_Thread.nestinfo[MPIR_Thread.nest_count].line);\
+}}
+#else
+#define MPIR_Nest_init()
 #define MPIR_Nest_incr() {MPIR_Thread.nest_count++;}
 #define MPIR_Nest_decr() {MPIR_Thread.nest_count--;}
+#endif /* MPICH_DEBUG_NESTING */
 #define MPIR_Nest_value() (MPIR_Thread.nest_count)
+#else
+#define MPIR_Nest_init()
 #endif
 
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);

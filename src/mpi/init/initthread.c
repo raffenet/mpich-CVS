@@ -179,6 +179,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Err_init();
     MPID_Wtime_init();
     MPIR_Datatype_init();
+    MPIR_Nest_init();
     /* MPIU_Timer_pre_init(); */
 
     /* define MPI as initialized so that we can use MPI functions within 
