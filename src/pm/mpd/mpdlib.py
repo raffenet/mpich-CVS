@@ -164,6 +164,9 @@ def mpd_send_one_msg(sock,msg):
     except StandardError, errmsg:    # any built-in exceptions
         mpd_print_tb(1, 'mpd_send_one_msg: errmsg=:%s:' % (errmsg) )
         return 0
+    except Exception, errmsg:
+        mpd_print_tb(1, 'mpd_send_one_msg: sock=%s errmsg=:%s:' % (sock,errmsg) )
+        return 0
     except:
         mpd_print_tb(1, 'mpd_send_one_msg failed on sock %s' % sock)
         return 0
