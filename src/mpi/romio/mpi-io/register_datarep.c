@@ -25,6 +25,31 @@
 #include "mpioprof.h"
 #endif
 
+/*@
+  MPI_Register_datarep - Register functions for user-defined data 
+                         representations
+
+  Input Parameters:
++ name - data representation name (string)
+. read_conv_fn - function invoked to convert from file representation to
+                 native representation (function)
+. write_conv_fn - function invoked to convert from native representation to
+                  file representation (function)
+. extent_fn - function invoked to get the exted of a datatype as represented
+                  in the file (function)
+- extra_state - pointer to extra state that is passed to each of the
+                three functions
+
+ Notes:
+ This function allows the user to provide routines to convert data from
+ an external representation, used within a file, and the native representation,
+ used within the CPU.  There is one predefined data representation, 
+ 'external32'.  Please consult the MPI-2 standard for details on this
+ function.
+
+.N fortran
+  
+  @*/
 int MPI_Register_datarep(char *name,
 			 MPI_Datarep_conversion_function *read_conv_fn,
 			 MPI_Datarep_conversion_function *write_conv_fn,
