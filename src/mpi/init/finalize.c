@@ -29,6 +29,7 @@
    MPI_Finalize to know the routine names a priori.  Any module that wants to 
    have a callback calls MPIR_Add_finalize( routine, extra ).
  */
+PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
 typedef struct {
     int (*f)( void * );
     void *extra_data;
@@ -40,12 +41,20 @@ static int fstack_sp = 0;
 void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
 {
     if (fstack_sp >= MAX_FINALIZE_FUNC) {
+	/* This is a little tricky.  We may want to check the state of
+	   MPIR_Process.initialized to decide how to signal the error */
+	fprintf( stderr, "Internal error: overflow in Finalize stack!\n" );
+	if (MPIR_Process.initialized == MPICH_WITHIN_MPI) {
+	    MPID_Abort( 0, 1 );
+	}
+	else {
+	    exit(1);
+	}
     }
     fstack[fstack_sp].f            = f;
     fstack[fstack_sp++].extra_data = extra_data;
 }
 
-PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
 PMPI_LOCAL void MPIR_Call_finalize_callbacks( void )
 {
     int i;
@@ -101,19 +110,24 @@ int MPI_Finalize( void )
     MPID_MPI_FINALIZE_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
     
     /* ... body of routine ...  */
+
+    /* Question: why is this not one of the finalize callbacks?.  Do we need
+       pre and post MPID_Finalize callbacks? */
     MPIU_Timer_finalize();
     
     MPID_Finalize();
 
     MPIR_Call_finalize_callbacks();
 
-    /* If memory debugging is enabled, check the memory here */
+    /* If memory debugging is enabled, check the memory here, after all
+       finalize callbacks */
 #ifdef USE_MEMORY_TRACING
     if (1) {
 	MPIU_trdump( (void *)0 );
     }
 #endif
 
+    MPIR_Process.initialized = MPICH_POST_FINALIZED;
     /* ... end of body of routine ... */
 
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
