@@ -1078,10 +1078,17 @@ if test -n "$aio_write_found" ; then
     save_libs=$LIBS
     LIBS="$LIBS $ROMIO_LIBLIST"
     AC_MSG_CHECKING([whether aio routines can be used])
+    # Include aio.h and the aiocb struct (since we'll need these to 
+    # actually use the aio_write interface).  Note that this will 
+    # fail for some pre-POSIX implementations of the aio interface 
+    # (an old IBM interface needs an fd argument as well)
     AC_TRY_RUN([
+#include <sys/types.h>
+#include <aio.h>
 	int main(int argc, char **argv)
 	{
-	    if (argc > 10) aio_write();
+            struct aiocb *aiocbp;
+	    if (argc > 10) aio_write(aiocbp);
 	    return 0;
 	}
 	],
@@ -1097,8 +1104,18 @@ if test -n "$aio_write_found" ; then
 	AC_DEFINE(ROMIO_HAVE_WORKING_AIO, 1, Define if AIO calls seem to work)
     fi
 
-    AC_CHECK_HEADERS(aio.h signal.h)
-    AC_MSG_CHECKING(for aio_fildes member of aiocb structure)
+    AC_CHECK_HEADERS(signal.h)
+    # Just because aio.h is found by CPP doesn't mean that we can use it
+    # We try to compile it, not just read it.
+    AC_MSG_CHECKING([if aio.h exists and can be compiled])
+    AC_TRY_COMPILE([
+#include <aio.h>],
+[],have_aio_h=yes,have_aio_h=no)
+    AC_MSG_RESULT($have_aio_h)
+    if test "$have_aio_h" = yes ; then
+        AC_DEFINE(HAVE_AIO_H,1,[Define if aio.h exists and can be compiled])
+    fi
+    AC_MSG_CHECKING([for aio_fildes member of aiocb structure])
     AC_TRY_COMPILE([
 	#ifdef HAVE_SIGNAL_H
 	#include <signal.h>
