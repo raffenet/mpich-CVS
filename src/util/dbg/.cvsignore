@@ -2,3 +2,5 @@
 *.lo
 Makefile
 Makefile.in
+*Debug*
+*Release*
