@@ -920,7 +920,11 @@ sub TargetPrograms {
 	    # convert -L dir -lname into dir/libname.a
 	    $libdep=$pgm_ldadd{$pgm};
 	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l(\w*)//;
-	    print FD " $1/lib$2.a";
+	    $libdir = $1;
+	    $libname = $2;
+	    if ($libdir != "" && $libname != "") { 
+	        print FD " $libdir/lib$libname.a";
+            }
 	}
 	# Use the link rule appropriate for this program type
 	$pgmtype = $pgmsrctype{$pgm};

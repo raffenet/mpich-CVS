@@ -1,10 +1,16 @@
 #! /bin/sh
 #
 # Update all of the derived files
-# Execute this in the top-level directory
+# For best performance, execute this in the top-level directory.
+# There are some experimental features to allow it to be executed in
+# subdirectories
+at_top=no
+if [ -d maint -a -s maint/simplemake.in ] ; then
+    at_top=yes
+fi
 #
 # Get the Autoconf macro files
-if [ ! -d confdb ] ; then
+if [ $at_top = "yes" -a ! -d confdb ] ; then
     # setup to allow CVSROOT instead of an absolute directory path
     if [ -n "$CVSROOT" -a -d "$CVSROOT/fpmpi" ] ; then
         cvs -q checkout confdb
@@ -14,6 +20,11 @@ if [ ! -d confdb ] ; then
         echo "Checkout confdb from /home/gropp/cvsMaster_z" and rerun
 	exit 1
     fi
+fi
+#
+if [ $at_top = "no" ] ; then
+    echo "Must execute at top level directory for now"
+    exit 1
 fi
 #
 # Build simplemake if necessary
