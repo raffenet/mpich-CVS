@@ -68,6 +68,12 @@ int mpiexecPrintTable( ProcessTable_t * );
 int mpiexecChooseHosts( ProcessTable_t * );
 int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] );
 int mpiexecGetPort( int *, int * );
+int mpiexecStartProcesses( ProcessTable_t *, char [], int );
+int mpiexecGetRemshellArgv( char *[], int );
+int mpiexecHandleStdin( int, charbuf * );
+int mpiexecHandleStdout( int, charbuf *, int );
+int mpiexecPollFDs( ProcessTable_t *, int );
+int mpiexecPrintTable( ProcessTable_t * );
 
 /* ----------------------------------------------------------------------- */
 
@@ -753,5 +759,3 @@ int mpiexecHandleStdout( int infd, charbuf *buf, int outfd )
 	
     }
 }    
-
-

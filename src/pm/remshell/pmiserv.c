@@ -25,6 +25,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 
 #include "simple_pmiutil.h"
 #include "pmiserv.h"
@@ -173,7 +176,7 @@ int PMIServHandleInputFd ( PMI_Process *pentry )
  * kvsname is the initial kvs name (provide a string of size MAXKVSNAME.
  * Return value: groupid
  */
-int PMIServ_Init( int nprocs, char kvsname[] )
+int PMIServInit( int nprocs, char kvsname[] )
 {
     int i;
     for ( i = 0; i < MAXKVSS; i++ )
@@ -198,7 +201,7 @@ int PMIServInitEntry( PMI_Process *pmientry )
     pmientry->kvs   = -1;
 }
 
-int PMIServ_addto_group( int group, int rank, pid_t pid, int fd )
+int PMIServAddtoGroup( int group, int rank, pid_t pid, int fd )
 {
     pmi.grouptable[group].fds[rank]  = fd;
     pmi.grouptable[group].pids[rank] = pid;

@@ -28,9 +28,13 @@ typedef struct PMI_Process {
    the mpiexec implementation to simplify setting up the select/poll loops */
 
 extern int PMIServInit( int, char [] );
+extern int PMIServInitEntry( PMI_Process * );
+
 /* This routine is called when there is input on the fd for the given 
    process */
 extern int PMIServHandleInputFd ( PMI_Process * );
+
+extern int PMIServAddtoGroup( int, int, pid_t, int );
 
 /* Possible return values for PMIServHandleInputFd : */
 #define PMI_OK 0

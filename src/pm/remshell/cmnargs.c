@@ -7,6 +7,9 @@
 
 #include "remshellconf.h"
 #include "remshell.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 /* ----------------------------------------------------------------------- */
 /* Process options                                                         */
