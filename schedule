@@ -447,18 +447,18 @@ MPID_tBsend,,,,,Brian
 MPID_Recv,,,,,Brian,,done
 MPID_Irecv,,,,,Brian,,done
 MPID_Request_free,,,,,Brian,,done
-MPID_Cancel_send,,,,,Brian,,,
-MPID_Cancel_recv,,,,,Brian,,,persistent requests
+MPID_Cancel_send,,,,,Brian,,done,
+MPID_Cancel_recv,,,,,Brian,,done,
 MPID_Iprobe,,,,,Brian,,done
 MPID_Probe,,,,,Brian,,done
 
 Persistent Point-to-Point
 
-MPID_Send_init,,,,,Brian,,done,MPI_PROC_NULL
-MPID_Ssend_init,,,,,Brian,,done,MPI_PROC_NULL
-MPID_Rsend_init,,,,,Brian,,done,MPI_PROC_NULL
-MPID_Recv_init,,,,,Brian,,done,MPI_PROC_NULL
-MPID_Startall,,,,,Brian,,done,MPI_PROC_NULL
+MPID_Send_init,,,,,Brian,,done,
+MPID_Ssend_init,,,,,Brian,,done,
+MPID_Rsend_init,,,,,Brian,,done,
+MPID_Recv_init,,,,,Brian,,done,
+MPID_Startall,,,,,Brian,,done,
 
 Requests
 
@@ -478,7 +478,7 @@ Starting and stopping
 
 MPID_Init,,,,,Brian,MPIDI_CH3_Init,done
 MPID_Finalize,,,,,Brian,MPIDI_CH3_Finalize,done
-MPID_Abort,,,,,Brian
+MPID_Abort,,,,,Brian,PMI_Abort
 
 CH3 packet and data handlers
 
@@ -582,6 +582,7 @@ MPIDI_CH3_iStartmsgv,,,,,Brian,done
 MPIDI_CH3_Request_add_ref,,,,,Brian,,done
 MPIDI_CH3_Request_release_ref,,,,,Brian,,done
 MPIDI_CH3_Request_destroy,,,,,Brian,,done
+MPIDI_CH3_Cancel_send,,,,,Brian
 
 Send/Recv
 
