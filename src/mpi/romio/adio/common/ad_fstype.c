@@ -363,7 +363,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 	FPRINTF(stderr, "ADIO_ResolveFileType: ROMIO has not been configured to use the NFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 # else
-	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_UFS,
+	myerrcode = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_NFS,
 				     myname, (char *) 0, (char *) 0);
 	*error_code =  ADIOI_Error(MPI_FILE_NULL, myerrcode, myname);
 	return;
