@@ -1,6 +1,6 @@
 #! /bin/sh
 mpirun="@MPIRUN@"
-STOPFILE=$HOME/.stopmpichtests
+STOPFILE=${MPITEST_STOPTEST:-"$HOME/.stopmpichtests"}
 #
 # If the programs are not available, run make.
 runtests=1
