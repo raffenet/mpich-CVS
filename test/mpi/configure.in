@@ -19,6 +19,9 @@ dnl AC_ARG_ENABLE(f90,
 dnl [--enable-f90 - Turn on Fortran 90 tests (default)],,enable_f90=no)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Turn on C++ tests (default)],,enable_cxx=yes)
+
+PAC_VPATH_CHECK()
+
 PAC_PROG_MAKE
 if test -z "$top_build_dir" ; then 
     top_build_dir=`cd ../.. ; pwd`

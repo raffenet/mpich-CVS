@@ -100,12 +100,8 @@ AC_ARG_WITH(subname,
               --with-mpichconfig],
 subname=$withval,subname="")
 
-dnl
-dnl First check that we have a clean build if we are doing a VPATH build
-if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
-    AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
-    configured.  Run "make distclean" in $srcdir first.])
-fi
+# First check that we have a clean build if we are doing a VPATH build
+PAC_VPATH_CHECK(mpif.h mpif77.conf mpif77 setbotf.f)
 
 #
 # Get the "master" top srcdir if we are a subdir configure
