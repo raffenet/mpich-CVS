@@ -11,7 +11,8 @@
 #include "mpisgi2.h"
 #endif
 
-#ifdef MPICH
+#if defined(MPICH)
+/* MPICH2 also provides this routine */
 void MPIR_Datatype_iscontig(MPI_Datatype datatype, int *flag);
 
 void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)

@@ -75,9 +75,11 @@ dnl
 AC_ARG_ENABLE(g,
 [--enable-g=option - Control the level of debugging support in the MPICH
 implementation.  option may be a list of common separated names including
-    none  - No debugging
-    mem   - Memory usage tracing
-    all   - All of the above choices],,enable_g=none)
+    none   - No debugging
+    mem    - Memory usage tracing
+    handle - Trace handle operations
+    dbg    - Add compiler -g flags
+    all    - All of the above choices],,enable_g=none)
 dnl
 dnl
 dnl --enable-sharedlibs=kind is set with the PAC_ARG_SHAREDLIBS macro 
