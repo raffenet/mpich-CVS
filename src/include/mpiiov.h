@@ -15,6 +15,9 @@
 #define MPID_IOV_LEN     len
 #define MPID_IOV_BUF     buf
 #else
+#ifdef HAVE_STDIO_H
+#include <stdio.h> /* macs need stdio.h before uio.h can be included */
+#endif
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
