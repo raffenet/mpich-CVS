@@ -2188,7 +2188,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	{
 	    fprintf(stderr, "User credentials needed to launch processes:\n");
 	    smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
-	    smpd_cache_password(smpd_process.UserAccount, smpd_process.UserPassword);
 	    result = smpd_add_command_arg(temp_cmd, "account", smpd_process.UserAccount);
 	    if (result != SMPD_SUCCESS)
 	    {
