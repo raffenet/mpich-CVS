@@ -63,7 +63,7 @@ int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
     if (MPIR_Err_is_fatal(errcode) || kind == 0) 
     {
 	/* This file does not get the correct definitions for MPIU_Snprintf because it cannot include mpiimpl.h */
-	/*MPIU_Snprintf(error_msg, 4096, "Fatal error in %s: ", fcname);*/
+	/* MPIU_Snprintf(error_msg, 4096, "Fatal error in %s: ", fcname); */
 	sprintf(error_msg, "Fatal error in %s: ", fcname);
 	len = (int)strlen(error_msg);
 	MPIR_Err_get_string(errcode, &error_msg[len], 4096-len, NULL);
