@@ -59,7 +59,7 @@ static smpd_data_t * smpd_parse_smpd_file()
     char *buffer;
     int len;
     smpd_data_t *list = NULL, *node;
-    const char *iter;
+    char *iter;
     char name[SMPD_MAX_NAME_LENGTH];
     char equal_str[SMPD_MAX_NAME_LENGTH];
     char data[SMPD_MAX_VALUE_LENGTH];
@@ -84,6 +84,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 		    result = MPIU_Str_get_string(&iter, name, SMPD_MAX_NAME_LENGTH);
 		    if (result != MPIU_STR_SUCCESS)
 		    {
+			return NULL;
 		    }
 		    equal_str[0] = '\0';
 		    result = MPIU_Str_get_string(&iter, equal_str, SMPD_MAX_NAME_LENGTH);
@@ -93,6 +94,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 			result = MPIU_Str_get_string(&iter, equal_str, SMPD_MAX_NAME_LENGTH);
 			if (result != MPIU_STR_SUCCESS)
 			{
+			    return NULL;
 			}
 		    }
 		    data[0] = '\0';
