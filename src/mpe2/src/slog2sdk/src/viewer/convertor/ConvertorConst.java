@@ -17,10 +17,12 @@ import logformat.slog2.TraceName;
 
 public class ConvertorConst
 {
-    public  static final String  CLOG_TO_SLOG2      = "  CLOG  -->  SLOG-2  ";
-    public  static final String  RLOG_TO_SLOG2      = "  RLOG  -->  SLOG-2  ";
-    public  static final String  UTE_TO_SLOG2       = "  UTE   -->  SLOG-2  ";
+    public  static final String  CLOG2_TO_SLOG2     = "  CLOG-2  -->  SLOG-2  ";
+    public  static final String  CLOG_TO_SLOG2      = "  CLOG    -->  SLOG-2  ";
+    public  static final String  RLOG_TO_SLOG2      = "  RLOG    -->  SLOG-2  ";
+    public  static final String  UTE_TO_SLOG2       = "  UTE     -->  SLOG-2  ";
 
+    private static final String  CLOG2_TO_SLOG2_JAR = "clog2TOslog2.jar";
     private static final String  CLOG_TO_SLOG2_JAR  = "clogTOslog2.jar";
     private static final String  RLOG_TO_SLOG2_JAR  = "traceTOslog2.jar";
     private static final String  UTE_TO_SLOG2_JAR   = "traceTOslog2.jar";
@@ -34,6 +36,7 @@ public class ConvertorConst
 
     // if XXX_TraceLibPath = null, means no need to use -Djava.library.path=
     // if XXX_TraceLibPath contains ".", i.e. Jar Directory.
+    private static       String  CLOG2_TraceLibPath = "";
     private static       String  CLOG_TraceLibPath  = "";
     private static       String  RLOG_TraceLibPath  = ".:../trace_rlog/lib";
     private static       String  UTE_TraceLibPath   = ".:/usr/lpp/ppe.perf/lib";
@@ -43,7 +46,9 @@ public class ConvertorConst
     public  static String getDefaultConvertor( String filename )
     {
         String log_ext = TraceName.getLogFormatExtension( filename );
-        if ( log_ext.equals( TraceName.CLOG_EXT ) )
+        if ( log_ext.equals( TraceName.CLOG2_EXT ) )
+            return CLOG2_TO_SLOG2;
+        else if ( log_ext.equals( TraceName.CLOG_EXT ) )
             return CLOG_TO_SLOG2;
         else if ( log_ext.equals( TraceName.RLOG_EXT ) )
             return RLOG_TO_SLOG2;
@@ -60,7 +65,9 @@ public class ConvertorConst
 
     public  static String getDefaultJarName( String convertor )
     {
-        if ( convertor.equals( CLOG_TO_SLOG2 ) )
+        if ( convertor.equals( CLOG2_TO_SLOG2 ) )
+            return CLOG2_TO_SLOG2_JAR;
+        else if ( convertor.equals( CLOG_TO_SLOG2 ) )
             return CLOG_TO_SLOG2_JAR;
         else if ( convertor.equals( RLOG_TO_SLOG2 ) )
             return RLOG_TO_SLOG2_JAR;
@@ -81,7 +88,9 @@ public class ConvertorConst
     public  static String getDefaultTraceLibPath( String  convertor,
                                                   String  prefix )
     {
-        if ( convertor.equals( CLOG_TO_SLOG2 ) )
+        if ( convertor.equals( CLOG2_TO_SLOG2 ) )
+            return updateLibraryPath( prefix, CLOG2_TraceLibPath );
+        else if ( convertor.equals( CLOG_TO_SLOG2 ) )
             return updateLibraryPath( prefix, CLOG_TraceLibPath );
         else if ( convertor.equals( RLOG_TO_SLOG2 ) )
             return updateLibraryPath( prefix, RLOG_TraceLibPath );
@@ -95,6 +104,9 @@ public class ConvertorConst
                                                        char new_char )
     {
         if ( old_char != new_char ) {
+            if ( CLOG2_TraceLibPath != null )
+                CLOG2_TraceLibPath = CLOG2_TraceLibPath.replace( old_char,
+                                                                 new_char );
             if ( CLOG_TraceLibPath != null )
                 CLOG_TraceLibPath = CLOG_TraceLibPath.replace( old_char,
                                                                new_char );

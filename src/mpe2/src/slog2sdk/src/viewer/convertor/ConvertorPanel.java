@@ -175,6 +175,7 @@ public class ConvertorPanel extends JPanel
                     cmd_pulldown.setForeground( Color.yellow );
                     cmd_pulldown.setBackground( pulldown_bg_color );
                     cmd_pulldown.setToolTipText( " Logfile Convertor's Name " );
+                    cmd_pulldown.addItem( ConvertorConst.CLOG2_TO_SLOG2 );
                     cmd_pulldown.addItem( ConvertorConst.CLOG_TO_SLOG2 );
                     cmd_pulldown.addItem( ConvertorConst.RLOG_TO_SLOG2 );
                     cmd_pulldown.addItem( ConvertorConst.UTE_TO_SLOG2 );
