@@ -79,6 +79,22 @@ public class Preamble
         return version.equalsIgnoreCase( Const.VERSION );
     }
 
+    public boolean isVersionCompatible()
+    {
+        String   old_version;
+        boolean  isCompatible;
+        int      idx;
+
+        isCompatible = false;
+        for ( idx = 0;
+              idx < Const.COMPAT_VERSIONS.length && !isCompatible;
+              idx++ ) {
+            old_version   = Const.COMPAT_VERSIONS[ idx ];
+            isCompatible  = version.equalsIgnoreCase( old_version );
+        }
+        return isCompatible;
+    }
+
     public boolean isBigEndian()
     {
         return is_big_endian;

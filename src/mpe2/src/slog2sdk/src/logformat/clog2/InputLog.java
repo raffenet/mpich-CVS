@@ -39,12 +39,21 @@ public class InputLog
         preamble = new Preamble();
         preamble.readFromDataStream( main_ins );
         if ( ! preamble.isVersionMatched() ) {
-            System.err.println( "Error: CLOG version mismatched !\n"
-                              + "\t" + "The input logfile version is "
-                              + preamble.getVersionString() + "\n"
-                              + "\t" + "But this tool is of version "
-                              + Const.VERSION );
-            System.exit( 1 );
+            if ( ! preamble.isVersionCompatible() ) {
+                System.err.println( "Error: CLOG versions mismatched !\n"
+                                  + "\t" + "The input logfile version is "
+                                  + preamble.getVersionString() + "\n"
+                                  + "\t" + "But this tool is of version "
+                                  + Const.VERSION );
+                System.exit( 1 );
+            }
+            else {
+                System.err.println( "Warning: CLOG versions compatible !\n"
+                                  + "\t" + "The input logfile version is "
+                                  + preamble.getVersionString() + "\n"
+                                  + "\t" + "But this tool is of version "
+                                  + Const.VERSION );
+            }
         }
         if ( ! preamble.isBigEndian() ) {
             System.err.println( "Error: input logfile is little-endian!" );
