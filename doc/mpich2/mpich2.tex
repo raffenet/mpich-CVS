@@ -384,11 +384,6 @@ long-double-int types may be 32 bytes, but on these systems, sizeof(int) will
 be at least 32 bits, leaving us enough room for the size of these longer
 types). 
 
-Comment [BRT]: If we can assume that all basic types are of the size
-$2^N$, the we can simply store $N$, eliminating the need for more than a
-few bits of storage.  I'm not sure if this is a reasonable
-assumption.  Note from Bill: Under Linux, \code{long double} is 12 bytes.
-
 For predefined Groups and Communicators we simply use the remaining bits
 to specify the particular group/communicator (e.g. \code{MPI_COMM_WORLD}) and 
 either the rank of the process or the size (or both!).  Actually, for
@@ -3630,7 +3625,13 @@ intermediate form (e.g., contiguous).
 An alternate implementation would have the target process rather than the
 origin process perform the operation.  The difficulty with this is that the
 origin buffer need not be in shared memory, so it is less likely that this
-single-move form can be carried out.
+single-move form can be carried out.  
+
+[BRT] The act of communicating the need for the target process to do
+work on behalf of the origin process introduces extra overhead.  I
+fail to see how passing the work onto the target process will result
+in a performance gain that outweighs the extra overhead.  Perhaps I am
+missing something important...
 
 Question: how is completion handled?  
 
@@ -3658,9 +3659,18 @@ contiguous can be handled with a simple call to either
 is where both datatypes are not contiguous or the same, requiring a
 copy to an intermediate form.
 
-Another possible implementation would have a thread per window object, or a
-thread for all window objects that allow locks\index{thread overhead!passive
-  RMA}. 
+Another possible implementation would have a thread per window object,
+or a thread for all window objects that allow locks\index{thread
+overhead!passive RMA}.
+
+[BRT] Alternatively, passive target operations could be communicated
+over the same socket as all other operations, but a message handling
+thread could be used to periodically check for new messages when other
+threads were busy with non-MPI related computations.  This avoids a
+context switch whenever a message fragment is received, but insures
+that passive operations are processed in a timely fashion.  For the
+non-threaded implementation, a similar solution could be used,
+replacing the message handling thread with a SIGALRM signal handler.
 
 \subsubsection{\mpifunc{MPI_PUT}}
 \begin{adi3}\mpidfunc{MPID_Put}
@@ -3765,8 +3775,14 @@ Call \mpidfunc{MPID_Mem_alloc}.  We also need a routine that
 \mpifunc{MPI_WIN_CREATE} can call to determine if memory was allocated with
 this (or a similar) routine.
 
-Question: Should this routine be \mpidfunc{MPID_Mem_isalloc}\code{ int
-size, void *ptr )}?
+Note [BRT]: The performance of point-to-point and collective communication
+could be improved in some situations if the user buffers were
+allocated using \mpifunc{MPI_Mem_alloc}.  The info argument could be
+used to express the intended use of the space, alllowing
+\mpifunc{MPI_Mem_alloc} to select an appropriate memory pool.
+
+Question: Should this routine be \mpidfunc{MPID_Mem_isalloc}\code{( int
+size, void *ptr )}?  ([BRT] isalloc???)
 
 \subsubsection{\mpifunc{MPI_FREE_MEM}}
 Call \mpidfunc{MPID_Mem_free}.
