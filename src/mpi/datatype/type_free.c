@@ -45,6 +45,7 @@ int MPI_Type_free(MPI_Datatype *datatype)
     static const char FCNAME[] = "MPI_Type_free";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    int inuse;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_FREE);
@@ -54,10 +55,12 @@ int MPI_Type_free(MPI_Datatype *datatype)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    /* Check for built-in type */
+	    if (HANDLE_GET_KIND(*datatype) == HANDLE_KIND_BUILTIN) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_TYPE,
+						  "**dtypeperm", 0 );
+	    }
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
@@ -69,6 +72,17 @@ int MPI_Type_free(MPI_Datatype *datatype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    MPIU_Object_release_ref(datatype_ptr,&inuse);
+    if (!inuse) {
+	/* FIXME - We need to free the structure */
+	if (datatype_ptr->free_fn) {
+	    mpi_errno = (datatype_ptr->free_fn)( datatype_ptr );
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+    }
     *datatype = MPI_DATATYPE_NULL;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);
