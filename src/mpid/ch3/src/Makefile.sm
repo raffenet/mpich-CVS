@@ -10,4 +10,4 @@ lib${MPILIBNAME}_a_SOURCES = \
     mpid_send.c mpid_send_init.c mpid_ssend.c mpid_ssend_init.c \
     mpid_startall.c mpid_vc.c mpid_win_fence.c mpid_put.c mpid_get.c \
     mpid_accumulate.c mpidi_isend_self.c mpidi_printf.c mpid_win_complete.c \
-    mpid_win_wait.c
+    mpid_win_wait.c mpid_win_post.c
