@@ -43,7 +43,7 @@ Output Parameters:
 int MPI_File_read_ordered(MPI_File fh, void *buf, int count, 
                           MPI_Datatype datatype, MPI_Status *status)
 {
-    int error_code, datatype_size, nprocs, myrank, i, incr;
+    int error_code, datatype_size, nprocs, myrank, incr;
     int source, dest;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_READ_ORDERED";
