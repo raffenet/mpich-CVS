@@ -53,6 +53,7 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len, int *num_bytes_ptr)
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(vc->ch.write_shmq->packet[index].data, buf, length);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	MPIU_DBG_PRINTF(("shm_write: %d bytes in packet %d\n", vc->ch.write_shmq->packet[index].num_bytes, index));
 	MPID_WRITE_BARRIER();
 	vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	buf = (char *) buf + length;
@@ -168,7 +169,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 	vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	vc->ch.write_shmq->tail_index =
 	    (vc->ch.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	/*printf("shm_writev - %d bytes\n", vc->ch.write_shmq->packet[index].num_bytes);fflush(stdout);*/
+	MPIU_DBG_PRINTF(("shm_writev - %d bytes in packet %d\n", vc->ch.write_shmq->packet[index].num_bytes, index));
 	*num_bytes_ptr = total;
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
@@ -189,6 +190,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	    MPIU_DBG_PRINTF(("shm_writev: +%d=%d bytes in packet %d\n", iov[i].MPID_IOV_LEN, vc->ch.write_shmq->packet[index].num_bytes, index));
 	    dest_pos += iov[i].MPID_IOV_LEN;
 	}
 	else
@@ -198,6 +200,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, dest_avail);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	    MPIU_DBG_PRINTF(("shm_writev: +%d=%d bytes in packet %d\n", dest_avail, vc->ch.write_shmq->packet[index].num_bytes, index));
 	    MPID_WRITE_BARRIER();
 	    vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_USED;
 	    cur_pos = (unsigned char *)(iov[i].MPID_IOV_BUF) + dest_avail;
@@ -218,6 +221,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 		MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		memcpy(vc->ch.write_shmq->packet[index].data, cur_pos, num_bytes);
 		MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+		MPIU_DBG_PRINTF(("shm_writev: +%d=%d bytes in packet %d\n", num_bytes, vc->ch.write_shmq->packet[index].num_bytes, index));
 		total += num_bytes;
 		cur_pos += num_bytes;
 		cur_avail -= num_bytes;
