@@ -1,0 +1,28 @@
+#! /usr/bin/perl
+#
+#
+#
+$missed_lines = 0;
+while (<>) {
+    if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	while (<>) {
+	    if (/^\s*#\s*endif/) { 
+		last; 
+	    }
+	}
+	next;	       
+    }
+    if (/^\s*######/) {
+	if (! /^\s*######\s*\}\s*/) {
+	    $missed_lines++;
+	}
+    }
+    print $_;
+}
+
+if ($missed_lines) {
+    print "$missed_lines line(s) not covered by tests\n";
+}
+else {
+    print "All code covered by tests\n";
+}
