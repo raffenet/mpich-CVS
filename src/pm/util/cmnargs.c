@@ -335,7 +335,8 @@ const char *MPIE_ArgDescription( void )
 {
     return "-n <numprocs> -soft <softness> -host <hostname> \\\n\
                -wdir <working directory> -path <search path> \\\n\
-               -file <filename> -configfile <filename> execname <args>\n";
+               -file <filename> -configfile <filename> execname <args>\\\n\
+               [ : -n <numprocs> ... execname <args>]\n";
 }
 
 /*@ MPIE_PrintProcessUniverse - Debugging routine used to print out the 

@@ -9,12 +9,12 @@
  * interfaces in this file, other resource managers can be used.
  *
  * The interfaces are:
- * int mpiexecChooseHosts( ProcessList *plist, int nplist, 
+ * int MPIE_ChooseHosts( ProcessList *plist, int nplist, 
  *                         ProcessTable *ptable )
  *    Given the list of processes in plist, set the host field for each of the 
  *    processes in the ptable (ptable is already allocated)
  *
- * int mpiexecRMProcessArg( int argc, char *argv[], void *extra )
+ * int MPIE_RMProcessArg( int argc, char *argv[], void *extra )
  *    Called by the top-level argument processor for unrecognized arguments;
  *    allows the resource manager to use the command line.  If no command
  *    line options are allowed, this routine simply returns zero.
@@ -28,6 +28,9 @@
 #include <ctype.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
 #endif
 
 #include "pmutil.h"
@@ -46,9 +49,10 @@
 /* These structures are used as part of the code to assign machines to 
    processes */
 typedef struct {
-    char *name;            /* Name of the machine (used for ssh etc) */
+    char *hostname;        /* Name of the machine (used for ssh etc) */
     int  np;               /* Number of processes on this machine */
-    char *login;           /* Login name to use (if different) */
+    char *login;           /* Login name to use (if different).
+			      Q: do we also want to provide for a password? */
     char *netname;         /* Interface name to use (if different from host) */
     /* Other resource descriptions would go here, such as memory, 
        software, file systems */
@@ -62,15 +66,21 @@ typedef struct {
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
-static MachineTable *MPIE_ReadMachines( const char *, int );
+
+MachineTable *MPIE_ReadMachines( const char *, int, void * );
 
 /* Choose the hosts for the processes in the ProcessList.  In
    addition, expand the list into a table with one entry per process.
+   
+   The function "readDB" is used to read information from a database
+   of available machines and return a "machine table" that is used to
+   supply hosts.  A default routine, MPIE_ReadMachines, is available.
 */
-int mpiexecChooseHosts( ProcessWorld *pWorld )
+int MPIE_ChooseHosts( ProcessWorld *pWorld, 
+		      MachineTable* (*readDB)(const char *, int, void *), 
+		      void *readDBdata )
 {
     int i, k, nNeeded=0, ntest;
-    const char *arch;
     MachineTable *mt;
     ProcessApp   *app;
     ProcessState *pState;
@@ -86,10 +96,18 @@ int mpiexecChooseHosts( ProcessWorld *pWorld )
     }
     if (nNeeded == 0) return 0;
 
+    /* Now, for each app, find the hostnames by reading the
+       machine table associate with the architecture */
     app = pWorld->apps;
-    while (app) {
-	app = app->nextApp;
-    }
+    while (app && nNeeded > 0) {
+	int nForApp = 0;
+
+	pState = app->pState;
+	for (i=0; i<app->nProcess; i++) {
+	    if (!pState[i].hostname) nForApp++;
+	}
+	
+	mt = (*readDB)( app->arch, nForApp, readDBdata );
 #if 0
     /* Read the appropriate machines file.  There may be multiple files, 
        one for each requested architecture.  We'll read one machine file
@@ -105,7 +123,7 @@ int mpiexecChooseHosts( ProcessWorld *pWorld )
 	/* Read the machines file for this architecture.  Use the
 	   default architecture if none selected */
 	arch = ptable->table[i].spec.arch;
-	mt = mpiexecReadMachines( arch, nNeeded );
+	mt = (*readDB)( arch, nNeeded, readDBdata );
 	if (!mt) {
 	    /* FIXME : needs an error message */
 	    /* By default, run on local host? */
@@ -145,8 +163,11 @@ int mpiexecChooseHosts( ProcessWorld *pWorld )
 	}
 	/* We can't free the machines table because we made references
 	   to storage (hostnames) in the table */
+	/* FIXME: Must be able to free the table */
     }
 #endif
+	app = app->nextApp;
+    }
     return nNeeded != 0;   /* Return nonzero on failure */
 }
 
@@ -174,8 +195,22 @@ static const char defaultMachinesPath[] = DEFAULT_MACHINES_PATH;
    path/machines 
    (if no arch is specified)
    
+   The files are found by looking in
+
+   env{MPIEXEC_MACHINES_PATH}/machines.<archname>
+
+   or, if archname is null, 
+
+   env{MPIEXEC_MACHINES_PATH}/machines
+
+   Question: We could set this with a -machinefile and -machinefilepath
+   option, and pass this information in through the "data" argument.
+
+   See the MPIE_RMProcessArg routine for a place to put the tests for the
+   arguments.
 */
-static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
+MachineTable *MPIE_ReadMachines( const char *arch, int nNeeded, 
+				 void *data )
 {
     FILE *fp=0;
     char buf[MAXLINE+1];
@@ -307,7 +342,7 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	/* Save the names */
 
 	/* Initialize the fields for this new entry */
-	mt->desc[nFound].name    = MPIU_Strdup( name );
+	mt->desc[nFound].hostname    = MPIU_Strdup( name );
 	if (login) 
 	    mt->desc[nFound].login   = MPIU_Strdup( login );
 	else
@@ -336,7 +371,7 @@ static MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     return mt;	
 }
 
-int mpiexecRMProcessArg( int argc, char *argv[], void *extra )
+int MPIE_RMProcessArg( int argc, char *argv[], void *extra )
 {
   return 0;
 }

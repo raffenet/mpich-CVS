@@ -98,4 +98,6 @@ int PMISetupInClient( PMISetup * );
 int PMISetupFinishInServer( PMISetup *, ProcessState * );
 int PMISetupNewGroup( int, PMIKVSpace * );
 
+int PMIServAcceptFromPort( int, int, void * );
+int PMIServHandleInput( int, int, void * );
 #endif

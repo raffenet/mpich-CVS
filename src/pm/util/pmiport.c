@@ -23,6 +23,9 @@
 #endif
 
 #include "pmutil.h"
+#include "process.h"
+#include "pmiserv.h"
+#include "ioloop.h"
 
 #ifndef MAX_PENDING_CONN
 #define MAX_PENDING_CONN 10
@@ -47,7 +50,7 @@
 #ifndef TCP
 #define TCP 0
 #endif
-int MPIE_GetPort( int *fdout, int *portout )
+int PMIServGetPort( int *fdout, char *portString, int portLen )
 {
     int                fd = -1;
     struct sockaddr_in sa;
@@ -67,7 +70,7 @@ int MPIE_GetPort( int *fdout, int *portout )
 	char *p;
 	/* Look for n:m format */
 	p = range_ptr;
-	while (*p && iswhite(*p)) p++;
+	while (*p && isspace(*p)) p++;
 	while (*p && isdigit(*p)) low_port = 10 * low_port + (*p++ - '0');
 	if (*p == ':') {
 	    while (*p && isdigit(*p)) high_port = 10 * high_port + (*p++ - '0');
@@ -125,13 +128,19 @@ int MPIE_GetPort( int *fdout, int *portout )
 	getsockname( fd, (struct sockaddr *)&sa, &sinlen );
 	portnum = ntohs(sa.sin_port);
     }
-    *portout = portnum;
+
+    /* Create the port string */
+    {
+	char hostname[MAX_HOST_NAME+1];
+    MPIE_GetMyHostName( hostname, sizeof(hostname) );
+    MPIU_Snprintf( portString, portLen, "%s:%d", hostname, portnum );
+    }
     
     return 0;
 }
 
 #include <netdb.h>
-int MPIE_GetMyHostName( char myname[MAX_HOST_NAME+1] )
+int MPIE_GetMyHostName( char myname[MAX_HOST_NAME+1], int namelen )
 {
     struct hostent     *hp;
     char *hostname = 0;
@@ -140,11 +149,79 @@ int MPIE_GetMyHostName( char myname[MAX_HOST_NAME+1] )
      */
     if (!hostname) {
 	hostname = myname;
-	gethostname( myname, MAX_HOST_NAME );
+	gethostname( myname, namelen );
     }
     hp = gethostbyname( hostname );
     if (!hp) {
 	return -1;
     }
+    return 0;
+}
+
+/* IO Handler for the listen socket
+   Respond to a connection request by creating a new socket, which is
+   then registered.
+   Initialize the startup handshake.
+ */
+int PMIServAcceptFromPort( int fd, int rdwr, void *data )
+{
+    int    newfd;
+    struct sockaddr sock;
+    int    addrlen;
+    int    id;
+    ProcessWorld *pWorld = (ProcessWorld *)data;
+    ProcessApp   *app;
+
+    /* Get the new socket */
+    MPIE_SYSCALL(newfd,accept,( fd, &sock, &addrlen ));
+    if (newfd < 0) return newfd;
+
+#ifdef FOO
+    /* Mark this fd as non-blocking */
+    flags = fcntl( newfd, F_GETFL, 0 );
+    if (flags >= 0) {
+	flags |= O_NDELAY;
+	fcntl( newfd, F_SETFL, flags );
+    }
+#endif
+
+    /* Find the matching process.  Do this by reading from the socket and 
+       getting the id value with which process was created. */
+    id = PMI_Init_port_connection( newfd );
+    if (id >= 0) {
+	/* find the matching entry */
+	ProcessState *pState;
+	int           nSoFar = 0;
+	PMIProcess   *pmiprocess;
+
+	app = pWorld->apps;
+	while (app) {
+	    if (app->nProcess < id - nSoFar) {
+		/* Found the matching app */
+		pState = app->pState + (id - nSoFar);
+		break;
+	    }
+	    else {
+		nSoFar += app->nProcess;
+	    }
+	    app = app->nextApp;
+	}
+	
+	/* Now, initialize the connection */
+#if 0
+	PMIServAddtoGroup( 0, id, ps->pid, ps->fdPMI );
+	PMIServSetupEntry( newfd, 0, ptable->nProcesses, id, 
+				   &ps->pmientry );
+	PMI_Init_remote_proc( newfd, &ps->pmientry,
+			      id, ptable->nProcesses, debug );
+#endif
+	/* See PMISetupFinishInServer for similar code */
+	pmiprocess = PMISetupNewProcess( newfd, pState );
+	MPIE_IORegister( newfd, IO_READ, PMIServHandleInput, pmiprocess );
+    }
+    else {
+    }
+
+    /* Return success. */
     return 0;
 }
