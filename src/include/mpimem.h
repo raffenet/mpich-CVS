@@ -128,6 +128,30 @@ char *MPIU_Strdup( const char * );
 
 typedef int MPIU_BOOL;
 
+#ifdef USE_HUMAN_READABLE_TOKENS
+
+#define MPIU_STR_QUOTE_CHAR     '\"'
+#define MPIU_STR_QUOTE_STR      "\""
+#define MPIU_STR_DELIM_CHAR     '='
+#define MPIU_STR_DELIM_STR      "="
+#define MPIU_STR_ESCAPE_CHAR    '\\'
+#define MPIU_STR_HIDE_CHAR      '*'
+#define MPIU_STR_SEPAR_CHAR     ' '
+#define MPIU_STR_SEPAR_STR      " "
+
+#else
+
+#define MPIU_STR_QUOTE_CHAR     '\"'
+#define MPIU_STR_QUOTE_STR      "\""
+#define MPIU_STR_DELIM_CHAR     '#'
+#define MPIU_STR_DELIM_STR      "#"
+#define MPIU_STR_ESCAPE_CHAR    '\\'
+#define MPIU_STR_HIDE_CHAR      '*'
+#define MPIU_STR_SEPAR_CHAR     '$'
+#define MPIU_STR_SEPAR_STR      "$"
+
+#endif
+
 /*@ MPIU_Str_get_string_arg - Extract an option from a string with a maximum length
   
     Input Parameters:

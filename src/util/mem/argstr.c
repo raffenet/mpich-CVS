@@ -21,26 +21,6 @@
    values on which isascii returns true). */
 #include <ctype.h>
 
-#define MPIU_STR_QUOTE_CHAR     '\"'
-#define MPIU_STR_QUOTE_STR      "\""
-#define MPIU_STR_DELIM_CHAR     '='
-#define MPIU_STR_DELIM_STR      "="
-#define MPIU_STR_ESCAPE_CHAR    '\\'
-#define MPIU_STR_HIDE_CHAR      '*'
-#define MPIU_STR_SEPAR_CHAR     ' '
-#define MPIU_STR_SEPAR_STR      " "
-
-/*
-#define MPIU_STR_QUOTE_CHAR     '\"'
-#define MPIU_STR_QUOTE_STR      "\""
-#define MPIU_STR_DELIM_CHAR     '#'
-#define MPIU_STR_DELIM_STR      "#"
-#define MPIU_STR_ESCAPE_CHAR    '\\'
-#define MPIU_STR_HIDE_CHAR      '*'
-#define MPIU_STR_SEPAR_CHAR     '$'
-#define MPIU_STR_SEPAR_STR      "$"
-*/
-
 #define MPIU_STR_TRUNCATED MPIU_STR_NOMEM
 
 static int encode_buffer(char *dest, int dest_length, const char *src, int src_length, int *num_encoded)
