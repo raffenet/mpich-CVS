@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\src\include,..\include\win32"
+				AdditionalIncludeDirectories="..\src\include,..\src\include\win32"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_WINDOWS_H"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -69,7 +69,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\src\include,..\include\win32"
+				AdditionalIncludeDirectories="..\src\include,..\src\include\win32"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;HAVE_WINDOWS_H"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
