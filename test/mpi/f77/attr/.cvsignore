@@ -3,3 +3,6 @@ Makefile
 *.o
 baseattr
 attraints.h
+*ebug*
+*elease*
+*.vfproj

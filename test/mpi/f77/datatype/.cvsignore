@@ -2,3 +2,6 @@ Makefile.in
 Makefile
 *.o
 typeaints.h
+*ebug*
+*elease*
+*.vfproj

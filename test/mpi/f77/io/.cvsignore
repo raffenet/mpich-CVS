@@ -25,3 +25,6 @@ writeallbef
 iooffset.h
 Makefile.in
 Makefile
+*ebug*
+*elease*
+*.vfproj
