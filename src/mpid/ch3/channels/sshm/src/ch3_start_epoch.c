@@ -38,7 +38,7 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
         /* this is a win_start or win_post. */
 
         MPI_Group win_grp, grp;
-        int i, grp_size, *ranks_in_grp, *ranks_in_win, dst, src;
+        int i, grp_size, *ranks_in_grp, *ranks_in_win, dst, src, rank;
 
         /* First translate the ranks of the processes in
            group_ptr to ranks in win_ptr->comm. Save the translated ranks
@@ -97,6 +97,8 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
             
             /* MPI_MODE_NOCHECK not specified. Synchronization is necessary. */
 
+            NMPI_Comm_rank(win_ptr->comm, &rank);
+
             if (access_or_exposure == MPIDI_CH3_ACCESS_EPOCH) {
                 /* this is a Win_start. Since MPI_MODE_NOCHECK was not specified, 
                    we need to check if Win_post was called on the target processes. 
@@ -105,15 +107,17 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
                 for (i=0; i<grp_size; i++)
                 {
                     src = ranks_in_win[i];
-                    mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100,
-                                          win_ptr->comm, MPI_STATUS_IGNORE);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-                    {
-                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                        goto fn_exit;
+                    if (src != rank) {
+                        mpi_errno = NMPI_Recv(NULL, 0, MPI_INT, src, 100,
+                                              win_ptr->comm, MPI_STATUS_IGNORE);
+                        /* --BEGIN ERROR HANDLING-- */
+                        if (mpi_errno)
+                        {
+                            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                            goto fn_exit;
+                        }
+                        /* --END ERROR HANDLING-- */
                     }
-                    /* --END ERROR HANDLING-- */
                 }
             }
 
@@ -125,14 +129,16 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
                 for (i=0; i<grp_size; i++)
                 {
                     dst = ranks_in_win[i];
-                    mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-                    {
-                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                        goto fn_exit;
+                    if (dst != rank) {
+                        mpi_errno = NMPI_Send(&i, 0, MPI_INT, dst, 100, win_ptr->comm);
+                        /* --BEGIN ERROR HANDLING-- */
+                        if (mpi_errno)
+                        {
+                            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                            goto fn_exit;
+                        }
+                        /* --END ERROR HANDLING-- */
                     }
-                    /* --END ERROR HANDLING-- */
                 }
             }
         }    
