@@ -1,0 +1,11 @@
+
+for arg in $ac_configure_args ; do
+  case  "`eval echo $arg`" in 
+    --with-gasnet=* )
+      gasnet_dir=`eval echo $arg | sed 's/--with-gasnet=//'`
+      ;;
+    --with-gm=* )
+      gm_dir=`eval echo $arg | sed 's/--with-gm=//'`
+      ;;
+  esac
+done
