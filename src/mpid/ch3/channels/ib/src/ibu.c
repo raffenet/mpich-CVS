@@ -1050,6 +1050,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 }
 #endif
 
+#if 0
 #undef FUNCNAME
 #define FUNCNAME ibui_post_writev
 #undef FCNAME
@@ -1158,6 +1159,124 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov_orig, int n, int (*write_pro
 	ibu->nAvailRemote--;
 	
     } while (n);
+    //} while (0); // lets force the progress engine to reload after each packet.
+    
+    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
+    return total;
+}
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME ibui_post_writev
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
+{
+    ib_uint32_t status;
+    ib_scatter_gather_list_t sg_list;
+    ib_data_segment_t data;
+    ib_work_req_send_t work_req;
+    void *mem_ptr;
+    unsigned int len, msg_size;
+    int total = 0;
+    unsigned int num_avail;
+    unsigned char *buf;
+    int cur_index;
+    unsigned int cur_len;
+    unsigned char *cur_buf;
+    MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITEV);
+
+    cur_index = 0;
+    cur_len = iov[0].IBU_IOV_LEN;
+    cur_buf = iov[0].IBU_IOV_BUF;
+    do
+    {
+	if (ibu->nAvailRemote < 1)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "no more remote packets available."));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
+	    return total;
+	}
+	mem_ptr = ibuBlockAlloc(ibu->allocator);
+	if (mem_ptr == NULL)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL."));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
+	    return total;
+	}
+	buf = mem_ptr;
+	num_avail = IBU_PACKET_SIZE;
+	/*printf("iov length: %d\n", n);*/
+	for (; cur_index < n && num_avail; )
+	{
+	    len = min (num_avail, cur_len);
+	    num_avail -= len;
+	    total += len;
+	    /*printf("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail);fflush(stdout);*/
+	    memcpy(buf, cur_buf, len);
+	    buf += len;
+	    
+	    if (cur_len == len)
+	    {
+		cur_index++;
+		cur_len = iov[cur_index].IBU_IOV_LEN;
+		cur_buf = iov[cur_index].IBU_IOV_BUF;
+	    }
+	    else
+	    {
+		cur_len -= len;
+		cur_buf += len;
+	    }
+	}
+	msg_size = IBU_PACKET_SIZE - num_avail;
+	
+	MPIDI_DBG_PRINTF((60, FCNAME, "g_write_stack[%d].length = %d\n", g_cur_write_stack_index, msg_size));
+	g_num_bytes_written_stack[g_cur_write_stack_index].length = msg_size;
+	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
+	g_cur_write_stack_index++;
+	
+	data.length = msg_size;
+	data.va = (ib_uint64_t)(ib_uint32_t)mem_ptr;
+	data.l_key = ibu->lkey;
+	
+	sg_list.data_seg_p = &data;
+	sg_list.data_seg_num = 1;
+	
+	work_req.dest_address      = 0;
+	work_req.dest_q_key        = 0;
+	work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
+	work_req.eecn              = 0;
+	work_req.ethertype         = 0;
+	work_req.fence_f           = 0;
+	work_req.immediate_data    = 0;
+	work_req.immediate_data_f  = 0;
+	work_req.op_type           = OP_SEND;
+	work_req.remote_addr.va    = 0;
+	work_req.remote_addr.key   = 0;
+	work_req.se_f              = 0;
+	work_req.sg_list           = sg_list;
+	work_req.signaled_f        = 0;
+	
+	/* store the ibu ptr and the mem ptr in the work id */
+	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
+	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
+	
+	MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send_req_us(%d bytes)", msg_size));
+	status = ib_post_send_req_us( IBU_Process.hca_handle,
+	    ibu->qp_handle, 
+	    &work_req);
+	if (status != IBU_SUCCESS)
+	{
+	    printf("%s: nAvailRemote: %d, nUnacked: %d\n", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
+	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
+	    return -1;
+	}
+	ibu->nAvailRemote--;
+	
+    } while (cur_index < n);
     //} while (0); // lets force the progress engine to reload after each packet.
     
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
