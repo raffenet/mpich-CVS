@@ -6,8 +6,19 @@
 
 #include "mpidimpl.h"
 
+/*
+ * MPIDI_VCRT - virtual connection reference table
+ *
+ * handle - this element is not used, but exists so that we may use the
+ * MPIU_Object routines for reference counting
+ *
+ * ref_count - number of references to this table
+ *
+ * vcr_table - array of virtual connection references
+ */
 typedef struct MPIDI_VCRT
 {
+    int handle;
     volatile int ref_count;
     MPIDI_VC * vcr_table[1];
 }
@@ -29,17 +40,20 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 
 int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 {
-    /* MT - not atomic */
-    vcrt->ref_count += 1;
+    MPIU_Object_add_ref(vcrt);
+    return MPI_SUCCESS;
 }
 
 int MPID_VCRT_Release(MPID_VCRT vcrt)
 {
-    /* MT - not atomic */
-    if (--vcrt->ref_count == 0)
+    int count;
+
+    MPIU_Object_release_ref(vcrt, &count);
+    if (count == 0)
     {
 	MPIU_Free(vcrt);
     }
+    return MPI_SUCCESS;
 }
 
 int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
