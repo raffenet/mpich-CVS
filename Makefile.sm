@@ -59,6 +59,8 @@ dist:
 	( cd tmpdir/${PACKAGE}-$${version} && maint/updatefiles --with-codecheck=-distcheck ) ; \
 	cp -r tmpdir/${PACKAGE}-$${version} tmpdir2 ; \
 	( cd tmpdir2 && ./configure && ${MAKE} mandoc && ${MAKE} htmldoc && ${MAKE} latexdoc ) ; \
+	if [ ! -d tmpdir2/man ] ; then echo "unable to build manpages" ;\
+		(cd tmpdir2 && ls ) ; fi ; \
 	cp -r tmpdir2/man tmpdir/${PACKAGE}-$${version}/man ; \
 	cp -r tmpdir2/www tmpdir/${PACKAGE}-$${version}/www ; \
 	cp -r tmpdir2/doc/refman tmpdir/${PACKAGE}-$${version}/doc ; \
