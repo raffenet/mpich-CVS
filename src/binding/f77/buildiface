@@ -106,7 +106,7 @@ foreach $_ (@ARGV) {
 	   'MPI_Info' => 'MPI_Fint *',
 	   'MPI_Errhandler' => 'MPI_Fint *',
 	   'MPI_Aint' => 'MPI_Fint *',   # Should be MPIR_FAint
-	   'MPI_Offset' => 'MPI_Fint *', # Should be MPIR_FOint
+	   'MPI_Offset' => 'MPI_Offset *', # Should be MPIR_FOint
 	   'int' => 'MPI_Fint *',
 	   'int [][3]' => 'MPI_Fint *',
 	   'MPI_Datatype *' => 'MPI_Fint *',
@@ -117,6 +117,7 @@ foreach $_ (@ARGV) {
 	   'MPI_Request *' => 'MPI_Fint *',
 	   'MPI_Aint *' => 'MPI_Fint *',   # Should be MPIR_FAint
 	   'int *' => 'MPI_Fint *',
+	   'int*' => 'MPI_Fint *',         # Catch missing space
 	   'MPI_Op *' => 'MPI_Fint *',
 	   'MPI_Status *' => 'MPI_Fint *',
 	   'MPI_Info *' => 'MPI_Fint *',
