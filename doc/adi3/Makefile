@@ -16,7 +16,7 @@ paper.dvi: paper.tex
 
 adi3man.ps: adi3man.tex adi3.c adi3.h 
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
-	-rm adi3man/*.tex
+	-rm -f adi3man/*.tex
 	(cd adi3man ; \
 	doctext -latex -nolocation -quotefmt ../adi3.c ;\
 	doctext -latex -nolocation -quotefmt ../adi3.h ;)
