@@ -25,4 +25,5 @@
 #define NMPI_Comm_remote_group PMPI_Comm_remote_group
 #define NMPI_Group_compare PMPI_Group_compare
 #define NMPI_Group_free PMPI_Group_free
+#define NMPI_Comm_split PMPI_Comm_split
 #endif /* MPICH_NMPI_H_INCLUDED */
