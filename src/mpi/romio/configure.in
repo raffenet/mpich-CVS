@@ -734,7 +734,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
 		AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 1)
 		AC_MSG_RESULT([yes]),
 		AC_DEFINE(ROMIO_HAVE_STATFS_F_FSTYPENAME, 0);
-		AC_MSG_RESULT([no])
+		AC_MSG_RESULT([no]) )
        fi
        longlongsize=${longlongsize:-0}
 # printf doesn't work properly and no integer*8 as far as I can tell
