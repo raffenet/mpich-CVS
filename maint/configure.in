@@ -1,4 +1,5 @@
 # -*- Mode: shell-script; -*-
+AC_PREREQ(2.59)
 AC_INIT
 #
 # Try to find the version
