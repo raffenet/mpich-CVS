@@ -6,6 +6,8 @@
 
 #include "mpiimpl.h"
 
+/* style: allow:fprintf:2 sig:0 */
+
 /*
  * This file contains routines that are used only to perform testing
  * and debugging of the group routines

@@ -48,6 +48,7 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
     static const char FCNAME[] = "MPI_Probe";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
@@ -84,7 +85,8 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Probe(source, tag, comm_ptr, status);
+    mpi_errno = MPID_Probe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
+			   status);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PROBE);
     if (mpi_errno == MPI_SUCCESS)

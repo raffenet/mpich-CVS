@@ -62,6 +62,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
     MPIR_Topology *cart_ptr;
     int i, n, *vals;
     int pos[MAX_CART_DIM];
+    int rank;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_SHIFT);

@@ -15,7 +15,8 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset,
 {
     MPID_Request * rreq;
     
-    rreq = MPIDI_CH3U_Request_FU(source, tag, context);
+    rreq = MPIDI_CH3U_Request_FU(source, tag, 
+				 comm->context_id + context_offset);
     if (rreq != NULL)
     {
 	*status = rreq->status;

@@ -5,6 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* style: allow:fprintf:4 sig:0 */
+
 #include "mpiimpl.h"
 #include "errcodes.h"
 

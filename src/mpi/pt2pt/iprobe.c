@@ -44,11 +44,13 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
+int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, 
+	       MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Iprobe";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
@@ -56,6 +58,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL( flag, "flag", mpi_errno );
             if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
@@ -85,9 +88,10 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
-    mpi_errno = MPID_Iprobe(source, tag, comm_ptr, status);
+    mpi_errno = MPID_Iprobe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
+			    status);
     
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PROBE);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
     if (mpi_errno == MPI_SUCCESS)
     {
 	return MPI_SUCCESS;

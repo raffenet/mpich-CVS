@@ -49,11 +49,12 @@
 	  811,  821,  823,  827,  829,  839,  853,  857,  859,  863, 
 	  877,  881,  883,  887,  907,  911,  919,  929,  937,  941, 
 	  947,  953,  967,  971,  977,  983,  991,  997};
-typedef struct { int val, cnt; } Factor;
-PMPI_LOCAL int factor( int n, Factor *factors, int *ndivisors )
+typedef struct { int val, cnt; } Factors;
+PMPI_LOCAL int factor( int n, Factors *factors, int *ndivisors )
 {
     int n_tmp, n_root;
     int i, nfactors, nall=0;
+    int cnt;
 
     /* Start from an approximate of the square root of n, by first finding
        the power of 2 at least as large as n.  The approximate root is then
@@ -117,6 +118,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     int mpi_errno = MPI_SUCCESS;
     Factors factors[MAX_FACTORS];
     int i, j;
+    int dims_needed, dims_product, nfactors, ndivisors;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_DIMS_CREATE);
@@ -148,7 +150,8 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (dims[i] < 0) {
-		mpi_errno = MPIR_Err_create_code( "**argarrayneg %s %d %d", 
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+						  "**argarrayneg %s %d %d", 
 						  "**argarrayneg", 
 						  "dims", i, dims[i] );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
@@ -168,7 +171,8 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if ( (nnodes / dims_product ) * dims_product != nnodes ) {
-		...
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+						  "**dimspartition", 0 );
 	    }
         }
         MPID_END_ERROR_CHECKS;
