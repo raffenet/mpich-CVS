@@ -20,10 +20,16 @@ int MPIDI_CH3I_Setup_connections()
     int key_max_sz;
     int val_max_sz;
     int i, dlid;
+    int qp_num, dest_qp_num;
+    MPIDI_CH3I_Process_group_t * pg;
+    int pg_rank;
     MPIDI_VC *vc;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SETUP_CONNECTIONS);
+
+    pg_rank = MPIR_Process.comm_world->rank;
+    pg = MPIDI_CH3I_Process.pg;
 
     key_max_sz = PMI_KVS_Get_key_length_max();
     key = MPIU_Malloc(key_max_sz);
@@ -39,14 +45,69 @@ int MPIDI_CH3I_Setup_connections()
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
-    
-    /* create a queue pair connection to each process */
+
+    /* create a queue pair for each process */
     for (i=0; i<MPIDI_CH3I_Process.pg->size; i++)
     {
 	vc = &MPIDI_CH3I_Process.pg->vc_table[i];
 
-	if (vc->ib.pg_rank == MPIR_Process.comm_world->rank)
+	if (vc->ib.pg_rank == pg_rank)
 	    continue;
+
+	/* create the qp */
+	MPIU_DBG_PRINTF(("calling ibu_start_qp\n"));
+	vc->ib.ibu = ibu_start_qp(MPIDI_CH3I_Process.set, &qp_num);
+	if (vc->ib.ibu == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    return mpi_errno;
+	}
+	/* set the user pointer to be a pointer to the VC */
+	ibu_set_user_ptr(vc->ib.ibu, &MPIDI_CH3I_Process.pg->vc_table[i]);
+	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-qp", pg_rank, i);
+	if (mpi_errno < 0 || mpi_errno > key_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
+	    return mpi_errno;
+	}
+	mpi_errno = snprintf(val, val_max_sz, "%d", qp_num);
+	if (mpi_errno < 0 || mpi_errno > val_max_sz)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
+	    return mpi_errno;
+	}
+	/*printf("putting key = %s value = %s\n", key, val);fflush(stdout);*/
+	mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+	    return mpi_errno;
+	}
+	MPIU_DBG_PRINTF(("Published qp_num = %d\n", qp_num));
+    }
+
+    /* commit the qp_num puts and barrier so gets can happen */
+    mpi_errno = PMI_KVS_Commit(pg->kvs_name);
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
+	return mpi_errno;
+    }
+    mpi_errno = PMI_Barrier();
+    if (mpi_errno != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	return mpi_errno;
+    }
+
+    /* complete the queue pairs and post the receives */
+    for (i=0; i<MPIDI_CH3I_Process.pg->size; i++)
+    {
+	vc = &MPIDI_CH3I_Process.pg->vc_table[i];
+
+	if (vc->ib.pg_rank == pg_rank)
+	    continue;
+
 	/* get the destination lid from the pmi database */
 	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-lid", vc->ib.pg_rank);
 	if (mpi_errno < 0 || mpi_errno > key_max_sz)
@@ -66,16 +127,36 @@ int MPIDI_CH3I_Setup_connections()
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
 	    return mpi_errno;
 	}
-	/* connect to the dlid */
-	MPIU_DBG_PRINTF(("calling ibu_create_qp(%d)\n", dlid));
-	vc->ib.ibu = ibu_create_qp(MPIDI_CH3I_Process.set, dlid);
-	if (vc->ib.ibu == NULL)
+
+	/* get the destination qp from the pmi database */
+	mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d:%d-qp", vc->ib.pg_rank, pg_rank);
+	if (mpi_errno < 0 || mpi_errno > key_max_sz)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	    return mpi_errno;
 	}
-	/* set the user pointer to be a pointer to the VC */
-	ibu_set_user_ptr(vc->ib.ibu, &MPIDI_CH3I_Process.pg->vc_table[i]);
+	mpi_errno = PMI_KVS_Get(vc->ib.pg->kvs_name, key, val);
+	if (mpi_errno != 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+	    return mpi_errno;
+	}
+	dest_qp_num = atoi(val);
+	if (dest_qp_num < 0)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	    return mpi_errno;
+	}
+	/* finish the queue pair connection */
+	MPIU_DBG_PRINTF(("calling ibu_finish_qp(%d:%d)\n", dlid, dest_qp_num));
+	/*printf("calling ibu_finish_qp(%d:%d)\n", dlid, dest_qp_num);fflush(stdout);*/
+	mpi_errno = ibu_finish_qp(vc->ib.ibu, dlid, dest_qp_num);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**finish_qp", 0);
+	    return mpi_errno;
+	}
+
 	/* set the state to connected */
 	vc->ib.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 	/* post a read of the first packet */

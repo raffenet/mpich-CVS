@@ -115,7 +115,8 @@ int ibu_destroy_set(ibu_set_t set);
 
 int ibu_set_user_ptr(ibu_t ibu, void *user_ptr);
 
-ibu_t ibu_create_qp(ibu_set_t set, int dlid);
+ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr);
+int ibu_finish_qp(ibu_t ibu, int dest_lid, int dest_qpnum);
 int ibu_post_read(ibu_t ibu, void *buf, int len, int (*read_progress_update)(int, void*));
 int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*read_progress_update)(int, void*));
 int ibu_write(ibu_t ibu, void *buf, int len);

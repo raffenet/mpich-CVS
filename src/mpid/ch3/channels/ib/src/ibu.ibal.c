@@ -92,7 +92,7 @@ typedef struct ibu_state_t
 
     ib_net16_t dlid;
     ib_mr_handle_t mr_handle;
-    uint32_t dest_qp_num;
+    uint32_t qp_num, dest_qp_num;
 
     int closing;
     int pending_operations;
@@ -121,6 +121,7 @@ typedef struct IBU_Global {
     ib_ca_handle_t   hca_handle;
     ib_pd_handle_t   pd_handle;
     ib_net16_t       lid;
+    int              port;
     ibu_state_t *    unex_finished_list;
     int              error;
     char             err_msg[IBU_ERROR_MSG_LENGTH];
@@ -238,105 +239,42 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
     if (qp_state == IB_QPS_INIT)
     {
 	qp_mod.req_state = IB_QPS_INIT;
-	qp_mod.state.init.qkey = qkey;
-	qp_mod.state.init.pkey_index = 0;
-	qp_mod.state.init.primary_port = 1;
-	qp_mod.state.init.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_MW_BIND;
+	qp_mod.state.init.qkey = 0x0;
+	qp_mod.state.init.pkey_index = 0x0;
+	qp_mod.state.init.primary_port = IBU_Process.port;
+	qp_mod.state.init.access_ctrl = IB_AC_LOCAL_WRITE;
     }
     else if (qp_state == IB_QPS_RTR) 
     {
 	qp_mod.req_state = IB_QPS_RTR;
-#if 0
-	qp_mod.state         = IB_QPS_RTR;
-	qp_mod.qp_ous_rd_atom   = 1;
-	qp_mod.path_mtu         = MTU1024;
-	qp_mod.rq_psn           = 0;
-	qp_mod.pkey_ix          = 0;
-	qp_mod.min_rnr_timer    = 0;/*5;*/
-	qp_mod.dest_qp_num = ibu->dest_qp_num;
-	qp_mod.av.sl            = 0;
-	qp_mod.av.grh_flag      = 0;
-	qp_mod.av.static_rate   = 0;
-	qp_mod.av.src_path_bits = 0;
-	qp_mod.av.dlid = ibu->dlid;
-#endif
-	qp_mod.state.rtr.rq_psn = cl_ntoh32(0x01);
+	qp_mod.state.rtr.rq_psn = cl_hton32(0x00000001);
 	qp_mod.state.rtr.dest_qp = ibu->dest_qp_num;
-	qp_mod.state.rtr.primary_av.port_num = 1;
+	qp_mod.state.rtr.resp_res = 1;
+	qp_mod.state.rtr.pkey_index = 0x0;
+	qp_mod.state.rtr.rnr_nak_timeout = 7;
+	qp_mod.state.rtr.pkey_index = 0x0;
+	qp_mod.state.rtr.opts = IB_MOD_QP_PRIMARY_AV;
 	qp_mod.state.rtr.primary_av.sl = 0;
 	qp_mod.state.rtr.primary_av.dlid = ibu->dlid;
-	qp_mod.state.rtr.primary_av.grh_valid = FALSE;
-	/*
-	qp_mod.state.rtr.primary_av.grh.ver_class_flow;
-	qp_mod.state.rtr.primary_av.grh.resv1;
-	qp_mod.state.rtr.primary_av.grh.resv2;
-	qp_mod.state.rtr.primary_av.grh.hop_limit;
-	qp_mod.state.rtr.primary_av.grh.src_gid;
-	qp_mod.state.rtr.primary_av.grh.dest_gid;
-	*/
+	qp_mod.state.rtr.primary_av.grh_valid = 0;
 	qp_mod.state.rtr.primary_av.static_rate = 0;
 	qp_mod.state.rtr.primary_av.path_bits = 0;
 	qp_mod.state.rtr.primary_av.conn.path_mtu = IB_MTU_1024;
 	qp_mod.state.rtr.primary_av.conn.local_ack_timeout = 7;
 	qp_mod.state.rtr.primary_av.conn.seq_err_retry_cnt = 7;
 	qp_mod.state.rtr.primary_av.conn.rnr_retry_cnt = 7;
-	qp_mod.state.rtr.resp_res = 7;
-
-	qp_mod.state.rtr.opts = /*0;*/ /*IB_MOD_QP_PKEY;*/ IB_MOD_QP_PRIMARY_AV;
-/*
-IB_MOD_QP_ALTERNATE_AV
-IB_MOD_QP_PKEY
-IB_MOD_QP_APM_STATE
-IB_MOD_QP_PRIMARY_AV
-IB_MOD_QP_RNR
-IB_MOD_QP_RESP_RES
-IB_MOD_QP_INIT_DEPTH
-IB_MOD_QP_PRIMARY_PORT
-IB_MOD_QP_ACCESS_CTRL
-IB_MOD_QP_QKEY
-IB_MOD_QP_SQ_DEPTH
-IB_MOD_QP_RQ_DEPTH
-*/
-        /*
-	qp_mod.state.rtr.pkey_index = 0;
-	qp_mod.state.rtr.alternate_av;
-	qp_mod.state.rtr.qkey;
-	qp_mod.state.rtr.access_ctrl;
-	qp_mod.state.rtr.sq_depth;
-	qp_mod.state.rtr.rq_depth;
-	*/
-	qp_mod.state.rtr.rnr_nak_timeout = 7;
+	/*qp_mod.state.rtr.primary_av.port_num = IBU_Process.port;*/
     }
     else if (qp_state == IB_QPS_RTS)
     {
-	qp_mod.req_state         = IB_QPS_RTS;
-#if 0
-	qp_mod.sq_psn           = 0;
-	qp_mod.timeout          = 0x20; /*10;*/
-	qp_mod.retry_count      = 1; /*5;*/
-	qp_mod.rnr_retry        = 3; /*1;*/
-	qp_mod.ous_dst_rd_atom  = 1; /*255;*/
-#endif
-	qp_mod.state.rts.sq_psn = 0;
+	qp_mod.req_state = IB_QPS_RTS;
+	qp_mod.state.rts.sq_psn = cl_hton32(0x00000001);
 	qp_mod.state.rts.retry_cnt = 7;
 	qp_mod.state.rts.rnr_retry_cnt = 7;
 	qp_mod.state.rts.rnr_nak_timeout = 7;
-	qp_mod.state.rts.local_ack_timeout = 7; /*0x20;*/
-	qp_mod.state.rts.init_depth = 3;
-
+	qp_mod.state.rts.local_ack_timeout = 0x20;
+	qp_mod.state.rts.init_depth = 7;
 	qp_mod.state.rts.opts = 0;
-	/*
-	qp_mod.state.rts.opts = IB_MOD_QP_RESP_RES;
-	qp_mod.state.rts.resp_res = 1;
-	qp_mod.state.rts.qkey;
-	qp_mod.state.rts.access_ctrl;
-	qp_mod.state.rts.alternate_av;
-	qp_mod.state.rts.sq_depth;
-	qp_mod.state.rts.rq_depth;
-	qp_mod.state.rts.apm_state;
-	qp_mod.state.rts.primary_port;
-	qp_mod.state.rts.pkey_index;
-	*/
     }
     else if (qp_state == IB_QPS_RESET)
     {
@@ -394,7 +332,11 @@ static ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
 	return status;
     }
-    ibu->dest_qp_num = qp_prop.dest_num;
+    MPIU_DBG_PRINTF(("qp: num = %d, dest_num = %d\n",
+		     cl_ntoh32(qp_prop.num),
+		     cl_ntoh32(qp_prop.dest_num)));
+    ibu->qp_num = qp_prop.num;
+
     MPIU_DBG_PRINTF(("exiting createQP\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATEQP);
     return IBU_SUCCESS;
@@ -429,7 +371,7 @@ static void *ib_malloc_register(size_t size)
     }
     mem.vaddr = ptr;
     mem.length = (uint64_t)size;
-    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_MW_BIND;
+    mem.access_ctrl = IB_AC_LOCAL_WRITE | IB_AC_RDMA_WRITE;
     status = ib_reg_mem(IBU_Process.pd_handle, &mem, &s_lkey, &rkey, &s_mr_handle);
     if (status != IBU_SUCCESS)
     {
@@ -459,28 +401,25 @@ static void ib_free_deregister(void *p)
 }
 
 #undef FUNCNAME
-#define FUNCNAME ibu_create_qp
+#define FUNCNAME ibu_start_qp
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-ibu_t ibu_create_qp(ibu_set_t set, int dlid)
+ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 {
     ib_api_status_t status;
     ibu_t p;
-    int i;
-    MPIDI_STATE_DECL(MPID_STATE_IBU_CREATE_QP);
+    MPIDI_STATE_DECL(MPID_STATE_IBU_START_QP);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_QP);
-
-    MPIU_DBG_PRINTF(("entering ibu_create_qp\n"));
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_START_QP);
     p = (ibu_t)MPIU_Malloc(sizeof(ibu_state_t));
     if (p == NULL)
     {
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_START_QP);
 	return NULL;
     }
 
+    memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    p->dlid = dlid;
     /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
     p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
     p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
@@ -493,37 +432,55 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: createQP failed, error %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_START_QP);
 	return NULL;
     }
+    *qp_num_ptr = p->qp_num;
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_START_QP);
+    return p;
+}
 
+#undef FUNCNAME
+#define FUNCNAME ibu_finish_qp
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
+{
+    int mpi_errno;
+    ib_api_status_t status;
+    int i;
+    MPIDI_STATE_DECL(MPID_STATE_IBU_FINISH_QP);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINISH_QP);
+
+    MPIU_DBG_PRINTF(("entering ibu_create_qp\n"));
+
+    p->dest_qp_num = dest_qp_num;
+    p->dlid = dest_lid;
     /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(INIT)"));*/
     status = modifyQP(p, IB_QPS_INIT);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(INIT) failed, error %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-	return NULL;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
     }
     /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(RTR)"));*/
     status = modifyQP(p, IB_QPS_RTR);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(RTR) failed, error %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-	return NULL;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
     }
-
-    /* The Mellanox code adds a barrier here so that both sides are in the RTR state before moving to RTS */
-    /*sleep(1);*/
 
     /*MPIDI_DBG_PRINTF((60, FCNAME, "modifyQP(RTS)"));*/
     status = modifyQP(p, IB_QPS_RTS);
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: modifyQP(RTS) failed, error %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-	return NULL;
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+	return -1;
     }
 
     /* pre post some receives on each connection */
@@ -537,8 +494,8 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     p->nAvailRemote--; /* remove one from nAvailRemote so a ack packet can always get through */
 
     MPIU_DBG_PRINTF(("exiting ibu_create_qp\n"));    
-    MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
-    return p;
+    MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
+    return MPI_SUCCESS;
 }
 
 #ifndef min
@@ -562,7 +519,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 
-    MPIU_DBG_PRINTF(("entering ibui_post_receive_unacked\n"));
+    /*MPIU_DBG_PRINTF(("entering ibui_post_receive_unacked\n"));*/
     mem_ptr = ibuBlockAlloc(ibu->allocator);
     if (mem_ptr == NULL)
     {
@@ -594,8 +551,8 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     data.length = IBU_PACKET_SIZE;
     data.lkey = ibu->lkey;
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_recv"));
-
+    /*MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_recv"));*/
+    MPIU_DBG_PRINTF(("."));
     status = ib_post_recv(ibu->qp_handle, &work_req, NULL);
     if (status != IB_SUCCESS)
     {
@@ -605,7 +562,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 	return status;
     }
 
-    MPIU_DBG_PRINTF(("exiting ibui_post_receive_unacked\n"));
+    /*MPIU_DBG_PRINTF(("exiting ibui_post_receive_unacked\n"));*/
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
     return IBU_SUCCESS;
 }
@@ -627,7 +584,7 @@ static int ibui_post_receive(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
 
-    MPIU_DBG_PRINTF(("entering ibui_post_receive\n"));
+    /*MPIU_DBG_PRINTF(("entering ibui_post_receive\n"));*/
     mem_ptr = ibuBlockAlloc(ibu->allocator);
     if (mem_ptr == NULL)
     {
@@ -659,7 +616,8 @@ static int ibui_post_receive(ibu_t ibu)
     data.length = IBU_PACKET_SIZE;
     data.lkey = ibu->lkey;
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_recv"));
+    /*MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_recv"));*/
+    MPIU_DBG_PRINTF(("*"));
 
     status = ib_post_recv(ibu->qp_handle, &work_req, NULL);
     if (status != IB_SUCCESS)
@@ -674,7 +632,7 @@ static int ibui_post_receive(ibu_t ibu)
 	ibui_post_ack_write(ibu);
     }
 
-    MPIU_DBG_PRINTF(("exiting ibui_post_receive\n"));
+    /*MPIU_DBG_PRINTF(("exiting ibui_post_receive\n"));*/
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
     return IBU_SUCCESS;
 }
@@ -694,7 +652,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
 
-    MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));
+    /*MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));*/
     work_req.p_next = NULL;
     work_req.wr_type = WR_SEND;
     work_req.send_opt = IB_SEND_OPT_IMMEDIATE | IB_SEND_OPT_SIGNALED;
@@ -717,7 +675,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     id_ptr->mem = (void*)-1;
 #endif
     
-    MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(%d byte ack)", ibu->nUnacked));
+    MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send(ack = %d)", ibu->nUnacked));
     status = ib_post_send(ibu->qp_handle, &work_req, NULL);
     if (status != IB_SUCCESS)
     {
@@ -728,7 +686,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     }
     ibu->nUnacked = 0;
 
-    MPIU_DBG_PRINTF(("exiting ibui_post_ack_write\n"));
+    /*MPIU_DBG_PRINTF(("exiting ibui_post_ack_write\n"));*/
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
     return IBU_SUCCESS;
 }
@@ -968,12 +926,13 @@ static int ibui_get_first_active_ca()
     status = ib_get_ca_guids( IBU_Process.al_handle, NULL, &guid_count );
     if(status != IB_INSUFFICIENT_MEMORY)
     {
-	printf( "[%d] ib_get_ca_guids failed [%s]\n", __LINE__, ib_get_err_str(status));
-	return status;
+	MPIU_Internal_error_printf( "[%d] ib_get_ca_guids failed [%s]\n", __LINE__, ib_get_err_str(status));
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**get_guids", 0);
+	return mpi_errno;
     }
-    
-    printf("Total number of CA's = %d\n", (uint32_t)guid_count);
-	
+
+    /*printf("Total number of CA's = %d\n", (uint32_t)guid_count);fflush(stdout);*/
+
     if(guid_count == 0) 
     {
 	MPIU_Internal_error_printf("no channel adapters available.\n");
@@ -1005,7 +964,7 @@ static int ibui_get_first_active_ca()
 	    continue;
 	}		
 
-	printf( "GUID = %"PRIx64"\n", p_ca_guid_array[i]);
+	/*printf( "GUID = %"PRIx64"\n", p_ca_guid_array[i]);fflush(stdout);*/
 
 	/* Query the CA */
 	bsize = 0;
@@ -1046,16 +1005,36 @@ static int ibui_get_first_active_ca()
 	    if( p_port_attr->link_state == IB_LINK_ACTIVE )
 	    {
 		/* yes, is there a port_guid or lid we should attach to? */
+		/*
 		printf("port %d active with lid %d\n", 
 		       p_port_attr->port_num,
 		       cl_ntoh16(p_port_attr->lid));
 		fflush(stdout);
+		*/
+		/* get a protection domain handle */
+		status = ib_alloc_pd(hca_handle, IB_PDT_NORMAL,
+				     NULL, &IBU_Process.pd_handle);
+		if (status != IB_SUCCESS)
+		{
+		    MPIU_Internal_error_printf("get_first_ca: ib_alloc_pd failed, status %s\n", ib_get_err_str(status));
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pd_alloc", "**pd_alloc %s", ib_get_err_str(status));
+		    return mpi_errno;
+		}
+		IBU_Process.port = p_port_attr->port_num;
+		IBU_Process.lid = p_port_attr->lid;
+		MPIU_DBG_PRINTF(("port = %d, lid = %d, mtu = %d, max_cqes = %d, maxmsg = %d, link = %s\n",
+		     p_port_attr->port_num,
+		     cl_ntoh16(p_port_attr->lid),
+		     p_port_attr->mtu,
+		     p_ca_attr->max_cqes,
+		     p_port_attr->max_msg_size,
+		     ib_get_port_state_str(p_port_attr->link_state)));
+		IBU_Process.hca_handle = hca_handle;
 		/*
 		p_root->p_ca_attr = p_ca_attr;
 		p_root->p_port_attr = p_port_attr;
 		*/
 		cl_free( p_ca_attr );
-		IBU_Process.hca_handle = hca_handle;
 		return MPI_SUCCESS;
 	    }
 	}
@@ -1089,7 +1068,7 @@ int ibu_init()
 
     /* Initialize globals */
 
-    /* get a handle to the host channel adapter */
+    /* get a handle to the infiniband access layer */
     status = ib_open_al(&IBU_Process.al_handle);
     if (status != IB_SUCCESS)
     {
@@ -1105,50 +1084,11 @@ int ibu_init()
     status = ibui_get_first_active_ca();
     if (status != MPI_SUCCESS)
     {
-	return IBU_FAIL;
-    }
-
-    /* get a protection domain handle */
-    status = ib_alloc_pd(IBU_Process.hca_handle, IB_PDT_NORMAL, NULL, &IBU_Process.pd_handle);
-    if (status != IB_SUCCESS)
-    {
-	MPIU_Internal_error_printf("ibu_init: ib_alloc_pd failed, status %s\n", ib_get_err_str(status));
+	MPIU_Internal_error_printf("ibu_init: get_first_active_ca failed.\n");
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
 
-    /* get the lid */
-    ca_size = 0;
-    status = ib_query_ca(IBU_Process.hca_handle, NULL, &ca_size);
-    if (status != IB_SUCCESS && status != IB_INSUFFICIENT_MEMORY)
-    {
-	MPIU_Internal_error_printf("ibu_init: ib_query_ca failed, status %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
-    }
-    ca_attr_ptr = MPIU_Malloc(ca_size);
-    status = ib_query_ca(IBU_Process.hca_handle, ca_attr_ptr, &ca_size);
-    if (status != IB_SUCCESS)
-    {
-	MPIU_Internal_error_printf("ibu_init: ib_query_ca failed, status %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
-    }
-    IBU_Process.lid = ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->lid;
-    MPIU_DBG_PRINTF(("port = %d, lid = %d, mtu = %d, max_cqes = %d, maxmsg = %d, link = %s\n",
-		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->port_num,
-		     cl_ntoh16(((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->lid),
-		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->mtu,
-		     ((ib_ca_attr_t*)ca_attr_ptr)->max_cqes,
-		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->max_msg_size,
-		     ib_get_port_state_str(((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->link_state)));
-    status = ib_close_ca(IBU_Process.hca_handle, NULL);
-    if (status != IB_SUCCESS)
-    {
-	MPIU_Internal_error_printf("ibu_init: ib_close_ca failed, status %s\n", ib_get_err_str(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
-    }
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
 #ifndef HAVE_32BIT_POINTERS
@@ -1172,15 +1112,16 @@ int ibu_finalize()
 #ifdef HAVE_32BIT_POINTERS
     ibuBlockAllocFinalize(&g_workAllocator);
 #endif
+    ib_close_ca(IBU_Process.hca_handle, NULL);
     ib_close_al(IBU_Process.al_handle);
     MPIU_DBG_PRINTF(("exiting ibu_finalize\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
 }
 
-void FooBar(ib_async_event_rec_t* p_event_rec)
+void FooBar(void *p)
 {
-    printf("FooBar is a naughty boy.\n");fflush(stdout);
+    MPIU_Internal_error_printf("FooBar should never be called.\n");
 }
 
 #undef FUNCNAME
@@ -1206,6 +1147,7 @@ int ibu_create_set(ibu_set_t *set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
     }
+    /*
     status = ib_rearm_cq(*set, TRUE);
     if (status != IB_SUCCESS)
     {
@@ -1213,6 +1155,7 @@ int ibu_create_set(ibu_set_t *set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return IBU_FAIL;
     }
+    */
 
     MPIU_DBG_PRINTF(("exiting ibu_create_set\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
@@ -1485,8 +1428,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	p_complete = NULL;
 	completion_data.p_next = NULL;
 	p_in = &completion_data;
-#if 0
-	status = ib_rearm_cq(set, TRUE);
+
+	/*
+	status = ib_rearm_cq(set, FALSE);
 	if (status != IB_SUCCESS)
 	{
 	    MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
@@ -1494,7 +1438,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
-#endif
+	*/
+
 	status = ib_poll_cq(set, &p_in, &p_complete); 
 	if (status == IB_NOT_FOUND && p_complete == NULL)
 	{
@@ -1519,24 +1464,18 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
+	/*
 	if (completion_data.status != IB_SUCCESS)
 	{
-	    MPIU_Internal_error_printf("%s: error: status = %s != IB_SUCCESS\n", 
+	    MPIU_Internal_error_printf("%s: completion status = %s != IB_SUCCESS\n", 
 		FCNAME, ib_get_err_str(completion_data.status));
 	    MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
+	*/
 
 	/*printf("ib_poll_cq returned %d\n", completion_data.wc_type);fflush(stdout);*/
-	status = ib_rearm_cq(set, TRUE);
-	if (status != IB_SUCCESS)
-	{
-	    MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
-	    MPIU_DBG_PRINTFX(("exiting ibu_wait -2\n"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
-	    return IBU_FAIL;
-	}
 
 #ifdef HAVE_32BIT_POINTERS
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.wr_id)->data.ptr);
@@ -1551,6 +1490,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	switch (completion_data.wc_type)
 	{
 	case IB_WC_SEND:
+	    if (completion_data.status != IB_SUCCESS)
+	    {
+		MPIU_Internal_error_printf("%s: send completion status = %s != IB_SUCCESS\n", 
+					   FCNAME, ib_get_err_str(completion_data.status));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		return IBU_FAIL;
+	    }
 	    if (mem_ptr == (void*)-1)
 	    {
 		/* flow control ack completed, no user data so break out here */
@@ -1590,6 +1537,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    return IBU_SUCCESS;
 	    break;
 	case IB_WC_RECV:
+	    if (completion_data.status != IB_SUCCESS)
+	    {
+		MPIU_Internal_error_printf("%s: recv completion status = %s != IB_SUCCESS\n", 
+					   FCNAME, ib_get_err_str(completion_data.status));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		return IBU_FAIL;
+	    }
 	    if (completion_data.recv.conn.recv_opt & IB_RECV_OPT_IMMEDIATE)
 	    {
 		ibu->nAvailRemote += completion_data.recv.conn.immediate_data;
@@ -1716,6 +1671,14 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    break;
 	default:
+	    if (completion_data.status != IB_SUCCESS)
+	    {
+		MPIU_Internal_error_printf("%s: unknown completion status = %s != IB_SUCCESS\n", 
+					   FCNAME, ib_get_err_str(completion_data.status));
+		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
+		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+		return IBU_FAIL;
+	    }
 	    MPIU_Internal_error_printf("%s: unknown ib wc_type: %s\n", FCNAME, op2str(completion_data.wc_type));
 	    break;
 	}

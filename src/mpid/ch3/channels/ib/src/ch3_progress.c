@@ -301,12 +301,10 @@ static inline void handle_written(MPIDI_VC * vc)
     {
 	MPID_Request * req = vc->ib.send_active;
 
-	/*
 	if (req->ib.iov_offset >= req->ch3.iov_count)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "iov_offset(%d) >= iov_count(%d)", req->ib.iov_offset, req->ch3.iov_count));
 	}
-	*/
 	assert(req->ib.iov_offset < req->ch3.iov_count);
 	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling ibu_post_writev"));*/
 	nb = ibu_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset);
