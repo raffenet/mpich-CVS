@@ -55,40 +55,53 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INFO_GET_VALUELEN);
 
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_GET_VALUELEN);
+    
+    /* Validate parameters, especially handles needing to be converted */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_INFO(info, mpi_errno);
+            if (mpi_errno) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    /* Convert MPI object handles to object pointers */
     MPID_Info_get_ptr( info, info_ptr );
+    
+    /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    int keylen;
 
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-
-	    /* Check input arguments */
-	    if (!key) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
-						  "**infokeynull", 0 );
-	    }
-	    else if ((keylen = (int)strlen(key)) > MPI_MAX_INFO_KEY) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
-						  "**infokeylong", 0 );
-	    } else if (keylen == 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_KEY,
-						  "**infokeyempty", 0 );
-	    }
             /* Validate info_ptr */
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
+	    
+	    /* Check key */
+	    MPIU_ERR_CHKANDJUMP((!key), mpi_errno, MPI_ERR_INFO_KEY, "**infokeynull");
+	    keylen = (int)strlen(key);
+	    MPIU_ERR_CHKANDJUMP((keylen > MPI_MAX_INFO_KEY), mpi_errno, MPI_ERR_INFO_KEY, "**infokeylong");
+	    MPIU_ERR_CHKANDJUMP((keylen == 0), mpi_errno, MPI_ERR_INFO_KEY, "**infokeyempty");
+
+	    MPIR_ERRTEST_ARGNULL(valuelen, "valuelen", mpi_errno);
+            MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     curr_ptr = info_ptr->next;
     *flag = 0;
 
@@ -100,19 +113,24 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
 	}
 	curr_ptr = curr_ptr->next;
     }
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_VALUELEN);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+    
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-            FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_info_get_valuelen", "**mpi_info_get_valuelen %I %s %p %p", 
-	    info, key, valuelen, flag);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_VALUELEN);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_info_get_valuelen",
+	    "**mpi_info_get_valuelen %I %s %p %p", info, key, valuelen, flag);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -80,7 +80,7 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
 	    for (i = 0; i < count; i++)
 	    {
-		MPIR_ERRTEST_INFO(array_of_info[i], mpi_errno);
+		MPIR_ERRTEST_INFO_OR_NULL(array_of_info[i], mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }

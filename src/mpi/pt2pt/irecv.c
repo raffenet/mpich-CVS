@@ -95,10 +95,6 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
-	    if (request != NULL)
-	    {
-		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
-	    }
 	    if (mpi_errno) goto fn_fail;
 
 	    /* Validate datatype handle */

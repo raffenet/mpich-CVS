@@ -70,7 +70,7 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-	    MPIR_ERRTEST_INFO(info, mpi_errno);
+	    MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

@@ -75,7 +75,7 @@ int MPI_Open_port(MPI_Info info, char *port_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    /* Note that a NULL info is allowed */
-	    MPIR_ERRTEST_INFO(info, mpi_errno);
+	    MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

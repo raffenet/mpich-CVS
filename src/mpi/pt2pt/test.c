@@ -71,7 +71,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 	    MPIR_ERRTEST_ARGNULL(request, "request", mpi_errno);
 	    if (mpi_errno) goto fn_fail;
 	    
-	    MPIR_ERRTEST_REQUEST(*request, mpi_errno);
+	    MPIR_ERRTEST_REQUEST_OR_NULL(*request, mpi_errno);
 	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;

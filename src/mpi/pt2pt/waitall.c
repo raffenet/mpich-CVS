@@ -94,27 +94,18 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    if (count != 0) 
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+	    /* NOTE: MPI_STATUSES_IGNORE != NULL */
+	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+	    for (i = 0; i < count; i++)
 	    {
-		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", 
-				     mpi_errno);
-		/* NOTE: MPI_STATUSES_IGNORE != NULL */
-		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses",
-				     mpi_errno);
-		if (array_of_requests != NULL && count > 0)
-		{
-		    for (i = 0; i < count; i++)
-		    {
-			MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
-		    }
-		}
+		MPIR_ERRTEST_REQUEST_OR_NULL(array_of_requests[i], mpi_errno);
 	    }
-            if (mpi_errno != MPI_SUCCESS)
-	    {
-		/* --BEGIN ERROR HANDLING -- */
-		goto fn_fail;
-		/* --END ERROR HANDLING -- */
-	    }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }

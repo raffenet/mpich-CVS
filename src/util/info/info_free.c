@@ -49,14 +49,31 @@ int MPI_Info_free( MPI_Info *info )
     MPID_Info *info_ptr=0;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INFO_FREE);
 
+    MPIR_ERRTEST_INITIALIZED_ORDIE();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_FREE);
-    /* Get handles to MPI objects. */
-    MPID_Info_get_ptr( *info, info_ptr );
+    
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_INFO(*info, mpi_errno);
+            if (mpi_errno) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Info_get_ptr( *info, info_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate info_ptr */
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
@@ -66,20 +83,27 @@ int MPI_Info_free( MPI_Info *info )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     MPIU_Info_free( info_ptr );
     *info = MPI_INFO_NULL;
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_FREE);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_info_free", "**mpi_info_free %p", info);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_FREE);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_info_free",
+	    "**mpi_info_free %p", info);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
