@@ -50,6 +50,10 @@ MPI_Start(request, error)
   numbers of parameters can be passed in registers, but the intel boxes will
   just end up pushing the parameters on the stack anyway...
 
+- there is an optimization here that allows registered memory to be maintained
+  as registered in the persistent case.  to do this we will need to let the
+  method know that we do/do not want the memory unregistered.
+
 - need to store request type in request structure so that MPI_Start() can do
   the right thing (tm).
 

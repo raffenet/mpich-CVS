@@ -30,6 +30,453 @@
     serializes the put, and the target creates the corresponding recv after
     processing the put CAR?
 
+  - much of the checking of parameters can be performed on the origin, as 
+    we have all the window displacement information locally
+
   - a series of RMA operations could be described as a chain of operation
     CARs where each operation has a data CARs hung off of it
+
+  - we would like to be able to submit a batch of CARs to a single destination.
+
+  - rma operations will be handled differently by the different methods, as
+    some of them can handle these directly.  however, almost none of them will
+    have native support for accumulate operations -- so do these need to go
+    up to the CA?
+
+
+Isend/Irecv scenerio
+
+- generates a send CAR on the sending side and a receive CAR on the receiving
+  CAR
+
+  send CAR - segment, counter, envelope
+  recv CAR - segment, counter, envelope
+
+- CA_enqueue(vc, send_car)
+
+  - add send_car to the end of send queue associated with the VC
+
+  - if queue was empty (before the add) then start processing the new CAR
+
+- CA_enqueue(vc, recv_car)
+
+  - add recv_car to the end of recv queue associated with the VC
+
+  - ...
+
+  "if we buffer, you suffer!" --rob
+
+- if a receive request is posted after the matching message is in the process
+  of being received into a temporary buffer, we would like the message
+  reception to be paused, the already buffered data to be copied into the user
+  buffer, and the remainder of the receive to be deposited directly into the
+  user buffer
+
+
+Persistent requests
+
+- We need to allow the method the opportunity to register memory reused in a
+  persistant sent.  We suggest accomplishing this by calling CA_register_mem()
+  during the MPI_<op>_init() and CA_unregister_mem() during the
+  MPI_Request_free().
+
+  CA_register_mem(method, buffer, count, datatype, &reg_mem_data_p)
+  CA_unregister_mem(method, buffer, count, datatype, reg_mem_data_p)
+
+  A reg_mem_data_p (void *) is returned from CA_register_mem() which points at
+  method specific data.  This reg_mem_data_p should be attached to each
+  "registered" send/recv CAR.
+
+- For persistent receives with "any source", we will call register memory for
+  each method.
+
+Structures
+
+- there will be a separate structure of some sort for each VC.  there will be a
+  mapping function that allows one to map comm/rank to a VC.
+
+- for each VC there is a posted receive queue and posted send queue
+
+- there is also a global "unexpected receive" queue in which incoming sends
+  which do not match are placed.
+
+- there is also a wildcard queue, possibly one per method.  we will devise some
+  mechanism for avoiding locking this queue each time we receive an incoming
+  send.  some alternatives are: one wc queue per method, an is-empty flag for
+  the wildcard queue (which must be capable of being atomically read or written
+  without a lock).
+
+- a receive call from above matches the unexpected queue and then inserts
+  itself into the wildcard of vc-specific queue
+
+- an incoming message from a remote system matches the wildcard queue or the
+  vc-specific receive queue.  to maintain MPI ordering semantics, we must keep
+  a counter.  this counter's value is stored in each CAR.  it is incremented
+  only on enqueue into the wildcard queue (new value used by wildcard CAR), and
+  ties go to the wildcard receive.  
+
+- we will have to handle rollover in some reasonable way...how do we want to do
+  that? i propose some very high overhead mad search through things in order
+  to teach these evil wildcard users a lesson!
+
+end result: we have rewarded the case where receives are posted first with only
+per-vc locks.  in the case of wildcard receives we have a counter increment and
+a second queue to check.  in the case of unmatched incoming messages we have a
+single queue which might be a source of some contention.
+
+this is a more memory-intensive approach than the original prototype, but it
+should allow for higher performance and parallelism across VCs that share a
+common method at least in the well-behaved case of pre-posted, known-source
+receives (which is the approach we should reward :)).
+
+we decided to use a single unexpected queue since having multiple unexpected
+queues requires timestamp to order the messages.  the timestamp counter is a
+point of global contention, just like the global unexpect queue.
+
+interface:
+
+- enqueue(queue, car)
+
+- dequeue(queue, car)
+
+- findorallocate(vc?, envelope, &car)
+  - used to match a posted receive to an incoming message
+    - check for unexpeced incoming message
+      - if match, return match to that message
+      - otherwise post receive in the vc queue (if not wildcard) or
+        in the wildcard queue (for the wildcard case)
+  - also used to match an incoming message to a posted receive
+    - check for matches in wildcard queue and vc queue (need to lock both
+      queues if wildcard queue is non-empty)
+      - if both, use counter to arbitrate which to match, match
+      - if neither, allocate spot in unexpected incoming message
+
+  - could split this into incomingfoa and expectingfoa?  something like that.
+
+- we maybe want to use requests for matching envelopes, and separate from this
+  the CARs for describing the pieces that make up the payloads
+
+- maybe special CARs that are the envelopes to match?  does that make any sense
+  in the gather case?  this makes a certain amount of sense in that we want to
+  be queueing things as units, with the envelope info and payload separate.
+
+  this gets ugly when the dependency information is added :)
+
+
+mpi_send(tag, context, dest, buf, ...)
+{
+  calls mpid_send()
+  {
+	allocates a counter
+	allocates a car (c), fills in envelope, payload, pointer to counter
+        set counter to 1
+
+	bump refcount on the communicator
+	
+        get the vc from the comm/rank
+
+        get the right queue (q) from the vc
+
+        enqueue(q, c) <- brian and i think this might be register_op()?
+	{
+		we want this to MAYBE start doing work if the queue was empty
+		this calls a method-specific call function
+	}		
+	
+	...we need to make progress and/or wait on completion...
+
+	testing for completion isn't necessarily the same operation as making 
+	progress happen
+
+        in the adi3 we have testflags and waitflags at the moment which do both
+        of these
+
+        do we want to kick all the pipes or just this particular pipe (vc) in
+        this case?  or just the pipes for our method?  dunno.
+
+	our ability to efficiently kick all the "active" pipes will depend on
+	how easily we can get the status of the various methods from this
+	level.
+
+	when the method completes the car, it decrements the counter?  or is
+	that a CA thing?  either way the car is dequeued too.  we think this is
+	a method thing?  finally if the refcount on the car is 0, it is freed,
+	otherwise it sits around until the guys dependent on it are done???  we
+	think that the car can maybe go away.  but we'll wait on this issue
+	until we get to the collective case.
+
+	we may or may not even need a refcount in the car...dunno yet
+
+	we think that the car maybe needs a pointer to the queue that it is in
+	so that we can know most easily where to dequeue from?
+
+        we decided to do this as:
+	   while (counter > 0) kick_all_pipes();
+
+	then we decrement the refcount on the communicator.
+
+	done.
+  }
+}
+       
+
+
+----------
+
+Rusty was right!
+
+MPID_Send()
+{
+    int counter = 1;
+    /* error checking */
+    vc = get_vc(comm, dest);
+    vc->alloc_car(&car, SEND_CAR);
+    /* construct send car */
+    car->type = SEND;
+    car->context = context;
+    car->rank = dest;
+    car->tag = tag;
+    car->buf = buf;
+    car->count = count;
+    car->datatype = datatype;
+    car->first = first;
+    car->last = last;
+    car->pcount = &counter;
+    vc->advance_state(car, GO_FORWARD_AND_BE_HAPPY)
+
+    while(counter > 0)
+    {
+	make_progress();
+    }
+}
+
+
+/*** NOT DONE YET ***/
+MPID_Recv()
+{
+    int counter = 1;
+
+    /* error checking */
+    if (any source recv)
+    {
+        alloc(&recv_any_p);
+        lock(recv_any_p->mutex);
+
+        found = false;
+    	for(method = 0; !found && method < NUM_METHODS; method++)
+    	{
+    	    method_table[method]->recv_find_or_alloc_car(&car[method],
+                context, ANY_SRC, tag, recv_any_p,
+                RECV_ANY_SOURCE_CAR, &found);
+
+            car[method]->pcount = &counter;
+	    car[method]->buf = buf;
+	    car[method]->count = count;
+	    car[method]->datatype = datatype;
+	    car[method]->first = first;
+	    car[method]->last = last;
+            method_table[method]->advance_state(car, <STATE>)
+
+            if (found == true)
+            {
+                method_table[method]->set_segment(car[method],
+                    buf, count, datatype, first, last);
+
+	      	for(method2 = 0; method2 < method; method2++)
+                {
+                    method_table[method2]->cancel(car[method]);
+                }
+
+            }
+        }
+
+        unlock(recv_any_p->mutex);
+        if (found == true)
+        {
+            free(recv_any_p);
+        }
+    }
+    else
+    {
+        vc = get_vc(comm, src);
+
+        vc->recv_find_or_alloc_car(&car,
+            context, src, tag, NULL, &counter, RECV_CAR,
+            &found);
+
+        if (found)
+        {
+            vc->set_segment(car, buf, count, datatype, first, last);
+        }
+
+    }
+
+    while(counter > 0)
+    {
+	make_progress();
+    }
+}
+
+so we see that this can work, but it's a little ugly.  we think that we might
+eventually want to have a set of functions for creating specific cars for each
+method -- this would be a fast path for the send/recv cases.
+
+---------
+
+collective case:
+
+MPID_Xfer_scatter_init()?
+
+buffer dependencies could be on either side -- we need some sort of mechanism
+for arbitrating which method should allocate buffers, based on which is more
+advantageous.
+
+in the case where the sender supplies the buffer, we are creating a type of
+flow control which allows us to most efficiently use the local buffers.
+
+start is going to put the cars with envelopes into the "active" state?
+something like that...
+
+(see Rob's picture)
+
+buffer management is handled by the method, since each method has its own
+peculiarities with respect to limitations.
+
+we need to keep up with who allocates temporary buffers, and we need to further
+ensure that they are only freed when they are no longer needed by any cars
+(could be more than one)
+
+--------
+
+The xfer request structure will contain both a counter for determining when
+operation have completed as well as tracking data structures for building the
+CARs associated with the xfer block.
+
+MPID_xfer_scatter_init(src, tag, comm, &req)
+{
+    alloc(req); /* allocates a xfer request */
+    req->src = src;
+    req->tag = tag;
+    req->comm = comm;
+    req->car_count = 0;
+    req->recv_vc = get_vc(comm, src);
+    req->recv_car_list = recv_envelope;
+}
+
+MPID_xfer_scatter_recv_op(req, buf, count, dtype, first, last)
+{
+    req->recv_vc->alloc(car);
+    car->type = RECV_DATA | UNPACK;
+    car->segment = segment;
+    list_add(req->recv_car_list, car);    
+}
+
+/*
+ *
+ * the type field has three independent sets of flags:
+ * SEND_DATA - sending
+ * RECV_DATA - receiving
+ *
+ * SUPPLY_PACKED_BUF - the method associated with this CAR will supply a
+ *     buffer for use by both this and some other CAR
+ * PACKED_BUF_DEPENDENCY - this CAR will be supplied a buffer from some other
+ *     CAR (thus it has a buffer dependency)
+ *
+ * PACK - this CAR packs the data from the segment into the packed buffer
+ * UNPACK - this CAR unpacks the data from the pack buffer into the segment
+ *     buffer
+ */
+
+MPID_xfer_scatter_recv_forward_op(req, buf, count, dtype, first, last, dest)
+{
+	this one unpacks
+}
+
+
+MPID_xfer_scatter_mayberecv_forward_op(req, buf, count, dtype, first, last, dest, RECVFLAG)
+{
+    send_vc = get_vc(req->comm, dest);
+    send_vc->alloc(send_car);
+    req->recv_vc->alloc(recv_car);
+
+    buffer_handing = func(...);
+    switch(buffer_handling)
+    {
+      case SENDER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | SUPPLY_PACKED_BUF;
+        send_car->buf_dep = recv_car;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK | PACKED_BUF_DEPENDENCY;
+        recv_car->pack_buf = NULL;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+    
+      case RECEIVER_SUPPLIES_BUF:
+    	send_car->type = SEND_DATA | PACKED_BUF_DEPENDENCY;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK | SUPPLY_PACKED_BUF;
+        recv_car->buf_dep = send_car;
+        recv_car->pack_buf = NULL;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+    
+      case USE_SEGMENT_BUF:
+    	send_car->type = SEND_DATA | PACK;
+	send_car->pack_buf = NULL;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK;
+        recv_car->pack_buf = NULL;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+    
+      case USE_TMP_BUF:
+	/* case where neither method is capable of providing a buffer */
+	alloc(tmp_buf);
+    	send_car->type = SEND_DATA;
+	send_car->pack_buf = tmp_buf;
+    	send_car->pack_size = get_segment_size(buf, count, dtype, first, last);
+
+    	recv_car->type = RECV_DATA | UNPACK;
+        recv_car->pack_buf = tmp_buf;
+    	recv_car->segment = segment(buf, count, dtype, first, last);
+    	recv_car->progress_dep = send_car;
+    }
+    if (req->send_car_list{dest} == NULL)
+        req->send_car_list{dest} = envelope_car{dest};
+    list_add(req->send_car_list{dest}, send_car);
+    list_add(req->recv_car_list, recv_car);    
+}
+
+MPID_xfer_scatter_forward_op(req, size, dest)
+{
+
+    this one doesn't unpack.  david points out that there is no USE_SEGMENT_BUF
+    case here.  that might be worth optimizing out...
+
+}
+
+MPID_xfer_scatter_send_op(req, buf, count, dtype, first, last, dest)
+{
+    send_vc = get_vc(req->comm, dest);
+    send_vc->alloc(car);
+    car->type = SEND_DATA | PACK;
+    car->segment = segment;
+    if (req->send_car_list{dest} == NULL)
+        req->send_car_list{dest} = envelope_car{dest}; /* allocate an envelope
+                                                          and put it at the 
+                                                          head of the 
+                                                          send_car_list for 
+                                                          this destination */
+    list_add(req->send_car_list{dest}, car);
+}
+
+MPID_xfer_scatter_start(req)
+{
+    
+}
 
