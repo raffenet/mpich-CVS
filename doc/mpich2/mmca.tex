@@ -76,7 +76,7 @@ possible ordering, and we will discuss other possibilities in
 Section~\ref{sssec:walkthrough}.
 
 \begin{comment}
-  \emph{include a figure showing the actual code snippets?  definitely.}
+  \emph{include a figure showing the actual code snippets}
 \end{comment}
 
 % posting (async send case)
@@ -85,26 +85,15 @@ Section~\ref{sssec:walkthrough}.
 % - calling of method function to post
 
 An asynchronous send (\mpifunc{MPI_ISEND}) first results in the allocation and
-initialization of a \mpids{MPI_Request} structure (described previously in
+initialization of a \mpids{MPI_Request} object (described previously in
 XXX).  A \emph{completion counter} is included in this structure, and it is
 initialized at this point (to 1).
 %
 
-\begin{comment}
-  \emph{is it a MPI_Request structure or a MPID_Request structure?  are
-  \texttt{MPI_Request}s just references to \texttt{MPID_Request}s?}
-\end{comment}
 
 \begin{comment}
-  \emph{structure vs. object: the standard refers to \mpids{MPI_Request}
-    objects and handles that refer to them.  should we use similar
-    terminology.}
-\end{comment}
-
-\begin{comment}
-  \emph{should we explain why the completion counter is set to a value of 1?}
-  I think that should have been addressed in a previous section, so maybe we
-  should just footnote it.
+  \emph{we should explain why the completion counter is set to a value of 1, or
+    do something to clear this up.}
 \end{comment}
 
 \begin{comment}
@@ -115,20 +104,13 @@ initialized at this point (to 1).
 
 %
 Next the \emph{virtual connection} (VC) is determined from the communicator
-passed into the send call.  Through the VC the appropriate method functions
-for moving data on this VC are found.
+passed into the send call.  A reference to the appropriate method for moving
+data on this VC is found within the VC object.
 
 %
 Finally the method function for posting a send is called, passing it the buffer
-and envelope information supplied to \mpifunc{MPI_SEND}.  A reference to this
-function is found in the VC data structure.
+and envelope information supplied to \mpifunc{MPI_SEND}. 
 
-\begin{comment}
-  \emph{function pointer: didn't we agree that the function pointer table
-  would be in the method object?  If so the above text needs to be fixed so
-  that the VC is use to find the method and the method is used from that point
-  forward.}
-\end{comment}
 
 % posting (async recv, posted before data arrives)
 % - allocation of MPI req
@@ -138,17 +120,14 @@ function is found in the VC data structure.
 % - is there anything really different from above (at this level)?
 
 An asynchronous receive (\mpifunc{MPI_IRECV} is handled in a similar manner.  A
-\mpids{MPI_Request} structure is allocated and the completion counter is
+\mpids{MPI_Request} object is allocated and the completion counter is
 initialized (to 1).
 %
 
-\begin{comment}
-  \emph{buffer?}
-\end{comment}
 
 %
 The appropriate VC is determined by looking at the communicator passed to the
-receive call.  From the VC the appropriate method function for posting a
+receive call.  From the VC object the appropriate method function for posting a
 receive is found and called.
  
 % progress 
@@ -170,34 +149,29 @@ receive is found and called.
     nonblocking operations''...}
 \end{comment}
 
-Progress must be made on posted operations in order for them to complete.
-Progress is simply the act of moving control and data packets (should I use
-this word?) on order to accomplish the desired operation.  The MPI semantics
-allow for progress to only occur when MPI calls are made; however, we might
-want to make progress at other times.  This could be accomplished through the
-use of threads or other system capabilities (see Section XXXX).
+Progress is simply the act of performing a set of operations necessary to
+complete a pending request.  For example, a send request might require data to
+be moved from memory to the network card so that it may be transmitted over the
+network.
+%
+The MPI semantics allow for progress to only occur when MPI calls
+are made; however, we might want to make progress at other times.  This could
+be accomplished through the use of threads or other system capabilities (see
+Section XXXX).
 
 \begin{comment}
-  \emph{control and data packets: I think we should avoid using packet until
-  we start discussion particular method implementations.}
+  it would be great if there were clear definitions of ``requests'' and
+  ``operations'' around somewhere.
 \end{comment}
 
-In our multi-method P2P communication system a \emph{progress engine}
-component is responsible for orchestrating progress on all queued operations.  
-This is necessary in order for the system as a whole to balance service across
-methods.
-
-Method functions are used to make progress on specific requests (operations in
-progress?).  These method functions must utilize \emph{buffer} information
-(user buffer location, datatype, count) in order to determine the appropriate
-data regions to send or receive.
-
-\begin{comment}
-  \emph{I am having difficulty agreeing with the first sentence of the above
-    paragraph.  Progress must be made on outstanding requests (operations) but
-    will the function(s) involved know be informed about specific requests for
-    which progress should be made?}
-\end{comment}
+In our multi-method P2P communication system a \emph{progress engine} component
+is responsible for orchestrating progress on all posted requests.  This is
+necessary in order for the system as a whole to balance service across methods.
+The progress engine invokes a method function, giving the method an opportunity
+to make progress on pending requests (operations in progress?).  This method
+function must utilize \emph{buffer} information (user buffer location,
+datatype, count) provide when the request was posted in order to determine the
+appropriate data regions to send or receive.
 
 Matching of requests occurs within the context of progress as well.  In our
 example scenario, our receive was posted before any data from the sender
@@ -211,11 +185,6 @@ the incoming message must be matched to the envelope from the posted receive.
   any details???)
 \end{comment}
 
-\begin{comment}
-  \emph{we should probably mention message delivery order somewhere.  maybe
-    later?}
-\end{comment}
-
 This matching process might seem trivial, but in fact the MPI semantics for
 wildcard operations and message ordering combined with the possibility of
 multiple methods make matching somewhat complicated.
@@ -224,9 +193,7 @@ component (do you like that name?) for performing request matching for the
 system as a whole (both intra- and inter-method).
 
 \begin{comment}
-  \emph{arbitrator: does it really arbitrate?  It is a cool sounding word, but
-    it seems that ``request matching'' component is more descriptive of what it
-    actually does.}
+  \emph{arbitrator: find something better than matcher that doesn't have the negative conotation of arbitrator.}
 \end{comment}
 
 % completion
@@ -244,7 +211,7 @@ all data has been received into the buffer supplied to \mpifunc{MPI_RECV}.
 %
 At this point the completion counter is decremented, and since it is now zero,
 the request is considered complete.  The P2P communication system, however,
-cannot dallocate the MPI request because this is still in use by the
+cannot deallocate the MPI request because this is still in use by the
 application as a reference to the operation.
 %
 A \mpifunc{MPI_TEST} would indicate that
