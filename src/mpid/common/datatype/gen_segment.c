@@ -299,11 +299,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 
 					DLOOP_Offset *lastp, 
 					int (*contigfn) (DLOOP_Offset *blocks_p,
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 							 DLOOP_Type el_type,
-#else
-							 int el_size,
-#endif
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
@@ -311,11 +307,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							 int count,
 							 int blklen,
 							 DLOOP_Offset stride,
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 							 DLOOP_Type el_type,
-#else
-							 int el_size,
-#endif
 							 DLOOP_Offset rel_off,
 							 void *bufp,
 							 void *v_paramp),
@@ -323,20 +315,14 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							int count,
 							int *blockarray,
 							DLOOP_Offset *offsetarray,
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 							DLOOP_Type el_type,
-#else
-							int el_size,
-#endif
 							DLOOP_Offset rel_off,
 							void *bufp,
 							void *v_paramp),
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 					DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
-#endif
 					void *pieceparams)
 {
-    /* these four variables are the "local values": cur_sp, valid_sp, last, stream_off */
+    /* these four are the "local values": cur_sp, valid_sp, last, stream_off */
     int cur_sp, valid_sp;
     DLOOP_Offset last, stream_off;
 
@@ -389,22 +375,15 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
 	    int piecefn_indicated_exit = -1;
 	    DLOOP_Offset myblocks, local_el_size, stream_el_size;
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 	    DLOOP_Type el_type;
-#endif
 
 	    /* pop immediately on zero count */
 	    if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 
 	    /* size on this system of the int, double, etc. that is the elem. type */
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 	    local_el_size  = cur_elmp->loop_p->el_size;
 	    el_type        = cur_elmp->loop_p->el_type;
-	    stream_el_size = sizefn(el_type);
-#else
-	    local_el_size  = cur_elmp->loop_p->el_size;
-	    stream_el_size = local_el_size;
-#endif
+	    stream_el_size = (sizefn) ? sizefn(el_type) : local_el_size;
 
 	    /* calculate number of elem. types to work on and function to use.
 	     * default is to use the contig piecefn (if there is one).
@@ -474,11 +453,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(myblocks <= cur_elmp->curblock);
 		    piecefn_indicated_exit =
 			contigfn(&myblocks,
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 				 el_type,
-#else
-				 local_el_size,
-#endif
 				 cur_elmp->curoffset, /* relative to segp->ptr */
 				 segp->ptr, /* start of buffer (from segment) */
 				 pieceparams);
@@ -489,11 +464,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 				 cur_elmp->curcount,
 				 cur_elmp->orig_block,
 				 cur_elmp->loop_p->loop_params.v_t.stride,
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 				 el_type,
-#else
-				 local_el_size,
-#endif
 				 cur_elmp->curoffset, /* relative to segp->ptr */
 				 segp->ptr, /* start of buffer (from segment) */
 				 pieceparams);
@@ -507,11 +478,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 				cur_elmp->curcount,
 				cur_elmp->loop_p->loop_params.i_t.blocksize_array,
 				cur_elmp->loop_p->loop_params.i_t.offset_array,
-#ifdef DLOOP_HETEROGENEOUS_SUPPORT
 				el_type,
-#else
-				local_el_size,
-#endif
 				cur_elmp->orig_offset, /* indexfn adds offset value */
 				segp->ptr,
 				pieceparams);
