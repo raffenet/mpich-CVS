@@ -101,6 +101,6 @@ int main(int argc, char* argv[])
 	mp_err_printf("sock_finalize failed, sock error:\n%s\n", get_sock_error_string(result));
     }
     mp_dbg_printf("exiting\n");
-    ExitProcess(0);
+    exit(0);
 }
 
