@@ -27,6 +27,7 @@ void smpd_print_options(void)
     printf(" -console [hostname]\n");
     printf(" -status [hostname]\n");
     printf("unix only options:\n");
+    printf(" -s\n");
     printf(" -smpdfile <filename>\n");
     printf("windows only options:\n");
     printf(" -install or -regserver\n");
@@ -36,10 +37,10 @@ void smpd_print_options(void)
     printf("\n");
     printf(" bracketed items are optional\n");
     printf("\n");
-    printf("Executing smpd will start the smpd in daemon mode for the\n");
+    printf("Executing \"smpd -s\" will start the smpd in daemon mode for the\n");
     printf("current user under unix.\n");
-    printf("Executing smpd will start the smpd in console mode under Windows.\n");
-    printf("The Windows daemon mode is started by installing smpd (smpd -install).\n");
+    printf("Executing smpd will start the smpd in debug mode under Windows.\n");
+    printf("The Windows service mode is started by installing smpd (smpd -install).\n");
     printf("This must be done by a user with administrator privileges and then all\n");
     printf("users can launch processes with mpiexec.\n");
     printf("The equivalent root daemon mode for unix is not yet implemented.\n");
@@ -60,16 +61,24 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 
     smpd_enter_fn("smpd_parse_command_args");
 
-#ifdef HAVE_WINDOWS_H
-    smpd_process.bService = SMPD_TRUE;
-#endif
-
     /* check for help option */
-    if (smpd_get_opt(argcp, argvp, "-help") || smpd_get_opt(argcp, argvp, "-?"))
+    if (
+#ifndef HAVE_WINDOWS_H
+	*argcp < 2 || /* unix: print the options if no arguments are supplied */
+#endif
+	smpd_get_opt(argcp, argvp, "-help") || smpd_get_opt(argcp, argvp, "-?"))
     {
 	smpd_print_options();
 	smpd_exit(0);
     }
+
+    /* check for the service/silent option */
+#ifdef HAVE_WINDOWS_H
+    smpd_process.bService = SMPD_TRUE;
+#else
+    if (smpd_get_opt(argcp, argvp, "-s"))
+	smpd_process.bNoTTY = SMPD_TRUE;
+#endif
 
     /* check for debug option */
     if (smpd_get_opt_int(argcp, argvp, "-d", &dbg_flag))
