@@ -79,7 +79,8 @@ MPI_AINT="int"
 MPI_FINT="int"
 MPI_OFFSET="__int64"
 EXTRA_STATUS_DECL=
-HAVE_ROMIO=1
+#HAVE_ROMIO=#include "mpio.h"
+HAVE_ROMIO=
 
 #
 # Create mpi.h for windows
