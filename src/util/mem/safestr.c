@@ -183,6 +183,48 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 	    }
 	    break;
 
+	    case 'x':
+	    {
+		int val;
+		char tmp[20];
+		char *t = tmp;
+		/* Get the argument, of integer type */
+		val = va_arg( list, int );
+		sprintf( tmp, "%x", val );
+		if (width > 0) {
+		    int tmplen = strlen(tmp);
+		    /* If a width was specified, pad with spaces on the
+		       left (on the right if %-3d given; not implemented yet */
+		    while (size-- > 0 && width-- > tmplen) 
+			*out_str++ = ' ';
+		}
+		while (size-- > 0 && *t) {
+		    *out_str++ = *t++;
+		}
+	    }
+	    break;
+
+	    case 'p':
+	    {
+		int val;
+		char tmp[20];
+		char *t = tmp;
+		/* Get the argument, of integer type */
+		val = va_arg( list, int );
+		sprintf( tmp, "%p", val );
+		if (width > 0) {
+		    int tmplen = strlen(tmp);
+		    /* If a width was specified, pad with spaces on the
+		       left (on the right if %-3d given; not implemented yet */
+		    while (size-- > 0 && width-- > tmplen) 
+			*out_str++ = ' ';
+		}
+		while (size-- > 0 && *t) {
+		    *out_str++ = *t++;
+		}
+	    }
+	    break;
+
 	    case 's':
 	    {
 		char *s_arg;
