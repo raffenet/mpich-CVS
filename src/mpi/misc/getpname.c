@@ -82,8 +82,8 @@ int MPI_Get_processor_name( char *name, int *resultlen)
     {
 	return MPI_SUCCESS;
     }
-    else
-    {
-	return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-    }
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_get_processor_name", "**mpi_get_processor_name %p %p", name, resultlen);
+    return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
 }

@@ -71,7 +71,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 	    /* If comm_ptr is not valid, it will be reset to null */
 
 	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
-		MPID_Errhandler_valid_ptr( errhan_ptr,mpi_errno );
+		MPID_Errhandler_valid_ptr( errhan_ptr, mpi_errno );
 	    }
 	    /* FIXME: Add a check that this is a comm errhandler.
 	       This test should be a macro so that it can be used

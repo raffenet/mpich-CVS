@@ -98,12 +98,16 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( n, &new_group_ptr );
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_group_incl", "**mpi_group_incl %G %d %p %p", group, n, ranks, newgroup);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INCL);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
     new_group_ptr->rank = MPI_UNDEFINED;
-    for (i=0; i<n; i++) {
+    for (i=0; i<n; i++)
+    {
 	new_group_ptr->lrank_to_lpid[i].lrank = i;
 	new_group_ptr->lrank_to_lpid[i].lpid  = 
 	    group_ptr->lrank_to_lpid[ranks[i]].lpid;

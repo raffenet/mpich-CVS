@@ -94,8 +94,10 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
     MPID_Common_thread_lock();
     old_p = &type_ptr->attributes;
     p     = type_ptr->attributes;
-    while (p) {
-	if (p->keyval->handle == keyval_ptr->handle) {
+    while (p)
+    {
+	if (p->keyval->handle == keyval_ptr->handle)
+	{
 	    break;
 	}
 	old_p = &p->next;
@@ -106,18 +108,21 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
        we know whether the delete function has returned with a 0 status
        code */
 
-    if (p) {
+    if (p)
+    {
 	/* Run the delete function, if any, and then free the attribute 
 	   storage */
 	mpi_errno = MPIR_Call_attr_delete( type, p );
 
-	if (!mpi_errno) {
+	if (!mpi_errno)
+	{
 	    int in_use;
 	    /* We found the attribute.  Remove it from the list */
 	    *old_p = p->next;
 	    /* Decrement the use of the keyval */
 	    MPIU_Object_release_ref( p->keyval, &in_use);
-	    if (!in_use) {
+	    if (!in_use)
+	    {
 		MPIU_Handle_obj_free( &MPID_Keyval_mem, p->keyval );
 	    }
 	    MPID_Attr_free(p);
@@ -127,12 +132,14 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
     MPID_Common_thread_unlock( );
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DELETE_ATTR);
     if (mpi_errno)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            "**mpi_type_delete_attr", "**mpi_type_delete_attr %D %d", type, type_keyval);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DELETE_ATTR);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
 
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DELETE_ATTR);
     return MPI_SUCCESS;
 }

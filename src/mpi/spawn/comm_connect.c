@@ -78,7 +78,15 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Comm_connect(port_name, info_ptr, root, comm_ptr, &newcomm_ptr);
+    mpi_errno = MPID_Comm_connect(port_name, info_ptr, root, comm_ptr, &newcomm_ptr);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_comm_connect", "**mpi_comm_connect %s %I %d %C %p",
+	    port_name, info, root, comm, newcomm);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_ACCEPT);
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
     /* *newcomm = MPID_Comm_ptr_to_MPI_Comm(newcomm_ptr); */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);

@@ -76,20 +76,26 @@ int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 #   endif /* HAVE_ERROR_CHECKING */
 
 #ifdef HAVE_NAMEPUB_SERVICE
-    if (!MPIR_Namepub) {
+    if (!MPIR_Namepub)
+    {
 	mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
     }
-    if (!mpi_errno) 
+    if (!mpi_errno)
+    {
 	mpi_errno = MPID_NS_Publish( MPIR_Namepub, info_ptr, 
 				     (const char *)service_name, 
 				     (const char *)port_name );
+    }
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
-
-    if (mpi_errno) {
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_publish_name", "**mpi_publish_name %s %I %s", service_name, info, port_name);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
 
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
     return MPI_SUCCESS;
 #else
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);

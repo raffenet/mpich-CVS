@@ -99,14 +99,15 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     /* FIXME: Is this correct for intercomms? */
     mpi_errno = MPID_Iprobe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
 			    flag, status);
-    
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
+
     if (mpi_errno == MPI_SUCCESS)
     {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_iprobe", "**mpi_iprobe %d %d %C %p %p", source, tag, comm, flag, status);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IPROBE);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -130,7 +130,10 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 #endif    
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  BSEND, &request_ptr );
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_bsend", "**mpi_bsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

@@ -86,7 +86,10 @@ int MPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
     MPIR_Nest_incr();
     mpi_errno = PMPI_Comm_get_errhandler( comm, errhandler );
     MPIR_Nest_decr();
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_errhandler_get", "**mpi_errhandler_get %C %p", comm, errhandler);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_GET);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

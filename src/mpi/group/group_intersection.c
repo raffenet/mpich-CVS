@@ -126,16 +126,21 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
 	
 	mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
 	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno) {
+	if (mpi_errno)
+	{
 	    MPID_Common_thread_unlock();
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_group_intersection", "**mpi_group_intersection %G %G %p", group1, group2, newgroup);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 	/* --END ERROR HANDLING-- */
 	new_group_ptr->rank = MPI_UNDEFINED;
 	k = 0;
-	for (i=0; i<size1; i++) {
-	    if (group_ptr1->lrank_to_lpid[i].flag) {
+	for (i=0; i<size1; i++)
+	{
+	    if (group_ptr1->lrank_to_lpid[i].flag)
+	    {
 		new_group_ptr->lrank_to_lpid[k].lrank = k;
 		new_group_ptr->lrank_to_lpid[k].lpid = 
 		    group_ptr1->lrank_to_lpid[i].lpid;

@@ -73,13 +73,13 @@ int MPI_Add_error_string(int errorcode, char *string)
 
     /* ... body of routine ...  */
     mpi_errno = MPIR_Err_set_msg( errorcode, (const char *)string );
-
-#   ifdef HAVE_ERROR_CHECKING
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_add_error_string", "**mpi_add_error_string %d %s", errorcode, string);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_STRING);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
-#   endif
 
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADD_ERROR_STRING);

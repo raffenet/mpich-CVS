@@ -126,6 +126,8 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
     
     /* ... end of body of routine ... */
     
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_irecv", "**mpi_irecv %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, request);
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -739,8 +739,9 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     }
     else
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_bcast", "**mpi_bcast %p %d %D %d %C", buffer, count, datatype, root, comm);
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     /* ... end of body of routine ... */

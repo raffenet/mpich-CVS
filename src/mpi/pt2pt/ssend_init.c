@@ -131,7 +131,8 @@ int MPI_Ssend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND_INIT);
 	return MPI_SUCCESS;
     }
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_ssend_init", "**mpi_ssend_init %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
     /* ... end of body of routine ... */
     
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND_INIT);

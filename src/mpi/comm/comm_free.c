@@ -118,6 +118,8 @@ int MPI_Comm_free(MPI_Comm *comm)
 	return MPI_SUCCESS;
     }
 
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_free", "**mpi_comm_free %p", comm);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

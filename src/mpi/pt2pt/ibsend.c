@@ -100,15 +100,21 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  IBSEND, &request_ptr );
-    if (!mpi_errno) {
+    if (mpi_errno == MPI_SUCCESS)
+    {
 	/* FIXME.  For now, we'll assume that the all the message has
 	   been copied, so we can return a created request here */
 	/* Create a completed request */
 	request_ptr = MPID_Request_create();
 	/* --BEGIN ERROR HANDLING-- */
-	if (!request_ptr) {
+	if (!request_ptr)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**nomem", "**nomem %s", "MPI_Request");
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_ibsend", "**mpi_ibsend %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
-	    return MPIR_ERR_MEMALLOCFAILED;
+	    return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
 	}
 	/* --END ERROR HANDLING-- */
 	request_ptr->kind                 = MPID_REQUEST_SEND;
@@ -118,8 +124,11 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	request_ptr->comm                 = NULL;
 	*request = request_ptr->handle;
     }
-    else {
+    else
+    {
 	*request = MPI_REQUEST_NULL;
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_ibsend", "**mpi_ibsend %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

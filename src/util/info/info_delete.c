@@ -97,10 +97,13 @@ int MPI_Info_delete( MPI_Info info, char *key )
 	curr_ptr = curr_ptr->next;
     }
 
-    if (!curr_ptr) {
+    if (!curr_ptr)
+    {
 	/* If curr_ptr is not defined, we never found the key */
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_INFO_NOKEY, "**infonokey",
 					  "**infonokey %s", key );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_info_delete", "**mpi_info_delete %I %p", info, key);
 	
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DELETE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

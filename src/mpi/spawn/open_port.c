@@ -84,7 +84,14 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Open_port(info_ptr, port_name);
+    mpi_errno = MPID_Open_port(info_ptr, port_name);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_open_port", "**mpi_open_port %I %s", info, port_name);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
+	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
     return MPI_SUCCESS;

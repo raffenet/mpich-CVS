@@ -62,7 +62,14 @@ int MPI_Close_port(char *port_name)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Close_port(port_name);
+    mpi_errno = MPID_Close_port(port_name);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_close_port", "**mpi_close_port %s", port_name);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
+	return mpi_errno;
+    }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
     return MPI_SUCCESS;

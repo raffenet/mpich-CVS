@@ -82,7 +82,8 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 	mpi_errno = MPID_Type_dup(datatype, newtype);
     }
 
-    if (mpi_errno == MPI_SUCCESS) {
+    if (mpi_errno == MPI_SUCCESS)
+    {
 	MPID_Datatype *new_dtp;
 
 	MPID_Datatype_get_ptr(*newtype, new_dtp);
@@ -101,23 +102,29 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 	   attribute functions.  The actual function is (by default)
 	   MPIR_Attr_dup_list 
 	*/
-	if (MPIR_Process.attr_dup) {
+	if (mpi_errno == MPI_SUCCESS && MPIR_Process.attr_dup)
+	{
 	    new_dtp->attributes = 0;
 	    mpi_errno = MPIR_Process.attr_dup( datatype_ptr->handle, 
 					       datatype_ptr->attributes, 
 					       &new_dtp->attributes );
-	    if (mpi_errno) {
+	    if (mpi_errno)
+	    {
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
 		*newtype = MPI_DATATYPE_NULL;
 		/* FIXME - free new_dtp */
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		
 	    }
 	}
     }
-    else
+
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
+	return MPI_SUCCESS;
     }
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_dup", "**mpi_type_dup %D %p", datatype, newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

@@ -108,7 +108,9 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_o
 	return MPI_SUCCESS;
     }
 
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_spawn_multiple", "**mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p",
+	count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPAWN_MULTIPLE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

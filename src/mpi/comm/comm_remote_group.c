@@ -83,7 +83,10 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
     if (!comm_ptr->remote_group) {
 	n = comm_ptr->remote_size;
 	mpi_errno = MPIR_Group_create( n, &group_ptr );
-	if (mpi_errno) {
+	if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_comm_remote_group", "**mpi_comm_remote_group %C %p", comm, group);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP );
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}

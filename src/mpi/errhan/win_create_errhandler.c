@@ -67,8 +67,11 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MPI_Errhandler *e
 
     /* ... body of routine ...  */
     errhan_ptr = (MPID_Errhandler *)MPIU_Handle_obj_alloc( &MPID_Errhandler_mem );
-    if (!errhan_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+    if (!errhan_ptr)
+    {
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Errhandler" );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_win_create_errhandler", "**mpi_win_create_errhandler %p %p", function, errhandler);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

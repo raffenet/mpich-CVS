@@ -140,8 +140,11 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 	/* Allocate a new group and lrank_to_lpid array */
 	mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
 	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno) {
+	if (mpi_errno)
+	{
 	    MPID_Common_thread_unlock();
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_group_union", "**mpi_group_union %G %G %p", group1, group2, newgroup);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}

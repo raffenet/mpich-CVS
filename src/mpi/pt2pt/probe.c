@@ -95,13 +95,14 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
     mpi_errno = MPID_Probe(source, tag, comm_ptr, MPID_CONTEXT_INTRA_PT2PT, 
 			   status);
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_PROBE);
     if (mpi_errno == MPI_SUCCESS)
     {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_PROBE);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_probe", "**mpi_probe %d %d %C %p", source, tag, comm, status);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_PROBE);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -132,7 +132,8 @@ PMPI_LOCAL int MPIR_Exscan (
     MPID_Datatype_get_extent_macro( datatype, extent );
 
     partial_scan = MPIU_Malloc(count*(MPIR_MAX(true_extent,extent)));
-    if (!partial_scan) {
+    if (!partial_scan)
+    {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
         return mpi_errno;
     }
@@ -385,6 +386,8 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
     }
     else
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_exscan", "**mpi_exscan %p %p %d %D %O %C", sendbuf, recvbuf, count, datatype, op, comm);
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

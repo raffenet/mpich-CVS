@@ -172,7 +172,8 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
     mpi_errno = MPID_Progress_test();
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_testall", "**mpi_testall %d %p %p %p", count, array_of_requests, flag, array_of_statuses);
 	goto fn_exit;
     }
 	    

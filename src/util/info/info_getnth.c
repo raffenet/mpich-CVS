@@ -76,22 +76,27 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
     /* ... body of routine ...  */
     curr_ptr = info_ptr->next;
     nkeys = 0;
-    while (curr_ptr && nkeys != n) {
+    while (curr_ptr && nkeys != n)
+    {
 	curr_ptr = curr_ptr->next;
 	nkeys++;
     }
 
-    if (curr_ptr) {
+    if (curr_ptr)
+    {
 	/* Success */
 	MPIU_Strncpy( key, curr_ptr->key, MPI_MAX_INFO_KEY+1 );
 	/* Eventually, we could remember the location of this key in 
 	   the head using the key/value locations (and a union datatype?) */
     }	
-    else {
+    else
+    {
 	/* n is invalid */
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 					  "**infonkey", "**infonkey %d %d", 
 					  n, nkeys );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_info_get_nthkey", "**mpi_info_get_nthekey %I %d %p", info, n, key);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

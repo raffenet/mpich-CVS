@@ -109,7 +109,9 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
 	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", count * sizeof(MPID_Request*));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_startall", "**mpi_startall %d %p", count, array_of_requests);
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
@@ -148,7 +150,8 @@ int MPI_Startall(int count, MPI_Request array_of_requests[])
     mpi_errno = MPID_Startall(count, request_ptrs);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_startall", "**mpi_startall %d %p", count, array_of_requests);
     }
 
   fn_exit:

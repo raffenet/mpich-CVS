@@ -142,10 +142,14 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	old_p = &p->next;
 	p = p->next;
     }
-    if (!p) {
+    if (!p)
+    {
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	if (!new_p) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	if (!new_p)
+	{
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_type_set_attr", "**mpi_type_set_attr %D %d %p", type, type_keyval, attribute_val);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}

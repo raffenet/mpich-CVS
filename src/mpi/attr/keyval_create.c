@@ -83,7 +83,10 @@ int MPI_Keyval_create(MPI_Copy_function *copy_fn,
     mpi_errno = PMPI_Comm_create_keyval( copy_fn, delete_fn, keyval, 
 					extra_state );
     MPIR_Nest_decr();
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_keyval_create", "**mpi_keyval_create %p %p %p %p", copy_fn, delete_fn, keyval, extra_state);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_CREATE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

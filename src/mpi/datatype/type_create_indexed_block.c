@@ -73,6 +73,10 @@ int MPI_Type_create_indexed_block(int count, int blocklength, int *array_of_disp
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* FIXME UNIMPLEMENTED */
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_create_indexed_block", "**mpi_type_create_indexed_block %d %d %p %D %p",
+	count, blocklength, array_of_displacements, oldtype, newtype);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
     return MPI_SUCCESS;
 }

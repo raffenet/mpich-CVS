@@ -83,7 +83,15 @@ int MPI_Win_wait(MPI_Win win)
 
     mpi_errno = MPID_Win_wait(win_ptr);
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
+	return mpi_errno;
+    }
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_wait", "**mpi_win_wait %W", win);
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_WAIT);
-    return mpi_errno;
+    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }
 

@@ -734,6 +734,9 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
     }
     else
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_allgatherv", "**mpi_allgatherv %p %d %D %p %p %p %D %C",
+	    sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm);
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHERV);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

@@ -145,7 +145,8 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 
     /* Create the topololgy structure */
     cart_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof( MPIR_Topology ) );
-    if (!cart_ptr) {
+    if (!cart_ptr)
+    {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -157,15 +158,16 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     cart_ptr->topo.cart.dims     = (int *)MPIU_Malloc( ndims * sizeof(int) );
     cart_ptr->topo.cart.periodic = (int *)MPIU_Malloc( ndims * sizeof(int) );
     cart_ptr->topo.cart.position = (int *)MPIU_Malloc( ndims * sizeof(int) );
-    if (!cart_ptr->topo.cart.dims || !cart_ptr->topo.cart.periodic ||
-	!cart_ptr->topo.cart.position) {
+    if (!cart_ptr->topo.cart.dims || !cart_ptr->topo.cart.periodic || !cart_ptr->topo.cart.position)
+    {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     rank   = comm_ptr->rank;
     nranks = newsize;
-    for (i=0; i<ndims; i++) {
+    for (i=0; i<ndims; i++)
+    {
 	cart_ptr->topo.cart.dims[i]     = dims[i];
 	cart_ptr->topo.cart.periodic[i] = periods[i];
 	nranks = nranks / dims[i];
@@ -176,6 +178,12 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 
     /* Place this topology onto the communicator */
     mpi_errno = MPIR_Topology_put( newcomm_ptr, cart_ptr );
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		    "**mpi_cart_create", "**mpi_cart_create %C %d %p %p %d %p",
+		    comm_old, ndims, dims, periods, reorder, comm_cart);
+    }
 
     *comm_cart = newcomm_ptr->handle;
     /* ... end of body of routine ... */

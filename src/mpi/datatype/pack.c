@@ -125,7 +125,22 @@ int MPI_Pack(void *inbuf,
     /* TODO: CHECK RETURN VALUES?? */
     /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
     segp = MPID_Segment_alloc();
-    MPID_Segment_init(inbuf, incount, datatype, segp);
+    if (segp == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment");
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_pack", "**mpi_pack %p %d %D %p %d %p %C", inbuf, incount, datatype, outbuf, outcount, position, comm);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
+	return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    }
+    mpi_errno = MPID_Segment_init(inbuf, incount, datatype, segp);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_pack", "**mpi_pack %p %d %D %p %d %p %C", inbuf, incount, datatype, outbuf, outcount, position, comm);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK);
+	return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    }
 
     /* NOTE: the use of buffer values and positions in MPI_Pack and in
      * MPID_Segment_pack are quite different.  See code or docs or something.

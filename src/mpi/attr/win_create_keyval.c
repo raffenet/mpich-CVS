@@ -71,8 +71,11 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_
 
     /* ... body of routine ...  */
     keyval_ptr = (MPID_Keyval *)MPIU_Handle_obj_alloc( &MPID_Keyval_mem );
-    if (!keyval_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+    if (!keyval_ptr)
+    {
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Keyval" );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_win_create_keyval", "**mpi_win_create_keyval %p %p %p %p", win_copy_attr_fn, win_delete_attr_fn, win_keyval, extra_state);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

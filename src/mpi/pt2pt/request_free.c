@@ -148,7 +148,8 @@ int MPI_Request_free(MPI_Request *request)
     
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_request_free", "**mpi_request_free %p", request);
     }
 #ifdef HAVE_ERROR_CHECKING
   fn_exit:

@@ -105,7 +105,10 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
        this must be the local size */
     mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->local_size, 
 				&newcomm_ptr );
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
@@ -121,7 +124,10 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 	mpi_errno = MPIR_Process.attr_dup( comm_ptr->handle, 
 					   comm_ptr->attributes, 
 					   &newcomm_ptr->attributes );
-	if (mpi_errno) {
+	if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
 	    *newcomm = MPI_COMM_NULL;
 	    /* FIXME - free newcomm */

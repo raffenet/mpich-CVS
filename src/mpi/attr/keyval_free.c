@@ -70,7 +70,10 @@ int MPI_Keyval_free(int *keyval)
     MPIR_Nest_incr();
     mpi_errno = PMPI_Comm_free_keyval( keyval );
     MPIR_Nest_decr();
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_keyval_free", "**mpi_keyval_free %p", keyval);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_FREE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

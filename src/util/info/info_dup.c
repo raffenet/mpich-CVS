@@ -87,10 +87,14 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
     *newinfo = curr_new->handle;
 
     curr_old        = info_ptr->next;
-    while (curr_old) {
+    while (curr_old)
+    {
 	curr_new->next = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
-	if (!curr_new->next) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	if (!curr_new->next)
+	{
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Info" );
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_info_dup", "**mpi_info_dup %I %p", info, newinfo);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 	curr_new	 = curr_new->next;

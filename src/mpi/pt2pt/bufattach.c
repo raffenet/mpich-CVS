@@ -91,7 +91,10 @@ int MPI_Buffer_attach(void *buffer, int size)
     /* ... body of routine ...  */
     mpi_errno = MPIR_Bsend_attach( buffer, size );
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_buffer_attach", "**mpi_buffer_attach %p %d", buffer, size);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }	
     /* ... end of body of routine ... */

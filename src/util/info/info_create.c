@@ -64,8 +64,11 @@ int MPI_Info_create( MPI_Info *info )
 
     /* ... body of routine ...  */
     info_ptr = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
-    if (!info_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+    if (!info_ptr)
+    {
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPI_Info" );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_info_create", "**mpi_info_create %p", info);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

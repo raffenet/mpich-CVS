@@ -103,12 +103,22 @@ int MPI_Cancel(MPI_Request *request)
 	case MPID_REQUEST_SEND:
 	{
 	    mpi_errno = MPID_Cancel_send(request_ptr);
+	    if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		    "**mpi_cancel", "**mpi_cancel %p", request);
+	    }
 	    break;
 	}
 
 	case MPID_REQUEST_RECV:
 	{
 	    mpi_errno = MPID_Cancel_recv(request_ptr);
+	    if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		    "**mpi_cancel", "**mpi_cancel %p", request);
+	    }
 	    break;
 	}
 
@@ -117,6 +127,11 @@ int MPI_Cancel(MPI_Request *request)
 	    if (request_ptr->partner_request != NULL)
 	    {
 		mpi_errno = MPID_Cancel_send(request_ptr->partner_request);
+		if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+			"**mpi_cancel", "**mpi_cancel %p", request);
+		}
 	    }
 	    else
 	    {
@@ -132,6 +147,11 @@ int MPI_Cancel(MPI_Request *request)
 	    if (request_ptr->partner_request != NULL)
 	    {
 		mpi_errno = MPID_Cancel_recv(request_ptr->partner_request);
+		if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+			"**mpi_cancel", "**mpi_cancel %p", request);
+		}
 	    }
 	    else
 	    {
@@ -145,6 +165,11 @@ int MPI_Cancel(MPI_Request *request)
 	case MPID_UREQUEST:
 	{
 	    mpi_errno = (request_ptr->cancel_fn)(request_ptr->grequest_extra_state, (request_ptr->cc == 0));
+	    if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		    "**mpi_cancel", "**mpi_cancel %p", request);
+	    }
 	    break;
 	}
 

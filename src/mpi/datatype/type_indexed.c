@@ -120,7 +120,8 @@ int MPI_Type_indexed(int count,
 				  old_type,
 				  newtype);
 
-    if (mpi_errno == MPI_SUCCESS) {
+    if (mpi_errno == MPI_SUCCESS)
+    {
 	MPID_Datatype *new_dtp;
 	int i, *ints;
 
@@ -146,20 +147,15 @@ int MPI_Type_indexed(int count,
 					       &old_type);
 	MPIU_Free(ints);
     }
-    else
+
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_INDEXED);
+	return MPI_SUCCESS;
     }
 
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_indexed", "**mpi_type_indexed %d %p %p %D %p", count, blocklens, indices, old_type, newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_INDEXED);
-    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
-    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
-
-
-
-
-
-
-
-

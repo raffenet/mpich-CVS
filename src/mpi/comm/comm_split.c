@@ -158,7 +158,10 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     /* Must collectively create the communicator but we
        can recover the storage for color == MPI_UNDEFINED */
     mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_comm_split", "**mpi_comm_split %C %d %d %p", comm, color, key, newcomm);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

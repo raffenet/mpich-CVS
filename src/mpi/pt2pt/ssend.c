@@ -119,8 +119,8 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     {
 	if (request_ptr == NULL)
 	{
-		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
-		return MPI_SUCCESS;
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
+	    return MPI_SUCCESS;
 	}
 	else
 	{
@@ -157,12 +157,14 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    }
 	}
     }
-
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-
     /* ... end of body of routine ... */
 
   fn_exit:
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_ssend", "**mpi_ssend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+    }
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

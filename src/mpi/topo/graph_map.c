@@ -80,9 +80,12 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    if (comm_ptr->local_size < nnodes) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
+    if (comm_ptr->local_size < nnodes)
+    {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**graphnnodes", 0 );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_graph_map", "**mpi_graph_map %C %d %p %p %p", comm_old, nnodes, index, edges, newrank);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     

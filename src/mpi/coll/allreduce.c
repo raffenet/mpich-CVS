@@ -929,6 +929,9 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     }
     else
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_allreduce", "**mpi_allreduce %p %p %d %D %O %C",
+	    sendbuf, recvbuf, count, datatype, op, comm);
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

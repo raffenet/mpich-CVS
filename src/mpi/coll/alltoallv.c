@@ -357,6 +357,9 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
     }
     else
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_alltoallv", "**mpi_alltoallv %p %p %p %D %p %p %p %D %C",
+	    sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm);
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLV);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

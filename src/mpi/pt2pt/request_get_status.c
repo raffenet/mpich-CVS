@@ -197,7 +197,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_request_get_status", "**mpi_request_get_status %R %p %p", request, flag, status);
     }
 #ifdef HAVE_ERROR_CHECKING
   fn_exit:

@@ -117,16 +117,21 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
     MPID_Common_thread_lock( );
     old_p = &win_ptr->attributes;
     p = win_ptr->attributes;
-    while (p) {
-	if (p->keyval->handle == keyval_ptr->handle) {
+    while (p)
+    {
+	if (p->keyval->handle == keyval_ptr->handle)
+	{
 	    /* If found, call the delete function before replacing the 
 	       attribute */
 	    mpi_errno = MPIR_Call_attr_delete( win, p );
-	    if (mpi_errno) {
+	    if (mpi_errno)
+	    {
 		MPID_Common_thread_unlock( );
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		    "**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
 		/* FIXME: communicator of window? */
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
 	    }
 	    p->value = attribute_val;
 	    /* Does not change the reference count on the keyval */
@@ -134,10 +139,13 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	}
 	else if (p->keyval->handle > keyval_ptr->handle) {
 	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	    if (!new_p) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	    if (!new_p)
+	    {
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		    "**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
 	    }
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->pre_sentinal	 = 0;
@@ -151,12 +159,16 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	old_p = &p->next;
 	p = p->next;
     }
-    if (!p) {
+    if (!p)
+    {
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	if (!new_p) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	if (!new_p)
+	{
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
 	}
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;

@@ -162,7 +162,8 @@ Output Parameter:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt,  MPI_Datatype recvtype, int root, MPI_Comm comm)
+int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt,  MPI_Datatype recvtype,
+		 int root, MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Scatterv";
     int mpi_errno = MPI_SUCCESS;
@@ -316,7 +317,8 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
 	return MPI_SUCCESS;
     }
 
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_scatterv", "**mpi_scatterv %p %p %p %D %p %d %D %d %C", sendbuf, sendcnts, displs, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 
     /* ... end of body of routine ... */
 

@@ -253,14 +253,20 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	
 	remote_size  = remote_size;
 	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
-	if (!remote_lpids) {
+	if (!remote_lpids)
+	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_intercomm_create", "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
 	local_lpids =  (int *)MPIU_Malloc( local_size * sizeof(int) );
-	if (!local_lpids) {
+	if (!local_lpids)
+	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_intercomm_create", "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
@@ -282,8 +288,11 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		   check for any overlap */
 		mpi_errno = MPIR_CheckDisjointLpids( local_lpids, local_size,
 						   remote_lpids, remote_size );
-		if (mpi_errno) {
+		if (mpi_errno)
+		{
 		    MPIR_Nest_decr();
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+			"**mpi_intercomm_create", "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 		    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 		    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 		}	    
@@ -310,8 +319,11 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     DEBUG(printf( "About to get contextid (commsize=%d) on %d\n",
 		  comm_ptr->local_size, comm_ptr->rank ));
     context_id = MPIR_Get_contextid( local_comm );
-    if (context_id == 0) {
+    if (context_id == 0)
+    {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_intercomm_create", "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
@@ -346,14 +358,18 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	DEBUG(printf( "end of bcast on local_comm of size %d\n", 
 		      comm_ptr->local_size ));
     }
-    else {
+    else
+    {
 	/* were the other processes */
 	DEBUG(printf ("About to receive bcast on local_comm\n"));
 	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
 	remote_size = comm_info[0];
 	remote_lpids = (int *)MPIU_Malloc( remote_size * sizeof(int) );
-	if (!remote_lpids) {
+	if (!remote_lpids)
+	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_intercomm_create", "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
@@ -376,8 +392,11 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     /* All processes in the local_comm now build the communicator */
 
     newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-    if (!newcomm_ptr) {
+    if (!newcomm_ptr)
+    {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_intercomm_create", "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
@@ -433,4 +452,3 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_CREATE);
     return MPI_SUCCESS;
 }
-

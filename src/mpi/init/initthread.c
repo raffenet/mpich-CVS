@@ -221,6 +221,8 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     mpi_errno = MPIR_Init_thread( argc, argv, required, provided );
     if (mpi_errno)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_init_thread", "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

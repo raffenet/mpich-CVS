@@ -148,7 +148,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", incount * sizeof(MPID_Request*));
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
@@ -265,7 +265,6 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	mpi_errno = MPID_Progress_wait();
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    goto fn_exit;
 	}
     }
@@ -276,6 +275,14 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	MPIU_Free(request_ptrs);
     }
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITSOME);
+	return MPI_SUCCESS;
+    }
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_waitsome", "**mpi_waitsome %d % %p %p %p", incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITSOME);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }

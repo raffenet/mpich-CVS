@@ -65,6 +65,9 @@ int MPI_Register_datarep(char *datarep, MPI_Datarep_conversion_function *read_co
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* FIXME UNIMPLEMENTED */
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_register_datarep", "**mpi_register_datarep %s %p %p %p %p", datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REGISTER_DATAREP);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

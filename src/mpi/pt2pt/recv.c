@@ -127,8 +127,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     {
 	if (request_ptr == NULL)
 	{
-		MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
-		return MPI_SUCCESS;
+	    MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
+	    return MPI_SUCCESS;
 	}
 	else
 	{
@@ -143,7 +143,8 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+			    "**mpi_recv", "**mpi_recv %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, status);
 			goto fn_exit;
 		    }
 		    /* --END ERROR HANDLING-- */

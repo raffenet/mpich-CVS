@@ -158,6 +158,8 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
 	if (!new_p) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+		"**mpi_comm_set_attr", "**mpi_comm_set_attr %C %d %p", comm, comm_keyval, attribute_val);
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}

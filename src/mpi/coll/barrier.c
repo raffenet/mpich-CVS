@@ -342,6 +342,8 @@ int MPI_Barrier( MPI_Comm comm )
     }
     else
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_barrier", "**mpi_barrier %C", comm);
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

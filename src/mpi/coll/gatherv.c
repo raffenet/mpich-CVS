@@ -312,6 +312,9 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
     }
     else
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_gatherv", "**mpi_gatherv %p %d %D %p %p %p %D %d %C", 
+	    sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm);
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHERV);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }

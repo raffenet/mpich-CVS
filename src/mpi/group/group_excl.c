@@ -99,7 +99,10 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 	return MPI_SUCCESS;
     }
     mpi_errno = MPIR_Group_create( size - n, &new_group_ptr );
-    if (mpi_errno) {
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_group_excl", "**mpi_group_excl %G %d %p %p", group, n, ranks, newgroup);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_EXCL);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

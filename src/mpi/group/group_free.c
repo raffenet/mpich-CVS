@@ -79,6 +79,13 @@ int MPI_Group_free(MPI_Group *group)
 
     *group = MPI_GROUP_NULL;
     /* ... end of body of routine ... */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_group_free", "**mpi_group_free %p", group);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_FREE);
+	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    }
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_FREE);
     return mpi_errno;
 }

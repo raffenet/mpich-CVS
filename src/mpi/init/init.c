@@ -71,6 +71,8 @@ int MPI_Init( int *argc, char ***argv )
     mpi_errno = MPIR_Init_thread( argc, argv, MPI_THREAD_SINGLE, (int *)0 );
     if (mpi_errno)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_init", "**mpi_init %p %p", argc, argv);
 	MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
