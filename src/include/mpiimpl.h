@@ -3238,7 +3238,7 @@ int MPIR_Gatherv (void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                   void *recvbuf, int *recvcnts, int *displs,
                   MPI_Datatype recvtype, int root, MPID_Comm
                   *comm_ptr); 
-int MPIR_Reduce (void *sendbuf, void *recvbuf, int count, MPI_Datatype
+int MPIR_Reduce_inter (void *sendbuf, void *recvbuf, int count, MPI_Datatype
                  datatype, MPI_Op op, int root, MPID_Comm *comm_ptr); 
 int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
                    MPI_Datatype sendtype, void *recvbuf, int recvcnt,

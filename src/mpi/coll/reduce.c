@@ -71,9 +71,8 @@
    End Algorithm: MPI_Reduce
 */
 
-/* not declared static because it is called in intercomm. allreduce */
 /* begin:nested */
-int MPIR_Reduce ( 
+PMPI_LOCAL int MPIR_Reduce ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
@@ -617,7 +616,7 @@ int MPIR_Reduce (
     }
     else {
         /* remote group. Rank 0 allocates temporary buffer, does
-           local intracommunicator gather, and then sends the data
+           local intracommunicator reduce, and then sends the data
            to root. */
         
         rank = comm_ptr->rank;

@@ -66,7 +66,6 @@ PMPI_LOCAL int MPIR_Allgather (
     MPI_Datatype recvtype, 
     MPID_Comm *comm_ptr )
 {
-    static const char FCNAME[] = "MPIR_Allgather";
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status status;
@@ -77,6 +76,7 @@ PMPI_LOCAL int MPIR_Allgather (
         offset, tmp_mask, tree_root, type_size,
         left, right, jnext;
 #ifdef MPID_HAS_HETERO
+    static const char FCNAME[] = "MPIR_Allgather";
     int position, tmp_buf_size, nbytes;
     void *tmp_buf;
 #endif

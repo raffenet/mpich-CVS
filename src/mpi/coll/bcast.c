@@ -64,7 +64,7 @@
 */
 
 /* begin:nested */
-/* not declared static because it is called in intercomm. allgather */
+/* not declared static because it is called in intercomm. allgatherv */
 int MPIR_Bcast ( 
 	void *buffer, 
 	int count, 

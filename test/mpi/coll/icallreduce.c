@@ -25,8 +25,7 @@ int main( int argc, char *argv[] )
     while (MTestGetIntercomm( &comm, &leftGroup, 4 )) {
 	if (comm == MPI_COMM_NULL) continue;
 	MPI_Comm_rank( comm, &rank );
-/*	for (count = 1; count < 65000; count = 2 * count) { */
-	count = 1; {
+	for (count = 1; count < 65000; count = 2 * count) {
 	    /* printf( "rank = %d(%d)\n", rank, leftGroup ); fflush(stdout); */
 	    sendbuf = (int *)malloc( count * sizeof(int) );
 	    recvbuf = (int *)malloc( count * sizeof(int) );
@@ -67,8 +66,8 @@ int main( int argc, char *argv[] )
 		    }
 		}
 	    }
-	free( sendbuf );
-	free( recvbuf );
+            free( sendbuf );
+            free( recvbuf );
 	}
     }
 
