@@ -99,7 +99,9 @@
 /* #undef CHAR_PTR_IS_BYTE */
 
 #define HAVE_PROCESS_H
+#ifndef HAVE_WINDOWS_H
 #define HAVE_WINDOWS_H
+#endif
 #define HAVE_WINDOWS_SOCKET
 #define HAVE_WINSOCK2_H
 #define HAVE_WIN32_SLEEP
@@ -112,7 +114,7 @@
 #define MPIU_INT16_T __int16
 #define MPIU_INT32_T __int32
 #define MPIU_INT64_T __int64
-
+#define MPIU_SIZE_T unsigned int
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 #define inline __inline
