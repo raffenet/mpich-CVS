@@ -15,7 +15,7 @@ int MPIR_Test(MPID_Request * request)
        this function since those routines are only necessary when calling
        MPIR_Progress_wait(). */
     req_complete = (*request->cc_ptr == 0);
-    if (req_complete)
+    if (!req_complete)
     {
 	MPID_Progress_test();
 	req_complete = (*request->cc_ptr == 0);
