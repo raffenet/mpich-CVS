@@ -3,3 +3,9 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../../include \
 	 -I${srcdir}/../../include
 LDADD = ../util/mtest.o 
 DEPADD = ../util/mtest.o
+
+winnamex_SOURCES = winnamex.cxx
+getgroupx_SOURCES = getgroupx.cxx
+winfencex_SOURCES = winfencex.cxx
+winscale1x_SOURCES = winscale1x.cxx
+winscale2x_SOURCES = winscale2x.cxx
