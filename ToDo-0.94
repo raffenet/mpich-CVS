@@ -34,6 +34,8 @@ Open Items:
 
 * measure and compare performance of shm and ssm (using shm) [David]
 
+* improved distribution cutting script [Brian/Rusty]
+
 ----
 
 Finished Items:
@@ -46,8 +48,6 @@ Finished Items:
 * split CH3_Progress() into CH3_Progress_wait() and
   CH3_Progress_test() to avoid extra overhead associated with checking
   blocking flag and branching [David/Brian]
-
-* improved distribution cutting script [Brian]
 
 -----
 
