@@ -51,7 +51,7 @@ typedef struct {
     /* other, device-specific information */
 }MPID_List;
 
-/*D
+/*E
   MPID_Lang_t - Known language bindings for MPI
 
   A few operations in MPI need to know what language they were called from
@@ -59,7 +59,7 @@ typedef struct {
   the MPI implementation can choose the correct behavior.  An example of this
   are the keyval attribute copy and delete functions.
 
-  D*/
+  E*/
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
@@ -84,6 +84,14 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   Module:
   Attribute
   T*/
+
+/*E
+  MPID_Copy_function - MPID Structure to hold an attribute copy function
+
+  Notes:
+  The appropriate element of this union is selected by using the language
+  field of the 'keyval'.
+  E*/
 typedef union {
   int  (*C_CopyFunction)  (MPI_Comm, int, void *, void *, void *, int *)
   void (*F77_CopyFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
@@ -93,6 +101,13 @@ typedef union {
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
 
+/*E
+  MPID_Delete_function - MPID Structure to hold an attribute delete function
+
+  Notes:
+  The appropriate element of this union is selected by using the language
+  field of the 'keyval'.
+  E*/
 typedef union {
   int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
   void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
@@ -101,6 +116,10 @@ typedef union {
 			      MPI_Fint * );
   
 } MPID_Delete_function;
+
+/*S
+  MPID_Keyval - Structure of an MPID keyval
+  S*/
 typedef struct {
     int                  id;
     volatile int         ref_count;
@@ -111,19 +130,22 @@ typedef struct {
   /* other, device-specific information */
 }MPID_Keyval;
 
-/*
- * Attributes don't have ref_counts because they don't have reference
- * count semantics.  That is, there are no shallow copies or duplicates
- * of an attibute.  An attribute is copied when the communicator that
- * it is attached to is duplicated.  Subsequent operations, such as
- * MPI_Comm_attr_free, can change the attribute list for one of the
- * communicators but not the other, making it impractical to keep the
- * same list.  (We could defer making the copy until the list is changed,
- * but even then, there would be no reference count on the individual
- * attributes.)
- *
- * Question: Do we want the keyval or a pointer to the keyval data?
- */
+/*S
+  MPID_Attribute - Structure of an MPID attribute
+
+  Notes:
+  Attributes don't have ref_counts because they don't have reference
+  count semantics.  That is, there are no shallow copies or duplicates
+  of an attibute.  An attribute is copied when the communicator that
+  it is attached to is duplicated.  Subsequent operations, such as
+  MPI_Comm_attr_free, can change the attribute list for one of the
+  communicators but not the other, making it impractical to keep the
+  same list.  (We could defer making the copy until the list is changed,
+  but even then, there would be no reference count on the individual
+  attributes.)
+ 
+  Question: Do we want the keyval or a pointer to the keyval data?
+ S*/
 typedef struct {
     void *      value;              /* Stored value */
     MPID_Keyval *keyval;            /* Keyval structure for this attribute */
@@ -144,7 +166,7 @@ typedef struct {
   number to a specific process or link?
   D*/
 
-/*D
+/*S
   MPID_Lpidmask - Description of the Processor mask data strucure
 
   Allows quick determination whether a designated processor is within the
@@ -167,7 +189,7 @@ typedef struct {
 
   Module:
   Group
-  D*/
+  S*/
 typedef struct {
     /* other, device-specific information */
 } MPID_Lpidmask;
@@ -180,49 +202,110 @@ typedef struct {
  * where each [] indicates that a field may be *either* an array or a scalar.
  * For each such type, we define a struct that describes these parameters
  */
+
+/*S
+  MPID_datatype_contig - Description of a contiguous datatype
+
+  Fields:
++ count - Number of elements
+- datatype - datatype that this datatype consists of
+  S*/
 typedef struct {
     int count;
     struct dataloop_ datatype;
-} datatype_contig;
+} MPID_datatype_contig;
+
+/*S
+  MPID_datatype_vector - Description of a vector or strided datatype
+
+  Fields:
++ count - Number of elements
+. blocksize - Number of datatypes in each element
+. stride - Stride (in bytes) between each block
+- datatype - Datatype of each element
+  S*/
 typedef struct { 
     int count;
     int blocksize;
     int stride;
     struct dataloop_ datatype;
-} datatype_vector;
+} MPID_datatype_vector;
 
+/*S
+  MPID_datatype_blockindexed - Description of a block-indexed datatype
+
+  Fields:
++ count - Number of blocks
+. blocksize - Number of elements in each block
+. offset - Array of offsets (in bytes) to each block
+- datatype - Datatype of each element
+  S*/
 typedef struct {
     int count;
     int blocksize;
     int *offset;
     struct dataloop_ datatype;
-} datatype_blockindexed;
+} MPID_datatype_blockindexed;
 
+/*S
+  MPID_datatype_indexed - Description of an indexed datatype
+
+  Fields:
++ count - Number of blocks
+. blocksize - Array giving the number of elements in each block
+. offset - Array of offsets (in bytes) to each block
+- datatype - Datatype of each element
+
+  S*/
 typedef struct {
     int count;
     int *blocksize;
     int *offset;
     struct dataloop_ datatype;
-} datatype_indexed;
+} MPID_datatype_indexed;
 
+/*S
+  MPID_datatype_struct - Description of a structure datatype
+
+  Fields:
++ count - Number of blocks
+. blocksize - Array giving the number of elements in each block
+. offset - Array of offsets (in bytes) to each block
+- datatype - Array of datatypes describing the elements of each block
+  S*/
 typedef struct {
     int count;
     int *blocksize;
     int *offset;
     struct dataloop_ *datatype;
-} datatype_struct;
+} MPID_datatype_struct;
 
+/*S
+  MPID_Dataloop - Description of the structure used to hold a datatype
+  description
+
+  Fields:
++  kind - Indicates what type of datatype.  May have the value
+  'MPID_Contig', 'MPID_Vector', 'MPID_BlockIndexed', 'MPID_Indexed', or
+  'MPID_Struct'.  
+. loop_parms - A union containing the 5 datatype structures, e.g., 
+  'MPID_datatype_contig', 'MPID_datatype_vector', etc.  A sixth element in
+  this union, 'count', allows quick access to the shared 'count' field in the
+  five datatype structure.
+. extent - The extent of the datatype
+- id     - id for the corresponding 'MPI_Datatype'.
+  S*/
 typedef struct datatloop_ { 
     int kind;                  /* Contains both the loop type (of the 5 above)
 				  and a bit that indicates whether the
 				  datatype is a leaf type. */
     union {
-	int                   count;
-	datatype_contig       c_t;
-	datatype_vector       v_t;
-	datatype_blockindexed bi_t;
-	datatype_indexed      i_t;
-	datatype_struct       s_t;
+	int                        count;
+	MPID_datatype_contig       c_t;
+	MPID_datatype_vector       v_t;
+	MPID_datatype_blockindexed bi_t;
+	MPID_datatype_indexed      i_t;
+	MPID_datatype_struct       s_t;
     } loop_params;
     MPI_Aint extent;
     int id;                       /* Having the id here allows us to find the
@@ -230,7 +313,7 @@ typedef struct datatloop_ {
 				     Dataloop description */
 } MPID_Dataloop;
 
-/*D
+/*S
   MPID_Datatype - Description of the MPID Datatype structure
 
   Notes:
@@ -262,7 +345,7 @@ typedef struct datatloop_ {
   For datatypes built from other datatypes, do I want to copy the loop
   information from the old datatypes?  This is the MPID_Dataloop
   information (e.g., precopy the entire dataloop stack)?
-  D*/
+  S*/
 typedef struct { 
     int           id;            /* value of MPI_Datatype for this structure */
     volatile int  ref_count;
@@ -299,7 +382,7 @@ typedef struct {
   /* other, device-specific information */
 } MPID_Datatype;
 
-/*D
+/*S
  MPID_Group - Description of the Group data structure
 
  The processes in the group of 'MPI_COMM_WORLD' have lpid values 0 to size-1,
@@ -327,7 +410,7 @@ typedef struct {
 
  Questions:
  Do we want a rank of this process in the group (if any)?
- D*/
+ S*/
 typedef struct {
     volatile int ref_count;
     int          size;           /* Size of a group */
@@ -336,7 +419,7 @@ typedef struct {
   /* other, device-specific information */
 } MPID_Group;
 
-/*D
+/*S
   MPID_Comm - Description of the Communicator data structure
 
   Notes:
@@ -361,7 +444,7 @@ typedef struct {
   case, we use the default routines.  The advantage of this, besides the
   reduction in space used by communicators, is that a small MPI application
   need not load all of the collective routines.
-  D*/
+  S*/
 typedef struct { 
     volatile int ref_count;
     int16_t       context_id;    /* Assigned context id */
@@ -381,7 +464,7 @@ typedef struct {
 				      same method */
 } MPID_Comm;
 
-/*D
+/*S
   MPID_Win - Description of the Window Object data structure.
 
   Module:
@@ -391,7 +474,7 @@ typedef struct {
   Should a win be defined after MPID_Segment in case the device wants to 
   store a queue of pending put/get operations, described with MPID_Segment
   (or MPID_Request)s?
-  D*/
+  S*/
 typedef struct {
     int  id;                     /* value of MPI_Win for this structure */
     volatile int ref_count;
@@ -419,7 +502,7 @@ typedef struct {
     MPID_Dataloop loopinfo;
 } MPID_Dataloop_stackelm;
 
-/*D
+/*S
   MPID_Segment - Description of the Segment datatype
 
   Notes:
@@ -474,7 +557,7 @@ typedef struct {
 
   Questions:
   Should this have an id for allocation and similarity purposes?
-  D*/
+  S*/
 typedef struct { 
     void *ptr;
     int  bytes;
@@ -491,7 +574,7 @@ typedef struct {
     /* other, device-specific information */
 } MPID_Segment;
 
-/*D
+/*S
   MPID_Request - Description of the Request data structure
 
   Module:
@@ -501,14 +584,14 @@ typedef struct {
   Do we need an MPID_Datatype * to hold the datatype in the event of a 
   nonblocking (and not yet completed) operation involving a complex datatype,
   or do we need a pointer to an MPID_Buffer?  Or is it device-specific?
-  D*/
+  S*/
 typedef struct {
     volatile int ready;   /* Set to true when the request may be used */
     volatile int complete; /* Set to true when the request is completed */
     /* other, device-specific information */
 } MPID_Request;
 
-/*D
+/*E
   Handlers - Description of the remote handlers and their arguments
   
   Enumerate the possible Remote Handler Call types.  For each of these
@@ -524,7 +607,7 @@ typedef struct {
   Module:
   MPID_CORE
 
-  D*/
+  E*/
 typedef enum { MPID_Hid_Request_to_send = 1, 
 	       MPID_Hid_Cancel = 27,
 	       MPID_Hid_Define_Datatype,
@@ -537,8 +620,8 @@ typedef enum { MPID_Hid_Request_to_send = 1,
  * Handler Definitions
  */
 
-/*D 
-  MPID_Hid_Request_to_send - Handler type for point-to-point communication
+/*S 
+  MPID_Hid_Request_to_send_t - Handler type for point-to-point communication
 
   The specific type lengths are not required; however, the type lengths
   used by the device must be consistent with the rest of the code.
@@ -558,7 +641,7 @@ typedef enum { MPID_Hid_Request_to_send = 1,
   Should there be a bit to indicate an rsend message so that "no posted
   receive" errors can be detected?
 
- D*/
+ S*/
 typedef struct {
   int32_t tag;
   int16_t context_id;
@@ -568,22 +651,22 @@ typedef struct {
   /* other, device-specific information */
   } MPID_Hid_Request_to_send_t
 
-/*D
-   MPID_Hid_Cancel - Cancel a communication operation
+/*S
+   MPID_Hid_Cancel_t - Cancel a communication operation
 
    Module:
    MPID_CORE
 
-  D*/
+  S*/
 typedef struct {
    int16_t request_id;
    /* other, device-specific information */
    } MPID_Hid_Cancel_t;
 
 
-/*T
-  Section x: Enviroment and Global Values
-  T*/
+/*
+ * Section x: Enviroment and Global Values
+ */
 
 /*D
   Constants - Description of constants defined by the device.
@@ -626,3 +709,4 @@ typedef struct {
   Environment
   D*/
 #define MPID_MAX_THREAD_LEVEL 
+

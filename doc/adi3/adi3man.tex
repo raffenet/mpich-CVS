@@ -92,6 +92,8 @@ complete ADI-3 implementation.
 \item[Attribute]MPI Keyvals and attributes
 \item[Datatype]MPI Datatypes and pack/unpack operations and a new
 object, \code{MPID_Segment}, used only within the ADI.
+\item[Dynamic]Support for MPI-2 dynamic process operations.  This
+module must be implemented to support the dynamic process chapter of MPI-2.
 \item[Group]MPI Groups
 \item[Communicator]MPI Communicators
 \item[Request]MPI Requests.  Requests are fundemental to many
@@ -127,6 +129,9 @@ trying to get the maximum performance for point-to-point operations
 may want to replace that module with one carefully tuned to their
 specific platform.
 
+Not included in this list is the ADIO module used to support MPI-IO.
+See \cite{romio-adio-manual} for a description of that module.
+
 \subsection{The Core}
 \label{sec-minimal}
 
@@ -155,28 +160,10 @@ and \code{MPID_Put_contig} operations
 be called.  A device is permitted to define this as a no-op if polling
 is not needed.  In other words, this routine is provided to
 \emph{allow} polling implementations, not to \emph{require} them.
-\item[\code{MPID_Comm_Spawn_Multiple}]Spawns new processes.  An implementation
-  that does not plan to support \code{MPI_Comm_spawn} or
-  \code{MPI_Comm_spawn_multiple} can implement these as routines that return
-  failure.  Such an implementation will not implement all of MPI-2.
-\item[\code{MPID_Open_port}]Open a port for connecting to processes.  The
-  routines \code{MPID_Open_port}, \code{MPID_Close_port},
-  \code{MPID_Comm_connect}, \code{MPID_Comm_attach}, and
-  \code{MPID_Comm_disconnect} can be considered a 
-  ``submodule'' supporting the corresponding part of the MPI-2 standard.  Just
-  as for \code{MPID_Comm_spawn_multiple}, an implementation that chooses to
-  support only the subset of MPI-2 that does not include the MPI routines for
-  connecting two groups of MPI processes may implement these routines by
-  simply having them return failure.
-\item[\code{MPID_Close_port}]Close a port opened with \code{MPID_Open_port}.
-\item[\code{MPID_Comm_connect}]Connect to an MPI program.
-\item[\code{MPID_Comm_attach}]Attach to an MPI program.
-\item[\code{MPID_Comm_disconnect}]Detach from an MPI program.
 \item[\code{mpiexec}]An implementation of \code{mpiexec}, as defined in the
   MPI-2 standard, for starting MPI jobs.  While not a routine, it must be 
   provided by any device.  
 \end{description}
-
 From these routines, together with the implementation of MPI in terms of MPID
 that we are planning to carry out, all of MPI can be implemented\footnote{See
 Section~\ref{sec-passive-target} for some caveats about pure polling
@@ -196,6 +183,35 @@ with active messages, as well as current trends in interconnects,
 suggests that a remote memory put operation that does not require any
 other processing at the target (destination) should be separated from
 the more general active-message invocation (\code{MPID_Rhcv}).
+
+\subsection{Dynamic}
+For a full MPI-2 implementation, the dynamic module must also be
+implemented.  That is, for a full MPI-2 implementation, the dynamic
+module is really part of \code{MPID_CORE}.  This module is separated
+out both because it is unnecessary for MPI-1 and because the
+implementation of these routines is (usually) very different from the
+communication support in \code{MPID_CORE}.  The contents of the
+dynamic module include:
+
+\begin{description}
+\item[\code{MPID_Comm_Spawn_Multiple}]Spawns new processes.  An implementation
+  that does not plan to support \code{MPI_Comm_spawn} or
+  \code{MPI_Comm_spawn_multiple} can implement these as routines that return
+  failure.  Such an implementation will not implement all of MPI-2.
+\item[\code{MPID_Open_port}]Open a port for connecting to processes.  The
+  routines \code{MPID_Open_port}, \code{MPID_Close_port},
+  \code{MPID_Comm_connect}, \code{MPID_Comm_attach}, and
+  \code{MPID_Comm_disconnect} can be considered a 
+  ``submodule'' supporting the corresponding part of the MPI-2 standard.  Just
+  as for \code{MPID_Comm_spawn_multiple}, an implementation that chooses to
+  support only the subset of MPI-2 that does not include the MPI routines for
+  connecting two groups of MPI processes may implement these routines by
+  simply having them return failure.
+\item[\code{MPID_Close_port}]Close a port opened with \code{MPID_Open_port}.
+\item[\code{MPID_Comm_connect}]Connect to an MPI program.
+\item[\code{MPID_Comm_attach}]Attach to an MPI program.
+\item[\code{MPID_Comm_disconnect}]Detach from an MPI program.
+\end{description}
 
 \subsection{Design Rationale}
 \label{sec-intermediate}
@@ -359,20 +375,24 @@ Still to do.  This section needs to cover:
 \subsection{MPID Core}
 \begin{verbatim}
     MPID_Abort
+    MPID_Finalize
+    MPID_Flags_testsome
+    MPID_Flags_waitsome
+    MPID_Open_port
+    MPID_Put
+    MPID_Rhcv
+    MPID_Thread_init
+\end{verbatim}
+%    MPID_Hid_Cancel (handler)
+%    MPID_Hid_Request_to_send (handler)
+
+\subsection{Dynamic}
+\begin{verbatim}
     MPID_Close_port
     MPID_Comm_accept
     MPID_Comm_connect
     MPID_Comm_disconnect
     MPID_Comm_spawn_multiple
-    MPID_Finalize
-    MPID_Flags_testsome
-    MPID_Flags_waitsome
-    MPID_Hid_Cancel (handler)
-    MPID_Hid_Request_to_send (handler)
-    MPID_Open_port
-    MPID_Put
-    MPID_Rhcv
-    MPID_Thread_init
 \end{verbatim}
 
 \subsection{Handlers}
@@ -389,15 +409,15 @@ Still to do.  This section needs to cover:
     MPID_Attr_predefined
     MPID_Comm_attr_delete
     MPID_Comm_attr_set
-    MPID_Lang_t
 \end{verbatim}
+%   MPID_Lang_t
+
 
 \subsection{Datatypes}
 \begin{verbatim}
     MPID_Datatype_free
     MPID_Datatype_incr
     MPID_Datatype_new
-    MPID_Datatype
     MPID_Pack_size
     MPID_Pack
     MPID_Unpack
@@ -405,28 +425,29 @@ Still to do.  This section needs to cover:
     MPID_Segment_init_pack
     MPID_Segment_init_unpack
     MPID_Segment_pack
-    MPID_Segment
     MPID_Segment_unpack
 \end{verbatim}
+%    MPID_Datatype
+%    MPID_Segment
 
 \subsection{Groups}
 \begin{verbatim}
     MPID_Group_free
     MPID_Group_incr
     MPID_Group_new
-    MPID_Group
-    MPID_Lpidmask
 \end{verbatim}
+%    MPID_Group
+%    MPID_Lpidmask
 
 \subsection{Communicators}
 \begin{verbatim}
     MPID_Comm_create
     MPID_Comm_free
     MPID_Comm_incr
-    MPID_Comm
     MPID_Comm_thread_lock
     MPID_Comm_thread_unlock
 \end{verbatim}
+%    MPID_Comm
 
 \subsection{Requests}
 \begin{verbatim}
@@ -437,6 +458,7 @@ Still to do.  This section needs to cover:
     MPID_Request_new
     MPID_Request_ready
 \end{verbatim}
+% MPID_Request
 
 \subsection{Communication}
 \begin{verbatim}
@@ -444,6 +466,7 @@ Still to do.  This section needs to cover:
     MPID_Flags_waitall
     MPID_Get
     MPID_Isend
+    etc.
     MPID_Memory_register
     MPID_Memory_unregister
     MPID_Rhc
@@ -457,13 +480,14 @@ Still to do.  This section needs to cover:
     MPID_Isend_stream
     MPID_Wait_stream
 \end{verbatim}
+%MPID_Stream
 
 \subsection{Window Objects}
 \begin{verbatim}
     MPID_Alloc_mem
     MPID_Free_mem
-    MPID_Win
 \end{verbatim}
+%    MPID_Win
 
 \subsection{Timers}
 \begin{verbatim}
@@ -517,6 +541,9 @@ Still to do.  This section needs to cover:
 
 \section{Communicators}
 \input Communicator-list.tex
+
+\section{Dynamic}
+\input Dynamic-list.tex
 
 \section{Requests}
 \input Request-list.tex

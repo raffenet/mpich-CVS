@@ -1945,8 +1945,11 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   for the 'required' argument to 'MPI_Init_thread'.
 
   Output Parameter:
-. provided - Provided level of thread support.  May be less than the 
++ provided - Provided level of thread support.  May be less than the 
   requested level of support.
+- parent_group - MPID group of parent.  This is null for all MPI-1 uses and 
+  for processes that are `not` started with 'MPI_Comm_spawn' or 
+  'MPI_Comm_spawn_multiple'.
 
   Return value:
   Returns '0' on success and an MPI error code on failure.  Failure can happen
@@ -2002,7 +2005,8 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   this call have an info argument to support BNR?
   @*/
 int MPID_Thread_init( int *argc_p, char *(*argv_p)[], 
-		      int requested, int *provided )
+		      int requested, int *provided,
+		      MPID_Group **parent_group )
 {
 }
 
@@ -2525,7 +2529,7 @@ extern int MPID_THREAD_LEVEL;
   MPID_Comm_spawn_multiple - Spawm and connect to new processes
 
   Module:
-  MPID_CORE
+  Dynamic
   @*/
 int MPID_Comm_spawn_multiple( int count, const char *commands[],
 			      const char *argv_p[][], 
@@ -2540,7 +2544,7 @@ int MPID_Comm_spawn_multiple( int count, const char *commands[],
   MPID_Open_port - Open a port for accepting connections from MPI processes
 
   Module:
-  MPID_CORE
+  Dynamic
   @*/
 int MPID_Open_port( MPID_Info *info, const char *port_name )
 {
@@ -2550,7 +2554,7 @@ int MPID_Open_port( MPID_Info *info, const char *port_name )
   MPID_Close_port - Close a port
 
   Module:
-  MPID_CORE
+  Dynamic
   @*/
 int MPID_Close_port( const char *port_name )
 {
@@ -2560,7 +2564,7 @@ int MPID_Close_port( const char *port_name )
   MPID_Comm_accept - Accept a connection from an MPI process
 
   Module:
-  MPID_CORE
+  Dynamic
 
   @*/
 int MPID_Comm_accept( const char *port_name, MPID_Info *info, int root,
@@ -2572,7 +2576,7 @@ int MPID_Comm_accept( const char *port_name, MPID_Info *info, int root,
   MPID_Comm_connect - Connect to an MPI process
 
   Module:
-  MPID_CORE
+  Dynamic
 
   @*/
 int MPID_Comm_connect( const char *port_name, MPID_Info *info, int root,
@@ -2584,7 +2588,7 @@ int MPID_Comm_connect( const char *port_name, MPID_Info *info, int root,
   MPID_Comm_disconnect - Disconnect from MPI processes
 
   Module:
-  MPID_CORE
+  Dynamic
 
   @*/
 int MPID_Comm_disconnect( MPID_Comm *comm )
