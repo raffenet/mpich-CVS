@@ -44,7 +44,11 @@ int tcp_read_header(MPIDI_VC *vc_ptr)
     if (num_read == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
+#ifdef HAVE_WINSOCK2_H
 	if (TCP_Process.error == WSAEWOULDBLOCK)
+#else
+	if ((TCP_Process.error == EINTR) || (TCP_Process.error == EAGAIN))
+#endif
 	    num_read = 0;
 	else
 	{
@@ -229,7 +233,11 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
+#ifdef HAVE_WINSOCK2_H
 		if (TCP_Process.error == WSAEWOULDBLOCK)
+#else
+		if ((TCP_Process.error == EINTR) || (TCP_Process.error == EAGAIN))
+#endif
 		    num_read = 0;
 		else
 		{
@@ -327,7 +335,11 @@ int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     if (num_read == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
+#ifdef HAVE_WINSOCK2_H
 	if (TCP_Process.error == WSAEWOULDBLOCK)
+#else
+	if ((TCP_Process.error == EINTR) || (TCP_Process.error == EAGAIN))
+#endif
 	    num_read = 0;
 	else
 	{
@@ -378,7 +390,11 @@ int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
     if (num_read == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
+#ifdef HAVE_WINSOCK2_H
 	if (TCP_Process.error == WSAEWOULDBLOCK)
+#else
+	if ((TCP_Process.error == EINTR) || (TCP_Process.error == EAGAIN))
+#endif
 	    num_read = 0;
 	else
 	{
