@@ -285,6 +285,8 @@ typedef struct {
 
 #define MPI_STATUS_IGNORE (MPI_Status *)0
 #define MPI_STATUSES_IGNORE (MPI_Status *)0
+#define MPI_ERRCODES_IGNORE (int *)0
+#define MPI_ARGV_NULL (char **)0
 
 /* For supported thread levels */
 #define MPI_THREAD_SINGLE 0
