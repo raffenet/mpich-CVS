@@ -1362,10 +1362,10 @@ int ibui_readv_unex(ibu_t ibu)
 	
 	if (ibu->read.iovlen == 0)
 	{
-	    msg_printf("read finished in ibui_readv_unex\n");
 	    ibu->state &= ~IBU_READING;
 	    ibu->unex_finished_queue = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = ibu;
+	    msg_printf("ibui_readv_unex: finished read saved in IBU_Process.unex_finished_list\n");
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_READV_UNEX);
 	    return IBU_SUCCESS;
 	}
