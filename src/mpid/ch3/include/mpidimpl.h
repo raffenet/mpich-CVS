@@ -82,6 +82,10 @@ void MPIDI_err_printf(char *, char *, ...);
 }
 
 
+/* Prototypes for collective operations supplied by the device (or channel) */
+int MPIDI_Barrier(MPID_Comm *);
+
+
 /* Channel function prototypes are in mpidi_ch3_post.h since some of the macros
    require their declarations. */
 
