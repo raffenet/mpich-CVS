@@ -74,7 +74,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 
 
 
-#ifdef OOOLD
+#ifdef USE_OOOLD
 int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
                          const int maxprocs, MPI_Info info, const int root,
                          MPID_Comm *comm, MPID_Comm *intercomm,
@@ -161,6 +161,7 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
                                 &same_domain, (const void *) kvsnamelen);
 	assert(rc == 0);
 */
+	MPIR_Nest_incr();
         rc = NMPI_Bcast(kvsname, kvsnamelen, MPI_CHAR, root, comm->handle);
         assert(rc == 0);
 
@@ -168,13 +169,16 @@ int MPIDI_CH3_Comm_spawn(const char *command, const char *argv[],
            bcast that as well */
         rc = NMPI_Bcast((int *) &maxprocs, 1, MPI_INT, root, comm->handle);
         assert(rc == 0);
+	MPIR_Nest_decr();
     }
     else {
 	/* get some information as needed from root */
+	MPIR_Nest_incr();
         rc = NMPI_Bcast(kvsname, kvsnamelen, MPI_CHAR, root, comm->handle);
         assert(rc == 0);
         rc = NMPI_Bcast((int *) &maxprocs, 1, MPI_INT, root, comm->handle);
         assert(rc == 0);
+	MPIR_Nest_decr();
 
         key_max_sz = PMI_KVS_Get_key_length_max();
         key = MPIU_Malloc(key_max_sz);
