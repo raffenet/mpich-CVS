@@ -66,7 +66,10 @@ Cpman_visView::~Cpman_visView()
     {
 	WaitForSingleObject(m_hThread, INFINITE);
 	CloseHandle(m_hThread);
-	send_xyminmax(0, 0, 0, 0);
+	if (g_bUseMPI)
+	    mpi_send_xyminmax(0, 0, 0, 0);
+	else
+	    send_xyminmax(0, 0, 0, 0);
     }
 }
 
