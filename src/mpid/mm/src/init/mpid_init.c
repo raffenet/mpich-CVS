@@ -13,12 +13,17 @@ MPID_PerProcess_t MPID_Process;
 /*@
    MPID_Init - Initialize the mm device
 
-   Notes:
+   Parameters:
++  int *argcp
+.  char ***argvp
+.  int requested
+.  int *provided
+.  int *flag_args
+-  int *flag_env
 
-.N Errors
-.N MPI_SUCCESS
+   Notes:
 @*/
-int MPID_Init( void )
+int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag_args, int *flag_env)
 {
     static const char FCNAME[] = "MPID_Init";
     char pszPortName[MPI_MAX_PORT_NAME];
