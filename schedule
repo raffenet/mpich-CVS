@@ -69,13 +69,13 @@ Point-to-Point Communication
 MPI_Send,,,,,Brian,,done
 MPI_Recv,,,,,Brian,,done
 MPI_Get_count,,,,,Bill,,done
-MPI_Bsend,,,,,,MPI_Buffer_attach and MPID_tBsend,
+MPI_Bsend,,,,,Bill,MPI_Buffer_attach and MPID_tBsend,10/14/02
 MPI_Ssend,,,,,Brian,,done,not tested
 MPI_Rsend,,,,,Brian,,done,not tested
 MPI_Buffer_attach,1,1,1,2,Bill,,.1,3/31/02
-MPI_Buffer_detach,,,,,Bill,MPI_Buffer_attach,
+MPI_Buffer_detach,,,,,Bill,MPI_Buffer_attach,10/14/02
 MPI_Isend,,,,,David/Brian,,done
-MPI_Ibsend,,,,,,MPI_Buffer_attach,
+MPI_Ibsend,,,,,Bill,MPI_Buffer_attach,10/14/02
 MPI_Issend,,,,,Brian,,done,not tested
 MPI_Irsend,,,,,Brian,,done,not tested
 MPI_Irecv,,,,,David/Brian,,done

@@ -48,7 +48,9 @@ int main( int argc, char *argv[] )
 	}
 	if (rmsg2[0] != msg2[0] || rmsg2[1] != msg2[1]) {
 	    errs++;
-	    fprintf( stderr, "message 2 incorrect\n" );
+	    fprintf( stderr, 
+	  "message 2 incorrect, values are (%f,%f) but should be (%f,%f)\n",
+		     rmsg2[0], rmsg2[1], msg2[0], msg2[1] );
 	}
 	if (strcmp( rmsg3, msg3 ) != 0) {
 	    errs++;
@@ -59,6 +61,7 @@ int main( int argc, char *argv[] )
     /* We can't guarantee that messages arrive until the detach */
     MPI_Buffer_detach( &bbuf, &bsize );
 
+    
     MPI_Finalize();
     return 0;
 }

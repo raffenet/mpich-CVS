@@ -126,14 +126,12 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 #endif    
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  &request_ptr );
-    if (!mpi_errno) {
-	MPIR_Wait( request_ptr );
-	MPID_Request_release( request_ptr );
-    }
-    else {
+    if (mpi_errno) {
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
+    /* We'll wait on the request, if any, within the bsendutil.c functions
+       that advance active sends */
     /* ... end of body of routine ... */
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);

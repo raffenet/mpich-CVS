@@ -93,6 +93,7 @@ static void MPIR_Bsend_retry_pending( void );
 static void MPIR_Bsend_check_active ( void );
 static BsendData_t *MPIR_Bsend_find_buffer( int );
 static void MPIR_Bsend_take_buffer( BsendData_t *, int );
+static int MPIR_Bsend_finalize( void * );
 
 /*
  * Attach a buffer.  This checks for the error conditions and then
@@ -122,7 +123,7 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 
     if (!initialized) {
 	initialized = 1;
-	/* FIXME : add callback to finalize handler */
+	MPIR_Add_finalize( MPIR_Bsend_finalize, (void *)0 );
     }
 
     BsendBuffer.buffer	    = buffer;
@@ -136,10 +137,10 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 
     /* Set the first block */
     p		  = (BsendData_t *)buffer;
-    p->size	  = buffer_size - sizeof(BsendData_t);
+    p->size	  = buffer_size - sizeof(BsendData_t) + sizeof(double);
     p->total_size = buffer_size;
     p->next	  = p->prev = 0;
-    p->msg.msgbuf = (char *)p + sizeof(BsendData_t);
+    p->msg.msgbuf = (char *)p + sizeof(BsendData_t) - sizeof(double);
 
     return MPI_SUCCESS;
 }
@@ -406,8 +407,8 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	
 	newp = (BsendData_t *)( (char *)p + sizeof(BsendData_t) + alloc_size );
 	newp->total_size = p->total_size - alloc_size - sizeof(BsendData_t);
-	newp->size = newp->total_size - sizeof(BsendData_t);
-	newp->msg.msgbuf = (char *)newp + sizeof(BsendData_t);
+	newp->size = newp->total_size - sizeof(BsendData_t) + sizeof(double);
+	newp->msg.msgbuf = (char *)newp + sizeof(BsendData_t) - sizeof(double);
 
 	/* Insert this new block after p (we'll remove p from the avail list
 	   next) */
@@ -437,5 +438,18 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     }
     p->next	      = BsendBuffer.active;
     p->prev	      = 0;
-    BsendBuffer.avail = p;
+    BsendBuffer.active = p;
+}
+
+/* Ignore p */
+static int MPIR_Bsend_finalize( void *p )
+{
+    void *b;
+    int  s;
+
+    if (BsendBuffer.buffer) {
+	/* Use detach to complete any communication */
+	MPIR_Bsend_detach( &b, &s );
+    }
+    return 0;
 }
