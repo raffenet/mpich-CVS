@@ -51,6 +51,9 @@ if test "X$enable_cache" = "Xnotgiven" -o "X$enable_cache" = "X" ; then
 	    fi
         elif test ! -f $cache_system -a -n "$testval" ; then
 	    echo "$testval" > $cache_system
+	    # remove the cache file because it may not correspond to our
+	    # system
+	    rm -f $cache_file
 	    enable_cache="yes"
         fi
     fi
