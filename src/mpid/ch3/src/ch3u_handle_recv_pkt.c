@@ -163,9 +163,8 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request * rreq;
 	    int found;
 
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager send pkt"));
-	    MPIDI_DBG_PRINTF((10, FCNAME, "rank=%d, tag=%d, context=%d",eager_pkt->match.rank, eager_pkt->match.tag,
-			      eager_pkt->match.context_id));
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
+			      eager_pkt->sender_req_id, eager_pkt->match.rank, eager_pkt->match.tag, eager_pkt->match.context_id));
 	    
 	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&eager_pkt->match, &found);
 	    if (rreq == NULL)
@@ -187,10 +186,8 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request * rreq;
 	    int found;
 	    
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager ready send pkt"));
-	    MPIDI_DBG_PRINTF((10, FCNAME, "rank=%d, tag=%d, context=%d", ready_pkt->match.rank, ready_pkt->match.tag,
-			      ready_pkt->match.context_id));
-
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received ready send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
+			      ready_pkt->sender_req_id, ready_pkt->match.rank, ready_pkt->match.tag, ready_pkt->match.context_id));
 	    
 	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&ready_pkt->match, &found);
 	    if (rreq == NULL)
@@ -243,16 +240,14 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	
 	case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
 	{
-	    MPIDI_CH3_Pkt_eager_send_t * eager_pkt = &pkt->eager_send;
+	    MPIDI_CH3_Pkt_eager_send_t * es_pkt = &pkt->eager_send;
 	    MPID_Request * rreq;
 	    int found;
 
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager send pkt"));
-	    MPIDI_DBG_PRINTF((10, FCNAME, "rank=%d, tag=%d, context=%d", eager_pkt->match.rank, eager_pkt->match.tag,
-			      eager_pkt->match.context_id));
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager sync send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
+			      es_pkt->sender_req_id, es_pkt->match.rank, es_pkt->match.tag, es_pkt->match.context_id));
 	    
-	    
-	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&eager_pkt->match, &found);
+	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&es_pkt->match, &found);
 	    if (rreq == NULL)
 	    {
 		/* FIXME - need to handle memory allocation problems */
@@ -260,7 +255,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		abort();
 	    }
 	    
-	    set_request_info(rreq, eager_pkt, MPIDI_REQUEST_EAGER_MSG);
+	    set_request_info(rreq, es_pkt, MPIDI_REQUEST_EAGER_MSG);
 	    post_data_receive(vc, rreq, found);
 	    
 	    if (found)
@@ -272,7 +267,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
 			
 		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
-		esa_pkt->sender_req_id = eager_pkt->sender_req_id;
+		esa_pkt->sender_req_id = es_pkt->sender_req_id;
 		esa_req = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt));
 		if (esa_req != NULL)
 		{
@@ -292,6 +287,8 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_CH3_Pkt_eager_sync_ack_t * esa_pkt = &pkt->eager_sync_ack;
 	    MPID_Request * sreq;
 	    
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received eager sync ack pkt, sreq=0x%08x", esa_pkt->sender_req_id));
+	    
 	    MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
 	    /* decrement CC (but don't mark data transfer as complete since the transfer could still be in progress) */
 	    MPIDI_CH3U_Request_complete(sreq);
@@ -304,9 +301,8 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request * rreq;
 	    int found;
 
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt"));
-	    MPIDI_DBG_PRINTF((35, FCNAME, "rank=%d, tag=%d, context=%d", rts_pkt->match.rank, rts_pkt->match.tag,
-			      rts_pkt->match.context_id));
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
+			      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id));
 	    
 	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&rts_pkt->match, &found);
 	    assert(rreq != NULL);
@@ -412,14 +408,19 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request * rreq;
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &upkt.cancel_send_resp;
-	    MPID_Request * resp_req;
+	    MPID_Request * resp_sreq;
 
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received cancel send req pkt"));
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received cancel send req pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
+			      req_pkt->sender_req_id, req_pkt->match.rank, req_pkt->match.tag, req_pkt->match.context_id));
 	    
 	    rreq = MPIDI_CH3U_Request_FDU(req_pkt->sender_req_id, &req_pkt->match);
 	    if (rreq != NULL)
 	    {
 		MPIDI_DBG_PRINTF((35, FCNAME, "message cancelled"));
+		if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG && rreq->ch3.recv_data_sz > 0)
+		{
+		    MPIU_Free(rreq->ch3.tmpbuf);
+		}
 		MPID_Request_release(rreq);
 		resp_pkt->ack = TRUE;
 	    }
@@ -431,10 +432,10 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    
 	    resp_pkt->type = MPIDI_CH3_PKT_CANCEL_SEND_RESP;
 	    resp_pkt->sender_req_id = req_pkt->sender_req_id;
-	    resp_req = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt));
-	    if (resp_req != NULL)
+	    resp_sreq = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt));
+	    if (resp_sreq != NULL)
 	    {
-		MPID_Request_release(resp_req);
+		MPID_Request_release(resp_sreq);
 	    }
 	    
 	    break;
@@ -444,15 +445,23 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	{
 	    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &pkt->cancel_send_resp;
 	    MPID_Request * sreq;
-	    int cc;
 
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received cancel send resp pkt"));
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received cancel send resp pkt, sreq=0x%08x, ack=%d",
+			      resp_pkt->sender_req_id, resp_pkt->ack));
 	    
 	    MPID_Request_get_ptr(resp_pkt->sender_req_id, sreq);
 	    
 	    if (resp_pkt->ack)
 	    {
 		sreq->status.cancelled = TRUE;
+		
+		if (MPIDI_Request_get_msg_type(sreq) == MPIDI_REQUEST_RNDV_MSG ||
+		    MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_SSEND)
+		{
+		    /* decrement the CC one additional time for the CTS/sync ack that is never going to arrive */
+		    MPIDI_CH3U_Request_complete(sreq);
+		}
+		
 		MPIDI_DBG_PRINTF((35, FCNAME, "message cancelled"));
 	    }
 	    else
@@ -460,8 +469,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		MPIDI_DBG_PRINTF((35, FCNAME, "unable to cancel message"));
 	    }
 
-	    MPIDI_CH3U_Request_decrement_cc(sreq, &cc);
-	    MPID_Request_release(sreq);
+	    MPIDI_CH3U_Request_complete(sreq);
 	    
 	    break;
 	}

@@ -160,9 +160,9 @@ extern MPIDI_Process_t MPIDI_Process;
 }
 
 /* Masks and flags for channel device state in an MPID_Request */
-#define MPIDI_Request_state_init(req)		\
+#define MPIDI_Request_state_init(_req)		\
 {						\
-    req->ch3.state = 0;				\
+    (_req)->ch3.state = 0;			\
 }
 
 #define MPIDI_REQUEST_MSG_MASK (0x3 << MPIDI_REQUEST_MSG_SHIFT)
@@ -222,6 +222,17 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->ch3.state |= ((_type) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;	\
 }
 
+#define MPIDI_REQUEST_CANCEL_MASK (0x1 << MPIDI_REQUEST_CANCEL_SHIFT)
+#define MPIDI_REQUEST_CANCEL_SHIFT 7
+#if defined(MPICH_SINGLE_THREADED)
+#define MPIDI_Request_cancel_pending(_req, _flag)						\
+{												\
+    *(_flag) = ((_req)->ch3.state & MPIDI_REQUEST_CANCEL_MASK) >> MPIDI_REQUEST_CANCEL_SHIFT;	\
+    (_req)->ch3.state |= MPIDI_REQUEST_CANCEL_MASK;						\
+}
+#else
+#error Multi-threaded MPIDI_Request_cancel_pending() not implemented.
+#endif
 
 /*
  * Send/Receive buffer macros
