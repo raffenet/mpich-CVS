@@ -267,7 +267,7 @@ The addition of a new sock object to the sock set may occur while other threads 
 Thread safety of simultaneously operations on the same sock set must be guaranteed by the Sock implementation.
   
 @*/
-int MPIDU_Sock_native_to_sock(MPIDU_Sock_set_t set, MPIDU_SOCK_NATIVE_FD fd, void *user_ptr, MPIDU_Sock_t *sock_ptr);
+int MPIDU_Sock_native_to_sock(MPIDU_Sock_set_t set, MPIDU_SOCK_NATIVE_FD fd, void * user_ptr, MPIDU_Sock_t * sock);
 
 
 /*@
@@ -429,7 +429,7 @@ Input Parameter:
 . sock - sock object to be closed
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - request to close the connection was successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object or close already posted
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
@@ -500,7 +500,7 @@ Input Parameters:
 + upate_fn - application progress update function (may be NULL)
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - request to read was successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
@@ -559,7 +559,7 @@ Input Parameters:
 + upate_fn - application progress update function (may be NULL)
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - request to read was successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_LEN - iov_n is out of range
@@ -618,7 +618,7 @@ Input Parameters:
 + upate_fn - application progress aupdate function (may be NULL)
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - request to write was successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_LEN - length parameters must be greater than zero and maxlen must be greater than minlen
@@ -678,7 +678,7 @@ Input Parameters:
 + upate_fn - application progress update function (may be NULL)
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - request to write was successfully posted
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_LEN - iov_n is out of range
@@ -737,7 +737,7 @@ Output Parameter:
 . event - pointer to the event structure to be populated
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - a new event was returned
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SET - invalid sock set object
 . MPIDU_SOCK_ERR_TIMEOUT - a timeout occurred
@@ -767,7 +767,7 @@ Input Parameter:
 . set - sock set upon which to wait for an event
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - wakeup request successfully processed
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SET - invalid sock set object
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory (is this possible?)
@@ -798,7 +798,7 @@ Output Parameter:
 . num_read - number of bytes actually read
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - no error encountered during the read operation
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and len resulted in a memory fault
@@ -848,7 +848,7 @@ Output Parameter:
 . num_read - number of bytes actually read
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - no error encountered during the read operation
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
@@ -898,7 +898,7 @@ Output Parameter:
 . num_written - actual number of bytes written
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - no error encountered during the write operation
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by buf and len resulted in a memory fault
@@ -947,7 +947,7 @@ Output Parameter:
 . num_written - actual number of bytes written
 
 Return value: a MPI error code with a Sock extended error class
-+ MPI_SUCCESS - request close the connection successfully posted
++ MPI_SUCCESS - no error encountered during the write operation
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_SOCK - invalid sock object
 . MPIDU_SOCK_ERR_BAD_BUF - using the buffer described by iov and iov_n resulted in a memory fault
