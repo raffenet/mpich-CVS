@@ -455,7 +455,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 }
 
 
-#ifdef OOOLD
+#ifdef USE_OOOLD
 int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
     int p, key_max_sz, val_max_sz, mpi_errno=MPI_SUCCESS;
@@ -648,8 +648,9 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
             
             MPIU_Strncpy(bizcard_ptr, val, val_max_sz);
             
-            printf("Child's biz card %s\n", bizcard_ptr);
-            fflush(stdout);
+	    /* I Assume that this is temporary debugging output - WDG */
+            /* printf("Child's biz card %s\n", bizcard_ptr);
+	       fflush(stdout); */
 
             bizcard_ptr += strlen(val) + 1;
             bizcards_len += strlen(val) + 1;
