@@ -1,0 +1,29 @@
+#! /bin/sh
+#
+# Configure and build mpich2 with some of the options
+#
+srcdir=/home/gropp/projects/mpich2
+instdir=/sandbox/gropp/mpi2-inst
+
+$srcdir/configure --prefix=$instdir --enable-g=all --enable-strict --enable-timing
+make
+
+#
+# Run some examples with memory tracing turned on.
+
+#
+# Other options
+# --enable-error-checking={ no, runtime, all }
+# --enable-error-messages={ all, generic, class, none }
+# --enable-timing={ none, all, runtime }
+# --enable-threads={single, multiple}
+# --enable-mpi-macros
+# --enable-g={ none, mem, all }
+# --enable-internat
+# --enable-fast
+# --enable-f77
+# --enable-cxx
+#
+# --with-loging = { ??? }
+# --with-pmi = { uni, forker, mpd }
+# --with-cross=filename (file containing cross-compilation values)

@@ -87,6 +87,8 @@ enable_fast=no)
 dnl
 AC_ARG_ENABLE(f77,
 [--enable-f77 - Enable Fortran 77 bindings],,enable_f77=no)
+AC_ARG_ENABLE(cxx,
+[--enable-cxx - Enable C++ bindings],,enable_cxx=no)
 
 dnl With options
 dnl "default" is a special device that allows MPICH to choose one based on 
