@@ -12,6 +12,14 @@
 #include <lm.h>
 #endif
 
+typedef struct smpd_host_spn_node_t
+{
+    char host[SMPD_MAX_NAME_LENGTH];
+    char spn[SMPD_MAX_NAME_LENGTH];
+    struct smpd_host_spn_node_t *next;
+} smpd_host_spn_node_t;
+static smpd_host_spn_node_t *spn_list = NULL;
+
 #undef FCNAME
 #define FCNAME "smpd_register_spn"
 int smpd_register_spn(const char *dc, const char *dn, const char *dh)
@@ -146,31 +154,7 @@ int smpd_lookup_spn(char *target, int length, const char * host, int port)
     env = getenv("MPICH_SPN");
     if (env)
     {
-	if (strlen(env) > 1)
-	{
-	    strncpy(target, env, SMPD_MAX_NAME_LENGTH);
-	}
-	else
-	{
-	    switch (env[0])
-	    {
-	    case 'p':
-		GetUserNameEx(NameUserPrincipal, target, &len);
-		break;
-	    case 'd':
-		GetUserNameEx(NameDnsDomain, target, &len);
-		break;
-	    case 'n':
-		GetUserNameEx(NameSamCompatible, target, &len);
-		break;
-	    case 'x':
-		*target = '\0';
-		break;
-	    default:
-		GetUserName(target, &len);
-		break;
-	    }
-	}
+	MPIU_Strncpy(target, env, SMPD_MAX_NAME_LENGTH);
     }
     else
     {
@@ -179,7 +163,7 @@ int smpd_lookup_spn(char *target, int length, const char * host, int port)
 	if (result != ERROR_SUCCESS)
 	{
 	    smpd_translate_win_error(result, err_msg, 255, NULL);
-	    smpd_err_printf("DsMakeSpn failed: %s\n", err_msg);
+	    smpd_err_printf("DsMakeSpn(%s, %s, %d) failed: %s\n", SMPD_SERVICE_NAME, host, port, err_msg);
 	    return SMPD_FAIL;
 	}
 	/*
