@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 #define LOGGING
 #include "mpi.h"
 #ifdef USE_GRAPHICS
