@@ -237,7 +237,7 @@ if [ "$has_unix_find" = "yes" ] ; then
 	        # directory.  
 	        if [ $dir = "./src/mpi/romio" ] ; then
 		    (cd $dir ; \
-		    autoheader -l ../../../confdb configure2.in > adio/include/romioconf.h \
+		     autoheader -l ../../../confdb configure2.in > adio/include/romioconf.h ; \
 		     autoconf -l ../../../confdb configure2.in > configure )
 		fi
 	        continue

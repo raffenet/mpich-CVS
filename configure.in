@@ -361,10 +361,6 @@ if test "$enable_cxx" = "yes" ; then
 fi
 AC_SUBST(bindings)
 dnl
-if test "$enable_romio" = "yes" ; then
-   subsystems="$subsystems src/mpi/romio"
-fi
-dnl
 pac_cross_compiling=no
 if test "$with_cross" != "no" ; then
     if test -s "$with_cross" ; then
@@ -446,6 +442,18 @@ if test -z "$master_top_srcdir" ; then
 fi
 AC_SUBST(master_top_srcdir)
 export master_top_srcdir
+dnl
+dnl This goes here because we need the top_srcdir
+if test "$enable_romio" = "yes" ; then
+   if test -d $use_top_srcdir/src/mpi/romio ; then
+       subsystems="$subsystems src/mpi/romio"
+   else
+       AC_MSG_WARN([ROMPI src directory is not available])
+   fi
+   # Set environment variables that the romio configure expects
+   FROM_MPICH=1
+   export FROM_MPICH
+fi
 dnl
 if test ! -d $use_top_srcdir/src/mpid/$device_name ; then
 dnl     WAIT UNTIL WE INCLUDE A DEVICE

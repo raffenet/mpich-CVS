@@ -121,7 +121,7 @@ PREFIX=""
 DEBUG=no
 MIPS=0
 BITS=0
-FROM_MPICH=0
+FROM_MPICH=${FROM_MPICH:-0}
 CFLAGS=${CFLAGS:-""}
 LL="\%lld"
 AR_LOCAL=l
@@ -223,9 +223,8 @@ if test -z "$ARCH" -a -x $srcdir/util/tarch ; then
     ARCH=`$srcdir/util/tarch | sed s/-/_/g`
     if test -z "$ARCH" ; then
        AC_MSG_RESULT(Unknown!)
-       print_error "Error: Couldn't guess target architecture, you must"
-       print_error "       set an architecture type with -arch=<value>"
-       exit 1
+       AC_MSG_ERROR([Error: Couldn't guess target architecture, you must
+set an architecture type with -arch=<value>])
     fi
     eval "arch_$ARCH=1"
     AC_MSG_RESULT($ARCH)
@@ -1193,6 +1192,8 @@ echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
 #
+VPATH='VPATH = .:${srcdir}'
+AC_SUBST(VPATH)
 AC_SUBST(ARCH)
 AC_SUBST(FILE_SYSTEM)
 AC_SUBST(CC)
@@ -1277,17 +1278,18 @@ AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile \
 #
 rm -f *.o
 if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = 0 ; then
-print_error " "
-print_error Please register your copy of ROMIO with us by sending email
-print_error to majordomo@mcs.anl.gov with the message
-print_error subscribe romio-users
-print_error This will enable us to notify you of new releases of ROMIO
-print_error as well as bug fixes.
-print_error " "
+cat <<EOF
+
+Please register your copy of ROMIO with us by sending email
+to majordomo@mcs.anl.gov with the message
+subscribe romio-users
+This will enable us to notify you of new releases of ROMIO
+as well as bug fixes.
+
+EOF
 fi
 if test $FROM_MPICH = 0 ; then
-   print_error Configure done. Now type make
-   print_error " "
+   AC_MSG_RESULT([Configure done. Now type make])
 fi
 dnl PAC_SUBDIR_CACHE_CLEANUP
 exit 0
