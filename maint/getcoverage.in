@@ -35,7 +35,7 @@ $outputUncovered = 1;
 # annoteBaseDir is the base file name that is stripped from the
 # file names
 $annoteSrcDir = "";
-$annoteFiles = 1;
+$annoteFiles = 0;
 $annoteBaseDir = "";
 
 for (@ARGV) {
@@ -302,7 +302,7 @@ sub WriteAnnoteFile {
 	$basefile =~ s/$annoteBaseDir//;
 	my $OUTFD = OUTFD;
 	my $rc = &MakeDirs( "$annoteSrcDir/$basefile" );
-	$rc = open( $OUTFD, ">$annoteSrcDir/$basefile" );
+	$rc = open( $OUTFD, ">$annoteSrcDir/$basefile.htm" );
 	if ($rc != 0) {
 	    $newline = "\r\n";
 	    print $OUTFD "<HTML><HEAD>$newline";
