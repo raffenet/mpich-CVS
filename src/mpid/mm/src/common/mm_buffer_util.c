@@ -13,5 +13,15 @@ int mm_get_buffers_tmp(MPID_Request *request_ptr)
 
 int mm_get_buffers_vec(MPID_Request *request_ptr)
 {
+    request_ptr->mm.buf.vec.first = request_ptr->mm.buf.vec.last;
+    request_ptr->mm.buf.vec.last = request_ptr->mm.last;
+
+    MPID_Segment_pack_vector(
+	&request_ptr->mm.segment,
+	request_ptr->mm.buf.vec.first,
+	&request_ptr->mm.buf.vec.last,
+	request_ptr->mm.buf.vec.vec,
+	&request_ptr->mm.buf.vec.vec_size);
+
     return MPI_SUCCESS;
 }

@@ -143,7 +143,7 @@ typedef union MM_Segment_buffer
 	int vec_size;
 	int msg_size;
 	int num_read;
-	int local_last;
+	int first, last;
 	int min_num_written;
     } vec;
 #ifdef WITH_METHOD_SHM

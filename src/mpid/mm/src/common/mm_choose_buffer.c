@@ -20,16 +20,21 @@ int mm_choose_buffer(MPID_Request *request_ptr)
     /* pick the best buffer type that everyone can handle */
     /* if there are incompatible cars, allocate other requests and 
        connect them together with copier methods */
+    /* pat your head and rub your tummy */
 
     /* but for now always choose the vector buffer type */
     if (request_ptr->mm.rcar[0].type != MM_NULL_CAR)
     {
+	/* Should this code be moved into a function like vec_buffer_init? */
+	/* This would lead nicely into shm_buffer_init and via_buffer_init */
 	request_ptr->mm.buf.type = MM_VEC_BUFFER;
 	request_ptr->mm.buf.vec.vec_size = MPID_VECTOR_LIMIT;
 	request_ptr->mm.buf.vec.msg_size = 0;
 	request_ptr->mm.buf.vec.num_read = 0;
 	request_ptr->mm.buf.vec.min_num_written = 0;
-	request_ptr->mm.buf.vec.local_last = 0;
+	request_ptr->mm.buf.vec.first = 0;
+	request_ptr->mm.buf.vec.last = 0;
+
 	request_ptr->mm.get_buffers = mm_get_buffers_vec;
     }
     else

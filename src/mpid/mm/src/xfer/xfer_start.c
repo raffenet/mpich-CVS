@@ -24,12 +24,24 @@ int xfer_start(MPID_Request *request_ptr)
     pRequest = request_ptr;
     while (pRequest)
     {
+	/* choose the buffer */
 	mpi_errno = mm_choose_buffer(pRequest);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    return mpi_errno;
 	}
-	mm_reset_cars(pRequest);
+	/* get the initial buffers */
+	mpi_errno = pRequest->mm.get_buffers(pRequest);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    return mpi_errno;
+	}
+	/* reset the cars */
+	mpi_errno = mm_reset_cars(pRequest);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    return mpi_errno;
+	}
 	pRequest = pRequest->mm.next_ptr;
     }
 

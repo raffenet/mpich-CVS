@@ -11,6 +11,7 @@ int mm_post_recv(MM_Car *car_ptr)
     MM_Car *iter_ptr, *trailer_ptr;
     
     /* check if this is a packer car */
+    /* packer cars are not matched */
     if (car_ptr->type & MM_PACKER_CAR)
     {
 	packer_post_read(MPID_Process.packer_vc_ptr, car_ptr);
@@ -102,7 +103,8 @@ int mm_post_read_pkt(MPIDI_VC *vc_ptr)
     buf_ptr->vec.vec_size = 1;
     buf_ptr->vec.num_read = 0;
     buf_ptr->vec.min_num_written = 0;
-    buf_ptr->vec.local_last = sizeof(MPID_Packet);
+    buf_ptr->vec.first = 0;
+    buf_ptr->vec.last = sizeof(MPID_Packet);
     buf_ptr->vec.msg_size = sizeof(MPID_Packet);
 
     vc_ptr->post_read(vc_ptr, car_ptr);

@@ -13,6 +13,6 @@ int packer_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
 int packer_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 {
-    err_printf("packer_merge_with_unexpected: I thought this function would never be called.\n");
+    err_printf("packer_merge_with_unexpected: Congratulations,\nyou win the opportuninty to report a bug.  I thought this function would never be called.\n");
     return MPI_SUCCESS;
 }

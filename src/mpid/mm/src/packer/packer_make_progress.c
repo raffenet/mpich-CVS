@@ -58,7 +58,7 @@ int packer_make_progress()
 		buf_ptr->vec.vec_size = 1;
 		buf_ptr->vec.num_read = 0;
 		buf_ptr->vec.min_num_written = 0;
-		buf_ptr->vec.local_last = 0;
+		buf_ptr->vec.last = 0;
 		buf_ptr->vec.msg_size = 0;
 		finished = TRUE;
 		break;
