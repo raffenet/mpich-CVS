@@ -45,6 +45,9 @@ Open Tasks:
 
 * (doc, req #125) documentation generator [Bill/?]
 
+* (mpi) all MPI functions need to call MPIR_Err_create_code() so the errors
+  printed to the user do not contain MPID function names
+
 * failures on 64-bit platforms
 
 * (util, req #125) parameter interface and implementation [Bill/?]
