@@ -197,6 +197,14 @@ AC_DEFUN(PAC_C_DEPENDS,[
 AC_SUBST(C_DEPEND_OPT)
 AC_SUBST(C_DEPEND_OUT)
 AC_SUBST(C_DEPEND_MV)
+if test -n "$ac_cv_c_depend_opt" ; then
+    AC_MSG_RESULT([Option $ac_cv_c_depend_opt creates dependencies (cached)])
+    C_DEPEND_OUT="$ac_cv_c_depend_out"
+    C_DEPEND_MV="$ac_cv_c_depend_mv"
+    C_DEPEND_OPT="$ac_cv_c_depend_opt"
+    C_DEPEND_PREFIX="$ac_cv_c_depend_prefix"
+else
+   # Determine the values
 rm -f conftest*
 dnl
 dnl Some systems (/usr/ucb/cc on Solaris) do not generate a dependency for
@@ -253,15 +261,18 @@ for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
     fi
     copt=""
 done
-AC_SUBST(C_DEPEND_PREFIX)
-if test "X$copt" = "X" ; then
-    C_DEPEND_PREFIX="true"
-else
-    C_DEPEND_PREFIX=""
-fi
-# Ensure that there is a Depends file
-touch Depends
+    AC_SUBST(C_DEPEND_PREFIX)
+    if test "X$copt" = "X" ; then
+        C_DEPEND_PREFIX="true"
+    else
+        C_DEPEND_PREFIX=""
+    fi
+    ac_cv_c_depend_out="$C_DEPEND_OUT"
+    ac_cv_c_depend_mv="$C_DEPEND_MV"
+    ac_cv_c_depend_opt="$C_DEPEND_OPT"
+    ac_cv_c_depend_prefix="$C_DEPEND_PREFIX"
 rm -f conftest*
+fi
 ])
 dnl
 dnl/*D 

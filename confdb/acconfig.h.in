@@ -5,3 +5,4 @@
  */
 #include "acconfig_f77.h"
 #include "acconfig_cc.h"
+#include "acconfig_mpi.h"

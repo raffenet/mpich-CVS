@@ -119,3 +119,23 @@ AC_ARG_WITH(sgimpi,
 [--with-sgimpi    - Use the SGI implementation of MPI],
 TESTCC=${CC:=cc}; TESTF77=${F77:=f77})
 ])
+dnl
+dnl/*D
+dnl PAC_MPI_F2C - Determine if MPI has the MPI-2 functions MPI_xxx_f2c and
+dnl   MPI_xxx_c2f
+dnl
+dnl Output Effect:
+dnl Define 'HAVE_MPI_F2C' if the routines are found.
+dnlD*/
+AC_DEFUN(PAC_MPI_F2C,[
+AC_CACHE_CHECK([for MPI F2C and C2F routines],
+pac_cv_mpi_f2c,
+[
+AC_TRY_LINK([#include "mpi.h"],
+[MPI_Request request;MPI_Fint a;a = MPI_Request_c2f(request);],
+pac_cv_mpi_f2c="yes",pac_cv_mpi_f2c="no")
+])
+if test "$pac_cv_mpi_f2c" = "yes" ; then 
+    AC_DEFINE(HAVE_MPI_F2C) 
+fi
+])

@@ -46,7 +46,6 @@ str=`$MAKE -f conftest 2>&1`
 if test "$str" != "success" ; then
     str=`$MAKE --no-print-directory -f conftest 2>&1`
     if test "$str" = "success" ; then
-        MAKE="$MAKE --no-print-directory"
 	pac_cv_prog_make_echos_dir="yes using --no-print-directory"
     else
 	pac_cv_prog_make_echos_dir="no"
@@ -57,6 +56,9 @@ fi
 /bin/rm -f conftest
 str=""
 ])
+if test "$pac_cv_prog_make_echos_dir" = "yes using --no-print-directory" ; then
+    MAKE="$MAKE --no-print-directory"
+fi
 ])dnl
 dnl
 dnl/*D
@@ -273,6 +275,11 @@ dnl This macro uses 'PAC_PROG_MAKE_ECHOS_DIR', 'PAC_PROG_MAKE_INCLUDE',
 dnl 'PAC_PROG_MAKE_ALLOWS_COMMENTS', 'PAC_PROG_MAKE_VPATH', and
 dnl 'PAC_PROG_MAKE_SET_CFLAGS'.  See those commands for details about their
 dnl actions.
+dnl 
+dnl It may call 'AC_PROG_MAKE_SET', which sets 'SET_MAKE' to 'MAKE = @MAKE@'
+dnl if the make program does not set the value of make, otherwise 'SET_MAKE'
+dnl is set to empty; if the make program echos the directory name, then 
+dnl 'SET_MAKE' is set to 'MAKE = $MAKE'.
 dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE,[
@@ -285,5 +292,9 @@ PAC_PROG_MAKE_ALLOWS_COMMENTS
 PAC_PROG_MAKE_VPATH
 AC_SUBST(SET_CFLAGS)
 PAC_PROG_MAKE_SET_CFLAGS([SET_CFLAGS='CFLAGS='])
-AC_PROG_MAKE_SET
+if test "$pac_cv_prog_make_echos_dir" = "no" ; then
+    AC_PROG_MAKE_SET
+else
+    SET_MAKE="MAKE=${MAKE-make}"
+fi
 ])

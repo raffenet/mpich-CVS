@@ -17,17 +17,53 @@ dnl To use this version of 'AC_CACHE_LOAD', you need to include
 dnl 'aclocal_cache.m4' in your 'aclocal.m4' file.  The sowing 'aclocal.m4'
 dnl file include this file.
 dnl
+dnl If no --enable-cache or --disable-cache option is selected, the
+dnl command causes configure to keep track of the system being configured
+dnl in a config.system file; if the current system matches the value stored
+dnl in that file (or there is neither a config.cache nor config.system file),
+dnl configure will enable caching.
+dnl
 dnl See Also:
 dnl PAC_ARG_CACHING
 dnlD*/
 define([AC_CACHE_LOAD],
-[if test "X$enable_cache" = "Xyes" ; then
+[if test "X$cache_system" = "X" ; then
+    if test "$cache_file" != "/dev/null" ; then
+        # Get the directory for the cache file, if any
+	changequote(,)
+        cache_system=`echo $cache_file | sed -e 's%^\(.*/\)[^/]*%\1/config.system%'`
+	changequote([,])
+        test "x$cache_system" = "x$cache_file" && cache_system="config.system"
+    fi
+fi
+dnl
+dnl The "action-if-not-given" part of AC_ARG_ENABLE is not executed until
+dnl after the AC_CACHE_LOAD is executed (!).  Thus, the value of 
+dnl enable_cache if neither --enable-cache or --disable-cache is selected
+dnl is null.  Just in case autoconf ever fixes this, we test both cases.
+if test "X$enable_cache" = "Xnotgiven" -o "X$enable_cache" = "X" ; then
+    # check for valid cache file
+    if uname -srm >/dev/null 2>&1 ; then
+        testval=`uname -srm`
+        if test -f $cache_system -a -n "$testval" ; then
+	    if test "$testval" = "`cat $cache_system`" ; then
+	        enable_cache="yes"
+	    fi
+        elif test ! -f $cache_system -a -n "$testval" ; then
+	    echo "$testval" > $cache_system
+	    enable_cache="yes"
+        fi
+    fi
+fi
+if test "X$enable_cache" = "Xyes" ; then
   if test -r "$cache_file" ; then
     echo "loading cache $cache_file"
     . $cache_file
   else
     echo "creating cache $cache_file"
     > $cache_file
+    rm -f $cache_system
+    uname -srm > $cache_system
   fi
 else
   cache_file="/dev/null"
@@ -53,5 +89,5 @@ dnl initially processes ARG_ENABLE commands.
 AC_DEFUN(PAC_ARG_CACHING,[
 AC_ARG_ENABLE(cache,
 [--enable-cache  - Turn on configure caching],
-enable_cache="yes",enable_cache="no")
+enable_cache="$enableval",enable_cache="notgiven")
 ])

@@ -17,3 +17,9 @@
 
 /* Define if Fortran leaves case unchanged, followed by an underscore */
 #undef F77_NAME_MIXED_USCORE
+
+/* Sizeof standard Fortran types */
+#undef SIZEOF_F77_DOUBLE_PRECISION
+#undef SIZEOF_F77_INTEGER
+#undef SIZEOF_F77_INTEGER_4
+#undef SIZEOF_F77_REAL

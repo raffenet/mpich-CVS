@@ -8,3 +8,4 @@ configure.in
 configure
 config.log
 config.status
+config.cache
