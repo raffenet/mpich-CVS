@@ -45,7 +45,7 @@ C
          if (value .lt. 0) then
             errs = errs + 1
             print *, "MPI_APPNUM is defined as ", value,
-     $           "but must be nonnegative"
+     $           " but must be nonnegative"
          endif
       endif
 
