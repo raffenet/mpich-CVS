@@ -7,20 +7,20 @@
 #define IBIMPL_H
 
 #include "mm_ib.h"
-#include "sock.h"
 
 #include "iba.h"
 
 #define IB_SUCCESS 0
 #define IB_FAILURE 1
 
-#define IB_EAGER_LIMIT         (1024 * 1024 * 4)
-#define IB_ERROR_MSG_LENGTH    256
-#define IB_LISTENER_POINTER    &IB_Process
+#define IB_EAGER_LIMIT            (1024 * 1024 * 6)
+#define IB_ERROR_MSG_LENGTH       256
+#define IB_LISTENER_POINTER       &IB_Process
 //#define IB_PINNED_MEMORY_SIZE  2*1024*1024
-#define IB_PACKET_SIZE         (1024 * 128)
-#define IB_PACKET_COUNT        16
-#define IB_MAX_CQ_ENTRIES      50
+#define IB_PACKET_SIZE            (1024 * 32)
+#define IB_PACKET_COUNT           192
+#define IB_NUM_PREPOSTED_RECEIVES 32
+#define IB_MAX_CQ_ENTRIES         255
 
 typedef struct IB_PerProcess {
     MPID_Thread_lock_t lock;
