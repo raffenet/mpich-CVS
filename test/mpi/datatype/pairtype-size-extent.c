@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
 
 	    if (verbose) fprintf(stderr,
 				 "extent of %s (%d) does not match extent of hand-built equivalent structure (%d)\n",
-				 pairtypes[i].name, (int) ptype_size,
-				 (int) stype_size);
+				 pairtypes[i].name, (int) ptype_extent,
+				 (int) stype_extent);
 	}
     }
     
