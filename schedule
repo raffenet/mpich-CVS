@@ -679,10 +679,6 @@ mm_choose_buffer,
 mm_get_buffers_tmp,
 mm_get_buffers_vec,
 
-mm_packer_read,
-mm_packer_write,
-mm_unpacker_write,
-
 mm_post_recv,
 mm_post_read_pkt,
 mm_post_send,
