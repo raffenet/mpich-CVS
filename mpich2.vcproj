@@ -1861,6 +1861,12 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\romio\adio\common\ad_iopen.c">
 			</File>
 			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_iread.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_iwrite.c">
+			</File>
+			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs.c">
 			</File>
 			<File
@@ -1876,9 +1882,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_flush.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_hints.c">
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_iread.c">
 			</File>
 			<File
@@ -1888,22 +1891,13 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_open.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_rdcoll.c">
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_read.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_resize.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_seek.c">
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_wait.c">
-			</File>
-			<File
-				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_wrcoll.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\ad_ntfs\ad_ntfs_write.c">
@@ -1919,6 +1913,9 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\ad_read_str_naive.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_seek.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\ad_set_sh_fp.c">
@@ -2515,6 +2512,21 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 				RelativePath=".\src\mpid\common\datatype\gen_segment.c">
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_blockindexed.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_contiguous.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_indexed.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_struct.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_vector.c">
+			</File>
+			<File
 				RelativePath=".\src\mpi\romio\adio\common\gencheck.c">
 			</File>
 			<File
@@ -3107,6 +3119,12 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\timer\mpidtime.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\mpi-io\glue\mpich2\mpio_err.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\mpi-io\glue\mpich2\mpio_file.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\mpir_request.c">
@@ -4222,9 +4240,6 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\src\mpi\romio\adio\common\setfn.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\shfp_fname.c">

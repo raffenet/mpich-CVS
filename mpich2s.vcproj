@@ -870,9 +870,6 @@
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_flush.c">
 			</File>
 			<File
-				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_hints.c">
-			</File>
-			<File
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_iread.c">
 			</File>
 			<File
@@ -882,22 +879,13 @@
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_open.c">
 			</File>
 			<File
-				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_rdcoll.c">
-			</File>
-			<File
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_read.c">
 			</File>
 			<File
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_resize.c">
 			</File>
 			<File
-				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_seek.c">
-			</File>
-			<File
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_wait.c">
-			</File>
-			<File
-				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_wrcoll.c">
 			</File>
 			<File
 				RelativePath="src\mpi\romio\adio\ad_ntfs\ad_ntfs_write.c">
@@ -1854,6 +1842,21 @@
 				RelativePath="src\mpid\common\datatype\gen_segment.c">
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_blockindexed.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_contiguous.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_indexed.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_struct.c">
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_type_vector.c">
+			</File>
+			<File
 				RelativePath=".\src\mpi\romio\adio\common\gencheck.c">
 			</File>
 			<File
@@ -2593,9 +2596,6 @@
 						Name="VCCLCompilerTool"
 						PreprocessorDefinitions="F77_NAME_UPPER"/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="src\mpi\romio\adio\common\setfn.c">
 			</File>
 			<File
 				RelativePath="src\mpi\romio\adio\common\shfp_fname.c">
