@@ -115,10 +115,12 @@ int cq_handle_read_car(MM_Car *car_ptr)
 int cq_handle_write_head_car(MM_Car *car_ptr)
 {
     /* for now, all writes are eager - no rndv */
+    /*
     if (car_ptr->next_ptr)
     {
 	car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
+    */
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
@@ -127,10 +129,12 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
 int cq_handle_write_data_car(MM_Car *car_ptr)
 {
     /* for now, all writes are eager - no rndv */
+    /*
     if (car_ptr->next_ptr)
     {
 	car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
+    */
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
