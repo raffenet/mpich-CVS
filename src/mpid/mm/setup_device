@@ -10,3 +10,10 @@ for method in $method_subdirs ; do
        LIBS="$LIBS /usr/local/PSC1200/lib/libibos.so -ldl -lpthread"
     fi
 done
+
+master_top_builddir="`pwd`"
+
+CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/mpid/mm/include"
+CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/mpid/common/datatype"
+CPPFLAGS="$CPPFLAGS -I${master_top_builddir}/src/mpid/mm/include"
+CPPFLAGS="$CPPFLAGS -I${master_top_builddir}/src/mpid/common/datatype"
