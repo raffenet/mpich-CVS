@@ -51,14 +51,11 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
     static const char FCNAME[] = "MPI_Irecv";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_Datatype *datatype_ptr = NULL;
     MPID_Request *request_ptr = NULL;
+    int context_offset = 0;
+    MPID_MPI_STATE_DECLS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IRECV);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
-    MPID_Request_get_ptr( *request, request_ptr );
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -66,13 +63,37 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                             "**initialized", 0 );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
-	    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    MPID_Request_valid_ptr( request_ptr, mpi_errno );
-            /* Validate comm_ptr */
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IRECV);
+
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPID_Datatype *datatype_ptr = NULL;
+
+            /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+
+            /* Validate datatype */
+	    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+	    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
@@ -81,8 +102,24 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPID_Irecv(buf, count, datatype_ptr, source, tag, comm_ptr, &request_ptr);
+    mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr, context_offset, &request_ptr);
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	if (request_ptr == NULL)
+	{
+	    /* *request = MPID_STATIC_FINISHED_REQUEST; */
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+	    return MPI_SUCCESS;
+	}
+
+	/* return the handle of the request to the user */
+	*request = request_ptr->id;
+	
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+	return MPI_SUCCESS;
+    }
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRECV);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
