@@ -64,6 +64,44 @@ AC_CHECK_HEADERS(                               \
     sys/uio.h					\
     unistd.h)
 
+AC_MSG_CHECKING([if struct poll is defined]);
+AC_TRY_COMPILE([
+#if defined(HAVE_POLL_H)
+#include <poll.h>
+#endif
+#if defined(HAVE_SYS_POLL_H)
+#include <sys/poll.h>
+#endif
+],[
+struct pollfd pollfd;
+pollfd.fd = -1;
+],[
+AC_MSG_RESULT([yes])
+],[
+AC_MSG_RESULT([no])
+AC_MSG_ERROR([This device requires the poll function])
+])
+
+AC_MSG_CHECKING([if a simple program using poll() can be compiled]);
+AC_TRY_COMPILE([
+#if defined(HAVE_POLL_H)
+#include <poll.h>
+#endif
+#if defined(HAVE_SYS_POLL_H)
+#include <sys/poll.h>
+#endif
+],[
+struct pollfd pollfds[2];
+int n_fds;
+pollfds[0].fd = -1;
+pollfds[1].fd = -1;
+n_fds = poll(pollfds, 2, -1);
+],[
+AC_MSG_RESULT([yes])
+],[
+AC_MSG_RESULT([no])
+AC_MSG_ERROR([This device requires the poll function])
+])
 
 saveLIBS="$LIBS"
 LIBS=""
