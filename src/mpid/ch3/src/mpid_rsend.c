@@ -142,6 +142,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 
   fn_exit:
     *request = sreq;
+#ifdef MPICH_DBG_OUTPUT
     if (mpi_errno == MPI_SUCCESS)
     {
 	if (sreq)
@@ -153,6 +154,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests allocated"));
 	}
     }
+#endif
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_RSEND);
     return mpi_errno;

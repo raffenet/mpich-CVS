@@ -194,11 +194,12 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
   fn_exit:
     *request = sreq;
+#ifdef MPICH_DBG_OUTPUT
     if (sreq != NULL)
     {
-	MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x",
-			  sreq->handle));
+	MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
     }
+#endif
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_ISSEND);
     return mpi_errno;
