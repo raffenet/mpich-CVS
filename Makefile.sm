@@ -73,7 +73,7 @@ dist-with-version:
 	rm -f cvsexp.log 
 	if [ -n "${TAG}" ] ; then \
 	    ( cd tmpdir && \
-	    cvs -d $(MPICVSHOME) export -r ${TAG} mpich2all >cvsexp.log 2>&1 ) ;\
+	    cvs -d $(MPICVSHOME) export -r "${TAG}" mpich2all >cvsexp.log 2>&1 ) ;\
 	else \
 	    ( cd tmpdir && \
 	    cvs -d $(MPICVSHOME) export -D 'now' mpich2all >cvsexp.log 2>&1 ) ;\
