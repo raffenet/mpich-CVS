@@ -1,0 +1,2 @@
+simple_SOURCES = simple.c
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
