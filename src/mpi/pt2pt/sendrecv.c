@@ -124,6 +124,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	reqs[0]->status.MPI_TAG = MPI_ANY_TAG;
 	reqs[0]->kind = MPID_REQUEST_RECV;
 	reqs[0]->cc = 0;
+	reqs[0]->cc_ptr = &reqs[0]->cc;
     }
     
     if (dest == MPI_PROC_NULL)
@@ -142,6 +143,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 
 	reqs[1]->kind = MPID_REQUEST_SEND;
 	reqs[1]->cc = 0;
+	reqs[1]->cc_ptr = &reqs[1]->cc;
     }
 
     if (source != MPI_PROC_NULL)

@@ -122,13 +122,14 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	{
 	    request_ptr->kind = MPID_REQUEST_SEND;
 	    request_ptr->cc = 0;
+	    request_ptr->cc_ptr = &request_ptr->cc;
 	    *request = request_ptr->handle;
 	
 	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISEND);
 	    return MPI_SUCCESS;
 	}
 	
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ISEND);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISEND);
 	return MPI_ERR_NOMEM;
     }
 

@@ -123,13 +123,14 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 	    request_ptr->status.MPI_TAG = MPI_ANY_TAG;
 	    request_ptr->kind = MPID_REQUEST_RECV;
 	    request_ptr->cc = 0;
+	    request_ptr->cc_ptr = &request_ptr->cc;
 	    *request = request_ptr->handle;
 	
 	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
 	    return MPI_SUCCESS;
 	}
 	
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IRECV);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
 	return MPI_ERR_NOMEM;
     }
 
