@@ -1,28 +1,36 @@
 \subsection{Steps Needed in Implementing a Device}
+Here are the steps that must be taken to implement a new device.
+Similar steps are required when adding to a device, such as creating a
+new channel-based device.
+
 \begin{enumerate}
-\item \code{mpiexec}.  Define how \mpich\ creates the correct
-\code{mpiexec}.  There must be an \code{mpiexec} target in the
-device's \file{Makefile}.
+\item A new device is created by adding a new directory
+\file{src/mpid/<newdevice>}.  Into this directory should go all of the
+files (and subdirectories) needed for the device.  These include
+\begin{description}
+\item[\file{setup_device}]This script, if present, is run
+\emph{before} any configure in the device directory.  It can setup any
+files or communicate any data that is needed by the device.
 
-\item Installation.  Define how \mpich\ gets the proper device-specific files
-  installed; e.g., if the device uses the multi-purpose demon
-  (\code{mpd}), ensure that the \code{mpd} is installed.  Provide an
-  \code{install} target in the device's \file{Makefile}.  For example,
-  in the \file{Makefile.sm}, use the line
+\item[\file{configure}]This should be a standard \code{autoconf}
+script (at least, it must accept the standard \code{configure}
+arguments.  All device-specific tests, such as those for header files
+or libraries, should be made by the \code{configure} in the device
+directory.  No changes of any kind should be made to the top-level
+\code{configure} (the one in the \file{mpich2} directory).
+
+\item[\file{localdefs}]This file, if present, is sourced by the
+top-level \code{configure}.  It should be used to communicate any
+variable values to the top-level configure.  A common use it to add
+any libraries that may be required.  For example, a file
+\file{localdefs.in} may be used containing
 \begin{verbatim}
-install_BIN = mpd
+LIBS="$LIBS @EXTRA_LIBS@"
 \end{verbatim}
-to install the program \code{mpd} into the \file{bin} directory.
-
-\item Device-specific documentation, such as environment variables and
-  command-line arguments used only by a particular device.  Place this
-  information into the file \file{devdoc.txt}.  The \mpich\
-  documentation generators will look for this file.
-
-\item Testing codes for device-specific functions.  Place these
-in a \file{test} subdirectory of the device. These tests 
-should be performed through a \code{test} target in the device's
-\file{Makefile}. 
+The \code{configure} in the device directory includes \file{localdefs}
+in the \code{AC_OUTPUT} list, allowing the device's \code{configure} step to
+create the \file{localdefs} file.
+\end{description}
 
 \item Include files.  Any include files that are needed by
 \file{mpiimpl.h} (used to build the implementation of the MPI
@@ -40,6 +48,41 @@ This also includes information on the timers.
 \item[mpidpost.h]Any definitions needed by the device after the rest
 of the definitions in \file{mpiimpl.h}.  In many cases, this file may
 be empty.
+
+\item Testing codes for device-specific functions.  Place these
+in a \file{test} subdirectory of the device. These tests 
+should be performed through a \code{test} target in the device's
+\file{Makefile.sm}. 
+
+
+\item \code{mpiexec}.  Decide whether you need a special
+  \code{mpiexec} program.  Many devices will be able to use any of the
+\code{mpiexec} programs in the various \file{src/pm} directories, such
+as \file{src/pm/mpd} and \file{src/pm/forker}.  (``pm'' is for process
+manager, and MPICH2 expects to install some process manager for all
+devices.)
+If you need a new
+\code{mpiexec}, it should be added to a new subdirectory within
+\file{src/pm}.  There must be an installation target in the
+\file{Makefile.sm} for any new \code{mpiexec}.  For example, if the
+\code{mpiexec} program requires the multi-purpose demon
+  (\code{mpd}), ensure that the \code{mpd} is installed.  For example,
+  in the \file{src/pm/<my-process-manager>/Makefile.sm}, use the line
+\begin{verbatim}
+install_BIN = mpd
+\end{verbatim}
+to install the program \code{mpd} into the \file{bin} directory.  The
+particular process manager to use is selected at configure time using
+the \code{--with-pm} option.  Most devices should be able to use one
+of the process managers provided with MPICH2.
+
+\item Device-specific documentation, such as environment variables and
+  command-line arguments used only by a particular device.  Place this
+  information into the file \file{src/mpid/<yourdevice>devdoc.txt}.
+  The \mpich\ 
+  documentation generators will look for this file.
+
+
 \end{description}
 All of these are included by the file \file{mpiimpl.h}.
 \end{enumerate}
@@ -74,4 +117,5 @@ echomaxprocname:
 \end{verbatim}
 This value will be used as the value for
 \code{MPI_MAX_PROCESSOR_NAME}, and must be an integer value.
-
+(The above will be replaced by an option to provide this value through
+the \file{localdefs} files.)

@@ -15,7 +15,24 @@ into MPI implementations).
 
 \subsection{Other Work}
 \label{sec:other-work}
+
 This section will briefly review other MPI implementation designs.
+
+Other implementations of MPI include ones from IBM \cite{mpi-ibm},
+Sun \cite{mpi-sun}, MPI Software technology \cite{mpi-softtech} and
+Critical Software \cite{mpi-critical-software}.  The IBM, Sun, and MPI
+Software technology versions offer support for \code{MPI_THREAD_MULTIPLE}.
+
+Several implementations have been developed that rely on remote memory
+operations, including IBM LAPI \cite{mpi-lapi}, DEC (now HP) memory
+channel \cite{mpi-dec-memory-channel}, Infiniband
+\cite{mpi-infiniband}, and BIP \cite{mpi-bip}.  
+
+Several implementations of the MPI one-sided operations have been
+described; see \cite{mpi-sun-rma}, \cite{mpi-fujitsu-rma}.
+
+The major cluster implementations are MPICH \cite{mpich} and LAM/MPI
+\cite{lam-mpi}.  
 
 An example of the use of both lock-free shared-memory operations and threads
 as MPI ``processes'' is presented in \cite{tang00:mpi-impl}.  
@@ -33,8 +50,13 @@ data cannot be delivered to its final (user-specified) destination
 until the matching MPI call is made by the destination process.  This feature
 has led many (but not all) MPI implementations to adopt a
 \emph{polling}\index{polling} mode of communication where communication for MPI
-happens only within MPI calls, not asynchronously.  An alternative
-approach uses either one more more separate threads or an interrupt to
+happens only within MPI calls, not asynchronously.\footnote{The only
+  exception to this is cancelling of MPI Send operations; a strictly
+  conforming implementation of this requires a guarantee that the
+  remote process will respond without requiring an MPI call.  Because
+  of the extremely rare usage of this feature, most polling-mode
+  implementations do not support this case.} An alternative
+approach uses either one more separate threads or an interrupt to
 cause communication to happen outside of MPI calls made by the
 user\footnote{MPICH-1 supported both modes but most implementations chose the
   polling mode.  All ADI-2 implementation distributed with MPICH-1 used
@@ -135,19 +157,20 @@ and management of other MPI objects such as datatypes, attributes,
 error handlers, and reduction operations.  However, hooks are provided to
 allow the MPI level to notify the ADI of changes in the other MPI objects.
 
-Most implementors will choose to use a simpler interface that is
-(will be) documented separately---the method interface.  This defines
+Most implementors will choose to start with a simple interface based
+on only nonblocking \code{readv} and 
+\code{writev}-like operations.  This replaces
+the ``channel'' interface defined in ADI-2.  An implementation of
+ADI-3 is provided with MPICH that is built on this simple
+interface; the channel interface and this implementation are described
+in \cite{channel3-tcp}.
+
+Another interface that is under development and that will be
+documented separately is the method interface.  This defines 
 a set of operations that are needed to implement communication on a
 single connection.  This interface allows multiple communication
 methods to be used in a single MPI program, such as TCP, VIA, and
 shared memory.  
-
-An even simpler interface based on only nonblocking \code{readv} and
-\code{writev}-like operations will also be defined.  This will replace
-the ``channel'' interface defined in ADI-2.  An implementation of
-ADI-3 will be provided with MPICH that is built on this simple
-interface; the channel interface and this implementation are described
-in \cite{channel3-tcp}.
 
 \section{High-level Overview}
 \label{sec:high-level}
@@ -184,7 +207,7 @@ protocol.  These are really \emph{virtual connections}, with meaning only for
 the ADI and MPI layers.
 
 \begin{figure}
-\centerline{\psfig{file=adi-ov.eps,width=5in}}
+\centerline{\resizebox{5in}{!}{\includegraphics{adi-ov.eps}}}
 \caption{Simplified block diagram of the communication paths on a connection
   between two processes.  The dashed lines separate the four communication
   types described below.} 
@@ -326,6 +349,15 @@ holds a pending communication operation.  Only if the data cannot be
 communicated immediately will the ADI create an intermediate data
 structure to hold the state of the incomplete communication.  
 
+Thread safety is another goal of the MPICH2 implementation.  There are
+really two separate situations.  One is the use of multiple threads by
+the user's code, for example, in a \code{MPI_THREAD_MULTIPLE} mode.
+Another case is the use of a single thread by the user but multiple
+threads by the MPICH2 implementation.  In addition, because thread
+safety introduces extra overhead to ensure that shared data structures
+are updated consistently, MPICH2 can be configured for both compile
+time and runtime specification of the level of support for user threads.
+
 \subsection{Other Relevant MPI Issues}
 MPI defines a number of objects such as requests, windows, and
 communicators.  In many cases, these objects are natural choices for
@@ -366,7 +398,8 @@ low-level communication layers.  Such layers typically support only
 contiguous memory regions or Unix ``io vectors'' (\code{struct
 iovec}); MPI provides more general forms of data layouts.  However,
 while the MPI datatypes are sufficient to express most forms of
-communication, there are no MPI routines to pack or unpack only a
+communication, there are no routines defined by the MPI standard to
+pack or unpack only a 
 fraction of a datatype.  For example, there is no MPI-defined method
 to pack as much as fits into a fixed sized buffer and return enough
 state so that a subsequent pack can pick up where the last left off.
@@ -425,7 +458,7 @@ information will be discussed later.
 This allows a ``blocking'' send to return a request if the operation
 has not completed, giving the calling routine more control over
 what steps to take to complete the request.  It sets the request
-pointer to NULL if it was able to complete without creating a request.
+pointer to \code{NULL} if it was able to complete without creating a request.
 
 % An alternative design would have fewer routines but with additional
 % arguments.  This design was chosen because it both provides a shorter
@@ -448,9 +481,9 @@ receive).  For thread-safety\index{thread safety!issues}, operations on these
 two lists must be 
 made atomically.  These operations include 
 \begin{itemize}
-\item check posted and return if found; else insert into unexpected 
+\item check posted and return if found; else insert into unexpected queue
 %(for incoming messages)
-\item check unexpected and return if found; else insert into posted
+\item check unexpected and return if found; else insert into posted queue
 % (for posting a receive)
 \end{itemize}
 The MPID request is the appropriate list element to use in
@@ -490,7 +523,7 @@ place and before any of the destroy operations take place.
 
 \paragraph{Communicators.}
 
-MPI Communicators describe both a collection of processes (a
+MPI Communicators describe both a collection of processes (an
 \code{MPI_Group}) and a unique communication context.  As described
 later, in MPICH and ADI-3, the communication context is encoded as an
 integer.  The target process of communication in MPI is described by a
@@ -498,9 +531,10 @@ rank in a group associated with a communicator.  While this suggests
 that MPI groups are fundamental data structures, in MPICH-2, groups
 are not used in the ADI at all.  Instead, each communicator maintains
 an array of \emph{connections} that are indexed by the rank.
-The MPI implementation provides complete support for the MPI group
-operations (e.g., \code{MPI_Group_union}), but the ADI does not use
-groups at all.  
+Using these connections, the MPI implementation provides complete
+support for the MPI group 
+operations (e.g., \code{MPI_Group_union}).  Explicit MPI Groups are
+not used by the ADI.
 
 % The following comment was made when I thought that we would just use the
 % rank to index into the connection table.  Instead, a multimethod device
@@ -515,7 +549,7 @@ such as in a call to \code{MPI_Wait}, it is necessary to have the ADI
 respond to \emph{any} pending communication.  Thus, it is not
 necessary to provide the ADI with a collection of request to test or
 wait on.  Instead, we merely need to ask the ADI to try to make
-progress on communication and they check (using the \code{busy} flag
+progress on communication and then check (using the \code{busy} flag
 in each request) whether any particular MPI requests have completed.
 In the absence of threads, a simple interface would look like
 \begin{verbatim}
@@ -530,8 +564,8 @@ In the absence of threads, a simple interface would look like
 \end{verbatim}
 However, if there are multiple threads, particularly if there are
 separate threads that can complete communication\index{thread safety!issues},
-then this API is 
-incorrect.  Instead, a slightly more complex interface is needed to
+then this code has a race condition, caused by the API for progress.
+Instead, a slightly more complex interface is needed to
 eliminate any race conditions.  For example,
 \begin{verbatim}
     MPI_Waitsome( ... )
@@ -609,6 +643,10 @@ The very first version of ADI-3 may not include these more general
 multi-party communication operations.  It is the intent of ADI-3,
 however, to develop an efficient method for describing and
 implementing the operations needed for the MPI collective operations.
+We may also consider special support for collective argument checking,
+that is, checking that the parameters to a collective MPI routine are
+consistent amoung all of the involved processes, perhaps using a
+special header format or layered header format.
 
 \subsection{Data Segments}
 \label{sec:segment}
@@ -680,12 +718,14 @@ projects such as PVFS and HDF5.
 \subsection{Remote Memory Access}
 \label{sec:rma-design}
 The MPI remote memory access model was deliberately designed to have
-very loose synchronization requirements and to make minimal \emph{demands} on
+very loose (but precise) synchronization requirements and to make
+minimal \emph{demands} on 
 the 
 underlying hardware.  For example, it is possible within the MPI model
 to support non-cache-coherent systems (such as the NEC vector
 supercomputers)\footnote{The ADI-3 design, however, does assume cache
-coherence.}.  However, the model also \emph{allows} an MPI 
+coherence with local memory; that is, the memory system on each node
+is cache coherent.}.  However, the model also \emph{allows} an MPI 
 implementation to exploit special hardware capabilities.  
 
 %
@@ -747,7 +787,7 @@ implementation to perform aggregation of RMA operations without
 calling the ADI.  This eliminates a layer of function calls in these
 simple cases\footnote{In addition, the MPI functions could be inlined by a
   suitably sophisticated compiler,
-removing all function calls}.  
+removing all function calls.}.  
 %Of course, for some operations and for
 %some devices, ...
 The ADI provides a set of definitions
@@ -774,7 +814,8 @@ with three different mechanisms for marking completion in their code:
 \item[Fence.]This is essentially a barrier synchronization, similar to
 the \code{shmembarrier}.  To allow the ADI to exploit hardware and
 software features similar to those used by Cray \code{shmembarrier} in the
-Cray T3D and T3E, the ADI provides a similar routine, with the
+Cray T3D and T3E, the ADI provides a similar routine
+(\code{MPID_Win_fence}), with the 
 difference that it applies to MPI window objects on arbitrary groups
 of processes. An ADI implementation for a system that
 provides an efficient fence operation only on all processes can, of
@@ -815,7 +856,7 @@ non-interfering.  That is, communication for collective operations
 such as \code{MPI_Bcast} and point-to-point operations such as
 \code{MPI_Send}, even on the same communicator, must not interfere
 with each other.  With MPI-2, this is extended to operations on MPI
-Files and Window objects, both of which may involve some communication
+File and Window objects, both of which may involve some communication
 by the implementation.
 
 MPI also requires that communication within different
@@ -870,6 +911,12 @@ the MPI level will keep track of returned context ids (made available
 by freeing a communicator) so that the ADI can be told when a context
 id is available again.
 
+In the current implementation, context id generation is provided by a
+utility routine above the level of the ADI.  Because there are opportunties
+for implementations on hardware that provides remote memory operations,
+such as accumulate, future versions of the ADI may allow the ADI
+implementation to replace the default context id generation.
+
 \subsection{Dynamic Processes}
 There are two major goals here for the ADI:  scale to large but not
 necessarily enormous numbers of processes and maintain modularity so
@@ -893,7 +940,7 @@ operations are implemented above the ADI, we do not discuss them here.
 \section{ADI Layers}
 \label{sec:layers}
 
-It is expected that implementations of the ADI will be \emph{layered},
+It is expected that many implementations of the ADI will be \emph{layered},
 building the four types of communication described in
 Section~\ref{sec:comm-types} in terms of simpler communication methods.
 This section outlines several possible implementations.
@@ -945,7 +992,9 @@ polling models.  The second socket is used for the locally-completing
 communication (types 2 and 4), and uses a separate thread, process, or
 \code{SIGIO} to ensure local completion.  This approach provides correctness
 with the MPI progress model without sacrificing the low latency of the
-polling approach for the more common operations.  
+polling approach for the more common operations.  Note that such an
+implementation must still guard some data structure updates where
+different communication threads might update the same data structure.
 
 Of course, other approaches are possible, including one that uses a
 mix of polling and nonpolling even on type 1 and type 3 communication.
@@ -1021,7 +1070,7 @@ Note that there is no direct access to the message queues by the MPI
 layer.  We recommend that the device implement the message queue
 interface defined for external tools and used by Totalview.  This
 interface is described in \cite{pvmmpi99-totalview} and the files
-\file{mpich/src/infoexport/} in MPICH-1.
+\file{mpich2/src/mpi/debugger/} in MPICH2.
 
 \subsection{Completion of Point to point communication}
 Completion of nonblocking (or incomplete in the case of a request

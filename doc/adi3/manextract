@@ -12,6 +12,7 @@ while (<>) {
     if (/\/\*T([^ ]*)[ ]*\n/) {
 	$filename = $1;
 	print "Filename = |$filename|\n" if $debug; 
+	$filename =~ s/\s*//;
 	if ($filename ne "") {
 	    open( OUTFILE, ">$filename" ) || die "Could not open $filename\n";
 	    $OUTFILE = OUTFILE;

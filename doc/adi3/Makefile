@@ -1,10 +1,18 @@
 ALL: adi3new.ps tcpadi3.ps adi3new.pdf 
 SHELL = /bin/sh
 
+# Set MPICH2 to the location of the MPICH source tree.  If this is
+# built from within the MPICH2 distribution, then a relative path of 
+# ../.. may be used.  This *must* be a relative path.
+MPICH2 = ../..
+
 #
 # Use doctext in /home/gropp/bin/$ARCH/doctext 
 DOCTEXT = doctext
-.SUFFIXES: .ps .pdf .dvi .tex .eps .fig
+# Give the directory with the Latex style files associated with doctext
+DOCTEXTSTYLE = /home/gropp/share
+
+.SUFFIXES: .ps .pdf .dvi .tex .eps .fig .idx .ind
 
 adi3.dvi: adi3.tex
 paper.dvi: paper.tex
@@ -19,64 +27,45 @@ paper.dvi: paper.tex
 	-latex $* </dev/null 2>&1 >/dev/null
 	-latex $*
 
-ADI3FILES = adi3man.tex adi3.c adi3.h Makefile
-adi3man.dvi: $(ADI3FILES)
-	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
-	-rm -f adi3man/*.tex adi3man/tmp.*
-	(cd adi3man ; \
-	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
-	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;)
-	${MAKE} lists
-	-cp adi3man.tex adi3man/adi3man.tex
-	(cd adi3man ; \
-	../manextract ../adi3.[ch] > /dev/null ;\
-	latex adi3man < /dev/null 2>&1 >/dev/null ;\
-	bibtex adi3man ;\
+.idx.ind:
+	rm -f tmp.idx tmp.ind
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
 	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
-		adi3man.idx > tmp.idx ; \
-	makeindex tmp ;\
+		$< > tmp.idx
+	makeindex tmp
 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
-	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3man.ind ; \
-	rm -f tmp.idx tmp.ind ; \
+	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > $*.ind
+	rm -f tmp.idx tmp.ind
+
+ADI3FILES = adi3man.tex adi3.c adi3.h Makefile
+
+# This list of files gets us the old versions first and the new
+# versions last, so that the newest versions will override the old versions
+# Eventually, the old versions will be removed.
+ADI3IMPLFILES = adi3.c adi3.h $(MPICH2)/src/include/mpiimpl.h 
+adi3man/MPID_Init.tex: $(ADI3IMPLFILES) Makefile
+	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
+	-rm -f adi3man/*.tex adi3man/tmp.*
+	for file in $(ADI3IMPLFILES) ; do \
+	( cd adi3man ; \
+	${DOCTEXT} -latex -nolocation -quotefmt ../$$file ; \
+	perl ../manextract ../$$file ) ; done
+
+refman.sty: $(DOCTEXTSTYLE)/refman.sty
+	cp $(DOCTEXTSTYLE)/refman.sty .
+#	cp $(DOCTEXTSTYLE)/tpage.sty .
+
+adi3man.dvi: adi3man/MPID_Init.c $(ADI3FILES) refman.sty
+	${MAKE} lists
+	-cp adi3man.tex adi3man/adi3man.tex
+	(cd adi3man ;
+	latex adi3man < /dev/null 2>&1 >/dev/null ;\
 	bibtex adi3man ;\
+	make -f ../Makefile adi3man.ind ; \
 	latex adi3man < /dev/null )
 	mv adi3man/adi3man.dvi .
-
-# adi3manpdf.dvi: $(ADI3FILES)
-# 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
-# 	-rm -f adi3man/*.tex adi3man/tmp.*
-# 	(cd adi3man ; \
-# 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
-# 	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;)
-# 	${MAKE} lists
-# 	rm -f adi3man/adi3manpdf.tex
-# 	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
-# 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
-# 	    -e '/usepackage{.*url}/d' \
-# 		adi3man.tex > adi3man/adi3manpdf.tex
-# 	(cd adi3man ; \
-# 	../manextract ../adi3.[ch] > /dev/null ;\
-# 	latex adi3manpdf < /dev/null ;\
-# 	bibtex adi3manpdf ;\
-# 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
-# 	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
-# 	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
-# 		adi3man.idx > tmp.idx ; \
-# 	makeindex tmp ;\
-# 	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
-# 	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
-# 	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3manpdf.ind ; \
-# 	bibtex adi3manpdf ;\
-# 	latex adi3manpdf < /dev/null )
-# 	mv adi3man/adi3manpdf.dvi .
-
-# adi3man.pdf: adi3manpdf.dvi
-# 	dvipdfm adi3manpdf
-# 	rm -f adi3man.pdf
-# 	mv -f adi3manpdf.pdf adi3man.pdf
 
 # This isn't ready yet.  We'd like to use doctext to generate the 
 # HTML for the 
@@ -90,38 +79,17 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 #	tohtml -default adi3new.tex
 #	tohtml -default adi3new.tex
 
-ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps mpiddir.eps Makefile
+ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps mpiddir.eps Makefile adi3man/MPID_Init.tex refman.sty
 adi3new.ps: $(ADI3NEWFILES)
 	touch adi3new.ind
-	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
-	-rm -f adi3man/*.tex adi3man/tmp.*
-	(cd adi3man ; \
-	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
-	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;\
-	../manextract ../adi3.[ch] > /dev/null )
 	latex adi3new < /dev/null 2>&1 >/dev/null
 	-bibtex adi3new
-	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
-	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
-	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
-		adi3new.idx > tmp.idx
-	-makeindex tmp
-	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
-	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
-	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3new.ind 
-	rm -f tmp.ind tmp.idx
-	-bibtex adi3new 
+	make adi3new.ind 
 	latex adi3new < /dev/null
 	dvips adi3new
 
-adi3new.pdf: $(ADI3NEWFILES)
+adi3new.pdf: $(ADI3NEWFILES) adi3man/MPID_Init.tex
 	touch adi3new.ind
-	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
-	-rm -f adi3man/*.tex adi3man/tmp.*
-	(cd adi3man ; \
-	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.c ;\
-	${DOCTEXT} -latex -nolocation -quotefmt ../adi3.h ;\
-	../manextract ../adi3.[ch] > /dev/null )
 	rm -f adi3newpdf.tex
 	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
@@ -129,16 +97,7 @@ adi3new.pdf: $(ADI3NEWFILES)
 		adi3new.tex > adi3newpdf.tex
 	latex adi3newpdf < /dev/null 2>&1 >/dev/null
 	-bibtex adi3newpdf
-	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
-	    -e 's/MPID_\([A-Za-z0-9]*\)/\1_MPID/g' \
-	    -e 's/MPIU_\([A-Za-z0-9]*\)/\1_MPIU/g' \
-		adi3newpdf.idx > tmp.idx
-	-makeindex tmp
-	sed -e 's/\([A-Za-z0-9]*\)_MPID/MPID_\1/g' \
-	    -e 's/\([A-Za-z0-9]*\)_MPIU/MPIU_\1/g' \
-	    -e 's/_/\\texttt{\\char`\\_}/g' tmp.ind > adi3newpdf.ind 
-	-rm -f tmp.ind tmp.idx
-	-bibtex adi3newpdf 
+	make adi3newpdf.ind
 	latex adi3newpdf < /dev/null
 	dvipdfm adi3newpdf
 	rm -f adi3new.pdf

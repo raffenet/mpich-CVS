@@ -738,6 +738,7 @@ void MPID_Dev_comm_attr_set_hook( MPID_Comm *comm, int keyval, void *attr_val,
     and 'MPID_Dev_xxx_destroy_hook' will be defined as empty macros.
 
     See also 'MPID_Dev_xxx_destroy_hook'
+
   @*/
 void MPID_Dev_xxx_create_hook( MPID_xxx *obj )
 {}
