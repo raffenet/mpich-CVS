@@ -60,7 +60,7 @@ int PMI_Init(int *spawned)
 	    fn.PMI_KVS_Iter_first = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_Iter_first");
 	    fn.PMI_KVS_Iter_next = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_Iter_next");
 	    fn.PMI_Spawn_multiple = (int (*)(int, const char **, const char ***, const int *, const int *, const PMI_keyval_t **, int, const PMI_keyval_t *, int *, int *))GetProcAddress(hModule, "PMI_Spawn_multiple");
-	    fn.PMI_Args_to_info = (int (*)(int *, char ***, void *))GetProcAddress(hModule, "PMI_Args_to_info");
+	    fn.PMI_Args_to_keyval = (int (*)(int *, char ***, PMI_keyval_t *, int *))GetProcAddress(hModule, "PMI_Args_to_keyval");
 	    return fn.PMI_Init(spawned);
 	}
     }
@@ -87,7 +87,7 @@ int PMI_Init(int *spawned)
     fn.PMI_KVS_Iter_first = iPMI_KVS_Iter_first;
     fn.PMI_KVS_Iter_next = iPMI_KVS_Iter_next;
     fn.PMI_Spawn_multiple = iPMI_Spawn_multiple;
-    fn.PMI_Args_to_info = iPMI_Args_to_info;
+    fn.PMI_Args_to_keyval = iPMI_Args_to_keyval;
     return fn.PMI_Init(spawned);
 }
 
@@ -243,9 +243,9 @@ int PMI_Spawn_multiple(int count,
 	errors, same_domain);
 }
 
-int PMI_Args_to_info(int *argcp, char ***argvp, void *infop)
+int PMI_Args_to_keyval(int *argcp, char ***argvp, PMI_keyval_t *keyvalp, int *size)
 {
-    if (fn.PMI_Args_to_info == NULL)
+    if (fn.PMI_Args_to_keyval == NULL)
 	return PMI_FAIL;
-    return fn.PMI_Args_to_info(argcp, argvp, infop);
+    return fn.PMI_Args_to_keyval(argcp, argvp, keyvalp, size);
 }
