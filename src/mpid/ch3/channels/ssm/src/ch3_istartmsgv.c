@@ -6,40 +6,40 @@
 
 #include "mpidi_ch3_impl.h"
 
-static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, int nb)
-{
-    MPID_Request * sreq;
-    int i;
-    MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
-    
-    sreq = MPIDI_CH3_Request_create();
-    if (sreq == NULL)
-	return NULL;
-    MPIU_Object_set_ref(sreq, 2);
-    sreq->kind = MPID_REQUEST_SEND;
-    
-    /* memcpy(sreq->ch3.iov, iov, iov_count * sizeof(MPID_IOV)); */
-    for (i = 0; i < iov_count; i++)
-    {
-	sreq->ch3.iov[i] = iov[i];
-    }
-    if (iov_offset == 0)
-    {
-	/* memcpy(&sreq->ssm.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */
-	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
-	sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt;
-    }
-    sreq->ch3.iov[iov_offset].MPID_IOV_BUF = (char *) sreq->ch3.iov[iov_offset].MPID_IOV_BUF + nb;
-    sreq->ch3.iov[iov_offset].MPID_IOV_LEN -= nb;
-    sreq->ssm.iov_offset = iov_offset;
-    sreq->ch3.iov_count = iov_count;
-    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
-
-    MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
-    return sreq;
+/*static MPID_Request * create_request(MPID_IOV * iov, int count, int offset, int nb)*/
+#undef create_request
+#define create_request(sreq, iov, count, offset, nb) \
+{ \
+    /*MPID_Request * sreq;*/ \
+    int i; \
+    MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
+    MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
+    sreq = MPIDI_CH3_Request_create(); \
+    if (sreq == NULL) \
+    { \
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0); \
+	MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV); \
+	return mpi_errno; \
+    } \
+    MPIU_Object_set_ref(sreq, 2); \
+    sreq->kind = MPID_REQUEST_SEND; \
+    /*memcpy(sreq->ch3.iov, iov, count * sizeof(MPID_IOV));*/ \
+    for (i = 0; i < count; i++) { sreq->ch3.iov[i] = iov[i]; } \
+    if (offset == 0) \
+    { \
+	/* memcpy(&sreq->ssm.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
+	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
+	sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
+	sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt; \
+    } \
+    sreq->ch3.iov[offset].MPID_IOV_BUF = (char *) sreq->ch3.iov[offset].MPID_IOV_BUF + nb; \
+    sreq->ch3.iov[offset].MPID_IOV_LEN -= nb; \
+    sreq->ssm.iov_offset = offset; \
+    sreq->ch3.iov_count = count; \
+    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE; \
+    MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
+    /*return sreq;*/ \
 }
 
 /*
@@ -111,12 +111,14 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 		    else
 		    {
 			MPIDI_DBG_PRINTF((55, FCNAME, "partial write, request enqueued at head"));
-			sreq = create_request(iov, n_iov, offset, nb);
+			create_request(sreq, iov, n_iov, offset, nb);
+			/*sreq = create_request(iov, n_iov, offset, nb);
 			if (sreq == NULL)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 			    return mpi_errno;
 			}
+			*/
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 			if (vc->ssm.bShm)
 			    vc->ssm.send_active = sreq;
@@ -149,12 +151,15 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	else
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send in progress, request enqueued"));
+	    create_request(sreq, iov, n_iov, 0, 0);
+	    /*
 	    sreq = create_request(iov, n_iov, 0, 0);
 	    if (sreq == NULL)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		return mpi_errno;
 	    }
+	    */
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
@@ -166,12 +171,15 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	/*MPIDI_CH3I_VC_post_connect(vc);*/
 	
 	/* queue the data so it can be sent after the connection is formed */
+	create_request(sreq, iov, n_iov, 0, 0);
+	/*
 	sreq = create_request(iov, n_iov, 0, 0);
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    return mpi_errno;
 	}
+	*/
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 
 	MPIDI_CH3I_VC_post_connect(vc);
@@ -180,12 +188,15 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
     {
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
+	create_request(sreq, iov, n_iov, 0, 0);
+	/*
 	sreq = create_request(iov, n_iov, 0, 0);
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    return mpi_errno;
 	}
+	*/
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     else

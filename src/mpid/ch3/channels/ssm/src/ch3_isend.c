@@ -6,19 +6,19 @@
 
 #include "mpidi_ch3_impl.h"
 
-static void update_request(MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz, int nb)
-{
-    MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST);
-    /* memcpy(&sreq->ssm.pkt, pkt, pkt_sz); */
-    assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t));
-    sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) pkt;
-    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt + nb;
-    sreq->ch3.iov[0].MPID_IOV_LEN = pkt_sz - nb;
-    sreq->ch3.iov_count = 1;
-    sreq->ssm.iov_offset = 0;
-    MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST);
+/*static void update_request(MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz, int nb)*/
+#undef update_request
+#define update_request(sreq, pkt, pkt_sz, nb) \
+{ \
+    MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
+    MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
+    assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
+    sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
+    sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt + nb; \
+    sreq->ch3.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
+    sreq->ch3.iov_count = 1; \
+    sreq->ssm.iov_offset = 0; \
+    MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
 
 #undef FUNCNAME
@@ -145,4 +145,3 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
     return MPI_SUCCESS;
 }
-
