@@ -6,7 +6,7 @@ lib${MPILIBNAME}_a_SOURCES = crypt.c smpd_authenticate.c smpd_printf.c \
  smpd_handle_command.c smpd_session.c smpd_start_mgr.c smpd_barrier.c \
  smpd_do_console.c smpd_restart.c smpd_host_util.c smpd_handle_spawn.c
 #mpiexec_SOURCES = mpiexec.c mp_parse_command_line.c
-#smpd_SOURCES = smpd.c smpd_cmd_args.c
+#smpd_SOURCES = smpd.c smpd_cmd_args.c smpd_watchprocs.c
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/smpd -I${master_top_srcdir}/src/pmi/smpd
 #mpiexec_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
@@ -16,8 +16,8 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
 all-local: mpiexec smpd
 mpiexec: mpiexec.o mp_parse_command_line.o ../../../lib/lib${MPILIBNAME}.a
 	../../../bin/mpicc -o mpiexec mpiexec.o mp_parse_command_line.o
-smpd: smpd.o smpd_cmd_args.o ../../../lib/lib${MPILIBNAME}.a
-	../../../bin/mpicc -o smpd smpd.o smpd_cmd_args.o
+smpd: smpd.o smpd_cmd_args.o smpd_watchprocs.o ../../../lib/lib${MPILIBNAME}.a
+	../../../bin/mpicc -o smpd smpd.o smpd_cmd_args.o smpd_watchprocs.o
 install_BIN = mpiexec smpd
 distclean-local:
 	@-rm -f smpdconf.h
