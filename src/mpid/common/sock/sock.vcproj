@@ -368,9 +368,6 @@
 				RelativePath="sock_describe_states.c">
 			</File>
 			<File
-				RelativePath="iocp\sock_iocp.c">
-			</File>
-			<File
 				RelativePath="iocp\socki_describe_states.c">
 			</File>
 		</Filter>
@@ -379,12 +376,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
 				RelativePath=".\mpidu_sock.h">
-			</File>
-			<File
-				RelativePath="sock.h">
-			</File>
-			<File
-				RelativePath="iocp\socki.h">
 			</File>
 			<File
 				RelativePath="winsockconf.h">
