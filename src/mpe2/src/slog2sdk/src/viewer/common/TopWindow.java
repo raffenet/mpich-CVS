@@ -15,6 +15,8 @@ import javax.swing.JFrame;
 
 public abstract class TopWindow
 {
+    private static Dimension     Screen_Size = null;
+
     private JFrame  root;
 
     public TopWindow()
@@ -47,6 +49,9 @@ public abstract class TopWindow
         if ( ! Parameters.AUTO_WINDOWS_LOCATION )
             return;
 
+        if ( Screen_Size == null )
+            Screen_Size = Routines.getScreenSize();
+
         Rectangle bounds = new Rectangle();
         JFrame legend_frame   = Legend.getWindow();
         if ( legend_frame != null ) {
@@ -71,6 +76,8 @@ public abstract class TopWindow
         JFrame prefer_frame   = Preference.getWindow();
         if ( prefer_frame != null ) {
             bounds.x += bounds.width;
+            if ( bounds.x > Screen_Size.width-20 )
+                bounds.x = Screen_Size.width - prefer_frame.getWidth();
             prefer_frame.setLocation( bounds.getLocation() );
         }
     }

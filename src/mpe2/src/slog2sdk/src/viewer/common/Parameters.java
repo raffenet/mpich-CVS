@@ -25,7 +25,7 @@ import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String   VERSION_INFO             = "1.0.0.1";
+    private static final String   VERSION_INFO             = "1.0.0.2";
     private static       String   setupfile_path           = null;
 
     public  static       boolean  AUTO_WINDOWS_LOCATION    = true;
@@ -41,6 +41,8 @@ public class Parameters
     public  static       int      ARROW_HEAD_LENGTH        = 10;
     public  static       int      ARROW_HEAD_HALF_WIDTH    = 3;
     public  static       int      CLICK_RADIUS_TO_LINE     = 3;
+
+    public  static       int      MIN_WIDTH_TO_DRAG        = 4;
 
     public static final void initSetupFile()
     {
@@ -101,6 +103,8 @@ public class Parameters
                            String.valueOf( ARROW_HEAD_HALF_WIDTH ) );
         pptys.setProperty( "CLICK_RADIUS_TO_LINE",
                            String.valueOf( CLICK_RADIUS_TO_LINE ) );
+        pptys.setProperty( "MIN_WIDTH_TO_DRAG",
+                           String.valueOf( MIN_WIDTH_TO_DRAG ) );
 
         try {
             FileOutputStream fouts = new FileOutputStream( setupfile_path );
@@ -186,6 +190,10 @@ public class Parameters
         ppty_val = pptys.getProperty( "CLICK_RADIUS_TO_LINE" );
         if ( ppty_val != null )
             CLICK_RADIUS_TO_LINE = Integer.parseInt( ppty_val );
+
+        ppty_val = pptys.getProperty( "MIN_WIDTH_TO_DRAG" );
+        if ( ppty_val != null )
+            MIN_WIDTH_TO_DRAG = Integer.parseInt( ppty_val );
         System.out.println( "Initialize Parameters: \n"
                           + Parameters.toInOutString() );
     }
@@ -207,6 +215,8 @@ public class Parameters
         rep.append( "ARROW_HEAD_LENGTH = "     + ARROW_HEAD_LENGTH     + "\n" );
         rep.append( "ARROW_HEAD_HALF_WIDTH = " + ARROW_HEAD_HALF_WIDTH + "\n" );
         rep.append( "CLICK_RADIUS_TO_LINE = "  + CLICK_RADIUS_TO_LINE  + "\n" );
+
+        rep.append( "MIN_WIDTH_TO_DRAG = "     + MIN_WIDTH_TO_DRAG     + "\n" );
         return rep.toString();
     }
 

@@ -29,6 +29,8 @@ public class PreferencePanel extends JPanel
     private        LabeledTextField       fld_ARROW_HEAD_HALF_WIDTH;
     private        LabeledTextField       fld_CLICK_RADIUS_TO_LINE;
 
+    private        LabeledTextField       fld_MIN_WIDTH_TO_DRAG;
+
 
     public PreferencePanel()
     {
@@ -186,6 +188,18 @@ public class PreferencePanel extends JPanel
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
+        fld_MIN_WIDTH_TO_DRAG = new LabeledTextField(
+                                    "MIN_WIDTH_TO_DRAG",
+                                    Const.INTEGER_FORMAT );
+        fld_MIN_WIDTH_TO_DRAG.setToolTipText(
+        "minimum Pixel width to be considered a dragged operation." );
+        fld_MIN_WIDTH_TO_DRAG.setHorizontalAlignment( JTextField.CENTER );
+        fld_MIN_WIDTH_TO_DRAG.addSelfDocumentListener();
+        fld_MIN_WIDTH_TO_DRAG.setEditable( true );
+        super.add( fld_MIN_WIDTH_TO_DRAG );
+
+        super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
+
         super.setBorder( BorderFactory.createEtchedBorder() );
     }
 
@@ -207,6 +221,8 @@ public class PreferencePanel extends JPanel
         fld_ARROW_HEAD_HALF_WIDTH.setInteger(
                                   Parameters.ARROW_HEAD_HALF_WIDTH );
         fld_CLICK_RADIUS_TO_LINE.setInteger( Parameters.CLICK_RADIUS_TO_LINE );
+
+        fld_MIN_WIDTH_TO_DRAG.setInteger( Parameters.MIN_WIDTH_TO_DRAG );
     }
 
     public void updateAllParameters()
@@ -236,5 +252,8 @@ public class PreferencePanel extends JPanel
                   = fld_ARROW_HEAD_HALF_WIDTH.getInteger();
         Parameters.CLICK_RADIUS_TO_LINE
                   = fld_CLICK_RADIUS_TO_LINE.getInteger();
+
+        Parameters.MIN_WIDTH_TO_DRAG
+                  = fld_MIN_WIDTH_TO_DRAG.getInteger();
     }
 }
