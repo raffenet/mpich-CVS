@@ -51,24 +51,30 @@ int MPI_Pack_size(int incount,
     static const char FCNAME[] = "MPI_Pack_size";
     int mpi_errno = MPI_SUCCESS;
     int typesize;
-    MPID_Comm *comm_ptr = NULL;
-    MPID_Datatype *datatype_ptr = NULL;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK_SIZE);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+	    MPID_Comm *comm_ptr = NULL;
+	    MPID_Datatype *datatype_ptr = NULL;
+
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate comm_ptr */
+	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE_NULL(datatype, "datatype", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(size, "size", mpi_errno);
+	    MPID_Comm_get_ptr( comm, comm_ptr );
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not valid, it will be reset to null */
-	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
+	    if (mpi_errno == MPI_SUCCESS) {
+		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+		    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		}
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_SIZE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
