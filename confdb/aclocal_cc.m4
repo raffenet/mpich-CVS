@@ -733,3 +733,40 @@ if test "$notbroken" = "no" ; then
 correctly set error code when a fatal error occurs])
 fi
 ])
+dnl
+dnl/*D
+dnl PAC_FUNC_CRYPT - Check that the function crypt is defined
+dnl
+dnl Synopsis:
+dnl PAC_FUNC_CRYPT
+dnl
+dnl Output Effects:
+dnl 
+dnl In Solaris, the crypt function is not defined in unistd unless 
+dnl _XOPEN_SOURCE is defines and _XOPEN_VERSION is 4 or greater.
+dnl We test by looking for a missing crypt by defining our own
+dnl incompatible one and trying to compile it
+dnlD*/
+AC_DEFUN(PAC_FUNC_CRYPT,[
+AC_CACHE_CHECK([if crypt defined in unistd.h],
+pac_cv_func_crypt_defined,[
+AC_TRY_COMPILE([
+#include <unistd.h>
+double crypt(double a){return a;}],[return 0];,
+pac_cv_func_crypt_defined="no",pac_cv_func_crypt_defined="yes")])
+if test "$pac_cv_func_crypt_defined" = "no" ; then
+    # check to see if defining _XOPEN_SOURCE helps
+    AC_CACHE_CHECK([if crypt defined in unistd with _XOPEN_SOURCE],
+pac_cv_func_crypt_xopen,[
+    AC_TRY_COMPILE([
+#define _XOPEN_SOURCE    
+#include <unistd.h>
+double crypt(double a){return a;}],[return 0];,
+pac_cv_func_crypt_xopen="no",pac_cv_func_crypt_xopen="yes")])
+fi
+if test "$pac_cv_func_crypt_xopen" = "yes" ; then
+    AC_DEFINE(_XOPEN_SOURCE)
+elif test "$pac_cv_func_crypt_defined" = "no" ; then
+    AC_DEFINE(NEED_CRYPT_PROTOTYPE)
+fi
+])dnl
