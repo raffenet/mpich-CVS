@@ -66,10 +66,12 @@
 
 %
 % Algorithm
+% It would be nice to find a version of obeylines that numbered the lines.
 \newif\ifwasvmode
 % The wasvmode allows us to exit and return to paragraph mode
 \newenvironment{algorithm}{\ifvmode\wasvmodetrue\else\par\wasvmodefalse\fi
-\begingroup\advance\leftskip2em\obeylines\obeyspaces\makeuscore\noindent\makespaceactive\parskip 2pt}{\endgroup\ifwasvmode\else\noindent\fi}
+\begingroup\advance\leftskip2em\obeylines\obeyspaces
+\makeuscore\noindent\makespaceactive\parskip 0pt}{\endgroup\ifwasvmode\else\noindent\fi}
 
 %
 % This is used to indicate a implementation of a routine.
@@ -86,3 +88,6 @@
 % Optionally include the rationale
 \newif\ifrationale
 \rationaletrue
+%
+% Use this to indicate the status of a function.
+\newcommand\funcstatus[1]{\marginpar{#1}}

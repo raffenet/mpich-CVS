@@ -85,16 +85,30 @@ operation; it will also reduce the size of (unshared) executables since few if
 any programs use all of the collective operations.
 See the discussion of the implementation of PMPI.
 
+Question: We could restructure MPICH1 \emph{now} to use this same
+approach.  The resulting code would serve as the first step towards
+the MPICH2 coee.
+
 Question: Now that MPI-2 defines intercommunicator collective
 routines, do we want these in the same file as the intracommunicator
 routines, or in an alternate file.  E.g., should \file{bcast.c} contain
 the intracommunicator implementation of \mpifunc{MPI_Bcast} and
 \file{icbcast.c} contain the intercommunicator implementation.
 Also, we may select no intercommunicator collectives at configure (or run?)
-time to reduce the size of libraries and code.
+time to reduce the size of libraries and code.  This could use the
+configure option \cfgoption{--enable-comm:intercommcoll=no}.
 
 We may want to have multiple ``generic'' implementations and an easy
-way, say with the runtime parameter routines, to select among them at runtime.
+way, say with the runtime parameter routines, to select among them at
+runtime.
+
+One approach is the following:
+By default, the \mpids{MPID_Comm}{collops} pointer is null.  In that
+case, the default routine is used.  If the structure is not null, but
+the individual pointer is null, then the default routine is used.
+Otherwise, call the routine in the structure.  This follows the rule
+of lazy initialization and permits cleaner separation of the
+implementation of the various collective routines.  
 
 We may want to compute and save things like the neighbors for each
 collective communication pattern; this can be done either when the
