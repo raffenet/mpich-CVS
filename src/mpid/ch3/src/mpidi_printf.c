@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+/* style: allow:vprintf:1 sig:0 */
+/* style: allow:printf:2 sig:0 */
+
 #undef MPIDI_dbg_printf
 void MPIDI_dbg_printf(int level, char * func, char * fmt, ...)
 {
