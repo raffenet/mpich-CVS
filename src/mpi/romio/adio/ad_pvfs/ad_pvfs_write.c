@@ -583,7 +583,7 @@ void ADIOI_PVFS_WriteStridedListIO(ADIO_File fd, void *buf, int count,
 		}
 	    }
 	} /* while (!flag) */
-    } /* if (file_ptr_type == ADIOI_INDIVIDUAL) */
+    } /* if (file_ptr_type == ADIO_INDIVIDUAL) */
     else {
         n_etypes_in_filetype = filetype_size/etype_size;
 	n_filetypes = (int) (offset / n_etypes_in_filetype);
@@ -605,7 +605,7 @@ void ADIOI_PVFS_WriteStridedListIO(ADIO_File fd, void *buf, int count,
 	/* abs. offset in bytes in the file */
 	offset = disp + (ADIO_Offset) n_filetypes*filetype_extent +
 	    abs_off_in_filetype;
-    } /* else [file_ptr_type != ADIOI_INDIVIDUAL] */
+    } /* else [file_ptr_type != ADIO_INDIVIDUAL] */
 
     start_off = offset;
     st_fwr_size = fwr_size;
