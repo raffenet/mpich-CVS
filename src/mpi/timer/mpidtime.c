@@ -62,6 +62,12 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 
 
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 void MPID_Wtime( MPID_Time_t *tval )
 {
     struct timezone tzp;

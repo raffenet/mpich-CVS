@@ -61,7 +61,7 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr1, mpi_errno );
             MPID_Comm_valid_ptr( comm_ptr2, mpi_errno );
-	    MPID_ERRTEST_ARGNULL( result, "result", mpi_errno );
+	    /*MPID_ERRTEST_ARGNULL( result, "result", mpi_errno );*/
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
