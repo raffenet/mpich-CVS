@@ -1677,6 +1677,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
     MPIDI_VC *recv_vc_ptr;
     void *mem_ptr_orig;
     int mpi_errno;
+    int pkt_offset;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
@@ -1686,7 +1687,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
     {
 	if (IBU_Process.unex_finished_list)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes", IBU_Process.unex_finished_list->read.total));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes",
+			      IBU_Process.unex_finished_list->read.total));
 	    /* remove this ibu from the finished list */
 	    ibu = IBU_Process.unex_finished_list;
 	    IBU_Process.unex_finished_list = IBU_Process.unex_finished_list->unex_finished_queue;
@@ -1835,6 +1837,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    num_bytes = completion_data.byte_len;
 #ifdef USE_INLINE_PKT_RECEIVE
 	    recv_vc_ptr = ibu->vc_ptr;
+	    pkt_offset = 0;
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
@@ -1863,7 +1866,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    break;
 		}
 		if (recv_vc_ptr->ch.recv_active == NULL)
+		{
+		    /*printf("pkt handled with %d bytes remaining to be buffered.\n", num_bytes);*/
+		    ibui_buffer_unex_read(ibu, mem_ptr_orig, sizeof(MPIDI_CH3_Pkt_t), num_bytes);
 		    break;
+		}
+		pkt_offset = sizeof(MPIDI_CH3_Pkt_t);
 	    }
 #endif
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
@@ -1871,7 +1879,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    if (!(ibu->state & IBU_READING))
 	    {
 #ifdef USE_INLINE_PKT_RECEIVE
-		ibui_buffer_unex_read(ibu, mem_ptr_orig, sizeof(MPIDI_CH3_Pkt_t), num_bytes);
+		/*printf("a:buffering %d bytes.\n", num_bytes);*/
+		ibui_buffer_unex_read(ibu, mem_ptr_orig, pkt_offset, num_bytes);
 #else
 		ibui_buffer_unex_read(ibu, mem_ptr, 0, num_bytes);
 #endif
@@ -1925,7 +1934,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		{
 		    /* save the unused but received data */
 #ifdef USE_INLINE_PKT_RECEIVE
-		    ibui_buffer_unex_read(ibu, mem_ptr_orig, offset, num_bytes);
+		    /*printf("b:buffering %d bytes (offset,pkt = %d,%d).\n", num_bytes, offset, pkt_offset);*/
+		    ibui_buffer_unex_read(ibu, mem_ptr_orig, offset + pkt_offset, num_bytes);
 #else
 		    ibui_buffer_unex_read(ibu, mem_ptr, offset, num_bytes);
 #endif
@@ -1955,7 +1965,10 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    memcpy(ibu->read.buffer, mem_ptr, ibu->read.bufflen);
 		    ibu->read.total = ibu->read.bufflen;
 #ifdef USE_INLINE_PKT_RECEIVE
-		    ibui_buffer_unex_read(ibu, mem_ptr_orig, ibu->read.bufflen, num_bytes - ibu->read.bufflen);
+		    /*printf("c:buffering %d bytes.\n", num_bytes - ibu->read.bufflen);*/
+		    ibui_buffer_unex_read(ibu, mem_ptr_orig,
+					  ibu->read.bufflen + pkt_offset,
+					  num_bytes - ibu->read.bufflen);
 #else
 		    ibui_buffer_unex_read(ibu, mem_ptr, ibu->read.bufflen, num_bytes - ibu->read.bufflen);
 #endif
@@ -2123,5 +2136,80 @@ int ibu_get_lid()
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_GET_LID);
     return IBU_Process.lid;
 }
+
+#ifdef USE_INLINE_PKT_RECEIVE
+#undef FUNCNAME
+#define FUNCNAME post_pkt_recv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int post_pkt_recv(MPIDI_VC *recv_vc_ptr)
+{
+    int mpi_errno;
+    void *mem_ptr;
+    ibu_t ibu;
+    ibu_unex_read_t *temp;
+    MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV);
+    MPIDI_FUNC_ENTER(MPID_STATE_POST_PKT_RECV);
+
+    if (recv_vc_ptr->ch.ibu->unex_list == NULL)
+    {
+	recv_vc_ptr->ch.reading_pkt = TRUE;
+	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+	return MPI_SUCCESS;
+    }
+
+    ibu = recv_vc_ptr->ch.ibu;
+    recv_vc_ptr->ch.reading_pkt = TRUE;
+    mem_ptr = ibu->unex_list->buf;
+
+    if (ibu->unex_list->length < sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+	return mpi_errno;
+    }
+
+    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
+	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+	return mpi_errno;
+    }
+
+    ibu->unex_list->buf += sizeof(MPIDI_CH3_Pkt_t);
+    ibu->unex_list->length -= sizeof(MPIDI_CH3_Pkt_t);
+    if (ibu->unex_list->length == 0)
+    {
+	/* put the receive packet back in the pool */
+	if (ibu->unex_list->mem_ptr == NULL)
+	{
+	    MPIU_Internal_error_printf("ibui_readv_unex: mem_ptr == NULL\n");
+	}
+	assert(ibu->unex_list->mem_ptr != NULL);
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockFreeIB(mem_ptr)"));
+	ibuBlockFreeIB(ibu->allocator, ibu->unex_list->mem_ptr);
+	/* MPIU_Free the unexpected data node */
+	temp = ibu->unex_list;
+	ibu->unex_list = ibu->unex_list->next;
+	MPIU_Free(temp);
+	/* replace the consumed read descriptor */
+	ibui_post_receive(ibu);
+    }
+
+    if (recv_vc_ptr->ch.recv_active == NULL)
+    {
+	MPIU_DBG_PRINTF(("packet %d with no data handled.\n", g_num_received));
+	recv_vc_ptr->ch.reading_pkt = TRUE;
+    }
+    else
+    {
+	/*mpi_errno =*/ ibu_post_readv(ibu, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count);
+    }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+    return mpi_errno;
+}
+#endif
 
 #endif /* USE_IB_VAPI */
