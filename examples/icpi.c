@@ -34,7 +34,10 @@ int main(int argc,char *argv[])
         if (myid == 0) {
             fprintf(stdout, "Enter the number of intervals: (0 quits) ");
 	    fflush(stdout);
-            scanf("%d",&n);
+            if (scanf("%d",&n) != 1) {
+		fprintf( stdout, "No number entered; quitting\n" );
+		n = 0;
+	    }
 	    startwtime = MPI_Wtime();
         }
         MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
