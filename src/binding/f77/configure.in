@@ -336,18 +336,13 @@ if test "$DEBUG_DUMP" = "yes" ; then
     echo "End of env" >> config.env
 fi
 dnl
-dnl Why is this here?  Please explain why -lg2c must be excluded when
-dnl using the NAG compilers.  
+dnl Historical note:
+dnl If using the nag Fortran compilers, you may need -lg2c.
 dnl The reason is that when it is included, codes fail in exit.  The
 dnl problem was tracked down to the fact that the nag fortran routines
 dnl do not initialize the argument values in the way that g2c expects.
 dnl So, g2c is discovered, but it will not work.
 dnl 
-if test "$f90nag" = "1" -o "$f95nag" = "1" ; then 
-    NOG2C=yes 
-else 
-    NOG2C=no
-fi
 dnl
 dnl This option requires the config.guess etc.
 #
@@ -1153,40 +1148,65 @@ AC_SUBST(F77CPP)
 # For Fortran 90, we'll also need MPI_ADDRESS_KIND and MPI_OFFSET_KIND
 # Since our compiler might BE a Fortran 90 compiler, try and determine the
 # values.  
-F90="${F90-$F77}"
-PAC_LANG_PUSH_COMPILERS
-PAC_LANG_FORTRAN90
-# Offset kind should be for 8 bytes if possible (Romio prefers that)
-# address should be sizeof void *
-testsize=$ac_cv_sizeof_voidp
-if test "$testsize" = 0 ; then
-    # Set a default
-    testsize=4
-fi
-dnl Using the {} around testsize helps the comments work correctly
-PAC_PROG_F90_INT_KIND(ADDRESS_KIND,${testsize},$CROSS_F90_ADDRESS_KIND)
-if test "$ac_cv_sizeof_void_p" = 8 ; then
-    OFFSET_KIND=$ADDRESS_KIND
-else
-    PAC_PROG_F90_INT_KIND(OFFSET_KIND,8,$CROSS_F90_OFFSET_KIND)
-fi
-#
-# Some compilers won't allow a -1 kind (e.g., absoft).  In this case, 
-# use a fallback (sizeof(int) kind)
-if test "$ADDRESS_KIND" = "-1" -o "$OFFSET_KIND" = "-1" ; then
-    PAC_PROG_F90_INT_KIND(simpleintkind,${pac_cv_f77_sizeof_integer})
-    if test "$simpleintkind" = "-1" ; then
-	# Wild guess; probably means that Fortran 90 is not available
-	simpleintkind=4
+if test -z "$F90" ; then
+    AC_CACHE_CHECK([whether Fortran compiler is a Fortran 90 compiler],
+    pac_cv_prog_f77_is_f90,[
+    pac_cv_prog_f77_is_f90=no
+    cat >>conftest.f90 <<EOF
+        program main
+        integer, dimension(10) :: n
+        integer k
+	print *,  range(k)
+        end
+EOF
+    if $F77 -o conftest $FFLAGS conftest.f90 >/dev/null 2>&1 ; then
+        if test -x conftest ; then
+	    pac_cv_prog_f77_is_f90=yes
+        fi
     fi
-    if test "$ADDRESS_KIND" = "-1" ; then
-	ADDRESS_KIND=$simpleintkind
-    fi
-    if test "$OFFSET_KIND" = "-1" ; then
-	OFFSET_KIND=$simpleintkind
+])
+    if test "$pac_cv_prog_f77_is_f90" = yes ; then
+        F90=$F77
+	if test -z "$F90FLAGS" ; then 
+	    F90FLAGS="$FFLAGS"
+        fi
     fi
 fi
-PAC_LANG_POP_COMPILERS
+if test -n "$F90" ; then
+    PAC_LANG_PUSH_COMPILERS
+    PAC_LANG_FORTRAN90
+    # Offset kind should be for 8 bytes if possible (Romio prefers that)
+    # address should be sizeof void *
+    testsize=$ac_cv_sizeof_voidp
+    if test "$testsize" = 0 ; then
+        # Set a default
+        testsize=4
+    fi  
+    dnl Using the {} around testsize helps the comments work correctly
+    PAC_PROG_F90_INT_KIND(ADDRESS_KIND,${testsize},$CROSS_F90_ADDRESS_KIND)
+    if test "$ac_cv_sizeof_void_p" = 8 ; then
+        OFFSET_KIND=$ADDRESS_KIND
+    else
+        PAC_PROG_F90_INT_KIND(OFFSET_KIND,8,$CROSS_F90_OFFSET_KIND)
+    fi
+    #
+    # Some compilers won't allow a -1 kind (e.g., absoft).  In this case, 
+    # use a fallback (sizeof(int) kind)
+    if test "$ADDRESS_KIND" = "-1" -o "$OFFSET_KIND" = "-1" ; then
+        PAC_PROG_F90_INT_KIND(simpleintkind,${pac_cv_f77_sizeof_integer})
+        if test "$simpleintkind" = "-1" ; then
+	    # Wild guess; probably means that Fortran 90 is not available
+   	    simpleintkind=4
+        fi
+        if test "$ADDRESS_KIND" = "-1" ; then
+	    ADDRESS_KIND=$simpleintkind
+        fi
+        if test "$OFFSET_KIND" = "-1" ; then
+	    OFFSET_KIND=$simpleintkind
+        fi
+    fi
+    PAC_LANG_POP_COMPILERS
+fi
 
 AC_SUBST(ADDRESS_KIND)
 AC_SUBST(OFFSET_KIND)
