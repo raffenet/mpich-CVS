@@ -186,9 +186,63 @@ the commands provided by the file system to access the file, e.g., ls,
 mv, cp, rm, ftp.
 
 
+Using ROMIO on NFS
+------------------
 
-Installation Instructions
--------------------------
+To use ROMIO on NFS, file locking with fcntl must work correctly on
+the NFS installation. On some installations, fcntl locks don't work.
+To get them to work, you need to use Version~3 of NFS and
+have the system administrator mount the NFS file system with the 
+"noac" option (no attribute caching). Turning off attribute caching 
+may reduce performance, but it is necessary for correct behavior.
+
+The following are some instructions we received from Ian Wells of HP
+for setting the {\tt noac} option on NFS. We have not tried them
+ourselves. We are including them here because you may find 
+them useful. Note that some of the steps may be specific to HP
+systems, and you may need root permission to execute some of the
+commands. 
+   
+   >1. first confirm you are running nfs version 3
+   >
+   >rpcnfo -p `hostname` | grep nfs
+   >
+   >ie 
+   >    goedel >rpcinfo -p goedel | grep nfs
+   >    100003    2   udp   2049  nfs
+   >    100003    3   udp   2049  nfs
+   >
+   >
+   >2. then edit /etc/fstab for each nfs directory read/written by MPIO
+   >   on each  machine used for multihost MPIO.
+   >
+   >    Here is an example of a correct fstab entry for /epm1:
+   >
+   >   ie grep epm1 /etc/fstab
+   > 
+   >      ROOOOT 11>grep epm1 /etc/fstab
+   >      gershwin:/epm1 /rmt/gershwin/epm1 nfs bg,intr,noac 0 0
+   >
+   >   if the noac option is not present, add it 
+   >   and then remount this directory
+   >   on each of the machines that will be used to share MPIO files
+   >
+   >ie
+   >
+   >ROOOOT >umount /rmt/gershwin/epm1
+   >ROOOOT >mount  /rmt/gershwin/epm1
+   >
+   >3. Confirm that the directory is mounted noac:
+   >
+   >ROOOOT >grep gershwin /etc/mnttab 
+   >gershwin:/epm1 /rmt/gershwin/epm1 nfs
+   >noac,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0 0 0 899911504
+
+
+
+
+ROMIO Installation Instructions
+-------------------------------
 
 Since ROMIO is included in MPICH, LAM, HP MPI, SGI MPI, and NEC MPI,
 you don't need to install it separately if you are using any of these
