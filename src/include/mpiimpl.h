@@ -3244,6 +3244,8 @@ extern MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[];
 #define MPIR_MAX(a,b) (((b)>(a))?(b):(a))
 #endif
 
+int MPIR_Bcast_inter(void *buffer, int count, MPI_Datatype datatype, 
+		     int root, MPID_Comm *comm_ptr);
 int MPIR_Bcast (void *buffer, int count, MPI_Datatype datatype, int
                 root, MPID_Comm *comm_ptr);
 int MPIR_Gather (void *sendbuf, int sendcnt, MPI_Datatype sendtype,
