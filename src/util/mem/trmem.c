@@ -341,8 +341,8 @@ int MPIU_trvalid( const char str[] )
 	if (head->cookie != COOKIE_VALUE) {
 	    if (!errs) msg_fprintf( stderr, "%s\n", str );
 	    errs++;
-	    fprintf( stderr, "[%d] Block at address %lx is corrupted\n", 
-		     world_rank, (PointerInt)head );
+	    msg_fprintf( stderr, "[%d] Block at address %lx is corrupted\n", 
+			 world_rank, (PointerInt)head );
 	    /* Must stop because if head is invalid, then the data in the
 	       head is probably also invalid, and using could lead to 
 	       SEGV or BUS  */
@@ -351,7 +351,7 @@ int MPIU_trvalid( const char str[] )
 	a    = (char *)(((TrSPACE*)head) + 1);
 	nend = (unsigned long *)(a + head->size);
 	if (nend[0] != COOKIE_VALUE) {
-	    if (!errs) fprintf( stderr, "%s\n", str );
+	    if (!errs) msg_fprintf( stderr, "%s\n", str );
 	    errs++;
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
 	    msg_fprintf( stderr, 
@@ -690,28 +690,28 @@ void MPIU_trSortBlocks ( void );
 /* Merge two lists, returning the head of the merged list */
 TRSPACE *MPIU_trImerge( TRSPACE *l1, TRSPACE *l2 )
 {
-TRSPACE *head = 0, *tail = 0;
-int     sign;
-while (l1 && l2) {
-    sign = strcmp(l1->fname, l2->fname);
-    if (sign > 0 || (sign == 0 && l1->lineno >= l2->lineno)) {
-	if (head) tail->next = l1; 
-	else      head = tail = l1;
-	tail = l1;
-	l1   = l1->next;
+    TRSPACE *head = 0, *tail = 0;
+    int     sign;
+    while (l1 && l2) {
+	sign = strncmp(l1->fname, l2->fname, TR_FNAME_LEN - 1 );
+	if (sign > 0 || (sign == 0 && l1->lineno >= l2->lineno)) {
+	    if (head) tail->next = l1; 
+	    else      head = tail = l1;
+	    tail = l1;
+	    l1   = l1->next;
 	}
-    else {
-	if (head) tail->next = l2; 
-	else      head = tail = l2;
-	tail = l2;
-	l2   = l2->next;
+	else {
+	    if (head) tail->next = l2; 
+	    else      head = tail = l2;
+	    tail = l2;
+	    l2   = l2->next;
 	}
     }
-/* Add the remaining elements to the end */
-if (l1) tail->next = l1;
-if (l2) tail->next = l2;
-
-return head;
+    /* Add the remaining elements to the end */
+    if (l1) tail->next = l1;
+    if (l2) tail->next = l2;
+    
+    return head;
 }
 /* Sort head with n elements, returning the head */
 TRSPACE *MPIU_trIsort( TRSPACE *head, int n )
@@ -762,7 +762,7 @@ void MPIU_trdumpGrouped( FILE *fp )
 	cur     = head->next;
 	nblocks = 1;
 	nbytes  = (int)head->size;
-	while (cur && strcmp(cur->fname,head->fname) == 0 && 
+	while (cur && strncmp(cur->fname,head->fname,TR_FNAME_LEN-1) == 0 && 
 	       cur->lineno == head->lineno ) {
 	    nblocks++;
 	    nbytes += (int)cur->size;
