@@ -674,6 +674,10 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
     if (sock->elem + 1 == sock_set->poll_array_elems)
     { 
 	sock_set->poll_array_elems -= 1;
+	if (sock_set->starting_elem >= sock_set->poll_array_elems)
+	{
+	    sock_set->starting_elem = 0;
+	}
     }
 
     /*

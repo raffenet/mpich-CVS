@@ -36,7 +36,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
     for (;;)
     { 
 	int elem;
-	int nfds;
+	int n_fds;
+	int n_elems;
 	int found_active_elem = FALSE;
 	
 	if (MPIDU_Socki_event_dequeue(sock_set, &elem, eventp) == MPI_SUCCESS)
@@ -80,7 +81,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 #	    if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_POLL);
-		nfds = poll(sock_set->pollfds, sock_set->poll_array_elems, millisecond_timeout);
+		n_fds = poll(sock_set->pollfds, sock_set->poll_array_elems, millisecond_timeout);
 		MPIDI_FUNC_EXIT(MPID_STATE_POLL);
 	    }
 #	    else
@@ -90,10 +91,10 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		 * overhead.
 		 */
 		MPIDI_FUNC_ENTER(MPID_STATE_POLL);
-		nfds = poll(sock_set->pollfds, sock_set->poll_array_elems, 0);
+		n_fds = poll(sock_set->pollfds, sock_set->poll_array_elems, 0);
 		MPIDI_FUNC_EXIT(MPID_STATE_POLL);
 		
-		if (nfds == 0 && millisecond_timeout != 0)
+		if (n_fds == 0 && millisecond_timeout != 0)
 		{
 		    int pollfds_active_elems = sock_set->poll_array_elems;
 		
@@ -120,7 +121,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 #                   endif
 			    
 		    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
-		    nfds = poll(sock_set->pollfds_active, pollfds_active_elems, millisecond_timeout);
+		    n_fds = poll(sock_set->pollfds_active, pollfds_active_elems, millisecond_timeout);
 		    MPIDI_FUNC_EXIT(MPID_STATE_POLL);
 		    
 #                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
@@ -177,11 +178,11 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 	    }
 #	    endif
 
-	    if (nfds > 0)
+	    if (n_fds > 0)
 	    {
 		break;
 	    }
-	    else if (nfds == 0)
+	    else if (n_fds == 0)
 	    {
 		mpi_errno = MPIDU_SOCK_ERR_TIMEOUT;
 		goto fn_exit;
@@ -211,7 +212,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 	}
 
 	elem = sock_set->starting_elem;
-	while (nfds > 0)
+	n_elems = sock_set->poll_array_elems;
+	while (n_fds > 0 && n_elems > 0)
 	{
 	    /*
 	     * Acquire pointers to the pollfd and pollinfo structures for the next element
@@ -228,6 +230,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 	    if (pollfd->fd < 0 || pollfd->revents == 0)
 	    {
 		/* This optimization assumes that most FDs will not have a pending event. */
+		n_elems -= 1;
 		elem = (elem + 1 < sock_set->poll_array_elems) ? elem + 1 : 0;
 		continue;
 	    }
@@ -349,7 +352,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		}
 	    }
 
-	    nfds--;
+	    n_fds -= 1;
+	    n_elems -= 1;
 	    elem = (elem + 1 < sock_set->poll_array_elems) ? elem + 1 : 0;
 	}
     }
