@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = SendRecvTest(rank, reps);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - sr\n" : "%d:FAILURE - sr\n", rank);
 	    fflush(stdout);
 	}
 
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = IsendIrecvTest(rank);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - isr\n" : "%d:FAILURE - isr\n", rank);
 	    fflush(stdout);
 	}
 
@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = IsendIrecvTest2(rank, 100);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - iisr\n" : "%d:FAILURE - iisr\n", rank);
 	    fflush(stdout);
 	}
 
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = OutOfOrderTest(rank, 100);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - oo\n" : "%d:FAILURE - oo\n", rank);
 	    fflush(stdout);
 	}
 
@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = ForceUnexpectedTest(rank, 100);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - unex\n" : "%d:FAILURE - unex\n", rank);
 	    fflush(stdout);
 	}
 
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = RndvTest(rank, rndv_size, 1);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - rndv\n" : "%d:FAILURE - rndv\n", rank);
 	    fflush(stdout);
 	}
 
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = RndvTest(rank, rndv_size, reps);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - rndv_reps\n" : "%d:FAILURE - rndv_reps\n", rank);
 	    fflush(stdout);
 	}
 
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 		rndv_size = atoi(argv[2]);
 	    }
 	    result = IsendIrecvTest2(rank, rndv_size);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - rndv_iisr\n" : "%d:FAILURE - rndv_iisr\n", rank);
 	    fflush(stdout);
 	}
 
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 		rndv_size = atoi(argv[2]);
 	    }
 	    result = OutOfOrderTest(rank, rndv_size);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - rndv_oo\n" : "%d:FAILURE - rndv_oo\n", rank);
 	    fflush(stdout);
 	}
 
@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 	    }
 	    result = ForceUnexpectedTest(rank, rndv_size);
-	    printf(result ? "%d:SUCCESS\n" : "%d:FAILURE\n", rank);
+	    printf(result ? "%d:SUCCESS - rndv_unex\n" : "%d:FAILURE - rndv_unex\n", rank);
 	    fflush(stdout);
 	}
     }
