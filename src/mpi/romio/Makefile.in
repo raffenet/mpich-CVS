@@ -35,7 +35,7 @@ mpio:
         fi;\
 	$(MAKE) clean
 	$(RANLIB) $(LIBNAME)
-	@if test "$(FROM_MPICH)" = 0 -a "$(FROM_MPICH2)" = 0 ; then \
+	@if test "$(FROM_MPICH)" = no -a "$(FROM_MPICH2)" = no ; then \
            echo " "; \
            echo "Completed build of ROMIO. Check the output for errors."; \
            echo " " ;\
@@ -82,7 +82,7 @@ clean:
          echo " ";
 
 mpiolib:
-	@if test "$(FROM_MPICH)" = 0 -a "$(FROM_MPICH2)" = 0 ; then \
+	@if test "$(FROM_MPICH)" = no -a "$(FROM_MPICH2)" = no ; then \
             echo " " ;\
             echo "deleting previously built library if it exists" ;\
             rm -f $(LIBNAME) ;\
