@@ -294,6 +294,7 @@ int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
     {
 	if (cur_rreq == rreq)
 	{
+	    MPID_Request_release(rreq);
 	    if (prev_rreq != NULL)
 	    {
 		prev_rreq->ch3.next = cur_rreq->ch3.next;
