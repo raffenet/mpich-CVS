@@ -380,60 +380,60 @@ MPI_Type_match_size
 MPID functions
 
 Data Structures
-MPID_Request_kind.tex
-MPID_Request.tex
-MPID_Comm.tex
+MPID_Request_kind
+MPID_Request
+MPID_Comm
 
 Basic Point-to-Point
 
-MPID_Send.tex
-MPID_Ssend.tex
-MPID_Rsend.tex
-MPID_Isend.tex
-MPID_Issend.tex
-MPID_Irsend.tex
-MPID_tBsend.tex
-MPID_Recv.tex
-MPID_Irecv.tex
-MPID_Request_free.tex
-MPID_Cancel_send.tex
-MPID_Cancel_recv.tex
-MPID_Iprobe.tex
-MPID_Probe.tex
+MPID_Send
+MPID_Ssend
+MPID_Rsend
+MPID_Isend
+MPID_Issend
+MPID_Irsend
+MPID_tBsend
+MPID_Recv
+MPID_Irecv
+MPID_Request_free
+MPID_Cancel_send
+MPID_Cancel_recv
+MPID_Iprobe
+MPID_Probe
 
 Persistent Point-to-Point
 
-MPID_Send_init.tex
-MPID_Ssend_init.tex
-MPID_Rsend_init.tex
-MPID_Recv_init.tex
-MPID_Startall.tex
+MPID_Send_init
+MPID_Ssend_init
+MPID_Rsend_init
+MPID_Recv_init
+MPID_Startall
 
 Progress Engine
 
-MPID_Progress_start.tex
-MPID_Progress_end.tex
-MPID_Progress_test.tex
-MPID_Progress_wait.tex
-MPID_Progress_poke.tex
+MPID_Progress_start
+MPID_Progress_end
+MPID_Progress_test
+MPID_Progress_wait
+MPID_Progress_poke
 
 Starting and stopping
 
-MPID_Init.tex
-MPID_Finalize.tex
-MPID_Abort.tex
+MPID_Init
+MPID_Finalize
+MPID_Abort
 
 RMA
 
-MPID_Win_put.tex
-MPID_Win_get.tex
-MPID_Win_accumulate.tex
-MPID_Win_do.tex
-MPID_Win_fence.tex
-MPID_Win_begin.tex
-MPID_Win_end.tex
-MPID_Win_local_lock.tex
-MPID_Win_local_unlock.tex
+MPID_Win_put
+MPID_Win_get
+MPID_Win_accumulate
+MPID_Win_do
+MPID_Win_fence
+MPID_Win_begin
+MPID_Win_end
+MPID_Win_local_lock
+MPID_Win_local_unlock
 
 Dynamic Processes
 
@@ -441,8 +441,8 @@ Collective Communication
 
 Device Hooks
 
-MPID_Dev_xxx_create_hook.tex
-MPID_Dev_xxx_destroy_hook.tex
+MPID_Dev_xxx_create_hook
+MPID_Dev_xxx_destroy_hook
 
 -------------------------------------------------
 
