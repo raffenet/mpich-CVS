@@ -266,7 +266,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
+	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val, val_max_sz);
 	    if (mpi_errno != PMI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
