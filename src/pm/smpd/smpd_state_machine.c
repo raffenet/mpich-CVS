@@ -9,6 +9,82 @@
 #ifdef HAVE_WINDOWS_H
 void smpd_stdin_thread(SOCKET hWrite)
 {
+    DWORD num_read;
+    char str[SMPD_MAX_CMD_LENGTH];
+    HANDLE h[2];
+    int result;
+    /*int i;*/
+
+    smpd_dbg_printf("smpd_stdin_thread started.\n");
+    h[0] = GetStdHandle(STD_INPUT_HANDLE);
+    if (h[0] == NULL)
+    {
+	smpd_err_printf("Unable to get the stdin handle.\n");
+	return;
+    }
+    h[1] = smpd_process.hCloseStdinThreadEvent;
+    for (;;)
+    {
+	/*smpd_dbg_printf("waiting for input from stdin\n");*/
+	result = WaitForMultipleObjects(2, h, FALSE, INFINITE);
+	if (result == WAIT_OBJECT_0)
+	{
+	    if (ReadFile(h[0], str, SMPD_MAX_CMD_LENGTH, &num_read, NULL))
+	    {
+		smpd_dbg_printf("forwarding stdin: %d bytes\n", num_read);
+		/*
+		printf("forwarding stdin: '");
+		for (i=0; i<num_read; i++)
+		{
+		    printf("%c", str[i]);
+		}
+		printf("'\n");
+		fflush(stdout);
+		*/
+		if (num_read > 0)
+		{
+		    if (send(hWrite, str, num_read, 0) == SOCKET_ERROR)
+		    {
+			smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
+			return;
+		    }
+		}
+		else
+		{
+		    /* ReadFile failed, what do I do? */
+		    shutdown(hWrite, SD_BOTH);
+		    closesocket(hWrite);
+		    smpd_dbg_printf("fgets failed, closing stdin reader thread.\n");
+		    return;
+		}
+	    }
+	    else
+	    {
+		/* ReadFile failed, what do I do? */
+		shutdown(hWrite, SD_BOTH);
+		closesocket(hWrite);
+		smpd_dbg_printf("fgets failed, closing stdin reader thread.\n");
+		return;
+	    }
+	}
+	else if (result == WAIT_OBJECT_0 + 1)
+	{
+	    shutdown(hWrite, SD_BOTH);
+	    closesocket(hWrite);
+	    smpd_dbg_printf("hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
+	    return;
+	}
+	else
+	{
+	    smpd_err_printf("stdin wait failed, error %d\n", GetLastError());
+	    return;
+	}
+    }
+}
+#if 0
+/* fgets version */
+void smpd_stdin_thread(SOCKET hWrite)
+{
     DWORD len;
     char str[SMPD_MAX_CMD_LENGTH];
     HANDLE h[2];
@@ -61,6 +137,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 	}
     }
 }
+#endif
 #endif
 
 char * smpd_get_state_string(smpd_state_t state)
