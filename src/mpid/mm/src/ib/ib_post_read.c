@@ -21,16 +21,18 @@ int ib_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 
 int ib_post_read_pkt(MPIDI_VC *vc_ptr)
 {
-    int result;
+    /*int result;*/
     MPIDI_STATE_DECL(MPID_STATE_IB_POST_READ_PKT);
     MPIDI_FUNC_ENTER(MPID_STATE_IB_POST_READ_PKT);
 
     vc_ptr->data.ib.reading_header = TRUE;
+    /*
     result = ibu_post_receive(vc_ptr);
     if (result != MPI_SUCCESS)
     {
 	err_printf("ib_post_read_pkt: unable to post a read packet.\n");
     }
+    */
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_POST_READ_PKT);
     return MPI_SUCCESS;
