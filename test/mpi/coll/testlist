@@ -7,12 +7,15 @@ red3 10
 alltoall1 8
 alltoallv 10
 alltoallw2 10
+allgather2 10
+allgatherv2 10
 bcasttest 4
 bcasttest 10
 bcast2 4
 # More that 8 processes are required to get bcast to switch to the long
 # msg algorithm (see coll definitions in mpiimpl.h)
 bcast2 10
+bcast3 10
 coll2 5
 coll3 5
 coll4 4
@@ -62,4 +65,6 @@ opprod 5
 opprod 6
 opsum 4
 opmin 4
+opminloc 4
 opmax 5
+opmaxloc 5
