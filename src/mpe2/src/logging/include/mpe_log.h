@@ -2,13 +2,6 @@
    (C) 2001 by Argonne National Laboratory.
        See COPYRIGHT in top-level directory.
 */
-/* --MPE_Log--
-  mpe_log.h - prototypes for externally callable routines, and a few
-              return values
- 
-  All work funded by Argonne National Laboratory
-*/
-
 #ifndef _MPE_LOG_H_
 #define _MPE_LOG_H_
 
@@ -74,6 +67,8 @@ int MPE_Log_bare_event( int event );
 
 int MPE_Log_info_event( int event, const char *bytebuf );
   /* log one infomational event */
+
+int MPE_Log_sync_clocks( void );
 
 int MPE_Stop_log( void );
   /* stop logging events */

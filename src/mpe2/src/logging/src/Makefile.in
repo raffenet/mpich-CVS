@@ -52,8 +52,9 @@ EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@
 CFLAGS           = $(MPE_CFLAGS) $(INCLUDE_DIR) @CFLAGS@
 CC_LDFLAGS       = $(LDFLAGS) $(MPE_CFLAGS)
 
-MPE_CSOURCES     = clog_byteswap.c clog_time.c clog_util.c \
-                   clog.c clog_merge.c mpe_log.c
+MPE_CSOURCES     = clog_util.c clog_timer.c \
+                   clog_preamble.c clog_block.c clog_buffer.c clog_record.c \
+                   clog_sync.c clog_merger.c clog.c mpe_log.c
 MPE_COBJECTS     = $(MPE_CSOURCES:.c=.@OBJEXT@)
 
 MPE_WSOURCES     = mpe_logf.c
@@ -65,10 +66,10 @@ MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 .SUFFIXES: .c .@OBJEXT@ .lo .a @EXEEXT@
 
 .c.@OBJEXT@:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPE_INT_CC) $(MPE_INT_CFLAGS) -c $<
 
 .c.a:
-	$(MPI_CC) $(CFLAGS) -c $<
+	$(MPI_INT_CC) $(MPE_INT_CFLAGS) -c $<
 
 # Allow compilers that do not allow -o for renaming object files
 .c.lo:
@@ -84,6 +85,8 @@ profile_all:
 
 #
 default: clean
+	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a
+	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_null.a
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME).a
 	$(MAKE) $(EXECS)
 
@@ -99,40 +102,49 @@ default: clean
 # is done once (e.g., a blip in the filesystem time can't be 
 # responsible if make works as Sun documents it).  To fix this, we
 # add all the objects to the library, not just the "recent" ones.
-build_Cobjs: $(MPE_COBJECTS)
-	$(AR) $(ARFLAGS) ${libbuild_dir}/lib$(PROF_LIBNAME).a ${MPE_COBJECTS}
-	$(RANLIB) ${libbuild_dir}/lib$(PROF_LIBNAME).a
-#	-$(RM) -f $?
-
-build_Wobjs: $(MPE_WOBJECTS)
-	$(AR) $(ARFLAGS) ${libbuild_dir}/lib$(PROF_LIBNAME).a ${MPE_WOBJECTS}
-	$(RANLIB) ${libbuild_dir}/lib$(PROF_LIBNAME).a
-#	-$(RM) -f $?
-
-${libbuild_dir}/lib$(PROF_LIBNAME).a: build_Cobjs
+${libbuild_dir}/lib$(PROF_LIBNAME).a: clean
+	@$(MAKE) $(MPE_COBJECTS) \
+	 "MPE_INT_CC=${MPI_CC}" "MPE_INT_CFLAGS=${CFLAGS}"
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) build_Wobjs ; \
+	     $(MAKE) $(MPE_WOBJECTS) \
+	     "MPE_INT_CC=${MPI_CC}" "MPE_INT_CFLAGS=${CFLAGS}" ; \
 	 fi
+	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
+	$(RANLIB) $@
 
-# The old dependency and rule involes too many unnecessary code.  A.Chan
-# clog_print: clog_print.o clog.o clog_time.o clog_util.o clog_merge.o
-#       $(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.o $(PROF_LIBS)
-${binbuild_dir}/clog2_print@EXEEXT@: clog_byteswap.@OBJEXT@ \
-                                     clog_util.@OBJEXT@ \
-                                     clog_print.@OBJEXT@
-	$(CLINKER) $(CC_LDFLAGS) -o $@ $?
-#	 $(RM) -f $?
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
+	@$(MAKE) $(MPE_COBJECTS) \
+	 "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} -DCLOG_NOMPI"
+	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	     $(MAKE) $(MPE_WOBJECTS) \
+	     "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} -DCLOG_NOMPI" ; \
+	 fi
+	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
+	$(RANLIB) $@
 
-testlog: testlog.@OBJEXT@ clog.@OBJEXT@ clog_time.@OBJEXT@ \
-         clog_merge.@OBJEXT@ clog_util.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o testlog@EXEEXT@ testlog.@OBJEXT@ \
-	               $(PROF_LIBS)
+# -DCLOG_NOMPI can be used when creating lib$(PROF_LIBNAME)_null.a
+${libbuild_dir}/lib$(PROF_LIBNAME)_null.a: clean
+	@$(MAKE) mpe_log_null.@OBJEXT@ \
+	 "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} "
+	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	     $(MAKE) $(MPE_WOBJECTS) \
+	     "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS}" ; \
+	 fi
+	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
+	$(RANLIB) $@
+
+${binbuild_dir}/clog2_print@EXEEXT@: clean
+	@$(MAKE) clog_print.o \
+	 "MPE_INT_CC=${CC}" "MPE_INT_CFLAGS=${CFLAGS} -DCLOG_NOMPI"
+	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.@OBJEXT@ \
+                   -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 
 #
 # Remove the old libraries before rebuilding (in case they came from another
 # architecture or are otherwise damaged)
 rmlib:
 	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a 
 
 rmprog:
 	@-$(RM) -f $(EXECS)

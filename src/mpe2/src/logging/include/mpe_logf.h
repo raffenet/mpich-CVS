@@ -43,6 +43,8 @@ C
       external MPE_Log_bare_event
       integer  MPE_Log_info_event
       external MPE_Log_info_event
+      external MPE_Log_sync_clocks
+      integer  MPE_Log_sync_clocks
       integer  MPE_Stop_log
       external MPE_Stop_log
       integer  MPE_Finish_log

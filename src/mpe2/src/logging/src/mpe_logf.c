@@ -44,6 +44,7 @@ extern void free();
 #define mpe_log_info_event_ MPE_LOG_INFO_EVENT
 #define mpe_log_send_ MPE_LOG_SEND
 #define mpe_log_receive_ MPE_LOG_RECEIVE
+#define mpe_log_sync_clocks_ MPE_LOG_SYNC_CLOCKS
 #define mpe_finish_log_ MPE_FINISH_LOG
 #elif defined(F77_NAME_LOWER_2USCORE)
 #define mpe_init_log_ mpe_init_log__
@@ -60,6 +61,7 @@ extern void free();
 #define mpe_log_info_event_ mpe_log_info_event__
 #define mpe_log_send_ mpe_log_send__
 #define mpe_log_receive_ mpe_log_receive__
+#define mpe_log_sync_clocks_ mpe_log_sync_clocks__
 #define mpe_finish_log_ mpe_finish_log__
 #elif defined(F77_NAME_LOWER)
 #define mpe_init_log_ mpe_init_log
@@ -76,6 +78,7 @@ extern void free();
 #define mpe_log_info_event_ mpe_log_info_event
 #define mpe_log_send_ mpe_log_send
 #define mpe_log_receive_ mpe_log_receive
+#define mpe_log_sync_clocks_ mpe_log_sync_clocks
 #define mpe_finish_log_ mpe_finish_log
 #endif
 
@@ -91,7 +94,7 @@ extern void free();
    RS6000)
  */
 
-static char *mpe_tmp_cpy ( char *, int );
+static char *mpe_tmp_cpy( char *, int );
 static char *mpe_tmp_cpy( s, d )
 char *s;
 int  d;
@@ -104,25 +107,31 @@ int  d;
     return p;
 }
 
-int mpe_init_log_ ( void );
+int mpe_init_log_( void );
 int  mpe_init_log_( void )
 {
     return MPE_Init_log();
 }
 
-int mpe_start_log_ ( void );
+int mpe_start_log_( void );
 int  mpe_start_log_( void )
 {
     return MPE_Start_log();
 }
 
-int mpe_stop_log_ ( void );
+int mpe_stop_log_( void );
 int  mpe_stop_log_( void )
 {
     return MPE_Stop_log();
 }
 
-int mpe_log_get_event_number_ ( void );
+int mpe_log_sync_clocks_( void );
+int  mpe_log_sync_clocks_( void )
+{
+    return MPE_Log_sync_clocks();
+}
+
+int mpe_log_get_event_number_( void );
 int mpe_log_get_event_number_( void )
 {
     return MPE_Log_get_event_number();
@@ -157,7 +166,7 @@ _fcd name, color, format;
     return err;
 }
 #else
-int  mpe_describe_info_state_ ( int *, int *, char *, char *, char *,
+int  mpe_describe_info_state_( int *, int *, char *, char *, char *,
                                 int, int, int );
 int  mpe_describe_info_state_( start_etype, final_etype, name, color, format,
                                d1, d2, d3 )
@@ -193,7 +202,7 @@ _fcd name, color;
     return err;
 }
 #else
-int  mpe_describe_state_ ( int *, int *, char *, char *, int, int );
+int  mpe_describe_state_( int *, int *, char *, char *, int, int );
 int  mpe_describe_state_( start_etype, final_etype, name, color, d1, d2 )
 int *start_etype, *final_etype;
 char *name, *color;
@@ -227,7 +236,7 @@ _fcd name, color, format;
     return err;
 }
 #else
-int  mpe_describe_info_event_ ( int *, char *, char*, char *, int, int, int );
+int  mpe_describe_info_event_( int *, char *, char*, char *, int, int, int );
 int  mpe_describe_info_event_( event, name, color, format, d1, d2, d3 )
 int *event;
 char *name, *color, *format;
@@ -261,7 +270,7 @@ _fcd name, color;
     return err;
 }
 #else
-int  mpe_describe_event_ ( int *, char *, char*, int, int );
+int  mpe_describe_event_( int *, char *, char*, int, int );
 int  mpe_describe_event_( event, name, color, d1, d2 )
 int *event;
 char *name, *color;
@@ -300,7 +309,7 @@ _fcd byteinfo;
     return err;
 }
 #else
-int  mpe_log_event_ ( int *, int *, char *, int );
+int  mpe_log_event_( int *, int *, char *, int );
 int  mpe_log_event_( event, data, byteinfo, d1 )
 int *event, *data;
 char *byteinfo;
@@ -324,7 +333,7 @@ _fcd byteinfo;
     return MPE_Log_info_event( *event, _fcdtocp( byteinfo ) );
 }
 #else
-int  mpe_log_info_event_ ( int *, char *, int );
+int  mpe_log_info_event_( int *, char *, int );
 int  mpe_log_info_event_( event, byteinfo, d1 )
 int *event;
 char *byteinfo;
@@ -352,7 +361,7 @@ _fcd filename;
     return err;
 }
 #else
-int  mpe_finish_log_ ( char *, int );
+int  mpe_finish_log_( char *, int );
 int  mpe_finish_log_( filename, d1 )
 char *filename;
 int  d1;

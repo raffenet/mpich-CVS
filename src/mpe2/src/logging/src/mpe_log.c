@@ -2,27 +2,29 @@
    (C) 2001 by Argonne National Laboratory.
        See COPYRIGHT in top-level directory.
 */
-/* mpe_log.c - the externally callable functions in MPE_Log
-
-   New version to use CLOG - Bill Gropp and Rusty Lusk
-
-*/
-
-#include <stdio.h>
-
 #include "mpe_logging_conf.h"
-#include "clog.h"
-#include "clog_merge.h"
-#include "mpe_log.h"
-#include "mpi.h"                /* Needed for PMPI routines */
 
-#ifdef HAVE_STDLIB_H
+#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
 /* Needed for getenv */
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
+#if defined( STDC_HEADERS ) || defined( HAVE_STRING_H )
 #include <string.h>
 #endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
+#include <stdio.h>
+#endif
+
+#include "mpe_log.h"
+#if !defined( CLOG_NOMPI )
+#include "mpi.h"                /* Needed for PMPI routines */
+#endif
+
+#include "clog.h"
+#include "clog_common.h"
+#include "clog_util.h"
+#include "clog_timer.h"
+#include "clog_sync.h"
 
 /* we want to use the PMPI routines instead of the MPI routines for all of 
    the logging calls internal to the mpe_log package */
@@ -40,6 +42,10 @@ int    MPE_Log_AdjustedTimes = 0;
 #define MPE_HAS_PROCID
 int    MPE_Log_procid;
 /* end of borrowing */
+
+CLOG_Stream_t *clog_stream;
+CLOG_Buffer_t *clog_buffer;
+
 
 /*@
     MPE_Init_log - Initialize for logging
@@ -61,19 +67,26 @@ int    MPE_Log_procid;
 @*/
 int MPE_Init_log( void )
 {
-
     if (!MPE_Log_hasBeenInit || MPE_Log_hasBeenClosed) {
+        clog_stream  = CLOG_Open();
+        clog_buffer  = clog_stream->buffer;
+        CLOG_Local_init( clog_stream, NULL );
+#if !defined( CLOG_NOMPI )
+        CLOG_Buffer_save_commevt( clog_buffer, CLOG_COMM_INIT,
+                                  CLOG_COMM_NULL, (int) MPI_COMM_WORLD );
         PMPI_Comm_rank( MPI_COMM_WORLD, &MPE_Log_procid ); /* get process ID */
-        CLOG_Init();
-        CLOG_LOGCOMM(INIT, -1, (int) MPI_COMM_WORLD);
+        if ( MPE_Log_procid == 0 ) {
+            CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
+                                       MPI_PROC_NULL, "MPI_PROC_NULL" );
+            CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
+                                       MPI_ANY_SOURCE, "MPI_ANY_SOURCE" );
+            CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
+                                       MPI_ANY_TAG, "MPI_ANY_TAG" );
+        }
+#endif
         MPE_Log_hasBeenInit = 1;        /* set MPE_Log as being initialized */
         MPE_Log_hasBeenClosed = 0;
         MPE_Log_isLockedOut = 0;
-        if ( MPE_Log_procid == 0 ) {
-            CLOG_LOGCONST( CLOG_CONST_DEF, MPI_PROC_NULL, "MPI_PROC_NULL" );
-            CLOG_LOGCONST( CLOG_CONST_DEF, MPI_ANY_SOURCE, "MPI_ANY_SOURCE" );
-            CLOG_LOGCONST( CLOG_CONST_DEF, MPI_ANY_TAG, "MPI_ANY_TAG" );
-        }
     }
     return MPE_Log_OK;
 }
@@ -85,7 +98,7 @@ int MPE_Start_log( void )
 {
     if (!MPE_Log_hasBeenInit)
         return MPE_Log_NOT_INITIALIZED;
-    CLOG_status = 0;
+    clog_buffer->status = CLOG_INIT_AND_ON;
     MPE_Log_isLockedOut = 0;
     return MPE_Log_OK;
 }
@@ -98,7 +111,7 @@ int MPE_Stop_log( void )
     if (!MPE_Log_hasBeenInit)
         return MPE_Log_NOT_INITIALIZED;
     MPE_Log_isLockedOut = 1;
-    CLOG_status = 1;
+    clog_buffer->status = CLOG_INIT_AND_OFF;
     return MPE_Log_OK;
 }
 
@@ -166,7 +179,7 @@ N*/
 
 .N MPE_LOG_BYTE_FORMAT
 
-.seealso: MPE_Log_get_event_number
+.see also: MPE_Log_get_event_number
 @*/
 int MPE_Describe_info_state( int start_etype, int final_etype,
                              const char *name, const char *color,
@@ -177,8 +190,10 @@ int MPE_Describe_info_state( int start_etype, int final_etype,
     if (!MPE_Log_hasBeenInit)
         return MPE_Log_NOT_INITIALIZED;
 
-    stateID = CLOG_get_new_state();
-    CLOG_LOGSTATE( stateID, start_etype, final_etype, color, name, format );
+    stateID = CLOG_Get_new_stateID( clog_stream );
+    CLOG_Buffer_save_statedef( clog_buffer, stateID,
+                               start_etype, final_etype,
+                               color, name, format );
 
     return MPE_Log_OK;
 }
@@ -245,7 +260,7 @@ int MPE_Describe_info_event( int event, const char *name, const char *color,
     if (!MPE_Log_hasBeenInit)
         return MPE_Log_NOT_INITIALIZED;
 
-    CLOG_LOGEVENT( event, color, name, format );
+    CLOG_Buffer_save_eventdef( clog_buffer, event, color, name, format );
 
     return MPE_Log_OK;
 }
@@ -289,7 +304,7 @@ int MPE_Describe_event( int event, const char *name, const char *color )
 @*/
 int MPE_Log_get_event_number( void )
 {
-    return CLOG_get_new_event();
+    return CLOG_Get_new_eventID( clog_stream );
 }
 
 /*@
@@ -303,8 +318,11 @@ int MPE_Log_get_event_number( void )
 @*/
 int MPE_Log_send( int other_party, int tag, int size )
 {
+#if !defined( CLOG_NOMPI )
     if (other_party != MPI_PROC_NULL)
-        CLOG_LOGMSG( CLOG_MSG_SEND, tag, other_party, 0, size );
+#endif
+        CLOG_Buffer_save_msgevt( clog_buffer, CLOG_EVT_SENDMSG,
+                                 tag, other_party, 0, size );
     return MPE_Log_OK;
 }
 
@@ -318,8 +336,11 @@ int MPE_Log_send( int other_party, int tag, int size )
 @*/
 int MPE_Log_receive( int other_party, int tag, int size )
 {
+#if !defined( CLOG_NOMPI )
     if (other_party != MPI_PROC_NULL)
-        CLOG_LOGMSG( CLOG_MSG_RECV, tag, other_party, 0, size );
+#endif
+        CLOG_Buffer_save_msgevt( clog_buffer, CLOG_EVT_RECVMSG,
+                                 tag, other_party, 0, size );
     return MPE_Log_OK;
 }
 
@@ -363,8 +384,10 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
             tot_sz = sizeof( short ) + count;
             if ( *position + tot_sz <= sizeof( MPE_LOG_BYTES ) ) {
                 *((short *) vptr) = (short) count;
-                CLOG_byteswap( vptr, sizeof( short ) , 1 );
-                vptr = (void *)((char *)(vptr) + sizeof( short ));
+#if !defined( WORDS_BIGENDIAN )
+                CLOG_Util_swap_bytes( vptr, sizeof( short ) , 1 );
+#endif
+                vptr += sizeof( short );
                 memcpy( vptr, data, count );
                 *position += tot_sz;
                 return MPE_Log_OK;
@@ -374,7 +397,9 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
             tot_sz = count * 2;
             if ( *position + tot_sz <= sizeof( MPE_LOG_BYTES ) ) {
                 memcpy( vptr, data, tot_sz );
-                CLOG_byteswap( vptr, 2 , count );
+#if !defined( WORDS_BIGENDIAN ) 
+                CLOG_Util_swap_bytes( vptr, 2 , count );
+#endif
                 *position += tot_sz;
                 return MPE_Log_OK;
             }
@@ -385,7 +410,9 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
             tot_sz = count * 4;
             if ( *position + tot_sz <= sizeof( MPE_LOG_BYTES ) ) {
                 memcpy( vptr, data, tot_sz );
-                CLOG_byteswap( vptr, 4, count );
+#if !defined( WORDS_BIGENDIAN )
+                CLOG_Util_swap_bytes( vptr, 4, count );
+#endif
                 *position += tot_sz;
                 return MPE_Log_OK;
             }
@@ -396,7 +423,9 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
             tot_sz = count * 8;
             if ( *position + tot_sz <= sizeof( MPE_LOG_BYTES ) ) {
                 memcpy( vptr, data, tot_sz );
-                CLOG_byteswap( vptr, 8, count );
+#if !defined( WORDS_BIGENDIAN )
+                CLOG_Util_swap_bytes( vptr, 8, count );
+#endif
                 *position += tot_sz;
                 return MPE_Log_OK;
             }
@@ -425,9 +454,9 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
 int MPE_Log_event( int event, int data, const char *bytebuf )
 {
     if ( bytebuf ) 
-        CLOG_LOGCARGO( event, bytebuf );
+        CLOG_Buffer_save_cargoevt( clog_buffer, event, bytebuf );
     else
-        CLOG_LOGBARE( event );
+        CLOG_Buffer_save_bareevt( clog_buffer, event );
     return MPE_Log_OK;
 }
 
@@ -442,7 +471,7 @@ int MPE_Log_event( int event, int data, const char *bytebuf )
 @*/
 int MPE_Log_bare_event( int event )
 {
-    CLOG_LOGBARE( event );
+    CLOG_Buffer_save_bareevt( clog_buffer, event );
     return MPE_Log_OK;
 }
 
@@ -459,9 +488,32 @@ int MPE_Log_bare_event( int event )
 @*/
 int MPE_Log_info_event( int event, const char *bytebuf )
 {
-    CLOG_LOGCARGO( event, bytebuf );
+    CLOG_Buffer_save_cargoevt( clog_buffer, event, bytebuf );
     return MPE_Log_OK;
 }
+
+/*@
+    MPE_Log_sync_clocks - synchronize or recalibrate all MPI clocks to
+                          minimize the effect of time drift.  It is like a 
+                          longer version of MPI_Comm_barrier( MPI_COMM_WORLD );
+
+    Returns:
+    alway returns MPE_Log_OK
+@*/
+int MPE_Log_sync_clocks( void )
+{
+    CLOG_Sync_t  *clog_syncer;
+    CLOG_Time_t   local_timediff;
+
+    clog_syncer = clog_stream->syncer;
+    if ( clog_syncer->is_ok_to_sync == CLOG_BOOL_TRUE ) {
+        local_timediff = CLOG_Sync_update_timediffs( clog_syncer );
+        CLOG_Buffer_set_timeshift( clog_buffer, local_timediff,
+                                   CLOG_BOOL_TRUE );
+    }
+    return MPE_Log_OK;
+}
+
 
 /*@
     MPE_Finish_log - Send log to master, who writes it out
@@ -479,66 +531,22 @@ int MPE_Log_info_event( int event, const char *bytebuf )
 int MPE_Finish_log( char *filename )
 {
 /*
- * The environment variable MPE_LOG_FORMAT is NOT read
+   The environment variable MPE_LOG_FORMAT is NOT read
  */
-    char *env_log_format;
-    char *env_logfile_prefix;
-    int shift, log_format, final_log_format;
-    int *is_globalp, flag;
+    char         *env_logfile_prefix;
 
-    if (MPE_Log_hasBeenClosed == 0) {
-        CLOG_Finalize();
-
-        PMPI_Attr_get( MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL,
-                       &is_globalp, &flag );
-
-        if (!flag || (is_globalp && !*is_globalp))
-            shift = CMERGE_SHIFT;
-        else
-            shift = CMERGE_NOSHIFT;
-        /*
-            Ignore what MPI says if the clock is sync.,
-            force synchronization of the clocks
-        */
-        /*  
-            printf( "Forcing the synchronization of the clock\n" );
-            shift = CMERGE_SHIFT;
-        */
-
-        log_format = CLOG_LOG;
-        env_log_format = (char *) getenv( "MPE_LOG_FORMAT" );
-
-        /*
-        if ( env_log_format != NULL )
-            printf( "MPE_LOG_FORMAT = %s\n", env_log_format );
-        */
- 
-        if ( env_log_format != NULL ) {
-            if (strcmp(env_log_format,"ALOG") == 0)
-                log_format = ALOG_LOG;
-            else if (strcmp(env_log_format,"SLOG") == 0)
-                log_format = SLOG_LOG;
-        }
-             
-
-        /* 
-           We should do a compare across all processes to choose the format,
-           in case the environment is not the same on all processes.  We use
-           MPI_MAX since SLOG_LOG > ALOG_LOG > CLOG_LOG.
-           Since log_format is initialized to CLOG, then CLOG will be 
-           the default logfile format unless MPE_LOG_FORMAT is set.
-        */
-        PMPI_Allreduce( &log_format, &final_log_format, 1, MPI_INT,
-                        MPI_MAX, MPI_COMM_WORLD );
-
-        /*  printf( "final_log_format = %d\n", final_log_format );  */
-
+    if ( MPE_Log_hasBeenClosed == 0 ) {
+        CLOG_Local_finalize( clog_stream );
 
         env_logfile_prefix = (char *) getenv( "MPE_LOGFILE_PREFIX" );
         if ( env_logfile_prefix != NULL )
-            CLOG_mergelogs(shift, env_logfile_prefix, final_log_format); 
+            CLOG_Converge_init( clog_stream, env_logfile_prefix );
         else
-            CLOG_mergelogs(shift, filename, final_log_format); 
+            CLOG_Converge_init( clog_stream, filename );
+        CLOG_Converge_sort( clog_stream );
+        CLOG_Converge_finalize( clog_stream );
+
+        CLOG_Close( clog_stream );
 
         MPE_Log_hasBeenClosed = 1;
         MPE_Stop_log();

@@ -148,7 +148,7 @@ AC_OBJEXT
 AC_EXEEXT
 dnl Check for broken handling of common symbols
 dnl PAC_PROG_C_BROKEN_COMMON
-AC_CHECK_PROG( AR, ar, ar, ; )
+AC_CHECK_PROG(AR, ar, ar, ;)
 AC_PROG_RANLIB
 
 dnl We need to check that this has worked.  The autoconf macro is broken
@@ -224,7 +224,7 @@ AC_CHECK_HEADERS( fcntl.h,
     )
 )
 
-AC_CHECK_HEADERS( stdlib.h string.h )
+AC_CHECK_HEADERS( stdio.h stdlib.h string.h sys/time.h )
 
 AC_SUBST(MPE_BUILD_FORTRAN2C)
 AC_SUBST(CC)
