@@ -1350,7 +1350,7 @@ sub RecursiveOp {
 	@dirs = @$subdirname;
     }
     else {
-	@dirs = (@subdirs, @extra_dirs);
+	@dirs = (@extra_dirs, @subdirs);
     }
     print "n dirs = $#dirs\n" if $debug;
     if ($#dirs == 0 && $dirs[0] eq ".") { return; }
@@ -1449,7 +1449,7 @@ sub TargetAll {
 	print_make_endline( FD );
 	# Now add the steps for the subdirectories
 	$has_dot = 0;
-	foreach $dir (@subdirs, @extra_dirs) {
+	foreach $dir (@extra_dirs, @subdirs) {
 	    if ($dir eq ".") {
 		if (scalar(@alltargets) || 
 		    defined($usertargets{"all-local"})) {
@@ -1467,12 +1467,12 @@ sub TargetAll {
 	    else {
 		print FD "\t${quietmake}(cd $dir && \${MAKE} all )$newline";
 	    }
-	    # If subdirs has no dot but there are local targets, add an 
-	    # implicit dot to the end.
-	    if (!$has_dot && $#alltargets > -1) {
-		$has_dot = 1;
-		print FD "\t\${MAKE} all-local$newline";
-	    }
+	}
+	# If subdirs has no dot but there are local targets, add an 
+	# implicit dot to the end.
+	if (!$has_dot && $#alltargets > -1) {
+	    $has_dot = 1;
+	    print FD "\t\${MAKE} all-local$newline";
 	}
 	if ($has_dot && !defined($usertargets{"all-local"})) {
 	    print_make_line( FD, "all-local:" );
