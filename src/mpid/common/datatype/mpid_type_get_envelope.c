@@ -29,8 +29,6 @@ int MPID_Type_get_envelope(MPI_Datatype datatype,
 			   int *num_datatypes,
 			   int *combiner)
 {
-    MPID_Datatype *dtp;
-
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN ||
 	datatype == MPI_FLOAT_INT ||
 	datatype == MPI_DOUBLE_INT ||
@@ -42,16 +40,17 @@ int MPID_Type_get_envelope(MPI_Datatype datatype,
 	*num_integers  = 0;
 	*num_addresses = 0;
 	*num_datatypes = 0;
-
-	return MPI_SUCCESS;
     }
+    else {
+	MPID_Datatype *dtp;
 
-    MPID_Datatype_get_ptr(datatype, dtp);
+	MPID_Datatype_get_ptr(datatype, dtp);
 
-    *combiner      = dtp->contents->combiner;
-    *num_integers  = dtp->contents->nr_ints;
-    *num_addresses = dtp->contents->nr_aints;
-    *num_datatypes  = dtp->contents->nr_types;
+	*combiner      = dtp->contents->combiner;
+	*num_integers  = dtp->contents->nr_ints;
+	*num_addresses = dtp->contents->nr_aints;
+	*num_datatypes = dtp->contents->nr_types;
+    }
 
     return MPI_SUCCESS;
 }
