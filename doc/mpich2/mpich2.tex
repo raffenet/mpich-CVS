@@ -48,6 +48,12 @@
 \newenvironment{mmadi}{\begin{quote}\textbf{MMADI:}\\}{\end{quote}}
 \newenvironment{core}{\begin{quote}\textbf{Core:}\\}{\end{quote}}
 
+%
+% For rma, there are these three kinds:
+\newenvironment{tcp}{\begin{quote}\textbf{Twosided:}\\}{\end{quote}}
+\newenvironment{shmem}{\begin{quote}\textbf{SharedMem:}\\}{\end{quote}}
+\newenvironment{via}{\begin{quote}\textbf{RemoteMem:}\\}{\end{quote}}
+
 
 %\tpageoneskip
 \ANLTMTitle{MPICH2 Design Document\\
@@ -567,6 +573,7 @@ the ``current'' state of info are operating on it.
 
 \paragraph{MPI-1 Attribute Functions.}
 The following five functions are deprecated.
+
 \subsubsection{\mpifunc{MPI_ATTR_DELETE}}
 Calls \mpifunc{MPI_COMM_DELETE_ATTR}.
 
@@ -682,9 +689,13 @@ Question: Since many of the predefined Info values encode either booleans or
 integers, do we want an internal routine such as \mpidfunc{MPID_Info_get_int}
 that returns an integer value if the key is found and has either an integer or
 boolean value?  Similarly, should there be an \mpidfunc{MPID_Info_set_int}?
-If we do this, do we want to cache the result in the Info item structure?
-Are there any predefined info keys that have a list value (integers separated
-by commas)?
+If we do this, do we want to cache the result in the Info item
+structure?
+There are a few info keys (e.g., \mpiconst{chuncked} or
+\mpiconst{io_node_list}) that are lists of integers and at least one
+(\mpiconst{access_style}) that is a list of strings.  \mpiconst{soft}
+is a list of triplets; an info routine that returned triplets would be
+needed for this.
 
 Question: Do we want to make the key part of the structure, and set
 \mpiconst{MPI_MAX_KEY_VALUE} to a small value such as 32 (the minimum
@@ -711,6 +722,7 @@ modify the info structure or the list of key/value pairs to operate safely.
 Because none of the info routines are performance critical, and because none
 of these operations is very complex, using a single lock per \code{MPI_Info}
 or even a single lock for \emph{all} info objects is probably adequate.
+
 
 \subsubsection{\mpifunc{MPI_INFO_FREE}}
 Delete an info object.  Uses an MPID object creator.
@@ -1150,7 +1162,8 @@ you
 ensure that the expected communicator is acted on?
 
 If a hidden communicator is used, it should have its error handler permanently
-set to \mpifunc{MPI_ERRORS_RETURN} so that an error action that is appropriate to
+set to \mpifunc{MPI_ERRORS_RETURN} so that an error action that is
+appropriate to 
 the collective routine, not the routine called, may be used.
 
 What utility routines do we wish to define?  There are a number of
@@ -1167,10 +1180,14 @@ intercommunicators, local group).  If the group comparision(s) return
 the same value as given by \mpifunc{MPI_GROUP_COMPARE}.
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE}}
-We need a basic communicator creation routine for this.
+We need a basic communicator creation routine for this.  In
+particular, many of the communicator construction routines can create
+a group and then use that to specify the communicator.  
 
 \subsubsection{\mpifunc{MPI_COMM_DUP}}
-This routine must invoke the attribute copy functions for each attribute.
+One approach is to extract the group from the incoming communicator,
+invoke \mpifunc{MPI_Comm_create}, and then invoke the attribute
+copying step.
 
 Question: Who (if anyone) guarantees that two threads don't run the same
 attribute copy functions at the same time?  The standard is silent here, but
@@ -1178,6 +1195,11 @@ some examples use code where the attribute is a pointer to storage that holds
 an integer (e.g., a private tag) and the copy routine performs (without
 locking) a fetch and increment.  Do we want to allow/force the attribute copy
 functions to behave like Java synchronized methods?
+
+This question was posed to the MPI Forum and the answer was that
+because any operation (including communication) is permitted, it isn't
+permissible to lock around the attribute copy routines.  Thus, we can
+only warn the user on the man page.
 
 \subsubsection{\mpifunc{MPI_COMM_FREE}}
 This routine must invoke the attribute delete functions for each attribute.
@@ -1206,6 +1228,9 @@ destination or source ranks must look at the remote size.  Should
 there be a \code{local_size} field in the communicator?
 
 \subsubsection{\mpifunc{MPI_COMM_SPLIT}}
+Perform an Allgather on the color and key.  Create the subgroups,
+ordered according to the color.  Use \mpifunc{MPI_Comm_create} to
+build the new communicator.
 
 \subsubsection{\mpifunc{MPI_COMM_TEST_INTER}}
 Should this simply test to see if the remote group and the local groups are
@@ -1270,7 +1295,9 @@ and send the message before implementing the buffer-copying strategy.
 
 Question: should the request needed to implement a buffered send be allocated
 from the user-supplied buffer?  The standard suggests so, though it isn't
-strictly required.
+strictly required.  For example, only the information needed to create
+the request could be saved; if no request is available, the bsend
+handler can wait until later.
 
 What utility routine should be defined to allocate buffer space from the
 user-specified buffer?  How will it be made thread-safe?  What is the
@@ -1278,19 +1305,41 @@ interface to \mpifunc{MPI_REQUEST_FREE}?  How do we ensure that we wait on
 pending bsend operations in a polling implementation?  See the file
 mpich/src/util/bsendutil2.c in MPICH-1.
 
+The bsend operations are roughly:
+\begin{adi3}
+Try \mpidfunc{MPID_tBsend}; if it succeeds, done.
+Otherwise, find the first block in the buffer that is large enough for
+the data, stored as packed with \mpifunc{MPI_Pack}.  
+Save: the data, the type of the data (e.g., \code{MPI_PACKED} or some
+contiguous type), the count, and the \code{MPI_Request} used to start
+an \mpifunc{MPI_Isend} on the data.
+
+As a slight refinement, we should be prepared to save the
+communicator, tag, and rank, so that if no request is currently
+available, the communication can be deferred until later.  SGI doesn't
+do this currently, and as a result, their implementation fails on some
+valid MPI programs.
+\end{adi3}
+
 \subsubsection{\mpifunc{MPI_IBSEND}}
+See Buffered send.
 
 \subsubsection{\mpifunc{MPI_BSEND}}
+See Buffered send.
 
 \subsubsection{\mpifunc{MPI_BSEND_INIT}}
 Question:  Should this reserve space in the buffer that is used as
-necessary by \code{MPI_Start}?
+necessary by \code{MPI_Start}?  No, that doesn't conform to the
+standard's model implementation.  This should setup a persistant
+request in the same way as the other persistent routines.
 
 \subsubsection{\mpifunc{MPI_BUFFER_ATTACH}}
+\begin{adi3}
 If a buffer is already attached, return error.
 Otherwise, attach the designated buffer and initialize the buffer as empty.
 The buffer is organized as a circular buffer as described in the model
 implementation of buffered mode in the MPI standard.
+\end{adi3}
 
 \subsubsection{\mpifunc{MPI_BUFFER_DETACH}}
 Buffer detach must first wait for all operations to complete before
@@ -1304,18 +1353,31 @@ set.
 \subsubsection{\mpifunc{MPI_CANCEL}}
 \begin{adi3}\mpidfunc{MPID_Request_cancel}
 \begin{mmadi}??
-\begin{core}\mpidfunc{MPID_Rhcv}
+Start by separating the cases:
+\begin{itemize}
+\item Inactive persistent.  Return error.
+\item Active persistent.  Handle as a non-persistent of the same type.
+\item Receive.  If already complete, cancel fails.  
+\begin{core} Otherwise, remove request from receive queue.  In many
+ADIs, this is a local operation.  However, some systems may require
+logic similar to the send branch.
 \end{core}
+\item Send. If already complete or in progress, cancel fails.
+\begin{core} Otherwise use \mpidfunc{MPID_Rhcv} to send a cancel
+request.  The cancel operation must wait for a acknowledgement that
+indicates whether the cancel succeeded or failed.  
+\end{core}
+\end{itemize}
 \end{mmadi}
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_GET_COUNT}}
 How does this get the value?
-Question: Does this belong with datatypes?
+Question: Does this belong with datatypes? (Yes)
 
 \subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
 How does this get the value?
-Question: Does this belong with datatypes?
+Question: Does this belong with datatypes? (Yes)
 
 \subsubsection{\mpifunc{MPI_IPROBE}}
 \begin{adi3}\mpidfunc{MPID_Request_iprobe}
@@ -1337,6 +1399,7 @@ Is this the same as \code{MPI_ISEND}, but with the ready mode set?  Or is
 there a separate routine that exploits the ready nature of the operation?
 Special note: we should be able to report an error when a ready send is not
 matched by a posted receive.
+
 \subsubsection{\mpifunc{MPI_ISEND}}
 \begin{adi3}\mpidfunc{MPID_Isend}
 \begin{mmadi}\mpidfunc{MPID_Request_send_FOA}\\
@@ -1347,6 +1410,7 @@ matched by a posted receive.
 \end{core}
 \end{mmadi}
 \end{adi3}
+
 \subsubsection{\mpifunc{MPI_ISSEND}}
 Same as \code{MPI_ISEND}, but with the synchronous mode set.
 
@@ -1356,11 +1420,17 @@ we might want to let the partner (matching sender) know that this is blocking
 a thread or process.  
 
 \subsubsection{\mpifunc{MPI_RECV_INIT}}
-\begin{adi3}
-\begin{mmadi}
-\begin{core}
-\end{core}
-\end{mmadi}
+\begin{adi3}Create a persistent request and save the message
+parameters (communicator, tag, rank, datatype, buffer, and count).
+\code{MPID_Memory_register} for either the buffer or a created segment
+that will be used for receiving the data.  
+
+Note that a persistent request is not like an
+\mpidconst{MPID_Request}; rather, it only contains enough information
+to identify it as a persistent request and a pointer to a normal
+\mpidconst{MPID_Request}.  In fact, the pointer to the request can be
+used to indicate whether the persistent request is active, rather than
+using a separate field.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_REQUEST_GET_STATUS}}
@@ -1377,28 +1447,46 @@ status elements in the \mpidfunc{MPID_Request}.
 \end{adi3}
 Who handles persistent or user-defined requests?
 
+Note that this is not the same as cancelling a request.  
+A request that is freed must still complete.  Thus, the request needs
+a reference count that must be checked when the related communication
+completes.  If the count is zero, there will be no \code{MPI_Wait}
+etc. call, and the request data strucutre must be recovered.  A
+polling device that expects a wait or test call may need to maintain a
+list of freed but not completed requests and effectively call
+\mpidfunc{MPID_Testsome} on that list.
+
 \subsubsection{\mpifunc{MPI_RSEND}}
 Like \mpifunc{MPI_Send}, but with the ready mode.
 
 \subsubsection{\mpifunc{MPI_RSEND_INIT}}
+See \mpifunc{MPI_RECV_INIT}.
 
 \subsubsection{\mpifunc{MPI_SEND}}
+See \mpifunc{MPI_ISEND}.  This could simply be isend followed by wait.
+
+Question: do we want to indicate to the receiver that this is a
+blocking send?
 
 \subsubsection{\mpifunc{MPI_SENDRECV}}
 Question: If the source and destination are the same, is there anything
 special that we want to do?  Note that this routine matches communication from
-any point-to-point operation, not just other sendrecv calls.
+any point-to-point operation, not just other sendrecv calls.  
+Simply use \mpifunc{MPI_Isend}, \mpifunc{MPI_Irecv}, and
+\mpifunc{MPI_Waitall}. 
 
 \subsubsection{\mpifunc{MPI_SENDRECV_REPLACE}}
 Question: Should this use the segment code to bound the memory buffer that
 must be allocated for the replacement?
 
 \subsubsection{\mpifunc{MPI_SEND_INIT}}
+See \mpifunc{MPI_RECV_INIT}.
 
 \subsubsection{\mpifunc{MPI_SSEND}}
 Like \mpifunc{MPI_Send}, but with the synchronous mode.
 
 \subsubsection{\mpifunc{MPI_SSEND_INIT}}
+See \mpifunc{MPI_RECV_INIT}.
 
 \subsubsection{\mpifunc{MPI_START}}
 This just calls \mpifunc{MPI_STARTALL} with a single request.  Note that
@@ -1410,18 +1498,29 @@ Do we want startall to allow for some scheduling of the operations?  For
 example, it could start the ``furthest away'' first.  It could also batch
 operations (see the paper on improving TCP performance).
 
+Should each of the individual persistent routines provide an internal
+routine that is used to start the operation?
+
 \subsubsection{\mpifunc{MPI_STATUS_SET_CANCELLED}}
 Where are the values defined for indicating cancelled message?
+A \mpidconst{MPID_TAG_MSG_CANCELLED} for the tag field in the status?
 
 \subsubsection{\mpifunc{MPI_STATUS_SET_ELEMENTS}}
 Where are the values defined for the count field(s) in the status?
+Should this be with the datatype?
 
 \subsubsection{\mpifunc{MPI_TEST}}
-Call \mpifunc{MPI_Testany}.
+Call \mpifunc{MPI_Testall}.
 
 \subsubsection{\mpifunc{MPI_TESTALL}}
 
 \subsubsection{\mpifunc{MPI_TESTANY}}
+Call \mpidfunc{MPID_Testsome} on each request, on at a time.
+
+Question: do we want something better?  Can we subdivide
+\mpidfunc{MPID_Testsome} into smaller building blocks from which we
+can build the four test routines without dropping down to an
+\mpidfunc{MPID_Test}?
 
 \subsubsection{\mpifunc{MPI_TESTSOME}}
 Call \mpidfunc{MPID_Testsome}.
@@ -1433,15 +1532,17 @@ Does this use the status field in a request to test for a cancelled message?
 Call \mpifunc{MPI_Waitany}.
 
 \subsubsection{\mpifunc{MPI_WAITALL}}
+See \mpifunc{MPI_Testall}.
 
 \subsubsection{\mpifunc{MPI_WAITANY}}
+See \mpifunc{MPI_Testany}.
 
 \subsubsection{\mpifunc{MPI_WAITSOME}}
 Call \mpidfunc{MPID_Waitsome}.
 
 \subsection{Collective Communication and Computation}
-One of the major changes in MPICH2000 is in the implementation of the
-collective routines.  The MPICH2000 implementation will exploit
+One of the major changes in MPICH2 is in the implementation of the
+collective routines.  The MPICH2 implementation will exploit
 pipelining and store and forward algorithms; these are supported by
 the \code{MPID_Stream_xxx} routines.  
 
@@ -1530,9 +1631,18 @@ attribute?
 predefined types?  
 
 \subsubsection{\mpifunc{MPI_OP_CREATE}}
+Create the object and set the kind, language, and function.  Use an
+internal routine that can be shared with the init routine to create
+the predefined operations.
 
 \subsubsection{\mpifunc{MPI_OP_FREE}}
+If predefined and not in finalize, indicate error.
+Otherwise, free.  
 
+Question: do we need a reference count?  Not in a single threaded
+case, an in a multithreaded case, you could argue that a user that
+frees an \mpiconst{MPI_Op} while a collective routine is using it in
+another thread.
 
 \subsubsection{Intracommunicator Collective Operations}
 The following section (will) briefly describe the algorithms used to implement
@@ -1540,9 +1650,32 @@ the intracommunicator collective operations.
 
 Several functions support \mpiconst{MPI_IN_PLACE} as an argument.
 
+One important check is to test for mismatched collective operations.
+MPICH uses a different tag value for communication for each collective
+operation, but has no way to test for a mismatch (because the
+communication selects on tag and, without preceeding all communication
+with an \mpifunc{MPI_Iprobe} call to check that the ``next'' message
+has the right tag.  We might want a routine that returns an
+``unexpected message'' when it finds a message with a different tag
+from a particular source and communicator.
+That is, if the communication is a virtual stream (virtual in the
+sense of being separate for each communicator/rank pair), then it is
+an error to see a message with an different tag value.  
+
+Question: do we need an MPID routine to implement this? Is it a
+(optional) feature of the stream routines?
+
+We also want to provide the option to check other parameters in
+collective calls, for example, that the message sizes conform or that
+all processes agree on the root.
+
 \subsubsection{\mpifunc{MPI_ALLGATHER}}
 For short data, use recursive doubling algorithm.  For long data, consider the
 bucket brigade algorithm.
+
+\subsubsection{\mpifunc{MPI_ALLGATHERV}}
+Same as \mpifunc{MPI_ALLGATHER}, since all processes can make the
+short/long determination.
 
 \subsubsection{\mpifunc{MPI_ALLREDUCE}}
 Consider recursive doubling algorithm, with care taken to ensure that all
@@ -1641,7 +1774,9 @@ for the topology information)?
 
 One advantage to using attributes (or equivalently a pointer to a
 structure) is it allows any information to be saved in with the
-communicator, not just some predefined fields.  
+communicator, not just some predefined fields.  Note that
+\mpifunc{MPI_Comm_dup} is required to copy both attributes and
+topologies, so it makes sense to implement topologies as an attribute.
 
 If attributes are used for holding topology information, we need to
 \emph{add} a routine to initialize the corresponding keyval; this will
