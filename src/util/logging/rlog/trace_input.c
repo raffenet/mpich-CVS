@@ -1,10 +1,10 @@
-// TraceInput.cpp : Defines the entry point for the DLL application.
-//
+/* TraceInput.cpp : Defines the entry point for the DLL application. */
 
 #include "trace_input.h"
 #include "rlog.h"
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 #define TRACEINPUT_SUCCESS 0
 #define TRACEINPUT_FAIL    -1
@@ -60,13 +60,26 @@ TRACE_EXPORT int TRACE_Open( const char filespec[], TRACE_file *fp )
     int i, j;
     RLOG_IOStruct *pInput;
 
+    if (filespec == NULL || fp == NULL)
+	return TRACEINPUT_FAIL;
+
+    if (strstr(filespec, "-h"))
+    {
+	*fp = NULL;
+	return TRACEINPUT_SUCCESS;
+    }
+
     *fp = (_trace_file*)malloc(sizeof(_trace_file));
     if (*fp == NULL)
 	return TRACEINPUT_FAIL;
 
     (*fp)->pInput = pInput = RLOG_CreateInputStruct(filespec);
     if (pInput == NULL)
+    {
+	free(*fp);
+	*fp = NULL;
 	return TRACEINPUT_FAIL;
+    }
 
     (*fp)->bArrowAvail = (RLOG_GetNextArrow(pInput, &(*fp)->arrow) == 0);
     if (pInput->nNumRanks > 0)
