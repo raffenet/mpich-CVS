@@ -1,15 +1,14 @@
 #
 # We allow these routines for the test programs 
 #
-%gAllowedRoutinesForDirTree = ( 
+%gTestFuncs = ( 
 	'printf' => sys, 'fprintf' => sys , 'sprintf' => sys, 'vprintf' => sys,
 	'strcpy' => sys, 'strncpy' => sys,
 	'malloc' => sys, 'free' => sys, 'calloc' => sys,
 	'assert' => sys,
 	);
-$gAllowedRoutinesForDirTreeDepth = $gDirDepth;
-
+&PushAllowFuncNames( gTestFuncs, "tree", "add");
 #
 # Also add additional CPP names
-%gAllowedDefinesForDirTree = ( 'DEBUG' => 1 );
-$gAllowedDefinesForDirTreeDepth = $gDirDepth;
+%gTestNames = ( 'DEBUG' => 1 );
+&PushDefinesNames( "gTestNames", "tree", "add" );
