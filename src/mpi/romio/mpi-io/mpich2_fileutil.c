@@ -8,6 +8,16 @@
 
 #ifdef MPICH2
 
+/* Forward ref for the routine to extract and set the error handler
+   in a ROMIO File structure.  FIXME: These should be imported from a common
+   header file that is also used in errhan/file_set_errhandler.c
+ */
+int MPIR_ROMIO_Get_file_errhand( MPI_File, MPI_Errhandler * );
+int MPIR_ROMIO_Set_file_errhand( MPI_File, MPI_Errhandler );
+void MPIR_Get_file_error_routine( MPI_Errhandler, 
+				  void (**)(MPI_File *, int *, ...), 
+				  int * );
+
 int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
 {
     MPI_Errhandler e;
