@@ -29,6 +29,7 @@ struct PMIU_keyval_pairs {
 struct PMIU_keyval_pairs PMIU_keyval_tab[64];
 int  PMIU_keyval_tab_idx;
 
+/* This should be combined with the message routines */
 void PMIU_printf( int print_flag, char *fmt, ... )
 {
     va_list ap;
@@ -132,13 +133,13 @@ int PMIU_parse_keyvals( char *st )
 		       p - st, st );
 	    return( -1 );
 	}
-        strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].key, keystart, p - keystart );
+        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].key, keystart, MAXKEYLEN );
 	PMIU_keyval_tab[PMIU_keyval_tab_idx].key[p - keystart] = '\0'; /* store key */
 
 	valstart = ++p;			/* start of value */
 	while ( *p != ' ' && *p != '\n' && *p != '\0' )
 	    p++;
-        strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].value, valstart, p - valstart );
+        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].value, valstart, MAXVALLEN );
 	PMIU_keyval_tab[PMIU_keyval_tab_idx].value[p - valstart] = '\0'; /* store value */
 	PMIU_keyval_tab_idx++;
 	if ( *p == ' ' )
@@ -155,13 +156,13 @@ void PMIU_dump_keyvals( void )
 	PMIU_printf(1, "  %s=%s\n",PMIU_keyval_tab[i].key, PMIU_keyval_tab[i].value);
 }
 
-char *PMIU_getval( char *keystr, char *valstr, int vallen )
+char *PMIU_getval( const char *keystr, char *valstr, int vallen )
 {
     int i;
     
     for (i = 0; i < PMIU_keyval_tab_idx; i++) {
 	if ( strcmp( keystr, PMIU_keyval_tab[i].key ) == 0 ) { 
-	    strncpy( valstr, PMIU_keyval_tab[i].value, vallen - 1 );
+	    MPIU_Strncpy( valstr, PMIU_keyval_tab[i].value, vallen - 1 );
 	    valstr[vallen - 1] = '\0';
 	    return valstr;
        } 
@@ -170,13 +171,13 @@ char *PMIU_getval( char *keystr, char *valstr, int vallen )
     return NULL;
 }
 
-void PMIU_chgval( char *keystr, char *valstr )
+void PMIU_chgval( const char *keystr, char *valstr )
 {
     int i;
     
     for ( i = 0; i < PMIU_keyval_tab_idx; i++ ) {
 	if ( strcmp( keystr, PMIU_keyval_tab[i].key ) == 0 ) {
-	    strncpy( PMIU_keyval_tab[i].value, valstr, MAXVALLEN - 1 );
+	    MPIU_Strncpy( PMIU_keyval_tab[i].value, valstr, MAXVALLEN - 1 );
 	    PMIU_keyval_tab[i].value[MAXVALLEN - 1] = '\0';
 	}
     }

@@ -44,7 +44,7 @@ int PMI_Init( int *spawned )
 	PMI_fd = -1;
 
     if ( PMI_fd == -1 ) {
-	fprintf( stderr, "warning: process not started with mpiexec\n" );
+	MPIU_Error_printf( "warning: process not started with mpiexec\n" );
 	PMI_initialized = 0;
 	return( -1 );
     }
