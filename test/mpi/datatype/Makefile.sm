@@ -23,6 +23,8 @@ darray-pack_SOURCES = darray-pack.c
 
 subarray-pack_SOURCES = subarray-pack.c
 
+struct-zero-count_SOURCES = struct-zero-count.c
+
 transpose-pack_SOURCES = transpose-pack.c
 
 localpack_SOURCES = localpack.c
