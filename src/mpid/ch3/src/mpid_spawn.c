@@ -5,6 +5,7 @@
  */
 
 #include "mpidimpl.h"
+#include "pmi.h"
 #include <stdio.h>
 
 /*
@@ -32,7 +33,7 @@ int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, in
 
 /*  begin experimental Ralph and Rusty version */
 
-    /* printf( "before call to PMI_Spawn, maxprocs=%d, intercomm=%d, comm=%d\n",
+    /* printf( "before call to PMI_Spawn, maxprocs=%d, intercomm=0x%x, comm=0x%x\n",
        maxprocs, intercomm, comm ); fflush(stdout); */
     if (comm->rank == root) {
 	rc = PMI_Spawn(command, argv, maxprocs, spawned_kvsname, kvsnamelen );
@@ -41,7 +42,7 @@ int MPID_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, in
     else {
 	/* get some information as needed from root */
     }
-    /* printf( "after call to PMI_Spawn, maxprocs=%d, intercomm=%d, comm=%d\n",
+    /* printf( "after call to PMI_Spawn, maxprocs=%d, intercomm=0x%x, comm=0x%x\n",
        maxprocs, intercomm, comm ); fflush(stdout); */
 
     /* Fill in new intercomm */
