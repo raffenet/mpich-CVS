@@ -34,14 +34,22 @@ void ADIOI_Shfp_fname(ADIO_File fd, int rank)
 	
 	strcpy(fd->shared_fp_fname, fd->filename);
 	
+#ifdef NTFS
+	slash = strrchr(fd->filename, '\\');
+#else
 	slash = strrchr(fd->filename, '/');
+#endif
 	if (!slash) {
 	    strcpy(fd->shared_fp_fname, ".");
 	    strcpy(fd->shared_fp_fname + 1, fd->filename);
 	}
 	else {
 	    ptr = slash;
+#ifdef NTFS
+		slash = strrchr(fd->shared_fp_fname, '\\');
+#else
 	    slash = strrchr(fd->shared_fp_fname, '/');
+#endif
 	    strcpy(slash + 1, ".");
 	    strcpy(slash + 2, ptr + 1);
 	}
