@@ -43,7 +43,7 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 	MPI_Type_size(fd->filetype, &filetype_size);
 	if ( ! filetype_size ) {
 	    *error_code = MPI_SUCCESS; 
-	    return;
+	    return 0;
 	}
 
 	n_etypes_in_filetype = filetype_size/etype_size;
