@@ -89,13 +89,6 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     fd->fp_ind = off;
     fd->fp_sys_posn = off;
 
-    if (err == -1) {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					   myname, __LINE__, MPI_ERR_IO, "**io",
-					   "**io %s", strerror(errno));
-    }
-    else *error_code = MPI_SUCCESS;    
-#endif
     *error_code = MPI_SUCCESS;
 
     return off;
