@@ -37,8 +37,8 @@ C more separation from comm_world
 C
        call mpi_comm_dup( MPI_COMM_WORLD, comm, ierr )
        call mpi_type_size( MPI_INTEGER, intsize, ierr )
-       asize = 10 * intsize
-       call mpi_win_create( buf, asize, intsize, MPI_INFO_NULL,
+       aint  = 10 * intsize
+       call mpi_win_create( buf, aint, intsize, MPI_INFO_NULL,
      &                      comm, win, ierr )
 C
        call mpi_win_set_errhandler( win, myerrhan, ierr )

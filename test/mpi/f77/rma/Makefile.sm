@@ -1,3 +1,4 @@
+F77INCLUDES = -I.
 LDADD = -L../../../../lib ../util/mtestf.o 
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 smvar_do_sharedlibs = 0
@@ -7,7 +8,6 @@ winscale1f_SOURCES = winscale1f.f
 winscale2f_SOURCES = winscale2f.f
 winfencef_SOURCES  = winfencef.f
 winerrf_SOURCES    = winerrf.f
-winattrf_SOURCES   = winattrf.f
 winnamef_SOURCES   = winnamef.f
 wingroupf_SOURCES  = wingroupf.f
 winaccf_SOURCES    = winaccf.f

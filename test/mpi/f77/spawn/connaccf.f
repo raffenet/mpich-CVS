@@ -6,7 +6,7 @@ C
       program main
       implicit none
       include 'mpif.h'
-      integer size, rank, ierr, errs
+      integer size, rank, ierr, errs, eclass
       integer color, comm, intercomm
       integer s1, s2
       character*(MPI_MAX_PORT_NAME) portname
@@ -38,7 +38,7 @@ C        Server
          call mpi_close_port( portname, ierr )
       else
 C        Client
-         call mpi_comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN, 
+         call mpi_comm_set_errhandler( MPI_COMM_WORLD,MPI_ERRORS_RETURN, 
      &                                 ierr )
          ierr = MPI_SUCCESS
          call mpi_lookup_name( "fservtest", MPI_INFO_NULL, 

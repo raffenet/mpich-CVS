@@ -37,7 +37,7 @@ C
          errs = errs + 1
          print *, 'Did not get expected lb'
       endif
-      if (asizev(2) .ne 3*intsize) then
+      if (asizev(2) .ne. 3*intsize) then
          errs = errs + 1
          print *, 'Did not get expected extent'
       endif
@@ -48,9 +48,10 @@ C
          errs = errs + 1
          print *, 'Did not get expected true lb'
       endif
-      if (asizev(2) .ne 3*intsize) then
+      if (asizev(2) .ne. 3*intsize) then
          errs = errs + 1
-         print *, 'Did not get expected true extent'
+         print *, 'Did not get expected true extent (', asizev(2), ') ',
+     &     ' expected ', 3 * intsize
       endif
 C
       do i=1,10

@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <strings.h>
 #include "mpitest.h"
 
 static char MTEST_Descrip[] = "A simple test of Comm_spawn";
@@ -69,7 +70,7 @@ int main( int argc, char *argv[] )
 	}
 	/* Check the name of the parent */
 	MPI_Comm_get_name( intercomm, cname, &rlen );
-	if (strcmp( cname, 'MPI_COMM_PARENT' ) != 0) {
+	if (strcmp( cname, "MPI_COMM_PARENT" ) != 0) {
 	    errs++;
 	    printf( "Name of parent is not correct\n" );
 	}

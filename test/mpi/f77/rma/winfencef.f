@@ -23,8 +23,8 @@ C Include addsize defines asize as an address-sized integer
 
       call mpi_type_size( MPI_INTEGER, intsize, ierr )
       do while( mtestGetIntraComm( comm, 2, .false. ) ) 
-         asize = nrows * (ncols + 2) * intsize
-         call mpi_win_create( buf, asize, intsize * nrows, 
+         aint = nrows * (ncols + 2) * intsize
+         call mpi_win_create( buf, aint, intsize * nrows, 
      &                        MPI_INFO_NULL, comm, win, ierr )
          
          call mpi_comm_size( comm, size, ierr )
@@ -65,7 +65,8 @@ C Check the results
                if (buf(i,0) .ne. ans) then
                   errs = errs + 1
                   if (errs .le. 10) then
-                     print *, ' buf(',i,'0) = ', buf(i,0)
+                     print *, ' buf(',i,',0) = ', buf(i,0),
+     &                    ' expected', ans
                   endif
                endif
             enddo
@@ -77,7 +78,7 @@ C Check the results
                   errs = errs + 1
                   if (errs .le. 10) then
                      print *, ' buf(',i,',',ncols+1,') = ', 
-     &                         buf(i,ncols+1)
+     &                         buf(i,ncols+1), ' expected ', ans
                   endif
                endif
             enddo

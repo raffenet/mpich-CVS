@@ -1,3 +1,4 @@
+F77INCLUDES = -I.
 smvar_do_sharedlibs = 0
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a
 
