@@ -159,7 +159,7 @@ void CLOG_Merger_init(       CLOG_Merger_t    *merger,
     merger->num_mpi_procs  = 1;
 #endif
     CLOG_Merger_set_neighbor_ranks( merger );
-                                                                                
+
     merger->is_big_endian  = preamble->is_big_endian;
     /* Open the merged output file at root process */
     if ( merger->parent_mpi_rank == CLOG_RANK_NULL ) {
