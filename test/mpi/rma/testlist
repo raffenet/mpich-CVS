@@ -21,3 +21,4 @@ transpose4 2
 fetchandadd 7
 fetchandadd_tree 7
 wintest 2
+contig_displ 1
