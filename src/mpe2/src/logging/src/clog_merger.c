@@ -97,6 +97,7 @@ void CLOG_Merger_free( CLOG_Merger_t **merger_handle )
         CLOG_BlockData_free( &(merger->sorted_blk) );
         CLOG_BlockData_free( &(merger->left_blk) );
         CLOG_BlockData_free( &(merger->right_blk) );
+        FREE( merger );
     }
     *merger_handle = NULL;
 }
