@@ -304,7 +304,6 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_host_node_t *ghost_list;
     int no_drive_mapping;
     int n_priority_class, n_priority;
-    int use_priorities;
     int index, i;
     char configfilename[SMPD_MAX_FILENAME];
     int use_configfile, delete_configfile;
@@ -320,6 +319,15 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int maxlen;
     int appnum = 0;
     char channel[SMPD_MAX_NAME_LENGTH] = "";
+    /* smpd configured settings */
+    char smpd_setting_tmp_buffer[20];
+    char smpd_setting_channel[20] = "";
+    char smpd_setting_internode_channel[20] = "";
+    SMPD_BOOL smpd_setting_timeout = SMPD_INVALID_SETTING;
+    SMPD_BOOL smpd_setting_priority_class = SMPD_INVALID_SETTING;
+    SMPD_BOOL smpd_setting_priority = SMPD_INVALID_SETTING;
+    char smpd_setting_path[SMPD_MAX_PATH_LENGTH] = "";
+    SMPD_BOOL smpd_setting_localonly = SMPD_INVALID_SETTING;
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -422,6 +430,60 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	}
     }
 
+    /* Get settings saved in smpd */
+    /* These settings have the lowest priority.
+     * First are settings on the command line,
+     * second are settings from environment variables and
+     * these are last.
+     */
+    result = smpd_get_smpd_data("channel", smpd_setting_channel, 20);
+    result = smpd_get_smpd_data("internode_channel", smpd_setting_internode_channel, 20);
+    smpd_setting_tmp_buffer[0] = '\0';
+    result = smpd_get_smpd_data("timeout", smpd_setting_tmp_buffer, 20);
+    if (result == SMPD_SUCCESS)
+    {
+	smpd_setting_timeout = atoi(smpd_setting_tmp_buffer);
+	if (smpd_setting_timeout < 1)
+	{
+	    smpd_setting_timeout = SMPD_INVALID_SETTING;
+	}
+    }
+    smpd_process.output_exit_codes = smpd_option_on("exitcodes");
+    if (smpd_option_on("noprompt") == SMPD_TRUE)
+    {
+	smpd_process.noprompt = SMPD_TRUE;
+	smpd_process.credentials_prompt = SMPD_FALSE;
+    }
+    smpd_setting_tmp_buffer[0] = '\0';
+    result = smpd_get_smpd_data("priority", smpd_setting_tmp_buffer, 20);
+    if (result == SMPD_SUCCESS)
+    {
+	if (isnumber(smpd_setting_tmp_buffer))
+	{
+	    char *str;
+	    smpd_setting_priority_class = atoi(smpd_setting_tmp_buffer);
+	    str = strchr(smpd_setting_tmp_buffer, ':');
+	    if (str)
+	    {
+		str++;
+		smpd_setting_priority = atoi(str);
+	    }
+	    else
+	    {
+		smpd_setting_priority = SMPD_DEFAULT_PRIORITY;
+	    }
+	    if (smpd_setting_priority_class < 0 || smpd_setting_priority_class > 4 || smpd_setting_priority < 0 || smpd_setting_priority > 5)
+	    {
+		/* ignore invalid priority settings */
+		smpd_setting_priority_class = SMPD_INVALID_SETTING;
+		smpd_setting_priority = SMPD_INVALID_SETTING;
+	    }
+	}
+    }
+    result = smpd_get_smpd_data("app_path", smpd_setting_path, SMPD_MAX_PATH_LENGTH);
+    smpd_process.plaintext = smpd_option_on("plaintext");
+    smpd_setting_localonly = smpd_option_on("localonly");
+
     /* check for mpi options */
     /*
      * Required:
@@ -511,11 +573,17 @@ configfile_loop:
 	use_pwd_file = SMPD_FALSE;
 	host_list = NULL;
 	no_drive_mapping = SMPD_FALSE;
-	use_priorities = SMPD_FALSE;
-	n_priority_class = SMPD_DEFAULT_PRIORITY_CLASS;
-	n_priority = SMPD_DEFAULT_PRIORITY;
+	n_priority_class = (smpd_setting_priority_class == SMPD_INVALID_SETTING) ? SMPD_DEFAULT_PRIORITY_CLASS : smpd_setting_priority_class;
+	n_priority = (smpd_setting_priority == SMPD_INVALID_SETTING) ? SMPD_DEFAULT_PRIORITY : smpd_setting_priority;
 	use_machine_file = SMPD_FALSE;
-	path[0] = '\0';
+	if (smpd_setting_path[0] != '\0')
+	{
+	    strncpy(path, smpd_setting_path, SMPD_MAX_PATH_LENGTH);
+	}
+	else
+	{
+	    path[0] = '\0';
+	}
 
 	/* Check for the -configfile option.  It must be the first and only option in a group. */
 	if ((*argvp)[1] && (*argvp)[1][0] == '-')
@@ -1204,7 +1272,6 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		smpd_dbg_printf("priorities = %d:%d\n", n_priority_class, n_priority);
-		use_priorities = SMPD_TRUE;
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "iproot") == 0)
@@ -1406,15 +1473,29 @@ configfile_loop:
 		    smpd_process.timeout = -1;
 		}
 	    }
+	    else
+	    {
+		/* If a timeout is specified in the smpd settings but not in an env variable and not on the command line then use it. */
+		if (smpd_setting_timeout != SMPD_INVALID_SETTING)
+		{
+		    smpd_process.timeout = smpd_setting_timeout;
+		}
+	    }
 	}
 
 	/* Check to see if the environment wants all processes to run locally.
 	 * This is useful for test scripts.
 	 */
 	env_str = getenv("MPIEXEC_LOCALONLY");
+	if (env_str == NULL && smpd_setting_localonly == SMPD_TRUE)
+	{
+	    smpd_setting_tmp_buffer[0] = '1';
+	    smpd_setting_tmp_buffer[1] = '\0';
+	    env_str = smpd_setting_tmp_buffer;
+	}
 	if (env_str != NULL)
 	{
-	    if ((strcmp(env_str, "yes") == 0) || *env_str == '1')
+	    if (smpd_is_affirmative(env_str))
 	    {
 #if 1
 		/* This block creates a host list of one host to implement -localonly */
@@ -1465,8 +1546,11 @@ configfile_loop:
 	}
 	else
 	{
-	    /* Check to see if a channel is specified in the smpd settings */
-	    result = smpd_get_smpd_data("channel", channel, SMPD_MAX_NAME_LENGTH);
+	    if (smpd_setting_channel[0] != '\0')
+	    {
+		/* channel specified in the smpd settings */
+		strncpy(channel, smpd_setting_channel, 20);
+	    }
 	}
 	if (result == SMPD_SUCCESS)
 	{
@@ -1841,16 +1925,27 @@ configfile_loop:
 	/* set the channel */
 	if (multiple_nodes)
 	{
-	    strcpy(channel, "ssm");
+	    if (smpd_setting_internode_channel[0] != '\0')
+	    {
+		/* Use the internode channel specified in the smpd settings */
+		strncpy(channel, smpd_setting_internode_channel, 20);
+	    }
+	    else
+	    {
+		/* Use the default sock-shared-memory internode channel */
+		strcpy(channel, "ssm");
+	    }
 	}
 	else
 	{
 	    if (smpd_process.launch_list->nproc < 8)
 	    {
+		/* small jobs use the shared memory channel */
 		strcpy(channel, "shm");
 	    }
 	    else
 	    {
+		/* larger jobs use the scalable shared memory channel */
 		strcpy(channel, "sshm");
 	    }
 	}
