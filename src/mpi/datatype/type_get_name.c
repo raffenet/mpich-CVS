@@ -24,6 +24,51 @@
 
 #endif
 
+/* This routine initializes all of the name fields in the predefined 
+   datatypes */
+void MPIR_Datatype_init_names( void ) 
+{
+    /* For each predefined type, ensure that there is a corresponding
+       object and that the object's name is set */
+    MPIR_Datatype_setname( MPI_CHAR, "char" );
+    MPIR_Datatype_setname( MPI_UNSIGNED_CHAR, "unsigned char" );
+    MPIR_Datatype_setname( MPI_BYTE, "byte" );
+    MPIR_Datatype_setname( MPI_WCHAR_T, "wchar_t" );
+    MPIR_Datatype_setname( MPI_SHORT, "short" );
+    MPIR_Datatype_setname( MPI_UNSIGNED_SHORT, "unsigned short" );
+    MPIR_Datatype_setname( MPI_INT, "int" );
+    MPIR_Datatype_setname( MPI_UNSIGNED, "unsigned" );
+    MPIR_Datatype_setname( MPI_LONG, "long" );
+    MPIR_Datatype_setname( MPI_UNSIGNED_LONG, "unsigned long" );
+    MPIR_Datatype_setname( MPI_FLOAT, "float" );
+    MPIR_Datatype_setname( MPI_DOUBLE, "double" );
+    MPIR_Datatype_setname( MPI_LONG_DOUBLE, "long double" );
+    MPIR_Datatype_setname( MPI_LONG_LONG_INT, "long long int" );
+    MPIR_Datatype_setname( MPI_LONG_LONG, "long long" );
+    MPIR_Datatype_setname( MPI_PACKED, "packed" );
+    MPIR_Datatype_setname( MPI_LB, "lb" );
+    MPIR_Datatype_setname( MPI_UB, "ub" );
+    MPIR_Datatype_setname( MPI_FLOAT_INT, "float_int" );
+    MPIR_Datatype_setname( MPI_DOUBLE_INT, "double_int" );
+    MPIR_Datatype_setname( MPI_LONG_INT, "long_int" );
+    MPIR_Datatype_setname( MPI_SHORT_INT, "short_int" );
+    MPIR_Datatype_setname( MPI_2INT, "2int" );
+    MPIR_Datatype_setname( MPI_LONG_DOUBLE_INT, "long_double_int" );
+    /* Fortran */
+    MPIR_Datatype_setname( MPI_COMPLEX, "COMPLEX" );
+    MPIR_Datatype_setname( MPI_DOUBLE_COMPLEX, "DOUBLE COMPLEX" );
+    MPIR_Datatype_setname( MPI_LOGICAL, "LOGICAL" );
+    MPIR_Datatype_setname( MPI_REAL, "REAL" );
+    MPIR_Datatype_setname( MPI_DOUBLE_PRECISION, "DOUBLE PRECISION" );
+    MPIR_Datatype_setname( MPI_INTEGER, "INTEGER" );
+    MPIR_Datatype_setname( MPI_2INTEGER, "2INTEGER" );
+    MPIR_Datatype_setname( MPI_2COMPLEX, "2COMPLEX" );
+    MPIR_Datatype_setname( MPI_2DOUBLE_COMPLEX, "2DOUBLE COMPLEX" );
+    MPIR_Datatype_setname( MPI_2REAL, "2REAL" );
+    MPIR_Datatype_setname( MPI_2DOUBLE_PRECISION, "2DOUBLE PRECISION" );
+    MPIR_Datatype_setname( MPI_CHARACTER, "CHARACTER" );
+}
+
 #undef FUNCNAME
 #define FUNCNAME MPI_Type_get_name
 
@@ -47,6 +92,7 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     static const char FCNAME[] = "MPI_Type_get_name";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    static int setup = 0;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_GET_NAME);
     /* Get handles to MPI objects. */
@@ -70,6 +116,21 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    /* If this is the first call, initialize all of the predefined names */
+    if (!setup) { 
+	MPID_Common_thread_lock();
+	{
+	    if (!setup) {
+		/* Initialize all of the predefined names */
+		MPIR_Datatype_init_names();
+		setup = 1;
+	    }
+	}
+	MPID_Common_thread_unlock();
+    }
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_NAME);
     return MPI_SUCCESS;
