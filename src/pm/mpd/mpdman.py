@@ -278,7 +278,7 @@ def mpdman():
     numDone = 0
     while not endBarrierDone:
         try:
-            (inReadySockets,None,None) = select(socketsToSelect.keys(),[],[],30)
+            (inReadySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],30)
         except error, data:
             if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
                 continue

@@ -127,7 +127,7 @@ def _mpd():
     while not done:
         socketsToSelect = g.activeSockets.keys()
         try:
-            (inReadySockets,None,None) = select(socketsToSelect,[],[],3)
+            (inReadySockets,unused1,unused2) = select(socketsToSelect,[],[],3)
         except error, data:
             if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
                 continue

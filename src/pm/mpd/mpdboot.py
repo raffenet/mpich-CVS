@@ -109,7 +109,7 @@ def mpdboot():
     numStarted = 1
     myPort = locMPD.fromchild.readline().strip()
     try:
-        (readyFDs,None,None) = select([locMPD.fromchild],[],[],1)
+        (readyFDs,unused1,unused2) = select([locMPD.fromchild],[],[],1)
     except error, errmsg:
         mpd_raise('mpdboot: select failed: errmsg=:%s:' % (errmsg) )
     if locMPD.fromchild in readyFDs:

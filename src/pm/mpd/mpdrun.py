@@ -308,7 +308,7 @@ def mpdrun():
     done = 0
     while done < 3:    # man, client stdout, and client stderr
         try:
-            (readySockets,None,None) = select(socketsToSelect.keys(),[],[],10)
+            (readySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],10)
             for readySocket in readySockets:
                 if readySocket == manSocket:
                     msg = mpd_recv_one_msg(manSocket)
