@@ -19,7 +19,7 @@ all-local:
 	        rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a ; \
 		rm -f lib/pkglist ; \
 	        mv -f lib/pkglist.new lib/pkglist ; \
-		${MAKE} clean ; \
+		${MAKE} clean ; cd test && ${MAKE} clean ; \
 	    fi ; \
 	fi
 all-preamble:
