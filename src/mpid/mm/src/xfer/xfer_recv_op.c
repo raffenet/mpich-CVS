@@ -126,7 +126,8 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->qnext_ptr = NULL;
     mm_inc_cc(pRequest);
 
-    /* allocate a write car for unpacking */
+    /* setup a write car for unpacking */
+    pRequest->mm.write_list = &pRequest->mm.wcar[0];
     pCar = pRequest->mm.wcar;
     pCar->type = MM_HEAD_CAR | MM_WRITE_CAR | MM_UNPACKER_CAR;
     pCar->request_ptr = pRequest;

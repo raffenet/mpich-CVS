@@ -45,7 +45,7 @@ int packer_make_progress()
 		    &car_ptr->request_ptr->mm.segment,       /* pack the segment in the request */
 		    car_ptr->data.unpacker.first,            /* first and last are kept in the car */
 		    &car_ptr->data.unpacker.last,
-		    car_ptr->request_ptr->mm.buf.tmp.buf_ptr[car_ptr->request_ptr->mm.buf.tmp.cur_buf] /* pack into the current buffer */
+		    car_ptr->request_ptr->mm.buf.tmp.buf[car_ptr->request_ptr->mm.buf.tmp.cur_buf] /* pack into the current buffer */
 		    );
 		break;
 	    case MM_VEC_BUFFER:

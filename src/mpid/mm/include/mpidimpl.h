@@ -189,6 +189,8 @@ MPID_Request * mm_request_alloc();
            int mm_reset_cars(MPID_Request *request_ptr);
            int mm_get_buffers_tmp(MPID_Request *request_ptr);
            int mm_get_buffers_vec(MPID_Request *request_ptr);
+	   int vec_buffer_init(MPID_Request *request_ptr);
+	   int tmp_buffer_init(MPID_Request *request_ptr);
 
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
@@ -196,6 +198,7 @@ MPID_Request * mm_request_alloc();
            int mm_cq_test();
            int mm_cq_wait();
            int mm_cq_enqueue(MM_Car *car_ptr);
+	   int mm_create_post_unex(MM_Car *unex_head_car_ptr);
 
 /* requests */
 /*

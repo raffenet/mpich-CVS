@@ -11,7 +11,6 @@ int mm_cq_test()
     MM_Car *car_ptr, *old_car_ptr;
     MM_Car *iter_ptr, *trailer_ptr;
     int found;
-    MM_Segment_buffer *buf_ptr;
     int complete;
 
     /* Should we call make_progress on all the methods?
@@ -95,43 +94,7 @@ int mm_cq_test()
 	    /* else allocate a temp buffer, place in the unex_q, and post a read */
 	    if (!found)
 	    {
-		/* save the head car */
-		old_car_ptr = car_ptr;
-		/* use rcar[1] as the data car */
-		car_ptr->next_ptr = &car_ptr->request_ptr->mm.rcar[1];
-		car_ptr = car_ptr->next_ptr;
-
-		/* allocate a temporary buffer to hold the unexpected data */
-		car_ptr->src = old_car_ptr->src;
-		car_ptr->vc_ptr = old_car_ptr->vc_ptr;
-		car_ptr->request_ptr = old_car_ptr->request_ptr;
-		car_ptr->type = MM_READ_CAR | MM_UNEX_CAR;
-		car_ptr->freeme = FALSE;
-		car_ptr->next_ptr = NULL;
-		car_ptr->opnext_ptr = NULL;
-		car_ptr->qnext_ptr = NULL;
-		car_ptr->request_ptr->mm.size = old_car_ptr->msg_header.pkt.size;
-		buf_ptr = car_ptr->buf_ptr = &old_car_ptr->request_ptr->mm.buf;
-		buf_ptr->type = MM_TMP_BUFFER;
-		buf_ptr->tmp.buf_ptr[0] = MPIU_Malloc(old_car_ptr->msg_header.pkt.size);
-		buf_ptr->tmp.buf_ptr[1] = NULL;
-		buf_ptr->tmp.cur_buf = 0;
-		buf_ptr->tmp.min_num_written = 0;
-		buf_ptr->tmp.num_read = 0;
-
-		/* enqueue the head car in the unexpected queue */
-		if (MPID_Process.unex_q_tail == NULL)
-		{
-		    MPID_Process.unex_q_head = old_car_ptr;
-		}
-		else
-		{
-		    MPID_Process.unex_q_tail->qnext_ptr = old_car_ptr;
-		}
-		MPID_Process.unex_q_tail = old_car_ptr;
-
-		/* post a read of the unexpected data */
-		car_ptr->vc_ptr->post_read(car_ptr->vc_ptr, car_ptr);
+		mm_create_post_unex(car_ptr);
 		complete = FALSE;
 	    }
 	}
@@ -159,6 +122,72 @@ int mm_cq_test()
 	    car_ptr = car_ptr->qnext_ptr;
 	}
     }
+
+    return MPI_SUCCESS;
+}
+
+int mm_create_post_unex(MM_Car *unex_head_car_ptr)
+{
+    MPID_Request *request_ptr;
+    MM_Car *car_ptr;
+    MM_Segment_buffer *buf_ptr;
+
+    request_ptr = mm_request_alloc();
+    if (request_ptr == NULL)
+	return -1;
+
+    /* save the packet header */
+    car_ptr = &request_ptr->mm.rcar[0];
+    car_ptr->msg_header.pkt = unex_head_car_ptr->msg_header.pkt;
+
+    car_ptr->type = MM_UNEX_HEAD_CAR | MM_READ_CAR;
+    car_ptr->src = unex_head_car_ptr->msg_header.pkt.src;
+    car_ptr->request_ptr = request_ptr;
+    car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
+    car_ptr->buf_ptr = &car_ptr->msg_header.buf;
+    car_ptr->opnext_ptr = &request_ptr->mm.rcar[1];
+    car_ptr->next_ptr = &request_ptr->mm.rcar[1];
+    car_ptr->qnext_ptr = NULL;
+
+    /* use rcar[1] as the data car */
+    car_ptr->next_ptr = &request_ptr->mm.rcar[1];
+    car_ptr = car_ptr->next_ptr;
+    
+    /* allocate a temporary buffer to hold the unexpected data */
+    car_ptr->type = MM_READ_CAR | MM_UNEX_CAR;
+    car_ptr->src = unex_head_car_ptr->src;
+    car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
+    car_ptr->request_ptr = request_ptr;
+    car_ptr->freeme = FALSE;
+    car_ptr->next_ptr = NULL;
+    car_ptr->opnext_ptr = NULL;
+    car_ptr->qnext_ptr = NULL;
+    car_ptr->request_ptr->mm.size = unex_head_car_ptr->msg_header.pkt.size;
+    mm_inc_cc(request_ptr);
+
+    buf_ptr = car_ptr->buf_ptr = &request_ptr->mm.buf;
+    buf_ptr->type = MM_TMP_BUFFER;
+    buf_ptr->tmp.buf[0] = MPIU_Malloc(unex_head_car_ptr->msg_header.pkt.size);
+    buf_ptr->tmp.len[0] = unex_head_car_ptr->msg_header.pkt.size;
+    buf_ptr->tmp.buf[1] = NULL;
+    buf_ptr->tmp.len[1] = 0;
+    buf_ptr->tmp.cur_buf = 0;
+    buf_ptr->tmp.min_num_written = 0;
+    buf_ptr->tmp.num_read = 0;
+    
+    /* enqueue the head car in the unexpected queue */
+    if (MPID_Process.unex_q_tail == NULL)
+    {
+	MPID_Process.unex_q_head = &request_ptr->mm.rcar[0];
+    }
+    else
+    {
+	MPID_Process.unex_q_tail->qnext_ptr = &request_ptr->mm.rcar[0];
+    }
+    MPID_Process.unex_q_tail = &request_ptr->mm.rcar[0];
+    
+    /* post a read of the unexpected data */
+    car_ptr->vc_ptr->post_read(car_ptr->vc_ptr, car_ptr);
 
     return MPI_SUCCESS;
 }

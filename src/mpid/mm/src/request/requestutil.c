@@ -21,6 +21,7 @@ MPID_Request * mm_request_alloc()
     p = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (p == NULL)
 	return p;
+    p->cc = 0;
     p->cc_ptr = &p->cc;
     p->mm.rcar[0].freeme = FALSE;
     p->mm.rcar[1].freeme = FALSE;

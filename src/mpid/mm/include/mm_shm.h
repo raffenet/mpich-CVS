@@ -19,5 +19,6 @@ int shm_post_connect(MPIDI_VC *vc_ptr, char *business_card);
 int shm_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 int shm_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int shm_post_read_pkt(MPIDI_VC *vc_ptr);
+int shm_buffer_init(MPID_Request *request_ptr);
 
 #endif

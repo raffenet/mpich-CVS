@@ -101,7 +101,8 @@ typedef union MM_Segment_buffer
     struct mm_segment_tmp
     {
 	MM_BUFFER_TYPE type;
-	void *buf_ptr[2];
+	void *buf[2];
+	int len[2];
 	int cur_buf;
 	int num_read;
 	int min_num_written;

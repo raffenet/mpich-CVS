@@ -30,17 +30,7 @@ int mm_choose_buffer(MPID_Request *request_ptr)
     /* but for now always choose the vector buffer type */
     if (request_ptr->mm.rcar[0].type != MM_NULL_CAR)
     {
-	/* Should this code be moved into a function like vec_buffer_init? */
-	/* This would lead nicely into shm_buffer_init and via_buffer_init */
-	request_ptr->mm.buf.type = MM_VEC_BUFFER;
-	request_ptr->mm.buf.vec.vec_size = MPID_VECTOR_LIMIT;
-	request_ptr->mm.buf.vec.num_read = 0;
-	request_ptr->mm.buf.vec.first = 0;
-	request_ptr->mm.buf.vec.last = 0;
-	request_ptr->mm.buf.vec.segment_last = request_ptr->mm.last;
-	request_ptr->mm.buf.vec.buf_size = 0;
-	request_ptr->mm.buf.vec.num_cars_outstanding = 0;
-	request_ptr->mm.buf.vec.num_cars = 0;
+	vec_buffer_init(request_ptr);
 	/* count the cars that read/write data */
 	car_ptr = request_ptr->mm.wcar;
 	while (car_ptr)

@@ -24,6 +24,7 @@ int MPID_Finalize( void )
     mm_car_finalize();
     mm_vc_finalize();
 
+    PMI_Barrier();
     PMI_Finalize();
 
     return MPI_SUCCESS;

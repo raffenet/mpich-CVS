@@ -5,37 +5,42 @@
  */
 #include "tcpimpl.h"
 
+int tcp_read_connecting(MPIDI_VC *vc_ptr)
+{
+    char ack;
+    if (beasy_receive(vc_ptr->data.tcp.bfd, &ack, 1) == SOCKET_ERROR)
+    {
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_read: beasy_receive(ack) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	return -1;
+    }
+    if (ack == TCP_ACCEPT_CONNECTION)
+    {
+	vc_ptr->data.tcp.connected = TRUE;
+	vc_ptr->data.tcp.connecting = FALSE;
+    }
+    else if (ack == TCP_REJECT_CONNECTION)
+    {
+	vc_ptr->data.tcp.reject_received = TRUE;
+    }
+    else
+    {
+	err_printf("tcp_read: unknown ack char #%d received in read function.\n", (int)ack);
+    }
+    return MPI_SUCCESS;
+}
+
 int tcp_read(MPIDI_VC *vc_ptr)
 {
     int num_read;
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
-    char ack;
     int num_left, i;
 
     if (vc_ptr->data.tcp.connecting)
     {
-	if (beasy_receive(vc_ptr->data.tcp.bfd, &ack, 1) == SOCKET_ERROR)
-	{
-	    TCP_Process.error = beasy_getlasterror();
-	    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	    err_printf("tcp_read: beasy_receive(ack) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-	    return -1;
-	}
-	if (ack == TCP_ACCEPT_CONNECTION)
-	{
-	    vc_ptr->data.tcp.connected = TRUE;
-	    vc_ptr->data.tcp.connecting = FALSE;
-	}
-	else if (ack == TCP_REJECT_CONNECTION)
-	{
-	    vc_ptr->data.tcp.reject_received = TRUE;
-	}
-	else
-	{
-	    err_printf("tcp_read: unknown ack char #%d received in read function.\n", (int)ack);
-	}
-	return MPI_SUCCESS;
+	return tcp_read_connecting(vc_ptr);
     }
 
     car_ptr = vc_ptr->readq_head;
@@ -48,7 +53,7 @@ int tcp_read(MPIDI_VC *vc_ptr)
 	break;
     case MM_TMP_BUFFER:
 	num_read = bread(vc_ptr->data.tcp.bfd, 
-	    (char*)(buf_ptr->tmp.buf_ptr[buf_ptr->tmp.cur_buf]) + car_ptr->data.tcp.buf.tmp.num_read, 
+	    (char*)(buf_ptr->tmp.buf[buf_ptr->tmp.cur_buf]) + car_ptr->data.tcp.buf.tmp.num_read, 
 	    buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_read);
 	if (num_read == SOCKET_ERROR)
 	{

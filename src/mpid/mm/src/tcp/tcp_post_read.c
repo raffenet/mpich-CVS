@@ -15,8 +15,33 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 {
     /* copy the unexpected packet into the posted packet */
     car_ptr->msg_header.pkt = unex_car_ptr->msg_header.pkt;
-    /* read the data eagerly for now */
-    tcp_post_read(car_ptr->vc_ptr, car_ptr->next_ptr);
+
+    if (unex_car_ptr->next_ptr)
+    {
+	/* reading of unexpected data in progress */
+
+	err_printf("Help the ship is sinking.\n");
+
+	/* copy/unpack the read data into the posted cars */
+	/* mark the completed cars complete */
+	/* post reads for the partially filled or incomplete cars */
+    }
+    else
+    {
+	/* unex header matched a previously posted recv */
+
+	/* mark the head car as completed */
+	mm_dec_cc(car_ptr->request_ptr);
+	car_ptr = car_ptr->next_ptr;
+	
+	/* read the data eagerly for now */
+	while (car_ptr)
+	{
+	    tcp_post_read(car_ptr->vc_ptr, car_ptr);
+	    car_ptr = car_ptr->next_ptr;
+	}
+    }
+
     return MPI_SUCCESS;
 }
 
