@@ -260,7 +260,7 @@ static int shmi_buffer_unex_read(MPIDI_VC *vc_ptr, MPIDI_CH3I_SHM_Packet_t *pkt_
 
     MPIDI_DBG_PRINTF((60, FCNAME, "%d bytes\n", num_bytes));
 
-    p = (MPIDI_CH3I_SHM_Unex_read_t *)malloc(sizeof(MPIDI_CH3I_SHM_Unex_read_t));
+    p = (MPIDI_CH3I_SHM_Unex_read_t *)MPIU_Malloc(sizeof(MPIDI_CH3I_SHM_Unex_read_t));
     p->pkt_ptr = pkt_ptr;
     p->buf = (unsigned char *)mem_ptr + offset;
     p->length = num_bytes;
@@ -310,10 +310,10 @@ static int shmi_read_unex(MPIDI_VC *vc_ptr)
 	    vc_ptr->shm.unex_list->pkt_ptr->cur_pos = 
 		vc_ptr->shm.unex_list->pkt_ptr->data;
 	    vc_ptr->shm.unex_list->pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
-	    /* free the unexpected data node */
+	    /* MPIU_Free the unexpected data node */
 	    temp = vc_ptr->shm.unex_list;
 	    vc_ptr->shm.unex_list = vc_ptr->shm.unex_list->next;
-	    free(temp);
+	    MPIU_Free(temp);
 	}
 	/* check to see if the entire message was received */
 	if (vc_ptr->shm.read.bufflen == 0)
@@ -377,10 +377,10 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 	    assert(vc_ptr->shm.unex_list->pkt_ptr != NULL);
 	    vc_ptr->shm.unex_list->pkt_ptr->cur_pos = vc_ptr->shm.unex_list->pkt_ptr->data;
 	    vc_ptr->shm.unex_list->pkt_ptr->avail = MPIDI_CH3I_PKT_AVAILABLE;
-	    /* free the unexpected data node */
+	    /* MPIU_Free the unexpected data node */
 	    temp = vc_ptr->shm.unex_list;
 	    vc_ptr->shm.unex_list = vc_ptr->shm.unex_list->next;
-	    free(temp);
+	    MPIU_Free(temp);
 	}
 	
 	if (vc_ptr->shm.read.iovlen == 0)
