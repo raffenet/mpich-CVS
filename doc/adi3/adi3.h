@@ -27,27 +27,6 @@
  * just delete the blanks.
  */
 
-/*TOpaqOverview.tex
-  MPI Opaque Objects:
-
-  MPI Opaque objects such as 'MPI_Comm' or 'MPI_Datatype' are specified by 
-  integers (in the MPICH2 implementation); the MPI standard calls these
-  handles.  
-  Out of range values are invalid; the value 0 is reserved.
-  For most (with the possible exception of 
-  'MPI_Request' for performance reasons) MPI Opaque objects, the integer
-  encodes both the kind of object (allowing runtime tests to detect a datatype
-  passed where a communicator is expected) and important properties of the 
-  object.  Even the 'MPI_xxx_NULL' values should be encoded so that 
-  different null handles can be distinguished.  The details of the encoding
-  of the handles is covered in more detail in the MPICH2 Design Document.
-  For the most part, the ADI uses pointers to the underlying structures
-  rather than the handles themselves.  However, each structure contains an 
-  'handle' field that is the corresponding integer handle for the MPI object.
-
-  MPID objects (objects used within the implementation of MPI) are not opaque.
-
-  T*/
 
 /*
   Attributes and keyvals must be maintained.
@@ -705,7 +684,7 @@ typedef struct {
  * Section x: Enviroment and Global Values
  */
 
-/*D
+/* D
   Constants - Description of constants defined by the device.
 
   The thread levels are 'define'd rather than enumerated so that they 
