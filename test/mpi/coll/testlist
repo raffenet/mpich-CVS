@@ -26,16 +26,16 @@ scattern 4
 scatterv 4
 icbcast 4
 icbcast 10
-# icallreduce hangs now
-#icallreduce 4
-icreduce 4
+icallreduce 5
 icreduce 5
-icscatter 4
 icscatter 5
-icgather 4
 icgather 5
-icallgather 4
 icallgather 5
+icbarrier 5
+icallgatherv 5
+icgatherv 5
+icscatterv 5
+icalltoall 5
 # the opxxx tests look at optional types, and are included for MPICH2 testing.
 # MPI implementations may instead signal errors for these types
 opland 4
