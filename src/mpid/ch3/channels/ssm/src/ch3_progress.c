@@ -208,16 +208,16 @@ int MPIDI_CH3I_Message_queue_progress()
     MPIDI_CH3I_Shmem_queue_info info;
     int num_bytes;
     MPIDI_VC *vc_ptr;
-    int rc, mpi_errno;
+    int mpi_errno;
 
     /* check for new shmem queue connection requests */
     /*printf("<%dR>", MPIR_Process.comm_world->rank);fflush(stdout);*/
-    rc = MPIDI_CH3I_BootstrapQ_recv_msg(
+    mpi_errno = MPIDI_CH3I_BootstrapQ_recv_msg(
 	MPIDI_CH3I_Process.pg->bootstrapQ, &info, sizeof(info), 
 	&num_bytes, FALSE);
-    if (rc != MPI_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
 	return mpi_errno;
     }
     assert(num_bytes == 0 || num_bytes == sizeof(info));
@@ -225,11 +225,11 @@ int MPIDI_CH3I_Message_queue_progress()
     {
 	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
 	/* printf("rank %d attaching to shm(%s) from rank %d\n", MPIR_Process.comm_world->rank, info.info.name, info.pg_rank); */
-	rc = MPIDI_CH3I_SHM_Attach_to_mem(
+	mpi_errno = MPIDI_CH3I_SHM_Attach_to_mem(
 	    &info.info, &vc_ptr->ssm.shm_read_queue_info);
-	if (rc != MPI_SUCCESS)
+	if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ssm.shm_read_queue_info.error);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ssm.shm_read_queue_info.error);
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
