@@ -75,7 +75,7 @@ User's Guide}, found in this same \texttt{doc} subdirectory.
 MPICH2 has many options.  We will first go through a preferred,
 ``standard'' installation in a step-by-step fashion, and later describe
 alternative possibilities.  This \emph{Installer's Guide} is for MPICH2
-Release 0.971.  We are reserving the 1.0 designation for when every last
+Release 1.0.  We are reserving the 1.0 designation for when every last
 feature of the MPI-2 Standard is implemented, but most features are
 included.  See the \texttt{RELEASE\_NOTES} file in the top-level
 directory for details.
@@ -143,7 +143,7 @@ If your tar doesn't accept the z option, use
 \end{verbatim}
 Let us assume that the directory where you do this is
 \texttt{/home/you/libraries}.  It will now contain a subdirectory named
-\texttt{mpich2-0.971}.
+\texttt{mpich2-1.0}.
 
 \item
 Choose an installation directory (the default is \texttt{/usr/local/bin)}:
@@ -162,15 +162,15 @@ the configuration and compilation steps are executed.  It is preferable
 that this also be separate from the source directory, so that it remains
 clean and can be reused to build other copies on other machines.
 \begin{verbatim}
-    mkdir /tmp/you/mpich2-0.971
+    mkdir /tmp/you/mpich2-1.0
 \end{verbatim}
 
 \item
 Configure MPICH2, specifying the installation directory, and running
 the \texttt{configure} script in the source directory:
 \begin{verbatim}
-    cd  /tmp/you/mpich2-0.971
-    /home/you/libraries/mpich2-0.971/configure \
+    cd  /tmp/you/mpich2-1.0
+    /home/you/libraries/mpich2-1.0/configure \
             -prefix=/home/you/mpich2-install |& tee configure.log
 \end{verbatim}
 where the \texttt{$\backslash$} means that this is really one line.  (On
@@ -316,7 +316,7 @@ started.  From each machine, after starting the mpd, you can do
 \end{verbatim}
 to see which machines are in the ring so far.  More details on
 \texttt{mpdboot} and other options for starting the mpd's are in
-\texttt{mpich2-0.971/src/pm/mpd/README}.
+\texttt{mpich2-1.0/src/pm/mpd/README}.
 
 \item
 Test the ring you have just created:
@@ -357,7 +357,7 @@ command because it is in your path.  If not, use the full pathname:
 Now we will run an MPI job, using the \texttt{mpiexec} command as specified
 in the MPI-2 standard.  There are some examples in the install
 directory, which you have already put in your path, as well as in
-the directory \texttt{mpich2-0.97/examples}.  One of them is the classic \texttt{cpi}
+the directory \texttt{mpich2-1.0/examples}.  One of them is the classic \texttt{cpi}
 example, which computes the value of $\pi$ by numerical integration in
 parallel.   
 \begin{verbatim}
