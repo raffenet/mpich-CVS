@@ -2042,6 +2042,11 @@ export AR
 export RANLIB
 export MPILIBNAME
 export CC
+# Make sure that any Fortran 77 and Fortran 90 compilers are exported to 
+# the subdir builds (in particular, ROMIO may try to use the Fortran 90
+# compiler to determine the Fortran 90 KINDS for MPI_OFFSET_KIND).
+export F77
+export F90
 PAC_SUBDIR_CACHE
 #
 # Configure threads first.  This is necessary to obtain all required
