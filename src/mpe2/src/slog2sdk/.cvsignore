@@ -3,3 +3,4 @@ autom4te.cache
 config.log
 config.cache
 configure
+simple.class
