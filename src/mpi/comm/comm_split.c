@@ -27,6 +27,28 @@
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_split
 
+
+typedef struct {
+    int color, key;
+} splittype;
+
+PMPI_LOCAL MPIU_Sort_inttable( splittype *keytable, int size )
+{
+    splittype tmp;
+    int i, j;
+
+    /* FIXME Bubble sort */
+    for (i=0; i<size; i++) {
+	for (j=i; j<size; j++) {
+	    if (keytable[i].key > keytable[j].key) {
+		tmp = keytable[i];
+		keytable[i] = keytable[j];
+		keytable[j] = tmp;
+	    }
+	}
+    }
+}
+
 /*@
    MPI_Comm_split - split a communicator
 
@@ -40,14 +62,28 @@
 
 .N Fortran
 
+ Algorithm:
+.vb
+  1. Use MPI_Allgather to get the color and key from each process
+  2. Count the number of processes with the same color; create a 
+     communicator with that many processes.  If this process has
+     'MPI_UNDEFINED' as the color, create a process with a single member.
+  3. Use key to order the ranks
+  4. Set the VCRs using the ordered key values
+.ve
+ 
 .N Errors
 .N MPI_SUCCESS
+
 @*/
 int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 {
     static const char FCNAME[] = "MPI_Comm_split";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
+    MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
+    splittype *table, *keytable;
+    int       rank, size, i, new_size, first_entry, *last_ptr;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SPLIT);
     /* Get handles to MPI objects. */
@@ -56,13 +92,11 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -72,6 +106,70 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    rank = comm_ptr->rank;
+    size = comm_ptr->local_size;
+
+    /* Step 1: Find out what all of the processes have */
+    table = (splittype *) MPIU_Malloc( size * sizeof(splittype) );
+    table[rank].color = color;
+    table[rank].key   = key;
+
+    NMPI_Allgather( MPI_IN_PLACE, 2, MPI_INT, table, 2, MPI_INT, comm );
+
+    /* Step 2: How many processes have our same color? */
+    if (color == MPI_UNDEFINED) {
+	new_size = 1;
+    }
+    else {
+	new_size = 0;
+	/* Also replace the color value with the index of the *next* value
+	   in this set.  The integer first_entry is the index of the 
+	   first element */
+	last_ptr = &first_entry;
+	for (i=0; i<size; i++) {
+	    if (table[i].color == color) {
+		new_size++;
+		*last_ptr = i;
+		last_ptr = &table[i].color;
+	    }
+	}
+    }
+
+    /* Step 3: Create the communicator */
+    mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT );
+	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    }
+    
+    /* Step 4: Order the processes by their key values.  Sort the
+       list that is stored in table.  To simplify the sort, we 
+       extract the table into a smaller array and sort that */
+    keytable = (splittype *) MPIU_Malloc( new_size * sizeof(splittype) );
+    for (i=0; i<new_size; i++) {
+	keytable[i].key = table[first_entry].key;
+	keytable[i].color = i;
+	first_entry = table[first_entry].color;
+    }
+
+    /* sort key table.  The "color" entry is the rank of the corresponding
+       process in the input communicator */
+    MPIU_Sort_inttable( keytable, new_size );
+
+    MPID_VCRT_Create( new_size, &newcomm_ptr->vcrt );
+    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
+    for (i=0; i<new_size; i++) {
+	MPID_VCR_Dup( comm_ptr->vcr[keytable[i].color], &newcomm_ptr->vcr[i] );
+    }
+
+    /* Free all storage */
+    MPIU_Free( keytable );
+    MPIU_Free( table );
+
+    *newcomm = newcomm_ptr->handle;
+
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT);
     return MPI_SUCCESS;
 }
