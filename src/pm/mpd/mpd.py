@@ -216,19 +216,16 @@ def _handle_console_input():
     elif msg['cmd'] == 'mpdlistjobs':
         for jobid in g.activeJobs.keys():
             for pid in g.activeJobs[jobid]:
-                if msg['username'] == g.activeJobs[jobid][pid]['username']  \
-                or msg['username'] == '_all_':
-                    msgToSend = { 'cmd' : 'mpdlistjobs_info',
-                                  'dest' : g.myId,
-                                  'jobid' : jobid,
-                                  'username' : g.activeJobs[jobid][pid]['username'],
-                                  'host' : g.myHost,
-                                  'pid'  : str(pid),
-                                  'pgm'  : g.activeJobs[jobid][pid]['pgm'],
-                                  'rank' : g.activeJobs[jobid][pid]['rank'] }
-                    mpd_send_one_msg(g.rhsSocket, msgToSend)
-        msgToSend = { 'cmd'  : 'mpdlistjobs_trailer', 'dest' : g.myId,
-                      'username' : msg['username'] }
+                msgToSend = { 'cmd' : 'mpdlistjobs_info',
+                              'dest' : g.myId,
+                              'jobid' : jobid,
+                              'username' : g.activeJobs[jobid][pid]['username'],
+                              'host' : g.myHost,
+                              'pid'  : str(pid),
+                              'pgm'  : g.activeJobs[jobid][pid]['pgm'],
+                              'rank' : g.activeJobs[jobid][pid]['rank'] }
+                mpd_send_one_msg(g.rhsSocket, msgToSend)
+        msgToSend = { 'cmd'  : 'mpdlistjobs_trailer', 'dest' : g.myId }
         mpd_send_one_msg(g.rhsSocket,msgToSend)
         # do not send an ack to console now; will send listjobs info later
     elif msg['cmd'] == 'mpdkilljob':
@@ -302,16 +299,14 @@ def _handle_lhs_input():
         else:
             for jobid in g.activeJobs.keys():
                 for pid in g.activeJobs[jobid]:
-                    if msg['username'] == g.activeJobs[jobid][pid]['username']  \
-                    or msg['username'] == '_all_':
-                        msgToSend = { 'cmd' : 'mpdlistjobs_info',
-                                      'dest' : msg['dest'],
-                                      'jobid' : jobid,
-                                      'username' : g.activeJobs[jobid][pid]['username'],
-                                      'host' : g.myHost,
-                                      'pgm' : g.activeJobs[jobid][pid]['pgm'],
-                                      'rank' : g.activeJobs[jobid][pid]['rank'] }
-                        mpd_send_one_msg(g.rhsSocket, msgToSend)
+                    msgToSend = { 'cmd' : 'mpdlistjobs_info',
+                                  'dest' : msg['dest'],
+                                  'jobid' : jobid,
+                                  'username' : g.activeJobs[jobid][pid]['username'],
+                                  'host' : g.myHost,
+                                  'pgm' : g.activeJobs[jobid][pid]['pgm'],
+                                  'rank' : g.activeJobs[jobid][pid]['rank'] }
+                    mpd_send_one_msg(g.rhsSocket, msgToSend)
             mpd_send_one_msg(g.rhsSocket, msg)
     elif msg['cmd'] == 'mpdallexit':
         g.allExiting = 1
@@ -354,7 +349,7 @@ def _handle_lhs_input():
                     if g.activeJobs[jobid][pid]['username'] == msg['username']  \
                     or g.activeJobs[jobid][pid]['username'] == 'root':
                         kill(pid * (-1), SIGKILL)  # neg pid -> group
-                del g.activeJobs[jobid]
+                # del g.activeJobs[jobid]  ## handled by sigchld_handler
     elif msg['cmd'] == 'abortjob':
         if msg['src'] != g.myId:
             mpd_send_one_msg(g.rhsSocket,msg)
@@ -362,7 +357,7 @@ def _handle_lhs_input():
             if jobid == msg['jobid']:
                 for pid in g.activeJobs[jobid].keys():
                     kill(pid * (-1), SIGKILL)  # neg pid -> group
-                del g.activeJobs[jobid]
+                # del g.activeJobs[jobid]  ## handled by sigchld_handler
     else:
         mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
 

@@ -33,9 +33,11 @@ def mpdkilljob():
         jobnum = '0'
     else:
         jobalias = ''
-        jobnum = argv[1]
-        if len(argv) > 2:
-            mpdid = argv[2]
+        jobid = argv[1]
+        sjobid = jobid.split('@')
+        jobnum = sjobid[0]
+        if len(sjobid) > 1:
+            mpdid = sjobid[1]
     mpd_send_one_msg(conSocket, {'cmd':'mpdkilljob',
                                  'jobnum' : jobnum, 'mpdid' : mpdid, 'jobalias' : jobalias,
                                  'username' : username})

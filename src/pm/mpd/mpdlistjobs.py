@@ -10,10 +10,32 @@ from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
 
 def mpdlistjobs():
     mpd_set_my_id('mpdlistjobs_')
-    if len(argv) > 1  and  ( argv[1] == '-h'  or  argv[1] == '--help' ) :
-        print 'usage: mpdlistjobs [-a | --all]'
-        exit(-1)
     username = mpd_get_my_username()
+    uname    = ''
+    jobid    = ''
+    sjobid   = ''
+    jobalias = ''
+    if len(argv) > 1:
+        aidx = 1
+        while aidx < len(argv):
+            if argv[aidx] == '-h'  or  argv[aidx] == '--help':
+                print 'usage: mpdlistjobs [-u | --user username] [-a | --alias jobalias] ',
+                print '[-j | --jobid jobid]'
+                print '  only use one of jobalias or jobid'
+                exit(-1)
+            if argv[aidx] == '-u' or argv[aidx] == '--user':
+                uname = argv[aidx+1]
+                aidx += 2
+            elif argv[aidx] == '-j'  or  argv[aidx] == '--jobid':
+                jobid = argv[aidx+1]
+                aidx += 2
+                sjobid = jobid.split('@')    # jobnum and originating host
+            elif argv[aidx] == '-a'  or  argv[aidx] == '--alias':
+                jobalias = argv[aidx+1]
+                aidx += 2
+            else:
+                print 'unrecognized arg: %s' % argv[aidx]
+                exit(-1)
     if environ.has_key('UNIX_SOCKET'):
         conFD = int(environ['UNIX_SOCKET'])
         conSocket = fromfd(conFD,AF_UNIX,SOCK_STREAM)
@@ -26,25 +48,40 @@ def mpdlistjobs():
         except Exception, errmsg:
             mpd_raise('cannot connect to local mpd')
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
-    if len(argv) > 1  and  (argv[1] == '-a' or argv[1] == '--all'):
-        msgToSend = { 'cmd' : 'mpdlistjobs', 'username' : '_all_' }
-    else:
-        msgToSend = { 'cmd' : 'mpdlistjobs', 'username' : username }
+    msgToSend = { 'cmd' : 'mpdlistjobs' }
     mpd_send_one_msg(conSocket,msgToSend)
-    printed_hdr = 0
     while 1:
         msg = mpd_recv_one_msg(conSocket)
         if not msg.has_key('cmd'):
             raise RuntimeError, 'mpdlistjobs: INVALID msg=:%s:' % (msg)
         if msg['cmd'] == 'mpdlistjobs_info':
-            if not printed_hdr:
-                hdr = 'jobid'  +  ' ' * (len(msg['jobid'])-1)  +  \
-		      'host'  +  ' ' * (len(msg['host']))  +  \
-		      'pid    rank    user        pgm'
-                print hdr + '\n' + '-' * len(hdr)
-                printed_hdr = 1
-            print '%s    %s    %s   %s       %s     %s' % \
-                  (msg['jobid'],msg['host'],msg['pid'],msg['rank'],msg['username'],msg['pgm'])
+            smjobid = msg['jobid'].split('  ')  # jobnum, mpdid, and alias (if present)
+            if len(smjobid) < 3:
+                smjobid.append('')
+            print_based_on_uname    = 0    # default
+            print_based_on_jobid    = 0    # default
+            print_based_on_jobalias = 0    # default
+            if not uname  or  uname == msg['username']:
+                print_based_on_uname = 1
+            if not jobid  and  not jobalias:
+                print_based_on_jobid = 1
+                print_based_on_jobalias = 1
+            else:
+                if sjobid  and  sjobid[0] == smjobid[0]  and  sjobid[1] == smjobid[1]:
+                    print_based_on_jobid = 1
+                if jobalias  and  jobalias == smjobid[2]:
+                    print_based_on_jobalias = 1
+            if not smjobid[2]:
+                smjobid[2] = '          '  # just for printing
+            if print_based_on_uname and (print_based_on_jobid or print_based_on_jobalias):
+                print 'jobid    = %s@%s' % (smjobid[0],smjobid[1])
+                print 'jobalias = %s'    % (smjobid[2])
+                print 'username = %s'    % (msg['username'])
+                print 'host     = %s'    % (msg['host'])
+                print 'pid      = %s'    % (msg['pid'])
+                print 'rank     = %s'    % (msg['rank'])
+                print 'pgm      = %s'    % (msg['pgm'])
+                print
         else:
             break  # mpdlistjobs_trailer
 

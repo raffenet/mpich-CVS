@@ -41,12 +41,15 @@ def mpdsigjob():
         jobnum = '0'
     else:
         jobalias = ''
-        jobnum = argv[2]
-        if len(argv) > 3:
-            mpdid = argv[3]
-    mpd_send_one_msg(conSocket, {'cmd' : 'mpdsigjob', 'sigtype': sigtype,
-                                 'jobnum' : jobnum, 'mpdid' : mpdid, 'jobalias' : jobalias,
-                                 'username' : username} )
+        jobid = argv[2]
+        sjobid = jobid.split('@')
+        jobnum = sjobid[0]
+        if len(sjobid) > 1:
+            mpdid = sjobid[1]
+    msgToSend = {'cmd' : 'mpdsigjob', 'sigtype': sigtype,
+                 'jobnum' : jobnum, 'mpdid' : mpdid, 'jobalias' : jobalias,
+                 'username' : username}
+    mpd_send_one_msg(conSocket, msgToSend)
     msg = mpd_recv_one_msg(conSocket)
     if not msg or msg['cmd'] != 'mpdsigjob_ack':
         if msg['cmd'] == 'already_have_a_console':
