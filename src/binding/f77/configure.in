@@ -802,7 +802,7 @@ else
         REAL4 REAL8 REAL16 COMPLEX8 COMPLEX16 COMPLEX32 ; do  
 	eval varname=MPI_$var
         eval varvalue=\$$varname
-	echo "$varname = $varvalue"
+	#echo "$varname = $varvalue"
 	if test "$varvalue" = MPI_DATATYPE_NULL ; then
 	    eval F77_$var=0
 	else
@@ -967,28 +967,92 @@ AC_SUBST(NEEDSPLIB)
 # Try to get values for Fortran logical variables.
 if test "$cross_compiling" = "no" ; then
     AC_MSG_CHECKING([for values of Fortran logicals])
+    # Use a Fortran main program.  This simplifies some steps, since getting
+    # all of the Fortran libraries (including shared libraries that are not
+    # in the default library search path) can be tricky.  Specifically,
+    # The PROG_F77_RUN_PROC_FROM_C failed with some installations of the
+    # Portland group compiler.
+dnl     AC_CACHE_VAL(pac_cv_prog_f77_true_false_value,[
+dnl     PAC_PROG_F77_RUN_PROC_FROM_C([
+dnl #include <stdio.h>
+dnl int main()
+dnl {
+dnl     $MPI_FINT itrue, ifalse;
+dnl     FILE *f = fopen("conftestval", "w" );
+dnl     if (!f) exit(1);
+dnl     ftest_( &itrue, &ifalse );
+dnl     fprintf( f, "%d %d\n", itrue, ifalse );
+dnl     exit(0);
+dnl }
+dnl ],[
+dnl         subroutine ftest( itrue, ifalse )
+dnl         logical itrue, ifalse
+dnl         itrue  = .TRUE.
+dnl         ifalse = .FALSE.
+dnl         return
+dnl         end
+dnl ],[
+dnl     pac_cv_prog_f77_true_false_value=`cat conftestval`
+dnl ],,:)])
     AC_CACHE_VAL(pac_cv_prog_f77_true_false_value,[
-    PAC_PROG_F77_RUN_PROC_FROM_C([
+# Compile a C routine to print the values of true and false
+cat >conftestc.c <<EOF
 #include <stdio.h>
-int main()
-{
-    $MPI_FINT itrue, ifalse;
-    FILE *f = fopen("conftestval", "w" );
-    if (!f) exit(1);
-    ftest_( &itrue, &ifalse );
-    fprintf( f, "%d %d\n", itrue, ifalse );
-    exit(0);
+#include "confdefs.h"
+#ifdef F77_NAME_UPPER
+#define ftest_ FTEST
+#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
+#define ftest_ ftest
+#endif
+void ftest_( $MPI_FINT *, $MPI_FINT *);
+void ftest_( $MPI_FINT *itrue, $MPI_FINT *ifalse )
+{ 
+  FILE *f = fopen("conftestval","w");
+  if (!f) exit(1);
+  fprintf( f, "%d %d\n", *itrue, *ifalse );
+  fclose(f);
 }
-],[
-        subroutine ftest( itrue, ifalse )
-        logical itrue, ifalse
-        itrue  = .TRUE.
-        ifalse = .FALSE.
-        return
-        end
-],[
-    pac_cv_prog_f77_true_false_value=`cat conftestval`
-],,:)])
+EOF
+# Create the Fortran program
+cat >conftest.f <<EOF
+       program main
+       logical itrue, ifalse
+       itrue = .TRUE. 
+       ifalse = .FALSE.
+       call ftest( itrue, ifalse )
+       end
+EOF
+# Compile the two files
+    pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&5'
+    if AC_TRY_EVAL(pac_tmp_compile) && test -s conftestc.o ; then
+        AC_LANG_SAVE
+        AC_LANG_FORTRAN77
+        saveLIBS=$LIBS
+        LIBS="conftestc.o $LIBS"
+        if AC_TRY_EVAL(ac_link) && test -s conftest$ac_exeext ; then
+	    if ./conftest$ac_exeext ; then
+	        # success
+		pac_cv_prog_f77_true_false_value=`cat conftestval`
+            else
+	        # failure 
+		AC_MSG_WARN([Unable to run the program to determine the values of logicals])
+		echo "configure: failed program was:" >&AC_FD_CC
+		cat conftest.f >&AC_FD_CC
+	    fi
+        else
+	    # failure
+            AC_MSG_WARN([Unable to build program to determine values of logicals])
+	    echo "configure: failed program was:" >&AC_FD_CC
+	    cat conftest.f >&AC_FD_CC
+        fi
+	LIBS=$saveLIBS
+        AC_LANG_RESTORE
+    else
+        AC_MSG_WARN([Unable to compile the C routine for finding the values of logicals])
+	echo "configure: failed program was:" >&AC_FD_CC
+	cat conftestc.c >&AC_FD_CC
+    fi
+])
     true_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/ .*//g'`"
     false_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/.*  *//g'`"
     if test -n "$true_val" -a -n "$false_val" ; then
