@@ -84,7 +84,7 @@ static int smpd_encrypt_data_plaintext(char *input, int input_length, char *outp
     smpd_enter_fn(FCNAME);
     if (output_length < input_length + 2)
     {
-	smpd_err_printf("encryption output buffer too small.\n");
+	smpd_err_printf("encryption output buffer too small: %d < %d.\n", output_length, input_length + 2);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
