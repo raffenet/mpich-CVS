@@ -389,7 +389,10 @@ channel.
 
 Here are the configure flags for the GASNet channel:
 
-  --with-device=ch3:gasnet
+  --with-device=ch3:gasnet --with-gasnet-conduit=<conduit>
+
+where <conduit> is the name of the GASNet conduit (e.g.,
+"--with-gasnet-conduit=gm" for the GM conduit.
 
 If the GASNet library and include files are not in the standard library
 and include paths, you should use the following flags:
@@ -403,8 +406,9 @@ or use,
 
 if GASNet's lib/ and include/ subdirectories are not in the same directory.
 
-If you are using GASNet with the GM conduit you will have to specify the
-location of GM's include and lib directories as well.
+If you are using GASNet with the GM conduit you will have to specify
+the location of GM's include and lib directories, if they are not in
+the standard include and library paths.
 
   --with-gm=<GM install directory>
 
@@ -413,10 +417,10 @@ or
   --with-gm-include=<directory where gm.h can be found>
   --with-gm-lib=<directory where libgm.a can be found>
 
-Though we have only tested this with the GM conduit we expect this to
-work with any conduit.  If you need to specify include and lib paths for
-the other conduits (e.g., Quadrics, or IBA) you should be able to use
-the --with-gm= flag for those too.
+Though we have only tested this with the GM conduit we expect this may
+also work with other conduits.  If you need to specify include and lib
+paths for the other conduits (e.g., Quadrics, or IBA) you should be
+able to use the --with-gm= flag for those too.
 
 Because GASNet doesn't support dynamic process creation, The dynamic
 process features of MPI are not supported.  Also, you will have to use

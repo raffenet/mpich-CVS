@@ -43,29 +43,40 @@ done
 
 # include gasnet
 if test -n "$gasnet_dir" ; then
-  CPPFLAGS="$CPPFLAGS -I${gasnet_dir}/include -I${gasnet_dir}/include/gm-conduit"
+  CPPFLAGS="$CPPFLAGS -I${gasnet_dir}/include -I${gasnet_dir}/include/${gasnet_conduit}-conduit"
   LDFLAGS="$LDFLAGS -L${gasnet_dir}/lib"
 fi
 if test -n "$gasnet_include_dir" ; then
-  CPPFLAGS="$CPPFLAGS -I${gasnet_include_dir} -I${gasnet_include_dir}/gm-conduit"
+  CPPFLAGS="$CPPFLAGS -I${gasnet_include_dir} -I${gasnet_include_dir}/${gasnet_conduit}-conduit"
 fi
 if test -n "$gasnet_lib_dir" ; then
   LDFLAGS="$LDFLAGS -L${gasnet_lib_dir}"
 fi
-LIBS="$LIBS -lgasnet-gm-seq"
+LIBS="$LIBS -lgasnet-${gasnet_conduit}-seq"
 
-#include gm
-if test -n "$gm_dir" ; then
-  LDFLAGS="$LDFLAGS -L${gm_dir}/lib"
-  CPPFLAGS="$CPPFLAGS -I${gm_dir}/include"
-fi
-if test -n "$gm_include_dir" ; then
-  CPPFLAGS="$CPPFLAGS -I${gm_include_dir}"
-fi
-if test -n "$gm_lib_dir" ; then
-  LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
-fi
-LIBS="$LIBS -lgm"
+case "$gasnet_conduit" in
+  gm )
+    if test -n "$gm_dir" ; then
+      LDFLAGS="$LDFLAGS -L${gm_dir}/lib"
+      CPPFLAGS="$CPPFLAGS -I${gm_dir}/include"
+    fi
+    if test -n "$gm_include_dir" ; then
+      CPPFLAGS="$CPPFLAGS -I${gm_include_dir}"
+    fi
+    if test -n "$gm_lib_dir" ; then
+      LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
+    fi
+    LIBS="$LIBS -lgm"
+    ;;
+  lapi )
+    CPPFLAGS="$CPPFLAGS -D_ALL_SOURCE"
+    LIBS="$LIBS -llapi_r -lpthread"
+    ;;
+  "" )
+    echo "You must specify a gasnet conduit using --with-gasnet-conduit="
+    exit 1
+    ;;
+esac
 
 case "$CC" in
   *pgcc* )
