@@ -440,17 +440,18 @@ extern MPIU_Object_alloc_t MPID_Group_mem;
 extern MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN];
 extern MPID_Group MPID_Group_direct[];
 
+typedef struct MPIDI_VCRT * MPID_VCRT;
+typedef struct MPIDI_VC   * MPID_VC;
+
 /* Communicators */
 typedef struct MPID_Comm { 
-    int           handle;            /* value of MPI_Comm for this structure */
+    int           handle;        /* value of MPI_Comm for this structure */
     volatile int  ref_count;
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
-    struct MPIDI_VC **vcrt;      /* pointer to the virtual connecton reference
-				    table (which is an array of pointers to
-				    virtual connections */
-    volatile int  *vcrt_ref_count;/* reference count for the VCRT */
+    MPID_VCRT     vcrt;          /* virtual connecton reference table */
+    MPID_VC      *vc;            /* alias to the array of virtual connections in vcrt */
     MPID_List     attributes;    /* List of attributes */
     MPID_Group    *local_group,  /* Groups in communicator. */
                   *remote_group; /* The local and remote groups are the
@@ -852,5 +853,10 @@ void MPID_Progress_poke();
 #if !defined(MPID_Request_free)
 void MPID_Request_free(MPID_Request *);
 #endif
+
+int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr);
+int MPID_VCRT_Add_ref(MPID_VCRT vcrt);
+int MPID_VCRT_Release(MPID_VCRT vcrt);
+int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VC **vc_pptr);
 
 #endif /* MPIIMPL_INCLUDED */
