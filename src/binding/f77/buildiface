@@ -55,6 +55,13 @@ $do_weak    = 1;
 $do_subdecls = 1;
 $do_bufptr = 1;
 $prototype_file = "../../include/mpi.h.in";
+
+# Global hashes used for definitions and to record the locations of the
+# defintions.
+%mpidef = ();
+%mpidefFile = ();
+%mpiRoutinesFile = ();
+
 # Process arguments
 #
 # Args
@@ -1493,8 +1500,6 @@ sub chararray_ftoc {
 sub chararray2_in_decl {
     my $count = $_[0];
     print $OUTFD "    char ***p$count=0;\n";
-    print $OUTFD "    char *pcpy$count=0;\n";
-    print $OUTFD "    int  asize$count=0;\n";
 }
 sub chararray2_in_arg {
     my $count = $_[0];
@@ -1502,53 +1507,113 @@ sub chararray2_in_arg {
 }
 sub chararray2_ftoc {
     my $count = $_[0];
-    
+
+    if ($Array_size eq "") {
+	print STDERR "A leading array size is required for 2-d Character arrays\n";
+	return 1;
+    }
+
     # First, compute the number of elements.  In Fortran, a null
     # string terminates the array.  The array is stored as 
     # a two-dimensional field of fixed-length characters.
     # Then copy the strings into the new storage, appending the
     # null at the end
     # Since this is a 2-d array, we always know the first dimension,
-    # the second dimension must be computed, this is asize$count
+    # the second dimension must be computed, this is asize$count.
+    # The first dimension is Array_size.
     print $OUTFD "\
-    if (v$count == MPI_F_ARGVS_NULL) { v$count = MPI_ARGVS_NULL; } 
-    else { \n";
+    /* Check for the special case of a the null args case. */
+    if (v$count == MPI_F_ARGVS_NULL) { v$count = (char *)MPI_ARGVS_NULL; } 
+    else { 
+        /* We must convert from the 2-dimensional Fortran array of
+           fixed length strings to a C variable-sized array (really an
+           array of pointers for each command of pointers to each 
+           argument, which is null terminated.*/\n";
 
-      # We must be careful.  A blank line is ALL blank, not just leading blank
-      print $OUTFD "  int i, k;
-      char *ptmp;
-      pcpy$count = v$count;
-      for (asize$count=1; 1; asize$count++) {
-          char *p = pcpy$count + d$count -1;
-          while (*p == ' ' && p > pcpy$count) p--;
-          /* Are we at the last char ? (e.g., all were blank?) */
-          if (*p == ' ') break;
-          pcpy$count += d$count;
-      }\n";
+    # We must be careful.  A blank line is ALL blank, not just leading blank
+    # We must also be careful allocating the array, as C and Fortran 
+    # arrays are not the same.  In C, for a two dimensional array
+    # sized at run time, we must
+    # allocate an array of pointers to arrays.
+    #    p = (char ***) malloc( nrows * sizeof(char **) )
+    # where we are letting using p[nrows][colindex].  
+    # For MPI_Comm_spawn_multiple, each of these rows is for one command.
+    # Each p[k] is a pointer to an array of character strings.  
+    # For MPI_Comm_spawn_multiple, all we know is that in the 
+    # corresponding Fortran code, the two-dimensional character array
+    # contains an all-blank entry as the terminating element; the
+    # corresponding C array must have a null entry (pointer) in
+    # the corresponding position.  
+    # Thus, the C code must make several allocations:
+    #    p = nrows * sizeof(char **)
+    # for p[k], (ncols + 1) * sizeof(char *)
+    # for p[k][i], space for the ith input argument.
+    # To reduce the number of allocations, we allocate space for all
+    # elements on a row at one time.
 
+    # Purely local variables don't need $count
     print $OUTFD "\
-      p$count = (char ***)$malloc( $Array_size * asize$count * sizeof(char **) );
-      ptmp    = (char *)$malloc( $Array_size * asize$count * (d$count + 1) );
+      int k;
+
+      /* Allocate the array of pointers for the commands */
+      p$count = (char ***)$malloc( $Array_size * sizeof(char **) );
+
       for (k=0; k<$Array_size; k++) {
-        for (i=0; i<asize$count-1; i++) {
-          char *p = v$count + i * d$count, *pin, *pdest;
-          int j;
+        /* For each command, find the number of command-line arguments.
+           They are terminated by an empty entry. */
+        /* Find the first entry in the Fortran array for this row */
+        char *p = v$count + k * ($Array_size * d$count);
+        int arglen = 0, argcnt=0, i;
+        char **pargs, *pdata;
+        for (argcnt=0; 1; argcnt ++) {
+            char *pin = p + d$count - 1; /* Move to the end of the
+                                            current Fortran string */
+            while (*pin == ' ' && pin > p) pin--; /* Move backwards until
+                                                    we find a non-blank
+                                                    (Fortran is blank padded)*/
+            if (pin == p && *pin == ' ') {
+                /* found the terminating empty arg */
+                break;
+            }
+            /* Keep track of the amount of space needed */
+            arglen += (pin - p) + 2;   /* add 1 for the null */
+            /* Advance to the next entry in the array */
+            p += d$count;
+        }
 
-          pdest = ptmp + i * (d$count + 1);
-          p$count\[i\]\[k\] = pdest;
-          /* Move to the end and work back */
-          pin = p + d$count - 1;
-          while (*pin == ' ' && pin > p) pin--;
-          /* Copy and then null terminate */
-          for (j=0; j<(pin-p)+1; j++) { pdest\[j\] = p\[j\]; }
-          pdest\[j\] = 0;
-          }
+        /* argcnt is the number of provided arguments.  
+           Allocate the necessary elements and copy, null terminating copies */
+        pargs = (char **)$malloc( (argcnt+1)*sizeof(char *) );
+        pdata = (char *)$malloc( arglen );
+        p$count\[k\] = pargs;
+        pargs\[argcnt\] = 0;  /* Null terminate end */
+        /* Copy each argument to consequtive locations in pdata, 
+           and set the corresponding pointer entry */
+        p = v$count + k * ($Array_size * d$count);
+        for (i=0; i<argcnt; i++) {
+            int j;
+            char *pin;
+            p$count\[k\]\[i\] = pdata;
+            /* Move to the end and work back */
+            pin = p + d$count - 1;
+            while (*pin == ' ' && pin > p) pin--;
+            /* Copy and then null terminate */
+            for (j=0; j<(pin-p)+1; j++) { *pdata++ = p\[j\]; }
+            *pdata++ = 0;
+            /* Advance to the next entry in the array */
+            p += d$count;
+        }
        }
-    /* Null terminate the array */
-    p$count\[asize$count-1\]\[$Array_size-1\] = 0;
     }\n";
 
-    $clean_up .= "if (v$count != MPI_ARGVS_NULL){ $free( p$count\[0\] ); $free( p$count );}\n";
+    $clean_up .= "    if (v$count != (char *)MPI_ARGVS_NULL) { 
+        int i; 
+        for (i=0; i <$Array_size; i++) {
+            $free( p$count\[i\]\[0\] );  /* Free space allocated to args */
+            $free( p$count\[i\] );       /* Free space allocated to arg array */
+            $free( p$count );
+        }
+    }\n";
 }
 
 # ---------------------------------------------------------------------------
@@ -2322,16 +2387,19 @@ sub print_mpif_int {
 
 sub ReadAndProcessInterface {
     my $prototype_file = $_[0];
+    my $linecount = 0;
 
     open( FD, "<$prototype_file" ) || die "Cannot open $prototype_file\n";
 
     # Skip to prototypes
     while (<FD>) {
+	$linecount ++;
 	if ( /\/\*\s*Begin Prototypes/ ) { last; }
     }
 
     # Read each one
     while (<FD>) {
+	$linecount ++;
 	# Remove any comments
 	s/\/\*.*\*\///g;
 	print $_ if $debug;
@@ -2350,6 +2418,7 @@ sub ReadAndProcessInterface {
 	    $args = $2;
 	    while (! ($args =~ /;/)) {
 		$args .= <FD>;
+		$linecount++;
 	    }
 	    $args =~ s/\)\s*;//g;
 	    $args =~ s/[\r\n]*//g;
@@ -2376,12 +2445,18 @@ sub ReadAndProcessInterface {
 	    else {
 		# Check for duplicates in the list of routines
 		if (defined($mpi_routines{$routine_name})) {
-		    print STDERR "Duplicate prototypes for $routine_name\n";
+		    my $found = "";
+		    if (defined($mpiRoutinesFile{$routine_name})) {
+			my $location = $mpiRoutinesFile{$routine_name};
+			$found = "previous prototoype found in $location\n";
+		    }
+		    print STDERR "Duplicate prototypes for $routine_name in $prototype_file:$linecount\n$found";
 		    next;
 		}
 		# Clear variables
 		&clean_args;
 		$mpi_routines{$routine_name} = $args;
+		$mpiRoutinesFile{$routine_name} = "$prototype_file:$linecount";
 
 		$clean_up = "";
 		if ($buildfiles) {
@@ -2449,11 +2524,13 @@ sub ReadAndProcessInterface {
 
 sub ReadInterfaceForDefinitions {
     my $prototype_file = $_[0];
+    my $linecount = 0;
 
     open ( MPIFD, "<$prototype_file" ) || die "Could not open $prototype_file\n";
     #
     # First, find the values that we need
     while (<MPIFD>) {
+	$linecount++;
 	# Remove any comments
 	s/\/\*.*\*\///g;
 
@@ -2482,23 +2559,33 @@ sub ReadInterfaceForDefinitions {
 		    $val = "(($1)$2)";
 		}
 		if ($mpidef{$name} ne $val) {
-		    print STDERR "Attempting to redefine $name with a new value $val,\nusing original value of $mpidef{$name}\n";
+		    my $found = "";
+		    if (defined($mpidefFile{$name})) {
+			my $location = $mpidefFile{$name};
+			$found = " found in $location";
+		    }
+		    print STDERR "Attempting to redefine $name with a new value $val found in $prototype_file:$linecount,\nusing original value of $mpidef{$name}$found\n";
 		}
 	    }
 	    else {
 		$mpidef{$name} = $val;
+		$mpidefFile{$name} = "$prototype_file:$linecount";
 	    }
 	}
 	elsif (/typedef\s+enum\s*[A-Za-z0-9_]*\s*{\s*(.*)/) {
 	    # Allow a named type
 	    # Eat until we find the closing right brace
 	    $enum_line = $1;
-	    while (! ($enum_line =~ /}/)) { $enum_line .= <MPIFD>; }
-	       # Now process for names and values
-	       while ( ($enum_line =~ /\s*(MPI_[A-Z_0-9]*)\s*=\s*([a-fx0-9]*)(.*)/ ) ){
-		   $mpidef{$1} = $2;
-		   $enum_line = $3;
-		   print "Defining $1 as $2\n" if $debug;
+	    while (! ($enum_line =~ /}/)) { 
+	        $enum_line .= <MPIFD>; 
+                $linecount++;
+            }
+	    # Now process for names and values
+	    while ( ($enum_line =~ /\s*(MPI_[A-Z_0-9]*)\s*=\s*([a-fx0-9]*)(.*)/ ) ){
+		$mpidef{$1} = $2;
+		$mpidefFile{$1} = "$prototype_file:$linecount";
+		$enum_line = $3;
+		print "Defining $1 as $2\n" if $debug;
 	       }
 	       
 	   } 
