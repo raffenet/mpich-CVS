@@ -39,21 +39,6 @@
 /* Debug definitions */
 #define DEBUG_ARGS
 
-/* Temporary definitions for memory management */
-#ifndef MPIU_Malloc
-#define MPIU_Malloc(a)    malloc((unsigned)(a))
-#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
-#define MPIU_Free(a)      free((void *)(a))
-#ifdef HAVE_STRDUP
-#ifdef NEEDS_STRDUP_DECL
-extern char *strdup( const char * );
-#endif
-#define MPIU_Strdup(a)    strdup(a)
-#else
-/* Don't define MPIU_Strdup, provide it in safestr.c */
-#endif
-#endif
-
 ProcessTable_t processTable;
 
 /* ----------------------------------------------------------------------- */
@@ -123,7 +108,7 @@ int main( int argc, char *argv[] )
     if (rc) return rc;
 
     /* Optionally stage the executables */
-#ifdef MPI_STAGE_EXECUTABLES
+#ifdef USE_MPI_STAGE_EXECUTABLES
     if (stageExes) {
 	mpiexecStageExes( &processTable );
     }
@@ -670,7 +655,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	/* (A negative value is infinite) */
 	timeout = GetRemainingTime();
 
-	printf( "About to poll...\n" ); fflush(stdout);
+	DBG_PRINTF( "About to poll...\n" ); fflush(stdout);
 	/* 
 	 * Fill in poll array.  Initialize all of the fds.
 	 */
@@ -679,9 +664,9 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 						pollarray, handlearray, fdPMI );
 	    resetPollarray = 0;
 	    /* If only the mpiexec fds are set, exit */
-	    printf( "activeNfds = %d\n", activeNfds ) ; fflush(stdout);
+	    DBG_PRINTF( "activeNfds = %d\n", activeNfds ) ; fflush(stdout); 
 	    if (activeNfds == 1) {
-		printf( "fd left = %d\n", pollarray[0].fd );
+		DBG_PRINTF( "fd left = %d\n", pollarray[0].fd );
 	    }
 	    /* FIXME: if all processes have exited, then we can close the
 	       PMIServer socket.  Need to think about the state machine
@@ -702,7 +687,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 
 	/* rc = 0 is a timeout, with nothing read */
 	if (rc == 0) {
-	    printf( "rc = 0, timeout = %d\n", timeout );
+	    DBG_PRINTF( "rc = 0, timeout = %d\n", timeout );
 	    break;
 	}
 
@@ -738,7 +723,7 @@ int mpiexecPollFDs( ProcessTable_t *ptable, int fdPMI )
 	   is not accepting input (don't read any more) */
 	
     }
-    printf( "Exiting poll...\n" ); fflush(stdout);
+    DBG_PRINTF( "Exiting poll...\n" ); fflush(stdout);
     return 0;
 }
 
@@ -862,7 +847,8 @@ int mpiexecSetupPollArray( ProcessTable_t *ptable, struct pollfd pollarray[],
 /* ------------------------------------------------------------------------ */
 void CreateNewSession( void )
 {
-#if defined(HAVE_SETSID) && defined(HAVE_ISATTY) && defined(USE_NEW_SESSION)
+#if defined(HAVE_SETSID) && defined(HAVE_ISATTY) && defined(USE_NEW_SESSION) &&\
+    defined(HAVE_GETSID)
 if (!isatty(0) && getsid(0) != getpid()) {
     pid_t rc;
     rc = setsid();
@@ -904,7 +890,7 @@ int mpiexecHandleOutput( int fd, int pidx, void *extra )
     int n, nout;
     charbuf *buf = (charbuf *)extra;
 
-    printf( "Reading from %d to %d\n", fd, buf->destfd );
+    DBG_PRINTF( "Reading from %d to %d\n", fd, buf->destfd );
     buf->destfd = 1;
     buf->firstchar = buf->buf;
     buf->nleft = MAXCHARBUF;
@@ -913,7 +899,7 @@ int mpiexecHandleOutput( int fd, int pidx, void *extra )
 	n = read( fd, buf->firstchar, buf->nleft );
     }
     while (n < 0 && errno == EINTR);
-    printf ("Read %d chars\n", n );
+    DBG_PRINTF ("Read %d chars\n", n );
     if (n >= 0) {
 	buf->nleft -= n;
 	/* Try to write to outfd */
@@ -979,14 +965,14 @@ int mpiexecGetPMIsock( int fd, int pidx, void *extra )
     ProcessTable_t *ptable = (ProcessTable_t *)extra;
 
     /*  */
-    printf( "Beginning accept on %d\n", fd ); fflush(stdout);
+    DBG_PRINTF( "Beginning accept on %d\n", fd ); fflush(stdout);
  
     /* Get the new socket */
     newfd = accept( fd, &sock, &addrlen );
     if (newfd < 0) return newfd;
 
     /* */
-    printf( "accept succeeded with fd %d\n", newfd ); fflush(stdout);
+    DBG_PRINTF( "accept succeeded with fd %d\n", newfd ); fflush(stdout);
 
 #ifdef FOO
     /* Mark this fd as non-blocking */

@@ -111,7 +111,8 @@ pac_cv_has_ptrace_parms=no)])
     fi
 fi
 # Check for the functions needed to create a new session.
-AC_CHECK_FUNCS(setsid isatty)
+# cygwin has setsid but no getsid (!)
+AC_CHECK_FUNCS(getsid setsid isatty)
 if test "$enable_newsession" = "yes" ; then
     AC_DEFINE(USE_NEW_SESSION,1,[Define if mpiexec should create a new process group session])
 fi

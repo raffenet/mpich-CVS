@@ -70,7 +70,7 @@ int handle_sigchild( int sig )
 {
     int prog_stat, pid, rc, sigval, i;
 
-    printf( "Entering sigchild handler\n" ); fflush(stdout);
+    DBG_PRINTF( "Entering sigchild handler\n" ); fflush(stdout);
     if (debug) {
 	DBG_FPRINTF( stderr, "Waiting for any child on signal\n" );
 	fflush( stderr );

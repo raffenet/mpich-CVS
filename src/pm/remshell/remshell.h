@@ -137,20 +137,7 @@ extern int debug;
 #define DBG_PRINTF printf
 #define DBG_FPRINTF fprintf
 
-/* Temporary definitions for memory management */
-#ifndef MPIU_Malloc
-#define MPIU_Malloc(a)    malloc((unsigned)(a))
-#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
-#define MPIU_Free(a)      free((void *)(a))
-#ifdef HAVE_STRDUP
-#ifdef NEEDS_STRDUP_DECL
-extern char *strdup( const char * );
-#endif
-#define MPIU_Strdup(a)    strdup(a)
-#else
-/* Don't define MPIU_Strdup, provide it in safestr.c */
-#endif
-#endif
-
+/* Use the memory defintions from mpich2/src/include */
+#include "mpimem.h"
 
 #endif

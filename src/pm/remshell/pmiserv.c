@@ -123,7 +123,7 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
     int  returnCode = 0;
     char inbuf[PMIU_MAXLINE], outbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
 
-    printf( "Handling PMI input\n" ); fflush(stdout);
+    DBG_PRINTF( "Handling PMI input\n" ); fflush(stdout);
     if ( ( rc = PMIU_readline( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
 	if (pmidebug) {
 	    DBG_PRINTF( "Entering PMIServHandleInputFd %s\n", inbuf );
@@ -131,7 +131,7 @@ int PMIServHandleInputFd ( int fd, int pidx, void *extra )
 
 	PMIU_parse_keyvals( inbuf );
 	PMIU_getval( "cmd", cmd, MAXPMICMD );
-	printf( "cmd = %s\n", cmd ); fflush(stdout);
+	DBG_PRINTF( "cmd = %s\n", cmd ); fflush(stdout);
 	if ( strncmp( cmd, "barrier_in", MAXPMICMD ) == 0 ) {
 	    fPMI_Handle_barrier( pentry );
 	}
@@ -446,7 +446,7 @@ static void fPMI_Handle_get( PMI_Process *pentry )
     snprintf( outbuf, PMIU_MAXLINE, "cmd=get_result rc=%d msg=%s value=%s\n",
 	      rc, message, value );
     PMIU_writeline( pentry->fd, outbuf );
-    printf( "%s", outbuf );
+    DBG_PRINTF( "%s", outbuf );
 }
 
 /* Handle an incoming get_my_kvsname command */
@@ -546,11 +546,11 @@ int PMI_Init_port_connection( int fd )
     int pmiid = -1;
 
     if (pmidebug) {
-	printf( "Beginning initial handshake read\n" ); fflush(stdout);
+	DBG_PRINTF( "Beginning initial handshake read\n" ); fflush(stdout);
     }
     PMIU_readline( fd, message, PMIU_MAXLINE );
     if (pmidebug) {
-	printf( "received message %s\n", message );fflush(stdout);
+	DBG_PRINTF( "received message %s\n", message );fflush(stdout);
     }
     PMIU_parse_keyvals( message );
     PMIU_getval( "cmd", cmd, MAXPMICMD );
