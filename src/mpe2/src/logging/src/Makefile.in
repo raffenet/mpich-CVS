@@ -118,8 +118,8 @@ ${libbuild_dir}/lib$(PROF_LIBNAME).a: build_Cobjs
 # clog_print: clog_print.o clog.o clog_time.o clog_util.o clog_merge.o
 #       $(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.o $(PROF_LIBS)
 ${binbuild_dir}/clog2_print@EXEEXT@: clog_byteswap.@OBJEXT@ \
-                                    clog_util.@OBJEXT@ \
-                                    clog_print.@OBJEXT@
+                                     clog_util.@OBJEXT@ \
+                                     clog_print.@OBJEXT@
 	$(CLINKER) $(CC_LDFLAGS) -o $@ $?
 #	 $(RM) -f $?
 

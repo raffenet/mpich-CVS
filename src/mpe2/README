@@ -58,7 +58,7 @@ II. CONFIGURATION
 -----------------
 
 MPE can be configured and installed as an extension to most MPI standard
-compliant MPI implementations, e.g. MPICH-2, MPICH, LAM, SGI's MPI,
+-compliant MPI implementations, e.g. MPICH-2, MPICH, LAM/MPI, SGI's MPI,
 HP-UX's MPI and IBM's MPI.  It has been integrated seamlessly into 
 MPICH and MPICH-2 distributions, so MPE will be installed automatically
 during MPICH-X's installation process.  
