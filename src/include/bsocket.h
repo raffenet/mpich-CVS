@@ -10,8 +10,13 @@
 extern "C" {
 #endif
 
+#ifdef USE_WINCONF_H
+#include "winmpidconf.h"
+#include "winmpichconf.h"
+#else
 #include "mpidconf.h"
 #include "mpichconf.h"
+#endif
 
 /* sockaddr_in (Internet) */
 #ifdef HAVE_NETINET_IN_H

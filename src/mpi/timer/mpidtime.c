@@ -5,7 +5,11 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#ifdef USE_WINCONF_H
+#include "wintimerconf.h"
+#else
 #include "timerconf.h"
+#endif
 #include "mpichtimer.h"
 #include "mpiimpl.h"
 

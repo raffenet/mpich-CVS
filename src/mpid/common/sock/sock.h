@@ -20,7 +20,11 @@
 CPLUSPLUS_BEGIN
 
 /* config header file */
+#ifdef USE_WINCONF_H
+#include "winsockconf.h"
+#else
 #include "sockconf.h"
+#endif
 
 /* implemenatation specific header file */    
 #include "socki.h"

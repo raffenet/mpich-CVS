@@ -4,7 +4,11 @@
  *      See COPYRIGHT in top-level directory.
  */
 //#include "mpiimpl.h"
+#ifdef USE_WINCONF_H
+#include "winmpichconf.h"
+#else
 #include "mpichconf.h"
+#endif
 #include "bsocketimpl.h"
 
 #ifdef HAVE_STDIO_H

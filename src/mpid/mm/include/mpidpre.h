@@ -7,7 +7,11 @@
 #define MPIDPRE_H
 
 #include "mpi.h"
+#ifdef USE_WINCONF_H
+#include "winmpidconf.h"
+#else
 #include "mpidconf.h"
+#endif
 #include "mpid_dataloop.h"
 #include "mpiimpl.h"
 

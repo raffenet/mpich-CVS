@@ -13,7 +13,11 @@ extern "C" {
 #endif
 
 //#include "mpidimpl.h"
+#ifdef USE_WINCONF_H
+#include "winmpichconf.h"
+#else
 #include "mpichconf.h"
+#endif
 #include "blockallocator.h"
 
 #ifdef __cplusplus

@@ -7,9 +7,15 @@
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
 #define MPICH_MPIDPRE_H_INCLUDED
 
+#ifdef USE_WINCONF_H
+#include "winmpidi_ch3_conf.h"
+#else
 #include "mpidi_ch3_conf.h"
+#endif
 
+#ifdef HAVE_ASSERT_H
 #include <assert.h>
+#endif
 
 #if defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>

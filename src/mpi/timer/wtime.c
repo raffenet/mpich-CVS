@@ -22,7 +22,11 @@
 #define MPI_Wtime PMPI_Wtime
 #endif
 
+#ifdef USE_WINCONF_H
+#include "wintimerconf.h"
+#else
 #include "timerconf.h"
+#endif
 
 /*@
   MPI_Wtime - Returns an elapsed time on the calling processor
