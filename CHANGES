@@ -1,8 +1,11 @@
 ===============================================================================
 				Changes in 0.97
 ===============================================================================
-
 - MPI-2 one-sided communication has been implemented in the CH3 device.
+
+- mpigdb works as a simple parallel debugger for MPI programs started
+  with mpd.  New since MPICH1 is the ability to attach to running
+  parallel programs.  See the README in mpich2/src/pm/mpd for details.
 
 - MPI_Type_create_darray() and MPI_Type_create_subarray() implemented including
   the right contents and envelope data.
