@@ -53,6 +53,19 @@ int main(int argc, char* argv[])
 	goto quit_job;
     }
 
+    /* make sure we have a passphrase to authenticate connections to the smpds */
+    if (smpd_process.passphrase[0] == '\0')
+    {
+	if (smpd_process.noprompt)
+	{
+	    printf("Error: No smpd passphrase specified through the registry or .smpd file, exiting.\n");
+	    goto quit_job;
+	}
+	printf("Please specify an authentication passphrase for smpd: ");
+	fflush(stdout);
+	smpd_get_password(smpd_process.passphrase);
+    }
+
     /* print and see what we've got */
     smpd_dbg_printf("host tree:\n");
     host_node_ptr = smpd_process.host_list;
