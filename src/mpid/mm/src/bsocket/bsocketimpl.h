@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #include "mpidimpl.h"
+#include "blockallocator.h"
 
 #ifdef HAVE_WINDOWS_SOCKET
 #define close closesocket

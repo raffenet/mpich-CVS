@@ -84,10 +84,13 @@ struct BFD_Buffer_struct {
 #endif
 
 /* Preallocated datatype objects */
+/*
 BFD_Buffer Bsocket_direct[BSOCKET_PREALLOC];
 MPIU_Object_alloc_t Bsocket_mem = { 0, 0, 0, 0, 0, 
 				    sizeof(BFD_Buffer) + 1024, Bsocket_direct,
 				    BSOCKET_PREALLOC };
+*/
+BlockAllocator Bsocket_mem;
 
 #define BSOCKET_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define BSOCKET_MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -162,7 +165,8 @@ int bsocket_init(void)
     if (pszEnvVar != NULL)
 	g_bbuflen = atoi(pszEnvVar);
 
-    Bsocket_mem.size = sizeof(BFD_Buffer) + g_bbuflen;
+    //Bsocket_mem.size = sizeof(BFD_Buffer) + g_bbuflen;
+    Bsocket_mem = BlockAllocInit(sizeof(BFD_Buffer) + g_bbuflen, 64, 64, malloc, free);
 
     g_bInitFinalize = 1;
 
@@ -181,7 +185,7 @@ int bsocket_finalize(void)
 	return 0;
 
     /* Free up the memory used by Bsocket_mem */
-    /* ... */
+    BlockAllocFinalize(&Bsocket_mem);
     
 #ifdef HAVE_WINSOCK2_H
     WSACleanup();
@@ -207,10 +211,18 @@ int bsocket(int family, int type, int protocol)
     
     DBG_MSG("Enter bsocket\n");
     
+    /*
     pbfd = (BFD_Buffer *)MPIU_Handle_obj_new( &Bsocket_mem );
     if (pbfd == 0) 
     {
 	DBG_MSG(("ERROR in bsocket: MPIU_Handle_obj_new returned NULL"));
+	return -1;
+    }
+    */
+    pbfd = (BFD_Buffer *)BlockAlloc( Bsocket_mem );
+    if (pbfd == 0) 
+    {
+	DBG_MSG(("ERROR in bsocket: BlockAlloc returned NULL"));
 	return -1;
     }
     
@@ -221,7 +233,8 @@ int bsocket(int family, int type, int protocol)
     {
 	DBG_MSG("ERROR in bsocket: socket returned SOCKET_ERROR\n");
 	memset(pbfd, 0, sizeof(BFD_Buffer));
-	MPIU_Handle_obj_free( &Bsocket_mem, pbfd );
+	//MPIU_Handle_obj_free( &Bsocket_mem, pbfd );
+	BlockFree( Bsocket_mem, pbfd );
 	return -1;
     }
     
@@ -302,10 +315,18 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
 	return BFD_INVALID_SOCKET;
     }
     
+    /*
     new_bfd = (BFD_Buffer *)MPIU_Handle_obj_new( &Bsocket_mem );
     if (new_bfd == 0) 
     {
 	DBG_MSG(("ERROR in baccept: MPIU_Handle_obj_new return NULL\n"));
+	return BFD_INVALID_SOCKET;
+    }
+    */
+    new_bfd = (BFD_Buffer *)BlockAlloc( Bsocket_mem );
+    if (new_bfd == 0) 
+    {
+	DBG_MSG(("ERROR in baccept: BlockAlloc return NULL\n"));
 	return BFD_INVALID_SOCKET;
     }
 
@@ -730,7 +751,8 @@ int bclose(int bfd)
 
     close(((BFD_Buffer*)bfd)->real_fd);
     memset((void*)bfd, 0, sizeof(BFD_Buffer));
-    MPIU_Handle_obj_free( &Bsocket_mem, (BFD_Buffer*)bfd );
+    //MPIU_Handle_obj_free( &Bsocket_mem, (BFD_Buffer*)bfd );
+    BlockFree( Bsocket_mem, (BFD_Buffer*)bfd );
 
     return 0;
 }
