@@ -127,6 +127,10 @@ extern MPIDI_Process_t MPIDI_Process;
     MPID_Request_destruct(_req);				\
 }
 
+/* FIXME: MT: The reference count is normally set to two, one for the user and one for the device and channel.  The device and
+ * channel should really be separated since the device may have completed the request and thus be done with it; but, the channel
+ * may still need it (to check if ch3.iov_count is zero).  Right now the request is being referenced by the progress engine after
+ * the MPIDI_CH3U_Request_complete() is called, thus using the request after it may have been freed. */
 #define MPIDI_CH3U_Request_complete(req_)			\
 {								\
     int incomplete__;						\
