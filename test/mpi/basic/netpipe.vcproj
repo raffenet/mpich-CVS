@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="netpipe"
+	ProjectGUID="{FF13401B-AB0F-4659-823E-E3AA20D85E8B}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
