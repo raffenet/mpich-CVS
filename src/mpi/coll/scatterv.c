@@ -99,7 +99,7 @@ int MPIR_Scatterv (
         }
     }
 
-    if ((comm_ptr->comm_kind == MPID_INTERCOMM) && (root == MPI_ROOT)) {
+    else if ((comm_ptr->comm_kind == MPID_INTERCOMM) && (root == MPI_ROOT)) {
         /* intercommunicator root */
         int remote_comm_size;
 
