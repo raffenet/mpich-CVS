@@ -677,6 +677,10 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
 
     mem_ptr = ibuBlockAlloc(ibu->allocator);
+    if (mem_ptr == NULL)
+    {
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
+    }
     assert(mem_ptr);
 
     sg_list.data_seg_p = &data;
@@ -730,6 +734,11 @@ static int ibui_post_receive(ibu_t ibu)
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
 
     mem_ptr = ibuBlockAlloc(ibu->allocator);
+    if (mem_ptr == NULL)
+    {
+	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
+    }
+    assert(mem_ptr);
 
     sg_list.data_seg_p = &data;
     sg_list.data_seg_num = 1;
@@ -1026,6 +1035,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    mem_ptr = ibuBlockAlloc(ibu->allocator);
 	    if (mem_ptr == NULL)
 	    {
+		MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
 		break;
 	    }
 	    total += len;
@@ -1053,6 +1063,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 		mem_ptr = ibuBlockAlloc(ibu->allocator);
 		if (mem_ptr == NULL)
 		{
+		    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlockAlloc returned NULL"));
 		    break;
 		}
 		total += length;
