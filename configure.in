@@ -924,11 +924,6 @@ AC_CHECK_FUNCS(vsnprintf vsprintf)
 dnl Use snprintf if possible when creating messages
 AC_CHECK_FUNCS(snprintf)
 dnl
-dnl Necessary for locks
-AC_CHECK_FUNCS( yield sched_yield usleep sleep select )
-AC_CHECK_FUNCS( mutex_init compare_and_swap )
-AC_CHECK_HEADERS( pthread.h )
-dnl
 dnl If internationalization selected, try to find the needed functions
 if test "$enable_internat" = "yes" ; then
     AC_CHECK_HEADERS(libintl.h)
