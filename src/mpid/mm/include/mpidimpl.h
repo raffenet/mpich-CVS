@@ -73,7 +73,7 @@ typedef struct MPID_PerProcess {
       MPID_Thread_lock_t cqlock;
          struct MM_Car * cq_head;          /* completion queue head */
          struct MM_Car * cq_tail;          /* completion queue tail */
-                    char pmi_kvsname[MM_KVS_NAME_LENGTH];
+                  char * pmi_kvsname; /*[MM_KVS_NAME_LENGTH];*/
              MPID_Comm * comm_parent;
           OpenPortNode * port_list;
           BlockAllocator VCTable_allocator; /* memory allocator for vc tables */

@@ -59,5 +59,7 @@ int MPID_Finalize( void )
 
     bsocket_finalize();
 
+    free(MPID_Process.pmi_kvsname);
+
     return MPI_SUCCESS;
 }
