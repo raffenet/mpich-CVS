@@ -988,7 +988,8 @@ sub CopyFileToOutput {
 
     if (open( TESTFD, "<$filename" )) {
 	print $OUTFD "First $linecount lines of $filename\n";
-	while (<TESTFD> && ($linecount-- > 0)) {
+	while (<TESTFD>) {
+	    if ($linecount <= 0) { last; }
 	    if ($is_xml) {
 		# xml-ify the line by 
 		# escaping the special characters
@@ -998,6 +999,7 @@ sub CopyFileToOutput {
 		s/\*AMP\*/&/g;
 	    }
 	    print $OUTFD $_;
+	    $linecount --;
 	}
 	close (TESTFD);
     }
