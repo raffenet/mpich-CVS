@@ -91,8 +91,26 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 					       NULL,
 					       NULL,
 					       &datatype);
-    }
 
+	/* Copy attributes, executing the attribute copy functions */
+	/* This accesses the attribute dup function through the perprocess
+	   structure to prevent type_dup from forcing the linking of the
+	   attribute functions.  The actual function is (by default)
+	   MPIR_Attr_dup_list 
+	*/
+	if (MPIR_Process.attr_dup) {
+	    new_dtp->attributes = 0;
+	    mpi_errno = MPIR_Process.attr_dup( datatype_ptr->handle, 
+					       datatype_ptr->attributes, 
+					       &new_dtp->attributes );
+	    if (mpi_errno) {
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
+		*newtype = MPI_DATATYPE_NULL;
+		/* FIXME - free new_dtp */
+		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    }
+	}
+    }
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
     return MPI_SUCCESS;
 }
