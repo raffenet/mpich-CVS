@@ -11,6 +11,10 @@
 #include "mpisgi2.h"
 #endif */
 
+#ifdef PROFILE
+#include "mpe.h"
+#endif
+
 void ADIO_Close(ADIO_File fd, int *error_code)
 {
     int i, j, k, combiner, myrank, err, is_contig;
@@ -82,4 +86,30 @@ void ADIO_Close(ADIO_File fd, int *error_code)
     MPI_Info_free(&(fd->info));
 
     /* memory for fd is freed in MPI_File_close */
+}
+
+void ADIOI_GEN_Close(ADIO_File fd, int *error_code)
+{
+    int err;
+    static char myname[] = "ADIOI_GEN_CLOSE";
+
+#ifdef PROFILE
+    MPE_Log_event(9, 0, "start close");
+#endif
+
+    err = close(fd->fd_sys);
+
+#ifdef PROFILE
+    MPE_Log_event(10, 0, "end close");
+#endif
+
+    fd->fd_sys = -1;
+
+    if (err == -1) {
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					   myname, __LINE__, MPI_ERR_IO,
+					   "**io",
+					   "**io %s", strerror(errno));
+    }
+    else *error_code = MPI_SUCCESS;
 }

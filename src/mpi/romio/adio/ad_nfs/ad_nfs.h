@@ -33,7 +33,6 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 #endif
 
 void ADIOI_NFS_Open(ADIO_File fd, int *error_code);
-void ADIOI_NFS_Close(ADIO_File fd, int *error_code);
 void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int count, 
                       MPI_Datatype datatype, int file_ptr_type,
                      ADIO_Offset offset, ADIO_Status *status, int

@@ -8,7 +8,7 @@ CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 
-AD_SFS_OBJECTS = ad_sfs_close.o ad_sfs_read.o \
+AD_SFS_OBJECTS = ad_sfs_read.o \
       ad_sfs_open.o ad_sfs_write.o ad_sfs_done.o \
       ad_sfs_fcntl.o ad_sfs_iread.o ad_sfs_iwrite.o ad_sfs_wait.o \
       ad_sfs_flush.o \

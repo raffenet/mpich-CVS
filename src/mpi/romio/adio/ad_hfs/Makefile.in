@@ -8,7 +8,7 @@ CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
 
 @VPATH@
 
-AD_HFS_OBJECTS = ad_hfs_close.o ad_hfs_read.o  \
+AD_HFS_OBJECTS = ad_hfs_read.o  \
       ad_hfs_wrcoll.o ad_hfs_open.o ad_hfs_write.o ad_hfs_done.o \
       ad_hfs_fcntl.o ad_hfs_iread.o ad_hfs_iwrite.o ad_hfs_wait.o \
       ad_hfs_resize.o ad_hfs_seek.o \

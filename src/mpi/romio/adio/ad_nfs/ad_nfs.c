@@ -22,7 +22,7 @@ struct ADIOI_Fns_struct ADIO_NFS_operations = {
     ADIOI_GEN_SetInfo, /* SetInfo */
     ADIOI_NFS_ReadStrided, /* ReadStrided */
     ADIOI_NFS_WriteStrided, /* WriteStrided */
-    ADIOI_NFS_Close, /* Close */
+    ADIOI_GEN_Close, /* Close */
     ADIOI_NFS_IreadContig, /* IreadContig */
     ADIOI_NFS_IwriteContig, /* IwriteContig */
     ADIOI_NFS_ReadDone, /* ReadDone */

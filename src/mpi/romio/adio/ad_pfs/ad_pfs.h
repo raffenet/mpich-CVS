@@ -31,7 +31,6 @@
 #endif
 
 void ADIOI_PFS_Open(ADIO_File fd, int *error_code);
-void ADIOI_PFS_Close(ADIO_File fd, int *error_code);
 void ADIOI_PFS_ReadContig(ADIO_File fd, void *buf, int count, 
                       MPI_Datatype datatype, int file_ptr_type,
                      ADIO_Offset offset, ADIO_Status *status, int
