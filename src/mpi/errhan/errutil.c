@@ -123,7 +123,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	else
 	{
 	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
-			      "Please file a bug report.  No error stack is available.\n", class);
+			      "Please file a bug report.  No error stack is available.\n", error_class);
 	}
 	
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
@@ -209,7 +209,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 	else
 	{
 	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
-			      "Please file a bug report.  No error stack is available.\n", class);
+			      "Please file a bug report.  No error stack is available.\n", error_class);
 	}
 	
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
