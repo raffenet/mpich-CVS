@@ -106,8 +106,8 @@ static BOOL g_bGetMemSyncCalled = FALSE;
 -  int nNproc
 
    Notes:
-    Set the global variables MPIDI_CH3I_Process.addr, MPIDI_CH3I_Process.size, MPIDI_CH3I_Process.id
-    Ensure that MPIDI_CH3I_Process.addr is the same across all processes that share memory.
+    Set the global variables pg->addr, pg->size, pg->id
+    Ensure that pg->addr is the same across all processes that share memory.
 @*/
 void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc)
 {
@@ -161,8 +161,8 @@ void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize
     {
         /* Create the shared memory object */
 #ifdef HAVE_SHMGET
-        MPIDI_CH3I_Process.id = shmget(MPIDI_CH3I_Process.key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
-        if (MPIDI_CH3I_Process.id == -1) 
+        pg->id = shmget(pg->key, nTotalSize, IPC_CREAT | SHM_R | SHM_W);
+        if (pg->id == -1) 
         {
             printf("Error in shmget\n");
             MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_SYNC);

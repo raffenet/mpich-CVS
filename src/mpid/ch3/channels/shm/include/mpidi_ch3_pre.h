@@ -7,6 +7,8 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
+#include "mpidi_ch3i_shm_conf.h"
+
 /*#define MPICH_DBG_OUTPUT*/
 
 #define SHM_SUCCESS    0
