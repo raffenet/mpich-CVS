@@ -598,7 +598,7 @@ int smpd_state_reading_connect_result(smpd_context_t *context, MPIDU_Sock_event_
 
 	/* connection failed, abort? */
 	/* when does a forming context get assinged it's global place?  At creation?  At connection? */
-	if (smpd_process.left_context == smpd_process.left_context)
+	if (smpd_process.left_context == context)
 	    smpd_process.left_context = NULL;
 	if (smpd_process.do_console && smpd_process.console_host[0] != '\0')
 	    result = smpd_post_abort_command("1 unable to connect to %s", smpd_process.console_host);
@@ -3008,9 +3008,14 @@ int smpd_state_reading_impersonate_result(smpd_context_t *context, MPIDU_Sock_ev
     if (strcmp(context->sspi_header, SMPD_SUCCESS_STR))
     {
 	/* impersonation failed */
+	/* close the context */
 	smpd_dbg_printf("impersonation failed.\n");
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
+	if (smpd_process.left_context == context)
+	    smpd_process.left_context = NULL;
+	/* abort the job */
+	smpd_post_abort_command("Impersonation failed");
 	smpd_exit_fn(FCNAME);
 	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
     }
