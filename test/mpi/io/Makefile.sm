@@ -1,7 +1,7 @@
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
 	 -I${srcdir}/../include
 LDADD = -L../../../lib ../util/mtest.o 
-DEPADD = ../../../lib/lib${MPILIBNAME}.a
+DEPADD = ../../../lib/lib${MPILIBNAME}.a ../util/mtest.o
 smvar_do_sharedlibs = 0
 
 EXTRA_PROGRAMS = 
@@ -9,3 +9,7 @@ rdwrord_SOURCES = rdwrord.c
 rdwrzero_SOURCES = rdwrzero.c
 getextent_SOURCES = getextent.c
 setinfo_SOURCES = setinfo.c
+setviewcur_SOURCES = setviewcur.c
+
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o)

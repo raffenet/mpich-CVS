@@ -89,6 +89,8 @@ int main( int argc, char *argv[] )
 
     free( buf );
 
+    MPI_File_close( &fh );
+
     MTest_Finalize( errs );
     MPI_Finalize();
     return 0;
