@@ -18,7 +18,7 @@ import viewer.common.Const;
 
 public class ScrollbarTime extends JScrollBar
 {
-    private ModelTime  model;
+    private ModelTime   model;
     private Dimension   min_size;
 
     public ScrollbarTime( ModelTime model )
