@@ -2,25 +2,70 @@
 <job id="winconfigure">
 <script language="VBScript">
 
+bWin64 = False
+bUseCycleCounter = True
+
+' Process arguments
+argCount = WScript.Arguments.Count
+For arg = 0 To argCount - 1
+  argValue = WScript.Arguments(arg)
+  If argValue = "--win64" Then
+    bWin64 = True
+  ElseIf argValue = "--win32" Then
+    bWin64 = False
+  ElseIf argValue = "--enable-timer-type=x86cycle" Then
+    bUseCycleCounter = True
+  ElseIf argValue = "--enable-timer-type=queryperformancecounter" Then
+    bUseCycleCounter = False
+  ElseIf argValue = "--enable-hptiming" Then
+    bUseCycleCounter = True
+  ElseIf argValue = "--enable-hptiming=yes" Then
+    bUseCycleCounter = True
+  ElseIf argValue = "--enable-hptiming=no" Then
+    bUseCycleCounter = False
+  End If
+Next
+
+'
+' Generate mpi.h
+'
+
 mpi_datatype_prefix = "4c00"
 
 '
 ' C datatype sizes
 '
-len_short           = "02"
-len_int             = "04"
-len_long            = "04"
-len_long_long       = "08"
-len_float           = "04"
-len_double          = "08"
-len_long_double     = "08"
-len_wchar_t         = "02"
-len_float_int       = "08"
-len_double_int      = "10"
-len_long_int        = "08"
-len_short_int       = "08"
-len_2_int           = "08"
-len_long_double_int = "10"
+If bWin64 Then
+  len_short           = "02"
+  len_int             = "04"
+  len_long            = "04"
+  len_long_long       = "08"
+  len_float           = "04"
+  len_double          = "08"
+  len_long_double     = "08"
+  len_wchar_t         = "02"
+  len_float_int       = "08"
+  len_double_int      = "10"
+  len_long_int        = "08"
+  len_short_int       = "08"
+  len_2_int           = "08"
+  len_long_double_int = "10"
+Else
+  len_short           = "02"
+  len_int             = "04"
+  len_long            = "04"
+  len_long_long       = "08"
+  len_float           = "04"
+  len_double          = "08"
+  len_long_double     = "08"
+  len_wchar_t         = "02"
+  len_float_int       = "08"
+  len_double_int      = "10"
+  len_long_int        = "08"
+  len_short_int       = "08"
+  len_2_int           = "08"
+  len_long_double_int = "10"
+End If
 
 MPI_CHAR           = "0x" + mpi_datatype_prefix                 + "0101"
 MPI_UNSIGNED_CHAR  = "0x" + mpi_datatype_prefix                 + "0102"
@@ -55,10 +100,17 @@ MPI_LONG_DOUBLE_INT = "0x" + mpi_datatype_prefix + len_long_double_int + "1c"
 '
 ' Fortran datatype sizes
 '
-len_integer    = "08"
-len_double     = "08"
-len_doublecplx = "10"
-len_2dc        = "20"
+If bWin64 Then
+  len_integer    = "08"
+  len_double     = "08"
+  len_doublecplx = "10"
+  len_2dc        = "20"
+Else
+  len_integer    = "08"
+  len_double     = "08"
+  len_doublecplx = "10"
+  len_2dc        = "20"
+End If
 
 MPI_CHARACTER         = "0x" + mpi_datatype_prefix                + "0120"
 MPI_INTEGER           = "0x" + mpi_datatype_prefix + len_integer    + "21"
@@ -78,7 +130,11 @@ MPI_2DOUBLE_COMPLEX   = "0x" + mpi_datatype_prefix + len_2dc        + "2b"
 '
 MPI_MAX_PROCESSOR_NAME = "128"
 BSEND_OVERHEAD         = "52"
-MPI_AINT               = "int"
+If bWin64 Then
+  MPI_AINT               = "__int64"
+Else
+  MPI_AINT               = "int"
+End If
 MPI_FINT               = "int"
 MPI_OFFSET             = "__int64"
 EXTRA_STATUS_DECL      = ""
@@ -133,6 +189,26 @@ contents = Replace(contents, "@MPI_FINT@", MPI_FINT)
 contents = Replace(contents, "@MPI_OFFSET@", MPI_OFFSET)
 contents = Replace(contents, "@EXTRA_STATUS_DECL@", EXTRA_STATUS_DECL)
 contents = Replace(contents, "@HAVE_ROMIO@", HAVE_ROMIO)
+
+fout.Write(contents)
+fin.Close()
+fout.Close()
+
+'
+' Generate mpichtimer.h
+'
+
+set fout = f.CreateTextFile("src\include\mpichtimer.h")
+set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
+
+contents = fin.ReadAll()
+If bUseCycleCounter Then
+  contents = Replace(contents, "@MPICH_TIMER_KIND@", "USE_WIN86_CYCLE")
+  contents = Replace(contents, "@MPID_TIMER_TYPE@", "unsigned __int64")
+Else
+  contents = Replace(contents, "@MPICH_TIMER_KIND@", "USE_QUERYPERFORMANCECOUNTER")
+  contents = Replace(contents, "@MPID_TIMER_TYPE@", "LARGE_INTEGER")
+End If
 
 fout.Write(contents)
 fin.Close()
