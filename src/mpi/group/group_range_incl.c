@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "group.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Group_range_incl */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -47,7 +48,8 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
 {
     static const char FCNAME[] = "MPI_Group_range_incl";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Group *group_ptr = NULL;
+    MPID_Group *group_ptr = NULL, *new_group_ptr;
+    int first, last, stride, nnew, i, j, k;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_RANGE_INCL);
@@ -61,6 +63,10 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not value, it will be reset to null */
+	    if (group_ptr) {
+		mpi_errno = MPIR_Group_check_valid_ranges( group_ptr, 
+							   ranges, n );
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -71,6 +77,50 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *new
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    /* Compute size, assuming that included ranks are valid (and distinct) */
+    nnew = 0;
+    for (i=0; i<n; i++) {
+	first = ranges[i][0]; last = ranges[i][1]; stride = ranges[i][2];
+	/* works for stride of either sign.  Error checking above 
+	   has already guaranteed stride != 0 */
+	nnew += 1 + (last - first) / stride;
+    }
+
+    /* Allocate a new group and lrank_to_lpid array */
+    mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
+    if (mpi_errno) {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
+	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    }
+    new_group_ptr->rank = MPI_UNDEFINED;
+
+    /* Group members taken in order specified by the range array */
+    /* This could be integrated with the error checking, but since this
+       is a low-usage routine, we haven't taken that optimization */
+    k = 0;
+    for (i=0; i<n; i++) {
+	first = ranges[i][0]; last = ranges[i][1]; stride = ranges[i][2];
+	if (stride > 0) {
+	    for (j=first; j<=last; j += stride) {
+		new_group_ptr->lrank_to_lpid[k].lrank = k;
+		new_group_ptr->lrank_to_lpid[k].lpid = 
+		    group_ptr->lrank_to_lpid[j].lpid;
+		if (j == group_ptr->rank) 
+		    new_group_ptr->rank = k;
+		k++;
+	    }
+	}
+	else {
+	    for (j=first; j>=last; j += stride) {
+		new_group_ptr->lrank_to_lpid[k].lrank = k;
+		new_group_ptr->lrank_to_lpid[k].lpid = 
+		    group_ptr->lrank_to_lpid[j].lpid;
+		if (j == group_ptr->rank) 
+		    new_group_ptr->rank = k;
+		k++;
+	    }
+	}
+    }
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
     return MPI_SUCCESS;

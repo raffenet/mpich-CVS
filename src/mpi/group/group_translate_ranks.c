@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "group.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Group_translate_ranks */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -30,12 +31,15 @@
 /*@
    MPI_Group_translate_ranks - group_translate_ranks
 
-   Arguments:
-+  MPI_Group group1 - group1
-.  int n - n
-.  int *ranks1 - ranks1
-.  MPI_Group group2 - group2
--  int *ranks2 - ranks2
+  Input Parameters:
++ group1 - group1 (handle) 
+. n - number of ranks in  'ranks1' and 'ranks2'  arrays (integer) 
+. ranks1 - array of zero or more valid ranks in 'group1' 
+- group2 - group2 (handle) 
+
+  Output Parameter:
+. ranks2 - array of corresponding ranks in group2,  'MPI_UNDEFINED'  when no 
+correspondence exists. 
 
    Notes:
 
@@ -50,6 +54,7 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr1 = NULL;
     MPID_Group *group_ptr2 = NULL;
+    int size1, i, g2_idx, l1_pid, l2_pid;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
@@ -64,7 +69,21 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
             MPID_Group_valid_ptr( group_ptr2, mpi_errno );
-	    /* If group_ptr is not value, it will be reset to null */
+	    /* If group_ptr is not valid, it will be reset to null */
+
+	    if (group_ptr1) {
+		/* Check that the rank entries are valid */
+		size1 = group_ptr1->size;
+		for (i=0; i<n; i++) {
+		    if (ranks1[i] < 0 || 
+			ranks1[i] >= size1) {
+			mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
+						  "**rank", "**rank %d %d", 
+						  ranks1[i], size1 );
+			break;
+		    }
+		}
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -75,7 +94,41 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    /* Initialize the output ranks */
+    for (i=0; i<n; i++) {
+	ranks2[i] = MPI_UNDEFINED;
+    }
+
+    /* We may want to optimize for the special case of group2 is 
+       a dup of MPI_COMM_WORLD, or more generally, has rank == lpid 
+       for everything within the size of group2.  NOT DONE YET */
+    g2_idx = group_ptr2->idx_of_first_lpid;
+    if (g2_idx < 0) {
+	MPIR_Group_setup_lpid_list( group_ptr2 );
+	g2_idx = group_ptr2->idx_of_first_lpid;
+    }
+    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+    for (i=0; i<n; i++) {
+	l1_pid = group_ptr1->lrank_to_lpid[ranks1[i]].lpid;
+	/* Search for this l1_pid in group2.  Use the following
+	   optimization: start from the last position in the lpid list
+	   if possible.  A more sophisticated version could use a 
+	   tree based or even hashed search to speed the translation. */
+	if (l1_pid < l2_pid) {
+	    /* Start over from the beginning */
+	    g2_idx = group_ptr2->idx_of_first_lpid;
+	    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+	}
+	while (g2_idx >= 0 && l1_pid > l2_pid) {
+	    g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
+	    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+	}
+	if (l1_pid == l2_pid) {
+	    ranks2[i] = group_ptr2->lrank_to_lpid[g2_idx].lrank;
+	}
+    }
     /* ... end of body of routine ... */
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
     return MPI_SUCCESS;
 }

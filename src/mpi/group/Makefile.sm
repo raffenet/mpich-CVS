@@ -7,5 +7,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 #
 # This is a test for the document generation
-doc_HTML_SOURCES = ${MPI_SOURCES}
+doc_HTML_SOURCES = ${mpi_sources}
 
+# translate

@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "group.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Group_union */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -48,6 +49,8 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr1 = NULL;
     MPID_Group *group_ptr2 = NULL;
+    MPID_Group *new_group_ptr;
+    int g1_idx, g2_idx, nnew, i, k, size1, size2;
     MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_UNION);
@@ -73,6 +76,85 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    /* Determine the size of the new group.  The new group consists of all
+       members of group1 plus the members of group2 that are not in group1.
+    */
+    g1_idx = group_ptr1->idx_of_first_lpid;
+    g2_idx = group_ptr2->idx_of_first_lpid;
+    /* If the lpid list hasn't been created, do it now */
+    if (g1_idx < 0) { 
+	MPIR_Group_setup_lpid_list( group_ptr1 ); 
+	g1_idx = group_ptr1->idx_of_first_lpid;
+    }
+    if (g2_idx < 0) { 
+	MPIR_Group_setup_lpid_list( group_ptr2 ); 
+	g2_idx = group_ptr2->idx_of_first_lpid;
+    }
+    nnew = group_ptr1->size;
+
+    /* Must lock against other threads because we need the flag elements */
+    MPID_Common_thread_lock();
+    {
+	size2 = group_ptr2->size;
+	for (i=0; i<size2; i++) {
+	    group_ptr2->lrank_to_lpid[i].flag = 0;
+	}
+	while (g1_idx >= 0 && g2_idx >= 0) {
+	    int l1_pid, l2_pid;
+	    l1_pid = group_ptr1->lrank_to_lpid[g1_idx].lpid;
+	    l2_pid = group_ptr1->lrank_to_lpid[g2_idx].lpid;
+	    if (l1_pid > l2_pid) {
+		nnew++;
+		group_ptr2->lrank_to_lpid[g2_idx].flag = 1;
+		g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
+	    }
+	    else if (l1_pid == l2_pid) {
+		g1_idx = group_ptr1->lrank_to_lpid[g1_idx].next_lpid;
+		g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
+	    }
+	    else {
+		/* l1 < l2 */
+		g1_idx = group_ptr1->lrank_to_lpid[g1_idx].next_lpid;
+	    }
+	}
+	/* If we hit the end of group1, add the remaining members of group 2 */
+	while (g2_idx >= 0) {
+	    nnew++;
+	    group_ptr2->lrank_to_lpid[g2_idx].flag = 1;
+	    g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
+	}
+	
+	/* Allocate a new group and lrank_to_lpid array */
+	mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
+	if (mpi_errno) {
+	    MPID_Common_thread_unlock();
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
+	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	}
+	new_group_ptr->rank = group_ptr1->rank;
+    
+	/* Add group1 */
+	size1 = group_ptr1->size;
+	for (i=0; i<size1; i++) {
+	    new_group_ptr->lrank_to_lpid[i].lrank = i;
+	    new_group_ptr->lrank_to_lpid[i].lpid  = 
+		group_ptr1->lrank_to_lpid[i].lpid;
+	}
+
+	/* Add members of group2 that are not in group 1 */
+	k = size1;
+	for (i=0; i<size2; i++) {
+	    if (group_ptr2->lrank_to_lpid[i].flag) {
+		new_group_ptr->lrank_to_lpid[k].lrank = k;
+		new_group_ptr->lrank_to_lpid[k].lpid = 
+		    group_ptr2->lrank_to_lpid[i].lpid;
+		k++;
+	    }
+	}
+	MPID_Common_thread_unlock();
+    }
+    *newgroup = new_group_ptr->handle;
+
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
     return MPI_SUCCESS;

@@ -5,6 +5,7 @@
  */
 
 #include "mpiimpl.h"
+#include "group.h"
 
 #ifndef MPID_GROUP_PREALLOC 
 #define MPID_GROUP_PREALLOC 8
@@ -17,10 +18,32 @@ MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP,
 				      sizeof(MPID_Group), MPID_Group_direct,
 				       MPID_GROUP_PREALLOC};
 
+/* 
+ * Allocate a new group and the group lrank to lpid array
+ */
+int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    *new_group_ptr = (MPID_Group *)MPIU_Handle_obj_alloc( &MPID_Group_mem );
+    if (!*new_group_ptr) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	return mpi_errno;
+    }
+    (*new_group_ptr)->lrank_to_lpid = 
+	(MPID_Group_pmap_t *)MPIU_Malloc( nproc * sizeof(MPID_Group_pmap_t) );
+    if (!(*new_group_ptr)->lrank_to_lpid) {
+	MPIU_Handle_obj_free( &MPID_Group_mem, *new_group_ptr );
+	*new_group_ptr = NULL;
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	return mpi_errno;
+    }
+    return mpi_errno;
+}
 /*
  * return value is the first index in the list
  */
-int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
+static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 {
     int idx1, idx2, first_idx, cur_idx;
 
@@ -55,14 +78,146 @@ int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 }
 
 /* 
- * Create a list of the lpids, in lpid order
+ * Create a list of the lpids, in lpid order.
  */
 void MPIR_Group_setup_lpid_list( MPID_Group *group_ptr )
 {
-    int idx;
-    
-    group_ptr->idx_of_first_lpid = 
-	MPIR_Mergesort_lpidarray( group_ptr->lrank_to_lpid, group_ptr->size );
-
+    /* Lock around the data structure updates in case another thread
+       decides to update the same group.  Note that this is needed only
+       for MPI_THREAD_MULTIPLE */
+    MPID_Common_thread_lock();
+    {
+	if (group_ptr->idx_of_first_lpid == -1) {
+	    group_ptr->idx_of_first_lpid = 
+		MPIR_Mergesort_lpidarray( group_ptr->lrank_to_lpid, 
+					  group_ptr->size );
+	}
+    }
+    MPID_Common_thread_unlock();
     return;
 }
+
+void MPIR_Group_setup_lpid_pairs( MPID_Group *group_ptr1, 
+				  MPID_Group *group_ptr2 )
+{
+    /* If the lpid list hasn't been created, do it now */
+    if (group_ptr1->idx_of_first_lpid < 0) { 
+	MPIR_Group_setup_lpid_list( group_ptr1 ); 
+    }
+    if (group_ptr2->idx_of_first_lpid < 0) { 
+	MPIR_Group_setup_lpid_list( group_ptr2 ); 
+    }
+}
+
+#ifdef HAVE_ERROR_CHECKING
+/*
+ * This routine is for error checking for a valid ranks array, used
+ * by Group_incl and Group_excl
+ */
+int MPIR_Group_check_valid_ranks( MPID_Group *group_ptr, int ranks[], int n )
+{
+    int mpi_errno = MPI_SUCCESS, i;
+
+    /* Thread lock in case any other thread wants to use the group
+       data structure.  Needed only for MPI_THREAD_MULTIPLE */
+    MPID_Common_thread_lock();
+    {
+	for (i=0; i<group_ptr->size; i++) {
+	    group_ptr->lrank_to_lpid[i].flag = 0;
+	}
+	for (i=0; i<n; i++) {
+	    if (ranks[i] < 0 ||
+		ranks[i] >= group_ptr->size) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
+				  "**rankarray", "**rankarray %d %d %d",
+				  i, ranks[i], group_ptr->size );
+	    }
+	    if (group_ptr->lrank_to_lpid[ranks[i]].flag) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
+				"**rankdup", "**rankdup %d %d %d",
+				  i, ranks[i], 
+				  group_ptr->lrank_to_lpid[ranks[i]].flag-1);
+	    }
+	    group_ptr->lrank_to_lpid[ranks[i]].flag = i+1;
+	}
+    }
+    MPID_Common_thread_unlock();
+
+    return mpi_errno;
+}
+
+int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr, 
+				   int ranges[][3], int n )
+{
+    int i, j, size, first, last, stride, mpi_errno = MPI_SUCCESS;
+
+    /* Lock in case another thread is accessing the group 
+       data structures */
+    MPID_Common_thread_lock();
+    size = group_ptr->size;
+    
+    /* First, clear the flag */
+    for (i=0; i<size; i++) {
+	group_ptr->lrank_to_lpid[i].flag = 0;
+    }
+    for (i=0; i<n; i++) {
+	first = ranges[i][0]; last = ranges[i][1]; 
+	stride = ranges[i][2];
+	if (first < 0 || first >= size) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+					      "**stride", 
+					      "**strideinvalid %d %d %d", 
+					      i, first, size );
+	    break;
+	}
+	if (last < 0 || last >= size) {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+					      "**stride", 
+					      "**strideinvalid %d %d %d", 
+					      i, last, size );
+	    break;
+	}
+	if (stride != 0) {
+	    if ( (stride > 0 && first > last) ||
+		 (stride < 0 && first < last) ) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+						  "**stride", "**stride %d %d %d", 
+						  first, last, stride );
+		break;
+	    }
+	}
+	else {
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+					      "**stridezero", 0 );
+	    break;
+	}
+	/* range is valid.  Mark flags */
+	if (stride > 0) {
+	    for (j=first; j<=last; j+=stride) {
+		if (group_ptr->lrank_to_lpid[j].flag) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+						      "**stridedup", 0 );
+		    break;
+		}
+		else
+		    group_ptr->lrank_to_lpid[i].flag = 1;
+	    }
+	}
+	else {
+	    for (j=first; j>=last; j+=stride) {
+		if (group_ptr->lrank_to_lpid[j].flag) {
+		    mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+						      "**stridedup", 0 );
+		    break;
+		}
+		else
+		    group_ptr->lrank_to_lpid[i].flag = 1;
+	    }
+	}
+	if (mpi_errno) break;
+    }
+    MPID_Common_thread_unlock();
+
+    return mpi_errno;
+}
+#endif

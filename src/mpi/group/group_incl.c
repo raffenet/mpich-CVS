@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "group.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Group_incl */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -64,30 +65,8 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 	    /* If group_ptr is not value, it will be reset to null */
 
 	    if (group_ptr) {
-		/* Thread lock in case any other thread wants to use the group
-		   data structure.  */
-		MPID_Common_thread_lock();
-		{
-		    for (i=0; i<group_ptr->size; i++) {
-			group_ptr->lrank_to_lpid[i].flag = 0;
-		    }
-		    for (i=0; i<n; i++) {
-			if (ranks[i] < 0 ||
-			    ranks[i] >= group_ptr->size) {
-			    mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
-					"**rankarray", "**rankarray %d %d %d",
-					      i, ranks[i], group_ptr->size );
-			}
-			if (group_ptr->lrank_to_lpid[ranks[i]].flag) {
-			mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
-				"**rankdup", "**rankdup %d %d %d",
-				  i, ranks[i], 
-				  group_ptr->lrank_to_lpid[ranks[i]].flag-1);
-			}
-			group_ptr->lrank_to_lpid[ranks[i]].flag = i+1;
-		    }
-		}
-		MPID_Common_thread_unlock();
+		mpi_errno = MPIR_Group_check_valid_ranks( group_ptr, 
+							  ranks, n );
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INCL);
@@ -100,15 +79,8 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 
     /* ... body of routine ...  */
     /* Allocate a new group and lrank_to_lpid array */
-    new_group_ptr = (MPID_Group *)MPIU_Handle_obj_alloc( &MPID_Group_mem );
-    if (!new_group_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INCL);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    }
-    new_group_ptr->lrank_to_lpid = (MPID_Group_pmap_t *)MPIU_Malloc( n * sizeof(MPID_Group_pmap_t) );
-    if (!new_group_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+    mpi_errno = MPIR_Group_create( n, &new_group_ptr );
+    if (mpi_errno) {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INCL);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

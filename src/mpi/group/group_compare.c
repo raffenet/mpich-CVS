@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "group.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Group_compare */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -86,11 +87,19 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     g1_idx = group_ptr1->idx_of_first_lpid;
     g2_idx = group_ptr2->idx_of_first_lpid;
     /* If the lpid list hasn't been created, do it now */
-    if (g1_idx < 0) { MPIR_Group_setup_lpid_list( group_ptr1 ); }
-    if (g2_idx < 0) { MPIR_Group_setup_lpid_list( group_ptr2 ); }
+    if (g1_idx < 0) { 
+	MPIR_Group_setup_lpid_list( group_ptr1 ); 
+	g1_idx = group_ptr1->idx_of_first_lpid;
+    }
+    if (g2_idx < 0) { 
+	MPIR_Group_setup_lpid_list( group_ptr2 ); 
+	g2_idx = group_ptr2->idx_of_first_lpid;
+    }
     while (g1_idx >= 0 && g2_idx >= 0) {
 	if (group_ptr1->lrank_to_lpid[g1_idx].lpid !=
 	    group_ptr2->lrank_to_lpid[g2_idx].lpid) {
+	    g1_idx = group_ptr1->lrank_to_lpid[g1_idx].next_lpid;
+	    g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
 	    *result = MPI_UNEQUAL;
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
 	    return MPI_SUCCESS;
