@@ -314,7 +314,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
 #ifdef MPICH_DBG_OUTPUT
 		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
-		    if (shm_ptr->packet[index] != pkt_ptr)
+		    if (&shm_ptr->packet[index] != pkt_ptr)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
@@ -388,7 +388,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
 #ifdef MPICH_DBG_OUTPUT
 		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
-		    if (shm_ptr->packet[index] != pkt_ptr)
+		    if (&shm_ptr->packet[index] != pkt_ptr)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
@@ -444,7 +444,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
 #ifdef MPICH_DBG_OUTPUT
 		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
-		    if (shm_ptr->packet[index] != pkt_ptr)
+		    if (&shm_ptr->packet[index] != pkt_ptr)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);

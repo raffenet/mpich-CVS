@@ -51,7 +51,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	num_bytes = pkt_ptr->num_bytes;
 #ifdef MPICH_DBG_OUTPUT
 	/*assert(num_bytes > 0);*/
-	if (num_bytex < 1)
+	if (num_bytes < 1)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmq", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
