@@ -7,8 +7,6 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
-#define err_printf printf
-
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
 static inline void handle_read(MPIDI_VC *vc, int nb);
@@ -27,8 +25,8 @@ void MPIDI_CH3_Progress_start()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress(int is_blocking)
 {
+    int mpi_errno = MPI_SUCCESS;
     ibu_wait_t out;
-    int rc;
     unsigned register count;
     unsigned completions = MPIDI_CH3I_progress_completions;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
@@ -38,10 +36,13 @@ int MPIDI_CH3I_Progress(int is_blocking)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-	rc = ibu_wait(MPIDI_CH3I_Process.set, 0, &out);
-	if (rc == IBU_FAIL)
-	    err_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
-	assert(rc != IBU_FAIL);
+	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, &out);
+	if (mpi_errno != IBU_SUCCESS)
+	{
+	    MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_wait", "**ibu_wait %d", mpi_errno);
+	    return mpi_errno;
+	}
 	switch (out.op_type)
 	{
 	case IBU_OP_TIMEOUT:
@@ -66,7 +67,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
     count = MPIDI_CH3I_progress_completions - completions;
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
-    return count;
+    return mpi_errno;
 }
 
 #undef FUNCNAME

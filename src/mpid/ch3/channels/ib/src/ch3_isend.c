@@ -72,13 +72,6 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 	    vc->ib.send_active = sreq;
 	}
-	else if (nb == 0)
-	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
-	    update_request(sreq, pkt, pkt_sz, 0);
-	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    vc->ib.send_active = sreq;
-	}
 	else
 	{
 	    /* Connection just failed. Mark the request complete and return an error. */

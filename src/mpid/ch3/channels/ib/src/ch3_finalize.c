@@ -14,16 +14,14 @@
 int MPIDI_CH3_Finalize()
 {
     int mpi_errno = MPI_SUCCESS;
-    int rc;
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 
     /* Shutdown the progress engine */
-    rc = MPIDI_CH3I_Progress_finalize();
-    assert (rc == MPI_SUCCESS);
-    if (rc != MPI_SUCCESS && mpi_errno == MPI_SUCCESS)
+    mpi_errno = MPIDI_CH3I_Progress_finalize();
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = rc;
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_progress", 0);
     }
 
     /* Free resources allocated in CH3_Init() */
@@ -34,11 +32,10 @@ int MPIDI_CH3_Finalize()
     MPIU_Free(MPIDI_CH3I_Process.pg);
     
     /* Let PMI know the process is about to exit */
-    rc = PMI_Finalize();
-    assert(rc == 0);
-    if (rc)
+    mpi_errno = PMI_Finalize();
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 	    MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", rc );
     }
 
