@@ -233,7 +233,7 @@ case "$enable_timing" in
     time)
     collect_stats=true
     ;;
-    log)
+    log|log_detailed)
     logging_required=true
     ;;
     yes)
