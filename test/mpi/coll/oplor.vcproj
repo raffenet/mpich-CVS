@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="oplor"
-	ProjectGUID="{73107d39-0b79-47ea-b528-a26b63c1f366}"
+	ProjectGUID="{73107D39-0B79-47EA-B528-A26B63C1F366}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -119,10 +119,10 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{f6bd7b8b-2ac5-44aa-8877-6e5253d33ba3}">
 			<File
-				RelativePath=".\oplor.c">
+				RelativePath="..\util\mtest.c">
 			</File>
 			<File
-				RelativePath="..\util\mtest.c">
+				RelativePath=".\oplor.c">
 			</File>
 		</Filter>
 		<Filter

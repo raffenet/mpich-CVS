@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="oplxor"
-	ProjectGUID="{057bb4d7-ae8e-4335-90bf-715a8a6f8373}"
+	ProjectGUID="{057BB4D7-AE8E-4335-90BF-715A8A6F8373}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -119,10 +119,10 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{99353661-e105-412a-8829-d88757571820}">
 			<File
-				RelativePath=".\oplxor.c">
+				RelativePath="..\util\mtest.c">
 			</File>
 			<File
-				RelativePath="..\util\mtest.c">
+				RelativePath=".\oplxor.c">
 			</File>
 		</Filter>
 		<Filter

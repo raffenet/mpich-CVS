@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="opland"
-	ProjectGUID="{dede55d5-f182-4241-81ba-4f9a183107be}"
+	ProjectGUID="{DEDE55D5-F182-4241-81BA-4F9A183107BE}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -119,10 +119,10 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{d5ec1eee-8403-4eb6-a84b-f01f8d8ed5c8}">
 			<File
-				RelativePath=".\opland.c">
+				RelativePath="..\util\mtest.c">
 			</File>
 			<File
-				RelativePath="..\util\mtest.c">
+				RelativePath=".\opland.c">
 			</File>
 		</Filter>
 		<Filter
