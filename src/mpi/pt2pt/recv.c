@@ -169,10 +169,12 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 		return MPI_SUCCESS;
 	    }
 	}
+    /* --BEGIN ERROR HANDLING-- */
     }
 
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

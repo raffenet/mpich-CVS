@@ -126,6 +126,7 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     mpi_errno = MPID_Isend(buf, count, datatype, dest, tag, comm_ptr,
 			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	/* return the handle of the request to the user */
@@ -140,4 +141,5 @@ int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	"**mpi_isend", "**mpi_isend %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
