@@ -174,6 +174,7 @@ int MTestGetDatatypes( MTest_Datatype *sendtype, MTest_Datatype *recvtype )
     case 5:
 	/* vector send type and contiguous receive type */
 	sendtype->stride = 3;
+	recvtype->count  = 10;
 	MPI_Type_vector( recvtype->count, 1, sendtype->stride, MPI_INT, 
 			 &sendtype->datatype );
 	MPI_Type_set_name( sendtype->datatype, "int-vector" );
