@@ -14,9 +14,7 @@ void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int count,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
     int err=-1, datatype_size, len;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_READCONTIG";
-#endif
 
     MPI_Type_size(datatype, &datatype_size);
     len = datatype_size * count;

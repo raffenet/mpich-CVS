@@ -112,9 +112,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     /* TODO: increase this to the maximum value */
 #define MAX_ARRAY_SIZE 64
 
-#ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_WRITESTRIDED";
-#endif
 
 /* PFS file pointer modes are not relevant here, because PFS does
    not support strided accesses. */

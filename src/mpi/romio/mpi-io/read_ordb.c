@@ -42,11 +42,9 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
 {
     int error_code, datatype_size, nprocs, myrank, incr;
     int source, dest;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
-    static char myname[] = "MPI_FILE_READ_ORDERED_BEGIN";
-#endif
     ADIO_Offset shared_fp;
     ADIO_File fh;
+    static char myname[] = "MPI_FILE_READ_ORDERED_BEGIN";
 
     fh = MPIO_File_resolve(mpi_fh);
 

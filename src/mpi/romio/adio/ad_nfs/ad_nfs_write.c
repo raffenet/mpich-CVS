@@ -148,9 +148,7 @@ void ADIOI_NFS_WriteStrided(ADIO_File fd, void *buf, int count,
     char *writebuf, *value;
     int flag, st_fwr_size, st_n_filetypes, writebuf_len, write_sz;
     int new_bwr_size, new_fwr_size, err_flag=0, info_flag, max_bufsize;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "ADIOI_NFS_WRITESTRIDED";
-#endif
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);

@@ -70,12 +70,10 @@ int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count,
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
     ADIO_File fh;
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
-    static char myname[] = "MPI_FILE_IWRITE_SHARED";
-#endif
     int datatype_size, incr;
     ADIO_Status status;
     ADIO_Offset off, shared_fp;
+    static char myname[] = "MPI_FILE_IWRITE_SHARED";
 
     fh = MPIO_File_resolve(mpi_fh);
 
