@@ -130,8 +130,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     }
     else
     {
-	int sock_errno;
-	sock_size_t nb;
+	MPIDU_Sock_size_t nb;
 #ifdef MPICH_DBG_OUTPUT
 	/*assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_CONNECTED);*/
 	if (vc->ssm.state != MPIDI_CH3I_VC_STATE_CONNECTED)
@@ -145,13 +144,13 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	MPIDI_CH3I_sock_read_active++;
 	/*MPIDI_CH3I_active_flag |= MPID_CH3I_SOCK_BIT;*/
 
-	sock_errno = sock_readv(vc->ssm.sock, rreq->ch3.iov, rreq->ch3.iov_count, &nb);
-	if (sock_errno == SOCK_SUCCESS)
+	mpi_errno = MPIDU_Sock_readv(vc->ssm.sock, rreq->ch3.iov, rreq->ch3.iov_count, &nb);
+	if (mpi_errno == MPI_SUCCESS)
 	{
 	    rreq->ssm.iov_offset = 0;
 	    while (rreq->ssm.iov_offset < rreq->ch3.iov_count)
 	    {
-		if ((sock_size_t)rreq->ch3.iov[rreq->ssm.iov_offset].MPID_IOV_LEN <= nb)
+		if ((MPIDU_Sock_size_t)rreq->ch3.iov[rreq->ssm.iov_offset].MPID_IOV_LEN <= nb)
 		{
 		    nb -= rreq->ch3.iov[rreq->ssm.iov_offset].MPID_IOV_LEN;
 		    rreq->ssm.iov_offset += 1;
@@ -172,7 +171,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	}
 	else
 	{
-	    mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(sock_errno, FCNAME);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    return mpi_errno;
 	}
 /*

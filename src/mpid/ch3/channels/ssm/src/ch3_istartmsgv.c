@@ -84,22 +84,23 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
-	    int rc;
 	    int nb;
+	    MPIDU_Sock_size_t snb;
 
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
 	    if (vc->ssm.bShm)
 	    {
-		rc = MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb);
+		mpi_errno = MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb);
 	    }
 	    else
 	    {
-		rc = sock_writev(vc->ssm.sock, iov, n_iov, &nb);
+		mpi_errno = MPIDU_Sock_writev(vc->ssm.sock, iov, n_iov, &snb);
+		nb = snb;
 	    }
-	    if (rc != MPI_SUCCESS)
+	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 		return mpi_errno;
 #if 0

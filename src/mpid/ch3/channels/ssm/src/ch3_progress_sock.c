@@ -10,9 +10,9 @@
 #define FUNCNAME handle_sock_op
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int handle_sock_op(sock_event_t *event_ptr)
+int handle_sock_op(MPIDU_Sock_event_t *event_ptr)
 {
-    int rc, mpi_errno;
+    int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_SOCK_OP);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_SOCK_OP);
@@ -116,7 +116,7 @@ int handle_sock_op(sock_event_t *event_ptr)
 			if (conn->vc->ssm.sock != conn->sock)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bad_sock", "**bad_sock %d %d",
-				sock_getid(conn->vc->ssm.sock), sock_getid(conn->sock));
+				MPIDU_Sock_getid(conn->vc->ssm.sock), sock_getid(conn->sock));
 			    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SOCK_OP);
 			    return mpi_errno;
 			}
@@ -129,7 +129,7 @@ int handle_sock_op(sock_event_t *event_ptr)
 		    {
 			conn->vc = NULL;
 			conn->state = CONN_STATE_CLOSING;
-			sock_post_close(conn->sock);
+			MPIDU_Sock_post_close(conn->sock);
 		    }
 		}
 		else
@@ -194,11 +194,11 @@ int handle_sock_op(sock_event_t *event_ptr)
 		    {
 			/* head-to-head connections - close this connection */
 			conn->state = CONN_STATE_CLOSING;
-			rc = sock_post_close(conn->sock);
+			mpi_errno = MPIDU_Sock_post_close(conn->sock);
 			/*assert(rc == SOCK_SUCCESS);*/
-			if (rc != SOCK_SUCCESS)
+			if (mpi_errno != MPI_SUCCESS)
 			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**sock_post_close", "**sock_post_close %d", rc);
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**sock_post_close", 0);
 			    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SOCK_OP);
 			    return mpi_errno;
 			}
@@ -220,8 +220,8 @@ int handle_sock_op(sock_event_t *event_ptr)
 		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SOCK_OP);
 		return mpi_errno;
 	    }
-	    rc = sock_accept(listener_conn->sock, sock_set, conn, &conn->sock);
-	    if (rc == SOCK_SUCCESS)
+	    mpi_errno = MPIDU_Sock_accept(listener_conn->sock, sock_set, conn, &conn->sock);
+	    if (mpi_errno == MPI_SUCCESS)
 	    { 
 		conn->vc = NULL;
 		conn->state = CONN_STATE_OPEN_LRECV;
@@ -334,7 +334,11 @@ int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC * vc, MPID_Request * rreq)
     }
 #endif
     conn->recv_active = rreq;
-    sock_post_readv(conn->sock, rreq->ch3.iov + rreq->ssm.iov_offset, rreq->ch3.iov_count - rreq->ssm.iov_offset, NULL);
+    mpi_errno = MPIDU_Sock_post_readv(conn->sock, rreq->ch3.iov + rreq->ssm.iov_offset, rreq->ch3.iov_count - rreq->ssm.iov_offset, NULL);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    }
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_READ);
@@ -372,7 +376,11 @@ int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
 #endif
 
     conn->send_active = sreq;
-    sock_post_writev(conn->sock, sreq->ch3.iov + sreq->ssm.iov_offset, sreq->ch3.iov_count - sreq->ssm.iov_offset, NULL);
+    mpi_errno = MPIDU_Sock_post_writev(conn->sock, sreq->ch3.iov + sreq->ssm.iov_offset, sreq->ch3.iov_count - sreq->ssm.iov_offset, NULL);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    }
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);

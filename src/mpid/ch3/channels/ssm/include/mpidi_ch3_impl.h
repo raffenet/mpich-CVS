@@ -228,6 +228,10 @@ int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
 
+#define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
+#define MPIDI_CH3I_HOST_KEY              "host"
+#define MPIDI_CH3I_PORT_KEY              "port"
+
 #define MPIDI_BOOTSTRAP_NAME_LEN 100
 #define BOOTSTRAP_MAX_NUM_MSGS 2048
 #define BOOTSTRAP_MAX_MSG_SIZE sizeof(MPIDI_CH3I_Shmem_queue_info)
@@ -259,7 +263,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 int MPIDI_CH3I_SHM_read(MPIDI_VC *vc, void *buf, int len);
 int MPIDI_CH3I_SHM_readv(MPIDI_VC *vc, MPID_IOV *iov, int n);
 
-int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname);
+/*int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname);*/
 
 #define MPID_CH3I_SHM_BIT             0x01
 #define MPID_CH3I_SOCK_BIT            0x02

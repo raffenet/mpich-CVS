@@ -65,6 +65,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    int nb;
+	    MPIDU_Sock_size_t snb;
 
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
@@ -74,11 +75,12 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	    }
 	    else
 	    {
-		mpi_errno = sock_write(vc->ssm.sock, pkt, pkt_sz, &nb);
+		mpi_errno = MPIDU_Sock_write(vc->ssm.sock, pkt, pkt_sz, &snb);
+		nb = snb;
 	    }
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 		return mpi_errno;
 #if 0

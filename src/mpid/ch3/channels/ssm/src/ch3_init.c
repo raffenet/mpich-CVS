@@ -153,7 +153,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].ssm.send_active = NULL;
 	vc_table[p].ssm.req = NULL;
 	vc_table[p].ssm.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].ssm.sock = SOCK_INVALID_SOCK;
+	vc_table[p].ssm.sock = SOCKI_INVALID_SOCK;
 	vc_table[p].ssm.conn = NULL;
 	vc_table[p].ssm.read_shmq = NULL;
 	vc_table[p].ssm.write_shmq = NULL;

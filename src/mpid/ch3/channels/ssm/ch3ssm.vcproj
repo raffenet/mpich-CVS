@@ -212,9 +212,6 @@
 				RelativePath="src\ch3i_bootstrapq.c">
 			</File>
 			<File
-				RelativePath="src\ch3i_errno.c">
-			</File>
-			<File
 				RelativePath="src\ch3i_get_business_card.c">
 			</File>
 			<File

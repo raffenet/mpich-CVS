@@ -7,7 +7,7 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#include "sock.h"
+#include "mpidu_sock.h"
 #ifdef USE_WINCONF_H
 #include "winmpidi_ch3i_ssm_conf.h"
 #include "winmpidi_ch3_conf.h"
@@ -157,7 +157,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * recv_active;
     struct MPID_Request * req;
     MPIDI_CH3I_VC_state_t state;
-    sock_t sock;
+    MPIDU_Sock_t sock;
     struct MPIDI_CH3I_Connection * conn;
     BOOL bShm;
     MPIDI_CH3I_Shmem_block_request_result shm_write_queue_info, shm_read_queue_info;

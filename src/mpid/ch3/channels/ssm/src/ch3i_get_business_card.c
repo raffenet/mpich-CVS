@@ -189,6 +189,7 @@ static int GetLocalIPs(int32_t *pIP, int max)
 
 #endif /* HAVE_WINDOWS_H */
 
+#if 0
 int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
     int32_t local_ip[MAX_NUM_NICS];
@@ -232,5 +233,70 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     /*MPIU_DBG_PRINTF(("Business card:\n<%s>\n", value_orig));*/
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
+    return MPI_SUCCESS;
+}
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Get_business_card(char *value, int length)
+{
+    int mpi_errno;
+    int port;
+    char host_description[256];
+    char host[100];
+
+    mpi_errno = MPIDU_Sock_get_host_description(host_description, 256);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	return mpi_errno;
+    }
+
+    port = MPIDI_CH3I_Listener_get_port();
+
+    gethostname(host, 100);
+
+    mpi_errno = MPIU_Str_add_string_arg(&value, &length, MPIDI_CH3I_HOST_KEY, host);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_int_arg(&value, &length, MPIDI_CH3I_PORT_KEY, port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_string_arg(&value, &length, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
     return MPI_SUCCESS;
 }
