@@ -1164,6 +1164,9 @@ AC_ARG_ENABLE(dependencies,[
 enable_dependencies=default)
 #
 #
+if test -z "$enable_dependencies" ; then 
+   enable_dependencies=default
+fi
 if test "$enable_dependencies" = "default" ; then
     # Try to use gcc if available
     enable_dependencies=no
@@ -1171,25 +1174,45 @@ if test "$enable_dependencies" = "default" ; then
          # See if gcc is available
 	 AC_CHECK_PROGS(GCC,gcc)
 	 if test -n "$GCC" ; then 
-	     enable_dependencies=yes
+	     enable_dependencies=gcc
+         else 
+	     # Try for another form, based on the stock compiler on the
+	     # given system
+	     ostype=`uname -s`
+	     case "$ostype" in
+	         SunOS)
+		 enable_dependencies=solaris
+		 ;;
+	         *)
+		 # Unrecognized; ignore
+		 ;;
+	     esac
          fi
     else
-	enable_dependencies=yes
+	enable_dependencies=gcc
     fi
-    if test "$enable_dependencies" = "yes" ; then
+    if test "$enable_dependencies" = "gcc" ; then
         AC_MSG_RESULT([Using gcc to determine dependencies])
     fi
 fi
 if test "$enable_dependencies" != "no" ; then
-    if test "$enable_dependencies" = "yes" -o -z "$enable_dependencies" ; then
+   case "$enable_dependencies" in
+   gcc|yes)
         # Ensure that the profiling libraries get their targets into
 	# the files.  Use -MMD if you want the file in the build directory
 	# instead of a subdirectory
         MAKE_DEPEND_C="gcc -MM"
-    else
+    ;;
+    solaris)
+        # At least some Solaris SunPro compilers accept -xM1 -MT name, though
+	# they ignore the -MT name argument.
+        MAKE_DEPEND_C="cc -xM1"
+    ;;
+    *)	
         AC_MSG_RESULT([Using $enable_dependencies for MAKE_DEPEND_C])
         MAKE_DEPEND_C="$enable_dependencies"
-    fi
+    ;;	
+    esac		
 fi
 export MAKE_DEPEND_C
 
@@ -1270,10 +1293,15 @@ AC_CHECK_SIZEOF(long double,$CROSS_SIZEOF_LONG_DOUBLE)
 AC_CHECK_SIZEOF(wchar_t,$CROSS_SIZEOF_WCHAR_T)
 # wchar_t is sometimes defined in stddef.h.  If we got a zero for its
 # size, and we have stddef.h, try again with an explicit test
-if test "$ac_cv_sizeof_wchar_t" = 0 -a "$ac_cv_header_stddef_h" = yes ; then
-    AC_CACHE_CHECK([for sizeof wchar_t],ac_cv_sizeof_wchar_t,[
-    rm -f conftestval 
-    AC_TRY_RUN([#include <stdio.h>
+if test "$ac_cv_sizeof_wchar_t" = 0 ; then 
+    # See if we have stddef
+    AC_CHECK_HEADERS(stddef.h)
+    if test "$ac_cv_header_stddef_h" = yes ; then
+        # Do not use cache check since we don't want to use 
+	# any cached value
+	AC_MSG_CHECKING([for sizeof wchar_t])
+        rm -f conftestval 
+        AC_TRY_RUN([#include <stdio.h>
 #include <stddef.h>
 main()
 {
@@ -1282,8 +1310,10 @@ main()
   if (!f) exit(1);
   fprintf(f, "%d\n", sizeof(a));
   exit(0);
-}],ac_cv_sizeof_wchar_t=`cat conftestval`,ac_cv_sizeof_wchar_t=0,ac_cv_sizeof_wchar_t=$CROSS_SIZEOF_WCHAR_T)])
-  rm -f conftestval
+}],ac_cv_sizeof_wchar_t=`cat conftestval`,ac_cv_sizeof_wchar_t=0,ac_cv_sizeof_wchar_t=$CROSS_SIZEOF_WCHAR_T)
+        AC_MSG_RESULT($ac_cv_sizeof_wchar_t)
+        rm -f conftestval
+    fi
 fi
 AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
 PAC_CHECK_SIZEOF_2TYPES(float int, float, int, $CROSS_SIZEOF_FLOAT_INT)
@@ -1422,6 +1452,10 @@ system; this program outputs an appropriate file for the --with-cross option])
     done
     if test $len -lt 16 ; then
         hexlen="0$hexlen"
+    fi
+    if test $len = 0 ; then
+        # This sometimes happens for wchar_t
+        hexlen="00";
     fi
     eval len_$type=$hexlen
 done
@@ -2377,6 +2411,13 @@ AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
 fi],enable_dependencies=$enable_dependencies)
 
 AC_OUTPUT_COMMANDS([chmod +x doc/mansrc/createhtmlindex])
+
+dnl
+dnl If we rerun configure, place a file in the lib directory with the
+dnl date.  We can use this to avoid rebuilding the library when
+dnl a build aborts due to an error (this is intended to help developers)
+AC_OUTPUT_COMMANDS([if [ ! -d lib ] ; then mkdir lib ; fi 
+date > lib/newconfig])
 
 dnl
 dnl For the examples, we want to use the scripts to encourage users
