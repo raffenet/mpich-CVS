@@ -94,7 +94,7 @@
 /* We use -2 (MPI_PROC_NULL and MPI_ROOT are negative) for the intercomm 
    test */
 #define MPIR_ERRTEST_INTER_ROOT(comm_ptr,root,err) \
-  if ((root) < -2 || (root) >= (comm_ptr)->local_size) {\
+  if ((root) < -3 || (root) >= (comm_ptr)->local_size) {\
       err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ROOT, "**root", "**root %d", root );}
 #define MPIR_ERRTEST_PERSISTENT(reqp,err) \
   if ((reqp)->kind != MPID_PREQUEST_SEND && reqp->kind != MPID_PREQUEST_RECV) { \
