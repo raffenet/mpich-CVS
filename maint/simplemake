@@ -937,3 +937,34 @@ sub TargetDependencies {
 	}
     }
 }
+
+# Eventually we will use this to generate the profiling targets.
+sub ProfileTargets {
+    print FD "\
+# Instead, we define the PMPI_OBJECTS as having suffix pf:\
+PMPI_OBJECTS = \${OBJECTS:.o=.pf}\
+# Convert foo.pf to _foo.o, then archive all at once\
+${libbuild_dir}/lib\@PMPILIBNAME\@.a: \${PMPI_OBJECTS}\
+        \@echo "Rename xxx.pf to _xxx.o for profiling interface."\
+        \@if [ ! -d .tmp ] ; then mkdir .tmp ; else rm -f .tmp/*.o ; fi\
+        \@for file in $? ; do \\\
+            bname=`basename $$file .pf`; \\\
+            cp $$file .tmp/_$${bname}.o ; \\\
+        done\
+        \@cd .tmp && ${AR} cr $\@ *.o && rm -f *.o\
+        -\@rmdir .tmp\
+# Note that the Solaris SunPro cc (4.0 98/12/15) does not allow the file\
+# named with -o to have any suffix other than .o !\
+.c.pf:\
+        \${C_COMPILE} -c -DMPICH_MPI_FROM_PMPI \$< -o \$*.o\
+        \@mv -f \$*.o \$*.pf\
+.f.pf:\
+        \${F77_COMPILE} -c \$<\
+        \@mv -f \$*.o \$*.pf\
+";
+}
+
+
+
+
+
