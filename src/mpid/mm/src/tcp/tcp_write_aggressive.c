@@ -198,6 +198,13 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 
     MM_ENTER_FUNC(TCP_UPDATE_CAR_NUM_WRITTEN);
 
+#ifdef MPICH_DEV_BUILD
+    if (car_ptr == NULL)
+    {
+	err_printf("Error: tcp_update_car_num_written called on a NULL car pointer, num_written = %d\n", *num_written_ptr);
+    }
+#endif
+
     buf_ptr = car_ptr->buf_ptr;
     num_written = *num_written_ptr;
 
