@@ -30,10 +30,16 @@
 /* style: allow:printf:2 sig:0 */
 
 #ifdef HAVE_VA_COPY
-#define va_copy_end(a) va_end(a)
+# define va_copy_end(a) va_end(a)
 #else
-#define va_copy(a,b) a = b
-#define va_copy_end(a)
+# ifdef HAVE___VA_COPY
+#  define va_copy(a,b) __va_copy(a,b)
+#  define va_copy_end(a) 
+# else
+#  define va_copy(a,b) ((a) = (b))
+/* Some writers recommend define va_copy(a,b) memcpy(&a,&b,sizeof(va_list)) */
+#  define va_copy_end(a)
+# endif
 #endif
 
 #if !defined(MPICH_DBG_MEMLOG_NUM_LINES)
