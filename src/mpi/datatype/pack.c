@@ -133,7 +133,7 @@ int MPI_Pack(void *inbuf,
      * MPID_Segment_pack are quite different.  See code or docs or something.
      */
     first = 0;
-    last  = outcount;
+    last  = SEGMENT_IGNORE_LAST;
 
     MPID_Segment_pack(segp,
 		      first,

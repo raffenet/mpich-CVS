@@ -108,7 +108,7 @@ int MPI_Unpack(void *inbuf,
      * MPID_Segment_unpack are quite different.  See code or docs or something.
      */
     first = 0;
-    last  = insize;
+    last  = SEGMENT_IGNORE_LAST;
 
     MPID_Segment_unpack(segp,
 			first,
