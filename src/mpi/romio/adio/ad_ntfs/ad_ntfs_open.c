@@ -6,6 +6,11 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+/* Set the style to c++ since this code will only be compiled with the
+   Windows C/C++ compiler that accepts C++ style comments and other 
+   constructions */
+/* style:c++ header */
+
 #include "ad_ntfs.h"
 
 void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
