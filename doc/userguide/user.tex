@@ -272,6 +272,106 @@ Some extension parameters have only global versions.  They are
 
 \subsubsection{\texttt{mpiexec} arguments for SMPD}
 \label{sec:extensions-smpd}
+
+SMPD is an alternate process manager that runs on both Unix and Windows.
+It can launch jobs across both platforms if the binary formats match 
+(big/little endianness and size of C types - int,long,void*,etc).
+
+mpiexec for smpd accepts the standard MPI-2 mpiexec options.  Execute
+\begin{verbatim}
+    mpiexec
+\end{verbatim}
+or
+\begin{verbatim}
+    mpiexec -help2
+\end{verbatim}
+to print the usage options.  Typical usage:
+\begin{verbatim}
+    mpiexec -n 10 myapp.exe
+\end{verbatim}
+
+All options to mpiexec:
+\begin{description}
+\item[\texttt{-n x}]
+\item[\texttt{-np x}]\mbox{}\\
+  launch x processes
+\item[\texttt{-localonly x}]
+\item[\texttt{-np x -localonly}]\mbox{}\\
+  launch x processes on the local machine
+\item[\texttt{-machinefile filename}]\mbox{}\\
+  use a file to list the names of machines to launch on
+\item[\texttt{-host hostname}]\mbox{}\\
+  launch on the specified host.
+\item[\texttt{-hosts n host1 host2 ... hostn}]
+\item[\texttt{-hosts n host1 m1 host2 m2 ... hostn mn}]\mbox{}\\
+  launch on the specified hosts.
+  In the second version the number of processes = m1 + m2 + ... + mn
+\item[\texttt{-dir drive:$\backslash$my$\backslash$working$\backslash$directory}]
+\item[\texttt{-wdir /my/working/directory}]\mbox{}\\
+  launch processes with the specified working directory. (-dir and -wdir are
+equivalent)
+\item[\texttt{-env var val}]\mbox{}\\
+  set environment variable before launching the processes
+%\item[\texttt{-nocolor}]\mbox{}\\
+%  don't use process specific output coloring
+%\item[\texttt{-nompi}]\mbox{}\\
+%  launch processes without the mpi startup mechanism
+\item[\texttt{-exitcodes}]\mbox{}\\
+  print the process exit codes when each process exits.
+\item[\texttt{-noprompt}]\mbox{}\\
+  prevent mpiexec from prompting for user credentials.  Instead errors will
+be printed and mpiexec will exit.
+% This may be implemented.
+%\item[\texttt{-localroot}]\mbox{}\\
+%  launch the root process without smpd if the host is local.
+%  (This allows the root process to create windows and be debugged.)
+\item[\texttt{-port port}]
+\item[\texttt{-p port}]\mbox{}\\
+  specify the port that smpd is listening on.
+\item[\texttt{-phrase passphrase}]\mbox{}\\
+  specify the passphrase to authenticate connections to smpd with.
+\item[\texttt{-smpdfile filename}]\mbox{}\\
+  specify the file where the smpd options are stored including the 
+passphrase. (unix only option)
+\item[\texttt{-soft Fortran90\_triple}]\mbox{}\\
+  acceptable number of processes to launch up to maxprocs
+\item[\texttt{-path search\_path}]\mbox{}\\
+  search path for executable, ; separated
+% This will probably not be implemented.
+%\item[\texttt{-arch architecture}]\mbox{}\\
+%  sun, linux, rs6000, ...
+\item[\texttt{-timeout seconds}]\mbox{}\\
+  timeout for the job.
+\end{description}
+Windows specific options:
+\begin{description}
+\item[\texttt{-map drive:$\backslash$$\backslash$host$\backslash$share}]\mbox{}\\
+  map a drive on all the nodes
+  this mapping will be removed when the processes exit
+\item[\texttt{-logon}]\mbox{}\\
+  prompt for user account and password
+\item[\texttt{-pwdfile filename}]\mbox{}\\
+  read the account and password from the file specified
+  put the account on the first line and the password on the second
+\item[\texttt{-nomapping}]\mbox{}\\
+  don't try to map the current directory on the remote nodes
+\item[\texttt{-nopopup\_debug}]\mbox{}\\
+  disable the system popup dialog if the process crashes
+\item[\texttt{-dbg}]\mbox{}\\
+  catch unhandled exceptions
+\item[\texttt{-priority class[:level]}]\mbox{}\\
+  set the process startup priority class and optionally level.\mbox{}\\
+  class = 0,1,2,3,4   = idle, below, normal, above, high\mbox{}\\
+  level = 0,1,2,3,4,5 = idle, lowest, below, normal, above, highest\mbox{}\\
+  the default is -priority 1:3
+\item[\texttt{-register}]\mbox{}\\
+  encrypt a user name and password to the Windows registry.
+\item[\texttt{-remove}]\mbox{}\\
+  delete the encrypted credentials from the Windows registry.
+\item[\texttt{-validate [-host hostname]}]\mbox{}\\
+  validate the encrypted credentials for the current or specified host.
+\end{description}
+
 \subsubsection{\texttt{mpiexec} arguments for Forker}
 \label{sec:extensions-forker}
 
@@ -482,8 +582,44 @@ ksl2%
 \section{MPICH2 under Windows}
 \label{sec:windows}
 
-Here we need a description of how to run jobs after installation, and
-installation described in the other manual.
+\subsection{Directories}
+\label{sec:windir}
+
+The default installation of MPICH2 is in
+\texttt{C:$\backslash$Program Files$\backslash$MPICH2}. Under the installation
+directory are three sub-directories: \texttt{include}, \texttt{bin}, and
+\texttt{lib}.  The \texttt{include} and \texttt{lib} directories contain
+the header files and libraries necessary to compile MPI applications.  
+The \texttt{bin} directory contains the process manager, \texttt{smpd.exe},
+and the the MPI job launcher, \texttt{mpiexec.exe}.  The dlls that implement
+MPICH2 are copied to the Windows system32 directory.
+
+\subsection{Compiling}
+\label{sec:wincompile}
+
+The libraries in the lib directory were compiled with MS Visual C++ .NET 2003
+and Intel Fortran 8.0 with the default MPICH2 socket channel.  These 
+compilers and any others that can link with the MS .lib files can be used to
+create user applications.  gcc and g77 for cygwin can be used with the 
+libmpich*.a libraries.
+
+For MS Developer Studio users:  Create a project and add
+\texttt{C:$\backslash$Program Files$\backslash$MPICH2$\backslash$include} 
+to the include path and \texttt{C:$\backslash$Program Files$\backslash$MPICH2$\backslash$lib} 
+to the library path.  Add cxx.lib and mpich2.lib to the Release target link 
+command.  Add cxxd.lib and mpich2d.lib to the Debug target.
+
+Intel Fortran 8 users add fmpich2d.lib to the link command in addition to the
+libraries mentioned above.
+
+cygwin users use libmpich2.a libfmpich2g.a.
+
+\subsection{Running}
+\label{sec:winrun}
+
+MPI jobs are run from a command prompt using mpiexec.exe.  See section \ref{sec:extensions-smpd} 
+on mpiexec for smpd for a description of the options to mpiexec.
+
 
 \bibliographystyle{plain}
 \bibliography{user,/home/MPI/allbib}
