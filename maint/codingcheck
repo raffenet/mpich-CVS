@@ -305,17 +305,22 @@ sub CheckForMismatchedStates {
 
 #
 # Check for proper preamble.  Record during file reading and check at end
-$saw_c_style = 0;
+$saw_c_style   = 0;
+$saw_cxx_style = 0;
 $saw_copyright = 0;
 
 sub ClearPreamble {
-    $saw_c_style = 0;
+    $saw_c_style   = 0;
+    $saw_cxx_style = 0;
     $saw_copyright = 0;
 }    
 sub CheckForPreamble {
     my $curline = $_[0];
     if ($curline =~ /-\*-\s*Mode:\s*C;\s*c-basic-offset:4/) {
 	$saw_c_style = 1;
+    }
+    elsif ($curline =~ /-\*-\s*Mode:\s*C\+\+;\s*c-basic-offset:4/) {
+	$saw_cxx_style = 1;
     }
     elsif ($curline =~ /See COPYRIGHT/) {
 	$saw_copyright = 1;
@@ -326,7 +331,7 @@ sub ReportOnPreamble {
 
     # Is this a derived file?
     if (-s "$filename.in") { return 0; }
-    if (! $saw_c_style) {
+    if (! $saw_c_style && !$saw_cxx_style) {
 	print "C style header (c-basic-offset:4) missing in $filename\n";
     }
     if (! $saw_copyright) {
