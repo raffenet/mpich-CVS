@@ -8,7 +8,10 @@
 int tcp_write(MPIDI_VC *vc_ptr)
 {
     MM_Car *car_ptr;
-    //int num_read;
+    int num_written;
+    int cur_index;
+    MPID_VECTOR *car_vec, *buf_vec;
+    int num_left, i;
 
     if (!vc_ptr->data.tcp.connected)
 	return MPI_SUCCESS;
@@ -28,52 +31,113 @@ int tcp_write(MPIDI_VC *vc_ptr)
 	    if (car_ptr->data.tcp.buf.vec_write.num_read_copy != car_ptr->buf_ptr->vec.num_read)
 	    {
 		/* update vector */
+		cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;
+		car_vec = car_ptr->data.tcp.buf.vec_write.vec;
+		buf_vec = car_ptr->buf_ptr->vec.vec;
+
+		/* copy the buf vector into the car vector from the current index to the end */
+		memcpy(&car_vec[cur_index], &buf_vec[cur_index], 
+		    (car_ptr->buf_ptr->vec.vec_size - cur_index) * sizeof(MPID_VECTOR));
+		car_vec[cur_index].MPID_VECTOR_BUF = 
+		    (char*)car_vec[cur_index].MPID_VECTOR_BUF + car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+		car_vec[cur_index].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN - car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index;
+
+		/* set the size of the car vector to zero */
+		car_ptr->data.tcp.buf.vec_write.vec_size = 0;
+
+		/* add vector elements to the size until all the read data is accounted for */
+		num_left = car_ptr->data.tcp.buf.vec_write.num_read_copy - car_ptr->data.tcp.buf.vec_write.cur_num_written;
+		i = cur_index;
+		while (num_left > 0)
+		{
+		    car_ptr->data.tcp.buf.vec_write.vec_size++;
+		    num_left -= car_vec[i].MPID_VECTOR_LEN;
+		    i++;
+		}
+		/* if the last vector buffer is larger than the amount of data read into that buffer,
+		   update the length field in the car's copy of the vector */
+		if (num_left < 0)
+		{
+		    car_vec[i].MPID_VECTOR_LEN += num_left;
+		}
+
+		/* at this point the vec in the car describes all the currently read data */
+
+		/* update num_read_copy */
+		car_ptr->data.tcp.buf.vec_write.num_read_copy = car_ptr->buf_ptr->vec.num_read;
 	    }
 
-	    if (car_ptr->data.tcp.buf.vec_write.num_written < car_ptr->data.tcp.buf.vec_write.num_read_copy)
+	    if (car_ptr->data.tcp.buf.vec_write.cur_num_written < car_ptr->data.tcp.buf.vec_write.num_read_copy)
 	    {
 		/* write */
-		/* update vector */
-	    }
-
-	    if (car_ptr->data.tcp.buf.vec_write.num_written == car_ptr->buf_ptr->vec.num_read)
-	    {
-		mm_dec_atomic(&(car_ptr->buf_ptr->vec.num_cars_outstanding));
-	    }
-
-	    /*
-	    if (car_ptr->data.tcp.buf.vec_write.vec_size == 1)
-	    {
-		num_read = bwrite(vc_ptr->data.tcp.bfd, 
-		    car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_BUF,
-		    car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_LEN);
-		if (num_read == SOCKET_ERROR)
+		if (car_ptr->data.tcp.buf.vec_write.vec_size == 1) /* optimization for single buffer writes */
 		{
-		    TCP_Process.error = beasy_getlasterror();
-		    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		    err_printf("tcp_write: bwrite failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		    return -1;
-		}
-		if (num_read == car_ptr->buf_ptr->vec.num_read)
-		{
-		    
+		    num_written = bwrite(vc_ptr->data.tcp.bfd, 
+			car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_VECTOR_BUF,
+			car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_VECTOR_LEN);
+		    if (num_written == SOCKET_ERROR)
+		    {
+			TCP_Process.error = beasy_getlasterror();
+			beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+			err_printf("tcp_write: bwrite failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+			return -1;
+		    }
 		}
 		else
 		{
+		    num_written = bwritev(
+			vc_ptr->data.tcp.bfd, 
+			&car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index], 
+			car_ptr->data.tcp.buf.vec_write.vec_size);
+		    if (num_written == SOCKET_ERROR)
+		    {
+			TCP_Process.error = beasy_getlasterror();
+			beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+			err_printf("tcp_write: bwritev failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+			return -1;
+		    }
 		}
-	    }
-	    else
-	    {
-		num_read = bwritev(vc_ptr->data.tcp.bfd, car_ptr->data.tcp.buf.vec_write.vec, car_ptr->data.tcp.buf.vec_write.vec_size);
-		if (num_read == SOCKET_ERROR)
+
+		/* update vector */
+		car_ptr->data.tcp.buf.vec_write.cur_num_written += num_written;
+		car_ptr->data.tcp.buf.vec_write.total_num_written += num_written;
+		if (car_ptr->data.tcp.buf.vec_write.cur_num_written == car_ptr->buf_ptr->vec.buf_size)
 		{
-		    TCP_Process.error = beasy_getlasterror();
-		    beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-		    err_printf("tcp_write: bwritev failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
-		    return -1;
+		    tcp_reset_car(car_ptr);
+		}
+		else
+		{
+		    num_left = num_written;
+		    i = car_ptr->data.tcp.buf.vec_write.cur_index;
+		    while (num_left > 0)
+		    {
+			num_left -= car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN;
+			if (num_left > 0)
+			{
+			    i++;
+			}
+			else
+			{
+			    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF = car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_BUF - num_left;
+			    car_ptr->data.tcp.buf.vec_write.vec[i].MPID_VECTOR_LEN += num_left;
+			}
+		    }
+		    car_ptr->data.tcp.buf.vec_write.cur_index = i;
+		}
+
+		if (car_ptr->data.tcp.buf.vec_write.cur_num_written == car_ptr->buf_ptr->vec.buf_size)
+		{
+		    /* signal that we have finished writing the current vector */
+		    mm_dec_atomic(&(car_ptr->buf_ptr->vec.num_cars_outstanding));
 		}
 	    }
-	    */
+
+	    /* if the entire mpi segment has been written, enqueue the car in the completion queue */
+	    if (car_ptr->data.tcp.buf.vec_write.total_num_written == car_ptr->request_ptr->mm.size)
+	    {
+		tcp_car_dequeue(car_ptr->vc_ptr, car_ptr);
+		mm_cq_enqueue(car_ptr);
+	    }
 	}
 	break;
 #ifdef WITH_METHOD_SHM

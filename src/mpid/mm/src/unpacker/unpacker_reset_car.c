@@ -19,27 +19,10 @@ int unpacker_reset_car(MM_Car *car_ptr)
     case MM_NULL_BUFFER:
 	break;
     case MM_TMP_BUFFER:
-	car_ptr->data.tcp.buf.tmp.num_read = 0;
-	car_ptr->data.tcp.buf.tmp.num_read_copy = 0;
-	car_ptr->data.tcp.buf.tmp.num_read_local = 0;
-	car_ptr->data.tcp.buf.tmp.num_written = 0;
+	car_ptr->data.unpacker.first = 0;
+	car_ptr->data.unpacker.last = 0;
 	break;
     case MM_VEC_BUFFER:
-	if (car_ptr->type & MM_WRITE_CAR)
-	{
-	    car_ptr->data.tcp.buf.vec_write.cur_index = 0;
-	    car_ptr->data.tcp.buf.vec_write.num_read_copy = 0;
-	    car_ptr->data.tcp.buf.vec_write.num_written = 0;
-	    car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index = 0;
-	    car_ptr->data.tcp.buf.vec_write.vec_size = 0;
-	}
-	else
-	{
-	    car_ptr->data.tcp.buf.vec_read.cur_index = 0;
-	    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
-	    car_ptr->data.tcp.buf.vec_read.num_read_local = 0;
-	    car_ptr->data.tcp.buf.vec_read.vec_size = 0;
-	}
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:

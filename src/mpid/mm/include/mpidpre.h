@@ -141,9 +141,9 @@ typedef union MM_Segment_buffer
 	MM_BUFFER_TYPE type;
 	MPID_VECTOR vec[MPID_VECTOR_LIMIT];
 	int vec_size;
-	int msg_size;
 	int num_read;
 	int first, last;
+	int buf_size;
 	int min_num_written;
 	int num_cars, num_cars_outstanding;
     } vec;

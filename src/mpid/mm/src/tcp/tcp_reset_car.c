@@ -29,15 +29,17 @@ int tcp_reset_car(MM_Car *car_ptr)
 	{
 	    car_ptr->data.tcp.buf.vec_write.cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_write.num_read_copy = 0;
-	    car_ptr->data.tcp.buf.vec_write.num_written = 0;
+	    car_ptr->data.tcp.buf.vec_write.cur_num_written = 0;
+	    car_ptr->data.tcp.buf.vec_write.total_num_written = 0;
 	    car_ptr->data.tcp.buf.vec_write.num_written_at_cur_index = 0;
 	    car_ptr->data.tcp.buf.vec_write.vec_size = 0;
 	}
 	else
 	{
 	    car_ptr->data.tcp.buf.vec_read.cur_index = 0;
+	    car_ptr->data.tcp.buf.vec_read.cur_num_read = 0;
+	    car_ptr->data.tcp.buf.vec_read.total_num_read = 0;
 	    car_ptr->data.tcp.buf.vec_read.num_read_at_cur_index = 0;
-	    car_ptr->data.tcp.buf.vec_read.num_read_local = 0;
 	    car_ptr->data.tcp.buf.vec_read.vec_size = 0;
 	}
 	break;

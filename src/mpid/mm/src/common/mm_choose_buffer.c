@@ -30,11 +30,11 @@ int mm_choose_buffer(MPID_Request *request_ptr)
 	/* This would lead nicely into shm_buffer_init and via_buffer_init */
 	request_ptr->mm.buf.type = MM_VEC_BUFFER;
 	request_ptr->mm.buf.vec.vec_size = MPID_VECTOR_LIMIT;
-	request_ptr->mm.buf.vec.msg_size = 0;
 	request_ptr->mm.buf.vec.num_read = 0;
 	request_ptr->mm.buf.vec.min_num_written = 0;
 	request_ptr->mm.buf.vec.first = 0;
 	request_ptr->mm.buf.vec.last = 0;
+	request_ptr->mm.buf.vec.buf_size = 0;
 	request_ptr->mm.buf.vec.num_cars_outstanding = 0;
 	request_ptr->mm.buf.vec.num_cars = 0;
 	/* count the data cars */

@@ -23,5 +23,7 @@ int mm_get_buffers_vec(MPID_Request *request_ptr)
 	request_ptr->mm.buf.vec.vec,
 	&request_ptr->mm.buf.vec.vec_size);
 
+    request_ptr->mm.buf.vec.buf_size = request_ptr->mm.buf.vec.last - request_ptr->mm.buf.vec.first;
+
     return MPI_SUCCESS;
 }
