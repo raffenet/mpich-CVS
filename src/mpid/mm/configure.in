@@ -57,21 +57,6 @@ AC_ARG_ENABLE(sharedlibs,
 This option is currently ignored])
 dnl
 dnl Process any enable or with values
-if test "$with_device" = "default" ; then
-    # Pick the method.  For now, always choose shm and tcp
-    with_device=mm:shm,tcp
-fi
-dnl Extract the methods
-method_subdirs=`echo $with_device | sed -e 's/mm://' | sed -e 's/,/ /g'`
-if test "$method_subdirs" = "" ; then method_subdirs="shm tcp" fi
-AC_SUBST(method_subdirs)
-for method in $method_subdirs - ; do \
-    if [ "$method" = "-" ] ; then break ; fi ; \
-    if [ "$method" = "tcp" ] ; then ( AC_DEFINE(WITH_METHOD_TCP, 1, "tcp method enabled") ) ; fi ; \
-    if [ "$method" = "shm" ] ; then ( AC_DEFINE(WITH_METHOD_SHM, 1, "shared memory method enabled") ) ; fi ; \
-    if [ "$method" = "via" ] ; then ( AC_DEFINE(WITH_METHOD_VIA, 1, "via method enabled") ) ; fi ; \
-    if [ "$method" = "via_rdma" ] ; then ( AC_DEFINE(WITH_METHOD_VIA_RDMA, 1, "via rdma method enabled") ) ; fi \
-done
 dnl error-checking
 case "$enable_error_checking" in 
     no)
@@ -240,6 +225,33 @@ fi
 dnl
 dnl
 dnl Setup other replaceable values
+dnl
+dnl Extract the methods
+dnl if test "$with_device" = "default" ; then
+dnl     with_device="mm:shm,tcp"
+dnl fi
+method_subdirs=`echo $with_device | sed -e 's/mm://' | sed -e 's/,/ /g'`
+if test "$method_subdirs" = "" ; then method_subdirs="shm tcp" ; fi
+AC_SUBST(method_subdirs)
+for method in $method_subdirs ; do
+    if test "$method" = "tcp" ; then 
+       AC_DEFINE(WITH_METHOD_TCP, 1, "tcp method enabled")
+       echo tcp method enabled.
+    fi
+    if test "$method" = "shm" ; then 
+       AC_DEFINE(WITH_METHOD_SHM, 1, "shared memory method enabled") 
+       echo shm method enabled
+    fi
+    if test "$method" = "via" ; then 
+       AC_DEFINE(WITH_METHOD_VIA, 1, "via method enabled")
+       echo via method enabled 
+    fi
+    if test "$method" = "via_rdma" ; then 
+       AC_DEFINE(WITH_METHOD_VIA_RDMA, 1, "via rdma method enabled")
+       echo via rdma method enabled 
+    fi
+done
+dnl
 MPILIBNAME=mpich
 AC_SUBST(MPILIBNAME)
 
