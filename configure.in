@@ -739,6 +739,15 @@ AC_SUBST(MPI_LONG_INT)
 AC_SUBST(MPI_SHORT_INT)
 AC_SUBST(MPI_2INT)
 AC_SUBST(MPI_LONG_DOUBLE_INT)
+#
+# Export the basic C types so that the Fortran system can use them
+export MPI_CHAR
+export MPI_SHORT
+export MPI_LONG
+export MPI_LONG_LONG
+export MPI_FLOAT
+export MPI_DOUBLE
+export MPI_LONG_DOUBLE
 dnl
 dnl Is char * the byte address?
 AC_CACHE_CHECK([if char * pointers use give byte addresses],

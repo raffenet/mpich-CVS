@@ -552,6 +552,20 @@ AC_SUBST(MPI_DOUBLE_COMPLEX)
 AC_SUBST(MPI_2DOUBLE_PRECISION)
 AC_SUBST(MPI_2COMPLEX)
 
+#
+# Temporary for the vast majority of systems that use 4 byte reals and
+# 8 byte doubles
+# Lengths at this point are in hex, hench "10" = 10 base 16 = 16 base 10.
+if test "$len_cplx" = "08" ; then
+    F77_COMPLEX8=$MPI_COMPLEX
+fi
+if test "$len_doublecplx" = "10" ; then
+    F77_COMPLEX16=$MPI_DOUBLE_COMPLEX
+fi
+if test "$len_long_double" = "10" ; then
+    F77_COMPLEX32="0x4c00202b"
+fi
+
 len_2dc=`expr $pac_cv_f77_sizeof_double_precision \* 4`
 firstdigit=0
 seconddigit=0
@@ -639,19 +653,15 @@ AC_CHECK_SIZEOF(void*,$CROSS_SIZEOF_VOID_P)
 #
 # Preload the C mpi types
 # THESE MUST MATCH THE DEFINITIONS IN MPI.H and MPIF.H
-char_mpi=1
-short_mpi=4
-int_mpi=6
-long_mpi=8
-long_long_mpi=13
-float_mpi=10
-double_mpi=11
-long_double_mpi=12
-# Warning: float_cplx is Fortran COMPLEX, not (float,float)
-float_cplx_mpi=23
-# Warning: double_cplx is Fortran DOUBLE COMPLEX, not (double,double)
-double_cplx_mpi=24
-long_double_cplx_mpi=0
+# We use these to match the optional Fortran types
+char_mpi=${MPI_CHAR:-0}
+short_mpi=${MPI_SHORT:-0}
+int_mpi=${MPI_INT:-0}
+long_mpi=${MPI_LONG:-0}
+long_long_mpi=${MPI_LONG_LONG:-0}
+float_mpi=${MPI_FLOAT:-0}
+double_mpi=${MPI_DOUBLE:-0}
+long_double_mpi=${MPI_LONG_DOUBLE:-0}
 
 for len in 1 2 4 8 16 ; do
     eval F77_INTEGER$len=0
@@ -674,10 +684,11 @@ for len in 1 2 4 8 16 ; do
     fi
 done
 
+# Complex is set separately above
 for len in 4 8 16 ; do
     len2=`expr $len + $len`
     eval F77_REAL$len=0
-    eval F77_COMPLEX$len2=0
+    #eval F77_COMPLEX$len2=0
     #eval testval=\$"pac_cv_f77_sizeof_real_$len"
     eval testval=\$"has_real_$len"
     if test "$testval" = 0 ; then continue ; fi
@@ -688,7 +699,7 @@ for len in 4 8 16 ; do
 	if test "$testval" = "$ctypelen" -a "$ctypelen" -gt 0 ; then
 	    AC_MSG_RESULT($c_type)
 	    eval F77_REAL$len=\$"${c_type}_mpi"
-	    eval F77_COMPLEX$len2=\$"${c_type}_cplx_mpi"
+	    #eval F77_COMPLEX$len2=\$"${c_type}_cplx_mpi"
             noval="no"
 	    break
         fi
@@ -696,6 +707,29 @@ for len in 4 8 16 ; do
     if test "$noval" = "yes" ; then
         AC_MSG_RESULT([unavailable])
     fi
+done
+
+# We must convert all hex values to decimal (!)
+for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
+    REAL4 REAL8 REAL16 COMPLEX8 COMPLEX16 COMPLEX32 ; do  
+    fullvar="F77_$var"
+    eval fullvarvalue=\$$fullvar
+    #echo "$fullvar = $fullvarvalue"
+    value=0
+    for pos in 3 4 5 6 7 8 9 10 ; do
+        char=`expr substr $fullvarvalue $pos 1`
+        case $char in 
+            a) char=10 ;;
+	    b) char=11 ;;
+	    c) char=12 ;;
+	    d) char=13 ;;
+	    e) char=14 ;;
+	    f) char=15 ;;
+        esac
+        value=`expr $value \* 16 + $char`
+    done
+    #echo "$fullvar = $value"
+    eval $fullvar=$value
 done
 AC_SUBST(F77_INTEGER1)
 AC_SUBST(F77_INTEGER2)
