@@ -33,7 +33,24 @@
 #include <sys/mount.h>
 #endif
 
-void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
+/*
+ ADIO_FileSysType_fncall - determines the file system type for a given file 
+ using a system-dependent function call
+
+Input Parameters:
+. filename - pointer to file name character array
+
+Output Parameters:
+. fstype - location in which to store file system type (ADIO_XXX)
+. error_code - location in which to store error code
+
+ MPI_SUCCESS is stored in the location pointed to by error_code on success.
+
+ This function is used by MPI_File_open() and MPI_File_delete() to determine 
+ file system type.  Most other functions use the type which is stored when the 
+ file is opened.
+ */
+void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code)
 {
     char *dir, *slash;
     int err;
@@ -49,6 +66,8 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 #ifdef SX4
     struct stat sbuf;
 #endif
+
+    *error_code = MPI_SUCCESS;
 
     dir = strdup(filename);
     slash = strrchr(dir, '/');
@@ -80,7 +99,6 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	    else *fstype = ADIO_UFS;
 # endif
 	}
-	*error_code = MPI_SUCCESS;
     }
 #elif defined(LINUX)
     err = statfs(filename, &fsbuf);
@@ -95,7 +113,6 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	else if (fsbuf.f_type == PVFS_SUPER_MAGIC) *fstype = ADIO_PVFS;
 #endif
 	else *fstype = ADIO_UFS;
-	*error_code = MPI_SUCCESS;
     }
 #elif (defined(FREEBSD) && defined(HAVE_MOUNT_NFS))
     err = statfs(filename, &fsbuf);
@@ -110,7 +127,6 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	if (fsbuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
 #endif
 	else *fstype = ADIO_UFS;
-	*error_code = MPI_SUCCESS;
     }
 #elif defined(PARAGON)
     err = statpfs(filename, &ebuf, 0, 0);
@@ -122,7 +138,6 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	if (ebuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
 	else if (ebuf.f_type == MOUNT_PFS) *fstype = ADIO_PFS;
 	else *fstype = ADIO_UFS;
-	*error_code = MPI_SUCCESS;
     }
 #elif defined(tflops)
     err = statfs(filename, &fsbuf);
@@ -134,7 +149,6 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	if (fsbuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
 	else if (fsbuf.f_type == MOUNT_PFS) *fstype = ADIO_PFS;
 	else *fstype = ADIO_UFS;
-	*error_code = MPI_SUCCESS;
     }
 #elif defined(SX4)
      err = stat (filename, &sbuf);
@@ -145,13 +159,61 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
      else {
          if (!strcmp(sbuf.st_fstype, "nfs")) *fstype = ADIO_NFS;
          else *fstype = ADIO_SFS;
-        *error_code = MPI_SUCCESS;
      }
 #else
     /* on other systems, make NFS the default */
     free(dir);
     *fstype = ADIO_NFS;   
-    *error_code = MPI_SUCCESS;
 #endif
-
 }
+
+/*
+  ADIO_FileSysType_prefix - determines file system type for a file using 
+  a prefix on the file name.  upper layer should have already determined
+  that a prefix is present.
+
+Input Parameters:
+. filename - path to file, including prefix (xxx:)
+
+Output Parameters:
+. fstype - pointer to integer in which to store file system type (ADIO_XXX)
+. error_code - pointer to integer in which to store error code
+
+  Returns MPI_SUCCESS in error_code on success.  Filename not having a prefix
+  is considered an error.
+
+ */
+void ADIO_FileSysType_prefix(char *filename, int *fstype, int *error_code)
+{
+    *error_code = MPI_SUCCESS;
+
+    if (!strncmp(filename, "pfs:", 4) || !strncmp(filename, "PFS:", 4)) {
+	*fstype = ADIO_PFS;
+    }
+    else if (!strncmp(filename, "piofs:", 6) || !strncmp(filename, "PIOFS:", 6)) {
+	*fstype = ADIO_PIOFS;
+    }
+    else if (!strncmp(filename, "ufs:", 4) || !strncmp(filename, "UFS:", 4)) {
+	*fstype = ADIO_UFS;
+    }
+    else if (!strncmp(filename, "nfs:", 4) || !strncmp(filename, "NFS:", 4)) {
+	*fstype = ADIO_NFS;
+    }
+    else if (!strncmp(filename, "hfs:", 4) || !strncmp(filename, "HFS:", 4)) {
+	*fstype = ADIO_HFS;
+    }
+    else if (!strncmp(filename, "xfs:", 4) || !strncmp(filename, "XFS:", 4)) {
+	*fstype = ADIO_XFS;
+    }
+    else if (!strncmp(filename, "sfs:", 4) || !strncmp(filename, "SFS:", 4)) {
+	*fstype = ADIO_SFS;
+    }
+    else if (!strncmp(filename, "pvfs:", 5) || !strncmp(filename, "PVFS:", 5)) {
+	*fstype = ADIO_PVFS;
+    }
+    else {
+	*fstype = 0;
+	*error_code = MPI_ERR_UNKNOWN;
+    }
+}
+
