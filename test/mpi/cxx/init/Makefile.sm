@@ -1,7 +1,10 @@
 smvar_do_sharedlibs = 0
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../../include \
-	 -I${srcdir}/../../include
+INCLUDES = -I../../include -I${srcdir}/../../include
 LDADD = ../util/mtest.o 
 DEPADD = ../util/mtest.o
 
 baseenv_SOURCES = baseenv.cxx
+initstatx_SOURCES = initstatx.cxx
+
+../util/mtest.o: 
+	(cd ../util && $(MAKE) mtest.o)
