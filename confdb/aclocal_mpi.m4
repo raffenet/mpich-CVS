@@ -35,7 +35,8 @@ if test "X$pac_lib_mpi_is_building" != "Xyes" ; then
          CPP="$pac_save_CPP"
      fi
   fi
-  AC_SEARCH_LIBS(MPI_Init,mpi mpich)
+  # Look for MPILIB first if it is defined
+  AC_SEARCH_LIBS(MPI_Init,$MPILIB mpi mpich)
   if test "$ac_cv_search_MPI_Init" = "no" ; then
     ifelse($2,,
     AC_MSG_ERROR([Could not find MPI library]),[$2])
@@ -173,6 +174,9 @@ dnl   MPI_xxx_c2f
 dnl
 dnl Output Effect:
 dnl Define 'HAVE_MPI_F2C' if the routines are found.
+dnl
+dnl Notes:
+dnl Looks only for 'MPI_Request_c2f'.
 dnlD*/
 AC_DEFUN(PAC_MPI_F2C,[
 AC_CACHE_CHECK([for MPI F2C and C2F routines],

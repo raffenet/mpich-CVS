@@ -152,12 +152,15 @@ dnl PAC_PROG_F90_INT_KIND - Determine kind parameter for an integer with
 dnl the specified number of bytes.
 dnl
 dnl Synopsis:
-dnl  PAC_PROG_F90_INT_KIND(variable-to-set,number-of-bytes)
+dnl  PAC_PROG_F90_INT_KIND(variable-to-set,number-of-bytes,[cross-size])
 dnl
 dnlD*/
 AC_DEFUN(PAC_PROG_F90_INT_KIND,[
 # Set the default
 $1=-1
+if test "$pac_cv_prog_f90_cross" = "yes" ; then
+    $1="$3"
+else
 if test -n "$ac_f90compile" ; then
     AC_MSG_CHECKING([for Fortran 90 integer kind for $2-byte integers])
     # Convert bytes to digits
@@ -202,12 +205,15 @@ EOF
 	AC_MSG_RESULT($KINDVAL)
     fi # not cached
 fi # Has Fortran 90
+fi # is not cross compiling
 ])dnl
 dnl
 dnl
+dnl Note: This checks for f95 before f90, since F95 is the more recent
+dnl revision of Fortran 90.
 AC_DEFUN(PAC_PROG_F90,[
 if test -z "$F90" ; then
-    AC_CHECK_PROGS(F90, f90 xlf90 pgf90)
+    AC_CHECK_PROGS(F90, f95 f90 xlf90 pgf90)
     test -z "$F90" && AC_MSG_WARN([no acceptable Fortran 90 compiler found in \$PATH])
 fi
 PAC_PROG_F90_WORKS
@@ -270,3 +276,7 @@ AC_MSG_CHECKING([whether the Fortran 90 compiler ($F90 $F90FLAGS $LDFLAGS) is a 
 AC_MSG_RESULT($pac_cv_prog_f90_cross)
 cross_compiling=$pac_cv_prog_f90_cross
 ])
+dnl
+dnl The following looks for F90 options to enable th specified f90 compiler
+dnl to work with the f77 compiler, particularly for accessing command-line
+dnl arguments
