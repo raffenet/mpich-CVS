@@ -1121,8 +1121,10 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 	    pbfd->state = BFD_ERROR;
 	    pbfd->errval = WSAGetLastError();
 	    BPRINTF("***WSARecv failed reading %d WSABUFs, error %d***\n", veclen - i + 1, pbfd->errval);
+#ifdef DBG_READV
 	    for (k=0; k<veclen-i+1; k++)
 		BPRINTF("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k+i, vec[k+i].B_VECTOR_LEN, k+i, vec[k+i].B_VECTOR_BUF);
+#endif
 	    n = 0; /* Set this to zero so it can be added to num_read */
 	}
     }
@@ -1284,6 +1286,9 @@ int bmake_blocking(int bfd)
 @*/
 int beasy_create(int *bfd, int port, unsigned long addr)
 {
+#ifdef HAVE_WINSOCK2_H
+    int len;
+#endif
     struct sockaddr_in sin;
     int optval = 1;
     struct linger linger;

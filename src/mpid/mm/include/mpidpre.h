@@ -15,6 +15,9 @@
 #ifdef WITH_METHOD_TCP
 #include "mm_tcp_pre.h"
 #endif
+#ifdef WITH_METHOD_SOCKET
+#include "mm_socket_pre.h"
+#endif
 #ifdef WITH_METHOD_SHM
 #include "mm_shm_pre.h"
 #endif
@@ -73,7 +76,9 @@ typedef enum {
     MPID_RNDV_DATA_PKT,
     MPID_RDMA_ACK_PKT,
     MPID_RDMA_DATA_ACK_PKT,
-    MPID_RDMA_REQUEST_DATA_ACK_PKT
+    MPID_RDMA_REQUEST_DATA_ACK_PKT,
+    MPID_CONNECT_PKT,
+    MPID_ACK_PKT
 } MPID_Packet_type;
 
 /* Communication agent request type */
@@ -84,39 +89,8 @@ typedef int MM_CAR_TYPE;
 #define MM_WRITE_CAR     ( 0x1 << 2 )
 #define MM_PACKER_CAR    ( 0x1 << 3 )
 #define MM_UNPACKER_CAR  ( 0x1 << 4 )
-/*
-typedef int MM_CAR_TYPE;
-#define MM_NULL_CAR      0x00
-#define MM_HEAD_CAR      0x01
-#define MM_READ_CAR      0x02
-#define MM_WRITE_CAR     0x04
-#define MM_PACKER_CAR    0x08
-#define MM_UNPACKER_CAR  0x10
-#define MM_UNEX_HEAD_CAR 0x20
-#define MM_UNEX_CAR      0x40
-*/
 
 /* packet definitions */
-/*
-typedef struct MPID_Eager_pkt
-{
-    MPID_Packet_type type;
-    int context;
-    int tag;
-    int src;
-    int size;
-} MPID_Eager_pkt;
-
-typedef struct MPID_Request_to_send_pkt
-{
-    MPID_Packet_type type;
-    int context;
-    int tag;
-    int src;
-    int size;
-    struct MPID_Request *sender_req_ptr;
-} MPID_Request_to_send_pkt;
-*/
 typedef struct MPID_Header_pkt
 {
     MPID_Packet_type type;
@@ -126,6 +100,14 @@ typedef struct MPID_Header_pkt
     int size;
     struct MM_Car *sender_car_ptr;
 } MPID_Header_pkt;
+
+typedef struct MPID_Connect_pkt
+{
+    MPID_Packet_type type;
+    int rank;
+    int context;
+    char ack_in, ack_out;
+} MPID_Connect_pkt;
 
 typedef struct MPID_Rndv_clear_to_send_pkt
 {
@@ -164,6 +146,7 @@ typedef struct MPID_Packet
     {
 	MPID_Packet_type type;
 	MPID_Header_pkt hdr;
+	MPID_Connect_pkt connect;
 	MPID_Rndv_clear_to_send_pkt cts;
 	MPID_Rndv_data_pkt rdata;
 #ifdef WITH_VIA_RDMA_METHOD
@@ -173,16 +156,6 @@ typedef struct MPID_Packet
 #endif
     } u;
 } MPID_Packet;
-/*
-typedef struct MPID_Packet
-{
-    MPID_Packet_type type;
-    int context;
-    int tag;
-    int src;
-    int size;
-} MPID_Packet;
-*/
 
 typedef union MM_Segment_buffer
 {
@@ -323,6 +296,9 @@ typedef union MM_Car_data
 #endif
 #ifdef WITH_METHOD_TCP
     MM_Car_data_tcp tcp;
+#endif
+#ifdef WITH_METHOD_SOCKET
+    MM_Car_data_socket socket;
 #endif
 #ifdef WITH_METHOD_VIA
     MM_Car_data_via via;

@@ -169,6 +169,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
     case MM_NULL_METHOD:
 	break;
     case MM_UNBOUND_METHOD:
+	memset(&vc_ptr->data, 0, sizeof(vc_ptr->data));
 	break;
     case MM_PACKER_METHOD:
 	vc_ptr->post_read = packer_post_read;
@@ -213,6 +214,41 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->setup_packet_car = tcp_setup_packet_car;
 	/* tcp specific functions */
 	vc_ptr->data.tcp.read = tcp_read_connecting;
+	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
+	vc_ptr->pkt_car.vc_ptr = vc_ptr;
+	vc_ptr->pkt_car.next_ptr = NULL;
+	vc_ptr->pkt_car.vcqnext_ptr = NULL;
+	vc_ptr->pkt_car.freeme = FALSE;
+	vc_ptr->pkt_car.request_ptr = NULL;
+	vc_ptr->pkt_car.buf_ptr = &vc_ptr->pkt_car.msg_header.buf;
+	vc_ptr->pkt_car.msg_header.buf.type = MM_SIMPLE_BUFFER;
+	vc_ptr->pkt_car.msg_header.buf.simple.buf = &vc_ptr->pkt_car.msg_header.pkt;
+	vc_ptr->pkt_car.msg_header.buf.simple.len = sizeof(MPID_Packet);
+	break;
+#endif
+#ifdef WITH_METHOD_SOCKET
+    case MM_SOCKET_METHOD:
+	/* data members */
+	vc_ptr->data.socket.sock = SOCK_INVALID_SOCKET;
+	//vc_ptr->data.socket.connected = FALSE;
+	//vc_ptr->data.socket.connecting = FALSE;
+	//vc_ptr->data.socket.ack_received = FALSE;
+	//vc_ptr->data.socket.accept_called = FALSE;
+	vc_ptr->data.socket.connect_state = 0;
+	vc_ptr->data.socket.state = 0; //SOCKET_INVALID_STATE;
+	/* function pointers */
+	/* mm required functions */
+	vc_ptr->post_read = socket_post_read;
+	vc_ptr->merge_with_unexpected = socket_merge_with_unexpected;
+	vc_ptr->merge_with_posted = socket_merge_with_posted;
+	vc_ptr->merge_unexpected_data = socket_merge_unexpected_data;
+	vc_ptr->post_write = socket_post_write;
+	vc_ptr->reset_car = socket_reset_car;
+	vc_ptr->post_read_pkt = socket_post_read_pkt;
+	vc_ptr->enqueue_read_at_head = socket_car_head_enqueue;
+	vc_ptr->enqueue_write_at_head = socket_car_head_enqueue;
+	vc_ptr->setup_packet_car = socket_setup_packet_car;
+	/* socket specific */
 	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
 	vc_ptr->pkt_car.vc_ptr = vc_ptr;
 	vc_ptr->pkt_car.next_ptr = NULL;
@@ -288,41 +324,41 @@ MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank)
     
     kvs_name = comm_ptr->mm.pmi_kvsname;
 
-    dbg_printf("+PMI_KVS_Get_value_length_max");
+    //dbg_printf("+PMI_KVS_Get_value_length_max");
     value_len = PMI_KVS_Get_value_length_max();
-    dbg_printf("-\n");
+    //dbg_printf("-\n");
     value = (char*)MPIU_Malloc(value_len);
     methods = (char*)MPIU_Malloc(value_len);
 
-    dbg_printf("A:remote_rank: %d\n", rank);
+    //dbg_printf("A:remote_rank: %d\n", rank);
     snprintf(key, 100, "businesscard:%d", rank);
-    dbg_printf("+PMI_KVS_Get(%s):", key);
+    //dbg_printf("+PMI_KVS_Get(%s):", key);
     PMI_KVS_Get(kvs_name, key, methods);
-    dbg_printf("%s-\n", methods);
+    //dbg_printf("%s-\n", methods);
     
     /* choose method */
     
-    /* match tcp first so I can test the tcp method */
+    /* match socket first so I can test the socket method */
     /* begin test code ****************/
-    if (strstr(methods, "tcp"))
+    if (strstr(methods, "socket"))
     {
 	/* get the tcp method business card */
-	dbg_printf("B: remote rank: %d\n", rank);
-	snprintf(key, 100, "business_card_tcp:%d", rank);
-	dbg_printf("+PMI_KVS_Get(%s):", key);
+	//dbg_printf("B: remote rank: %d\n", rank);
+	snprintf(key, 100, "business_card_socket:%d", rank);
+	//dbg_printf("+PMI_KVS_Get(%s):", key);
 	PMI_KVS_Get(kvs_name, key, value);
-	dbg_printf("%s-\n", value);
+	//dbg_printf("%s-\n", value);
 
 	/* check to see if we can connect with this business card */
-	if (tcp_can_connect(value))
+	if (socket_can_connect(value))
 	{
 	    /* allocate a vc for this method */
-	    vc_ptr = mm_vc_alloc(MM_TCP_METHOD);
+	    vc_ptr = mm_vc_alloc(MM_SOCKET_METHOD);
 	    /* copy the kvs name and rank into the vc. this may not be necessary */
 	    vc_ptr->pmi_kvsname = kvs_name;
 	    vc_ptr->rank = rank;
 	    /* post a connection request to the method */
-	    tcp_post_connect(vc_ptr, value);
+	    socket_post_connect(vc_ptr, value);
 	    
 	    MPIU_Free(value);
 	    MPIU_Free(methods);

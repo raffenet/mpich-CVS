@@ -251,33 +251,17 @@ int mm_cq_test()
 
     MPIDI_FUNC_ENTER(MPID_STATE_MM_CQ_TEST);
 
-    dbg_printf(".");
+    //dbg_printf(".");
 
     /* Should we call make_progress on all the methods?
      * before checking the cq?
      * after checking the cq?
      * only if the cq is empty?
-     * Should this be a function: mm_make_progress()?
+     * Should this be a function or inline?
      */
     if (MPID_Process.cq_head == NULL)
     {
-	packer_make_progress();
-#ifdef WITH_METHOD_TCP
-	tcp_make_progress();
-#endif
-#ifdef WITH_METHOD_SHM
-	shm_make_progress();
-#endif
-#ifdef WITH_METHOD_VIA
-	via_make_progress();
-#endif
-#ifdef WITH_METHOD_VIA_RDMA
-	via_rdma_make_progress();
-#endif
-#ifdef WITH_METHOD_NEW
-	new_make_progress();
-#endif
-	unpacker_make_progress();
+	mm_make_progress();
     }
 
     if (MPID_Process.cq_head == NULL)

@@ -56,7 +56,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 dlog.lib mpid_mm.lib ws2_32.lib pmi.lib mpdutil.lib mpichinfo.lib crypt.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"lib/mpich2.dll" /libpath:"src\pm\winmpd\bsocket2\release" /libpath:"src\pm\winmpd\mpdutil\release" /libpath:"src\pm\winmpd\mpichinfo\release" /libpath:"src\pm\winmpd\crypt\release" /libpath:"lib"
+# ADD LINK32 dlog.lib mpid_mm.lib pmi.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"lib/mpich2.dll" /libpath:"src\pm\winmpd\bsocket2\release" /libpath:"src\pm\winmpd\mpdutil\release" /libpath:"src\pm\winmpd\mpichinfo\release" /libpath:"src\pm\winmpd\crypt\release" /libpath:"lib"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=copying mpich2.dll to system32 directory
@@ -89,7 +89,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 dlogd.lib mpid_mmd.lib ws2_32.lib pmid.lib mpdutil.lib mpichinfo.lib crypt.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"lib/mpich2d.dll" /pdbtype:sept /libpath:"src\pm\winmpd\bsocket2\debug" /libpath:"src\pm\winmpd\mpdutil\debug" /libpath:"src\pm\winmpd\mpichinfo\debug" /libpath:"src\pm\winmpd\crypt\debug" /libpath:"lib"
+# ADD LINK32 dlogd.lib mpid_mmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"lib/mpich2d.dll" /pdbtype:sept /libpath:"src\pm\winmpd\bsocket2\debug" /libpath:"src\pm\winmpd\mpdutil\debug" /libpath:"src\pm\winmpd\mpichinfo\debug" /libpath:"src\pm\winmpd\crypt\debug" /libpath:"lib"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Desc=copying mpich2d.dll to system32 directory
@@ -386,6 +386,7 @@ SOURCE=.\src\mpi\comm\comm_size.c
 # Begin Source File
 
 SOURCE=.\src\mpi\spawn\comm_spawn.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -513,6 +514,14 @@ SOURCE=.\src\mpi\coll\gather.c
 
 SOURCE=.\src\mpi\coll\gatherv.c
 # PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpid\common\datatype\gen_dataloop.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpid\common\datatype\gen_segment.c
 # End Source File
 # Begin Source File
 
@@ -758,6 +767,30 @@ SOURCE=.\mpich2.def
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\mpid\common\datatype\mpid_segment.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpid\common\datatype\mpid_type_contiguous.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpid\common\datatype\mpid_type_get_contents.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpid\common\datatype\mpid_type_get_envelope.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpid\common\datatype\mpid_type_indexed.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpid\common\datatype\mpid_type_vector.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\mpi\timer\mpidtime.c
 # End Source File
 # Begin Source File
@@ -897,6 +930,10 @@ SOURCE=.\src\mpi\pt2pt\rsend.c
 
 SOURCE=.\src\mpi\pt2pt\rsend_init.c
 # PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\util\mem\safestr.c
 # End Source File
 # Begin Source File
 
@@ -1101,16 +1138,6 @@ SOURCE=.\src\mpi\datatype\type_hind.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\mpi\datatype\type_hvec.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\mpi\datatype\type_ind.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\mpi\datatype\type_lb.c
 # PROP Exclude_From_Build 1
 # End Source File
@@ -1143,10 +1170,6 @@ SOURCE=.\src\mpi\datatype\type_struct.c
 
 SOURCE=.\src\mpi\datatype\type_ub.c
 # PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\mpi\datatype\type_vec.c
 # End Source File
 # Begin Source File
 

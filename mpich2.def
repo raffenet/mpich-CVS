@@ -115,8 +115,8 @@ EXPORTS
 ;	MPI_Comm_set_name=PMPI_Comm_set_name
 	PMPI_Comm_size
 	MPI_Comm_size=PMPI_Comm_size
-	PMPI_Comm_spawn
-	MPI_Comm_spawn=PMPI_Comm_spawn
+;	PMPI_Comm_spawn
+;	MPI_Comm_spawn=PMPI_Comm_spawn
 	PMPI_Comm_spawn_multiple
 	MPI_Comm_spawn_multiple=PMPI_Comm_spawn_multiple
 ;	PMPI_Comm_split

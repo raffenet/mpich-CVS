@@ -106,14 +106,6 @@ SOURCE=..\..\util\dbg\dbg_printf.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\datatype\gen_dataloop.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\datatype\gen_segment.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\mm\mm_accept.c
 # End Source File
 # Begin Source File
@@ -163,6 +155,10 @@ SOURCE=.\src\util\mm_events.c
 # Begin Source File
 
 SOURCE=.\src\common\mm_get_vc.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\common\mm_make_progress.c
 # End Source File
 # Begin Source File
 
@@ -258,10 +254,6 @@ SOURCE=.\src\pt2pt\mpid_send.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\datatype\mpid_type_vector.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\packer\packer_car_queue.c
 # End Source File
 # Begin Source File
@@ -343,6 +335,66 @@ SOURCE=.\src\shm\shm_post_write.c
 # Begin Source File
 
 SOURCE=.\src\sock\sock_iocp.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_can_connect.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_car_queue.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_get_business_card.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_handle_written.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_init.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_make_progress.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_merge_unexpected_data.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_merge_with_posted.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_merge_with_unexpected.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_post_connect.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_post_read.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_post_write.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_read.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_reset_car.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socket_write_aggressive.c
 # End Source File
 # Begin Source File
 
@@ -566,6 +618,14 @@ SOURCE=.\include\mm_shm_pre.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\include\mm_socket.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\mm_socket_pre.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\include\mm_tcp.h
 # End Source File
 # Begin Source File
@@ -610,14 +670,6 @@ SOURCE=..\..\include\mpichtimer.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\common\datatype\mpid_dataloop.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\common\datatype\mpid_datatype.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\include\mpidconf.h
 # End Source File
 # Begin Source File
@@ -651,6 +703,10 @@ SOURCE=.\src\shm\shmimpl.h
 # Begin Source File
 
 SOURCE=..\..\include\sock.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\sock\socketimpl.h
 # End Source File
 # Begin Source File
 
