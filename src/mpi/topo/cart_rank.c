@@ -124,6 +124,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 #   endif /* HAVE_ERROR_CHECKING */
 
     ndims = cart_ptr->topo.cart.ndims;
+    *rank = 0;
     multiplier = 1;
     for ( i=ndims-1; i >=0; i-- ) {
 	coord = coords[i];
