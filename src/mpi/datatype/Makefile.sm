@@ -14,7 +14,7 @@ lib${MPILIBNAME}_a_SOURCES = address.c get_address.c getcount.c \
  type_indexed.c type_hindexed.c type_struct.c \
  type_contiguous.c type_free.c type_hvector.c \
  typeutil.c type_get_envelope.c type_get_contents.c \
- type_ub.c type_lb.c
+ type_ub.c type_lb.c type_get_extent.c type_get_true_extent.c \
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 #

@@ -71,6 +71,16 @@ int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+	*lb     = 0;
+	*extent = MPID_Datatype_get_basic_size(datatype);
+    }
+    else {
+	*lb     = datatype_ptr->lb;
+	*extent = datatype_ptr->extent; /* derived, should be same as ub - lb */
+    }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_EXTENT);
     return MPI_SUCCESS;
 }
