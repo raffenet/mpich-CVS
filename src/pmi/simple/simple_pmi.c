@@ -344,6 +344,7 @@ int PMI_KVS_Destroy( const char kvsname[] )
 	return 0;
     }
 
+    /* FIXME: Check for tempbuf too short */
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=destroy_kvs kvsname=%s\n", kvsname );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
@@ -376,6 +377,7 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
 	/* Ignore the put */
 	return 0;
     }
+    /* FIXME: Check for tempbuf too short */
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=put kvsname=%s key=%s value=%s\n",
 	      kvsname, key, value);
     PMIU_writeline( PMI_fd, buf );
@@ -409,6 +411,7 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int lengt
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
 
+    /* FIXME: Check for tempbuf too short */
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", kvsname, key );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
@@ -457,6 +460,7 @@ int PMI_Spawn(const char *command, const char *argv[],
     int  rc;
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
+    /* FIXME: Check for tempbuf too short */
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s arg=%s\n",
 	      maxprocs, command, argv[0] );
     PMIU_writeline( PMI_fd, buf );
@@ -511,6 +515,7 @@ int PMI_Spawn_multiple(int count,
     /* MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
     for (spawncnt=0; spawncnt < count; spawncnt++)
     {
+	/* FIXME: Check for buf too short */
         MPIU_Snprintf(buf, PMIU_MAXLINE, "cmd=spawn nprocs=%d execname=%s ",
 	          maxprocs[spawncnt], cmds[spawncnt] );
     
@@ -518,12 +523,20 @@ int PMI_Spawn_multiple(int count,
         if ((argvs != NULL) && (argvs[spawncnt] != NULL)) {
             for (i=0; argvs[spawncnt][i] != NULL; i++)
             {
+		/* FIXME (protocol design flaw): command line arguments
+		   may contain both = and <space> (and even tab!).
+		   Also, command line args may be quite long, leading to 
+		   errors when PMIU_MAXLINE is exceeded */
+		/* FIXME: Check for tempbuf too short */
                 MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s ",i+1,argvs[spawncnt][i]);
+		/* FIXME: Check for error (buf too short for line) */
                 MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
                 argcnt++;
             }
         }
+	/* FIXME: Check for tempbuf too short */
         MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d ",argcnt);
+	/* FIXME: Check for error (buf too short for line) */
         MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
     
 /*        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ",preput_num);
@@ -531,20 +544,28 @@ int PMI_Spawn_multiple(int count,
         for (i=0; i < preput_num; i++)
         {
 	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_%d=%s:%s ",i,preput_keys[i],preput_vals[i]);
+*/ /* FIXME: Check for error (buf too short for line) *//*
 	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
         }
 */
 
+	/* FIXME: Check for tempbuf too short */
         MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ", preput_keyval_size);
+	/* FIXME: Check for error (buf too short for line) */
         MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
         for (i=0; i < preput_keyval_size; i++)
         { 
+	    /* FIXME: Check for tempbuf too short */
 	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_key_%d=%s ",i,preput_keyval_vector[i].key);
+	    /* FIXME: Check for error (buf too short for line) */
 	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    /* FIXME: Check for tempbuf too short */
 	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_val_%d=%s ",i,preput_keyval_vector[i].val);
+	    /* FIXME: Check for error (buf too short for line) */
 	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
         } 
 
+	/* FIXME: Check for error (buf too short for line) */
         MPIU_Strnapp(buf, "\n", PMIU_MAXLINE);
         PMIU_writeline( PMI_fd, buf );
         PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
@@ -581,6 +602,7 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *k
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
 
+    /* FIXME: Check for tempbuf too short */
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=getbyidx kvsname=%s idx=%d\n", kvsname, idx  );
     PMIU_writeline( PMI_fd, buf );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
@@ -757,6 +779,7 @@ int PMI_Set_from_port( int fd, int id )
     }
     /* Handshake and initialize from a port */
 
+    /* FIXME: Check for tempbuf too short */
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=initack pmiid=%d\n", id );
     err = PMIU_writeline( fd, buf );
     if (err) {
