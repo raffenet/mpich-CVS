@@ -493,7 +493,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		/* this assumes we're either *just* processing the last parts of the current block,
 		 * or we're processing as many blocks as we like starting at the beginning of one.
 		 */
-		assert(myblocks <= cur_elmp->curblock || cur_elmp->curblock == cur_elmp->orig_block);
+		assert(myblocks == cur_elmp->curblock || cur_elmp->curblock == cur_elmp->orig_block);
 
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_INDEXED:
@@ -521,13 +521,15 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			}
 			break;
 		    case DLOOP_KIND_VECTOR:
-			cur_elmp->curcount -= myblocks / cur_elmp->orig_block;
+			/* this math relies on assertions at top of code block */
+			cur_elmp->curcount -= myblocks / cur_elmp->curblock;
 			if (cur_elmp->curcount == 0) {
 			    assert(myblocks % cur_elmp->orig_block == 0);
 			    DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			}
 			else {
-			    cur_elmp->curblock = cur_elmp->orig_block - (myblocks % cur_elmp->orig_block);
+			    /* this math relies on assertions at top of code block */
+			    cur_elmp->curblock = cur_elmp->orig_block - (myblocks % cur_elmp->curblock);
 			    /* new offset = original offset +
 			     *              stride * whole blocks +
 			     *              leftover bytes
@@ -535,7 +537,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			    cur_elmp->curoffset = cur_elmp->orig_offset +
 				((cur_elmp->orig_count - cur_elmp->curcount) *
 				 cur_elmp->loop_p->loop_params.v_t.stride) +
-				((myblocks % cur_elmp->orig_block) * basic_type_size);
+				((cur_elmp->orig_block - cur_elmp->curblock) * basic_type_size);
 			}
 			break;
 		    case DLOOP_KIND_CONTIG:
