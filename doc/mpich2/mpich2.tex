@@ -5406,9 +5406,28 @@ other person who is the ``immediate reviewer''.  The writer is responsible for
 organizing and leading any discussion necessary to complete the text.
 Anyone may read and comment on the document at any time, but should check with
 the section author first to make sure that the document is up-to-date.
+Once a section is written, it should be read and by everyone and we should
+``vote'' on the section.  Once a section is ``passed,'' the section author
+should update the ADI-3 document to match the section.  This may involve
+changing, adding, and/or deleting routines from the ADI-3 document.  Once that
+step is completed, the routines in the section can be written.
+
+Many of these sections can be implemented independently.  
 \begin{enumerate}
-\item Major Sections
+\item Infrastructure
   \begin{enumerate}
+    \item Directory structure
+    \item MPI routine source code template
+    \item mpich2 bug list (first entry: \file{config/confdb} is wrong; it
+      appears to be a snapshot (complete with bugs) of the correct one).
+  \end{enumerate}
+\item MPI Major Sections
+  \begin{enumerate}
+  \item Attributes. 
+  \item Info.
+  \item Datatypes.
+  \item Groups.
+  \item Communicators.
   \item Point-to-point.  
     \begin{enumerate}
     \item Make the scenario (Section~\ref{sec:pt-2-pt-scenarios})
@@ -5417,9 +5436,10 @@ the section author first to make sure that the document is up-to-date.
     \item Define the communicator data structure, including the handling
       of processes that are not part of the original
       \mpiconst{MPI_COMM_WORLD}.
+    \item Address the issues of the multiple completion routines (e.g.,
+      \mpifunc{MPI_Waitsome}). 
     \end{enumerate}
-  \item RMA.  Everything (including scenarios illustrating BSP-style defered
-    updates).
+  \item Communication agent
   \item Collective.  Most of this can be left until later.  However, it
     would be good to include details for \mpifunc{MPI_Bcast} and
     \mpifunc{MPI_Scatter} that show how the routines use the lower-level
@@ -5431,6 +5451,30 @@ the section author first to make sure that the document is up-to-date.
       \mpifunc{MPI_Comm_connect}, \mpifunc{MPI_Comm_attach}, and
       \mpifunc{MPI_Join}).  
     \end{enumerate}
+  \item Topology.
+  \item RMA.  Everything (including scenarios illustrating BSP-style defered
+    updates).  
+  \begin{enumerate}
+    \item Scenarios
+  \end{enumerate}
+  \item Starting and Ending MPI.
+  \item Dynamic processes.
+  \item User-defined requests.
+  \item Error handlers.
+  \item Handle Transfers.
+  \item Timers.
+  \item Runtime Environment.
+  \item Profiling.
+  \end{enumerate}
+\item Source code, portability, and framework
+  \begin{enumerate}
+  \item Error reporting
+  \item Configure.
+  \item Cross compilation
+  \item Fortran
+  \item C++
+  \item Testing.  Needs new test harness; intelligent sampling of the possible
+    combinations; archiving of results (including performance tests).
   \end{enumerate}
 \item Minor Items
   \begin{enumerate}
