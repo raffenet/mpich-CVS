@@ -7,10 +7,35 @@ set -x
 srcdir=/home/gropp/projects/mpich2
 rundir=/sandbox/gropp/cb/mpich2
 mpichtestdir=/sandbox/gropp/cb/mpitest
+outdir=/home/gropp/projects/mpich2-tests
+date=`date "+%Y-%M-%d"`
+# default outfile
+outfile=testbuild.xml
+
+#
+# Get options
+for arg ; do
+    argval=""
+    case $arg in 
+        -*=*) argval=`echo "$arg" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    esac
+
+    case $arg in 
+    -outfile=*) outfile=$argval ;;
+    -outdir=*)  outdir=$argval ;;
+    esac
+done
+
+# Construct the full outfile name from the dir and file
+$outfile="$outdir/$outfile";
 
 if [ ! -d $rundir ] ; then 
     # Assume that we have mkdir -p
     mkdir -p $rundir
+fi
+if [ ! -d $outdir ] ; then 
+    # Assume that we have mkdir -p
+    mkdir -p $outdir
 fi
 if [ ! -d "$rundir/maint" ] ; then
     mkdir "$rundir/maint"
@@ -28,5 +53,5 @@ fi
 $rundir/maint/checkbuilds -rundir=$rundir \
 			  -envopt="CC;cc;gcc" -envopt="FC;f77;g77" \
 			  -tests=mpich \
-			  -xml -maxcount=1
+			  -xml -maxcount=1 -outfile=$outfile
 

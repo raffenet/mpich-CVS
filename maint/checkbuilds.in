@@ -202,7 +202,7 @@ sub RunTest {
 	if ($envset ne "") {
 	    print $OUTFD "Environment = $envset\n";
 	}
-	$rc = system @config;
+	$rc = &RunProgram( @config );
 	$config_status = $rc;
 	if (! -s "Makefile" && $rc == 0) {
 	    $config_status = "No Makefile";
@@ -212,12 +212,12 @@ sub RunTest {
 	# print "rc = $rc\n";
 	if ($rc == 0) {
 	    print $OUTFD $MakeStart;
-	    $rc = system "make";
+	    $rc = &RunProgram( "make" );
 	    print $OUTFD $MakeEnd;
 	    $make_status = $rc;
 	    if ($rc == 0) {
 		print $OUTFD $MakeInstStart;
-		$install_status = system split( /\s+/,"make install");
+		$install_status = &RunProgram( "make install" );
 		print $OUTFD $MakeInstEnd;
 		if ($install_status == 0) {
 		    # Get mpd status from the with args ...
@@ -333,13 +333,13 @@ sub RunTestSuites {
 	    $config[2] = "-mpilibname=mpich";
 	    # Note that there are no quotes in the following because
 	    # they are not needed (no shell evaluation here)
-	    $config[3] = "-cc=gcc -I$instdir/include -L$instdir/lib";
-	    $config[4] = "-fc=f77 -I$instdir/include -L$instdir/lib";
+	    $config[3] = "-cc=\"gcc -I$instdir/include -L$instdir/lib\"";
+	    $config[4] = "-fc=\"f77 -I$instdir/include -L$instdir/lib\"";
 	    #$config[5] = "--enable-echo";
 	    %saveENV = %ENV;
 	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
 	    $ENV{MPIEXEC_TIMEOUT} = "1";
-	    $rc = system @config;
+	    $rc = &RunProgram( @config );
 	    if ($rc == 0) {
 		# HACK for mpd for now.
 		if ($built_for_mpd) {
@@ -355,7 +355,9 @@ sub RunTestSuites {
 			sleep 1;
 		    }
 		}
-		$rc = system "make testing";
+		$rc = &RunProgram( "make testing" );
+		$test_status = $rc;
+		if ($run_status == 0 & &$rc != 0) { $run_status = $rc; }
 		if ($built_for_mpd) {
 		    `$instdir/bin/mpdallexit`;
 		    kill 2, $pid;
@@ -384,6 +386,35 @@ sub RunTestSuites {
 	}
     }
     return $run_status;
+}
+# ---------------------------------------------------------------------------
+# RunProgram LIST
+sub RunProgram {
+    # perl does not correctly handle "2>&1 >>foo" redirection in system
+    # correctly (some stderr escapes to the prior stderr).  This
+    # code attempts to do the correct thing.
+    # By reopening stdout and stderr, we can ensure that all of the 
+    # output goes to the specified files.  Unfortunately, we can't
+    # force perl to correctly flush files without open/close
+    if ($outfile ne "") {
+	close $OUTFD;
+    }
+    @args = @_;
+    $pid = fork();
+    if ($pid == 0) {
+        open STDIN, '/dev/null';
+        open STDOUT, ">>$outfile";
+        open STDERR, ">>&STDOUT";
+        exec @args;
+    }
+    else {
+        waitpid $pid,0;
+        $rc = $?;
+    }
+    if ($outfile ne "") {
+	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile\n";
+    }
+    return $rc;
 }
 # ---------------------------------------------------------------------------
 #
@@ -422,7 +453,17 @@ if ($rundir ne "") {
 
 # Select the output file
 if ($outfile ne "") {
+    if (! ($outfile =~ /^\//) ) {
+	# Ensure that we have an absolute directory for the output file
+	my $curdir = `pwd`;
+	chop $curdir;
+	$outfile = "$curdir/$outfile";
+    }
     open( $OUTFD, ">$outfile" ) || die "Could not open $outfile for writing\n";
+    # Setting autoflush is not enough to ensure that output is 
+    # correctly ordered when child processes also write to the file.
+    # All of the shells get this right but unfortunately perl does not.
+    #autoflush $OUTFD 1;
 }
 else {
     $OUTFD = STDOUT;
