@@ -97,7 +97,6 @@ install: all
 	@echo "copying python files/links into " ${bindir}
 	-@for cmd in ${CMDS_ROOT} ; do \
 	    sed -e 's/\/usr\/bin\/env python.*/\/usr\/bin\/env ${PYTHON}/' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    install ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py ; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	    ( rm -f ${bindir}/$$cmd >/dev/null 2>&1 || exit 0 ) ; \
 	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
@@ -112,7 +111,7 @@ install: all
 	    install -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
-	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
+	-@install -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
 	-@install -m 755 ${srcdir}/mpdman.py ${bindir}/mpdman.py
 	-@install -m 755 ${srcdir}/mpdlib.py ${bindir}/mpdlib.py
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )

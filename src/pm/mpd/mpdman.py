@@ -705,6 +705,8 @@ def mpdman():
                     if pmiCollectiveJob:
                         if rhsSocket:  # still alive ?
                             if not jobEndingEarly:  # if I did not already know this
+                                if not clientExited:
+                                    clientExitStatus = 137  # assume kill -9 below
                                 msgToSend = { 'cmd' : 'collective_abort',
                                               'src' : myId, 'rank' : myRank,
                                               'exit_status' : clientExitStatus }
