@@ -16,7 +16,8 @@
 /* style: allow:free:3 sig:0 */
 /* style: allow:strdup:1 sig:0 */
 /* style: define:malloc:1 sig:0 */
-/* style: define:__strdup:1 sig: 0 */
+/* style: define:__strdup:1 sig:0 */
+/* style: define:FPRINTF:1 sig:0 */
 
 #ifdef malloc
 /* Undefine these in case they were set to 'error' */
@@ -41,6 +42,8 @@ extern void *malloc( size_t );
 extern void *calloc( size_t, size_t );
 extern int free( void *);
 #endif
+
+#define FPRINTF fprintf
 
 /*D
     MPIU_trspace - Routines for tracing space usage
@@ -197,7 +200,7 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     frags     ++;
 
     if (TRlevel & TR_MALLOC) 
-	msg_fprintf( stderr, "[%d] Allocating %d bytes at %lx in %s:%d\n", 
+	MPIU_Error_printf( "[%d] Allocating %d bytes at %lx in %s:%d\n", 
 		     world_rank, a, (PointerInt)new, fname, lineno );
     return (void *)new;
 }
@@ -230,7 +233,7 @@ void MPIU_trfree( void *a_ptr, int line, const char file[] )
     head  = (TRSPACE *)a;
     if (head->cookie != COOKIE_VALUE) {
 	/* Damaged header */
-	msg_fprintf( stderr, 
+	MPIU_Error_printf( 
 		     "[%d] Block at address %lx is corrupted; cannot free;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n\
 called in %s at line %d\n", world_rank, (PointerInt)a, file, line );
@@ -240,7 +243,7 @@ called in %s at line %d\n", world_rank, (PointerInt)a, file, line );
 /* Check that nend is properly aligned */
     if ((sizeof(long) == 4 && ((long)nend & 0x3) != 0) ||
 	(sizeof(long) == 8 && ((long)nend & 0x7) != 0)) {
-	msg_fprintf( stderr,
+	MPIU_Error_printf(
  "[%d] Block at address %lx is corrupted (invalid address or header)\n\
 called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE), 
 		 file, line );
@@ -248,26 +251,26 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     }
     if (*nend != COOKIE_VALUE) {
 	if (*nend == ALREADY_FREED) {
-	    msg_fprintf( stderr, 
+	    MPIU_Error_printf( 
 		     "[%d] Block [id=%d(%lu)] at address %lx was already freed\n", 
 		     world_rank, head->id, head->size, (PointerInt)a + sizeof(TrSPACE) );
 	    head->fname[TR_FNAME_LEN-1]	  = 0;  /* Just in case */
 	    head->freed_fname[TR_FNAME_LEN-1] = 0;  /* Just in case */
-	    msg_fprintf( stderr, 
+	    MPIU_Error_printf(
 		     "[%d] Block freed in %s[%d]\n", world_rank, head->freed_fname, 
 		     head->freed_lineno );
-	    msg_fprintf( stderr, 
+	    MPIU_Error_printf(
 		     "[%d] Block allocated at %s[%d]\n", 
 		     world_rank, head->fname, head->lineno );
 	    return;
 	}
 	else {
 	    /* Damaged tail */
-	    msg_fprintf( stderr, 
+	    MPIU_Error_printf(
 		     "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
 		     world_rank, head->id, head->size, (PointerInt)a );
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
-	    msg_fprintf( stderr, 
+	    MPIU_Error_printf(
 		     "[%d] Block allocated in %s[%d]\n", world_rank, 
 		     head->fname, head->lineno );
 	}
@@ -288,7 +291,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     if (head->next)
 	head->next->prev = head->prev;
     if (TRlevel & TR_FREE)
-	msg_fprintf( stderr, "[%d] Freeing %lu bytes at %lx in %s:%d\n", 
+	MPIU_Error_printf( "[%d] Freeing %lu bytes at %lx in %s:%d\n", 
 		     world_rank, head->size, (PointerInt)a + sizeof(TrSPACE),
 		     file, line );
     
@@ -339,9 +342,9 @@ int MPIU_trvalid( const char str[] )
     head = TRhead;
     while (head) {
 	if (head->cookie != COOKIE_VALUE) {
-	    if (!errs) msg_fprintf( stderr, "%s\n", str );
+	    if (!errs) MPIU_Error_printf( "%s\n", str );
 	    errs++;
-	    msg_fprintf( stderr, "[%d] Block at address %lx is corrupted\n", 
+	    MPIU_Error_printf( "[%d] Block at address %lx is corrupted\n", 
 			 world_rank, (PointerInt)head );
 	    /* Must stop because if head is invalid, then the data in the
 	       head is probably also invalid, and using could lead to 
@@ -351,13 +354,13 @@ int MPIU_trvalid( const char str[] )
 	a    = (char *)(((TrSPACE*)head) + 1);
 	nend = (unsigned long *)(a + head->size);
 	if (nend[0] != COOKIE_VALUE) {
-	    if (!errs) msg_fprintf( stderr, "%s\n", str );
+	    if (!errs) MPIU_Error_printf( "%s\n", str );
 	    errs++;
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
-	    msg_fprintf( stderr, 
+	    MPIU_Error_printf( 
 "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
 			 world_rank, head->id, head->size, (PointerInt)a );
-	    msg_fprintf( stderr, 
+	    MPIU_Error_printf(
 			 "[%d] Block allocated in %s[%d]\n", 
 			 world_rank, head->fname, head->lineno );
 	}
@@ -396,18 +399,18 @@ void MPIU_trdump( FILE *fp )
     if (fp == 0) fp = stderr;
     head = TRhead;
     while (head) {
-	msg_fprintf( fp, "[%d] %lu at [%lx], id = ", 
+	FPRINTF( "[%d] %lu at [%lx], id = ", 
 		 world_rank, head->size, (PointerInt)head + sizeof(TrSPACE) );
 	if (head->id >= 0) {
 	    head->fname[TR_FNAME_LEN-1] = 0;
-	    msg_fprintf( fp, "%d %s[%d]\n", 
+	    FPRINTF( fp, "%d %s[%d]\n", 
 		     head->id, head->fname, head->lineno );
 	}
 	else {
 	    /* Decode the package values */
 	    head->fname[TR_FNAME_LEN-1] = 0;
 	    id = head->id;
-	    msg_fprintf( fp, "%d %s[%d]\n", 
+	    FPRINTF( fp, "%d %s[%d]\n", 
 		     id, head->fname, head->lineno );
 	}
 	head = head->next;
@@ -440,7 +443,7 @@ static FILE *TRFP = 0;
 static void PrintSum( TRINFO **a, VISIT order, int level )
 { 
     if (order == postorder || order == leaf) 
-	msg_fprintf( TRFP, "[%d]%s[%d] has %d\n", 
+	FPRINTF( TRFP, "[%d]%s[%d] has %d\n", 
 		 (*a)->id, (*a)->fname, (*a)->lineno, (*a)->size );
 }
 
@@ -493,7 +496,7 @@ void MPIU_trSummary( FILE *fp )
 #else
 void MPIU_trSummary( FILE *fp )
 {
-    msg_fprintf( fp, 
+    FPRINTF( fp, 
 		 "# [%d] The maximum space allocated was %ld bytes [%ld]\n", 
 		 world_rank, TRMaxMem, TRMaxMemId );
 }	
@@ -612,7 +615,7 @@ void *MPIU_trrealloc( void *p, int size, int lineno, const char fname[] )
     head = (TRSPACE *)(pa - sizeof(TrSPACE));
     if (head->cookie != COOKIE_VALUE) {
 	/* Damaged header */
-	msg_fprintf( stderr, 
+	MPIU_Error_printf( 
 "[%d] Block at address %lx is corrupted; cannot realloc;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n", 
 		     world_rank, (PointerInt)pa );
@@ -757,7 +760,7 @@ void MPIU_trdumpGrouped( FILE *fp )
 	    nbytes += (int)cur->size;
 	    cur    = cur->next;
 	}
-	msg_fprintf( fp, 
+	FPRINTF( fp, 
 "[%d] File %13s line %5d: %d bytes in %d allocation%c\n", 
 		     world_rank, head->fname, head->lineno, nbytes, nblocks, 
 		     (nblocks > 1) ? 's' : ' ' );
