@@ -17,6 +17,9 @@
 #ifdef HAVE_MATH_H
 #include <math.h>
 #endif
+/* ctype is needed for isspace and isascii (isspace is only defined for 
+   values on which isascii returns true). */
+#include <ctype.h>
 
 #define MPIU_STR_QUOTE_CHAR     '\"'
 #define MPIU_STR_DELIM_CHAR     '='
@@ -114,7 +117,8 @@ static const char * first_token(const char *str)
 {
     if (str == NULL)
 	return NULL;
-    while (isspace(*str))
+    /* isspace is defined only if isascii is true */
+    while (isascii(*str) && isspace(*str))
 	str++;
     if (*str == '\0')
 	return NULL;
@@ -162,7 +166,7 @@ static const char * next_token(const char *str)
 	else
 	{
 	    /* move over literal */
-	    while (!isspace(*str) && *str != MPIU_STR_DELIM_CHAR && *str != '\0')
+	    while ((isascii(*str) && !isspace(*str)) && *str != MPIU_STR_DELIM_CHAR && *str != '\0')
 		str++;
 	}
     }
@@ -226,14 +230,16 @@ static int compare_token(const char *token, const char *str)
     }
 
     /* compare literals */
-    while (*token == *str && *str != '\0' && *token != MPIU_STR_DELIM_CHAR && !isspace(*token))
+    while (*token == *str && *str != '\0' && *token != MPIU_STR_DELIM_CHAR && 
+	   (isascii(*token) && !isspace(*token)) )
     {
 	token++;
 	str++;
     }
-    if ( (*str == '\0') && (*token == MPIU_STR_DELIM_CHAR || isspace(*token) || *token == '\0') )
+    if ( (*str == '\0') && (*token == MPIU_STR_DELIM_CHAR || (isascii(*token) && isspace(*token)) || *token == '\0') )
 	return 0;
-    if (*token == MPIU_STR_DELIM_CHAR || isspace(*token) || *token < *str)
+    if (*token == MPIU_STR_DELIM_CHAR || 
+	(isascii(*token) && isspace(*token)) || *token < *str)
 	return -1;
     return 1;
 }
@@ -302,7 +308,8 @@ static int token_copy(const char *token, char *str, int maxlen)
     }
 
     /* literal copy */
-    while (*token != MPIU_STR_DELIM_CHAR && !isspace(*token) && *token != '\0' && maxlen)
+    while (*token != MPIU_STR_DELIM_CHAR && 
+	   (isascii(*token) && !isspace(*token)) && *token != '\0' && maxlen)
     {
 	*str = *token;
 	str++;
@@ -367,7 +374,8 @@ static void token_hide(char *token)
     }
 
     /* literal */
-    while (*token != MPIU_STR_DELIM_CHAR && !isspace(*token) && *token != '\0')
+    while (*token != MPIU_STR_DELIM_CHAR && 
+	   (isascii(*token) && !isspace(*token)) && *token != '\0')
     {
 	*token = MPIU_STR_HIDE_CHAR;
 	token++;
