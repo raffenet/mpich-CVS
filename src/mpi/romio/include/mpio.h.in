@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
  *   $Id$    
  *
@@ -20,12 +21,18 @@ extern "C" {
 
 /* define MPI-IO datatypes and constants */
 
+#ifndef MPI_FILE_DEFINED
 typedef struct ADIOI_FileD *MPI_File;
+#endif
 
 /* no generalized requests as yet */
+#ifndef HAVE_MPI_PREQUEST
 typedef struct ADIOI_RequestD *MPIO_Request;  
+#endif
 
+#ifndef HAVE_MPI_OFFSET
 @DEFINE_MPI_OFFSET@
+#endif
 
 #ifndef NEEDS_MPI_FINT
 @NEEDS_MPI_FINT@
