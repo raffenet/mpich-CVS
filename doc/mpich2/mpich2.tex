@@ -381,7 +381,12 @@ copy attributes (where requested) from the old communicator.
 Question: do we want a ``hidden'' communicator for implementing the
 collective routines?  Just a hidden context?  One concern when there
 are two communicators: which do you lock (e.g., with
-\code{MPID_Comm_thread_lock})?  How do you avoid 
+\code{MPID_Comm_thread_lock})?  How do you avoid deadly embraces?  How do you
+ensure that the expected communicator is acted on?
+
+If a hidden communicator is used, it should have its error handler permanently
+set to \code{MPI_ERRORS_RETURN} so that an error action that is appropriate to
+the collective routine, not the routine called, may be used.
 
 \subsection{Point to Point Communication}
 
@@ -402,7 +407,8 @@ Since each system may have some feature that provides for even faster
 implementation of the collective routines, it will be possible to
 substitute a system-specific implementation for any of the collective
 routines.  The purpose of the implementations provided with MPICH is
-to provide a 
+to provide a good performance and a level of performance that will be adequate
+for many users.  
 
 \subsubsection{Redution functions}
 The reduction functions must use the \code{restrict} qualifier.
@@ -570,7 +576,32 @@ We need to document all \code{CROSS_xxx} variables.  Here is a start at that
 list:
 \begin{description}
 \item[\texttt{CROSS_BYTE_ORDERING}]
-\item[\texttt{CROSS_F90_INTEGER_KIND}]
+\item[\texttt{CROSS_STRUCT_ALIGNMENT}]Structure alignment.  One of 
+    \begin{description}
+    \item[\texttt{packed}]No padding
+    \item[\texttt{largest}]Aligned on the largest item
+    \item[\texttt{two}]Aligned to two bytes
+    \item[\texttt{four}]Aligned to four bytes
+    \item[\texttt{eight}]Aligned to eight bytes
+    \item[\texttt{other}]Unable to determine
+    \end{description}
+\item[\texttt{CROSS_SIZEOF_INT}]\code{sizeof(int)}
+\item[\texttt{CROSS_SIZEOF_VOID_P}]\code{sizeof(void*)}
+\item[\texttt{CROSS_SIZEOF_CHAR}]\code{sizeof{char}}
+\item[\texttt{CROSS_SIZEOF_LONG}]\code{sizeof{long}}
+\item[\texttt{CROSS_SIZEOF_FLOAT}]\code{sizeof{float}}
+\item[\texttt{CROSS_SIZEOF_DOUBLE}]\code{sizeof{double}}
+\item[\texttt{CROSS_SIZEOF_LONG_DOUBLE}]\code{long double}
+\item[\texttt{CROSS_F77_SIZEOF_INTEGER}]The size of an \code{INTEGER} in
+  Fortran (as if there was a \code{sizeof} operator in Fortran)
+\item[\texttt{CROSS_F77_SIZEOF_REAL}]
+\item[\texttt{CROSS_F77_SIZEOF_DOUBLE_PRECISION}]
+\item[\texttt{CROSS_F90_INTEGER_KIND}]The Fortran 90 kind for an integer that
+  corresponds to a C \code{int}.
+\item[\texttt{CROSS_OFFSET_KIND}]The Fortran 90 kind for an integer that
+  corresponds to a \code{MPI_Offset}.
+\item[\texttt{CROSS_ADDRESS_KIND}]The Fortran 90 kind for an integer that
+  corresponds to a \code{MPI_Aint}.
 \end{description}
 
 Other items, such as the allowed types for the f90 modules, also needs
