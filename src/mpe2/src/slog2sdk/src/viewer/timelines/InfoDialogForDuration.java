@@ -21,9 +21,6 @@ import viewer.common.Routines;
 
 public class InfoDialogForDuration extends InfoDialog
 {
-    private static final Component       STRUT = Box.createHorizontalStrut( 5 );
-    private static final Component       GLUE  = Box.createHorizontalGlue();
-
     private static final String          FORMAT = Const.INFOBOX_TIME_FORMAT;
     private static       DecimalFormat   fmt = null;
 
@@ -49,21 +46,21 @@ public class InfoDialogForDuration extends InfoDialog
             int          num_cols = 0, num_rows = 3;
 
             StringBuffer linebuf = new StringBuffer();
-            linebuf.append( "[0]: time = "
-                          + fmt.format(timebox.getEarliestTime()) );
+            linebuf.append( "duration = "
+                          + fmt.format(timebox.getDuration()) );
             num_cols = linebuf.length();
             textbuf.append( linebuf.toString() + "\n" );
 
             linebuf = new StringBuffer();
-            linebuf.append( "[1]: time = "
-                          + fmt.format(timebox.getLatestTime()) );
+            linebuf.append( "[0]: time = "
+                          + fmt.format(timebox.getEarliestTime()) );
             if ( num_cols < linebuf.length() )
                 num_cols = linebuf.length();
             textbuf.append( linebuf.toString() + "\n" );
             
             linebuf = new StringBuffer();
-            linebuf.append( "duration = "
-                          + fmt.format(timebox.getDuration()) );
+            linebuf.append( "[1]: time = "
+                          + fmt.format(timebox.getLatestTime()) );
             if ( num_cols < linebuf.length() )
                 num_cols = linebuf.length();
             textbuf.append( linebuf.toString() );

@@ -140,9 +140,7 @@ public class ActionTimelineMove implements ActionListener
         toolbar.mark_btn.setEnabled( true );
         toolbar.move_btn.setEnabled( false );
         toolbar.delete_btn.setEnabled( false );
-        toolbar.expand_btn.setEnabled( tree.isLevelExpandable() );
-        toolbar.collapse_btn.setEnabled( tree.isLevelCollapsable() );
-        toolbar.commit_btn.setEnabled( true );
+        toolbar.resetYaxisTreeButtons();
     }
 
     private TreePath getReplacedPath( TreePath prefix_path, TreePath old_path )

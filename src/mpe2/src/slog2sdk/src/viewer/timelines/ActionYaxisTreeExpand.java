@@ -35,8 +35,6 @@ public class ActionYaxisTreeExpand implements ActionListener
         toolbar.commit_btn.doClick();
 
         // Set toolbar buttons to reflect status
-        toolbar.expand_btn.setEnabled( tree_view.isLevelExpandable() );
-        toolbar.collapse_btn.setEnabled( tree_view.isLevelCollapsable() );
-        toolbar.commit_btn.setEnabled( true );
+        toolbar.resetYaxisTreeButtons();
     }
 }

@@ -164,7 +164,7 @@ public class CanvasTime extends ScrollableObject
     protected void finalizeAllOffImages( final TimeBoundingBox imgs_times )
     {
         drawn_boxes.finalize();
-        map_line2row = null;        
+        map_line2row = null;
         nesting_stacks.finalize();
         // Update the timeframe of all images
         timeframe4imgs.setEarliestTime( imgs_times.getEarliestTime() );
@@ -241,6 +241,16 @@ public class CanvasTime extends ScrollableObject
 
             int N_nestable = 0, N_nestless = 0;
             int N_nestable_drawn = 0, N_nestless_drawn = 0;
+            
+            // Draw Nestable Drawables
+            dobjs = treetrunk.iteratorOfDrawables( timebounds, true, true );
+            while ( dobjs.hasNext() ) {
+                dobj = (Drawable) dobjs.next();
+                N_nestable_drawn +=
+                dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
+                                   drawn_boxes, nesting_stacks );
+                N_nestable += dobj.getNumOfPrimitives();
+            }
 
             // Draw Nestable Shadows
             sobjs = treetrunk.iteratorOfLowestFloorShadows( timebounds,
@@ -251,16 +261,6 @@ public class CanvasTime extends ScrollableObject
                 sobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
                                    drawn_boxes, nesting_stacks );
                 N_nestable += sobj.getNumOfPrimitives();
-            }
-            
-            // Draw Nestable Drawables
-            dobjs = treetrunk.iteratorOfDrawables( timebounds, true, true );
-            while ( dobjs.hasNext() ) {
-                dobj = (Drawable) dobjs.next();
-                N_nestable_drawn +=
-                dobj.drawOnCanvas( offGraphics, coord_xform, map_line2row,
-                                   drawn_boxes, nesting_stacks );
-                N_nestable += dobj.getNumOfPrimitives();
             }
 
             // Set AntiAliasing from Parameters for all slanted lines
@@ -340,8 +340,8 @@ public class CanvasTime extends ScrollableObject
             if ( clicked_dobj != null ) {
                 return  new InfoDialogForDrawable( root_window,
                                                    clicked_time,
-                                                   y_colnames,
                                                    map_line2treeleaf,
+                                                   y_colnames,
                                                    clicked_dobj );
             }
         }
@@ -357,8 +357,8 @@ public class CanvasTime extends ScrollableObject
             if ( clicked_dobj != null ) {
                 return  new InfoDialogForDrawable( root_window,
                                                    clicked_time,
-                                                   y_colnames,
                                                    map_line2treeleaf,
+                                                   y_colnames,
                                                    clicked_dobj );
             }
         }
@@ -374,8 +374,8 @@ public class CanvasTime extends ScrollableObject
             if ( clicked_dobj != null ) {
                 return  new InfoDialogForDrawable( root_window,
                                                    clicked_time,
-                                                   y_colnames,
                                                    map_line2treeleaf,
+                                                   y_colnames,
                                                    clicked_dobj );
             }
         }
@@ -391,8 +391,8 @@ public class CanvasTime extends ScrollableObject
             if ( clicked_dobj != null ) {
                 return  new InfoDialogForDrawable( root_window,
                                                    clicked_time,
-                                                   y_colnames,
                                                    map_line2treeleaf,
+                                                   y_colnames,
                                                    clicked_dobj );
             }
         }

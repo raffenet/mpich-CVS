@@ -31,7 +31,6 @@ public class ActionZoomUndo implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        TimeBoundingBox  zoom_timebox = null;
         if ( model.isZoomUndoStackEmpty() ) {
             Frame frame = (Frame) SwingUtilities.windowForComponent( toolbar );
             String msg = "Zoom Undo Stack is empty";
@@ -40,15 +39,9 @@ public class ActionZoomUndo implements ActionListener
         else
             model.zoomUndo();
 
-        /*
         // Set toolbar buttons to reflect status
-        zoomlevel = model.getZoomLevel();
-        if ( toolbar != null ) {
-            toolbar.zoomIn_btn.setEnabled( zoomlevel < Const.MAX_ZOOM_LEVEL );
-            toolbar.home_btn.setEnabled( zoomlevel != Const.MIN_ZOOM_LEVEL );
-            toolbar.zoomOut_btn.setEnabled( zoomlevel > Const.MIN_ZOOM_LEVEL );
-        }
-        */
+        if ( toolbar != null )
+            toolbar.resetZoomButtons();
 
         if ( Debug.isActive() )
             Debug.println( "Action for Zoom Undo button." );

@@ -31,7 +31,6 @@ public class ActionZoomRedo implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        TimeBoundingBox  zoom_timebox = null;
         if ( model.isZoomRedoStackEmpty() ) {
             Frame frame = (Frame) SwingUtilities.windowForComponent( toolbar );
             String msg = "Zoom Redo Stack is empty";
@@ -40,15 +39,9 @@ public class ActionZoomRedo implements ActionListener
         else
             model.zoomRedo();
 
-        /*
         // Set toolbar buttons to reflect status
-        zoomlevel = model.getZoomLevel();
-        if ( toolbar != null ) {
-            toolbar.zoomIn_btn.setEnabled( zoomlevel < Const.MAX_ZOOM_LEVEL );
-            toolbar.home_btn.setEnabled( zoomlevel != Const.MIN_ZOOM_LEVEL );
-            toolbar.zoomOut_btn.setEnabled( zoomlevel > Const.MIN_ZOOM_LEVEL );
-        }
-        */
+        if ( toolbar != null )
+            toolbar.resetZoomButtons();
 
         if ( Debug.isActive() )
             Debug.println( "Action for Zoom Redo button." );

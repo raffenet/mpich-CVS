@@ -35,6 +35,7 @@ public class ViewportTime extends JViewport
     // view_img is both a Component and ScrollableView object
     private ScrollableView            view_img      = null;
     private ModelTime                 time_model    = null;
+    private ToolBarStatus             toolbar       = null;
 
     private TimeBoundingBox           vport_timebox = null;
     private CoordPixelImage           coord_xform   = null;
@@ -98,6 +99,11 @@ public class ViewportTime extends JViewport
                                                              info_dialogs );
         info_window_listener = new InfoDialogWindowListener( this,
                                                              info_dialogs );
+    }
+
+    public void setToolBarStatus( ToolBarStatus  in_toolbar )
+    {
+        toolbar = in_toolbar;
     }
 
     //  For Debugging Profiling
@@ -502,6 +508,8 @@ public class ViewportTime extends JViewport
                     zoom_timebox.setZeroDuration( focus_time );
                     this.repaint();
                 }
+                if ( toolbar != null )
+                    toolbar.resetZoomButtons();
             }
             else if ( SwingUtilities.isRightMouseButton( mouse_evt ) ) {
                 if ( click_time > mouse_pressed_time )

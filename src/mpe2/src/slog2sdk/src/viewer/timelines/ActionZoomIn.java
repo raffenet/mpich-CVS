@@ -42,15 +42,9 @@ public class ActionZoomIn implements ActionListener
         else
             model.zoomIn();
 
-        /*
         // Set toolbar buttons to reflect status
-        zoomlevel = model.getZoomLevel();
-        if ( toolbar != null ) {
-            toolbar.zoomIn_btn.setEnabled( zoomlevel < Const.MAX_ZOOM_LEVEL );
-            toolbar.home_btn.setEnabled( zoomlevel != Const.MIN_ZOOM_LEVEL );
-            toolbar.zoomOut_btn.setEnabled( zoomlevel > Const.MIN_ZOOM_LEVEL );
-        }
-        */
+        if ( toolbar != null )
+            toolbar.resetZoomButtons();
 
         if ( Debug.isActive() )
             Debug.println( "Action for Zoom In button. ZoomLevel = "

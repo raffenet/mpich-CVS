@@ -20,8 +20,8 @@ public class TreeTrunkPanel extends JPanel
                             implements ChangeListener
 {
     private TreeTrunk               treetrunk;
-    private LabeledTextField        fld_cur_depth;
-    private LabeledTextField        fld_max_depth;
+    private LabeledTextField        fld_low2max_depth;
+    private short                   max_depth;
 
     public TreeTrunkPanel( TreeTrunk  in_treetrunk )
     {
@@ -29,28 +29,25 @@ public class TreeTrunkPanel extends JPanel
         treetrunk  = in_treetrunk;
         setLayout( new BoxLayout( this, BoxLayout.X_AXIS ) );
 
-        fld_cur_depth   = new LabeledTextField( "Lowest Depth",
-                                                Const.SHORT_FORMAT );
-        fld_cur_depth.setEditable( false );
-        fld_cur_depth.setHorizontalAlignment( JTextField.CENTER );
+        fld_low2max_depth   = new LabeledTextField( "Lowest / Max. Depth",
+                                                    null );
+        fld_low2max_depth.setEditable( false );
+        fld_low2max_depth.setHorizontalAlignment( JTextField.CENTER );
         // fld_tree_depth.addActionListener( this );
-        add( fld_cur_depth );
-
-        fld_max_depth   = new LabeledTextField( "Max. Depth",
-                                                Const.SHORT_FORMAT );
-        fld_max_depth.setEditable( false );
-        fld_max_depth.setHorizontalAlignment( JTextField.CENTER );
-        add( fld_max_depth );
+        add( fld_low2max_depth );
 
         super.setBorder( BorderFactory.createEtchedBorder() );
-        fld_max_depth.setInteger(
-                      treetrunk.getTreeRoot().getTreeNodeID().depth );
+        max_depth = treetrunk.getTreeRoot().getTreeNodeID().depth;
     }
 
     // public void lowestDepthChanged()
     public void stateChanged( ChangeEvent evt )
     {
-        fld_cur_depth.setInteger( (int) treetrunk.getLowestDepth() );
+        StringBuffer  strbuf = new StringBuffer();
+        strbuf.append( treetrunk.getLowestDepth() );
+        strbuf.append( " / " );
+        strbuf.append( max_depth );
+        fld_low2max_depth.setText( strbuf.toString() );
     }
     
 }

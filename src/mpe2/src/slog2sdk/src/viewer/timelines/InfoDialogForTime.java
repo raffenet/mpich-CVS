@@ -20,9 +20,6 @@ import viewer.common.Routines;
 
 public class InfoDialogForTime extends InfoDialog
 {
-    private static final Component      STRUT = Box.createHorizontalStrut( 5 );
-    private static final Component      GLUE  = Box.createHorizontalGlue();
-
     private static final String         FORMAT = Const.INFOBOX_TIME_FORMAT;
     private static       DecimalFormat  fmt = null;
 

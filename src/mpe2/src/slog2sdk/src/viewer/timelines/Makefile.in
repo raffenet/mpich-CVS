@@ -29,7 +29,7 @@ SRC       = Diagnosis.java Debug.java Profile.java \
             InfoDialog.java InfoDialogForTime.java \
             InfoDialogForDuration.java InfoDialogForDrawable.java \
             ScrollableView.java ScrollableObject.java \
-            ViewportTime.java ViewportTimeYaxis.java \
+            ToolBarStatus.java ViewportTime.java ViewportTimeYaxis.java \
             RulerTime.java ViewportTimePanel.java \
             CoordPixelImage.java CanvasTime.java \
             ActionVportUp.java ActionVportDown.java \
@@ -40,7 +40,7 @@ SRC       = Diagnosis.java Debug.java Profile.java \
             ActionVportBackward.java ActionVportForward.java \
             ActionVportUp.java ActionZoomHome.java ActionVportDown.java \
             ActionZoomIn.java ActionZoomOut.java \
-            ActionZoomUndo.java ActionZoomRedo.java \
+            ActionZoomUndo.java ActionZoomRedo.java ActionSearch.java \
             ActionPptyRefresh.java ActionPptyPrint.java ActionPptyStop.java \
             TimelineToolBar.java TimelinePanel.java TimelineFrame.java
 
