@@ -16,3 +16,5 @@ cpi_SOURCES = cpi.c
 cpi_LDADD = -lm
 icpi_SOURCES = icpi.c
 icpi_LDADD = -lm
+pmandel_SOURCES = pmandel.c
+pmandel_LDADD = -lm
