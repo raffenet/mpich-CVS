@@ -194,6 +194,21 @@ Return values:
 int PMI_Publish_name( const char service_name[], const char port[] );
 
 /*@
+PMI_Unpublish_name - unpublish a name
+
+Input parameters:
+. service_name - string representing the service being unpublished
+
+Return values:
++ PMI_SUCCESS - port for service successfully published
+. PMI_ERR_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to unpublish service
+
+
+@*/
+int PMI_Unpublish_name( const char service_name[] );
+
+/*@
 PMI_Lookup_name - lookup a service by name
 
 Input parameters:
