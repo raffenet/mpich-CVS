@@ -74,6 +74,9 @@ AC_SUBST(master_top_builddir)
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
+dnl
+dnl Libraries required by Simple
+AC_SUBST(PMI_LIBS)
 
 AC_OUTPUT(Makefile localdefs)
 

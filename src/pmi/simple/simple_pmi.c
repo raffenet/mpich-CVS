@@ -7,8 +7,6 @@
 
 /*********************** PMI implementation ********************************/
 
-#define USE_PMI_PORT
-
 #include "pmiconf.h" 
 
 #include <stdio.h>
