@@ -39,14 +39,18 @@ void ADIOI_NFS_Open(ADIO_File fd, int *error_code)
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
         fd->fp_ind = fd->fp_sys_posn = lseek(fd->fd_sys, 0, SEEK_END);
 
-#ifdef PRINT_ERR_MSG
-    *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
     if (fd->fd_sys == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(ADIO_FILE_NULL, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code = MPI_ERR_UNKNOWN;
+#else
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 }

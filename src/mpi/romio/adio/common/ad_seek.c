@@ -92,16 +92,20 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     fd->fp_ind = off;
     fd->fp_sys_posn = off;
 
-#ifdef PRINT_ERR_MSG
-    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
     if (err == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(MPI_FILE_NULL, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code = MPI_ERR_UNKNOWN;
+#else /* MPICH-1 */
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(MPI_FILE_NULL, *error_code, myname);	    
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 
     return off;
 }

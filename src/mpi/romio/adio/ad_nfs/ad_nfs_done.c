@@ -56,9 +56,13 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	    *error_code = MPI_SUCCESS;
 	}
 	else {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(tmp->aio_errno)); 
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
 	    *error_code = MPI_ERR_UNKNOWN;
-#else
+#else /* MPICH-1 */
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 		          myname, "I/O Error", "%s", strerror(tmp->aio_errno));
 	    ADIOI_Error((*request)->fd, *error_code, myname);	    
@@ -94,16 +98,20 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	
 	    done = 1;
 
-#ifdef PRINT_ERR_MSG
-	    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	    if (err == -1) {
+#ifdef MPICH2
+				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+								"**io %s", strerror(errno));
+				MPIR_Err_return_file((*request)->fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+	    *error_code =  MPI_SUCCESS;
+#else
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 		ADIOI_Error((*request)->fd, *error_code, myname);	    
+#endif
 	    }
 	    else *error_code = MPI_SUCCESS;
-#endif
 	}
     }
     else {
@@ -130,16 +138,21 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 
 	    done = 1;
 
-#ifdef PRINT_ERR_MSG
-	    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	    if (err == -1) {
+#ifdef MPICH2
+				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+								"**io %s", strerror(errno));
+				MPIR_Err_return_file((*request)->fd, myname, *error_code);
+
+#elif PRINT_ERR_MSG
+	    *error_code =  MPI_SUCCESS;
+#else
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 		ADIOI_Error((*request)->fd, *error_code, myname);	    
+#endif
 	    }
 	    else *error_code = MPI_SUCCESS;
-#endif
 	}
     }
     else {

@@ -58,10 +58,13 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
 #endif
 
     if (size < 0) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**iobadsize", "**iobadsize");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_preallocate: Invalid size argument\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_SIZE_ARG,
 				     myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);
@@ -72,10 +75,13 @@ int MPI_File_preallocate(MPI_File fh, MPI_Offset size)
     MPI_Bcast(&tmp_sz, 1, ADIO_OFFSET, 0, fh->comm);
 
     if (tmp_sz != size) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**notsame", "**notsame");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_preallocate: size argument must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_SIZE_ARG_NOT_SAME,
 				     myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);

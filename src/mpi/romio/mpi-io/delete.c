@@ -86,9 +86,11 @@ int MPI_File_delete(char *filename, MPI_Info info)
 	 * the error up.  In the PRINT_ERR_MSG case MPI_Abort has already
 	 * been called as well, so we probably didn't even make it this far.
 	 */
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+	return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
+#elif PRINT_ERR_MSG
 	MPI_Abort(MPI_COMM_WORLD, 1); /* this is mostly here for clarity */
-#else
+#else /* MPICH-1 */
 	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
 #endif
     }

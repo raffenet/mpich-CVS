@@ -88,16 +88,20 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	     lseek64(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
 /* not required in SPPUX since there we use pread/pwrite */
 #endif
-#ifdef PRINT_ERR_MSG
-	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
-    if (fcntl_struct->fsize == -1) {
-	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
-			      myname, "I/O Error", "%s", strerror(errno));
-	ADIOI_Error(fd, *error_code, myname);	    
-    }
-    else *error_code = MPI_SUCCESS;
+	if (fcntl_struct->fsize == -1) {
+#ifdef MPICH2
+		*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io", 
+				"**io %s", strerror(errno));
+		MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+		*error_code = MPI_ERR_UNKNOWN;
+#else /* MPICH-1 */
+		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+				myname, "I/O Error", "%s", strerror(errno));
+		ADIOI_Error(fd, *error_code, myname);	    
 #endif
+	}
+	else *error_code = MPI_SUCCESS;
 	break;
 
     case ADIO_FCNTL_SET_DISKSPACE:
@@ -107,7 +111,11 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	err = prealloc64(fd->fd_sys, fcntl_struct->diskspace);
 	/* prealloc64 works only if file is of zero length */
 	if (err && (errno != ENOTEMPTY)) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+	    *error_code = MPIR_Err_create_code(MPI_ERR_IO< "**io", 
+						"**io %s", strerror(errno));
+		MPIR_Err_return_file(fd, myname, *error_code); 
+#elif PRINT_ERR_MSG
 	    *error_code = MPI_ERR_UNKNOWN;
 #else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
@@ -125,7 +133,11 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
         if (fcntl_struct->diskspace <= 2147483647) {
 	    err = prealloc(fd->fd_sys, (off_t) fcntl_struct->diskspace);
 	    if (err && (errno != ENOTEMPTY)) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+								"**io %s", strerror(errno));
+				MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
     	        *error_code = MPI_ERR_UNKNOWN;
 #else
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
@@ -161,10 +173,14 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 		ADIO_ReadContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
                       done, &status, error_code);
 		if (*error_code != MPI_SUCCESS) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, 
+							"**iopreallocrdwr", "**iopreallocrdwr");
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
 		    FPRINTF(stderr, "ADIOI_HFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		    MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 		    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_PREALLOC_PERM,
 			      myname, (char *) 0, (char *) 0);
 		    ADIOI_Error(fd, *error_code, myname);

@@ -48,10 +48,14 @@ int MPI_File_set_errhandler(MPI_File fh, MPI_Errhandler errhandler)
 
     if (fh == MPI_FILE_NULL) ADIOI_DFLT_ERR_HANDLER = errhandler;
     else if (fh->cookie != ADIOI_FILE_COOKIE) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_FILE, "**iobadfh",
+							"**iobadfh");
+			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
+#elif PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_FILE, MPIR_ERR_FILE_CORRUPT, 
               myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);

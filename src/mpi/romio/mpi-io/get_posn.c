@@ -54,10 +54,14 @@ int MPI_File_get_position(MPI_File fh, MPI_Offset *offset)
 #endif
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
+							"**ioamodeseq", "**ioamodeseq");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_get_position: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, MPIR_ERR_AMODE_SEQ,
 				     myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);

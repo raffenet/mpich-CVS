@@ -86,16 +86,20 @@ void ADIOI_PIOFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *
 	fcntl_struct->fsize = llseek(fd->fd_sys, 0, SEEK_END);
 	if (fd->fp_sys_posn != -1) 
 	     llseek(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
-#ifdef PRINT_ERR_MSG
-	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	if (fcntl_struct->fsize == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code =  MPI_ERR_UNKNOWN;
+#else /* MPICH-1 */
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error(fd, *error_code, myname);	    
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
 	break;
 
     case ADIO_FCNTL_SET_DISKSPACE:
@@ -122,15 +126,19 @@ void ADIOI_PIOFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *
 	    ADIO_ReadContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, done,
 			    &status, error_code);
 	    if (*error_code != MPI_SUCCESS) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+								"**io %s", strerror(errno));
+				MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
 		FPRINTF(stderr, "ADIOI_PIOFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_PREALLOC_PERM,
 			      myname, (char *) 0, (char *) 0);
 		ADIOI_Error(fd, *error_code, myname);
-                return;  
 #endif
+                return;  
 	    }
 	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, done,
 			     &status, error_code);
@@ -177,16 +185,20 @@ void ADIOI_PIOFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *
 	err = piofsioctl(fd->fd_sys, PIOFS_CHANGE_VIEW, piofs_change_view);
 	ADIOI_Free(piofs_change_view);
 	fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1;
-#ifdef PRINT_ERR_MSG
-	*error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
-#else
 	if (err == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code =  MPI_ERR_UNKNOWN;
+#else /* MPICH-1 */
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error(fd, *error_code, myname);	    
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
 	break;
 
     default:

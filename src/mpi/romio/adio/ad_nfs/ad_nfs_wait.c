@@ -39,16 +39,20 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 
         (*request)->nbytes = tmp->aio_return;
 
-#ifdef PRINT_ERR_MSG
-	*error_code = (tmp->aio_return == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	if (tmp->aio_return == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file((*request)->fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code =  MPI_ERR_UNKNOWN;
+#else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			  myname, "I/O Error", "%s", strerror(tmp->aio_errno));
 	    ADIOI_Error((*request)->fd, *error_code, myname);	    
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
 
 /* aiowait only dequeues a request. The completion of a request can be
    checked by just checking the aio_return flag in the handle passed
@@ -84,18 +88,22 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
    IBM man pages don't indicate what function to use for dequeue.
    I'm assuming it is aio_return! */
 
-#ifdef PRINT_ERR_MSG
-	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	if (err == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file((*request)->fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code =  MPI_ERR_UNKNOWN;
+#else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 	 	            myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error((*request)->fd, *error_code, myname);	    
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
     }
-    else *error_code = MPI_SUCCESS;
+    else *error_code = MPI_SUCCESS;  /* if ( (*request)->queued )
 
 #ifdef HAVE_STATUS_SET_BYTES
     if ((*request)->nbytes != -1)
@@ -116,18 +124,23 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	}
 	else (*request)->nbytes = -1;
 
-#ifdef PRINT_ERR_MSG
-	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	if (err == -1) {
+#ifdef MPICH2
+			*error_code
+					MPIR_Err_create_code(MPI_ERR_IO, "**io",
+									"**io %s", strerror(errno));
+			MPIR_Err_return_file((*request)->fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+	*error_code =  MPI_ERR_UNKNOWN;
+#else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 	 	            myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error((*request)->fd, *error_code, myname);	    
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
     }
-    else *error_code = MPI_SUCCESS;
+    else *error_code = MPI_SUCCESS;  /* if ((*request)->queued) ... */
 #ifdef HAVE_STATUS_SET_BYTES
     if ((*request)->nbytes != -1)
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);

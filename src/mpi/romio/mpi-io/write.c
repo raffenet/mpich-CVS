@@ -65,10 +65,14 @@ int MPI_File_write(MPI_File fh, void *buf, int count,
 #endif
 
     if (count < 0) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
+							"**iobadcount", "**iobadcount");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_write: Invalid count argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_COUNT_ARG,
 				     myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);
@@ -76,15 +80,19 @@ int MPI_File_write(MPI_File fh, void *buf, int count,
     }
 
     if (datatype == MPI_DATATYPE_NULL) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, 
+							"**dtypenull", "**dtypenull");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_write: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_TYPE, MPIR_ERR_TYPE_NULL,
 				     myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);	    
 #endif
-    }
+}
 
     MPI_Type_size(datatype, &datatype_size);
     if (count*datatype_size == 0) {
@@ -95,10 +103,14 @@ int MPI_File_write(MPI_File fh, void *buf, int count,
     }
 
     if ((count*datatype_size) % fh->etype_size != 0) {
-#ifdef PRINT_ERR_MSG
-        FPRINTF(stderr, "MPI_File_write: Only an integral number of etypes can be accessed\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
+							"**ioetype", "**ioetype");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_write: Only an integral number of etypes can be accessed\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_ETYPE_FRACTIONAL,
 				     myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);	    
@@ -106,10 +118,14 @@ int MPI_File_write(MPI_File fh, void *buf, int count,
     }
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
+							"**ioamodeseq", "**ioamodeseq");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
 	FPRINTF(stderr, "MPI_File_write: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
                         MPIR_ERR_AMODE_SEQ, myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);

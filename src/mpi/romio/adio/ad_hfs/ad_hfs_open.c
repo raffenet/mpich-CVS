@@ -47,14 +47,18 @@ void ADIOI_HFS_Open(ADIO_File fd, int *error_code)
 	fd->fp_sys_posn = -1;  /* set it to null bec. we use pread, pwrite*/
 #endif
 
-#ifdef PRINT_ERR_MSG
-    *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
-    if (fd->fd_sys == -1) {
+	if (fd->fd_sys == -1 ) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io", 
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+    *error_code = MPI_ERR_UNKNOWN;
+#else /* MPICH-1 */
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 }

@@ -53,10 +53,14 @@ int MPI_File_read_at_all_end(MPI_File fh, void *buf, MPI_Status *status)
 #endif
 
     if (!(fh->split_coll_count)) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
+							"**iosplitcollnone", "**iosplitcollnone");
+			return MPIR_Err_return_file(fh, myname, error_code);
+#elif PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_read_at_all_end: Does not match a previous MPI_File_read_at_all_begin\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_SPLIT_COLL,
                               myname, (char *) 0, (char *) 0);
 	return ADIOI_Error(fh, error_code, myname);

@@ -84,16 +84,20 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
     case ADIO_FCNTL_GET_FSIZE:
 	fcntl_struct->fsize = lseek64(fd->fd_sys, 0, SEEK_END);
-#ifdef PRINT_ERR_MSG
-	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	if (fcntl_struct->fsize == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code = MPI_ERR_UNKNOWN;
+#else /* MPICH-1 */
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error(fd, *error_code, myname);	    
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
 	break;
 
     case ADIO_FCNTL_SET_DISKSPACE:
@@ -108,16 +112,21 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	    err = ftruncate64(fd->fd_sys, fcntl_struct->diskspace);
 	    if (err) i = 1;
 	}
-#ifdef PRINT_ERR_MSG
-	*error_code = (i == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
-#else
+
 	if (i == 1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code = MPI_ERR_UNKNOWN;
+#else /* MPICH-1 */
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error(fd, *error_code, myname);	    
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
 	break;
 
     case ADIO_FCNTL_SET_IOMODE:

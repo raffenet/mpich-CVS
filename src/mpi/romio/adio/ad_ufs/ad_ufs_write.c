@@ -39,16 +39,20 @@ void ADIOI_UFS_WriteContig(ADIO_File fd, void *buf, int count,
     if (err != -1 && status) MPIR_Status_set_bytes(status, datatype, err);
 #endif
 
-#ifdef PRINT_ERR_MSG
-    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
     if (err == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code = MPI_ERR_UNKNOWN;
+#else
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(fd, *error_code, myname);
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 }
 
 

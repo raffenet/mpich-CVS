@@ -68,16 +68,20 @@ ADIO_Offset ADIOI_HFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 
 #ifdef HPUX
     fd->fp_sys_posn = lseek64(fd->fd_sys, off, SEEK_SET);
-#ifdef PRINT_ERR_MSG
-    *error_code = (fd->fp_sys_posn == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
     if (fd->fp_sys_posn == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+    *error_code = MPI_SUCCESS;
+#else /* MPICH-1 */
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(fd, *error_code, myname);	    
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 #endif
 
 #ifdef SPPUX

@@ -45,16 +45,20 @@ void ADIOI_NFS_WriteContig(ADIO_File fd, void *buf, int count,
     if (err != -1) MPIR_Status_set_bytes(status, datatype, err);
 #endif
 
-#ifdef PRINT_ERR_MSG
-    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
     if (err == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG 
+			*error_code =  MPI_ERR_UNKNOWN;
+#else
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(fd, *error_code, myname);
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 }
 
 
@@ -224,16 +228,20 @@ void ADIOI_NFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	ADIOI_Free(writebuf); /* malloced in the buffered_write macro */
 
         if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
-#ifdef PRINT_ERR_MSG
-        *error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	if (err_flag) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code =  MPI_ERR_UNKNOWN;
+#else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error(fd, *error_code, myname);
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
     }
 
     else {  /* noncontiguous in file */
@@ -448,16 +456,20 @@ void ADIOI_NFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	ADIOI_Free(writebuf); /* malloced in the buffered_write macro */
 
 	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
-#ifdef PRINT_ERR_MSG
-	*error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
 	if (err_flag) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code =  MPI_ERR_UNKNOWN;
+#else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error(fd, *error_code, myname);
+#endif
 	}
 	else *error_code = MPI_SUCCESS;
-#endif
     }
 
     fd->fp_sys_posn = -1;   /* set it to null. */

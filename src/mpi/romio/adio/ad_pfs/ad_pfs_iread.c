@@ -47,27 +47,35 @@ void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int count,
         *id_sys = _iread(fd->fd_sys, buf, len);
 
         if ((*id_sys == -1) && (errno == EQNOMID)) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+								"**io %s", strerror(errno));
+				MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
             FPRINTF(stderr, "Error in asynchronous I/O\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	    ADIOI_Error(fd, *error_code, myname);	    
-	    return;
 #endif
+	    return;
         }
     }
     else if (*id_sys == -1) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
         FPRINTF(stderr, "Unknown errno %d in ADIOI_PFS_IreadContig\n", errno);
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(fd, *error_code, myname);	    
-	return;
 #endif
+	return;
     }
 
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len; 
@@ -79,16 +87,20 @@ void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int count,
 
     fd->fp_sys_posn = -1;   /* set it to null. */
 
-#ifdef PRINT_ERR_MSG
-    *error_code = (*id_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
-#else
     if (*id_sys == -1) {
+#ifdef MPICH2
+			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+							"**io %s", strerror(errno));
+			MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
+			*error_code =  MPI_ERR_UNKNOWN;
+#else
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
 	ADIOI_Error(fd, *error_code, myname);	    
+#endif
     }
     else *error_code = MPI_SUCCESS;
-#endif
 }
 
 

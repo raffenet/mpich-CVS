@@ -1257,7 +1257,7 @@ if test $FROM_MPICH2 = 1 ; then
    AC_DEFINE(HAVE_MPI_GREQUEST,,[Define if generalized requests avaliable])
 fi
 #
-if test $MPI != "mpich" -o "$FROM_MPICH2" = 1 ; then
+if test $MPI != "mpich" ; then
    AC_DEFINE(PRINT_ERR_MSG,,[Define for printing error messages])
 fi
 #

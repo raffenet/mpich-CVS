@@ -592,15 +592,19 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 	    ADIO_ReadContig(fd, write_buf, size, MPI_BYTE, 
                          ADIO_EXPLICIT_OFFSET, off, &status, &err);
 	    if (err != MPI_SUCCESS) {
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**ioRMWrdwr",
+								"**ioRMWrdwr");
+				MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
 		FPRINTF(stderr, "ADIOI_GEN_WriteStridedColl: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
-#else
+#else /* MPICH-1 */
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_READ_PERM,
 			      myname, (char *) 0, (char *) 0);
 		ADIOI_Error(fd, *error_code, myname);
-                return;  
 #endif
+                return;  
 	    } 
 	}
     }

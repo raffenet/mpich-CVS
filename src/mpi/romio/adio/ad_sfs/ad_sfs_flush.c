@@ -15,9 +15,13 @@ void ADIOI_SFS_Flush(ADIO_File fd, int *error_code)
 #endif
 
      /* there is no fsync on SX-4 */
-#ifdef PRINT_ERR_MSG
+#ifdef MPICH2
+	*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
+					"**io %s", strerror(errno));
+	MPIR_Err_return_file(fd, myname, *error_code);
+#elif PRINT_ERR_MSG
      *error_code = MPI_ERR_UNKNOWN; 
-#else
+#else /* MPICH-1 */
      *error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 1,
 			      myname, (char *) 0, (char *) 0);
      ADIOI_Error(fd, *error_code, myname);	    
