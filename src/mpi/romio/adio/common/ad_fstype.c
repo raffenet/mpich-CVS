@@ -33,8 +33,8 @@
 #ifdef SX4
 #include <sys/stat.h>
 #endif
-#ifdef ROMIO_PVFS
-#include "pvfs_config.h"
+#ifdef HAVE_PVFS_H
+#include "pvfs.h"
 #include <sys/param.h>
 #endif
 #ifdef tflops

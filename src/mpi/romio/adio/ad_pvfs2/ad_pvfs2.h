@@ -10,7 +10,9 @@
 #define AD_PVFS2_INCLUDE
 
 #include "adio.h"
+#ifdef HAVE_PVFS2_H
 #include "pvfs2.h"
+#endif
 
 void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code);
 void ADIOI_PVFS2_Close(ADIO_File fd, int *error_code);

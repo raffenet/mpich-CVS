@@ -21,9 +21,10 @@ typedef long long int int64_t;
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <fcntl.h>
+#ifdef HAVE_PVFS_H
 #include <pvfs.h>
+#endif
 #include "adio.h"
-#include "pvfs_proto.h"
 
 void ADIOI_PVFS_Open(ADIO_File fd, int *error_code);
 void ADIOI_PVFS_Close(ADIO_File fd, int *error_code);

@@ -7,7 +7,6 @@
  */
 
 #include "ad_pvfs.h"
-#include "pvfs_config.h"
 
 void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 {

@@ -1234,6 +1234,8 @@ main() {
 fi
 
 if test -n "$file_system_pvfs"; then
+    CPPFLAGS="$CPPFLAGS $CFLAGS"
+    AC_CHECK_HEADERS(pvfs.h)
     # Check for missing int64_t (intel version 8 compiler and -no-gcc
     # selected)
     AC_MSG_CHECKING([that pvfs.h can be compiled])
@@ -1259,6 +1261,8 @@ typedef long long int int64_t;
     fi
 fi
 if test -n "$file_system_pvfs2"; then
+    CPPFLAGS="$CPPFLAGS $CFLAGS"
+    AC_CHECK_HEADERS(pvfs2.h)
     AC_DEFINE(ROMIO_PVFS2,1,[Define for Romio with PVFS2])
 fi
 if test -n "$file_system_pfs"; then
