@@ -74,6 +74,9 @@ struct ADIOI_Hints_struct {
 		    int listio_read;
 		    int listio_write;
 	    } pvfs;
+	    struct {
+		    int debugmask;
+	    } pvfs2;
     } fs_hints;
 
 };
