@@ -306,21 +306,20 @@ void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
     }
 
     /* pad everything that we're going to allocate */
-    if ((epsilon = loop_sz % align_sz)) {
-	loop_sz += align_sz - epsilon;
-    }
-    if ((epsilon = off_sz % align_sz)) {
-	off_sz += align_sz - epsilon;
-    }
-    if ((epsilon = blk_sz % align_sz)) {
-	blk_sz += align_sz - epsilon;
-    }
-    if ((epsilon = ptr_sz % align_sz)) {
-	ptr_sz += align_sz - epsilon;
-    }
-    if ((epsilon = extent_sz % align_sz)) {
-	extent_sz += align_sz - epsilon;
-    }
+    epsilon = loop_sz % align_sz;
+    if (epsilon) loop_sz += align_sz - epsilon;
+
+    epsilon = off_sz % align_sz;
+    if (epsilon) off_sz += align_sz - epsilon;
+
+    epsilon = blk_sz % align_sz;
+    if (epsilon) blk_sz += align_sz - epsilon;
+
+    epsilon = ptr_sz % align_sz;
+    if (epsilon) ptr_sz += align_sz - epsilon;
+
+    epsilon = extent_sz % align_sz;
+    if (epsilon) extent_sz += align_sz - epsilon;
 
     new_loop_sz += loop_sz + off_sz + blk_sz + ptr_sz +
 	extent_sz + old_loop_sz;
@@ -480,24 +479,23 @@ void PREPEND_PREFIX(Dataloop_struct_alloc)(int count,
     basic_sz  = sizeof(DLOOP_Dataloop);
 
     /* pad everything that we're going to allocate */
-    if ((epsilon = loop_sz % align_sz)) {
-	loop_sz += align_sz - epsilon;
-    }
-    if ((epsilon = off_sz % align_sz)) {
-	off_sz += align_sz - epsilon;
-    }
-    if ((epsilon = blk_sz % align_sz)) {
-	blk_sz += align_sz - epsilon;
-    }
-    if ((epsilon = ptr_sz % align_sz)) {
-	ptr_sz += align_sz - epsilon;
-    }
-    if ((epsilon = extent_sz % align_sz)) {
-	extent_sz += align_sz - epsilon;
-    }
-    if ((epsilon - basic_sz % align_sz)) {
-	basic_sz += align_sz - epsilon;
-    }
+    epsilon = loop_sz % align_sz;
+    if (epsilon) loop_sz += align_sz - epsilon;
+
+    epsilon = off_sz % align_sz;
+    if (epsilon) off_sz += align_sz - epsilon;
+
+    epsilon = blk_sz % align_sz;
+    if (epsilon) blk_sz += align_sz - epsilon;
+
+    epsilon = ptr_sz % align_sz;
+    if (epsilon) ptr_sz += align_sz - epsilon;
+
+    epsilon = extent_sz % align_sz;
+    if (epsilon) extent_sz += align_sz - epsilon;
+
+    epsilon = basic_sz % align_sz;
+    if (epsilon) basic_sz += align_sz - epsilon;
 
     /* note: we pad *each* basic type dataloop, because the
      * code used to create them assumes that we're going to
