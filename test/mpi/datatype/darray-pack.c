@@ -1,5 +1,4 @@
 #include "mpi.h"
-#include "mpio.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
