@@ -725,6 +725,12 @@ with MPI_Alloc_mem.
 **shmq_index %d %d:invalid shm queue index (%d > %d)
 **sock_post_close:posting a close of the socket failed
 **sock_post_close %d:posting a close of the socket failed (errno %d)
+**closesocket:closesocket failed
+**closesocket %d:closesocket failed (errno %d)
+**closesocket %s %d:closesocket failed, %s (errno %d)
+**shutdown:shutdown failed
+**shutdown %d:shutdown failed (errno %d)
+**shutdown %s %d:shutdown failed, %s (errno %d)
 **strncpy:insufficient buffer length to complete strncpy
 **vc_state:invalid vc state
 **vc_state %d:invalid vc state (%d)
