@@ -20,8 +20,71 @@
 
 /* Define the string copy and duplication functions */
 /* Safer string routines */
-int MPIU_Strncpy( char *, const char *, size_t );
+/*@ MPIU_Strncpy - Copy a string with a maximum length
+  
+    Input Parameters:
++   instr - String to copy
+-   maxlen - Maximum total length of 'outstr'
+
+    Output Parameter:
+.   outstr - String to copy into
+
+    Notes:
+    This routine is the routine that you wish 'strncpy' was.  In copying 
+    'instr' to 'outstr', it stops when either the end of 'outstr' (the 
+    null character) is seen or the maximum length 'maxlen' is reached.
+    Unlike 'strncpy', it does not add enough nulls to 'outstr' after 
+    copying 'instr' in order to move precisely 'maxlen' characters.  
+    Thus, this routine may be used anywhere 'strcpy' is used, without any
+    performance cost related to large values of 'maxlen'.
+
+  Module:
+  Utility
+  @*/
+int MPIU_Strncpy( char *outstr, const char *instr, size_t maxlen );
+
+/*@ MPIU_Strnapp - Append to a string with a maximum length
+
+    Input Parameters:
++   instr - String to copy
+-   maxlen - Maximum total length of 'outstr'
+
+    Output Parameter:
+.   outstr - String to copy into
+
+    Notes:
+    This routine is similar to 'strncat' except that the 'maxlen' argument
+    is the maximum total length of 'outstr', rather than the maximum 
+    number of characters to move from 'instr'.  Thus, this routine is
+    easier to use when the declared size of 'instr' is known.
+
+  Module:
+  Utility
+  @*/
 int MPIU_Strnapp( char *, const char *, size_t );
+
+/*@ 
+  MPIU_Strdup - Duplicate a string
+
+  Synopsis:
+.vb
+    char *MPIU_Strdup( const char *str )
+.ve
+
+  Input Parameter:
+. str - null-terminated string to duplicate
+
+  Return value:
+  A pointer to a copy of the string, including the terminating null.  A
+  null pointer is returned on error, such as out-of-memory.
+
+  Notes:
+  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
+  macro but may use 'MPIU_trstrdup' to provide a tracing version.
+
+  Module:
+  Utility
+  @*/
 char *MPIU_Strdup( const char * );
 
 #ifdef USE_MEMORY_TRACING
@@ -54,6 +117,7 @@ char *MPIU_Strdup( const char * );
   Module:
   Utility
   M*/
+
 #define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
 /*M
   MPIU_Calloc - Allocate memory that is initialized to zero.
@@ -76,6 +140,7 @@ char *MPIU_Strdup( const char * );
   M*/
 #define MPIU_Calloc(a,b)  \
     MPIU_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
+
 /*M
   MPIU_Free - Free memory
 
@@ -105,29 +170,8 @@ char *MPIU_Strdup( const char * );
   M*/
 #define MPIU_Free(a)      MPIU_trfree(a,__LINE__,__FILE__)
 
-/*M 
-  MPIU_Strdup - Duplicate a string
-
-  Synopsis:
-.vb
-    char *MPIU_Strdup( const char *str )
-.ve
-
-  Input Parameter:
-. str - null-terminated string to duplicate
-
-  Return value:
-  A pointer to a copy of the string, including the terminating null.  A
-  null pointer is returned on error, such as out-of-memory.
-
-  Notes:
-  Like 'MPIU_Malloc' and 'MPIU_Free', this will often be implemented as a 
-  macro but may use 'MPIU_trstrdup' to provide a tracing version.
-
-  Module:
-  Utility
-  M*/
 #define MPIU_Strdup(a)    MPIU_trstrdup(a,__LINE__,__FILE__)
+
 /* Define these as invalid C to catch their use in the code */
 #define malloc(a)         'Error use MPIU_Malloc'
 #define calloc(a,b)       'Error use MPIU_Calloc'

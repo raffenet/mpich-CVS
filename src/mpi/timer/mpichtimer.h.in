@@ -49,11 +49,143 @@ typedef @MPID_TIMER_TYPE@ MPID_Time_t;
  * use them, as well as any profiling and timing code that is built into
  * MPICH
  */
-void MPID_Wtime( MPID_Time_t * );
-void MPID_Wtime_diff( MPID_Time_t *, MPID_Time_t *, double * );
-void MPID_Wtime_acc( MPID_Time_t *, MPID_Time_t *, MPID_Time_t * );
-void MPID_Wtime_todouble( MPID_Time_t *, double * );
+/*@
+  MPID_Wtime - Return a time stamp
+  
+  Output Parameter:
+. timeval - A pointer to an 'MPID_Wtime_t' variable.
+
+  Notes:
+  This routine returns an `opaque` time value.  This difference between two
+  time values returned by 'MPID_Wtime' can be converted into an elapsed time
+  in seconds with the routine 'MPID_Wtime_diff'.
+
+  This routine is defined this way to simplify its implementation as a macro.
+  For example, the for Intel x86 and gcc, 
+.vb
+#define MPID_Wtime(timeval) \
+    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" \
+                            : "=m" (*((char *) (var_ptr))), \
+                              "=m" (*(((char *) (var_ptr))+4)) \
+                            :: "eax", "ebx", "ecx", "edx" ); \
+.ve
+
+  For some purposes, it is important
+  that the timer calls change the timing of the code as little as possible.
+  This form of a timer routine provides for a very fast timer that has
+  minimal impact on the rest of the code.  
+
+  From a semantic standpoint, this format emphasizes that any particular
+  timer value has no meaning; only the difference between two values is 
+  meaningful.
+
+  Module:
+  Timer
+
+  Question:
+  MPI-2 allows 'MPI_Wtime' to be a macro.  We should make that easy; this
+  version does not accomplish that.
+  @*/
+void MPID_Wtime( MPID_Time_t * timeval);
+
+/*@
+  MPID_Wtime_diff - Compute the difference between two time stamps
+
+  Input Parameters:
+. t1, t2 - Two time values set by 'MPID_Wtime' on this process.
+ 
+
+  Output Parameter:
+. diff - The different in time between t2 and t1, measured in seconds.
+
+  Note: 
+  If 't1' is null, then 't2' is assumed to be differences accumulated with
+  'MPID_Wtime_acc', and the output value gives the number of seconds that
+  were accumulated.
+
+  Question:
+  Instead of handling a null value of 't1', should we have a separate
+  routing 'MPID_Wtime_todouble' that converts a single timestamp to a 
+  double value?  
+
+  Module:
+  Timer
+  @*/
+void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff );
+
+/*@
+  MPID_Wtime_acc - Accumulate time values
+
+  Input Parameters:
+. t1,t2,t3 - Three time values.  't3' is updated with the difference between 
+             't2' and 't1': '*t3 += (t2 - t1)'.
+
+  Notes:
+  This routine is used to accumulate the time spent with a block of code 
+  without first converting the time stamps into a particular arithmetic
+  type such as a 'double'.  For example, if the 'MPID_Wtime' routine accesses
+  a cycle counter, this routine (or macro) can perform the accumulation using
+  integer arithmetic.  
+
+  To convert a time value accumulated with this routine, use 'MPID_Wtime_diff' 
+  with a 't1' of zero.  
+
+  Module:
+  Timer
+  @*/
+void MPID_Wtime_acc( MPID_Time_t t1, MPID_Time_t t2, MPID_Time_t *t3 );
+
+/*@
+  MPID_Wtime_todouble - Converts an MPID timestamp to a double 
+
+  Input Parameter:
+. timeval - 'MPID_Time_t' time stamp
+
+  Output Parameter:
+. seconds - Time in seconds from an arbitrary (but fixed) time in the past
+
+  Notes:
+  This routine may be used to change a timestamp into a number of seconds,
+  suitable for 'MPI_Wtime'.  
+
+  @*/
+void MPID_Wtime_todouble( MPID_Time_t *timeval, double *seconds );
+
+/*@
+  MPID_Wtick - Provide the resolution of the 'MPID_Wtime' timer
+
+  Return value:
+  Resolution of the timer in seconds.  In many cases, this is the 
+  time between ticks of the clock that 'MPID_Wtime' returns.  In other
+  words, the minimum significant difference that can be computed by 
+  'MPID_Wtime_diff'.
+
+  Note that in some cases, the resolution may be estimated.  No application
+  should expect either the same estimate in different runs or the same
+  value on different processes.
+
+  Module:
+  Timer
+  @*/
 double MPID_Wtick( void );
+
+/*@
+  MPID_Wtime_init - Initialize the timer
+
+  Note:
+  This routine should perform any steps needed to initialize the timer.
+  In addition, it should set the value of the attribute 'MPI_WTIME_IS_GLOBAL'
+  if the timer is known to be the same for all processes in 'MPI_COMM_WORLD'
+  (the value is zero by default).
+
+  If any operations need to be performed when the MPI program calls 
+  'MPI_Finalize' this routine should register a handler with 'MPI_Finalize'
+  (see the MPICH Design Document).
+  
+  Module:
+  Timer
+
+  @*/
 void MPID_Wtime_init(void);
 
 /* Inlined timers.  Note that any definition of one of the functions

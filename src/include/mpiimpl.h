@@ -408,7 +408,8 @@ M*/
    may have been changed by another thread, resulting in both threads calling
    'MPID_Datatype_free'.  Instead, use
 .vb
-   if (MPID_Object_release_ref( datatype_ptr ) == 0) 
+   MPID_Object_release_ref( datatype_ptr, &inUse );
+   if (!inuse) 
        MPID_Datatype_free( datatype_ptr );
 .ve
 
@@ -623,6 +624,45 @@ void MPIU_Param_finalize( void );
 
 /* ------------------------------------------------------------------------- */
 /* Info */
+/*TInfoOverview.tex
+
+  'MPI_Info' provides a way to create a list of '(key,value)' pairs
+  where the 'key' and 'value' are both strings.  Because many routines, both
+  in the MPI implementation and in related APIs such as the PMI process
+  management interface, require 'MPI_Info' arguments, we define a simple 
+  structure for each 'MPI_Info' element.  Elements are allocated by the 
+  generic object allocator; the head element is always empty (no 'key'
+  or 'value' is defined on the head element).  
+  
+  For simplicity, we have not abstracted the info data structures;
+  routines that want to work with the linked list may do so directly.
+  Because the 'MPI_Info' type is a handle and not a pointer, an MPIU
+  (utility) routine is provided to handle the 
+  deallocation of 'MPID_Info' elements.  See the implementation of
+  'MPI_Info_create' for how an Info type is allocated.
+
+  Thread Safety:
+
+  The info interface itself is not thread-robust.  In particular, the routines
+  'MPI_INFO_GET_NKEYS' and 'MPI_INFO_GET_NTHKEY' assume that no other 
+  thread modifies the info key.  (If the info routines had the concept
+  of a next value, they would not be thread safe.  As it stands, a user
+  must be careful if several threads have access to the same info object.) 
+  Further, 'MPI_INFO_DUP', while not 
+  explicitly advising implementers to be careful of one thread modifying the
+  'MPI_Info' structure while 'MPI_INFO_DUP' is copying it, requires that the
+  operation take place in a thread-safe manner.
+  There isn'' much that we can do about these cases.  There are other cases
+  that must be handled.  In particular, multiple threads are allowed to 
+  update the same info value.  Thus, all of the update routines must be thread
+  safe; the simple implementation used in the MPICH implementation uses locks.
+  Note that the 'MPI_Info_delete' call does not need a lock; the defintion of
+  thread-safety means that any order of the calls functions correctly; since
+  it invalid either to delete the same 'MPI_Info' twice or to modify an
+  'MPI_Info' that has been deleted, only one thread at a time can call 
+  'MPI_Info_free' on any particular 'MPI_Info' value.  
+
+  T*/
 /*S
   MPID_Info - Structure of an MPID info
 
@@ -729,6 +769,32 @@ extern MPID_Errhandler MPID_Errhandler_direct[];
 
 /* ------------------------------------------------------------------------- */
 /* Keyvals and attributes */
+/*TKyOverview.tex
+
+  Keyvals are MPI objects that, unlike most MPI objects, are defined to be
+  integers rather than a handle (e.g., 'MPI_Comm').  However, they really
+  `are` MPI opaque objects and are handled by the MPICH implementation in
+  the same way as all other MPI opaque objects.  The only difference is that
+  there is no 'typedef int MPI_Keyval;' in 'mpi.h'.  In particular, keyvals
+  are encoded (for direct and indirect references) in the same way that 
+  other MPI opaque objects are
+
+  Each keyval has a copy and a delete function associated with it.
+  Unfortunately, these have a slightly different calling sequence for
+  each language, particularly when the size of a pointer is 
+  different from the size of a Fortran integer.  The unions 
+  'MPID_Copy_function' and 'MPID_Delete_function' capture the differences
+  in a single union type.
+
+  Notes:
+  One potential user error is to access an attribute in one language (say
+  Fortran) that was created in another (say C).  We could add a check and
+  generate an error message in this case; note that this would have to 
+  be an option, because (particularly when accessing the attribute from C), 
+  it may be what the user intended, and in any case, it is a valid operation.
+
+  T*/
+
 /* Because Comm, Datatype, and File handles are all ints, and because
    attributes are otherwise identical between the three types, we
    only store generic copy and delete functions.  This allows us to use
@@ -945,6 +1011,10 @@ typedef enum MPID_Comm_kind_t {
   make up this communicator.  These are used often enough that this
   optimization is valuable.  
 
+  This definition provides only a 16-bit integer for context id's .
+  This should be sufficient for most applications.  However, extending
+  this to a 32-bit (or longer) integer should be easy.
+
   The virtual connection table is an explicit member of this structure.
   This contains the information used to contact a particular process,
   indexed by the rank relative to this communicator.
@@ -958,7 +1028,8 @@ typedef enum MPID_Comm_kind_t {
   corresponding to the 'local_group' (we may want this anyway to simplify
   the implementation of the intercommunicator collective routines).
 
-  The pointer to the structure containing pointers to the collective 
+  The pointer to the structure 'MPID_Collops' containing pointers to the 
+  collective  
   routines allows an implementation to replace each routine on a 
   routine-by-routine basis.  By default, this pointer is null, as are the 
   pointers within the structure.  If either pointer is null, the implementation
@@ -968,7 +1039,12 @@ typedef enum MPID_Comm_kind_t {
   need to include the implementation of all collective routines in all MPI 
   executables, even if the routines are not used.
 
-  
+  The macro 'MPID_HAS_HETERO' may be defined by a device to indicate that
+  the device supports MPI programs that must communicate between processes with
+  different data representations (e.g., different sized integers or different
+  byte orderings).  If the device does need to define this value, it should
+  be defined in the file 'mpidpre.h'. 
+
   Module:
   Communicator-DS
 
@@ -1062,8 +1138,7 @@ typedef enum MPID_Request_kind_t {
 
   Notes:
   If it is necessary to remember the MPI datatype, this information is 
-  saved within the 'segment', not as part of a separate 'MPID_Datatype' 
-  entry.
+  saved within the device-specific fields provided by 'MPID_DEV_REQUEST_DECL'.
 
   Requests come in many flavors, as stored in the 'kind' field.  It is 
   expected that each kind of request will have its own structure type 
@@ -1077,7 +1152,8 @@ typedef struct MPID_Request {
     MPID_Thread_lock_t mutex;
 #endif
 #ifndef MPICH_SINGLE_THREADED
-    /* initialized flag/lock used to by recv queue and recv code for thread safety */
+    /* initialized flag/lock used to by recv queue and recv code for 
+       thread safety */
     MPID_Thread_lock_t initialized;
 #endif
     MPID_Request_kind_t kind;
@@ -1217,6 +1293,85 @@ extern MPID_Win MPID_Win_direct[];
 extern volatile int MPIDI_Passive_target_thread_exit_flag;
 #define MPIDI_PASSIVE_TARGET_DONE_TAG  348297
 #define MPIDI_PASSIVE_TARGET_RMA_TAG 563924
+
+/*
+ * Good Memory (may be required for passive target operations on MPI_Win)
+ */
+
+/*@
+  MPID_Mem_alloc - Allocate memory suitable for passive target RMA operations
+
+  Input Parameter:
++ size - Number of types to allocate.
+- info - Info object
+
+  Return value:
+  Pointer to the allocated memory.  If the memory is not available, 
+  returns null.
+
+  Notes:
+  This routine is used to implement 'MPI_Alloc_mem'.  It is for that reason
+  that there is no communicator argument.  
+
+  This memory may `only` be freed with 'MPID_Mem_free'.
+
+  This is a `local`, not a collective operation.  It functions more like a
+  good form of 'malloc' than collective shared-memory allocators such as
+  the 'shmalloc' found on SGI systems.
+
+  Implementations of this routine may wish to use 'MPID_Memory_register'.  
+  However, this routine has slighly different requirements, so a separate
+  entry point is provided.
+
+  Question:
+  Since this takes an info object, should there be an error routine in the 
+  case that the info object contains an error?
+
+  Module:
+  Win
+  @*/
+void *MPID_Mem_alloc( size_t size, MPID_Info *info );
+
+/*@
+  MPID_Mem_free - Frees memory allocated with 'MPID_Mem_alloc'
+
+  Input Parameter:
+. ptr - Pointer to memory allocated by 'MPID_Mem_alloc'.
+
+  Return value:
+  'MPI_SUCCESS' if memory was successfully freed; an MPI error code otherwise.
+
+  Notes:
+  The return value is provided because it may not be easy to validate the
+  value of 'ptr' without attempting to free the memory.
+
+  Module:
+  Win
+  @*/
+int MPID_Mem_free( void *ptr );
+
+/*@
+  MPID_Mem_was_alloced - Return true if this memory was allocated with 
+  'MPID_Mem_alloc'
+
+  Input Parameters:
++ ptr  - Address of memory
+- size - Size of reqion in bytes.
+
+  Return value:
+  True if the memory was allocated with 'MPID_Mem_alloc', false otherwise.
+
+  Notes:
+  This routine may be needed by 'MPI_Win_create' to ensure that the memory 
+  for passive target RMA operations was allocated with 'MPI_Mem_alloc'.
+  This may be used, for example, for ensuring that memory used with
+  passive target operations was allocated with 'MPID_Mem_alloc'.
+
+  Module:
+  Win
+  @*/
+int MPID_Mem_was_alloced( void *ptr );
+
 /* ------------------------------------------------------------------------- */
 /* end of also in mpirma.h ? */
 /* ------------------------------------------------------------------------- */
@@ -1453,7 +1608,9 @@ extern MPICH_PerThread_t MPIR_Thread;
   For example, communicators, datatypes, and window objects all have 
   attributes; do we need a thread lock for each type?  Should we instead have
   an MPI Object, on which some common operations, such as thread lock, 
-  reference count, and name are implemented?
+  reference count, and name are implemented?  Note that there is a 
+  common lock for operations that are infrequently performed and do not 
+  require fine-grain locking.
   M*/
 #define MPID_Comm_thread_lock(comm_ptr_)
 /*M
@@ -1903,7 +2060,9 @@ int MPIR_Request_get_error(MPID_Request *);
   environment variables are provided to all processes, most users expect a
   common environment.  These variables allow an MPI implementation (that is
   based on ADI-3) to provide both of these by making use of MPI communication
-  after 'MPID_Init' is called but before 'MPI_Init' returns to the user.
+  after 'MPID_Init' is called but before 'MPI_Init' returns to the user, if
+  the process management environment does not provide this service.
+
 
   This routine is used to implement both 'MPI_Init' and 'MPI_Init_thread'.
 
@@ -1939,6 +2098,12 @@ int MPIR_Request_get_error(MPID_Request *);
   handle this while taking advantage of any support that the process 
   manager framework may provide.
 
+  Alternately, how do we find out from the process management environment
+  whether it took care of the environment or the command line arguments?  
+  Do we need a 'PMI_Env_query' function that can answer these questions
+  dynamically (in case a different process manager is used through the same
+  interface)?
+
   Can we fix the Fortran command-line arguments?  That is, can we arrange for
   'iargc' and 'getarg' (and the POSIX equivalents) to return the correct 
   values?  See, for example, the Absoft implementations of 'getarg'.  
@@ -1957,8 +2122,8 @@ int MPIR_Request_get_error(MPID_Request *);
   process the same environment and argument lists unless the user 
   explicitly directed otherwise.
 
-  How does this interface to BNR?  Do we need to know anything?  Should
-  this call have an info argument to support BNR?
+  How does this interface to PMI?  Do we need to know anything?  Should
+  this call have an info argument to support PMI?
 
   The following questions involve how environment variables and command
   line arguments are used to control the behavior of the implementation. 
@@ -1991,7 +2156,10 @@ int MPIR_Request_get_error(MPID_Request *);
   will need to use different algorithms and most fatal errors detected by the 
   MPI implementation should abort only the affected process, not all processes.
   @*/
-int MPID_Init(int *, char ***, int, int *, int *, int *);
+int MPID_Init( int *argc_p, char *(*argv_p)[], 
+	       int requested, int *provided,
+	       /*MPID_Comm **parent_comm,*/ int *has_args, int *has_env );
+
 /*@
   MPID_Finalize - Perform the device-specific termination of an MPI job
 
@@ -2052,7 +2220,7 @@ int MPID_Finalize(void);
   However, the implementation of 'MPID_Abort' will either do this by
   communicating with other processes or by requesting the process manager
   to kill the processes.  That brings up this question: should 
-  'MPID_Abort' use 'BNR' to kill processes?  Should it be required to
+  'MPID_Abort' use 'PMI' to kill processes?  Should it be required to
   notify the process manager?  What about persistent resources (such 
   as SYSV segments or forked processes)?  
 
@@ -2084,7 +2252,7 @@ int MPID_Finalize(void);
   Module:
   MPID_CORE
   @*/
-int MPID_Abort( MPID_Comm *, int );
+int MPID_Abort( MPID_Comm *comm, int return_code );
 
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Close_port(char *);
@@ -2117,8 +2285,10 @@ int MPID_Comm_spawn(char *, char *[], int, MPI_Info, int, MPID_Comm *,
   Communication
 
   @*/
-int MPID_Send(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-	      MPID_Request **);
+int MPID_Send( const void *buf, int count, MPI_Datatype datatype,
+	       int dest, int tag, MPID_Comm *comm, int context_offset,
+	       MPID_Request **request );
+
 /*@
   MPID_Rsend - MPID entry point for MPI_Rsend
 
@@ -2140,8 +2310,10 @@ int MPID_Send(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   Communication
 
   @*/
-int MPID_Rsend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-               MPID_Request **);
+int MPID_Rsend( const void *buf, int count, MPI_Datatype datatype,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
+		MPID_Request **request );
+
 /*@
   MPID_Ssend - MPID entry point for MPI_Ssend
 
@@ -2163,8 +2335,9 @@ int MPID_Rsend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   Communication
 
   @*/
-int MPID_Ssend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-               MPID_Request **);
+int MPID_Ssend( const void *buf, int count, MPI_Datatype datatype,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
+		MPID_Request **request );
 
 /*@
   MPID_tBsend - Attempt a send and return if it would block
@@ -2193,6 +2366,9 @@ int MPID_Ssend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   is not implemented by the ADI, the C preprocessor constant 'MPID_HAS_TBSEND'
   should be defined if this routine has a nontrivial implementation.
 
+  This is an optional routine.  The MPI code for 'MPI_Bsend' will attempt
+  to call this routine only if the device defines 'MPID_HAS_TBSEND'.
+
   Module:
   Communication
   @*/
@@ -2214,8 +2390,10 @@ int MPID_tBsend( const void *buf, int count, MPI_Datatype datatype,
   Communication
 
   @*/
-int MPID_Isend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-               MPID_Request **);
+int MPID_Isend( const void *buf, int count, MPI_Datatype datatype,
+		int dest, int tag, MPID_Comm *comm, int context_offset,
+		MPID_Request **request );
+
 /*@
   MPID_Irsend - MPID entry point for MPI_Irsend
 
@@ -2231,8 +2409,10 @@ int MPID_Isend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   Communication
 
   @*/
-int MPID_Irsend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-		MPID_Request **);
+int MPID_Irsend( const void *buf, int count, MPI_Datatype datatype,
+		 int dest, int tag, MPID_Comm *comm, int context_offset,
+		 MPID_Request **request );
+
 /*@
   MPID_Issend - MPID entry point for MPI_Issend
 
@@ -2248,8 +2428,10 @@ int MPID_Irsend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   Communication
 
   @*/
-int MPID_Issend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-		MPID_Request **);
+int MPID_Issend( const void *buf, int count, MPI_Datatype datatype,
+		 int dest, int tag, MPID_Comm *comm, int context_offset,
+		 MPID_Request **request );
+
 /*@
   MPID_Recv - MPID entry point for MPI_Recv
 
@@ -2268,8 +2450,11 @@ int MPID_Issend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   Communication
 
   @*/
-int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-              MPI_Status *, MPID_Request **);
+int MPID_Recv( void *buf, int count, MPI_Datatype datatype,
+	       int source, int tag, MPID_Comm *comm, int context_offset,
+	       MPI_Status *status, MPID_Request **request );
+
+
 /*@
   MPID_Irecv - MPID entry point for MPI_Irecv
 
@@ -2285,8 +2470,10 @@ int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   Communication
 
   @*/
-int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
-               MPID_Request **);
+int MPID_Irecv( void *buf, int count, MPI_Datatype datatype,
+		int source, int tag, MPID_Comm *comm, int context_offset,
+		MPID_Request **request );
+
 /*@
   MPID_Send_init - MPID entry point for MPI_Send_init
 
@@ -2302,8 +2489,10 @@ int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
   Communication
 
   @*/
-int MPID_Send_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
-		   int, MPID_Request **);
+int MPID_Send_init( const void *buf, int count, MPI_Datatype datatype,
+		    int dest, int tag, MPID_Comm *comm, int context_offset,
+		    MPID_Request **request );
+
 int MPID_Bsend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
 		   int, MPID_Request **);
 /*@
@@ -2321,8 +2510,9 @@ int MPID_Bsend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
   Communication
 
   @*/
-int MPID_Rsend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
-		    int, MPID_Request **);
+int MPID_Rsend_init( const void *buf, int count, MPI_Datatype datatype,
+		     int dest, int tag, MPID_Comm *comm, int context_offset,
+		     MPID_Request **request );
 /*@
   MPID_Ssend_init - MPID entry point for MPI_Ssend_init
 
@@ -2338,8 +2528,10 @@ int MPID_Rsend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
   Communication
 
   @*/
-int MPID_Ssend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
-		    int, MPID_Request **);
+int MPID_Ssend_init( const void *buf, int count, MPI_Datatype datatype,
+		     int dest, int tag, MPID_Comm *comm, int context_offset,
+		     MPID_Request **request );
+
 /*@
   MPID_Recv_init - MPID entry point for MPI_Recv_init
 
@@ -2355,8 +2547,10 @@ int MPID_Ssend_init(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
   Communication
 
   @*/
-int MPID_Recv_init(void *, int, MPI_Datatype, int, int, MPID_Comm *,
-		   int, MPID_Request **);
+int MPID_Recv_init( void *buf, int count, MPI_Datatype datatype,
+		    int source, int tag, MPID_Comm *comm, int context_offset,
+		    MPID_Request **request );
+
 /*@
   MPID_Startall - MPID entry point for MPI_Startall
 
@@ -2370,7 +2564,7 @@ int MPID_Recv_init(void *, int, MPI_Datatype, int, int, MPID_Comm *,
   whereas an implementation built on just 'MPID_Start' would force the
   ADI to initiate the communication in the order encountered.
   @*/
-int MPID_Startall(int, MPID_Request * []);
+int MPID_Startall(int count, MPID_Request *requests[]);
 
 /*@
    MPID_Probe - Block until a matching request is found and return information 
@@ -2540,6 +2734,9 @@ void MPID_Progress_start(void);
    'MPID_Progess_start'.  It is typically used when checks of the 
    relevant request completion counters found a completed request.  In a single
    threaded ADI implementation, this may be defined as an empty macro.
+
+  Module:
+  Communication
    @*/
 void MPID_Progress_end(void);
 /*@
@@ -2560,6 +2757,8 @@ void MPID_Progress_end(void);
   This function used to return TRUE if one or more requests have completed, 
   FALSE otherwise.  This functionality was not used so we removed it.
 
+  Module:
+  Communication
   @*/
 int MPID_Progress_test(void);
 /*@ MPID_Progress_wait - Wait for some communication since 
@@ -2574,6 +2773,8 @@ int MPID_Progress_test(void);
     calling thread (only, not the process).  Before returning, it releases
     the block begun with 'MPID_Progress_start'.
 
+  Module:
+  Communication
  @*/
 int MPID_Progress_wait(void);
 /*@
@@ -2588,6 +2789,9 @@ int MPID_Progress_wait(void);
   implementation of the ADI.  This routine must be nonblocking.
 
   A multithreaded implementation is free to define this as an empty macro.
+
+  Module:
+  Communication
   @*/
 int MPID_Progress_poke(void);
 
@@ -2624,15 +2828,146 @@ void MPID_Request_set_completed(MPID_Request *);
 @*/
 void MPID_Request_release(MPID_Request *);
 
+/*TTopoOverview.tex
+ *
+ * The MPI collective and topology routines can benefit from information 
+ * about the topology of the underlying interconnect.  Unfortunately, there
+ * is no best form for the representation (the MPI-1 Forum tried to define
+ * such a representation, but was unable to).  One useful decomposition
+ * that has been used in cluster enviroments is a hierarchical decomposition.
+ *
+ * The other obviously useful topology information would match the needs of 
+ * 'MPI_Cart_create'.  However, it may be simpler to for the device to 
+ * implement this routine directly.
+ *
+ * Other useful information could be the topology information that matches
+ * the needs of the collective operation, such as spanning trees and rings.
+ * These may be added to ADI3 later.
+ *
+ * Question: Should we define a cart create function?  Dims create?
+ *
+ * Usage:
+ * This routine has nothing to do with the choice of communication method
+ * that a implementation of the ADI may make.  It is intended only to
+ * communicate information on the heirarchy of processes, if any, to 
+ * the implementation of the collective communication routines.  This routine
+ * may also be useful for the MPI Graph topology functions.
+ *
+ T*/
+
+/*@
+  MPID_Topo_cluster_info - Return information on the hierarchy of 
+  interconnections
+
+  Input Parameter:
+. comm - Communicator to study.  May be 'NULL', in which case 'MPI_COMM_WORLD'
+  is the effective communicator.
+
+  Output Parameters:
++ levels - The number of levels in the hierarchy.  
+  To simplify the use of this routine, the maximum value is 
+  'MPID_TOPO_CLUSTER_MAX_LEVELS' (typically 8 or less).
+. my_cluster - For each level, the id of the cluster that the calling process
+  belongs to.
+- my_rank - For each level, the rank of the calling process in its cluster
+
+  Notes:
+  This routine returns a description of the system in terms of nested 
+  clusters of processes.  Levels are numbered from zero.  At each level,
+  each process may belong to no more than cluster; if a process is in any
+  cluster at level i, it must be in some cluster at level i-1.
+
+  The communicator argument allows this routine to be used in the dynamic
+  process case (i.e., with communicators that are created after 'MPI_Init' 
+  and that involve processes that are not part of 'MPI_COMM_WORLD').
+
+  For non-hierarchical systems, this routine simply returns a single 
+  level containing all processes.
+
+  Sample Outputs:
+  For a single, switch-connected cluster or a uniform-memory-access (UMA)
+  symmetric multiprocessor (SMP), the return values could be
+.vb
+    level       my_cluster         my_rank
+    0           0                  rank in comm_world
+.ve
+  This is also a valid response for `any` device.
+
+  For a switch-connected cluster of 2 processor SMPs
+.vb
+    level       my_cluster         my_rank
+    0           0                  rank in comm_world
+    1           0 to p/2           0 or 1
+.ve
+ where the value each process on the same SMP has the same value for
+ 'my_cluster[1]' and a different value for 'my_rank[1]'.
+
+  For two SMPs connected by a network,
+.vb
+    level       my_cluster         my_rank
+    0           0                  rank in comm_world
+    1           0 or 1             0 to # on SMP
+.ve
+
+  An example with more than 2 levels is a collection of clusters, each with
+  SMP nodes.  
+
+  Limitations:
+  This approach does not provide a representations for topologies that
+  are not hierarchical.  For example, a mesh interconnect is a single-level
+  cluster in this view.
+
+  Module: 
+  Topology
+  @*/
+int MPID_Topo_cluster_info( MPID_Comm *comm, 
+			    int *levels, int my_cluster[], int my_rank[] );
+
+/*@
+  MPID_Get_processor_name - Return the name of the current processor
+
+  Output Parameters:
++ name - A unique specifier for the actual (as opposed to virtual) node. This
+  must be an array of size at least 'MPI_MAX_PROCESSOR_NAME'.
+- resultlen - Length (in characters) of the name 
+
+  Notes:
+  The name returned should identify a particular piece of hardware; 
+  the exact format is implementation defined.  This name may or may not
+  be the same as might be returned by 'gethostname', 'uname', or 'sysinfo'.
+
+  This routine is essentially an MPID version of 'MPI_Get_processor_name' .  
+  It must be part of the device because not all environments support calls
+  to return the processor name.
+  @*/
+int MPID_Get_processor_name( char *name, int *resultlen);
+
 void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr);
 
+/*@
+  MPID_VCRT_Create - Create a virtual connection reference table
+  @*/
 int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr);
+/*@
+  MPID_VCRT_Add_ref - Add a reference to a VCRT
+  @*/
 int MPID_VCRT_Add_ref(MPID_VCRT vcrt);
+/*@
+  MPID_VCRT_Release - Release a reference to a VCRT
+  @*/
 int MPID_VCRT_Release(MPID_VCRT vcrt);
+/*@
+  MPID_VCRT_Get_ptr - 
+  @*/
 int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr);
 
+/*@
+  MPID_VCR_Dup - 
+  @*/
 int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
+
 int MPID_VCR_Release(MPID_VCR vcr);
+
 /*@
    MPID_VCR_Get_lpid - Get the local process id that corresponds to a 
    virtual connection reference.
@@ -2644,8 +2979,6 @@ int MPID_VCR_Release(MPID_VCR vcr);
    processes may use different ids to identify the same target process
   @*/
 int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
-
-int MPID_Get_processor_name(char *, int *);
 
 /* Debugger support */
 #ifdef HAVE_DEBUGGER_SUPPORT

@@ -161,6 +161,56 @@ typedef struct MPID_Datatype_contents {
 } MPID_Datatype_contents;
 
 /* Datatype Structure */
+/*S
+  MPID_Datatype - Description of the MPID Datatype structure
+
+  Notes:
+  The 'ref_count' is needed for nonblocking operations such as
+.vb
+   MPI_Type_struct( ... , &newtype );
+   MPI_Irecv( buf, 1000, newtype, ..., &request );
+   MPI_Type_free( &newtype );
+   ...
+   MPI_Wait( &request, &status );
+.ve
+
+  Module:
+  Datatype-DS
+
+  Notes:
+
+  Alternatives:
+  The following alternatives for the layout of this structure were considered.
+  Most were not chosen because any benefit in performance or memory 
+  efficiency was outweighed by the added complexity of the implementation.
+
+  A number of fields contain only boolean inforation ('is_contig', 
+  'has_sticky_ub', 'has_sticky_lb', 'is_permanent', 'is_committed').  These 
+  could be combined and stored in a single bit vector.  
+
+  'MPI_Type_dup' could be implemented with a shallow copy, where most of the
+  data fields, particularly the 'opt_dataloop' field, would not be copied into
+  the new object created by 'MPI_Type_dup'; instead, the new object could 
+  point to the data fields in the old object.  However, this requires 
+  more code to make sure that fields are found in the correct objects and that
+  deleting the old object doesn't invalidate the dup'ed datatype.
+
+  A related optimization would point to the 'opt_dataloop' and 'dataloop' 
+  fields in other datatypes.  This has the same problems as the shallow 
+  copy implementation.
+
+  In addition to the separate 'dataloop' and 'opt_dataloop' fields, we could
+  in addition have a separate 'hetero_dataloop' optimized for heterogeneous
+  communication for systems with different data representations. 
+
+  Earlier versions of the ADI used a single API to change the 'ref_count', 
+  with each MPI object type having a separate routine.  Since reference
+  count changes are always up or down one, and since all MPI objects 
+  are defined to have the 'ref_count' field in the same place, the current
+  ADI3 API uses two routines, 'MPIU_Object_add_ref' and 
+  'MPIU_Object_release_ref', to increment and decrement the reference count.
+
+  S*/
 typedef struct MPID_Datatype { 
     int           handle;            /* value of MPI_Datatype for structure */
     volatile int  ref_count;

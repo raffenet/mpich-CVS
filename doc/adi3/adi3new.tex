@@ -46,14 +46,14 @@
 \def\makeustext{\catcode`\_=11}
 %\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
-Version 3.3\\
+Version 3.4\\
 Reference Manual\\\ \\Draft of \today}{\em 
 William Gropp\\
 Ewing Lusk\\
 David Ashton\\
 Rob Ross\\
+Rajeev Thakur\\
 Brian Toonen\\
-Your Name Here\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}{00}{\today}
 
@@ -82,20 +82,44 @@ device-dependent modules.
 
 \section{Data Structures}
 \label{sec:datastructures}
+
+This section contains descriptions of the data structures using in the
+ADI3 definition.  These include both the major enumerated types and
+the structure definitions.
+
 \input adi3man/MPID_Request_kind.tex
 \input adi3man/MPID_Request.tex
+\input adi3man/MPID_Comm_kind_t.tex
 \input adi3man/MPID_Comm.tex
-\input adi3man/MPID_Segment.tex
-\input adi3man/MPID_Dataloop.tex
-\input adi3man/MPID_Dataloop_contig.tex
-\input adi3man/MPID_Dataloop_vector.tex
-\input adi3man/MPID_Dataloop_blockindexed.tex
-\input adi3man/MPID_Dataloop_indexed.tex
-\input adi3man/MPID_Dataloop_struct.tex
+\input adi3man/MPID_Group.tex
+\input adi3man/MPID_Errhandler_fn.tex
+\input adi3man/MPID_Win.tex
+\input adi3man/MPID_User_function.tex
+\input adi3nam/MPID_Op_kind.tex
+\input adi3man/MPID_Op.tex
+%\input adi3man/MPID_Segment.tex
+%\input adi3man/MPID_Dataloop.tex
+%\input adi3man/MPID_Dataloop_contig.tex
+%\input adi3man/MPID_Dataloop_vector.tex
+%\input adi3man/MPID_Dataloop_blockindexed.tex
+%\input adi3man/MPID_Dataloop_indexed.tex
+%\input adi3man/MPID_Dataloop_struct.tex
 \input adi3man/MPID_Datatype.tex
+\input adi3man/MPID_Info.tex
+\input adi3man/MPID_Errhandler.tex
+\input adi3man/MPID_Keyval.tex
+\input adi3man/MPID_Attribute.tex
+\input adi3man/MPID_Copy_function.tex
+\input adi3man/MPID_Delete_function.tex
 
 \section{Basic Point-to-Point}
 \label{sec:pt-2-pt}
+This section provides definitions for the point-to-point communication
+functions.  These roughly parallel their MPI counterparts, with the 
+exception that all (even \code{MPID_Send} and \code{MPID_Recv} are
+non-blocking, and the optional \code{MPID_tBsend} routine that may be
+used to improve the performance of buffered sends.
+
 \input adi3man/MPID_Send.tex
 \input adi3man/MPID_Ssend.tex
 \input adi3man/MPID_Rsend.tex
@@ -113,6 +137,13 @@ device-dependent modules.
 
 \section{Persistent Point-to-Point}
 \label{sec:persistent}
+This section provides the definitions for the persistent communication
+routines.  Note that there is no \code{MPID_Start} routine; we
+currently believe that \code{MPID_Startall} is all that is required,
+as it is easy to implement \code{MPI_Start} with \code{MPID_Startall},
+and \code{MPID_Startall} is required to allow the device the option of
+scheduling communication for all of the requests passed to it.
+
 \input adi3man/MPID_Send_init.tex
 \input adi3man/MPID_Ssend_init.tex
 \input adi3man/MPID_Rsend_init.tex
@@ -121,16 +152,18 @@ device-dependent modules.
 
 \section{Generalized Requests}
 \label{sec:grequests}
+This section provides the interface to the generalized (user-defined)
+requests.  
 \input adi3man/MPID_Request_create.tex
-\input adi3man/MPID_Request_set_completed.tex
+%\input adi3man/MPID_Request_set_completed.tex
 
-\section{Data Segment}
-\label{sec:segment-fcns}
-\input adi3man/MPID_Segment_init_pack
-\input adi3man/MPID_Segment_pack
-\input adi3man/MPID_Segment_init_unpack
-\input adi3man/MPID_Segment_unpack
-\input adi3man/MPID_Segment_free
+%% \section{Data Segment}
+%% \label{sec:segment-fcns}
+%% \input adi3man/MPID_Segment_init_pack
+%% \input adi3man/MPID_Segment_pack
+%% \input adi3man/MPID_Segment_init_unpack
+%% \input adi3man/MPID_Segment_unpack
+%% \input adi3man/MPID_Segment_free
 
 \section{Progress Engine}
 \label{sec:progress}

@@ -7,23 +7,25 @@ new channel-based device.
 \item A new device is created by adding a new directory
 \file{src/mpid/<newdevice>}.  Into this directory should go all of the
 files (and subdirectories) needed for the device.  These include
+
 \begin{description}
-\item[\file{setup_device}]This script, if present, is run
+\item[\file{setup_device}:]This script, if present, is run
 \emph{before} any configure in the device directory.  It can setup any
 files or communicate any data that is needed by the device.
 
-\item[\file{configure}]This should be a standard \code{autoconf}
+\item[\file{configure}:]This should be a standard \code{autoconf}
 script (at least, it must accept the standard \code{configure}
 arguments.  All device-specific tests, such as those for header files
 or libraries, should be made by the \code{configure} in the device
 directory.  No changes of any kind should be made to the top-level
 \code{configure} (the one in the \file{mpich2} directory).
 
-\item[\file{localdefs}]This file, if present, is sourced by the
-top-level \code{configure}.  It should be used to communicate any
+\item[\file{localdefs}:]This file, if present, is sourced by the
+top-level \code{configure} after the device's \code{configure} is run.
+It should be used to communicate any  
 variable values to the top-level configure.  A common use it to add
 any libraries that may be required.  For example, a file
-\file{localdefs.in} may be used containing
+\file{localdefs.in} may be used that contains
 \begin{verbatim}
 LIBS="$LIBS @EXTRA_LIBS@"
 \end{verbatim}
@@ -32,12 +34,26 @@ in the \code{AC_OUTPUT} list, allowing the device's \code{configure} step to
 create the \file{localdefs} file.
 \end{description}
 
-\item Include files.  Any include files that are needed by
-\file{mpiimpl.h} (used to build the implementation of the MPI
-routines) should be \emph{copied} into \file{mpich/src/include} as
-part of the device's configure step.  Provide the files
+\item Include files.  
+%% Any include files that are needed by
+%% \file{mpiimpl.h} (used to build the implementation of the MPI
+%% routines) should be \emph{copied} into \file{mpich/src/include} as
+%% part of the device's configure step.  
+Any include files that are needed by \file{mpiimpl.h} should be make
+available by including the directory path in the \code{CPPFLAGS}
+variable, set in the \file{setup_device} file mentioned above.  Make
+sure that you append to this variable, as in 
+\begin{verbatim}
+    CPPFLAGS="$CPPFLAGS -I$use_top_srcdir/src/mpid/mydevice"
+\end{verbatim}
+Note the use of the variable \code{use_top_srcdir}; the top-level
+\code{configure} sets this to the absolute path to the top-level
+source directory.
+
+Provide the files
 \file{mpidpre.h} and \file{mpidpost.h}.  The implementation of all MPI
 routines include files in this order:
+
 \begin{description}
 \item[mpi.h]The standard \file{mpi.h} that all MPI users include
 \item[mpidpre.h]Any definitions needed \emph{before} the provided
@@ -48,6 +64,7 @@ This also includes information on the timers.
 \item[mpidpost.h]Any definitions needed by the device after the rest
 of the definitions in \file{mpiimpl.h}.  In many cases, this file may
 be empty.
+\end{description}
 
 \item Testing codes for device-specific functions.  Place these
 in a \file{test} subdirectory of the device. These tests 
@@ -83,7 +100,6 @@ of the process managers provided with MPICH2.
   documentation generators will look for this file.
 
 
-\end{description}
 All of these are included by the file \file{mpiimpl.h}.
 \end{enumerate}
 
@@ -106,7 +122,8 @@ macros defined in
 \file{mpich/confdb/aclocal.m4}, as they include fixes to
 \code{autoconf}\footnote{There are serious bugs in the
 \texttt{AC_CHECK_HEADER} macro that are still present in
-\texttt{autoconf} 2.52.}
+\texttt{autoconf} 2.52, and version 2.57 is not backward compatible
+with earlier versions of \texttt{autoconf}, including 2.52.}.
 Do not modify the \mpich\ \code{configure} to support a device.
 
 There must be a \code{echomaxprocname} target in the \file{Makefile}

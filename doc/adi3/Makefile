@@ -45,7 +45,9 @@ ADI3FILES = adi3man.tex adi3.c adi3.h Makefile
 # versions last, so that the newest versions will override the old versions
 # Eventually, the old versions will be removed.
 ADI3IMPLFILES = adi3.c adi3.h $(MPICH2)/src/include/mpiimpl.h \
-	$(MPICH2)/src/include/mpihandlemem.h
+	$(MPICH2)/src/include/mpihandlemem.h \
+	$(MPICH2)/src/mpid/common/mpid_datatype.h \
+	$(MPICH2)/src/mpi/timer/mpichtimer.h.in
 adi3man/MPID_Init.tex: $(ADI3IMPLFILES) Makefile
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
 	-rm -f adi3man/*.tex adi3man/tmp.*
@@ -86,6 +88,7 @@ adi3new.ps: $(ADI3NEWFILES)
 	latex adi3new < /dev/null 2>&1 >/dev/null
 	-bibtex adi3new
 	make adi3new.ind 
+	latex adi3new < /dev/null 2>&1 >/dev/null
 	latex adi3new < /dev/null
 	dvips adi3new
 
@@ -99,6 +102,7 @@ adi3new.pdf: $(ADI3NEWFILES) adi3man/MPID_Init.tex
 	latex adi3newpdf < /dev/null 2>&1 >/dev/null
 	-bibtex adi3newpdf
 	make adi3newpdf.ind
+	latex adi3newpdf < /dev/null 2>&1 >/dev/null
 	latex adi3newpdf < /dev/null
 	dvipdfm adi3newpdf
 	rm -f adi3new.pdf

@@ -65,31 +65,6 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
 
 /* Keyval functions - Data types for attribute copy and delete routines. */
-/*TKyOverview.tex
-
-  Keyvals are MPI objects that, unlike most MPI objects, are defined to be
-  integers rather than a handle (e.g., 'MPI_Comm').  However, they really
-  `are` MPI opaque objects and are handled by the MPICH implementation in
-  the same way as all other MPI opaque objects.  The only difference is that
-  there is no 'typedef int MPI_Keyval;' in 'mpi.h'.  In particular, keyvals
-  are encoded (for direct and indirect references) in the same way that 
-  other MPI opaque objects are
-
-  Each keyval has a copy and a delete function associated with it.
-  Unfortunately, these have a slightly different calling sequence for
-  each language, particularly when the size of a pointer is 
-  different from the size of a Fortran integer.  The unions 
-  'MPID_Copy_function' and 'MPID_Delete_function' capture the differences
-  in a single union type.
-
-  Notes:
-  One potential user error is to access an attribute in one language (say
-  Fortran) that was created in another (say C).  We could add a check and
-  generate an error message in this case; note that this would have to 
-  be an option, because (particularly when accessing the attribute from C), 
-  it may be what the user intended, and in any case, it is a valid operation.
-
-  T*/
 
 typedef enum { 
   MPID_COMM       = 0x1, 
@@ -178,7 +153,7 @@ typedef struct MPID_Info_s {
   Document for more details on the use of local process ids.  
   D*/
 
-/*S
+/* S
   MPID_Lpidmask - Description of the Processor mask data strucure
 
   Allows quick determination whether a designated processor is within the
@@ -221,7 +196,7 @@ typedef struct {
  * For each such type, we define a struct that describes these parameters
  */
 
-/*S
+/* S
   MPID_Dataloop_contig - Description of a contiguous datatype
 
   Fields:
@@ -240,7 +215,7 @@ typedef struct {
     struct dataloop_ *dataloop;
 } MPID_Dataloop_contig;
 
-/*S
+/* S
   MPID_Dataloop_vector - Description of a vector or strided datatype
 
   Fields:
@@ -263,7 +238,7 @@ typedef struct {
     MPI_Aint stride;
 } MPID_Dataloop_vector;
 
-/*S
+/* S
   MPID_Dataloop_blockindexed - Description of a block-indexed datatype
 
   Fields:
@@ -287,7 +262,7 @@ typedef struct {
     MPI_Aint *offset;
 } MPID_Dataloop_blockindexed;
 
-/*S
+/* S
   MPID_Dataloop_indexed - Description of an indexed datatype
 
   Fields:
@@ -311,7 +286,7 @@ typedef struct {
     MPI_Aint *offset;
 } MPID_Dataloop_indexed;
 
-/*S
+/* S
   MPID_Dataloop_struct - Description of a structure datatype
 
   Fields:
@@ -335,7 +310,7 @@ typedef struct {
     MPI_Aint *offset;
 } MPID_Dataloop_struct;
 
-/*S
+/* S
   MPID_Dataloop - Description of the structure used to hold a datatype
   description
 
@@ -374,56 +349,6 @@ typedef struct dataloop_ {
 				     Dataloop description */
 } MPID_Dataloop;
 
-/*S
-  MPID_Datatype - Description of the MPID Datatype structure
-
-  Notes:
-  The 'ref_count' is needed for nonblocking operations such as
-.vb
-   MPI_Type_struct( ... , &newtype );
-   MPI_Irecv( buf, 1000, newtype, ..., &request );
-   MPI_Type_free( &newtype );
-   ...
-   MPI_Wait( &request, &status );
-.ve
-
-  Module:
-  Datatype-DS
-
-  Notes:
-
-  Alternatives:
-  The following alternatives for the layout of this structure were considered.
-  Most were not chosen because any benefit in performance or memory 
-  efficiency was outweighed by the added complexity of the implementation.
-
-  A number of fields contain only boolean inforation ('is_contig', 
-  'has_sticky_ub', 'has_sticky_lb', 'is_permanent', 'is_committed').  These 
-  could be combined and stored in a single bit vector.  
-
-  'MPI_Type_dup' could be implemented with a shallow copy, where most of the
-  data fields, particularly the 'opt_dataloop' field, would not be copied into
-  the new object created by 'MPI_Type_dup'; instead, the new object could 
-  point to the data fields in the old object.  However, this requires 
-  more code to make sure that fields are found in the correct objects and that
-  deleting the old object doesn't invalidate the dup'ed datatype.
-
-  A related optimization would point to the 'opt_dataloop' and 'dataloop' 
-  fields in other datatypes.  This has the same problems as the shallow 
-  copy implementation.
-
-  In addition to the separate 'dataloop' and 'opt_dataloop' fields, we could
-  in addition have a separate 'hetero_dataloop' optimized for heterogeneous
-  communication for systems with different data representations. 
-
-  Earlier versions of the ADI used a single API to change the 'ref_count', 
-  with each MPI object type having a separate routine.  Since reference
-  count changes are always up or down one, and since all MPI objects 
-  are defined to have the 'ref_count' field in the same place, the current
-  ADI3 API uses two routines, 'MPIU_Object_add_ref' and 
-  'MPIU_Object_release_ref', to increment and decrement the reference count.
-
-  S*/
 typedef struct { 
     int           handle;        /* value of MPI_Datatype for this structure */
     volatile int  ref_count;
@@ -541,7 +466,7 @@ typedef struct {
  */
 #define MPID_MAX_DATATYPE_DEPTH 8
 
-/*S
+/* S
   MPID_Dataloop_stackelm - Structure for an element of the stack used
   to process datatypes
 
@@ -560,7 +485,7 @@ typedef struct {
     MPID_Dataloop loopinfo;
 } MPID_Dataloop_stackelm;
 
-/*S
+/* S
   MPID_Segment - Description of the Segment data structure
 
   Notes:
