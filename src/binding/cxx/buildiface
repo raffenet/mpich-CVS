@@ -1146,8 +1146,6 @@ open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 # This line is unfortunately necessary to ensure that a working
 # autoconf is used.
-#print MAKEFD "smvar_autoconf = /home/gropp/bin/linux/autoconf\n";
-#print MAKEFD "smvar_debug = 1\n";
 print MAKEFD "smvar_do_dependencies = ignore\n";
 &print_line(  MAKEFD, "mpi_sources = ", 80, "\\\n\t", 8 );
 for ($i=0; $i<=$#files; $i++) {

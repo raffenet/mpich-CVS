@@ -557,9 +557,8 @@ if ("$buildMakefile") {
     # corrected the bug in autoconf 2.13, CheckAutoconf test for this bug.
     if (&CheckAutoconf) {
 	# Autoconf does not work
-#	print MAKEFD "smvar_autoconf = autoconf:autoconf-2.52:/home/gropp/bin/linux/autoconf\n";
-#	print MAKEFD "smvar_autoconf_version = 2.52\n";
 	# This isn't quite right, because any updates will be broken
+	# FIXME : but not sure how to do this.
 	;
     }
     else {
