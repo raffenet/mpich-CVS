@@ -155,6 +155,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIDI_DBG_Print_packet(pkt);
 
     assert(pkt->type < MPIDI_CH3_PKT_END_CH3);
     
@@ -304,8 +305,8 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_Request * rreq;
 	    int found;
 
-	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
-			      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id));
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
+			      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, rts_pkt->match.context_id, rts_pkt->data_sz));
 	    
 	    rreq = MPIDI_CH3U_Request_FDP_or_AEU(&rts_pkt->match, &found);
 	    assert(rreq != NULL);
@@ -353,10 +354,11 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPID_IOV iov[MPID_IOV_LIMIT];
 	    int iov_n;
 	    int mpi_errno = MPI_SUCCESS;
-	    
+
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv CTS pkt"));
 
 	    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
+	    MPIU_DBG_PRINTF(("received cts, count=%d\n", sreq->ch3.user_count));
 
 	    /* release the RTS request if one exists */
 	    /* FIXME - MT: this needs to be atomic to prevent cancel send from cancelling the wrong request */
