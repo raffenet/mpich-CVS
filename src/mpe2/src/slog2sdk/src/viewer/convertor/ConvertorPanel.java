@@ -65,7 +65,7 @@ public class ConvertorPanel extends JPanel
     private JTextField         cmd_option4jar;
     private JTextField         cmd_path2jvm;
     private JTextField         cmd_path2jardir;
-    private JTextField         cmd_path2tracedir;
+    private JTextField         cmd_path2tracelibpath;
     private JSplitPane         cmd_splitter;
     private JButton            cmd_start_btn;
     private JButton            cmd_stop_btn;
@@ -79,13 +79,16 @@ public class ConvertorPanel extends JPanel
 
     private SwingProcessWorker logconv_worker;
 
-    public ConvertorPanel()
+    public ConvertorPanel( LogFileChooser  in_file_chooser )
     {
         super();
         this.initComponents();
         this.initAllTextFields();
 
-        file_chooser = new LogFileChooser( false );
+        if ( in_file_chooser != null )
+            file_chooser = in_file_chooser;
+        else
+            file_chooser = new LogFileChooser( false );
         cmd_pulldown.addActionListener( new PulldownListener() );
         cmd_infile.addActionListener( new LogNameListener() );
         infile_btn.addActionListener( new InputFileSelectorListener() );
@@ -123,9 +126,9 @@ public class ConvertorPanel extends JPanel
 
     private void initComponents()
     {
-        Border   lowered_border, etched_border;
-        lowered_border  = BorderFactory.createLoweredBevelBorder();
-        etched_border   = BorderFactory.createEtchedBorder();
+        Border   raised_border, etched_border;
+        raised_border  = BorderFactory.createRaisedBevelBorder();
+        etched_border  = BorderFactory.createEtchedBorder();
 
         //  Setup all relevant Dimension of various components
         Dimension   row_pref_sz;   // for typical row JPanel
@@ -171,7 +174,7 @@ public class ConvertorPanel extends JPanel
                     cmd_pulldown.addItem( ConvertorConst.CLOG_TO_SLOG2 );
                     cmd_pulldown.addItem( ConvertorConst.RLOG_TO_SLOG2 );
                     cmd_pulldown.addItem( ConvertorConst.UTE_TO_SLOG2 );
-                    cmd_pulldown.setBorder( lowered_border );
+                    cmd_pulldown.setBorder( raised_border );
                     cmd_pulldown.setEditable( false );
                     cmd_pulldown.setAlignmentX( Component.CENTER_ALIGNMENT );
                 cmd_name_panel.add( cmd_pulldown );
@@ -190,6 +193,8 @@ public class ConvertorPanel extends JPanel
                                                            BoxLayout.X_AXIS ) );
 
                     label = new JLabel( " Input File Spec. : " );
+                    label.setToolTipText(
+                          "File Specification of the Input Trace File." );
                     Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 cmd_infile_panel.add( label );
                     cmd_infile = new ActableTextField();
@@ -215,6 +220,7 @@ public class ConvertorPanel extends JPanel
                                                            BoxLayout.X_AXIS ) );
 
                     label = new JLabel( " Output File Name : " );
+                    label.setToolTipText( "File Name of the SLOG-2 File" );
                     Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 cmd_outfile_panel.add( label );
                     cmd_outfile = new JTextField();
@@ -317,6 +323,8 @@ public class ConvertorPanel extends JPanel
                                                   BoxLayout.X_AXIS ) );
 
                     label = new JLabel( " JVM pathname : " );
+                    label.setToolTipText(
+                          "Full Pathname of the Java Virtual Machine." );
                     Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 cmd_path2jvm_panel.add( label );
                     cmd_path2jvm = new JTextField();
@@ -339,6 +347,8 @@ public class ConvertorPanel extends JPanel
                                                     BoxLayout.X_AXIS ) );
     
                     label = new JLabel( " JVM option : " );
+                    label.setToolTipText(
+                          "Option to the Java Virtual Machine." );
                     Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 cmd_option4jvm_panel.add( label );
                     cmd_option4jvm = new JTextField();
@@ -361,6 +371,7 @@ public class ConvertorPanel extends JPanel
                                                      BoxLayout.X_AXIS ) );
     
                     label = new JLabel( " JAR directory : " );
+                    label.setToolTipText( "Directory of the .jar files." );
                     Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 cmd_path2jardir_panel.add( label );
                     cmd_path2jardir = new JTextField();
@@ -383,6 +394,7 @@ public class ConvertorPanel extends JPanel
                                                     BoxLayout.X_AXIS ) );
 
                     label = new JLabel( " JAR option : " );
+                    label.setToolTipText( "Option to the selected Convertor." );
                     Routines.setShortJComponentSizes( label, lbl_pref_sz );
                 cmd_option4jar_panel.add( label );
                     cmd_option4jar = new JTextField();
@@ -397,25 +409,28 @@ public class ConvertorPanel extends JPanel
             lower_panel.add( Box.createVerticalGlue() );
             lower_panel.add( Box.createVerticalStrut( 4 ) );
     
-                JPanel  cmd_path2tracedir_panel = new JPanel();
-                cmd_path2tracedir_panel.setAlignmentX(
-                                        Component.CENTER_ALIGNMENT );
-                cmd_path2tracedir_panel.setLayout(
-                                        new BoxLayout( cmd_path2tracedir_panel,
-                                                       BoxLayout.X_AXIS ) );
+                JPanel  cmd_path2tracelibpath_panel = new JPanel();
+                cmd_path2tracelibpath_panel.setAlignmentX(
+                                            Component.CENTER_ALIGNMENT );
+                cmd_path2tracelibpath_panel.setLayout(
+                         new BoxLayout( cmd_path2tracelibpath_panel,
+                                        BoxLayout.X_AXIS ) );
     
-                    label = new JLabel( " Trace directory : " );
+                    label = new JLabel( " TraceLibrary path : " );
+                    label.setToolTipText(
+                        "Trace Input Library path of the selected Convertor" );
                     Routines.setShortJComponentSizes( label, lbl_pref_sz );
-                cmd_path2tracedir_panel.add( label );
-                    cmd_path2tracedir = new JTextField();
-                    // Routines.setShortJComponentSizes( cmd_path2tracedir,
+                cmd_path2tracelibpath_panel.add( label );
+                    cmd_path2tracelibpath = new JTextField();
+                    // Routines.setShortJComponentSizes( cmd_path2tracelibpath,
                     //                                   fld_pref_sz );
-                    cmd_path2tracedir.addActionListener( help_msg_listener );
-                cmd_path2tracedir_panel.add( cmd_path2tracedir );
-                Routines.setShortJComponentSizes( cmd_path2tracedir_panel,
+                    cmd_path2tracelibpath.addActionListener(
+                                          help_msg_listener );
+                cmd_path2tracelibpath_panel.add( cmd_path2tracelibpath );
+                Routines.setShortJComponentSizes( cmd_path2tracelibpath_panel,
                                                   row_pref_sz );
 
-            lower_panel.add( cmd_path2tracedir_panel );
+            lower_panel.add( cmd_path2tracelibpath_panel );
             lower_panel.add( Box.createVerticalStrut( 4 ) );
 
 
@@ -477,21 +492,6 @@ public class ConvertorPanel extends JPanel
             cmd_button_panel.add( cmd_stop_btn );
             cmd_button_panel.add( Box.createHorizontalGlue() );
 
-                cmd_close_btn = new JButton( "Return" );
-                icon_URL = getURL( Const.IMG_PATH + "Home24.gif" );
-                if ( icon_URL != null ) {
-                    cmd_close_btn.setIcon( new ImageIcon( icon_URL ) );
-                    cmd_close_btn.setVerticalTextPosition(
-                                  AbstractButton.CENTER );
-                    cmd_close_btn.setHorizontalTextPosition(
-                                  AbstractButton.RIGHT );
-                    // cmd_close_btn.setMargin( btn_insets );
-                }
-                cmd_close_btn.setToolTipText(
-                    "Close this panel and Return to the previous component." );
-            cmd_button_panel.add( cmd_close_btn );
-            cmd_button_panel.add( Box.createHorizontalGlue() );
-
                 cmd_help_btn = new JButton( " Help " );
                 icon_URL = getURL( Const.IMG_PATH + "Help24.gif" );
                 if ( icon_URL != null ) {
@@ -505,6 +505,21 @@ public class ConvertorPanel extends JPanel
                 cmd_help_btn.setToolTipText(
                     "Help message of the selected logfile conversion." );
             cmd_button_panel.add( cmd_help_btn );
+            cmd_button_panel.add( Box.createHorizontalGlue() );
+
+                cmd_close_btn = new JButton( "Return" );
+                icon_URL = getURL( Const.IMG_PATH + "Home24.gif" );
+                if ( icon_URL != null ) {
+                    cmd_close_btn.setIcon( new ImageIcon( icon_URL ) );
+                    cmd_close_btn.setVerticalTextPosition(
+                                  AbstractButton.CENTER );
+                    cmd_close_btn.setHorizontalTextPosition(
+                                  AbstractButton.RIGHT );
+                    // cmd_close_btn.setMargin( btn_insets );
+                }
+                cmd_close_btn.setToolTipText(
+                    "Close this panel and Return to the previous component." );
+            cmd_button_panel.add( cmd_close_btn );
 
             cmd_button_panel.add( Box.createHorizontalGlue() );
 
@@ -513,41 +528,20 @@ public class ConvertorPanel extends JPanel
 
     private void initAllTextFields()
     {
-        Properties       sys_pptys;
-        String           java_home, path2jvm;
-        String           classpath, path2jardir;
+        String           path2jardir;
         String           option4jvm;
-        File             jvm_file;
-        StringTokenizer  paths;
-        String           path;
-        char             old_char, new_char;
-        int              char_idx;
 
-        sys_pptys  = System.getProperties();
-        file_sep   = sys_pptys.getProperty( "file.separator" );
-        path_sep   = sys_pptys.getProperty( "path.separator" );
+        ConvertorConst.initializeSystemProperties();
 
         // set the path to JVM 
-        java_home  = sys_pptys.getProperty( "java.home" );
-        path2jvm   = java_home + file_sep + "bin" + file_sep + "java";
-        jvm_file   = new File( path2jvm );
-        if ( ! jvm_file.exists() )
-            path2jvm  = "java";
-        cmd_path2jvm.setText( path2jvm );
+        cmd_path2jvm.setText( ConvertorConst.getDefaultPathToJVM() );
 
         // set the path to all the jar files
-        classpath    = sys_pptys.getProperty( "java.class.path" );
-        // System.out.println( "java.class.path = " + classpath );
-        path2jardir  = null;
-        paths        = new StringTokenizer( classpath, path_sep );
-        while ( paths.hasMoreTokens() && path2jardir == null ) {
-            path      = paths.nextToken();
-            char_idx  = path.lastIndexOf( file_sep );
-            if ( char_idx >= 0 )
-                path2jardir = path.substring( 0, char_idx );
-        }
-        // System.out.println( "path2jardir = " + path2jardir );
+        path2jardir  = ConvertorConst.getDefaultPathToJarDir();
         cmd_path2jardir.setText( path2jardir );
+
+        // Update the default TraceLibPaths with cmd_path2jar.
+        ConvertorConst.updateDefaultTraceLibPaths( path2jardir );
 
         // set the JVM option
         option4jvm  = null;
@@ -556,9 +550,6 @@ public class ConvertorPanel extends JPanel
         } catch ( NullPointerException err ) {}
         if ( option4jvm == null || option4jvm.length() <= 0 );
             cmd_option4jvm.setText( "-Xms32m -Xmx64m" );
-
-        // Replace file separator if necessary
-        ConvertorConst.updateFileSeparatorOfTraceDirs( file_sep.charAt( 0 ) );
     }
 
 
@@ -585,7 +576,8 @@ public class ConvertorPanel extends JPanel
     private void printSelectedConvertorHelp()
     {
         String             convertor;
-        String             path2jardir, path2tracedir;
+        String             path2jardir;
+        String             path2tracelibpath;
         String             jar_path;
         StringBuffer       exec_cmd;
         File               jar_file;
@@ -597,11 +589,7 @@ public class ConvertorPanel extends JPanel
 
         //  Set the path to the jar file
         path2jardir = cmd_path2jardir.getText();
-        if ( path2jardir != null && path2jardir.length() > 0 )
-            jar_path  = path2jardir + file_sep
-                      + ConvertorConst.getDefaultJarName( convertor );
-        else
-            jar_path  = ConvertorConst.getDefaultJarName( convertor );
+        jar_path  = ConvertorConst.getDefaultJarPath( path2jardir, convertor );
         jar_file  = new File( jar_path );
         if ( ! jar_file.exists() ) {
             Dialogs.error( top_window, jar_path + " does not exist!" );
@@ -610,18 +598,9 @@ public class ConvertorPanel extends JPanel
 
         exec_cmd = new StringBuffer( cmd_path2jvm.getText() + " "
                                    + cmd_option4jvm.getText() );
-        path2tracedir = cmd_path2tracedir.getText();
-        if ( path2tracedir != null && path2tracedir.length() > 0 ) {
-            exec_cmd.append( " -Djava.library.path=" );
-            if (    path2tracedir.startsWith( file_sep )
-                 || path2tracedir.charAt( 1 ) == ':' )
-                // Assume it is full path
-                exec_cmd.append( path2tracedir );
-            else
-                // Assume it is relative path to JAR libdir
-                exec_cmd.append( path2jardir + file_sep
-                               + path2tracedir );
-        }
+        path2tracelibpath = cmd_path2tracelibpath.getText();
+        if ( path2tracelibpath != null && path2tracelibpath.length() > 0 )
+            exec_cmd.append( " -Djava.library.path=" + path2tracelibpath );
         exec_cmd.append( " -jar " + jar_path + " -h" );
 
         cmd_textarea.append( "Executing " + exec_cmd.toString()
@@ -652,10 +631,10 @@ public class ConvertorPanel extends JPanel
     }
 
 
-    private void convertSelectedLogfile()
+    private void convertSelectedLogFile()
     {
         String             convertor;
-        String             path2jardir, path2tracedir;
+        String             path2jardir, path2tracelibpath;
         String             infile_name, outfile_name, jar_path;
         String             option4jar;
         File               infile, outfile, jar_file;
@@ -732,11 +711,7 @@ public class ConvertorPanel extends JPanel
 
         //  Set the path to the jar file
         path2jardir = cmd_path2jardir.getText();
-        if ( path2jardir != null && path2jardir.length() > 0 )
-            jar_path  = path2jardir + file_sep
-                      + ConvertorConst.getDefaultJarName( convertor );
-        else
-            jar_path  = ConvertorConst.getDefaultJarName( convertor );
+        jar_path  = ConvertorConst.getDefaultJarPath( path2jardir, convertor );
         jar_file  = new File( jar_path );
         if ( ! jar_file.exists() ) {
             Dialogs.error( top_window, jar_path + " does not exist!" );
@@ -745,20 +720,11 @@ public class ConvertorPanel extends JPanel
 
         exec_cmd = new StringBuffer( cmd_path2jvm.getText() + " "
                                    + cmd_option4jvm.getText() );
-        path2tracedir = cmd_path2tracedir.getText();
-        if ( path2tracedir != null && path2tracedir.length() > 0 ) {
-            exec_cmd.append( " -Djava.library.path=" );
-            if (    path2tracedir.startsWith( file_sep )
-                 || path2tracedir.charAt( 1 ) == ':' )
-                // Assume it is full path
-                exec_cmd.append( path2tracedir );
-            else
-                // Assume it is relative path to JAR libdir
-                exec_cmd.append( path2jardir + file_sep
-                               + path2tracedir );
-        }
+        path2tracelibpath = cmd_path2tracelibpath.getText();
+        if ( path2tracelibpath != null && path2tracelibpath.length() > 0 )
+            exec_cmd.append( " -Djava.library.path=" + path2tracelibpath );
         exec_cmd.append( " -jar " + jar_path );
-        
+
         option4jar  = cmd_option4jar.getText();
         if ( option4jar != null && option4jar.length() > 0 )
             exec_cmd.append( " " + option4jar );
@@ -853,8 +819,8 @@ public class ConvertorPanel extends JPanel
         {
             String  convertor;
             convertor  = (String) cmd_pulldown.getSelectedItem();
-            cmd_path2tracedir.setText(
-                              ConvertorConst.getDefaultTraceDir( convertor ) );
+            cmd_path2tracelibpath.setText(
+                     ConvertorConst.getDefaultTraceLibPath( convertor ) );
             printSelectedConvertorHelp();
         }
     }
@@ -863,7 +829,7 @@ public class ConvertorPanel extends JPanel
     {
         public void actionPerformed( ActionEvent evt )
         {
-            convertSelectedLogfile();
+            convertSelectedLogFile();
         }
     }
 

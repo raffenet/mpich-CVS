@@ -16,6 +16,8 @@ import java.awt.event.WindowAdapter;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
+
+
 public class ConvertorFrame extends JFrame
 {
     private static String          in_filename;      // For main()
@@ -27,7 +29,7 @@ public class ConvertorFrame extends JFrame
         super( "Logfile Convertor" );
         super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 
-        top_panel = new ConvertorPanel();
+        top_panel = new ConvertorPanel( null );
         top_panel.addActionListenerForCloseButton( new ActionListener() {
             public void actionPerformed( ActionEvent evt ) {
                 ConvertorFrame.this.setVisible( false );

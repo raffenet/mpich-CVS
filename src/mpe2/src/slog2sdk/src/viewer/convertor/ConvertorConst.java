@@ -9,6 +9,10 @@
 
 package viewer.convertor;
 
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.io.File;
+
 import logformat.slog2.TraceName;
 
 public class ConvertorConst
@@ -17,15 +21,23 @@ public class ConvertorConst
     public  static final String  RLOG_TO_SLOG2      = "  RLOG  -->  SLOG-2  ";
     public  static final String  UTE_TO_SLOG2       = "  UTE   -->  SLOG-2  ";
 
-    public  static final String  CLOG_TO_SLOG2_JAR  = "clogTOslog2.jar";
-    public  static final String  RLOG_TO_SLOG2_JAR  = "traceTOslog2.jar";
-    public  static final String  UTE_TO_SLOG2_JAR   = "traceTOslog2.jar";
+    private static final String  CLOG_TO_SLOG2_JAR  = "clogTOslog2.jar";
+    private static final String  RLOG_TO_SLOG2_JAR  = "traceTOslog2.jar";
+    private static final String  UTE_TO_SLOG2_JAR   = "traceTOslog2.jar";
 
-    public  static       char    File_Separator     = '/';
+    // if XXX_TraceLibPath = null, means no need to use -Djava.library.path=
+    // if XXX_TraceLibPath contains ".", i.e. Jar Directory.
+    private static       String  CLOG_TraceLibPath  = null;
+    private static       String  RLOG_TraceLibPath  = ".:../trace_rlog/lib";
+    private static       String  UTE_TraceLibPath   = ".";
 
-    public  static       String  CLOG_TraceDir      = "";
-    public  static       String  RLOG_TraceDir      = "../trace_rlog/lib";
-    public  static       String  UTE_TraceDir       = "";
+    // Assume Unix convention.
+    private static       String  FileSeparator      = "/";
+    private static       String  PathSeparator      = ":";
+    private static       String  JavaHome           = null;
+    private static       String  ClassPath          = null;
+    private static final String  JVM                = "java";
+
 
     public  static String getDefaultConvertor( String filename )
     {
@@ -57,28 +69,141 @@ public class ConvertorConst
             return "";
     }
 
-    public  static String getDefaultTraceDir( String convertor )
+    public  static String getDefaultJarPath( String prefix, String convertor )
     {
-        if ( convertor.equals( CLOG_TO_SLOG2 ) )
-            return CLOG_TraceDir;
-        else if ( convertor.equals( RLOG_TO_SLOG2 ) )
-            return RLOG_TraceDir;
-        else if ( convertor.equals( UTE_TO_SLOG2 ) )
-            return UTE_TraceDir;
+        if ( prefix != null && prefix.length() > 0 )
+            return prefix + FileSeparator + getDefaultJarName( convertor );
         else
-            return "";
+            return getDefaultJarName( convertor );
     }
 
-    public  static void updateFileSeparatorOfTraceDirs( char new_file_sep )
+    public  static String getDefaultTraceLibPath( String convertor )
     {
-        if ( File_Separator != new_file_sep ) {
-            if ( CLOG_TraceDir != null )
-                CLOG_TraceDir.replace( File_Separator, new_file_sep );
-            if ( RLOG_TraceDir != null )
-                RLOG_TraceDir.replace( File_Separator, new_file_sep );
-            if ( RLOG_TraceDir != null )
-                RLOG_TraceDir.replace( File_Separator, new_file_sep );
-            File_Separator = new_file_sep;
+        if ( convertor.equals( CLOG_TO_SLOG2 ) )
+            return CLOG_TraceLibPath;
+        else if ( convertor.equals( RLOG_TO_SLOG2 ) )
+            return RLOG_TraceLibPath;
+        else if ( convertor.equals( UTE_TO_SLOG2 ) )
+            return UTE_TraceLibPath;
+        else
+            return ".";
+    }
+
+    private static boolean replaceCharOfTraceLibPaths( char old_char,
+                                                       char new_char )
+    {
+        if ( old_char != new_char ) {
+            if ( CLOG_TraceLibPath != null )
+                CLOG_TraceLibPath = CLOG_TraceLibPath.replace( old_char,
+                                                               new_char );
+            if ( RLOG_TraceLibPath != null )
+                RLOG_TraceLibPath = RLOG_TraceLibPath.replace( old_char,
+                                                               new_char );
+            if ( UTE_TraceLibPath != null )
+                UTE_TraceLibPath  = UTE_TraceLibPath.replace( old_char,
+                                                              new_char );
+            return true;
+        }
+        else
+            return false;
+    }
+
+    public  static void initializeSystemProperties()
+    {
+        Properties       sys_pptys;
+        String           ppty_str;
+
+        sys_pptys  = System.getProperties();
+
+        ppty_str   = sys_pptys.getProperty( "file.separator" );
+        if ( replaceCharOfTraceLibPaths( FileSeparator.charAt( 0 ),
+                                         ppty_str.charAt( 0 ) ) )
+            FileSeparator = ppty_str;
+
+        ppty_str   = sys_pptys.getProperty( "path.separator" );
+        if ( replaceCharOfTraceLibPaths( PathSeparator.charAt( 0 ),
+                                         ppty_str.charAt( 0 ) ) )
+            PathSeparator = ppty_str;
+
+        JavaHome   = sys_pptys.getProperty( "java.home" );
+        ClassPath  = sys_pptys.getProperty( "java.class.path" );
+    }
+
+    public  static String getDefaultPathToJVM()
+    {
+        String  path2jvm;
+        File    jvm_file;
+
+        path2jvm = JavaHome + FileSeparator + "bin" + FileSeparator + JVM;
+        jvm_file = new File( path2jvm );
+        if ( ! jvm_file.exists() ) {
+            // Maybe this is MS Windows name
+            path2jvm = path2jvm + ".exe";
+            jvm_file = new File( path2jvm );
+            if ( ! jvm_file.exists() )
+                path2jvm = JVM;
+        }
+        return path2jvm;
+    }
+
+    public  static String getDefaultPathToJarDir()
+    {
+        StringTokenizer  paths;
+        String           path;
+        String           path2jardir;
+        int              char_idx;
+
+        // System.out.println( "ClassPath = " + ClassPath );
+        path2jardir  = null;
+        paths        = new StringTokenizer( ClassPath, PathSeparator );
+        while ( paths.hasMoreTokens() && path2jardir == null ) {
+            path      = paths.nextToken();
+            char_idx  = path.lastIndexOf( FileSeparator );
+            if ( char_idx >= 0 )
+                path2jardir = path.substring( 0, char_idx );
+        }
+        return path2jardir;
+    }
+
+    private static String updateLibraryPath( String  prefix_path,
+                                             String  old_libpath )
+    {
+        StringBuffer     new_libpath;
+        StringTokenizer  paths;
+        String           path;
+
+        new_libpath  = new StringBuffer();
+        paths        = new StringTokenizer( old_libpath, PathSeparator );
+        while ( paths.hasMoreTokens() ) {
+            path     = paths.nextToken();
+            if (    path.startsWith( FileSeparator )
+                 || ( path.length() > 1 && path.charAt( 1 ) == ':' ) )
+                // Assume it is full path
+                new_libpath.append( path );
+            else if ( path.equals( "." ) )
+                // Assume . as prefix_path
+                new_libpath.append( prefix_path );
+            else
+                // Assume it is relative path, prepend with prefix_path
+                new_libpath.append( prefix_path + FileSeparator + path );
+            if ( paths.hasMoreTokens() )
+                new_libpath.append( PathSeparator );
+        }
+        return new_libpath.toString();
+    }
+
+    public  static void updateDefaultTraceLibPaths( String  path2jardir )
+    {
+        if ( path2jardir != null ) {
+            if ( CLOG_TraceLibPath != null )
+                CLOG_TraceLibPath  = updateLibraryPath( path2jardir,
+                                                        CLOG_TraceLibPath );
+            if ( RLOG_TraceLibPath != null )
+                RLOG_TraceLibPath  = updateLibraryPath( path2jardir,
+                                                        RLOG_TraceLibPath );
+            if ( UTE_TraceLibPath != null )
+                UTE_TraceLibPath   = updateLibraryPath( path2jardir,
+                                                        UTE_TraceLibPath );
         }
     }
 }

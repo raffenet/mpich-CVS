@@ -17,19 +17,22 @@ import javax.swing.JFrame;
 import javax.swing.JDialog;
 import javax.swing.WindowConstants;
 
+import viewer.common.LogFileChooser;
+
 public class ConvertorDialog extends JDialog
 {
     private static String          in_filename;      // For main()
 
     private        ConvertorPanel  top_panel;
 
-    public ConvertorDialog( JFrame ancestor_frame )
+    public ConvertorDialog( JFrame          ancestor_frame,
+                            LogFileChooser  file_chooser )
     {
         // Make this a Modal Dialog
         super( ancestor_frame, "Logfile Convertor", true );
         super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 
-        top_panel = new ConvertorPanel();
+        top_panel = new ConvertorPanel( file_chooser );
         super.setContentPane( top_panel );
 
         super.addWindowListener( new WindowAdapter() {
@@ -48,12 +51,14 @@ public class ConvertorDialog extends JDialog
     public void addActionListenerForCloseButton( ActionListener action )
     { top_panel.addActionListenerForCloseButton( action ); }
 
-    public static String convertLogfile( JFrame frame, String filename )
+    public static String convertLogFile( JFrame          frame,
+                                         LogFileChooser  chooser,
+                                         String          filename )
     {
         ConvertorDialog        conv_dialog;
         CloseToRetrieveAction  retrieve_action;
         CloseToRetrieveAction  close2getname;
-        conv_dialog    = new ConvertorDialog( frame );
+        conv_dialog    = new ConvertorDialog( frame, chooser );
         close2getname  = new CloseToRetrieveAction( conv_dialog );
         conv_dialog.top_panel.addActionListenerForCloseButton( close2getname );
 
