@@ -523,7 +523,7 @@ main() {
 rm -f conftestll
 if test "$Pac_CV_NAME" = 8 ; then
     AC_MSG_RESULT(yes)
-    AC_DEFINE(HAVE_LONG_LONG_64)
+    AC_DEFINE(HAVE_LONG_LONG_64,,[Define if have 64 bit long long])
     DEFINE_MPI_OFFSET="typedef long long MPI_Offset;"
     FORTRAN_MPI_OFFSET="integer*8"
     echo "defining MPI_Offset as long long in C and integer*8 in Fortran"
