@@ -32,12 +32,12 @@ int MPID_Init( void )
     MPID_Process.port_list = (OpenPortNode_t *)0;
 
     BNR_Init(&spawned);
-    BNR_DB_Get_my_name(MPID_Process.bnr_dbname);
+    BNR_KM_Get_my_name(MPID_Process.bnr_dbname);
     BNR_Barrier();
 
     if (spawned)
     {
-	BNR_DB_Get(MPID_Process.bnr_dbname, MPICH_PARENT_PORT_KEY, pszPortName);
+	BNR_KM_Get(MPID_Process.bnr_dbname, MPICH_PARENT_PORT_KEY, pszPortName);
 	//PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPID_Process.comm_parent);
     }
     else

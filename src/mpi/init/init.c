@@ -47,10 +47,6 @@ int MPI_Init( int *argc, char ***argv )
 {
     static const char FCNAME[] = "MPI_Init";
     int mpi_errno = MPI_SUCCESS;
-#ifdef FOO
-    char pszPortName[MPI_MAX_PORT_NAME];
-    int spawned;
-#endif
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INIT);
 #   ifdef HAVE_ERROR_CHECKING
@@ -79,27 +75,7 @@ int MPI_Init( int *argc, char ***argv )
      * the intended common routine.
      */
 
-#ifdef FOO
-    BNR_Init(&spawned);
-#endif
-
     MPIR_Init_thread( MPI_THREAD_SINGLE, (int *)0 );
-
-#ifdef FOO
-    BNR_DB_Get_my_name(MPIR_Process.bnr_dbname);
-    BNR_Barrier();
-
-    if (spawned)
-    {
-	BNR_DB_Get(MPIR_Process.bnr_dbname, MPICH_PARENT_PORT_KEY, pszPortName);
-	PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPIR_Process.comm_parent);
-    }
-    else
-    {
-	MPIR_Process.comm_parent = MPI_COMM_NULL;
-    }
-
-#endif
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT);
     return MPI_SUCCESS;
