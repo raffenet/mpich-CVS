@@ -687,7 +687,7 @@ typedef struct {
   Fields:
 + curcount - Current loop count value (between 0 and 
              loopinfo.loop_params.count-1) 
-. cufoffset - Offset for relative offsets in datatypes 
+. curoffset - Offset for relative offsets in datatypes 
 - loopinfo  - Loop-based description of the datatype
 
 S*/
