@@ -32,6 +32,7 @@ int main( int argc, char **argv )
     
     errs = test_communicators();
     MTest_Finalize( errs );
+    MPI_Finalize();
     return 0;
 }
 
