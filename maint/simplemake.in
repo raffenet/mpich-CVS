@@ -186,16 +186,16 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
 $srcdir_name =               'srcdir      = @' . "srcdir"      . '@';
 $master_topsrcdir_name =     
                'master_top_srcdir  = @' . "master_top_srcdir"  . '@';
-$topsrcdir_name =            'top_srcdir  = @' . "top_srcdir"  . '@';
-$prefix_name =               'prefix      = @' . "prefix"      . '@'; 
-$exec_prefix_name =          'exec_prefix = @' . "exec_prefix" . '@';
-$bindir_name =               'bindir      = @' . "bindir"      . '@';
-$sbindir_name =              'sbindir     = @' . "sbindir"     . '@';
-$libdir_name =               'libdir      = @' . "libdir"      . '@';
-$includedir_name =           'includedir  = @' . "includedir"  . '@';
-$mandir_name =               'mandir      = @' . "mandir"      . '@';
-$htmldir_name =              'htmldir     = @' . "htmldir"     . '@';
-$docdir_name =               'docdir      = @' . "docdir"      . '@';
+$topsrcdir_name =            'top_srcdir      = @' . "top_srcdir"  . '@';
+$prefix_name =               'prefix          = @' . "prefix"      . '@'; 
+$exec_prefix_name =          'exec_prefix     = @' . "exec_prefix" . '@';
+$bindir_name =               'bindir          = @' . "bindir"      . '@';
+$sbindir_name =              'sbindir         = @' . "sbindir"     . '@';
+$libdir_name =               'libdir          = @' . "libdir"      . '@';
+$includedir_name =           'includedir      = @' . "includedir"  . '@';
+$mandir_name =               'mandir          = @' . "mandir"      . '@';
+$htmldir_name =              'htmldir         = @' . "htmldir"     . '@';
+$docdir_name =               'docdir          = @' . "docdir"      . '@';
 
 %dirdefs = ( 'srcdir'     => $srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
@@ -245,7 +245,7 @@ $docdir_name =               'docdir      = @' . "docdir"      . '@';
 $globaldocdir  = 'ROOTDIR/$dockinddirval'; 
 %dockinddir = ( "html" => "www/www3", 
 	        "man" => "man/man3", 
-	        "latex" => "tex/tex3" );
+	        "latex" => "doc/refman" );
 $docnamedefs   = "";
 $doc_attop = 1;
 #
@@ -585,6 +585,9 @@ sub WriteMfile {
     open( FD, ">$output_filename" ) || die "Could not open $output_filename\n";
 
     print FD "# This $output_filename created by simplemake.  Do not edit$newline$newline";
+    if ($output_filename =~ /Makefile\.in/) {
+	print FD "# \@configure_input\@$newline";
+    }
     # Ensure that the default target takes us to "all"
     print FD "all: all-redirect$newline$newline";
     if ($useinclude) {
@@ -685,13 +688,13 @@ sub WriteMfile {
 sub DefaultRules {
     # SHELL must be in uppercase for Make to use it as the shell to
     # execute commands with.
-    print FD "SHELL       = \@SHELL\@$newline";
+    print FD "SHELL           = \@SHELL\@$newline";
 
     # Library definitions
     if (scalar(%libraries)) {
 	# Add ar, ranlib definitions if there are any library targets.
-        print FD "AR          = \@AR\@$newline";
-	print FD "RANLIB      = \@RANLIB\@$newline";
+        print FD "AR              = \@AR\@$newline";
+	print FD "RANLIB          = \@RANLIB\@$newline";
 # Replace this with a block to create the actual shared library (.so), 
 # not just the archive of sharable objects (.la)	
 # 	if ($do_sharedlibs) {
@@ -1719,10 +1722,24 @@ sub TargetDocs {
 	    print FD "$newline";
 	}
 	# If we're at the top; create any directories that are needed
+	# This assumes a particular layout for the directories that
+	# we'll eventually want to make adjustable.
 	if ($doc_attop) {
 	    $doc_attop = 0;
-	    print FD "\tif [ ! -d www ] ; then mkdir www ; fi$newline";
-	    print FD "\tif [ ! -d www/www3 ] ; then mkdir www/www3 ; fi$newline";
+	    if ($kind eq "html") {
+		print FD "\tif [ ! -d www ] ; then mkdir www ; fi$newline";
+		print FD "\tif [ ! -d www/www3 ] ; then mkdir www/www3 ; fi$newline";
+	    }
+	    elsif ($kind eq "man") {
+		print FD "\tif [ ! -d man ] ; then mkdir man ; fi$newline";
+		print FD "\tif [ ! -d man/man3 ] ; then mkdir man/man3 ; fi$newline";
+	    }
+	    elsif ($kind eq "latex") {
+		print FD "\tif [ ! -d doc/refman ] ; then mkdir doc/refman ; fi$newline";
+	    }
+	    else {
+		print STDERR "Unrecognized document type $kind\n";
+	    }
 	}
 	&RecursiveOp( $kind );
 	$didkind{$kind} = 1;
@@ -1736,6 +1753,23 @@ sub TargetDocs {
 	    &RecursiveOp( $kind );
 	}
     }
+}
+
+#
+# Install target.  Question: does this need to list (or use a shell command
+# to get) the filename for each individual file?
+sub InstallDocs {
+    # Add target only at the top
+    if (!$doc_attop) { return; }
+    
+    # Each document type is different:
+    if (! $didkind{"html"} && $globaldockind{"html"}) {
+	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/$newline";
+    }
+    if (! $didkind{"man"} && $globaldockind{"man"}) {
+	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/$newline";
+    }
+    # LaTeX manual is different and requires a special case
 }
 
 #
@@ -1785,6 +1819,9 @@ sub TargetInstall {
 	print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$newline";
     }
     print FD "$newline";
+
+    # Install documentation
+    &InstallDocs;
     #
     print FD "install-strip:$newline";
     print FD "\t\$(MAKE) INSTALL_STRIP_FLAG=-s install$newline";
