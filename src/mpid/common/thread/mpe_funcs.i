@@ -19,7 +19,7 @@
 
 #define MPID_Thread_same(id1_, id2_, same_)	\
 {						\
-    MPIE_Thread_same((id1_), (id2_), (same_));	\
+    MPE_Thread_same((id1_), (id2_), (same_));	\
 }
 
 #define MPID_Thread_yield()			\
