@@ -77,27 +77,52 @@ ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 AC_PROVIDE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
 ])
 
+dnl
+dnl Added complication:  We want to check for a header EVEN IF WE CAN'T 
+dnl COMPILE IT.  E.g., if the header requires another header, we want 
+dnl this to still work.  To make this slightly more robust, if the
+dnl CPP is the compiler, just use the CPP test.  Otherwise, fall
+dnl back into the compilation test.  Since autoconf uses /lib/cpp
+dnl only if it can't figure out how to use the compiler, we
+dnl test for that specific cast, then use CPP if we can. 
+dnl However, on failure, we still test to see if, even though CPP 
+dnl failed, the compiler accepts it (this avoids some of the "evaluation
+dnl copy" problems.
+dnl 
 undefine([AC_CHECK_HEADER])
 AC_DEFUN(AC_CHECK_HEADER,
 [dnl Do the transliteration at runtime so arg 1 can be a shell variable.
 ac_safe=`echo "$1" | sed 'y%./+-%__p_%'`
 AC_MSG_CHECKING([for $1])
 AC_CACHE_VAL(ac_cv_header_$ac_safe,
-[cat >conftest.c<<EOF
+[
+pac_found_header=no
+if test "$CPP" != "/lib/cpp" ; then
+    AC_TRY_CPP([#include <$1>], pac_found_header=yes)
+fi
+# If cpp failed, see if the compiler accepts the header.
+if test "$pac_found_header" != "yes" ; then
+    cat >conftest.c<<EOF
 [#]line __oline__ "configure"
 #include "confdefs.h"
 #include <$1>
 int conftest() {return 0;}
 EOF
-ac_compile_for_cpp='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.c 1>&AC_FD_CC'
-if AC_TRY_EVAL(ac_compile_for_cpp); then
+    ac_compile_for_cpp='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.c 1>&AC_FD_CC'
+    if AC_TRY_EVAL(ac_compile_for_cpp); then
+	pac_found_header=yes
+    else
+        echo "configure: failed program was:" >&AC_FD_CC
+        cat conftest.c >&AC_FD_CC
+    fi
+    rm -f conftest*
+fi
+# Finally, set the ac variable.
+if test "$pac_found_header" = "yes" ; then
     eval "ac_cv_header_$ac_safe=yes"
 else
     eval "ac_cv_header_$ac_safe=no"
-    echo "configure: failed program was:" >&AC_FD_CC
-    cat conftest.c >&AC_FD_CC
 fi
-rm -f conftest*
 ])dnl
 if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
   AC_MSG_RESULT(yes)
