@@ -56,14 +56,8 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
-            if (!rank) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
-                            "**nullptr", "**nullptr %s", "rank" );
-            } 
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            MPIR_ERRTEST_ARGNULL(rank,"rank",mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
