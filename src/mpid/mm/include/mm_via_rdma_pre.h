@@ -8,7 +8,7 @@
 
 typedef struct MM_Car_data_via_rdma
 {
-    union 
+    union mm_car_data_via_rdma_buf
     {
 	struct car_via_rdma_tmp
 	{

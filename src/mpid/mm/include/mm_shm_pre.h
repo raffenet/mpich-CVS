@@ -8,7 +8,7 @@
 
 typedef struct MM_Car_data_shm
 {
-    union 
+    union mm_car_data_shm_buf
     {
 	struct car_shm_tmp
 	{

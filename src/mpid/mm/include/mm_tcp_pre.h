@@ -8,7 +8,7 @@
 
 typedef struct MM_Car_data_tcp
 {
-    union 
+    union mm_car_data_tcp_buf
     {
 	struct car_tcp_tmp
 	{

@@ -40,7 +40,7 @@ typedef struct VI_Info
 
 typedef struct MM_Car_data_via
 {
-    union 
+    union mm_car_data_via_buf
     {
 	struct car_via_tmp
 	{
