@@ -205,12 +205,17 @@ int MPI_Type_create_darray(int size, int rank, int ndims,
                     int order, MPI_Datatype oldtype, MPI_Datatype *newtype);
 #endif
 
+/* The globus2 device has to rename MPI_ symbols in order to use the vendor
+   MPI as one of its transport mechanisms.  Therefore, the following undefines
+   should only happen if MPICH_RENAMING_MPI_FUNCS is not defined. */
 /* Section 4.12.4 */
+#if !defined(MPICH_RENAMING_MPI_FUNCS)
 #ifdef MPI_File_f2c
 #undef MPI_File_f2c
 #endif
 #ifdef MPI_File_c2f
 #undef MPI_File_c2f
+#endif
 #endif
 /* above needed for some versions of mpi.h in MPICH!! */
 MPI_File MPI_File_f2c(MPI_Fint fh);
@@ -241,11 +246,16 @@ int MPI_Info_get_nthkey(MPI_Info info, int n, char *key);
 int MPI_Info_dup(MPI_Info info, MPI_Info *newinfo);
 int MPI_Info_free(MPI_Info *info);
 
+/* The globus2 device has to rename MPI_ symbols in order to use the vendor
+   MPI as one of its transport mechanisms.  Therefore, the following undefines
+   should only happen if MPICH_RENAMING_MPI_FUNCS is not defined. */
+#if !defined(MPICH_RENAMING_MPI_FUNCS)
 #ifdef MPI_Info_f2c
 #undef MPI_Info_f2c
 #endif
 #ifdef MPI_Info_c2f
 #undef MPI_Info_c2f
+#endif
 #endif
 /* above needed for some versions of mpi.h in MPICH!! */
 MPI_Fint MPI_Info_c2f(MPI_Info info);
