@@ -939,7 +939,7 @@ if test "$pac_cv_have_long_double" = "yes" ; then
 fi
 AC_CACHE_CHECK([whether long long is supported],
 pac_cv_have_long_long,[
-AC_TRY_COMPILE(,[long double a;],
+AC_TRY_COMPILE(,[long long a;],
 pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
 if test "$pac_cv_have_long_long" = "yes" ; then
     AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
