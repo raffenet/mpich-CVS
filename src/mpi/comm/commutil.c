@@ -335,3 +335,39 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 }
 
 
+int MPIR_Comm_release(MPID_Comm * comm_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int inuse;
+    
+    MPIU_Object_release_ref( comm_ptr, &inuse);
+    if (!inuse) {
+	/* Remove the attributes, executing the attribute delete routine.  Do this only if the attribute functions are defined. */
+	if (MPIR_Process.comm_attr_free && comm_ptr->attributes) {
+	    mpi_errno = MPIR_Process.comm_attr_free( comm_ptr, comm_ptr->attributes );
+	}
+
+	if (mpi_errno == MPI_SUCCESS) {
+	    /* Free the VCRT */
+	    MPID_VCRT_Release(comm_ptr->vcrt);
+	
+	    /* FIXME: For intercomms, free the local vcrt */
+
+	    /* Free the context value */
+	    MPIR_Free_contextid( comm_ptr->context_id );
+
+	    /* FIXME: Free the local and remote groups, if they exist */
+	    comm_ptr->local_group = 0;
+	    comm_ptr->remote_group = 0;
+
+	    /* FIXME - when we recover comm objects, many tests (such as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
+  	    MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );  
+	}
+	else {
+	    /* If the user attribute free function returns an error, then do not free the communicator */
+	    MPIU_Object_add_ref( comm_ptr );
+	}
+    }
+
+    return mpi_errno;
+}
