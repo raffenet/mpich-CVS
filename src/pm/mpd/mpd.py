@@ -1020,7 +1020,9 @@ if __name__ == '__main__':
             while 1:
                 mpdtid = Thread(target=_mpd)
                 mpdtid.start()
-                mpdtid.join()   # only come out if exiting or thread fails
+                # signals must be handled in main thread; thus we permit timeout of join
+                while mpdtid.isAlive():
+                    mpdtid.join(2)   # come out sometimes and handle signals
                 if g.allExiting:
                     break
                 if g.conSocket:
