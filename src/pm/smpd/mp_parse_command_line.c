@@ -1388,6 +1388,9 @@ configfile_loop:
 		result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, namepart);
 		if (result != MPIU_STR_SUCCESS)
 		{
+		    printf("Error: insufficient buffer space for the command line.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
 		}
 	    }
 	    else
@@ -1395,6 +1398,9 @@ configfile_loop:
 		result = MPIU_Str_add_string(&exe_iter, &exe_len_remaining, (*argvp)[1]);
 		if (result != MPIU_STR_SUCCESS)
 		{
+		    printf("Error: insufficient buffer space for the command line.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
 		}
 	    }
 	}
@@ -1472,7 +1478,8 @@ configfile_loop:
 		drive_map_list->ref_count++;
 	    }
 	    strcpy(launch_node->exe, exe);
-	    /* insert the node in order
+#ifdef MPIEXEC_INORDER_LAUNCH
+	    /* insert the node in order */
 	    launch_node->next = NULL;
 	    if (smpd_process.launch_list == NULL)
 	    {
@@ -1487,14 +1494,14 @@ configfile_loop:
 		launch_node_iter->next = launch_node;
 		launch_node->prev = launch_node_iter;
 	    }
-	    */
+#else
 	    /* insert the node in reverse order */
 	    launch_node->next = smpd_process.launch_list;
 	    if (smpd_process.launch_list)
 		smpd_process.launch_list->prev = launch_node;
 	    smpd_process.launch_list = launch_node;
 	    launch_node->prev = NULL;
-	    /**/
+#endif
 	}
 
 	if (s_host_list)

@@ -80,6 +80,7 @@ int main(int argc, char* argv[])
     }
 
     /* print and see what we've got */
+    /* debugging output *************/
     smpd_dbg_printf("host tree:\n");
     host_node_ptr = smpd_process.host_list;
     if (!host_node_ptr)
@@ -102,6 +103,7 @@ int main(int argc, char* argv[])
 	    launch_node_ptr->exe);
 	launch_node_ptr = launch_node_ptr->next;
     }
+    /* end debug output *************/
 
     result = MPIDU_Sock_create_set(&set);
     if (result != MPI_SUCCESS)
