@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "mpi.h"
+#include "mpitest.h"
 
 int main( int argc, char *argv[] )
 {

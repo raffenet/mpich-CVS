@@ -11,7 +11,6 @@
 int main( int argc, char **argv )
 {
     char name[MPI_MAX_OBJECT_NAME];
-    char nameout[MPI_MAX_OBJECT_NAME];
     int namelen;
     int errs = 0;
 

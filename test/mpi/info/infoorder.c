@@ -16,11 +16,9 @@ int main( int argc, char *argv[] )
     char *keys1[NKEYS] = { "file", "soft", "host" };
     char *values1[NKEYS] = { "runfile.txt", "2:1000:4,3:1000:7", 
 			    "myhost.myorg.org" };
-    char *keys2[NKEYS] = { "striping_factor", "chunked_item", "access_style", };
-    char *values2[NKEYS] = { "2", "1024", "read_once", };
 
     char value[MPI_MAX_INFO_VAL];
-    int i, flag, nkeys;
+    int i, flag;
 
     MTest_Init( &argc, &argv );
 

@@ -34,6 +34,7 @@ int main( int argc, char *argv[] )
 	printf( "Dup'ed info has a different number of keys; is %d should be %d\n",
 		nkeysdup, nkeys );
     }
+    vallen = MPI_MAX_INFO_VAL;
     for (i=0; i<nkeys; i++) {
 	/* MPI requires that the keys are in the same order after the dup */
 	MPI_Info_get_nthkey( info1, i, key );

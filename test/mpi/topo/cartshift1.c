@@ -62,7 +62,7 @@ int main( int argc, char *argv[] )
 	printf( "source for non-periodic shift 1 is %d\n", source );
     }
     if ((rank < size-1 && dest != rank + 1) || 
-	(rank == size-1) && dest != MPI_PROC_NULL) {
+	((rank == size-1) && dest != MPI_PROC_NULL)) {
 	errs++;
 	printf( "dest for non-periodic shift 1 is %d\n", dest );
     }

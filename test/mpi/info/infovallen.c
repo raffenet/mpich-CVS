@@ -17,7 +17,7 @@ int main( int argc, char *argv[] )
     char *values[NKEYS] = { "runfile.txt", "2:1000:4,3:1000:7", 
 			    "myhost.myorg.org" };
     char value[MPI_MAX_INFO_VAL];
-    int i, flag, nkeys, vallen;
+    int i, flag, vallen;
 
     MTest_Init( &argc, &argv );
 
