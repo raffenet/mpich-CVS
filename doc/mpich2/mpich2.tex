@@ -448,7 +448,7 @@ macros defined in \file{confdb} automatically handle communicating the
 results of tests in one \code{configure} to the subsidiary configures
 (even when no cache file is specified).
 
-\item[Initialization and rundown]. As much as possible, let modules initialize 
+\item[Initialization and rundown.] As much as possible, let modules initialize 
 themselves on first use, rather than forcing \code{MPI_Init_thread} to call
 something 
 to initialize them.  Use the finalize callbacks to register any routine used
@@ -499,24 +499,25 @@ just too awkward.}, we settled on simply setting the indentation level.
   symbols cannot be used.
 
 \item The two lines that undefine \code{FUNCNAME} and then define
-\code{FUNCNAME} as \code{MPI_Foo} make it possible to create new names
-from the name of the function.  This can be helpful and is more
-general than the \code{const char FCNAME[]} that is defined to include
-the name of the routine.
-
+  \code{FUNCNAME} as \code{MPI_Foo} make it possible to create new names
+  from the name of the function.  This can be helpful and is more
+  general than the \code{const char FCNAME[]} that is defined to include
+  the name of the routine.
+  
 \item The structured comment block uses predefined text for the possible error
   classes.  These are specified as \code{.N name}, along with common text on
   errors \code{.N Errors}.  This structured comment block is read by
-the \code{doctext} program; see \cite{doctext} for details of the
-format of the structured comment block.
+  the \code{doctext} program; see \cite{doctext} for details of the
+  format of the structured comment block.
 
-\item The declaration of \code{FCNAME}\index{FCNAME} ensures that all macros and
-routines can easily access the name of the routine.  While some
-compilers (such as \code{gcc}) provide \code{__FUNCTION__} for this,
-that is not portable.
+\item The declaration of \code{FCNAME}\index{FCNAME} ensures that all
+  macros and 
+  routines can easily access the name of the routine.  While some
+  compilers (such as \code{gcc}) provide \code{__FUNCTION__} for this,
+  that is not portable.
 
 \item 
-The first executable statement starts the timer (and in general,
+  The first executable statement starts the timer (and in general,
   any profiling) for the routine.  This
   is a macro that will expand into the appropriate code, including no code for
   the fastest production version and logging code for SLOG output.
@@ -538,8 +539,8 @@ The first executable statement starts the timer (and in general,
 % function name.
 
 \item Routines of the form \code{MPID_Xxx_get_ptr} return the pointer
-for an opaque handle.  These do no (or only limited) error checking (see
-\code{MPID_Comm_valid_ptr} below).
+  for an opaque handle.  These do no (or only limited) error checking (see
+  \code{MPID_Comm_valid_ptr} below).
 
 \item The actual error checks are guarded by both a compile-time test and a
   runtime test.  Note that only at the end of the list is an error return
@@ -554,6 +555,7 @@ for an opaque handle.  These do no (or only limited) error checking (see
   visually set off this code from the surrounding code.
   The expansion of this macro is controlled by the
 \cfgoption{--enable-error-checking} option of \code{configure}.
+
 % [BRT] for CPP conditions in the code, I like to see the statements indented
 % along with the code.  Also, for macros that begin and end blocks, I like to
 % see a explicit block created.  For example:
@@ -569,20 +571,24 @@ for an opaque handle.  These do no (or only limited) error checking (see
 % #   endif /* defined(HAVE_ERROR_CHECKING) */
 
 \item Pointers to opaque objects are validated with macros of the
-form \code{MPID_Xxx_valid_ptr}.  This sets the second argument with an
-error message if the pointer is not valid, and also resets the pointer
-to null. 
+  form \code{MPID_Xxx_valid_ptr}.  This sets the second argument with an
+  error message if the pointer is not valid, and also resets the pointer
+  to null. 
 
 \item Error codes are generated with \code{MPIR_Err_create_code}.  These use
   predefined name strings (see error reporting in the ADI manual and
-Appendix~\ref{sec:error-codes}). 
+  Appendix~\ref{sec:error-codes}). 
 
 \item If an error is detected, the proper error handler is invoked
-with \code{MPID_Err_return_xxx}, where \code{xxx} is either
-\code{comm}, \code{win}, or \code{file} (the MPI objects with attached
-error handlers).  If the object pointer is \code{NULL}, the
-appropriate error handler will be used (usually the handler on
-\code{MPI_COMM_WORLD} or \code{MPI_FILE_NULL}).
+  with \code{MPID_Err_return_xxx}, where \code{xxx} is either
+  \code{comm}, \code{win}, or \code{file} (the MPI objects with attached
+  error handlers).  If the object pointer is \code{NULL}, the
+  appropriate error handler will be used (usually the handler on
+  \code{MPI_COMM_WORLD} or \code{MPI_FILE_NULL}).
+
+\item The body of the code is placed between two comments that include
+  ``\code{body of routine}''.  This makes it easy to automatically
+  extract the code that implements the function.
 
 \item The example shows the use of MPID routines to lock the communicator
   against other threads.  As with the error checking code above, a
@@ -1446,7 +1452,7 @@ requirement in the call). Alignment values are macros of the form
 etc.  \code{configure} can determine the alignment requirements or
 these can be specified through a configuration file.
 The amount of checking may be controlled at configure time through the
-configure option \cfgoption{--enable-g:strongpointercheck}.
+configure option \cfgoption{--enable-g=strongpointercheck}.
 \end{itemize}
 Note that message buffer pointers depend on the datatype; if the datatype is a
 struct type, then a null pointer or otherwise invalid value for the message
@@ -1756,7 +1762,7 @@ controlled:
 \begin{description}
 \item[at compile time]with the \cfgoption{--enable-timing} configure flag.
  Options to this can restrict timing code to particular classes, e.g.,
- enable-timing=all,class=pt2pt,class=coll.  These are implemented by
+ \code{--enable-timing=all,class=pt2pt,class=coll}.  These are implemented by
  defining the class as \code{MPID_STATE_CLASS_xxx} before including
  \file{mpiimpl.h}, and having code in \file{mpiimpl.h} check the class
  when defining these macros.
@@ -2353,7 +2359,7 @@ that can be different from each developer's personnal style.
 % Comment [BRT]: Yes.  Having a style standard makes it much easier to
 % read and modify code written by others.
 
-\item[Source Formatting.] 
+\item[Source formatting.] 
 Where possible, keep line lengths to 80 characters.  This permits
 side-by-side display on common displays.  
 
@@ -2363,7 +2369,7 @@ file \file{maint/template.c} that contains the copyright and
 standardized includes (e.g., \file{mpiimpl.h}).  All files must
 contain the C-style and copyright block preamble.
 
-\item[Function Name.]
+\item[Function name.]
 The function name is available as \code{FCNAME}.  Each routine is responsible
 for setting this variable; it should be of type \code{static const
 char[]}.
@@ -2410,7 +2416,7 @@ char[]}.
 % sticky upper bound marker, lower bound marker).  MPI Window objects also
 % have multiple flags.
 
-\item[Global Variables]should be avoided where possible; in cases
+\item[Global variables]should be avoided where possible; in cases
 where they cannot be avoided, they should be collected into a
 structure.  Global variables that may be widely used can be placed
 within the per process (\code{MPIR_Process}) or per thread
@@ -2471,7 +2477,7 @@ Note that autoconf version 2 better handles communication options between
 modules, as long as the subsidiary module has its configure invoked using
 \code{AC_CONFIG_SUBDIRS} and \code{PAC_SUBDIR_CACHE} is invoked first
 (this ensures that \code{AC_CONFIG_SUBDIRS} uses any information
-discovered by this code{configure}).  In addition, the changes to the autoconf
+discovered by this \code{configure}).  In addition, the changes to the autoconf
 macros defined in the \file{confdb} subdirectory correctly pass
 information to the subsidiary configures (unlike the stock
 \code{autoconf}).
@@ -3152,7 +3158,7 @@ names only if \texttt{MPI_Type_get_name} is used by the user's program.}.
 \subsubsection{Creating a New Datatype}
 Here are the steps to create and return a new datatype.
 \begin{enumerate}
-\item Allocate a new object using \code{MPIU_Handle_new_obj}.
+\item Allocate a new object using \code{MPIU_Handle_obj_create}.
 
 \item Allocate two dataloops: one to hold the description as given (needed to
   return the contents and envelope) and one to hold the optimized loop.
@@ -3171,7 +3177,7 @@ Here are the steps to create and return a new datatype.
   be used.  This will become clearer below.
   
   Setting up the \code{dataloop} is relatively easy.  The combiner (e.g.,
-  \mpiconst{MPI_COMBINER_HVECTOR} is stored in the
+  \mpiconst{MPI_COMBINER_HVECTOR}) is stored in the
   \mpids{MPID_Datatype}{combiner} field in the 
   datatype.  
 
@@ -3365,7 +3371,7 @@ communicated to the destination to allow it to be checked).
 
     Question: do we want \code{--disable-type_signature} or should
     this be an option on a more generic \code{--enable-mpidatatype},
-    such as \code{--enable-mpidatatype:signature=no}?
+    such as \code{--enable-mpidatatype=signature=no}?
 
 \item There could also be a configure option to enable compilation of
 the datatype pack and unpack code at runtime.  For example,
@@ -3388,9 +3394,10 @@ special case of a
 datatype of size zero and a message of size zero; this should return a count
 of zero (see the MPI errata discussion). 
 
-Question: should this call an MPID function for systems that want to
-manage the count field differently, that is, not use it to store the number of
-bytes in the message (e.g., Globus)?  
+Devices that provide their own datatype support (such as the
+\code{globus2} device in MPICH1) can provide the function
+\mpidfunc{MPID_Get_count} and define \mpidconst{MPID_HAS_GET_COUNT}
+instead.
 
 \subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
 This requires some care.  This should return the number of basic datatypes in
@@ -3923,7 +3930,7 @@ the description of any group may be shared among all processes;
 compressed representations of subsets of such a group can also be defined.
 
 Note: the MPICH-1 implementation of \mpifunc{MPI_Group_difference},
-\mpifunc{MPI_Group_union}, and \mpifunc{MPI_Group_intersection} has complexity
+\mpifunc{MPI_Group_union}, and \mpifunc{MPI_Group_intersection} have complexity
 that is the product of the sizes of the groups (!).  The MPICH-2
 implementation described in this section has lower complexity; in
 fact, it is linear if radix sort routines are used.
@@ -3966,10 +3973,10 @@ is simply an affine one: if
 then the translation between the groups is simpler.  We might want the 
 special cases:
 \begin{description}
-\item{MPID_GROUP_MAP_IDENT} for \code{lpid = lrank}
-\item{MPID_GROUP_MAP_AFFINE_UNIT} for \code{lpid = offset + lrank}
-\item{MPID_GROUP_MAP_AFFINE} for \code{lpid = offset + lrank * stride}
-\item{MPID_GROUP_MAP_GENERAL} for the general case.
+\item{\code{MPID_GROUP_MAP_IDENT}} for \code{lpid = lrank}
+\item{\code{MPID_GROUP_MAP_AFFINE_UNIT}} for \code{lpid = offset + lrank}
+\item{\code{MPID_GROUP_MAP_AFFINE}} for \code{lpid = offset + lrank * stride}
+\item{\code{MPID_GROUP_MAP_GENERAL}} for the general case.
 \end{description}
 
 %\begin{algorithm}
@@ -4137,6 +4144,21 @@ the same value as given by \mpifunc{MPI_GROUP_COMPARE}.  If the
 communicator is an intercommunicator, return the lowest value returned
 by \mpifunc{MPI_GROUP_COMPARE}.
 
+Question:  This requires that we create the groups.  An alternative is
+\begin{enumerate}
+\item If \mpids{MPI_Comm}{context_id} values are the same, return
+\mpiconst{MPI_IDENT}
+\item If sizes of the corresponding local and remote groups are
+  different, or if one is an intercommunicator and the other is an
+  intercommunicator, return \mpiconst{MPI_UNEQUAL}.
+\item Compare the elements of the virtual connection table
+  (\mpids{MPID_VCR}{vcr}); if they all reference the same local
+  processes in the same order, return \mpiconst{MPI_CONGRUENT}.
+\item Otherwise, use \mpifunc{PMPI_GROUP_COMPARE}.
+\end{enumerate}
+The advantage of this approach is that for most applications, we never
+explicitly create the groups.
+
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE}}
 We need a basic communicator creation routine for this.  In
@@ -4246,7 +4268,7 @@ of processes.  1024 might be enough.  Is this a compile time or
 runtime parameter?  Is the \cfgoption{--with-maxcomm=n} the configure
 control for this?  Or should this option be collected with other
 options for communicators, such as
-\cfgoption{--enable-comm:maxcontext=n}?
+\cfgoption{--enable-comm=maxcontext=n}?
 
 \paragraph{Caching context ids.} 
 The performance of operations such as \mpifunc{MPI_Comm_split} and
@@ -4259,9 +4281,8 @@ require ordering of collective calls, even in the multi-threaded case,
 context ids can be extracted from this cache with no communication.
 
 Question: Do we want to support context id caching?  If so, how many?
-Is there an attribute to provide runtime control?  Is
-\cfgoption{--enable-commid-cache=n} the configure option?  Or, as
-above, should it be \cfgoption{--enable-comm:id-cache=n}?
+If provided, the \code{configure} flag is
+\cfgoption{--enable-comm=id-cache=n}? 
 
 \subsubsection{\mpifunc{MPI_COMM_DUP}}
 One approach is to extract the group from the incoming communicator,
@@ -4587,7 +4608,7 @@ Consider the following cases:
   one user thread ever holds the condition variable).
 \item There is one communication agent for each method.  For example,
   a TCP method that waits in select for activity on an fd and a thread that
-  handles shared memory and may use (in Linux) \code{sched_yield} after
+  handles shared memory and may use (in POSIX) \code{sched_yield} after
   spinwaiting (or, in systems that support condition variables shared between
   processes, may use that to wait for an incoming event or message).
   A similar approach may be used here: \code{pthread_cond_broadcast} can be
@@ -5217,7 +5238,7 @@ message.  See the discussion under
 \mpifunc{MPI_STATUS_SET_CANCELLED}.  We need to decide.
 
 \subsubsection{\mpifunc{MPI_WAIT}}
-As described abover under point-to-point completion functions.
+As described above under point-to-point completion functions.
 
 \subsubsection{\mpifunc{MPI_WAITALL}}
 Like \mpifunc{MPI_Testall}, but must wait until all requests are complete.
@@ -6108,7 +6129,8 @@ struct (e.g., fields \mpids{MPID_Win}{user_base}, \mpids{MPID_Win}{user_size},
 and \mpids{MPID_Win}{user_disp}) or far way where a mistake by the user is
 less likely to cause trouble?
 
-Use the private communicator to perform an \mpifunc{MPI_Allgather}
+Use the private communicator created with \code{MPI_Comm_dup} above to
+call \mpifunc{MPI_Allgather} to
 collect all of the window base addresses, sizes, and displacement
 units from all of the processes using \mpifunc{MPI_Allgather}, along
 with a flag that indicates if the local window is in shared memory.
@@ -7345,19 +7367,30 @@ must check for user requests and handle them at the MPI (not ADI) level.
 % them).
 Note that a user-defined request is started with callbacks (functions
 to call for query, cancel, and free); these need to be associated with
-the request.  
+the request.  These callbacks are used by the various MPI routines to
+complete, cancel, or free a request.
+
+In the current implementation, there is only one kind of
+\code{MPID_Request} and it contains all of the fields that are needed
+by any request type.  
+
+Question: should the generalized requests be allocated by the device
+or by a separate module?  If they are allocated by the device, what is
+the call?
 
 \subsubsection{\mpifunc{MPI_GREQUEST_START}}
-Where are the typedefs for the query, free, and cancel function defined? 
-Are they in \file{mpi.h}?  Where are they stored for the generalized request?
-For example, \mpids{MPI_Request(generalized)}{query_fn},
+Create and initialize a user-defined request.  The values are stored
+in the request fields \mpids{MPI_Request(generalized)}{query_fn},
 \mpids{MPI_Request(generalized)}{free_fn},
 \mpids{MPI_Request(generalized)}{cancel_fn}, and
-\mpids{MPI_Request(generalized)}{extra_state}. 
+\mpids{MPI_Request(generalized)}{grequest_extra_state}. 
 
 \subsubsection{\mpifunc{MPI_GREQUEST_COMPLETE}}
+Set the request completion field \mpids{MPI_Request}{cc} to zero.
 
-(Need to describe the user-request handling)
+This must be done in a way that will allow the progress engine to
+signal a blocking wait that a request has completed.  To ensure this,
+we use \mpidfunc{MPID_Request_set_completed}.  
 
 \subsection{Error Handlers}
 \label{sec:errhand}
@@ -7577,8 +7610,9 @@ return that value.
 \subsubsection{\mpifunc{MPI_GET_PROCESSOR_NAME}}
 Call \mpidfunc{MPID_Get_processor_name}.  
 
-Question: How is the value of \mpiconst{MPI_MAX_PROCESSOR_NAME} specified?
-Should configure run something to get this value from the chosen device?
+The value of \mpiconst{MPI_MAX_PROCESSOR_NAME} is provided by the
+device at configure time, through the Makefile target
+\code{echomaxprocname}.  If no value is provided, \code{128} will be used.
 
 \subsubsection{\mpifunc{MPI_GET_VERSION}}
 Return the values of \mpiconst{MPI_VERSION} and \mpiconst{MPI_SUBVERSION}. 
@@ -7698,9 +7732,12 @@ libraries?
 \label{sec:configure}
 We will use autoconf version 2.13 or later, but earlier than
 2.50\footnote{Don't ask.  Ok, \texttt{autoconf} jumped from 2.13 to
-  2.50 and completely reorganized (good).  Unfortunately, many of the
+  2.50 and completely reorganized (which was good).  Unfortunately, many of the
   internal macros that are used by our extensions were reused with
-  different semantics(!)}.  The top-level configure will only
+  different semantics!  In particular, the support for
+  \texttt{AC_LANG} changed, and the new system does not support
+  Fortran 90 directly and does not document how to add support for
+  additional languages.}.  The top-level configure will only
 test for items used in the implementation of the MPI routines.  For
 other parts of the package, such as the ADI implementation, the
 top-level configure will invoke a configure or other setup script for
@@ -7741,6 +7778,11 @@ For example, use \code{--enable-method=via,tcp} instead of separate
 \code{--enable-via} and \code{--enable-tcp} options.  
 
 In general, use hierarchies to keep the user interface simple.
+
+Also consider the use of short cuts for common choices.  For example, 
+\cfgoption{--enable-fast} is defined to set the appropriate configure
+flags for building the fastest code (e.g., no error checking or
+internal timing).
 
 \subsection{Supporting Cross-compilation}
 \label{sec:cross-compile}
@@ -7929,8 +7971,19 @@ Tools already available:
 \file{mpich2/maint}.  This also check for C preprocessor names that
 may indicate a portability problem, such as the use of tests on
 particular system names or features.
+
+%%   One good source of information on routines that can cause trouble is the
+%%   ``Particular Functions'' topic in the \code{autoconf} documentation.  These
+%%   are routines that require nontrivial tests, and should be avoided if
+%%   possible.  These include
+%% \begin{verbatim}
+%%   alloca, closedir, fnmatch, getloadavg, getmntent, getpgrp, memcmp,
+%%   mmap, setpgrp, setvbuf, strcoll, strftime, utime, vfork, vprintf, wait3
+%% \end{verbatim}
+
 \item[gcc -Wall etc.]Missing prototypes, return values, etc.  This can be set
-  in \code{configure} with the \code{PAC_ARG_STRICT} macro.
+  in \code{configure} with the \code{PAC_ARG_STRICT} macro which
+  defined \cfgoption{--enable-strict}.
 % \item[finddefines]Check for OS name or system type in a preprocessor
 %   statement (look for \emph{all} \code{\#ifdef} or \code{\#if defined()} and
 %   check against permitted values).  (Only partially implemented.  Currently in \file{/home/MPI/maint/util}.)
@@ -7941,14 +7994,6 @@ We also need tools for the following:
 \item Look for header files and functions that are not universal and
   ensure that they are properly guarded.
   An example of a function that must be guarded is \code{rindex}.
-  One good source of information on routines that can cause trouble is the
-  ``Particular Functions'' topic in the \code{autoconf} documentation.  These
-  are routines that require nontrivial tests, and should be avoided if
-  possible.  These include
-\begin{verbatim}
-  alloca, closedir, fnmatch, getloadavg, getmntent, getpgrp, memcmp,
-  mmap, setpgrp, setvbuf, strcoll, strftime, utime, vfork, vprintf, wait3
-\end{verbatim}
 Note that the \code{AC_FUNC_MMAP} test is inadequate and must be supplemented
 by a more rigorous test (as used in MPICH1).
 \end{itemize}
