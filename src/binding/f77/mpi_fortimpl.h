@@ -90,8 +90,8 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #else
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
 extern void *MPIR_F_MPI_BOTTOM;
-extern void *MPIR_F_MPI_STATUS_IGNORE;
-extern void *MPIR_F_MPI_STATUSES_IGNORE;
+extern void *MPI_F_STATUS_IGNORE;
+extern void *MPI_F_STATUSES_IGNORE;
 /* MPIR_F_PTR checks for the Fortran MPI_BOTTOM and provides the value 
    MPI_BOTTOM if found 
    See src/pt2pt/addressf.c for why MPIR_F_PTR(a) is just (a)

@@ -1,3 +1,3 @@
 mtest.o: mtest.c
 all-local: mtest.o
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include -I${top_srcdir}/test/mpi/include
+INCLUDES = -I../../../src/include -I${master_top_srcdir}/src/include -I../include -I${top_srcdir}/include

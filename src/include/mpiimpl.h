@@ -1001,6 +1001,8 @@ typedef struct MPICH_PerProcess_t {
        and File, since all are ints (and we can cast in the call) */
     int  (*cxx_call_delfn)( int, int, void *, void *, 
 			    void (*)(void) );
+    int  (*cxx_call_copyfn)( int, int, void *, void *, 
+			    void (*)(void) );
 #endif    
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;

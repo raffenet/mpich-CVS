@@ -169,27 +169,50 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 
     /* Now, invoke the error handler for the file */
     if (file_ptr && file_ptr->errhandler) {
-	switch (file_ptr->errhandler->language) {
-	case MPID_LANG_C:
+    /* Now, invoke the error handler for the communicator */
+        if (file_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL) {
+	    /* Try to print the associated message */
+	    const char *p = MPIR_Err_get_string( errcode );
+	    
+	    /* The default handler should try the following:
+	       Provide the rank in comm_world.  If the process is not
+	       in comm world, use something else.  If the communicator
+	       exists and has a name, provide that name */
+	    if (p) {
+		fprintf( stderr, "Fatal error: %s in %s\n", p, fcname );
+	    }
+	    else
+	    {
+		fprintf( stderr, "Fatal error (code %d) in %s\n", errcode, fcname );
+	    }
+	    abort(); /* Change this to MPID_Abort */
+	}
+        else if (file_ptr->errhandler->handle == MPI_ERRORS_RETURN) {
+	    return errcode;
+	}
+	else {
+	    /* Invoke the provided error handler */
+	    switch (file_ptr->errhandler->language) {
+	    case MPID_LANG_C:
 #ifdef HAVE_CXX_BINDING
-	case MPID_LANG_CXX:
+	    case MPID_LANG_CXX:
 #endif
-	    (*file_ptr->errhandler->errfn.C_Comm_Handler_function)( 
+		(*file_ptr->errhandler->errfn.C_Comm_Handler_function)( 
 		&file_ptr->handle, &errcode );
-	    break;
+		break;
 #ifdef HAVE_FORTRAN_BINDING
-	case MPID_LANG_FORTRAN90:
-	case MPID_LANG_FORTRAN:
-	    (*file_ptr->errhandler->errfn.F77_Handler_function)( 
-		(MPI_Fint *)&file_ptr->handle, &errcode );
-	    break;
+	    case MPID_LANG_FORTRAN90:
+	    case MPID_LANG_FORTRAN:
+		(*file_ptr->errhandler->errfn.F77_Handler_function)( 
+		    (MPI_Fint *)&file_ptr->handle, &errcode );
+		break;
 #endif
+	    }
 	}
     }
     else {
-	/* No file, so errors are fatal */
-	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
-	abort(); /* Change this to MPID_Abort */
+	/* No file, so errors return */
+	return errcode;
     }
     return errcode;
 }
