@@ -64,17 +64,18 @@ typedef enum MPIDI_CH3I_VC_state
 }
 MPIDI_CH3I_VC_state_t;
 
-#define MPIDI_CH3_VC_DECL			\
-struct MPIDI_CH3I_VC				\
-{						\
-    MPIDI_CH3I_Process_group_t * pg;		\
-    int pg_rank;				\
-    struct MPID_Request * sendq_head;		\
-    struct MPID_Request * sendq_tail;		\
-    MPIDI_CH3I_VC_state_t state;		\
-    sock_t sock;				\
-    struct MPIDI_CH3I_Connection * conn;	\
-} sc;
+typedef struct MPIDI_CH3I_VC
+{
+    MPIDI_CH3I_Process_group_t * pg;
+    int pg_rank;
+    struct MPID_Request * sendq_head;
+    struct MPID_Request * sendq_tail;
+    MPIDI_CH3I_VC_state_t state;
+    sock_t sock;
+    struct MPIDI_CH3I_Connection * conn;
+} MPIDI_CH3I_VC;
+
+#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC sc;
 
 
 /*
