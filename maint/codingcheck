@@ -102,7 +102,7 @@ sub ProcessFile {
 		 "getmntent", "getpgrp", "memcmp", "mmap", 
 		 "setpgrp", "setvbuf", "strcoll", "strftime",
 		 "utime", "vfork", "vprintf", "wait3" );
-%bettersubs = ( "strcpy" => "strncpy",
+%bettersubs = ( #"strcpy" => "strncpy",
 		"strcmp" => "strncmp",
 		"strcat" => "strncat",
 		"sprintf" => "snprintf" );
