@@ -73,6 +73,7 @@ def mpdrun():
                           'nproc','nofile','ofile','memlock','as','vmem']
     username = mpd_get_my_username()
     cwd = path.abspath(getcwd())
+    recvTimeout = 20
 
     execs   = {}
     users   = {}
@@ -113,7 +114,7 @@ def mpdrun():
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
         msgToSend = { 'cmd' : 'get_mpd_version' }
         mpd_send_one_msg(conSocket,msgToSend)
-        msg = recv_one_msg_with_timeout(conSocket,5)
+        msg = recv_one_msg_with_timeout(conSocket,recvTimeout)
         if not msg:
             mpd_raise('no msg recvd from mpd during version check')
         elif msg['cmd'] != 'mpd_version_response':
@@ -204,7 +205,7 @@ def mpdrun():
     msgToSend['stdin_goes_to_who'] = stdinGoesToWho
 
     mpd_send_one_msg(conSocket,msgToSend)
-    msg = recv_one_msg_with_timeout(conSocket,5)
+    msg = recv_one_msg_with_timeout(conSocket,recvTimeout)
     if not msg:
         mpd_raise('no msg recvd from mpd when expecting ack of request')
     elif msg['cmd'] == 'mpdrun_ack':
