@@ -40,8 +40,8 @@ extern "C" {
 #define RLOG_SENDER   1
 #define RLOG_RECEIVER 0
 
-#define RLOG_FIRST_EVENT_ID 500
-#define RLOG_ARROW_EVENT_ID 499
+#define RLOG_FIRST_EVENT_ID 1500
+#define RLOG_ARROW_EVENT_ID 1499
 
 /* structures */
 
