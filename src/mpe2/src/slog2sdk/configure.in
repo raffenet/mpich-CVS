@@ -379,17 +379,24 @@ slog2_enable_softerror=yes
 export slog2_enable_softerror
 PKGS=""
 selected_pkgs=""
-for pkg in $trial_pkgs ; do
-    dirname=${pkg}_dirname
-    eval dirvalue=\$"$dirname"
-    flagname=enable_${pkg}
-    eval flagvalue=\$"$flagname"
-    if test "$flagvalue" = "yes" -a -s $srcdir/$dirvalue/configure ; then
-        PKGS="$PKGS $dirvalue"
-        selected_pkgs="$selected_pkgs $pkg"
-    fi
-done
-AC_CONFIG_SUBDIRS($PKGS)
+if test "$enable_source" = "yes" \
+     -a -s $srcdir/src/configure ; then
+    PKGS="$PKGS src"
+    selected_pkgs="$selected_pkgs source"
+    AC_CONFIG_SUBDIRS(src)
+fi
+if test "$enable_sample" = "yes" \
+     -a -s $srcdir/trace_sample/configure ; then
+    PKGS="$PKGS trace_sample"
+    selected_pkgs="$selected_pkgs sample"
+    AC_CONFIG_SUBDIRS(trace_sample)
+fi
+if test "$enable_rlog" = "yes" \
+     -a -s $srcdir/trace_rlog/configure ; then
+    PKGS="$PKGS trace_rlog"
+    selected_pkgs="$selected_pkgs rlog"
+    AC_CONFIG_SUBDIRS(trace_rlog)
+fi
 
 AC_SUBST(PKGS)
 
