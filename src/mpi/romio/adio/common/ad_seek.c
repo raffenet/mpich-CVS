@@ -15,6 +15,10 @@
 #define lseek llseek
 #endif
 
+#ifdef tflops
+#define lseek eseek
+#endif
+
 ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
 		      int whence, int *error_code)
 {
@@ -45,6 +49,10 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 
 	MPI_Type_extent(fd->filetype, &filetype_extent);
 	MPI_Type_size(fd->filetype, &filetype_size);
+	if ( ! filetype_size ) {
+	    *error_code = MPI_SUCCESS; 
+	    return;
+	}
 
 	n_etypes_in_filetype = filetype_size/etype_size;
 	n_filetypes = (int) (offset / n_etypes_in_filetype);

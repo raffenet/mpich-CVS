@@ -121,6 +121,18 @@ void ADIO_FileSysType(char *filename, int *fstype, int *error_code)
 	else *fstype = ADIO_UFS;
 	*error_code = MPI_SUCCESS;
     }
+#elif defined(tflops)
+    err = statfs(filename, &fsbuf);
+    if (err && (errno == ENOENT)) err = statfs(dir, &fsbuf);
+    free(dir);
+
+    if (err) *error_code = MPI_ERR_UNKNOWN;
+    else {
+	if (fsbuf.f_type == MOUNT_NFS) *fstype = ADIO_NFS;
+	else if (fsbuf.f_type == MOUNT_PFS) *fstype = ADIO_PFS;
+	else *fstype = ADIO_UFS;
+	*error_code = MPI_SUCCESS;
+    }
 #elif defined(SX4)
      err = stat (filename, &sbuf);
      if (err && (errno == ENOENT)) err = stat (dir, &sbuf);

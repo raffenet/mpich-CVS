@@ -262,6 +262,23 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
     MPI_Type_size(datatype, &buftype_size);
     etype_size = fd->etype_size;
 
+    if ( ! filetype_size ) {
+	*contig_access_count_ptr = 0;
+	*offset_list_ptr = (ADIO_Offset *) ADIOI_Malloc(2*sizeof(ADIO_Offset));
+	*len_list_ptr = (int *) ADIOI_Malloc(2*sizeof(int));
+        /* 2 is for consistency. everywhere I malloc one more than needed */
+
+	offset_list = *offset_list_ptr;
+	len_list = *len_list_ptr;
+        offset_list[0] = (file_ptr_type == ADIO_INDIVIDUAL) ? fd->fp_ind : 
+                 fd->disp + etype_size * offset;
+	len_list[0] = 0;
+	*start_offset_ptr = offset_list[0];
+	*end_offset_ptr = offset_list[0] + len_list[0] - 1;
+	
+	return;
+    }
+
     if (filetype_is_contig) {
 	*contig_access_count_ptr = 1;        
 	*offset_list_ptr = (ADIO_Offset *) ADIOI_Malloc(2*sizeof(ADIO_Offset));

@@ -116,6 +116,11 @@ void ADIOI_PIOFS_WriteStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
 
     MPI_Type_size(fd->filetype, &filetype_size);
+    if ( ! filetype_size ) {
+	*error_code = MPI_SUCCESS; 
+	return;
+    }
+
     MPI_Type_extent(fd->filetype, &filetype_extent);
     MPI_Type_size(datatype, &buftype_size);
     MPI_Type_extent(datatype, &buftype_extent);
