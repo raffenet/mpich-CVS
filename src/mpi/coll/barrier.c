@@ -45,6 +45,7 @@ int MPI_Barrier( MPI_Comm comm )
     static const char FCNAME[] = "MPI_Barrier";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_BARRIER);
     /* Get handles to MPI objects. */
@@ -68,6 +69,8 @@ int MPI_Barrier( MPI_Comm comm )
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    err_printf("ERROR: MPI_Barrier not implemented.\n");
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
     return MPI_SUCCESS;

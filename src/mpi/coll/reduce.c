@@ -51,6 +51,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
     static const char FCNAME[] = "MPI_Reduce";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REDUCE);
     /* Get handles to MPI objects. */
@@ -74,6 +75,8 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    err_printf("ERROR: MPI_Reduce not implemented.\n");
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
     return MPI_SUCCESS;
