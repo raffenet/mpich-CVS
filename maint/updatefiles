@@ -166,7 +166,7 @@ to see the version of autoconf (unfortunately, there is no standard
 format for the version output and it changes between autoconf versions).
 
 This version of updatefiles attempts to workaround the incompatibilities
-in autoconf 2.57, but problems remain.  In particular, you may run
+in autoconf 2.57 (and later), but problems remain.  In particular, you may run
 into trouble if you need to execute 
     make configure
 on a platform different that the one you ran $0 on.
@@ -176,7 +176,7 @@ EOF
 Your do not have a usable version of autoconf (either no version found \
 or version 2.57 or later)"
     acIncDirFlag=-B
-    acVersion=2-57
+    acVersion=2-57-or-later
 fi
 rm -rf .tmp
 
@@ -337,6 +337,10 @@ if [ -x maint/getstates ] ; then
     echo "Creating the list of routine states into src/util/logging/lwlog/lwstates.c"
     maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
                     -namefile=src/util/logging/lwlog/lwnames.h src
+fi
+if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
+    echo "generating logging states enumeration..."
+    maint/genstates
 fi
 
 if [ -x maint/f77tof90 ] ; then
@@ -595,6 +599,7 @@ EOF/g' $dir/configure > c.tmp
 		sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
 		rm -f $dir/configure
 		mv c.tmp $dir/configure
+		chmod a+x $dir/configure
 	    fi
         fi
     if [ ! -x $dir/configure ] ; then
@@ -682,13 +687,10 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/mpid/common/sock/poll/poll.c \
 			$codecheck_args src
 fi
+# The following must be the last statements executed
 if [ -n "$error_summary" ] ; then
     echo " "
     echo "Problems encountered while running updatefiles."
     echo "These may cause problems when configuring or building MPICH2."
     echo "$error_summary"
-fi
-if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
-    echo "generating logging states enumeration..."
-    maint/genstates
 fi
