@@ -49,12 +49,11 @@ void MTest_Finalize( int errs )
     MPI::COMM_WORLD.Allreduce( &errs, &toterrs, 1, MPI::INT, MPI::SUM );
     if (rank == 0) {
 	if (toterrs) {
-	    printf( " Found %d errors\n", toterrs );
+	    cout << " Found " << toterrs << " errors\n";
 	}
 	else {
-	    printf( " No Errors\n" );
+	    cout << " No Errors\n";
 	}
-	fflush( stdout );
     }
 }
 
@@ -82,7 +81,7 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
-	    fprintf( stderr, "Out of memory in type buffer init\n" );
+	    cerr << "Out of memory in type buffer init\n";
 	    MPI::COMM_WORLD.Abort(1);
 	}
 	for (i=0; i<totsize; i++) {
@@ -234,14 +233,14 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 
     if (dbgflag && datatype_index > 0) {
 	int typesize;
-	fprintf( stderr, "%d: sendtype is %s\n", wrank, MTestGetDatatypeName( sendtype ) );
+	cout << wrank << ": sendtype is " << MTestGetDatatypeName( sendtype ) 
+	     << "\n";
 	typesize = sendtype->datatype.Get_size();
-	fprintf( stderr, "%d: sendtype size = %d\n", wrank, typesize );
-	fprintf( stderr, "%d: recvtype is %s\n", wrank, MTestGetDatatypeName( recvtype ) );
+	cout << wrank << ": sendtype size = " << typesize << "\n";
+	cout << wrank << ": recvtype is " << MTestGetDatatypeName( recvtype ) 
+	     << "\n";
 	typesize = recvtype->datatype.Get_size();
-	fprintf( stderr, "%d: recvtype size = %d\n", wrank, typesize );
-	fflush( stderr );
-	
+	cout << wrank << ": recvtype size = " << typesize << "\n";
     }
     return datatype_index;
 }
@@ -553,7 +552,7 @@ void MTestPrintError( int errcode )
     
     errclass = MPI::Get_error_class( errcode );
     MPI::Get_error_string( errcode, string, slen );
-    printf( "Error class %d (%s)\n", errclass, string );
+    cout << "Error class " << errclass << "(" << string << ")\n";
 }
 
 
