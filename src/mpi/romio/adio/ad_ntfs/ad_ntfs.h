@@ -82,6 +82,5 @@ void ADIOI_NTFS_Flush(ADIO_File fd, int *error_code);
 void ADIOI_NTFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 ADIO_Offset ADIOI_NTFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
                        int whence, int *error_code);
-void ADIOI_NTFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 
 #endif

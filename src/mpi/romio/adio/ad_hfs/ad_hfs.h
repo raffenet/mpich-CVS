@@ -73,6 +73,5 @@ void ADIOI_HFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 void ADIOI_HFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 ADIO_Offset ADIOI_HFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
                        int whence, int *error_code);
-void ADIOI_HFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 
 #endif
