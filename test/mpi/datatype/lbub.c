@@ -7,7 +7,6 @@
 #include <string.h>
 #endif
 
-#define HAVE_MPI_TYPE_GET_TRUE_EXTENT
 
 static int verbose = 0;
 
@@ -107,7 +106,7 @@ int parse_args(int argc, char **argv)
 int int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { -3, 0, 6 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -153,6 +152,24 @@ int int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -3);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -3) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -3);
+    }
+
+    if (extent != 9) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 9);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -164,7 +181,6 @@ int int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, 6);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -180,7 +196,6 @@ int int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 4);
     }
-#endif
     
     MPI_Type_free(&eviltype);
 
@@ -190,7 +205,7 @@ int int_with_lb_ub_test(void)
 int contig_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { -3, 0, 6 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -239,6 +254,24 @@ int contig_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -3);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -3) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -3);
+    }
+
+    if (extent != 27) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 27);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -250,7 +283,6 @@ int contig_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, 24);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -266,7 +298,6 @@ int contig_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 22);
     }
-#endif
 
     return errs;
 }
@@ -274,7 +305,7 @@ int contig_of_int_with_lb_ub_test(void)
 int contig_negextent_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { 6, 0, -3 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -323,6 +354,24 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -12);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -12) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -12);
+    }
+
+    if (extent != 9) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 9);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -334,7 +383,6 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, -3);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -350,7 +398,6 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 22);
     }
-#endif
 
     return errs;
 }
@@ -358,7 +405,7 @@ int contig_negextent_of_int_with_lb_ub_test(void)
 int vector_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { -3, 0, 6 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -407,6 +454,24 @@ int vector_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -3);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -3) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -3);
+    }
+
+    if (extent != 27) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 27);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -418,7 +483,6 @@ int vector_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, 24);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -434,7 +498,6 @@ int vector_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 22);
     }
-#endif
 
     return errs;
 }
@@ -445,7 +508,7 @@ int vector_of_int_with_lb_ub_test(void)
 int vector_blklen_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { -3, 0, 6 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -494,6 +557,24 @@ int vector_blklen_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -3);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -3) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -3);
+    }
+
+    if (extent != 54) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 54);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -505,7 +586,6 @@ int vector_blklen_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, 51);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -521,7 +601,6 @@ int vector_blklen_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 49);
     }
-#endif
 
     return errs;
 }
@@ -529,7 +608,7 @@ int vector_blklen_of_int_with_lb_ub_test(void)
 int vector_blklen_stride_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { -3, 0, 6 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -578,6 +657,24 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -3);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -3) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -3);
+    }
+
+    if (extent != 126) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 126);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -589,7 +686,6 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, 123);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -605,7 +701,6 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
-#endif
 
     return errs;
 }
@@ -613,7 +708,7 @@ int vector_blklen_stride_of_int_with_lb_ub_test(void)
 int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { -3, 0, 6 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -662,6 +757,24 @@ int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -93);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -93) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -93);
+    }
+
+    if (extent != 126) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 126);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -673,7 +786,6 @@ int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, 33);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -689,7 +801,6 @@ int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
-#endif
 
     return errs;
 }
@@ -697,7 +808,7 @@ int vector_blklen_negstride_of_int_with_lb_ub_test(void)
 int int_with_negextent_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint lb, extent, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { 6, 0, -3 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -743,6 +854,24 @@ int int_with_negextent_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, 6);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != 6) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, 6);
+    }
+
+    if (extent != -9) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, -9);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -754,7 +883,6 @@ int int_with_negextent_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, -3);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -770,7 +898,6 @@ int int_with_negextent_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 4);
     }
-#endif
     
     MPI_Type_free(&eviltype);
 
@@ -780,7 +907,7 @@ int int_with_negextent_test(void)
 int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint true_lb, aval;
+    MPI_Aint lb, extent, true_lb, aval;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { 6, 0, -3 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -829,6 +956,24 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -111);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -111) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -111);
+    }
+
+    if (extent != 108) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 108);
+    }
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -840,7 +985,6 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, -3);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -856,7 +1000,6 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
-#endif
 
     return errs;
 }
@@ -864,7 +1007,7 @@ int vector_blklen_stride_negextent_of_int_with_lb_ub_test(void)
 int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void)
 {
     int err, errs = 0, val;
-    MPI_Aint aval, true_lb;
+    MPI_Aint extent, lb, aval, true_lb;
     int blocks[3] = { 1, 4, 1 };
     MPI_Aint disps[3] = { 6, 0, -3 };
     MPI_Datatype types[3] = { MPI_LB, MPI_BYTE, MPI_UB };
@@ -913,6 +1056,25 @@ int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n", (int) aval, -21);
     }
 
+    err = MPI_Type_get_extent(eviltype, &lb, &extent);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, "  MPI_Type_get_extent failed.\n");
+    }
+
+    if (lb != -21) {
+	errs++;
+	if (verbose) fprintf(stderr, "  lb of type = %d; should be %d\n",
+			     (int) aval, -21);
+    }
+
+    if (extent != 108) {
+	errs++;
+	if (verbose) fprintf(stderr, "  extent of type = %d; should be %d\n",
+			     (int) extent, 108);
+    }
+
+
     err = MPI_Type_ub(eviltype, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -924,7 +1086,6 @@ int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void)
 	if (verbose) fprintf(stderr, "  ub of type = %d; should be %d\n", (int) aval, 87);
     }
 
-#ifdef HAVE_MPI_TYPE_GET_TRUE_EXTENT
     err = MPI_Type_get_true_extent(eviltype, &true_lb, &aval);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -940,7 +1101,6 @@ int vector_blklen_negstride_negextent_of_int_with_lb_ub_test(void)
 	errs++;
 	if (verbose) fprintf(stderr, "  true extent of type = %d; should be %d\n", (int) aval, 121);
     }
-#endif
 
     return errs;
 }
