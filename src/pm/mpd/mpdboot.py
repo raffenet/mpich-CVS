@@ -113,12 +113,12 @@ def mpdboot():
     except error, errmsg:
         mpd_raise('mpdboot: select failed: errmsg=:%s:' % (errmsg) )
     if locMPD.fromchild in readyFDs:
-        print myPort
+        ## print 'local mpd port: %s' % (myPort)
         for line in locMPD.fromchild.readlines():
             print line,
         for line in locMPD.childerr.readlines():
             print line,
-        exit(-1)
+        ## exit(-1)
 
     if rshCmd == 'ssh':
         xOpt = '-x'
