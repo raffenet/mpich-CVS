@@ -39,7 +39,7 @@ int MPID_Init(int * argc, char *** argp, int requested, int * provided,
 	/* XXX - functionality is not yet supported */
 	MPIDI_err_printf(FCNAME, "initialization of parent communicator is "
 			"UNIMPLEMENTED");
-	MPID_Abort(MPI_COMM_NULL, MPI_ERR_INTERN);
+	MPID_Abort(NULL, MPI_ERR_INTERN);
     }
     
     /* MT - only single threaded applications are supported at the moment... */
