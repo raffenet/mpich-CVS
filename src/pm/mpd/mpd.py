@@ -949,9 +949,9 @@ def sigchld_handler(signum,frame):
             done = 1
 
 def usage():
-    print 'usage: mpd [--host=<host> [--port=<portnum>] [--noconsole] \ '
+    print 'usage: mpd [--host=<host> --port=<portnum>] [--noconsole] \ '
     print '           [--trace] [--echo] [--daemon] [--bulletproof] \ '
-    print '           [--idmyhost=<hostname>]' 
+    print '           [--idmyhost=<hostname>] [--listenport=<listenport>]' 
     print ''
     print 'Long parameter names may be abbreviated to their first letters by using'
     print '  only one hyphen and no equal sign:'
