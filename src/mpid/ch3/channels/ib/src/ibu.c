@@ -850,6 +850,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 }
 */
 
+#if 0
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
@@ -971,8 +972,8 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     //return IBU_SUCCESS;
     return total;
 }
+#endif
 
-#if 0
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
@@ -1053,7 +1054,6 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     //return IBU_SUCCESS;
     return total;
 }
-#endif
 
 static inline void init_state_struct(ibu_state_t *p)
 {
