@@ -51,7 +51,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 {
     int i, elmsize = 0, depth = 0;
     struct DLOOP_Dataloop_stackelm *elmp;
-    struct DLOOP_Dataloop *dlp = 0;
+    struct DLOOP_Dataloop *dlp = 0, *sblp = &segp->builtin_loop;
     
     /* first figure out what to do with the datatype/count.
      * there are three cases:
@@ -72,26 +72,26 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Handle_get_size_macro(handle, elmsize);
 
 	/* NOTE: ELMSIZE IS WRONG */
-	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	segp->builtin_loop.handle = handle;
-	segp->builtin_loop.loop_params.c_t.count = count;
-	segp->builtin_loop.loop_params.c_t.dataloop = 0;
-	segp->builtin_loop.el_size = elmsize;
-	DLOOP_Handle_get_extent_macro(handle, segp->builtin_loop.el_extent);
+	sblp->kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+	sblp->handle = handle;
+	sblp->loop_params.c_t.count = count;
+	sblp->loop_params.c_t.dataloop = 0;
+	sblp->el_size = elmsize;
+	DLOOP_Handle_get_extent_macro(handle, sblp->el_extent);
 
-	dlp = &segp->builtin_loop;
+	dlp = sblp;
 	depth = 1;
     }
     else if (count == 0) {
 	/* only use the builtin, call it 0 ints */
-	segp->builtin_loop.kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-	segp->builtin_loop.handle = MPI_INT;
-	segp->builtin_loop.loop_params.c_t.count = 0;
-	segp->builtin_loop.loop_params.c_t.dataloop = 0;
-	segp->builtin_loop.el_size = 0;
-	segp->builtin_loop.el_extent = 0;
+	sblp->kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+	sblp->handle = MPI_INT;
+	sblp->loop_params.c_t.count = 0;
+	sblp->loop_params.c_t.dataloop = 0;
+	sblp->el_size = 0;
+	sblp->el_extent = 0;
 
-	dlp = &segp->builtin_loop;
+	dlp = sblp;
 	depth = 1;
     }
     else if (count == 1) {
@@ -100,55 +100,62 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Handle_get_loopdepth_macro(handle, depth);
     }
     else {
-	/* default: need to use builtin to handle contig; must check loop depth first */
-	DLOOP_Dataloop *tmploop;
+	/* default: need to use builtin to handle contig; must check
+	 * loop depth first
+	 */
+	DLOOP_Dataloop *oldloop; /* loop from original type, before new count */
 	DLOOP_Offset type_size, type_extent;
 	
 	DLOOP_Handle_get_loopdepth_macro(handle, depth);
 	if (depth >= DLOOP_MAX_DATATYPE_DEPTH) return -1;
 
-	DLOOP_Handle_get_loopptr_macro(handle, segp->builtin_loop.loop_params.c_t.dataloop);
+	DLOOP_Handle_get_loopptr_macro(handle, oldloop);
 	DLOOP_Handle_get_size_macro(handle, type_size);
 	DLOOP_Handle_get_extent_macro(handle, type_extent);
 
-	tmploop = segp->builtin_loop.loop_params.c_t.dataloop;
-	if (depth == 1 && ((tmploop->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG))
+#if 1
+	if (depth == 1 && ((oldloop->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG))
+#else
+	if (0) /* skip this optimization */
+#endif
 	{
+
 	    /* optimization: coalesce counts and use just the builtin */
 	    /* note: contig might have been resized! */
 	    if (type_size == type_extent)
 	    {
 		/* use a contig */
-		segp->builtin_loop.kind                     = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
-		segp->builtin_loop.loop_params.c_t.count    = count * tmploop->loop_params.c_t.count;
-		segp->builtin_loop.loop_params.c_t.dataloop = NULL;
-		segp->builtin_loop.el_size                  = tmploop->el_size;
-		segp->builtin_loop.el_extent                = tmploop->el_extent;
+		sblp->kind                     = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
+		sblp->loop_params.c_t.count    = count * oldloop->loop_params.c_t.count;
+		sblp->loop_params.c_t.dataloop = NULL;
+		sblp->el_size                  = oldloop->el_size;
+		sblp->el_extent                = oldloop->el_extent;
 	    }
 	    else
 	    {
 		/* use a vector, with extent of original type becoming the stride */
-		segp->builtin_loop.kind                      = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
-		segp->builtin_loop.loop_params.v_t.count     = count;
-		segp->builtin_loop.loop_params.v_t.blocksize = tmploop->loop_params.c_t.count;
-		segp->builtin_loop.loop_params.v_t.stride    = type_extent;
-		segp->builtin_loop.loop_params.v_t.dataloop  = NULL;
-		segp->builtin_loop.el_size                   = tmploop->el_size;
-		segp->builtin_loop.el_extent                 = tmploop->el_extent;
+		sblp->kind                      = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
+		sblp->loop_params.v_t.count     = count;
+		sblp->loop_params.v_t.blocksize = oldloop->loop_params.c_t.count;
+		sblp->loop_params.v_t.stride    = type_extent;
+		sblp->loop_params.v_t.dataloop  = NULL;
+		sblp->el_size                   = oldloop->el_size;
+		sblp->el_extent                 = oldloop->el_extent;
 	    }
 	}
 	else
 	{
 	    /* general case */
-	    segp->builtin_loop.kind = DLOOP_KIND_CONTIG;
-	    segp->builtin_loop.loop_params.c_t.count = count;
-	    segp->builtin_loop.el_size = type_size;
-	    segp->builtin_loop.el_extent = type_extent;
+	    sblp->kind                     = DLOOP_KIND_CONTIG;
+	    sblp->loop_params.c_t.count    = count;
+	    sblp->loop_params.c_t.dataloop = oldloop;
+	    sblp->el_size                  = type_size;
+	    sblp->el_extent                = type_extent;
 
 	    depth++; /* we're adding to the depth with the builtin */
 	}
 
-	dlp = &segp->builtin_loop;
+	dlp = sblp;
     }
 
     /* initialize the rest of the segment values */
@@ -159,15 +166,16 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     segp->valid_sp = 0;
 
     /* initialize the first stackelm in its entirety */
-    /* Note that we start counts (and blocks) at the maximum value and then decrement;
-     * that way when we're testing for completion we don't have to look back at the
-     * maximum value.
+    /* Note that we start counts (and blocks) at the maximum value and then
+     * decrement; that way when we're testing for completion we don't have to
+     * look back at the maximum value.
      */
     elmp = &(segp->stackelm[0]);
     elmp->loop_p = dlp;
 
-    /* NOTE: It's easier later to use blksize for the size of a contig rather than count,
-     * because in every other case blksize is the size of a contiguous set of types.
+    /* NOTE: It's easier later to use blksize for the size of a contig rather
+     * than count, because in every other case blksize is the size of a
+     * contiguous set of types.
      */
     if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG) {
 	elmp->orig_count = 1;
@@ -523,7 +531,9 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 	    /* TODO: MAYBE REORGANIZE? */
 	    if (myblocks < cur_elmp->curblock) {
-		/* Definitely stopping after this.  Either piecefn stopped short or we did due to last param */
+		/* Definitely stopping after this.  Either piecefn stopped
+                 * short or we did due to last param.
+		 */
 		cur_elmp->curoffset += myblocks * basic_size;
 
 		/* NOTE: THIS CODE ASSUMES THAT WE STOP ON WHOLE BASIC SIZES!!! */
@@ -555,7 +565,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	     */
 	    if (myblocks > cur_elmp->curblock)
 	    {
-		int count_index;
+		int count_index = 0;
 		/* recall that we only handle more than one contiguous block if
 		 * we are at the beginning of a block.  this simplifies the
 		 * calculations here.
@@ -591,10 +601,18 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			cur_elmp->curcount -= myblocks / cur_elmp->orig_block;
 			if (cur_elmp->curcount == 0) DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
 			else {
-			    /* if we didn't finish the entire type, we need to update the block and offset */
+			    /* if we didn't finish the entire type, we need to
+                             *  update the block and offset
+			     */
 			    cur_elmp->curblock = cur_elmp->orig_block - (myblocks % cur_elmp->orig_block);
-			    cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
-				cur_elmp->loop_p->loop_params.v_t.stride;
+			    /* new offset = original offset +
+			     *              stride * whole blocks +
+			     *              leftover bytes
+			     */
+			    cur_elmp->curoffset = cur_elmp->orig_offset +
+				((cur_elmp->orig_count - cur_elmp->curcount) *
+				 cur_elmp->loop_p->loop_params.v_t.stride) +
+				((myblocks % cur_elmp->orig_block) * basic_size);
 			}
 			break;
 		    case DLOOP_KIND_CONTIG:

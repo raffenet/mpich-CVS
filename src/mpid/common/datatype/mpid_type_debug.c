@@ -421,7 +421,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 				i,
 				ints[2*i+1],
 				ints[2*i+2]);
-		MPIDI_Datatype_contents_printf(types[i],
+		MPIDI_Datatype_contents_printf(*types,
 					       depth + 1,
 					       acount);
 	    }
@@ -436,7 +436,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 				i,
 				ints[i+1],
 				aints[i]);
-		MPIDI_Datatype_contents_printf(types[i],
+		MPIDI_Datatype_contents_printf(*types,
 					       depth + 1,
 					       acount);
 	    }

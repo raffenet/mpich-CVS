@@ -182,6 +182,7 @@ int MPID_Type_struct(int count,
 	if (epsilon) {
 	    new_dtp->ub += (alignsize - epsilon);
 	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	    new_dtp->is_contig = 0;
 	}
 
 	/* mark as having more than one element size/type */
@@ -257,8 +258,15 @@ int MPID_Type_struct(int count,
 	    new_dtp->ub            = ub_disp;
 	}
 	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	if (new_dtp->extent != new_dtp->true_ub - new_dtp->true_lb) {
+	    new_dtp->is_contig = 0;
+	}
 
         new_dtp->eltype = oldtype_array[type_idx];
+
+	/* alignsize, element size, and element type are ok in this
+	 * case because we only had one basic type.
+	 */
 
 	return mpi_errno;
     }

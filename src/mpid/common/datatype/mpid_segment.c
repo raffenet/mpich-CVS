@@ -13,6 +13,7 @@
 #include <mpid_dataloop.h>
 
 #undef MPID_SP_VERBOSE
+#undef MPID_SU_VERBOSE
 
 /* MPID_Segment_piece_params
  *
@@ -474,6 +475,17 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 
     blocks_left = *blocks_p;
 
+#ifdef MPID_SP_VERBOSE
+    MPIU_dbg_printf("\t[vector to vec: do=%d, dp=%x, ind=%d, sz=%d, blksz=%d, str=%d, blks=%d]\n",
+		    (unsigned) rel_off,
+		    (unsigned) bufp,
+		    paramp->u.pack_vector.index,
+		    basic_size,
+		    blksz,
+		    stride,
+		    (int) *blocks_p);
+#endif
+
     for (i=0; i < count && blocks_left > 0; i++) {
 	if (blocks_left > blksz) {
 	    size = blksz * basic_size;
@@ -597,12 +609,12 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
     size = *blocks_p * (DLOOP_Offset) el_size;
 
 #ifdef MPID_SP_VERBOSE
-    MPIU_dbg_printf("\t[index = %d, loc = (%x + %x) = %x, size = %d]\n",
-		    paramp->u.pack_vector.index,
-		    (unsigned) bufp,
+    MPIU_dbg_printf("\t[contig to vec: do=%d, dp=%x, ind=%d, sz=%d, blksz=%d]\n",
 		    (unsigned) rel_off,
-		    (unsigned) bufp + rel_off,
-		    size);
+		    (unsigned) bufp,
+		    paramp->u.pack_vector.index,
+		    el_size,
+		    (int) *blocks_p);
 #endif
     
     if (paramp->u.pack_vector.index > 0 && ((char *) bufp + rel_off) ==
@@ -646,12 +658,12 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
     index = paramp->u.flatten.index;
 
 #ifdef MPID_SP_VERBOSE
-    MPIU_dbg_printf("\t[index = %d, loc = (%x + %x) = %x, size = %d]\n",
+    MPIU_dbg_printf("\t[contig flatten: index = %d, loc = (%x + %x) = %x, size = %d]\n",
 		    index,
 		    (unsigned) bufp,
 		    (unsigned) rel_off,
 		    (unsigned) bufp + rel_off,
-		    size);
+		    (int) size);
 #endif
     
     if (index > 0 && ((DLOOP_Offset) bufp + rel_off) ==
@@ -693,10 +705,12 @@ static int MPID_Segment_contig_count_block(DLOOP_Offset *blocks_p,
     size = *blocks_p * (DLOOP_Offset) el_size;
 
 #ifdef MPID_SP_VERBOSE
-    MPIU_dbg_printf("count = %d, buf+off = %d, lastloc = %d\n",
+#if 0
+    MPIU_dbg_printf("contig count block: count = %d, buf+off = %d, lastloc = %d\n",
 		    (int) paramp->u.contig_blocks.count,
 		    (int) ((char *) bufp + rel_off),
 		    (int) paramp->u.contig_blocks.last_loc);
+#endif
 #endif
 
     if (paramp->u.contig_blocks.count > 0 && ((char *) bufp + rel_off) == paramp->u.contig_blocks.last_loc)
@@ -755,6 +769,17 @@ static int MPID_Segment_vector_unpack_to_buf(DLOOP_Offset *blocks_p,
     whole_count = *blocks_p / blksz;
     blocks_left = *blocks_p % blksz;
 
+#ifdef MPID_SU_VERBOSE
+    dbg_printf("\t[vector unpack: do=%d, dp=%x, bp=%x, sz=%d, blksz=%d, str=%d, blks=%d]\n",
+	       rel_off, 
+	       (unsigned) bufp,
+	       (unsigned) paramp->u.unpack.unpack_buffer,
+	       (int) basic_size,
+	       (int) blksz,
+	       (int) stride,
+	       (int) *blocks_p);
+#endif
+
     if (basic_size == 8) {
 	MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, stride, int64_t, blksz, whole_count);
 	MPIDI_COPY_TO_VEC(paramp->u.unpack.unpack_buffer, cbufp, 0, int64_t, blocks_left, 1);
@@ -769,12 +794,28 @@ static int MPID_Segment_vector_unpack_to_buf(DLOOP_Offset *blocks_p,
     }
     else {
 	for (i=0; i < whole_count; i++) {
+#ifdef MPID_SU_VERBOSE
+	    dbg_printf("\t[vector unpack(1): do=%d, dp=%x, bp=%x, sz=%d, blksz=%d]\n",
+		       (int) (cbufp - (char *) bufp), 
+		       (unsigned) bufp,
+		       (unsigned) paramp->u.unpack.unpack_buffer,
+		       basic_size,
+		       (int) blksz * basic_size);
+#endif
 	    memcpy(cbufp, paramp->u.unpack.unpack_buffer, blksz * basic_size);
 	    paramp->u.unpack.unpack_buffer += blksz * basic_size;
 	    cbufp += stride;
 	}
 	if (blocks_left) {
-	    memcpy(paramp->u.unpack.unpack_buffer, cbufp, blocks_left * basic_size);
+#ifdef MPID_SU_VERBOSE
+	    dbg_printf("\t[vector unpack(2): do=%d, dp=%x, bp=%x, sz=%d, blksz=%d]\n",
+		       (int) (cbufp - (char *) bufp), 
+		       (unsigned) bufp,
+		       (unsigned) paramp->u.unpack.unpack_buffer,
+		       basic_size,
+		       (int) blocks_left * basic_size);
+#endif
+	    memcpy(cbufp, paramp->u.unpack.unpack_buffer, blocks_left * basic_size);
 	    paramp->u.unpack.unpack_buffer += blocks_left * basic_size;
 	}
     }
@@ -799,8 +840,12 @@ static int MPID_Segment_contig_unpack_to_buf(DLOOP_Offset *blocks_p,
     size = *blocks_p * (DLOOP_Offset) el_size;
 
 #ifdef MPID_SU_VERBOSE
-    dbg_printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, dbufoff, 
-	       (unsigned) dbufp, (unsigned) paramp->u.unpack.unpack_buffer, size);
+    dbg_printf("\t[contig unpack: do=%d, dp=%x, bp=%x, sz=%d, blksz=%d]\n",
+	       rel_off, 
+	       (unsigned) bufp,
+	       (unsigned) paramp->u.unpack.unpack_buffer,
+	       el_size,
+	       (int) *blocks_p);
 #endif
     
     memcpy((char *) bufp + rel_off, paramp->u.unpack.unpack_buffer, size);
@@ -835,6 +880,17 @@ static int MPID_Segment_vector_pack_to_buf(DLOOP_Offset *blocks_p,
     whole_count = *blocks_p / blksz;
     blocks_left = *blocks_p % blksz;
 
+#ifdef MPID_SP_VERBOSE
+    dbg_printf("\t[vector pack: do=%d, dp=%x, bp=%x, sz=%d, blksz=%d, str=%d, blks=%d]\n",
+	       rel_off, 
+	       (unsigned) bufp,
+	       (unsigned) paramp->u.pack.pack_buffer,
+	       (int) basic_size,
+	       (int) blksz,
+	       (int) stride,
+	       (int) *blocks_p);
+#endif
+
     if (basic_size == 8) {
 	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, stride, int64_t, blksz, whole_count);
 	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int64_t, blocks_left, 1);
@@ -849,11 +905,27 @@ static int MPID_Segment_vector_pack_to_buf(DLOOP_Offset *blocks_p,
     }
     else {
 	for (i=0; i < whole_count; i++) {
+#ifdef MPID_SP_VERBOSE
+	    dbg_printf("\t[vector pack(1): do=%d, dp=%x, bp=%x, sz=%d, blksz=%d]\n",
+		       (int) (cbufp - (char *) bufp), 
+		       (unsigned) bufp,
+		       (unsigned) paramp->u.pack.pack_buffer,
+		       basic_size,
+		       (int) blksz * basic_size);
+#endif
 	    memcpy(paramp->u.pack.pack_buffer, cbufp, blksz * basic_size);
 	    paramp->u.pack.pack_buffer += blksz * basic_size;
 	    cbufp += stride;
 	}
 	if (blocks_left) {
+#ifdef MPID_SP_VERBOSE
+	    dbg_printf("\t[vector pack(2): do=%d, dp=%x, bp=%x, sz=%d, blksz=%d]\n",
+		       (int) (cbufp - (char *) bufp), 
+		       (unsigned) bufp,
+		       (unsigned) paramp->u.pack.pack_buffer,
+		       basic_size,
+		       (int) blocks_left * basic_size);
+#endif
 	    memcpy(paramp->u.pack.pack_buffer, cbufp, blocks_left * basic_size);
 	    paramp->u.pack.pack_buffer += blocks_left * basic_size;
 	}
@@ -888,8 +960,12 @@ static int MPID_Segment_contig_pack_to_buf(DLOOP_Offset *blocks_p,
      *      we wanted...)
      */
 #ifdef MPID_SP_VERBOSE
-    dbg_printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, rel_off, 
-	       (unsigned) bufp, (unsigned) paramp->u.pack.pack_buffer, size);
+    dbg_printf("\t[contig pack: do=%d, dp=%x, bp=%x, sz=%d, blksz=%d]\n",
+	       rel_off, 
+	       (unsigned) bufp,
+	       (unsigned) paramp->u.pack.pack_buffer,
+	       el_size,
+	       (int) *blocks_p);
 #endif
 
     /* TODO: DEAL WITH CASE WHERE ALL DATA DOESN'T FIT! */
