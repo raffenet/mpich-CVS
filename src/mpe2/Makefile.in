@@ -75,7 +75,7 @@ uninstall:
 
 ########  Cleaning
 clean_include:
-	@-if [ -n "$(includebuild_dir)" \
+	@-if [ -n "$(includebuild_dir)" -a "$(top_srcdir)" != "." \
 	       -a "$(includebuild_dir)" != "$(top_srcdir)/include" ] ; then \
 	      for file in $(MPE_HEADERS) ; do \
 	          $(RM) -f $(includebuild_dir)/$$file ; \
