@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 	smpd_get_password(smpd_process.passphrase);
 #ifndef HAVE_WINDOWS_H
 	homedir = getenv("HOME");
-	strcpy(homedir, smpd_filename);
+	strcpy(smpd_filename, homedir);
 	if (smpd_filename[strlen(smpd_filename)-1] != '/')
 	    strcat(smpd_filename, "/.smpd");
 	else
