@@ -62,8 +62,8 @@ int MPIO_Wait(MPIO_Request *request, MPI_Status *status)
     if ((*request < (MPIO_Request) 0) || 
 	     ((*request)->cookie != ADIOI_REQ_COOKIE)) {
 #ifdef MPICH2
-			error_code = MPIR_create_code(MPI_ERR_REQUEST, "**request", 0);
-			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
+			error_code = MPIR_Err_create_code(MPI_ERR_REQUEST, "**request", 0);
+			return MPIR_Err_return_file(NULL, myname, error_code);
 #elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPIO_Wait: Invalid request object\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
