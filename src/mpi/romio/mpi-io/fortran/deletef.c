@@ -5,7 +5,7 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#if _UNICOS
+#ifdef _UNICOS
 #include <fortran.h>
 #endif
 #include "adio.h"
@@ -91,7 +91,7 @@
 /*
 FORTRAN_API void FORT_CALL mpi_file_delete_(char *filename, MPI_Fint *info, int *ierr, int str_len);
 
-#if _UNICOS
+#ifdef _UNICOS
 void mpi_file_delete_(_fcd filename_fcd, MPI_Fint *info, int *ierr)
 {
     char *filename = _fcdtocp(filename_fcd);
@@ -102,7 +102,7 @@ FORTRAN_API void FORT_CALL mpi_file_delete_(char *filename, MPI_Fint *info, int 
 /* Prototype to keep compiler happy */
 FORTRAN_API void FORT_CALL mpi_file_delete_(char *filename FORT_MIXED_LEN_DECL, MPI_Fint *info, int *ierr FORT_END_LEN_DECL);
 
-#if _UNICOS
+#ifdef _UNICOS
 void mpi_file_delete_(_fcd filename_fcd, MPI_Fint *info, int *ierr)
 {
     char *filename = _fcdtocp(filename_fcd);

@@ -5,7 +5,7 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#if _UNICOS
+#ifdef _UNICOS
 #include <fortran.h>
 #endif
 #include "adio.h"
@@ -128,7 +128,7 @@ void mpi_file_open_(MPI_Fint *comm,char *filename,int *amode,
 
 #else
 
-#if _UNICOS
+#ifdef _UNICOS
 void mpi_file_open_(MPI_Comm *comm,_fcd filename_fcd,int *amode,
                   MPI_Fint *info, MPI_Fint *fh, int *ierr)
 {
