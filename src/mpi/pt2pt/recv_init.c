@@ -7,34 +7,34 @@
 
 #include "mpiimpl.h"
 
-/* -- Begin Profiling Symbol Block for routine MPI_Rsend_init */
+/* -- Begin Profiling Symbol Block for routine MPI_Recv_init */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPI_Rsend_init = PMPI_Rsend_init
+#pragma weak MPI_Recv_init = PMPI_Recv_init
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Rsend_init  MPI_Rsend_init
+#pragma _HP_SECONDARY_DEF PMPI_Recv_init  MPI_Recv_init
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPI_Rsend_init as PMPI_Rsend_init
+#pragma _CRI duplicate MPI_Recv_init as PMPI_Recv_init
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#define MPI_Rsend_init PMPI_Rsend_init
+#define MPI_Recv_init PMPI_Recv_init
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPI_Rsend_init
+#define FUNCNAME MPI_Recv_init
 
 /*@
-   MPI_Rsend_init - rsend_init
+   MPI_Recv_init - recv_init
 
    Arguments:
 +  void *buf - buffer
 .  int count - count
 .  MPI_Datatype datatype - datatype
-.  int dest - destination
+.  int source - source
 .  int tag - tag
 .  MPI_Comm comm - communicator
 -  MPI_Request *request - request
@@ -46,14 +46,13 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
-		   int tag, MPI_Comm comm, MPI_Request *request)
+int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
 {
-    static const char FCNAME[] = "MPI_Rsend_init";
+    static const char FCNAME[] = "MPI_Recv_init";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_RSEND_INIT);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_RECV_INIT);
 
     /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
@@ -70,8 +69,8 @@ int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 	    
-    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_RSEND_INIT);
-    
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_RECV_INIT);
+
     /* ... body of routine ...  */
     
     /* Convert MPI object handles to object pointers */
@@ -86,28 +85,28 @@ int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND_INIT);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
-	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
-	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
+	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
+	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
 	    if (request != NULL)
 	    {
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND_INIT);
+	    if (mpi_errno) {
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
-	    
+
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND_INIT);
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
         }
@@ -115,20 +114,39 @@ int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Rsend_init(buf, count, datatype, dest, tag, comm_ptr,
-				MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
+    if (source == MPI_PROC_NULL)
+    {
+	request_ptr = MPID_Request_create();
+	if (request_ptr != NULL)
+	{
+	    request_ptr->status.MPI_SOURCE = MPI_PROC_NULL;
+	    request_ptr->status.MPI_TAG = MPI_ANY_TAG;
+	    request_ptr->kind = MPID_REQUEST_RECV;
+	    request_ptr->cc = 0;
+	    *request = request_ptr->handle;
+	
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
+	    return MPI_SUCCESS;
+	}
+	
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
+	return MPI_ERR_NOMEM;
+    }
+
+    mpi_errno = MPID_Recv_init(buf, count, datatype, source, tag, comm_ptr,
+			       MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
 
     if (mpi_errno == MPI_SUCCESS)
     {
 	/* return the handle of the request to the user */
 	*request = request_ptr->handle;
 	
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND_INIT);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
 	return MPI_SUCCESS;
     }
     
     /* ... end of body of routine ... */
     
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND_INIT);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV_INIT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

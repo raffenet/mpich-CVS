@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+#if !defined(MPID_PARTNER_REQUEST_POOL_SIZE)
+#define MPID_PARTNER_REQUEST_POOL_SIZE 16
+#endif
+
 /* -- Begin Profiling Symbol Block for routine MPI_Startall */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Startall = PMPI_Startall
@@ -44,26 +48,83 @@
 int MPI_Startall(int count, MPI_Request array_of_requests[])
 {
     static const char FCNAME[] = "MPI_Startall";
+    MPID_Request * partner_request_pool[MPID_PARTNER_REQUEST_POOL_SIZE];
+    MPID_Request ** request_ptrs;
+    int i;
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_STARTALL);
 
-    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_STARTALL);
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_requests,"array_of_requests",
+				 mpi_errno);
+	    if (array_of_requests != NULL && count > 0)
+	    {
+		for (i = 0; i < count; i++)
+		{
+		    MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
+		}
+	    }
             if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_STARTALL);
+
+    /* Convert MPI request handles to a request object pointers */
+    if (count <= MPID_PARTNER_REQUEST_POOL_SIZE)
+    {
+	request_ptrs = partner_request_pool;
+    }
+    else
+    {
+	request_ptrs = MPIU_Malloc(count * sizeof(MPID_Request *));
+	if (request_ptrs == NULL)
+	{
+	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
+	    return MPIR_Err_return_comm( 0, FCNAME, MPI_ERR_NOMEM );
+	}
+    }
+
+    for (i = 0; i < count; i++)
+    {
+	MPID_Request_get_ptr(array_of_requests[i], request_ptrs[i]);
+    }
+    
+    /* Validate object pointers if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    for (i = 0; i < count; i++)
+	    {
+		MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
+	    }
+            if (mpi_errno) {
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
+                return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+    
+    mpi_errno = MPID_Startall(count, request_ptrs);
 
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_STARTALL);
-    return MPI_SUCCESS;
+    if (count > MPID_PARTNER_REQUEST_POOL_SIZE)
+    {
+	MPIU_Free(request_ptrs);
+    }
+    
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
+	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }

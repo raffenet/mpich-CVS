@@ -1,16 +1,17 @@
 mpi_sources = bsend.c bsend_init.c bufattach.c buffree.c \
- cancel.c commreq_free.c create_recv.c create_send.c  greq_start.c \
- greq_complete.cibsend.c iprobe.c irecv.c irsend.c isend.c issend.c \
- probe.c recv.c  request_get_status.c rsend.c rsend_init.c send.c \
+ cancel.c commreq_free.c greq_start.c greq_complete.cibsend.c iprobe.c \
+ irecv.c irsend.c isend.c issend.c probe.c recv.c recv_init.c \
+ request_get_status.c rsend.c rsend_init.c send.c send_init.c \
  sendrecv.c sendrecv_rep.c status_set_cancelled.c ssend.c ssend_init.c \
  start.c startall.c test.c test_cancelled.c  testall.c testany.c \
  testsome.c wait.c waitall.c waitany.c waitsome.c
  
 lib${MPILIBNAME}_a_SOURCES = bsend.c bsendutil.c bufattach.c buffree.c \
  cancel.c commreq_free.c greq_start.c greq_complete.c iprobe.c irecv.c \
- irsend.c isend.c issend.c mpir_wait.c mpir_test.c probe.c recv.c rsend.c \
- send.c sendrecv.c ssend.c status_set_cancelled.c test_cancelled.c test.c \
- testany.c wait.c waitall.c
+ irsend.c isend.c issend.c mpir_wait.c mpir_test.c probe.c recv.c recv_init.c \
+ rsend.c rsend_init.c send.c send_init.c sendrecv.c ssend.c ssend_init.c \
+ start.c startall.c status_set_cancelled.c test_cancelled.c test.c testany.c \
+ wait.c waitall.c
 
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include

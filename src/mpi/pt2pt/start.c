@@ -43,26 +43,52 @@
 int MPI_Start(MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Start";
+    MPID_Request * request_ptr = NULL;
     int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_START);
 
-    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_START);
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
+	    if (request != NULL)
+	    {
+		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
+	    }
+            if (mpi_errno) {
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_START);
+    
+    /* Convert MPI request handle to a request object pointer */
+    MPID_Request_get_ptr( *request, request_ptr );
+    
+    /* Validate object pointers if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+            MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Startall(1, &request_ptr);
+    
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
+	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
 }
