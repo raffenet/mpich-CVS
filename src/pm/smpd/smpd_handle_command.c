@@ -281,6 +281,27 @@ int smpd_handle_stdin_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
+int smpd_handle_close_stdin_command(smpd_context_t *context)
+{
+    smpd_process_t *piter;
+    int result;
+
+    smpd_enter_fn("handle_close_stdin_command");
+
+    piter = smpd_process.process_list;
+    while (piter)
+    {
+	if (piter->rank == 0 || smpd_process.stdin_toall)
+	{
+	    result = MPIDU_Sock_post_close(piter->in->sock);
+	}
+	piter = piter->next;
+    }
+
+    smpd_exit_fn("handle_close_stdin_command");
+    return SMPD_SUCCESS;
+}
+
 int smpd_handle_stdout_command(smpd_context_t *context)
 {
     int rank;
@@ -361,6 +382,47 @@ int smpd_handle_stderr_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
+static int create_process_group(int nproc, char *kvs_name, smpd_process_group_t **pg_pptr)
+{
+    int i;
+    smpd_process_group_t *pg;
+    
+    /* initialize a new process group structure */
+    pg = (smpd_process_group_t*)malloc(sizeof(smpd_process_group_t));
+    if (pg == NULL)
+    {
+	smpd_err_printf("unable to allocate memory for a process group structure.\n");
+	return SMPD_FAIL;
+    }
+    pg->aborted = SMPD_FALSE;
+    pg->any_init_received = SMPD_FALSE;
+    pg->any_noinit_process_exited = SMPD_FALSE;
+    strncpy(pg->kvs, kvs_name, SMPD_MAX_DBS_NAME_LEN);
+    pg->num_procs = nproc;
+    pg->processes = (smpd_exit_process_t*)malloc(nproc * sizeof(smpd_exit_process_t));
+    if (pg->processes == NULL)
+    {
+	smpd_err_printf("unable to allocate an array of %d process exit structures.\n", nproc);
+	return SMPD_FAIL;
+    }
+    for (i=0; i<nproc; i++)
+    {
+	pg->processes[i].ctx_key[0] = '\0';
+	pg->processes[i].errmsg = NULL;
+	pg->processes[i].exitcode = -1;
+	pg->processes[i].exited = SMPD_FALSE;
+	pg->processes[i].finalize_called = SMPD_FALSE;
+	pg->processes[i].init_called = SMPD_FALSE;
+	pg->processes[i].suspended = SMPD_FALSE;
+	pg->processes[i].suspend_cmd = NULL;
+    }
+    /* add the process group to the global list */
+    pg->next = smpd_process.pg_list;
+    smpd_process.pg_list = pg;
+    *pg_pptr = pg;
+    return SMPD_SUCCESS;
+}
+
 int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char *domain_name, smpd_spawn_context_t *spawn_context)
 {
     int result;
@@ -375,33 +437,15 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 
     launch_node_ptr = launch_list;
     smpd_dbg_printf("creating a process group of size %d on node %d called %s\n", launch_node_ptr->nproc, smpd_process.id, kvs_name);
-    /* initialize a new process group structure */
-    pg = (smpd_process_group_t*)malloc(sizeof(smpd_process_group_t));
-    if (pg == NULL)
+    result = create_process_group(launch_list->nproc, kvs_name, &pg);
+    if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to allocate memory for a process group structure.\n");
-	goto launch_failure;
-    }
-    pg->aborted = SMPD_FALSE;
-    pg->any_init_received = SMPD_FALSE;
-    pg->any_noinit_process_exited = SMPD_FALSE;
-    strncpy(pg->kvs, kvs_name, SMPD_MAX_DBS_NAME_LEN);
-    pg->num_procs = launch_node_ptr->nproc;
-    pg->processes = (smpd_exit_process_t*)malloc(launch_node_ptr->nproc * sizeof(smpd_exit_process_t));
-    if (pg->processes == NULL)
-    {
-	smpd_err_printf("unable to allocate an array of %d process exit structures.\n", launch_node_ptr->nproc);
+	smpd_err_printf("unable to create a process group.\n");
 	goto launch_failure;
     }
     launch_iter = launch_node_ptr;
     for (i=0; i<launch_node_ptr->nproc; i++)
     {
-	pg->processes[i].ctx_key[0] = '\0';
-	pg->processes[i].errmsg = NULL;
-	pg->processes[i].exitcode = -1;
-	pg->processes[i].exited = SMPD_FALSE;
-	pg->processes[i].finalize_called = SMPD_FALSE;
-	pg->processes[i].init_called = SMPD_FALSE;
 	if (launch_iter == NULL)
 	{
 	    smpd_err_printf("number of launch nodes does not match number of processes: %d < %d\n", i, launch_node_ptr->nproc);
@@ -409,13 +453,8 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 	}
 	pg->processes[i].node_id = launch_iter->host_id;
 	MPIU_Strncpy(pg->processes[i].host, launch_iter->hostname, SMPD_MAX_HOST_LENGTH);
-	pg->processes[i].suspended = SMPD_FALSE;
-	pg->processes[i].suspend_cmd = NULL;
 	launch_iter = launch_iter->next;
     }
-    /* add the process group to the global list */
-    pg->next = smpd_process.pg_list;
-    smpd_process.pg_list = pg;
 
     /* launch the processes */
     smpd_dbg_printf("launching the processes.\n");
@@ -564,6 +603,8 @@ int smpd_handle_result(smpd_context_t *context)
     char pg_ctx[100] = "";
     int pg_rank = -1;
     smpd_process_group_t *pg;
+    char host_description[256];
+    int listener_port;
 
     smpd_enter_fn("handle_result");
 
@@ -811,7 +852,39 @@ int smpd_handle_result(smpd_context_t *context)
 				if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "domain_name", smpd_process.domain_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
 				{
 				    smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s', domain_name: '%s'\n", smpd_process.kvs_name, smpd_process.domain_name);
-				    ret_val = smpd_launch_processes(smpd_process.launch_list, smpd_process.kvs_name, smpd_process.domain_name, NULL);
+				    if (smpd_process.launch_list != NULL)
+				    {
+					ret_val = smpd_launch_processes(smpd_process.launch_list, smpd_process.kvs_name, smpd_process.domain_name, NULL);
+				    }
+				    else
+				    {
+					/* mpiexec connected to an smpd without any processes to launch.  This means it is running -pmiserver */
+					create_process_group(smpd_process.nproc, smpd_process.kvs_name, &pg);
+					result = smpd_create_command("pmi_listen", 0, 1, SMPD_TRUE, &cmd_ptr);
+					if (result == SMPD_SUCCESS)
+					{
+					    result = smpd_add_command_int_arg(cmd_ptr, "nproc", smpd_process.nproc);
+					    if (result == SMPD_SUCCESS)
+					    {
+						result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+						if (result != SMPD_SUCCESS)
+						{
+						    smpd_err_printf("unable to post a write for the pmi_listen command\n");
+						    ret_val = SMPD_FAIL;
+						}
+					    }
+					    else
+					    {
+						smpd_err_printf("unable to add the nproc to the pmi_listen command\n");
+						ret_val = SMPD_FAIL;
+					    }
+					}
+					else
+					{
+					    smpd_err_printf("unable to create a pmi_listen command.\n");
+					    ret_val = SMPD_FAIL;
+					}
+				    }
 				}
 				else
 				{
@@ -831,6 +904,14 @@ int smpd_handle_result(smpd_context_t *context)
 			smpd_err_printf("start_dbs failed: %s\n", str);
 			ret_val = SMPD_ABORT;
 		    }
+		}
+		else if (strcmp(iter->cmd_str, "pmi_listen") == 0)
+		{
+		    MPIU_Str_get_string_arg(context->read_cmd.cmd, "host_description", host_description, 256);
+		    MPIU_Str_get_int_arg(context->read_cmd.cmd, "listener_port", &listener_port);
+		    printf("%s\n%d\n%s\n", host_description, listener_port, smpd_process.kvs_name);
+		    /*printf("%s %d %s\n", smpd_process.host_list->host, smpd_process.port, smpd_process.kvs_name);*/
+		    fflush(stdout);
 		}
 		else if (strcmp(iter->cmd_str, "spawn") == 0)
 		{
@@ -2276,6 +2357,13 @@ int smpd_handle_abort_command(smpd_context_t *context)
     {
 	smpd_err_printf("abort: %s\n", error_str);
     }
+    else
+    {
+	/* abort without an error means return and exit peacefully */
+	/* FIXME: create a new return class, for now use SMPD_DBS_RETURN */
+	smpd_exit_fn("smpd_handle_abort_command");
+	return SMPD_DBS_RETURN;
+    }
 
     smpd_exit_fn("smpd_handle_abort_command");
     return SMPD_EXIT;
@@ -3420,9 +3508,11 @@ int smpd_handle_exit_command(smpd_context_t *context)
 	}
     }
 
+    /*printf("process %d exited with exit code %d\n", iproc, exitcode);fflush(stdout);*/
     smpd_process.nproc_exited++;
     if (smpd_process.nproc == smpd_process.nproc_exited)
     {
+	/*printf("last process exited, returning SMPD_EXIT.\n");fflush(stdout);*/
 	smpd_dbg_printf("last process exited, returning SMPD_EXIT.\n");
 	smpd_exit_fn("smpd_handle_exit_command");
 	return SMPD_EXIT;
@@ -3736,6 +3826,141 @@ int smpd_handle_kill_command(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
+int smpd_handle_pmi_listen_command(smpd_context_t *context)
+{
+    int result;
+    smpd_command_t *cmd, *temp_cmd;
+    int nproc;
+    MPIDU_Sock_t sock_pmi_listener;
+    smpd_context_t *listener_context;
+    int listener_port;
+    /*smpd_process_t *process;*/
+    char host_description[256];
+
+    smpd_enter_fn("smpd_handle_pmi_listen_command");
+
+    cmd = &context->read_cmd;
+
+    result = MPIU_Str_get_int_arg(cmd->cmd, "nproc", &nproc);
+    if (result != MPIU_STR_SUCCESS)
+    {
+	smpd_err_printf("no nproc field in the pmi_listen command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+
+    /* start a pmi listener for nproc processes to connect to */
+    /* insert code here */
+    /*
+    result = smpd_create_process_struct(-1, &process);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a process structure for the pmi_listen command\n");
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    */
+
+    listener_port = 0;
+    result = MPIDU_Sock_listen(context->set, NULL, &listener_port, &sock_pmi_listener); 
+    if (result != MPI_SUCCESS)
+    {
+	/* If another smpd is running and listening on this port, tell it to shutdown or restart? */
+	smpd_err_printf("MPIDU_Sock_listen failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    smpd_dbg_printf("pmiserver listening on port %d\n", listener_port);
+
+    result = smpd_create_context(SMPD_CONTEXT_PMI_LISTENER, context->set, sock_pmi_listener, -1, &listener_context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a context for the pmi listener.\n");
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    result = MPIDU_Sock_set_user_ptr(sock_pmi_listener, listener_context);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("MPIDU_Sock_set_user_ptr failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    listener_context->state = SMPD_SMPD_LISTENING/*SMPD_PMI_SERVER_LISTENING*/;
+    result = smpd_get_hostname(host_description, 256);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("smpd_get_hostname failed\n");
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    /*result = MPIDU_Sock_get_host_description(host_description, 256);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("MPIDU_Sock_get_host_description failed,\nsock error: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    */
+    /* save the listener sock in the slot reserved for the client sock so we can match the listener
+    to the process structure when the client sock is accepted */
+    /*process->pmi->sock = sock_pmi_listener;*/
+
+    /* create the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command in response to pmi_listen command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "cmd_orig", cmd->cmd_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add cmd_orig to the result command for a %s command\n", cmd->cmd_str);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", SMPD_SUCCESS_STR);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result field to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "host_description", host_description);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the host_description field to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_int_arg(temp_cmd, "listener_port", listener_port);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the listener_port field to the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command in response to pmi_listen command: '%s'\n", cmd->cmd);
+	smpd_exit_fn("smpd_handle_pmi_listen_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_pmi_listen_command");
+    return result;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 int smpd_handle__command(smpd_context_t *context)
@@ -3856,6 +4081,12 @@ int smpd_handle_command(smpd_context_t *context)
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }
+    else if (strcmp(cmd->cmd_str, "close_stdin") == 0)
+    {
+	result = smpd_handle_stdin_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
     else if (strcmp(cmd->cmd_str, "stdout") == 0)
     {
 	result = smpd_handle_stdout_command(context);
@@ -3889,6 +4120,12 @@ int smpd_handle_command(smpd_context_t *context)
     else if (strcmp(cmd->cmd_str, "start_dbs") == 0)
     {
 	result = smpd_handle_start_dbs_command(context);
+	smpd_exit_fn("smpd_handle_command");
+	return result;
+    }
+    else if (strcmp(cmd->cmd_str, "pmi_listen") == 0)
+    {
+	result = smpd_handle_pmi_listen_command(context);
 	smpd_exit_fn("smpd_handle_command");
 	return result;
     }

@@ -8,6 +8,65 @@
 #include "mpiexec.h"
 #include "smpd.h"
 
+#ifdef HAVE_WINDOWS_H
+void timeout_thread(void *p)
+{
+    MPIU_Size_t num_written;
+    char ch = -1;
+    Sleep(smpd_process.timeout * 1000);
+    smpd_err_printf("\nmpiexec terminated job due to %d second timeout.\n", smpd_process.timeout);
+    if (smpd_process.timeout_sock != MPIDU_SOCK_INVALID_SOCK)
+    {
+	MPIDU_Sock_write(smpd_process.timeout_sock, &ch, 1, &num_written);
+	Sleep(30000); /* give the engine 30 seconds to shutdown and then force an exit */
+    }
+    ExitProcess(-1);
+}
+#else
+#ifdef SIGALRM
+void timeout_function(int signo)
+{
+    MPIU_Size_t num_written;
+    char ch = -1;
+    static int alarmed = 0;
+    if (signo == SIGALRM)
+    {
+	if (smpd_process.timeout_sock != MPIDU_SOCK_INVALID_SOCK && alarmed == 0)
+	{
+	    alarmed = 1;
+	    smpd_err_printf("\nmpiexec terminated job due to %d second timeout.\n", smpd_process.timeout);
+	    MPIDU_Sock_write(smpd_process.timeout_sock, &ch, 1, &num_written);
+	    alarm(30); /* give the engine 30 seconds to shutdown and then force an exit */
+	}
+	else
+	{
+	    if (alarmed == 0)
+	    {
+		smpd_err_printf("\nmpiexec terminated job due to %d second timeout.\n", smpd_process.timeout);
+	    }
+	    exit(-1);
+	}
+    }
+}
+#else
+#ifdef HAVE_PTHREAD_H
+void *timeout_thread(void *p)
+{
+    MPIU_Size_t num_written;
+    char ch = -1;
+    sleep(smpd_process.timeout);
+    smpd_err_printf("\nmpiexec terminated job due to %d second timeout.\n", smpd_process.timeout);
+    if (smpd_process.timeout_sock != MPIDU_SOCK_INVALID_SOCK)
+    {
+	MPIDU_Sock_write(smpd_process.timeout_sock, &ch, 1, &num_written);
+	sleep(30); /* give the engine 30 seconds to shutdown and then force an exit */
+    }
+    exit(-1);
+}
+#endif
+#endif
+#endif
+
 int main(int argc, char* argv[])
 {
     int result = SMPD_SUCCESS;
@@ -26,6 +85,8 @@ int main(int argc, char* argv[])
 	mp_print_options();
 	exit(0);
     }
+
+    smpd_process.mpiexec_argv0 = argv[0];
 
     /* initialize */
     result = PMPI_Init(&argc, &argv);
@@ -110,6 +171,39 @@ int main(int argc, char* argv[])
 
 	/* skip over the non-rsh code and go to the cleanup section */
 	goto quit_job;
+    }
+
+    /* Start the timeout mechanism if specified */
+    if (smpd_process.timeout > 0)
+    {
+#ifdef HAVE_WINDOWS_H
+	/* create a Windows thread to sleep until the timeout expires */
+	if (smpd_process.timeout_thread == NULL)
+	{
+	    smpd_process.timeout_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
+	    if (smpd_process.timeout_thread == NULL)
+	    {
+		printf("Error: unable to create a timeout thread, errno %d.\n", GetLastError());
+		smpd_exit_fn("mp_parse_command_args");
+		return SMPD_FAIL;
+	    }
+	}
+#elif defined(SIGALRM)
+	/* create an alarm to signal mpiexec when the timeout expires */
+	smpd_signal(SIGALRM, timeout_function);
+	alarm(smpd_process.timeout);
+#elif defined(HAVE_PTHREAD_H)
+	/* create a pthread to sleep until the timeout expires */
+	result = pthread_create(&smpd_process.timeout_thread, NULL, timeout_thread, NULL);
+	if (result != 0)
+	{
+	    printf("Error: unable to create a timeout thread, errno %d.\n", result);
+	    smpd_exit_fn("mp_parse_command_args");
+	    return SMPD_FAIL;
+	}
+#else
+	/* no timeout mechanism available */
+#endif
     }
 
     /* make sure we have a passphrase to authenticate connections to the smpds */
@@ -199,7 +293,10 @@ quit_job:
 	CloseHandle(smpd_process.hStdinThread);
     }
     if (smpd_process.hCloseStdinThreadEvent)
+    {
 	CloseHandle(smpd_process.hCloseStdinThreadEvent);
+	smpd_process.hCloseStdinThreadEvent = NULL;
+    }
 #endif
     smpd_exit_fn("main");
     return smpd_exit(smpd_process.mpiexec_exit_code);

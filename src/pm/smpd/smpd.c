@@ -169,6 +169,7 @@ int smpd_entry_point()
     int result;
     MPIDU_Sock_set_t set;
     MPIDU_Sock_t listener;
+    SMPD_BOOL print_port = SMPD_FALSE;
 
     /* This function is called by main or by smpd_service_main in the case of a Windows service */
 
@@ -206,6 +207,8 @@ int smpd_entry_point()
     }
     smpd_process.set = set;
     smpd_dbg_printf("created a set for the listener: %d\n", MPIDU_Sock_get_sock_set_id(set));
+    if (smpd_process.port == 0)
+	print_port = SMPD_TRUE;
     result = MPIDU_Sock_listen(set, NULL, &smpd_process.port, &listener); 
     if (result != MPI_SUCCESS)
     {
@@ -215,6 +218,11 @@ int smpd_entry_point()
 	return result;
     }
     smpd_dbg_printf("smpd listening on port %d\n", smpd_process.port);
+    if (print_port)
+    {
+	printf("%d\n", smpd_process.port);
+	fflush(stdout);
+    }
 
     result = smpd_create_context(SMPD_CONTEXT_LISTENER, set, listener, -1, &smpd_process.listener_context);
     if (result != SMPD_SUCCESS)

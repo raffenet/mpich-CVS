@@ -32,7 +32,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpich2sockd.lib smpd_utild.lib dbgd.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="mpich2sockd.lib ws2_32.lib mswsock.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="..\..\..\bin\mpiexec.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"

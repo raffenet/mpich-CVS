@@ -148,7 +148,18 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* map0to1                 */
       SMPD_FALSE,       /* rsh_mpiexec             */
       SMPD_FALSE,       /* mpiexec_inorder_launch  */
-      SMPD_FALSE        /* mpiexec_run_local       */
+      SMPD_FALSE,       /* mpiexec_run_local       */
+#ifdef HAVE_WINDOWS_H
+      NULL,             /* timeout_thread          */
+#else
+#ifdef HAVE_PTHREADS_H
+      NULL,             /* timeout_thread          */
+#endif
+#endif
+      -1,               /* timeout                 */
+      MPIDU_SOCK_INVALID_SOCK, /* timeout_sock     */
+      SMPD_TRUE,        /* use_pmi_server          */
+      NULL              /* mpiexec_argv0           */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -201,7 +212,7 @@ int smpd_post_abort_command(char *fmt, ...)
 	result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("unable to post a write of the close command to tear down the job tree.\n");
+	    smpd_err_printf("unable to post a write of the close command to tear down the job tree as part of the abort process.\n");
 	    smpd_exit_fn("smpd_enter_at_state");
 	    return SMPD_FAIL;
 	}

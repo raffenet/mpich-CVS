@@ -181,39 +181,6 @@ static int isnumber(char *str)
 }
 
 #ifdef HAVE_WINDOWS_H
-static int g_timeout = 0;
-static HANDLE g_hTimeoutThread = NULL;
-void timeout_thread(void *p)
-{
-    Sleep(g_timeout * 1000);
-    smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
-    ExitProcess(-1);
-}
-#else
-static int g_timeout = -1;
-#ifdef SIGALRM
-void timeout_function(int signo)
-{
-    if (signo == SIGALRM)
-    {
-	smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
-	exit(-1);
-    }
-}
-#else
-#ifdef HAVE_PTHREAD_H
-static pthread_t g_timeoutthread;
-void *timeout_function(void *p)
-{
-    sleep(g_timeout);
-    smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
-    exit(-1);
-}
-#endif
-#endif
-#endif
-
-#ifdef HAVE_WINDOWS_H
 static int mpiexec_assert_hook( int reportType, char *message, int *returnValue )
 {
     fprintf(stderr, "%s", message);
@@ -338,6 +305,36 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	}
     }
 #endif
+
+    if (*argcp == 3)
+    {
+	if ((strcmp((*argvp)[1], "-pmiserver") == 0) || (strcmp((*argvp)[1], "-pmi_server") == 0))
+	{
+	    char host[100];
+	    int id;
+
+	    smpd_process.nproc = atoi((*argvp)[2]);
+	    if (smpd_process.nproc < 1)
+	    {
+		printf("invalid number of processes: %s\n", (*argvp)[2]);
+		smpd_exit(-1);
+	    }
+
+	    /* set up the host list to connect to only the local host */
+	    smpd_get_hostname(host, 100);
+	    result = smpd_get_host_id(host, &id);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to get a id for host %s\n", host);
+		return SMPD_FAIL;
+	    }
+
+	    /* Return without creating any launch_nodes.  This will result in an mpiexec connected to the local smpd
+	     * and no processes launched.
+	     */
+	    return SMPD_SUCCESS;
+	}
+    }
 
     /* check for mpi options */
     /*
@@ -516,6 +513,7 @@ configfile_loop:
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "localonly") == 0)
 	    {
+#if 1
 		/* the run_local flag + the rsh_mpiexec flag causes the rsh code to launch the processes locally */
 		smpd_process.mpiexec_run_local = SMPD_TRUE;
 		smpd_process.rsh_mpiexec = SMPD_TRUE;
@@ -554,6 +552,20 @@ configfile_loop:
 		    smpd_process.launch_list = ordered_list;
 		}
 		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
+#else
+		/* create a host list of one and set nproc to -1 to be replaced by nproc after parsing the block */
+		host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		if (host_list == NULL)
+		{
+		    printf("failed to allocate memory for a host node.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		host_list->next = NULL;
+		host_list->connected = SMPD_FALSE;
+		host_list->nproc = -1;
+		smpd_get_hostname(host_list->host, SMPD_MAX_HOST_LENGTH);
+#endif
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "machinefile") == 0)
 	    {
@@ -982,46 +994,7 @@ configfile_loop:
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-#ifdef HAVE_WINDOWS_H
-		/* create a Windows thread to sleep until the timeout expires */
-		g_timeout = atoi((*argvp)[2]);
-		if (g_timeout > 0 && g_hTimeoutThread == NULL)
-		{
-		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
-		    if (g_hTimeoutThread == NULL)
-		    {
-			printf("Error: unable to create a timeout thread, errno %d.\n", GetLastError());
-			smpd_exit_fn("mp_parse_command_args");
-			return SMPD_FAIL;
-		    }
-		}
-#else
-		if (g_timeout == -1)
-		{
-		    g_timeout = atoi((*argvp)[2]);
-		    if (g_timeout > 0)
-		    {
-#ifdef SIGALRM
-			/* create an alarm to signal mpiexec when the timeout expires */
-			smpd_signal(SIGALRM, timeout_function);
-			alarm(g_timeout);
-#else
-#ifdef HAVE_PTHREAD_H
-			/* create a pthread to sleep until the timeout expires */
-			result = pthread_create(&g_timeoutthread, NULL, timeout_thread, NULL);
-			if (result != 0)
-			{
-			    printf("Error: unable to create a timeout thread, errno %d.\n", result);
-			    smpd_exit_fn("mp_parse_command_args");
-			    return SMPD_FAIL;
-			}
-#endif
-#endif
-		    }
-		    else
-			g_timeout = -1;
-		}
-#endif
+		smpd_process.timeout = atoi((*argvp)[2]);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "hide_console") == 0)
@@ -1052,6 +1025,10 @@ configfile_loop:
 		}
 		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
 	    }
+	    else if ((strcmp(&(*argvp)[1][1], "nosmpd") == 0) || (strcmp(&(*argvp)[1][1], "no_smpd") == 0) || (strcmp(&(*argvp)[1][1], "nopm") == 0))
+	    {
+		smpd_process.use_pmi_server = SMPD_FALSE;
+	    }
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);
@@ -1059,48 +1036,67 @@ configfile_loop:
 	    strip_args(argcp, argvp, num_args_to_strip);
 	}
 
-#ifdef HAVE_WINDOWS_H
-	if (g_hTimeoutThread == NULL)
+	/* check to see if a timeout is specified by the environment variable only if
+	 * a timeout has not been specified on the command line
+	 */
+	if (smpd_process.timeout == -1)
 	{
 	    char *p = getenv("MPIEXEC_TIMEOUT");
 	    if (p)
 	    {
-		g_timeout = atoi(p);
-		if (g_timeout > 0)
-		{
-		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
-		}
+		smpd_process.timeout = atoi(p);
 	    }
 	}
-#else
-	if (g_timeout == -1)
+
+	/* Check to see if the environment wants all processes to run locally.
+	 * This is useful for test scripts.
+	 */
+	env_str = getenv("MPIEXEC_LOCALONLY");
+	if (env_str != NULL)
 	{
-	    char *p = getenv("MPIEXEC_TIMEOUT");
-	    if (p)
+	    if ((strcmp(env_str, "yes") == 0) || *env_str == '1')
 	    {
-		g_timeout = atoi(p);
-		if (g_timeout > 0)
+#if 1
+		/* This block creates a host list of one host to implement -localonly */
+
+		if (host_list == NULL)
 		{
-#ifdef SIGALRM
-		    smpd_signal(SIGALRM, timeout_function);
-		    alarm(g_timeout);
-#else
-#ifdef HAVE_PTHREAD_H
-		    /* create a pthread to sleep until the timeout expires */
-		    result = pthread_create(&g_timeoutthread, NULL, timeout_thread, NULL);
-		    if (result != 0)
+		    /* create a host list of one and set nproc to -1 to be replaced by 
+		       nproc after parsing the block */
+		    host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		    if (host_list == NULL)
 		    {
-			printf("Error: unable to create a timeout thread, errno %d.\n", result);
+			printf("failed to allocate memory for a host node.\n");
 			smpd_exit_fn("mp_parse_command_args");
 			return SMPD_FAIL;
 		    }
-#endif
-#endif
+		    host_list->next = NULL;
+		    host_list->connected = SMPD_FALSE;
+		    host_list->nproc = -1;
+		    smpd_get_hostname(host_list->host, SMPD_MAX_HOST_LENGTH);
 		}
+#else
+		/* This block uses the rsh code to implement -localonly */
+
+		smpd_process.mpiexec_run_local = SMPD_TRUE;
+		smpd_process.rsh_mpiexec = SMPD_TRUE;
+		if (smpd_process.mpiexec_inorder_launch == SMPD_FALSE)
+		{
+		    smpd_launch_node_t *temp_node, *ordered_list = NULL;
+		    /* sort any existing reverse order nodes to be in order */
+		    while (smpd_process.launch_list)
+		    {
+			temp_node = smpd_process.launch_list->next;
+			smpd_process.launch_list->next = ordered_list;
+			ordered_list = smpd_process.launch_list;
+			smpd_process.launch_list = temp_node;
+		    }
+		    smpd_process.launch_list = ordered_list;
+		}
+		smpd_process.mpiexec_inorder_launch = SMPD_TRUE;
+#endif
 	    }
 	}
-#endif
-
 
 	/* remaining args are the executable and it's args */
 	if (argc < 2)

@@ -120,7 +120,10 @@ quit_job:
 	CloseHandle(smpd_process.hStdinThread);
     }
     if (smpd_process.hCloseStdinThreadEvent)
+    {
 	CloseHandle(smpd_process.hCloseStdinThreadEvent);
+	smpd_process.hCloseStdinThreadEvent = NULL;
+    }
 #endif
     smpd_exit_fn("smpd_do_console");
     smpd_exit(0);

@@ -26,6 +26,7 @@ void smpd_print_options(void)
     printf(" -shutdown [hostname]\n");
     printf(" -console [hostname]\n");
     printf(" -status [hostname]\n");
+    printf(" -anyport\n");
     printf("unix only options:\n");
     printf(" -s\n");
     printf(" -r\n");
@@ -78,6 +79,27 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     if (smpd_get_opt(argcp, argvp, "-printprocs"))
     {
 	smpd_watch_processes();
+	smpd_exit(0);
+    }
+
+    if (smpd_get_opt(argcp, argvp, "-hosts"))
+    {
+	char first_host[SMPD_MAX_HOST_LENGTH], host[SMPD_MAX_HOST_LENGTH];
+
+	result = smpd_get_next_hostname(first_host);
+	if (result != SMPD_SUCCESS)
+	    smpd_exit(result);
+	printf("%s\n", first_host);
+	result = smpd_get_next_hostname(host);
+	if (result != SMPD_SUCCESS)
+	    smpd_exit(result);
+	while (strcmp(host, first_host) != 0)
+	{
+	    printf("%s\n", host);
+	    result = smpd_get_next_hostname(host);
+	    if (result != SMPD_SUCCESS)
+		smpd_exit(result);
+	}
 	smpd_exit(0);
     }
 
@@ -137,6 +159,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     /* check for port option */
     smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
     smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+    if (smpd_get_opt(argcp, argvp, "-anyport"))
+    {
+	smpd_process.port = 0;
+	smpd_process.dbg_state = 0; /* turn of debugging or you won't be able to read the port from stdout */
+	smpd_process.bNoTTY = SMPD_FALSE;
+	smpd_process.bService = SMPD_FALSE;
+    }
 
     smpd_process.noprompt = smpd_get_opt(argcp, argvp, "-noprompt");
 

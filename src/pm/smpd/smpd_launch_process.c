@@ -438,6 +438,12 @@ typedef struct smpd_piothread_arg_t
     SOCKET hOut;
 } smpd_piothread_arg_t;
 
+typedef struct smpd_pinthread_arg_t
+{
+    SOCKET hIn;
+    HANDLE hOut;
+} smpd_pinthread_arg_t;
+
 static int smpd_easy_send(SOCKET sock, char *buffer, int length)
 {
     int error;
@@ -506,6 +512,40 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     closesocket(hOut);
     CloseHandle(hIn);
     /*smpd_dbg_printf("*** exiting smpd_piothread ***\n");*/
+    return 0;
+}
+
+int smpd_pinthread(smpd_pinthread_arg_t *p)
+{
+    char ch;
+    DWORD num_written;
+    SOCKET hIn;
+    HANDLE hOut;
+
+    hIn = p->hIn;
+    hOut = p->hOut;
+    free(p);
+    p = NULL;
+
+    smpd_dbg_printf("*** entering smpd_pinthread ***\n");
+    while (1)
+    {
+	if (recv(hIn, &ch, 1, 0) == SOCKET_ERROR)
+	{
+	    smpd_dbg_printf("recv from stdin socket failed, error %d.\n", WSAGetLastError());
+	    break;
+	}
+	if (!WriteFile(hOut, &ch, 1, &num_written, NULL))
+	{
+	    smpd_dbg_printf("WriteFile failed, error %d\n", GetLastError());
+	    break;
+	}
+    }
+    smpd_dbg_printf("*** smpd_pinthread finishing ***\n");
+    FlushFileBuffers(hOut);
+    closesocket(hIn);
+    CloseHandle(hOut);
+    /*smpd_dbg_printf("*** exiting smpd_pinthread ***\n");*/
     return 0;
 }
 
@@ -1295,7 +1335,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	result = execvp( argv[0], argv );
 
 	result = errno;
-	/*fprintf(stderr, "Unable to exec '%s'.\nError %d - %s", process->exe, result, strerror(result));*/
+	/*fprintf(stderr, "Unable to exec '%s'.\nError %d - %s\n", process->exe, result, strerror(result));*/
 	sprintf(process->err_msg, "Error %d - %s", result, strerror(result));
 
 	if (process->pmi != NULL)
@@ -1455,6 +1495,13 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     DWORD exit_code;
     smpd_enter_fn("smpd_wait_process");
 
+    if (wait.hProcess == INVALID_HANDLE_VALUE || wait.hProcess == NULL)
+    {
+	smpd_dbg_printf("No process to wait for.\n");
+	*exit_code_ptr = -1;
+	smpd_exit_fn("smpd_wait_process");
+	return SMPD_SUCCESS;
+    }
     if (WaitForSingleObject(wait.hProcess, INFINITE) != WAIT_OBJECT_0)
     {
 	smpd_err_printf("WaitForSingleObject failed, error %d\n", GetLastError());
@@ -1623,38 +1670,76 @@ int smpd_kill_all_processes(void)
 
     smpd_enter_fn("smpd_kill_all_processes");
 
-    iter = smpd_process.process_list;
-    while (iter)
+    if (smpd_process.rsh_mpiexec)
     {
-#ifdef HAVE_WINDOWS_H
-	/*DWORD dwProcessId;*/
-	smpd_process_from_registry(iter);
-	/* For some reason break signals don't work on processes created by smpd_launch_process
-	printf("ctrl-c process: %s\n", iter->exe);fflush(stdout);
-	dwProcessId = GetProcessId(iter->wait.hProcess);
-	GenerateConsoleCtrlEvent(CTRL_C_EVENT, dwProcessId);
-	if (WaitForSingleObject(iter->wait.hProcess, 1000) != WAIT_OBJECT_0)
+	int i;
+	int count = 0;
+	iter = smpd_process.process_list;
+	while (iter)
 	{
-	    printf("breaking process: %s\n", iter->exe);fflush(stdout);
-	GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, dwProcessId);
-	if (WaitForSingleObject(iter->wait.hProcess, 1000) != WAIT_OBJECT_0)
+	    count++;
+	    iter = iter->next;
+	}
+	if (count > 0)
 	{
-	*/
-	if (!SafeTerminateProcess(iter->wait.hProcess, 123))
-	{
-	    if (GetLastError() != ERROR_PROCESS_ABORTED)
+	    smpd_pwait_t *wait_array;
+	    wait_array = (smpd_pwait_t*)malloc(sizeof(smpd_pwait_t) * count);
+	    for (i=0, iter = smpd_process.process_list; i<count; i++)
 	    {
-		TerminateProcess(iter->wait.hProcess, 255);
+		wait_array[i] = iter->wait;
+		iter = iter->next;
+	    }
+	    for (i=0; i<count; i++)
+	    {
+#ifdef HAVE_WINDOWS_H
+		if (!SafeTerminateProcess(wait_array[i].hProcess, 123))
+		{
+		    if (GetLastError() != ERROR_PROCESS_ABORTED)
+		    {
+			TerminateProcess(wait_array[i].hProcess, 255);
+		    }
+		}
+#else
+		kill(wait_array[i], /*SIGTERM*/SIGKILL);
+#endif
 	    }
 	}
-	/*
-	}
-	}
-	*/
+    }
+    else
+    {
+	iter = smpd_process.process_list;
+	while (iter)
+	{
+#ifdef HAVE_WINDOWS_H
+	    /*DWORD dwProcessId;*/
+	    smpd_process_from_registry(iter);
+	    /* For some reason break signals don't work on processes created by smpd_launch_process
+	    printf("ctrl-c process: %s\n", iter->exe);fflush(stdout);
+	    dwProcessId = GetProcessId(iter->wait.hProcess);
+	    GenerateConsoleCtrlEvent(CTRL_C_EVENT, dwProcessId);
+	    if (WaitForSingleObject(iter->wait.hProcess, 1000) != WAIT_OBJECT_0)
+	    {
+	    printf("breaking process: %s\n", iter->exe);fflush(stdout);
+	    GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, dwProcessId);
+	    if (WaitForSingleObject(iter->wait.hProcess, 1000) != WAIT_OBJECT_0)
+	    {
+	    */
+	    if (!SafeTerminateProcess(iter->wait.hProcess, 123))
+	    {
+		if (GetLastError() != ERROR_PROCESS_ABORTED)
+		{
+		    TerminateProcess(iter->wait.hProcess, 255);
+		}
+	    }
+	    /*
+	    }
+	    }
+	    */
 #else
-	kill(iter->wait, /*SIGTERM*/SIGKILL);
+	    kill(iter->wait, /*SIGTERM*/SIGKILL);
 #endif
-	iter = iter->next;
+	    iter = iter->next;
+	}
     }
 
     smpd_exit_fn("smpd_kill_all_processes");
@@ -1671,6 +1756,10 @@ int smpd_exit(int exitcode)
     if (smpd_process.use_abort_exit_code)
 	exitcode = smpd_process.abort_exit_code;
 #ifdef HAVE_WINDOWS_H
+    if (smpd_process.hCloseStdinThreadEvent)
+    {
+	CloseHandle(smpd_process.hCloseStdinThreadEvent);
+    }
     /* This is necessary because exit() can deadlock flushing file buffers while the stdin thread is running */
     ExitProcess(exitcode);
 #else

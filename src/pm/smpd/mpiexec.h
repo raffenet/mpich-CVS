@@ -16,5 +16,16 @@
 int mp_parse_command_args(int *argcp, char **argvp[]);
 void mp_print_options(void);
 int mpiexec_rsh(void);
+#ifdef HAVE_WINDOWS_H
+void timeout_thread(void *p);
+#else
+#ifdef SIGALRM
+void timeout_function(int signo);
+#else
+#ifdef HAVE_PTHREAD_H
+void *timeout_thread(void *p);
+#endif
+#endif
+#endif
 
 #endif

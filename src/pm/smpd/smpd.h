@@ -37,6 +37,12 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
 #include "mpi.h"
 #include "mpidu_sock.h"
 #include "mpimem.h"
@@ -158,6 +164,7 @@ typedef enum smpd_state_t
     SMPD_SMPD_LISTENING,
     SMPD_MGR_LISTENING,
     SMPD_PMI_LISTENING,
+    SMPD_PMI_SERVER_LISTENING,
     SMPD_MPIEXEC_CONNECTING_TREE,
     SMPD_MPIEXEC_CONNECTING_SMPD,
     SMPD_CONNECTING_RPMI,
@@ -207,6 +214,9 @@ typedef enum smpd_state_t
     SMPD_READING_PROCESS_RESULT,
     SMPD_WRITING_PROCESS_SESSION_ACCEPT,
     SMPD_WRITING_PROCESS_SESSION_REJECT,
+    SMPD_READING_TIMEOUT,
+    SMPD_READING_PMI_ID,
+    SMPD_WRITING_PMI_ID,
     SMPD_END_MARKER_NUM_STATES
 } smpd_state_t;
 
@@ -228,6 +238,7 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_PMI_LISTENER,
     SMPD_CONTEXT_SMPD,
     SMPD_CONTEXT_PMI,
+    SMPD_CONTEXT_TIMEOUT,
     SMPD_CONTEXT_UNDETERMINED,
     SMPD_CONTEXT_FREED
 } smpd_context_type_t;
@@ -338,6 +349,7 @@ typedef struct smpd_process_t
     char err_msg[SMPD_MAX_ERROR_LEN];
     smpd_stdin_write_node_t *stdin_write_list;
     int spawned;
+    SMPD_BOOL local_process;
     struct smpd_process_t *next;
 } smpd_process_t;
 
@@ -534,6 +546,17 @@ typedef struct smpd_global_t
     SMPD_BOOL rsh_mpiexec;
     SMPD_BOOL mpiexec_inorder_launch;
     SMPD_BOOL mpiexec_run_local;
+#ifdef HAVE_WINDOWS_H
+    HANDLE timeout_thread;
+#else
+#ifdef HAVE_PTHREADS_H
+    pthread_t timeout_thread;
+#endif
+#endif
+    int timeout;
+    MPIDU_Sock_t timeout_sock;
+    SMPD_BOOL use_pmi_server;
+    char *mpiexec_argv0;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

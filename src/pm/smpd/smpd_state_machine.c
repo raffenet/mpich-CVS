@@ -109,6 +109,8 @@ char * smpd_get_state_string(smpd_state_t state)
 	return "SMPD_MGR_LISTENING";
     case SMPD_PMI_LISTENING:
 	return "SMPD_PMI_LISTENING";
+    case SMPD_PMI_SERVER_LISTENING:
+	return "SMPD_PMI_SERVER_LISTENING";
     case SMPD_READING_SESSION_REQUEST:
 	return "SMPD_READING_SESSION_REQUEST";
     case SMPD_WRITING_SMPD_SESSION_REQUEST:
@@ -825,8 +827,16 @@ int smpd_state_reading_cmd_header(smpd_context_t *context, MPIDU_Sock_event_t *e
     smpd_enter_fn("smpd_state_reading_cmd_header");
     if (event_ptr->error != MPI_SUCCESS)
     {
-	smpd_err_printf("unable to read the cmd header on the %s context, %s.\n",
-	    smpd_get_context_str(context), get_sock_error_string(event_ptr->error));
+	if (context->type == SMPD_CONTEXT_PMI)
+	{
+	    smpd_dbg_printf("unable to read the cmd header on the %s context, %s.\n",
+		smpd_get_context_str(context), get_sock_error_string(event_ptr->error));
+	}
+	else
+	{
+	    smpd_err_printf("unable to read the cmd header on the %s context, %s.\n",
+		smpd_get_context_str(context), get_sock_error_string(event_ptr->error));
+	}
 	if (smpd_process.root_smpd)
 	{
 	    context->state = SMPD_CLOSING;
@@ -1385,6 +1395,45 @@ int smpd_state_pmi_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_
     return SMPD_FAIL;
 }
 
+int smpd_state_pmi_server_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr, MPIDU_Sock_set_t set)
+{
+    int result;
+    MPIDU_Sock_t new_sock;
+    smpd_process_t *process;
+
+    smpd_enter_fn("smpd_state_pmi_server_listening");
+    result = MPIDU_Sock_accept(context->sock, set, NULL, &new_sock);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("error accepting socket: %s\n", get_sock_error_string(result));
+	smpd_exit_fn("smpd_state_pmi_server_listening");
+	return SMPD_FAIL;
+    }
+    smpd_create_process_struct(-1, &process);
+    process->next = smpd_process.process_list;
+    smpd_process.process_list = process;
+
+    process->pmi->sock = new_sock;
+    process->context_refcount++;
+    result = MPIDU_Sock_set_user_ptr(new_sock, process->pmi);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("unable to set the user pointer on the newly accepted sock, error:\n%s\n",
+	    get_sock_error_string(result));
+	smpd_exit_fn("smpd_state_pmi_server_listening");
+	return SMPD_FAIL;
+    }
+    result = smpd_post_read_command(process->pmi);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a read of a command after accepting a pmi connection.\n");
+	smpd_exit_fn("smpd_state_pmi_server_listening");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("smpd_state_pmi_server_listening");
+    return SMPD_SUCCESS;
+}
+
 int smpd_state_mgr_listening(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr, MPIDU_Sock_set_t set)
 {
     int result;
@@ -1505,7 +1554,42 @@ int smpd_state_reading_session_request(smpd_context_t *context, MPIDU_Sock_event
     }
     else if (strcmp(context->session, SMPD_PMI_SESSION_STR) == 0)
     {
+	smpd_process_t *process;
+
+	/* create a process struct for this pmi connection */
+	smpd_create_process_struct(-1, &process);
+	process->next = smpd_process.process_list;
+	smpd_process.process_list = process;
+
+	/* remove unused contexts */
+	smpd_free_context(process->in);
+	smpd_free_context(process->out);
+	smpd_free_context(process->err);
+
+	/* replace the pmi context with this context */
+	smpd_free_context(process->pmi);
+	process->pmi = context;
+	context->process = process;
+	process->context_refcount++;
+	process->local_process = SMPD_FALSE;
+
 	context->type = SMPD_CONTEXT_PMI;
+
+	/* send the id to be used by the pmi context client to send commands */
+	context->write_state = SMPD_WRITING_PMI_ID;
+	snprintf(context->session, SMPD_SESSION_REQUEST_LEN, "%d", process->id);
+	result = MPIDU_Sock_post_write(context->sock, context->session, SMPD_SESSION_REQUEST_LEN, SMPD_SESSION_REQUEST_LEN, NULL);
+	if (result != MPI_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the context session id string '%s',\nsock error: %s\n",
+		context->session, get_sock_error_string(result));
+	    context->state = SMPD_CLOSING;
+	    result = MPIDU_Sock_post_close(context->sock);
+	    smpd_exit_fn("smpd_state_reading_session_request");
+	    return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+	}
+
+	/*
 	result = smpd_post_read_command(context);
 	if (result != SMPD_SUCCESS)
 	{
@@ -1513,6 +1597,7 @@ int smpd_state_reading_session_request(smpd_context_t *context, MPIDU_Sock_event
 	    smpd_exit_fn("smpd_state_reading_session_request");
 	    return SMPD_FAIL;
 	}
+	*/
     }
     else
     {
@@ -1580,17 +1665,28 @@ int smpd_state_writing_process_session_request(smpd_context_t *context, MPIDU_So
 
 int smpd_state_writing_pmi_session_request(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
-    smpd_enter_fn("smpd_state_writing_process_session_request");
+    int result;
+
+    smpd_enter_fn("smpd_state_writing_pmi_session_request");
     if (event_ptr->error != MPI_SUCCESS)
     {
 	smpd_err_printf("unable to write the pmi session request, %s.\n", get_sock_error_string(event_ptr->error));
-	smpd_exit_fn("smpd_state_writing_process_session_request");
+	smpd_exit_fn("smpd_state_writing_pmi_session_request");
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("wrote pmi session request: '%s'\n", context->session);
     context->write_state = SMPD_IDLE;
-    smpd_exit_fn("smpd_state_writing_process_session_request");
-    return SMPD_DBS_RETURN;
+    context->read_state = SMPD_READING_PMI_ID;
+    result = MPIDU_Sock_post_read(context->sock, context->session, SMPD_SESSION_REQUEST_LEN, SMPD_SESSION_REQUEST_LEN, NULL);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("unable to post a read of the pmi context id,\nsock error: %s\n",
+	    get_sock_error_string(result));
+	smpd_exit_fn("smpd_state_writing_pmi_session_request");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("smpd_state_writing_pmi_session_request");
+    return SMPD_SUCCESS;
 }
 
 int smpd_state_writing_pwd_request(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
@@ -3124,6 +3220,86 @@ int smpd_state_writing_smpd_password(smpd_context_t *context, MPIDU_Sock_event_t
     return SMPD_SUCCESS;
 }
 
+int smpd_state_reading_pmi_id(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
+{
+    int result;
+
+    smpd_enter_fn("smpd_state_reading_pmi_id");
+    if (event_ptr->error != MPI_SUCCESS)
+    {
+	smpd_err_printf("unable to read the pmi context id, %s.\n", get_sock_error_string(event_ptr->error));
+	context->state = SMPD_CLOSING;
+	result = MPIDU_Sock_post_close(context->sock);
+	smpd_exit_fn("smpd_state_reading_pmi_id");
+	return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+    }
+    smpd_dbg_printf("read pmi context id: '%s'\n", context->session);
+    smpd_exit_fn("smpd_state_reading_pmi_id");
+    return SMPD_DBS_RETURN;
+}
+
+int smpd_state_writing_pmi_id(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
+{
+    int result;
+
+    smpd_enter_fn("smpd_state_writing_pmi_id");
+    if (event_ptr->error != MPI_SUCCESS)
+    {
+	smpd_err_printf("unable to write the pmi context id, %s.\n", get_sock_error_string(event_ptr->error));
+	smpd_exit_fn("smpd_state_writing_pmi_id");
+	return SMPD_FAIL;
+    }
+    smpd_dbg_printf("wrote pmi context id: '%s'\n", context->session);
+    context->write_state = SMPD_IDLE;
+
+    result = smpd_post_read_command(context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a read of a command after accepting a pmi connection.\n");
+	smpd_exit_fn("smpd_state_reading_session_request");
+	return SMPD_FAIL;
+    }
+    smpd_exit_fn("smpd_state_writing_pmi_id");
+    return SMPD_SUCCESS;
+}
+
+int smpd_state_reading_timeout(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
+{
+    int result;
+
+    smpd_enter_fn("smpd_state_reading_timeout");
+    if (event_ptr->error != MPI_SUCCESS)
+    {
+	smpd_err_printf("unable to read the timeout byte, %s.\n", get_sock_error_string(event_ptr->error));
+	smpd_exit_fn("smpd_state_reading_timeout");
+	return SMPD_FAIL;
+    }
+    result = smpd_kill_all_processes();
+#ifdef HAVE_WINDOWS_H
+    if (smpd_process.hCloseStdinThreadEvent)
+    {
+	SetEvent(smpd_process.hCloseStdinThreadEvent);
+    }
+    if (smpd_process.hStdinThread != NULL)
+    {
+	if (WaitForSingleObject(smpd_process.hStdinThread, 3000) != WAIT_OBJECT_0)
+	{
+	    TerminateThread(smpd_process.hStdinThread, 321);
+	}
+	CloseHandle(smpd_process.hStdinThread);
+    }
+    /*
+    if (smpd_process.hCloseStdinThreadEvent)
+    {
+	CloseHandle(smpd_process.hCloseStdinThreadEvent);
+	smpd_process.hCloseStdinThreadEvent = NULL;
+    }
+    */
+#endif
+    smpd_exit_fn("smpd_state_reading_timeout");
+    return SMPD_SUCCESS;
+}
+
 int smpd_handle_op_read(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 {
     int result;
@@ -3186,6 +3362,12 @@ int smpd_handle_op_read(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 	break;
     case SMPD_READING_SESSION_HEADER:
 	result = smpd_state_reading_session_header(context, event_ptr);
+	break;
+    case SMPD_READING_TIMEOUT:
+	result = smpd_state_reading_timeout(context, event_ptr);
+	break;
+    case SMPD_READING_PMI_ID:
+	result = smpd_state_reading_pmi_id(context, event_ptr);
 	break;
     default:
 	smpd_err_printf("sock_op_read returned while context is in state: %s\n",
@@ -3276,6 +3458,9 @@ int smpd_handle_op_write(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr,
     case SMPD_WRITING_DATA_TO_STDIN:
 	result = smpd_state_smpd_writing_data_to_stdin(context, event_ptr);
 	break;
+    case SMPD_WRITING_PMI_ID:
+	result = smpd_state_writing_pmi_id(context, event_ptr);
+	break;
     default:
 	if (event_ptr->error != MPI_SUCCESS)
 	{
@@ -3309,6 +3494,9 @@ int smpd_handle_op_accept(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr
 	break;
     case SMPD_PMI_LISTENING:
 	result = smpd_state_pmi_listening(context, event_ptr, set);
+	break;
+    case SMPD_PMI_SERVER_LISTENING:
+	result = smpd_state_pmi_server_listening(context, event_ptr, set);
 	break;
     default:
 	smpd_err_printf("sock_op_accept returned while context is in state: %s\n",
@@ -3477,55 +3665,62 @@ int smpd_handle_op_close(smpd_context_t *context, MPIDU_Sock_event_t *event_ptr)
 
 		smpd_dbg_printf("process refcount == %d, waiting for the process to finish exiting.\n", context->process->context_refcount);
 
+		if (context->process->local_process)
+		{
 #ifdef HAVE_WINDOWS_H
-		smpd_process_from_registry(context->process);
+		    smpd_process_from_registry(context->process);
 #endif
-		result = smpd_wait_process(context->process->wait, &context->process->exitcode);
-		if (result != SMPD_SUCCESS)
-		{
-		    smpd_err_printf("unable to wait for the process to exit: '%s'\n", context->process->exe);
-		    smpd_exit_fn("smpd_handle_op_close");
-		    return SMPD_FAIL;
+		    result = smpd_wait_process(context->process->wait, &context->process->exitcode);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to wait for the process to exit: '%s'\n", context->process->exe);
+			smpd_exit_fn("smpd_handle_op_close");
+			return SMPD_FAIL;
+		    }
 		}
-		/* create the process exited command */
-		result = smpd_create_command("exit", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
-		if (result != SMPD_SUCCESS)
-		{
-		    smpd_err_printf("unable to create an exit command for rank %d\n", context->process->rank);
-		    smpd_exit_fn("smpd_handle_op_close");
-		    return SMPD_FAIL;
-		}
-		result = smpd_add_command_int_arg(cmd_ptr, "rank", context->process->rank);
-		if (result != SMPD_SUCCESS)
-		{
-		    smpd_err_printf("unable to add the rank %d to the exit command.\n", context->process->rank);
-		    smpd_exit_fn("smpd_handle_op_close");
-		    return SMPD_FAIL;
-		}
-		result = smpd_add_command_int_arg(cmd_ptr, "code", context->process->exitcode);
-		if (result != SMPD_SUCCESS)
-		{
-		    smpd_err_printf("unable to add the exit code to the exit command for rank %d\n", context->process->rank);
-		    smpd_exit_fn("smpd_handle_op_close");
-		    return SMPD_FAIL;
-		}
-		result = smpd_add_command_arg(cmd_ptr, "kvs", context->process->kvs_name);
-		if (result != SMPD_SUCCESS)
-		{
-		    smpd_err_printf("unable to add the kvs name to the exit command for rank %d\n", context->process->rank);
-		    smpd_exit_fn("smpd_handle_op_close");
-		    return SMPD_FAIL;
-		}
-		smpd_dbg_printf("creating an exit command for rank %d, pid %d, exit code %d.\n",
-		    context->process->rank, context->process->pid, context->process->exitcode);
 
-		/* send the exit command */
-		result = smpd_post_write_command(smpd_process.parent_context, cmd_ptr);
-		if (result != SMPD_SUCCESS)
+		if (smpd_process.parent_context != NULL)
 		{
-		    smpd_err_printf("unable to post a write of the exit command for rank %d\n", context->process->rank);
-		    smpd_exit_fn("handle_launch_command");
-		    return SMPD_FAIL;
+		    /* create the process exited command */
+		    result = smpd_create_command("exit", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create an exit command for rank %d\n", context->process->rank);
+			smpd_exit_fn("smpd_handle_op_close");
+			return SMPD_FAIL;
+		    }
+		    result = smpd_add_command_int_arg(cmd_ptr, "rank", context->process->rank);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the rank %d to the exit command.\n", context->process->rank);
+			smpd_exit_fn("smpd_handle_op_close");
+			return SMPD_FAIL;
+		    }
+		    result = smpd_add_command_int_arg(cmd_ptr, "code", context->process->exitcode);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the exit code to the exit command for rank %d\n", context->process->rank);
+			smpd_exit_fn("smpd_handle_op_close");
+			return SMPD_FAIL;
+		    }
+		    result = smpd_add_command_arg(cmd_ptr, "kvs", context->process->kvs_name);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the kvs name to the exit command for rank %d\n", context->process->rank);
+			smpd_exit_fn("smpd_handle_op_close");
+			return SMPD_FAIL;
+		    }
+		    smpd_dbg_printf("creating an exit command for rank %d, pid %d, exit code %d.\n",
+			context->process->rank, context->process->pid, context->process->exitcode);
+
+		    /* send the exit command */
+		    result = smpd_post_write_command(smpd_process.parent_context, cmd_ptr);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the exit command for rank %d\n", context->process->rank);
+			smpd_exit_fn("handle_launch_command");
+			return SMPD_FAIL;
+		    }
 		}
 
 		/* remove the process structure from the global list */
@@ -3814,7 +4009,10 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 			context->type != SMPD_CONTEXT_MPIEXEC_STDIN_RSH &&
 			context->type != SMPD_CONTEXT_MPIEXEC_STDIN)
 		    {
-			smpd_err_printf("op_read error on %s context: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
+			if (!((context->type == SMPD_CONTEXT_STDOUT || context->type == SMPD_CONTEXT_STDERR) && event.error == MPIDU_SOCK_ERR_CONN_CLOSED))
+			{
+			    smpd_err_printf("op_read error on %s context: %s\n", smpd_get_context_str(context), get_sock_error_string(event.error));
+			}
 		    }
 		}
 	    }
@@ -3834,8 +4032,34 @@ int smpd_enter_at_state(MPIDU_Sock_set_t set, smpd_state_t state)
 		}
 		if (context->type == SMPD_CONTEXT_MPIEXEC_STDIN || context->type == SMPD_CONTEXT_MPIEXEC_STDIN_RSH)
 		{
+		    smpd_command_t *cmd_ptr;
 		    smpd_dbg_printf("stdin to mpiexec closed.\n");
 		    /* FIXME: should we send a message to the root process manager to close stdin to the root process? */
+#ifdef HAVE_WINDOWS_H
+		    /* If the stdin redirection thread has been signalled to be closed, don't send a close_stdin command */
+		    if (WaitForSingleObject(smpd_process.hCloseStdinThreadEvent, 0) != WAIT_OBJECT_0)
+		    {
+#endif
+		    /* create an close_stdin command */
+		    result = smpd_create_command("close_stdin", 0, 1 /* input always goes to node 1? */, SMPD_FALSE, &cmd_ptr);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create an close_stdin command.\n");
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+
+		    /* send the stdin command */
+		    result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the close_stdin command.\n");
+			smpd_exit_fn("smpd_enter_at_state");
+			return SMPD_FAIL;
+		    }
+#ifdef HAVE_WINDOWS_H
+		    }
+#endif
 		}
 		smpd_dbg_printf("SOCK_OP_READ failed - result = %d, closing %s context.\n", result, smpd_get_context_str(context));
 		context->state = SMPD_CLOSING;

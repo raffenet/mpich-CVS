@@ -97,6 +97,10 @@ static int setup_stdin_redirection(smpd_process_t *process, MPIDU_Sock_set_t set
 #ifdef HAVE_WINDOWS_H
 BOOL WINAPI mpiexec_rsh_handler(DWORD type)
 {
+    static int first = 1;
+    char ch = -1;
+    MPIU_Size_t num_written;
+
     switch (type)
     {
     case CTRL_C_EVENT:
@@ -104,6 +108,15 @@ BOOL WINAPI mpiexec_rsh_handler(DWORD type)
     case CTRL_CLOSE_EVENT:
     case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
+	if (smpd_process.timeout_sock != MPIDU_SOCK_INVALID_SOCK)
+	{
+	    if (first == 1)
+	    {
+		first = 0;
+		MPIDU_Sock_write(smpd_process.timeout_sock, &ch, 1, &num_written);
+		return TRUE;
+	    }
+	}
 	if (smpd_process.hCloseStdinThreadEvent)
 	{
 	    SetEvent(smpd_process.hCloseStdinThreadEvent);
@@ -116,16 +129,109 @@ BOOL WINAPI mpiexec_rsh_handler(DWORD type)
 	    }
 	    CloseHandle(smpd_process.hStdinThread);
 	}
+	/*
 	if (smpd_process.hCloseStdinThreadEvent)
 	{
 	    CloseHandle(smpd_process.hCloseStdinThreadEvent);
+	    smpd_process.hCloseStdinThreadEvent = NULL;
 	}
+	*/
 	smpd_exit(-1);
 	return TRUE;
     }
     return FALSE;
 }
 #endif
+
+static int ConnectToHost(char *host, int port, smpd_state_t state, MPIDU_Sock_set_t set, MPIDU_Sock_t *sockp, smpd_context_t **contextpp)
+{
+    int result;
+    char error_msg[MPI_MAX_ERROR_STRING];
+    int len;
+
+    /*printf("posting a connect to %s:%d\n", host, port);fflush(stdout);*/
+    result = MPIDU_Sock_post_connect(set, NULL, host, port, sockp);
+    if (result != MPI_SUCCESS)
+    {
+	len = MPI_MAX_ERROR_STRING;
+	PMPI_Error_string(result, error_msg, &len);
+	smpd_err_printf("ConnectToHost failed: unable to post a connect to %s:%d, error: %s\n", host, port, error_msg);
+	return SMPD_FAIL;
+    }
+
+    result = smpd_create_context(SMPD_CONTEXT_PMI, set, *sockp, -1, contextpp);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("ConnectToHost failed: unable to create a context to connect to %s:%d with.\n", host, port);
+	return SMPD_FAIL;
+    }
+    (*contextpp)->state = state;
+
+    result = MPIDU_Sock_set_user_ptr(*sockp, *contextpp);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("ConnectToHost failed: unable to set the connect sock user pointer.\n");
+	return SMPD_FAIL;
+    }
+
+    result = smpd_enter_at_state(set, state);
+    if (result != MPI_SUCCESS)
+    {
+	smpd_err_printf("ConnectToHost failed: unable to connect to %s:%d.\n", host, port);
+	return SMPD_FAIL;
+    }
+
+    return SMPD_SUCCESS;
+}
+
+#ifdef HAVE_WINDOWS_H
+#define popen _popen
+#define pclose _pclose
+#endif
+static FILE *pmi_server = NULL;
+int start_pmi_server(int nproc, char *host, int len, int *port)
+{
+    char cmd[100];
+    char line[1024];
+    char *argv0;
+
+    if (smpd_process.mpiexec_argv0 != NULL)
+    {
+	argv0 = smpd_process.mpiexec_argv0;
+    }
+    sprintf(cmd, "%s -pmiserver %d", argv0, nproc);
+    pmi_server = popen(cmd, "r");
+    if (pmi_server == NULL)
+    {
+	smpd_err_printf("popen failed: %d\n", errno);
+	return SMPD_FAIL;
+    }
+    fgets(line, 1024, pmi_server);
+    strtok(line, "\r\n");
+    strncpy(host, line, len);
+    /*printf("read host: %s\n", host);*/
+    fgets(line, 1024, pmi_server);
+    *port = atoi(line);
+    /*printf("read port: %d\n", *port);*/
+    fgets(line, 1024, pmi_server);
+    strtok(line, "\r\n");
+    strncpy(smpd_process.kvs_name, line, SMPD_MAX_DBS_NAME_LEN);
+    /*printf("read kvs: %s\n", smpd_process.kvs_name);*/
+    return SMPD_SUCCESS;
+}
+
+int stop_pmi_server()
+{
+    if (pmi_server != NULL)
+    {
+	if (pclose(pmi_server) == -1)
+	{
+	    smpd_err_printf("pclose failed: %d\n", errno);
+	    return SMPD_FAIL;
+	}
+    }
+    return SMPD_SUCCESS;
+}
 
 int mpiexec_rsh()
 {
@@ -141,6 +247,9 @@ int mpiexec_rsh()
     SMPD_BOOL escape_escape = SMPD_TRUE;
     char *env_str;
     int maxlen;
+    MPIDU_Sock_t abort_sock;
+    smpd_context_t *abort_context;
+    smpd_command_t *cmd_ptr;
 
     smpd_enter_fn("mpiexec_rsh");
 
@@ -173,15 +282,37 @@ int mpiexec_rsh()
 	return SMPD_FAIL;
     }
 
-    /* start the root smpd */
-    result = PMIX_Start_root_smpd(smpd_process.launch_list->nproc, root_host, 100, &root_port);
-    if (result != PMI_SUCCESS)
+    if (smpd_process.use_pmi_server)
     {
-	smpd_err_printf("mpiexec_rsh is unable to start the root smpd.\n");
-	smpd_exit_fn("mpiexec_rsh");
-	return SMPD_FAIL;
+	result = start_pmi_server(smpd_process.launch_list->nproc, root_host, 100, &root_port);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("mpiexec_rsh is unable to start the local pmi server.\n");
+	    smpd_exit_fn("mpiexec_rsh");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("the pmi server is listening on %s:%d\n", root_host, root_port);
     }
-    smpd_dbg_printf("the root smpd is listening on %s:%d\n", root_host, root_port);
+    else
+    {
+	/* start the root smpd */
+	result = PMIX_Start_root_smpd(smpd_process.launch_list->nproc, root_host, 100, &root_port);
+	if (result != PMI_SUCCESS)
+	{
+	    smpd_err_printf("mpiexec_rsh is unable to start the root smpd.\n");
+	    smpd_exit_fn("mpiexec_rsh");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("the root smpd is listening on %s:%d\n", root_host, root_port);
+
+	/* create a connection to the root smpd used to abort the job */
+	result = ConnectToHost(root_host, root_port, SMPD_CONNECTING_RPMI, set, &abort_sock, &abort_context);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_exit_fn("mpiexec_rsh");
+	    return SMPD_FAIL;
+	}
+    }
 
     processes = (smpd_process_t**)malloc(sizeof(smpd_process_t*) * smpd_process.launch_list->nproc);
     if (processes == NULL)
@@ -322,6 +453,58 @@ int mpiexec_rsh()
 	return SMPD_FAIL;
     }
 
+    /* Start the timeout mechanism if specified */
+    if (smpd_process.timeout > 0)
+    {
+	smpd_context_t *reader_context;
+	MPIDU_Sock_t sock_reader;
+	MPIDU_SOCK_NATIVE_FD reader, writer;
+#ifdef HAVE_WINDOWS_H
+	/*SOCKET reader, writer;*/
+	smpd_make_socket_loop((SOCKET*)&reader, (SOCKET*)&writer);
+#else
+	/*int reader, writer;*/
+	int pair[2];
+	socketpair(AF_UNIX, SOCK_STREAM, 0, pair);
+	reader = pair[0];
+	writer = pair[1];
+#endif
+	result = MPIDU_Sock_native_to_sock(set, reader, NULL, &sock_reader);
+	result = MPIDU_Sock_native_to_sock(set, writer, NULL, &smpd_process.timeout_sock);
+	result = smpd_create_context(SMPD_CONTEXT_TIMEOUT, set, sock_reader, -1, &reader_context);
+	reader_context->read_state = SMPD_READING_TIMEOUT;
+	result = MPIDU_Sock_post_read(sock_reader, &reader_context->read_cmd.cmd, 1, 1, NULL);
+#ifdef HAVE_WINDOWS_H
+	/* create a Windows thread to sleep until the timeout expires */
+	smpd_process.timeout_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
+	if (smpd_process.timeout_thread == NULL)
+	{
+	    printf("Error: unable to create a timeout thread, errno %d.\n", GetLastError());
+	    smpd_exit_fn("mp_parse_command_args");
+	    return SMPD_FAIL;
+	}
+#else
+#ifdef SIGALRM
+	/* create an alarm to signal mpiexec when the timeout expires */
+	smpd_signal(SIGALRM, timeout_function);
+	alarm(smpd_process.timeout);
+#else
+#ifdef HAVE_PTHREAD_H
+	/* create a pthread to sleep until the timeout expires */
+	result = pthread_create(&smpd_process.timeout_thread, NULL, timeout_thread, NULL);
+	if (result != 0)
+	{
+	    printf("Error: unable to create a timeout thread, errno %d.\n", result);
+	    smpd_exit_fn("mp_parse_command_args");
+	    return SMPD_FAIL;
+	}
+#else
+	/* no timeout mechanism available */
+#endif
+#endif
+#endif
+    }
+
     result = smpd_enter_at_state(set, SMPD_IDLE);
     if (result != SMPD_SUCCESS)
     {
@@ -330,12 +513,45 @@ int mpiexec_rsh()
 	return SMPD_FAIL;
     }
 
-    result = PMIX_Stop_root_smpd();
-    if (result != PMI_SUCCESS)
+    if (smpd_process.use_pmi_server)
     {
-	smpd_err_printf("mpiexec_rsh unable to stop the root smpd.\n");
-	smpd_exit_fn("mpiexec_rsh");
-	return SMPD_FAIL;
+	result = stop_pmi_server();
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("mpiexec_rsh unable to stop the pmi server.\n");
+	    smpd_exit_fn("mpiexec_rsh");
+	    return SMPD_FAIL;
+	}
+    }
+    else
+    {
+	/* Send an abort command to the root_smpd thread/process to insure that it exits.
+	 * This only needs to be sent when there is an error or failed process of some sort
+	 * but it is safe to send it in all cases.
+	 */
+	result = smpd_create_command("abort", 0, 0, SMPD_FALSE, &cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create an abort command.\n");
+	    smpd_exit_fn("mpiexec_rsh");
+	    return SMPD_FAIL;
+	}
+	result = smpd_post_write_command(abort_context, cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    /* Only print this as a debug message instead of an error because the root_smpd thread/process may have already exited. */
+	    smpd_dbg_printf("unable to post a write of the abort command to the %s context.\n", smpd_get_context_str(abort_context));
+	    smpd_exit_fn("mpiexec_rsh");
+	    return SMPD_FAIL;
+	}
+
+	result = PMIX_Stop_root_smpd();
+	if (result != PMI_SUCCESS)
+	{
+	    smpd_err_printf("mpiexec_rsh unable to stop the root smpd.\n");
+	    smpd_exit_fn("mpiexec_rsh");
+	    return SMPD_FAIL;
+	}
     }
 
     smpd_exit_fn("mpiexec_rsh");
