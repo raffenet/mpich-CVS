@@ -308,6 +308,22 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *send
                     MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
                 }
             }
+
+            for (i=0; i<comm_size; i++) {
+                if (sendcnts[i] > 0) {
+                    MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcnts[i], mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(sendbuf,sendcnts[i],sendtypes[i],mpi_errno); 
+                    break;
+                }
+            }
+            for (i=0; i<comm_size; i++) {
+                if (recvcnts[i] > 0) {
+                    MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcnts[i], mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcnts[i],recvtypes[i],mpi_errno); 
+                    break;
+                }
+            }
+
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

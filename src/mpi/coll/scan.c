@@ -310,6 +310,13 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             }
+
+            /* in_place option allowed. no error check */
+            MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);
+
+            MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
+            MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
+
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

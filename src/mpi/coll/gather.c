@@ -527,6 +527,7 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                         MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                         MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
                     }
+                    MPIR_ERRTEST_USERBUFFER(sendbuf,sendcnt,sendtype,mpi_errno);
                 }
                 
                 rank = comm_ptr->rank;
@@ -537,7 +538,11 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                         MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                         MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
                     }
+                    MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcnt, mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcnt,recvtype,mpi_errno);
                 }
+                else
+                    MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcnt, mpi_errno);
             }
 
 	    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
@@ -550,6 +555,8 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                         MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                         MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
                     }
+                    MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcnt, mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcnt,recvtype,mpi_errno);                    
                 }
                 
                 else if (root != MPI_PROC_NULL) {
@@ -559,6 +566,8 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
                         MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                         MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
                     }
+                    MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcnt, mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(sendbuf,sendcnt,sendtype,mpi_errno);
                 }
             }
 

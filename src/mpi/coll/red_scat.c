@@ -1013,7 +1013,7 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
         {
 	    MPID_Datatype *datatype_ptr = NULL;
             MPID_Op *op_ptr = NULL;
-            int rank, i, size;
+            int i, size, sum;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
@@ -1024,17 +1024,27 @@ int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype
             size = comm_ptr->local_size; 
             /* even in intercomm. case, recvcnts is of size local_size */
 
+            sum = 0;
 	    for (i=0; i<size; i++) {
 		MPIR_ERRTEST_COUNT(recvcnts[i],mpi_errno);
+                sum += recvcnts[i];
 	    }
-            rank = comm_ptr->rank;
-	    MPIR_ERRTEST_DATATYPE(recvcnts[rank], datatype, mpi_errno);
-	    MPIR_ERRTEST_OP(op, mpi_errno);
-	    
+
+	    MPIR_ERRTEST_DATATYPE(sum, datatype, mpi_errno);
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             }
+
+            MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcnts[comm_ptr->rank], mpi_errno);
+	    if (comm_ptr->comm_kind == MPID_INTERCOMM) 
+                MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sum, mpi_errno);
+
+            MPIR_ERRTEST_USERBUFFER(recvbuf,recvcnts[comm_ptr->rank],datatype,mpi_errno);
+            MPIR_ERRTEST_USERBUFFER(sendbuf,sum,datatype,mpi_errno); 
+
+	    MPIR_ERRTEST_OP(op, mpi_errno);
+
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE_SCATTER);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

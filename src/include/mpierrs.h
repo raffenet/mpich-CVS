@@ -117,6 +117,18 @@
     }															\
 }
 
+#define MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf,count,err) \
+  if (count > 0 && sendbuf == MPI_IN_PLACE) {\
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_BUFFER, "**sendbuf_inplace", 0 );}
+
+#define MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf,count,err) \
+  if (count > 0 && recvbuf == MPI_IN_PLACE) {\
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_BUFFER, "**recvbuf_inplace", 0 );}
+
+#define MPIR_ERRTEST_BUF_INPLACE(buf,count,err) \
+  if (count > 0 && buf == MPI_IN_PLACE) {\
+      err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_BUFFER, "**buf_inplace", 0 );}
+
 /*
  * Check that the triple (buf,count,datatype) does not specify a null
  * buffer.  This does not guarantee that the buffer is valid but does

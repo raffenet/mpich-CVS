@@ -654,6 +654,8 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
 
+	    if (comm_ptr->comm_kind == MPID_INTERCOMM)
+                MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcount, mpi_errno);
             if (sendbuf != MPI_IN_PLACE) {
                 MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
                 MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
@@ -661,6 +663,7 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                     MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                     MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
                 }
+                MPIR_ERRTEST_USERBUFFER(sendbuf,sendcount,sendtype,mpi_errno);
             }
 
             if (comm_ptr->comm_kind == MPID_INTRACOMM) 
@@ -676,6 +679,13 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
             if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                 MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+            }
+            for (i=0; i<comm_size; i++) {
+                if (recvcounts[i] > 0) {
+                    MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf,recvcounts[i],mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcounts[i],recvtype,mpi_errno); 
+                    break;
+                }
             }
     
             if (mpi_errno != MPI_SUCCESS) {

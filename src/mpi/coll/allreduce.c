@@ -869,6 +869,15 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             }
 
+	    if (comm_ptr->comm_kind == MPID_INTERCOMM)
+                MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, count, mpi_errno);
+            
+            if (sendbuf != MPI_IN_PLACE) 
+                MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);
+
+            MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
+	    MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
+
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
 		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

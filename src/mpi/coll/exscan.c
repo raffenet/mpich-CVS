@@ -313,6 +313,7 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
         {
 	    MPID_Datatype *datatype_ptr = NULL;
             MPID_Op *op_ptr = NULL;
+            int rank;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
@@ -328,6 +329,19 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             }
+
+            rank = comm_ptr->rank;
+
+            /* no in_place allowed */
+
+            MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, count, mpi_errno);
+            MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);
+
+            if (rank != 0) {
+                MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
+                MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
+            }
+
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

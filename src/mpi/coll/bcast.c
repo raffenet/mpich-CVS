@@ -694,6 +694,9 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             }
+
+            MPIR_ERRTEST_BUF_INPLACE(buffer, count, mpi_errno);
+            MPIR_ERRTEST_USERBUFFER(buffer,count,datatype,mpi_errno);
             
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
@@ -742,5 +745,3 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     }
     /* ... end of body of routine ... */
 }
-
-

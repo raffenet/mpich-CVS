@@ -211,6 +211,7 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                         MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                         MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
                     }
+                    MPIR_ERRTEST_USERBUFFER(sendbuf,sendcnt,sendtype,mpi_errno);
                 }
 
                 rank = comm_ptr->rank;
@@ -224,7 +225,17 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                         MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                         MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
                     }
+
+                    for (i=0; i<comm_size; i++) {
+                        if (recvcnts[i] > 0) {
+                            MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcnts[i], mpi_errno);
+                            MPIR_ERRTEST_USERBUFFER(recvbuf,recvcnts[i],recvtype,mpi_errno); 
+                            break;
+                        }
+                    }
                 }
+                else
+                    MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcnt, mpi_errno);
             }
 
 	    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
@@ -240,6 +251,13 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                         MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                         MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
                     }
+                    for (i=0; i<comm_size; i++) {
+                        if (recvcnts[i] > 0) {
+                            MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcnts[i], mpi_errno);
+                            MPIR_ERRTEST_USERBUFFER(recvbuf,recvcnts[i],recvtype,mpi_errno); 
+                            break;
+                        }
+                    }
                 }
                 else if (root != MPI_PROC_NULL) {
                     MPIR_ERRTEST_COUNT(sendcnt, mpi_errno);
@@ -248,6 +266,8 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                         MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                         MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
                     }
+                    MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcnt, mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(sendbuf,sendcnt,sendtype,mpi_errno);
                 }
 	    }
 

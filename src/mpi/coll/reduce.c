@@ -725,25 +725,64 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
         {
 	    MPID_Datatype *datatype_ptr = NULL;
             MPID_Op *op_ptr = NULL;
+            int rank;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
                 return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
             }
-	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+
 	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
 		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
-	    }
-	    else {
-		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
-	    }
-	    MPIR_ERRTEST_OP(op, mpi_errno);
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
-                MPID_Datatype_get_ptr(datatype, datatype_ptr);
-                MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+
+                MPIR_ERRTEST_COUNT(count, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+                if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+                    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                }
+
+                if (sendbuf != MPI_IN_PLACE)
+                    MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);
+
+                rank = comm_ptr->rank;
+                if (rank == root) {
+                    MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
+                }
+                else
+                    MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, count, mpi_errno);
             }
+
+	    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
+
+                if (root == MPI_ROOT) {
+                    MPIR_ERRTEST_COUNT(count, mpi_errno);
+                    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+                    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                        MPID_Datatype_get_ptr(datatype, datatype_ptr);
+                        MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                    }
+                    MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
+                }
+                
+                else if (root != MPI_PROC_NULL) {
+                    MPIR_ERRTEST_COUNT(count, mpi_errno);
+                    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
+                    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                        MPID_Datatype_get_ptr(datatype, datatype_ptr);
+                        MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                    }
+                    MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, count, mpi_errno);
+                    MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);
+                }
+            }
+
+	    MPIR_ERRTEST_OP(op, mpi_errno);
+
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_REDUCE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

@@ -32,4 +32,17 @@ coll12
 scatterv
 scattern
 rerr
+bcast2
+exscan2
+icallgather
+icallgatherv
+icallreduce
+icalltoall
+icbarrier
+icbcast
+icgather
+icgatherv
+icreduce
+icscatter
+icscatterv
 .deps
