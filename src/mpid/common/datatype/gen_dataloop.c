@@ -20,7 +20,7 @@
 #error "You must explicitly include a header that sets the PREPEND_PREFIX and includes gen_dataloop.h"
 #endif
 
-#define DEBUG_DLOOP_SIZE
+#undef DEBUG_DLOOP_SIZE
 
 /* Dataloops
  *
