@@ -502,7 +502,12 @@ if ("$buildMakefile") {
     }
     &print_endline( MAKEFD );
 
+    # FWRAPNAME is the name of a library that contains ONLY the 
+    # Fortran wrappers
+    print MAKEFD "FWRAPNAME = \@FWRAPNAME\@\n";
     print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} setbotf.f \
+lib\${FWRAPNAME}_a_DIR = ROOTDIR/lib\
+lib\${FWRAPNAME}_a_SOURCES = \${mpi_sources}\
 \
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\
