@@ -293,9 +293,9 @@ copy shmRelease\mpich2.lib lib\mpich2.lib
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3mmDebug|Win32"
-			OutputDirectory="ch3mmDebug"
-			IntermediateDirectory="ch3mmDebug"
+			Name="ch3ssmDebug|Win32"
+			OutputDirectory="ch3ssmDebug"
+			IntermediateDirectory="ch3ssmDebug"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -303,15 +303,15 @@ copy shmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\ch3mmDebug/mpich2.pch"
-				AssemblerListingLocation=".\ch3mmDebug/"
-				ObjectFile=".\ch3mmDebug/"
-				ProgramDataBaseFileName=".\ch3mmDebug/"
+				PrecompiledHeaderFile=".\ch3ssmDebug/mpich2.pch"
+				AssemblerListingLocation=".\ch3ssmDebug/"
+				ObjectFile=".\ch3ssmDebug/"
+				ProgramDataBaseFileName=".\ch3ssmDebug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -322,27 +322,27 @@ copy shmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2mmcd.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="smpd_utild.lib dbgd.lib sockd.lib ch3ssmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\debug,src\pm\winmpd\mpdutil\debug,src\pm\winmpd\mpichinfo\debug,src\pm\winmpd\crypt\debug,lib"
 				ModuleDefinitionFile=".\mpich2.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\ch3mmDebug/mpich2d.pdb"
-				ImportLibrary=".\ch3mmDebug/mpich2d.lib"/>
+				ProgramDatabaseFile=".\ch3ssmDebug/mpich2d.pdb"
+				ImportLibrary=".\ch3ssmDebug/mpich2d.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\ch3mmDebug/mpich2.tlb"/>
+				TypeLibraryName=".\ch3ssmDebug/mpich2.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
+copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -364,9 +364,9 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3mmRelease|Win32"
-			OutputDirectory="ch3mmRelease"
-			IntermediateDirectory="ch3mmRelease"
+			Name="ch3ssmRelease|Win32"
+			OutputDirectory="ch3ssmRelease"
+			IntermediateDirectory="ch3ssmRelease"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -374,16 +374,16 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\ch3mmRelease/mpich2.pch"
-				AssemblerListingLocation=".\ch3mmRelease/"
-				ObjectFile=".\ch3mmRelease/"
-				ProgramDataBaseFileName=".\ch3mmRelease/"
+				PrecompiledHeaderFile=".\ch3ssmRelease/mpich2.pch"
+				AssemblerListingLocation=".\ch3ssmRelease/"
+				ObjectFile=".\ch3ssmRelease/"
+				ProgramDataBaseFileName=".\ch3ssmRelease/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -393,26 +393,26 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2mmc.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="smpd_util.lib dbg.lib sock.lib ch3ssm.lib pmi.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\release,src\pm\winmpd\mpdutil\release,src\pm\winmpd\mpichinfo\release,src\pm\winmpd\crypt\release,lib"
 				ModuleDefinitionFile=".\mpich2.def"
-				ProgramDatabaseFile=".\ch3mmRelease/mpich2.pdb"
-				ImportLibrary=".\ch3mmRelease/mpich2.lib"/>
+				ProgramDatabaseFile=".\ch3ssmRelease/mpich2.pdb"
+				ImportLibrary=".\ch3ssmRelease/mpich2.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\ch3mmRelease/mpich2.tlb"/>
+				TypeLibraryName=".\ch3ssmRelease/mpich2.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3mmRelease\mpich2.lib lib\mpich2.lib
+copy ch3ssmRelease\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -661,9 +661,9 @@ copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3mmPDebug|Win32"
-			OutputDirectory="ch3mmPDebug"
-			IntermediateDirectory="ch3mmPDebug"
+			Name="ch3ssmPDebug|Win32"
+			OutputDirectory="ch3ssmPDebug"
+			IntermediateDirectory="ch3ssmPDebug"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -671,15 +671,15 @@ copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
 				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\ch3mmPDebug/mpich2.pch"
-				AssemblerListingLocation=".\ch3mmPDebug/"
-				ObjectFile=".\ch3mmPDebug/"
-				ProgramDataBaseFileName=".\ch3mmPDebug/"
+				PrecompiledHeaderFile=".\ch3ssmPDebug/mpich2.pch"
+				AssemblerListingLocation=".\ch3ssmPDebug/"
+				ObjectFile=".\ch3ssmPDebug/"
+				ProgramDataBaseFileName=".\ch3ssmPDebug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -690,27 +690,27 @@ copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2mmcd.lib dbgd.lib rlogd.lib sockd.lib ch3mmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="mpich2mmcd.lib dbgd.lib rlogd.lib sockd.lib ch3ssmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\debug,src\pm\winmpd\mpdutil\debug,src\pm\winmpd\mpichinfo\debug,src\pm\winmpd\crypt\debug,lib"
 				ModuleDefinitionFile=".\mpich2.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\ch3mmPDebug/mpich2d.pdb"
-				ImportLibrary=".\ch3mmPDebug/mpich2d.lib"/>
+				ProgramDatabaseFile=".\ch3ssmPDebug/mpich2d.pdb"
+				ImportLibrary=".\ch3ssmPDebug/mpich2d.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\ch3mmPDebug/mpich2.tlb"/>
+				TypeLibraryName=".\ch3ssmPDebug/mpich2.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
+copy ch3ssmPDebug\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -747,10 +747,10 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\ch3mmDebug/mpich2.pch"
-				AssemblerListingLocation=".\ch3mmDebug/"
-				ObjectFile=".\ch3mmDebug/"
-				ProgramDataBaseFileName=".\ch3mmDebug/"
+				PrecompiledHeaderFile=".\ch3ssmDebug/mpich2.pch"
+				AssemblerListingLocation=".\ch3ssmDebug/"
+				ObjectFile=".\ch3ssmDebug/"
+				ProgramDataBaseFileName=".\ch3ssmDebug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -768,20 +768,20 @@ copy ch3mmPDebug\mpich2d.lib lib\mpich2d.lib
 				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\debug,src\pm\winmpd\mpdutil\debug,src\pm\winmpd\mpichinfo\debug,src\pm\winmpd\crypt\debug,lib"
 				ModuleDefinitionFile=".\mpich2.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\ch3mmDebug/mpich2d.pdb"
-				ImportLibrary=".\ch3mmDebug/mpich2d.lib"/>
+				ProgramDatabaseFile=".\ch3ssmDebug/mpich2d.pdb"
+				ImportLibrary=".\ch3ssmDebug/mpich2d.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\ch3mmDebug/mpich2.tlb"/>
+				TypeLibraryName=".\ch3ssmDebug/mpich2.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2d.dll to system32 directory"
 				CommandLine="copy lib\mpich2d.dll %SystemRoot%\system32\mpich2d.dll
-copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
+copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -819,10 +819,10 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\ch3mmRelease/mpich2.pch"
-				AssemblerListingLocation=".\ch3mmRelease/"
-				ObjectFile=".\ch3mmRelease/"
-				ProgramDataBaseFileName=".\ch3mmRelease/"
+				PrecompiledHeaderFile=".\ch3ssmRelease/mpich2.pch"
+				AssemblerListingLocation=".\ch3ssmRelease/"
+				ObjectFile=".\ch3ssmRelease/"
+				ProgramDataBaseFileName=".\ch3ssmRelease/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -838,20 +838,20 @@ copy ch3mmDebug\mpich2d.lib lib\mpich2d.lib
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="src\pm\winmpd\bsocket2\release,src\pm\winmpd\mpdutil\release,src\pm\winmpd\mpichinfo\release,src\pm\winmpd\crypt\release,lib"
 				ModuleDefinitionFile=".\mpich2.def"
-				ProgramDatabaseFile=".\ch3mmRelease/mpich2.pdb"
-				ImportLibrary=".\ch3mmRelease/mpich2.lib"/>
+				ProgramDatabaseFile=".\ch3ssmRelease/mpich2.pdb"
+				ImportLibrary=".\ch3ssmRelease/mpich2.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\ch3mmRelease/mpich2.tlb"/>
+				TypeLibraryName=".\ch3ssmRelease/mpich2.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="copying mpich2.dll to system32 directory"
 				CommandLine="copy lib\mpich2.dll %SystemRoot%\system32\mpich2.dll
-copy ch3mmRelease\mpich2.lib lib\mpich2.lib
+copy ch3ssmRelease\mpich2.lib lib\mpich2.lib
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
@@ -1257,13 +1257,13 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmDebug|Win32"
+					Name="ch3ssmDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmRelease|Win32"
+					Name="ch3ssmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1287,7 +1287,7 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmPDebug|Win32"
+					Name="ch3ssmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1338,13 +1338,13 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmDebug|Win32"
+					Name="ch3ssmDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmRelease|Win32"
+					Name="ch3ssmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1368,7 +1368,7 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmPDebug|Win32"
+					Name="ch3ssmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1413,13 +1413,13 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmDebug|Win32"
+					Name="ch3ssmDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmRelease|Win32"
+					Name="ch3ssmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1443,7 +1443,7 @@ copy ch3mmRelease\mpich2.lib lib\mpich2.lib
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmPDebug|Win32"
+					Name="ch3ssmPDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>

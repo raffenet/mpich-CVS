@@ -95,15 +95,15 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3mmDebug|Win32"
-			OutputDirectory="ch3mmDebug"
-			IntermediateDirectory="ch3mmDebug"
+			Name="ch3ssmDebug|Win32"
+			OutputDirectory="ch3ssmDebug"
+			IntermediateDirectory="ch3ssmDebug"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -122,7 +122,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Combining libraries into mpich2mmcd.lib"
-				CommandLine="lib lib\mpich2mmcd.lib lib\ch3mmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
+				CommandLine="lib lib\mpich2mmcd.lib lib\ch3ssmd.lib lib\cxxd.lib lib\dbgd.lib lib\pmid.lib lib\sockd.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -139,9 +139,9 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3mmRelease|Win32"
-			OutputDirectory="ch3mmRelease"
-			IntermediateDirectory="ch3mmRelease"
+			Name="ch3ssmRelease|Win32"
+			OutputDirectory="ch3ssmRelease"
+			IntermediateDirectory="ch3ssmRelease"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
@@ -149,7 +149,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\mm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -168,7 +168,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Combining libraries into mpich2mmc.lib"
-				CommandLine="lib lib\mpich2mmc.lib lib\ch3mm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
+				CommandLine="lib lib\mpich2mmc.lib lib\ch3ssm.lib lib\cxx.lib lib\dbg.lib lib\pmi.lib lib\sock.lib"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -913,13 +913,13 @@
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmDebug|Win32"
+					Name="ch3ssmDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmRelease|Win32"
+					Name="ch3ssmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -988,13 +988,13 @@
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmDebug|Win32"
+					Name="ch3ssmDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmRelease|Win32"
+					Name="ch3ssmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1066,13 +1066,13 @@
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmDebug|Win32"
+					Name="ch3ssmDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmRelease|Win32"
+					Name="ch3ssmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -1141,13 +1141,13 @@
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmDebug|Win32"
+					Name="ch3ssmDebug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ch3mmRelease|Win32"
+					Name="ch3ssmRelease|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>

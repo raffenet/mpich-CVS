@@ -97,15 +97,15 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3mmDebug|Win32"
-			OutputDirectory="ch3mmDebug"
-			IntermediateDirectory="ch3mmDebug"
+			Name="ch3ssmDebug|Win32"
+			OutputDirectory="ch3ssmDebug"
+			IntermediateDirectory="ch3ssmDebug"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\mm\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp"
+				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\ssm\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;USE_WINCONF_H;MPICH_DBG_OUTPUT"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -307,9 +307,9 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="ch3mmRelease|Win32"
-			OutputDirectory="ch3mmRelease"
-			IntermediateDirectory="ch3mmRelease"
+			Name="ch3ssmRelease|Win32"
+			OutputDirectory="ch3ssmRelease"
+			IntermediateDirectory="ch3ssmRelease"
 			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
@@ -317,7 +317,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\mm\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp"
+				AdditionalIncludeDirectories="..\..\include,..\..\mpid\ch3\include,..\..\mpid\ch3\channels\ssm\include,..\..\mpid\common\datatype,..\..\mpid\common\sock,..\..\mpid\common\sock\iocp"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_WINCONF_H"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
