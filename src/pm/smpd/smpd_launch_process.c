@@ -420,13 +420,56 @@ static void RemoveEnvironmentVariables(char *bEnv)
 
 int smpd_priority_class_to_win_class(int *priorityClass)
 {
-    *priorityClass = NORMAL_PRIORITY_CLASS;
+    switch (*priorityClass)
+    {
+    case 0:
+	*priorityClass = IDLE_PRIORITY_CLASS;
+	break;
+    case 1:
+	*priorityClass = BELOW_NORMAL_PRIORITY_CLASS;
+	break;
+    case 2:
+	*priorityClass = NORMAL_PRIORITY_CLASS;
+	break;
+    case 3:
+	*priorityClass = ABOVE_NORMAL_PRIORITY_CLASS;
+	break;
+    case 4:
+	*priorityClass = HIGH_PRIORITY_CLASS;
+	break;
+    default:
+	*priorityClass = NORMAL_PRIORITY_CLASS;
+	break;
+    }
     return SMPD_SUCCESS;
 }
 
 int smpd_priority_to_win_priority(int *priority)
 {
-    *priority = THREAD_PRIORITY_NORMAL;
+    switch (*priority)
+    {
+    case 0:
+	*priority = THREAD_PRIORITY_IDLE;
+	break;
+    case 1:
+	*priority = THREAD_PRIORITY_LOWEST;
+	break;
+    case 2:
+	*priority = THREAD_PRIORITY_BELOW_NORMAL;
+	break;
+    case 3:
+	*priority = THREAD_PRIORITY_NORMAL;
+	break;
+    case 4:
+	*priority = THREAD_PRIORITY_ABOVE_NORMAL;
+	break;
+    case 5:
+	*priority = THREAD_PRIORITY_HIGHEST;
+	break;
+    default:
+	*priority = THREAD_PRIORITY_NORMAL;
+	break;
+    }
     return SMPD_SUCCESS;
 }
 
@@ -479,6 +522,7 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     DWORD num_read;
     HANDLE hIn;
     SOCKET hOut;
+    DWORD error;
 
     hIn = p->hIn;
     hOut = p->hOut;
@@ -488,9 +532,20 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     smpd_dbg_printf("*** entering smpd_piothread ***\n");
     for (;;)
     {
+	num_read = 0;
 	if (!ReadFile(hIn, buffer, 8192, &num_read, NULL))
 	{
-	    smpd_dbg_printf("ReadFile failed, error %d\n", GetLastError());
+	    error = GetLastError();
+	    /* If there was an error but some bytes were read, send those bytes before exiting */
+	    if (num_read > 0)
+	    {
+		if (smpd_easy_send(hOut, buffer, num_read) == SOCKET_ERROR)
+		{
+		    smpd_dbg_printf("smpd_easy_send of %d bytes failed.\n", num_read);
+		    break;
+		}
+	    }
+	    smpd_dbg_printf("ReadFile failed, error %d\n", error);
 	    break;
 	}
 	if (num_read < 1)
@@ -515,6 +570,72 @@ int smpd_piothread(smpd_piothread_arg_t *p)
     return 0;
 }
 
+/* one line at a time version */
+int smpd_pinthread(smpd_pinthread_arg_t *p)
+{
+    char str [SMPD_MAX_CMD_LENGTH];
+    int index;
+    DWORD num_written;
+    SOCKET hIn;
+    HANDLE hOut;
+    /*int i;*/
+
+    hIn = p->hIn;
+    hOut = p->hOut;
+    free(p);
+    p = NULL;
+
+    smpd_dbg_printf("*** entering smpd_pinthread ***\n");
+    index = 0;
+    for (;;)
+    {
+	if (recv(hIn, &str[index], 1, 0) == SOCKET_ERROR)
+	{
+	    if (index > 0)
+	    {
+		/* write any buffered data before exiting */
+		if (!WriteFile(hOut, str, index, &num_written, NULL))
+		{
+		    smpd_dbg_printf("WriteFile failed, error %d\n", GetLastError());
+		    break;
+		}
+	    }
+	    smpd_dbg_printf("recv from stdin socket failed, error %d.\n", WSAGetLastError());
+	    break;
+	}
+	if (str[index] == '\n' || index == SMPD_MAX_CMD_LENGTH-1)
+	{
+	    smpd_dbg_printf("writing %d bytes to the process's stdin\n", index+1);
+	    if (!WriteFile(hOut, str, index+1, &num_written, NULL))
+	    {
+		smpd_dbg_printf("WriteFile failed, error %d\n", GetLastError());
+		break;
+	    }
+	    /*
+	    smpd_dbg_printf("wrote: ");
+	    for (i=0; i<=index; i++)
+	    {
+		smpd_dbg_printf("(%d)'%c'", (int)str[i], str[i]);
+	    }
+	    smpd_dbg_printf("\n");
+	    */
+	    index = 0;
+	}
+	else
+	{
+	    smpd_dbg_printf("read character(%d)'%c'\n", (int)str[index], str[index]);
+	    index++;
+	}
+    }
+    smpd_dbg_printf("*** smpd_pinthread finishing ***\n");
+    FlushFileBuffers(hOut);
+    closesocket(hIn);
+    CloseHandle(hOut);
+    /*smpd_dbg_printf("*** exiting smpd_pinthread ***\n");*/
+    return 0;
+}
+#if 0
+/* 1 byte at a time version */
 int smpd_pinthread(smpd_pinthread_arg_t *p)
 {
     char ch;
@@ -548,6 +669,7 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
     /*smpd_dbg_printf("*** exiting smpd_pinthread ***\n");*/
     return 0;
 }
+#endif
 
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
 {
@@ -556,7 +678,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     SOCKET hSockStdoutR = INVALID_SOCKET, hSockStdoutW = INVALID_SOCKET;
     SOCKET hSockStderrR = INVALID_SOCKET, hSockStderrW = INVALID_SOCKET;
     SOCKET hSockPmiR = INVALID_SOCKET, hSockPmiW = INVALID_SOCKET;
-    /*HANDLE hPipeStdinR = NULL, hPipeStdinW = NULL;*/
+    HANDLE hPipeStdinR = NULL, hPipeStdinW = NULL;
     HANDLE hPipeStdoutR = NULL, hPipeStdoutW = NULL;
     HANDLE hPipeStderrR = NULL, hPipeStderrW = NULL;
     HANDLE hIn = INVALID_HANDLE_VALUE, hOut = INVALID_HANDLE_VALUE, hErr = INVALID_HANDLE_VALUE;
@@ -617,12 +739,14 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     smpd_priority_to_win_priority(&priority);
 
     /* Save stdin, stdout, and stderr */
+    WaitForSingleObject(smpd_process.hLaunchProcessMutex, INFINITE);
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     hStderr = GetStdHandle(STD_ERROR_HANDLE);
     if (hStdin == INVALID_HANDLE_VALUE || hStdout == INVALID_HANDLE_VALUE  || hStderr == INVALID_HANDLE_VALUE)
     {
 	nError = GetLastError(); /* This will only be correct if stderr failed */
+	ReleaseMutex(smpd_process.hLaunchProcessMutex);
 	smpd_err_printf("GetStdHandle failed, error %d\n", nError);
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_FAIL;;
@@ -699,6 +823,11 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     saAttr.bInheritHandle = TRUE;
 
     /* Create the pipes for stdout, stderr */
+    if (!CreatePipe(&hPipeStdinR, &hPipeStdinW, &saAttr, 0))
+    {
+	smpd_err_printf("CreatePipe(stdin) failed, error %d\n", GetLastError());
+	goto CLEANUP;
+    }
     if (!CreatePipe(&hPipeStdoutR, &hPipeStdoutW, &saAttr, 0))
     {
 	smpd_err_printf("CreatePipe(stdout) failed, error %d\n", GetLastError());
@@ -711,7 +840,16 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
 
     /* Make the ends of the pipes that this process will use not inheritable */
+    /*
     if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdinW, GetCurrentProcess(), &hIn, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    */
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hPipeStdinW, GetCurrentProcess(), &hIn, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
 	nError = GetLastError();
@@ -760,6 +898,13 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
 
     /* prevent the socket loops from being inherited */
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdinR, GetCurrentProcess(), (LPHANDLE)&hSockStdinR, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
     if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdoutR, GetCurrentProcess(), (LPHANDLE)&hSockStdoutR, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
@@ -768,6 +913,13 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	goto CLEANUP;
     }
     if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStderrR, GetCurrentProcess(), (LPHANDLE)&hSockStderrR, 
+	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
+    {
+	nError = GetLastError();
+	smpd_err_printf("DuplicateHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)hSockStdinW, GetCurrentProcess(), (LPHANDLE)&hSockStdinW, 
 	0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS))
     {
 	nError = GetLastError();
@@ -790,8 +942,10 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     }
 
     /* make the ends used by the spawned process blocking */
+    /*
     blocking_flag = 0;
     ioctlsocket(hSockStdinR, FIONBIO, &blocking_flag);
+    */
     /*
     blocking_flag = 0;
     ioctlsocket(hSockStdoutW, FIONBIO, &blocking_flag);
@@ -800,7 +954,15 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     */
 
     /* Set stdin, stdout, and stderr to the ends of the pipe the created process will use */
+    /*
     if (!SetStdHandle(STD_INPUT_HANDLE, (HANDLE)hSockStdinR))
+    {
+	nError = GetLastError();
+	smpd_err_printf("SetStdHandle failed, error %d\n", nError);
+	goto CLEANUP;
+    }
+    */
+    if (!SetStdHandle(STD_INPUT_HANDLE, (HANDLE)hPipeStdinR))
     {
 	nError = GetLastError();
 	smpd_err_printf("SetStdHandle failed, error %d\n", nError);
@@ -836,7 +998,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     /* Create the process */
     memset(&saInfo, 0, sizeof(STARTUPINFO));
     saInfo.cb = sizeof(STARTUPINFO);
-    saInfo.hStdInput = (HANDLE)hSockStdinR;
+    /*saInfo.hStdInput = (HANDLE)hSockStdinR;*/
+    saInfo.hStdInput = (HANDLE)hPipeStdinR;
     /*
     saInfo.hStdOutput = (HANDLE)hSockStdoutW;
     saInfo.hStdError = (HANDLE)hSockStderrW;
@@ -954,7 +1117,14 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     if (bSuccess)
     {
 	/* make sock structures out of the sockets */
+	/*
 	nError = MPIDU_Sock_native_to_sock(set, hIn, NULL, &sock_in);
+	if (nError != MPI_SUCCESS)
+	{
+	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
+	}
+	*/
+	nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockStdinW, NULL, &sock_in);
 	if (nError != MPI_SUCCESS)
 	{
 	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
@@ -993,7 +1163,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     else
     {
 	/* close all the sockets and handles allocated in this function */
-	CloseHandle(hIn);
+	/*CloseHandle(hIn);*/
+	CloseHandle((HANDLE)hSockStdinW);
 	CloseHandle((HANDLE)hSockStdoutR);
 	CloseHandle((HANDLE)hSockStderrR);
 	if (process->pmi != NULL && smpd_process.use_inherited_handles)
@@ -1007,7 +1178,9 @@ RESTORE_CLEANUP:
     SetStdHandle(STD_ERROR_HANDLE, hStderr);
 
 CLEANUP:
-    CloseHandle((HANDLE)hSockStdinR);
+    ReleaseMutex(smpd_process.hLaunchProcessMutex);
+    /*CloseHandle((HANDLE)hSockStdinR);*/
+    CloseHandle((HANDLE)hPipeStdinR);
     /*
     CloseHandle((HANDLE)hSockStdoutW);
     CloseHandle((HANDLE)hSockStderrW);
@@ -1021,7 +1194,13 @@ CLEANUP:
     {
 	HANDLE hThread;
 	smpd_piothread_arg_t *arg_ptr;
+	smpd_pinthread_arg_t *in_arg_ptr;
 
+	in_arg_ptr = (smpd_pinthread_arg_t*)malloc(sizeof(smpd_pinthread_arg_t));
+	in_arg_ptr->hIn = hSockStdinR;
+	in_arg_ptr->hOut = hPipeStdinW;
+	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_pinthread, in_arg_ptr, 0, NULL);
+	CloseHandle(hThread);
 	arg_ptr = (smpd_piothread_arg_t*)malloc(sizeof(smpd_piothread_arg_t));
 	arg_ptr->hIn = hOut;
 	arg_ptr->hOut = hSockStdoutW;

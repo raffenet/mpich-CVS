@@ -7,6 +7,200 @@
 #include "smpd.h"
 
 #ifdef HAVE_WINDOWS_H
+/*
+static void print_bytes(char *str, int length)
+{
+    int i;
+    printf("%d bytes: '", length);
+    for (i=0; i<length; i++)
+    {
+	if (str[i] > 20)
+	{
+	    printf("%c", str[i]);
+	}
+	else
+	{
+	    printf("(%d)", (int)str[i]);
+	}
+    }
+    printf("'\n");
+    fflush(stdout);
+}
+*/
+void smpd_stdin_thread(SOCKET hWrite)
+{
+    DWORD num_read;
+    char str[SMPD_MAX_CMD_LENGTH];
+    int index;
+    HANDLE h;
+
+    smpd_dbg_printf("smpd_stdin_thread started.\n");
+    /* acquire the launch process mutex to avoid grabbing a redirected input handle */
+    WaitForSingleObject(smpd_process.hLaunchProcessMutex, INFINITE);
+    h = GetStdHandle(STD_INPUT_HANDLE);
+    ReleaseMutex(smpd_process.hLaunchProcessMutex);
+    if (h == NULL || h == INVALID_HANDLE_VALUE)
+    {
+	/* Don't print an error in case there is no stdin handle */
+	smpd_dbg_printf("Unable to get the stdin handle.\n");
+	return;
+    }
+    index = 0;
+    for (;;)
+    {
+	/*smpd_dbg_printf("waiting for input from stdin\n");*/
+	num_read = 0;
+	str[index] = '\0';
+	if (ReadFile(h, &str[index], 1, &num_read, NULL))
+	{
+	    if (num_read < 1)
+	    {
+		/* forward any buffered data */
+		if (index > 0)
+		{
+		    if (send(hWrite, str, index, 0) == SOCKET_ERROR)
+		    {
+			smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
+			return;
+		    }
+		}
+		/* ReadFile failed, what do I do? */
+		shutdown(hWrite, SD_BOTH);
+		closesocket(hWrite);
+		smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
+		return;
+	    }
+	    /*printf("CHAR(%d)", (int)str[index]);fflush(stdout);*/
+	    if (str[index] == '\n' || index == SMPD_MAX_CMD_LENGTH-1)
+	    {
+		num_read = index + 1;
+		index = 0; /* reset the index back to the beginning of the input buffer */
+		smpd_dbg_printf("forwarding stdin: %d bytes\n", num_read);
+		/*print_bytes(str, num_read);*/
+		if (send(hWrite, str, num_read, 0) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
+		    return;
+		}
+	    }
+	    else
+	    {
+		index++;
+	    }
+	}
+	else
+	{
+	    /* forward any buffered data */
+	    if (index > 0)
+	    {
+		if (send(hWrite, str, index, 0) == SOCKET_ERROR)
+		{
+		    smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
+		    return;
+		}
+	    }
+	    /* ReadFile failed, what do I do? */
+	    shutdown(hWrite, SD_BOTH);
+	    closesocket(hWrite);
+	    smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
+	    return;
+	}
+    }
+}
+/* forward entire input lines at a time version */
+#if 0
+void smpd_stdin_thread(SOCKET hWrite)
+{
+    DWORD num_read;
+    char str[SMPD_MAX_CMD_LENGTH];
+    int index;
+    HANDLE h[2];
+    int result;
+    /*int i;*/
+
+    smpd_dbg_printf("smpd_stdin_thread started.\n");
+    /* acquire the launch process mutex to avoid grabbing a redirected input handle */
+    WaitForSingleObject(smpd_process.hLaunchProcessMutex, INFINITE);
+    h[0] = GetStdHandle(STD_INPUT_HANDLE);
+    ReleaseMutex(smpd_process.hLaunchProcessMutex);
+    if (h[0] == NULL || h[0] == INVALID_HANDLE_VALUE)
+    {
+	smpd_err_printf("Unable to get the stdin handle.\n");
+	return;
+    }
+    h[1] = smpd_process.hCloseStdinThreadEvent;
+    index = 0;
+    for (;;)
+    {
+	/*smpd_dbg_printf("waiting for input from stdin\n");*/
+	result = WaitForMultipleObjects(2, h, FALSE, INFINITE);
+	if (result == WAIT_OBJECT_0)
+	{
+	    num_read = 0;
+	    str[index] = '\0';
+	    if (ReadFile(h[0], &str[index], 1, &num_read, NULL))
+	    {
+		if (num_read < 1)
+		{
+		    /* ReadFile failed, what do I do? */
+		    shutdown(hWrite, SD_BOTH);
+		    closesocket(hWrite);
+		    smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
+		    return;
+		}
+		printf("CHAR(%d)", (int)str[index]);fflush(stdout);
+		if (str[index] == '\n' || index == SMPD_MAX_CMD_LENGTH-1)
+		{
+		    num_read = index + 1;
+		    index = 0; /* reset the index back to the beginning of the input buffer */
+		    smpd_dbg_printf("forwarding stdin: %d bytes\n", num_read);
+		    print_bytes(str, num_read);
+		    /*
+		    printf("forwarding stdin: '");
+		    for (i=0; i<num_read; i++)
+		    {
+		    printf("%c", str[i]);
+		    }
+		    printf("'\n");
+		    fflush(stdout);
+		    */
+		    if (send(hWrite, str, num_read, 0) == SOCKET_ERROR)
+		    {
+			smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
+			return;
+		    }
+		}
+		else
+		{
+		    index++;
+		}
+	    }
+	    else
+	    {
+		/* ReadFile failed, what do I do? */
+		shutdown(hWrite, SD_BOTH);
+		closesocket(hWrite);
+		smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
+		return;
+	    }
+	}
+	else if (result == WAIT_OBJECT_0 + 1)
+	{
+	    shutdown(hWrite, SD_BOTH);
+	    closesocket(hWrite);
+	    smpd_dbg_printf("hCloseStdinThreadEvent signalled, closing stdin reader thread.\n");
+	    return;
+	}
+	else
+	{
+	    smpd_err_printf("stdin wait failed, error %d\n", GetLastError());
+	    return;
+	}
+    }
+}
+#endif
+#if 0
+/* 1 byte at a time version */
 void smpd_stdin_thread(SOCKET hWrite)
 {
     DWORD num_read;
@@ -16,7 +210,10 @@ void smpd_stdin_thread(SOCKET hWrite)
     /*int i;*/
 
     smpd_dbg_printf("smpd_stdin_thread started.\n");
+    /* acquire the launch process mutex to avoid grabbing a redirected input handle */
+    WaitForSingleObject(smpd_process.hLaunchProcessMutex, INFINITE);
     h[0] = GetStdHandle(STD_INPUT_HANDLE);
+    ReleaseMutex(smpd_process.hLaunchProcessMutex);
     if (h[0] == NULL)
     {
 	smpd_err_printf("Unable to get the stdin handle.\n");
@@ -29,7 +226,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 	result = WaitForMultipleObjects(2, h, FALSE, INFINITE);
 	if (result == WAIT_OBJECT_0)
 	{
-	    if (ReadFile(h[0], str, SMPD_MAX_CMD_LENGTH, &num_read, NULL))
+	    if (ReadFile(h[0], str, 1/*SMPD_MAX_CMD_LENGTH*/, &num_read, NULL))
 	    {
 		smpd_dbg_printf("forwarding stdin: %d bytes\n", num_read);
 		/*
@@ -54,7 +251,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 		    /* ReadFile failed, what do I do? */
 		    shutdown(hWrite, SD_BOTH);
 		    closesocket(hWrite);
-		    smpd_dbg_printf("fgets failed, closing stdin reader thread.\n");
+		    smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
 		    return;
 		}
 	    }
@@ -63,7 +260,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 		/* ReadFile failed, what do I do? */
 		shutdown(hWrite, SD_BOTH);
 		closesocket(hWrite);
-		smpd_dbg_printf("fgets failed, closing stdin reader thread.\n");
+		smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
 		return;
 	    }
 	}
@@ -81,6 +278,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 	}
     }
 }
+#endif
 #if 0
 /* fgets version */
 void smpd_stdin_thread(SOCKET hWrite)
@@ -91,7 +289,10 @@ void smpd_stdin_thread(SOCKET hWrite)
     int result;
 
     smpd_dbg_printf("smpd_stdin_thread started.\n");
+    /* acquire the launch process mutex to avoid grabbing a redirected input handle */
+    WaitForSingleObject(smpd_process.hLaunchProcessMutex, INFINITE);
     h[0] = GetStdHandle(STD_INPUT_HANDLE);
+    ReleaseMutex(smpd_process.hLaunchProcessMutex);
     if (h[0] == NULL)
     {
 	smpd_err_printf("Unable to get the stdin handle.\n");
@@ -3428,6 +3629,8 @@ int smpd_state_reading_timeout(smpd_context_t *context, MPIDU_Sock_event_t *even
     }
     if (smpd_process.hStdinThread != NULL)
     {
+	/* close stdin so the input thread will exit */
+	CloseHandle(GetStdHandle(STD_INPUT_HANDLE));
 	if (WaitForSingleObject(smpd_process.hStdinThread, 3000) != WAIT_OBJECT_0)
 	{
 	    TerminateThread(smpd_process.hStdinThread, 321);

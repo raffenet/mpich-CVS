@@ -148,6 +148,8 @@ typedef int SMPD_BOOL;
 
 #define SMPD_DEFAULT_TIMEOUT              120
 #define SMPD_SHORT_TIMEOUT                 60
+#define SMPD_DEFAULT_PRIORITY_CLASS         2
+#define SMPD_DEFAULT_PRIORITY               3
 
 #define SMPD_UNREFERENCED_ARG(a) a
 
@@ -383,6 +385,7 @@ typedef struct smpd_launch_node_t
     int iproc;
     int nproc;
     int appnum;
+    int priority_class, priority_thread;
     struct smpd_launch_node_t *next, *prev;
 } smpd_launch_node_t;
 
@@ -514,6 +517,7 @@ typedef struct smpd_global_t
 #ifdef HAVE_WINDOWS_H
     BOOL bOutputInitialized;
     HANDLE hOutputMutex;
+    HANDLE hLaunchProcessMutex;
 #endif
 #ifdef USE_WIN_MUTEX_PROTECT
     HANDLE hDBSMutex;
@@ -723,5 +727,6 @@ int PMIX_Stop_root_smpd(void);
 int smpd_hash(char *input, int input_length, char *output, int output_length);
 int smpd_encrypt_data(char *input, int input_length, char *output, int output_length);
 int smpd_decrypt_data(char *input, int input_length, char *output, int *output_length);
+int smpd_get_all_smpd_data(smpd_data_t **data);
 
 #endif

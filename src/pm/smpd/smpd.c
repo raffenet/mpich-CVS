@@ -317,11 +317,13 @@ int smpd_entry_point()
 	    get_sock_error_string(result));
     }
 
+    /*
     result = MPIDU_Sock_finalize();
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
+    */
 
     smpd_exit_fn("smpd_entry_point");
     return 0;

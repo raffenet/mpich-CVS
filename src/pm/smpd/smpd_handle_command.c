@@ -551,6 +551,24 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 	    smpd_err_printf("unable to add the domain name('%s') to the launch command\n", domain_name);
 	    goto launch_failure;
 	}
+	if (launch_node_ptr->priority_class != SMPD_DEFAULT_PRIORITY_CLASS)
+	{
+	    result = smpd_add_command_int_arg(cmd_ptr, "pc", launch_node_ptr->priority_class);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the priority class field to the launch command: %d\n", launch_node_ptr->priority_class);
+		goto launch_failure;
+	    }
+	}
+	if (launch_node_ptr->priority_thread != SMPD_DEFAULT_PRIORITY)
+	{
+	    result = smpd_add_command_int_arg(cmd_ptr, "pt", launch_node_ptr->priority_thread);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the priority field to the launch command: %d\n", launch_node_ptr->priority_thread);
+		goto launch_failure;
+	    }
+	}
 	map_iter = launch_node_ptr->map_list;
 	i = 0;
 	while (map_iter)
@@ -1496,6 +1514,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
     smpd_command_t *cmd, *temp_cmd;
     smpd_process_t *process;
     char share[SMPD_MAX_EXE_LENGTH];
+    int priority_class = SMPD_DEFAULT_PRIORITY_CLASS, priority_thread = SMPD_DEFAULT_PRIORITY;
 
     smpd_enter_fn("handle_launch_command");
 
@@ -1527,6 +1546,8 @@ int smpd_handle_launch_command(smpd_context_t *context)
     MPIU_Str_get_int_arg(cmd->cmd, "n", &process->nproc);
     MPIU_Str_get_int_arg(cmd->cmd, "s", &process->spawned);
     MPIU_Str_get_int_arg(cmd->cmd, "a", &process->appnum);
+    MPIU_Str_get_int_arg(cmd->cmd, "pc", &priority_class);
+    MPIU_Str_get_int_arg(cmd->cmd, "pt", &priority_thread);
     /* parse the -m drive mapping options */
     nmaps = 0;
     MPIU_Str_get_int_arg(cmd->cmd, "mn", &nmaps);
@@ -1561,7 +1582,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 
     /* launch the process */
     smpd_dbg_printf("launching: '%s'\n", process->exe);
-    result = smpd_launch_process(process, 2, 3, SMPD_FALSE, context->set);
+    result = smpd_launch_process(process, priority_class, priority_thread, SMPD_FALSE, context->set);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("launch_process failed.\n");

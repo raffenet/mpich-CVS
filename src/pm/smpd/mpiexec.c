@@ -287,6 +287,8 @@ quit_job:
 	SetEvent(smpd_process.hCloseStdinThreadEvent);
     if (smpd_process.hStdinThread != NULL)
     {
+	/* close stdin so the input thread will exit */
+	CloseHandle(GetStdHandle(STD_INPUT_HANDLE));
 	if (WaitForSingleObject(smpd_process.hStdinThread, 3000) != WAIT_OBJECT_0)
 	{
 	    TerminateThread(smpd_process.hStdinThread, 321);

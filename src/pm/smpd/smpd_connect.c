@@ -97,6 +97,7 @@ smpd_global_t smpd_process =
 #ifdef HAVE_WINDOWS_H
       FALSE,            /* bOutputInitialized     */
       NULL,             /* hOutputMutex           */
+      NULL,             /* hLaunchProcessMutex    */
 #endif
 #ifdef USE_WIN_MUTEX_PROTECT
       NULL,             /* hDBSMutext             */
@@ -321,8 +322,10 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     }
 
     /* set the nodelay option */
+    /*
     b = TRUE;
     setsockopt(*pWrite, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
+    */
 
     /* Set the linger on close option */
     /*
@@ -347,6 +350,13 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     /* Accept the connection from myself */
     len = sizeof(sockAddr);
     *pRead = accept(sock, (SOCKADDR*)&sockAddr, &len);
+
+    /* set the nodelay option */
+    b = TRUE;
+    setsockopt(*pWrite, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
+    /* set the nodelay option */
+    b = TRUE;
+    setsockopt(*pRead, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
 
     closesocket(sock);
     return 0;
@@ -443,6 +453,10 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     len = sizeof(sockAddr);
     *pRead = accept(sock, (SOCKADDR*)&sockAddr, &len);
 
+    /* set the nodelay option */
+    b = TRUE;
+    setsockopt(*pRead, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
+
     closesocket(sock);
     return 0;
 }
@@ -506,6 +520,7 @@ int smpd_init_process(void)
 
 #ifdef HAVE_WINDOWS_H
     smpd_process.hBombDiffuseEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    smpd_process.hLaunchProcessMutex = CreateMutex(NULL, FALSE, NULL);
 #else
     homedir = getenv("HOME");
     strcpy(smpd_process.smpd_filename, homedir);

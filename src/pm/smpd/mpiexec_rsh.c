@@ -123,6 +123,8 @@ BOOL WINAPI mpiexec_rsh_handler(DWORD type)
 	}
 	if (smpd_process.hStdinThread != NULL)
 	{
+	    /* close stdin so the input thread will exit */
+	    CloseHandle(GetStdHandle(STD_INPUT_HANDLE));
 	    if (WaitForSingleObject(smpd_process.hStdinThread, 3000) != WAIT_OBJECT_0)
 	    {
 		TerminateThread(smpd_process.hStdinThread, 321);
@@ -427,7 +429,7 @@ int mpiexec_rsh()
 
 	/* call smpd_launch_process */
 	smpd_dbg_printf("launching: %s\n", process->exe);
-	result = smpd_launch_process(process, 2, 3, SMPD_FALSE, set);
+	result = smpd_launch_process(process, SMPD_DEFAULT_PRIORITY_CLASS, SMPD_DEFAULT_PRIORITY, SMPD_FALSE, set);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to launch process %d <%s>.\n", i, process->exe);
