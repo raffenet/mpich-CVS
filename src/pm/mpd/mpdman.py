@@ -339,8 +339,9 @@ def mpdman():
                             mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif msg['cmd'] == 'pmi_get':
                     if msg['from_rank'] == myRank:
-                        pmiMsgToSend = 'cmd=get_result rc=-1 msg="%s"\n' % msg['key']
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+			if pmiSocket:  # may have disappeared in early shutdown
+                            pmiMsgToSend = 'cmd=get_result rc=-1 msg="%s"\n' % msg['key']
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         kvsname = msg['kvsname']
                         key = msg['key']
@@ -357,8 +358,9 @@ def mpdman():
                             mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'pmi_get_response':
                     if msg['to_rank'] == myRank:
-                        pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (msg['value'])
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+			if pmiSocket:  # may have disappeared in early shutdown
+                            pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (msg['value'])
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'signal':
@@ -405,12 +407,13 @@ def mpdman():
                 elif msg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
                     # print "RMB: MAN %d: HANDLING INTERRUPT_PEER from lhs" % myRank
                     if int(msg['torank']) == myRank:
-                        pmiMsgToSend = '%s\n' % (msg['msg'])
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                        select([],[],[],0.1)  # minor pause before intr
-                        select([],[],[],0.1)
-                        kill(clientPid,SIGUSR1)
-                        # print "RMB: MAN %d: in INTERRUPT_PEER msg=:%s:" % (myRank,pmiMsgToSend)
+			if pmiSocket:  # may have disappeared in early shutdown
+                            pmiMsgToSend = '%s\n' % (msg['msg'])
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                            select([],[],[],0.1)  # minor pause before intr
+                            select([],[],[],0.1)
+                            kill(clientPid,SIGUSR1)
+                            # print "RMB: MAN %d: in INTERRUPT_PEER msg=:%s:" % (myRank,pmiMsgToSend)
                     else:
                         mpd_send_one_msg(rhsSocket,msg)
                 else:
@@ -553,10 +556,11 @@ def mpdman():
                                   'kvsname' : default_kvsname,
                                   'kvs' : default_kvs }
                     mpd_send_one_msg(readySocket,msgToSend)
-                    pmiMsgToSend = \
-                         'cmd=spawn_result status=spawn_done remote_kvsname=%s\n' % \
-                             msg['kvsname']
-                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
+		    if pmiSocket:  # may have disappeared in early shutdown
+                        pmiMsgToSend = \
+                             'cmd=spawn_result status=spawn_done remote_kvsname=%s\n' % \
+                                 msg['kvsname']
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 else:
                     mpd_print(1, "unrecognized msg from spawned child :%s:" % line )
             elif readySocket == pmiSocket:
@@ -573,6 +577,7 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msgToSend)
                     del socketsToSelect[pmiSocket]
                     pmiSocket.close()
+		    pmiSocket = 0
                     if pmiCollectiveJob:
                         if conSocket:
                             msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'rank' : myRank }
