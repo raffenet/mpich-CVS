@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -26,6 +25,9 @@
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
 typedef struct Factors { int val, cnt; } Factors;
+/* This routine may be global if we are not using weak symbols */
+PMPI_LOCAL int factor( int, Factors [], int * );
+
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Dims_create PMPI_Dims_create
 
@@ -51,7 +53,6 @@ typedef struct Factors { int val, cnt; } Factors;
 	  811,  821,  823,  827,  829,  839,  853,  857,  859,  863, 
 	  877,  881,  883,  887,  907,  911,  919,  929,  937,  941, 
 	  947,  953,  967,  971,  977,  983,  991,  997};
-PMPI_LOCAL int factor( int, Factors [], int * );
 
 PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
 {
@@ -202,6 +203,11 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    if (!dims_needed) {
+	/* Special case - all dimensions provided */
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
+	return MPI_SUCCESS;
+    }
     nnodes /= dims_product;
 
     /* Now, factor nnodes into dims_needed components.  We'd like these
@@ -246,9 +252,10 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 		}
 	    }
 	}
-	/* Any remaining dims are set to one */
+	/* Any remaining unset dims are set to one */
 	for (i++;i<ndims; i++) {
-	    dims[i] = 1;
+	    if (dims[i] == 0) 
+		dims[i] = 1;
 	}
     }
     else {
@@ -262,7 +269,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	    /* Special case for k**n, such as powers of 2 */
 	    int factor = factors[0].val;
 	    int cnt    = factors[0].cnt; /* Numver of factors left */
-	    int cnteach = ( cnt + dims_needed - 1 )/ dims_needed;
+	    int cnteach = ( cnt + dims_needed - 1 ) / dims_needed;
 	    int factor_each;
 	    
 	    factor_each = factor;
