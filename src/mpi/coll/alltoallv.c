@@ -58,7 +58,7 @@ PMPI_LOCAL int MPIR_Alltoallv (
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status *starray;
     MPI_Request *reqarray;
-    int dst, rank;
+    int dst, rank, req_cnt;
     MPI_Comm comm;
     
     comm = comm_ptr->handle;
@@ -75,29 +75,36 @@ PMPI_LOCAL int MPIR_Alltoallv (
     starray = (MPI_Status *) MPIU_Malloc(2*comm_size*sizeof(MPI_Status));
     reqarray = (MPI_Request *) MPIU_Malloc(2*comm_size*sizeof(MPI_Request));
 
+    req_cnt = 0;
     for ( i=0; i<comm_size; i++ ) { 
         dst = (rank+i) % comm_size;
-        mpi_errno = MPIC_Irecv((char *)recvbuf+rdispls[dst]*recv_extent, 
-                               recvcnts[dst], recvtype, dst,
-                               MPIR_ALLTOALLV_TAG, comm,
-                               &reqarray[i]);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno) return mpi_errno;
-	/* --END ERROR HANDLING-- */
+        if (recvcnts[dst]) {
+            mpi_errno = MPIC_Irecv((char *)recvbuf+rdispls[dst]*recv_extent, 
+                                   recvcnts[dst], recvtype, dst,
+                                   MPIR_ALLTOALLV_TAG, comm,
+                                   &reqarray[req_cnt]);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno) return mpi_errno;
+            /* --END ERROR HANDLING-- */
+            req_cnt++;
+        }
     }
 
     for ( i=0; i<comm_size; i++ ) { 
         dst = (rank+i) % comm_size;
-        mpi_errno = MPIC_Isend((char *)sendbuf+sdispls[dst]*send_extent, 
-                               sendcnts[dst], sendtype, dst,
-                               MPIR_ALLTOALLV_TAG, comm,
-                               &reqarray[i+comm_size]);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno) return mpi_errno;
-	/* --END ERROR HANDLING-- */
+        if (sendcnts[dst]) {
+            mpi_errno = MPIC_Isend((char *)sendbuf+sdispls[dst]*send_extent, 
+                                   sendcnts[dst], sendtype, dst,
+                                   MPIR_ALLTOALLV_TAG, comm,
+                                   &reqarray[req_cnt]);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno) return mpi_errno;
+            /* --END ERROR HANDLING-- */
+            req_cnt++;
+        }
     }
 
-    mpi_errno = NMPI_Waitall(2*comm_size, reqarray, starray);
+    mpi_errno = NMPI_Waitall(req_cnt, reqarray, starray);
 
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_ERR_IN_STATUS) {
