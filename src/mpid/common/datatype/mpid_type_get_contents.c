@@ -36,6 +36,7 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 			   MPI_Aint array_of_addresses[], 
 			   MPI_Datatype array_of_datatypes[])
 {
+    int i;
     MPID_Datatype *dtp;
     MPID_Datatype_contents *cp;
     char *ptr;
@@ -69,6 +70,13 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
     }
 
     if (cp->nr_aints > 0) memcpy(array_of_addresses, ptr, cp->nr_aints * sizeof(MPI_Aint));
+
+    for (i=0; i < cp->nr_types; i++) {
+    	if (HANDLE_GET_KIND(array_of_datatypes[i]) != HANDLE_KIND_BUILTIN) {
+	    MPID_Datatype_get_ptr(array_of_datatypes[i], dtp);
+	    MPID_Datatype_add_ref(dtp);
+	}
+    }
 
     return MPI_SUCCESS;
 }

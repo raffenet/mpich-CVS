@@ -54,7 +54,7 @@ int MPID_Datatype_set_contents(MPID_Datatype *new_dtp,
     for (i=0; i < nr_types; i++) {
 	if (HANDLE_GET_KIND(array_of_types[i]) != HANDLE_KIND_BUILTIN) {
 	    MPID_Datatype_get_ptr(array_of_types[i], old_dtp);
-	    MPIU_Object_add_ref(old_dtp);
+	    MPID_Datatype_add_ref(old_dtp);
 	}
     }
 
