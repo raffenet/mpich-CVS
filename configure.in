@@ -1447,11 +1447,13 @@ AC_SUBST(MPI_LDFLAGS)
 # Get and save the MPIVERSION 
 AC_SUBST(MPIVERSION)
 # Get the locatin of the CVS repository, if present
-if test -s CVS/Root ; then
-    MPICVSHOME=`cat CVS/Root`
     # We can use this test (for CVS/Root) for creating maintainer targets
     # as well, and tests for maintainer-required software, such as 
     # doctext
+if test -s CVS/Root ; then
+    MPICVSHOME=`cat CVS/Root`
+elif test -s "$srcdir/CVS/Root" ; then
+    MPICVSHOME=`cat $srcdir/CVS/Root`
 fi
 AC_SUBST(MPICVSHOME)
 
