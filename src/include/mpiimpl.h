@@ -680,7 +680,7 @@ typedef struct MPID_Datatype_st {
     int           is_contig;     /* True if data is contiguous (even with 
                                     a (count,datatype) pair) */
     int           is_perm;       /* True if datatype is a predefined type */
-    struct MPID_Dataloop_st *opt_loopinfo;  /* "optimized" loopinfo.  
+    struct MPID_Dataloop *opt_loopinfo;  /* "optimized" loopinfo.  
                                     Filled in at create
                                     time; not touched by MPI calls.  This will
                                     be for the homogeneous case until further
@@ -698,7 +698,7 @@ typedef struct MPID_Datatype_st {
     int loopsize; /* size of loops for this datatype in bytes; derived value */
     int           combiner;      /* MPI call that was used to create this
                                     datatype */
-    struct MPID_Dataloop_st *loopinfo; /* Original loopinfo, used when 
+    struct MPID_Dataloop *loopinfo; /* Original loopinfo, used when 
                                           creating and when getting contents */
     int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
     int           has_mpi1_lb;
