@@ -2,3 +2,4 @@ smvar_do_sharedlibs = 0
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a
 
 baseattr_SOURCES = baseattr.f
+baseattrwin_SOURCES = baseattrwin.f

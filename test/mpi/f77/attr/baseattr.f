@@ -51,5 +51,7 @@
          print *, " Found ", errs, " errors"
       endif
 
+      call MPI_Finalize( ierr )
+
       end
 
