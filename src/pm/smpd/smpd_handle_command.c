@@ -1765,6 +1765,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 	    process->map_list[i].drive = share[0];
 	    strncpy(process->map_list[i].share, &share[2], SMPD_MAX_EXE_LENGTH);
 
+#ifdef HAVE_WINDOWS_H
 	    /* map the drive */
 	    /* FIXME: username and password needed to map a drive */
 	    result = smpd_map_user_drives(share, NULL, NULL, err_msg, 256);
@@ -1775,6 +1776,7 @@ int smpd_handle_launch_command(smpd_context_t *context)
 		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
+#endif
 	}
 	else
 	{
