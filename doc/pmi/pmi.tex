@@ -64,9 +64,9 @@ Argonne National Laboratory}{00}{\today}
 \section{Introduction}
 
 MPI needs the services of a process manager.
-Many MPI implementations include their own process manager.
+Many MPI implementations include their own process managers.
 For greatest flexibility and usability, an MPI program should work with any
-process manager, including third-party process managers (e.g., PBS)
+process manager, including third-party process managers (e.g., PBS).
 MPICH2 uses a ``Process Manager Interface'' (PMI) to separate the process
 management functions from the MPI implementation.
 PMI should be scalable in design and functional in specification.
@@ -104,7 +104,7 @@ We are in discussions with vendors to support PMI directly.
 \section{Spawn function}
 \input{pmiman/PMI_keyval_t.tex}
 \input{pmiman/PMI_Spawn_multiple.tex}
-\input{pmiman/PMI_Args_to_info.tex}
+\input{pmiman/PMI_Args_to_keyval.tex}
 
 % Index
 %\openin\testfile{pmi.ind}
