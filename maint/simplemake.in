@@ -1595,20 +1595,20 @@ sub TargetInstall {
     # a file that will uninstall only the installed files (as MPICH-1
     # does).
     print FD "uninstall:$newline";
-    foreach $kind (keys(%install_files) {
+    foreach $kind (keys(%install_files)) {
 	$dir = $install_dir{$kind};
-	foreach $file ($install_files($kind)) {
+	foreach $file ($install_files{$kind}) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
-	    print FD "\t-rm -f $dir/$destfile$newline";
+	    print FD "\t-rm -f \${$dir}/$destfile$newline";
 	}
     }
-    foreach $kind (keys(%optinstall_files) {
+    foreach $kind (keys(%optinstall_files)) {
 	$dir = $install_dir{$kind};
-	foreach $file ($optinstall_files($kind)) {
+	foreach $file ($optinstall_files{$kind}) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
-	    print FD "\t-rm -f $dir/$destfile$newline";
+	    print FD "\t-rm -f \${$dir}/$destfile$newline";
 	}
     }
     # Still doesn't handle install files added by subdir installs

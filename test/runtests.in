@@ -29,7 +29,7 @@ $err_count = 0;          # Number of programs that failed.
 # Output forms
 $xmloutput = 0;          # Set to true to get xml output (also specify file)
 $verbose = 0;            # Set to true to get more output
-
+$newline = "\r\n";       # Set to \r\n for Windows-friendly, \n for Unix only
 #---------------------------------------------------------------------------
 # Process arguments and override any defaults
 #---------------------------------------------------------------------------
@@ -66,6 +66,7 @@ else {
     &RunList( $listfiles );
 }
 
+if ($xmloutput) { close XMLOUT; }
 #
 # ---------------------------------------------------------------------------
 # Routines
@@ -131,7 +132,7 @@ sub BuildMPIProgram {
 
 sub CleanUpAfterRun {
     my $programname = $_[0];
-    unlink $programname "$programname.o";
+    unlink $programname, "$programname.o";
 }
 #
 # ----------------------------------------------------------------------------
