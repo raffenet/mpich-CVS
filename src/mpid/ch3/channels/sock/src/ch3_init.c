@@ -4,14 +4,15 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidi_ch3_impl.h"
-#include "pmi.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
+
+#include "mpidi_ch3_impl.h"
+#include "pmi.h"
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
