@@ -121,7 +121,7 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
 
 /* get max_bufsize from the info object. */
 
-    max_bufsize = fd->hint->ind_wr_buffer_size;
+    max_bufsize = fd->hints->ind_wr_buffer_size;
 
     if (!buftype_is_contig && filetype_is_contig) {
 
