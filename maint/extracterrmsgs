@@ -393,3 +393,14 @@ sub AddTestCall {
 	# This allows us to review the source of the values for the args.
     }
 }
+
+
+#
+# Other todos:
+# It would be good to keep track of any .N MPI_ERR_xxx names in the structured
+# comment and match these against any MPI_ERR_yyy used in the code, emitting a
+# warning message for MPI_ERR_yyy values used in the code but not mentioned 
+# in the header.  This could even apply to routines that are not at the MPI
+# layer, forcing all routines to document all MPI error classes that they might
+# return (this is like requiring routines to document the exceptions that 
+# they may throw).

@@ -29,12 +29,13 @@ $fcname = "f77";
 		  'internat',
 		  'fast',
 		  'f77',
-#		  'cxx',
+		  'cxx',
 		  'romio',
 		  'coverage',
 		  'strict',
 		  'weak_symbols;no;yes',
-#		  'debugger',
+		  'debugger',
+		  'sharedlibs',
 #                 'threads;single;multiple',
 );
 @with_array = (

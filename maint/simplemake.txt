@@ -75,6 +75,10 @@ Makefile.sm Rules
 -----------------
 lib<name>_a_SOURCES = source file names for library <name>
 lib<name>_a_DIR     = directory in which lib<name> will exist
+lib<name>_so_SOURCES = source file names for library <name> for libraries that
+                       are *only* built as shared libraries
+lib<name>_so_DIR     = directory in which lib<name> will exist, for these
+		       shared libraries
 <name>_SOURCES      = source file names for program <name>
 <name>_LDADD        = additional files and flags used for 
                       linking program <name>.  Libraries are added to
@@ -97,6 +101,16 @@ EXTRA_PROGRAMS      = names of programs that should *not* be built by default
 install_<type>      = names of files to install when "make install" is
                       invoked.  <type> is a directory type, such as BIN, LIB,
                       or INCLUDE.
+<name>-local        = Local addition to a target in the Makefile.  For example,
+		      to add to the list of files in the clean target, include
+			 clean-local:
+				commands to execute
+                      in Makefile.sm.  These steps are run before any of
+		      the other steps, but after any prerequisits on the
+		      target
+<name>-preamble     = Like the <name>-local, but used as the first
+		      prerequisite for <name>, ensuring that it happens first.
+<name>-postable     = Like <name>-local, but run as the last step.
 doc_<type>_SOURCES  = Source files for building documentation using doctext.
                       Type may be MAN, HTML, or LATEX.
 doc_<type>_DIR      = Installation directory for documentation (some 

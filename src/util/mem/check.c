@@ -1,3 +1,10 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  $Id$
+ *
+ *  (C) 2002 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #include <stdio.h>
 
 /* This is a test program, so we allow printf */

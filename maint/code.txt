@@ -1,0 +1,58 @@
+A brief summary of the checks performed by "codingcheck" and the
+reasons for them.  
+
+1. #ifdef and #define names:  We want to use a prefix on these in
+    order to avoid clashes with other systems that aren't careful
+    about names.  One vendor defined CACHE_ALIGN, which broke code
+    used in MPICH1 to cache align data structures.  Prefixes should be
+    USE_, HAVE_, MPIR_, MPID_ . 
+
+2. malloc/free/calloc/realloc/strdup: By using the MPIU_xxx routines,
+   it is easier to check for storage overwrites and leaks, even on
+   systems (or at scales) where we don't have more sophisticated tools
+   for trapping memory problems.  Since these can be replaced by
+   macros that directly call malloc etc., there is no performance
+   overhead. 
+
+3. printf/fprintf: To allow for internationalization, all messages
+ that users may see should go through MPIU_Usage_printf,
+ MPIU_Msg_printf, MPIU_Error_printf, and MPIU_Internal_error_printf
+ (this also helps separate messages that are intended for users and
+ ones that represent some internal error that a user may see if
+ something goes wrong).  Debugging messages should be either wrapped
+ in 
+ DEBUG(...) (as in DEBUG(printf( ....))) or use DBG_PRINTF and DBG_FPRINTF.  
+
+4. C++ files should use a C++ suffix (e.g., cc or cpp).  C++ header
+    files should set the Emacs mode to C++, as in 
+    /* -*- Mode: C++;  c-basic-offset:4 ; -*- */  
+   Don't forget that // is not a valid C comment.
+
+5. strcpy etc.: The standard C routines are very dangerous, since it
+   is easy for them to allow an overwrite of memory.  The versions in
+   src/util/mem/safestr.c are safer than the standard strcpy etc but
+   do not access the entire array (e.g., strncpy sets n characters,
+   not the min of (n,length of source string+1, MPIU_Strncpy does do
+   only the min).  For sprint, use MPIU_Snprintf instead; this is just
+   snprintf where snprintf is available but provides a partial
+   implementation (just %s, %d, and %% + regular characters) for
+   systems without snprintf. BTW, in going through the code, I found
+   an strncpy( a, argv[i], strlen(argv[i])+1 ), whoever wrote this
+   abomination owes a round of drinks for the group :). 
+
+6. There are always exceptions.  These can be handled either by
+   telling the code checker to skip a file (appropriate only for
+   external files, such as crypt.h), or by enhancing the code checker.
+   For example, in working on the printf stuff, I realized that we
+   needed to separate out user errors and internal errors for messages
+   (I should have thought of this; Pete Bradley's been saying this).
+   Of course, there are other things to check for as well.  If there
+   is something you think we should be checking for (and an easy way
+   to do it), please contribute it. 
+
+7. By default, the codechecks ignore directories that are named
+   "test".  This provides an easy way to both clearly separate these
+   programs (we've had bug reports about the test programs because
+   they were in the source directory) and avoid complaints from the
+   code checker.  Running the code checker over them is still possible
+   (and a good idea) with the option -checktest (to maint/codingcheck)

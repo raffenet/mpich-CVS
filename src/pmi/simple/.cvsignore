@@ -1,5 +1,6 @@
 *.o
 *.bb
+*.lo
 *.bbg
 *.da
 *.gcov
