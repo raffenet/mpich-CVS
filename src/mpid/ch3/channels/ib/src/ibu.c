@@ -1769,6 +1769,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		{
 		    /* copy the received data */
 		    memcpy(ibu->read.buffer, mem_ptr, num_bytes);
+		    ibu->read.total += num_bytes;
 		    /* advance the user pointer */
 		    ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
 		    ibu->read.bufflen -= num_bytes;

@@ -45,11 +45,11 @@ int MPIDI_CH3_Progress(int is_blocking)
 	case IBU_OP_TIMEOUT:
 	    break;
 	case IBU_OP_READ:
-	    MPIU_dbg_printf("make_progress: ibu_wait reported %d bytes read\n", out.num_bytes);
+	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read\n", out.num_bytes));
 	    handle_read(out.user_ptr, out.num_bytes);
 	    break;
 	case IBU_OP_WRITE:
-	    MPIU_dbg_printf("make_progress: ibu reported %d bytes written\n", out.num_bytes);
+	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu reported %d bytes written\n", out.num_bytes));
 	    //handle_written(out.user_ptr, out.num_bytes);
 	    handle_written(out.user_ptr);
 	    break;
