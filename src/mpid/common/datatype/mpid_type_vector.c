@@ -93,18 +93,30 @@ int MPID_Type_vector(int count,
 	new_dtp->n_elements = 0;
 	new_dtp->is_contig  = 1;
 
-	MPID_Dataloop_create_vector(0,
-				    0,
-				    0,
-				    0,
-				    MPI_INT, /* dummy type */
-				    &(new_dtp->dataloop),
-				    &(new_dtp->dataloop_size),
-				    &(new_dtp->dataloop_depth),
-				    0);
+	mpi_errno = MPID_Dataloop_create_vector(0,
+						0,
+						0,
+						0,
+						MPI_INT, /* dummy type */
+						&(new_dtp->dataloop),
+						&(new_dtp->dataloop_size),
+						&(new_dtp->dataloop_depth),
+						0);
+	if (mpi_errno == MPI_SUCCESS) {
+	    /* heterogeneous dataloop representation */
+	    mpi_errno = MPID_Dataloop_create_vector(0,
+						    0,
+						    0,
+						    0,
+						    MPI_INT,
+						    &(new_dtp->hetero_dloop),
+						    &(new_dtp->hetero_dloop_size),
+						    &(new_dtp->hetero_dloop_depth),
+						    0);
+	}
+
 	*newtype = new_dtp->handle;
-	
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
     else if (is_builtin) {
 	el_sz   = MPID_Datatype_get_basic_size(oldtype);
@@ -175,7 +187,7 @@ int MPID_Type_vector(int count,
      */
     new_dtp->is_contig = (new_dtp->size == new_dtp->extent) ? old_is_contig : 0;
 
-    /* fill in dataloop */
+    /* fill in dataloop(s) */
     mpi_errno = MPID_Dataloop_create_vector(count,
 					    blocklength,
 					    stride,
@@ -185,12 +197,20 @@ int MPID_Type_vector(int count,
 					    &(new_dtp->dataloop_size),
 					    &(new_dtp->dataloop_depth),
 					    0);
+    if (mpi_errno == MPI_SUCCESS) {
+	/* heterogeneous dataloop representation */
+	mpi_errno = MPID_Dataloop_create_vector(count,
+						blocklength,
+						stride,
+						strideinbytes,
+						oldtype,
+						&(new_dtp->hetero_dloop),
+						&(new_dtp->hetero_dloop_size),
+						&(new_dtp->hetero_dloop_depth),
+						0);
+    }
 
     *newtype = new_dtp->handle;
-
-#ifdef MPID_TYPE_ALLOC_DEBUG
-    MPIU_dbg_printf("(h)vector type %x created.\n", new_dtp->handle);
-#endif
     return mpi_errno;
 }
 

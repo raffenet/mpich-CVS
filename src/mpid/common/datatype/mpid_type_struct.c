@@ -145,17 +145,29 @@ int MPID_Type_struct(int count,
 	new_dtp->n_elements = 0;
 	new_dtp->is_contig  = 1;
 
-	MPID_Dataloop_create_struct(0,
-				    NULL,
-				    NULL,
-				    NULL,
-				    &(new_dtp->dataloop),
-				    &(new_dtp->dataloop_size),
-				    &(new_dtp->dataloop_depth),
-				    0);
+	mpi_errno = MPID_Dataloop_create_struct(0,
+						NULL,
+						NULL,
+						NULL,
+						&(new_dtp->dataloop),
+						&(new_dtp->dataloop_size),
+						&(new_dtp->dataloop_depth),
+						0);
+
+	if (mpi_errno == MPI_SUCCESS) {
+	    /* heterogeneous dataloop representation */
+	    mpi_errno = MPID_Dataloop_create_struct(0,
+						    NULL,
+						    NULL,
+						    NULL,
+						    &(new_dtp->hetero_dloop),
+						    &(new_dtp->hetero_dloop_size),
+						    &(new_dtp->hetero_dloop_depth),
+						    0);
+	}
+
 	*newtype = new_dtp->handle;
-	
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
 
     for (i=0; i < count; i++)
@@ -323,7 +335,7 @@ int MPID_Type_struct(int count,
 	new_dtp->is_contig = 0;
     }
 
-    /* fill in dataloop */
+    /* fill in dataloop(s) */
     mpi_errno = MPID_Dataloop_create_struct(count,
 					    blocklength_array,
 					    displacement_array,
@@ -332,9 +344,19 @@ int MPID_Type_struct(int count,
 					    &(new_dtp->dataloop_size),
 					    &(new_dtp->dataloop_depth),
 					    MPID_DATALOOP_HOMOGENEOUS);
+    if (mpi_errno == MPI_SUCCESS) {
+	/* heterogeneous dataloop representation */
+	mpi_errno = MPID_Dataloop_create_struct(count,
+						blocklength_array,
+						displacement_array,
+						oldtype_array,
+						&(new_dtp->hetero_dloop),
+						&(new_dtp->hetero_dloop_size),
+						&(new_dtp->hetero_dloop_depth),
+						0);
+    }
 
     *newtype = new_dtp->handle;
-
     return mpi_errno;
 }
 

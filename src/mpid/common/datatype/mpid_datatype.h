@@ -141,6 +141,27 @@ do {                                                                    \
             break;                                                      \
     }                                                                   \
 } while (0)
+
+#define MPID_Datatype_get_hetero_loopptr_macro(a,__lptr                 \
+do {                                                                    \
+    void *ptr;                                                          \
+    switch (HANDLE_GET_KIND(a)) {                                       \
+        case HANDLE_KIND_DIRECT:                                        \
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
+            __lptr = ((MPID_Datatype *) ptr)->hetero_dloop;             \
+            break;                                                      \
+        case HANDLE_KIND_INDIRECT:                                      \
+            ptr = ((MPID_Datatype *)                                    \
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
+            __lptr = ((MPID_Datatype *) ptr)->hetero_dloop;             \
+            break;                                                      \
+        case HANDLE_KIND_INVALID:                                       \
+        case HANDLE_KIND_BUILTIN:                                       \
+        default:                                                        \
+            __lptr = 0;                                                 \
+            break;                                                      \
+    }                                                                   \
+} while (0)
         
 #define MPID_Datatype_get_extent_macro(a,__extent)			    \
 do {									    \
@@ -284,9 +305,13 @@ typedef struct MPID_Datatype {
     /* dataloop members, including a pointer to the loop, the size in bytes,
      * and a depth used to verify that we can process it (limited stack depth
      */
-    struct MPID_Dataloop *dataloop; /* default dataloop; might be optimized */
+    struct MPID_Dataloop *dataloop; /* might be optimized for homogenous */
     int                   dataloop_size;
     int                   dataloop_depth;
+
+    struct MPID_Dataloop *hetero_dloop; /* heterogeneous dataloop */
+    int                   hetero_dloop_size;
+    int                   hetero_dloop_depth;
 
     /* MPI-2 attributes and name */
     struct MPID_Attribute *attributes;

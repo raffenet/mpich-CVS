@@ -108,18 +108,30 @@ int MPID_Type_blockindexed(int count,
 
 	new_dtp->is_contig  = 1;
 
-	MPID_Dataloop_create_blockindexed(0,
-					  0,
-					  NULL,
-					  0,
-					  MPI_INT, /* dummy type */
-					  &(new_dtp->dataloop),
-					  &(new_dtp->dataloop_size),
-					  &(new_dtp->dataloop_depth),
-					  0);
+	mpi_errno = MPID_Dataloop_create_blockindexed(0,
+						      0,
+						      NULL,
+						      0,
+						      MPI_INT, /* dummy type */
+						      &(new_dtp->dataloop),
+						      &(new_dtp->dataloop_size),
+						      &(new_dtp->dataloop_depth),
+						      0);
+	if (mpi_errno == MPI_SUCCESS) {
+	    /* heterogeneous dataloop representation */
+	    mpi_errno = MPID_Dataloop_create_blockindexed(0,
+							  0,
+							  NULL,
+							  0,
+							  MPI_INT,
+							  &(new_dtp->hetero_dloop),
+							  &(new_dtp->hetero_dloop_size),
+							  &(new_dtp->hetero_dloop_depth),
+							  0);
+	}
+
 	*newtype = new_dtp->handle;
-	
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
     else if (is_builtin)
     {
@@ -222,18 +234,30 @@ int MPID_Type_blockindexed(int count,
 	new_dtp->is_contig = 0;
     }
 
-    MPID_Dataloop_create_blockindexed(count,
-				      blocklength,
-				      displacement_array,
-				      dispinbytes,
-				      oldtype,
-				      &(new_dtp->dataloop),
-				      &(new_dtp->dataloop_size),
-				      &(new_dtp->dataloop_depth),
-				      0);
+    mpi_errno = MPID_Dataloop_create_blockindexed(count,
+						  blocklength,
+						  displacement_array,
+						  dispinbytes,
+						  oldtype,
+						  &(new_dtp->dataloop),
+						  &(new_dtp->dataloop_size),
+						  &(new_dtp->dataloop_depth),
+						  0);
+    if (mpi_errno == MPI_SUCCESS) {
+	/* heterogeneous dataloop representation */
+	mpi_errno = MPID_Dataloop_create_blockindexed(count,
+						      blocklength,
+						      displacement_array,
+						      dispinbytes,
+						      oldtype,
+						      &(new_dtp->hetero_dloop),
+						      &(new_dtp->hetero_dloop_size),
+						      &(new_dtp->hetero_dloop_depth),
+						      0);
+    }
 
     *newtype = new_dtp->handle;
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 /*@

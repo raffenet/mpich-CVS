@@ -90,8 +90,17 @@ int MPID_Type_contiguous(int count,
 						    &(new_dtp->dataloop_size),
 						    &(new_dtp->dataloop_depth),
 						    0);
+	if (mpi_errno == MPI_SUCCESS) {
+	    /* heterogeneous dataloop representation */
+	    mpi_errno = MPID_Dataloop_create_contiguous(0,
+							MPI_INT, /* dummy type */
+							&(new_dtp->hetero_dloop),
+							&(new_dtp->hetero_dloop_size),
+							&(new_dtp->hetero_dloop_depth),
+							0);
+	}
+
 	*newtype = new_dtp->handle;
-	
 	return mpi_errno;
     }
     else if (is_builtin)
@@ -150,13 +159,22 @@ int MPID_Type_contiguous(int count,
 	new_dtp->is_contig    = old_dtp->is_contig;
     }
 
-    /* fill in dataloop */
+    /* fill in dataloop(s) */
     mpi_errno = MPID_Dataloop_create_contiguous(count,
 						oldtype,
 						&(new_dtp->dataloop),
 						&(new_dtp->dataloop_size),
 						&(new_dtp->dataloop_depth),
 						0);
+    if (mpi_errno == MPI_SUCCESS) {
+	/* heterogeneous dataloop representation */
+	mpi_errno = MPID_Dataloop_create_contiguous(count,
+						    oldtype,
+						    &(new_dtp->hetero_dloop),
+						    &(new_dtp->hetero_dloop_size),
+						    &(new_dtp->hetero_dloop_depth),
+						    0);
+    }
 
     *newtype = new_dtp->handle;
 
