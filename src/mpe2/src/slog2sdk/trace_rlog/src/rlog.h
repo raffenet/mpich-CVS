@@ -33,7 +33,7 @@ extern "C" {
 #define RLOG_BUFFSIZE           (8*1024*1024)
 #define RLOG_MAX_RECORD_SIZE     1024
 #define RLOG_COLOR_LENGTH       (3 * sizeof(double))
-#define RLOG_DESCRIPTION_LENGTH (4 * sizeof(double))
+#define RLOG_DESCRIPTION_LENGTH (5 * sizeof(double))
 #define RLOG_MAX_DOUBLE         (1e100)
 #define RLOG_MIN_DOUBLE         (-1e100)
 
@@ -112,10 +112,10 @@ typedef struct RLOG_COMM
     int rank;
 } RLOG_COMM;
 
-#define RLOG_HEADER_SECTION 0
-#define RLOG_STATE_SECTION  1
-#define RLOG_ARROW_SECTION  2
-#define RLOG_EVENT_SECTION  3
+#define RLOG_HEADER_SECTION         0
+#define RLOG_STATE_SECTION          1
+#define RLOG_ARROW_SECTION          2
+#define RLOG_EVENT_SECTION          3
 
 typedef struct RLOG_FILE_HEADER
 {
@@ -214,6 +214,7 @@ int RLOG_GetEvent(RLOG_IOStruct *pInput, int rank, int recursion_level, int inde
 int RLOG_ResetEventIter(RLOG_IOStruct *pInput, int rank, int recursion_level);
 int RLOG_GetNextEvent(RLOG_IOStruct *pInput, int rank, int recursion_level, RLOG_EVENT *pEvent);
 int RLOG_FindEventBeforeTimestamp(RLOG_IOStruct *pInput, int rank, int recursion_level, double timestamp, RLOG_EVENT *pEvent, int *pIndex);
+int RLOG_FindAnyEventBeforeTimestamp(RLOG_IOStruct *pInput, int rank, double timestamp, RLOG_EVENT *pEvent);
 int RLOG_ResetGlobalIter(RLOG_IOStruct *pInput);
 int RLOG_GetNextGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent);
 int RLOG_GetPreviousGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent);
@@ -221,6 +222,7 @@ int RLOG_GetCurrentGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent);
 int RLOG_FindGlobalEventBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_EVENT *pEvent);
 int RLOG_FindArrowBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp, RLOG_ARROW *pArrow, int *pIndex);
 int RLOG_HitTest(RLOG_IOStruct *pInput, int rank, int level, double timestamp, RLOG_EVENT *pEvent);
+int RLOG_ModifyEvents(const char *log_filename, double *pOffsets, int num_offsets);
 
 /* debugging functions */
 int RLOG_PrintGlobalState(RLOG_IOStruct *pInput);
