@@ -28,7 +28,7 @@ int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID
     MPID_Request *rreq;
     MPIDI_CH3_Pkt_rndv_req_to_send_t * rts_pkt = &pkt->rndv_req_to_send;
 
-    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&pkt->rndv_req_to_send.match, foundp);
+    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, foundp);
     /* --BEGIN ERROR HANDLING-- */
     if (rreq == NULL)
     {
