@@ -43,7 +43,8 @@ Output Argument:
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
+.N MPI_ERR_OTHER
+.N MPI_ERR_ARG
 @*/
 int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 {
@@ -60,10 +61,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate info_ptr */
             MPID_Info_valid_ptr( info_ptr, mpi_errno );
             if (mpi_errno) {

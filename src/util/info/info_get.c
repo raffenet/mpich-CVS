@@ -45,7 +45,10 @@ Output Parameters:
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
+.N MPI_ERR_OTHER
+.N MPI_ERR_INFO_KEY
+.N MPI_ERR_ARG
+.N MPI_ERR_INFO_VALUE
 @*/
 int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
 		 int *flag)
