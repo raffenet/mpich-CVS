@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* This file replaces all MPI function names with their PMPI equivalents.
    PMPI versions are used by default so that the user can profile 
    application code without interference from MPI functions used by 

@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* MPI_ERR_FILE */
 #define MPIR_ERR_FILE_NULL 3
 #define MPIR_ERR_FILE_CORRUPT 5
