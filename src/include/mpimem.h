@@ -117,6 +117,182 @@ int MPIU_Strnapp( char *, const char *, size_t );
   @*/
 char *MPIU_Strdup( const char * );
 
+/*@ MPIU_Str_get_string_arg - Extract an option from a string with a maximum length
+  
+    Input Parameters:
++   str - Source string
+.   key - key
+-   maxlen - Maximum total length of 'val'
+
+    Output Parameter:
+.   val - output string
+
+    Notes:
+    This routine searches for a "key = value" entry in a string
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_get_string_arg(const char *str, const char *key, char *val, int maxlen);
+
+/*@ MPIU_Str_get_binary_arg - Extract an option from a string with a maximum length
+  
+    Input Parameters:
++   str - Source string
+.   key - key
+-   maxlen - Maximum total length of 'buffer'
+
+    Output Parameter:
+.   buffer - output buffer
+
+    Notes:
+    This routine searches for a "key = value" entry in a string and decodes the value
+    back to binary data.  The data must have been encoded with MPIU_Str_add_binary_arg.
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_get_binary_arg(const char *str, const char *key, char *buffer, int maxlen);
+
+/*@ MPIU_Str_get_int_arg - Extract an option from a string
+  
+    Input Parameters:
++   str - Source string
+-   key - key
+
+    Output Parameter:
+.   val_ptr - pointer to the output integer
+
+    Notes:
+    This routine searches for a "key = value" entry in a string and decodes the value
+    back to an int.
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_get_int_arg(const char *str, const char *key, int *val_ptr);
+
+/*@ MPIU_Str_add_string_arg - Add an option to a string with a maximum length
+  
+    Input Parameters:
++   str_ptr - Pointer to the destination string
+.   maxlen_ptr - Pointer to the maximum total length of '*str_ptr'
+.   key - key
+-   val - input string
+
+    Output Parameter:
++   str_ptr - The string pointer is updated to the next available location in the string
+-   maxlen_ptr - maxlen is reduced by the number of characters written
+
+    Notes:
+    This routine adds a string option to a string in the form "key = value".
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *key, const char *val);
+
+/*@ MPIU_Str_add_binary_arg - Add an option to a string with a maximum length
+  
+    Input Parameters:
++   str_ptr - Pointer to the destination string
+.   maxlen_ptr - Pointer to the maximum total length of '*str_ptr'
+.   key - key
+.   val - input data
+-   length - length of the input data
+
+    Output Parameter:
++   str_ptr - The string pointer is updated to the next available location in the string
+-   maxlen_ptr - maxlen is reduced by the number of characters written
+
+    Notes:
+    This routine encodes binary data into a string option in the form "key = encoded_value".
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *key, const char *buffer, int length);
+
+/*@ MPIU_Str_add_int_arg - Add an option to a string with a maximum length
+  
+    Input Parameters:
++   str_ptr - Pointer to the destination string
+.   maxlen_ptr - Pointer to the maximum total length of '*str_ptr'
+.   key - key
+-   val - input integer
+
+    Output Parameter:
++   str_ptr - The string pointer is updated to the next available location in the string
+-   maxlen_ptr - maxlen is reduced by the number of characters written
+
+    Notes:
+    This routine adds an integer option to a string in the form "key = value".
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_add_int_arg(char **str_ptr, int *maxlen_ptr, const char *key, int val);
+
+/*@ MPIU_Str_hide_string_arg - Over-write the value of an string option with * characters
+  
+    Input Parameters:
++   str - input string
+-   key - key
+
+    Output Parameter:
+.   str - The string data is modified if the key is found in the string
+
+    Notes:
+    This routine covers an option in a string converting "key = value" to "key = *****"
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_hide_string_arg(char *str, const char *key);
+
+/*@ MPIU_Str_add_string - Add a string to a string
+  
+    Input Parameters:
++   str - input string
+.   maxlen - maximum total length of 'str'
+-   val - string to add
+
+    Output Parameter:
+.   str - The string pointer is updated to the next available location in the string
+
+    Notes:
+    This routine adds a string to a string in such a way that MPIU_Str_get_string can
+    retreive the same string back.  It takes into account spaces and quote characters.
+
+  Module:
+  Utility
+  @*/
+int MPIU_Str_add_string(char *str, int maxlen, const char *val);
+
+/*@ MPIU_Str_get_string - Get the next string from a string
+  
+    Input Parameters:
++   str - input string
+-   maxlen - maximum total length of 'val'
+
+    Output Parameter:
++   val - location to store the string
+-   num_chars - the number of characters copied to val.  This value is -1 if the string
+                was truncated.  The value is -2 if there was an error.
+
+    Return Value:
+    The return value is the location in str where the next MPIU_Str_get_string can be
+    called from.
+
+    Notes:
+    This routine adds a string to a string in such a way that MPIU_Str_get_string can
+    retreive the same string back.  It takes into account spaces and quote characters.
+
+  Module:
+  Utility
+  @*/
+const char * MPIU_Str_get_string(const char *str, char *val, int maxlen, int *num_chars);
+
 #ifdef USE_MEMORY_TRACING
 /*M
   MPIU_Malloc - Allocate memory
