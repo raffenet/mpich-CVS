@@ -296,7 +296,10 @@ static void * BlockAlloc(BlockAllocator p)
 
     /*** don't allocate more memory ***/
     if (p->pNextFree == NULL)
+    {
+	printf("BlockAlloc returning NULL\n");fflush(stdout);
 	return NULL;
+    }
     /******/
 
     pVoid = p->pNextFree + 1;
