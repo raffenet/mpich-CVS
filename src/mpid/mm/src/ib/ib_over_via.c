@@ -19,7 +19,7 @@ ib_int32_t ib_release_us(void)
     return IB_SUCCESS;
 }
 
-ib_int32_t ib_hca_open_us( const char * hca_name,
+ib_int32_t ib_hca_open_us(ib_uint32_t index,
 			  ib_hca_handle_t * handle_p )
 {
     return IB_SUCCESS;
@@ -27,7 +27,9 @@ ib_int32_t ib_hca_open_us( const char * hca_name,
 
 ib_int32_t ib_hca_query_us(ib_hca_handle_t hca_handle, 
 			   ib_hca_attr_t * hca_attr_p, 
-			   ib_uint32_t hca_attr_flags )
+			   ib_uint32_t hca_attr_flags, // combination of Ib_hca_query_flag values
+			   ib_uint32_t * attr_size_p	// IN/OUT size/required size of buffer hca_attr_p
+			   )
 {
     return IB_SUCCESS;
 }

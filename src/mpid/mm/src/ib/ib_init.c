@@ -463,15 +463,16 @@ int ib_init()
     ib_uint32_t status;
     char key[100], value[100];
     ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
+    ib_uint32_t attr_size;
     MPIDI_STATE_DECL(MPID_STATE_IB_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_INIT);
 
-    ib_init_us();
+    /*ib_init_us();*/
 
     /* Initialize globals */
     /* get a handle to the host channel adapter */
-    status = ib_hca_open_us("TORRENT" , &IB_Process.hca_handle);
+    status = ib_hca_open_us(0 , &IB_Process.hca_handle);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_open_us failed, status %d\n", status);
@@ -509,19 +510,21 @@ int ib_init()
 	return -1;
     }
     /* get the lid */
+    attr_size = sizeof(IB_Process.attr);
     status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
-			     HCA_QUERY_HCA_STATIC);
+			     HCA_QUERY_HCA_STATIC, &attr_size);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
+    attr_size = sizeof(IB_Process.attr);
     IB_Process.attr.port_dynamic_info_p = 
 	(port_dynamic_info_t*)malloc(IB_Process.attr.node_info.port_num * 
 				     sizeof(port_dynamic_info_t));
     status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
-			     HCA_QUERY_PORT_INFO_DYNAMIC);
+			     HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_PORT_INFO_DYNAMIC) failed, status %d\n", status);
@@ -556,7 +559,7 @@ int ib_finalize()
     MPIDI_STATE_DECL(MPID_STATE_IB_FINALIZE);
     MPIDI_FUNC_ENTER(MPID_STATE_IB_FINALIZE);
 
-    ib_release_us();
+    /*ib_release_us();*/
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_FINALIZE);
     return MPI_SUCCESS;
