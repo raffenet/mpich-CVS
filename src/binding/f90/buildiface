@@ -1,0 +1,270 @@
+#! /usr/bin/perl
+require "binding.sub";
+
+$prototype_file = "../../include/mpi.h.in";
+
+%mpi_routines = ();
+%parmc2f = ( 'int' => 'INTEGER',
+	     'int[]' => 'INTEGER %name%(*)',
+	     'int[][3]' => 'INTEGER %name%(3,*)',
+	     'int*' => 'INTEGER',      # assume output scalar (see array
+	                               # replacement below)
+	     'bool' => 'LOGICAL',
+	     'bool[]' => 'LOGICAL %name%(*)',
+	     'MPI_Request' => 'INTEGER',
+	     'MPI_Request*' => 'INTEGER',
+	     'MPI_Request[]' => 'INTEGER %name%(*)',
+	     'MPI_Datatype' => 'INTEGER',
+	     'MPI_Datatype*' => 'INTEGER',
+	     'MPI_Datatype[]' => 'INTEGER %name%(*)',
+	     'MPI_Comm' => 'INTEGER',
+	     'MPI_Comm*' => 'INTEGER', # Never an array of comm
+	     'MPI_Group' => 'INTEGER',
+	     'MPI_Group*' => 'INTEGER', # Never an array of groups
+	     'MPI_Errhandler' => 'INTEGER',
+	     'MPI_Errhandler*' => 'INTEGER', # Never an array of errhandlers
+	     'MPI_Op' => 'INTEGER',
+	     'MPI_Op*' => 'INTEGER', # Never an array of ops
+	     'MPI_Status*' => 'INTEGER %name%(MPI_STATUS_SIZE)',
+	     'MPI_Status[]' => 'INTEGER %name%(MPI_STATUS_SIZE,*)',
+	     'MPI_Aint' => 'INTEGER(KIND=MPI_ADDRESS_KIND)',
+	     'MPI_Aint*' => 'INTEGER(KIND=MPI_ADDRESS_KIND)',
+	     'MPI_Aint[]' => 'INTEGER(KIND=MPI_ADDRESS_KIND) %name%(*)',
+	     'MPI_Info' => 'INTEGER',
+	     'MPI_Info*' => 'INTEGER', # Never an array of info
+	     'char*' => 'CHARACTER (LEN=*)',
+	     'MPI_Win' => 'INTEGER',
+	     'MPI_Win*' => 'INTEGER', # Never an array of win
+	     'MPI_File' => 'INTEGER',
+	     'MPI_File*' => 'INTEGER', # Never an array of files
+	     );
+
+# Routine-count
+%special_args = ( 'Testany-2' => 'MPI_Request[]',
+		  'Startall-2' => 'MPI_Request[]',
+		  'Testall-2' => 'MPI_Request[]',
+		  'Testall-4' => 'MPI_Status[]',
+		  'Testsome-2' => 'MPI_Request[]',
+		  'Testsome-4' => 'int[]',
+		  'Testsome-5' => 'MPI_Status[]',
+		  'Type_hindexed-2' => 'int[]',
+		  'Type_hindexed-3' => 'int[]',
+		  'Type_indexed-2' => 'int[]',
+		  'Type_indexed-3' => 'int[]',
+		  'Type_struct-2' => 'int[]',
+		  'Type_struct-3' => 'int[]',
+		  'Type_struct-4' => 'MPI_Datatype[]',
+		  'Waitall-2' => 'MPI_Request[]',
+		  'Waitall-3' => 'MPI_Status[]',
+		  'Waitany-2' => 'MPI_Request[]',
+		  'Waitsome-2' => 'MPI_Request[]',
+		  'Waitsome-4' => 'int[]',
+		  'Waitsome-5' => 'MPI_Status[]',
+		  'Group_excl-3' => 'int[]',
+		  'Group_incl-3' => 'int[]',
+		  'Group_translate_ranks-3' => 'int[]',
+		  'Group_translate_ranks-5' => 'int[]',
+		  'Cart_coords-4' => 'int[]',
+		  'Cart_create-3' => 'int[]',
+		  'Cart_create-4' => 'bool[]',
+		  'Cart_get-3' => 'int[]',
+		  'Cart_get-5' => 'int[]',
+		  'Cart_get-4' => 'bool[]',
+		  'Cart_map-3' => 'int[]',
+		  'Cart_map-4' => 'bool[]',
+		  'Cart_rank-2' => 'int[]',
+		  'Cart_sub-2' => 'bool[]',
+		  'Dims_create-3' => 'int[]',
+		  'Graph_create-3' => 'int[]',
+		  'Graph_create-4' => 'int[]',
+		  'Graph_create-5' => 'bool',
+		  'Graph_get-4' => 'int[]',
+		  'Graph_get-5' => 'int[]',
+		  'Graph_map-3' => 'int[]',
+		  'Graph_map-4' => 'int[]',
+		  'Graph_neighbors-4' => 'int[]',
+		  'Iprobe-4' => 'bool',
+		  'Test-2' => 'bool',
+		  'Testall-3' => 'bool',
+		  'Testany-4' => 'bool',
+		  'Test_cancelled-2' => 'bool',
+		  'Op_create-2' => 'bool',
+		  'Attr_get-4' => 'bool',
+		  'Comm_test_inter-2' => 'bool',
+		  'Intercomm_merge-2' => 'bool',
+		  'Cart_create-5' => 'bool',
+		  'Initialized-1' => 'bool',		
+		  'Group_range_excl-3' => 'int[][3]',
+		  'Group_range_incl-3' => 'int[][3]',
+		  'Info_get_valuelen-4' => 'bool',
+		  'Is_thread_main-1' => 'bool',
+		  'Type_create_subarray-2' => 'int[]',
+		  'Type_create_subarray-3' => 'int[]',
+		  'Type_create_subarray-4' => 'int[]',
+		  'Request_get_status-2' => 'bool',
+		  'Info_get-5' => 'bool',
+		  'Type_create_indexed_block-3' => 'int[]',
+		  'Type_create_darray-4' => 'int[]',
+		  'Type_create_darray-5' => 'int[]',
+		  'Type_create_darray-6' => 'int[]',
+		  'Type_create_darray-7' => 'int[]',
+		  'Type_create_struct-2' => 'int[]',
+		  'Type_create_struct-3' => 'MPI_Aint[]',
+		  'Win_test-2' => 'bool',
+		  'Type_create_hindexed-2' => 'int[]',
+		  'Type_create_hindexed-3' => 'MPI_Aint[]',
+		);
+
+%skip_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Status_c2f' => 1,
+		   'Status_f2c' => 1, 'Pcontrol' => 1,
+		   );
+&ReadInterface( $prototype_file, "MPI_", "[A-Z][a-z_0-9]*", "mpi_routines" );
+
+#
+# For some MPI routines, we need to distinguish between arguments that are 
+# input arrays versus ones that are output scalars.  For those functions,
+# convert input (or output) arrays to [] format.  
+
+#
+# Generate the module for the routines
+# First pass.  Ignore the issue of choice routines
+# Print header
+open (MPIFD, ">mpi.f90" ) || die "Could not open mpi.f90\n";
+print MPIFD "        MODULE MPI
+        IMPLICIT NONE
+        INTERFACE\n";
+
+foreach $routine (keys(%mpi_routines)) {
+    $ucname = uc($routine);
+    $args   = $mpi_routines{$routine};
+    @parms  = split(/,/, $args );
+
+    # Check for a routine to skip
+    if (defined($skip_routines{$routine})) {
+	next;
+    }
+
+    # Check for a void * argument (usually choice)
+    if ($args =~ /void/) {
+	$mpi_choice_routines{$routine} = $args;
+	print "Skipping $routine because of void argument\n" if $debug;
+	next;
+    }
+    print MPIFD "       SUBROUTINE MPI_$ucname(";
+    for ($i=0; $i<=$#parms; $i++) {
+	print MPIFD "v$i,";
+    }
+    print MPIFD "ierror)\n";
+    # Determine if we need any constants (e.g., MPI_STATUS_SIZE, 
+    # MPI_OFFSET_KIND)
+    %use_constants = ();
+    $found_constants = 0;
+    for ($i=0; $i<=$#parms; $i++) {
+	$parm = $parms[$i];
+	# Check for special args
+	$loc = $i+1;
+	if (defined($special_args{"$routine-$loc"})) {
+	    $parm = $special_args{"$routine-$loc"};
+	}
+	# Map the C type to the Fortran type
+	$cparm = $parm;
+	$cparm =~ s/\s+//g;
+	$fparm = $parmc2f{$cparm};
+	# Now, does this type contain an MPI constant?
+	if ($fparm =~ /(MPI_[A-Z_]*)/) {
+	    $use_constants{$1} = 1;
+	    $found_constants = 1;
+	}
+    }
+    if ($found_constants) {
+	print MPIFD "       USE MPI_CONSTANTS,ONLY:";
+	$sep = "";
+	foreach $name (keys(%use_constants)) {
+	    print MPIFD "$sep$name";
+	    $sep = ", ";
+	}
+	print MPIFD "\n";
+    }
+
+    # Output argument types
+    for ($i=0; $i<=$#parms; $i++) {
+	$parm = $parms[$i];
+	# Check for special args
+	$loc = $i+1;
+	if (defined($special_args{"$routine-$loc"})) {
+	    $parm = $special_args{"$routine-$loc"};
+	}
+	# Map the C type to the Fortran type
+	$cparm = $parm;
+	$cparm =~ s/\s+//g;
+	$fparm = $parmc2f{$cparm};
+	if ($fparm eq "") {
+	    print STDERR "$routine: No parm type for $cparm ($parm)\n";
+	}
+	if ($fparm =~ /%name%/) {
+	    $fparm =~ s/%name%/v$i/;
+	    print MPIFD "       $fparm\n";
+	}
+	else {
+	    print MPIFD "       $fparm v$i\n";
+	}
+    }
+    print MPIFD "       INTEGER ierror\n";
+    print MPIFD "       END SUBROUTINE MPI_$ucname\n\n";
+}
+print MPIFD "       END INTERFACE\n       END MODULE MPI\n";
+close MPIFD;
+
+open ( MPIFD, ">mpi_constants.f90" ) || die "Cannot open mpi_constants.f90\n";
+print MPIFD "        MODULE MPI_CONSTANTS
+        INCLUDE 'mpif.h'
+        END MODULE MPI_CONSTANTS\n";
+close MPIFD;
+
+#
+# Generate the choice argument routines
+open( MPIFD, ">mpi_t1.f90" ) || die "Cannot open mpi_t1.f90\n";
+print MPIFD "        MODULE MPI_t1_s
+        IMPLICIT NONE
+        PRIVATE\n";
+
+# Generate the interface specs
+foreach $routine (keys(%mpi_choice_routines)) {
+    $ucname = uc($routine);
+
+    print MPIFD "        PUBLIC :: MPI_$ucname\n";
+    print MPIFD "        INTERFACE MPI_$ucname\n";
+    print MPIFD "           MODULE PROCEDURE MPI_${ucname}_T\n";
+    print MPIFD "        END INTERFACE MPI_$ucname\n\n";
+}
+
+print MPIFD "        CONTAINS\n";
+
+# For each, add the modules
+foreach $routine (keys(%mpi_choice_routines)) {
+    $ucname = uc($routine);
+    $args   = $mpi_routines{$routine};
+    @parms  = split(/,/, $args );
+
+    print MPIFD "        SUBROUTINE MPI_${ucname}_T(";
+    for ($i=0; $i<=$#parms; $i++) {
+	print MPIFD "v$i,";
+    }
+    print MPIFD "ierror)\n";
+    # print the arg decls ...
+    # convert %type% to the various types and %dims% to the dimensions,
+    # including scalar.
+    print MPIFD "        CALL MPI_${ucname}(";
+    for ($i=0; $i<=$#parms; $i++) {
+	print MPIFD "v$i,";
+    }
+    print MPIFD "ierror)\n";
+    print MPIFD "        END SUBROUTINE MPI_${ucname}_T\n\n";
+}
+close MPIFD;
+
+#
+# Still to do
+# make sure that we fit within the Fortran line length rules
+# Look into alternatives for generating a zillion files
+# Handle routines with more than one choice argument
