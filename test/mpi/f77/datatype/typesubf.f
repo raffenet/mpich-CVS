@@ -29,6 +29,7 @@ C starts are from zero, even in Fortran
       starts(2)    = 2
       call mpi_type_create_subarray( 2, fullsizes, subsizes, starts, 
      &         MPI_ORDER_FORTRAN, MPI_INTEGER, newtype, ierr )
+      call mpi_type_commit( newtype, ierr )
 C
 C Prefill the array
       do j=1, maxm

@@ -30,6 +30,7 @@ C
       asizev(2) = 3 * intsize
       call mpi_type_create_resized( MPI_INTEGER, asizev(1), asizev(2), 
      &                              type1, ierr )
+      call mpi_type_commit( type1, ierr )
       asizev(1) = -1
       asizev(2) = -1
       call mpi_type_get_extent( type1, asizev(1), asizev(2), ierr )
@@ -60,10 +61,12 @@ C
       enddo
       call mpi_type_create_hindexed( 10, blocklens, asizev, 
      &                               MPI_INTEGER, type2, ierr )
+      call mpi_type_commit( type2, ierr )
 C
       asize = 3 * intsize
       call mpi_type_create_hvector( 10, 1, asize, MPI_INTEGER, type3, 
      &                              ierr )
+      call mpi_type_commit( type3, ierr )
 C
       do i=1,10
          blocklens(i) = 1
@@ -72,12 +75,14 @@ C
       enddo
       call mpi_type_create_struct( 10, blocklens, asizev, dtypes,
      &                             type4, ierr )
+      call mpi_type_commit( type4, ierr )
 
       do i=1,10
          displs(i)    = (i-1) * 3
       enddo
       call mpi_type_create_indexed_block( 10, 1, displs, 
      &                               MPI_INTEGER, type5, ierr )
+      call mpi_type_commit( type5, ierr )
 C
 C Using each time, send and receive using these types
       do i=1, max_asizev*3
