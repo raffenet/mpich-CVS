@@ -1583,26 +1583,26 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 {
     int mpi_errno;
     SOCKET s, *sp;
-    MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_CLOSE);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_CLOSE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
     if (!g_init_called)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_init", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 	return mpi_errno;
     }
 
     if (sock == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**nullptr", "**nullptr %s", "sock");
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 	return mpi_errno;
     }
     if (sock->closing)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**pctwice", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 	return mpi_errno;
     }
 
@@ -1622,7 +1622,7 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**bad_listenersock", 0);
 	else
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**bad_sock", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 	return mpi_errno;
     }
 
@@ -1666,7 +1666,7 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	fflush(stdout);
 #endif
 	/*
-	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 	return SOCK_ERR_OP_IN_PROGRESS;
 	*/
 	/* posting a close cancels all outstanding operations */
@@ -1699,13 +1699,13 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	if (!PostQueuedCompletionStatus(sock->set, 0, (ULONG_PTR)sock, NULL))
 	{
 	    mpi_errno = mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**fail", "**fail %d", GetLastError());
-	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
 	    return mpi_errno;
 	}
     /*
     }
     */
-    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
     return MPI_SUCCESS;
 }
 
