@@ -264,9 +264,9 @@ def mpdrun():
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
                     elif msg['cmd'] == 'job_terminated_early':
                         print 'mpdrun: job %s terminated early by %s' % (msg['jobid'], msg['id'])
-                        del socketsToSelect[readySocket]
-                        readySocket.close()
-                        done += 1
+                        # del socketsToSelect[readySocket]
+                        # readySocket.close()
+                        # done += 1
                     elif (msg['cmd'] == 'job_terminated'):
                         del socketsToSelect[readySocket]
                         readySocket.close()

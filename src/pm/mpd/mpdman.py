@@ -373,7 +373,7 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
-                        if myRank == 0:
+                        if conSocket:
                             msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
                             mpd_send_one_msg(conSocket,msgToSend)
                             conSocket.close()
@@ -391,10 +391,23 @@ def mpdman():
                             mpd_send_one_msg(rhsSocket,msg)
                             kill(clientPid,SIGCONT)
                 elif msg['cmd'] == 'client_exit_status':
-		    if myRank == 0:
-		        mpd_send_one_msg(conSocket,msg)
-		    else:
-		        mpd_send_one_msg(rhsSocket,msg)
+                    if myRank == 0:
+                        mpd_send_one_msg(conSocket,msg)
+                    else:
+                        mpd_send_one_msg(rhsSocket,msg)
+                elif msg['cmd'] == 'collective_abort':
+		    if msg['src'] != myId:
+                        if conSocket:
+                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
+                            mpd_send_one_msg(conSocket,msgToSend)
+                            # conSocket.close()
+                        if rhsSocket in socketsToSelect.keys():  # still alive ?
+                            mpd_send_one_msg(rhsSocket,msg)
+                            # rhsSocket.close()
+			try:
+                            kill(clientPid,SIGKILL)
+			except:
+			    pass    # client may already be gone
                 else:
                     mpd_print(1, 'unexpected msg recvd on lhsSocket :%s:' % msg )
             elif readySocket == rhsSocket:
@@ -530,26 +543,27 @@ def mpdman():
                 line = pmiFile.readline()
                 if not line:
                     (donePid,status) = waitpid(clientPid,0)
-		    msgToSend = { 'cmd' : 'client_exit_status', 'status' : status,
-		                  'id' : myId, 'rank' : myRank }
-		    if myRank == 0:
-		        mpd_send_one_msg(conSocket,msgToSend)
-		    else:
-		        mpd_send_one_msg(rhsSocket,msgToSend)
+                    msgToSend = { 'cmd' : 'client_exit_status', 'status' : status,
+                                  'id' : myId, 'rank' : myRank }
+                    if myRank == 0:
+                        mpd_send_one_msg(conSocket,msgToSend)
+                    else:
+                        mpd_send_one_msg(rhsSocket,msgToSend)
                     del socketsToSelect[pmiSocket]
                     pmiSocket.close()
                     if pmiCollectiveJob:
-			# treat it as a sigint to the entire job
-			if myRank == 0:
-			    msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
-			    mpd_send_one_msg(conSocket,msgToSend)
-			    conSocket.close()
-			if rhsSocket in socketsToSelect.keys():  # still alive ?
-			    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
-			    mpd_send_one_msg(rhsSocket,msgToSend)
-			    rhsSocket.close()
-			kill(0,SIGKILL)  # pid 0 -> all in my process group
-			_exit(0)
+                        if conSocket:
+                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
+                            mpd_send_one_msg(conSocket,msgToSend)
+                            # conSocket.close()
+                        if rhsSocket in socketsToSelect.keys():  # still alive ?
+                            msgToSend = { 'cmd' : 'collective_abort', 'src' : myId }
+                            mpd_send_one_msg(rhsSocket,msgToSend)
+                            # rhsSocket.close()
+			try:
+                            kill(clientPid,SIGKILL)
+			except:
+			    pass    # client may already be gone
                 else:
                     parsedMsg = parse_pmi_msg(line)
                     if parsedMsg['cmd'] == 'get_my_kvsname':
