@@ -52,7 +52,7 @@ int MPI_File_set_errhandler(MPI_File fh, MPI_Errhandler errhandler)
 			error_code = MPIR_Err_create_code(MPI_ERR_FILE, "**iobadfh",
 							"**iobadfh");
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */

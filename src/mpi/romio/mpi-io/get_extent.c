@@ -58,7 +58,7 @@ int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype,
 			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, "**dtypenull",
 							"**dtypenull");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_get_type_extent: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */

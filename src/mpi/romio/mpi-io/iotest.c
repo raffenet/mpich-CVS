@@ -65,7 +65,7 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 #ifdef MPICH2
 			error_code = MPIR_create_code(MPI_ERR_REQUEST, "**request", "**request");
 			return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPIO_Test: Invalid request object\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */

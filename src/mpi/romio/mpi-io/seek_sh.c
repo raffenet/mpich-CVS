@@ -56,7 +56,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
 							"**ioamodeseq", "**ioamodeseq");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_seek_shared: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -71,7 +71,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, 
 											"**iosharedunsupported", "**iosharedunsupported");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_seek_shared: Shared file pointer not supported on PIOFS and PVFS\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -87,7 +87,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 #ifdef MPICH2
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG, "**notsame", "**notsame");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_seek_shared: offset must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -104,7 +104,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
 							"**iobadwhence", "**iobadwhence");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_seek_shared: whence argument must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -124,7 +124,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
 							"**iobadoffset", "**iobadoffset");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 		FPRINTF(stderr, "MPI_File_seek_shared: Invalid offset argument\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -147,7 +147,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
 							"**ionegoffset", "**ionegoffset");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 		FPRINTF(stderr, "MPI_File_seek_shared: offset points to a negative location in the file\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -166,7 +166,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
 							"**ionegoffset", "**ionegoffset");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 		FPRINTF(stderr, "MPI_File_seek_shared: offset points to a negative location in the file\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -181,7 +181,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG,
 							"**iobadwhence", "**iobadwhence");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "MPI_File_seek_shared: Invalid whence argument\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */

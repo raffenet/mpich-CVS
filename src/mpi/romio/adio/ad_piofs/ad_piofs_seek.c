@@ -79,7 +79,7 @@ ADIO_Offset ADIOI_PIOFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
 							"**io %s", strerror(errno));
 			MPIR_Err_return_file(fd, myname, *error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 			*error_code =  MPI_ERR_UNKNOWN;
 #else
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,

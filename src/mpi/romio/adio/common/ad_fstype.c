@@ -384,7 +384,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**iofstype",
 							"**iofstype");
 			MPIR_Err_return_file(MPI_FILE_NULL, myname, *error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "ADIO_ResolveFileType: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:).\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -412,7 +412,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
 			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
 							"**io");
 			MPIR_Err_return_file(MPI_FILE_NULL, myname, *error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	    FPRINTF(stderr, "ADIO_ResolveFileType: Can't determine the file-system type from the specified prefix. Check the filename/path and prefix you provided and try again.\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */

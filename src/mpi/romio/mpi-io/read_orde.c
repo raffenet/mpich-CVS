@@ -57,7 +57,7 @@ int MPI_File_read_ordered_end(MPI_File fh, void *buf, MPI_Status *status)
 			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
 							"**iosplitcollnone", "**iosplitcollnone");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_ordered_end: Does not match a previous MPI_File_read_ordered_begin\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */

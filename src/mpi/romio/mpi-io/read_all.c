@@ -67,7 +67,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count,
 			error_code = MPIR_Err_create_code(MPI_ERR_ARG, 
 							"**iobadcount", "**iobadcount");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read_all: Invalid count argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -82,7 +82,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count,
 			error_code = MPIR_Err_create_code(MPI_ERR_TYPE, 
 							"**dtypenull", "**dtypenull");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_all: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -98,7 +98,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count,
 			error_code = MPIR_Err_create_code(MPI_ERR_IO, 
 							"**ioetype", "**ioetype");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
         FPRINTF(stderr, "MPI_File_read_all: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -113,7 +113,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count,
 			error_code=  MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, 
 							"**ioneedrd", "**ioneedrd");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read_all: Can't read from a file opened with MPI_MODE_WRONLY\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
@@ -128,7 +128,7 @@ int MPI_File_read_all(MPI_File fh, void *buf, int count,
 			error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION,
 							"**ioamodeseq", "**ioamodeseq");
 			return MPIR_Err_return_file(fh, myname, error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	FPRINTF(stderr, "MPI_File_read_all: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
 #else

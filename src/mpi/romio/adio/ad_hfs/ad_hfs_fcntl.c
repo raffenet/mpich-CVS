@@ -93,7 +93,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 		*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io", 
 				"**io %s", strerror(errno));
 		MPIR_Err_return_file(fd, myname, *error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 		*error_code = MPI_ERR_UNKNOWN;
 #else /* MPICH-1 */
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
@@ -115,7 +115,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	    *error_code = MPIR_Err_create_code(MPI_ERR_IO< "**io", 
 						"**io %s", strerror(errno));
 		MPIR_Err_return_file(fd, myname, *error_code); 
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 	    *error_code = MPI_ERR_UNKNOWN;
 #else
 	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
@@ -137,7 +137,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 				*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
 								"**io %s", strerror(errno));
 				MPIR_Err_return_file(fd, myname, *error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
     	        *error_code = MPI_ERR_UNKNOWN;
 #else
 		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
@@ -177,7 +177,7 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 			*error_code = MPIR_Err_create_code(MPI_ERR_IO, 
 							"**iopreallocrdwr", "**iopreallocrdwr");
 			MPIR_Err_return_file(fd, myname, *error_code);
-#elif PRINT_ERR_MSG
+#elif defined(PRINT_ERR_MSG)
 		    FPRINTF(stderr, "ADIOI_HFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 #else /* MPICH-1 */
