@@ -49,13 +49,12 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    
 	    /* MT: need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
-	    do
-	    {
-		MPIU_dbg_printf("ibu_post_write(%d bytes)\n", hdr_sz);
-		ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
-		nb = 0;
-	    }
-	    while (nb == -1);
+
+	    /*
+	    MPIU_dbg_printf("ibu_post_write(%d bytes)\n", hdr_sz);
+	    ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
+	    */
+	    nb = 0;
 	    
 	    MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 		

@@ -69,12 +69,9 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    /* MT - need some signalling to lock down our right to use the
                channel, thus insuring that the progress engine does also try to
                write */
-	    do
-	    {
-		ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
-		nb = 0;
-	    }
-	    while (nb == -1);
+
+	    /*ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);*/
+	    nb = 0;
 	    
 	    if (nb == hdr_sz)
 	    {

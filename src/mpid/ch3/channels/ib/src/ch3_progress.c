@@ -97,6 +97,7 @@ void MPIDI_CH3I_IB_post_read(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_IB_POST_READ);
     MPIU_dbg_printf("ch3_ib_post_read\n");
     vc->ib.recv_active = req;
+    ibu_post_readv(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_IB_POST_READ);
 }
 
@@ -107,6 +108,7 @@ void MPIDI_CH3I_IB_post_write(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_IB_POST_WRITE);
     MPIU_dbg_printf("ch3_ib_post_write\n");
     vc->ib.send_active = req;
+    ibu_post_writev(vc->ib.ibu, req->ch3.iov + req->ib.iov_offset, req->ch3.iov_count - req->ib.iov_offset, NULL);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_IB_POST_WRITE);
 }
 
