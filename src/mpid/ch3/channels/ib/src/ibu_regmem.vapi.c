@@ -285,7 +285,6 @@ int ibu_free_pin_cache()
 int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 {
     VAPI_ret_t status;
-    void *ptr;
     VAPI_mrw_t mem, mem_out;
     ibu_mem_node_t *iter;
     MPIDI_STATE_DECL(MPID_STATE_IBU_REGISTER_MEMORY);
@@ -406,7 +405,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state)
 {
     ibu_mem_node_t *iter;
-    VAPI_ret_t status;
+    /*VAPI_ret_t status;*/
     MPIDI_STATE_DECL(MPID_STATE_IBU_DEREGISTER_MEMORY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_DEREGISTER_MEMORY);
