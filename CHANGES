@@ -5,6 +5,13 @@
   the right contents and envelope data.
 - ROMIO flattening code now supports subarray and darray combiners.
 
+- Removed MPIDI_CH3_{iRead,iWrite} from the CH3 interface.
+  MPIDI_CH3U_Handle_recv_pkt() now returns a receive request with a populated
+  iovec to receive data associated with the request.
+  MPIDU_CH3U_Handle_{recv,send}_req() reload the iovec in the request and
+  return and set the complete argument to TRUE if more data is to read or
+  written.  If data transfer for the request is complete, the coomplete
+  argument must be set to FALSE.
 
 =============================================================================== 
                                Changes in 0.96p2
