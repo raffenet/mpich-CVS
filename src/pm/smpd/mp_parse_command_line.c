@@ -231,9 +231,24 @@ int mp_get_next_hostname(char *host)
 {
     if (s_host_list == NULL)
     {
-	if (gethostname(host, SMPD_MAX_HOST_LENGTH) == 0)
-	    return SMPD_SUCCESS;
-	return SMPD_FAIL;
+	if (smpd_process.cur_default_host)
+	{
+	    if (smpd_process.cur_default_iproc >= smpd_process.cur_default_host->nproc)
+	    {
+		smpd_process.cur_default_host = smpd_process.cur_default_host->next;
+		smpd_process.cur_default_iproc = 0;
+		if (smpd_process.cur_default_host == NULL) /* This should never happen because the hosts are in a ring */
+		    return SMPD_FAIL;
+	    }
+	    strcpy(host, smpd_process.cur_default_host->host);
+	    smpd_process.cur_default_iproc++;
+	}
+	else
+	{
+	    if (gethostname(host, SMPD_MAX_HOST_LENGTH) != 0)
+		return SMPD_FAIL;
+	}
+	return SMPD_SUCCESS;
     }
     if (s_cur_host == NULL)
     {
@@ -596,6 +611,9 @@ int mp_parse_command_args(int *argcp, char **argvp[])
      * -np <numprocs>
      * -dir <working directory>
      */
+
+    /* Get a list of hosts from a file or the registry to be used with the -n,-np options */
+    smpd_get_default_hosts();
 
     cur_rank = 0;
     next_argc = *argcp;

@@ -119,7 +119,13 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* noprompt                */
       "",               /* smpd_filename           */
       SMPD_FALSE,       /* stdin_toall             */
-      SMPD_FALSE        /* stdin_redirecting       */
+      SMPD_FALSE,       /* stdin_redirecting       */
+      NULL,             /* default_host_list       */
+      NULL,             /* cur_default_host        */
+      0                 /* cur_default_iproc       */
+#ifdef HAVE_WINDOWS_H
+      , NULL            /* hSMPDDataMutex          */
+#endif
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -682,4 +688,169 @@ int smpd_get_smpd_password_from_parent(sock_set_t set, sock_t sock)
     smpd_enter_fn("smpd_get_smpd_password_from_parent");
     smpd_exit_fn("smpd_get_smpd_password_from_parent");
     return SMPD_FAIL;
+}
+
+int smpd_get_default_hosts()
+{
+    char hosts[8192];
+    char *host;
+    smpd_host_node_t *cur_host, *iter;
+#ifdef HAVE_WINDOWS_H
+    DWORD len;
+#else
+    int dynamic = SMPD_FALSE;
+    char myhostname[SMPD_MAX_HOST_LENGTH];
+    int found;
+#endif
+
+    smpd_enter_fn("smpd_get_default_hosts");
+
+    if (smpd_get_smpd_data("hosts", hosts, 8192) != SMPD_SUCCESS)
+    {
+#ifdef HAVE_WINDOWS_H
+	len = 8192;
+	if (GetComputerName(hosts, &len))
+	{
+	    smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	    if (smpd_process.default_host_list == NULL)
+	    {
+		smpd_exit_fn("smpd_get_default_hosts");
+		return SMPD_FAIL;
+	    }
+	    strcpy(smpd_process.default_host_list->host, hosts);
+	    smpd_process.default_host_list->nproc = 1;
+	    smpd_process.default_host_list->next = smpd_process.default_host_list;
+	    smpd_process.cur_default_host = smpd_process.default_host_list;
+	    smpd_exit_fn("smpd_get_default_hosts");
+	    return SMPD_SUCCESS;
+	}
+	smpd_exit_fn("smpd_get_default_hosts");
+	return SMPD_FAIL;
+#else
+	smpd_lock_smpd_data();
+	if (smpd_get_smpd_data("dynamic_hosts", hosts, 8192) != SMPD_SUCCESS)
+	{
+	    smpd_unlock_smpd_data();
+	    if (gethostname(hosts, 8192) == 0)
+	    {
+		smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		if (smpd_process.default_host_list == NULL)
+		{
+		    smpd_exit_fn("smpd_get_default_hosts");
+		    return SMPD_FAIL;
+		}
+		strcpy(smpd_process.default_host_list->host, hosts);
+		smpd_process.default_host_list->nproc = 1;
+		smpd_process.default_host_list->next = smpd_process.default_host_list;
+		smpd_process.cur_default_host = smpd_process.default_host_list;
+		/* add this host to the dynamic_hosts key */
+		strcpy(myhostname, hosts);
+		smpd_lock_smpd_data();
+		hosts[0] = '\0';
+		smpd_get_smpd_data("dynamic_hosts", hosts, 8192);
+		if (strlen(hosts) > 0)
+		{
+		    /* FIXME this could overflow */
+		    strcat(hosts, " ");
+		    strcat(hosts, myhostname);
+		}
+		else
+		{
+		    strcpy(hosts, myhostname);
+		}
+		smpd_set_smpd_data("dynamic_hosts", hosts);
+		smpd_unlock_smpd_data();
+		smpd_exit_fn("smpd_get_default_hosts");
+		return SMPD_SUCCESS;
+	    }
+	    smpd_exit_fn("smpd_get_default_hosts");
+	    return SMPD_FAIL;
+	}
+	smpd_unlock_smpd_data();
+	if (gethostname(myhostname, SMPD_MAX_HOST_LENGTH) != 0)
+	{
+	    dynamic = SMPD_FALSE;
+	    myhostname[0] = '\0';
+	}
+	else
+	{
+	    dynamic = SMPD_TRUE;
+	}
+#endif
+    }
+
+    /* Insert code here to parse a compresses host string */
+    /* For now, just use a space separated list of host names */
+
+    host = strtok(hosts, " \t\r\n");
+    while (host)
+    {
+	cur_host = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	if (cur_host != NULL)
+	{
+	    strcpy(cur_host->host, host);
+	    cur_host->nproc = 1;
+	    cur_host->next = NULL;
+	    if (smpd_process.default_host_list == NULL)
+	    {
+		smpd_process.default_host_list = cur_host;
+	    }
+	    else
+	    {
+		iter = smpd_process.default_host_list;
+		while (iter->next)
+		    iter = iter->next;
+		iter->next = cur_host;
+	    }
+	}
+	host = strtok(NULL, " \t\r\n");
+    }
+    if (smpd_process.default_host_list)
+    {
+#ifndef HAVE_WINDOWS_H
+	if (dynamic)
+	{
+	    found = SMPD_FALSE;
+	    iter = smpd_process.default_host_list;
+	    while (iter)
+	    {
+		if (strcmp(iter->host, myhostname) == 0)
+		{
+		    found = SMPD_TRUE;
+		    break;
+		}
+		iter = iter->next;
+	    }
+	    if (!found)
+	    {
+		/* add this host to the dynamic_hosts key */
+		smpd_lock_smpd_data();
+		hosts[0] = '\0';
+		smpd_get_smpd_data("dynamic_hosts", hosts, 8192);
+		if (strlen(hosts) > 0)
+		{
+		    /* FIXME this could overflow */
+		    strcat(hosts, " ");
+		    strcat(hosts, myhostname);
+		}
+		else
+		{
+		    strcpy(hosts, myhostname);
+		}
+		smpd_set_smpd_data("dynamic_hosts", hosts);
+		smpd_unlock_smpd_data();
+	    }
+	}
+#endif
+	/* make the default list into a ring */
+	iter = smpd_process.default_host_list;
+	while (iter->next)
+	    iter = iter->next;
+	iter->next = smpd_process.default_host_list;
+	/* point the cur_default_host to the first node in the ring */
+	smpd_process.cur_default_host = smpd_process.default_host_list;
+    }
+
+    smpd_exit_fn("smpd_get_default_hosts");
+    return SMPD_SUCCESS;
 }

@@ -505,6 +505,14 @@ int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
 	strncpy(value, "no", value_len);
 	value[value_len-1] = '\0';
     }
+    else if (strcmp(key, "hosts") == 0)
+    {
+	if (gethostname(value, value_len) != 0)
+	{
+	    smpd_exit_fn("smpd_get_smpd_data_default");
+	    return SMPD_FAIL;
+	}
+    }
     else
     {
 	smpd_exit_fn("smpd_get_smpd_data_default");
@@ -591,4 +599,39 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
     smpd_exit_fn("smpd_get_smpd_data");
     return result;
 #endif
+}
+
+int smpd_lock_smpd_data(void)
+{
+    smpd_enter_fn("smpd_lock_smpd_data");
+#ifdef HAVE_WINDOWS_H
+    if (smpd_process.hSMPDDataMutex == NULL)
+    {
+	smpd_process.hSMPDDataMutex = CreateMutex(NULL, FALSE, SMPD_DATA_MUTEX_NAME);
+	if (smpd_process.hSMPDDataMutex == NULL)
+	{
+	    smpd_exit_fn("smpd_lock_smpd_data");
+	    return SMPD_FAIL;
+	}
+    }
+    if (WaitForSingleObject(smpd_process.hSMPDDataMutex, SMPD_SHORT_TIMEOUT*1000) != WAIT_OBJECT_0)
+    {
+	smpd_exit_fn("smpd_lock_smpd_data");
+	return SMPD_FAIL;
+    }
+#else
+#endif
+    smpd_exit_fn("smpd_lock_smpd_data");
+    return SMPD_SUCCESS;
+}
+
+int smpd_unlock_smpd_data(void)
+{
+    smpd_enter_fn("smpd_unlock_smpd_data");
+#ifdef HAVE_WINDOWS_H
+    ReleaseMutex(smpd_process.hSMPDDataMutex);
+#else
+#endif
+    smpd_exit_fn("smpd_unlock_smpd_data");
+    return SMPD_SUCCESS;
 }

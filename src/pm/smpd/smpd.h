@@ -89,7 +89,8 @@ typedef int SMPD_BOOL;
 #define SMPD_NO_RECONNECT_PORT_STR        "-1"
 #define SMPD_SUCCESS_STR                  "SUCCESS"
 #define SMPD_FAIL_STR                     "FAIL"
-#define SMPD_OUTPUT_MUTEXNAME             "SMPD_OUTPUT_MUTEX"
+#define SMPD_OUTPUT_MUTEX_NAME            "SMPD_OUTPUT_MUTEX"
+#define SMPD_DATA_MUTEX_NAME              "SMPD_DATA_MUTEX"
 #define SMPD_FREE_COOKIE           0xDDBEEFDD
 
 #define SMPD_DBG_STATE_STDOUT            0x01
@@ -431,6 +432,11 @@ typedef struct smpd_global_t
     SMPD_BOOL noprompt;
     char smpd_filename[SMPD_MAX_FILENAME];
     SMPD_BOOL stdin_toall, stdin_redirecting;
+    smpd_host_node_t *default_host_list, *cur_default_host;
+    int cur_default_iproc;
+#ifdef HAVE_WINDOWS_H
+    HANDLE hSMPDDataMutex;
+#endif
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -557,5 +563,8 @@ SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd
 SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd_process_t *process);
 SMPD_BOOL smpd_is_affirmative(const char *str);
 int smpd_hide_string_arg(char *str, const char *flag);
+int smpd_get_default_hosts(void);
+int smpd_lock_smpd_data(void);
+int smpd_unlock_smpd_data(void);
 
 #endif
