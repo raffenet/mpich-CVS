@@ -51,28 +51,24 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 {
     static const char FCNAME[] = "MPI_Get_count";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
     int size;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_COUNT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_COUNT);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
-            if (!status) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                            "**nullptr", "**nullptr %s", "status" );
-            } 
+	    MPID_Datatype *datatype_ptr = NULL;
+
+	    MPID_ERRTEST_ARGNULL(status, "status", mpi_errno);
+	    MPID_ERRTEST_ARGNULL(count, "count", mpi_errno);
+
             /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If datatype_ptr is not value, it will be reset to null */
+	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+	    /* Q: Must the type be committed to be used with this function? */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_COUNT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
