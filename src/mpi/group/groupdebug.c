@@ -12,6 +12,8 @@
  * This file contains routines that are used only to perform testing
  * and debugging of the group routines
  */
+void MPITEST_Group_create( int, int, MPI_Group * );
+void MPITEST_Group_print( MPI_Group );
 
 void MPITEST_Group_create( int nproc, int myrank, MPI_Group *new_group )
 {

@@ -58,8 +58,6 @@ static Param_entry *param_table = 0;
   @*/
 int MPIU_Param_init( int *argc_p, char *argv_p[], const char def_file[] )
 {
-    int argc;
-
     /* Allocate a parameter table */
     param_table = (Param_entry *)MPIU_Malloc( 
 				     MAX_PARAM_TABLE * sizeof(Param_entry) );
@@ -144,6 +142,7 @@ int MPIU_Param_init( int *argc_p, char *argv_p[], const char def_file[] )
     /* Now, process any command line choices.  This must look for registered
        names. */
     if (argc_p) {
+	int argc;
 	for (argc=0; argc<*argc_p; argc++) {
 	    ;
 	}
@@ -187,7 +186,6 @@ static Param_entry *find_entry( const char name[] )
 
 int MPIU_Param_get_int( const char name[], int default_val, int *value )
 {
-    int i, cmp;
     Param_entry *entry; 
 
     entry = find_entry( name );
@@ -210,7 +208,6 @@ int MPIU_Param_get_int( const char name[], int default_val, int *value )
 int MPIU_Param_get_string( const char name[], const char *default_val,
                            char **value )
 {
-    int i, cmp;
     Param_entry *entry; 
 
     entry = find_entry( name );

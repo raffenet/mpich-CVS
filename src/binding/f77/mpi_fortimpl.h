@@ -116,11 +116,6 @@ typedef char *MPID_FCHAR_T;
 #define MPID_FCHAR_LARG(d) ,d
 #endif
 
-#ifndef MPIR_FALLOC
-#define MPIR_FALLOC(ptr,expr,a,b,c) \
-    if (! (ptr = (expr))) { MPIR_ERROR(a,b,c); }
-#endif
-
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
