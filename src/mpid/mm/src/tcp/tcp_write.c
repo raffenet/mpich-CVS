@@ -25,9 +25,9 @@ int tcp_write(MPIDI_VC *vc_ptr)
     case MM_VEC_BUFFER:
 	/* error - coordinate buf_ptr->vec with car_ptr->data.tcp.buf.vec */
 	/* write as much of the vector as possible */
-	if (car_ptr->data.tcp.buf.vec.len > 1)
+	if (car_ptr->data.tcp.buf.vec_write.vec_size > 1)
 	{
-	    num_read = bwritev(vc_ptr->data.tcp.bfd, car_ptr->data.tcp.buf.vec.vec, car_ptr->data.tcp.buf.vec.len);
+	    num_read = bwritev(vc_ptr->data.tcp.bfd, car_ptr->data.tcp.buf.vec_write.vec, car_ptr->data.tcp.buf.vec_write.vec_size);
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
@@ -39,8 +39,8 @@ int tcp_write(MPIDI_VC *vc_ptr)
 	else
 	{
 	    num_read = bwrite(vc_ptr->data.tcp.bfd, 
-		car_ptr->data.tcp.buf.vec.vec[0].MPID_VECTOR_BUF,
-		car_ptr->data.tcp.buf.vec.vec[0].MPID_VECTOR_LEN);
+		car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_BUF,
+		car_ptr->data.tcp.buf.vec_write.vec[0].MPID_VECTOR_LEN);
 	    if (num_read == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();

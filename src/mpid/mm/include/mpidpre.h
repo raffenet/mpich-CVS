@@ -140,8 +140,10 @@ typedef union MM_Segment_buffer
     {
 	MM_BUFFER_TYPE type;
 	MPID_VECTOR vec[MPID_VECTOR_LIMIT];
-	int size;
+	int vec_size;
+	int msg_size;
 	int num_read;
+	int local_last;
 	int min_num_written;
     } vec;
 #ifdef WITH_METHOD_SHM

@@ -71,9 +71,11 @@ int mm_packer_read()
 	    /* update min_num_written */
 	    buf_ptr->vec.vec[0].MPID_VECTOR_BUF = (void*)car_ptr->request_ptr->mm.user_buf.send;
 	    buf_ptr->vec.vec[0].MPID_VECTOR_LEN = car_ptr->request_ptr->mm.size;
-	    buf_ptr->vec.size = 1;
+	    buf_ptr->vec.vec_size = 1;
 	    buf_ptr->vec.num_read = 0;
 	    buf_ptr->vec.min_num_written = 0;
+	    buf_ptr->vec.local_last = 0;
+	    buf_ptr->vec.msg_size = 0;
 	    finished = TRUE;
 	    break;
 #ifdef WITH_METHOD_SHM

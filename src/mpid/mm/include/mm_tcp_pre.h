@@ -12,13 +12,28 @@ typedef struct MM_Car_data_tcp
     {
 	struct car_tcp_tmp
 	{
+	    int num_read_local;
+	    int num_read_copy;
 	    int num_read;
+	    int num_written;
 	} tmp;
-	struct car_tcp_vec
+	struct car_tcp_vec_read
 	{
+	    int num_read_local;
 	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
-	    int len;
-	} vec;
+	    int vec_size;
+	    int cur_index;
+	    int num_read_at_cur_index;
+	} vec_read;
+	struct car_tcp_vec_write
+	{
+	    int num_read_copy;
+	    MPID_VECTOR vec[MPID_VECTOR_LIMIT];
+	    int vec_size;
+	    int num_written;
+	    int cur_index;
+	    int num_written_at_cur_index;
+	} vec_write;
 #ifdef WITH_METHOD_SHM
 	struct car_tcp_shm
 	{

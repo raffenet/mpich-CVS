@@ -37,7 +37,7 @@ int mm_unpacker_write()
 		car_ptr->data.unpacker.first,
 		&car_ptr->data.unpacker.last,
 		car_ptr->request_ptr->mm.buf.vec.vec,
-		&car_ptr->request_ptr->mm.buf.vec.size);
+		&car_ptr->request_ptr->mm.buf.vec.vec_size);
 	    /* update first and last */
 	    /* update min_num_written */
 	    break;

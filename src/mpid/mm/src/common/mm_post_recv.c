@@ -100,9 +100,11 @@ int mm_post_read_pkt(MPIDI_VC *vc_ptr)
     buf_ptr->type = MM_VEC_BUFFER;
     buf_ptr->vec.vec[0].MPID_VECTOR_BUF = (void*)&car_ptr->data.pkt;
     buf_ptr->vec.vec[0].MPID_VECTOR_LEN = sizeof(MPID_Packet);
-    buf_ptr->vec.size = 1;
+    buf_ptr->vec.vec_size = 1;
     buf_ptr->vec.num_read = 0;
     buf_ptr->vec.min_num_written = 0;
+    buf_ptr->vec.local_last = sizeof(MPID_Packet);
+    buf_ptr->vec.msg_size = sizeof(MPID_Packet);
 
     vc_ptr->post_read(vc_ptr, car_ptr);
 
