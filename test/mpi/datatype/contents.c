@@ -27,18 +27,33 @@ int main(int argc, char **argv)
     /* perform some tests */
     err = builtin_float_test();
     errs += err;
+    if (err) {
+	fprintf(stderr, "Found %d errors in builtin float test.\n", err);
+    }
 
     err = vector_of_vectors_test();
     errs += err;
+    if (err) {
+	fprintf(stderr, "Found %d errors in vector of vectors test.\n", err);
+    }
 
     err = optimizable_vector_of_basics_test();
     errs += err;
+    if (err) {
+	fprintf(stderr, "Found %d errors in vector of basics test.\n", err);
+    }
 
     err = indexed_of_basics_test();
     errs += err;
+    if (err) {
+	fprintf(stderr, "Found %d errors in indexed of basics test.\n", err);
+    }
 
     err = indexed_of_vectors_test();
     errs += err;
+    if (err) {
+	fprintf(stderr, "Found %d errors in indexed of vectors test.\n", err);
+    }
 
 #ifdef HAVE_MPI_TYPE_CREATE_STRUCT
     err = struct_of_basics_test();
