@@ -147,7 +147,7 @@ if [ $do_bindings = "yes" ] ; then
 
     if [ $build_f77 = "yes" ] ; then
 	echo "Building Fortran 77 interface"
-	(cd src/binding/f77 && ./buildiface )
+	( cd src/binding/f77 && chmod a+x ./buildiface && ./buildiface )
     fi
     if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
 	build_cxx=yes
@@ -162,7 +162,8 @@ if [ $do_bindings = "yes" ] ; then
     #    if [ ! -d src/mpi/romio ] ; then
 #	    otherarg="-noromio"
     #    fi
-	(cd src/binding/cxx && ./buildiface -nosep $otherarg )
+	( cd src/binding/cxx && chmod a+x ./buildiface &&
+	  ./buildiface -nosep $otherarg )
     fi
 fi
 #
