@@ -28,12 +28,15 @@ const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
 void *MPIR_F_MPI_BOTTOM     = 0;
 void *MPI_F_STATUS_IGNORE   = 0;
 void *MPI_F_STATUSES_IGNORE = 0;
+int  *MPI_F_ERRCODES_IGNORE = 0;
+void *MPI_F_ARGVS_NULL      = 0;
 #endif
 
 
-FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
+FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d )
 {
     MPIR_F_MPI_BOTTOM     = a;
     MPI_F_STATUS_IGNORE   = b;
     MPI_F_STATUSES_IGNORE = c;
+    MPI_F_ERRCODES_IGNORE = (int *)d;
 }
