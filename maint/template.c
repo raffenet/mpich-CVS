@@ -44,6 +44,8 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 
    Notes:
 
+.N Fortran
+
 .N Errors
 .N MPI_SUCCESS
 .N ... others
@@ -70,7 +72,7 @@ int MPI_Foo( MPI_Comm comm, int a )
             } 
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (!comm_ptr) { comm_ptr = MPIR_Process.comm_world; }
+	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FOO);
                 return MPIR_Err_return_comm( comm_ptr, mpi_errno );
