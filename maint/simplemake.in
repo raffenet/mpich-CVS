@@ -1071,7 +1071,7 @@ sub ClearVars {
     %sources = ();
     # Targets
     @alltargets = ();   # implicit targets 
-    @allshlibtargets = () # implicit shared library targets
+    @allshlibtargets = (); # implicit shared library targets
     %usertargets = ();  # explicit, user-defined targets
     %extra_programs = ();
     %libraries = ();
