@@ -107,18 +107,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		    if (sreq->ch3.iov_count != 0)
 		    {
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-#                       if 0
-			{
-			    /*
-			     * This is handled by CH3_iWrite() which is called by CH3U_Handle_send_req() if more data needs to be
-			     * written.
-			     */
-			    if (vc->ssm.bShm)
-			        vc->ssm.send_active = sreq;
-			    else
-                                MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
-			}
-#			endif
 		    }
 		}
 	    }

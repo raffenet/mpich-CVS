@@ -98,7 +98,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		    /* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete, but
 		       request may still be active (see MPI_Ssend()) */
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    vc->shm.send_active = sreq;
 		}
 	    }
 	}
