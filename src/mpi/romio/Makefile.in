@@ -68,7 +68,7 @@ clean:
          do \
             echo " " ;\
             echo cleaning directory $$dir ;\
-            (cd $$dir; \rm -f *.o) ;\
+            (cd $$dir; rm -f *.o) ;\
          done; \
          echo " " ;\
          echo cleaning directory test ;\
@@ -79,7 +79,7 @@ mpiolib:
 	@if test "$(FROM_MPICH)" = 0 ; then \
             echo " " ;\
             echo "deleting previously built library if it exists" ;\
-            \rm -f $(LIBNAME) ;\
+            rm -f $(LIBNAME) ;\
         fi; \
 	if test "$(arch_IRIX)" = 1 && test "$(MPI)" = "sgi" && test "$(SGIMPI31)" = 0; then \
              if test "$(MIPS)" = 3 && test "$(BITS)" = 32 ; then \
@@ -156,21 +156,33 @@ profile:
 cleanall:
 	@dirs=`echo "$(ALL_DIRS)"`; \
         echo cleaning current directory ;\
-	(\rm -f config.status Makefile *~ *.log romio.tar*) ;\
+	(rm -f config.status Makefile *~ *.log romio.tar*) ;\
         for dir in $$dirs ;\
          do \
             echo " " ;\
             echo cleaning directory $$dir ;\
-            (cd $$dir; \rm -f *.o Makefile *~) ;\
+            (cd $$dir; rm -f *.o Makefile *~) ;\
          done; \
-         (cd test; \rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity); \
+         (cd test; rm -f .P* PI* misc.c large_file.c fcoll_test.f fmisc.f fperf.f mpif.h simple async coll_test coll_perf misc perf fcoll_test fperf fmisc file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity); \
          echo " " ;\
          echo "cleaning directory include" ;\
-         (cd include; \rm -f *.h);\
+         (cd include; rm -f *.h);\
          echo " " ;\
          echo "cleaning directory util" ;\
-         (cd util; \rm -f romioinstall *~)
+         (cd util; rm -f romioinstall *~)
 
 install:
 	$(MAKE) clean
 	@./util/romioinstall -prefix=$(PREFIX)
+
+romio_lflags:
+	@echo '@ROMIO_LFLAGS@'
+
+romio_liblist:
+	@echo '@ROMIO_LIBLIST@'
+
+romio_tcflags:
+	@echo '@ROMIO_TCFLAGS@'
+
+romio_tfflags:
+	@echo '@ROMIO_TFFLAGS@'
