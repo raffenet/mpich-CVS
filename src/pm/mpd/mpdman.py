@@ -849,6 +849,16 @@ def mpdman():
                         mpd_send_one_msg_noprint(conSocket,msgToSend)
                 elif parsedMsg['cmd'] == 'init':
                     pmiCollectiveJob = 1
+                    myPmiVersion = "1.1"
+                    (myV1,myV2) = myPmiVersion.split('.')
+                    (pV1,pV2) = parsedMsg['pmi_version'].split('.')
+                    if int(myV1) == int(pV1)  and  int(myV2) >= int(pV2):
+                        rc = 0
+                    else:
+                        rc = -1
+                    pmiMsgToSend = 'cmd=response_to_init pmi_version=%s rc=%d\n' % \
+                                   (myPmiVersion,rc)
+                    mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'get_my_kvsname':
                     pmiMsgToSend = 'cmd=my_kvsname kvsname=%s\n' % (default_kvsname)
                     mpd_send_one_line(pmiSocket,pmiMsgToSend)
