@@ -2,10 +2,10 @@ sendrecv1 4
 sendrecv2 2
 #pingping 2
 bottom 2
-bsend1
-bsend2
-bsend3
-bsend4
+bsend1 1
+bsend2 1
+bsend3 1
+bsend4 1
 bsendalign 2
 bsendpending 2
 isendself 1
@@ -20,3 +20,4 @@ greq1 1
 probe-unexp 4
 # For testing, scancel will run with 1 process as well
 scancel 2
+threaded_sr 2
