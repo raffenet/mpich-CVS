@@ -24,7 +24,7 @@ mpio:
 	$(MAKE) clean
 	@if test "$(NOPROFILE)" = 0 ; then\
             $(MAKE) profile; \
-        fi;\
+        fi;
 	$(MAKE) clean
 	$(RANLIB) $(LIBNAME)
 	@if test "$(FROM_MPICH)" = 0 ; then \
