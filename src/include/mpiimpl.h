@@ -10,6 +10,9 @@
 /* Include the mpi definitions */
 #include "mpi.h"
 
+/* Include nested mpi (NMPI) definitions */
+#include "nmpi.h"
+
 /* There are a few definitions that must be made *before* the mpichconf.h 
    file is included.  These include the definitions of the error levels */
 #define MPICH_ERROR_MSG_NONE 0
