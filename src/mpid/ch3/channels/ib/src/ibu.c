@@ -1327,7 +1327,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 
 	status = VAPI_poll_cq(
 	    IBU_Process.hca_handle,
-	    *set,
+	    set,
 	    &completion_data);
 	if (status == VAPI_EAGAIN || status == VAPI_CQ_EMPTY)
 	{
