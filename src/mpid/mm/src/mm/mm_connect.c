@@ -15,7 +15,7 @@ int MM_Connect(MPID_Info *info_ptr, char *port_name)
     int bfd;
     int error;
 
-    strcpy(host, port_name);
+    strncpy(host, port_name, 100);
     token = strtok(host, ":");
     token = strtok(NULL, "\n");
     if (token == NULL)

@@ -34,7 +34,7 @@ int MM_Open_port(MPID_Info *info_ptr, char *port_name)
 
     p = (OpenPortNode_t*)MPIU_Malloc(sizeof(OpenPortNode_t));
     p->bfd = bfd;
-    strcpy(p->port_name, port_name);
+    strncpy(p->port_name, port_name, MPI_MAX_PORT_NAME);
     p->next = MPID_Process.port_list;
     MPID_Process.port_list = p;
 
