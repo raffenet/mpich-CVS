@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     setreuid(getuid(),getuid());
     setregid(getgid(),getgid());
 
-    newargv = (char **) malloc(sizeof(char*) * argc + 2);  /* pad a bit */
+    newargv = (char **) malloc(sizeof(char*) * (argc + 2));  /* pad a bit */
     strncpy(cmd,argv[0],NAME_LEN);
     if (s = strrchr(cmd,'/'))
     {
