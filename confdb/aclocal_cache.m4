@@ -115,7 +115,7 @@ dnl accepted by 'configure'.
 dnl
 dnl See Also:
 dnl AC_CACHE_LOAD
-dnlD*/
+dnl D*/
 dnl Add this call to the other ARG_ENABLE calls.  Note that the values
 dnl set here are redundant; the LOAD_CACHE call relies on the way autoconf
 dnl initially processes ARG_ENABLE commands.
@@ -124,11 +124,21 @@ AC_ARG_ENABLE(cache,
 [--enable-cache  - Turn on configure caching],
 enable_cache="$enableval",enable_cache="notgiven")
 ])
+dnl/*D
+dnl PAC_SUBDIR_CACHE - Create a cache file before ac_output for subdirectory
+dnl configures.
+dnl 
+dnl Synopsis:
+dnl PAC_SUBDIR_CACHE
 dnl
+dnl Output Effects:
+dnl 	
 dnl Create a cache file before ac_output so that subdir configures don't
 dnl make mistakes. 
 dnl We can't use OUTPUT_COMMANDS to remove the cache file, because those
 dnl commands are executed *before* the subdir configures.
+dnl
+dnl D*/
 AC_DEFUN(PAC_SUBDIR_CACHE,[
 if test "$cache_file" = "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; then
     cache_file=$$conf.cache
