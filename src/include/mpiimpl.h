@@ -888,9 +888,15 @@ int MPIR_Err_return_comm( MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( MPID_Win *, const char [], int );
 int MPIR_Err_return_file( MPID_File *, const char [], int );
 int MPIR_Err_create_code( int, const char [], ... );
+#ifdef MPICH_SINGLE_THREADED
+#define MPIR_Nest_incr() MPIR_Thread.nest_count++
+#define MPIR_Nest_decr() MPIR_Thread.nest_count--
+#define MPIR_Nest_value() MPIR_Thread.nest_count
+#else
 void MPIR_Nest_incr( void );
 void MPIR_Nest_decr( void );
 int MPIR_Nest_value( void );
+#endif
 
 /* ADI Bindings */
 int MPID_Init(int *, char ***, int, int *, int *, int *);

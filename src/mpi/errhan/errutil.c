@@ -226,8 +226,12 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 /* 
    Nesting level for routines.
    Note that since these use per-thread data, no locks or atomic update
-   routines are required 
+   routines are required.
+
+   In a single-threaded environment, we could replace these with
+   MPIR_Thread.nest_count ++, --.  These are defined in the mpiimpl.h file.
  */
+#ifndef MPICH_SINGLE_THREADED
 void MPIR_Nest_incr( void )
 {
     MPICH_PerThread_t *p;
@@ -246,6 +250,7 @@ int MPIR_Nest_value( void )
     MPID_GetPerThread(p);
     return p->nest_count;
 }
+#endif
 
 /*
  * Error handlers.  These are handled just like the other opaque objects
