@@ -74,7 +74,8 @@ AC_OUTPUT_COMMANDS([chmod a+x mpicxx ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% mpicxx > ../../../bin/mpicxx ;
-   chmod a+x ../../../bin/mpicxx ],
+   chmod a+x ../../../bin/mpicxx 
+   cp mpicxx.h ../../../src/include/mpicxx.h ],
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 )
