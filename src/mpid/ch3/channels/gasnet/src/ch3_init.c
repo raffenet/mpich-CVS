@@ -67,15 +67,13 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #ifdef FOO
     int i;
 #endif
-    int argc;
-    char *argv[1];
+    int null_argc = 0;
+    char **null_argv = 0;
 
     MPIDI_CH3I_inside_handler = 0;
     
     /* Pass in null args */
-    argc = 0;
-    argv[1] = "";
-    gn_errno = gasnet_init (&argc, &argv);
+    gn_errno = gasnet_init (&null_argc, &null_argv);
     if (gn_errno != GASNET_OK)
     {
         mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
