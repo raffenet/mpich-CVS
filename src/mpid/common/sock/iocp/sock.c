@@ -1682,15 +1682,18 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	/*printf("flushing socket buffer before closing\n");fflush(stdout);*/
 	FlushFileBuffers((HANDLE)s);
 
-	/*
-	shutdown(s, SD_SEND);
-	if (sock->state ^ SOCKI_READING)
+	if (sock->type != SOCKI_LISTENER)
 	{
-	    Post a read to get notification of when the socket is empty
+	    char ch;
+	    shutdown(s, SD_SEND);
+	    /* If we require that sockets be quiet when they are shut down then a blocking read here should return 0 bytes */
+	    /* This gives the OS the chance to do a graceful shutdown and not lose any outstanding data. */
+	    recv(sock->sock, &ch, 1, 0);
 	}
-	*/
-
-	shutdown(s, SD_BOTH);
+	else
+	{
+	    shutdown(s, SD_BOTH);
+	}
 	closesocket(s);
 	*sp = INVALID_SOCKET;
 	if (!PostQueuedCompletionStatus(sock->set, 0, (ULONG_PTR)sock, NULL))
