@@ -13,7 +13,14 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 {
     int perm, amode, old_mask, flag;
     char *value;
+    /* some really old versions of pvfs may not have a release nr */
+    /* we changed the structure of pvfs_filestat in pvfs-1.5.7 */
+#if defined(PVFS_RELEASE_NR) && PVFS_RELEASE_NR > 10506
+    struct pvfs_filestat pstat = {-1,-1,-1};
+#else
     struct pvfs_filestat pstat = {-1,-1,-1,0,0};
+#endif
+
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_OPEN";
 #endif
