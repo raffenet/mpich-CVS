@@ -846,8 +846,15 @@ sub DefaultRules {
     &SuffixDocs;
 
     print FD ".SUFFIXES:$newline";
+    # Grrr.
+    # OSF1 make complains if there are no suffix items.  To make it happy,
+    # *always* add .o .c
     if ("$suffixes $ExplicitSuffixes" ne " ") {
 	print FD ".SUFFIXES: $suffixes $ExplicitSuffixes$newline";
+    }
+    else { 
+	print FD "# Some make programs complain if no suffixes are set$newline";
+	print FD ".SUFFIXES: .c .o$newline";
     }
 
     # To make it easier to build programs, conditionally add a 
@@ -969,7 +976,7 @@ sub DefaultRules {
 	}
 	$relcurdir = $curdir;
 	$relcurdir =~ s/^$last_config_dir//;
-	print FD "\t${ignore_step}CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
+	print FD "\t${ignore_step}test -x config.status && CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
     }
     # Clean targets
     &TargetClean;
