@@ -184,7 +184,6 @@ static inline void post_queued_send(MPIDI_VC * vc)
     
     assert(vc != NULL);
     vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc); /* MT */
-    /*
     if (vc->ib.send_active != NULL)
     {
 	MPIDI_DBG_PRINTF((75, FCNAME, "queued message, send active"));
@@ -195,7 +194,6 @@ static inline void post_queued_send(MPIDI_VC * vc)
     {
 	MPIDI_DBG_PRINTF((75, FCNAME, "queue empty, send deactivated"));
     }
-    */
 
     MPIDI_FUNC_EXIT(MPID_STATE_POST_QUEUED_SEND);
 }
