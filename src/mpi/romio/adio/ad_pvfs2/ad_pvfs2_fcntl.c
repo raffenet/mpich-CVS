@@ -38,14 +38,7 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	}
 	fcntl_struct->fsize = resp_getattr.attr.size;
 	return;
-    case ADIO_FCNTL_SET_IOMODE:
-	/* a relic from PFS */
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    MPI_Barrier(MPI_COMM_WORLD);
-	}
-	*error_code = MPI_SUCCESS;
-	return;
+
     /* --BEGIN ERROR HANDLING-- */
     case ADIO_FCNTL_SET_ATOMICITY:
     case ADIO_FCNTL_SET_DISKSPACE:

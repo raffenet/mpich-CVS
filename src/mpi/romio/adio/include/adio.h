@@ -209,7 +209,6 @@ typedef struct ADIOI_FileD {
     int async_count;         /* count of outstanding nonblocking operations */
     int perm;
     int atomicity;          /* true=atomic, false=nonatomic */
-    int iomode;             /* reqd. to implement Intel PFS modes */
     MPI_Errhandler err_handler;
     void *fs_ptr;            /* file-system specific information */
 } ADIOI_FileD;
@@ -233,12 +232,10 @@ typedef struct ADIOI_RequestD *ADIO_Request;
 
 /* fcntl structure */
 typedef struct {
-    ADIO_Offset disp; 
+    ADIO_Offset disp;
     MPI_Datatype etype;
     MPI_Datatype filetype;
-    MPI_Info info;   
-    int iomode;              /* to change PFS I/O mode. for MPI-IO
-				implementation, just set it to M_ASYNC. */  
+    MPI_Info info;
     int atomicity;
     ADIO_Offset fsize;       /* for get_fsize only */
     ADIO_Offset diskspace;   /* for file preallocation */
@@ -282,19 +279,11 @@ typedef struct {
 #define ADIO_SEEK_END            SEEK_END
 
 #define ADIO_FCNTL_SET_ATOMICITY 180
-#define ADIO_FCNTL_SET_IOMODE    184
 #define ADIO_FCNTL_SET_DISKSPACE 188
 #define ADIO_FCNTL_GET_FSIZE     200
 
 /* for default file permissions */
 #define ADIO_PERM_NULL           -1
-
-/* PFS file-pointer modes (removed most of them because they are unused) */
-#ifndef M_ASYNC 
-#define M_UNIX                    0
-/*#define M_LOG                     1  redefined in malloc.h on SGI! */
-#define M_ASYNC                   5
-#endif
 
 #define ADIOI_FILE_COOKIE 2487376
 #define ADIOI_REQ_COOKIE 3493740

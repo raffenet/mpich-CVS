@@ -24,6 +24,12 @@
 #define _gopen(n,m,i,p) open(n,m,p)
 #endif
 
+/* PFS file-pointer modes (removed most of them because they are unused) */
+#ifndef M_ASYNC 
+#define M_UNIX                    0
+#define M_ASYNC                   5
+#endif
+
 void ADIOI_PFS_Open(ADIO_File fd, int *error_code);
 void ADIOI_PFS_Close(ADIO_File fd, int *error_code);
 void ADIOI_PFS_ReadContig(ADIO_File fd, void *buf, int count, 

@@ -102,16 +102,6 @@ void ADIOI_PIOFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *
 	*error_code = MPI_SUCCESS;
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
-        /* for implementing PFS I/O modes. will not occur in MPI-IO
-           implementation.*/
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    MPI_Barrier(MPI_COMM_WORLD);
-	}
-	*error_code = MPI_SUCCESS;
-	break;
-
     case ADIO_FCNTL_SET_ATOMICITY:
 	piofs_change_view = (piofs_change_view_t *) 
                                  ADIOI_Malloc(sizeof(piofs_change_view_t));

@@ -44,7 +44,7 @@ void ADIOI_PFS_Open(ADIO_File fd, int *error_code)
     MPE_Log_event(1, 0, "start open");
 #endif
     if (np_total == np_comm) 
-	fd->fd_sys = _gopen(fd->filename,amode,fd->iomode,perm);
+	fd->fd_sys = _gopen(fd->filename, amode, M_ASYNC, perm);
     else fd->fd_sys = open(fd->filename, amode, perm);
 #ifdef PROFILE
     MPE_Log_event(2, 0, "end open");

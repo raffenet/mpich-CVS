@@ -192,11 +192,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	filename = tmp + 1;
 
 /* use default values for disp, etype, filetype */    
-/* set iomode=M_ASYNC. It is used to implement the Intel PFS interface
-   on top of ADIO. Not relevant for MPI-IO implementation */    
 
     *fh = ADIO_Open(comm, dupcomm, filename, file_system, amode, 0, MPI_BYTE,
-                    MPI_BYTE, M_ASYNC, info, ADIO_PERM_NULL, &error_code);
+                    MPI_BYTE, 0, info, ADIO_PERM_NULL, &error_code);
 
     if (error_code != MPI_SUCCESS)
         MPI_Comm_free(&dupcomm);

@@ -150,16 +150,6 @@ void ADIOI_HFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	*error_code = MPI_SUCCESS;
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
-        /* for implementing PFS I/O modes. will not occur in MPI-IO
-           implementation.*/
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    MPI_Barrier(MPI_COMM_WORLD);
-	}
-	*error_code = MPI_SUCCESS;
-	break;
-
     case ADIO_FCNTL_SET_ATOMICITY:
 	fd->atomicity = (fcntl_struct->atomicity == 0) ? 0 : 1;
 	*error_code = MPI_SUCCESS;

@@ -102,7 +102,6 @@ void ADIOI_PVFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	/* --END ERROR HANDLING-- */
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
     default:
 	/* --BEGIN ERROR HANDLING-- */
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,

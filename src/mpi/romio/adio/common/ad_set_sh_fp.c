@@ -29,7 +29,7 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
 				     fd->shared_fp_fname, 
 				     fd->file_system,
 				     ADIO_CREATE | ADIO_RDWR | ADIO_DELETE_ON_CLOSE, 
-				     0, MPI_BYTE, MPI_BYTE, M_ASYNC, 
+				     0, MPI_BYTE, MPI_BYTE, 0, 
 				     MPI_INFO_NULL, 
 				     ADIO_PERM_NULL, error_code);
     }

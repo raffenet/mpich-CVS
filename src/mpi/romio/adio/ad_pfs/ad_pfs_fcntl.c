@@ -48,17 +48,6 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 	else *error_code = MPI_SUCCESS;
 	break;
 
-    case ADIO_FCNTL_SET_IOMODE:
-        /* for implementing PFS I/O modes. will not occur in MPI-IO
-           implementation.*/
-	if (fd->iomode != fcntl_struct->iomode) {
-	    fd->iomode = fcntl_struct->iomode;
-	    setiomode(fd->fd_sys, iomode);
-           /* for some unknown reason, the compiler gives a warning here */
-	}
-	*error_code = MPI_SUCCESS;
-	break;
-
     case ADIO_FCNTL_SET_ATOMICITY:
 	MPI_Comm_size(MPI_COMM_WORLD, &np_total);
 	MPI_Comm_size(fd->comm, &np_comm);

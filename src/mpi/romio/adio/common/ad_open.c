@@ -18,7 +18,8 @@ static int is_aggregator(int rank, ADIO_File fd);
 MPI_File ADIO_Open(MPI_Comm orig_comm,
 		   MPI_Comm comm, char *filename, int file_system,
 		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
-		   MPI_Datatype filetype, int iomode,
+		   MPI_Datatype filetype,
+		   int iomode /* ignored */,
 		   MPI_Info info, int perm, int *error_code)
 {
     MPI_File mpi_fh;
@@ -50,14 +51,12 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->split_coll_count = 0;
     fd->shared_fp_fd = ADIO_FILE_NULL;
     fd->atomicity = 0;
-
     fd->etype = etype;          /* MPI_BYTE by default */
     fd->filetype = filetype;    /* MPI_BYTE by default */
     fd->etype_size = 1;  /* default etype is MPI_BYTE */
 
     fd->perm = perm;
 
-    fd->iomode = iomode;
     fd->async_count = 0;
 
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;

@@ -137,21 +137,6 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     /* TODO: increase this to the maximum value */
 #define MAX_ARRAY_SIZE 64
 
-
-/* PFS file pointer modes are not relevant here, because PFS does
-   not support strided accesses. */
-
-    /* --BEGIN ERROR HANDLING-- */
-    if ((fd->iomode != M_ASYNC) && (fd->iomode != M_UNIX)) {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
-					   MPIR_ERR_RECOVERABLE,
-					   myname, __LINE__,
-					   MPI_ERR_ARG,
-					   "Only M_ASYNC and M_UNIX iomodes are valid", 0);
-	return;
-    }
-    /* --END ERROR HANDLING-- */
-
     /* --BEGIN ERROR HANDLING-- */
     if (fd->atomicity) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
