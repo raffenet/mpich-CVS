@@ -1,7 +1,7 @@
 smvar_do_sharedlibs = 0
 INCLUDES = -I../../include -I${srcdir}/../../include
 LDADD = ../util/mtest.o 
-DEPADD = @MPILIBLOC@ ../util/mtestf.o
+DEPADD = @MPILIBLOC@ ../util/mtest.o
 
 commname2_SOURCES = commname2.cxx
 
