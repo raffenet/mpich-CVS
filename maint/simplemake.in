@@ -34,7 +34,10 @@ $project_libs = "";  # name of the libraries that are created by
                      # this project
 $project_libdir = "";# name of the directory (may contain ROOTDIR) in which
                      # the libraries are created                    
-
+#
+# Perhaps a better approach is to provide
+# <program>_DEPS = other program dependencies
+# DEPSALL = dependencies for *all* programs
 
 $make_depend = "gcc -MM";  # Set to command to create dependency list
 $fixup_autoconf_cd = 0; # set to 1 to (partially) fixup configure for
@@ -403,8 +406,8 @@ sub ReadMfile {
         }
 
         # Look for reserved forms:
-        #lib(\w*)_SOURCES = names
-        #lib(\w*)_DIR = name
+        #lib([\w-]*)_SOURCES = names
+        #lib([\w-]*)_DIR = name
         #SUBDIRS = names
 	# Also keep track of Makefile usages:
 	#target: ...
@@ -456,12 +459,12 @@ sub ReadMfile {
 	    print "Setting libdir{$1} to $2/\n";
             $libdir{$1}  = "$2/";
         }
-	elsif (/^doc_(\w*)_SOURCES\s*=\s*(.*)\s*$/) {
+	elsif (/^doc_([\w-]*)_SOURCES\s*=\s*(.*)\s*$/) {
 	    # Lowercase the type
 	    $docsrc{lc($1)} = $2;
 	    $globaldockind{lc($1)} = 1;
 	}
-	elsif (/^doc_(\w*)_DIR\s*=\s*(.*)\s*$/) {
+	elsif (/^doc_([\w-]*)_DIR\s*=\s*(.*)\s*$/) {
 	    # Lowercase the type
 	    $docdir{lc($1)} = $2;
 	}
@@ -470,10 +473,10 @@ sub ReadMfile {
 	    $profile_libraries{$1} = $2;
 	    $found_profilelib = 1;
 	}
-	elsif (/^install_(\w*)\s*=\s*(.*)\s*$/) {
+	elsif (/^install_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    $install_files{$1} = $2;
 	}
-	elsif (/^optinstall_(\w*)\s*=\s*(.*)\s*$/) {
+	elsif (/^optinstall_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    # This is for files that will be installed only if present
 	    $optinstall_files{$1} = $2;
 	}
@@ -514,7 +517,7 @@ sub ReadMfile {
 	    # Skip for now
 	    ;
 	}
-	elsif (/^(\w*)_SOURCES\s*=\s*(.*)\s*$/) {
+	elsif (/^([\w-]*)_SOURCES\s*=\s*(.*)\s*$/) {
 	    # programs
 	    $pgm = $1;
 	    $pgmsrc = $2;
@@ -528,13 +531,13 @@ sub ReadMfile {
 	    # Find program source type
 	    $pgmsrctype{$pgm} = &FindPgmSrcType( $pgm, $pgmsrc );
 	}
-	elsif (/^(\w*)_LDADD\s*=\s*(.*)\s*$/) {
+	elsif (/^([\w-]*)_LDADD\s*=\s*(.*)\s*$/) {
 	    $pgm_ldadd{$1} = $2;
 	}
 	elsif (/^LDADD\s*=\s*(.*)\s*$/) {
 	    $ldadd_all = $1;
 	}
-	elsif (/^(\w*)\s*=\s*(.*)\s*$/) {
+	elsif (/^([\w-]*)\s*=\s*(.*)\s*$/) {
 	    $other_vars .= "$origline";
 	    # Save all variable names
 	    $makevars{$1} = $2;
@@ -867,7 +870,7 @@ sub DefaultRules {
 	    # Extract includes from aclocal.m4
 	    open (AFD, "<$macroloc/aclocal.m4" );
 	    while (<AFD>) {
-		if (/^\s*builtin\(include,(\w*\.m4)\)\s*$/) {
+		if (/^\s*builtin\(include,([\w-]*\.m4)\)\s*$/) {
 		    $filename = "$macroloc/$1";
 		    $autoconf_deps .= " $filename";
 		}
@@ -1505,7 +1508,7 @@ sub TargetPrograms {
 	    print STDERR "Checking for relative dirs\n" if $debug_lib_dependencies;
 	    # convert -L dir -lname into dir/libname.a
 	    $libdep=$pgm_ldadd{$pgm};
-	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l(\w*)//;
+	    $libdep =~ s/-L\s*([\w\.\/]*)\s*-l([\w-]*)//;
 	    $libdir = $1;
 	    $libname = $2;
 	    print STDERR "Checking $libdir and $libname\n" if $debug_lib_dependencies;
