@@ -1439,7 +1439,7 @@ char ret;
 long int readval;
 __asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
 	: "=q" (ret), "=m" (*p), "=a" (readval)
-	: "r" (newval), "m" (*p), "a" (oldval));
+	: "r" (newval), "m" (*p), "a" (oldval) : "memory");
 return (compval == 20) ? 0 : -1;
 }
 ], AC_MSG_RESULT(yes)
@@ -1466,7 +1466,7 @@ char ret;
 long int readval;
 __asm__ __volatile__ ("lock; cmpxchgq %3, %1; sete %0"
 	: "=q" (ret), "=m" (*p), "=a" (readval)
-	: "r" (newval), "m" (*p), "a" (oldval));
+	: "r" (newval), "m" (*p), "a" (oldval) : "memory");
 return (compval == 20) ? 0 : -1;
 }
 ], AC_MSG_RESULT(yes)
@@ -1488,7 +1488,7 @@ dnl char ret;
 dnl long int readval;
 dnl asm("lock; cmpxchgl %3, %1; sete %0"
 dnl 	: "=q" (ret), "=m" (*p), "=a" (readval)
-dnl 	: "r" (newval), "m" (*p), "a" (oldval));
+dnl 	: "r" (newval), "m" (*p), "a" (oldval) : "memory");
 dnl return (compval == 20) ? 0 : -1;
 dnl }
 dnl ], AC_MSG_RESULT(yes)

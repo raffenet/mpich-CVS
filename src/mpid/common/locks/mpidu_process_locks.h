@@ -23,7 +23,7 @@ __attribute__ ((unused))
 
   __asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
                 : "=q" (ret), "=m" (*p), "=a" (readval)
-            : "r" (newval), "m" (*p), "a" (oldval));
+            : "r" (newval), "m" (*p), "a" (oldval) : "memory");
   return ret;
 }
 #endif
@@ -39,7 +39,7 @@ __attribute__ ((unused))
 
   __asm__ __volatile__ ("lock; cmpxchgq %3, %1; sete %0"
                 : "=q" (ret), "=m" (*p), "=a" (readval)
-            : "r" (newval), "m" (*p), "a" (oldval));
+            : "r" (newval), "m" (*p), "a" (oldval) : "memory");
   return ret;
 }
 #endif
