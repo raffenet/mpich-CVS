@@ -81,11 +81,14 @@ typedef struct _RMQ_Packet {
     ? data area ?
     } RMQ_Packet;
 
-/* Requests are also carefully aligned.
+/* Requests are also carefully aligned. */
 typedef struct _MPID_Request {
    MPID_Request_p next;     /* Easy enqueue of requests */
    RMQ_Method    method;
    int            to;       ? if not in packet
+   MPI_Comm      comm;      /* needed to invoke correct error handler; 
+                               perhaps identify communication queue */
+   MPI_Datatype  datatype;  /* needed to create byte stream */
    ??? other data not in packet???
    char           pad[PAD_SIZE]; /* padding to position packet */
    RMQ_Packet    packet;   
@@ -119,7 +122,7 @@ MPID_Irecv( MPID_Request *request )
     // pending receives
     if (MPID_Match_recv( request )) {
 	// found a matching receive.  Process it
-	MPID_Push_request( request );
+	RMQ_Push_request( request );
 	// request may be complete (short message) or may not (long message,
         // push-request sent ack).
     }
@@ -207,6 +210,31 @@ MPID_Init()  // no cmdline args required
     RMQ_SHMEM_CommPostInit();
 }
 
+Question:  What do we guarantee about the enviroment of the processes?
+Environment variables?  Commandline arguments?  What do we try to provide?
+
+MPID_Mem_register( void *buf, long n )
+{
+   // may be a nop for these methods    
+}
+ 
+Mem_register is used by MPI_Send_init and MPI_Recv_init, as well as
+MPI_Win_create.  
+
+void *MPID_Mem_alloc( long n )
+{
+    return RMQ_SHMEM_Mem_alloc( n );
+}
+This attempts to allocate memory in a shared memory area.  Note that MPI-2 can
+restrict third-party access to such memory.  For example, the device could
+choose to allow this only if *only* the shared memory method was used.
+
+void MPID_Mem_free( void *buf )
+{
+    RMQ_SHMEM_Mem_free( buf );
+}
+Free the memory.
+
 RMQ device (general routines)
 ==============================
 
@@ -217,6 +245,17 @@ RMQ_Dispatch_packet( packet )
       Add packet to queue of pending packets
    else
       call routine to process packet (switch in MPID_Poll?)
+}
+
+RMQ_Push_request( MPID_Request *request )
+{
+    switch (request->method) {
+        case RMQ_TCP:   RMQ_TCP_Push_request( request ); break;
+	case RMQ_SHMEM: RMQ_SHMEM_Push_request( request ); break;
+	/* Add other methods here */
+	/* Always catch the something-is-wrong case */
+	default: Panic();
+    }
 }
 
 
@@ -309,6 +348,26 @@ RMQ_SHMEM_Init()
     ?? (if sysv segments, this would look much like TCP_Init)
 }
 
+RMQ_SHMEM_Put_data( MPID_Packet *packet_p )
+{
+   Find request from packet
+   if (message is contiguous) {
+       compute address of source data from request
+   }
+   else {
+       use MPID_pack_datatype into a buffer attached to the request
+       (space allocated at Isend?  At Put_data time?)
+       save state of pack in request if we aren't done
+   }
+   memcpy( dest-address, source-address, n );
+   change packet type to indicate some data sent
+   RMQ_SHMEM_Enqueue_envelope( MPID_Request_p request_p )
+   // An enhancement is to have the initial message allow *two* memcpy's
+   // to start.  This estabilishes a double buffering copy.  The ack is sent
+   // after the first is copied and then after each copy.  This is better
+   // for one-way data delivery but not for exchanges.
+}
+
 Notes on the implementation
 ===========================
 Rather than use an enum type and a switch statement, the MPID_Request could
@@ -365,3 +424,74 @@ malloc).
 
 Who defines MPI_Status structure?  Is this something defined by the particular
 device implementation (and hence must be included within the mpi.h file)?
+
+Should there be allowed command-line args to make it easier to pass
+debug/option values to the device?
+
+MPI-2 Operations
+================
+
+Spawn
+=====
+One way to consider spawn is to replace mpirun with a small MPI program that
+calls MPI_Comm_spawn_multiple (or a slight variation):
+
+mpirun.c:
+#include <mpi.h>
+int main( int argc, char *argv[] );
+{
+    MPI_Comm intercomm;
+    MPI_Init(0,0);
+    /* convert command-line arguments into args for ... */
+    MPI_Comm_spawn_multiple( ..., &intercomm );
+    MPI_Comm_free( &intercomm );
+    /* handle io, signals, etc. */
+    MPI_Finalize();
+    return rc;
+}
+
+This won't quite work, but it is close.  Close enough that we should consider
+replacing MPI_Comm_spawn_multiple with a slightly enhanced version that would
+work.  The enhanced version should
+1. Provide an environment consisting of a common part and a per-process part,
+allowing per-process information to be passed within the environment
+2. Provide hooks for I/O routing
+3. Provide hooks for signal/event delivery
+4. Provide hooks for return code vector
+
+Note that MPI_Comm_spawn_multiple requires the ability to provide different
+command line arguments to each process.
+
+Remote Memory Access
+====================
+
+Because the RMQ device has put as an abstraction, the MPI_PUT operation, at
+least for contiquous data, is fairly simple.  For MPI_GET and ACCUMULATE, we
+may want to add those operations (at least as options).
+
+A complication is the ability to specify at the source a datatype to be
+applied at the target.  This means sending datatype descriptions to the target
+of a put/get/accumulate.  For efficiency, we need to cache such datatype
+descriptions and optimize for contiguous data.
+
+We should also allow a target to flush the datatype cache, so we will need to
+handle "cache miss" on a datatype.
+
+Additional Packet Types:
+
+RMQ_PKT_DATATYPE_DEFN - data contains datatype defn.  Complication-datatype
+    defn may be arbitrarily long
+RMQ_PKT_DATATYPE_MISS - The datatype cachevalue (id) refered to in a previous
+    RMA operation is no longer valid and must be resent
+RMQ_PKT_RMA_PUT - MPI_Put operation
+RMQ_PKT_RMA_GET - MPI_Get operation
+RMQ_PKT_RMA_ACCUMULATE - MPI_Accumulate operation
+
+What do we need for syncronization?  Perhaps
+
+RMQ_PKT_RMA_SYNC - Sync the specified RMA window
+
+Question: Can we combine these with the message-passing operations?  E.g., can
+we eliminate the rendezvous send by including these?  Even the datatype cache
+could be used; for example, a receive rendezvous could return the datatype id,
+allowing the put operation to exploit any scatter capability.

@@ -1,16 +1,17 @@
-ALL: adi3.ps
+ALL: paper.ps
 
 .SUFFIXES: .ps .dvi .tex
 
 adi3.dvi: adi3.tex
-	-latex adi3
-	-bibtex adi3
-	-latex adi3
-	-latex adi3
-
+paper.dvi: paper.tex
 
 .dvi.ps:
 	dvips $*
+.tex.dvi:
+	-latex $*
+	-bibtex $*
+	-latex $*
+	-latex $*
 
 clean:
-	rm -f *.log *.aux *.dvi adi3.ps *.bbl
+	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps
