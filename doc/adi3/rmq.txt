@@ -498,3 +498,65 @@ Question: Can we combine these with the message-passing operations?  E.g., can
 we eliminate the rendezvous send by including these?  Even the datatype cache
 could be used; for example, a receive rendezvous could return the datatype id,
 allowing the put operation to exploit any scatter capability.
+
+Random Thoughts and Notes
+=========================
+
+Managing persistent resources
+-----------------------------
+All resources that the OS doesn't automatically clean up (e.g., SYSV ipcs,
+processes) should be registered somewhere.  E.g., RSRC_Register( const char *
+command_to_remove ).
+
+An implementation of this API simply appends to a well-known file that can be
+read and executed.
+
+Fast multimethod devices
+------------------------
+For best performance, the fastest method should have the shortest software
+path.  This suggests that only the fastest method provides input queues, and
+that all other methods convert their messages into messages for the fast
+method.  This is relatively easy if the slower methods all run in separate
+threads; then only the fastest method does polling and/or waiting; all other
+methods wait in their threads.
+
+
+Collective Operations
+=====================
+
+points:
+
+1. To catch user errors in matching collective operations up, we'd like to
+have the following test in the device:
+
+   if (is-collective-message && is-from-expected-source && 
+       collective-type != active-collective-type-for-this-communicator) {
+       Generate-error-mismatched-collective
+   }
+
+(Do we need the "is-from-expected-source"?  It is here because two successive
+collective operations may use different communication patterns and hence 
+might not arrive in the same order; but if communication is on a pair-by-pair
+basis, then messages must arrive in-order for each communicator.)
+
+This and some other items suggests that the envelope of the messages contain
+some "user"-specified data.  In this case, that the operation is collective
+and additional data is provided besides just the tag (note that we did NOT
+test the tag; the point is that an unexpected tag is an error).  
+Other data might include "errors on input", allowing collective reporting of
+user-argument errors (e.g., a bcast with erroneous datatype at root would
+still do a broadcast, but with (rank=root detected error), causing all
+processes involved in the bcast to return an error.
+
+2. Fast algorithms for individual operations, particularly in
+store-and-forward algorithms, rely on pipelining the operations (i.e., sending
+one long message in multiple parts so that the first part can be forwarded
+before the last part has been sent).  This in turn
+relies on being able to send partial messages.  Since a single MPI datatype
+may represent an arbitrary amount of data, we need an interface that can send
+partial messages, remembering how far through the datatype it has gotten.
+
+The limiting case of pipelining is a stream of data, which can be forwarded
+after the first byte arrives.  We won't express this directly at the top
+level, though we should allow a device to do this on a packet-by-packet level.
+

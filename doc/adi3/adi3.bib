@@ -70,3 +70,22 @@
   note =	 {http://www.globus.org/nexus/globus\_v1/api/default.asp}
 }
 
+@TechReport{skj98:shmem-mpi,
+  author = 	 {Boris V. Protopopov and Anthony Skjellum},
+  title = 	 {Designing shared-memory communication devices for {MPI}
+                  message-passing library},
+  institution =  {Computer Science Department, Mississippi State Univ.},
+  year = 	 1998,
+  note =	 {Submitted to Concurrency: Practice and Experience},
+  annote =	 {Argues for $n^2$ queue design only (no long messages).}
+}
+
+@Article{blackwell96:tcp-shortmsgs,
+  author = 	 {Trevor Blackwell},
+  title = 	 {Speeding up Protocols for Small Messages},
+  journal = 	 {ACM SIGCOMM},
+  year = 	 1996,
+  annote =	 {Argues for processing all (upto data cache size) available
+                  messages before passing control to the next software layer.}
+}
+
