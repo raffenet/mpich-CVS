@@ -1,1 +1,2 @@
-SUBDIRS = mpi mpid util pmi .
+#SUBDIRS = mpi mpid util pmi .
+SUBDIRS = mpi mpid util .
