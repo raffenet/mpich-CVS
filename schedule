@@ -93,7 +93,7 @@ MPI_Probe,,,,,Brian,,.1,04/23/2002
 MPI_Cancel,.25,.5,1,,Brian,,
 MPI_Test_cancelled,.1,.15,.2,,Brian,,.1,04/26/02
 MPI_Send_init,,,,,Brian,,done,mpi_proc_null
-MPI_Bsend_init,,,,,Brian,,
+MPI_Bsend_init,,,,,Bill,,done
 MPI_Ssend_init,,,,,Brian,,done,mpi_proc_null
 MPI_Rsend_init,,,,,Brian,,done,mpi_proc_null
 MPI_Recv_init,,,,,Brian,,done,mpi_proc_null
@@ -166,8 +166,8 @@ MPI_Comm_free,.1,.1,.1,2,Bill,,.1,9/11/02
 MPI_Comm_test_inter,1,1,1,3,Bill,,.05,3/29/02
 MPI_Comm_remote_size,,,,,Bill,,.1,done
 MPI_Comm_remote_group,.1,.1,.1,2,Bill,,.1,9/5/02
-MPI_Intercomm_create,
-MPI_Intercomm_merge,
+MPI_Intercomm_create,1,2,3,2,Bill,,2,11/08/02
+MPI_Intercomm_merge,1,2,3,2,Bill,,2,11/08/02
 MPI_Keyval_create,1,1,1,2,Bill,MPI_Comm_create_keyval,.1,3/31/02
 MPI_Keyval_free,1,1,1,2,Bill,MPI_Comm_free_keyval,.1,/3/31/02
 MPI_Attr_put,1,1,1,2,Bill,MPI_Comm_set_attr,.05,3/29/02
@@ -177,7 +177,7 @@ MPI_Attr_delete,1,1,1,2,Bill,MPI_Comm_delete_attr,.05/3/29/02
 Process Topologies
 
 MPI_Cart_create,1,1,1,2,Bill,MPI_Comm_create_keyval and MPI_Comm_split,.2,9/11/02
-MPI_Dims_create,1,2,3,,Bill,,,
+MPI_Dims_create,1,2,3,,Bill,,2,11/04/02
 MPI_Graph_create,1,1,1,2,Bill,MPI_Comm_create_keyval and MPI_Comm_split,.2,9/11/02
 MPI_Topo_test,1,1,1,2,Bill,MPI_Comm_get_attr,.1,3/25/02
 MPI_Graphdims_get,1,1,1,2,Bill,MPI_Comm_get_attr,.1,3/25/02
@@ -191,7 +191,7 @@ MPI_Graph_neighbors,1,1,1,2,Bill,MPI_Comm_get_attr,.05,3/26/02
 MPI_Cart_shift,1,1,1,2,Bill,MPI_Comm_get_attr,.1,4/23/02
 MPI_Cart_sub,1,1,1,2,Bill,MPI_Comm_get_attr,,.1,9/11/02
 MPI_Cart_map,1,1,1,2,Bill,MPI_Comm_get_attr,.05,3/26/02
-MPI_Graph_map,1,1,1,2,Bill,MPI_Comm_get_attr,,
+MPI_Graph_map,1,1,1,2,Bill,MPI_Comm_get_attr,,.2,11/4/02
 
 Environmental Inquiry
 
