@@ -28,7 +28,7 @@ AH_BOTTOM([
 #else
 
 #ifdef HAVE_O_BINARY
-#define OPEN( a, b, c )    open( a, b, c | O_BINARY )
+#define OPEN( a, b, c )    open( a, b | O_BINARY, c )
 #else
 #define OPEN( a, b, c )    open( a, b, c )
 #endif
