@@ -80,7 +80,7 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
     va_start(list, format);
 
     p = format;
-    while (p && size > 0) {
+    while (*p && size > 0) {
 	char *nf;
 
 	nf = strchr(p, '%');
@@ -98,7 +98,7 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 		*out_str++ = *p++;
 	    }
 	    /* Handle the format character */
-	    switch nf {
+	    switch (nc) {
 	    case '%':
 		*out_str++ = '%';
 		size--;
@@ -140,6 +140,8 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
     }
 
     va_end(list);
+
+    if (size-- > 0) *out_str++ = '\0';
 
     n = out_str - str;
     return n;
