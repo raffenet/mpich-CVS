@@ -50,6 +50,10 @@ typedef struct MPIDI_Message_match
 }
 MPIDI_Message_match;
 
+/*
+ * MPIDI_CH3_Pkt_type_t
+ *
+ */
 typedef enum 
 {
     MPIDI_CH3_PKT_EAGER_SEND = 0,
@@ -60,8 +64,9 @@ typedef enum
     MPIDI_CH3_PKT_CANCEL_SEND_RESP,
     MPIDI_CH3_PKT_PUT,
     MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,
-# if defined(MPIDI_CH3I_PKT_ENUM)
-    MPIDI_CH3I_PKT_ENUM
+    MPIDI_CH3_PKT_END_CH3,
+# if defined(MPIDI_CH3_PKT_ENUM)
+    MPIDI_CH3_PKT_ENUM
 # endif    
 }
 MPIDI_CH3_Pkt_type_t;
@@ -98,18 +103,19 @@ typedef struct
 }
 MPIDI_CH3_Pkt_rndv_send_t;
 
-#if defined(MPIDI_CH3I_PKT_DEFS)
-MPIDI_CH3I_PKT_DEFS
+#if defined(MPIDI_CH3_PKT_DEFS)
+MPIDI_CH3_PKT_DEFS
 #endif
 
 typedef union
 {
+    MPIDI_CH3_Pkt_type_t type;
     MPIDI_CH3_Pkt_eager_send_t eager_send;
     MPIDI_CH3_Pkt_rndv_req_to_send_t rndv_req_to_send;
     MPIDI_CH3_Pkt_rndv_clr_to_send_t rndv_clr_to_send;
     MPIDI_CH3_Pkt_rndv_send_t rndv_send;
-# if defined(MPIDI_CH3I_PKT_DECL)
-    MPIDI_CH3I_PKT_DECL
+# if defined(MPIDI_CH3_PKT_DECL)
+    MPIDI_CH3_PKT_DECL
 # endif
 }
 MPIDI_CH3_Pkt_t;
@@ -120,28 +126,28 @@ MPIDI_CH3_Pkt_t;
  * An enumeration of the actions to perform when the requested I/O operation
  * has completed.
  *
- * MPIDI_CA_NONE - Do nothing.  Used in situations where the request will
+ * MPIDI_CH3_CA_NONE - Do nothing.  Used in situations where the request will
  * be referenced later by an incoming packet.
  *
- * MPIDI_CA_RELOAD_IOV - This request contains more segments of data than
+ * MPIDI_CH3_CA_RELOAD_IOV - This request contains more segments of data than
  * the IOV or buffer space allow.  Since the previously request operation has
  * completed, the IOV in the request should be reload at this time.
  *
- * MPIDI_CA_COMPLETE - The last operation for this request has completed.  The
- * completion counter should be decremented.  If it has reached zero, then the
- * request should be "freed" by calling MPID_Request_free().
+ * MPIDI_CH3_CA_COMPLETE - The last operation for this request has completed.
+ * The completion counter should be decremented.  If it has reached zero, then
+ * the request should be "freed" by calling MPID_Request_free().
  *
- * MPIDI_CA_END_CH3 - This not a real action, but rather a marker.  All actions
- * numerically less than MPID_CA_END are defined by channel device.  Any
- * actions numerically greater than MPIDI_CA_END are internal to the channel
- * instance and must be handled by the channel instance.
+ * MPIDI_CH3_CA_END_CH3 - This not a real action, but rather a marker.  All
+ * actions numerically less than MPID_CA_END are defined by channel device.
+ * Any actions numerically greater than MPIDI_CA_END are internal to the
+ * channel instance and must be handled by the channel instance.
  */
 typedef enum
 {
-    MPIDI_CA_NONE,
-    MPIDI_CA_RELOAD_IOV,
-    MPIDI_CA_COMPLETE,
-    MPIDI_CA_END_CH3,
+    MPIDI_CH3_CA_NONE,
+    MPIDI_CH3_CA_RELOAD_IOV,
+    MPIDI_CH3_CA_COMPLETE,
+    MPIDI_CH3_CA_END_CH3,
 # if defined(MPIDI_CH3_CA_ENUM)
     MPIDI_CH3_CA_ENUM
 # endif
