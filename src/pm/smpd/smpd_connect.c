@@ -74,7 +74,7 @@ void smpd_child_handler(int code)
     int status;
     int pid;
 
-    if (code == SIGCHLD)
+    if (smpd_process.root_smpd && code == SIGCHLD)
     {
 	/*pid = waitpid(-1, &status, WNOHANG);*/
 	pid = waitpid(-1, &status, 0);
