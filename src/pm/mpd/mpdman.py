@@ -279,14 +279,14 @@ def mpdman():
     childrenStderrTreeSockets = []
     if lchild >= 0:
         numWithIO += 2    # stdout and stderr from child
-        msgToSend = { 'cmd' : 'info_for_parent_in_tree',
+        msgToSend = { 'cmd' : 'info_from_parent_in_tree',
                       'to_rank' : str(lchild),
                       'parent_host' : myHost,
                       'parent_port' : myPort }
         mpd_send_one_msg(rhsSocket,msgToSend)
     if rchild >= 0:
         numWithIO += 2    # stdout and stderr from child
-        msgToSend = { 'cmd' : 'info_for_parent_in_tree',
+        msgToSend = { 'cmd' : 'info_from_parent_in_tree',
                       'to_rank' : str(rchild),
                       'parent_host' : myHost,
                       'parent_port' : myPort }
@@ -359,7 +359,7 @@ def mpdman():
                     if rhsSocket:
                         mpd_send_one_msg(rhsSocket,msgToSend)
                 clientExitStatusSent = 1
-            if holdingEndBarrierLoop1 and (myRank == 0 or numDone >= numWithIO):
+            if holdingEndBarrierLoop1 and numDone >= numWithIO:
                 holdingEndBarrierLoop1 = 0
                 msgToSend = {'cmd' : 'end_barrier_loop_1'}
                 mpd_send_one_msg(rhsSocket,msgToSend)
@@ -417,7 +417,7 @@ def mpdman():
                     write(pipe_man_end,'go')
                     close(pipe_man_end)
                     jobStarted = 1
-                elif msg['cmd'] == 'info_for_parent_in_tree':
+                elif msg['cmd'] == 'info_from_parent_in_tree':
                     if int(msg['to_rank']) == myRank:
                         parentHost = msg['parent_host']
                         parentPort = msg['parent_port']
@@ -859,7 +859,6 @@ def mpdman():
                             pmiMsgToSend = 'cmd=getbyidx_results rc=-2 reason=no_more_keyvals\n'
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif parsedMsg['cmd'] == 'spawn':
-                    ## mpd_print(1111, 'message from pmi: ', parsedMsg )
                     ## This code really is handling PMI_Spawn_multiple.  It translates a
                     ## sequence of separate spawn messages into a single message to send
                     ## to the mpd.  It keeps track by the "totspawns" and "spawnssofar"
@@ -872,7 +871,7 @@ def mpdman():
                     ## in which case adding 2 to numWithIO will cause the pgm to hang.
                     totspawns = int(parsedMsg['totspawns'])
                     spawnssofar = int(parsedMsg['spawnssofar'])
-                    if spawnssofar == 1: # this is the first of possibly several spawns
+                    if spawnssofar == 1: # this is the first of possibly several spawn msgs
                         numWithIO += 2
                         tpsf = 0             # total processes spawned so far
                         spawnExecs = {}      # part of MPI_Spawn_multiple args
@@ -932,7 +931,6 @@ def mpdman():
                                       'envvars'  : spawnEnvvars,
                                       'limits'   : spawnLimits
                                     }
-                        ## mpd_print(1111, 'message from man to mpd: ', msgToSend)
                         mpd_send_one_msg(mpdSocket,msgToSend)
                         # I could send the preput_info along but will keep it here
                         # and let the spawnee call me up and ask for it; he will
@@ -1112,7 +1110,7 @@ def mpdman():
                 msg = mpd_recv_one_msg(readySocket)
                 mpd_print(1, 'recvd msg :%s: on unknown socket :%s:' % (msg,readySocket) )
                 del socketsToSelect[readySocket]
-    mpd_print(0000, "out of loop")
+    mpd_print(0000, "out of loop" )
     # may want to wait for waitPids here
 
 def in_stdinRcvrs(myRank,stdinGoesToWho):
