@@ -217,8 +217,17 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
     }
     else
     {
-	mpi_errno = MPIR_Gatherv(sendbuf, sendcnt, sendtype, recvbuf, recvcnts,
-                                 displs, recvtype, root, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+            /* intercommunicator */ 
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+	}
+	else {
+	    mpi_errno = MPIR_Gatherv(sendbuf, sendcnt, sendtype, 
+				     recvbuf, recvcnts,
+				     displs, recvtype, root, comm_ptr); 
+	}
     }
     if (mpi_errno == MPI_SUCCESS)
     {

@@ -220,8 +220,17 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
     }
     else
     {
-	mpi_errno = MPIR_Scatterv(sendbuf, sendcnts, displs, sendtype, 
-                                  recvbuf, recvcnt, recvtype, root, comm_ptr); 
+        if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+            /* intercommunicator */ 
+	    mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM, 
+					      "**intercommcoll",
+					      "**intercommcoll %s", FCNAME );
+	}
+	else {
+	    mpi_errno = MPIR_Scatterv(sendbuf, sendcnts, displs, sendtype, 
+				      recvbuf, recvcnt, recvtype, 
+				      root, comm_ptr); 
+	}
     }
     if (mpi_errno == MPI_SUCCESS)
     {
