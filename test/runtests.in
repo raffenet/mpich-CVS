@@ -122,7 +122,7 @@ foreach $_ (@ARGV) {
 	open( XMLOUT, ">$xmlfile" ) || die "Cannot open $xmlfile\n";
 	my $date = `date "+%Y-%m-%d-%H-%M"`;
 	print XMLOUT "<?xml version='1.0' ?>
-<?xml-stylesheet href=\"er.xsl\" type=\"text/xsl\" ?>
+<?xml-stylesheet href=\"TestResults.xsl\" type=\"text/xsl\" ?>
 <MPITESTRESULTS>
 <DATE>$date</DATE>
 <MPISOURCE></MPISOURCE>\n";
