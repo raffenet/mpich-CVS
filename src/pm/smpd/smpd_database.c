@@ -42,7 +42,11 @@ int smpd_dbs_init()
 #endif
     smpd_process.nInitDBSRefCount++;
     if (smpd_process.domain_name[0] == '\0')
-	get_uuid(smpd_process.domain_name);
+    {
+	/*get_uuid(smpd_process.domain_name);*/
+	/* create a database for the domain to be used for global operations like name publishing */
+	smpd_dbs_create(smpd_process.domain_name);
+    }
     smpd_exit_fn("smpd_dbs_init");
     return SMPD_DBS_SUCCESS;
 }
