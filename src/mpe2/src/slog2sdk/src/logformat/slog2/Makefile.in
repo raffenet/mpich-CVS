@@ -25,6 +25,7 @@ SRC     = Const.java TreeNodeID.java FileBlockPtr.java \
           Permutation.java LineIDMap.java LineIDMapList.java \
           IteratorOfBackPrimitives.java IteratorOfForePrimitives.java \
           IteratorOfBackDrawables.java IteratorOfForeDrawables.java \
+          IteratorOfForeDrawablesOfAll.java IteratorOfBackDrawablesOfAll.java \
           BufForObjects.java BufForDrawables.java BufForShadows.java \
           CategoryMap.java Header.java
 

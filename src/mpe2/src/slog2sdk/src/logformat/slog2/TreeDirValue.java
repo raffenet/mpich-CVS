@@ -39,6 +39,11 @@ public class TreeDirValue
         return timebounds.getLatestTime();
     }
 
+    public TimeBoundingBox getTimeBoundingBox()
+    {
+        return timebounds;
+    }
+
     public long getFilePointer()
     {
         return blockptr.getFilePointer();

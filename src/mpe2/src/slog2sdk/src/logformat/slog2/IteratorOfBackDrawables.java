@@ -31,22 +31,32 @@ public class IteratorOfBackDrawables implements Iterator
     {
         drawables_itr  = dobjs_list.listIterator( dobjs_list.size() );
         timeframe      = tframe;
-        next_drawable  = null;
+        next_drawable  = this.getNextInQueue();
+    }
+
+    private Drawable getNextInQueue()
+    {
+        Drawable   next_dobj;
+        while ( drawables_itr.hasPrevious() ) {
+            next_dobj = (Drawable) drawables_itr.previous();
+            if ( next_dobj.overlaps( timeframe ) )
+                return next_dobj;
+        }
+        return null;
     }
 
     public boolean hasNext()
     {
-        while ( drawables_itr.hasPrevious() ) {
-            next_drawable = (Drawable) drawables_itr.previous();
-            if ( next_drawable.overlaps( timeframe ) )
-                return true;
-        }
-        return false;
+        return next_drawable != null;
     }
 
     public Object next()
     {
-        return next_drawable;
+        Drawable  returning_dobj;
+
+        returning_dobj = next_drawable;
+        next_drawable  = this.getNextInQueue();
+        return returning_dobj;
     }
 
     public void remove() {}

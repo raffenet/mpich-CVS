@@ -276,113 +276,21 @@ public class BufForDrawables extends BufForObjects
 
     public String toString()
     {
-        Drawable dobj;
-        Iterator dobjs_itr;
-        int      idx;
+        Iterator  nestable_itr, nestless_itr;
+        Iterator  dobjs_itr;
+        int       idx;
 
         StringBuffer rep = new StringBuffer( "    BufForDrawables{ " );
         rep.append( super.toString() /* BufForObjects */ );
         rep.append( " }\n" );
 
-        dobjs_itr = new ForeItrOfDobjs( this );
+        nestable_itr  = new IteratorOfForeDrawables( buf4nestable, this );
+        nestless_itr  = new IteratorOfForeDrawables( buf4nestless, this );
+        dobjs_itr     = new IteratorOfForeDrawablesOfAll( nestable_itr,
+                                                          nestless_itr );
         for ( idx = 1; dobjs_itr.hasNext(); idx++ )
             rep.append( idx + ": " + dobjs_itr.next() + "\n" );
 
         return rep.toString();
     }
-
-
-
-    /*
-       Iterators to return Drawables (Primitive/Composite)
-       in Increasing StartTime Order(1st) and then Decreasing EndTime Order(2nd)
-    */
-    private class ForeItrOfDobjs implements Iterator
-    {
-        private TimeBoundingBox  timeframe;
-        private Iterator         nestable_itr;
-        private Iterator         nestless_itr;
-        private Drawable         nestable_dobj;
-        private Drawable         nestless_dobj;
-        private Drawable         next_drawable;
-
-        public ForeItrOfDobjs( final TimeBoundingBox  tframe )
-        {
-            timeframe      = tframe;
-            nestable_itr   = new IteratorOfForeDrawables( buf4nestable,
-                                                          tframe );
-            nestless_itr   = new IteratorOfForeDrawables( buf4nestless,
-                                                          tframe );
-            nestable_dobj  = null;
-            nestless_dobj  = null;
-            next_drawable  = null;
-        }
-
-        public boolean hasNext()
-        {
-            double nestable_starttime, nestless_starttime;
-
-            if ( nestable_dobj == null ) {
-                if ( nestable_itr.hasNext() )
-                    nestable_dobj = (Drawable) nestable_itr.next();
-            }
-
-            if ( nestless_dobj == null ) {
-                if ( nestless_itr.hasNext() )
-                    nestless_dobj = (Drawable) nestless_itr.next();
-            }
-
-            if ( nestable_dobj != null && nestless_dobj != null ) {
-                nestable_starttime = nestable_dobj.getEarliestTime();
-                nestless_starttime = nestless_dobj.getEarliestTime();
-                if ( nestable_starttime == nestless_starttime ) {
-                    if ( nestable_dobj.getLatestTime()
-                       < nestless_dobj.getLatestTime() ) {
-                        next_drawable = nestless_dobj;
-                        nestless_dobj = null;
-                        return true;
-                    }
-                    else {
-                        next_drawable = nestable_dobj;
-                        nestable_dobj = null;
-                        return true;
-                    }
-                }
-                else { /* Significant Order */
-                    if ( nestable_starttime < nestless_starttime ) {
-                        next_drawable = nestable_dobj;
-                        nestable_dobj = null;
-                        return true;
-                    }
-                    else {
-                        next_drawable = nestless_dobj;
-                        nestless_dobj = null;
-                        return true;
-                    }
-                }
-            }
-
-            if ( nestable_dobj != null ) {
-                next_drawable = nestable_dobj;
-                nestable_dobj = null;
-                return true;
-            }
-
-            if ( nestless_dobj != null ) {
-                next_drawable = nestless_dobj;
-                nestless_dobj = null;
-                return true;
-            }
-
-            return false;
-        }
-
-        public Object next()
-        {
-            return next_drawable;
-        }
-
-        public void remove() {}
-    }   // private class ForeItrOfDobjs
-
 }

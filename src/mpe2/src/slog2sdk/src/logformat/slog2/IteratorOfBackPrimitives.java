@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 import base.drawable.TimeBoundingBox;
 import base.drawable.Drawable;
@@ -43,47 +44,64 @@ public class IteratorOfBackPrimitives implements Iterator
         drawables_itr  = dobjs_list.listIterator( dobjs_list.size() );
         timeframe      = tframe;
         set_primes     = new TreeSet( DRAWING_ORDER );
+        next_primitive = this.getNextInQueue();
     }
 
-    public boolean hasNext()
+    private Primitive getNextInQueue()
     {
         Drawable   itr_dobj;
         Composite  itr_cmplx;
+        Primitive  next_prime;
 
-        next_primitive   = null;
+        next_prime = null;
         while ( drawables_itr.hasPrevious() ) {
             itr_dobj = (Drawable) drawables_itr.previous();
             if ( itr_dobj.overlaps( timeframe ) ) {
                 if ( itr_dobj instanceof Composite ) {
                     itr_cmplx  = (Composite) itr_dobj;
                     itr_cmplx.addPrimitivesToSet( set_primes, timeframe );
-                    next_primitive = (Primitive) set_primes.last();
-                    set_primes.remove( next_primitive );
+                    try {
+                        next_prime = (Primitive) set_primes.last();
+                        set_primes.remove( next_prime );
+                        return next_prime;
+                    } catch ( NoSuchElementException err ) {}
                 }
                 else { // if ( itr_dobj instanceof Primitive )
                     if ( ! set_primes.isEmpty() ) {
                         set_primes.add( itr_dobj );
-                        next_primitive = (Primitive) set_primes.last();
-                        set_primes.remove( next_primitive );
+                        next_prime = (Primitive) set_primes.last();
+                        set_primes.remove( next_prime );
+                        return next_prime;
                     }
-                    else
-                        next_primitive = (Primitive) itr_dobj;
+                    else {
+                        next_prime = (Primitive) itr_dobj;
+                        return next_prime;
+                    }
                 }
-                break;
             }
         }
 
-        if ( next_primitive == null && !set_primes.isEmpty() ) {
-            next_primitive = (Primitive) set_primes.last();
-            set_primes.remove( next_primitive );
+        if ( next_prime == null && !set_primes.isEmpty() ) {
+            next_prime = (Primitive) set_primes.last();
+            set_primes.remove( next_prime );
+            return next_prime;
         }
 
+        return null;
+    }
+
+    public boolean hasNext()
+    {
         return next_primitive != null;
     }
 
     public Object next()
     {
-        return next_primitive;
+        Primitive  returning_prime;
+
+        returning_prime = next_primitive;
+        next_primitive  = this.getNextInQueue();
+        return returning_prime;
     }
 
     public void remove() {}
