@@ -198,7 +198,7 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
 
   Notes:
   In addition to returning a pointer to a new object, this routine may
-  allocation additional space for more objects.
+  allocate additional space for more objects.
 
   This routine is thread-safe.
   +*/
@@ -207,6 +207,8 @@ void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
     MPIU_Handle_common *ptr;
     int objsize, objkind;
 
+    /* FIXME: we should use memory atomic routines to acquire an item from
+       the list without the lock (see 3.12.5 in the MPICH2 coding document) */
     /* Lock if necessary */
     MPID_Allocation_lock();
 
