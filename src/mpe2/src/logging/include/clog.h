@@ -5,7 +5,13 @@
 #if !defined( _CLOG )
 #define _CLOG
 
-#define CLOG_VERSION          "CLOG-02.10"
+/*
+   Version 2.0: Initial rewrite of CLOG.
+   Version 2.1: Clean up of CLOG record's data structure to minimize
+                wasted disk space.
+   Version 2.2: Added CLOG internal profiling state: CLOG_Buffer_write2disk
+*/
+#define CLOG_VERSION          "CLOG-02.20"
 
 #include "clog_buffer.h"
 #include "clog_sync.h"
