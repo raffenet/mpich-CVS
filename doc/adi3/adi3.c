@@ -239,8 +239,7 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
    as 'volatile' only when needed?  For now, the answer is no; there isn''t
    enough to be gained in that case.
 @*/
-void MPIU_Object_add_ref( MPIU_Object_head *ptr )
-{}
+void MPIU_Object_add_ref( MPIU_Object_head *ptr );
 
 /*@
    MPIU_Object_release_ref - Decrement the reference count for an MPI object

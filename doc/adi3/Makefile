@@ -10,7 +10,7 @@ MPICH2 = ../..
 # Use doctext in /home/gropp/bin/$ARCH/doctext 
 DOCTEXT = doctext
 # Give the directory with the Latex style files associated with doctext
-DOCTEXTSTYLE = /home/gropp/share
+DOCTEXTSTYLE = /home/gropp/data/share
 
 .SUFFIXES: .ps .pdf .dvi .tex .eps .fig .idx .ind
 
