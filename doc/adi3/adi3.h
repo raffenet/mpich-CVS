@@ -1,7 +1,7 @@
 /***********************************************************************
  * This is a DRAFT
  * All parts of this document are subject to (and expected to) change
- * This DRAFT dated September 14, 2000
+ * This DRAFT dated September 22, 2000
  ***********************************************************************/
 
 /*
@@ -59,6 +59,8 @@ typedef struct {
   the MPI implementation can choose the correct behavior.  An example of this
   are the keyval attribute copy and delete functions.
 
+  Module:
+  Attribute
   E*/
 typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN, 
 	       MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
@@ -81,8 +83,6 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   be an option, because (particularly when accessing the attribute from C), 
   it may be what the user intended, and in any case, it is a valid operation.
 
-  Module:
-  Attribute
   T*/
 
 /*E
@@ -91,6 +91,10 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   Notes:
   The appropriate element of this union is selected by using the language
   field of the 'keyval'.
+
+  Module:
+  Attribute
+
   E*/
 typedef union {
   int  (*C_CopyFunction)  (MPI_Comm, int, void *, void *, void *, int *)
@@ -107,6 +111,10 @@ typedef union {
   Notes:
   The appropriate element of this union is selected by using the language
   field of the 'keyval'.
+
+  Module:
+  Attribute
+
   E*/
 typedef union {
   int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
@@ -119,6 +127,10 @@ typedef union {
 
 /*S
   MPID_Keyval - Structure of an MPID keyval
+
+  Module:
+  Attribute
+
   S*/
 typedef struct {
     int                  id;
@@ -144,6 +156,9 @@ typedef struct {
   but even then, there would be no reference count on the individual
   attributes.)
  
+  Module:
+  Attribute
+
   Question: Do we want the keyval or a pointer to the keyval data?
  S*/
 typedef struct {
@@ -151,6 +166,30 @@ typedef struct {
     MPID_Keyval *keyval;            /* Keyval structure for this attribute */
     /* other, device-specific information */
 } MPID_Attribute;
+
+/*S
+  MPID_Info - Structure of an MPID info
+
+  Notes:
+  There is no reference count because 'MPI_Info' values, unlike other MPI 
+  objects, may be changed after they are passed to a routine without 
+  changing the routine''s behavior.  In other words, any routine that uses
+  an 'MPI_Info' object must make a copy or otherwise act on any info value
+  that it needs.
+
+  Module:
+  Attribute
+
+  Question:
+  Do we really want to mandate this this is a linked list, or do we want
+  to make use of the 'MPID_List'?
+  S*/
+typedef struct MPID_Info_s {
+    int                id;
+    char               *key;
+    char               *value;
+    struct MPID_Info_s *next;
+} MPID_Info;
 
 /*D
   LocalPID - Description of the local process ids
@@ -209,6 +248,9 @@ typedef struct {
   Fields:
 + count - Number of elements
 - datatype - datatype that this datatype consists of
+
+  Module:
+  Datatype
   S*/
 typedef struct {
     int count;
@@ -223,6 +265,9 @@ typedef struct {
 . blocksize - Number of datatypes in each element
 . stride - Stride (in bytes) between each block
 - datatype - Datatype of each element
+
+  Module:
+  Datatype
   S*/
 typedef struct { 
     int count;
@@ -239,6 +284,10 @@ typedef struct {
 . blocksize - Number of elements in each block
 . offset - Array of offsets (in bytes) to each block
 - datatype - Datatype of each element
+
+  Module:
+  Datatype
+
   S*/
 typedef struct {
     int count;
@@ -256,6 +305,9 @@ typedef struct {
 . offset - Array of offsets (in bytes) to each block
 - datatype - Datatype of each element
 
+  Module:
+  Datatype
+
   S*/
 typedef struct {
     int count;
@@ -272,6 +324,10 @@ typedef struct {
 . blocksize - Array giving the number of elements in each block
 . offset - Array of offsets (in bytes) to each block
 - datatype - Array of datatypes describing the elements of each block
+
+  Module:
+  Datatype
+
   S*/
 typedef struct {
     int count;
@@ -294,6 +350,10 @@ typedef struct {
   five datatype structure.
 . extent - The extent of the datatype
 - id     - id for the corresponding 'MPI_Datatype'.
+
+  Module:
+  Datatype
+
   S*/
 typedef struct datatloop_ { 
     int kind;                  /* Contains both the loop type (of the 5 above)
@@ -600,7 +660,7 @@ typedef struct {
   'MPID_Hid_Cancel_t'.
 
   Notes:
-  This is a typedef enum (not shown yet) that lists the possible call types
+  This is a typedef enum that lists the possible call types
   for 'MPID_Rhcv'.  The exact list will depend on the generic implementation 
   of the other (i.e., not-\texttt{MPID_CORE}) modules.
 
@@ -649,7 +709,7 @@ typedef struct {
   int16_t request_id;
   int32_t length;        /* In bytes */
   /* other, device-specific information */
-  } MPID_Hid_Request_to_send_t
+} MPID_Hid_Request_to_send_t;
 
 /*S
    MPID_Hid_Cancel_t - Cancel a communication operation

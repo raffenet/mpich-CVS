@@ -11,6 +11,11 @@
 \oddsidemargin=.2in
 \topmargin=-.50in
 
+%
+% Modify the way titles are handled for no breaks between pages
+\def\mantitle#1#2#3{\pagerule\nobreak
+\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi}
+
 \begin{document}
 
 \markright{ADI-3 Reference Manual}
@@ -22,6 +27,7 @@
 \catcode`\_=11
 \def\code#1{{\tt #1}}
 
+\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
 Version 3\\
 Reference Manual\\\ \\Draft}{\em 
@@ -528,6 +534,7 @@ Still to do.  This section needs to cover:
 \section{Attributes}
 \input AttrOverview.tex
 \input KyOverview.tex
+\input InfoOverview.tex
 \input Attribute-list.tex
 
 \section{Datatypes}

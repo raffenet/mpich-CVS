@@ -1,4 +1,4 @@
-ALL: paper.ps
+ALL: adi3man.ps
 SHELL = /bin/sh
 
 .SUFFIXES: .ps .dvi .tex
@@ -30,11 +30,15 @@ adi3man.ps: adi3man.tex adi3.c adi3.h
 	rm -f adi3man.ps
 	mv adi3man/adi3man.ps .
 
+# This uses the full-featured date program in Linux
 install-web: adi3man.ps
 	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
 	cp adi3man.ps /mcs/www-unix/mpi/mpich/adi3
+	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`/" \
+		/mcs/www-unix/mpi/mpich/adi3/index.html 
+
 clean:
-	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod
+	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod adi3man.ps
 
 #
 # The following are helpers for assembling the reference manual

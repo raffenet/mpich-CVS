@@ -3,7 +3,7 @@
 /***********************************************************************
  * This is a DRAFT
  * All parts of this document are subject to (and expected to) change
- * This DRAFT dated September 8, 2000
+ * This DRAFT dated September 22, 2000
  ***********************************************************************/
 /*TOverview.tex
  The following are routines that a device must implement; these are used
@@ -456,6 +456,9 @@ MPID_Comm *MPID_Comm_create( MPID_Comm *old_comm,
   (old) communicator using a private context id (e.g., the private communicator
   used in MPICH-1).  Freeing a communicator returns the context id to the 
   shared pool.
+
+  Module:
+  Communicator
 
 @*/
 int MPID_Comm_context_id( MPID_Comm *old_comm, MPID_Group *new_group )
@@ -1254,10 +1257,6 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
  * Here go MPID versions of important point-to-point operations, just like the
  * full ADI-2. This list is expected to include:
  *
- * MPID_Isend
- * MPID_Irecv
- * MPID_Issend
- * MPID_Irsend
  * MPID_Waitsome
  * MPID_Testsome
  *
@@ -1270,7 +1269,7 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
  */
 
 /*@
-  MPID_Isend - 
+  MPID_Isend - MPID entry point for MPI_Isend
 
   Notes:
   The only difference between this and 'MPI_Isend' is that the basic
@@ -1288,6 +1287,97 @@ int MPID_Isend( void *buf, int count, MPID_Datatype *datatype,
 {
 }
 
+/*@
+  MPID_Issend - MPID entry point for MPI_Issend
+
+  Notes:
+  The only difference between this and 'MPI_Issend' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, and the MPI opaque objects have been replaced by
+  MPID objects.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Issend( void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, 
+		MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Irsend - MPID entry point for MPI_Irsend
+
+  Notes:
+  The only difference between this and 'MPI_Irsend' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, and the MPI opaque objects have been replaced by
+  MPID objects.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Irsend( void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, 
+		MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Irecv - MPID entry point for MPI_Irecv
+
+  Notes:
+  The only difference between this and 'MPI_Irecv' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, and the MPI opaque objects have been replaced by
+  MPID objects.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, 
+		MPID_Request **request )
+{
+}
+
+/*@
+  MPID_Waitsome - MPID entry point for MPI_Waitsome
+
+  Notes:
+  The only difference between this and 'MPI_Waitsome' is that the basic
+  error checks (e.g., request and count)
+  have been made, and the MPI opaque objects have been replaced by
+  MPID objects.
+
+  Module:
+  Communication
+  @*/
+int MPID_Waitsome( int incount, MPID_Request *(array_of_requests[]),
+		   int *outcount, int array_of_indices[],
+		   MPI_Status array_of_statuses[] )
+{}
+
+/*@
+  MPID_Testsome - MPID entry point for MPI_Testsome
+
+  Notes:
+  The only difference between this and 'MPI_Testsome' is that the basic
+  error checks (e.g., request and count)
+  have been made, and the MPI opaque objects have been replaced by
+  MPID objects.
+
+  Module:
+  Communication
+  @*/
+int MPID_Testsome( int incount, MPID_Request *(array_of_requests[]),
+		   int *outcount, int array_of_indices[],
+		   MPI_Status array_of_statuses[] )
+{}
+  
 /*@
   MPID_tBsend - Attempt a send and return if it would block
 
@@ -2483,6 +2573,85 @@ MPID_Attribute *MPID_Attr_list_walk( MPID_List *list, MPID_Attribute *prev )
 int MPID_Attr_delete( MPID_List *list, int keyval )
 {
 }
+
+/*TInfoOverview.tex
+  
+  'MPI_Info' is a sort of MPI-2 version of attributes.  
+  Many MPI-2 routines take an 'MPI_Info' argument, so the
+  structure of info needs to be known by the device.  In addition,
+  similar list manipulation routines could be used to manage Info 
+  objects.  The functions for managing 'MPID_Info' are essentially
+  the same as for attributes, replacing integer 'keyval' with character
+  key strings, and returning a pointer to an 'MPID_Info' structure 
+  rather than an attribute.
+
+  Questions
+  
+  The routines listed here assume that an info is just a linked list of 
+  info items.  Another implementation would make 'MPI_Info' an 'MPID_List',
+  and hang 'MPID_Info' records off of the list.  
+  T*/
+/*@
+  MPID_Info_find - Find a info value for a given key string
+
+  Input Parameters:
++ info - Head of an Info object list.
+. key - key string
+- insert - True if info should be inserted if it is not found.
+
+  Return Value:
+  A pointer to the matching info structure, or null if no info matching the
+  key was found.
+
+  Notes:
+  Using a value of 0 for 'insert' makes it easy to implement 'MPI_Info_get';
+  a value of 1 is used for 'MPI_Info_set' 
+
+  Module:
+  Attribute
+
+  Question:
+  Do we want to require that updates to info are atomic in the 
+  multi-threaded case?  I believe that we should.
+  @*/
+MPID_Info *MPID_Info_find( MPID_Info *info, const char key[], int insert )
+{
+}
+/*@
+  MPID_Info_list_walk - Walk through a list of info values
+
+  Input Parameters:
++ info - Info list to walk through
+- prev - Previous info returned by this routine, or null.
+
+  Notes:
+  This routine returns each element of an info list in turn.
+  The first call should use 'NULL' for the value of 'prev'.  
+
+  Module:
+  Attribute
+  @*/
+MPID_Info *MPID_Info_list_walk( MPID_Info *info, MPID_Info *info )
+{
+}
+
+/*@
+  MPID_Info_delete - Remote a kev/value pair from a info list
+
+  Input Parameters:
++ info - Info list to search
+- key - key string to look for
+ 
+  Return value:
+  zero if the key was found and deleted, an MPI error code otherwise.
+  
+  Module:
+  Attribute
+  @*/
+int MPID_Info_delete( MPID_Info *info, const char key[] )
+{
+}
+
 
 /*T
  * Section : Environment
