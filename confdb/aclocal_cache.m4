@@ -62,6 +62,9 @@ if test "X$enable_cache" = "Xnotgiven" -o "X$enable_cache" = "X" ; then
         fi
     fi
 fi
+if test "X$enable_cache" = "Xyes" -a "$cache_file" = "/dev/null" ; then
+    enable_cache=no
+fi
 if test "X$enable_cache" = "Xyes" ; then
   if test -r "$cache_file" ; then
     echo "loading cache $cache_file"
