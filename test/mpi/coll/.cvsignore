@@ -35,6 +35,7 @@ scatterv
 scattern
 rerr
 bcast2
+bcast3
 exscan2
 icallgather
 icallgatherv
