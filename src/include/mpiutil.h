@@ -32,13 +32,13 @@
  * mesage box on a remote machine.
  */
 #if (!defined(NDEBUG) && defined(HAVE_ERROR_CHECKING))
-#   define MPIU_Assert(a_)												\
-    {															\
-	if (!(a_))													\
-	{														\
-	    MPIU_Internal_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
-            MPID_Abort(NULL, MPI_SUCCESS, 1);										\
-	}														\
+#   define MPIU_Assert(a_)													\
+    {																\
+	if (!(a_))														\
+	{															\
+	    MPIU_Internal_error_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
+            MPID_Abort(NULL, MPI_SUCCESS, 1);											\
+	}															\
     }
 #else
 #   define MPIU_Assert(a_)
@@ -51,11 +51,11 @@
  * be used for error checking in prototype code, although it should be converted real error checking and reporting once the
  * prototype becomes part of the official and supported code base.
  */
-#define MPIU_Assertp(a_)													\
+#define MPIU_Assertp(a_)												\
 {															\
     if (!(a_))														\
     {															\
-        MPIU_Internal_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
+        MPIU_Internal_error_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
         MPID_Abort(NULL, MPI_SUCCESS, 1);										\
     }															\
 }
