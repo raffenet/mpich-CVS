@@ -1449,15 +1449,16 @@ void Op::Init( User_function *f, bool commute )
 
     # Keyval and attribute routines
     print $OUTFD "
-extern \"C\" void MPIR_Call_delfn( MPI_Comm comm, int keyval,
+extern \"C\" int MPIR_Call_delfn( MPI_Comm comm, int keyval,
 				   void *value, void *extra_state, 
 				   MPI::Comm::Delete_attr_function *f )
 {
     MPI::Comm cxxcomm = comm;
     int err;
     err = (*f)( cxxcomm, keyval, value, extra_state );
+    return err;  
 }
-extern \"C\" void MPIR_Call_copyfn( MPI_Comm comm, int keyval,
+extern \"C\" int MPIR_Call_copyfn( MPI_Comm comm, int keyval,
 				   void *extra_state, void *value,
 				    void *new_value, int *cflag,
 				   MPI::Comm::Copy_attr_function *f )
@@ -1467,6 +1468,7 @@ extern \"C\" void MPIR_Call_copyfn( MPI_Comm comm, int keyval,
     bool flag;
     err=(*f)( cxxcomm, keyval, extra_state, value, new_value, flag );
     *cflag = flag;
+      return err;
 }
 extern \"C\" void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
 int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, 
