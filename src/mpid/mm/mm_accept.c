@@ -21,7 +21,11 @@ int MM_Accept(MPID_Info *info_ptr, char *port_name)
 	    bfd = beasy_accept(p->bfd);
 	    if (bfd == BFD_INVALID_SOCKET)
 	    {
+#ifdef HAVE_WINDOWS_H
 		error = WSAGetLastError();
+#else
+		error = errno;
+#endif
 		printf("beasy_accept failed, error %d\n", error);
 		return BFD_INVALID_SOCKET;
 	    }

@@ -12,8 +12,12 @@ int MM_Send(int conn, char *buffer, int length)
     int error;
     if (beasy_send(conn, buffer, length) != SOCKET_ERROR)
 	return length;
+#ifdef HAVE_WINDOWS_H
     error = WSAGetLastError();
+#else
+    error = errno;
+#endif
     printf("beasy_send failed, error %d\n", error);
-    return 0;
+    return SOCKET_ERROR;
 }
 
