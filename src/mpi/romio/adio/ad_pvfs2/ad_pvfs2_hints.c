@@ -45,7 +45,6 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    }
 
 	    /* the striping factor */
-	    value = (char *) ADIOI_Malloc( (MPI_MAX_INFO_VAL+1)*sizeof(char));
 	    MPI_Info_get(users_info, "striping_factor", 
 		    MPI_MAX_INFO_VAL, value, &flag);
 	    if (flag) {
@@ -61,8 +60,10 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		}
 		/* --END ERROR HANDLING-- */
 		
-		MPI_Info_set(fd->info, "romio_pvfs2_debugmask", value);
+		MPI_Info_set(fd->info, "striping_factor", value);
 	    }
+
+            ADIOI_Free(value);
 	}
     }
     /* set the values for collective I/O and data sieving parameters */
