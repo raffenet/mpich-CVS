@@ -1,3 +1,5 @@
 Makefile
 Makefile.in
-config*
+configure
+config.status
+config.log
