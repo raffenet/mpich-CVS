@@ -120,13 +120,13 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*));
 
 /* utility allocator functions */
-#if 0
+//#if 0
 typedef struct BlockAllocator_struct * BlockAllocator;
 
 BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
 int BlockAllocFinalize(BlockAllocator *p);
-void * BlockAlloc(BlockAllocator p);
-int BlockFree(BlockAllocator p, void *pBlock);
+void * ibuBlockAlloc(BlockAllocator p);
+int ibuBlockFree(BlockAllocator p, void *pBlock);
 
 struct BlockAllocator_struct
 {
@@ -245,7 +245,7 @@ static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_
 }
 #endif /* WITH_ALLOCATOR_LOCKING */
 
-static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p))
+static BlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p))
 {
     BlockAllocator p;
     void **ppVoid;
@@ -343,7 +343,7 @@ static int BlockFree(BlockAllocator p, void *pBlock)
 }
 
 
-#endif
+//#endif
 
 
 
