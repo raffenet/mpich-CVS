@@ -198,13 +198,21 @@ sub CountUncoveredLines {
 	    while (<FD>) {
 		$linecount++;
 		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\*\s+--BEGIN/) {
-		    my $cleanline = $_;
-		    $cleanline =~ s/^\s*//;
-		    chop $cleanline;
-		    print STDERR "Possible missing END EXPERIMENTAL in $filename at $linecount; saw \"$cleanline\"\n";
-		}
-		if (/^\s*\/\*\s+--END EXPERIMENTAL--\s+\*\/\s*/) {
+		# We allow "experimental" to contain other marked blocks.
+		# This allows us to leave such markers in the 
+		# experimental code, at the cost of possibly missing
+                # an 'end experimental'.  See the if at the bottom
+		# of the loop for a partial catch
+# 		if (/^\s*\/\*\s+--BEGIN/) {
+# 		    my $cleanline = $_;
+# 		    $cleanline =~ s/^\s*//;
+# 		    chop $cleanline;
+# 		    print STDERR "Possible missing END EXPERIMENTAL in $filename at $linecount; saw \"$cleanline\"\n";
+# 		}
+		if (/^\s*\/\*\s+--END\sEXPERIMENTAL--\s+\*\/\s*/) {
+		    last; 
+		if (/^\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/) {
+		    print STDERR "Mangled line: $_";
 		    last; 
 		}
 	    }
