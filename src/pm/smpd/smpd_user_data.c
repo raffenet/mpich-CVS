@@ -14,6 +14,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <stdlib.h>
 
 SMPD_BOOL smpd_option_on(const char *option)
 {
