@@ -47,6 +47,7 @@
 #define DEBUG1(a) 
 /* #define PRINT_AVAIL */
 /* #define DEBUG1(a) a;fflush(stdout)  */
+/* #define PRINT_ARENA */
 
 /* Private structures for the bsend buffers */
 
@@ -210,6 +211,10 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 
     MPIR_Nest_incr();
 
+    /* We check the active buffer first.  This helps avoid storage 
+       fragmentation */
+    MPIR_Bsend_check_active();
+
     (void)NMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
 
     DEBUG1(printf("looking for buffer of size %d\n", packsize));
@@ -316,10 +321,15 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 static void MPIR_Bsend_free_segment( BsendData_t *p )
 {
     BsendData_t *prev = p->prev, *avail = BsendBuffer.avail, *avail_prev;
-    int         inserted = 0;
 
     DEBUG1(printf("Freeing bsend segment at %x of size %d, next at %x\n",
 		 p,p->size, ((char *)p)+p->total_size));
+
+#ifdef PRINT_ARENA
+    printf( "At the begining of free_segment with size %d:\n", p->total_size );
+    MPIR_Bsend_dump();
+#endif    
+
     /* Remove the segment from the free list */
     if (prev) {
 	DEBUG(printf("free segment is within active list\n"));
@@ -329,6 +339,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	/* p was at the head of the active list */
 	DEBUG(printf("free segment is head of active list\n"));
 	BsendBuffer.active = p->next;
+	/* The next test sets the prev pointer to null */
     }
     if (p->next) {
 	p->next->prev = prev;
@@ -346,71 +357,56 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
     }
 #endif
     /* Merge into the avail list */
+    /* Find avail_prev, avail, such that p is between them.
+       either may be null if p is at either end of the list */
     avail_prev = 0;
     while (avail) {
-	if ((char *)avail + avail->total_size == (char *)p) {
-	    DEBUG(printf("merge with previous block at %x\n", avail));
-	    /* Add p to avail, set p to this block and continue through
-	       the loop to catch p+size == next avail */
-	    avail->total_size += p->total_size;
-	    avail->size       += p->total_size;
-	    p = avail;
-	    inserted = 1;
-	    /* No break because we may want to merge with the next 
-	     block */
-	}
-	else if ((char *)p + p->total_size == (char *)avail) {
-	    DEBUG(printf("merge with next block at %x\n", avail));
-	    /* Exact fit to the next entry.  Replace that entry 
-	       with this one */
-	    p->total_size += avail->total_size;
-	    p->prev	   = avail->prev;
-	    p->next	   = avail->next;
-	    p->size        = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
-	    /* The above should be the same as p->size + avail->total_size */
-	    if (!p->prev) {
-		BsendBuffer.avail = p;
-	    }
+	if (avail > p) {
 	    break;
 	}
-	else if (p < avail) {
-	    BsendData_t *prev = avail->prev;
-	    if (inserted) break;   /* Exit if already inserted (top case) */
-	    /* Insert p before avail */
-	    DEBUG(printf("insert before next block at %x\n", avail ));
-	    p->next = avail;
-	    p->prev = prev;
-	    avail->prev = p;
-	    if (prev) 
-		prev->next = p;
-	    else
-		BsendBuffer.avail = p;
-	    break;
-	}
-	avail_prev = avail;    /* Save for end-of-list processing */
+	avail_prev = avail;
 	avail      = avail->next;
     }
-    
-    /* If p is at the end of the list, avail will be null */
-    if (!avail && !inserted) {
-	/* We hit the end without finding the location */
-	if (avail_prev) {
-	    avail_prev->next = p;
-	    p->prev	     = avail_prev;
-	    p->next          = 0;
+
+    /* Try to merge p with the next block */
+    if (avail) {
+	if ((char *)p + p->total_size == (char *)avail) {
+	    p->total_size += avail->total_size;
+	    p->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
+	    p->next = avail->next;
+	    if (avail->next) avail->next->prev = p;
+	    avail = 0;
 	}
 	else {
-	    if (!BsendBuffer.avail) {
-		BsendBuffer.avail = p;
-		p->next           = 0;
-		p->prev           = 0;
-	    }
-	    else {
-		/* Something is wrong */
-		printf ( "PANIC!\n" );
-	    }
+	    p->next = avail;
+	    avail->prev = p;
 	}
     }
+    else {
+	p->next = 0;
+    }
+    /* Try to merge p with the previous block */
+    if (avail_prev) {
+	if ((char *)avail_prev + avail_prev->total_size == (char *)p) {
+	    avail_prev->total_size += p->total_size;
+	    avail_prev->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
+	    avail_prev->next = p->next;
+	    if (p->next) p->next->prev = avail_prev;
+	}
+	else {
+	    avail_prev->next = p;
+	    p->prev          = avail_prev;
+	}
+    }
+    else {
+	/* p is the new head of the list */
+	BsendBuffer.avail = p;
+	p->prev           = 0;
+    }
+#ifdef PRINT_ARENA
+    printf( "At the end of free_segment:\n" );
+    MPIR_Bsend_dump();
+#endif    
 }
 /* end:nested */
 /* 
@@ -497,6 +493,11 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     /* alloc_size is the amount of space (out of size) that we will 
        allocate for this buffer. */
 
+#ifdef PRINT_ARENA
+    printf( "Taking %d bytes from a block with %d bytes\n", alloc_size, 
+	    p->total_size );
+#endif
+
     /* Is there enough space left to create a new block? */
     if (alloc_size + BSENDDATA_HEADER_TRUE_SIZE + MIN_BUFFER_BLOCK <= p->size) {
 	/* Yes, the available space (p->size) is large enough to 
@@ -521,6 +522,11 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	p->next       = newp;
 	p->total_size = (char *)newp - (char*)p;
 	p->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
+
+#ifdef PRINT_ARENA
+	printf( "broken blocks p (%d) and new (%d)\n",
+		p->total_size, newp->total_size ); fflush(stdout);
+#endif
     }
 
     /* Remove p from the avail list and add it to the active list */
@@ -542,6 +548,11 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     p->next	       = BsendBuffer.active;
     p->prev	       = 0;
     BsendBuffer.active = p;
+
+#ifdef PRINT_ARENA
+    printf( "At end of take buffer\n" );
+    MPIR_Bsend_dump();
+#endif
     DEBUG(printf("segment %x now head of active\n", p ));
 }
 
@@ -557,3 +568,36 @@ static int MPIR_Bsend_finalize( void *p )
     }
     return 0;
 }
+
+#ifdef PRINT_ARENA
+void MPIR_Bsend_dump( void )
+{
+    BsendData_t *a = BsendBuffer.avail;
+
+    printf( "Total size is %d\n", BsendBuffer.buffer_size );
+    printf( "Avail list is:\n" );
+    while (a) {
+	printf( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+		a->total_size );
+	if (a == a->next) {
+	    printf( "@@@Corrupt list; avail block points at itself\n" );
+	    break;
+	}
+	a = a->next;
+    }
+
+    printf( "Active list is:\n" );
+    a = BsendBuffer.active;
+    while (a) {
+	printf( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+		a->total_size );
+	if (a == a->next) {
+	    printf( "@@@Corrupt list; active block points at itself\n" );
+	    break;
+	}
+	a = a->next;
+    }
+    printf( "end of list\n" );
+    fflush( stdout );
+}
+#endif
