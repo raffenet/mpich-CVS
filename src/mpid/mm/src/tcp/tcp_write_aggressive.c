@@ -53,11 +53,11 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 	return FALSE;
     }
 
+    cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;
+    car_vec = car_ptr->data.tcp.buf.vec_write.vec;
     if (car_ptr->data.tcp.buf.vec_write.num_read_copy != buf_ptr->vec.num_read)
     {
 	/* update car vector */
-	cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;
-	car_vec = car_ptr->data.tcp.buf.vec_write.vec;
 	buf_vec = buf_ptr->vec.vec;
 	
 	/* update num_read_copy */
@@ -105,7 +105,7 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 
     /* copy as much of the car vector into the stuffed vector as possible */
     cur_pos = *cur_pos_ptr;
-    cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;
+    /*cur_index = car_ptr->data.tcp.buf.vec_write.cur_index;*/
     /* The amount available is the amount read minus the amount previously written. */
     num_avail = buf_ptr->vec.num_read - car_ptr->data.tcp.buf.vec_write.cur_num_written;
     /* If the amount available for writing plus the total amount previously written is equal to the total size
@@ -114,6 +114,17 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 
     /*msg_printf("tcp_stuff_vector_vec: num_avail = %d\n", num_avail);*/
 
+    while ((cur_pos < MPID_VECTOR_LIMIT) && num_avail)
+    {
+	if (num_avail < 0)
+	    err_printf("Error: tcp_stuff_vector_vec - num_avail is negative: %d\n", num_avail);
+	vec[cur_pos].MPID_VECTOR_BUF = car_vec[cur_index].MPID_VECTOR_BUF;
+	num_avail -= (vec[cur_pos].MPID_VECTOR_LEN = car_vec[cur_index].MPID_VECTOR_LEN);
+	cur_index++;
+	cur_pos++;
+    }
+    *cur_pos_ptr = cur_pos;
+#ifdef FOO
     /* set the first vector to be the buf_ptr vector offset by the amount previously written */
     vec[cur_pos].MPID_VECTOR_BUF = 
 	(char*)buf_ptr->vec.vec[cur_index].MPID_VECTOR_BUF + 
@@ -137,6 +148,7 @@ int tcp_stuff_vector_vec(MPID_VECTOR *vec, int *cur_pos_ptr, MM_Car *car_ptr, MM
 	cur_pos++;
     }
     *cur_pos_ptr = cur_pos;
+#endif
 
     /* return TRUE if this segment is completely copied into the vec array */
     if (num_avail == 0 && final_segment)
