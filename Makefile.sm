@@ -1,14 +1,21 @@
 SUBDIRS = . src examples test
+# The all-local target makes sure that when different subsystems are selected
+# for the configure step, the libraries are removed and the object files 
+# cleaned out.  Without this step, it is possible to run make and encounter
+# errors caused by out-of-date objects in the directories and in the 
+# library
 all-local:
 	if [ ! -d lib ] ; then mkdir lib ; \
 	else \
 	    echo "@subsystems@" > lib/pkglist.new ; \
 	    if diff lib/pkglist lib/pkglist.new >/dev/null 2>&1 ; then \
-	        : ; \
+	        rm -f lib/pkglist.new ; \
             else \
 	        rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a ; \
+		rm -f lib/pkglist ; \
+	        mv -f lib/pkglist.new lib/pkglist ;\
+		${MAKE} clean ; \
 	    fi ; \
-	    mv -f lib/pkglist.new lib/pkglist ;\
 	fi
 all-preamble:
 	@echo "Beginning make"
@@ -38,7 +45,9 @@ dist:
 
 # Set the document sources and types (empty lists still cause recursion)
 doc_HTML_SOURCES =
-		
+doc_MAN_SOURCES = 
+doc_LATEX_SOURCES = 
+
 install_LIB = lib/lib${MPILIBNAME}.a
 install_INCLUDE = src/include/mpi.h
 optinstall_LIB = lib/libp${MPILIBNAME}.a
