@@ -99,6 +99,7 @@ $smdir =~ s/\/?simplemake$//;
 #print "smdir = $smdir\n";
 
 $debug = 0;                 # General debugging
+$debug_dirs = 0;            # Debug the choice of directories
 $debug_confdir = 0;         # Track the directory containing the controlling
                             # configure.in
 $quiet = 0;
@@ -389,6 +390,9 @@ foreach $_ (@ARGV) {
 	# extra files to remove in this directory
 	$distcleanfiles = $1;
     }
+    elsif (/-debugdirs/) {
+	$debug_dirs = 1;
+    }
     elsif (/-debug/) {
 	$debug = 1;
     }
@@ -564,6 +568,9 @@ sub ReadMfile {
 	    # have any of the values realname
 	    $subdir_autoconf_vars{$1} = $2;
 	    $subdir_optionals .= " $2";
+	    # Also add as a make variable because other
+	    # parts of the code will look for it as a raw variable.
+	    $makevars{"SUBDIRS_$1"} = $2;
 	}
         elsif (/^DOC_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
@@ -1297,7 +1304,7 @@ sub ResetFileName {
 }
 sub ShowFileName {
     if ($curFilenamePrinted) { return; }
-    print "Processing $curdir$file\n" if (!$quiet);
+    print "Processing $curdir$file\n" if (!$quiet && $debug_dirs);
     $curFilenamePrinted = 1;
 }
 
@@ -1305,7 +1312,7 @@ sub ProcessFile {
     $file = $_[0];
 
     &ResetFileName( "$curdir$file" );
-    #print "Processing $curdir$file\n" if (!$quiet);
+    print "Processing $curdir$file\n" if (!$quiet || $debug_dirs);
     $configure_has_config_headers = "no";
     if (-s "configure.in") {
 	&ReadAutoconf;
@@ -1326,7 +1333,7 @@ sub ProcessFile {
     my @actdirs = ();
     foreach my $dir (@dirs) {
 	$sdir = $dir;
-	#print "Checking $sdir\n";
+	print "Checking $sdir\n" if ($debug_dirs);
 	if ($sdir =~ /@([^@]*)@/) {
 	    $subst_name = $1;
 	    $subdirs_has_autoconf = 1;
@@ -1421,10 +1428,10 @@ sub RecursiveOp {
     $target = $_[0];
     $subdirname = $_[1];
     if ($subdirname ne "") {
-	@dirs = @$subdirname;
+	my @dirs = @$subdirname;
     }
     else {
-	@dirs = (@extra_dirs, @subdirs);
+	my @dirs = (@extra_dirs, @subdirs);
     }
     print "n dirs = $#dirs\n" if $debug;
     if ($#dirs == 0 && $dirs[0] eq ".") { return; }
