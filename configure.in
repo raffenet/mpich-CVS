@@ -150,7 +150,9 @@ AC_ARG_WITH(namepublisher,
                              MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
                              include
                                no (no service available)
-                               mpd  (service only within the same MPD ring)
+                               pmiext  (service using a pmi extension,
+                                        usually only within the same MPD ring)
+			       file:directory
                                ldap:ldapservername
                              Only no has been implemented so far.],,
 with_namepublisher=no)
@@ -605,6 +607,8 @@ fi
 # a shell script.
 AC_PATH_PROG(PERL5,perl)
 
+nameserv_name=""
+AC_SUBST(nameserv_name)
 if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
     case "$with_namepublisher" in 
     none|no) ;;
@@ -619,16 +623,29 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
 	        "$ac_cv_header_ldap_h" = yes -a \
 		"$have_ldap_lib" = yes ; then
 	    AC_DEFINE(USE_LDAP_FOR_NAMEPUB,1,[Define if ldap should be used for name publishing])
+	    nameserv_name="ldap"
 	else 
 	    AC_MSG_WARN([Could not find files needed to use LDAP for name publishing])
 	fi
 
     ;;
-    mpd)
-    AC_MSG_WARN([No mpd name publisher supported])
-dnl    AC_DEFINE(USE_MPD_FOR_NAMEPUB,1,[Define if mpd should be used for name publishing])
+    pmiext)
+    AC_MSG_WARN([No pmiext name publisher supported])
+dnl    AC_DEFINE(USE_PMIEXT_FOR_NAMEPUB,1,[Define if pmiext should be used for name publishing])
+    #nameserv_name="pmiext"
+    ;;
+    file*)
+    AC_MSG_WARN([No file name publisher supported])
+    nameserv_name="file"
+    AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
+    ;;
+    *)
+    AC_MSG_WARN([Unknown name publisher $with_namepublisher])
     ;;
     esac    
+fi
+if test -n "$nameserv_name" ; then
+   AC_DEFINE(HAVE_NAMEPUB_SERVICE,1,[Define if a name publishing service is available])
 fi
 
 dnl
