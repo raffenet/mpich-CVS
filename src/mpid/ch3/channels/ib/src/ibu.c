@@ -821,7 +821,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     work_req.signaled_f        = 0;
 
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
-    ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)0;
+    ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)-1;
     
     MPIU_dbg_printf("ib_post_send_req_us(%d byte ack)\n", ibu->nUnacked);
     status = ib_post_send_req_us( IBU_Process.hca_handle,
@@ -1668,7 +1668,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	switch (completion_data.op_type)
 	{
 	case OP_SEND:
-	    if (completion_data.immediate_data_f)
+	    if (completion_data.immediate_data_f || (int)mem_ptr == -1)
 	    {
 		break;
 	    }
