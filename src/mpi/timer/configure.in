@@ -172,5 +172,6 @@ dnl Choose the timer type (e.g., long, double, array).  long is the default
 AC_SUBST(MPILIBNAME)
 AC_SUBST(MPID_TIMER_TYPE)
 dnl Generate the Makefile from Makefile.in
+AC_OUTPUT_COMMANDS(if test ! -d ../../include ; then mkdir ../../include ; fi)
 AC_OUTPUT_COMMANDS(cp mpichtimer.h ../../include)
 AC_OUTPUT(Makefile mpichtimer.h)
