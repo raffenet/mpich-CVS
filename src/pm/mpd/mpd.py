@@ -539,11 +539,21 @@ def _handle_lhs_input():
 
 def _do_mpdrun(msg):
     mpd_print(0000, "DO_MPDRUN MSG=:%s:" % msg)
+    if msg.has_key('jobid'):
+        jobid = msg['jobid']
+    else:
+        jobid = str(g.nextJobInt) + '  ' + g.myId + '  ' + msg['jobalias']
+        g.nextJobInt += 1
+        msg['jobid'] = jobid
     handled_one__any_ = 0
     while 1:
         if msg['nstarted'] >= msg['nprocs']:
             break
-        if handled_one__any_:
+        if g.activeJobs.has_key(jobid):
+            procsHereForJob = len(g.activeJobs[jobid].keys())
+        else:
+            procsHereForJob = 0
+        if handled_one__any_  and  procsHereForJob >= g.NCPUs:
             break
         hosts = msg['hosts']
         currRank = msg['nstarted']
@@ -586,12 +596,6 @@ def _do_mpdrun(msg):
             msg['port0'] = tempPort
         manHost0 = msg['host0']
         manPort0 = msg['port0']
-        if currRank == 0:
-            jobid = str(g.nextJobInt) + '  ' + g.myId + '  ' + msg['jobalias']
-            g.nextJobInt += 1
-            msg['jobid'] = jobid
-        else:
-            jobid = msg['jobid']
         users = msg['users']
         for ranks in users.keys():
             (lo,hi) = ranks
@@ -643,6 +647,7 @@ def _do_mpdrun(msg):
             if currRank >= lo  and  currRank <= hi:
                 cwd = cwds[ranks]
                 break
+        procsHereForJob += 1
         manPid = fork()
         if manPid == 0:
             mpd_set_my_id('%s_man_%d' % (g.myHost,g.myPid) )
@@ -1068,6 +1073,7 @@ def _process_cmdline_args():
     g.daemon       = 0
     g.bulletproof  = 0
     g.listenPort   = 0
+    g.NCPUs        = 1
     if g.configParams.has_key('idmyhost'):
         g.myHost   = g.configParams['idmyhost']
     else:
@@ -1075,8 +1081,8 @@ def _process_cmdline_args():
     try:
         (opts,args) = getopt(argv[1:],
                              'h:p:i:l:tnedb',
-                             ['host=','port=','idmyhost=','listenport=','trace','noconsole','echo',
-                              'daemon','bulletproof'])
+                             ['host=','port=','idmyhost=','listenport=','ncpus=',
+                              'trace','noconsole','echo','daemon','bulletproof'])
     except:
         usage()
 
@@ -1100,6 +1106,8 @@ def _process_cmdline_args():
             g.daemon = 1 
         elif opt[0] == '-b'  or  opt[0] == '--bulletproof':
             g.bulletproof = 1 
+        elif opt[0] == '--ncpus':
+            g.NCPUs = int(opt[1])
         else:
             pass    ## getopt raises an exception if not recognized
     if (g.entryHost and not g.entryPort) or (not g.entryHost and g.entryPort):
