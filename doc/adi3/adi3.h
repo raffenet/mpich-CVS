@@ -797,7 +797,7 @@ typedef struct {
     int          id;             /* value of MPI_Win for this structure */
     volatile int ref_count;
     void         *start_address; /* Address and length of *local* window */
-    MPID_Aint    length;        
+    MPI_Aint     length;        
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_List    attributes;
     MPID_Comm    *comm;         /* communicator of window */
