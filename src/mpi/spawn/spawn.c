@@ -57,7 +57,7 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, int
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SPAWN);
     /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, &comm_ptr );
+    MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;

@@ -55,7 +55,7 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CONNECT);
     /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, &comm_ptr );
+    MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
