@@ -27,7 +27,7 @@ int main( int argc, char *argv[] )
         err = MPI_Send("bye", 4, MPI_CHAR, rank, 0, intercomm); 
     } 
 
-    /*sleep(5);*/
+    sleep(5);
     MPI_Finalize();
 
     return 0;
