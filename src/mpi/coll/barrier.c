@@ -74,7 +74,8 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	/* First step: receive from the upper group */
 	if (rank < remaining) {
 	    MPID_Recv( 0, 0, MPI_BYTE, twon_within + rank, MPIR_BARRIER_TAG, 
-		       comm_ptr, MPID_CONTEXT_INTRA_COLL, 0, &request_ptr );
+		       comm_ptr, MPID_CONTEXT_INTRA_COLL, MPI_STATUS_IGNORE,
+		       &request_ptr );
 	    if (request_ptr) {
 		MPIR_Wait(request_ptr);
 		MPID_Request_release(request_ptr);
@@ -85,8 +86,8 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	    partner = (rank ^ gap);
 	    if (rank < partner) {
 		MPID_Recv( 0, 0, MPI_BYTE, partner, MPIR_BARRIER_TAG, 
-			   comm_ptr, MPID_CONTEXT_INTRA_COLL, 0, 
-			   &request_ptr );
+			   comm_ptr, MPID_CONTEXT_INTRA_COLL,
+			   MPI_STATUS_IGNORE, &request_ptr );
 		if (request_ptr) {
 		    MPIR_Wait(request_ptr);
 		    MPID_Request_release(request_ptr);
@@ -122,7 +123,8 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	}
 	/* There is no second step; for the third step, recv */
 	MPID_Recv( 0, 0, MPI_BYTE, rank - twon_within, MPIR_BARRIER_TAG, 
-		   comm_ptr, MPID_CONTEXT_INTRA_COLL, 0, &request_ptr );
+		   comm_ptr, MPID_CONTEXT_INTRA_COLL, MPI_STATUS_IGNORE,
+		   &request_ptr );
 	if (request_ptr) {
 	    MPIR_Wait(request_ptr);
 	    MPID_Request_release(request_ptr);
