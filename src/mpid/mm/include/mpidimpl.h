@@ -179,18 +179,18 @@ typedef struct MPIDI_VCRT
            int mm_close(int);
 
 /* requests */
-MPID_Request * mm_request_alloc();
+MPID_Request * mm_request_alloc(void);
           void mm_request_free(MPID_Request *request_ptr);
 
 /* communication agent/action requests */
-          void mm_car_init();
-          void mm_car_finalize();
-      MM_Car * mm_car_alloc();
+          void mm_car_init(void);
+          void mm_car_finalize(void);
+      MM_Car * mm_car_alloc(void);
           void mm_car_free(MM_Car *car_ptr);
 
 /* virtual connections */
-          void mm_vc_init();
-          void mm_vc_finalize();
+          void mm_vc_init(void);
+          void mm_vc_finalize(void);
     MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank);
     MPIDI_VC * mm_vc_from_context(int comm_context, int rank);
     MPIDI_VC * mm_vc_alloc(MM_METHOD method);
@@ -209,8 +209,8 @@ MPID_Request * mm_request_alloc();
 /* queues */
            int mm_post_recv(MM_Car *car_ptr);
            int mm_post_send(MM_Car *car_ptr);
-           int mm_cq_test();
-           int mm_cq_wait();
+           int mm_cq_test(void);
+           int mm_cq_wait(void);
            int mm_cq_enqueue(MM_Car *car_ptr);
 	   int mm_create_post_unex(MM_Car *unex_head_car_ptr);
 	   int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr);

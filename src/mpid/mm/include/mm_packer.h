@@ -8,11 +8,11 @@
 
 #include "mpidimpl.h"
 
-int packer_init();
+int packer_init(void);
 int packer_post_read(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int packer_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 int packer_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-int packer_make_progress();
+int packer_make_progress(void);
 int packer_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int packer_car_dequeue(MPIDI_VC *vc_ptr, MM_Car *car_ptr);
 int packer_reset_car(MM_Car *car_ptr);
