@@ -83,53 +83,10 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
 #ifndef NO_AIO
     int error_code;
-#ifdef AIO_SUN 
-    aio_result_t *result;
-#else
     struct aiocb *aiocbp;
-#endif
 #endif
 
     fd_sys = fd->fd_sys;
-
-#ifdef AIO_SUN
-    result = (aio_result_t *) ADIOI_Malloc(sizeof(aio_result_t));
-    result->aio_return = AIO_INPROGRESS;
-    if (wr) err = aiowrite(fd_sys, buf, len, offset, SEEK_SET, result); 
-    else err = aioread(fd_sys, buf, len, offset, SEEK_SET, result);
-
-    if (err == -1) {
-	if (errno == EAGAIN) { 
-       /* the man pages say EPROCLIM, but in reality errno is set to EAGAIN! */
-
-        /* exceeded the max. no. of outstanding requests.
-           complete all previous async. requests and try again.*/
-
-	    ADIOI_Complete_async(&error_code);
-	    if (error_code != MPI_SUCCESS) return -EIO;
-
-	    if (wr) err = aiowrite(fd_sys, buf, len, offset, SEEK_SET, result); 
-	    else err = aioread(fd_sys, buf, len, offset, SEEK_SET, result);
-
-	    while (err == -1) {
-		if (errno == EAGAIN) {
-                    /* sleep and try again */
-                    sleep(1);
-		    if (wr) err = aiowrite(fd_sys, buf, len, offset, SEEK_SET, result); 
-		    else err = aioread(fd_sys, buf, len, offset, SEEK_SET, result);
-		}
-                else {
-		    return -errno;
-                }
-	    }
-	}
-        else {
-            return -errno;
-        }
-    }
-
-    *((aio_result_t **) handle) = result;
-#endif
 
 #ifdef NO_FD_IN_AIOCB
 /* IBM */
@@ -171,7 +128,7 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     *((struct aiocb **) handle) = aiocbp;
 
-#elif (!defined(NO_AIO) && !defined(AIO_SUN))
+#elif !defined(NO_AIO)
 /* DEC, SGI IRIX 5 and 6 */
 
     aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);

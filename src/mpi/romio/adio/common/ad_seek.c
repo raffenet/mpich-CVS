@@ -12,14 +12,6 @@
 #include "mpe.h"
 #endif
 
-#ifdef SX4
-#define lseek llseek
-#endif
-
-#ifdef tflops
-#define lseek eseek
-#endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

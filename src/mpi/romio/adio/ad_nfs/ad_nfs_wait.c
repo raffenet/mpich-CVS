@@ -8,14 +8,11 @@
 
 #include "ad_nfs.h"
 
-void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
+void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
+			    int *error_code)
 {
 #ifndef NO_AIO
-#ifdef AIO_SUN 
-    aio_result_t *result=0, *tmp;
-#else
     int err;
-#endif
 #ifdef AIO_HANDLE_IN_AIOCB
     struct aiocb *tmp1;
 #endif
@@ -26,39 +23,6 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	*error_code = MPI_SUCCESS;
 	return;
     }
-
-#ifdef AIO_SUN
-    if ((*request)->queued) {  /* dequeue it */
-	tmp = (aio_result_t *) (*request)->handle;
-	while (tmp->aio_return == AIO_INPROGRESS) usleep(1000); 
-	/* sleep for 1 ms., until done. Is 1 ms. a good number? */
-	/* when done, dequeue any one request */
-	result = (aio_result_t *) aiowait(0);
-
-        (*request)->nbytes = tmp->aio_return;
-
-	if (tmp->aio_return == -1) {
-	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
-					       MPIR_ERR_RECOVERABLE, myname,
-					       __LINE__, MPI_ERR_IO, "**io",
-					       "**io %s", strerror(errno));
-	}
-	else *error_code = MPI_SUCCESS;
-
-/* aiowait only dequeues a request. The completion of a request can be
-   checked by just checking the aio_return flag in the handle passed
-   to the original aioread()/aiowrite(). Therefore, I need to ensure
-   that aiowait() is called exactly once for each previous
-   aioread()/aiowrite(). This is also taken care of in ADIOI_xxxDone */
-    }
-    else *error_code = MPI_SUCCESS;
-
-#ifdef HAVE_STATUS_SET_BYTES
-    if ((*request)->nbytes != -1)
-	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
-#endif
-
-#endif
     
 #ifdef AIO_HANDLE_IN_AIOCB
 /* IBM */
@@ -94,7 +58,7 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
-#elif (!defined(NO_AIO) && !defined(AIO_SUN))
+#elif !defined(NO_AIO)
 /* DEC, SGI IRIX 5 and 6 */
     if ((*request)->queued) {
 	do {

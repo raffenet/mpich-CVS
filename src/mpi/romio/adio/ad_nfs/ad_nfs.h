@@ -15,13 +15,9 @@
 #include "adio.h"
 
 #ifndef NO_AIO
-#ifdef AIO_SUN
-#include <sys/asynch.h>
-#else
 #include <aio.h>
 #ifdef NEEDS_ADIOCB_T
 typedef struct adiocb adiocb_t;
-#endif
 #endif
 #endif
 

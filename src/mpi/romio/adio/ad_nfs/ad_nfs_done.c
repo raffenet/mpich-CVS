@@ -14,11 +14,7 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
     static char myname[] = "ADIOI_NFS_READDONE";
 #ifndef NO_AIO
     int done=0;
-#ifdef AIO_SUN 
-    aio_result_t *result=0, *tmp;
-#else
     int err;
-#endif
 #ifdef AIO_HANDLE_IN_AIOCB
     struct aiocb *tmp1;
 #endif
@@ -40,41 +36,6 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
     *error_code = MPI_SUCCESS;
     return 1;
 #endif    
-
-#ifdef AIO_SUN
-    if ((*request)->queued) {
-	tmp = (aio_result_t *) (*request)->handle;
-	if (tmp->aio_return == AIO_INPROGRESS) {
-	    done = 0;
-	    *error_code = MPI_SUCCESS;
-	}
-	else if (tmp->aio_return != -1) {
-	    result = (aio_result_t *) aiowait(0); /* dequeue any one request */
-	    done = 1;
-	    (*request)->nbytes = tmp->aio_return;
-	    *error_code = MPI_SUCCESS;
-	}
-	else {
-	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
-					       MPIR_ERR_RECOVERABLE, myname,
-					       __LINE__, MPI_ERR_IO, "**io",
-					       "**io %s",
-					       strerror(tmp->aio_errno)); 
-	}
-    }
-    else {
-	/* ADIOI_Complete_Async completed this request, but request object
-           was not freed. */
-	done = 1;
-	*error_code = MPI_SUCCESS;
-    }
-#ifdef HAVE_STATUS_SET_BYTES
-    if (done && ((*request)->nbytes != -1))
-	MPIR_Status_set_bytes(status, (*request)->datatype,
-			      (*request)->nbytes);
-#endif
-
-#endif
 
 #ifdef AIO_HANDLE_IN_AIOCB
 /* IBM */
@@ -111,7 +72,7 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
 #endif
 
-#elif (!defined(NO_AIO) && !defined(AIO_SUN))
+#elif !defined(NO_AIO)
 /* DEC, SGI IRIX 5 and 6 */
     if ((*request)->queued) {
 	errno = aio_error((const struct aiocb *) (*request)->handle);

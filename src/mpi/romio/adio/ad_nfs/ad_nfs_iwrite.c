@@ -82,83 +82,10 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     int error_code, this_errno;
 
 #ifndef NO_AIO
-#ifdef AIO_SUN 
-    aio_result_t *result;
-#else
     struct aiocb *aiocbp;
-#endif
 #endif
     
     fd_sys = fd->fd_sys;
-
-#ifdef AIO_SUN
-    result = (aio_result_t *) ADIOI_Malloc(sizeof(aio_result_t));
-    result->aio_return = AIO_INPROGRESS;
-    if (wr) {
-	ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-	err = aiowrite(fd_sys, buf, len, offset, SEEK_SET, result); 
-        this_errno = errno;
-	ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-    }
-    else {
-	ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-	err = aioread(fd_sys, buf, len, offset, SEEK_SET, result);
-        this_errno = errno;
-	ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-    }
-
-    if (err == -1) {
-	if (this_errno == EAGAIN) { 
-       /* the man pages say EPROCLIM, but in reality errno is set to EAGAIN! */
-
-        /* exceeded the max. no. of outstanding requests.
-           complete all previous async. requests and try again.*/
-
-	    ADIOI_Complete_async(&error_code);
-	    if (error_code != MPI_SUCCESS) return -EIO;
-
-	    if (wr) {
-		ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-		err = aiowrite(fd_sys, buf, len, offset, SEEK_SET, result); 
-		this_errno = errno;
-		ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-	    }
-	    else {
-		ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-		err = aioread(fd_sys, buf, len, offset, SEEK_SET, result);
-                this_errno = errno;
-		ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-	    }
-
-	    while (err == -1) {
-		if (this_errno == EAGAIN) {
-                    /* sleep and try again */
-                    sleep(1);
-		    if (wr) {
-			ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
-			err = aiowrite(fd_sys, buf, len, offset, SEEK_SET, result); 
-			this_errno = errno;
-			ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-		    }
-		    else {
-			ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
-			err = aioread(fd_sys, buf, len, offset, SEEK_SET, result);
-			this_errno = errno;
-			ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
-		    }
-		}
-                else {
-		    return -this_errno;
-                }
-	    }
-	}
-        else {
-	    return -this_errno;
-        }
-    }
-
-    *((aio_result_t **) handle) = result;
-#endif
 
 #ifdef NO_FD_IN_AIOCB
 /* IBM */
@@ -230,7 +157,7 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     *((struct aiocb **) handle) = aiocbp;
 
-#elif (!defined(NO_AIO) && !defined(AIO_SUN))
+#elif !defined(NO_AIO)
 /* DEC, SGI IRIX 5 and 6 */
 
     aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);
