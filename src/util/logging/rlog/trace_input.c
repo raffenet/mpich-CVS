@@ -342,10 +342,20 @@ TRACE_EXPORT int TRACE_Get_next_primitive( const TRACE_file fp,
 	if (!fp->bArrowAvail)
 	    return TRACEINPUT_FAIL;
 	*category_index = RLOG_ARROW_EVENT_ID;
-	PackQuadDouble(
-	    fp->arrow.start_time, 
-	    fp->arrow.end_time, 
-	    n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	if (fp->arrow.leftright == RLOG_ARROW_RIGHT)
+	{
+	    PackQuadDouble(
+		fp->arrow.start_time, 
+		fp->arrow.end_time, 
+		n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	}
+	else
+	{
+	    PackQuadDouble(
+		fp->arrow.end_time,
+		fp->arrow.start_time, 
+		n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	}
 	PackQuadInt(
 	    fp->arrow.src, 
 	    fp->arrow.dest, 
@@ -373,10 +383,20 @@ TRACE_EXPORT int TRACE_Get_next_primitive( const TRACE_file fp,
 	if (fp->arrow.end_time < dmin)
 	{
 	    *category_index = RLOG_ARROW_EVENT_ID;
-	    PackQuadDouble(
-		fp->arrow.start_time, 
-		fp->arrow.end_time, 
-		n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	    if (fp->arrow.leftright == RLOG_ARROW_RIGHT)
+	    {
+		PackQuadDouble(
+		    fp->arrow.start_time, 
+		    fp->arrow.end_time, 
+		    n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	    }
+	    else
+	    {
+		PackQuadDouble(
+		    fp->arrow.end_time,
+		    fp->arrow.start_time, 
+		    n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	    }
 	    PackQuadInt(
 		fp->arrow.src, 
 		fp->arrow.dest, 

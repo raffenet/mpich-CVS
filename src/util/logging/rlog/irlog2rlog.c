@@ -45,7 +45,7 @@ typedef struct StartArrowStruct
 typedef struct EndArrowStruct
 {
     int src, tag;
-    long file_pos;
+    double timestamp;
     struct EndArrowStruct *next;
 } EndArrowStruct;
 
@@ -182,6 +182,102 @@ void SaveArrow(RLOG_IARROW *pArrow)
     StartArrowStruct *pStart, *pStartIter;
     EndArrowStruct *pEnd, *pEndIter;
     RLOG_ARROW arrow;
+
+    if (g_fArrow == NULL)
+    {
+	strcpy(g_pszArrowFilename, "ArrowFile.tmp");
+	g_fArrow = fopen(g_pszArrowFilename, "w+b");
+	if (g_fArrow == NULL)
+	{
+	    printf("unable to open ArrowFile.tmp\n");
+	    return;
+	}
+    }
+
+    if (pArrow->sendrecv == RLOG_SENDER)
+    {
+	pNode = GetArrowNode(pArrow->remote);
+	pEnd = ExtractEndNode(pNode, pArrow->rank, pArrow->tag);
+	if (pEnd == NULL)
+	{
+	    pStart = (StartArrowStruct *)malloc(sizeof(StartArrowStruct));
+	    pStart->src = pArrow->rank;
+	    pStart->tag = pArrow->tag;
+	    pStart->length = pArrow->length;
+	    pStart->start_time = pArrow->timestamp;
+	    pStart->next = NULL;
+	    if (pNode->pStartList == NULL)
+	    {
+		pNode->pStartList = pStart;
+	    }
+	    else
+	    {
+		pStartIter = pNode->pStartList;
+		while (pStartIter->next != NULL)
+		    pStartIter = pStartIter->next;
+		pStartIter->next = pStart;
+	    }
+	    return;
+	}
+	arrow.src = pArrow->rank;
+	arrow.dest = pArrow->remote;
+	arrow.length = pArrow->length;
+	arrow.start_time = pEnd->timestamp;
+	arrow.end_time = pArrow->timestamp;
+	arrow.tag = pArrow->tag;
+	arrow.leftright = RLOG_ARROW_LEFT;
+	fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	free(pEnd);
+    }
+    else
+    {
+	arrow.dest = pArrow->rank;
+	arrow.end_time = pArrow->timestamp;
+	arrow.tag = pArrow->tag;
+	arrow.length = pArrow->length;
+
+	pNode = GetArrowNode(pArrow->rank);
+	pStart = ExtractStartNode(pNode, pArrow->remote, pArrow->tag);
+	if (pStart != NULL)
+	{
+	    arrow.src = pStart->src;
+	    arrow.start_time = pStart->start_time;
+	    arrow.length = pStart->length; /* the sender length is more accurate than the receiver length */
+	    arrow.leftright = RLOG_ARROW_RIGHT;
+	    free(pStart);
+	    fwrite(&arrow, sizeof(RLOG_ARROW), 1, g_fArrow);
+	}
+	else
+	{
+	    pEnd = (EndArrowStruct *)malloc(sizeof(EndArrowStruct));
+	    pEnd->src = pArrow->remote;
+	    pEnd->tag = pArrow->tag;
+	    pEnd->timestamp = pArrow->timestamp;
+	    pEnd->next = NULL;
+	    if (pNode->pEndList == NULL)
+	    {
+		pNode->pEndList = pEnd;
+	    }
+	    else
+	    {
+		pEndIter = pNode->pEndList;
+		while (pEndIter->next != NULL)
+		    pEndIter = pEndIter->next;
+		pEndIter->next = pEnd;
+	    }
+	}
+    }
+
+    //fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow);
+}
+
+#ifdef FOO
+void SaveArrow(RLOG_IARROW *pArrow)
+{
+    ArrowNode *pNode;
+    StartArrowStruct *pStart, *pStartIter;
+    EndArrowStruct *pEnd, *pEndIter;
+    RLOG_ARROW arrow;
     long file_pos;
 
     if (g_fArrow == NULL)
@@ -277,6 +373,7 @@ void SaveArrow(RLOG_IARROW *pArrow)
 
     //fwrite(pArrow, sizeof(RLOG_IARROW), 1, g_fArrow);
 }
+#endif
 
 RecursionStruct *GetLevel(int rank, int recursion)
 {

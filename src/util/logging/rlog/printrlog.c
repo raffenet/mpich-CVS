@@ -44,9 +44,10 @@ void PrintEventAndIndex(RLOG_EVENT *pEvent, int index)
 void PrintArrow(RLOG_ARROW *pArrow)
 {
     printf("RLOG_ARROW -");
-    printf(" %3d -> %3d, tag: %3d, length: %d, start: %g, end: %g\n", 
+    printf(" %2d -> %2d, %s tag:%3d, len: %d, start: %g, end: %g\n", 
 	pArrow->src,
 	pArrow->dest,
+	(pArrow->leftright == RLOG_ARROW_RIGHT) ? "RIGHT" : "LEFT ",
 	pArrow->tag,
 	pArrow->length,
 	pArrow->start_time,
@@ -75,15 +76,20 @@ int main(int argc, char *argv[])
     int bSummary = 1;
     RLOG_STATE state;
     RLOG_EVENT event, lastevent;
-    RLOG_ARROW arrow;
+    RLOG_ARROW arrow, lastarrow;
     int bFindEvent = 0;
     double dFindTime = 0.0;
     int bValidate = 0;
+    int bValidateArrows = 0;
     int bOrder = 0;
 
     if (argc < 2)
     {
-	printf("printrlog rlogfile\n");
+	printf("printrlog rlogfile [EVENTS | STATES | ARROWS | HEADER | COMM | ALL | SUMMARY ]\n");
+	printf("printrlog rlogfile find endtime\n");
+	printf("printrlog rlogfile validate\n");
+	printf("printrlog rlogfile order\n");
+	printf("printrlog rlogfile arroworder\n");
 	return -1;
     }
 
@@ -123,6 +129,10 @@ int main(int argc, char *argv[])
 	    {
 		bOrder = 1;
 	    }
+	    if (strcmp(argv[i], "arroworder") == 0)
+	    {
+		bValidateArrows = 1;
+	    }
 	}
     }
 
@@ -133,8 +143,56 @@ int main(int argc, char *argv[])
 	return -1;
     }
 
+    if (bValidateArrows)
+    {
+	num_arrows = RLOG_GetNumArrows(pInput);
+	if (num_arrows)
+	{
+	    printf("num arrows: %d\n", num_arrows);
+	    RLOG_GetNextArrow(pInput, &lastarrow);
+	    if (lastarrow.start_time > lastarrow.end_time)
+		printf("start > end: %g > %g\n", lastarrow.start_time, lastarrow.end_time);
+	    while (RLOG_GetNextArrow(pInput, &arrow) == 0)
+	    {
+		if (arrow.start_time > arrow.end_time)
+		    printf("start > end: %g > %g\n", arrow.start_time, arrow.end_time);
+		if (arrow.end_time < lastarrow.end_time)
+		    printf("arrows out of order: %d < %d\n", arrow.end_time, lastarrow.end_time);
+		lastarrow = arrow;
+	    }
+	}
+	RLOG_CloseInputStruct(&pInput);
+	return 0;
+    }
+
     if (bValidate)
     {
+	num_arrows = RLOG_GetNumArrows(pInput);
+	if (num_arrows)
+	{
+	    printf("num arrows: %d\n", num_arrows);
+	    RLOG_GetNextArrow(pInput, &lastarrow);
+	    if (lastarrow.start_time > lastarrow.end_time)
+	    {
+		printf("Error, arrows endtime before starttime: %g < %g\n", lastarrow.end_time, lastarrow.start_time);
+		PrintArrow(&arrow);
+	    }
+	    while (RLOG_GetNextArrow(pInput, &arrow) == 0)
+	    {
+		if (lastarrow.end_time > arrow.end_time)
+		{
+		    printf("Error, arrows out of order: %g > %g\n", lastarrow.end_time, arrow.end_time);
+		    PrintArrow(&lastarrow);
+		    PrintArrow(&arrow);
+		}
+		if (arrow.start_time > arrow.end_time)
+		{
+		    printf("Error, arrows endtime before starttime: %g < %g\n", arrow.end_time, arrow.start_time);
+		    PrintArrow(&arrow);
+		}
+		lastarrow = arrow;
+	    }
+	}
 	for (j=pInput->header.nMinRank; j<=pInput->header.nMaxRank; j++)
 	{
 	    num_levels = RLOG_GetNumEventRecursions(pInput, j);
