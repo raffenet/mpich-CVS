@@ -3,15 +3,10 @@ BUILDING MPICH2 under Windows
 requirements:
 MS Visual Studio .NET
 administrative privileges on your machines.
-bash shell (cygwin) to generate mpi.h
 
 1) unzip the package.
 2) cd into the mpich2 directory
-3) run bash and execute winconfigure to generate mpi.h
-For example:
-bash
-% winconfigure
-exit
+3) run winconfigure to generate mpi.h
 
 4) build the process launcher, mpd.exe, and its supporting libraries.
 This solution is found in mpich2\src\pm\winmpd\mpi2.sln.  Install mpd.exe 
