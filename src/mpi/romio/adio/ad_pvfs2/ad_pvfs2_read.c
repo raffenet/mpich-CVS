@@ -360,7 +360,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    /* PVFS_Request_hindexed already expresses the offsets into the
 	     * file, so we should not pass in an offset if we are using
 	     * hindexed for the file type */
-	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
+	    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 0, 
 		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
@@ -401,7 +401,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    if (err_flag < 0)
 		goto error_state;
 	    /* as above, use 0 for 'offset' when using hindexed file type*/
-	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
+	    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 0, 
 		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
