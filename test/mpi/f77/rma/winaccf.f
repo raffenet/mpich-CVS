@@ -52,9 +52,9 @@ C Initialize the buffer
 C         
          call mpi_accumulate( buf(1,1), nrows, MPI_INTEGER, 
      &                 left, ncols+1, 
-     &                 nrows, MPI_INTEGER, win, MPI_SUM, ierr )
+     &                 nrows, MPI_INTEGER, MPI_SUM, win, ierr )
          call mpi_accumulate( buf(1,ncols), nrows, MPI_INTEGER, right,0, 
-     &                 nrows, MPI_INTEGER, win, MPI_SUM, ierr )
+     &                 nrows, MPI_INTEGER, MPI_SUM, win, ierr )
 C         
          call mpi_win_fence( MPI_MODE_NOSTORE + MPI_MODE_NOPUT + 
      &                       MPI_MODE_NOSUCCEED, win, ierr )

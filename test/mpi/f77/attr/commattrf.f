@@ -97,6 +97,8 @@ C Test the delete function
 C
       subroutine mycopyfn( oldcomm, keyval, extrastate, valin, valout,
      &                     flag, ierr )
+      implicit none
+      include 'mpif.h'
       integer oldcomm, keyval, ierr
       include 'attraints.h'
       logical flag
@@ -116,6 +118,8 @@ C increment the attribute by 2
       end
 C
       subroutine mydelfn( comm, keyval, val, extrastate, ierr )
+      implicit none
+      include 'mpif.h'
       integer comm, keyval, ierr
       include 'attraints.h'
       integer callcount, delcount

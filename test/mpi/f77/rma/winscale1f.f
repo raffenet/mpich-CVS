@@ -67,8 +67,8 @@ C
          call mpi_put( buf(1,ncols), nrows, MPI_INTEGER, right, 0, 
      &                 nrows, MPI_INTEGER, win, ierr )
 C         
-         call mpi_win_wait( win, ierr )
          call mpi_win_complete( win, ierr )
+         call mpi_win_wait( win, ierr )
 C
 C Check the results
          if (left .ne. MPI_PROC_NULL) then

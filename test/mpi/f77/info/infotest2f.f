@@ -54,7 +54,8 @@ C        keys are number from 0 to n-1, even in Fortran (Section 4.10)
                   errs = errs + 1
                   print *, ' no value for key', mykey
                else
-                  call mpi_info_get( i1, mykey, myvalue, ierr )
+                  call mpi_info_get( i1, mykey, MPI_MAX_INFO_VAL,
+     &                               myvalue, flag, ierr )
                   if (myvalue .ne. values(j)) then
                      errs = errs + 1
                      print *, 'Value for ', mykey, ' not expected'
@@ -100,7 +101,8 @@ C flag to false
          endif
       enddo
       do i=3,6
-         call mpi_info_get( i2, keys(i), myvalue, ierr )
+         call mpi_info_get( i2, keys(i), MPI_MAX_INFO_VAL, 
+     &                      myvalue, flag, ierr )
          if (myvalue .ne. values(i)) then
             errs = errs + 1
             print *, 'Found wrong value (', myvalue, ') for key ', 

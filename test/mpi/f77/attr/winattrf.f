@@ -86,6 +86,8 @@ C Note that the copyfn is unused for MPI windows, since there is
 C (and because of alias rules, can be) no MPI_Win_dup function
       subroutine mycopyfn( oldwin, keyval, extrastate, valin, valout,
      &                     flag, ierr )
+      implicit none
+      include 'mpif.h'
       integer oldwin, keyval, ierr
       include 'attraints.h'
       logical flag
@@ -102,6 +104,8 @@ C Since we should *never* call this, indicate an error
       end
 C
       subroutine mydelfn( win, keyval, val, extrastate, ierr )
+      implicit none
+      include 'mpif.h'
       integer win, keyval, ierr
       include 'attraints.h'
       integer callcount, delcount
