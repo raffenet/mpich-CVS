@@ -465,6 +465,8 @@ with MPI_Alloc_mem.
 **ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
 **ch3|sock|addrinuse:[ch3:sock] tcp port already in use
 **ch3|sock|addrinuse %d:[ch3:sock] tcp port %d already in use
+**ch3|sock|post_write:[ch3:sock] posting a write failed
+**ch3|sock|progress_finalize:[ch3:sock] progress_finalize failed
 
 #
 # CH3:ssm
