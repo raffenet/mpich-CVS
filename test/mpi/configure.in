@@ -43,4 +43,5 @@ AC_OUTPUT(Makefile \
 	  pt2pt/Makefile \
           rma/Makefile \
 	  spawn/Makefile \
-	  topo/Makefile )
+	  topo/Makefile \
+	  io/Makefile )
