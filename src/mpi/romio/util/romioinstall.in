@@ -11,7 +11,7 @@
 #
 # in the top-level romio directory
 #
-PREFIX=@PREFIX@
+PREFIX=@prefix@
 ROMIO_HOME=@ROMIO_HOME@
 ARCH=@ARCH@
 RANLIB=@RANLIB@
@@ -38,6 +38,7 @@ WANT_INSTALL=1
 MODE=0644
 XMODE=0755
 replace=1
+verbose=0
 
 # Shell procedures to copy files and create directories
 #
@@ -46,6 +47,9 @@ replace=1
 # replace #...# and @...@ in files
 CP=cp
 #
+MkDir() {
+	if [ ! -e $1 ]; then mkdir $1 ; fi
+}
 CopyFile() {
 if [ -z "$3" ] ; then
     mode=$MODE
@@ -125,6 +129,7 @@ fi
 # Uninstall filename
 if [ -z "$UNINSTALLFILE" ] ; then 
     UNINSTALLFILE="$sbindir/romiouninstall"
+    MkDir `dirname $UNINSTALLFILE`
 fi
 
 # LAM top-level switch to install or uninstall
@@ -139,7 +144,7 @@ if test "$WANT_INSTALL" = "1"; then
     MkDir $docdir
     for file in COPYRIGHT README users-guide.ps.gz ; do
 	CopyFile $ROMIO_HOME/$file $docdir
-    fi
+    done
 
     echo "copying directory include to $includedir"
     MkDir $includedir
