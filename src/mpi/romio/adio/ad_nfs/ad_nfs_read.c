@@ -33,7 +33,9 @@ void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 	    offset = fd->fp_ind;
             if (fd->fp_sys_posn != fd->fp_ind)
 		lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
-	    ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
+	    if (fd->atomicity)
+		ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, len);
+	    else ADIOI_READ_LOCK(fd, offset, SEEK_SET, len);
 	    err = read(fd->fd_sys, buf, len);
 	    ADIOI_UNLOCK(fd, offset, SEEK_SET, len);
 	    fd->fp_ind += len;
