@@ -404,7 +404,8 @@ foreach $_ (@ARGV) {
     }
     elsif (/-distcleanfiles=(.*)/) {
 	# extra files to remove in this directory
-	$distcleanfiles = $1;
+	if ($distcleanfiles ne "") { $distcleanfiles .= " "; }
+	$distcleanfiles .= $1;
     }
     elsif (/-debugdirs/) {
 	$debug_dirs = 1;
