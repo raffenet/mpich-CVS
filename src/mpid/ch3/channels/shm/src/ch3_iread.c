@@ -15,8 +15,9 @@
 #define FUNCNAME MPIDI_CH3_iRead
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
+int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 {
+    int mpi_errno;
 #ifdef USE_NEW_WAY
     void *mem_ptr;
     char *iter_ptr;
@@ -37,8 +38,8 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     {
 	rreq->shm.iov_offset = 0;
 	vc->shm.recv_active = rreq;
-	MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
-	return;
+	mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
+	return mpi_errno;
     }
 
     pkt_ptr = &vc->shm.read_shmq->packet[index];
@@ -74,9 +75,9 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	    rreq->ch3.iov[rreq->shm.iov_offset].MPID_IOV_BUF = (char *) rreq->ch3.iov[rreq->shm.iov_offset].MPID_IOV_BUF + num_bytes;
 	    rreq->ch3.iov[rreq->shm.iov_offset].MPID_IOV_LEN -= num_bytes;
 	    vc->shm.recv_active = rreq;
-	    MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
+	    mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
-	    return;
+	    return mpi_errno;
 	}
     }
     if (num_bytes == 0)
@@ -113,6 +114,7 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 #endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
+    return MPI_SUCCESS;
 }
 
 #if 0
@@ -131,7 +133,7 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 #define FUNCNAME MPIDI_CH3_iRead
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
+int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
@@ -143,5 +145,6 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
+    return MPI_SUCCESS;
 }
 #endif
