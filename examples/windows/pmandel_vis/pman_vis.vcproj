@@ -20,6 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="..\..\..\src\include"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -33,7 +34,9 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="mpich2d.lib"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				TargetMachine="1"/>
@@ -72,6 +75,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\..\src\include"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG"
 				MinimalRebuild="FALSE"
 				RuntimeLibrary="0"
@@ -84,7 +88,9 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="mpich2.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -129,6 +135,9 @@
 			</File>
 			<File
 				RelativePath=".\MainFrm.cpp">
+			</File>
+			<File
+				RelativePath=".\mpi.cpp">
 			</File>
 			<File
 				RelativePath=".\pman_vis.cpp">

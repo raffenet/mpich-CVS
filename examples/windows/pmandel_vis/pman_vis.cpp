@@ -7,6 +7,9 @@
 
 #include "pman_visDoc.h"
 #include "pman_visView.h"
+#include ".\pman_vis.h"
+
+#include "mpi.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -88,9 +91,20 @@ BOOL Cpman_visApp::InitInstance()
 	m_pMainWnd->UpdateWindow();
 	// call DragAcceptFiles only if there's a suffix
 	//  In an SDI app, this should occur after ProcessShellCommand
+	MPI_Init(NULL, NULL);
 	return TRUE;
 }
 
+//BOOL Cpman_visApp::InitApplication()
+//{
+//    return CWinApp::InitApplication();
+//}
+
+int Cpman_visApp::ExitInstance()
+{
+    MPI_Finalize();
+    return CWinApp::ExitInstance();
+}
 
 
 // CAboutDlg dialog used for App About
@@ -129,7 +143,3 @@ void Cpman_visApp::OnAppAbout()
 	CAboutDlg aboutDlg;
 	aboutDlg.DoModal();
 }
-
-
-// Cpman_visApp message handlers
-

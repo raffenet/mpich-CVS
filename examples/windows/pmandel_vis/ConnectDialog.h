@@ -1,4 +1,5 @@
 #pragma once
+#include "afxwin.h"
 
 
 // CConnectDialog dialog
@@ -13,7 +14,7 @@ public:
 
 // Dialog Data
 	enum { IDD = IDD_CONNECT_DIALOG };
-
+	enum CONNECT_TYPE { MPI_CONNECT, TCP_CONNECT };
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
@@ -21,4 +22,14 @@ protected:
 public:
     int m_nPort;
     CString m_pszHost;
+    CString m_pszMPIPort;
+    afx_msg void OnBnClickedMpiRadio();
+    afx_msg void OnBnClickedTcpRadio();
+    CButton m_MPI_Radio;
+    CButton m_TCP_Radio;
+    CONNECT_TYPE m_type;
+    CEdit m_mpi_port_edit;
+    CEdit m_host_edit;
+    CEdit m_port_edit;
+    virtual BOOL OnInitDialog();
 };

@@ -10,6 +10,11 @@
 #define IDD_CONNECT_DIALOG              130
 #define IDC_HOSTNAME                    1000
 #define IDC_PORT                        1001
+#define IDC_MPI_RADIO                   1002
+#define IDC_RADIO2                      1003
+#define IDC_TCP_RADIO                   1003
+#define IDC_MPIPORT                     1004
+#define IDC_CONNECT_GROUP               1005
 #define ID_FILE_CONNECT                 32771
 
 // Next default values for new objects
@@ -18,7 +23,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32772
-#define _APS_NEXT_CONTROL_VALUE         1001
+#define _APS_NEXT_CONTROL_VALUE         1006
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
