@@ -39,7 +39,7 @@
    End Algorithm: MPI_Scatterv
 */
 
-static int MPIR_Scatterv ( 
+PMPI_LOCAL int MPIR_Scatterv ( 
 	void *sendbuf, 
 	int *sendcnts, 
 	int *displs, 

@@ -15,14 +15,18 @@
 
 require "maint/parse.sub";
 
+$verbose = 0;
 $debug = 0;
 $showfiles = 0;
+$depth = 1;
+$curdir = ".";
 
 # Check for special args
 @files = ();
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
     elsif( $arg =~ /-debug/) { $debug = 1; }
+    elsif ( $arg =~ /-verbose/) { $verbose = 1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
@@ -168,6 +172,7 @@ sub CheckForBadSubs {
 	       'MPICH_[A-Za-z0-9_]*', 
 	       'DBG_[A-Z0-9_]*',
 	       'WITH_[A-Z0-9_]*',
+	       'F77_[A-Z_]*',
 	       'MPI_BUILD_PROFILING' );
 @BadNames = ( 'rs6000', 'solaris', 'hpux', 'linux', 'HPUX', 'IRIX' );
 sub CheckName {
@@ -213,9 +218,43 @@ sub CheckForBadDefines {
 
 foreach $file (@files) {
     print "$file\n" if $showfiles;
-    &ProcessFile( $file );
+    if (-d $file) {
+	&ProcessDir( $file );
+    }
+    else {
+        &ProcessFile( $file );
+    }
 }
 
+sub ProcessDir {
+    my $DIR = "DIR$depth"; $depth++;
+    my $dir = $_[0];
+    my $savedir = $curdir;
+    $curdir = "$curdir/$dir";
+    print "Processing directory $curdir\n" if ($verbose);
+    opendir( $DIR, "$curdir" ) || die "Cannot open directory $curdir\n";
+    my @filelist;
+    while ($file = readdir( $DIR) ) {
+	print "File $file\n" if ($verbose);
+	$filelist[$#filelist+1] = $file;
+    }
+    closedir( $DIR );
+    foreach $file (@filelist) {
+	print "processing $file\n" if ($verbose);
+	if (-d "$curdir/$file") {
+	    if (! ($file =~ /^\./) && ! ($file =~ /CVS/) ) { 
+		print "Directory $file\n";
+		&ProcessDir( $file );
+	    }
+	}
+	elsif ($file =~ /\.[ch]$/) {
+	    print "File $file\n" if ($verbose);
+	    &ProcessFile( "$curdir/$file" );
+	}
+    }
+    closedir( $DIR );
+    $curdir = $savedir;
+}
 #
 # Look for mismatched names in the state definitions 
 # MPID_MPI_FUNC_EXIT, MPID_MPI_FUNC_ENTER

@@ -946,6 +946,8 @@ AC_OUTPUT_COMMANDS([if test "$has_exclaim" = "yes" ; then
     rm -f .tmp
 fi
 ],[has_exclaim=$has_exclaim])
+dnl
+AC_SUBST(CFLAGS) # some autoconf versions need this explicitly
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif77])
 dnl AC_OUTPUT_COMMANDS([chmod a+x mpif90])
 dnl AC_OUTPUT(Makefile mpif.h mpi_fortdefs.h mpif77 mpif77.conf mpif90 mpif90.conf initfcmn.f)
