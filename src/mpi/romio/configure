@@ -1378,10 +1378,37 @@ fi
 
 #
    if test -z "$FILE_SYSTEM" ; then
-       file_system_xfs=1
        file_system_nfs=1
-       FILE_SYSTEM="xfs nfs"
-       echo "configuring for file systems xfs and nfs"
+       FILE_SYSTEM="nfs"
+       echo checking for xfs
+cat > conftest.c <<EOF
+#include "confdefs.h"
+
+#include <aio.h>
+int main() { exit(0); }
+int t() { aiocb64_t *t1; }
+EOF
+if eval $compile; then
+  rm -rf conftest*
+  file_system_xfs=1;FILE_SYSTEM="xfs $FILE_SYSTEM";
+
+fi
+rm -f conftest*
+
+       if test "$file_system_xfs" = 1 ; then 
+	   if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+       else
+           if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+       fi
+       echo "configuring for file systems $FILE_SYSTEM"
    fi
    CFLAGS="$CFLAGS -D__IRIX"
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
