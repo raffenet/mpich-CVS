@@ -8,7 +8,7 @@
 #ifndef MPID_DATALOOP_H
 #define MPID_DATALOOP_H
 
-#include <mpiimpl.h>
+#include "mpi.h"
 
 /* Note: this is where you define the prefix that will be prepended on
  * all externally visible generic dataloop and segment functions.
@@ -70,6 +70,11 @@
  * and defines, in terms of the prefixes and types above.
  */
 #include <gen_dataloop.h>
+
+/* mpiimpl.h must be included after gen_dataloop.h because mpidpre.h needs the
+ * definition of the MPID_Segment struct.
+ */
+#include "mpiimpl.h"
 
 /* NOTE: WE MAY WANT TO UNDEF EVERYTHING HERE FOR NON-INTERNAL COMPILATIONS */
 
