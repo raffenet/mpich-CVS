@@ -5,3 +5,5 @@ mpichtimer.h
 pmi.h
 mpidpre.h
 mpidpost.h
+*pre.h
+*post.h
