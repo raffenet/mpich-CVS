@@ -40,7 +40,7 @@ int MPI_File_write_all_end(MPI_File fh, void *buf, MPI_Status *status)
 {
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
-    static char myname[] = "MPI_FILE_IREAD";
+    static char myname[] = "MPI_FILE_WRITE_ALL_END";
 #endif
 
 #ifdef PRINT_ERR_MSG
@@ -67,6 +67,12 @@ int MPI_File_write_all_end(MPI_File fh, void *buf, MPI_Status *status)
 #endif
     }
 
+#ifdef HAVE_STATUS_SET_BYTES
+    /* FIXME - we should really ensure that the split_datatype remains
+       valid by incrementing the ref count in the write_allb.c routine
+       and decrement it here after setting the bytes */
+       *status = fh->split_status;
+#endif
     fh->split_coll_count = 0;
 
     return MPI_SUCCESS;

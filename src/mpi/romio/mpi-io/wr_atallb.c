@@ -43,7 +43,6 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_WRITE_AT_ALL_BEGIN";
 #endif
-    MPI_Status status;
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
@@ -145,7 +144,8 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 #endif
     }
 
+    fh->split_datatype = datatype;
     ADIO_WriteStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
-			  offset, &status, &error_code);
+			  offset, &fh->split_status, &error_code);
     return error_code;
 }

@@ -39,7 +39,6 @@ int MPI_File_write_all_begin(MPI_File fh, void *buf, int count,
                             MPI_Datatype datatype)
 {
     int error_code, datatype_size;
-    MPI_Status status;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_WRITE_ALL_BEGIN";
 #endif
@@ -130,7 +129,9 @@ int MPI_File_write_all_begin(MPI_File fh, void *buf, int count,
 #endif
     }
 
+    /* See FIXME in write_alle.c */
+    fh->split_datatype = datatype;
     ADIO_WriteStridedColl(fh, buf, count, datatype, ADIO_INDIVIDUAL,
-			  0, &status, &error_code);
+			  0, &fh->split_status, &error_code);
     return error_code;
 }

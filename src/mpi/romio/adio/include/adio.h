@@ -192,6 +192,8 @@ typedef struct ADIOI_FileD {
     ADIOI_Hints *hints;      /* structure containing fs-indep. info values */
     MPI_Info info;
     int split_coll_count;    /* count of outstanding split coll. ops. */
+    MPI_Status split_status; /* status used for split collectives */
+    MPI_Datatype split_datatype; /* datatype used for split collectives */
     char *shared_fp_fname;   /* name of file containing shared file pointer */
     struct ADIOI_FileD *shared_fp_fd;  /* file handle of file 
                                          containing shared fp */
