@@ -365,11 +365,13 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
             if (comm_ptr->remote_group)
                 MPIR_Group_release(comm_ptr->remote_group);
 
-	    /* FIXME - when we recover comm objects, many tests (such as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
+	    /* FIXME - when we recover comm objects, many tests 
+	       (such as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
   	    MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );  
 	}
 	else {
-	    /* If the user attribute free function returns an error, then do not free the communicator */
+	    /* If the user attribute free function returns an error,
+	       then do not free the communicator */
 	    MPIU_Object_add_ref( comm_ptr );
 	}
     }
