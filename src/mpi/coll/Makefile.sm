@@ -1,4 +1,7 @@
-lib${MPILIBNAME}_a_SOURCES = allgather.c allgatherv.c allreduce.c alltoall.c \
+# As routines are implemented, add there files to the list.
+# (unimplemented routines should cause link-time, not run-time failures)
+lib${MPILIBNAME}_a_SOURCES = 
+#lib${MPILIBNAME}_a_SOURCES = allgather.c allgatherv.c allreduce.c alltoall.c \
  alltoallv.c barrier.c bcast.c gather.c gatherv.c red_scat.c reduce.c scan.c \
  scatter.c scatterv.c op_create.c op_free.c alltoallw.c exscan.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
