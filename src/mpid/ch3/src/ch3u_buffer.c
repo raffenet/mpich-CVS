@@ -34,8 +34,6 @@ void MPIDI_CH3U_Buffer_copy(
     MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr);
     MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr);
 
-    printf("sdata_sz=%d, rdata_sz=%d\n", sdata_sz, rdata_sz);
-    
     if (sdata_sz > rdata_sz)
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "message truncated, sdata_sz=" MPIDI_MSG_SZ_FMT " rdata_sz=", MPIDI_MSG_SZ_FMT,
