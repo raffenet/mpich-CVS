@@ -46,9 +46,9 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	    return mpi_errno;
 	}
 
-	mem_ptr = (void*)(vc->ssm.read_shmq->packet[index].data + vc->ssm.read_shmq->packet[index].offset);
 	pkt_ptr = &vc->ssm.read_shmq->packet[index];
-	num_bytes = vc->ssm.read_shmq->packet[index].num_bytes;
+	mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
+	num_bytes = pkt_ptr->num_bytes;
 	assert(num_bytes > 0);
 
 	iter_ptr = mem_ptr;
