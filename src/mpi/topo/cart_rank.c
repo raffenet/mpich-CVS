@@ -46,7 +46,7 @@ Notes:
  Versions of MPICH before 1.2.2 returned 'MPI_PROC_NULL' for the rank in this 
  case.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
