@@ -8,8 +8,23 @@
 #include "ibu.h"
 #include "iba.h"
 #include "psc_iba.h"
-#include "blockallocator.h"
+//#include "blockallocator.h"
 #include <stdio.h>
+
+struct ibuBlockAllocator_struct
+{
+    void **pNextFree;
+    void *(* alloc_fn)(size_t size);
+    void (* free_fn)(void *p);
+    struct ibuBlockAllocator_struct *pNextAllocation;
+    unsigned int nBlockSize;
+    int nCount, nIncrementSize;
+#ifdef WITH_ALLOCATOR_LOCKING
+    MPIDU_Lock_t lock;
+#endif
+};
+
+typedef struct ibuBlockAllocator_struct * ibuBlockAllocator;
 
 typedef union ibu_work_id_handle_t
 {
@@ -59,7 +74,7 @@ typedef struct ibu_state_t
     IBU_STATE state;
     ib_uint32_t lkey;
     ib_qp_handle_t qp_handle;
-    BlockAllocator allocator;
+    ibuBlockAllocator allocator;
 
     ib_uint32_t mtu_size;
     ib_uint32_t dlid;
@@ -121,25 +136,11 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 
 /* utility allocator functions */
 //#if 0
-typedef struct BlockAllocator_struct * BlockAllocator;
 
-BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
-int BlockAllocFinalize(BlockAllocator *p);
-void * ibuBlockAlloc(BlockAllocator p);
-int ibuBlockFree(BlockAllocator p, void *pBlock);
-
-struct BlockAllocator_struct
-{
-    void **pNextFree;
-    void *(* alloc_fn)(size_t size);
-    void (* free_fn)(void *p);
-    struct BlockAllocator_struct *pNextAllocation;
-    unsigned int nBlockSize;
-    int nCount, nIncrementSize;
-#ifdef WITH_ALLOCATOR_LOCKING
-    MPIDU_Lock_t lock;
-#endif
-};
+ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
+int ibuBlockAllocFinalize(ibuBlockAllocator *p);
+void * ibuBlockAlloc(ibuBlockAllocator p);
+int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
 
 static int g_nLockSpinCount = 100;
 
@@ -245,13 +246,13 @@ static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_
 }
 #endif /* WITH_ALLOCATOR_LOCKING */
 
-static BlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p))
+static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p))
 {
-    BlockAllocator p;
+    ibuBlockAllocator p;
     void **ppVoid;
     int i;
 
-    p = alloc_fn( sizeof(struct BlockAllocator_struct) + ((blocksize + sizeof(void**)) * count) );
+    p = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count) );
 
     p->alloc_fn = alloc_fn;
     p->free_fn = free_fn;
@@ -275,18 +276,18 @@ static BlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int i
     return p;
 }
 
-static int BlockAllocFinalize(BlockAllocator *p)
+static int ibuBlockAllocFinalize(ibuBlockAllocator *p)
 {
     if (*p == NULL)
 	return 0;
-    BlockAllocFinalize(&(*p)->pNextAllocation);
+    ibuBlockAllocFinalize(&(*p)->pNextAllocation);
     if ((*p)->free_fn != NULL)
 	(*p)->free_fn(*p);
     *p = NULL;
     return 0;
 }
 
-static void * BlockAlloc(BlockAllocator p)
+static void * ibuBlockAlloc(ibuBlockAllocator p)
 {
     void *pVoid;
     
@@ -297,7 +298,7 @@ static void * BlockAlloc(BlockAllocator p)
     /*** don't allocate more memory ***/
     if (p->pNextFree == NULL)
     {
-	printf("BlockAlloc returning NULL\n");fflush(stdout);
+	printf("ibuBlockAlloc returning NULL\n");fflush(stdout);
 	return NULL;
     }
     /******/
@@ -307,10 +308,10 @@ static void * BlockAlloc(BlockAllocator p)
     /*
     if (*(p->pNextFree) == NULL)
     {
-	BlockAllocator pIter = p;
+	ibuBlockAllocator pIter = p;
 	while (pIter->pNextAllocation != NULL)
 	    pIter = pIter->pNextAllocation;
-	pIter->pNextAllocation = BlockAllocInit(p->nBlockSize, p->nIncrementSize, p->nIncrementSize, p->alloc_fn, p->free_fn);
+	pIter->pNextAllocation = ibuBlockAllocInit(p->nBlockSize, p->nIncrementSize, p->nIncrementSize, p->alloc_fn, p->free_fn);
 	p->pNextFree = pIter->pNextFree;
     }
     else
@@ -325,7 +326,7 @@ static void * BlockAlloc(BlockAllocator p)
     return pVoid;
 }
 
-static int BlockFree(BlockAllocator p, void *pBlock)
+static int ibuBlockFree(ibuBlockAllocator p, void *pBlock)
 {
 #ifdef WITH_ALLOCATOR_LOCKING
     MPIDU_Lock(&p->lock);
@@ -577,7 +578,7 @@ ibu_t ibu_create_qp(ibu_set_t set, int dlid)
     }
 
     p->dlid = dlid;
-    p->allocator = BlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
+    p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
     p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
     p->mtu_size = 3; /* 3 = 2048 */
     /* save the lkey for posting sends and receives */
@@ -648,7 +649,7 @@ static int ibui_post_receive(ibu_t ibu)
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
 
-    mem_ptr = BlockAlloc(ibu->allocator);
+    mem_ptr = ibuBlockAlloc(ibu->allocator);
 
     sg_list.data_seg_p = &data;
     sg_list.data_seg_num = 1;
@@ -768,7 +769,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	g_write_list_tail = p;
 #endif
 	
-	mem_ptr = BlockAlloc(ibu->allocator);
+	mem_ptr = ibuBlockAlloc(ibu->allocator);
 	if (mem_ptr == NULL)
 	{
 	    return total;
@@ -863,7 +864,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	//total += len;
 	if (len <= IBU_PACKET_SIZE)
 	{
-	    mem_ptr = BlockAlloc(ibu->allocator);
+	    mem_ptr = ibuBlockAlloc(ibu->allocator);
 	    if (mem_ptr == NULL)
 	    {
 		break;
@@ -888,7 +889,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 		length = min(len, IBU_PACKET_SIZE);
 		len -= length;
 		
-		mem_ptr = BlockAlloc(ibu->allocator);
+		mem_ptr = ibuBlockAlloc(ibu->allocator);
 		if (mem_ptr == NULL)
 		{
 		    break;
@@ -985,7 +986,7 @@ static inline void init_state_struct(ibu_state_t *p)
 
 /* ibu functions */
 
-static BlockAllocator g_StateAllocator;
+static ibuBlockAllocator g_StateAllocator;
 
 int ibu_init()
 {
@@ -1042,7 +1043,7 @@ int ibu_init()
     IBU_Process.lid = IBU_Process.attr_p->port_dynamic_info_p->lid;
 
     /* non infiniband initialization */
-    g_StateAllocator = BlockAllocInit(sizeof(ibu_state_t), 1000, 500, malloc, free);
+    g_StateAllocator = ibuBlockAllocInit(sizeof(ibu_state_t), 1000, 500, malloc, free);
     IBU_Process.unex_finished_list = NULL;
 
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
@@ -1055,7 +1056,7 @@ int ibu_finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_FINALIZE);
     /*ib_release_us();*/
-    BlockAllocFinalize(&g_StateAllocator);
+    ibuBlockAllocFinalize(&g_StateAllocator);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINALIZE);
     return IBU_SUCCESS;
 }
@@ -1133,7 +1134,7 @@ static int ibui_read_unex(ibu_t ibu)
     ibu->read.bufflen -= ibu->unex_list->length;
     ibu->read.total += ibu->unex_list->length;
     /* put the receive packet back in the pool */
-    BlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
     /* free the unexpected data node */
     temp = ibu->unex_list;
     ibu->unex_list = ibu->unex_list->next;
@@ -1190,7 +1191,7 @@ static int ibui_read_unex(ibu_t ibu)
 	else
 	{
 	    /* put the receive packet back in the pool */
-	    BlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1265,7 +1266,7 @@ int ibui_readv_unex(ibu_t ibu)
 	    }
 	}
 	/* put the receive packet back in the pool */
-	BlockFree(ibu->allocator, mem_ptr);
+	ibuBlockFree(ibu->allocator, mem_ptr);
 	/* free the unexpected data node */
 	temp = ibu->unex_list;
 	ibu->unex_list = ibu->unex_list->next;
@@ -1325,7 +1326,7 @@ int ibui_readv_unex(ibu_t ibu)
 	if (ibu->unex_list->length == 0)
 	{
 	    /* put the receive packet back in the pool */
-	    BlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
+	    ibuBlockFree(ibu->allocator, ibu->unex_list->mem_ptr);
 	    /* free the unexpected data node */
 	    temp = ibu->unex_list;
 	    ibu->unex_list = ibu->unex_list->next;
@@ -1436,12 +1437,12 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		for (; i<0; i++)
 		{
 		    num_bytes += g_num_bytes_written_stack[g_cur_write_stack_index].length;
-		    BlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index--].mem_ptr);
+		    ibuBlockFree(ibu->allocator, g_num_bytes_written_stack[g_cur_write_stack_index--].mem_ptr);
 		}
 	    }
 	    else
 	    {
-		BlockFree(ibu->allocator, mem_ptr);
+		ibuBlockFree(ibu->allocator, mem_ptr);
 	    }
 	    printf("ibu_wait: num_bytes sent = %d\n", num_bytes);fflush(stdout);
 	    MPIU_dbg_printf("ibu_wait: write update, total = %d + %d = %d\n", ibu->write.total, num_bytes, ibu->write.total + num_bytes);
@@ -1561,7 +1562,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		if (num_bytes == 0)
 		{
 		    /* put the receive packet back in the pool */
-		    BlockFree(ibu->allocator, mem_ptr);
+		    ibuBlockFree(ibu->allocator, mem_ptr);
 		    ibui_post_receive(ibu);
 		}
 		else
@@ -1605,7 +1606,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
 		ibu->read.bufflen -= num_bytes;
 		/* put the receive packet back in the pool */
-		BlockFree(ibu->allocator, mem_ptr);
+		ibuBlockFree(ibu->allocator, mem_ptr);
 		if (ibu->read.bufflen == 0)
 		{
 		    ibu->state &= ~IBU_READING;
