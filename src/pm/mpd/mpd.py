@@ -948,15 +948,15 @@ def sigchld_handler(signum,frame):
             done = 1
 
 def usage():
-    print 'usage: mpd [--host <host> [--port <portnum>] [--noconsole] \ '
+    print 'usage: mpd [--host=<host> [--port=<portnum>] [--noconsole] \ '
     print '           [--trace] [--echo] [--daemon] [--bulletproof] \ '
-    print '           [--idmyhost <hostname>]' 
+    print '           [--idmyhost=<hostname>]' 
     print ''
     print 'Long parameter names may be abbreviated to their first letters by using'
-    print '  only one hyphen:'
+    print '  only one hyphen and no equal sign:'
     print '     mpd -h donner -p 4268 -n'
     print '  is equivalent to'
-    print '     mpd --host donner --port 4268 --noconsole'
+    print '     mpd --host=donner --port=4268 --noconsole'
     print ''
     print '--host and --port must be specified together; they tell the new mpd where'
     print '  to enter an existing ring;  if they are omitted, the new mpd forms a'

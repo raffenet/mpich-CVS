@@ -180,27 +180,30 @@ def mpdboot():
 
 
 def usage():
+    print 'usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ '
+    print '                [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>] \ '
+    print '                [--loccons] [--remcons] [--shell] [--verbose] [-1]'
+    print ' or, in short form, '
+    print '        mpdboot -n n_to_start [-f <hostsfile>] [-h] [-r <rshcmd>] [-u <user>] \ '
+    print '                [-m <mpdcmd>]  -s -v [-1]'
     print ''
-    print 'mpdboot [-h] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-m <mpdcmd>] [-n n_to_start] -s -v -1'
-    print 'Long options:'
-    print '  --help --file=<hostsfile> --rsh=<rshcmd> --user=<user> --mpd=<mpdcmd> --totalnum=<n_to_start> --loccons --remcons --shell --verbose'
-    print """
-mpdboot starts one mpd locally and (n_to_start - 1) others as computed
-from the -n (--totalnum) option; at least the one local mpd will be
-started by default; the machines to use are specified by the --file
-option (default is mpd.hosts).  You may find it useful to specify the
-full pathname of mpd on remote hosts (-r) if it is not in your path on
-the remote machines.  The --loccons and --remcons options indicate that
-you do NOT want a console available on local and remote mpds,
-respectively.  The -s option allows you to indicate that Bourne shell is
-your default shell for rsh.  The -1 option indicates that you want to
-start mpd's on all the nodes in the file as well as one on the local
-machine even if the local machine occurs there and thus the result would
-be two mpd's on the local machine.  Verbose mode (-v or --verbose)
-causes the rsh attempts to be printed as they occur.  It does not
-provide confirmation that the rsh's were successful.  The -z N option permits
-you to parallelize the startup of mpds by starting N copies of mpdboot itself.
-"""
+    print '--totalnum specifies the total number of mpds to start; at least'
+    print '  one mpd will be started locally, and others on the machines specified'
+    print '  by the file argument'
+    print '--file specifies the file of machines to start the rest of the mpds on;'
+    print '  it defaults to mpd.hosts'
+    print '--mpd specifies the full path name of mpd on the remote hosts if it is'
+    print '  not in your path'
+    print '--rsh specifies the name of the command used to start remote mpds; it'
+    print '  defaults to ssh; an alternative is rsh'
+    print '--shell says that the Bourne shell is your default for rsh' 
+    print '--verbose shows the ssh attempts as they occur; it does not provide'
+    print '  confirmation that the sshs were successful'
+    print '--loccons says you do not want a console commands available on the local mpd'
+    print '--remcons says you do not want consoles available on remote mpds'
+    print '--1 means start two mpds on the local machine if it occurs in the file' 
+    print '-z specifies a number of remote mpdboots to start'
+
     exit(-1)
     
 if __name__ == '__main__':
