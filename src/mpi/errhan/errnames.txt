@@ -57,11 +57,11 @@ also the value at index %d
 **indexneg:Index value in graph topology must be nonnegative
 **indexneg %d %d:Index value for index[%d] is %d but must be nonnegative
 **indexnonmonotone:Index values in graph topology must be monotone nondecreasing
-**indexnonmonotone %d %d %d:Index values in graph topology must be monotone\
+**indexnonmonotone %d %d %d:Index values in graph topology must be monotone \
  nondecreasing but index[%d] is %d but the next index value is %d
 **graphnnodes:Number of graph nodes exceeds size of communicator.
 **rangedup:The range array specifies duplicate entries
-**rangedup %d %d %d:The range array specifies duplicate entries; process %d\
+**rangedup %d %d %d:The range array specifies duplicate entries; process %d \
  specified in range array %d was previously specified in range array %d
 **rank:Invalid rank
 **rank %d %d:Invalid rank has value %d but must be nonnegative and less than %d
@@ -70,10 +70,10 @@ also the value at index %d
 **stridezero:Zero stride is invalid
 **rangeinvalid:Invalid range
 **rangestartinvalid:Some element of a range array is either negative or too large
-**rangestartinvalid %d %d %d:The %dth element of a range array starts at %d\
+**rangestartinvalid %d %d %d:The %dth element of a range array starts at %d \
  but must be nonnegative and less than %d
 **rangeendinvalid:Some element of a range array is either negative or too large
-**rangeendinvalid %d %d %d:The %dth element of a range array ends at %d\
+**rangeendinvalid %d %d %d:The %dth element of a range array ends at %d \
  but must be nonnegative and less than %d
 **argrange:Argument is not within valid range
 **argrange %s %d %d:Argument %s has value %d but must be within [0,%d]
@@ -129,7 +129,7 @@ be in the range 0 to %d
 **namepublish %s:Unable to publish service name %s
 **namepubnotpub:Lookup failed for service name 
 **namepubnotpub %s:Lookup failed for service name %s
-
+**nonamepub:No name publishing service available
 #
 #---- The messages below this line haven't been used yet.
 #
