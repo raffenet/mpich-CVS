@@ -278,7 +278,7 @@ sub CheckForBadSubs {
 @GoodNames = ( 'HAVE_[A-Za-z0-9_]*',  'USE_[A-Za-z0-9_]*',
 	       'NEEDS_[A-Za-z0-9_]*', 'WITH_[A-Z0-9_]*',
 	       'MPICH_SINGLE_THREADED', 'CHAR_PTR_IS_ADDRESS', 'FOO',
-	       'STDC_HEADERS', '__cplusplus', 'IOV_MAX',
+	       'STDC_HEADERS', '__cplusplus', 'IOV_MAX', 'S_ISLNK', 
 	       'MPIR_[A-Za-z0-9_]*',
 	       'MPID_[A-Za-z0-9_]*',
 	       'MPIU_[A-Za-z0-9_]*',
