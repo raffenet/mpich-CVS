@@ -36,6 +36,7 @@ int main( int argc, char **argv )
     MPI_Pack_size( 2, ntype2, MPI_COMM_WORLD, &psize );
 
     MPI_Type_free( &ntype2 );
+	MPI_Type_free( &ntype1 );
 
     /* The only failure mode has been SEGV or aborts within the datatype
        routines */
