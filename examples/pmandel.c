@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 	    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval));
 #endif
 
-	    printf("sending image size to visualizer.\n");
+	    printf("sending image size to visualizer (%d x %d, %d colors).\n", ipixels_across, ipixels_down, num_colors);
 	    sock_write(sock, &ipixels_across, sizeof(int));
 	    sock_write(sock, &ipixels_down, sizeof(int));
 	    sock_write(sock, &num_colors, sizeof(int));
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
 	    }
 	    else
 	    {
-		printf("reading xmin,ymin,xmax,ymax.\n");fflush(stdout);
+		printf("reading xmin,ymin,xmax,ymax,max_iter.\n");fflush(stdout);
 		sock_read(sock, &x_min, sizeof(double));
 		sock_read(sock, &y_min, sizeof(double));
 		sock_read(sock, &x_max, sizeof(double));
@@ -1311,6 +1311,7 @@ void output_data(int *in_grid_array, int coord[4], int *out_grid_array, int widt
     }
     if (!use_stdin)
     {
+	/*printf("sending [%d][%d][%d][%d]\n", coord[0], coord[1], coord[2], coord[3]);fflush(stdout);*/
 	sock_write(sock, coord, 4 * sizeof(int));
 	sock_write(sock, in_grid_array, ((coord[1] + 1 - coord[0]) * (coord[3] + 1 - coord[2])) * sizeof(int));
 	/* send the data to the visualizer */
