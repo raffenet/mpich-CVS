@@ -35,6 +35,7 @@ sub ProcessFile {
     %AllowedRoutines = ();
     $cxx_comments_found = 0;
     %warningmsgs = ();
+    &ClearMismatchedStates;
     open( FD, "<$filename" ) || die "Could not open $filename";
     while (<FD>) {
 #	if (/\/\*-ALLOW-PRINTF-\*\//) {
@@ -72,6 +73,7 @@ sub ProcessFile {
 	}
 	&CheckForBadSubs( $_, $filename );
         &CheckForBadDefines( FD, $_, $filename );
+	&CheckForMismatchedStates ( FD, $_, $filename );
     }
     # Output summary messages
     foreach $key (keys(%warningmsgs)) {
@@ -197,4 +199,38 @@ sub CheckForBadDefines {
 foreach $file (@files) {
     print "$file\n" if $showfiles;
     &ProcessFile( $file );
+}
+
+#
+# Look for mismatched names in the state definitions 
+# MPID_MPI_FUNC_EXIT, MPID_MPI_FUNC_ENTER
+$statename = "";
+$funcname  = "";
+sub ClearMismatchedStates {
+    $statename = "";
+    $funcname  = "";
+}
+sub CheckForMismatchedStates {
+    my $FD = $_[0];
+    my $curline = $_[1];
+    my $filename = $_[2];
+    if ($curline =~ /#define\s\s*FUNCNAME\s\s*(.*)\s*$/) {
+        $funcname = $1;
+        $funcname =~ s/\r//;
+	$funcname =~ tr/a-z/A-Z/;
+    }
+    elsif ($curline =~ /\s#define/) { return; }
+    elsif ($curline =~ /MPID_MPI_FUNC_ENTER\(\s*(.*)\s*\)/) {
+	$statename = $1;
+	$funcstatename = "MPID_STATE_".$funcname;
+	if ($funcname ne "" && $statename ne $funcstatename) {
+	    print "Warning: State name \"$statename\" does not match function name \"$funcname\"\n";
+	}
+    }
+    elsif ($curline =~ /MPID_MPI_FUNC_EXIT\(\s*(.*)\s*\)/) {
+	$endname = $1;
+	if ($statename ne $endname) {
+	    print "Warning: State $statename ended with $endname in $filename\n";
+	}
+    }
 }
