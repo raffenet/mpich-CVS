@@ -104,8 +104,7 @@ clean_include:
 
 clean_bin:
 	 -cd $(binbuild_dir) ; \
-	  files=`/bin/ls` ; \
-	  for file in ${files} ; do \
+	  for file in * ; do \
 	      if [ ! -d "$$file" ] ; then \
 	          $(RM) -f $$file ; \
 	      fi ; \

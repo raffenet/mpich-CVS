@@ -117,6 +117,8 @@ dnl  MPE_KNOWN_MPI_IMPL can be tested by testing MPI_IMPL = MPICH, MPICH2
 if test "$enable_mpich" = "yes" -o "$FROM_MPICH" = "yes" ; then
     AC_MSG_RESULT([This MPE build is part of the MPICH build])
     MPI_IMPL="MPICH"
+    enable_softerror=yes
+    enable_checkMPI=no
 dnl BUILDING_MPI=yes & MPE_KNOWN_MPI_IMPL=yes
 elif test "$FROM_MPICH2" = yes ; then
     AC_MSG_RESULT([This MPE build is part of the MPICH2 build])
@@ -126,6 +128,8 @@ elif test "$FROM_MPICH2" = yes ; then
     else
         MPICPPFLAGS="$MPICPPFLAGS -I$master_top_srcdir/src/include -I$master_top_builddir/src/include"
     fi
+    enable_softerror=yes
+    enable_checkMPI=no
 dnl BUILDING_MPI=yes & MPE_KNOWN_MPI_IMPL=yes
 dnl elif test "$FROM_LAM" = yes ; then
 dnl    AC_MSG_RESULT([This MPE build is part of the LAM build])
@@ -134,14 +138,15 @@ dnl BUILDING_MPI=yes & MPE_KNOWN_MPI_IMPL=yes
 else
     AC_MSG_RESULT([User supplied MPI implmentation (Good Luck!)])
     MPI_IMPL="UserSupplied"
+    enable_checkMPI=yes
 dnl BUILDING_MPI=no & MPE_KNOWN_MPI_IMPL=no
 fi
 
 AC_ARG_ENABLE( checkMPI,
 [--enable-checkMPI                  - Turn on/off the linking test for the MPI
                                      include files, MPI libraries and MPI_CC
-                                     compiler. The default is enable=yes.], ,
-enable_checkMPI=yes )
+                                     compiler. The default is enable=yes.],
+enable_checkMPI=${mpe_enable_checkMPI:-$enableval} )
 
 AC_ARG_ENABLE( checkMPIwtime,
 [--enable-checkMPIwtime             - Turn on/off the linking test for the
@@ -160,15 +165,19 @@ AC_ARG_WITH( mpelibname,
 MPE_LIBNAME="$withval" )
 
 dnl
-dnl  Set the Fortran Library Leading Character
+dnl  Set the Fortran Include Library Leading Characters
+dnl
+AC_ARG_WITH( finc_path_leader,
+[--with-finc_path_leader=FINC_PATH_LEADER - Specify a Fortran include path
+                                     leader for compilation,
+                                     default value is -I.],
+FINC_PATH_LEADER="$withval" )
 dnl
 AC_ARG_WITH( flib_path_leader,
 [--with-flib_path_leader=FLIB_PATH_LEADER - Specify a Fortran library path
-                                     for linking, default value is -L.],
+                                     leader for linking, default value is -L.],
 FLIB_PATH_LEADER="$withval" )
-if test -z "$FLIB_PATH_LEADER" ; then
-    FLIB_PATH_LEADER=-L
-fi
+dnl
 
 dnl
 dnl  Get the user supplied CFLAGS and FFLAGS
@@ -202,7 +211,7 @@ fi
 # [mpe_]sbinbuild_dir is for all system admin stuffs
 #
 rootbuild_dir=`pwd`
-for dir in include lib bin sbin src ; do
+for dir in include lib bin sbin ; do
     dirname=${dir}build_dir
     eval dirvalue=\$"$dirname"
     eval $dirname=$rootbuild_dir/$dir
@@ -211,6 +220,7 @@ for dir in include lib bin sbin src ; do
     export $mpe_dirname
 done
 
+srcbuild_dir=$rootbuild_dir/src
 for dir in include lib bin sbin src ; do
     dirname=${dir}build_dir
     eval dirvalue=\$"$dirname"
@@ -320,7 +330,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
         PAC_MPI_LINK_F77_FUNC( $MPI_F77, [$FFLAGS $MPI_INC], $MPI_LIBS, [
         integer mytid
         integer ierr
-    ], [ call MPI_Comm_rank( MPI_COMM_WORLD, mytid, ierr ) ],
+        ], [ call MPI_Comm_rank( MPI_COMM_WORLD, mytid, ierr ) ],
         [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
         if test "$mpe_link_ok" = "yes" ; then
             AC_MSG_RESULT(yes)
@@ -328,16 +338,16 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
             AC_MSG_RESULT(no)
             PAC_MSG_ERROR( $enable_softerror,
                            [Cannot link with basic MPI F77 program!
-	    Check your MPI include paths, MPI libraries and MPI F77 compiler ] )
+	Check your MPI include paths, MPI libraries and MPI F77 compiler ] )
         fi
     fi
 
-    #
-    # Some MPI's seem to have trouble with
-    # MPI_Wtime, PMPI_Wtime, and MPI_Attr_get
-    # (Fujitsu for MPI_Wtime and MPI_Attr_get; IBM's PMPI_Wtime returned 0)
-    # Check at least that we can link with MPI_Wtime and MPI_Attr_get
-    #
+    dnl
+    dnl Some MPI's seem to have trouble with
+    dnl MPI_Wtime, PMPI_Wtime, and MPI_Attr_get
+    dnl (Fujitsu for MPI_Wtime and MPI_Attr_get; IBM's PMPI_Wtime returned 0)
+    dnl Check at least that we can link with MPI_Wtime and MPI_Attr_get
+    dnl
     if test "$enable_checkMPI" = "yes" -a "$enable_checkMPIwtime" = "yes" ; then
         AC_MSG_CHECKING( [for the C version of MPI_Wtime()] )
         PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
@@ -364,6 +374,12 @@ if test -n "$F77" -a "$MPE_BUILD_FORTRAN2C" = "yes" ; then
     AC_F77_LIBRARY_LDFLAGS
     PAC_PROG_F77_CHECK_FLIBS
     PAC_PROG_F77_NAME_MANGLE
+    PAC_PROG_F77_LIBRARY_DIR_FLAG
+    if test -z "$FLIB_PATH_LEADER" ; then
+        FLIB_PATH_LEADER=$F77_LIBDIR_LEADER
+    fi
+    PAC_PROG_F77_HAS_INCDIR(f77tmpdir)
+    FINC_PATH_LEADER=$F77_INCDIR
 fi
 
 dnl  We need to check that this has worked.  The autoconf macro is broken
@@ -413,6 +429,7 @@ export MPI_F77
 export MPI_INC
 export MPI_LIBS
 export LDFLAGS
+export FINC_PATH_LEADER
 export FLIB_PATH_LEADER
 
 mpe_enable_softerror=yes
@@ -433,22 +450,22 @@ AC_ARG_ENABLE( misc,
 [--enable-misc                      - build MPE miscellaneous routines, e.g.
                                      MPE_Errors_xxx(), MPE_Seq_xxx(),
                                      MPE_xxxTags() and MPE_GetHostName()....
-                                     The default enable=yes.], ,
-enable_misc=yes )
+                                     The default enable=yes.],
+, enable_misc=yes )
 
 dnl
 AC_ARG_ENABLE( logging,
-[--enable-logging                   - build MPE logging routines related to
+[--enable-logging                   - build MPE logging routines for 
                                      CLOG-2, e.g.  MPE_Log_xxx()...
-                                     The default enable=yes.], ,
-enable_logging=yes )
+                                     The default enable=yes.],
+, enable_logging=yes )
 
 dnl
 AC_ARG_ENABLE( wrappers,
-[--enable-wrappers                  - build MPE various MPI wrapper libraries.
+[--enable-wrappers                  - build various MPI wrapper libraries.
                                      MPI logging library, liblmpe.a;
                                      MPI tracing library, libtmpe.a;
-                                     Fortran to C MPI library, libmpe_f2cmpi.a],
+                                     MPI Fortran to C library, libmpe_f2cmpi.a],
 , enable_wrappers=yes )
 dnl  src/wrappers requires at least src/logging
 if test "$enable_wrappers" = "yes" ; then
@@ -457,14 +474,22 @@ fi
 
 dnl  Determine if the X graphics is going to be configured
 AC_ARG_ENABLE( graphics,
-[--enable-graphics                  - build MPE graphics routines.  If disabled
+[--enable-graphics                  - build MPE graphics routines and MPI
+                                     animation library, libampe.a.  If disabled
                                      then the MPE routines that make use of X11
                                      graphics will NOT be built.  This is
                                      appropriate for systems that either do not
                                      have the X11 include files or that do not
                                      support X11 graphics.
-                                     The default enable=yes.], ,
-enable_graphics=yes )
+                                     The default enable=yes.],
+, enable_graphics=yes )
+dnl  src/graphics's libmpe_nompi.a requires mpehname.c defined in src/misc
+dnl  but then libmpe_nompi.a is rarely used, tests in src/grahics will pass
+dnl  without src/misc.  Let user decides.
+if test "$enable_graphics" = "yes" -a "$enable_misc" != "yes" ; then
+    AC_MSG_WARN( [libmpe_nompi.a in src/graphics needs mpehname.c in src/misc!
+	If you need libmpe_nompi.a, reconfigure with --enable-misc.] )
+fi
 
 PKGS=""
 selected_pkgs=""
@@ -500,7 +525,7 @@ if test -s $srcdir/$slog2_dirname/configure ; then
             slog2_enable_source=no
         fi
         export slog2_enable_source
-        # Enabling softerror in SLOG2 configure won't abort the entire process
+        dnl  Enable softerror in SLOG2 configure won't abort the entire process
         slog2_enable_softerror=yes
         export slog2_enable_softerror
         PKGS="$PKGS $slog2_dirname"

@@ -233,7 +233,7 @@ Other User Options:
                                 CLOG-2, e.g.  MPE_Log_xxx()...
                                 The default enable=yes.
 
---enable-wrappers               build MPE various MPI wrapper libraries.
+--enable-wrappers               build various MPI wrapper libraries.
                                 MPI logging library, liblmpe.a;
                                 MPI tracing library, libtmpe.a;
                                 Fortran to C MPI library, libmpe_f2cmpi.a.
@@ -253,32 +253,16 @@ Other User Options:
                                 The default is enable=yes.
 
 --with-java=JAVA_HOME           Specify the path of the top-level directory 
-                                of the Java, JDK, installation.  If this 
-                                option or --with-javaX is not given, configure
-                                will try to locate JDK for you to build 
-                                Jumpshot-2 and Jumpshot-3.  JDK 1.1.6 to 
-                                JDK 1.1.8 can be used to build both Jumpshots.
-                                It is recommended that user should use this 
-                                option when there is only 1 version of JDK 
-                                installed on the machine.
-
---with-java1=JAVA_HOME          Specify the path of the top-level directory
-                                of the Java, JDK, installation for Jumpshot-2
-                                only.  If this option or --with-java is not 
-                                given, Jumpshot-2's configure will try to 
-                                locate JDK for you to build Jumpshot-2.  For
-                                performance reason, it is recommended to use
-                                the latest Java 1, i.e. JDK-1.1.8, to build
-                                Jumpshot-2.
+                                of the Java, j2sdk, installation.  If this 
+                                option or --with-java2 is not given, 
+                                slog2sdk configure will try to locate j2sdk
+                                for you to build slog2 related tools. 
 
 --with-java2=JAVA_HOME          Specify the path of the top-level directory
-                                of the Java, JDK, installation for Jumpshot-3
-                                only.  If this option or --with-java is not 
-                                given, Jumpshot-3's configure will try to 
-                                locate JDK for you to build Jumpshot-3.  For
-                                performance reason, it is recommended to use
-                                the latest Java 2, i.e. JDK-1.4.x, to build
-                                Jumpshot-3.
+                                of the Java, j2sdk, installation.  If this
+                                option or --with-java2 is not given, 
+                                slog2sdk configure will try to locate j2sdk
+                                for you to build slog2 related tools. 
 
 In order to achieve maximum performance benefit, it is recommended to
 use latest Java 2, i.e. JDK-1.4.x to build Jumpshot-4. 
@@ -297,7 +281,7 @@ implementations.
 
 
 III. a)  Configuring as part of the MPICH-1 configure
----------------------------------------------------
+-----------------------------------------------------
 
 The configure in the MPICH directory will try to determine the necessary 
 information and pass it to the MPE configure.  If no options are given, 
@@ -377,8 +361,7 @@ For LAM, do
     setenv MPI_CC ${LAM_INSTALL_DIR}/bin/mpicc
     setenv MPI_F77 ${LAM_INSTALL_DIR}/bin/mpif77
     ${MPE_SRC_DIR}/configure --with-mpilibs="-L${LAM_INSTALL_DIR}/lib -lpmpi" \
-                             --with-java1=/sandbox/jdk117_v3 \
-                             --with-java2=/sandbox/jdk1.3.1
+                             --with-java=/sandbox/jdk1.3.1
     make
     make install PREFIX=${MPE_INSTALL_DIR}
 
@@ -391,7 +374,6 @@ do
     setenv MPI_F77 ${LAM_INSTALL_DIR}/bin/mpif77
     ${MPE_SRC_DIR}/configure --with-mpilibs="-L${LAM_INSTALL_DIR}/lib -lpmpi" \
                              --with-f2cmpilibs=-llamf77mpi \
-                             --with-java1=/sandbox/jdk117_v3 \
                              --with-java2=/sandbox/jdk1.3.1
     make
     make install PREFIX=${MPE_INSTALL_DIR}
@@ -415,8 +397,7 @@ For prebuilt version of MPICH-1.1.2 or MPICH-1.2.0, e.g. donner, do
     setenv MPI_F77 ${MPICH_INSTALL_DIR}/bin/mpif77
     ${MPE_SRC_DIR}/configure  --with-f2cmpilibs=-lfmpich \
                               --with-mpelibname=newMPE \
-                              --with-java1=/sandbox/jdk117_v3 \
-                              --with-java2=/sandbox/jdk1.3.1
+                              --with-java=/sandbox/j2sdk1.4.2
     make
     make install PREFIX=${MPE_INSTALL_DIR}
 
@@ -445,7 +426,7 @@ For cross-compilation with an existing version of MPICH(or LAM). e.g. ASCI-Red.
     ${MPE_SRC_DIR}/configure --with-mpicc=${MPICH_INSTALL_DIR}/bin/mpicc \
                              --with-mpif77=${MPICH_INSTALL_DIR}/bin/mpif77 \
                              --with-f2cmpilibs=-lfmpich \
-                             --disable-mpe_graphics --disable-viewers
+                             --disable-graphics
     make
     make install PREFIX=${MPE_INSTALL_DIR}
 
@@ -461,7 +442,7 @@ mpif77 can be composed by including the following line
 cicc -I${MPICH_INSTALL_DIR}/include -L${MPICH_INSTALL_DIR}/lib $@ <-lmpi>
 
 
-<-lmpi> refers to various MPI libraries included your MPI implementation.
+<-lmpi> refers to various MPI libraries included in your MPI implementation.
 
 
 *** If the Fortran to C MPI profiling wrapper library does NOT exist,
@@ -481,7 +462,7 @@ cicc -I${MPICH_INSTALL_DIR}/include -L${MPICH_INSTALL_DIR}/lib $@ <-lmpi>
     setenv CROSS_FORTRAN2C_FALSE 0
     ${MPE_SRC_DIR}/configure --with-mpicc=${MPICH_INSTALL_DIR}/bin/mpicc \
                              --with-mpif77=${MPICH_INSTALL_DIR}/bin/mpif77 \
-                             --disable-mpe_graphics --disable-viewers
+                             --disable-graphics
     make
     make install PREFIX=${MPE_INSTALL_DIR}
 
