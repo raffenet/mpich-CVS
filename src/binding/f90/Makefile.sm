@@ -1,18 +1,19 @@
 smvar_do_dependencies = ignore
 
 MOD              = @F90MODEXT@
+MPIMOD           = @MPIMODNAME@
 F90INCFLAG       = @F90INCFLAG@
 F90_COMPILE_MODS = $(F90_COMPILE) $(F90INCFLAG)../f77
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
 lib${MPILIBNAME}f90_a_SOURCES = mpi.o
-all-preamble: mpi.$(MOD)
+all-preamble: $(MPIMOD).$(MOD)
 
 # Thes copy line in this step makes the F90 modules available to 
 # the mpif90 script before an install takes place
-mpi.$(MOD): $(srcdir)/mpi.f90
+$(MPIMOD).$(MOD): $(srcdir)/mpi.f90
 	$(F90_COMPILE_MODS) -c $(srcdir)/mpi.f90
-	cp mpi.$(MOD) ../../../src/include
+	cp @(MPIMOD).$(MOD) ../../../src/include
 	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
 	    cp work.pc ../../../src/include/mpimod.pc ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
@@ -25,7 +26,7 @@ clean-local:
 
 install_BIN     = mpif90
 install_ETC     = mpif90.conf
-install_INCLUDE = mpi.$(MOD)
+install_INCLUDE = $(MPIMOD).$(MOD)
 optinstall_INCLUDE = mpimod.pcl mpimod.pc
 install_LIB     = lib${MPILIBNAME}f90.a
 
@@ -38,7 +39,4 @@ doc_LATEX_SOURCES = ${doc_sources}
 
 distclean-local:
 	rm -f ../../../bin/mpif90
-	rm -f ../../../src/include/mpi.$(MOD)
-	rm -f ../../../src/include/mpi_base.$(MOD)
-	rm -f ../../../src/include/mpi_constants.$(MOD)
-	rm -f ../../../src/include/mpi_sizeofs.$(MOD)
+	rm -f ../../../src/include/$(MPIMOD).$(MOD)
