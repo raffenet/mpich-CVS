@@ -482,13 +482,17 @@ typedef struct MPIU_Mem_stack { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_M
 /* Utilities: Safe string copy and sprintf */
 int MPIU_Strncpy( char *, const char *, size_t );
 /* Provide a fallback snprintf for systems that do not have one */
-#ifdef HAVE_SNPRINTF
-#define MPIU_Snprintf snprintf
-#else
 /* Define attribute as empty if it has no definition */
 #ifndef ATTRIBUTE
 #define ATTRIBUTE(a)
 #endif
+#ifdef HAVE_SNPRINTF
+#define MPIU_Snprintf snprintf
+/* Sometimes systems don't provide prototypes for snprintf */
+#ifdef NEEDS_SNPRINTF_DECL
+extern int snprintf( char *, size_t, const char *, ... ) ATTRIBUTE((format(printf,3,4)));
+#endif
+#else
 int MPIU_Snprintf( char *str, size_t size, const char *format, ... ) 
      ATTRIBUTE((format(printf,3,4)));
 #endif
