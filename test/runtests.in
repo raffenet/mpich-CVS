@@ -1,4 +1,5 @@
 #! @PERL5@
+# -*- Mode: perl; -*-
 #
 # This script is the beginnings of a script to run a sequence of test 
 # programs.  See the MPICH document for a description of the test
@@ -20,6 +21,11 @@
 #      output)
 #   Remove executable, out, err files
 #
+# The format of a list file is
+# programname number-of-processes
+# If number-of-processes is missing, $np_default is used (this is 2 but can
+# be overridden with -np=new-value)
+#
 
 # Global variables
 $mpiexec = "mpiexec";    # Name of mpiexec program (including path, if necessary)
@@ -31,6 +37,8 @@ $np_default = 2;         # Default number of processes to use
 $xmloutput = 0;          # Set to true to get xml output (also specify file)
 $verbose = 0;            # Set to true to get more output
 $newline = "\r\n";       # Set to \r\n for Windows-friendly, \n for Unix only
+
+$debug = 1;
 
 # Build flags
 $remove_this_pgm = 0;
@@ -44,6 +52,7 @@ foreach $_ (@ARGV) {
     elsif (/-np=(.*)/)   { $np_default = $1; }
     elsif (/-tests=(.*)/) { $listfiles = $1; }
     elsif (/-verbose/) { $verbose = 1; }
+    elsif (/-debug/) { $debug = 1; }
     elsif (/-xmlfile=(.*)/) {
 	$xmlfile   = $1;
 	$xmloutput = 1;
@@ -63,17 +72,21 @@ if ($listfiles eq "") {
     while (<PGMS>) {
 	s/\r?\n//;
 	$programname = $_;
-	if (-d $programname) { ; }  # Ignore directories
+	if (-d $programname) { next; }  # Ignore directories
+	if ($programname eq "runtests") { next; } # Ignore self
 	if (-x $programname) { $found_exec++; }
 	if ($programname =~ /\.[cf]$/) { $found_src++; } 
     }
     close PGMS;
     
     if ($found_exec) {
+	print "Found executables\n" if $debug;
 	open (PGMS, "ls -1 |" ) || die "Cannot list programs\n";
 	while (<PGMS>) {
 	    s/\r?\n//;
 	    $programname = $_;
+	    if (-d $programname) { next; }  # Ignore directories
+	    if ($programname eq "runtests") { next; } # Ignore self
 	    if (-x $programname) {
 		&RunMPIProgram( $programname, $np_default );
 	    }
@@ -81,10 +94,13 @@ if ($listfiles eq "") {
 	close PGMS;
     }
     elsif ($found_src) { 
+	print "Found source files\n" if $debug;
 	open (PGMS, "ls -1 *.c |" ) || die "Cannot list programs\n";
 	while (<PGMS>) {
 	    s/\r?\n//;
 	    $programname = $_;
+	    # Skip messages from ls about no files
+	    if (! -s $programname) { next; }
 	    $programname =~ s/\.c//;
 	    &BuildMPIProgram( $programname );
 	    &RunMPIProgram( $programname, $np_default );
@@ -140,7 +156,7 @@ sub RunMPIProgram {
 	if (/FORTRAN STOP/) { next; }
 	$inline .= $_;
 	if (! /^\s*No Errors\s*$/ && !/^\s*Test Passed\s*$/) {
-	    print STDERR "Unexpected output $_";
+	    print STDERR "Unexpected output in $programname: $_";
 	    if (!$found_error) {
 		$found_error = 1;
 		$err_count ++;
@@ -207,3 +223,5 @@ sub RunTestFailed {
 	print XMLOUT "<TESTDIFF>$output</TESTDIFF>$newline";
     }
 }
+# ----------------------------------------------------------------------------
+
