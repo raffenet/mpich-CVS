@@ -1,13 +1,7 @@
 mpi.h
-*conf.h
-*conf.h.in
 mpichtimer.h
-pmi.h
 bnr.h
-mpidpre.h
-mpidpost.h
-*pre.h
-*post.h
+mpid*.h
 winmpichtimer.h
 mpid_datatype.h
 mpid_dataloop.h
