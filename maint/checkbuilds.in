@@ -432,95 +432,13 @@ sub RunTestSuites {
 	    print $OUTFD "Running test $testname...\n";
 	}
 	if ($testname eq "mpich") {
-	    my $nargs;
-	    $cwd = `pwd`;
-	    my @config;
-	    # Make sure that the tests run past a failure to build an
-	    # executable.  Without this, the summary doesn't include
-	    # any tests in the same directory that completed.
-	    $ENV{"MPITEST_CONTINUE"} = "always";
-
-	    chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
-	    $nargs = 0;
-	    $config[$nargs++] = "$mpich1_dir/examples/test/configure";
-	    $config[$nargs++] = "--prefix=$instdir";
-	    $config[$nargs++] = "-mpilibname=mpich";
-	    $config[$nargs++] = "--enable-io";
-	    # This isn't right, since these need to use the compilation 
-	    # scripts.  We'll approximate this by trying to use the
-	    # compilation scripts if they're found
-	    if (defined($ENV{"CC"})) {
-		$ccname = $ENV{"CC"};
-	    }
-	    if (defined($ENV{"FC"})) {
-	        $fcname = $ENV{"FC"};
-	    }
-	    # Note that there are no quotes in the following because
-	    # they are not needed (no shell evaluation here)
-	    if (-x "$instdir/bin/mpicc" ) {
-		$config[$nargs++] = "-cc=$instdir/bin/mpicc";
-	    }
-	    else {
-		$config[$nargs++] = "-cc=$ccname -I$instdir/include -L$instdir/lib";
-	    }
-	    if (-x "$instdir/bin/mpif77" ) {
-		$config[$nargs++] = "-fc=$instdir/bin/mpif77";
-	    }
-	    else {
-		$config[$nargs++] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
-	    }
-	    if (defined($ENV{"MAKE"})) {
-		$makepgm = $ENV{"MAKE"};
-		$config[$nargs++] = "-make=$makepgm";
-	    }
-	    else {
-		$makepgm = "make";
-	    }
-	    #$config[$nargs++] = "--enable-echo";
-	    %saveENV = %ENV;
-	    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
-	    # This timeout needs to be made uniform for all mpiruns
-	    # 3 minutes is enough for some of our slower machines
-	    if ($built_for_mpd) {
-		$ENV{MPIEXEC_TIMEOUT} = "180";
-	    }
-	    else {
-		$ENV{MPIEXEC_TIMEOUT} = "3";
-	    }
-	    $rc = &RunProgram( @config );
-	    if ($rc == 0) {
-		# HACK for mpd for now.
-		if ($built_for_mpd) {
-		    &RunMPD;
-		}
-		$rc = &RunProgram( "$makepgm testing" );
-		$test_status = $rc;
-		if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
-		if ($built_for_mpd) {
-		    `$instdir/bin/mpdallexit`;
-		    kill 2, $pid;
-		    kill 3, $pid;
-		    kill 9, $pid;
-		    waitpid $pid,0;
-		}
-	    }
-	    else {
-		$run_status = $rc;
-		print $OUTFD "Configure step for test failed\n";
-		print $OUTFD "Could not execute " . join(" ", @config) . "\n";
-		print $OUTFD "Environment was\n";
-		foreach $key (keys(%ENV)) {
-		    print $OUTFD "$key = $ENV{$key}\n";
-		}
-	    }
-	    %ENV = %saveENV;
-	    chdir $cwd;
+	    &RunMpichTestSuite;
 	}
 	elsif ($testname eq "intel") {
-	    ;
+	    &RunIntelTestSuite;
 	}
 	elsif ($testname eq "mpicxx") {
-	    ;
+	    &RunCxxTestSuite;
 	}
 	else {
 	    print $OUTFD "Unrecognized test $testname\n";
@@ -530,6 +448,190 @@ sub RunTestSuites {
     return $run_status;
 }
 # ---------------------------------------------------------------------------
+sub RunMpichTestSuite {
+    my $nargs;
+    $cwd = `pwd`;
+    my @config;
+# Make sure that the tests run past a failure to build an
+# executable.  Without this, the summary doesn't include
+# any tests in the same directory that completed.
+    $ENV{"MPITEST_CONTINUE"} = "always";
+
+    chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
+    $nargs = 0;
+    $config[$nargs++] = "$mpich1_dir/examples/test/configure";
+    $config[$nargs++] = "--prefix=$instdir";
+    $config[$nargs++] = "-mpilibname=mpich";
+    $config[$nargs++] = "--enable-io";
+# This isn't right, since these need to use the compilation 
+# scripts.  We'll approximate this by trying to use the
+# compilation scripts if they're found
+    if (defined($ENV{"CC"})) {
+	$ccname = $ENV{"CC"};
+    }
+    if (defined($ENV{"FC"})) {
+	$fcname = $ENV{"FC"};
+    }
+# Note that there are no quotes in the following because
+# they are not needed (no shell evaluation here)
+    if (-x "$instdir/bin/mpicc" ) {
+	$config[$nargs++] = "-cc=$instdir/bin/mpicc";
+    }
+    else {
+	$config[$nargs++] = "-cc=$ccname -I$instdir/include -L$instdir/lib";
+    }
+    if (-x "$instdir/bin/mpif77" ) {
+	$config[$nargs++] = "-fc=$instdir/bin/mpif77";
+    }
+    else {
+	$config[$nargs++] = "-fc=$fcname -I$instdir/include -L$instdir/lib";
+    }
+    if (defined($ENV{"MAKE"})) {
+	$makepgm = $ENV{"MAKE"};
+	$config[$nargs++] = "-make=$makepgm";
+    }
+    else {
+	$makepgm = "make";
+    }
+#$config[$nargs++] = "--enable-echo";
+    %saveENV = %ENV;
+    $ENV{MPIRUN} = "$instdir/bin/mpiexec";
+# This timeout needs to be made uniform for all mpiruns
+# 3 minutes is enough for some of our slower machines
+    if ($built_for_mpd) {
+	$ENV{MPIEXEC_TIMEOUT} = "180";
+    }
+    else {
+	$ENV{MPIEXEC_TIMEOUT} = "3";
+    }
+    $rc = &RunProgram( @config );
+    if ($rc == 0) {
+	# HACK for mpd for now.
+	if ($built_for_mpd) {
+	    &RunMPD;
+	}
+	$rc = &RunProgram( "$makepgm testing" );
+	$test_status = $rc;
+	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
+	if ($built_for_mpd) {
+	    `$instdir/bin/mpdallexit`;
+#	    kill 2, $pid;
+#	    kill 3, $pid;
+#	    kill 9, $pid;
+#	    waitpid $pid,0;
+	}
+    }
+    else {
+	$run_status = $rc;
+	print $OUTFD "Configure step for test failed\n";
+	print $OUTFD "Could not execute " . join(" ", @config) . "\n";
+	print $OUTFD "Environment was\n";
+	foreach $key (keys(%ENV)) {
+	    print $OUTFD "$key = $ENV{$key}\n";
+	}
+    }
+    %ENV = %saveENV;
+    chdir $cwd;
+}
+sub RunCxxTestSuite {
+    my $nargs = 0;
+    $cwd = `pwd`;
+    my @config;
+
+    chdir $mpicxx_test_dir || die "Cannot change to $mpicxx_test_dir\n";
+    $config[$nargs++] = "$projects_dir/mpicxxtest/configure";
+    $config[$nargs++] = "--with-mpich=$instdir";
+    if (defined($ENV{"MAKE"})) {
+	$makepgm = $ENV{"MAKE"};
+    }
+    else {
+	$makepgm = "make";
+    }
+    %saveENV = %ENV;
+    # This timeout needs to be made uniform for all mpiruns
+    # 3 minutes is enough for some of our slower machines
+    if ($built_for_mpd) {
+	$ENV{MPIEXEC_TIMEOUT} = "180";
+    }
+    else {
+	$ENV{MPIEXEC_TIMEOUT} = "3";
+    }
+    $rc = &RunProgram( @config );
+    if ($rc == 0) {
+	# HACK for mpd for now.
+	if ($built_for_mpd) {
+	    &RunMPD;
+	}
+	$rc = &RunProgram( "$makepgm run-tests" );
+	$test_status = $rc;
+	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
+	if ($built_for_mpd) {
+	    &StopMPD;
+	}
+    }
+    else {
+	$run_status = $rc;
+	print $OUTFD "Configure step for test failed\n";
+	print $OUTFD "Could not execute " . join(" ", @config) . "\n";
+	print $OUTFD "Environment was\n";
+	foreach $key (keys(%ENV)) {
+	    print $OUTFD "$key = $ENV{$key}\n";
+	}
+    }
+    %ENV = %saveENV;
+    chdir $cwd;
+}
+sub RunIntelTestSuite {
+    my $nargs = 0;
+
+    print "Intel test suite not yet supported\n";
+    $cwd = `pwd`;
+
+    my @config;
+
+    chdir $intel_test_dir || die "Cannot change to $intel_test_dir\n";
+    $config[$nargs++] = "--with-mpich=$instdir";
+    if (defined($ENV{"MAKE"})) {
+	$makepgm = $ENV{"MAKE"};
+    }
+    else {
+	$makepgm = "make";
+    }
+    %saveENV = %ENV;
+    # This timeout needs to be made uniform for all mpiruns
+    # 3 minutes is enough for some of our slower machines
+    if ($built_for_mpd) {
+	$ENV{MPIEXEC_TIMEOUT} = "180";
+    }
+    else {
+	$ENV{MPIEXEC_TIMEOUT} = "3";
+    }
+    $rc = &RunProgram( @config );
+    if ($rc == 0) {
+	# HACK for mpd for now.
+	if ($built_for_mpd) {
+	    &RunMPD;
+	}
+	$rc = &RunProgram( "$makepgm run-tests" );
+	$test_status = $rc;
+	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
+	if ($built_for_mpd) {
+	    &StopMPD;
+	}
+    }
+    else {
+	$run_status = $rc;
+	print $OUTFD "Configure step for test failed\n";
+	print $OUTFD "Could not execute " . join(" ", @config) . "\n";
+	print $OUTFD "Environment was\n";
+	foreach $key (keys(%ENV)) {
+	    print $OUTFD "$key = $ENV{$key}\n";
+	}
+    }
+    %ENV = %saveENV;
+    chdir $cwd;
+}
+# ---------------------------------------------------------------------------
 # RunProgram LIST
 sub RunProgram {
     # perl does not correctly handle "2>&1 >>foo" redirection in system
@@ -537,8 +639,12 @@ sub RunProgram {
     # code attempts to do the correct thing.
     # By reopening stdout and stderr, we can ensure that all of the 
     # output goes to the specified files.  Unfortunately, we can't
-    # force perl to correctly flush files without open/close
-    #
+    # force perl to correctly flush files without open/close, so
+    # we close the output file before the fork.  This guarantees that
+    # the data is flushed.  We reopen it after the fork (which is implicit
+    # in the open)
+    close $OUTFD;
+
     # We now use a different approach that uses a open that creates a 
     # fork and associates file handle (CFD for Child FD).
     @args = @_;
@@ -549,11 +655,11 @@ sub RunProgram {
 	# Do we want to allow an output filter, e.g., to convert the 
 	# output into well-formed XML?
         open STDERR, ">>&STDOUT";
-	close $OUTFD;   # Try to keep from buffering the output data
         exec @args;
     }
     else {
 	# Read from the child
+	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile for appending\n";
 	while (<CFD>) {
 	    if ($is_xml) {
 		# xml-ify the line by escaping the special characters
@@ -614,6 +720,13 @@ sub RunMPD {
 #  	# Wait a little for the mpd to start.
 #  	sleep 1;
 #      }
+}
+sub StopMPD {
+    `$instdir/bin/mpdallexit`;
+    kill 2, $pid;
+    kill 3, $pid;
+    kill 9, $pid;
+    waitpid $pid,0;
 }
 #
 # Change output style
