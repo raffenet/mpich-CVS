@@ -205,7 +205,7 @@ if test "$lac_cv_have___asm_and_x86_lfence" = "yes" ; then
     AC_DEFINE(HAVE___ASM_AND_X86_LFENCE, 1, [Define if using __asm on a x86 system with the lfence instruction])
 fi
 
-dnl pgcc checking
+dnl pgcc checking - compiler needs -Masmkeyword flag. How do I set this in the try_run?
 
 AC_MSG_CHECKING([for x86 mfence instruction using asm()])
 AC_TRY_RUN([
