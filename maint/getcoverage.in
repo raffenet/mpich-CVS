@@ -54,7 +54,6 @@ for (@ARGV) {
 	    if ($missed_lines) {
 		print "$missed_lines line(s) not covered by tests in $file\n";
 		&WriteAnnoteFile( $file );
-		}
 	    }
 	    else {
 		print "All code covered by tests in $file\n";
@@ -65,7 +64,7 @@ for (@ARGV) {
 	($missed_lines,$total_lines) = &CountUncoveredLines( $filename );
 	if ($missed_lines) {
 	    print "$missed_lines line(s) not covered by tests in $filename\n";
-	    $WriteAnnoteFile( $filename );
+	    &WriteAnnoteFile( $filename );
 	}
 	else {
 	    print "All code covered by tests in $filename\n";
@@ -224,7 +223,7 @@ sub AnnotateUncoveredLines {
     while (<FD>) {
 	# Make sure that we're in the right state.  Check to see if the 
 	# next line is executed or not.
-	if (!/^\s*######/) {
+	if (! /^\s*\#\#\#\#\#\#/) {
 	    if ($outstate eq "unex") {
 		print $outfile "</TD><TR><TD WIDTH=100%><PRE>$newline";
 	    }
@@ -238,12 +237,12 @@ sub AnnotateUncoveredLines {
 	if (!/^\s/) { next; }
 
 	# Skip any error checking block
-	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    print $outfile $_;
 	    while (<FD>) {
 		if (!/^\s/) { next; }
 	        print $outfile $_;
-		if (/^\s+#\s*endif/ || /^\s*#\s*els/) { 
+		if (/^\s+\#\s*endif/ || /^\s*\#\s*els/) { 
 		    last; 
 		}
 	    }
@@ -254,7 +253,7 @@ sub AnnotateUncoveredLines {
 	if (/^\s*\/\* --BEGIN DEBUG-- \*\//) {
 	    print $outfile $_;
 	    while (<FD>) {
-		if (!/^\s/) { print $outfile $_;
+		if (!/^\s/) { print $outfile $_; }
 		if (/^\s*\/\* --END DEBUG-- \*\//) {
 		    last; 
 		}
@@ -266,7 +265,7 @@ sub AnnotateUncoveredLines {
 	if (/^\s*\/\* --BEGIN ERROR HANDLING-- \*\//) {
 	    print $outfile $_;
 	    while (<FD>) {
-		if (!/^\s/) { print $outfile $_;
+		if (!/^\s/) { print $outfile $_; }
 		if (/^\s*\/\* --END ERROR HANDLING-- \*\//) {
 		    last; 
 		}
@@ -287,7 +286,6 @@ sub AnnotateUncoveredLines {
 		$outstate = "unex";
 	    }
 	    print $outfile $_;
-	    }
 	}
     }
     close (FD);
@@ -303,8 +301,9 @@ sub WriteAnnoteFile {
 	$basefile =~ s/\.gcov//;
 	$basefile =~ s/$annoteBaseDir//;
 	my $OUTFD = OUTFD;
-	my $rc = open( $OUTFD, ">$annoteSrcDir/$basefile" );
-	if ($rc == 0) {
+	my $rc = &MakeDirs( "$annoteSrcDir/$basefile" );
+	$rc = open( $OUTFD, ">$annoteSrcDir/$basefile" );
+	if ($rc != 0) {
 	    $newline = "\r\n";
 	    print $OUTFD "<HTML><HEAD>$newline";
 	    print $OUTFD "<TITLE>Coverage for $file</TITLE>$newline";
@@ -314,7 +313,36 @@ sub WriteAnnoteFile {
 	    print $OUTFD "</BODY></HTML>$newline";
 	    close( $OUTFD );
 	}
+	else {
+	    print STDERR "Cannot open $annoteSrcDir/$basefile\n";
+	}
     }
+}
+
+# Make all of the directories in filename (which may include a 
+# final file).  If it contains only directories, make sure that 
+# the name ends in a /
+sub MakeDirs {
+    my $filename = $_[0];
+    
+    my @subdirs = split(/\//, $filename );
+    print "Size of subdirs is $#subdirs\n";
+    my $curdir = $subdirs[0];
+    if ($curdir eq "") { $curdir = "/"; }
+    my $rc = 0;
+    for($i=1; $i<=$#subdirs; $i++) {
+	print "Making $curdir\n" if $debug;
+	if (! -d $curdir) {
+	    $rc = mkdir $curdir;
+	    if (!$rc) { 
+		print STDERR "Could not make directory $curdir\n";
+		return $rc;
+	    }
+	}
+	if (! ($curdir =~ /\/$/)) { $curdir .= "/"; }
+	$curdir .= "$subdirs[$i]";
+    }
+    return 1;
 }
 #
 # To generate a summary
