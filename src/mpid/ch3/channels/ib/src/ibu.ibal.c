@@ -56,9 +56,7 @@ typedef int IBU_STATE;
 #define IBU_READING    0x0008
 #define IBU_WRITING    0x0010
 
-#define ACK_TAG -1000
-
-typedef struct ibu_buffer
+typedef struct ibu_buffer_t
 {
     int use_iov;
     unsigned int num_bytes;
@@ -69,7 +67,7 @@ typedef struct ibu_buffer
     int index;
     int total;
     int (*progress_update)(int,void*);
-} ibu_buffer;
+} ibu_buffer_t;
 
 typedef struct ibu_unex_read_t
 {
@@ -99,9 +97,9 @@ typedef struct ibu_state_t
     int closing;
     int pending_operations;
     /* read and write structures */
-    ibu_buffer read;
+    ibu_buffer_t read;
     ibu_unex_read_t *unex_list;
-    ibu_buffer write;
+    ibu_buffer_t write;
     int nAvailRemote, nUnacked;
     /* user pointer */
     void *user_ptr;
@@ -151,8 +149,10 @@ static int g_cur_write_stack_index = 0;
 /* local prototypes */
 static int ibui_post_receive(ibu_t ibu);
 static int ibui_post_receive_unacked(ibu_t ibu);
+#if 0
 static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(int, void*));
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*));
+#endif
 static int ibui_post_ack_write(ibu_t ibu);
 
 /* utility allocator functions */
@@ -425,8 +425,11 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
-    p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
+    /* In ibuBlockAllocInit, ib_malloc_register is called which sets the
+       global variable s_mr_handle */
+    p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
+				     IBU_PACKET_COUNT,
+				     ib_malloc_register, ib_free_deregister);
     p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
     /* save the lkey for posting sends and receives */
     p->lkey = s_lkey;

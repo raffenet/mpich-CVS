@@ -56,7 +56,7 @@ typedef int IBU_STATE;
 #define IBU_READING    0x0008
 #define IBU_WRITING    0x0010
 
-typedef struct ibu_buffer
+typedef struct ibu_buffer_t
 {
     int use_iov;
     unsigned int num_bytes;
@@ -67,7 +67,7 @@ typedef struct ibu_buffer
     int index;
     int total;
     int (*progress_update)(int,void*);
-} ibu_buffer;
+} ibu_buffer_t;
 
 typedef struct ibu_unex_read_t
 {
@@ -90,7 +90,6 @@ typedef struct ibu_state_t
     VAPI_qp_hndl_t qp_handle;
     ibuBlockAllocator allocator;
 
-    IB_mtu_t mtu_size;
     IB_lid_t dlid;
     VAPI_mr_hndl_t mr_handle;
     VAPI_qp_num_t qp_num, dest_qp_num;
@@ -98,9 +97,9 @@ typedef struct ibu_state_t
     int closing;
     int pending_operations;
     /* read and write structures */
-    ibu_buffer read;
+    ibu_buffer_t read;
     ibu_unex_read_t *unex_list;
-    ibu_buffer write;
+    ibu_buffer_t write;
     int nAvailRemote, nUnacked;
     /* user pointer */
     void *user_ptr;
@@ -143,8 +142,10 @@ static int g_cur_write_stack_index = 0;
 /* local prototypes */
 static int ibui_post_receive(ibu_t ibu);
 static int ibui_post_receive_unacked(ibu_t ibu);
+#if 0
 static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_update)(int, void*));
 static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*));
+#endif
 static int ibui_post_ack_write(ibu_t ibu);
 
 /* utility allocator functions */
@@ -437,10 +438,12 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    /* In ibuBlockAllocInit, ib_malloc_register is called which sets the global variable s_mr_handle */
-    p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT, IBU_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
+    /* In ibuBlockAllocInit, ib_malloc_register is called which sets the
+       global variable s_mr_handle */
+    p->allocator = ibuBlockAllocInit(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
+				     IBU_PACKET_COUNT,
+				     ib_malloc_register, ib_free_deregister);
     p->mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
-    p->mtu_size = 3; /* 3 = 2048 */
     /* save the lkey for posting sends and receives */
     p->lkey = s_lkey;
 
@@ -532,6 +535,9 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     VAPI_sg_lst_entry_t data;
     VAPI_rr_desc_t work_req;
     void *mem_ptr;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
@@ -549,15 +555,16 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
 #else
-    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.id == NULL)
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    *((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
+    if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return IBU_FAIL;
     }
-    ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
-    ((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+    id_ptr->ptr = (void*)ibu;
+    id_ptr->mem = (void*)mem_ptr;
 #endif
     work_req.opcode = VAPI_RECEIVE;
     work_req.comp_type = VAPI_SIGNALED;
@@ -595,6 +602,9 @@ static int ibui_post_receive(ibu_t ibu)
     VAPI_sg_lst_entry_t data;
     VAPI_rr_desc_t work_req;
     void *mem_ptr;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_RECEIVE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_RECEIVE);
@@ -612,15 +622,16 @@ static int ibui_post_receive(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
 #else
-    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.id == NULL)
+    id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+    *((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
+    if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return IBU_FAIL;
     }
-    ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
-    ((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+    id_ptr->ptr = (void*)ibu;
+    id_ptr->mem = (void*)mem_ptr;
 #endif
     work_req.opcode = VAPI_RECEIVE;
     work_req.comp_type = VAPI_SIGNALED;
@@ -728,6 +739,9 @@ int ibu_write(ibu_t ibu, void *buf, int len)
     void *mem_ptr;
     int length;
     int total = 0;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITE);
@@ -786,15 +800,16 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
 #else
-	work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-	if ((void*)work_req.id == NULL)
+	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+	*((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
+	if (id_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return IBU_FAIL;
 	}
-	((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
-	((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+	id_ptr->ptr = (void*)ibu;
+	id_ptr->mem = (void*)mem_ptr;
 #endif
 	
 	MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_sr(%d bytes)", length));
@@ -835,6 +850,9 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
     int cur_index;
     unsigned int cur_len;
     unsigned char *cur_buf;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WRITEV);
@@ -916,15 +934,16 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	((ibu_work_id_handle_t*)&work_req.id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.id)->data.mem = (u_int32_t)mem_ptr;
 #else
-	work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-	if ((void*)work_req.id == NULL)
+	id_ptr = (ibu_work_id_handle_t*)ibuBlockAlloc(g_workAllocator);
+	*((ibu_work_id_handle_t**)&work_req.id) = id_ptr;
+	if (id_ptr == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return IBU_FAIL;
 	}
-	((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
-	((ibu_work_id_handle_t*)work_req.id)->mem = (void*)mem_ptr;
+	id_ptr->ptr = (void*)ibu;
+	id_ptr->mem = (void*)mem_ptr;
 #endif
 	
 	MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d bytes)", msg_size));
@@ -1365,6 +1384,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     ibu_t ibu;
     int num_bytes;
     unsigned int offset;
+#ifndef HAVE_32BIT_POINTERS
+    ibu_work_id_handle_t *id_ptr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_WAIT);
@@ -1432,9 +1454,10 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.id)->data.ptr);
 	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.id)->data.mem);
 #else
-	ibu = (ibu_t)(((ibu_work_id_handle_t*)completion_data.id)->ptr);
-	mem_ptr = (void*)(((ibu_work_id_handle_t*)completion_data.id)->mem);
-	ibuBlockFree(g_workAllocator, (void*)completion_data.id);
+	id_ptr = *((ibu_work_id_handle_t**)&completion_data.id);
+	ibu = (ibu_t)(id_ptr->ptr);
+	mem_ptr = (void*)(id_ptr->mem);
+	ibuBlockFree(g_workAllocator, (void*)id_ptr);
 #endif
 
 	switch (completion_data.opcode)
@@ -1606,6 +1629,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    break;
 	default:
 	    MPIU_Internal_error_printf("%s: unknown ib opcode: %s\n", FCNAME, op2str(completion_data.opcode));
+	    return IBU_FAIL;
 	    break;
 	}
     }
