@@ -8,6 +8,7 @@
 /* style: allow:mmap:3 sig:0 */
 #include "mpidi_ch3_impl.h"
 
+#if defined(USE_POSIX_SHM) || defined(USE_WINDOWS_SHM)
 static void generate_shm_string(char *str)
 {
 #ifdef USE_WINDOWS_SHM
@@ -20,12 +21,11 @@ static void generate_shm_string(char *str)
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
 #elif defined (USE_POSIX_SHM)
     MPIU_Snprintf(str, 40, "/mpich_shm_%d", rand());
-#elif defined (USE_SYSV_SHM)
-    MPIU_Snprintf(str, 40, "%d", getpid());
 #else
 #error No shared memory subsystem defined
 #endif
 }
+#endif
 
 #if 0
 /* Here's a clip of the SHARED_PROCESS_READ code */
@@ -219,10 +219,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
 int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result *pOutput)
 {
     int mpi_errno = MPI_SUCCESS;
-#if defined (USE_POSIX_SHM)
-    int i;
-#elif defined (USE_SYSV_SHM)
-    int i;
+#ifdef USE_SYSV_SHM
     FILE *fout;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
@@ -528,3 +525,32 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM);
     return MPI_SUCCESS;
 }
+
+/*@
+   MPIDI_CH3I_SHM_Unlink_and_detach_mem - 
+
+   Notes: This function unlinks and detaches a shared memory segment. It is called in
+          MPIDI_CH3I_Free_mem (for rma).
+          
+@*/
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Unlink_and_detach_mem
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_SHM_Unlink_and_detach_mem(MPIDI_CH3I_Shmem_block_request_result *p)
+{
+    int mpi_errno=MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_AND_DETACH_MEM);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_AND_DETACH_MEM);
+
+    mpi_errno = MPIDI_CH3I_SHM_Unlink_mem(p);
+    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+
+    mpi_errno = MPIDI_CH3I_SHM_Release_mem(p);
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_AND_DETACH_MEM);
+    return mpi_errno;
+}
+

@@ -197,4 +197,13 @@ MPIDI_CH3I_Progress_state;
 
 #define MPIDI_CH3_PROGRESS_STATE_DECL MPIDI_CH3I_Progress_state ch;
 
+
+typedef struct MPIDI_CH3I_Alloc_mem_list_t {
+    MPIDI_CH3I_Shmem_block_request_result *shm_struct;
+    struct MPIDI_CH3I_Alloc_mem_list_t *next;
+} MPIDI_CH3I_Alloc_mem_list_t;
+
+extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
+
+
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
