@@ -81,8 +81,9 @@ public class State
         g.setColor( color );
         g.fillRect( iHead, jHead, iTail-iHead+1, jTail-jHead+1 );
 
-        BorderStyle.paintStateBorder( g, iHead, jHead, isStartVtxInImg,
-                                         iTail, jTail, isFinalVtxInImg );
+        BorderStyle.paintStateBorder( g, color,
+                                      iHead, jHead, isStartVtxInImg,
+                                      iTail, jTail, isFinalVtxInImg );
         return 1;
     }
 

@@ -22,35 +22,41 @@ import base.drawable.Category;
 
 public class PreviewState
 {
-    private static StateBorder BorderStyle  = StateBorder.WHITE_RAISED_BORDER;
+    // private static StateBorder BorderStyle = StateBorder.WHITE_RAISED_BORDER;
+    private static StateBorder BorderStyle = StateBorder.COLOR_XOR_BORDER;
 
     public static void setBorderStyle( final StateBorder state_border )
     {
         BorderStyle = state_border;
     }
 
-    public  static final  String DECRE_WEIGHT_ORDER    = "DECRE_WEIGHT_ORDER";
-    private static final  int    DECRE_WEIGHT_ORDER_ID = 0;
-    public  static final  String DECRE_LEGEND_ORDER    = "DECRE_LEGEND_ORDER";
-    private static final  int    DECRE_LEGEND_ORDER_ID = 1;
-    public  static final  String MOST_LEGENDS_ORDER    = "MOST_LEGENDS_ORDER";
-    private static final  int    MOST_LEGENDS_ORDER_ID = 2;
+    public  static final String OVERLAP_RATIOS          = "OverlapRatios";
+    private static final int    OVERLAP_RATIOS_ID       = 0;
+    public  static final String CUMULATIVE_RATIOS       = "CumulativeRatios";
+    private static final int    CUMULATIVE_RATIOS_ID    = 1;
+    public  static final String CUMULATIVE_EXCLUSION    = "CumulativeExclusion";
+    private static final int    CUMULATIVE_EXCLUSION_ID = 2;
+    public  static final String FIT_MOST_LEGENDS        = "FitMostLegends";
+    private static final int    FIT_MOST_LEGENDS_ID     = 3;
 
-    private static        int    DisplayType           = DECRE_WEIGHT_ORDER_ID;
+    private static       int    DisplayType             = OVERLAP_RATIOS_ID;
 
     public static void setDisplayType( String new_display_type )
     {
-        if ( new_display_type.equals( MOST_LEGENDS_ORDER ) )
-            DisplayType = MOST_LEGENDS_ORDER_ID;
-        else if ( new_display_type.equals( DECRE_LEGEND_ORDER ) )
-            DisplayType = DECRE_LEGEND_ORDER_ID;
-        else if ( new_display_type.equals( DECRE_WEIGHT_ORDER ) )
-            DisplayType = DECRE_WEIGHT_ORDER_ID;
+        if ( new_display_type.equals( FIT_MOST_LEGENDS ) )
+            DisplayType = FIT_MOST_LEGENDS_ID;
+        else if ( new_display_type.equals( CUMULATIVE_EXCLUSION ) )
+            DisplayType = CUMULATIVE_RATIOS_ID;
+        else if ( new_display_type.equals( CUMULATIVE_RATIOS ) )
+            DisplayType = CUMULATIVE_RATIOS_ID;
+        else if ( new_display_type.equals( OVERLAP_RATIOS ) )
+            DisplayType = OVERLAP_RATIOS_ID;
         else
-            DisplayType = DECRE_WEIGHT_ORDER_ID;
+            DisplayType = OVERLAP_RATIOS_ID;
     }
 
-    private static        int    MinCategoryHeight   = 2;  
+    private static        int    MinCategoryHeight          = 2;  
+    private static        int    MinCategorySeparation      = 4;  
 
     public static void setMinCategoryHeight( int new_min_category_height )
     {
@@ -63,7 +69,7 @@ public class PreviewState
         Assume caller guarantees the order of timestamps and ypos, such that
         start_time <= final_time  and  start_ypos <= final_ypos.
     */
-    private static int  drawForward( Graphics2D g,
+    private static int  drawForward( Graphics2D g, Color color,
                                      CategoryWeight[] twgts, Insets insets,
                                      CoordPixelXform    coord_xform,
                                      DrawnBox           last_drawn_pos,
@@ -90,8 +96,9 @@ public class PreviewState
         }
 
         boolean  isStartVtxInImg, isFinalVtxInImg;
+        int      iImageWidth = coord_xform.getImageWidth();
         isStartVtxInImg = ( iStart >= 0 ) ;
-        isFinalVtxInImg = ( iFinal <  coord_xform.getImageWidth() );
+        isFinalVtxInImg = ( iFinal <  iImageWidth );
 
         int iHead, iTail, jHead, jTail;
         // jHead = slope * ( iHead - iStart ) + jStart
@@ -106,20 +113,39 @@ public class PreviewState
         if ( isFinalVtxInImg )
             iTail = iFinal;
         else
-            iTail = coord_xform.getImageWidth() - 1;
-            // iTail = coord_xform.getImageWidth();
+            iTail = iImageWidth - 1;
+            // iTail = iImageWidth;
         jTail    = jFinal;
             
-        int iWidth  = iTail-iHead+1;
+        int iRange  = iFinal-iStart+1;  // width uncut by image border
+        int iWidth  = iTail-iHead+1;    // width possibly cut by the image
         int jHeight = jTail-jHead+1;
 
         CategoryWeight  twgt = null;
         int             idx, twgts_length;
         float           height_per_wgt;
-        int             jLevel, jDelta;
+        int             jLevel, jDelta, jCenter;
+        int             iLevel, iDelta, iCenter;
 
         twgts_length = twgts.length;
-        if ( DisplayType == MOST_LEGENDS_ORDER_ID ) {
+        if ( DisplayType == OVERLAP_RATIOS_ID ) {
+            jLevel = Integer.MAX_VALUE; // JLevel should be named as JDelta_prev
+            iDelta = iRange;
+            for ( idx = twgts_length-1; idx >= 0; idx-- ) {
+                twgt = twgts[ idx ];
+                if ( twgt.getCategory().isVisible() ) {
+                    jDelta = (int) (twgt.getRatio() * jHeight + 0.5f);
+                    twgt.setPixelHeight( jDelta );
+                    if ( jDelta >= jLevel )
+                        iDelta -= MinCategorySeparation;
+                    twgt.setPixelWidth( iDelta );
+                    jLevel = jDelta;
+                }
+                else
+                    twgt.setPixelHeight( 0 );
+            }
+        }
+        else if ( DisplayType == FIT_MOST_LEGENDS_ID ) {
             int num_visible_twgts = 0;
             for ( idx = 0; idx < twgts_length; idx++ ) {
                 if ( twgts[ idx ].getCategory().isVisible() )
@@ -156,19 +182,19 @@ public class PreviewState
             for ( idx = 0; idx < twgts_length; idx++ ) {
                 twgt = twgts[ idx ];
                 if ( twgt.getCategory().isVisible() )
-                    tot_wgt += twgt.getWeight();
+                    tot_wgt += twgt.getRatio();
             }
             height_per_wgt = (float) jHeight / tot_wgt;
 
-            // Assume the input twgt[] is arranged in WEIGHT_ORDER
-            // Arrays.sort( twgts, CategoryWeight.WEIGHT_ORDER );
+            // Assume the input twgt[] is arranged in RATIO_ORDER
+            // Arrays.sort( twgts, CategoryWeight.RATIO_ORDER );
 
             // set sub-rectangles' height from the bottom, ie. jHead+jTail
             jLevel = jHead + jHeight;  // jLevel = jTail + 1
             for ( idx = twgts_length-1; idx >= 0; idx-- ) {
                 twgt = twgts[ idx ];
                 if ( twgt.getCategory().isVisible() ) {
-                    jDelta = (int) (height_per_wgt * twgt.getWeight() + 0.5f);
+                    jDelta = (int) (height_per_wgt * twgt.getRatio() + 0.5f);
                     if ( jDelta > 0 ) {
                         if ( jLevel > jHead ) {
                             if ( jLevel-jDelta >= jHead ) {
@@ -191,28 +217,54 @@ public class PreviewState
             }
         }
 
-        if ( DisplayType == DECRE_LEGEND_ORDER_ID )
+        /*
+        if ( DisplayType == CUMULATIVE_LEGENDS_ID )
             Arrays.sort( twgts, CategoryWeight.INDEX_ORDER );
-        else // if ( DisplayType == DECRE_WEIGHT_ORDER || MOST_LEGENDS_ORDER )
-            Arrays.sort( twgts, CategoryWeight.WEIGHT_ORDER );
+        else // if ( DisplayType == CUMULATIVE_RATIOS || FIT_MOST_LEGENDS )
+            Arrays.sort( twgts, CategoryWeight.RATIO_ORDER );
+        */
 
         // Fill the color of the sub-rectangles from the bottom, ie. jHead+jTail
         int num_sub_rects_drawn = 0;
-        jLevel = jHead + jHeight;  // jLevel = jTail + 1
-        for ( idx = twgts_length-1; idx >= 0; idx-- ) {
-            twgt     = twgts[ idx ];
-            jDelta   = twgt.getPixelHeight();
-            if ( jDelta > 0 ) {
-                jLevel  -= jDelta;
-                g.setColor( twgt.getCategory().getColor() );
-                g.fillRect( iHead, jLevel, iWidth, jDelta );
-                num_sub_rects_drawn++;
+        if ( DisplayType == OVERLAP_RATIOS_ID ) {
+            // iBoxXXXX : variables that twgt isn't cut by image border
+            int iBoxHead, iBoxTail, iBoxWidth;
+            jCenter = jHead  + jHeight / 2; // i.e. jCenter % jHead & jTail
+            iCenter = iStart + iRange / 2;  // i.e. iCenter % iStart & iFinal
+            for ( idx = twgts_length-1; idx >= 0; idx-- ) {
+                twgt       = twgts[ idx ];
+                jDelta     = twgt.getPixelHeight();
+                iBoxWidth  = twgt.getPixelWidth();
+                if ( jDelta > 0 && iBoxWidth > 0 ) {
+                    iBoxHead = iCenter - iBoxWidth / 2;
+                    iBoxTail = iBoxHead + iBoxWidth;
+                    iLevel   = ( iBoxHead >= 0 ? iBoxHead : 0 );
+                    iDelta   = ( iBoxTail < iImageWidth ?
+                                 iBoxTail : iImageWidth ) - iLevel;
+                    g.setColor( twgt.getCategory().getColor() );
+                    g.fillRect( iLevel, jCenter-jDelta/2, iDelta, jDelta );
+                    num_sub_rects_drawn++;
+                }
+            }
+        }
+        else {
+            jLevel = jHead + jHeight;  // jLevel = jTail + 1
+            for ( idx = twgts_length-1; idx >= 0; idx-- ) {
+                twgt     = twgts[ idx ];
+                jDelta   = twgt.getPixelHeight();
+                if ( jDelta > 0 ) {
+                    jLevel  -= jDelta;
+                    g.setColor( twgt.getCategory().getColor() );
+                    g.fillRect( iHead, jLevel, iWidth, jDelta );
+                    num_sub_rects_drawn++;
+                }
             }
         }
 
         if ( num_sub_rects_drawn > 0 )
-            BorderStyle.paintStateBorder( g, iHead, jHead, isStartVtxInImg,
-                                             iTail, jTail, isFinalVtxInImg );
+            BorderStyle.paintStateBorder( g, color,
+                                          iHead, jHead, isStartVtxInImg,
+                                          iTail, jTail, isFinalVtxInImg );
         return 1;
     }
 
@@ -269,15 +321,44 @@ public class PreviewState
         twgts_length = twgts.length;
 
         // Locate the sub-rectangle from the bottom, ie. jHead+jTail
-        int jLevel, jDelta;
-        jLevel = jHead + jHeight;  // jLevel = jTail + 1
-        for ( idx = twgts_length-1; idx >= 0; idx-- ) {
-            twgt     = twgts[ idx ];
-            jDelta   = twgt.getPixelHeight(); 
-            if ( jDelta > 0 ) {
-                jLevel  -= jDelta;
-                if ( pt_y >= jLevel )
-                    return twgt.getCategory();
+        int jLevel, jDelta, jCenter;
+        int iLevel, iDelta, iCenter;
+        if ( DisplayType == OVERLAP_RATIOS_ID ) {
+            int iImageWidth, iRange;
+            // iBoxXXXX : variables that twgt isn't cut by image border
+            int iBoxHead, iBoxTail, iBoxWidth;
+            iImageWidth = coord_xform.getImageWidth();
+            iRange      = iFinal - iStart + 1; // width uncut by image border
+            jCenter     = jHead  + jHeight / 2;// i.e. jCenter % jHead & jTail
+            iCenter     = iStart + iRange / 2; // i.e. iCenter % iStart & iFinal
+            for ( idx = 0; idx < twgts_length; idx++ ) {
+                twgt      = twgts[ idx ];
+                jDelta    = twgt.getPixelHeight(); 
+                iBoxWidth = twgt.getPixelWidth();
+                if ( jDelta > 0 && iBoxWidth > 0 ) {
+                    jLevel = jCenter - jDelta / 2;
+                    if ( pt_y >= jLevel && pt_y < jLevel+jDelta ) {
+                        iBoxHead = iCenter - iBoxWidth / 2;
+                        iBoxTail = iBoxHead + iBoxWidth;
+                        iLevel   = ( iBoxHead >= 0 ? iBoxHead : 0 );
+                        iDelta   = ( iBoxTail < iImageWidth ?
+                                     iBoxTail : iImageWidth ) - iLevel;
+                        if ( pt_x >= iLevel && pt_x < iLevel+iDelta )
+                            return twgt.getCategory();
+                    }
+                }
+            }
+        }
+        else {
+            jLevel = jHead + jHeight;  // jLevel = jTail + 1
+            for ( idx = twgts_length-1; idx >= 0; idx-- ) {
+                twgt     = twgts[ idx ];
+                jDelta   = twgt.getPixelHeight(); 
+                if ( jDelta > 0 ) {
+                    jLevel  -= jDelta;
+                    if ( pt_y >= jLevel )
+                        return twgt.getCategory();
+                }
             }
         }
 
@@ -285,7 +366,7 @@ public class PreviewState
     }
 
 
-    public static int  draw( Graphics2D g,
+    public static int  draw( Graphics2D g, Color color,
                              CategoryWeight[] twgts, Insets insets,
                              CoordPixelXform    coord_xform,
                              DrawnBox           last_drawn_pos,
@@ -294,24 +375,24 @@ public class PreviewState
     {
          if ( start_time < final_time ) {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, twgts, insets,
+                 return drawForward( g, color, twgts, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, start_ypos,
                                      final_time, final_ypos );
              else
-                 return drawForward( g, twgts, insets,
+                 return drawForward( g, color, twgts, insets,
                                      coord_xform, last_drawn_pos,
                                      start_time, final_ypos,
                                      final_time, start_ypos );
          }
          else {
              if ( start_ypos < final_ypos )
-                 return drawForward( g, twgts, insets,
+                 return drawForward( g, color, twgts, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, start_ypos,
                                      start_time, final_ypos );
              else
-                 return drawForward( g, twgts, insets,
+                 return drawForward( g, color, twgts, insets,
                                      coord_xform, last_drawn_pos,
                                      final_time, final_ypos,
                                      start_time, start_ypos );

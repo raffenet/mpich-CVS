@@ -27,10 +27,14 @@ public abstract class StateBorder
                                      = new ColorLoweredBorder();
     public  static final StateBorder COLOR_RAISED_BORDER
                                      = new ColorRaisedBorder();
+    public  static final StateBorder COLOR_XOR_BORDER
+                                     = new ColorXORBorder();
 
     public static StateBorder parseString( String str )
     {
-        if ( str.equalsIgnoreCase( COLOR_RAISED_BORDER.toString() ) )
+        if ( str.equalsIgnoreCase( COLOR_XOR_BORDER.toString() ) )
+            return COLOR_XOR_BORDER;
+        else if ( str.equalsIgnoreCase( COLOR_RAISED_BORDER.toString() ) )
             return COLOR_RAISED_BORDER;
         else if ( str.equalsIgnoreCase( COLOR_LOWERED_BORDER.toString() ) )
             return COLOR_LOWERED_BORDER;
@@ -46,7 +50,7 @@ public abstract class StateBorder
             return null;
     }
 
-    public abstract void paintStateBorder( Graphics2D g,
+    public abstract void paintStateBorder( Graphics2D g, Color color,
                                            int iHead, int jHead,
                                            boolean isStartVtxIn,
                                            int iTail, int jTail,
@@ -58,7 +62,7 @@ public abstract class StateBorder
 
     public static class EmptyBorder extends StateBorder
     {
-        public void paintStateBorder( Graphics2D g,
+        public void paintStateBorder( Graphics2D g, Color color,
                                       int iHead, int jHead,
                                       boolean isStartVtxIn,
                                       int iTail, int jTail,
@@ -72,7 +76,7 @@ public abstract class StateBorder
 
     public static class WhitePlainBorder extends StateBorder
     {
-        public void paintStateBorder( Graphics2D g,
+        public void paintStateBorder( Graphics2D g, Color color,
                                       int iHead, int jHead,
                                       boolean isStartVtxIn,
                                       int iTail, int jTail,
@@ -106,7 +110,7 @@ public abstract class StateBorder
 
     public static class WhiteLoweredBorder extends StateBorder
     {
-        public void paintStateBorder( Graphics2D g,
+        public void paintStateBorder( Graphics2D g, Color color,
                                       int iHead, int jHead,
                                       boolean isStartVtxIn,
                                       int iTail, int jTail,
@@ -140,7 +144,7 @@ public abstract class StateBorder
 
     public static class WhiteRaisedBorder extends StateBorder
     {
-        public void paintStateBorder( Graphics2D g,
+        public void paintStateBorder( Graphics2D g, Color color,
                                       int iHead, int jHead,
                                       boolean isStartVtxIn,
                                       int iTail, int jTail,
@@ -174,7 +178,7 @@ public abstract class StateBorder
 
     public static class ColorLoweredBorder extends StateBorder
     {
-        public void paintStateBorder( Graphics2D g,
+        public void paintStateBorder( Graphics2D g, Color color,
                                       int iHead, int jHead,
                                       boolean isStartVtxIn,
                                       int iTail, int jTail,
@@ -182,7 +186,6 @@ public abstract class StateBorder
         {
             int    iwidth  = iTail - iHead + 1;
             int    jheight = jTail - jHead + 1;
-            Color  color  = g.getColor();
             /*
                Draw the shaded lower right first then upper left,
                so tight packed states are shown as white.
@@ -209,7 +212,7 @@ public abstract class StateBorder
 
     public static class ColorRaisedBorder extends StateBorder
     {
-        public void paintStateBorder( Graphics2D g,
+        public void paintStateBorder( Graphics2D g, Color color,
                                       int iHead, int jHead,
                                       boolean isStartVtxIn,
                                       int iTail, int jTail,
@@ -217,7 +220,6 @@ public abstract class StateBorder
         {
             int    iwidth  = iTail - iHead + 1;
             int    jheight = jTail - jHead + 1;
-            Color  color  = g.getColor();
             /*
                Draw the shaded lower right first then upper left,
                so tight packed states are shown as white.
@@ -240,4 +242,36 @@ public abstract class StateBorder
         public String toString() { return "ColorRaised"; }
     }   // Endof public class ColorRaisedBorder
 
+    public static class ColorXORBorder extends StateBorder
+    {
+        public void paintStateBorder( Graphics2D g, Color color,
+                                      int iHead, int jHead,
+                                      boolean isStartVtxIn,
+                                      int iTail, int jTail,
+                                      boolean isFinalVtxIn )
+        {
+            int    iwidth  = iTail - iHead + 1;
+            int    jheight = jTail - jHead + 1;
+            // Color  color  = Color.white;
+            /*
+               Draw the shaded lower right first then upper left,
+               so tight packed states are shown as white.
+            */
+            g.setXORMode( color );
+            // g.drawLine( iHead, jTail, iTail, jTail );
+            g.fillRect( iHead, jTail, iwidth, 1 );
+            if ( isFinalVtxIn )
+                // g.drawLine( iTail, jHead, iTail, jTail );
+                g.fillRect( iTail, jHead, 1, jheight );
+
+            // g.drawLine( iHead, jHead, iTail, jHead );
+            g.fillRect( iHead, jHead, iwidth, 1 );
+            if ( isStartVtxIn )
+                // g.drawLine( iHead, jHead, iHead, jTail );
+                g.fillRect( iHead, jHead, 1, jheight );
+            g.setPaintMode();
+        }
+
+        public String toString() { return "ColorXOR"; }
+    }   // Endof public class ColorRaisedBorder
 }
