@@ -1550,6 +1550,8 @@ done
 EXTRA_SRC_DIRS=""
 if test "$FROM_MPICH2" = yes ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich2"
+elif test "$FROM_MPICH" = yes ; then
+    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich1"
 fi
 if test "$BUILD_MPI_INFO" = 1 ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info"
