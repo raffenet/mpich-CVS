@@ -252,7 +252,7 @@ static inline int handle_read(MPIDI_VC *vc, int nb)
 	    MPIDI_CA_t ca = req->dev.ca;
 	    
 	    vc->ch.recv_active = NULL;
-	    
+
 #ifndef USE_INLINE_PKT_RECEIVE
 	    if (ca == MPIDI_CH3I_CA_HANDLE_PKT)
 	    {
