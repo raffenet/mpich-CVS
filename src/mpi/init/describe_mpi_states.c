@@ -200,12 +200,14 @@ static unsigned long random_color(unsigned char *r, unsigned char *g, unsigned c
     return getColorRGB(d1, d2 + 0.5, r, g, b);
 }
 
-static char random_color_str[40];
+#define MAX_RANDOM_COLOR_STR 40
+static char random_color_str[MAX_RANDOM_COLOR_STR];
 static char *get_random_color_str()
 {
     unsigned char r,g,b;
     random_color(&r, &g, &b);
-    sprintf(random_color_str, "%3d %3d %3d", (int)r, (int)g, (int)b);
+    MPIU_Snprintf(random_color_str, MAX_RANDOM_COLOR_STR, 
+		  "%3d %3d %3d", (int)r, (int)g, (int)b);
     return random_color_str;
 }
 
