@@ -748,7 +748,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 
 /* retrieves the pg_ptr from the front of the business card and
    increments the business card ptr to point to the real business
-   card. not static because it is needed in ch3_comm_connect.c */
+   card. */
 static int GetPGptr(char **business_card, MPIDI_CH3I_Process_group_t **remote_pg_ptr)
 {
     sscanf(*business_card, "%p", remote_pg_ptr);
@@ -1029,11 +1029,9 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
         goto fn_exit;
     }
 
-
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
     return mpi_errno;
-
 }
 
 
