@@ -8,6 +8,8 @@
 **inittwice:Cannot call MPI_INIT or MPI_INIT_THREAD more than once
 **nomem:Out of memory
 **nomem %d %d:Out of memory (requested %d but only %d available)
+**nomem %s %d:Out of memory (unable to allocate a '%s' of size %d)
+**nomem %s:Out of memory (unable to allocate a '%s')
 **notimpl:Function not implemented
 **notimpl %s:Function %s not implemented
 **nullptr:Null pointer
@@ -394,8 +396,6 @@ with MPI_Alloc_mem.
 **opnotpredefined %d:only predefined ops are valid (op = %d)
 **opundefined_rma:RMA target received unknown RMA operation
 **opundefined_rma %d:RMA target received unknown RMA operation type %d
-**pmi_finalize:PMI_Finalize failed
-**pmi_finalize %d:PMI_Finalize failed, error %d
 **ch3|mpid_cancel_send|cancelrndv:failure occurred while performing local cancellation of a rendezvous message
 **ch3|mpid_cancel_send|canceleager:failure occurred while performing local cancellation of a eager message
 **ch3|mpid_cancel_send|cancelmsg:failure occurred while sending remote cancellation request packet
@@ -471,29 +471,15 @@ with MPI_Alloc_mem.
 **badsock:internal error - bad sock
 **failure:unknown failure
 **failure %d:unknown failure, error %d
-**pmi_init":PMI_Init failed
-**pmi_init %d:PMI_Init returned %d
-**pmi_get_rank":PMI_Get_rank failed
-**pmi_get_rank %d:PMI_Get_rank returned %d
-**pmi_get_size:PMI_Get_size failed
-**pmi_get_size %d:PMI_Get_size returned %d
-**pmi_my_name:PMI_Get_my_name failed
-**pmi_my_name %d:PMI_Get_my_name returned %d
 **init_vcrt:failed to create VCRT
 **init_getptr:failed to get the vcr
 **init_progress:progress_init failed
 **snprintf:snprintf returned an invalid number
 **snprintf %d:snprintf returned %d
 **init_buscard:failed to get my business card
-**pmi_put:PMI_KVS_Put failed
-**pmi_put %d:PMI_KVS_Put returned %d
 **init_strtok_host:failed to copy the hostname from the business card
 **init_strtok_host %s:failed to copy the hostname from this business card: %s
 **boot_tostring:unable to get a string representation of the boostrap queue
-**pmi_commit:PMI_KVS_Commit failed
-**pmi_commit %d:PMI_KVS_Commit returned %d
-**pmi_barrier:PMI_Barrier failed
-**pmi_barrier %d:PMI_Barrier returned %d
 **ch3ireadaggressive:aggressive reading failed
 **msgctl:msgctl failed
 **msgctl %d:msgctl returned %d
@@ -504,8 +490,6 @@ with MPI_Alloc_mem.
 **msgrcv:msgrcv failed
 **msgrcv %d:msgrcv returned %d
 **nextbootmsg:failed to get the next bootstrap message
-**pmi_get_rank:PMI_Get_rank failed
-**pmi_init:PMI_Init failed
 **winwait:WaitForSingleObject failed
 **CreateThread:CreateThread failed
 **CreateThread %d:CreateThread failed, error %d
@@ -522,10 +506,6 @@ with MPI_Alloc_mem.
 **finalize_progress:finalizing the progress engine failed
 **handle_sock_op:handle_sock_op failed
 **pfinal_sockclose:sock_close failed
-**pmi_get:PMI_KVS_Get failed
-**pmi_name:PMI_Get_my_name failed
-**pmi_rank:PMI_Get_rank failed
-**pmi_size:PMI_Get_size failed
 **post_connect:failed to post a connection
 **progress_handle_sock_op:handle_sock_op failed
 **progress_sock_wait:sock_wait failed
@@ -533,11 +513,6 @@ with MPI_Alloc_mem.
 **shmconnect_getmem:failed to allocate shared memory for a write queue
 **shmwrite:shared memory write failed
 **attach_to_mem %d:attach to shared memory returned error %d
-**nomem %s:out of memory, unable to allocate: %s
-**pmi_get %d:PMI_KVS_Get returned %d
-**pmi_name %d:PMI_Get_my_name returned %d
-**pmi_rank %d:PMI_Get_rank returned %d
-**pmi_size %d:PMI_Get_size returned %d
 **post_connect %s:%s failed in VC_post_connect
 
 #
@@ -560,3 +535,43 @@ with MPI_Alloc_mem.
 **read_progress:Unable to make read progress
 **handle_read:Unable to handle the read data
 **process_group:Process group initializatio failed
+
+#
+# pmi
+#
+**pmi_init:PMI_Init failed
+**pmi_init %d:PMI_Init returned %d
+**pmi_initialized:PMI_Initialized failed
+**pmi_initialized %d:PMI_Initialized returned %d
+**pmi_get_size:PMI_Get_size failed
+**pmi_get_size %d:PMI_Get_size returned %d
+**pmi_get_rank:PMI_Get_rank failed
+**pmi_get_rank %d:PMI_Get_rank returned %d
+**pmi_barrier:PMI_Barrier failed
+**pmi_barrier %d:PMI_Barrier returned %d
+**pmi_finalize:PMI_Finalize failed
+**pmi_finalize %d:PMI_Finalize returned %d
+**pmi_kvs_get_my_name:PMI_KVS_Get_my_name failed
+**pmi_kvs_get_my_name %d:PMI_KVS_Get_my_name returned %d
+**pmi_kvs_get_name_length_max:PMI_KVS_Get_name_length_max failed
+**pmi_kvs_get_name_length_max %d:PMI_KVS_Get_name_length_max returned %d
+**pmi_kvs_get_key_length_max:PMI_KVS_Get_key_length_max failed
+**pmi_kvs_get_key_length_max %d:PMI_KVS_Get_key_length_max returned %d
+**pmi_kvs_get_value_length_max:PMI_KVS_Get_value_length_max failed
+**pmi_kvs_get_value_length_max %d:PMI_KVS_Get_value_length_max returned %d
+**pmi_kvs_create:PMI_KVS_Create failed
+**pmi_kvs_create %d:PMI_KVS_Create returned %d
+**pmi_kvs_destroy:PMI_KVS_Destroy failed
+**pmi_kvs_destroy %d:PMI_KVS_Destroy returned %d
+**pmi_kvs_put:PMI_KVS_Put failed
+**pmi_kvs_put %d:PMI_KVS_Put returned %d
+**pmi_kvs_commit:PMI_KVS_Commit failed
+**pmi_kvs_commit %d:PMI_KVS_Commit returned %d
+**pmi_kvs_get:PMI_KVS_Get failed
+**pmi_kvs_get %d:PMI_KVS_Get returned %d
+**pmi_kvs_iter_first:PMI_KVS_iter_first failed
+**pmi_kvs_iter_first %d:PMI_KVS_iter_first returned %d
+**pmi_kvs_iter_next:PMI_KVS_iter_next failed
+**pmi_kvs_iter_next %d:PMI_KVS_iter_next returned %d
+**pmi_spawn_multiple:pmi_spawn_multiple failed
+**pmi_spawn_multiple %d:pmi_spawn_multiple returned %d
