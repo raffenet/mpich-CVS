@@ -1,8 +1,12 @@
 CC          = @CC@
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I../include
 AR          = @AR@
 LIBNAME     = @LIBNAME@
+srcdir      = @srcdir@
+
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include
 CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
+
+@VPATH@
 
 AD_NFS_OBJECTS = ad_nfs_close.o ad_nfs_read.o ad_nfs_rdcoll.o \
       ad_nfs_wrcoll.o ad_nfs_open.o ad_nfs_write.o ad_nfs_done.o \
@@ -13,7 +17,7 @@ AD_NFS_OBJECTS = ad_nfs_close.o ad_nfs_read.o ad_nfs_rdcoll.o \
 default: $(LIBNAME)
 
 .c.o:
-	$(CC) $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $<
 
 $(LIBNAME): $(AD_NFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_NFS_OBJECTS)

@@ -4,6 +4,9 @@ INCLUDE_DIR = @ROMIO_INCLUDE@
 LIBS = @TEST_LIBNAME@ @MPI_LIB@
 USER_CFLAGS = @USER_CFLAGS@ $(INCLUDE_DIR)
 USER_FFLAGS = @USER_FFLAGS@ $(INCLUDE_DIR)
+srcdir=@srcdir@
+
+@VPATH@
 
 all: simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll split_coll shared_fp \
@@ -12,10 +15,10 @@ all: simple perf async coll_test coll_perf misc file_info excl large_array \
 default: all
 
 .c.o:
-	$(CC) $(USER_CFLAGS) -c $*.c
+	$(CC) $(USER_CFLAGS) -c $<
 
 .f.o:
-	$(F77) $(USER_FFLAGS) -c $*.f
+	$(F77) $(USER_FFLAGS) -c $<
 
 clean: 
 	rm -f .P* PI* *.o simple async coll_test coll_perf misc perf fcoll_test fperf fmisc test* job* file_info excl large_array large_file noncontig i_noncontig noncontig_coll atomicity split_coll shared_fp *.out

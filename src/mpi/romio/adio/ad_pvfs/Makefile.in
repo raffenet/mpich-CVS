@@ -1,8 +1,12 @@
 CC          = @CC@
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I../include
 AR          = @AR@
 LIBNAME     = @LIBNAME@
+srcdir      = @srcdir@
+
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include
 CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
+
+@VPATH@
 
 AD_PVFS_OBJECTS = ad_pvfs_close.o ad_pvfs_read.o ad_pvfs_rdcoll.o \
       ad_pvfs_wrcoll.o ad_pvfs_open.o ad_pvfs_write.o ad_pvfs_done.o \
@@ -12,7 +16,7 @@ AD_PVFS_OBJECTS = ad_pvfs_close.o ad_pvfs_read.o ad_pvfs_rdcoll.o \
 default: $(LIBNAME)
 
 .c.o:
-	$(CC) $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $<
 
 $(LIBNAME): $(AD_PVFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_PVFS_OBJECTS)

@@ -1,9 +1,13 @@
 CC          = @CC@
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../../include
 AR          = @AR@
 RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
+srcdir      = @srcdir@
+
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../../include
 CFLAGS      = @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
+
+@VPATH@
 
 MPIO_FOBJECTS = subarrayf.o darrayf.o
 
@@ -16,10 +20,10 @@ all: $(LIBNAME)
 .SUFFIXES: $(SUFFIXES) .p
 
 .c.o:
-	$(CC) $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $<
 
 .c.p:
-	@cp $*.c _$*.c
+	@cp $(srcdir)/$*.c _$*.c
 	$(CC) $(CFLAGS) -c _$*.c
 	@rm -f _$*.c
 

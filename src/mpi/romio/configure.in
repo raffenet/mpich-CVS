@@ -290,12 +290,16 @@ done
 #
 AC_PREPARE()
 #
+PAC_FIXUP_SRCDIR
+#
+PAC_MAKE_VPATH
+#
 # Check that an arch was set
 # If it wasn't set, try to guess using "util/tarch"
 #
-if test -z "$ARCH" -a -x util/tarch ; then
+if test -z "$ARCH" -a -x $srcdir/util/tarch ; then
     AC_MSG_CHECKING(for architecture)
-    ARCH=`./util/tarch | sed s/-/_/g`
+    ARCH=`$srcdir/util/tarch | sed s/-/_/g`
     if test -z "$ARCH" ; then
        AC_MSG_RESULT(Unknown!)
        print_error "Error: Couldn't guess target architecture, you must"
@@ -307,7 +311,7 @@ if test -z "$ARCH" -a -x util/tarch ; then
 fi
 #
 # check for valid architecture
-grep _"$ARCH"_ .config_params > /dev/null 2>&1
+grep _"$ARCH"_ $srcdir/.config_params > /dev/null 2>&1
 if test $? != 0 ; then
    echo "Unknown architecture $arch... proceeding anyway"
 fi
@@ -316,7 +320,7 @@ fi
 if test -n "$FILE_SYSTEM" ; then
    for x in $FILE_SYSTEM
    do
-      grep _"$x"_ .config_params > /dev/null 2>&1
+      grep _"$x"_ $srcdir/.config_params > /dev/null 2>&1
       if test $? != 0 ; then
          echo "Unknown file system $x... proceeding anyway"
       fi
@@ -325,7 +329,7 @@ fi
 #
 # check for valid MPI implementation
 if test -n "$MPI" ; then
-   grep _"$MPI"_mpi .config_params > /dev/null 2>&1
+   grep _"$MPI"_mpi $srcdir/.config_params > /dev/null 2>&1
    if test $? != 0 ; then
       echo "Unknown MPI implementation $MPI... proceeding anyway"
    fi
@@ -912,18 +916,25 @@ if test -n "$mpi_hp"; then
       PAC_CHECK_MPIOF_H
    fi
 fi
-PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
+# Find the home directory if not specified
+if test "X$srcdir" != "X." -a -s $srcdir/mpi-io/Makefile.in ; then 
+    ROMIO_HOME_TRIAL=$srcdir
+else
+    PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
+fi
 echo "ROMIO home directory is $ROMIO_HOME_TRIAL"
 ROMIO_HOME=$ROMIO_HOME_TRIAL
+if test -z "$srcdir" -o "$srcdir" = "." ; then srcdir="$ROMIO_HOME" ; fi
+AC_SUBST(srcdir)
 if test -z "$LIBNAME"; then
 LIBNAME="$ROMIO_HOME/lib/$ARCH/libmpio.a"
 fi
 #
-if test ! -d lib ; then 
-   mkdir lib
+if test ! -d $ROMIO_HOME/lib ; then 
+   mkdir $ROMIO_HOME/lib
 fi
-if test ! -d lib/$ARCH ; then 
-   mkdir lib/$ARCH
+if test ! -d $ROMIO_HOME/lib/$ARCH ; then 
+   mkdir $ROMIO_HOME/lib/$ARCH
 fi
 #
 if test $NOF77 = 1 ; then
@@ -938,9 +949,9 @@ else
 fi
 #
 if test "$MPI_INCLUDE_DIR" = "." ; then
-   ROMIO_INCLUDE="-I$ROMIO_HOME/include"
+   ROMIO_INCLUDE="-I../include"
 else 
-   ROMIO_INCLUDE="-I$ROMIO_HOME/include -I$MPI_INCLUDE_DIR"
+   ROMIO_INCLUDE="-I../include -I$MPI_INCLUDE_DIR"
 fi
 #
 TEST_LIBNAME=$LIBNAME
@@ -1037,6 +1048,8 @@ AC_SUBST(ROMIO_TCFLAGS)
 AC_SUBST(ROMIO_TCPPFLAGS)
 AC_SUBST(ROMIO_TFFLAGS)
 AC_SUBST(MPIRUN)
+if test ! -d adio ; then mkdir adio ; fi
+if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
 AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h)
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/fperf.f"

@@ -2,3 +2,6 @@ Makefile
 config.status
 config.log
 lib
+bin
+misc
+

@@ -917,4 +917,91 @@ else
 fi
 ])dnl
 dnl
+dnl
+dnl Look for a style of VPATH.  Known forms are
+dnl VPATH = .:dir
+dnl .PATH: . dir
+dnl
+dnl Defines VPATH or .PATH with . $(srcdir)
+dnl Requires that vpath work with implicit targets
+dnl NEED TO DO: Check that $< works on explicit targets.
+dnl
+define(PAC_MAKE_VPATH,[
+AC_SUBST(VPATH)
+AC_MSG_CHECKING(for virtual path format)
+rm -rf conftest*
+mkdir conftestdir
+cat >conftestdir/a.c <<EOF
+A sample file
+EOF
+cat > conftest <<EOF
+all: a.o
+VPATH=.:conftestdir
+.c.o:
+	@echo \$<
+EOF
+ac_out=`$MAKE -f conftest 2>&1 | grep 'conftestdir/a.c'`
+if test -n "$ac_out" ; then 
+    AC_MSG_RESULT(VPATH)
+    VPATH='VPATH=.:$(srcdir)'
+else
+    rm -f conftest
+    cat > conftest <<EOF
+all: a.o
+.PATH: . conftestdir
+.c.o:
+	@echo \$<
+EOF
+    ac_out=`$MAKE -f conftest 2>&1 | grep 'conftestdir/a.c'`
+    if test -n "$ac_out" ; then 
+        AC_MSG_RESULT(.PATH)
+        VPATH='.PATH: . $(srcdir)'
+    else
+	AC_MSG_RESULT(neither VPATH nor .PATH works)
+    fi
+fi
+rm -rf conftest*
+])dnl
+dnl
+dnl
+dnl There is a bug in AC_PREPARE that sets the srcdir incorrectly (it
+dnl is correct in configure, but it puts an absolute path into config.status,
+dnl which is a big problem for scripts like mpireconfig that are wrappers
+dnl around config.status).  The bug is in not recognizing that ./ and .//
+dnl are the same  directory as . (in fact, ./[/]* is the same).
+dnl
+define(PAC_FIXUP_SRCDIR,[
+# Find the source files, if location was not specified.
+if test "$srcdirdefaulted" = "yes" ; then
+  srcdir=""
+  # Try the directory containing this script, then `..'.
+  prog=[$]0
+changequote(,)dnl
+  confdir=`echo $prog|sed 's%/[^/][^/]*$%%'`
+  # Remove all trailing /'s 
+  confdir=`echo $confdir|sed 's%[/*]$%%'`
+changequote([,])dnl
+  test "X$confdir" = "X$prog" && confdir=.
+  srcdir=$confdir
+  if test ! -r $srcdir/$unique_file; then
+    srcdir=..
+  fi
+fi
+if test ! -r $srcdir/$unique_file; then
+  if test x$srcdirdefaulted = xyes; then
+    echo "configure: Cannot find sources in \`${confdir}' or \`..'." 1>&2
+  else
+    echo "configure: Cannot find sources in \`${srcdir}'." 1>&2
+  fi
+  exit 1
+fi
+# Preserve a srcdir of `.' to avoid automounter screwups with pwd.
+# (and preserve ./ and .//)
+# But we can't avoid them for `..', to make subdirectories work.
+case $srcdir in
+  .|./|.//|/*|~*) ;;
+  *) srcdir=`cd $srcdir; pwd` ;; # Make relative path absolute.
+esac
+])
+dnl
    

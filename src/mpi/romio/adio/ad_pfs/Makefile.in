@@ -1,8 +1,12 @@
 CC          = @CC@
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I../include
 AR          = @AR@
 LIBNAME     = @LIBNAME@
+srcdir      = @srcdir@
+
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@  -I${srcdir}/../include
 CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
+
+@VPATH@
 
 AD_PFS_OBJECTS = ad_pfs_close.o ad_pfs_read.o ad_pfs_rdcoll.o \
       ad_pfs_wrcoll.o ad_pfs_open.o ad_pfs_write.o ad_pfs_done.o \
@@ -12,10 +16,10 @@ AD_PFS_OBJECTS = ad_pfs_close.o ad_pfs_read.o ad_pfs_rdcoll.o \
 default: $(LIBNAME)
 
 .c.o:
-	$(CC) $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $<
 
 $(LIBNAME): $(AD_PFS_OBJECTS)
 	$(AR) $(LIBNAME) $(AD_PFS_OBJECTS)
 
 clean:
-	rm *.o
+	@rm -f *.o

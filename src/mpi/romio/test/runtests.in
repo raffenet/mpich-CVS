@@ -1,5 +1,6 @@
 #! /bin/sh
 mpirun="@MPIRUN@"
+STOPFILE=$HOME/.stopmpichtests
 #
 # If the programs are not available, run make.
 runtests=1
@@ -7,9 +8,10 @@ makeeach=0
 check_at_once=1
 quiet=0
 MAKE="@MAKE@"
+srcdir=@srcdir@
 check_canrun=0
 FILENAME=test
-# Using shifts should  remove args from the list.
+# Using shifts should remove args from the list.
 for arg in "$@" ; do
     case $arg in 
 	-checkonly)
@@ -47,7 +49,7 @@ for arg in "$@" ; do
 	shift
 	echo "runtests [-fname=FILENAME] [-checkonly] [-atend] [-check]"
 	echo "run tests in this directory.  If -checkonly set, just run"
-	echo "the differences check (do NO rerun the test programs)."
+	echo "the differences check (do NOT rerun the test programs)."
 	echo "If -small is used, the examples are built, run, and deleted."
 	echo "If -atend is used, the success of the tests is checked only"
 	echo "at the end of the test rather than also after each test."
@@ -66,6 +68,10 @@ done
 
 # MakeExe program-name
 MakeExe() {
+    if [ -s $STOPFILE ] ; then 
+        echo "Found stopfile; exiting"
+        exit 0
+    fi
     if [ ! -x $1 ] ; then
 	$MAKE $1
         if [ ! -x $1 ] ; then 
@@ -94,7 +100,7 @@ OutTime() {
 # Do an "on the fly" check for problems.
 CheckOutput() {
   if [ $check_at_once = 1 ] ; then
-    stdfile=std/$1.std
+    stdfile=${srcdir}/std/$1.std
     if [ ! -s $1.out ] ; then
         echo "No output file $1.out!"
     elif [ -s $stdfile ] ; then
@@ -228,6 +234,27 @@ $mpirun -np 4 misc -fname $FILENAME "$@" >> misc.out 2>&1
 CheckOutput misc
 CleanExe misc
 #
+OutTime
+testfiles="$testfiles shared_fp.out"
+\rm -f shared_fp.out
+MakeExe shared_fp
+\rm -f $FILENAME*
+echo '**** Testing shared_fp.c ****'
+$mpirun -np 4 shared_fp -fname $FILENAME "$@" >> shared_fp.out 2>&1
+CheckOutput shared_fp
+CleanExe shared_fp
+#
+#
+OutTime
+testfiles="$testfiles split_coll.out"
+\rm -f split_coll.out
+MakeExe split_coll
+\rm -f $FILENAME*
+echo '**** Testing split_coll.c ****'
+$mpirun -np 4 split_coll -fname $FILENAME "$@" >> split_coll.out 2>&1
+CheckOutput split_coll
+CleanExe split_coll
+#
 if [ @NOF77@ = 0 ] ; then 
     echo ""
     echo "FORTRAN TESTS"
@@ -267,7 +294,7 @@ echo '*** Checking for differences from expected output ***'
 /bin/rm -f iotests.diff
 nodiff=1
 for file in $testfiles ; do
-    stdfile="std/`basename $file .out`.std"
+    stdfile="${srcdir}/std/`basename $file .out`.std"
     # if basename is sendrecv or isndrcv, then we may want to test 
     # with .std2 as well.  We should really separate out the long double
     # tests ...

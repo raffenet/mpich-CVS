@@ -16,6 +16,8 @@ MPIO_DIRS   = mpi-io
 ALL_DIRS    = mpi-io mpi-io/fortran mpi2-other/info mpi2-other/info/fortran mpi2-other/array mpi2-other/array/fortran adio/common adio/ad_pfs adio/ad_piofs adio/ad_nfs adio/ad_ufs adio/ad_xfs adio/ad_hfs adio/ad_sfs test
 SHELL       = /bin/sh
 
+@VPATH@
+
 all: mpio
 
 mpio:

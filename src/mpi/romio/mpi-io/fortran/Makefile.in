@@ -1,9 +1,13 @@
 CC          = @CC@
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I../../adio/include
 AR          = @AR@
 RANLIB      = @RANLIB@
 LIBNAME     = @LIBNAME@
+srcdir      = @srcdir@
+
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I${srcdir}/../../adio/include
 CFLAGS      = @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
+
+@VPATH@
 
 MPIO_FOBJECTS = closef.o readf.o openf.o writef.o get_extentf.o \
       ireadf.o iwritef.o iotestf.o iowaitf.o seekf.o \
@@ -52,16 +56,16 @@ all: $(LIBNAME)
 .SUFFIXES: $(SUFFIXES) .p
 
 .c.o:
-	$(CC) $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $<
 
 .c.p:
-	@cp $*.c _$*.c
+	@cp $(srcdir)/$*.c _$*.c
 	$(CC) $(CFLAGS) -c _$*.c
 	@rm -f _$*.c
 
 profile: $(MPIO_TMP_PFOBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_REAL_PFOBJECTS)
-	@rm -f _*.o
+	@rm -f $(srcdir)/_*.o
 
 $(LIBNAME): $(MPIO_FOBJECTS)
 	$(AR) $(LIBNAME) $(MPIO_FOBJECTS)
