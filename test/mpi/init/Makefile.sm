@@ -9,6 +9,7 @@ smvar_do_sharedlibs = 0
 EXTRA_PROGRAMS = 
 exitst1_SOURCES = exitst1.c
 exitst2_SOURCES = exitst2.c
+exitst3_SOURCES = exitst3.c
 initstat_SOURCES = initstat.c 
 version_SOURCES = version.c
 timeout_SOURCES = timeout.c
