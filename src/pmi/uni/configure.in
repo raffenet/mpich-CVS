@@ -126,7 +126,9 @@ dnl
 dnl Find a C compiler (choose gcc first)
 AC_PROG_CC
 AC_PATH_PROG(AR,ar)
-AC_PATH_PROG(RANLIB,ranlib)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
 dnl
 dnl Find SSH.  If SSH is defined, use that instead
 dnl AC_PATH_PROG(SSH,ssh)

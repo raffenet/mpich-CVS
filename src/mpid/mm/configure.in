@@ -102,7 +102,9 @@ export master_top_srcdir
 
 AC_PROG_CC
 AC_PATH_PROG(AR,ar)
-AC_PATH_PROG(RANLIB,ranlib)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
 PAC_PROG_MAKE
 AC_C_CONST
 PAC_C_VOLATILE

@@ -254,7 +254,9 @@ else
 fi
 AC_SUBST(AR)
 AC_PROG_INSTALL
-AC_PATH_PROG(RANLIB,ranlib)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
 AC_SUBST(RANLIB)
 # allow for a different linker for Fortran programs
 AC_SUBST(F77LINKER)
