@@ -697,7 +697,6 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 				&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("%s: nAvailRemote: %d, nUnacked: %d", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
@@ -753,7 +752,6 @@ static int ibui_post_receive(ibu_t ibu)
 				&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("%s: nAvailRemote: %d, nUnacked: %d", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib receive, status = %d\n", FCNAME, status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
@@ -871,7 +869,6 @@ static int ibui_post_ack_write(ibu_t ibu)
 	&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("%s: nAvailRemote: %d, nUnacked: %d", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return status;
@@ -962,7 +959,6 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	    &work_req);
 	if (status != IBU_SUCCESS)
 	{
-	    printf("%s: nAvailRemote: %d, nUnacked: %d", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITE);
 	    return -1;
@@ -1114,7 +1110,6 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	&work_req);
     if (status != IBU_SUCCESS)
     {
-	printf("%s: nAvailRemote: %d, nUnacked: %d", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
 	return status;
@@ -1224,7 +1219,6 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    &work_req);
 	if (status != IBU_SUCCESS)
 	{
-	    printf("%s: nAvailRemote: %d, nUnacked: %d", FCNAME, ibu->nAvailRemote, ibu->nUnacked);
 	    err_printf("%s: Error: failed to post ib send, status = %d, %s\n", FCNAME, status, iba_errstr(status));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
 	    return -1;
