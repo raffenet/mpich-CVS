@@ -100,6 +100,8 @@ foreach $_ (@ARGV) {
 
 %argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)',
 		  'MPI_Status *'  => '(MPI_Status *)(ARG)',
+		  'MPI_File' => '(MPI_File)(ARG)',
+		  'MPI_File *' => '(MPI_File *)(ARG)', 
 		  'int [][3]' => '(int (*)[3])(ARG)'
 );
 
