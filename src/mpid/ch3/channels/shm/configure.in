@@ -22,21 +22,22 @@ fi
 
 PAC_PROG_MAKE
 
-dnl AC_DEFINE(IBU_TYPE_UNIX,,[Define to use unix iovecs])
+AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
+
+AC_CHECK_FUNCS( yield sched_yield usleep sleep select )
+AC_CHECK_FUNCS( mutex_init compare_and_swap )
+AC_CHEKC_FUNCS( pthread_mutexattr_init pthread_mutexattr_setpshared )
 
 AC_CHECK_HEADERS(				\
     assert.h					\
     errno.h					\
     fcntl.h					\
-    netdb.h					\
-    netinet/in.h				\
-    netinet/tcp.h				\
     stdlib.h					\
     sys/param.h					\
-    sys/poll.h					\
-    sys/socket.h				\
     sys/types.h					\
-    unistd.h)
+    unistd.h    \
+    pthread.h   \
+)
 
 AC_SUBST(DEVICE)
 AC_SUBST(CHANNEL)
