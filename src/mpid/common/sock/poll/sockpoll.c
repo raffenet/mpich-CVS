@@ -432,12 +432,12 @@ int sock_post_connect(sock_set_t sock_set, void * user_ptr, char * host, int por
     else if (errno == EINPROGRESS)
     {
 	/* connection pending */
-	sock->pollfd->events |= POLLOUT;
+	sock->pollfd->events |= POLLOUT | POLLERR;
     }
     else
     {
 	if (errno == ECONNREFUSED)
-	{ 
+	{
 	    socki_event_enqueue(sock->sock_set, SOCK_OP_CONNECT, 0, user_ptr, SOCK_ERR_CONN_REFUSED);
 	}
 	else
@@ -448,7 +448,6 @@ int sock_post_connect(sock_set_t sock_set, void * user_ptr, char * host, int por
 
   fn_exit:
     *sockp = sock;
-    
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CONNECT);
     return SOCK_SUCCESS;
 
@@ -686,6 +685,18 @@ int sock_wait(sock_set_t sock_set, int millisecond_timeout, sock_event_t * event
 			socki_event_enqueue(pollinfo->sock->sock_set, SOCK_OP_READ, pollinfo->read_nb, pollinfo->user_ptr,
 					    SOCK_ERR_CONN_FAILED);
 			pollfd->events &= ~POLLIN;
+		    }
+		    if (pollfd->events & POLLOUT)
+		    {
+			if (pollinfo->state == SOCK_STATE_CONNECTING)
+			{
+			    socki_event_enqueue(pollinfo->sock->sock_set, SOCK_OP_CONNECT, 0, pollinfo->user_ptr, SOCK_ERR_CONN_FAILED);
+			}
+			else
+			{
+			    socki_event_enqueue(pollinfo->sock->sock_set, SOCK_OP_WRITE, pollinfo->write_nb, pollinfo->user_ptr, SOCK_ERR_CONN_FAILED);
+			}
+			pollfd->events &= ~POLLOUT;
 		    }
 		}
 	    }
