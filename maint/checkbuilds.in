@@ -37,33 +37,30 @@ $has_cxx = 1;
 #
 # Set available options.  For enable and with, the values are
 # {with,enable}-name[;possiblevalues]*
+# We need a way to keep these consistent with the arguments recognized by
+# configure
 @enable_array = ( 
 		  'error-checking;no;runtime;all', 
 		  'error-messages;all;generic;class;none',
 		  'timer-type;linux86_cycle;gethrtime;clock_gettime;gettimeofday;linuxalpha_cycle',
 		  'timing;none;all;runtime;log;log_detailed',
-		  'mpi-macros',
-		  'g;none;all;handle;mem;dbg',
-		  'internat',
+		  'g;none;all;handle;dbg',
 		  'fast',
 		  'f77',
-		  'f90',
 		  'cxx',
 		  'romio',
 		  'coverage',
 		  'strict',
 		  'weak_symbols;no;yes',
-		  'debugger',
-		  'sharedlibs;gcc',
 #                 'threads;single;multiple',
-		  'dependencies',
+#		  'dependencies',
 );
 %chosenEnable = ();
 @with_array = (
-	       'logging;none;rlog;dlog;lwlog',
+	       'logging;none;rlog;dlog',
 	       'pmi;simple',    #; uni no longer supported
 	       'pm;forker;mpd', #;remshell
-	       'namepublisher;no;file;pmiext', #;ldap:ldapserver',
+	       'namepublisher;no;file', #;ldap:ldapserver',
 	       'device;ch3;ch3:shm;ch3:ssm',
 );
 %chosenWith = ();
