@@ -19,20 +19,20 @@ into MPI implementations).
 This section will briefly review other MPI implementation designs.
 
 Other implementations of MPI include ones from IBM \cite{mpi-ibm},
-Sun \cite{mpi-sun}, MPI Software technology \cite{mpi-softtech} and
+Sun \cite{hat01:sun-mpi}, MPI Software technology \cite{mpi-softtech} and
 Critical Software \cite{mpi-critical-software}.  The IBM, Sun, and MPI
 Software technology versions offer support for \code{MPI_THREAD_MULTIPLE}.
 
 Several implementations have been developed that rely on remote memory
-operations, including IBM LAPI \cite{mpi-lapi}, DEC (now HP) memory
-channel \cite{mpi-dec-memory-channel}, Infiniband
+operations, including IBM LAPI \cite{mpi-LAPI99}, DEC (now HP) memory
+channel \cite{DEC-memchannel2}, Infiniband
 \cite{mpi-infiniband}, and BIP \cite{mpi-bip}.  
 
 Several implementations of the MPI one-sided operations have been
 described; see \cite{mpi-sun-rma}, \cite{mpi-fujitsu-rma}.
 
-The major cluster implementations are MPICH \cite{mpich} and LAM/MPI
-\cite{lam-mpi}.  
+The major cluster implementations are MPICH
+\cite{gropp-lusk-doss-skjellum:mpich} and LAM/MPI \cite{lam,lam-www-iu}.  
 
 An example of the use of both lock-free shared-memory operations and threads
 as MPI ``processes'' is presented in \cite{tang00:mpi-impl}.  
