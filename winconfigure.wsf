@@ -1146,6 +1146,12 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef HAVE_ALARM */")
 				Case "HAVE_SETITIMER"
 					fout.WriteLine("/* #undef HAVE_SETITIMER */")
+				Case "USE_MPI_FOR_NMPI"
+					fout.WriteLine("/* #undef USE_MPI_FOR_NMPI */")
+				Case "USE_MACROS_FOR_WTIME"
+					fout.WriteLine("/* #undef USE_MACROS_FOR_WTIME */")
+				Case "HAVE_CSHARP_BINDING"
+					fout.WriteLine("/* #undef HAVE_CSHARP_BINDING */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
