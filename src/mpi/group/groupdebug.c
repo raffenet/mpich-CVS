@@ -5,6 +5,7 @@
  */
 
 #include "mpiimpl.h"
+#include "group.h"
 
 /* style: allow:fprintf:2 sig:0 */
 
