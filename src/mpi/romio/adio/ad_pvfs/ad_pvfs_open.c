@@ -53,5 +53,15 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
 	fd->fp_ind = fd->fp_sys_posn = pvfs_lseek(fd->fd_sys, 0, SEEK_END);
 
+    if (fd->fd_sys != -1) {
+	pvfs_ioctl(fd->fd_sys, GET_META, &pstat);
+	sprintf(value, "%d", pstat.pcount);
+	MPI_Info_set(fd->info, "striping_factor", value);
+	sprintf(value, "%d", pstat.ssize);
+	MPI_Info_set(fd->info, "striping_unit", value);
+	sprintf(value, "%d", pstat.base);
+	MPI_Info_set(fd->info, "start_iodevice", value);
+    }
+
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 }
