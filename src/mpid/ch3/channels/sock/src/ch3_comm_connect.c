@@ -50,7 +50,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     if (mpi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_name_length_max", "**pmi_kvs_get_name_length_max %d", mpi_errno);
-	return mpi_errno;
+	goto fn_exit;
     }
 
     remote_root_pg->kvs_name = MPIU_Malloc(kvs_namelen + 1);
@@ -64,7 +64,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     if (mpi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
-	return mpi_errno;
+	goto fn_exit;
     }
     
     remote_root_pg->pg_id = MPIU_Malloc(id_sz + 1);
@@ -121,7 +121,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
     if (mpi_errno != PMI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_value_length_max", "**pmi_kvs_get_value_length_max %d", mpi_errno);
-	return mpi_errno;
+	goto fn_exit;
     }
     val = (char *) MPIU_Malloc(val_max_sz);
     if (val == NULL)
@@ -327,7 +327,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
 	if (mpi_errno != PMI_SUCCESS)
 	{
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", mpi_errno);
-            return mpi_errno;
+            goto fn_exit;
 	}
         key = (char *) MPIU_Malloc(key_max_sz);
         if (key == NULL)

@@ -839,6 +839,9 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", mpi_errno);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
+        return mpi_errno;
     }
     key = MPIU_Malloc(key_max_sz);
     if (key == NULL)
@@ -1112,6 +1115,9 @@ static inline MPIDI_CH3I_Connection_t * connection_alloc(void)
     mpi_errno = PMI_Get_id_length_max(&id_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
+	/* return mpi_errno;*/
+	MPID_Abort(NULL, mpi_errno, 13);
     }
     conn->pg_id = MPIU_Malloc(id_sz + 1);
     if (conn->pg_id == NULL)
