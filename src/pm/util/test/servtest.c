@@ -13,8 +13,8 @@ struct iofds { int readOut[2], readErr[2]; };
 typedef struct { char label[32]; int lastNL; } IOLabel;
 
 int mypreamble( void * );
-int myprefork( void *, void * );
-int mypostamble( void *, void * );
+int myprefork( void *, void *, ProcessState* );
+int mypostamble( void *, void *, ProcessState* );
 int labeler( int, int, void * );
 
 /* 
@@ -47,7 +47,7 @@ int mypreamble( void *data )
     if (pipe(newfds->readErr)) return -1;
 }
 /* Close one side of each pipe pair and replace stdout/err with the pipes */
-int myprefork( void *predata, void *data )
+int myprefork( void *predata, void *data, ProcessState *pState )
 {
     struct iofds *newfds = (struct iofds *)predata;
 
@@ -60,7 +60,7 @@ int myprefork( void *predata, void *data )
 }
 #include <fcntl.h>
 /* Close one side of the pipe pair and register a handler for the I/O */
-int mypostamble( void *predata, void *data )
+int mypostamble( void *predata, void *data, ProcessState *pState )
 {
     struct iofds *newfds = (struct iofds *)predata;
     IOLabel *leader, *leadererr;
@@ -71,10 +71,11 @@ int mypostamble( void *predata, void *data )
 
     /* We need dedicated storage for the private data */
     leader = (IOLabel *)malloc( sizeof(IOLabel) );
-    snprintf( leader->label, sizeof(leader->label), "%d>", wRank++ );
+    snprintf( leader->label, sizeof(leader->label), "%d>", pState->wRank );
     leader->lastNL = 1;
     leadererr = (IOLabel *)malloc( sizeof(IOLabel) );
-    snprintf( leadererr->label, sizeof(leadererr->label), "err%d>", wRank++ );
+    snprintf( leadererr->label, sizeof(leadererr->label), "err%d>", 
+	      pState->wRank );
     leadererr->lastNL = 1;
     MPIE_IORegister( newfds->readOut[0], IO_READ, labeler, leader );
     MPIE_IORegister( newfds->readErr[0], IO_READ, labeler, leadererr );

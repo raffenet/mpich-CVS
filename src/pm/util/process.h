@@ -121,8 +121,8 @@ extern ProcessUniverse pUniv;
 /* Function prototypes */    
 int MPIE_ForkProcesses( ProcessWorld *, char *[], 
 			int (*)(void*), void *,
-			int (*)(void*,void*), void *,
-			int (*)(void*,void*), void * );
+			int (*)(void*,void*,ProcessState*), void *,
+			int (*)(void*,void*,ProcessState*), void * );
 ProcessState *MPIE_FindProcessByPid( pid_t );
 void MPIE_ProcessInit( void );
 void MPIE_SetupSigChld( void );

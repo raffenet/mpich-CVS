@@ -130,6 +130,8 @@ static int fPMI_Handle_spawn( PMIProcess * );
 static int fPMI_Handle_get_universe_size( PMIProcess * );
 static int fPMI_Handle_get_appnum( PMIProcess * );
 
+static PMIKVSpace *fPMIKVSAllocate( void );
+
 int PMIServHandleInput( int, int, void * );
 
 typedef struct {
@@ -242,7 +244,8 @@ PMIProcess *PMISetupNewProcess( int fd, ProcessState *pState )
 }
 
 /* Initialize a new PMI group that will be the parent of all
-   PMIProcesses until the next group is created */
+   PMIProcesses until the next group is created 
+   Each group also starts with a KV Space */
 int PMISetupNewGroup( int nProcess )
 {
     PMIGroup *g;
@@ -270,6 +273,9 @@ int PMISetupNewGroup( int nProcess )
 	    g = g->nextGroup;
 	}
     }
+    curPMIGroup->kvs = fPMIKVSAllocate();
+
+    return 0;
 }
 
 
@@ -496,24 +502,45 @@ static int fPMI_Handle_barrier( PMIProcess *pentry )
     return 0;
 }
 
-/* Create a kvs and generate its name; return that name as the argument */
-static int fPMIKVSAllocate( char kvsname[], int maxlen )
+/* Create a kvs and return a pointer to it */
+static PMIKVSpace *fPMIKVSAllocate( void )
 {
-    PMIKVSpace *kvs;
+    PMIKVSpace *kvs, **kPrev, *k;
+    int        rc;
     static int kvsnum = 0;    /* Used to generate names */
 
     /* Create the space */
     kvs = (PMIKVSpace *)MPIU_Malloc( sizeof(PMIKVSpace) );
     if (!kvs) {
 	MPIU_Internal_error_printf( stderr, "too many kvs's\n" );
-	return -1;
+	return 0;
     }
-    MPIU_Snprintf( kvsname, maxlen, "kvs_%d", kvsnum++ );
-    /* Cast for the one and only assignment of this name */
-    MPIU_Strncpy( (char*)(kvs->kvsname), kvsname, MAXNAMELEN );
+    MPIU_Snprintf( (char *)(kvs->kvsname), MAXNAMELEN, "kvs_%d", kvsnum++ );
     kvs->pairs     = 0;
     kvs->lastByIdx = 0;
     kvs->lastIdx   = -1;
+
+    /* Insert into the list of KV spaces */
+    kPrev = &pmimaster.kvSpaces;
+    k     = pmimaster.kvSpaces;
+    while (k) {
+	rc = strcmp( k->kvsname, kvs->kvsname );
+	if (rc > 0) break;
+	kPrev = &k->nextKVS;
+	k     = k->nextKVS;
+    }
+    kvs->nextKVS = k;
+    *kPrev = kvs;
+
+    return kvs;
+}
+/* Create a kvs and generate its name; return that name as the argument */
+static int fPMIKVSGetNewSpace( char kvsname[], int maxlen )
+{
+    PMIKVSpace *kvs;
+
+    kvs = fPMIKVSAllocate( );
+    MPIU_Strncpy( kvsname, kvs->kvsname, maxlen );
     return 0;
 }
 static int fPMIKVSFindKey( PMIKVSpace *kvs, 
@@ -648,7 +675,7 @@ static int fPMI_Handle_create_kvs( PMIProcess *pentry )
     char kvsname[MAXKVSNAME], outbuf[PMIU_MAXLINE];
     int rc;
 
-    rc = fPMIKVSAllocate( kvsname, sizeof(kvsname) );
+    rc = fPMIKVSGetNewSpace( kvsname, sizeof(kvsname) );
     if (rc) {
 	/* PANIC - allocation failed */
 	return 1;
@@ -781,9 +808,19 @@ static int fPMI_Handle_get( PMIProcess *pentry )
 static int fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
-    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=my_kvsname kvsname=%s\n",
-	      pentry->group->kvs->kvsname );
+    PMIKVSpace *kvs;
+
+    kvs = pentry->group->kvs;
+    if (kvs && kvs->kvsname) {
+	MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=my_kvsname kvsname=%s\n",
+		       kvs->kvsname );
+    }
+    else {
+	MPIU_Internal_error_printf( "Group has no associated KVS" );
+	return -1;
+    }
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     return 0;
 }
 
@@ -792,9 +829,10 @@ static int fPMI_Handle_get_universe_size( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
     /* Import the universe size from the process structures */
-    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=universe_size size=%s\n",
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=universe_size size=%d\n",
 	      pUniv.size );
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     return 0;
 }
 
@@ -806,6 +844,7 @@ static int fPMI_Handle_get_appnum( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=appnum appnum=%d\n",
 		   app->myAppNum );		
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     return 0;
 }
 
@@ -829,6 +868,7 @@ static int fPMI_Handle_init( PMIProcess *pentry )
 	      "cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n",
 	      PMI_VERSION, PMI_SUBVERSION, rc);
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     return 0;
 }
 
@@ -840,6 +880,7 @@ static int fPMI_Handle_get_maxes( PMIProcess *pentry )
 	      "cmd=maxes kvsname_max=%d keylen_max=%d vallen_max=%d\n",
 	      MAXKVSNAME, MAXKEYLEN, MAXVALLEN );
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     return 0;
 }
 
@@ -887,6 +928,7 @@ static int fPMI_Handle_getbyidx( PMIProcess *pentry )
     }
 
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     return rc;
 }
 
@@ -906,11 +948,14 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", 
 		   pentry->group->nProcess );
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", 
 		   pentry->pState->wRank );
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
+    DBG_PRINTF( "%s", outbuf );
     return 0;
 }
 
@@ -921,6 +966,8 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 
        Output:
        cmd=spawn_result remote_kvsname=name rc=integer
+
+       DBG_PRINTF( "%s", outbuf );
     */
     return 0;
 }

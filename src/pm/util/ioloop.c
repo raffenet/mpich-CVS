@@ -98,6 +98,7 @@ int MPIE_IOLoop( int timeoutSeconds )
 	FD_ZERO( &writefds );
 	/* maxfd is the maximum active fd */
 	maxfd = -1;
+	activefds = 0;
 	for (i=0; i<=maxFD; i++) {
 	    if (handlesByFD[i].handler) {
 		fd = handlesByFD[i].fd;

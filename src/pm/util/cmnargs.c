@@ -187,11 +187,13 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 		indexOfFirstArg = -1;
 	    }
 	    
-	    /* Create a new app */
+	    /* Create a new app and add to the app list*/
 	    pApp = (ProcessApp*) MPIU_Malloc( sizeof(ProcessApp) );
 	    *nextAppPtr = pApp;
 	    nextAppPtr = &(pApp->nextApp);
 	    pApp->nextApp = 0;
+	    pUniv->worlds[0].nApps++;
+
 	    pApp->pState  = 0;
 	    /* Save the properties of this app */
 	    pApp->exename  = exename;
@@ -221,6 +223,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 		pApp->nProcess    = np;
 		pApp->soft.nelm   = 0;
 		pApp->soft.tuples = 0;
+		pUniv->worlds[0].nProcess += np;
 	    }
 	    pApp->myAppNum = appnum++;
 

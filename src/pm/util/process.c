@@ -70,8 +70,10 @@ ProcessUniverse pUniv;
   @*/
 int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 			int (*preamble)(void*), void *preambleData,
-			int (*postfork)(void*,void*), void *postforkData,
-			int (*postamble)(void*,void*), void *postambleData
+			int (*postfork)(void*,void*,ProcessState*), 
+			void *postforkData,
+			int (*postamble)(void*,void*,ProcessState*), 
+			void *postambleData
 			)
 {
     pid_t         pid;
@@ -114,7 +116,7 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 		/* exec the process (this call only returns if there is an 
 		   error */
 		if (postfork) {
-		    rc = (*postfork)( preambleData, postforkData );
+		    rc = (*postfork)( preambleData, postforkData, &pState[i] );
 		}
 		rc = MPIE_ExecProgram( &pState[i], envp );
 		if (rc) {
@@ -128,10 +130,16 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 		pState[i].pid = pid;
 
 		if (postamble) {
-		    rc = (*postamble)( preambleData, postambleData );
+		    rc = (*postamble)( preambleData, postambleData, 
+				       &pState[i] );
+		    if (rc) {
+			MPIU_Internal_error_printf( 
+				      "mpiexec postamble failed\n" );
+			/* FIXME: kill children */
+			exit(1);
+		    }
 		}
 	    }
-	    
 	}
 	
 	app = app->nextApp;

@@ -87,6 +87,7 @@ PMIProcess *PMISetupNewProcess( int, ProcessState * );
 int PMISetupSockets( int, PMISetup * );
 int PMISetupInClient( PMISetup * );
 int PMISetupFinishInServer( PMISetup *, ProcessState * );
+int PMISetupNewGroup( int );
 
 #if 0
 /*
