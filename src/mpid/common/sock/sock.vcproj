@@ -280,7 +280,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".,iocp,..\..\..\include,..\..\ch3\channels\mm\include,..\..\ch3\include,..\datatype"
-				PreprocessorDefinitions="WIN32,_DEBUG,WIN32,_DEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG,USE_LOGGING=MPID_LOGGING_RLOG"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
