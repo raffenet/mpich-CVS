@@ -1655,7 +1655,6 @@ extern Datatype TWOINTEGER;
 		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
 		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
                   MAX_INFO_VAL, MAX_INFO_KEY, 
-		  MAX_DATAREP_STRING, 
 		  UNDEFINED, LOCK_EXCLUSIVE, LOCK_SHARED, 
 		  WIN_BASE, WIN_DISP_UNIT, WIN_SIZE, 
 		  @errclasses ) {
@@ -1672,10 +1671,19 @@ extern Datatype TWOINTEGER;
     }
     print $OUTFD "#endif\n";
 
-    # Other file constants
-    foreach $int (DISPLACEMENT_CURRENT, DISTRIBUTE_BLOCK, DISTRIBUTE_CYCLIC,
+    foreach $int (DISTRIBUTE_BLOCK, DISTRIBUTE_CYCLIC,
 		  DISTRIBUTE_DFLT_DARG, DISTRIBUTE_NONE, ORDER_C, 
 		  ORDER_FORTRAN) {
+        print $OUTFD "${extern}const int $int";
+	if ($giveValue) { print $OUTFD " = MPI_$int;\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+
+    print $OUTFD "// Include these only if MPI-IO is available\n";
+    print $OUTFD "#ifdef MPI_MODE_RDONLY\n";
+
+    # Other file constants
+    foreach $int (DISPLACEMENT_CURRENT, MAX_DATAREP_STRING) {
         print $OUTFD "${extern}const int $int";
 	if ($giveValue) { print $OUTFD " = MPI_$int;\n"; }
 	else            { print $OUTFD ";\n"; }
@@ -1689,6 +1697,8 @@ extern Datatype TWOINTEGER;
 	if ($giveValue) { print $OUTFD " = MPI_MODE_$int;\n"; }
 	else            { print $OUTFD ";\n"; }
     }
+    print $OUTFD "#endif // IO\n";
+
     # MPI Combiners
     foreach $int (CONTIGUOUS, DARRAY, DUP, F90_COMPLEX, F90_INTEGER, 
 		  F90_REAL, HINDEXED_INTEGER, HINDEXED, HVECTOR_INTEGER,
@@ -1999,6 +2009,7 @@ void MPIR_Call_errhandler_fn( int kind, int *handle, int *errcode,
     case 0: // comm
 	    //	    MPI::Comm::Err
 	    break;
+#ifdef MPI_MODE_RDONLY
     case 1: // file
 	    {
 		MPI::File fh = (MPI_File)*(MPI_File*)handle;
@@ -2006,10 +2017,12 @@ void MPIR_Call_errhandler_fn( int kind, int *handle, int *errcode,
 		(*f)( fh, errcode );
 	    }
 	    break;
+#endif // IO
     case 2: // win
 	    break;
     }
 }
+#ifdef MPI_MODE_RDONLY
 Errhandler File::Create_errhandler( Errhandler_fn *f )
 {
     MPI_Errhandler eh;
@@ -2020,6 +2033,7 @@ Errhandler File::Create_errhandler( Errhandler_fn *f )
     e1.the_real_errhandler = eh;
     return e1;
 }
+#endif // IO
 Errhandler Comm::Create_errhandler( Errhandler_fn *f )
 {
     MPI_Errhandler eh;
