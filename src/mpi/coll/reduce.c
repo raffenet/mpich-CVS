@@ -574,7 +574,8 @@ int MPIR_Reduce (
 /* end:nested */
 
 /* begin:nested */
-PMPI_LOCAL int MPIR_Reduce_inter ( 
+/* Needed in intercommunicator allreduce */
+/*PMPI_LOCAL */int MPIR_Reduce_inter ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 

@@ -754,27 +754,27 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
     if (comm_ptr->is_low_group) {
         /* reduce from right group to rank 0*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
-                                root, comm_ptr);  
+        mpi_errno = MPIR_Reduce_inter(sendbuf, recvbuf, count, datatype, op,
+				      root, comm_ptr);  
         if (mpi_errno) return mpi_errno;
 
         /* reduce to rank 0 of right group */
         root = 0;
-        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
-                                root, comm_ptr);  
+        mpi_errno = MPIR_Reduce_inter(sendbuf, recvbuf, count, datatype, op,
+				      root, comm_ptr);  
         if (mpi_errno) return mpi_errno;
     }
     else {
         /* reduce to rank 0 of left group */
         root = 0;
-        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
-                                root, comm_ptr);  
+        mpi_errno = MPIR_Reduce_inter(sendbuf, recvbuf, count, datatype, op,
+				      root, comm_ptr);  
         if (mpi_errno) return mpi_errno;
 
         /* reduce from right group to rank 0 */
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op,
-                                root, comm_ptr);  
+        mpi_errno = MPIR_Reduce_inter(sendbuf, recvbuf, count, datatype, op,
+				      root, comm_ptr);  
         if (mpi_errno) return mpi_errno;
     }
 
