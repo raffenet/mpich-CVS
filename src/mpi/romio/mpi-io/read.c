@@ -100,6 +100,9 @@ int MPI_File_read(MPI_File fh, void *buf, int count,
 #ifdef MPI_hpux
 	HPMP_IO_END(fl_xmpi, fh, datatype, count);
 #endif /* MPI_hpux */
+#ifdef HAVE_STATUS_SET_BYTES
+       MPIR_Status_set_bytes(status, datatype, 0);
+#endif
 	return MPI_SUCCESS;
     }
 

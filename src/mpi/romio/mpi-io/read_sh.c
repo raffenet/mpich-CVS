@@ -90,7 +90,12 @@ int MPI_File_read_shared(MPI_File fh, void *buf, int count,
     }
 
     MPI_Type_size(datatype, &datatype_size);
-    if (count*datatype_size == 0) return MPI_SUCCESS;
+    if (count*datatype_size == 0) {
+#ifdef HAVE_STATUS_SET_BYTES
+	MPIR_Status_set_bytes(status, datatype, 0);
+#endif
+	return MPI_SUCCESS;
+    }
 
     if ((count*datatype_size) % fh->etype_size != 0) {
 #ifdef MPICH2
