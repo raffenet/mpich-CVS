@@ -1,5 +1,8 @@
 ALL: adi3new.ps tcpadi3.ps adi3new.pdf 
 SHELL = /bin/sh
+srcdir = @srcdir@
+
+VPATH = .:@srcdir@
 
 # Set MPICH2 to the location of the MPICH source tree.  If this is
 # built from within the MPICH2 distribution, then a relative path of 
@@ -22,10 +25,10 @@ paper.dvi: paper.tex
 .dvi.pdf:
 	(unset TEXMF ; dvipdfm $* )
 .tex.dvi:
-	-latex $* </dev/null 2>&1 >/dev/null
+	-latex $< </dev/null 2>&1 >/dev/null
 	-bibtex $*
-	-latex $* </dev/null 2>&1 >/dev/null
-	-latex $*
+	-latex $< </dev/null 2>&1 >/dev/null
+	-latex $<
 
 .idx.ind:
 	rm -f tmp.idx tmp.ind
@@ -62,7 +65,7 @@ refman.sty: $(DOCTEXTSTYLE)/refman.sty
 
 adi3man.dvi: adi3man/MPID_Init.c $(ADI3FILES) refman.sty
 	${MAKE} lists
-	-cp adi3man.tex adi3man/adi3man.tex
+	-cp $(srcdir)/adi3man.tex adi3man/adi3man.tex
 	-(cd adi3man ;
 	latex adi3man < /dev/null 2>&1 >/dev/null ;\
 	bibtex adi3man ;\
@@ -85,11 +88,11 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps mpiddir.eps Makefile adi3man/MPID_Init.tex refman.sty
 adi3new.ps: $(ADI3NEWFILES)
 	touch adi3new.ind
-	-latex adi3new < /dev/null 2>&1 >/dev/null
+	-latex $(srcdir)/adi3new < /dev/null 2>&1 >/dev/null
 	-bibtex adi3new
 	make adi3new.ind 
-	-latex adi3new < /dev/null 2>&1 >/dev/null
-	latex adi3new < /dev/null
+	-latex $(srcdir)/adi3new < /dev/null 2>&1 >/dev/null
+	latex $(srcdir)/adi3new < /dev/null
 	dvips adi3new
 
 adi3new.pdf: $(ADI3NEWFILES) adi3man/MPID_Init.tex
@@ -98,7 +101,7 @@ adi3new.pdf: $(ADI3NEWFILES) adi3man/MPID_Init.tex
 	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
 	    -e '/usepackage{.*url}/d' \
-		adi3new.tex > adi3newpdf.tex
+		$(srcdir)/adi3new.tex > adi3newpdf.tex
 	-latex adi3newpdf < /dev/null 2>&1 >/dev/null
 	-bibtex adi3newpdf
 	make adi3newpdf.ind
@@ -111,8 +114,8 @@ adi3new.pdf: $(ADI3NEWFILES) adi3man/MPID_Init.tex
 # This isn't ready yet.  We'd like to use doctext to generate the 
 # HTML for the adi document
 adi3new/adi3new.htm: adi3new.tex adi3.c adi3.h Makefile
-	tohtml -default -dosnl adi3new.tex
-	tohtml -default -dosnl adi3new.tex
+	tohtml -default -dosnl $(srcdir)/adi3new.tex
+	tohtml -default -dosnl $(srcdir)/adi3new.tex
 
 core.dvi: core.tex adi3.c adi3.h
 	touch core-list.ind
@@ -123,7 +126,7 @@ tcpadi3.pdf: tcpadi3.tex
 	rm -f tcpadi3pdf.tex
 	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
 	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
-		tcpadi3.tex > tcpadi3pdf.tex
+		$(srcdir)/tcpadi3.tex > tcpadi3pdf.tex
 	make tcpadi3pdf.dvi
 	dvipdfm tcpadi3pdf
 	-mv tcpadi3pdf.pdf tcpadi3.pdf
@@ -133,7 +136,7 @@ tcpadi3.pdf: tcpadi3.tex
 WEBDIR = /mcs/www-unix/mpi/mpich2/docs
 install-web: adi3new.ps adi3new.pdf adi3new/adi3new.htm tcpadi3.ps tcpadi3.pdf
 	-rm -f ${WEBDIR}/adi3.[ch]
-	cp adi3.[ch] ${WEBDIR}/adi3
+	cp $(srcdir)/adi3.[ch] ${WEBDIR}/adi3
 	cp adi3new.ps ${WEBDIR}/adi3man.ps
 	cp adi3new.pdf ${WEBDIR}/adi3man.pdf
 	cp tcpadi3.ps ${WEBDIR}/tcpadi3.ps
@@ -147,7 +150,7 @@ install-web: adi3new.ps adi3new.pdf adi3new/adi3new.htm tcpadi3.ps tcpadi3.pdf
 	rm -f .foo
 install-web-old: adi3man.ps adi3man.pdf
 	-rm -f ${WEBDIR}/adi3.[ch]
-	cp adi3.[ch] ${WEBDIR}
+	cp $(srcdir)/adi3.[ch] ${WEBDIR}
 	cp adi3man.ps ${WEBDIR}
 	cp adi3man.pdf ${WEBDIR}
 	cp ${WEBDIR}/index.html .foo
