@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpicomm.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Intercomm_merge */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -90,7 +91,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-	    if (comm_ptr && comm_ptr->kind != MPID_INTERCOMM) {
+	    if (comm_ptr && comm_ptr->comm_kind != MPID_INTERCOMM) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_COMM,
 						  "**commnotinter", 0 );
 	    }
@@ -108,9 +109,19 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
        will be used to determine which group is ordered first in
        the generated communicator */
     local_high = high;
-    NMPI_Sendrecv( &local_high, 1, MPI_INT, 0, 0, 
-		   &remote_high, 1, MPI_INT, 0, 0, comm, MPI_STATUS_NULL );
-    
+    if (comm_ptr->rank == 0) {
+	NMPI_Sendrecv( &local_high, 1, MPI_INT, 0, 0, 
+		       &remote_high, 1, MPI_INT, 0, 0, intercomm, 
+		       MPI_STATUS_IGNORE );
+    }
+    /* All processes in the local group now need to get the 
+       value of remote_high */
+    if (!comm_ptr->local_comm) {
+	/* Manufacture the local communicator */
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
+    }
+    NMPI_Bcast( &remote_high, 1, MPI_INT, 0, comm_ptr->local_comm->handle );
+        
     /* If local_high and remote_high are the same, then order is arbitrary.
        we use the lpids of the rank 0 member of the local and remote
        groups to choose an order in this case. */
@@ -139,15 +150,16 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     newcomm_ptr->rank         = -1;
     newcomm_ptr->local_group  = 0;
     newcomm_ptr->remote_group = 0;
-    newcomm_ptr->kind         = MPID_INTRACOMM;
+    newcomm_ptr->comm_kind    = MPID_INTRACOMM;
 
     /* Now we know which group comes first.  Build the new vcr 
        from the existing vcrs */
     MPID_VCRT_Create( new_size, &newcomm_ptr->vcrt );
+    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
     if (local_high) {
 	/* remote group first */
 	j = 0;
-	for (i=0; i<comm_ptr->size; i++) {
+	for (i=0; i<comm_ptr->remote_size; i++) {
 	    MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->vcr[j++] );
 	}
 	for (i=0; i<comm_ptr->local_size; i++) {
@@ -162,7 +174,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 	    if (i == comm_ptr->rank) newcomm_ptr->rank = j;
 	    MPID_VCR_Dup( comm_ptr->local_vcr[i], &newcomm_ptr->vcr[j++] );
 	}
-	for (i=0; i<comm_ptr->size; i++) {
+	for (i=0; i<comm_ptr->remote_size; i++) {
 	    MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->vcr[j++] );
 	}
     }
@@ -172,12 +184,14 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
        operations within the context id algorithm, since we already
        have a valid (almost - see comm_create_hook) communicator.
     */
+    /* printf( "About to get context id \n" ); fflush( stdout ); */
     new_context_id = MPIR_Get_contextid( newcomm_ptr->handle );
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
+    /* printf( "Resetting contextid\n" ); fflush( stdout ); */
     newcomm_ptr->context_id = new_context_id;
 
     /* Notify the device of this new communicator */

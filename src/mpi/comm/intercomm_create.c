@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpicomm.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Intercomm_create */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -58,6 +59,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPID_Comm *peer_comm_ptr = NULL;
     int context_id, final_context_id;
     int remote_size, *remote_lpids;
+    int i;
     MPID_Comm *newcomm_ptr, *commworld_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 
@@ -129,7 +131,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 
 	NMPI_Sendrecv( local_info, 2, MPI_INT, remote_leader, tag,
 		       remote_info, 2, MPI_INT, remote_leader, tag, 
-		       peer_comm, MPI_STATUS_NULL );
+		       peer_comm, MPI_STATUS_IGNORE );
 	
 	/* With this information, we can now send and receive the 
 	   local process ids from the peer.  This works only
@@ -157,7 +159,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	NMPI_Sendrecv( local_lpids, comm_ptr->local_size, MPI_INT, 
 		       remote_leader, tag,
 		       remote_lpids, remote_size, MPI_INT, 
-		       remote_leader, tag, peer_comm, MPI_STATUS_NULL );
+		       remote_leader, tag, peer_comm, MPI_STATUS_IGNORE );
 
 	MPIU_Free( local_lpids );
 
@@ -212,30 +214,32 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     newcomm_ptr->context_id   = final_context_id;
     newcomm_ptr->remote_size  = remote_size;
     newcomm_ptr->local_size   = comm_ptr->local_size;
-    newcomm_ptr->rank         = comm_ptr->local_rank;
+    newcomm_ptr->rank         = comm_ptr->rank;
     newcomm_ptr->local_group  = 0;
     newcomm_ptr->remote_group = 0;
+    newcomm_ptr->comm_kind    = MPID_INTERCOMM;
     
     /* FIXME: for MPI1, all process ids are relative to MPI_COMM_WORLD.
        For MPI2, we'll need to do something more complex */
     commworld_ptr = MPIR_Process.comm_world;
     /* Setup the communicator's vc table: remote group */
-    MPID_VCRT_Create( n, &newcomm_ptr->vcrt );
+    MPID_VCRT_Create( remote_size, &newcomm_ptr->vcrt );
     MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
     for (i=0; i<remote_size; i++) {
 	/* For rank i in the new communicator, find the corresponding
 	   rank in the comm world (FIXME FOR MPI2) */
+	/* printf( "[%d] Remote rank %d has lpid %d\n", 
+	   MPIR_Process.comm_world->rank, i, remote_lpids[i] ); */
 	MPID_VCR_Dup( commworld_ptr->vcr[remote_lpids[i]], 
 		      &newcomm_ptr->vcr[i] );
 	}
 
-    /* Setup the communicator's vc table: local group */
-    MPID_VCRT_Create( n, &newcomm_ptr->local_vcrt );
+    /* Setup the communicator's vc table: local group.  This is
+     just a duplicate of the local_comm's group */
+    MPID_VCRT_Create( comm_ptr->local_size, &newcomm_ptr->local_vcrt );
     MPID_VCRT_Get_ptr( newcomm_ptr->local_vcrt, &newcomm_ptr->local_vcr );
     for (i=0; i<comm_ptr->local_size; i++) {
-	int lpid;
-	(void)MPID_VCR_Get_lpid( comm_ptr->vcr[i], &lpid );
-	MPID_VCR_Dup( commworld_ptr->vcr[lpid], &newcomm_ptr->local_vcr[i] );
+	MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->local_vcr[i] );
     }
 	
     /* Notify the device of this new communicator */

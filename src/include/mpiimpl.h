@@ -737,6 +737,8 @@ typedef struct MPID_Comm {
     MPID_Comm_kind_t comm_kind;  /* MPID_INTRACOMM or MPID_INTERCOMM */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+    struct MPID_Comm    *local_comm; /* Defined only for intercomms, holds
+				        an intracomm for the local group */
     struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
                                               implementing the collective 
                                               routines */

@@ -15,13 +15,17 @@ int main( int argc, char *argv[] )
 {
     MPI_Comm intercomm;
     int      remote_rank, rank, size, errs = 0, toterr;
+    volatile int trigger;
 
     MPI_Init( &argc, &argv );
+
+    trigger = 1;
+/*    while (trigger) ; */
 
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     if (size < 2) {
 	printf( "Size must be at least 2\n" );
-	MPI_Abort( MPI_COMM_WORLD );
+	MPI_Abort( MPI_COMM_WORLD, 0 );
     }
 
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
@@ -36,13 +40,14 @@ int main( int argc, char *argv[] )
 			      MPI_COMM_WORLD, remote_rank, 27, 
 			      &intercomm );
 
-	/* Now, communication between them */
+	/* Now, communicate between them */
 	MPI_Sendrecv( &lrank, 1, MPI_INT, 0, 13, 
 		      &rrank, 1, MPI_INT, 0, 13, intercomm, &status );
 
 	if (rrank != remote_rank) {
 	    errs++;
-	    printf( "Expected 5d but received %d\n", remote_rank, rrank );
+	    printf( "%d Expected %d but received %d\n", 
+		    rank, remote_rank, rrank );
 	}
 
 	MPI_Comm_free( &intercomm );
@@ -60,7 +65,6 @@ int main( int argc, char *argv[] )
 	    printf (" Found %d errors\n", toterr );
 	}
     }
-    
     
     MPI_Finalize();
     

@@ -160,6 +160,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	newcomm_ptr->context_id = new_context_id;
 	newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
 	newcomm_ptr->rank        = group_ptr->rank;
+	newcomm_ptr->comm_kind   = MPID_INTRACOMM;
 	/* Since the group has been provided, let the new communicator know
 	   about the group */
 	newcomm_ptr->local_group  = group_ptr;

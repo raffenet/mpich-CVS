@@ -1,4 +1,6 @@
 LDADD = -L ../../../lib 
 dup_LDADD = ../util/mtest.o
 dup_SOURCES=dup.c
+ic1_LDADD = ../util/mtest.o
+ic1_SOURCES=ic1.c
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include -I${top_srcdir}/test/mpi/include

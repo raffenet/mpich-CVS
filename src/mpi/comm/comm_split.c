@@ -150,6 +150,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     }
     newcomm_ptr->remote_size = new_size;
     newcomm_ptr->local_size  = new_size;
+    newcomm_ptr->comm_kind   = MPID_INTRACOMM;
     
     /* Step 4: Order the processes by their key values.  Sort the
        list that is stored in table.  To simplify the sort, we 

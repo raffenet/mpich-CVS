@@ -58,7 +58,12 @@ We don't guarantee that *anything* works yet.  However, we have run parts of
 the MPICH-1 test suite and some of the tests included with this release.
 Among the routines that compile but that are known not to work yet are:
 
-MPI_Intercomm_create and MPI_Intercomm_merge
+MPI_Cancel for sends, persistent requests
+MPI_Get_elements
+
+Routines not yet available include
+
+MPI_Bsend_init
 MPI_Sendrecv_replace
 
 VPATH Builds

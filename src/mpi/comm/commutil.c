@@ -53,6 +53,53 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
     return 0;
 }
 
+/* Create a local intra communicator from the local group of the 
+   specified intercomm.
+   For the context id, use the intercomm's context id + 2.  <- FIXME?
+ */
+int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
+{
+    MPID_Comm *localcomm_ptr;
+    int mpi_errno;
+
+    localcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
+    if (!localcomm_ptr) {
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	return mpi_errno;
+    }
+    MPIU_Object_set_ref( localcomm_ptr, 1 );
+    localcomm_ptr->context_id = intercomm_ptr->context_id + 2;
+
+    /* Duplicate the VCRT references */
+    MPID_VCRT_Add_ref( intercomm_ptr->local_vcrt );
+    localcomm_ptr->vcrt = intercomm_ptr->local_vcrt;
+    localcomm_ptr->vcr  = intercomm_ptr->local_vcr;
+
+    /* Save the kind of the communicator */
+    localcomm_ptr->comm_kind   = MPID_INTRACOMM;
+    
+    /* Set the sizes and ranks */
+    localcomm_ptr->remote_size = intercomm_ptr->local_size;
+    localcomm_ptr->rank        = intercomm_ptr->rank;
+    localcomm_ptr->local_size  = intercomm_ptr->local_size;
+
+    /* More advanced version: if the group is available, dup it by 
+       increasing the reference count */
+    localcomm_ptr->local_group  = 0;
+    localcomm_ptr->remote_group = 0;
+
+    /* This is an internal communicator, so ignore */
+    localcomm_ptr->errhandler = 0;
+    
+    /* No local functions for the collectives FIXME */
+    localcomm_ptr->coll_fns = 0;
+
+    /* We do *not* inherit any name */
+    localcomm_ptr->name[0] = 0;
+
+    intercomm_ptr->local_comm = localcomm_ptr;
+    return 0;
+}
 /*
  * Here is the routine to find a new context id.  The algorithm is discussed 
  * in detail in the mpich2 coding document.  There are versions for
@@ -115,6 +162,58 @@ void MPIR_Free_contextid( int context_id )
 
     context_mask[idx] |= (0x1 << bitpos);
 }
+/* Get a context for a new intercomm.  There are two approaches 
+   here (for MPI-1 codes only)
+   (a) Each local group gets a context; the groups exchange, and
+       the low value is accepted and the high one returned.  This
+       works because the context ids are taken from the same pool.
+   (b) Form a temporary intracomm over all processes and use that
+       with the regular algorithm.
+   
+   In some ways, (a) is the better approach because it is the one that
+   extends to MPI-2 (where the last step, returning the context, is 
+   not used and instead separate send and receive context id value 
+   are kept).  For this reason, we'll use (a).
+
+   FIXME - This approach will not work for MPI-2
+*/
+int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
+{
+    int context_id, remote_context_id, final_context_id;
+    int tag = 31567; /* FIXME */
+
+    if (!comm_ptr->local_comm) {
+	/* Manufacture the local communicator */
+	MPIR_Setup_intercomm_localcomm( comm_ptr );
+    }
+
+    context_id = MPIR_Get_contextid( comm_ptr->local_comm->handle );
+    if (context_id == 0) return 0;
+    
+    /* FIXME - need to use a different context on the communicator */
+    if (comm_ptr->rank == 0) {
+	NMPI_Sendrecv( &context_id, 1, MPI_INT, 0, tag,
+		       &remote_context_id, 1, MPI_INT, 0, tag, 
+		       comm_ptr->handle, MPI_STATUS_IGNORE );
+    }
+
+    /* We need to do something with the context ids.  For 
+       MPI1, we can just take the min of the two context ids and
+       use that value.  For MPI2, we'll need to have separate
+       send and receive context ids - FIXME */
+    if (remote_context_id < context_id)
+	final_context_id = remote_context_id;
+    else 
+	final_context_id = context_id;
+
+    /* If we did not choose this context, free it.  We won't do this
+       once we have MPI2 intercomms (at least, not for intercomms that
+       are not subsets of MPI_COMM_WORLD) - FIXME */
+    if (final_context_id != context_id) {
+	MPIR_Free_contextid( context_id );
+    }
+    return final_context_id;
+}
 #else
 int MPIR_Get_contextid( MPI_Comm comm )
 {
@@ -142,8 +241,14 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     /* Get a new context first.  We need this to be collective over the
        input communicator */
     /* If there is a context id cache in oldcomm, use it here.  Otherwise,
-       use the appropriate algorithm to get a new context id */
-    new_context_id = MPIR_Get_contextid( comm_ptr->handle );
+       use the appropriate algorithm to get a new context id.  Be careful
+       of intercomms here */
+    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	new_context_id = MPIR_Get_intercomm_contextid( comm_ptr );
+    }
+    else {
+	new_context_id = MPIR_Get_contextid( comm_ptr->handle );
+    }
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**toomanycomm", 0 );
 	return mpi_errno;
@@ -170,11 +275,21 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     newcomm_ptr->vcrt = comm_ptr->vcrt;
     newcomm_ptr->vcr  = comm_ptr->vcr;
 
+    /* Save the kind of the communicator */
+    newcomm_ptr->comm_kind   = comm_ptr->comm_kind;
+    
+    /* If it is an intercomm, duplicate the local vcrt references */
+    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	MPID_VCRT_Add_ref( comm_ptr->local_vcrt );
+	newcomm_ptr->local_vcrt = comm_ptr->local_vcrt;
+	newcomm_ptr->local_vcr  = comm_ptr->local_vcr;
+    }
+
     /* Set the sizes and ranks */
     newcomm_ptr->remote_size = comm_ptr->remote_size;
     newcomm_ptr->rank        = comm_ptr->rank;
     newcomm_ptr->local_size  = comm_ptr->local_size;
-    
+
     /* More advanced version: if the group is available, dup it by 
        increasing the reference count */
     newcomm_ptr->local_group  = 0;

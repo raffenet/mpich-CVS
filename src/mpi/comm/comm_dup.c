@@ -70,8 +70,9 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    /* Generate a new context value and a new communicator structure */
-    mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->remote_size, &newcomm_ptr );
+    /* Generate a new context value and a new communicator structure */ 
+    mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->remote_size, 
+				&newcomm_ptr );
     if (mpi_errno) {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
