@@ -228,7 +228,7 @@ def mpdrun():
 
     (manSocket,addr) = listenSocket.accept()
     msg = mpd_recv_one_msg(manSocket)
-    if (not msg.has_key('cmd')):
+    if (not msg  or  not msg.has_key('cmd')):
         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
     if (msg['cmd'] == 'job_started'):
         # print 'mpdrun: job %s started' % (msg['jobid'])
