@@ -109,10 +109,11 @@ typedef int MPI_Win;
 #define MPI_FILE_DEFINED
 #ifdef MPICH_NEW_MPIIO
 typedef int MPI_File;
-#define MPI_FILE_NULL ((MPI_File)0x10000000)
+/* commenting out the line below otherwise maint/updatefiles prints a warning */
+/* #define MPI_FILE_NULL ((MPI_File)0x10000000) */
 #else
 typedef struct ADIOI_FileD *MPI_File;
-/* #define MPI_FILE_NULL ((MPI_File)0)*/
+#define MPI_FILE_NULL ((MPI_File)0)
 #endif
 
 /* Collective operations */
