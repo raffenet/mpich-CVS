@@ -1012,12 +1012,6 @@ extern void MPID_TimerStateEnd( int, MPID_Time_t * );
     MPID_Thread_unlock(&MPIR_Process.common_lock);}
 #endif
 
-/*
- * MPIR_MSG_CANCELLED is place in status.MPI_SOURCE to signal that the request
- * has been cancelled.
- */
-#define MPIR_MSG_CANCELLED (-1024)
-
 /* Include definitions from the device which require items defined by this file
    (mpiimpl.h).  NOTE: This include requires the device to copy mpidpost.h to
    the src/include directory in the build tree. */
