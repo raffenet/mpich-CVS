@@ -131,7 +131,9 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
 	    break;
 #ifdef HAVE_FORTRAN_BINDING
 	case 2: /* Fortran BASE */
-	    *attr_int = (MPI_Fint)(win_ptr->base);
+	    /* The Fortran routine that matches this routine should
+	       provide an address-sized integer, not an MPI_Fint */
+	    *attr_int = (MPI_Aint)(win_ptr->base);
 	    break;
 	case 4: /* Fortran SIZE */
 	    /* We do not need to copy because we return the value,
