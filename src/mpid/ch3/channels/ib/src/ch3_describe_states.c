@@ -159,8 +159,8 @@ int CH3U_Describe_timer_states()
 	"ibui_post_receive",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-	MPID_STATE_IBUI_NEXT_NUM_WRITTEN,
-	"ibui_next_num_written",
+	MPID_STATE_IBUI_POST_ACK_WRITE,
+	"ibui_post_ack_write",
 	get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 	MPID_STATE_IBUI_POST_WRITE,
