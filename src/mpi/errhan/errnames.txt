@@ -800,14 +800,16 @@ with MPI_Alloc_mem.
 **pmi_get_size %d:PMI_Get_size returned %d
 **pmi_get_rank:PMI_Get_rank failed
 **pmi_get_rank %d:PMI_Get_rank returned %d
+**pmi_get_id_length_max:PMI_Get_id_length_max failed
+**pmi_get_id_length_max %d:PMI_Get_id_length_max returned %d
+**pmi_get_id:PMI_Get_id failed
+**pmi_get_id %d:PMI_Get_id returned %d
 **pmi_barrier:PMI_Barrier failed
 **pmi_barrier %d:PMI_Barrier returned %d
 **pmi_finalize:PMI_Finalize failed
 **pmi_finalize %d:PMI_Finalize returned %d
 **pmi_kvs_get_my_name:PMI_KVS_Get_my_name failed
 **pmi_kvs_get_my_name %d:PMI_KVS_Get_my_name returned %d
-**pmi_kvs_get_id:PMI_KVS_Get_id failed
-**pmi_kvs_get_id %d:PMI_KVS_Get_id returned %d
 **pmi_kvs_get_name_length_max:PMI_KVS_Get_name_length_max failed
 **pmi_kvs_get_name_length_max %d:PMI_KVS_Get_name_length_max returned %d
 **pmi_kvs_get_key_length_max:PMI_KVS_Get_key_length_max failed
