@@ -614,6 +614,23 @@ Else
 End IF
 
 '
+' Generate setbotf.f
+'
+
+If f.FileExists("src\binding\f77\setbotf.f.in") Then
+
+  set fin = f.OpenTextFile("src\binding\f77\setbotf.f.in")
+  set fout = f.CreateTextFile("src\binding\f77\setbotf.f")
+  contents = fin.ReadAll()
+' Add the replacements for setbotf.f here
+  contents = Replace(contents, "@MPI_STATUS_SIZE@", "5")
+  fout.Write(contents)
+  fin.Close()
+  fout.Close()
+
+End IF
+
+'
 ' Generate F90 module files
 '
 
