@@ -11,7 +11,6 @@
 #include "mpihandlemem.h"
 
 /* NOTE: 
- * - struct MPID_Datatype is defined in src/include/mpiimpl.h.
  * - struct MPID_Dataloop and MPID_Segment are defined in 
  *   src/mpid/common/datatype/mpid_dataloop.h (and gen_dataloop.h).
  * - MPIU_Object_alloc_t is defined in src/include/mpihandle.h
