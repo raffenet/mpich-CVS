@@ -107,6 +107,11 @@
 			helpstring = "Add dll decoration to the mpi function prototypes"
 			required = "false"
 		/>
+		<unnamed
+			name = "--testdir"
+			helpstring = "Configure the test directory only"
+			require = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -166,6 +171,8 @@ MPI_OFFSET             = "__int64"
 MPI_OFFSET_TYPEDEF     = "#if defined(USE_GCC) || defined(__GNUC__)" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif"
 EXTRA_STATUS_DECL      = ""
 HAVE_ROMIO             = "#include ""mpio.h"""
+
+set f = WScript.CreateObject("Scripting.FileSystemObject")
 
 ' Process arguments
 argCount = WScript.Arguments.Count
@@ -232,6 +239,9 @@ For arg = 0 To argCount - 1
 	bUseIbRDMA = True
   ElseIf argValue = "--use_ib_rdma" Then
 	bUseIbRDMA = True
+  ElseIf argValue = "--testdir" Then
+    ConfigureTestDir()
+    WScript.Quit
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -284,7 +294,6 @@ Else
 End If
 
 set dtypes = WScript.CreateObject("Scripting.Dictionary")
-set f = WScript.CreateObject("Scripting.FileSystemObject")
 
 '
 ' Create a dictionary of all the datatype handles
@@ -1223,6 +1232,11 @@ BuildIFaces()
 '
 ' Generate defmsg.h
 '
+'Function RunCmd(cmd_line)
+'	Set oExec = WshShell.Exec("cmd /C " & cmd_line & " 2>&1")
+'	cmd_output = oExec.StdOut.ReadAll()
+'	RunCmd = cmd_output
+'End Function
 Function RunCmd(cmd_line)
 	Dim results(2)
 	Set WshShell = CreateObject("WScript.Shell")
@@ -2133,10 +2147,8 @@ End Sub
 ' Generate the conf.h files
 '
 
-header = "/* -*- Mode: C; c-basic-offset:4 ; -*- */" & vbNewLine & "/*" & vbNewLine & " *  (C) 2001 by Argonne National Laboratory." & vbNewLine & " *      See COPYRIGHT in top-level directory." & vbNewLine & " */"
-
 Sub WriteHeader( fout, str )
-	fout.WriteLine( header )
+	fout.WriteLine( "/* -*- Mode: C; c-basic-offset:4 ; -*- */" & vbNewLine & "/*" & vbNewLine & " *  (C) 2001 by Argonne National Laboratory." & vbNewLine & " *      See COPYRIGHT in top-level directory." & vbNewLine & " */" )
 	fout.WriteLine("")
 	fout.WriteLine("#ifndef " & UCase(str) & "CONF_H")
 	fout.WriteLine("#define " & UCase(str) & "CONF_H")
@@ -2361,88 +2373,94 @@ fout.WriteLine("#define HAVE_STRING_H")
 Call WriteFooter(fout)
 fout.Close()
 
-'
-' mpitestconf.h
-'
-If f.FileExists("test\mpi\include\mpitestconf.h.in") Then
-	'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
-	Set fout = f.CreateTextFile("src\include\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
-	Call WriteHeader(fout, "mpitest")
-	Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in")
-	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
-	fout.WriteLine("#define HAVE_WINDOWS_H")
-	fout.WriteLine("#endif")
-	Call WriteFooter(fout)
-	fout.Close()
-End If
+Function ConfigureTestDir
 
-If Not bRemoveFortran Then
 	'
-	' attraints.h
+	' mpitestconf.h
 	'
-	If f.FileExists("test\mpi\f77\attr\attraints.h.in") Then
-		Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
-		Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
-		contents = fin.ReadAll()
-		contents = ReplaceAts(contents, false)
-		fout.Write(contents)
-		fin.Close()
+	If f.FileExists("test\mpi\include\mpitestconf.h.in") Then
+		'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
+		Set fout = f.CreateTextFile("src\include\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
+		Call WriteHeader(fout, "mpitest")
+		Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in")
+		fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+		fout.WriteLine("#define HAVE_WINDOWS_H")
+		fout.WriteLine("#endif")
+		Call WriteFooter(fout)
 		fout.Close()
 	End If
 
-	'
-	' typeaints.h
-	'
-	If f.FileExists("test\mpi\f77\datatype\typeaints.h.in") Then
-		Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
-		Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
-		contents = fin.ReadAll()
-		contents = ReplaceAts(contents, false)
-		fout.Write(contents)
-		fin.Close()
-		fout.Close()
+	If Not bRemoveFortran Then
+		'
+		' attraints.h
+		'
+		If f.FileExists("test\mpi\f77\attr\attraints.h.in") Then
+			Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+		End If
+
+		'
+		' typeaints.h
+		'
+		If f.FileExists("test\mpi\f77\datatype\typeaints.h.in") Then
+			Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+		End If
+
+		'
+		' iooffset.h
+		'
+		If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
+			Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+		End If
+
+		'
+		' iodisp.h
+		'
+		If f.FileExists("test\mpi\f77\io\iodisp.h.in") Then
+			Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+		End If
+
+		'
+		' addsize.h
+		'
+		If f.FileExists("test\mpi\f77\rma\addsize.h.in") Then
+			Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+		End If
+
 	End If
 
-	'
-	' iooffset.h
-	'
-	If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
-		Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
-		Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
-		contents = fin.ReadAll()
-		contents = ReplaceAts(contents, false)
-		fout.Write(contents)
-		fin.Close()
-		fout.Close()
-	End If
+End Function
 
-	'
-	' iodisp.h
-	'
-	If f.FileExists("test\mpi\f77\io\iodisp.h.in") Then
-		Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp.h")
-		Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
-		contents = fin.ReadAll()
-		contents = ReplaceAts(contents, false)
-		fout.Write(contents)
-		fin.Close()
-		fout.Close()
-	End If
-
-	'
-	' addsize.h
-	'
-	If f.FileExists("test\mpi\f77\rma\addsize.h.in") Then
-		Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
-		Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
-		contents = fin.ReadAll()
-		contents = ReplaceAts(contents, false)
-		fout.Write(contents)
-		fin.Close()
-		fout.Close()
-	End If
-
-End If
+ConfigureTestDir()
 
 '
 ' fooconf.h
