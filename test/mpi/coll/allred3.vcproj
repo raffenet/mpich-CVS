@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="bcast2"
-	ProjectGUID="{DF2577A1-B25E-4538-9183-40A7B9907B73}"
+	Name="allred3"
+	ProjectGUID="{78527CD3-9616-4DEB-A1F8-B872272F97A8}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -33,11 +33,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpich2d.lib ws2_32.lib"
-				OutputFile="$(OutDir)/bcast2.exe"
+				OutputFile="$(OutDir)/allred3.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/bcast2.pdb"
+				ProgramDatabaseFile="$(OutDir)/allred3.pdb"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
@@ -81,7 +81,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpich2.lib ws2_32.lib"
-				OutputFile="$(OutDir)/bcast2.exe"
+				OutputFile="$(OutDir)/allred3.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
@@ -119,7 +119,7 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\bcast2.c">
+				RelativePath=".\allred3.c">
 			</File>
 			<File
 				RelativePath="..\util\mtest.c">
