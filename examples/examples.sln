@@ -47,26 +47,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netpipe", "..\test\mpi\basi
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "faultywork1", "faultywork\faultywork1.vcproj", "{F902135F-DA12-47C6-BB42-D983B1032820}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "faultywork2", "faultywork\faultywork2.vcproj", "{769AC72B-10AC-4885-AE3E-0D5914ECAD92}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "faultywork3", "faultywork\faultywork3.vcproj", "{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "faultywork4", "faultywork\faultywork4.vcproj", "{D6DF8014-6120-4690-80B9-62528096C035}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "faultywork5", "faultywork\faultywork5.vcproj", "{4E329FB0-625A-4C70-800F-726585246FA9}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -171,46 +151,6 @@ Global
 		{FF13401B-AB0F-4659-823E-E3AA20D85E8B}.Release.Build.0 = Release|Win32
 		{FF13401B-AB0F-4659-823E-E3AA20D85E8B}.Release64.ActiveCfg = Release64|Win32
 		{FF13401B-AB0F-4659-823E-E3AA20D85E8B}.Release64.Build.0 = Release64|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Debug.ActiveCfg = Debug|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Debug.Build.0 = Debug|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Debug64.ActiveCfg = Debug64|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Debug64.Build.0 = Debug64|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Release.ActiveCfg = Release|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Release.Build.0 = Release|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Release64.ActiveCfg = Release64|Win32
-		{F902135F-DA12-47C6-BB42-D983B1032820}.Release64.Build.0 = Release64|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Debug.ActiveCfg = Debug|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Debug.Build.0 = Debug|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Debug64.ActiveCfg = Debug64|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Debug64.Build.0 = Debug64|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Release.ActiveCfg = Release|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Release.Build.0 = Release|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Release64.ActiveCfg = Release64|Win32
-		{769AC72B-10AC-4885-AE3E-0D5914ECAD92}.Release64.Build.0 = Release64|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Debug.ActiveCfg = Debug|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Debug.Build.0 = Debug|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Debug64.ActiveCfg = Debug64|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Debug64.Build.0 = Debug64|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Release.ActiveCfg = Release|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Release.Build.0 = Release|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Release64.ActiveCfg = Release64|Win32
-		{CC525BEE-281E-4BF7-8BA8-CA157E34BA72}.Release64.Build.0 = Release64|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Debug.ActiveCfg = Debug|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Debug.Build.0 = Debug|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Debug64.ActiveCfg = Debug64|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Debug64.Build.0 = Debug64|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Release.ActiveCfg = Release|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Release.Build.0 = Release|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Release64.ActiveCfg = Release64|Win32
-		{D6DF8014-6120-4690-80B9-62528096C035}.Release64.Build.0 = Release64|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Debug.ActiveCfg = Debug|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Debug.Build.0 = Debug|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Debug64.ActiveCfg = Debug64|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Debug64.Build.0 = Debug64|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Release.ActiveCfg = Release|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Release.Build.0 = Release|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Release64.ActiveCfg = Release64|Win32
-		{4E329FB0-625A-4C70-800F-726585246FA9}.Release64.Build.0 = Release64|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
