@@ -1,13 +1,17 @@
+#include "mpi.h"
+#include "mpitest.h"
 #include <stdio.h>
+#ifdef HAVE_WINDOWS_H
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#endif
 #include <string.h>
-#include "mpi.h"
-#include "mpitest.h"
 
 static char MTEST_Descrip[] = "A simple test of Comm_join";
 
@@ -41,7 +45,7 @@ int main( int argc, char *argv[] )
             MPI_Abort(MPI_COMM_WORLD,1);
         }
         
-        bzero(&servaddr, sizeof(servaddr));
+        memset(&servaddr, 0, sizeof(servaddr));
         servaddr.sin_family = AF_INET;
         servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
         servaddr.sin_port = 0;
