@@ -108,6 +108,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     PVFS_Request mem_req, file_req;
     ADIOI_PVFS2_fs * pvfs_fs;
     PVFS_sysresp_io resp_io;
+    MPI_Offset total_bytes_written=0;
 
     /* TODO: increase this to the maximum value */
 #define MAX_ARRAY_SIZE 64
@@ -208,6 +209,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 
 			    file_offsets, PVFS_BOTTOM, mem_req, 
 			    &(pvfs_fs->credentials), &resp_io);
+		    total_bytes_written += resp_io.total_completed;
 		  
 		    /* in the case of error or the last read list call, 
 		     * leave here */
@@ -222,7 +224,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	ADIOI_Free(mem_offsets);
 	ADIOI_Free(mem_lengths);
 
-	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
+	if (file_ptr_type == ADIO_INDIVIDUAL) 
+	    fd->fp_ind += total_bytes_written;
 
 	if (err_flag) {
 	    ADIOI_PVFS2_pvfs_error_convert(err_flag, error_code);
@@ -389,6 +392,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
+	    total_bytes_written += resp_io.total_completed;
 
             mem_offsets += mem_lengths;
             mem_lengths = 0;
@@ -429,6 +433,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    /* as above, use 0 for 'offset' when using hindexed file type*/
 	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
 		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
+	    total_bytes_written += resp_io.total_completed;
 	    if (err_flag < 0)
 		goto error_state;
         }
@@ -784,6 +789,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
 		    PVFS_BOTTOM, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    size_wrote += new_buffer_write;
+	    total_bytes_written += resp_io.total_completed;
 	    start_k = k;
 	    start_j = j;
 	} /* while (size_wrote < bufsize) */
@@ -793,7 +799,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Free(file_offsets);
     ADIOI_Free(file_lengths);
 
-    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = offset;
+    if (file_ptr_type == ADIO_INDIVIDUAL) 
+	fd->fp_ind += total_bytes_written;
 
 error_state:
     /* XXX: free memory */

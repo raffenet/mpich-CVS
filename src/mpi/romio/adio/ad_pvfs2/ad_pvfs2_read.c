@@ -106,6 +106,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
     ADIOI_PVFS2_fs * pvfs_fs;
     PVFS_sysresp_io resp_io;
     int err_flag=0;
+    MPI_Offset total_bytes_read = 0;
 
 #define MAX_ARRAY_SIZE 64
 
@@ -188,6 +189,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 		    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 
 			    file_offsets, PVFS_BOTTOM, mem_req, 
 			    &(pvfs_fs->credentials), &resp_io);
+		    total_bytes_read += resp_io.total_completed;
 		  
 		    /* in the case of error or the last read list call, 
 		     * leave here */
@@ -202,7 +204,8 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	ADIOI_Free(mem_offsets);
 	ADIOI_Free(mem_lengths);
 
-        if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
+        if (file_ptr_type == ADIO_INDIVIDUAL) 
+	    fd->fp_ind += total_bytes_read;
 
 	fd->fp_sys_posn = -1;  /* set it to null. */
 
@@ -364,6 +367,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
+	    total_bytes_read += resp_io.total_completed;
 	    mem_offsets += mem_lengths;
 	    mem_lengths = 0;
 	} /* for (i=0; i<n_read_lists; i++) */
@@ -405,6 +409,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
+	    total_bytes_read += resp_io.total_completed;
 	}
     }
     else {
@@ -752,6 +757,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    /* offset will be expressed in memory and file datatypes */
 	    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 0, 
 		    PVFS_BOTTOM, mem_req, &(pvfs_fs->credentials), &resp_io);
+	    total_bytes_read += resp_io.total_completed;
 	    size_read += new_buffer_read;
 	    start_k = k;
 	    start_j = j;
@@ -762,7 +768,8 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Free(file_offsets);
     ADIOI_Free(file_lengths);
     
-    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
+    /* Other ADIO routines will convert absolute bytes into counts of datatypes */
+    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += total_bytes_read;
 
 error_state:
     if (err_flag) {
