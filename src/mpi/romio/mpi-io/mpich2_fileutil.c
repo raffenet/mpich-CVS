@@ -54,7 +54,8 @@ int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
     else {
 	MPIR_Get_file_error_routine( e, &c_errhandler, &kind );
     }
-    
+
+    /* --BEGIN ERROR HANDLING-- */
     if (MPIR_Err_is_fatal(errcode) || kind == 0) 
     {
 	if (MPIR_Err_print_stack_flag)
@@ -75,8 +76,9 @@ int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
 		     errcode, fcname, msg);
 	}
 
-	abort(); /* Change this to MPID_Abort */
+	MPID_Abort( 0, errcode, errcode); 
     }
+    /* --END ERROR HANDLING-- */
     else if (kind == 2) {
 	(*c_errhandler)( &file_ptr, &errcode, 0 );
     }
@@ -92,9 +94,11 @@ int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
 int MPIR_ROMIO_Set_file_errhand( MPI_File file_ptr, MPI_Errhandler e )
 {
     if (file_ptr == MPI_FILE_NULL) ADIOI_DFLT_ERR_HANDLER = e;
+    /* --BEGIN ERROR HANDLING-- */
     else if (file_ptr->cookie != ADIOI_FILE_COOKIE) {
 	return MPI_ERR_FILE;
     }
+    /* --END ERROR HANDLING-- */
     else 
 	file_ptr->err_handler = e;
     return 0;
@@ -108,9 +112,11 @@ int MPIR_ROMIO_Get_file_errhand( MPI_File file_ptr, MPI_Errhandler *e )
 	    *e = ADIOI_DFLT_ERR_HANDLER;
 	}
     }
+    /* --BEGIN ERROR HANDLING-- */
     else if (file_ptr->cookie != ADIOI_FILE_COOKIE) {
 	return MPI_ERR_FILE;
     }
+    /* -- END ERROR HANDLING-- */
     else {
 	if (file_ptr->err_handler == MPI_ERRORS_RETURN) 
 	    *e = 0;
