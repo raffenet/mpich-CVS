@@ -1256,11 +1256,18 @@ sub print_args {
 		#  a) place parameter correctly
 		# Split into raw type and []
 		# Handle multidim arrays as well (Range_excl/incl)
-		$parm =~ /\s*([^\s]*)\s*(\[\s*\])(.*)/;
-		$basetype = $1;
-		$foundbrack = $2;
-		$extrabracks = $3;
-		$otherdims = "";
+		# Use \S* instead of the equivalent [^\s]*.
+		# See ../f77/buildiface for an explanation
+		if ($parm =~ /\s*(\S*)\s*(\[\s*\])(.*)/) {
+		    $basetype = $1;
+		    $foundbrack = $2;
+		    $extrabracks = $3;
+		    $otherdims = "";
+		}
+		else {
+		    print STDERR "Internal error.  Could not find basetype\n";
+		    print STDERR "This may be a bug in perl in the handling of certain expressions\n";
+		}
 		if ($extrabracks =~ /(\[[\d\s]*\])/) {
 		    $otherdims = $1;
 		}

@@ -831,8 +831,17 @@ sub print_args {
 	    $star_count = 1;
 	    $arg_addresses[$count] = $star_count;
 	    # Split into raw type and []
-	    $parm =~ /\s*([^\s]*)\s*(\[\s*\])/;
-	    $basetype = $1;
+            # Use \S* instead of the equivalent [^\s]*.
+            # (\S is not-a-space)
+            # perl 5.8 is known to mishandle the latter, leading to
+	    # an empty basetype
+	    if ($parm =~ /\s*(\S*)\s*(\[\s*\])/) {
+		$basetype = $1;
+	    }
+	    else {
+		print STDERR "Internal error.  Could not find basetype\n";
+		print STDERR "This may be a bug in perl in the handling of certain expressions\n";
+	    }
 	    print "\tparm $parm is array of >$basetype<\n" if $debug;
 	    #$foundbrack = $2;
 	    if (defined($tof77{$parm})) {
@@ -2361,7 +2370,8 @@ sub ReadInterfaceForDefinitions {
 	    }
 	}
 
-	if (/#\s*define\s+(MPI_[A-Za-z_0-9]*)\s*([^\s]*)(.*)/) {
+	# Use \S instead of [^\s].  See the comment above
+	if (/#\s*define\s+(MPI_[A-Za-z_0-9]*)\s*(\S*)(.*)/) {
 	    my $name      = $1;
 	    my $val       = $2;
 	    my $remainder = $3;
