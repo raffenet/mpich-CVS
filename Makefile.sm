@@ -35,7 +35,11 @@ VERSION = 0.1
 dist:
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi
 #	if [ ! -d tmpdir/${PACKAGE}-${VERSION} ] ; then mkdir tmpdir/${PACKAGE}-${VERSION} ; fi
-	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -r ${TAG} mpich2all )
+	if [ -n "${TAG}" ] ; then \
+	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -r ${TAG} mpich2all ) ;\
+	else \
+	(cd tmpdir && cvs -d /home/MPI/cvsMaster export -D 'now' mpich2all ) ;\
+	fi	
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${VERSION}
 	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles )
 	(cd tmpdir/${PACKAGE}-${VERSION} && maint/updatefiles -distrib )
