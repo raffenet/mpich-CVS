@@ -3311,7 +3311,7 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
   something like MPID_Err_create_code_predef( int precode, ... )?
   @*/
 int MPID_Err_create_code( int class, const char *generic_msg, 
-                          const char instance_msg, ... )
+                          const char *instance_msg, ... )
 {}
 
 /*@
