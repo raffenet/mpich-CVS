@@ -1,8 +1,10 @@
 #!/bin/sh
-SLOG2_AUTOHEADER=${SLOG2_AUTOHEADER:-"autoheader"}
-SLOG2_AUTOCONF=${SLOG2_AUTOCONF:-"autoconf"}
-AUTOHEADER=${AUTOHEADER:-${SLOG2_AUTOHEADER}}
-AUTOCONF=${AUTOCONF:-${SLOG2_AUTOCONF}}
+AUTOHEADER=${AUTOHEADER:-autoheader}
+AUTOCONF=${AUTOCONF:-autoconf}
+MPE_AUTOHEADER=${MPE_AUTOHEADER:-$AUTOHEADER}
+MPE_AUTOCONF=${MPE_AUTOCONF:-$AUTOCONF}
+SLOG2_AUTOHEADER=${SLOG2_AUTOHEADER:-$MPE_AUTOHEADER}
+SLOG2_AUTOCONF=${SLOG2_AUTOCONF:-$MPE_AUTOCONF}
 
 # The directory of this script is located
 PWD=`pwd`
@@ -17,7 +19,7 @@ for cfgin in $cfgins ; do
     echo "Creating configure in $dir/ ..."
     cd $dir
     if [ -n "`grep AC_CONFIG_HEADER $cfgin`" ] ; then
-        $AUTOHEADER
+        $SLOG2_AUTOHEADER
     fi
-    $AUTOCONF
+    $SLOG2_AUTOCONF
 done
