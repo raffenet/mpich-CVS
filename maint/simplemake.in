@@ -1954,14 +1954,18 @@ sub InstallDocs {
     # Each document type is different.  In addition, we want the install
     # to work even if the documents have not been built.
     if ((!$didkind{"html"}) && $globaldockind{"html"}) {
-        print FD "\tif [ ! -d $(htmldir) ] ; then \$(MKDIR_P) $(htmldir) ; fi\n";
+        print FD "\tif [ ! -d \$(htmldir) ] ; then \$(MKDIR_P) \$(htmldir) ; fi\n";
 	print FD "\tif [ -d www/www3 ] ; then \\$newline";
 	print FD "\t\$(INSTALL_DATA) www/www3/* \$(htmldir)/www3/ ; fi$newline";
+	print FD "\tif [ -d www/www1 ] ; then \\$newline";
+	print FD "\t\$(INSTALL_DATA) www/www1/* \$(htmldir)/www1/ ; fi$newline";
     }
     if ((!$didkind{"man"}) && $globaldockind{"man"}) {
-        print FD "\tif [ ! -d $(mandir) ] ; then \$(MKDIR_P) $(mandir) ; fi\n";
+        print FD "\tif [ ! -d \$(mandir) ] ; then \$(MKDIR_P) \$(mandir) ; fi\n";
 	print FD "\tif [ -d man/man3 ] ; then \\$newline";
 	print FD "\t\$(INSTALL_DATA) man/man3/* \$(mandir)/man3/ ; fi $newline";
+	print FD "\tif [ -d man/man1 ] ; then \\$newline";
+	print FD "\t\$(INSTALL_DATA) man/man1/* \$(mandir)/man1/ ; fi $newline";
     }
     # LaTeX manual is different and requires a special case
 }
