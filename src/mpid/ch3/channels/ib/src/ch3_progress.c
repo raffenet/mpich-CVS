@@ -7,8 +7,6 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
-#define DBGMSG(a)
-
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
 //static inline void make_progress(int is_blocking);
@@ -61,7 +59,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    assert(FALSE);
 	    break;
 	}
-    }
+    } 
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 
     count = MPIDI_CH3I_progress_completions - completions;
@@ -273,7 +271,7 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 		    MPIDI_DBG_PRINTF((65, FCNAME, "CH3U_Handle_recv_pkt() returned"));
 		    if (vc->ib.recv_active == NULL)
 		    {
-			DBGMSG((65, "complete; posting new recv packet"));
+			MPIDI_DBG_PRINTF((65, FCNAME, "complete; posting new recv packet"));
 			post_pkt_recv(vc);
 			MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 			MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
@@ -301,8 +299,8 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 		MPIDI_CH3U_Handle_recv_req(vc, req);
 		if (vc->ib.recv_active == NULL)
 		{
-		    DBGMSG((65, "request (assumed) complete"));
-		    DBGMSG((65, "posting new recv packet"));
+		    MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete"));
+		    MPIDI_DBG_PRINTF((65, FCNAME, "posting new recv packet"));
 		    post_pkt_recv(vc);
 		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
@@ -372,7 +370,8 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 			MPIDI_DBG_PRINTF((65, FCNAME, "CH3U_Handle_recv_pkt() returned"));
 			if (vc->ib.recv_active == NULL)
 			{
-			    DBGMSG((65, "complete; posting new recv packet"));
+			    
+			    MPIDI_DBG_PRINTF((65, FCNAME, "complete; posting new recv packet"));
 			    post_pkt_recv(vc);
 			    break;
 			}
@@ -396,8 +395,8 @@ static inline void handle_read(MPIDI_VC *vc, int nb)
 		    MPIDI_CH3U_Handle_recv_req(vc, req);
 		    if (vc->ib.recv_active == NULL)
 		    {
-			DBGMSG((65, "request (assumed) complete"));
-			DBGMSG((65, "posting new recv packet"));
+			MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete"));
+			MPIDI_DBG_PRINTF((65, FCNAME, "posting new recv packet"));
 			post_pkt_recv(vc);
 			break;
 		    }
@@ -476,7 +475,7 @@ static inline void handle_written(MPIDI_VC * vc)
 		
 		if (ca == MPIDI_CH3_CA_COMPLETE)
 		{
-		    DBGMSG((65, "sent requested data, decrementing CC"));
+		    MPIDI_DBG_PRINTF((65, FCNAME, "sent requested data, decrementing CC"));
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		    /*post_queued_send(vc);*/ vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
 		    /* mark data transfer as complete and decrment CC */
@@ -498,15 +497,15 @@ static inline void handle_written(MPIDI_VC * vc)
 		}
 		else if (ca < MPIDI_CH3_CA_END_CH3)
 		{
-		    DBGMSG((65, "finished sending iovec, calling CH3U_Handle_send_req()"));
+		    MPIDI_DBG_PRINTF((65, FCNAME, "finished sending iovec, calling CH3U_Handle_send_req()"));
 		    MPIDI_CH3U_Handle_send_req(vc, req);
 		    if (vc->ib.send_active == NULL)
 		    {
 			/* NOTE: This code assumes that if another write is not posted by the device during the callback, then the
 			   device has completed the current request.  As a result, the current request is dequeded and next request
 			   in the queue is processed. */
-			DBGMSG((65, "request (assumed) complete"));
-			DBGMSG((65, "dequeuing req and posting next send"));
+			MPIDI_DBG_PRINTF((65, FCNAME, "request (assumed) complete"));
+			MPIDI_DBG_PRINTF((65, FCNAME, "dequeuing req and posting next send"));
 			MPIDI_CH3I_SendQ_dequeue(vc);
 			/*post_queued_send(vc);*/ vc->ib.send_active = MPIDI_CH3I_SendQ_head(vc);
 		    }
