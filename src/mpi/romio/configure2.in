@@ -86,7 +86,7 @@ available, for building the profiling interface.
 #
 AC_INIT(adio/include/romioconf.h.in)
 echo " "
-echo "Configuring ROMIO Version 1.2.3"
+echo "Configuring ROMIO Version 1.2.6"
 echo " "
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
