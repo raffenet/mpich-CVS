@@ -673,7 +673,7 @@ static int cb_config_list_lex(void)
 
     if (*token_ptr == '\0') return AGG_EOS;
 
-    slen = strcspn(token_ptr, ":,");
+    slen = (int)strcspn(token_ptr, ":,");
 
     if (*token_ptr == ':') {
 	token_ptr++;

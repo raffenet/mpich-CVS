@@ -63,7 +63,7 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 	    /* If datatype_ptr is not value, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(type_name,"type_name", mpi_errno);
 	    if (!mpi_errno) {
-		int slen = strlen( type_name );
+		int slen = (int)strlen( type_name );
 		if (slen >= MPI_MAX_OBJECT_NAME) {
 		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, 
 		      "**typenamelen", "**typenamelen %d", slen );

@@ -76,7 +76,7 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
     /* ... body of routine ...  */
     /* The user must allocate a large enough section of memory */
     MPIU_Strncpy( comm_name, comm_ptr->name, MPI_MAX_NAME_STRING );
-    *resultlen = strlen( comm_name );
+    *resultlen = (int)strlen( comm_name );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);

@@ -74,7 +74,7 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
     /* ... body of routine ...  */
 
     MPIR_Err_get_string( errorcode, string );
-    *resultlen = strlen( string );
+    *resultlen = (int)strlen( string );
 
     /* ... end of body of routine ... */
 

@@ -165,7 +165,7 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 
     /* Include the null in MPI_MAX_OBJECT_NAME */
     MPIU_Strncpy( type_name, datatype_ptr->name, MPI_MAX_OBJECT_NAME );
-    *resultlen = strlen( type_name );
+    *resultlen = (int)strlen( type_name );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_NAME);
