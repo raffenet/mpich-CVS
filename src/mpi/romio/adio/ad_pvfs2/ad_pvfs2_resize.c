@@ -16,6 +16,7 @@ void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
     int ret, rank;
     ADIOI_PVFS2_fs *pvfs_fs;
+    static char myname[] = "ADIOI_PVFS2_RESIZE";
 
     *error_code = MPI_SUCCESS;
 

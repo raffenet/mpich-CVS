@@ -20,6 +20,7 @@ void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code)
 { 
     int ret, rank, dummy=0, dummy_in=0; 
     ADIOI_PVFS2_fs *pvfs_fs;
+    static char myname[] = "ADIOI_PVFS2_FLUSH";
 
     *error_code = MPI_SUCCESS;
 
