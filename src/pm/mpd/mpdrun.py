@@ -409,6 +409,7 @@ def process_cmdline_args():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
            try0Locally, lineLabels, jobAlias, stdinGoesToWho, hostsFile
 
+    hostsFile = ''
     if len(argv) < 3:
         usage()
     argidx = 1
