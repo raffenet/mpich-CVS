@@ -10,7 +10,7 @@
 #define FUNCNAME adjust_iov
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
+int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
 {
     MPID_IOV * const iov = *iovp;
     const int count = *countp;
@@ -41,7 +41,7 @@ static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
 #define FUNCNAME connection_post_send_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn)
+void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn)
 {
     int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
