@@ -2,6 +2,14 @@ Discussion items:
 
 - IPC resource registration/allocation and failure recovery
 
+- SSM performance tuning: highest performance for N=P, or reasonable peformance
+  for all N?
+
+- other issues described below
+
+- documentation: need detailed outline for user/installation document(s)
+
+
 ================================================================================
 Datatypes
 
@@ -16,12 +24,14 @@ CH3 device
 issue:		flow control
 importance:	useful, but not critical for most applications
 assigned to:	Brian
+status:		not started
 description:	add flow control for eager messages into the CH3 device
 
 
 issue:		MPIDI_CH3_Abort()
 importance:	useful, but not critical
 assigned to:	Brian
+status:		not started
 description:	MPID_Abort() current just calls exit(), relying on the process
 		manager to notice that a process exited without properly
 		ending (calling PMI_Finalize() if PMI is used by the channel).
@@ -32,6 +42,7 @@ description:	MPID_Abort() current just calls exit(), relying on the process
 issue:		MPID_Abort()
 assigned to:	Brian
 importance:	must fix to be MPI-1 compliant
+status:		not started
 description:	The current version of MPID_Abort() takes an MPI error code.
 		It should take an exit code that is reported to the process
 		manager.  Ideally it should call MPIDI_CH3_Abort(), but at the
@@ -43,9 +54,18 @@ description:	The current version of MPID_Abort() takes an MPI error code.
 ================================================================================
 sock channel
 
+issue:		connection formation
+importance:	critical
+assigned to:	Brian/David?
+status:		not started
+description:	Connection to a process may fail due to a backlog of accepted
+		connections at the connectee.  The connector should perform
+		so number of reties before reporting an error to the user.
+
 issue:		MPID_Abort()
 importance:	must be fixed to be MPI-1 compliant
 assigned to:	Brian
+status:		not started
 description:	All calls to MPID_Abort() must be updated so that a useful
 		error message is printed before MPI_Abort() is called with an
 		exit code (not an MPI error code).
@@ -53,6 +73,7 @@ description:	All calls to MPID_Abort() must be updated so that a useful
 issue:		error handling
 importance:	useful
 assigned to:	Brian
+status:		not started
 description:	The calls to abort(), MPID_Abort() and many calls to assert()
 		should be replaced with the generation of error codes which are
 		then return to the CH3 device.  This may be somewhat difficult
@@ -65,16 +86,19 @@ shm channel
 issue:		test suite runs
 importance:	critical
 assigned to:	Bill or Brian/David ???
+status:		not started
 description:	The MPICH1, MPICH2 and Intel test suites need to be run.
 
 issue:		test suite failures (if any)
 importance:	critical
 assigned to:	David/Brian
+status:		not started
 description:	(waiting for tests)
 
 issue:		MPID_Abort()
 importance:	must be fixed to be MPI-1 compliant
 assigned to:	David
+status:		not started
 description:	All calls to MPID_Abort() must be updated so that a useful
 		error message is printed before MPI_Abort() is called with an
 		exit code (not an MPI error code).
@@ -84,15 +108,18 @@ description:	All calls to MPID_Abort() must be updated so that a useful
 issue:		test suite runs
 importance:	critical
 assigned to:	Bill or Brian/David ???
+status:		not started
 description:	The MPICH1, MPICH2 and Intel test suites need to be run.
 
 issue:		test suite failures (if any)
 importance:	critical
+status:		not started
 assigned to:	David/Brian
 
 issue:		MPID_Abort()
 importance:	must be fixed to be MPI-1 compliant
 assigned to:	David
+status:		not started
 description:	All calls to MPID_Abort() must be updated so that a useful
 		error message is printed before MPI_Abort() is called with an
 		exit code (not an MPI error code).
