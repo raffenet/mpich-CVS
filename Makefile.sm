@@ -208,13 +208,16 @@ install-local:
 install-devdocs:
 	(cd doc && $(MAKE) install-devdocs)
 
+#
+# The documents are shipped as part of the release, and so should be 
+# installed from the source directory, not a VPATH build directory
 install_DOC = 
 optinstall_DOC = \
-    doc/userguide/user.pdf \
-    doc/installguide/install.pdf \
-    doc/smpd/smpd_pmi.pdf \
-    doc/logging/logging.pdf
-installdir_HTML = www
-installdir_MAN  = man
+    $(srcdir)/doc/userguide/user.pdf \
+    $(srcdir)/doc/installguide/install.pdf \
+    $(srcdir)/doc/smpd/smpd_pmi.pdf \
+    $(srcdir)/doc/logging/logging.pdf
+installdir_HTML = $(srcdir)/www
+installdir_MAN  = $(srcdir)/man
 #install_BIN = 
 #install_SBIN = 	
