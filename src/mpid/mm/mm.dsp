@@ -170,6 +170,10 @@ SOURCE=.\src\ib\ib_write_aggressive.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ib\ibu.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\ib\ibutil.c
 # End Source File
 # Begin Source File
@@ -278,6 +282,10 @@ SOURCE=.\src\rma\mpid_accumulate.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\pt2pt\mpid_bsend_init.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\spawn\mpid_close_port.c
 # End Source File
 # Begin Source File
@@ -331,6 +339,10 @@ SOURCE=.\src\pt2pt\mpid_recv.c
 # Begin Source File
 
 SOURCE=.\src\pt2pt\mpid_send.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\pt2pt\mpid_startall.c
 # End Source File
 # Begin Source File
 
@@ -683,6 +695,10 @@ SOURCE=..\common\datatype\gen_dataloop.h
 # Begin Source File
 
 SOURCE=.\src\ib\ibimpl.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\include\ibu.h
 # End Source File
 # Begin Source File
 
