@@ -487,6 +487,7 @@ SOURCE=.\src\mpi\errhan\file_get_errhandler.c
 # Begin Source File
 
 SOURCE=.\src\mpi\errhan\file_set_errhandler.c
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -843,7 +844,15 @@ SOURCE=.\src\mpi\coll\opmax.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\mpi\coll\opmaxloc.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\mpi\coll\opmin.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\mpi\coll\opminloc.c
 # End Source File
 # Begin Source File
 
