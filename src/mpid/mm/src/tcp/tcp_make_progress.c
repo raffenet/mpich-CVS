@@ -226,8 +226,8 @@ int tcp_make_progress()
 	if (BFD_ISSET(vc_iter->data.tcp.bfd, &writeset))
 	{
 	    /* write data */
-	    tcp_write(vc_iter);
-	    /*tcp_write_aggressive(vc_iter);*/
+	    /*tcp_write(vc_iter);*/
+	    tcp_write_aggressive(vc_iter);
 	    nready--;
 	}
 	if (nready == 0)

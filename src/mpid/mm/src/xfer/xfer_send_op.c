@@ -6,6 +6,53 @@
 
 #include "mpidimpl.h"
 
+void get_xfer_send_request(MPID_Request *request_ptr, int dest, MPID_Request **ppRequest, BOOL *pbNeedHeader)
+{
+    MM_Car *pCarIter;
+    MPID_Request *pRequestIter;
+
+    *ppRequest = mm_request_alloc();
+    pRequestIter = request_ptr;
+    pCarIter = pRequestIter->mm.write_list;
+    while (pCarIter)
+    {
+	if (pCarIter->dest == dest)
+	{
+	    while (pCarIter->next_ptr)
+	    {
+		pCarIter = pCarIter->next_ptr;
+	    }
+	    pCarIter->next_ptr = (*ppRequest)->mm.wcar;
+	    *pbNeedHeader = FALSE;
+	    break;
+	}
+	pCarIter = pCarIter->opnext_ptr;
+    }
+    while (pRequestIter->mm.next_ptr)
+    {
+	pRequestIter = pRequestIter->mm.next_ptr;
+	if (*pbNeedHeader)
+	{
+	    pCarIter = pRequestIter->mm.write_list;
+	    while (pCarIter)
+	    {
+		if (pCarIter->dest == dest)
+		{
+		    while (pCarIter->next_ptr)
+		    {
+			pCarIter = pCarIter->next_ptr;
+		    }
+		    pCarIter->next_ptr = (*ppRequest)->mm.wcar;
+		    *pbNeedHeader = FALSE;
+		    break;
+		}
+		pCarIter = pCarIter->opnext_ptr;
+	    }
+	}
+    }
+    pRequestIter->mm.next_ptr = (*ppRequest);
+}
+
 /*@
    xfer_send_op - xfer_send_op
 
@@ -23,9 +70,8 @@
 int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Datatype dtype, int first, int last, int dest)
 {
     MM_Car *pCar;
-    MPID_Request *pRequest, *pRequestIter;
+    MPID_Request *pRequest;
     BOOL bNeedHeader = TRUE;
-    MM_Car *pCarIter;
 
     MM_ENTER_FUNC(XFER_SEND_OP);
     dbg_printf("xfer_send_op\n");
@@ -33,50 +79,18 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     /* Get a pointer to the current unused request, allocating if necessary. */
     if (request_ptr->mm.op_valid == FALSE)
     {
+	/* This is the common case */
 	pRequest = request_ptr;
     }
     else
     {
-	pRequest = mm_request_alloc();
-	pRequestIter = request_ptr;
-	pCarIter = pRequestIter->mm.write_list;
-	while (pCarIter)
-	{
-	    if (pCarIter->dest == dest)
-	    {
-		while (pCarIter->next_ptr)
-		{
-		    pCarIter = pCarIter->next_ptr;
-		}
-		pCarIter->next_ptr = pRequest->mm.wcar;
-		bNeedHeader = FALSE;
-		break;
-	    }
-	    pCarIter = pCarIter->opnext_ptr;
-	}
-	while (pRequestIter->mm.next_ptr)
-	{
-	    pRequestIter = pRequestIter->mm.next_ptr;
-	    if (bNeedHeader)
-	    {
-		pCarIter = pRequestIter->mm.write_list;
-		while (pCarIter)
-		{
-		    if (pCarIter->dest == dest)
-		    {
-			while (pCarIter->next_ptr)
-			{
-			    pCarIter = pCarIter->next_ptr;
-			}
-			pCarIter->next_ptr = pRequest->mm.wcar;
-			bNeedHeader = FALSE;
-			break;
-		    }
-		    pCarIter = pCarIter->opnext_ptr;
-		}
-	    }
-	}
-	pRequestIter->mm.next_ptr = pRequest;
+	/* This is the case for collective operations */
+	/* Will putting the uncommon case in a function call make the 
+	 * common case faster?  The code used to be inline here.  Having a
+	 * function call makes the else jump shorter.
+	 * Does this prevent speculative branch execution down the else block?
+	 */
+	get_xfer_send_request(request_ptr, dest, &pRequest, &bNeedHeader);
     }
 
     pRequest->mm.op_valid = TRUE;
@@ -108,6 +122,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pRequest->mm.rcar[0].next_ptr = NULL;
     pRequest->mm.rcar[0].opnext_ptr = NULL;
     pRequest->mm.rcar[0].qnext_ptr = NULL;
+    printf("inc cc: send packer car\n");fflush(stdout);
     mm_inc_cc(pRequest);
 
     /* setup the write car, adding a header car if this is the first send op to this destination */
@@ -127,6 +142,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	pRequest->mm.wcar[0].opnext_ptr = &pRequest->mm.wcar[1];
 	pRequest->mm.wcar[0].next_ptr = &pRequest->mm.wcar[1];
 	pRequest->mm.wcar[0].qnext_ptr = NULL;
+	printf("inc cc: write head car\n");fflush(stdout);
 	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.wcar[1];
@@ -145,6 +161,7 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
+    printf("inc cc: write data car\n");fflush(stdout);
     mm_inc_cc(pRequest);
 
     MM_EXIT_FUNC(XFER_SEND_OP);

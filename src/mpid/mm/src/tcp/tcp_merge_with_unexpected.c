@@ -22,6 +22,7 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 	if (unex_car_ptr->msg_header.pkt.u.hdr.type == MPID_EAGER_PKT)
 	{
 	    /* mark the head car as completed */
+	    printf("dec cc: read eager head car\n");fflush(stdout);
 	    mm_dec_cc(car_ptr->request_ptr);
 	    car_ptr = car_ptr->next_ptr;
 
@@ -31,7 +32,8 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
 	} 
 	else if (unex_car_ptr->msg_header.pkt.u.hdr.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
 	{
-	    err_printf("tcp_merge_with_unexpected doesn't handle unexpected rndv yet.\n");
+	    /*err_printf("tcp_merge_with_unexpected doesn't handle unexpected rndv yet.\n");*/
+	    mm_post_rndv_clear_to_send(car_ptr, unex_car_ptr);
 	}
 	else
 	{
@@ -52,6 +54,7 @@ int tcp_merge_with_unexpected(MM_Car *car_ptr, MM_Car *unex_car_ptr)
     orig_unex_data_ptr = unex_data_ptr = unex_car_ptr->buf_ptr->tmp.buf;
 
     /* mark the head car as completed */
+    printf("dec cc: read eager head car\n");fflush(stdout);
     mm_dec_cc(car_ptr->request_ptr);
     car_ptr = car_ptr->next_ptr;
     while (num_left)

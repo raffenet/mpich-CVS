@@ -6,6 +6,49 @@
 
 #include "mpidimpl.h"
 
+void get_xfer_recv_request(MPID_Request *request_ptr, int src, MPID_Request **ppRequest, BOOL *pbNeedHeader)
+{
+    MM_Car *pCarIter;
+    MPID_Request *pRequestIter;
+
+    *ppRequest = mm_request_alloc();
+    pRequestIter = request_ptr;
+    pCarIter = pRequestIter->mm.rcar;
+    if (pCarIter->type & MM_HEAD_CAR)
+    {
+	if (pCarIter->src == src)
+	{
+	    while (pCarIter->next_ptr)
+	    {
+		pCarIter = pCarIter->next_ptr;
+	    }
+	    pCarIter->next_ptr = (*ppRequest)->mm.rcar;
+	    *pbNeedHeader = FALSE;
+	}
+    }
+    while (pRequestIter->mm.next_ptr)
+    {
+	pRequestIter = pRequestIter->mm.next_ptr;
+	if (*pbNeedHeader)
+	{
+	    pCarIter = pRequestIter->mm.rcar;
+	    if (pCarIter->type & MM_HEAD_CAR)
+	    {
+		if (pCarIter->src == src)
+		{
+		    while (pCarIter->next_ptr)
+		    {
+			pCarIter = pCarIter->next_ptr;
+		    }
+		    pCarIter->next_ptr = (*ppRequest)->mm.rcar;
+		    *pbNeedHeader = FALSE;
+		}
+	    }
+	}
+    }
+    pRequestIter->mm.next_ptr = (*ppRequest);
+}
+
 /*@
    xfer_recv_op - xfer_recv_op
 
@@ -22,8 +65,8 @@
 @*/
 int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype dtype, int first, int last, int src)
 {
-    MM_Car *pCar, *pCarIter;
-    MPID_Request *pRequest, *pRequestIter;
+    MM_Car *pCar;
+    MPID_Request *pRequest;
     BOOL bNeedHeader = TRUE;
 
     MM_ENTER_FUNC(XFER_RECV_OP);
@@ -32,46 +75,17 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     /* Get a pointer to the current unused request, allocating if necessary. */
     if (request_ptr->mm.op_valid == FALSE)
     {
+	/* This is the common case */
 	pRequest = request_ptr;
     }
     else
     {
-	pRequest = mm_request_alloc();
-	pRequestIter = request_ptr;
-	pCarIter = pRequestIter->mm.rcar;
-	if (pCarIter->type & MM_HEAD_CAR)
-	{
-	    if (pCarIter->src == src)
-	    {
-		while (pCarIter->next_ptr)
-		{
-		    pCarIter = pCarIter->next_ptr;
-		}
-		pCarIter->next_ptr = pRequest->mm.rcar;
-		bNeedHeader = FALSE;
-	    }
-	}
-	while (pRequestIter->mm.next_ptr)
-	{
-	    pRequestIter = pRequestIter->mm.next_ptr;
-	    if (bNeedHeader)
-	    {
-		pCarIter = pRequestIter->mm.rcar;
-		if (pCarIter->type & MM_HEAD_CAR)
-		{
-		    if (pCarIter->src == src)
-		    {
-			while (pCarIter->next_ptr)
-			{
-			    pCarIter = pCarIter->next_ptr;
-			}
-			pCarIter->next_ptr = pRequest->mm.rcar;
-			bNeedHeader = FALSE;
-		    }
-		}
-	    }
-	}
-	pRequestIter->mm.next_ptr = pRequest;
+	/* This is the case for collective operations */
+	/* Will putting the uncommon case in a function call make the 
+	 * common case faster?  The code used to be inline here.  Having a
+	 * function call makes the else jump shorter.
+	 */
+	get_xfer_recv_request(request_ptr, src, &pRequest, &bNeedHeader);
     }
 
     pRequest->mm.op_valid = TRUE;
@@ -109,6 +123,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
 	pRequest->mm.rcar[0].opnext_ptr = &pRequest->mm.rcar[1];
 	pRequest->mm.rcar[0].next_ptr = &pRequest->mm.rcar[1];
 	pRequest->mm.rcar[0].qnext_ptr = NULL;
+	printf("inc cc: read head car\n");fflush(stdout);
 	mm_inc_cc(pRequest);
 
 	pCar = &pRequest->mm.rcar[1];
@@ -127,6 +142,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
+    printf("inc cc: read data car\n");fflush(stdout);
     mm_inc_cc(pRequest);
 
     /* setup a write car for unpacking */
@@ -139,6 +155,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pCar->next_ptr = NULL;
     pCar->opnext_ptr = NULL;
     pCar->qnext_ptr = NULL;
+    printf("inc cc: recv unpack car\n");fflush(stdout);
     mm_inc_cc(pRequest);
 
     MM_EXIT_FUNC(XFER_RECV_OP);

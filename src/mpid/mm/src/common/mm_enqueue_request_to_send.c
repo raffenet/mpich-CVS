@@ -13,6 +13,7 @@ int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr)
     MM_ENTER_FUNC(MM_ENQUEUE_REQUEST_TO_SEND);
     dbg_printf("mm_enqueue_request_to_send\n");
 
+    printf("mm_enqueue_request_to_send\n");fflush(stdout);
     car_ptr = mm_car_alloc();
 
     car_ptr->msg_header = unex_head_car_ptr->msg_header;

@@ -246,6 +246,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 		 * enqueue the next car for writing */
 		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
 	    }
+	    printf("dec cc: written vec: %d\n", num_written);fflush(stdout);
 	    mm_dec_cc(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}
@@ -273,6 +274,7 @@ int tcp_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 		 * enqueue the next car for writing */
 		car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr->next_ptr);
 	    }
+	    printf("dec cc: written tmp buffer: %d\n", num_written);fflush(stdout);
 	    mm_dec_cc(car_ptr->request_ptr);
 	    mm_car_free(car_ptr);
 	}

@@ -84,6 +84,8 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
     case MPID_RNDV_CLEAR_TO_SEND_PKT:
 	/* post the rndv_data head packet for writing */
 	mm_post_rndv_data_send(car_ptr);
+	/*mm_dec_cc(car_ptr->request_ptr);*/ /* decrement once for the header packet? */
+	/*mm_car_free(car_ptr);*/ /* This car doesn't need to be freed because it is static in the vc */
 	break;
     case MPID_RNDV_DATA_PKT:
 	err_printf("Help me, I'm melting.\n");
@@ -117,6 +119,7 @@ int cq_handle_read_data_car(MM_Car *car_ptr)
 	if (car_ptr->vc_ptr->post_read_pkt)
 	    car_ptr->vc_ptr->post_read_pkt(car_ptr->vc_ptr);
     }
+    printf("dec cc: read data car\n");fflush(stdout);
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
@@ -143,10 +146,8 @@ int cq_handle_write_head_car(MM_Car *car_ptr)
     {
 	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
-    if (car_ptr->request_ptr != NULL)
-    {
-	mm_dec_cc(car_ptr->request_ptr);
-    }
+    printf("dec cc: written head car\n");fflush(stdout);
+    mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
 }
@@ -158,6 +159,7 @@ int cq_handle_write_data_car(MM_Car *car_ptr)
 	/* enqueue next car to be written before any other pending cars */
 	car_ptr->vc_ptr->enqueue_write_at_head(car_ptr->vc_ptr, car_ptr->next_ptr);
     }
+    printf("dec cc: written data car\n");fflush(stdout);
     mm_dec_cc(car_ptr->request_ptr);
     mm_car_free(car_ptr);
     return MPI_SUCCESS;
