@@ -703,8 +703,9 @@ def mpdman():
                     if pmiCollectiveJob:
                         if rhsSocket:  # still alive ?
                             if not jobEndingEarly:  # if I did not already know this
-                                msgToSend = { 'cmd' : 'collective_abort', 'src' : myId,
-                                              'rank' : myRank, 'exit_status' : status }
+                                msgToSend = { 'cmd' : 'collective_abort',
+                                              'src' : myId, 'rank' : myRank,
+                                              'exit_status' : clientExitStatus }
                                 mpd_send_one_msg(rhsSocket,msgToSend)
                         try:
                             pgrp = clientPid * (-1)   # neg Pid -> group
