@@ -338,6 +338,17 @@ else
 fi
 dnl
 dnl This option requires the config.guess etc.
+#
+# Tru64 Unix (at least V5.0) implements neither the RANDOM variable nor the
+# mktemp function.  This will cause config.guess to fail.  To workaround this,
+# we define RANDOM using date if it is not defined
+# Grr.  This doesn't work because configure execute config.guess in 
+# a separate shell, using sh .  The only fix is to specify a -host 
+# when running configure.  Sigh.
+#if test -z "$RANDOM" ; then
+#    RANDOM=`date '+%H%M%S'`
+#    export RANDOM
+#fi
 FLIBS_save="$FLIBS"
 FLIBS=""
 AC_F77_LIBRARY_LDFLAGS
