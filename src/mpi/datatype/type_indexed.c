@@ -126,7 +126,7 @@ int MPI_Type_indexed(int count,
 	int i, *ints;
 
 	ints = (int *) MPIU_Malloc((2*count + 1) * sizeof(int));
-	if (ints == NULL) assert(0);
+	assert(ints != NULL);
 
 	ints[0] = count;
 
