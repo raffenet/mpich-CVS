@@ -92,10 +92,16 @@
 			helpstring = "Remove fortran code and interfaces"
 			required = "false"
 		/>
+		<unnamed
+			name = "--use_ib_rdma"
+			helpstring = "Use the rdma interface in the infiniband channel"
+			required = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
 
+bUseIbRDMA = False
 bRemoveFortran = False
 bWin64 = False
 bUseCycleCounter = True
@@ -186,6 +192,8 @@ For arg = 0 To argCount - 1
 	WScript.Quit
   ElseIf argValue = "--remove-fortran" Then
     bRemoveFortran = True
+  ElseIf argValue = "--use_ib_rdma" Then
+	bUseIbRDMA = True
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -2162,11 +2170,15 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 		fout.WriteLine("#define __ia64__")
 	else
 		fout.WriteLine("#define __i386__")
-		fout.WriteLine("#define HAVE_32BIT_POINTERS")
 	End If
-	fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
+	If bUseIbRDMA Then
+		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
+	Else
+		fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
+		fout.WriteLine("#define USE_NO_PIN_CACHE")
+	End If
 	fout.WriteLine("#define USE_RDMA_GET")
-	fout.WriteLine("#define USE_NO_PIN_CACHE")
 	Call WriteFooter(fout)
 	fout.Close()
 End If
