@@ -843,7 +843,7 @@ static int post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "null message, %s, decrementing completion counter",
 			  (found ? "posted request found" : "unexpected request allocated")));
-	/* mark data transfer as complete adn decrment CC */
+	/* mark data transfer as complete and decrment CC */
 	rreq->dev.iov_count = 0;
 	MPIDI_CH3U_Request_complete(rreq);
 	goto fn_exit;
