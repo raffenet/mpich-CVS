@@ -35,7 +35,7 @@ void MPIDI_CH3_Progress_poke(void);
  * Channel utility prototypes
  */
 MPID_Request * MPIDI_CH3U_Request_FU(int, int, int);
-MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request);
+MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request, MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int *);
 int MPIDI_CH3U_Request_FDP(MPID_Request *);
 MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match *, int *);

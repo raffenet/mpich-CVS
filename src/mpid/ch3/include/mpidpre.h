@@ -104,6 +104,23 @@ typedef struct
 }
 MPIDI_CH3_Pkt_rndv_send_t;
 
+typedef struct
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPIDI_Message_match match;
+    MPI_Request sender_req_id;
+}
+MPIDI_CH3_Pkt_cancel_send_req_t;
+
+typedef struct
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPI_Request sender_req_id;
+    int ack;
+}
+MPIDI_CH3_Pkt_cancel_send_resp_t;
+
+
 #if defined(MPIDI_CH3_PKT_DEFS)
 MPIDI_CH3_PKT_DEFS
 #endif
@@ -115,6 +132,8 @@ typedef union
     MPIDI_CH3_Pkt_rndv_req_to_send_t rndv_req_to_send;
     MPIDI_CH3_Pkt_rndv_clr_to_send_t rndv_clr_to_send;
     MPIDI_CH3_Pkt_rndv_send_t rndv_send;
+    MPIDI_CH3_Pkt_cancel_send_req_t cancel_send_req;
+    MPIDI_CH3_Pkt_cancel_send_resp_t cancel_send_resp;
 # if defined(MPIDI_CH3_PKT_DECL)
     MPIDI_CH3_PKT_DECL
 # endif

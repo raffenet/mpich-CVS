@@ -43,6 +43,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
 
+	    MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	    
 	    MPIDI_dbg_printf(15, FCNAME, "sending zero length message");
@@ -75,6 +76,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
     if (count * dt_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=
 	MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {
+	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	/* eager message send */
@@ -112,6 +114,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt =
 	    &upkt.rndv_req_to_send;
 	    
+	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_RNDV_MSG);
 	sreq->ch3.ca = MPIDI_CH3_CA_NONE;
 	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;

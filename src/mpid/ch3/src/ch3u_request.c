@@ -82,7 +82,7 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 }
 
 /*
- * MPIDI_CH3U_Request_FDUOAEP()
+ * MPIDI_CH3U_Request_FDU()
  *
  * Find a request in the unexpected queue and dequeue it; otherwise return
  * NULL.
@@ -91,7 +91,8 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 #define FUNCNAME MPIDI_CH3U_Request_FDU
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id)
+MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id,
+				      MPIDI_Message_match * match)
 {
     MPID_Request * prev_rreq;
     MPID_Request * cur_rreq;
@@ -104,7 +105,10 @@ MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request sreq_id)
     cur_rreq = MPIDI_Process.recv_unexpected_head;
     while(cur_rreq != NULL)
     {
-	if (cur_rreq->ch3.sender_req_id == sreq_id)
+	if (cur_rreq->ch3.sender_req_id == sreq_id &&
+	    cur_rreq->ch3.match.context_id == match->context_id &&
+	    cur_rreq->ch3.match.rank == match->rank &&
+	    cur_rreq->ch3.match.tag == match->tag)
 	{
 	    matching_prev_rreq = prev_rreq;
 	    matching_cur_rreq = cur_rreq;
@@ -332,30 +336,26 @@ MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(
     rreq = MPIDI_Process.recv_posted_head;
     while (rreq != NULL)
     {
-	if (rreq->ch3.match.context_id == match->context_id)
+	if ((rreq->ch3.match.context_id == match->context_id) &&
+	    (rreq->ch3.match.rank == match->rank ||
+	     rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
+	    (rreq->ch3.match.tag == match->tag ||
+	     rreq->ch3.match.tag == MPI_ANY_TAG))
 	{
-	    if (rreq->ch3.match.rank == match->rank ||
-		rreq->ch3.match.rank == MPI_ANY_SOURCE)
+	    if (prev_rreq != NULL)
 	    {
-		if (rreq->ch3.match.tag == match->tag ||
-		    rreq->ch3.match.tag == MPI_ANY_TAG)
-		{
-		    if (prev_rreq != NULL)
-		    {
-			prev_rreq->ch3.next = rreq->ch3.next;
-		    }
-		    else
-		    {
-			MPIDI_Process.recv_posted_head = rreq->ch3.next;
-		    }
-		    if (rreq->ch3.next == NULL)
-		    {
-			MPIDI_Process.recv_posted_tail = prev_rreq;
-		    }
-		    *found = TRUE;
-		    return rreq;
-		}
+		prev_rreq->ch3.next = rreq->ch3.next;
 	    }
+	    else
+	    {
+		MPIDI_Process.recv_posted_head = rreq->ch3.next;
+	    }
+	    if (rreq->ch3.next == NULL)
+	    {
+		MPIDI_Process.recv_posted_tail = prev_rreq;
+	    }
+	    *found = TRUE;
+	    return rreq;
 	}
 	    
 	prev_rreq = rreq;

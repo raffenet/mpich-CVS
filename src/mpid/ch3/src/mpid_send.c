@@ -101,7 +101,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt =
 	    &upkt.rndv_req_to_send;
-	    
+
 	sreq = MPIDI_CH3_Request_create();
 	assert(sreq != NULL);
 	sreq->ref_count = 2;
@@ -115,6 +115,14 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype,
 	sreq->ch3.datatype = datatype;
 	sreq->ch3.vc = comm->vcr[rank];
 	sreq->ch3.ca = MPIDI_CH3_CA_NONE;
+	
+	/* XXX - Since the request is never returned to the user and they can't
+           do things like cancel it or wait on it, we may not need to fill in
+           all of the fields.  For example, it may be completely unnecessary to
+           supply the matching information.  Also, some of the fields can be
+           set after the message has been sent.  These issues should be looked
+           at more closely when we are trying to squeeze those last few
+           nanoseconds out of the code.  */
 	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
 	rts_pkt->match.rank = comm->rank;

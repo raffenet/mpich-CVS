@@ -43,7 +43,6 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    
 	    rreq->status.MPI_SOURCE = eager_pkt->match.rank;
 	    rreq->status.MPI_TAG = eager_pkt->match.tag;
-	    rreq->status.MPI_ERROR = MPI_SUCCESS;
 	    rreq->status.count = eager_pkt->data_sz;
 	    rreq->ch3.vc = vc;
 	    rreq->ch3.sender_req_id = eager_pkt->sender_req_id;
@@ -151,7 +150,6 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    
 	    rreq->status.MPI_SOURCE = rts_pkt->match.rank;
 	    rreq->status.MPI_TAG = rts_pkt->match.tag;
-	    rreq->status.MPI_ERROR = MPI_SUCCESS;
 	    rreq->status.count = rts_pkt->data_sz;
 	    rreq->ch3.vc = vc;
 	    rreq->ch3.sender_req_id = rts_pkt->sender_req_id;
@@ -294,19 +292,66 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	
 	case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
 	{
+	    MPIDI_CH3_Pkt_cancel_send_req_t * req_pkt = &pkt->cancel_send_req;
+	    MPID_Request * rreq;
+	    MPIDI_CH3_Pkt_t upkt;
+	    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt =
+		&upkt.cancel_send_resp;
+	    MPID_Request * resp_req;
+
 	    MPIDI_dbg_printf(30, FCNAME,
 			     "received cancel send request packet");
-	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
-	    abort();
+	    
+	    rreq = MPIDI_CH3U_Request_FDU(req_pkt->sender_req_id,
+					  &req_pkt->match);
+	    if (rreq != NULL)
+	    {
+		MPIDI_dbg_printf(35, FCNAME, "message successfully cancelled");
+		MPID_Request_release(rreq);
+		resp_pkt->ack = TRUE;
+	    }
+	    else
+	    {
+		MPIDI_dbg_printf(35, FCNAME, "unable to cancel message");
+		resp_pkt->ack = FALSE;
+	    }
+	    
+	    resp_pkt->type = MPIDI_CH3_PKT_CANCEL_SEND_RESP;
+	    resp_pkt->sender_req_id = req_pkt->sender_req_id;
+	    resp_req = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt));
+	    if (resp_req != NULL)
+	    {
+		MPID_Request_release(resp_req);
+	    }
+	    
 	    break;
 	}
 	
 	case MPIDI_CH3_PKT_CANCEL_SEND_RESP:
 	{
+	    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt =
+		&pkt->cancel_send_resp;
+	    MPID_Request * sreq;
+	    int cc;
+
 	    MPIDI_dbg_printf(30, FCNAME,
 			     "received cancel send response packet");
-	    MPIDI_dbg_printf(30, FCNAME, "UMIMPLEMENTED");
-	    abort();
+	    
+	    MPID_Request_get_ptr(resp_pkt->sender_req_id, sreq);
+	    
+	    if (resp_pkt->ack)
+	    {
+		sreq->status.cancelled = TRUE;
+		MPIDI_dbg_printf(35, FCNAME, "message successfully cancelled");
+	    }
+	    else
+	    {
+		MPIDI_dbg_printf(35, FCNAME, "unable to cancel message");
+	    }
+
+	    MPIDI_CH3U_Request_decrement_cc(sreq, &cc);
+	    MPID_Request_release(sreq);
+	    
 	    break;
 	}
 	
