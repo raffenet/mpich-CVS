@@ -28,6 +28,9 @@ Set cur_folder = f.GetFolder(".")
 Set files = CreateObject("Scripting.Dictionary")
 num_files = 0
 output = ""
+num_passed = 0
+num_failed = 0
+num_skipped = 0
 
 ' check if we are running cscript or wscript
 bEcho = false
@@ -42,12 +45,18 @@ if WScript.Arguments.Named.Exists("config") then
 end if
 
 ' check out option
-outfile_name = "results.txt"
+outfile_name = "summary.xml"
 if WScript.Arguments.Named.Exists("out") then
 	outfile_name = WScript.Arguments.Named.Item("out")
 end if
 
 set ftmp = f.CreateTextFile(outfile_name)
+ftmp.WriteLine("<?xml version='1.0' ?>")
+ftmp.WriteLine("<?xml-stylesheet href=""er.xsl"" type=""text/xsl"" ?>")
+ftmp.WriteLine("<MPITESTRESULTS>")
+ftmp.WriteLine("<DATE>" & Date)
+ftmp.WriteLine("</DATE>")
+ftmp.WriteLine("<MPISOURCE></MPISOURCE>")
 ftmp.Close()
 
 Function GetTestLists(folder)
@@ -99,16 +108,41 @@ Function RunTests(filename)
 			 		WScript.Echo cmd + vbCrLf
 				end if
 				set fout = f.OpenTextFile(outfile_name, 8, True)
-				fout.Write( cmd + vbCrLf )
+				'fout.Write( cmd + vbCrLf )
+				fout.WriteLine("<MPITEST>")
+				fout.WriteLine("<NAME>" & twostrings(0) & "</NAME>")
 				if f.FileExists(exe) then
 					result = RunTest(cmd)
 				else
 					result = "no executable, test skipped"
+					num_skipped = num_skipped + 1
 				end if
 				if bEcho = true then
 					WScript.Echo result + vbCrLf
 				end if
-				fout.Write( result + vbCrLf )
+				'fout.Write( result + vbCrLf )
+				if Instr(result, " No Errors") And len(result) < 14 Then
+					fout.WriteLine("<STATUS>pass</STATUS>")
+					num_passed = num_passed + 1
+				else
+					fout.WriteLine("<STATUS>fail</STATUS>")
+					fout.WriteLine("<TESTDIFF>")
+					result = cmd & vbCrLf & result
+					result = Replace( result, "&", "&amp;" )
+					result = Replace( result, "<", "&lt;" )
+					result = Replace( result, ">", "&gt;" )
+					' There better not be any *AMP* in the output
+					'result = Replace( result, "<", "*AMP*lt;" )
+					'result = Replace( result, ">", "*AMP*gt;" )
+					'result = Replace( result, "&", "*AMP*amp;" )
+					'result = Replace( result, "*AMP*", "&" )
+					fout.WriteLine(result)
+					fout.WriteLine("</TESTDIFF>")
+					if f.FileExists(exe) then
+						num_failed = num_failed + 1
+					end if
+				end if
+				fout.WriteLine("</MPITEST>")
 				fout.Close()
 			  end if
 			 end if
@@ -125,6 +159,16 @@ If files.Count > 0 Then
 		RunTests a(i)
 	Next
 End If
+
+set fout = f.OpenTextFile(outfile_name, 8, True)
+fout.WriteLine("</MPITESTRESULTS>")
+fout.Close()
+
+if bEcho = true then
+	WScript.Echo "num_passed = " & num_passed
+	WScript.Echo "num_failed = " & num_failed
+	WScript.Echo "num_skipped = " & num_skipped
+end if
 
 </script>
 </job>
