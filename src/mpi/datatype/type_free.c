@@ -45,7 +45,6 @@ int MPI_Type_free(MPI_Datatype *datatype)
     static const char FCNAME[] = "MPI_Type_free";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
-    int inuse;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_FREE);
@@ -72,24 +71,7 @@ int MPI_Type_free(MPI_Datatype *datatype)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* NOTE: I FEEL LIKE WE'VE GOT SOME FUNCTIONS VISIBLE IN THE WRONG SPOTS HERE */
-#if 0
-    /* LEAVE THIS COMMENTED OUT UNTIL WE HAVE REFCT'ING RIGHT IN THE ISEND ETC. FNS */
-    MPIU_Object_release_ref(datatype_ptr,&inuse);
-    if (!inuse) {
-#if 0
-	/* LEAVE THIS COMMENTED OUT UNTIL WE HAVE SOME USE FOR THE FREE_FN */
-	if (datatype_ptr->free_fn) {
-	    mpi_errno = (datatype_ptr->free_fn)( datatype_ptr );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
-	}
-#endif
-	MPID_Datatype_free(datatype_ptr);
-    }
-#endif
+    MPID_Datatype_release(datatype_ptr);
     *datatype = MPI_DATATYPE_NULL;
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);

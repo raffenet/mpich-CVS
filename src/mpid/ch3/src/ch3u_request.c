@@ -761,13 +761,14 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 {
     int dt_contig;
     MPIDI_msg_sz_t userbuf_sz;
+    MPID_Datatype * dt_ptr;
     MPIDI_msg_sz_t unpack_sz;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
 
-    MPIDI_CH3U_Datatype_get_info(rreq->ch3.user_count, rreq->ch3.datatype, dt_contig, userbuf_sz);
+    MPIDI_CH3U_Datatype_get_info(rreq->ch3.user_count, rreq->ch3.datatype, dt_contig, userbuf_sz, dt_ptr);
     
     if (rreq->ch3.recv_data_sz <= userbuf_sz)
     {

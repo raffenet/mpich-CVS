@@ -39,6 +39,11 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
     rreq->ch3.datatype = datatype;
     rreq->partner_request = NULL;
     MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_RECV);
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+    {
+	MPID_Datatype_gt_ptr(datatype, rreq->ch3.datatype_ptr);
+	MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
+    }
 	
     *request = rreq;
 

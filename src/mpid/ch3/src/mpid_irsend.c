@@ -22,6 +22,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     MPIDI_CH3_Pkt_ready_send_t * const ready_pkt = &upkt.ready_send;
     MPIDI_msg_sz_t data_sz;
     int dt_contig;
+    MPID_Datatype * dt_ptr;
     MPID_Request * sreq;
     MPID_IOV iov[MPID_IOV_LIMIT];
     MPIDI_VC * vc;
@@ -53,7 +54,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
     
-    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz);
+    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr);
 
     vc = comm->vcr[rank];
     
@@ -80,8 +81,6 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     
     /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
 
-    /* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
-    
     iov[0].MPID_IOV_BUF = (void*)ready_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
 
@@ -91,6 +90,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	    
 	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	
+	/* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
 	iov[1].MPID_IOV_BUF = (void *) buf;
 	iov[1].MPID_IOV_LEN = data_sz;
 
@@ -119,6 +119,12 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	    MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
 	    MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	    
+	    if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
+	    {
+		sreq->ch3.datatype_ptr = dt_ptr;
+		MPID_Datatype_add_ref(dt_ptr);
+	    }
 	    
 	    MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
 	}

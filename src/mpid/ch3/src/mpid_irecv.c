@@ -119,6 +119,12 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 		/* The data is still being transfered across the net.  We'll leave it to the progress engine to handle once the
 		   entire message has arrived. */
 		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
+		
+		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+		{
+		    MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
+		    MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
+		}
 	    }
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)
@@ -139,6 +145,12 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 		/* FIXME: Ideally we could specify that a req not be returned.  This would avoid our having to decrement the
 		   reference count on a req we don't want/need. */
 		MPID_Request_release(cts_req);
+	    }
+
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	    {
+		MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
+		MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
 	    }
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_SELF_MSG)
@@ -176,6 +188,12 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	/* Message has yet to arrived.  The request has been placed on the list of posted receive requests and populated with
            information supplied in the arguments. */
 	MPIDI_DBG_PRINTF((15, FCNAME, "request allocated in posted queue"));
+	
+	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	{
+	    MPID_Datatype_get_ptr(datatype, rreq->ch3.datatype_ptr);
+	    MPID_Datatype_add_ref(rreq->ch3.datatype_ptr);
+	}
     }
 
   fn_exit:

@@ -23,14 +23,16 @@ void MPIDI_CH3U_Buffer_copy(
     int rdt_contig;
     MPIDI_msg_sz_t sdata_sz;
     MPIDI_msg_sz_t rdata_sz;
+    MPID_Datatype * sdt_ptr;
+    MPID_Datatype * rdt_ptr;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
     *smpi_errno = MPI_SUCCESS;
     *rmpi_errno = MPI_SUCCESS;
 
-    MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz);
-    MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz);
+    MPIDI_CH3U_Datatype_get_info(scount, sdt, sdt_contig, sdata_sz, sdt_ptr);
+    MPIDI_CH3U_Datatype_get_info(rcount, rdt, rdt_contig, rdata_sz, rdt_ptr);
 
     if (sdata_sz == 0)
     {

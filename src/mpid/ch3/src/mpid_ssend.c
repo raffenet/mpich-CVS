@@ -20,6 +20,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 {
     MPIDI_msg_sz_t data_sz;
     int dt_contig;
+    MPID_Datatype * dt_ptr;
     MPID_Request * sreq = NULL;
     MPIDI_VC * vc;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
@@ -53,7 +54,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
 
-    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz);
+    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr);
 
     vc = comm->vcr[rank];
 	
@@ -93,8 +94,6 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     
     /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
 
-    /* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
-    
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_sync_send_t) <= MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {
 	MPIDI_CH3_Pkt_t upkt;
@@ -147,6 +146,12 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 		MPIDI_CH3U_Pkt_set_seqnum(es_pkt, seqnum);
 		MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 		
+		if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
+		{
+		    sreq->ch3.datatype_ptr = dt_ptr;
+		    MPID_Datatype_add_ref(dt_ptr);
+		}
+
 		MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
 	    }
 	    else
@@ -179,8 +184,15 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	rts_sreq = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt));
 	sreq->partner_request = rts_sreq;
 
-	/* TODO: fill temporary IOV or pack temporary buffer after send to hide some latency.  This require synchronization because
-           CTS could arrive and be processed before the above iSend completes (depending on the progress engine, threads, etc.). */
+	/* FIXME: fill temporary IOV or pack temporary buffer after send to hide some latency.  This requires synchronization
+           because the CTS packet could arrive and be processed before the above iStartmsg completes (depending on the progress
+           engine, threads, etc.). */
+	
+	if (dt_ptr != NULL)
+	{
+	    sreq->ch3.datatype_ptr = dt_ptr;
+	    MPID_Datatype_add_ref(dt_ptr);
+	}
     }
 
   fn_exit:

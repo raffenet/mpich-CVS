@@ -30,6 +30,9 @@
    do not want mpi.h to depend on any other files or configure flags */
 #include "mpichconf.h"
 
+/* Early structure declarations to allow pointer to structure not yet defined */
+struct MPID_Datatype;
+
 /* Include definitions from the device which must exist before items in this
    file (mpiimpl.h) can be defined.  NOTE: This include requires the device to
    copy mpidpre.h to the src/include directory in the build tree. */

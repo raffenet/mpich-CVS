@@ -24,6 +24,11 @@ int MPID_Bsend_init(const void * buf, int count, MPI_Datatype datatype, int rank
 
     MPIDI_CH3M_create_psreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_BSEND);
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+    {
+	MPID_Datatype_get_ptr(datatype, sreq->ch3.datatype_ptr);
+	MPID_Datatype_add_ref(sreq->ch3.datatype_ptr);
+    }
     *request = sreq;
 
   fn_exit:    

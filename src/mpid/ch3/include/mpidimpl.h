@@ -58,10 +58,11 @@ extern MPIDI_Process_t MPIDI_Process;
 /*
  * Datatype Utility Macros (internal - do not use in MPID macros)
  */
-#define MPIDI_CH3U_Datatype_get_info(_count, _datatype, _dt_contig_out, _data_sz_out)					\
+#define MPIDI_CH3U_Datatype_get_info(_count, _datatype, _dt_contig_out, _data_sz_out, _dt_ptr)				\
 {															\
     if (HANDLE_GET_KIND(_datatype) == HANDLE_KIND_BUILTIN)								\
     {															\
+	(_dt_ptr) = NULL;												\
 	(_dt_contig_out) = TRUE;											\
 	(_data_sz_out) = (_count) * MPID_Datatype_get_basic_size(_datatype);						\
 	MPIDI_DBG_PRINTF((15, FCNAME, "basic datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,		\
@@ -69,13 +70,11 @@ extern MPIDI_Process_t MPIDI_Process;
     }															\
     else														\
     {															\
-	MPID_Datatype * __dtp;												\
-															\
-	MPID_Datatype_get_ptr((_datatype), __dtp);									\
-	(_dt_contig_out) = __dtp->is_contig;										\
-	(_data_sz_out) = (_count) * __dtp->size;									\
+	MPID_Datatype_get_ptr((_datatype), (_dt_ptr));									\
+	(_dt_contig_out) = (_dt_ptr)->is_contig;									\
+	(_data_sz_out) = (_count) * (_dt_ptr)->size;									\
 	MPIDI_DBG_PRINTF((15, FCNAME, "user defined datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,	\
-			  (_dt_contig_out), __dtp->size, (_data_sz_out)));						\
+			  (_dt_contig_out), (_dt_ptr)->size, (_data_sz_out)));						\
     }															\
 }
 
@@ -94,14 +93,25 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->status.cancelled = FALSE;				\
     MPIDI_Request_state_init((_req));				\
     (_req)->comm = NULL;					\
+    (_req)->ch3.datatype_ptr = NULL;				\
 }
 
-#define MPIDI_CH3U_Request_destroy(_req)	\
-{						\
-    if (MPIDI_Request_get_srbuf_flag(_req))	\
-    {						\
-	MPIDI_CH3U_SRBuf_free(_req);		\
-    }						\
+#define MPIDI_CH3U_Request_destroy(_req)			\
+{								\
+    if ((_req)->comm != NULL)					\
+    {								\
+	/* FIXME: release communicator */			\
+    }								\
+    								\
+    if ((_req)->ch3.datatype_ptr != NULL)			\
+    {								\
+	MPID_Datatype_release((_req)->ch3.datatype_ptr);	\
+    }								\
+    								\
+    if (MPIDI_Request_get_srbuf_flag(_req))			\
+    {								\
+	MPIDI_CH3U_SRBuf_free(_req);				\
+    }								\
 }
 
 #define MPIDI_CH3U_Request_complete(_req)		\

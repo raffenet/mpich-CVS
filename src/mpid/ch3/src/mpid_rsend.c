@@ -22,6 +22,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     MPIDI_CH3_Pkt_ready_send_t * const ready_pkt = &upkt.ready_send;
     MPIDI_msg_sz_t data_sz;
     int dt_contig;
+    MPID_Datatype * dt_ptr;
     MPID_Request * sreq = NULL;
     MPID_IOV iov[MPID_IOV_LIMIT];
     MPIDI_VC * vc;
@@ -47,7 +48,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
 
-    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz);
+    MPIDI_CH3U_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr);
 
     vc = comm->vcr[rank];
     
@@ -77,8 +78,6 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     }
     
     /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
-
-    /* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
     
     iov[0].MPID_IOV_BUF = (char *)ready_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
@@ -87,6 +86,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
+	/* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
 	iov[1].MPID_IOV_BUF = (void *) buf;
 	iov[1].MPID_IOV_LEN = data_sz;
 	    
@@ -123,6 +123,12 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    MPIDI_CH3U_VC_FAI_send_seqnum(vc, seqnum);
 	    MPIDI_CH3U_Pkt_set_seqnum(ready_pkt, seqnum);
 	    MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
+	    
+	    if (sreq->ch3.ca != MPIDI_CH3_CA_COMPLETE)
+	    {
+		sreq->ch3.datatype_ptr = dt_ptr;
+		MPID_Datatype_add_ref(dt_ptr);
+	    }
 	    
 	    MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
 	}

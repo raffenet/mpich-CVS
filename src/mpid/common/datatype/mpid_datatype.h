@@ -23,14 +23,22 @@
  * and, if the refct is then zero, frees the MPID_Datatype and associated
  * structures.
  */
-#define MPID_Datatype_release(datatype_ptr)                             \
-do {                                                                    \
-    int inuse;                                                          \
-                                                                        \
-    MPIU_Object_release_ref((datatype_ptr),&inuse);                     \
-    if (!inuse) {                                                       \
-	MPID_Datatype_free(datatype_ptr);                               \
-    }                                                                   \
+#define MPID_Datatype_release(datatype_ptr)					\
+do {										\
+    int inuse;									\
+										\
+    MPIU_Object_release_ref((datatype_ptr),&inuse);				\
+    if (!inuse) {								\
+ 	/* LEAVE THIS COMMENTED OUT UNTIL WE HAVE SOME USE FOR THE FREE_FN	\
+	if (datatype_ptr->free_fn) {						\
+	    mpi_errno = (datatype_ptr->free_fn)( datatype_ptr );		\
+	     if (mpi_errno) {							\
+		 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);			\
+		 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );		\
+	     }									\
+	} */									\
+	MPID_Datatype_free(datatype_ptr);					\
+    }										\
 } while (0)
 
 /* Note: Probably there is some clever way to build all of these from a macro.

@@ -70,6 +70,11 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	if (type != MPIDI_REQUEST_TYPE_RSEND)
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "added receive request to unexpected queue; attaching send request"));
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	    {
+		MPID_Datatype_get_ptr(datatype, sreq->ch3.datatype_ptr);
+		MPID_Datatype_add_ref(sreq->ch3.datatype_ptr);
+	    }
 	    rreq->partner_request = sreq;
 	    rreq->ch3.sender_req_id = sreq->handle;
 	}

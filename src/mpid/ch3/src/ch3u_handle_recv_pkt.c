@@ -346,6 +346,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &upkt.rndv_send;
 	    int dt_contig;
 	    MPIDI_msg_sz_t data_sz;
+	    MPID_Datatype * dt_ptr;
 	    MPID_IOV iov[MPID_IOV_LIMIT];
 	    int iov_n;
 	    int mpi_errno = MPI_SUCCESS;
@@ -367,7 +368,7 @@ void MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 	    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
 
-	    MPIDI_CH3U_Datatype_get_info(sreq->ch3.user_count, sreq->ch3.datatype, dt_contig, data_sz);
+	    MPIDI_CH3U_Datatype_get_info(sreq->ch3.user_count, sreq->ch3.datatype, dt_contig, data_sz, dt_ptr);
 	
 	    if (dt_contig) 
 	    {
@@ -522,8 +523,9 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
 {
     int dt_contig;
     MPIDI_msg_sz_t userbuf_sz;
+    MPID_Datatype * dt_ptr;
     MPIDI_msg_sz_t data_sz;
-
+    
     if (rreq->ch3.recv_data_sz == 0)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "null message, %s, decrementing completion counter",
@@ -538,7 +540,7 @@ static void post_data_receive(MPIDI_VC * vc, MPID_Request * rreq, int found)
     {
 	MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
 	
-	MPIDI_CH3U_Datatype_get_info(rreq->ch3.user_count, rreq->ch3.datatype, dt_contig, userbuf_sz);
+	MPIDI_CH3U_Datatype_get_info(rreq->ch3.user_count, rreq->ch3.datatype, dt_contig, userbuf_sz, dt_ptr);
 		
 	if (rreq->ch3.recv_data_sz <= userbuf_sz)
 	{
