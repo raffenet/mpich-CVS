@@ -69,6 +69,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
     pg->size = pg_size;
+    pg->rank = pg_rank;
     mpi_errno = PMI_KVS_Get_name_length_max(&name_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
@@ -108,6 +109,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].ch.sendq_tail = NULL;
 	vc_table[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
 	vc_table[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ch.recv_active = NULL;
+	vc_table[p].ch.send_active = NULL;
     }
     pg->vc_table = vc_table;
     
@@ -129,7 +132,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
     for (p = 0; p < pg_size; p++)
     {
-	MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
+	mpi_errno = MPID_VCR_Dup(&vc_table[p], &comm->vcr[p]);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
+	    return mpi_errno;
+	}
     }
     
     /* Initialize MPI_COMM_SELF object */
@@ -148,11 +156,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_getptr", 0);
 	return mpi_errno;
     }
-    MPID_VCR_Dup(&vc_table[pg_rank], &comm->vcr[0]);
+    mpi_errno = MPID_VCR_Dup(&vc_table[pg_rank], &comm->vcr[0]);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrdup", 0);
+	return mpi_errno;
+    }
 
-    /*
-     * Initialize Progress Engine (and setup listener socket)
-     */
+    /* Initialize Progress Engine */
     mpi_errno = MPIDI_CH3I_Progress_init();
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -160,11 +171,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	return mpi_errno;
     }
     
-    /*
-     * Publish the contact info for this process in the PMI keyval space
-     *
-     * XXX - need to check sizes of values to insure array overruns do not occur
-     */
     mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {

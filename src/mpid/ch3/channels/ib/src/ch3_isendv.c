@@ -42,10 +42,22 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
     MPIU_DBG_PRINTF(("ch3_isendv\n"));
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(n_iov <= MPID_IOV_LIMIT);
-    assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
+#ifdef MPICH_DBG_OUTPUT
+    if (n_iov > MPID_IOV_LIMIT)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	return mpi_errno;
+    }
+    if (iov[0].MPID_IOV_LEN > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+	return mpi_errno;
+    }
+#endif
 
-    /* The TCP implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The IB implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     
     /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
@@ -90,13 +102,12 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	    if (offset == n_iov)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
-		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		MPIDI_CH3U_Handle_send_req(vc, sreq);
 		if (sreq->dev.iov_count == 0)
 		{
 		/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but
 		    request may still be active (see MPI_Ssend()) */
-		    MPIDI_CH3I_SendQ_dequeue(vc);
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		}
 	    }
 	}

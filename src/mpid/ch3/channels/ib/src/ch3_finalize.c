@@ -33,9 +33,9 @@ int MPIDI_CH3_Finalize()
     
     /* Let PMI know the process is about to exit */
     mpi_errno = PMI_Finalize();
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno != PMI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 	    MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", mpi_errno );
     }
 
