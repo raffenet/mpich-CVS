@@ -1,7 +1,7 @@
 <package>
 <job id="winconfigure">
     <runtime>
-        <description>This script generates header files for MPICH</description>
+        <description>This script generates files for building MPICH2</description>
         <unnamed
             name = "--force"
             helpstring = "Force the creation of new files, overwriting the old"
@@ -67,6 +67,26 @@
 			helpstring = "Generate mixed case Fortran interface with one underscore"
 			required = "false"
 		/>
+		<unnamed
+			name = "--defmsg"
+			helpstring = "Generate defmsg.h"
+			required = "false"
+		/>
+		<unnamed
+			name = "--genstates"
+			helpstring = "Generate mpiallstates.h and describe_states.c"
+			required = "false"
+		/>
+		<unnamed
+			name = "--mpicc"
+			helpstring = "Generate mpicc.wsf"
+			required = "false"
+		/>
+		<unnamed
+			name = "--ifaces"
+			helpstring = "Generate the interfaces (c++,f77,f90,etc)"
+			required = "false"
+		/>
         <example>Example: winconfigure.wsf --force</example>
     </runtime>
 <script language="VBScript">
@@ -82,6 +102,25 @@ bf77_name_upper = True
 bf77_name_mixed = False
 b77_name_mixed_uscore = False
 unhandled_definitions = ""
+unhandled_ats = ""
+'
+' Miscellaneous settings
+'
+MPI_MAX_PROCESSOR_NAME = "128"
+BSEND_OVERHEAD         = "52"
+If bWin64 Then
+  MPI_AINT               = "__int64"
+Else
+  MPI_AINT               = "int"
+End If
+MPI_FINT               = "int"
+'MPI_OFFSET             = "long long"
+MPI_OFFSET             = "__int64"
+'MPI_OFFSET_TYPEDEF     = "typedef __int64 MPI_Offset;"
+'MPI_OFFSET_TYPEDEF     = "typedef long long MPI_Offset;"
+MPI_OFFSET_TYPEDEF     = "#if defined(USE_GCC) || defined(__GNUC__)" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif"
+EXTRA_STATUS_DECL      = ""
+HAVE_ROMIO             = "#include ""mpio.h"""
 
 ' Process arguments
 argCount = WScript.Arguments.Count
@@ -89,6 +128,7 @@ For arg = 0 To argCount - 1
   argValue = WScript.Arguments(arg)
   If argValue = "--win64" Then
     bWin64 = True
+    MPI_AINT = "__int64"
   ElseIf argValue = "--win32" Then
     bWin64 = False
   ElseIf argValue = "--enable-timer-type=x86cycle" Then
@@ -121,6 +161,20 @@ For arg = 0 To argCount - 1
 	bf77_name_mixed = True
   ElseIf argValue = "--f77_name_mixed_uscore" Then
 	b77_name_mixed_uscore = True
+  ElseIf argValue = "--defmsg" Then
+    GenerateDefmsg()
+    WScript.Quit
+  ElseIf argValue = "--genstates" Then
+    GenerateStatesFiles()
+    WScript.Quit
+  ElseIf argValue = "--mpicc" Then
+	GenerateMPICC()
+	WScript.Quit
+  ElseIf argValue = "--ifaces" Then
+	WScript.Echo "Option not implemented, run the entire script to generate the interfaces"
+	' BuildIFaces needs the dictionary object to replace the @xxx@s in mpif.h
+	'BuildIFaces()
+	WScript.Quit
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -128,228 +182,633 @@ For arg = 0 To argCount - 1
 Next
 
 '
+' datatype sizes
+'
+If bWin64 Then
+  len_short           = "02"
+  len_int             = "04"
+  len_long            = "04"
+  len_long_long       = "08"
+  len_float           = "04"
+  len_double          = "08"
+  len_long_double     = "08"
+  len_wchar           = "02"
+  len_wchar_t         = "02"
+  len_float_int       = "08"
+  len_double_int      = "10"
+  len_long_int        = "08"
+  len_short_int       = "08"
+  len_2_int           = "08"
+  len_long_double_int = "10"
+' Fortran datatype sizes
+  len_integer         = "08"
+  len_doublecplx      = "10"
+  len_2dc             = "20"
+Else
+  len_short           = "02"
+  len_int             = "04"
+  len_long            = "04"
+  len_long_long       = "08"
+  len_float           = "04"
+  len_double          = "08"
+  len_long_double     = "08"
+  len_wchar           = "02"
+  len_wchar_t         = "02"
+  len_float_int       = "08"
+  len_double_int      = "10"
+  len_long_int        = "08"
+  len_short_int       = "08"
+  len_2_int           = "08"
+  len_long_double_int = "10"
+' Fortran datatype sizes
+  len_integer         = "04"
+  len_doublecplx      = "10"
+  len_2dc             = "20"
+End If
+
+set dtypes = WScript.CreateObject("Scripting.Dictionary")
+set f = WScript.CreateObject("Scripting.FileSystemObject")
+
+'
+' Create a dictionary of all the datatype handles
+'
+unmatched_size_strs = ""
+set fin = f.OpenTextFile("configure.in")
+contents = fin.ReadAll()
+fin.Close()
+set fin = f.OpenTextFile("src\binding\f77\configure.in")
+contents = contents + fin.ReadAll()
+fin.Close()
+dim regEx, Match, Matches
+set regEx = New RegExp
+regEx.Pattern = "MPI_.*=""?0x4c00.*[0-9a-f][0-9a-f]"
+regEx.IgnoreCase = False
+regEx.Global = True
+Set Matches = regEx.Execute(contents)
+For Each Match in Matches
+	size_str = RegExpFind("\$\{len.*\}", Match.Value)
+	dtype_str = RegExpFind("MPI_[^=]*", Match.Value)
+	dtype_val_str = RegExpFind("0x4c00.*[0-9a-f][0-9a-f]", Match.Value)
+	if size_str <> "" then
+		Select Case size_str
+			Case "${len_int}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_int)
+			Case "${len_short}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_short)
+			Case "${len_long}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_long)
+			Case "${len_long_long}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_long_long)
+			Case "${len_float_int}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_float_int)
+			Case "${len_double_int}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_double_int)
+			Case "${len_long_int}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_long_int)
+			Case "${len_short_int}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_short_int)
+			Case "${len_2_int}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_2_int)
+			Case "${len_long_double_int}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_long_double_int)
+			Case "${len_double}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_double)
+			Case "${len_doublecplx}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_doublecplx)
+			Case "${len_2dc}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_2dc)
+			Case "${len_float}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_float)
+			Case "${len_long_double}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_long_double)
+			Case "${len_integer}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_integer)
+			Case "${len_wchar_t}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_wchar_t)
+			Case "${len_wchar}"
+				dtype_val_str = Replace(dtype_val_str, size_str, len_wchar)
+			Case Else
+				unmatched_size_strs = unmatched_size_strs & " " & size_str & vbCrLf
+		End Select
+	end if
+	if dtypes.Exists(dtype_str) then
+		if dtypes.Item(dtype_str) <> dtype_val_str then
+			temp_str = dtype_str & " = " & dtypes.Item(dtype_str) & " or " & dtype_val_str
+			MsgBox temp_str
+		end if
+	else
+		dtypes.Add dtype_str, dtype_val_str
+	end if
+Next
+if unmatched_size_strs <> "" then
+	MsgBox unmatched_size_strs
+end if
+
+'mpi_datatype_prefix = "4c00"
+
+'MPI_CHAR              = "0x" + mpi_datatype_prefix                 + "0101"
+'MPI_SIGNED_CHAR       = "0x" + mpi_datatype_prefix                 + "0118"
+'MPI_UNSIGNED_CHAR     = "0x" + mpi_datatype_prefix                 + "0102"
+'MPI_BYTE              = "0x" + mpi_datatype_prefix                 + "010d"
+'MPI_WCHAR             = "0x" + mpi_datatype_prefix + len_wchar       + "0e"
+'MPI_WCHAR_T           = "0x" + mpi_datatype_prefix + len_wchar_t     + "0e"
+'MPI_SHORT             = "0x" + mpi_datatype_prefix + len_short       + "03"
+'MPI_UNSIGNED_SHORT    = "0x" + mpi_datatype_prefix + len_short       + "04"
+'MPI_INT               = "0x" + mpi_datatype_prefix + len_int         + "05"
+'MPI_UNSIGNED          = "0x" + mpi_datatype_prefix + len_int         + "06"
+'MPI_LONG              = "0x" + mpi_datatype_prefix + len_long        + "07"
+'MPI_UNSIGNED_LONG     = "0x" + mpi_datatype_prefix + len_long        + "08"
+'MPI_LONG_LONG         = "0x" + mpi_datatype_prefix + len_long_long   + "09"
+'MPI_LONG_LONG_INT     = "0x" + mpi_datatype_prefix + len_long_long   + "09"
+'MPI_UNSIGNED_LONG_LONG ="0x" + mpi_datatype_prefix + len_long_long   + "19"
+'MPI_FLOAT             = "0x" + mpi_datatype_prefix + len_float       + "0a"
+'MPI_DOUBLE            = "0x" + mpi_datatype_prefix + len_double      + "0b"
+'MPI_LONG_DOUBLE       = "0x" + mpi_datatype_prefix + len_long_double + "0c"
+'MPI_PACKED            = "0x" + mpi_datatype_prefix                 + "010f"
+'MPI_LB                = "0x" + mpi_datatype_prefix                 + "0010"
+'MPI_UB                = "0x" + mpi_datatype_prefix                 + "0011"
+'MPI_REAL4             = "0x" + mpi_datatype_prefix                 + "0427"
+'MPI_REAL8             = "0x" + mpi_datatype_prefix                 + "0829"
+'MPI_REAL16            = "0x" + mpi_datatype_prefix                 + "1029"
+'MPI_COMPLEX8          = "0x" + mpi_datatype_prefix                 + "0828"
+'MPI_COMPLEX16         = "0x" + mpi_datatype_prefix                 + "102b"
+'MPI_COMPLEX32         = "0x" + mpi_datatype_prefix                 + "2030"
+'MPI_INTEGER1          = "0x" + mpi_datatype_prefix                 + "012d"
+'MPI_INTEGER2          = "0x" + mpi_datatype_prefix                 + "022f"
+'MPI_INTEGER4          = "0x" + mpi_datatype_prefix                 + "0430"
+'MPI_INTEGER8          = "0x" + mpi_datatype_prefix                 + "082a"
+'MPI_INTEGER16         = "0x" + mpi_datatype_prefix                 + "102f"
+'MPI_FLOAT_INT         = "0x" + mpi_datatype_prefix + len_float_int       + "12"
+'MPI_DOUBLE_INT        = "0x" + mpi_datatype_prefix + len_double_int      + "13"
+'MPI_LONG_INT          = "0x" + mpi_datatype_prefix + len_long_int        + "14"
+'MPI_SHORT_INT         = "0x" + mpi_datatype_prefix + len_short_int       + "15"
+'MPI_2INT              = "0x" + mpi_datatype_prefix + len_2_int           + "16"
+'MPI_LONG_DOUBLE_INT   = "0x" + mpi_datatype_prefix + len_long_double_int + "17"
+'MPI_CHARACTER         = "0x" + mpi_datatype_prefix                + "011a"
+'MPI_INTEGER           = "0x" + mpi_datatype_prefix + len_integer    + "1b"
+'MPI_REAL              = "0x" + mpi_datatype_prefix + len_integer    + "1c"
+'MPI_LOGICAL           = "0x" + mpi_datatype_prefix + len_integer    + "1d"
+'MPI_COMPLEX           = "0x" + mpi_datatype_prefix + len_double     + "1e"
+'MPI_DOUBLE_PRECISION  = "0x" + mpi_datatype_prefix + len_double     + "1f"
+'MPI_2INTEGER          = "0x" + mpi_datatype_prefix + len_double     + "20"
+'MPI_2REAL             = "0x" + mpi_datatype_prefix + len_double     + "21"
+'MPI_DOUBLE_COMPLEX    = "0x" + mpi_datatype_prefix + len_doublecplx + "22"
+'MPI_2DOUBLE_PRECISION = "0x" + mpi_datatype_prefix + len_doublecplx + "23"
+'MPI_2COMPLEX          = "0x" + mpi_datatype_prefix + len_doublecplx + "24"
+'MPI_2DOUBLE_COMPLEX   = "0x" + mpi_datatype_prefix + len_2dc        + "25"
+
+'F77_MPI_COMPLEX           = "1275070494"
+'F77_MPI_DOUBLE_COMPLEX    = "1275072546"
+'F77_MPI_LOGICAL           = "1275069469"
+'F77_MPI_REAL              = "1275069468"
+'F77_MPI_DOUBLE_PRECISION  = "1275070495"
+'F77_MPI_INTEGER           = "1275069467"
+'F77_MPI_2INTEGER          = "1275070496"
+'F77_MPI_2COMPLEX          = "1275072548"
+'F77_MPI_2DOUBLE_COMPLEX   = "1275076645"
+'F77_MPI_2REAL             = "1275070497"
+'F77_MPI_2DOUBLE_PRECISION = "1275072547"
+'F77_MPI_CHARACTER         = "1275068698"
+'F77_MPI_LB                = "1275068432"
+'F77_MPI_PACKED            = "1275068687"
+'F77_MPI_UB                = "1275068433"
+'F77_COMPLEX8              = "1275070504"
+'F77_COMPLEX16             = "1275072554"
+'F77_COMPLEX32             = "MPI_DATATYPE_NULL"
+'F77_INTEGER1              = "1275068717"
+'F77_INTEGER2              = "1275068975"
+'F77_INTEGER4              = "1275069488"
+'F77_INTEGER8              = "1275070507"
+'F77_INTEGER16             = "MPI_DATATYPE_NULL"
+'F77_REAL4                 = "1275069479"
+'F77_REAL8                 = "1275070505"
+'F77_REAL16                = "MPI_DATATYPE_NULL"
+
+'
+' Set the datatype variables from the dictionary
+'
+mpi_datatype_prefix = "4c00"
+missing_datatypes = ""
+
+if dtypes.Exists("MPI_CHAR") then
+	MPI_CHAR = dtypes.Item("MPI_CHAR")
+else
+	missing_datatypes = missing_datatypes & "MPI_CHAR" & vbCrLf
+	MPI_CHAR              = "0x" + mpi_datatype_prefix                 + "0101"
+end if
+if dtypes.Exists("MPI_SIGNED_CHAR") then
+	MPI_SIGNED_CHAR = dtypes.Item("MPI_SIGNED_CHAR")
+else
+	missing_datatypes = missing_datatypes & "MPI_SIGNED_CHAR" & vbCrLf
+	MPI_SIGNED_CHAR       = "0x" + mpi_datatype_prefix                 + "0118"
+end if
+if dtypes.Exists("MPI_UNSIGNED_CHAR") then
+	MPI_UNSIGNED_CHAR = dtypes.Item("MPI_UNSIGNED_CHAR")
+else
+	missing_datatypes = missing_datatypes & "MPI_UNSIGNED_CHAR" & vbCrLf
+	MPI_UNSIGNED_CHAR     = "0x" + mpi_datatype_prefix                 + "0102"
+end if
+if dtypes.Exists("MPI_BYTE") then
+	MPI_BYTE = dtypes.Item("MPI_BYTE")
+else
+	missing_datatypes = missing_datatypes & "MPI_BYTE" & vbCrLf
+	MPI_BYTE              = "0x" + mpi_datatype_prefix                 + "010d"
+end if
+if dtypes.Exists("MPI_WCHAR") then
+	MPI_WCHAR = dtypes.Item("MPI_WCHAR")
+else
+	missing_datatypes = missing_datatypes & "MPI_WCHAR" & vbCrLf
+	MPI_WCHAR             = "0x" + mpi_datatype_prefix + len_wchar       + "0e"
+end if
+if dtypes.Exists("MPI_WCHAR_T") then
+	MPI_WCHAR_T = dtypes.Item("MPI_WCHAR_T")
+else
+	'missing_datatypes = missing_datatypes & "MPI_WCHAR_T" & vbCrLf
+	'MPI_WCHAR_T           = "0x" + mpi_datatype_prefix + len_wchar_t     + "0e"
+	MPI_WCHAR_T = dtypes.Item("MPI_WCHAR")
+end if
+if dtypes.Exists("MPI_SHORT") then
+	MPI_SHORT = dtypes.Item("MPI_SHORT")
+else
+	missing_datatypes = missing_datatypes & "MPI_SHORT" & vbCrLf
+	MPI_SHORT             = "0x" + mpi_datatype_prefix + len_short       + "03"
+end if
+if dtypes.Exists("MPI_UNSIGNED_SHORT") then
+	MPI_UNSIGNED_SHORT = dtypes.Item("MPI_UNSIGNED_SHORT")
+else
+	missing_datatypes = missing_datatypes & "MPI_UNSIGNED_SHORT" & vbCrLf
+	MPI_UNSIGNED_SHORT    = "0x" + mpi_datatype_prefix + len_short       + "04"
+end if
+if dtypes.Exists("MPI_INT") then
+	MPI_INT = dtypes.Item("MPI_INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_INT" & vbCrLf
+	MPI_INT               = "0x" + mpi_datatype_prefix + len_int         + "05"
+end if
+if dtypes.Exists("MPI_UNSIGNED_INT") then
+	MPI_UNSIGNED_INT = dtypes.Item("MPI_UNSIGNED_INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_UNSIGNED_INT" & vbCrLf
+	MPI_UNSIGNED_INT      = "0x" + mpi_datatype_prefix + len_int         + "06"
+end if
+if dtypes.Exists("MPI_UNSIGNED") then
+	MPI_UNSIGNED = dtypes.Item("MPI_UNSIGNED")
+else
+	'missing_datatypes = missing_datatypes & "MPI_UNSIGNED" & vbCrLf
+	'MPI_UNSIGNED          = "0x" + mpi_datatype_prefix + len_int         + "06"
+	MPI_UNSIGNED = dtypes.Item("MPI_UNSIGNED_INT")
+end if
+if dtypes.Exists("MPI_LONG") then
+	MPI_LONG = dtypes.Item("MPI_LONG")
+else
+	missing_datatypes = missing_datatypes & "MPI_LONG" & vbCrLf
+	MPI_LONG              = "0x" + mpi_datatype_prefix + len_long        + "07"
+end if
+if dtypes.Exists("MPI_UNSIGNED_LONG") then
+	MPI_UNSIGNED_LONG = dtypes.Item("MPI_UNSIGNED_LONG")
+else
+	missing_datatypes = missing_datatypes & "MPI_UNSIGNED_LONG" & vbCrLf
+	MPI_UNSIGNED_LONG     = "0x" + mpi_datatype_prefix + len_long        + "08"
+end if
+if dtypes.Exists("MPI_LONG_LONG") then
+	MPI_LONG_LONG = dtypes.Item("MPI_LONG_LONG")
+else
+	missing_datatypes = missing_datatypes & "MPI_LONG_LONG" & vbCrLf
+	MPI_LONG_LONG         = "0x" + mpi_datatype_prefix + len_long_long   + "09"
+end if
+if dtypes.Exists("MPI_LONG_LONG_INT") then
+	MPI_LONG_LONG_INT = dtypes.Item("MPI_LONG_LONG_INT")
+else
+	'missing_datatypes = missing_datatypes & "MPI_LONG_LONG_INT" & vbCrLf
+	'MPI_LONG_LONG_INT     = "0x" + mpi_datatype_prefix + len_long_long   + "09"
+	MPI_LONG_LONG_INT = dtypes.Item("MPI_LONG_LONG")
+end if
+if dtypes.Exists("MPI_UNSIGNED_LONG_LONG") then
+	MPI_UNSIGNED_LONG_LONG = dtypes.Item("MPI_UNSIGNED_LONG_LONG")
+else
+	missing_datatypes = missing_datatypes & "MPI_UNSIGNED_LONG_LONG" & vbCrLf
+	MPI_UNSIGNED_LONG_LONG ="0x" + mpi_datatype_prefix + len_long_long   + "19"
+end if
+if dtypes.Exists("MPI_FLOAT") then
+	MPI_FLOAT = dtypes.Item("MPI_FLOAT")
+else
+	missing_datatypes = missing_datatypes & "MPI_FLOAT" & vbCrLf
+	MPI_FLOAT             = "0x" + mpi_datatype_prefix + len_float       + "0a"
+end if
+if dtypes.Exists("MPI_DOUBLE") then
+	MPI_DOUBLE = dtypes.Item("MPI_DOUBLE")
+else
+	missing_datatypes = missing_datatypes & "MPI_DOUBLE" & vbCrLf
+	MPI_DOUBLE            = "0x" + mpi_datatype_prefix + len_double      + "0b"
+end if
+if dtypes.Exists("MPI_LONG_DOUBLE") then
+	MPI_LONG_DOUBLE = dtypes.Item("MPI_LONG_DOUBLE")
+else
+	missing_datatypes = missing_datatypes & "MPI_LONG_DOUBLE" & vbCrLf
+	MPI_LONG_DOUBLE       = "0x" + mpi_datatype_prefix + len_long_double + "0c"
+end if
+if dtypes.Exists("MPI_PACKED") then
+	MPI_PACKED = dtypes.Item("MPI_PACKED")
+else
+	missing_datatypes = missing_datatypes & "MPI_PACKED" & vbCrLf
+	MPI_PACKED            = "0x" + mpi_datatype_prefix                 + "010f"
+end if
+if dtypes.Exists("MPI_LB") then
+	MPI_LB = dtypes.Item("MPI_LB")
+else
+	missing_datatypes = missing_datatypes & "MPI_LB" & vbCrLf
+	MPI_LB                = "0x" + mpi_datatype_prefix                 + "0010"
+end if
+if dtypes.Exists("MPI_UB") then
+	MPI_UB = dtypes.Item("MPI_UB")
+else
+	missing_datatypes = missing_datatypes & "MPI_UB" & vbCrLf
+	MPI_UB                = "0x" + mpi_datatype_prefix                 + "0011"
+end if
+if dtypes.Exists("MPI_REAL4") then
+	MPI_REAL4 = dtypes.Item("MPI_REAL4")
+else
+	missing_datatypes = missing_datatypes & "MPI_REAL4" & vbCrLf
+	MPI_REAL4             = "0x" + mpi_datatype_prefix                 + "0427"
+end if
+if dtypes.Exists("MPI_REAL8") then
+	MPI_REAL8 = dtypes.Item("MPI_REAL8")
+else
+	missing_datatypes = missing_datatypes & "MPI_REAL8" & vbCrLf
+	MPI_REAL8             = "0x" + mpi_datatype_prefix                 + "0829"
+end if
+if dtypes.Exists("MPI_REAL16") then
+	MPI_REAL16 = dtypes.Item("MPI_REAL16")
+else
+	missing_datatypes = missing_datatypes & "MPI_REAL16" & vbCrLf
+	MPI_REAL16            = "0x" + mpi_datatype_prefix                 + "1029"
+end if
+if dtypes.Exists("MPI_COMPLEX8") then
+	MPI_COMPLEX8 = dtypes.Item("MPI_COMPLEX8")
+else
+	missing_datatypes = missing_datatypes & "MPI_COMPLEX8" & vbCrLf
+	MPI_COMPLEX8          = "0x" + mpi_datatype_prefix                 + "0828"
+end	if
+if dtypes.Exists("MPI_COMPLEX16") then
+	MPI_COMPLEX16 = dtypes.Item("MPI_COMPLEX16")
+else
+	missing_datatypes = missing_datatypes & "MPI_COMPLEX16" & vbCrLf
+	MPI_COMPLEX16         = "0x" + mpi_datatype_prefix                 + "102b"
+end if
+if dtypes.Exists("MPI_COMPLEX32") then
+	MPI_COMPLEX32 = dtypes.Item("MPI_COMPLEX32")
+else
+	missing_datatypes = missing_datatypes & "MPI_COMPLEX32" & vbCrLf
+	MPI_COMPLEX32         = "0x" + mpi_datatype_prefix                 + "2030"
+end if
+if dtypes.Exists("MPI_INTEGER1") then
+	MPI_INTEGER1 = dtypes.Item("MPI_INTEGER1")
+else
+	missing_datatypes = missing_datatypes & "MPI_INTEGER1" & vbCrLf
+	MPI_INTEGER1          = "0x" + mpi_datatype_prefix                 + "012d"
+end if
+if dtypes.Exists("MPI_INTEGER2") then
+	MPI_INTEGER2 = dtypes.Item("MPI_INTEGER2")
+else
+	missing_datatypes = missing_datatypes & "MPI_INTEGER2" & vbCrLf
+	MPI_INTEGER2          = "0x" + mpi_datatype_prefix                 + "022f"
+end if
+if dtypes.Exists("MPI_INTEGER4") then
+	MPI_INTEGER4 = dtypes.Item("MPI_INTEGER4")
+else
+	missing_datatypes = missing_datatypes & "MPI_INTEGER4" & vbCrLf
+	MPI_INTEGER4          = "0x" + mpi_datatype_prefix                 + "0430"
+end if
+if dtypes.Exists("MPI_INTEGER8") then
+	MPI_INTEGER8 = dtypes.Item("MPI_INTEGER8")
+else
+	missing_datatypes = missing_datatypes & "MPI_INTEGER8" & vbCrLf
+	MPI_INTEGER8          = "0x" + mpi_datatype_prefix                 + "082a"
+end if
+if dtypes.Exists("MPI_INTEGER16") then
+	MPI_INTEGER16 = dtypes.Item("MPI_INTEGER16")
+else
+	missing_datatypes = missing_datatypes & "MPI_INTEGER16" & vbCrLf
+	MPI_INTEGER16         = "0x" + mpi_datatype_prefix                 + "102f"
+end if
+if dtypes.Exists("MPI_FLOAT_INT") then
+	MPI_FLOAT_INT = dtypes.Item("MPI_FLOAT_INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_FLOAT_INT" & vbCrLf
+	MPI_FLOAT_INT         = "0x" + mpi_datatype_prefix + len_float_int       + "12"
+end if
+if dtypes.Exists("MPI_DOUBLE_INT") then
+	MPI_DOUBLE_INT = dtypes.Item("MPI_DOUBLE_INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_DOUBLE_INT" & vbCrLf
+	MPI_DOUBLE_INT        = "0x" + mpi_datatype_prefix + len_double_int      + "13"
+end if
+if dtypes.Exists("MPI_LONG_INT") then
+	MPI_LONG_INT = dtypes.Item("MPI_LONG_INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_LONG_INT" & vbCrLf
+	MPI_LONG_INT          = "0x" + mpi_datatype_prefix + len_long_int        + "14"
+end if
+if dtypes.Exists("MPI_SHORT_INT") then
+	MPI_SHORT_INT = dtypes.Item("MPI_SHORT_INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_SHORT_INT" & vbCrLf
+	MPI_SHORT_INT         = "0x" + mpi_datatype_prefix + len_short_int       + "15"
+end if
+if dtypes.Exists("MPI_2INT") then
+	MPI_2INT = dtypes.Item("MPI_2INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_2INT" & vbCrLf
+	MPI_2INT              = "0x" + mpi_datatype_prefix + len_2_int           + "16"
+end if
+if dtypes.Exists("MPI_LONG_DOUBLE_INT") then
+	MPI_LONG_DOUBLE_INT = dtypes.Item("MPI_LONG_DOUBLE_INT")
+else
+	missing_datatypes = missing_datatypes & "MPI_LONG_DOUBLE_INT" & vbCrLf
+	MPI_LONG_DOUBLE_INT   = "0x" + mpi_datatype_prefix + len_long_double_int + "17"
+end if
+if dtypes.Exists("MPI_CHARACTER") then
+	MPI_CHARACTER = dtypes.Item("MPI_CHARACTER")
+else
+	missing_datatypes = missing_datatypes & "MPI_CHARACTER" & vbCrLf
+	MPI_CHARACTER         = "0x" + mpi_datatype_prefix                + "011a"
+end if
+if dtypes.Exists("MPI_INTEGER") then
+	MPI_INTEGER = dtypes.Item("MPI_INTEGER")
+else
+	missing_datatypes = missing_datatypes & "MPI_INTEGER" & vbCrLf
+	MPI_INTEGER           = "0x" + mpi_datatype_prefix + len_integer    + "1b"
+end if
+if dtypes.Exists("MPI_REAL") then
+	MPI_REAL = dtypes.Item("MPI_REAL")
+else
+	missing_datatypes = missing_datatypes & "MPI_REAL" & vbCrLf
+	MPI_REAL              = "0x" + mpi_datatype_prefix + len_integer    + "1c"
+end if
+if dtypes.Exists("MPI_LOGICAL") then
+	MPI_LOGICAL = dtypes.Item("MPI_LOGICAL")
+else
+	missing_datatypes = missing_datatypes & "MPI_LOGICAL" & vbCrLf
+	MPI_LOGICAL           = "0x" + mpi_datatype_prefix + len_integer    + "1d"
+end if
+if dtypes.Exists("MPI_COMPLEX") then
+	MPI_COMPLEX = dtypes.Item("MPI_COMPLEX")
+else
+	missing_datatypes = missing_datatypes & "MPI_COMPLEX" & vbCrLf
+	MPI_COMPLEX           = "0x" + mpi_datatype_prefix + len_double     + "1e"
+end if
+if dtypes.Exists("MPI_DOUBLE_PRECISION") then
+	MPI_DOUBLE_PRECISION = dtypes.Item("MPI_DOUBLE_PRECISION")
+else
+	missing_datatypes = missing_datatypes & "MPI_DOUBLE_PRECISION" & vbCrLf
+	MPI_DOUBLE_PRECISION  = "0x" + mpi_datatype_prefix + len_double     + "1f"
+end if
+if dtypes.Exists("MPI_2INTEGER") then
+	MPI_2INTEGER = dtypes.Item("MPI_2INTEGER")
+else
+	missing_datatypes = missing_datatypes & "MPI_2INTEGER" & vbCrLf
+	MPI_2INTEGER          = "0x" + mpi_datatype_prefix + len_double     + "20"
+end if
+if dtypes.Exists("MPI_2REAL") then
+	MPI_2REAL = dtypes.Item("MPI_2REAL")
+else
+	missing_datatypes = missing_datatypes & "MPI_2REAL" & vbCrLf
+	MPI_2REAL             = "0x" + mpi_datatype_prefix + len_double     + "21"
+end if
+if dtypes.Exists("MPI_DOUBLE_COMPLEX") then
+	MPI_DOUBLE_COMPLEX = dtypes.Item("MPI_DOUBLE_COMPLEX")
+else
+	missing_datatypes = missing_datatypes & "MPI_DOUBLE_COMPLEX" & vbCrLf
+	MPI_DOUBLE_COMPLEX    = "0x" + mpi_datatype_prefix + len_doublecplx + "22"
+end if
+if dtypes.Exists("MPI_2DOUBLE_PRECISION") then
+	MPI_2DOUBLE_PRECISION = dtypes.Item("MPI_2DOUBLE_PRECISION")
+else
+	missing_datatypes = missing_datatypes & "MPI_2DOUBLE_PRECISION" & vbCrLf
+	MPI_2DOUBLE_PRECISION = "0x" + mpi_datatype_prefix + len_doublecplx + "23"
+end if
+if dtypes.Exists("MPI_2COMPLEX") then
+	MPI_2COMPLEX = dtypes.Item("MPI_2COMPLEX")
+else
+	missing_datatypes = missing_datatypes & "MPI_2COMPLEX" & vbCrLf
+	MPI_2COMPLEX          = "0x" + mpi_datatype_prefix + len_doublecplx + "24"
+end if
+if dtypes.Exists("MPI_2DOUBLE_COMPLEX") then
+	MPI_2DOUBLE_COMPLEX = dtypes.Item("MPI_2DOUBLE_COMPLEX")
+else
+	missing_datatypes = missing_datatypes & "MPI_2DOUBLE_COMPLEX" & vbCrLf
+	MPI_2DOUBLE_COMPLEX   = "0x" + mpi_datatype_prefix + len_2dc        + "25"
+end if
+
+if missing_datatypes <> "" then
+	MsgBox "Missing datatypes:" & vbCrLf & missing_datatypes
+	WScript.Quit
+end if
+
+Function ToInteger(c)
+	Dim i
+	i = 0
+	if c = "0" then i = 0 end if
+	if c = "1" then i = 1 end if
+	if c = "2" then i = 2 end if
+	if c = "3" then i = 3 end if
+	if c = "4" then i = 4 end if
+	if c = "5" then i = 5 end if
+	if c = "6" then i = 6 end if
+	if c = "7" then i = 7 end if
+	if c = "8" then i = 8 end if
+	if c = "9" then i = 9 end if
+	if c = "a" then i = 10 end if
+	if c = "b" then i = 11 end if
+	if c = "c" then i = 12 end if
+	if c = "d" then i = 13 end if
+	if c = "e" then i = 14 end if
+	if c = "f" then i = 15 end if
+	ToInteger = i
+End Function
+
+'first = true
+Function HexToInt(str)
+	Dim i, multiplier, index
+	i = 0
+	multiplier = 1
+	for index = len(str) to 3 step -1
+		i = i + (ToInteger(Mid(str, index, 1)) * multiplier)
+		multiplier = multiplier * 16
+		'if first then
+		'	MsgBox "char " & Mid(str, index, 1) & ", i = " & i
+		'end if
+	next
+	'first = false
+	HexToInt = i
+End Function
+
+F77_MPI_DOUBLE_COMPLEX    = HexToInt(dtypes.Item("MPI_DOUBLE_COMPLEX"))
+F77_MPI_COMPLEX           = HexToInt(dtypes.Item("MPI_COMPLEX"))
+F77_MPI_LOGICAL           = HexToInt(dtypes.Item("MPI_LOGICAL"))
+F77_MPI_REAL              = HexToInt(dtypes.Item("MPI_REAL"))
+F77_MPI_DOUBLE_PRECISION  = HexToInt(dtypes.Item("MPI_DOUBLE_PRECISION"))
+F77_MPI_INTEGER           = HexToInt(dtypes.Item("MPI_INTEGER"))
+F77_MPI_2INTEGER          = HexToInt(dtypes.Item("MPI_2INTEGER"))
+F77_MPI_2COMPLEX          = HexToInt(dtypes.Item("MPI_2COMPLEX"))
+F77_MPI_2DOUBLE_COMPLEX   = HexToInt(dtypes.Item("MPI_2DOUBLE_COMPLEX"))
+F77_MPI_2REAL             = HexToInt(dtypes.Item("MPI_2REAL"))
+F77_MPI_2DOUBLE_PRECISION = HexToInt(dtypes.Item("MPI_2DOUBLE_PRECISION"))
+F77_MPI_CHARACTER         = HexToInt(dtypes.Item("MPI_CHARACTER"))
+F77_MPI_LB                = HexToInt(dtypes.Item("MPI_LB"))
+F77_MPI_PACKED            = HexToInt(dtypes.Item("MPI_PACKED"))
+F77_MPI_UB                = HexToInt(dtypes.Item("MPI_UB"))
+F77_COMPLEX8              = HexToInt(dtypes.Item("MPI_COMPLEX8"))
+F77_COMPLEX16             = HexToInt(dtypes.Item("MPI_COMPLEX16"))
+F77_COMPLEX32             = HexToInt(dtypes.Item("MPI_COMPLEX32"))
+F77_INTEGER1              = HexToInt(dtypes.Item("MPI_INTEGER1"))
+F77_INTEGER2              = HexToInt(dtypes.Item("MPI_INTEGER2"))
+F77_INTEGER4              = HexToInt(dtypes.Item("MPI_INTEGER4"))
+F77_INTEGER8              = HexToInt(dtypes.Item("MPI_INTEGER8"))
+F77_INTEGER16             = HexToInt(dtypes.Item("MPI_INTEGER16"))
+F77_REAL4                 = HexToInt(dtypes.Item("MPI_REAL4"))
+F77_REAL8                 = HexToInt(dtypes.Item("MPI_REAL8"))
+F77_REAL16                = HexToInt(dtypes.Item("MPI_REAL16"))
+
+if false then
+foo = ""
+foo = "F77_MPI_COMPLEX = " &                F77_MPI_COMPLEX          & vbCrLf
+foo = foo & "F77_MPI_DOUBLE_COMPLEX = " &   F77_MPI_DOUBLE_COMPLEX   & vbCrLf
+foo = foo & "F77_MPI_LOGICAL = " &          F77_MPI_LOGICAL          & vbCrLf
+foo = foo & "F77_MPI_REAL = " &             F77_MPI_REAL             & vbCrLf
+foo = foo & "F77_MPI_DOUBLE_PRECISION = " & F77_MPI_DOUBLE_PRECISION & vbCrLf
+foo = foo & "F77_MPI_INTEGER = " &          F77_MPI_INTEGER          & vbCrLf
+foo = foo & "F77_MPI_2INTEGER = " &         F77_MPI_2INTEGER         & vbCrLf
+foo = foo & "F77_MPI_2COMPLEX = " &         F77_MPI_2COMPLEX         & vbCrLf
+foo = foo & "F77_MPI_2DOUBLE_COMPLEX = " &  F77_MPI_2DOUBLE_COMPLEX  & vbCrLf
+foo = foo & "F77_MPI_2REAL = " &            F77_MPI_2REAL            & vbCrLf
+foo = foo & "F77_MPI_2DOUBLE_PRECISION = " & F77_MPI_2DOUBLE_PRECISION & vbCrLf
+foo = foo & "F77_MPI_CHARACTER = " &        F77_MPI_CHARACTER        & vbCrLf
+foo = foo & "F77_MPI_LB = " &               F77_MPI_LB               & vbCrLf
+foo = foo & "F77_MPI_PACKED = " &           F77_MPI_PACKED           & vbCrLf
+foo = foo & "F77_MPI_UB = " &               F77_MPI_UB               & vbCrLf
+foo = foo & "F77_COMPLEX8 = " &             F77_COMPLEX8             & vbCrLf
+foo = foo & "F77_COMPLEX16 = " &            F77_COMPLEX16            & vbCrLf
+foo = foo & "F77_COMPLEX32 = " &            F77_COMPLEX32            & vbCrLf
+foo = foo & "F77_INTEGER1 = " &             F77_INTEGER1             & vbCrLf
+foo = foo & "F77_INTEGER2 = " &             F77_INTEGER2             & vbCrLf
+foo = foo & "F77_INTEGER4 = " &             F77_INTEGER4             & vbCrLf
+foo = foo & "F77_INTEGER8 = " &             F77_INTEGER8             & vbCrLf
+foo = foo & "F77_INTEGER16 = " &            F77_INTEGER16            & vbCrLf
+foo = foo & "F77_REAL4 = " &                F77_REAL4                & vbCrLf
+foo = foo & "F77_REAL8 = " &                F77_REAL8                & vbCrLf
+foo = foo & "F77_REAL16 = " &               F77_REAL16               & vbCrLf
+WScript.Echo foo
+end if
+
+'
 ' Generate mpi.h
 '
-
-mpi_datatype_prefix = "4c00"
-
-'
-' C datatype sizes
-'
-If bWin64 Then
-  len_short           = "02"
-  len_int             = "04"
-  len_long            = "04"
-  len_long_long       = "08"
-  len_float           = "04"
-  len_double          = "08"
-  len_long_double     = "08"
-  len_wchar_t         = "02"
-  len_float_int       = "08"
-  len_double_int      = "10"
-  len_long_int        = "08"
-  len_short_int       = "08"
-  len_2_int           = "08"
-  len_long_double_int = "10"
-Else
-  len_short           = "02"
-  len_int             = "04"
-  len_long            = "04"
-  len_long_long       = "08"
-  len_float           = "04"
-  len_double          = "08"
-  len_long_double     = "08"
-  len_wchar_t         = "02"
-  len_float_int       = "08"
-  len_double_int      = "10"
-  len_long_int        = "08"
-  len_short_int       = "08"
-  len_2_int           = "08"
-  len_long_double_int = "10"
-End If
-
-MPI_CHAR           = "0x" + mpi_datatype_prefix                 + "0101"
-MPI_UNSIGNED_CHAR  = "0x" + mpi_datatype_prefix                 + "0102"
-MPI_BYTE           = "0x" + mpi_datatype_prefix                 + "010d"
-MPI_WCHAR_T        = "0x" + mpi_datatype_prefix + len_wchar_t     + "0e"
-MPI_SHORT          = "0x" + mpi_datatype_prefix + len_short       + "03"
-MPI_UNSIGNED_SHORT = "0x" + mpi_datatype_prefix + len_short       + "04"
-MPI_INT            = "0x" + mpi_datatype_prefix + len_int         + "05"
-MPI_UNSIGNED       = "0x" + mpi_datatype_prefix + len_int         + "06"
-MPI_LONG           = "0x" + mpi_datatype_prefix + len_long        + "07"
-MPI_UNSIGNED_LONG  = "0x" + mpi_datatype_prefix + len_long        + "08"
-MPI_LONG_LONG      = "0x" + mpi_datatype_prefix + len_long_long   + "09"
-MPI_FLOAT          = "0x" + mpi_datatype_prefix + len_float       + "0a"
-MPI_DOUBLE         = "0x" + mpi_datatype_prefix + len_double      + "0b"
-MPI_LONG_DOUBLE    = "0x" + mpi_datatype_prefix + len_long_double + "0c"
-MPI_PACKED         = "0x" + mpi_datatype_prefix                 + "010f"
-MPI_LB             = "0x" + mpi_datatype_prefix                 + "0010"
-MPI_UB             = "0x" + mpi_datatype_prefix                 + "0011"
-
-MPI_REAL4          = "0x" + mpi_datatype_prefix                 + "0425"
-MPI_REAL8          = "0x" + mpi_datatype_prefix                 + "0827"
-'MPI_REAL16         = "0x" + mpi_datatype_prefix                 + "1029"
-MPI_REAL16         = "MPI_DATATYPE_NULL"
-MPI_COMPLEX8       = "0x" + mpi_datatype_prefix                 + "0826"
-MPI_COMPLEX16      = "0x" + mpi_datatype_prefix                 + "1028"
-'MPI_COMPLEX32      = "0x" + mpi_datatype_prefix                 + "2030"
-MPI_COMPLEX32      = "MPI_DATATYPE_NULL"
-MPI_INTEGER1       = "0x" + mpi_datatype_prefix                 + "012b"
-MPI_INTEGER2       = "0x" + mpi_datatype_prefix                 + "022c"
-MPI_INTEGER4       = "0x" + mpi_datatype_prefix                 + "042d"
-MPI_INTEGER8       = "0x" + mpi_datatype_prefix                 + "082e"
-'MPI_INTEGER16      = "0x" + mpi_datatype_prefix                 + "102f"
-MPI_INTEGER16      = "MPI_DATATYPE_NULL"
-
-'
-' These should define the mixed types *only* for contiguous data.
-' For example, MPI_SHORT_INT may have a gap; it will need to be defined
-' as a derived type instead.  For IA32, this only affects short_int.
-'
-MPI_FLOAT_INT       = "0x" + mpi_datatype_prefix + len_float_int       + "12"
-MPI_DOUBLE_INT      = "0x" + mpi_datatype_prefix + len_double_int      + "13"
-MPI_LONG_INT        = "0x" + mpi_datatype_prefix + len_long_int        + "14"
-MPI_SHORT_INT       = "0x" + mpi_datatype_prefix + len_short_int       + "15"
-MPI_2INT            = "0x" + mpi_datatype_prefix + len_2_int           + "16"
-MPI_LONG_DOUBLE_INT = "0x" + mpi_datatype_prefix + len_long_double_int + "17"
-
-'
-' Fortran datatype sizes
-'
-If bWin64 Then
-  len_integer    = "08"
-  len_double     = "08"
-  len_doublecplx = "10"
-  len_2dc        = "20"
-Else
-  len_integer    = "08"
-  len_double     = "08"
-  len_doublecplx = "10"
-  len_2dc        = "20"
-End If
-
-MPI_CHARACTER         = "0x" + mpi_datatype_prefix                + "0118"
-MPI_INTEGER           = "0x" + mpi_datatype_prefix + len_integer    + "19"
-MPI_REAL              = "0x" + mpi_datatype_prefix + len_integer    + "1a"
-MPI_LOGICAL           = "0x" + mpi_datatype_prefix + len_integer    + "1b"
-MPI_COMPLEX           = "0x" + mpi_datatype_prefix + len_double     + "1c"
-MPI_DOUBLE_PRECISION  = "0x" + mpi_datatype_prefix + len_double     + "1d"
-MPI_2INTEGER          = "0x" + mpi_datatype_prefix + len_double     + "1e"
-MPI_2REAL             = "0x" + mpi_datatype_prefix + len_double     + "1f"
-MPI_DOUBLE_COMPLEX    = "0x" + mpi_datatype_prefix + len_doublecplx + "20"
-MPI_2DOUBLE_PRECISION = "0x" + mpi_datatype_prefix + len_doublecplx + "21"
-MPI_2COMPLEX          = "0x" + mpi_datatype_prefix + len_doublecplx + "22"
-MPI_2DOUBLE_COMPLEX   = "0x" + mpi_datatype_prefix + len_2dc        + "23"
-
-F77_MPI_2COMPLEX          = "1275072546"
-F77_MPI_2DOUBLE_COMPLEX   = "1275076643"
-F77_MPI_2DOUBLE_PRECISION = "1275072545"
-F77_MPI_2INTEGER          = "1275070494"
-F77_MPI_2REAL             = "1275070495"
-F77_MPI_CHARACTER         = "1275068696"
-F77_MPI_COMPLEX           = "1275070492"
-F77_MPI_DOUBLE_COMPLEX    = "1275072544"
-F77_MPI_DOUBLE_PRECISION  = "1275070493"
-F77_MPI_INTEGER           = "1275070489"
-F77_MPI_LB                = "1275068432"
-F77_MPI_LOGICAL           = "1275070491"
-F77_MPI_PACKED            = "1275068687"
-F77_MPI_REAL              = "1275070490"
-F77_MPI_UB                = "1275068433"
-
-F77_COMPLEX8          = "1275070492"
-F77_COMPLEX16         = "1275072544"
-F77_COMPLEX32         = "MPI_DATATYPE_NULL"
-F77_INTEGER1          = "1275068673" '"0x" + mpi_datatype_prefix + "01"
-F77_INTEGER2          = "1275068931" '"0x" + mpi_datatype_prefix + "02"
-F77_INTEGER4          = "1275069445" '"0x" + mpi_datatype_prefix + "04"
-F77_INTEGER8          = "1275070471" '"0x" + mpi_datatype_prefix + "08"
-F77_INTEGER16         = "MPI_DATATYPE_NULL" '"0x" + mpi_datatype_prefix + "10"
-F77_REAL4             = "1275069450" '"0x" + mpi_datatype_prefix + "04"
-F77_REAL8             = "1275070475" '"0x" + mpi_datatype_prefix + "08"
-F77_REAL16            = "MPI_DATATYPE_NULL" '"0x" + mpi_datatype_prefix + "10"
-
-'
-' Miscellaneous settings
-'
-MPI_MAX_PROCESSOR_NAME = "128"
-BSEND_OVERHEAD         = "52"
-If bWin64 Then
-  MPI_AINT               = "__int64"
-Else
-  MPI_AINT               = "int"
-End If
-MPI_FINT               = "int"
-MPI_OFFSET             = "__int64"
-'MPI_OFFSET_TYPEDEF     = "typedef __int64 MPI_Offset;"
-MPI_OFFSET_TYPEDEF     = "#ifdef USE_GCC" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif"
-'MPI_OFFSET             = "long long"
-'MPI_OFFSET_TYPEDEF     = "typedef long long MPI_Offset;"
-EXTRA_STATUS_DECL      = ""
-HAVE_ROMIO             = "#include ""mpio.h"""
-'HAVE_ROMIO             = ""
-
-set f = WScript.CreateObject("Scripting.FileSystemObject")
 set fout = f.CreateTextFile("src\include\mpi.h")
 set fin = f.OpenTextFile("src\include\mpi.h.in")
 
 contents = fin.ReadAll()
-contents = Replace(contents, "@MPI_CHAR@", MPI_CHAR)
-contents = Replace(contents, "@MPI_UNSIGNED_CHAR@", MPI_UNSIGNED_CHAR)
-contents = Replace(contents, "@MPI_SHORT@", MPI_SHORT)
-contents = Replace(contents, "@MPI_UNSIGNED_SHORT@", MPI_UNSIGNED_SHORT)
-contents = Replace(contents, "@MPI_INT@", MPI_INT)
-contents = Replace(contents, "@MPI_UNSIGNED@", MPI_UNSIGNED)
-contents = Replace(contents, "@MPI_UNSIGNED_INT@", MPI_UNSIGNED)
-contents = Replace(contents, "@MPI_LONG@", MPI_LONG)
-contents = Replace(contents, "@MPI_UNSIGNED_LONG@", MPI_UNSIGNED_LONG)
-contents = Replace(contents, "@MPI_LONG_LONG@", MPI_LONG_LONG)
-contents = Replace(contents, "@MPI_FLOAT@", MPI_FLOAT)
-contents = Replace(contents, "@MPI_DOUBLE@", MPI_DOUBLE)
-contents = Replace(contents, "@MPI_LONG_DOUBLE@", MPI_LONG_DOUBLE)
-contents = Replace(contents, "@MPI_BYTE@", MPI_BYTE)
-contents = Replace(contents, "@MPI_WCHAR_T@", MPI_WCHAR_T)
-contents = Replace(contents, "@MPI_PACKED@", MPI_PACKED)
-contents = Replace(contents, "@MPI_LB@", MPI_LB)
-contents = Replace(contents, "@MPI_UB@", MPI_UB)
-contents = Replace(contents, "@MPI_FLOAT_INT@", MPI_FLOAT_INT)
-contents = Replace(contents, "@MPI_DOUBLE_INT@", MPI_DOUBLE_INT)
-contents = Replace(contents, "@MPI_LONG_INT@", MPI_LONG_INT)
-contents = Replace(contents, "@MPI_SHORT_INT@", MPI_SHORT_INT)
-contents = Replace(contents, "@MPI_2INT@", MPI_2INT)
-contents = Replace(contents, "@MPI_LONG_DOUBLE_INT@", MPI_LONG_DOUBLE_INT)
-contents = Replace(contents, "@MPI_CHARACTER@", MPI_CHARACTER)
-contents = Replace(contents, "@MPI_INTEGER@", MPI_INTEGER)
-contents = Replace(contents, "@MPI_REAL@", MPI_REAL)
-contents = Replace(contents, "@MPI_LOGICAL@", MPI_LOGICAL)
-contents = Replace(contents, "@MPI_COMPLEX@", MPI_COMPLEX)
-contents = Replace(contents, "@MPI_DOUBLE_PRECISION@", MPI_DOUBLE_PRECISION)
-contents = Replace(contents, "@MPI_2INTEGER@", MPI_2INTEGER)
-contents = Replace(contents, "@MPI_2REAL@", MPI_2REAL)
-contents = Replace(contents, "@MPI_DOUBLE_COMPLEX@", MPI_DOUBLE_COMPLEX)
-contents = Replace(contents, "@MPI_2DOUBLE_PRECISION@", MPI_2DOUBLE_PRECISION)
-contents = Replace(contents, "@MPI_2COMPLEX@", MPI_2COMPLEX)
-contents = Replace(contents, "@MPI_2DOUBLE_COMPLEX@", MPI_2DOUBLE_COMPLEX)
-contents = Replace(contents, "@MPI_MAX_PROCESSOR_NAME@", MPI_MAX_PROCESSOR_NAME)
-contents = Replace(contents, "@BSEND_OVERHEAD@", BSEND_OVERHEAD)
-contents = Replace(contents, "@MPI_AINT@", MPI_AINT)
-contents = Replace(contents, "@MPI_FINT@", MPI_FINT)
-contents = Replace(contents, "@MPI_OFFSET@", MPI_OFFSET)
-contents = Replace(contents, "@MPI_OFFSET_TYPEDEF@", MPI_OFFSET_TYPEDEF)
-contents = Replace(contents, "@EXTRA_STATUS_DECL@", EXTRA_STATUS_DECL)
-contents = Replace(contents, "@HAVE_ROMIO@", HAVE_ROMIO)
-contents = Replace(contents, "@MPI_REAL4@", MPI_REAL4)
-contents = Replace(contents, "@MPI_REAL8@", MPI_REAL8)
-contents = Replace(contents, "@MPI_REAL16@", MPI_REAL16)
-contents = Replace(contents, "@MPI_COMPLEX8@", MPI_COMPLEX8)
-contents = Replace(contents, "@MPI_COMPLEX16@", MPI_COMPLEX16)
-contents = Replace(contents, "@MPI_COMPLEX32@", MPI_COMPLEX32)
-contents = Replace(contents, "@MPI_INTEGER1@", MPI_INTEGER1)
-contents = Replace(contents, "@MPI_INTEGER2@", MPI_INTEGER2)
-contents = Replace(contents, "@MPI_INTEGER4@", MPI_INTEGER4)
-contents = Replace(contents, "@MPI_INTEGER8@", MPI_INTEGER8)
-contents = Replace(contents, "@MPI_INTEGER16@", MPI_INTEGER16)
-
+contents = ReplaceAts(contents, false)
 fout.Write(contents)
 fin.Close()
 fout.Close()
@@ -362,14 +821,7 @@ set fout = f.CreateTextFile("src\include\mpichtimer.h")
 set fin = f.OpenTextFile("src\mpi\timer\mpichtimer.h.in")
 
 contents = fin.ReadAll()
-If bUseCycleCounter Then
-  contents = Replace(contents, "@MPICH_TIMER_KIND@", "USE_WIN86_CYCLE")
-  contents = Replace(contents, "@MPID_TIMER_TYPE@", "unsigned __int64")
-Else
-  contents = Replace(contents, "@MPICH_TIMER_KIND@", "USE_QUERYPERFORMANCECOUNTER")
-  contents = Replace(contents, "@MPID_TIMER_TYPE@", "LARGE_INTEGER")
-End If
-
+contents = ReplaceAts(contents, false)
 fout.Write(contents)
 fin.Close()
 fout.Close()
@@ -383,15 +835,7 @@ set fout = f.CreateTextFile("src\include\mpio.h")
 set fin = f.OpenTextFile("src\mpi\romio\include\mpio.h.in")
 
 contents = fin.ReadAll()
-'contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "typedef __int64 MPI_Offset;")
-'contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "#ifdef USE_GCC" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif")
-'contents = Replace(contents, "@DEFINE_MPI_OFFSET@", "typedef long long MPI_Offset;")
-contents = Replace(contents, "@DEFINE_MPI_OFFSET@", MPI_OFFSET_TYPEDEF)
-contents = Replace(contents, "@NEEDS_MPI_FINT@", "")
-contents = Replace(contents, "@HAVE_MPI_INFO@", "#define HAVE_MPI_INFO")
-contents = Replace(contents, "@HAVE_MPI_DARRAY_SUBARRAY@", "")
-contents = Replace(contents, "@DEFINE_HAVE_MPI_GREQUEST@", "#define DEFINE_HAVE_MPI_GREQUEST")
-
+contents = ReplaceAts(contents, false)
 fout.Write(contents)
 fin.Close()
 fout.Close()
@@ -485,77 +929,190 @@ fout.WriteLine("#endif")
 
 fout.Close()
 
-'
-' Generate mpicxx.h
-'
 
-Dim WshShell
+Function BuildIFaces()
 
-If bForce Or Not f.FileExists("src\binding\cxx\mpicxx.h.in") Then
+	Dim WshShell
+	set f = WScript.CreateObject("Scripting.FileSystemObject")
 
-  Set WshShell = CreateObject("WScript.Shell")
-  WshShell.CurrentDirectory = "src\binding\cxx"
-  WshShell.Run "perl buildiface -nosep -noromio", 0, true
-  WshShell.CurrentDirectory = "..\..\.."
-
-End If
-
-If f.FileExists("src\binding\cxx\mpicxx.h.in") Then
-
-  set fin = f.OpenTextFile("src\binding\cxx\mpicxx.h.in")
-  set fout = f.CreateTextFile("src\include\mpicxx.h")
-  contents = fin.ReadAll()
-  contents = Replace(contents, "@HAVE_CXX_EXCEPTIONS@", "1")
-  fout.Write(contents)
-  fin.Close()
-  fout.Close()
-
-Else
-
-  WScript.Echo("Run ""perl buildiface -nosep -noromio"" from the src\binding\cxx directory before running winconfigure")
-  
-End IF
-
-
-'
-' Generate mpimcxx.h
-'
-
-If bMcxx Then
-
-	If bForce Or Not f.FileExists("src\binding\mcxx\mpimcxx.h.in") Then
+	'
+	' Generate mpicxx.h
+	'
+	If bForce Or Not f.FileExists("src\binding\cxx\mpicxx.h.in") Then
 
 		Set WshShell = CreateObject("WScript.Shell")
-		WshShell.CurrentDirectory = "src\binding\mcxx"
-		WshShell.Run "perl buildiface -nosep -noromio", 0, true
-		WhShell.CurrentDirectory = "..\..\.."
+		WshShell.CurrentDirectory = "src\binding\cxx"
+		WshShell.Run "perl buildiface -nosep", 0, true
+		WshShell.CurrentDirectory = "..\..\.."
+	
+	End If
+
+	If f.FileExists("src\binding\cxx\mpicxx.h.in") Then
+	
+	  set fin = f.OpenTextFile("src\binding\cxx\mpicxx.h.in")
+	  set fout = f.CreateTextFile("src\include\mpicxx.h")
+	  contents = fin.ReadAll()
+	  contents = ReplaceAts(contents, false)
+	  fout.Write(contents)
+	  fin.Close()
+	  fout.Close()
+	
+	Else
+	
+	  WScript.Echo("Run ""perl buildiface -nosep"" from the src\binding\cxx directory before running winconfigure")
+	  
+	End IF
+	
+	
+	'
+	' Generate mpimcxx.h
+	'
+	If bMcxx Then
+	
+		If bForce Or Not f.FileExists("src\binding\mcxx\mpimcxx.h.in") Then
+	
+			Set WshShell = CreateObject("WScript.Shell")
+			WshShell.CurrentDirectory = "src\binding\mcxx"
+			WshShell.Run "perl buildiface -nosep", 0, true
+			WhShell.CurrentDirectory = "..\..\.."
+	
+		End If
+	
+		If f.FileExists("src\binding\mcxx\mpimcxx.h.in") Then
+
+			set fin = f.OpenTextFile("src\binding\mcxx\mpimcxx.h.in")
+			set fout = f.CreateTextFile("src\include\mpimcxx.h")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+
+		Else
+	
+			WScript.Echo("Run ""perl buildiface -nosep"" from the src\binding\mcxx directory before running winconfigure")
+	  
+		End If
+		
+	End If
+
+	'
+	' Generate mpif.h
+	'
+	If bForce Or Not f.FileExists("src\binding\f77\mpif.h.in") Then
+
+		Set WshShell = CreateObject("WScript.Shell")
+		WshShell.CurrentDirectory = "src\binding\f77"
+		WshShell.Run "perl buildiface", 0, true
+		WshShell.CurrentDirectory = "..\..\.."
 
 	End If
 
-	If f.FileExists("src\binding\mcxx\mpimcxx.h.in") Then
+	If f.FileExists("src\binding\f77\mpif.h.in") Then
 
-		set fin = f.OpenTextFile("src\binding\mcxx\mpimcxx.h.in")
-		set fout = f.CreateTextFile("src\include\mpimcxx.h")
+		set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
+		set fout = f.CreateTextFile("src\include\mpif.h")
 		contents = fin.ReadAll()
-		contents = Replace(contents, "@HAVE_CXX_EXCEPTIONS@", "1")
+		contents = ReplaceAts(contents, true)
 		fout.Write(contents)
 		fin.Close()
 		fout.Close()
 
 	Else
-
-		WScript.Echo("Run ""perl buildiface -nosep -noromio"" from the src\binding\mcxx directory before running winconfigure")
-  
-	End If
 	
-End If
+	  WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
+	
+	End IF
+	
+	'
+	' Generate setbotf.f
+	'
+	If f.FileExists("src\binding\f77\setbotf.f.in") Then
 
+		set fin = f.OpenTextFile("src\binding\f77\setbotf.f.in")
+		set fout = f.CreateTextFile("src\binding\f77\setbotf.f")
+		contents = fin.ReadAll()
+		contents = ReplaceAts(contents, true)
+		fout.Write(contents)
+		fin.Close()
+		fout.Close()
+
+	End IF
+
+	'
+	' Generate F90 module files
+	'
+	If bForce Or Not f.FileExists("src\binding\f90\mpi.f90") Then
+
+		Set WshShell = CreateObject("WScript.Shell")
+		WshShell.CurrentDirectory = "src\binding\f90"
+		WshShell.Run "perl buildiface", 0, true
+		WshShell.CurrentDirectory = "..\..\.."
+
+	End If
+
+	If Not f.FileExists("src\binding\f90\mpi.f90") Then
+
+		WScript.Echo("Run ""perl buildiface"" from the src\binding\f90 directory to generate the F90 modules")
+
+	End IF
+
+End Function
+
+BuildIFaces()
+
+'
+' Generate defmsg.h
+'
+Function RunCmd(cmd_line)
+	Dim results(2)
+	Set WshShell = CreateObject("WScript.Shell")
+	Set oExec = WshShell.Exec(cmd_line)
+	cmd_output = ""
+    err_output = ""
+	If Not oExec.StdOut.AtEndOfStream Then
+		cmd_output = cmd_output & oExec.StdOut.ReadAll
+	End If
+    If Not oExec.StdErr.AtEndOfStream Then
+		err_output = err_output & oExec.StdErr.ReadAll
+	End If
+    Do While oExec.Status <> 1
+        WScript.Sleep 10
+    Loop
+    results(0) = cmd_output
+    results(1) = err_output
+    RunCmd = results
+End Function
+
+Function GenerateDefmsg()
+	set f = WScript.CreateObject("Scripting.FileSystemObject")
+	set fin = f.OpenTextFile("maint\errmsgdirs")
+	contents = fin.ReadAll()
+	fin.Close()
+	contents = Trim(contents)
+	contents = Replace(contents, "/", "\")
+	contents = Replace(contents, vbCrLf, "")
+	cmd_line = "perl maint\extracterrmsgs " & contents
+	'WScript.Echo(cmd_line)
+	output = RunCmd(cmd_line)
+	If Len(output(1)) > 0 Then
+		WScript.Echo("Because of errors in extracting error messages, the file src\mpi\errhan\defmsg.h was not updated.")
+	Else
+		set fout = f.OpenTextFile("src\mpi\errhan\defmsg.h", 2, True)
+		fout.Write(output(0))
+		fout.Close()
+	End If
+End Function
+
+If bForce Then
+	GenerateDefmsg()
+End If
 
 '
 ' Generate mpiallstates.h and describe_states.c
 '
-If bForce Or Not f.FileExists("maint\genstates") Then
-
+Function GenerateStatesFiles()
+	set f = WScript.CreateObject("Scripting.FileSystemObject")
 	If f.FileExists("maint\genstates.in") Then
 
 		set fin = f.OpenTextFile("maint\genstates.in")
@@ -574,105 +1131,11 @@ If bForce Or Not f.FileExists("maint\genstates") Then
 	
 	Set WshShell = CreateObject("WScript.Shell")
 	WshShell.Run "perl maint\genstates", 0, true
+End Function
 
+If bForce Or Not f.FileExists("maint\genstates") Then
+	GenerateStatesFiles()
 End If
-
-'
-' Generate mpif.h
-'
-
-If bForce Or Not f.FileExists("src\binding\f77\mpif.h.in") Then
-
-  Set WshShell = CreateObject("WScript.Shell")
-  WshShell.CurrentDirectory = "src\binding\f77"
-  WshShell.Run "perl buildiface", 0, true
-  WshShell.CurrentDirectory = "..\..\.."
-
-End If
-
-If f.FileExists("src\binding\f77\mpif.h.in") Then
-
-  set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
-  set fout = f.CreateTextFile("src\include\mpif.h")
-  contents = fin.ReadAll()
-' Add the replacements for mpif.h here
-  contents = Replace(contents, "@ADDRESS_KIND@", "4")
-  contents = Replace(contents, "@OFFSET_KIND@", "4")
-  contents = Replace(contents, "@BSEND_OVERHEAD@", BSEND_OVERHEAD)
-  contents = Replace(contents, "@F77_COMPLEX16@", F77_COMPLEX16)
-  contents = Replace(contents, "@F77_COMPLEX32@", F77_COMPLEX32)
-  contents = Replace(contents, "@F77_COMPLEX8@", F77_COMPLEX8)
-  contents = Replace(contents, "@F77_INTEGER1@", F77_INTEGER1)
-  contents = Replace(contents, "@F77_INTEGER2@", F77_INTEGER2)
-  contents = Replace(contents, "@F77_INTEGER4@", F77_INTEGER4)
-  contents = Replace(contents, "@F77_INTEGER8@", F77_INTEGER8)
-  contents = Replace(contents, "@F77_INTEGER16@", F77_INTEGER16)
-  contents = Replace(contents, "@F77_REAL4@", F77_REAL4)
-  contents = Replace(contents, "@F77_REAL8@", F77_REAL8)
-  contents = Replace(contents, "@F77_REAL16@", F77_REAL16)
-
-  contents = Replace(contents, "@MPI_2COMPLEX@", F77_MPI_2COMPLEX)
-  contents = Replace(contents, "@MPI_2DOUBLE_COMPLEX@", F77_MPI_2DOUBLE_COMPLEX)
-  contents = Replace(contents, "@MPI_2DOUBLE_PRECISION@", F77_MPI_2DOUBLE_PRECISION)
-  contents = Replace(contents, "@MPI_2INTEGER@", F77_MPI_2INTEGER)
-  contents = Replace(contents, "@MPI_2REAL@", F77_MPI_2REAL)
-  contents = Replace(contents, "@MPI_CHARACTER@", F77_MPI_CHARACTER)
-  contents = Replace(contents, "@MPI_COMPLEX@", F77_MPI_COMPLEX)
-  contents = Replace(contents, "@MPI_DOUBLE_COMPLEX@", F77_MPI_DOUBLE_COMPLEX)
-  contents = Replace(contents, "@MPI_DOUBLE_PRECISION@", F77_MPI_DOUBLE_PRECISION)
-  contents = Replace(contents, "@MPI_INTEGER@", F77_MPI_INTEGER)
-  contents = Replace(contents, "@MPI_LB@", F77_MPI_LB)
-  contents = Replace(contents, "@MPI_LOGICAL@", F77_MPI_LOGICAL)
-  contents = Replace(contents, "@MPI_MAX_PROCESSOR_NAME@", MPI_MAX_PROCESSOR_NAME)
-  contents = Replace(contents, "@MPI_PACKED@", F77_MPI_PACKED)
-  contents = Replace(contents, "@MPI_REAL@", F77_MPI_REAL)
-  contents = Replace(contents, "@MPI_STATUS_SIZE@", "5")
-  contents = Replace(contents, "@MPI_UB@", F77_MPI_UB)
-  fout.Write(contents)
-  fin.Close()
-  fout.Close()
-
-Else
-
-  WScript.Echo("Run ""perl buildiface"" from the src\binding\f77 directory before running winconfigure")
-
-End IF
-
-'
-' Generate setbotf.f
-'
-
-If f.FileExists("src\binding\f77\setbotf.f.in") Then
-
-  set fin = f.OpenTextFile("src\binding\f77\setbotf.f.in")
-  set fout = f.CreateTextFile("src\binding\f77\setbotf.f")
-  contents = fin.ReadAll()
-' Add the replacements for setbotf.f here
-  contents = Replace(contents, "@MPI_STATUS_SIZE@", "5")
-  fout.Write(contents)
-  fin.Close()
-  fout.Close()
-
-End IF
-
-'
-' Generate F90 module files
-'
-
-If bForce Or Not f.FileExists("src\binding\f90\mpi.f90") Then
-
-  Set WshShell = CreateObject("WScript.Shell")
-  WshShell.CurrentDirectory = "src\binding\f90"
-  WshShell.Run "perl buildiface", 0, true
-  WshShell.CurrentDirectory = "..\..\.."
-
-End If
-
-If Not f.FileExists("src\binding\f90\mpi.f90") Then
-
-  WScript.Echo("Run ""perl buildiface"" from the src\binding\f90 directory to generate the F90 modules")
-  
-End IF
 
 '
 ' Validate .in files
@@ -689,6 +1152,261 @@ Function RegExpFind(pattern, str)
       RegExpFind = Match.Value
       Exit For
    Next
+End Function
+
+Function ReplaceAts( str, use_f77 )
+	Dim regEx, Match, Matches
+	Set regEx = New RegExp
+	regEx.Pattern = "@.*@"
+	regEx.IgnoreCase = True
+	regEx.Global = True
+	Set Matches = regEx.Execute(str)
+	For Each Match in Matches
+		Select Case Match
+			Case "@MPI_CHAR@"
+				str = Replace(str, "@MPI_CHAR@", MPI_CHAR)
+			Case "@MPI_SIGNED_CHAR@"
+				str = Replace(str, "@MPI_SIGNED_CHAR@", MPI_SIGNED_CHAR)
+			Case "@MPI_WCHAR@"
+				str = Replace(str, "@MPI_WCHAR@", MPI_WCHAR)
+			Case "@MPI_UNSIGNED_CHAR@"
+				str = Replace(str, "@MPI_UNSIGNED_CHAR@", MPI_UNSIGNED_CHAR)
+			Case "@MPI_SHORT@"
+				str = Replace(str, "@MPI_SHORT@", MPI_SHORT)
+			Case "@MPI_UNSIGNED_SHORT@"
+				str = Replace(str, "@MPI_UNSIGNED_SHORT@", MPI_UNSIGNED_SHORT)
+			Case "@MPI_INT@"
+				str = Replace(str, "@MPI_INT@", MPI_INT)
+			Case "@MPI_UNSIGNED@"
+				str = Replace(str, "@MPI_UNSIGNED@", MPI_UNSIGNED)
+			Case "@MPI_UNSIGNED_INT@"
+				str = Replace(str, "@MPI_UNSIGNED_INT@", MPI_UNSIGNED)
+			Case "@MPI_LONG@"
+				str = Replace(str, "@MPI_LONG@", MPI_LONG)
+			Case "@MPI_UNSIGNED_LONG@"
+				str = Replace(str, "@MPI_UNSIGNED_LONG@", MPI_UNSIGNED_LONG)
+			Case "@MPI_LONG_LONG@"
+				str = Replace(str, "@MPI_LONG_LONG@", MPI_LONG_LONG)
+			Case "@MPI_UNSIGNED_LONG_LONG@"
+				str = Replace(str, "@MPI_UNSIGNED_LONG_LONG@", MPI_UNSIGNED_LONG_LONG)
+			Case "@MPI_FLOAT@"
+				str = Replace(str, "@MPI_FLOAT@", MPI_FLOAT)
+			Case "@MPI_DOUBLE@"
+				str = Replace(str, "@MPI_DOUBLE@", MPI_DOUBLE)
+			Case "@MPI_LONG_DOUBLE@"
+				str = Replace(str, "@MPI_LONG_DOUBLE@", MPI_LONG_DOUBLE)
+			Case "@MPI_BYTE@"
+				str = Replace(str, "@MPI_BYTE@", MPI_BYTE)
+			Case "@MPI_WCHAR_T@"
+				str = Replace(str, "@MPI_WCHAR_T@", MPI_WCHAR_T)
+			Case "@MPI_PACKED@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_PACKED@", F77_MPI_PACKED)
+				Else
+					str = Replace(str, "@MPI_PACKED@", MPI_PACKED)
+				End If
+			Case "@MPI_LB@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_LB@", F77_MPI_LB)
+				Else
+					str = Replace(str, "@MPI_LB@", MPI_LB)
+				End If
+			Case "@MPI_UB@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_UB@", F77_MPI_UB)
+				Else
+					str = Replace(str, "@MPI_UB@", MPI_UB)
+				End If
+			Case "@MPI_FLOAT_INT@"
+				str = Replace(str, "@MPI_FLOAT_INT@", MPI_FLOAT_INT)
+			Case "@MPI_DOUBLE_INT@"
+				str = Replace(str, "@MPI_DOUBLE_INT@", MPI_DOUBLE_INT)
+			Case "@MPI_LONG_INT@"
+				str = Replace(str, "@MPI_LONG_INT@", MPI_LONG_INT)
+			Case "@MPI_SHORT_INT@"
+				str = Replace(str, "@MPI_SHORT_INT@", MPI_SHORT_INT)
+			Case "@MPI_2INT@"
+				str = Replace(str, "@MPI_2INT@", MPI_2INT)
+			Case "@MPI_LONG_DOUBLE_INT@"
+				str = Replace(str, "@MPI_LONG_DOUBLE_INT@", MPI_LONG_DOUBLE_INT)
+			Case "@MPI_CHARACTER@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_CHARACTER@", F77_MPI_CHARACTER)
+				Else
+					str = Replace(str, "@MPI_CHARACTER@", MPI_CHARACTER)
+				End If
+			Case "@MPI_INTEGER@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_INTEGER@", F77_MPI_INTEGER)
+				Else
+					str = Replace(str, "@MPI_INTEGER@", MPI_INTEGER)
+				End If
+			Case "@MPI_REAL@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_REAL@", F77_MPI_REAL)
+				Else
+					str = Replace(str, "@MPI_REAL@", MPI_REAL)
+				End If
+			Case "@MPI_LOGICAL@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_LOGICAL@", F77_MPI_LOGICAL)
+				Else
+					str = Replace(str, "@MPI_LOGICAL@", MPI_LOGICAL)
+				End If
+			Case "@MPI_COMPLEX@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_COMPLEX@", F77_MPI_COMPLEX)
+				Else
+					str = Replace(str, "@MPI_COMPLEX@", MPI_COMPLEX)
+				End If
+			Case "@MPI_DOUBLE_PRECISION@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_DOUBLE_PRECISION@", F77_MPI_DOUBLE_PRECISION)
+				Else
+					str = Replace(str, "@MPI_DOUBLE_PRECISION@", MPI_DOUBLE_PRECISION)
+				End If
+			Case "@MPI_2INTEGER@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_2INTEGER@", F77_MPI_2INTEGER)
+				Else
+					str = Replace(str, "@MPI_2INTEGER@", MPI_2INTEGER)
+				End If
+			Case "@MPI_2REAL@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_2REAL@", F77_MPI_2REAL)
+				Else
+					str = Replace(str, "@MPI_2REAL@", MPI_2REAL)
+				End If
+			Case "@MPI_DOUBLE_COMPLEX@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_DOUBLE_COMPLEX@", F77_MPI_DOUBLE_COMPLEX)
+				Else
+					str = Replace(str, "@MPI_DOUBLE_COMPLEX@", MPI_DOUBLE_COMPLEX)
+				End If
+			Case "@MPI_2DOUBLE_PRECISION@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_2DOUBLE_PRECISION@", F77_MPI_2DOUBLE_PRECISION)
+				Else
+					str = Replace(str, "@MPI_2DOUBLE_PRECISION@", MPI_2DOUBLE_PRECISION)
+				End If
+			Case "@MPI_2COMPLEX@"
+				If use_f77 Then
+					str = Replace(str, "@MPI_2COMPLEX@", F77_MPI_2COMPLEX)
+				else
+					str = Replace(str, "@MPI_2COMPLEX@", MPI_2COMPLEX)
+				End If
+			Case "@MPI_2DOUBLE_COMPLEX@"
+				if use_f77 Then
+					str = Replace(str, "@MPI_2DOUBLE_COMPLEX@", F77_MPI_2DOUBLE_COMPLEX)
+				Else
+					str = Replace(str, "@MPI_2DOUBLE_COMPLEX@", MPI_2DOUBLE_COMPLEX)
+				End If
+			Case "@MPI_MAX_PROCESSOR_NAME@"
+				str = Replace(str, "@MPI_MAX_PROCESSOR_NAME@", MPI_MAX_PROCESSOR_NAME)
+			Case "@BSEND_OVERHEAD@"
+				str = Replace(str, "@BSEND_OVERHEAD@", BSEND_OVERHEAD)
+			Case "@MPI_AINT@"
+				str = Replace(str, "@MPI_AINT@", MPI_AINT)
+			Case "@MPI_FINT@"
+				str = Replace(str, "@MPI_FINT@", MPI_FINT)
+			Case "@MPI_OFFSET@"
+				str = Replace(str, "@MPI_OFFSET@", MPI_OFFSET)
+			Case "@MPI_OFFSET_TYPEDEF@"
+				str = Replace(str, "@MPI_OFFSET_TYPEDEF@", MPI_OFFSET_TYPEDEF)
+			Case "@EXTRA_STATUS_DECL@"
+				str = Replace(str, "@EXTRA_STATUS_DECL@", EXTRA_STATUS_DECL)
+			Case "@HAVE_ROMIO@"
+				str = Replace(str, "@HAVE_ROMIO@", HAVE_ROMIO)
+			Case "@MPI_REAL4@"
+				str = Replace(str, "@MPI_REAL4@", MPI_REAL4)
+			Case "@MPI_REAL8@"
+				str = Replace(str, "@MPI_REAL8@", MPI_REAL8)
+			Case "@MPI_REAL16@"
+				str = Replace(str, "@MPI_REAL16@", MPI_REAL16)
+			Case "@MPI_COMPLEX8@"
+				str = Replace(str, "@MPI_COMPLEX8@", MPI_COMPLEX8)
+			Case "@MPI_COMPLEX16@"
+				str = Replace(str, "@MPI_COMPLEX16@", MPI_COMPLEX16)
+			Case "@MPI_COMPLEX32@"
+				str = Replace(str, "@MPI_COMPLEX32@", MPI_COMPLEX32)
+			Case "@MPI_INTEGER1@"
+				str = Replace(str, "@MPI_INTEGER1@", MPI_INTEGER1)
+			Case "@MPI_INTEGER2@"
+				str = Replace(str, "@MPI_INTEGER2@", MPI_INTEGER2)
+			Case "@MPI_INTEGER4@"
+				str = Replace(str, "@MPI_INTEGER4@", MPI_INTEGER4)
+			Case "@MPI_INTEGER8@"
+				str = Replace(str, "@MPI_INTEGER8@", MPI_INTEGER8)
+			Case "@MPI_INTEGER16@"
+				str = Replace(str, "@MPI_INTEGER16@", MPI_INTEGER16)
+			Case "@MPICH_TIMER_KIND@"
+				If bUseCycleCounter Then
+					str = Replace(str, "@MPICH_TIMER_KIND@", "USE_WIN86_CYCLE")
+				Else
+					str = Replace(str, "@MPICH_TIMER_KIND@", "USE_QUERYPERFORMANCECOUNTER")
+				End If
+			Case "@MPID_TIMER_TYPE@"
+				If bUseCycleCounter Then
+					str = Replace(str, "@MPID_TIMER_TYPE@", "unsigned __int64")
+				Else
+					str = Replace(str, "@MPID_TIMER_TYPE@", "LARGE_INTEGER")
+				End If
+			Case "@DEFINE_MPI_OFFSET@"
+				'str = Replace(str, "@DEFINE_MPI_OFFSET@", "typedef __int64 MPI_Offset;")
+				'str = Replace(str, "@DEFINE_MPI_OFFSET@", "#if defined(USE_GCC) || defined(__GNUC__)" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif")
+				'str = Replace(str, "@DEFINE_MPI_OFFSET@", "typedef long long MPI_Offset;")
+				str = Replace(str, "@DEFINE_MPI_OFFSET@", MPI_OFFSET_TYPEDEF)
+			Case "@NEEDS_MPI_FINT@"
+				str = Replace(str, "@NEEDS_MPI_FINT@", "")
+			Case "@HAVE_MPI_INFO@"
+				str = Replace(str, "@HAVE_MPI_INFO@", "#define HAVE_MPI_INFO")
+			Case "@HAVE_MPI_DARRAY_SUBARRAY@"
+				str = Replace(str, "@HAVE_MPI_DARRAY_SUBARRAY@", "")
+			Case "@DEFINE_HAVE_MPI_GREQUEST@"
+				str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "#define HAVE_MPI_GREQUEST")
+			Case "@ADDRESS_KIND@"
+				str = Replace(str, "@ADDRESS_KIND@", "4")
+			Case "@OFFSET_KIND@"
+				str = Replace(str, "@OFFSET_KIND@", "4")
+			Case "@F77_COMPLEX16@"
+				str = Replace(str, "@F77_COMPLEX16@", F77_COMPLEX16)
+			Case "@F77_COMPLEX32@"
+				str = Replace(str, "@F77_COMPLEX32@", F77_COMPLEX32)
+			Case "@F77_COMPLEX8@"
+				str = Replace(str, "@F77_COMPLEX8@", F77_COMPLEX8)
+			Case "@F77_INTEGER1@"
+				str = Replace(str, "@F77_INTEGER1@", F77_INTEGER1)
+			Case "@F77_INTEGER2@"
+				str = Replace(str, "@F77_INTEGER2@", F77_INTEGER2)
+			Case "@F77_INTEGER4@"
+				str = Replace(str, "@F77_INTEGER4@", F77_INTEGER4)
+			Case "@F77_INTEGER8@"
+				str = Replace(str, "@F77_INTEGER8@", F77_INTEGER8)
+			Case "@F77_INTEGER16@"
+				str = Replace(str, "@F77_INTEGER16@", F77_INTEGER16)
+			Case "@F77_REAL4@"
+				str = Replace(str, "@F77_REAL4@", F77_REAL4)
+			Case "@F77_REAL8@"
+				str = Replace(str, "@F77_REAL8@", F77_REAL8)
+			Case "@F77_REAL16@"
+				str = Replace(str, "@F77_REAL16@", F77_REAL16)
+			Case "@MPI_STATUS_SIZE@"
+				str = Replace(str, "@MPI_STATUS_SIZE@", "5")
+			Case "@HAVE_CXX_EXCEPTIONS@"
+				str = Replace(str, "@HAVE_CXX_EXCEPTIONS@", "1")
+			Case "@F77_MPI_ADDRESS@"
+				str = Replace(str, "@F77_MPI_ADDRESS@", "INTEGER")
+			Case "@F77_MPI_OFFSET@"
+				str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER*8")
+			Case "@PCONTROL_LIST@"
+				'str = Replace(str, "@PCONTROL_LIST@", "")
+			Case "@configure_input@"
+				'str = Replace(str, "@configure_input@", "")
+			Case Else
+				unhandled_ats = unhandled_ats & Match & vbNewLine
+		End Select
+	Next
+	ReplaceAts = str
 End Function
 
 Sub AddDefinitions( fout, filename )
@@ -1178,6 +1896,14 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef MPIR_INTEGER16_CTYPE */")
 				Case "HAVE___VA_COPY"
 					fout.WriteLine("/* #undef HAVE___VA_COPY */")
+				Case "HAVE_IOSTREAM"
+					fout.WriteLine("#define HAVE_IOSTREAM 1")
+				Case "HAVE_NAMESPACES"
+					fout.WriteLine("#define HAVE_NAMESPACES 1")
+				Case "HAVE_NAMESPACE_STD"
+					fout.WriteLine("#define HAVE_NAMESPACE_STD 1")
+				Case "HAVE_STDDEF_H"
+					fout.WriteLine("#define HAVE_STDDEF_H 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -1215,6 +1941,12 @@ End Sub
 Set fout = f.CreateTextFile("src\binding\f77\mpi_fortconf.h")
 Call WriteHeader(fout, "mpi_fort")
 Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in")
+fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+fout.WriteLine("#define HAVE_WINDOWS_H")
+fout.WriteLine("#endif")
+fout.WriteLine("")
+fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
+fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
 Call WriteFooter(fout)
 fout.Close()
 
@@ -1383,12 +2115,65 @@ fout.Close()
 '
 ' mpitestconf.h
 '
-'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
-Set fout = f.CreateTextFile("src\include\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
-Call WriteHeader(fout, "mpitest")
-Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in")
-Call WriteFooter(fout)
-fout.Close()
+If f.FileExists("test\mpi\include\mpitestconf.h.in") Then
+	'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
+	Set fout = f.CreateTextFile("src\include\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
+	Call WriteHeader(fout, "mpitest")
+	Call AddDefinitions(fout, "test\mpi\include\mpitestconf.h.in")
+	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
+	fout.WriteLine("#define HAVE_WINDOWS_H")
+	fout.WriteLine("#endif")
+	Call WriteFooter(fout)
+	fout.Close()
+End If
+
+'
+' attraints.h
+'
+If f.FileExists("test\mpi\f77\attr\attraints.h.in") Then
+	Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
+	Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false)
+	fout.Write(contents)
+	fout.Close()
+End If
+
+'
+' typeaints.h
+'
+If f.FileExists("test\mpi\f77\datatype\typeaints.h.in") Then
+	Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
+	Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false)
+	fout.Write(contents)
+	fout.Close()
+End If
+
+'
+' iooffset.h
+'
+If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
+	Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
+	Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false)
+	fout.Write(contents)
+	fout.Close()
+End If
+
+'
+' addsize.h
+'
+If f.FileExists("test\mpi\f77\rma\addsize.h.in") Then
+	Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
+	Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
+	contents = fin.ReadAll()
+	contents = ReplaceAts(contents, false)
+	fout.Write(contents)
+	fout.Close()
+End If
 
 '
 ' fooconf.h
@@ -1403,111 +2188,119 @@ fout.Close()
 '
 ' Generate mpicc
 '
-vbLessThan = "<"
-vbGreaterThan = ">"
-path_to_mpich = f.GetAbsolutePathName("winconfigure.wsf")
-path_to_mpich = Left(path_to_mpich, Len(path_to_mpich) - 16)
-If Not f.FolderExists("bin") Then
-	f.CreateFolder("bin")
-End If
-Set fout = f.CreateTextFile("bin\mpicc.wsf")
-fout.WriteLine(vbLessThan & "package" & vbGreaterThan)
-fout.WriteLine(vbLessThan & "job id=""mpicc""" & vbGreaterThan)
-fout.WriteLine("    " & vbLessThan & "runtime" & vbGreaterThan)
-fout.WriteLine("        " & vbLessThan & "description" & vbGreaterThan & "This script compiles C console MPICH2 applications" & vbLessThan & "/description" & vbGreaterThan)
-fout.WriteLine("        " & vbLessThan & "unnamed")
-fout.WriteLine("            name = ""file""")
-fout.WriteLine("            helpstring = ""List the source files to compile""")
-fout.WriteLine("            many = ""true""")
-fout.WriteLine("            required = ""1""")
-fout.WriteLine("        /" & vbGreaterThan)
-fout.WriteLine("        " & vbLessThan & "named")
-fout.WriteLine("            name = ""out""")
-fout.WriteLine("            helpstring = ""Name of the output executable, default=myapp.exe""")
-fout.WriteLine("            type = ""string""")
-fout.WriteLine("            required = ""false""")
-fout.WriteLine("        /" & vbGreaterThan)
-fout.WriteLine("        " & vbLessThan & "example" & vbGreaterThan & "Example: mpicc main.c /out:foobar.exe" & vbLessThan & "/example" & vbGreaterThan)
-fout.WriteLine("    " & vbLessThan & "/runtime" & vbGreaterThan)
-fout.WriteLine(vbLessThan & "script language=""VBScript""" & vbGreaterThan)
-fout.WriteLine("")
-fout.WriteLine("' Set defaults")
-fout.WriteLine("outputExe = ""myapp.exe""")
-fout.WriteLine("")
-fout.WriteLine("If WScript.Arguments.Unnamed.Count = 0 Then")
-fout.WriteLine("    WScript.Arguments.ShowUsage")
-fout.WriteLine("    WScript.Quit")
-fout.WriteLine("End If")
-fout.WriteLine("")
-fout.WriteLine("Set f = WScript.CreateObject(""Scripting.FileSystemObject"")")
-fout.WriteLine("")
-fout.WriteLine("' Process named arguments")
-fout.WriteLine("If WScript.Arguments.Named.Exists(""out"") Then")
-fout.WriteLine("	outputExe = WScript.Arguments.Named.Item(""out"")")
-fout.WriteLine("End If")
-fout.WriteLine("")
-fout.WriteLine("' Create a new instance of Visual Studio .NET.")
-fout.WriteLine("Set DTE = WScript.CreateObject(""VisualStudio.DTE.7.1"")")
-fout.WriteLine("Set solution = DTE.Solution")
-fout.WriteLine("solution.Open(""" & path_to_mpich & "examples\windows\skeleton\skeleton.sln"")")
-fout.WriteLine("Set project = solution.Projects.Item(1)")
-fout.WriteLine("")
-fout.WriteLine("' Add the C files to the project")
-fout.WriteLine("Set Cfiles = WScript.Arguments.Unnamed")
-fout.WriteLine("For arg = 0 To Cfiles.Count - 1")
-fout.WriteLine("	Cfile = Cfiles(arg)")
-fout.WriteLine("	Cfile = f.GetAbsolutePathName(Cfile)")
-fout.WriteLine("	project.ProjectItems.AddFromFile(Cfile)")
-fout.WriteLine("Next")
-fout.WriteLine("")
-fout.WriteLine("' Build the solution")
-fout.WriteLine("solution.SolutionBuild.Build()")
-fout.WriteLine("")
-fout.WriteLine("While solution.SolutionBuild.BuildState " & vbLessThan & vbGreaterThan & " 3")
-fout.WriteLine("	WScript.Sleep 1000")
-fout.WriteLine("Wend")
-fout.WriteLine("")
-fout.WriteLine("' Save the output on error")
-fout.WriteLine("If solution.SolutionBuild.LastBuildInfo " & vbLessThan & vbGreaterThan & " 0 Then")
-fout.WriteLine("	WScript.Echo ""Build failed""")
-fout.WriteLine("	Set shell = WScript.CreateObject(""WScript.shell"")")
-fout.WriteLine("	shell.run """ & path_to_mpich & "examples\windows\skeleton\Debug\BuildLog.htm""")
-fout.WriteLine("End If")
-fout.WriteLine("")
-fout.WriteLine("' Remove the C files from the project")
-fout.WriteLine("For i = 1 To project.ProjectItems.Count")
-fout.WriteLine("	If project.ProjectItems.Item(i).Name = ""Source Files"" Then")
-fout.WriteLine("		index = i")
-fout.WriteLine("	End If")
-fout.WriteLine("Next")
-fout.WriteLine("For arg = 0 To Cfiles.Count - 1")
-fout.WriteLine("	Cfile = Cfiles(arg)")
-fout.WriteLine("	Cfile = f.GetFileName(Cfile)")
-fout.WriteLine("	For i = project.ProjectItems.Item(index).ProjectItems.Count To 1 Step -1")
-fout.WriteLine("		If project.ProjectItems.Item(index).ProjectItems.Item(i).Name = Cfile Then")
-fout.WriteLine("			project.ProjectItems.Item(index).ProjectItems.Item(i).Remove()")
-fout.WriteLine("		End If")
-fout.WriteLine("	Next")
-fout.WriteLine("Next")
-fout.WriteLine("")
-fout.WriteLine("' Copy the executable")
-fout.WriteLine("If f.FileExists(""" & path_to_mpich & "examples\windows\skeleton\Debug\skeleton.exe"") Then")
-fout.WriteLine("	f.CopyFile """ & path_to_mpich & "examples\windows\skeleton\Debug\skeleton.exe"", outputExe, True")
-fout.WriteLine("End If")
-fout.WriteLine("")
-fout.WriteLine("' Clean up")
-fout.WriteLine("solution.SolutionBuild.Clean()")
-fout.WriteLine("")
-fout.WriteLine(vbLessThan & "/script" & vbGreaterThan)
-fout.WriteLine(vbLessThan & "/job" & vbGreaterThan)
-fout.WriteLine(vbLessThan & "/package" & vbGreaterThan)
-fout.Close()
+Function GenerateMPICC()
+	set f = WScript.CreateObject("Scripting.FileSystemObject")
+	vbLessThan = "<"
+	vbGreaterThan = ">"
+	path_to_mpich = f.GetAbsolutePathName("winconfigure.wsf")
+	path_to_mpich = Left(path_to_mpich, Len(path_to_mpich) - 16)
+	If Not f.FolderExists("bin") Then
+		f.CreateFolder("bin")
+	End If
+	Set fout = f.CreateTextFile("bin\mpicc.wsf")
+	fout.WriteLine(vbLessThan & "package" & vbGreaterThan)
+	fout.WriteLine(vbLessThan & "job id=""mpicc""" & vbGreaterThan)
+	fout.WriteLine("    " & vbLessThan & "runtime" & vbGreaterThan)
+	fout.WriteLine("        " & vbLessThan & "description" & vbGreaterThan & "This script compiles C console MPICH2 applications" & vbLessThan & "/description" & vbGreaterThan)
+	fout.WriteLine("        " & vbLessThan & "unnamed")
+	fout.WriteLine("            name = ""file""")
+	fout.WriteLine("            helpstring = ""List the source files to compile""")
+	fout.WriteLine("            many = ""true""")
+	fout.WriteLine("            required = ""1""")
+	fout.WriteLine("        /" & vbGreaterThan)
+	fout.WriteLine("        " & vbLessThan & "named")
+	fout.WriteLine("            name = ""out""")
+	fout.WriteLine("            helpstring = ""Name of the output executable, default=myapp.exe""")
+	fout.WriteLine("            type = ""string""")
+	fout.WriteLine("            required = ""false""")
+	fout.WriteLine("        /" & vbGreaterThan)
+	fout.WriteLine("        " & vbLessThan & "example" & vbGreaterThan & "Example: mpicc main.c /out:foobar.exe" & vbLessThan & "/example" & vbGreaterThan)
+	fout.WriteLine("    " & vbLessThan & "/runtime" & vbGreaterThan)
+	fout.WriteLine(vbLessThan & "script language=""VBScript""" & vbGreaterThan)
+	fout.WriteLine("")
+	fout.WriteLine("' Set defaults")
+	fout.WriteLine("outputExe = ""myapp.exe""")
+	fout.WriteLine("")
+	fout.WriteLine("If WScript.Arguments.Unnamed.Count = 0 Then")
+	fout.WriteLine("    WScript.Arguments.ShowUsage")
+	fout.WriteLine("    WScript.Quit")
+	fout.WriteLine("End If")
+	fout.WriteLine("")
+	fout.WriteLine("Set f = WScript.CreateObject(""Scripting.FileSystemObject"")")
+	fout.WriteLine("")
+	fout.WriteLine("' Process named arguments")
+	fout.WriteLine("If WScript.Arguments.Named.Exists(""out"") Then")
+	fout.WriteLine("	outputExe = WScript.Arguments.Named.Item(""out"")")
+	fout.WriteLine("End If")
+	fout.WriteLine("")
+	fout.WriteLine("' Create a new instance of Visual Studio .NET.")
+	fout.WriteLine("Set DTE = WScript.CreateObject(""VisualStudio.DTE.7.1"")")
+	fout.WriteLine("Set solution = DTE.Solution")
+	fout.WriteLine("solution.Open(""" & path_to_mpich & "examples\windows\skeleton\skeleton.sln"")")
+	fout.WriteLine("Set project = solution.Projects.Item(1)")
+	fout.WriteLine("")
+	fout.WriteLine("' Add the C files to the project")
+	fout.WriteLine("Set Cfiles = WScript.Arguments.Unnamed")
+	fout.WriteLine("For arg = 0 To Cfiles.Count - 1")
+	fout.WriteLine("	Cfile = Cfiles(arg)")
+	fout.WriteLine("	Cfile = f.GetAbsolutePathName(Cfile)")
+	fout.WriteLine("	project.ProjectItems.AddFromFile(Cfile)")
+	fout.WriteLine("Next")
+	fout.WriteLine("")
+	fout.WriteLine("' Build the solution")
+	fout.WriteLine("solution.SolutionBuild.Build()")
+	fout.WriteLine("")
+	fout.WriteLine("While solution.SolutionBuild.BuildState " & vbLessThan & vbGreaterThan & " 3")
+	fout.WriteLine("	WScript.Sleep 1000")
+	fout.WriteLine("Wend")
+	fout.WriteLine("")
+	fout.WriteLine("' Save the output on error")
+	fout.WriteLine("If solution.SolutionBuild.LastBuildInfo " & vbLessThan & vbGreaterThan & " 0 Then")
+	fout.WriteLine("	WScript.Echo ""Build failed""")
+	fout.WriteLine("	Set shell = WScript.CreateObject(""WScript.shell"")")
+	fout.WriteLine("	shell.run """ & path_to_mpich & "examples\windows\skeleton\Debug\BuildLog.htm""")
+	fout.WriteLine("End If")
+	fout.WriteLine("")
+	fout.WriteLine("' Remove the C files from the project")
+	fout.WriteLine("For i = 1 To project.ProjectItems.Count")
+	fout.WriteLine("	If project.ProjectItems.Item(i).Name = ""Source Files"" Then")
+	fout.WriteLine("		index = i")
+	fout.WriteLine("	End If")
+	fout.WriteLine("Next")
+	fout.WriteLine("For arg = 0 To Cfiles.Count - 1")
+	fout.WriteLine("	Cfile = Cfiles(arg)")
+	fout.WriteLine("	Cfile = f.GetFileName(Cfile)")
+	fout.WriteLine("	For i = project.ProjectItems.Item(index).ProjectItems.Count To 1 Step -1")
+	fout.WriteLine("		If project.ProjectItems.Item(index).ProjectItems.Item(i).Name = Cfile Then")
+	fout.WriteLine("			project.ProjectItems.Item(index).ProjectItems.Item(i).Remove()")
+	fout.WriteLine("		End If")
+	fout.WriteLine("	Next")
+	fout.WriteLine("Next")
+	fout.WriteLine("")
+	fout.WriteLine("' Copy the executable")
+	fout.WriteLine("If f.FileExists(""" & path_to_mpich & "examples\windows\skeleton\Debug\skeleton.exe"") Then")
+	fout.WriteLine("	f.CopyFile """ & path_to_mpich & "examples\windows\skeleton\Debug\skeleton.exe"", outputExe, True")
+	fout.WriteLine("End If")
+	fout.WriteLine("")
+	fout.WriteLine("' Clean up")
+	fout.WriteLine("solution.SolutionBuild.Clean()")
+	fout.WriteLine("")
+	fout.WriteLine(vbLessThan & "/script" & vbGreaterThan)
+	fout.WriteLine(vbLessThan & "/job" & vbGreaterThan)
+	fout.WriteLine(vbLessThan & "/package" & vbGreaterThan)
+	fout.Close()
+End Function
+
+GenerateMPICC()
 
 '
 ' Report any errors
 '
 If unhandled_definitions <> "" Then
 	MsgBox "Unhandled definitions:" & vbNewLine & unhandled_definitions
+End If
+If unhandled_ats <> "" Then
+	MsgBox "Unhandled @foo@'s:" & vbNewLine & unhandled_ats
 End If
 
 </script>
