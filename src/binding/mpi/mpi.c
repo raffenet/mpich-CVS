@@ -16,7 +16,7 @@
  * Windows only mpi binding
  *
  * This file implements an mpi binding that calls another dynamically loaded mpi binding.
- * The environment variable MPI_DLL_NAME controls which library should be loaded.
+ * The environment variables MPI_DLL_NAME and MPICH2_CHANNEL control which library should be loaded.
  * The default library is mpich2.dll or mpich2d.dll.
  *
  * The motivation for this binding is to allow compiled mpi applications to be able
