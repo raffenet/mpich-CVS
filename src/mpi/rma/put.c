@@ -111,11 +111,11 @@ int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
 
     if (target_rank == MPI_PROC_NULL) return MPI_SUCCESS;
 
-    if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
+/*    if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
         printf("ERROR: RMA operations not supported for derived datatypes on target\n");
         NMPI_Abort(MPI_COMM_WORLD,1);
     }
-
+*/
     mpi_errno = MPID_Put(origin_addr, origin_count, origin_datatype,
                          target_rank, target_disp, target_count,
                          target_datatype, win_ptr);

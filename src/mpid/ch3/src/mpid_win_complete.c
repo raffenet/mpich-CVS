@@ -17,12 +17,27 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         MPI_Aint disp;
         int count;
         int datatype;
+        int datatype_kind;  /* basic or derived */
         MPI_Op op;
     } MPIU_RMA_op_info;
     MPIU_RMA_op_info *rma_op_infos;
+    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
+        int           is_contig; 
+        int           size;     
+        MPI_Aint      extent;   
+        int           loopsize; 
+        void          *loopinfo;  /* pointer needed to update pointers
+                                     within dataloop on remote side */
+        int           loopinfo_depth; 
+        MPI_Aint ub, lb, true_ub, true_lb;
+        int has_sticky_ub, has_sticky_lb;
+    } MPIU_RMA_dtype_info;
+    MPIU_RMA_dtype_info *dtype_infos;
+    void **dataloops;    /* to store dataloops for each datatype */
     MPI_Request *reqs;
     MPI_Group win_grp, start_grp;
     int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp;
+    MPID_Datatype *dtp;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_COMPLETE);
 
@@ -79,7 +94,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
                                ranks_in_start_grp, win_grp, ranks_in_win_grp);
 
     reqs = (MPI_Request *)
-        MPIU_Malloc((start_grp_size+2*total_op_count)*sizeof(MPI_Request));
+        MPIU_Malloc((start_grp_size+4*total_op_count)*sizeof(MPI_Request));
     if (!reqs) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
@@ -112,12 +127,32 @@ int MPID_Win_complete(MPID_Win *win_ptr)
        put or irecv for a get. */
     
     rma_op_infos = (MPIU_RMA_op_info *) 
-        MPIU_Malloc(total_op_count * sizeof(MPIU_RMA_op_info));
+        MPIU_Malloc((total_op_count+1) * sizeof(MPIU_RMA_op_info));
+    /* allocate one extra to prevent 0 size malloc */
     if (!rma_op_infos) {
         mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
         MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
         return mpi_errno;
     }
+
+    dtype_infos = (MPIU_RMA_dtype_info *)
+        MPIU_Malloc((total_op_count+1)*sizeof(MPIU_RMA_dtype_info));
+    /* allocate one extra to prevent 0 size malloc */
+    if (!dtype_infos) {
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
+    
+    dataloops = (void **) MPIU_Malloc((total_op_count+1)*sizeof(void*));
+    /* allocate one extra to prevent 0 size malloc */
+    if (!dataloops) {
+        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+        return mpi_errno;
+    }
+    for (i=0; i<total_op_count; i++)
+        dataloops[i] = NULL;
 
     i = 0;
     req_cnt = start_grp_size;
@@ -128,20 +163,93 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         rma_op_infos[i].count = curr_ptr->target_count;
         rma_op_infos[i].datatype = curr_ptr->target_datatype;
         rma_op_infos[i].op = curr_ptr->op;
-        
         dest = curr_ptr->target_rank;
         
-        /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
-        mpi_errno = NMPI_Isend(&rma_op_infos[i],
-                               sizeof(MPIU_RMA_op_info), MPI_BYTE, 
-                               dest, tags[dest], comm,
-                               &reqs[req_cnt]); 
-        if (mpi_errno) {
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
-            return mpi_errno;
+        if (HANDLE_GET_KIND(curr_ptr->target_datatype) ==
+            HANDLE_KIND_BUILTIN) {
+            /* basic datatype. send only the rma_op_info struct */
+            rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_BASIC;
+            /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
+            mpi_errno = NMPI_Isend(&rma_op_infos[i],
+                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                   dest, tags[dest], comm,
+                                   &reqs[req_cnt]); 
+            if (mpi_errno) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+                return mpi_errno;
+            }
+            req_cnt++;
+            tags[dest]++;
         }
-        req_cnt++;
-        tags[dest]++;
+        else {
+            /* derived datatype. send rma_op_info_struct as well
+               as derived datatype information */
+            
+            rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_DERIVED; 
+            /* fill derived datatype info */
+            MPID_Datatype_get_ptr(curr_ptr->target_datatype, dtp);
+            dtype_infos[i].is_contig = dtp->is_contig;
+            dtype_infos[i].size = dtp->size;
+            dtype_infos[i].extent = dtp->extent;
+            dtype_infos[i].loopsize = dtp->loopsize;
+            dtype_infos[i].loopinfo_depth = dtp->loopinfo_depth;
+            dtype_infos[i].loopinfo = dtp->loopinfo;
+            dtype_infos[i].ub = dtp->ub;
+            dtype_infos[i].lb = dtp->lb;
+            dtype_infos[i].true_ub = dtp->true_ub;
+            dtype_infos[i].true_lb = dtp->true_lb;
+            dtype_infos[i].has_sticky_ub = dtp->has_sticky_ub;
+            dtype_infos[i].has_sticky_lb = dtp->has_sticky_lb;
+
+            dataloops[i] = MPIU_Malloc(dtp->loopsize);
+            if (!dataloops[i]) {
+                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+                return mpi_errno;
+            }
+            memcpy(dataloops[i], dtp->loopinfo, dtp->loopsize);
+
+            /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
+            mpi_errno = NMPI_Isend(&rma_op_infos[i],
+                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                   dest, tags[dest], comm,
+                                   &reqs[req_cnt]); 
+            if (mpi_errno) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+                return mpi_errno;
+            }
+            req_cnt++;
+            tags[dest]++;
+
+            /* send the datatype info */
+            /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
+            mpi_errno = NMPI_Isend(&dtype_infos[i],
+                                   sizeof(MPIU_RMA_dtype_info), MPI_BYTE, 
+                                   dest, tags[dest], comm,
+                                   &reqs[req_cnt]); 
+            if (mpi_errno) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+                return mpi_errno;
+            }
+            req_cnt++;
+            tags[dest]++;
+            
+            mpi_errno = NMPI_Isend(dataloops[i],
+                                   dtp->loopsize, MPI_BYTE, 
+                                   dest, tags[dest], comm,
+                                   &reqs[req_cnt]); 
+            if (mpi_errno) {
+                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
+                return mpi_errno;
+            }
+            req_cnt++;
+            tags[dest]++;
+            
+            /* release the target dataype */
+            MPID_Datatype_release(dtp);
+        }
+
+        /* now send or recv the data */
         if ((curr_ptr->type == MPID_REQUEST_PUT) ||
             (curr_ptr->type == MPID_REQUEST_ACCUMULATE))
             mpi_errno = NMPI_Isend(curr_ptr->origin_addr,
@@ -158,6 +266,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         if (mpi_errno) {
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
             return mpi_errno;
+        }
+        if (HANDLE_GET_KIND(curr_ptr->origin_datatype) != HANDLE_KIND_BUILTIN) {
+            MPID_Datatype_get_ptr(curr_ptr->origin_datatype, dtp);
+            MPID_Datatype_release(dtp);
         }
         req_cnt++;
         tags[dest]++;
@@ -179,6 +291,11 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     MPIU_Free(rma_op_infos);
     MPIU_Free(nops_to_proc);
     NMPI_Group_free(&win_grp);
+    MPIU_Free(dtype_infos);
+    for (i=0; i<total_op_count; i++)
+        if (dataloops[i] != NULL) 
+            MPIU_Free(dataloops[i]);
+    MPIU_Free(dataloops);
 
     /* free MPIU_RMA_ops_list */
     curr_ptr = MPIU_RMA_ops_list;
@@ -188,14 +305,9 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         curr_ptr = next_ptr;
     }
     MPIU_RMA_ops_list = NULL;
-    
-    MPIU_Object_release_ref(win_ptr->start_group_ptr,&i);
-    if (!i) {
-        /* Only if refcount is 0 do we actually free. */
-        MPIU_Free( win_ptr->start_group_ptr->lrank_to_lpid );
-        MPIU_Handle_obj_free( &MPID_Group_mem, win_ptr->start_group_ptr );
-    }
 
+    /* free the group stored in window */
+    MPIR_Group_release(win_ptr->start_group_ptr);
     win_ptr->start_group_ptr = NULL; 
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);

@@ -76,8 +76,10 @@ int MPI_Type_struct(int count,
 		    MPIR_ERRTEST_ARGNEG(blocklens[i], "blocklen", mpi_errno);
 		    MPIR_ERRTEST_DATATYPE_NULL(old_types[i], "datatype", mpi_errno);
 		    if (mpi_errno != MPI_SUCCESS) break; /* stop before we dereference the null type */
-		    MPID_Datatype_get_ptr(old_types[i], datatype_ptr);
-		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                    if (HANDLE_GET_KIND(old_types[i]) != HANDLE_KIND_BUILTIN) {
+                        MPID_Datatype_get_ptr(old_types[i], datatype_ptr);
+                        MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                    }
 		}
 	    }
             if (mpi_errno != MPI_SUCCESS) {

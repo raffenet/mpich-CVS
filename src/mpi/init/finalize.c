@@ -127,6 +127,29 @@ int MPI_Finalize( void )
     
     MPID_Finalize();
 
+    /* delete local and remote groups on comm_world and comm_self if
+       they had been created */
+    if (MPIR_Process.comm_world->local_group)
+        MPIR_Group_release(MPIR_Process.comm_world->local_group);
+    if (MPIR_Process.comm_world->remote_group)
+        MPIR_Group_release(MPIR_Process.comm_world->remote_group);
+    if (MPIR_Process.comm_self->local_group)
+        MPIR_Group_release(MPIR_Process.comm_self->local_group);
+    if (MPIR_Process.comm_self->remote_group)
+        MPIR_Group_release(MPIR_Process.comm_self->remote_group);
+
+    /* Remove the attributes, executing the attribute delete routine.
+       Do this only if the attribute functions are defined. */ 
+    if (MPIR_Process.comm_attr_free && MPIR_Process.comm_world->attributes) {
+        mpi_errno = MPIR_Process.comm_attr_free(MPIR_Process.comm_world,
+                                         MPIR_Process.comm_world->attributes);
+    }
+    if (MPIR_Process.comm_attr_free && MPIR_Process.comm_self->attributes) {
+        mpi_errno = MPIR_Process.comm_attr_free(MPIR_Process.comm_self,
+                                         MPIR_Process.comm_self->attributes);
+    }
+
+
     MPIR_Call_finalize_callbacks();
 
     /* If memory debugging is enabled, check the memory here, after all
@@ -141,5 +164,5 @@ int MPI_Finalize( void )
     /* ... end of body of routine ... */
 
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

@@ -22,7 +22,7 @@ int MPID_Win_free(MPID_Win **win_ptr)
 
     pthread_join((*win_ptr)->passive_target_thread_id, (void **) &err);
     mpi_errno = *err;
-    MPIU_Free(*err);
+    MPIU_Free(err);
 
     NMPI_Comm_free(&((*win_ptr)->comm));
 

@@ -36,6 +36,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->disp_unit = disp_unit;
     (*win_ptr)->start_group_ptr = NULL; 
     (*win_ptr)->post_group_ptr = NULL; 
+
     mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &((*win_ptr)->comm));
 
     pthread_create(&((*win_ptr)->passive_target_thread_id), NULL,
@@ -56,17 +57,32 @@ void *MPIDI_Win_passive_target_thread(void *arg)
         MPI_Aint disp;
         int count;
         int datatype;
+        int datatype_kind;  /* basic or derived */
         MPI_Op op;
         int lock_type;
     } MPIU_RMA_op_info;
     MPIU_RMA_op_info rma_op_info;
+    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
+        int           is_contig; 
+        int           size;     
+        MPI_Aint      extent;   
+        int           loopsize; 
+        void          *loopinfo;  /* pointer needed to update pointers
+                                     within dataloop on remote side */
+        int           loopinfo_depth; 
+        MPI_Aint ub, lb, true_ub, true_lb;
+        int has_sticky_ub, has_sticky_lb;
+    } MPIU_RMA_dtype_info;
+    MPIU_RMA_dtype_info dtype_info;
+    void *dataloop=NULL;    /* to store dataloops for each datatype */
     MPI_User_function *uop;
     MPI_Op op;
     void *tmp_buf;
-    MPI_Aint extent;
+    MPI_Aint extent, ptrdiff;
     MPID_Win *win_ptr;
     int *mpi_errno, flag=0;
     MPI_Status status;
+    MPID_Datatype *new_dtp=NULL;
 
     mpi_errno = (int *) MPIU_Malloc(sizeof(int));
     if (!mpi_errno) {
@@ -99,7 +115,7 @@ void *MPIDI_Win_passive_target_thread(void *arg)
                                  MPIDI_PASSIVE_TARGET_RMA_TAG, comm,
                                  &flag, &status);
         if (*mpi_errno) return mpi_errno;
-*/
+*/        
         if (flag) {
             src = status.MPI_SOURCE;
             *mpi_errno = NMPI_Recv(&nops_from_proc, 1, MPI_INT, src,
@@ -120,6 +136,69 @@ void *MPIDI_Win_passive_target_thread(void *arg)
                 if (*mpi_errno) return mpi_errno;
                 tag++;
                 
+                if (rma_op_info.datatype_kind == MPID_RMA_DATATYPE_DERIVED) {
+                    /* recv the derived datatype info and create
+                       derived datatype */
+                    *mpi_errno = NMPI_Recv(&dtype_info,
+                                           sizeof(MPIU_RMA_dtype_info),
+                                           MPI_BYTE, src, tag, comm,
+                                           MPI_STATUS_IGNORE);
+                    if (*mpi_errno) return mpi_errno;
+                    tag++;
+
+                    /* recv dataloop */
+                    dataloop = (void *) MPIU_Malloc(dtype_info.loopsize);
+                    if (!dataloop) {
+                        *mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                        return mpi_errno;
+                    }
+                    
+                    *mpi_errno = NMPI_Recv(dataloop, dtype_info.loopsize,
+                                           MPI_BYTE, src, tag, comm,
+                                           MPI_STATUS_IGNORE);
+                    if (*mpi_errno) return mpi_errno;
+                    tag++;
+                    
+                    /* create derived datatype */
+                    
+                    /* allocate new datatype object and handle */
+                    new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
+                    if (!new_dtp) {
+                        *mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+                        return mpi_errno;
+                    }
+                    
+                    /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
+                    MPIU_Object_set_ref(new_dtp, 1);
+                    new_dtp->is_permanent = 0;
+                    new_dtp->is_committed = 1;
+                    new_dtp->attributes   = 0;
+                    new_dtp->cache_id     = 0;
+                    new_dtp->name[0]      = 0;
+                    new_dtp->is_contig = dtype_info.is_contig;
+                    new_dtp->size = dtype_info.size;
+                    new_dtp->extent = dtype_info.extent;
+                    new_dtp->loopsize = dtype_info.loopsize;
+                    new_dtp->loopinfo_depth = dtype_info.loopinfo_depth; 
+                    /* set dataloop pointer */
+                    new_dtp->loopinfo = dataloop;
+                    /* set datatype handle to be used in send/recv
+                       below */
+                    rma_op_info.datatype = new_dtp->handle;
+                    
+                    new_dtp->ub = dtype_info.ub;
+                    new_dtp->lb = dtype_info.lb;
+                    new_dtp->true_ub = dtype_info.true_ub;
+                    new_dtp->true_lb = dtype_info.true_lb;
+                    new_dtp->has_sticky_ub = dtype_info.has_sticky_ub;
+                    new_dtp->has_sticky_lb = dtype_info.has_sticky_lb;
+                    /* update pointers in dataloop */
+                    ptrdiff = (char *) (new_dtp->loopinfo) - (char *)
+                        (dtype_info.loopinfo); 
+                    
+                    MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
+                }
+
                 switch (rma_op_info.type) {
                 case MPID_REQUEST_LOCK:
                     /* We don't need to do anything for a lock request
@@ -191,6 +270,11 @@ void *MPIDI_Win_passive_target_thread(void *arg)
                     *mpi_errno = MPIR_Err_create_code( MPI_ERR_OP,
                                                        "****intern","**opundefined %s", "RMA target received unknown RMA operation" );
                     return mpi_errno;
+                }
+
+                if (rma_op_info.datatype_kind == MPID_RMA_DATATYPE_DERIVED) {
+                    MPIU_Handle_obj_free(&MPID_Datatype_mem, new_dtp);
+                    MPIU_Free(dataloop);
                 }
             }
             /* We need to acknowledge that all the operations are complete at

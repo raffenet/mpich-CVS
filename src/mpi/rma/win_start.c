@@ -95,6 +95,7 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     win_ptr->start_group_ptr = group_ptr;
     MPIU_Object_add_ref( group_ptr );
 
+
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
     return MPI_SUCCESS;
 }

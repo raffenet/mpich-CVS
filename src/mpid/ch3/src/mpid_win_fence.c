@@ -19,14 +19,29 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         MPI_Aint disp;
         int count;
         int datatype;
+        int datatype_kind;  /* basic or derived */
         MPI_Op op;
     } MPIU_RMA_op_info;
     MPIU_RMA_op_info *rma_op_infos;
+    typedef struct MPIU_RMA_dtype_info { /* for derived datatypes */
+        int           is_contig; 
+        int           size;     
+        MPI_Aint      extent;   
+        int           loopsize; 
+        void          *loopinfo;  /* pointer needed to update pointers
+                                     within dataloop on remote side */
+        int           loopinfo_depth; 
+        MPI_Aint ub, lb, true_ub, true_lb;
+        int has_sticky_ub, has_sticky_lb;
+    } MPIU_RMA_dtype_info;
+    MPIU_RMA_dtype_info *dtype_infos;
+    void **dataloops;    /* to store dataloops for each datatype */
     MPI_Request *reqs;
     MPI_User_function *uop;
     MPI_Op op;
     void *tmp_buf;
-    MPI_Aint extent;
+    MPI_Aint extent, ptrdiff;
+    MPID_Datatype *dtp, *new_dtp=NULL;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_FENCE);
 
@@ -88,7 +103,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         }
 
         reqs = (MPI_Request *)
-            MPIU_Malloc(total_op_count*2*sizeof(MPI_Request)); 
+            MPIU_Malloc(total_op_count*4*sizeof(MPI_Request)); 
         if (!reqs) {
             mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
             MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
@@ -102,6 +117,26 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             return mpi_errno;
         }
 
+        dtype_infos = (MPIU_RMA_dtype_info *)
+            MPIU_Malloc((total_op_count+1)*sizeof(MPIU_RMA_dtype_info));
+        /* allocate one extra for use when receiving data. see below */
+        if (!dtype_infos) {
+            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+            return mpi_errno;
+        }
+
+        dataloops = (void **)
+            MPIU_Malloc((total_op_count+1)*sizeof(void*));
+        /* allocate one extra for use when receiving data. see below */
+        if (!dataloops) {
+            mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+            return mpi_errno;
+        }
+        for (i=0; i<=total_op_count; i++)
+            dataloops[i] = NULL;
+
         i = 0;
         req_cnt = 0;
         curr_ptr = MPIU_RMA_ops_list;
@@ -110,21 +145,95 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
             rma_op_infos[i].disp = curr_ptr->target_disp;
             rma_op_infos[i].count = curr_ptr->target_count;
             rma_op_infos[i].datatype = curr_ptr->target_datatype;
-            rma_op_infos[i].op = curr_ptr->op;
-            
+            rma_op_infos[i].op = curr_ptr->op; 
             dest = curr_ptr->target_rank;
 
-            /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
-            mpi_errno = NMPI_Isend(&rma_op_infos[i],
-                                   sizeof(MPIU_RMA_op_info), MPI_BYTE, 
-                                   dest, tags[dest], comm,
-                                   &reqs[req_cnt]); 
-            if (mpi_errno) {
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
-                return mpi_errno;
+            if (HANDLE_GET_KIND(curr_ptr->target_datatype) ==
+                HANDLE_KIND_BUILTIN) {
+                /* basic datatype. send only the rma_op_info struct */
+                rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_BASIC;
+                /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
+                mpi_errno = NMPI_Isend(&rma_op_infos[i],
+                                       sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                       dest, tags[dest], comm,
+                                       &reqs[req_cnt]); 
+                if (mpi_errno) {
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                    return mpi_errno;
+                }
+                req_cnt++;
+                tags[dest]++;
             }
-            req_cnt++;
-            tags[dest]++;
+            else {
+                /* derived datatype. send rma_op_info_struct as well
+                   as derived datatype information */
+
+                rma_op_infos[i].datatype_kind = MPID_RMA_DATATYPE_DERIVED; 
+                /* fill derived datatype info */
+                MPID_Datatype_get_ptr(curr_ptr->target_datatype, dtp);
+                dtype_infos[i].is_contig = dtp->is_contig;
+                dtype_infos[i].size = dtp->size;
+                dtype_infos[i].extent = dtp->extent;
+                dtype_infos[i].loopsize = dtp->loopsize;
+                dtype_infos[i].loopinfo_depth = dtp->loopinfo_depth;
+                dtype_infos[i].loopinfo = dtp->loopinfo;
+                dtype_infos[i].ub = dtp->ub;
+                dtype_infos[i].lb = dtp->lb;
+                dtype_infos[i].true_ub = dtp->true_ub;
+                dtype_infos[i].true_lb = dtp->true_lb;
+                dtype_infos[i].has_sticky_ub = dtp->has_sticky_ub;
+                dtype_infos[i].has_sticky_lb = dtp->has_sticky_lb;
+
+                dataloops[i] = MPIU_Malloc(dtp->loopsize);
+                if (!dataloops[i]) {
+                    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                    return mpi_errno;
+                }
+                memcpy(dataloops[i], dtp->loopinfo, dtp->loopsize);
+
+                /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
+                mpi_errno = NMPI_Isend(&rma_op_infos[i],
+                                       sizeof(MPIU_RMA_op_info), MPI_BYTE, 
+                                       dest, tags[dest], comm,
+                                       &reqs[req_cnt]); 
+                if (mpi_errno) {
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                    return mpi_errno;
+                }
+                req_cnt++;
+                tags[dest]++;
+
+                /* send the datatype info */
+                /* NEED TO CONVERT THE FOLLOWING TO USE STRUCT DATATYPE */
+                mpi_errno = NMPI_Isend(&dtype_infos[i],
+                                       sizeof(MPIU_RMA_dtype_info), MPI_BYTE, 
+                                       dest, tags[dest], comm,
+                                       &reqs[req_cnt]); 
+                if (mpi_errno) {
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                    return mpi_errno;
+                }
+                req_cnt++;
+                tags[dest]++;
+
+                mpi_errno = NMPI_Isend(dataloops[i],
+                                       dtp->loopsize, MPI_BYTE, 
+                                       dest, tags[dest], comm,
+                                       &reqs[req_cnt]); 
+                if (mpi_errno) {
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                    return mpi_errno;
+                }
+                req_cnt++;
+                tags[dest]++;
+
+                /* release the target dataype */
+                MPID_Datatype_release(dtp);
+            }
+
+            /* now send or recv the data */
+
             if ((curr_ptr->type == MPID_REQUEST_PUT) ||
                 (curr_ptr->type == MPID_REQUEST_ACCUMULATE))
                 mpi_errno = NMPI_Isend(curr_ptr->origin_addr,
@@ -142,6 +251,11 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                 return mpi_errno;
             }
+            if (HANDLE_GET_KIND(curr_ptr->origin_datatype) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr(curr_ptr->origin_datatype, dtp);
+                MPID_Datatype_release(dtp);
+            }
+
             req_cnt++;
             tags[dest]++;
 
@@ -173,6 +287,82 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     return mpi_errno;
                 }
                 tags[src]++;
+
+                if (rma_op_infos[total_op_count].datatype_kind ==
+                    MPID_RMA_DATATYPE_DERIVED) {
+                    /* recv the derived datatype info and create
+                       derived datatype */
+                    mpi_errno =
+                        NMPI_Recv(&dtype_infos[total_op_count],
+                                  sizeof(MPIU_RMA_dtype_info),
+                                  MPI_BYTE, src, tags[src], comm,
+                                  MPI_STATUS_IGNORE);
+                    if (mpi_errno) {
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        return mpi_errno;
+                    }
+                    tags[src]++;
+
+                    /* recv dataloop */
+                    dataloops[total_op_count] = (void *)
+                        MPIU_Malloc(dtype_infos[total_op_count].loopsize);
+                    if (!dataloops[total_op_count]) {
+                        mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        return mpi_errno;
+                    }
+
+                    mpi_errno = NMPI_Recv(dataloops[total_op_count],
+                                          dtype_infos[total_op_count].loopsize,
+                                          MPI_BYTE, src, tags[src], comm,
+                                          MPI_STATUS_IGNORE);
+                    if (mpi_errno) {
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        return mpi_errno;
+                    }
+                    tags[src]++;
+
+                    /* create derived datatype */
+
+                    /* allocate new datatype object and handle */
+                    new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
+                    if (!new_dtp) {
+                        mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**nomem", 0);
+                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
+                        return mpi_errno;
+                    }
+                    
+                    /* Note: handle is filled in by MPIU_Handle_obj_alloc() */
+                    MPIU_Object_set_ref(new_dtp, 1);
+                    new_dtp->is_permanent = 0;
+                    new_dtp->is_committed = 1;
+                    new_dtp->attributes   = 0;
+                    new_dtp->cache_id     = 0;
+                    new_dtp->name[0]      = 0;
+                    new_dtp->is_contig = dtype_infos[total_op_count].is_contig;
+                    new_dtp->size = dtype_infos[total_op_count].size;
+                    new_dtp->extent = dtype_infos[total_op_count].extent;
+                    new_dtp->loopsize = dtype_infos[total_op_count].loopsize;
+                    new_dtp->loopinfo_depth =
+                        dtype_infos[total_op_count].loopinfo_depth; 
+                    /* set dataloop pointer */
+                    new_dtp->loopinfo = dataloops[total_op_count];
+                    /* set datatype handle to be used in send/recv
+                       below */
+                    rma_op_infos[total_op_count].datatype = new_dtp->handle;
+
+                    new_dtp->ub = dtype_infos[total_op_count].ub;
+                    new_dtp->lb = dtype_infos[total_op_count].lb;
+                    new_dtp->true_ub = dtype_infos[total_op_count].true_ub;
+                    new_dtp->true_lb = dtype_infos[total_op_count].true_lb;
+                    new_dtp->has_sticky_ub = dtype_infos[total_op_count].has_sticky_ub;
+                    new_dtp->has_sticky_lb = dtype_infos[total_op_count].has_sticky_lb;
+                    /* update pointers in dataloop */
+                    ptrdiff = (char *) (new_dtp->loopinfo) - (char *)
+                        (dtype_infos[total_op_count].loopinfo); 
+
+                    MPID_Dataloop_update(new_dtp->loopinfo, ptrdiff);
+                }
 
                 switch (rma_op_infos[total_op_count].type) {
                 case MPID_REQUEST_PUT:
@@ -249,9 +439,13 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
                     return mpi_errno;
                 }
-
                 tags[src]++;
 
+                if (rma_op_infos[total_op_count].datatype_kind ==
+                    MPID_RMA_DATATYPE_DERIVED) {
+                    MPIU_Handle_obj_free(&MPID_Datatype_mem, new_dtp);
+                    MPIU_Free(dataloops[total_op_count]);
+                }
             }
         }
 
@@ -268,6 +462,11 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         MPIU_Free(rma_op_infos);
         MPIU_Free(nops_to_proc);
         MPIU_Free(nops_from_proc);
+        MPIU_Free(dtype_infos);
+        for (i=0; i<total_op_count; i++)
+            if (dataloops[i] != NULL) 
+                MPIU_Free(dataloops[i]);
+        MPIU_Free(dataloops);
 
         /* free MPIU_RMA_ops_list */
         curr_ptr = MPIU_RMA_ops_list;

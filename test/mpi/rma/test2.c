@@ -59,6 +59,6 @@ int main(int argc, char *argv[])
     MPI_Group_free(&comm_group);
     MPI_Win_free(&win); 
     if (rank==0) printf("Done\n");
-    MPI_Finalize(); 
+    MPI_Finalize();
     return 0; 
 } 

@@ -45,7 +45,7 @@ int MPI_Group_free(MPI_Group *group)
     static const char FCNAME[] = "MPI_Group_free";
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL;
-    int flag;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_FREE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_FREE);
@@ -70,17 +70,12 @@ int MPI_Group_free(MPI_Group *group)
 
     /* ... body of routine ...  */
     /* Do not free MPI_GROUP_EMPTY */
-    if (*group != MPI_GROUP_EMPTY) {
-	MPIU_Object_release_ref(group_ptr,&flag);
-	if (!flag) {
-	    /* Only if refcount is 0 do we actually free. */
-	    MPIU_Free( group_ptr->lrank_to_lpid );
-	    MPIU_Handle_obj_free( &MPID_Group_mem, group_ptr );
-	}
-    }
+    if (*group != MPI_GROUP_EMPTY)
+        mpi_errno = MPIR_Group_release(group_ptr);
+
     *group = MPI_GROUP_NULL;
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_FREE);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 

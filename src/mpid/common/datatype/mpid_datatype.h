@@ -375,6 +375,8 @@ void MPID_Datatype_free_contents(struct MPID_Datatype *ptr);
 
 void MPID_Datatype_free(struct MPID_Datatype *ptr);
 
+void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
+                           MPI_Aint ptrdiff);
 
 /* end of file */
 #endif

@@ -19,6 +19,22 @@ MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP,
 				      sizeof(MPID_Group), MPID_Group_direct,
 				       MPID_GROUP_PREALLOC};
 
+
+int MPIR_Group_release(MPID_Group *group_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int inuse;
+
+    MPIU_Object_release_ref(group_ptr, &inuse);
+    if (!inuse) {
+        /* Only if refcount is 0 do we actually free. */
+        MPIU_Free(group_ptr->lrank_to_lpid);
+        MPIU_Handle_obj_free( &MPID_Group_mem, group_ptr );
+    }
+    return mpi_errno;
+}
+ 
+
 /* 
  * Allocate a new group and the group lrank to lpid array.  Does *not* 
  * initialize any arrays, but does set the reference count.

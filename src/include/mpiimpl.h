@@ -723,6 +723,8 @@ typedef struct MPIU_RMA_ops {
 #define MPID_REQUEST_GET 24
 #define MPID_REQUEST_ACCUMULATE 25
 #define MPID_REQUEST_LOCK 26
+#define MPID_RMA_DATATYPE_BASIC 50
+#define MPID_RMA_DATATYPE_DERIVED 51
 
 extern MPIU_RMA_ops *MPIU_RMA_ops_list; /* list of outstanding RMA requests */
 
@@ -1283,6 +1285,7 @@ int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
 void MPIR_Keyval_set_fortran( int );
 
 int MPIR_Group_create( int, MPID_Group ** );
+int MPIR_Group_release(MPID_Group *group_ptr);
 
 int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *, int *);

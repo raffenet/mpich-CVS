@@ -356,9 +356,11 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	    /* Free the context value */
 	    MPIR_Free_contextid( comm_ptr->context_id );
 
-	    /* FIXME: Free the local and remote groups, if they exist */
-	    comm_ptr->local_group = 0;
-	    comm_ptr->remote_group = 0;
+	    /* Free the local and remote groups, if they exist */
+            if (comm_ptr->local_group)
+                MPIR_Group_release(comm_ptr->local_group);
+            if (comm_ptr->remote_group)
+                MPIR_Group_release(comm_ptr->remote_group);
 
 	    /* FIXME - when we recover comm objects, many tests (such as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
   	    MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );  

@@ -13,6 +13,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 {
     int mpi_errno = MPI_SUCCESS;
     MPIU_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
+    MPID_Datatype *dtp;
     MPIDI_STATE_DECL(MPID_STATE_MPI_ACCUMULATE);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_ACCUMULATE);
@@ -45,6 +46,15 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     new_ptr->target_count = target_count;
     new_ptr->target_datatype = target_datatype;
     new_ptr->op = op;
+
+    if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN) {
+        MPID_Datatype_get_ptr(origin_datatype, dtp);
+        MPID_Datatype_add_ref(dtp);
+    }
+    if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
+        MPID_Datatype_get_ptr(target_datatype, dtp);
+        MPID_Datatype_add_ref(dtp);
+    }
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);
 

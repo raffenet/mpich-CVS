@@ -16,7 +16,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
     pthread_join(win_ptr->wait_thread_id, (void **) &err);
     mpi_errno = *err;
-    MPIU_Free(*err);
+    MPIU_Free(err);
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
     return mpi_errno;
