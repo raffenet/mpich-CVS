@@ -920,6 +920,23 @@ fi
 MPI_MAX_PROCESSOR_NAME="$maxproc"
 AC_SUBST(MPI_MAX_PROCESSOR_NAME)
 dnl
+#
+# If it is necessary for the device to update some of the variables,
+# this step allows that to happen.  Possible variables to update are
+#   LIBS - Add libraries needed for linking
+#   LDFLAGS - Add other LD flags (e.g., search paths for libraries)
+#   CPPFLAGS - Add C preprocessor flags, including -Idir
+#   DEFS  - Add C preprocessor definitions, e.g., -Dfoo
+# These must be updated, not replaced, so the setup_device script should
+# do, e.g., 
+#   LIBS="$LIBS -lmywierdlib",
+# not
+#   LIBS="-lmywierdlib"
+if test -x src/mpid/$device_name/setup_device ; then
+    . ./src/mpid/$device_name/setup_device
+elif test -x $use_top_srcdir/src/mpid/$device_name/setup_device ; then
+    . $use_top_srcdir/src/mpid/$device_name/setup_device
+fi
 dnl
 dnl Set the libraries to use in building programs
 if test "$enable_weak_symbols" != "yes" ; then
