@@ -15,7 +15,8 @@ Mpiexec:main()
   \--loop
      MPI_Finalize()
         MPID_Finalize()
-          PMI_Finalize() - block until output is redirected if singleton. }
+          PMI_Finalize() - block until output is redirected if singleton.
+}
 */
 
 #define MPIEXEC_MAX_DIR_LENGTH  1024
@@ -148,6 +149,8 @@ int parse_arguments(int *argcp, char **argvp[],
     cmd_struct *cmd_node, *cmd_iter, *cmd_list = NULL;
     int error_length;
     char error_string[1024];
+    int num_args_parsed;
+    MPI_Info info;
 
     /* check for mpi options */
     /*
@@ -329,8 +332,20 @@ configfile_loop:
 	    }
 	    else
 	    {
-		/*MPID_Parse_arg(argcp, argvp, &info);*/
+#ifdef HAVE_MPID_PARSE_OPTION
+		result = MPID_Parse_option(*argcp - 1, &(*argvp)[1], &num_args_parsed, &info);
+		if (result != MPI_SUCCESS)
+		{
+		    printf("Error: MPID_Parse_arg failed with error code %d\n", result);
+		    return MPIEXEC_FAIL;
+		}
+		if (num_args_parsed == 0)
+		    printf("Unknown option: %s\n", (*argvp)[1]);
+		else
+		    num_args_to_strip = num_args_parsed;
+#else
 		printf("Unknown option: %s\n", (*argvp)[1]);
+#endif
 	    }
 	    strip_args(argcp, argvp, num_args_to_strip);
 	}

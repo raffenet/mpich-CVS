@@ -19,30 +19,40 @@ PMI_CONSTANTS - PMI definitions
 Error Codes:
 + PMI_SUCCESS - operation completed successfully
 . PMI_FAIL - operation failed
+. PMI_ERR_NOMEM - input buffer not large enough
+. PMI_ERR_INIT - PMI not initialized
 . PMI_ERR_INVALID_ARG - invalid argument
 . PMI_ERR_INVALID_KEY - invalid key argument
 . PMI_ERR_INVALID_KEY_LENGTH - invalid key length argument
 . PMI_ERR_INVALID_VAL - invalid val argument
 . PMI_ERR_INVALID_VAL_LENGTH - invalid val length argument
 . PMI_ERR_INVALID_LENGTH - invalid length argument
-. PMI_ERR_NOMEM - input buffer not large enough
-- PMI_ERR_INIT - PMI not initialized
+. PMI_ERR_INVALID_NUM_ARGS - invalid number of arguments
+. PMI_ERR_INVALID_ARGS - invalid args argument
+. PMI_ERR_INVALID_NUM_PARSED - invalid num_parsed length argument
+. PMI_ERR_INVALID_KEYVALP - invalid keyvalp argument
+- PMI_ERR_INVALID_SIZE - invalid size argument
 
 Booleans:
 + PMI_TRUE - true
 - PMI_FALSE - false
 
 D*/
-#define PMI_SUCCESS                 0
-#define PMI_FAIL                   -1
-#define PMI_ERR_INVALID_ARG         1
-#define PMI_ERR_INVALID_KEY         2
-#define PMI_ERR_INVALID_KEY_LENGTH  3
-#define PMI_ERR_INVALID_VAL         4
-#define PMI_ERR_INVALID_VAL_LENGTH  5
-#define PMI_ERR_INVALID_LENGTH      6
-#define PMI_ERR_INIT                7
-#define PMI_ERR_NOMEM               8
+#define PMI_SUCCESS                  0
+#define PMI_FAIL                    -1
+#define PMI_ERR_INIT                 1
+#define PMI_ERR_NOMEM                2
+#define PMI_ERR_INVALID_ARG          3
+#define PMI_ERR_INVALID_KEY          4
+#define PMI_ERR_INVALID_KEY_LENGTH   5
+#define PMI_ERR_INVALID_VAL          6
+#define PMI_ERR_INVALID_VAL_LENGTH   7
+#define PMI_ERR_INVALID_LENGTH       8
+#define PMI_ERR_INVALID_NUM_ARGS     9
+#define PMI_ERR_INVALID_ARGS        10
+#define PMI_ERR_INVALID_NUM_PARSED  11
+#define PMI_ERR_INVALID_KEYVALP     12
+#define PMI_ERR_INVALID_SIZE        13
 
 typedef int PMI_BOOL;
 #define PMI_TRUE     1
@@ -577,6 +587,40 @@ int PMI_Spawn_multiple(int count,
                        const PMI_keyval_t preput_keyval_vector[],
                        int errors[]);
 
+
+/*@
+PMI_Parse_option - create keyval structures from a single command line argument
+
+Input Parameters:
++ num_args - length of args array
+- args - array of command line arguments starting with the argument to be parsed
+
+Output Parameters:
++ num_parsed - number of elements of the argument array parsed
+. keyvalp - pointer to an array of keyvals
+- size - size of the allocated array
+
+Return values:
++ PMI_SUCCESS - success
+. PMI_ERR_INVALID_NUM_ARGS - invalid number of arguments
+. PMI_ERR_INVALID_ARGS - invalid args argument
+. PMI_ERR_INVALID_NUM_PARSED - invalid num_parsed length argument
+. PMI_ERR_INVALID_KEYVALP - invalid keyvalp argument
+. PMI_ERR_INVALID_SIZE - invalid size argument
+- PMI_FAIL - fail
+
+Notes:
+This function removes one PMI specific argument from the command line and
+creates the corresponding 'PMI_keyval_t' structure for it.  It returns
+an array and size to the caller.  The array must be freed by 'PMI_Free_keyvals()'.
+If the first element of the args array is not a PMI specific argument, the function
+returns success and sets num_parsed to zero.  If there are multiple PMI specific
+arguments in the args array, this function may parse more than one argument as long
+as the options are contiguous in the args array.
+
+@*/
+int PMI_Parse_option(int num_args, char *args[], int *num_parsed, PMI_keyval_t **keyvalp, int *size);
+
 /*@
 PMI_Args_to_keyval - create keyval structures from command line arguments
 
@@ -602,7 +646,7 @@ not be used to free this array as there is no requirement that the array be
 allocated with 'malloc()'.
 
 @*/
-int PMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t (*keyvalp)[], int *size);
+int PMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t **keyvalp, int *size);
 
 /*@
 PMI_Free_keyvals - free the keyval structures created by PMI_Args_to_keyval
@@ -617,14 +661,14 @@ Return values:
 - PMI_FAIL - fail
 
 Notes:
- This function frees the data returned by 'PMI_Args_to_keyval'.
+ This function frees the data returned by 'PMI_Args_to_keyval' and 'PMI_Parse_option'.
  Using this routine instead of 'free' allows the PMI package to track 
  allocation of storage or to use interal storage as it sees fit.
 @*/
 int PMI_Free_keyvals(PMI_keyval_t keyvalp[], int size);
 
 /*@
-PMI_Get_options - get a string to print to the user with command line argument descriptions
+PMI_Get_options - get a string of command line argument descriptions that may be printed to the user
 
 Input Parameters:
 . length - length of str

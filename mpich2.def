@@ -704,3 +704,5 @@ EXPORTS
 
 ;	MPIR_Op_set_cxx
 ;	MPIR_Keyval_set_cxx
+	MPID_Parse_option
+	

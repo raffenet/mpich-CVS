@@ -1112,5 +1112,8 @@ int PMPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
 #endif 
 #endif
 
-#endif
 
+#define HAVE_MPID_PARSE_OPTION
+int MPID_Parse_option(int num_args, char *args[], int *num_parsed, MPI_Info *info);
+
+#endif

@@ -14,7 +14,8 @@ Mpiexec:main()
   \--loop
      MPI_Finalize()
         MPID_Finalize()
-          PMI_Finalize() - block until output is redirected if singleton. }
+          PMI_Finalize() - block until output is redirected if singleton.
+}
 */
 
 int parse_arguments(int *argcp, char **argvp[], int *count, char ***array_of_commands, char****array_of_argv, int **array_of_maxprocs, MPI_Info **array_of_info);

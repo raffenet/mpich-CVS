@@ -1697,7 +1697,25 @@ int iPMI_Spawn_multiple(int count,
     return PMI_SUCCESS;
 }
 
-int iPMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t (*keyvalp)[], int *size)
+int iPMI_Parse_option(int num_args, char *args[], int *num_parsed, PMI_keyval_t **keyvalp, int *size)
+{
+    if (num_args < 1)
+	return PMI_ERR_INVALID_NUM_ARGS;
+    if (args == NULL)
+	return PMI_ERR_INVALID_ARGS;
+    if (num_parsed == NULL)
+	return PMI_ERR_INVALID_NUM_PARSED;
+    if (keyvalp == NULL)
+	return PMI_ERR_INVALID_KEYVALP;
+    if (size == NULL)
+	return PMI_ERR_INVALID_SIZE;
+    *num_parsed = 0;
+    *keyvalp = NULL;
+    *size = 0;
+    return PMI_SUCCESS;
+}
+
+int iPMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t **keyvalp, int *size)
 {
     if (argcp == NULL || argvp == NULL || keyvalp == NULL || size == NULL)
 	return PMI_ERR_INVALID_ARG;

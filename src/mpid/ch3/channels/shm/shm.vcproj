@@ -244,6 +244,9 @@
 				RelativePath="..\..\src\mpid_open_port.c">
 			</File>
 			<File
+				RelativePath="..\..\src\mpid_parse_option.c">
+			</File>
+			<File
 				RelativePath="..\..\src\mpid_probe.c">
 			</File>
 			<File

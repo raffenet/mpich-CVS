@@ -85,10 +85,11 @@ int iPMI_Spawn_multiple(int count,
                        const PMI_keyval_t preput_keyval_vector[],
                        int errors[]);
 
+int iPMI_Parse_option(int num_args, char *args[], int *num_parsed, PMI_keyval_t **keyvalp, int *size);
 /* parse PMI implementation specific values into an info object that can then be passed to 
    PMI_Spawn_multiple.  Remove PMI implementation specific arguments from argc and argv */
-int iPMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t (*keyvalp)[], int *size);
-/* free the data returned by iPMI_Args_to_keyval */
+int iPMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t **keyvalp, int *size);
+/* free the data returned by iPMI_Parse_option or iPMI_Args_to_keyval */
 int iPMI_Free_keyvals(PMI_keyval_t keyvalp[], int size);
 
 typedef struct ipmi_functions_t
@@ -113,11 +114,12 @@ typedef struct ipmi_functions_t
     int (*PMI_KVS_Put)( const char [], const char [], const char [] );
     int (*PMI_KVS_Commit)( const char [] );
     int (*PMI_KVS_Get)( const char [], const char [], char [], int );
-    int (*PMI_KVS_Iter_first)(const char [], char [], int, char [], int );
-    int (*PMI_KVS_Iter_next)(const char [], char [], int , char [], int );
-    int (*PMI_Spawn_multiple)(int, const char *[], const char **[], const int [], const int [], const PMI_keyval_t *[], int, const PMI_keyval_t [], int []);
-    int (*PMI_Args_to_keyval)(int *, char *((*)[]), PMI_keyval_t (*)[], int * );
-    int (*PMI_Free_keyvals)(PMI_keyval_t [], int);
+    int (*PMI_KVS_Iter_first)( const char [], char [], int, char [], int );
+    int (*PMI_KVS_Iter_next)( const char [], char [], int , char [], int );
+    int (*PMI_Spawn_multiple)( int, const char *[], const char **[], const int [], const int [], const PMI_keyval_t *[], int, const PMI_keyval_t [], int [] );
+    int (*PMI_Parse_option)( int, char *[], int *, PMI_keyval_t **, int * );
+    int (*PMI_Args_to_keyval)( int *, char *((*)[]), PMI_keyval_t **, int * );
+    int (*PMI_Free_keyvals)( PMI_keyval_t [], int );
 } ipmi_functions_t;
 
 #if defined(__cplusplus)
