@@ -33,13 +33,16 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_set_atomicity(MPI_File fh, int flag)
+int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
 {
     int error_code, tmp_flag;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SET_ATOMICITY";
 #endif
     ADIO_Fcntl_t *fcntl_struct;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

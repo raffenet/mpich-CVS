@@ -15,12 +15,13 @@
 
 static int is_aggregator(int rank, ADIO_File fd);
 
-ADIO_File ADIO_Open(MPI_Comm orig_comm,
-		    MPI_Comm comm, char *filename, int file_system,
-		    int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
-		    MPI_Datatype filetype, int iomode,
-                    MPI_Info info, int perm, int *error_code)
+MPI_File ADIO_Open(MPI_Comm orig_comm,
+		   MPI_Comm comm, char *filename, int file_system,
+		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
+		   MPI_Datatype filetype, int iomode,
+		   MPI_Info info, int perm, int *error_code)
 {
+    MPI_File mpi_fh;
     ADIO_File fd;
     ADIO_cb_name_array array;
     int orig_amode_excl, orig_amode_wronly, err, rank, procs, agg_rank;
@@ -35,10 +36,11 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 
     *error_code = MPI_SUCCESS;
 
-    fd = (ADIO_File) ADIOI_Malloc(sizeof(struct ADIOI_FileD));
-    if (fd == NULL) {
-	/* NEED TO HANDLE ENOMEM ERRORS */
+    /* obtain MPI_File handle */
+    mpi_fh = MPIO_File_create(sizeof(struct ADIOI_FileD));
+    if (mpi_fh == MPI_FILE_NULL) {
     }
+    fd = MPIO_File_resolve(mpi_fh);
 
     fd->cookie = ADIOI_FILE_COOKIE;
     fd->fp_ind = disp;

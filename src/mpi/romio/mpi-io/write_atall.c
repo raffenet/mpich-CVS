@@ -41,7 +41,7 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
+int MPI_File_write_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                           int count, MPI_Datatype datatype, 
                           MPI_Status *status)
 {
@@ -53,8 +53,8 @@ int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, void *buf,
     HPMP_IO_START(fl_xmpi, BLKMPIFILEWRITEATALL, TRDTBLOCK, fh, datatype, count);
 #endif /* MPI_hpux */
 
-    error_code = ADIOI_File_write_all(fh, offset, ADIO_EXPLICIT_OFFSET, buf,
-				      count, datatype, myname, status);
+    error_code = MPIOI_File_write_all(mpi_fh, offset, ADIO_EXPLICIT_OFFSET,
+				      buf, count, datatype, myname, status);
 
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, datatype, count);

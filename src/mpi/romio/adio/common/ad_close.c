@@ -92,5 +92,5 @@ void ADIO_Close(ADIO_File fd, int *error_code)
 
     MPI_Info_free(&(fd->info));
 
-    ADIOI_Free(fd);
+    /* memory for fd is freed in MPI_File_close */
 }

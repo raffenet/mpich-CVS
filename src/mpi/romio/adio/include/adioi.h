@@ -81,6 +81,24 @@ struct ADIOI_Hints_struct {
 
 };
 
+#if 0
+typedef int MPI_Datarep_conversion_function(void *userbuf,
+					    MPI_Datatype datatype,
+					    int count,
+					    void *filebuf,
+					    MPI_Offset position,
+					    void *extra_state);
+#endif
+
+typedef struct ADIOI_Datarep {
+    char *name;
+    void *state;
+    MPI_Datarep_extent_function *extent_fn;
+    MPI_Datarep_conversion_function *read_conv_fn;
+    MPI_Datarep_conversion_function *write_conv_fn;
+    struct ADIOI_Datarep *next; /* pointer to next datarep */
+} ADIOI_Datarep;
+
 /* Values for use with cb_read, cb_write, ds_read, and ds_write 
  * and some fs-specific hints
    (IBM xlc, Compaq Tru64 compilers object to a comma after the last item)
@@ -362,7 +380,7 @@ int ADIOI_Uses_generic_read(ADIO_File fd);
 int ADIOI_Uses_generic_write(ADIO_File fd);
 
 /* File I/O common functionality */
-int ADIOI_File_read(MPI_File fh,
+int MPIOI_File_read(MPI_File fh,
 		    MPI_Offset offset,
 		    int file_ptr_type,
 		    void *buf,
@@ -370,7 +388,7 @@ int ADIOI_File_read(MPI_File fh,
 		    MPI_Datatype datatype,
 		    char *myname,
 		    MPI_Status *status);
-int ADIOI_File_write(MPI_File fh,
+int MPIOI_File_write(MPI_File fh,
 		     MPI_Offset offset,
 		     int file_ptr_type,
 		     void *buf,
@@ -378,7 +396,7 @@ int ADIOI_File_write(MPI_File fh,
 		     MPI_Datatype datatype,
 		     char *myname,
 		     MPI_Status *status);
-int ADIOI_File_read_all(MPI_File fh,
+int MPIOI_File_read_all(MPI_File fh,
 			MPI_Offset offset,
 			int file_ptr_type,
 			void *buf,
@@ -386,7 +404,7 @@ int ADIOI_File_read_all(MPI_File fh,
 			MPI_Datatype datatype,
 			char *myname,
 			MPI_Status *status);
-int ADIOI_File_write_all(MPI_File fh,
+int MPIOI_File_write_all(MPI_File fh,
 			 MPI_Offset offset,
 			 int file_ptr_type,
 			 void *buf,
@@ -394,25 +412,25 @@ int ADIOI_File_write_all(MPI_File fh,
 			 MPI_Datatype datatype,
 			 char *myname,
 			 MPI_Status *status);
-int ADIOI_File_read_all_begin(MPI_File fh,
+int MPIOI_File_read_all_begin(MPI_File fh,
 			      MPI_Offset offset,
 			      int file_ptr_type,
 			      void *buf,
 			      int count,
 			      MPI_Datatype datatype,
 			      char *myname);
-int ADIOI_File_write_all_begin(MPI_File fh,
+int MPIOI_File_write_all_begin(MPI_File fh,
 			       MPI_Offset offset,
 			       int file_ptr_type,
 			       void *buf,
 			       int count,
 			       MPI_Datatype datatype,
 			       char *myname);
-int ADIOI_File_read_all_end(MPI_File fh,
+int MPIOI_File_read_all_end(MPI_File fh,
 			    void *buf,
 			    char *myname,
 			    MPI_Status *status);
-int ADIOI_File_write_all_end(MPI_File fh,
+int MPIOI_File_write_all_end(MPI_File fh,
 			     void *buf,
 			     char *myname,
 			     MPI_Status *status);

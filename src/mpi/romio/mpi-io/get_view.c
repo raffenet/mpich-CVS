@@ -41,15 +41,21 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype,
-		 MPI_Datatype *filetype, char *datarep)
+int MPI_File_get_view(MPI_File mpi_fh,
+		      MPI_Offset *disp,
+		      MPI_Datatype *etype,
+		      MPI_Datatype *filetype,
+		      char *datarep)
 {
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
+    ADIO_File fh;
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_GET_VIEW";
 #endif
     int i, j, k, combiner;
     MPI_Datatype copy_etype, copy_filetype;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

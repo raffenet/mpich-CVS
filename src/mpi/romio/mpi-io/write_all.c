@@ -40,7 +40,7 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_write_all(MPI_File fh, void *buf, int count, 
+int MPI_File_write_all(MPI_File mpi_fh, void *buf, int count, 
                        MPI_Datatype datatype, MPI_Status *status)
 {
     int error_code;
@@ -51,7 +51,8 @@ int MPI_File_write_all(MPI_File fh, void *buf, int count,
     HPMP_IO_START(fl_xmpi, BLKMPIFILEWRITEALL, TRDTBLOCK, fh, datatype, count);
 #endif /* MPI_hpux */
 
-    error_code = ADIOI_File_write_all(fh, (MPI_Offset) 0, ADIO_INDIVIDUAL, buf,
+    error_code = MPIOI_File_write_all(mpi_fh, (MPI_Offset) 0,
+				      ADIO_INDIVIDUAL, buf,
 				      count, datatype, myname, status);
 
 #ifdef MPI_hpux
@@ -60,7 +61,7 @@ int MPI_File_write_all(MPI_File fh, void *buf, int count,
     return error_code;
 }
 
-int ADIOI_File_write_all(MPI_File fh,
+int MPIOI_File_write_all(MPI_File mpi_fh,
 			 MPI_Offset offset,
 			 int file_ptr_type,
 			 void *buf,
@@ -70,6 +71,9 @@ int ADIOI_File_write_all(MPI_File fh,
 			 MPI_Status *status)
 {
     int error_code, datatype_size;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG

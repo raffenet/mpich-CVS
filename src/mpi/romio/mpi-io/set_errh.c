@@ -34,12 +34,15 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_set_errhandler(MPI_File fh, MPI_Errhandler errhandler)
+int MPI_File_set_errhandler(MPI_File mpi_fh, MPI_Errhandler errhandler)
 {
     int error_code = MPI_SUCCESS;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SET_ERRHANDLER";
 #endif
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     if ((errhandler != MPI_ERRORS_RETURN) && (errhandler != MPI_ERRORS_ARE_FATAL)) {
 	FPRINTF(stderr, "Only MPI_ERRORS_RETURN and MPI_ERRORS_ARE_FATAL are currently supported for MPI_File_set_errhandler\n");

@@ -41,19 +41,23 @@ Output Parameters:
 #ifdef HAVE_MPI_GREQUEST
 #include "mpiu_greq.h"
 
-int MPI_File_iread_shared(MPI_File fh, void *buf, int count, 
+int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count, 
 			  MPI_Datatype datatype, MPIO_Request *request)
 {
+	int error_code;
+	ADIO_File fh;
 	MPI_Status *status;
-	int errcode;
+
+	fh = MPIO_File_resolve(mpi_fh);
+	/* TODO: CHECK THIS FH */
 
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */
-	errcode = MPI_File_read_shared(fh, buf, count, datatype, status); 
+	error_code = MPI_File_read_shared(fh, buf, count, datatype, status); 
 	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
-	status->MPI_ERROR = errcode;
+	status->MPI_ERROR = error_code;
 
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
@@ -65,16 +69,19 @@ int MPI_File_iread_shared(MPI_File fh, void *buf, int count,
 	return MPI_SUCCESS;
 }
 #else
-int MPI_File_iread_shared(MPI_File fh, void *buf, int count, 
+int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count, 
                           MPI_Datatype datatype, MPIO_Request *request)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
+    ADIO_File fh;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_IREAD_SHARED";
 #endif
     int datatype_size, incr;
     ADIO_Status status;
     ADIO_Offset off, shared_fp;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG

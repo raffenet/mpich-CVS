@@ -34,9 +34,10 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
+int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 {
     int error_code;
+    ADIO_File fh;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SEEK";
 #endif
@@ -46,6 +47,8 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 
     HPMP_IO_START(fl_xmpi, BLKMPIFILESEEK, TRDTBLOCK, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

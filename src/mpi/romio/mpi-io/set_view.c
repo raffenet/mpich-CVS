@@ -37,7 +37,7 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
+int MPI_File_set_view(MPI_File mpi_fh, MPI_Offset disp, MPI_Datatype etype,
 		 MPI_Datatype filetype, char *datarep, MPI_Info info)
 {
     int filetype_size, etype_size, error_code;
@@ -45,6 +45,9 @@ int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
     static char myname[] = "MPI_FILE_SET_VIEW";
 #endif
     ADIO_Offset shared_fp, byte_off;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

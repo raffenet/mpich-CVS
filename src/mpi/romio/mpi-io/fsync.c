@@ -33,9 +33,10 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_sync(MPI_File fh)
+int MPI_File_sync(MPI_File mpi_fh)
 {
     int error_code;
+    ADIO_File fh;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_SYNC";
 #endif
@@ -44,6 +45,8 @@ int MPI_File_sync(MPI_File fh)
 
     HPMP_IO_START(fl_xmpi, BLKMPIFILESYNC, TRDTBLOCK, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

@@ -35,10 +35,11 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_size(MPI_File fh, MPI_Offset *size)
+int MPI_File_get_size(MPI_File mpi_fh, MPI_Offset *size)
 {
-    ADIO_Fcntl_t *fcntl_struct;
     int error_code;
+    ADIO_File fh;
+    ADIO_Fcntl_t *fcntl_struct;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_GET_SIZE";
 #endif
@@ -48,6 +49,8 @@ int MPI_File_get_size(MPI_File fh, MPI_Offset *size)
     HPMP_IO_START(fl_xmpi, BLKMPIFILEGETSIZE, TRDTBLOCK, fh,
 		  MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

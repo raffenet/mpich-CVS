@@ -39,7 +39,7 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf,
+int MPI_File_read_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 		     int count, MPI_Datatype datatype, MPI_Status *status)
 {
     int error_code;
@@ -51,7 +51,7 @@ int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf,
 #endif /* MPI_hpux */
 
     /* ADIOI_File_read() defined in mpi-io/read.c */
-    error_code = ADIOI_File_read(fh, offset, ADIO_EXPLICIT_OFFSET, buf,
+    error_code = MPIOI_File_read(mpi_fh, offset, ADIO_EXPLICIT_OFFSET, buf,
 				 count, datatype, myname, status);
 
 #ifdef MPI_hpux

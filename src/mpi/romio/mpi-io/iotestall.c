@@ -29,7 +29,8 @@
   requests.
 */
 
-int MPIO_Testall( int count, MPIO_Request requests[], int *flag, MPI_Status statuses[] )
+int MPIO_Testall(int count, MPIO_Request requests[], int *flag,
+		 MPI_Status statuses[])
 {
     int done, i, err; 
 

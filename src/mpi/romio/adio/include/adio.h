@@ -309,11 +309,11 @@ typedef struct {
 
 void ADIO_Init(int *argc, char ***argv, int *error_code);
 void ADIO_End(int *error_code);
-ADIO_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
-		    int file_system,
-                    int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
-                    MPI_Datatype filetype, int iomode, 
-                    MPI_Info info, int perm, int *error_code);
+MPI_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
+		   int file_system,
+		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
+		   MPI_Datatype filetype, int iomode, 
+		   MPI_Info info, int perm, int *error_code);
 void ADIO_ImmediateOpen(ADIO_File fd, int *error_code);
 void ADIO_Close(ADIO_File fd, int *error_code);
 void ADIO_ReadContig(ADIO_File fd, void *buf, int count, MPI_Datatype datatype,
@@ -383,6 +383,10 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype, 
 		MPI_Datatype filetype, MPI_Info info,  int *error_code);
 
+/* MPI_File management functions (in mpio_file.c) */
+MPI_File MPIO_File_create(int size);
+ADIO_File MPIO_File_resolve(MPI_File mpi_fh);
+void MPIO_File_free(MPI_File *mpi_fh);
 
 #include "adioi.h"
 #include "adioi_fs_proto.h"

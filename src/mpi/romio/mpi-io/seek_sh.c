@@ -34,13 +34,16 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
+int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 {
     int error_code=MPI_SUCCESS, tmp_whence, myrank;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SEEK_SHARED";
 #endif
     MPI_Offset curr_offset, eof_offset, tmp_offset;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG

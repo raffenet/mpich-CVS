@@ -33,9 +33,10 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_set_size(MPI_File fh, MPI_Offset size)
+int MPI_File_set_size(MPI_File mpi_fh, MPI_Offset size)
 {
     int error_code;
+    ADIO_File fh;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_SET_SIZE";
 #endif
@@ -46,6 +47,8 @@ int MPI_File_set_size(MPI_File fh, MPI_Offset size)
     HPMP_IO_START(fl_xmpi, BLKMPIFILESETSIZE, TRDTBLOCK, fh,
 		  MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

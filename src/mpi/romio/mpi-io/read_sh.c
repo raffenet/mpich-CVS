@@ -40,7 +40,7 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_read_shared(MPI_File fh, void *buf, int count, 
+int MPI_File_read_shared(MPI_File mpi_fh, void *buf, int count, 
                   MPI_Datatype datatype, MPI_Status *status)
 {
     int error_code, bufsize, buftype_is_contig, filetype_is_contig;
@@ -49,6 +49,9 @@ int MPI_File_read_shared(MPI_File fh, void *buf, int count,
 #endif
     int datatype_size, incr;
     ADIO_Offset off, shared_fp;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG

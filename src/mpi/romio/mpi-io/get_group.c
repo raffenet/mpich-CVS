@@ -36,12 +36,15 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_group(MPI_File fh, MPI_Group *group)
+int MPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
 {
-#ifndef PRINT_ERR_MSG
     int error_code;
+    ADIO_File fh;
+#ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_GET_GROUP";
 #endif
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

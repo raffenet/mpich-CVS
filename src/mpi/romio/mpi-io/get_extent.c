@@ -36,13 +36,16 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype, 
+int MPI_File_get_type_extent(MPI_File mpi_fh, MPI_Datatype datatype, 
                              MPI_Aint *extent)
 {
-#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
+    ADIO_File fh;
+#if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_GET_TYPE_EXTENT";
 #endif
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

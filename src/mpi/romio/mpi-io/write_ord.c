@@ -40,7 +40,7 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_write_ordered(MPI_File fh, void *buf, int count, 
+int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count, 
 			   MPI_Datatype datatype, MPI_Status *status)
 {
     int error_code, datatype_size, nprocs, myrank, incr;
@@ -49,6 +49,9 @@ int MPI_File_write_ordered(MPI_File fh, void *buf, int count,
     static char myname[] = "MPI_FILE_WRITE_ORDERED";
 #endif
     ADIO_Offset shared_fp;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

@@ -42,20 +42,25 @@ Output Parameters:
 #ifdef HAVE_MPI_GREQUEST
 #include "mpiu_greq.h"
 
-int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
+int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
 {
+	int error_code;
 	MPI_Status *status;
-	int errcode;
+	ADIO_File fh;
 
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
+	fh = MPIO_File_resolve(mpi_fh);
+	/* TODO: CHECK THIS FH */
+
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */
-	errcode = MPI_File_write_at(fh, offset, buf, count, datatype, status); 
+	error_code = MPI_File_write_at(fh, offset, buf, count, datatype,
+				       status); 
 	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
-	status->MPI_ERROR = errcode;
+	status->MPI_ERROR = error_code;
 
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
@@ -67,11 +72,12 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 	return MPI_SUCCESS;
 }
 #else
-int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
+int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
 {
     int error_code;
+    ADIO_File fh;
     static char myname[] = "MPI_FILE_IWRITE_AT";
 #ifdef MPI_hpux
     int fl_xmpi;
@@ -79,6 +85,9 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
     HPMP_IO_START(fl_xmpi, BLKMPIFILEIWRITEAT, TRDTSYSTEM,
 		  fh, datatype, count);
 #endif /* MPI_hpux */
+
+    fh = MPIO_File_resolve(mpi_fh);
+    /* TODO: check this fh */
 
     error_code = ADIOI_File_iwrite(fh, offset, ADIO_EXPLICIT_OFFSET, buf,
 				   count, datatype, myname, request);

@@ -292,15 +292,6 @@ fi
 C_DEBUG_FLAG="-g"
 F77_DEBUG_FLAG="-g"
 C_OPT_FLAG=${CFLAGS:-"-O"}
-# MPICH1 uses OPTFLAGS and OPTFLAGSC to specify separate optimization
-# flags for the C compiler (this is better that adding it to the
-# undifferentiated CFLAGS, at least on input).
-if test -n "$OPTFLAGS" ; then
-    C_OPT_FLAG="$C_OPT_FLAG $OPTFLAGS"
-fi
-if test -n "$OPTFLAGSC" ; then
-    C_OPT_FLAG="$C_OPT_FLAG $OPTFLAGSC"
-fi
 case $ARCH in 
      sun4)
      CC=${CC:-gcc}
@@ -1480,6 +1471,9 @@ for dir in $FILE_SYSTEM ; do
     FILE_SYS_DIRS="$FILE_SYS_DIRS adio/ad_$dir"
 done
 EXTRA_SRC_DIRS=""
+if test "$FROM_MPICH2" = yes ; then
+    EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi-io/glue/mpich2"
+fi
 if test "$BUILD_MPI_INFO" = 1 ; then
     EXTRA_SRC_DIRS="$EXTRA_SRC_DIRS mpi2-other/info"
     if test "$NOF77" = 0 -a "$FROM_MPICH2" != yes ; then
@@ -1614,6 +1608,8 @@ dnl
 if test ! -d adio ; then mkdir adio ; fi
 if test ! -d adio/include ; then mkdir adio/include ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
+if test ! -d mpi-io ; then mkdir mpi-io ; fi
+if test ! -d mpi-io/glue ; then mkdir mpi-io/glue ; fi
 # 
 # Make sure we remove any configuration file incase there is out-of-date data.
 # We remove the version in include in case this is a vpath build
@@ -1634,7 +1630,8 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
 		   adio/ad_pvfs2/Makefile adio/ad_piofs/Makefile \
                    mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile \
                    mpi2-other/array/fortran/Makefile test/fmisc.f \
-                   test/fcoll_test.f test/pfcoll_test.f test/fperf.f )
+                   test/fcoll_test.f test/pfcoll_test.f test/fperf.f \
+		   mpi-io/glue/mpich2/Makefile)
 #
 rm -f *.o
 if test "$ROMIO_NO_BANNER" != "yes" -a "$FROM_MPICH" = no -a \

@@ -32,9 +32,10 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_close(MPI_File *fh)
+int MPI_File_close(MPI_File *mpi_fh)
 {
     int error_code;
+    ADIO_File fh;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "MPI_FILE_CLOSE";
 #endif
@@ -44,28 +45,30 @@ int MPI_File_close(MPI_File *fh)
     HPMP_IO_WSTART(fl_xmpi, BLKMPIFILECLOSE, TRDTBLOCK, *fh);
 #endif /* MPI_hpux */
 
+    fh = MPIO_File_resolve(*mpi_fh);
+
 #ifdef PRINT_ERR_MSG
-    if ((*fh <= (MPI_File) 0) || ((*fh)->cookie != ADIOI_FILE_COOKIE)) {
+    if ((fh <= (MPI_File) 0) || ((fh)->cookie != ADIOI_FILE_COOKIE)) {
 	FPRINTF(stderr, "MPI_File_close: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 #else
-    ADIOI_TEST_FILE_HANDLE(*fh, myname);
+    ADIOI_TEST_FILE_HANDLE(fh, myname);
 #endif
 
-    if (((*fh)->file_system != ADIO_PIOFS) && ((*fh)->file_system != ADIO_PVFS) && ((*fh)->file_system != ADIO_PVFS2)) {
-	ADIOI_Free((*fh)->shared_fp_fname);
+    if (((fh)->file_system != ADIO_PIOFS) && ((fh)->file_system != ADIO_PVFS) && ((fh)->file_system != ADIO_PVFS2)) {
+	ADIOI_Free((fh)->shared_fp_fname);
         /* need a barrier because the file containing the shared file
         pointer is opened with COMM_SELF. We don't want it to be
 	deleted while others are still accessing it. */ 
-        MPI_Barrier((*fh)->comm);
-	if ((*fh)->shared_fp_fd != ADIO_FILE_NULL)
-	    ADIO_Close((*fh)->shared_fp_fd, &error_code);
+        MPI_Barrier((fh)->comm);
+	if ((fh)->shared_fp_fd != ADIO_FILE_NULL)
+	    ADIO_Close((fh)->shared_fp_fd, &error_code);
     }
 
-    ADIO_Close(*fh, &error_code);
+    ADIO_Close(fh, &error_code);
+    MPIO_File_free(mpi_fh);
 
-    *fh = MPI_FILE_NULL;
 #ifdef MPI_hpux
     HPMP_IO_WEND(fl_xmpi);
 #endif /* MPI_hpux */

@@ -36,12 +36,15 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_get_errhandler(MPI_File fh, MPI_Errhandler *errhandler)
+int MPI_File_get_errhandler(MPI_File mpi_fh, MPI_Errhandler *errhandler)
 {
     int error_code = MPI_SUCCESS;
+    ADIO_File fh;
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     static char myname[] = "MPI_FILE_GET_ERRHANDLER";
 #endif
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     if (fh == MPI_FILE_NULL) *errhandler = ADIOI_DFLT_ERR_HANDLER;
     else if (fh->cookie != ADIOI_FILE_COOKIE) {

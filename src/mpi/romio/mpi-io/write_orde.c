@@ -36,12 +36,15 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_write_ordered_end(MPI_File fh, void *buf, MPI_Status *status)
+int MPI_File_write_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
 #if defined(MPICH2) || !defined(PRINT_ERR_MSG)
     int error_code;
     static char myname[] = "MPI_FILE_WRITE_ORDERED_END";
 #endif
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG

@@ -41,19 +41,23 @@ Output Parameters:
 #ifdef HAVE_MPI_GREQUEST
 #include "mpiu_greq.h"
 
-int MPI_File_iwrite(MPI_File fh, void *buf, int count, 
+int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count, 
 		MPI_Datatype datatype, MPIO_Request *request)
 {
+	int error_code;
 	MPI_Status *status;
-	int errcode;
+	ADIO_File fh;
+
+	fh = MPIO_File_resolve(mpi_fh);
+	/* TODO: CHECK THIS FH */
 
 	status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
 
 	/* for now, no threads or anything fancy. 
 	 * just call the blocking version */
-	errcode = MPI_File_write(fh, buf, count, datatype, status); 
+	error_code = MPI_File_write(fh, buf, count, datatype, status); 
 	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
-	status->MPI_ERROR = errcode;
+	status->MPI_ERROR = error_code;
 
 	/* kick off the request */
 	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
@@ -88,7 +92,7 @@ int MPI_File_iwrite(MPI_File fh, void *buf, int count,
 
 
 #ifndef HAVE_MPI_GREQUEST
-int ADIOI_File_iwrite(MPI_File fh,
+int ADIOI_File_iwrite(MPI_File mpi_fh,
 		      MPI_Offset offset,
 		      int file_ptr_type,
 		      void *buf,
@@ -101,6 +105,9 @@ int ADIOI_File_iwrite(MPI_File fh,
     int datatype_size;
     ADIO_Status status;
     ADIO_Offset off;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
 #ifdef PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {

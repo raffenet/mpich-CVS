@@ -30,7 +30,7 @@ mpi_sources = close.c read.c open.c write.c set_view.c \
       wr_atalle.c write_allb.c write_alle.c \
       get_posn_sh.c iread_sh.c read_sh.c write_sh.c \
       iwrite_sh.c seek_sh.c read_ord.c read_orde.c write_ordb.c \
-      read_ordb.c write_ord.c write_orde.c mpiu_greq.c 
+      read_ordb.c write_ord.c write_orde.c mpiu_greq.c register_datarep.c
 
 # EXTRA objects are ones that need to be included for all but MPICH2
 MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
@@ -46,7 +46,9 @@ MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       wr_atalle.o write_allb.o write_alle.o \
       get_posn_sh.o iread_sh.o read_sh.o write_sh.o \
       iwrite_sh.o seek_sh.o read_ord.o read_orde.o write_ordb.o \
-      read_ordb.o write_ord.o write_orde.o mpiu_greq.o mpich2_fileutil.o
+      read_ordb.o write_ord.o write_orde.o mpiu_greq.o mpich2_fileutil.o \
+      register_datarep.o
+
 # MPIO_REQOBJECTS are the routines that provide the MPIO_Wait etc.
 # routines (iotest.o, iowait.o iowaitall.o iowaitany.o iotestall.o
 # iotestany.o iowaitsome.o and iotestsome.o)
@@ -70,7 +72,7 @@ MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
       wr_atalle.p write_allb.p write_alle.p \
       get_posn_sh.p iread_sh.p read_sh.p write_sh.p \
       iwrite_sh.p seek_sh.p read_ord.p read_orde.p write_ordb.p \
-      read_ordb.p write_ord.p write_orde.p 
+      read_ordb.p write_ord.p write_orde.p register_datarep.p
 
 # Either get_errh.p set_errh.p or empty 
 MPIO_EXTRA_TMP_POBJECTS = @MPIO_EXTRA_TMP_POBJECTS@ @MPIO_REQ_TMP_POBJECTS@
@@ -91,7 +93,7 @@ MPIO_REAL_POBJECTS = _close.o _read.o _open.o _get_extent.o \
       _wr_atalle.o _write_allb.o _write_alle.o \
       _get_posn_sh.o _iread_sh.o _read_sh.o _write_sh.o \
       _iwrite_sh.o _seek_sh.o _read_ord.o _read_orde.o _write_ordb.o \
-      _read_ordb.o _write_ord.o _write_orde.o 
+      _read_ordb.o _write_ord.o _write_orde.o _register_datarep.o
 
 # Either _get_errh.o _set_errh.o or empty 
 MPIO_EXTRA_REAL_POBJECTS = @MPIO_EXTRA_REAL_POBJECTS@ @MPIO_REQ_REAL_POBJECTS@

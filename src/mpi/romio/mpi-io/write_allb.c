@@ -36,20 +36,20 @@ Input Parameters:
 
 .N fortran
 @*/
-int MPI_File_write_all_begin(MPI_File fh, void *buf, int count, 
+int MPI_File_write_all_begin(MPI_File mpi_fh, void *buf, int count, 
 			     MPI_Datatype datatype)
 {
     int error_code;
     static char myname[] = "MPI_FILE_WRITE_ALL_BEGIN";
 
-    error_code = ADIOI_File_write_all_begin(fh, (MPI_Offset) 0,
+    error_code = MPIOI_File_write_all_begin(mpi_fh, (MPI_Offset) 0,
 					    ADIO_INDIVIDUAL, buf, count,
 					    datatype, myname);
 
     return error_code;
 }
 
-int ADIOI_File_write_all_begin(MPI_File fh,
+int ADIOI_File_write_all_begin(MPI_File mpi_fh,
 			       MPI_Offset offset,
 			       int file_ptr_type,
 			       void *buf,
@@ -58,6 +58,9 @@ int ADIOI_File_write_all_begin(MPI_File fh,
 			       char *myname)
 {
     int error_code, datatype_size;
+    ADIO_File fh;
+
+    fh = MPIO_File_resolve(mpi_fh);
 
     /* --BEGIN ERROR HANDLING-- */
 #ifdef PRINT_ERR_MSG

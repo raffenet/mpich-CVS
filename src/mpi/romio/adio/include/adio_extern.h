@@ -20,6 +20,8 @@ extern ADIOI_Req_node *ADIOI_Req_avail_head, *ADIOI_Req_avail_tail;
 extern ADIOI_Malloc_req *ADIOI_Malloc_req_head, *ADIOI_Malloc_req_tail;
     /* list of malloced areas for requests, which must be freed in ADIO_End */
 
+extern ADIOI_Datarep *ADIOI_Datarep_head;
+
 /* for f2c and c2f conversion */
 extern ADIO_File *ADIOI_Ftable;
 extern int ADIOI_Ftable_ptr, ADIOI_Ftable_max;

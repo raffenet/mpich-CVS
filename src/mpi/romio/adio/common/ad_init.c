@@ -23,6 +23,9 @@ ADIOI_Req_node *ADIOI_Req_avail_head = NULL, *ADIOI_Req_avail_tail = NULL;
 ADIOI_Malloc_req *ADIOI_Malloc_req_head = NULL, *ADIOI_Malloc_req_tail = NULL;
     /* list of malloced areas for requests, which must be freed in ADIO_End */
 
+ADIOI_Datarep *ADIOI_Datarep_head = NULL;
+    /* list of datareps registered by the user */
+
 /* for f2c and c2f conversion */
 ADIO_File *ADIOI_Ftable = NULL;
 int ADIOI_Ftable_ptr = 0, ADIOI_Ftable_max = 0;
