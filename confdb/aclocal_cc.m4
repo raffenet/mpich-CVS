@@ -364,7 +364,7 @@ dnl Synopsis:
 dnl PAC_C_VOLATILE
 dnl
 dnl Output Effect:
-dnl Defines 'HAS_VOLATILE' if 'volatile int a;' can be compiled.
+dnl Defines 'volatile' as empty if volatile is not available.
 dnl
 dnlD*/
 AC_DEFUN(PAC_C_VOLATILE,[
@@ -372,8 +372,8 @@ AC_CACHE_CHECK([for volatile],
 pac_cv_c_volatile,[
 AC_TRY_COMPILE(,[volatile int a;],pac_cv_c_volatile="yes",
 pac_cv_c_volatile="no")])
-if test "$pac_cv_c_volatile" = "yes" ; then
-    AC_DEFINE(HAS_VOLATILE)
+if test "$pac_cv_c_volatile" = "no" ; then
+    AC_DEFINE(volatile,)
 fi
 ])dnl
 dnl
@@ -606,5 +606,110 @@ else
 fi
 rm -f conftest*
 ])
-
-
+dnl
+dnl/*D
+dnl PAC_PROG_C_UNALIGNED_DOUBLES - Check that the C compiler allows unaligned
+dnl doubles
+dnl
+dnl Synopsis:
+dnl   PAC_PROG_C_UNALIGNED_DOUBLES(action-if-true,action-if-false,
+dnl       action-if-unknown)
+dnl
+dnl Notes:
+dnl 'action-if-unknown' is used in the case of cross-compilation.
+dnlD*/
+AC_DEFUN(PAC_PROG_C_UNALIGNED_DOUBLES,[
+AC_CACHE_CHECK([whether C compiler allows unaligned doubles],
+pac_cv_prog_c_unaligned_doubles,[
+AC_TRY_RUN([
+void fetch_double( v )
+double *v;
+{
+*v = 1.0;
+}
+int main( argc, argv )
+int argc;
+char **argv;
+{
+int p[4];
+double *p_val;
+fetch_double( (double *)&(p[0]) );
+p_val = (double *)&(p[0]);
+if (*p_val != 1.0) return 1;
+fetch_double( (double *)&(p[1]) );
+p_val = (double *)&(p[1]);
+if (*p_val != 1.0) return 1;
+return 0;
+}
+],pac_cv_prog_c_unaligned_doubles="yes",pac_cv_prog_c_unaligned_doubles="no",
+pac_cv_prog_c_unaligned_doubles="unknown")])
+ifelse($1,,,if test "X$pac_cv_prog_c_unaligned_doubles" = "yes" ; then 
+$1
+fi)
+ifelse($2,,,if test "X$pac_cv_prog_c_unaligned_doubles" = "no" ; then 
+$2
+fi)
+ifelse($3,,,if test "X$pac_cv_prog_c_unaligned_doubles" = "unknown" ; then 
+$3
+fi)
+])
+dnl
+dnl/*D 
+dnl PAC_PROG_C_WEAK_SYMBOLS - Test whether C supports weak symbols.
+dnl
+dnl Synopsis
+dnl PAC_PROG_C_WEAK_SYMBOLS(action-if-true,action-if-false)
+dnl
+dnl Output Effect:
+dnl Defines one of the following if a weak symbol pragma is found:
+dnl.vb
+dnl    HAVE_PRAGMA_WEAK - #pragma weak
+dnl    HAVE_PRAGMA_HP_SEC_DEF - #pragma _HP_SECONDARY_DEF
+dnl    HAVE_PRAGMA_CRI_DUP) - #pragma _CRI duplicate x as y
+dnl.ve
+dnl 
+dnlD*/
+AC_DEFUN(PAC_PROG_C_WEAK_SYMBOLS,[
+AC_CACHE_CHECK([for type of weak symbol support],
+pac_cv_prog_c_weak_symbols,[
+# Test for weak symbol support...
+# We can't put # in the message because it causes autoconf to generate
+# incorrect code
+AC_TRY_LINK([
+#pragma weak PFoo = Foo
+int Foo(a) { return a; }
+],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma weak")
+dnl
+if test -z "$pac_cv_prog_c_weak_symbols" ; then 
+    AC_TRY_LINK([
+#pragma _HP_SECONDARY_DEF Foo  PFoo
+int Foo(a) { return a; }
+],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma _HP_SECONDARY_DEF")
+fi
+dnl
+if test -z "$pac_cv_prog_c_weak_symbols" ; then
+    AC_TRY_LINK([
+#pragma _CRI duplicate PFoo as Foo
+int Foo(a) { return a; }
+],[return PFoo(1);],pac_cv_prog_c_weak_symbols="pragma _CRI duplicate x as y")
+fi
+dnl
+if test -z "$pac_cv_prog_c_weak_symbols" ; then
+    pac_cv_prog_c_weak_symbols="no"
+fi
+])
+dnl
+if test "$pac_cv_prog_c_weak_symbols" = "no" ; then
+    ifelse([$2],,:,[$2])
+else
+    case "$pac_cv_prog_c_weak_symbols" in
+	"pragma weak") AC_DEFINE(HAVE_PRAGMA_WEAK) 
+	;;
+	"pragma _HP")  AC_DEFINE(HAVE_PRAGMA_HP_SEC_DEF)
+	;;
+	"pragma _CRI") AC_DEFINE(HAVE_PRAGMA_CRI_DUP)
+	;;
+    esac
+    ifelse([$1],,:,[$1])
+fi
+])

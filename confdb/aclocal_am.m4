@@ -9,3 +9,7 @@ dnl then complain that AM_IGNORE is a duplicate (if you are using the
 dnl patched automake/aclocal).
 ifdef([AM_IGNORE],,[
 define([AM_IGNORE],)])
+AC_DEFUN(PAC_PROVIDE_IGNORE,[
+ifdef([AM_IGNORE],,[
+define([AM_IGNORE],)])
+])

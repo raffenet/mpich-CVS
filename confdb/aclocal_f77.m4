@@ -87,7 +87,7 @@ EOF
 ])
 # Make the actual definition
 pac_namecheck=`echo X$pac_cv_prog_f77_name_mangle | sed 's/ /-/g'`
-ifelse($1,,[
+ifelse([$1],,[
 case $pac_namecheck in
     X) AC_MSG_WARN([Cannot determine Fortran naming scheme]) ;;
     Xlower) AC_DEFINE(F77_NAME_LOWER) ;;
@@ -122,12 +122,13 @@ dnl replaces that with an underscore (e.g., 'SIZEOF_F77_INTEGER_4').
 dnl
 dnl Notes:
 dnl If the 'cross-size' argument is not given, 'autoconf' will issue an error
-dnl message.
+dnl message.  You can use '0' to specify undetermined.
 dnl
 dnlD*/
 AC_DEFUN(PAC_PROG_F77_CHECK_SIZEOF,[
 changequote(<<, >>)dnl
 dnl The name to #define.
+dnl If the arg value contains a variable, we need to update that
 define(<<PAC_TYPE_NAME>>, translit(sizeof_f77_$1, [a-z *], [A-Z__]))dnl
 dnl The cache variable name.
 define(<<PAC_CV_NAME>>, translit(pac_cv_f77_sizeof_$1, [ *], [__]))dnl
@@ -143,15 +144,11 @@ cat <<EOF > conftest.f
 EOF
 if AC_TRY_EVAL(ac_fcompile) && test -s conftest.o ; then
     mv conftest.o conftestf.o
-else 
-    echo "configure: failed program was:" >&AC_FD_CC
-    cat conftest.f >&AC_FD_CC
-fi
-AC_LANG_SAVE
-AC_LANG_C
-save_LIBS="$LIBS"
-LIBS="conftestf.o $LIBS"
-AC_TRY_RUN([#include <stdio.h>
+    AC_LANG_SAVE
+    AC_LANG_C
+    save_LIBS="$LIBS"
+    LIBS="conftestf.o $LIBS"
+    AC_TRY_RUN([#include <stdio.h>
 #ifdef F77_NAME_UPPER
 #define cisize_ CISIZE
 #define isize_ ISIZE
@@ -171,10 +168,15 @@ main()
     isize_();
     fprintf(f,"%d\n", isize_val );
     exit(0);
-}],PAC_CV_NAME=`cat conftestval`, PAC_CV_NAME=0, 
-ifelse([$2],,,AC_CV_NAME=$2))
-LIBS="$save_LIBS"
-AC_LANG_RESTORE
+}], eval PAC_CV_NAME=`cat conftestval`,eval PAC_CV_NAME=0,
+ifelse([$2],,,eval PAC_CV_NAME=$2))
+    LIBS="$save_LIBS"
+    AC_LANG_RESTORE
+else 
+    echo "configure: failed program was:" >&AC_FD_CC
+    cat conftest.f >&AC_FD_CC
+    ifelse([$2],,eval PAC_CV_NAME=0,eval PAC_CV_NAME=$2)
+fi
 ])
 AC_DEFINE_UNQUOTED(PAC_TYPE_NAME,$PAC_CV_NAME)
 undefine([PAC_TYPE_NAME])
@@ -207,9 +209,9 @@ pac_cv_prog_f77_exclaim_comments="no")
 AC_LANG_RESTORE
 ])
 if test "$pac_cv_prog_f77_exclaim_comments" = "yes" ; then
-    ifelse($1,,:,$1)
+    ifelse([$1],,:,$1)
 else
-    ifelse($2,,:,$2)
+    ifelse([$2],,:,$2)
 fi
 ])dnl
 dnl
@@ -260,7 +262,7 @@ if ${F77-f77} $save_FFLAGS -o conftest conftest.f >conftest.bas 2>&1 ; then
                   if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
 	             AC_MSG_RESULT(yes)	  
 		     FFLAGS="$save_FFLAGS"
-                     ifelse($2,,FOPTIONS="$FOPTIONS $1",$2)
+                     ifelse([$2],,FOPTIONS="$FOPTIONS $1",$2)
                   elif test -s conftest.out ; then
 	             cat conftest.out >&AC_FD_CC
 	             AC_MSG_RESULT(no)
@@ -320,10 +322,12 @@ dnl
 dnl Output Effects:
 dnl  The following variables are set:
 dnl.vb
-dnl    F77_GETARG   - Statement to get an argument i into string s
-dnl    F77_IARGC    - Routine to return the number of arguments
-dnl    FXX_MODULE   - Module command when using Fortran 90 compiler
-dnl    F77_GETARGDECL - Declaration of routine used for F77_GETARG
+dnl    F77_GETARG         - Statement to get an argument i into string s
+dnl    F77_IARGC          - Routine to return the number of arguments
+dnl    FXX_MODULE         - Module command when using Fortran 90 compiler
+dnl    F77_GETARGDECL     - Declaration of routine used for F77_GETARG
+dnl    F77_GETARG_FFLAGS  - Flags needed when compiling/linking
+dnl    F77_GETARG_LDFLAGS - Flags needed when linking
 dnl.ve
 dnl If 'F77_GETARG' has a value, then that value and the values for these
 dnl other symbols will be used instead.  If no approach is found, all of these
@@ -331,7 +335,11 @@ dnl variables will have empty values.
 dnl If no other approach works and a file 'f77argdef' is in the directory, 
 dnl that file will be sourced for the values of the above four variables.
 dnl
-dnl 'AC_SUBST' is called for all four variables.
+dnl In most cases, you should add F77_GETARG_FFLAGS to the FFLAGS variable
+dnl and F77_GETARG_LDFLAGS to the LDFLAGS variable, to ensure that tests are
+dnl performed on the compiler version that will be used.
+dnl
+dnl 'AC_SUBST' is called for all six variables.
 dnl
 dnl f77argdef
 dnlD*/
@@ -380,6 +388,15 @@ $libs"
     done
 
     # Options to use when compiling and linking
+    # +U77 is needed by HP Fortran to access getarg etc.
+    # The -N109 was used for getarg before we realized that GETARG
+    # was necessary with the (non standard conforming) Absoft compiler
+    # (Fortran is monocase; Absoft uses mixedcase by default)
+    # The -f is used by Absoft and is the compiler switch that folds 
+    # symbolic names to lower case.  Without this option, the compiler
+    # considers upper- and lower-case letters to be unique.
+    # The -YEXT_NAMES=LCS will cayse external names to be output as lower
+    # case letter for Absoft F90 compilers (default is upper case)
     # The first line is "<space><newline>, the space is important
 trial_FLAGS=" 
 -f
@@ -431,6 +448,8 @@ $flag"
     # Name of routines.  Since these are in groups, we use a case statement
     # and loop until the end (accomplished by reaching the end of the
     # case statement
+    # For one version of Nag F90, the names are 
+    # call f90_unix_MP_getarg(i,s) and f90_unix_MP_iargc().
     trial=0
     while test -z "$pac_cv_prog_f77_cmdarg" ; do
         case $trial in 
@@ -523,6 +542,8 @@ EOF
                 if AC_TRY_EVAL(ac_fcompilelink_test) && test -x conftest ; then
 	            AC_MSG_RESULT([yes])
 		    pac_cv_prog_f77_cmdarg="$MSG"
+		    pac_cv_prog_f77_cmdarg_fflags="$flags"
+		    pac_cv_prog_f77_cmdarg_ldflags="$libs"
 		    break
 	        else
                     AC_MSG_RESULT([no])
@@ -552,8 +573,147 @@ F77_GETARGDECL="$pac_cv_F77_GETARGDECL"
 F77_IARGC="$pac_cv_F77_IARGC"
 F77_GETARG="$pac_cv_F77_GETARG"
 FXX_MODULE="$pac_cv_FXX_MODULE"
+F77_GETARG_FFLAGS="$pac_cv_prog_f77_cmdarg_fflags"
+F77_GETARG_LDFLAGS="$pac_cv_prog_f77_cmdarg_ldflags"
 AC_SUBST(F77_GETARGDECL)
 AC_SUBST(F77_IARGC)
 AC_SUBST(F77_GETARG)
 AC_SUBST(FXX_MODULE)
+AC_SUBST(F77_GETARG_FFLAGS)
+AC_SUBST(F77_GETARG_LDFLAGS)
+])
+dnl/*D
+dnl PAC_PROG_F77_LIBRARY_DIR_FLAG - Determine the flag used to indicate
+dnl the directories to find libraries in
+dnl
+dnl Notes:
+dnl Many compilers accept '-Ldir' just like most C compilers.  
+dnl Unfortunately, some (such as some HPUX Fortran compilers) do not, 
+dnl and require instead either '-Wl,-L,dir' or something else.  This
+dnl command attempts to determine what is accepted.  The flag is 
+dnl placed into 'F77_LIBDIR_LEADER'.
+dnl
+dnlD*/
+AC_DEFUN(PAC_PROG_F77_LIBRARY_DIR_FLAG,[
+if test "X$F77_LIBDIR_LEADER" = "X" ; then
+AC_CACHE_CHECK([for Fortran 77 flag for library directories],
+pac_cv_prog_f77_library_dir_flag,
+[
+    rm -f conftest.*
+    cat > conftest.f <<EOF
+        program main
+        end
+EOF
+    ac_fcompileldtest='${F77-f77} -o conftest $FFLAGS ${ldir}. conftest.f 1>&AC_FD_CC'
+    for ldir in "-L" "-Wl,-L," ; do
+        if AC_TRY_EVAL(ac_fcompileldtest) && test -s conftest ; then
+	    pac_cv_prog_f77_library_dir_flag="$ldir"
+	    break
+       fi
+    done
+    rm -f conftest*
+])
+    AC_SUBST(F77_LIBDIR_LEADER)
+    if test "X$pac_cv_prog_f77_library_dir_flag" != "X" ; then
+        F77_LIBDIR_LEADER="$pac_cv_prog_f77_library_dir_flag"
+    fi
+fi
+])
+dnl/*D 
+dnl PAC_PROG_F77_HAS_INCDIR - Check whether Fortran accepts -Idir flag
+dnl
+dnl Syntax:
+dnl   PAC_PROG_F77_HAS_INCDIR(directory,action-if-true,action-if-false)
+dnl
+dnl Output Effect:
+dnl  Sets 'F77_INCDIR' to the flag used to choose the directory.  
+dnl
+dnl Notes:
+dnl This refers to the handling of the common Fortran include extension,
+dnl not to the use of '#include' with the C preprocessor.
+dnl If directory does not exist, it will be created.  In that case, the 
+dnl directory should be a direct descendant of the current directory.
+dnl
+dnlD*/ 
+AC_DEFUN(PAC_PROG_F77_HAS_INCDIR,[
+checkdir=$1
+AC_CACHE_CHECK([for include directory flag for Fortran],
+pac_cv_prog_f77_has_incdir,[
+if test ! -d $checkdir ; then mkdir $checkdir ; fi
+cat >$checkdir/conftestf.h <<EOF
+       call sub()
+EOF
+cat >conftest.f <<EOF
+       program main
+       include 'conftestf.h'
+       end
+EOF
+
+ac_fcompiletest='${F77-f77} -c $FFLAGS ${idir}$checkdir conftest.f 1>&AC_FD_CC'
+pac_cv_prog_f77_has_incdir="none"
+# SGI wants -Wf,-I
+for idir in "-I" "-Wf,-I" ; do
+    if AC_TRY_EVAL(ac_fcompiletest) && test -s conftest.o ; then
+        pac_cv_prog_f77_has_incdir="$idir"
+	break
+    fi
+done
+rm -f conftest*
+rm -f $checkdir/conftestf.h
+])
+AC_SUBST(F77_INCDIR)
+if test "X$pac_cv_prog_f77_has_incdir" != "Xnone" ; then
+    F77_INCDIR="$pac_cv_prog_f77_has_incdir"
+fi
+])
+dnl
+dnl/*D
+dnl PAC_PROG_F77_ALLOWS_UNUSED_EXTERNALS - Check whether the Fortran compiler
+dnl allows unused and undefined functions to be listed in an external 
+dnl statement
+dnl
+dnl Syntax:
+dnl   PAC_PROG_F77_ALLOWS_UNUSED_EXTERNALS(action-if-true,action-if-false)
+dnl
+dnlD*/
+AC_DEFUN(PAC_PROG_F77_ALLOWS_UNUSED_EXTERNALS,[
+AC_CACHE_CHECK([whether Fortran allows unused externals],
+pac_cv_prog_f77_allows_unused_externals,[
+AC_LANG_SAVE
+AC_LANG_FORTRAN77
+AC_TRY_LINK(,[
+        external bar
+],pac_cv_prog_f77_allows_unused_externals="yes",
+pac_cv_prog_f77_allows_unused_externals="no")
+AC_LANG_RESTORE
+])
+if test "X$pac_cv_prog_f77_allows_unused_externals" = "Xyes" ; then
+   ifelse([$1],,:,[$1])
+else
+   ifelse([$2],,:,[$2])
+fi
+])
+dnl/*D 
+dnl PAC_PROG_F77_HAS_POINTER - Determine if Fortran allows pointer type
+dnl
+dnl Synopsis:
+dnl   PAC_PROG_F77_HAS_POINTER(action-if-true,action-if-false)
+dnlD*/
+AC_DEFUN(PAC_PROG_F77_HAS_POINTER,[
+AC_CACHE_CHECK([whether Fortran has pointer declaration],
+pac_cv_prog_f77_has_pointer,[
+AC_LANG_SAVE
+AC_LANG_FORTRAN77
+AC_TRY_COMPILE(,[
+        integer M
+        pointer (MPTR,M)
+        data MPTR/0/
+],pac_cv_prog_f77_has_pointer="yes",pac_cv_prog_f77_has_pointer="no")
+AC_LANG_RESTORE
+])
+if test "$pac_cv_prog_f77_has_pointer" = "yes" ; then
+    ifelse([$1],,:,[$1])
+else
+    ifelse([$2],,:,[$2])
+fi
 ])

@@ -135,3 +135,60 @@ PAC_TRY_F90_COMPILE(,,pac_cv_f90_ext_f90="yes",pac_cv_f90_ext_f90="no")
 ac_f90ext=$save_ac_f90ext
 ])
 ])
+dnl
+dnl/*D 
+dnl PAC_PROG_F90_INT_KIND - Determine kind parameter for an integer with
+dnl the specified number of bytes.
+dnl
+dnl Synopsis:
+dnl  PAC_PROG_F90_INT_KIND(variable-to-set,number-of-bytes)
+dnl
+dnlD*/
+AC_DEFUN(PAC_PROG_F90_INT_KIND,[
+# Set the default
+$1=-1
+if test -n "$ac_f90compile" ; then
+    AC_MSG_CHECKING([for Fortran 90 integer kind for $2-byte integers])
+    # Convert bytes to digits
+    case $2 in 
+	1) sellen=2 ;;
+	2) sellen=4 ;;
+	4) sellen=8 ;;
+	8) sellen=16 ;;
+       16) sellen=30 ;;
+	*) sellen=8 ;;
+    esac
+    # Check for cached value
+    eval testval=\$"pac_cv_prog_f90_int_kind_$sellen"
+    if test -n "$testval" ; then 
+        AC_MSG_RESULT([$testval (cached)])
+	$1=$testval
+    else
+        # must compute
+        rm -f conftest*
+        cat <<EOF > conftest.$ac_f90ext
+      program main
+      integer i
+      i = selected_int_kind($sellen)
+      open(8, file="conftest1.out", form="formatted")
+      write (8,*) i
+      close(8)
+      stop
+      end
+EOF
+        KINDVAL="unavailable"
+        eval "pac_cv_prog_f90_int_kind_$sellen"=-1
+        if AC_TRY_EVAL(ac_f90link) && test -s conftest ; then
+            ./conftest >>config.log 2>&1
+            if test -s conftest1.out ; then
+	        # Because of write, there may be a leading blank.
+                KINDVAL=`cat conftest1.out | sed 's/ //g'`
+ 	        eval "pac_cv_prog_f90_int_kind_$sellen"=$KINDVAL
+	        $1=$KINDVAL
+            fi
+        fi
+        rm -f conftest*
+	AC_MSG_RESULT($KINDVAL)
+    fi # not cached
+fi # Has Fortran 90
+])dnl

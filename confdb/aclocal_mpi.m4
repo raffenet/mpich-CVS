@@ -62,7 +62,9 @@ dnl Output Effect:
 dnl Adds the command-line switch '--with-mpichbuilding' that may be used to
 dnl indicate that MPICH is building.  This allows a configure to work-around
 dnl the fact that during a build of MPICH, certain commands, particularly the
-dnl compilation commands such as 'mpicc', are not yet functional.
+dnl compilation commands such as 'mpicc', are not yet functional.  The
+dnl variable 'pac_lib_mpi_is_building' is set to 'yes' if in an MPICH build,
+dnl 'no' otherwise.
 dnl
 dnl See Also:
 dnl PAC_LIB_MPI
@@ -91,12 +93,14 @@ dnl- \-\-with\-sgimpi - SGI MPI
 dnl If no type is selected, and a default ("mpich", "ibmmpi", or "sgimpi")
 dnl is given, that type is used as if '--with-<default>' was given.
 dnl
-dnl Sets 'CC', 'F77', 'TESTCC', and 'TESTF77'.
+dnl Sets 'CC', 'F77', 'TESTCC', 'TESTF77', and 'MPILIBNAME'.  Does `not`
+dnl perform an AC_SUBST for these values.
 dnl
 dnl See also:
 dnl PAC_LANG_PUSH_COMPILERS, PAC_LIB_MPI
 dnlD*/
 AC_DEFUN(PAC_ARG_MPI_TYPES,[
+AC_PROVIDE([AC_PROG_CC])
 AC_SUBST(CC)
 AC_SUBST(CXX)
 AC_SUBST(F77)
@@ -110,10 +114,12 @@ ac_mpi_type=ibmmpi)
 AC_ARG_WITH(sgimpi,
 [--with-sgimpi    - Use the SGI implementation of MPI],
 ac_mpi_type=sgimpi)
-if test "X$ac_mpi_type" = "X" -a "X$1" != "X" ; then
-    ac_mpi_type=$1
-else
-    ac_mpi_type=unknown
+if test "X$ac_mpi_type" = "X" ; then
+    if test "X$1" != "X" ; then
+        ac_mpi_type=$1
+    else
+        ac_mpi_type=unknown
+    fi
 fi
 case $ac_mpi_type in
 	mpich)
@@ -137,14 +143,19 @@ case $ac_mpi_type in
         TESTCXX=${CXX-CC}
         CXX="$MPICXX"
 	PATH="$save_PATH"
+	MPILIBNAME="mpich"
 	;;
 	ibmmpi)
 	TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf
+	MPILIBNAME=""
 	;;
 	sgimpi)
 	TESTCC=${CC:=cc}; TESTF77=${F77:=f77}; 
 	TESTCXX=${CXX:=CC}; TESTF90=${F90:=f90}
 	AC_CHECK_LIB(mpi,MPI_Init)
+	if test "$ac_cv_lib_mpi_MPI_Init" = "yes" ; then
+	    MPILIBNAME="mpi"
+	fi	
 	;;
 	*)
 	;;
