@@ -19,6 +19,9 @@
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
 
 #if !defined( CLOG_NOMPI )
 #include "mpi.h"
@@ -73,6 +76,10 @@ void CLOG_Util_set_tmpfilename( char *tmp_pathname )
     env_tmpdir = (char *) getenv( "MPE_TMPDIR" );
     if ( env_tmpdir == NULL )
         env_tmpdir = (char *) getenv( "TMPDIR" );
+    if ( env_tmpdir == NULL )
+        env_tmpdir = (char *) getenv( "TMP" );
+    if ( env_tmpdir == NULL )
+        env_tmpdir = (char *) getenv( "TEMP" );
                                                                                 
     /*  Set tmpdirname_ref to TMPDIR at Master if available  */
     if ( my_rank == 0 ) {
