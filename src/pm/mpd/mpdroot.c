@@ -63,18 +63,23 @@ int main(int argc, char *argv[])
         rc = connect(sock,(struct sockaddr *)&sa,sizeof(sa));
         if (rc < 0)
         {
+            /*****
             printf("cannot connect to local mpd at: %s\n", console_name);
 	    printf("probable cause:  no mpd daemon on this machine\n");
 	    printf("possible cause:  unix socket %s has been removed\n", console_name);
             exit(-1);
+            *****/
+        }
+        else
+        {
+            snprintf(env_unix_socket,NAME_LEN,"UNIX_SOCKET=%d",sock);
+            putenv(env_unix_socket);
         }
     }
 
     setreuid(getuid(),getuid());
     setregid(getgid(),getgid());
 
-    snprintf(env_unix_socket,NAME_LEN,"UNIX_SOCKET=%d",sock);
-    putenv(env_unix_socket);
     if (strncmp(pgmname,"mpdrun",6) == 0)
     {
         cmd = BINDIR "/mpdrun.py";
