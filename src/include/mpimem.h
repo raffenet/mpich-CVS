@@ -375,6 +375,72 @@ extern char *strdup( const char * );
 #endif /* HAVE_STRDUP */
 
 
+#if 1
+/* Memory allocation macros. See document. */
+
+/* You can redefine this to indicate whether memory allocation errors
+   are fatal */
+#define MPID_CHKMEM_ISFATAL 1
+
+/* Memory used and freed within the current scopy (alloca if feasible) */
+#ifdef HAVE_ALLOCA
+#define MPID_CHKLMEM_DECL(_n)
+#define MPID_CHKLMEM_FREEALL
+#define MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
+{_pointer = (_type)MPID_Malloc(_nbytes); \
+if (!(_pointer)) { \
+    _rc = MPIR_Err_create_code( MPI_SUCCESS, MPID_CHKMEM_ISFATAL,  \
+          FCNAME, __LINE__, \
+          MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
+         _nbytes, _name ); \
+    goto _label; \
+}
+#else
+#define MPID_CHKLMEM_DECL(_n) \
+ void *(_mpid_chklmem_stk[_n]);\
+ int _mpid_chklmem_stk_sp=0;
+#define MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
+{_pointer = (_type)MPID_Malloc(_nbytes); \
+if (_pointer) { \
+    _mpid_chklmem_stk[_mpid_chklmem_stk_sp++] = _pointer;\
+} else {\
+    _rc = MPIR_Err_create_code( MPI_SUCCESS, MPID_CHKMEM_ISFATAL, \
+          FCNAME, __LINE__, \
+          MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
+         _nbytes, _name ); \
+    goto _label; \
+}
+#define MPID_CHKLMEM_FREEALL \
+    { while (_mpid_chklmem_stk_sp > 0) {\
+       MPID_Free( _mpid_chklmem_stk[--_mpid_chklmem_stk_sp] ); } }
+#endif /* HAVE_ALLOCA */
+#define MPID_CHKLMEM_MALLOC(_pointer,_type,_nbytes,_rc,_name) \
+    MPID_CHKLMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,fn_fail)
+
+/* Persistent memory that we may want to recover if something goes wrong */
+#define MPID_CHKPMEM_DECL(_n) \
+ void *(_mpid_chkpmem_stk[_n]);\
+ int _mpid_chkpmem_stk_sp=0;
+#define MPID_CHKPMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,_label) \
+{_pointer = (_type)MPID_Malloc(_nbytes); \
+if (_pointer) { \
+    _mpid_chkpmem_stk[_mpid_chkpmem_stk_sp++] = _pointer;\
+} else {\
+    _rc = MPIR_Err_create_code( MPI_SUCCESS, 1, FCNAME, __LINE__, \
+          MPI_ERR_OTHER, "**nomem2", "**nomem2 %d %s", \
+         _nbytes, _name ); \
+    goto _label; \
+}
+#define MPID_CHKPMEM_REAP \
+    { while (_mpid_chkpmem_stk_sp > 0) {\
+       MPID_Free( _mpid_chkpmem_stk[--_mpid_chkpmem_stk_sp] ); } }
+#define MPID_CHKPMEM_COMMIT \
+    _mpid_chkpmem_stk_sp = 0
+#define MPID_CHKPMEM_MALLOC(_pointer,_type,_nbytes,_rc,_name) \
+    MPID_CHKPMEM_MALLOC_ORJUMP(_pointer,_type,_nbytes,_rc,_name,fn_fail)
+
+#endif 
+
 #if 0
 /* Memory allocation stack.
    These are used to allocate multiple chunks of memory (with MPIU_Malloc)
