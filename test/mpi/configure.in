@@ -84,6 +84,12 @@ dnl        F90=$top_build_dir/bin/mpif90
         CC=$mpibindir/mpicc
         FC=$mpibindir/mpif77
         CXX=$mpibindir/mpicxx
+        # For some of the tests below, we'll need a separate compiler
+        if test ! -x $CXX ; then
+            CXXTEST=$top_build_dir/bin/mpicxx
+        else 
+            CXXTEST=$CXX
+        fi
 dnl        F90=$mpibindir/mpif90
     fi
 fi
@@ -172,7 +178,7 @@ elif test "$enable_cxx" = yes ; then
     rm -f conftest*
     cat >conftest.cxx <<EOF
 #include "mpi.h"
-int main( int argc, char *argv[])
+int main( int argc, char **argv)
 {
     MPI::Init();
     MPI::Finalize();
@@ -189,6 +195,10 @@ EOF
     rm -f conftest*
 fi
 if test "$enable_cxx" = yes ; then
+    CXXsave=$CXX
+    if test -n "$CXXTEST" ; then
+        CXX=$CXXTEST
+    fi
     AC_CACHE_CHECK([whether <iostream> available],pac_cv_cxx_has_iostream,[
     AC_LANG_SAVE
     AC_LANG_CPLUSPLUS
@@ -201,6 +211,11 @@ if test "$enable_cxx" = yes ; then
     fi
 
     AC_CXX_NAMESPACE_STD
+   
+    if test "$ac_cv_cxx_namespaces" != yes ; then 
+        AC_MSG_WARN([The compiler $CXX does not support C++ namespaces.  This may cause problems for the tests])
+    fi
+    CXX=$CXXsave
 fi
 # Find perl; used to create some of the tests from template and 
 # defintion files
