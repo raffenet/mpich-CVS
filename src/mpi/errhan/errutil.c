@@ -84,13 +84,23 @@ void MPIR_Err_init( void )
 	char *env;
 
 	MPID_Thread_lock_init(&error_ring_mutex);
-	/* TODO: get environment setting to see if single message or message stack should be printed */
-	MPIR_Err_print_stack_flag = TRUE; /* for the moment... */
+	
 	env = getenv("MPICH_ABORT_ON_ERROR");
 	if (env)
 	{
 	    if (strcmp(env, "1") == 0 || strcmp(env, "on") == 0 || strcmp(env, "yes") == 0)
+	    { 
 		MPIR_Err_abort_on_error = TRUE;
+	    }
+	}
+	
+	env = getenv("MPICH_PRINT_ERROR_STACK");
+	if (env)
+	{
+	    if (strcmp(env, "1") == 0 || strcmp(env, "on") == 0 || strcmp(env, "yes") == 0)
+	    { 
+		MPIR_Err_print_stack_flag = TRUE;
+	    }
 	}
     }
 #   endif
@@ -116,14 +126,14 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
-			      "Please file a bug report.  The error stack follows:\n", error_class);
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n"
+			      "%s.  Please file a bug report.  The error stack follows:\n", error_class, fcname);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
-			      "Please file a bug report.  No error stack is available.\n", error_class);
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n"
+			      "%s.  Please file a bug report.  No error stack is available.\n", error_class, fcname);
 	}
 	
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
@@ -202,14 +212,14 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
-			      "Please file a bug report.  The error stack follows:\n", error_class);
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n"
+			      "%s.  Please file a bug report.  The error stack follows:\n", error_class, fcname);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n.  "
-			      "Please file a bug report.  No error stack is available.\n", error_class);
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n"
+			      "%s.  Please file a bug report.  No error stack is available.\n", error_class, fcname);
 	}
 	
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
@@ -270,14 +280,14 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     {
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
-			      "Please file a bug report.  The error stack follows:\n", error_class);
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n"
+			      "%s.  Please file a bug report.  The error stack follows:\n", error_class, fcname);
 	    MPIR_Err_print_stack(stderr, errcode);
 	}
 	else
 	{
-	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n%s().  "
-			      "Please file a bug report.  No error stack is available.\n");
+	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n"
+			      "%s.  Please file a bug report.  No error stack is available.\n", error_class, fcname);
 	}
 	
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
@@ -707,9 +717,23 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 
     va_start(Argp, specific_msg);
 
-    if (error_class == MPI_ERR_OTHER && lastcode != MPI_SUCCESS)
+    if (error_class == MPI_ERR_OTHER)
     {
-	error_class = lastcode & (ERROR_CLASS_MASK | ERROR_DYN_MASK);
+        if (MPIR_ERR_GET_CLASS(lastcode) > MPI_SUCCESS && MPIR_ERR_GET_CLASS(lastcode) <= MPICH_ERR_LAST_CLASS)
+	{
+	    /* If the last class is more specific (and is valid), then pass it through */
+	    error_class = MPIR_ERR_GET_CLASS(lastcode);
+	}
+	else
+	{
+	    error_class = MPI_ERR_OTHER;
+	}
+    }
+
+    /* Handle special case of MPI_ERR_IN_STATUS.  According to the standard, the code must be equal to the class. */
+    if (error_class == MPI_ERR_IN_STATUS)
+    {
+	return MPI_ERR_IN_STATUS;
     }
 
     err_code = error_class;
