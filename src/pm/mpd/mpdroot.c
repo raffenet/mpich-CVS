@@ -11,13 +11,13 @@ int main(int argc, char *argv[])
     int i, rc, sock;
     char env_unix_socket[NAME_LEN];
     struct sockaddr_un sa;
-    char console_name[NAME_LEN], pgmname[NAME_LEN], *s, *cmd;
+    char console_name[NAME_LEN], short_pgmname[NAME_LEN], cmd[NAME_LEN], *s;
     struct passwd *pwent;
 
-    if ((s = rindex(argv[0],'/')) == NULL)
-        strncpy(pgmname,argv[0],NAME_LEN);
+    if ((s = strrchr(argv[0],'/')) != NULL)    /* DOES contain a  /  */
+        strncpy(short_pgmname,s+1,NAME_LEN);
     else
-        strncpy(pgmname,s+1,NAME_LEN);
+        strncpy(short_pgmname,argv[0],NAME_LEN);
 
     if ((pwent = getpwuid(getuid())) == NULL)    /* for real id */
     {
@@ -80,44 +80,8 @@ int main(int argc, char *argv[])
     setreuid(getuid(),getuid());
     setregid(getgid(),getgid());
 
-    if (strncmp(pgmname,"mpdrun",6) == 0)
-    {
-        cmd = BINDIR "/mpdrun.py";
-    }
-    else if (strncmp(pgmname,"mpiexec",7) == 0)
-    {
-        cmd = BINDIR "/mpiexec.py";
-    }
-    else if (strncmp(pgmname,"mpirun",6) == 0)
-    {
-        cmd = BINDIR "/mpdrun.py";
-    }
-    else if (strncmp(pgmname,"mpdtrace",8) == 0)
-    {
-        cmd = BINDIR "/mpdtrace.py";
-    }
-    else if (strncmp(pgmname,"mpdringtest",11) == 0)
-    {
-        cmd = BINDIR "/mpdringtest.py";
-    }
-    else if (strncmp(pgmname,"mpdlistjobs",11) == 0)
-    {
-        cmd = BINDIR "/mpdlistjobs.py";
-    }
-    else if (strncmp(pgmname,"mpdkilljob",10) == 0)
-    {
-        cmd = BINDIR "/mpdkilljob.py";
-    }
-    else if (strncmp(pgmname,"mpdsigjob",9) == 0)
-    {
-        cmd = BINDIR "/mpdsigjob.py";
-    }
-    else
-    {
-        pgmname[NAME_LEN-1] = '\0';    /* just to be sure it is terminated */
-        printf("UNKNOWN NAME FOR MPDROOT: %s\n",pgmname);
-        exit(-1);
-    }
+    strncpy(cmd,argv[0],NAME_LEN);
+    strncat(cmd,".py",NAME_LEN);
     argv[0] = cmd;
     execvp(cmd,&argv[0]);
     printf("mpdroot failed to exec :%s:\n",cmd);
