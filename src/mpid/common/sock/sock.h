@@ -115,6 +115,7 @@ int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_
 /* extended functions */
 int sock_getid(sock_t sock);
 int sock_getsetid(sock_set_t set);
+int sock_get_last_os_error(void);
 
 CPLUSPLUS_END
 

@@ -1416,6 +1416,8 @@ static int socki_adjust_iov(MPIDI_msg_sz_t nb, SOCK_IOV * const iov, const int c
     return TRUE;
 }
 
+static int g_last_os_error = 0;
+
 static int socki_errno_to_sock_errno(int unix_errno)
 {
     int sock_errno;
@@ -1438,8 +1440,18 @@ static int socki_errno_to_sock_errno(int unix_errno)
     }
     else
     {
-	sock_errno = SOCK_FAIL;
+	g_last_os_error = unix_errno;
+	sock_errno = SOCK_ERR_OS_SPECIFIC;
     }
 
     return sock_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME sock_get_last_os_error
+#undef FCNAME
+#define FCNAME SOCKI_QUOTE(FUNCNAME)
+int sock_get_last_os_error(void)
+{
+    return g_last_os_error;
 }
