@@ -2136,6 +2136,10 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
 # Automake strives to generate the dependencies.  This is a better approach,
 # but it is very difficult to implement in practice, particularly where the
 # development environment is not GNU.  
+#
+# This is somewhat tricky because the current organization of MPICH2
+# makes use of many -I<dir> switches, that are selected at configure time,
+# so some files may not be where expected.
 sub AddDependency {
     $target = $_[0];
     if (defined($makevars{"INCLUDES"})) {
@@ -2153,6 +2157,10 @@ sub AddDependency {
     print "Depend commandline = $cmdline\n" if $debug;
     open( DEPFD, $cmdline ) || return;
     while (<DEPFD>) {
+	# Remove files that are provided by the device
+	s/[^\s]*mpidpre\.h//g;
+	s/[^\s]*mpidpost\.h//g;
+
 	# For derived object files like lo and pf, add these
 	if ($do_profilelibs && $found_profilelib) {
 	    s/^(.*)\.o:(.*)/\1.o \1.pf:\2/;
@@ -2164,6 +2172,9 @@ sub AddDependency {
     }
     close( DEPFD );
 }
+
+#
+# 
 sub TargetDependencies {
     print FD "# Dependencies$newline";
     # Libraries first
