@@ -13,11 +13,11 @@
 #undef MPID_STRUCT_FLATTEN_DEBUG
 #undef MPID_STRUCT_DEBUG
 
-int MPID_Type_struct_alignsize(int count,
-			       MPI_Datatype *oldtype_array);
+static int MPID_Type_struct_alignsize(int count,
+				      MPI_Datatype *oldtype_array);
 
-int MPID_Type_struct_alignsize(int count,
-			       MPI_Datatype *oldtype_array)
+static int MPID_Type_struct_alignsize(int count,
+				      MPI_Datatype *oldtype_array)
 {
     int i, max_alignsize = 0, tmp_alignsize;
 

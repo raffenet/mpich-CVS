@@ -28,36 +28,39 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
     MPID_Datatype *datatype_ptr;
     MPID_Segment *segp;
 
-    if (HANDLE_GET_KIND(*datatype_p) == HANDLE_KIND_BUILTIN) return 0;
+    assert(HANDLE_GET_KIND(*datatype_p) != HANDLE_KIND_BUILTIN);
 
-    MPID_Datatype_get_ptr( *datatype_p, datatype_ptr );
-    datatype_ptr->is_committed = 1;
+    MPID_Datatype_get_ptr(*datatype_p, datatype_ptr);
 
-    /* determine number of contiguous blocks in the type */
-    segp = MPID_Segment_alloc();
-    MPID_Segment_init(0, 1, *datatype_p, segp, 0); /* first 0 is bufptr,
-						    * 1 is count
-						    * last 0 is homogeneous
-						    */
+    if (datatype_ptr->is_committed == 0) {
+	datatype_ptr->is_committed = 1;
 
-    first = 0;
-    last  = SEGMENT_IGNORE_LAST;
+	/* determine number of contiguous blocks in the type */
+	segp = MPID_Segment_alloc();
+	MPID_Segment_init(0, 1, *datatype_p, segp, 0); /* first 0 is bufptr,
+							* 1 is count
+							* last 0 is homogeneous
+							*/
 
-    MPID_Segment_count_contig_blocks(segp,
-				     first,
-				     &last,
-				     &count);
+	first = 0;
+	last  = SEGMENT_IGNORE_LAST;
+	
+	MPID_Segment_count_contig_blocks(segp,
+					 first,
+					 &last,
+					 &count);
 
-    datatype_ptr->n_contig_blocks = count;
+	datatype_ptr->n_contig_blocks = count;
 
-    MPID_Segment_free(segp);
+	MPID_Segment_free(segp);
 
-    MPIU_DBG_PRINTF(("# contig blocks = %d\n",
-		     (int) datatype_ptr->n_contig_blocks));
+	MPIU_DBG_PRINTF(("# contig blocks = %d\n",
+			 (int) datatype_ptr->n_contig_blocks));
 
 #if 0
-    MPIDI_Dataloop_dot_printf(datatype_ptr->dataloop, 0, 1);
+	MPIDI_Dataloop_dot_printf(datatype_ptr->dataloop, 0, 1);
 #endif
+    }
 
     return 0;
 }

@@ -70,11 +70,32 @@ int MPI_Type_free(MPI_Datatype *datatype)
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    /* Check for built-in type */
 	    if (HANDLE_GET_KIND(*datatype) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
-						  "**dtypeperm", 0 );
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						 MPIR_ERR_RECOVERABLE,
+						 FCNAME, __LINE__,
+						 MPI_ERR_TYPE,
+						 "**dtypeperm", 0);
+		goto fn_fail;
+	    }
+
+	    /* all but MPI_2INT of the pair types are not stored as builtins
+	     * but should be treated similarly.
+	     */
+	    if (*datatype == MPI_FLOAT_INT ||
+		*datatype == MPI_DOUBLE_INT ||
+		*datatype == MPI_LONG_INT ||
+		*datatype == MPI_SHORT_INT ||
+		*datatype == MPI_LONG_DOUBLE_INT)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						 MPIR_ERR_RECOVERABLE,
+						 FCNAME, __LINE__,
+						 MPI_ERR_TYPE,
+						  "**dtypeperm", 0);
+		goto fn_fail;
 	    }
             /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
@@ -88,11 +109,10 @@ int MPI_Type_free(MPI_Datatype *datatype)
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_free", "**mpi_type_free %p", datatype);
-#endif
+				     "**mpi_type_free", "**mpi_type_free %p",
+				     datatype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

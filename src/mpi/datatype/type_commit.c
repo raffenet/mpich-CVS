@@ -64,19 +64,30 @@ int MPI_Type_commit(MPI_Datatype *datatype)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    if (HANDLE_GET_KIND(*datatype) == HANDLE_KIND_BUILTIN)
+	return MPI_SUCCESS;
+
+    /* pair types stored as real types are a special case */
+    if (*datatype == MPI_FLOAT_INT ||
+	*datatype == MPI_DOUBLE_INT ||
+	*datatype == MPI_LONG_INT ||
+	*datatype == MPI_SHORT_INT ||
+	*datatype == MPI_LONG_DOUBLE_INT) return MPI_SUCCESS;
+
     mpi_errno = MPID_Type_commit(datatype);
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
 	return MPI_SUCCESS;
     }
+
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_type_commit", "**mpi_type_commit %p", datatype);
-#endif
+				     "**mpi_type_commit",
+				     "**mpi_type_commit %p", datatype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -294,7 +294,8 @@ static void DLOOP_Type_indexed_array_copy(int count,
 
     if (!dispinbytes)
     {
-	out_disp_array[0] = (DLOOP_Offset) ((int *) in_disp_array)[0] * old_extent;
+	out_disp_array[0] = (DLOOP_Offset)
+	    ((int *) in_disp_array)[0] * old_extent;
 	
 	for (i = 1; i < count; i++)
 	{
@@ -313,12 +314,13 @@ static void DLOOP_Type_indexed_array_copy(int count,
 	    {
 		cur_idx++;
 		assert(cur_idx < contig_count);
-		out_disp_array[cur_idx] = ((DLOOP_Offset) ((int *) in_disp_array)[i]) * old_extent;
-		out_blklen_array[cur_idx]  = in_blklen_array[i];
+		out_disp_array[cur_idx] =
+		    ((DLOOP_Offset) ((int *) in_disp_array)[i]) * old_extent;
+		out_blklen_array[cur_idx] = in_blklen_array[i];
 	    }
 	}
     }
-    else
+    else /* input displacements already in bytes */
     {
 	out_disp_array[0] = ((DLOOP_Offset *) in_disp_array)[0];
 	
@@ -339,7 +341,7 @@ static void DLOOP_Type_indexed_array_copy(int count,
 	    {
 		cur_idx++;
 		assert(cur_idx < contig_count);
-		out_disp_array[cur_idx]   = ((DLOOP_Offset *) in_disp_array)[i];
+		out_disp_array[cur_idx] = ((DLOOP_Offset *) in_disp_array)[i];
 		out_blklen_array[cur_idx] = in_blklen_array[i];
 	    }
 	}

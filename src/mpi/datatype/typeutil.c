@@ -50,12 +50,15 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_PACKED,
     MPI_LB,
     MPI_UB,
+    MPI_2INT,
+#if 0
+    /* no longer builtins */
     MPI_FLOAT_INT,
     MPI_DOUBLE_INT,
     MPI_LONG_INT,
     MPI_SHORT_INT,
-    MPI_2INT,
     MPI_LONG_DOUBLE_INT,
+#endif
 /* Fortran types */
     MPI_COMPLEX,
     MPI_DOUBLE_COMPLEX,

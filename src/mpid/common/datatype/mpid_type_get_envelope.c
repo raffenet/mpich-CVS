@@ -32,13 +32,7 @@ int MPID_Type_get_envelope(MPI_Datatype datatype,
 {
     MPID_Datatype *dtp;
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
-	*num_integers  = 0;
-	*num_addresses = 0;
-	*num_datatypes = 0;
-	*combiner = MPI_COMBINER_NAMED;
-	return MPI_SUCCESS;
-    }
+    assert(HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN);
 
     MPID_Datatype_get_ptr(datatype, dtp);
 

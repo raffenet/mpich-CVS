@@ -75,6 +75,21 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* handle all the predefined types here */
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN ||
+	datatype == MPI_FLOAT_INT ||
+	datatype == MPI_DOUBLE_INT ||
+	datatype == MPI_LONG_INT ||
+	datatype == MPI_SHORT_INT ||
+	datatype == MPI_LONG_DOUBLE_INT)
+    {
+	*num_integers  = 0;
+	*num_addresses = 0;
+	*num_datatypes = 0;
+	*combiner = MPI_COMBINER_NAMED;
+	return MPI_SUCCESS;
+    }
+
     mpi_errno = MPID_Type_get_envelope(datatype,
 				       num_integers,
 				       num_addresses,

@@ -61,17 +61,42 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_GET_CONTENTS);
     /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+    MPID_Datatype_get_ptr(datatype, datatype_ptr);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+
+	    /* Check for built-in type */
+	    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						 MPIR_ERR_RECOVERABLE,
+						 FCNAME, __LINE__,
+						 MPI_ERR_TYPE,
+						 "**dtypeperm", 0);
+		goto fn_fail;
+	    }
+
+	    /* all but MPI_2INT of the pair types are not stored as builtins
+	     * but should be treated similarly.
+	     */
+	    if (datatype == MPI_FLOAT_INT ||
+		datatype == MPI_DOUBLE_INT ||
+		datatype == MPI_LONG_INT ||
+		datatype == MPI_SHORT_INT ||
+		datatype == MPI_LONG_DOUBLE_INT)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
+						 MPIR_ERR_RECOVERABLE,
+						 FCNAME, __LINE__,
+						 MPI_ERR_TYPE,
+						 "**dtypeperm", 0);
+		goto fn_fail;
+	    }
+
             /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) goto fn_fail;
         }
