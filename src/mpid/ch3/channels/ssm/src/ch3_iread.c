@@ -111,20 +111,15 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	    pkt_ptr->num_bytes = num_bytes;
 	}
 
-	if (rreq->dev.ca == MPIDI_CH3_CA_COMPLETE)
+	vc->ch.recv_active = NULL;
+	mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, rreq);
+	if (mpi_errno != MPI_SUCCESS)
 	{
-	    /* mark data transfer as complete and decrement CC */
-	    rreq->dev.iov_count = 0;
-	    MPIDI_CH3U_Request_complete(rreq);
-	    MPIDI_DBG_PRINTF((60, FCNAME, "called request complete"));
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	}
-	else
+	if (rreq->dev.iov_count == 0 && vc->ch.recv_active == NULL)
 	{
-	    /* FIXME: excessive recursion... */
-	    /* decrement the number of active reads */
-	    MPIDI_CH3I_shm_read_active--;
-	    MPIDI_CH3U_Handle_recv_req(vc, rreq);
-	    MPIDI_DBG_PRINTF((60, FCNAME, "called handle_recv_req"));
+	    vc->ch.shm_reading_pkt = TRUE;
 	}
 
     }

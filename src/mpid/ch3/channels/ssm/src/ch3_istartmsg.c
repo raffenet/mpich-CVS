@@ -53,7 +53,14 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    /*assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));*/
+#ifdef MPICH_DBG_OUTPUT
+    if (pkt_sz > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	return mpi_errno;
+    }
+#endif
 
     /* The MM channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     pkt_sz = sizeof(MPIDI_CH3_Pkt_t);
@@ -78,13 +85,36 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 		mpi_errno = MPIDU_Sock_write(vc->ch.sock, pkt, pkt_sz, &snb);
 		nb = snb;
 	    }
-	    if (mpi_errno != MPI_SUCCESS)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-		return mpi_errno;
-#if 0
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed, rc=%d", mpi_errno));
+		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
+
+		if (nb == pkt_sz)
+		{ 
+		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete, %d bytes", nb));
+		    /* done.  get us out of here as quickly as possible. */
+		}
+		else
+		{
+		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
+		    create_request(sreq, pkt, pkt_sz, nb);
+		    /*sreq = create_request(pkt, pkt_sz, nb);
+		    if (sreq == NULL)
+		    {
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		    return mpi_errno;
+		    }
+		    */
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		    if (vc->ch.bShm)
+			vc->ch.send_active = sreq;
+		    else
+			MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
+		}
+	    }
+	    else
+	    {
 		sreq = MPIDI_CH3_Request_create();
 		if (sreq == NULL)
 		{
@@ -95,34 +125,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
 		/* TODO: Create an appropriate error message based on the return value */
-		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
-#endif
-	    }
-
-	    MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
-
-	    if (nb == pkt_sz)
-	    { 
-		MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete, %d bytes", nb));
-		/* done.  get us out of here as quickly as possible. */
-	    }
-	    else
-	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
-		create_request(sreq, pkt, pkt_sz, nb);
-		/*sreq = create_request(pkt, pkt_sz, nb);
-		if (sreq == NULL)
-		{
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-		return mpi_errno;
-		}
-		*/
-		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		if (vc->ch.bShm)
-		    vc->ch.send_active = sreq;
-		else
-		    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
+		sreq->status.MPI_ERROR = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
 	    }
 	}
 	else
@@ -197,5 +200,5 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

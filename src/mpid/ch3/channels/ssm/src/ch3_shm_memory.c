@@ -473,6 +473,9 @@ int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p)
     ret_val = shm_unlink(p->name);
     if (ret_val == -1)
     {
+#ifdef ENOENT
+	if (errno != ENOENT)
+#endif
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_unlink", "**shm_unlink %s %d", p->key, ret_val);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
 	return mpi_errno;
@@ -481,6 +484,9 @@ int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p)
     ret_val = shmctl(p->id, IPC_RMID, NULL);
     if (ret_val == -1)
     {
+#ifdef EIDRM
+	if (errno != EIDRM)
+#endif
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmctl", "**shmctl %d %d", p->id, ret_val);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_UNLINK_MEM);
 	return mpi_errno;
