@@ -825,6 +825,7 @@ sub WriteMfile {
 
     # Unrecognized lines go here
     print FD $other_text;
+    print FD "${newline}FORCE_TARGET:${newline}${newline}";
     close FD;
 
     # Make the file read only
@@ -2347,7 +2348,7 @@ sub TargetInstall {
     %dirschecked = ();
     if (!scalar(%install_files)) { return ; }
     print FD "# Install target$newline";
-    print FD "install:$newline";
+    print FD "install: FORCE_TARGET $newline";
     foreach $kind (keys(%install_files)) {
 	$dir = $install_dir{$kind};
 	if ($dir eq "") {
