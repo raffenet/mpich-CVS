@@ -23,6 +23,10 @@ if test "$enable_g" = "yes" -o "$enable_g" = "all" ; then
 fi
 
 dnl Checks for programs.
+dnl Determine the executable and object file extensions.  These
+dnl are needed for some operations under cygwin
+AC_EXEEXT
+AC_OBJEXT
 # Checking for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
