@@ -530,7 +530,7 @@ So for example, to see a complete list of the possible arguments for
 \texttt{mpdboot}, you would run
 \begin{verbatim}
     mpdboot --help
-\end{verbatim}
+end{verbatim}
 
 
 \subsubsection{Options for \texttt{mpd}}
@@ -1158,6 +1158,27 @@ for example.  An easy way to check, is to gradually add them to
 \texttt{mpd.hosts} and try an \texttt{mpdboot} with a \texttt{-n} arg
 that uses them all each time.
 
+\texttt{mpdboot} can be used to start mpd's on machines that have multiple
+interfaces.  Each mpd needs to be able to identify the interface that it uses
+to communicate with other mpd's in the ring.  We do not actually use interface
+names (e.g. eth0), but use hostnames or actual IP addresses associated with
+the address.  We refer to this information as the \texttt{ifhn}, the
+interface-hostname.  To specify the ifhn on the local machine, i.e. for the
+local mpd, use the \texttt{--ifhn} arg:
+\begin{verbatim}
+    $ mpdboot --ifhn=192.168.1.1 -n 2
+\end{verbatim}
+This example uses the IP address associated with an alternative interface.
+Similarly you can specify alternative interfaces for machines listed in an
+mpd.hosts file.  For example:
+\begin{verbatim}
+    frontend:1 ifhn=192.168.1.1
+    backend1:2
+\end{verbatim}
+This file indicates that the frontend machine in the cluster has a single 
+cpu and uses its itnerface with IP address to communicate with nodes in the
+cluster.  Host backend1 has 2 cpus and uses its default (or only) interface
+for communication in the cluster..
 
 \end{document}
 
