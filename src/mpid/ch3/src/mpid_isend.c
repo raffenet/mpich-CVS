@@ -200,6 +200,52 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_CH3U_Pkt_set_seqnum(rts_pkt, seqnum);
 	MPIDI_CH3U_Request_set_seqnum(sreq, seqnum);
 
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+
+	MPIDI_DBG_PRINTF((30, FCNAME, "Rendezvous send using do_rts"));
+    
+	if (dt_contig) 
+	{
+	    MPIDI_DBG_PRINTF((30, FCNAME, "  contiguous rndv data, data_sz="
+			      MPIDI_MSG_SZ_FMT, data_sz));
+		
+	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	    
+	    sreq->dev.iov[0].MPID_IOV_BUF = sreq->dev.user_buf + dt_true_lb;
+	    sreq->dev.iov[0].MPID_IOV_LEN = data_sz;
+	    sreq->dev.iov_count = 1;
+	}
+	else
+	{
+	    MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count,
+			      sreq->dev.datatype, &sreq->dev.segment);
+	    sreq->dev.iov_count = MPID_IOV_LIMIT;
+	    sreq->dev.segment_first = 0;
+	    sreq->dev.segment_size = data_sz;
+	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &sreq->dev.iov[0],
+							 &sreq->dev.iov_count);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
+						 FCNAME, __LINE__, MPI_ERR_OTHER,
+						 "**ch3|loadsendiov", 0);
+		goto fn_exit;
+	    }
+	}
+	mpi_errno = MPIDI_CH3_do_rts (vc, sreq, &upkt, sreq->dev.iov,
+				      sreq->dev.iov_count);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MPIU_Object_set_ref(sreq, 0);
+	    MPIDI_CH3_Request_destroy(sreq);
+	    sreq = NULL;
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
+					     FCNAME, __LINE__, MPI_ERR_OTHER,
+					     "**ch3|rtspkt", 0);
+	    goto fn_exit;
+	}
+	
+#else
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -213,6 +259,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	{
 	    MPID_Request_release(rts_sreq);
 	}
+#endif
 	
 	/* FIXME: fill temporary IOV or pack temporary buffer after send to hide some latency.  This requires synchronization
            because the CTS packet could arrive and be processed before the above iStartmsg completes (depending on the progress

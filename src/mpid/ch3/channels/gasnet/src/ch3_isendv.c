@@ -20,6 +20,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov,
     int msg_sz;
     int offset;
     int i, j;
+    int complete;
     MPID_IOV tmp_iov;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
@@ -34,8 +35,9 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov,
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)iov[0].MPID_IOV_BUF);
 
-    if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE) && !MPIDI_CH3I_inside_handler)
-       /* MT */
+    if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE) &&
+	!MPIDI_CH3I_inside_handler)
+	/* MT */
     {
 	/* get an iov that has no more than MPIDI_CH3_packet_len of data */
 	msg_sz = 0;
@@ -85,8 +87,17 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov,
 	    {
 		MPID_Abort(NULL, MPI_SUCCESS, -1);
 	    }
-	    sreq->gasnet.iov_offset = 0;
-	    MPIDI_CH3U_Handle_send_req(vc, sreq);
+	    
+	    MPIDI_CH3U_Handle_send_req (vc, sreq, &complete);
+
+	    if (!complete)
+	    {
+		sreq->gasnet.iov_offset = 0;
+		sreq->gasnet.vc = vc;
+		MPIDI_CH3I_SendQ_enqueue_head (sreq, CH3_NORMAL_QUEUE);
+		assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
+		MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+	    }
 	}    
     }
     else
@@ -108,8 +119,9 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov,
 	sreq->gasnet.iov_offset = 0;
 	sreq->gasnet.vc = vc;
 	MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
-    }
 
+    }
+    
     printf_d ("Exiting "FCNAME"\n");
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);

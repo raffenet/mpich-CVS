@@ -115,6 +115,32 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)
 	{
 	    /* A rendezvous request-to-send (RTS) message has arrived.  We need to send a CTS message to the remote process. */
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+		/* The channel will be performing the rendezvous */
+
+		mpi_errno = MPIDI_CH3U_Post_data_receive(vc, found, &rreq);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+						      FCNAME, __LINE__,
+						      MPI_ERR_OTHER,
+						      "**ch3|postrecv",
+						      "**ch3|postrecv %s",
+						      "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+		    goto fn_exit;
+		}
+		mpi_errno = MPIDI_CH3_do_cts (vc, rreq, rreq->dev.sender_req_id,
+					      rreq->dev.iov, rreq->dev.iov_count);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
+						      FCNAME, __LINE__,
+						      MPI_ERR_OTHER,
+						      "**ch3|ctspkt", 0);
+		    goto fn_exit;
+		}
+
+#else
 	    MPID_Request * cts_req;
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
@@ -136,7 +162,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		   reference count on a req we don't want/need. */
 		MPID_Request_release(cts_req);
 	    }
-
+#endif
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	    {
 		MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);

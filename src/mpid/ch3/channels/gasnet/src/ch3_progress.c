@@ -43,6 +43,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
     int rc;
     unsigned completions = MPIDI_CH3I_progress_completions;
     int mpi_errno = MPI_SUCCESS;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
@@ -68,23 +69,27 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	sreq = MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE];
 	if (sreq)
 	{
+	    complete = 0;
 	    mpi_errno = MPIDI_CH3_iWrite (sreq->gasnet.vc, sreq);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		MPID_Abort(NULL, mpi_errno, -1);
 	    }
+	    
 	    if (sreq->dev.iov_count == 0)
 	    {
-		if (sreq->dev.ca == MPIDI_CH3_CA_COMPLETE)
-		{
-		    MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
-		    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
-		}
-		mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc, sreq);
+		mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc,
+							sreq, &complete);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    MPID_Abort(NULL, mpi_errno, -1);
 		}
+	    }
+	    
+	    if (complete)
+	    {
+		MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
+		MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
 	    }
 	}
 	else
@@ -92,35 +97,33 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    sreq = MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE);
 	    if (sreq)
 	    {
-		 mpi_errno = send_enqueuedv (sreq->gasnet.vc, sreq);
-		 if (mpi_errno != MPI_SUCCESS)
-		 {
-		     MPID_Abort(NULL, mpi_errno, -1);
-		 }
-		 if (sreq->dev.iov_count == 0)
-		 {
-		     if (sreq->dev.ca == MPIDI_CH3_CA_COMPLETE)
-		     {
-			 MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
-		     }
-		     else
-		     {
-			 MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
-		     }
-		     mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc,
-							     sreq);
-		     if (mpi_errno != MPI_SUCCESS)
-		     {
-			 MPID_Abort(NULL, mpi_errno, -1);
-		     }
-		 }
-		 else
-		 {
-		     MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
-		 }
+		complete = 0;
+		mpi_errno = send_enqueuedv (sreq->gasnet.vc, sreq);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    MPID_Abort(NULL, mpi_errno, -1);
+		}
+		if (sreq->dev.iov_count == 0)
+		{
+		    mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc,
+							    sreq, &complete);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			MPID_Abort(NULL, mpi_errno, -1);
+		    }
+		}
+		
+		if (complete)
+		{
+		    MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
+		}
+		else
+		{
+		    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+		}
 	    }
 	}
-#if 0
+
 	/* handle rendezvous puts */
 	sreq = MPIDI_CH3I_SendQ_head (CH3_RNDV_QUEUE);
 	if (sreq)
@@ -165,7 +168,8 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		    
 		    if (sreq->dev.iov_count == 0)
 		    {
-			MPIDI_CH3U_Handle_send_req_rndv (sreq);
+			MPIDI_CH3U_Handle_send_req (sreq->gasnet.vc, sreq,
+						    &complete);
 			sreq->gasnet.iov_offset = 0;
 		    }
 		}
@@ -174,10 +178,6 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		MPID_Abort (NULL, MPI_SUCCESS, -1);
 	    }    
 	}
-#else
-	if (!MPIDI_CH3I_SendQ_empty (CH3_RNDV_QUEUE))
-	    abort ();
-#endif
     }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
     
@@ -201,6 +201,8 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     int gn_errno;
     gasnet_node_t sender;
     MPIDI_VC *vc;
+    MPID_Request *rreq;
+    
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_START_PACKET_HANDLER);
@@ -218,10 +220,19 @@ MPIDI_CH3_start_packet_handler (gasnet_token_t token, void* buf, size_t data_sz)
     vc->gasnet.data = buf + sizeof (MPIDI_CH3_Pkt_t);
     vc->gasnet.data_sz = data_sz - sizeof (MPIDI_CH3_Pkt_t);
     
-    mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)buf);
+    mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)buf, &rreq);
     if (mpi_errno != MPI_SUCCESS)
     {
 	MPID_Abort(NULL, mpi_errno, -1);
+    }
+    
+    if (rreq)
+    {
+	mpi_errno = MPIDI_CH3_iRead (vc, rreq);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MPID_Abort(NULL, mpi_errno, -1);
+	}
     }
     
     MPIDI_CH3I_inside_handler = 0;
@@ -264,17 +275,6 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     {
 	MPID_Abort(NULL, mpi_errno, -1);
     }
-
-#if 0
-    if (rreq->dev.iov_count == 0)
-    {
-	mpi_errno = MPIDI_CH3U_Handle_recv_req (vc, rreq);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    MPID_Abort(NULL, mpi_errno, -1);
-	}
-    }
-#endif
     
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_continue_packet_handler\n");
@@ -348,10 +348,11 @@ void
 MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
 				      int sreq_id)
 {
-#if 0
+
     MPID_Request *rreq;
     int gn_errno;
     gasnet_node_t sender;
+    int complete;
     MPIDI_VC *vc;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
 
@@ -370,9 +371,9 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
 
     MPID_Request_get_ptr (rreq_id, rreq);
 
-    MPIDI_CH3U_Handle_recv_req_rndv (vc, rreq);
+    MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
 
-    if (rreq->dev.iov_count != 0)
+    if (!complete)
     {
 	gn_errno = gasnet_AMReplyMedium2 (token,
 					  MPIDI_CH3_reload_IOV_reply_handler_id,
@@ -388,16 +389,12 @@ MPIDI_CH3_reload_IOV_or_done_handler (gasnet_token_t token, int rreq_id,
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_reload_IOV_handler\n");
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_RELOAD_IOV_OR_DONE_HANDLER);
-#else
-    abort ();
-#endif
 }
 
 void
 MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
 				    int sreq_id, int n_iov)
 {
-#if 0
     MPID_Request *sreq;
     MPID_IOV *iov = (MPID_IOV *)buf;
     int i;
@@ -426,9 +423,6 @@ MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
     MPIDI_CH3I_inside_handler = 0;
     printf_d ("Exiting MPIDI_CH3_reload_IOV_reply_handler\n");
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_RELOAD_IOV_REPLY_HANDLER);
-#else
-    abort ();
-#endif
 }
 
 

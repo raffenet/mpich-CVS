@@ -15,6 +15,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr,
 {
     int mpi_errno = MPI_SUCCESS;
     int gn_errno;
+    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
@@ -47,7 +48,7 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr,
 	    MPID_Abort(NULL, MPI_SUCCESS, -1);
 	}
 	
-	MPIDI_CH3U_Handle_send_req(vc, sreq);
+	MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
     }
     else
     {

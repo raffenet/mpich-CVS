@@ -7,7 +7,7 @@
 #include "mpidi_ch3_impl.h"
 
 /*
- * MPIDI_CH3_iRead()
+ * MPIDI_CH3_iRead() -- will read the rest of the packet
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_iRead
@@ -16,47 +16,56 @@
 int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 {
     int i;
+    int complete;
+    
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
     printf_d ("Entering "FCNAME "\n");
-    printf_d ("  rreq->gasnet.iov_offset = %d\n", rreq->gasnet.iov_offset);
-    printf_d ("  rreq->dev.iov_count = %d\n", rreq->dev.iov_count);
-    printf_d ("  vc->gasnet.data_sz = %d\n", vc->gasnet.data_sz);
-    
-    for (i = rreq->gasnet.iov_offset;
-	 i < rreq->dev.iov_count + rreq->gasnet.iov_offset; ++i)
+    do
     {
-	printf_d ("  rreq->dev.iov[%d] = (%p, %d)\n", i,
-		  rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN);
+	printf_d ("  rreq->gasnet.iov_offset = %d\n", rreq->gasnet.iov_offset);
+	printf_d ("  rreq->dev.iov_count = %d\n", rreq->dev.iov_count);
+	printf_d ("  vc->gasnet.data_sz = %d\n", vc->gasnet.data_sz);
+    
+	for (i = rreq->gasnet.iov_offset;
+	     i < rreq->dev.iov_count + rreq->gasnet.iov_offset; ++i)
+	{
+	    printf_d ("  rreq->dev.iov[%d] = (%p, %d)\n", i,
+		      rreq->dev.iov[i].MPID_IOV_BUF,
+		      rreq->dev.iov[i].MPID_IOV_LEN);
 	
-	if (rreq->dev.iov[i].MPID_IOV_LEN <= vc->gasnet.data_sz)
-	{
-	    memcpy (rreq->dev.iov[i].MPID_IOV_BUF, vc->gasnet.data,
-		    rreq->dev.iov[i].MPID_IOV_LEN);
-	    vc->gasnet.data += rreq->dev.iov[i].MPID_IOV_LEN;
-	    vc->gasnet.data_sz -= rreq->dev.iov[i].MPID_IOV_LEN;
+	    if (rreq->dev.iov[i].MPID_IOV_LEN <= vc->gasnet.data_sz)
+	    {
+		memcpy (rreq->dev.iov[i].MPID_IOV_BUF, vc->gasnet.data,
+			rreq->dev.iov[i].MPID_IOV_LEN);
+		vc->gasnet.data += rreq->dev.iov[i].MPID_IOV_LEN;
+		vc->gasnet.data_sz -= rreq->dev.iov[i].MPID_IOV_LEN;
+	    }
+	    else
+	    {
+		memcpy (rreq->dev.iov[i].MPID_IOV_BUF, vc->gasnet.data,
+			vc->gasnet.data_sz);
+		rreq->dev.iov[i].MPID_IOV_BUF += vc->gasnet.data_sz;
+		rreq->dev.iov[i].MPID_IOV_LEN -= vc->gasnet.data_sz;
+		rreq->dev.iov_count -= i - rreq->gasnet.iov_offset;
+		rreq->gasnet.iov_offset = i;
+		/* vc->gasnet.data += vc->gasnet.data_sz; */
+		vc->gasnet.data_sz = 0;
+		assert (vc->gasnet.recv_active == NULL ||
+			vc->gasnet.recv_active == rreq);
+		vc->gasnet.recv_active = rreq;
+		goto fn_exit;
+	    }
 	}
-	else
-	{
-	    memcpy (rreq->dev.iov[i].MPID_IOV_BUF, vc->gasnet.data,
-		    vc->gasnet.data_sz);
-	    rreq->dev.iov[i].MPID_IOV_BUF += vc->gasnet.data_sz;
-	    rreq->dev.iov[i].MPID_IOV_LEN -= vc->gasnet.data_sz;
-	    rreq->dev.iov_count -= i - rreq->gasnet.iov_offset;
-	    rreq->gasnet.iov_offset = i;
-	    /* vc->gasnet.data += vc->gasnet.data_sz; */
-	    vc->gasnet.data_sz = 0;
-	    assert (vc->gasnet.recv_active == NULL ||
-		    vc->gasnet.recv_active == rreq);
-	    vc->gasnet.recv_active = rreq;
-	    goto fn_exit;
-	}
-    }
 
+	rreq->gasnet.iov_offset = 0;
+	
+	MPIDI_CH3U_Handle_recv_req(vc, rreq, &complete);
+    }
+    while (!complete);
+    
     vc->gasnet.recv_active = NULL;
-    /* FIXME: excessive recursion... */
-    MPIDI_CH3U_Handle_recv_req(vc, rreq);
 
 fn_exit:
     printf_d ("Exiting "FCNAME "\n");

@@ -322,7 +322,56 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm
                           *comm_ptr, MPID_Comm **newcomm); 
 
 int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
-                           *comm_ptr, MPID_Comm **newcomm); 
+                           *comm_ptr, MPID_Comm **newcomm);
+
+
+/*E
+  MPIDI_CH3_do_rts - This function is used to initiate a rendezvous
+  send.
+
+  NOTE: An "rts packet" is provided which must be passed to
+  handle_recv_pkt on the remote side.  The first iov is also provided
+  so the channel can register buffers, etc., if neccessary.
+
+  Input Parameters:
++ vc - virtual connection over which the rendezvous will be performed
+. sreq - pointer to the send request object
+. rts_pkt - CH3 packet to be delivered to CH3 on remote side
+. iov - the first vector of a structure contains a buffer pointer and length
+- n_iov - number of elements in the vector
+
+  Return value:
+  An mpi error code.
+
+  IMPLEMENTORS:
+E*/
+int MPIDI_CH3_do_rts (MPIDI_VC * vc, MPID_Request * sreq,
+		      MPIDI_CH3_Pkt_t * rts_pkt,
+		      MPID_IOV * iov, int n_iov);
+
+/*E
+  MPIDI_CH3_do_cts - This function is used to indicate that a previous
+  rendezvous rts has been matched and data transfer can commence.
+
+  NOTE: The sreq_id is provided so that handle_send_req can be called
+  with the corresponding send request on the remote side to reload the
+  iov, if necessary, and to complete the request once the transfer has
+  finished.
+
+  Input Parameters:
++ vc - virtual connection over which the rendezvous will be performed
+. rreq - pointer to the receive request object
+. sreq_id - handle to the send request on the remote side
+. iov - the first vector of a structure contains a buffer pointer and length
+- n_iov - number of elements in the vector
+
+  Return value:
+  An mpi error code.
+
+  IMPLEMENTORS:
+E*/
+int MPIDI_CH3_do_cts (MPIDI_VC * vc, MPID_Request * rreq, MPI_Request sreq_id,
+		      MPID_IOV * iov, int n_iov);
 
 
 /*
@@ -422,6 +471,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq);
 void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sdt, int * smpi_errno,
 			    void * const rbuf, int rcount, MPI_Datatype rdt, MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
+int MPIDI_CH3U_Post_data_receive(MPIDI_VC * vc, int found, MPID_Request ** rreqp);
 
 /* Include definitions from the channel which require items defined by this file (mpidimpl.h) or the file it includes
    (mpiimpl.h). */
