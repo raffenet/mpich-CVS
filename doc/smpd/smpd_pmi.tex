@@ -2,52 +2,25 @@
 %  This is a latex file that generates a reference manual for
 %  the wire protocol between an mpich2 process and a smpd manager.
 %
-\documentclass{article}
-\usepackage{tpage}
-\usepackage{../../doc/adi3/refman}
-\usepackage{url}
+\documentclass[dvipdfm,11pt]{article}
+\usepackage[dvipdfm]{hyperref} % Upgraded url package
 \usepackage{epsf}
-%\usepackage{psfig}
-%hyperref - do not remove this comment
-
-\textheight=9in
-\textwidth=6.1in
-\oddsidemargin=.2in
-\topmargin=-.50in
-\newread\testfile
-
-\let\findex=\index
-%
-% Modify the way titles are handled for no breaks between pages
-\def\mantitle#1#2#3{\pagerule\nobreak
-\ifmancontents\addcontentsline{toc}{subsection}{#1}\fi
-\index{#1}}
-
-\makeindex
+\parskip=.1in
 
 \begin{document}
-
 \markright{SMPD PMI Wire Protocol Reference Manual}
-
-\def\nopound{\catcode`\#=13}
-{\nopound\gdef#{{\tt \char`\#}}}
-\catcode`\_=13
-\def_{{\tt \char`\_}}
-\catcode`\_=11
-\def\code#1{{\tt #1}}
-%\let\url=\code
-\def\makeussubscript{\catcode`\_=8}
-\def\makeustext{\catcode`\_=11}
-%\tpageoneskip
-\ANLTMTitle{SMPD PMI Wire Protocol\\
-Version 1.0\\
-Reference Manual\\\ \\Draft of \today}{\em 
-David Ashton\\
-Brian R. Toonen\\
+\title{SMPD PMI Wire Protocol Reference Manual\\
+Version 0.1\\
+DRAFT of \today\\
 Mathematics and Computer Science Division\\
-Argonne National Laboratory}{00}{\today}
+Argonne National Laboratory}
 
-\clearpage
+\author{David Ashton}
+
+
+\maketitle
+
+\cleardoublepage
 
 \pagenumbering{roman}
 \tableofcontents
@@ -55,6 +28,7 @@ Argonne National Laboratory}{00}{\today}
 
 \pagenumbering{arabic}
 \pagestyle{headings}
+
 
 \section{Introduction}
 
@@ -102,27 +76,27 @@ MPICH2 processes compiled with the SMPD PMI library expect the following
 environment variables to be set:
 
 \begin{description}
-\item PMI\_ RANK = my rank in the process group ( 0 to N-1 )
-\item PMI\_ SIZE = process group size ( N )
-\item PMI\_ KVS = my keyval space name unique to my process group
-\item PMI\_ DOMAIN = my keyval space domain name
-\item *PMI\_ CLIQUE = my node neighbors in the form of a clique.  A clique is
+\item PMI\_RANK = my rank in the process group ( 0 to N-1 )
+\item PMI\_SIZE = process group size ( N )
+\item PMI\_KVS = my keyval space name unique to my process group
+\item PMI\_DOMAIN = my keyval space domain name
+\item *PMI\_CLIQUE = my node neighbors in the form of a clique.  A clique is
 a comma separated list of ranges and numbers.  Example: 0,2..4,7
-\item PMI\_ SMPD\_ ID = my smpd manager node id
-\item PMI\_ SMPD\_ KEY = ctx\_ key value to be included with PMI commands 
+\item PMI\_SMPD\_ID = my smpd manager node id
+\item PMI\_SMPD\_KEY = ctx\_key value to be included with PMI commands 
 from this process.
-\item **PMI\_ SMPD\_ FD = file descriptor/handle to convert into the PMI 
+\item **PMI\_SMPD\_FD = file descriptor/handle to convert into the PMI 
 socket context.
-\item PMI\_ SPAWN = 0 or 1 if this process was started by a 
-PMI\_ Spawn\_ multiple command.
-\item **PMI\_ ROOT\_ HOST = root host to connect to to establish the PMI 
+\item PMI\_SPAWN = 0 or 1 if this process was started by a 
+PMI\_Spawn\_multiple command.
+\item **PMI\_ROOT\_HOST = root host to connect to to establish the PMI 
 socket context.
-\item **PMI\_ ROOT\_ PORT = root listening port number
-\item **PMI\_ ROOT\_ LOCAL = 0 or 1 if the root process is to act as the root smpd manager.
-If PMI\_ ROOT\_ LOCAL is specfied and it is 1, the root MPICH process starts a separate
+\item **PMI\_ROOT\_PORT = root listening port number
+\item **PMI\_ROOT\_LOCAL = 0 or 1 if the root process is to act as the root smpd manager.
+If PMI\_ROOT\_LOCAL is specfied and it is 1, the root MPICH process starts a separate
 thread or process to act as the smpd manager.  This manager listens on the specified port
 for pmi socket contexts to connect from all the processes in the job and handles smpd pmi
-commands for them.  It is an error if PMI\_ ROOT\_ HOST is not the same as the host where
+commands for them.  It is an error if PMI\_ROOT\_HOST is not the same as the host where
 rank 0 is launched.
 \end{description}
 
@@ -130,11 +104,11 @@ rank 0 is launched.
 
 ** Only one option may be specified.
 
-PMI\_ SMPD\_ FD is mutually exclusive with the 
-PMI\_ ROOT\_ HOST/PMI\_ ROOT\_ PORT pair.  If PMI\_ SMPD\_ FD exists then 
+PMI\_SMPD\_FD is mutually exclusive with the 
+PMI\_ROOT\_HOST/PMI\_ROOT\_PORT pair.  If PMI\_SMPD\_FD exists then 
 the process uses that handle as its connection to the SMPD manager 
 otherwise it makes a socket connection to the
-host/port described by PMI\_ ROOT\_ HOST/PMI\_ ROOT\_ PORT.
+host/port described by PMI\_ROOT\_HOST/PMI\_ROOT\_PORT.
 
 \section{SMPD wire commands}
 This section describes the wire protocol for PMI commands from the child
@@ -142,130 +116,135 @@ process to the smpd manager.
 
 \subsection{Comand Format}
 Commands are variable length.
-Each command begins with a 13 byte header.  Bytes are 8 bits.  The header 
+Each command begins with a 13 byte header.  The header 
 is a NULL terminated ascii string representation of the length of the 
 command to follow the header.  After the header is a string of the length 
 described by the header.  Both the header and the command are NULL terminated.
 The header is always 13 bytes no matter where the NULL character falls.  The
-command string begins at the 14th bytes and the length of the command must 
+command string begins at the 14th byte and the length of the command must 
 include the NULL character.
 
-Commands contain \code{key=value} strings to describe the components of 
+Commands contain \texttt{key=value} strings to describe the components of 
 the command.  All commands will have the following keys:
 
-\code{cmd=command src=my\_ smpd\_ id dest=dest\_ smpd\_ id 
-tag=command\_ tag ctx\_ key=pmi\_ smpd\_ key}
+\begin{enumerate}
+\item \texttt{cmd=command}
+\item \texttt{src=my\_smpd\_id}
+\item \texttt{dest=dest\_smpd\_id}
+\item \texttt{tag=command\_tag}
+\item \texttt{ctx\_key=pmi\_smpd\_key}
+\end{enumerate}
 
 Additional command specific keys are described in the following section.
 
 \subsection{Commands}
 \begin{description}
-%\item[\code{exit\_ on\_ done}]\mbox{}\\
+%\item[\texttt{exit\_on\_done}]\mbox{}\\
 %Tell the root to exit when all done commands are received - used in rPMI only.
-\item[\code{done}]\mbox{}\\
+\item[\texttt{done}]\mbox{}\\
 No more PMI commands, close the context.  This command is sent from the 
 child directly to its SMPD manager and does not receive a reply.
 
-Example: \code{cmd=done src=3 dest=3 tag=14 ctx\_ key=0}
-\item[\code{exit_on_done}]\mbox{}\\
+Example: \texttt{cmd=done src=3 dest=3 tag=14 ctx\_key=0}
+\item[\texttt{exit\_on\_done}]\mbox{}\\
 The root smpd manager can and should exit when all done commands are received.
 This command is sent by the root process.
 
-Example: \code{cmd=exit_on_done src=1 dest=1 tag=13 ctx\_ key=0}
+Example: \texttt{cmd=exit\_on\_done src=1 dest=1 tag=13 ctx\_key=0}
 
 Is this command necessary?  Shouldn't the root smpd know that it is a root smpd
 and exit automatically when all its pmi contexts close?
-\item[\code{barrier}]\mbox{}\\
+\item[\texttt{barrier}]\mbox{}\\
 Barrier across a set of processes. 
-Add \code{name=barrier\_ name value=number\_ of\_ participants}.
+Add \texttt{name=barrier\_name value=number\_of\_participants}.
 The result command returns SUCCESS or FAIL.
 
-Example: \code{cmd=barrier src=2 dest=1 tag=3 ctx\_ key=1 name=kvsname value=2}
-\item[\code{dbcreate}]\mbox{}\\
-Create a new keyval space.  If \code{name=kvsname} is added to the command
+Example: \texttt{cmd=barrier src=2 dest=1 tag=3 ctx\_key=1 name=kvsname value=2}
+\item[\texttt{dbcreate}]\mbox{}\\
+Create a new keyval space.  If \texttt{name=kvsname} is added to the command
 then the keyval space is created with the provided name, otherwise the 
 implementation chooses a name.
-The result command returns SUCCESS or FAIL and \code{name=kvsname}.
+The result command returns SUCCESS or FAIL and \texttt{name=kvsname}.
 
-Example: \code{cmd=dbcreate src=1 dest=1 tag=100 ctx\_ key=0}
-\item[\code{dbdestroy}]\mbox{}\\
-Destroy a keyval space.  Add \code{name=kvsname}.
+Example: \texttt{cmd=dbcreate src=1 dest=1 tag=100 ctx\_key=0}
+\item[\texttt{dbdestroy}]\mbox{}\\
+Destroy a keyval space.  Add \texttt{name=kvsname}.
 The result command returns SUCCESS or FAIL.
 
-Example: \code{cmd=dbdestroy src=4 dest=1 tag=13 ctx\_ key=1 name=kvsname}
-\item[\code{dbput}]\mbox{}\\
-Put a keyval into a kvs space.  Add \code{name=kvsname key=user\_ key 
-value=user\_ value}.
+Example: \texttt{cmd=dbdestroy src=4 dest=1 tag=13 ctx\_key=1 name=kvsname}
+\item[\texttt{dbput}]\mbox{}\\
+Put a keyval into a kvs space.  Add \texttt{name=kvsname key=user\_key 
+value=user\_value}.
 The result command returns SUCCESS or FAIL.
 
-Example \code{cmd=dbput src=3 dest=1 tag=100 ctx\_ key=0 name=kvsname key=foo value=bar}
-\item[\code{dbget}]\mbox{}\\
-Get a kevyal from a kvs space.  Add \code{name=kvsname key=user\_ key}.
-The result command returns SUCCESS or FAIL and \code{value=val}.
+Example \texttt{cmd=dbput src=3 dest=1 tag=100 ctx\_key=0 name=kvsname key=foo value=bar}
+\item[\texttt{dbget}]\mbox{}\\
+Get a kevyal from a kvs space.  Add \texttt{name=kvsname key=user\_key}.
+The result command returns SUCCESS or FAIL and \texttt{value=val}.
 
-Example: \code{cmd=dbget src=4 dest=1 tag=0 ctx\_ key=0 name=kvsname key=foo}
-\item[\code{dbfirst}]\mbox{}\\
-Start the keyval space iterator.  Add \code{name=kvsname}.
-The result command returns SUCCESS or FAIL and \code{key=key value=val}.
+Example: \texttt{cmd=dbget src=4 dest=1 tag=0 ctx\_key=0 name=kvsname key=foo}
+\item[\texttt{dbfirst}]\mbox{}\\
+Start the keyval space iterator.  Add \texttt{name=kvsname}.
+The result command returns SUCCESS or FAIL and \texttt{key=key value=val}.
 
-Example: \code{cmd=dbfirst src=1 dest=1 tag=22 ctx\_ key=0 name=kvsname}
-\item[\code{dbnext}]\mbox{}\\
-Get the next keyval from the iterator.  Add \code{name=kvsname}.
-The result command returns SUCCESS or FAIL and \code{key=key value=val}.
+Example: \texttt{cmd=dbfirst src=1 dest=1 tag=22 ctx\_key=0 name=kvsname}
+\item[\texttt{dbnext}]\mbox{}\\
+Get the next keyval from the iterator.  Add \texttt{name=kvsname}.
+The result command returns SUCCESS or FAIL and \texttt{key=key value=val}.
 
-Example: \code{cmd=dbnext src=2 dest=1 tag=12 ctx\_ key=0 name=kvsname}
-\item[\code{spawn}]\mbox{}\\
+Example: \texttt{cmd=dbnext src=2 dest=1 tag=12 ctx\_key=0 name=kvsname}
+\item[\texttt{spawn}]\mbox{}\\
 Spawn a new process group.  See the next section for a complete description.
-\item[\code{result}]\mbox{}\\
+\item[\texttt{result}]\mbox{}\\
 The result of a previous command.  Result commands will always have two 
-fields, \code{cmd\_ tag=command\_ tag} and \code{result=result\_ string}.
-The \code{command\_ tag} matches the tag of the command the result command 
-refers to.  The \code{result\_ string} is SUCCESS or a failure message. 
+fields, \texttt{cmd\_tag=command\_tag} and \texttt{result=result\_string}.
+The \texttt{command\_tag} matches the tag of the command the result command 
+refers to.  The \texttt{result\_string} is SUCCESS or a failure message. 
 Other return fields will be present as specified by the issued command.
 \end{description}
 
 \subsection{spawn command}
-The \code{spawn} command is issued by a single node to launch a set of 
+The \texttt{spawn} command is issued by a single node to launch a set of 
 processes in a new process group.
 
-The \code{spawn} command is used to implement PMI\_ Spawn\_ multiple.
+The \texttt{spawn} command is used to implement PMI\_Spawn\_multiple.
 
-The keys to the \code{spawn} command are the following:
+The keys to the \texttt{spawn} command are the following:
 \begin{description}
-\item \code{ncmds = x number of commands}
-\item \code{cmd0 = command}
-\item \code{cmd1 = command}
-\item \code{...}
-\item \code{argv0 = string1 string2 string3 ...}
-\item \code{argv1 = string1 string2 string3 ...}
-\item \code{...}
-\item \code{maxprocs = n0 n1 n2 ... nx-1}
-\item \code{nkeyvals = n0 n1 n2 ... nx-1}
-\item \code{keyvals0 = ``0=$\backslash$``key=val$\backslash$'' 
+\item \texttt{ncmds = x number of commands}
+\item \texttt{cmd0 = command}
+\item \texttt{cmd1 = command}
+\item \texttt{...}
+\item \texttt{argv0 = string1 string2 string3 ...}
+\item \texttt{argv1 = string1 string2 string3 ...}
+\item \texttt{...}
+\item \texttt{maxprocs = n0 n1 n2 ... nx-1}
+\item \texttt{nkeyvals = n0 n1 n2 ... nx-1}
+\item \texttt{keyvals0 = ``0=$\backslash$``key=val$\backslash$'' 
 1=$\backslash$``key=val$\backslash$'' ... 
 n0-1=$\backslash$``key=val$\backslash$''''}
-\item \code{keyvals1 = ``0=$\backslash$``key=val$\backslash$'' 
+\item \texttt{keyvals1 = ``0=$\backslash$``key=val$\backslash$'' 
 1=$\backslash$``key=val$\backslash$'' ... 
 n1-1=$\backslash$``key=val$\backslash$''''}
-\item \code{...}
-\item \code{npreput = number of preput keyvals}
-\item \code{preput = ``0=$\backslash$``key=val$\backslash$'' 
+\item \texttt{...}
+\item \texttt{npreput = number of preput keyvals}
+\item \texttt{preput = ``0=$\backslash$``key=val$\backslash$'' 
 1=$\backslash$``key=val$\backslash$'' ... 
 n-1=$\backslash$``key=val$\backslash$''''}
 \end{description}
 
-The \code{ncmds} key represents the size of the rest of the vector arguments.
-There will be \code{ncmds} \code{cmd} and \code{argv} keys.  \code{maxprocs}
-and \code{nkeyvals} will contain \code{ncmds} entries.  The values in
-\code{maxprocs} represent the requested number of processes to launch for the
-corresponding \code{cmd} command.  There will be \code{ncmds} \code{keyvals}
-keys and each \code{keyvals} key will contain nx keys where nx is the 
-corresponding value in \code{nkeyvals}.  \code{npreput} represents the 
-number of keys in the \code{preput} key.  The keys in the \code{preput} key
+The \texttt{ncmds} key represents the size of the rest of the vector arguments.
+There will be \texttt{ncmds} \texttt{cmd} and \texttt{argv} keys.  \texttt{maxprocs}
+and \texttt{nkeyvals} will contain \texttt{ncmds} entries.  The values in
+\texttt{maxprocs} represent the requested number of processes to launch for the
+corresponding \texttt{cmd} command.  There will be \texttt{ncmds} \texttt{keyvals}
+keys and each \texttt{keyvals} key will contain nx keys where nx is the 
+corresponding value in \texttt{nkeyvals}.  \texttt{npreput} represents the 
+number of keys in the \texttt{preput} key.  The keys in the \texttt{preput} key
 are to be put in the keyval space of the spawned process group before any
 of the processes are launched.
 
-Example: \code{cmd=spawn src=3 dest=0 tag=4 ctx\_ key=0 ncmds=1 cmd0=myapp
+Example: \texttt{cmd=spawn src=3 dest=0 tag=4 ctx\_key=0 ncmds=1 cmd0=myapp
 argv0=``one $\backslash$``two args$\backslash$'' three'' maxprocs=4 
 nkeyvals=2 keyvals0=``0=$\backslash$``host=toad$\backslash$'' 
 1=$\backslash$``path=/home/me$\backslash$'''' 
@@ -276,9 +255,9 @@ This section describes the format of key=value elements in a stream.
 
 stream := frame \vline\ frame stream
 
-frame := element frame\_ char \vline\ element separ\_ char frame
+frame := element frame\_char \vline\ element separ\_char frame
 
-element := key delim\_ char value
+element := key delim\_char value
 
 key := string
 
@@ -288,24 +267,27 @@ string := literal \vline\ quoted
 
 literal := array of chars without separators, deliminators, or quotes
 
-quoted := quote\_ char array-of-escaped-characters quote\_ char
+quoted := quote\_char array-of-escaped-characters quote\_char
 
 chars := ascii characters
 
-escapted chars := ascii characters with escaped quote\_ chars and escape\_ chars
+escapted chars := ascii characters with escaped quote\_chars and escape\_chars
 
-quote\_ char := "
+quote\_char := "
 
-escape\_ char := $\backslash$
+escape\_char := $\backslash$
 
-delim\_ char := =
+delim\_char := =
 
-separ\_ char := ' '
+separ\_char := ' '
 
-frame\_ char := '$\backslash$0'
+frame\_char := '$\backslash$0'
 
 Example:
 
 	a=b "my name"="David Ashton" foo="He said, $\backslash$"Hi there.$\backslash$""
 	
+\bibliographystyle{plain}
+\bibliography{smpd_pmi}
+
 \end{document}

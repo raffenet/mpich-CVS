@@ -2083,7 +2083,8 @@ AC_OUTPUT(Makefile src/Makefile \
 	  doc/adi3/Makefile \
 	  doc/installguide/Makefile \
 	  doc/userguide/Makefile \
-	  doc/logging/Makefile )
+	  doc/logging/Makefile \
+	  doc/smpd/Makefile )
 
 dnl The following files should be created by the appropriate configure within
 dnl the device.
