@@ -7,10 +7,21 @@
  */
 
 #include "ad_pvfs2.h"
+#include "ad_pvfs2_common.h"
 
 void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 {
-    *error_code = MPI_SUCCESS;
+    int ret;
+    ADIOI_PVFS2_fs *pvfs_fs;
+
+    pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
+
+    ret = PVFS_sys_truncate(pvfs_fs->pinode_refn, size, pvfs_fs->credentials);
+    if (ret < 0 ) {
+	ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
+    } else {
+	*error_code = MPI_SUCCESS;
+    }
 }
 
 /*
