@@ -725,7 +725,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
        PAC_HAVE_MOUNT_NFS
        if test "$ROMIO_HAVE_MOUNT_NFS" = "1"; then
        		AC_MSG_CHECKING(struct statfs.f_fstypename)
-		AC_TRY_COMPILE([
+		AC_COMPILE_CHECK([
 			#include <sys/param.h>
 			#include <string.h>],[
 			struct statfs f;
