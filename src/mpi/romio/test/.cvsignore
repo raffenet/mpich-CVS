@@ -4,3 +4,4 @@ fmisc.f
 large_file.c
 fcoll_test.f
 fperf.f
+*.out
