@@ -203,6 +203,18 @@ int Sock_describe_timer_states()
 	MPID_STATE_SOCK_POST_WRITEV,
 	"sock_post_writev",
 	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+	MPID_STATE_SOCK_GETID,
+	"sock_getid",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+	MPID_STATE_SOCK_GETSETID,
+	"sock_getsetid",
+	get_random_color_str());
+    RLOG_DescribeState(g_pRLOG,
+	MPID_STATE_SOCK_NATIVE_TO_SOCK,
+	"sock_native_to_sock",
+	get_random_color_str());
     return Socki_describe_timer_states();
 }
 
