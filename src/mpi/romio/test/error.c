@@ -9,11 +9,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define VERBOSE 0
 /* tests if error message is printed correctly */
 
 int main(int argc, char **argv)
 {
     int i, rank, len, err;
+    int errs = 0;
     char *filename, *tmp;
     MPI_File fh;
     char string[MPI_MAX_ERROR_STRING];
@@ -21,10 +23,12 @@ int main(int argc, char **argv)
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+#if VERBOSE
     if (!rank) {
 	fprintf(stderr, "Tests if errors are reported correctly...\n");
 	fprintf(stderr, "Should say \"Invalid displacement argument\"\n\n");
     }
+#endif
 
 /* process 0 takes the file name as a command-line argument and 
    broadcasts it to other processes */
@@ -62,15 +66,39 @@ int main(int argc, char **argv)
                             MPI_INFO_NULL);
     /* disp is deliberately passed as -1 */
 
+    /* This test is designed for ROMIO specifically and tests for a 
+       specific error message */
     if (err != MPI_SUCCESS) {
 	MPI_Error_string(err, string, &len);
-	if (!rank) fprintf(stderr, "%s\n", string);
+	if (!rank) {
+#if VERBOSE
+	    fprintf(stderr, "%s\n", string);
+#else
+	    if (strcmp( string, "Invalid displacement argument" ) != 0) {
+		errs++;
+	    }
+#endif
+	}
+    }
+    else {
+	errs++;
+	fprintf( stderr, "File set view did not return an error\n" );
     }
 
     MPI_File_close(&fh);
 
     free(filename);
     free(tmp);
+
+    if (!rank) {
+	if (errs == 0) {
+	    printf( " No Errors\n" );
+	}
+	else {
+	    printf( " Found %d errors\n", errs );
+	}
+    }
+
     MPI_Finalize();
     return 0; 
 }
