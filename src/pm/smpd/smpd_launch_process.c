@@ -4,6 +4,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "smpd.h"
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#include <stdlib.h>
 
 #ifdef HAVE_WINDOWS_H
 
@@ -724,17 +731,17 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     close(stderr_pipe_fds[1]);
 
     /* make sock structures out of the sockets */
-    result = sock_native_to_sock(set, stdin_pipe_fds[1], NULL, sock_in);
+    result = sock_native_to_sock(set, stdin_pipe_fds[1], NULL, &sock_in);
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_native_to_sock(set, stdout_pipe_fds[0], NULL, sock_out);
+    result = sock_native_to_sock(set, stdout_pipe_fds[0], NULL, &sock_out);
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
     }
-    result = sock_native_to_sock(set, stderr_pipe_fds[0], NULL, sock_err);
+    result = sock_native_to_sock(set, stderr_pipe_fds[0], NULL, &sock_err);
     if (result != SOCK_SUCCESS)
     {
 	smpd_err_printf("sock_native_to_sock failed, error %s\n", get_sock_error_string(result));
