@@ -111,6 +111,7 @@ int smpd_get_smpd_data(char *key, char *value, int value_len)
 	    smpd_exit_fn("smpd_get_smpd_data");
 	    return SMPD_FAIL;
 	}
+	smpd_exit_fn("smpd_get_smpd_data");
 	return SMPD_SUCCESS;
     }
 
