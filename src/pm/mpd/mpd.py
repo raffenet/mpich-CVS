@@ -997,6 +997,9 @@ def usage():
     print '  with read and write access only for the user, and must contain at least'
     print '  a line with password=<password>'
     print ''
+    print 'To run mpd as root, install it while root and instead of a .mpd.conf file'
+    print 'use mpd.conf (no initial dot) in the /etc directory.' 
+    print ''
     print 'This version of mpd is %s' % str(mpd_version)
 
     exit(-1)
