@@ -63,7 +63,8 @@ EOF
    AC_LANG_SAVE
    AC_LANG_C   
    save_LIBS="$LIBS"
-   LIBS="fconftestf.o $LIBS"
+   dnl FLIBS comes from AC_F77_LIBRARY_LDFLAGS
+   LIBS="fconftestf.o $FLIBS $LIBS"
    AC_TRY_LINK(,my_name();,pac_cv_prog_f77_name_mangle="lower")
    if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
      AC_TRY_LINK(,my_name_();,pac_cv_prog_f77_name_mangle="lower underscore")
@@ -150,7 +151,8 @@ if AC_TRY_EVAL(ac_fcompile) && test -s conftest.o ; then
     AC_LANG_SAVE
     AC_LANG_C
     save_LIBS="$LIBS"
-    LIBS="conftestf.o $LIBS"
+    dnl Add the Fortran linking libraries
+    LIBS="conftestf.o $FLIBS $LIBS"
     AC_TRY_RUN([#include <stdio.h>
 #ifdef F77_NAME_UPPER
 #define cisize_ CISIZE
@@ -339,6 +341,15 @@ dnl performed on the compiler version that will be used.
 dnl
 dnl 'AC_SUBST' is called for all six variables.
 dnl
+dnl One complication is that on systems with multiple Fortran compilers, 
+dnl some libraries used by one Fortran compiler may have been (mis)placed
+dnl in a common location.  We have had trouble with libg2c in particular.
+dnl To work around this, we test whether iargc etc. work first.  This
+dnl will catch most systems and will speed up the tests.
+dnl
+dnl Next, the libraries are only added if they are needed to complete a 
+dnl link; they aren't added just because they exist.
+dnl
 dnl f77argdef
 dnlD*/
 AC_DEFUN(PAC_PROG_F77_CMDARGS,[
@@ -348,6 +359,46 @@ AC_CACHE_VAL(pac_cv_prog_f77_cmdarg,
 [
     AC_MSG_RESULT([searching...])
     found_cached="no"
+    # First, we perform a quick check.  Does iargc and getarg work?
+    fxx_module="${FXX_MODULE:-}"
+    f77_getargdecl="${F77_GETARGDECL:-external getarg}"
+    f77_getarg="${F77_GETARG:-call GETARG(i,s)}"
+    f77_iargc="${F77_IARGC:-IARGC()}"
+    #    
+    cat > conftest.f <<EOF
+        program main
+$fxx_module
+        integer i, j
+        character*20 s
+        $f77_getargdecl
+	i = 0
+        $f77_getarg
+        i=$f77_iargc
+	if (i .gt. 1) then
+	    j = i - i
+	    j = 1.0 / j
+	endif
+        end
+EOF
+    found_answer="no"
+    if test -z "$ac_fcompilelink" ; then
+        ac_fcompilelink="${F77-f77} -o conftest $FFLAGS $flags conftest.f $LIBS 1>&AC_FD_CC"
+    fi
+    AC_MSG_CHECKING([if ${F77-f77} $flags $libs works with GETARG and IARGC])
+    if AC_TRY_EVAL(ac_fcompilelink) && test -x conftest ; then
+	if test "$ac_cv_prog_f77_cross" = "no" ; then
+	    if conftest >/dev/null 2>&1 ; then
+		found_answer="yes"
+	        FXX_MODULE="$fxx_module"
+		F77_GETARGDECL="$f77_getargdecl"
+		F77_GETARG="$f77_getarg"
+		F77_IARGC="$f77_iargc"
+		AC_MSG_RESULT(yes)
+     	    fi
+        fi
+    fi    
+    if test $found_answer = "no" ; then
+	AC_MSG_RESULT(no)
     # Grumph.  Here are a bunch of different approaches
     # We have several axes the check:
     # Library to link with (none, -lU77 (HPUX), -lg2c (LINUX f77))
@@ -587,6 +638,7 @@ EOF
 	rm -f conftest.*
         trial=`expr $trial + 1`   
     done
+fi
 pac_cv_F77_GETARGDECL="$F77_GETARGDECL"
 pac_cv_F77_IARGC="$F77_IARGC"
 pac_cv_F77_GETARG="$F77_GETARG"
@@ -782,7 +834,7 @@ if AC_TRY_EVAL(ac_fcompile) && test -s conftest.o ; then
     AC_LANG_SAVE
     AC_LANG_C
     save_LIBS="$LIBS"
-    LIBS="conftestf.o $LIBS"
+    LIBS="conftestf.o $FLIBS $LIBS"
     AC_TRY_RUN([#include <stdio.h>
 #ifdef F77_NAME_UPPER
 #define ftest_ FTEST
