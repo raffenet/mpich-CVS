@@ -6,6 +6,9 @@
 
 #include "socketimpl.h"
 #include "sock.h"
+
+#if (WITH_SOCK_TYPE == SOCK_IOCP)
+
 #include <mswsock.h>
 #include <stdio.h>
 
@@ -1117,3 +1120,5 @@ int sock_easy_send(sock_t sock, void *buf, int len, int *num_written)
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_EASY_SEND);
     return SOCK_SUCCESS;
 }
+
+#endif /* WITH_SOCK_TYPE == SOCK_IOCP  */
