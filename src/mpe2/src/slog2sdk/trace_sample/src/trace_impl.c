@@ -902,17 +902,20 @@ int TRACE_Peek_next_primitive( const  TRACE_file fp,
             break;
         }
     }
+/*
     if ( type == NULL ) {
         fprintf( stderr, "TRACE_Peek_next_primitive(): Cannot locate "
                          "CATEGORY in catgeory table.\n" );
         return 20;
     }
+*/
 
     *num_bytes = 0;
     info_A = NULL;
     info_B = NULL;
     if (    ( info_A = strstr( newline, "< " ) ) != NULL
-         && ( info_B = strstr( info_A, " >" ) ) != NULL ) {
+         && ( info_B = strstr( info_A, " >" ) ) != NULL
+         && type != NULL ) {
         info_A = (char *) (info_A + 2);
         sprintf( info_B, "%c", '\0' );
         sscanf( info_A, type->label, &infovals[0], &infovals[1] );
@@ -1045,17 +1048,20 @@ int TRACE_Peek_next_composite( const TRACE_file fp,
             break;
         }
     }
+/*
     if ( type == NULL ) {
         fprintf( stderr, "TRACE_Peek_next_composite(): Cannot locate "
                          "CATEGORY in catgeory table.\n" );
         return 20;
     }
+*/
 
     *num_bytes = 0;
     info_A = NULL;
     info_B = NULL;
     if (    ( info_A = strstr( newline, "< " ) ) != NULL
-         && ( info_B = strstr( info_A, " >" ) ) != NULL ) {
+         && ( info_B = strstr( info_A, " >" ) ) != NULL
+         && type != NULL ) {
         info_A = (char *) (info_A + 2);
         sprintf( info_B, "%c", '\0' );
         sscanf( info_A, type->label, &infovals[0], &infovals[1] );
