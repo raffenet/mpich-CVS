@@ -8,3 +8,5 @@ infodup_SOURCES = infodup.c
 infodel_SOURCES = infodel.c
 infovallen_SOURCES = infovallen.c
 infoorder_SOURCES = infoorder.c
+infomany_SOURCES = infomany.c
+infotest_SOURCES = infotest.c

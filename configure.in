@@ -1891,7 +1891,6 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/Makefile test/runtests test/util/Makefile \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
-	  test/util/info/Makefile \
 	  examples/Makefile \
 	  examples/f77/Makefile \
 	  examples/f90/Makefile \
