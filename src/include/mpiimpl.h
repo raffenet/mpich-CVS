@@ -421,7 +421,8 @@ typedef struct MPID_Datatype_st {
     MPI_Aint      extent;        /* MPI-2 allows a type to be created by
                                     resizing (the extent of) an existing 
                                     type */
-    int           true_lb;       /* lb of datatype if no LB in effect */
+    MPI_Aint      ub, lb,        /* MPI-1 upper and lower bounds */
+                  true_ub, true_lb; /* MPI-2 true upper and lower bounds */
     int           alignsize;     /* size of datatype to align (affects pad) */
     /* The remaining fields are required but less frequently used, and
        are placed after the more commonly used fields */
