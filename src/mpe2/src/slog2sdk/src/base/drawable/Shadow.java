@@ -12,6 +12,7 @@ package base.drawable;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.awt.BasicStroke;
+import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.Map;
@@ -26,8 +27,6 @@ public class Shadow extends Primitive
 {
     private static final int     BYTESIZE = TimeBoundingBox.BYTESIZE /*super*/
                                           + 8  /* num_real_objs */ ;
-
-    private static final Stroke  STROKE = new BasicStroke( 3.0f );
 
     private        long      num_real_objs;
 
@@ -159,9 +158,9 @@ public class Shadow extends Primitive
     }
 
     /* Caller needs to be sure that the Drawable is a State */
-    public void setStateNesting( CoordPixelXform  coord_xform,
-                                 Map              map_line2row,
-                                 NestingStacks    nesting_stacks )
+    public void setStateRowAndNesting( CoordPixelXform  coord_xform,
+                                       Map              map_line2row,
+                                       NestingStacks    nesting_stacks )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -173,12 +172,15 @@ public class Shadow extends Primitive
                    map_line2row.get( new Integer(start_vtx.lineID) )
                  ).intValue();
         super.setRowID( rowID );
-        // nesting_ftr = NestingStacks.getShadowNestingHeight();
+        /*
         // if ( nesting_stacks.isReadyToGetNestingFactorFor( this ) ) {
         if ( super.isNestingFactorUninitialized() ) {
             nesting_ftr = nesting_stacks.getNestingFactorFor( this );
             super.setNestingFactor( nesting_ftr );
         }
+        */
+        nesting_ftr = nesting_stacks.getNestingFactorFor( this );
+        super.setNestingFactor( nesting_ftr );
     }
 
     public int  drawOnCanvas( Graphics2D g, CoordPixelXform coord_xform,
@@ -220,6 +222,21 @@ public class Shadow extends Primitive
         return null;
     }
 
+
+
+    private static Insets Empty_Border = new Insets( 0, 2, 0, 2 );
+    private static Stroke Line_Stroke  = new BasicStroke( 3.0f );
+
+    public static void setStateInsetsDimension( int width, int height )
+    {
+        Empty_Border = new Insets( height, width, height, width );
+    }
+
+    public static void setArrowLineThickness( float thickness )
+    {
+        Line_Stroke = new BasicStroke( thickness );
+    }
+
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
@@ -246,7 +263,7 @@ public class Shadow extends Primitive
         rStart = (float) rowID - nesting_ftr / 2.0f;
         rFinal = rStart + nesting_ftr;
 
-        return State.draw( g, color, null, coord_xform,
+        return State.draw( g, color, Empty_Border, coord_xform,
                            drawn_boxes.getLastStatePos( rowID ),
                            tStart, rStart, tFinal, rFinal );
     }
@@ -271,7 +288,7 @@ public class Shadow extends Primitive
                    map_line2row.get( new Integer(final_vtx.lineID) )
                  ).intValue();
 
-        return Line.draw( g, color, STROKE, coord_xform,
+        return Line.draw( g, color, Line_Stroke, coord_xform,
                           drawn_boxes.getLastArrowPos( iStart, iFinal ),
                           tStart, (float) iStart, tFinal, (float) iFinal );
     }
@@ -298,7 +315,6 @@ public class Shadow extends Primitive
                  ).intValue();
         */
         rowID       = super.getRowID();
-        // nesting_ftr = NestingStacks.getShadowNestingHeight();
         /* assume NestingFactor has been calculated */
         nesting_ftr = super.getNestingFactor();
 

@@ -408,9 +408,9 @@ public class Composite extends Drawable
     }
 
      /* Caller needs to be sure that the Drawable is a State */
-    public void setStateNesting( CoordPixelXform  coord_xform,
-                                 Map              map_line2row,
-                                 NestingStacks    nesting_stacks )
+    public void setStateRowAndNesting( CoordPixelXform  coord_xform,
+                                       Map              map_line2row,
+                                       NestingStacks    nesting_stacks )
     {
         Primitive  prime;
         int        primes_length, idx;
@@ -420,8 +420,8 @@ public class Composite extends Drawable
             prime = primes[ idx ];
             // assume all primitives are all States
             if ( coord_xform.overlaps( prime ) )
-                prime.setStateNesting( coord_xform, map_line2row,
-                                       nesting_stacks );
+                prime.setStateRowAndNesting( coord_xform, map_line2row,
+                                             nesting_stacks );
         }
     }
 

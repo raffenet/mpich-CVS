@@ -104,9 +104,9 @@ public abstract class Drawable extends InfoBox
     public abstract Integer[] getArrayOfLineIDs();
 
     /* Caller needs to be sure that the Drawable is a State */
-    public abstract void      setStateNesting( CoordPixelXform coord_xform,
-                                               Map             map_line2row,
-                                               NestingStacks   nesting_stacks );
+    public abstract void setStateRowAndNesting( CoordPixelXform coord_xform,
+                                                Map             map_line2row,
+                                                NestingStacks   nest_stacks );
 
     /* return number of primitives drawn */
     public abstract int       drawOnCanvas( Graphics2D      g,

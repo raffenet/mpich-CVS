@@ -38,17 +38,12 @@ public class NestingStacks
             Nesting_Height_Reduction = new_reduction;
     }
 
-    public static void  setInitialNestingHeight( float new_reduction )
+    public static void  setInitialNestingHeight( float new_init_height )
     {
-        if ( new_reduction > 0.0f && new_reduction < 1.0f ) {
-            Initial_Nesting_Height   = Nesting_Height_Reduction;   
-            Shadow_Nesting_Height    = Initial_Nesting_Height / 2.0f;
+        if ( new_init_height > 0.0f && new_init_height < 1.0f ) {
+            Initial_Nesting_Height   = new_init_height;   
+            Shadow_Nesting_Height    = Initial_Nesting_Height;
         }
-    }
-
-    public static float getShadowNestingHeight()
-    {
-        return Shadow_Nesting_Height;
     }
 
     public void initialize( boolean isScrolling )
@@ -107,32 +102,39 @@ public class NestingStacks
        These Drawables needs all the other real Drawables to be presented
        on the NestingStack to have their NestingFactor computed correctly.
 
-       If the input Primitive is Shadow, nesting_stack ignores its presence.
-       i.e. Shadow won't be pushed onto the stack.
+       Assume all drawables are arranged in increasing starttime order
+
+       In order to guarantee that both real drawables and shadows which
+       may overlap on another but not totally enclosed one another, a
+       scheme is needed to make sure they can be drawn and displayed
+       continuously/seamlessly across different images in ScrollableObject.
+       Object in the nesting stack will be popped until a totally
+       covering drawable is found, i.e prime.covers( cur_prime ).
+       The previous criterion,  
+           cur_prime.getEarliestTime() < prime.getLatestTime()
+       is not enough to guarantee a continuous and seamless drawables
+       across images.  Overlapped drawables cannot be drawn nested, because
+       when overlapped drawables spread between 2 neighoring images, they 
+       may not be both within in 2 neigboring images.  The nesting_stack 
+       algorithm seems to work faultlessly for perfectly nested states 
+       across different images.  Therefore, extending criteria of popping
+       nesting stack to search of perfect nested states seem doing the trick. 
      */
     public float getNestingFactorFor( final Primitive cur_prime )
     {
-        boolean   isRealDrawable  = ! ( cur_prime instanceof Shadow );
+        // boolean   isRealDrawable  = ! ( cur_prime instanceof Shadow );
         int       rowID           = cur_prime.getRowID();
         Stack     nesting_stack   = nesting_stacks[ rowID ];
         float     nesting_ftr     = Drawable.NON_NESTABLE;
         Primitive prime;
-        /*
-           Assume all drawables are arranged in increasing starttime order
-           nesting_stack still needs to pop() even if the input Primitive,
-           shadow, is excluded from being push() to the stack, because 
-           when shadow overlaps with one of real drawables on the stack.
-           Drawables before the shadow are completely disjointed from
-           the shadow, so they should be pop() off the stack.
-        */
+
         while ( ! nesting_stack.empty() ) {
             prime = (Primitive) nesting_stack.peek();
-            // cur_prime is nested inside or is overlap with prime
-            if ( cur_prime.getEarliestTime() < prime.getLatestTime() ) {
+            // cur_prime is nested inside. pop Overlaped for image continuity
+            if ( prime.covers( cur_prime ) ) {
                 nesting_ftr = prime.getNestingFactor()
                             * Nesting_Height_Reduction;
-                if ( isRealDrawable )
-                    nesting_stack.push( cur_prime );
+                nesting_stack.push( cur_prime );
                 return nesting_ftr;
             }
             else
@@ -140,8 +142,7 @@ public class NestingStacks
         }
         // i.e.  nesting_stack.empty() == true
         nesting_ftr = Initial_Nesting_Height;
-        if ( isRealDrawable )
-            nesting_stack.push( cur_prime );
+        nesting_stack.push( cur_prime );
         return nesting_ftr;
-    } 
+    }   //  Endof public float getNestingFactorFor()
 }

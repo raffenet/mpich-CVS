@@ -334,9 +334,9 @@ public class Primitive extends Drawable
     }
 
     /* Caller needs to be sure that the Drawable is a State */
-    public void setStateNesting( CoordPixelXform  coord_xform,
-                                 Map              map_line2row,
-                                 NestingStacks    nesting_stacks )
+    public void setStateRowAndNesting( CoordPixelXform  coord_xform,
+                                       Map              map_line2row,
+                                       NestingStacks    nesting_stacks )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
