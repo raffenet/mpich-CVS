@@ -2933,6 +2933,7 @@ int smpd_state_writing_impersonate_result(smpd_context_t *context, MPIDU_Sock_ev
     }
 
     /* impersonation succeeded, launch the manager process */
+#ifdef HAVE_WINDOWS_H
     result = smpd_start_win_mgr(context, SMPD_TRUE);
     if (result != SMPD_SUCCESS)
     {
@@ -2950,6 +2951,9 @@ int smpd_state_writing_impersonate_result(smpd_context_t *context, MPIDU_Sock_ev
 	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
+#else
+    /* If the sspi functions were implemented under unix then the fork stuff would go here. */
+#endif
     /* post a write of the reconnect request */
     smpd_dbg_printf("smpd writing reconnect request: port %s\n", context->port_str);
     context->write_state = SMPD_WRITING_RECONNECT_REQUEST;
