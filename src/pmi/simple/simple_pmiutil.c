@@ -54,6 +54,8 @@ void PMIU_printf( int print_flag, char *fmt, ... )
 
     if ( print_flag ) {
 	/* MPIU_Error_printf( "[%s]: ", PMIU_print_id ); */
+	/* FIXME: Decide what role PMIU_printf should have (if any) and
+	   select the appropriate MPIU routine */
 	fprintf( stderr, "[%s]: ", PMIU_print_id );
 	va_start( ap, fmt );
 	vfprintf( stderr, fmt, ap );
