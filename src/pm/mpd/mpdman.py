@@ -174,10 +174,10 @@ def mpdman():
     close(pipe_write_cli_stdout)
     close(pipe_write_cli_stderr)
     clientStdoutFD = pipe_read_cli_stdout
-    clientStdoutFile = fdopen(clientStdoutFD,'r')
+    # clientStdoutFile = fdopen(clientStdoutFD,'r')
     socketsToSelect[clientStdoutFD] = 1
     clientStderrFD = pipe_read_cli_stderr
-    clientStderrFile = fdopen(clientStderrFD,'r')
+    # clientStderrFile = fdopen(clientStderrFD,'r')
     socketsToSelect[clientStderrFD] = 1
     clientListenSocket.close()
     pmiSocketClientEnd.close()
