@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "dataloop.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Get_elements */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -28,7 +27,7 @@ static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
 {
     int mpi_errno;
 
-    if ( (datatype_ptr->loopinfo->kind & DATALOOP_KIND_MASK) == MPID_STRUCT) {
+    if ( (datatype_ptr->loopinfo->kind & DATALOOP_KIND_MASK) == MPID_DTYPE_STRUCT) {
 	/* This is the hard case; we must loop through the components of the 
 	   datatype */
 	/* NOT DONE */

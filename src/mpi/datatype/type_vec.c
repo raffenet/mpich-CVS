@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "dataloop.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Type_vector */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -125,7 +124,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 	new_ptr->alignsize	= oldsize;
 	new_ptr->n_elements	= count * blocklength;
 	new_ptr->element_size	= oldsize;
-	new_ptr->opt_loopinfo->kind = MPID_VECTOR | DATALOOP_FINAL_MASK | 
+	new_ptr->opt_loopinfo->kind = MPID_DTYPE_VECTOR | DATALOOP_FINAL_MASK | 
 	    (oldsize << DATALOOP_ELMSIZE_SHIFT);
 	new_ptr->opt_loopinfo->loop_params.v_t.count	 = count;
 	new_ptr->opt_loopinfo->loop_params.v_t.blocksize = blocklength;
@@ -148,7 +147,7 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 	new_ptr->element_size	= old_ptr->element_size;
 	/* FIX ME: final only if old type is contiguous */
 	if (1) {
-	    new_ptr->opt_loopinfo->kind = MPID_VECTOR | DATALOOP_FINAL_MASK | 
+	    new_ptr->opt_loopinfo->kind = MPID_DTYPE_VECTOR | DATALOOP_FINAL_MASK | 
 	    (old_ptr->size << DATALOOP_ELMSIZE_SHIFT);
 	}
 	new_ptr->opt_loopinfo->loop_params.v_t.count	 = count;

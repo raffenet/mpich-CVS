@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "dataloop.h"
 
 /* Maximum depth of any dataloop stack */
 #define MAX_DATALOOP_STK 16
@@ -50,7 +49,7 @@
 
    ***THE UPDATE OF CURLOOPINFO MAY NOT BE CORRECT YET.  
 */
-void MPID_Segment_pack( MPID_Dataloop *loopinfo, 
+void MPIR_Segment_pack( MPID_Dataloop *loopinfo, 
 			char * restrict src_buf, char * restrict dest_buf )
 {
     int cur_sp = 0, valid_sp = 0;
