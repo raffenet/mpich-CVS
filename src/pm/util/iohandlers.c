@@ -324,3 +324,327 @@ void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
 	*pout = 0;
     }
 }
+
+/* ------------------------------------------------------------------------- */
+/* 
+ * Improved handling of stdin, out, and err
+ *
+ * For stdin, out, and err, we must move data from one fd to another.  This
+ * is complicated by several requirements:
+ * 1) stdout and stderr have many sources (the stdout/err of each forked 
+ *    process) writing to a single sink (the stdout/err of the mpiexec process)
+ * 2) stdin has one source but potentially many sinks 
+ * 3) the handlers must not block, even if the sinks can no longer accept any
+ *    data.
+ * 4) We want the option to annotate the stdout/err, such as adding the rank
+ *    to each line, or doing differential aggregation (e.g., processes 1-17,34
+ *    are identical).
+ *
+ * A major source of complexity is that the actions that we take on one fd 
+ * (the source) depend on the state of another fd (the sink).  To manage this
+ * relationship between the fds, an fd that is a sink that is ready to 
+ * process data maintains a FIFO of routines that are called to write to the
+ * fd (we let the routine write directly because this is not an interface
+ * for the casual user - a more robust interface would use additional copies
+ * or routine calls to separate the access to the fd).
+ * The stdout/err and stdin cases are slightly different, because the 
+ * stdout/err is a many to one mode and stdin is (potentially) one to many, 
+ * even though the most common case is one to one (stdin sent to the process
+ * with rank 0 in MPI_COMM_WORLD).
+ */
+
+/* A circular buffer, used to hold a line of input */
+typedef struct {
+    char *first, *firstFree;   /* Pointers to the first character and the 
+				  first free location in the buffer 
+			          An empty buffer has first = firstFree */
+    int  nleft;                /* Number of available chars from firstFree
+				  to either first or end of buffer */
+    char *buf;                 /* Pointer to the allocated buffer */
+    int  bufSize;              /* Number of characters in the buffer */
+} CircularBuffer;
+
+/* An annotated buffer */
+#ifndef HAVE_IOVEC_DEFINITION
+struct iovec {
+    void  *iov_base;
+    size_t iov_len;
+};
+#endif
+
+#define MAX_IOVS 32
+typedef struct {
+    CircularBuffer cbuf;
+    char   *lastSeen;                /* Last location seen 
+					by the annotation routine in
+					the cbuf */
+    struct iovec   iovs[MAX_IOVS];   /* Used for inserting annotations*/
+    int    cbufIncr[MAX_IOVS];       /* Tells how many characters through
+					the cbuf to advanced when this
+					iov element is consumed */
+    int    nIOV;                     /* number of active iov's */
+} AnnotatedBuffer;    
+
+/* Data used to forward information from one fd to another */
+typedef struct {
+    AnnotatedBuffer abuf;       /* Holds the pending data */
+
+    int state;
+    int (*annotate)( AnnotatedBuffer *, void *);
+	/* Routine to annotate the data */
+    int (*notify)( AnnotatedBuffer *, void * ); 
+        /* Routine to call when data available */
+    void *annotateExtra;       /* Extra data passed to the annotate routine */
+    void *notifyExtra;         /* Extra data passed to the notify routine */
+} IOOutManyToOne;
+
+/* This is a prototypical many-to-one handler (e.g., for 
+   stdout or stderr) 
+   Called when there is activity on fd, such as the stdout of a process.
+   Steps:
+   Read data into the buffer.
+   Call the notify routine
+       Based on the return from the notify routine,
+       0) No data processed.  If buffer is full, return xxx
+       <0) Error on processing.  Return error to caller
+       >0) Some data processed
+*/
+int IOManyToOneReader( int fd, void *extra )
+{
+    IOOutManyToOne *iodata = (IOOutManyToOne *)extra;
+    char      *p,*p1;
+    int       n;
+    int       err;
+
+    if (debug) {
+	DBG_PRINTF( "Reading from fd %d\n", fd );
+    }
+    n = read( fd, iodata->abuf.cbuf.first, iodata->abuf.cbuf.nleft );
+    /* FIXME: what should we do on an error? */
+    if (n <= 0) return 0;
+
+    /* Update the circular buffer */
+    iodata->abuf.cbuf.nleft -= n;
+    iodata->abuf.cbuf.firstFree += n;
+    if (iodata->abuf.cbuf.nleft == 0) {
+	/* Either hit the end of the buffer or the first pointer */
+	/* FIXME: handle at the first pointer */
+	iodata->abuf.cbuf.firstFree = iodata->abuf.cbuf.buf;
+	/* FIXME: we need to let the annotate routine know that
+	   we've moved the firstFree pointer */
+    }
+
+    /* Annotate the incoming data if requested */
+    /* We need to call the annotation routine AFTER reading data, 
+       because we may want to check for newlines without the buffer.
+       We use iov's to avoid copying the output (and the potential 
+       for explosive growth in the required size for the annotation
+       that we'd get a long prefix and a series of newlines).
+    */
+    if (iodata->annotate) {
+	err = (*iodata->annotate)( &iodata->abuf, iodata->annotateExtra );
+    }
+    else {
+	/* No annotation routine, so just place the entire buffer 
+	   in the first entry */
+	iodata->abuf.iovs[0].iov_base = iodata->abuf.cbuf.first;
+	iodata->abuf.iovs[0].iov_len = iodata->abuf.cbuf.nleft;
+	iodata->abuf.nIOV        = 1;
+	iodata->abuf.cbufIncr[0] = 1;
+    }
+
+    /* Pass the data on to the output by using the notify routine */
+    err = (*iodata->notify)( &iodata->abuf, iodata->notifyExtra );
+
+    /* Check the output state to see if we should suppress reading 
+       from our fd until data can be accepted by the notify routine */
+    return n;
+}
+
+/* A prototypical notify function.
+   Add this data to the specified output.  The choice of
+   output is stored in the structure pointed at by the extra
+   data.
+   
+   Note that this function may choose to output directly; however, 
+   it must not block, so if it cannot write all output, it must
+   queue this output.
+
+   FIXME: Still needs a function to initialize and setup the extra data.
+*/
+typedef struct {
+    int outfd;
+} IONotifyData;
+int IOManyToOneNotify( AnnotatedBuffer *abuf, void *extra )
+{
+    /* FIXME: First check to see if the queue of pending writes
+       is empty.  If it isn't, we must not write, instead queuing 
+       the data */
+    /* FIXME: If any data is left, we need to queue it */
+    return IOManyToOneConsume( abuf, extra );
+}
+
+int IOManyToOneConsume( AnnotatedBuffer *abuf, void *extra )
+{
+    int i, j, n, ntot;
+    IONotifyData *iodata = (IONotifyData *)extra;
+    
+    n = writev( iodata->outfd, abuf->iovs, abuf->nIOV );
+
+    if (n < 0) {
+	/* FIXME: Check for buffer full (EAGAIN?) */
+	/* Error */
+	return n;
+    }
+
+    /* Figure out how much we wrote (all, we hope!) */
+    ntot = 0;
+    for (i=0; i<abuf->nIOV; i++) {
+	if (abuf->iovs[i].iov_len > n) break;
+	ntot = abuf->iovs[i].iov_len;
+	/* Move the circular buffer pointers over this entry */
+	if (abuf->cbufIncr[i]) {
+	    abuf->cbuf.first += abuf->iovs[i].iov_len;
+	    if (abuf->cbuf.first == abuf->cbuf.buf + abuf->cbuf.bufSize) {
+		abuf->cbuf.first = abuf->cbuf.buf;
+	    }
+	}
+    }
+
+    if (i<abuf->nIOV) {
+	/* We didn't manage to write everything.  We must compress the
+	   iov as well as update the circular buffer pointer.  Because
+	   we'll normally have a small IOV, compressing it is simpler 
+	   than maintaining it as a circular list */
+	for (j=0; j<i; j++) {
+	    abuf->iovs[j]     = abuf->iovs[i+j];
+	    abuf->cbufIncr[j] = abuf->cbufIncr[i+j];
+	}
+	abuf->nIOV -= i;
+
+	/* Update the 0th entry for any bytes consumed from it */
+	abuf->iovs[0].iov_base += (n-ntot);
+	abuf->iovs[0].iov_len -= (n-ntot);
+	if (abuf->cbufIncr[0]) {
+	    abuf->cbuf.first += n-ntot;
+	    if (abuf->cbuf.first == abuf->cbuf.buf + abuf->cbuf.bufSize) 
+		abuf->cbuf.first = abuf->cbuf.buf;
+	}
+    }
+
+    return n;
+}
+
+/* 
+   A prototypical annotation function.  This adds the
+   specified label (stored in the structure pointed at by the extra data)
+   after every newline (but only after a character has been seen)
+   
+   FIXME: Not tested.
+   FIXME: Still needs an initialization function that 
+   can set up the extra data.
+*/
+typedef struct {
+    char *leader;
+    int  leaderlen;
+    int  newlineFlag;
+} IOAnnotateData;
+
+int IOManyToOneAnnotate( AnnotatedBuffer *abuf, void *extra )
+{
+    char *p, *lastP;
+    IOAnnotateData *iodata = (IOAnnotateData *)extra;
+    int newlineFlag = iodata->newlineFlag, nseen;
+
+    p = abuf->lastSeen;
+
+    /* Search for a newline.  Because this is a circular buffer, this
+       is slighly more complicated */
+    if (abuf->cbuf.first < abuf->cbuf.firstFree) 
+	lastP = abuf->cbuf.firstFree;
+    else
+	lastP = abuf->cbuf.buf + abuf->cbuf.bufSize;
+
+    nseen = 0;
+    while (p < lastP) {
+	
+	if (newlineFlag) {
+	    /* newlineFlag lets us add the leader after a newline
+	       only when there is data to follow the leader */
+	    abuf->iovs[abuf->nIOV].iov_base = iodata->leader;
+	    abuf->iovs[abuf->nIOV].iov_len  = iodata->leaderlen;
+	    abuf->cbufIncr[abuf->nIOV++] = 0;
+	    newlineFlag = 0;
+	}
+	nseen++;
+
+	if (*p == '\n') {
+	    /* Here is where we would break to insert an annotation */
+	    abuf->iovs[abuf->nIOV].iov_base = abuf->lastSeen;
+	    abuf->iovs[abuf->nIOV].iov_len  = nseen;
+	    abuf->cbufIncr[abuf->nIOV++] = 1;
+	    nseen = 0;
+	}
+	p++;
+	if (p == abuf->cbuf.buf + abuf->cbuf.bufSize) {
+	    /* Hit the end of the circular buffer.  Update both
+	       the pointer and the end-of-buffer */
+	    p = abuf->cbuf.buf;
+	    lastP = abuf->cbuf.firstFree-1;
+	}
+	/* Leave some room for an iov (we don't need to fully 
+	 annotate the buffer if there are too many newlines) */
+	if (abuf->nIOV == MAX_IOVS - 2) break;
+    }
+
+    /* Remember our state */
+    iodata->newlineFlag = newlineFlag;
+    abuf->lastSeen      = p;
+
+    return 0;
+}
+
+/* This is the routine that is called when it is possible to write 
+   on an fd for the many-to-one function.  This routine
+   manages the queue of pending writes.  Note that we 
+   allow immediate access to the fd in the notify routine to bypass a
+   separate queuing step.  We share a writer routine, IOManyToOneConsume.
+*/
+/* FIXME: MAX_PENDING_OUT should be max processes (including max universe 
+   size */
+#define MAX_PENDING_OUT 256
+typedef struct {
+    AnnotatedBuffer *abuf;
+} IOQueueOut;
+/* A circular list of entries.  Empty when first==firstFree=0 */
+typedef struct {
+    int        first, firstFree;
+    IOQueueOut pending[MAX_PENDING_OUT];
+} IOManyToOneOut;
+int IOManyToOneWriter( int fd, void *extra )
+{
+    IOManyToOneOut *iodata = (IOManyToOneOut *)extra;
+
+    /* FIXME: Nothing to write, so we should not select on this fd */
+    if (first == firstFree && first == 0) return 0;
+
+    /* While there are queue entries,
+       try to consume all of the data.  If all data read, remove that
+       element */
+
+    /* If no operations are pending, set a flag so that the Notifier routine
+       can (attempt to) write directly to the output fd */
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 
+ * OneToMany .  These routines provide for stdin handling.
+ * The initial implementation will direct stdin to a single fd, but the
+ * design allows for directing copies of input to more than one destination.
+ * This code is also somewhat simpler than the ManyToOne since there is
+ * no need to annotate the data.  This allows use to use a single circular
+ * buffer.  In the general case, the only complexity is keeping data around
+ * until all selected destinations have read it.
+ */
