@@ -20,7 +20,7 @@ typedef struct HostNode
 typedef struct MapDriveNode
 {
     char cDrive;
-    char pszShare[MAX_PATH];
+    char pszShare[SMPD_MAX_DIR_LENGTH];
     struct MapDriveNode *pNext;
 } MapDriveNode;
 
