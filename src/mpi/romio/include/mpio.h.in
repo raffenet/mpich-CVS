@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#define ROMIO_VERSION 102      /* Version 1.0.2 */
+#define ROMIO_VERSION 123      /* Version 1.2.3 */
 
 /* define MPI-IO datatypes and constants */
 
