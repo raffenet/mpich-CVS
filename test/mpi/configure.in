@@ -34,7 +34,9 @@ fi
 # tests, since the environment variables for the compilers is set 
 # as part of the initial build
 if test "$FROM_MPICH2" != yes ; then
-    #BASECC=$CC
+    if test -z "$BASECC" ; then 
+        BASECC=$CC
+    fi     
     BASEF77=$F77
     CC=$top_build_dir/bin/mpicc
     FC=$top_build_dir/bin/mpif77
@@ -85,7 +87,9 @@ if test "$FROM_MPICH2" = yes ; then
     AC_MSG_RESULT([Configuring tests for MPICH2])
     if test "$enable_in_place" = yes ; then
         LIBS=$saveLIBS
-	#BASECC=$CC
+	if test -z "$BASECC" ; then
+	    BASECC=$CC
+        fi
 	# We need the base Fortran compiler for some tests that 
 	# are only about Fortran, not MPI and Fortran
 	BASEF77=$F77
@@ -108,6 +112,9 @@ dnl        F90=$top_build_dir/bin/mpif90
         else
             eval  mpibindir=${bindir}
 	fi
+	if test -z "$BASECC" ; then
+	    BASECC=$CC
+        fi
         CC=$mpibindir/mpicc
         FC=$mpibindir/mpif77
         BASEF77=$F77
@@ -283,6 +290,21 @@ EOF
 	    F77_MPI_OFFSET="integer*$len"
         fi
     done
+
+    # Check for name mapping so that we can do the handle conversion tests
+    # This test needs both the base c and fortran compilers
+    saveF77=$F77
+    saveCC=$CC
+    if test -n "$BASECC" ; then 
+        CC=$BASECC 
+    fi	   
+    if test -n "$BASEF77" ; then
+        F77=$BASEF77
+    fi	
+    AC_LANG_FORTRAN77
+    PAC_PROG_F77_NAME_MANGLE
+    F77=$saveF77
+    CC=$saveCC
 fi
 # Set a default for the Fortran 77 version of MPI_Offset.
 if test -z "$F77_MPI_OFFSET" ; then
@@ -399,6 +421,8 @@ AC_SUBST(LDFLAGS)
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
 AC_OUTPUT_COMMANDS([chmod a+x maint/testmerge])
+dnl Note that this format for AC_OUTPUT can cause problems for autoconf
+dnl run under cygwin
 AC_OUTPUT(maint/testmerge \
           Makefile \
           basic/Makefile \
@@ -431,6 +455,7 @@ AC_OUTPUT(maint/testmerge \
 	  f77/info/Makefile \
 	  f77/spawn/Makefile \
 	  f77/rma/Makefile \
+	  f77/ext/Makefile \
           f77/io/Makefile \
 	  f77/io/iooffset.h \
 	  f77/io/iodisp.h \

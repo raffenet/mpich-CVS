@@ -2,7 +2,10 @@ LDADD = -L../../../../lib ../util/mtestf.o
 DEPADD = ../../../../lib/lib${MPILIBNAME}.a ../util/mtestf.o
 smvar_do_sharedlibs = 0
 
+EXTRA_PROGRAMS = allocmem
+
 allocmem_SOURCES = allocmem.f
+c2f2cf_SOURCES = c2f2c.c c2f2cf.f
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
