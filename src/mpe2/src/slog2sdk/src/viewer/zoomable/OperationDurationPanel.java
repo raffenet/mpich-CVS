@@ -58,11 +58,25 @@ public class OperationDurationPanel extends JPanel
         }
         super.setBorder( Normal_Border );
 
-        JPanel   stat_panel = new JPanel();
-        JButton  stat_btn   = null;
-        URL      icon_URL   = getURL( Const.IMG_PATH + "Stat110x40.gif" );
-        if ( icon_URL != null )
-            stat_btn = new JButton( new ImageIcon( icon_URL ) );
+        JPanel      stat_panel = new JPanel();
+        JButton     stat_btn   = null;
+        URL         icon_URL   = getURL( Const.IMG_PATH + "Stat110x40.gif" );
+        ImageIcon   icon, icon_shaded;
+        Border  raised_border, lowered_border, big_border, huge_border;
+        if ( icon_URL != null ) {
+            icon        = new ImageIcon( icon_URL );
+            icon_shaded = new ImageIcon(
+                          GrayFilter.createDisabledImage( icon.getImage() ) );
+            stat_btn = new JButton( icon );
+            stat_btn.setPressedIcon( icon_shaded );
+            raised_border  = BorderFactory.createRaisedBevelBorder();
+            lowered_border = BorderFactory.createLoweredBevelBorder();
+            big_border = BorderFactory.createCompoundBorder( raised_border,
+                                                             lowered_border );
+            huge_border = BorderFactory.createCompoundBorder( raised_border,
+                                                              big_border );
+            stat_btn.setBorder( huge_border );
+        }
         else
             stat_btn = new JButton( "Sumary Statistics" );
         stat_btn.setMargin( new Insets( 2, 2, 2, 2 ) );
