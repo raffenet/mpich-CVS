@@ -74,6 +74,17 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	mpi_errno = ibu_write(vc->ch.ibu, pkt, pkt_sz, &nb);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    sreq = MPIDI_CH3_Request_create();
+	    if (sreq == NULL)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		return mpi_errno;
+	    }
+	    sreq->kind = MPID_REQUEST_SEND;
+	    sreq->cc = 0;
+	    /* TODO: Create an appropriate error message based on the return value */
+	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 	    return mpi_errno;
