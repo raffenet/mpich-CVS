@@ -1151,10 +1151,26 @@ sub ExpandMakeVars {
                      # need to run config.status from that directory.
 
 $last_config_dir = "";
+
+# These next two routines let us print out the file being processed only
+# when we need to (e.g., before an error message).
+$curFilename = "";
+$curFilenamePrinted = 0;
+sub ResetFileName { 
+    $curFilename = $_[0];
+    $curFilenamePrinted = 0;
+}
+sub ShowFileName {
+    if ($curFilenamePrinted) { return; }
+    print "Processing $curdir$file\n" if (!$quiet);
+    $curFilenamePrinted = 1;
+}
+
 sub ProcessFile {
     $file = $_[0];
 
-    print "Processing $curdir$file\n" if (!$quiet);
+    &ResetFileName( "$curdir$file" );
+    #print "Processing $curdir$file\n" if (!$quiet);
     if (-s "configure.in") {
 	&ReadAutoconf;
 	print "Found configure.in in $curdir\n" if $debug_confdir;
@@ -1196,6 +1212,7 @@ sub ProcessFile {
 	if ($dir eq ".") { next M; }
 	if ($dir =~ /\.\./ || $dir =~ /.\/./) {
 	    # Skip directory changes that aren't simple
+	    &ShowFileName;
 	    print "$dir has .. in it (skipping)\n";
 	    print "Current dir is $curdir\n" if $debug;
 	    next M;
@@ -1203,6 +1220,7 @@ sub ProcessFile {
 	}
 	if (! -d $dir) { 
 	    my $ldir = `pwd`;
+	    &ShowFileName;
 	    print "Directory $curdir$dir does not exist\n"; 
 	    print "(Current location is $ldir)\n";
 	    next M; }
@@ -1211,6 +1229,7 @@ sub ProcessFile {
 	$curdir .= "$dir/";
 	$curdir = &CleanCurDir( $curdir );
 	if ($dir =~ /\.\./) {
+	    &ShowFileName;
 	    print "changed to a non-obvious dir = $dir\n";
 	    my $ldir = $dir;
 	    while ($ldir =~ /^\.\.\//) {
