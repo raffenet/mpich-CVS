@@ -1,12 +1,13 @@
 #include "mpi.h" 
 #include "stdio.h"
 #include "stdlib.h"
+#include "mpitest.h"
 
 /* Fetch and add example from Using MPI-2 (the non-scalable version,
    Fig. 6.12). */ 
 
 
-#define NTIMES 10  /* no of times each process calls the counter
+#define NTIMES 20  /* no of times each process calls the counter
                       routine */
 
 int localvalue=0;  /* contribution of this process to the counter. We
@@ -16,14 +17,17 @@ int localvalue=0;  /* contribution of this process to the counter. We
 void Get_nextval(MPI_Win win, int *val_array, MPI_Datatype get_type,
                  int rank, int nprocs, int *value);
 
+int compar(const void *a, const void *b);
+
 int main(int argc, char *argv[]) 
 { 
     int rank, nprocs, i, blens[2], disps[2], *counter_mem, *val_array,
-        value;
+        *results, *counter_vals;
     MPI_Datatype get_type;
     MPI_Win win;
+    int errs = 0;
  
-    MPI_Init(&argc,&argv); 
+    MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD,&rank); 
 
@@ -35,6 +39,24 @@ int main(int argc, char *argv[])
 
         MPI_Win_free(&win); 
         free(counter_mem);
+
+        /* gather the results from other processes, sort them, and check 
+           whether they represent a counter being incremented by 1 */
+
+        results = (int *) malloc(NTIMES*nprocs*sizeof(int));
+        for (i=0; i<NTIMES*nprocs; i++)
+            results[i] = -1;
+
+        MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, results, NTIMES, MPI_INT, 
+                   0, MPI_COMM_WORLD);
+
+        qsort(results+NTIMES, NTIMES*(nprocs-1), sizeof(int), compar);
+
+        for (i=NTIMES+1; i<(NTIMES*nprocs); i++)
+            if (results[i] != results[i-1] + 1)
+                errs++;
+        
+        free(results);
     }
     else {
         blens[0] = rank;
@@ -45,20 +67,31 @@ int main(int argc, char *argv[])
         MPI_Type_indexed(2, blens, disps, MPI_INT, &get_type);
         MPI_Type_commit(&get_type);
 
-        MPI_Win_create(NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win); 
-
         val_array = (int *) malloc(nprocs * sizeof(int));
 
+        /* allocate array to store the values obtained from the 
+           fetch-and-add counter */
+        counter_vals = (int *) malloc(NTIMES * sizeof(int));
+
+        MPI_Win_create(NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win); 
+
         for (i=0; i<NTIMES; i++) {
-            Get_nextval(win, val_array, get_type, rank, nprocs, &value);
-            printf("Rank %d, counter %d\n", rank, value);
+            Get_nextval(win, val_array, get_type, rank, nprocs, counter_vals+i);
+            /* printf("Rank %d, counter %d\n", rank, value); */
         }
 
         MPI_Win_free(&win);
+
         free(val_array);
         MPI_Type_free(&get_type);
+
+        /* gather the results to the root */
+        MPI_Gather(counter_vals, NTIMES, MPI_INT, NULL, 0, MPI_DATATYPE_NULL, 
+                   0, MPI_COMM_WORLD);
+        free(counter_vals);
     }
 
+    MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 
 } 
@@ -81,3 +114,9 @@ void Get_nextval(MPI_Win win, int *val_array, MPI_Datatype get_type,
 
     localvalue++;
 }
+
+int compar(const void *a, const void *b)
+{
+    return (*((int *)a) - *((int *)b));
+}
+

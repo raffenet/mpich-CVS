@@ -1,5 +1,7 @@
 #include "mpi.h" 
 #include "stdio.h"
+#include "stdlib.h"
+#include "mpitest.h"
 
 /* tests passive target RMA on 2 processes. tests the lock-single_op-unlock 
    optimization. */
@@ -11,8 +13,9 @@ int main(int argc, char *argv[])
 { 
     int rank, nprocs, A[SIZE2], B[SIZE2], i;
     MPI_Win win;
+    int errs = 0;
  
-    MPI_Init(&argc,&argv); 
+    MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD,&rank); 
 
@@ -40,8 +43,10 @@ int main(int argc, char *argv[])
         MPI_Win_free(&win);
 
         for (i=0; i<SIZE1; i++) 
-            if (B[i] != (-4)*(i+SIZE1)) 
-            printf("Get Error: B[%d] is %d, should be %d\n", i, B[i], (-4)*(i+SIZE1));
+            if (B[i] != (-4)*(i+SIZE1)) {
+                printf("Get Error: B[%d] is %d, should be %d\n", i, B[i], (-4)*(i+SIZE1));
+                errs++;
+            }
     }
  
     else {  /* rank=1 */
@@ -52,12 +57,15 @@ int main(int argc, char *argv[])
         MPI_Win_free(&win); 
         
         for (i=0; i<SIZE1; i++) {
-            if (B[i] != i)
+            if (B[i] != i) {
                 printf("Put Error: B[%d] is %d, should be %d\n", i, B[i], i);
+                errs++;
+            }
         }
     }
 
-    if (rank==0) printf("Done\n");
+/*    if (rank==0) printf("Done\n");*/
+    MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 
 } 

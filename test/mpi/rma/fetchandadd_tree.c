@@ -1,13 +1,14 @@
 #include "mpi.h" 
 #include "stdio.h"
 #include "stdlib.h"
+#include "mpitest.h"
 
 /* This is the tree-based scalable version of the fetch-and-add
    example from Using MPI-2, pg 206-207. The code in the book (Fig
    6.16) has bugs that are fixed below. */ 
 
 
-#define NTIMES 10  /* no of times each process calls the counter
+#define NTIMES 20  /* no of times each process calls the counter
                       routine */
 
 int localvalue=0;  /* contribution of this process to the counter. We
@@ -17,12 +18,15 @@ int localvalue=0;  /* contribution of this process to the counter. We
 void Get_nextval_tree(MPI_Win win, int *get_array, MPI_Datatype get_type,
                  MPI_Datatype acc_type, int nlevels, int *value);
 
+int compar(const void *a, const void *b);
+
 int main(int argc, char *argv[]) 
 { 
     int rank, nprocs, i, *counter_mem, *get_array, *get_idx, *acc_idx,
-        value, mask, nlevels, level, idx, *blklens, tmp_rank, pof2;
+        mask, nlevels, level, idx, *blklens, tmp_rank, pof2;
     MPI_Datatype get_type, acc_type;
     MPI_Win win;
+    int errs = 0, *results, *counter_vals;
  
     MPI_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
@@ -41,6 +45,24 @@ int main(int argc, char *argv[])
 
         MPI_Win_free(&win); 
         free(counter_mem);
+
+        /* gather the results from other processes, sort them, and check 
+           whether they represent a counter being incremented by 1 */
+
+        results = (int *) malloc(NTIMES*nprocs*sizeof(int));
+        for (i=0; i<NTIMES*nprocs; i++)
+            results[i] = -1;
+
+        MPI_Gather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, results, NTIMES, MPI_INT, 
+                   0, MPI_COMM_WORLD);
+
+        qsort(results+NTIMES, NTIMES*(nprocs-1), sizeof(int), compar);
+
+        for (i=NTIMES+1; i<(NTIMES*nprocs); i++)
+            if (results[i] != results[i-1] + 1)
+                errs++;
+        
+        free(results);
     }
     else {
         /* Get the largest power of two smaller than nprocs */ 
@@ -91,12 +113,16 @@ int main(int argc, char *argv[])
         MPI_Type_commit(&get_type);
         MPI_Type_commit(&acc_type);
 
+        /* allocate array to store the values obtained from the 
+           fetch-and-add counter */
+        counter_vals = (int *) malloc(NTIMES * sizeof(int));
+
         MPI_Win_create(NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win); 
 
         for (i=0; i<NTIMES; i++) {
             Get_nextval_tree(win, get_array, get_type, acc_type,
-                             nlevels, &value); 
-            printf("Rank %d, counter %d\n", rank, value);
+                             nlevels, counter_vals+i); 
+            /* printf("Rank %d, counter %d\n", rank, value); */
         }
 
         MPI_Win_free(&win);
@@ -106,8 +132,14 @@ int main(int argc, char *argv[])
         free(blklens);
         MPI_Type_free(&get_type);
         MPI_Type_free(&acc_type);
-    }
 
+         /* gather the results to the root */
+        MPI_Gather(counter_vals, NTIMES, MPI_INT, NULL, 0, MPI_DATATYPE_NULL, 
+                   0, MPI_COMM_WORLD);
+        free(counter_vals);
+   }
+
+    MTest_Finalize(errs);
     MPI_Finalize(); 
     return 0; 
 } 
@@ -134,4 +166,9 @@ void Get_nextval_tree(MPI_Win win, int *get_array, MPI_Datatype get_type,
     localvalue++;
 
     free(one);
+}
+
+int compar(const void *a, const void *b)
+{
+    return (*((int *)a) - *((int *)b));
 }
