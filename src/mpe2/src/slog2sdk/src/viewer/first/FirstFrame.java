@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+import viewer.common.Dialogs;
 import viewer.common.TopWindow;
 
 public class FirstFrame extends JFrame
@@ -37,7 +38,10 @@ public class FirstFrame extends JFrame
 
         addWindowListener( new WindowAdapter() {
             public void windowClosing( WindowEvent e ) {
-                TopWindow.First.disposeAll();
+                if ( Dialogs.confirm( TopWindow.First.getWindow(),
+                     "Are you sure you want to exit Jumpshot-4 ?" ) ) {
+                    TopWindow.First.disposeAll();
+                }
             }
         } );
 
