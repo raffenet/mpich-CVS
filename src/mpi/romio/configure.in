@@ -83,7 +83,7 @@ MPIO_EXTRA_REAL_POBJECTS="_get_errh.o _set_errh.o"
 #
 # Completion routines for MPIO_Requests.  MPI Implementations with
 # generalized requests do not need these
-MPIO_REQOBJECTS="iotest.o iowait.o iowaitall.o iowaitany.o iotestall.o iotestany.o iowaitsome.o iotestsome.o"
+MPI_REQOBJECTS="iotest.o iotestall.o iotestany.o iotestsome.o iowait.o iowaitall.o iowaitany.o iowaitsome.o ioreq_c2f.o ioreq_f2c.o"
 MPIO_REQ_TMP_POBJECTS="iotest.p iowait.p iowaitall.p iowaitany.p iotestall.p iotestany.p iowaitsome.p iotestsome.p"
 MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall.o _iotestany.o _iowaitsome.o _iotestsome.o"
 #
@@ -1538,6 +1538,7 @@ AC_SUBST(MPI_FARRAY6)
 AC_SUBST(MPI_FARRAY7)
 AC_SUBST(MPI_OFFSET_KIND1)
 AC_SUBST(MPI_OFFSET_KIND2)
+AC_SUBST(MPIO_REQOBJECTS)
 AC_SUBST(TEST_CC)
 AC_SUBST(TEST_F77)
 AC_SUBST(ROMIO_INCLUDE)

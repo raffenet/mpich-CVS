@@ -11,6 +11,17 @@
 #include <assert.h>
 #include <limits.h>
 
+/* MPI datatype debugging helper routines.
+ * 
+ * The one you want to call is:
+ *   MPIDU_Datatype_debug(MPI_Datatype type, int array_ct)
+ *
+ * The "array_ct" value tells the call how many array values to print
+ * for struct, indexed, and blockindexed types.
+ *
+ */
+
+
 void MPIDI_Datatype_dot_printf(MPI_Datatype type, int depth, int header);
 void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p, int depth, int header);
 void MPIDI_Datatype_contents_printf(MPI_Datatype type, int depth, int acount);

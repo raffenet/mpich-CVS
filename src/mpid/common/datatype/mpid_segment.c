@@ -276,6 +276,16 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 }
 
 /* MPID_Segment_pack_vector
+ *
+ * Parameters:
+ * segp    - pointer to segment structure
+ * first   - first byte in segment to pack
+ * lastp   - in/out parameter describing last byte to pack (and afterwards
+ *           the last byte _actually_ packed)
+ *           NOTE: actually returns index of byte _after_ last one packed
+ * vectorp - pointer to (off, len) pairs to fill in
+ * lengthp - in/out parameter describing length of array (and afterwards
+ *           the amount of the array that has actual data)
  */
 void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 			      DLOOP_Offset first,
@@ -380,7 +390,7 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
 				      DLOOP_Offset first,
 				      DLOOP_Offset *lastp,
-				      DLOOP_Offset *countp)
+				      int *countp)
 {
     struct MPID_Segment_piece_params packvec_params;
     MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_COUNT_CONTIG_BLOCKS);

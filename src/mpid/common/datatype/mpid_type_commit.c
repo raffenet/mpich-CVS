@@ -23,7 +23,7 @@
 @*/
 int MPID_Type_commit(MPI_Datatype *datatype_p)
 {
-    MPI_Aint count;
+    int count;
     MPI_Aint first, last;
     MPID_Datatype *datatype_ptr;
     MPID_Segment *segp;
@@ -45,7 +45,7 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 		      &last,
 		      &count);
 
-    datatype_ptr->n_contig_blocks = (int) count;
+    datatype_ptr->n_contig_blocks = count;
 
     MPID_Segment_free(segp);
 

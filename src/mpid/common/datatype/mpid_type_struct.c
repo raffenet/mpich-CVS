@@ -522,11 +522,11 @@ void MPID_Dataloop_create_struct(int count,
     {
 	/* arbitrary types, convert to bytes and use indexed */
 	int *tmp_blklen_array, nr_blks = 0;
-	MPI_Aint *tmp_disp_array;
+	MPI_Aint *tmp_disp_array, bytes;
 	MPID_IOV *iov_array;
 	MPID_Segment *segp;
 
-	MPI_Aint first, last, bytes;
+	int first_ind, last_ind;
 
 	segp = MPID_Segment_alloc();
 
@@ -571,7 +571,7 @@ void MPID_Dataloop_create_struct(int count,
 	assert(tmp_disp_array != NULL);
 
 	/* use segment code again to flatten the type */
-	first = 0;
+	first_ind = 0;
 	for (i=0; i < count; i++)
 	{
 	    /* we're going to use the segment code to flatten the type.
@@ -589,17 +589,17 @@ void MPID_Dataloop_create_struct(int count,
 				  oldtype_array[i],
 				  segp);
 	    
-		last  = nr_blks - first;
+		last_ind = nr_blks - first_ind;
 		bytes = SEGMENT_IGNORE_LAST;
 		MPID_Segment_pack_vector(segp,
 					 0,
 					 &bytes,
-					 &iov_array[first],
-					 &last);
-		first += last;
+					 &iov_array[first_ind],
+					 &last_ind);
+		first_ind += last_ind;
 	    }
 	}
-	nr_blks = first;
+	nr_blks = first_ind;
 
 #ifdef MPID_STRUCT_FLATTEN_DEBUG
 	MPIU_dbg_printf("--- start of flattened type ---\n");
