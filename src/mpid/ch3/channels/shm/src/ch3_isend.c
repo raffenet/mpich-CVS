@@ -6,13 +6,12 @@
 
 #include "mpidi_ch3_impl.h"
 
-/* static void update_request(MPID_Request * sreq, void * pkt, int pkt_sz, int nb) */
 #undef update_request
+#ifdef MPICH_DBG_OUTPUT
 #define update_request(sreq, pkt, pkt_sz, nb) \
 { \
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
-    /* assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t); */ \
     if (pkt_sz != sizeof(MPIDI_CH3_Pkt_t)) \
     { \
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0); \
@@ -24,8 +23,22 @@
     sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->dev.iov_count = 1; \
+    sreq->ch.iov_offset = 0; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
+#else
+#define update_request(sreq, pkt, pkt_sz, nb) \
+{ \
+    MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
+    MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
+    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
+    sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
+    sreq->dev.iov_count = 1; \
+    sreq->ch.iov_offset = 0; \
+    MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
+}
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_iSend
@@ -72,16 +85,15 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	    if (nb == pkt_sz)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
-		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-		if (complete)
+		if (!complete)
 		{
-		    /* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but the
-		    request may still be active (see MPI_Ssend()) */
-		    MPIDI_CH3I_SendQ_dequeue(vc);
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		    vc->ch.send_active = sreq;
 		}
 		else
 		{
+		    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 		}
 	    }
 	    else
