@@ -36,6 +36,9 @@
 # and can be used to distinquish between routines with the same name but
 # different number of arguments.
 #
+# (const applies only if the function does not modify its object (e.g., 
+# get_name may be const but set_name must not be.)
+#
 # A capability of this approach is that a stripped-down interface that 
 # implements only the required routines can be created.
 #
@@ -68,7 +71,8 @@ $debug = 0;
 @mpilevels = ( 'mpi1' , 'mpi2' );
 #feature variables
 $do_subdecls = 1;
-
+$doCoverage = 0;
+$doFuncspec = 1;
 # Process environment variables
 #   CXX_COVERAGE - yes    : turn on coverage code
 if ($ENV{"CXX_COVERAGE"} eq "yes") {
@@ -149,7 +153,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 # and Send is
 #  Send => '0:1', Send-1 => 'in:const'
 # The mappings for the arguments are kept in a 
-# separate hash, %routine_arg_maps.
+# separate hash, %funcArgMap.
 #
 %class_mpi1comm = ( Send => '0:1', Recv => 0, 
 		    Bsend => '0:1', Ssend => '0:1', 
@@ -170,7 +174,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		    Get_errhandler => MPI_Errhandler,
 		    Is_inter => '2;bool',
 		   );
-%routine_arg_maps = (
+%funcArgMap = (
 		    'Send-1' => 'in:const',
 		    'Bsend-1' => 'in:const',
 		    'Rsend-1' => 'in:const',
@@ -240,6 +244,8 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Write_all_end-2' => 'in:const',
 		     'Write_ordered_begin-2' => 'in:const',
 		     'Write_ordered_end-2' => 'in:const',
+		     'Write_ordered-2' => 'in:const',
+		     'Write_shared-2' => 'in:const', 
 		     'Set_atomicity-2' => 'in:bool',
 
 		     'Put-1' => 'in:const',
@@ -251,6 +257,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Get_version-2' => 'in:refint',
 		     'Get_name-3' => 'in:refint',
 		     'Set_name-2' => 'in:const',
+		     'Add_error_string-2' => 'in:const', 
 		     );
 %class_mpi1cart = ( 'Dup' => MPI_Comm,
 		    'Get_dim' => 'int',
@@ -370,6 +377,9 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		    'Is_finalized' => '1;bool',
 		    'Query_thread' => '1',
 		    'Is_thread_main' => '1;bool',
+		    'Add_error_class' => 1,
+		    'Add_error_code' => 2, 
+		    'Add_error_string' => '0:2',
 		    );
 %class_mpi2comm = ( 'Get_attr' => 'int',
 		    'Set_attr' => 0,
@@ -379,8 +389,8 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		    'Call_errhandler' => 0,
 		    'Set_name' => '0:2',
 		    'Get_name' => '0:3',
-		    'Get_parent' => 'static:0',
 		    'Disconnect' => 0,
+		    'Get_parent' => 'static:0;Intercomm',
 		   );
 %class_mpi2cart = ();
 %class_mpi2dtype = ( 'Set_name' => '0:2', 
@@ -400,9 +410,8 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 #		     'Create_keyval' => 'int',
 		     'Free_keyval' =>  'static:0:1',
 );
-%class_mpi2errh = ( 'Add_error_class' => 0,
-		    'Add_error_code' => 0, 
-		    'Add_error_string' => 0 );
+%class_mpi2errh = ( 
+		    );
 %class_mpi2graph = ();
 %class_mpi2group = ();
 %class_mpi2inter = ( 'Barrier' => 0, # MPI-2 adds intercomm collective
@@ -496,6 +505,7 @@ if ($build_io) {
 		   'Sync' => 0,
 		   'Get_errhandler' => 'MPI_Errhandler',
 		   'Set_errhandler' => 0,
+ 		   'Call_errhandler' => 0,
 		   );		
 #     %class_mpi2file = ( 
 # 		   'File_open' => 'static:MPI_File:2',
@@ -619,9 +629,11 @@ if ($build_io) {
 		     'intercomm' => 'Intercomm_methods',
 		     'intracomm' => 'Intracomm_methods',
 		     'graphcomm' => 'Graphcomm_methods',
-		     'cartcomm'  =>  'Cartcomm_methods',
+		     'cartcomm'  => 'Cartcomm_methods',
 		     'dtype'     => 'Datatype_methods',
 		     'op'        => 'Op_methods',
+		     'file'      => 'File_methods',
+		     'win'       => 'Win_methods',
 		     );
 
 # ----------------------------------------------------------------------------
@@ -682,7 +694,8 @@ if ($routine_list ne "") {
 	    'LONG_INT', 'SHORT_INT', 'LONG_DOUBLE_INT',
 	    'REAL4', 'REAL8', 'REAL16', 'COMPLEX8', 'COMPLEX16',
 	    'COMPLEX32', 'INTEGER1', 'INTEGER2', 'INTEGER4', 
-	    'INTEGER8', 'INTEGER16' );
+	    'INTEGER8', 'INTEGER16', 'WCHAR', 'SIGNED_CHAR', 
+	    'UNSIGNED_LONG_LONG' );
 
 #
 # Still missing: C++ only types: BOOL, COMPLEX, DOUBLE_COMPLEX, 
@@ -788,7 +801,8 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 		   'group' => 'Comm,Intracomm,Intercomm,Win,File',
 		   'inter' => 'Intracomm',
 		   'intra' => 'Cartcomm,Graphcomm,Datatype',
-		   'op' => 'Intracomm,Intercomm,Win',
+		   # Op adds comm as a friend because of MPI2
+		   'op' => 'Intracomm,Intercomm,Win,Comm',
 		   'preq' => '',
 		   'req' => 'Comm,File,Grequest',
 		   'st' => 'Comm,File,Request',
@@ -852,7 +866,14 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 	     'dtype-Create_contiguous' => 'Type_contiguous',
 	     'dtype-Create_vector' => 'Type_vector',
 	     'dtype-Create_indexed' => 'Type_indexed',
+	     'dtype-Create_indexed_block' => 'Type_create_indexed_block',
 	     'dtype-Create_struct' => 'Type_create_struct',
+	     'dtype-Get_envelope' => 'Type_get_envelope',
+	     'dtype-Get_contents' => 'Type_get_contents',
+	     'dtype-Match_size' => 'Type_match_size',
+	     'dtype-Create_f90_real' => 'Type_create_f90_real',
+	     'dtype-Create_f90_complex' => 'Type_create_f90_complex',
+	     'dtype-Create_f90_integer' => 'Type_create_f90_integer',
 	     'dtype-Commit' => 'Type_commit',
 	     'dtype-Pack' => 'Pack',
 #	     'dtype-Unpack' => 'Unpack',
@@ -879,6 +900,9 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 	     'group-Get_rank' => 'Group_rank',
 	     'group-Intersect' => 'Group_intersection',
 	     'intra-Create_intercomm' => 'Intercomm_create',
+	     'inter-Create' => 'Comm_create',
+	     'inter-Split' => 'Comm_split',
+	     'intra-Split' => 'Comm_split',
 	     'inter-Get_remote_group' => 'Comm_remote_group',
 	     'inter-Get_remote_size' => 'Comm_remote_size',
 	     'inter-Dup' => 'Comm_dup',
@@ -930,6 +954,28 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # These classes do not have a default intialization
 # These use the Full class name
 %class_has_no_default = ( 'Status' => 1 );
+
+# Read the function specification (will eventually replace the hard-coded
+# values set in this file).  This file contains information that is not
+# derived from the ReadInterface
+if ($doFuncspec) {
+    &ReadFuncSpec( "cxxdecl3.dat" );
+    # Use the MPI C++ binding names for the defered definitions
+    $defer_definition{"Create_cart"}  = "Comm";
+    $defer_definition{"Create_graph"} = "Comm";
+    $defer_definition{"Get_parent"}   = "Comm";
+    $defer_definition{"Join"}         = "Comm";
+    $defer_definition{"Merge"}        = "Intercomm";
+	      
+}
+# FIXME: TODO
+# Some of the routine definitions require future class definitions; e.g.,
+# The Intracomm routine Create_cart needs to create a Cartcomm.  These
+# routines must have their definitions in initcxx.cxx, not 
+# mpicxx.h .  How should we mark these?
+# (The original buildiface incorrectly generated Comm objects for these)
+# Because there are only a few routines, we can keep track of these here
+
 
 # create the master file
 $filename = "mpicxx.h.in";
@@ -1062,75 +1108,10 @@ typedef int MPI_File;\
     }
 
     print $OUTFD "\n";
-    # As for the typedefs, we must leave off the MPI:: within an MPI 
-    # namespace
-    foreach $dtype (@dtypes) {
-        print $OUTFD "extern Datatype $dtype;\n";
-    }
-    print $OUTFD "extern Datatype TWOINT;\n";
-    print $OUTFD "extern Datatype DATATYPE_NULL;\n";
 
-    # Fortran types
-    print $OUTFD "
-#ifdef HAVE_FORTRAN_BINDING
-extern Datatype INTEGER;
-extern Datatype REAL;
-extern Datatype DOUBLE_PRECISION;
-extern Datatype F_COMPLEX;
-extern Datatype F_DOUBLE_COMPLEX;
-extern Datatype LOGICAL;
-extern Datatype CHARACTER;
-extern Datatype TWOREAL;
-extern Datatype TWODOUBLE_PRECISION;
-extern Datatype TWOINTEGER;
-#endif\n";
-
-    # Initialize the operations
-    foreach $op (@ops) {
-	print $OUTFD "extern const Op $op;\n";
-    }
-    print $OUTFD "extern const Op OP_NULL;\n";
-
-    # Predefined communicators and groups
-    print $OUTFD "extern Intracomm COMM_WORLD;\n";
-    print $OUTFD "extern Intracomm COMM_SELF;\n";
-    print $OUTFD "extern const Comm COMM_NULL;\n";
-    print $OUTFD "extern const Group GROUP_EMPTY;\n";
-    print $OUTFD "extern const Group GROUP_NULL;\n";
-
-    # Predefined requests
-    print $OUTFD "extern const Request REQUEST_NULL;\n";
-
-    # Predefined errhandlers
-    print $OUTFD "extern const Errhandler ERRHANDLER_NULL;\n";
-    print $OUTFD "extern const Errhandler ERRORS_RETURN;\n";
-    print $OUTFD "extern const Errhandler ERRORS_ARE_FATAL;\n";
-    print $OUTFD "extern const Errhandler ERRORS_THROW_EXCEPTIONS;\n";
-
-    # Predefined info
-    print $OUTFD "extern const Info INFO_NULL;\n";
-
-    # Predefined integers.  Include MPI-2 predefined keyvals
-    foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
-		  IDENT, SIMILAR, CONGRUENT, UNEQUAL, PROC_NULL,
-		  ANY_TAG, ANY_SOURCE, ROOT, TAG_UB, IO, HOST, WTIME_IS_GLOBAL,
-                  UNIVERSE_SIZE, LASTUSEDCODE, APPNUM, 
-                  WIN_BASE, WIN_SIZE, WIN_DISP_UNIT,
-		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
-		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
-                  MAX_INFO_VAL, MAX_INFO_KEY, 
-		  UNDEFINED, @errclasses) {
-	print $OUTFD "extern const int $int;\n";
-    }
-    # Handle seek as a special case
-    print $OUTFD "#if defined(MPI_SEEK_SET) && !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
-    foreach $int (SEEK_SET, SEEK_END, SEEK_CUR) {
-	print $OUTFD "extern const int $int;\n";
-    }
-    print $OUTFD "#endif\n";
-
-    # Predefined other
-    print $OUTFD "extern const void *BOTTOM;\n";
+    # Print the extern names for the various constants defined in the 
+    # MPI namespace
+    &PrintConstants( $OUTFD, 0 );
 
     # Other routines
     print $OUTFD "extern void Init(void);\n";
@@ -1454,8 +1435,8 @@ sub print_call_args {
 	if (!$first) { print $OUTFD ", "; } else { $first = 0; }
 
 	# Special handling must preempt any other handling
-	if (defined($routine_arg_maps{"${routine}-$count"}) ||
-	    defined($routine_arg_maps{"${class}-${routine}-${count}"})) {
+	if (defined($funcArgMap{"${routine}-$count"}) ||
+	    defined($funcArgMap{"${class}-${routine}-${count}"})) {
 	    &DoSpecialArgProcessing( $OUTFD, $routine, $count, "call" );
 	}
 	elsif ($count == $return_parm_pos) {
@@ -1547,6 +1528,188 @@ sub clean_args {
     $args = $newargs;
 }
 
+# Print out the constants.
+# PrintConstants( FD, giveValue )
+# if GiveValue is true, defint the value, otherwise, make it external
+sub PrintConstants {    
+    my ($OUTFD, $giveValue) = @_;
+    my $extern = "extern ";
+    if ($giveValue) { $extern = ""; }
+
+    # Initialize the datatypes.
+    # We do not use MPI:: within the MPI namespace
+    foreach $dtype (@dtypes) {
+	print $OUTFD "${extern}Datatype $dtype";
+	if ($giveValue) { print $OUTFD "(MPI_$dtype);\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+    # special case
+    if ($giveValue) {
+	print $OUTFD "Datatype TWOINT(MPI_2INT);\n";
+    }
+    else {
+	print $OUTFD "extern Datatype TWOINT;\n";
+    }
+    print $OUTFD "${extern}Datatype DATATYPE_NULL;\n";
+
+    # Fortran types
+    if ($giveValue) {
+	print $OUTFD "
+#ifdef HAVE_FORTRAN_BINDING
+Datatype INTEGER(MPI_INTEGER);
+Datatype REAL(MPI_REAL);
+Datatype DOUBLE_PRECISION(MPI_DOUBLE_PRECISION);
+Datatype F_COMPLEX(MPI_COMPLEX);
+Datatype F_DOUBLE_COMPLEX(MPI_DOUBLE_COMPLEX);
+Datatype LOGICAL(MPI_LOGICAL);
+Datatype CHARACTER(MPI_CHARACTER);
+Datatype TWOREAL(MPI_2REAL);
+Datatype TWODOUBLE_PRECISION(MPI_2DOUBLE_PRECISION);
+Datatype TWOINTEGER(MPI_2INTEGER);
+#endif\n";
+    }
+    else {
+	print $OUTFD "
+#ifdef HAVE_FORTRAN_BINDING
+extern Datatype INTEGER;
+extern Datatype REAL;
+extern Datatype DOUBLE_PRECISION;
+extern Datatype F_COMPLEX;
+extern Datatype F_DOUBLE_COMPLEX;
+extern Datatype LOGICAL;
+extern Datatype CHARACTER;
+extern Datatype TWOREAL;
+extern Datatype TWODOUBLE_PRECISION;
+extern Datatype TWOINTEGER;
+#endif\n";
+    }
+    # Still to do: Fortran optional types, integer1,2,4, real2,4,8,
+
+    # Initialize the operations
+    foreach $op (@ops) {
+	print $OUTFD "${extern}const Op $op";
+	if ($giveValue) { print $OUTFD "(MPI_$op);\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+    print $OUTFD "${extern}const Op OP_NULL;\n";
+
+    # Predefined communicators and groups
+    if ($giveValue) {
+	print $OUTFD "Intracomm COMM_WORLD(MPI_COMM_WORLD);\n";
+	print $OUTFD "Intracomm COMM_SELF(MPI_COMM_SELF);\n";
+	print $OUTFD "const Group GROUP_EMPTY(MPI_GROUP_EMPTY);\n";
+    } 
+    else {
+	print $OUTFD "extern Intracomm COMM_WORLD;\n";
+	print $OUTFD "extern Intracomm COMM_SELF;\n";
+	print $OUTFD "extern const Group GROUP_EMPTY;\n";
+    }
+    print $OUTFD "${extern}const Comm COMM_NULL;\n";
+    print $OUTFD "${extern}const Group GROUP_NULL;\n"; 
+
+    # Predefined requests
+    print $OUTFD "${extern}const Request REQUEST_NULL;\n";
+
+    # Predefined errhandlers
+    print $OUTFD "${extern}const Errhandler ERRHANDLER_NULL;\n";
+    if ($giveValue) {
+	print $OUTFD "const Errhandler ERRORS_RETURN(MPI_ERRORS_RETURN);\n";
+	print $OUTFD "const Errhandler ERRORS_ARE_FATAL(MPI_ERRORS_ARE_FATAL);\n";
+	# Errors_return is not quite right for errors-throw-exceptions,
+	# but it is close.
+	print $OUTFD "const Errhandler ERRORS_THROW_EXCEPTIONS(MPI_ERRORS_RETURN);\n";
+    }
+    else {
+	print $OUTFD "extern const Errhandler ERRORS_RETURN;\n";
+	print $OUTFD "extern const Errhandler ERRORS_ARE_FATAL;\n";
+	print $OUTFD "extern const Errhandler ERRORS_THROW_EXCEPTIONS;\n";
+    }
+
+    # Predefined info
+    print $OUTFD "${extern}const Info INFO_NULL;\n";
+
+    # Predefined File and Win
+    print $OUTFD "${extern}const Win WIN_NULL;\n";
+    print $OUTFD "${extern}const File FILE_NULL;\n";
+
+    # Predefined integers
+    foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
+		  IDENT, SIMILAR, CONGRUENT, UNEQUAL, PROC_NULL,
+		  ANY_TAG, ANY_SOURCE, ROOT, TAG_UB, IO, HOST, WTIME_IS_GLOBAL,
+                  UNIVERSE_SIZE, LASTUSEDCODE, APPNUM, 
+		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
+		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
+                  MAX_INFO_VAL, MAX_INFO_KEY, 
+		  MAX_DATAREP_STRING, 
+		  UNDEFINED, LOCK_EXCLUSIVE, LOCK_SHARED, 
+		  WIN_BASE, WIN_DISP_UNIT, WIN_SIZE, 
+		  @errclasses ) {
+	print $OUTFD "${extern}const int $int";
+	if ($giveValue) { print $OUTFD "= MPI_$int;\n"; }
+    	else            { print $OUTFD ";\n"; }
+    }
+    # Handle seek as a special case
+    print $OUTFD "#if defined(MPI_SEEK_SET) && !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
+    foreach $int (SEEK_SET, SEEK_END, SEEK_CUR) {
+	print $OUTFD "${extern}const int $int";
+	if ($giveValue) { print $OUTFD " = MPI_$int;\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+    print $OUTFD "#endif\n";
+
+    # Other file constants
+    foreach $int (DISPLACEMENT_CURRENT, DISTRIBUTE_BLOCK, DISTRIBUTE_CYCLIC,
+		  DISTRIBUTE_DFLT_DARG, DISTRIBUTE_NONE, ORDER_C, 
+		  ORDER_FORTRAN) {
+        print $OUTFD "${extern}const int $int";
+	if ($giveValue) { print $OUTFD " = MPI_$int;\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+
+    # MPI Mode
+    foreach $int (APPEND, CREATE, DELETE_ON_CLOSE, EXCL, NOCHECK,
+		  NOPRECEDE, NOPUT, NOSTORE, NOSUCCEED, RDONLY, 
+		  RDWR, SEQUENTIAL, UNIQUE_OPEN, WRONLY) {
+	print $OUTFD "${extern}const int MODE_$int";
+	if ($giveValue) { print $OUTFD " = MPI_MODE_$int;\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+    # MPI Combiners
+    foreach $int (CONTIGUOUS, DARRAY, DUP, F90_COMPLEX, F90_INTEGER, 
+		  F90_REAL, HINDEXED_INTEGER, HINDEXED, HVECTOR_INTEGER,
+		  HVECTOR, INDEXED_BLOCK, INDEXED, NAMED, RESIZED, 
+		  STRUCT_INTEGER, STRUCT, SUBARRAY, VECTOR) {
+	print $OUTFD "${extern}const int COMBINER_$int";
+	if ($giveValue) { print $OUTFD " = MPI_COMBINER_$int;\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+    # MPI Thread levels
+    foreach $int (FUNNELED, MULTIPLE, SERIALIZED, SINGLE) {
+	print $OUTFD "${extern}const int THREAD_$int";
+	if ($giveValue) { print $OUTFD " = MPI_THREAD_$int;\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
+    # MPI Empty argvs
+    if ($giveValue) {
+	print $OUTFD "char ** const ARGV_NULL = 0;\n";
+	print $OUTFD "char *** const ARGVS_NULL = 0;\n";
+    }
+    else {
+	print $OUTFD "extern char ** const ARGV_NULL;\n";
+	print $OUTFD "extern char *** const ARGVS_NULL;\n";
+    }
+
+    # Predefined other
+    if ($giveValue) {
+	print $OUTFD "void * const BOTTOM = MPI_BOTTOM;\n";
+	print $OUTFD "void * const IN_PLACE = MPI_IN_PLACE;\n";
+    }
+    else {
+	print $OUTFD "extern void * const BOTTOM;\n";
+	print $OUTFD "extern void * const IN_PLACE;\n";
+    }
+}
+
 #
 # Build the special routines
 sub build_specials {
@@ -1564,79 +1727,7 @@ sub build_specials {
     # Start the namespace
     print $OUTFD "namespace MPI {\n";
 
-    # Initialize the datatypes.
-    # We do not use MPI:: within the MPI namespace
-    foreach $dtype (@dtypes) {
-	print $OUTFD "Datatype $dtype(MPI_$dtype);\n";
-    }
-    # special case
-    print $OUTFD "Datatype TWOINT(MPI_2INT);\n";
-    print $OUTFD "Datatype DATATYPE_NULL;\n";
-
-    # Fortran types
-    print $OUTFD "
-#ifdef HAVE_FORTRAN_BINDING
-Datatype INTEGER(MPI_INTEGER);
-Datatype REAL(MPI_REAL);
-Datatype DOUBLE_PRECISION(MPI_DOUBLE_PRECISION);
-Datatype F_COMPLEX(MPI_COMPLEX);
-Datatype F_DOUBLE_COMPLEX(MPI_DOUBLE_COMPLEX);
-Datatype LOGICAL(MPI_LOGICAL);
-Datatype CHARACTER(MPI_CHARACTER);
-Datatype TWOREAL(MPI_2REAL);
-Datatype TWODOUBLE_PRECISION(MPI_2DOUBLE_PRECISION);
-Datatype TWOINTEGER(MPI_2INTEGER);
-#endif\n";
-    # Still to do: Fortran optional types, integer1,2,4, real2,4,8,
-
-    # Initialize the operations
-    foreach $op (@ops) {
-	print $OUTFD "const Op $op(MPI_$op);\n";
-    }
-    print $OUTFD "const Op OP_NULL;\n";
-
-    # Predefined communicators and groups
-    print $OUTFD "Intracomm COMM_WORLD(MPI_COMM_WORLD);\n";
-    print $OUTFD "Intracomm COMM_SELF(MPI_COMM_SELF);\n";
-    print $OUTFD "const Comm COMM_NULL;\n";
-    print $OUTFD "const Group GROUP_EMPTY(MPI_GROUP_EMPTY);\n";
-    print $OUTFD "const Group GROUP_NULL;\n";
-
-    # Predefined requests
-    print $OUTFD "const Request REQUEST_NULL;\n";
-
-    # Predefined errhandlers
-    print $OUTFD "const Errhandler ERRHANDLER_NULL;\n";
-    print $OUTFD "const Errhandler ERRORS_RETURN(MPI_ERRORS_RETURN);\n";
-    print $OUTFD "const Errhandler ERRORS_ARE_FATAL(MPI_ERRORS_ARE_FATAL);\n";
-    # Errors_return is not quite right for errors-throw-exceptions,
-    # but it is close.
-    print $OUTFD "const Errhandler ERRORS_THROW_EXCEPTIONS(MPI_ERRORS_RETURN);\n";
-
-    # Predefined info
-    print $OUTFD "const Info INFO_NULL;\n";
-
-
-    # Predefined integers
-    foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
-		  IDENT, SIMILAR, CONGRUENT, UNEQUAL, PROC_NULL,
-		  ANY_TAG, ANY_SOURCE, ROOT, TAG_UB, IO, HOST, WTIME_IS_GLOBAL,
-                  UNIVERSE_SIZE, LASTUSEDCODE, APPNUM, 
-		  MAX_PROCESSOR_NAME, MAX_ERROR_STRING,
-		  MAX_NAME_STRING, MAX_PORT_NAME, MAX_OBJECT_NAME,
-                  MAX_INFO_VAL, MAX_INFO_KEY, 
-		  UNDEFINED, @errclasses ) {
-	print $OUTFD "const int $int = MPI_$int;\n";
-    }
-    # Handle seek as a special case
-    print $OUTFD "#if defined(MPI_SEEK_SET) && !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
-    foreach $int (SEEK_SET, SEEK_END, SEEK_CUR) {
-	print $OUTFD "const int $int = MPI_$int;\n";
-    }
-    print $OUTFD "#endif\n";
-
-    # Predefined other
-    print $OUTFD "const void *BOTTOM = MPI_BOTTOM;\n";
+    &PrintConstants( $OUTFD, 1 );
 
     print $OUTFD "void Init";
     $args = "";
@@ -1853,9 +1944,63 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
 }
 ";
 
+print $OUTFD "\
+extern \"C\" void MPIR_Errhandler_set_cxx( MPI_Errhandler, void (*)(void) );
+extern \"C\" 
+void MPIR_Call_errhandler_fn( int kind, int *handle, int *errcode, 
+			      void (*cxxfn)(void) )
+{
+    // Use horrible casts to get the correct routine signature
+    switch (kind) {
+    case 0: // comm
+	    //	    MPI::Comm::Err
+	    break;
+    case 1: // file
+	    {
+		MPI::File fh = (MPI_File)*handle;
+		MPI::File::Errhandler_fn *f = (MPI::File::Errhandler_fn *)cxxfn;
+		(*f)( fh, errcode );
+	    }
+	    break;
+    case 2: // win
+	    break;
+    }
+}
+Errhandler File::Create_errhandler( Errhandler_fn *f )
+{
+    MPI_Errhandler eh;
+    MPI::Errhandler e1;
+    MPI_File_create_errhandler( (MPI_File_errhandler_fn *)f, &eh );
+    MPIR_Errhandler_set_cxx( eh, 
+			     (void (*)(void))MPIR_Call_errhandler_fn );
+    e1.the_real_errhandler = eh;
+    return e1;
+}
+Errhandler Comm::Create_errhandler( Errhandler_fn *f )
+{
+    MPI_Errhandler eh;
+    MPI::Errhandler e1;
+    MPI_Comm_create_errhandler( (MPI_Comm_errhandler_fn *)f, &eh );
+    MPIR_Errhandler_set_cxx( eh, 
+			     (void (*)(void))MPIR_Call_errhandler_fn );
+    e1.the_real_errhandler = eh;
+    return e1;
+}
+Errhandler Win::Create_errhandler( Errhandler_fn *f )
+{
+    MPI_Errhandler eh;
+    MPI::Errhandler e1;
+    MPI_Win_create_errhandler( (MPI_Win_errhandler_fn *)f, &eh );
+    MPIR_Errhandler_set_cxx( eh, 
+			     (void (*)(void))MPIR_Call_errhandler_fn );
+    e1.the_real_errhandler = eh;
+    return e1;
+}
+\n";
+
     print $OUTFD "\
     void Datatype::Pack( const void *inbuf, int incount, void *outbuf, 
-			int outsize, int &position, const Comm &comm ) {\n";
+			int outsize, int &position, const Comm &comm ) const {\n";
     &printCoverageStart( $OUTFD, "Pack", 6 );
     print $OUTFD "\
 	MPIX_CALL( MPI_Pack( (void *)inbuf, incount, the_real_datatype, outbuf, 
@@ -1864,7 +2009,7 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     print $OUTFD "\
     }
     void Datatype::Unpack( const void *inbuf, int insize, void *outbuf,
-			  int outcount, int &position, const Comm &comm ) {\n";
+			  int outcount, int &position, const Comm &comm ) const {\n";
     &printCoverageStart( $OUTFD, "Unpack", 6 );
     print $OUTFD "\
 	MPIX_CALL( MPI_Unpack( (void *)inbuf, insize, &position, outbuf, outcount, 
@@ -1876,6 +2021,56 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     # No coverage for Wtime and Wtick
     print $OUTFD "double Wtime(void) { return MPI_Wtime(); }\n";
     print $OUTFD "double Wtick(void) { return MPI_Wtick(); }\n";
+
+    print $OUTFD "\
+    Cartcomm Intracomm::Create_cart( int v2, const int * v3, const bool v4[], bool v5 ) const
+    {
+        Cartcomm *v6 = new Cartcomm;
+        int *l4 = new int[v2];
+        int l5;
+        { 
+            int i4; 
+            for (i4=0;i4<v2;i4++) {
+                l4[i4] = v4[i4] == true ? 1 : 0;
+            }
+        }
+         l5 = (v5 == true) ? 1 : 0;\n";
+     &printCoverageStart( $OUTFD, "Cart_create", 5 );
+     print $OUTFD "\
+        MPIX_CALL( MPI_Cart_create( (MPI_Comm) the_real_comm, v2, (int *)v3, l4, l5, &(v6->the_real_comm) ));\n";
+     &printCoverageEnd( $OUTFD, "Cart_create", 5 );
+     print $OUTFD "\
+            delete[] l4;
+        return *v6;
+    }\n";
+
+    print $OUTFD "\
+    Graphcomm Intracomm::Create_graph( int v2, const int * v3, const int * v4, bool v5 ) const
+    {
+        Graphcomm *v6 = new Graphcomm;
+        int l5;
+         l5 = (v5 == true) ? 1 : 0;\n";
+    &printCoverageStart( $OUTFD, "Graph_create", 6 );
+    print $OUTFD "\
+        MPIX_CALL( MPI_Graph_create( (MPI_Comm) the_real_comm, v2, (int *)v3, (int *)v4, l5, &(v6->the_real_comm) ));\n";
+    &printCoverageEnd( $OUTFD, "Graph_create", 6 );
+    print $OUTFD "\
+        return *v6;
+    }\n";
+
+    print $OUTFD "\
+    Intracomm Intercomm::Merge( bool v2 ) const
+    {
+        Intracomm *v3 = new Intracomm;
+        int l2;
+         l2 = (v2 == true) ? 1 : 0;\n";
+    &printCoverageStart( $OUTFD, "Intercomm_merge", 3 );
+    print $OUTFD "\
+        MPIX_CALL( MPI_Intercomm_merge( (MPI_Comm) the_real_comm, l2, &(v3->the_real_comm) ));\n";
+    &printCoverageEnd( $OUTFD, "Intercomm_merge", 3 );
+    print $OUTFD "\
+        return *v3;
+    }\n";
 
     # MPI-2 base routines
     &PrintWrapper( $OUTFD, "bool", "Is_finalized", "void",
@@ -1892,6 +2087,14 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
                   "(char *)sn, (MPI_Info)(info), (char*)pn" );
     &PrintWrapper( $OUTFD, "void", "Get_version", "int &v, int&sv",
                   "", "", "&v,&sv", "" );
+
+    &PrintWrapper( $OUTFD, "int", "Add_error_class", "void", 
+                   "int eclass;", "", "&eclass", "eclass" );
+    &PrintWrapper( $OUTFD, "int", "Add_error_code", "int eclass",
+                   "int ecode;", "", "eclass, &ecode", "ecode" );
+    &PrintWrapper( $OUTFD, "void", "Add_error_string", 
+                   "int ecode, const char *estring", 
+                   "", "", "ecode, (char *)estring", "" );
 
     print $OUTFD "} // namespace MPI\n";
     close ($OUTFD);
@@ -2223,9 +2426,9 @@ sub Status_methods {
     my $OUTFD = $_[0];
     
     print $OUTFD "\
-    int Get_source(void) { return the_real_status.MPI_SOURCE; }
-    int Get_tag(void) { return the_real_status.MPI_TAG; }
-    int Get_error(void) { return the_real_status.MPI_ERROR; }
+    int Get_source(void) const { return the_real_status.MPI_SOURCE; }
+    int Get_tag(void) const { return the_real_status.MPI_TAG; }
+    int Get_error(void) const { return the_real_status.MPI_ERROR; }
     void Set_source(int source) { the_real_status.MPI_SOURCE = source; }
     void Set_tag(int tag) { the_real_status.MPI_TAG = tag; }
     void Set_error(int error) { the_real_status.MPI_ERROR = error; }
@@ -2264,7 +2467,29 @@ sub Comm_methods {
 	{ return 0; }
     static int DUP_FN( const Comm &oldcomm, int keyval, void *ex,
     void *attr_in, void *attr_out, bool &flag ) { flag = 1; 
-    *(void **)attr_out = attr_in; return 0;} \n";
+    *(void **)attr_out = attr_in; return 0;} 
+    static Errhandler Create_errhandler( Errhandler_fn * );
+\n";
+}
+sub File_methods {
+    my $OUTFD = $_[0];
+
+    # Typedefs
+    print $OUTFD "\
+    typedef void Errhandler_fn(File &, int *, ... );
+
+    static Errhandler Create_errhandler( Errhandler_fn * );
+\n";
+}
+sub Win_methods {
+    my $OUTFD = $_[0];
+
+    # Typedefs
+    print $OUTFD "\
+    typedef void Errhandler_fn(Win &, int *, ... );
+
+    static Errhandler Create_errhandler( Errhandler_fn * );
+\n";
 }
 sub Graphcomm_methods {
     my $OUTFD = $_[0];
@@ -2314,8 +2539,8 @@ sub Datatype_methods {
     my $OUTFD = $_[0];
     
     print $OUTFD "\
-    void Unpack( const void *, int, void *, int, int &, const Comm & );
-    void Pack( const void *, int, void *, int, int &, const Comm & );\n";
+    void Unpack( const void *, int, void *, int, int &, const Comm & ) const;\n";
+#    void Pack( const void *, int, void *, int, int &, const Comm & ) const;\n";
 }
 # ----------------------------------------------------------------------------
 # We may eventually want to build separate files for each class rather than
@@ -2360,6 +2585,8 @@ sub PrintRoutineDef {
     my $routine = $_[2];
     my $arginfo = $_[3];
     my $defonly = $_[4];
+
+    my $fnchash = "$class-$routine";
     
     my $cArgs;      # The argument string of the C binding
     my $Croutine;   # Name of the MPI C binding routine to all;
@@ -2378,7 +2605,12 @@ sub PrintRoutineDef {
     ($cArgs, $Croutine) = &GetCArgs( $class, $routine );
 
     &PrintMethodDef( $OUTFD, $class, $routine, $arginfo, $cArgs );    
-    
+
+    # This inserts a modifier, such as const or =0 (for pure virtual)
+    if (defined($funcAttributes{$fnchash})) {
+	print $OUTFD " $funcAttributes{$fnchash}";
+    }
+
     # Some methods cannot be defined yet.  In that case, we're done.
     if ($defonly || defined($defer_definition{$routine})) { 
 	print $OUTFD ";\n";
@@ -2391,12 +2623,6 @@ sub PrintRoutineDef {
     # Output any declaration needed for the return type
     &ReturnTypeDecl( $OUTFD );
 
-#     if ($routine eq "Get_atomicity") {
-# 	print STDERR "Croutine = $Croutine\n";
-# 	print STDERR "cArgs = $cArgs\n";
-# 	print STDERR "arginfo = $arginfo\n";
-# 	print STDERR "special_args = $special_args\n";
-#     }
     # Output any other declarations
     &RoutineTempDecls( $OUTFD, $routine, $cArgs, $special_args );
 
@@ -2493,6 +2719,8 @@ sub PrintMethodDef {
     my $arginfo = $_[3];
     my $cArgs   = $_[4];
 
+    my $fnchash = "$class-$routine";
+
     my $is_static = 0;
     # Process info for finding the return value info.
     # This sets global variables return_type and return_parm_pos
@@ -2512,12 +2740,22 @@ sub PrintMethodDef {
     if ($return_type =~ /MPI_/) {
 	$real_return_type =~ s/MPI_//;
     }
+    print $OUTFD $indent;
+    if (defined($funcDeclaration{$fnchash})) {
+	my $decl = $funcDeclaration{$fnchash};
+	if ($decl eq "static") { $is_static = 1; }
+# 	if ($is_static && $decl eq "static") {
+# 	    print STDERR "$routine has both decl static and args->static\n";
+# 	}
+# 	else {
+# 	    print $OUTFD "$funcDeclaration{$fnchash} ";
+# 	}
+    }
     if ($is_static) {
-	print $OUTFD "${indent}static $real_return_type $routine";
+	print $OUTFD "static ";
     }
-    else {
-	print $OUTFD "${indent}$real_return_type $routine";
-    }
+    
+    print $OUTFD "$real_return_type $routine";
     
     # OUTFD, C declaration, C datatype for Class, output info
     &print_args( $OUTFD, $cArgs, $class_type{$class}, $arginfo );
@@ -2540,12 +2778,19 @@ sub GetCArgs {
     my $trial_name = "${Class}_" . lc($routine);
     # We need to do this to separate MPI_Get from MPI_Info_get.
     if (defined($mpi_routine{$trial_name})) {
+#	if (defined($altname{"$class-$routine"})) {
+#	    print STDERR "Ambiguous name for $class-$routine\n";
+#	}
 	$args = $mpi_routine{$trial_name};
 	$mpi_routine_name = $trial_name;
+	print "Matched $trial_name to $mpi_routine_name in mpi_routine{}\n" if $debug;
 	return ($args,$mpi_routine_name);
     }
 
     if (defined($mpi_routine{$routine})) {
+#	if (defined($altname{"$class-$routine"})) {
+#	    print STDERR "Ambiguous name for $class-$routine\n";
+#	}
 	$args = $mpi_routine{$routine};
     }
     $mpi_routine_name = $routine;
@@ -2571,6 +2816,7 @@ sub GetCArgs {
 	    print STDERR "Name $routine in class $class has no known MPI routine\n";
 	}
     }
+    print "Matched $trial_name to $mpi_routine_name\n" if $debug;
     return ($args,$mpi_routine_name);
 }
 
@@ -2685,9 +2931,9 @@ sub DoSpecialArgProcessing {
     my $argdir;            # either in, out, inout
 
     print "Checking for $routine - $count\n" if $debug;
-    $subname = $routine_arg_maps{"${routine}-$count"};
+    $subname = $funcArgMap{"${routine}-$count"};
     if ($subname eq "") {
-	$subname = $routine_arg_maps{"${class}-${routine}-$count"};
+	$subname = $funcArgMap{"${class}-${routine}-$count"};
 	print "Found class $class $routine $count\n" if $debug;
     }
     if ($subname =~ /([^:]*):([^:]*)(.*)/) {
@@ -2705,6 +2951,9 @@ sub DoSpecialArgProcessing {
 #		&$subname( "v$count", "l$count" );
 #	    }
 	}
+	else {
+	    print STDERR "Expected :$subname: for $routine but is was not defined\n";
+	}
     }
     return 0;
 }
@@ -2713,13 +2962,46 @@ sub DoSpecialArgProcessing {
 # $parm is defined outside
 sub const_in_methoddecl {
     my $count = $_[0];
+
+    my $lparm = $parm;
+
     if (!$first) { print $OUTFD ", "; }
-    print $OUTFD "const $parm v$count";
+    # Convert part if it contains an MPI_ type
+    $lparm =~ s/MPI_//;
+    if ($lparm =~ /(\w*)\s*(\[\].*)/) {
+	my $name = $1;
+	my $array = $2;
+	# Using $array allows us to handle both [] and [][3]
+	print $OUTFD "const $name v$count$array";
+    }
+    else {
+	print $OUTFD "const $lparm v$count";
+    }
 }
 # We have to explicitly remove the cast
 sub const_in_call {
     my $count = $_[0];
-    print $OUTFD "($parm)v$count";
+    my $lparm = $parm;
+    if ($lparm =~ /(\w*)\s*\[\]/) {
+	my $basetype = $1;
+	# ISO C++ forbids casting to an array type, but we can
+	# cast to a pointer
+	if ($lparm =~ /\[\](\[.*)/) {
+	    print $OUTFD "($basetype (*)$1)v$count";
+	}
+	else {
+	    print $OUTFD "($basetype *)v$count";
+	}
+    }
+    else {
+	print $OUTFD "($parm)v$count";
+    }
+}
+sub const_in_decl {
+}
+sub const_in_cxxtoc {
+}
+sub const_in_ctocxx {
 }
 #
 # bool
@@ -2737,6 +3019,7 @@ sub bool_in_decl {
     my $count = $_[0];
     print $OUTFD "$indent    int l$count;\n";
 }
+sub bool_in_ctocxx {}
 sub bool_in_call {
     my $count = $_[0];
     print $OUTFD "l$count";
@@ -2878,7 +3161,7 @@ sub statusarray_out_ctocxx {
 sub boolarray_in_methoddecl {
     my $count = $_[0];
     if (!$first) { print $OUTFD ", "; }
-    print $OUTFD "bool v$count\[]";
+    print $OUTFD "const bool v$count\[]";
 }
 # We have to explicitly remove the cast
 sub boolarray_in_call {
@@ -3050,6 +3333,47 @@ sub dtypearray_in_ctocxx {
     if ($n =~ /-(\d*)/) { $n = $1; }
     print $OUTFD "$indent                delete[] l$count;\n";
 }
+
+sub dtypearray_out_methoddecl {
+    my $count = $_[0];
+    if (!$first) { print $OUTFD ", "; }
+    print $OUTFD "Datatype v$count\[]";
+}
+sub dtypearray_out_decl { 
+    my $count = $_[0];
+    my $n     = "v$otherarg";
+    if ($n =~ /-(\d*)/) { $n = $1; }
+    print $OUTFD "$indent    MPI_Datatype *l$count = new MPI_Datatype[$n];\n";
+}
+sub dtypearray_out_cxxtoc {
+    my $count      = $_[0];
+    my $n          = "v$otherarg";
+
+    my $cinvar     = "l" . $count;
+    my $cxxoutvar  = "v" . $count;
+
+    if ($n =~ /-(\d*)/) { $n = $1; }
+}
+sub dtypearray_out_call {
+    my $count = $_[0];
+    print $OUTFD "l$count";
+}
+sub dtypearray_out_ctocxx {
+    my $count      = $_[0];
+    my $n          = "v$otherarg";
+
+    my $cinvar     = "l" . $count;
+    my $cxxoutvar  = "v" . $count;
+
+    if ($n =~ /-(\d*)/) { $n = $1; }
+    print $OUTFD "$indent    { 
+            int i$count; 
+            for (i$count=0;i$count<$n;i$count++) {
+                v$count\[i$count].the_real_datatype = l$count\[i$count];
+            }
+            delete[] l$count;
+        }\n";
+}
 # ----------------------------------------------------------------------------
 # These are used to convert int *foo into int &foo
 sub refint_in_methoddecl {
@@ -3062,6 +3386,85 @@ sub refint_in_call {
     my $count = $_[0];
     print $OUTFD "&v$count";
 }
+sub refint_in_decl {}
+sub refint_in_cxxtoc {}
+sub refint_in_ctocxx {}
+# ----------------------------------------------------------------------------
+# These are used to convert <type> *foo or <type> foo into <type> &foo
+sub constref_in_methoddecl {
+    my $count = $_[0];
+    if (!$first) { print $OUTFD ", "; }
+    print $OUTFD "const $otherarg &v$count";
+}
+# We have to explicitly remove the cast
+sub constref_in_call {
+    my $count = $_[0];
+    my $lparm = $parm;
+    
+    # Parm is usually in C, not C++ form.  Make sure here
+    $lparm =~ s/MPI::/MPI_/;
+    if ($lparm =~ /MPI_/) {
+	# If an MPI type, cast back to MPI type
+	if ($lparm eq MPI_Aint && $lparm eq MPI_Offset) {
+	    print $OUTFD "($lparm *)&v$count";
+	}
+	else {
+	    my $shortname = $lparm;
+	    $shortname =~ s/MPI_//;
+	    $shortname = lc($shortname);
+	    if (defined($mytopclass{$shortname})) {
+		$shortname = $mytopclass{$shortname};
+	    }
+	    print $OUTFD "($lparm)(v$count.the_real_$shortname)";
+	}
+    }
+    else {
+	print $OUTFD "&v$count";
+    }
+}
+sub constref_in_decl {}
+sub constref_in_cxxtoc {}
+sub constref_in_ctocxx {}
+# ----------------------------------------------------------------------------
+# These are used to handle C++ ref types to MPI * type (output)
+sub reftype_out_methoddecl {
+    my $count = $_[0];
+    if (!$first) { print $OUTFD ", "; }
+    print $OUTFD "$otherarg &v$count";
+}
+# We have to explicitly remove the cast
+sub reftype_out_call {
+    my $count = $_[0];
+    my $lparm = $parm;
+    
+    # Parm is usually in C, not C++ form.  Make sure here
+    $lparm =~ s/MPI::/MPI_/;
+    if ($lparm =~ /MPI_/) {
+	# If an MPI type, cast back to MPI type
+	if ($lparm ne MPI_Aint && $lparm ne MPI_Offset) {
+	    my $shortname = $lparm;
+	    $shortname =~ s/MPI_//;
+	    # Remove any * from the end of the C type
+	    $shortname =~ s/\s*\*\s*$//;
+	    $shortname = lc($shortname);
+	    if (defined($mytopclass{$shortname})) {
+		$shortname = $mytopclass{$shortname};
+	    }
+	    print $OUTFD "($lparm)&(v$count.the_real_$shortname)";
+	}
+	else {
+	    print $OUTFD "($lparm)&v$count";
+	}
+    }
+    else {
+	print $OUTFD "&v$count";
+    }
+}
+sub reftype_out_decl {
+}
+sub reftype_out_cxxtoc {}
+sub reftype_out_ctocxx {
+}
 # ----------------------------------------------------------------------------
 sub ptrref_inout_methoddecl {
     my $count = $_[0];
@@ -3069,7 +3472,6 @@ sub ptrref_inout_methoddecl {
 }
 # ----------------------------------------------------------------------------
 # Coverage hooks
-$doCoverage = 0;
 # setCoverage( flag )
 sub setCoverage {
     my $flag = $_[0];
@@ -3081,7 +3483,7 @@ sub printCoverageStart {
     my $name  = $_[1];
     my $count = $_[2];
     if ($doCoverage) {
-	print $FD "  COVERAGE_START($name,$count);\n";
+	print $FD "        COVERAGE_START($name,$count);\n";
     }
 }
 sub printCoverageEnd {
@@ -3089,7 +3491,7 @@ sub printCoverageEnd {
     my $name  = $_[1];
     my $count = $_[2];
     if ($doCoverage) {
-	print $FD "  COVERAGE_END($name,$count);\n";
+	print $FD "        COVERAGE_END($name,$count);\n";
     }
 }
 
@@ -3103,9 +3505,16 @@ sub printCoverageHeader {
 	    print $FD "\@DEFINE_FOR_COVERAGE\@\n";
 	    print $FD "\@DEFINE_FOR_COVERAGE_KIND\@\n";
 	}
-        print $FD "#if defined(USE_COVERAGE)\n";
-	print $FD "#include \"mpicxxcov.h\"\n";
-	print $FD "#endif\n\n";
+        print $FD "\
+#if defined(USE_COVERAGE)
+#include \"mpicxxcov.h\"
+#else
+// Just make these empty in case we've created the coverage versions
+#define COVERAGE_INITIALIZE()
+#define COVERAGE_START(a,b)
+#define COVERAGE_END(a,b)
+#define COVERAGE_FINALIZE()
+#endif\n\n";
     }
 }
 #
@@ -3137,6 +3546,163 @@ sub printCoverageInitialize {
 	print $FD "COVERAGE_INITIALIZE();\n";
     }
 }    
+# ----------------------------------------------------------------------------
+# Read a specification file for a binding.  This helps provide information on
+# exceptions and enhancements to the binding automatically derived from the
+# prototype file (the C header file).  The format of this specificaiton
+# file is:
+# class-name: [static] return (args) [const]
+#
+# argument positions refer to the positions in the original (C) binding
+#
+# a \ at the end of the line is a continuation.  # begins a comment
+#
+# Note that this sets values in GLOBAL variables for the classes and
+# for each routine.  The variables used are
+#   %funcAttributes - attribute for function (e.g., const)
+#   %funcDeclaration - declaration for function (e.g., static)
+#   %funcReturn    - position and optional type for return value
+#   %funcArgMap    - routine to call to handle a positional argument
+#
+# Example declaration
+sub ReadFuncSpec {
+    my $filename = $_[0];
+    my $linecount = 0;
+    my $mpilevel = "mpi2";
+    open SFD, "<$filename" || die "Cannot open $filename\n";
+
+    while (<SFD>) {
+	$linecount++;
+	# Remove comments
+	s/#.*//g;
+	# Remove newline
+	s/\r?\n//;
+	# Handle any continuations
+	while (/\\\s*$/) {
+	    my $newline;
+	    s/\\\s*//;
+	    $newline = <SFD>;
+	    $linecount++;
+	    $newline =~ s/#.*//;
+	    $newline =~ s/\r?\n//;
+	    $_ .= $newline;
+	}
+	# Handle special cases
+	if (/<(\w*)>/) {
+	    $mpilevel = $1;
+	    if ($mpilevel ne "mpi1" && $mpilevel ne "mpi2") {
+		print STDERR "Unrecognized MPI level $mpilevel\n";
+	    }
+	    next;
+	}
+	# Process any data
+	if (/^\s*(\w*)-(\w*)\s*(.*)/) {
+	    my $class   = $1;
+	    my $routine = $2;
+	    my $line    = $3;
+	    my $fnchash = "$class-$routine";
+	    my $specialPos = "";
+	    my $needsReturn = 0;
+	    my $returnPos = 0;
+	    my $returnType = "";
+	    my $isStatic = 0;
+	    # Leading static decl
+	    if ($line =~ /^\s*static\s/) {
+		$funcDeclaration{$fnchash} = "static";
+		$isStatic = 1;
+		$line =~ s/^\s*static\s+//;
+	    }
+	    # Possible returning
+	    if ($line =~ /^(\w*)\s+(.*)/) {
+		$funcReturnType{$fnchash} = $1;
+		my $endline = $2;
+		if ($1 ne "void") {
+		    $needsReturn = 1;
+		    $returnType = $1;
+		}
+		$line = $endline;
+	    }
+	    else {
+		$funcReturnType{$fnchash} = "void";
+	    }
+
+	    $line =~ s/\s*\(//;
+	    # Now, process all args
+	    my $argnum = 1;
+	    while ($line =~ /\S/) {
+		if ($line =~ /\s*([^,\)\s]*)\s*([,\)])(.*)/) {
+		    my $endline = $3;
+		    my $sep = $2;
+		    my $arg = $1;
+		    
+		    if ($arg eq "return") {
+			$returnPos = $argnum;
+			$funcReturnMap{$fnchash} = "$argnum;$returntype";
+		    }
+		    elsif ($arg =~ /\S/) {
+			#print "Setting $fnchash-$argnum = $arg\n";
+			$specialPos .= "$argnum:";
+ 			$funcArgMap{"$fnchash-$argnum"} = $arg;
+		    }
+
+		    $line = $endline;
+		    if ($sep eq ")") {
+			# break out of the loop to process any end-of-decl
+			last;
+		    }
+		    $argnum ++;
+		}
+		else {
+		    print STDERR "I'm confused!\n";
+		    last;
+		}
+	    }
+	    # For things like const and =0
+	    if ($line =~ /\s*(\S*)/) {
+		$funcAttributes{$fnchash} = $1;
+	    }
+
+	    # This is a temporary until we fix the various hashes and
+	    # function fields
+	    if ($specialPos ne "" || $needsReturn) {
+		my $classVar = "class_$mpilevel$class";
+		chop $specialPos;
+		my $funcops;
+		if ($needsReturn) {
+		    $funcops = "$returnPos";
+		    my $classType = $fullclassname{$class};
+		    if ($returnType ne "int" &&
+			$returnType ne $classType) {
+			$funcops .= ";$returnType";
+		    }
+		}
+		else {
+		    $funcops = "0";
+		}
+		if ($specialPos ne "") {
+		    $funcops .= ":";
+		}
+		if (defined($$classVar{$routine})) {
+		    my $newval = $funcops . $specialPos;
+		    if ($isStatic) {
+			$newval = "static:" . $newval;
+		    }
+		    my $oldval = $$classVar{$routine};
+		    if ($oldval ne $newval) {
+			print STDERR "Changing $classVar\{$routine\} from $oldval to $newval\n" if $debug;
+		    }
+		}
+		$$classVar{$routine} = $funcops . $specialPos;
+		#print "$routine:Special pos = <$funcops$specialPos>\n";
+	    }
+	}
+	elsif (/\S/) {
+	    print STDERR "Unrecognized line $_\n";
+	}
+    }
+
+    close SFD;
+}
 # ----------------------------------------------------------------------------
 #
 # ISSUES NOT YET HANDLED

@@ -24,6 +24,7 @@ autom4te.cache
 *.log
 *.htm
 cov.dat
+cov2html
 mpi1dtype-cpp.h
 mpi2dtype-cpp.h
 mpi1info-cpp.h

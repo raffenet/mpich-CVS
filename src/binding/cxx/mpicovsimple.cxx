@@ -191,6 +191,82 @@ int MPIX_Coverage::FileMerge( const char filename[] )
     return 0;
 }
 
+#if 0
+// This is partial and incomplete code for an alternative version of
+// FileMerge that avoids reading the entire file into memory
+// This was a early version that was lost in a terrible keyboarding 
+// accident just after it was debugged :)
+// This predates the current form of the coverage file and contains
+// a number of bugs, but it would be a reasonable starting point 
+// if it is desired to avoid reading the entire file into memory.
+int MPIX_Ooverage::FileMerge( const char filename[] )
+{
+    covinfo *p, *fp=0;
+    ifstream infile;
+    ofstream outfile;
+    char *tmpfile;
+
+    infile.open( filename, ios::in );
+
+    tmpfile = new char [ strlen(filename) + 5 ];
+    strcpy( tmpfile, filename );
+    strcat( tmpfile, ".tmp" );
+    outfile.open( tmpfile );
+    if (!outfile) {
+	cerr << "Unable to open " << tmpfile << "\n";
+    }
+    p = head;
+    if (infile) {
+	fp = new covinfo;
+	fp->name = new char [1024];
+	infile >> fp->name >> fp->argcount >> fp->count;
+    }
+    while (p) {
+	int cmp = 0;
+	if (fp) {
+	    cmp = strcmp( fp->name, p->name );
+	    if (cmp == 0) {
+		cmp = fp->argcount - p->argcount;
+	    }
+	    if (cmp < 0) {
+		// output the file entry
+		outfile << fp->name << '\t' << fp->argcount << '\t' <<
+		    fp->count << '\n';
+		infile >> fp->name >> fp->argcount >> fp->count;
+		if (infile.eof()) break;
+		continue;
+	    }
+	    else if (cmp == 0) {
+		// Increment the p entry 
+		p->count += fp->count;
+		infile >> fp->name >> fp->argcount >> fp->count;
+		if (infile.eof()) break;
+	    }
+	    // else keep this entry
+	}
+	outfile << p->name << '\t' << p->argcount << '\t' << p->count << '\n';
+	p = p->fLink;
+    }
+    // Read the rest of the file, if any
+    while (infile && !infile.eof()) {
+	infile >> fp->name >> fp->argcount fp->count;
+	outfile << fp->name << '\t' << fp->argcount << '\t' <<
+	    fp->count << '\n';
+    }
+    // Output the rest of the list
+    while (p) {
+	outfile << p->name << '\t' << p->argcount << '\t' << p->count << '\n';
+	p = p->fLink;
+    }
+    // Close the input file if we opened it...
+    if (fp) {
+	infile.close();
+	... remove code as above
+    }
+
+}
+#endif
+
 MPIX_Coverage MPIR_Cov;
 
 //#define TEST_PROGRAM
