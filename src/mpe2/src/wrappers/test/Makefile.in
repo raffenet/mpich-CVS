@@ -22,7 +22,8 @@ FLIB_PATH            = @FLIB_PATH_LEADER@$(MPE_LIBDIR) \
                        $(F2CMPI_LIBS) @LOG_LIBS@ \
                        $(MPI_LIBS)
 #
-INCLUDE_DIR          = -I$(MPE_INCDIR) $(MPI_INC)
+C_INCS               = -I$(MPE_INCDIR) $(MPI_INC)
+F_INCS               = @FINC_PATH_LEADER@$(MPE_INCDIR) $(MPI_INC)
 LDFLAGS              = @LDFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 RM                   = @RM@
@@ -33,8 +34,8 @@ RM                   = @RM@
 
 srcdir        = @srcdir@
 
-CFLAGS        = $(MPE_CFLAGS) $(INCLUDE_DIR) 
-FFLAGS        = $(MPE_FFLAGS) $(INCLUDE_DIR)
+CFLAGS        = $(MPE_CFLAGS) $(C_INCS) 
+FFLAGS        = $(MPE_FFLAGS) $(F_INCS)
 CC_LDFLAGS    = $(LDFLAGS) $(MPE_CFLAGS)
 FC_LDFLAGS    = $(LDFLAGS) $(MPE_FFLAGS)
 EXECS         = cpilog srtest
