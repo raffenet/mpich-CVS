@@ -1088,6 +1088,9 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
  * This code allows a program to contact a host/port for the PMI socket.
 a */
 #include <errno.h>
+#if defined(HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#endif
 #include <sys/param.h>
 #include <sys/socket.h>
 

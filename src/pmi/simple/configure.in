@@ -25,6 +25,9 @@ PAC_ARG_CACHING
 AC_ARG_ENABLE(pmiport,
 [--enable-pmiport - Allow PMI interface to use a host-port pair to contact
                    for PMI services],,enable_pmiport=default)
+if test "$enable_pmiport" != "no" ; then
+   enable_pmiport=yes
+fi
 
 PAC_PROG_MAKE
 
@@ -37,29 +40,36 @@ fi
 #
 # PM's that need support for a port can set the environment variable
 # NEED_PMIPORT in their setup_pm script.
-if test "$NEED_PMIPORT" = "yes" ; then
-    if test "$enable_pmiport" = "default" ; then
-        enable_pmiport=yes
-    fi
+if test "$NEED_PMIPORT" = "yes" -a "$enable_pmiport" != "yes" ; then
+    AC_MSG_WARN([The process manager requires the pmiport capability.  Do not specify --disable-pmiport.])
+    enable_pmiport=yes
 fi
 #
 if test "$enable_pmiport" = "yes" ; then
     # Check for the necessary includes and functions
     missing_headers=no
-    AC_CHECK_HEADERS(sys/param.h sys/socket.h netinet/in.h netinet/tcp.h sys/un.h netdb.h,,missing_headers=yes )
-    missing_functions=no
-    AC_CHECK_FUNCS(socket setsockopt gethostbyname,,missing_functions=yes)
+    AC_CHECK_HEADERS([	\
+	sys/types.h	\
+	sys/param.h	\
+	sys/socket.h	\
+	netinet/in.h	\
+	netinet/tcp.h	\
+	sys/un.h	\
+	netdb.h		\
+	],,missing_headers=yes )
     saveLIBS="$LIBS"
     LIBS=""
     AC_SEARCH_LIBS(socket,socket,,,$saveLIBS)
     AC_SEARCH_LIBS(gethostbyname,nsl,,,$saveLIBS)
     PMI_LIBS="$PMI_LIBS $LIBS"
     LIBS="$saveLIBS $LIBS"
+    missing_functions=no
+    AC_CHECK_FUNCS(socket setsockopt gethostbyname,,missing_functions=yes)
     
-    if test "$missing_functions" = "no" -a "$missing_headers" = "no" ; then
+    if test "$missing_functions" = "no" ; then
         AC_DEFINE(USE_PMI_PORT,1,[Define if access to PMI information through a port rather than just an fd is allowed])
     else
-        AC_MSG_WARN([Cannot build simple PMI with support for an IP port because of missing headers and/or functions])
+        AC_MSG_ERROR([Cannot build simple PMI with support for an IP port because of missing functions])
     fi
 fi
 AC_SUBST(AR)
