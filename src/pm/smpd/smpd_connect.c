@@ -453,7 +453,7 @@ int smpd_init_process(void)
 #else
     homedir = getenv("HOME");
     strcpy(smpd_process.smpd_filename, homedir);
-    if (smpd_filename[strlen(smpd_process.smpd_filename)-1] != '/')
+    if (smpd_process.smpd_filename[strlen(smpd_process.smpd_filename)-1] != '/')
 	strcat(smpd_process.smpd_filename, "/.smpd");
     else
 	strcat(smpd_process.smpd_filename, ".smpd");
