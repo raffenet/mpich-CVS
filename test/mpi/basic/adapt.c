@@ -751,7 +751,7 @@ skip_12_trial:
 		fflush(stdout);
 	    }
 
-	    for (itrial=0, ii=1; ii<=args012.bufflen; ii <<= 1, itrial++)
+	    for (itrial=0, ii=1; ii<=nrepeat012; ii <<= 1, itrial++)
 	    {
 		/* Finally, we get to transmit or receive and time */
 		switch (g_proc_loc)
