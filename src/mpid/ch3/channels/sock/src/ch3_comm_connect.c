@@ -182,7 +182,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
             fflush(stdout);
 */
             bizcard_ptr += strlen(val) + 1;
-            bizcards_len += strlen(val) + 1;
+            bizcards_len += (int)strlen(val) + 1;
         }
 
         /* send the business cards to the remote root */
@@ -336,7 +336,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
             goto fn_exit;
         }
 
-        mpi_errno = MPIC_Send(val, strlen(val)+1, MPI_CHAR, root, 52,
+        mpi_errno = MPIC_Send(val, (int)strlen(val)+1, MPI_CHAR, root, 52,
                               comm_ptr->handle); 
         if (mpi_errno) goto fn_exit;
 
