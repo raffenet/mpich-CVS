@@ -1,11 +1,12 @@
       program main
+      include 'mpif.h'
       integer v, value;
       logical flag
       integer ierr, errs
       integer base(1024)
       integer disp
       integer win
-      integer (kind=MPI_ADDRESS_KIND) baseadd
+      integer baseadd
       errs = 0;
       
       call mpi_init( ierr )
@@ -19,29 +20,35 @@ C Create a window; then extract the values
 C
 C In order to check the base, we need an address-of function.
 C We use MPI_Get_address, even though that isn't strictly correct
-
       call MPI_Win_get_attr( win, MPI_WIN_BASE, value, flag, ierr )
       if (.not. flag) then
          errs = errs + 1
          print *, "Could not get WIN_BASE"
-      else
-         call MPI_Get_address( base, baseadd, ierr )
-         if (value .ne. baseadd) then
-	    errs = errs + 1
-	    print *, "Got incorrect value for WIN_BASE (", value, 
-     &             ", should be ", baseadd
-         endif
+C
+C There is no easy way to get the actual value of base to compare 
+C against.  MPI_Address gives a value relative to MPI_BOTTOM, which 
+C is different from 0 in Fortran (unless you can define MPI_BOTTOM
+C as something like %pointer(0)).
+C      else
+C
+CC For this Fortran 77 version, we use the older MPI_Address function
+C         call MPI_Address( base, baseadd, ierr )
+C         if (value .ne. baseadd) then
+C           errs = errs + 1
+C	    print *, "Got incorrect value for WIN_BASE (", value, 
+C     &             ", should be ", baseadd, ")"
+C         endif
       endif
 
-      call MPI_Win_get_attr( win, MPI_WIN_SIZE, v, flag, ierr )
+      call MPI_Win_get_attr( win, MPI_WIN_SIZE, value, flag, ierr )
       if (.not. flag) then
          errs = errs + 1
          print *, "Could not get WIN_SIZE"
       else
 	if (value .ne. n) then
-	    errs = err + 1
-	    print *, "Got wrong value for WIN_SIZE (", value, 
-     &        ", should be ", n
+	    errs = errs + 1
+	    print *, "Got incorrect value for WIN_SIZE (", value, 
+     &        ", should be ", n, ")"
          endif
       endif
 
@@ -64,6 +71,6 @@ C We use MPI_Get_address, even though that isn't strictly correct
          print *, " Found ", errs, " errors"
       endif
 
-      call MPI_Finalize( );
+      call MPI_Finalize( ierr );
 
       end
