@@ -6,8 +6,14 @@
 
 #include "mpidimpl.h"
 #include "ibu.h"
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
+
+#ifdef USE_IB_IBAL
 
 struct ibuBlockAllocator_struct
 {
@@ -369,7 +375,7 @@ static ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
     qp_init_attr.rq_sge = 8;
     qp_init_attr.h_sq_cq = set;
     qp_init_attr.h_rq_cq = set;
-    qp_init_attr.sq_signaled = FALSE; /*TRUE;*/
+    qp_init_attr.sq_signaled = /*FALSE;*/ TRUE;
 
     status = ib_create_qp(IBU_Process.pd_handle, &qp_init_attr, NULL, NULL, &ibu->qp_handle);
     if (status != IB_SUCCESS)
@@ -428,7 +434,6 @@ static void *ib_malloc_register(size_t size)
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
 	return NULL;
     }
-    s_lkey = mem_out.l_key;
 
     MPIU_DBG_PRINTF(("exiting ib_malloc_register\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
@@ -565,8 +570,8 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.id == NULL)
+    work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+    if ((void*)work_req.wr_id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
@@ -626,8 +631,8 @@ static int ibui_post_receive(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.id == NULL)
+    work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+    if ((void*)work_req.wr_id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
@@ -686,8 +691,8 @@ static int ibui_post_ack_write(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)-1;
 #else
-    work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-    if ((void*)work_req.id == NULL)
+    work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+    if ((void*)work_req.wr_id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_POST_ACK_WRITE);
@@ -774,8 +779,8 @@ int ibu_write(ibu_t ibu, void *buf, int len)
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-	work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-	if ((void*)work_req.id == NULL)
+	work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+	if ((void*)work_req.wr_id == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
@@ -891,8 +896,8 @@ int ibu_writev(ibu_t ibu, IBU_IOV *iov, int n)
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.ptr = (u_int32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.wr_id)->data.mem = (u_int32_t)mem_ptr;
 #else
-	work_req.id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
-	if ((void*)work_req.id == NULL)
+	work_req.wr_id = (u_int64_t)ibuBlockAlloc(g_workAllocator);
+	if ((void*)work_req.wr_id == NULL)
 	{
 	    MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
@@ -973,7 +978,7 @@ int ibu_init()
     /* get the lid */
     ca_size = 0;
     status = ib_query_ca(IBU_Process.hca_handle, NULL, &ca_size);
-    if (status != IB_SUCCESS)
+    if (status != IB_SUCCESS && status != IB_INSUFFICIENT_MEMORY)
     {
 	MPIU_Internal_error_printf("ibu_init: ib_query_ca failed, status %s\n", ib_get_err_str(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
@@ -987,8 +992,13 @@ int ibu_init()
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
-    IBU_Process.lid = ((ib_ca_attr_t)ca_attr_ptr)->p_port_attr->lid;
-    MPIU_DBG_PRINTF(("max_cqes = %d\n", ((ib_ca_attr_t)ca_attr_ptr)->max_cqes));
+    IBU_Process.lid = ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->lid;
+    MPIU_DBG_PRINTF(("port = %d, mtu = %d, max_cqes = %d, maxmsg = %d, link = %d\n",
+		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->port_num,
+		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->mtu,
+		     ((ib_ca_attr_t*)ca_attr_ptr)->max_cqes,
+		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->max_msg_size,
+		     ((ib_ca_attr_t*)ca_attr_ptr)->p_port_attr->link_state));
 
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
@@ -1019,6 +1029,11 @@ int ibu_finalize()
     return IBU_SUCCESS;
 }
 
+void FooBar(ib_async_event_rec_t* p_event_rec)
+{
+    printf("FooBar is a naughty boy.\n");fflush(stdout);
+}
+
 #undef FUNCNAME
 #define FUNCNAME ibu_create_set
 #undef FCNAME
@@ -1032,8 +1047,8 @@ int ibu_create_set(ibu_set_t *set)
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_CREATE_SET);
     MPIU_DBG_PRINTF(("entering ibu_create_set\n"));
     /* create the completion queue */
-    cq_attr.size = IBU_MAX_CQ_ENTRIES+1;
-    cq_attr.pfn_comp_cb = NULL; /* completion routine */
+    cq_attr.size = IBU_MAX_CQ_ENTRIES;
+    cq_attr.pfn_comp_cb = FooBar; /* completion routine */
     cq_attr.h_wait_obj = NULL; /* client specific wait object */
     status = ib_create_cq(IBU_Process.pd_handle, &cq_attr, NULL, NULL, set);
     if (status != IB_SUCCESS)
@@ -1308,17 +1323,19 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    return IBU_SUCCESS;
 	}
 
+	p_complete = NULL;
 	completion_data.p_next = NULL;
 	p_in = &completion_data;
-	status = ib_poll_cq(set, &p_in, &p_complete); 
+	status = ib_rearm_cq(set, TRUE);
 	if (status != IB_SUCCESS)
 	{
-	    MPIU_Internal_error_printf("%s: error: ib_poll_cq did not return IB_SUCCESS, %s\n", FCNAME, ib_get_err_str(status));
-	    MPIU_DBG_PRINTFX(("exiting ibu_wait 3\n"));
+	    MPIU_Internal_error_printf("%s: error: ib_rearm_cq failed, %s\n", FCNAME, ib_get_err_str(status));
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait -1\n"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 	    return IBU_FAIL;
 	}
-	if (p_complete == NULL)
+	status = ib_poll_cq(set, &p_in, &p_complete); 
+	if (status == IB_NOT_FOUND && p_complete == NULL)
 	{
 	    /* ibu_wait polls until there is something in the queue */
 	    /* or the timeout has expired */
@@ -1334,6 +1351,13 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    continue;
 	}
+	if (status != IB_SUCCESS)
+	{
+	    MPIU_Internal_error_printf("%s: error: ib_poll_cq did not return IB_SUCCESS, %s\n", FCNAME, ib_get_err_str(status));
+	    MPIU_DBG_PRINTFX(("exiting ibu_wait 3\n"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
+	    return IBU_FAIL;
+	}
 	if (completion_data.status != IB_SUCCESS)
 	{
 	    MPIU_Internal_error_printf("%s: error: status = %s != IB_SUCCESS\n", 
@@ -1343,6 +1367,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    return IBU_FAIL;
 	}
 
+	/*printf("ib_poll_cq returned %d\n", completion_data.wc_type);fflush(stdout);*/
 #ifdef HAVE_32BIT_POINTERS
 	ibu = (ibu_t)(((ibu_work_id_handle_t*)&completion_data.wr_id)->data.ptr);
 	mem_ptr = (void*)(((ibu_work_id_handle_t*)&completion_data.wr_id)->data.mem);
@@ -1703,3 +1728,5 @@ int ibu_get_lid()
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_GET_LID);
     return IBU_Process.lid;
 }
+
+#endif /* USE_IB_IBAL */

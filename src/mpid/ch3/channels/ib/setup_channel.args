@@ -1,0 +1,11 @@
+for arg in $ac_configure_args ; do
+  case $arg in 
+    --with-ib=*)
+    ibu_name=`echo $arg | sed 's/--with-ib=//'`
+    ;;
+  esac
+done
+
+if test -z "$ibu_name" ; then
+  ibu_name='ibal'
+fi

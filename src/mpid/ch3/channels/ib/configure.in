@@ -23,6 +23,33 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
+file=${master_top_srcdir}/src/mpid/${device_name}/channels/ib/setup_channel.args
+if test -f ${file} ; then
+    . ${file}
+else
+    echo "Error: ${file} not found"
+    exit 1
+fi
+for arg in $ibu_name ; do
+  case $arg in 
+    ibal)
+    AC_DEFINE(USE_IB_IBAL,,[Define to use the SourceForge ibal interface])
+    ;;
+  esac
+  case $arg in
+    vapi)
+    AC_DEFINE(USE_IB_VAPI,,[Define to use the Mellanox vapi interface])
+    ;;
+  esac
+done
+
+dnl if "x$ibu_name" = "xibal" ; then
+dnl AC_DEFINE(USE_IB_IBAL,,[Define to use the SourceForge ibal interface])
+dnl fi
+dnl if "x$ibu_name" = "xvapi" ; then
+dnl AC_DEFINE(USE_IB_VAPI,,[Define to use the Mellanox vapi interface])
+dnl fi
+
 PAC_PROG_MAKE
 
 AC_DEFINE(MPID_IBU_TYPE_UNIX,,[Define to use unix iovecs])
@@ -44,14 +71,16 @@ AC_CHECK_HEADERS(				\
 AC_SEARCH_LIBS(socket,socket)
 AC_SEARCH_LIBS(gethostbyname,nsl)
 
-IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
+dnl IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
+IB_LIBS="$IB_LIBS -lallib -lcomplib -lpthread -ldl"
 LIBS=$save_libs
 AC_SUBST(IB_LIBS)
 
 dnl IB_CPPFLAGS="$IB_CPPFLAGS -I/usr/mellanox/include -I/usr/mellanox/wrap"
 dnl AC_SUBST(IB_CPPFLAGS)
 
-IB_LDFLAGS="$IB_LDFLAGS -L/usr/mellanox/lib"
+dnl IB_LDFLAGS="$IB_LDFLAGS -L/usr/mellanox/lib"
+IB_LDFLAGS="$IB_LDFLAGS -L/usr/sf-iba/iba/linuxuser/bin/x86/2.4.18-19.7.x/lib/free"
 AC_SUBST(IB_LDFLAGS)
 
 AC_SUBST(device_name)

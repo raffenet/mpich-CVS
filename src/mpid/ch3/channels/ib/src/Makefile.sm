@@ -3,6 +3,6 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_describe_states.c ch3_finalize.c ch3_init.c \
  ch3_iread.c ch3_isend.c ch3_isendv.c ch3_istartmsg.c ch3_istartmsgv.c \
  ch3_iwrite.c ch3_request.c \
- ibu.c ch3_setup_connections.c ch3_progress.c \
+ ibu.ibal.c ibu.vapi.c ch3_setup_connections.c ch3_progress.c \
  ch3_cancel_send.c ch3_comm_spawn_multiple.c \
  ch3_open_port.c ch3_comm_accept.c ch3_comm_connect.c

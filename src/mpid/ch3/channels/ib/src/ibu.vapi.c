@@ -6,8 +6,14 @@
 
 #include "mpidimpl.h"
 #include "ibu.h"
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
+
+#ifdef USE_IB_VAPI
 
 struct ibuBlockAllocator_struct
 {
@@ -1755,3 +1761,5 @@ int ibu_get_lid()
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_GET_LID);
     return IBU_Process.lid;
 }
+
+#endif /* USE_IB_VAPI */

@@ -296,7 +296,7 @@ static inline void handle_written(MPIDI_VC * vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_WRITTEN);
     
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
+    /*MPIDI_DBG_PRINTF((60, FCNAME, "entering"));*/
     while (vc->ib.send_active != NULL)
     {
 	MPID_Request * req = vc->ib.send_active;
@@ -379,7 +379,7 @@ static inline void handle_written(MPIDI_VC * vc)
 	}
     }
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+    /*MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));*/
 
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
 }
