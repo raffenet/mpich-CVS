@@ -1968,9 +1968,9 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		if (iter != NULL)
 		    iter->accepted = 1;
 		out->op_type = MPIDU_SOCK_OP_ACCEPT;
-		if (sock->sock == INVALID_SOCKET)
+		if (sock->listen_sock == INVALID_SOCKET)
 		{
-		    MPIU_Error_printf("returning OP_ACCEPT with an INVALID_SOCKET\n");
+		    MPIU_Error_printf("returning MPIDU_SOCK_OP_ACCEPT with an INVALID_SOCKET for the listener\n");
 		}
 		out->num_bytes = num_bytes;
 		out->error = MPI_SUCCESS;
