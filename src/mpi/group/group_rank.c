@@ -46,6 +46,7 @@ int MPI_Group_rank(MPI_Group group, int *rank)
     static const char FCNAME[] = "MPI_Group_rank";
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_RANK);
     /* Get handles to MPI objects. */
@@ -54,10 +55,7 @@ int MPI_Group_rank(MPI_Group group, int *rank)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not value, it will be reset to null */
@@ -70,6 +68,9 @@ int MPI_Group_rank(MPI_Group group, int *rank)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    *rank = group_ptr->rank;
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANK);
     return MPI_SUCCESS;
 }

@@ -46,6 +46,7 @@ int MPI_Group_size(MPI_Group group, int *size)
     static const char FCNAME[] = "MPI_Group_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_SIZE);
     /* Get handles to MPI objects. */
@@ -54,10 +55,7 @@ int MPI_Group_size(MPI_Group group, int *size)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not value, it will be reset to null */
@@ -69,6 +67,10 @@ int MPI_Group_size(MPI_Group group, int *size)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    *size = group_ptr->size;
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_SIZE);
     return MPI_SUCCESS;
