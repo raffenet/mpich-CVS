@@ -2,3 +2,10 @@ This is SLOG-2 Standard Development Kit
 
 This version also contains a prototype Jumpshot, and sample implementation
 of TRACE-API in trace_sample/
+
+5/6/03 added Join method support in Jumpshot for AIX's UTE converted
+       slog2 file, so disconnected bebit states can be connected in
+       connected view as 1 state.
+
+5/6/03 added an extra filter in traceTOslog2 and clogTOslog2 to remove
+       unused categories
