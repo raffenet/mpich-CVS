@@ -1547,39 +1547,6 @@ configfile_loop:
 	    }
 	}
 
-	if (channel[0] != '\0')
-	{
-	    /* channel specified on the command line */
-	    result = SMPD_SUCCESS;
-	}
-	else
-	{
-	    if (smpd_setting_channel[0] != '\0')
-	    {
-		/* channel specified in the smpd settings */
-		strncpy(channel, smpd_setting_channel, 20);
-	    }
-	}
-	if (result == SMPD_SUCCESS)
-	{
-	    if ((strcmp(channel, "auto") != 0) && (strcmp(channel, "default") != 0))
-	    {
-		/* FIXME: Should we check to make sure the channel is valid? */
-		/* Use the MPICH2_CHANNEL environment variable to pass the specified channel */
-		env_node = (smpd_env_node_t*)malloc(sizeof(smpd_env_node_t));
-		if (env_node == NULL)
-		{
-		    printf("Error: malloc failed to allocate structure to hold an environment variable.\n");
-		    smpd_exit_fn("mp_parse_command_args");
-		    return SMPD_FAIL;
-		}
-		strncpy(env_node->name, "MPICH2_CHANNEL", SMPD_MAX_NAME_LENGTH);
-		strncpy(env_node->value, channel, SMPD_MAX_VALUE_LENGTH);
-		env_node->next = genv_list;
-		genv_list = env_node;
-	    }
-	}
-
 	/* remaining args are the executable and it's args */
 	if (argc < 2)
 	{
@@ -1906,75 +1873,86 @@ configfile_loop:
     /* create the cliques */
     smpd_create_cliques(smpd_process.launch_list);
 
-    /* If the user specified auto channel selection then set the channel here */
-    /* shm < 8 processes on one node
-     * sshm >= 8 processes on one node
-     * ssm multiple nodes
-     */
-    if ((strcmp(channel, "auto") == 0) && (smpd_process.launch_list != NULL))
+    if (smpd_process.launch_list != NULL)
     {
-	smpd_launch_node_t *iter;
-	int id;
-	int multiple_nodes = 0;
-
-	/* determine whether or not there are multiple nodes */
-	id = smpd_process.launch_list->host_id;
-	iter = smpd_process.launch_list;
-	while (iter)
+	if ((channel[0] == '\0') && (smpd_setting_channel[0] != '\0'))
 	{
-	    if (iter->host_id != id)
-	    {
-		multiple_nodes = 1;
-		break;
-	    }
-	    iter = iter->next;
+	    /* channel specified in the smpd settings */
+	    strncpy(channel, smpd_setting_channel, 20);
 	}
+	if (channel[0] != '\0')
+	{
+	    smpd_launch_node_t *iter;
+	    /* If the user specified auto channel selection then set the channel here */
+	    /* shm < 8 processes on one node
+	    * sshm >= 8 processes on one node
+	    * ssm multiple nodes
+	    */
+	    if ((strcmp(channel, "auto") == 0) && (smpd_process.launch_list != NULL))
+	    {
+		int id;
+		int multiple_nodes = 0;
 
-	/* set the channel */
-	if (multiple_nodes)
-	{
-	    if (smpd_setting_internode_channel[0] != '\0')
-	    {
-		/* Use the internode channel specified in the smpd settings */
-		strncpy(channel, smpd_setting_internode_channel, 20);
-	    }
-	    else
-	    {
-		/* Use the default sock-shared-memory internode channel */
-		strcpy(channel, "ssm");
-	    }
-	}
-	else
-	{
-	    if (smpd_process.launch_list->nproc < 8)
-	    {
-		/* small jobs use the shared memory channel */
-		strcpy(channel, "shm");
-	    }
-	    else
-	    {
-		/* larger jobs use the scalable shared memory channel */
-		strcpy(channel, "sshm");
-	    }
-	}
+		/* determine whether or not there are multiple nodes */
+		id = smpd_process.launch_list->host_id;
+		iter = smpd_process.launch_list;
+		while (iter)
+		{
+		    if (iter->host_id != id)
+		    {
+			multiple_nodes = 1;
+			break;
+		    }
+		    iter = iter->next;
+		}
 
-	/* add the channel to the environment of each process */
-	iter = smpd_process.launch_list;
-	while (iter)
-	{
-	    maxlen = (int)strlen(iter->env);
-	    env_str = &iter->env[maxlen];
-	    maxlen = SMPD_MAX_ENV_LENGTH - maxlen - 1;
-	    if (maxlen > 15) /* At least 16 characters are needed to store MPICH2_CHANNEL=x */
-	    {
-		*env_str = ' ';
-		env_str++;
-		MPIU_Str_add_string_arg(&env_str, &maxlen, "MPICH2_CHANNEL", channel);
-		/* trim the trailing white space */
-		env_str--;
-		*env_str = '\0';
+		/* set the channel */
+		if (multiple_nodes)
+		{
+		    if (smpd_setting_internode_channel[0] != '\0')
+		    {
+			/* Use the internode channel specified in the smpd settings */
+			strncpy(channel, smpd_setting_internode_channel, 20);
+		    }
+		    else
+		    {
+			/* Use the default sock-shared-memory internode channel */
+			strcpy(channel, "ssm");
+		    }
+		}
+		else
+		{
+		    if (smpd_process.launch_list->nproc < 8)
+		    {
+			/* small jobs use the shared memory channel */
+			strcpy(channel, "shm");
+		    }
+		    else
+		    {
+			/* larger jobs use the scalable shared memory channel */
+			strcpy(channel, "sshm");
+		    }
+		}
 	    }
-	    iter = iter->next;
+
+	    /* add the channel to the environment of each process */
+	    iter = smpd_process.launch_list;
+	    while (iter)
+	    {
+		maxlen = (int)strlen(iter->env);
+		env_str = &iter->env[maxlen];
+		maxlen = SMPD_MAX_ENV_LENGTH - maxlen - 1;
+		if (maxlen > 15) /* At least 16 characters are needed to store MPICH2_CHANNEL=x */
+		{
+		    *env_str = ' ';
+		    env_str++;
+		    MPIU_Str_add_string_arg(&env_str, &maxlen, "MPICH2_CHANNEL", channel);
+		    /* trim the trailing white space */
+		    env_str--;
+		    *env_str = '\0';
+		}
+		iter = iter->next;
+	    }
 	}
     }
 
