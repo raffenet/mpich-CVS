@@ -71,6 +71,7 @@ sub ProcessFile {
     %warningmsgs = ();
     &ClearMismatchedStates;
     &ClearNested;
+    $notInNested = 1;
     
     open( FD, "<$filename" ) || die "Could not open $filename";
     $line_num = 0;
@@ -97,6 +98,12 @@ sub ProcessFile {
 	elsif (/\/\*\s*style:\s*c\+\+ header/) {
 	    $cxx_header = 1;
 	}
+	elsif (/\/\*\s*begin:nested\s*\*\//) {
+	    $notInNested = 0;
+	}
+	elsif (/\/\*\s*end:nested\s*\*\//) {
+	    $notInNested = 1;
+	}
 	# The preamble is within a comment
 	&CheckForPreamble( $_ );
 	$_ = StripComments( FD, $_ );
@@ -117,10 +124,27 @@ sub ProcessFile {
 	    }
 	    s/\/\/.*//;
 	}
-	&CheckForBadSubs( $_, $filename );
+	# Skip any single function calls withing DEBUG
+	if (!/DEBUG\([^\(\)]*\([^\(\)]*\)/ && !$withinRomio) {
+	    # FIXME: eventually we need to include ROMIO in these checks
+	    &CheckForBadSubs( $_, $filename );
+	}
         &CheckForBadDefines( FD, $_, $filename );
 	&CheckForMismatchedStates ( FD, $_, $filename );
-	&CheckForNested( FD, $_, $filename );
+	if ($notInNested) {
+	    &CheckForNested( FD, $_, $filename );
+	}
+	if (! $filename =~ /binding\/f77/ &&
+	    ! $filename =~ /include \/nmpi.h/) {
+	    # Allow PMPI calls within the f77 binding
+	    &CheckForPMPI( FD, $_, $filename );
+	}
+	# We also need to check for the use of MPI routines from within
+	# the code (only use NMPI), at least for all of the MPI
+	# implementation code.  Withing src/mpi/*, we could look for
+	# MPI_([A-Z][a-z0-9_]*)[^;]*; and then complain if $1 is not one
+	# of Status, Comm, Group, Win, File, Aint, Fint, Offset, Request,
+	# File, Info, Datatype .
     }
     # Output summary messages
     foreach $key (keys(%warningmsgs)) {
@@ -350,6 +374,10 @@ sub CheckForMismatchedStates {
 }
 #
 # Check for nested routine calls (NMPI) without Nest_incr/decr
+# Special feature:
+# /* begin:nested */ and /* end:nested */ can be used around
+# routines that are only called with by another routine that
+# has incremented the nested count
 $nested_seen = 0;
 
 sub ClearNested {
@@ -378,7 +406,35 @@ sub CheckForNested {
     elsif ($curline =~ /MPIR_Nest_incr/) {
 	$nested_seen ++;
     }
+    elsif ($curline =~ /MPIR_Nest_decr/) {
+	# We do not decrement nested seen since we do not analyze program 
+	# structure
+	# $nested_seen --;
+	;
+    }
 }
+# Check for PMPI routine calls (normally, all calls should use NMPI)
+sub CheckForPMPI {
+    my $FD = $_[0];
+    my $curline = $_[1];
+    my $filename = $_[2];
+    
+    # Skip definitions
+    if ($curline =~ /#define\s+MPI/) { # Skip #define MPI_xxx PMPI_xxx
+	return;
+    }
+    if ($curline =~ /pragma/) { # Skip pragmas containing PMPI
+	return;
+    }
+    if ($curline =~ /PMPI_LOCAL/) { # Skip the PMPI_LOCAL defn
+	return;
+    }
+    if ($curline =~ /PMPI_([A-Za-z0-9_]*)/) {
+	$name = $1;
+	print "Error: PMPI_$name called in $filename\[$line_num\]\n";
+    }
+}
+
 #
 # Check for proper preamble.  Record during file reading and check at end
 $saw_c_style   = 0;
