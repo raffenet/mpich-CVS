@@ -92,7 +92,7 @@ int MPI_Type_create_hindexed(int count,
 				  oldtype,
 				  newtype);
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

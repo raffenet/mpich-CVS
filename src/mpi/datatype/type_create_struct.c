@@ -92,7 +92,7 @@ int MPI_Type_create_struct(int count,
 				 array_of_displacements,
 				 array_of_types,
 				 newtype);
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
