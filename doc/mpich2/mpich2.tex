@@ -1619,6 +1619,66 @@ MPI-2, from intracommunicators to intercommunicators.
 \code{MPI_Win_copy_attr_function}\\
 \code{MPI_Win_errhandler_fn}\\
 
+\section{Development Plan}
+\label{sec:development}
+This section proposes a development and implementation plan.
+
+\begin{enumerate}
+\item ADI Implementation
+    \begin{enumerate}
+    \item Multi-method ADI for shared memory, VIA, and TCP/UDP
+	\begin{enumerate}
+	\item Design and implement general datatype point-to-point
+	\item Design and implement general datatype collective
+        (layered on ADI segment and stream interfaces)
+  	\item Design and implement RMA
+	\item Design and implement Dynamic and connect with BNR
+	\end{enumerate}
+    \item ADI on \code{MPID_CORE}
+        \begin{enumerate}
+	\item Implement all ADI-3 modules on top of the core.  Refine
+        the design of the core during this process.   
+        \end{enumerate}
+    \item Implement common ADI services.  These are modules that are
+    needed by other ADI modules that do not (directly) involve
+    interprocess communication but will be common for most ADI
+    implementations, including both the core and the multi-method
+    implementation. 
+	\begin{enumerate}
+	\item Error handling
+	\item Attributes
+	\item Topology
+	\item Datatype
+	\item Group
+	\item Timer
+	\item Utility
+	\end{enumerate}
+    \end{enumerate}
+\item MPICH Implementation on ADI
+    \begin{enumerate}
+    \item For each MPI routine, write the ``top'': structured comment,
+    routine header and error checking.
+    \item Implement the action of each MPI routine in terms of the
+    full ADI-3 design.
+    \end{enumerate}
+\item Test Suite
+    \begin{enumerate}
+    \item Design standard test harness: test communicators, datatypes,
+    operation mixtures, run script, and result checking.
+    \end{enumerate}
+\item Deployment
+    \begin{enumerate}
+    \item Implement new configure.  Design database for both configure
+    macros and for data (such as compiler options and names) that
+    configure cannot determine.
+    \item Shared library support.
+    \end{enumerate}
+\end{enumerate}
+
+%
+% Eventually include table or a project as Postscript from project.
+%
+
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
 \bibliography{/home/MPI/allbib,/home/gropp/Update/new/gropp,mpich2}

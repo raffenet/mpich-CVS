@@ -217,12 +217,24 @@ instead of \code{MPID_Rhcv}.
 This is not the only small set of routines from which MPI can be
 implemented.  However, the one-sided operations defined in MPI-2 make
 it difficult to use a two-sided (message-passing-like) core.
-Alternately, \code{MPID_Put} isn't actually necessary; the same
+Alternately, \code{MPID_Put_contig} isn't actually necessary; the same
 functionality is provided by \code{MPID_Rhcv}.  However, experience
 with active messages, as well as current trends in interconnects,
 suggests that a remote memory put operation that does not require any
 other processing at the target (destination) should be separated from
 the more general active-message invocation (\code{MPID_Rhcv}).
+
+\subsubsection{The Role of the CORE}
+The \code{MPID\_CORE} is intended to provide a small set of routines
+with which all of MPI can be implemented.  These routines are
+\emph{not} intended as the only approach for implementing the full
+ADI.  In particular, the remote handler routine, \code{MPID_Rhcv}, is
+not directly by any implementation of the MPI routines.  That is, the
+implementation of the MPI routines will call routines from various ADI
+modules; it is the implementation of the ADI routines \emph{for the
+core device} that use \code{MPID_Rhcv}.  It is possible to implement
+the ADI without implementing \code{MPID_Rhcv} by implementing all of
+the other ADI modules.
 
 \subsection{Dynamic}
 For a full MPI-2 implementation, the dynamic module must also be
