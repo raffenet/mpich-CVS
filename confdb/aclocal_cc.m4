@@ -955,23 +955,24 @@ dnl
 dnl NOT TESTED
 AC_DEFUN(PAC_PROG_C_BROKEN_COMMON,[
 AC_MSG_CHECKING([whether global variables handled properly])
+AC_MSG_REQUIRE([AC_PROG_RANLIB])
 ac_cv_prog_cc_globals_work=no
 echo 'extern int a; int a;' > conftest1.c
 echo 'extern int a; int main( ){ return a; }' > conftest2.c
 if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
-    if ${AR-ar} cr libconftest.a conftest1.o ; then
-        if ${RANLIB-:} libconftest.a ; then
-            if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a ; then
+    if ${AR-ar} cr libconftest.a conftest1.o >/dev/null 2>&1 ; then
+        if ${RANLIB-:} libconftest.a >/dev/null 2>&1 ; then
+            if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >>conftest.out 2>&1 ; then
 		# Success!  C works
 		ac_cv_prog_cc_globals_work=yes
 	    else
 	        # Failure!  Do we need -fno-common?
-	        ${CC-cc} $CFLAGS -fno-common -c conftest1.c > conftest.out 2>&1
+	        ${CC-cc} $CFLAGS -fno-common -c conftest1.c >> conftest.out 2>&1
 		rm -f libconftest.a
 		${AR-ar} cr libconftest.a conftest1.o
 	        ${RANLIB-:} libconftest.a
-	        if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a ; then
-		    ac_cv_prob_cc_globals_work="needs -fno-common"
+	        if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
+		    ac_cv_prog_cc_globals_work="needs -fno-common"
 		    CFLAGS="$CFLAGS -fno-common"
 		fi
 	    fi
