@@ -34,8 +34,11 @@ void MPIDI_CH3_Progress_poke(void);
 /*
  * Channel utility prototypes
  */
-MPID_Request * MPIDI_CH3U_Request_FUOAP(int, int, int, int *);
-MPID_Request * MPIDI_CH3U_Request_FPOAU(MPIDI_Message_match *, int *);
+MPID_Request * MPIDI_CH3U_Request_FU(int, int, int);
+MPID_Request * MPIDI_CH3U_Request_FDU(int, int, int);
+MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int *);
+MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match *);
+MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match *, int *);
 int MPIDI_CH3U_Request_adjust_iov(MPID_Request *, int);
 int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC *, MPIDI_CH3_Pkt_t *);
 int MPIDI_CH3U_Handle_recv_req(MPIDI_VC *, MPID_Request *);
@@ -54,7 +57,7 @@ MPIU_Object_add_ref(req)
     assert(req->ref_count >= 0);				\
 }
 
-#define MPID_Request_free(req)					\
+#define MPID_Request_release(req)				\
 {								\
     int ref_count;						\
     								\
