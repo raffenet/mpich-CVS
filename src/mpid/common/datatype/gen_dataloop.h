@@ -305,24 +305,6 @@ typedef struct DLOOP_Segment {
     /* other, device-specific information */
 } DLOOP_Segment;
 
-#if 0
-
-#ifdef HAVE_WINSOCK2_H
-#include <winsock2.h>
-#define DLOOP_VECTOR         WSABUF
-#define DLOOP_VECTOR_LEN     len
-#define DLOOP_VECTOR_BUF     buf
-#else
-#ifdef HAVE_SYS_UIO_H
-#include <sys/uio.h>
-#endif
-#define DLOOP_VECTOR         struct iovec
-#define DLOOP_VECTOR_LEN     iov_len
-#define DLOOP_VECTOR_BUF     iov_base
-#endif
-#define DLOOP_VECTOR_LIMIT   16
-
-
 /* MOVING PROTOTYPES OUT OF HERE */
 
 /* Dataloop functions */
@@ -347,27 +329,18 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Handle handle,
 				 struct DLOOP_Segment *segp);
 
-void PREPEND_PREFIX(Segment_pack)(struct DLOOP_Segment *segp,
-				  DLOOP_Offset first,
-				  DLOOP_Offset *lastp,
-				  DLOOP_Buffer pack_buffer);
+void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
+					int first, 
+					int *lastp,
+					int (*piecefn)(DLOOP_Handle,
+						       int,
+						       int,
+						       void *,
+						       void *), 
+					void *pieceparams);
 
-void PREPEND_PREFIX(Segment_unpack)(struct DLOOP_Segment *segp,
-				    DLOOP_Offset first,
-				    DLOOP_Offset *lastp,
-				    DLOOP_Buffer unpack_buffer);
-
-void PREPEND_PREFIX(Segment_pack_vector)(struct DLOOP_Segment *segp,
-					 DLOOP_Offset first,
-					 DLOOP_Offset *lastp,
-					 DLOOP_VECTOR *vector,
-					 DLOOP_Offset *lengthp);
-
-void PREPEND_PREFIX(Segment_unpack_vector)(struct DLOOP_Segment *segp,
-					   DLOOP_Offset first,
-					   DLOOP_Offset *lastp,
-					   DLOOP_VECTOR *vector,
-					   DLOOP_Offset *lengthp);
-#endif
 
 #endif
+
+
+

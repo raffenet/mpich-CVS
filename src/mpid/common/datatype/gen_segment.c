@@ -30,67 +30,7 @@
  *   to segment functionality
  */
 
-/* DLOOP_Segment_piece_params
- *
- * This structure is used to pass function-specific parameters into our 
- * segment processing function.  This allows us to get additional parameters
- * to the functions it calls without changing the prototype.
- *
- * TODO: MOVE THIS OUT AND MAKE IT USE-DEPENDENT
- */
-struct DLOOP_Segment_piece_params {
-    union {
-        struct {
-            char *pack_buffer;
-        } pack;
-        struct {
-            DLOOP_VECTOR *vectorp;
-            int index;
-            int length;
-        } pack_vector;
-        struct {
-            char *unpack_buffer;
-        } unpack;
-        struct {
-            int stream_off;
-        } print;
-    } u;
-};
-
 static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp);
-
-
-/* TODO: MOVE THESE ALL OUT AND MAKE THEM USE-DEPENDENT */
-static int DLOOP_Segment_piece_print(DLOOP_Handle handle,
-				     int dbufoff, 
-				     int size,
-				     void *dbufp,
-				     struct DLOOP_Segment_piece_params *paramp);
-static int DLOOP_Segment_piece_pack(DLOOP_Handle handle,
-				    int dbufoff, 
-				    int size,
-				    void *dbufp,
-				    struct DLOOP_Segment_piece_params *paramp);
-static int DLOOP_Segment_piece_pack_vector(DLOOP_Handle handle,
-					   int dbufoff, 
-					   int size,
-					   void *dbufp,
-					   struct DLOOP_Segment_piece_params *paramp);
-static int DLOOP_Segment_piece_unpack(DLOOP_Handle handle,
-				      int dbufoff, 
-				      int size,
-				      void *dbufp,
-				      struct DLOOP_Segment_piece_params *paramp);
-
-static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
-				     int first, 
-				     int *lastp,
-				     int (*piecefn)(DLOOP_Handle,
-						    int,
-						    int,
-						    void*,
-						    struct DLOOP_Segment_piece_params *), 
-				     struct DLOOP_Segment_piece_params *pieceparams);
 
 /*
  * NOT USING OPTIMIZED DATALOOPS YET (SINCE THEY DON'T EXIST <SMILE>)
@@ -241,185 +181,6 @@ void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp)
     return;
 }
 
-
-/* Segment_pack - we need to implement this if for no other reason
- * than for performance testing
- *
- * Input Parameters:
- * segp - pointer to segment
- * pack_buffer - pointer to buffer to pack into
- * first - first byte index to be packed (or actually packed (??))
- *
- * InOut Parameters:
- * last - pointer to last byte index to be packed plus 1 (makes math easier)
- *
- * This and the similar functions all set up a piece_params structure that
- * they then pass to DLOOP_Segment_manipulate along with the function that 
- * they want called on each piece.  So in this case DLOOP_Segment_manipulate
- * will call DLOOP_Segment_piece_pack() on each piece of the buffer to pack,
- * where a piece is a basic datatype.
- *
- * Eventually we'll probably ditch this approach to gain some speed, but
- * for now it lets me have one function (_manipulate) that implements our
- * algorithm for parsing.
- *
- */
-void PREPEND_PREFIX(Segment_pack)(struct DLOOP_Segment *segp,
-				  int first,
-				  int *lastp, 
-				  void *pack_buffer)
-{
-    struct DLOOP_Segment_piece_params pack_params;
-    
-    pack_params.u.pack.pack_buffer = pack_buffer;
-    DLOOP_Segment_manipulate(segp, first, lastp, DLOOP_Segment_piece_pack, 
-    &pack_params);
-    return;
-}
-
-/* MPID_Segment_pack_vector
- */
-void PREPEND_PREFIX(Segment_pack_vector)(struct DLOOP_Segment *segp,
-					 DLOOP_Offset first,
-					 DLOOP_Offset *lastp,
-					 DLOOP_VECTOR *vectorp,
-					 DLOOP_Offset *lengthp)
-{
-    struct DLOOP_Segment_piece_params packvec_params;
-
-    packvec_params.u.pack_vector.vectorp = vectorp;
-    packvec_params.u.pack_vector.index   = 0;
-    packvec_params.u.pack_vector.length  = *lengthp;
-
-    DLOOP_Segment_manipulate(segp, first, lastp, 
-                DLOOP_Segment_piece_pack_vector, 
-                &packvec_params);
-
-    /* last value already handled by DLOOP_Segment_manipulate */
-    *lengthp = packvec_params.u.pack_vector.index;
-    return;
-}
-
-/* Segment_unpack
- */
-void PREPEND_PREFIX(Segment_unpack)(struct DLOOP_Segment *segp,
-				    DLOOP_Offset first,
-				    DLOOP_Offset *lastp,
-				    const DLOOP_Buffer unpack_buffer)
-{
-    struct DLOOP_Segment_piece_params unpack_params;
-    
-    unpack_params.u.unpack.unpack_buffer = (DLOOP_Buffer) unpack_buffer;
-    DLOOP_Segment_manipulate(segp, first, lastp, 
-			    DLOOP_Segment_piece_unpack, 
-			    &unpack_params);
-    return;
-}
-
-
-/* DLOOP_Segment_piece_pack_vector
- */
-static int DLOOP_Segment_piece_pack_vector(DLOOP_Handle handle,
-					   int dbufoff, 
-					   int size,
-					   void *dbufp,
-					   struct DLOOP_Segment_piece_params *paramp)
-{
-#ifdef SP_VERBOSE
-    printf("\t[index=%d, loc=%x, size=%d]\n", paramp->u.pack_vector.index,
-        (unsigned) dbufp + dbufoff, size);
-#endif
-    
-    /* for now we'll just be stupid about this */
-    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_BUF=
-        (char*)dbufp + dbufoff;
-    paramp->u.pack_vector.vectorp[paramp->u.pack_vector.index].DLOOP_VECTOR_LEN=
-        size;
-    
-    /* it would be a good idea to aggregate contiguous regions here! */
-    
-    paramp->u.pack_vector.index++;
-    if (paramp->u.pack_vector.index == paramp->u.pack_vector.length) {
-        /* we have used up our entire vector buffer; quit */
-        return 1;
-    }
-    else {
-        return 0;
-    }
-}
-
-/* Segment_unpack_vector
- *
- * Q: Should this be any different from pack vector???
- */
-void PREPEND_PREFIX(Segment_unpack_vector)(struct DLOOP_Segment *segp,
-					   DLOOP_Offset first,
-					   DLOOP_Offset *lastp,
-					   DLOOP_VECTOR *vectorp,
-					   DLOOP_Offset *lengthp)
-{
-    PREPEND_PREFIX(Segment_pack_vector)(segp, first, lastp, vectorp, lengthp);
-    return;
-}
-
-/* DLOOP_Segment_piece_unpack
- */
-static int DLOOP_Segment_piece_unpack(DLOOP_Handle handle, int dbufoff, 
-int size, void *dbufp, struct DLOOP_Segment_piece_params *paramp)
-{
-#ifdef SU_VERBOSE
-    printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, dbufoff, 
-        (unsigned) dbufp, (unsigned) paramp->u.unpack.unpack_buffer, size);
-#endif
-    
-    memcpy((char*)dbufp+dbufoff, paramp->u.unpack.unpack_buffer, size);
-    paramp->u.unpack.unpack_buffer += size;
-    return 0;
-}
-
-/* DLOOP_Segment_piece_pack
- */
-static int DLOOP_Segment_piece_pack(DLOOP_Handle handle,
-				    int dbufoff,
-				    int size, 
-				    void *dbufp,
-				    struct DLOOP_Segment_piece_params *paramp)
-{
-    /*
-     * h  = handle value
-     * do = datatype buffer offset
-     * dp = datatype buffer pointer
-     * bp = pack buffer pointer (current location, incremented as we go)
-     * sz = size of datatype (guess we could get this from handle value if
-     *      we wanted...)
-     */
-#ifdef SP_VERBOSE
-    printf("\t[h=%x, do=%d, dp=%x, bp=%x, sz=%d]\n", handle, dbufoff, 
-        (unsigned) dbufp, (unsigned) paramp->u.pack.pack_buffer, size);
-#endif
-
-    memcpy(paramp->u.pack.pack_buffer, (char*)dbufp+dbufoff, size);
-    paramp->u.pack.pack_buffer += size;
-    return 0;
-}
-
-/* DLOOP_Segment_piece_print
- */
-static int DLOOP_Segment_piece_print(DLOOP_Handle handle,
-				     int dbufoff,
-				     int size,
-				     void *dbufp,
-				     struct DLOOP_Segment_piece_params *paramp)
-{
-#ifdef D_VERBOSE
-    printf("\t[h=%x, do=%d, dp=%x, sz=%d]\n", handle, dbufoff, 
-       (unsigned) dbufp, size);
-#endif
-    return 0;
-}
-
-
-
 /* DLOOP_Segment_manipulate - do something to a segment
  *
  * This function does all the work, calling the piecefn passed in when it 
@@ -458,15 +219,15 @@ do { \
     cur_elmp->curoffset  = 0; \
 } while (0)
 
-static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
-				     int first, 
-				     int *lastp, 
-				     int (*piecefn)(DLOOP_Handle,
-						    int,
-						    int,
-						    void *,
-						    struct DLOOP_Segment_piece_params *), 
-				     struct DLOOP_Segment_piece_params *pieceparams)
+void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
+					int first, 
+					int *lastp, 
+					int (*piecefn)(DLOOP_Handle,
+						       int,
+						       int,
+						       void *,
+						       void *), 
+					void *pieceparams)
 {
     int ret, count_index, block_index, piece_size, basic_size, dtype_size, partial_flag;
     struct DLOOP_Dataloop_stackelm *cur_elmp, *next_elmp;
@@ -497,7 +258,7 @@ static void DLOOP_Segment_manipulate(struct DLOOP_Segment *segp,
 	 * simplifies this code.
 	 */
 	tmp_last = first;
-	DLOOP_Segment_manipulate(segp, 0, &tmp_last, NULL, NULL);
+	PREPEND_PREFIX(Segment_manipulate)(segp, 0, &tmp_last, NULL, NULL);
 	
 	/* verify that we're in the right location */
 	if (tmp_last != first) assert(0);
