@@ -113,8 +113,19 @@ def mpdman():
         conSocket = mpd_get_inet_socket_and_connect(conHost,conPort)  # for cntl msgs
         socketsToSelect[conSocket] = 1
         if spawned:
-            msgToSend = { 'cmd' : 'spawned_child_is_up' }
+            msgToSend = { 'cmd' : 'spawned_child_is_up',
+                          'spawned_id' : environ['MPDMAN_SPAWNED'] }
             mpd_send_one_msg(conSocket,msgToSend)
+            msg = mpd_recv_one_msg(conSocket)
+            if msg['cmd'] != 'preput_info_for_child':
+                mpd_print(1,'invalid msg from parent :%s:' % msg)
+                exit(-1)
+            try:
+                for k in msg['kvs'].keys():
+                    KVSs[default_kvsname][k] = msg['kvs'][k]
+            except:
+                mpd_print(1,'failed to insert preput_info')
+                exit(-1)
         ## NOTE: if you spawn a non-MPI job, it may not send this msg
         ## in which case the pgm will hang
         stdoutToConSocket = mpd_get_inet_socket_and_connect(conHost,conPort)
@@ -291,6 +302,14 @@ def mpdman():
                     elif msg['cmd'] == 'spawned_child_is_up':
                         socketsToSelect[tempSocket] = 1
                         spawnedChildSockets.append(tempSocket)
+                        tempID = msg['spawned_id']
+                        spawnedKVSname = 'mpdman_kvs_for_spawned_' + tempID
+                        msgToSend = { 'cmd' : 'preput_info_for_child',
+                                      'kvs' : KVSs[spawnedKVSname] }
+                        mpd_send_one_msg(tempSocket,msgToSend)
+		        if pmiSocket:  # may have disappeared in early shutdown
+                            pmiMsgToSend = 'cmd=spawn_result status=spawn_done\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         mpd_print(1, 'unknown msg recvd on listenSocket :%s:' % (msg) )
             elif readySocket == lhsSocket:
@@ -574,16 +593,6 @@ def mpdman():
                     readySocket.close()
                 elif msg['cmd'] == 'job_started'  or  msg['cmd'] == 'job_terminated':
                     pass
-                elif msg['cmd'] == 'spawned_child_needs_preput_info':
-                    tempID = msg['spawned_id']
-                    spawnedKVSname = 'mpdman_kvs_for_spawned_' + tempID
-                    msgToSend = { 'cmd' : 'preput_info_for_child',
-                                  'kvs' : KVSs[spawnedKVSname] }
-                    mpd_send_one_msg(readySocket,msgToSend)
-		    if pmiSocket:  # may have disappeared in early shutdown
-                        pmiMsgToSend = 'cmd=spawn_result status=spawn_done\n'
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
-                    ## NOTE: I could now del KVSs[spawnedKVSname]
                 elif msg['cmd'] == 'client_exit_status':
                     if myRank == 0:
                         if conSocket:
@@ -636,20 +645,6 @@ def mpdman():
                             mpd_send_one_msg_noprint(conSocket,msgToSend)
                     elif parsedMsg['cmd'] == 'init':
                         pmiCollectiveJob = 1
-                        if spawned:
-                            msgToSend = { 'cmd' : 'spawned_child_needs_preput_info',
-                                          'spawned_id' : environ['MPDMAN_SPAWNED'] }
-                            mpd_send_one_msg(conSocket,msgToSend)
-                            msg = mpd_recv_one_msg(conSocket)
-                            if msg['cmd'] != 'preput_info_for_child':
-                                mpd_print(1,'invalid msg from parent :%s:' % msg)
-                                exit(-1)
-                            try:
-                                for k in msg['kvs'].keys():
-                                    KVSs[default_kvsname][k] = msg['kvs'][k]
-                            except:
-                                mpd_print(1,'failed to insert preput_info')
-                                exit(-1)
                     elif parsedMsg['cmd'] == 'get_my_kvsname':
                         pmiMsgToSend = 'cmd=my_kvsname kvsname=%s\n' % (default_kvsname)
                         mpd_send_one_line(pmiSocket,pmiMsgToSend)
