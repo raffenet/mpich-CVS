@@ -100,12 +100,13 @@ public class TreeFloor extends TreeMap
     }
 
     public Iterator iteratorOfDrawables( final TimeBoundingBox  tframe,
+                                         boolean isComposite,
                                          boolean isForeItr, boolean isNestable )
     {
         if ( isForeItr )
-            return new ForeItrOfDrawables( tframe, isNestable );
+            return new ForeItrOfDrawables( tframe, isComposite, isNestable );
         else
-            return new BackItrOfDrawables( tframe, isNestable );
+            return new BackItrOfDrawables( tframe, isComposite, isNestable );
     }
 
     public Iterator iteratorOfShadows( final TimeBoundingBox  tframe,
@@ -143,13 +144,16 @@ public class TreeFloor extends TreeMap
     {
         private static final boolean          INCRE_STARTTIME_ORDER = true;
         private              Iterator         nodes_itr;
+        private              boolean          isComposite;
         private              boolean          isNestable;
 
         public ForeItrOfDrawables( final TimeBoundingBox  tframe,
+                                         boolean          in_isComposite,
                                          boolean          in_isNestable )
         {
             super( tframe );
             isNestable  = in_isNestable;
+            isComposite = in_isComposite;
             nodes_itr   = values().iterator();
             super.setObjGrpItr( this.nextObjGrpItr( tframe ) );
         }
@@ -163,7 +167,7 @@ public class TreeFloor extends TreeMap
                 while ( nodes_itr.hasNext() ) {
                     node       = (TreeNode) nodes_itr.next();
                     if ( node.overlaps( tframe ) )
-                        return node.iteratorOfDrawables( tframe,
+                        return node.iteratorOfDrawables( tframe, isComposite,
                                                          INCRE_STARTTIME_ORDER,
                                                          isNestable );
                 }
@@ -177,13 +181,16 @@ public class TreeFloor extends TreeMap
     {
         private static final boolean          DECRE_STARTTIME_ORDER = false;
         private              ListIterator     nodes_itr;
+        private              boolean          isComposite;
         private              boolean          isNestable;
 
         public BackItrOfDrawables( final TimeBoundingBox  tframe,
+                                         boolean          in_isComposite,
                                          boolean          in_isNestable )
         {
             super( tframe );
             isNestable  = in_isNestable;
+            isComposite = in_isComposite;
             List nodes  = new ArrayList( values() );
             nodes_itr   = nodes.listIterator( nodes.size() );
             super.setObjGrpItr( this.nextObjGrpItr( tframe ) );
@@ -198,7 +205,7 @@ public class TreeFloor extends TreeMap
                 while ( nodes_itr.hasPrevious() ) {
                     node       = (TreeNode) nodes_itr.previous();
                     if ( node.overlaps( tframe ) )
-                        return node.iteratorOfDrawables( tframe,
+                        return node.iteratorOfDrawables( tframe, isComposite,
                                                          DECRE_STARTTIME_ORDER,
                                                          isNestable );
                 }

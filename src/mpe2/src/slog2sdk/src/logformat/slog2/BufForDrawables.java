@@ -119,9 +119,13 @@ public class BufForDrawables extends BufForObjects
     }
 
     // Iterator of Nestable Drawables in Increasing StartTime order
-    public Iterator nestableForeIterator( final TimeBoundingBox tframe )
+    public Iterator nestableForeIterator( final TimeBoundingBox tframe,
+                                                boolean         isComposite )
     {
-        return new IteratorOfForeDrawables( buf4nestable, tframe );
+        if ( isComposite )
+            return new IteratorOfForeDrawables( buf4nestable, tframe );
+        else
+            return new IteratorOfForePrimitives( buf4nestable, tframe );
     }
     
     // Iterator of Nestless Drawables in Increasing StartTime order
@@ -131,9 +135,13 @@ public class BufForDrawables extends BufForObjects
     }
 
     // Iterator of Nestable Drawables in Decreasing StartTime order
-    public Iterator nestableBackIterator( final TimeBoundingBox tframe )
+    public Iterator nestableBackIterator( final TimeBoundingBox tframe,
+                                                boolean         isComposite )
     {
-        return new IteratorOfBackDrawables( buf4nestable, tframe );
+        if ( isComposite )
+            return new IteratorOfBackDrawables( buf4nestable, tframe );
+        else
+            return new IteratorOfBackPrimitives( buf4nestable, tframe );
     }
 
     // Iterator of Nestless Drawables in Decreasing StartTime order

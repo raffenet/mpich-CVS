@@ -160,23 +160,29 @@ public class TreeFloorList
     }
 
     public Iterator iteratorOfAllDrawables( final TimeBoundingBox  tframe,
+                                                  boolean          isComposite,
                                                   boolean          isForeItr,
                                                   boolean          isNestable )
     {
         if ( isForeItr )
-            return new ForeItrOfDrawables( tframe, isNestable, true );
+            return new ForeItrOfDrawables( tframe, isComposite,
+                                           isNestable, true );
         else
-            return new BackItrOfDrawables( tframe, isNestable, true );
+            return new BackItrOfDrawables( tframe, isComposite,
+                                           isNestable, true );
     }
 
     public Iterator iteratorOfRealDrawables( final TimeBoundingBox  tframe,
+                                                   boolean          isComposite,
                                                    boolean          isForeItr,
                                                    boolean          isNestable )
     {
         if ( isForeItr )
-            return new ForeItrOfDrawables( tframe, isNestable, false );
+            return new ForeItrOfDrawables( tframe, isComposite,
+                                           isNestable, false );
         else
-            return new BackItrOfDrawables( tframe, isNestable, false );
+            return new BackItrOfDrawables( tframe, isComposite,
+                                           isNestable, false );
     }
 
     public Iterator iteratorOfLowestFloorShadows( final TimeBoundingBox tframe,
@@ -208,19 +214,26 @@ public class TreeFloorList
 
     public String toString( final TimeBoundingBox tframe )
     {
+        boolean isComposite      = true;
+        boolean isIncreStartTime = true;
+        boolean isNestable       = true;
         StringBuffer rep = new StringBuffer();
         Iterator dobjs, sobjs;
         int idx;
-        dobjs = this.iteratorOfRealDrawables( tframe, true, true );
+        dobjs = this.iteratorOfRealDrawables( tframe, isComposite,
+                                              isIncreStartTime, true );
         for ( idx = 1; dobjs.hasNext(); idx++ )
             rep.append( idx + ", " + dobjs.next() + "\n" );
-        dobjs = this.iteratorOfRealDrawables( tframe, true, false );
+        dobjs = this.iteratorOfRealDrawables( tframe, isComposite,
+                                              isIncreStartTime, false );
         for ( ; dobjs.hasNext(); idx++ )
             rep.append( idx + ", " + dobjs.next() + "\n" );
-        sobjs = this.iteratorOfLowestFloorShadows( tframe, true, true );
+        sobjs = this.iteratorOfLowestFloorShadows( tframe,
+                                                   isIncreStartTime, true );
         for ( idx = 1; sobjs.hasNext(); idx++ )
             rep.append( idx + ", " + sobjs.next() + "\n" );
-        sobjs = this.iteratorOfLowestFloorShadows( tframe, true, false );
+        sobjs = this.iteratorOfLowestFloorShadows( tframe,
+                                                   isIncreStartTime, false );
         for ( ; sobjs.hasNext(); idx++ )
             rep.append( idx + ", " + sobjs.next() + "\n" );
         return rep.toString();
@@ -228,6 +241,7 @@ public class TreeFloorList
 
     public String toFloorString( final TimeBoundingBox timeframe )
     {
+        boolean isComposite      = true;
         boolean isIncreStartTime = true;
         boolean isNestable       = true;
         StringBuffer rep = new StringBuffer();
@@ -235,6 +249,7 @@ public class TreeFloorList
         for ( int flr = floors.length-1; flr >= 0; flr-- ) {
             rep.append( "\n" + floors[ flr ].toStubString() + "\n" );
             dobjs = floors[ flr ].iteratorOfDrawables( timeframe,
+                                                       isComposite,
                                                        isIncreStartTime,
                                                        isNestable );
             for ( int idx = 1; dobjs.hasNext(); idx++ )
@@ -250,6 +265,7 @@ public class TreeFloorList
      */
     private class ForeItrOfDrawables implements Iterator
     {
+        private static final boolean  IS_FORE_ITR = true;
         /*
            map_obj2itr is a backstore for Iterator of each floor.
            The key of map_obj2itr is the leading drawable out of the Iterator.
@@ -261,6 +277,7 @@ public class TreeFloorList
         private double       next_floor_starttime;
 
         public ForeItrOfDrawables( final TimeBoundingBox  tframe,
+                                         boolean          isComposite,
                                          boolean          isNestable,
                                          boolean          withShadows )
         {
@@ -268,7 +285,8 @@ public class TreeFloorList
             map_obj2itr = new TreeMap( DRAWING_ORDER );
             for ( int idx = floors.length-1; idx >= lowest_depth; idx-- ) {
                 this_floor_itr = floors[ idx ].iteratorOfDrawables(
-                                               tframe, true, isNestable );
+                                               tframe, isComposite,
+                                               IS_FORE_ITR, isNestable );
                 if ( this_floor_itr.hasNext() ) {
                     this_floor_obj = (Drawable) this_floor_itr.next();
                     map_obj2itr.put( this_floor_obj, this_floor_itr );
@@ -276,7 +294,7 @@ public class TreeFloorList
             }
             if ( withShadows ) {
                 this_floor_itr = floors[ lowest_depth ].iteratorOfShadows(
-                                                        tframe, true,
+                                                        tframe, IS_FORE_ITR,
                                                         isNestable );
                 if ( this_floor_itr.hasNext() ) {
                     this_floor_obj = (Shadow) this_floor_itr.next();
@@ -370,6 +388,7 @@ public class TreeFloorList
      */
     private class BackItrOfDrawables implements Iterator
     {
+        private static final boolean  IS_BACK_ITR = false;
         /*
            map_obj2itr is a backstore for Iterator of each floor.
            The key of map_obj2itr is the leading drawable out of the Iterator.
@@ -381,22 +400,25 @@ public class TreeFloorList
         private double       next_floor_starttime;
 
         public BackItrOfDrawables( final TimeBoundingBox  tframe,
+                                         boolean          isComposite,
                                          boolean          isNestable,
                                          boolean          withShadows )
         {
             // map_obj2itr has Drawables arranged in Increasing Starttime order
             map_obj2itr = new TreeMap( DRAWING_ORDER );
             for ( int idx = floors.length-1; idx >= lowest_depth; idx-- ) {
-                this_floor_itr = floors[ idx ]
-                              .iteratorOfDrawables( tframe, false, isNestable );
+                this_floor_itr = floors[ idx ].iteratorOfDrawables(
+                                               tframe, isComposite,
+                                               IS_BACK_ITR, isNestable );
                 if ( this_floor_itr.hasNext() ) {
                     this_floor_obj = (Drawable) this_floor_itr.next();
                     map_obj2itr.put( this_floor_obj, this_floor_itr );
                 }
             }
             if ( withShadows ) {
-                this_floor_itr = floors[ lowest_depth ]
-                               .iteratorOfShadows( tframe, false, isNestable );
+                this_floor_itr = floors[ lowest_depth ].iteratorOfShadows(
+                                                        tframe, IS_BACK_ITR,
+                                                        isNestable );
                 if ( this_floor_itr.hasNext() ) {
                     this_floor_obj = (Shadow) this_floor_itr.next();
                     map_obj2itr.put( this_floor_obj, this_floor_itr );

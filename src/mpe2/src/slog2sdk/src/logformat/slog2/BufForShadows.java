@@ -182,7 +182,8 @@ public class BufForShadows extends BufForObjects
     }
 
     // Iterator of Nestable Drawables in Increasing StartTime order
-    public Iterator nestableForeIterator( final TimeBoundingBox tframe )
+    public Iterator nestableForeIterator( final TimeBoundingBox tframe,
+                                                boolean         isComposite )
     {
         // if ( ! isOutputBuf )
         return new IteratorOfForeDrawables( buf4nestable, tframe );
@@ -196,7 +197,8 @@ public class BufForShadows extends BufForObjects
     }
 
     // Iterator of Nestable Drawables in Decreasing StartTime order
-    public Iterator nestableBackIterator( final TimeBoundingBox tframe )
+    public Iterator nestableBackIterator( final TimeBoundingBox tframe,
+                                                boolean         isComposite )
     {
         // if ( ! isOutputBuf )
         return new IteratorOfBackDrawables( buf4nestable, tframe );

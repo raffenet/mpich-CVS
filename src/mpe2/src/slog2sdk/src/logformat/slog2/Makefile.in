@@ -23,6 +23,7 @@ PACKAGE = logformat.slog2
 SRC     = Const.java TreeNodeID.java FileBlockPtr.java \
           TreeDirValue.java TreeDir.java \
           Permutation.java LineIDMap.java LineIDMapList.java \
+          IteratorOfBackPrimitives.java IteratorOfForePrimitives.java \
           IteratorOfBackDrawables.java IteratorOfForeDrawables.java \
           BufForObjects.java BufForDrawables.java BufForShadows.java \
           CategoryMap.java Header.java

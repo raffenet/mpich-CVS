@@ -111,7 +111,8 @@ public abstract class BufForObjects extends TimeBoundingBox
 
     // Iterator of Nestable Drawables in Decreasing Endtime order
     public abstract
-    Iterator nestableBackIterator( final TimeBoundingBox tframe );
+    Iterator nestableBackIterator( final TimeBoundingBox tframe,
+                                         boolean         isComposite );
 
     // Iterator of Nestless Drawables in Decreasing Endtime order
     public abstract
@@ -119,7 +120,8 @@ public abstract class BufForObjects extends TimeBoundingBox
 
     // Iterator of Nestable Drawables in Increasing Endtime order
     public abstract
-    Iterator nestableForeIterator( final TimeBoundingBox tframe );
+    Iterator nestableForeIterator( final TimeBoundingBox tframe,
+                                         boolean         isComposite );
 
     // Iterator of Nestless Drawables in Increasing Endtime order
     public abstract

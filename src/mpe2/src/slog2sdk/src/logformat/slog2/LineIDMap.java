@@ -99,6 +99,11 @@ public class LineIDMap extends TreeMap
         }
     }
 
+    public Method[] getMethods()
+    {
+        return methods;
+    }
+
     public void setTitle( String title_labelname )
     {
         title_label = title_labelname;

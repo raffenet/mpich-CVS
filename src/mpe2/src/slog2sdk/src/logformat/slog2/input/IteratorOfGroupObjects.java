@@ -13,6 +13,12 @@ import java.util.Iterator;
 
 import base.drawable.TimeBoundingBox;
 
+/*
+   This iterator iterates over a set of consecutive sub-iterators one at a time.
+   After one of sub-iterators has been exhaustively iterated, the next one
+   in the set will be iterated.  The order of sub-iterator being iterated is
+   defined by setObjGrpItr().
+*/
 public abstract class IteratorOfGroupObjects implements Iterator
 {
     private  TimeBoundingBox    timeframe;

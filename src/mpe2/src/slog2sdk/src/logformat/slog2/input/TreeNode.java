@@ -52,17 +52,18 @@ public class TreeNode extends BufForDrawables
     }
 
     public Iterator iteratorOfDrawables( final TimeBoundingBox  tframe,
+                                         boolean isComposite,
                                          boolean isForeItr, boolean isNestable )
     {
         if ( isForeItr ) {
             if ( isNestable )
-                return super.nestableForeIterator( tframe );
+                return super.nestableForeIterator( tframe, isComposite );
             else
                 return super.nestlessForeIterator( tframe );
         }
         else {
             if ( isNestable )
-                return super.nestableBackIterator( tframe );
+                return super.nestableBackIterator( tframe, isComposite );
             else
                 return super.nestlessBackIterator( tframe );
         }
@@ -157,6 +158,10 @@ public class TreeNode extends BufForDrawables
 
     private class BackItrOfNestableShadows extends IteratorOfGroupObjects
     {
+        // IS_COMPOSITE can be true/false, because
+        // shadowbuf.nestableBackIterator() does not use IS_COMPOSITE
+        private static final  boolean  IS_COMPOSITE  = false;
+
         private int              shadowbufs_length;
         private int              next_buf_idx;
 
@@ -180,7 +185,8 @@ public class TreeNode extends BufForDrawables
                     shadowbuf  = shadowbufs[ next_buf_idx ];
                     next_buf_idx--;
                     if ( shadowbuf.overlaps( tframe ) )
-                        return shadowbuf.nestableBackIterator( tframe );
+                        return shadowbuf.nestableBackIterator( tframe,
+                                                               IS_COMPOSITE );
                 }
             }
             // return NULL when no more shadowbuf in shadowbufs[]
@@ -223,6 +229,10 @@ public class TreeNode extends BufForDrawables
 
     private class ForeItrOfNestableShadows extends IteratorOfGroupObjects
     {
+        // IS_COMPOSITE can be true/false, because
+        // shadowbuf.nestableForeIterator() does not use IS_COMPOSITE
+        private static final  boolean  IS_COMPOSITE  = false;
+
         private int              shadowbufs_length;
         private int              next_buf_idx;
 
@@ -246,7 +256,8 @@ public class TreeNode extends BufForDrawables
                     shadowbuf  = shadowbufs[ next_buf_idx ];
                     next_buf_idx++;
                     if ( shadowbuf.overlaps( tframe ) )
-                        return shadowbuf.nestableForeIterator( tframe );
+                        return shadowbuf.nestableForeIterator( tframe,
+                                                               IS_COMPOSITE );
                 }
             }
             // return NULL when no more shadowbuf in shadowbufs[]

@@ -76,7 +76,8 @@ public class BufStub extends BufForObjects
         return null;
     }
 
-    public Iterator nestableBackIterator( final TimeBoundingBox tframe )
+    public Iterator nestableBackIterator( final TimeBoundingBox tframe,
+                                                boolean         isComposite )
     { 
         System.err.println( "BufStub.nestableBackIterator(): "
                           + "should NOT be called" );
@@ -90,7 +91,8 @@ public class BufStub extends BufForObjects
         return null;
     }
 
-    public Iterator nestableForeIterator( final TimeBoundingBox tframe )
+    public Iterator nestableForeIterator( final TimeBoundingBox tframe,
+                                                boolean         isComposite )
     { 
         System.err.println( "BufStub.nestableForeIterator(): "
                           + "should NOT be called" );
