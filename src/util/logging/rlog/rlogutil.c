@@ -6,9 +6,11 @@
  */
 
 #include "rlog.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdarg.h>
 
 static int ReadFileData(char *pBuffer, int length, FILE *fin)
 {
@@ -56,6 +58,20 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
     return 0;
 }
 
+int rlog_err_printf(char *str, ...)
+{
+    int n;
+    va_list list;
+
+    va_start(list, str);
+    n = vprintf(str, list);
+    va_end(list);
+
+    fflush(stdout);
+
+    return n;
+}
+
 RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 {
     int i, j, rank_index, cur_rank, min_rank = 0;
@@ -75,6 +91,7 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
     pInput->gppPrevEvent = NULL;
     pInput->ppEventOffset = NULL;
     pInput->ppNumEvents = NULL;
+    pInput->nNumArrows = 0;
     /* open the input rlog file */
     pInput->f = fopen(filename, "rb");
     if (pInput->f == NULL)
@@ -96,7 +113,11 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    {
 		printf("error in header size %d != %d\n", length, sizeof(RLOG_FILE_HEADER));
 	    }
-	    ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f);
+	    if (ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f))
+	    {
+		rlog_err_printf("reading rlog header failed\n");
+		return NULL;
+	    }
 	    
 	    pInput->nNumRanks = pInput->header.nMaxRank + 1 - pInput->header.nMinRank;
 	    min_rank = pInput->header.nMinRank;
@@ -376,7 +397,7 @@ int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
 	error = ReadFileData((char*)&event, sizeof(RLOG_EVENT), f);
 	if (error)
 	{
-	    printf("reading event failed.\n");
+	    rlog_err_printf("reading event failed.\n");
 	    return -1;
 	}
 	index = event.rank - nMin;
@@ -388,7 +409,7 @@ int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
 	    error = WriteFileData((const char *)&event, sizeof(RLOG_EVENT), f);
 	    if (error)
 	    {
-		printf("writing modified event failed.\n");
+		rlog_err_printf("writing modified event failed.\n");
 		return -1;
 	    }
 	    fseek(f, 0, SEEK_CUR);
@@ -418,6 +439,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
     pInput->gppPrevEvent = NULL;
     pInput->ppEventOffset = NULL;
     pInput->ppNumEvents = NULL;
+    pInput->nNumArrows = 0;
     /* open the input rlog file */
     pInput->f = fopen(filename, "rb+");
     if (pInput->f == NULL)
@@ -437,9 +459,14 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    /*printf("type: RLOG_HEADER_SECTION, length: %d\n", length);*/
 	    if (length != sizeof(RLOG_FILE_HEADER))
 	    {
-		printf("error in header size %d != %d\n", length, sizeof(RLOG_FILE_HEADER));
+		rlog_err_printf("error in header size %d != %d\n", length, sizeof(RLOG_FILE_HEADER));
+		return -1;
 	    }
-	    ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f);
+	    if (ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f))
+	    {
+		rlog_err_printf("error reading rlog header\n");
+		return -1;
+	    }
 	    
 	    pInput->nNumRanks = pInput->header.nMaxRank + 1 - pInput->header.nMinRank;
 	    min_rank = pInput->header.nMinRank;
@@ -600,7 +627,11 @@ int RLOG_GetState(RLOG_IOStruct *pInput, int i, RLOG_STATE *pState)
     if (pInput == NULL || pState == NULL || i < 0 || i >= pInput->nNumStates)
 	return -1;
     fseek(pInput->f, pInput->nStateOffset + (i * sizeof(RLOG_STATE)), SEEK_SET);
-    ReadFileData((char*)pState, sizeof(RLOG_STATE), pInput->f);
+    if (ReadFileData((char*)pState, sizeof(RLOG_STATE), pInput->f))
+    {
+	rlog_err_printf("Error reading rlog state\n");
+	return -1;
+    }
 
     pInput->nCurState = i+1;
 
@@ -622,7 +653,11 @@ int RLOG_GetNextState(RLOG_IOStruct *pInput, RLOG_STATE *pState)
     if (pInput->nCurState >= pInput->nNumStates)
 	return 1;
     fseek(pInput->f, pInput->nStateOffset + (pInput->nCurState * sizeof(RLOG_STATE)), SEEK_SET);
-    ReadFileData((char*)pState, sizeof(RLOG_STATE), pInput->f);
+    if (ReadFileData((char*)pState, sizeof(RLOG_STATE), pInput->f))
+    {
+	rlog_err_printf("Error reading next rlog state\n");
+	return -1;
+    }
     pInput->nCurState++;
     return 0;
 }
@@ -639,7 +674,11 @@ int RLOG_GetArrow(RLOG_IOStruct *pInput, int i, RLOG_ARROW *pArrow)
     if (pInput == NULL || pArrow == NULL || i < 0 || i >= pInput->nNumArrows)
 	return -1;
     fseek(pInput->f, pInput->nArrowOffset + (i * sizeof(RLOG_ARROW)), SEEK_SET);
-    ReadFileData((char*)pArrow, sizeof(RLOG_ARROW), pInput->f);
+    if (ReadFileData((char*)pArrow, sizeof(RLOG_ARROW), pInput->f))
+    {
+	rlog_err_printf("Error reading rlog arrow\n");
+	return -1;
+    }
 
     pInput->nCurArrow = i+1;
 
@@ -661,7 +700,11 @@ int RLOG_GetNextArrow(RLOG_IOStruct *pInput, RLOG_ARROW *pArrow)
     if (pInput->nCurArrow >= pInput->nNumArrows)
 	return 1;
     fseek(pInput->f, pInput->nArrowOffset + (pInput->nCurArrow * sizeof(RLOG_ARROW)), SEEK_SET);
-    ReadFileData((char*)pArrow, sizeof(RLOG_ARROW), pInput->f);
+    if (ReadFileData((char*)pArrow, sizeof(RLOG_ARROW), pInput->f))
+    {
+	rlog_err_printf("Error reading next rlog arrow\n");
+	return -1;
+    }
     pInput->nCurArrow++;
     return 0;
 }
@@ -696,7 +739,11 @@ int RLOG_GetEvent(RLOG_IOStruct *pInput, int rank, int recursion_level, int inde
 	return -1;
 
     fseek(pInput->f, pInput->ppEventOffset[rank_index][recursion_level] + (index * sizeof(RLOG_EVENT)), SEEK_SET);
-    ReadFileData((char*)pEvent, sizeof(RLOG_EVENT), pInput->f);
+    if (ReadFileData((char*)pEvent, sizeof(RLOG_EVENT), pInput->f))
+    {
+	rlog_err_printf("Error reading rlog event\n");
+	return -1;
+    }
 
     /* GetEvent sets the current iteration position also */
     pInput->ppCurEvent[rank_index][recursion_level] = index+1;
@@ -796,7 +843,11 @@ int RLOG_GetNextEvent(RLOG_IOStruct *pInput, int rank, int recursion_level, RLOG
 	fseek(pInput->f, 
 	    pInput->ppEventOffset[rank_index][recursion_level] + 
 	    (pInput->ppCurEvent[rank_index][recursion_level] * sizeof(RLOG_EVENT)), SEEK_SET);
-	ReadFileData((char*)pEvent, sizeof(RLOG_EVENT), pInput->f);
+	if (ReadFileData((char*)pEvent, sizeof(RLOG_EVENT), pInput->f))
+	{
+	    rlog_err_printf("Error reading next rlog event\n");
+	    return -1;
+	}
 	pInput->ppCurEvent[rank_index][recursion_level]++;
 	return 0;
     }
