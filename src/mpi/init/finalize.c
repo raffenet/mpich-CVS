@@ -95,6 +95,10 @@ PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
    it is best not to perform much more than a 'return rc' after calling
    'MPI_Finalize'.
 
+Thread and Signal Safety:
+The MPI standard requires that 'MPI_Finalize' be called `only` by the same 
+thread that initialized MPI with either 'MPI_Init' or 'MPI_Init_thread'.
+
 .N Fortran
 
 .N Errors
@@ -202,8 +206,11 @@ int MPI_Finalize( void )
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_finalize", 0);
+#endif
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -31,7 +31,7 @@
 #define FUNCNAME MPI_Abort
 
 /*@
-   MPI_Abort - abort
+   MPI_Abort - Terminates MPI execution environment
 
 Input Parameters:
 + comm - communicator of tasks to abort 
@@ -40,6 +40,11 @@ Input Parameters:
 Notes:
 Terminates all MPI processes associated with the communicator 'comm'; in
 most systems (all to date), terminates `all` processes.
+
+.N NotThreadSafe
+Because the 'MPI_Abort' routine is intended to ensure that an MPI
+process (and possibly an entire job), it cannot wait for a thread to 
+release a lock or other mechanism for atomic access.
 
 .N Fortran
 
@@ -91,8 +96,16 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
 
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_abort", "**mpi_abort %C %d", comm, errorcode);
+    /* It is not clear that doing aborting abort makes sense.  We may
+       want to specify that erroneous arguments to MPI_Abort will
+       cause an immediate abort. */
+       
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
+				     "**mpi_abort", "**mpi_abort %C %d", 
+				     comm, errorcode);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ABORT);
     return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -27,18 +27,31 @@
 #define FUNCNAME MPI_Query_thread
 
 /*@
-   MPI_Query_thread - Return the level of thread support provided
+   MPI_Query_thread - Return the level of thread support provided by the MPI 
+    library
 
    Output Parameter:
 .  provided - Level of thread support provided.  This is the same value
    that was returned in the 'provided' argument in 'MPI_Init_thread'.
 
    Notes:
+   The valid values for the level of thread support are\:
++ MPI_THREAD_SINGLE - Only one thread will execute. 
+. MPI_THREAD_FUNNELED - The process may be multi-threaded, but only the main 
+  thread will make MPI calls (all MPI calls are funneled to the 
+   main thread). 
+. MPI_THREAD_SERIALIZED - The process may be multi-threaded, and multiple 
+  threads may make MPI calls, but only one at a time: MPI calls are not 
+  made concurrently from two distinct threads (all MPI calls are serialized). 
+- MPI_THREAD_MULTIPLE - Multiple threads may call MPI, with no restrictions. 
+
    If 'MPI_Init' was called instead of 'MPI_Init_thread', the level of
    thread support is defined by the implementation.  This routine allows
    you to find out the provided level.  It is also useful for library 
    routines that discover that MPI has already been initialized and
    wish to determine what level of thread support is available.
+
+.N SignalSafe
 
 .N Fortran
 
@@ -51,18 +64,19 @@ int MPI_Query_thread( int *provided )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_QUERY_THREAD);
 
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_QUERY_THREAD);
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(provided,"provided",mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_QUERY_THREAD);
     
     /* ... body of routine ...  */
     *provided = MPIR_Process.thread_provided;
@@ -72,8 +86,11 @@ int MPI_Query_thread( int *provided )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_query_thread", "**mpi_query_thread %p", provided);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_QUERY_THREAD);
     return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */

@@ -40,10 +40,29 @@
 +  argc - Pointer to the number of arguments 
 -  argv - Pointer to the argument vector
 
-   Notes:
+Thread and Signal Safety:
+This routine must be called by one thread only.  That thread is called
+the `main thread` and must be the thread that calls 'MPI_Finalize'.
+
+Notes:
+   The MPI standard does not say what a program can do before an 'MPI_INIT' or
+   after an 'MPI_FINALIZE'.  In the MPICH implementation, you should do
+   as little as possible.  In particular, avoid anything that changes the
+   external state of the program, such as opening files, reading standard
+   input or writing to standard output.
+
+Notes for Fortran:
+The Fortran binding for 'MPI_Init' has only the error return
+.vb
+    subroutine MPI_INIT( ierr )
+    integer ierr
+.ve
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_INIT
+
+.seealso: MPI_Init_thread, MPI_Finalize
 @*/
 int MPI_Init( int *argc, char ***argv )
 {
@@ -73,8 +92,11 @@ int MPI_Init( int *argc, char ***argv )
     }
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_HANDLING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_init", "**mpi_init %p %p", argc, argv);
+#endif
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -47,23 +47,17 @@ double MPI_Wtick( void )
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WTICK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WTICK);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
+    /* The only possible error is MPI is not initialized, in 
+       which case the error mechanism cannot be used. */
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
     tick = MPID_Wtick();
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WTICK);
     return tick;
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_wtick", 0);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WTICK);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* There is no valid object to use for the communicator */
+    MPID_Abort( 0, MPI_ERR_OTHER, MPI_ERR_OTHER, "" );
+    return 0.0;
 }

@@ -30,11 +30,11 @@
    MPI_Is_thread_main - Returns a flag indicating whether this thread called 
                         'MPI_Init' or 'MPI_Init_thread'
 
-   Output Arguments:
+   Output Parameter:
 . flag - Flag is true if 'MPI_Init' or 'MPI_Init_thread' has been called by 
-         this thread and false otherwise.  
+         this thread and false otherwise.  (logical)
 
-   Notes:
+.N SignalSafe
 
 .N Fortran
 
@@ -47,18 +47,8 @@ int MPI_Is_thread_main( int *flag )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IS_THREAD_MAIN);
 
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IS_THREAD_MAIN);
+    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
     
     /* ... body of routine ...  */
 #if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_FUNNELED
@@ -72,8 +62,11 @@ int MPI_Is_thread_main( int *flag )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_is_thread_main", "**mpi_is_thread_main %p", flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IS_THREAD_MAIN);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

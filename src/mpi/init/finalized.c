@@ -29,32 +29,24 @@
 /*@
    MPI_Finalized - Indicates whether 'MPI_Finalize' has been called.
 
-Output Argument:
+Output Parameter:
 . flag - Flag is true if 'MPI_Finalize' has been called and false otherwise. 
+     (logical)
 
-   Notes:
+.N SignalSafe
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Finalized( int * flag )
+int MPI_Finalized( int *flag )
 {
     static const char FCNAME[] = "MPI_Finalized";
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_FINALIZED);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FINALIZED);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
     *flag = (MPIR_Process.initialized >= MPICH_POST_FINALIZED);
@@ -64,8 +56,11 @@ int MPI_Finalized( int * flag )
     return MPI_SUCCESS;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_CHECKING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_finalized", "**mpi_finalized %p", flag);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZED);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

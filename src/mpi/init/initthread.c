@@ -47,6 +47,7 @@ static int assert_hook( int reportType, char *message, int *returnValue )
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread = { 0 };
 #endif
+
 int MPIR_Init_thread(int * argc, char ***argv, int required,
 		     int * provided)
 {
@@ -126,7 +127,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* Set the functions used to call functions in the C++ binding 
        for reductions and attribute operations.  These are null
        until a C++ operation is defined.  This allows the C code
-       that implements these operations to not invovke a C++ code
+       that implements these operations to not invoke a C++ code
        directly, which may force the inclusion of symbols known only
        to the C++ compiler (e.g., under more non-GNU compilers, including
        Solaris and IRIX). */
@@ -169,6 +170,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_parent = NULL;
 
     /* Call any and all MPID_Init type functions */
+    /* FIXME: The call to err init should be within an ifdef
+       HAVE_ ERROR_CHECKING block (as must all uses of Err_create_code) */
     MPIR_Err_init();
     MPID_Wtime_init();
     /* MPIU_Timer_pre_init(); */
@@ -178,6 +181,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, "MPIR_Init_thread", __LINE__, MPI_ERR_OTHER, "**init", 0);
+	/* FIXME: the default behavior for all MPI routines is to abort.  
+	   This isn't always convenient, because there's no other way to 
+	   get this routine to simply return.  But we should provide some
+	   sort of control for that and follow the default defined 
+	   by the standard */
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -194,7 +202,10 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #endif
 
 #ifdef HAVE_FORTRAN_BINDING
-    /* Initialize Fortran special names (MPI_BOTTOM and STATUS_IGNOREs) */
+    /* Initialize Fortran special names (MPI_BOTTOM and STATUS_IGNOREs)
+       We must do this here because the MPI standard requires that 
+       all languages be initialized by MPI_Init/MPI_Init_thread in any
+       language */
 #if defined(F77_NAME_LOWER_USCORE) || defined(F77_NAME_LOWER_2USCORE)
     mpirinitf_();
 #elif defined(F77_NAME_UPPER)
@@ -233,9 +244,6 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
    the command line arguments supported by 'MPI_INIT' and 'MPI_INIT_THREAD'.
 
    Notes:
-   Note that the Fortran binding for this routine does not have the 'argc' and
-   'argv' arguments. ('MPI_INIT_THREAD(required, provided, ierror)')
-
    The valid values for the level of thread support are\:
 + MPI_THREAD_SINGLE - Only one thread will execute. 
 . MPI_THREAD_FUNNELED - The process may be multi-threaded, but only the main 
@@ -246,9 +254,16 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
   made concurrently from two distinct threads (all MPI calls are serialized). 
 - MPI_THREAD_MULTIPLE - Multiple threads may call MPI, with no restrictions. 
 
+Notes for Fortran:
+   Note that the Fortran binding for this routine does not have the 'argc' and
+   'argv' arguments. ('MPI_INIT_THREAD(required, provided, ierror)')
+
+
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
+
+.seealso: MPI_Init, MPI_Finalize
 @*/
 int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
@@ -281,8 +296,11 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     
 fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+#ifdef HAVE_ERROR_HANDLING
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+				     FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_init_thread", "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
