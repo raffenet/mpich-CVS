@@ -1,0 +1,5 @@
+configure
+config.*
+ldapnameservconf.h.in
+ldapnameservconf.h
+Makefile
