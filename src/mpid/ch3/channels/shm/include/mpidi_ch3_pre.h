@@ -41,14 +41,19 @@ typedef struct MPIDI_Process_group_s
 }
 MPIDI_CH3I_Process_group_t;
 
+#ifdef USE_ALIGNED_PACKET_SIZE
 typedef struct MPIDI_CH3_Pkt_max_size_aligned
 {
     char pad[32];
 } MPIDI_CH3_Pkt_max_size_aligned_t;
 
+#define MPIDI_CH3_PKT_DECL MPIDI_CH3_Pkt_max_size_aligned_t dummy;
+#else
+#define MPIDI_CH3_PKT_DECL
+#endif
+
 #define MPIDI_CH3_PKT_ENUM
 #define MPIDI_CH3_PKT_DEFS
-#define MPIDI_CH3_PKT_DECL MPIDI_CH3_Pkt_max_size_aligned_t dummy;
 
 typedef enum MPIDI_CH3I_VC_state
 {
