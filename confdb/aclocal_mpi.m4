@@ -130,6 +130,11 @@ case $ac_mpi_type in
         if test "X$pac_lib_mpi_is_building" != "Xyes" ; then
             save_PATH="$PATH"
             if test "$with_mpich" != "yes" -a "$with_mpich" != "no" ; then 
+		# Look for commands; if not found, try adding bin to the
+		# path
+		if test ! -x $with_mpich/mpicc -a -x $with_mpich/bin/mpicc ; then
+			with_mpich="$with_mpich/bin"
+		fi
                 PATH=$with_mpich:${PATH}
             fi
             AC_PATH_PROG(MPICC,mpicc)
@@ -153,6 +158,9 @@ case $ac_mpi_type in
 	;;
 	ibmmpi)
 	TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf
+	# There is no mpxlf90, but the options langlvl and free can
+	# select the F90 version of xlf
+	TESTF90=${F90-xlf90}; F90="mpxlf -qlanglvl=90ext -qfree=f90"
 	MPILIBNAME=""
 	;;
 	sgimpi)

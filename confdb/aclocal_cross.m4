@@ -72,6 +72,34 @@ if test "X$pac_save_level" = "X" ; then
         AC_TRY_COMPILER([int main(){return(0);}], ac_cv_prog_cxx_works, ac_cv_prog_cxx_cross)
         AC_LANG_RESTORE
     fi
+    # Ignore Fortran 90 if we aren't using it.
+    if test -n "$F90" ; then
+        AC_LANG_SAVE
+        PAC_LANG_FORTRAN90
+	dnl We can't use AC_TRY_COMPILER because it doesn't know about 
+        dnl Fortran 90
+        cat > conftest.$ac_ext << EOF
+      program conftest
+      end
+EOF
+        if { (eval echo configure:2324: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+          ac_cv_prog_f90_works=yes
+          # If we can't run a trivial program, we are probably using a cross compiler.
+          if (./conftest; exit) 2>/dev/null; then
+              ac_cv_prog_f90_cross=no
+          else
+              ac_cv_prog_f90_cross=yes
+          fi
+        else
+          echo "configure: failed program was:" >&5
+          cat conftest.$ac_ext >&5
+          ac_cv_prog_f90_works=no
+        fi
+	pac_cv_prog_f90_cross="$ac_cv_prog_f90_cross"
+	pac_cv_prog_f90_works="$ac_cv_prog_f90_works"
+        rm -fr conftest*
+        AC_LANG_RESTORE
+    fi
 fi
 pac_save_level=`expr $pac_save_level + 1`
 ])

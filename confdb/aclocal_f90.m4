@@ -213,10 +213,12 @@ dnl Note: This checks for f95 before f90, since F95 is the more recent
 dnl revision of Fortran 90.
 AC_DEFUN(PAC_PROG_F90,[
 if test -z "$F90" ; then
-    AC_CHECK_PROGS(F90, f95 f90 xlf90 pgf90)
+    AC_CHECK_PROGS(F90,f95 f90 xlf90 pgf90)
     test -z "$F90" && AC_MSG_WARN([no acceptable Fortran 90 compiler found in \$PATH])
 fi
-PAC_PROG_F90_WORKS
+if test -n "$F90" ; then
+     PAC_PROG_F90_WORKS
+fi
 dnl Cache these so we don't need to change in and out of f90 mode
 ac_f90ext=$pac_cv_f90_ext
 ac_f90compile='${F90-f90} -c $F90FLAGS conftest.$ac_f90ext 1>&AC_FD_CC'

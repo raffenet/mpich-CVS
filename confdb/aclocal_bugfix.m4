@@ -14,8 +14,8 @@ dnl
 dnl
 dnl AC_CONFIG_AUX_DIRS only checks for install-sh, but assumes other
 dnl values are present.  Also doesn't provide a way to override the
-dnl sources of the various configure scripts.  PAC_CONFIG_AUX_DIRS
-dnl overcomes this 
+dnl sources of the various configure scripts.  This replacement
+dnl version of AC_CONFIG_AUX_DIRS overcomes this.
 dnl Internal subroutine.
 dnl Search for the configuration auxiliary files in directory list $1.
 dnl We look only for install-sh, so users of AC_PROG_INSTALL
