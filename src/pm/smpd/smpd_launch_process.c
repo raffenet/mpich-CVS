@@ -1200,11 +1200,15 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
 	close(pmi_pipe_fds[0]); /* close the other end */
 
+	/* change the working directory */
 	result = -1;
 	if (process->dir[0] != '\0')
 	    result = chdir( process->dir );
 	if (result < 0)
 	    chdir( getenv( "HOME" ) );
+
+	/* reset the file mode creation mask */
+	umask(0);
 
 	result = execvp( argv[0], argv );
 
