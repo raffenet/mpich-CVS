@@ -58,19 +58,29 @@ static int dbg_memlog_next = 0;
 static int dbg_memlog_count = 0;
 static int dbg_rank = -1;
 
+static void dbg_init(void);
+
 int MPIU_dbg_init(int rank)
 {
     dbg_rank = rank;
+
+    if (MPIUI_dbg_state == MPIU_DBG_STATE_UNINIT)
+    {
+	dbg_init();
+    }
 
     /* If file logging is enable, we need to open a file */
     if (MPIUI_dbg_state & MPIU_DBG_STATE_FILE)
     {
 	char fn[128];
 
-	sprintf(fn, "mpich2-dbg-%d.log", dbg_rank);
-	
-	MPIUI_dbg_fp = fopen(fn, "w");
-	setvbuf(MPIUI_dbg_fp, NULL, _IONBF, 0);
+	/* Only open the file only once in case MPIU_dbg_init is called more than once */
+	if (MPIUI_dbg_fp == NULL)
+	{
+	    sprintf(fn, "mpich2-dbg-%d.log", dbg_rank);
+	    MPIUI_dbg_fp = fopen(fn, "w");
+	    setvbuf(MPIUI_dbg_fp, NULL, _IONBF, 0);
+	}
     }
     
     return 0;
