@@ -15,6 +15,11 @@ AC_ARG_ENABLE(strict,
 [--enable-strict  - Turn on strict compilation testing when using gcc],,
 enable_strict=no)
 
+AC_ARG_ENABLE(weak-symbols,
+[--enable-weak-symbols - Use weak symbols to provide the profiling interface
+    (default)],
+enable_weak=$enableval,enable_weak="yes")
+
 AC_ARG_ENABLE(echo,
 [--enable-echo    - Turn on echoing from within the configure script],
 set -x)
@@ -70,8 +75,34 @@ fi
 export master_top_builddir
 AC_SUBST(master_top_builddir)
 
+PAC_PROG_MAKE
+AC_PATH_PROG(AR,ar)
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
 AC_PROG_INSTALL
 PAC_PROG_MKDIR_P
+
+# Get the C compiler (needed for type_create_f90_xxx functions)
+PAC_PROG_CC
+dnl Set CFLAGS for enable strict if necessary
+PAC_CC_STRICT
+AC_C_CONST
+#
+# Try for weak symbols for the profiling interface.
+if test "$enable_weak" = "yes" ; then
+    PAC_PROG_C_WEAK_SYMBOLS(AC_DEFINE(HAVE_WEAK_SYMBOLS,1,[Define if weak symbols supported]))
+    # Check for the ability to support multiple weak symbols
+    if test "$pac_cv_prog_c_weak_symbols" = "pragma weak" ; then
+       PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS(AC_DEFINE(HAVE_MULTIPLE_PRAGMA_WEAK,1,[Define if multiple weak symbols may be defined]))
+    fi
+fi
+# These values are exported from the upper-layer configure.
+AC_SUBST(PROFILE_DEF_MPI)
+AC_SUBST(NO_WEAK_SYM)
+AC_SUBST(NO_WEAK_SYM_TARGET)
+AC_SUBST(NEEDSPLIB)
+#
 
 # Find a Fortran 90 compiler.  Sets F90
 PAC_PROG_F90
@@ -161,7 +192,7 @@ if test -z "$CROSS_F90_REAL_MODEL" ; then
        end
 EOF
     if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
-        ./conftest > conftest.out 2>AC_FD_CC
+        ./conftest > conftest.out 2>&AC_FD_CC
         if test -s conftest.out ; then
             F90_REAL_MODEL=`cat conftest.out | sed -e 's/  */ /g'`
 	    AC_MSG_RESULT($F90_REAL_MODEL)
@@ -187,7 +218,7 @@ if test -z "$CROSS_F90_DOUBLE_MODEL" ; then
        end
 EOF
     if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
-        ./conftest > conftest.out 2>AC_FD_CC
+        ./conftest > conftest.out 2>&AC_FD_CC
         if test -s conftest.out ; then
             F90_DOUBLE_MODEL=`cat conftest.out | sed -e 's/  */ /g'`
 	    AC_MSG_RESULT($F90_DOUBLE_MODEL)
@@ -213,7 +244,7 @@ if test -z "$CROSS_F90_INTEGER_MODEL" ; then
        end
 EOF
     if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
-        ./conftest > conftest.out 2>AC_FD_CC
+        ./conftest > conftest.out 2>&AC_FD_CC
         if test -s conftest.out ; then
             F90_INTEGER_MODEL=`cat conftest.out | sed -e 's/  */ /g'`
 	    AC_MSG_RESULT($F90_INTEGER_MODEL)
@@ -251,7 +282,7 @@ if test -z "$CROSS_F90_INTEGER_MODEL_MAP" ; then
       end 
 EOF
     if AC_TRY_EVAL(ac_f90link) && test -s conftest${ac_exeext} ; then
-        ./conftest > conftest.out 2>AC_FD_CC
+        ./conftest > conftest.out 2>&AC_FD_CC
         if test -s conftest.out ; then
             F90_INTEGER_MODEL_MAP=`cat conftest.out | tr '\012' ' '  | \
 				       sed -e 's/  */ /g'`
@@ -299,6 +330,20 @@ AC_SUBST(MPIVERSION)
 AC_SUBST(NEEDSPLIB)
 # 
 AC_SUBST(MPILIBNAME)
+# Here are the commands to substitute the compilers to be used to create
+# shared libraries.  The choices for the first two come down from the
+# top-level configure.  FC_SHL must be determined in this configure
+AC_SUBST(CC_SHL)
+AC_SUBST(ENABLE_SHLIB)
+dnl AC_SUBST(FC_SHL)
+dnl AC_SUBST(FC_LINKPATH_SHL)
+dnl if test "$ENABLE_SHLIB" = "gcc" ; then
+dnl    # Assume that the compiler is g77 if gcc style shared libraries chosen
+dnl    FC_SHL="$FC -shared -fpic"
+dnl    FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
+dnl fi
+AC_SUBST(LIBTOOL)
+
 # These last 2 sets of flags are used to pass flags needed only to compile
 # and use MPI programs, not to build the MPI library itself.
 AC_SUBST(MPI_F90FLAGS)
