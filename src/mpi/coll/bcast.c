@@ -113,8 +113,13 @@ int MPIR_Bcast (
       nbytes = type_size * count;
   }
   else {
-      NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
-
+      mpi_errno = NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
+      /* --BEGIN ERROR HANDLING-- */
+      if (mpi_errno != MPI_SUCCESS)
+      {
+	  return mpi_errno;
+      }
+      /* --END ERROR HANDLING-- */
       /* calculate the value of nbytes, the size in packed
          representation of the buffer to be broadcasted. We can't
          simply multiply tmp_buf_size by count because tmp_buf_size
