@@ -18,3 +18,4 @@ lwlog.h
 *Debug*
 *Release*
 mpio.h
+mpicxx.h
