@@ -29,7 +29,7 @@ typedef struct IB_PerProcess {
        ib_cqd_handle_t cqd_handle;
         ib_cq_handle_t cq_handle;
                    int lid;
-         ib_hca_attr_t attr;
+       ib_hca_attr_t * attr_p;
 		   int error;
 		  char err_msg[IB_ERROR_MSG_LENGTH];
 } IB_PerProcess;

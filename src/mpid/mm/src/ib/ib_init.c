@@ -81,53 +81,26 @@ int ib_init()
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return -1;
     }
+
     /* get the lid */
     attr_size = 0;
     status = ib_hca_query_us(IB_Process.hca_handle, NULL, 
-			     HCA_QUERY_HCA_STATIC, &attr_size);
-    pMem = malloc(attr_size);
-    status = ib_hca_query_us(IB_Process.hca_handle, (ib_hca_attr_t*)&pMem, 
-			     HCA_QUERY_HCA_STATIC, &attr_size);
+        HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
+    IB_Process.attr_p = calloc(attr_size, sizeof(ib_uint8_t));
+    /*MPIU_dbg_printf("MALLOC %d bytes\n", attr_size);*/
+    status = ib_hca_query_us(IB_Process.hca_handle, IB_Process.attr_p, 
+	HCA_QUERY_HCA_STATIC | HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
-/*
-    IB_Process.attr.port_dynamic_info_p = 
-	(port_dynamic_info_t*)malloc(IB_Process.attr.node_info.port_num * 
-				     sizeof(port_dynamic_info_t));
-    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
-			     HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
-*/
-    attr_size = 0;
-    status = ib_hca_query_us(IB_Process.hca_handle, NULL, 
-			     HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
-/*
-    IB_Process.attr.port_dynamic_info_p = 
-	(port_dynamic_info_t*)malloc(((ib_hca_attr_t*)pMem)->node_info.port_num * 
-				     sizeof(port_dynamic_info_t));
-*/
-    IB_Process.attr.port_dynamic_info_p = (port_dynamic_info_t*)malloc(attr_size);
-    status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
-			     HCA_QUERY_PORT_INFO_DYNAMIC, &attr_size);
-    if (status != IB_SUCCESS)
-    {
-	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_PORT_INFO_DYNAMIC) failed, status %d\n", status);
-	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
-	return status;
-    }
-    IB_Process.lid = IB_Process.attr.port_dynamic_info_p->lid;
-    /* free this structure because the information is transient? */
-    /*
-    free(IB_Process.attr.port_dynamic_info_p);
-    IB_Process.attr.port_dynamic_info_p = NULL;
-    */
+    IB_Process.lid = IB_Process.attr_p->port_dynamic_info_p->lid;
 
     sprintf(key, "ib_lid_%d", MPIR_Process.comm_world->rank);
     sprintf(value, "%d", IB_Process.lid);
-    /*MPIU_dbg_printf("ib lid %d\n", IB_Process.lid);*/
+    MPIU_dbg_printf("ib lid %d\n", IB_Process.lid);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
     PMI_Barrier();
 
