@@ -19,15 +19,17 @@ import base.drawable.DrawnBox;
 
 public class Event
 {
-    private static       int     Base_Half_Width        = 3;
+    private static       int     Base_Half_Width        = 6;
+    private static       int     Base_Width             = 3;
     private static       double  Max_LineSeg2Pt_DistSQ  = 10.0d;
 
     //  For Viewer
     public static void setBaseWidth( int new_width )
     {
         Base_Half_Width = new_width / 2;
-        if ( Base_Half_Width < 1 )
-            Base_Half_Width = 1;
+        if ( Base_Half_Width < 0 )
+            Base_Half_Width = 0;
+        Base_Width = Base_Half_Width + Base_Half_Width;
     }
 
     public static void setPixelClosenessTolerance( int pix_dist )
@@ -39,10 +41,10 @@ public class Event
     public static int  draw( Graphics2D g, Color color, Stroke stroke,
                              CoordPixelXform    coord_xform,
                              DrawnBox           last_drawn_pos,
-                             double point_time, float peak_ypos,
-                             float start_ypos, float final_ypos )
+                             double point_time, float point_ypos,
+                             float start_ypos,  float final_ypos )
     {
-        int      iPoint, jPeak, jStart, jFinal;
+        int      iPoint, jPoint, jStart, jFinal;
         iPoint   = coord_xform.convertTimeToPixel( point_time );
 
         /* Determine if Event should be drawn */
@@ -56,7 +58,7 @@ public class Event
         if ( ! isPointVtxInImg )
             return 0;
 
-        jPeak    = coord_xform.convertRowToPixel( peak_ypos );
+        jPoint   = coord_xform.convertRowToPixel( point_ypos );
         jStart   = coord_xform.convertRowToPixel( start_ypos );
         jFinal   = coord_xform.convertRowToPixel( final_ypos );
 
@@ -66,17 +68,26 @@ public class Event
             g.setStroke( stroke );
         }
 
-        g.setColor( color );
+        int  iCorner, jHeight;
+        iCorner = 0;
+        jHeight = 0;
 
-        int  iLeft, iRight;
-        g.drawLine( iPoint, jStart, iPoint, jPeak );
-        iLeft  = iPoint - Base_Half_Width;
-        iRight = iPoint + Base_Half_Width;
-        g.drawLine( iLeft, jFinal, iRight, jFinal );
-        if ( jPeak != jFinal ) {
-            g.drawLine( iPoint, jPeak, iLeft, jFinal );
-            g.drawLine( iPoint, jPeak, iRight, jFinal );
+        g.setColor( color );
+        g.drawLine( iPoint, jPoint, iPoint, jFinal );
+        /* Fill the ellipse first */
+        if ( jStart != jPoint ) {
+            iCorner = iPoint - Base_Half_Width;
+            jHeight = jPoint - jStart - 1;
+            g.fillArc( iCorner, jStart, Base_Width, jHeight, 0, 360 );
         }
+
+        g.setColor( Color.white );
+        /* Draw the white ellipse boundray */
+        if ( jPoint != jFinal )
+            g.drawArc( iCorner, jStart, Base_Width, jHeight, 0, 360 );
+        else
+            g.drawLine( iPoint - Base_Half_Width, jStart,
+                        iPoint + Base_Half_Width, jStart );
 
         if ( stroke != null )
             g.setStroke( orig_stroke );
@@ -87,15 +98,15 @@ public class Event
 /*
     public static boolean  containsPixel( CoordPixelXform coord_xform, Point pt,
                                           double point_time,
-                                          float peak_ypos, float final_ypos )
+                                          float point_ypos, float final_ypos )
     {
-        int      iPoint, iLeft, iRight, jPeak, jFinal;
+        int      iPoint, iLeft, iRight, jPoint, jFinal;
         int      pt_x, pt_y;
 
         pt_y     = pt.y;
 
-        jPeak    = coord_xform.convertRowToPixel( peak_ypos );
-        if ( pt_y < jPeak  )
+        jPoint    = coord_xform.convertRowToPixel( point_ypos );
+        if ( pt_y < jPoint  )
             return false;
 
         jFinal   = coord_xform.convertRowToPixel( final_ypos );

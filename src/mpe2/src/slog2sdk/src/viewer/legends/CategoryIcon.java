@@ -176,10 +176,40 @@ public class CategoryIcon implements Icon
         g.setColor( (Color) Parameters.BACKGROUND_COLOR.toValue() );
         g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
 
+        // Paint middle timeline
+        x1 = x ;                       y1 = y + ICON_HALF_HEIGHT;
+        x2 = x + ICON_WIDTH - 1;       y2 = y1;
+        g.setColor( Color.red );
+        g.drawLine( x1, y1, x2, y2 );
+
+        x1 = x + XOFF;                   y1 = y + YOFF;
+
+        // Fill the ellipse
+        g.setColor( color_shown );
+        g.fillArc( x1, y1, ICON_WIDTH-2*XOFF, ICON_QUARTER_HEIGHT, 0, 360 );
+
+        // Draw the ellipse
+        g.setColor( Color.white );
+        g.drawArc( x1, y1, ICON_WIDTH-2*XOFF, ICON_QUARTER_HEIGHT, 0, 360 );
+
+        // Draw the line marks the event
+        x1 = x + ICON_HALF_WIDTH;        y1 = y + YOFF + ICON_QUARTER_HEIGHT;
+        x2 = x1;                         y2 = y + ICON_HEIGHT-1 - 2;
+        g.drawLine( x1, y1, x2, y2 );
+    }
+/*
+    private void paintEventIcon( Graphics g, int x, int y )
+    {
+        int x1, y1, x2, y2, x3, y3;
+
+        // g.setColor( Color.black );
+        g.setColor( (Color) Parameters.BACKGROUND_COLOR.toValue() );
+        g.fillRect( x, y, ICON_WIDTH, ICON_HEIGHT );
+
         g.setColor( color_shown );
 
         int half_base_width = ICON_QUARTER_WIDTH - 2;
-        /* Draw the sym triangle */
+        // Draw the sym triangle
         x1 = x + ICON_HALF_WIDTH;                y1 = y + 2;
         x2 = x + half_base_width;                y2 = y + ICON_HEIGHT-1 - 2;
         x3 = x + ICON_WIDTH-1 - half_base_width; y3 = y2;
@@ -187,6 +217,7 @@ public class CategoryIcon implements Icon
         g.drawLine( x1, y1, x3, y3 );
         g.drawLine( x2, y2, x3, y3 );
     }
+*/
 
     private void paintBlankIcon( Graphics g, int x, int y )
     {

@@ -25,6 +25,7 @@ import base.topology.StateBorder;
 import base.topology.State;
 import base.topology.Event;
 import base.topology.PreviewState;
+import base.topology.PreviewEvent;
 import base.topology.SummaryState;
 import base.topology.SummaryArrow;
 import base.drawable.Shadow;
@@ -115,6 +116,9 @@ public class Parameters
         PreviewState.setBorderStyle( Parameters.PREVIEW_STATE_BORDER );
         PreviewState.setDisplayType( Parameters.PREVIEW_STATE_DISPLAY );
         PreviewState.setMinCategoryHeight( Parameters.PREVIEW_STATE_LEGEND_H );
+        // PreviewEvent.setBaseWidth( Parameters.EVENT_BASE_WIDTH );
+        PreviewEvent.setPixelClosenessTolerance(
+                                      Parameters.CLICK_RADIUS_TO_LINE );
 
         // Define Shadow State's insets dimension
         Shadow.setStateInsetsDimension( Parameters.PREVIEW_STATE_BORDER_W,
