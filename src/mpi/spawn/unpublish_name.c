@@ -73,8 +73,11 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 #   endif /* HAVE_ERROR_CHECKING */
 
 #ifdef HAVE_NAMEPUB_SERVICE
-    if (!MPIR_Namepub)
-    {
+    /* The standard leaves explicitly undefined what happens if the code 
+       attempts to unpublish a name that is not published.  In this case, 
+       MPI_Unpublish_name could be called before a name service structure
+       is allocated. */
+    if (!MPIR_Namepub) {
 	mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
     }
     if (mpi_errno == MPI_SUCCESS) 

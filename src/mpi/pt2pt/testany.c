@@ -103,9 +103,11 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
 		    MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
 		}
 	    }
+	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno) {
                 goto fn_exit;
             }
+	    /* --END ERROR HANDLING-- */
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -170,12 +172,14 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
     *index = MPI_UNDEFINED;
     
     mpi_errno = MPID_Progress_test();
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_testany", "**mpi_testany %d %p %p %p %p", count, array_of_requests, index, flag, status);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 	
     for (i = 0; i < count; i++)
     {

@@ -185,10 +185,12 @@ PMPI_LOCAL int MPIR_Allreduce (
         MPID_Datatype_get_extent_macro(datatype, extent);
 
         tmp_buf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
+	/* --BEGIN ERROR HANDLING-- */
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         /* adjust for potential negative lower bound in datatype */
         tmp_buf = (void *)((char*)tmp_buf - true_lb);
         
@@ -332,15 +334,19 @@ PMPI_LOCAL int MPIR_Allreduce (
                    the buffer */
 
                 cnts = (int *) MPIU_Malloc(pof2*sizeof(int));
+		/* --BEGIN ERROR HANDLING-- */
                 if (!cnts) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
+		/* --END ERROR HANDLING-- */
                 disps = (int *) MPIU_Malloc(pof2*sizeof(int));
+		/* --BEGIN ERROR HANDLING-- */
                 if (!disps) {
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
+		/* --END ERROR HANDLING-- */
 
                 for (i=0; i<(pof2-1); i++) 
                     cnts[i] = count/pof2;
@@ -586,10 +592,12 @@ PMPI_LOCAL int MPIR_Allreduce (
         MPID_Datatype_get_extent_macro( datatype, extent );
 
         tmp_buf = MPIU_Malloc(count*(MPIR_MAX(extent,true_extent)));
+	/* --BEGIN ERROR HANDLING-- */
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         /* adjust for potential negative lower bound in datatype */
         tmp_buf = (void *)((char*)tmp_buf - true_lb);
         

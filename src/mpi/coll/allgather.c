@@ -230,10 +230,12 @@ PMPI_LOCAL int MPIR_Allgather (
             NMPI_Pack_size(recvcount*comm_size, recvtype, comm, &tmp_buf_size);
             
             tmp_buf = MPIU_Malloc(tmp_buf_size);
+	    /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf) { 
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
+	    /* --END ERROR HANDLING-- */
             
             /* calculate the value of nbytes, the number of bytes in packed
                representation that each process contributes. We can't simply divide
@@ -457,10 +459,12 @@ PMPI_LOCAL int MPIR_Allgather_inter (
         extent = MPIR_MAX(send_extent, true_extent);
 
         tmp_buf = MPIU_Malloc(extent*sendcount*local_size);
+	/* --BEGIN ERROR HANDLING-- */
         if (!tmp_buf) {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+	/* --END ERROR HANDLING-- */
         /* adjust for potential negative lower bound in datatype */
         tmp_buf = (void *)((char*)tmp_buf - true_lb);
     }

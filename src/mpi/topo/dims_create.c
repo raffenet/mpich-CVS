@@ -84,6 +84,7 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
 	    n = n / primes[i];
 	}
 	if (cnt > 0) {
+	    /* --BEGIN ERROR HANDLING-- */
 	    if (nfactors + 1 == MAX_FACTORS) {
 		/* Time to panic.  This should not happen, since the
 		   smallest number that could exceed this would
@@ -91,6 +92,7 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
 		   greater than one, which is 6469693230 */
 		return nfactors;
 	    }
+	    /* --END ERROR HANDLING-- */
 	    factors[nfactors].val = primes[i];
 	    factors[nfactors++].cnt = cnt;
 	    nall += cnt;

@@ -44,21 +44,25 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
     int mpi_errno = MPI_SUCCESS;
 
     *new_group_ptr = (MPID_Group *)MPIU_Handle_obj_alloc( &MPID_Group_mem );
+    /* --BEING ERROR HANDLING-- */
     if (!*new_group_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Group_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     /* printf( "new group ptr is %x handle %x\n", (int)*new_group_ptr,
        (*new_group_ptr)->handle );fflush(stdout); */
     MPIU_Object_set_ref( *new_group_ptr, 1 );
     (*new_group_ptr)->lrank_to_lpid = 
 	(MPID_Group_pmap_t *)MPIU_Malloc( nproc * sizeof(MPID_Group_pmap_t) );
+    /* --BEGIN ERROR HANDLING-- */
     if (!(*new_group_ptr)->lrank_to_lpid) {
 	MPIU_Handle_obj_free( &MPID_Group_mem, *new_group_ptr );
 	*new_group_ptr = NULL;
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Group_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
     (*new_group_ptr)->size = nproc;
     /* Make sure that there is no question that the list of ranks sorted
        by pids is marked as uninitialized */
