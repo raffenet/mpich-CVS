@@ -837,12 +837,12 @@ else
    ifelse([$2],,:,[$2])
 fi
 ])
-dnl/*D 
+dnl /*D 
 dnl PAC_PROG_F77_HAS_POINTER - Determine if Fortran allows pointer type
 dnl
 dnl Synopsis:
 dnl   PAC_PROG_F77_HAS_POINTER(action-if-true,action-if-false)
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_PROG_F77_HAS_POINTER,[
 AC_CACHE_CHECK([whether Fortran has pointer declaration],
 pac_cv_prog_f77_has_pointer,[

@@ -16,3 +16,13 @@ builtin(include,aclocal_shl.m4)
 dnl builtin(include,aclocal_tcl.m4)
 builtin(include,aclocal_java.m4)
 
+dnl PAC_CONFIG_SUBDIRS_IMMEDIATE(DIR ...)
+dnl Perform the configuration *now*
+AC_DEFUN(PAC_CONFIG_SUBDIRS_IMMEDIATE,
+[AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
+SAVE_subdirs="$subdirs"
+subdirs=$1
+AC_OUTPUT_SUBDIRS
+subdirs="$SAVE_subdirs"
+])
+
