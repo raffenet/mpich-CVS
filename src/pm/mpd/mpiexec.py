@@ -90,7 +90,7 @@ def handle_argset(argset):
     while argidx < len(argset):
         if argset[argidx][0] != '-':
             break
-        if argset[argidx] == '-n':
+        if argset[argidx] == '-n' or argset[argidx] == '-np':
             nProcs = int(argset[argidx+1])
         elif argset[argidx] == '-host':
             host = argset[argidx+1]
@@ -99,7 +99,7 @@ def handle_argset(argset):
         elif argset[argidx] == '-path':
             wpath = argset[argidx+1]
         else:
-            print 'unsupported or unrecognized option: %s' % argset[i]
+            print 'unsupported or unrecognized option: %s' % argset[argidx]
             usage()
         argidx += 2  # currently, all args have subargs
     while argidx < len(argset):
