@@ -36,8 +36,11 @@ all-local:
 	fi
 cleanobjsandlibs:
 	rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a
+	rm -f lib/lib${MPILIBNAME}cxx.a 
 	rm -f lib/lib${MPILIBNAME}.so* lib/libp${MPILIBNAME}.so*
+	rm -f lib/lib${MPILIBNAME}cxx.so* 
 	rm -f lib/lib${MPILIBNAME}.la* lib/libp${MPILIBNAME}.la*
+	rm -f lib/lib${MPILIBNAME}cxx.la* 
 	${MAKE} clean ; cd test && ${MAKE} clean
 	rm -f lib/newconfig
 
@@ -173,9 +176,13 @@ htmldoc-local:
 testing:
 	(cd test && $(MAKE) testing)
 
+MPICXXLIBNAME = @MPICXXLIBNAME@
+MPIFLIBNAME   = @MPIFLIBNAME@
 install_LIB = lib/lib${MPILIBNAME}.a
-optinstall_LIB = lib/lib${MPIFLIBNAME.a}
-optinstall_LIB = lib/lib${MPICXXLIBNAME.a}
+optinstall_LIB = lib/lib${MPIFLIBNAME}.a
+optinstall_LIB = lib/lib${MPICXXLIBNAME}.a
+#optinstall_SHLIB = lib/lib${MPIFLIBNAME}.so
+#optinstall_SHLIB = lib/lib${MPICXXLIBNAME}.so
 
 install_INCLUDE = src/include/mpi.h
 

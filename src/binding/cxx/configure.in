@@ -67,7 +67,7 @@ if test -n "$subname" ; then
     # add the leading hyphen
     subname="-$subname"
     if test "$set_MPICXXLIBNAME" != "yes" ; then
-	MPIFLIBNAME="mpich$subname"
+	MPICXXLIBNAME="mpich$subname"
     fi
 else
     subname="-`echo $CXX | sed 's/ /-/g'`"
@@ -154,6 +154,14 @@ AC_SUBST(builddir)
 # top-level configure.  CXX_SHL must be determined in this configure
 if test -z "$ENABLE_SHLIB" ; then
     ENABLE_SHLIB=none
+else
+    if test "$set_MPICXXLIBNAME" != yes ; then
+        # If we are building with shared libraries, we need to 
+	# keep the C++ interface separate from the C routines.  If we
+	# do not, then the resulting shared library may contain
+	# symbols that are unknown to the C environment
+        MPICXXLIBNAME=${MPILIBNAME}cxx
+    fi
 fi
 AC_SUBST(CC_SHL)
 AC_SUBST(ENABLE_SHLIB)

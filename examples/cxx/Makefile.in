@@ -4,8 +4,8 @@ all: all-redirect
 SHELL           = @SHELL@
 top_srcdir      = @top_srcdir@
 srcdir          = @srcdir@
-DEFS        = @DEFS@ -I. -I${srcdir}
-CPPFLAGS        = @CPPFLAGS@
+DEFS            = 
+CPPFLAGS        = 
 LIBS            = @LIBS@
 MPILIBNAME      = @MPILIBNAME@
 
