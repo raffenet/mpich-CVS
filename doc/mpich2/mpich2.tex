@@ -2747,6 +2747,11 @@ programs do not consider common symbols as defining the use of a name(!)
 unless special options are used; this causes link steps to fail.
 Because of this, the use of common symbols is considered an error.}. 
 
+\item[Open file descriptors]
+Whereever possible, open file descriptors should have \code{FD_CLOEXEC} 
+set (close on exec) to avoid problems if \code{fork} and \code{exec} are 
+called, either by another routine in the MPICH library or by a user routine.
+
 \item[Fixmes]Known issues in the code should be marked with a
   ``fixme'' comment in the following format
 \begin{verbatim}
