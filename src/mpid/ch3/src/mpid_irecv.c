@@ -36,16 +36,18 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	    rreq->ref_count = 1;
 	    rreq->cc = 0;
 	    rreq->kind = MPID_REQUEST_RECV;
-	    MPIR_Status_set_empty(&rreq->status);
-	    rreq->status.MPI_SOURCE = MPI_PROC_NULL;
-	    /* DEBUG: the following are provided for debugging purposes only */
-	    rreq->comm = comm;
-	    rreq->ch3.match.rank = rank;
-	    rreq->ch3.match.tag = tag;
-	    rreq->ch3.match.context_id = comm->context_id + context_offset;
-	    rreq->ch3.user_buf = buf;
-	    rreq->ch3.user_count = count;
-	    rreq->ch3.datatype = datatype;
+	    MPIR_Status_set_procnull(&rreq->status);
+#	    if !defined(NDEBUG)
+	    {
+		rreq->comm = comm;
+		rreq->ch3.match.rank = rank;
+		rreq->ch3.match.tag = tag;
+		rreq->ch3.match.context_id = comm->context_id + context_offset;
+		rreq->ch3.user_buf = buf;
+		rreq->ch3.user_count = count;
+		rreq->ch3.datatype = datatype;
+	    }
+#	    endif
 	}
 	else
 	{

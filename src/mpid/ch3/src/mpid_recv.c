@@ -27,8 +27,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
     
     if (rank == MPI_PROC_NULL)
     {
-	MPIR_Status_set_empty(status);
-	status->MPI_SOURCE = MPI_PROC_NULL;
+	MPIR_Status_set_procnull(status);
 	rreq = NULL;
 	goto fn_exit;
     }

@@ -1329,15 +1329,15 @@ void MPIR_Wait(MPID_Request *);
     }						\
 }
 /* See MPI 1.1, section 3.11, Null Processes */
-#define MPIR_Status_set_procnull(status)		\
+#define MPIR_Status_set_procnull(status)	\
 {						\
-    if (status != MPI_STATUS_IGNORE)		\
+    if ((status) != MPI_STATUS_IGNORE)		\
     {						\
-	status->MPI_SOURCE = MPI_PROC_NULL;	\
-	status->MPI_TAG = MPI_ANY_TAG;		\
-	status->MPI_ERROR = MPI_SUCCESS;	\
-	status->count = 0;			\
-	status->cancelled = FALSE;		\
+	(status)->MPI_SOURCE = MPI_PROC_NULL;	\
+	(status)->MPI_TAG = MPI_ANY_TAG;	\
+	(status)->MPI_ERROR = MPI_SUCCESS;	\
+	(status)->count = 0;			\
+	(status)->cancelled = FALSE;		\
     }						\
 }
 
