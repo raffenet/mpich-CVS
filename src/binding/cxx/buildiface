@@ -1034,7 +1034,7 @@ extern Datatype TWOINTEGER;
 	print $OUTFD "extern const int $int;\n";
     }
     # Handle seek as a special case
-    print $OUTFD "#if !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
+    print $OUTFD "#if defined(MPI_SEEK_SET) && !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
     foreach $int (SEEK_SET, SEEK_END, SEEK_CUR) {
 	print $OUTFD "extern const int $int;\n";
     }
@@ -1495,7 +1495,7 @@ Datatype TWOINTEGER(MPI_2INTEGER);
 	print $OUTFD "const int $int = MPI_$int;\n";
     }
     # Handle seek as a special case
-    print $OUTFD "#if !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
+    print $OUTFD "#if defined(MPI_SEEK_SET) && !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)\n";
     foreach $int (SEEK_SET, SEEK_END, SEEK_CUR) {
 	print $OUTFD "const int $int = MPI_$int;\n";
     }
