@@ -560,6 +560,7 @@ static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp)
 	assert(0);
         break;
     }
+    return -1;
 }
 
 /* DLOOP_Stackelm_offset - returns offset (displacement) for stackelm based
