@@ -103,6 +103,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

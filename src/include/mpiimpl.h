@@ -1168,6 +1168,28 @@ extern int MPID_THREAD_LEVEL;
     if ((comm_ptr)->comm_kind != MPID_INTRACOMM) {\
        err = MPIR_Err_create_code(MPI_ERR_COMM,"**commnotintra",0);}
 
+/*
+ * Check that the tripple (buf,count,datatype) does not specify a null
+ * buffer.  This does not guarantee that the buffer is valid but does
+ * catch the most common problems.
+ * Question:
+ * Should this be an (inlineable) routine?  
+ * Since it involves extracting the datatype pointer for non-builtin
+ * datatypes, should it take a dtypeptr argument (valid only if not
+ * builtin)?
+ */
+#define MPIR_ERRTEST_USERBUFFER(buf,count,dtype,err)                      \
+    if (count > 0 && buf == 0) {                                          \
+        int ferr = 0;                                                     \
+        if (HANDLE_GET_KIND(dtype) == HANDLE_KIND_BUILTIN) { ferr=1; }    \
+        else {                                                            \
+            MPID_Datatype *errdtypeptr;                                   \
+            MPID_Datatype_get_ptr(dtype,errdtypeptr);                     \
+            if (errdtypeptr && errdtypeptr->true_lb == 0) { ferr=1; }      \
+        }                                                                 \
+        if (ferr) {                                                       \
+            err = MPIR_Err_create_code(MPI_ERR_BUFFER, "**bufnull", 0 );} \
+    }
 /* The following are placeholders.  We haven't decided yet whether these
    should take a handle or pointer, or if they should take a handle and return 
    a pointer if the handle is valid.  These need to be rationalized with the
