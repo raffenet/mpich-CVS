@@ -25,18 +25,25 @@ public class CoordPixelImage implements CoordPixelXform
     private int               ipix_final;
     private int               ipix_width;
 
-    public CoordPixelImage( ScrollableObject image_object, int row_height )
+    public CoordPixelImage( ScrollableObject image_object )
     {
         img_obj        = image_object;
-        row_hgt        = row_height;
-        row_half_hgt   = row_height / 2 + 1;
+        row_hgt        = 0;
+        row_half_hgt   = 0;
     }
 
     public CoordPixelImage( ScrollableObject image_object, int row_height,
                             final TimeBoundingBox  image_timebounds )
     {
-        this( image_object, row_height );
+        this( image_object );
+        this.resetRowHeight( row_height );
         this.resetTimeBounds( image_timebounds );
+    }
+
+    public void resetRowHeight( int row_height )
+    {
+        row_hgt        = row_height;
+        row_half_hgt   = row_height / 2 + 1;
     }
 
     public void resetTimeBounds( final TimeBoundingBox  image_timebounds )

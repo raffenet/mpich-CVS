@@ -30,17 +30,18 @@ SRC       = Diagnosis.java Debug.java Profile.java SearchDialog.java \
             InfoPanelForDrawable.java InfoDialogForDrawable.java \
             ScrollableView.java ScrollableObject.java SearchableView.java \
             ToolBarStatus.java ViewportTime.java ViewportTimeYaxis.java \
-            RulerTime.java ViewportTimePanel.java \
-            CoordPixelImage.java SearchTreeTrunk.java CanvasTime.java \
+            RulerTime.java ViewportTimePanel.java CoordPixelImage.java \
+            SearchCriteria.java SearchTreeTrunk.java CanvasTime.java \
             ActionVportUp.java ActionVportDown.java \
             ActionTimelineMark.java ActionTimelineMove.java \
             ActionTimelineDelete.java \
             ActionYaxisTreeExpand.java ActionYaxisTreeCollapse.java \
             ActionYaxisTreeCommit.java \
             ActionVportBackward.java ActionVportForward.java \
-            ActionVportUp.java ActionZoomHome.java ActionVportDown.java \
-            ActionZoomIn.java ActionZoomOut.java \
+            ActionVportUp.java ActionVportDown.java \
+            ActionZoomIn.java ActionZoomHome.java ActionZoomOut.java \
             ActionZoomUndo.java ActionZoomRedo.java \
+            ActionSearchInit.java \
             ActionSearchForward.java ActionSearchBackward.java \
             ActionPptyRefresh.java ActionPptyPrint.java ActionPptyStop.java \
             TimelineToolBar.java TimelinePanel.java TimelineFrame.java

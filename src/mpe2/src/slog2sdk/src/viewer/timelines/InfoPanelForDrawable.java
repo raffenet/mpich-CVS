@@ -80,43 +80,54 @@ public class InfoPanelForDrawable extends JPanel
                 duration = shade.getLatestTime() - shade.getEarliestTime();
                 linebuf = new StringBuffer();
                 linebuf.append( "duration = (max)" + fmt.format(duration) );
-                duration = coords[coords_length-1].time - coords[0].time;
-                linebuf.append( ", (ave)" + fmt.format(duration) );
                 num_cols = linebuf.length();
                 textbuf.append( linebuf.toString() );
+                linebuf = new StringBuffer();
+                duration = coords[coords_length-1].time - coords[0].time;
+                linebuf.append( "duration = (ave) " + fmt.format(duration) );
+                if ( num_cols < linebuf.length() )
+                    num_cols = linebuf.length();
+                textbuf.append( "\n" + linebuf.toString() );
+
                     idx     = 0;
-                    textbuf.append( "\n" );
                     linebuf = new StringBuffer( "[" + idx + "]: " );
                     vertex  = coords[idx];
                     lineID  = new Integer(vertex.lineID);
                     node    = (YaxisTreeNode) map_line2treenodes.get( lineID );
                     nodes   = node.getPath();
                     linebuf.append( "time = (min)"
-                                  + fmt.format(shade.getEarliestTime())
-                                  + ", (ave)" + fmt.format(vertex.time) );
+                                  + fmt.format(shade.getEarliestTime()) );
                     for ( ii = 1; ii < nodes.length; ii++ )
                         linebuf.append( ", " + y_colnames[ii-1]
                                       + " = " + nodes[ ii ] );
                     if ( num_cols < linebuf.length() )
                         num_cols = linebuf.length();
-                    textbuf.append( linebuf.toString() );
+                    textbuf.append( "\n" + linebuf.toString() );
+                    linebuf = new StringBuffer( "[" + idx + "]: " );
+                    linebuf.append( "time = (ave) " + fmt.format(vertex.time) );
+                    if ( num_cols < linebuf.length() )
+                        num_cols = linebuf.length();
+                    textbuf.append( "\n" + linebuf.toString() );
 
                     idx     = coords_length-1;
-                    textbuf.append( "\n" );
                     linebuf = new StringBuffer( "[" + idx + "]: " );
                     vertex  = coords[idx];
                     lineID  = new Integer(vertex.lineID);
                     node    = (YaxisTreeNode) map_line2treenodes.get( lineID );
                     nodes   = node.getPath();
                     linebuf.append( "time = (max)"
-                                  + fmt.format(shade.getLatestTime())
-                                  + ", (ave)" + fmt.format(vertex.time) );
+                                  + fmt.format(shade.getLatestTime()) );
                     for ( ii = 1; ii < nodes.length; ii++ )
                         linebuf.append( ", " + y_colnames[ii-1]
                                       + " = " + nodes[ ii ] );
                     if ( num_cols < linebuf.length() )
                         num_cols = linebuf.length();
-                    textbuf.append( linebuf.toString() );
+                    textbuf.append( "\n" + linebuf.toString() );
+                    linebuf = new StringBuffer( "[" + idx + "]: " );
+                    linebuf.append( "time = (ave) " + fmt.format(vertex.time) );
+                    if ( num_cols < linebuf.length() )
+                        num_cols = linebuf.length();
+                    textbuf.append( "\n" + linebuf.toString() );
 
                 linebuf = new StringBuffer( "Number of Real Drawables = " );
                 linebuf.append( shade.getNumOfRealObjects() );
@@ -134,7 +145,6 @@ public class InfoPanelForDrawable extends JPanel
                 num_cols = linebuf.length();
                 textbuf.append( linebuf.toString() );
                 for ( idx = 0; idx < coords_length; idx++ ) {
-                    textbuf.append( "\n" );
                     linebuf = new StringBuffer( "[" + idx + "]: " );
                     vertex  = coords[idx];
                     lineID  = new Integer(vertex.lineID);
@@ -146,7 +156,7 @@ public class InfoPanelForDrawable extends JPanel
                                       + " = " + nodes[ ii ] );
                     if ( num_cols < linebuf.length() )
                         num_cols = linebuf.length();
-                    textbuf.append( linebuf.toString() );
+                    textbuf.append( "\n" + linebuf.toString() );
                 }
                 
                 String info_str = prime.toInfoBoxString().trim();

@@ -30,7 +30,6 @@ public class TimelinePanel extends JPanel
     private TreeNode                treeroot;
 
     private TimelineToolBar         toolbar;
-    private SearchDialog            search_dialog;
     private TreeTrunkPanel          treetrunk_panel;
     private BoundedRangeModel       y_model;
     private YaxisMaps               y_maps;
@@ -72,7 +71,7 @@ public class TimelinePanel extends JPanel
         /* Initialize the YaxisMaps through the initialization of YaxisTree */
         LineIDMapList lineIDmaps = slog_ins.getLineIDMapList();
         LineIDMap     lineIDmap  = (LineIDMap) lineIDmaps.get( view_ID );
-        String[]      y_colnames  = lineIDmap.getColumnLabels();
+        String[]      y_colnames = lineIDmap.getColumnLabels();
         y_maps      = new YaxisMaps( lineIDmap );
         y_tree      = new YaxisTree( y_maps.getTreeRoot() );
         y_maps.setTreeView( y_tree );   
@@ -147,7 +146,7 @@ public class TimelinePanel extends JPanel
                 time_canvas       = new CanvasTime( time_model, treetrunk,
                                                     y_model, y_maps,
                                                     y_colnames );
-                time_canvas_vport = new ViewportTimeYaxis( time_model );
+                time_canvas_vport = new ViewportTimeYaxis( time_model, y_tree );
                 time_canvas_vport.setView( time_canvas );
                 time_canvas_panel = new ViewportTimePanel( time_canvas_vport );
                 time_canvas_panel.setBorderTitle( " TimeLines ",
@@ -245,11 +244,9 @@ public class TimelinePanel extends JPanel
         this.add( splitter, BorderLayout.CENTER );
 
             /* The ToolBar for various user controls */
-            search_dialog = new SearchDialog( TopWindow.Timeline.getWindow() );
             toolbar = new TimelineToolBar( time_canvas_vport,
                                            y_scrollbar, y_tree, y_maps,
-                                           time_scrollbar, time_model,
-                                           search_dialog );
+                                           time_scrollbar, time_model );
 
         this.add( toolbar, BorderLayout.NORTH );
 

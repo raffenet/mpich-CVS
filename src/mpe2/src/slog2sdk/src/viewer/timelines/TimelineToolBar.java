@@ -27,7 +27,6 @@ public class TimelineToolBar extends JToolBar
     private YaxisMaps               y_maps;
     private ScrollbarTime           time_scrollbar;
     private ModelTime               time_model;
-    private SearchDialog            search_dialog;
 
     public  JButton                 mark_btn;
     public  JButton                 move_btn;
@@ -53,6 +52,7 @@ public class TimelineToolBar extends JToolBar
     public  JButton                 zoomRedo_btn;
 
     public  JButton                 searchBack_btn;
+    public  JButton                 searchInit_btn;
     public  JButton                 searchFore_btn;
 
     public  JButton                 refresh_btn;
@@ -65,8 +65,7 @@ public class TimelineToolBar extends JToolBar
                             JScrollBar yaxis_scrollbar,
                             YaxisTree yaxis_tree, YaxisMaps yaxis_maps,
                             ScrollbarTime a_time_scrollbar,
-                            ModelTime a_time_model,
-                            SearchDialog a_search_dialog )
+                            ModelTime a_time_model )
     {
         super();
         canvas_vport     = canvas_viewport;
@@ -75,7 +74,6 @@ public class TimelineToolBar extends JToolBar
         y_maps           = yaxis_maps;
         time_scrollbar   = a_time_scrollbar;
         time_model       = a_time_model;
-        search_dialog    = a_search_dialog;
         this.addButtons();
         canvas_vport.setToolBarStatus( this );
     }
@@ -316,9 +314,20 @@ public class TimelineToolBar extends JToolBar
         searchBack_btn.setMnemonic( KeyEvent.VK_B );
         // searchBack_btn.setPreferredSize( btn_dim );
         searchBack_btn.addActionListener( 
-                       new ActionSearchBackward( this, canvas_vport,
-                                                 search_dialog ) );
+                       new ActionSearchBackward( this, canvas_vport ) );
         super.add( searchBack_btn );
+
+        icon_URL = getURL( img_path + "Find24.gif" );
+        if ( icon_URL != null )
+            searchInit_btn = new JButton( new ImageIcon( icon_URL ) );
+        else
+            searchInit_btn = new JButton( "SearchInitialize" );
+        searchInit_btn.setToolTipText( "Initialize search in time" );
+        searchInit_btn.setMnemonic( KeyEvent.VK_I );
+        // searchInit_btn.setPreferredSize( btn_dim );
+        searchInit_btn.addActionListener(
+                       new ActionSearchInit( this, canvas_vport ) );
+        super.add( searchInit_btn );
 
         icon_URL = getURL( img_path + "FindFore24.gif" );
         if ( icon_URL != null )
@@ -327,9 +336,9 @@ public class TimelineToolBar extends JToolBar
             searchFore_btn = new JButton( "SearchForward" );
         searchFore_btn.setToolTipText( "Search backward in time" );
         searchFore_btn.setMnemonic( KeyEvent.VK_F );
+        // searchFore_btn.setPreferredSize( btn_dim );
         searchFore_btn.addActionListener(
-                       new ActionSearchForward( this, canvas_vport,
-                                                search_dialog ) );
+                       new ActionSearchForward( this, canvas_vport ) );
         super.add( searchFore_btn );
 
         super.addSeparator();
@@ -386,6 +395,7 @@ public class TimelineToolBar extends JToolBar
         this.resetZoomButtons();
 
         searchBack_btn.setEnabled( true );
+        searchInit_btn.setEnabled( true );
         searchFore_btn.setEnabled( true );
 
         refresh_btn.setEnabled( true );

@@ -48,12 +48,10 @@ public class ActionTimelineMark implements ActionListener
         selected_paths = tree.getSelectionPaths();
         for ( int idx = 0; idx < selected_paths.length; idx++ ) {
             node = (MutableTreeNode) selected_paths[idx].getLastPathComponent();
-            if ( tree.isExpanded( selected_paths[ idx ] ) ) {
-                if ( Debug.isActive() )
+            if ( Debug.isActive() ) {
+                if ( tree.isExpanded( selected_paths[ idx ] ) )
                     Debug.println( "\tselected an expanded node " + node );
-            }
-            else {
-                if ( Debug.isActive() )
+                else
                     Debug.println( "\tselected a collapsed node " + node );
             }
         }

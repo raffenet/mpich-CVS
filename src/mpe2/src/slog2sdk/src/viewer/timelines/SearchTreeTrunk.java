@@ -25,13 +25,13 @@ public class SearchTreeTrunk
     private static       TimeBoundingBox      Infinite_TimeBox;
 
     private              TreeTrunk            treetrunk;
-    private              ModelTime            time_model;
+    private              SearchCriteria       criteria;
     private              Drawable             last_found_dobj;
 
-    public SearchTreeTrunk( TreeTrunk  treebody,  ModelTime  a_time_model )
+    public SearchTreeTrunk( TreeTrunk  treebody, final YaxisTree y_tree )
     {
         treetrunk        = treebody;
-        time_model       = a_time_model;
+        criteria         = new SearchCriteria( y_tree );
         last_found_dobj  = null;
 
         Infinite_TimeBox = new TimeBoundingBox();
@@ -39,14 +39,11 @@ public class SearchTreeTrunk
         Infinite_TimeBox.setLatestTime( Double.POSITIVE_INFINITY );
     }
 
-    public Drawable previousDrawable( boolean isNewSearch )
+    // This is for a backward NEW SEARCH
+    public Drawable previousDrawable( double searching_time )
     {
         Iterator  dobjs;
         Drawable  dobj;
-        double    focus_time;
-
-        if ( isNewSearch )
-            last_found_dobj = null;
         /*
            Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
@@ -54,37 +51,57 @@ public class SearchTreeTrunk
         dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
                                                   !INCRE_STARTTIME_ORDER,
                                                   true );
-        if ( last_found_dobj != null ) {
-            while ( dobjs.hasNext() ) {
-                dobj = (Drawable) dobjs.next();
-                if ( DRAWING_ORDER.compare( dobj, last_found_dobj ) < 0 ) {
-                    last_found_dobj = dobj;
-                    return dobj;
-                }
-            }
-        }
-        else {
-            focus_time = time_model.getTimeZoomFocus();
-            while ( dobjs.hasNext() ) {
-                dobj = (Drawable) dobjs.next();
-                if ( dobj.getEarliestTime() <= focus_time ) { 
-                    last_found_dobj = dobj;
-                    return dobj;
-                }
+        criteria.initMatch();
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisible()
+                 && dobj.getEarliestTime() <= searching_time
+                 && criteria.isMatched( dobj ) ) { 
+                last_found_dobj = dobj;
+                return last_found_dobj;
             }
         }
         last_found_dobj = null;
         return null;
     }
 
-    public Drawable nextDrawable( boolean isNewSearch )
+    // This is for a backward CONTINUING SEARCH
+    public Drawable previousDrawable()
     {
         Iterator  dobjs;
         Drawable  dobj;
-        double    focus_time;
 
-        if ( isNewSearch )
-            last_found_dobj = null;
+        if ( last_found_dobj == null ) {
+            System.err.println( "SearchTreeTrunk.previousDrawable(): "
+                              + "Unexpected error, last_found_dobj == null" );
+            return null;
+        }
+        /*
+           Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
+           all drawables in the memory disregarding the treefloor's timebounds
+        */
+        dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+                                                  !INCRE_STARTTIME_ORDER,
+                                                  true );
+        criteria.initMatch();
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisible()
+                 && DRAWING_ORDER.compare( dobj, last_found_dobj ) < 0
+                 && criteria.isMatched( dobj ) ) {
+                last_found_dobj = dobj;
+                return last_found_dobj;
+            }
+        }
+        last_found_dobj = null;
+        return null;
+    }
+
+    // This is for a forward NEW SEARCH
+    public Drawable nextDrawable( double searching_time )
+    {
+        Iterator  dobjs;
+        Drawable  dobj;
         /*
            Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
            all drawables in the memory disregarding the treefloor's timebounds
@@ -92,23 +109,46 @@ public class SearchTreeTrunk
         dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
                                                   INCRE_STARTTIME_ORDER,
                                                   true );
-        if ( last_found_dobj != null ) {
-            while ( dobjs.hasNext() ) {
-                dobj = (Drawable) dobjs.next();
-                if ( DRAWING_ORDER.compare( dobj, last_found_dobj ) > 0 ) {
-                    last_found_dobj = dobj;
-                    return dobj;
-                }
+        criteria.initMatch();
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisible()
+                 && dobj.getEarliestTime() >= searching_time
+                 && criteria.isMatched( dobj ) ) {
+                last_found_dobj = dobj;
+                return last_found_dobj;
             }
         }
-        else {
-            focus_time = time_model.getTimeZoomFocus();
-            while ( dobjs.hasNext() ) {
-                dobj = (Drawable) dobjs.next();
-                if ( dobj.getEarliestTime() >= focus_time ) {
-                    last_found_dobj = dobj;
-                    return dobj;
-                }
+        last_found_dobj = null;
+        return null;
+    }
+
+    // This is for a forward CONTINUING SEARCH
+    public Drawable nextDrawable()
+    {
+        Iterator  dobjs;
+        Drawable  dobj;
+
+        if ( last_found_dobj == null ) {
+            System.err.println( "SearchTreeTrunk.nextDrawable(): "
+                              + "Unexpected error, last_found_dobj == null" );
+            return null;
+        }
+        /*
+           Use a infinite TimeBoundingBox so iteratorOfAllDrawables() returns
+           all drawables in the memory disregarding the treefloor's timebounds
+        */
+        dobjs = treetrunk.iteratorOfAllDrawables( Infinite_TimeBox,
+                                                  INCRE_STARTTIME_ORDER,
+                                                  true );
+        criteria.initMatch();
+        while ( dobjs.hasNext() ) {
+            dobj = (Drawable) dobjs.next();
+            if (    dobj.getCategory().isVisible()
+                 && DRAWING_ORDER.compare( dobj, last_found_dobj ) > 0
+                 && criteria.isMatched( dobj ) ) {
+                last_found_dobj = dobj;
+                return last_found_dobj;
             }
         }
         last_found_dobj = null;

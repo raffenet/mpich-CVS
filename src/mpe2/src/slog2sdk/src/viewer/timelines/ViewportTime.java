@@ -39,9 +39,9 @@ public class ViewportTime extends JViewport
     private   ToolBarStatus             toolbar       = null;
 
     private   TimeBoundingBox           vport_timebox = null;
-    private   CoordPixelImage           coord_xform   = null;
+    protected CoordPixelImage           coord_xform   = null;
 
-    protected TimeBoundingBox           zoom_timebox  = null;
+    private   TimeBoundingBox           zoom_timebox  = null;
     private   TimeBoundingBox           info_timebox  = null;
 
     // info_dialogs list is used to keep track of all InfoDialog boxes.
@@ -93,7 +93,7 @@ public class ViewportTime extends JViewport
             setPreferredSize( pref_sz );
         view_img     = (ScrollableView) view;
 
-        coord_xform  = new CoordPixelImage( (ScrollableObject) view_img, 0 );
+        coord_xform  = new CoordPixelImage( (ScrollableObject) view_img );
         super.addMouseListener( this );
         super.addMouseMotionListener( this );
 
@@ -231,7 +231,6 @@ public class ViewportTime extends JViewport
                -- JViewport.setViewPosition() may have invoked super.repaint()
             */
             this.repaint();
-
         }
         if ( Debug.isActive() ) {
             if ( view_img != null ) {
@@ -306,7 +305,6 @@ public class ViewportTime extends JViewport
         }
     }
 
-    //  This is for Debugging Profiling
     public void paint( Graphics g )
     {
         Iterator    itr;
@@ -412,7 +410,7 @@ public class ViewportTime extends JViewport
             //    ( (Component) view_img ).repaint();
             // -- JViewport.setViewPosition() may have invoked super.repaint()
 
-            super.repaint();
+            this.repaint();
         }
         if ( Debug.isActive() ) {
             if ( view_img != null ) {
@@ -435,8 +433,8 @@ public class ViewportTime extends JViewport
 
         public void mouseEntered( MouseEvent mouse_evt ) {}
         public void mouseExited( MouseEvent mouse_evt ) {}
-        public void mouseClicked( MouseEvent mouse_evt ) {}
         public void mouseMoved( MouseEvent mouse_evt ) {}
+        public void mouseClicked( MouseEvent mouse_evt ) {}
 
         /* 
             mouse_press_time is a temporary variable among
@@ -447,13 +445,19 @@ public class ViewportTime extends JViewport
 
         public void mousePressed( MouseEvent mouse_evt )
         {
+            Point  vport_click;
             double click_time;
+
+            // Ignore all mouse events when Control key is pressed
+            if ( mouse_evt.isControlDown() )
+                return;
+
             vport_timebox.setEarliestTime( time_model.getTimeViewPosition() );
             vport_timebox.setLatestFromEarliest(
                           time_model.getTimeViewExtent() );
             coord_xform.resetTimeBounds( vport_timebox );
-            Point vport_click = mouse_evt.getPoint();
-            click_time = coord_xform.convertPixelToTime( vport_click.x );
+            vport_click = mouse_evt.getPoint();
+            click_time  = coord_xform.convertPixelToTime( vport_click.x );
             if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
                 zoom_timebox.setZeroDuration( click_time );
                 this.repaint();
@@ -469,9 +473,15 @@ public class ViewportTime extends JViewport
 
         public void mouseDragged( MouseEvent mouse_evt )
         {
+            Point  vport_click;
             double click_time, focus_time;
-            Point vport_click = mouse_evt.getPoint();
-            click_time = coord_xform.convertPixelToTime( vport_click.x );
+
+            // Ignore all mouse events when Control key is pressed
+            if ( mouse_evt.isControlDown() )
+                return;
+
+            vport_click = mouse_evt.getPoint();
+            click_time  = coord_xform.convertPixelToTime( vport_click.x );
             if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
                 if ( click_time > mouse_pressed_time )
                     zoom_timebox.setLatestTime( click_time );
@@ -498,8 +508,12 @@ public class ViewportTime extends JViewport
             Point             vport_click, view_click, global_click;
             double            click_time, focus_time;
 
+            // Ignore all mouse events when Control key is pressed
+            if ( mouse_evt.isControlDown() )
+                return;
+
             vport_click = mouse_evt.getPoint();
-            click_time = coord_xform.convertPixelToTime( vport_click.x );
+            click_time  = coord_xform.convertPixelToTime( vport_click.x );
             if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
                 if ( click_time > mouse_pressed_time )
                     zoom_timebox.setLatestTime( click_time );
@@ -552,6 +566,15 @@ public class ViewportTime extends JViewport
                 this.repaint();
             }
         }
+
+    protected InfoDialog getLastInfoDialog()
+    {
+        int info_dialogs_size = info_dialogs.size();
+        if ( info_dialogs_size > 0 )
+            return (InfoDialog) info_dialogs.get( info_dialogs_size - 1 );
+        else
+            return null;
+    }
 
 
 

@@ -10,6 +10,9 @@
 package viewer.timelines;
 
 import java.awt.Component;
+import java.awt.Rectangle;
+
+import base.drawable.Drawable;
 
 /*
    Define the interface to be implemented by the view object, ScrollableView,
@@ -18,7 +21,18 @@ import java.awt.Component;
 
 public interface SearchableView
 {
-    public Component searchNextComponent( boolean isNewSearch );
+    public Rectangle localRectangleForDrawable( final Drawable dobj );
 
-    public Component searchPreviousComponent( boolean isNewSearch );
+    // NEW search starting from the specified time
+    public Component searchPreviousComponent( double searching_time );
+
+    // CONTINUING search
+    public Component searchPreviousComponent();
+
+    // NEW search starting from the specified time
+    public Component searchNextComponent( double searching_time );
+
+    // CONTINUING search
+    public Component searchNextComponent();
+
 }

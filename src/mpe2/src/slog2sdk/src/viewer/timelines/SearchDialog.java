@@ -14,19 +14,23 @@ import java.awt.event.*;
 import javax.swing.*;
 
 import base.drawable.Drawable;
+import viewer.common.TopWindow;
 
 public class SearchDialog extends JDialog 
                           implements ActionListener
 {
-    private JFrame       root_frame;
-    private Container    root_panel;
-    private JButton      close_btn;
+    private JFrame             root_frame;
+    private ViewportTimeYaxis  viewport;
 
-    public SearchDialog( final JFrame  frame )
+    private Container          root_panel;
+    private JButton            close_btn;
+
+    public SearchDialog( final JFrame frame, ViewportTimeYaxis  vport )
     {
         super( frame, "Search Box" );
-        super.setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
+        super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 
+        viewport   = vport;
         root_frame = frame;
 
         root_panel = super.getContentPane();
@@ -35,6 +39,16 @@ public class SearchDialog extends JDialog
         close_btn = new JButton( "close" );
         close_btn.addActionListener( this );
         close_btn.setAlignmentX( Component.CENTER_ALIGNMENT );
+
+        super.addWindowListener( new WindowAdapter()
+        {
+            public void windowClosing( WindowEvent evt )
+            {
+                SearchDialog.this.setVisible( false );
+                viewport.eraseSearchedDrawable();
+                viewport.repaint();
+            }
+        } );
 
         super.setVisible( false );
     }
@@ -49,9 +63,17 @@ public class SearchDialog extends JDialog
 
     public void setVisibleAtDefaultLocation()
     {
-        Rectangle  rect    = root_frame.getBounds();
-        Point      loc_pt  = new Point( rect.x + rect.width / 2,
-                                        rect.y + rect.height );
+        Rectangle rect   = null;
+        Point     loc_pt = null;
+        Frame     frame  = TopWindow.First.getWindow();
+        if ( frame != null ) {
+            rect    = frame.getBounds();
+            loc_pt  = new Point( rect.x + rect.width, rect.y );
+        }
+        else {
+            rect    = root_frame.getBounds();
+            loc_pt  = new Point( rect.x + rect.width, rect.y );
+        }
         this.setVisibleAtLocation( loc_pt );
     }
 
@@ -66,7 +88,11 @@ public class SearchDialog extends JDialog
 
     public void actionPerformed( ActionEvent evt )
     {
-        if ( evt.getSource() == close_btn )
+        if ( evt.getSource() == close_btn ) {
             super.setVisible( false );
+            viewport.eraseSearchedDrawable();
+            viewport.repaint();
+        }
     }
+
 }

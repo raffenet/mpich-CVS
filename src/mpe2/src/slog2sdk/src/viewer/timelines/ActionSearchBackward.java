@@ -9,37 +9,25 @@
 
 package viewer.timelines;
 
-import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
 
 public class ActionSearchBackward implements ActionListener
 {
     private TimelineToolBar    toolbar;
     private ViewportTimeYaxis  canvas_vport;
-    private SearchDialog       search_dialog;
 
     public ActionSearchBackward( TimelineToolBar    in_toolbar,
-                                 ViewportTimeYaxis  in_vport,
-                                 SearchDialog       in_dialog )
+                                 ViewportTimeYaxis  in_vport )
     {
         toolbar       = in_toolbar;
         canvas_vport  = in_vport;
-        search_dialog = in_dialog;
     }
 
     public void actionPerformed( ActionEvent event )
     {
-        Component jcomponent = canvas_vport.searchBackward();
-        if ( jcomponent != null ) {
-            search_dialog.replace( jcomponent );
-            if ( ! search_dialog.isVisible() )
-                search_dialog.setVisibleAtDefaultLocation();
-        }
-        else
-            search_dialog.setVisible( false );
+        canvas_vport.searchBackward();
 
         if ( Debug.isActive() )
-            Debug.println( "Action for Serach Backward button. " );
+            Debug.println( "Action for Search Backward button. " );
     }
 }
