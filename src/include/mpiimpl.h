@@ -354,12 +354,19 @@ typedef struct {
     /* other, device-specific information */
 } MPID_Attribute;
 
+/* This structure is used to implement the group operations such as 
+   MPI_Group_translate_ranks */
+typedef struct {
+    int          lpid, lrank;
+} MPID_Group_pmap_t;
+
 typedef struct {
     int          id;
     volatile int ref_count;
     int          size;           /* Size of a group */
     int          *lrank_to_lpid; /* Array mapping a local rank to local 
 				    process number */
+    MPID_Group_pmap_t *lpid_to_lrank;
   /* Other, device-specific information */
 #ifdef MPID_DEV_GROUP_DECL
     MPID_DEV_GROUP_DECL
@@ -483,7 +490,7 @@ typedef struct MPID_Datatype_st {
     int           n_elements;   /* Number of basic elements in this datatype */
     MPI_Aint      element_size; /* Size of each element or -1 if elements are
 				   not all the same size */
-
+    int (*free_fn)( MPID_Datatype * ); /* Function to free this datatype */
     /* Other, device-specific information */
 #ifdef MPID_DEV_DATATYPE_DECL
     MPID_DEV_DATATYPE_DECL
