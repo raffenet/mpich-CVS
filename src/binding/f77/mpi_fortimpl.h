@@ -53,6 +53,11 @@
 /* mpi.h includes the definitions of MPI_Fint */
 #include "mpi.h"
 
+/* FIXME: These need to be prototyped but maybe not here. */
+void MPIR_Keyval_set_fortran( int );
+void MPIR_Keyval_set_fortran90( int );
+void MPIR_Grequest_set_lang_f77( MPI_Request greq );
+
 /* If there is no MPI I/O support, and we are still using MPIO_Request,
    make sure that one is defined */
 #ifndef MPIO_REQUEST_DEFINED
@@ -73,12 +78,15 @@ typedef MPI_Aint MPI_FAint;
 
 /* Fortran logical values */
 #ifndef _CRAY
+#ifdef F77_USE_BOOLEAN_LITERALS
+#define MPIR_F_TRUE  F77_TRUE_VALUE
+#define MPIR_F_FALSE F77_FALSE_VALUE
+#else
 #if !defined(F77_RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
-/*#define MPIR_F_TRUE  F77_TRUE_VALUE*/
-/*#define MPIR_F_FALSE F77_FALSE_VALUE */
 extern const int MPIR_F_TRUE, MPIR_F_FALSE;
 #else
 extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
+#endif
 #endif
 #define MPIR_TO_FLOG(a) ((a) ? MPIR_F_TRUE : MPIR_F_FALSE)
 /* 

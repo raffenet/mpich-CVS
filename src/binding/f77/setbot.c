@@ -17,11 +17,13 @@
 #define mpirinitc_ mpirinitc
 #endif
 
+#ifndef F77_USE_BOOLEAN_LITERALS
 #if defined(F77_RUNTIME_VALUES) || !defined(F77_TRUE_VALUE_SET)
 MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
 #else
 const MPI_Fint MPIR_F_TRUE=F77_TRUE_VALUE;
 const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
+#endif
 #endif
 
 #ifndef USE_POINTER_FOR_BOTTOM

@@ -2263,11 +2263,13 @@ sub build_specials {
     # external symbols that don't have a value assigned at compile time 
     # (so called common symbols)
     print $OUTFD "
+#ifndef F77_USE_BOOLEAN_LITERALS
 #if defined(F77_RUNTIME_VALUES) || !defined(F77_TRUE_VALUE_SET)
 MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
 #else
 const MPI_Fint MPIR_F_TRUE=F77_TRUE_VALUE;
 const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
+#endif
 #endif
 ";
     # MPI-2, section 4.12.5, on the declaration of MPI_F_STATUS_IGNORE
