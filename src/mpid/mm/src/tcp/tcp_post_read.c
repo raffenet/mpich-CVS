@@ -20,15 +20,11 @@ int tcp_post_read_pkt(MPIDI_VC *vc_ptr)
 #ifdef MPICH_DEV_BUILD
     if (!vc_ptr->data.tcp.connected)
     {
-	err_printf("Error: tcp_post_read_pkt cannot change to reading_header until the vc is connected.\n");
+	err_printf("Error: tcp_post_read_pkt cannot change to reading_header state until the vc is connected.\n");
     }
 #endif
     vc_ptr->data.tcp.bytes_of_header_read = 0;
     vc_ptr->data.tcp.read = tcp_read_header;
-    /*
-    tcp_setup_packet_car(vc_ptr, MM_READ_CAR, vc_ptr->rank, &vc_ptr->pkt_car);
-    tcp_post_read(vc_ptr, &vc_ptr->pkt_car);
-    */
 
     MM_EXIT_FUNC(TCP_POST_READ_PKT);
     return MPI_SUCCESS;

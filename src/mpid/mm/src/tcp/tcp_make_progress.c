@@ -26,6 +26,7 @@ int tcp_accept_connection()
 	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	return -1;
     }
+    /* receive the remote rank */
     if (beasy_receive(bfd, (void*)&remote_rank, sizeof(int)) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
@@ -34,6 +35,7 @@ int tcp_accept_connection()
 	MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	return -1;
     }
+    /* receive the remote context */
     if (beasy_receive(bfd, (void*)&context, sizeof(int)) == SOCKET_ERROR)
     {
 	TCP_Process.error = beasy_getlasterror();
@@ -43,12 +45,16 @@ int tcp_accept_connection()
 	return -1;
     }
 
+    /* resolve the context to a virtual connection */
     vc_ptr = mm_vc_from_context(context, remote_rank);
     
     MPID_Thread_lock(vc_ptr->lock);
 
     if (vc_ptr->method == MM_UNBOUND_METHOD)
     {
+	/* This block really is impossible to get to because tcp_accept_connection 
+	 * can only be called if you know that the vc is bound to the tcp method.
+	 */
 	vc_ptr->method = MM_TCP_METHOD;
 	vc_ptr->data.tcp.bfd = bfd;
 	vc_ptr->post_read = tcp_post_read;
@@ -82,6 +88,7 @@ int tcp_accept_connection()
     }
     else
     {
+#ifdef MPICH_DEV_BUILD
 	if (vc_ptr->method != MM_TCP_METHOD)
 	{
 	    err_printf("Error:tcp_accept_connection: vc is already connected with method %d\n", vc_ptr->method);
@@ -96,6 +103,7 @@ int tcp_accept_connection()
 	    MM_EXIT_FUNC(TCP_ACCEPT_CONNECTION);
 	    return -1;
 	}
+#endif
 	if (remote_rank > MPIR_Process.comm_world->rank)
 	{
 	    if (vc_ptr->data.tcp.bfd == TCP_Process.max_bfd)
@@ -183,16 +191,19 @@ int tcp_make_progress()
     if ((TCP_Process.num_readers == 0) &&
 	(TCP_Process.num_writers == 0))
     {
+	/* shortcut out because there are no sockets in either the read set or the write set */
 	MM_EXIT_FUNC(TCP_MAKE_PROGRESS);
 	return MPI_SUCCESS;
     }
 
+    /* This function needs a way to know if it should block or not */
     tv.tv_sec = 0;
     tv.tv_usec = 1;
     
     readset = TCP_Process.readset;
     writeset = TCP_Process.writeset;
 
+    /* select */
     MM_ENTER_FUNC(BSELECT);
     nready = bselect(TCP_Process.max_bfd, 
 	TCP_Process.num_readers ? &readset : NULL,
@@ -206,14 +217,14 @@ int tcp_make_progress()
 	return MPI_SUCCESS;
     }
 
+    /* handle readers */
     if ((vc_iter = TCP_Process.read_list) != NULL)
     {
 	do
 	{
 	    if (BFD_ISSET(vc_iter->data.tcp.bfd, &readset))
 	    {
-		/* read data */
-		/*tcp_read(vc_iter);*/
+		/* read */
 		vc_iter->data.tcp.read(vc_iter);
 		nready--;
 	    }
@@ -226,13 +237,14 @@ int tcp_make_progress()
 	}while (vc_iter);
     }
 
+    /* handle writers */
     if ((vc_iter = TCP_Process.write_list) != NULL)
     {
 	do
 	{
 	    if (BFD_ISSET(vc_iter->data.tcp.bfd, &writeset))
 	    {
-		/* write data */
+		/* write */
 		/*tcp_write(vc_iter);*/
 		tcp_write_aggressive(vc_iter);
 		nready--;
@@ -252,6 +264,7 @@ int tcp_make_progress()
 	return MPI_SUCCESS;
     }
 
+    /* handle new connections */
     if (BFD_ISSET(TCP_Process.listener, &readset))
     {
 	nready--;

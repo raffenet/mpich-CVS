@@ -29,7 +29,11 @@ int packer_finalize()
 {
     MM_ENTER_FUNC(PACKER_FINALIZE);
 
-    mm_vc_free(MPID_Process.packer_vc_ptr);
+    if (MPID_Process.packer_vc_ptr != NULL)
+    {
+	mm_vc_free(MPID_Process.packer_vc_ptr);
+	MPID_Process.packer_vc_ptr = NULL;
+    }
 
     MM_EXIT_FUNC(PACKER_FINALIZE);
     return MPI_SUCCESS;

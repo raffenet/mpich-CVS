@@ -32,14 +32,17 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
     }
 #endif
 
+    /* check if this communicator has its vc reference table initialized yet */
     if (comm_ptr->vcrt == NULL)
     {
+	/* allocate a vc reference table */
 	mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    MM_EXIT_FUNC(MM_VC_FROM_COMMUNICATOR);
 	    return NULL;
 	}
+	/* get an alias to the array of vc pointers */
 	mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -53,8 +56,6 @@ MPIDI_VC * mm_vc_from_communicator(MPID_Comm *comm_ptr, int rank)
     {
 	/* allocate and connect a virtual connection */
 	comm_ptr->vcr[rank] = vc_ptr = mm_vc_connect_alloc(comm_ptr, rank);
-	/* post a read on the newly connected vc for a packet */
-	/*vc_ptr->post_read_pkt(vc_ptr);*/ /* this is automatic now */
     }
 
     MM_EXIT_FUNC(MM_VC_FROM_COMMUNICATOR);
@@ -82,14 +83,17 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
     /*comm_ptr = MPID_Get_comm_from_context(comm_context); */
     comm_ptr = MPIR_Process.comm_world;
 
+    /* check if this communicator has its vc reference table initialized yet */
     if (comm_ptr->vcrt == NULL)
     {
+	/* allocate a vc reference table */
 	mpi_errno = MPID_VCRT_Create(comm_ptr->remote_size, &comm_ptr->vcrt);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    MM_EXIT_FUNC(MM_VC_FROM_CONTEXT);
 	    return NULL;
 	}
+	/* get an alias to the array of vc pointers */
 	mpi_errno = MPID_VCRT_Get_ptr(comm_ptr->vcrt, &comm_ptr->vcr);
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -101,6 +105,7 @@ MPIDI_VC * mm_vc_from_context(int comm_context, int rank)
     vc_ptr = comm_ptr->vcr[rank];
     if (vc_ptr == NULL)
     {
+	/* allocate a virtual connection */
 	comm_ptr->vcr[rank] = vc_ptr = mm_vc_alloc(MM_UNBOUND_METHOD);
     }
 

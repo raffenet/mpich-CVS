@@ -151,7 +151,6 @@ int tcp_car_enqueue(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
 	vc_ptr->readq_tail = car_ptr;
     }
 
-    //car_ptr->vcqnext_ptr = NULL;
     iter_ptr = car_ptr;
     do
     {

@@ -16,17 +16,19 @@ int mm_enqueue_request_to_send(MM_Car *unex_head_car_ptr)
     /*printf("mm_enqueue_request_to_send\n");fflush(stdout);*/
     car_ptr = mm_car_alloc();
 
-    //car_ptr->msg_header = unex_head_car_ptr->msg_header;
+    car_ptr->msg_header = unex_head_car_ptr->msg_header;
+    /*
     car_ptr->msg_header.pkt.u.hdr.context = unex_head_car_ptr->msg_header.pkt.u.hdr.context;
-#ifdef MPICH_DEV_BUILD
-    if ((unsigned long)unex_head_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr < 1000)
-	err_printf("Error: mm_enqueue_request_to_send setting invalid send_car_ptr: %u\n", unex_head_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr);
-#endif
     car_ptr->msg_header.pkt.u.hdr.sender_car_ptr = unex_head_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr;
     car_ptr->msg_header.pkt.u.hdr.size = unex_head_car_ptr->msg_header.pkt.u.hdr.size;
     car_ptr->msg_header.pkt.u.hdr.src = unex_head_car_ptr->msg_header.pkt.u.hdr.src;
     car_ptr->msg_header.pkt.u.hdr.tag = unex_head_car_ptr->msg_header.pkt.u.hdr.tag;
     car_ptr->msg_header.pkt.u.hdr.type = unex_head_car_ptr->msg_header.pkt.u.hdr.type;
+    */
+#ifdef MPICH_DEV_BUILD
+    if ((unsigned long)unex_head_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr < 1000)
+	err_printf("Error: mm_enqueue_request_to_send setting invalid send_car_ptr: %u\n", unex_head_car_ptr->msg_header.pkt.u.hdr.sender_car_ptr);
+#endif
 
     car_ptr->buf_ptr = &car_ptr->msg_header.buf;
     car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;

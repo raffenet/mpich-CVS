@@ -56,15 +56,6 @@ int tmp_buffer_init(MPID_Request *request_ptr)
     MM_ENTER_FUNC(TMP_BUFFER_INIT);
     
     request_ptr->mm.buf.type = MM_TMP_BUFFER;
-    /*
-    request_ptr->mm.buf.tmp.buf[0] = NULL;
-    request_ptr->mm.buf.tmp.buf[1] = NULL;
-    request_ptr->mm.buf.tmp.len[0] = 0;
-    request_ptr->mm.buf.tmp.len[1] = 0;
-    request_ptr->mm.buf.tmp.cur_buf = 0;
-    request_ptr->mm.buf.tmp.min_num_written = 0;
-    request_ptr->mm.buf.tmp.num_read = 0;
-    */
     request_ptr->mm.buf.tmp.buf = NULL;
     request_ptr->mm.buf.tmp.len = 0;
     request_ptr->mm.buf.tmp.num_read = 0;

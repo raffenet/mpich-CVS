@@ -40,21 +40,21 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     MPID_Thread_lock_init(MPID_Process.qlock);
     MPID_Thread_lock_init(MPID_Process.lock);
 
-    dbg_printf("+PMI_Init");
+    /*dbg_printf("+PMI_Init");*/
     PMI_Init(&spawned);
-    dbg_printf("-\n+PMI_Get_rank:");
+    /*dbg_printf("-\n+PMI_Get_rank:");*/
     PMI_Get_rank(&MPIR_Process.comm_world->rank);
-    dbg_printf("%d-\n+PMI_Get_size:", MPIR_Process.comm_world->rank);
+    /*dbg_printf("%d-\n+PMI_Get_size:", MPIR_Process.comm_world->rank);*/
     PMI_Get_size(&MPIR_Process.comm_world->local_size);
-    dbg_printf("%d-\n", MPIR_Process.comm_world->local_size);
+    /*dbg_printf("%d-\n", MPIR_Process.comm_world->local_size);*/
     MPIR_Process.comm_world->remote_size = MPIR_Process.comm_world->local_size;
-    dbg_printf("+PMI_KVS_Get_my_name:");
+    /*dbg_printf("+PMI_KVS_Get_my_name:");*/
     PMI_KVS_Get_my_name(MPID_Process.pmi_kvsname);
-    dbg_printf("%s-\n", MPID_Process.pmi_kvsname);
+    /*dbg_printf("%s-\n", MPID_Process.pmi_kvsname);*/
     MPIR_Process.comm_world->mm.pmi_kvsname = MPID_Process.pmi_kvsname;
-    dbg_printf("+PMI_Barrier");
+    /*dbg_printf("+PMI_Barrier");*/
     PMI_Barrier();
-    dbg_printf("-\n");
+    /*dbg_printf("-\n");*/
 
 #ifdef USE_MPE_PROFILING
     prof_init(MPIR_Process.comm_world->rank, MPIR_Process.comm_world->local_size);
@@ -62,9 +62,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 
     if (spawned)
     {
-	dbg_printf("+PMI_KVS_Get");
+	/*dbg_printf("+PMI_KVS_Get");*/
 	PMI_KVS_Get(MPID_Process.pmi_kvsname, MPICH_PARENT_PORT_KEY, pszPortName);
-	dbg_printf("-\n");
+	/*dbg_printf("-\n");*/
 	/*PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPID_Process.comm_parent); */
     }
     else
@@ -100,9 +100,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     new_method_init();
 #endif
 
-    dbg_printf("+PMI_KVS_Get_value_length_max");
+    /*dbg_printf("+PMI_KVS_Get_value_length_max");*/
     value_len = PMI_KVS_Get_value_length_max();
-    dbg_printf("-\n");
+    /*dbg_printf("-\n");*/
     if (value_len < 1)
     {
 	err_printf("PMI_KVS_Get_value_length_max returned %d\n", value_len);
@@ -114,9 +114,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 	err_printf("MPIU_Malloc(%d) failed\n", value_len);
 	return -1;
     }
-    dbg_printf("+PMI_KVS_Get_key_length_max");
+    /*dbg_printf("+PMI_KVS_Get_key_length_max");*/
     key_len = PMI_KVS_Get_key_length_max();
-    dbg_printf("-\n");
+    /*dbg_printf("-\n");*/
     if (key_len < 1)
     {
 	err_printf("PMI_KVS_Get_key_length_max returned %d\n", key_len);
@@ -133,17 +133,17 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     strncat(sCapabilities, "shm,", 5);
     shm_get_business_card(value, value_len);
     snprintf(key, key_len, "business_card_shm:%d", MPIR_Process.comm_world->rank);
-    dbg_printf("+PMI_KVS_Put([%s],[%s])", key, value);
+    /*dbg_printf("+PMI_KVS_Put([%s],[%s])", key, value);*/
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
-    dbg_printf("-\n");
+    /*dbg_printf("-\n");*/
 #endif
 #ifdef WITH_METHOD_TCP
     strncat(sCapabilities, "tcp,", 5);
     tcp_get_business_card(value, value_len);
     snprintf(key, key_len, "business_card_tcp:%d", MPIR_Process.comm_world->rank);
-    dbg_printf("+PMI_KVS_Put([%s],[%s])", key, value);
+    /*dbg_printf("+PMI_KVS_Put([%s],[%s])", key, value);*/
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
-    dbg_printf("-\n");
+    /*dbg_printf("-\n");*/
 #endif
 #ifdef WITH_METHOD_VIA
     strncat(sCapabilities, "via,", 5);
@@ -168,13 +168,13 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 	sCapabilities[strlen(sCapabilities)-1] = '\0';
 
     snprintf(key, key_len, "businesscard:%d", MPIR_Process.comm_world->rank);
-    dbg_printf("+PMI_KVS_Put([%s],[%s])", key, sCapabilities);
+    /*dbg_printf("+PMI_KVS_Put([%s],[%s])", key, sCapabilities);*/
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, sCapabilities);
-    dbg_printf("-\n+PMI_KVS_Commit");
+    /*dbg_printf("-\n+PMI_KVS_Commit");*/
     PMI_KVS_Commit(MPID_Process.pmi_kvsname);
-    dbg_printf("-\n+PMI_Barrier");
+    /*dbg_printf("-\n+PMI_Barrier");*/
     PMI_Barrier();
-    dbg_printf("-\n");
+    /*dbg_printf("-\n");*/
 
     MPIU_Free(value);
     MPIU_Free(key);

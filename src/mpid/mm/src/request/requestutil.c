@@ -29,11 +29,16 @@ MPID_Request * mm_request_alloc()
     }
     p->cc = 0;
     p->cc_ptr = &p->cc;
+    /* prevent the built in cars from being freed */
     p->mm.rcar[0].freeme = FALSE;
     p->mm.rcar[1].freeme = FALSE;
     p->mm.wcar[0].freeme = FALSE;
     p->mm.wcar[1].freeme = FALSE;
     p->mm.next_ptr = NULL;
+
+#ifdef MPICH_DEV_BUILD
+    /* insert stuff like "ptr = INVALID_POINTER" here */
+#endif
 
     MM_EXIT_FUNC(MM_REQUEST_ALLOC);
     return p;

@@ -28,6 +28,8 @@ int packer_reset_car(MM_Car *car_ptr)
 	car_ptr->data.packer.last = 0;
 	break;
     case MM_VEC_BUFFER:
+	car_ptr->data.packer.first = 0;
+	car_ptr->data.packer.last = 0;
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_BUFFER:
