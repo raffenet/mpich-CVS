@@ -424,7 +424,7 @@ typedef struct MPID_Comm {
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
-    struct MPID_VC **vcrt;       /* pointer to the virtual connecton reference
+    struct MPIDI_VC **vcrt;      /* pointer to the virtual connecton reference
 				    table (which is an array of pointers to
 				    virtual connections */
     volatile int  *vcrt_ref_count;/* reference count for the VCRT */
@@ -727,15 +727,17 @@ void MPIR_Nest_decr( void );
 int MPIR_Nest_value( void );
 
 /* ADI Bindings */
+int MPID_Init(int *, char ***, int, int *, int *, int *);
+int MPID_Finalize(void);
+
+int MPID_Open_port(MPID_Info *, char *);
 int MPID_Close_port(char *);
 int MPID_Comm_accept(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPID_Comm_disconnect(MPID_Comm *);
 int MPID_Comm_spawn_multiple(int, char *[], char* *[], int [], MPI_Info [],
 			     int, MPID_Comm *, MPID_Comm **, int []);
-int MPID_Finalize(void);
-int MPID_Init(int *, char ***, int, int *, int *, int *);
-int MPID_Open_port(MPID_Info *, char *);
+
 int MPID_Send(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	       MPID_Request **);
 int MPID_Isend(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
@@ -744,10 +746,28 @@ int MPID_Recv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	      MPI_Status *, MPID_Request **);
 int MPID_Irecv(void *, int, MPI_Datatype, int, int, MPID_Comm *, int,
 	       MPID_Request **);
+
+#if !defined(MPID_Progress_start)
 void MPID_Progress_start();
+#endif
+#if !defined(MPID_Progress_end)
 void MPID_Progress_end();
+#endif
+#if !defined(MPID_Progress_test)
 int MPID_Progress_test();
+#endif
+#if !defined(MPID_Progress_wait)
 void MPID_Progress_wait();
+#endif
+#if !defined(MPID_Progress_poke)
 void MPID_Progress_poke();
+#endif
+
+#if !defined(MPID_Request_new)
+MPID_Request * MPID_Request_new();
+#endif
+#if !defined(MPID_Request_free)
+void MPID_Request_free(MPID_Request *);
+#endif
 
 #endif /* MPIIMPL_INCLUDED */
