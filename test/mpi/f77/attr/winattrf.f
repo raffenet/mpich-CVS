@@ -93,7 +93,47 @@ C Test the delete function on window free
          errs = errs + 1
          call mtestprinterror( ierr )
       endif
+C
+C The MPI standard defines null copy and duplicate functions.
+C However, are only used when an object is duplicated.  Since
+C MPI_Win objects cannot be duplicated, so under normal circumstances,
+C these will not be called.  Since they are defined, they should behave
+C as defined.  To test them, we simply call them here
+      flag   = .false.
+      valin  = 7001
+      valout = -1
+      ierr   = -1
+      call MPI_WIN_DUP_FN( win, keyval, extrastate, valin, valout,
+     $     flag, ierr ) 
+      if (.not. flag) then
+         errs = errs + 1
+         print *, " Flag was false after MPI_WIN_DUP_FN"
+      else if (valout .ne. 7001) then
+         errs = errs + 1
+         print *, " output attr value was not copied in MPI_WIN_DUP_FN" 
+      else if (ierr .ne. MPI_SUCCESS) then
+         errs = errs + 1
+         print *, " MPI_WIN_DUP_FN did not return MPI_SUCCESS"
+      endif
 
+      flag   = .true.
+      valin  = 7001
+      valout = -1
+      ierr   = -1
+      call MPI_WIN_NULL_COPY_FN( win, keyval, extrastate, valin, valout
+     $     ,flag, ierr ) 
+      if (flag) then
+         errs = errs + 1
+         print *, " Flag was true after MPI_WIN_NULL_COPY_FN"
+      else if (valout .ne. -1) then
+         errs = errs + 1
+         print *,
+     $        " output attr value was copied in MPI_WIN_NULL_COPY_FN" 
+      else if (ierr .ne. MPI_SUCCESS) then
+         errs = errs + 1
+         print *, " MPI_WIN_NULL_COPY_FN did not return MPI_SUCCESS"
+      endif
+C
       call mtest_finalize( errs )
       call mpi_finalize( ierr )
       end
