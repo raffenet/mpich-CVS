@@ -2204,6 +2204,26 @@ FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d )
  */
 #include \"mpi_fortimpl.h\"
 #include \"mpiimpl.h\"
+
+/* -- Begin Profiling Symbol Block for routine MPI_Status_f2c */
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_Status_f2c = PMPI_Status_f2c
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_Status_f2c  MPI_Status_f2c
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_Status_f2c as PMPI_Status_f2c
+#endif
+/* -- End Profiling Symbol Block */
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#define MPI_Status_f2c PMPI_Status_f2c
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPI_Status_f2c
+
 int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
 {
     int mpi_errno = MPI_SUCCESS;
@@ -2233,6 +2253,26 @@ int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
  */
 #include \"mpi_fortimpl.h\"
 #include \"mpiimpl.h\"
+
+/* -- Begin Profiling Symbol Block for routine MPI_Status_c2f */
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPI_Status_c2f = PMPI_Status_c2f
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_Status_c2f  MPI_Status_c2f
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPI_Status_c2f as PMPI_Status_c2f
+#endif
+/* -- End Profiling Symbol Block */
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#define MPI_Status_c2f PMPI_Status_c2f
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPI_Status_c2f
+
 int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 {
     int mpi_errno = MPI_SUCCESS;
