@@ -49,19 +49,21 @@ MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int rank)
 }
 
 /*@
-   mm_vc_get - get the virtual connection pointer
+   mm_vc_get - get the virtual connection pointer from a remote context and rank
 
    Parameters:
-+  int rank - rank
++  int comm_context - context of the communicator
+-  int rank - rank
 
    Notes:
 @*/
-MPIDI_VC *mm_vc_get(int rank)
+MPIDI_VC *mm_vc_get(int comm_context, int rank)
 {
     int mpi_errno;
     MPIDI_VC *vc_ptr;
     MPID_Comm *comm_ptr;
 
+    /*comm_ptr = MPID_Get_comm_from_context(comm_context); */
     comm_ptr = MPIR_Process.comm_world;
 
     if (comm_ptr->vcrt == NULL)

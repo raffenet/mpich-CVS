@@ -110,7 +110,7 @@ int mm_cq_test()
 		car_ptr->request_ptr->mm.size = old_car_ptr->data.pkt.size;
 		buf_ptr = car_ptr->buf_ptr = &old_car_ptr->request_ptr->mm.buf;
 		buf_ptr->type = MM_TMP_BUFFER;
-		buf_ptr->tmp.buf_ptr[0] = malloc(old_car_ptr->data.pkt.size);
+		buf_ptr->tmp.buf_ptr[0] = MPIU_Malloc(old_car_ptr->data.pkt.size);
 		buf_ptr->tmp.buf_ptr[1] = NULL;
 		buf_ptr->tmp.cur_buf = 0;
 		buf_ptr->tmp.min_num_written = 0;

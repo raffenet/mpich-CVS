@@ -124,6 +124,7 @@ typedef struct MPIDI_VCRT
 {
     volatile int ref_count;
      MPIDI_VC ** table_ptr;
+           int * lid_ptr;
 } MPIDI_VCRT;
 
 /*** multi-method prototypes ***/
@@ -165,7 +166,7 @@ MPID_Request * mm_request_alloc();
           void mm_vcutil_init();
           void mm_vcutil_finalize();
     MPIDI_VC * mm_get_vc(MPID_Comm *comm_ptr, int rank);
-    MPIDI_VC * mm_vc_get(int rank);
+    MPIDI_VC * mm_vc_get(int comm_context, int rank);
     MPIDI_VC * mm_vc_alloc(MM_METHOD method);
     MPIDI_VC * mm_vc_connect_alloc(MPID_Comm *comm_ptr, int rank);
            int mm_vc_free(MPIDI_VC *ptr);

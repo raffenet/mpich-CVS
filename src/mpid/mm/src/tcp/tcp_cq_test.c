@@ -9,6 +9,7 @@ int tcp_accept_connection()
 {
     int bfd;
     int remote_rank;
+    int context;
     MPIDI_VC *vc_ptr;
     char ack;
 
@@ -28,7 +29,15 @@ int tcp_accept_connection()
 	err_printf("tcp_cq_test: beasy_receive(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
 	return -1;
     }
-    vc_ptr = mm_vc_get(remote_rank);
+    if (beasy_receive(bfd, (void*)&context, sizeof(int)) == SOCKET_ERROR)
+    {
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_cq_test: beasy_receive(context) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	return -1;
+    }
+
+    vc_ptr = mm_vc_get(context, remote_rank);
     
     MPID_Thread_lock(vc_ptr->lock);
 
@@ -55,6 +64,12 @@ int tcp_accept_connection()
 	vc_ptr->data.tcp.connected = TRUE;
 	vc_ptr->data.tcp.connecting = FALSE;
 	
+	/* add the vc to the active read list */
+	TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
+	BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
+	vc_ptr->read_next_ptr = TCP_Process.read_list;
+	TCP_Process.read_list = vc_ptr;
+
 	MPID_Thread_unlock(vc_ptr->lock);
 
 	/* post the first packet read on the newly connected vc */

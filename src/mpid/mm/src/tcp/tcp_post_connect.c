@@ -70,6 +70,20 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
 	MPID_Thread_unlock(vc_ptr->lock);
 	return -1;
     }
+    if (beasy_send(vc_ptr->data.tcp.bfd, (void*)&MPIR_Process.comm_world->context_id, sizeof(int)) == SOCKET_ERROR)
+    {
+	TCP_Process.error = beasy_getlasterror();
+	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
+	err_printf("tcp_post_connect: beasy_send(rank) failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	MPID_Thread_unlock(vc_ptr->lock);
+	return -1;
+    }
+
+    /* add the vc to the active read list */
+    TCP_Process.max_bfd = BFD_MAX(vc_ptr->data.tcp.bfd, TCP_Process.max_bfd);
+    BFD_SET(vc_ptr->data.tcp.bfd, &TCP_Process.readset);
+    vc_ptr->read_next_ptr = TCP_Process.read_list;
+    TCP_Process.read_list = vc_ptr;
 
     vc_ptr->data.tcp.connecting = TRUE;
     MPID_Thread_unlock(vc_ptr->lock);
