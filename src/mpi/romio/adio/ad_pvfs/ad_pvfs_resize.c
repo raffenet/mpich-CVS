@@ -23,7 +23,7 @@ void ADIOI_PVFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
     if (rank == fd->hints->ranklist[0]) {
 	err = pvfs_ftruncate64(fd->fd_sys, size);
     }
-    MPI_Bcast(&err, 1, MPI_INT, 0, fd->comm)
+    MPI_Bcast(&err, 1, MPI_INT, 0, fd->comm);
 
     if (err == -1) {
 #ifdef MPICH2
