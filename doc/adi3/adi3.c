@@ -1015,6 +1015,12 @@ void MPID_Request_set_completed( MPID_Request *request )
   to use message-queues attached to particular communicators or connections
   between processes.
 
+  Devices that rely solely on polling to make progress should call
+  MPID_Progress_poke() (or some equivalent function) if a matching request
+  could not be found.  This insures that progress continues to be made even if
+  the application is calling MPI_Iprobe() from within a loop not containing
+  calls to any other MPI functions.
+  
   Module:
   Request
 
