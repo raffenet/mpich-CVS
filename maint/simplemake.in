@@ -1818,7 +1818,7 @@ sub TargetPrograms {
 	        &print_make_line( FD, " $libdir/lib$libname.a" );
             }
 	}
-	$otherdep = $pgm_depadd{pgm};
+	$otherdep = $pgm_depadd{$pgm};
 	if (defined($otherdep)) {
 	    &print_make_line( FD, " $otherdep" );
 	}
