@@ -1164,7 +1164,7 @@ print MAKEFD "MPICXXLIBNAME = \@MPICXXLIBNAME\@\n";
 print MAKEFD "lib\${MPICXXLIBNAME}_a_DIR = ROOTDIR/lib\
 lib\${MPICXXLIBNAME}_a_SOURCES = \${mpi_sources} $otherSources\
 \
-INCLUDES = -I../../include -I\${top_srcdir}/src/include\
+INCLUDES = -I../../include -I\${top_srcdir}/src/include -I\$(master_top_srcdir)/src/include \
 maintainerclean-local:\
 \trm -f \${mpi_sources}\
 install_INCLUDE = mpicxx.h $otherHeaders\
