@@ -122,8 +122,11 @@ public class TreeNode extends BufForDrawables
         else  // if ( childnode != null )
             super.setLatestTime( childnode.getLatestTime() );
 
-        if ( shadowbuf != null )
+        if ( shadowbuf != null ) {
+            // After setting the LatestTime, seal the shadows' category weights
             shadowbuf.setLatestTime( super.getLatestTime() );
+            shadowbuf.setMapOfCategoryWeights();
+        }
     }
 
     public void mergeVerticalShadowBufs()

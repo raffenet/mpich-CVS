@@ -94,8 +94,11 @@ public class BufForShadows extends BufForObjects
             buf4shadows.put( key, sobj );
             total_bytesize += sobj.getByteSize();
         }
-        else
+        else {
+            total_bytesize -= sobj.getByteSize();
             sobj.mergeWithPrimitive( prime );
+            total_bytesize += sobj.getByteSize();
+        }
     }
 
     public void empty()
@@ -127,9 +130,22 @@ public class BufForShadows extends BufForObjects
                 buf4shadows.put( key, sobj );
                 total_bytesize += sobj.getByteSize();
             }
-            else
+            else {
+                total_bytesize -= sobj.getByteSize();
                 sobj.mergeWithShadow( (Shadow) key_sobj.getValue() );
+                total_bytesize += sobj.getByteSize();
+            }
         }
+    }
+
+    public void setMapOfCategoryWeights()
+    {
+        Iterator  sobjs_itr;
+        Shadow    sobj;
+
+        sobjs_itr = buf4shadows.values().iterator();
+        while ( sobjs_itr.hasNext() )
+            ( (Shadow) sobjs_itr.next() ).setMapOfCategoryWeights();
     }
 
     public int getNumOfPrimitives()
