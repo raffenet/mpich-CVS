@@ -18,11 +18,10 @@ void ADIOI_SFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
     err = ftruncate(fd->fd_sys, size);
     if (err == -1) {
 #ifdef MPICH2
-			*error_code = MPIR_Err_create_code(MPI_ERR_IO, "**io",
-							"**io %s", strerror(errno));
-			MPIR_Err_return_file(fd, myname, *error_code);
+	*error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, MPI_ERR_IO, "**io",
+	    "**io %s", strerror(errno));
 #elif defined(PRINT_ERR_MSG)
-			*error_code = MPI_ERR_UNKNOWN;
+	*error_code = MPI_ERR_UNKNOWN;
 #else /* MPICH-1 */
 	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
 			      myname, "I/O Error", "%s", strerror(errno));
