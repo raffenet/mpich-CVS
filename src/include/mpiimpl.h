@@ -1232,7 +1232,10 @@ extern int MPID_THREAD_LEVEL;
        err = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg", "**argneg %s %d", arg_name, arg ); }
 #define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err) \
    if ((arg) <= 0) {\
-       err = MPIR_Err_create_code( MPI_ERR_ARG, "**argnonpos", "**argnonpos %s %d", arg_name, arg ); } 
+       err = MPIR_Err_create_code( MPI_ERR_ARG, "**argnonpos", "**argnonpos %s %d", arg_name, arg ); }
+#define MPIR_ERRTEST_DATATYPE_NULL(arg,arg_name,err) \
+   if ((arg) == MPI_DATATYPE_NULL) {\
+       err = MPIR_Err_create_code( MPI_ERR_TYPE, "**dtypenull", 0); }
 /* An intracommunicator must have a root between 0 and local_size-1. */
 /* intercomm can be between MPI_PROC_NULL (or MPI_ROOT) and local_size-1 */
 #define MPIR_ERRTEST_INTRA_ROOT(comm_ptr,root,err) \

@@ -51,52 +51,44 @@ int MPI_Type_create_hvector(int count,
 			    MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_create_hvector";
-    int mpi_errno = MPI_SUCCESS, ret;
-    MPID_Datatype *datatype_ptr = NULL;
+    int mpi_errno = MPI_SUCCESS;
+
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( oldtype, datatype_ptr );
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
-            /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+	    MPID_Datatype *datatype_ptr = NULL;
 
-	    if (count < 0) 
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg",
-						  "**countneg %d", count );
-	    if (blocklength < 0) 
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg",
-						  "**argneg %s %d", 
-						  "blocklength", blocklength );
-	    /* MPICH 1 code also checked for old type equal to MPI_UB or LB.
-	       We may want to check on length 0 datatypes */
-
-            if (mpi_errno) {
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(blocklength, "blocklen", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE_NULL(oldtype, "datatype", mpi_errno);
+	    if (mpi_errno == MPI_SUCCESS) {
+		MPID_Datatype_get_ptr(oldtype, datatype_ptr);
+		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+	    }
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
             }
-        }
+	}
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    ret = MPID_Type_vector(count,
-			   blocklength,
-			   stride,
-			   1, /* stride in bytes */
-			   oldtype,
-			   newtype);
+    mpi_errno = MPID_Type_vector(count,
+				 blocklength,
+				 stride,
+				 1, /* stride in bytes */
+				 oldtype,
+				 newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
-    if (ret == MPI_SUCCESS) return MPI_SUCCESS;
-    else return MPIR_Err_return_comm(0, FCNAME, ret);
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
 
 

@@ -60,9 +60,11 @@ int MPI_Unpack(void *inbuf,
     MPID_Comm *comm_ptr = NULL;
     MPID_Datatype *datatype_ptr = NULL;
     MPID_Segment *segp;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPACK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPACK);
+
     /* Get handles to MPI objects. */
     MPID_Comm_get_ptr( comm, comm_ptr );
     MPID_Datatype_get_ptr( datatype, datatype_ptr );
@@ -71,16 +73,16 @@ int MPI_Unpack(void *inbuf,
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COUNT(insize, mpi_errno);
+	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 	    }
-	    MPIR_ERRTEST_COUNT(insize,mpi_errno);
-	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }

@@ -52,23 +52,33 @@ int MPI_Type_create_struct(int count,
 {
     static const char FCNAME[] = "MPI_Type_create_struct";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
+
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
-    /* Get handles to MPI objects. */
-    /*MPID_Datatype_get_ptr( datatype, datatype_ptr );*/
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
-            /* Validate datatype_ptr */
-            /*MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );*/
-	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
+	    int i;
+	    MPID_Datatype *datatype_ptr = NULL;
+
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COUNT(count,mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_blocklengths, "blocklens", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_displacements, "indices", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(array_of_types, "types", mpi_errno);
+	    if (mpi_errno == MPI_SUCCESS) {
+		for (i=0; i < count; i++) {
+		    MPIR_ERRTEST_ARGNONPOS(array_of_blocklengths[i], "blocklen", mpi_errno);
+		    MPIR_ERRTEST_DATATYPE_NULL(array_of_types[i], "datatype", mpi_errno);
+		    if (mpi_errno != MPI_SUCCESS) break; /* stop before we dereference the null type */
+		    MPID_Datatype_get_ptr(array_of_types[i], datatype_ptr);
+		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		}
+	    }
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
@@ -82,7 +92,6 @@ int MPI_Type_create_struct(int count,
 				 array_of_displacements,
 				 array_of_types,
 				 newtype);
-
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);

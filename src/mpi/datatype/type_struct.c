@@ -51,14 +51,19 @@ int MPI_Type_struct(int count,
 		    MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_struct";
-    int mpi_errno = MPI_SUCCESS, i;
-    MPID_Datatype *datatype_ptr;
+    int mpi_errno = MPI_SUCCESS;
+
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_STRUCT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_STRUCT);
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+	    int i;
+	    MPID_Datatype *datatype_ptr;
+
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
@@ -67,12 +72,14 @@ int MPI_Type_struct(int count,
 	    if (mpi_errno == MPI_SUCCESS) {
 		/* verify that all blocklengths are > 0 (0 isn't ok is it?) */
 		for (i=0; i < count; i++) {
-		    MPIR_ERRTEST_ARGNONPOS(blocklens, "blocklen", mpi_errno);
+		    MPIR_ERRTEST_ARGNONPOS(blocklens[i], "blocklen", mpi_errno);
+		    MPIR_ERRTEST_DATATYPE_NULL(old_types[i], "datatype", mpi_errno);
+		    if (mpi_errno != MPI_SUCCESS) break; /* stop before we dereference the null type */
 		    MPID_Datatype_get_ptr(old_types[i], datatype_ptr);
 		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 		}
 	    }
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
@@ -86,7 +93,6 @@ int MPI_Type_struct(int count,
 				 indices,
 				 old_types,
 				 newtype);
-
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_STRUCT);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);

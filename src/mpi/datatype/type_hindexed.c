@@ -51,30 +51,33 @@ int MPI_Type_hindexed(int count,
 		      MPI_Datatype *newtype)
 {
     static const char FCNAME[] = "MPI_Type_hindexed";
-    int mpi_errno = MPI_SUCCESS, i;
-    MPID_Datatype *datatype_ptr = NULL;
+    int mpi_errno = MPI_SUCCESS;
+
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_HINDEXED);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_HINDEXED);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( old_type, datatype_ptr );
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
-            /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+	    int i;
+	    MPID_Datatype *datatype_ptr = NULL;
+
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(blocklens, "blocklens", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
 	    if (mpi_errno == MPI_SUCCESS) {
+		if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
+		    MPID_Datatype_get_ptr( old_type, datatype_ptr );
+		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		}
 		/* verify that all blocklengths are > 0 (0 isn't ok is it?) */
 		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNONPOS(blocklens[i], "blocklen", mpi_errno);
 	    }
-	    MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
-            if (mpi_errno) {
+            if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }

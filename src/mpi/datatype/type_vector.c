@@ -54,42 +54,25 @@ int MPI_Type_vector(int count,
 		    MPI_Datatype *newtype_p)
 {
     static const char FCNAME[] = "MPI_Type_vector";
-    int ret;
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *old_ptr = NULL;
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_VECTOR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_VECTOR);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( old_type, old_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
-            /* Validate old_ptr */
+	    MPID_Datatype *old_ptr = NULL;
+
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(blocklength, "blocklen", mpi_errno);
+	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
 	    if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
+		MPID_Datatype_get_ptr( old_type, old_ptr );
 		MPID_Datatype_valid_ptr( old_ptr, mpi_errno );
 	    }
-	    /* If old_ptr is not valid, it will be reset to null */
-	    /* Validate other arguments */
-	    if (count <= 0) 
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg",
-						  "**countneg %d", count );
-	    if (blocklength <= 0) 
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg",
-						  "**argneg %s %d", 
-						  "blocklen", blocklength );
-	    /* MPICH 1 code also checked for old type equal to MPI_UB or LB.
-	       We may want to check on length 0 datatypes */
-
-	    /* Note: if there are multiple errors, only the last one detected
-	     * will be reported.
-	     */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -99,15 +82,15 @@ int MPI_Type_vector(int count,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    ret = MPID_Type_vector(count,
-			   blocklength,
-			   (MPI_Aint) stride,
-			   0, /* stride not in bytes, but in terms of type extent */
-			   old_type,
-			   newtype_p);
+    mpi_errno = MPID_Type_vector(count,
+				 blocklength,
+				 (MPI_Aint) stride,
+				 0, /* stride not in bytes, but in terms of type extent */
+				 old_type,
+				 newtype_p);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
-    if (ret == MPI_SUCCESS) return MPI_SUCCESS;
-    else return MPIR_Err_return_comm(0, FCNAME, ret);
+    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
 
 

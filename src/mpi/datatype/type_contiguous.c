@@ -51,23 +51,6 @@ int MPI_Type_contiguous(int count,
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CONTIGUOUS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CONTIGUOUS);
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    if (count < 0) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                            "**argneg", "**argneg %s %d", "count", count );
-            } 
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
-        }
-        MPID_END_ERROR_CHECKS;
-    }
-#   endif /* HAVE_ERROR_CHECKING */
 
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -75,21 +58,26 @@ int MPI_Type_contiguous(int count,
         {
             MPID_Datatype *datatype_ptr = NULL;
 
+	    /* MPIR_ERRTEST_XXX macros defined in mpiimpl.h */
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
             if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(old_type, datatype_ptr);
                 MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
-		MPIR_ERRTEST_COUNT(count, mpi_errno);
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
-                    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-                }
-            }
+	    }
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
+		return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	    }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    mpi_errno = MPID_Type_contiguous(count, old_type, new_type_p);
+    mpi_errno = MPID_Type_contiguous(count,
+				     old_type,
+				     new_type_p);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
 

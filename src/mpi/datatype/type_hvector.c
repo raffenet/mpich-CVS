@@ -52,24 +52,30 @@ int MPI_Type_hvector(int count,
 {
     static const char FCNAME[] = "MPI_Type_hvector";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_HVECTOR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_HVECTOR);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( old_type, datatype_ptr );
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-	    MPIR_ERRTEST_COUNT(count,mpi_errno);
+	    MPID_Datatype *datatype_ptr = NULL;
+
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_ARGNONPOS(blocklen,"blocklen",mpi_errno);
+	    MPIR_ERRTEST_DATATYPE_NULL(old_type, "datatype", mpi_errno);
+	    if (mpi_errno == MPI_SUCCESS) {
+		if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
+		    MPID_Datatype_get_ptr(old_type, datatype_ptr);
+		    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		}
+	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HVECTOR);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -86,3 +92,4 @@ int MPI_Type_hvector(int count,
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }
+
