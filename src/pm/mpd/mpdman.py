@@ -71,6 +71,7 @@ def mpdman():
     exec('%s = {}' % (default_kvsname) )
     kvs_next_id = 1
     pmiCollectiveJob = 0
+    doingBNR = 0  ## BNR
 
     if nprocs == 1:  # one-man ring
         lhsSocket = mpd_get_inet_socket_and_connect(host0,port0)  # to myself
@@ -144,17 +145,23 @@ def mpdman():
             mpd_raise('%s: invalid go msg from man :%s:' % (myId,msg) )
         close(pipe_cli_end)
         (pmiSocket,pmiAddr) = clientListenSocket.accept()
-        pmiFile = fdopen(pmiSocket.fileno(),'r')
-	msg = mpd_recv_one_line(pmiFile)
-        ## mpd_print(0000, "recvd pmi handshake=:%s:" % msg )
-        if not msg  or  msg != 'cmd=pmi_handler\n':    # handshake
+
+        msg = mpd_recv_one_msg(pmiSocket)
+        if not msg  or  msg['cmd'] != 'pmi_handler':    # handshake
             mpd_raise('%d: invalid msg from handler :%s:' % (myRank,msg) )
+
         clientPgmArgs = [clientPgm] + clientPgmArgs
         environ['PATH'] = environ['MPDMAN_CLI_PATH']
         environ['PMI_FD'] = str(pmiSocket.fileno())
         environ['PMI_SIZE'] = str(nprocs)
         environ['PMI_RANK'] = str(myRank)
         environ['PMI_DEBUG'] = str(0)
+        environ['MPD_TVDEBUG'] = str(0)                                    ## BNR
+        environ['MPD_JID'] = environ['MPDMAN_JOBID']                       ## BNR
+        environ['MPD_JSIZE'] = str(nprocs)                                 ## BNR
+        environ['MPD_JRANK'] = str(myRank)                                 ## BNR
+        environ['MAN_MSGS_FD'] = environ['PMI_FD']                         ## BNR
+        environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
         for envvar in clientPgmEnv:
             (envkey,envval) = envvar.split('=')
             environ[envkey] = envval
@@ -181,8 +188,7 @@ def mpdman():
 
     # connect to the client telling it that we are providing pmi service
     pmiSocket = mpd_get_inet_socket_and_connect('localhost',clientListenPort)
-    pmiFile = fdopen(pmiSocket.fileno(),'r')
-    mpd_send_one_line(pmiSocket,'cmd=pmi_handler\n')  # handshake
+    mpd_send_one_msg(pmiSocket,{ 'cmd' : 'pmi_handler' } )  # handshake
     socketsToSelect[pmiSocket] = 1
 
     # begin setup of stdio tree
@@ -341,8 +347,15 @@ def mpdman():
                     if myRank == 0:
                         msgToSend = { 'cmd' : 'pmi_barrier_loop_2' }
                         mpd_send_one_msg(rhsSocket,msgToSend)
-                        pmiMsgToSend = 'cmd=barrier_out\n'
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                        if doingBNR:    ## BNR
+                            pmiMsgToSend = 'cmd=client_bnr_fence_out\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                            select([],[],[],0.1)  # minor pause before intr
+                            kill(clientPid,SIGUSR1)
+                            # print "RMB: MAN %d: SENT FENCE_OUT" % myRank
+                        else:
+                            pmiMsgToSend = 'cmd=barrier_out\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
                     else:
                         holdingPMIBarrierLoop1 = 1
                         if pmiBarrierInRecvd:
@@ -351,9 +364,16 @@ def mpdman():
                     pmiBarrierInRecvd = 0
                     holdingPMIBarrierLoop1 = 0
                     if myRank != 0:
-                        pmiMsgToSend = 'cmd=barrier_out\n'
-                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
                         mpd_send_one_msg(rhsSocket,msg)
+                        if doingBNR:    ## BNR
+                            pmiMsgToSend = 'cmd=client_bnr_fence_out\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                            select([],[],[],0.1)  # minor pause before intr
+                            kill(clientPid,SIGUSR1)
+                            # print "RMB: MAN %d: SENT FENCE_OUT" % myRank
+                        else:
+                            pmiMsgToSend = 'cmd=barrier_out\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
                 elif msg['cmd'] == 'pmi_get':
                     if msg['from_rank'] == myRank:
                         pmiMsgToSend = 'cmd=get_result rc=-1 msg="%s"\n' % msg['key']
@@ -403,7 +423,7 @@ def mpdman():
                     else:
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'collective_abort':
-		    if msg['src'] != myId:
+                    if msg['src'] != myId:
                         if conSocket:
                             msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'rank' : msg['rank'] }
                             mpd_send_one_msg(conSocket,msgToSend)
@@ -411,14 +431,25 @@ def mpdman():
                         if rhsSocket in socketsToSelect.keys():  # still alive ?
                             mpd_send_one_msg(rhsSocket,msg)
                             # rhsSocket.close()
-			try:
+                        try:
                             kill(clientPid,SIGKILL)
-			except:
-			    pass    # client may already be gone
+                        except:
+                            pass    # client may already be gone
                 elif msg['cmd'] == 'stdin_from_user':
-		    if msg['src'] != myId:
+                    if msg['src'] != myId:
                         mpd_send_one_msg(rhsSocket,msg)
                         write(pipe_write_cli_stdin,msg['line'])
+                elif msg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
+                    # print "RMB: MAN %d: HANDLING INTERRUPT_PEER from lhs" % myRank
+                    if int(msg['torank']) == myRank:
+                        pmiMsgToSend = '%s\n' % (msg['msg'])
+                        mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                        select([],[],[],0.1)  # minor pause before intr
+                        select([],[],[],0.1)
+                        kill(clientPid,SIGUSR1)
+                        # print "RMB: MAN %d: in INTERRUPT_PEER msg=:%s:" % (myRank,pmiMsgToSend)
+                    else:
+                        mpd_send_one_msg(rhsSocket,msg)
                 else:
                     mpd_print(1, 'unexpected msg recvd on lhsSocket :%s:' % msg )
             elif readySocket == rhsSocket:
@@ -566,7 +597,9 @@ def mpdman():
                 else:
                     mpd_print(1, "unrecognized msg from spawned child :%s:" % line )
             elif readySocket == pmiSocket:
-	        line = mpd_recv_one_line(pmiFile)
+                # print "RMB: MAN: RECVING ON PMISOCK"
+                line = mpd_recv_one_line(pmiSocket)
+                # print "RMB: MAN: RECVed ON PMISOCK :%s:" % line
                 if not line:
                     (donePid,status) = waitpid(clientPid,0)
                     msgToSend = { 'cmd' : 'client_exit_status', 'status' : status,
@@ -586,10 +619,10 @@ def mpdman():
                             msgToSend = { 'cmd' : 'collective_abort', 'src' : myId, 'rank' : myRank}
                             mpd_send_one_msg(rhsSocket,msgToSend)
                             # rhsSocket.close()
-			try:
+                        try:
                             kill(clientPid,SIGKILL)
-			except:
-			    pass    # client may already be gone
+                        except:
+                            pass    # client may already be gone
                 else:
                     parsedMsg = parse_pmi_msg(line)
                     if parsedMsg['cmd'] == 'get_my_kvsname':
@@ -702,6 +735,54 @@ def mpdman():
                         mpdSocket = 0
                     elif parsedMsg['cmd'] == 'finalize':
                         pmiCollectiveJob = 0
+                    elif parsedMsg['cmd'] == 'client_bnr_fence_in':    ## BNR
+                        # print "RMB: MAN %d: GOT BNR_FENCE_IN" % myRank
+                        pmiBarrierInRecvd = 1
+                        if myRank == 0  or  holdingPMIBarrierLoop1:
+                            msgToSend = { 'cmd' : 'pmi_barrier_loop_1' }
+                            mpd_send_one_msg(rhsSocket,msgToSend)
+                    elif parsedMsg['cmd'] == 'client_bnr_put':         ## BNR
+                        # print "RMB: MAN %d: GOT BNR_PUT" % myRank
+                        kvsname = default_kvs
+                        key = parsedMsg['attr']
+                        value = parsedMsg['val']
+                        cmd = kvsname + '["' + key + '"] = "' + value + '"'
+                        try:
+                            exec(cmd)
+                            pmiMsgToSend = 'cmd=put_result rc=0\n'
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                        except Exception, errmsg:
+                            pmiMsgToSend = 'cmd=put_result rc=-1 msg="%s"\n' % errmsg
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                    elif parsedMsg['cmd'] == 'client_bnr_get':          ## BNR
+                        # print "RMB: MAN %d: GOT BNR_GET" % myRank
+                        kvsname = default_kvs
+                        key = parsedMsg['attr']
+                        cmd = 'value = ' + kvsname + '["' + key + '"]'
+                        try:
+                            exec(cmd)
+                            gotit = 1
+                        except Exception, errmsg:
+                            gotit = 0
+                        if gotit:
+                            pmiMsgToSend = 'cmd=client_bnr_get_output rc=0 val=%s\n' % (value)
+                            mpd_send_one_line(pmiSocket,pmiMsgToSend)
+                        else:
+                            msgToSend = { 'cmd' : 'bnr_get', 'key' : key,
+                                          'kvsname' : kvsname, 'from_rank' : myRank }
+                            mpd_send_one_msg(rhsSocket,msgToSend)
+                    elif parsedMsg['cmd'] == 'client_ready':               ## BNR
+                        ## continue to wait for accepting_signals
+                        # print "RMB: MAN %d: GOT CLIENT_READY" % myRank
+                        pass
+                    elif parsedMsg['cmd'] == 'accepting_signals':          ## BNR
+                        # print "RMB: MAN %d: GOT ACCEPTING_SIGNALS" % myRank
+                        ## handle it like a barrier_in ??
+                        pmiBarrierInRecvd = 1
+                        doingBNR = 1    ## BNR
+                    elif parsedMsg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
+                        # print "RMB: MAN %d: HANDLING INTERRUPT_PEER from client" % myRank
+                        mpd_send_one_msg(rhsSocket,parsedMsg)
                     else:
                         mpd_print(1, "unrecognized pmi msg :%s:" % line )
             elif readySocket == conSocket:
@@ -728,10 +809,10 @@ def mpdman():
                     if stdinGoesToWho == 1:    # 1 -> all processes
                         msg['src'] = myId
                         mpd_send_one_msg(rhsSocket,msg)
-		    try:
+                    try:
                         write(pipe_write_cli_stdin,msg['line'])
-		    except:
-		        mpd_print(1, 'cannot send stdin to client')
+                    except:
+                        mpd_print(1, 'cannot send stdin to client')
                 else:
                     mpd_print(1, 'unexpected msg recvd on conSocket :%s:' % msg )
             elif readySocket == mpdSocket:

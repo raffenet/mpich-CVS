@@ -130,12 +130,25 @@ def mpd_send_one_line(sock,line):
     except Exception, errmsg:
         mpd_print_tb(1, 'mpd_send_one_line: errmsg=:%s:' % (errmsg) )
 
-def mpd_recv_one_line(file):
+def mpd_recv_one_line(sock):
+    msg = ''
     try:
-        msg = file.readline()
+        c = sock.recv(1)
     except Exception, errmsg:
+	c = ''
 	msg = ''
         mpd_print_tb(0, 'mpd_recv_one_line: errmsg=:%s:' % (errmsg) )
+    if c:
+	while c != '\n':
+	    msg += c
+	    try:
+	        c = sock.recv(1)
+	    except Exception, errmsg:
+		c = ''
+		msg = ''
+		mpd_print_tb(0, 'mpd_recv_one_line: errmsg=:%s:' % (errmsg) )
+		break
+	msg += c
     return msg
 
 def mpd_send_one_msg(sock,msg):
