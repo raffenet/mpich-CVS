@@ -1225,11 +1225,11 @@ static void socki_event_enqueue(struct sock_set * sock_set, sock_op_t op, sock_s
 	}
 
 	eventq_pool = &eventq_elem[1];
-	for (i = 1; i < SOCK_EVENTQ_POOL_SIZE - 2; i++)
+	for (i = 0; i < SOCK_EVENTQ_POOL_SIZE - 2; i++)
 	{
 	    eventq_pool[i].next = &eventq_pool[i+1];
 	}
-	eventq_pool[SOCK_EVENTQ_POOL_SIZE-1].next = NULL;
+	eventq_pool[SOCK_EVENTQ_POOL_SIZE-2].next = NULL;
     }
     
     eventq_elem->event.op_type = op;
