@@ -452,6 +452,15 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	    {
 		MPIDI_DBG_PRINTF((30, FCNAME, "unexpected request allocated"));
 		MPID_Request_initialized_set(rreq);
+		
+		/*
+		 * A MPID_Probe() may be waiting for the request we just inserted, so we need to tell the progress engine to exit.
+		 *
+		 * FIXME: This will cause MPID_Progress_wait() to return to the MPI layer each time an unexpected RTS packet is
+		 * received.  MPID_Probe() should atomically increment a counter and MPIDI_CH3_Progress_signal_completion()
+		 * should only be called if that counter is greater than zero.
+		 */
+                MPIDI_CH3_Progress_signal_completion();
 	    }
 
 	    *rreqp = NULL;

@@ -27,3 +27,4 @@ greq1_SOURCES = greq1.c
 sendrecv1_SOURCES = sendrecv1.c
 sendrecv2_SOURCES = sendrecv2.c
 waitany-null_SOURCES = waitany-null.c
+probe-unexp_SOURCES = probe-unexp.c
