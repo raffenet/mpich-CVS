@@ -29,8 +29,8 @@ int PMI_vallen_max;
 int PMI_iter_next_idx;
 int PMI_debug;
 
-int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max );
-int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, char *val );
+static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max );
+static int PMII_iter( const char *kvsname, const int idx, int *nextidx, char *key, char *val );
 
 /******************************** Group functions *************************/
 
@@ -362,7 +362,7 @@ int PMI_Args_to_info(int *argcp, char ***argvp, void *infop)
 
 /* get a keyval pair by specific index */
 
-int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *key, char *val )
+static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *key, char *val )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
@@ -399,7 +399,7 @@ int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *key, cha
 }
 
 /* to get all maxes in one message */
-int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
+static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
