@@ -72,6 +72,27 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
 }
+#elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCEFREQUENCY
+void MPID_Wtime_init()
+{
+    LARGE_INTEGER n;
+    QueryPerformanceFrequency(&n);
+    MPIR_Process.timer_frequency = (double)n.QuadPart;
+}
+void MPID_Wtime( MPID_Time_t *timeval )
+{
+    QueryPerformanceCounter(timeval);
+}
+void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
+{
+    *val = (double)t->QuadPart;
+}
+void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
+{
+    LARGE_INTEGER n;
+    n = *t2 - *t1;
+    *diff = (double)n.QuadPart / MPIR_Process.timer_frequency;
+}
 #endif
 
 
