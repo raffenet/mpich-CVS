@@ -158,6 +158,10 @@ static void print_configfile(FILE *fout)
 {
     HostNode *node;
     char *exe;
+    char *var, *val;
+    char env[SMPD_MAX_ENV_LENGTH];
+    char *cur_env;
+    int env_length, num;
 
     smpd_enter_fn("print_configfile");
 
@@ -166,6 +170,41 @@ static void print_configfile(FILE *fout)
 	printf("Error: unable to parse the specified configuration file.\n");
 	smpd_exit_fn("print_configfile");
 	return;
+    }
+
+    env[0] = '\0';
+    if (g_pszEnv[0] != '\0')
+    {
+	env_length = SMPD_MAX_ENV_LENGTH;
+	cur_env = env;
+	var = strtok(g_pszEnv, "|");
+	while (var != NULL)
+	{
+	    val = var;
+	    while (*val != '\0')
+	    {
+		if (*val == '=')
+		{
+		    *val = '\0';
+		    val++;
+		    break;
+		}
+		val++;
+	    }
+	    if (strlen(var) > 0 && strlen(val) > 0)
+	    {
+		num = snprintf(cur_env, env_length, "-env %s %s ", var, val);
+		if (num < 0)
+		{
+		    env[SMPD_MAX_ENV_LENGTH-1] = '\0';
+		    break;
+		}
+		cur_env += num;
+		env_length -= num;
+	    }
+	    var = strtok(NULL, "|");
+	}
+	/*printf("env = '%s'\n", env);*/
     }
 
     node = g_pHosts;
@@ -184,6 +223,10 @@ static void print_configfile(FILE *fout)
 	if (g_pszDir[0] != '\0')
 	{
 	    fprintf(fout, "-wdir %s ", g_pszDir);
+	}
+	if (env[0] != '\0')
+	{
+	    fprintf(fout, "%s", env);
 	}
 	fprintf(fout, "-host %s -n %d ", node->host, node->nSMPProcs);
 	if (node->exe[0] != '\0')
