@@ -84,6 +84,7 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     MM_Car *pCar;
     MPID_Request *pRequest;
     BOOL bNeedHeader = TRUE;
+    long dtype_sz;
     MPID_STATE_DECLS;
 
     MPID_FUNC_ENTER(MPID_STATE_XFER_RECV_OP);
@@ -119,7 +120,8 @@ int xfer_recv_op(MPID_Request *request_ptr, void *buf, int count, MPI_Datatype d
     pRequest->mm.count = count;
     pRequest->mm.dtype = dtype;
     pRequest->mm.first = first;
-    pRequest->mm.size = count * MPID_Datatype_get_size(dtype);
+    MPID_Datatype_get_size_macro(dtype, dtype_sz);
+    pRequest->mm.size = count * dtype_sz;
     pRequest->mm.last = (last == MPID_DTYPE_END) ? pRequest->mm.size : last;
 
     MPID_Segment_init(buf, count, dtype, &pRequest->mm.segment);
