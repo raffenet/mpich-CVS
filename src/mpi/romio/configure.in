@@ -1371,10 +1371,10 @@ if test "$FROM_MPICH" = yes ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
-   if test $FROM_MPICH2 != yes ; then
-       BUILD_MPI_ARRAY=1
-       BUILD_MPI_INFO=1
-   fi
+#   if test $FROM_MPICH2 != yes ; then
+#       BUILD_MPI_ARRAY=1
+#       BUILD_MPI_INFO=1
+#   fi
    # A later test will insert the mpi2-other/info and array directories based
    # on the value of BUILD_MPI_xxxx.  This lets MPICH2 turn these off,
    # since MPICH2 provides these routines elsewhere
