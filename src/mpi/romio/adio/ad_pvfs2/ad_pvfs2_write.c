@@ -38,7 +38,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
     }
 
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
-	ret = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, offset,  buf, 
+	ret = PVFS_sys_write(pvfs_fs->object_ref, file_req, offset,  buf, 
 		mem_req, pvfs_fs->credentials, &resp_io);
 	if (ret < 0 ) {
 	    fprintf(stderr, "pvfs_sys_write returns with %d\n", ret);
@@ -46,7 +46,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 	}
 	fd->fp_sys_posn = offset + (int) resp_io.total_completed;
     } else {
-	ret = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, fd->fp_ind, buf, 
+	ret = PVFS_sys_write(pvfs_fs->object_ref, file_req, fd->fp_ind, buf, 
 		mem_req, pvfs_fs->credentials, &resp_io);
 	if (ret < 0) {
 	    fprintf(stderr, "pvfs_sys_write returns with %d\n", ret);
@@ -205,7 +205,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		    err_flag = PVFS_Request_contiguous(file_lengths, 
 			    PVFS_BYTE, &file_req);
 		    if (err_flag < 0) break;
-		    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 
+		    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 
 			    file_offsets, PVFS_BOTTOM, mem_req, 
 			    pvfs_fs->credentials, &resp_io);
 		  
@@ -385,7 +385,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    /* PVFS_Request_hindexed already expresses the offsets into the
 	     * file, so we should not pass in an offset if we are using
 	     * hindexed for the file type */
-	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0, 
+	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
 		    mem_offsets, mem_req, pvfs_fs->credentials, &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
@@ -427,7 +427,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    if (err_flag < 0)
 		goto error_state;
 	    /* as above, use 0 for 'offset' when using hindexed file type*/
-	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0, 
+	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
 		    mem_offsets, mem_req, pvfs_fs->credentials, &resp_io);
 	    if (err_flag < 0)
 		goto error_state;
@@ -781,7 +781,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    if (err_flag < 0)
 		goto error_state;
 	    /* offset will be expressed in memory and file datatypes */
-	    err_flag = PVFS_sys_write(pvfs_fs->pinode_refn, file_req, 0, 
+	    err_flag = PVFS_sys_write(pvfs_fs->object_ref, file_req, 0, 
 		    PVFS_BOTTOM, mem_req, pvfs_fs->credentials, &resp_io);
 	    size_wrote += new_buffer_write;
 	    start_k = k;

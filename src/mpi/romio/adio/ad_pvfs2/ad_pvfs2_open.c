@@ -11,7 +11,7 @@
 
 struct open_status_s {
     int error;
-    PVFS_pinode_reference pinode_refn;
+    PVFS_object_ref object_ref;
 };
 typedef struct open_status_s open_status;
     
@@ -55,8 +55,8 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 		return;
 	    } 
 	    ret = PVFS_sys_create(resp_getparent.basename, 
-		    resp_getparent.parent_refn, attribs, 
-		    pvfs2_fs->credentials, &resp_create); 
+		    resp_getparent.parent_ref, attribs, 
+		    pvfs2_fs->credentials, NULL, &resp_create); 
 
 	    if (ret < 0) { /* XXX: should only do this for EEXISTS */
 		ret = PVFS_sys_lookup(fs_id, pvfs_name,
@@ -67,10 +67,10 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 		    return;
 		}
 		o_status->error = ret;
-		o_status->pinode_refn = resp_lookup.pinode_refn;
+		o_status->object_ref = resp_lookup.ref;
 		return;
 	    }
-	    o_status->pinode_refn = resp_create.pinode_refn;
+	    o_status->object_ref = resp_create.ref;
 	} else {
 	    fprintf(stderr, "cannot create file without MPI_MODE_CREATE\n");
 	    o_status->error = ret;
@@ -81,7 +81,7 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 	o_status->error = -1; /* XXX: what should it be? */
 	return;
     } else {
-	o_status->pinode_refn = resp_lookup.pinode_refn;
+	o_status->object_ref = resp_lookup.ref;
     }
     o_status->error = ret;
     return;
@@ -102,13 +102,13 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     ADIOI_PVFS2_fs *pvfs2_fs;
 
     /* since one process is doing the open, that means one process is also
-     * doing the error checking.  define a struct for both the pinode and the
-     * error code to broadcast to all the processors */
+     * doing the error checking.  define a struct for both the object reference
+     * and the error code to broadcast to all the processors */
 
     open_status o_status;
     MPI_Datatype open_status_type;
     MPI_Datatype types[2] = {MPI_INT, MPI_BYTE};
-    int lens[2] = {1, sizeof(PVFS_pinode_reference)};
+    int lens[2] = {1, sizeof(PVFS_object_ref)};
     MPI_Aint offsets[2];
     
     pvfs2_fs = (ADIOI_PVFS2_fs *)ADIOI_Malloc(sizeof(ADIOI_PVFS2_fs));
@@ -121,7 +121,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     MPI_Comm_rank(fd->comm, &rank);
 
     MPI_Address(&o_status.error, &offsets[0]);
-    MPI_Address(&o_status.pinode_refn, &offsets[1]);
+    MPI_Address(&o_status.object_ref, &offsets[1]);
 
     MPI_Type_struct(2, lens, offsets, types, &open_status_type);
     MPI_Type_commit(&open_status_type);
@@ -170,7 +170,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	return;
     } 
 
-    /* broadcast status and (if successful) valid pinode refn */
+    /* broadcast status and (if successful) valid object reference */
     MPI_Bcast(MPI_BOTTOM, 1, open_status_type, 0, fd->comm);
 
     if (o_status.error != 0 ) { 
@@ -179,7 +179,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	return;
     }
 
-    pvfs2_fs->pinode_refn = o_status.pinode_refn;
+    pvfs2_fs->object_ref = o_status.object_ref;
     fd->fs_ptr = pvfs2_fs;
 
     MPI_Type_free(&open_status_type);

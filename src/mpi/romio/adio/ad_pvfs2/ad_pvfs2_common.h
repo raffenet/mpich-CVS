@@ -18,7 +18,7 @@
 
 
 struct ADIOI_PVFS2_fs_s {
-    PVFS_pinode_reference pinode_refn;
+    PVFS_object_ref object_ref;
     PVFS_credentials credentials;
 } ADIOI_PVFS2_fs_s;
 

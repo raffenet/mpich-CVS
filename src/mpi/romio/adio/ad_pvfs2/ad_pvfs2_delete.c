@@ -41,7 +41,7 @@ void ADIOI_PVFS2_Delete(char *filename, int *error_code)
     ret = PVFS_sys_getparent(cur_fs, pvfs_path, credentials, &resp_getparent);
 
     ret = PVFS_sys_remove(resp_getparent.basename, 
-	    resp_getparent.parent_refn, credentials);
+	    resp_getparent.parent_ref, credentials);
     if (ret < 0) {
 	/* XXX: better error handling */
 	ADIOI_PVFS2_pvfs_error_convert(ret, error_code);
