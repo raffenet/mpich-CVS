@@ -44,6 +44,7 @@ int MPIDI_CH3_Progress(int is_blocking)
 	case SHM_WAIT_TIMEOUT:
 	    if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
 	    {
+#ifdef USE_SLEEP_YIELD
 		if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitYieldCount)
 		{
 		    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SLEEP_YIELD);
@@ -52,23 +53,30 @@ int MPIDI_CH3_Progress(int is_blocking)
 		}
 		else
 		{
+#endif
 		    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		    MPIDU_Yield();
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
+#ifdef USE_SLEEP_YIELD
 		}
+#endif
 	    }
 	    spin_count++;
 	    break;
 	case SHM_WAIT_READ:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes read", num_bytes));
 	    spin_count = 1;
+#ifdef USE_SLEEP_YIELD
 	    MPIDI_Sleep_yield_count = 0;
+#endif
 	    handle_read(vc_ptr, num_bytes);
 	    break;
 	case SHM_WAIT_WRITE:
 	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes written", num_bytes));
 	    spin_count = 1;
+#ifdef USE_SLEEP_YIELD
 	    MPIDI_Sleep_yield_count = 0;
+#endif
 	    handle_written(vc_ptr);
 	    break;
 	case SHM_WAIT_ERROR:

@@ -1,5 +1,6 @@
 #include "mpidu_process_locks.h"
 
+#ifdef USE_SLEEP_YIELD
 int MPIDI_Sleep_yield_count = 0;
 /* FIXME - add the appropriate backoff values here */
 #ifdef HAVE_WIN32_SLEEP
@@ -12,6 +13,7 @@ int MPIDI_Sleep_yield_counts[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1000 };
 int MPIDI_Sleep_yield_counts[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1000 };
 #else
 #error *** No function available to implement sleep_yield ***
+#endif
 #endif
 
 #ifdef USE_PROCESS_LOCKS

@@ -24,6 +24,7 @@ extern int g_nLockSpinCount;
 #error *** No yield function specified ***
 #endif
 
+#ifdef USE_SLEEP_YIELD
 /* Define MPIDU_Sleep_yield() */
 extern int MPIDI_Sleep_yield_count;
 extern int MPIDI_Sleep_yield_counts[10];
@@ -47,6 +48,7 @@ static inline void MPIDU_Sleep_yield()
     if (MPIDI_Sleep_yield_count < 9)
 	MPIDI_Sleep_yield_count++;
 }
+#endif
 
 /*
 #ifdef HAVE_WIN32_SLEEP
