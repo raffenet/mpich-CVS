@@ -19,7 +19,7 @@ from types     import FunctionType
 from signal    import signal, SIGCHLD, SIGKILL, SIGHUP, SIG_IGN
 from atexit    import register
 from time      import sleep
-from random    import seed, randrange
+from random    import seed, randrange, random
 from syslog    import syslog, openlog, closelog, LOG_DAEMON, LOG_INFO, LOG_ERR
 from md5       import new
 from cPickle   import dumps
@@ -849,7 +849,9 @@ def _handle_lhs_challenge_response(responseSocket):
        (not msg.has_key('cmd'))   or  (not msg.has_key('response'))  or  \
        (not msg.has_key('host'))  or  (not msg.has_key('port'))  or  \
        (msg['response'] != g.correctChallengeResponse[responseSocket]):
-        mpd_print(1, 'INVALID msg for lhs response msg=:%s:' % (msg) )
+        mpd_print(1, 'INVALID msg for lhs response msg=:%s: from host=%s port=%d' % \
+                  (msg,g.activeSockets[responseSocket].rhsHost,
+                   g.activeSockets[responseSocket].rhsPort) )
         msgToSend = { 'cmd' : 'invalid_response' }
         mpd_send_one_msg(responseSocket,msgToSend)
         del g.correctChallengeResponse[responseSocket]
@@ -872,9 +874,16 @@ def _handle_rhs_challenge_response(responseSocket):
        (not msg.has_key('cmd'))   or  (not msg.has_key('response'))  or  \
        (not msg.has_key('host'))  or  (not msg.has_key('port'))  or  \
        (msg['response'] != g.correctChallengeResponse[responseSocket]):
-        mpd_print(1, 'INVALID msg for rhs response msg=:%s:' % (msg) )
+        mpd_print(1, 'INVALID msg for rhs response msg=:%s: from host=%s port=%d' % \
+                  (msg,g.activeSockets[responseSocket].rhsHost,
+                   g.activeSockets[responseSocket].rhsPort) )
         msgToSend = { 'cmd' : 'invalid_response' }
         mpd_send_one_msg(responseSocket,msgToSend)
+        del g.correctChallengeResponse[responseSocket]
+        del g.activeSockets[responseSocket]
+        responseSocket.close()
+    elif msg['response'] == 'bad_generation':
+        mpd_print(1, 'someone failed entering my ring gen=%d msg=%s' % (g.generation,msg) )
         del g.correctChallengeResponse[responseSocket]
         del g.activeSockets[responseSocket]
         responseSocket.close()
@@ -946,33 +955,47 @@ def _enter_existing_ring():
     g.lhsHost = g.entryHost
     g.lhsPort  = g.entryPort
     inRing = 0
-    numTries = 0
-    while not inRing  and  numTries < 8:
-        g.lhsSocket = mpd_get_inet_socket_and_connect(g.lhsHost,g.lhsPort)
-        if g.lhsSocket:
+    numEnterTries = 0
+    numConnTries = 0
+    while not inRing  and  numEnterTries < 8:
+        numEnterTries += 1
+        connected = 0
+        while not connected  and  numConnTries < 8:
+            numConnTries += 1
+            g.lhsSocket = mpd_get_inet_socket_and_connect(g.lhsHost,g.lhsPort)
+            if g.lhsSocket:
+                connected = 1
+            else:
+                sleep(random())
+        if not connected:
+            continue
+        _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',g.lhsHost,g.lhsPort)
+        msgToSend = { 'cmd' : 'request_to_enter_as_rhs',
+                      'host' : g.myHost,
+                      'port' : g.myPort,
+                      'mpd_version' : mpd_version }
+        mpd_send_one_msg(g.lhsSocket,msgToSend)
+        msg = mpd_recv_one_msg(g.lhsSocket)
+        if (not msg) or  \
+           (not msg.has_key('cmd')) or  \
+           (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')) or  \
+           (not msg.has_key('g.generation')):
+            mpd_raise('invalid challenge msg: %s' % (msg) )
+        g.generationFromMsg = int(msg['g.generation'])
+        if g.generationFromMsg > g.generation:
+            g.generation = g.generationFromMsg
             inRing = 1
-        numTries += 1
+        else:
+            del g.activeSockets[g.lhsSocket]
+            g.lhsSocket.close()
+            sleep(random())
     if not inRing:
-        mpd_raise('Failed to enter ring at %s %d' % (g.entryHost,g.entryPort))
-    _add_active_socket(g.lhsSocket,'lhs','_handle_lhs_input',g.lhsHost,g.lhsPort)
-    msgToSend = { 'cmd' : 'request_to_enter_as_rhs',
-                  'host' : g.myHost,
-                  'port' : g.myPort,
-                  'mpd_version' : mpd_version }
-    mpd_send_one_msg(g.lhsSocket,msgToSend)
-    msg = mpd_recv_one_msg(g.lhsSocket)
-    if (not msg) or  \
-       (not msg.has_key('cmd')) or  \
-       (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')) or  \
-       (not msg.has_key('g.generation')):
-        mpd_raise('invalid challenge msg: %s' % (msg) )
-    g.generationFromMsg = int(msg['g.generation'])
-    if g.generationFromMsg > g.generation:
-        g.generation = g.generationFromMsg
-    else:
-        del g.activeSockets[g.lhsSocket]
-        g.lhsSocket.close()
-        return -1
+        msgToSend = { 'cmd' : 'challenge_response',
+                      'host' : g.myHost, 'port' : g.myPort,
+                      'response' : 'bad_generation', 'gen' : g.generation }
+        mpd_send_one_msg(g.lhsSocket,msgToSend)
+        mpd_raise('Failed to enter ring at %s; my gen=%d other gen=%d ' % \
+                  (g.lhsHost,g.lhsPort,g.generation,g.generationFromMsg) ) 
     response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
     msgToSend = { 'cmd' : 'challenge_response',
                   'response' : response,
