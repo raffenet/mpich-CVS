@@ -57,9 +57,10 @@ AC_PROG_CC
 AC_CHECK_PROGS(AR,ar)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
 dnl
-dnl Check for shared library
-PAC_ARG_SHAREDLIBS
+dnl Support shared libraries
+dnl PAC_ARG_SHAREDLIBS
 AC_SUBST(ENABLE_SHLIB)
+AC_SUBST(CC_SHL)
 dnl
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)

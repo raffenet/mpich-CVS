@@ -458,6 +458,12 @@ sub RunMpichTestSuite {
     $ENV{"MPITEST_CONTINUE"} = "always";
 
     chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
+
+    # A special hack for the io part 
+    if (! -d io) { 
+	`mkdir "io"`;
+	`cp $mpich1_dir/examples/test/io/*.in io`;
+    }
     $nargs = 0;
     $config[$nargs++] = "$mpich1_dir/examples/test/configure";
     $config[$nargs++] = "--prefix=$instdir";
@@ -515,10 +521,6 @@ sub RunMpichTestSuite {
 	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
 	if ($built_for_mpd) {
 	    `$instdir/bin/mpdallexit`;
-#	    kill 2, $pid;
-#	    kill 3, $pid;
-#	    kill 9, $pid;
-#	    waitpid $pid,0;
 	}
     }
     else {

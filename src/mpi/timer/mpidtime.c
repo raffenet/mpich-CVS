@@ -182,8 +182,11 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
    thanks to Dave Covey dnc@gi.alaska.edu
    Untested
  */
-    unsigned long cc
+#error "LinuxAlpha cycle counter not supported"
+/*
+    unsigned long cc;
     asm volatile( "rpcc %0" : "=r"(cc) : : "memory" );
+ */
     /* Convert to time.  Scale cc by 1024 incase it would overflow a double;
        consider using long double as well */
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
