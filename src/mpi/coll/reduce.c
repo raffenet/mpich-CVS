@@ -181,7 +181,7 @@ int MPIR_Reduce (
 		if (is_commutative) {
 #ifdef HAVE_CXX_BINDING
 		    if (is_cxx_uop) {
-			MPIR_Call_op_fn( buffer, recvbuf, 
+			(*MPIR_Process.cxx_call_op_fn)( buffer, recvbuf, 
 					 count, datatype, uop );
 		    }
 		    else 
@@ -191,7 +191,7 @@ int MPIR_Reduce (
 		else {
 #ifdef HAVE_CXX_BINDING
 		    if (is_cxx_uop) {
-			MPIR_Call_op_fn( recvbuf, buffer,
+			(*MPIR_Process.cxx_call_op_fn)( recvbuf, buffer,
 					 count, datatype, uop );
 		    }
 		    else 

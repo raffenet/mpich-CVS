@@ -187,7 +187,7 @@ PMPI_LOCAL int MPIR_Allreduce (
                     /* op is commutative OR the order is already right */
 #ifdef HAVE_CXX_BINDING
 		    if (is_cxx_uop) {
-			MPIR_Call_op_fn( tmp_buf, recvbuf, 
+			(*MPIR_Process.cxx_call_op_fn)( tmp_buf, recvbuf, 
 					 count, datatype, uop );
 		    }
 		    else 
@@ -198,7 +198,7 @@ PMPI_LOCAL int MPIR_Allreduce (
                     /* op is noncommutative and the order is not right */
 #ifdef HAVE_CXX_BINDING
 		    if (is_cxx_uop) {
-			MPIR_Call_op_fn( recvbuf, tmp_buf, 
+			(*MPIR_Process.cxx_call_op_fn)( recvbuf, tmp_buf, 
 					 count, datatype, uop );
 		    }
 		    else 

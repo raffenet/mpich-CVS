@@ -173,9 +173,9 @@ PMPI_LOCAL int MPIR_Scan (
             if (rank > dst) {
 #ifdef HAVE_CXX_BINDING
 		if (is_cxx_uop) {
-		    MPIR_Call_op_fn( tmp_buf, partial_scan, 
+		    (*MPIR_Process.cxx_call_op_fn)( tmp_buf, partial_scan, 
 				     count, datatype, uop );
-		    MPIR_Call_op_fn( tmp_buf, recvbuf, 
+		    (*MPIR_Process.cxx_call_op_fn)( tmp_buf, recvbuf, 
 				     count, datatype, uop );
 		}
 		else 
@@ -189,7 +189,7 @@ PMPI_LOCAL int MPIR_Scan (
                 if (is_commutative) {
 #ifdef HAVE_CXX_BINDING
 		    if (is_cxx_uop) {
-			MPIR_Call_op_fn( tmp_buf, partial_scan, 
+			(*MPIR_Process.cxx_call_op_fn)( tmp_buf, partial_scan, 
 					 count, datatype, uop );
 		    }
 		    else 
@@ -199,7 +199,7 @@ PMPI_LOCAL int MPIR_Scan (
                 else {
 #ifdef HAVE_CXX_BINDING
 		    if (is_cxx_uop) {
-			MPIR_Call_op_fn( partial_scan, tmp_buf,
+			(*MPIR_Process.cxx_call_op_fn)( partial_scan, tmp_buf,
 					 count, datatype, uop );
 		    }
 		    else 

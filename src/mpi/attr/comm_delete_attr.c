@@ -141,10 +141,10 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 		
 #ifdef HAVE_CXX_BINDING
 	    case MPID_LANG_CXX:
-		mpi_errno = MPIR_Call_delfn( comm, 
-					     comm_keyval, p->value,
-					     keyval_ptr->extra_state, 
-				    keyval_ptr->delfn.C_CommDeleteFunction );
+		mpi_errno = (*MPIR_Process.cxx_call_delfn)( comm, 
+				     comm_keyval, p->value,
+				     keyval_ptr->extra_state, 
+		(void (*)(void)) keyval_ptr->delfn.C_CommDeleteFunction );
 		break;
 #endif
 	    }

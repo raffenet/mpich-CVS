@@ -65,6 +65,9 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
     MPID_Op *op_ptr;
     MPI_Comm comm;
     MPICH_PerThread_t *p;
+#ifdef HAVE_CXX_BINDING
+    int is_cxx_uop = 0;
+#endif
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -93,12 +96,14 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
         else
             is_commutative = 1;
 
-#ifdef HAVE_CXX_BINDING        
-        if ((op_ptr->language == MPID_LANG_C) || (op_ptr->language ==
-                                                  MPID_LANG_CXX)) 
-#else
-        if ((op_ptr->language == MPID_LANG_C))
+#ifdef HAVE_CXX_BINDING            
+	if (op_ptr->language == MPID_LANG_CXX) {
+	    uop = (MPI_User_function *) op_ptr->function.c_function;
+	    is_cxx_uop = 1;
+	}
+	else
 #endif
+        if ((op_ptr->language == MPID_LANG_C))
             uop = (MPI_User_function *) op_ptr->function.c_function;
         else
             uop = (MPI_User_function *) op_ptr->function.f77_function;
@@ -166,9 +171,25 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             if (mpi_errno) return mpi_errno;
             
             if (is_commutative || (src < rank)) {
-                if (sendbuf != MPI_IN_PLACE)
+                if (sendbuf != MPI_IN_PLACE) {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			(*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, recvbuf, 
+					 recvcnts[rank], datatype, uop );
+		    }
+		    else 
+#endif
                     (*uop)(tmp_recvbuf, recvbuf, &recvcnts[rank], &datatype); 
+		}
                 else {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			(*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, 
+				    ((char *)recvbuf+displs[rank]*extent), 
+                           recvcnts[rank], datatype, uop ); 
+		    }
+		    else 
+#endif
                     (*uop)(tmp_recvbuf, ((char *)recvbuf+displs[rank]*extent), 
                            &recvcnts[rank], &datatype); 
                     /* we can't store the result at the beginning of
@@ -180,6 +201,13 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             }
             else {
                 if (sendbuf != MPI_IN_PLACE) {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			(*MPIR_Process.cxx_call_op_fn)( recvbuf, tmp_recvbuf, 
+					 recvcnts[rank], datatype, uop );
+		    }
+		    else 
+#endif
                     (*uop)(recvbuf, tmp_recvbuf, &recvcnts[rank], &datatype); 
                     /* copy result back into recvbuf */
                     mpi_errno = MPIR_Localcopy(tmp_recvbuf, recvcnts[rank], 
@@ -187,6 +215,15 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
                                                recvcnts[rank], datatype); 
                 }
                 else {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			(*MPIR_Process.cxx_call_op_fn)( 
+			    ((char *)recvbuf+displs[rank]*extent),
+                           tmp_recvbuf, recvcnts[rank], datatype, uop );   
+
+		    }
+		    else 
+#endif
                     (*uop)(((char *)recvbuf+displs[rank]*extent),
                            tmp_recvbuf, &recvcnts[rank], &datatype);   
                     /* copy result back into recvbuf */
@@ -362,18 +399,46 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 
                         /* perform the reduction */
                         if (is_commutative || (dst_tree_root < my_tree_root)) {
+#ifdef HAVE_CXX_BINDING
+			    if (is_cxx_uop) {
+				(*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, 
+						tmp_results, blklens[0],
+						datatype, uop ); 
+				(*MPIR_Process.cxx_call_op_fn)( 
+				    ((char *)tmp_recvbuf + dis[1]*extent),
+                                    ((char *)tmp_results + dis[1]*extent),
+                                    blklens[1], datatype, uop ); 
+			    }
+			    else 
+#endif
+			    {
                             (*uop)(tmp_recvbuf, tmp_results, &blklens[0],
                                    &datatype); 
                             (*uop)(((char *)tmp_recvbuf + dis[1]*extent),
                                    ((char *)tmp_results + dis[1]*extent),
                                    &blklens[1], &datatype); 
+			    }
                         }
                         else {
+#ifdef HAVE_CXX_BINDING
+			    if (is_cxx_uop) {
+				(*MPIR_Process.cxx_call_op_fn)( tmp_results, 
+                                        tmp_recvbuf, blklens[0],
+					datatype, uop ); 
+				(*MPIR_Process.cxx_call_op_fn)( 
+				    ((char *)tmp_results + dis[1]*extent),
+				    ((char *)tmp_recvbuf + dis[1]*extent),
+                                    blklens[1], datatype, uop ); 
+			    }
+			    else 
+#endif
+			    {
                             (*uop)(tmp_results, tmp_recvbuf, &blklens[0],
                                    &datatype); 
                             (*uop)(((char *)tmp_results + dis[1]*extent),
                                    ((char *)tmp_recvbuf + dis[1]*extent),
                                    &blklens[1], &datatype); 
+			    }
                             /* copy result back into tmp_results */
                             mpi_errno = MPIR_Localcopy(tmp_recvbuf, 1,
                                                        recvtype,
@@ -397,18 +462,46 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
             dst = rank ^ mask;
             if (dst < comm_size) {
                 if (is_commutative || (dst_tree_root < my_tree_root)) {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			(*MPIR_Process.cxx_call_op_fn)( tmp_recvbuf, 
+				    tmp_results, blklens[0],
+				    datatype, uop); 
+			(*MPIR_Process.cxx_call_op_fn)( 
+			    ((char *)tmp_recvbuf + dis[1]*extent),
+			    ((char *)tmp_results + dis[1]*extent),
+                            blklens[1], datatype, uop ); 
+		    }
+		    else
+#endif
+		    {
                     (*uop)(tmp_recvbuf, tmp_results, &blklens[0],
                            &datatype); 
                     (*uop)(((char *)tmp_recvbuf + dis[1]*extent),
                            ((char *)tmp_results + dis[1]*extent),
                            &blklens[1], &datatype); 
+		    }
                 }
                 else {
+#ifdef HAVE_CXX_BINDING
+		    if (is_cxx_uop) {
+			(*MPIR_Process.cxx_call_op_fn)( tmp_results, 
+				 tmp_recvbuf, blklens[0],
+				 datatype, uop ); 
+			(*MPIR_Process.cxx_call_op_fn)( 
+			    ((char *)tmp_results + dis[1]*extent),
+			    ((char *)tmp_recvbuf + dis[1]*extent),
+                            blklens[1], datatype, uop ); 
+		    }
+		    else 
+#endif
+		    {
                     (*uop)(tmp_results, tmp_recvbuf, &blklens[0],
                            &datatype); 
                     (*uop)(((char *)tmp_results + dis[1]*extent),
                            ((char *)tmp_recvbuf + dis[1]*extent),
                            &blklens[1], &datatype); 
+		    }
                     /* copy result back into tmp_results */
                     mpi_errno = MPIR_Localcopy(tmp_recvbuf, 1, recvtype, 
                                                tmp_results, 1, recvtype);

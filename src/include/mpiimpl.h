@@ -963,6 +963,14 @@ typedef struct MPICH_PerProcess_t {
     /* Routine to get the messages corresponding to dynamically created
        error messages */
     const char *(*errcode_to_string)( int );
+#ifdef HAVE_CXX_BINDING
+    /* Routines to call C++ functions from the C implementation of the
+       MPI reduction and attribute routines */
+    void (*cxx_call_op_fn)( void *, void *, int, MPI_Datatype, 
+			    MPI_User_function * );
+    int  (*cxx_call_delfn)( MPI_Comm, int, void *, void *, 
+			    void (*)(void) );
+#endif    
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 

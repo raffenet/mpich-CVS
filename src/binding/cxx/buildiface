@@ -1421,7 +1421,7 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     # which invokes the MPIR_Call_op_fn routine, with a pointer to the 
     # C++ routine to invoke.
     print $OUTFD "
-extern \"C\" void MPIR_Op_set_cxx( MPI_Op );
+extern \"C\" void MPIR_Op_set_cxx( MPI_Op, void (*)(void) );
 extern \"C\" 
 void MPIR_Call_op_fn( void *invec, void *outvec, int len, MPI_Datatype dtype,
 		     User_function *uop )
@@ -1433,7 +1433,7 @@ void Op::Init( User_function *f, bool commute )
     {
 	MPIX_CALL( MPI_Op_create( (MPI_User_function *)f, 
 				 (int) commute, &the_real_op ) ); 
-	MPIR_Op_set_cxx( the_real_op );
+	MPIR_Op_set_cxx( the_real_op, (void (*)(void)) MPIR_Call_op_fn );
     }\n";
 
     # Keyval and attribute routines
@@ -1445,7 +1445,7 @@ extern \"C\" void MPIR_Call_delfn( MPI_Comm comm, int keyval,
     MPI::Comm cxxcomm = comm;
     (*f)( cxxcomm, keyval, value, extra_state );
 }
-extern \"C\" void MPIR_Keyval_set_cxx( int );
+extern \"C\" void MPIR_Keyval_set_cxx( int, void (*)(void) );
 int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, 
 			void *extra_state ) {
     int keyval;
@@ -1455,7 +1455,7 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df,
     MPIX_CALL( MPI_Comm_create_keyval( (MPI_Comm_copy_attr_function *)cf, 
 				       (MPI_Comm_delete_attr_function *)df,
 				      &keyval, extra_state ) );
-    MPIR_Keyval_set_cxx( keyval );
+    MPIR_Keyval_set_cxx( keyval, (void (*)(void)) MPIR_Call_delfn );
     return keyval;
 }
 ";
