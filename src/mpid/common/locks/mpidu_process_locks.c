@@ -1,4 +1,7 @@
 #include "mpiimpl.h"
+
+#ifdef USE_PROCESS_LOCKS
+
 #include "mpidu_process_locks.h"
 #include <errno.h>
 #ifdef HAVE_WINDOWS_H
@@ -171,3 +174,5 @@ void MPIDU_Process_lock_free( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_FREE);
 }
 #endif /* #ifndef USE_BUSY_LOCKS */
+
+#endif /* USE_PROCESS_LOCKS */
