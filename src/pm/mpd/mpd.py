@@ -852,10 +852,8 @@ def _handle_man_msgs(manSocket):
         msg['first_loop'] = 1
         msg['jobalias'] = ''
         msg['stdin_goes_to_who'] = '0'
-        if msg.has_key('try_0_locally'):
-            _do_mpdrun(msg)
-        else:
-            mpd_send_one_msg(g.rhsSocket,msg)
+        msg['ringsize'] = 0
+        mpd_send_one_msg(g.rhsSocket,msg)
         ## mpd_send_one_msg(manSocket, {'cmd' : 'mpdrun_ack', } )
     else:
         mpd_print(1, 'INVALID request from man msg=:%s:' % (msg) )

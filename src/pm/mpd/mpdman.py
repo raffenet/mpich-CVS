@@ -132,6 +132,11 @@ def mpdman():
             except:
                 mpd_print(1,'failed to insert preput_info')
                 exit(-1)
+            msg = mpd_recv_one_msg(conSocket)
+            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
+                mpd_raise(1, 'spawned: bad msg from con; got: %s' % (msg) )
+            universeSize = msg['ringsize']
+            mpd_send_one_msg(rhsSocket,msg)  # forward it on
         else:
             msgToSend = { 'cmd' : 'man_checking_in' }
             mpd_send_one_msg(conSocket,msgToSend)
@@ -326,6 +331,8 @@ def mpdman():
                         spawnedKVSname = 'mpdman_kvs_for_spawned_' + tempID
                         msgToSend = { 'cmd' : 'preput_info_for_child',
                                       'kvs' : KVSs[spawnedKVSname] }
+                        mpd_send_one_msg(tempSocket,msgToSend)
+                        msgToSend = { 'cmd' : 'ringsize', 'ringsize' : universeSize }
                         mpd_send_one_msg(tempSocket,msgToSend)
 		        if pmiSocket:  # may have disappeared in early shutdown
                             pmiMsgToSend = 'cmd=spawn_result status=spawn_done\n'
@@ -803,6 +810,7 @@ def mpdman():
                     cwds    = { (0,nprocs-1) : environ['MPDMAN_CWD'] }
                     paths   = { (0,nprocs-1) : '' }
                     envvars = { (0,nprocs-1) : { 'MPI_APPNUM' : '736' } }
+                    limits  = { (0,nprocs-1) : {} }
                     ##### args    = { (0,nprocs-1) : [ parsedMsg['args'] ] }
                     ##### args    = { (0,nprocs-1) : [ 'AA', 'BB', 'CC' ] }
                     cliArgs = []
@@ -823,7 +831,8 @@ def mpdman():
                                   'cwds'     : cwds,
                                   'paths'    : paths,
                                   'args'     : args,
-                                  'envvars'  : envvars
+                                  'envvars'  : envvars,
+                                  'limits'   : limits
                                 }
                     mpd_send_one_msg(mpdSocket,msgToSend)
                     # I could send the preput_info along but will keep it here
