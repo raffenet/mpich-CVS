@@ -1,0 +1,2 @@
+SUBDIRS_sock_name = iocp poll
+SUBDIRS = @sock_name@ .
