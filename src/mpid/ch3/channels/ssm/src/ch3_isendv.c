@@ -94,7 +94,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 			if (vc->ssm.bShm)
 			    vc->ssm.send_active = sreq;
 			else
-			    MPIDI_CH3I_MM_VC_post_write(vc, sreq);
+			    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
 			break;
 		    }
 
@@ -104,11 +104,20 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
-		    if (sreq->ch3.iov_count == 0)
+		    if (sreq->ch3.iov_count != 0)
 		    {
-			/* NOTE: ch3.iov_count is used to detect completion instead of cc because the transfer may be complete, but
-                           request may still be active (see MPI_Ssend()) */
-			MPIDI_CH3I_SendQ_dequeue(vc);
+			if (vc->ssm.bShm)
+			    vc->ssm.send_active = sreq;
+			else
+			    MPIDI_CH3I_SSM_VC_post_write(vc, sreq);
+		    }
+		    else
+		    {
+			if (MPIDI_CH3I_SendQ_head(vc) == sreq)
+			{
+			    MPIDI_CH3I_SendQ_dequeue(vc);
+			    /* vc->ssm.send_active = MPIDI_CH3I_SendQ_head(vc); ??? */
+			}
 		    }
 		}
 	    }
