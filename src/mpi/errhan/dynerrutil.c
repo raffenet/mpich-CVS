@@ -12,7 +12,11 @@
  * This file contains the routines needed to implement the MPI routines that
  * can add error classes and codes during runtime.  This file is organized
  * so that applications that do not use the MPI-2 routines to create new
- * error codes will not load any of this code.
+ * error codes will not load any of this code.  
+ * 
+ * ROMIO will be customized to provide error messages with the same tools
+ * as the rest of MPICH2 and will not rely on the dynamically assigned
+ * error classes.  This leaves all of the classes and codes for the user.
  */
 
 /* Local data structures.

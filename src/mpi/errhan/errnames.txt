@@ -22,7 +22,9 @@
 **keyvalnotcomm:Keyval was not defined for communicators
 **keyvalnotwin:Keyval was not defined for window objects
 **keyvalnotfile:Keyval was not defined for files
+**keyvalinvalid:Attribute key was MPI_KEYVAL_INVALID
 **permattr:Cannot set permanent attribute
+**keyval:Invalid keyval
 **noerrclasses:No more user-defined error classes
 **noerrcodes:No more user-defined error codes
 **rankdup:Duplicate ranks in rank array 
@@ -32,12 +34,24 @@ also the value at index %d
 **topotoolarge %d %d:Topology size %d is larger than communicator size (%d)
 **notcarttopo:No Cartesian topology associated with this communicator
 **notgraphtopo:No Graph topology associated with this communicator
+**notopology:No topology associated with this communicator
 **dimsmany:Number of dimensions is too large 
 **dimsmany %d %d:Number of dimensions %d is too large (maximum is %d)
 **dimspartition:Can not partition nodes as requested 
 **cartcoordinvalid:Cartesian coordinate is invalid (not in range)
 **cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate \
  is %d but must be between 0 and %d
+**cartdim:Size of Cartesian grid is larger than the size of the communicator
+**cartdim %d %d:Size of the communicator (%d) is smaller than the size of the \
+ Cartesian topology (%d)
+**edgeoutrange:Edge index in graph topology is out of range
+**edgeoutrange %d %d %d:Edge index edges[%d] is %d but must be nonnegative \
+ and less than %d
+**indexneg:Index value in graph topology must be nonnegative
+**indexneg %d %d:Index value for index[%d] is %d but must be nonnegative
+**indexnonmonotone:Index values in graph topology must be monotone nondecreasing
+**indexnonmonotone %d %d %d:Index values in graph topology must be monotone \
+ nondecreasing but index[%d] is %d but the next index value is %d
 **rangedup:The range array specifies duplicate entries
 **rank:Invalid rank
 **rank %d %d:Invalid rank has value %d but must be nonnegative and less than %d
@@ -66,6 +80,8 @@ was not started with MPI_GREQUEST_START
  possible errors in using the attribute value in user code.
 **toomanycomm:Too many communicators
 **group:Invalid group
+**commnotintra:An intracommunicator is required but an intercommunicator \
+ was provided.
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
@@ -181,7 +197,7 @@ Fortran integer (value is %ld)
 **inpending:Pending request (no error)
 **request:Invalid MPI_Request
 **requestnull:Null MPI_Request 
-**requestnotpersist:Request is not persistent in MPI_Start or \mpifunc{MPI_Startall.
+**requestnotpersist:Request is not persistent in MPI_Start or MPI_Startall.
 **requestpersistactive:Persistent request passed to MPI_Start or MPI_Startall is already active.
 **fileaccess:Access denied to file
 **fileaccess %s:Access denied to file %s
@@ -282,7 +298,6 @@ with MPI_Alloc_mem.
 **base:Invalid base address
 **base %d:Invalid base address %d
 **locktype:Invalid locktype
-**keyval:Invalid keyval
 **keyvalnull:Null keyval 
 **keyvalperm:Cannot free permanent attribute key
 **keyvalcomm:Keyval is not in communicator 

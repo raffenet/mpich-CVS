@@ -18,6 +18,9 @@
    MPIR_Err_create_code */
 #include <stdarg.h>
 
+/* stdio is needed for vsprintf and vsnprintf */
+#include <stdio.h>
+
 /*
  * Instance-specific error messages are stored in a ring.
  * Messages are written into the error_ring; the corresponding entry in
@@ -36,7 +39,7 @@ static volatile unsigned int error_ring_loc = 0;
 #endif
 
 /* Special error handler to call if we are not yet initialized */
-/* BUG - NOT YET CALLED ANYWHERE */
+/* FIXME - NOT YET CALLED ANYWHERE */
 void MPIR_Err_preinit( void )
 {
     fprintf( stderr, "Error encountered before initializing MPICH\n" );
@@ -158,7 +161,12 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 }
 
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
-/* Given a generic message string, return the corresponding index */
+/* Given a message string abbreviation (e.g., one that starts "**"), 
+   return the corresponding index.  For the generic (non parameterized
+   messages), use 
+   idx =     FindMsgIndex( "**msg" );
+   The instance-specific message should have the same idx value
+*/
 static int FindMsgIndex( const char *msg )
 {
     int i, c;
@@ -187,6 +195,7 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 {
     va_list Argp;
     int err_code;
+    int specific_idx = -1;
     /* Create the code from the class and the message ring index */
 
     va_start( Argp, def_string );
@@ -196,11 +205,9 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
     /* Handle the generic message.  This selects a subclass, based on a 
        text string */
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
-    {
-	int specific_idx = FindMsgIndex( def_string );
-	if (specific_idx >= 0)
-	    err_code |= specific_idx << ERROR_GENERIC_SHIFT;
-    }
+    specific_idx = FindMsgIndex( def_string );
+    if (specific_idx >= 0)
+	err_code |= specific_idx << ERROR_GENERIC_SHIFT;
 #endif
 
     /* Handle the instance-specific part of the error message */
@@ -219,6 +226,15 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 	inst_string = va_arg( Argp, const char * );
 	if (inst_string) {
 	    int i;
+
+	    if (specific_idx >=0 && 
+		specific_err_msgs[specific_idx].short_name &&
+		strcmp( inst_string, 
+			specific_err_msgs[specific_idx].short_name)==0) {
+		/* If this name is in the lookup table, use the 
+		   replacement */
+		inst_string = specific_err_msgs[specific_idx].long_name;
+	    }
 	    /* An instance string is available.  Use it */
 #ifdef HAVE_VSNPRINTF
 	    vsnprintf( str, MPI_MAX_ERROR_STRING, inst_string, Argp );
@@ -237,6 +253,10 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
 	    }
 	    ring_seq %= ERROR_SPECIFIC_SEQ_SIZE;
 	    error_ring_seq[ring_idx] = ring_seq;
+	}
+	else if (specific_idx >= 0) {
+	    MPIU_Strncpy( str, generic_err_msgs[specific_idx].long_name, 
+			  MPI_MAX_ERROR_STRING );
 	}
 	else {
 	    MPIU_Strncpy( str, def_string, MPI_MAX_ERROR_STRING );
@@ -287,17 +307,40 @@ const char *MPIR_Err_get_string( int errorcode )
     if (errorcode & ERROR_DYN_MASK) {
 	/* This is a dynamically created error code (e.g., with
 	   MPI_Err_add_class) */
-	p = MPIR_Process.errcode_to_string( errorcode );
+	if (!MPIR_Process.errcode_to_string) {
+	    p = "Undefined dynamic error code";
+	}
+	else {
+	    p = MPIR_Process.errcode_to_string( errorcode );
+	}
     }
     else if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
 	/* code is a raw error class.  Convert the class to an index */
 	p = MPIR_Err_get_generic_string( errorcode );
     }
     else {
-	/* error code encods a message.  For now, just mask it off
-	   and return the class message */
-	/* FIXME */
-	p = MPIR_Err_get_generic_string( ERROR_GET_CLASS(errorcode) );
+	/* error code encodes a message.  Find it and make sure that
+	   it is still valid (seq number matches the stored value in the
+	   error message ring).  If the seq number is *not* valid,
+	   use the generic message.
+	 */
+	int ring_idx;
+	int ring_seq;
+	int generic_idx;
+
+	ring_idx    = (errorcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+	ring_seq    = (errorcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
+	generic_idx = (errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT;
+
+	if (error_ring_seq[ring_idx] == ring_seq) {
+	    p = error_ring[ring_idx];
+	}
+	else if (generic_idx > 0) {
+	    p = generic_err_msgs[generic_idx].long_name;
+	}
+	else {
+	    p = MPIR_Err_get_generic_string( ERROR_GET_CLASS(errorcode) );
+	}
     }
     return p;
 }
