@@ -123,6 +123,7 @@ int smpd_init_command(smpd_command_t *cmd)
     return SMPD_SUCCESS;
 }
 
+#if 0
 int smpd_parse_command(smpd_command_t *cmd_ptr)
 {
     char temp_str[100];
@@ -167,11 +168,65 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
 	return SMPD_FAIL;
     }
 
+    /* get the tag */
+    if (smpd_get_string_arg(cmd_ptr->cmd, "tag", temp_str, 100))
+    {
+	cmd_ptr->tag = atoi(temp_str);
+    }
+
+    smpd_exit_fn("smpd_parse_command");
+    return SMPD_SUCCESS;
+}
+#endif
+
+int smpd_parse_command(smpd_command_t *cmd_ptr)
+{
+    smpd_enter_fn("smpd_parse_command");
+
+    /* get the source */
+    if (!smpd_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src))
+    {
+	smpd_err_printf("no src flag in the command.\n");
+	smpd_exit_fn("smpd_parse_command");
+	return SMPD_FAIL;
+    }
+    if (cmd_ptr->src < 0)
+    {
+	smpd_err_printf("invalid command src: %d\n", cmd_ptr->src);
+	smpd_exit_fn("smpd_parse_command");
+	return SMPD_FAIL;
+    }
+
+    /* get the destination */
+    if (!smpd_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest))
+    {
+	smpd_err_printf("no dest flag in the command.\n");
+	smpd_exit_fn("smpd_parse_command");
+	return SMPD_FAIL;
+    }
+    if (cmd_ptr->dest < 0)
+    {
+	smpd_err_printf("invalid command dest: %d\n", cmd_ptr->dest);
+	smpd_exit_fn("smpd_parse_command");
+	return SMPD_FAIL;
+    }
+
+    /* get the command string */
+    if (!smpd_get_string_arg(cmd_ptr->cmd, "cmd", cmd_ptr->cmd_str, SMPD_MAX_CMD_STR_LENGTH))
+    {
+	smpd_err_printf("no cmd string in the command.\n");
+	smpd_exit_fn("smpd_parse_command");
+	return SMPD_FAIL;
+    }
+
+    /* get the tag */
+    smpd_get_int_arg(cmd_ptr->cmd, "tag", &cmd_ptr->tag);
+
     smpd_exit_fn("smpd_parse_command");
     return SMPD_SUCCESS;
 }
 
-int smpd_create_command(char *cmd, int src, int dest, smpd_command_t **cmd_pptr)
+int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_command_t **cmd_pptr)
 {
     smpd_command_t *cmd_ptr;
     char *str;
@@ -225,6 +280,16 @@ int smpd_create_command(char *cmd, int src, int dest, smpd_command_t **cmd_pptr)
 	smpd_exit_fn("smpd_create_command");
 	return SMPD_FAIL;
     }
+    result = smpd_add_int_arg(&str, &len, "tag", smpd_process.cur_tag++);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the command.\n");
+	free(cmd_ptr);
+	smpd_exit_fn("smpd_create_command");
+	return SMPD_FAIL;
+    }
+    if (want_reply)
+	cmd_ptr->wait = SMPD_TRUE;
 
     *cmd_pptr = cmd_ptr;
     smpd_exit_fn("smpd_create_command");

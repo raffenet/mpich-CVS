@@ -81,6 +81,37 @@ int mp_exit_fn(char *fcname)
     return SMPD_SUCCESS;
 }
 
+int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr)
+{
+    int result;
+    smpd_command_t cmd;
+
+    mp_enter_fn("mp_create_command_from_stdin");
+
+    smpd_init_command(&cmd);
+    strcpy(cmd.cmd, str);
+    result = smpd_parse_command(&cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("invalid command read from stdin, ignoring: \"%s\"\n", str);
+	mp_exit_fn("mp_create_command_from_stdin");
+	return SMPD_FAIL;
+    }
+    if (strcmp(cmd.cmd_str, "connect") == 0)
+    {
+	cmd.wait = SMPD_TRUE;
+    }
+    result = smpd_create_command_copy(&cmd, cmd_pptr);
+    if (result != SMPD_SUCCESS)
+    {
+	mp_err_printf("unable to create a copy of the command read from stdin: \"%s\"\n", str);
+	mp_exit_fn("mp_create_command_from_stdin");
+	return SMPD_FAIL;
+    }
+    mp_exit_fn("mp_create_command_from_stdin");
+    return SMPD_SUCCESS;
+}
+
 int handle_command(smpd_context_t *context)
 {
     int result;
@@ -95,8 +126,9 @@ int handle_command(smpd_context_t *context)
     mp_dbg_printf(" src  = %d\n", cmd->src);
     mp_dbg_printf(" dest = %d\n", cmd->dest);
     mp_dbg_printf(" cmd  = %s\n", cmd->cmd_str);
-    mp_dbg_printf(" str = %s\n", cmd->cmd);
-    mp_dbg_printf(" len = %d\n", cmd->length);
+    mp_dbg_printf(" tag  = %d\n", cmd->tag);
+    mp_dbg_printf(" str  = %s\n", cmd->cmd);
+    mp_dbg_printf(" len  = %d\n", cmd->length);
     if (context == smpd_process.left_context)
 	mp_dbg_printf(" context = left\n");
     else if (context == smpd_process.right_context)
@@ -143,7 +175,7 @@ int handle_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "closed_request") == 0)
     {
-	result = smpd_create_command("closed", smpd_process.id, context->id, &temp_cmd);
+	result = smpd_create_command("closed", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed command for the context.\n");
@@ -199,36 +231,31 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 	mp_exit_fn("handle_read");
 	return SMPD_FAIL;
     }
-    if (context->host[0] == '\0')
+
+    if (context->type == SMPD_CONTEXT_STDIN)
     {
 	/* handle data read from stdin */
 	if (context->read_cmd.cmd[read_offset] == '\n')
 	{
 	    context->read_cmd.cmd[read_offset] = '\0'; /* remove the \n character */
-	    mp_dbg_printf("command read from stdin, forwarding to smpd\n");
-	    result = smpd_parse_command(&context->read_cmd);
-	    if (result != SMPD_SUCCESS)
+	    result = mp_create_command_from_stdin(context->read_cmd.cmd, &cmd_ptr);
+	    if (result == SMPD_SUCCESS)
 	    {
-		mp_err_printf("invalid command read from stdin, ignoring: \"%s\"\n", context->read_cmd.cmd);
-		mp_exit_fn("handle_read");
-		return SMPD_FAIL;
+		mp_dbg_printf("command read from stdin, forwarding to smpd\n");
+		result = smpd_post_write_command(session_context, cmd_ptr);
+		if (result != SMPD_SUCCESS)
+		{
+		    mp_err_printf("unable to post a write of the command read from stdin: \"%s\"\n", cmd_ptr->cmd);
+		    smpd_free_command(cmd_ptr);
+		    mp_exit_fn("handle_read");
+		    return SMPD_FAIL;
+		}
+		mp_dbg_printf("posted write of command: \"%s\"\n", cmd_ptr->cmd);
 	    }
-	    result = smpd_create_command_copy(&context->read_cmd, &cmd_ptr);
-	    if (result != SMPD_SUCCESS)
+	    else
 	    {
-		mp_err_printf("unable to create a copy of the command read from stdin: \"%s\"\n", context->read_cmd.cmd);
-		mp_exit_fn("handle_read");
-		return SMPD_FAIL;
-	    }
-	    result = smpd_post_write_command(session_context, cmd_ptr);
-	    if (result != SMPD_SUCCESS)
-	    {
-		mp_err_printf("unable to post a write of the command read from stdin: \"%s\"\n", cmd_ptr->cmd);
-		smpd_free_command(cmd_ptr);
-		mp_exit_fn("handle_read");
-		return SMPD_FAIL;
-	    }
-	    mp_dbg_printf("posted write of command: \"%s\"\n", cmd_ptr->cmd);
+		mp_err_printf("unable to create a command from user input, ignoring.\n");
+	    }	    
 	    read_offset = 0;
 	}
 	else
@@ -317,7 +344,7 @@ int handle_read(smpd_context_t *context, int num_read, int error, smpd_context_t
 
 int handle_written(smpd_context_t *context, int num_written, int error)
 {
-    smpd_command_t *cmd;
+    smpd_command_t *cmd, *iter;
     int ret_val = SMPD_SUCCESS;
 
     mp_enter_fn("handle_written");
@@ -364,10 +391,14 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 	    ret_val = SMPD_FAIL;
 	    break;
 	case SMPD_CMD_WRITING_CMD:
+	    /* get the currently written command out of the write list */
 	    cmd = context->write_list;
 	    context->write_list = context->write_list->next;
+
+	    /* check to see if the sock needs to be closed */
 	    if (strcmp(cmd->cmd_str, "closed") == 0)
 	    {
+		/* after writing a closed command, close the socket */
 		mp_dbg_printf("closed command written, posting close of the sock.\n");
 		mp_dbg_printf("sock_post_close(%d)\n", sock_getid(context->sock));
 		ret_val = sock_post_close(context->sock);
@@ -380,12 +411,36 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 		    break;
 		}
 	    }
-	    ret_val = smpd_free_command(cmd);
-	    if (ret_val != SMPD_SUCCESS)
+
+	    if (cmd->wait)
 	    {
-		mp_err_printf("unable to free the written command.\n");
-		break;
+		/* If this command expects a reply, move it to the wait list */
+		mp_dbg_printf("moving '%s' command to the wait_list.\n", cmd->cmd_str);
+		if (context->wait_list)
+		{
+		    iter = context->wait_list;
+		    while (iter->next)
+			iter = iter->next;
+		    iter->next = cmd;
+		}
+		else
+		{
+		    context->wait_list = cmd;
+		}
+		cmd->next = NULL;
 	    }
+	    else
+	    {
+		/* otherwise free the command immediately. */
+		ret_val = smpd_free_command(cmd);
+		if (ret_val != SMPD_SUCCESS)
+		{
+		    mp_err_printf("unable to free the written command.\n");
+		    break;
+		}
+	    }
+
+	    /* move to the next command in the write list an post a write for it */
 	    cmd = context->write_list;
 	    if (cmd)
 	    {

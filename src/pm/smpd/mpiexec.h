@@ -1,6 +1,7 @@
 #ifndef MPIEXEC_H
 #define MPIEXEC_H
 
+#include "smpd.h"
 #include "sock.h"
 #include <stdio.h>
 
@@ -37,5 +38,6 @@ int mp_exit_fn(char *fcname);
 int mp_parse_command_args(int *argc, char **argv[]);
 void mp_get_account_and_password(char *account, char *password);
 int mp_console(char *host);
+int mp_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);
 
 #endif

@@ -29,7 +29,15 @@
 #endif
 #endif
 
-smpd_process_t smpd_process = { -1, -1, -1, NULL, NULL, NULL, SMPD_FALSE, SMPD_FALSE, SOCK_INVALID_SET, "", "", SMPD_FALSE, SMPD_FALSE, "", "", "" };
+smpd_process_t smpd_process = 
+    { -1, -1, -1, 
+      NULL, NULL, NULL,
+      SMPD_FALSE, SMPD_FALSE,
+      SOCK_INVALID_SET,
+      "", "",
+      SMPD_FALSE, SMPD_FALSE,
+      "", "", "",
+      0 };
 
 #ifdef HAVE_SIGACTION
 void child_handler(int code)

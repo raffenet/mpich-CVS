@@ -132,6 +132,7 @@ typedef struct smpd_process_t
     char SMPDPassword[100];
     char UserAccount[100];
     char UserPassword[100];
+    int cur_tag;
 } smpd_process_t;
 
 extern smpd_process_t smpd_process;
@@ -149,7 +150,7 @@ HANDLE smpd_decode_handle(char *str);
 int smpd_init_process(void);
 int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_set_t set, sock_t sock, int id);
 int smpd_init_command(smpd_command_t *cmd);
-int smpd_create_command(char *cmd_str, int src, int dest, smpd_command_t **cmd_pptr);
+int smpd_create_command(char *cmd_str, int src, int dest, int want_reply, smpd_command_t **cmd_pptr);
 int smpd_create_command_copy(smpd_command_t *src_ptr, smpd_command_t **cmd_pptr);
 int smpd_free_command(smpd_command_t *cmd_ptr);
 int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value);

@@ -24,8 +24,9 @@ int handle_command(smpd_context_t *context)
     smpd_dbg_printf(" src  = %d\n", cmd->src);
     smpd_dbg_printf(" dest = %d\n", cmd->dest);
     smpd_dbg_printf(" cmd  = %s\n", cmd->cmd_str);
-    smpd_dbg_printf(" str = %s\n", cmd->cmd);
-    smpd_dbg_printf(" len = %d\n", cmd->length);
+    smpd_dbg_printf(" tag  = %d\n", cmd->tag);
+    smpd_dbg_printf(" str  = %s\n", cmd->cmd);
+    smpd_dbg_printf(" len  = %d\n", cmd->length);
     if (context == smpd_process.left_context)
 	smpd_dbg_printf(" context = left\n");
     else if (context == smpd_process.right_context)
@@ -65,7 +66,7 @@ int handle_command(smpd_context_t *context)
 	{
 	    if (smpd_process.left_context)
 	    {
-		result = smpd_create_command("close", smpd_process.id, smpd_process.left_context->id, &temp_cmd);
+		result = smpd_create_command("close", smpd_process.id, smpd_process.left_context->id, SMPD_FALSE, &temp_cmd);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create a close command for the left context.\n");
@@ -83,7 +84,7 @@ int handle_command(smpd_context_t *context)
 	    }
 	    if (smpd_process.right_context)
 	    {
-		result = smpd_create_command("close", smpd_process.id, smpd_process.right_context->id, &temp_cmd);
+		result = smpd_create_command("close", smpd_process.id, smpd_process.right_context->id, SMPD_FALSE, &temp_cmd);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create a close command for the right context.\n");
@@ -104,7 +105,7 @@ int handle_command(smpd_context_t *context)
 	    return SMPD_SUCCESS;
 	    /*return SMPD_CLOSE;*/
 	}
-	result = smpd_create_command("closed", smpd_process.id, context->id, &temp_cmd);
+	result = smpd_create_command("closed", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed command for the parent context.\n");
@@ -171,7 +172,7 @@ int handle_command(smpd_context_t *context)
 	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
-	result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
+	result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, SMPD_FALSE, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed_request command for the parent context.\n");
@@ -192,7 +193,7 @@ int handle_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "closed_request") == 0)
     {
-	result = smpd_create_command("closed", smpd_process.id, context->id, &temp_cmd);
+	result = smpd_create_command("closed", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a closed command for the context.\n");
@@ -319,7 +320,7 @@ int handle_command(smpd_context_t *context)
 	    smpd_process.right_context ? smpd_process.right_context->id : -1);
 	if (smpd_process.left_context)
 	{
-	    result = smpd_create_command("print", smpd_process.id, smpd_process.left_context->id, &temp_cmd);
+	    result = smpd_create_command("print", smpd_process.id, smpd_process.left_context->id, SMPD_FALSE, &temp_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a 'print' command for the left context.\n");
@@ -336,7 +337,7 @@ int handle_command(smpd_context_t *context)
 	}
 	if (smpd_process.right_context)
 	{
-	    result = smpd_create_command("print", smpd_process.id, smpd_process.right_context->id, &temp_cmd);
+	    result = smpd_create_command("print", smpd_process.id, smpd_process.right_context->id, SMPD_FALSE, &temp_cmd);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to create a 'print' command for the right context.\n");
@@ -359,7 +360,7 @@ int handle_command(smpd_context_t *context)
 	{
 	    if (strcmp(cmd->cmd_str, "shutdown") == 0)
 	    {
-		result = smpd_create_command("down", smpd_process.id, context->id, &temp_cmd);
+		result = smpd_create_command("down", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create a closed command for the context.\n");
@@ -379,7 +380,7 @@ int handle_command(smpd_context_t *context)
 	    }
 	    else if (strcmp(cmd->cmd_str, "stat") == 0)
 	    {
-		result = smpd_create_command("all ok", smpd_process.id, cmd->src, &temp_cmd);
+		result = smpd_create_command("all ok", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to create an 'all ok' command for the context.\n");
@@ -535,7 +536,7 @@ int smpd_handle_read(smpd_context_t *context)
 
 int smpd_handle_written(smpd_context_t *context)
 {
-    smpd_command_t *cmd;
+    smpd_command_t *cmd, *iter;
     int ret_val = SMPD_SUCCESS;
 
     smpd_enter_fn("smpd_handle_written");
@@ -586,12 +587,43 @@ int smpd_handle_written(smpd_context_t *context)
 	    smpd_free_command(cmd);
 	    smpd_exit(0);
 	}
+
+	if (cmd->wait)
+	{
+	    /* If this command expects a reply, move it to the wait list */
+	    smpd_dbg_printf("moving '%s' command to the wait_list.\n", cmd->cmd_str);
+	    if (context->wait_list)
+	    {
+		iter = context->wait_list;
+		while (iter->next)
+		    iter = iter->next;
+		iter->next = cmd;
+	    }
+	    else
+	    {
+		context->wait_list = cmd;
+	    }
+	    cmd->next = NULL;
+	}
+	else
+	{
+	    /* otherwise free the command immediately. */
+	    ret_val = smpd_free_command(cmd);
+	    if (ret_val != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to free the written command.\n");
+		break;
+	    }
+	}
+
+	/*
 	ret_val = smpd_free_command(cmd);
 	if (ret_val != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to free the written command.\n");
 	    break;
 	}
+	*/
 	cmd = context->write_list;
 	if (cmd)
 	{
@@ -820,7 +852,7 @@ int smpd_session(sock_set_t set, sock_t sock)
 		if (smpd_process.left_context == NULL && smpd_process.right_context == NULL)
 		{
 		    /* all children have closed, send a 'closed' command to the parent */
-		    result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
+		    result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, SMPD_FALSE, &temp_cmd);
 		    if (result != SMPD_SUCCESS)
 		    {
 			smpd_err_printf("unable to create a closed_request command for the parent context.\n");
