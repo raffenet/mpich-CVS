@@ -507,6 +507,9 @@ else
 fi
 AC_SUBST(pmi_name)
 dnl with-pm
+if test "$with_pmi" = "uni" -a "$with_pm" = "default" ; then
+    with_pm=""
+fi
 if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
     with_pm=mpd
 fi
