@@ -7,6 +7,7 @@
 *.idx
 *.ind
 *.ilg
+*.out
 mpich2.ps
 scanpattern.eps indirect.eps handle.eps intercomm.eps sendrecv.eps
 template.tex
