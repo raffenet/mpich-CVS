@@ -109,3 +109,13 @@ ifelse([$3], , , [$3
 fi
 ])
 
+dnl
+dnl This internal macro fails to work properly with OTHER internal macros.
+dnl Basically, if the prologue is [], then no message should be generated.
+dnl This macro is in autoconf 2.52
+m4_define([AC_LANG_PROGRAM(Fortran 77)],
+[m4_if([$1],[[]],,[m4_ifval([$1],
+       [m4_warn([syntax], [$0: ignoring PROLOGUE: $1])])])dnl
+      program main
+$2
+      end])
