@@ -31,3 +31,5 @@ extern int MPIR_Infotable_ptr, MPIR_Infotable_max;
 #ifdef __XFS
 extern int ADIOI_Direct_read, ADIOI_Direct_write;
 #endif
+
+extern MPI_Errhandler ADIOI_DFLT_ERR_HANDLER;

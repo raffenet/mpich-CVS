@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: simple -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: simple -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -71,12 +71,12 @@ int main(int argc, char **argv)
     MPI_Allreduce(&sum, &global_sum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
     if (global_sum != (((COUNT*nprocs - 1)*(COUNT*nprocs))/2))
-	printf("Error: sum %d, global_sum %d, %d\n", sum, global_sum,(((COUNT*nprocs - 1)*(COUNT*nprocs))/2));
+	fprintf(stderr, "Error: sum %d, global_sum %d, %d\n", sum, global_sum,(((COUNT*nprocs - 1)*(COUNT*nprocs))/2));
     
     free(buf);
     free(filename);
 
-    if (!rank) printf("Done\n");
+    if (!rank) fprintf(stderr, "Done\n");
 
     MPI_Finalize();
     return 0; 

@@ -44,7 +44,7 @@ int MPI_Info_create(MPI_Info *info)
    Can't initialize it here, because don't know argc, argv */
         MPI_Initialized(&flag);
         if (!flag) {
-            printf("Error: MPI_Init() must be called before using MPI_Info_create\n");
+            FPRINTF(stderr, "Error: MPI_Init() must be called before using MPI_Info_create\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 

@@ -289,6 +289,9 @@ ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
                       int whence, int *error_code);
 void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 void ADIOI_Shfp_fname(ADIO_File fd, int rank);
+int ADIOI_Error(ADIO_File fd, int error_code, char *string);
+int MPIR_Err_setmsg( int, int, const char *, const char *, const char *, ... );
+int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state);
 
 
 /* Unix-style file locking */
@@ -328,6 +331,10 @@ int ADIOI_Set_lock64(int fd_sys, int cmd, int type, ADIO_Offset offset, int when
 #define ADIOI_Calloc(a,b) ADIOI_Calloc(a,b,__LINE__,__FILE__)
 #define ADIOI_Realloc(a,b) ADIOI_Realloc(a,b,__LINE__,__FILE__)
 #define ADIOI_Free(a) ADIOI_Free(a,__LINE__,__FILE__)
+
+#define FPRINTF fprintf
+
+#include "adioi_error.h"
 
 #endif
 

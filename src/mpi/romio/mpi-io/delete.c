@@ -52,7 +52,7 @@ int MPI_File_delete(char *filename, MPI_Info info)
    Can't initialize it here, because don't know argc, argv */
         MPI_Initialized(&flag);
         if (!flag) {
-            printf("Error: MPI_Init() must be called before using MPI-IO\n");
+            FPRINTF(stderr, "Error: MPI_Init() must be called before using MPI-IO\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 

@@ -14,7 +14,7 @@ void ADIO_End(int *error_code)
     ADIOI_Malloc_async *tmp;
     ADIOI_Malloc_req *tmp1;
     
-/*    printf("reached end\n"); */
+/*    FPRINTF(stderr, "reached end\n"); */
 
 /* delete the flattened datatype list */
     curr = ADIOI_Flatlist;
@@ -28,7 +28,7 @@ void ADIO_End(int *error_code)
     ADIOI_Flatlist = NULL;
 
     if (ADIOI_Async_list_head) {
-	printf("ADIO_End: Error! There are outstanding nonblocking I/O operations!\n");
+	FPRINTF(stderr, "ADIO_End: Error! There are outstanding nonblocking I/O operations!\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

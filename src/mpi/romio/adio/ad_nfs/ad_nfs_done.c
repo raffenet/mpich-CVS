@@ -11,6 +11,9 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 {
     int done=0;
 #ifndef __NO_AIO
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_NFS_READDONE";
+#endif
 #ifdef __AIO_SUN 
     aio_result_t *result=0, *tmp;
 #else
@@ -55,7 +58,16 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	else {
 	    result = (aio_result_t *) aiowait(0); /* dequeue any one request */
 	    done = 1;
+#ifdef __PRINT_ERR_MSG
 	    *error_code = ((int) result == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	    if ((int) result == -1) {
+		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+		ADIOI_Error((*request)->fd, *error_code, myname);	    
+	    }
+	    else *error_code = MPI_SUCCESS;
+#endif
 	    /* the error could have been for some other request, since we
 	       don't know which request is being dequeued, but might as well
 	       flag it here. */
@@ -86,7 +98,16 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
    I'm assuming it is aio_return! */
 	
 	    done = 1;
+#ifdef __PRINT_ERR_MSG
 	    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	    if (err == -1) {
+		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+		ADIOI_Error((*request)->fd, *error_code, myname);	    
+	    }
+	    else *error_code = MPI_SUCCESS;
+#endif
 	    /* status to be filled */
 	}
     }
@@ -105,9 +126,18 @@ int ADIOI_NFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int *error_co
 	else {
 	    nbytes = aio_return((struct aiocb *) (*request)->handle); 
 	    /* also dequeues the request*/ 
-	    /*  if (err) printf("error in testing completion of nonblocking I/O\n");*/
+	    /*  if (err) FPRINTF(stderr, "error in testing completion of nonblocking I/O\n");*/
 	    done = 1;
+#ifdef __PRINT_ERR_MSG
 	    *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	    if (err == -1) {
+		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+		ADIOI_Error((*request)->fd, *error_code, myname);	    
+	    }
+	    else *error_code = MPI_SUCCESS;
+#endif
 	    /* status to be filled */
 	}
     }

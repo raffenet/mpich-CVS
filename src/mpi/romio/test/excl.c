@@ -24,7 +24,7 @@ int main(int argc, char **argv)
             argv++;
         }
         if (i >= argc) {
-            printf("\n*#  Usage: excl -fname filename\n\n");
+            fprintf(stderr, "\n*#  Usage: excl -fname filename\n\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         argv++;
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     err = MPI_File_open(MPI_COMM_WORLD, filename, 
          MPI_MODE_CREATE | MPI_MODE_EXCL | MPI_MODE_RDWR, MPI_INFO_NULL , &fh);
     if (err != MPI_SUCCESS)
-	printf("Process %d: open failed when it should have succeeded\n", rank);
+	fprintf(stderr, "Process %d: open failed when it should have succeeded\n", rank);
     else MPI_File_close(&fh);
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -57,9 +57,9 @@ int main(int argc, char **argv)
     err = MPI_File_open(MPI_COMM_WORLD, filename, 
          MPI_MODE_CREATE | MPI_MODE_EXCL | MPI_MODE_RDWR, MPI_INFO_NULL , &fh);
     if (err == MPI_SUCCESS)
-	printf("Process %d: open succeeded when it should have failed\n", rank);
+	fprintf(stderr, "Process %d: open succeeded when it should have failed\n", rank);
 
-    if (!rank) printf("Done\n");
+    if (!rank) fprintf(stderr, "Done\n");
 
     free(filename);
     MPI_Finalize();

@@ -18,6 +18,9 @@ ADIO_Offset ADIOI_HFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 
     ADIO_Offset off;
     ADIOI_Flatlist_node *flat_file;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_HFS_SEEKINDIVIDUAL";
+#endif
 
     int i, n_etypes_in_filetype, n_filetypes, etype_in_filetype;
     ADIO_Offset abs_off_in_filetype=0;
@@ -60,7 +63,16 @@ ADIO_Offset ADIOI_HFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
 
 #ifdef __HPUX
     fd->fp_sys_posn = lseek64(fd->fd_sys, off, SEEK_SET);
+#ifdef __PRINT_ERR_MSG
     *error_code = (fd->fp_sys_posn == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (fd->fp_sys_posn == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 #endif
 
 #ifdef __SPPUX

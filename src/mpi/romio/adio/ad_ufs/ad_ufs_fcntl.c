@@ -19,6 +19,9 @@ void ADIOI_UFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     ADIO_Offset curr_fsize, alloc_size, size, len, done;
     ADIO_Status status;
     char *buf;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_UFS_FCNTL";
+#endif
 
     switch(flag) {
     case ADIO_FCNTL_SET_VIEW:
@@ -84,7 +87,16 @@ void ADIOI_UFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	fcntl_struct->fsize = lseek(fd->fd_sys, 0, SEEK_END);
 	if (fd->fp_sys_posn != -1) 
 	     lseek(fd->fd_sys, fd->fp_sys_posn, SEEK_SET);
+#ifdef __PRINT_ERR_MSG
 	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if (fcntl_struct->fsize == -1) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error(fd, *error_code, myname);	    
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
 	break;
 
     case ADIO_FCNTL_SET_DISKSPACE:
@@ -111,8 +123,15 @@ void ADIOI_UFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	    ADIO_ReadContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, done,
 			    &status, error_code);
 	    if (*error_code != MPI_SUCCESS) {
-		printf("ADIOI_UFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
+#ifdef __PRINT_ERR_MSG
+		FPRINTF(stderr, "ADIOI_UFS_Fcntl: To preallocate disk space, ROMIO needs to read the file and write it back, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_PREALLOC_PERM,
+			      myname, (char *) 0, (char *) 0);
+		ADIOI_Error(fd, *error_code, myname);
+                return;  
+#endif
 	    }
 	    ADIO_WriteContig(fd, buf, len, ADIO_EXPLICIT_OFFSET, done,
 			     &status, error_code);
@@ -154,7 +173,7 @@ void ADIOI_UFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	break;
 
     default:
-	printf("Unknown flag passed to ADIOI_UFS_Fcntl\n");
+	FPRINTF(stderr, "Unknown flag passed to ADIOI_UFS_Fcntl\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 }

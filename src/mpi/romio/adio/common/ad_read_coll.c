@@ -77,12 +77,6 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
         MPE_Log_event(13, 0, "start computation");
 #endif
 
-/* PFS file pointer modes are not relevant here. */
-    if ((fd->iomode != M_ASYNC) && (fd->iomode != M_UNIX)) {
-	printf("ADIOI_GEN_ReadStridedColl: only M_ASYNC and M_UNIX iomodes are valid\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-
     MPI_Comm_size(fd->comm, &nprocs);
     MPI_Comm_rank(fd->comm, &myrank);
 
@@ -107,7 +101,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
 			   &end_offset, &contig_access_count); 
     
 /*    for (i=0; i<contig_access_count; i++) {
-	printf("rank %d  off %ld  len %d\n", myrank, offset_list[i], len_list[i]);
+	FPRINTF(stderr, "rank %d  off %ld  len %d\n", myrank, offset_list[i], len_list[i]);
     }*/
 
 /* each process communicates its start and end offsets to other 
@@ -246,7 +240,7 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
     int contig_access_count, *len_list, flag, filetype_is_contig;
     MPI_Aint filetype_extent, filetype_lb;
     ADIOI_Flatlist_node *flat_file;
-    ADIO_Offset *offset_list, off, end_offset, disp;
+    ADIO_Offset *offset_list, off, end_offset=0, disp;
     
 /* For this process's request, calculate the list of offsets and
    lengths in the file and determine the start and end offsets. */
@@ -509,7 +503,7 @@ void ADIOI_Calc_my_req(ADIO_Offset *offset_list, int *len_list, int
 	proc = (int) ((offset_list[i] - min_st_offset + fd_size)/fd_size - 1);
         /* sanity check */
 	if (proc >= nprocs_for_coll) {
-	    printf("Error: proc >= nprocs_for_coll, file %s, line %d\n", __FILE__, __LINE__);
+	    FPRINTF(stderr, "Error: proc >= nprocs_for_coll, file %s, line %d\n", __FILE__, __LINE__);
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 
@@ -715,15 +709,18 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     ADIO_Offset st_loc=0, end_loc=0, off, done, real_off, req_off;
     char *read_buf, *tmp_buf;
     int *curr_offlen_ptr, *count, *send_size, *recv_size;
-    int *partial_send, *recd_from_proc, *start_pos, for_next_iter, err=-1;
+    int *partial_send, *recd_from_proc, *start_pos, for_next_iter;
     int *recv_buf_idx, *curr_from_proc, *done_from_proc;
-    int real_size, req_len, flag, for_curr_iter, rank, err_flag=0;
+    int real_size, req_len, flag, for_curr_iter, rank;
     MPI_Status status;
     ADIOI_Flatlist_node *flat_buf=NULL;
     MPI_Aint buftype_extent;
     int info_flag, coll_bufsize;
     char *value;
 
+    *error_code = MPI_SUCCESS;  /* changed below if error */
+    /* only I/O errors are currently reported */
+    
 /* calculate the number of reads of size coll_bufsize
    to be done by each process and the max among all processes.
    That gives the no. of communication phases as well.
@@ -860,7 +857,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 	for_next_iter = 0;
 
 	for (i=0; i<nprocs; i++) {
-	    /* printf("rank %d, i %d, others_count %d\n", rank, i, others_req[i].count); */
+	    /* FPRINTF(stderr, "rank %d, i %d, others_count %d\n", rank, i, others_req[i].count); */
 	    if (others_req[i].count) {
 		start_pos[i] = curr_offlen_ptr[i];
 		for (j=curr_offlen_ptr[i]; j<others_req[i].count;
@@ -919,8 +916,8 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 #endif
 	if (flag) {
 	    ADIO_ReadContig(fd, read_buf+for_curr_iter, size,
-			    ADIO_EXPLICIT_OFFSET, off, &status, &err);
-	    if (err != MPI_SUCCESS) err_flag = 1;
+			    ADIO_EXPLICIT_OFFSET, off, &status, error_code);
+	    if (*error_code != MPI_SUCCESS) return;
 	}
 	
 	for_curr_iter = for_next_iter;
@@ -985,9 +982,6 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     ADIOI_Free(recv_buf_idx);
     ADIOI_Free(curr_from_proc);
     ADIOI_Free(done_from_proc);
-
-    /* only I/O errors are currently reported */
-    *error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 }
 
 
@@ -1052,7 +1046,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 		    MPI_Irecv(recv_buf[i], recv_size[i], MPI_BYTE, i, 
 			      myrank+i+100*iter, fd->comm, requests+j);
 		    j++;
-		    /* printf("node %d, recv_size %d, tag %d \n", myrank, recv_size[i], myrank+i+100*iter); */
+		    /* FPRINTF(stderr, "node %d, recv_size %d, tag %d \n", myrank, recv_size[i], myrank+i+100*iter); */
 		}
     }
 

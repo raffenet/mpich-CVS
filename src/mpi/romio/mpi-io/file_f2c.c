@@ -35,7 +35,6 @@ Return Value:
 @*/
 MPI_File MPI_File_f2c(MPI_Fint fh)
 {
-
 #ifndef __INT_LT_POINTER
     return (MPI_File) ((void *) fh);  
     /* the extra cast is to get rid of a compiler warning on Exemplar.
@@ -45,8 +44,9 @@ MPI_File MPI_File_f2c(MPI_Fint fh)
 #else
     if (!fh) return MPI_FILE_NULL;
     if ((fh < 0) || (fh > ADIOI_Ftable_ptr)) {
-	printf("MPI_File_f2c: Invalid file handle\n");
+	FPRINTF(stderr, "MPI_File_f2c: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+endif
     }
     return ADIOI_Ftable[fh];
 #endif

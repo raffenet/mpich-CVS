@@ -13,6 +13,9 @@ void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     long *id_sys;
     ADIO_Offset off;
     int err;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PFS_IREADCONTIG";
+#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_READ;
@@ -39,13 +42,27 @@ void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
         *id_sys = _iread(fd->fd_sys, buf, len);
 
         if ((*id_sys == -1) && (errno == EQNOMID)) {
-            printf("Error in asynchronous I/O\n");
+#ifdef __PRINT_ERR_MSG
+            FPRINTF(stderr, "Error in asynchronous I/O\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error(fd, *error_code, myname);	    
+	    return;
+#endif
         }
     }
     else if (*id_sys == -1) {
-        printf("Unknown errno %d in ADIOI_PFS_IreadContig\n", errno);
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "Unknown errno %d in ADIOI_PFS_IreadContig\n", errno);
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+	return;
+#endif
     }
 
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len; 
@@ -56,7 +73,16 @@ void ADIOI_PFS_IreadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 
     fd->fp_sys_posn = -1;   /* set it to null. */
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (*id_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (*id_sys == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 
 /* status info. must be linked to the request structure, so that it
    can be accessed later from a wait */

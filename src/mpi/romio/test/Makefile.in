@@ -64,6 +64,9 @@ noncontig_coll: noncontig_coll.o
 file_info: file_info.o
 	$(CC) $(USER_CFLAGS) -o file_info file_info.o $(LIBS)
 
+error: error.o
+	$(CC) $(USER_CFLAGS) -o error error.o $(LIBS)
+
 shared_fp: shared_fp.o
 	$(CC) $(USER_FFLAGS) -o shared_fp shared_fp.o $(LIBS)
 

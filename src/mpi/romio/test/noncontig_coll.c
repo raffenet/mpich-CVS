@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &mynod);
 
     if (nprocs != 2) {
-        printf("Run this program on two processes\n");
+        fprintf(stderr, "Run this program on two processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: noncontig_coll -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: noncontig_coll -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     MPI_Type_free(&typevec);
 
     if (!mynod) {
-	printf("\ntesting noncontiguous in memory, noncontiguous in file using collective I/O\n");
+	fprintf(stderr, "\ntesting noncontiguous in memory, noncontiguous in file using collective I/O\n");
 	MPI_File_delete(filename, MPI_INFO_NULL);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -90,15 +90,15 @@ int main(int argc, char **argv)
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
 	    if ((i%2) && (buf[i] != -1))
-		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
+		fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
 	    if (!(i%2) && (buf[i] != i))
-		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
+		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
 	}
 	else {
 	    if ((i%2) && (buf[i] != i + mynod*SIZE))
-		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
+		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
 	    if (!(i%2) && (buf[i] != -1))
-		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
+		fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
 	}
     }
 
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (!mynod) {
-	printf("\ntesting noncontiguous in memory, contiguous in file using collective I/O\n");
+	fprintf(stderr, "\ntesting noncontiguous in memory, contiguous in file using collective I/O\n");
 	MPI_File_delete(filename, MPI_INFO_NULL);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -127,15 +127,15 @@ int main(int argc, char **argv)
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
 	    if ((i%2) && (buf[i] != -1))
-		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
+		fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
 	    if (!(i%2) && (buf[i] != i))
-		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
+		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
 	}
 	else {
 	    if ((i%2) && (buf[i] != i + mynod*SIZE))
-		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
+		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
 	    if (!(i%2) && (buf[i] != -1))
-		printf("Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
+		fprintf(stderr, "Process %d: buf %d is %d, should be -1\n", mynod, i, buf[i]);
 	}
     }
 
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (!mynod) {
-	printf("\ntesting contiguous in memory, noncontiguous in file using collective I/O\n");
+	fprintf(stderr, "\ntesting contiguous in memory, noncontiguous in file using collective I/O\n");
 	MPI_File_delete(filename, MPI_INFO_NULL);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -166,11 +166,11 @@ int main(int argc, char **argv)
     for (i=0; i<SIZE; i++) {
 	if (!mynod) {
 	    if (buf[i] != i)
-		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
+		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
 	}
 	else {
 	    if (buf[i] != i + mynod*SIZE)
-		printf("Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
+		fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i + mynod*SIZE);
 	}
     }
 

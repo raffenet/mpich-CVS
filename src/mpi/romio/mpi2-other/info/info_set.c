@@ -38,37 +38,37 @@ int MPI_Info_set(MPI_Info info, char *key, char *value)
     MPI_Info prev, curr;
 
     if ((info <= (MPI_Info) 0) || (info->cookie != MPIR_INFO_COOKIE)) {
-        printf("MPI_Info_set: Invalid info object\n");
+        FPRINTF(stderr, "MPI_Info_set: Invalid info object\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (key <= (char *) 0) {
-	printf("MPI_Info_set: key is an invalid address\n");
+	FPRINTF(stderr, "MPI_Info_set: key is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (value <= (char *) 0) {
-	printf("MPI_Info_set: value is an invalid address\n");
+	FPRINTF(stderr, "MPI_Info_set: value is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (strlen(key) > MPI_MAX_INFO_KEY) {
-	printf("MPI_Info_set: key is longer than MPI_MAX_INFO_KEY\n");
+	FPRINTF(stderr, "MPI_Info_set: key is longer than MPI_MAX_INFO_KEY\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (strlen(value) > MPI_MAX_INFO_VAL) {
-	printf("MPI_Info_set: value is longer than MPI_MAX_INFO_VAL\n");
+	FPRINTF(stderr, "MPI_Info_set: value is longer than MPI_MAX_INFO_VAL\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (!strlen(key)) {
-	printf("MPI_Info_set: key is a null string\n");
+	FPRINTF(stderr, "MPI_Info_set: key is a null string\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (!strlen(value)) {
-	printf("MPI_Info_set: value is a null string\n");
+	FPRINTF(stderr, "MPI_Info_set: value is a null string\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

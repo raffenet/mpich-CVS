@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: coll_test -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: coll_test -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
     free(tmpbuf);
 
     if (j != bufcount) {
-	printf("Error in initializing writebuf on process %d\n", mynod);
+	fprintf(stderr, "Error in initializing writebuf on process %d\n", mynod);
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 /* end of initialization */
@@ -128,9 +128,9 @@ int main(int argc, char **argv)
     /* check the data read */
     for (i=0; i<bufcount; i++) 
 	if (readbuf[i] != writebuf[i])
-	    printf("Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);
+	    fprintf(stderr, "Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);
 
-    if (!mynod) printf("Done\n");
+    if (!mynod) fprintf(stderr, "Done\n");
 
     MPI_Type_free(&newtype);
     free(readbuf);

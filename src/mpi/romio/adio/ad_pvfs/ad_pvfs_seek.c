@@ -19,6 +19,9 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
    routine. */
 /* offset is in units of etype relative to the filetype */
 
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PVFS_SEEKINDIVIDUAL";
+#endif
     ADIO_Offset off, err;
     ADIOI_Flatlist_node *flat_file;
 
@@ -69,6 +72,15 @@ ADIO_Offset ADIOI_PVFS_SeekIndividual(ADIO_File fd, ADIO_Offset offset,
     fd->fp_ind = off;
     fd->fp_sys_posn = off;
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (err == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
     return off;
 }

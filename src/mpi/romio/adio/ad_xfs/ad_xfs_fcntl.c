@@ -17,6 +17,9 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
     int combiner, i, j, k, filetype_is_contig, err;
     ADIOI_Flatlist_node *flat_file;
     struct flock64 fl;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_XFS_FCNTL";
+#endif
 
     switch(flag) {
     case ADIO_FCNTL_SET_VIEW:
@@ -80,7 +83,16 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 
     case ADIO_FCNTL_GET_FSIZE:
 	fcntl_struct->fsize = lseek64(fd->fd_sys, 0, SEEK_END);
+#ifdef __PRINT_ERR_MSG
 	*error_code = (fcntl_struct->fsize == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if (fcntl_struct->fsize == -1) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error(fd, *error_code, myname);	    
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
 	break;
 
     case ADIO_FCNTL_SET_DISKSPACE:
@@ -95,7 +107,16 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	    err = ftruncate64(fd->fd_sys, fcntl_struct->diskspace);
 	    if (err) i = 1;
 	}
+#ifdef __PRINT_ERR_MSG
 	*error_code = (i == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
+#else
+	if (i == 1) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error(fd, *error_code, myname);	    
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
 	break;
 
     case ADIO_FCNTL_SET_IOMODE:
@@ -114,7 +135,7 @@ void ADIOI_XFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *er
 	break;
 
     default:
-	printf("Unknown flag passed to ADIOI_XFS_Fcntl\n");
+	FPRINTF(stderr, "Unknown flag passed to ADIOI_XFS_Fcntl\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 }

@@ -11,29 +11,36 @@ void ADIOI_PVFS_ReadContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
     int err=-1;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PVFS_READCONTIG";
+#endif
 
-    if ((fd->iomode == M_ASYNC) || (fd->iomode == M_UNIX)) {
-	if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
-	    if (fd->fp_sys_posn != offset)
-		pvfs_lseek(fd->fd_sys, offset, SEEK_SET);
-	    err = pvfs_read(fd->fd_sys, buf, len);
-	    fd->fp_sys_posn = offset + err;
-         /* individual file pointer not updated */        
-	}
-	else {  /* read from curr. location of ind. file pointer */
-	    if (fd->fp_sys_posn != fd->fp_ind)
-		pvfs_lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
-	    err = pvfs_read(fd->fd_sys, buf, len);
-	    fd->fp_ind += err; 
-	    fd->fp_sys_posn = fd->fp_ind;
-	}         
+    if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
+	if (fd->fp_sys_posn != offset)
+	    pvfs_lseek(fd->fd_sys, offset, SEEK_SET);
+	err = pvfs_read(fd->fd_sys, buf, len);
+	fd->fp_sys_posn = offset + err;
+	/* individual file pointer not updated */        
     }
-    else fd->fp_sys_posn = -1;    /* set it to null */
+    else {  /* read from curr. location of ind. file pointer */
+	if (fd->fp_sys_posn != fd->fp_ind)
+	    pvfs_lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
+	err = pvfs_read(fd->fd_sys, buf, len);
+	fd->fp_ind += err; 
+	fd->fp_sys_posn = fd->fp_ind;
+    }         
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (err == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 }
-
-
 
 
 void ADIOI_PVFS_ReadStrided(ADIO_File fd, void *buf, int count,

@@ -1,5 +1,5 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -13,7 +13,7 @@
 #define SIZE 1048576*4     /* no. of long longs in each write/read */
 #define NTIMES 128         /* no. of writes/reads */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     MPI_File fh;
     MPI_Status status;
@@ -28,7 +28,7 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
     if (nprocs != 1) {
-	printf("Run this program on one process only\n");
+	fprintf(stderr, "Run this program on one process only\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -38,18 +38,18 @@ main(int argc, char **argv)
 	argv++;
     }
     if (i >= argc) {
-	printf("\n*#  Usage: large -fname filename\n\n");
+	fprintf(stderr, "\n*#  Usage: large -fname filename\n\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
     argv++;
     len = strlen(*argv);
     filename = (char *) malloc(len+1);
     strcpy(filename, *argv);
-    printf("This program creates an 4 Gbyte file. Don't run it if you don't have that much disk space!\n");
+    fprintf(stderr, "This program creates an 4 Gbyte file. Don't run it if you don't have that much disk space!\n");
 
     buf = (long long *) malloc(SIZE * sizeof(long long));
     if (!buf) {
-	printf("not enough memory to allocate buffer\n");
+	fprintf(stderr, "not enough memory to allocate buffer\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -64,13 +64,13 @@ main(int argc, char **argv)
         /* MPI_DOUBLE because not all MPI implementations define
            MPI_LONG_LONG_INT, even though the C compiler supports long long. */
         if (err != MPI_SUCCESS) {
-	    printf("MPI_File_write returned error\n");
+	    fprintf(stderr, "MPI_File_write returned error\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
     }
 
     MPI_File_get_size(fh, &size);
-    printf("file size = @LL@ bytes\n", size);
+    fprintf(stderr, "file size = @LL@ bytes\n", size);
 
     MPI_File_seek(fh, 0, MPI_SEEK_SET);
 
@@ -82,21 +82,22 @@ main(int argc, char **argv)
         /* MPI_DOUBLE because not all MPI implementations define
            MPI_LONG_LONG_INT, even though the C compiler supports long long. */
         if (err != MPI_SUCCESS) {
-	    printf("MPI_File_write returned error\n");
+	    fprintf(stderr, "MPI_File_write returned error\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	for (j=0; j<SIZE; j++) 
 	    if (buf[j] != i*SIZE + j) {
-		printf("error: buf %d is @LL@, should be @LL@ \n", j, buf[j], 
+		fprintf(stderr, "error: buf %d is @LL@, should be @LL@ \n", j, buf[j], 
                                  i*SIZE + j);
 		flag = 1;
 	    }
     }
 
-    if (!flag) printf("Data read back is correct\n");
+    if (!flag) fprintf(stderr, "Data read back is correct\n");
     MPI_File_close(&fh);
 
     free(buf);
     free(filename);
     MPI_Finalize(); 
+    return 0;
 }

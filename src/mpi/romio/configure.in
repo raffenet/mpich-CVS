@@ -55,7 +55,8 @@ where
    MPI_IMPL     = the MPI implementation with which ROMIO will be used
                   Valid values are mpich, sgi, hp. (case-sensitive)
                   Valid implementations are MPICH 1.1.1 or higher,
-                  SGI's MPI 3.1 or higher, and HP MPI 1.3 or higher.
+                  SGI's MPI 3.1 or higher, HP MPI 1.3 or higher, LAM, 
+                  and Cray MPI.
    MPI_INCLUDE_DIR = the full path of the directory where mpi.h is located.
                   Not needed if the directory is in the compiler's 
                   default include path
@@ -119,7 +120,7 @@ available, for building the profiling interface.
 "
 #
 echo " "
-echo "Configuring ROMIO Version 1.0.2"
+echo "Configuring ROMIO Version 1.0.3 beta"
 echo " "
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
@@ -394,7 +395,7 @@ if test -n "$arch_sun4" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
 	if test "$CC" = "gcc"; then
-           CFLAGS="$CFLAGS -g -D__USE_FIXED_PROTOTYPES__ -Wall -D__AIO_SUN"
+           CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -D__AIO_SUN"
 	else
            CFLAGS="$CFLAGS -g -D__AIO_SUN"
         fi
@@ -418,7 +419,7 @@ if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
     F77=${FC:-f77}
     if test $DEBUG = 1; then
         if test "$CC" = "gcc" ; then
-            CFLAGS="$CFLAGS -g -Wall -D__AIO_SUN"
+            CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -D__AIO_SUN"
         else 
             CFLAGS="$CFLAGS -g -v -D__AIO_SUN"
         fi
@@ -560,7 +561,7 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
        CFLAGS="$CFLAGS -D__LINUX"
     fi
     if test $DEBUG = 1; then
-        CFLAGS="$CFLAGS -g -Wall -D__NO_AIO"
+        CFLAGS="$CFLAGS -g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -D__NO_AIO"
     else 
         CFLAGS="$CFLAGS -O -D__NO_AIO"
     fi
@@ -1072,6 +1073,10 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPI_BIN_DIR/mpif77
    fi
    CC=$MPI_BIN_DIR/mpicc
+fi
+#
+if test $MPI != "mpich" ; then
+   CFLAGS="$CFLAGS -D__PRINT_ERR_MSG"
 fi
 #
 if test -z "$TEST_CC" ; then

@@ -29,7 +29,7 @@ void ADIOI_PVFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		tmp_val = str_factor;
 		MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
 		if (tmp_val != str_factor) {
-		    printf("ADIOI_PVFS_SetInfo: the value for key \"striping_factor\" must be the same on all processes\n");
+		    FPRINTF(stderr, "ADIOI_PVFS_SetInfo: the value for key \"striping_factor\" must be the same on all processes\n");
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
 		else MPI_Info_set(fd->info, "striping_factor", value);
@@ -42,7 +42,7 @@ void ADIOI_PVFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		tmp_val = str_unit;
 		MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
 		if (tmp_val != str_unit) {
-		    printf("ADIOI_PVFS_SetInfo: the value for key \"striping_unit\" must be the same on all processes\n");
+		    FPRINTF(stderr, "ADIOI_PVFS_SetInfo: the value for key \"striping_unit\" must be the same on all processes\n");
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
 		else MPI_Info_set(fd->info, "striping_unit", value);
@@ -55,7 +55,7 @@ void ADIOI_PVFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		tmp_val = start_iodev;
 		MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
 		if (tmp_val != start_iodev) {
-		    printf("ADIOI_PVFS_SetInfo: the value for key \"start_iodevice\" must be the same on all processes\n");
+		    FPRINTF(stderr, "ADIOI_PVFS_SetInfo: the value for key \"start_iodevice\" must be the same on all processes\n");
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
 		else MPI_Info_set(fd->info, "start_iodevice", value);

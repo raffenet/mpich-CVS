@@ -382,6 +382,10 @@ int PMPI_Type_create_darray(int size, int rank, int ndims,
 MPI_File PMPI_File_f2c(MPI_Fint fh);
 MPI_Fint PMPI_File_c2f(MPI_File fh);
 
+/* Section 4.13.3 */
+int MPI_File_set_errhandler(MPI_File fh, MPI_Errhandler errhandler);
+int MPI_File_get_errhandler(MPI_File fh, MPI_Errhandler *errhandler);
+
 
 /* The foll. functions are required, because an MPIO_Request object
    is currently used for nonblocking I/O. These functions will go away

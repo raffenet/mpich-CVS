@@ -42,7 +42,7 @@ MPIO_Request MPIO_Request_f2c(MPI_Fint request)
 #else
     if (!request) return MPIO_REQUEST_NULL;
     if ((request < 0) || (request > ADIOI_Reqtable_ptr)) {
-	printf("MPIO_Request_f2c: Invalid request\n");
+	FPRINTF(stderr, "MPIO_Request_f2c: Invalid request\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
     return ADIOI_Reqtable[request];

@@ -39,7 +39,7 @@ int MPI_Info_dup(MPI_Info info, MPI_Info *newinfo)
     MPI_Info curr_old, curr_new;
 
     if ((info <= (MPI_Info) 0) || (info->cookie != MPIR_INFO_COOKIE)) {
-        printf("MPI_Info_dup: Invalid info object\n");
+        FPRINTF(stderr, "MPI_Info_dup: Invalid info object\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

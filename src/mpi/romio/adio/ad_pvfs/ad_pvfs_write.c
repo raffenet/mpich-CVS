@@ -12,26 +12,35 @@ void ADIOI_PVFS_WriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
     int err=-1;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PVFS_WRITECONTIG";
+#endif
 
-    if ((fd->iomode == M_ASYNC) || (fd->iomode == M_UNIX)) {
-	if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
-	    if (fd->fp_sys_posn != offset)
-		pvfs_lseek(fd->fd_sys, offset, SEEK_SET);
-	    err = pvfs_write(fd->fd_sys, buf, len);
-	    fd->fp_sys_posn = offset + err;
-         /* individual file pointer not updated */        
-        }
-	else { /* write from curr. location of ind. file pointer */
-	    if (fd->fp_sys_posn != fd->fp_ind)
-		pvfs_lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
-	    err = pvfs_write(fd->fd_sys, buf, len);
-	    fd->fp_ind += err;
-	    fd->fp_sys_posn = fd->fp_ind;
-        }
+    if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
+	if (fd->fp_sys_posn != offset)
+	    pvfs_lseek(fd->fd_sys, offset, SEEK_SET);
+	err = pvfs_write(fd->fd_sys, buf, len);
+	fd->fp_sys_posn = offset + err;
+	/* individual file pointer not updated */        
     }
-    else fd->fp_sys_posn = -1;    /* set it to null */
+    else { /* write from curr. location of ind. file pointer */
+	if (fd->fp_sys_posn != fd->fp_ind)
+	    pvfs_lseek(fd->fd_sys, fd->fp_ind, SEEK_SET);
+	err = pvfs_write(fd->fd_sys, buf, len);
+	fd->fp_ind += err;
+	fd->fp_sys_posn = fd->fp_ind;
+    }
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (err == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 }
 
 
@@ -57,17 +66,20 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset off, disp;
     int flag, new_bwr_size, new_fwr_size, err_flag=0;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PVFS_WRITESTRIDED";
+#endif
 
 /* PFS file pointer modes are not relevant here, because PFS does
    not support strided accesses. */
 
     if ((fd->iomode != M_ASYNC) && (fd->iomode != M_UNIX)) {
-	printf("ADIOI_PVFS_WriteStrided: only M_ASYNC and M_UNIX iomodes are valid\n");
+	FPRINTF(stderr, "ADIOI_PVFS_WriteStrided: only M_ASYNC and M_UNIX iomodes are valid\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (fd->atomicity) {
-	printf("ROMIO cannot guarantee atomicity of noncontiguous accesses in atomic mode, as PVFS doesn't support file locking. Use nonatomic mode and its associated semantics.\n");
+	FPRINTF(stderr, "ROMIO cannot guarantee atomicity of noncontiguous accesses in atomic mode, as PVFS doesn't support file locking. Use nonatomic mode and its associated semantics.\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -106,7 +118,7 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 		iov[k].iov_base = ((char *) buf) + j*buftype_extent +
 		    flat_buf->indices[i]; 
 		iov[k].iov_len = flat_buf->blocklens[i];
-		/*printf("%d %d\n", iov[k].iov_base, iov[k].iov_len);*/
+		/*FPRINTF(stderr, "%d %d\n", iov[k].iov_base, iov[k].iov_len);*/
 
 		off += flat_buf->blocklens[i];
 		k = (k+1)%16;
@@ -125,7 +137,16 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
 
 	ADIOI_Free(iov);
+#ifdef __PRINT_ERR_MSG
 	*error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if (err_flag) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error(fd, *error_code, myname);
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
     }
 
     else {  /* noncontiguous in file */
@@ -270,7 +291,7 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
                     }
 
                     off = disp + flat_file->indices[j] + 
-                                              (ADIO_Offset) n_filetypes*filetype_extent;
+                                   (ADIO_Offset) n_filetypes*filetype_extent;
 
 		    new_fwr_size = flat_file->blocklens[j];
 		    if (size != bwr_size) {
@@ -299,7 +320,16 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 	}
 
         if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
+#ifdef __PRINT_ERR_MSG
 	*error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if (err_flag) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error(fd, *error_code, myname);
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
     }
 
     fd->fp_sys_posn = -1;   /* set it to null. */

@@ -36,6 +36,8 @@ int ADIOI_Direct_read, ADIOI_Direct_write;
 
 int ADIO_Init_keyval=MPI_KEYVAL_INVALID;
 
+MPI_Errhandler ADIOI_DFLT_ERR_HANDLER = MPI_ERRORS_RETURN;
+
 void ADIO_Init(int *argc, char ***argv, int *error_code)
 {
 #ifdef __XFS

@@ -10,6 +10,9 @@
 void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
 #ifndef __NO_AIO
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_NFS_READCOMPLETE";
+#endif
 #ifdef __AIO_SUN 
     aio_result_t *result=0, *tmp;
 #else
@@ -39,7 +42,16 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	/* sleep for 1 ms., until done. Is 1 ms. a good number? */
 	/* when done, dequeue any one request */
 	result = (aio_result_t *) aiowait(0);
+#ifdef __PRINT_ERR_MSG
 	*error_code = ((int) result == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if ((int) result == -1) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			  myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error((*request)->fd, *error_code, myname);	    
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
         /* the error could have been for some other request, since we
            don't know which request is being dequeued, but might as well
            flag it here. */
@@ -67,7 +79,16 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
    IBM man pages don't indicate what function to use for dequeue.
    I'm assuming it is aio_return! */
 
+#ifdef __PRINT_ERR_MSG
 	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if (err == -1) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+	 	            myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error((*request)->fd, *error_code, myname);	    
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
     }
     else *error_code = MPI_SUCCESS;
 
@@ -80,7 +101,16 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	if (!err) nbytes = aio_return((struct aiocb *) (*request)->handle); 
 	else nbytes = 0;
 	/* also dequeues the request, at least on DEC */ 
+#ifdef __PRINT_ERR_MSG
 	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if (err == -1) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+	 	            myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error((*request)->fd, *error_code, myname);	    
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
     }
     else *error_code = MPI_SUCCESS;
 #endif

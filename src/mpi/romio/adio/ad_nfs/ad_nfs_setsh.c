@@ -14,6 +14,9 @@ void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
 {
     int err;
     MPI_Comm dupcommself;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_NFS_SET_SHARED_FP";
+#endif
 
     if (fd->shared_fp_fd == ADIO_FILE_NULL) {
 	MPI_Comm_dup(MPI_COMM_SELF, &dupcommself);
@@ -30,6 +33,15 @@ void ADIOI_NFS_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
     err = write(fd->shared_fp_fd->fd_sys, &offset, sizeof(ADIO_Offset));
     ADIOI_UNLOCK(fd->shared_fp_fd, 0, SEEK_SET, sizeof(ADIO_Offset));
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (err == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 }
 

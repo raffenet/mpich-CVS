@@ -39,6 +39,9 @@ Output Parameters:
 int MPIO_Wait(MPIO_Request *request, MPI_Status *status)
 {
     int error_code;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "MPIO_WAIT";
+#endif
 #ifdef MPI_hpux
     int fl_xmpi;
 
@@ -51,8 +54,14 @@ int MPIO_Wait(MPIO_Request *request, MPI_Status *status)
 
     if ((*request < (MPIO_Request) 0) || 
 	     ((*request)->cookie != ADIOI_REQ_COOKIE)) {
-	printf("MPIO_Wait: Invalid request object\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPIO_Wait: Invalid request object\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_REQUEST, MPIR_ERR_REQUEST_NULL,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 
     switch ((*request)->optype) {

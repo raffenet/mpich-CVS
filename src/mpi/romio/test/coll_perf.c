@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: coll_perf -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: coll_perf -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -112,8 +112,8 @@ int main(int argc, char **argv)
 
     if (mynod == 0) {
       write_bw = (array_of_gsizes[0]*array_of_gsizes[1]*array_of_gsizes[2]*sizeof(int))/(new_write_tim*1024.0*1024.0);
-      printf("Global array size %d x %d x %d integers\n", array_of_gsizes[0], array_of_gsizes[1], array_of_gsizes[2]);
-      printf("Collective write time = %f sec, Collective write bandwidth = %f Mbytes/sec\n", new_write_tim, write_bw);
+      fprintf(stderr, "Global array size %d x %d x %d integers\n", array_of_gsizes[0], array_of_gsizes[1], array_of_gsizes[2]);
+      fprintf(stderr, "Collective write time = %f sec, Collective write bandwidth = %f Mbytes/sec\n", new_write_tim, write_bw);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
     if (mynod == 0) {
       read_bw = (array_of_gsizes[0]*array_of_gsizes[1]*array_of_gsizes[2]*sizeof(int))/(new_read_tim*1024.0*1024.0);
-      printf("Collective read time = %f sec, Collective read bandwidth = %f Mbytes/sec\n", new_read_tim, read_bw);
+      fprintf(stderr, "Collective read time = %f sec, Collective read bandwidth = %f Mbytes/sec\n", new_read_tim, read_bw);
     }
 
     MPI_Type_free(&newtype);

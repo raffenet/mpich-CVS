@@ -36,7 +36,7 @@ int MPI_Info_free(MPI_Info *info)
     MPI_Info curr, next;
 
     if ((*info <= (MPI_Info) 0) || ((*info)->cookie != MPIR_INFO_COOKIE)) {
-        printf("MPI_Info_free: Invalid info object\n");
+        FPRINTF(stderr, "MPI_Info_free: Invalid info object\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

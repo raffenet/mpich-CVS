@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: perf -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: perf -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	strcpy(filename, *argv);
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(filename, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
-	printf("Access size per process = %d bytes, ntimes = %d\n", SIZE, ntimes);
+	fprintf(stderr, "Access size per process = %d bytes, ntimes = %d\n", SIZE, ntimes);
     }
     else {
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -90,8 +90,8 @@ int main(int argc, char **argv)
     if (mynod == 0) {
 	read_bw = (SIZE*nprocs)/(min_read_tim*1024.0*1024.0);
 	write_bw = (SIZE*nprocs)/(min_write_tim*1024.0*1024.0);
-	printf("Write bandwidth without file sync = %f Mbytes/sec\n", write_bw);
-	printf("Read bandwidth without prior file sync = %f Mbytes/sec\n", read_bw);
+	fprintf(stderr, "Write bandwidth without file sync = %f Mbytes/sec\n", write_bw);
+	fprintf(stderr, "Read bandwidth without prior file sync = %f Mbytes/sec\n", read_bw);
     }
 
     min_write_tim=10000000.0;
@@ -140,12 +140,12 @@ int main(int argc, char **argv)
     }
 
     if (mynod == 0) {
-	if (flag) printf("MPI_File_sync returns error.\n");
+	if (flag) fprintf(stderr, "MPI_File_sync returns error.\n");
 	else {
 	    read_bw = (SIZE*nprocs)/(min_read_tim*1024.0*1024.0);
 	    write_bw = (SIZE*nprocs)/(min_write_tim*1024.0*1024.0);
-	    printf("Write bandwidth including file sync = %f Mbytes/sec\n", write_bw);
-	    printf("Read bandwidth after file sync = %f Mbytes/sec\n", read_bw);
+	    fprintf(stderr, "Write bandwidth including file sync = %f Mbytes/sec\n", write_bw);
+	    fprintf(stderr, "Read bandwidth after file sync = %f Mbytes/sec\n", read_bw);
 	}
     }
 

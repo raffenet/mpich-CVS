@@ -13,6 +13,9 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
     int perm, amode, old_mask, flag;
     char *value;
     struct pvfs_stat pstat = {-1,-1,-1,0,0};
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PVFS_OPEN";
+#endif
 
     if (fd->perm == ADIO_PERM_NULL) {
 	old_mask = umask(022);
@@ -64,5 +67,14 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 	MPI_Info_set(fd->info, "start_iodevice", value);
     }
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (fd->fd_sys == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 }

@@ -92,7 +92,7 @@ void mpi_info_get_nthkey_(MPI_Fint *info, int *n, char *key, int *__ierr,
     char *tmpkey;
 
     if (key <= (char *) 0) {
-        printf("MPI_Info_get_nthkey: key is an invalid address\n");
+        FPRINTF(stderr, "MPI_Info_get_nthkey: key is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

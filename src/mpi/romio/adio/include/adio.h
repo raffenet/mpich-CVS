@@ -151,6 +151,7 @@ struct ADIOI_FileD {
     int perm;
     int atomicity;          /* true=atomic, false=nonatomic */
     int iomode;             /* reqd. to implement Intel PFS modes */
+    MPI_Errhandler err_handler;
 };
 
 typedef struct ADIOI_FileD *ADIO_File;
@@ -315,6 +316,6 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 
 #include "adioi.h"
 #include "adioi_fs_proto.h"
-
+#include "mpio_error.h"
 #include "mpipr.h"
 #endif

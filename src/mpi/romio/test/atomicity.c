@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: coll_test -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: coll_test -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	for (i=0; i<BUFSIZE; i++) writebuf[i] = 0;
 	MPI_File_write(fh, writebuf, BUFSIZE, MPI_INT, &status);
 	MPI_File_close(&fh);
-	printf("\ntesting contiguous accesses\n");
+	fprintf(stderr, "\ntesting contiguous accesses\n");
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 /* set atomicity to true */
     err = MPI_File_set_atomicity(fh, 1);
     if (err != MPI_SUCCESS) {
-	printf("Atomic mode not supported on this file system.\n");
+	fprintf(stderr, "Atomic mode not supported on this file system.\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -93,18 +93,18 @@ int main(int argc, char **argv)
 	    if (readbuf[0] == 0) { /* the rest must also be 0 */
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 0) {
-			printf("Process %d: readbuf[%d] is %d, should be 0\n", mynod, i, readbuf[i]);
+			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 0\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
 	    }
 	    else if (readbuf[0] == 10) { /* the rest must also be 10 */
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 10) {
-			printf("Process %d: readbuf[%d] is %d, should be 10\n", mynod, i, readbuf[i]);
+			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 10\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
 	    }
-	    else printf("Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	    
+	    else fprintf(stderr, "Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	    
 	}
     }
 
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 	MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", info);
 	MPI_File_write(fh, writebuf, BUFSIZE, MPI_INT, &status);
 	MPI_File_close(&fh);
-	printf("\ntesting noncontiguous accesses\n");
+	fprintf(stderr, "\ntesting noncontiguous accesses\n");
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -152,18 +152,18 @@ int main(int argc, char **argv)
 	    if (readbuf[0] == 0) {
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 0) {
-			printf("Process %d: readbuf[%d] is %d, should be 0\n", mynod, i, readbuf[i]);
+			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 0\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
 	    }
 	    else if (readbuf[0] == 10) {
 		for (i=1; i<BUFSIZE; i++) 
 		    if (readbuf[i] != 10) {
-			printf("Process %d: readbuf[%d] is %d, should be 10\n", mynod, i, readbuf[i]);
+			fprintf(stderr, "Process %d: readbuf[%d] is %d, should be 10\n", mynod, i, readbuf[i]);
 			MPI_Abort(MPI_COMM_WORLD, 1);
 		    }
 	    }
-	    else printf("Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	    
+	    else fprintf(stderr, "Process %d: readbuf[0] is %d, should be either 0 or 10\n", mynod, readbuf[0]); 	    
 	}
     }
 

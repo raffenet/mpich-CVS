@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: file_info -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: file_info -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
 	if (!mynod) 
-	    printf("Process %d, Default:  key = %s, value = %s\n", mynod, 
+	    fprintf(stderr, "Process %d, Default:  key = %s, value = %s\n", mynod, 
                 key, value);
 	if (!strcmp("striping_factor", key))
 	  default_striping_factor = atoi(value);
@@ -121,11 +121,11 @@ int main(int argc, char **argv)
     MPI_File_get_info(fh, &info_used);
     MPI_Info_get_nkeys(info_used, &nkeys);
 
-    if (!mynod) printf("\n New values\n\n");
+    if (!mynod) fprintf(stderr, "\n New values\n\n");
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
-	if (!mynod) printf("Process %d, key = %s, value = %s\n", mynod, 
+	if (!mynod) fprintf(stderr, "Process %d, key = %s, value = %s\n", mynod, 
                 key, value);
     }
     

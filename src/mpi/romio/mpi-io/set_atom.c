@@ -35,12 +35,19 @@ Input Parameters:
 int MPI_File_set_atomicity(MPI_File fh, int flag)
 {
     int error_code, tmp_flag;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "MPI_FILE_SET_ATOMICITY";
+#endif
     ADIO_Fcntl_t *fcntl_struct;
 
+#ifdef __PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	printf("MPI_File_set_atomicity: Invalid file handle\n");
+	FPRINTF(stderr, "MPI_File_set_atomicity: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+#else
+    ADIOI_TEST_FILE_HANDLE(fh, myname);
+#endif
 
     if (flag) flag = 1;  /* take care of non-one values! */
 
@@ -48,8 +55,14 @@ int MPI_File_set_atomicity(MPI_File fh, int flag)
     tmp_flag = flag;
     MPI_Bcast(&tmp_flag, 1, MPI_INT, 0, fh->comm);
     if (tmp_flag != flag) {
-        printf("MPI_File_set_atomicity: flag must be the same on all processes\n");
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "MPI_File_set_atomicity: flag must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_FLAG_ARG,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     if (fh->atomicity == flag) return MPI_SUCCESS;

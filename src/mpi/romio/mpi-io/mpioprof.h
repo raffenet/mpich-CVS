@@ -73,6 +73,9 @@
 #define MPI_Type_create_subarray PMPI_Type_create_subarray
 #define MPI_Type_create_darray PMPI_Type_create_darray
 
+#define MPI_File_set_errhandler PMPI_File_set_errhandler
+#define MPI_File_get_errhandler PMPI_File_get_errhandler
+
 #ifndef MPI_File_f2c
 #define MPI_File_f2c PMPI_File_f2c
 #define MPI_File_c2f PMPI_File_c2f

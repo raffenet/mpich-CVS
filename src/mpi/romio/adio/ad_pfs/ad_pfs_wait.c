@@ -10,6 +10,9 @@
 void ADIOI_PFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *error_code)  
 {
     int err=0;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PFS_READCOMPLETE";
+#endif
 
     if (*request == ADIO_REQUEST_NULL) {
         *error_code = MPI_SUCCESS;
@@ -28,7 +31,16 @@ void ADIOI_PFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 
     if ((*request)->queued) {
 	err = _iowait(*((long *) (*request)->handle));
+#ifdef __PRINT_ERR_MSG
 	*error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+	if (err == -1) {
+	    *error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			  myname, "I/O Error", "%s", strerror(errno));
+	    ADIOI_Error((*request)->fd, *error_code, myname);	    
+	}
+	else *error_code = MPI_SUCCESS;
+#endif
     }
     else *error_code = MPI_SUCCESS;
 

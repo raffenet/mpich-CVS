@@ -264,6 +264,16 @@ $mpirun -np 4 psimple -fname $FILENAME "$@" >> psimple.out 2>&1
 CheckOutput psimple
 CleanExe psimple
 #
+OutTime
+testfiles="$testfiles error.out"
+\rm -f error.out
+MakeExe error
+\rm -f $FILENAME*
+echo '**** Testing error.c ****'
+$mpirun -np 1 error -fname $FILENAME "$@" >> error.out 2>&1
+CheckOutput error
+CleanExe error
+#
 if [ @NOF77@ = 0 ] ; then 
     echo ""
     echo "FORTRAN TESTS"

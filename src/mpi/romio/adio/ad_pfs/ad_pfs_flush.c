@@ -14,7 +14,16 @@ void ADIOI_PFS_Flush(ADIO_File fd, int *error_code)
 /* fsync is not actually needed in PFS, because it uses something
    called fast-path I/O. However, it doesn't do any harm either. */
     err = fsync(fd->fd_sys);
+#ifdef __PRINT_ERR_MSG
     *error_code = (err == 0) ? MPI_SUCCESS : MPI_ERR_UNKNOWN;
+#else
+    if (err == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 
 /* MPI-IO requires that after an fsync all processes must see the same
    file size. In PFS M_ASYNC mode, this doesn't automatically happen.

@@ -36,11 +36,19 @@ Output Parameters:
 @*/
 int MPI_File_get_atomicity(MPI_File fh, int *flag)
 {
+#ifndef __PRINT_ERR_MSG
+    int error_code;
+    static char myname[] = "MPI_FILE_GET_ATOMICITY";
+#endif
 
+#ifdef __PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	printf("MPI_File_get_atomicity: Invalid file handle\n");
+	FPRINTF(stderr, "MPI_File_get_atomicity: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+#else
+    ADIOI_TEST_FILE_HANDLE(fh, myname);
+#endif
 
     *flag = fh->atomicity;
     return MPI_SUCCESS;

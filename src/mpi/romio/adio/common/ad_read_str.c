@@ -14,8 +14,8 @@
 	readbuf_off = req_off; \
 	readbuf_len = (int) (ADIOI_MIN(max_bufsize, end_offset-readbuf_off+1));\
 	ADIO_ReadContig(fd, readbuf, readbuf_len, ADIO_EXPLICIT_OFFSET, \
-			readbuf_off, &status1, &err); \
-        if (err != MPI_SUCCESS) err_flag = 1; \
+			readbuf_off, &status1, error_code); \
+        if (*error_code != MPI_SUCCESS) return; \
     } \
     while (req_len > readbuf_off + readbuf_len - req_off) { \
 	partial_read = (int) (readbuf_off + readbuf_len - req_off); \
@@ -29,8 +29,8 @@
 	readbuf_len = (int) (partial_read + ADIOI_MIN(max_bufsize, \
 				       end_offset-readbuf_off+1)); \
 	ADIO_ReadContig(fd, readbuf+partial_read, readbuf_len-partial_read, \
-             ADIO_EXPLICIT_OFFSET, readbuf_off+partial_read, &status1, &err); \
-        if (err != MPI_SUCCESS) err_flag = 1; \
+             ADIO_EXPLICIT_OFFSET, readbuf_off+partial_read, &status1, error_code); \
+        if (*error_code != MPI_SUCCESS) return; \
     } \
     memcpy((char *)buf + userbuf_off, readbuf+req_off-readbuf_off, req_len); \
 }
@@ -44,7 +44,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 /* offset is in units of etype relative to the filetype. */
 
     ADIOI_Flatlist_node *flat_buf, *flat_file;
-    int i, j, k, err=-1, brd_size, frd_size=0, st_index=0;
+    int i, j, k, brd_size, frd_size=0, st_index=0;
     int bufsize, num, size, sum, n_etypes_in_filetype, size_in_filetype;
     int n_filetypes, etype_in_filetype;
     ADIO_Offset abs_off_in_filetype=0;
@@ -55,18 +55,10 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
     ADIO_Offset off, req_off, disp, end_offset, readbuf_off, start_off;
     char *readbuf, *tmp_buf, *value;
     int flag, st_frd_size, st_n_filetypes, readbuf_len;
-    int new_brd_size, new_frd_size, err_flag=0, info_flag, max_bufsize;
+    int new_brd_size, new_frd_size, info_flag, max_bufsize;
     ADIO_Status status1;
 
-/* PFS file pointer modes are not relevant here, because PFS does
-   not support strided accesses. */
-
-/*    printf("hi\n");*/
-
-    if ((fd->iomode != M_ASYNC) && (fd->iomode != M_UNIX)) {
-	printf("ADIOI_GEN_ReadStrided: only M_ASYNC and M_UNIX iomodes are valid\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
+    *error_code = MPI_SUCCESS;  /* changed below if error */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
@@ -110,8 +102,8 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
             ADIOI_WRITE_LOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
 
         ADIO_ReadContig(fd, readbuf, readbuf_len, ADIO_EXPLICIT_OFFSET,
-                        readbuf_off, &status1, &err);
-        if (err != MPI_SUCCESS) err_flag = 1;
+                        readbuf_off, &status1, error_code);
+	if (*error_code != MPI_SUCCESS) return;
 
         for (j=0; j<count; j++) 
             for (i=0; i<flat_buf->count; i++) {
@@ -128,7 +120,6 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
         if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
 
 	ADIOI_Free(readbuf); 
-        *error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
     }
 
     else {  /* noncontiguous in file */
@@ -327,7 +318,6 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
 
 	ADIOI_Free(readbuf); /* malloced in the buffered_read macro */
-	*error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
     }
 
     fd->fp_sys_posn = -1;   /* set it to null. */

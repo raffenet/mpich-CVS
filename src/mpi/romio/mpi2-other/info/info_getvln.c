@@ -41,22 +41,22 @@ int MPI_Info_get_valuelen(MPI_Info info, char *key, int *valuelen, int *flag)
     MPI_Info curr;
 
     if ((info <= (MPI_Info) 0) || (info->cookie != MPIR_INFO_COOKIE)) {
-        printf("MPI_Info_get_valuelen: Invalid info object\n");
+        FPRINTF(stderr, "MPI_Info_get_valuelen: Invalid info object\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (key <= (char *) 0) {
-	printf("MPI_Info_get_valuelen: key is an invalid address\n");
+	FPRINTF(stderr, "MPI_Info_get_valuelen: key is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (strlen(key) > MPI_MAX_INFO_KEY) {
-	printf("MPI_Info_get_valuelen: key is longer than MPI_MAX_INFO_KEY\n");
+	FPRINTF(stderr, "MPI_Info_get_valuelen: key is longer than MPI_MAX_INFO_KEY\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (!strlen(key)) {
-	printf("MPI_Info_get_valuelen: key is a null string\n");
+	FPRINTF(stderr, "MPI_Info_get_valuelen: key is a null string\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

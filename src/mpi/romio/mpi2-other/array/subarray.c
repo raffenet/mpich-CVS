@@ -50,41 +50,41 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
     MPI_Offset size_with_offset;
 
     if (ndims <= 0) {
-	printf("MPI_Type_create_subarray: Invalid ndims argument\n");
+	FPRINTF(stderr, "MPI_Type_create_subarray: Invalid ndims argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (array_of_sizes <= (int *) 0) {
-	printf("MPI_Type_create_subarray: array_of_sizes is an invalid address\n");
+	FPRINTF(stderr, "MPI_Type_create_subarray: array_of_sizes is an invalid address\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (array_of_subsizes <= (int *) 0) {
-	printf("MPI_Type_create_subarray: array_of_subsizes is an invalid address\n");
+	FPRINTF(stderr, "MPI_Type_create_subarray: array_of_subsizes is an invalid address\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (array_of_starts <= (int *) 0) {
-	printf("MPI_Type_create_subarray: array_of_starts is an invalid address\n");
+	FPRINTF(stderr, "MPI_Type_create_subarray: array_of_starts is an invalid address\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     for (i=0; i<ndims; i++) {
         if (array_of_sizes[i] <= 0) {
-            printf("MPI_Type_create_subarray: Invalid value in array_of_sizes\n");
+            FPRINTF(stderr, "MPI_Type_create_subarray: Invalid value in array_of_sizes\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         if (array_of_subsizes[i] <= 0) {
-            printf("MPI_Type_create_subarray: Invalid value in array_of_subsizes\n");
+            FPRINTF(stderr, "MPI_Type_create_subarray: Invalid value in array_of_subsizes\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         if (array_of_starts[i] < 0) {
-            printf("MPI_Type_create_subarray: Invalid value in array_of_starts\n");
+            FPRINTF(stderr, "MPI_Type_create_subarray: Invalid value in array_of_starts\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         if (array_of_subsizes[i] > array_of_sizes[i]) {
-            printf("MPI_Type_create_subarray: Error! array_of_subsizes[%d] > array_of_sizes[%d]\n", i, i);
+            FPRINTF(stderr, "MPI_Type_create_subarray: Error! array_of_subsizes[%d] > array_of_sizes[%d]\n", i, i);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         if (array_of_starts[i] > (array_of_sizes[i] - array_of_subsizes[i])) {
-            printf("MPI_Type_create_subarray: Error! array_of_starts[%d] > (array_of_sizes[%d] - array_of_subsizes[%d])\n", i, i, i);
+            FPRINTF(stderr, "MPI_Type_create_subarray: Error! array_of_starts[%d] > (array_of_sizes[%d] - array_of_subsizes[%d])\n", i, i, i);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
@@ -92,7 +92,7 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
     /* order argument checked below */
 
     if (oldtype == MPI_DATATYPE_NULL) {
-        printf("MPI_Type_create_subarray: oldtype is an invalid datatype\n");
+        FPRINTF(stderr, "MPI_Type_create_subarray: oldtype is an invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -106,7 +106,7 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
     size_with_offset = extent;
     for (i=0; i<ndims; i++) size_with_offset *= array_of_sizes[i];
     if (size_with_aint != size_with_offset) {
-	printf("MPI_Type_create_subarray: Can't use an array of this size unless the MPI implementation defines a 64-bit MPI_Aint\n");
+	FPRINTF(stderr, "MPI_Type_create_subarray: Can't use an array of this size unless the MPI implementation defines a 64-bit MPI_Aint\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -166,7 +166,7 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
 	}
     }
     else {
-	printf("MPI_Type_create_subarray: Invalid order argument\n");
+	FPRINTF(stderr, "MPI_Type_create_subarray: Invalid order argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
     

@@ -92,7 +92,7 @@ void mpi_info_get_(MPI_Fint *info, char *key, int *valuelen, char *value,
     int new_keylen, lead_blanks, i, tmpvaluelen;
 
     if (key <= (char *) 0) {
-        printf("MPI_Info_get: key is an invalid address\n");
+        FPRINTF(stderr, "MPI_Info_get: key is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -104,7 +104,7 @@ void mpi_info_get_(MPI_Fint *info, char *key, int *valuelen, char *value,
 
     for (i=keylen-1; i>=0; i--) if (key[i] != ' ') break;
     if (i < 0) {
-        printf("MPI_Info_get: key is a blank string\n");
+        FPRINTF(stderr, "MPI_Info_get: key is a blank string\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     new_keylen = i + 1 - lead_blanks;
@@ -115,15 +115,15 @@ void mpi_info_get_(MPI_Fint *info, char *key, int *valuelen, char *value,
     newkey[new_keylen] = '\0';
 
     if (value <= (char *) 0) {
-        printf("MPI_Info_get: value is an invalid address\n");
+        FPRINTF(stderr, "MPI_Info_get: value is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (*valuelen <= 0) {
-        printf("MPI_Info_get: Invalid valuelen argument\n");
+        FPRINTF(stderr, "MPI_Info_get: Invalid valuelen argument\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (*valuelen > valspace) {
-        printf("MPI_Info_get: valuelen is greater than the amount of memory available in value\n");
+        FPRINTF(stderr, "MPI_Info_get: valuelen is greater than the amount of memory available in value\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     

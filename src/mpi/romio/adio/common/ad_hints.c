@@ -46,7 +46,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    tmp_val = intval;
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
 	    if (tmp_val != intval) {
-		printf("ADIOI_GEN_SetInfo: the value for key \"cb_buffer_size\" must be the same on all processes\n");
+		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"cb_buffer_size\" must be the same on all processes\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
 	    else MPI_Info_set(info, "cb_buffer_size", value);
@@ -58,7 +58,7 @@ void ADIOI_GEN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    tmp_val = intval;
 	    MPI_Bcast(&tmp_val, 1, MPI_INT, 0, fd->comm);
 	    if (tmp_val != intval) {
-		printf("ADIOI_GEN_SetInfo: the value for key \"cb_nodes\" must be the same on all processes\n");
+		FPRINTF(stderr, "ADIOI_GEN_SetInfo: the value for key \"cb_nodes\" must be the same on all processes\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
 	    else {

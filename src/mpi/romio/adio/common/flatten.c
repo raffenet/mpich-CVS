@@ -45,7 +45,7 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
     flat->indices = NULL;
 
     flat->count = ADIOI_Count_contiguous_blocks(datatype, &curr_index);
-/*    printf("%d\n", flat->count);*/
+/*    FPRINTF(stderr, "%d\n", flat->count);*/
 
     if (flat->count) {
 	flat->blocklens = (int *) ADIOI_Malloc(flat->count * sizeof(int));
@@ -58,14 +58,14 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
     ADIOI_Flatten(datatype, flat, 0, &curr_index);
 
 /* debug */
-    /*printf("blens: ");
+    /*FPRINTF(stderr, "blens: ");
     for (i=0; i<flat->count; i++) 
-	printf("%d ", flat->blocklens[i]);
-    printf("\n\n");
-    printf("indices: ");
+	FPRINTF(stderr, "%d ", flat->blocklens[i]);
+    FPRINTF(stderr, "\n\n");
+    FPRINTF(stderr, "indices: ");
     for (i=0; i<flat->count; i++) 
-	printf("%ld ", flat->indices[i]);
-    printf("\n\n");*/
+	FPRINTF(stderr, "%ld ", flat->indices[i]);
+    FPRINTF(stderr, "\n\n");*/
 
 }
 
@@ -390,7 +390,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
  	break;
 
     default:
-	printf("Error: Unsupported datatype passed to ADIOI_Flatten\n");
+	FPRINTF(stderr, "Error: Unsupported datatype passed to ADIOI_Flatten\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -548,7 +548,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 	}
 	break;
     default:
-	printf("Error: Unsupported datatype passed to ADIOI_Count_contiguous_blocks\n");
+	FPRINTF(stderr, "Error: Unsupported datatype passed to ADIOI_Count_contiguous_blocks\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

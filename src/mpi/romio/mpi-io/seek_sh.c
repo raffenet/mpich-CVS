@@ -36,35 +36,66 @@ Input Parameters:
 int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 {
     int error_code=MPI_SUCCESS, tmp_whence, myrank;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "MPI_FILE_SEEK_SHARED";
+#endif
     MPI_Offset curr_offset, eof_offset, tmp_offset;
 
+#ifdef __PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	printf("MPI_File_seek_shared: Invalid file handle\n");
+	FPRINTF(stderr, "MPI_File_seek_shared: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+#else
+    ADIOI_TEST_FILE_HANDLE(fh, myname);
+#endif
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
-        printf("MPI_File_seek_shared: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "MPI_File_seek_shared: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
+                        MPIR_ERR_AMODE_SEQ, myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)) {
-	printf("MPI_File_seek_shared: Shared file pointer not supported on PIOFS and PVFS\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_seek_shared: Shared file pointer not supported on PIOFS and PVFS\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
+                    MPIR_ERR_NO_SHARED_FP, myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     tmp_offset = offset;
     MPI_Bcast(&tmp_offset, 1, ADIO_OFFSET, 0, fh->comm);
     if (tmp_offset != offset) {
-        printf("MPI_File_seek_shared: offset must be the same on all processes\n");
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "MPI_File_seek_shared: offset must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG_NOT_SAME,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     tmp_whence = whence;
     MPI_Bcast(&tmp_whence, 1, MPI_INT, 0, fh->comm);
     if (tmp_whence != whence) {
-        printf("MPI_File_seek_shared: whence argument must be the same on all processes\n");
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "MPI_File_seek_shared: whence argument must be the same on all processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_WHENCE_ARG_NOT_SAME,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     MPI_Comm_rank(fh->comm, &myrank);
@@ -73,21 +104,33 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 	switch(whence) {
 	case MPI_SEEK_SET:
 	    if (offset < 0) {
-		printf("MPI_File_seek_shared: Invalid offset argument\n");
+#ifdef __PRINT_ERR_MSG
+		FPRINTF(stderr, "MPI_File_seek_shared: Invalid offset argument\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);	    
+#endif
 	    }
 	    break;
 	case MPI_SEEK_CUR:
 	    /* get current location of shared file pointer */
 	    ADIO_Get_shared_fp(fh, 0, &curr_offset, &error_code);
 	    if (error_code != MPI_SUCCESS) {
-		printf("MPI_File_seek_shared: Could not access shared file pointer!\n");
+		FPRINTF(stderr, "MPI_File_seek_shared: Error! Could not access shared file pointer.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
 	    offset += curr_offset;
 	    if (offset < 0) {
-		printf("MPI_File_seek_shared: offset points to a negative location in the file\n");
+#ifdef __PRINT_ERR_MSG
+		FPRINTF(stderr, "MPI_File_seek_shared: offset points to a negative location in the file\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG_NEG,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);	    
+#endif
 	    }
 	    break;
 	case MPI_SEEK_END:
@@ -95,13 +138,25 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 	    ADIOI_Get_eof_offset(fh, &eof_offset);
 	    offset += eof_offset;
 	    if (offset < 0) {
-		printf("MPI_File_seek_shared: offset points to a negative location in the file\n");
+#ifdef __PRINT_ERR_MSG
+		FPRINTF(stderr, "MPI_File_seek_shared: offset points to a negative location in the file\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_OFFSET_ARG_NEG,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);	    
+#endif
 	    }
 	    break;
 	default:
-	    printf("MPI_File_seek_shared: Invalid whence argument\n");
+#ifdef __PRINT_ERR_MSG
+	    FPRINTF(stderr, "MPI_File_seek_shared: Invalid whence argument\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	    error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_WHENCE_ARG,
+				     myname, (char *) 0, (char *) 0);
+	    return ADIOI_Error(fh, error_code, myname);
+#endif
 	}
 
 	ADIO_Set_shared_fp(fh, offset, &error_code);

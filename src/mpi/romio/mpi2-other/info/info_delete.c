@@ -38,22 +38,22 @@ int MPI_Info_delete(MPI_Info info, char *key)
     int done;
 
     if ((info <= (MPI_Info) 0) || (info->cookie != MPIR_INFO_COOKIE)) {
-        printf("MPI_Info_delete: Invalid info object\n");
+        FPRINTF(stderr, "MPI_Info_delete: Invalid info object\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (key <= (char *) 0) {
-	printf("MPI_Info_delete: key is an invalid address\n");
+	FPRINTF(stderr, "MPI_Info_delete: key is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (strlen(key) > MPI_MAX_INFO_KEY) {
-	printf("MPI_Info_delete: key is longer than MPI_MAX_INFO_KEY\n");
+	FPRINTF(stderr, "MPI_Info_delete: key is longer than MPI_MAX_INFO_KEY\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (!strlen(key)) {
-	printf("MPI_Info_delete: key is a null string\n");
+	FPRINTF(stderr, "MPI_Info_delete: key is a null string\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -75,7 +75,7 @@ int MPI_Info_delete(MPI_Info info, char *key)
     }
 
     if (!done) {
-	printf("MPI_Info_delete: key not defined in info\n");
+	FPRINTF(stderr, "MPI_Info_delete: key not defined in info\n");
         MPI_Abort(MPI_COMM_WORLD, 1);	
     }
 

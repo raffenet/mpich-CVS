@@ -43,6 +43,9 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
                   MPI_Info info, MPI_File *fh)
 {
     int error_code, file_system, flag, tmp_amode, rank, orig_amode;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "MPI_FILE_OPEN";
+#endif
     int err, min_code;
     char *tmp;
     MPI_Comm dupcomm, dupcommself;
@@ -53,42 +56,75 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 #endif /* MPI_hpux */
 
     if (comm == MPI_COMM_NULL) {
-	printf("MPI_File_open: Invalid communicator\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: Invalid communicator\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_COMM, MPIR_ERR_COMM_NULL,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 
     MPI_Comm_test_inter(comm, &flag);
     if (flag) {
-	printf("MPI_File_open: Intercommunicator cannot be passed to MPI_File_open\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: Intercommunicator cannot be passed to MPI_File_open\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_COMM, MPIR_ERR_COMM_INTER,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 
-    if (!((amode & MPI_MODE_RDONLY) ^ (amode & MPI_MODE_RDWR) ^ (amode & MPI_MODE_WRONLY)) || 
-        ((amode & MPI_MODE_RDONLY) && (amode & MPI_MODE_RDWR) && (amode & MPI_MODE_WRONLY))) {
-	printf("MPI_File_open: Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or MPI_MODE_RDWR must be specified\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+    if ( ((amode&MPI_MODE_RDONLY)?1:0) + ((amode&MPI_MODE_RDWR)?1:0) +
+	 ((amode&MPI_MODE_WRONLY)?1:0) != 1 ) {
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or MPI_MODE_RDWR must be specified\n");
+	MPI_Abort(MPI_COMM_WORLD, 1); 
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_AMODE, 3,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 
     if ((amode & MPI_MODE_RDONLY) && 
             ((amode & MPI_MODE_CREATE) || (amode & MPI_MODE_EXCL))) {
-	printf("MPI_File_open: It is erroneous to specify MPI_MODE_CREATE or MPI_MODE_EXCL with MPI_MODE_RDONLY\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: It is erroneous to specify MPI_MODE_CREATE or MPI_MODE_EXCL with MPI_MODE_RDONLY\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_AMODE, 5,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 
     if ((amode & MPI_MODE_RDWR) && (amode & MPI_MODE_SEQUENTIAL)) {
-	printf("MPI_File_open: It is erroneous to specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: It is erroneous to specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_AMODE, 7,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 
 /* check if amode is the same on all processes */
     MPI_Comm_dup(comm, &dupcomm);
     tmp_amode = amode;
+
+/*  
+    Removed this check because broadcast is too expensive. 
     MPI_Bcast(&tmp_amode, 1, MPI_INT, 0, dupcomm);
     if (amode != tmp_amode) {
-	printf("MPI_File_open: amode must be the same on all processes\n");
+	FPRINTF(stderr, "MPI_File_open: amode must be the same on all processes\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
-
+*/
 
 /* check if ADIO has been initialized. If not, initialize it */
     if (ADIO_Init_keyval == MPI_KEYVAL_INVALID) {
@@ -97,7 +133,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
    Can't initialize it here, because don't know argc, argv */
 	MPI_Initialized(&flag);
 	if (!flag) {
-	    printf("Error: MPI_Init() must be called before using MPI-IO\n");
+	    FPRINTF(stderr, "Error: MPI_Init() must be called before using MPI-IO\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 
@@ -122,8 +158,14 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     if (!tmp) {
 	ADIO_FileSysType(filename, &file_system, &err);
 	if (err != MPI_SUCCESS) {
-	    printf("MPI_File_open: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:).\n");
+#ifdef __PRINT_ERR_MSG
+	    FPRINTF(stderr, "MPI_File_open: Can't determine the file-system type. Check the filename/path you provided and try again. Otherwise, prefix the filename with a string to indicate the type of file sytem (piofs:, pfs:, nfs:, ufs:, hfs:, xfs:, sfs:, pvfs:).\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_FSTYPE,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
 	}
 	MPI_Allreduce(&file_system, &min_code, 1, MPI_INT, MPI_MIN, dupcomm);
 	if (min_code == ADIO_NFS) file_system = ADIO_NFS;
@@ -132,50 +174,98 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
 #ifndef __PFS
     if (!strncmp(filename, "pfs:", 4) || !strncmp(filename, "PFS:", 4) || (file_system == ADIO_PFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the PFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the PFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 #ifndef __PIOFS
     if (!strncmp(filename, "piofs:", 6) || !strncmp(filename, "PIOFS:", 6) || (file_system == ADIO_PIOFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the PIOFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the PIOFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PIOFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 #ifndef __UFS
     if (!strncmp(filename, "ufs:", 4) || !strncmp(filename, "UFS:", 4) || (file_system == ADIO_UFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the UFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the UFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_UFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 #ifndef __NFS
     if (!strncmp(filename, "nfs:", 4) || !strncmp(filename, "NFS:", 4) || (file_system == ADIO_NFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the NFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the NFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_UFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 #ifndef __HFS
     if (!strncmp(filename, "hfs:", 4) || !strncmp(filename, "HFS:", 4) || (file_system == ADIO_HFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the HFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the HFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_HFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 #ifndef __XFS
     if (!strncmp(filename, "xfs:", 4) || !strncmp(filename, "XFS:", 4) || (file_system == ADIO_XFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the XFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the XFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_XFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 #ifndef __SFS
     if (!strncmp(filename, "sfs:", 4) || !strncmp(filename, "SFS:", 4) || (file_system == ADIO_SFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the SFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the SFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_SFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 #ifndef __PVFS
     if (!strncmp(filename, "pvfs:", 5) || !strncmp(filename, "PVFS:", 5) || (file_system == ADIO_PVFS)) {
-	printf("MPI_File_open: ROMIO has not been configured to use the PVFS file system\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: ROMIO has not been configured to use the PVFS file system\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_NO_PVFS,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 #endif
 
@@ -214,8 +304,14 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
     if (((file_system == ADIO_PIOFS) || (file_system == ADIO_PVFS)) && 
         (amode & MPI_MODE_SEQUENTIAL)) {
-	printf("MPI_File_open: MPI_MODE_SEQUENTIAL not supported on PIOFS and PVFS\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_open: MPI_MODE_SEQUENTIAL not supported on PIOFS and PVFS\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
+                    MPIR_ERR_NO_MODE_SEQ, myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(MPI_FILE_NULL, error_code, myname);
+#endif
     }
 
     orig_amode = amode;

@@ -15,6 +15,9 @@ void ADIOI_PIOFS_Open(ADIO_File fd, int *error_code)
     int amode, perm, old_mask, err;
     piofs_fstat_t piofs_fstat;
     char *value;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_PIOFS_OPEN";
+#endif
 
     if (fd->perm == ADIO_PERM_NULL) {
 	old_mask = umask(022);
@@ -68,5 +71,14 @@ void ADIOI_PIOFS_Open(ADIO_File fd, int *error_code)
 	    fd->fp_ind = fd->fp_sys_posn = llseek(fd->fd_sys, 0, SEEK_END);
     }
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (fd->fd_sys == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (fd->fd_sys == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(ADIO_FILE_NULL, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 }

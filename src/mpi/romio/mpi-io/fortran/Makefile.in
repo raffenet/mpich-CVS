@@ -21,7 +21,7 @@ MPIO_FOBJECTS = closef.o readf.o openf.o writef.o get_extentf.o \
       wr_atallef.o write_allbf.o write_allef.o \
       get_posn_shf.o iread_shf.o read_shf.o write_shf.o \
       iwrite_shf.o seek_shf.o read_ordf.o read_ordef.o write_ordbf.o \
-      read_ordbf.o write_ordf.o write_ordef.o
+      read_ordbf.o write_ordf.o write_ordef.o set_errhf.o get_errhf.o
 
 MPIO_TMP_PFOBJECTS = closef.p readf.p openf.p writef.p get_extentf.p \
       ireadf.p iwritef.p iotestf.p iowaitf.p seekf.p \
@@ -35,7 +35,7 @@ MPIO_TMP_PFOBJECTS = closef.p readf.p openf.p writef.p get_extentf.p \
       wr_atallef.p write_allbf.p write_allef.p \
       get_posn_shf.p iread_shf.p read_shf.p write_shf.p \
       iwrite_shf.p seek_shf.p read_ordf.p read_ordef.p write_ordbf.p \
-      read_ordbf.p write_ordf.p write_ordef.p
+      read_ordbf.p write_ordf.p write_ordef.p set_errhf.p get_errhf.p
 
 MPIO_REAL_PFOBJECTS = _closef.o _readf.o _openf.o _get_extentf.o \
       _writef.o _set_viewf.o _seekf.o _read_atf.o \
@@ -49,7 +49,7 @@ MPIO_REAL_PFOBJECTS = _closef.o _readf.o _openf.o _get_extentf.o \
       _wr_atallef.o _write_allbf.o _write_allef.o \
       _get_posn_shf.o _iread_shf.o _read_shf.o _write_shf.o \
       _iwrite_shf.o _seek_shf.o _read_ordf.o _read_ordef.o _write_ordbf.o \
-      _read_ordbf.o _write_ordf.o _write_ordef.o
+      _read_ordbf.o _write_ordf.o _write_ordef.o _set_errhf.o _get_errhf.o
 
 all: $(LIBNAME)
 

@@ -98,7 +98,7 @@ void mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
     char *tmprep;
 
     if (datarep <= (char *) 0) {
-        printf("MPI_File_get_view: datarep is an invalid address\n");
+        FPRINTF(stderr, "MPI_File_get_view: datarep is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -144,7 +144,7 @@ void mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Datatype *etype,
 
 /* Initialize the string to all blanks */
     if (datarep <= (char *) 0) {
-        printf("MPI_File_get_view: datarep is an invalid address\n");
+        FPRINTF(stderr, "MPI_File_get_view: datarep is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     

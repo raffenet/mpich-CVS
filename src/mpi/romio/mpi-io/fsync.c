@@ -35,16 +35,23 @@ Input Parameters:
 int MPI_File_sync(MPI_File fh)
 {
     int error_code;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "MPI_FILE_SYNC";
+#endif
 #ifdef MPI_hpux
     int fl_xmpi;
 
     HPMP_IO_START(fl_xmpi, BLKMPIFILESYNC, TRDTBLOCK, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
+#ifdef __PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	printf("MPI_File_sync: Invalid file handle\n");
+	FPRINTF(stderr, "MPI_File_sync: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+#else
+    ADIOI_TEST_FILE_HANDLE(fh, myname);
+#endif
 
     ADIO_Flush(fh, &error_code);
 #ifdef MPI_hpux

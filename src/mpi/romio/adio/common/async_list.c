@@ -124,7 +124,7 @@ void ADIOI_Complete_async(int *error_code)
 	    ADIO_WriteComplete(request, &status, error_code);
 	    break;
 	default:
-	    printf("Error in ADIOI_Complete_Async\n");
+	    FPRINTF(stderr, "Error in ADIOI_Complete_Async\n");
 	    break;
 	}
 	(*request)->queued = 0;  /* dequeued, but request object not

@@ -14,6 +14,9 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     ADIO_Status status;
 #else
     int err=-1;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_UFS_IWRITECONTIG";
+#endif
 #endif
 
     *request = ADIOI_Malloc_request();
@@ -42,7 +45,16 @@ void ADIOI_UFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (err == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 #endif
 
     fd->fp_sys_posn = -1;   /* set it to null. */
@@ -127,13 +139,13 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		    else err = aioread(fd_sys, buf, len, offset, SEEK_SET, result);
 		}
                 else {
-                    printf("Unknown errno %d in ADIOI_UFS_aio\n", errno);
+                    FPRINTF(stderr, "Unknown errno %d in ADIOI_UFS_aio\n", errno);
                     MPI_Abort(MPI_COMM_WORLD, 1);
                 }
 	    }
 	}
         else {
-            printf("Unknown errno %d in ADIOI_UFS_aio\n", errno);
+            FPRINTF(stderr, "Unknown errno %d in ADIOI_UFS_aio\n", errno);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
@@ -168,13 +180,13 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		    else err = aio_read(fd_sys, aiocbp);
 		}
                 else {
-                    printf("Unknown errno %d in ADIOI_UFS_aio\n", errno);
+                    FPRINTF(stderr, "Unknown errno %d in ADIOI_UFS_aio\n", errno);
                     MPI_Abort(MPI_COMM_WORLD, 1);
                 }
             }
 	}
         else {
-            printf("Unknown errno %d in ADIOI_UFS_aio\n", errno);
+            FPRINTF(stderr, "Unknown errno %d in ADIOI_UFS_aio\n", errno);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
@@ -225,13 +237,13 @@ int ADIOI_UFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		    else err = aio_read(aiocbp);
 		}
 		else {
-		    printf("Unknown errno %d in ADIOI_UFS_aio\n", errno);
+		    FPRINTF(stderr, "Unknown errno %d in ADIOI_UFS_aio\n", errno);
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
 	    }
         }
 	else {
-	    printf("Unknown errno %d in ADIOI_UFS_aio\n", errno);
+	    FPRINTF(stderr, "Unknown errno %d in ADIOI_UFS_aio\n", errno);
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
     }

@@ -93,11 +93,11 @@ void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *__ierr,
     int new_keylen, new_vallen, lead_blanks, i;
 
     if (key <= (char *) 0) {
-        printf("MPI_Info_set: key is an invalid address\n");
+        FPRINTF(stderr, "MPI_Info_set: key is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     if (value <= (char *) 0) {
-        printf("MPI_Info_set: value is an invalid address\n");
+        FPRINTF(stderr, "MPI_Info_set: value is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -109,7 +109,7 @@ void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *__ierr,
 
     for (i=keylen-1; i>=0; i--) if (key[i] != ' ') break;
     if (i < 0) {
-        printf("MPI_Info_set: key is a blank string\n");
+        FPRINTF(stderr, "MPI_Info_set: key is a blank string\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     new_keylen = i + 1 - lead_blanks;
@@ -128,7 +128,7 @@ void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *__ierr,
 
     for (i=vallen-1; i>=0; i--) if (value[i] != ' ') break;
     if (i < 0) {
-        printf("MPI_Info_set: value is a blank string\n");
+        FPRINTF(stderr, "MPI_Info_set: value is a blank string\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     new_vallen = i + 1 - lead_blanks;

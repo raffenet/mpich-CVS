@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: large_array -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: large_array -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	strcpy(filename, *argv);
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(filename, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
-	printf("This program creates a 4 Gbyte file. Don't run it if you don't have that much disk space!\n");
+	fprintf(stderr, "This program creates a 4 Gbyte file. Don't run it if you don't have that much disk space!\n");
     }
     else {
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     size_with_offset = sizeof(int);
     for (i=0; i<ndims; i++) size_with_offset *= array_of_gsizes[i];
     if (size_with_aint != size_with_offset) {
-        printf("Can't use an array of this size unless the MPI implementation defines a 64-bit MPI_Aint\n");
+        fprintf(stderr, "Can't use an array of this size unless the MPI implementation defines a 64-bit MPI_Aint\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     MPI_Type_size(newtype, &bufcount);
     bufcount = bufcount/sizeof(int);
     writebuf = (int *) malloc(bufcount * sizeof(int));
-    if (!writebuf) printf("Process %d, not enough memory for writebuf\n", mynod);
+    if (!writebuf) fprintf(stderr, "Process %d, not enough memory for writebuf\n", mynod);
     for (i=0; i<bufcount; i++) writebuf[i] = mynod*1024 + i;
 
     /* write the array to the file */
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 
     /* now read it back */
     readbuf = (int *) calloc(bufcount, sizeof(int));
-    if (!readbuf) printf("Process %d, not enough memory for readbuf\n", mynod);
+    if (!readbuf) fprintf(stderr, "Process %d, not enough memory for readbuf\n", mynod);
 
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, 
                   MPI_INFO_NULL, &fh);
@@ -121,10 +121,10 @@ int main(int argc, char **argv)
     flag = 0;
     for (i=0; i<bufcount; i++) 
 	if (readbuf[i] != mynod*1024 + i) {
-	    printf("Process %d, readbuf=%d, writebuf=%d\n", mynod, readbuf[i], mynod*1024 + i);
+	    fprintf(stderr, "Process %d, readbuf=%d, writebuf=%d\n", mynod, readbuf[i], mynod*1024 + i);
             flag = 1;
 	}
-    if (!flag) printf("Process %d: data read back is correct\n", mynod);
+    if (!flag) fprintf(stderr, "Process %d: data read back is correct\n", mynod);
 
     MPI_Type_free(&newtype);
     free(readbuf);
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     if (!mynod) {
 	err = MPI_File_delete(filename, MPI_INFO_NULL);
-	if (err == MPI_SUCCESS) printf("file deleted\n");
+	if (err == MPI_SUCCESS) fprintf(stderr, "file deleted\n");
     }
 
     MPI_Finalize();

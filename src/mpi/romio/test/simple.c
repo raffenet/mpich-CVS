@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
-	    printf("\n*#  Usage: simple -fname filename\n\n");
+	    fprintf(stderr, "\n*#  Usage: simple -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 	}
 	argv++;
@@ -71,9 +71,9 @@ int main(int argc, char **argv)
     /* check if the data read is correct */
     for (i=0; i<nints; i++) 
 	if (buf[i] != (rank*100000 + i)) 
-	    printf("Process %d: error, read %d, should be %d\n", rank, buf[i], rank*100000+i);
+	    fprintf(stderr, "Process %d: error, read %d, should be %d\n", rank, buf[i], rank*100000+i);
 
-    if (!rank) printf("Done\n");
+    if (!rank) fprintf(stderr, "Done\n");
 
     free(buf);
     free(filename);

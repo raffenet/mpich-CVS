@@ -33,7 +33,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
                          ADIOI_Access *others_req, 
                          int *send_buf_idx, int *curr_to_proc,
                          int *done_to_proc, int *hole, int iter, 
-                         MPI_Aint buftype_extent, int *buf_idx);
+                         MPI_Aint buftype_extent, int *buf_idx, int *error_code);
 static void ADIOI_Fill_send_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node                           *flat_buf, char **send_buf, ADIO_Offset 
                            *offset_list, int *len_list, int *send_size, 
                            MPI_Request *requests, int *sent_to_proc, 
@@ -80,12 +80,6 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 #ifdef __PROFILE
 	MPE_Log_event(13, 0, "start computation");
 #endif
-
-/* PFS file pointer modes are not relevant here. */
-    if ((fd->iomode != M_ASYNC) && (fd->iomode != M_UNIX)) {
-	printf("ADIOI_GEN_WriteStridedColl: only M_ASYNC and M_UNIX iomodes are valid\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
-    }
 
     MPI_Comm_size(fd->comm, &nprocs);
     MPI_Comm_rank(fd->comm, &myrank);
@@ -253,13 +247,16 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
     ADIO_Offset st_loc=0, end_loc=0, off, done, req_off;
     char *write_buf;
     int *curr_offlen_ptr, *count, *send_size, req_len, *recv_size;
-    int *partial_recv, *sent_to_proc, *start_pos, err=-1, flag;
-    int *send_buf_idx, *curr_to_proc, *done_to_proc, err_flag=0;
+    int *partial_recv, *sent_to_proc, *start_pos, flag;
+    int *send_buf_idx, *curr_to_proc, *done_to_proc;
     MPI_Status status;
     ADIOI_Flatlist_node *flat_buf=NULL;
     MPI_Aint buftype_extent;
     int info_flag, coll_bufsize;
     char *value;
+
+    *error_code = MPI_SUCCESS;  /* changed below if error */
+    /* only I/O errors are currently reported */
 
 /* calculate the number of writes of size coll_bufsize
    to be done by each process and the max among all processes.
@@ -345,9 +342,9 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
    common, let me do the simplest thing possible here: Each process
    completes all pending nonblocking operations before completing. */
 
-    ADIOI_Complete_async(&err);
+    ADIOI_Complete_async(error_code);
+    if (*error_code != MPI_SUCCESS) return;
     MPI_Barrier(fd->comm);
-    if (err != MPI_SUCCESS) err_flag = 1;
 
     done = 0;
     off = st_loc;
@@ -414,7 +411,7 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 			    if ((j+1 < others_req[i].count) && 
                                  (others_req[i].offsets[j+1] < 
                                      off+size)) { 
-				printf("Error: the filetype specifies an overlapping write\n");
+				FPRINTF(stderr, "Error: the filetype specifies an overlapping write\n");
 				MPI_Abort(MPI_COMM_WORLD, 1);
 			    }
 			    break;
@@ -437,7 +434,9 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 			    buftype_is_contig, contig_access_count,
 			    min_st_offset, fd_size, fd_start, fd_end,
 			    others_req, send_buf_idx, curr_to_proc,
-                            done_to_proc, &hole, m, buftype_extent, buf_idx); 
+                            done_to_proc, &hole, m, buftype_extent, buf_idx,
+			    error_code); 
+        if (*error_code != MPI_SUCCESS) return;
 #ifdef __PROFILE
 	MPE_Log_event(8, 0, "end communication");
 #endif
@@ -448,8 +447,8 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 
 	if (flag) {
 	    ADIO_WriteContig(fd, write_buf, size, ADIO_EXPLICIT_OFFSET, 
-                        off, &status, &err);
-	    if (err != MPI_SUCCESS) err_flag = 1;
+                        off, &status, error_code);
+	    if (*error_code != MPI_SUCCESS) return;
 	}
 
 	off += size;
@@ -470,7 +469,8 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 			    min_st_offset, fd_size, fd_start, fd_end,
 			    others_req, send_buf_idx, 
                             curr_to_proc, done_to_proc, &hole, m, 
-                            buftype_extent, buf_idx); 
+                            buftype_extent, buf_idx, error_code); 
+        if (*error_code != MPI_SUCCESS) return;
 #ifdef __PROFILE
 	MPE_Log_event(8, 0, "end communication");
 #endif
@@ -486,9 +486,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
     ADIOI_Free(send_buf_idx);
     ADIOI_Free(curr_to_proc);
     ADIOI_Free(done_to_proc);
-
-    /* only I/O errors are currently reported */
-    *error_code = (err_flag) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
 }
 
 
@@ -506,7 +503,8 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 			 ADIOI_Access *others_req, 
 			 int *send_buf_idx, int *curr_to_proc,
 			 int *done_to_proc, int *hole, int iter, 
-                         MPI_Aint buftype_extent, int *buf_idx)
+                         MPI_Aint buftype_extent, int *buf_idx,
+                         int *error_code)
 {
     int i, j, k, *tmp_len, nprocs_recv, nprocs_send, err;
     char **send_buf; 
@@ -515,6 +513,9 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
     MPI_Status *statuses, status;
     int *srt_len, sum;
     ADIO_Offset *srt_off;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_W_EXCHANGE_DATA";
+#endif
 
 /* exchange recv_size info so that each process knows how much to
    send to whom. */
@@ -587,8 +588,15 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 	    ADIO_ReadContig(fd, write_buf, size, ADIO_EXPLICIT_OFFSET, off,
 			    &status, &err);
 	    if (err != MPI_SUCCESS) {
-		printf("ADIOI_GEN_WriteStridedColl: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
+#ifdef __PRINT_ERR_MSG
+		FPRINTF(stderr, "ADIOI_GEN_WriteStridedColl: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+		*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_READ_PERM,
+			      myname, (char *) 0, (char *) 0);
+		ADIOI_Error(fd, *error_code, myname);
+                return;  
+#endif
 	    } 
 	}
     }

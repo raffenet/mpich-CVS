@@ -6,6 +6,7 @@
  */
 
 #include "adio.h"
+#include "adio_extern.h"
 #ifdef __MPISGI
 #include "mpisgi2.h"
 #endif
@@ -39,6 +40,8 @@ ADIO_File ADIO_Open(MPI_Comm comm, char *filename, int file_system,
 
     fd->iomode = iomode;
     fd->async_count = 0;
+
+    fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
 
 /* set I/O function pointers */
     ADIOI_SetFunctions(fd);

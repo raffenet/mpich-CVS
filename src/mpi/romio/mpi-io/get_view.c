@@ -43,17 +43,31 @@ Output Parameters:
 int MPI_File_get_view(MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype,
 		 MPI_Datatype *filetype, char *datarep)
 {
+#ifndef __PRINT_ERR_MSG
+    int error_code;
+    static char myname[] = "MPI_FILE_GET_VIEW";
+#endif
     int i, j, k, combiner;
     MPI_Datatype copy_etype, copy_filetype;
 
+#ifdef __PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	printf("MPI_File_get_view: Invalid file handle\n");
+	FPRINTF(stderr, "MPI_File_get_view: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+#else
+    ADIOI_TEST_FILE_HANDLE(fh, myname);
+#endif
 
     if (datarep <= (char *) 0) {
-	printf("MPI_File_get_view: The user must allocate memory for datarep\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_get_view: The user must allocate memory for datarep\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_DATAREP_ARG,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     *disp = fh->disp;

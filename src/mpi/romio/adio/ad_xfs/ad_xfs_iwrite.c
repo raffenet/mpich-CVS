@@ -11,6 +11,9 @@ void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
     int err=-1;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "ADIOI_XFS_IWRITECONTIG";
+#endif
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
@@ -27,7 +30,16 @@ void ADIOI_XFS_IwriteContig(ADIO_File fd, void *buf, int len, int file_ptr_type,
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
+#ifdef __PRINT_ERR_MSG
     *error_code = (err == -1) ? MPI_ERR_UNKNOWN : MPI_SUCCESS;
+#else
+    if (err == -1) {
+	*error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ADIO_ERROR,
+			      myname, "I/O Error", "%s", strerror(errno));
+	ADIOI_Error(fd, *error_code, myname);	    
+    }
+    else *error_code = MPI_SUCCESS;
+#endif
 
     fd->fp_sys_posn = -1;   /* set it to null. */
 
@@ -116,13 +128,13 @@ int ADIOI_XFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		    else err = aio_read64(aiocbp);
 		}
 		else {
-		    printf("Unknown errno %d in ADIOI_XFS_aio\n", errno);
+		    FPRINTF(stderr, "Unknown errno %d in ADIOI_XFS_aio\n", errno);
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
 	    }
         }
         else {
-            printf("Unknown errno %d in ADIOI_XFS_aio\n", errno);
+            FPRINTF(stderr, "Unknown errno %d in ADIOI_XFS_aio\n", errno);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }

@@ -41,12 +41,12 @@ int MPI_Info_get_nthkey(MPI_Info info, int n, char *key)
     int nkeys, i;
 
     if ((info <= (MPI_Info) 0) || (info->cookie != MPIR_INFO_COOKIE)) {
-        printf("MPI_Info_get_nthkey: Invalid info object\n");
+        FPRINTF(stderr, "MPI_Info_get_nthkey: Invalid info object\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     if (key <= (char *) 0) {
-	printf("MPI_Info_get: key is an invalid address\n");
+	FPRINTF(stderr, "MPI_Info_get: key is an invalid address\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -58,7 +58,7 @@ int MPI_Info_get_nthkey(MPI_Info info, int n, char *key)
     }
 
     if ((n < 0) || (n >= nkeys)) {
-        printf("MPI_Info_get_nthkey: n is an invalid number\n");
+        FPRINTF(stderr, "MPI_Info_get_nthkey: n is an invalid number\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 

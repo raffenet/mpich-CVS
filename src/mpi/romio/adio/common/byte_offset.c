@@ -16,7 +16,7 @@ void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset, ADIO_Offset *disp)
     ADIOI_Flatlist_node *flat_file;
     int i, sum, n_etypes_in_filetype, size_in_filetype;
     int n_filetypes, etype_in_filetype;
-    ADIO_Offset abs_off_in_filetype;
+    ADIO_Offset abs_off_in_filetype=0;
     int filetype_size, etype_size, filetype_is_contig;
     MPI_Aint filetype_extent;
 

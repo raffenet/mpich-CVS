@@ -40,40 +40,77 @@ int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count,
 				MPI_Datatype datatype)
 {
     int error_code, datatype_size, nprocs, myrank, i, incr;
+#ifndef __PRINT_ERR_MSG
+    static char myname[] = "MPI_FILE_READ_ORDERED_BEGIN";
+#endif
     ADIO_Offset shared_fp;
     MPI_Status status;
 
+#ifdef __PRINT_ERR_MSG
     if ((fh <= (MPI_File) 0) || (fh->cookie != ADIOI_FILE_COOKIE)) {
-	printf("MPI_File_read_ordered_begin: Invalid file handle\n");
+	FPRINTF(stderr, "MPI_File_read_ordered_begin: Invalid file handle\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
+#else
+    ADIOI_TEST_FILE_HANDLE(fh, myname);
+#endif
 
     if (count < 0) {
-	printf("MPI_File_read_ordered_begin: Invalid count argument\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_read_ordered_begin: Invalid count argument\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_ARG, MPIR_ERR_COUNT_ARG,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     if (datatype == MPI_DATATYPE_NULL) {
-        printf("MPI_File_read_ordered_begin: Invalid datatype\n");
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "MPI_File_read_ordered_begin: Invalid datatype\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_TYPE, MPIR_ERR_TYPE_NULL,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);	    
+#endif
     }
 
     if (fh->split_coll_count) {
-        printf("MPI_File_read_ordered_begin: Only one active split collective I/O operation allowed per file handle\n");
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "MPI_File_read_ordered_begin: Only one active split collective I/O operation allowed per file handle\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_MULTIPLE_SPLIT_COLL,
+                              myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     fh->split_coll_count = 1;
 
     MPI_Type_size(datatype, &datatype_size);
     if ((count*datatype_size) % fh->etype_size != 0) {
-        printf("MPI_File_read_ordered_begin: Only an integral number of etypes can be accessed\n");
+#ifdef __PRINT_ERR_MSG
+        FPRINTF(stderr, "MPI_File_read_ordered_begin: Only an integral number of etypes can be accessed\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_IO, MPIR_ERR_ETYPE_FRACTIONAL,
+				     myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);	    
+#endif
     }
 
     if ((fh->file_system == ADIO_PIOFS) || (fh->file_system == ADIO_PVFS)) {
-	printf("MPI_File_read_ordered_begin: Shared file pointer not supported on PIOFS and PVFS\n");
+#ifdef __PRINT_ERR_MSG
+	FPRINTF(stderr, "MPI_File_read_ordered_begin: Shared file pointer not supported on PIOFS and PVFS\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+	error_code = MPIR_Err_setmsg(MPI_ERR_UNSUPPORTED_OPERATION, 
+                    MPIR_ERR_NO_SHARED_FP, myname, (char *) 0, (char *) 0);
+	return ADIOI_Error(fh, error_code, myname);
+#endif
     }
 
     MPI_Comm_size(fh->comm, &nprocs);
@@ -84,7 +121,7 @@ int MPI_File_read_ordered_begin(MPI_File fh, void *buf, int count,
 	if (i == myrank) {
 	    ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);
 	    if (error_code != MPI_SUCCESS) {
-		printf("MPI_File_read_ordered_begin: Could not access shared file pointer!\n");
+		FPRINTF(stderr, "MPI_File_read_ordered_begin: Error! Could not access shared file pointer.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
 	}
