@@ -20,6 +20,7 @@ autom4te.cache
 *.bbg
 *.da
 *.gcov
+*.log
 mpi1dtype-cpp.h
 mpi2dtype-cpp.h
 mpi1info-cpp.h
