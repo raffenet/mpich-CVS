@@ -75,7 +75,7 @@ static void InitSharedProcesses(MPIDI_CH3I_Process_group_t *pg)
             pg->pSharedProcessFileDescriptors[i] = open(filename, O_RDONLY);
             if (pg->pSharedProcessFileDescriptors[i] == -1)
 	    {
-                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|shm|open", "**ch3|shm|open %s %d", filename, pSharedProcess[i].nPid); /*"failed to open mem file, '%s', for process %d\n", filename, pSharedProcess[i].nPid);*/
+                mpi_errno = MPIR_Err_create_code(MPI_ERR_OTHER, "**ch3|shm|open", "**ch3|shm|open %s %d %d", filename, pSharedProcess[i].nPid, errno); /*"failed to open mem file, '%s', for process %d\n", filename, pSharedProcess[i].nPid);*/
 	    }
 #endif
         }
