@@ -47,6 +47,16 @@ typedef short int16_t;
 typedef int int32_t;
 #endif
 
+#ifndef BOOL
+typedef int BOOL;
+#endif
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 /* Debugging and printf control */
 /* Use these *only* for debugging output intended for the implementors
    and maintainers of MPICH.  Do *not* use these for any output that
@@ -477,7 +487,11 @@ extern MPID_Comm MPID_Comm_direct[];
 typedef struct MPID_Request {
     int          handle;
     volatile int ref_count;
-    volatile int busy;
+    /* completion counter */
+    volatile int cc;
+    /* pointer to the completion counter */
+    /* This is necessary for the case when an operation is described by a list of requests */
+    int volatile *cc_ptr;
     /* A comm is needed to find the proper error handler */
     MPID_Comm *comm;
     /* Status is needed for wait/test/recv */
