@@ -3,6 +3,7 @@
 # autoconf --localdir=../confdb configure.in
 # (or wherever the confdb is)
 #
+AC_PREREQ(2.59)
 AC_INIT(adio/include/romioconf.h.in)
 VERSION=1.2.6
 AC_MSG_RESULT([Configuring ROMIO Version $VERSION])
