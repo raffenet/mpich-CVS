@@ -429,6 +429,7 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
     smpd_command_t *cmd_ptr;
     smpd_launch_node_t *launch_node_ptr, *launch_iter;
     smpd_map_drive_node_t *map_iter;
+    char drive_arg_str[20];
     char drive_map_str[SMPD_MAX_EXE_LENGTH];
     smpd_process_group_t *pg;
     int i;
@@ -544,10 +545,29 @@ int smpd_launch_processes(smpd_launch_node_t *launch_list, char *kvs_name, char 
 	    goto launch_failure;
 	}
 	map_iter = launch_node_ptr->map_list;
+	i = 0;
 	while (map_iter)
 	{
+	    i++;
+	    map_iter = map_iter->next;
+	}
+	if (i > 0)
+	{
+	    result = smpd_add_command_int_arg(cmd_ptr, "mn", i);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_err_printf("unable to add the drive mapping arg to the launch command: 'mn=%d'\n", i);
+		goto launch_failure;
+	    }
+	}
+	map_iter = launch_node_ptr->map_list;
+	i = 0;
+	while (map_iter)
+	{
+	    sprintf(drive_arg_str, "m%d", i);
+	    i++;
 	    sprintf(drive_map_str, "%c:%s", map_iter->drive, map_iter->share);
-	    result = smpd_add_command_arg(cmd_ptr, "m", drive_map_str);
+	    result = smpd_add_command_arg(cmd_ptr, drive_arg_str, drive_map_str);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the drive mapping to the launch command: '%s'\n", drive_map_str);
@@ -1458,8 +1478,11 @@ int smpd_handle_launch_command(smpd_context_t *context)
 {
     int result;
     int iproc;
+    int i, nmaps;
+    char drive_arg_str[20];
     smpd_command_t *cmd, *temp_cmd;
     smpd_process_t *process;
+    char share[SMPD_MAX_EXE_LENGTH];
 
     smpd_enter_fn("handle_launch_command");
 
@@ -1491,6 +1514,36 @@ int smpd_handle_launch_command(smpd_context_t *context)
     MPIU_Str_get_int_arg(cmd->cmd, "n", &process->nproc);
     MPIU_Str_get_int_arg(cmd->cmd, "s", &process->spawned);
     /* parse the -m drive mapping options */
+    nmaps = 0;
+    MPIU_Str_get_int_arg(cmd->cmd, "mn", &nmaps);
+    if (nmaps > 0)
+    {
+	/* make a linked list out of one big array */
+	process->map_list = (smpd_map_drive_node_t *)malloc(sizeof(smpd_map_drive_node_t) * nmaps);
+    }
+    for (i=0; i<nmaps; i++)
+    {
+	if (i == nmaps-1)
+	    process->map_list[i].next = NULL;
+	else
+	    process->map_list[i].next = &process->map_list[i+1];
+	process->map_list[i].ref_count = 0;
+	sprintf(drive_arg_str, "m%d", i);
+	result = MPIU_Str_get_string_arg(cmd->cmd, drive_arg_str, share, SMPD_MAX_EXE_LENGTH);
+	if (result == MPIU_STR_SUCCESS)
+	 {
+	    process->map_list[i].drive = share[0];
+	    strncpy(process->map_list[i].share, &share[2], SMPD_MAX_EXE_LENGTH);
+
+	    /* map the drive */
+	    /* FIXME: username and password needed to map a drive */
+	}
+	else
+	{
+	    process->map_list[i].drive = '\0';
+	    process->map_list[i].share[0] = '\0';
+	}
+    }
 
     /* launch the process */
     smpd_dbg_printf("launching: '%s'\n", process->exe);

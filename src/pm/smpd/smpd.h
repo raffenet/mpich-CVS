@@ -329,6 +329,14 @@ typedef struct smpd_stdin_write_node_t
     struct smpd_stdin_write_node_t *next;
 } smpd_stdin_write_node_t;
 
+typedef struct smpd_map_drive_node_t
+{
+    int ref_count;
+    char drive;
+    char share[SMPD_MAX_EXE_LENGTH];
+    struct smpd_map_drive_node_t *next;
+} smpd_map_drive_node_t;
+
 typedef struct smpd_process_t
 {
     int id;
@@ -351,16 +359,9 @@ typedef struct smpd_process_t
     smpd_stdin_write_node_t *stdin_write_list;
     int spawned;
     SMPD_BOOL local_process;
+    smpd_map_drive_node_t *map_list;
     struct smpd_process_t *next;
 } smpd_process_t;
-
-typedef struct smpd_map_drive_node_t
-{
-    int ref_count;
-    char drive;
-    char share[SMPD_MAX_EXE_LENGTH];
-    struct smpd_map_drive_node_t *next;
-} smpd_map_drive_node_t;
 
 typedef struct smpd_launch_node_t
 {
