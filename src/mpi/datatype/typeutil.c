@@ -103,9 +103,10 @@ void MPIR_Datatype_init( void )
 void MPIR_Datatype_iscontig( MPI_Datatype datatype, int *flag )
 {
     MPID_Datatype *datatype_ptr;
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
-    if (datatype_ptr) 
-	*flag = datatype_ptr->is_contig;
-    else 
-	*flag = 0;
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+        *flag = 1;
+    else  {
+        MPID_Datatype_get_ptr( datatype, datatype_ptr );
+        *flag = datatype_ptr->is_contig;
+    }
 }
