@@ -62,10 +62,10 @@ def mpdman():
     close(mpdFD)
     socketsToSelect[mpdSocket] = 1
     lineLabels = int(environ['MPDMAN_LINE_LABELS'])
-    stdinGoesToWho = int(environ['MPDMAN_STDIN_GOES_TO_WHO'])
     startStdoutLineLabel = 1
     startStderrLineLabel = 1
     myLineLabel = str(myRank) + ': '
+    stdinGoesToWho = environ['MPDMAN_STDIN_GOES_TO_WHO']
 
     # set up pmi stuff early in case I was spawned
     KVSs = {}
@@ -480,7 +480,12 @@ def mpdman():
                 elif msg['cmd'] == 'stdin_from_user':
                     if msg['src'] != myId:
                         mpd_send_one_msg(rhsSocket,msg)
-                        write(pipe_write_cli_stdin,msg['line'])
+                        if in_stdinRcvrs(myRank,stdinGoesToWho):
+                            write(pipe_write_cli_stdin,msg['line'])
+                elif msg['cmd'] == 'stdin_goes_to_who':
+                    if msg['src'] != myId:
+                        stdinGoesToWho = msg['stdin_procs']
+                        mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'interrupt_peer_with_msg':    ## BNR
                     if int(msg['torank']) == myRank:
 			if pmiSocket:  # may have disappeared in early shutdown
@@ -876,13 +881,17 @@ def mpdman():
                         except:
                             pass
                 elif msg['cmd'] == 'stdin_from_user':
-                    if stdinGoesToWho == 1:    # 1 -> all processes
-                        msg['src'] = myId
-                        mpd_send_one_msg(rhsSocket,msg)
-                    try:
-                        write(pipe_write_cli_stdin,msg['line'])
-                    except:
-                        mpd_print(1, 'cannot send stdin to client')
+                    msg['src'] = myId
+                    mpd_send_one_msg(rhsSocket,msg)
+                    if in_stdinRcvrs(myRank,stdinGoesToWho):
+                        try:
+                            write(pipe_write_cli_stdin,msg['line'])
+                        except:
+                            mpd_print(1, 'cannot send stdin to client')
+                elif msg['cmd'] == 'stdin_goes_to_who':
+                    stdinGoesToWho = msg['stdin_procs']
+                    msg['src'] = myId
+                    mpd_send_one_msg(rhsSocket,msg)
                 else:
                     mpd_print(1, 'unexpected msg recvd on conSocket :%s:' % msg )
             elif readySocket == mpdSocket:
@@ -918,6 +927,19 @@ def mpdman():
                 mpd_print(1, 'recvd msg on unknown socket :%s:' % readySocket )
     mpd_print(0000, "out of loop")
     # may want to want to wait for waitPids here
+
+def in_stdinRcvrs(myRank,stdinGoesToWho):
+    s1 = stdinGoesToWho.split(',')
+    for s in s1:
+        s2 = s.split('-')
+        if len(s2) == 1:
+            if myRank == int(s2[0]):
+                return 1
+        else:
+            if myRank >= int(s2[0])  and  myRank <= int(s2[1]):
+                return 1
+    return 0
+        
 
 def parse_pmi_msg(msg):
     parsed_msg = {}

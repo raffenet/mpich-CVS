@@ -11,7 +11,7 @@ from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
 from exceptions import Exception
 from syslog     import syslog, LOG_INFO, LOG_ERR
-from os         import getuid
+from os         import getuid, read
 from grp        import getgrall
 from pwd        import getpwnam, getpwuid
 
@@ -137,6 +137,27 @@ def mpd_trace_returns(frame,event,args):
         return None
     else:
         return mpd_trace_returns
+
+def mpd_read_one_line(fd):
+    line = ''
+    try:
+        c = read(fd,1)
+    except Exception, errmsg:
+	c = ''
+	line = ''
+        mpd_print_tb(1, 'mpd_read_one_line: errmsg=:%s:' % (errmsg) )
+    if c:
+	while c != '\n':
+	    line += c
+	    try:
+	        c = read(fd,1)
+	    except Exception, errmsg:
+		c = ''
+		line = ''
+		mpd_print_tb(1, 'mpd_read_one_line: errmsg=:%s:' % (errmsg) )
+		break
+	line += c
+    return line
 
 def mpd_send_one_line(sock,line):
     try:

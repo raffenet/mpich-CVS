@@ -26,7 +26,7 @@ from re              import findall
 from urllib          import unquote
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                             mpd_get_inet_listen_socket, mpd_get_my_username, \
-                            mpd_raise, mpdError, mpd_version, mpd_print
+                            mpd_raise, mpdError, mpd_version, mpd_print, mpd_read_one_line
 import xml.dom.minidom
 
 class mpdrunInterrupted(Exception):
@@ -34,14 +34,14 @@ class mpdrunInterrupted(Exception):
         self.args = args
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-       try0Locally, lineLabels, jobAlias, hostsFile
+       try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, gdb
 global timeoutVal, stdinGoesToWho, myExitStatus, manSocket, jobid
 global outXmlDoc, outXmlEC, outXmlFile
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobAlias, hostsFile
+           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, gdb
     global timeoutVal, stdinGoesToWho, myExitStatus, manSocket, jobid
     global outXmlDoc, outXmlEC, outXmlFile
 
@@ -59,7 +59,12 @@ def mpdrun():
     delArgsFile = 0
     try0Locally = 1
     lineLabels = 0
-    stdinGoesToWho = 0
+    stdinGoesToWho = '0'
+    mergingOutput = 0
+    linesToRanks = {}
+    linesOrdered = []
+    ranksCached = {}
+    gdb = 0
     process_cmdline_args()
     (listenSocket,listenPort) = mpd_get_inet_listen_socket('',0)
     cwd = path.abspath(getcwd())
@@ -125,8 +130,8 @@ def mpdrun():
 	    lineLabels = 1
         if createReq.hasAttribute('pgid'):    # our jobalias
             jobAlias = createReq.getAttribute('pgid')
-        if createReq.hasAttribute('stdin_goes_to_all'):
-            stdinGoesToWho = int(createReq.getAttribute('stdin_goes_to_all'))
+        if createReq.hasAttribute('stdin_goes_to_who'):
+            stdinGoesToWho = createReq.getAttribute('stdin_goes_to_who')
 
         nextHost = 0
         hostSpec = createReq.getElementsByTagName('host-spec')
@@ -242,7 +247,7 @@ def mpdrun():
                 envVals[envkey] = envval
             envvars[(loRange,hiRange)] = envVals
 
-        ## exit(-1)    #####  RMB TEMP
+        ## exit(-1)    #####  RMB         
 
     else:
         if not nprocs:
@@ -309,7 +314,7 @@ def mpdrun():
         msgToSend['rship'] = rship
         msgToSend['mship_host'] = gethostname()
         msgToSend['mship_port'] = mshipPort
-    msgToSend['stdin_goes_to_who'] = str(stdinGoesToWho)
+    msgToSend['stdin_goes_to_who'] = stdinGoesToWho
     mpd_send_one_msg(conSocket,msgToSend)
     msg = mpd_recv_one_msg(conSocket)
     if not msg:
@@ -352,10 +357,37 @@ def mpdrun():
     signal(SIGINT,sig_handler)
     signal(SIGTSTP,sig_handler)
     signal(SIGCONT,sig_handler)
+    if gdb:
+        msgToSend = { 'cmd' : 'stdin_from_user' }
+        msgToSend['line'] = 'set prompt\n'
+        mpd_send_one_msg(manSocket,msgToSend)
+        msgToSend['line'] = 'set confirm off\n'
+        mpd_send_one_msg(manSocket,msgToSend)
+        msgToSend['line'] = 'handle SIGUSR1 nostop noprint\n'
+        mpd_send_one_msg(manSocket,msgToSend)
+        msgToSend['line'] = 'handle SIGPIPE nostop noprint\n'
+        mpd_send_one_msg(manSocket,msgToSend)
+        msgToSend['line'] = 'set confirm on\n'
+        mpd_send_one_msg(manSocket,msgToSend)
+        msgToSend['line'] = 'set prompt (gdb)\\n\n'
+        mpd_send_one_msg(manSocket,msgToSend)
+        # msgToSend['line'] = 'quit\n'
+        # mpd_send_one_msg(manSocket,msgToSend)
+
+    firstGDB = 1
     done = 0
     while done < 3:    # man, client stdout, and client stderr
         try:
-            (readySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],10)
+            (readySockets,unused1,unused2) = select(socketsToSelect.keys(),[],[],1)
+            if mergingOutput  and  len(readySockets) == 0:    # timed out
+                for line in linesOrdered:
+                    linesToRanks[line].sort()
+                    fsr = format_sorted_ranks(linesToRanks[line])
+                    print '%s: %s' % (fsr,line),
+                stdout.flush()
+                linesToRanks = {}
+                linesOrdered = []
+                ranksCached = {}
             for readySocket in readySockets:
                 if readySocket == manSocket:
                     msg = mpd_recv_one_msg(manSocket)
@@ -416,16 +448,53 @@ def mpdrun():
 		    else:
 		        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
-                    msg = manCliStdoutSocket.recv(1024)
-                    if not msg:
-                        del socketsToSelect[readySocket]
-                        # readySocket.close()
-                        done += 1
+                    if mergingOutput:
+                        if gdb and firstGDB:
+                            firstGDB = 0
+                            for i in range(nprocs):
+                                line = mpd_read_one_line(manCliStdoutSocket.fileno())
+                                # print "^%s$" % line
+                            print '(gdb) '
+                            continue
+                        line = mpd_read_one_line(manCliStdoutSocket.fileno())
+                        if not line:
+                            del socketsToSelect[readySocket]
+                            done += 1
+                        else:
+                            (rank,rest) = line.split(':',1)
+                            rank = int(rank)
+                            linesToRanks.setdefault(rest,[])
+                            linesToRanks[rest].append(rank)
+                            ranksCached.setdefault(rank,0)
+                            ranksCached[rank] += 1
+                            if rest not in linesOrdered:
+                                linesOrdered.append(rest)
+                            if len(ranksCached.keys()) >= nprocs:
+                                # count # of procs that have same # of lines as prev proc
+                                n = 0
+                                x = ranksCached.values()
+                                for i in range(len(x)):
+                                    if x[i] == x[i-1]:    # -1 is valid subscript
+                                        n += 1
+                                # same number of lines for all procs ?
+                                if n == len(ranksCached.keys()):
+                                    for line in linesOrdered:
+                                        linesToRanks[line].sort()
+                                        fsr = format_sorted_ranks(linesToRanks[line])
+                                        print '%s: %s' % (fsr,line),
+                                    stdout.flush()
+                                    linesToRanks = {}
+                                    linesOrdered = []
+                                    ranksCached = {}
                     else:
-                        # print msg,
-                        # print 'MS: %s' % (msg.strip())
-                        stdout.write(msg)
-                        stdout.flush()
+                        msg = manCliStdoutSocket.recv(1024)
+                        if not msg:
+                            del socketsToSelect[readySocket]
+                            # readySocket.close()
+                            done += 1
+                        else:
+                            stdout.write(msg)
+                            stdout.flush()
                 elif readySocket == manCliStderrSocket:
                     msg = manCliStderrSocket.recv(1024)
                     if not msg:
@@ -438,10 +507,20 @@ def mpdrun():
                         stderr.write(msg)
                         stderr.flush()
                 elif readySocket == stdin:
-                    lineToSend = stdin.readline()
-                    if lineToSend:    # EOF
+                    line = stdin.readline()
+                    if line:    # not EOF
+                        msgToSend = { 'cmd' : 'stdin_from_user', 'line' : line } # default
+                        if gdb and line.startswith('z '):
+                            s1 = line[2:].rstrip().split(',')
+                            for s in s1:
+                                s2 = s.split('-')
+                                for i in s2:
+                                    if not i.isdigit():
+                                        print 'invalid arg to z :%s:' % i
+					continue
+                            msgToSend = { 'cmd' : 'stdin_goes_to_who',
+                                          'stdin_procs' : line.rstrip()[2:] }
                         if manSocket:
-                            msgToSend = { 'cmd' : 'stdin_from_user', 'line' : lineToSend }
                             mpd_send_one_msg(manSocket,msgToSend)
                     else:
                         del socketsToSelect[stdin]
@@ -470,11 +549,13 @@ def mpdrun():
 	        signal(SIGTSTP,SIG_DFL)      # stop myself
 	        kill(getpid(),SIGTSTP)
 	        signal(SIGTSTP,sig_handler)  # restore this handler
-        except Exception, errmsg:
-            if isinstance(errmsg,Exception)  and  errmsg[0] == 4:  # interrupted system call
-                continue
-            else:
-                mpd_raise('mpdrun: select failed: errmsg=:%s:' % (errmsg) )
+
+    if mergingOutput:
+        for line in linesOrdered:
+            linesToRanks[line].sort()
+            fsr = format_sorted_ranks(linesToRanks[line])
+            print '%s: %s' % (fsr,line),
+        stdout.flush()
     if mshipPid:
         (donePid,status) = wait()    # waitpid(mshipPid,0)
     if outXmlFile:
@@ -499,9 +580,31 @@ def sig_handler(signum,frame):
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
             mpd_send_one_msg(manSocket,msgToSend)
 
+def format_sorted_ranks(ranks):
+    all = []
+    one = []
+    prevRank = -999
+    for i in range(len(ranks)):
+        if i != 0  and  ranks[i] != (prevRank+1):
+            all.append(one)
+            one = []
+        one.append(ranks[i])
+        if i == (len(ranks)-1):
+            all.append(one)
+        prevRank = ranks[i]
+    pline = ''
+    for i in range(len(all)):
+        if len(all[i]) > 1:
+            pline += '%d-%d' % (all[i][0],all[i][-1])
+        else:
+            pline += '%d' % (all[i][0])
+        if i != (len(all)-1):
+            pline += ','
+    return pline
+
 def process_cmdline_args():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
-           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid
+           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput, gdb
     global outXmlDoc, outXmlEC, outXmlFile
 
     hostsFile = ''
@@ -571,17 +674,29 @@ def process_cmdline_args():
                 elif argv[argidx] == '-l':
                     lineLabels = 1
                     argidx += 1
+                elif argv[argidx] == '-m':
+                    mergingOutput = 1
+                    lineLabels = 1  # implied
+                    argidx += 1
+                elif argv[argidx] == '-g':
+                    gdb = 1
+                    mergingOutput = 1   # implied
+                    lineLabels = 1      # implied
+                    stdinGoesToWho = 'all' # implied  (all processes at first)
+                    argidx += 1
                 elif argv[argidx] == '-1' or argv[argidx] == '-nolocal':
                     try0Locally = 0
                     argidx += 1
                 elif argv[argidx] == '-s':
-                    stdinGoesToWho = 1   # 1 -> all processes
+                    stdinGoesToWho = 'all'   # -1 -> all processes
                     argidx += 1
                 else:
                     usage()
             else:
                 pgm = argv[argidx]
                 argidx += 1
+    if stdinGoesToWho == 'all':
+        stdinGoesToWho = '0-%d' % (nprocs-1)
     pgmArgs = []
     while argidx < len(argv):
         pgmArgs.append(argv[argidx])
@@ -590,13 +705,18 @@ def process_cmdline_args():
 def usage():
     print 'mpdrun for mpd version: %s' % str(mpd_version)
     print 'usage: mpdrun [args] pgm_to_execute [pgm_args]'
-    print '   where args may be: -a alias -np nprocs -hf hostsfile -cpm master_copgm -cpr remote_copgm -l -1 -s'
+    print '   where args may be: -a alias -np nprocs -hf hostsfile -cpm master_copgm -cpr remote_copgm -l -m -1 -s'
     print '       (nprocs must be a positive integer)'
     print '       (-hf is a hostsfile containing names of nodes on which to run)'
     print '       (-l means attach line labels identifying which client prints each line)'
+    print '       (-m means merge identical outputs into a single line;'
+    print '           implies that program produces whole lines;'
+    print '           implies -l)'
     print '       (-1 means do NOT start the first process locally)'
     print '       (-a means assign this alias to the job)'
     print '       (-s means send stdin to all processes; not just first)'
+    print '       (-g means assume user will be running gdb and send some initial setup;'
+    print '           implies -m and -l and initially -s );'
     print 'or:    mpdrun -f input_xml_filename [-r output_xml_exit_codes_filename]'
     print '   where filename contains all the arguments in xml format'
     exit(-1)
