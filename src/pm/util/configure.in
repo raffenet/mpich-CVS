@@ -24,8 +24,8 @@ dnl
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
 dnl
-AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
-CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes")
+AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],,
+enable_strict=no)
 dnl
 dnl
 dnl Set single for now
@@ -91,6 +91,8 @@ ENABLE_SHLIB=none
 AC_SUBST(ENABLE_SHLIB)
 dnl
 dnl     check for compiler characteristics
+dnl Set CFLAGS for enable strict if necessary
+PAC_CC_STRICT
 AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT

@@ -19,8 +19,8 @@ dnl Enable better caching control
 PAC_ARG_CACHING
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
-AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
-CFLAGS="$CFLAGS -O -Wall -Wstrict-prototypes -Wmissing-prototypes")
+AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],,
+enable_strict=no)
 dnl
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
@@ -54,6 +54,8 @@ dnl Here are some sample tests
 dnl
 dnl Find a C compiler (choose gcc first)
 AC_PROG_CC
+dnl Set CFLAGS for enable strict if necessary
+PAC_CC_STRICT
 AC_CHECK_PROGS(AR,ar)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
 dnl

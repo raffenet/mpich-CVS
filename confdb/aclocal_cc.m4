@@ -978,6 +978,34 @@ if test "$enable_strict_done" != "yes" ; then
     fi
 fi
 ])
+dnl
+dnl Use the value of enable-strict to update CFLAGS
+AC_DEFUN(PAC_CC_STRICT,[
+export enable_strict_done
+if test "$enable_strict_done" != "yes" ; then
+    if test "$enable_strict" = "yes" ; then
+        enable_strict_done="yes"
+        if test -z "CC" ; then
+            AC_CHECK_PROGS(CC,gcc)
+        fi
+        if test "$ac_cv_prog_gcc" = "yes" ; then 
+            CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+	else 
+	    AC_MSG_WARN([enable strict supported only for gcc])
+    	fi
+    elif test "$enable_strict" = "all" ; then
+        enable_strict_done="yes"
+        if test -z "CC" ; then
+            AC_CHECK_PROGS(CC,gcc)
+        fi
+        if test "$ac_cv_prog_gcc" = "yes" ; then 
+            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
+	else 
+	    AC_MSG_WARN([enable strict supported only for gcc])
+    	fi
+    fi
+fi
+])
 dnl/*D
 dnl PAC_ARG_CC_G - Add debugging flags for the C compiler
 dnl

@@ -12,8 +12,8 @@ dnl
 PAC_ARG_CACHING
 
 AC_ARG_ENABLE(strict,
-[--enable-strict  - Turn on strict compilation testing when using gcc],
-COPTIONS="${COPTIONS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL")
+[--enable-strict  - Turn on strict compilation testing when using gcc],,
+enable_strict=no)
 
 AC_ARG_ENABLE(echo,
 [--enable-echo    - Turn on echoing from within the configure script],
