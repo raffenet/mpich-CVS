@@ -157,24 +157,38 @@ if [ $do_bindings = "yes" ] ; then
 	(cd src/binding/cxx ; ./buildiface -nosep $otherarg )
     fi
 fi
-# Build simplemake if necessary
+# Build scripts such as simplemake if necessary
 made_simplemake=no
+run_configure=no
 if [ ! -x maint/configure ] ; then
     (cd maint && autoconf )
-fi
-# The following relies on the Unix find command
-if find -name 'maint/configure.in' -newer 'maint/configure' ; then
+elif find -name 'maint/configure.in' -newer 'maint/configure' ; then
+    # The above relies on the Unix find command
     (cd maint && autoconf)
 fi
-if [ ! -x maint/simplemake ] ; then
-    (cd maint && ./configure )
-    made_simplemake=yes
+if [ ! -x maint/simplemake -o ! -x maint/getstates ] ; then
+    run_configure=yes
 fi
+#
 # The following relies on the Unix find command
 if find -name 'maint/simplemake.in' -newer 'maint/simplemake' ; then
+    run_configure=yes
+fi
+if find -name 'maint/getstates.in' -newer 'maint/getstates' ; then
+    run_configure=yes
+fi
+
+if [ "$run_configure" = "yes" ] ; then
     (cd maint && ./configure)
     made_simplemake=yes
 fi
+
+# Run some of the simple codes
+if [ -x maint/getstates ] ; then
+    maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
+                    -namefile=src/util/logging/lwlog/lwnames.h src
+fi
+
 #
 if [ ! -x maint/simplemake ] ; then
     echo "Could not create simplemake"
