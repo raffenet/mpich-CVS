@@ -185,7 +185,10 @@ def mpdrun():
                 paths[(loRange,hiRange)] = environ['PATH']
             if p.hasAttribute('host'):
                 host = p.getAttribute('host')
-                hosts[(loRange,hiRange)] = gethostbyname_ex(host)[2][0]
+                if host.startswith('_any_'):
+                    hosts[(loRange,hiRange)] = host
+                else:
+                    hosts[(loRange,hiRange)] = gethostbyname_ex(host)[2][0]
             else:
                 if hostList:
                     hosts[(loRange,hiRange)] = '_any_from_pool_'
