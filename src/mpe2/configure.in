@@ -45,8 +45,6 @@ AC_ARG_ENABLE( softerror,
 VERSION=""
 CC=${CC:-cc}
 F77=${F77:-f77}
-MPI_INC=""
-MPI_LIBS=""
 MPE_CFLAGS=""
 MPE_FFLAGS=""
 MPE_LIBNAME=""
