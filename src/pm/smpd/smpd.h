@@ -40,6 +40,7 @@
 #define SMPD_MAX_FILENAME                1024
 #define SMPD_MAX_STDOUT_LENGTH           1024
 #define SMPD_MAX_SESSION_HEADER_LENGTH   1024
+#define SMPD_MAX_ERROR_LEN               1024
 #define SMPD_CMD_HDR_LENGTH                13
 #define SMPD_MAX_CMD_LENGTH	         8192
 #define SMPD_MAX_CMD_STR_LENGTH           100
@@ -253,6 +254,7 @@ typedef struct smpd_process_t
     smpd_pwait_t wait;
     int exitcode;
     char kvs_name[SMPD_MAX_DBS_NAME_LEN];
+    char err_msg[SMPD_MAX_ERROR_LEN];
     struct smpd_process_t *next;
 } smpd_process_t;
 
