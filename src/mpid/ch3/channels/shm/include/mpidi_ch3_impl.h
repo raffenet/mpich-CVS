@@ -91,6 +91,7 @@ typedef struct MPIDI_CH3I_SHM_Queue_t
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_CH3I_Process_group_t * pg;
+    MPIDI_VC *vc;
 }
 MPIDI_CH3I_Process_t;
 
@@ -147,17 +148,15 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 #define MPIDI_SHM_RNDV_LIMIT 10240
 #endif
 
-#define MPIDI_SHM_GC_COUNT_MAX 10
 #define MPID_SHMEM_PER_PROCESS 1048576
 
-/* sizes of shared memory segments used by the memory management algorithm */
-#define SHM_NSIZES 6
-#define SHM_SIZE1 64
-#define SHM_SIZE2 256
-#define SHM_SIZE3 1024
-#define SHM_SIZE4 4096
-#define SHM_SIZE5 16384
-#define SHM_MAX_SIZE 262144
+typedef enum shm_wait_e
+{
+SHM_WAIT_TIMEOUT,
+SHM_WAIT_READ,
+SHM_WAIT_WRITE,
+SHM_WAIT_ERROR
+} shm_wait_t;
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
@@ -166,6 +165,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
 void *MPIDI_CH3I_SHM_Get_mem_sync(MPIDI_CH3I_Process_group_t *pg, int nTotalSize, int nRank, int nNproc);
 void MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Process_group_t *pg);
 
+shm_wait_t MPIDI_CH3I_SHM_wait(MPIDI_VC *vc, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr, int *error_ptr);
 int MPIDI_CH3I_SHM_post_read(MPIDI_VC *vc, void *buf, int len, int (*read_progress_update)(int, void*));
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
 int MPIDI_CH3I_SHM_write(MPIDI_VC *vc, void *buf, int len);

@@ -23,7 +23,9 @@ void MPIDI_CH3_Progress_start()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Progress(int is_blocking)
 {
-/*    int rc;*/
+    MPIDI_VC *vc_ptr;
+    int num_bytes, error;
+    shm_wait_t wait_result;
     unsigned register count;
     unsigned completions = MPIDI_CH3I_progress_completions;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
@@ -33,30 +35,26 @@ int MPIDI_CH3_Progress(int is_blocking)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-#if 0
-	rc = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.set, 0, &out);
-	if (rc == IBU_FAIL)
-	    err_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
-	assert(rc != IBU_FAIL);
-	switch (out.op_type)
+	wait_result = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &error);
+	switch (wait_result)
 	{
-	case IBU_OP_TIMEOUT:
+	case SHM_WAIT_TIMEOUT:
 	    break;
-	case IBU_OP_READ:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read", out.num_bytes));
-	    handle_read(out.user_ptr, out.num_bytes);
+	case SHM_WAIT_READ:
+	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes read", num_bytes));
+	    handle_read(vc_ptr, num_bytes);
 	    break;
-	case IBU_OP_WRITE:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes written", out.num_bytes));
-	    handle_written(out.user_ptr);
+	case SHM_WAIT_WRITE:
+	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes written", num_bytes));
+	    handle_written(vc_ptr);
 	    break;
-	case IBU_OP_CLOSE:
+	case SHM_WAIT_ERROR:
+	    err_printf("MPIDI_CH3I_SHM_wait returned error %d\n", error);
 	    break;
 	default:
 	    assert(FALSE);
 	    break;
 	}
-#endif
     } 
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
 

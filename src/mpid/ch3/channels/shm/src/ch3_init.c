@@ -91,6 +91,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
     pg->vc_table = vc_table;
     
+    /* save my vc_ptr for easy access */
+    MPIDI_CH3I_Process.vc = &vc_table[pg_rank];
+
     /* Initialize MPI_COMM_WORLD object */
     comm = MPIR_Process.comm_world;
     comm->rank = pg_rank;
