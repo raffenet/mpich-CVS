@@ -105,9 +105,16 @@ public class Header
     }
 
     // For SLOG-2 Input API
+    public boolean isSLOG2()
+    {
+        return version_ID != null && version_ID.startsWith( Const.SLOG2_ID );
+    }
+
+    // For SLOG-2 Input API
     public String getCompatibleVersionMessage()
     {
-        if ( version_ID.compareTo( Const.version_ID ) == 0 ) 
+        if (    version_ID != null
+             && version_ID.compareTo( Const.version_ID ) == 0 ) 
             return null;
         else
             return ( "Incompatible Version IDs detected! \n"

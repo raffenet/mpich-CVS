@@ -20,7 +20,8 @@ RM           = @RM@
 
 TARGET  =
 PACKAGE = logformat.slog2
-SRC     = Const.java TreeNodeID.java FileBlockPtr.java \
+SRC     = Const.java TraceName.java \
+          TreeNodeID.java FileBlockPtr.java \
           TreeDirValue.java TreeDir.java \
           Permutation.java LineIDMap.java LineIDMapList.java \
           IteratorOfBackPrimitives.java IteratorOfForePrimitives.java \

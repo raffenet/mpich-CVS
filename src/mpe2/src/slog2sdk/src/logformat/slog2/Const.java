@@ -11,7 +11,8 @@ package logformat.slog2;
 
 public class Const
 {
-           static final String  version_ID     = "SLOG 2.0.5";
+           static final String  SLOG2_ID       = "SLOG 2";
+           static final String  version_ID     = SLOG2_ID + ".0.5";
            static final byte    INVALID_byte   = Byte.MIN_VALUE;
            static final short   INVALID_short  = Short.MIN_VALUE;
            static final int     INVALID_int    = Integer.MIN_VALUE;
