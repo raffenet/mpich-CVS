@@ -51,7 +51,7 @@ int MPIO_Testsome(int count, MPIO_Request requests[], int *outcount,
 
     /* Check for no active requests */
     for (i=0; i<count; i++) {
-	if (requests[i] != MPI_REQUEST_NULL) {
+	if (requests[i] != MPIO_REQUEST_NULL) {
 	    break;
 	}
     }
@@ -63,7 +63,7 @@ int MPIO_Testsome(int count, MPIO_Request requests[], int *outcount,
     err = MPI_SUCCESS;
     *outcount = 0;
     for (i=0; i<count; i++) {
-      if (requests[i] != MPI_REQUEST_NULL) {
+      if (requests[i] != MPIO_REQUEST_NULL) {
 	err = MPIO_Test( &requests[i], &flag, statuses );
 	if (flag) {
 	  if (!err) {

@@ -39,7 +39,7 @@ int MPIO_Waitall( int count, MPIO_Request requests[], MPI_Status statuses[] )
     do {
 	notdone = 0;
 	for (i=0; i<count; i++) {
-	    if (requests[i] != MPI_REQUEST_NULL) {
+	    if (requests[i] != MPIO_REQUEST_NULL) {
 		err = MPIO_Test( &requests[i], &flag, &statuses[i] );
 		if (!flag) notdone = 1;
 		if (err) return err;

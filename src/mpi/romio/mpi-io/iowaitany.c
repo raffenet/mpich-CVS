@@ -42,7 +42,7 @@ int MPIO_Waitany(int count, MPIO_Request requests[], int *index,
 
     /* Check for no active requests */
     for (i=0; i<count; i++) {
-	if (requests[i] != MPI_REQUEST_NULL) {
+	if (requests[i] != MPIO_REQUEST_NULL) {
 	    break;
 	}
     }
@@ -64,7 +64,7 @@ int MPIO_Waitany(int count, MPIO_Request requests[], int *index,
     do {
 	flag = 0;
 	for (i=0; i<count; i++) {
-	    if (requests[i] != MPI_REQUEST_NULL) {
+	    if (requests[i] != MPIO_REQUEST_NULL) {
 		err = MPIO_Test( &requests[i], &flag, status );
 		if (flag) {
 		    if (!err) *index = i;
