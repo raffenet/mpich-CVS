@@ -20,6 +20,8 @@
 #error "You must explicitly include a header that sets the PREPEND_PREFIX and includes gen_dataloop.h"
 #endif
 
+#define DEBUG_DLOOP_SIZE
+
 /* Dataloops
  *
  * The functions here are used for the creation, copying, update, and display
@@ -138,27 +140,51 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
     else {
 	DLOOP_Offset tmp_sz, tmp_ct = 1;
 
-	while (!(dl_p->kind & DLOOP_FINAL_MASK)) {
+	for (;;) {
 	    switch (dl_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
 		    tmp_ct *= dl_p->loop_params.c_t.count;
+#ifdef DEBUG_DLOOP_SIZE
+		    DLOOP_dbg_printf("stream_size: contig: ct = %d; new tot_ct = %d\n",
+				     dl_p->loop_params.c_t.count, tmp_ct);
+#endif
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    tmp_ct *=
 			dl_p->loop_params.v_t.count * dl_p->loop_params.v_t.blocksize;
+#ifdef DEBUG_DLOOP_SIZE
+		    DLOOP_dbg_printf("stream_size: vector: ct = %d; blk = %d; new tot_ct = %d\n",
+				     dl_p->loop_params.v_t.count,
+				     dl_p->loop_params.v_t.blocksize,
+				     tmp_ct);
+#endif
 		    break;
 		case DLOOP_KIND_BLOCKINDEXED:
 		    tmp_ct *= dl_p->loop_params.bi_t.total_blocks;
+#ifdef DEBUG_DLOOP_SIZE
+		    DLOOP_dbg_printf("stream_size: blkindexed: blks = %d; new tot_ct = %d\n",
+				     dl_p->loop_params.bi_t.total_blocks,
+				     tmp_ct);
+#endif
 		    break;
 		case DLOOP_KIND_INDEXED:
 		    tmp_ct *= dl_p->loop_params.i_t.total_blocks;
+#ifdef DEBUG_DLOOP_SIZE
+		    DLOOP_dbg_printf("stream_size: contig: blks = %d; new tot_ct = %d\n",
+				     dl_p->loop_params.i_t.total_blocks,
+				     tmp_ct);
+#endif
 		break;
 		default:
 		    assert(0);
 		    break;
 	    }
-	    assert(dl_p->loop_params.cm_t.dataloop != NULL);
-	    dl_p = dl_p->loop_params.cm_t.dataloop;
+
+	    if (dl_p->kind & DLOOP_FINAL_MASK) break;
+	    else {
+		assert(dl_p->loop_params.cm_t.dataloop != NULL);
+		dl_p = dl_p->loop_params.cm_t.dataloop;
+	    }
 	}
 
 	/* call fn for size using bottom type, or use size if fnptr is NULL */
