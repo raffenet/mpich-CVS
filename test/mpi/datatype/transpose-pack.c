@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     /* Variable declarations */
     int a[100][100], b[100][100];
     MPI_Datatype row, xpose;
-    int sizeofint;
+    MPI_Aint sizeofint;
 	
     int err, errs = 0;
     int bufsize, position;

@@ -15,3 +15,5 @@ simple-pack_SOURCES = simple-pack.c
 
 transpose-pack_SOURCES = transpose-pack.c
 
+lbub_SOURCES = lbub.c
+

@@ -21,15 +21,16 @@ int main(int argc, char **argv)
     parse_args(argc, argv);
 
     /* perform some tests */
-#if 0
     err = builtin_float_test();
+    if (err && verbose) fprintf(stderr, "%d errors in builtin float test.\n", err);
     errs += err;
-#endif
 
     err = vector_of_vectors_test();
+    if (err && verbose) fprintf(stderr, "%d errors in vector of vectors test.\n", err);
     errs += err;
 
     err = optimizable_vector_of_basics_test();
+    if (err && verbose) fprintf(stderr, "%d errors in vector of basics test.\n", err);
     errs += err;
 
     /* print message and exit */
@@ -129,13 +130,15 @@ int vector_of_vectors_test(void)
 		   sizeoftype,
 		   &position,
 		   MPI_COMM_WORLD);
-    
+
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (pack)\n",
 			     position, sizeoftype);
     }
 
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     for (i=0; i < 4; i++) {
 	if (((int *)buf)[i] != i+1) {
 	    errs++;
@@ -143,6 +146,7 @@ int vector_of_vectors_test(void)
 				 i, ((int *)buf)[i], i+1);
 	}
     }
+#endif
     
     memset(array, 0, 9*sizeof(int));
     position = 0;
@@ -250,6 +254,8 @@ int optimizable_vector_of_basics_test(void)
 			     position, sizeoftype);
     }
 
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     for (i=0; i < 20; i++) {
 	if (((int *)buf)[i] != i) {
 	    errs++;
@@ -257,6 +263,7 @@ int optimizable_vector_of_basics_test(void)
 				 i, ((int *)buf)[i], i);
 	}
     }
+#endif
 
     memset(array, 0, 20 * sizeof(int));
     position = 0;
