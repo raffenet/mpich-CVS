@@ -25,47 +25,51 @@ public class Category
 
     private int          index;
     private String       name;
-    private Topology     topo;          // private Shape    shape;
+    private Topology     topo;         // private Shape    shape;
     private ColorAlpha   color;
     private int          width;
     private String[]     infokeys;     // string infokeys for the infovals
     private InfoType[]   infotypes;    // % token to represent infoval type
     private Method[]     methods;
 
-    private boolean      isVisible;   // For SLOG-2 Input API, or Jumpshot
+    private boolean      isVisible;    // For SLOG-2 Input API, or Jumpshot
+    private boolean      isSearchable; // For SLOG-2 Input API, or Jumpshot
 
     public Category()
     {
-        infokeys    = null;
-        infotypes   = null;
-        methods     = null;
-        isVisible   = true;
+        infokeys     = null;
+        infotypes    = null;
+        methods      = null;
+        isVisible    = true;
+        isSearchable = true;
     }
 
     public Category( int in_idx, String in_name, Topology in_topo,
                      ColorAlpha in_color, int in_width )
     {
-        index       = in_idx;
-        name        = in_name;
-        topo        = in_topo;
-        color       = in_color;
-        width       = in_width;
-        infokeys    = null;
-        infotypes   = null;
-        methods     = null;
-        isVisible   = true;
+        index        = in_idx;
+        name         = in_name;
+        topo         = in_topo;
+        color        = in_color;
+        width        = in_width;
+        infokeys     = null;
+        infotypes    = null;
+        methods      = null;
+        isVisible    = true;
+        isSearchable = true;
     }
 
     //  For TRACE-API
     public Category( int obj_idx, String obj_name, int obj_width )
     {
-        index       = obj_idx;
-        name        = obj_name;
-        width       = obj_width;
-        infokeys    = null;
-        infotypes   = null;
-        methods     = null;
-        isVisible   = true;
+        index        = obj_idx;
+        name         = obj_name;
+        width        = obj_width;
+        infokeys     = null;
+        infotypes    = null;
+        methods      = null;
+        isVisible    = true;
+        isSearchable = true;
     }
 
     public int getIndex()
@@ -81,6 +85,21 @@ public class Category
     public boolean isVisible()
     {
         return isVisible;
+    }
+
+    public void setSearchable( boolean new_value )
+    {
+        isSearchable = new_value;
+    }
+
+    public boolean isSearchable()
+    {
+        return isSearchable;
+    }
+
+    public boolean isVisiblySearchable()
+    {
+        return isVisible && isSearchable;
     }
 
     public void setName( String in_name )
@@ -300,6 +319,8 @@ public class Category
                 rep.append( methods[ idx ] + " " );
             rep.append( ">" );
         }
+        rep.append( ", vis=" + isVisible );
+        rep.append( ", search=" + isSearchable );
         rep.append( " ]" );
         return rep.toString();
     }

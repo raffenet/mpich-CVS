@@ -117,4 +117,6 @@ public abstract class Drawable extends InfoBox
     public abstract Drawable  getDrawableWithPixel( CoordPixelXform coord_xform,
                                                     Map    map_line2row,
                                                     Point  pixel_point );
+
+    public abstract boolean   containSearchable();
 }

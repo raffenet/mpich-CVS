@@ -391,6 +391,11 @@ public class Primitive extends Drawable
         return null;
     }
 
+    public boolean containSearchable()
+    {
+        return super.getCategory().isVisiblySearchable();
+    }
+
     /* 
         0.0f < nesting_ftr <= 1.0f
     */

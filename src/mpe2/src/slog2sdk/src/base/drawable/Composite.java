@@ -463,4 +463,16 @@ public class Composite extends Drawable
         }
         return null;
     }
+
+    public boolean containSearchable()
+    {
+        int        primes_length, idx;
+
+        primes_length = (short) primes.length;
+        for ( idx = 0; idx < primes_length; idx++ ) {
+            if ( primes[ idx ].containSearchable() )
+                return true;
+        }
+        return false;
+    }
 }

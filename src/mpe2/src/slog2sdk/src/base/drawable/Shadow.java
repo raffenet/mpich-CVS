@@ -414,6 +414,19 @@ public class Shadow extends Primitive
         return null;
     }
 
+    public boolean containSearchable()
+    {
+        CategoryWeight  twgt;
+        int             idx;
+
+        for ( idx = twgt_ary.length-1; idx >= 0; idx-- ) {
+             twgt = twgt_ary[ idx ];
+             if ( twgt.getCategory().isVisiblySearchable() )
+                 return true;
+        }
+        return false;
+    }
+
 
 
     private static Insets Empty_Border = new Insets( 0, 2, 0, 2 );
