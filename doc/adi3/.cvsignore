@@ -34,3 +34,4 @@ adi3new
 *.bbg
 *.da
 *.gcov
+*.out

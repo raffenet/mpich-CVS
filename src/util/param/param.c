@@ -23,7 +23,7 @@ typedef struct {
     union {
 	char *string_value;
 	int  int_value;
-    };
+    } val;
 } Param_entry;
 
 static int nentries = 0;
@@ -58,7 +58,7 @@ int MPIU_Param_init( int *argc_p, char *argv_p[], const char def_file[] )
 
 int MPIU_Param_bcast( void )
 {
-    return;
+    return 0;
 }
 
 int MPIU_Param_register( const char name[], const char envname[], 
@@ -76,7 +76,7 @@ int MPIU_Param_get_int( const char name[], int default_val, int *value )
 	cmp = strcmp( param_table[i].name, name );
 	if (cmp == 0) {
 	    if (param_table[i].kind == MPIU_INT) {
-		*value = param_table[i].int_value;
+		*value = param_table[i].val.int_value;
 		return 0;
 	    }
 	    else {
