@@ -13,13 +13,13 @@ MM_Car *find_in_queue(MM_Car **find_q_head_ptr, MM_Car **find_q_tail_ptr, MM_Car
     trailer_ptr = iter_ptr = *find_q_head_ptr;
     while (iter_ptr)
     {
-	if ((iter_ptr->msg_header.pkt.context == car_ptr->msg_header.pkt.context) &&
-	    (iter_ptr->msg_header.pkt.tag == car_ptr->msg_header.pkt.tag) &&
+	if ((iter_ptr->msg_header.pkt.u.hdr.context == car_ptr->msg_header.pkt.u.hdr.context) &&
+	    (iter_ptr->msg_header.pkt.u.hdr.tag == car_ptr->msg_header.pkt.u.hdr.tag) &&
 	    (iter_ptr->src == car_ptr->src))
 	{
-	    if (iter_ptr->msg_header.pkt.size > car_ptr->msg_header.pkt.size)
+	    if (iter_ptr->msg_header.pkt.u.hdr.size > car_ptr->msg_header.pkt.u.hdr.size)
 	    {
-		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.size, car_ptr->msg_header.pkt.size);
+		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.u.hdr.size, car_ptr->msg_header.pkt.u.hdr.size);
 		return NULL;
 	    }
 	    /* dequeue the car from the posted_q */
@@ -48,7 +48,7 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 {
     MM_Car *qcar_ptr;
 
-    switch (car_ptr->msg_header.pkt.type)
+    switch (car_ptr->msg_header.pkt.u.type)
     {
     case MPID_EAGER_PKT:
     case MPID_RNDV_REQUEST_TO_SEND_PKT:
@@ -62,14 +62,14 @@ int cq_handle_read_head_car(MM_Car *car_ptr)
 	else
 	{
 	    /* else allocate a temp buffer, place in the unex_q, and post a read */
-	    if (car_ptr->msg_header.pkt.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
+	    if (car_ptr->msg_header.pkt.u.type == MPID_RNDV_REQUEST_TO_SEND_PKT)
 		mm_post_unex_rndv(car_ptr);
 	    else
 		mm_create_post_unex(car_ptr);
 	}
 	MPID_Thread_unlock(MPID_Process.qlock);
 	break;
-    case MPID_RNDV_OK_TO_SEND_PKT:
+    case MPID_RNDV_CLEAR_TO_SEND_PKT:
 	break;
     case MPID_RNDV_DATA_PKT:
 	break;
@@ -249,7 +249,7 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     car_ptr->msg_header.pkt = unex_head_car_ptr->msg_header.pkt;
 
     car_ptr->type = MM_HEAD_CAR | MM_READ_CAR;
-    car_ptr->src = unex_head_car_ptr->msg_header.pkt.src;
+    car_ptr->src = unex_head_car_ptr->msg_header.pkt.u.hdr.src;
     car_ptr->request_ptr = request_ptr;
     car_ptr->vc_ptr = unex_head_car_ptr->vc_ptr;
     car_ptr->buf_ptr = &car_ptr->msg_header.buf;
@@ -270,13 +270,13 @@ int mm_create_post_unex(MM_Car *unex_head_car_ptr)
     car_ptr->next_ptr = NULL;
     car_ptr->opnext_ptr = NULL;
     car_ptr->qnext_ptr = NULL;
-    car_ptr->request_ptr->mm.size = unex_head_car_ptr->msg_header.pkt.size;
+    car_ptr->request_ptr->mm.size = unex_head_car_ptr->msg_header.pkt.u.hdr.size;
     mm_inc_cc(request_ptr);
 
     buf_ptr = car_ptr->buf_ptr = &request_ptr->mm.buf;
     buf_ptr->type = MM_TMP_BUFFER;
-    buf_ptr->tmp.buf[0] = MPIU_Malloc(unex_head_car_ptr->msg_header.pkt.size);
-    buf_ptr->tmp.len[0] = unex_head_car_ptr->msg_header.pkt.size;
+    buf_ptr->tmp.buf[0] = MPIU_Malloc(unex_head_car_ptr->msg_header.pkt.u.hdr.size);
+    buf_ptr->tmp.len[0] = unex_head_car_ptr->msg_header.pkt.u.hdr.size;
     buf_ptr->tmp.buf[1] = NULL;
     buf_ptr->tmp.len[1] = 0;
     buf_ptr->tmp.cur_buf = 0;

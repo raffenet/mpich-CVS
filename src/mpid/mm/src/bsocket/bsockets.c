@@ -301,7 +301,7 @@ int bsocket(int family, int type, int protocol)
     if (pbfd == 0) 
     {
 	DBG_MSG(("ERROR in bsocket: BlockAlloc returned NULL"));
-	return -1;
+	return BFD_INVALID_SOCKET;
     }
     
     memset(pbfd, 0, sizeof(BFD_Buffer));
@@ -312,7 +312,7 @@ int bsocket(int family, int type, int protocol)
 	DBG_MSG("ERROR in bsocket: socket returned SOCKET_ERROR\n");
 	memset(pbfd, 0, sizeof(BFD_Buffer));
 	BlockFree( Bsocket_mem, pbfd );
-	return -1;
+	return BFD_INVALID_SOCKET;
     }
     
     return (int)pbfd;
@@ -626,12 +626,12 @@ int bread(int bfd, char *ubuf, int len)
 	    pbfd->state = BFD_ERROR;
 	    pbfd->errval = 0;
 	}
-	else if (n == -1) 
+	else if (n == SOCKET_ERROR) 
 	{
 	    if ((errno != EINTR) || (errno != EAGAIN)) 
 	    {
 		pbfd->state = BFD_ERROR;
-		pbfd->errval = -1;
+		pbfd->errval = errno;
 	    }
 	    n = 0;
 	}
@@ -651,14 +651,16 @@ int bread(int bfd, char *ubuf, int len)
 	pbfd->state = BFD_ERROR;
 	pbfd->errval = 0;
     }
-    else if (n == -1) 
+    else if (n == SOCKET_ERROR) 
     {
 	if ((errno != EINTR) || (errno != EAGAIN)) 
 	{
 	    pbfd->state = BFD_ERROR;
-	    pbfd->errval = -1;
+	    pbfd->errval = errno;
 	}
-	return -1;
+	if (pbfd->num_avail)
+	    return pbfd->num_avail;
+	return SOCKET_ERROR;
     }
     
     pbfd->num_avail = n;
@@ -805,12 +807,12 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
     }
 #else
     n = readv(fd, &vec[i], veclen - i + 1);
-    if (n == -1) 
+    if (n == SOCKET_ERROR) 
     {
 	if ((errno != EINTR) || (errno != EAGAIN)) 
 	{
 	    pbfd->state = BFD_ERROR;
-	    pbfd->errval = -1;
+	    pbfd->errval = errno;
 	}
 	n = 0; /* Set this to zero so it can be added to num_read */
     }
@@ -1289,7 +1291,8 @@ int beasy_receive(int bfd, char *buffer, int len)
 	    num_received = bread(bfd, buffer, len);
 	    if (num_received == SOCKET_ERROR)
 	    {
-		return SOCKET_ERROR;
+		if ((errno != EINTR) || (errno != EAGAIN))
+		    return SOCKET_ERROR;
 	    }
 	    else
 	    {
@@ -1306,7 +1309,10 @@ int beasy_receive(int bfd, char *buffer, int len)
 	else
 	{
 	    if (ret_val == SOCKET_ERROR)
-		return SOCKET_ERROR;
+	    {
+		if ((errno != EINTR) || (errno != EAGAIN))
+		    return SOCKET_ERROR;
+	    }
 	}
     }
 
@@ -1335,7 +1341,8 @@ int beasy_receive_some(int bfd, char *buffer, int len)
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
     {
-	return SOCKET_ERROR;
+	if ((errno != EINTR) || (errno != EAGAIN))
+	    return SOCKET_ERROR;
     }
     else
     {
@@ -1352,7 +1359,8 @@ int beasy_receive_some(int bfd, char *buffer, int len)
 	num_received = bread(bfd, buffer, len);
 	if (num_received == SOCKET_ERROR)
 	{
-	    return SOCKET_ERROR;
+	    if ((errno != EINTR) || (errno != EAGAIN))
+		return SOCKET_ERROR;
 	}
 	else
 	{
@@ -1416,7 +1424,8 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
 	    num_received = bread(bfd, buffer, len);
 	    if (num_received == SOCKET_ERROR)
 	    {
-		return SOCKET_ERROR;
+		if ((errno != EINTR) || (errno != EAGAIN))
+		    return SOCKET_ERROR;
 	    }
 	    else
 	    {
@@ -1433,7 +1442,10 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
 	else
 	{
 	    if (ret_val == SOCKET_ERROR)
-		return SOCKET_ERROR;
+	    {
+		if ((errno != EINTR) || (errno != EAGAIN))
+		    return SOCKET_ERROR;
+	    }
 	    else
 	    {
 		/*bmake_blocking(bfd);*/
@@ -1494,7 +1506,8 @@ int beasy_send(int bfd, char *buffer, int length)
     num_written = write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
     if (num_written == SOCKET_ERROR)
     {
-	return SOCKET_ERROR;
+	if ((errno != EINTR) || (errno != EAGAIN))
+	    return SOCKET_ERROR;
     }
     else
     {
@@ -1513,7 +1526,8 @@ int beasy_send(int bfd, char *buffer, int length)
 	    num_written = write(((BFD_Buffer*)bfd)->real_fd, buffer, length);
 	    if (num_written == SOCKET_ERROR)
 	    {
-		return SOCKET_ERROR;
+		if ((errno != EINTR) || (errno != EAGAIN))
+		    return SOCKET_ERROR;
 	    }
 	    else
 	    {
@@ -1529,7 +1543,10 @@ int beasy_send(int bfd, char *buffer, int length)
 	else
 	{
 	    if (ret_val == SOCKET_ERROR)
-		return SOCKET_ERROR;
+	    {
+		if ((errno != EINTR) || (errno != EAGAIN))
+		    return SOCKET_ERROR;
+	    }
 	}
     }
     return total;

@@ -217,6 +217,8 @@ int tcp_read_connecting(MPIDI_VC *vc_ptr)
     {
 	vc_ptr->data.tcp.connected = TRUE;
 	vc_ptr->data.tcp.connecting = FALSE;
+
+	bmake_nonblocking(vc_ptr->data.tcp.bfd);
     }
     else if (ack == TCP_REJECT_CONNECTION)
     {

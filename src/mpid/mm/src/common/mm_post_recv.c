@@ -17,13 +17,13 @@ int mm_post_recv(MM_Car *car_ptr)
     trailer_ptr = iter_ptr = MPID_Process.unex_q_head;
     while (iter_ptr)
     {
-	if ((iter_ptr->msg_header.pkt.context == car_ptr->msg_header.pkt.context) &&
-	    (iter_ptr->msg_header.pkt.tag == car_ptr->msg_header.pkt.tag) &&
+	if ((iter_ptr->msg_header.pkt.u.hdr.context == car_ptr->msg_header.pkt.u.hdr.context) &&
+	    (iter_ptr->msg_header.pkt.u.hdr.tag == car_ptr->msg_header.pkt.u.hdr.tag) &&
 	    (iter_ptr->src == car_ptr->src))
 	{
-	    if (iter_ptr->msg_header.pkt.size > car_ptr->msg_header.pkt.size)
+	    if (iter_ptr->msg_header.pkt.u.hdr.size > car_ptr->msg_header.pkt.u.hdr.size)
 	    {
-		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.size, car_ptr->msg_header.pkt.size);
+		err_printf("Error: unex msg size %d > posted msg size %d\n", iter_ptr->msg_header.pkt.u.hdr.size, car_ptr->msg_header.pkt.u.hdr.size);
 		return -1;
 	    }
 	    /* dequeue the car from the unex_q */

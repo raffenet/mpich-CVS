@@ -54,6 +54,8 @@ int tcp_accept_connection()
 	/* send a keep acknowledgement */
 	ack = TCP_ACCEPT_CONNECTION;
 	beasy_send(bfd, &ack, 1);
+
+	bmake_nonblocking(bfd);
 	/* add the new connection to the read set */
 	TCP_Process.max_bfd = BFD_MAX(bfd, TCP_Process.max_bfd);
 	if (!BFD_ISSET(bfd, &TCP_Process.readset))
@@ -124,6 +126,8 @@ int tcp_accept_connection()
 	/* change the state of the vc to connected */
 	vc_ptr->data.tcp.connected = TRUE;
 	vc_ptr->data.tcp.connecting = FALSE;
+
+	bmake_nonblocking(vc_ptr->data.tcp.bfd);
 	
 	MPID_Thread_unlock(vc_ptr->lock);
     }

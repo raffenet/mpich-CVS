@@ -67,7 +67,7 @@ typedef enum {
     MPID_INVALID_PKT,
     MPID_EAGER_PKT,
     MPID_RNDV_REQUEST_TO_SEND_PKT,
-    MPID_RNDV_OK_TO_SEND_PKT,
+    MPID_RNDV_CLEAR_TO_SEND_PKT,
     MPID_RNDV_DATA_PKT,
     MPID_RDMA_ACK_PKT,
     MPID_RDMA_DATA_ACK_PKT,
@@ -75,27 +75,13 @@ typedef enum {
 } MPID_Packet_type;
 
 /* Communication agent request type */
-enum MM_CAR_TYPE_BITS
-{
-MM_NULL_CAR_BIT,
-MM_HEAD_CAR_BIT,
-MM_READ_CAR_BIT,
-MM_WRITE_CAR_BIT,
-MM_PACKER_CAR_BIT,
-MM_UNPACKER_CAR_BIT,
-MM_UNEX_HEAD_CAR_BIT,
-MM_UNEX_CAR_BIT
-};
-
 typedef int MM_CAR_TYPE;
-#define MM_NULL_CAR      (0x0)
-#define MM_HEAD_CAR      (0x1 << MM_HEAD_CAR_BIT)
-#define MM_READ_CAR      (0x1 << MM_READ_CAR_BIT)
-#define MM_WRITE_CAR     (0x1 << MM_WRITE_CAR_BIT)
-#define MM_PACKER_CAR    (0x1 << MM_PACKER_CAR_BIT)
-#define MM_UNPACKER_CAR  (0x1 << MM_UNPACKER_CAR_BIT)
-//#define MM_UNEX_HEAD_CAR (0x1 << MM_UNEX_HEAD_CAR_BIT)
-//#define MM_UNEX_CAR      (0x1 << MM_UNEX_CAR_BIT)
+#define MM_NULL_CAR      ( 0x0 )
+#define MM_HEAD_CAR      ( 0x1 )
+#define MM_READ_CAR      ( 0x1 << 1 )
+#define MM_WRITE_CAR     ( 0x1 << 2 )
+#define MM_PACKER_CAR    ( 0x1 << 3 )
+#define MM_UNPACKER_CAR  ( 0x1 << 4 )
 /*
 typedef int MM_CAR_TYPE;
 #define MM_NULL_CAR      0x00
@@ -109,6 +95,83 @@ typedef int MM_CAR_TYPE;
 */
 
 /* packet definitions */
+/*
+typedef struct MPID_Eager_pkt
+{
+    MPID_Packet_type type;
+    int context;
+    int tag;
+    int src;
+    int size;
+} MPID_Eager_pkt;
+
+typedef struct MPID_Request_to_send_pkt
+{
+    MPID_Packet_type type;
+    int context;
+    int tag;
+    int src;
+    int size;
+    struct MPID_Request *sender_req_ptr;
+} MPID_Request_to_send_pkt;
+*/
+typedef struct MPID_Header_pkt
+{
+    MPID_Packet_type type;
+    int context;
+    int tag;
+    int src;
+    int size;
+    struct MPID_Request *sender_req_ptr;
+} MPID_Header_pkt;
+
+typedef struct MPID_Clear_to_send_pkt
+{
+    MPID_Packet_type type;
+    struct MPID_Request *sender_req_ptr;
+    struct MPID_Request *receiver_req_ptr;
+} MPID_Clear_to_send_pkt;
+
+typedef struct MPID_Rndv_data_pkt
+{
+    MPID_Packet_type type;
+    int size;
+    struct MPID_Request *receiver_req_ptr;
+} MPID_Rndv_data_pkt;
+
+#ifdef WITH_VIA_RDMA_METHOD
+typedef struct MPID_Rdma_ack_pkt
+{
+    MPID_Packet_type type;
+} MPID_Rdma_ack_pkt;
+
+typedef struct MPID_Rdma_data_ack_pkt
+{
+    MPID_Packet_type type;
+} MPID_Rdma_data_ack_pkt;
+
+typedef struct MPID_Rdma_request_data_ack_pkt
+{
+    MPID_Packet_type type;
+} MPID_Rdma_request_data_ack_pkt;
+#endif
+
+typedef struct MPID_Packet
+{
+    union MPID_Packet_contents
+    {
+	MPID_Packet_type type;
+	MPID_Header_pkt hdr;
+	MPID_Clear_to_send_pkt cts;
+	MPID_Rndv_data_pkt rdata;
+#ifdef WITH_VIA_RDMA_METHOD
+	MPID_Rdma_ack_pkt rdma_ack;
+	MPID_Rdma_data_ack_pkt rdma_data_ack;
+	MPID_Rdma_request_data_ack_pkt rdma_req_data_ack;
+#endif
+    } u;
+} MPID_Packet;
+/*
 typedef struct MPID_Packet
 {
     MPID_Packet_type type;
@@ -117,6 +180,7 @@ typedef struct MPID_Packet
     int src;
     int size;
 } MPID_Packet;
+*/
 
 typedef union MM_Segment_buffer
 {

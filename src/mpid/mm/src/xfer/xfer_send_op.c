@@ -118,11 +118,11 @@ int xfer_send_op(MPID_Request *request_ptr, const void *buf, int count, MPI_Data
 	pRequest->mm.wcar[0].request_ptr = pRequest;
 	pRequest->mm.wcar[0].vc_ptr = mm_vc_from_communicator(request_ptr->comm, dest);
 	pRequest->mm.wcar[0].buf_ptr = &pRequest->mm.wcar[0].msg_header.buf;
-	pRequest->mm.wcar[0].msg_header.pkt.type = MPID_EAGER_PKT; /* this should be set by the method */
-	pRequest->mm.wcar[0].msg_header.pkt.context = request_ptr->comm->context_id;
-	pRequest->mm.wcar[0].msg_header.pkt.tag = request_ptr->mm.tag;
-	pRequest->mm.wcar[0].msg_header.pkt.src = request_ptr->comm->rank;
-	pRequest->mm.wcar[0].msg_header.pkt.size = 0;
+	pRequest->mm.wcar[0].msg_header.pkt.u.type = MPID_EAGER_PKT; /* this should be set by the method */
+	pRequest->mm.wcar[0].msg_header.pkt.u.hdr.context = request_ptr->comm->context_id;
+	pRequest->mm.wcar[0].msg_header.pkt.u.hdr.tag = request_ptr->mm.tag;
+	pRequest->mm.wcar[0].msg_header.pkt.u.hdr.src = request_ptr->comm->rank;
+	pRequest->mm.wcar[0].msg_header.pkt.u.hdr.size = 0;
 	pRequest->mm.wcar[0].opnext_ptr = &pRequest->mm.wcar[1];
 	pRequest->mm.wcar[0].next_ptr = &pRequest->mm.wcar[1];
 	pRequest->mm.wcar[0].qnext_ptr = NULL;

@@ -10,7 +10,7 @@ int mm_post_send(MM_Car *car_ptr)
 {
     dbg_printf("mm_post_send\n");
     car_ptr->vc_ptr->post_write(car_ptr->vc_ptr, car_ptr);
-    if (car_ptr->msg_header.pkt.size == 0)
+    if (car_ptr->msg_header.pkt.u.hdr.size == 0)
     {
 	/* enqueue zero byte messages directly into the completion queue */
 	car_ptr = car_ptr->next_ptr;

@@ -57,11 +57,11 @@ int xfer_start(MPID_Request *request_ptr)
 	if (pRequest->mm.rcar[0].type & MM_HEAD_CAR)
 	{
 	    /* add up the size of the message and put it in the packet */
-	    pRequest->mm.rcar[0].msg_header.pkt.size = 0;
+	    pRequest->mm.rcar[0].msg_header.pkt.u.hdr.size = 0;
 	    pCarIter = pRequest->mm.rcar->next_ptr;
 	    while (pCarIter)
 	    {
-		pRequest->mm.rcar[0].msg_header.pkt.size += pCarIter->request_ptr->mm.size;
+		pRequest->mm.rcar[0].msg_header.pkt.u.hdr.size += pCarIter->request_ptr->mm.size;
 		pCarIter = pCarIter->next_ptr;
 	    }
 	    /* post the recv */
@@ -80,12 +80,12 @@ int xfer_start(MPID_Request *request_ptr)
 	    if (pCar->type & MM_HEAD_CAR)
 	    {
 		/* add up the size of the message and put it in the packet */
-		pCar->msg_header.pkt.size = 0;
+		pCar->msg_header.pkt.u.hdr.size = 0;
 		/* figure out the total size by adding up the size fields of the data cars */
 		pCarIter = pCar->next_ptr; /* skip the header car when calculating the size */
 		while (pCarIter)
 		{
-		    pCar->msg_header.pkt.size += pCarIter->request_ptr->mm.size;
+		    pCar->msg_header.pkt.u.hdr.size += pCarIter->request_ptr->mm.size;
 		    pCarIter = pCarIter->next_ptr;
 		}
 		/* enqueue the send */
