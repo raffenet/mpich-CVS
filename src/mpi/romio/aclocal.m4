@@ -1248,6 +1248,30 @@ EOF
   fi
   rm -f conftest mpitest.c
 ])dnl
+define(PAC_TEST_MPI_GREQUEST,[
+  AC_MSG_CHECKING(support for generalized requests)
+  rm -f mpitest.c
+  cat > mpitest.c <<EOF
+#include "mpi.h"
+#include "stdio.h"
+    main(int argc, char **argv)
+    {
+       MPI_Request request;
+       MPI_Init(&argc, &argv);
+       MPI_Grequest_start(NULL, NULL, NULL, NULL, &request);
+       MPI_Finalize();
+     }
+EOF
+  rm -f conftest
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -x conftest ; then
+     AC_MSG_RESULT(yes)
+     AC_DEFINE(HAVE_MPI_GREQUEST,,[Define if generalized requests avaliable])
+  else
+     AC_MSG_RESULT(no)
+  fi
+  rm -f conftest mpitest.c
+])dnl
 dnl
 dnl
 dnl

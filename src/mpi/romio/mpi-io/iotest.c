@@ -38,6 +38,12 @@ Output Parameters:
 
 .N fortran
 @*/
+#ifdef HAVE_MPI_GREQUEST
+int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
+{
+	return (MPI_Test(request, flag, status));
+}
+#else
 int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 {
     int error_code;
@@ -80,3 +86,4 @@ int MPIO_Test(MPIO_Request *request, int *flag, MPI_Status *status)
 #endif /* MPI_hpux */
     return error_code;
 }
+#endif

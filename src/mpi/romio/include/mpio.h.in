@@ -26,8 +26,10 @@ typedef struct ADIOI_FileD *MPI_File;
 #endif
 
 /* no generalized requests as yet */
-#ifndef HAVE_MPI_PREQUEST
+#ifndef HAVE_MPI_GREQUEST
 typedef struct ADIOI_RequestD *MPIO_Request;  
+#else
+#define MPIO_Request MPI_Request
 #endif
 
 #ifndef HAVE_MPI_OFFSET

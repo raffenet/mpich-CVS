@@ -21,7 +21,7 @@ MPIO_OBJECTS = close.o read.o open.o write.o set_view.o \
       wr_atalle.o write_allb.o write_alle.o \
       get_posn_sh.o iread_sh.o read_sh.o write_sh.o \
       iwrite_sh.o seek_sh.o read_ord.o read_orde.o write_ordb.o \
-      read_ordb.o write_ord.o write_orde.o get_errh.o set_errh.o
+      read_ordb.o write_ord.o write_orde.o get_errh.o set_errh.o mpiu_greq.o
 
 MPIO_TMP_POBJECTS = close.p read.p open.p write.p get_extent.p \
       iread.p iwrite.p iotest.p iowait.p seek.p \

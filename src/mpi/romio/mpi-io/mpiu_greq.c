@@ -1,0 +1,34 @@
+#include <string.h>
+#include "mpioimpl.h"
+
+int MPIU_Greq_query_fn(void *extra_state, MPI_Status *status)
+{
+	int foo;
+
+	/* can't touch user's MPI_ERROR, so hold it for a moment */
+	foo = status->MPI_ERROR;
+
+	/* get the status from the blocking operation */
+	memcpy(status, extra_state, sizeof(MPI_Status));
+
+	/* restore MPI_ERROR to whatever it had when we got it */
+	status->MPI_ERROR = foo;
+
+	/* and let Test|Wait know we weren't canceled */
+	MPI_Status_set_cancelled(status, 0);
+
+	/* the MPI_Status structure is a convienent place to stash the return
+	 * code of the blocking operation */
+	return ((MPI_Status*)extra_state)->MPI_ERROR;
+}
+
+int MPIU_Greq_free_fn(void *extra_state)
+{
+	free(extra_state);
+	return MPI_SUCCESS;
+}
+int MPIU_Greq_cancel_fn(void *extra_state, int complete)
+{
+	/* can't cancel */
+	return MPI_SUCCESS;
+}

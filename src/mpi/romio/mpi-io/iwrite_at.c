@@ -40,6 +40,34 @@ Output Parameters:
 
 .N fortran
 @*/
+#ifdef HAVE_MPI_GREQUEST
+#include "mpiu_greq.h"
+
+int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
+                       int count, MPI_Datatype datatype, 
+                       MPIO_Request *request)
+{
+	MPI_Status *status;
+	int errcode;
+
+	status = (MPI_Status*)malloc(sizeof(MPI_Status));
+
+	/* for now, no threads or anything fancy. 
+	 * just call the blocking version */
+	errcode = MPI_File_write_at(fh, offset, buf, count, datatype, status); 
+	/* ROMIO-1 doesn't do anything with status.MPI_ERROR */
+	status->MPI_ERROR = errcode;
+
+	/* kick off the request */
+	MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
+			MPIU_Greq_cancel_fn, status, request);
+	/* but we did all the work already */
+	MPI_Grequest_complete(*request);
+
+	/* passed the buck to the blocking version...*/
+	return MPI_SUCCESS;
+}
+#else
 int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
@@ -173,3 +201,4 @@ int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, void *buf,
 #endif /* MPI_hpux */
     return error_code;
 }
+#endif

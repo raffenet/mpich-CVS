@@ -859,7 +859,6 @@ if test -n "$arch_IRIX"; then
 fi
 
 AC_HAVE_FUNCS(memalign)
-PAC_TEST_MPIR_STATUS_SET_BYTES
 
 if test $NOF77 = 0 ; then
     echo "checking Fortran external names"
@@ -1204,10 +1203,19 @@ if test $FROM_MPICH2 = 1 ; then
    TEST_LIBNAME=""
    MPIRUN=$MPI_BIN_DIR/mpiexec
    AC_DEFINE(HAVE_STATUS_SET_BYTES,,[Define if status_set_bytes available])
+   AC_DEFINE(HAVE_MPI_GREQUEST,,[Define if generalized requests avaliable])
 fi
 #
 if test $MPI != "mpich" -o "$FROM_MPICH2" = 1 ; then
    AC_DEFINE(PRINT_ERR_MSG,,[Define for printing error messages])
+fi
+#
+# feature tests:  we can't test features if building as part of MPICH because
+# we don't yet have an implementation against which we can test
+#
+if test "$FROM_MPICH2" = 0 -a "$FROM_MPICH" = 0 ; then
+   PAC_TEST_MPIR_STATUS_SET_BYTES
+   PAC_TEST_MPI_GREQUEST
 fi
 #
 if test -z "$TEST_CC" ; then
