@@ -1,3 +1,3 @@
-SUBDIRS_mpe_dir = mpe
+SUBDIRS_mpe_dir = mpe2
 SUBDIRS = mpid mpi util nameserv binding env @mpe_dir@ pmi pm .
-NOTSIMPLEMAKE_SUBDIRS = mpe
+NOTSIMPLEMAKE_SUBDIRS = mpe2
