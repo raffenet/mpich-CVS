@@ -298,11 +298,36 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
 /* This isn't quite right, since we need to distinguish between multiple 
    user threads and multiple implementation threads.
  */
+#define MPICH_DEBUG_MAX_REFCOUNT 64
 #ifdef MPICH_SINGLE_THREADED
+#ifdef MPICH_DEBUG_HANDLES
+#define MPIU_Object_set_ref(objptr,val) \
+    if (1) {\
+        fprintf( stderr, "set %x refcount to %d in %s:%d\n", objptr, val, __FILE__, __LINE__ );}\
+    ((MPIU_Handle_head*)(objptr))->ref_count = val
+
+#define MPIU_Object_add_ref(objptr) \
+    if (1) {\
+       fprintf( stderr, "incr %x refcount in %s:%d\n", objptr, __FILE__,__LINE__ );\
+    }\
+    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){\
+        fprintf( stderr, "Invalid refcount in %x incr at %s:%d\n", objptr, __FILE__, __LINE__ );}\
+    ((MPIU_Handle_head*)(objptr))->ref_count++
+#define MPIU_Object_release_ref(objptr,inuse_ptr) \
+    if (1) {\
+       fprintf( stderr, "decr %x refcount in %s:%d\n", objptr, __FILE__,__LINE__ );\
+    }\
+    if (((MPIU_Handle_head*)(objptr))->ref_count > MPICH_DEBUG_MAX_REFCOUNT){\
+        fprintf( stderr, "Invalid refcount in %x decr at %s:%d\n", objptr, __FILE__, __LINE__ );}\
+    *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count
+#else
+#define MPIU_Object_set_ref(objptr,val) \
+    ((MPIU_Handle_head*)(objptr))->ref_count = val
 #define MPIU_Object_add_ref(objptr) \
     ((MPIU_Handle_head*)(objptr))->ref_count++
 #define MPIU_Object_release_ref(objptr,inuse_ptr) \
     *(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count
+#endif
 #else
 /* These can be implemented using special assembly language operations
    on most processors.  If no such operation is available, then each
@@ -325,6 +350,8 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
 #else
 #abort "Atomic updates specified but no code for this platform"
 #endif
+#define MPIU_Object_set_ref(objptr,val) \
+    ((MPIU_Handle_head*)(objptr))->ref_count = val
 #define MPIU_Object_add_ref(objptr) \
     MPID_Atomic_incr(&((objptr)->ref_count))
 #define MPIU_Object_release_ref(objptr,inuse_ptr) \

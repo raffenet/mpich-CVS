@@ -319,8 +319,15 @@ case "$enable_threads" in
 esac
 dnl
 dnl enable-g
-case "$enable_g" in 
-    no|none)
+# strip off multiple options, separated by commas
+save_IFS="$IFS"
+IFS=","
+for option in $enable_g ; do
+    case "$option" in 
+    no|non)
+    ;;
+    handle)
+    AC_DEFINE(MPICH_DEBUG_HANDLES,,[Define to enable handle checking])
     ;;
     mem|all|yes)
     AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
@@ -330,7 +337,9 @@ case "$enable_g" in
     *)
     AC_MSG_WARN([Unknown value $enable_g for enable-g])
     ;;
-esac
+    esac
+done
+IFS="$save_IFS"
 
 if test "$enable_f77" = "yes" ; then
    subsystems="$subsystems src/binding/f77"

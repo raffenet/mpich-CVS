@@ -243,6 +243,9 @@ void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
 	/* Unlock */
 	MPID_Allocation_unlock();
 	/* printf ("returning info %x\n", ptr->handle ); */
+#ifdef MPICH_DEBUG_HANDLES
+	fprintf( stderr, "Allocating handle %x\n", ptr );
+#endif
 	return ptr;
     }
 
@@ -262,6 +265,9 @@ void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
 	    objmem->avail = ptr->next;
 	/* unlock */
 	MPID_Allocation_unlock();
+#ifdef MPICH_DEBUG_HANDLES
+	fprintf( stderr, "Allocating handle %x\n", ptr );
+#endif
 	return ptr;
     }
 
@@ -275,6 +281,9 @@ void *MPIU_Handle_obj_alloc( MPIU_Object_alloc_t *objmem )
 
     /* Unlock */
     MPID_Allocation_unlock();
+#ifdef MPICH_DEBUG_HANDLES
+	fprintf( stderr, "Allocating handle %x\n", ptr );
+#endif
     return ptr;
 }   
 
