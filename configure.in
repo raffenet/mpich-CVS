@@ -760,7 +760,11 @@ if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
     ac_cv_prog_f90_cross=yes
     ac_cv_prog_cxx_cross=yes
 fi
+# Look for ar.  If we fail, abort
 AC_CHECK_PROGS(AR,ar)
+if test -z "$AR" ; then
+    AC_MSG_ERROR([The program ar is required for building MPICH2.  Make sure that your path includes ar])
+fi
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
