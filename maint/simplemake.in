@@ -1075,7 +1075,7 @@ sub TargetClean {
     print FD "clean:";
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
     print FD "$newline";
-    print FD "\t-rm -f *.o \${srcdir}/*.o *~ $programnames$newline";
+    print FD "\t-rm -f *.o \${srcdir}/*.o $programnames$newline";
     if ($do_sharedlibs) {
 	print FD "\t-rm -f *.lo \${srcdir}/*.lo$newline";
     }
