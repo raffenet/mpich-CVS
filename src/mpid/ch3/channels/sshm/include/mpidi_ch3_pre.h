@@ -208,13 +208,28 @@ extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
 /*
  * MPIDI_CH3_WIN_DECL (additions to MPID_Win)
  */
+/* shm_structs - array of shm structs containing shm keys and base addresses of windows in 
+                 shared memory of all processes
+   offsets - offset of address passed to win_create from base of allocated shared memory.
+             array (one for each process)
+   locks - pointer to an shm struct containing the key and base address of shared memory 
+           for the locks. Allocated and initialized by rank 0. The first comm_size entries 
+           starting from locks->addr contain the MPIDU_Process_lock_t type for each process.
+           The next comm_size entries contain the shared lock state for each process.
+   pt_rma_excl_lock - set to 1 if this process has called MPI_Win_lock(exclusive)
+   epoch_grp_ptr, epoch_grp_ranks_in_win - used for post-start-complete-wait 
+*/
+
 #define MPIDI_CH3_WIN_DECL									\
 MPIDI_CH3I_Shmem_block_request_result *shm_structs;						\
 void **offsets;									                \
-MPID_Group *epoch_grp_ptr;									\
-int *epoch_grp_ranks_in_win;
+MPIDI_CH3I_Shmem_block_request_result *locks;							\
+int pt_rma_excl_lock;								                \
+MPID_Group *access_epoch_grp_ptr;								\
+int *access_epoch_grp_ranks_in_win;								\
+MPID_Group *exposure_epoch_grp_ptr;								\
+int *exposure_epoch_grp_ranks_in_win;
 
-/*
 #define MPIDI_CH3_IMPLEMENTS_START_EPOCH
 #define MPIDI_CH3_IMPLEMENTS_END_EPOCH
 #define MPIDI_CH3_IMPLEMENTS_PUT
@@ -224,6 +239,7 @@ int *epoch_grp_ranks_in_win;
 #define MPIDI_CH3_IMPLEMENTS_WIN_FREE
 #define MPIDI_CH3_IMPLEMENTS_ALLOC_MEM
 #define MPIDI_CH3_IMPLEMENTS_FREE_MEM
-*/
+#define MPIDI_CH3_IMPLEMENTS_START_PT_EPOCH
+#define MPIDI_CH3_IMPLEMENTS_END_PT_EPOCH
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */

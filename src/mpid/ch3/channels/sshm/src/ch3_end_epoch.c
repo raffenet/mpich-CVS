@@ -21,15 +21,15 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_END_EPOCH);
 
-    grp_size = win_ptr->epoch_grp_ptr->size;
-    ranks_in_win = win_ptr->epoch_grp_ranks_in_win;
-
     MPIR_Nest_incr();
 
     NMPI_Comm_rank(win_ptr->comm, &rank);
 
     if (access_or_exposure == MPIDI_CH3_ACCESS_EPOCH) {
         /* this is a Win_complete. Send a 0-byte sync message to each target process */
+
+        grp_size = win_ptr->access_epoch_grp_ptr->size;
+        ranks_in_win = win_ptr->access_epoch_grp_ranks_in_win;
 
         for (i=0; i<grp_size; i++)
         {
@@ -48,8 +48,11 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
     }
 
     else if (access_or_exposure == MPIDI_CH3_EXPOSURE_EPOCH) { 
-        /* This is a Win_post. */
+        /* This is a Win_wait. */
                         
+        grp_size = win_ptr->exposure_epoch_grp_ptr->size;
+        ranks_in_win = win_ptr->exposure_epoch_grp_ranks_in_win;
+
         /* Recv a 0-byte message from the origin processes */
         for (i=0; i<grp_size; i++)
         {
@@ -71,13 +74,17 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr)
         /* return error */
     }
 
-    MPIR_Nest_decr();
-
-    MPIU_Free(win_ptr->epoch_grp_ranks_in_win);
-
-    MPIR_Group_release(win_ptr->epoch_grp_ptr);
+    if (access_or_exposure == MPIDI_CH3_ACCESS_EPOCH) {
+        MPIU_Free(win_ptr->access_epoch_grp_ranks_in_win);
+        MPIR_Group_release(win_ptr->access_epoch_grp_ptr);
+    }
+    else {
+        MPIU_Free(win_ptr->exposure_epoch_grp_ranks_in_win);
+        MPIR_Group_release(win_ptr->exposure_epoch_grp_ptr);
+    }
 
  fn_exit:
+    MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_END_EPOCH);
     return mpi_errno;
 }

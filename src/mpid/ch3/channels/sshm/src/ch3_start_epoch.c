@@ -20,12 +20,12 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_START_EPOCH);
 
+    MPIR_Nest_incr();
+
     if (access_or_exposure == MPIDI_CH3_ACCESS_AND_EXPOSURE_EPOCH) {
         /* this is a win_fence. just do a barrier. */
 
-        MPIR_Nest_incr();
         mpi_errno = NMPI_Barrier(win_ptr->comm);
-        MPIR_Nest_decr();
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
         {
@@ -70,8 +70,6 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
         }
         
         grp = group_ptr->handle;
-        
-        MPIR_Nest_incr();
         
         mpi_errno = NMPI_Comm_group(win_ptr->comm, &win_grp);
         /* --BEGIN ERROR HANDLING-- */
@@ -143,16 +141,21 @@ int MPIDI_CH3_Start_epoch(MPID_Group *group_ptr, int access_or_exposure, int ass
             }
         }    
 
-        MPIR_Nest_decr();
-
         /* save the ranks_in_win and group_ptr in win object */
-        win_ptr->epoch_grp_ranks_in_win = ranks_in_win;
-        win_ptr->epoch_grp_ptr = group_ptr;
-        MPIU_Object_add_ref( group_ptr );
+        if (access_or_exposure == MPIDI_CH3_ACCESS_EPOCH) {
+            win_ptr->access_epoch_grp_ranks_in_win = ranks_in_win;
+            win_ptr->access_epoch_grp_ptr = group_ptr;
+        }
+        else {
+            win_ptr->exposure_epoch_grp_ranks_in_win = ranks_in_win;
+            win_ptr->exposure_epoch_grp_ptr = group_ptr;
+        }
 
+        MPIU_Object_add_ref( group_ptr );
     }
 
  fn_exit:
+    MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_START_EPOCH);
     return mpi_errno;
 }

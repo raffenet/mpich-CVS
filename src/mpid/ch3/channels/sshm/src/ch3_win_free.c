@@ -17,6 +17,7 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
 {
     int mpi_errno = MPI_SUCCESS, comm_size, rank, i;
     MPID_Comm *comm_ptr;
+    MPIDU_Process_lock_t *locks_base_addr;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_WIN_FREE);
 
@@ -55,7 +56,7 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
     MPIU_Free((*win_ptr)->pt_rma_puts_accs);
     
     for (i=0; i<comm_size; i++) {
-        if (i != rank) {
+        if ((i != rank) && ((*win_ptr)->shm_structs[i].size != 0)) {
             mpi_errno = MPIDI_CH3I_SHM_Release_mem( &((*win_ptr)->shm_structs[i]) );
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
@@ -66,7 +67,19 @@ int MPIDI_CH3_Win_free(MPID_Win **win_ptr)
             /* --END ERROR HANDLING-- */
         }
     }
-    
+
+    if (rank != 0) {
+        mpi_errno = MPIDI_CH3I_SHM_Release_mem( (*win_ptr)->locks );
+    }
+    else {
+        locks_base_addr = (*win_ptr)->locks->addr;
+        for (i=0; i<comm_size; i++) 
+            MPIDU_Process_lock_free(&locks_base_addr[i]);
+        
+        mpi_errno = MPIDI_CH3I_SHM_Unlink_and_detach_mem( (*win_ptr)->locks );
+    }
+
+    MPIU_Free((*win_ptr)->locks);
     MPIU_Free((*win_ptr)->shm_structs);
     MPIU_Free((*win_ptr)->offsets);
 

@@ -21,7 +21,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_END_EPOCH
         {
-            mpi_errno = MPIDI_CH3_End_epoch(MPIDI_CH3_EXPOSURE_EPOCH, win_ptr);
+            mpi_errno = MPIDI_CH3_End_epoch(MPIDI_CH3_ACCESS_EPOCH, win_ptr);
         }
 #       endif
     }
@@ -354,11 +354,10 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         }
         win_ptr->rma_ops_list = NULL;
     
+        /* free the group stored in window */
+        MPIR_Group_release(win_ptr->start_group_ptr);
+        win_ptr->start_group_ptr = NULL; 
     }
-
-    /* free the group stored in window */
-    MPIR_Group_release(win_ptr->start_group_ptr);
-    win_ptr->start_group_ptr = NULL; 
 
  fn_exit:
     if (nest_level_inc)

@@ -19,6 +19,8 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     int mpi_errno=MPI_SUCCESS, i, comm_size, rank, found, result;
     void **tmp_buf, *offset=0;
     MPIDI_CH3I_Alloc_mem_list_t *curr_ptr;
+    MPIDU_Process_lock_t *locks_base_addr;
+    int *shared_lock_state_baseaddr;
         
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_WIN_CREATE);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
@@ -28,6 +30,8 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     /* The first part of the code below is the same as in MPID_Win_create, until the point 
        where all processes check whether win_base is in shared memory. */
 
+    MPIR_Nest_incr();
+        
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
     
@@ -56,8 +60,6 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     (*win_ptr)->my_pt_rma_puts_accs = 0;
     
     
-    MPIR_Nest_incr();
-        
     mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &((*win_ptr)->comm));
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -136,8 +138,6 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     }
     /* --END ERROR HANDLING-- */
     
-    MPIR_Nest_decr();
-    
     for (i=0; i<comm_size; i++)
     {
         (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
@@ -156,16 +156,26 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
        If even one process's win_base is not in shared memory, we revert to the generic 
        implementation of RMA in CH3 by setting MPIDI_Use_optimized_rma=0. */
 
+    /* For the special case where win_base is NULL, we treat it as if
+     * it is found in shared memory, so as not to disable
+       optimizations. For example, where the window is allocated in
+       shared memory on one process and others call win_create with NULL. */
+
     curr_ptr = MPIDI_CH3I_Alloc_mem_list_head;
-    found = 0;
-    while (curr_ptr != NULL) {
-        if ((curr_ptr->shm_struct->addr <= base) && 
-            (base < (void *) ((char *) curr_ptr->shm_struct->addr + curr_ptr->shm_struct->size))) {
-            found = 1;
-            offset = (void *) ((char *) curr_ptr->shm_struct->addr - (char *) base);
-            break;
+    if (base == NULL) {
+        found = 1;
+    }
+    else {
+        found = 0;
+        while (curr_ptr != NULL) {
+            if ((curr_ptr->shm_struct->addr <= base) && 
+                (base < (void *) ((char *) curr_ptr->shm_struct->addr + curr_ptr->shm_struct->size))) {
+                found = 1;
+                offset = (void *) ((char *) curr_ptr->shm_struct->addr - (char *) base);
+                break;
+            }
+            curr_ptr = curr_ptr->next;
         }
-        curr_ptr = curr_ptr->next;
     }
 
     mpi_errno = NMPI_Allreduce(&found, &result, 1, MPI_INT, MPI_BAND, comm_ptr->handle);
@@ -180,6 +190,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     if (result == 0) { /* not all in shared memory, can't be optimized */
         MPIDI_Use_optimized_rma = 0;
         (*win_ptr)->shm_structs = NULL;
+        (*win_ptr)->locks = NULL;
     }
     else {   /* all in shared memory. can be optimized */
         MPIDI_Use_optimized_rma = 1;
@@ -205,19 +216,26 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
             goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
-        
-        /* copy this process's shmem struct into right location in array of shmem structs */
-	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-        memcpy(&((*win_ptr)->shm_structs[rank]), curr_ptr->shm_struct, 
-               sizeof(MPIDI_CH3I_Shmem_block_request_result));
-	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 
-        /* copy this process's offset into right location in array of offsets */
-        (*win_ptr)->offsets[rank] = offset;
+        if (base != NULL) {
+            /* copy this process's shmem struct into right location in array of shmem structs */
+            MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
+            memcpy(&((*win_ptr)->shm_structs[rank]), curr_ptr->shm_struct, 
+                   sizeof(MPIDI_CH3I_Shmem_block_request_result));
+            MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+            
+            /* copy this process's offset into right location in array of offsets */
+            (*win_ptr)->offsets[rank] = offset;
+        }
+        else {
+            (*win_ptr)->shm_structs[rank].addr = NULL;
+            (*win_ptr)->shm_structs[rank].size = 0;
+
+            (*win_ptr)->offsets[rank] = 0;
+        }
 
         /* collect everyone's shm_structs and offsets */
 
-        MPIR_Nest_incr();
         mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                    (*win_ptr)->shm_structs, 
                                    sizeof(MPIDI_CH3I_Shmem_block_request_result), 
@@ -235,8 +253,6 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
                                    (*win_ptr)->offsets, sizeof(void *), 
                                    MPI_BYTE, comm_ptr->handle);   
 
-        MPIR_Nest_decr();
-        
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
         {
@@ -245,12 +261,14 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
         }
         /* --END ERROR HANDLING-- */
 
-        /* each process now attaches to the shared memory segments of other processes, so that 
-           direct RMA is possible. We use the addr field in the shmem struct to store the 
-           newly mapped addresses. */
+        
+        /* each process now attaches to the shared memory segments
+           (windows) of other processes (if they are non-zero), so that direct RMA is
+           possible. The newly mapped addresses are stored in the addr
+           field in the shmem struct. */ 
 
         for (i=0; i<comm_size; i++) {
-            if (i != rank) {
+            if ((i != rank) && ((*win_ptr)->shm_structs[i].size != 0)) {
                 mpi_errno = MPIDI_CH3I_SHM_Attach_notunlink_mem( &((*win_ptr)->shm_structs[i]) );
 
                 /* --BEGIN ERROR HANDLING-- */
@@ -262,12 +280,85 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
                 /* --END ERROR HANDLING-- */
             }
         }
+
+
+        /* allocate memory for the locks and the shared lock
+         * state. locks are needed for accumulate operations and for
+         *  passive target RMA. */
+        (*win_ptr)->locks = (MPIDI_CH3I_Shmem_block_request_result *) 
+            MPIU_Malloc(sizeof(MPIDI_CH3I_Shmem_block_request_result));
+
+        /* --BEGIN ERROR HANDLING-- */
+        if ((*win_ptr)->locks == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+
+        /* Rank 0 allocates shared memory for an array of locks, one for each process, and 
+           for an array of shared lock states and initializes the
+           locks and the shared lock state. */  
+        if (rank == 0) {
+            mpi_errno = MPIDI_CH3I_SHM_Get_mem(comm_size * sizeof(MPIDU_Process_lock_t)
+                                               + comm_size * sizeof(int), 
+                                               (*win_ptr)->locks);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS) {
+                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+
+            locks_base_addr = (*win_ptr)->locks->addr;
+            for (i=0; i<comm_size; i++)
+                MPIDU_Process_lock_init(&locks_base_addr[i]);
+
+            shared_lock_state_baseaddr = (int *) ((char *) (*win_ptr)->locks->addr + 
+                                         comm_size * sizeof(MPIDU_Process_lock_t));
+            /* initialize shared lock state of all processes to 0 */
+            for (i=0; i<comm_size; i++)
+                shared_lock_state_baseaddr[i] = 0;
+        }
+
+        
+        /* rank 0 broadcasts the locks struct to others so that they can attach to the shared 
+           memory containing the locks */
+
+        mpi_errno = NMPI_Bcast((*win_ptr)->locks, 
+                               sizeof(MPIDI_CH3I_Shmem_block_request_result), MPI_BYTE,
+                               0, comm_ptr->handle);   
+
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+
+        /* Processes other than rank 0 attach to the shared memory containing the lock
+           structure. */
+        if (rank != 0) {
+            mpi_errno = MPIDI_CH3I_SHM_Attach_notunlink_mem( (*win_ptr)->locks );
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+        }
     }
 
-    (*win_ptr)->epoch_grp_ptr = NULL;
-    (*win_ptr)->epoch_grp_ranks_in_win = NULL;
+    (*win_ptr)->access_epoch_grp_ptr = NULL;
+    (*win_ptr)->access_epoch_grp_ranks_in_win = NULL;
+    (*win_ptr)->exposure_epoch_grp_ptr = NULL;
+    (*win_ptr)->exposure_epoch_grp_ranks_in_win = NULL;
+    (*win_ptr)->pt_rma_excl_lock = 0;
         
  fn_exit:
+    MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_WIN_CREATE);
     return mpi_errno;
 }

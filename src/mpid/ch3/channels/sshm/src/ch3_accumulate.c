@@ -22,6 +22,7 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     void *target_addr, *tmp_buf;
     MPI_Aint true_lb, true_extent, extent;
     MPI_User_function *uop;
+    MPIDU_Process_lock_t *locks_base_addr;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ACCUMULATE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ACCUMULATE);
@@ -30,10 +31,23 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                   (long) win_ptr->offsets[target_rank] +
                   win_ptr->disp_units[target_rank] * target_disp;
 
+    locks_base_addr = win_ptr->locks->addr;
+
     if (op == MPI_REPLACE) {
         /* simply do a memcpy */
+
+        /* all accumulate operations need to be done atomically. If the process does 
+           not already have an exclusive lock, acquire it */
+
+        if (win_ptr->pt_rma_excl_lock == 0)
+            MPIDU_Process_lock( &locks_base_addr[target_rank] );
+
         mpi_errno = MPIR_Localcopy (origin_addr, origin_count, origin_datatype, 
                                     target_addr, target_count, target_datatype);
+
+        if (win_ptr->pt_rma_excl_lock == 0)
+            MPIDU_Process_unlock( &locks_base_addr[target_rank] );
+
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
         {
@@ -61,7 +75,13 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
         if ((HANDLE_GET_KIND(target_datatype) == HANDLE_KIND_BUILTIN) &&
             (HANDLE_GET_KIND(origin_datatype) == HANDLE_KIND_BUILTIN)) {
                 /* basic datatype on origin and target */
-                (*uop)(origin_addr, target_addr, &origin_count, &origin_datatype);
+            if (win_ptr->pt_rma_excl_lock == 0)
+                MPIDU_Process_lock( &locks_base_addr[target_rank] );
+
+            (*uop)(origin_addr, target_addr, &origin_count, &origin_datatype);
+
+            if (win_ptr->pt_rma_excl_lock == 0)
+                MPIDU_Process_unlock( &locks_base_addr[target_rank] );
         }
         else {
 
@@ -109,7 +129,13 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
             
             if (HANDLE_GET_KIND(target_datatype) == HANDLE_KIND_BUILTIN) {
                 /* basic datatype on target. call uop. */
+                if (win_ptr->pt_rma_excl_lock == 0)
+                    MPIDU_Process_lock( &locks_base_addr[target_rank] );
+
                 (*uop)(tmp_buf, target_addr, &target_count, &target_datatype);
+
+                if (win_ptr->pt_rma_excl_lock == 0)
+                    MPIDU_Process_unlock( &locks_base_addr[target_rank] );
             }
             else
             {
@@ -152,6 +178,9 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                 
                 type = dtp->eltype;
                 type_size = MPID_Datatype_get_basic_size(type);
+
+                if (win_ptr->pt_rma_excl_lock == 0)
+                    MPIDU_Process_lock( &locks_base_addr[target_rank] );
                 for (i=0; i<vec_len; i++)
                 {
                     count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
@@ -159,6 +188,8 @@ int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                            (char *)target_addr + MPIU_PtrToInt( dloop_vec[i].DLOOP_VECTOR_BUF ),
                            &count, &type);
                 }
+                if (win_ptr->pt_rma_excl_lock == 0)
+                    MPIDU_Process_unlock( &locks_base_addr[target_rank] );
                 
                 MPID_Segment_free(segp);
                 MPIU_Free(dloop_vec);

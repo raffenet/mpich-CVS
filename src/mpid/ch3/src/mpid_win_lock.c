@@ -20,7 +20,7 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_START_PT_EPOCH
         {
-            mpi_errno = MPIDI_CH3_Win_start_PT_epoch(lock_type, dest, assert, win_ptr);
+            mpi_errno = MPIDI_CH3_Start_PT_epoch(lock_type, dest, assert, win_ptr);
         }
 #       endif
     }

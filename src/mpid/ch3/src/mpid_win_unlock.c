@@ -23,7 +23,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_END_PT_EPOCH
         {
-            mpi_errno = MPIDI_CH3_Win_End_PT_epoch(dest, win_ptr);
+            mpi_errno = MPIDI_CH3_End_PT_epoch(dest, win_ptr);
         }
 #       endif
     }
