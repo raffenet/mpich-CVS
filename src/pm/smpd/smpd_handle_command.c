@@ -3754,63 +3754,16 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     }
     else
     {
-	ULONG len = SMPD_MAX_ACCOUNT_LENGTH;
-	char *env;
-	env = getenv("MPICH_SPN");
-	if (env)
+	result = smpd_lookup_spn(target, SMPD_MAX_ACCOUNT_LENGTH, host, port);
+	if (result != SMPD_SUCCESS)
 	{
-	    if (strlen(env) > 1)
-	    {
-		strncpy(target, env, SMPD_MAX_ACCOUNT_LENGTH);
-	    }
-	    else
-	    {
-		switch (env[0])
-		{
-		case 'p':
-		    GetUserNameEx(NameUserPrincipal, target, &len);
-		    break;
-		case 'd':
-		    GetUserNameEx(NameDnsDomain, target, &len);
-		    break;
-		case 'n':
-		    GetUserNameEx(NameSamCompatible, target, &len);
-		    break;
-		case 'x':
-		    target = NULL;
-		    break;
-		default:
-		    GetUserName(target, &len);
-		    break;
-		}
-	    }
+	    smpd_err_printf("unable to lookup the smpd SPN.\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
 	}
-	else
+	if (*target == '\0')
 	{
-	    /*result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);*/
-	    result = DsMakeSpn(SMPD_SERVICE_NAME, NULL, host, (USHORT)port, NULL, &len, target);
-	    if (result != ERROR_SUCCESS)
-	    {
-		smpd_translate_win_error(result, err_msg, 255, NULL);
-		smpd_err_printf("DsMakeSpn failed: %s\n", err_msg);
-		target = NULL;
-	    }
-	    /*
-	    char **spns;
-	    result = DsGetSpn(DS_SPN_DNS_HOST, SMPD_SERVICE_NAME, NULL, port, 1, &host, NULL, &len, &spns);
-	    if (result != ERROR_SUCCESS)
-	    {
-		smpd_translate_win_error(result, err_msg, 255, NULL);
-		smpd_err_printf("DsGetSpn failed: %s\n", err_msg);
-		target = NULL;
-	    }
-	    MPIU_Strncpy(target, spns[0], SMPD_MAX_ACCOUNT_LENGTH);
-	    DsFreeSpnArray(1, spns);
-	    */
-	    /*MPIU_Snprintf(target, SMPD_MAX_ACCOUNT_LENGTH, "%s/%s:%d", SMPD_SERVICE_NAME, host, port);*/
-	    /*GetUserNameEx(NameUserPrincipal, target, &len);*/
-	    /*GetUserNameEx(NameDnsDomain, target, &len);*/
-	    /*GetUserNameEx(NameSamCompatible, target, &len);*/
+	    target = NULL;
 	}
     }
     result = smpd_create_sspi_client_context(&sspi_context);
@@ -4065,7 +4018,6 @@ fn_fail:
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr)
 {
 #ifdef HAVE_WINDOWS_H
-    /*int result;*/
     char err_msg[256];
     SEC_WINNT_AUTH_IDENTITY *identity = NULL;
     SECURITY_STATUS sec_result, sec_result_copy;
@@ -4075,10 +4027,6 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
     TimeStamp ts;
     SecPkgInfo *info;
     smpd_sspi_client_context_t *sspi_context;
-    /*
-    char *target, target_[SMPD_MAX_ACCOUNT_LENGTH];
-    target = target_;
-    */
 
     smpd_enter_fn(FCNAME);
 
@@ -4108,62 +4056,6 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-
-#if 0
-    if (smpd_process.UserAccount[0] != '\0')
-    {
-	strncpy(target, smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH);
-    }
-    else
-    {
-	ULONG len = SMPD_MAX_ACCOUNT_LENGTH;
-	char *env;
-	env = getenv("MPICH_SPN");
-	if (env)
-	{
-	    if (strlen(env) > 1)
-	    {
-		strncpy(target, env, SMPD_MAX_ACCOUNT_LENGTH);
-	    }
-	    else
-	    {
-		switch (env[0])
-		{
-		case 'p':
-		    GetUserNameEx(NameUserPrincipal, target, &len);
-		    break;
-		case 'd':
-		    GetUserNameEx(NameDnsDomain, target, &len);
-		    break;
-		case 'n':
-		    GetUserNameEx(NameSamCompatible, target, &len);
-		    break;
-		case 'x':
-		    target = NULL;
-		    break;
-		default:
-		    GetUserName(target, &len);
-		    break;
-		}
-	    }
-	}
-	else
-	{
-	    /*Add DsServerRegisterSpn() or DsWriteAccountSpn() to the service installation code? */
-	    /*result = DsMakeSpn(SMPD_SERVICE_NAME, SMPD_SERVICE_NAME, NULL, 0, NULL, &len, target);*/
-	    result = DsMakeSpn(SMPD_SERVICE_NAME, NULL, host, (USHORT)port, NULL, &len, target);
-	    if (result != ERROR_SUCCESS)
-	    {
-		smpd_translate_win_error(result, err_msg, 255, NULL);
-		smpd_err_printf("DsMakeSpn failed: %s\n", err_msg);
-		target[0] = '\0';
-	    }
-	    /*GetUserNameEx(NameUserPrincipal, target, &len);*/
-	    /*GetUserNameEx(NameDnsDomain, target, &len);*/
-	    /*GetUserNameEx(NameSamCompatible, target, &len);*/
-	}
-    }
-#endif
 
     inbound_descriptor.ulVersion = SECBUFFER_VERSION;
     inbound_descriptor.cBuffers = 1;
@@ -4208,7 +4100,6 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
     sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
 	&sspi_context->credential,
 	&sspi_context->context,
-	/*target,*/
 	sspi_context->target,
 	/*ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT,*/
 	ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_CONFIDENTIALITY | ISC_REQ_MUTUAL_AUTH | ISC_REQ_DELEGATE,

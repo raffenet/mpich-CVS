@@ -119,6 +119,9 @@
 				RelativePath=".\smpd_database.c">
 			</File>
 			<File
+				RelativePath=".\smpd_delegation.c">
+			</File>
+			<File
 				RelativePath=".\smpd_do_console.c">
 			</File>
 			<File

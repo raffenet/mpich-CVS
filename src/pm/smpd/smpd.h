@@ -794,5 +794,6 @@ int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context);
 int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, short port);
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr);
 int smpd_register_spn(const char *dc, const char *dn, const char *dh);
+int smpd_lookup_spn(char *target, int length, const char * host, int port);
 
 #endif

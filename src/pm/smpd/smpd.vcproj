@@ -199,9 +199,6 @@
 				RelativePath="smpd_cmd_args.c">
 			</File>
 			<File
-				RelativePath=".\smpd_delegation.c">
-			</File>
-			<File
 				RelativePath=".\smpd_service.c">
 			</File>
 			<File
