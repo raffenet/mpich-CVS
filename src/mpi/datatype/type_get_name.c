@@ -111,11 +111,13 @@ void MPIR_Datatype_init_names( void )
 		if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
 
 		MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
+		/* --BEGIN ERROR HANDLING-- */
 		if (!datatype_ptr) {
 		    MPIU_dbg_printf("IMPLEMENTATION ERROR for datatype %d\n", 
 			     i );
 		    continue;
 		}
+		/* --END ERROR HANDLING-- */
 		/* MPIU_dbg_printf("mpi_names[%d].name = %x\n", i, (int) mpi_names[i].name ); */
 		MPIU_Strncpy( datatype_ptr->name, mpi_names[i].name, 
 			      MPI_MAX_OBJECT_NAME );
