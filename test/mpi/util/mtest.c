@@ -94,17 +94,24 @@ static void *MTestTypeContigFree( MTestDatatype *mtype )
 }
 static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 {
-    signed char *p;
+    unsigned char *p;
+    unsigned char expected;
     int  i, totsize, err = 0;
     MPI_Aint size;
 
-    p = mtype->buf;
+    p = (unsigned char *)mtype->buf;
     if (p) {
 	MPI_Type_extent( mtype->datatype, &size );
 	totsize = size * mtype->count;
 	for (i=0; i<totsize; i++) {
-	    if (p[i] != (0xff ^ (i & 0xff)))
+	    expected = (0xff ^ (i & 0xff));
+	    if (p[i] != expected) {
 		err++;
+		if (mtype->printErrors && err < 10) {
+		    printf( "Data expected = %x but got %x for %dth entry\n",
+			    expected, p[i], i );
+		}
+	    }
 	}
     }
     return err;
@@ -146,14 +153,16 @@ static void *MTestTypeVectorFree( MTestDatatype *mtype )
 int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 		       int count )
 {
-    sendtype->InitBuf  = 0;
-    sendtype->FreeBuf  = 0;
-    sendtype->datatype = 0;
-    sendtype->isBasic  = 0;
-    recvtype->InitBuf  = 0;
-    recvtype->FreeBuf  = 0;
-    recvtype->datatype = 0;
-    recvtype->isBasic  = 0;
+    sendtype->InitBuf	  = 0;
+    sendtype->FreeBuf	  = 0;
+    sendtype->datatype	  = 0;
+    sendtype->isBasic	  = 0;
+    sendtype->printErrors = 0;
+    recvtype->InitBuf	  = 0;
+    recvtype->FreeBuf	  = 0;
+    recvtype->datatype	  = 0;
+    recvtype->isBasic	  = 0;
+    recvtype->printErrors = 0;
 
     /* Set the defaults for the message lengths */
     sendtype->count    = count;

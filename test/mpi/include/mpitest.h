@@ -22,6 +22,8 @@ typedef struct _MTestDatatype {
     void *buf;              /* buffer to use in communication */
     int  count;             /* count to use for this datatype */
     int  isBasic;           /* true if the type is predefined */
+    int  printErrors;       /* true if errors should be printed
+			       (used by the CheckBuf routines) */
     /* The following is optional data that is used by some of
        the derived datatypes */
     int  stride, blksize, *index;
