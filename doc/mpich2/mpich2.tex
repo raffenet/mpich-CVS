@@ -1314,6 +1314,9 @@ declared within the routine.  A typical use might be
         MPIR_Return( ... );
     }
 \end{verbatim}
+% [BRT] The statement '_memstack.n_alloc = 0;' should be an init macro to allow
+% for future implementation changes.  A finalize macro might be useful as well,
+% although it would be a nop in the implementation described above.
 
 \subsubsection{Testing for Memory Errors}
 The \file{tr2} (TRacing memory package) provides both tests for memory
@@ -1387,7 +1390,7 @@ In fact, we may want to enforce the following order:
 \item Use any info or attribute value
 \item Use environment value
 \item Use configure file value (\file{.mpichrc}, followed by
-  \file{~/.mpichrc}).  There should be an environment variable and command
+  \file{\~/.mpichrc}).  There should be an environment variable and command
   line option to suppress reading of the configuration files.
 \item Use default (compile-time) value
 \end{enumerate}
