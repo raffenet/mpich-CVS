@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "datatype.h"
 #include "mpi_init.h"
 #ifdef HAVE_CRTDBG_H
 #include <crtdbg.h>
@@ -176,6 +177,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPID_Wtime_init();
     MPIR_Datatype_init();
     /* MPIU_Timer_pre_init(); */
+
+    /* define MPI as initialized so that we can use MPI functions within 
+       MPID_Init if necessary */
+    MPIR_Process.initialized = MPICH_WITHIN_MPI;
+
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);
     /* --BEGIN ERROR HANDLING-- */
@@ -216,7 +222,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #endif
 #endif
 
-    MPIR_Process.initialized = MPICH_WITHIN_MPI;
+    if (mpi_errno != MPI_SUCCESS)
+        MPIR_Process.initialized = MPICH_PRE_INIT;
 
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIR_WaitForDebugger();
