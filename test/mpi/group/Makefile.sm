@@ -3,7 +3,7 @@ LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
 
-EXTRA_PROGRAMS = glpid
+EXTRA_PROGRAMS = glpid gerr
 # glpid requires mpiimpl.h and hence special compile options.
 glpid_SOURCES = glpid.c
 grouptest_SOURCES = grouptest.c
@@ -13,6 +13,8 @@ gtranks_SOURCES = gtranks.c
 gtranks_LDADD = ../util/mtest.o
 groupnullincl_SOURCES = groupnullincl.c
 groupnullincl_LDADD = ../util/mtest.o
+
+gerr_SOURCES = gerr.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o)
