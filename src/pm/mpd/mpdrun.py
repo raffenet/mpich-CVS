@@ -270,6 +270,17 @@ def mpdrun():
                         del socketsToSelect[readySocket]
                         readySocket.close()
                         done += 1
+                    elif (msg['cmd'] == 'client_exit_status'):
+			status = msg['status']
+			killed_status = status & 0x000f
+			if killed_status:
+			    killed_status = killed_status & 0xef  # AND off core flag
+		            # print 'exit status of client %s: killed by signal %d ' % (msg['id'],killed_status)
+			else:
+			    exit_status = status >> 8
+		            # print 'exit status of client %s: return code %d ' % (msg['id'],exit_status)
+		    else:
+		        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
                     msg = manCliStdoutSocket.recv(1024)
                     if not msg:

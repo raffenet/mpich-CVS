@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 from os     import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                   chdir, execvpe, kill, access, X_OK, _exit
+                   chdir, execvpe, kill, waitpid, _exit
 from sys    import exit
 from socket import gethostname, fromfd, AF_INET, SOCK_STREAM
 from select import select, error
 from re     import findall, sub
-from signal import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_IGN
+from signal import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL, SIG_IGN
 from md5    import new
 from mpdlib import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                    mpd_send_one_line, mpd_send_one_msg, mpd_recv_one_msg, \
@@ -20,7 +20,7 @@ def mpdman():
     global get_sigtype_from_mpd
     get_sigtype_from_mpd = 0
     signal(SIGUSR1,sigusr1_handler)
-    signal(SIGCHLD,SIG_IGN)  # reset mpd's values
+    signal(SIGCHLD,SIG_DFL)  # reset mpd's values
 
     myHost = environ['MPDMAN_MYHOST']
     myRank = int(environ['MPDMAN_RANK'])
@@ -390,6 +390,11 @@ def mpdman():
                         if msg['dest'] != myId:
                             mpd_send_one_msg(rhsSocket,msg)
                             kill(clientPid,SIGCONT)
+                elif msg['cmd'] == 'client_exit_status':
+		    if myRank == 0:
+		        mpd_send_one_msg(conSocket,msg)
+		    else:
+		        mpd_send_one_msg(rhsSocket,msg)
                 else:
                     mpd_print(1, 'unexpected msg recvd on lhsSocket :%s:' % msg )
             elif readySocket == rhsSocket:
@@ -524,6 +529,12 @@ def mpdman():
             elif readySocket == pmiSocket:
                 line = pmiFile.readline()
                 if not line:
+                    (donePid,status) = waitpid(clientPid,0)
+		    msgToSend = { 'cmd' : 'client_exit_status', 'status' : status, 'id' : myId }
+		    if myRank == 0:
+		        mpd_send_one_msg(conSocket,msgToSend)
+		    else:
+		        mpd_send_one_msg(rhsSocket,msgToSend)
                     del socketsToSelect[pmiSocket]
                     pmiSocket.close()
                     if pmiCollectiveJob:
