@@ -83,8 +83,8 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     
     /* Set the sizes and ranks */
     localcomm_ptr->remote_size = intercomm_ptr->local_size;
-    localcomm_ptr->rank        = intercomm_ptr->rank;
     localcomm_ptr->local_size  = intercomm_ptr->local_size;
+    localcomm_ptr->rank        = intercomm_ptr->rank;
 
     /* More advanced version: if the group is available, dup it by 
        increasing the reference count */
@@ -197,6 +197,8 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 	MPIR_Setup_intercomm_localcomm( comm_ptr );
     }
 
+    /*printf( "local comm size is %d and intercomm local size is %d\n",
+      comm_ptr->local_comm->local_size, comm_ptr->local_size );*/
     context_id = MPIR_Get_contextid( comm_ptr->local_comm->handle );
     if (context_id == 0) return 0;
 
