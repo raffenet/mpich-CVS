@@ -93,11 +93,11 @@ void MPIR_Datatype_init_names( void )
 	    for (i=0; mpi_names[i].name != 0; i++) {
 		MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
 		if (!datatype_ptr) {
-		    fprintf( stderr, "IMPLEMENTATION ERROR for datatype %d\n", 
+		    MPIU_dbg_printf("IMPLEMENTATION ERROR for datatype %d\n", 
 			     i );
 		    continue;
 		}
-		fprintf( stdout, "mpi_names[%d].name = %x\n", i, (int)mpi_names[i].name ); fflush( stdout );
+		MPIU_dbg_printf("mpi_names[%d].name = %x\n", i, (int)mpi_names[i].name ); fflush( stdout );
 		MPIU_Strncpy( datatype_ptr->name, mpi_names[i].name, 
 			      MPI_MAX_OBJECT_NAME );
 	    }
