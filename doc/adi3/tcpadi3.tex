@@ -10,6 +10,10 @@
 \usepackage{epsf}
 \usepackage{graphics}
 %hyperref - do not remove this comment
+\ifx\texorpdfstring\undefined
+\def\texorpdfstring#1#2{#1}
+\fi
+
 \textheight=9in
 \textwidth=6.1in
 \oddsidemargin=.2in
@@ -444,10 +448,10 @@ where the parameters have the following meanings:
 
 \item[count]number of bytes (both local and remote)
 
-\item[rbaddr]address of remote buffer (may be NULL if count is zero)
+\item[rbaddr]address of remote buffer (may be 0 if count is zero)
 
 \item[rdaddr]address of a remote integer counter to be decremented when
-operation completes (may be NULL)
+operation completes (may be 0)
 
 \item[op] predefined \code{MPI_Reduce} operations (including
   \code{MPI_REPLACE}) 
@@ -464,49 +468,56 @@ these routines would only be used on homogeneous systems.  If that is true,
 \subsubsection{Passive target atomic operations}
 
 The following routines are intended for passive target communication.  If
-implemented, the must complete asynchronously (independent of remote process
+implemented, they must complete asynchronously (independent of remote process
 activities).
 
 \begin{verbatim}
 int MPIDI_CH3_iPTPutc(MPID_Win * winp,  MPIDI_VC * vc,
-      		      MPIDI_CH3_Win_lock_type_t type,
-      		      MPIDI_CH3_Win_lock_state_t state,
-      		      void * buf, int count,
-      		      MPID_RAint rbaddr, MPID_RAint rdaddr)
+                      MPIDI_CH3_Win_lock_type_t type,
+                      MPIDI_CH3_Win_lock_state_t state,
+                      const void * buf, int count,
+                      MPID_RAint rbaddr, MPID_RAint rdaddr)
 
 int MPIDI_CH3_iPTGetc(MPID_Win * winp,  MPIDI_VC * vc,
- 		      MPIDI_CH3_Win_lock_type_t type,
- 		      MPIDI_CH3_Win_lock_state_t state,
- 		      void * buf, int count,
- 		      MPID_RAint rbaddr, MPID_RAint rdaddr)
+                      MPIDI_CH3_Win_lock_type_t type,
+                      MPIDI_CH3_Win_lock_state_t state,
+                      void * buf, int count,
+                      MPID_RAint rbaddr, MPID_RAint rdaddr)
 
 int MPIDI_CH3_iPTAccc(MPID_Win * winp,  MPIDI_VC * vc,
                       MPIDI_CH3_Win_lock_type_t type,
                       MPIDI_CH3_Win_lock_state_t state,
-                      void * buf, int count, MPI_Op op,
+                      const void * buf, int count, MPI_Op op,
                       MPID_RAint rbaddr, MPID_RAint rdaddr)
 \end{verbatim}
 where the parameters have the following meanings:
 \begin{description}
 \item[winp]pointer to the window object (necessary for some implementations to
-access data structures which manage exclusive access to the window)
+access data structures which manage exclusive access to the window).
+Question: Whose window (local or remote)?  Is this a pointer or a handle or an
+\code{MPID_RAint}? 
 
 \item[vc]the virtual connection over which the operation takes place
 
 \item[type]\code{MPIDI_CH3_WIN_LOCK_EXCLUSIVE} or
-  \code{MPIDI_CH3_WIN_LOCK_SHARED} 
+  \code{MPIDI_CH3_WIN_LOCK_SHARED}.
+Question: Why not use MPI types (\code{MPI_LOCK_EXCLUSIVE} and
+\code{MPI_LOCK_SHARED})? 
 
 \item[state]\code{MPIDI_CH3_WIN_LOCK_START},
   \code{MPIDI_CH3_WIN_LOCK_CONTINUE}, or \code{MPIDI_CH3_WIN_LOCK_STOP}
+Question: rather than emphasizing ``lock'', how about
+\code{MPIDI_CH3_WIN_ACCESS_BEGIN}, \code{MPIDI_CH3_WIN_ACCESS_CONTINUE}, and
+\code{MPIDI_CH3_WIN_ACCESS_END}.
 
 \item[buf]pointer to the local buffer
 
 \item[count]number of bytes (both local and remote)
 
-\item[rbaddr]address of remote buffer (may be NULL if count is zero)
+\item[rbaddr]address of remote buffer (may be 0 if count is zero)
 
 \item[rdaddr]address of a remote integer counter to be decremented when
-operation completes (may be NULL)
+operation completes (may be 0)
 
 \item[op]predefined \code{MPI_Reduce} operations (including \code{MPI_REPLACE})
 \end{description}
@@ -531,6 +542,8 @@ access data structures which manage exclusive access to the window)
 
 \item[type]\code{MPIDI_CH3_WIN_LOCK_EXCLUSIVE} or
   \code{MPIDI_CH3_WIN_LOCK_SHARED} 
+Question: Why not use MPI types (\code{MPI_LOCK_EXCLUSIVE} and
+\code{MPI_LOCK_SHARED})? 
 \end{description}
 
 \subsubsection{Passive target memory allocation}
@@ -542,6 +555,10 @@ are defined, then this function must be defined.
 \begin{verbatim}
 int MPIDI_CH3_alloc_mem(MPID_Win * winp)
 \end{verbatim}
+
+We also require the corresponding free routine, along with a routine to test
+whether memory was allocated with this routine (for error detection).  The
+ADI3 spec has these routines; I propose that CH3 simply implement them.
 
 \subsubsection{Asynchronous operations}
 
@@ -946,7 +963,7 @@ MPID_Send( )
         fill in as eager send packet
         if (data contiguous) {
             request = CH3_iStartmsgv( iov )
-            // note that the request will be null if the message was sent
+            // note that the request will be NULL if the message was sent
             }
         else {
             create pack buffer
@@ -1009,7 +1026,7 @@ like
             if (packet type is eager &&
                 MPI envelope matches this receive) {
                 transfer data to destination
-                if (transfer complete) return # null request since done.
+                if (transfer complete) return # NULL request since done.
                 else {
                     create request, make active
                     return request
@@ -1238,7 +1255,7 @@ request.  Question: do we want a form of put that takes advantage of having an
 existing request?  In that case, instead of the remote flag address, the
 remote request id can be used.
 
-Note that if the read completes, the returned request is null.
+Note that if the read completes, the returned request is NULL.
 
 \subsection{RndvData}
 Action invoked by the receiver of data sent in response to an ok to send after
@@ -1429,7 +1446,7 @@ MPIDI_CH3U_DeQueue_unexp( int handle )
         if (r->handle == handle) {
              remove r from list and return it
         }
-    return null
+    return NULL
 \end{verbatim}
 (Recall that the integer id of the request is called the \code{handle}.)
 
@@ -1440,7 +1457,7 @@ MPIDI_CH3U_DeQueue_posted( int handle )
         if (r->handle == handle) {
              remove r from list and return it
         }
-    return null
+    return NULL
 \end{verbatim}
 The above are appropriate for rare operations such as cancel that can 
 afford to search through potentially long lists and can even use locks
@@ -1676,7 +1693,7 @@ not completely sent.
 MPID_Request *CH3_iStartMsg( MPID_VC *, void *header, int header_count )
    if there is no active request on this VC
       write the header.
-      if the entire header is written, return null
+      if the entire header is written, return NULL
       else /* see note below */
           create a request
           fill it in with the remaining data to write
