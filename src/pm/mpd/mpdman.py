@@ -5,13 +5,14 @@
 #
 
 from os       import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                     chdir, execvpe, kill, waitpid, strerror, setpgrp, WNOHANG
+                     chdir, execvpe, kill, waitpid, strerror, setpgrp, WNOHANG, X_OK, \
+                     path, access
 from errno    import EINTR
 from sys      import exit
 from socket   import gethostname, fromfd, AF_INET, SOCK_STREAM
 from select   import select, error
 from re       import findall, sub
-from signal   import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
+from signal   import signal, SIGINT, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL
 from md5      import new
 from cPickle  import loads
 from urllib   import quote
@@ -69,6 +70,7 @@ def mpdman():
     close(mpdFD)
     socketsToSelect[mpdSocket] = 1
     lineLabels = int(environ['MPDMAN_LINE_LABELS'])
+    gdb = int(environ['MPDMAN_GDB'])
     startStdoutLineLabel = 1
     startStderrLineLabel = 1
     myLineLabel = str(myRank) + ': '
@@ -231,7 +233,16 @@ def mpdman():
             exit(0)
         try:
             mpd_print(0000, 'execing clientPgm=:%s:' % (clientPgm) )
-            execvpe(clientPgm,clientPgmArgs,cli_environ)    # client
+            if gdb:
+                fullDirName = environ['MPDMAN_FULLPATHDIR']
+                gdbdrv = path.join(fullDirName,'mpdgdbdrv.py')
+                if not access(gdbdrv,X_OK):
+                    print 'mpdman: cannot execute mpdgdbdrv %s' % gdbdrv
+                    exit(0);
+                clientPgmArgs.insert(0,clientPgm)
+                execvpe(gdbdrv,clientPgmArgs,cli_environ)    # client
+            else:
+                execvpe(clientPgm,clientPgmArgs,cli_environ)    # client
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
             # print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
@@ -469,17 +480,36 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
+                        if not gdb:
+                            jobEndingEarly = 1
+                        for s in spawnedChildSockets:
+                            mpd_send_one_msg(s,msg)
+                        if myRank != 0:
+                            if rhsSocket:  # still alive ?
+                                mpd_send_one_msg(rhsSocket,msg)
+                            if gdb:
+                                kill(clientPid,SIGINT)
+                            else:
+                                try:
+                                    pgrp = clientPid * (-1)   # neg Pid -> group
+                                    kill(pgrp,SIGKILL)   # may be reaped by sighandler
+                                except:
+                                     pass
+                    elif msg['signo'] == 'SIGKILL':
                         jobEndingEarly = 1
                         for s in spawnedChildSockets:
                             mpd_send_one_msg(s,msg)
                         if myRank != 0:
                             if rhsSocket:  # still alive ?
                                 mpd_send_one_msg(rhsSocket,msg)
-                            try:
-                                pgrp = clientPid * (-1)   # neg Pid -> group
-                                kill(pgrp,SIGKILL)   # may be reaped by sighandler
-                            except:
-                                 pass
+                            if gdb:
+                                kill(clientPid,SIGUSR1)   # tell gdb driver to kill all
+                            else:
+                                try:
+                                    pgrp = clientPid * (-1)   # neg Pid -> group
+                                    kill(pgrp,SIGKILL)   # may be reaped by sighandler
+                                except:
+                                    pass
                     elif msg['signo'] == 'SIGTSTP':
                         if msg['dest'] != myId:
                             mpd_send_one_msg(rhsSocket,msg)
@@ -929,7 +959,7 @@ def mpdman():
                         parentStderrSocket.close()
                         parentStderrSocket = 0
                     if rhsSocket:
-	                msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+	                msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
                         mpd_send_one_msg(rhsSocket,msgToSend)
                     try:
                         pgrp = clientPid * (-1)   # neg Pid -> group
@@ -941,11 +971,26 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msg)
                         for s in spawnedChildSockets:
                             mpd_send_one_msg(s,msg)
-                        try:
-                            pgrp = clientPid * (-1)   # neg Pid -> group
-                            kill(pgrp,SIGKILL)   # may be reaped by sighandler
-                        except:
-                            pass
+                        if gdb:
+                            kill(clientPid,SIGINT)
+                        else:
+                            try:
+                                pgrp = clientPid * (-1)   # neg Pid -> group
+                                kill(pgrp,SIGKILL)   # may be reaped by sighandler
+                            except:
+                                pass
+                    elif msg['signo'] == 'SIGKILL':
+                        mpd_send_one_msg(rhsSocket,msg)
+                        for s in spawnedChildSockets:
+                            mpd_send_one_msg(s,msg)
+                        if gdb:
+                            kill(clientPid,SIGUSR1)    # tell gdb driver to kill all
+                        else:
+                            try:
+                                pgrp = clientPid * (-1)   # neg Pid -> group
+                                kill(pgrp,SIGKILL)   # may be reaped by sighandler
+                            except:
+                                pass
                     elif msg['signo'] == 'SIGTSTP':
                         msg['dest'] = myId
                         mpd_send_one_msg(rhsSocket,msg)

@@ -12,7 +12,8 @@ except KeyboardInterrupt:
 signal(SIGINT,SIG_IGN)
 
 from sys    import argv, exit
-from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, chmod
+from os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, \
+                   open, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY
 from popen2 import Popen3
 from pwd    import getpwuid
 from urllib import quote
@@ -40,6 +41,7 @@ def mpiexec():
     gWDIR         = path.abspath(getcwd())   # default
     gPath         = environ['PATH'] # default ; avoid name conflict with python path module
     gNProcs       = 1                   # default
+    gdb           = 0                   # default
 
     if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '-help'  or  argv[1] == '--help':
 	usage()
@@ -53,7 +55,8 @@ def mpiexec():
         if argv[1] == '-configfile':
 	    if len(argv) != 3:
 	        usage()
-            configFile = open(argv[2],'r')
+            configFileFD = open(argv[2],O_RDONLY)
+            configFile = fdopen(configFileFD,'r',0)
             configLines = configFile.readlines()
             configLines = [ x.strip() for x in configLines if x[0] != '#' ]
             if configLines[0].startswith('-default'):
@@ -124,6 +127,9 @@ def mpiexec():
                         usage()
                     gNProcs = int(defaultArgs[gargIdx+1])
                     gargIdx += 2
+                elif defaultArgs[gargIdx] == '-g':
+                    gdb = 1
+                    gargIdx += 1
                 else:
                     print 'unrecognized arg: %s' % (defaultArgs[gargIdx])
                     usage()
@@ -142,13 +148,15 @@ def mpiexec():
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
         if linelabels:
             xmlCPG.setAttribute('output', 'label')
+        if gdb:
+            xmlCPG.setAttribute('gdb', '1')
         submitter = getpwuid(getuid())[0]
         xmlCPG.setAttribute('submitter', submitter)
         xmlFilename = '/tmp/%s_tempxml_%d' % (submitter,getpid())
         try:    unlink(xmlFilename)
 	except: pass
-        xmlFile = open(xmlFilename,'w')
-        chmod(xmlFilename,0600)
+        xmlFileFD = open(xmlFilename,O_CREAT|O_WRONLY|O_EXCL,0600)
+        xmlFile = fdopen(xmlFileFD,'w',0)
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
         # print xmlDOC.toprettyxml(indent='   ')    #### TEMP DEBUG
         xmlFile.close()

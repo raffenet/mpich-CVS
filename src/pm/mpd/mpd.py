@@ -8,7 +8,8 @@ from sys       import stdout, argv, settrace, exit, excepthook, __stdout__, __st
 from os        import environ, getpid, fork, setpgrp, waitpid, kill, chdir, \
                       setsid, getuid, setuid, setreuid, setregid, setgroups, \
                       umask, close, access, path, stat, unlink, strerror, \
-                      dup2, R_OK, X_OK, WNOHANG, chmod
+                      dup2, R_OK, X_OK, WNOHANG, \
+                      open, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY
 from pwd       import getpwnam
 from socket    import socket, AF_UNIX, SOCK_STREAM, gethostname, gethostbyname_ex
 from errno     import EINTR
@@ -68,17 +69,17 @@ def _mpd_init():
             exit(0)
         chdir("/")  # free up filesys for umount
         umask(0)
-        g.logfileName = '/tmp/mpd2.logfile_' + mpd_get_my_username()
-        try:    unlink(g.logfileName)
+        g.logFilename = '/tmp/mpd2.logfile_' + mpd_get_my_username()
+        try:    unlink(g.logFilename)
         except: pass
-        logfile = open(g.logfileName,'w')
-        chmod(g.logfileName,0600)
-        stdout = logfile
-        stderr = logfile
+        logFileFD = open(g.logFilename,O_CREAT|O_WRONLY|O_EXCL,0600)
+        logFile = fdopen(logFileFD,'w',0)
+        stdout = logFile
+        stderr = logFile
         print >>stdout, 'logfile for mpd with pid %d' % getpid()
         stdout.flush()
-        dup2(logfile.fileno(),__stdout__.fileno())
-        dup2(logfile.fileno(),__stderr__.fileno())
+        dup2(logFile.fileno(),__stdout__.fileno())
+        dup2(logFile.fileno(),__stderr__.fileno())
 
     mpd_print(0, 'starting ')
     g.activeSockets = {}
@@ -631,6 +632,9 @@ def _do_mpdrun(msg):
             environ['MPDMAN_MY_LISTEN_FD'] = str(tempSocket.fileno())
             environ['MPDMAN_TO_MPD_FD'] = str(toMpdSocket.fileno())
             environ['MPDMAN_STDIN_GOES_TO_WHO'] = msg['stdin_goes_to_who']
+            environ['MPDMAN_GDB'] = str(msg['gdb'])
+            fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
+            environ['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
             if msg.has_key('line_labels'):
                 environ['MPDMAN_LINE_LABELS'] = '1'
             else:
@@ -983,7 +987,8 @@ def _process_configfile_params():
         print 'configuration file %s is accessible by others' % (configFilename)
         print 'change permissions to allow read and write access only by you'
         exit(0)
-    configFile = open(configFilename,'r')
+    configFileFD = open(configFilename,O_RDONLY)
+    configFile = fdopen(configFileFD,'r',0)
     g.configParams = {}
     for line in configFile:
         line = line.rstrip()

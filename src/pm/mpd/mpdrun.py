@@ -6,7 +6,7 @@
 
 try:
     from signal          import signal, alarm, SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, \
-                                SIGCONT, SIGALRM
+                                SIGCONT, SIGALRM, SIGKILL
 except KeyboardInterrupt:
     exit(0)
 
@@ -17,11 +17,12 @@ signal(SIGCONT,SIG_IGN)
 from sys             import argv, exit, stdin, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
                             close, wait, waitpid, kill, unlink, _exit,  \
-			    WIFSIGNALED, WEXITSTATUS
+                            WIFSIGNALED, WEXITSTATUS
 from pwd             import getpwnam
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname, \
                             gethostbyname_ex, gethostbyaddr
 from select          import select, error
+from time            import time, sleep
 from errno           import EINTR
 from exceptions      import Exception
 from re              import findall
@@ -36,16 +37,18 @@ class mpdrunInterrupted(Exception):
         self.args = args
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-       try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, gdb
-global stdinGoesToWho, myExitStatus, manSocket, jobid
-global outXmlDoc, outXmlEC, outXmlFile, linesPerRank
+       try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
+global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
-           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, gdb
-    global stdinGoesToWho, myExitStatus, manSocket, jobid
-    global outXmlDoc, outXmlEC, outXmlFile, linesPerRank
+           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+    global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
+    global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -63,16 +66,28 @@ def mpdrun():
     lineLabels = 0
     stdinGoesToWho = '0'
     mergingOutput = 0
+    hostList = []
     gdb = 0
+    gdbAttachJobid = ''
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
-    process_cmdline_args()
-    linesPerRank = {}  # keep this a dict instead of a list
-    for i in range(nprocs):
-        linesPerRank[i] = []
-    (listenSocket,listenPort) = mpd_get_inet_listen_socket('',0)
-    cwd = path.abspath(getcwd())
     username = mpd_get_my_username()
+    cwd = path.abspath(getcwd())
+
+    execs   = {}
+    users   = {}
+    cwds    = {}
+    paths   = {}
+    args    = {}
+    envvars = {}
+    limits  = {}
+    hosts   = {}
+
+    get_args_from_cmdline()    # verify args as much as possible before connecting to mpd
+    if argsFilename:
+        get_args_from_file()
+
+    (listenSocket,listenPort) = mpd_get_inet_listen_socket('',0)
     signal(SIGALRM,sig_handler)
     if environ.has_key('MPDRUN_TIMEOUT'):
         jobTimeout = int(environ['MPDRUN_TIMEOUT'])
@@ -96,208 +111,22 @@ def mpdrun():
             myExitStatus = -1  # used in main
             exit(myExitStatus) # really forces jump back into main
             # mpd_raise('cannot connect to local mpd; errmsg: %s' % (str(errmsg)) )
-	msgToSend = { 'cmd' : 'get_mpd_version' }
-	mpd_send_one_msg(conSocket,msgToSend)
-	msg = recv_one_msg_with_timeout(conSocket,5)
-	if not msg:
-	    mpd_raise('no msg recvd from mpd during version check')
-	elif msg['cmd'] != 'mpd_version_response':
-	    mpd_raise('unexpected msg from mpd :%s:' % (msg) )
-	if msg['mpd_version'] != mpd_version:
-	    mpd_raise('mpd version %s does not match mine %s' % (msg['mpd_version'],mpd_version) )
+        msgToSend = { 'cmd' : 'get_mpd_version' }
+        mpd_send_one_msg(conSocket,msgToSend)
+        msg = recv_one_msg_with_timeout(conSocket,5)
+        if not msg:
+            mpd_raise('no msg recvd from mpd during version check')
+        elif msg['cmd'] != 'mpd_version_response':
+            mpd_raise('unexpected msg from mpd :%s:' % (msg) )
+        if msg['mpd_version'] != mpd_version:
+            mpd_raise('mpd version %s does not match mine %s' % (msg['mpd_version'],mpd_version) )
 
-    hostList = []
-    if argsFilename:
-        try:
-            argsFile = open(argsFilename,'r')
-        except:
-            print 'could not open job specification file %s' % (argsFilename)
-            myExitStatus = -1  # used in main
-            exit(myExitStatus) # really forces jump back into main
-        args = argsFile.read()
-	if delArgsFile:
-	    unlink(argsFilename)
-        try: 
-            from xml.dom.minidom import parseString   #import only if needed
-        except:
-            print 'need xml parser like xml.dom.minidom'
-            myExitStatus = -1  # used in main
-            exit(myExitStatus) # really forces jump back into main
-        parsedArgs = parseString(args)
-        if parsedArgs.documentElement.tagName != 'create-process-group':
-            print 'expecting create-process-group; got unrecognized doctype: %s' % \
-                  (parsedArgs.documentElement.tagName)
-            myExitStatus = -1  # used in main
-            exit(myExitStatus) # really forces jump back into main
-        createReq = parsedArgs.getElementsByTagName('create-process-group')[0]
-        if createReq.hasAttribute('totalprocs'):
-            nprocs = int(createReq.getAttribute('totalprocs'))
-        else:
-            print '** totalprocs not specified in %s' % argsFilename
-            myExitStatus = -1  # used in main
-            exit(myExitStatus) # really forces jump back into main
-        if createReq.hasAttribute('dont_try_0_locally'):
-	    try0Locally = 0
-        if createReq.hasAttribute('output')  and  \
-           createReq.getAttribute('output') == 'label':
-	    lineLabels = 1
-        if createReq.hasAttribute('pgid'):    # our jobalias
-            jobAlias = createReq.getAttribute('pgid')
-        if createReq.hasAttribute('stdin_goes_to_who'):
-            stdinGoesToWho = createReq.getAttribute('stdin_goes_to_who')
-
-        nextHost = 0
-        hostSpec = createReq.getElementsByTagName('host-spec')
-        if hostSpec:
-            for node in hostSpec[0].childNodes:
-                node = node.data.strip()
-                hostnames = findall(r'\S+',node)
-                for hostname in hostnames:
-                    if hostname:    # some may be the empty string
-                        try:
-                            ipaddr = gethostbyname_ex(hostname)[2][0]
-                        except:
-                            print 'unable to determine IP info for host %s' % (hostname)
-                            myExitStatus = -1  # used in main
-                            exit(myExitStatus) # really forces jump back into main
-                        if ipaddr.startswith('127.0.0'):
-                            hostList.append(gethostname())
-                        else:
-                            hostList.append(ipaddr)
-        if hostSpec and hostSpec[0].hasAttribute('check'):
-            hostSpecMode = hostSpec[0].getAttribute('check')
-            if hostSpecMode == 'yes':
-                msgToSend = { 'cmd' : 'verify_hosts_in_ring', 'host_list' : hostList }
-                mpd_send_one_msg(conSocket,msgToSend)
-                msg = recv_one_msg_with_timeout(conSocket,5)
-                if not msg:
-                    mpd_raise('no msg recvd from mpd mpd during chk hosts up')
-                elif msg['cmd'] != 'verify_hosts_in_ring_response':
-                    mpd_raise('unexpected msg from mpd :%s:' % (msg) )
-                if msg['host_list']:
-                    print 'These hosts are not in the mpd ring:'
-                    for host in  msg['host_list']:
-                        if host[0].isdigit():
-                            print '    %s (%s)' % (gethostbyaddr(host)[0],host)  # ip addr
-                        else:
-                            print '    %s' % (host)
-                    myExitStatus = -1  # used in main
-                    exit(myExitStatus) # really forces jump back into main
-
-        execs   = {}
-        users   = {}
-        cwds    = {}
-        paths   = {}
-        args    = {}
-        envvars = {}
-        limits  = {}
-        hosts   = {}
-
-        covered = [0] * nprocs 
-        procSpec = createReq.getElementsByTagName('process-spec')
-        if not procSpec:
-            print 'No process-spec specified'
-            usage()
-        for p in procSpec:
-            if p.hasAttribute('range'):
-                therange = p.getAttribute('range')
-                splitRange = therange.split('-')
-                if len(splitRange) == 1:
-                    loRange = int(splitRange[0])
-                    hiRange = loRange
-                else:
-                    (loRange,hiRange) = (int(splitRange[0]),int(splitRange[1]))
-            else:
-                (loRange,hiRange) = (0,nprocs-1)
-            for i in xrange(loRange,hiRange+1):
-                if i >= nprocs:
-                    print '*** exiting; rank %d is greater than nprocs for args'
-                    myExitStatus = -1  # used in main
-                    exit(myExitStatus) # really forces jump back into main
-                if covered[i]:
-                    print '*** exiting; rank %d is doubly used in proc specs'
-                    myExitStatus = -1  # used in main
-                    exit(myExitStatus) # really forces jump back into main
-                covered[i] = 1
-            if p.hasAttribute('exec'):
-                execs[(loRange,hiRange)] = p.getAttribute('exec')
-            else:
-                print '*** exiting; range %d-%d has no exec' % (loRange,hiRange)
-                myExitStatus = -1  # used in main
-                exit(myExitStatus) # really forces jump back into main
-            if p.hasAttribute('user'):
-                tempuser = p.getAttribute('user')
-                try:
-                    pwent = getpwnam(tempuser)
-                except:
-                    pwent = None
-                if not pwent:
-                    print tempuser, 'is an invalid username'
-                    myExitStatus = -1  # used in main
-                    exit(myExitStatus) # really forces jump back into main
-                if tempuser == username  or  getuid() == 0:
-                    users[(loRange,hiRange)] = p.getAttribute('user')
-                else:
-                    print tempuser, 'username does not match yours and you are not root'
-                    myExitStatus = -1  # used in main
-                    exit(myExitStatus) # really forces jump back into main
-            else:
-                users[(loRange,hiRange)] = username
-            if p.hasAttribute('cwd'):
-                cwds[(loRange,hiRange)] = p.getAttribute('cwd')
-            else:
-                cwds[(loRange,hiRange)] = cwd
-            if p.hasAttribute('path'):
-                paths[(loRange,hiRange)] = p.getAttribute('path')
-            else:
-                paths[(loRange,hiRange)] = environ['PATH']
-            if p.hasAttribute('host'):
-                host = p.getAttribute('host')
-                if host.startswith('_any_'):
-                    hosts[(loRange,hiRange)] = host
-                else:
-                    hosts[(loRange,hiRange)] = gethostbyname_ex(host)[2][0]
-            else:
-                if hostList:
-                    hosts[(loRange,hiRange)] = '_any_from_pool_'
-                else:
-                    hosts[(loRange,hiRange)] = '_any_'
-
-            argDict = {}
-            argList = p.getElementsByTagName('arg')
-            for argElem in argList:
-                argDict[int(argElem.getAttribute('idx'))] = argElem.getAttribute('value')
-            argVals = [0] * len(argList)
-            for i in argDict.keys():
-                argVals[i-1] = unquote(argDict[i])
-            args[(loRange,hiRange)] = argVals
-
-            limitDict = {}
-            limitList = p.getElementsByTagName('limit')
-            for limitElem in limitList:
-                type = limitElem.getAttribute('type')
-                if type in known_rlimit_types:
-                    limitDict[type] = limitElem.getAttribute('value')
-                else:
-                    print 'mpdrun: invalid type in limit: %s' % (type)
-                    myExitStatus = -1  # used in main
-                    exit(myExitStatus) # really forces jump back into main
-            limits[(loRange,hiRange)] = limitDict
-
-            envVals = {}
-            envVarList = p.getElementsByTagName('env')
-            for envVarElem in envVarList:
-                envkey = envVarElem.getAttribute('name')
-                envval = envVarElem.getAttribute('value')
-                envVals[envkey] = envval
-            envvars[(loRange,hiRange)] = envVals
-
-        ## exit(-1)    #####  RMB         
-
-    else:
+    if gdbAttachJobid:
+        get_vals_for_attach()
+    elif not argsFilename:    # if only had cmd-line args
         if not nprocs:
-	    print 'you have to indicate how many processes to start'
-	    usage()
+            print 'you have to indicate how many processes to start'
+            usage()
         execs   = { (0,nprocs-1) : pgm }
         users   = { (0,nprocs-1) : username }
         cwds    = { (0,nprocs-1) : cwd }
@@ -318,12 +147,14 @@ def mpdrun():
                     hostIdx = 0
         else:
             hosts   = { (0,nprocs-1) : '_any_' }
+    else:
+        pass    # args already defined by get_args_from_file
 
     if mship:
         (mshipSocket,mshipPort) = mpd_get_inet_listen_socket('',0)
         mshipPid = fork()
         if mshipPid == 0:
-	    conSocket.close()
+            conSocket.close()
             environ['MPDCP_AM_MSHIP'] = '1'
             environ['MPDCP_MSHIP_PORT'] = str(mshipPort)
             environ['MPDCP_MSHIP_FD'] = str(mshipSocket.fileno())
@@ -337,13 +168,18 @@ def mpdrun():
     else:
         mshipPid = 0
 
+    # make sure to do this after nprocs has its value
+    linesPerRank = {}  # keep this a dict instead of a list
+    for i in range(nprocs):
+        linesPerRank[i] = []
+
     msgToSend = { 'cmd' : 'mpdrun',
                   'conhost'  : gethostname(),
                   'conport'  : listenPort,
                   'spawned'  : 0,
-		  'nstarted' : 0,
+                  'nstarted' : 0,
                   'nprocs'   : nprocs,
-		  'hosts'    : hosts,
+                  'hosts'    : hosts,
                   'execs'    : execs,
                   'jobalias' : jobAlias,
                   'users'    : users,
@@ -352,8 +188,9 @@ def mpdrun():
                   'args'     : args,
                   'envvars'  : envvars,
                   'limits'   : limits,
+                  'gdb'      : gdb,
                   'host_spec_pool' : hostList
-		}
+                }
     if try0Locally:
         msgToSend['try_0_locally'] = 1
     if lineLabels:
@@ -362,7 +199,10 @@ def mpdrun():
         msgToSend['rship'] = rship
         msgToSend['mship_host'] = gethostname()
         msgToSend['mship_port'] = mshipPort
+    if stdinGoesToWho == 'all':
+        stdinGoesToWho = '0-%d' % (nprocs-1)
     msgToSend['stdin_goes_to_who'] = stdinGoesToWho
+
     mpd_send_one_msg(conSocket,msgToSend)
     msg = recv_one_msg_with_timeout(conSocket,5)
     if not msg:
@@ -390,7 +230,7 @@ def mpdrun():
             mpd_raise('unexpected message from mpd: %s' % (msg) )
     conSocket.close()
     if jobTimeout:
-	alarm(jobTimeout)
+        alarm(jobTimeout)
 
     (manSocket,addr) = listenSocket.accept()
     msg = mpd_recv_one_msg(manSocket)
@@ -407,7 +247,7 @@ def mpdrun():
             outXmlEC.setAttribute('jobid',jobid.strip())
         # print 'mpdrun: job %s started' % (jobid)
     else:
-	mpd_raise('mpdrun: from man, unknown msg=:%s:' % (msg) )
+        mpd_raise('mpdrun: from man, unknown msg=:%s:' % (msg) )
 
     (manCliStdoutSocket,addr) = listenSocket.accept()
     (manCliStderrSocket,addr) = listenSocket.accept()
@@ -416,24 +256,9 @@ def mpdrun():
     signal(SIGINT,sig_handler)
     signal(SIGTSTP,sig_handler)
     signal(SIGCONT,sig_handler)
-    if gdb:
-        msgToSend = { 'cmd' : 'stdin_from_user' }
-        msgToSend['line'] = 'set prompt\n'
-        mpd_send_one_msg(manSocket,msgToSend)
-        msgToSend['line'] = 'set confirm off\n'
-        mpd_send_one_msg(manSocket,msgToSend)
-        msgToSend['line'] = 'handle SIGUSR1 nostop noprint\n'
-        mpd_send_one_msg(manSocket,msgToSend)
-        msgToSend['line'] = 'handle SIGPIPE nostop noprint\n'
-        mpd_send_one_msg(manSocket,msgToSend)
-        msgToSend['line'] = 'set confirm on\n'
-        mpd_send_one_msg(manSocket,msgToSend)
-        msgToSend['line'] = 'set prompt (gdb)\\n\n'
-        mpd_send_one_msg(manSocket,msgToSend)
-        # msgToSend['line'] = 'quit\n'
-        # mpd_send_one_msg(manSocket,msgToSend)
 
-    firstGDB = 1
+    timeDelayForPrints = 2  # seconds
+    timeForPrint = time() + timeDelayForPrints   # to get started
     done = 0
     while done < 3:    # man, client stdout, and client stderr
         try:
@@ -444,8 +269,12 @@ def mpdrun():
                     continue
                 else:
                     mpd_raise('select error: %s' % strerror(data[0]))
-            if mergingOutput  and  len(readySockets) == 0:    # timed out
-                print_ready_merged_lines(1)
+            if mergingOutput:
+                if timeForPrint < time():
+                    print_ready_merged_lines(1)
+                    timeForPrint = time() + timeDelayForPrints
+                else:
+                    print_ready_merged_lines(nprocs)
             for readySocket in readySockets:
                 if readySocket == manSocket:
                     msg = mpd_recv_one_msg(manSocket)
@@ -455,7 +284,7 @@ def mpdrun():
                         tempManSocket = manSocket    # keep a ref to it
                         manSocket = 0
                         done += 1
-		    elif not msg.has_key('cmd'):
+                    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
                     elif msg['cmd'] == 'execution_problem':
                         # print 'rank %d (%s) in job %s failed to find executable %s' % \
@@ -468,18 +297,18 @@ def mpdrun():
                     elif msg['cmd'] == 'job_aborted_early':
                         print 'rank %d in job %s caused collective abort of all ranks' % \
                               ( msg['rank'], msg['jobid'] )
-			status = msg['exit_status']
-			if WIFSIGNALED(status):
-			    if status > myExitStatus:
-			        myExitStatus = status
-			    killed_status = status & 0x007f  # AND off core flag
-		            print '  exit status of rank %d: killed by signal %d ' % \
+                        status = msg['exit_status']
+                        if WIFSIGNALED(status):
+                            if status > myExitStatus:
+                                myExitStatus = status
+                            killed_status = status & 0x007f  # AND off core flag
+                            print '  exit status of rank %d: killed by signal %d ' % \
                                   (msg['rank'],killed_status)
-			else:
-			    exit_status = WEXITSTATUS(status)
-			    if exit_status > myExitStatus:
-			        myExitStatus = exit_status
-		            print '  exit status of rank %d: return code %d ' % \
+                        else:
+                            exit_status = WEXITSTATUS(status)
+                            if exit_status > myExitStatus:
+                                myExitStatus = exit_status
+                            print '  exit status of rank %d: return code %d ' % \
                                   (msg['rank'],exit_status)
                     elif msg['cmd'] == 'job_aborted':
                         print 'job aborted; reason = %s' % (msg['reason'])
@@ -494,39 +323,28 @@ def mpdrun():
                         # print "exit info: rank=%d  host=%s  pid=%d  status=%d" % \
                               # (msg['cli_rank'],msg['cli_host'],
                                # msg['cli_pid'],msg['cli_status'])
-			status = msg['cli_status']
-			if WIFSIGNALED(status):
-			    if status > myExitStatus:
-			        myExitStatus = status
-			    killed_status = status & 0x007f  # AND off core flag
-		            # # print 'exit status of rank %d: killed by signal %d ' % (msg['cli_rank'],killed_status)
-			else:
-			    exit_status = WEXITSTATUS(status)
-			    if exit_status > myExitStatus:
-			        myExitStatus = exit_status
-		            # # print 'exit status of rank %d: return code %d ' % (msg['cli_rank'],exit_status)
-		    else:
-		        print 'unrecognized msg from manager :%s:' % msg
+                        status = msg['cli_status']
+                        if WIFSIGNALED(status):
+                            if status > myExitStatus:
+                                myExitStatus = status
+                            killed_status = status & 0x007f  # AND off core flag
+                            # # print 'exit status of rank %d: killed by signal %d ' % (msg['cli_rank'],killed_status)
+                        else:
+                            exit_status = WEXITSTATUS(status)
+                            if exit_status > myExitStatus:
+                                myExitStatus = exit_status
+                            # # print 'exit status of rank %d: return code %d ' % (msg['cli_rank'],exit_status)
+                    else:
+                        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
                     if mergingOutput:
-                        if gdb and firstGDB:
-                            firstGDB = 0
-                            for i in range(nprocs):
-                                line = mpd_read_one_line(manCliStdoutSocket.fileno())
-                                # print "^%s$" % line
-			    if nprocs == 1:
-			        ranks = '0'
-			    else:
-			        ranks = '0-%d' % (nprocs-1)
-                            stdout.softspace = 0
-                            print '%s:  (gdb) ' % (ranks),
-                            continue
                         line = mpd_read_one_line(manCliStdoutSocket.fileno())
                         if not line:
                             del socketsToSelect[readySocket]
                             done += 1
                         else:
-                            line = line.replace('(gdb)\n','(gdb) ')
+                            if gdb:
+                                line = line.replace('(gdb)\n','(gdb) ')
                             (rank,rest) = line.split(':',1)
                             rank = int(rank)
                             linesPerRank[rank].append(rest)
@@ -555,23 +373,31 @@ def mpdrun():
                     line = stdin.readline()
                     if line:    # not EOF
                         msgToSend = { 'cmd' : 'stdin_from_user', 'line' : line } # default
-                        if gdb and line.startswith('z '):
+                        if gdb and line.startswith('z'):
+                            line = line.rstrip()
+                            if len(line) < 3:    # just a 'z'
+                                line += ' 0-%d' % (nprocs-1)
                             s1 = line[2:].rstrip().split(',')
                             for s in s1:
                                 s2 = s.split('-')
                                 for i in s2:
                                     if not i.isdigit():
                                         print 'invalid arg to z :%s:' % i
-					continue
+                                        continue
                             msgToSend = { 'cmd' : 'stdin_goes_to_who',
-                                          'stdin_procs' : line.rstrip()[2:] }
+                                          'stdin_procs' : line[2:] }
                             stdout.softspace = 0
-                            print '(gdb) ',
+                            print '%s:  (gdb) ' % (line[2:]),
                         elif gdb and line.startswith('q'):
                             msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
                             if manSocket:
                                 mpd_send_one_msg(manSocket,msgToSend)
                             msgToSend = { 'cmd' : 'stdin_from_user','line' : 'q\n' }
+                        elif gdb and line.startswith('^'):
+                            msgToSend = { 'cmd' : 'stdin_goes_to_who','stdin_procs' : '0-%d' % (nprocs-1) }
+                            if manSocket:
+                                mpd_send_one_msg(manSocket,msgToSend)
+                            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
                         if manSocket:
                             mpd_send_one_msg(manSocket,msgToSend)
                     else:
@@ -584,31 +410,32 @@ def mpdrun():
             myExitStatus = -1  # used in main
             exit(myExitStatus) # really forces jump back into main
         except mpdrunInterrupted, errmsg:
-	    if errmsg.args == 'SIGINT':
-	        if manSocket:
-	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
-	            mpd_send_one_msg(manSocket,msgToSend)
+            if errmsg.args == 'SIGINT':
+                if manSocket:
+                    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
+                    mpd_send_one_msg(manSocket,msgToSend)
                     # next code because no longer exiting
-	            ### del socketsToSelect[manSocket]
-	            ### # manSocket.close()
+                    ### del socketsToSelect[manSocket]
+                    ### # manSocket.close()
                     ### tempManSocket = manSocket
-	            ### manSocket = 0
+                    ### manSocket = 0
                     ### done += 1
-	        # exit(-1)
-                myExitStatus = -1  # used in main
-                exit(myExitStatus) # really forces jump back into main
-	    elif errmsg.args == 'SIGTSTP':
-	        if manSocket:
-	            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGTSTP' }
-	            mpd_send_one_msg(manSocket,msgToSend)
-	        signal(SIGTSTP,SIG_DFL)      # stop myself
-	        kill(getpid(),SIGTSTP)
-	        signal(SIGTSTP,sig_handler)  # restore this handler
-	    elif errmsg.args == 'SIGALRM':
+                # exit(-1)
+                if not gdb:
+                    myExitStatus = -1  # used in main
+                    exit(myExitStatus) # really forces jump back into main
+            elif errmsg.args == 'SIGTSTP':
+                if manSocket:
+                    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGTSTP' }
+                    mpd_send_one_msg(manSocket,msgToSend)
+                signal(SIGTSTP,SIG_DFL)      # stop myself
+                kill(getpid(),SIGTSTP)
+                signal(SIGTSTP,sig_handler)  # restore this handler
+            elif errmsg.args == 'SIGALRM':
                 mpd_print(1, 'mpdrun terminating due to timeout %d seconds' % \
                           (jobTimeout))
                 if manSocket:
-                    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+                    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
                     mpd_send_one_msg(manSocket,msgToSend)
                     manSocket.close()
                 myExitStatus = -1  # used in main
@@ -630,9 +457,9 @@ def sig_handler(signum,frame):
     elif signum == SIGTSTP:
         raise mpdrunInterrupted, 'SIGTSTP'
     elif signum == SIGCONT:
-	if manSocket:
-	    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGCONT' }
-	    mpd_send_one_msg(manSocket,msgToSend)
+        if manSocket:
+            msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGCONT' }
+            mpd_send_one_msg(manSocket,msgToSend)
     elif signum == SIGALRM:
         raise mpdrunInterrupted, 'SIGALRM'
 
@@ -686,23 +513,23 @@ def print_ready_merged_lines(minRanks):
                 printFlag = 1
     stdout.flush()
 
-def process_cmdline_args():
+def get_args_from_cmdline():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, try0Locally, \
-           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput, gdb
-    global outXmlDoc, outXmlEC, outXmlFile
+           lineLabels, jobAlias, stdinGoesToWho, hostsFile, jobid, mergingOutput
+    global outXmlDoc, outXmlEC, outXmlFile, gdb, gdbAttachJobid
 
     hostsFile = ''
     if len(argv) < 3:
         usage()
     argidx = 1
     if argv[1] == '-delxmlfile':  # special case for mpiexec
-	delArgsFile = 1
+        delArgsFile = 1
         argsFilename = argv[2]   # initialized to '' in main
-	argidx = 3
+        argidx = 3
     elif argv[1] == '-f':
         argsFilename = argv[2]   # initialized to '' in main
         argidx += 2
-	if len(argv) > 3:
+        if len(argv) > 3:
             if len(argv) > 5  or  argv[3] != '-r':
                 print '-r is the only arg that can be used with -f'
                 usage()
@@ -713,14 +540,24 @@ def process_cmdline_args():
                 outXmlEC = outXmlDoc.createElement('exit-codes')
                 outXmlDoc.appendChild(outXmlEC)
                 argidx += 2
+    elif argv[1] == '-ga':
+        if len(argv) != 3:
+            print '-ga (and its jobid) must be the only cmd-line args'
+            usage()
+        gdb = 1
+        mergingOutput = 1   # implied
+        lineLabels = 1      # implied
+        stdinGoesToWho = 'all'    # chgd to 0 - nprocs-1 when nprocs avail
+        gdbAttachJobid = argv[2]
+        return
     if not argsFilename:
         while pgm == '':
-	    if argidx >= len(argv):
-	        usage()
+            if argidx >= len(argv):
+                usage()
             if argv[argidx][0] == '-':
                 if argv[argidx] == '-np' or argv[argidx] == '-n':
                     if not argv[argidx+1].isdigit():
-	                print 'non-numeric arg to -n or -np'
+                        print 'non-numeric arg to -n or -np'
                         usage()
                     else:
                         nprocs = int(argv[argidx+1])
@@ -729,8 +566,8 @@ def process_cmdline_args():
                         else:
                             argidx += 2
                 elif argv[argidx] == '-f':
-	            print '-f must be first and only -r can appear with it'
-		    usage()
+                    print '-f must be first and only -r can appear with it'
+                    usage()
                 elif argv[argidx] == '-r':
                     outExitCodesFilename = argv[argidx+1]   # initialized to '' in main
                     outXmlFile = open(outExitCodesFilename,'w')
@@ -767,25 +604,249 @@ def process_cmdline_args():
                     gdb = 1
                     mergingOutput = 1   # implied
                     lineLabels = 1      # implied
-                    stdinGoesToWho = 'all' # implied  (all processes at first)
+                    stdinGoesToWho = 'all'    # chgd to 0 - nprocs-1 when nprocs avail
                     argidx += 1
                 elif argv[argidx] == '-1' or argv[argidx] == '-nolocal':
                     try0Locally = 0
                     argidx += 1
                 elif argv[argidx] == '-s':
-                    stdinGoesToWho = 'all'   # -1 -> all processes
+                    stdinGoesToWho = 'all'    # chgd to 0 - nprocs-1 when nprocs avail
                     argidx += 1
                 else:
                     usage()
             else:
                 pgm = argv[argidx]
                 argidx += 1
-    if stdinGoesToWho == 'all':
-        stdinGoesToWho = '0-%d' % (nprocs-1)
     pgmArgs = []
     while argidx < len(argv):
         pgmArgs.append(argv[argidx])
         argidx += 1
+
+def get_args_from_file():
+    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
+           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+    global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
+    global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
+
+    try:
+        argsFile = open(argsFilename,'r')
+    except:
+        print 'could not open job specification file %s' % (argsFilename)
+        myExitStatus = -1  # used in main
+        exit(myExitStatus) # really forces jump back into main
+    file_contents = argsFile.read()
+    if delArgsFile:
+        unlink(argsFilename)
+    try: 
+        from xml.dom.minidom import parseString   #import only if needed
+    except:
+        print 'need xml parser like xml.dom.minidom'
+        myExitStatus = -1  # used in main
+        exit(myExitStatus) # really forces jump back into main
+    parsedArgs = parseString(file_contents)
+    if parsedArgs.documentElement.tagName != 'create-process-group':
+        print 'expecting create-process-group; got unrecognized doctype: %s' % \
+              (parsedArgs.documentElement.tagName)
+        myExitStatus = -1  # used in main
+        exit(myExitStatus) # really forces jump back into main
+    createReq = parsedArgs.getElementsByTagName('create-process-group')[0]
+    if createReq.hasAttribute('totalprocs'):
+        nprocs = int(createReq.getAttribute('totalprocs'))
+    else:
+        print '** totalprocs not specified in %s' % argsFilename
+        myExitStatus = -1  # used in main
+        exit(myExitStatus) # really forces jump back into main
+    if createReq.hasAttribute('dont_try_0_locally'):
+        try0Locally = 0
+    if createReq.hasAttribute('output')  and  \
+       createReq.getAttribute('output') == 'label':
+        lineLabels = 1
+    if createReq.hasAttribute('pgid'):    # our jobalias
+        jobAlias = createReq.getAttribute('pgid')
+    if createReq.hasAttribute('stdin_goes_to_who'):
+        stdinGoesToWho = createReq.getAttribute('stdin_goes_to_who')
+    if createReq.hasAttribute('gdb'):
+        gdb = int(createReq.getAttribute('gdb'))
+        if gdb:
+            mergingOutput = 1   # implied
+            lineLabels = 1      # implied
+            stdinGoesToWho = 'all'    # chgd to 0 - nprocs-1 when nprocs avail
+
+    nextHost = 0
+    hostSpec = createReq.getElementsByTagName('host-spec')
+    if hostSpec:
+        for node in hostSpec[0].childNodes:
+            node = node.data.strip()
+            hostnames = findall(r'\S+',node)
+            for hostname in hostnames:
+                if hostname:    # some may be the empty string
+                    try:
+                        ipaddr = gethostbyname_ex(hostname)[2][0]
+                    except:
+                        print 'unable to determine IP info for host %s' % (hostname)
+                        myExitStatus = -1  # used in main
+                        exit(myExitStatus) # really forces jump back into main
+                    if ipaddr.startswith('127.0.0'):
+                        hostList.append(gethostname())
+                    else:
+                        hostList.append(ipaddr)
+    if hostSpec and hostSpec[0].hasAttribute('check'):
+        hostSpecMode = hostSpec[0].getAttribute('check')
+        if hostSpecMode == 'yes':
+            msgToSend = { 'cmd' : 'verify_hosts_in_ring', 'host_list' : hostList }
+            mpd_send_one_msg(conSocket,msgToSend)
+            msg = recv_one_msg_with_timeout(conSocket,5)
+            if not msg:
+                mpd_raise('no msg recvd from mpd mpd during chk hosts up')
+            elif msg['cmd'] != 'verify_hosts_in_ring_response':
+                mpd_raise('unexpected msg from mpd :%s:' % (msg) )
+            if msg['host_list']:
+                print 'These hosts are not in the mpd ring:'
+                for host in  msg['host_list']:
+                    if host[0].isdigit():
+                        print '    %s (%s)' % (gethostbyaddr(host)[0],host)  # ip addr
+                    else:
+                        print '    %s' % (host)
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
+
+    covered = [0] * nprocs 
+    procSpec = createReq.getElementsByTagName('process-spec')
+    if not procSpec:
+        print 'No process-spec specified'
+        usage()
+    for p in procSpec:
+        if p.hasAttribute('range'):
+            therange = p.getAttribute('range')
+            splitRange = therange.split('-')
+            if len(splitRange) == 1:
+                loRange = int(splitRange[0])
+                hiRange = loRange
+            else:
+                (loRange,hiRange) = (int(splitRange[0]),int(splitRange[1]))
+        else:
+            (loRange,hiRange) = (0,nprocs-1)
+        for i in xrange(loRange,hiRange+1):
+            if i >= nprocs:
+                print '*** exiting; rank %d is greater than nprocs for args'
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
+            if covered[i]:
+                print '*** exiting; rank %d is doubly used in proc specs'
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
+            covered[i] = 1
+        if p.hasAttribute('exec'):
+            execs[(loRange,hiRange)] = p.getAttribute('exec')
+        else:
+            print '*** exiting; range %d-%d has no exec' % (loRange,hiRange)
+            myExitStatus = -1  # used in main
+            exit(myExitStatus) # really forces jump back into main
+        if p.hasAttribute('user'):
+            tempuser = p.getAttribute('user')
+            try:
+                pwent = getpwnam(tempuser)
+            except:
+                pwent = None
+            if not pwent:
+                print tempuser, 'is an invalid username'
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
+            if tempuser == username  or  getuid() == 0:
+                users[(loRange,hiRange)] = p.getAttribute('user')
+            else:
+                print tempuser, 'username does not match yours and you are not root'
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
+        else:
+            users[(loRange,hiRange)] = username
+        if p.hasAttribute('cwd'):
+            cwds[(loRange,hiRange)] = p.getAttribute('cwd')
+        else:
+            cwds[(loRange,hiRange)] = cwd
+        if p.hasAttribute('path'):
+            paths[(loRange,hiRange)] = p.getAttribute('path')
+        else:
+            paths[(loRange,hiRange)] = environ['PATH']
+        if p.hasAttribute('host'):
+            host = p.getAttribute('host')
+            if host.startswith('_any_'):
+                hosts[(loRange,hiRange)] = host
+            else:
+                hosts[(loRange,hiRange)] = gethostbyname_ex(host)[2][0]
+        else:
+            if hostList:
+                hosts[(loRange,hiRange)] = '_any_from_pool_'
+            else:
+                hosts[(loRange,hiRange)] = '_any_'
+
+        argDict = {}
+        argList = p.getElementsByTagName('arg')
+        for argElem in argList:
+            argDict[int(argElem.getAttribute('idx'))] = argElem.getAttribute('value')
+        argVals = [0] * len(argList)
+        for i in argDict.keys():
+            argVals[i-1] = unquote(argDict[i])
+        args[(loRange,hiRange)] = argVals
+
+        limitDict = {}
+        limitList = p.getElementsByTagName('limit')
+        for limitElem in limitList:
+            type = limitElem.getAttribute('type')
+            if type in known_rlimit_types:
+                limitDict[type] = limitElem.getAttribute('value')
+            else:
+                print 'mpdrun: invalid type in limit: %s' % (type)
+                myExitStatus = -1  # used in main
+                exit(myExitStatus) # really forces jump back into main
+        limits[(loRange,hiRange)] = limitDict
+
+        envVals = {}
+        envVarList = p.getElementsByTagName('env')
+        for envVarElem in envVarList:
+            envkey = envVarElem.getAttribute('name')
+            envval = envVarElem.getAttribute('value')
+            envVals[envkey] = envval
+        envvars[(loRange,hiRange)] = envVals
+
+
+def get_vals_for_attach():
+    global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
+           try0Locally, lineLabels, jobAlias, hostsFile, mergingOutput, conSocket
+    global stdinGoesToWho, myExitStatus, manSocket, jobid, username, cwd
+    global outXmlDoc, outXmlEC, outXmlFile, linesPerRank, gdb, gdbAttachJobid
+    global execs, users, cwds, paths, args, envvars, limits, hosts, hostList
+    sjobid = gdbAttachJobid.split('@')    # jobnum and originating host
+    msgToSend = { 'cmd' : 'mpdlistjobs' }
+    mpd_send_one_msg(conSocket,msgToSend)
+    msg = recv_one_msg_with_timeout(conSocket,5)
+    if not msg:
+        mpd_raise('no msg recvd from mpd before timeout')
+    if msg['cmd'] != 'local_mpdid':     # get full id of local mpd for filters later
+        mpd_raise('did not recv local_mpdid msg from local mpd; instead, recvd: %s' % msg)
+    else:
+        if len(sjobid) == 1:
+            sjobid.append(msg['id'])
+    while 1:
+        msg = mpd_recv_one_msg(conSocket)
+        if not msg.has_key('cmd'):
+            raise RuntimeError, 'mpdlistjobs: INVALID msg=:%s:' % (msg)
+        if msg['cmd'] == 'mpdlistjobs_info':
+            smjobid = msg['jobid'].split('  ')  # jobnum, mpdid, and alias (if present)
+            if sjobid[0] == smjobid[0]  and  sjobid[1] == smjobid[1]:  # jobnum and mpdid
+                rank = int(msg['rank'])
+                users[(rank,rank)]   = msg['username']
+                hosts[(rank,rank)]   = msg['host']
+                execs[(rank,rank)]   = msg['pgm']
+                cwds[(rank,rank)]    = cwd
+                paths[(rank,rank)]   = environ['PATH']
+                args[(rank,rank)]    = [msg['clipid']]
+                envvars[(rank,rank)] = {}
+                limits[(rank,rank)]  = {}
+        else:
+            break  # mpdlistjobs_trailer
+    nprocs = len(execs.keys())    # all dicts are the same len here
 
 
 def usage():
@@ -820,7 +881,7 @@ if __name__ == '__main__':
     try:
         mpdrun()
     except mpdError, errmsg:
-	print 'mpdrun failed: %s' % (errmsg)
+        print 'mpdrun failed: %s' % (errmsg)
     except SystemExit, errmsg:
         pass
     exit(myExitStatus)
