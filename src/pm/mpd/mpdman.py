@@ -5,7 +5,7 @@
 #
 
 from os       import environ, getpid, pipe, fork, fdopen, read, write, close, dup2, \
-                     chdir, execvpe, kill, waitpid, strerror, setpgrp
+                     chdir, execvpe, kill, waitpid, strerror, setpgrp, WNOHANG
 from errno    import EINTR
 from sys      import exit
 from socket   import gethostname, fromfd, AF_INET, SOCK_STREAM
@@ -23,8 +23,12 @@ from mpdlib   import mpd_set_my_id, mpd_print, mpd_print_tb, \
                      mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
                      mpd_socketpair, mpd_get_ranks_in_binary_tree
 
+global clientPid, clientExited, clientExitStatus
+
 def mpdman():
-    signal(SIGCHLD,SIG_DFL)  # reset mpd's values
+    global clientPid, clientExited, clientExitStatus
+    clientExited = 0
+    signal(SIGCHLD,sigchld_handler)
 
     myHost = environ['MPDMAN_MYHOST']
     myRank = int(environ['MPDMAN_RANK'])
@@ -314,6 +318,17 @@ def mpdman():
                 mpd_raise('select error: %s' % strerror(data[0]))
         except Exception, data:
             mpd_raise('other error after select %s :%s:' % ( data.__class__, data) )
+        if clientExited:
+            clientExited = 0
+            msgToSend = { 'cmd' : 'client_exit_status', 'man_id' : myId,
+                          'cli_status' : clientExitStatus, 'cli_host' : gethostname(),
+                          'cli_pid' : clientPid, 'cli_rank' : myRank }
+            if myRank == 0:
+                if conSocket:
+                    mpd_send_one_msg_noprint(conSocket,msgToSend)
+            else:
+                if rhsSocket:
+                    mpd_send_one_msg(rhsSocket,msgToSend)
         for readySocket in inReadySockets:
             if readySocket not in socketsToSelect.keys():
                 continue
@@ -680,16 +695,6 @@ def mpdman():
             elif readySocket == pmiSocket:
                 line = mpd_recv_one_line(pmiSocket)
                 if not line:
-                    (donePid,status) = waitpid(clientPid,0)
-                    msgToSend = { 'cmd' : 'client_exit_status', 'man_id' : myId,
-                                  'cli_status' : status, 'cli_host' : gethostname(),
-                                  'cli_pid' : clientPid, 'cli_rank' : myRank }
-                    if myRank == 0:
-                        if conSocket:
-                            mpd_send_one_msg_noprint(conSocket,msgToSend)
-                    else:
-                        if rhsSocket:
-                            mpd_send_one_msg(rhsSocket,msgToSend)
                     del socketsToSelect[pmiSocket]
                     pmiSocket.close()
 		    pmiSocket = 0
@@ -1059,6 +1064,20 @@ def set_limits(limits):
         except (NameError,ImportError), errmsg:
             return errmsg
     return 0
+
+def sigchld_handler(signum,frame):
+    global clientPid, clientExited, clientExitStatus
+    done = 0
+    while not done:
+        try:
+            (pid,status) = waitpid(-1,WNOHANG)
+            if pid == 0:    # no existing child process is finished
+                done = 1
+            if pid == clientPid:
+                clientExited = 1
+                clientExitStatus = status
+        except:
+            done = 1
 
 
 if __name__ == '__main__':
