@@ -84,6 +84,35 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
     }
     return mtype->buf;
 }
+
+/* 
+ * Setup contiguous buffers of n copies of a datatype.  Initialize for
+ * reception (e.g., set initial data to detect failure)
+ */
+static void *MTestTypeContigInitRecv( MTestDatatype *mtype )
+{
+    MPI_Aint size;
+    if (mtype->count > 0) {
+	signed char *p;
+	int  i, totsize;
+	MPI_Type_extent( mtype->datatype, &size );
+	totsize = size * mtype->count;
+	mtype->buf = (void *) malloc( totsize );
+	p = (signed char *)(mtype->buf);
+	if (!p) {
+	    /* Error - out of memory */
+	    fprintf( stderr, "Out of memory in type buffer init\n" );
+	    MPI_Abort( MPI_COMM_WORLD, 1 );
+	}
+	for (i=0; i<totsize; i++) {
+	    p[i] = 0xff;
+	}
+    }
+    else {
+	mtype->buf = 0;
+    }
+    return mtype->buf;
+}
 static void *MTestTypeContigFree( MTestDatatype *mtype )
 {
     if (mtype->buf) {
@@ -250,7 +279,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->datatype = MPI_INT;
 	recvtype->isBasic  = 1;
 	sendtype->InitBuf  = MTestTypeVectorInit;
-	recvtype->InitBuf  = MTestTypeContigInit;
+	recvtype->InitBuf  = MTestTypeContigInitRecv;
 	sendtype->FreeBuf  = MTestTypeVectorFree;
 	recvtype->FreeBuf  = MTestTypeContigFree;
 	sendtype->CheckBuf = 0;
@@ -262,7 +291,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 
     if (!sendtype->InitBuf) {
 	sendtype->InitBuf  = MTestTypeContigInit;
-	recvtype->InitBuf  = MTestTypeContigInit;
+	recvtype->InitBuf  = MTestTypeContigInitRecv;
 	sendtype->FreeBuf  = MTestTypeContigFree;
 	recvtype->FreeBuf  = MTestTypeContigFree;
 	sendtype->CheckBuf = MTestTypeContigCheckbuf;
