@@ -108,9 +108,9 @@ public class CategoryIcon implements Icon
         g.drawLine( x2, y1, x2, y2 );     // right
         g.drawLine( x1, y2, x2, y2 );     // bottom
         */
-        Parameters.STATE_BORDER_STYLE.paintStateBorder( (Graphics2D) g,
-                                                        x1, y1, true,
-                                                        x2, y2, true );
+        Parameters.STATE_BORDER.paintStateBorder( (Graphics2D) g,
+                                                  x1, y1, true,
+                                                  x2, y2, true );
     }
 
     private void paintArrowIcon( Graphics g, int x, int y )
