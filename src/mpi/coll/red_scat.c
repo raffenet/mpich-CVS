@@ -691,7 +691,7 @@ int MPIR_Reduce_scatter (
             
             /* calculate recvtype */
             blklens[0] = blklens[1] = 0;
-            for (j=0; j<dst_tree_root; j++)
+            for (j=0; j<dst_tree_root && j<comm_size; j++)
                 blklens[0] += recvcnts[j];
             for (j=dst_tree_root+mask; j<comm_size; j++)
                 blklens[1] += recvcnts[j];
