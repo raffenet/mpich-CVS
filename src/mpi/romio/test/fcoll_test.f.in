@@ -153,7 +153,7 @@
 
       call MPI_TYPE_FREE(newtype, ierr)
       if (mynod .eq. 0) then
-         print *, 'Done'
+         print *, ' Done'
       end if 
 
       call MPI_FINALIZE(ierr)

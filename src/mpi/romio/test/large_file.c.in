@@ -13,7 +13,7 @@
 #define SIZE 1048576*4     /* no. of long longs in each write/read */
 #define NTIMES 128         /* no. of writes/reads */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     MPI_File fh;
     MPI_Status status;
@@ -99,4 +99,5 @@ main(int argc, char **argv)
     free(buf);
     free(filename);
     MPI_Finalize(); 
+    return 0;
 }

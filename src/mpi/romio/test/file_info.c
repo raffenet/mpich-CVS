@@ -6,7 +6,7 @@
 
 /* prints out all the default info keys and values used by ROMIO */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int i, len, nkeys, flag, mynod, default_striping_factor, nprocs;
     MPI_File fh;
@@ -134,4 +134,5 @@ main(int argc, char **argv)
     MPI_Info_free(&info_used);
     MPI_Info_free(&info);
     MPI_Finalize();
+    return 0;
 }

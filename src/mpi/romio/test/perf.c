@@ -9,7 +9,7 @@
 
 #define SIZE (1048576*4)       /* read/write size per node in bytes */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int *buf, i, j, mynod, nprocs, ntimes=5, len, err, flag;
     double stim, read_tim, write_tim, new_read_tim, new_write_tim;
@@ -152,4 +152,5 @@ main(int argc, char **argv)
     free(buf);
     free(filename);
     MPI_Finalize();
+    return 0;
 }

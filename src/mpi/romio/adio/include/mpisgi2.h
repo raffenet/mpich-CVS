@@ -3,7 +3,7 @@
  * All Rights Reserved
  */
 
-#ifndef __HAS_MPI_COMBINERS
+#if (!defined(__HAS_MPI_COMBINERS) && !defined(MPI_COMBINER_NAMED))
 
 #define MPI_COMBINER_NAMED	(-1)
 #define MPI_COMBINER_CONTIGUOUS	0

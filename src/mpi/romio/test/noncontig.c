@@ -8,7 +8,7 @@
 
 #define SIZE 5000
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int *buf, i, mynod, nprocs, flag, len, b[3];
     MPI_Aint d[3];
@@ -215,4 +215,5 @@ main(int argc, char **argv)
     free(buf);
     free(filename);
     MPI_Finalize();
+    return 0;
 }

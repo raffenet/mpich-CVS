@@ -55,7 +55,7 @@
 
       call MPI_FILE_GET_AMODE(fh, amode, ierr)
       if (mynod .eq. 0) then
-         print *, 'testing MPI_FILE_GET_AMODE'
+         print *, ' testing MPI_FILE_GET_AMODE'
       end if
       if (amode .ne. (MPI_MODE_CREATE + MPI_MODE_RDWR)) then
          print *, 'amode is ', amode, ', should be ', MPI_MODE_CREATE   &
@@ -67,7 +67,7 @@
          print *, 'atomicity is ', flag, ', should be 0'
       end if
       if (mynod .eq. 0) then
-         print *, 'setting atomic mode'
+         print *, ' setting atomic mode'
       end if
       call MPI_FILE_SET_ATOMICITY(fh, 1, ierr)
       call MPI_FILE_GET_ATOMICITY(fh, flag, ierr)
@@ -76,7 +76,7 @@
       end if
       call MPI_FILE_SET_ATOMICITY(fh, 0, ierr)
       if (mynod .eq. 0) then
-         print *, 'reverting back to nonatomic mode'
+         print *, ' reverting back to nonatomic mode'
       end if
 
       call MPI_TYPE_VECTOR(10, 10, 20, MPI_INTEGER, newtype, ierr)
@@ -86,7 +86,7 @@
       call MPI_FILE_SET_VIEW(fh, disp, MPI_INTEGER, newtype, 'native',  & 
      &     MPI_INFO_NULL, ierr)
       if (mynod .eq. 0) then
-         print *, 'testing MPI_FILE_GET_VIEW'
+         print *, ' testing MPI_FILE_GET_VIEW'
       end if
 
       disp = 0
@@ -97,7 +97,7 @@
       end if
 
       if (mynod .eq. 0) then
-         print *, 'testing MPI_FILE_GET_BYTE_OFFSET'
+         print *, ' testing MPI_FILE_GET_BYTE_OFFSET'
       end if
       offset = 10
       call MPI_FILE_GET_BYTE_OFFSET(fh, offset, disp, ierr)
@@ -108,7 +108,7 @@
       call MPI_FILE_GET_GROUP(fh, group, ierr)
 
       if (mynod .eq. 0) then
-         print *, 'setting file size to 1060 bytes'
+         print *, ' setting file size to 1060 bytes'
       end if
       filesize = 1060
       call MPI_FILE_SET_SIZE(fh, filesize, ierr)
@@ -121,7 +121,7 @@
       end if
  
       if (mynod .eq. 0) then
-         print *, 'seeking to eof and testing MPI_FILE_GET_POSITION'
+         print *, ' seeking to eof and testing MPI_FILE_GET_POSITION'
       end if
       offset = 0
       call MPI_FILE_SEEK(fh, offset, MPI_SEEK_END, ierr)
@@ -131,7 +131,7 @@
       end if
 
       if (mynod .eq. 0) then
-         print *, 'testing MPI_FILE_GET_BYTE_OFFSET'
+         print *, ' testing MPI_FILE_GET_BYTE_OFFSET'
       end if
       call MPI_FILE_GET_BYTE_OFFSET(fh, offset, disp, ierr)
       if (disp .ne. 1080) then
@@ -140,7 +140,7 @@
       call MPI_BARRIER(MPI_COMM_WORLD, ierr)
 
       if (mynod .eq. 0) then
-         print *, 'testing MPI_FILE_SEEK with MPI_SEEK_CUR'
+         print *, ' testing MPI_FILE_SEEK with MPI_SEEK_CUR'
       end if
       offset = -10
       call MPI_FILE_SEEK(fh, offset, MPI_SEEK_CUR, ierr)
@@ -152,13 +152,13 @@
       end if
 
       if (mynod .eq. 0) then
-         print *, 'preallocating disk space up to 8192 bytes'
+         print *, ' preallocating disk space up to 8192 bytes'
       end if
       filesize = 8192
       call MPI_FILE_PREALLOCATE(fh, filesize, ierr)
 
       if (mynod .eq. 0) then
-         print *, 'closing the file and deleting it'
+         print *, ' closing the file and deleting it'
       end if
       call MPI_FILE_CLOSE(fh, ierr)
 

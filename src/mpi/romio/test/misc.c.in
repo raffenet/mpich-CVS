@@ -6,7 +6,7 @@
 
 /* tests various miscellaneous functions. */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int buf[1024], amode, flag, mynod, len, i;
     MPI_File fh;
@@ -121,4 +121,5 @@ main(int argc, char **argv)
     MPI_Group_free(&group);
     free(filename);
     MPI_Finalize(); 
+    return 0;
 }

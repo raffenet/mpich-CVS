@@ -824,3 +824,38 @@ EOF
 ])dnl
 dnl
 dnl
+dnl PAC_MPI_OFFSET_KIND()
+dnl
+dnl tries to determine the Fortran 90 kind parameter for 8-byte integers
+dnl
+define(PAC_MPI_OFFSET_KIND,
+[AC_MSG_CHECKING([for Fortran 90 KIND parameter for 8-byte integers])
+rm -f kind.f kind.o kind
+cat <<EOF > kind.f
+      program main
+      integer i
+      i = selected_int_kind(16)
+      open(8, file="k.out", form="formatted")
+      write (8,*) i
+      close(8)
+      stop
+      end
+EOF
+if test -z "$F90" ; then
+   F90=f90
+fi
+KINDVAL=""
+if $F90 -o kind kind.f >/dev/null 2>&1 ; then
+    ./kind >/dev/null 2>&1
+    KINDVAL=`cat k.out`
+fi
+rm -f kind k.out kind.f kind.o
+if test -n "$KINDVAL" -a "$KINDVAL" != "-1" -a "$KINDVAL" != " -1" ; then
+   AC_MSG_RESULT($KINDVAL)
+   MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
+   MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=$KINDVAL)"
+else
+    AC_MSG_RESULT(unavailable)
+fi
+])dnl
+dnl

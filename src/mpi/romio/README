@@ -9,7 +9,7 @@ Major Changes in This Version:
 * This version is included in MPICH 1.1.1 and HPMPI 1.4.
 
 * Added support for NEC SX-4 and created a new device ad_sfs for
-  NEC's SFS file system.
+  NEC SFS file system.
 
 * New devices ad_hfs for HP/Convex HFS file system and ad_xfs for 
   SGI XFS file system.
@@ -59,7 +59,7 @@ Major Changes in This Version:
       
   If ROMIO doesn't understand a hint, or if the value is invalid, the hint
   will be ignored. The values of hints being used by ROMIO at any time 
-  can be obtained via  MPI_File_get_info.
+  can be obtained via MPI_File_get_info.
 
 
 
@@ -101,11 +101,12 @@ This version of ROMIO works with and is included in MPICH 1.1.1 and in
 HPMPI 1.4. It also works with SGI MPI 3.1 and higher and with NEC MPI.
 
 You can open files on multiple file systems in the same program. The
-user is responsible for ensuring that the directory where the file is
-to be opened is accessible from the process opening the file. For
-example, a process running on one workstation may not be able to
-access a directory on the local disk of another workstation, and
-therefore ROMIO will not be able to open a file in such a directory.
+only restriction is that the directory where the file is to be opened
+must be accessible from the process opening the file. For example, a
+process running on one workstation may not be able to access a
+directory on the local disk of another workstation, and therefore
+ROMIO will not be able to open a file in such a directory. NFS-mounted
+files can be accessed.
 
 An MPI-IO file created by ROMIO is no different than any other file
 created by the underlying file system. Therefore, you may use any of
@@ -150,7 +151,7 @@ explicitly specify the file systems by using the "-file_system" option
 to configure. Multiple file systems can be specified by using "+" as a
 separator. For example,
 
-    ./configure -file_system=ufs+nfs
+    ./configure -file_system=xfs+nfs
 
 For the entire list of options to configure do
 

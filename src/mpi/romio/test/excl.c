@@ -6,7 +6,7 @@
 
 /* tests MPI_MODE_EXCL */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     MPI_File fh;
     int rank, len, err, i, flag=0;
@@ -66,5 +66,6 @@ main(int argc, char **argv)
     if (!rank) printf("Done\n");
 
     free(filename);
-    MPI_Finalize(); 
+    MPI_Finalize();
+    return 0; 
 }

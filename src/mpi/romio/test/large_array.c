@@ -13,7 +13,7 @@
 /* This program will work only if the MPI implementation defines MPI_Aint 
    as a 64-bit integer. */
    
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     MPI_Datatype newtype;
     int i, ndims, array_of_gsizes[3], array_of_distribs[3];
@@ -137,4 +137,5 @@ main(int argc, char **argv)
     }
 
     MPI_Finalize();
+    return 0;
 }

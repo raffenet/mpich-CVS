@@ -12,7 +12,7 @@
 
 #define BUFSIZE 10000    /* no. of integers */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int *writebuf, *readbuf, i, mynod, nprocs, flag, len, err;
     char *filename;
@@ -174,4 +174,5 @@ main(int argc, char **argv)
     free(filename);
 
     MPI_Finalize();
+    return 0;
 }

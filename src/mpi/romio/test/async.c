@@ -10,7 +10,7 @@
    reads them back. The file name is taken as a command-line argument,
    and the process rank is appended to it.*/ 
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int *buf, i, rank, nints, len, flag;
     char *filename, *tmp;
@@ -87,5 +87,6 @@ main(int argc, char **argv)
     free(filename);
     free(tmp);
 
-    MPI_Finalize(); 
+    MPI_Finalize();
+    return 0; 
 }

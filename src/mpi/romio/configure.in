@@ -27,13 +27,14 @@ print_error() {
     }
 usage_msg="
 Usage: ${progname} [-file_system=FILE_SYSTEM] [-arch=ARCH_TYPE] [-mpi=MPI_IMPL]
-                 [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
-                 [-cc=C_COMPILER] [-fc=FORTRAN_COMPILER] [-nof77] 
-                 [-cflags=CFLAGS] [-fflags=FFLAGS] [-f90nag] [-debug] 
-                 [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
-                 [-noranlib] [-ar=AR_COMMAND] [-prefix=INSTALL_DIR]  
-                 [-intsize=INTSIZE] [-ptrsize=PTRSIZE] [-longsize=LONGSIZE]
-                 [-longlongsize=LONGLONGSIZE] [-noprofile]
+                [-mpiincdir=MPI_INCLUDE_DIR] [-mpilib=MPI_LIBRARY]
+                [-cc=C_COMPILER] [-fc=FORTRAN_COMPILER] [-nof77] 
+                [-cflags=CFLAGS] [-fflags=FFLAGS] [-f90=F90_COMPILER] [-debug] 
+                [-make=MAKEPGM] [-mpiolib=MPIO_LIBRARY] [-ar_nolocal] 
+                [-noranlib] [-ar=AR_COMMAND] [-prefix=INSTALL_DIR]  
+                [-intsize=INTSIZE] [-ptrsize=PTRSIZE] [-longsize=LONGSIZE]
+                [-longlongsize=LONGLONGSIZE] [-f90nag] [-noprofile] 
+                 
 where
    FILE_SYSTEM  = the file system(s) for which ROMIO is to be configured.
                   Valid values are pfs, piofs, hfs, xfs, sfs, ufs, and nfs 
@@ -65,6 +66,8 @@ where
                   uses a default compiler depending on the machine.
    CFLAGS       = flags to give to the C compiler
    FFLAGS       = flags to give to the Fortran compiler
+   F90_COMPILER = the Fortran 90 compiler to use. If not specified, 
+                  ROMIO uses f90.
    MPIO_LIBRARY = name of the MPI-IO library to be built (full path).
                   Default is "this_directory"/lib/ARCH_TYPE/libmpio.a.
    MAKEPGM      = name of the make program to use
@@ -165,6 +168,7 @@ FORTRAN_MPI_OFFSET=""
 MPIOF_H_INCLUDED=0
 MPI_OFFSET_KIND1="!"
 MPI_OFFSET_KIND2="!"
+F90=""
 TEST_CC=""
 TEST_F77=""
 #
@@ -262,6 +266,9 @@ case $arg in
   -noprofile | --noprofile)
      echo "profiling interface will not be built"
      NOPROFILE=1
+     ;;
+  -f90=* | --f90=*)
+     F90=`echo $arg|sed 's/-*fc=//'`
      ;;
   -h | -help | --h | --help | -u | --u)
     (echo "${usage_msg}") >& 2
@@ -733,6 +740,8 @@ if test -n "$arch_IRIX"; then
           AC_MSG_RESULT(yes)
        else
           AC_MSG_RESULT(no)
+          file_system_ufs=1
+          FILE_SYSTEM="ufs $FILE_SYSTEM"
        fi
        echo "configuring for file systems $FILE_SYSTEM"
    fi
@@ -770,7 +779,11 @@ if test -n "$longlongsize"; then
    fi
 fi
 #
-# check if MPI_Info is implemented in the MPI implementation
+if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" ; then
+   PAC_MPI_OFFSET_KIND()
+fi
+#
+# check if MPI_Info functions are defined in the MPI implementation
 if test $FROM_MPICH = 0 ; then
    PAC_MPI_INFO()
 else
@@ -891,7 +904,7 @@ if test $FROM_MPICH = 1 ; then
       TEST_F77=$MPICH_HOME/bin/mpif90
    else
       TEST_F77=$MPICH_HOME/bin/mpif77
-   fi     
+   fi
    CC=$MPICH_HOME/bin/mpicc
 fi
 #
