@@ -5,7 +5,7 @@ from os              import environ, fork, execvpe, getuid, getpid, path, getcwd
                             close, wait, waitpid, kill, _exit
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname
 from select          import select
-from signal          import signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT
+from signal          import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from exceptions      import Exception
 from xml.dom.minidom import parseString
 from mpdlib          import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
@@ -17,12 +17,12 @@ class mpdrunInterrupted(Exception):
         self.args = args
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels
-global manSocket
+global manSocket, timeout, sigExitDueToTimeout
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels, jobalias
-    global manSocket
+    global manSocket, timeout, sigExitDueToTimeout
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -34,9 +34,16 @@ def mpdrun():
     try0Locally = 1
     lineLabels = 0
     process_cmdline_args()
+    sigExitDueToTimeout = 1
     (listenSocket,listenPort) = mpd_get_inet_listen_socket('',0)
     cwd = path.abspath(getcwd())
     username = mpd_get_my_username()
+    if environ.has_key('MPDRUN_TIMEOUT'):
+        timeout = int(environ['MPDRUN_TIMEOUT'])
+    elif environ.has_key('MPIEXEC_TIMEOUT'):
+        timeout = int(environ['MPIEXEC_TIMEOUT'])
+    else:
+        timeout = 0
     if environ.has_key('UNIX_SOCKET'):
         conFD = int(environ['UNIX_SOCKET'])
         conSocket = fromfd(conFD,AF_UNIX,SOCK_STREAM)
@@ -225,6 +232,9 @@ def mpdrun():
         else:
             mpd_raise('unexpected message from mpd: %s' % (msg) )
     conSocket.close()
+    if timeout:
+        signal(SIGALRM,sig_handler)
+	alarm(timeout)
 
     (manSocket,addr) = listenSocket.accept()
     msg = mpd_recv_one_msg(manSocket)
@@ -300,8 +310,10 @@ def mpdrun():
 	        kill(getpid(),SIGTSTP)
 	        signal(SIGTSTP,sig_handler)  # restore this handler
         except Exception, errmsg:
-            if errmsg[0] == 4:  # interrupted system call
+            if isinstance(errmsg,Exception)  and  errmsg[0] == 4:  # interrupted system call
                 continue
+	    elif sigExitDueToTimeout:
+	        exit(-1)
             else:
                 mpd_raise('mpdrun: select failed: errmsg=:%s:' % (errmsg) )
     if mshipPid:
@@ -309,7 +321,7 @@ def mpdrun():
 
 def sig_handler(signum,frame):
     # for some reason, I (rmb) was unable to handle TSTP and CONT in the same way
-    global manSocket
+    global manSocket, timeout, sigExitDueToTimeout
     if signum == SIGINT:
         raise mpdrunInterrupted, 'SIGINT'
     elif signum == SIGTSTP:
@@ -318,6 +330,14 @@ def sig_handler(signum,frame):
 	if manSocket:
 	    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGCONT' }
 	    mpd_send_one_msg(manSocket,msgToSend)
+    elif signum == SIGALRM:
+	if manSocket:
+	    msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
+	    mpd_send_one_msg(manSocket,msgToSend)
+	    manSocket.close()
+	print 'mpdrun terminating due to timeout %d seconds' % timeout
+	sigExitDueToTimeout = 1
+	exit(-1)
 
 def process_cmdline_args():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, try0Locally, lineLabels, jobalias
