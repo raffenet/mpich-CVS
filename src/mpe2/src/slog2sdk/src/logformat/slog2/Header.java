@@ -88,7 +88,9 @@ public class Header
     public void readObject( MixedDataInput ins )
     throws java.io.IOException
     {
-        version_ID              = ins.readString();
+        short  max_str_length;
+        max_str_length          = (short) Const.version_ID.length();
+        version_ID              = ins.readStringWithLimit( max_str_length );
         num_children_per_node   = ins.readShort();
         treeleaf_bytesize       = ins.readInt();
         max_treedepth           = ins.readShort();
@@ -109,8 +111,10 @@ public class Header
             return null;
         else
             return ( "Incompatible Version IDs detected! \n"
-                   + "the logfile's is version " + version_ID + ", "
-                   + "but the program is version " + Const.version_ID + "\n" );
+                   + "The logfile's version ID is "
+                   + version_ID + ",\n"
+                   + "but this input program reads logfile of version "
+                   + Const.version_ID + ".\n" );
     }
 
     public void setTreeLeafByteSize( int in_bytesize )
