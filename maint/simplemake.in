@@ -1224,7 +1224,7 @@ sub DefaultRules {
 		print FD "\t$tmparg \\$newline";
 	    }
 	}
-	if (defined($autoconf_files_by_dir{$lcurdir})) {
+	if ($lcurdir && defined($autoconf_files_by_dir{$lcurdir})) {
 	    print FD "\t-distcleanfiles=\"$autoconf_files_by_dir{$lcurdir}\" \\$newline";
 	}
 	print FD "\t\tMakefile.sm )$newline";
@@ -1254,7 +1254,9 @@ sub DefaultRules {
 	    $ignore_step = "";
 	}
 	$relcurdir = $curdir;
-	$relcurdir =~ s/^$last_config_dir//;
+	if ($last_config_dir) {
+	    $relcurdir =~ s/^$last_config_dir//;
+	}
 	print STDOUT "curdir is $curdir and relcurdir is $relcurdir\n" if $debug_confdir;
 	print FD "\t${ignore_step}if [ -x config.status ] ; then CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status ; fi$newline";
     }
@@ -2413,6 +2415,8 @@ sub VariableDocs {
     foreach my $kind (keys(%docsrc)) {
 	;
     }
+    # Let us set doctext from configure.
+    print FD "DOCTEXT = \@DOCTEXT\@\n";
 }
 
 #
@@ -2465,7 +2469,7 @@ sub RuleDocs {
 	    if ($kind eq "man" && ($docdestdir =~ /man(\d)$/)) {
 		$extarg = "-ext $1";
 	    }
-	    print FD "\tdoctext $doctextOptionName{$kind} -mpath $docdestdir $extarg -heading $doc_heading \\$newline";
+	    print FD "\t\$(DOCTEXT) $doctextOptionName{$kind} -mpath $docdestdir $extarg -heading $doc_heading \\$newline";
 	    print FD "\t\t-quotefmt $docargs \$<$newline";
 	}
     }
