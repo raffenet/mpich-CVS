@@ -6,12 +6,15 @@
 #ifndef MPID_DATATYPE_H
 #define MPID_DATATYPE_H
 
-#include <mpid_dataloop.h>
+#include "mpiimpl.h"
+#include "mpid_dataloop.h"
+#include "mpihandlemem.h"
 
 /* NOTE: 
  * - struct MPID_Datatype is defined in src/include/mpiimpl.h.
  * - struct MPID_Dataloop and MPID_Segment are defined in 
  *   src/mpid/common/datatype/mpid_dataloop.h (and gen_dataloop.h).
+ * - MPIU_Object_alloc_t is defined in src/include/mpihandle.h
  */
 
 #define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,0x000000ff,ptr)
@@ -179,7 +182,7 @@ typedef struct MPID_Datatype {
                                      no datatype is constructed that
                                      cannot be processed (see MPID_Segment) */
 
-    MPID_Attribute   *attributes;    /* MPI-2 adds datatype attributes */
+    struct MPID_Attribute   *attributes;    /* MPI-2 adds datatype attributes */
 
     int32_t       cache_id;      /* These are used to track which processes */
     /* MPID_Lpidmask mask; */         /* have cached values of this datatype */
