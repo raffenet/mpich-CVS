@@ -190,6 +190,7 @@ AC_OUTPUT(Makefile \
 	  io/Makefile \
 	  f77/Makefile \
 	  f77/attr/Makefile \
+	  f77/datatype/Makefile \
 	  f77/util/Makefile \
 	  f77/coll/Makefile \
 	  f77/rma/Makefile \
