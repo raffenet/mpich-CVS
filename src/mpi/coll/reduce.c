@@ -665,23 +665,32 @@ PMPI_LOCAL int MPIR_Reduce_inter (
 #define FUNCNAME MPI_Reduce
 
 /*@
-   MPI_Reduce - short description
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  void *recvbuf - receive buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  MPI_Op op - operation
-.  int root - root
--  MPI_Comm comm - communicator
+MPI_Reduce - Reduces values on all processes to a single value
 
-   Notes:
+Input Parameters:
++ sendbuf - address of send buffer (choice) 
+. count - number of elements in send buffer (integer) 
+. datatype - data type of elements of send buffer (handle) 
+. op - reduce operation (handle) 
+. root - rank of root process (integer) 
+- comm - communicator (handle) 
+
+Output Parameter:
+. recvbuf - address of receive buffer (choice, 
+significant only at 'root') 
 
 .N Fortran
 
+.N collops
+
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
+.N MPI_ERR_BUFFER_ALIAS
 @*/
 int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
 {

@@ -28,20 +28,30 @@
 #define FUNCNAME MPI_Pack_size
 
 /*@
-   MPI_Pack_size - short description
+   MPI_Pack_size - Returns the upper bound on the amount of space needed to
+                    pack a message
 
-   Arguments:
-+  int incount - incount
-.  MPI_Datatype datatype - datatype
-.  MPI_Comm comm - communicator
--  int *size - size
+Input Parameters:
++ incount - count argument to packing call (integer) 
+. datatype - datatype argument to packing call (handle) 
+- comm - communicator argument to packing call (handle) 
 
-   Notes:
+Output Parameter:
+. size - upper bound on size of packed message, in bytes (integer) 
 
-.N Fortran
+Notes:
+The MPI standard document describes this in terms of 'MPI_Pack', but it 
+applies to both 'MPI_Pack' and 'MPI_Unpack'.  That is, the value 'size' is 
+the maximum that is needed by either 'MPI_Pack' or 'MPI_Unpack'.
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
+
 @*/
 int MPI_Pack_size(int incount,
 		  MPI_Datatype datatype,

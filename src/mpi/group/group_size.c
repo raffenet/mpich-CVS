@@ -28,18 +28,20 @@
 #define FUNCNAME MPI_Group_size
 
 /*@
-   MPI_Group_size - size of a group
 
-   Arguments:
-+  MPI_Group group - group
--  int *size - size
+MPI_Group_size - Returns the size of a group
 
-   Notes:
+Input Parameters:
++ group - group (handle) 
+Output Parameter:
+- size - number of processes in the group (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_ARG
 @*/
 int MPI_Group_size(MPI_Group group, int *size)
 {

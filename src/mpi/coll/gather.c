@@ -430,24 +430,31 @@ PMPI_LOCAL int MPIR_Gather_inter (
 #define FUNCNAME MPI_Gather
 
 /*@
-   MPI_Gather - gather
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int sendcnt - send count
-.  MPI_Datatype sendtype - send datatype
-.  void *recvbuf - receive buffer
-.  int recvcnt - receive count
-.  MPI_Datatype recvtype - receive datatype
-.  int root - root
--  MPI_Comm comm - communicator
+MPI_Gather - Gathers together values from a group of processes
+ 
+Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. sendcount - number of elements in send buffer (integer) 
+. sendtype - data type of send buffer elements (handle) 
+. recvcount - number of elements for any single receive (integer, 
+significant only at root) 
+. recvtype - data type of recv buffer elements 
+(significant only at root) (handle) 
+. root - rank of receiving process (integer) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. recvbuf - address of receive buffer (choice, significant only at 'root') 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
 @*/
 int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {

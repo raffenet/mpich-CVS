@@ -420,23 +420,26 @@ PMPI_LOCAL int MPIR_Alltoall_inter(
 #define FUNCNAME MPI_Alltoall
 
 /*@
-   MPI_Alltoall - alltoall
+MPI_Alltoall - Sends data from all to all processes
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int sendcount - send count
-.  MPI_Datatype sendtype - send datatype
-.  void *recvbuf - receive buffer
-.  int recvcount - receive count
-.  MPI_Datatype recvtype - receive datatype
--  MPI_Comm comm - communicator
+Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. sendcount - number of elements to send to each process (integer) 
+. sendtype - data type of send buffer elements (handle) 
+. recvcount - number of elements received from any process (integer) 
+. recvtype - data type of receive buffer elements (handle) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. recvbuf - address of receive buffer (choice) 
 
 .N Fortran
 
 .N Errors
-.N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
 @*/
 int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {

@@ -37,13 +37,13 @@ Input Parameters:
 . key - key (string)
 - value - value (string)
 
-   Notes:
-
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
-.N ... others
+.N MPI_ERR_INFO_KEY
+.N MPI_ERR_INFO_VALUE
+.N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Info_set( MPI_Info info, char *key, char *value )
 {
@@ -60,10 +60,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    int keylen;
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    /* Check input arguments */
 	    if (!key) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_KEY,

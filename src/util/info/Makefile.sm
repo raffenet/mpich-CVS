@@ -1,10 +1,10 @@
-lib${MPILIBNAME}_a_SOURCES = infoutil.c info_create.c info_delete.c \
+mpi_sources = info_create.c info_delete.c \
  info_dup.c info_free.c info_get.c info_getn.c info_getnth.c \
  info_getvallen.c info_set.c
+lib${MPILIBNAME}_a_SOURCES = infoutil.c ${mpi_sources}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 #
-# This is a test for the document generation
-doc_HTML_SOURCES = info_create.c info_delete.c \
- info_dup.c info_free.c info_get.c info_getn.c info_getnth.c \
- info_getvallen.c info_set.c
+doc_HTML_SOURCES  = ${mpi_sources}
+doc_MAN_SOURCES   = ${mpi_sources}
+doc_LATEX_SOURCES = ${mpi_sources}

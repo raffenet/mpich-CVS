@@ -29,18 +29,46 @@
 #define FUNCNAME MPI_Comm_dup
 
 /*@
-   MPI_Comm_dup - duplicate a communicator
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  MPI_Comm *newcomm - new communicator
+MPI_Comm_dup - Duplicates an existing communicator with all its cached
+               information
 
-   Notes:
+Input Parameter:
+. comm - communicator (handle) 
+
+Output Parameter:
+. newcomm - A new communicator over the same group as 'comm' but with a new
+  context. See notes.  (handle) 
+
+Notes:
+  This routine is used to create a new communicator that has a new
+  communication context but contains the same group of processes as
+  the input communicator.  Since all MPI communication is performed
+  within a communicator (specifies as the group of processes `plus`
+  the context), this routine provides an effective way to create a
+  private communicator for use by a software module or library.  In
+  particular, no library routine should use 'MPI_COMM_WORLD' as the
+  communicator; instead, a duplicate of a user-specified communicator
+  should always be used.  For more information, see Using MPI, 2nd
+  edition. 
+
+  Because this routine essentially produces a copy of a communicator,
+  it also copies any attributes that have been defined on the input
+  communicator, using the attribute copy function specified by the
+  'copy_function' argument to 'MPI_Keyval_create'.  This is
+  particularly useful for (a) attributes that describe some property
+  of the group associated with the communicator, such as its
+  interconnection topology and (b) communicators that are given back
+  to the user; the attibutes in this case can track subsequent
+  'MPI_Comm_dup' operations on this communicator.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+
+.seealso: MPI_Comm_free, MPI_Keyval_create, MPI_Attr_set, MPI_Attr_delete
 @*/
 int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 {

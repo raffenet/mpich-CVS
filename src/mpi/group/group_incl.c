@@ -29,20 +29,34 @@
 #define FUNCNAME MPI_Group_incl
 
 /*@
-   MPI_Group_incl - group_incl
 
-   Arguments:
-+  MPI_Group group - group
-.  int n - n
-.  int *ranks - ranks
--  MPI_Group *newgroup - new group
+MPI_Group_incl - Produces a group by reordering an existing group and taking
+        only listed members
 
-   Notes:
+Input Parameters:
++ group - group (handle) 
+. n - number of elements in array 'ranks' (and size of newgroup ) (integer) 
+- ranks - ranks of processes in 'group' to appear in 'newgroup' (array of 
+integers) 
 
-.N Fortran
+Output Parameter:
+. newgroup - new group derived from above, in the order defined by 'ranks' 
+(handle) 
+
+Note:
+This implementation does not currently check to see that the list of
+ranks to ensure that there are no duplicates.
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_ARG
+.N MPI_ERR_EXHAUSTED
+.N MPI_ERR_RANK
+
+.seealso: MPI_Group_free
 @*/
 int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 {

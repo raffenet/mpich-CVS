@@ -29,20 +29,34 @@
 #define FUNCNAME MPI_Group_excl
 
 /*@
-   MPI_Group_excl - group_excl
 
-   Arguments:
-+  MPI_Group group - group
-.  int n - n
-.  int *ranks - ranks
--  MPI_Group *newgroup - new group
+MPI_Group_excl - Produces a group by reordering an existing group and taking
+        only unlisted members
 
-   Notes:
+Input Parameters:
++ group - group (handle) 
+. n - number of elements in array 'ranks' (integer) 
+- ranks - array of integer ranks in 'group' not to appear in 'newgroup' 
+
+Output Parameter:
+. newgroup - new group derived from above, preserving the order defined by 
+ 'group' (handle) 
+
+Note:  
+The MPI standard requires that each of the ranks to excluded must be
+a valid rank in the group and all elements must be distinct or the
+function is erroneous.  
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_EXHAUSTED
+.N MPI_ERR_ARG
+.N MPI_ERR_RANK
+
+.seealso: MPI_Group_free
 @*/
 int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 {

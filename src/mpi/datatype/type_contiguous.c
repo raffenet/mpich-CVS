@@ -28,19 +28,22 @@
 #define FUNCNAME MPI_Type_contiguous
 
 /*@
-   MPI_Type_contiguous - type_contiguous
+    MPI_Type_contiguous - Creates a contiguous datatype
 
-   Arguments:
-+  int count - count
-.  MPI_Datatype old_type - old datatype
--  MPI_Datatype *new_type_p - new datatype
+Input Parameters:
++ count - replication count (nonnegative integer) 
+- oldtype - old datatype (handle) 
 
-   Notes:
+Output Parameter:
+. newtype - new datatype (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_COUNT
+.N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Type_contiguous(int count,
 			MPI_Datatype old_type,

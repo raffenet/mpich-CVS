@@ -28,18 +28,19 @@
 #define FUNCNAME MPI_Attr_delete
 
 /*@
-   MPI_Attr_delete - attr_delete
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  int keyval - keyval
+MPI_Attr_delete - Deletes attribute value associated with a key
 
-   Notes:
+Input Parameters:
++ comm - communicator to which attribute is attached (handle) 
+- keyval - The key value of the deleted attribute (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_PERM_KEY
 @*/
 int MPI_Attr_delete(MPI_Comm comm, int keyval)
 {

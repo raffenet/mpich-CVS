@@ -235,22 +235,31 @@ PMPI_LOCAL int MPIR_Scan (
 #define FUNCNAME MPI_Scan
 
 /*@
-   MPI_Scan - scan
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  void *recvbuf - receive buffer
-.  int count - count
-.  MPI_Datatype datatype - datatype
-.  MPI_Op op - operation
--  MPI_Comm comm - communicator
+MPI_Scan - Computes the scan (partial reductions) of data on a collection of
+           processes
 
-   Notes:
+Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. count - number of elements in input buffer (integer) 
+. datatype - data type of elements of input buffer (handle) 
+. op - operation (handle) 
+- comm - communicator (handle) 
+
+Output Parameter:
+. recvbuf - starting address of receive buffer (choice) 
 
 .N Fortran
 
+.N collops
+
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
+.N MPI_ERR_BUFFER_ALIAS
 @*/
 int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {

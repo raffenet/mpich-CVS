@@ -29,13 +29,13 @@
 #define FUNCNAME MPI_Error_class
 
 /*@
-   MPI_Error_class - error class
+   MPI_Error_class - Converts an error code into an error class
 
-   Arguments:
-+  int errorcode - error code
--  int *errorclass - error class
+Input Parameter:
+. errorcode - Error code returned by an MPI routine 
 
-   Notes:
+Output Parameter:
+. errorclass - Error class associated with 'errorcode'
 
 .N Fortran
 

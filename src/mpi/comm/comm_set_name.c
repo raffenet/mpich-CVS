@@ -30,9 +30,9 @@
 /*@
    MPI_Comm_set_name - set the communicator name
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  char *comm_name - communicator name
+   Input Parameters:
++  MPI_Comm comm - communicator to name (handle)
+-  char *comm_name - Name for communicator
 
    Notes:
 
@@ -40,6 +40,7 @@
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
 @*/
 int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
 {

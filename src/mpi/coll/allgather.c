@@ -454,23 +454,41 @@ PMPI_LOCAL int MPIR_Allgather_inter (
 #define FUNCNAME MPI_Allgather
 
 /*@
-   MPI_Allgather - allgather
+MPI_Allgather - Gathers data from all tasks and distribute it to all 
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int sendcount - send count
-.  MPI_Datatype sendtype - send datatype
-.  void *recvbuf - receive buffer
-.  int recvcount - receive count
-.  MPI_Datatype recvtype - receive datatype
--  MPI_Comm comm - communicator
+Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. sendcount - number of elements in send buffer (integer) 
+. sendtype - data type of send buffer elements (handle) 
+. recvcount - number of elements received from any process (integer) 
+. recvtype - data type of receive buffer elements (handle) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. recvbuf - address of receive buffer (choice) 
+
+Notes:
+ The MPI standard (1.0 and 1.1) says that 
+
+ The jth block of data sent from 
+ each proess is received by every process and placed in the jth block of the 
+ buffer 'recvbuf'.  
+
+ This is misleading; a better description is
+
+ The block of data sent from the jth process is received by every
+ process and placed in the jth block of the buffer 'recvbuf'.
+
+ This text was suggested by Rajeev Thakur and has been adopted as a 
+ clarification.
 
 .N Fortran
 
 .N Errors
-.N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
 @*/
 int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {

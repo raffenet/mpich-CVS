@@ -28,18 +28,19 @@
 #define FUNCNAME MPI_Type_extent
 
 /*@
-   MPI_Type_extent - datatype extent
+    MPI_Type_extent - Returns the extent of a datatype
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
--  MPI_Aint *extent - extent
+Input Parameters:
+. datatype - datatype (handle) 
 
-   Notes:
+Output Parameter:
+. extent - datatype extent (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
 @*/
 int MPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
 {

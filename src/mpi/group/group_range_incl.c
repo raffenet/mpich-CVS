@@ -29,20 +29,31 @@
 #define FUNCNAME MPI_Group_range_incl
 
 /*@
-   MPI_Group_range_incl - group_range_incl
 
-   Arguments:
-+  MPI_Group group - group
-.  int n - n
-.  int ranges[][3] - ranges
--  MPI_Group *newgroup - new group
+MPI_Group_range_incl - Creates a new group from ranges of ranks in an 
+        existing group
 
-   Notes:
+Input Parameters:
++ group - group (handle) 
+. n - number of triplets in array  'ranges' (integer) 
+- ranges - a one-dimensional array of integer triplets, of the 
+form (first rank, last rank, stride) indicating ranks in
+'group'  or processes to be included in 'newgroup'  
+
+Output Parameter:
+. newgroup - new group derived from above, in the 
+order defined by  'ranges' (handle)  
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_EXHAUSTED
+.N MPI_ERR_ARG
+.N MPI_ERR_RANK
+
+.seealso: MPI_Group_free
 @*/
 int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *newgroup)
 {

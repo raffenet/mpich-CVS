@@ -200,25 +200,35 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
 #define FUNCNAME MPI_Alltoallv
 
 /*@
-   MPI_Alltoallv - alltoallv
+MPI_Alltoallv - Sends data from all to all processes, with a displacement
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int *sendcnts - send counts
-.  int *sdispls - send displacements
-.  MPI_Datatype sendtype - send datatype
-.  void *recvbuf - receive buffer
-.  int *recvcnts - receive counts
-.  int *rdispls - receive displacements
-.  MPI_Datatype recvtype - receive datatype
--  MPI_Comm comm - communicator
+Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. sendcounts - integer array equal to the group size 
+specifying the number of elements to send to each processor 
+. sdispls - integer array (of length group size). Entry 
+ 'j'  specifies the displacement (relative to sendbuf  from
+which to take the outgoing data destined for process  'j'  
+. sendtype - data type of send buffer elements (handle) 
+. recvcounts - integer array equal to the group size 
+specifying the maximum number of elements that can be received from
+each processor 
+. rdispls - integer array (of length group size). Entry 
+ 'i'  specifies the displacement (relative to recvbuf  at
+which to place the incoming data from process  'i'  
+. recvtype - data type of receive buffer elements (handle) 
+- comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. recvbuf - address of receive buffer (choice) 
 
 .N Fortran
 
 .N Errors
-.N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
 @*/
 int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendtype, void *recvbuf, int *recvcnts, int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {

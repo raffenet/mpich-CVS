@@ -29,18 +29,22 @@
 #define FUNCNAME MPI_Cartdim_get
 
 /*@
-   MPI_Cartdim_get - cartdim_get
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  int *ndims - ndims
+MPI_Cartdim_get - Retrieves Cartesian topology information associated with a 
+                  communicator
 
-   Notes:
+Input Parameter:
+. comm - communicator with cartesian structure (handle) 
+
+Output Parameter:
+. ndims - number of dimensions of the cartesian structure (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
 {

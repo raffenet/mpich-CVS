@@ -878,22 +878,33 @@ PMPI_LOCAL int MPIR_Reduce_scatter_inter (
 #define FUNCNAME MPI_Reduce_scatter
 
 /*@
-   MPI_Reduce_scatter - reduce scatter
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  void *recvbuf - receive buffer
-.  int *recvcnts - receive counts
-.  MPI_Datatype datatype - datatype
-.  MPI_Op op - operation
--  MPI_Comm comm - communicator
+MPI_Reduce_scatter - Combines values and scatters the results
 
-   Notes:
+Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. recvcounts - integer array specifying the 
+number of elements in result distributed to each process.
+Array must be identical on all calling processes. 
+. datatype - data type of elements of input buffer (handle) 
+. op - operation (handle) 
+- comm - communicator (handle) 
+
+Output Parameter:
+. recvbuf - starting address of receive buffer (choice) 
 
 .N Fortran
 
+.N collops
+
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
+.N MPI_ERR_OP
+.N MPI_ERR_BUFFER_ALIAS
 @*/
 int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {

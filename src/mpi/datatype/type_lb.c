@@ -28,18 +28,21 @@
 #define FUNCNAME MPI_Type_lb
 
 /*@
-   MPI_Type_lb - type lb
+    MPI_Type_lb - Returns the lower-bound of a datatype
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
--  MPI_Aint *displacement - displacement
+Input Parameters:
+. datatype - datatype (handle) 
 
-   Notes:
+Output Parameter:
+. displacement - displacement of lower bound from origin, 
+                             in bytes (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
 {

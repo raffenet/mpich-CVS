@@ -129,25 +129,35 @@ int MPIR_Gatherv (
 #define FUNCNAME MPI_Gatherv
 
 /*@
-   MPI_Gatherv - gatherv
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int sendcnt - send count
-.  MPI_Datatype sendtype - send datatype
-.  void *recvbuf - receive buffer
-.  int *recvcnts - receive counts
-.  int *displs - receive displacements
-.  MPI_Datatype recvtype - receive datatype
-.  int root - root
--  MPI_Comm comm - communicator
+MPI_Gatherv - Gathers into specified locations from all processes in a group
 
-   Notes:
+Input Parameters:
++ sendbuf - starting address of send buffer (choice) 
+. sendcount - number of elements in send buffer (integer) 
+. sendtype - data type of send buffer elements (handle) 
+. recvcounts - integer array (of length group size) 
+containing the number of elements that are received from each process
+(significant only at 'root') 
+. displs - integer array (of length group size). Entry 
+ 'i'  specifies the displacement relative to recvbuf  at
+which to place the incoming data from process  'i'  (significant only
+at root) 
+. recvtype - data type of recv buffer elements 
+(significant only at 'root') (handle) 
+. root - rank of receiving process (integer) 
+- comm - communicator (handle) 
+
+Output Parameter:
+. recvbuf - address of receive buffer (choice, significant only at 'root') 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
 @*/
 int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int *recvcnts, int *displs, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {

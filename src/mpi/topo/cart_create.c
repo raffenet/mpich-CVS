@@ -29,22 +29,32 @@
 #define FUNCNAME MPI_Cart_create
 
 /*@
-   MPI_Cart_create - cart_create
 
-   Arguments:
-+  MPI_Comm comm_old - communicator
-.  int ndims - ndims
-.  int *dims - dims
-.  int *periods - periods
-.  int reorder - reorder
--  MPI_Comm *comm_cart - communicator
+MPI_Cart_create - Makes a new communicator to which topology information
+                  has been attached
 
-   Notes:
+Input Parameters:
++ comm_old - input communicator (handle) 
+. ndims - number of dimensions of cartesian grid (integer) 
+. dims - integer array of size ndims specifying the number of processes in 
+  each dimension 
+. periods - logical array of size ndims specifying whether the grid is 
+  periodic (true) or not (false) in each dimension 
+- reorder - ranking may be reordered (true) or not (false) (logical) 
+
+Output Parameter:
+. comm_cart - communicator with new cartesian topology (handle) 
+
+Algorithm:
+We ignore 'reorder' info currently.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_DIMS
+.N MPI_ERR_ARG
 @*/
 int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
 		    int reorder, MPI_Comm *comm_cart)

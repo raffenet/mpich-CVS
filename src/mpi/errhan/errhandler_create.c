@@ -28,18 +28,27 @@
 #define FUNCNAME MPI_Errhandler_create
 
 /*@
-   MPI_Errhandler_create - create an error handler
+  MPI_Errhandler_create - Creates an MPI-style errorhandler
 
-   Arguments:
-+  MPI_Handler_function *function - function
--  MPI_Errhandler *errhandler - error handler
+Input Parameter:
+. function - user defined error handling procedure 
 
-   Notes:
+Output Parameter:
+. errhandler - MPI error handler (handle) 
+
+Notes:
+The MPI Standard states that an implementation may make the output value 
+(errhandler) simply the address of the function.  However, the action of 
+'MPI_Errhandler_free' makes this impossible, since it is required to set the
+value of the argument to 'MPI_ERRHANDLER_NULL'.  In addition, the actual
+error handler must remain until all communicators that use it are 
+freed.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhandler)
 {

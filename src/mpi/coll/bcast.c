@@ -488,21 +488,25 @@ PMPI_LOCAL int MPIR_Bcast_inter (
 #define FUNCNAME MPI_Bcast
 
 /*@
-   MPI_Bcast - broadcast
+MPI_Bcast - Broadcasts a message from the process with rank "root" to
+            all other processes of the group. 
 
-   Input Arguments:
-+  void *buffer
-.  int count
-.  MPI_Datatype datatype
-.  int root
--  MPI_Comm comm
-
-   Notes:
+Input/output Parameters:
++ buffer - starting address of buffer (choice) 
+. count - number of entries in buffer (integer) 
+. datatype - data type of buffer (handle) 
+. root - rank of broadcast root (integer) 
+- comm - communicator (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
+.N MPI_ERR_ROOT
 @*/
 int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm )
 {

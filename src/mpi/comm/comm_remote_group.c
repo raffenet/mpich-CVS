@@ -29,18 +29,21 @@
 #define FUNCNAME MPI_Comm_remote_group
 
 /*@
-   MPI_Comm_remote_group - remote communicator group
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  MPI_Group *group - group
+MPI_Comm_remote_group - Accesses the remote group associated with 
+                        the given inter-communicator
 
-   Notes:
+Input Parameter:
+. comm - Communicator (must be intercommunicator)
+
+Output Parameter:
+. group - remote group of communicator
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
 @*/
 int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 {

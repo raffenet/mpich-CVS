@@ -28,19 +28,37 @@
 #define FUNCNAME MPI_Attr_put
 
 /*@
-   MPI_Attr_put - attribute put
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int keyval - keyval
--  void *attr_value - attribute value
+MPI_Attr_put - Stores attribute value associated with a key
 
-   Notes:
+Input Parameters:
++ comm - communicator to which attribute will be attached (handle) 
+. keyval - key value, as returned by  'MPI_KEYVAL_CREATE' (integer) 
+- attribute_val - attribute value 
+
+Notes:
+Values of the permanent attributes 'MPI_TAG_UB', 'MPI_HOST', 'MPI_IO', 
+'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE', 'MPI_LASTUSEDCODE', and 'MPI_APPNUM' 
+ may not be changed. 
+
+The type of the attribute value depends on whether C or Fortran is being used.
+In C, an attribute value is a pointer ('void *'); in Fortran, it is a single 
+integer (`not` a pointer, since Fortran has no pointers and there are systems 
+for which a pointer does not fit in an integer (e.g., any > 32 bit address 
+system that uses 64 bits for Fortran 'DOUBLE PRECISION').
+
+If an attribute is already present, the delete function (specified when the
+corresponding keyval was created) will be called.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_KEYVAL
+.N MPI_ERR_PERM_KEY
+
+.seealso MPI_Attr_get, MPI_Keyval_create, MPI_Attr_delete
 @*/
 int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 {

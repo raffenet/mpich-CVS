@@ -28,17 +28,17 @@
 #define FUNCNAME MPI_Errhandler_free
 
 /*@
-   MPI_Errhandler_free - free error handler
+  MPI_Errhandler_free - Frees an MPI-style errorhandler
 
-   Arguments:
-.  MPI_Errhandler *errhandler - error handler
-
-   Notes:
+Input Parameter:
+. errhandler - MPI error handler (handle).  Set to 'MPI_ERRHANDLER_NULL' on 
+exit.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Errhandler_free(MPI_Errhandler *errhandler)
 {

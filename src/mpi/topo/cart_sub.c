@@ -29,19 +29,27 @@
 #define FUNCNAME MPI_Cart_sub
 
 /*@
-   MPI_Cart_sub - cart_sub
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int *remain_dims - remain_dims
--  MPI_Comm *comm_new - new communicator
+MPI_Cart_sub - Partitions a communicator into subgroups which 
+               form lower-dimensional cartesian subgrids
 
-   Notes:
+Input Parameters:
++ comm - communicator with cartesian structure (handle) 
+- remain_dims - the  'i'th entry of remain_dims specifies whether the 'i'th 
+dimension is kept in the subgrid (true) or is dropped (false) (logical 
+vector) 
+
+Output Parameter:
+. newcomm - communicator containing the subgrid that includes the calling 
+process (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 {

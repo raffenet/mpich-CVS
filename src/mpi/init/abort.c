@@ -33,11 +33,13 @@
 /*@
    MPI_Abort - abort
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  int errorcode - error code
+Input Parameters:
++ comm - communicator of tasks to abort 
+- errorcode - error code to return to invoking environment 
 
-   Notes:
+Notes:
+Terminates all MPI processes associated with the communicator 'comm'; in
+most systems (all to date), terminates `all` processes.
 
 .N Fortran
 

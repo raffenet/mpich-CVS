@@ -28,18 +28,22 @@
 #define FUNCNAME MPI_Group_rank
 
 /*@
-   MPI_Group_rank - rank in a group
 
-   Arguments:
-+  MPI_Group group - group
--  int *rank - rank
+MPI_Group_rank - Returns the rank of this process in the given group
 
-   Notes:
+Input Parameters:
+. group - group (handle) 
+
+Output Parameter:
+. rank - rank of the calling process in group, or   'MPI_UNDEFINED'  if the 
+process is not a member (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_ARG
 @*/
 int MPI_Group_rank(MPI_Group group, int *rank)
 {

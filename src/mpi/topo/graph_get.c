@@ -29,21 +29,26 @@
 #define FUNCNAME MPI_Graph_get
 
 /*@
-   MPI_Graph_get - graph_get
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int maxindex - max index
-.  int maxedges - max edges
-.  int *index - index
--  int *edges - edges
+MPI_Graph_get - Retrieves graph topology information associated with a 
+                communicator
 
-   Notes:
+Input Parameters:
++ comm - communicator with graph structure (handle) 
+. maxindex - length of vector 'index' in the calling program  (integer) 
+- maxedges - length of vector 'edges' in the calling program  (integer) 
+
+Output Parameter:
++ index - array of integers containing the graph structure (for details see the definition of 'MPI_GRAPH_CREATE') 
+- edges - array of integers containing the graph structure 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *edges)
 {

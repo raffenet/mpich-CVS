@@ -28,13 +28,16 @@
 #define FUNCNAME MPI_Pcontrol
 
 /*@
-   MPI_Pcontrol - profiling control
+  MPI_Pcontrol - Controls profiling
 
-   Arguments:
-+  const int level - level
+  Input Parameters:
++ level - Profiling level 
 -  ... - other arguments
 
-   Notes:
+  Notes:
+  This routine provides a common interface for profiling control.  The
+  interpretation of 'level' and any other arguments is left to the
+  profiling library.
 
 .N Fortran
 

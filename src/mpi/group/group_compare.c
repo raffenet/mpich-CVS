@@ -29,19 +29,24 @@
 #define FUNCNAME MPI_Group_compare
 
 /*@
-   MPI_Group_compare - compare two groups
 
-   Arguments:
-+  MPI_Group group1 - group1
-.  MPI_Group group2 - group2
--  int *result - result
+MPI_Group_compare - Compares two groups
 
-   Notes:
+Input Parameters:
++ group1 - group1 (handle) 
+- group2 - group2 (handle) 
+
+Output Parameter:
+. result - integer which is 'MPI_IDENT' if the order and members of
+the two groups are the same, 'MPI_SIMILAR' if only the members are the same,
+and 'MPI_UNEQUAL' otherwise
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_ARG
 @*/
 int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 {

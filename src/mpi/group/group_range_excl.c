@@ -29,20 +29,38 @@
 #define FUNCNAME MPI_Group_range_excl
 
 /*@
-   MPI_Group_range_excl - group_range_excl
 
-   Arguments:
-+  MPI_Group group - group
-.  int n - n
-.  int ranges[][3] - ranges
--  MPI_Group *newgroup - new group
+MPI_Group_range_excl - Produces a group by excluding ranges of processes from
+       an existing group
 
-   Notes:
+Input Parameters:
++ group - group (handle) 
+. n - number of elements in array 'ranks' (integer) 
+- ranges - a one-dimensional 
+array of integer triplets of the
+form (first rank, last rank, stride), indicating the ranks in
+'group'  of processes to be excluded
+from the output group 'newgroup' .  
 
-.N Fortran
+Output Parameter:
+. newgroup - new group derived from above, preserving the 
+order in 'group'  (handle) 
+
+Note:  
+The MPI standard requires that each of the ranks to be excluded must be
+a valid rank in the group and all elements must be distinct or the
+function is erroneous.  
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_EXHAUSTED
+.N MPI_ERR_RANK
+.N MPI_ERR_ARG
+
+.seealso: MPI_Group_free
 @*/
 int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group *newgroup)
 {

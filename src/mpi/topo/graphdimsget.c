@@ -29,19 +29,24 @@
 #define FUNCNAME MPI_Graphdims_get
 
 /*@
-   MPI_Graphdims_get - graphdims_get
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int *nnodes - nnodes
--  int *nedges - nedges
+MPI_Graphdims_get - Retrieves graph topology information associated with a 
+                    communicator
 
-   Notes:
+Input Parameters:
+. comm - communicator for group with graph structure (handle) 
+
+Output Parameter:
++ nnodes - number of nodes in graph (integer) 
+- nedges - number of edges in graph (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 {

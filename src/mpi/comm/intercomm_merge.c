@@ -58,18 +58,6 @@ Algorithm:
 
 .seealso: MPI_Intercomm_create, MPI_Comm_free
    MPI_Intercomm_merge - merge communicators
-
-   Arguments:
-+  MPI_Comm intercomm - intercommunicator
-.  int high - high
--  MPI_Comm *newintracomm - new intracommunicator
-
-   Notes:
-
-.N Fortran
-
-.N Errors
-.N MPI_SUCCESS
 @*/
 int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 {

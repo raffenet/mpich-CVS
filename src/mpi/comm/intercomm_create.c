@@ -84,25 +84,48 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
 #define FUNCNAME MPI_Intercomm_create
 
 /*@
-   MPI_Intercomm_create - create an intercommunicator
 
-   Arguments:
-+  MPI_Comm local_comm - local communicator
-.  int local_leader - local leader
-.  MPI_Comm peer_comm - peer communicator
-.  int remote_leader - remote leader
-.  int tag - tag
--  MPI_Comm *newintercomm - new intercommunicator
+MPI_Intercomm_create - Creates an intercommuncator from two intracommunicators
 
-   Notes:
+Input Paramters:
++ local_comm - Local (intra)communicator
+. local_leader - Rank in local_comm of leader (often 0)
+. peer_comm - Remote communicator
+. remote_leader - Rank in peer_comm of remote leader (often 0)
+- tag - Message tag to use in constructing intercommunicator; if multiple
+  'MPI_Intercomm_creates' are being made, they should use different tags (more
+  precisely, ensure that the local and remote leaders are using different
+  tags for each 'MPI_intercomm_create').
 
-   'peer_comm' is significant only for the process designated the 
-   'local_leader' in the 'local_comm'.
+Output Parameter:
+. comm_out - Created intercommunicator
+
+Notes:
+  The MPI 1.1 Standard contains two mutually exclusive comments on the
+  input intracommunicators.  One says that their repective groups must be
+  disjoint; the other that the leaders can be the same process.  After
+  some discussion by the MPI Forum, it has been decided that the groups must
+  be disjoint.  Note that the `reason` given for this in the standard is
+  `not` the reason for this choice; rather, the `other` operations on 
+  intercommunicators (like 'MPI_Intercomm_merge') do not make sense if the
+  groups are not disjoint.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_TAG
+.N MPI_ERR_EXHAUSTED
+.N MPI_ERR_RANK
+
+.seealso: MPI_Intercomm_merge, MPI_Comm_free, MPI_Comm_remote_group, 
+          MPI_Comm_remote_size
+   Notes:
+
+   'peer_comm' is significant only for the process designated the 
+   'local_leader' in the 'local_comm'.
+
 @*/
 int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, 
 			 MPI_Comm peer_comm, int remote_leader, int tag, 

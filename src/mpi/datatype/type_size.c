@@ -28,18 +28,21 @@
 #define FUNCNAME MPI_Type_size
 
 /*@
-   MPI_Type_size - short description
+    MPI_Type_size - Return the number of bytes occupied by entries
+                    in the datatype
 
-   Arguments:
-+  MPI_Datatype datatype
--  int *size
+Input Parameters:
+. datatype - datatype (handle) 
 
-   Notes:
+Output Parameter:
+. size - datatype size (integer) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_size(MPI_Datatype datatype, int *size)
 {

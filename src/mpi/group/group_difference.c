@@ -29,19 +29,24 @@
 #define FUNCNAME MPI_Group_difference
 
 /*@
-   MPI_Group_difference - difference of two groups
 
-   Arguments:
-+  MPI_Group group1 - group1
-.  MPI_Group group2 - group2
--  MPI_Group *newgroup - new group
+MPI_Group_difference - Makes a group from the difference of two groups
 
-   Notes:
+Input Parameters:
++ group1 - first group (handle) 
+- group2 - second group (handle) 
+
+Output Parameter:
+. newgroup - difference group (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_EXHAUSTED
+
+.seealso: MPI_Group_free
 @*/
 int MPI_Group_difference(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {

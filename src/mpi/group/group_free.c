@@ -28,17 +28,21 @@
 #define FUNCNAME MPI_Group_free
 
 /*@
-   MPI_Group_free - short description
 
-   Arguments:
-.  MPI_Group *group
+MPI_Group_free - Frees a group
 
-   Notes:
+Input Parameter
+. group - group (handle) 
+
+Notes:
+On output, group is set to 'MPI_GROUP_NULL'.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_PERM_GROUP
 @*/
 int MPI_Group_free(MPI_Group *group)
 {

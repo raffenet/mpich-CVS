@@ -29,19 +29,25 @@
 #define FUNCNAME MPI_Group_intersection
 
 /*@
-   MPI_Group_intersection - intersection of two groups
 
-   Arguments:
-+  MPI_Group group1 - group1
-.  MPI_Group group2 - group2
--  MPI_Group *newgroup - new group
+MPI_Group_intersection - Produces a group as the intersection of two existing
+                         groups
 
-   Notes:
+Input Parameters:
++ group1 - first group (handle) 
+- group2 - second group (handle) 
 
-.N Fortran
+Output Parameter:
+. newgroup - intersection group (handle) 
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_EXHAUSTED
+
+.seealso: MPI_Group_free
 @*/
 int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {

@@ -28,18 +28,22 @@
 #define FUNCNAME MPI_Comm_remote_size
 
 /*@
-   MPI_Comm_remote_size - remote communicator size
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  int *size - size
+MPI_Comm_remote_size - Determines the size of the remote group 
+                       associated with an inter-communictor
 
-   Notes:
+Input Parameter:
+. comm - communicator (handle) 
+
+Output Parameter:
+. size - number of processes in the group of 'comm'  (integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Comm_remote_size(MPI_Comm comm, int *size)
 {

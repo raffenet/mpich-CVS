@@ -29,21 +29,29 @@
 #define FUNCNAME MPI_Cart_get
 
 /*@
-   MPI_Cart_get - cart_get
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int maxdims - maxdims
-.  int *dims - dims
-.  int *periods - periods
--  int *coords - coords
+MPI_Cart_get - Retrieves Cartesian topology information associated with a 
+               communicator
 
-   Notes:
+Input Parameters:
++ comm - communicator with cartesian structure (handle) 
+- maxdims - length of vectors  'dims', 'periods', and 'coords'
+in the calling program (integer) 
+
+Output Parameters:
++ dims - number of processes for each cartesian dimension (array of integer) 
+. periods - periodicity (true/false) for each cartesian dimension 
+(array of logical) 
+- coords - coordinates of calling process in cartesian structure 
+(array of integer) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TOPOLOGY
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, int *coords)
 {

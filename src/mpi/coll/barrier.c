@@ -189,17 +189,22 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 #define FUNCNAME MPI_Barrier
 
 /*@
-   MPI_Barrier - barrier
 
-   Arguments:
-.  MPI_Comm comm - communicator
+MPI_Barrier - Blocks until all process have reached this routine.
 
-   Notes:
+Input Parameter:
+. comm - communicator (handle) 
+
+Notes:
+Blocks the caller until all group members have called it; 
+the call returns at any process only after all group members
+have entered the call.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
 @*/
 int MPI_Barrier( MPI_Comm comm )
 {

@@ -29,19 +29,24 @@
 #define FUNCNAME MPI_Error_string
 
 /*@
-   MPI_Error_string - error string
+   MPI_Error_string - Return a string for a given error code
 
-   Arguments:
-+  int errorcode - error code
-.  char *string - string
--  int *resultlen - result length
+Input Parameters:
+. errorcode - Error code returned by an MPI routine or an MPI error class
 
-   Notes:
+Output Parameter:
++ string - Text that corresponds to the errorcode 
+- resultlen - Length of string 
+
+Notes:  Error codes are the values return by MPI routines (in C) or in the
+'ierr' argument (in Fortran).  These can be converted into error classes 
+with the routine 'MPI_Error_class'.  
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
 @*/
 int MPI_Error_string(int errorcode, char *string, int *resultlen)
 {
@@ -55,6 +60,8 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(string,"string",mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

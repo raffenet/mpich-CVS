@@ -28,18 +28,21 @@
 #define FUNCNAME MPI_Type_ub
 
 /*@
-   MPI_Type_ub - type_ub
+    MPI_Type_ub - Returns the upper bound of a datatype
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
--  MPI_Aint *displacement - displacement
+Input Parameters:
+. datatype - datatype (handle) 
 
-   Notes:
+Output Parameter:
+. displacement - displacement of upper bound from origin, 
+                             in bytes (integer) 
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint *displacement)
 {

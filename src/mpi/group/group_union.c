@@ -29,19 +29,24 @@
 #define FUNCNAME MPI_Group_union
 
 /*@
-   MPI_Group_union - group union
 
-   Arguments:
-+  MPI_Group group1 - group1 
-.  MPI_Group group2 - group2
--  MPI_Group *newgroup - new group
+MPI_Group_union - Produces a group by combining two groups
 
-   Notes:
+Input Parameters:
++ group1 - first group (handle) 
+- group2 - second group (handle) 
 
-.N Fortran
+Output Parameter:
+. newgroup - union group (handle) 
+
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_GROUP
+.N MPI_ERR_EXHAUSTED
+
+.seealso: MPI_Group_free
 @*/
 int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {

@@ -28,18 +28,18 @@
 #define FUNCNAME MPI_Errhandler_set
 
 /*@
-   MPI_Errhandler_set - set error handler
+  MPI_Errhandler_set - Sets the error handler for a communicator
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  MPI_Errhandler errhandler - error handler
-
-   Notes:
+Input Parameters:
++ comm - communicator to set the error handler for (handle) 
+- errhandler - new MPI error handler for communicator (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
 {

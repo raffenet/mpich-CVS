@@ -54,19 +54,24 @@ PMPI_LOCAL void MPIU_Sort_inttable( splittype *keytable, int size )
 #endif
 
 /*@
-   MPI_Comm_split - split a communicator
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  int color - color
-.  int key - key
--  MPI_Comm *newcomm - new communicator
+MPI_Comm_split - Creates new communicators based on colors and keys
 
-   Notes:
+Input Parameters:
++ comm - communicator (handle) 
+. color - control of subset assignment (nonnegative integer).  Processes 
+  with the same color are in the same new communicator 
+- key - control of rank assigment (integer)
+
+Output Parameter:
+. newcomm - new communicator (handle) 
+
+Notes:
+  The 'color' must be non-negative or 'MPI_UNDEFINED'.
 
 .N Fortran
 
- Algorithm:
+Algorithm:
 .vb
   1. Use MPI_Allgather to get the color and key from each process
   2. Count the number of processes with the same color; create a 
@@ -76,9 +81,13 @@ PMPI_LOCAL void MPIU_Sort_inttable( splittype *keytable, int size )
   4. Set the VCRs using the ordered key values
 .ve
  
+
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_EXHAUSTED
 
+.seealso: MPI_Comm_free
 @*/
 int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 {

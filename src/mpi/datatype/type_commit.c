@@ -28,17 +28,16 @@
 #define FUNCNAME MPI_Type_commit
 
 /*@
-   MPI_Type_commit - commit datatype
+    MPI_Type_commit - Commits the datatype
 
-   Arguments:
-.  MPI_Datatype *datatype - datatype
-
-   Notes:
+Input Parameter:
+. datatype - datatype (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
 @*/
 int MPI_Type_commit(MPI_Datatype *datatype)
 {

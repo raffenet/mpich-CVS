@@ -28,23 +28,29 @@
 #define FUNCNAME MPI_Unpack
 
 /*@
-   MPI_Unpack - unpack
+    MPI_Unpack - Unpack a datatype into contiguous memory
 
-   Arguments:
-+  void *inbuf - input buffer
-.  int insize - input buffer size
-.  int *position - position
-.  void *outbuf - output buffer
-.  int outcount - ouput count
-.  MPI_Datatype datatype - datatype
--  MPI_Comm comm - communicator
+Input Parameters:
++ inbuf - input buffer start (choice) 
+. insize - size of input buffer, in bytes (integer) 
+. position - current position in bytes (integer) 
+. outcount - number of items to be unpacked (integer) 
+. datatype - datatype of each output data item (handle) 
+- comm - communicator for packed message (handle) 
 
-   Notes:
+Output Parameter:
+. outbuf - output buffer start (choice) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
+
+.seealso: MPI_Pack, MPI_Pack_size
 @*/
 int MPI_Unpack(void *inbuf,
 	       int insize,

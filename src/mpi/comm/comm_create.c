@@ -29,19 +29,24 @@
 #define FUNCNAME MPI_Comm_create
 
 /*@
-   MPI_Comm_create - create a new communicator
 
-   Arguments:
-+  MPI_Comm comm - communicator
-.  MPI_Group group - group
--  MPI_Comm *newcomm - new communicator
+MPI_Comm_create - Creates a new communicator
 
-   Notes:
+Input Parameters:
++ comm - communicator (handle) 
+- group - group, which is a subset of the group of 'comm'  (handle) 
+
+Output Parameter:
+. comm_out - new communicator (handle) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_GROUP
+
+.seealso: MPI_Comm_free
 @*/
 int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 {

@@ -484,24 +484,32 @@ PMPI_LOCAL int MPIR_Scatter_inter (
 #define FUNCNAME MPI_Scatter
 
 /*@
-   MPI_Scatter - scatter
 
-   Arguments:
-+  void *sendbuf - send buffer
-.  int sendcnt - send count
-.  MPI_Datatype sendtype - send type
-.  void *recvbuf - receive buffer
-.  int recvcnt - receive count
-.  MPI_Datatype recvtype - receive datatype
-.  int root - root
--  MPI_Comm comm - communicator
+MPI_Scatter - Sends data from one task to all other tasks in a group
 
-   Notes:
+Input Parameters:
++ sendbuf - address of send buffer (choice, significant 
+only at 'root') 
+. sendcount - number of elements sent to each process 
+(integer, significant only at 'root') 
+. sendtype - data type of send buffer elements (significant only at 'root') 
+(handle) 
+. recvcount - number of elements in receive buffer (integer) 
+. recvtype - data type of receive buffer elements (handle) 
+. root - rank of sending process (integer) 
+- comm - communicator (handle) 
+
+Output Parameter:
+. recvbuf - address of receive buffer (choice) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
 @*/
 int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {

@@ -29,21 +29,47 @@
 #define FUNCNAME MPI_Type_indexed
 
 /*@
-   MPI_Type_indexed - type indexed
+    MPI_Type_indexed - Creates an indexed datatype
 
-   Arguments:
-+  int count - count
-.  int blocklens[] - blocklens
-.  int indices[] - indices (in terms of old datatypes)
-.  MPI_Datatype old_type - old datatype
--  MPI_Datatype *newtype - new datatype
+Input Parameters:
++ count - number of blocks -- also number of entries in indices and blocklens
+. blocklens - number of elements in each block (array of nonnegative integers) 
+. indices - displacement of each block in multiples of old_type (array of 
+  integers)
+- old_type - old datatype (handle) 
 
-   Notes:
+Output Parameter:
+. newtype - new datatype (handle) 
 
 .N Fortran
 
+The indices are displacements, and are based on a zero origin.  A common error
+is to do something like to following
+.vb
+    integer a(100)
+    integer blens(10), indices(10)
+    do i=1,10
+         blens(i)   = 1
+10       indices(i) = 1 + (i-1)*10
+    call MPI_TYPE_INDEXED(10,blens,indices,MPI_INTEGER,newtype,ierr)
+    call MPI_TYPE_COMMIT(newtype,ierr)
+    call MPI_SEND(a,1,newtype,...)
+.ve
+expecting this to send 'a(1),a(11),...' because the indices have values 
+'1,11,...'.   Because these are `displacements` from the beginning of 'a',
+it actually sends 'a(1+1),a(1+11),...'.
+
+If you wish to consider the displacements as indices into a Fortran array,
+consider declaring the Fortran array with a zero origin
+.vb
+    integer a(0:99)
+.ve
+
 .N Errors
-.N MPI_SUCCESS
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
+.N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Type_indexed(int count,
 		     int blocklens[],

@@ -788,14 +788,14 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
 MPI_Allreduce - Combines values from all processes and distributes the result
                 back to all processes
 
-Input Arguments:
+Input Parameters:
 + sendbuf - starting address of send buffer (choice) 
 . count - number of elements in send buffer (integer) 
 . datatype - data type of elements of send buffer (handle) 
 . op - operation (handle) 
 - comm - communicator (handle) 
 
-Output Argument:
+Output Parameter:
 . recvbuf - starting address of receive buffer (choice) 
 
 .N Fortran

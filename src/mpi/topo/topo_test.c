@@ -29,19 +29,24 @@
 #define FUNCNAME MPI_Topo_test
 
 /*@
-   MPI_Topo_test - topology test
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  int *topo_type - topology type of communicator 'comm' (choice).
+MPI_Topo_test - Determines the type of topology (if any) associated with a 
+                communicator
 
+Input Parameter:
+. comm - communicator (handle) 
 
-   Notes:
+Output Parameter:
+. top_type - topology type of communicator 'comm' (choice).
 
-.N Fortran
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
+
+.seealso: MPI_Graph_create, MPI_Cart_create
 @*/
 int MPI_Topo_test(MPI_Comm comm, int *topo_type)
 {

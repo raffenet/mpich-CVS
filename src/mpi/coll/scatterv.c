@@ -128,25 +128,33 @@ int MPIR_Scatterv (
 #define FUNCNAME MPI_Scatterv
 
 /*@
-   MPI_Scatterv - scatterv
 
-   Arguments:
-+   void *sendbuf - send buffer
-.  int *sendcnts - send counts
-.  int *displs - send displacements
-.  MPI_Datatype sendtype - send type
-.  void *recvbuf - receive buffer
-.  int recvcnt - receive count
-.  MPI_Datatype recvtype - receive datatype
-.  int root - root
--  MPI_Comm comm - communicator
+MPI_Scatterv - Scatters a buffer in parts to all tasks in a group
 
-   Notes:
+Input Parameters:
++ sendbuf - address of send buffer (choice, significant only at 'root') 
+. sendcounts - integer array (of length group size) 
+specifying the number of elements to send to each processor  
+. displs - integer array (of length group size). Entry 
+ 'i'  specifies the displacement (relative to sendbuf  from
+which to take the outgoing data to process  'i' 
+. sendtype - data type of send buffer elements (handle) 
+. recvcount - number of elements in receive buffer (integer) 
+. recvtype - data type of receive buffer elements (handle) 
+. root - rank of sending process (integer) 
+- comm - communicator (handle) 
+
+Output Parameter:
+. recvbuf - address of receive buffer (choice) 
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_COUNT
+.N MPI_ERR_TYPE
+.N MPI_ERR_BUFFER
 @*/
 int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt,  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {

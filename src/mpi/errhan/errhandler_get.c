@@ -28,18 +28,32 @@
 #define FUNCNAME MPI_Errhandler_get
 
 /*@
-   MPI_Errhandler_get - get the error handler
+  MPI_Errhandler_get - Gets the error handler for a communicator
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  MPI_Errhandler *errhandler - error handler
+Input Parameter:
+. comm - communicator to get the error handler from (handle) 
 
-   Notes:
+Output Parameter:
+. errhandler - MPI error handler currently associated with communicator
+(handle) 
 
 .N Fortran
 
+Note on Implementation:
+
+The MPI Standard was unclear on whether this routine required the user to call 
+'MPI_Errhandler_free' once for each call made to this routine in order to 
+free the error handler.  After some debate, the MPI Forum added an explicit
+statement that users are required to call 'MPI_Errhandler_free' when the
+return value from this routine is no longer needed.  This behavior is similar
+to the other MPI routines for getting objects; for example, 'MPI_Comm_group' 
+requires that the user call 'MPI_Group_free' when the group returned
+by 'MPI_Comm_group' is no longer needed.
+
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_ARG
 @*/
 int MPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
 {

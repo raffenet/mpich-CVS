@@ -29,21 +29,65 @@
 #define FUNCNAME MPI_Type_struct
 
 /*@
-   MPI_Type_struct - type_struct
+    MPI_Type_struct - Creates a struct datatype
 
-   Arguments:
-+  int count - count
-.  int blocklens[] - blocklens
-.  MPI_Aint indices[] - indices
-.  MPI_Datatype old_types[] - old datatypes
--  MPI_Datatype *newtype - new datatype
+Input Parameters:
++ count - number of blocks (integer) -- also number of 
+entries in arrays array_of_types ,
+array_of_displacements  and array_of_blocklengths  
+. blocklens - number of elements in each block (array)
+. indices - byte displacement of each block (array)
+- old_types - type of elements in each block (array 
+of handles to datatype objects) 
 
-   Notes:
+Output Parameter:
+. newtype - new datatype (handle) 
+
+Notes:
+If an upperbound is set explicitly by using the MPI datatype 'MPI_UB', the
+corresponding index must be positive.
+
+The MPI standard originally made vague statements about padding and alignment;
+this was intended to allow the simple definition of structures that could
+be sent with a count greater than one.  For example,
+.vb
+    struct { int a; char b; } foo;
+.ve
+may have 'sizeof(foo) > sizeof(int) + sizeof(char)'; for example, 
+'sizeof(foo) == 2*sizeof(int)'.  The initial version of the MPI standard
+defined the extent of a datatype as including an `epsilon` that would have 
+allowed an implementation to make the extent an MPI datatype
+for this structure equal to '2*sizeof(int)'.  
+However, since different systems might define different paddings, there was 
+much discussion by the MPI Forum about what was the correct value of
+epsilon, and one suggestion was to define epsilon as zero.
+This would have been the best thing to do in MPI 1.0, particularly since 
+the 'MPI_UB' type allows the user to easily set the end of the structure.
+Unfortunately, this change did not make it into the final document.  
+Currently, this routine does not add any padding, since the amount of 
+padding needed is determined by the compiler that the user is using to
+build their code, not the compiler used to construct the MPI library.
+A later version of MPICH may provide for some natural choices of padding
+(e.g., multiple of the size of the largest basic member), but users are
+advised to never depend on this, even with vendor MPI implementations.
+Instead, if you define a structure datatype and wish to send or receive
+multiple items, you should explicitly include an 'MPI_UB' entry as the
+last member of the structure.  For example, the following code can be used
+for the structure foo
+.vb
+    blen[0] = 1; indices[0] = 0; oldtypes[0] = MPI_INT;
+    blen[1] = 1; indices[1] = &foo.b - &foo; oldtypes[1] = MPI_CHAR;
+    blen[2] = 1; indices[2] = sizeof(foo); oldtypes[2] = MPI_UB;
+    MPI_Type_struct( 3, blen, indices, oldtypes, &newtype );
+.ve
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_COUNT
+.N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Type_struct(int count,
 		    int blocklens[],

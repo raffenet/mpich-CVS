@@ -28,17 +28,28 @@
 #define FUNCNAME MPI_Type_free
 
 /*@
-   MPI_Type_free - free datatype
+    MPI_Type_free - Frees the datatype
 
-   Arguments:
-.  MPI_Datatype *datatype - datatype
+Input Parameter:
+. datatype - datatype that is freed (handle) 
 
-   Notes:
+Predefined types:
+
+The MPI standard states that (in Opaque Objects)
+.vb
+MPI provides certain predefined opaque objects and predefined, static handles
+to these objects. Such objects may not be destroyed.
+.ve
+
+Thus, it is an error to free a predefined datatype.  The same section makes
+it clear that it is an error to free a null datatype.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_free(MPI_Datatype *datatype)
 {

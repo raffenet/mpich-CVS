@@ -28,21 +28,27 @@
 #define FUNCNAME MPI_Type_hindexed
 
 /*@
-   MPI_Type_hindexed - short description
+    MPI_Type_hindexed - Creates an indexed datatype with offsets in bytes
 
-   Arguments:
-+  int count - count
-.  int blocklens[] - blocklens
-.  MPI_Aint indices[] - indices (in bytes)
-.  MPI_Datatype old_type - old datatype
--  MPI_Datatype *newtype - new datatype
+Input Parameters:
++ count - number of blocks -- also number of entries in indices and blocklens
+. blocklens - number of elements in each block (array of nonnegative integers) 
+. indices - byte displacement of each block (array of MPI_Aint) 
+- old_type - old datatype (handle) 
 
-   Notes:
+Output Parameter:
+. newtype - new datatype (handle) 
 
 .N Fortran
 
+Also see the discussion for 'MPI_Type_indexed' about the 'indices' in Fortran.
+
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_TYPE
+.N MPI_ERR_COUNT
+.N MPI_ERR_EXHAUSTED
+.N MPI_ERR_ARG
 @*/
 int MPI_Type_hindexed(int count,
 		      int blocklens[],

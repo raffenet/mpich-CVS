@@ -28,17 +28,23 @@
 #define FUNCNAME MPI_Keyval_free
 
 /*@
-   MPI_Keyval_free - free keyval
 
-   Arguments:
-.  int *keyval - keyval
+MPI_Keyval_free - Frees attribute key for communicator cache attribute
 
-   Notes:
+Input Parameter:
+. keyval - Frees the integer key value (integer) 
+
+Note:
+Key values are global (they can be used with any and all communicators)
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_ARG
+.N MPI_ERR_PERM_KEY
+
+.seealso: MPI_Keyval_create
 @*/
 int MPI_Keyval_free(int *keyval)
 {

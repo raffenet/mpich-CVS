@@ -29,18 +29,36 @@
 #define FUNCNAME MPI_Comm_group
 
 /*@
-   MPI_Comm_group - communicator group
 
-   Arguments:
-+  MPI_Comm comm - communicator
--  MPI_Group *group - group
+MPI_Comm_group - Accesses the group associated with given communicator
 
-   Notes:
+Input Parameter:
+. comm - Communicator
+
+Output Parameter:
+. group - Group in communicator
+
+Using 'MPI_COMM_NULL' with 'MPI_Comm_group':
+
+It is an error to use 'MPI_COMM_NULL' as one of the arguments to
+'MPI_Comm_group'.  The relevant sections of the MPI standard are 
+
+$(2.4.1 Opaque Objects)
+A null handle argument is an erroneous 'IN' argument in MPI calls, unless an
+exception is explicitly stated in the text that defines the function.
+
+$(5.3.2. Group Constructors)
+<no text in 'MPI_COMM_GROUP' allowing a null handle>
+
+Previous versions of MPICH allow 'MPI_COMM_NULL' in this function.  In the
+interests of promoting portability of applications, we have changed the
+behavior of 'MPI_Comm_group' to detect this violation of the MPI standard.
 
 .N Fortran
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_COMM
 @*/
 int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 {
