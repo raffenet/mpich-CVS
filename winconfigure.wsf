@@ -3054,6 +3054,26 @@ Else
 End If
 
 '
+' mpidi_ch3i_essm_conf.h
+'
+If f.FileExists("src\mpid\ch3\channels\essm\include\mpidi_ch3i_essm_conf.h.in") Then
+	cEcho "Creating src\include\win32\mpidi_ch3i_essm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_essm_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_essm_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\essm\include\mpidi_ch3i_essm_conf.h.in", false)
+	Call WriteFooter(fout)
+	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_essm_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_essm_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_essm_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\essm\include\mpidi_ch3i_essm_conf.h.in", true)
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_essm_conf.h"
+End If
+
+'
 ' mpidi_ch3i_sshm_conf.h
 '
 If f.FileExists("src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in") Then
@@ -3302,6 +3322,34 @@ If f.FileExists("src\mpid\common\thread\mpid_thread.h.in") Then
 	fout.Close()
 Else
 	cEcho "Skipping file: mpid_thread.h"
+End If
+
+'
+' mpiu_events_conf.h
+'
+If f.FileExists("src\util\events\mpiu_events_conf.h.in") Then
+	cEcho "Creating src\include\win32\mpiu_events_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpiu_events_conf.h")
+	Call WriteHeader(fout, "mpiu_events_")
+	Call AddDefinitions(fout, "src\util\events\mpiu_events_conf.h.in", false)
+	Call WriteFooter(fout)
+	fout.Close()
+	cEcho "Creating src\include\win64\mpiu_events_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpiu_events_conf.h")
+	Call WriteHeader(fout, "mpiu_events_")
+	Call AddDefinitions(fout, "src\util\events\mpiu_events_conf.h.in", false)
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	'cEcho "Skipping file: mpiu_events_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpiu_events_conf.h")
+	Call WriteHeader(fout, "mpiu_events_")
+	Call WriteFooter(fout)
+	fout.Close()
+	Set fout = f.CreateTextFile("src\include\win64\mpiu_events_conf.h")
+	Call WriteHeader(fout, "mpiu_events_")
+	Call WriteFooter(fout)
+	fout.Close()
 End If
 
 '
