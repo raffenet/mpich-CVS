@@ -21,28 +21,38 @@ import java.awt.Component;
 
 import base.topology.Line;
 import base.topology.Arrow;
+import base.topology.StateBorder;
+import base.topology.State;
 import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String   VERSION_INFO             = "1.0.0.2";
-    private static       String   setupfile_path           = null;
+    private static final String       VERSION_INFO             = "1.0.0.3";
+    private static       String       setupfile_path           = null;
 
-    public  static       boolean  AUTO_WINDOWS_LOCATION    = true;
-    public  static       short    INIT_SLOG2_LEVEL_READ    = 3;
-    public  static       float    SCREEN_HEIGHT_RATIO      = 0.7f;
+    public  static       boolean      AUTO_WINDOWS_LOCATION    = true;
+    public  static       short        INIT_SLOG2_LEVEL_READ    = 3;
+    public  static       float        SCREEN_HEIGHT_RATIO      = 0.7f;
 
-    public  static       String   Y_AXIS_ROOT_LABEL        = "SLOG-2";
-    public  static       boolean  Y_AXIS_ROOT_VISIBLE      = true;
-    public  static       int      Y_AXIS_ROW_HEIGHT        = 71;
-    public  static       float    STATE_HEIGHT_FACTOR      = 0.8f;
-    public  static       float    NESTING_HEIGHT_FACTOR    = 0.8f;
-    public  static       Alias    ARROW_ANTIALIASING       = Const.ANTIALIAS_DEFAULT;
-    public  static       int      ARROW_HEAD_LENGTH        = 10;
-    public  static       int      ARROW_HEAD_HALF_WIDTH    = 3;
-    public  static       int      CLICK_RADIUS_TO_LINE     = 3;
+    public  static       String       Y_AXIS_ROOT_LABEL        = "SLOG-2";
+    public  static       boolean      Y_AXIS_ROOT_VISIBLE      = true;
+    public  static       Alias        BACKGROUND_COLOR
+                                      = Const.COLOR_BLACK;
+    public  static       int          Y_AXIS_ROW_HEIGHT        = 71;
+    public  static       StateBorder  STATE_BORDER_STYLE
+                                      = StateBorder.COLOR_RAISED_BORDER;
+    public  static       float        STATE_HEIGHT_FACTOR      = 0.99f;
+    public  static       float        NESTING_HEIGHT_FACTOR    = 0.80f;
+    public  static       Alias        ARROW_ANTIALIASING
+                                      = Const.ANTIALIAS_DEFAULT;
+    public  static       int          ARROW_HEAD_LENGTH        = 10;
+    public  static       int          ARROW_HEAD_HALF_WIDTH    = 3;
+    public  static       int          CLICK_RADIUS_TO_LINE     = 3;
 
-    public  static       int      MIN_WIDTH_TO_DRAG        = 4;
+    public  static       int          MIN_WIDTH_TO_DRAG        = 4;
+    public  static       int          SEARCH_ARROW_LENGTH      = 20;
+    public  static       int          SEARCH_FRAME_THICKNESS   = 3;
+    public  static       boolean      SEARCHED_OBJECT_ON_TOP   = false;
 
     public static final void initSetupFile()
     {
@@ -63,6 +73,8 @@ public class Parameters
         Arrow.setHeadHalfWidth( Parameters.ARROW_HEAD_HALF_WIDTH );
         // Define how close a pixel is considered to be lying on a Line/Arrow
         Line.setPixelClosenessTolerance( Parameters.CLICK_RADIUS_TO_LINE );
+        // Define state border type
+        State.setBorderStyle( Parameters.STATE_BORDER_STYLE );
         // Define all nesting related properties
         NestingStacks.setInitialNestingHeight(
                       Parameters.STATE_HEIGHT_FACTOR );
@@ -89,12 +101,18 @@ public class Parameters
 
         pptys.setProperty( "Y_AXIS_ROOT_VISIBLE",
                            String.valueOf( Y_AXIS_ROOT_VISIBLE ) );
+        pptys.setProperty( "BACKGROUND_COLOR",
+                           String.valueOf( BACKGROUND_COLOR ) );
+
         pptys.setProperty( "Y_AXIS_ROW_HEIGHT",
                            String.valueOf( Y_AXIS_ROW_HEIGHT ) );
+        pptys.setProperty( "STATE_BORDER_STYLE",
+                           String.valueOf( STATE_BORDER_STYLE ) );
         pptys.setProperty( "STATE_HEIGHT_FACTOR",
                            String.valueOf( STATE_HEIGHT_FACTOR ) );
         pptys.setProperty( "NESTING_HEIGHT_FACTOR",
                            String.valueOf( NESTING_HEIGHT_FACTOR ) );
+
         pptys.setProperty( "ARROW_ANTIALIASING",
                            String.valueOf( ARROW_ANTIALIASING ) );
         pptys.setProperty( "ARROW_HEAD_LENGTH",
@@ -103,8 +121,15 @@ public class Parameters
                            String.valueOf( ARROW_HEAD_HALF_WIDTH ) );
         pptys.setProperty( "CLICK_RADIUS_TO_LINE",
                            String.valueOf( CLICK_RADIUS_TO_LINE ) );
+
         pptys.setProperty( "MIN_WIDTH_TO_DRAG",
                            String.valueOf( MIN_WIDTH_TO_DRAG ) );
+        pptys.setProperty( "SEARCH_ARROW_LENGTH",
+                           String.valueOf( SEARCH_ARROW_LENGTH ) );
+        pptys.setProperty( "SEARCH_FRAME_THICKNESS",
+                           String.valueOf( SEARCH_FRAME_THICKNESS ) );
+        pptys.setProperty( "SEARCHED_OBJECT_ON_TOP",
+                           String.valueOf( SEARCHED_OBJECT_ON_TOP ) );
 
         try {
             FileOutputStream fouts = new FileOutputStream( setupfile_path );
@@ -172,6 +197,12 @@ public class Parameters
         ppty_val = pptys.getProperty( "Y_AXIS_ROW_HEIGHT" );
         if ( ppty_val != null )
             Y_AXIS_ROW_HEIGHT = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "BACKGROUND_COLOR" );
+        if ( ppty_val != null )
+            BACKGROUND_COLOR = Const.parseBackgroundColor( ppty_val );
+        ppty_val = pptys.getProperty( "STATE_BORDER_STYLE" );
+        if ( ppty_val != null )
+            STATE_BORDER_STYLE = StateBorder.parseString( ppty_val );
         ppty_val = pptys.getProperty( "STATE_HEIGHT_FACTOR" );
         if ( ppty_val != null )
             STATE_HEIGHT_FACTOR = Float.parseFloat( ppty_val );
@@ -194,6 +225,16 @@ public class Parameters
         ppty_val = pptys.getProperty( "MIN_WIDTH_TO_DRAG" );
         if ( ppty_val != null )
             MIN_WIDTH_TO_DRAG = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "SEARCH_ARROW_LENGTH" );
+        if ( ppty_val != null )
+            SEARCH_ARROW_LENGTH = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "SEARCH_FRAME_THICKNESS" );
+        if ( ppty_val != null )
+            SEARCH_FRAME_THICKNESS = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "SEARCHED_OBJECT_ON_TOP" );
+        if ( ppty_val != null )
+            SEARCHED_OBJECT_ON_TOP =    ppty_val.equalsIgnoreCase( "true" )
+                                     || ppty_val.equalsIgnoreCase( "yes" );
         System.out.println( "Initialize Parameters: \n"
                           + Parameters.toInOutString() );
     }
@@ -208,7 +249,9 @@ public class Parameters
         rep.append( "AUTO_WINDOWS_LOCATION = " + AUTO_WINDOWS_LOCATION + "\n" );
 
         rep.append( "Y_AXIS_ROOT_VISIBLE = "   + Y_AXIS_ROOT_VISIBLE   + "\n" );
+        rep.append( "BACKGROUND_COLOR = "      + BACKGROUND_COLOR      + "\n" );
         rep.append( "Y_AXIS_ROW_HEIGHT = "     + Y_AXIS_ROW_HEIGHT     + "\n" );
+        rep.append( "STATE_BORDER_STYLE = "    + STATE_BORDER_STYLE    + "\n" );
         rep.append( "STATE_HEIGHT_FACTOR = "   + STATE_HEIGHT_FACTOR   + "\n" );
         rep.append( "NESTING_HEIGHT_FACTOR = " + NESTING_HEIGHT_FACTOR + "\n" );
         rep.append( "ARROW_ANTIALIASING = "    + ARROW_ANTIALIASING    + "\n" );
@@ -217,6 +260,9 @@ public class Parameters
         rep.append( "CLICK_RADIUS_TO_LINE = "  + CLICK_RADIUS_TO_LINE  + "\n" );
 
         rep.append( "MIN_WIDTH_TO_DRAG = "     + MIN_WIDTH_TO_DRAG     + "\n" );
+        rep.append( "SEARCH_ARROW_LENGTH = "   + SEARCH_ARROW_LENGTH   + "\n" );
+        rep.append( "SEARCH_FRAME_THICKNESS = "+ SEARCH_FRAME_THICKNESS+ "\n" );
+        rep.append( "SEARCHED_OBJECT_ON_TOP = "+ SEARCHED_OBJECT_ON_TOP+ "\n" );
         return rep.toString();
     }
 

@@ -10,6 +10,7 @@
 package viewer.common;
 
 import java.awt.Font;
+import java.awt.Color;
 import java.awt.RenderingHints;
 
 public class Const
@@ -39,6 +40,17 @@ public class Const
     public static final  Alias   ANTIALIAS_ON
             = new Alias( RenderingHints.VALUE_ANTIALIAS_ON, "on" );
 
+    public  static final Alias   COLOR_BLACK
+            = new Alias( Color.BLACK, "black" );
+    public  static final Alias   COLOR_DARKGRAY
+            = new Alias( Color.DARK_GRAY, "dark gray" );
+    public  static final Alias   COLOR_GRAY
+            = new Alias( Color.GRAY, "gray" );
+    public  static final Alias   COLOR_LIGHTGRAY
+            = new Alias( Color.LIGHT_GRAY, "light gray" );
+    public  static final Alias   COLOR_WHITE
+            = new Alias( Color.WHITE, "white" );
+
     public static Alias  parseAntiAliasing( String str_rep )
     {
         if ( str_rep.equalsIgnoreCase( ANTIALIAS_DEFAULT.toString() ) )
@@ -48,5 +60,20 @@ public class Const
         else if ( str_rep.equalsIgnoreCase( ANTIALIAS_ON.toString() ) )
             return ANTIALIAS_ON;
         return ANTIALIAS_DEFAULT;
+    }
+
+    public static Alias  parseBackgroundColor( String str_rep )
+    {
+        if ( str_rep.equalsIgnoreCase( COLOR_BLACK.toString() ) )
+            return COLOR_BLACK;
+        else if ( str_rep.equalsIgnoreCase( COLOR_DARKGRAY.toString() ) )
+            return COLOR_DARKGRAY;
+        else if ( str_rep.equalsIgnoreCase( COLOR_GRAY.toString() ) )
+            return COLOR_GRAY;
+        else if ( str_rep.equalsIgnoreCase( COLOR_LIGHTGRAY.toString() ) )
+            return COLOR_LIGHTGRAY;
+        else if ( str_rep.equalsIgnoreCase( COLOR_WHITE.toString() ) )
+            return COLOR_WHITE;
+        return COLOR_BLACK;
     }
 }

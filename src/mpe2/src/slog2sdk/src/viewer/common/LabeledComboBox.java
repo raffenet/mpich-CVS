@@ -89,9 +89,9 @@ public class LabeledComboBox extends JPanel
             lst.setSelectedItem( Boolean.FALSE );
     }
 
-    public Alias getSelectedAliasItem()
+    public Object getSelectedItem()
     {
-        return (Alias) lst.getSelectedItem();
+        return lst.getSelectedItem();
     }
 
     public boolean getSelectedBooleanItem()

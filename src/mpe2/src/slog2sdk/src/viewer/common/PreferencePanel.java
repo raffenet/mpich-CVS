@@ -11,6 +11,8 @@ package viewer.common;
 
 import javax.swing.*;
 
+import base.topology.StateBorder;
+
 public class PreferencePanel extends JPanel
 {
     private static int                    VERTICAL_GAP_HEIGHT = 10;
@@ -21,7 +23,9 @@ public class PreferencePanel extends JPanel
     private        LabeledTextField       fld_INIT_SLOG2_LEVEL_READ;
 
     private        LabeledComboBox        lst_Y_AXIS_ROOT_VISIBLE;
+    private        LabeledComboBox        lst_BACKGROUND_COLOR;
     private        LabeledTextField       fld_Y_AXIS_ROW_HEIGHT;
+    private        LabeledComboBox        lst_STATE_BORDER_STYLE;
     private        LabeledTextField       fld_STATE_HEIGHT_FACTOR;
     private        LabeledTextField       fld_NESTING_HEIGHT_FACTOR;
     private        LabeledComboBox        lst_ARROW_ANTIALIASING;
@@ -30,6 +34,9 @@ public class PreferencePanel extends JPanel
     private        LabeledTextField       fld_CLICK_RADIUS_TO_LINE;
 
     private        LabeledTextField       fld_MIN_WIDTH_TO_DRAG;
+    private        LabeledTextField       fld_SEARCH_ARROW_LENGTH;
+    private        LabeledTextField       fld_SEARCH_FRAME_THICKNESS;
+    private        LabeledComboBox        lst_SEARCHED_OBJECT_ON_TOP;
 
 
     public PreferencePanel()
@@ -111,6 +118,16 @@ public class PreferencePanel extends JPanel
         "Whelther to show the top of the Y-axis tree-styled directory label." );
         super.add( lst_Y_AXIS_ROOT_VISIBLE );
 
+        lst_BACKGROUND_COLOR = new LabeledComboBox( "BACKGROUND_COLOR" );
+        lst_BACKGROUND_COLOR.addItem( Const.COLOR_BLACK );
+        lst_BACKGROUND_COLOR.addItem( Const.COLOR_DARKGRAY );
+        lst_BACKGROUND_COLOR.addItem( Const.COLOR_GRAY );
+        lst_BACKGROUND_COLOR.addItem( Const.COLOR_LIGHTGRAY );
+        lst_BACKGROUND_COLOR.addItem( Const.COLOR_WHITE );
+        lst_BACKGROUND_COLOR.setToolTipText(
+        "Background color of the Timeline Canvas" );
+        super.add( lst_BACKGROUND_COLOR );
+
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
         fld_Y_AXIS_ROW_HEIGHT = new LabeledTextField(
@@ -122,6 +139,16 @@ public class PreferencePanel extends JPanel
         fld_Y_AXIS_ROW_HEIGHT.addSelfDocumentListener();
         fld_Y_AXIS_ROW_HEIGHT.setEditable( true );
         super.add( fld_Y_AXIS_ROW_HEIGHT );
+
+        lst_STATE_BORDER_STYLE = new LabeledComboBox( "STATE_BORDER_STYLE" );
+        lst_STATE_BORDER_STYLE.addItem( StateBorder.COLOR_RAISED_BORDER );
+        lst_STATE_BORDER_STYLE.addItem( StateBorder.COLOR_LOWERED_BORDER );
+        lst_STATE_BORDER_STYLE.addItem( StateBorder.WHITE_RAISED_BORDER );
+        lst_STATE_BORDER_STYLE.addItem( StateBorder.WHITE_LOWERED_BORDER );
+        lst_STATE_BORDER_STYLE.addItem( StateBorder.WHITE_PLAIN_BORDER );
+        lst_STATE_BORDER_STYLE.addItem( StateBorder.EMPTY_BORDER );
+        lst_STATE_BORDER_STYLE.setToolTipText( "Border Style of States" );
+        super.add( lst_STATE_BORDER_STYLE );
 
         fld_STATE_HEIGHT_FACTOR = new LabeledTextField(
                                       "STATE_HEIGHT_FACTOR",
@@ -153,7 +180,8 @@ public class PreferencePanel extends JPanel
         lst_ARROW_ANTIALIASING.addItem( Const.ANTIALIAS_OFF );
         lst_ARROW_ANTIALIASING.addItem( Const.ANTIALIAS_ON );
         lst_ARROW_ANTIALIASING.setToolTipText(
-        "Antialiasing in drawing arrows, slow down drawing by a factor of ~3" );
+          "Antialiasing in drawing arrow. ON usually slows down "
+        + "the drawing by a factor of ~3" );
         super.add( lst_ARROW_ANTIALIASING );
 
         fld_ARROW_HEAD_LENGTH = new LabeledTextField(
@@ -180,7 +208,7 @@ public class PreferencePanel extends JPanel
                                        "CLICK_RADIUS_TO_LINE",
                                        Const.INTEGER_FORMAT );
         fld_CLICK_RADIUS_TO_LINE.setToolTipText(
-        "Pixel radius in which a point/click is considered on the arrow." );
+        "Radius in pixel for a point/click to be considered on the arrow." );
         fld_CLICK_RADIUS_TO_LINE.setHorizontalAlignment( JTextField.CENTER );
         fld_CLICK_RADIUS_TO_LINE.addSelfDocumentListener();
         fld_CLICK_RADIUS_TO_LINE.setEditable( true );
@@ -192,11 +220,40 @@ public class PreferencePanel extends JPanel
                                     "MIN_WIDTH_TO_DRAG",
                                     Const.INTEGER_FORMAT );
         fld_MIN_WIDTH_TO_DRAG.setToolTipText(
-        "minimum Pixel width to be considered a dragged operation." );
+        "Minimum width in pixel to be considered a dragged operation." );
         fld_MIN_WIDTH_TO_DRAG.setHorizontalAlignment( JTextField.CENTER );
         fld_MIN_WIDTH_TO_DRAG.addSelfDocumentListener();
         fld_MIN_WIDTH_TO_DRAG.setEditable( true );
         super.add( fld_MIN_WIDTH_TO_DRAG );
+
+        fld_SEARCH_ARROW_LENGTH = new LabeledTextField(
+                                      "SEARCH_ARROW_LENGTH",
+                                      Const.INTEGER_FORMAT );
+        fld_SEARCH_ARROW_LENGTH.setToolTipText(
+        "Length of the search marker's arrow in pixel" );
+        fld_SEARCH_ARROW_LENGTH.setHorizontalAlignment( JTextField.CENTER );
+        fld_SEARCH_ARROW_LENGTH.addSelfDocumentListener();
+        fld_SEARCH_ARROW_LENGTH.setEditable( true );
+        super.add( fld_SEARCH_ARROW_LENGTH );
+
+        fld_SEARCH_FRAME_THICKNESS = new LabeledTextField(
+                                         "SEARCH_FRAME_THICKNESS",
+                                         Const.INTEGER_FORMAT );
+        fld_SEARCH_FRAME_THICKNESS.setToolTipText(
+          "Thickness in pixel of the popup frame that hightlights "
+        + "the searched drawable" );
+        fld_SEARCH_FRAME_THICKNESS.setHorizontalAlignment( JTextField.CENTER );
+        fld_SEARCH_FRAME_THICKNESS.addSelfDocumentListener();
+        fld_SEARCH_FRAME_THICKNESS.setEditable( true );
+        super.add( fld_SEARCH_FRAME_THICKNESS );
+
+        lst_SEARCHED_OBJECT_ON_TOP = new LabeledComboBox(
+                                         "SEARCHED_OBJECT_ON_TOP" );
+        lst_SEARCHED_OBJECT_ON_TOP.addItem( Boolean.TRUE );
+        lst_SEARCHED_OBJECT_ON_TOP.addItem( Boolean.FALSE );
+        lst_SEARCHED_OBJECT_ON_TOP.setToolTipText(
+        "Whelther to display the searched object on top of the search frame." );
+        super.add( lst_SEARCHED_OBJECT_ON_TOP );
 
         super.add( Box.createVerticalStrut( VERTICAL_GAP_HEIGHT ) );
 
@@ -213,7 +270,9 @@ public class PreferencePanel extends JPanel
 
         lst_Y_AXIS_ROOT_VISIBLE.setSelectedBooleanItem(
                                 Parameters.Y_AXIS_ROOT_VISIBLE );
+        lst_BACKGROUND_COLOR.setSelectedItem( Parameters.BACKGROUND_COLOR );
         fld_Y_AXIS_ROW_HEIGHT.setInteger( Parameters.Y_AXIS_ROW_HEIGHT );
+        lst_STATE_BORDER_STYLE.setSelectedItem( Parameters.STATE_BORDER_STYLE );
         fld_STATE_HEIGHT_FACTOR.setFloat( Parameters.STATE_HEIGHT_FACTOR );
         fld_NESTING_HEIGHT_FACTOR.setFloat( Parameters.NESTING_HEIGHT_FACTOR );
         lst_ARROW_ANTIALIASING.setSelectedItem( Parameters.ARROW_ANTIALIASING );
@@ -223,6 +282,11 @@ public class PreferencePanel extends JPanel
         fld_CLICK_RADIUS_TO_LINE.setInteger( Parameters.CLICK_RADIUS_TO_LINE );
 
         fld_MIN_WIDTH_TO_DRAG.setInteger( Parameters.MIN_WIDTH_TO_DRAG );
+        fld_SEARCH_ARROW_LENGTH.setInteger( Parameters.SEARCH_ARROW_LENGTH );
+        fld_SEARCH_FRAME_THICKNESS.setInteger(
+                                   Parameters.SEARCH_FRAME_THICKNESS );
+        lst_SEARCHED_OBJECT_ON_TOP.setSelectedBooleanItem(
+                                   Parameters.SEARCHED_OBJECT_ON_TOP );
     }
 
     public void updateAllParameters()
@@ -238,14 +302,18 @@ public class PreferencePanel extends JPanel
 
         Parameters.Y_AXIS_ROOT_VISIBLE
                   = lst_Y_AXIS_ROOT_VISIBLE.getSelectedBooleanItem();
+        Parameters.BACKGROUND_COLOR
+                  = (Alias) lst_BACKGROUND_COLOR.getSelectedItem();
         Parameters.Y_AXIS_ROW_HEIGHT
                   = fld_Y_AXIS_ROW_HEIGHT.getInteger();
+        Parameters.STATE_BORDER_STYLE
+                  = (StateBorder) lst_STATE_BORDER_STYLE.getSelectedItem();
         Parameters.STATE_HEIGHT_FACTOR
                   = fld_STATE_HEIGHT_FACTOR.getFloat();
         Parameters.NESTING_HEIGHT_FACTOR
                   = fld_NESTING_HEIGHT_FACTOR.getFloat();
         Parameters.ARROW_ANTIALIASING
-                  = lst_ARROW_ANTIALIASING.getSelectedAliasItem();
+                  = (Alias) lst_ARROW_ANTIALIASING.getSelectedItem();
         Parameters.ARROW_HEAD_LENGTH
                   = fld_ARROW_HEAD_LENGTH.getInteger();
         Parameters.ARROW_HEAD_HALF_WIDTH
@@ -255,5 +323,11 @@ public class PreferencePanel extends JPanel
 
         Parameters.MIN_WIDTH_TO_DRAG
                   = fld_MIN_WIDTH_TO_DRAG.getInteger();
+        Parameters.SEARCH_ARROW_LENGTH
+                  = fld_SEARCH_ARROW_LENGTH.getInteger();
+        Parameters.SEARCH_FRAME_THICKNESS
+                  = fld_SEARCH_FRAME_THICKNESS.getInteger();
+        Parameters.SEARCHED_OBJECT_ON_TOP
+                  = lst_SEARCHED_OBJECT_ON_TOP.getSelectedBooleanItem();
     }
 }
