@@ -191,8 +191,21 @@ char s_printf_buffer[SMPD_MAX_DBG_PRINTF_LENGTH];
 
 void smpd_clean_output(char *str)
 {
-    smpd_hide_string_arg(str, "password");
-    smpd_hide_string_arg(str, "pwd");
+    char *temp_str;
+
+    temp_str = strstr(str, "password");
+    while (temp_str != NULL)
+    {
+	smpd_hide_string_arg(temp_str, "password");
+	temp_str = strstr(temp_str+1, "password");
+    }
+
+    temp_str = strstr(str, "pwd");
+    while (temp_str != NULL)
+    {
+	smpd_hide_string_arg(temp_str, "pwd");
+	temp_str = strstr(temp_str+1, "pwd");
+    }
 }
 
 int smpd_err_printf(char *str, ...)
