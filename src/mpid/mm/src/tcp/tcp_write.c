@@ -137,8 +137,6 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     MPID_IOV *car_vec, *buf_vec;
     int num_left, i;
     MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_VEC);
-    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
-    MPIDI_STATE_DECL(MPID_STATE_BWRITEV);
     
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_VEC);
 
@@ -206,11 +204,9 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	/* write */
 	if (car_ptr->data.tcp.buf.vec_write.vec_size == 1) /* optimization for single buffer writes */
 	{
-	    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
 	    num_written = bwrite(vc_ptr->data.tcp.bfd, 
 		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_IOV_BUF,
 		car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index].MPID_IOV_LEN);
-	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
@@ -222,12 +218,10 @@ int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 	}
 	else
 	{
-	    MPIDI_FUNC_ENTER(MPID_STATE_BWRITEV);
 	    num_written = bwritev(
 		vc_ptr->data.tcp.bfd, 
 		&car_ptr->data.tcp.buf.vec_write.vec[car_ptr->data.tcp.buf.vec_write.cur_index], 
 		car_ptr->data.tcp.buf.vec_write.vec_size);
-	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
@@ -300,7 +294,6 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
     int num_written;
     MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_TMP);
-    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_TMP);
 
@@ -311,11 +304,9 @@ int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
     }
 
     /* write as much as possible */
-    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
     num_written = bwrite(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->tmp.buf) + car_ptr->data.tcp.buf.tmp.num_written,
 	buf_ptr->tmp.num_read - car_ptr->data.tcp.buf.tmp.num_written);
-    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
     if (num_written == SOCKET_ERROR)
     {
 	err_printf("tcp_write_tmp:bwrite failed, error %d\n", beasy_getlasterror());
@@ -347,7 +338,6 @@ int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
 {
     int num_written;
     MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_SIMPLE);
-    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_SIMPLE);
 
@@ -358,11 +348,9 @@ int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_p
     }
 
     /* write as much as possible */
-    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
     num_written = bwrite(vc_ptr->data.tcp.bfd, 
 	(char*)(buf_ptr->simple.buf) + car_ptr->data.tcp.buf.simple.num_written,
 	buf_ptr->simple.num_read - car_ptr->data.tcp.buf.simple.num_written);
-    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
     if (num_written == SOCKET_ERROR)
     {
 	err_printf("tcp_write_tmp:bwrite failed, error %d\n", beasy_getlasterror());

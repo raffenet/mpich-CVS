@@ -190,7 +190,7 @@ int tcp_make_progress()
     MPIDI_VC *vc_iter;
     bfd_set readset, writeset;
     MPIDI_STATE_DECL(MPID_STATE_TCP_MAKE_PROGRESS);
-    MPIDI_STATE_DECL(MPID_STATE_BSELECT);
+    /*MPIDI_STATE_DECL(MPID_STATE_BSELECT);*/
 
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_MAKE_PROGRESS);
 
@@ -211,12 +211,12 @@ int tcp_make_progress()
 	writeset = TCP_Process.writeset;
 
     /* select */
-    MPIDI_FUNC_ENTER(MPID_STATE_BSELECT);
+    /*MPIDI_FUNC_ENTER(MPID_STATE_BSELECT);*/
     nready = bselect(TCP_Process.max_bfd, 
 	TCP_Process.num_readers ? &readset : NULL,
 	TCP_Process.num_writers ? &writeset : NULL,
 	NULL, &tv);
-    MPIDI_FUNC_EXIT(MPID_STATE_BSELECT);
+    /*MPIDI_FUNC_EXIT(MPID_STATE_BSELECT);*/
 
     if (nready == 0)
     {

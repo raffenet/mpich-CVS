@@ -9,6 +9,7 @@
 #include "mpichtimer.h"
 #include "mpiimpl.h"
 
+
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
 void MPID_Wtime( MPID_Time_t *timeval )
 {
@@ -26,6 +27,9 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
     *t3 += (*t2 - *t1);
 }
+
+
+
 #elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
 void MPID_Wtime( MPID_Time_t *timeval )
 {
@@ -43,17 +47,20 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 }
 void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
-  int nsec, sec;
-
-  nsec = t1->tv_nsec + t2->tv_nsec;
-  sec  = t1->tv_sec + t2->tv_sec;
-  if (nsec > 1.0e9) {
-    nsec -= 1.0e9;
-    sec++;
-  }
-  t3->sec = sec;
-  t3->nsec = nsec;
+    int nsec, sec;
+    
+    nsec = t1->tv_nsec + t2->tv_nsec;
+    sec  = t1->tv_sec + t2->tv_sec;
+    if (nsec > 1.0e9) {
+	nsec -= 1.0e9;
+	sec++;
+    }
+    t3->sec = sec;
+    t3->nsec = nsec;
 }
+
+
+
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
 void MPID_Wtime( MPID_Time_t *tval )
 {
@@ -72,17 +79,20 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 }
 void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
-  int usec, sec;
-
-  usec = t2->tv_usec - t1->tv_usec;
-  sec  = t2->tv_sec - t1->tv_sec;
-  t3->tv_usec += usec;
-  t3->tv_sec += sec;
-  if (t3->tv_usec > 1.0e6) {
-    t3->tv_usec -= 1.0e6;
-    t3->tv_sec++;
-  }
+    int usec, sec;
+    
+    usec = t2->tv_usec - t1->tv_usec;
+    sec  = t2->tv_sec - t1->tv_sec;
+    t3->tv_usec += usec;
+    t3->tv_sec += sec;
+    if (t3->tv_usec > 1.0e6) {
+	t3->tv_usec -= 1.0e6;
+	t3->tv_sec++;
+    }
 }
+
+
+
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
 #include <sys/time.h>
 double g_timer_frequency;
@@ -117,8 +127,11 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 }
 void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
-  *t3 += (*t2 - *t1);
+    *t3 += (*t2 - *t1);
 }
+
+
+
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 /* Code from LinuxJournal #42 (Oct-97), p50; 
    thanks to Dave Covey dnc@gi.alaska.edu
@@ -136,6 +149,94 @@ void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
 }
+
+
+
+#elif MPICH_TIMER_KIND == USE_WIN86_CYCLE
+double g_timer_frequency;
+double MPID_Wtick(void)
+{
+    return g_timer_frequency;
+}
+void MPID_Wtime_todouble( MPID_Time_t *t, double *d)
+{
+    *d = (double)(__int64)*t / g_timer_frequency;
+}
+void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff)
+{
+    *diff = (double)((__int64)( *t2 - *t1 )) / g_timer_frequency;
+}
+void MPID_Wtime_init()
+{
+    MPID_Time_t t1, t2;
+    DWORD s1, s2;
+    double d;
+    int i;
+
+    MPID_Wtime(&t1);
+    MPID_Wtime(&t1);
+
+    /* time an interval using both timers */
+    s1 = GetTickCount();
+    MPID_Wtime(&t1);
+    /*Sleep(250);*/ /* Sleep causes power saving cpu's to stop which stops the counter */
+    while (GetTickCount() - s1 < 200)
+    {
+	for (i=2; i<1000; i++)
+	    d = (double)i / (double)(i-1);
+    }
+    s2 = GetTickCount();
+    MPID_Wtime(&t2);
+
+    /* calculate the frequency of the assembly cycle counter */
+    g_timer_frequency = (double)((__int64)(t2 - t1)) / ((double)(s2 - s1) / 1000.0);
+    /*
+    printf("t2-t1 %10d\nsystime diff %d\nfrequency %g\n CPU MHz %g\n", 
+	(int)(t2-t1), (int)(s2 - s1), g_timer_frequency, g_timer_frequency * 1.0e-6);
+    */
+}
+/*
+void TIMER_INIT()
+{
+    TIMER_TYPE t1, t2;
+    FILETIME ft1, ft2;
+    SYSTEMTIME st1, st2;
+    ULARGE_INTEGER u1, u2;
+
+    t1 = 5;
+    t2 = 5;
+
+    GET_TIME(&t1);
+    GET_TIME(&t1);
+
+    //GetSystemTimeAsFileTime(&ft1);
+    GetSystemTime(&st1);
+    GET_TIME(&t1);
+    Sleep(500);
+    //GetSystemTimeAsFileTime(&ft2);
+    GetSystemTime(&st2);
+    GET_TIME(&t2);
+
+    SystemTimeToFileTime(&st1, &ft1);
+    SystemTimeToFileTime(&st2, &ft2);
+
+    u1.QuadPart = ft1.dwHighDateTime;
+    u1.QuadPart = u1.QuadPart << 32;
+    u1.QuadPart |= ft1.dwLowDateTime;
+    u2.QuadPart = ft2.dwHighDateTime;
+    u2.QuadPart = u2.QuadPart << 32;
+    u2.QuadPart |= ft2.dwLowDateTime;
+
+    g_timer_frequency = (double)((__int64)(t2 - t1)) / (1e-7 * (double)((__int64)(u2.QuadPart - u1.QuadPart)));
+    printf("t2   %10d\nt1   %10d\ndiff %10d\nsystime diff %d\nfrequency %g\n CPU MHz %g\n", 
+	(int)t2, (int)t1, (int)(t2-t1), (int)(u2.QuadPart - u1.QuadPart), g_timer_frequency, g_timer_frequency * 1.0e-6);
+    printf("t2-t1 %10d\nsystime diff %d\nfrequency %g\n CPU MHz %g\n", 
+	(int)(t2-t1), (int)(u2.QuadPart - u1.QuadPart), g_timer_frequency, g_timer_frequency * 1.0e-6);
+}
+*/
+
+
+
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
 double g_timer_frequency=0.0;  /* High performance counter frequency */
 void MPID_Wtime_init(void)
@@ -148,12 +249,6 @@ double MPID_Wtick(void)
 {
     return g_timer_frequency;
 }
-/*
-void MPID_Wtime( MPID_Time_t *timeval )
-{
-    QueryPerformanceCounter(timeval);
-}
-*/
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
     *val = (double)t->QuadPart / g_timer_frequency;
@@ -168,6 +263,9 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
   /* ??? */
 }
+
+
+
 #endif
 
 

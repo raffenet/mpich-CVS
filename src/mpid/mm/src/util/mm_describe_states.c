@@ -29,6 +29,7 @@ int MPIDU_Describe_timer_states()
     g_timer_state[MPID_STATE_BWRITE].name = "bwrite";
     g_timer_state[MPID_STATE_BWRITEV].name = "bwritev";
     g_timer_state[MPID_STATE_BSELECT].name = "bselect";
+    g_timer_state[MPID_STATE_SELECT].name = "select";
 
     /* mm functions */
     g_timer_state[MPID_STATE_MM_OPEN_PORT].name = "mm_open_port";
@@ -337,11 +338,37 @@ int MPIDU_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPID_REQUEST_RELEASE, "MPID_Request_release", get_random_color_str());
 
     /* bsocket functions */
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BACCEPT, "baccept", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BBIND, "bbind", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BCLOSE, "bclose", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BCLR, "bclr", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BCONNECT, "bconnect", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_ACCEPT, "beasy_accept", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_CLOSESOCKET, "beasy_closesocket", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_CONNECT, "beasy_connect", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_CREATE, "beasy_create", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_GET_IP, "beasy_get_ip", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_GET_IP_STRING, "beasy_get_ip_string", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_GET_SOCK_INFO, "beasy_get_sock_info", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_RECEIVE, "beasy_receive", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_RECEIVE_SOME, "beasy_receive_some", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_RECEIVE_TIMEOUT, "beasy_receive_timeout", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BEASY_SEND, "beasy_send", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BGETSOCKNAME, "bgetsockname", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BLISTEN, "blisten", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BMAKE_BLOCKING, "bmake_blocking", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BMAKE_NONBLOCKING, "bmake_nonblocking", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BREAD, "bread", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BREADV, "breadv", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BSELECT, "bselect", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BSET, "bset", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BSETSOCKOPT, "bsetsockopt", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_BSOCKET, "bsocket", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BWRITE, "bwrite", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BWRITEV, "bwritev", get_random_color_str());
-    RLOG_DescribeState(g_pRLOG, MPID_STATE_BSELECT, "bselect", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_READ, "read", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_READV, "readv", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_SELECT, "select", get_random_color_str());
 
     /* mm functions */
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MM_OPEN_PORT, "mm_open_port", get_random_color_str());

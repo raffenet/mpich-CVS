@@ -48,6 +48,8 @@
 #include <time.h>
 #endif
 
+#include "mpidimpl.h"
+
 /*#define DEBUG_BSOCKET*/
 #undef DEBUG_BSOCKET
 
@@ -193,18 +195,30 @@ int bwritev(int bfd, B_VECTOR *pIOVec, int n)
 {
 #ifdef HAVE_WINSOCK2_H
     DWORD dwNumSent = 0;
+    MPIDI_STATE_DECL(MPID_STATE_BWRITEV);
+    MPIDI_FUNC_ENTER(MPID_STATE_BWRITEV);
     if (n == 0)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
 	return 0;
+    }
     if (WSASend(bfd, pIOVec, n, &dwNumSent, 0, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
     {
 	if (WSAGetLastError() != WSAEWOULDBLOCK)
 	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
 	    return SOCKET_ERROR;
 	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
     return dwNumSent;
 #else
-    return writev(bfd, pIOVec, n);
+    int num_written;
+    MPIDI_STATE_DECL(MPID_STATE_BWRITEV);
+    MPIDI_FUNC_ENTER(MPID_STATE_BWRITEV);
+    num_written = writev(bfd, pIOVec, n);
+    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
+    return num_written;
 #endif
 }
 
@@ -217,7 +231,9 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 #else
     int      n = 0;
 #endif
+    MPIDI_STATE_DECL(MPID_STATE_BREADV);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BREADV);
     DBG_MSG("Enter breadv\n");
     
 #ifdef HAVE_WINSOCK2_H
@@ -229,6 +245,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 	    for (k=0; k<veclen; k++)
 		msg_printf("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k, vec[k].B_VECTOR_LEN, k, vec[k].B_VECTOR_BUF);
 	    */
+	    MPIDI_FUNC_EXIT(MPID_STATE_BREADV);
 	    return SOCKET_ERROR;
 	}
 	n = 0;
@@ -236,16 +253,17 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 #else
     n = readv(bfd, vec, veclen);
 #endif
-    
+    MPIDI_FUNC_EXIT(MPID_STATE_BREADV);
     return n;
 }
 
 int bmake_nonblocking(int bfd)
 {
-    
     int      flag = 1;
     int      rc;
-    
+    MPIDI_STATE_DECL(MPID_STATE_BMAKE_NONBLOCKING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BMAKE_NONBLOCKING);
     DBG_MSG("Enter make_nonblocking\n");
     
 #ifdef HAVE_WINDOWS_SOCKET
@@ -253,15 +271,18 @@ int bmake_nonblocking(int bfd)
 #else
     rc = ioctl(bfd, FIONBIO, &flag);
 #endif
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_BMAKE_NONBLOCKING);
     return rc;
 }
 
 int bmake_blocking(int bfd)
 {
     int      flag = 0;
-    int      rc;
-    
+    int      rc;\
+    MPIDI_STATE_DECL(MPID_STATE_BMAKE_BLOCKING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BMAKE_BLOCKING);
     DBG_MSG("Enter make_blocking\n");
     
 #ifdef HAVE_WINDOWS_SOCKET
@@ -269,7 +290,8 @@ int bmake_blocking(int bfd)
 #else
     rc = ioctl(bfd, FIONBIO, &flag);
 #endif
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_BMAKE_BLOCKING);
     return rc;
 }
 
@@ -307,15 +329,22 @@ unsigned int bget_fd(int bfd)
 void bset(int bfd, bfd_set *s)
 {
     int i;
+    MPIDI_STATE_DECL(MPID_STATE_BSET);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BSET);
     /*dbg_printf("bset\n");*/
     FD_SET( bget_fd(bfd), & (s) -> set );
     for (i=0; i<s->n; i++)
     {
 	if (s->p[i] == (BFD_Buffer*)bfd)
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BSET);
 	    return;
+	}
     }
     s->p[s->n] = (BFD_Buffer*)bfd;
     s->n++;
+    MPIDI_FUNC_EXIT(MPID_STATE_BSET);
 }
 
 /*@
@@ -331,13 +360,18 @@ void bclr(int bfd, bfd_set *s)
 {
     int i;
     BFD_Buffer* p;
+    MPIDI_STATE_DECL(MPID_STATE_BCLR);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BCLR);
     /*dbg_printf("bclr\n");*/
 
     FD_CLR( bget_fd(bfd), & (s) -> set );
 
     if (s->n == 0)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_BCLR);
 	return;
+    }
 
     p = (BFD_Buffer*)bfd;
     for (i=0; i<s->n; i++)
@@ -346,9 +380,11 @@ void bclr(int bfd, bfd_set *s)
 	{
 	    s->p[i] = s->p[s->n-1];
 	    s->n--;
+	    MPIDI_FUNC_EXIT(MPID_STATE_BCLR);
 	    return;
 	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_BCLR);
 }
 
 /*@
@@ -446,7 +482,9 @@ int bsocket(int family, int type, int protocol)
     int bfdtemp;
 #endif
     BFD_Buffer *pbfd;
+    MPIDI_STATE_DECL(MPID_STATE_BSOCKET);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BSOCKET);
     DBG_MSG("Enter bsocket\n");
     /*dbg_printf("bsocket\n");*/
     
@@ -454,6 +492,7 @@ int bsocket(int family, int type, int protocol)
     if (pbfd == 0) 
     {
 	DBG_MSG(("ERROR in bsocket: BlockAlloc returned NULL"));
+	MPIDI_FUNC_EXIT(MPID_STATE_BSOCKET);
 	return BFD_INVALID_SOCKET;
     }
     
@@ -472,9 +511,11 @@ int bsocket(int family, int type, int protocol)
 	DBG_MSG("ERROR in bsocket: socket returned SOCKET_ERROR\n");
 	memset(pbfd, 0, sizeof(BFD_Buffer));
 	BlockFree( Bsocket_mem, pbfd );
+	MPIDI_FUNC_EXIT(MPID_STATE_BSOCKET);
 	return BFD_INVALID_SOCKET;
     }
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_BSOCKET);
     return (int)pbfd;
 }
 
@@ -491,10 +532,16 @@ Parameters:
 int bbind(int bfd, const struct sockaddr *servaddr,	      
 	  socklen_t servaddr_len)
 {
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_BBIND);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BBIND);
     DBG_MSG("Enter bbind\n");
     /*dbg_printf("bbind\n");*/
     
-    return bind(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
+    ret_val = bind(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
+    MPIDI_FUNC_EXIT(MPID_STATE_BBIND);
+    return ret_val;
 }
 
 /*@
@@ -508,8 +555,14 @@ Parameters:
 @*/
 int blisten(int bfd, int backlog)
 {
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_BLISTEN);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BLISTEN);
     /*dbg_printf("blisten\n");*/
-    return listen(((BFD_Buffer*)bfd)->real_fd, backlog);
+    ret_val = listen(((BFD_Buffer*)bfd)->real_fd, backlog);
+    MPIDI_FUNC_EXIT(MPID_STATE_BLISTEN);
+    return ret_val;
 }
 
 /*@
@@ -527,8 +580,14 @@ bsetsockopt - setsockopt
 int bsetsockopt(int bfd, int level, int optname, const void *optval,		    
 		socklen_t optlen)
 {
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_BSETSOCKOPT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BSETSOCKOPT);
     /*dbg_printf("bsetsockopt\n");*/
-    return setsockopt(((BFD_Buffer*)bfd)->real_fd, level, optname, optval, optlen);
+    ret_val = setsockopt(((BFD_Buffer*)bfd)->real_fd, level, optname, optval, optlen);
+    MPIDI_FUNC_EXIT(MPID_STATE_BSETSOCKOPT);
+    return ret_val;
 }
 
 /*@
@@ -545,7 +604,10 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
 {
     int 	       conn_fd, bfdtemp;
     BFD_Buffer 	       *new_bfd;
-    
+    MPIDI_STATE_DECL(MPID_STATE_BACCEPT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BACCEPT);
+
     DBG_MSG("Enter baccept\n");
     /*dbg_printf("baccept\n");*/
     
@@ -553,6 +615,7 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
     if (bfdtemp == SOCKET_ERROR) 
     {
 	DBG_MSG("ERROR in baccept: accept returned SOCKET_ERROR\n");
+	MPIDI_FUNC_EXIT(MPID_STATE_BACCEPT);
 	return BFD_INVALID_SOCKET;
     }
     
@@ -560,6 +623,7 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
     if (new_bfd == 0) 
     {
 	DBG_MSG(("ERROR in baccept: BlockAlloc return NULL\n"));
+	MPIDI_FUNC_EXIT(MPID_STATE_BACCEPT);
 	return BFD_INVALID_SOCKET;
     }
 
@@ -573,6 +637,7 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
     new_bfd->real_fd = conn_fd;
     new_bfd->state = BFD_IDLE;
 
+    MPIDI_FUNC_EXIT(MPID_STATE_BACCEPT);
     return (int)new_bfd;
 }
 
@@ -589,8 +654,14 @@ bconnect - connect
 int bconnect(int bfd, const struct sockaddr *servaddr,		    
 	     socklen_t servaddr_len)
 {
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_BCONNECT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BCONNECT);
     /*dbg_printf("bconnect\n");*/
-    return connect(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
+    ret_val = connect(((BFD_Buffer*)bfd)->real_fd, servaddr, servaddr_len);
+    MPIDI_FUNC_EXIT(MPID_STATE_BCONNECT);
+    return ret_val;
 }
 
 /*@
@@ -612,7 +683,10 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
     bfd_set        rcopy;
     BFD_Buffer     *p;
     int            i;
+    MPIDI_STATE_DECL(MPID_STATE_BSELECT);
+    MPIDI_STATE_DECL(MPID_STATE_SELECT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BSELECT);
     DBG_MSG("Enter bselect\n");
     /*dbg_printf("bselect\n");*/
     
@@ -636,21 +710,29 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
 	    if (writebfds)
 	    {
 		maxfds = ((BFD_Buffer*)maxfds)->real_fd + 1;
+		MPIDI_FUNC_ENTER(MPID_STATE_SELECT);
 		i = select(maxfds, NULL, &writebfds->set, NULL, tv);
+		MPIDI_FUNC_EXIT(MPID_STATE_SELECT);
 		if (i != SOCKET_ERROR)
 		    nbfds += i;
 	    }
+	    MPIDI_FUNC_EXIT(MPID_STATE_BSELECT);
 	    return nbfds;
 	}
     }
 
     maxfds = ((BFD_Buffer*)maxfds)->real_fd + 1;
+    MPIDI_FUNC_ENTER(MPID_STATE_SELECT);
     nbfds = select(maxfds, 
 	readbfds ? &readbfds->set : NULL, 
 	writebfds ? &writebfds->set : NULL, 
 	execbfds ? &execbfds->set : NULL, tv);
-    if (nbfds == SOCKET_ERROR) 
+    MPIDI_FUNC_EXIT(MPID_STATE_SELECT);
+    if (nbfds == SOCKET_ERROR)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_BSELECT);
 	return SOCKET_ERROR;
+    }
     
     if (readbfds)
     {
@@ -664,7 +746,8 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
 	    }
 	}
     }
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_BSELECT);
     return nbfds;
 }
 
@@ -680,9 +763,15 @@ bwrite - write
 @*/
 int bwrite(int bfd, char *ubuf, int len)
 {
+    int num_written;
+    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
     /*dbg_printf("bwrite\n");*/
-    return bfd_write(((BFD_Buffer*)bfd)->real_fd, ubuf, len);
+    num_written = bfd_write(((BFD_Buffer*)bfd)->real_fd, ubuf, len);
     /*return bfd_write(((BFD_Buffer*)bfd)->real_fd, ubuf, BSOCKET_MIN(len, 20*1024));*/
+    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
+    return num_written;
 }
 
 /*
@@ -709,8 +798,14 @@ int bwritev(int bfd, B_VECTOR *pIOVec, int n)
     int i;
 #endif
     DWORD dwNumSent = 0;
+    MPIDI_STATE_DECL(MPID_STATE_BWRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BWRITEV);
     if (n == 0)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
 	return 0;
+    }
 #ifdef DBG_BWRITEV
     BPRINTF("(bwritev");
     for (i=0; i<n; i++)
@@ -720,15 +815,21 @@ int bwritev(int bfd, B_VECTOR *pIOVec, int n)
     {
 	if (WSAGetLastError() != WSAEWOULDBLOCK)
 	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
 	    return SOCKET_ERROR;
 	}
     }
     DBG_BWRITEV_PRINT(("->%d)", dwNumSent));
+    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
     return dwNumSent;
 #else
     int nWritten;
+    MPIDI_STATE_DECL(MPID_STATE_BWRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BWRITEV);
     /*bg_printf("bwritev\n");*/
     nWritten = writev(((BFD_Buffer*)bfd)->real_fd, pIOVec, n);
+    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
     return nWritten;
 #endif
 }
@@ -751,14 +852,20 @@ int bread(int bfd, char *ubuf, int len)
     int      n;
     char     *bbuf;
     BFD_Buffer *pbfd;
-    
+    MPIDI_STATE_DECL(MPID_STATE_BREAD);
+    MPIDI_STATE_DECL(MPID_STATE_READ);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BREAD);
     DBG_MSG("Enter bread\n");
     /*dbg_printf("bread\n");*/
     
     pbfd = (BFD_Buffer*)bfd;
 
-    if (pbfd->state == BFD_ERROR) 
+    if (pbfd->state == BFD_ERROR)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
 	return pbfd->errval;
+    }
     
     pbfd->state = BFD_READING;
     fd = pbfd->real_fd;
@@ -773,7 +880,8 @@ int bread(int bfd, char *ubuf, int len)
 	    pbfd->curpos = 0;
 
 	DBG_MSG(("bread: copied %d bytes into ubuf starting at bbuf[%d]\n", len, *(bbuf) + conn->curpos));
-	
+
+	MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
 	return len;
     }
     
@@ -787,7 +895,9 @@ int bread(int bfd, char *ubuf, int len)
     
     if (len > g_bbuflen) 
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_READ);
 	n = bfd_read(fd, ubuf, len);
+	MPIDI_FUNC_EXIT(MPID_STATE_READ);
 	if (n == 0) 
 	{
 	    pbfd->state = BFD_ERROR;
@@ -807,11 +917,14 @@ int bread(int bfd, char *ubuf, int len)
 	n += pbfd->num_avail;
 	pbfd->num_avail = 0;
 
+	MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
 	return n;
     }
     
     num_copied = pbfd->num_avail;
+    MPIDI_FUNC_ENTER(MPID_STATE_READ);
     n = bfd_read(fd, bbuf, g_bbuflen);
+    MPIDI_FUNC_EXIT(MPID_STATE_READ);
     pbfd->curpos = 0;
     if (n == 0) 
     {
@@ -826,7 +939,11 @@ int bread(int bfd, char *ubuf, int len)
 	    pbfd->errval = errno;
 	}
 	if (pbfd->num_avail)
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
 	    return pbfd->num_avail;
+	}
+	MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
 	return SOCKET_ERROR;
     }
     
@@ -842,6 +959,7 @@ int bread(int bfd, char *ubuf, int len)
     DBG_MSG(("bread: copied %d bytes into ubuf from bbuf\n", num_used));
     
     n = num_used + num_copied;
+    MPIDI_FUNC_EXIT(MPID_STATE_BREAD);
     return n;
 }
 
@@ -882,14 +1000,20 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 #endif
     B_VECTOR pVector[B_VECTOR_LIMIT];
     int iVector;
+    MPIDI_STATE_DECL(MPID_STATE_BREADV);
+    MPIDI_STATE_DECL(MPID_STATE_READV);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BREADV);
     DBG_MSG("Enter breadv\n");
     /*dbg_printf("breadv\n");*/
     
     pbfd = (BFD_Buffer*)bfd;
     
-    if (pbfd->state == BFD_ERROR) 
+    if (pbfd->state == BFD_ERROR)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_BREADV);
 	return pbfd->errval;
+    }
     
     pbfd->state = BFD_READING;
     fd = pbfd->real_fd;
@@ -918,6 +1042,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 			pbfd->num_avail = 0;
 			pbfd->curpos = 0;
 			DBG_BREADV_PRINT(("->%d,%da)", num_read+n, pbfd->num_avail));
+			MPIDI_FUNC_EXIT(MPID_STATE_BREADV);
 			return num_read + n;
 		    }
 		}
@@ -947,6 +1072,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 	if (i == veclen - 1)
 	{
 	    DBG_BREADV_PRINT(("->%d,%db)", num_read, conn->num_avail));
+	    MPIDI_FUNC_EXIT(MPID_STATE_BREADV);
 	    return num_read;
 	}
     }
@@ -960,6 +1086,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 	BPRINTF(":%d", vec[k+i].B_VECTOR_LEN);
 #endif
 #ifdef HAVE_WINSOCK2_H
+    MPIDI_FUNC_ENTER(MPID_STATE_READV);
     if (WSARecv(fd, &vec[i], veclen - i + 1, &n, &nFlags, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
     {
 	if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -972,8 +1099,11 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 	    n = 0; /* Set this to zero so it can be added to num_read */
 	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_READV);
 #else
+    MPIDI_FUNC_ENTER(MPID_STATE_READV);
     n = readv(fd, &vec[i], veclen - i + 1);
+    MPIDI_FUNC_EXIT(MPID_STATE_READV);
     if (n == SOCKET_ERROR) 
     {
 	if ((errno != EINTR) || (errno != EAGAIN)) 
@@ -1000,6 +1130,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 		if (n == 0)
 		{
 		    DBG_BREADV_PRINT(("->%d,%dc)", num_read, pbfd->num_avail));
+		    MPIDI_FUNC_EXIT(MPID_STATE_BREADV);
 		    return num_read;
 		}
 	    }
@@ -1007,6 +1138,7 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
     }
 
     DBG_BREADV_PRINT(("->%d,%dd)", num_read, pbfd->num_avail));
+    MPIDI_FUNC_EXIT(MPID_STATE_BREADV);
     return num_read;
 }
 
@@ -1020,6 +1152,9 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 @*/
 int bclose(int bfd)
 {
+    MPIDI_STATE_DECL(MPID_STATE_BCLOSE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BCLOSE);
     DBG_MSG("Enter bclose\n");
     /*dbg_printf("bclose\n");*/
 
@@ -1027,6 +1162,7 @@ int bclose(int bfd)
     memset((void*)bfd, 0, sizeof(BFD_Buffer));
     BlockFree( Bsocket_mem, (BFD_Buffer*)bfd );
 
+    MPIDI_FUNC_EXIT(MPID_STATE_BCLOSE);
     return 0;
 }
 
@@ -1042,8 +1178,14 @@ bgetsockname -
 @*/
 int bgetsockname(int bfd, struct sockaddr *name, int *namelen)
 {
+    int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_BGETSOCKNAME);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BGETSOCKNAME);
     /*dbg_printf("bgetsockname\n");*/
-    return getsockname(((BFD_Buffer*)bfd)->real_fd, name, namelen);
+    ret_val = getsockname(((BFD_Buffer*)bfd)->real_fd, name, namelen);
+    MPIDI_FUNC_EXIT(MPID_STATE_BGETSOCKNAME);
+    return ret_val;
 }
 
 /*@
@@ -1059,7 +1201,9 @@ int bmake_nonblocking(int bfd)
     
     int      flag = 1;
     int      rc;
-    
+    MPIDI_STATE_DECL(MPID_STATE_BMAKE_NONBLOCKING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BMAKE_NONBLOCKING);
     DBG_MSG("Enter make_nonblocking\n");
     /*dbg_printf("bmake_nonblocking\n");*/
     
@@ -1068,7 +1212,7 @@ int bmake_nonblocking(int bfd)
 #else
     rc = ioctl(((BFD_Buffer*)bfd)->real_fd, FIONBIO, &flag);
 #endif
-    
+    MPIDI_FUNC_EXIT(MPID_STATE_BMAKE_NONBLOCKING);
     return rc;
 }
 
@@ -1084,7 +1228,9 @@ int bmake_blocking(int bfd)
 {
     int      flag = 0;
     int      rc;
+    MPIDI_STATE_DECL(MPID_STATE_BMAKE_BLOCKING);
     
+    MPIDI_FUNC_ENTER(MPID_STATE_BMAKE_BLOCKING);
     DBG_MSG("Enter make_blocking\n");
     /*dbg_printf("bmake_blocking\n");*/
     
@@ -1093,7 +1239,7 @@ int bmake_blocking(int bfd)
 #else
     rc = ioctl(((BFD_Buffer*)bfd)->real_fd, FIONBIO, &flag);
 #endif
-    
+    MPIDI_FUNC_EXIT(MPID_STATE_BMAKE_BLOCKING);
     return rc;
 }
 
@@ -1115,6 +1261,9 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     int optval = 1;
     struct linger linger;
     int len;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_CREATE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_CREATE);
 
     /*dbg_printf("beasy_create\n");*/
 
@@ -1122,6 +1271,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     *bfd = bsocket(AF_INET, SOCK_STREAM, 0);
     if (*bfd == BFD_INVALID_SOCKET)
     {
+	MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CREATE);
 	return SOCKET_ERROR;
     }
     
@@ -1133,6 +1283,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
     /* bind it to the port provided */
     if (bbind(*bfd, (const struct sockaddr *)&sin, sizeof(struct sockaddr)) == SOCKET_ERROR)
     {
+	MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CREATE);
 	return SOCKET_ERROR;
     }
 
@@ -1159,6 +1310,7 @@ int beasy_create(int *bfd, int port, unsigned long addr)
 	bsetsockopt(*bfd, SOL_SOCKET, SO_SNDBUF, (char*)&optval, sizeof(int));
     }
 #endif
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CREATE);
     return 0;
 }
 
@@ -1183,7 +1335,9 @@ int beasy_connect(int bfd, char *host, int port)
     /* use this array to make sure the warning only gets logged once */
     BOOL bWarningLogged[4] = { FALSE, FALSE, FALSE, FALSE };
 #endif
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_CONNECT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_CONNECT);
     dbg_printf("beasy_connect(%s:%d)\n", host, port);
 
     memset(&sockAddr,0,sizeof(sockAddr));
@@ -1197,7 +1351,10 @@ int beasy_connect(int bfd, char *host, int port)
 	if (lphost != NULL)
 	    sockAddr.sin_addr.s_addr = ((struct in_addr *)lphost->h_addr)->s_addr;
 	else
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CONNECT);
 	    return SOCKET_ERROR;
+	}
     }
     
     sockAddr.sin_port = htons((u_short)port);
@@ -1250,6 +1407,7 @@ int beasy_connect(int bfd, char *host, int port)
 	}
 	else
 	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CONNECT);
 	    return SOCKET_ERROR;
 	}
 #else
@@ -1265,6 +1423,7 @@ int beasy_connect(int bfd, char *host, int port)
 	}
 	else
 	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CONNECT);
 	    return SOCKET_ERROR;
 	}
 #endif
@@ -1275,6 +1434,7 @@ int beasy_connect(int bfd, char *host, int port)
     linger.l_linger = 60;
     bsetsockopt(bfd, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
 
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CONNECT);
     return 0;
 }
 
@@ -1295,7 +1455,9 @@ int beasy_accept(int bfd)
     struct sockaddr addr;
     int len;
     int client;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_ACCEPT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_ACCEPT);
     dbg_printf("beasy_accept\n");
 
     len = sizeof(addr);
@@ -1303,6 +1465,7 @@ int beasy_accept(int bfd)
 
     if (client == BFD_INVALID_SOCKET)
     {
+	MPIDI_FUNC_EXIT(MPID_STATE_BEASY_ACCEPT);
 	return BFD_INVALID_SOCKET;
     }
 
@@ -1314,6 +1477,7 @@ int beasy_accept(int bfd)
     b = TRUE;
     bsetsockopt(client, IPPROTO_TCP, TCP_NODELAY, (char*)&b, sizeof(BOOL));
 #endif
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_ACCEPT);
     return client;
 }
 
@@ -1329,6 +1493,9 @@ int beasy_closesocket(int bfd)
 {
 #ifdef HAVE_WINSOCK2_H
     WSAEVENT hEvent = WSACreateEvent();
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_CLOSESOCKET);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_CLOSESOCKET);
     if (hEvent != WSA_INVALID_EVENT)
     {
 	if (WSAEventSelect(bget_fd(bfd), hEvent, FD_CLOSE) == 0)
@@ -1352,9 +1519,13 @@ int beasy_closesocket(int bfd)
     }
     else
 	shutdown(bget_fd(bfd), SD_BOTH);
+#else
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_CLOSESOCKET);
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_CLOSESOCKET);
 #endif
     dbg_printf("beasy_closesocket\n");
     bclose(bfd);
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_CLOSESOCKET);
     return 0;
 }
 
@@ -1372,7 +1543,9 @@ int beasy_get_sock_info(int bfd, char *name, int *port)
 {
     struct sockaddr_in addr;
     int name_len = sizeof(addr);
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_GET_SOCK_INFO);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_GET_SOCK_INFO);
     dbg_printf("beasy_get_sock_info: ");
 
     getsockname(bget_fd(bfd), (struct sockaddr*)&addr, &name_len);
@@ -1381,6 +1554,7 @@ int beasy_get_sock_info(int bfd, char *name, int *port)
 
     dbg_printf("%s:%d\n", name, *port);
 
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_GET_SOCK_INFO);
     return 0;
 }
 
@@ -1397,7 +1571,9 @@ int beasy_get_ip_string(char *ipstring)
     char hostname[100];
     unsigned int a, b, c, d;
     struct hostent *pH;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_GET_IP_STRING);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_GET_IP_STRING);
     dbg_printf("beasy_get_ip_string: ");
 
     gethostname(hostname, 100);
@@ -1412,6 +1588,7 @@ int beasy_get_ip_string(char *ipstring)
 
     dbg_printf("%s\n", ipstring);
 
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_GET_IP_STRING);
     return 0;
 }
 
@@ -1427,12 +1604,16 @@ int beasy_get_ip(unsigned long *ip)
 {
     char hostname[100];
     struct hostent *pH;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_GET_IP);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_GET_IP);
     dbg_printf("beasy_get_ip\n");
 
     gethostname(hostname, 100);
     pH = gethostbyname(hostname);
     *ip = *((unsigned long *)(pH->h_addr_list));
+
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_GET_IP);
     return 0;
 }
 
@@ -1452,14 +1633,19 @@ int beasy_receive(int bfd, char *buffer, int len)
     int num_received;
     bfd_set readfds;
     int total = len;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_RECEIVE);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_RECEIVE);
     /*dbg_printf("beasy_receive\n");*/
     
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
     {
 	if ((errno != EINTR) || (errno != EAGAIN))
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE);
 	    return SOCKET_ERROR;
+	}
     }
     else
     {
@@ -1479,7 +1665,10 @@ int beasy_receive(int bfd, char *buffer, int len)
 	    if (num_received == SOCKET_ERROR)
 	    {
 		if ((errno != EINTR) || (errno != EAGAIN))
+		{
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE);
 		    return SOCKET_ERROR;
+		}
 	    }
 	    else
 	    {
@@ -1487,6 +1676,7 @@ int beasy_receive(int bfd, char *buffer, int len)
 		{
 		    /*BPRINTF("beasy_receive: socket closed\n");*/
 		    /*bmake_blocking(bfd);*/
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE);
 		    return 0;
 		}
 		len -= num_received;
@@ -1498,12 +1688,16 @@ int beasy_receive(int bfd, char *buffer, int len)
 	    if (ret_val == SOCKET_ERROR)
 	    {
 		if ((errno != EINTR) || (errno != EAGAIN))
+		{
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE);
 		    return SOCKET_ERROR;
+		}
 	    }
 	}
     }
 
     /*bmake_blocking(bfd);*/
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE);
     return total;
 }
 
@@ -1522,19 +1716,27 @@ int beasy_receive_some(int bfd, char *buffer, int len)
     int ret_val;
     int num_received;
     bfd_set readfds;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_RECEIVE_SOME);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_RECEIVE_SOME);
     /*dbg_printf("beasy_receive_some\n");*/
     
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
     {
 	if ((errno != EINTR) || (errno != EAGAIN))
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_SOME);
 	    return SOCKET_ERROR;
+	}
     }
     else
     {
 	if (num_received > 0)
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_SOME);
 	    return num_received;
+	}
     }
     
     BFD_ZERO(&readfds); 
@@ -1547,7 +1749,10 @@ int beasy_receive_some(int bfd, char *buffer, int len)
 	if (num_received == SOCKET_ERROR)
 	{
 	    if ((errno != EINTR) || (errno != EAGAIN))
+	    {
+		MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_SOME);
 		return SOCKET_ERROR;
+	    }
 	}
 	else
 	{
@@ -1556,10 +1761,12 @@ int beasy_receive_some(int bfd, char *buffer, int len)
 		/*BPRINTF("beasy_receive_some: socket closed\n");*/
 		/*bmake_blocking(bfd);*/
 	    }
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_SOME);
 	    return num_received;
 	}
     }
 
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_SOME);
     return SOCKET_ERROR;
 }
 
@@ -1581,13 +1788,16 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
     bfd_set readfds;
     struct timeval tv;
     int total = len;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
     /*dbg_printf("beasy_receive_timeout\n");*/
     
     /*
     num_received = bread(bfd, buffer, len);
     if (num_received == SOCKET_ERROR)
     {
+	MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
 	return SOCKET_ERROR;
     }
     else
@@ -1611,7 +1821,10 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
 	    if (num_received == SOCKET_ERROR)
 	    {
 		if ((errno != EINTR) || (errno != EAGAIN))
+		{
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
 		    return SOCKET_ERROR;
+		}
 	    }
 	    else
 	    {
@@ -1619,6 +1832,7 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
 		{
 		    /*BPRINTF("beasy_receive_timeout: socket closed\n");*/
 		    /*bmake_blocking(bfd);*/
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
 		    return total - len;
 		}
 		len -= num_received;
@@ -1630,16 +1844,21 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
 	    if (ret_val == SOCKET_ERROR)
 	    {
 		if ((errno != EINTR) || (errno != EAGAIN))
+		{
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
 		    return SOCKET_ERROR;
+		}
 	    }
 	    else
 	    {
 		/*bmake_blocking(bfd);*/
+		MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
 		return total - len;
 	    }
 	}
     }
     /*bmake_blocking(bfd);*/
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_RECEIVE_TIMEOUT);
     return total;
 }
 
@@ -1658,7 +1877,9 @@ int beasy_send(int bfd, char *buffer, int length)
 #ifdef HAVE_WINSOCK2_H
     int error;
     int num_sent;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_SEND);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_SEND);
     while ((num_sent = bwrite(bfd, buffer, length)) == SOCKET_ERROR)
     {
 	error = WSAGetLastError();
@@ -1674,26 +1895,33 @@ int beasy_send(int bfd, char *buffer, int length)
 		return SOCKET_ERROR;
 	    if (beasy_send(bfd, buffer+(length/2), length - (length/2)) == SOCKET_ERROR)
 		return SOCKET_ERROR;
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
 	    return length;
 	}
 	WSASetLastError(error);
+	MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
 	return SOCKET_ERROR;
     }
-    
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
     return length;
 #else
     int ret_val;
     int num_written;
     bfd_set writefds;
     int total = length;
+    MPIDI_STATE_DECL(MPID_STATE_BEASY_SEND);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_BEASY_SEND);
     /*dbg_printf("beasy_send\n");*/
     
     num_written = bwrite(bfd, buffer, length);
     if (num_written == SOCKET_ERROR)
     {
 	if ((errno != EINTR) || (errno != EAGAIN))
+	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
 	    return SOCKET_ERROR;
+	}
     }
     else
     {
@@ -1713,13 +1941,17 @@ int beasy_send(int bfd, char *buffer, int length)
 	    if (num_written == SOCKET_ERROR)
 	    {
 		if ((errno != EINTR) || (errno != EAGAIN))
+		{
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
 		    return SOCKET_ERROR;
+		}
 	    }
 	    else
 	    {
 		if (num_written == 0)
 		{
 		    /*BPRINTF("beasy_send: socket closed\n");*/
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
 		    return total - length;
 		}
 		length -= num_written;
@@ -1731,10 +1963,14 @@ int beasy_send(int bfd, char *buffer, int length)
 	    if (ret_val == SOCKET_ERROR)
 	    {
 		if ((errno != EINTR) || (errno != EAGAIN))
+		{
+		    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
 		    return SOCKET_ERROR;
+		}
 	    }
 	}
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_BEASY_SEND);
     return total;
 #endif
 }

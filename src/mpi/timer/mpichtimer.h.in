@@ -21,6 +21,7 @@
 #define USE_LINUX86_COUNTER 4
 #define USE_LINUXALPHA_COUNTER 5
 #define USE_QUERYPERFORMANCECOUNTER 6
+#define USE_WIN86_CYCLE 7
 #define MPICH_TIMER_KIND @MPICH_TIMER_KIND@
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
@@ -33,6 +34,9 @@
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
+#include <winsock2.h>
+#include <windows.h>
+#elif MPICH_TIMER_KIND == USE_WIN86_CYCLE
 #include <winsock2.h>
 #include <windows.h>
 #endif
@@ -112,6 +116,20 @@ extern double g_timer_frequency;
 #define MPIDM_Wtime_todouble( t, d ) \
   *d = (double)t->QuadPart /* don't convert to seconds */
 #endif
+
+#elif MPICH_TIMER_KIND == USE_WIN86_CYCLE
+#define MPID_Wtime(var_ptr) \
+{ \
+    register int *f1 = (int*)var_ptr; \
+    __asm cpuid \
+    __asm rdtsc \
+    __asm mov ecx, f1 \
+    __asm mov [ecx], eax \
+    __asm mov [ecx + TYPE int], edx \
+}
+extern double g_timer_frequency;
+#define MPIDM_Wtime_todouble(t, d) *d = (double)(__int64)*t / g_timer_frequency
+#define MPIDM_Wtime_diff(t1,t2,diff) *diff = (double)((__int64)( *t2 - *t1 )) / g_timer_frequency
 
 #endif
 

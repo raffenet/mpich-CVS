@@ -415,8 +415,6 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
     BOOL stop = FALSE;
     int num_written;
     MPIDI_STATE_DECL(MPID_STATE_TCP_WRITE_AGGRESSIVE);
-    MPIDI_STATE_DECL(MPID_STATE_BWRITE);
-    MPIDI_STATE_DECL(MPID_STATE_BWRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_WRITE_AGGRESSIVE);
 
@@ -503,9 +501,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	/* write the data */
 	if (cur_pos == 1)
 	{
-	    MPIDI_FUNC_ENTER(MPID_STATE_BWRITE);
 	    num_written = bwrite(vc_ptr->data.tcp.bfd, vec[0].MPID_IOV_BUF, vec[0].MPID_IOV_LEN);
-	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITE);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
@@ -517,9 +513,7 @@ int tcp_write_aggressive(MPIDI_VC *vc_ptr)
 	}
 	else
 	{
-	    MPIDI_FUNC_ENTER(MPID_STATE_BWRITEV);
 	    num_written = bwritev(vc_ptr->data.tcp.bfd, vec, cur_pos);
-	    MPIDI_FUNC_EXIT(MPID_STATE_BWRITEV);
 	    if (num_written == SOCKET_ERROR)
 	    {
 		TCP_Process.error = beasy_getlasterror();
