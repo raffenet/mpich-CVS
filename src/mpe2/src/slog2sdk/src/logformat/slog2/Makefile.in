@@ -40,27 +40,30 @@ CLASSDIR   = ../..
 CLASSPATH  = ../..
 PKGDIR     = logformat/slog2
 
-JFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START@$(CLASSPATH)@JPATH_FINAL@ -d @JPATH_START@$(CLASSDIR)@JPATH_FINAL@ @JFLAGS@
+JCFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_START@$(CLASSPATH)@JPATH_FINAL@ -d @JPATH_START@$(CLASSDIR)@JPATH_FINAL@ @JFLAGS@
 
 .java.class:
-	$(JC) $(JFLAGS) @JPATH_START@$<@JPATH_FINAL@
+	$(JC) $(JCFLAGS) $(JFLAGS) @JPATH_START@$<@JPATH_FINAL@
 
 ALL: $(OBJ)
 	cd output && $(MAKE)
 	cd input  && $(MAKE)
+	cd pipe   && $(MAKE)
 
 clean:
 	cd output && $(MAKE) clean
 	cd input  && $(MAKE) clean
+	cd pipe   && $(MAKE) clean
 	cd $(CLASSDIR) && \
 	$(RM) $(PKGDIR)/*.class
 
 rmlib:
 	cd output && $(MAKE) rmlib
 	cd input  && $(MAKE) rmlib
+	cd pipe   && $(MAKE) rmlib
 
 realclean: clean rmlib
 
 distclean: realclean
-	@-$(RM) output/Makefile input/Makefile
+	@-$(RM) output/Makefile input/Makefile pipe/Makefile
 	@-$(RM) Makefile
