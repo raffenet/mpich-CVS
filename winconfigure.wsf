@@ -1088,6 +1088,20 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("#define USE_HUMAN_READABLE_TOKENS 1")
 				Case "HAVE_STRERROR"
 					fout.WriteLine("#define HAVE_STRERROR 1")
+				Case "HAVE_ASM_AND_X86_LFENCE"
+					fout.WriteLine("/* #undef HAVE_ASM_AND_X86_LFENCE */")
+				Case "HAVE_ASM_AND_X86_MFENCE"
+					fout.WriteLine("/* #undef HAVE_ASM_AND_X86_MFENCE */")
+				Case "HAVE_ASM_AND_X86_SFENCE"
+					fout.WriteLine("/* #undef HAVE_ASM_AND_X86_SFENCE */")
+				Case "HAVE___ASM_AND_X86_LFENCE"
+					fout.WriteLine("/* #undef HAVE___ASM_AND_X86_LFENCE */")
+				Case "HAVE___ASM_AND_X86_MFENCE"
+					fout.WriteLine("/* #undef HAVE___ASM_AND_X86_MFENCE */")
+				Case "HAVE___ASM_AND_X86_SFENCE"
+					fout.WriteLine("/* #undef HAVE___ASM_AND_X86_SFENCE */")
+				Case "HAVE__INTERLOCKEDEXCHANGE"
+					fout.WriteLine("/* #undef HAVE__INTERLOCKEDEXCHANGE */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
