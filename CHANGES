@@ -78,6 +78,7 @@
   the device will change dramaticly in a future release.  A few more changes to
   the CH3 interface are also quite likely.
 
+- The definitions of MPID_VCR and MPID_VCRT are now defined by the device.
 
 =============================================================================== 
                                Changes in 0.96p2

@@ -47,5 +47,5 @@
 
 - The communicator passed to MPI_COMM_CONNECT and MPI_COMM_ACCEPT may
   not include a process for which any process in the remote
-  communicator already shares an existing communicator.
-  
+  communicator already shares an existing or previously existing
+  communicator.
