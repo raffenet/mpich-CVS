@@ -899,6 +899,8 @@ dnl Not yet available: options when using other compilers.  However,
 dnl here are some possible choices
 dnl Solaris cc
 dnl  -fd -v -Xc
+dnl IRIX
+dnl  -ansi -DEBUG:trap_uninitialized=ON:varargs_interface_check=ON:verbose_runtime=ON
 dnl
 dnlD*/
 AC_DEFUN(PAC_ARG_STRICT,[
