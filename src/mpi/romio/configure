@@ -1,6 +1,4 @@
-
-
-#!/bin/sh
+#! /bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf.
 # Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
@@ -2771,7 +2769,7 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-  sed -e "
+cat $top_srcdir/${file}.in | sed -e "
 $prsub
 $extrasub
 s%@RANLIB@%$RANLIB%g
@@ -2813,7 +2811,7 @@ s%@MPI_FINFO3@%$MPI_FINFO3%g
 s%@MPI_FINFO4@%$MPI_FINFO4%g
 s%@MPI_FARRAY1@%$MPI_FARRAY1%g
 s%@MPI_FARRAY2@%$MPI_FARRAY2%g
-s%@MPI_FARRAY3@%$MPI_FARRAY3%g
+s%@MPI_FARRAY3@%$MPI_FARRAY3%g" | sed -e "
 s%@MPI_FARRAY4@%$MPI_FARRAY4%g
 s%@MPI_FARRAY5@%$MPI_FARRAY5%g
 s%@MPI_FARRAY6@%$MPI_FARRAY6%g
@@ -2832,14 +2830,14 @@ s%@MPIRUN@%$MPIRUN%g
 s%@LIBS@%$LIBS%g
 s%@srcdir@%$srcdir%g
 s%@DEFS@%$DEFS%
-" $top_srcdir/${file}.in >> $file
+" >> $file
 fi; done
 
 
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} config.status
+${CONFIG_SHELL-/bin/sh} ./config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/fperf.f"
