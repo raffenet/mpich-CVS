@@ -1,0 +1,9 @@
+Makefile.in
+Makefile
+*.o
+*.pf
+bcasttest
+allreduce
+alltoallv
+coll8
+coll13
