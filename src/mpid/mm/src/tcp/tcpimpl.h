@@ -8,4 +8,13 @@
 
 #include "mm_tcp.h"
 
+typedef struct TCP_PerProcess {
+    MPID_Thread_lock_t lock;
+                   int listener;
+		   int port;
+		  char host[100];
+} TCP_PerProcess;
+
+extern TCP_PerProcess TCP_Process;
+
 #endif

@@ -39,16 +39,16 @@ typedef struct OpenPortNode {
 } OpenPortNode;
 
 typedef struct MPID_PerProcess {
-    MPID_Thread_lock_t  lock;
-       struct MPIDI_VC *posted_q;   /* unmatched posted read operations */
-       struct MPIDI_VC *unex_list;  /* active un-matched read operations */
-       struct MPIDI_VC *read_list;  /* active read operations */
-       struct MPIDI_VC *write_list; /* active write operations */
-                  char  pmi_kvsname[100];
-             MPID_Comm *comm_parent;
-          OpenPortNode *port_list;
-         BlockAllocator VCTable_allocator; /* memory allocator for vc tables */
-         BlockAllocator VC_allocator;      /* memory allocator for vc's */
+      MPID_Thread_lock_t lock;
+       struct MPIDI_VC * posted_q;   /* unmatched posted read operations */
+       struct MPIDI_VC * unex_list;  /* active un-matched read operations */
+       struct MPIDI_VC * read_list;  /* active read operations */
+       struct MPIDI_VC * write_list; /* active write operations */
+                    char pmi_kvsname[100];
+             MPID_Comm * comm_parent;
+          OpenPortNode * port_list;
+          BlockAllocator VCTable_allocator; /* memory allocator for vc tables */
+          BlockAllocator VC_allocator;      /* memory allocator for vc's */
 } MPID_PerProcess;
 
 extern MPID_PerProcess MPID_Process;
