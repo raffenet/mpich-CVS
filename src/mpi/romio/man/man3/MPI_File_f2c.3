@@ -1,9 +1,9 @@
-.TH MPI_File_f2c 3 "2/6/1998" " " "MPI-2"
+.TH MPI_File_f2c 3 "5/20/1998" " " "MPI-2"
 .SH NAME
 MPI_File_f2c \-  Translates a Fortran file handle to a C file handle 
 .SH SYNOPSIS
 .nf
-#include "mpio.h"
+#include "mpi.h"
 MPI_File MPI_File_f2c(MPI_Fint fh)
 .fi
 .SH INPUT PARAMETERS
@@ -14,26 +14,4 @@ MPI_File MPI_File_f2c(MPI_Fint fh)
 .PD 1
 
 .SH RETURN VALUE
-.PD 0
-.TP
-.B C file handle (handle)
-- @*/
-.PD 1
-MPI_File MPI_File_f2c(MPI_Fint fh)
-{
-
-#ifndef __INT_LT_POINTER
-return (MPI_File) ((void *) fh);
-/* the extra cast is to get rid of a compiler warning on Exemplar.
-The warning is because MPI_File points to a structure containing
-longlongs, which may be 8-byte aligned. But MPI_Fint itself
-may not be 8-byte aligned.*/
-#else
-if (!fh) return MPI_FILE_NULL;
-if ((fh < 0) || (fh > ADIOI_Ftable_ptr)) {
-printf("MPI_File_f2c: Invalid file handle\\n");
-MPI_Abort(MPI_COMM_WORLD, 1);
-}
-return ADIOI_Ftable[fh];
-#endif
-}
+C file handle (handle)

@@ -474,18 +474,15 @@ EOF
   \rm -f a.out mpitest.c
 ])dnl
 dnl
-dnl Check that the compile accepts ANSI prototypes.  Perform first arg if yes,
-dnl second if false
-dnl PAC_CHECK_CC_PROTOTYPES(true-action, false-action)
+dnl Check that the compile accepts ANSI prototypes. 
+dnl PAC_CHECK_CC_PROTOTYPES()
 dnl
 define(PAC_CHECK_CC_PROTOTYPES,[
 AC_MSG_CHECKING(that the compiler $CC accepts ANSI prototypes)
 AC_COMPILE_CHECK(,[int f(double a){return 0;}],,eval "ac_cv_ccworks=yes",eval "ac_cv_ccworks=no")
 AC_MSG_RESULT($ac_cv_ccworks)
 if test $ac_cv_ccworks = "yes" ; then
-    ifelse([$1],,:,[$1])
-else
-    ifelse([$2],,:,[$2])
+   AC_DEFINE(HAVE_PROTOTYPES)
 fi
 ])dnl
 dnl
@@ -699,8 +696,8 @@ EOF
 ])dnl
 dnl
 dnl
-define(PAC_CHECK_SGI_MPI31,[
-  AC_MSG_CHECKING(if it is SGI MPI 3.1)
+define(PAC_CHECK_MPI_SGI_INFO_NULL,[
+  AC_MSG_CHECKING(if MPI_INFO_NULL is defined in mpi.h)
   \rm -f mpitest.c
   cat > mpitest.c <<EOF
 #include "mpi.h"
@@ -714,8 +711,6 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -s a.out ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(__SGIMPI31)
-      SGIMPI31=1
       \cp adio/sgi/mpi3.1/*.h include
   else
       AC_MSG_RESULT(no)

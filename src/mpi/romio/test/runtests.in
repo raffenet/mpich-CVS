@@ -9,7 +9,7 @@ quiet=0
 MAKE="@MAKE@"
 check_canrun=0
 FILENAME=test
-# Using shifts should  remove args from the list.
+# Using shifts should remove args from the list.
 for arg in "$@" ; do
     case $arg in 
 	-checkonly)
@@ -47,7 +47,7 @@ for arg in "$@" ; do
 	shift
 	echo "runtests [-fname=FILENAME] [-checkonly] [-atend] [-check]"
 	echo "run tests in this directory.  If -checkonly set, just run"
-	echo "the differences check (do NO rerun the test programs)."
+	echo "the differences check (do NOT rerun the test programs)."
 	echo "If -small is used, the examples are built, run, and deleted."
 	echo "If -atend is used, the success of the tests is checked only"
 	echo "at the end of the test rather than also after each test."

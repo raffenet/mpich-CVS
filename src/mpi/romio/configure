@@ -133,7 +133,6 @@ DEBUG=0
 MIPS=0
 BITS=0
 FROM_MPICH=0
-SGIMPI31=0
 CFLAGS=""
 LL="\%lld"
 AR_LOCAL=l
@@ -402,23 +401,27 @@ if test -n "$MPI" ; then
 fi
 #
 # check for valid MPI include directory if specified
-if test -n "$MPI_INCLUDE_DIR"; then
-   if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
-      echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
-      exit 1
+if test $FROM_MPICH = 0 ; then
+   if test -n "$MPI_INCLUDE_DIR"; then
+      if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
+         echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
+         exit 1
+      fi
+   else
+#     assume that mpi.h is in the default path
+#     set MPI_INCLUDE_DIR to ".", so that it translates to -I. in the
+#     compile command. Some compilers complain if it's only -I
+      MPI_INCLUDE_DIR=.
    fi
-else
-# assume that mpi.h is in the default path
-# set MPI_INCLUDE_DIR to ".", so that it translates to -I. in the
-# compile command. Some compilers complain if it's only -I
-   MPI_INCLUDE_DIR=.
 fi
 #
 # check for valid MPI library if specified
-if test -n "$MPI_LIB" ; then
-   if test ! -f "$MPI_LIB" ; then
-      echo "Error: MPI library $MPI_LIB not found"
-      exit 1
+if test $FROM_MPICH = 0 ; then
+   if test -n "$MPI_LIB" ; then
+      if test ! -f "$MPI_LIB" ; then
+         echo "Error: MPI library $MPI_LIB not found"
+         exit 1
+      fi
    fi
 fi
 #
@@ -1051,269 +1054,6 @@ if test -n "$arch_IRIX"; then
    if test -n "$mpi_sgi" && test -z "$MPI_LIB" ; then
        MPI_LIB="-lmpi"
    fi
-   if test -n "$mpi_sgi"; then
-       
-  if test -z "$ac_echo_n" ; then
-ac_echo_n=yes
-if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
-  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
-    ac_n= ac_c='
-' ac_t='	'
-  else
-    ac_n=-n ac_c= ac_t=
-  fi
-else
-  ac_n= ac_c='\c' ac_t=
-fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
-
-fi
-if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo $ac_n "checking if it is SGI MPI 3.1""... $ac_c"
-else
-echo $ac_n "checking if it is SGI MPI 3.1""... $ac_c" 1>&1
-fi
-  \rm -f mpitest.c
-  cat > mpitest.c <<EOF
-#include "mpi.h"
-     main(int argc, char **argv)
-     {
-	int i;
-	i = MPI_INFO_NULL;
-     }
-EOF
-  \rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
-      if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""yes"
-else
-echo "$ac_t""yes" 1>&1
-fi
-      
-{
-test -n "$verbose" && \
-echo "	defining __SGIMPI31"
-echo "#define" __SGIMPI31 1 >> confdefs.h
-DEFS="$DEFS -D__SGIMPI31=1"
-}
-
-      SGIMPI31=1
-      \cp adio/sgi/mpi3.1/*.h include
-  else
-      if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""no"
-else
-echo "$ac_t""no" 1>&1
-fi
-  fi
-  \rm -f a.out mpitest.c
-    # is it 3.1?
-       if test $SGIMPI31 = 0; then
-          
-if test -z "$ac_echo_n" ; then
-ac_echo_n=yes
-if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
-  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
-    ac_n= ac_c='
-' ac_t='	'
-  else
-    ac_n=-n ac_c= ac_t=
-  fi
-else
-  ac_n= ac_c='\c' ac_t=
-fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
-
-fi
-if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo $ac_n "checking for 32-bit or 64-bit objects""... $ac_c"
-else
-echo $ac_n "checking for 32-bit or 64-bit objects""... $ac_c" 1>&1
-fi
-cat <<EOF >bittest.c
-main()
-{
-  int i;
-  i = 0;
-}
-EOF
-$CC $CFLAGS -c bittest.c > /dev/null 2>&1
-if test $MIPS = 4 ; then
-    testlink='$CC $CFLAGS -o bittest bittest.o adio/sgi/mpi2/mips4.64/get_contents.o $MPI_LIB >/dev/null 2>&1'
-    if eval $testlink ; then
-       BITS=64
-    else
-        testlink='$CC $CFLAGS -o bittest bittest.o adio/sgi/mpi2/mips4.32/get_contents.o $MPI_LIB >/dev/null 2>&1'
-        if eval $testlink ; then
-           BITS=32
-        else
-            echo "Error: Can't link with either 32-bit or 64-bit"
-            echo "Send email to romio-maint@mcs.anl.gov"
-            exit 1
-        fi
-    fi
-else
-    testlink='$CC $CFLAGS -o bittest bittest.o adio/sgi/mpi2/mips3.64/get_contents.o $MPI_LIB >/dev/null 2>&1'
-    if eval $testlink ; then
-       BITS=64
-    else
-        testlink='$CC $CFLAGS -o bittest bittest.o adio/sgi/mpi2/mips3.32/get_contents.o $MPI_LIB >/dev/null 2>&1'
-        if eval $testlink ; then
-           BITS=32
-        else
-            echo "Error: Can't link with either 32-bit or 64-bit"
-            echo "Send email to romio-maint@mcs.anl.gov"
-            exit 1
-        fi
-    fi
-fi
-\rm -f bittest*
-if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""$BITS bit"
-else
-echo "$ac_t""$BITS bit" 1>&1
-fi
-
-       fi
-       
-  if test -z "$ac_echo_n" ; then
-ac_echo_n=yes
-if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
-  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
-    ac_n= ac_c='
-' ac_t='	'
-  else
-    ac_n=-n ac_c= ac_t=
-  fi
-else
-  ac_n= ac_c='\c' ac_t=
-fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
-
-fi
-if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo $ac_n "checking if MPI_SGI_type_is_contig is defined""... $ac_c"
-else
-echo $ac_n "checking if MPI_SGI_type_is_contig is defined""... $ac_c" 1>&1
-fi
-  \rm -f mpitest.c
-  cat > mpitest.c <<EOF
-#include "mpi.h"
-     main(int argc, char **argv)
-     {
-         MPI_Datatype type;
-         int i;
-
-         MPI_Init(&argc,&argv);
-         i = MPI_SGI_type_is_contig(type);
-         MPI_Finalize(); 
-     }
-EOF
-  \rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
-     if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""yes"
-else
-echo "$ac_t""yes" 1>&1
-fi
-  else
-     if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""no"
-else
-echo "$ac_t""no" 1>&1
-fi
-     
-{
-test -n "$verbose" && \
-echo "	defining __NO_MPI_SGI_type_is_contig"
-echo "#define" __NO_MPI_SGI_type_is_contig 1 >> confdefs.h
-DEFS="$DEFS -D__NO_MPI_SGI_type_is_contig=1"
-}
-
-  fi
-  \rm -f a.out mpitest.c
-
-       
-  if test -z "$ac_echo_n" ; then
-ac_echo_n=yes
-if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
-  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
-    ac_n= ac_c='
-' ac_t='	'
-  else
-    ac_n=-n ac_c= ac_t=
-  fi
-else
-  ac_n= ac_c='\c' ac_t=
-fi
-ac_echo_test=`echo foo 1>&1`
-if test -z "$ac_echo_test" ; then
-     print_error "Your sh shell does not handle the output redirection"
-     print_error "1>&1 correctly.  Configure will work around this problem,"
-     print_error "but you should report the problem to your vendor."
-fi
-
-fi
-if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo $ac_n "checking if MPI-2 combiners are defined in mpi.h""... $ac_c"
-else
-echo $ac_n "checking if MPI-2 combiners are defined in mpi.h""... $ac_c" 1>&1
-fi
-  \rm -f mpitest.c
-  cat > mpitest.c <<EOF
-#include "mpi.h"
-     main(int argc, char **argv)
-     {
-         int i;
-
-         MPI_Init(&argc,&argv);
-         i = MPI_COMBINER_STRUCT;
-         MPI_Finalize(); 
-     }
-EOF
-  \rm -f a.out
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -s a.out ; then
-     if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""yes"
-else
-echo "$ac_t""yes" 1>&1
-fi
-     
-{
-test -n "$verbose" && \
-echo "	defining __HAS_MPI_COMBINERS"
-echo "#define" __HAS_MPI_COMBINERS 1 >> confdefs.h
-DEFS="$DEFS -D__HAS_MPI_COMBINERS=1"
-}
-
-  else
-     if test -z "$ac_echo_test" -a 1 = 1 ; then
-echo "$ac_t""no"
-else
-echo "$ac_t""no" 1>&1
-fi
-  fi
-  \rm -f a.out mpitest.c
-
-   fi
 #  check if pread64 is defined
    
   if test -z "$ac_echo_n" ; then
@@ -1446,7 +1186,7 @@ EOF
         CFLAGS="$CFLAGS $WDEF"
     fi
     \rm -f test/mpif.h
-    if test "$MPI_INCLUDE_DIR" != "."; then
+    if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 ; then
         ln -s $MPI_INCLUDE_DIR/mpif.h test
     fi
 else 
@@ -2099,6 +1839,191 @@ DEFS="$DEFS -D__HAS_MPI_INFO=1"
    MPI_FINFO4="!"
 fi   
 #
+if test -n "$mpi_sgi"; then
+   if test -z "$HAS_MPI_INFO" ; then
+      
+  if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking if MPI_INFO_NULL is defined in mpi.h""... $ac_c"
+else
+echo $ac_n "checking if MPI_INFO_NULL is defined in mpi.h""... $ac_c" 1>&1
+fi
+  \rm -f mpitest.c
+  cat > mpitest.c <<EOF
+#include "mpi.h"
+     main(int argc, char **argv)
+     {
+	int i;
+	i = MPI_INFO_NULL;
+     }
+EOF
+  \rm -f a.out
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -s a.out ; then
+      if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+      \cp adio/sgi/mpi3.1/*.h include
+  else
+      if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+  fi
+  \rm -f a.out mpitest.c
+  # is MPI_INFO_NULL defined in mpi.h?
+   fi
+   
+  if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking if MPI_SGI_type_is_contig is defined""... $ac_c"
+else
+echo $ac_n "checking if MPI_SGI_type_is_contig is defined""... $ac_c" 1>&1
+fi
+  \rm -f mpitest.c
+  cat > mpitest.c <<EOF
+#include "mpi.h"
+     main(int argc, char **argv)
+     {
+         MPI_Datatype type;
+         int i;
+
+         MPI_Init(&argc,&argv);
+         i = MPI_SGI_type_is_contig(type);
+         MPI_Finalize(); 
+     }
+EOF
+  \rm -f a.out
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -s a.out ; then
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+  else
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+     
+{
+test -n "$verbose" && \
+echo "	defining __NO_MPI_SGI_type_is_contig"
+echo "#define" __NO_MPI_SGI_type_is_contig 1 >> confdefs.h
+DEFS="$DEFS -D__NO_MPI_SGI_type_is_contig=1"
+}
+
+  fi
+  \rm -f a.out mpitest.c
+
+   
+  if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking if MPI-2 combiners are defined in mpi.h""... $ac_c"
+else
+echo $ac_n "checking if MPI-2 combiners are defined in mpi.h""... $ac_c" 1>&1
+fi
+  \rm -f mpitest.c
+  cat > mpitest.c <<EOF
+#include "mpi.h"
+     main(int argc, char **argv)
+     {
+         int i;
+
+         MPI_Init(&argc,&argv);
+         i = MPI_COMBINER_STRUCT;
+         MPI_Finalize(); 
+     }
+EOF
+  \rm -f a.out
+  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR mpitest.c $MPI_LIB > /dev/null 2>&1
+  if test -s a.out ; then
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""yes"
+else
+echo "$ac_t""yes" 1>&1
+fi
+     
+{
+test -n "$verbose" && \
+echo "	defining __HAS_MPI_COMBINERS"
+echo "#define" __HAS_MPI_COMBINERS 1 >> confdefs.h
+DEFS="$DEFS -D__HAS_MPI_COMBINERS=1"
+}
+
+  else
+     if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""no"
+else
+echo "$ac_t""no" 1>&1
+fi
+  fi
+  \rm -f a.out mpitest.c
+
+fi
+#
 # check if darray and subarray constructors are defined in the MPI implementation
 if test $FROM_MPICH = 0 ; then
    
@@ -2228,11 +2153,12 @@ if test -n "$file_system_piofs"; then
 fi
 if test -n "$mpi_mpich"; then
    CFLAGS="$CFLAGS -D__NEEDS_MPI_TEST -D__MPICH"
-   MPIOF_H_INCLUDED=1
+   if test -z "$arch_SX4" ; then
+      MPIOF_H_INCLUDED=1
+   fi
 fi
 if test -n "$mpi_sgi"; then
    CFLAGS="$CFLAGS -D__MPISGI"
-   MPIRUN=mpirun
 fi
 if test -n "$mpi_hp"; then
    CFLAGS="$CFLAGS -D__MPIHP"
@@ -2292,9 +2218,7 @@ fi
   \rm -f a.out mpitest.f
 
    fi
-   MPIRUN=mpirun
 fi
-CFLAGS="$CFLAGS $DEFS"
 
 ROMIO_HOME_TRIAL=$PWD
 if test "${ROMIO_HOME_TRIAL}" != "" -a -d "${ROMIO_HOME_TRIAL}" ; then 
@@ -2473,10 +2397,11 @@ fi
 #
 ROMIO_INCLUDE="-I$ROMIO_HOME/include"
 TEST_LIBNAME=$LIBNAME
+MPIRUN=mpirun
 #
 # if MPICH, use mpicc in test programs
 #
-if test $MPI = "mpich" ; then
+if test $FROM_MPICH = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
    TEST_CC=$MPICH_HOME/bin/mpicc
    MPI_LIB=""
@@ -2490,6 +2415,7 @@ if test $MPI = "mpich" ; then
    else
       TEST_F77=$MPICH_HOME/bin/mpif77
    fi     
+   CC=$MPICH_HOME/bin/mpicc
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -2499,13 +2425,16 @@ if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
 fi
 #
+CFLAGS="$CFLAGS $DEFS"
+#
 echo "setting CC to $CC"
 echo "setting F77 to $F77"
+echo "setting TEST_CC to $TEST_CC"
+echo "setting TEST_F77 to $TEST_F77"
 echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
 #
-
 
 
 
@@ -2634,7 +2563,6 @@ BUILD_MPI_INFO='$BUILD_MPI_INFO'
 HAS_MPI_DARRAY_SUBARRAY='$HAS_MPI_DARRAY_SUBARRAY'
 BUILD_MPI_ARRAY='$BUILD_MPI_ARRAY'
 DEFINE_MPI_OFFSET='$DEFINE_MPI_OFFSET'
-SGIMPI31='$SGIMPI31'
 MPI_FINFO1='$MPI_FINFO1'
 MPI_FINFO2='$MPI_FINFO2'
 MPI_FINFO3='$MPI_FINFO3'
@@ -2716,7 +2644,6 @@ s%@BUILD_MPI_INFO@%$BUILD_MPI_INFO%g
 s%@HAS_MPI_DARRAY_SUBARRAY@%$HAS_MPI_DARRAY_SUBARRAY%g
 s%@BUILD_MPI_ARRAY@%$BUILD_MPI_ARRAY%g
 s%@DEFINE_MPI_OFFSET@%$DEFINE_MPI_OFFSET%g
-s%@SGIMPI31@%$SGIMPI31%g
 s%@MPI_FINFO1@%$MPI_FINFO1%g
 s%@MPI_FINFO2@%$MPI_FINFO2%g
 s%@MPI_FINFO3@%$MPI_FINFO3%g

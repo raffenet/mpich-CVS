@@ -135,7 +135,6 @@ DEBUG=0
 MIPS=0
 BITS=0
 FROM_MPICH=0
-SGIMPI31=0
 CFLAGS=""
 LL="\%lld"
 AR_LOCAL=l
@@ -324,23 +323,27 @@ if test -n "$MPI" ; then
 fi
 #
 # check for valid MPI include directory if specified
-if test -n "$MPI_INCLUDE_DIR"; then
-   if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
-      echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
-      exit 1
+if test $FROM_MPICH = 0 ; then
+   if test -n "$MPI_INCLUDE_DIR"; then
+      if test ! -f "$MPI_INCLUDE_DIR/mpi.h" ; then
+         echo "Error: Include file $MPI_INCLUDE_DIR/mpi.h not found"
+         exit 1
+      fi
+   else
+#     assume that mpi.h is in the default path
+#     set MPI_INCLUDE_DIR to ".", so that it translates to -I. in the
+#     compile command. Some compilers complain if it's only -I
+      MPI_INCLUDE_DIR=.
    fi
-else
-# assume that mpi.h is in the default path
-# set MPI_INCLUDE_DIR to ".", so that it translates to -I. in the
-# compile command. Some compilers complain if it's only -I
-   MPI_INCLUDE_DIR=.
 fi
 #
 # check for valid MPI library if specified
-if test -n "$MPI_LIB" ; then
-   if test ! -f "$MPI_LIB" ; then
-      echo "Error: MPI library $MPI_LIB not found"
-      exit 1
+if test $FROM_MPICH = 0 ; then
+   if test -n "$MPI_LIB" ; then
+      if test ! -f "$MPI_LIB" ; then
+         echo "Error: MPI library $MPI_LIB not found"
+         exit 1
+      fi
    fi
 fi
 #
@@ -719,14 +722,6 @@ if test -n "$arch_IRIX"; then
    if test -n "$mpi_sgi" && test -z "$MPI_LIB" ; then
        MPI_LIB="-lmpi"
    fi
-   if test -n "$mpi_sgi"; then
-       PAC_CHECK_SGI_MPI31    # is it 3.1?
-       if test $SGIMPI31 = 0; then
-          PAC_CHECK_SGI_3264
-       fi
-       PAC_TEST_MPI_SGI_type_is_contig
-       PAC_TEST_MPI_COMBINERS
-   fi
 #  check if pread64 is defined
    PAC_HAS_PREAD64
 #
@@ -749,7 +744,7 @@ if test $NOF77 = 0 ; then
         CFLAGS="$CFLAGS $WDEF"
     fi
     \rm -f test/mpif.h
-    if test "$MPI_INCLUDE_DIR" != "."; then
+    if test "$MPI_INCLUDE_DIR" != "." && test $FROM_MPICH = 0 ; then
         ln -s $MPI_INCLUDE_DIR/mpif.h test
     fi
 else 
@@ -781,6 +776,14 @@ else
    MPI_FINFO3="!"
    MPI_FINFO4="!"
 fi   
+#
+if test -n "$mpi_sgi"; then
+   if test -z "$HAS_MPI_INFO" ; then
+      PAC_CHECK_MPI_SGI_INFO_NULL  # is MPI_INFO_NULL defined in mpi.h?
+   fi
+   PAC_TEST_MPI_SGI_type_is_contig
+   PAC_TEST_MPI_COMBINERS
+fi
 #
 # check if darray and subarray constructors are defined in the MPI implementation
 if test $FROM_MPICH = 0 ; then
@@ -826,20 +829,19 @@ if test -n "$file_system_piofs"; then
 fi
 if test -n "$mpi_mpich"; then
    CFLAGS="$CFLAGS -D__NEEDS_MPI_TEST -D__MPICH"
-   MPIOF_H_INCLUDED=1
+   if test -z "$arch_SX4" ; then
+      MPIOF_H_INCLUDED=1
+   fi
 fi
 if test -n "$mpi_sgi"; then
    CFLAGS="$CFLAGS -D__MPISGI"
-   MPIRUN=mpirun
 fi
 if test -n "$mpi_hp"; then
    CFLAGS="$CFLAGS -D__MPIHP"
    if test "$NOF77" = 0; then
       PAC_CHECK_MPIOF_H
    fi
-   MPIRUN=mpirun
 fi
-CFLAGS="$CFLAGS $DEFS"
 PAC_GETWD(ROMIO_HOME_TRIAL,mpi-io/Makefile.in)
 echo "ROMIO home directory is $ROMIO_HOME_TRIAL"
 ROMIO_HOME=$ROMIO_HOME_TRIAL
@@ -867,10 +869,11 @@ fi
 #
 ROMIO_INCLUDE="-I$ROMIO_HOME/include"
 TEST_LIBNAME=$LIBNAME
+MPIRUN=mpirun
 #
 # if MPICH, use mpicc in test programs
 #
-if test $MPI = "mpich" ; then
+if test $FROM_MPICH = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
    TEST_CC=$MPICH_HOME/bin/mpicc
    MPI_LIB=""
@@ -884,6 +887,7 @@ if test $MPI = "mpich" ; then
    else
       TEST_F77=$MPICH_HOME/bin/mpif77
    fi     
+   CC=$MPICH_HOME/bin/mpicc
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -893,8 +897,12 @@ if test -z "$TEST_F77" ; then
    TEST_F77="$F77"
 fi
 #
+CFLAGS="$CFLAGS $DEFS"
+#
 echo "setting CC to $CC"
 echo "setting F77 to $F77"
+echo "setting TEST_CC to $TEST_CC"
+echo "setting TEST_F77 to $TEST_F77"
 echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
@@ -932,7 +940,6 @@ AC_SUBST(BUILD_MPI_INFO)
 AC_SUBST(HAS_MPI_DARRAY_SUBARRAY)
 AC_SUBST(BUILD_MPI_ARRAY)
 AC_SUBST(DEFINE_MPI_OFFSET)
-AC_SUBST(SGIMPI31)
 AC_SUBST(MPI_FINFO1)
 AC_SUBST(MPI_FINFO2)
 AC_SUBST(MPI_FINFO3)

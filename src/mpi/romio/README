@@ -1,67 +1,70 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                       Version 1.0.1 beta, March 1998
-
-Major Changes since 1.0.0:
-
-1. Added support for NEC SX-4 and created a new device ad_sfs for
-   NEC's SFS file system.
-
-2. New devices ad_hfs for HP/Convex HFS file system and ad_xfs for 
-   SGI's XFS file system.
-
-3. Users no longer need to prefix the filename with the type of 
-   file system; ROMIO determines the file-system type on its own.
-
-4. Added support for 64-bit file sizes on IBM PIOFS, SGI XFS,
-   HP/Convex HFS, and NEC SFS file systems.
-
-5. MPI_Offset is an 8-byte integer on machines that support 8-byte integers.
-   It is of type "long long" in C and "integer*8" in Fortran.
-   With a Fortran 90 compiler, you can use either integer*8 or
-   integer(kind=MPI_OFFSET_KIND). 
-   If you printf an MPI_Offset in C, remember to use %lld 
-   or %ld as required by your compiler. Or see what is used in the test 
-   program romio/test/misc.c.
-
-   On some machines, ROMIO detects at configure time that "long long" is 
-   either not supported by the C compiler or it doesn't work properly.
-   In that case it sets MPI_Offset to long in C and integer in Fortran.
-   This happens on Intel Paragon, Sun4, and FreeBSD.
-
-6. Added support for passing hints to the implementation via the MPI_Info 
-   parameter. ROMIO understands the following hints (keys in MPI_Info object):
-
-   /* on all file systems */ 
-      cb_buffer_size - buffer size for collective I/O
-      cb_nodes - no. of processes that actually perform I/O in collective I/O
-      ind_rd_buffer_size - buffer size for data sieving in independent reads
-
-   /* on all file systems except IBM PIOFS */
-      ind_wr_buffer_size - buffer size for data sieving in independent writes
-       /* ind_wr_buffer_size is ignored on PIOFS because data sieving 
-          cannot be done for writes since PIOFS doesn't support file locking */
+                       Version 1.0.1 beta, May 1998
 
 
-   /* on Intel PFS and IBM PIOFS only. These hints are understood only if
-      supplied at file-creation time. */
-      striping_factor - no. of I/O devices to stripe the file across
-      striping_unit - the striping unit in bytes
-      start_iodevice - the number of the I/O device from which to start
-                       striping (between 0 and (striping_factor-1))
+Major Changes in This Version:
+-----------------------------
 
-   /* on Intel PFS only. */
-      pfs_svr_buf - turn on or off PFS server buffering by setting the value 
-                to "true" or "false", case-sensitive.
+* This version is included in MPICH 1.1.1 and HPMPI 1.4.
+
+* Added support for NEC SX-4 and created a new device ad_sfs for
+  NEC's SFS file system.
+
+* New devices ad_hfs for HP/Convex HFS file system and ad_xfs for 
+  SGI XFS file system.
+
+* Users no longer need to prefix the filename with the type of 
+  file system; ROMIO determines the file-system type on its own.
+
+* Added support for 64-bit file sizes on IBM PIOFS, SGI XFS,
+  HP/Convex HFS, and NEC SFS file systems.
+
+* MPI_Offset is an 8-byte integer on machines that support 8-byte integers.
+  It is of type "long long" in C and "integer*8" in Fortran.
+  With a Fortran 90 compiler, you can use either integer*8 or
+  integer(kind=MPI_OFFSET_KIND). 
+  If you printf an MPI_Offset in C, remember to use %lld 
+  or %ld as required by your compiler. (See what is used in the test 
+  program romio/test/misc.c.)
+
+* On some machines, ROMIO detects at configure time that "long long" is 
+  either not supported by the C compiler or it doesn't work properly.
+  In such cases, configure sets MPI_Offset to long in C and integer in
+  Fortran. This happens on Intel Paragon, Sun4, and FreeBSD.
+
+* Added support for passing hints to the implementation via the MPI_Info 
+  parameter. ROMIO understands the following hints (keys in MPI_Info object):
+
+  /* on all file systems */ 
+     cb_buffer_size - buffer size for collective I/O
+     cb_nodes - no. of processes that actually perform I/O in collective I/O
+     ind_rd_buffer_size - buffer size for data sieving in independent reads
+
+  /* on all file systems except IBM PIOFS */
+     ind_wr_buffer_size - buffer size for data sieving in independent writes
+      /* ind_wr_buffer_size is ignored on PIOFS because data sieving 
+         cannot be done for writes since PIOFS doesn't support file locking */
+
+  /* on Intel PFS and IBM PIOFS only. These hints are understood only if
+     supplied at file-creation time. */
+     striping_factor - no. of I/O devices to stripe the file across
+     striping_unit - the striping unit in bytes
+     start_iodevice - the number of the I/O device from which to start
+                      striping (between 0 and (striping_factor-1))
+
+  /* on Intel PFS only. */
+     pfs_svr_buf - turn on or off PFS server buffering by setting the value 
+               to "true" or "false", case-sensitive.
       
-   If ROMIO doesn't understand a hint, or if the value is invalid, the hint
-   will be ignored. The values of hints being used by ROMIO at any time 
-   can be obtained via  MPI_File_get_info.
+  If ROMIO doesn't understand a hint, or if the value is invalid, the hint
+  will be ignored. The values of hints being used by ROMIO at any time 
+  can be obtained via  MPI_File_get_info.
 
 
 
-
-                         General Information 
+General Information 
+-------------------
 
 ROMIO is a high-performance, portable implementation of MPI-IO (the
 I/O chapter in MPI-2). ROMIO's home page is at
@@ -69,17 +72,17 @@ http://www.mcs.anl.gov/home/thakur/romio . The MPI-2 standard itself
 is available at http://www.mpi-forum.org/docs/docs.html .
 
 This version of ROMIO includes everything defined in the MPI-2 I/O
-chapter except shared file pointer functions (Sec. 9.4.4), 
-split collective data access functions (Sec. 9.4.5),
-support for file interoperability (Sec. 9.5), I/O error handling
-(Sec. 9.7), and I/O error classes (Sec. 9.8). Since shared file
-pointer functions are not supported, the MPI_MODE_SEQUENTIAL amode to
-MPI_File_open is also not supported.
+chapter except shared file pointer functions (Sec. 9.4.4), split
+collective data access functions (Sec. 9.4.5), support for file
+interoperability (Sec. 9.5), I/O error handling (Sec. 9.7), and I/O
+error classes (Sec. 9.8). Since shared file pointer functions are not
+supported, the MPI_MODE_SEQUENTIAL amode to MPI_File_open is also not
+supported.
 
 The subarray and distributed array datatype constructor functions from
 Chapter 4 (Sec. 4.14.4 & 4.14.5) have been implemented. They are
 useful for accessing arrays stored in files. The functions
-MPI_File_f2c and MPI_File_c2f (Sec. 4.12.4) are also implemented. 
+MPI_File_f2c and MPI_File_c2f (Sec. 4.12.4) are also implemented.
 
 C, Fortran, and profiling interfaces are provided for all functions
 that have been implemented. 
@@ -87,173 +90,71 @@ that have been implemented.
 Please read the limitations of this version of ROMIO that are listed
 below (e.g., MPIO_Request object, restriction to homogeneous environments).
 
-This version of ROMIO runs on the following machines: IBM SP, Intel
-Paragon, HP/Convex Exemplar, SGI Origin2000, Challenge, and Power
-Challenge, NEC SX-4, and networks of workstations (Sun4, Solaris, IBM,
-DEC, SGI, HP, FreeBSD, and Linux). Supported file systems are IBM
-PIOFS, Intel PFS, HP/Convex HFS, SGI XFS, NEC SFS, NFS, and any
-Unix file system (UFS).
+This version of ROMIO runs on the following machines: IBM SP; Intel
+Paragon; HP Exemplar; SGI Origin2000; NEC SX-4; other symmetric
+multiprocessors from HP, SGI, DEC, and IBM; and networks of
+workstations (Sun, SGI, HP, IBM, DEC, Linux, and FreeBSD).
+Supported file systems are IBM PIOFS, Intel PFS, HP/Convex
+HFS, SGI XFS, NEC SFS, NFS, and any Unix file system (UFS).
 
-This version of ROMIO works with MPICH 1.1.1 on any machine.
-(You can get the latest version of MPICH from 
-http://www.mcs.anl.gov/mpi/mpich .)
-On SGI machines, ROMIO works with SGI MPI 3.0 and higher,
-and we recommend that you use it with SGI MPI instead of MPICH.
-ROMIO has been integrated into HPMPI 1.4. Therefore, if you are using
-HPMPI on HP machines, you need not install ROMIO separately.
+This version of ROMIO works with and is included in MPICH 1.1.1 and in
+HPMPI 1.4. It also works with SGI MPI 3.1 and higher and with NEC MPI.
 
-You can open files on multiple file systems in the same program.
-The user is responsible for ensuring that the directory
-where the file is to be opened is accessible from the process opening
-the file. For example, a process running on one workstation may not be
-able to access a directory on the local disk of another workstation,
-and therefore ROMIO will not be able to open a file in such a directory.
+You can open files on multiple file systems in the same program. The
+user is responsible for ensuring that the directory where the file is
+to be opened is accessible from the process opening the file. For
+example, a process running on one workstation may not be able to
+access a directory on the local disk of another workstation, and
+therefore ROMIO will not be able to open a file in such a directory.
 
 An MPI-IO file created by ROMIO is no different than any other file
 created by the underlying file system. Therefore, you may use any of
 the commands provided by the file system to access the file, e.g., ls,
 mv, cp, rm, ftp.
 
-If you use ROMIO with SGI MPI, you need to include the file mpio.h
-(for C) or mpiof.h (for Fortran) in your MPI-IO program; with MPICH or
-HPMPI, it is not necessary. See the examples and Makefile in the
-romio/test directory for information on how to compile MPI-IO programs
-and link with ROMIO on different machines. This information is also
-provided in the ROMIO Users Guide in romio/doc/users-guide.ps.gz.
 
 
+Installation Instructions
+-------------------------
 
-/****************** General Installation Instructions *****************/
+ROMIO is included in MPICH 1.1.1 and gets built as part of MPICH 1.1.1.
+ROMIO is also included in HPMPI 1.4 (see http://www.hp.com/go/mpi).
+Therefore, if you are using MPICH 1.1.1 or HPMPI, you need not install
+ROMIO separately. If you are using other versions of MPICH or HPMPI,
+we encourage you to upgrade to the latest versions, which include ROMIO. 
+
+If you are using SGI MPI or NEC MPI (NEC's version of MPICH), 
+you can configure and build ROMIO as follows:
 
 Untar the tar file as
 
-gunzip -c romio.tar.gz | tar xvf -
+    gunzip -c romio.tar.gz | tar xvf -
 
 OR
 
-zcat romio.tar.Z | tar xvf -
+    zcat romio.tar.Z | tar xvf -
 
 THEN
 
-cd romio
+    cd romio
+    ./configure
+    make
 
-./configure -file_system=nfs -mpiincdir=/usr/local/mpi/include -mpilib=/usr/local/mpi/lib/sun4/ch_p4/libmpi.a  
- (ONLY AN EXAMPLE. SPECIFIC configures FOR VARIOUS MACHINES ARE GIVEN BELOW.)
-
-make
-
-cd test
-
-make
-
+Some example programs and a Makefile are provided in the romio/test directory.
 Run the examples the way you would run any MPI program. Each program takes 
 the filename as a command-line argument "-fname filename".  
 
+The configure script by default configures ROMIO for the file systems
+most likely to be used on the given machine. If you wish, you can
+explicitly specify the file systems by using the "-file_system" option
+to configure. Multiple file systems can be specified by using "+" as a
+separator. For example,
 
+    ./configure -file_system=ufs+nfs
 
-/********** Configuring and Building ROMIO on Various Machines ***********/
+For the entire list of options to configure do
 
-Here is how you would commonly configure and build ROMIO on various
-machines. For your particular machine environment, you may need to
-specify some other options to configure. For the entire list of options do
-
-./configure -h | more
-
-
-********* NOTE *********
-You can configure and build ROMIO for multiple file systems by 
-specifying the names and using '+' as a separator.
-For example, ./configure -file_system=ufs+nfs ...
-
-
-
-On a network of Sun4, Solaris, IBM, DEC, FreeBSD, or Linux workstations
-using MPICH 1.1.0 (or higher) and NFS file system: 
-(Specify appropriate mpiincdir and mpilib for your system.)
-
-./configure -file_system=nfs -mpiincdir=/usr/local/mpi/include -mpilib=/usr/local/mpi/lib/sun4/ch_p4/libmpi.a 
-make
-
-
-
-On a network of SGI or HP workstations using MPICH 1.1.0 (or higher)
-and NFS file system: 
-(Specify appropriate mpiincdir and mpilib for your system.)
-
-./configure -file_system=nfs -mpi=mpich -mpiincdir=/usr/local/mpi/include -mpilib=/usr/local/mpi/lib/hpux/ch_p4/libmpi.a 
-make
-
-
-
-On an IBM SP using MPICH 1.1.0 (or higher) and PIOFS file system:
-(Specify appropriate mpiincdir and mpilib for your system.)
-
-./configure -file_system=piofs -mpiincdir=/usr/local/mpi/include -mpilib=/usr/local/mpi/lib/rs6000/ch_mpl/libmpi.a 
-make
-
-
-
-On an HP/Convex Exemplar using HP MPI 1.3 (or higher) and the HFS
-file system:
-
-./configure -file_system=hfs
-make
-
-On an HP/Convex Exemplar using MPICH 1.1.0 (or higher) and the HFS
-file system:
-(Specify appropriate mpiincdir and mpilib for your system.)
-
-./configure -file_system=hfs -mpi=mpich -mpiincdir=/usr/local/mpi/include -mpilib=/usr/local/mpi/lib/hpux/ch_shmem/libmpi.a 
-make
-
-
-
-On an SGI Origin 2000, Power Challenge, or Challenge using SGI MPI
-3.0 (or higher) and XFS file system: 
-
-./configure -file_system=xfs
-make
-
-If you need to generate a particular version that corresponds to 
-the -64, -n32, or -32 compiler/linker options on SGI, you can specify
-the options to passed to the compiler as
-./configure -file_system=ufs -cc="cc -64" -fc="f77 -64"
-or
-./configure -file_system=ufs -cc="cc -n32" -fc="f77 -n32"
-or
-./configure -file_system=ufs -cc="cc -32" -fc="f77 -32"
-
-To configure for a network of SGI workstations, see the networks of
-workstations case above.
-
-
-
-On an NEC SX-4 using MPICH 1.1.0 (or higher, or NEC's version of MPICH)
-and SFS file system:
-(Specify appropriate mpiincdir and mpilib for your system.)
-
-./configure -file_system=sfs
-make
-
-Use f90 (mpif90) instead of f77 (mpif77) on the SX-4.
-
-
-
-On an Intel Paragon using MPICH 1.1.0 (or higher) and PFS file system:
-(Specify appropriate mpiincdir and mpilib for your system.)
-
-./configure -arch=paragon -file_system=pfs -mpiincdir=/usr/local/mpi/include -mpilib=/usr/local/mpi/lib/paragon/ch_nx/libmpi.a 
-make
-
-
-If there is any error, try 
-
-./configure -h 
-
-for further options to configure or send email to
-romio-maint@mcs.anl.gov with a detailed description of the error
-(see "reporting bugs" below).
-
+    ./configure -h | more
 
 After building a specific version as above, you can install it in a
 particular directory with 
@@ -277,19 +178,69 @@ To rebuild ROMIO with a different set of configure options, do
 
     make cleanall
 
-to clean up everything including the Makefiles constructed by configure,
-and then run configure again with the new options.
-
-
-The Makefile in the romio/test directory shows how to compile and link
-MPI-IO programs for the system for which ROMIO has been configured.
-This information is also in the ROMIO Users Guide (doc/users-guide.ps.gz).
-You can run an MPI-IO program the way you would run any MPI program
-on the system.
+to clean everything including the Makefiles created by configure.
+Then run configure again with the new options, followed by make.
 
 
 
-/**************** Limitations of this version of ROMIO *****************/
+Testing ROMIO
+-------------
+
+To test if the installation works, do
+
+     make testing 
+
+in the romio/test directory. This calls a script that runs the test
+programs and compares the results with what they should be. By
+default, "make testing" causes the test programs to create files in
+the current directory and use whatever file system that corresponds
+to. To test with other file systems, you need to specify a filename in
+a directory corresponding to that file system as follows:
+
+     make testing TESTARGS="-fname=/foo/piofs/test"
+
+
+
+Compiling and Running MPI-IO Programs
+-------------------------------------
+
+If you are using SGI MPI or NEC MPI, you need to include the file
+mpio.h for C or mpiof.h for Fortran in your MPI-IO program. 
+In MPICH 1.1.1 and HPMPI 1.4, these files are already included in
+mpi.h and mpif.h, respectively.
+
+Note that on HP machines running HPUX and on NEC SX-4, you need to
+compile Fortran programs with mpif90, becuase the f77 compilers on
+these machines don't support 8-byte integers. 
+
+With MPICH or HPMPI, you can compile MPI-IO programs as 
+   mpicc foo.c
+or 
+   mpif77 foo.f
+
+With SGI MPI, you can compile MPI-IO programs as 
+   cc -Iromio_path/include foo.c romio_path/lib/IRIX64/libmpio.a -lmpi
+or
+   f77 -Iromio_path/include foo.f romio_path/lib/IRIX64/libmpio.a -lmpi
+
+With NEC MPI, you can compile MPI-IO programs as 
+   mpicc -Iromio_path/include foo.c romio_path/lib/SX4/libmpio.a
+or
+   mpif90 -Iromio_path/include foo.f romio_path/lib/SX4/libmpio.a
+
+Run the program as you would run any MPI program on the machine. If
+you use mpirun, make sure you use the correct mpirun for the MPI
+implementation you are using. For example, if you are using MPICH on
+an SGI machine, make sure that you use MPICH's mpirun and not SGI's
+mpirun.
+
+The Makefile in the romio/test directory illustrates how to compile
+and link MPI-IO programs. 
+
+
+
+Limitations of this version of ROMIO
+------------------------------------
 
 * The "status" argument is not filled in any function. Consequently,
 MPI_Get_count and MPI_Get_elements will not work when passed the
@@ -316,17 +267,21 @@ success and MPI_ERR_UNKNOWN on failure.
 * On HP machines running HPUX, atomic mode is not supported for files
 residing on HFS file systems.
 
+* On HP machines running HPUX and on NEC SX-4, you need to compile
+Fortran programs with mpif90 instead of mpif77, because the f77
+compilers on these machines don't support 8-byte integers.
+ 
 
 
+Usage Tips
+----------
 
-/***************** Usage Tips ******************/
-
-* When using ROMIO with SGI MPI, you may
-sometimes get an error message from SGI MPI: ``MPI has run out of
-internal datatype entries. Please set the environment variable
-MPI_TYPE_MAX for additional space.'' If you get this error message,
-add this line to your .cshrc file:
-setenv MPI_TYPE_MAX 65536
+* When using ROMIO with SGI MPI, you may sometimes get an error
+message from SGI MPI: ``MPI has run out of internal datatype
+entries. Please set the environment variable MPI_TYPE_MAX for
+additional space.'' If you get this error message, add this line to
+your .cshrc file:
+    setenv MPI_TYPE_MAX 65536 
 Use a larger number if you still get the error message.
 
 * If a Fortran program uses a file handle created using ROMIO's C
@@ -336,20 +291,10 @@ for example, if a Fortran program uses an I/O library written in C
 with MPI-IO calls. Similar functions MPIO_Request_f2c and
 MPIO_Request_c2f are also provided.
 
-* For Fortran programs on an Intel Paragon, you may need
-to provide the complete path to mpif.h in the include statement, e.g.,
-        include '/home/mpich/include/mpif.h'
-instead of 
-        include 'mpif.h'
-This is because the -I option doesn't work on the Paragon Fortran
-compiler if77. It always looks in the default directories first 
-and, therefore, may pick up Intel's mpif.h, which is actually the
-mpif.h of an older version of MPICH. 
 
 
-
-/******************* ROMIO Users Mailing List *******************/
-
+ROMIO Users Mailing List
+------------------------
 
 Please register your copy of ROMIO with us by sending email
 to majordomo@mcs.anl.gov with the message
@@ -361,13 +306,13 @@ bug fixes.
 
 
 
-
-/************************* Reporting Bugs *************************/
+Reporting Bugs
+--------------
 
 If you have trouble, first check the users guide (in
-romio/doc/users-guide.ps.gz). Then check the on-line list of "known
-bugs and patches" at http://www.mcs.anl.gov/home/thakur/romio .
-Finally, if you still have problems, send a detailed message giving
+romio/doc/users-guide.ps.gz). Then check the on-line list of known
+bugs and patches at http://www.mcs.anl.gov/home/thakur/romio .
+Finally, if you still have problems, send a detailed message containing:
 
    The type of system (often, uname -a)
    The output of configure
@@ -378,7 +323,8 @@ to romio-maint@mcs.anl.gov .
 
 
 
-/***************** ROMIO Internals ******************/
+ROMIO Internals
+---------------
 
 A key component of ROMIO that enables such a portable MPI-IO
 implementation is an internal abstract I/O device layer called
@@ -386,4 +332,3 @@ ADIO. Most users of ROMIO will not need to deal with the ADIO layer at
 all. However, ADIO is useful to those who want to port ROMIO to some
 other file system. The ROMIO source code and the ADIO paper
 (doc/adio.ps.gz) will help you get started.
-

@@ -15,7 +15,7 @@ Input Parameters:
 . fh - Fortran file handle (integer)
 
 Return Value:
-. C file handle (handle)
+  C file handle (handle)
 @*/
 MPI_File MPI_File_f2c(MPI_Fint fh)
 {
