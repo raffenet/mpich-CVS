@@ -2,13 +2,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
-typedef int BOOL;
+#ifndef BOOL
+#define BOOL int
+#endif
 #ifndef TRUE
 #define TRUE 1
 #endif
 #ifndef FALSE
 #define FALSE 0
+#endif
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
 #define MAX_RANK 1024*1024

@@ -10,7 +10,9 @@ extern "C" {
 #endif
 
 /* definitions */
-typedef int BOOL;
+#ifndef BOOL
+#define BOOL int
+#endif
 #ifndef TRUE
 #define TRUE 1
 #endif

@@ -63,7 +63,7 @@ typedef int int32_t;
 #endif
 
 #ifndef BOOL
-typedef int BOOL;
+#define BOOL int
 #endif
 #ifndef TRUE
 #define TRUE 1
