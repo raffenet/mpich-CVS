@@ -36,7 +36,7 @@ void *MPI_F_ARGVS_NULL      = 0;
 #endif
 
 
-FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void * e )
+FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, void * e )
 {
     MPIR_F_MPI_BOTTOM     = a;
     MPIR_F_MPI_IN_PLACE   = b;

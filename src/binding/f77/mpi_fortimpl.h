@@ -8,15 +8,6 @@
 #include "mpi_fortconf.h"
 #endif
 
-/* Support Windows extension to specify calling convention */
-#ifdef USE_FORT_STDCALL
-#define FORT_CALL __stdcall
-#elif defined (USE_FORT_CDECL)
-#define FORT_CALL __cdecl
-#else
-#define FORT_CALL
-#endif
-
 /* Handle different mechanisms for passing Fortran CHARACTER to routines */
 #ifdef USE_FORT_MIXED_STR_LEN
 #define FORT_MIXED_LEN_DECL   , MPI_Fint
@@ -30,17 +21,68 @@
 #define FORT_END_LEN(a)       , MPI_Fint a
 #endif
 
+/* ------------------------------------------------------------------------- */
+/* The following definitions are used to support the Microsoft compilers and
+
+   The following C preprocessor macros are not discoved by configure.  
+   Instead, they must be defined separately; this is normally done as part of 
+   the Windows-specific configuration process.
+
+   USE_FORT_STDCALL - Use __stdcall for the calling convention
+   USE_FORT_CDECL   - Use __cdelc for the calling convention
+       These define the macro FORT_CALL ; for other systems, FORT_CALL is 
+       empty
+
+       Note: It may be that these should be USE_MSC_xxx to indicate that
+       these can only be used with the MS C compiler.
+
+   USE_MSC_DLLSPEC - Use __declspec to control the import or export of
+                     symbols in a generated dynamic link library (DLL)
+       This defines the macros FORT_DECL_SPEC and FORT_C_DECL_SPEC ; for 
+       other systems, these names both expand to empty
+       If USE_MSC_DLLSPEC is defined, then the macros FORTRAN_EXPORTS and
+       FORTRAN_FROM_C_EXPORTS controls whether dllexport or dllimport is 
+       specified.       
+
+       The name (USE_MSC_xxx) here indicates that the MS C compiler is 
+       required for this.
+
+ */
+
+/* Support Windows extension to specify calling convention */
+#ifdef USE_FORT_STDCALL
+#define FORT_CALL __stdcall
+#elif defined (USE_FORT_CDECL)
+#define FORT_CALL __cdecl
+#else
+#define FORT_CALL
+#endif
+
 /* Support Windows extension to specify which functions are exported from
    shared (DLL) libraries */
-#ifdef HAVE_FORTRAN_API
+/* Backward compatibility (was HAVE_FORTRAN_API) */
+#if defined(HAVE_FORTRAN_API) && !defined(USE_MSC_DLLSPEC)
+#define USE_MSC_DLLSPEC
+#endif
+
+#ifdef USE_MSC_DLLSPEC
 # ifdef FORTRAN_EXPORTS
-#  define FORTRAN_API __declspec(dllexport)
+#  define FORT_DLL_SPEC __declspec(dllexport)
 # else
-#  define FORTRAN_API __declspec(dllimport)
+#  define FORT_DLL_SPEC __declspec(dllimport)
+# endif
+# ifdef FORTRAN_FROM_C_EXPORTS
+#  define FORT_C_DLL_SPEC __declspec(dllexport)
+# else
+#  define FORT_C_DLL_SPEC __declspec(dllimport)
 # endif
 #else
-# define FORTRAN_API
+# define FORT_DLL_SPEC
+# define FORT_C_DLL_SPEC
 #endif
+
+
+/* ------------------------------------------------------------------------- */
 
 /* Support an alternate approach for declaring a weak symbol supported by
    some versions of gcc */
@@ -49,6 +91,8 @@
 #else
 #define FUNC_ATTRIBUTES(name)
 #endif
+
+/* ------------------------------------------------------------------------- */
 
 /* mpi.h includes the definitions of MPI_Fint */
 #include "mpi.h"
@@ -111,12 +155,12 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 #define MPIR_F_PTR(a) (a)
 #else
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
-extern void *MPIR_F_MPI_BOTTOM;
-extern void *MPIR_F_MPI_IN_PLACE;
-extern void *MPI_F_STATUS_IGNORE;
-extern void *MPI_F_STATUSES_IGNORE;
-extern int  *MPI_F_ERRCODES_IGNORE;
-extern void *MPI_F_ARGVS_NULL;
+extern FORT_C_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
+extern FORT_C_DLL_SPEC void *MPIR_F_MPI_IN_PLACE;
+extern FORT_C_DLL_SPEC void *MPI_F_STATUS_IGNORE;
+extern FORT_C_DLL_SPEC void *MPI_F_STATUSES_IGNORE;
+extern FORT_C_DLL_SPEC int  *MPI_F_ERRCODES_IGNORE;
+extern FORT_C_DLL_SPEC void *MPI_F_ARGVS_NULL;
 /* MPIR_F_PTR checks for the Fortran MPI_BOTTOM and provides the value 
    MPI_BOTTOM if found 
    See src/pt2pt/addressf.c for why MPIR_F_PTR(a) is just (a)
@@ -171,4 +215,4 @@ typedef char *MPID_FCHAR_T;
 #undef MPI_COMM_NULL_COPY_FN
 #undef MPI_COMM_NULL_DELETE_FN
 #undef MPI_COMM_DUP_FN
-#endif
+#endif /* MPI_DUP_FN */
