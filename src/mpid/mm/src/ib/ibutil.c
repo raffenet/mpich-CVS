@@ -6,6 +6,10 @@
 #include "ibimpl.h"
 #include "psc_iba.h"
 
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
 static int s_cur_receive = 0;
 static int s_cur_send = 0;
 
