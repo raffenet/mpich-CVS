@@ -109,6 +109,8 @@ int MPIR_Bcast (
       NMPI_Abort(MPI_COMM_WORLD, 1);     
 #ifdef UNIMPLEMENTED
       NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
+#else
+      tmp_buf_size = 0;
 #endif
       /* calculate the value of nbytes, the size in packed
          representation of the buffer to be broadcasted. We can't
@@ -446,10 +448,12 @@ PMPI_LOCAL int MPIR_Bcast_inter (
 */
     int rank, mpi_errno;
     MPI_Comm newcomm;
+#ifdef UNIMPLEMENTED
     MPI_Group group;
+#endif
     MPI_Status status;
     MPID_Comm *newcomm_ptr = NULL;
-    MPI_Comm comm;
+    MPI_Comm comm = 0;
 
     if (root == MPI_PROC_NULL) {
         /* local processes other than root do nothing */
@@ -479,6 +483,8 @@ PMPI_LOCAL int MPIR_Bcast_inter (
 #ifdef UNIMPLEMENTED
         NMPI_Comm_group(comm, &group);
         MPID_Comm_return_intra(group, &newcomm);
+#else
+	newcomm = 0;
 #endif
         MPID_Comm_get_ptr( newcomm, newcomm_ptr );
         /* now do the usual broadcast on this intracommunicator

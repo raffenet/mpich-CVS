@@ -234,7 +234,9 @@ PMPI_LOCAL int MPIR_Reduce_inter (
 
     int rank, mpi_errno;
     MPI_Comm newcomm;
+#ifdef UNIMPLEMENTED
     MPI_Group group;
+#endif
     MPI_Status status;
     MPI_Aint extent, lb=0;
     void *tmp_buf=NULL;
@@ -285,6 +287,8 @@ PMPI_LOCAL int MPIR_Reduce_inter (
 #ifdef UNIMPLEMENTED
         NMPI_Comm_group(comm, &group);
         MPID_Comm_return_intra(group, &newcomm);
+#else
+	newcomm = 0;
 #endif
         MPID_Comm_get_ptr( newcomm, newcomm_ptr );
         /* now do a local reduce on this intracommunicator */

@@ -264,7 +264,9 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
 
     int rank, mpi_errno, inleftgroup, root;
     MPI_Comm newcomm;
+#ifdef UNIMPLEMENTED
     MPI_Group group;
+#endif
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
 
@@ -275,6 +277,8 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
        then from left group to rank 0 in right group*/
 #ifdef UNIMPLEMENTED
     inleftgroup = yes_or_no;  /* not done */
+#else
+    inleftgroup = TRUE;
 #endif
     if (inleftgroup) {
         /* reduce from right group to rank 0*/
@@ -306,6 +310,8 @@ PMPI_LOCAL int MPIR_Allreduce_inter (
 #ifdef UNIMPLEMENTED
     NMPI_Comm_group(comm, &group);
     MPID_Comm_return_intra(group, &newcomm);
+#else
+    newcomm = 0;
 #endif
     MPID_Comm_get_ptr( newcomm, newcomm_ptr );
 
