@@ -1125,10 +1125,11 @@ static int socki_sock_alloc(struct sock_set * sock_set, struct sock ** sockp)
         memcpy(fds, sock_set->pollfds, sock_set->poll_arr_sz * sizeof(struct pollfd));
         memcpy(infos, sock_set->pollinfos, sock_set->poll_arr_sz * sizeof(struct pollinfo));
 
-	/* Fix up pollfd pointer in sock structure */
+	/* Fix up pollfd and pollinfo pointer in sock structure */
 	for (elem = 0; elem < sock_set->poll_arr_sz; elem++)
 	{
-	    sock_set->pollinfos[elem].sock->pollfd = &sock_set->pollfds[elem];
+	    sock_set->pollinfos[elem].sock->pollfd = &fds[elem];
+	    sock_set->pollinfos[elem].sock->pollinfo = &infos[elem];
 	}
 
 	/* Free old arrays... */
