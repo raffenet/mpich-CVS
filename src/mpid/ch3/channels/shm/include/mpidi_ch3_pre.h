@@ -88,7 +88,7 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3I_SHM_Buffer_t read;
     MPIDI_CH3I_SHM_Unex_read_t *unex_list;
     MPIDI_CH3I_SHM_Unex_read_t *unex_finished_list;
-    MPIDI_CH3I_SHM_Buffer_t write;
+    /*MPIDI_CH3I_SHM_Buffer_t write;*/
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef HAVE_WINDOWS_H
     HANDLE hSharedProcessHandle;

@@ -73,19 +73,23 @@ __attribute__ ((unused))
 #define MAXHOSTNAMELEN 256
 #endif
 
+#define MPIDI_CH3I_NUM_PACKETS    16
+#define MPIDI_CH3I_PACKET_SIZE   (16*1024)
+#define MPIDI_CH3I_PKT_AVAILABLE  0
+#define MPIDI_CH3I_PKT_USED       1
+
 typedef struct MPIDI_CH3I_SHM_Packet_t
 {
-    struct MPIDI_CH3I_SHM_Packet_t *next;
+    int avail;
     int num_bytes;
-    int src;
+    char data[MPIDI_CH3I_PACKET_SIZE];
 } MPIDI_CH3I_SHM_Packet_t;
 
 typedef struct MPIDI_CH3I_SHM_Queue_t
 {
-    MPIDU_Process_lock_t lock;
-    int num_free;
-    MPIDI_CH3I_SHM_Packet_t *head;
-    MPIDI_CH3I_SHM_Packet_t *tail;
+    int head_index;
+    int tail_index;
+    MPIDI_CH3I_SHM_Packet_t packet[MPIDI_CH3I_NUM_PACKETS];
 } MPIDI_CH3I_SHM_Queue_t;
 
 typedef struct MPIDI_CH3I_Process_s

@@ -28,7 +28,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     char *pszEnvVariable;
     char shmemkey[100];
     void *shm_addr;
-    int i;
+    int i, j;
     int shm_block;
 
     /*
@@ -167,9 +167,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	vc_table[p].shm.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->addr + (shm_block * i));
 	if (pg_rank == 0)
 	{
-	    vc_table[p].shm.shm->head = NULL;
-	    vc_table[p].shm.shm->tail = NULL;
-	    vc_table[p].shm.shm->num_free = shm_block - sizeof(MPIDI_CH3I_SHM_Queue_t) - sizeof(MPIDI_CH3I_SHM_Packet_t);
+	    vc_table[p].shm.shm->head_index = 0;
+	    vc_table[p].shm.shm->tail_index = 0;
+	    for (j=0; j<MPIDI_CH3I_NUM_PACKETS; j++)
+	    {
+		vc_table[p].shm.shm->packet[j].avail = MPIDI_CH3I_PKT_AVAILABLE;
+	    }
 	}
     }
 
