@@ -1,5 +1,6 @@
 %
-% This file contains a discussion of a possible TCP device implementation of ADI3
+% This file contains a discussion of a possible TCP device
+% implementation of ADI3  
 
 \documentclass{article}
 \usepackage{psfig}
@@ -73,11 +74,11 @@ read but that any following data may not yet have been read.
 \begin{verbatim}
     FOA( tag, source, contextid, &request )
     if (found) {
-        TransferDataToDest
+        TransferDataToDest from socket
     }
     else {
         AllocateStorageFromEagerBuffer
-        TransferDataToDest
+        TransferDataToDest (contiguous) from socket
     }
 \end{verbatim}
 
