@@ -69,7 +69,7 @@
       end if
 
       call MPI_FILE_GET_ATOMICITY(fh, flag, ierr)
-      if (flag .ne. .FALSE.) then
+      if (flag) then
          errs = errs + 1
          print *, 'atomicity is ', flag, ', should be .FALSE.'
       end if
@@ -78,7 +78,7 @@
       end if
       call MPI_FILE_SET_ATOMICITY(fh, .TRUE., ierr)
       call MPI_FILE_GET_ATOMICITY(fh, flag, ierr)
-      if (flag .ne. .TRUE.) then
+      if (.not. flag) then
          errs = errs + 1
          print *, 'atomicity is ', flag, ', should be .TRUE.'
       end if
