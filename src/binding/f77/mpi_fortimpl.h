@@ -8,6 +8,7 @@
 #include "mpi_fortconf.h"
 #endif
 
+/* Support Windows extension to specify calling convention *?
 #ifdef USE_FORT_STDCALL
 #define FORT_CALL __stdcall
 #elif defined (USE_FORT_CDECL)
@@ -16,6 +17,7 @@
 #define FORT_CALL
 #endif
 
+/* Handle different mechanisms for passing Fortran CHARACTER to routines */
 #ifdef USE_FORT_MIXED_STR_LEN
 #define FORT_MIXED_LEN_DECL   , MPI_Fint
 #define FORT_END_LEN_DECL
@@ -28,6 +30,8 @@
 #define FORT_END_LEN(a)       , MPI_Fint a
 #endif
 
+/* Support Windows extension to specify which functions are exported from
+   shared (DLL) libraries */
 #ifdef HAVE_FORTRAN_API
 # ifdef FORTRAN_EXPORTS
 #  define FORTRAN_API __declspec(dllexport)
@@ -38,6 +42,8 @@
 # define FORTRAN_API
 #endif
 
+/* Support an alternate approach for declaring a weak symbol supported by
+   some versions of gcc */
 #ifdef USE_WEAK_ATTRIBUTE
 #define FUNC_ATTRIBUTES __attribute__ weak
 #else
