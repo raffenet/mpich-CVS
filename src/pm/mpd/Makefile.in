@@ -88,7 +88,6 @@ Makefile: ${srcdir}/Makefile.in config.status
 	${C_COMPILE} -c $<
 
 install: all
-	@/bin/chmod +x install.sh
 	@if [ ! -d ${bindir} ] ; then \
 	    echo "mkdir -p ${bindir} " ;\
 	    mkdir -p ${bindir} ;\
