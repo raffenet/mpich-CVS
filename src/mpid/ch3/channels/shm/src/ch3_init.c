@@ -165,25 +165,25 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	if (pg_rank == 0)
 	{
 	    generate_shm_string(shmemkey);
-	    strcpy(key, "SHMEMKEY");
-	    strcpy(val, shmemkey);
+	    MPIU_Strncpy(key, "SHMEMKEY", key_max_sz);
+	    MPIU_Strncpy(val, shmemkey, val_max_sz);
 	    PMI_KVS_Put(pg->kvs_name, key, val);
 	    PMI_KVS_Commit(pg->kvs_name);
 	    PMI_Barrier();
 	}
 	else
 	{
-	    strcpy(key, "SHMEMKEY");
+	    MPIU_Strncpy(key, "SHMEMKEY", key_max_sz);
 	    PMI_Barrier();
 	    PMI_KVS_Get(pg->kvs_name, key, val);
-	    strcpy(shmemkey, val);
+	    MPIU_Strncpy(shmemkey, val, val_max_sz);
 	}
 
 	MPIU_DBG_PRINTF(("KEY = %s\n", shmemkey));
 #ifdef HAVE_SHMGET
 	pg->key = atoi(shmemkey);
 #elif defined (HAVE_MAPVIEWOFFILE)
-	strcpy(pg->key, shmemkey);
+	MPIU_Strncpy(pg->key, shmemkey, MAX_PATH);
 #else
 #error *** No shared memory variables specified ***
 #endif
