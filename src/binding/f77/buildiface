@@ -2637,8 +2637,8 @@ sub print_mpif_int {
     my $key = $_[0];
     my $value = $mpidef{$key};
     
-    if ($value eq "") {
-	print STDERR "No value found for $key\n";
+    if (!defined($value) || $value eq "") {
+	print STDERR "No value found for \"$key\"\n";
 	return 0;
     }
     # Remove any casts
@@ -2826,10 +2826,11 @@ sub ReadInterfaceForDefinitions {
 	}
 
 	# Use \S instead of [^\s].  See the comment above
-	if (/#\s*define\s+(MPI_[A-Za-z_0-9]*)\s*(\S*)(.*)/) {
+	if (/^\s*#\s*define\s+(MPI_[A-Za-z_0-9]*)\s+(\S+)(.*)/) {
 	    my $name      = $1;
 	    my $val       = $2;
 	    my $remainder = $3;
+	    print "Found definition of $name as $val\n" if $debug;
 	    # If the name has some lower case letters in it, we
 	    # need to skip it (e.g., for a define MPI_Comm_c2f...)
 	    if ($name =~ /[a-z]/) { next; }
