@@ -108,24 +108,27 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
 	MPIR_Group_setup_lpid_list( group_ptr2 );
 	g2_idx = group_ptr2->idx_of_first_lpid;
     }
-    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
-    for (i=0; i<n; i++) {
-	l1_pid = group_ptr1->lrank_to_lpid[ranks1[i]].lpid;
-	/* Search for this l1_pid in group2.  Use the following
-	   optimization: start from the last position in the lpid list
-	   if possible.  A more sophisticated version could use a 
-	   tree based or even hashed search to speed the translation. */
-	if (l1_pid < l2_pid) {
-	    /* Start over from the beginning */
-	    g2_idx = group_ptr2->idx_of_first_lpid;
-	    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
-	}
-	while (g2_idx >= 0 && l1_pid > l2_pid) {
-	    g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
-	    l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
-	}
-	if (l1_pid == l2_pid) {
-	    ranks2[i] = group_ptr2->lrank_to_lpid[g2_idx].lrank;
+    if (g2_idx >= 0) {
+	/* g2_idx can be < 0 if the g2 group is empty */
+	l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+	for (i=0; i<n; i++) {
+	    l1_pid = group_ptr1->lrank_to_lpid[ranks1[i]].lpid;
+	    /* Search for this l1_pid in group2.  Use the following
+	       optimization: start from the last position in the lpid list
+	       if possible.  A more sophisticated version could use a 
+	       tree based or even hashed search to speed the translation. */
+	    if (l1_pid < l2_pid) {
+		/* Start over from the beginning */
+		g2_idx = group_ptr2->idx_of_first_lpid;
+		l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+	    }
+	    while (g2_idx >= 0 && l1_pid > l2_pid) {
+		g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
+		l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
+	    }
+	    if (l1_pid == l2_pid) {
+		ranks2[i] = group_ptr2->lrank_to_lpid[g2_idx].lrank;
+	    }
 	}
     }
     /* ... end of body of routine ... */
