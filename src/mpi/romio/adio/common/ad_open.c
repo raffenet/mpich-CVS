@@ -96,9 +96,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 	/* store the ranklist using the minimum amount of memory */
 	if (rank_ct > 0) {
 	    fd->hints->ranklist = (int *) ADIOI_Malloc(sizeof(int) * rank_ct);
-	    for (i=0; i < rank_ct; i++) {
-		fd->hints->ranklist[i] = tmp_ranklist[i];
-	    }
+	    memcpy(fd->hints->ranklist, tmp_ranklist, sizeof(int) * rank_ct);
 	}
 	ADIOI_Free(tmp_ranklist);
 	fd->hints->cb_nodes = rank_ct;
