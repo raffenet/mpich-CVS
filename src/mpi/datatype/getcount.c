@@ -62,8 +62,8 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
         {
 	    MPID_Datatype *datatype_ptr = NULL;
 
-	    MPID_ERRTEST_ARGNULL(status, "status", mpi_errno);
-	    MPID_ERRTEST_ARGNULL(count, "count", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(count, "count", mpi_errno);
 
             /* Validate datatype_ptr */
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
