@@ -948,23 +948,35 @@ def sigchld_handler(signum,frame):
             done = 1
 
 def usage():
-    print 'mpd version %s' % str(mpd_version)
-    print 'usage: %s -h -p -t -n -e -d -b -i -l' % argv[0]
-    print '   or: %s --host --port --trace --noconsole --echo --daemon --bulletproof --idmyhost --listenport' % argv[0]
-    print 'host and port must be specified together and tell where to enter a ring;'
-    print '  if they are not coded, the mpd forms a stand-alone ring that other mpds'
-    print '  may enter later'
-    print 'trace yields lots of traces thru mpd routines; not generally useful'
-    print 'noconsole is useful for running 2 mpds on the same machine; only one of'
+    print 'usage: mpd [--host <host> [--port <portnum>] [--noconsole] \ '
+    print '           [--trace] [--echo] [--daemon] [--bulletproof] \ '
+    print '           [--idmyhost <hostname>]' 
+    print ''
+    print 'Long parameter names may be abbreviated to their first letters by using'
+    print '  only one hyphen:'
+    print '     mpd -h donner -p 4268 -n'
+    print '  is equivalent to'
+    print '     mpd --host donner --port 4268 --noconsole'
+    print ''
+    print '--host and --port must be specified together; they tell the new mpd where'
+    print '  to enter an existing ring;  if they are omitted, the new mpd forms a'
+    print '  stand-alone ring that other mpds may enter later'
+    print '--noconsole is useful for running 2 mpds on the same machine; only one of'
+    print '  them will accept mpd commands'
+    print '--trace yields lots of traces thru mpd routines; currently too verbose'
     print '  them can have a unix socket which a console program can connect to'
-    print 'echo says to echo the listener port for the mpd; useful in scripts'
-    print 'daemon causes mpd to run backgrounded, with no controlling tty'
-    print 'bulletproof says to turn bulletproofing on (experimental)'
-    print 'idmyhost specifies an alternate hostname for the host this mpd is running on'
-    print 'listenport specifies a port for this mpd to listen on; by default it will'
-    print 'acquire one from the system.'
-    print '.mpd.conf file must be present in home directory with read and write access' 
-    print '  only for user, and must contain at least a line with password=<password>'
+    print '--echo causes the mpd echo its listener port by which other mpds may connect'
+    print '--daemon causes mpd to run backgrounded, with no controlling tty'
+    print '--bulletproof says to turn bulletproofing on (experimental)'
+    print '--idmyhost specifies an alternate hostname for the host this mpd is running on'
+    print '--listenport specifies a port for this mpd to listen on; by default it will'
+    print '  acquire one from the system.'
+    print ''
+    print 'A file named .mpd.conf file must be present in the user''s home directory'
+    print '  with read and write access only for the user, and must contain at least'
+    print '  a line with password=<password>'
+    print ''
+    print 'This version of mpd is %s' % str(mpd_version)
 
     exit(-1)
 
