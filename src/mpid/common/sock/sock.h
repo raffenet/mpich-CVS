@@ -42,17 +42,18 @@ typedef enum sock_op
 #define SOCK_IOV_LIMIT   16
 
 /* insert error codes here */
-#define SOCK_SUCCESS           0
+#define SOCK_SUCCESS            0
 #define SOCK_FAIL              -1
-#define SOCK_EOF	       1 
-#define SOCK_ERR_NOMEM         1000
-#define SOCK_ERR_TIMEOUT       1001
-#define SOCK_ERR_HOST_LOOKUP   1002
-#define SOCK_ERR_CONN_REFUSED  1003
-#define SOCK_ERR_CONN_FAILED   1004
-#define SOCK_ERR_BAD_SOCK      1005
-#define SOCK_ERR_BAD_BUFFER    1006 
-#define SOCK_ERR_OS_SPECIFIC   1007
+#define SOCK_EOF	        1 
+#define SOCK_ERR_NOMEM          1000
+#define SOCK_ERR_TIMEOUT        1001
+#define SOCK_ERR_HOST_LOOKUP    1002
+#define SOCK_ERR_CONN_REFUSED   1003
+#define SOCK_ERR_CONN_FAILED    1004
+#define SOCK_ERR_BAD_SOCK       1005
+#define SOCK_ERR_BAD_BUFFER     1006
+#define SOCK_ERR_OP_IN_PROGRESS 1007
+#define SOCK_ERR_OS_SPECIFIC    1008
 
 /*
  * structures
