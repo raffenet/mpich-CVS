@@ -151,7 +151,13 @@
 				RelativePath="src\ch3_cancel_send.c">
 			</File>
 			<File
-				RelativePath=".\src\ch3_comm_spawn.c">
+				RelativePath=".\src\ch3_comm_accept.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_comm_connect.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_comm_spawn_multiple.c">
 			</File>
 			<File
 				RelativePath="src\ch3_describe_states.c">
@@ -181,10 +187,16 @@
 				RelativePath="src\ch3_iwrite.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3_open_port.c">
+			</File>
+			<File
 				RelativePath="src\ch3_progress.c">
 			</File>
 			<File
 				RelativePath="src\ch3_request.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3i_acceptq.c">
 			</File>
 			<File
 				RelativePath="src\ch3i_errno.c">
@@ -236,9 +248,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_comm_disconnect.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_comm_spawn.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_comm_spawn_multiple.c">
