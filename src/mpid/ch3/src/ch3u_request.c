@@ -67,8 +67,8 @@ MPID_Request * MPIDI_CH3U_Request_FU(int source, int tag, int context_id)
 	while (rreq != NULL)
 	{
 	    if (rreq->ch3.match.context_id == match.context_id &&
-		(rreq->ch3.match.rank && mask.rank) == match.rank &&
-		(rreq->ch3.match.tag && mask.tag) == match.tag)
+		(rreq->ch3.match.rank & mask.rank) == match.rank &&
+		(rreq->ch3.match.tag & mask.tag) == match.tag)
 	    {
 		MPIDI_CH3_Request_add_ref(rreq);
 		return rreq;
@@ -222,8 +222,8 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 	while (rreq != NULL)
 	{
 	    if (rreq->ch3.match.context_id == match.context_id &&
-		(rreq->ch3.match.rank && mask.rank) == match.rank &&
-		(rreq->ch3.match.tag && mask.tag) == match.tag)
+		(rreq->ch3.match.rank & mask.rank) == match.rank &&
+		(rreq->ch3.match.tag & mask.tag) == match.tag)
 	    {
 		if (prev_rreq != NULL)
 		{
