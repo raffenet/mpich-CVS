@@ -16,6 +16,9 @@ fi
 CC=$top_build_dir/bin/mpicc
 FC=$top_build_dir/bin/mpif77
 CXX=$top_build_dir/bin/mpicxx
+#
+# Define functionality that we support
+AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
 # Clear the CPPFLAGS, since the MPI configure will have added many items
 # that are not required for user MPI programs.
 CPPFLAGS=
