@@ -25,7 +25,7 @@ using namespace std;
 int main( int argc, char *argv[] )
 {
     int errs = 0;
-    char port_name[MPI::MAX_PORT_NAME], port_name_out[MPI::MAX_PORT_NAME];
+    char *port_name, *port_name_out;
     char serv_name[256];
     int merr, mclass;
     const char *errmsg;
@@ -34,6 +34,9 @@ int main( int argc, char *argv[] )
 
     MTest_Init( );
 
+    port_name = new char [MPI::MAX_PORT_NAME];
+    port_name_out = new char [MPI::MAX_PORT_NAME];
+  
     rank = MPI::COMM_WORLD.Get_rank();
 
     /* Note that according to the MPI standard, port_name must
