@@ -269,6 +269,13 @@ Figure~\ref{fig:layers}.
 \label{fig:layers}
 \end{figure}
 
+The routines at the ADI-3 level look much like the MPI communications
+routines, with the change that the arguments to the ADI-3 routines are usually
+a (pointer to a) single object, such as a request.  The MPI routines are
+responsible for basic error checking (e.g., rank in range) and for filling in
+the fields of the data structure, such as a request, that is used to pass data
+into the ADI.  
+
 \subsection{Vertical Data Structure Interface}
 There are five basic objects: Requests, Datatypes, Communicators, Windows, and
 Files.  An ADI implementation may choose to define all of these datatypes, or
@@ -665,7 +672,8 @@ this, or should this be \code{ENQUEUE\_PACKET}?
 
 The second, \code{PUT\_STREAM}, begins sending stream data.
 
-
+All data is in contiguous locations.  The handling messages described by MPI
+datatypes is discussed in Section~\ref{sec:rmq-datatypes}.
 
 The operations that a method must define for the RMQ device include:
 \begin{description}
@@ -686,6 +694,7 @@ use generic versions
 \item[FREE-STREAM]Free a stream
 \item[GET-STREAM]Get a stream ID
 \end{description}
+
 
 The \code{POLL-METHOD} routine is called by all processes either whenever there
 is I/O activity (e.g., in response to a \code{SIGIO}), during MPI calls (ADI-3
@@ -709,6 +718,11 @@ directory, as shown in Figure~\ref{fig:mpid-dirs}.
 \caption{A possible organization of the mpid directory}
 \label{fig:mpid-dirs}
 \end{figure}
+
+Questions:
+Where is flow control?  Is it in RMQ or the individual method?  If in RMQ, how
+are the parameters set (e.g., if the socket buffer size is 64k, we can take
+advantage of that)?
 
 \subsection{Example Implementation of the RMQ for TCP}
 The following shows how the RMQ could be implemented for communication by
@@ -799,6 +813,66 @@ same thread that is sending or receiving data process the operation by calling
 messages that arrived when the other threads were in long computation loops.
 Of course, there would be some overhead, as all operations would need to be
 thread-safe and reentrant.
+
+\subsection{Handling Datatypes}
+\label{sec:rmq-datatypes}
+MPI provides a conveninent way to describe non-contiguous data items, as well
+as including information on the basic datatypes that allows for data to be
+correctly transfered between systems with different data representations.  The
+RMQ implementation supports this, but through a simplified interface.
+
+Each communication method transfers only contiguous data.  The RMQ itself will
+arrange for non-contiguous data to be transferred to and from contiguous
+locations.  In addition, when heterogeneous data representations are
+supported, the RMQ will arrange for the conversion of data.  
+
+The major design issue here is: how can copies be avoided in important special
+cases, such as homogenous systems transferring contiguous data, while
+maintaining a simple interface?
+
+There are several approaches:
+\begin{enumerate}
+\item Define Put routines that are called as a datatype is processed to put
+  data into the method, and define corresponding get routines that are called
+  on the receive end.  This is similar to the style used in PVM
+  \cite{pvm-book} and Nexus \cite{nexus-manual}.  A drawback of this approach
+  is that it is very hard to avoid performing an extra copy if the routines
+  are used in the contiguous, homogenous case.  An advantage is that they
+  cleanly separate the access to the user data and the communication buffers.
+
+\item Define Put and Get routines, but have them work with buffer pointers.
+  For example, Put can return a buffer pointer; add
+  the requirement that the buffer remain unmodified until released.
+  This allows the routines to simply return a pointer to the input buffer in
+  the contiguous case, and to choose one of several strategies if the data
+  must be copied or converted.  These may also require a GetCommBuffer routine
+  that returns an address that can be used as the buffer returned; this allows
+  the communication method to provide the buffer if the user's buffer cannot
+  be used.  Get is still a problem, because in the homogeneous contiguous
+  case,  the message must be received directly into the destination buffer.
+
+\item Have separate code for the two cases (this was the ADI-2 choice).  The
+  problem with this is that it complicates the code; in particular, there is a
+  lot of \code{\#ifdef HAS\_HETERO} stuff in the routines.
+\end{enumerate}
+
+Taking a stream view of data transfer, the operations for send are really the
+following:
+\begin{enumerate}
+\item Prepare to send (identify data characteristics and size).
+\item Provide some number of bytes, properly formatted, to the communication
+  system.
+\item Continue until all data has been sent.
+\end{enumerate}
+On the receive side, the operations are
+\begin{enumerate}
+\item Prepare to receive (identify data characteristics and size of buffer;
+  may be different in location and size from final destination).
+\item Receive some number of bytes and transfer to the final destination.
+  This may be ``receive some number of bytes directly into the final
+  destination.'' 
+\item Continue until all data has been received.
+\end{enumerate}
 
 \subsection{The RMQ implementation}
 The bulk of the RMQ implementation is in the routine
@@ -1053,9 +1127,10 @@ Other Miscellaneous Issues:
 \end{itemize}
 
 \subsection{Naming Conventions}
-All macros are in all upper case.  Functions have an \code{MPID} prefix
-followed by a mixed-case name.
-
+All macros are in all upper case.  Functions have an \code{ADI3} prefix
+followed by a mixed-case name for ADI-3; a \code{RMQ1} prefix is used for RMQ.
+Methods should use \code{RMQ1_xxx}, where \code{xxx} is short for the method.
+For example, \code{RMQ1_TCP} or \code{RMQ1_SHM}.
 
 \subsection{Instrumentation}
 To include: time waiting, time spinning, time waiting for flow ack, time in

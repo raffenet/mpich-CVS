@@ -13,4 +13,4 @@ adi3.dvi: adi3.tex
 	dvips $*
 
 clean:
-	rm -f *.log *.aux *.dvi adi3.ps
+	rm -f *.log *.aux *.dvi adi3.ps *.bbl
