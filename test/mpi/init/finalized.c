@@ -21,12 +21,12 @@ int main( int argc, char *argv[] )
 	MPI_Error_string(error, err_string, &length);
 	printf("MPI_Finalized failed: %s\n", err_string);
 	fflush(stdout);
-	return 1;
+	return error;
     }
     if (flag)
     {
 	printf("MPI_Finalized returned true before MPI_Init.\n");
-	return 1;
+	return -1;
     }
 
     error = MPI_Init(&argc, &argv);
@@ -35,7 +35,7 @@ int main( int argc, char *argv[] )
 	MPI_Error_string(error, err_string, &length);
 	printf("MPI_Init failed: %s\n", err_string);
 	fflush(stdout);
-	return 1;
+	return error;
     }
 
     error = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -45,7 +45,7 @@ int main( int argc, char *argv[] )
 	printf("MPI_Comm_rank failed: %s\n", err_string);
 	fflush(stdout);
 	MPI_Abort(MPI_COMM_WORLD, error);
-	return 1;
+	return error;
     }
 
     flag = 0;
@@ -61,7 +61,19 @@ int main( int argc, char *argv[] )
     if (flag)
     {
 	printf("MPI_Finalized returned true before MPI_Finalize.\n");
-	return 1;
+	fflush(stdout);
+	MPI_Abort(MPI_COMM_WORLD, error);
+	return -1;
+    }
+
+    error = MPI_Barrier(MPI_COMM_WORLD);
+    if (error != MPI_SUCCESS)
+    {
+	MPI_Error_string(error, err_string, &length);
+	printf("MPI_Barrier failed: %s\n", err_string);
+	fflush(stdout);
+	MPI_Abort(MPI_COMM_WORLD, error);
+	return error;
     }
 
     error = MPI_Finalize();
@@ -70,7 +82,7 @@ int main( int argc, char *argv[] )
 	MPI_Error_string(error, err_string, &length);
 	printf("MPI_Finalize failed: %s\n", err_string);
 	fflush(stdout);
-	return 1;
+	return error;
     }
 
     flag = 0;
@@ -80,16 +92,16 @@ int main( int argc, char *argv[] )
 	MPI_Error_string(error, err_string, &length);
 	printf("MPI_Finalized failed: %s\n", err_string);
 	fflush(stdout);
-	return 1;
+	return error;
     }
     if (!flag)
     {
 	printf("MPI_Finalized returned false after MPI_Finalize.\n");
-	return 1;
+	return -1;
     }
     if (rank == 0)
     {
-	printf(" No errors\n");
+	printf(" No Errors\n");
     }
     return 0;  
 }
