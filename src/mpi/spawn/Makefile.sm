@@ -1,0 +1,2 @@
+lib${MPILIBNAME}_a_SOURCES = connect.c open_port.c spawn.c spawn_multiple.c \
+INCLUDES = -I../../include -I${top_srcdir}/src/include
