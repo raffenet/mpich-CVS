@@ -81,7 +81,8 @@ def mpdrun():
         parsedArgs = parseString(args)
         ## if parsedArgs.doctype.name != 'PMRequests':
         if parsedArgs.documentElement.tagName != 'PMRequests':
-            print 'expecting PMRequests; got unrecognized doctype %s' 
+            print 'expecting PMRequests; got unrecognized doctype %s' % \
+                  (parsedArgs.documentElement.tagName)
             exit(-1)
         createReq = parsedArgs.getElementsByTagName('create-process-group')[0]
         if createReq.hasAttribute('totalprocs'):
