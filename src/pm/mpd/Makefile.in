@@ -94,12 +94,12 @@ install:
 	fi
 	@echo "copying python files/links into " ${bindir}
 	-@for cmd in ${CMDS_ROOT} ; do \
-	    cp -f $$cmd.py ${bindir}/$$cmd.py ; \
-	    @LN_S@ -f ${bindir}/mpdroot ${bindir}/$$cmd ; \
+	    cp -f ${srcdir}/$$cmd.py ${bindir}/$$cmd.py ; \
+	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
 	-@for cmd in ${CMDS_NO_ROOT} ; do \
-	    cp -f $$cmd.py ${bindir}/$$cmd ; \
-	cp -f mpdman.py ${bindir}/mpdman.py ; \
-	cp -f mpdlib.py ${bindir}/mpdlib.py ; \
+	    cp -f ${srcdir}/$$cmd.py ${bindir}/$$cmd ; \
+	cp -f ${srcdir}/mpdman.py ${bindir}/mpdman.py ; \
+	cp -f ${srcdir}/mpdlib.py ${bindir}/mpdlib.py ; \
 	done
-	@@LN_S@ -f ${bindir}/mpdrun.py ${bindir}/mpiexec
+	cd ${bindir} && @LN_S@ -f mpdrun.py mpiexec

@@ -1,0 +1,2 @@
+lib${MPILIBNAME}_a_SOURCES = simple_pmiutil.c simple_pmi.c
+INCLUDES = -I../../../include -I. -I${master_top_srcdir}/src/include

@@ -1,0 +1,5 @@
+# SUBDIRS_pm_name are the names that @ pm_name @ can take in SUBDIRS
+SUBDIRS_pm_name = mpd forker
+SUBDIRS = @pm_name@ .
+all-postamble:
+	cd @pm_name@ && ${MAKE} prefix=../../.. install

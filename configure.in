@@ -107,6 +107,9 @@ dnl
 AC_ARG_WITH(pmi, [--with-pmi=name - Specify the pmi interface for MPICH.],,
 with_pmi=default)
 dnl
+AC_ARG_WITH(pm, [--with-pm=name - Specify the process manager for MPICH.],,
+with_pm=default)
+dnl
 AC_ARG_WITH(logging,
 [--with-logging=name - Specify the logging library for MPICH.],,
 with_logging=default)
@@ -438,19 +441,34 @@ fi
 AC_SUBST(device_name)
 dnl with-pmi
 if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
-    with_pmi=forker
+    with_pmi=simple
 fi
 pmi_name=$with_pmi
 dnl
-if test ! -d $use_top_srcdir/src/pmi/impls/$pmi_name ; then
-    AC_MSG_WARN([$use_top_srcdir/src/pmi/impls/$pmi_name does not exist. PMI is unknown])
-elif test ! -x $use_top_srcdir/src/pmi/impls/$pmi_name/configure ; then
-    AC_MSG_WARN([pmi $pmi_name has no configure])
+if test ! -d $use_top_srcdir/src/pmi/$pmi_name ; then
+    AC_MSG_WARN([$use_top_srcdir/src/pmi/$pmi_name does not exist. PMI is unknown])
+elif test ! -x $use_top_srcdir/src/pmi/$pmi_name/configure ; then
+    AC_MSG_WARN([pmi $pmi_name has no configure or Makefile])
     pmi_name=""
 else
-    subsystems="$subsystems src/pmi/impls/$pmi_name"
+    subsystems="$subsystems src/pmi/$pmi_name"
 fi
 AC_SUBST(pmi_name)
+dnl with-pm
+if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
+    with_pm=mpd
+fi
+pm_name=$with_pm
+dnl
+if test ! -d $use_top_srcdir/src/pm/$pm_name ; then
+    AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
+elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure ; then
+    AC_MSG_WARN([pm $pm_name has no configure])
+    pm_name=""
+else
+    subsystems="$subsystems src/pm/$pm_name"
+fi
+AC_SUBST(pm_name)
 dnl
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
@@ -889,8 +907,8 @@ AC_OUTPUT(Makefile src/Makefile \
           src/mpid/Makefile \
           src/mpid/common/Makefile \
           src/mpid/common/datatype/Makefile \
+          src/pm/Makefile \
           src/pmi/Makefile \
-          src/pmi/impls/Makefile \
 	  src/util/Makefile \
 	  src/util/info/Makefile \
 	  src/util/instrm/Makefile \

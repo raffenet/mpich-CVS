@@ -11,7 +11,7 @@ AC_CONFIG_HEADER(pmiconf.h)
 dnl
 dnl Set the directory that contains support scripts such as install-sh and
 dnl config.guess
-dnl AC_CONFIG_AUX_DIR(confdb)
+dnl AC_CONFIG_AUX_DIR(../../../confdb)
 dnl
 echo "RUNNING CONFIGURE FOR THE UNI PMI"
 dnl
