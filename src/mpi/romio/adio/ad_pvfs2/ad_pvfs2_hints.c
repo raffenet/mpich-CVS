@@ -12,6 +12,8 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 {
     char *value;
     int flag, tmp_mask;
+    static char myname[] = "ADIOI_PVFS_SETINFO";
+
     if ((fd->info) == MPI_INFO_NULL) {
 	/* part of the open call */
 	MPI_Info_create(&(fd->info));
