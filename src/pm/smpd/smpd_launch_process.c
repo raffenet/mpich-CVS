@@ -800,7 +800,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     pid = fork();
     if (pid < 0)
     {
-	smpd_err_printf("fork failed.\n");
+	smpd_err_printf("fork failed - error %d.\n", errno);
 	smpd_exit_fn("smpd_launch_process");
 	return SMPD_FAIL;
     }
@@ -833,8 +833,9 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 
 	result = execvp( process->exe, NULL );
 
-	smpd_err_printf("execvp failed - error %d, exiting.\n", errno);
-	exit(errno);
+	result = errno;
+	fprintf(stderr, "error %d, unable to exec '%s'.\n", result, process->exe);
+	exit(result);
     }
 
     /* parent process */
@@ -863,9 +864,21 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     process->out->sock = sock_out;
     process->err->sock = sock_err;
     process->pid = process->in->id = process->out->id = process->err->id = pid;
-    sock_set_user_ptr(sock_in, process->in);
-    sock_set_user_ptr(sock_out, process->out);
-    sock_set_user_ptr(sock_err, process->err);
+    result = sock_set_user_ptr(sock_in, process->in);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+    }
+    result = sock_set_user_ptr(sock_out, process->out);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+    }
+    result = sock_set_user_ptr(sock_err, process->err);
+    if (result != SOCK_SUCCESS)
+    {
+	smpd_err_printf("sock_set_user_ptr failed, error %s\n", get_sock_error_string(result));
+    }
 
     result = sock_post_read(sock_out, process->out->read_cmd.cmd, 1, NULL);
     if (result != SOCK_SUCCESS)
