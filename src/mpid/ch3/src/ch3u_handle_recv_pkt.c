@@ -29,9 +29,10 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
     
     switch(pkt->type)
     {
+	case MPIDI_CH3_PKT_READY_SEND:
+	    /* XXX - ready send should only use Request_FDP() */
 	case MPIDI_CH3_PKT_EAGER_SEND:
 	case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
-	case MPIDI_CH3_PKT_READY_SEND:
 	{
 	    MPIDI_CH3_Pkt_eager_send_t * eager_pkt = &pkt->eager_send;
 	    MPID_Request * rreq;

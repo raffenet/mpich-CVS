@@ -33,24 +33,51 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank,
     MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag,
 		      comm->context_id + context_offset));
     
-    sreq = MPIDI_CH3_Request_create();
-    if (sreq == NULL)
+    MPIDI_CH3M_create_send_request(sreq, mpi_errno, goto fn_exit);
+    
+    if (rank == comm->rank)
     {
-	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));
-	mpi_errno = MPI_ERR_NOMEM;
+	MPIDI_Message_match match;
+	MPID_Request * rreq;
+	int found;
+	
+	MPIDI_DBG_PRINTF((15, FCNAME, "sending message to self"));
+	
+	match.rank = rank;
+	match.tag = tag;
+	match.context_id = comm->context_id + context_offset;
+	rreq = MPIDI_CH3U_Request_FDP(&match, &found);
+	if (rreq == NULL)
+	{
+	    mpi_errno = MPI_ERR_NOMEM;
+	    goto fn_exit;
+	}
+	
+	if (found)
+	{
+	    MPIDI_DBG_PRINTF((15, FCNAME, "found posted receive request; "
+			      "copying data"));
+	    
+	    MPIDI_CH3U_Buffer_copy(
+		buf, count, datatype, &mpi_errno,
+		rreq->ch3.user_buf,rreq->ch3.user_count, rreq->ch3.datatype,
+		&data_sz, &rreq->status.MPI_ERROR);
+	    rreq->status.MPI_SOURCE = rank;
+	    rreq->status.MPI_TAG = tag;
+	    rreq->status.count = data_sz;
+	    MPID_Request_set_complete(rreq);
+	    MPID_Request_set_complete(sreq);
+	    MPID_Request_release(rreq);
+	    MPID_Request_release(sreq);
+	}
+	else
+	{
+	    MPIDI_DBG_PRINTF((15, FCNAME, "unable to find matching recv req"));
+	    mpi_errno = MPI_ERR_UNKNOWN;
+	}
+
 	goto fn_exit;
     }
-    
-    sreq->ref_count = 2;
-    sreq->kind = MPID_REQUEST_SEND;
-    sreq->comm = comm;
-    sreq->ch3.match.rank = rank;
-    sreq->ch3.match.tag = tag;
-    sreq->ch3.match.context_id = comm->context_id + context_offset;
-    sreq->ch3.user_buf = (void *) buf;
-    sreq->ch3.user_count = count;
-    sreq->ch3.datatype = datatype;
-    sreq->ch3.vc = comm->vcr[rank];
     
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
     {

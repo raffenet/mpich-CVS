@@ -265,7 +265,7 @@ MPID_REQUEST_DECL
 
 /* prototype for the channel state description function */
 /* This function is called from MPIDU_Describe_timer_states() in mpid_describe_states.c */
-int CH3U_Describe_timer_states();
+int CH3U_Describe_timer_states(void);
 
 /* define the device state list to be the concatenation of the mpid
  * list and the channel list */

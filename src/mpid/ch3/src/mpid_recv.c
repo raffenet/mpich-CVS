@@ -98,7 +98,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		rreq->ch3.ca = MPIDI_CH3_CA_UNPACK_EUBUF_AND_COMPLETE;
 	    }
 	}
-	else
+	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)
 	{
 	    /* A rendezvous request-to-send (RTS) message has arrived.  We need
 	       to send a clear-to-send message to the remote process. */
@@ -122,6 +122,29 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype,
 		   on a req we don't want/need. */
 		MPID_Request_release(cts_req);
 	    }
+	}
+	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_SELF_MSG)
+	{
+	    MPID_Request * const sreq = rreq->partner_request;
+	    MPIDI_msg_sz_t data_sz;
+	    
+	    MPIDI_CH3U_Buffer_copy(
+		sreq->ch3.user_buf, sreq->ch3.user_count, sreq->ch3.datatype,
+		&sreq->status.MPI_ERROR, buf, count, datatype, &data_sz,
+		&rreq->status.MPI_ERROR);
+	    rreq->status.MPI_SOURCE = rank;
+	    rreq->status.MPI_TAG = tag;
+	    rreq->status.count = data_sz;
+	    MPID_Request_set_complete(sreq);
+	    MPID_Request_set_complete(rreq);
+	    MPID_Request_release(sreq);
+	    MPID_Request_release(rreq);
+	}
+	else
+	{
+	    MPIDI_ERR_PRINTF((FCNAME, "requst contains unexpected message "
+			      "type %d", MPIDI_Request_get_msg_type(rreq)));
+	    abort();
 	}
     }
     else

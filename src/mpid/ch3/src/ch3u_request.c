@@ -292,15 +292,16 @@ MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(
 
 
 /*
- * MPIDI_CH3U_Request_FDP()
+ * MPIDI_CH3U_Request_DP()
  *
- * Find a request in the posted queue and dequeue it, or return NULL
+ * Given an existing request, dequeue that request from the posted queue, or
+ * return NULL if the request was not in the posted queued
  */
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Request_FDP
+#define FUNCNAME MPIDI_CH3U_Request_DP
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
+int MPIDI_CH3U_Request_DP(MPID_Request * rreq)
 {
     MPID_Request * cur_rreq;
     MPID_Request * prev_rreq;
@@ -313,7 +314,6 @@ int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
     {
 	if (cur_rreq == rreq)
 	{
-	    MPID_Request_release(rreq);
 	    if (prev_rreq != NULL)
 	    {
 		prev_rreq->ch3.next = cur_rreq->ch3.next;
@@ -337,6 +337,60 @@ int MPIDI_CH3U_Request_FDP(MPID_Request * rreq)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP);
     return FALSE;
 }
+
+/*
+ * MPIDI_CH3U_Request_FDP
+ *
+ * Locate a request in the posted queue and dequeue it, or return NULL.
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_FDP
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+MPID_Request * MPIDI_CH3U_Request_FDP(
+    MPIDI_Message_match * match, int * found)
+{
+    MPID_Request * rreq;
+    MPID_Request * prev_rreq;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
+    prev_rreq = NULL;
+    rreq = MPIDI_Process.recv_posted_head;
+    while (rreq != NULL)
+    {
+	if ((rreq->ch3.match.context_id == match->context_id) &&
+	    (rreq->ch3.match.rank == match->rank ||
+	     rreq->ch3.match.rank == MPI_ANY_SOURCE) &&
+	    (rreq->ch3.match.tag == match->tag ||
+	     rreq->ch3.match.tag == MPI_ANY_TAG))
+	{
+	    if (prev_rreq != NULL)
+	    {
+		prev_rreq->ch3.next = rreq->ch3.next;
+	    }
+	    else
+	    {
+		MPIDI_Process.recv_posted_head = rreq->ch3.next;
+	    }
+	    if (rreq->ch3.next == NULL)
+	    {
+		MPIDI_Process.recv_posted_tail = prev_rreq;
+	    }
+	    *found = TRUE;
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
+	    return rreq;
+	}
+	    
+	prev_rreq = rreq;
+	rreq = rreq->ch3.next;
+    }
+
+    *found = FALSE;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_FDP_OR_AEU);
+    return NULL;
+}
+
 
 /*
  * MPIDI_CH3U_Request_FDP_or_AEU()

@@ -41,13 +41,17 @@ void MPIDI_CH3U_Handle_send_req(MPIDI_VC *, MPID_Request *);
 MPID_Request * MPIDI_CH3U_Request_FU(int, int, int);
 MPID_Request * MPIDI_CH3U_Request_FDU(MPI_Request, MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Request_FDU_or_AEP(int, int, int, int *);
-int MPIDI_CH3U_Request_FDP(MPID_Request *);
+int MPIDI_CH3U_Request_DP(MPID_Request *);
+MPID_Request * MPIDI_CH3U_Request_FDP(MPIDI_Message_match *, int *);
 MPID_Request * MPIDI_CH3U_Request_FDP_or_AEU(MPIDI_Message_match *, int *);
 void MPIDI_CH3U_Request_decrement_cc(MPID_Request *, int *);
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request *, MPID_IOV *, int *);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request *);
 int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request *);
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request *);
+void MPIDI_CH3U_Buffer_copy(const void * const, int, MPI_Datatype, int *,
+			    void * const, int, MPI_Datatype, MPIDI_msg_sz_t *,
+			    int *);
 
 /* Include definitions from the channel which require items defined by this
    file (mpidimpl.h) or the file it includes (mpiimpl.h).  NOTE: This include

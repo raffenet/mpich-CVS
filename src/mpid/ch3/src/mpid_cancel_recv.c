@@ -12,7 +12,6 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPID_Cancel_recv(MPID_Request * rreq)
 {
-    int cc;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_RECV);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_RECV);
@@ -21,16 +20,14 @@ void MPID_Cancel_recv(MPID_Request * rreq)
     assert(rreq->kind == MPID_REQUEST_RECV);
     /* XXX - need to handle persistent requests */
     
-    if (MPIDI_CH3U_Request_FDP(rreq))
+    if (MPIDI_CH3U_Request_DP(rreq))
     {
 	MPIDI_dbg_printf(15, FCNAME, "request 0x%08x cancelled", rreq->handle);
 	rreq->status.cancelled = TRUE;
 	rreq->status.count = 0;
-	/* MT - decrement_cc() used for write barrier */
-	MPIDI_CH3U_Request_decrement_cc(rreq, &cc);
-	/* NOTE: we should not perform a MPID_Request_release(rreq) as
-           MPIDI_CH3U_Request_FDP() releases the one it held internally and the
-           reference we have belongs to the caller. */
+	/* MT - MPID_Request_set_complete() used as a write barrier */
+	MPID_Request_set_complete(rreq);
+	MPID_Request_release(rreq);
     }
     else
     {
