@@ -262,6 +262,10 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 {
     int result;
     smpd_command_t *cmd, *temp_cmd;
+    char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
+    char key[SMPD_MAX_DBS_KEY_LEN+1] = "";
+    char value[SMPD_MAX_DBS_VALUE_LEN+1] = "";
+    char *result_str;
 
     smpd_enter_fn("handle_dbs_command");
 
@@ -302,6 +306,140 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	}
 	smpd_exit_fn("handle_dbs_command");
 	return SMPD_SUCCESS;
+    }
+
+    if (strcmp(cmd->cmd_str, "dbput") == 0)
+    {
+	/*GetNameKeyValue(&p->pszIn[6], name, key, value);*/
+	if (smpd_dbs_put(name, key, value) == SMPD_SUCCESS)
+	    result_str = DBS_SUCCESS_STR;
+	else
+	    result_str = DBS_FAIL_STR;
+    }
+    else if (strcmp(cmd->cmd_str, "dbget") == 0)
+    {
+	/*GetNameKeyValue(&p->pszIn[6], name, key, NULL);*/
+	if (smpd_dbs_get(name, key, value) == SMPD_SUCCESS)
+	{
+	    /*result_str = value;*/
+	    result_str = DBS_SUCCESS_STR;
+	}
+	else
+	    result_str = DBS_FAIL_STR;
+    }
+    else if (strcmp(cmd->cmd_str, "dbcreate") == 0)
+    {
+	if (smpd_dbs_create(name) == SMPD_SUCCESS)
+	{
+	    /*result_str = name;*/
+	    result_str = DBS_SUCCESS_STR;
+	}
+	else
+	    result_str = DBS_FAIL_STR;
+    }
+    else if (strcmp(cmd->cmd_str, "dbcreate") == 0)
+    {
+	/*GetNameKeyValue(&p->pszIn[9], name, NULL, NULL);*/
+	if (smpd_dbs_create_name_in(name) == SMPD_SUCCESS)
+	    result_str = DBS_SUCCESS_STR;
+	else
+	    result_str = DBS_FAIL_STR;
+    }
+    else if (strcmp(cmd->cmd_str, "dbdestroy") == 0)
+    {
+	/*GetNameKeyValue(&p->pszIn[10], name, NULL, NULL);*/
+	if (smpd_dbs_destroy(name) == SMPD_SUCCESS)
+	    result_str = DBS_SUCCESS_STR;
+	else
+	    result_str = DBS_FAIL_STR;
+    }
+    else if (strcmp(cmd->cmd_str, "dbfirst") == 0)
+    {
+	/*GetNameKeyValue(&p->pszIn[8], name, NULL, NULL);*/
+	if (smpd_dbs_first(name, key, value) == SMPD_SUCCESS)
+	{
+	    if (*key == '\0')
+	    {
+		/*result_str = DBS_END_STR;*/
+		result_str = DBS_SUCCESS_STR;
+	    }
+	    else
+	    {
+		/*_snprintf(p->pszOut, MAX_CMD_LENGTH, "key=%s value=%s", key, value);*/
+		result_str = DBS_SUCCESS_STR;
+	    }
+	}
+	else
+	{
+	    result_str = DBS_FAIL_STR;
+	}
+    }
+    else if (strcmp(cmd->cmd_str, "dbnext") == 0)
+    {
+	/*GetNameKeyValue(&p->pszIn[7], name, NULL, NULL);*/
+	if (smpd_dbs_next(name, key, value) == SMPD_SUCCESS)
+	{
+	    if (*key == '\0')
+	    {
+		/*result_str = DBS_END_STR;*/
+		result_str = DBS_SUCCESS_STR;
+	    }
+	    else
+	    {
+		/*_snprintf(p->pszOut, MAX_CMD_LENGTH, "key=%s value=%s", key, value);*/
+		result_str = DBS_SUCCESS_STR;
+	    }
+	}
+	else
+	{
+	    result_str = DBS_FAIL_STR;
+	}
+    }
+    else if (strcmp(cmd->cmd_str, "dbfirstdb") == 0)
+    {
+	if (smpd_dbs_firstdb(name) == SMPD_SUCCESS)
+	{
+	    /*
+	    if (*name == '\0')
+		strcpy(p->pszOut, DBS_END_STR);
+	    else
+		_snprintf(p->pszOut, MAX_CMD_LENGTH, "name=%s", name);
+	    */
+	    result_str = DBS_SUCCESS_STR;
+	}
+	else
+	{
+	    result_str = DBS_FAIL_STR;
+	}
+    }
+    else if (strcmp(cmd->cmd_str, "dbnextdb") == 0)
+    {
+	if (smpd_dbs_nextdb(name) == SMPD_SUCCESS)
+	{
+	    /*
+	    if (*name == '\0')
+		strcpy(p->pszOut, DBS_END_STR);
+	    else
+		_snprintf(p->pszOut, MAX_CMD_LENGTH, "name=%s", name);
+	    */
+	    result_str = DBS_SUCCESS_STR;
+	}
+	else
+	{
+	    result_str = DBS_FAIL_STR;
+	}
+    }
+    else if (strcmp(cmd->cmd_str, "dbdelete") == 0)
+    {
+	/*GetNameKeyValue(&p->pszIn[9], name, key, NULL);*/
+	if (smpd_dbs_delete(name, key) == SMPD_SUCCESS)
+	    result_str = DBS_SUCCESS_STR;
+	else
+	    result_str = DBS_FAIL_STR;
+    }
+    else
+    {
+	smpd_err_printf("unknown dbs command '%s'", cmd->cmd_str);
     }
 
     /* create a reply */
