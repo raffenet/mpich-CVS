@@ -75,7 +75,6 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
 /* offset is in units of etype relative to the filetype. */
 
     ADIOI_Flatlist_node *flat_buf, *flat_file;
-    struct iovec *iov;
     int i, j, k, err=-1, bwr_size, fwr_size=0, st_index=0;
     int bufsize, num, size, sum, n_etypes_in_filetype, size_in_filetype;
     int n_filetypes, etype_in_filetype;
@@ -120,48 +119,81 @@ void ADIOI_PVFS_WriteStrided(ADIO_File fd, void *buf, int count,
     bufsize = buftype_size * count;
 
     if (!buftype_is_contig && filetype_is_contig) {
-
+	char *combine_buf, *combine_buf_ptr;
+	ADIO_Offset combine_buf_remain;
 /* noncontiguous in memory, contiguous in file. use writev */
 
 	ADIOI_Flatten_datatype(datatype);
 	flat_buf = ADIOI_Flatlist;
 	while (flat_buf->type != datatype) flat_buf = flat_buf->next;
 
-/* There is a limit of 16 on the number of iovecs for readv/writev! */
+	/* allocate our "combine buffer" to pack data into before writing */
+	combine_buf = (char *) ADIOI_Malloc(fd->hints->ind_wr_buffer_size);
+	combine_buf_ptr = combine_buf;
+	combine_buf_remain = fd->hints->ind_wr_buffer_size;
 
-	iov = (struct iovec *) ADIOI_Malloc(16*sizeof(struct iovec));
-
+	/* seek to the right spot in the file */
 	if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	    off = fd->disp + etype_size * offset;
 	    pvfs_lseek64(fd->fd_sys, off, SEEK_SET);
 	}
 	else off = pvfs_lseek64(fd->fd_sys, fd->fp_ind, SEEK_SET);
 
-	k = 0;
-	for (j=0; j<count; j++) 
+	/* loop through all the flattened pieces.  combine into buffer until
+	 * no more will fit, then write.
+	 *
+	 * special case of a given piece being bigger than the combine buffer
+	 * is also handled.
+	 */
+	for (j=0; j<count; j++) {
 	    for (i=0; i<flat_buf->count; i++) {
-		iov[k].iov_base = ((char *) buf) + j*buftype_extent +
-		    flat_buf->indices[i]; 
-		iov[k].iov_len = flat_buf->blocklens[i];
-		/*FPRINTF(stderr, "%d %d\n", iov[k].iov_base, iov[k].iov_len);*/
-
-		off += flat_buf->blocklens[i];
-		k = (k+1)%16;
-
-		if (!k) {
-		    err = pvfs_writev(fd->fd_sys, iov, 16);
+		if (flat_buf->blocklens[i] > combine_buf_remain && combine_buf != combine_buf_ptr) {
+		    /* there is data in the buffer; write out the buffer so far */
+		    err = pvfs_write(fd->fd_sys,
+				     combine_buf,
+				     fd->hints->ind_wr_buffer_size - combine_buf_remain);
 		    if (err == -1) err_flag = 1;
+
+		    /* reset our buffer info */
+		    combine_buf_ptr = combine_buf;
+		    combine_buf_remain = fd->hints->ind_wr_buffer_size;
+		}
+
+		/* TODO: heuristic for when to not bother to use combine buffer? */
+		if (flat_buf->blocklens[i] >= combine_buf_remain) {
+		    /* special case: blocklen is as big as or bigger than the combine buf;
+		     * write directly
+		     */
+		    err = pvfs_write(fd->fd_sys,
+				     ((char *) buf) + j*buftype_extent + flat_buf->indices[i],
+				     flat_buf->blocklens[i]);
+		    if (err == -1) err_flag = 1;
+		    off += flat_buf->blocklens[i]; /* keep up with the final file offset too */
+		}
+		else {
+		    /* copy more data into combine buffer */
+		    memcpy(combine_buf_ptr,
+			   ((char *) buf) + j*buftype_extent + flat_buf->indices[i],
+			   flat_buf->blocklens[i]);
+		    combine_buf_ptr += flat_buf->blocklens[i];
+		    combine_buf_remain -= flat_buf->blocklens[i];
+		    off += flat_buf->blocklens[i]; /* keep up with the final file offset too */
 		}
 	    }
+	}
 
-	if (k) {
-	    err = pvfs_writev(fd->fd_sys, iov, k);
+	if (combine_buf_ptr != combine_buf) {
+	    /* data left in buffer to write */
+	    err = pvfs_write(fd->fd_sys,
+			     combine_buf,
+			     fd->hints->ind_wr_buffer_size - combine_buf_remain);
 	    if (err == -1) err_flag = 1;
 	}
 
 	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
 
-	ADIOI_Free(iov);
+	ADIOI_Free(combine_buf);
+
 	if (err_flag) {
 #ifdef MPICH2
 	    *error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_IO, "**io",
@@ -530,6 +562,15 @@ void ADIOI_PVFS_WriteStridedListIO(ADIO_File fd, void *buf, int count,
 #endif
 	}
 	else *error_code = MPI_SUCCESS;
+
+	fd->fp_sys_posn = -1;   /* clear this. */
+
+#ifdef HAVE_STATUS_SET_BYTES
+	MPIR_Status_set_bytes(status, datatype, bufsize);
+/* This is a temporary way of filling in status. The right way is to 
+   keep track of how much data was actually written by ADIOI_BUFFERED_WRITE. */
+#endif
+
 	ADIOI_Delete_flattened(datatype);
 	return;
     } /* if (!buftype_is_contig && filetype_is_contig) */
