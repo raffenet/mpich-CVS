@@ -164,7 +164,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
-    
+
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     while (vc->ch.send_active != NULL)
     {
@@ -248,7 +248,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		else
 		{
 		    MPIDI_DBG_PRINTF((65, FCNAME, "ca = %d", ca));
-		    assert(ca < MPIDI_CH3I_CA_END_SSM_CHANNEL);
+		    assert(ca < MPIDI_CH3I_CA_END_SSHM_CHANNEL);
 		}
 	    }
 	    else

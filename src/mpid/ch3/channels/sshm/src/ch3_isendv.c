@@ -100,11 +100,15 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		if (offset == n_iov)
 		{
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq);
 		    /* FIXME: MT: this is not quite right since the queue interface is not thread safe */
-		    if (sreq->dev.iov_count != 0)
+		    if (sreq->dev.iov_count == 0)
 		    {
-			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+			if (MPIDI_CH3I_SendQ_head(vc) == sreq)
+			{
+			    MPIDI_CH3I_SendQ_dequeue(vc);
+			}
 		    }
 		}
 	    }
@@ -139,7 +143,11 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	/*MPIDI_CH3I_VC_post_connect(vc);*/
 	update_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	MPIDI_CH3I_VC_post_connect(vc);
+	mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	}
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {

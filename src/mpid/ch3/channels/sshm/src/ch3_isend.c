@@ -62,10 +62,14 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	    if (nb == pkt_sz)
 	    { 
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
+		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		MPIDI_CH3U_Handle_send_req(vc, sreq);
-		if (sreq->dev.iov_count != 0)
+		if (sreq->dev.iov_count == 0)
 		{
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		    if (MPIDI_CH3I_SendQ_head(vc) == sreq)
+		    {
+			MPIDI_CH3I_SendQ_dequeue(vc);
+		    }
 		}
 	    }
 	    else
@@ -89,7 +93,11 @@ int MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  enqueuing request"));
 	update_request(sreq, pkt, pkt_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	MPIDI_CH3I_VC_post_connect(vc);
+	mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	}
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {

@@ -127,8 +127,8 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	    }
 	    else
 	    {
-		/*assert(ca < MPIDI_CH3I_CA_END_SSM_CHANNEL);*/
-		if (ca >= MPIDI_CH3I_CA_END_SSM_CHANNEL)
+		/*assert(ca < MPIDI_CH3I_CA_END_SSHM_CHANNEL);*/
+		if (ca >= MPIDI_CH3I_CA_END_SSHM_CHANNEL)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ca", "**ca %d", ca);
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
