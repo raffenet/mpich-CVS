@@ -51,6 +51,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pman_vis", "..\examples\win
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pmitest", "..\examples\windows\pmitest\pmitest.vcproj", "{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -109,6 +113,10 @@ Global
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Debug.Build.0 = Debug|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Release.ActiveCfg = Release|Win32
 		{29D7A10A-E306-413E-A87E-5A2BCCE0848C}.Release.Build.0 = Release|Win32
+		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Debug.ActiveCfg = Debug|Win32
+		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Debug.Build.0 = Debug|Win32
+		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Release.ActiveCfg = Release|Win32
+		{2DBB0E8D-447E-4E65-98FB-445BBCB7CDFD}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
