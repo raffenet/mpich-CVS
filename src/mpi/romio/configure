@@ -3753,6 +3753,82 @@ if test -z "$FILE_SYSTEM" ; then
     echo "configuring for file systems ufs and nfs"
 fi
 #
+if test -n "$file_system_nfs" ; then
+   # Check for problems with locks
+   if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking whether file locks work with NFS""... $ac_c"
+else
+echo $ac_n "checking whether file locks work with NFS""... $ac_c" 1>&1
+fi
+   cat > conftest.c <<EOF
+#include "confdefs.h"
+
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+
+int main()
+{
+    struct flock lock;
+    int fd, err;
+
+    lock.l_type = F_WRLCK;
+    lock.l_start = 0;
+    lock.l_whence = SEEK_SET;
+    lock.l_len = 100;
+
+    fd = open("conftest.dat", O_RDWR | O_CREAT, 0644);
+
+    err = fcntl(fd, F_SETLKW, &lock);
+
+   /* printf("err = %d, errno = %d\n", err, errno); */
+    close(fd);
+    return err;
+}
+EOF
+eval $compile
+if test -s conftest && (./conftest; exit) 2>/dev/null; then
+  nfs_locks_work=yes
+
+else
+  nfs_locks_work=no
+fi
+rm -fr conftest*
+    if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""$nfs_locks_work"
+else
+echo "$ac_t""$nfs_locks_work" 1>&1
+fi
+    if test "$nfs_locks_work" != "yes" ; then
+        if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo "$ac_t""Warning: File locks do not work with NFS.  See the Installation and
+users manual for instructions on fixing this"
+else
+echo "$ac_t""Warning: File locks do not work with NFS.  See the Installation and
+users manual for instructions on fixing this" 1>&1
+fi
+    fi
+fi
 if test -n "$file_system_nfs"; then
         
 {
