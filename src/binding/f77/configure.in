@@ -1092,7 +1092,13 @@ if test -n "$true_val" -a -n "$false_val" ; then
     AC_DEFINE(F77_TRUE_VALUE_SET,1,[Define if we know the value of Fortran true and false])
     AC_DEFINE_UNQUOTED(F77_TRUE_VALUE,$true_val,[The value of true in Fortran])
     AC_DEFINE_UNQUOTED(F77_FALSE_VALUE,$false_val,[The value of false in Fortran])
-    fi
+fi
+#
+# We'd also like to check other values for .TRUE. and .FALSE. to see
+# if the compiler allows (or uses) more than one value (some DEC compilers,
+# for example, used the high (sign) bit to indicate true and false; the rest
+# of the bits were ignored.  For now, we'll assume that there are unique
+# true and false values.
 
 PAC_LANG_POP_COMPILERS
 
