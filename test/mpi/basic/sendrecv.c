@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	    MPI_Recv(big_buffer, BIG_SIZE, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &status);
 	    MPI_Send(big_buffer, BIG_SIZE, MPI_BYTE, 0, tag, MPI_COMM_WORLD);
 	}
-	printf("Rank 1: received message '%s'\n", buffer); fflush(stdout);
+	printf("Rank 1: received message '%s'\n", big_buffer); fflush(stdout);
     }
     else
     {
