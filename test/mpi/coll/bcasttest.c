@@ -40,31 +40,42 @@ int main( int argc, char **argv)
 	{
 	    if (bVerify)
 	    {
-		if (rank == ROOT)
-		{
-		    for (i=0; i<sizes[n]; i++) 
-			buf[i] = i;
+                if (rank == ROOT)
+                {
+		    for (i=0; i<sizes[n]; i++)
+		    {
+			buf[i] = 1000000 * (n * NUM_REPS + reps) + i;
+		    }
 		}
 		else
-		{
+                {
 		    for (i=0; i<sizes[n]; i++)
-			buf[i] = -1;
+		    {
+                        buf[i] = -1 - (n * NUM_REPS + reps);
+		    }
 		}
 	    }
 
-	    MPI_Bcast(buf, sizes[n], MPI_INT, ROOT, MPI_COMM_WORLD); 
+#	    if DEBUG
+	    {
+		printf("rank=%d, n=%d, reps=%d\n", rank, n, reps);
+	    }
+#           endif
+	    
+	    MPI_Bcast(buf, sizes[n], MPI_INT, ROOT, MPI_COMM_WORLD);
 
 	    if (bVerify)
 	    {
 	        num_errors = 0;
 		for (i=0; i<sizes[n]; i++)
 		{
-		    if (buf[i] != i)
+		    if (buf[i] != 1000000 * (n * NUM_REPS + reps) + i)
 		    {
 		        num_errors++;
 			if (num_errors < 10)
 			{
-			    printf("Error: Rank=%d, i=%d, buf[i]=%d\n", rank, i, buf[i]);
+			    printf("Error: Rank=%d, n=%d, reps=%d, i=%d, buf[i]=%d expected=%d\n", rank, n, reps, i, buf[i],
+				   1000000 * (n * NUM_REPS + reps) +i);
 			    fflush(stdout);
 			}
 		    }
