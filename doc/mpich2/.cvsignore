@@ -18,3 +18,5 @@ iohints.ps
 agent.ps
 mmca.ps
 mpich2.pdf
+latex.err
+*.hux
