@@ -246,6 +246,7 @@ foreach $_ (@ARGV) {
     'Comm_test_inter' => '2', 'Comm_test_inter-2' => 'out:logical',
     'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
     'Error_string' => '2', 'Error_string-2' => 'out:blankpad',
+    'Intercomm_merge' => '2', 'Intercomm_merge-2' => 'in:logical',
     'Info_get' => '2:4:5', 'Info_get-2' => 'in:addnull',
 		  'Info_get-4' => 'out:blankpad',
 		  'Info_get-5' => 'out:logical',
@@ -1056,6 +1057,15 @@ $cchar       This file created by buildiface $arg_string\n";
     }
     # Attributes
     foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE, LASTUSEDCODE, APPNUM) {
+	# Special cast:  The Fortran versions of these attributes have 
+	# value 1 greater than the C versions
+	$attrval = $mpidef{"MPI_$key"};
+	print "$key is $attrval\n" if $debug;
+	if ($attrval =~ /^0x/) { $attrval = hex $attrval; }
+	$attrval++;
+	$attrval = "0x" . sprintf "%x", $attrval;
+	print "$key is now $attrval\n" if $debug;
+	$mpidef{"MPI_$key"} = $attrval;
 	&print_mpif_int( "MPI_$key" );
     } 
     # String sizes
