@@ -80,10 +80,12 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 	    MPIR_ERRTEST_ARGNULL( source, "source", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( dest, "dest", mpi_errno );
 	    MPIR_ERRTEST_ARGNEG( direction, "direction", mpi_errno );
+/* Nothing in the standard indicates that a zero displacement is not valid
 	    if (displ == 0) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
 						  "**cartshiftzero", 0 );
 	    }
+*/
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -119,7 +121,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* Check for the dase of a 0 displacement */
+    /* Check for the case of a 0 displacement */
     rank = comm_ptr->rank;
     if (displ == 0) {
 	*source = *dest = rank;
