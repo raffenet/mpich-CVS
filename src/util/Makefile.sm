@@ -1,2 +1,3 @@
 SUBDIRS = mem info msgs instrm thread dbg timing param @logging_dir@ .
 SUBDIRS_logging_dir = logging
+SUBDIRS_events_dir = events
