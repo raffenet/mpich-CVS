@@ -20,12 +20,14 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
     MPI_Comm_rank(MPI_COMM_WORLD,&rank); 
 
-    if (nprocs != 2) {
+    if (nprocs != 2)
+    {
         printf("Run this program with 2 processes\n");
         MPI_Abort(MPI_COMM_WORLD,1);
     }
 
-    if (rank == 0) {
+    if (rank == 0)
+    {
         for (i=0; i<NROWS; i++)
             for (j=0; j<NCOLS; j++)
                 A[i][j] = i*NCOLS + j;
@@ -47,7 +49,8 @@ int main(int argc, char *argv[])
 
         MPI_Win_fence(0, win); 
     }        
-    else {  /* rank = 1 */
+    else
+    {  /* rank = 1 */
         for (i=0; i<NROWS; i++) 
             for (j=0; j<NCOLS; j++)
                 A[i][j] = i*NCOLS + j;
@@ -58,12 +61,24 @@ int main(int argc, char *argv[])
         MPI_Win_fence(0, win); 
 
         for (j=0; j<NCOLS; j++)
-            for (i=0; i<NROWS; i++) 
-                if (A[j][i] != i*NCOLS + j + j*NCOLS + i) {
-                    printf("Error: A[%d][%d]=%d should be %d\n", j, i,
-                           A[j][i], i*NCOLS + j + j*NCOLS + i);
+	{
+            for (i=0; i<NROWS; i++)
+	    {
+                if (A[j][i] != i*NCOLS + j + j*NCOLS + i)
+		{
+		    if (errs < 50)
+		    {
+			printf("Error: A[%d][%d]=%d should be %d\n", j, i,
+			    A[j][i], i*NCOLS + j + j*NCOLS + i);
+		    }
                     errs++;
                 }
+	    }
+	}
+	if (errs >= 50)
+	{
+	    printf("Total number of errors: %d\n", errs);
+	}
     }
 
     MPI_Win_free(&win);

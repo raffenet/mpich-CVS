@@ -19,7 +19,8 @@ int main(int argc, char *argv[])
     MTest_Init(&argc,&argv); 
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs); 
 
-    if (nprocs != 1) {
+    if (nprocs != 1)
+    {
         printf("Run this program with 1 process\n");
         MPI_Abort(MPI_COMM_WORLD,1);
     }
@@ -47,12 +48,24 @@ int main(int argc, char *argv[])
     MPI_Win_fence(0, win); 
     
     for (j=0; j<NCOLS; j++)
-        for (i=0; i<NROWS; i++) 
-            if (B[j][i] != i*NCOLS + j + j*NCOLS + i) {
-                printf("Error: B[%d][%d]=%d should be %d\n", j, i,
-                       B[j][i], i*NCOLS + j + j*NCOLS + i);
+    {
+        for (i=0; i<NROWS; i++)
+	{
+            if (B[j][i] != i*NCOLS + j + j*NCOLS + i)
+	    {
+		if (errs < 20)
+		{
+		    printf("Error: B[%d][%d]=%d should be %d\n", j, i,
+			B[j][i], i*NCOLS + j + j*NCOLS + i);
+		}
                 errs++;
             }
+	}
+    }
+    if (errs >= 20)
+    {
+	printf("Total number of errors: %d\n", errs);
+    }
 
     MPI_Win_free(&win); 
     MTest_Finalize(errs);
