@@ -11,6 +11,7 @@ bsend1_SOURCES = bsend1.c
 bsend2_SOURCES = bsend2.c
 bsend3_SOURCES = bsend3.c
 bsend4_SOURCES = bsend4.c
+bsendalign_SOURCES = bsendalign.c
 isendself_SOURCES = isendself.c
 bsend1cxx_SOURCES = bsend1cxx.cxx
 bsendfrag_SOURCES = bsendfrag.c
