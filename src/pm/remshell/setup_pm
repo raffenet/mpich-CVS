@@ -1,4 +1,0 @@
-#! /bin/sh
-echo "Sourcing src/pm/remshell/setup_pm"
-NEED_PMIPORT=yes
-export NEED_PMIPORT
