@@ -33,8 +33,9 @@ Return value: success or failure
 - PMI_FAIL - initialization failed
 
 Notes:
-Initialize PMI for this process group. The value of spawned indicates whether this process
-was created by PMI_Spawn_multiple.
+Initialize PMI for this process group. The value of spawned indicates whether
+this process was created by PMI_Spawn_multiple.  spawned will be PMI_TRUE if
+this process group has a parent and PMI_FALSE if it does not.
 
 Module:
 PMI
@@ -57,8 +58,8 @@ int PMI_Initialized( void );
 PMI_Finalize - finalize the Process Manager Interface
 
 Return value: success or failure
-+ PMI_SUCCESS - initialization completed successfully
-- PMI_FAIL - initialization failed
++ PMI_SUCCESS - finalization completed successfully
+- PMI_FAIL - finalization failed
 
 Notes:
  Finalize PMI for this process group.
@@ -79,7 +80,8 @@ Return value: a PMI error code
 - PMI_FAIL - unable to return the size
 
 Notes:
-This function returns the size of the process group that the local process belongs to.
+This function returns the size of the process group that the local process
+belongs to.
 
 Module:
 PMI
@@ -108,16 +110,16 @@ int PMI_Get_rank( int *rank );
 PMI_Get_id - obtain the id of the process group
 
 Output Parameters:
-. id_str - pointer to an array of characters that receives the id of the process group
+. id_str - character array that receives the id of the process group
 
 Return value: a PMI error code
 + PMI_SUCCESS - id successfully obtained
 - PMI_FAIL - unable to return the id
 
 Notes:
-This function returns a string that uniquely identifies the process group that the local
-process belongs to.  The string passed in must be at least as long as the number returned
-by PMI_Get_id_length_max().
+This function returns a string that uniquely identifies the process group
+that the local process belongs to.  The string passed in must be at least
+as long as the number returned by PMI_Get_id_length_max().
 
 Module:
 PMI
@@ -130,8 +132,9 @@ PMI_Get_id_length_max - obtain the maximum length of an id string
 Return value: the maximum length of an id string
 
 Notes:
-This function returns the maximum length of a process group id string.  It must return at
-least 40 so that ids can be implemented with uuids.
+This function returns the maximum length of a process group id string.
+Note to implementors: It must return at least 40 so that ids can be
+implemented with uuids.
 
 Module:
 PMI
@@ -146,8 +149,9 @@ Return value: a PMI error code
 - PMI_FAIL - barrier failed
 
 Notes:
-This function is a collective call across all processes in the local process group.  It will not
-return until all the processes have called PMI_Barrier().
+This function is a collective call across all processes in the process group
+the local process belongs to.  It will not return until all the processes
+have called PMI_Barrier().
 
 Module:
 PMI
@@ -165,7 +169,11 @@ Return value: a PMI error code
 - PMI_FAIL - unable to return the clique size
 
 Notes:
-This function returns the number of processes in the local process group that are on the local node.
+This function returns the number of processes in the local process group that
+are on the local node along with the local process.  This is a simple topology
+function to distinguish between processes that can communicate through IPC
+mechanisms (ie shared memory) and other network mechanisms.
+
 
 Module:
 PMI
@@ -173,7 +181,7 @@ PMI
 int PMI_Get_clique_size( int *size );
 
 /*@
-PMI_Get_clique_ranks - obtain the ranks of the local processes in the process group
+PMI_Get_clique_ranks - get the ranks of the local processes in the process group
 
 Output Parameters:
 . ranks - pointer to an array of integers that receive the local ranks
@@ -183,8 +191,11 @@ Return value: a PMI error code
 - PMI_FAIL - unable to return the ranks
 
 Notes:
-This function returns the ranks of the processes on the local node.  The array must be the size returned
-by PMI_Get_clique_size().
+This function returns the ranks of the processes on the local node.  The array
+must be at least as large as the size returned by PMI_Get_clique_size().  This
+is a simple topology function to distinguish between processes that can
+communicate through IPC mechanisms (ie shared memory) and other network
+mechanisms.
 
 Module:
 PMI
@@ -203,8 +214,9 @@ Return value: a PMI error code
 - PMI_FAIL - unable to return the kvsname
 
 Notes:
-This function returns the name of the keyval space that this process and all other processes in the
-process group have access to.  kvsname must be at least as long as the value returned by
+This function returns the name of the keyval space that this process and all
+other processes in the process group have access to.  The output parameter,
+kvsname, must be at least as long as the value returned by
 PMI_KVS_Get_name_length_max().
 
 Module:
@@ -244,7 +256,8 @@ PMI_KVS_Get_value_length_max - obtain the length necessary to store a value
 Return value: maximum length required to hold a keyval space value
 
 Notes:
-This function returns the string length required to store a value from a keyval space.
+This function returns the string length required to store a value from a
+keyval space.
 
 Module:
 PMI
@@ -262,15 +275,16 @@ Return value: a PMI error code
 - PMI_FAIL - unable to create a new keyval space
 
 Notes:
-This function creates a new keyval space.  Everyone in the same process group can access this
-keyval space by the name returned by this function.  The function is not collective.  Only one
-process calls this function.  kvsname must be at least as long as the value returned by
+This function creates a new keyval space.  Everyone in the same process group
+can access this keyval space by the name returned by this function.  The
+function is not collective.  Only one process calls this function.  The output
+parameter, kvsname, must be at least as long as the value returned by
 PMI_KVS_Get_name_length_max().
 
 Module:
 PMI
 @*/
-int PMI_KVS_Create( char *kvsname );            /* make a new one, get name */
+int PMI_KVS_Create( char *kvsname );
 
 /*@
 PMI_KVS_Destroy - destroy keyval space
@@ -303,11 +317,12 @@ Return value: a PMI error code
 - PMI_FAIL - put failed
 
 Notes:
-This function puts the key/value pair in the specified keyval space.  The value is not visible
-to other processes until PMI_KVS_Commit is called.  The function may complete locally.  After 
-PMI_KVS_Commit() is called, the value may be retrieved by calling PMI_KVS_Get().  All keys put
-to a keyval space must be unique to the keyval space.  You may not put more than once with the
-same key.
+This function puts the key/value pair in the specified keyval space.  The
+value is not visible to other processes until PMI_KVS_Commit is called.  
+The function may complete locally.  After PMI_KVS_Commit() is called, the
+value may be retrieved by calling PMI_KVS_Get().  All keys put to a keyval
+space must be unique to the keyval space.  You may not put more than once
+with the same key.
 
 Module:
 PMI
@@ -325,8 +340,8 @@ Return value: a PMI error code
 - PMI_FAIL - commit failed
 
 Notes:
-This function commits all previous puts since the last PMI_KVS_Commit() into the specified keyval space.
-It is a process local operation.
+This function commits all previous puts since the last PMI_KVS_Commit() into
+the specified keyval space. It is a process local operation.
 
 Module:
 PMI
@@ -370,14 +385,16 @@ Return value: a PMI error code
 - PMI_FAIL - failed to initialize the iterator and get the first keyval pair
 
 Notes:
-This function initializes the iterator for the specified keyval space and retrieves the first key/val pair.
-The end of the keyval space is specified by returning an empty key string.  key and val must be at least as
-long as the values returned by PMI_KVS_Get_key_length_max() and PMI_KVS_Get_value_length_max().
+This function initializes the iterator for the specified keyval space and
+retrieves the first key/val pair.  The end of the keyval space is specified
+by returning an empty key string.  key and val must be at least as long as
+the values returned by PMI_KVS_Get_key_length_max() and
+PMI_KVS_Get_value_length_max().
 
 Module:
 PMI
 @*/
-int PMI_KVS_Iter_first(const char *kvsname, char *key, char *val);  /* loop through the */
+int PMI_KVS_Iter_first(const char *kvsname, char *key, char *val);
 
 /*@
 PMI_KVS_Iter_next - get the next keyval pair from the keyval space
@@ -394,10 +411,11 @@ Return value: a PMI error code
 - PMI_FAIL - failed to get the next keyval pair
 
 Notes:
-This function retrieves the next keyval pair from the specified keyval space.  PMI_KVS_Iter_first must have
-been previously called.  The end of the keyval space is specified by returning an empty key string.
-key and val must be at least as long as the values returned by PMI_KVS_Get_key_length_max() and
-PMI_KVS_Get_value_length_max().
+This function retrieves the next keyval pair from the specified keyval space.  
+PMI_KVS_Iter_first must have been previously called.  The end of the keyval
+space is specified by returning an empty key string.  The output parameters,
+key and val, must be at least as long as the values returned by
+PMI_KVS_Get_key_length_max() and PMI_KVS_Get_value_length_max().
 
 Module:
 PMI
@@ -444,9 +462,21 @@ Return value: a PMI error code
 - PMI_FAIL - spawn failed
 
 Notes:
-This function spawns a new process group.  The same_domain flag indicates if the spawned group
-is in the same PMI domain as the calling process.  Processes in the same PMI domain can access
-each others keyval spaces directly.
+This function spawns a set of processes into a new process group.  The count
+field refers to the size of the array parameters - cmd, argvs, maxprocs,
+info_keyval_sizes and info_keyval_vectors.  The preput_keyval_size refers
+to the size of the preput_keyval_vector array.  The preput_keyval_vector
+contains keyval pairs that will be put in the keyval space of the newly
+created process group before the processes are started.  The maxprocs array
+specifies the desired number of processes to create for each cmd string.  
+The actual number of processes may be less than the numbers specified in
+maxprocs.  The acceptable number of processes spawned may be controlled by
+``soft'' keyvals in the info arrays.  The ``soft'' option is specified by
+mpiexec in the MPI-2 standard.  Environment variables may be passed to the
+spawned processes through PMI implementation specific info_keyval parameters.
+The same_domain flag indicates if the spawned group is in the same PMI
+domain as the calling process.  Processes in the same PMI domain can
+access each others keyval spaces directly.
 
 Module:
 PMI
@@ -463,7 +493,7 @@ int PMI_Spawn_multiple(int count,
                        int * same_domain);
 
 /*@
-PMI_Args_to_info - create keyval structures from command line arguments
+PMI_Args_to_keyval - create keyval structures from command line arguments
 
 Input Parameters:
 + argcp - pointer to argc
@@ -478,9 +508,10 @@ Return value: a PMI error code
 - PMI_FAIL - fail
 
 Notes:
-This function removes PMI specific arguments from the command line and creates the corresponding
-PMI_keyval_t structures for them.  It returns an array and size to the caller that can then be passed to
-PMI_Spawn_multiple.  The array can be freed by free().
+This function removes PMI specific arguments from the command line and
+creates the corresponding PMI_keyval_t structures for them.  It returns
+an array and size to the caller that can then be passed to PMI_Spawn_multiple.
+The array can be freed by free().
 
 Module:
 PMI
