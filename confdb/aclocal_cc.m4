@@ -1026,6 +1026,15 @@ AC_MSG_RESULT($ac_cv_prog_cc_globals_work)
 dnl
 dnl
 dnl Return the structure alignment in pac_cv_c_struct_align
+dnl Possible values include
+dnl	packed
+dnl	largest
+dnl	two
+dnl	four
+dnl	eight
+dnl
+dnl In addition, a "Could not determine alignment" and a 
+dnl "Multiple cases:" return is possible.  
 AC_DEFUN(PAC_C_STRUCT_ALIGNMENT,[
 AC_CACHE_CHECK([for C struct alignment],pac_cv_c_struct_align,[
 AC_TRY_RUN([
