@@ -17,6 +17,16 @@
 
 /*#define MPICH_DBG_OUTPUT*/
 
+#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#define USE_POSIX_SHM
+#elif defined (HAVE_SHMGET) && defined (HAVE_SHMAT) && defined (HAVE_SHMCTL) && defined (HAVE_SHMDT)
+#define USE_SYSV_SHM
+#elif defined (HAVE_WINDOWS_H)
+#define USE_WINDOWS_SHM
+#else
+#error No shared memory subsystem defined
+#endif
+
 #define SHM_SUCCESS    0
 #define SHM_FAIL      -1
 
@@ -52,13 +62,13 @@ typedef struct MPIDI_Process_group_s
 #endif
     void *addr;
     int rank;
-#if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
+#ifdef USE_POSIX_SHM
     char key[100];
     int id;
-#elif defined (HAVE_SHMGET)
+#elif defined (USE_SYSV_SHM)
     int key;
     int id;
-#elif defined (HAVE_MAPVIEWOFFILE)
+#elif defined (USE_WINDOWS_SHM)
     char key[MAX_PATH];
     HANDLE id;
 #else
