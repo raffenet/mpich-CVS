@@ -20,6 +20,7 @@ void smpd_print_options(void)
     printf("smpd options:\n");
     printf(" -port <port> or -p <port>\n");
     printf(" -phrase <passphrase>\n");
+    printf(" -getphrase\n");
     printf(" -debug or -d\n");
     printf(" -noprompt\n");
     printf(" -restart [hostname]\n");
@@ -27,6 +28,10 @@ void smpd_print_options(void)
     printf(" -console [hostname]\n");
     printf(" -status [hostname]\n");
     printf(" -anyport\n");
+    printf(" -hosts\n");
+    printf(" -sethosts\n");
+    printf(" -query [domain]\n");
+    printf(" -help\n");
     printf("unix only options:\n");
     printf(" -s\n");
     printf(" -r\n");
@@ -61,6 +66,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     DWORD num_written, num_read;
 #endif
     int dbg_flag;
+    char domain[SMPD_MAX_HOST_LENGTH];
 
     smpd_enter_fn("smpd_parse_command_args");
 
@@ -102,6 +108,50 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	    if (result != SMPD_SUCCESS)
 		smpd_exit(result);
 	}
+	smpd_exit(0);
+    }
+
+    if (smpd_get_opt(argcp, argvp, "-sethosts"))
+    {
+	char *buffer, *iter;
+	int i, length;
+
+	length = (*argcp) * SMPD_MAX_HOST_LENGTH;
+	buffer = MPIU_Malloc(length);
+	if (buffer == NULL)
+	{
+	    smpd_err_printf("unable to allocate memory to store the host names.\n");
+	    smpd_exit(-1);
+	}
+	iter = buffer;
+	for (i=1; i<*argcp; i++)
+	{
+	    result = MPIU_Str_add_string(&iter, &length, (*argvp)[i]);
+	    if (result)
+	    {
+		printf("unable to add host #%d, %s\n", i, (*argvp)[i]);
+		MPIU_Free(buffer);
+		smpd_exit(-1);
+	    }
+	}
+	/*printf("hosts: %s\n", buffer);*/
+	result = smpd_set_smpd_data("hosts", buffer);
+	if (result == SMPD_SUCCESS)
+	{
+	    printf("hosts data saved successfully.\n");
+	}
+	else
+	{
+	    printf("Error: unable to save the hosts data.\n");
+	}
+	MPIU_Free(buffer);
+	smpd_exit(0);
+    }
+
+    if (smpd_get_opt_string(argcp, argvp, "-query", domain, SMPD_MAX_HOST_LENGTH))
+    {
+	printf("querying hosts in the %s domain:\n", domain);
+	printf("Not implemented yet.\n");
 	smpd_exit(0);
     }
 
@@ -425,6 +475,11 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
     }
 
     smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+    if (smpd_get_opt(argcp, argvp, "-getphrase"))
+    {
+	printf("passphrase for smpd: ");fflush(stdout);
+	smpd_get_password(smpd_process.passphrase);
+    }
 
     if (smpd_get_opt_string(argcp, argvp, "-smpdfile", smpd_process.smpd_filename, SMPD_MAX_FILENAME))
     {
