@@ -1323,6 +1323,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
 	  test/util/info/Makefile \
+	  test/util/timer/Makefile \
 	  examples/Makefile \
           src/util/logging/Makefile \
           src/util/timing/Makefile )
