@@ -18,7 +18,8 @@ static int GetLocalIPs(int32_t *pIP, int max)
 #ifdef HAVE_WINDOWS_H
     {
 	DWORD len = 100;
-	if (!GetComputerName(hostname, &len))
+	/*if (!GetComputerName(hostname, &len))*/
+	if (!GetComputerNameEx(ComputerNameDnsFullyQualified, hostname, &len))
 	{
 	    return 0;
 	}
@@ -272,7 +273,8 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 #ifdef HAVE_WINDOWS_H
     {
 	DWORD len = 100;
-	GetComputerName(host, &len);
+	/*GetComputerName(host, &len);*/
+	GetComputerNameEx(ComputerNameDnsFullyQualified, host, &len);
     }
 #else
     gethostname(host, 100);

@@ -39,7 +39,8 @@ int smpd_get_hostname(char *host, int length)
 {
 #ifdef HAVE_WINDOWS_H
     DWORD len = length;
-    if (!GetComputerName(host, &len))
+    /*if (!GetComputerName(host, &len))*/
+    if (!GetComputerNameEx(ComputerNameDnsFullyQualified, host, &len))
 	return SMPD_FAIL;
 #else
     if (gethostname(host, length))

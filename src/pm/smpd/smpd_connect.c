@@ -889,7 +889,8 @@ int smpd_get_default_hosts()
     {
 #ifdef HAVE_WINDOWS_H
 	len = 8192;
-	if (GetComputerName(hosts, &len))
+	/*if (GetComputerName(hosts, &len))*/
+	if (GetComputerNameEx(ComputerNameDnsFullyQualified, hosts, &len))
 	{
 	    smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 	    if (smpd_process.default_host_list == NULL)

@@ -463,7 +463,8 @@ static inline int easy_get_sock_info(SOCKET sock, char *name, int *port)
 
     getsockname(sock, (struct sockaddr*)&addr, &name_len);
     *port = ntohs(addr.sin_port);
-    GetComputerName(name, &len);
+    /*GetComputerName(name, &len);*/
+    GetComputerNameEx(ComputerNameDnsFullyQualified, name, &len);
     /*gethostname(name, 100);*/
 
     return 0;
@@ -907,7 +908,8 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     else
     {
 	/*if (gethostname(hostname, 100) == SOCKET_ERROR)*/
-	if (!GetComputerName(hostname, &length))
+	/*if (!GetComputerName(hostname, &length))*/
+	if (!GetComputerNameEx(ComputerNameDnsFullyQualified, hostname, &length))
 	{
 	    mpi_errno = WSAGetLastError();
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock_gethost", "**sock_gethost %s %d", get_error_string(mpi_errno), mpi_errno);

@@ -60,7 +60,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	{
 	    DWORD size = MPIDI_PROCESSOR_NAME_SIZE;
 	    
-	    if (!GetComputerName(MPIDI_Process.processor_name, &size))
+	    /*if (!GetComputerName(MPIDI_Process.processor_name, &size))*/
+	    if (!GetComputerNameEx(ComputerNameDnsFullyQualified, MPIDI_Process.processor_name, &size))
 	    {
 		MPIU_Free(MPIDI_Process.processor_name);
 		MPIDI_Process.processor_name = NULL;

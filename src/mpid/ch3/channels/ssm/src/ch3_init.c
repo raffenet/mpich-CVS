@@ -348,7 +348,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 #ifdef HAVE_WINDOWS_H
     {
 	DWORD len = sizeof(pg->ch.shm_hostname);
-	GetComputerName(pg->ch.shm_hostname, &len);
+	/*GetComputerName(pg->ch.shm_hostname, &len);*/
+	GetComputerNameEx(ComputerNameDnsFullyQualified, pg->ch.shm_hostname, &len);
     }
 #else
     gethostname(pg->ch.shm_hostname, sizeof(pg->ch.shm_hostname));

@@ -328,7 +328,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    }
 #ifdef HAVE_WINDOWS_H
 	    host_len = val_max_sz;
-	    GetComputerName(val, &host_len);
+	    /*GetComputerName(val, &host_len);*/
+	    GetComputerNameEx(ComputerNameDnsFullyQualified, val, &host_len);
 #else
 	    gethostname(val, val_max_sz); /* Don't call this under Windows because it requires the socket library */
 #endif
@@ -391,7 +392,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    }
 #ifdef HAVE_WINDOWS_H
 	    host_len = 100;
-	    GetComputerName(local_host, &host_len);
+	    /*GetComputerName(local_host, &host_len);*/
+	    GetComputerNameEx(ComputerNameDnsFullyQualified, local_host, &host_len);
 #else
 	    gethostname(local_host, 100); /* Don't call this under Windows because it requires the socket library */
 #endif

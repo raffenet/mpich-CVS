@@ -2313,7 +2313,8 @@ int PMIX_Start_root_smpd(int nproc, char *host, int len, int *port)
 	pmi_err_printf("the root process thread failed to initialize.\n");
 	return PMI_FAIL;
     }
-    GetComputerName(host, &dwLength);
+    /*GetComputerName(host, &dwLength);*/
+    GetComputerNameEx(ComputerNameDnsFullyQualified, host, &dwLength);
 #else
     pipe(pipe_fd);
     result = fork();
