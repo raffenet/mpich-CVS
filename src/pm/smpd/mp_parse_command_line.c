@@ -185,6 +185,14 @@ void timeout_thread(void *p)
 }
 #else
 static int g_timeout = -1;
+void timeout_function(int signo)
+{
+    if (signo == SIGALRM)
+    {
+	smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
+	exit(-1);
+    }
+}
 #endif
 
 int mp_parse_command_args(int *argcp, char **argvp[])
@@ -915,7 +923,10 @@ configfile_loop:
 		{
 		    g_timeout = atoi((*argvp)[2]);
 		    if (g_timeout > 0)
+		    {
+			smpd_signal(SIGALRM, timeout_function);
 			alarm(g_timeout);
+		    }
 		    else
 			g_timeout = -1;
 		}
@@ -951,6 +962,7 @@ configfile_loop:
 		g_timeout = atoi(p);
 		if (g_timeout > 0)
 		{
+		    smpd_signal(SIGALRM, timeout_function);
 		    alarm(g_timeout);
 		}
 	    }
