@@ -6,6 +6,7 @@
  */
 
 #include "ad_pvfs.h"
+#include "pvfs_config.h"
 
 void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 {
@@ -54,7 +55,7 @@ void ADIOI_PVFS_Open(ADIO_File fd, int *error_code)
 	fd->fp_ind = fd->fp_sys_posn = pvfs_lseek(fd->fd_sys, 0, SEEK_END);
 
     if (fd->fd_sys != -1) {
-	pvfs_ioctl(fd->fd_sys, GET_META, &pstat);
+	pvfs_ioctl(fd->fd_sys, GETMETA, &pstat);
 	sprintf(value, "%d", pstat.pcount);
 	MPI_Info_set(fd->info, "striping_factor", value);
 	sprintf(value, "%d", pstat.ssize);
