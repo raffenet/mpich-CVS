@@ -250,7 +250,7 @@ int MPIDU_Sock_get_sock_set_id(struct MPIDU_Sock_set * sock_set)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_error_class_string
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
