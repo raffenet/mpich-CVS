@@ -97,7 +97,14 @@ foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
     elsif( $arg =~ /-debug/) { $debug = 1; }
     elsif ( $arg =~ /-verbose/) { $verbose = 1; }
-    elsif ( $arg =~ /-skipfile=(.*)/) { $skipfiles{$1} = 1; }
+    elsif ( $arg =~ /-skipfile=(.*)/) { 
+	my $fname = $1;
+	$skipfiles{$fname} = 1; 
+	# Add ./$fname if we didn't get that form
+	if (! ($fname =~ /^\.\//)) {
+	    $skipfiles{"./$fname"} = 1;
+	}
+	}
     elsif ( $arg =~ /-allowromio=no/) { $allowRomioNames = 0; }
     elsif ( $arg =~ /-allowromio/) { $allowRomioNames = 1; }
     elsif ( $arg =~ /-checktest/) { $skipTest = 0; }
@@ -243,7 +250,10 @@ sub ProcessFile {
     # Output summary messages
     foreach $key (keys(%warningmsgs)) {
 	&PrintCurrentDirectory;
-	print "$key ($warningmsgs{$key} times)\n";
+	my $ntimes = $warningmsgs{$key};
+	my $plural = "";
+	if ($ntimes > 1) { $plural = "s"; }
+	print "$key ($warningmsgs{$key} time$plural)\n";
     }
     if ($cxx_comments_found > 1 && !$cxx_header) {
 	&PrintCurrentDirectory;
@@ -321,13 +331,14 @@ $AvoidMalloc = "Dynamic memory allocation often causes problems, though the crea
 
 $BetterString = "The standard string routines are risky because they provide no protection for input strings that are too long for the output strings.  Some of the \"n\" versions (e.g., strncat) are also risky because the length parameter is not the length of the buffer, and hence can be computed incorrectly.";
 %betterSubsReasons = (
+		      "assert" => "Assert is a handy way to include sanity checks in a code during development, but it does not generate good error messages should the assert fail for a user.  Instead, it is better to use customized assert routines that will provide a more user-centric error message.",
 		      "strcpy" => $BetterString,
 		      "strncpy" => $BetterString,
 		      "strcmp"  => $BetterString,
 		      "strcat"  => $BetterString,
 		      "sprintf" => "Sprintf, like the standard string routines, is risky because the input parameters can create an output string that is too long for the provided output buffer, with no way to detect this and indicate an error.",
-		      "snprintf" => "This routine is not portable; not all environments provide it.",
-		      "strerror" => "This routine is not portable; not all environments provide it."
+		      "snprintf" => "This routine is not portable; not all environments provide it.  More specifically, snprintf was not part of the 1990 ANSI/IOS C standard though it is part of C99.  Further, while some enviroments provide an snprintf entry point, they implement it by calling sprintf directly with no checks on the provided buffer, making snprintf no safer than sprintf.  Also, C99 and Single Unix Specification give different return values for snprintf.  With all of this, it isn't even clear what routine you are using when you use snprintf.",
+		      "strerror" => "This routine is not portable to older systems (it was added in C89); not all environments provide it.  Applications may use it but should consider guarding it with a HAVE_STRERROR test."
 		      );
 sub CheckForBadSubs {
     my $curline = $_[0];
@@ -612,7 +623,7 @@ foreach $key (keys(%betterSubsSeen)) {
     my $reason = $betterSubsReasons{$key};
     if (!$headerPrinted && $reason ne "") {
 	$headerPrinted = 1;
-	print "${topHeader}Explanation for messages about routines with prefered versions\n";
+	print "$topHeader\nExplanation for messages about routines with prefered versions\n";
 	$topHeader = "";
     }
     print "\n$key: $reason\n";
@@ -668,6 +679,7 @@ sub ProcessDir {
     $curdir =~ s/\/$//;
 
     my $f2name = "./" . "$curdir/$dir" ;
+    #print "checking $f2name and $curdir/$dir against skipfiles\n";
     if (defined($skipfiles{"$curdir/$dir"}) || defined($skipfiles{$f2name})) {
 	print "Skipping directory $curdir\n" if ($verbose);
 	$savedir = $curdir;
