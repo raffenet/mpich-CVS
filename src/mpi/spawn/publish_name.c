@@ -66,10 +66,7 @@ int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 	    /* Validate character pointers */
 	    MPIR_ERRTEST_ARGNULL( service_name, "service_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( port_name, "port_name", mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -87,23 +84,27 @@ int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 				     (const char *)port_name );
     }
 
-    if (mpi_errno != MPI_SUCCESS)
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno == MPI_SUCCESS)
     {
-	/* THIS CAUSES THE ROUTINE TO RETURN NO USEFUL INFORMATION ABOUT
-	   THE REASON FOR FAILURE */
-#if 0
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_publish_name", "**mpi_publish_name %s %I %s", service_name, info, port_name);
-#endif
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	return MPI_SUCCESS;
     }
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
-    return MPI_SUCCESS;
-#else
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
-    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_publish_name", "**mpi_publish_name %s %I %s", service_name, info, port_name);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
+
+#else
+
+    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_publish_name", "**mpi_publish_name %s %I %s", service_name, info, port_name);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 #endif    
 }

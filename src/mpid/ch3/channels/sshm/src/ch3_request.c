@@ -39,7 +39,7 @@ MPID_Request * MPIDI_CH3_Request_create()
 	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
-	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
 	}
 #endif
 	MPIDI_CH3U_Request_create(req);
@@ -71,7 +71,7 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req)
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
-	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
 #endif
     MPIU_Object_add_ref(req);
@@ -96,7 +96,7 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
-	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
 #endif
     MPIU_Object_release_ref(req, ref_count);
@@ -105,7 +105,7 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
     if (req->ref_count < 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
-	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
@@ -130,13 +130,13 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
-	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
     /*assert(req->ref_count == 0);*/
     if (req->ref_count != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
-	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
 #endif
     MPIDI_CH3U_Request_destroy(req);

@@ -78,10 +78,7 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_PUT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -89,19 +86,18 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 
     /* ... body of routine ...  */
     MPIR_Nest_incr();
-    mpi_errno = PMPI_Comm_set_attr( comm, keyval, attr_value );
+    mpi_errno = NMPI_Comm_set_attr( comm, keyval, attr_value );
     MPIR_Nest_decr();
-    if (mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	    /* IT IS VERY, VERY WRONG TO REPLACE THE ERROR CODE HERE */
-#if 0
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_attr_put", "**mpi_attr_put %C %d %p", comm, keyval, attr_value);
-#endif
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_PUT);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	return MPI_SUCCESS;
     }
-    /* ... end of body of routine ... */
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_attr_put", "**mpi_attr_put %C %d %p", comm, keyval, attr_value);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_PUT);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -65,11 +65,8 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(parent,"parent",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+	    MPIR_ERRTEST_ARGNULL(parent, "parent", mpi_errno);
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -80,4 +77,11 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_get_parent", "**mpi_comm_get_parent %p", parent);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_PARENT);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

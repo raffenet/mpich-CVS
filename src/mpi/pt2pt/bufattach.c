@@ -79,10 +79,7 @@ int MPI_Buffer_attach(void *buffer, int size)
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(size,"size",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -90,17 +87,17 @@ int MPI_Buffer_attach(void *buffer, int size)
 
     /* ... body of routine ...  */
     mpi_errno = MPIR_Bsend_attach( buffer, size );
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
-    if (mpi_errno)
+
+    if (mpi_errno == MPI_SUCCESS)
     {
-	/* --BEGIN ERROR HANDLING-- */
-	/* FIXME: This is wrong, since the internal routine returns the
-	   correct message for the user */
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_buffer_attach", "**mpi_buffer_attach %p %d", buffer, size);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-	/* --END ERROR HANDLING-- */
-    }	
-    /* ... end of body of routine ... */
-    return MPI_SUCCESS;
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_buffer_attach", "**mpi_buffer_attach %p %d", buffer, size);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_BUFFER_ATTACH);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

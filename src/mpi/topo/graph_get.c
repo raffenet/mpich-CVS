@@ -74,10 +74,7 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *ed
 	    MPIR_ERRTEST_ARGNULL( edges, "edges", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( index,  "index", mpi_errno );
 
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_GET);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -106,10 +103,7 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *ed
 					  "maxedges", maxedges, 
 					  topo_ptr->topo.graph.nedges );
 	    }
-	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_GET);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -130,4 +124,11 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int *index, int *ed
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_GET);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_graph_get", "**mpi_graph_get %C %d %d %p %p", comm, maxindex, maxedges, index, edges);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_GET);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -35,7 +35,7 @@
 
   Output Parameters:
 + comm_name - One output, contains the name of the communicator.  It must
-  be an array of size at least 'MPI_MAX_NAME_STRING'.
+  be an array of size at least 'MPI_MAX_OBJECT_NAME'.
 - resultlen - Number of characters in name
 
 .N Fortran
@@ -60,14 +60,14 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+	    if (comm != MPI_COMM_NULL)
+	    {
+		MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+	    }
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL( comm_name, "comm_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( resultlen, "resultlen", mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -75,11 +75,25 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
 
     /* ... body of routine ...  */
     /* The user must allocate a large enough section of memory */
-    MPIU_Strncpy( comm_name, comm_ptr->name, MPI_MAX_NAME_STRING );
+    if (comm == MPI_COMM_NULL)
+    {
+	MPIU_Strncpy( comm_name, "MPI_COMM_NULL", MPI_MAX_OBJECT_NAME );
+    }
+    else
+    {
+	MPIU_Strncpy( comm_name, comm_ptr->name, MPI_MAX_OBJECT_NAME );
+    }
     *resultlen = (int)strlen( comm_name );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_get_name", "**mpi_comm_get_name %C %p %p", comm, comm_name, resultlen);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

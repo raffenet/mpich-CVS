@@ -311,9 +311,7 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -330,10 +328,7 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
             MPID_Op *op_ptr = NULL;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
-                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno);
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
@@ -352,10 +347,7 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
             MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
             MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
 
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
                 MPID_Op_get_ptr(op, op_ptr);
                 MPID_Op_valid_ptr( op_ptr, mpi_errno );
@@ -364,10 +356,7 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
                 mpi_errno = 
                     ( * MPIR_Op_check_dtype_table[op%16 - 1] )(datatype); 
             }
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -394,11 +383,9 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
 	return MPI_SUCCESS;
     }
 
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_scan", "**mpi_scan %p %p %d %D %O %C", sendbuf, recvbuf, count, datatype, op, comm);
-
-    /* ... end of body of routine ... */
-
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

@@ -96,9 +96,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_exit;
 	}
         MPID_END_ERROR_CHECKS;
     }

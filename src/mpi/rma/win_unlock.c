@@ -58,13 +58,11 @@ int MPI_Win_unlock(int rank, MPI_Win win)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    if (mpi_errno) goto fn_fail;
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);
-                return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -79,6 +77,7 @@ int MPI_Win_unlock(int rank, MPI_Win win)
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_win_unlock", "**mpi_win_unlock %d %W", rank, win);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK);

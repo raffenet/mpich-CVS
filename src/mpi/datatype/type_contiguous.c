@@ -51,6 +51,7 @@ int MPI_Type_contiguous(int count,
 {
     static const char FCNAME[] = "MPI_Type_contiguous";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Datatype *new_dtp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CONTIGUOUS);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CONTIGUOUS);
@@ -69,10 +70,7 @@ int MPI_Type_contiguous(int count,
                 MPID_Datatype_get_ptr(old_type, datatype_ptr);
                 MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    }
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
-		return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-	    }
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -82,19 +80,18 @@ int MPI_Type_contiguous(int count,
 				     old_type,
 				     new_type_p);
 
-    if (mpi_errno == MPI_SUCCESS) {
-	MPID_Datatype *new_dtp;
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
 
-	MPID_Datatype_get_ptr(*new_type_p, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_CONTIGUOUS,
-					       1, /* ints (count) */
-					       0,
-					       1,
-					       &count,
-					       NULL,
-					       &old_type);
-    }
+    MPID_Datatype_get_ptr(*new_type_p, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_CONTIGUOUS,
+				           1, /* ints (count) */
+				           0,
+				           1,
+				           &count,
+				           NULL,
+				           &old_type);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -103,6 +100,7 @@ int MPI_Type_contiguous(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

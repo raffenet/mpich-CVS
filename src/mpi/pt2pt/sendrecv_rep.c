@@ -74,9 +74,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -96,9 +94,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	    
 	    /* Validate communicator */
             MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
-            if (mpi_errno) {
-		goto fn_exit;
-            }
+            if (mpi_errno) goto fn_exit;
 	    
             /* Validate datatype */
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
@@ -231,14 +227,19 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
     }
 #   endif
 
-  fn_exit:
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_sendrecv_replace", "**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p",
-	    buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
-    }
+fn_exit:
     MPIR_Nest_decr();
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_sendrecv_replace", "**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p",
+	buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
     MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

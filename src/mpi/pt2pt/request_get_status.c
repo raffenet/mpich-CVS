@@ -62,9 +62,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -81,9 +79,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-	    if (mpi_errno) {
-		goto fn_exit;
-            }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -99,9 +95,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
         {
 	    /* Validate request_ptr */
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
-            if (mpi_errno) {
-		goto fn_exit;
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -182,6 +176,10 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	    case MPID_UREQUEST:
 	    {
 		mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
+		}
 		MPIR_Request_extract_status(request_ptr, status);
 		break;
 	    }
@@ -195,17 +193,17 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	*flag = FALSE;
     }
 
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_request_get_status", "**mpi_request_get_status %R %p %p", request, flag, status);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_GET_STATUS);
+	return MPI_SUCCESS;
     }
-#ifdef HAVE_ERROR_CHECKING
-  fn_exit:
-#endif
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_request_get_status", "**mpi_request_get_status %R %p %p", request, flag, status);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_GET_STATUS);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
 }
-

@@ -86,10 +86,7 @@ int MPI_Unpack_external(char *datarep,
 	    }
 		
 	    /* If datatye_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
-                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -107,14 +104,13 @@ int MPI_Unpack_external(char *datarep,
 					 "**nomem",
 					 "**nomem %s",
 					 "MPID_Segment");
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
     mpi_errno = MPID_Segment_init(outbuf, outcount, datatype, segp, 1);
     if (mpi_errno != MPI_SUCCESS)
     {
-	goto fn_exit;
+	goto fn_fail;
     }
 
     /* NOTE: buffer values and positions in MPI_Unpack_external are used very
@@ -132,7 +128,6 @@ int MPI_Unpack_external(char *datarep,
 
     MPID_Segment_free(segp);
 
-fn_exit:
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
@@ -140,6 +135,7 @@ fn_exit:
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

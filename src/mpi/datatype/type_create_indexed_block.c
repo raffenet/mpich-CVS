@@ -53,6 +53,8 @@ int MPI_Type_create_indexed_block(int count,
 {
     static const char FCNAME[] = "MPI_Type_create_indexed_block";
     int mpi_errno = MPI_SUCCESS;
+    MPID_Datatype *new_dtp;
+    int i, *ints;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
@@ -78,10 +80,7 @@ int MPI_Type_create_indexed_block(int count,
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    }
 
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_INDEXED_BLOCK);
-                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -93,31 +92,34 @@ int MPI_Type_create_indexed_block(int count,
 				       0, /* dispinbytes */
 				       oldtype,
 				       newtype);
-    if (mpi_errno == MPI_SUCCESS) {
-	MPID_Datatype *new_dtp;
-	int i, *ints;
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
 
-	ints = (int *) MPIU_Malloc((count + 2) * sizeof(int));
-	assert(ints != NULL);
-
-	ints[0] = count;
-	ints[1] = blocklength;
-
-	for (i=0; i < count; i++) {
-	    ints[i+2] = array_of_displacements[i];
-	}
-
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_INDEXED_BLOCK,
-					       count + 2, /* ints */
-					       0, /* aints */
-					       1, /* types */
-					       ints,
-					       NULL,
-					       &oldtype);
-	MPIU_Free(ints);
+    ints = (int *) MPIU_Malloc((count + 2) * sizeof(int));
+    if (ints == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	goto fn_fail;
     }
+
+    ints[0] = count;
+    ints[1] = blocklength;
+
+    for (i=0; i < count; i++)
+    {
+	ints[i+2] = array_of_displacements[i];
+    }
+
+    MPID_Datatype_get_ptr(*newtype, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_INDEXED_BLOCK,
+				           count + 2, /* ints */
+				           0, /* aints */
+				           1, /* types */
+				           ints,
+				           NULL,
+				           &oldtype);
+    MPIU_Free(ints);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -126,6 +128,7 @@ int MPI_Type_create_indexed_block(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
 				     __LINE__, MPI_ERR_OTHER,
 				     "**mpi_type_create_indexed_block",

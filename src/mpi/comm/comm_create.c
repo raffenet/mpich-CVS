@@ -64,9 +64,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -87,10 +85,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 
 	    /* Check the group ptr */
 	    MPID_Group_valid_ptr( group_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -107,8 +102,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     new_context_id = MPIR_Get_contextid( comm_ptr->handle );
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     
     /* Make sure that the processes for this group are contained within
@@ -132,8 +126,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	mapping = (int *)MPIU_Malloc( n * sizeof(int) );
 	if (!mapping) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	for (i=0; i<n; i++) {
 	    /* Mapping[i] is the rank in the communicator of the process that
@@ -157,8 +150,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_GROUP, 
 						  "**groupnotincomm", 
 						  "**groupnotincomm %d", i );
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE );
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
 	}
 
@@ -166,7 +158,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
 	if (!newcomm_ptr) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	MPIU_Object_set_ref( newcomm_ptr, 1 );
 	newcomm_ptr->attributes  = 0;
@@ -216,7 +208,12 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	return MPI_SUCCESS;
     }
 
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_create", "**mpi_comm_create %C %G %p", comm, group, newcomm);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

@@ -76,10 +76,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(rank,"rank",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -114,10 +111,7 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 		    }
 		}
 	    }
-	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -142,4 +136,11 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_cart_rank", "**mpi_cart_rank %C %p %p", comm, coords, rank);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_RANK);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

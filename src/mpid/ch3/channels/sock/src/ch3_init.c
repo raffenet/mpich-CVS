@@ -33,6 +33,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int key_max_sz;
     int val_max_sz;
     int name_sz, id_sz;
+    /*
+    char *business_card;
+    int bc_length;
+    char host_description[256];
+    int port;
+    */
 
     MPIDI_CH3I_Process.acceptq_head = NULL;
     MPIDI_CH3I_Process.acceptq_tail = NULL;
@@ -179,6 +185,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 
     /*
      * Initialize Progress Engine (and setup listener socket)
+     * Must be called before the business card is created because it sets up the listener socket.
      */
     mpi_errno = MPIDI_CH3I_Progress_init();
     if (mpi_errno != MPI_SUCCESS)
@@ -221,12 +228,50 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
+    /*
+    business_card = val;
+    bc_length = val_max_sz;
+    port = MPIDI_CH3I_Listener_get_port();
+    mpi_errno = MPIDU_Sock_get_host_description(host_description, 256);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_description", 0);
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_int_arg(&business_card, &bc_length, MPIDI_CH3I_PORT_KEY, port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_string_arg(&business_card, &bc_length, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    */
     mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", 0);
 	return mpi_errno;
     }
+    /*printf("my business card: <%s>\n", val);fflush(stdout);*/
     mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
     if (mpi_errno != 0)
     {

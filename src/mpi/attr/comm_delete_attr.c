@@ -77,10 +77,7 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
 		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DELETE_ATTR);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
 	MPID_ELSE_ERROR_CHECKS;
 	{
@@ -133,8 +130,16 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
     MPID_Comm_thread_unlock( comm_ptr );
     /* ... end of body of routine ... */
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DELETE_ATTR);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_delete_attr", "**mpi_comm_delete_attr %C %d", comm, comm_keyval);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DELETE_ATTR);
-    if (mpi_errno) 
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -55,7 +55,8 @@ int MPI_Type_create_hindexed(int count,
 {
     static const char FCNAME[] = "MPI_Type_create_hindexed";
     int mpi_errno = MPI_SUCCESS;
-
+    MPID_Datatype *new_dtp;
+    int i, *ints;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
@@ -79,10 +80,7 @@ int MPI_Type_create_hindexed(int count,
 		}
 		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNEG(array_of_blocklengths[i], "blocklen", mpi_errno);
 	    }
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -95,29 +93,32 @@ int MPI_Type_create_hindexed(int count,
 				  oldtype,
 				  newtype);
 
-    if (mpi_errno == MPI_SUCCESS) {
-	MPID_Datatype *new_dtp;
-	int i, *ints;
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
 
-	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
-	if (ints == NULL) assert(0);
-
-	ints[0] = count;
-
-	for (i=0; i < count; i++) {
-	    ints[i+1] = array_of_blocklengths[i];
-	}
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_HINDEXED,
-					       count+1, /* ints (count, blocklengths) */
-					       count, /* aints (displacements) */
-					       1, /* types */
-					       ints,
-					       array_of_displacements,
-					       &oldtype);
-	MPIU_Free(ints);
+    ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
+    if (ints == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	goto fn_fail;
     }
+
+    ints[0] = count;
+
+    for (i=0; i < count; i++)
+    {
+	ints[i+1] = array_of_blocklengths[i];
+    }
+    MPID_Datatype_get_ptr(*newtype, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_HINDEXED,
+				           count+1, /* ints (count, blocklengths) */
+				           count, /* aints (displacements) */
+				           1, /* types */
+				           ints,
+				           array_of_displacements,
+				           &oldtype);
+    MPIU_Free(ints);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -126,6 +127,7 @@ int MPI_Type_create_hindexed(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

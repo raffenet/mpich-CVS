@@ -51,9 +51,7 @@ int MPI_Comm_disconnect(MPI_Comm *comm)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -70,10 +68,7 @@ int MPI_Comm_disconnect(MPI_Comm *comm)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DISCONNECT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -89,6 +84,7 @@ int MPI_Comm_disconnect(MPI_Comm *comm)
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_comm_disconnect", "**mpi_comm_disconnect %p", comm);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DISCONNECT);

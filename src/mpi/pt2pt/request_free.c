@@ -71,9 +71,7 @@ int MPI_Request_free(MPI_Request *request)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -91,9 +89,7 @@ int MPI_Request_free(MPI_Request *request)
 	    {
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
-	    if (mpi_errno) {
-		goto fn_exit;
-            }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -109,9 +105,7 @@ int MPI_Request_free(MPI_Request *request)
         {
 	    /* Validate request_ptr */
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
-            if (mpi_errno) {
-		goto fn_exit;
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -143,7 +137,7 @@ int MPI_Request_free(MPI_Request *request)
 #ifdef HAVE_CXX_BINDING
 	    case MPID_LANG_CXX:
 #endif
-	    mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
+		mpi_errno = (request_ptr->free_fn)(request_ptr->grequest_extra_state);
 	    break;
 #ifdef HAVE_FORTRAN_BINDING
 	    case MPID_LANG_FORTRAN:
@@ -158,6 +152,10 @@ int MPI_Request_free(MPI_Request *request)
 	    break;
 #endif	    
 	    }
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userfree %d", mpi_errno);
+	    }
 	    break;
 	}
     }
@@ -165,16 +163,16 @@ int MPI_Request_free(MPI_Request *request)
     MPID_Request_release(request_ptr);
     *request = MPI_REQUEST_NULL;
 
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_request_free", "**mpi_request_free %p", request);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
+	return MPI_SUCCESS;
     }
-#ifdef HAVE_ERROR_CHECKING
-  fn_exit:
-#endif
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_request_free", "**mpi_request_free %p", request);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
 }

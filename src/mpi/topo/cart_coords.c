@@ -71,10 +71,7 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(coords,"coords",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_COORDS);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -97,10 +94,7 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
 						  cart_ptr->topo.cart.ndims,
 						  maxdims );
 	    }
-	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_COORDS);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -117,4 +111,11 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_COORDS);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_cart_coords", "**mpi_cart_coords %C %d %d %p", comm, rank, maxdims, coords);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_COORDS);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

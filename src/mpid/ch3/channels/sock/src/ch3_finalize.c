@@ -30,6 +30,7 @@ int MPIDI_CH3_Finalize()
     MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
     MPIU_Free(MPIDI_CH3I_Process.pg->vc_table);
     MPIU_Free(MPIDI_CH3I_Process.pg->kvs_name);
+    MPIU_Free(MPIDI_CH3I_Process.pg->pg_id);
     MPIU_Free(MPIDI_CH3I_Process.pg);
 
     /* Let PMI know the process is about to exit */

@@ -93,10 +93,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
             MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
             MPIR_ERRTEST_SEND_RANK(comm_ptr, rank, mpi_errno);
 
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
-                return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -111,6 +108,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_win_lock", "**mpi_win_lock %d %d %A %W", lock_type, rank, assert, win);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);

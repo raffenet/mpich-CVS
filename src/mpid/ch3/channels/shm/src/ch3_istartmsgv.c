@@ -12,6 +12,7 @@
 { \
     /*int i;*/ \
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY); \
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
     sreq = MPIDI_CH3_Request_create(); \
     /*assert(sreq != NULL);*/ \
@@ -24,7 +25,9 @@
     } \
     MPIU_Object_set_ref(sreq, 2); \
     sreq->kind = MPID_REQUEST_SEND; \
+    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY); \
     memcpy(sreq->dev.iov, iov, count * sizeof(MPID_IOV)); \
+    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY); \
     /*for (i = 0; i < count; i++) { sreq->dev.iov[i] = iov[i]; }*/ \
     if (offset == 0) \
     { \

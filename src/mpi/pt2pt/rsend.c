@@ -65,9 +65,7 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -88,27 +86,18 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    MPID_Datatype * datatype_ptr = NULL;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
-                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
 	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -137,9 +126,7 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-			    "**mpi_rsend", "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
-			goto fn_exit;
+			goto fn_fail;
 		    }
 		    /* --END ERROR HANDLING-- */
 		}
@@ -163,12 +150,11 @@ int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    }
 	}
     }
+
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_rsend", "**mpi_rsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
-    /* ... end of body of routine ... */
-
-  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

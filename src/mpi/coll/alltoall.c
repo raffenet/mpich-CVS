@@ -713,9 +713,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -731,10 +729,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
 	    MPID_Datatype *sendtype_ptr=NULL, *recvtype_ptr=NULL;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
-                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
 	    MPIR_ERRTEST_COUNT(recvcount, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(sendcount, sendtype, mpi_errno);
@@ -755,10 +750,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
             MPIR_ERRTEST_USERBUFFER(sendbuf,sendcount,sendtype,mpi_errno);
 	    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcount,recvtype,mpi_errno);
 
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -792,24 +784,19 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recv
         }
 	MPIR_Nest_decr();
     }
-    /* --BEGIN ERROR HANDLING-- */
+
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_alltoall", "**mpi_alltoall %p %d %D %p %d %D %C",
-	    sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
-    /* ... end of body of routine ... */
-
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_alltoall", "**mpi_alltoall %p %d %D %p %d %D %C",
+	sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALL);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
 }

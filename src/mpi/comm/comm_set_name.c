@@ -62,10 +62,7 @@ int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( comm_name, "comm_name", mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_NAME);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -77,5 +74,12 @@ int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_NAME);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_set_name", "**mpi_comm_set_name %C %s", comm, comm_name);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_NAME);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

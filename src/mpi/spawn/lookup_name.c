@@ -75,10 +75,7 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 	    /* Validate character pointers */
 	    MPIR_ERRTEST_ARGNULL( service_name, "service_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( port_name, "port_name", mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -88,27 +85,42 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
     if (!MPIR_Namepub)
     {
 	mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    goto fn_fail;
+	}
     }
-    if (mpi_errno == MPI_SUCCESS) 
+
+    mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info_ptr,
+	(const char *)service_name, port_name );
+    if (mpi_errno != MPI_SUCCESS && MPIR_ERR_GET_CLASS(mpi_errno) != MPI_ERR_NAME)
     {
-	mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info_ptr, 
-				    (const char *)service_name, port_name );
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	goto fn_fail;
     }
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-    if (mpi_errno)
-    {
-	/* THIS CAUSES THE ROUTINE TO RETURN NO USEFUL INFORMATION ABOUT
-	   THE REASON FOR FAILURE */
-#if 0
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
-#endif
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    }
-    return MPI_SUCCESS;
-#else
+    return mpi_errno;
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
+
+#else
+
+    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nonamepub", 0 );
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_lookup_name", "**mpi_lookup_name %s %I %p", service_name, info, port_name);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 #endif    
 }

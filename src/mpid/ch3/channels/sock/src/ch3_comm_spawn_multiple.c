@@ -49,6 +49,8 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
     MPID_Info *iter;
     char key[MPI_MAX_INFO_KEY];
     int vallen, flag;
+    int *pmi_errcodes;
+    int total_num_processes;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
 
@@ -123,11 +125,29 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 
         MPIR_Nest_decr();
 
+	/* create an array for the pmi error codes */
+	total_num_processes = 0;
+	for (i=0; i<count; i++)
+	{
+	    total_num_processes += maxprocs[i];
+	}
+	pmi_errcodes = (int*)MPIU_Malloc(sizeof(int) * total_num_processes);
+	if (pmi_errcodes == NULL)
+	{
+	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
+	    MPIU_Free(info_keyval_sizes);
+	    MPIU_Free(pmi_errcodes);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    goto fn_exit;
+	}
+
+	/* Open a port for the spawned processes to connect to */
         mpi_errno = MPIDI_CH3_Open_port(port_name);
         if (mpi_errno != MPI_SUCCESS)
 	{
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
 	    MPIU_Free(info_keyval_sizes);
+	    MPIU_Free(pmi_errcodes);
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    goto fn_exit;
 	}
@@ -135,6 +155,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
         preput_keyval_vector.key = "PARENT_ROOT_PORT_NAME";
         preput_keyval_vector.val = port_name;
 
+	/* Spawn the processes */
         mpi_errno = PMI_Spawn_multiple(count, (const char **)
                                        commands, 
                                        (const char ***) argvs,
@@ -142,18 +163,25 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
                                        (const PMI_keyval_t **)
                                        info_keyval_vectors, 1, 
                                        &preput_keyval_vector,
-                                       errcodes);
+                                       pmi_errcodes);
 
         if (mpi_errno != PMI_SUCCESS)
         {
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
 	    MPIU_Free(info_keyval_sizes);
+	    MPIU_Free(pmi_errcodes);
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", mpi_errno);
             goto fn_exit;
         }
+	for (i=0; i<total_num_processes; i++)
+	{
+	    /* FIXME: translate the pmi error codes here */
+	    errcodes[i] = pmi_errcodes[i];
+	}
 
 	free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
         MPIU_Free(info_keyval_sizes);
+	MPIU_Free(pmi_errcodes);
     }
 
     mpi_errno = MPIDI_CH3_Comm_accept(port_name, root, comm_ptr, intercomm); 

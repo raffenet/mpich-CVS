@@ -742,6 +742,12 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		}
 		break;
 	    }
+
+	    case MPIDU_SOCK_OP_WAKEUP:
+	    {
+		MPIDI_CH3_Progress_signal_completion();
+		break;
+	    }
 	}
     }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
@@ -1060,7 +1066,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     char * val_p;
     int key_max_sz;
     int val_max_sz;
-    char host[MAXHOSTNAMELEN];
+    /*char host[MAXHOSTNAMELEN];*/
+    char host_description[256];
     int port;
     int rc;
     MPIDI_CH3I_Connection_t * conn;
@@ -1115,19 +1122,33 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 
     val_p = val;
 
+    /*
     rc = GetHostAndPort(host, &port, val_p);
     if (rc != MPI_SUCCESS)
     {
-	/*printf("GetHostAndPort failed: <%s>\n", val_p);fflush(stdout);*/
 	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
 	goto fn_exit;
     }
-    /*printf("GetHostAndPort returned: host %s, port %u\n", host, (unsigned int)port);fflush(stdout);*/
+    */
+    mpi_errno = MPIU_Str_get_string_arg(val, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, 256);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_hostd", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_get_int_arg(val, MPIDI_CH3I_PORT_KEY, &port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_port", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
+	return mpi_errno;
+    }
 
     rc = connection_alloc(&conn);
     if (rc == MPI_SUCCESS)
     {
-	rc = MPIDU_Sock_post_connect(sock_set, conn, host, port, &conn->sock);
+	rc = MPIDU_Sock_post_connect(sock_set, conn, host_description, port, &conn->sock);
 	if (rc == MPI_SUCCESS)
 	{
 	    vc->ch.sock = conn->sock;
@@ -1169,8 +1190,7 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
 {
     /* Used in ch3_comm_connect to connect with the process calling
        ch3_comm_accept */
-    char *port_name_p;
-    char host[MAXHOSTNAMELEN];
+    char host_description[256];
     int port, rc, mpi_errno;
     MPIDI_VC *vc;
     MPIDI_CH3I_Connection_t * conn;
@@ -1179,10 +1199,24 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
 
-    port_name_p = port_name;
-    
+    /*
     mpi_errno = GetHostAndPort(host, &port, port_name_p);
     if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+    */
+    mpi_errno = MPIU_Str_get_string_arg(port_name, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, 256);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_hostd", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_get_int_arg(port_name, MPIDI_CH3I_PORT_KEY, &port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_port", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
+	return mpi_errno;
+    }
     
     vc = (MPIDI_VC *) MPIU_Malloc(sizeof(MPIDI_VC));
     if (vc == NULL)
@@ -1211,7 +1245,7 @@ int  MPIDI_CH3I_Connect_to_root(char *port_name, MPIDI_VC **new_vc)
 
     /* conn->pg_id is not used for this conection */
 
-    rc = MPIDU_Sock_post_connect(sock_set, conn, host, port, &conn->sock);
+    rc = MPIDU_Sock_post_connect(sock_set, conn, host_description, port, &conn->sock);
     if (rc == MPI_SUCCESS)
     {
         vc->ch.sock = conn->sock;
@@ -1433,11 +1467,11 @@ static int connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
     /*
     if (conn->send_active)
     {
-	MPID_Abort(conn->send_active->comm, mpi_errno, 13);
+	MPID_Abort(conn->send_active->comm, mpi_errno, 13, NULL);
     }
     else
     {
-	MPID_Abort(NULL, mpi_errno, 13);
+	MPID_Abort(NULL, mpi_errno, 13, NULL);
     }
     
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_SEND_FAIL);
@@ -1471,7 +1505,6 @@ static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
     MPID_IOV * const iov = *iovp;
     const int count = *countp;
     int offset = 0;
-    int finished;
     
     while (offset < count)
     {

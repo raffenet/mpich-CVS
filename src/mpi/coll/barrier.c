@@ -47,6 +47,7 @@
 /* not declared static because it is called in ch3_comm_connect/accept */
 int MPIR_Barrier( MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Barrier";
     int size, rank, src, dst, mask, mpi_errno=MPI_SUCCESS;
     MPI_Comm comm;
 
@@ -69,7 +70,11 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
                                   MPIR_BARRIER_TAG, NULL, 0, MPI_BYTE,
                                   src, MPIR_BARRIER_TAG, comm,
                                   MPI_STATUS_IGNORE);
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
         mask <<= 1;
     }
 
@@ -204,6 +209,7 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
 /* not declared static because a machine-specific function may call this one in some cases */
 int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Barrier_inter";
     int rank, mpi_errno, i, root;
     MPID_Comm *newcomm_ptr = NULL;
 
@@ -217,7 +223,11 @@ int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
 
     /* do a barrier on the local intracommunicator */
     mpi_errno = MPIR_Barrier(newcomm_ptr);
-    if (mpi_errno) return mpi_errno;
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
 
     /* rank 0 on each group does an intercommunicator broadcast to the
        remote group to indicate that all processes in the local group
@@ -230,21 +240,37 @@ int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
         /* bcast to right*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
         /* receive bcast from right */
         root = 0;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
     }
     else {
         /* receive bcast from left */
         root = 0;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr); 
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
         /* bcast to left */
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Bcast_inter(&i, 1, MPI_BYTE, root, comm_ptr);  
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
     }
 
     return mpi_errno;
@@ -287,9 +313,7 @@ int MPI_Barrier( MPI_Comm comm )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -306,10 +330,7 @@ int MPI_Barrier( MPI_Comm comm )
         {
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -334,23 +355,21 @@ int MPI_Barrier( MPI_Comm comm )
 					      "**intercommcoll %s",
                                               FCNAME ); */
             mpi_errno = MPIR_Barrier_inter( comm_ptr );
-
 	}
         MPIR_Nest_decr();
     }
-    /* --BEGIN ERROR HANDLING-- */
+
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_barrier", "**mpi_barrier %C", comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_barrier", "**mpi_barrier %C", comm);
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BARRIER);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
-    /* ... end of body of routine ... */
 }

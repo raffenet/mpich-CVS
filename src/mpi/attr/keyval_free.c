@@ -58,27 +58,26 @@ int MPI_Keyval_free(int *keyval)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_FREE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     MPIR_Nest_incr();
-    mpi_errno = PMPI_Comm_free_keyval( keyval );
+    mpi_errno = NMPI_Comm_free_keyval( keyval );
     MPIR_Nest_decr();
-    if (mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_keyval_free", "**mpi_keyval_free %p", keyval);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_FREE);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	return MPI_SUCCESS;
     }
-    /* ... end of body of routine ... */
 
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_keyval_free", "**mpi_keyval_free %p", keyval);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_FREE);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

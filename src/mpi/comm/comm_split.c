@@ -110,10 +110,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -160,16 +157,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
     if (mpi_errno)
     {
-	/* FIXME: NEVER REPLACE A SPECIFIC MESSAGE WITH A GENERIC ONE.
-	   THE FOLLOWING CODE TURNS THE INFORMATIVE "Too many communicators"
-	   INTO "failed"
-	*/
-#if 0
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_comm_split", "**mpi_comm_split %C %d %d %p", comm, color, key, newcomm);
-#endif 
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     if (color != MPI_UNDEFINED) {
 	newcomm_ptr->remote_size = new_size;
@@ -233,5 +221,12 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_split", "**mpi_comm_split %C %d %d %p", comm, color, key, newcomm);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SPLIT );
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

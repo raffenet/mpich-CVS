@@ -90,10 +90,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    if (comm_ptr) {
 		MPIR_ERRTEST_COMM_INTRA( comm_ptr, mpi_errno );
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -116,10 +113,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 					  "**cartdim", "**cartdim %d %d", 
 					  comm_ptr->remote_size, newsize );
 	    }
-	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
+	    if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -129,10 +123,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
        (but do not duplicate the attributes) */
 
     mpi_errno = MPIR_Comm_copy( comm_ptr, newsize, &newcomm_ptr );
-    if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+    if (mpi_errno) goto fn_fail;
 
     /* If this process is not in the resulting communicator, return a 
        null communicator and exit */
@@ -140,7 +131,6 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	*comm_cart = MPI_COMM_NULL;
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
 	return MPI_SUCCESS;
-	
     }
 
     /* Create the topololgy structure */
@@ -148,8 +138,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     if (!cart_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
 
     cart_ptr->kind          = MPI_CART;
@@ -161,8 +150,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     if (!cart_ptr->topo.cart.dims || !cart_ptr->topo.cart.periodic || !cart_ptr->topo.cart.position)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     rank   = comm_ptr->rank;
     nranks = newsize;
@@ -178,16 +166,19 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 
     /* Place this topology onto the communicator */
     mpi_errno = MPIR_Topology_put( newcomm_ptr, cart_ptr );
-    if (mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		    "**mpi_cart_create", "**mpi_cart_create %C %d %p %p %d %p",
-		    comm_old, ndims, dims, periods, reorder, comm_cart);
+	*comm_cart = newcomm_ptr->handle;
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE);
+	return MPI_SUCCESS;
     }
 
-    *comm_cart = newcomm_ptr->handle;
-    /* ... end of body of routine ... */
-
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE);
-    return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_cart_create", "**mpi_cart_create %C %d %p %p %d %p",
+	comm_old, ndims, dims, periods, reorder, comm_cart);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE );
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

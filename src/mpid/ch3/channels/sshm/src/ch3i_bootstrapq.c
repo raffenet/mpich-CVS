@@ -526,8 +526,8 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int length)
 {
     int mpi_errno;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSRAPQ_TOSTRING);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSRAPQ_TOSTRING);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
     /*printf("[%d] queue->name = %s\n", MPIR_Process.comm_world->rank, queue->name);fflush(stdout);*/
     mpi_errno = MPIU_Strncpy(name, queue->name, length);
     if (mpi_errno)
@@ -536,7 +536,7 @@ int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
 	return mpi_errno;
     }
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSRAPQ_TOSTRING);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
     return MPI_SUCCESS;
 }
 
@@ -859,6 +859,7 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 
     int num_sent = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
     /*printf("[%d] calling mqshm_send from BootstrapQ_send_msg\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
     mpi_errno = MPIDI_CH3I_mqshm_send(queue->id, buffer, length,
@@ -875,6 +876,7 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 	char data[BOOTSTRAP_MAX_MSG_SIZE];
     } msg;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
 
 #ifdef MPICH_DBG_OUTPUT
@@ -895,7 +897,9 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 #else
     msg.mtype = 100;
 #endif
+    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
     memcpy(msg.data, buffer, length);
+    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
     MPIU_DBG_PRINTF(("sending message %d on queue %d\n", msg.mtype, queue->id));
 #ifdef USE_POSIX_MQ
     if (mq_send(queue->id, &msg, length, 0))
@@ -948,6 +952,7 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 #ifdef USE_MQSHM
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
     /*printf("[%d] calling mqshm_receive from BootstrapQ_recv_msg\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
     mpi_errno = MPIDI_CH3I_mqshm_receive(queue->id, queue->pid, buffer, length,
@@ -968,6 +973,7 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 	char data[BOOTSTRAP_MAX_MSG_SIZE];
     } msg;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
 
 #ifdef MPICH_DBG_OUTPUT
@@ -1019,7 +1025,9 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
 	return mpi_errno;
     }
+    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
     memcpy(buffer, msg.data, nb);
+    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
     *num_bytes_ptr = nb;
     MPIU_DBG_PRINTF(("message %d received: %d bytes\n", msg.mtype, nb));
     
@@ -1027,6 +1035,7 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 
     bootstrap_msg * msg;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
 
     mpi_errno = GetNextBootstrapMsg(queue, &msg, blocking);
@@ -1040,7 +1049,9 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
     }
     if (msg)
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(buffer, msg->buffer, min(length, msg->length));
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	*num_bytes_ptr = min(length, msg->length);
 	MPIU_Free(msg);
     }

@@ -2018,6 +2018,7 @@ int MPIR_Nest_value( void );
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
 int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
 void MPIR_Keyval_set_fortran( int );
+void MPIR_Keyval_set_fortran90( int );
 #ifdef HAVE_CXX_BINDING
 extern void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
 extern void MPIR_Op_set_cxx( MPI_Op, void (*)(void) );
@@ -2215,7 +2216,8 @@ int MPID_Finalize(void);
   Input Parameters:
 + comm        - Communicator of processes to abort
 . mpi_errno   - MPI error code containing the reason for the abort
-- exit_code   - Exit code to return to the calling environment.  See notes.
+. exit_code   - Exit code to return to the calling environment.  See notes.
+- error_msg   - Optional error message
 
   Return value:
   'MPI_SUCCESS' or an MPI error code.  Normally, this routine should not 
@@ -2237,6 +2239,10 @@ int MPID_Finalize(void);
   attempt to provide to the 'mpiexec' or other program invocation 
   environment.  See 'mpiexec' for a discussion of how exit codes from 
   many processes may be combined.
+
+  If the error_msg field is non-NULL this string will be used as the message
+  with the abort output.  Otherwise, the output message will be base on the
+  error message associated with the mpi_errno.
 
   An external agent that is aborting processes can invoke this with either
   'MPI_COMM_WORLD' or 'MPI_COMM_SELF'.  For example, if the process manager
@@ -2282,7 +2288,7 @@ int MPID_Finalize(void);
   Module:
   MPID_CORE
   @*/
-int MPID_Abort( MPID_Comm *comm, int mpi_errno, int exit_code );
+int MPID_Abort( MPID_Comm *comm, int mpi_errno, int exit_code, char *error_msg );
 
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Close_port(char *);

@@ -84,9 +84,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_exit;
 	}
         MPID_END_ERROR_CHECKS;
     }

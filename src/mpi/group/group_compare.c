@@ -71,10 +71,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
             MPID_Group_valid_ptr( group_ptr2, mpi_errno );
 	    /* MPID_ERRTEST_ARGNULL( result, "result", mpi_errno );*/
 	    /* If group_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -129,4 +126,11 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_group_compare", "**mpi_group_compare %G %G %p", group1, group2, result);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

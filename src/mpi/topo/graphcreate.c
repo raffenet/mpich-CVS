@@ -88,10 +88,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 		MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
 	    }
 	    MPIR_ERRTEST_ARGNULL(comm_graph,"comm_graph",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -114,10 +111,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 	    /* Perform the remaining tests only if nnodes is valid.  
 	       This avoids SEGVs from accessing invalid parts of the
 	       edges or index arrays */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    /* Check that index is monotone nondecreasing */
 	    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is not
@@ -162,10 +156,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 		}
 	    }
 	    
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -181,10 +172,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     mpi_errno = MPIR_Comm_copy( comm_ptr, nnodes, &newcomm_ptr );
     if (mpi_errno)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p", comm_old, nnodes, index, edges, reorder, comm_graph);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
 
     /* If this process is not in the resulting communicator, return a 
@@ -200,10 +188,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     if (!graph_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p", comm_old, nnodes, index, edges, reorder, comm_graph);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     
     graph_ptr->kind = MPI_GRAPH;
@@ -214,10 +199,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     if (!graph_ptr->topo.graph.index || !graph_ptr->topo.graph.edges)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p", comm_old, nnodes, index, edges, reorder, comm_graph);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     for (i=0; i<nnodes; i++) 
 	graph_ptr->topo.graph.index[i] = index[i];
@@ -229,14 +211,18 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     mpi_errno = MPIR_Topology_put( newcomm_ptr, graph_ptr );
     if (mpi_errno)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p", comm_old, nnodes, index, edges, reorder, comm_graph);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     
     *comm_graph = newcomm_ptr->handle;
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p", comm_old, nnodes, index, edges, reorder, comm_graph);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

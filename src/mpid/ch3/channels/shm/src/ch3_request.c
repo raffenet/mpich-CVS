@@ -35,7 +35,7 @@ MPID_Request * MPIDI_CH3_Request_create()
 	/*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
 	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
 	{
-	    MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1);
+	    MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1, NULL);
 	}
 #endif
 	MPIDI_CH3U_Request_create(req);
@@ -62,7 +62,7 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req)
     /*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
-	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1);
+	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1, NULL);
     }
 #endif
     MPIU_Object_add_ref(req);
@@ -83,7 +83,7 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
     /*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
-	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1);
+	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1, NULL);
     }
 #endif
     MPIU_Object_release_ref(req, ref_count);
@@ -106,12 +106,12 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     /*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
-	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1);
+	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1, NULL);
     }
     /*assert(req->ref_count == 0);*/
     if (req->ref_count != 0)
     {
-	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1);
+	MPID_Abort(MPIR_Process.comm_world, MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0), -1, NULL);
     }
 #endif
     MPIDI_CH3U_Request_destroy(req);

@@ -59,9 +59,7 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -83,10 +81,7 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 	    if (comm_ptr) {
 		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    }
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_PROBE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -101,6 +96,7 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 	return MPI_SUCCESS;
     }
 
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_probe", "**mpi_probe %d %d %C %p", source, tag, comm, status);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_PROBE);

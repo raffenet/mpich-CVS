@@ -156,10 +156,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	    MPIR_ERRTEST_ARGNEG(nnodes,"nnodes",mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(ndims,"ndims",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(dims,"dims",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -180,8 +177,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 						  "**argarrayneg", 
 						  "**argarrayneg %s %d %d", 
 						  "dims", i, dims[i] );
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
         }
         MPID_END_ERROR_CHECKS;
@@ -199,8 +195,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	    if ( (nnodes / dims_product ) * dims_product != nnodes ) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS, 
 						  "**dimspartition", 0 );
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
         }
         MPID_END_ERROR_CHECKS;
@@ -343,4 +338,11 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_dims_create", "**mpi_dims_create %d %d %p", nnodes, ndims, dims);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -58,7 +58,8 @@ int MPI_Type_hindexed(int count,
 {
     static const char FCNAME[] = "MPI_Type_hindexed";
     int mpi_errno = MPI_SUCCESS;
-
+    MPID_Datatype *new_dtp;
+    int i, *ints;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_HINDEXED);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_HINDEXED);
@@ -87,10 +88,7 @@ int MPI_Type_hindexed(int count,
 		/* verify that all blocklengths are > 0 (0 isn't ok is it?) */
 		for (i=0; i < count; i++) MPIR_ERRTEST_ARGNEG(blocklens[i], "blocklen", mpi_errno);
 	    }
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -103,44 +101,42 @@ int MPI_Type_hindexed(int count,
 				  old_type,
 				  newtype);
 
-    if (mpi_errno == MPI_SUCCESS) {
-	MPID_Datatype *new_dtp;
-	int i, *ints;
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
 
-	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
-	/* --BEGIN ERROR HANDLING-- */
-	if (ints == NULL)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno,
-					     MPIR_ERR_RECOVERABLE,
-					     FCNAME,
-					     __LINE__,
-					     MPI_ERR_OTHER,
-					     "**nomem",
-					     "**nomem %d",
-					     (count+1) * sizeof(int));
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
-	    return mpi_errno;
-	}
-	/* --END ERROR HANDLING-- */
-
-	/* copy ints into temporary buffer (count and blocklengths) */
-	ints[0] = count;
-	for (i=0; i < count; i++) {
-	    ints[i+1] = blocklens[i];
-	}
-
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_HINDEXED,
-					       count+1, /* ints */
-					       count, /* aints (displs) */
-					       1, /* types */
-					       ints,
-					       indices,
-					       &old_type);
-	MPIU_Free(ints);
+    ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
+    /* --BEGIN ERROR HANDLING-- */
+    if (ints == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno,
+				         MPIR_ERR_RECOVERABLE,
+				         FCNAME,
+				         __LINE__,
+				         MPI_ERR_OTHER,
+				         "**nomem",
+				         "**nomem %d",
+				         (count+1) * sizeof(int));
+	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
+
+    /* copy ints into temporary buffer (count and blocklengths) */
+    ints[0] = count;
+    for (i=0; i < count; i++)
+    {
+	ints[i+1] = blocklens[i];
+    }
+
+    MPID_Datatype_get_ptr(*newtype, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_HINDEXED,
+				           count+1, /* ints */
+				           count, /* aints (displs) */
+				           1, /* types */
+				           ints,
+				           indices,
+				           &old_type);
+    MPIU_Free(ints);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -149,6 +145,7 @@ int MPI_Type_hindexed(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

@@ -74,10 +74,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-            if (mpi_errno) 
-	    {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -96,27 +93,18 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    MPID_Datatype * datatype_ptr = NULL;
 
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -142,11 +130,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 		    mpi_errno = MPID_Progress_wait();
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-			    "**mpi_recv", "**mpi_recv %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, status);
-			goto fn_exit;
-		    }
+			goto fn_fail;
 		    /* --END ERROR HANDLING-- */
 		}
 		else
@@ -172,9 +156,10 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     /* --BEGIN ERROR HANDLING-- */
     }
 
-  fn_exit:
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_recv", "**mpi_recv %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, status);
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */
 }
-

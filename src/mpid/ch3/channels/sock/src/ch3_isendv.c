@@ -10,17 +10,26 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 {
     int i;
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
+    /*MPIDI_STATE_DECL(MPID_STATE_MEMCPY);*/
 
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST);
     
-    /* memcpy(sreq->dev.iov, iov, iov_count * sizeof(MPID_IOV)); */
+    /*
+    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
+    memcpy(sreq->dev.iov, iov, iov_count * sizeof(MPID_IOV));
+    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+    */
     for (i = 0; i < iov_count; i++)
     {
 	sreq->dev.iov[i] = iov[i];
     }
     if (iov_offset == 0)
     {
-	/* memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */
+	/*
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
+	memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	*/
 	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
 	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt;

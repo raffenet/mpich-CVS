@@ -89,10 +89,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -107,10 +104,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 				&newcomm_ptr );
     if (mpi_errno)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
 
     /* Copy attributes, executing the attribute copy functions */
@@ -135,10 +129,10 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
 #endif
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
 	    *newcomm = MPI_COMM_NULL;
 	    /* FIXME (gropp): free newcomm (better yet, consider running 
 	     attribute dup functions before generating the new communicator) */
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
     }
@@ -148,5 +142,12 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_dup", "**mpi_comm_dup %C %p", comm, newcomm);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP );
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

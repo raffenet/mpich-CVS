@@ -66,9 +66,7 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, int dest, int ta
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -89,10 +87,7 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, int dest, int ta
 	    MPID_Datatype * datatype_ptr = NULL;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND_INIT);
-                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
@@ -103,17 +98,11 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, int dest, int ta
 	    {
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND_INIT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND_INIT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -130,13 +119,13 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, int dest, int ta
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND_INIT);
 	return MPI_SUCCESS;
     }
-    
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_bsend_init", "**mpi_bsend_init %p %d %D %d %d %C %p",
 	buf, count, datatype, dest, tag, comm, request);
-    
-    /* ... end of body of routine ... */
-
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND_INIT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

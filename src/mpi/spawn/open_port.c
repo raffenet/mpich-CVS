@@ -68,26 +68,26 @@ int MPI_Open_port(MPI_Info info, char *port_name)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+            if (mpi_errno) goto fn_fail;
+	    /* check info_ptr? */
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Open_port(info_ptr, port_name);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_open_port", "**mpi_open_port %I %p", info, port_name);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-    }
-    /* --END ERROR HANDLING-- */
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_open_port", "**mpi_open_port %I %p", info, port_name);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OPEN_PORT);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

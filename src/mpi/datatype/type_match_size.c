@@ -78,10 +78,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNULL( datatype, "datatype", mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -100,7 +97,9 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	tname = "MPI_TYPECLASS_REAL";
 	for (i=0; i<sizeof(real_types)/sizeof(MPI_Datatype); i++) {
 	    if (real_types[i] == MPI_DATATYPE_NULL) { continue; }
-	    PMPI_Type_size( real_types[i], &tsize );
+	    MPIR_Nest_incr();
+	    NMPI_Type_size( real_types[i], &tsize );
+	    MPIR_Nest_decr();
 	    if (tsize == size) {
 		matched_datatype = real_types[i];
 		break;
@@ -111,7 +110,9 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	tname = "MPI_TYPECLASS_INTEGER";
 	for (i=0; i<sizeof(int_types)/sizeof(MPI_Datatype); i++) {
 	    if (int_types[i] == MPI_DATATYPE_NULL) { continue; }
-	    PMPI_Type_size( int_types[i], &tsize );
+	    MPIR_Nest_incr();
+	    NMPI_Type_size( int_types[i], &tsize );
+	    MPIR_Nest_decr();
 	    if (tsize == size) {
 		matched_datatype = int_types[i];
 		break;
@@ -122,7 +123,9 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	tname = "MPI_TYPECLASS_COMPLEX";
 	for (i=0; i<sizeof(complex_types)/sizeof(MPI_Datatype); i++) {
 	    if (complex_types[i] == MPI_DATATYPE_NULL) { continue; }
-	    PMPI_Type_size( complex_types[i], &tsize );
+	    MPIR_Nest_incr();
+	    NMPI_Type_size( complex_types[i], &tsize );
+	    MPIR_Nest_decr();
 	    if (tsize == size) {
 		matched_datatype = complex_types[i];
 		break;
@@ -162,10 +165,14 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno,
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
 					 MPIR_ERR_RECOVERABLE,
 					 FCNAME,
 					 __LINE__,
@@ -175,8 +182,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 					 typeclass,
 					 size,
 					 datatype);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-    }
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */
-    return MPI_SUCCESS;
 }

@@ -56,7 +56,8 @@ int MPI_Type_create_struct(int count,
 {
     static const char FCNAME[] = "MPI_Type_create_struct";
     int mpi_errno = MPI_SUCCESS;
-
+    int i, *ints;
+    MPID_Datatype *new_dtp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
@@ -90,10 +91,7 @@ int MPI_Type_create_struct(int count,
 		    }
 		}
 	    }
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_STRUCT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -105,29 +103,31 @@ int MPI_Type_create_struct(int count,
 				 array_of_types,
 				 newtype);
 
-    if (mpi_errno == MPI_SUCCESS) {
-	int i, *ints;
-	MPID_Datatype *new_dtp;
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
 
-	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
-	assert(ints != NULL);
-	ints[0] = count;
-	for (i=0; i < count; i++) {
-	    ints[i+1] = array_of_blocklengths[i];
-	}
-
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_STRUCT,
-					       count+1, /* ints (cnt,blklen) */
-					       count, /* aints (disps) */
-					       count, /* types */
-					       ints,
-					       array_of_displacements,
-					       array_of_types);
-
-	MPIU_Free(ints);
+    ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
+    if (ints == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	goto fn_fail;
     }
+    ints[0] = count;
+    for (i=0; i < count; i++)
+    {
+	ints[i+1] = array_of_blocklengths[i];
+    }
+
+    MPID_Datatype_get_ptr(*newtype, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_STRUCT,
+				           count+1, /* ints (cnt,blklen) */
+				           count, /* aints (disps) */
+				           count, /* types */
+				           ints,
+				           array_of_displacements,
+				           array_of_types);
+    MPIU_Free(ints);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -136,6 +136,7 @@ int MPI_Type_create_struct(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

@@ -20,11 +20,21 @@ static int GetLocalIPs(int32_t *pIP, int max)
     char hostname[100], **hlist;
     struct hostent *h = NULL;
     int n = 0;
-    
+
+#ifdef HAVE_WINDOWS_H
+    {
+	DWORD len = 100;
+	if (!GetComputerName(hostname, &len))
+	{
+	    return 0;
+	}
+    }
+#else
     if (gethostname(hostname, 100) == SOCKET_ERROR)
     {
 	return 0;
     }
+#endif
     
     h = gethostbyname(hostname);
     if (h == NULL)
@@ -213,6 +223,53 @@ static int GetLocalIPs(int32_t pIP[], int max)
 
 #endif /* HAVE_WINDOWS_H */
 
+#undef FUNCNAME
+#define FUNCNAME  MPIDI_CH3I_Get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Get_business_card(char *value, int length)
+{
+    int mpi_errno;
+    int port;
+    char host_description[256];
+
+    port = MPIDI_CH3I_Listener_get_port();
+    mpi_errno = MPIDU_Sock_get_host_description(host_description, 256);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_description", 0);
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_int_arg(&value, &length, MPIDI_CH3I_PORT_KEY, port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    mpi_errno = MPIU_Str_add_string_arg(&value, &length, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	}
+	return mpi_errno;
+    }
+    return MPI_SUCCESS;
+}
+
+#if 0
 int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
     int32_t local_ip[MAX_NUM_NICS];
@@ -261,7 +318,14 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     /* FIXME: If numnics == 0, we don't get a useful error message */
     if (ips_added == 0)
     {
+#ifdef HAVE_WINDOWS_H
+	{
+	    DWORD len = 100;
+	    GetComputerName(hostname, &len);
+	}
+#else
 	gethostname(hostname, 100);
+#endif
 	sprintf(value, "%s:127.0.0.1:%d", hostname, port);
     }
 /*    printf("Business card:\n<%s>\n", value_orig); */
@@ -269,3 +333,4 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
     return MPI_SUCCESS;
 }
+#endif

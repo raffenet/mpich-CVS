@@ -89,14 +89,20 @@ static MPI_Datatype mpi_dtypes[] = {
     (MPI_Datatype)-1,
 };
 
-void MPIR_Datatype_init( void )
+int MPIR_Datatype_init( void )
 {
+    static const char FCNAME[] = "MPIR_Datatype_init";
+    int mpi_errno = MPI_SUCCESS;
     int i;
     MPID_Datatype *dptr;
     MPI_Datatype  d;
     static int is_init = 0;
-    
-    if (is_init) return;
+    char error_msg[1024];
+
+    if (is_init)
+    {
+	return MPI_SUCCESS;
+    }
 
     {
 	MPID_Common_thread_lock();
@@ -113,6 +119,12 @@ void MPIR_Datatype_init( void )
 		if (d == MPI_DATATYPE_NULL) continue;
 
 		MPID_Datatype_get_ptr(d,dptr);
+		if (dptr < MPID_Datatype_builtin || dptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
+		{
+		    MPIU_Snprintf(error_msg, 1024, "%dth builtin datatype handle references invalid memory", i);
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
+		    return mpi_errno;
+		}
 		/* dptr will point into MPID_Datatype_builtin */
 		dptr->handle	   = d;
 		dptr->is_permanent = 1;
@@ -127,13 +139,17 @@ void MPIR_Datatype_init( void )
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (d != -1 && mpi_dtypes[i] != -1) {
 		/* We did not hit the end-of-list */
-		MPIU_Internal_error_printf( "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );
+		/*MPIU_Internal_error_printf( "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );*/
+		MPIU_Snprintf(error_msg, 1024, "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
+		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    is_init = 1;
 	}
 	MPID_Common_thread_unlock();
     }
+    return mpi_errno;
 }
 
 /* This will eventually be removed ones ROMIO knows more about 

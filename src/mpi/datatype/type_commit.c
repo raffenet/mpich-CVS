@@ -57,22 +57,22 @@ int MPI_Type_commit(MPI_Datatype *datatype)
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(0, *datatype, mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
     mpi_errno = MPID_Type_commit(datatype);
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_type_commit", "**mpi_type_commit %p", datatype);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
+	return MPI_SUCCESS;
     }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_commit", "**mpi_type_commit %p", datatype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_COMMIT);
-
-    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
-    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

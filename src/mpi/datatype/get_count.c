@@ -69,10 +69,7 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* Q: Must the type be committed to be used with this function? */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_COUNT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -102,4 +99,11 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_COUNT);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_get_count", "**mpi_get_count %p %D %p", status, datatype, count);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_COUNT);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

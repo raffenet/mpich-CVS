@@ -59,9 +59,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -81,9 +79,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    }
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-	    if (mpi_errno) {
-		goto fn_exit;
-            }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -105,9 +101,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
-            if (mpi_errno) {
-		goto fn_exit;
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -122,11 +116,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    mpi_errno = MPID_Progress_wait();
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		    "**mpi_wait", "**mpi_wait %p %p", request, status);
-		goto fn_exit;
-	    }
+		goto fn_fail;
 	    /* --END ERROR HANDLING-- */
 	}
 	else
@@ -137,13 +127,18 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 
     mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_wait", "**mpi_wait %p %p", request, status);
-    }
 
-  fn_exit:
+fn_exit:
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_wait", "**mpi_wait %p %p", request, status);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAIT);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(request_ptr ? request_ptr->comm : 0, FCNAME, mpi_errno);
+    return MPIR_Err_return_comm(request_ptr ? request_ptr->comm : 0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

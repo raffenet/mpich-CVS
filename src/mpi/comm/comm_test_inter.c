@@ -64,10 +64,7 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
 
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_TEST_INTER);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -79,5 +76,12 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_TEST_INTER);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_test_inter", "**mpi_comm_test_inter %C %p", comm, flag);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_TEST_INTER);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

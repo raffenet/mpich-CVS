@@ -69,10 +69,7 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 						  "**commnotinter", 0 );
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -85,10 +82,7 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 	mpi_errno = MPIR_Group_create( n, &group_ptr );
 	if (mpi_errno)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_comm_remote_group", "**mpi_comm_remote_group %C %p", comm, group);
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP );
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	
 	for (i=0; i<n; i++) {
@@ -105,8 +99,14 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
     MPIU_Object_add_ref( comm_ptr->remote_group );
     /* ... end of body of routine ... */
 
-
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_remote_group", "**mpi_comm_remote_group %C %p", comm, group);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_GROUP );
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

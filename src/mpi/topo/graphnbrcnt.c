@@ -69,10 +69,7 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 	    MPIR_ERRTEST_ARGNULL(nneighbors, "nneighbors", mpi_errno);
 
 	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -96,10 +93,7 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 					  "**rank", "**rank %d %d",
 					  rank, graph_ptr->topo.graph.nnodes );
 	    }
-	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -114,4 +108,11 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_graph_neighbors_count", "**mpi_graph_neighbors_count %C %d %p", comm, rank, nneighbors);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

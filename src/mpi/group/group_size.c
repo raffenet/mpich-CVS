@@ -61,10 +61,7 @@ int MPI_Group_size(MPI_Group group, int *size)
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not value, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_SIZE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -76,5 +73,12 @@ int MPI_Group_size(MPI_Group group, int *size)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_SIZE);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_group_size", "**mpi_group_size %G %p", group, size);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_SIZE);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

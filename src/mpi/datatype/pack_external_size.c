@@ -66,10 +66,7 @@ int MPI_Pack_external_size(char *datarep,
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If datatype_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -79,4 +76,9 @@ int MPI_Pack_external_size(char *datarep,
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_pack_external_size", "**mpi_pack_external_size %s %d %D %p", datarep, incount, datatype, size);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

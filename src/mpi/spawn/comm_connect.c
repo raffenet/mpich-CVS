@@ -68,10 +68,7 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -88,7 +85,9 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, MP
     }
 
     /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_connect", "**mpi_comm_connect %s %I %d %C %p", port_name, info, root, comm, newcomm);
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_connect", "**mpi_comm_connect %s %I %d %C %p", port_name, info, root, comm, newcomm);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CONNECT);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

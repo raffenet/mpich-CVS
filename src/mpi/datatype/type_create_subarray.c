@@ -309,9 +309,16 @@ int MPI_Type_create_subarray(int ndims,
 
   fn_exit:
     MPIR_Nest_decr();
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
-    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
+	return MPI_SUCCESS;
+    }
     /* --BEGIN ERROR HANDLING-- */
-    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_create_subarray", "**mpi_type_create_subarray %d %p %p %p %d %D %p", ndims, array_of_sizes, array_of_subsizes,
+	array_of_starts, order, oldtype, newtype);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     /* --END ERROR HANDLING-- */
 }

@@ -61,7 +61,10 @@ int MPI_Pack_size(int incount,
     static const char FCNAME[] = "MPI_Pack_size";
     int mpi_errno = MPI_SUCCESS;
     int typesize;
-
+#ifdef HAVE_ERROR_CHECKING
+    MPID_Comm *comm_ptr = NULL;
+    MPID_Datatype *datatype_ptr = NULL;
+#endif
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_SIZE);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PACK_SIZE);
@@ -70,9 +73,6 @@ int MPI_Pack_size(int incount,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPID_Comm *comm_ptr = NULL;
-	    MPID_Datatype *datatype_ptr = NULL;
-
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE_NULL(datatype, "datatype", mpi_errno);
@@ -86,10 +86,7 @@ int MPI_Pack_size(int incount,
 		    MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 		}
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_SIZE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -100,6 +97,11 @@ int MPI_Pack_size(int incount,
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_SIZE);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_pack_size", "**mpi_pack_size %d %D %C %p", incount, datatype, comm, size);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_SIZE);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }
 
 

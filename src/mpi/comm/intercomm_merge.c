@@ -94,10 +94,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 		    MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM,
 						  "**commnotinter", 0 );
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -131,9 +128,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 						  "**notsame",
 						  "**notsame %s %s", "high", 
 						  "MPI_Intercomm_merge" );
-		
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
         }
         MPID_END_ERROR_CHECKS;
@@ -210,8 +205,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
 						      MPIR_ERR_RECOVERABLE,
 		       FCNAME, __LINE__, MPI_ERR_INTERN, "**nouniquehigh", 0 );
-		    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
-		    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+		    goto fn_fail;
 		    /* --END ERROR HANDLING-- */
 		}
 		if (tout < tin) {
@@ -243,10 +237,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     if (!newcomm_ptr) {
 	MPIR_Nest_decr();
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_intercomm_merge", "**mpi_intercomm_merge %C %d %p", intercomm, high, newintracomm);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
@@ -297,10 +288,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     if (new_context_id == 0) {
 	MPIR_Nest_decr();
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_intercomm_merge", "**mpi_intercomm_merge %C %d %p", intercomm, high, newintracomm);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
     /* printf( "Resetting contextid\n" ); fflush( stdout ); */
@@ -314,4 +302,11 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_intercomm_merge", "**mpi_intercomm_merge %C %d %p", intercomm, high, newintracomm);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INTERCOMM_MERGE);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

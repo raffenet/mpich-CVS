@@ -53,26 +53,24 @@ int MPI_Close_port(char *port_name)
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Close_port(port_name);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_close_port", "**mpi_close_port %s", port_name);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
-	return mpi_errno;
+	return MPI_SUCCESS;
     }
-    /* --END ERROR HANDLING-- */
 
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_close_port", "**mpi_close_port %s", port_name);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
-    return MPI_SUCCESS;
+    return mpi_errno;
+    /* --END ERROR HANDLING-- */
 }

@@ -87,10 +87,7 @@ int MPI_Pack_external(char *datarep,
 		    MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 		}
 	    }
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
-                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -107,42 +104,12 @@ int MPI_Pack_external(char *datarep,
 					 "**nomem",
 					 "**nomem %s",
 					 "MPID_Segment");
-	mpi_errno = MPIR_Err_create_code(mpi_errno,
-					 MPIR_ERR_RECOVERABLE,
-					 FCNAME,
-					 __LINE__,
-					 MPI_ERR_OTHER,
-					 "**mpi_pack_external",
-					 "**mpi_pack_external %s %p %d %D %p %d %p",
-					 datarep,
-					 inbuf,
-					 incount,
-					 datatype,
-					 outbuf,
-					 outcount,
-					 position);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	goto fn_fail;
     }
     mpi_errno = MPID_Segment_init(inbuf, incount, datatype, segp, 1);
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno,
-					 MPIR_ERR_RECOVERABLE,
-					 FCNAME,
-					 __LINE__,
-					 MPI_ERR_OTHER,
-					 "**mpi_pack_external",
-					 "**mpi_pack_external %s %p %d %D %p %d %p",
-					 datarep,
-					 inbuf,
-					 incount,
-					 datatype,
-					 outbuf,
-					 outcount,
-					 position);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	goto fn_fail;
     }
 
     /* NOTE: the use of buffer values and positions in MPI_Pack_external and
@@ -163,4 +130,21 @@ int MPI_Pack_external(char *datarep,
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno,
+				     MPIR_ERR_RECOVERABLE,
+				     FCNAME,
+				     __LINE__,
+				     MPI_ERR_OTHER,
+				     "**mpi_pack_external",
+				     "**mpi_pack_external %s %p %d %D %p %d %p",
+				     datarep,
+				     inbuf,
+				     incount,
+				     datatype,
+				     outbuf,
+				     outcount,
+				     position);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PACK_EXTERNAL);
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

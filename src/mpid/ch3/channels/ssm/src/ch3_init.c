@@ -323,7 +323,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     /* FIXME: consider using sizeof(pg->shm_hostname) instead of
        MAXHOSTNAMELEN, in case the system and the ssm/include header files
        have a different interpretation of the size of MAXHOSTNAMELEN */
+#ifdef HAVE_WINDOWS_H
+    {
+	DWORD len = sizeof(pg->shm_hostname);
+	GetComputerName(pg->shm_hostname, &len);
+    }
+#else
     gethostname(pg->shm_hostname, sizeof(pg->shm_hostname));
+#endif
 
 #ifdef USE_MQSHM
 
@@ -539,6 +546,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    return mpi_errno;
 	}
 
+	MPIU_Strncpy(intercomm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
         MPIR_Process.comm_parent = intercomm;
 
         /* TODO: Check that this intercommunicator gets freed in

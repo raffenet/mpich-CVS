@@ -110,10 +110,7 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
 	    /* Validate buffer */
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -122,7 +119,8 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     /* ... body of routine ...  */
 #ifdef MPID_HAS_TBSEND
     mpi_errno = MPID_tBsend( buf, count, datatype, dest, tag, comm_ptr, 0 );
-    if (mpi_errno == MPI_SUCCESS) {
+    if (mpi_errno == MPI_SUCCESS)
+    {
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
 	return MPI_SUCCESS;
     }
@@ -130,17 +128,18 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 #endif    
     mpi_errno = MPIR_Bsend_isend( buf, count, datatype, dest, tag, comm_ptr, 
 				  BSEND, &request_ptr );
-    if (mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_bsend", "**mpi_bsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	return MPI_SUCCESS;
     }
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_bsend", "**mpi_bsend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* We'll wait on the request, if any, within the bsendutil.c functions
        that advance active sends */
-    /* ... end of body of routine ... */
-
-    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_BSEND);
-    return MPI_SUCCESS;
 }

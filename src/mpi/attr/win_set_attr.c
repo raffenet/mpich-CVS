@@ -69,7 +69,7 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-
+	    if (mpi_errno) goto fn_fail;
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not valid, it will be reset to null */
@@ -92,10 +92,7 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 		MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
 		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 		}
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
 	MPID_ELSE_ERROR_CHECKS;
 	{
@@ -128,11 +125,8 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	    if (mpi_errno)
 	    {
 		MPID_Common_thread_unlock( );
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		    "**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
 		/* FIXME (gropp): communicator of window? */
-		return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    p->value = attribute_val;
@@ -145,10 +139,7 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	    if (!new_p)
 	    {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		    "**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-		return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    new_p->keyval	 = keyval_ptr;
@@ -170,10 +161,7 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	if (!new_p)
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-	    return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
 	/* Did not find in list.  Add at end */
@@ -195,4 +183,9 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
+    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

@@ -81,10 +81,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -98,10 +95,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 	mpi_errno = MPIR_Group_create( n, &group_ptr );
 	if (mpi_errno)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_comm_group", "**mpi_comm_group %C %p", comm, group);
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 
 	/* Make sure that we get the correct group */
@@ -132,5 +126,12 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_comm_group", "**mpi_comm_group %C %p", comm, group);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP );
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

@@ -197,7 +197,9 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
         memcpy(recvbuf, sendbuf, sendcount*sendsize);
     }
     else {
-        PMPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPIR_Nest_incr();
+        NMPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPIR_Nest_decr();
         mpi_errno = MPIC_Sendrecv ( sendbuf, sendcount, sendtype,
                                     rank, MPIR_LOCALCOPY_TAG, 
                                     recvbuf, recvcount, recvtype,

@@ -86,10 +86,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 						  "**cartshiftzero", 0 );
 	    }
 */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -112,10 +109,7 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 						  cart_ptr->topo.cart.ndims,
 						  direction);
 	    }
-	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -162,4 +156,11 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_cart_shift", "**mpi_cart_shift %C %d %d %p %p", comm, direction, displ, source, dest);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SHIFT);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

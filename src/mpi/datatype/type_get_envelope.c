@@ -69,10 +69,7 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If comm_ptr is not value, it will be reset to null */
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
-                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -90,6 +87,7 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

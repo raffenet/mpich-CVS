@@ -73,10 +73,7 @@ int MPI_Type_vector(int count,
 		MPID_Datatype_get_ptr(old_type, old_ptr);
 		MPID_Datatype_valid_ptr(old_ptr, mpi_errno);
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
-                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -114,6 +111,7 @@ int MPI_Type_vector(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

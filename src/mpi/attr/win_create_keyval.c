@@ -66,10 +66,7 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -80,10 +77,7 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_
     if (!keyval_ptr)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Keyval" );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_win_create_keyval", "**mpi_win_create_keyval %p %p %p %p", win_copy_attr_fn, win_delete_attr_fn, win_keyval, extra_state);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     /* Initialize the attribute dup function */
     if (!MPIR_Process.attr_dup) {
@@ -106,4 +100,9 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, MPI_Win_
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_create_keyval", "**mpi_win_create_keyval %p %p %p %p", win_copy_attr_fn, win_delete_attr_fn, win_keyval, extra_state);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }

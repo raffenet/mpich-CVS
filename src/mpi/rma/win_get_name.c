@@ -68,10 +68,7 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
 	    MPIR_ERRTEST_ARGNULL(win_name, "win_name", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen, "resultlen", mpi_errno);
 
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_NAME);
-                return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -84,5 +81,9 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_NAME);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_get_name", "**mpi_win_get_name %W %p %p", win, win_name, resultlen);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_NAME);
+    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }
-

@@ -148,11 +148,13 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* MPIU_Timer_pre_init(); */
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, "MPIR_Init_thread", __LINE__, MPI_ERR_OTHER, "**init", 0);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* Capture the level of thread support provided */
     MPIR_Process.thread_provided = thread_provided;
@@ -233,24 +235,24 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
             if (MPIR_Process.initialized != MPICH_PRE_INIT) {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPI_Init_thread", __LINE__, MPI_ERR_OTHER, "**inittwice", 0 );
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPIR_Init_thread( argc, argv, required, provided );
-    if (mpi_errno)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_init_thread", "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    }
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_init_thread", "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

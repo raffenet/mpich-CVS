@@ -66,10 +66,7 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -89,10 +86,7 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 						  MPI_ERR_KEYVAL, "**keyvalnotwin", 0 );
 	    }
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	
 	MPID_END_ERROR_CHECKS;
     }
@@ -164,4 +158,9 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_get_attr", "**mpi_win_get_attr %W %d %p %p", win, win_keyval, attribute_val, flag);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
+    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }

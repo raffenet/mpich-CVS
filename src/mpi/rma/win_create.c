@@ -65,9 +65,7 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -85,10 +83,7 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
             /* Validate pointers */
 	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             if (size < 0)
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_SIZE,
                                                   "**rmasize",
@@ -97,10 +92,7 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
                                                  "**arg", "**arg %s", 
                                                  "disp_unit must be positive");  
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -108,16 +100,16 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
     mpi_errno = MPID_Win_create(base, size, disp_unit, info, comm_ptr, &win_ptr);
     if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_win_create", "**mpi_win_create %p %d %d %I %C %p", base, size, disp_unit, info, comm, win);
-	MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
-	MPIR_Err_return_win(NULL, FCNAME, mpi_errno);
-    }
+	goto fn_fail;
 
     /* return the handle of the window object to the user */
     *win = win_ptr->handle;
     
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
     return mpi_errno;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_create", "**mpi_win_create %p %d %d %I %C %p", base, size, disp_unit, info, comm, win);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE);
+    return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
 }

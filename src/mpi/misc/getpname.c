@@ -64,10 +64,7 @@ int MPI_Get_processor_name( char *name, int *resultlen)
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(name,"name",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
-                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -77,13 +74,17 @@ int MPI_Get_processor_name( char *name, int *resultlen)
     mpi_errno = MPID_Get_processor_name( name, resultlen );
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
     if (mpi_errno == MPI_SUCCESS)
     {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
 	return MPI_SUCCESS;
     }
 
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_get_processor_name", "**mpi_get_processor_name %p %p", name, resultlen);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
     return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

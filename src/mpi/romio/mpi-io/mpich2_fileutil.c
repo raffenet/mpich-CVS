@@ -17,12 +17,16 @@ int MPIR_ROMIO_Set_file_errhand( MPI_File, MPI_Errhandler );
 void MPIR_Get_file_error_routine( MPI_Errhandler, 
 				  void (**)(MPI_File *, int *, ...), 
 				  int * );
+struct MPID_Comm;
+int MPID_Abort( struct MPID_Comm *comm, int mpi_errno, int exit_code, char *error_msg );
 
 int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
 {
     MPI_Errhandler e;
     void (*c_errhandler)(MPI_File *, int *, ... );
     int  kind;   /* Error handler kind (see below) */
+    char error_msg[4096];
+    int len;
 
     /* First, check the nesting level */
     /*if (MPIR_Nest_value()) return errcode;*/ /* Is there any recursion in the MPI_File_... interface? */
@@ -58,25 +62,12 @@ int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
     /* --BEGIN ERROR HANDLING-- */
     if (MPIR_Err_is_fatal(errcode) || kind == 0) 
     {
-	if (MPIR_Err_print_stack_flag)
-	{
-	    fprintf( stderr, "Fatal error (code 0x%08x) in %s():\n", errcode, fcname);
-	    MPIR_Err_print_stack(stderr, errcode);
-	}
-	else
-	{
-	    /* The default handler should try the following: Provide the rank 
-	       in comm_world.  If the process is not in comm world,
-	       use something else.  If the communicator exists and has a name, 
-	       provide that name */
-	    char msg[MPI_MAX_ERROR_STRING];
-
-	    MPIR_Err_get_string( errcode, msg );
-	    fprintf( stderr, "Fatal error (code 0x%08x) in %s(): %s\n", 
-		     errcode, fcname, msg);
-	}
-
-	MPID_Abort( 0, errcode, errcode); 
+	/* This file does not get the correct definitions for MPIU_Snprintf because it cannot include mpiimpl.h */
+	/*MPIU_Snprintf(error_msg, 4096, "Fatal error in %s: ", fcname);*/
+	sprintf(error_msg, "Fatal error in %s: ", fcname);
+	len = (int)strlen(error_msg);
+	MPIR_Err_get_string(errcode, &error_msg[len], 4096-len, NULL);
+	MPID_Abort(NULL, MPI_SUCCESS, errcode, error_msg);
     }
     /* --END ERROR HANDLING-- */
     else if (kind == 2) {

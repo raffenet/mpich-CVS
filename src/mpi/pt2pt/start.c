@@ -58,9 +58,7 @@ int MPI_Start(MPI_Request *request)
 	    {
 		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
 	    }
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -77,28 +75,26 @@ int MPI_Start(MPI_Request *request)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
-                return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
-            }
+            if (mpi_errno) goto fn_fail;
 	    MPIR_ERRTEST_PERSISTENT(request_ptr, mpi_errno);
 	    MPIR_ERRTEST_PERSISTENT_ACTIVE(request_ptr, mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
-                return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     mpi_errno = MPID_Startall(1, &request_ptr);
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_start", "**mpi_start %p", request);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
+	return MPI_SUCCESS;
     }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_start", "**mpi_start %p", request);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_START);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS :
-	MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

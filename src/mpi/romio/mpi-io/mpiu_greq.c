@@ -7,6 +7,12 @@
 #include "mpioimpl.h"
 #include "mpiu_greq.h"
 
+#ifdef HAVE_WEAK_SYMBOLS
+/* Include mapping from MPI->PMPI */
+#define MPIO_BUILD_PROFILING
+#include "mpioprof.h"
+#endif
+
 int MPIU_Greq_query_fn(void *extra_state, MPI_Status *status)
 {
 	int foo;

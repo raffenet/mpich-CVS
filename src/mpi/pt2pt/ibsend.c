@@ -85,10 +85,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
 	    /* Validate buffer */
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -111,10 +108,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 		"**nomem", "**nomem %s", "MPI_Request");
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_ibsend", "**mpi_ibsend %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
-	    return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
 	request_ptr->kind                 = MPID_REQUEST_SEND;
@@ -127,13 +121,17 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     else
     {
 	*request = MPI_REQUEST_NULL;
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_ibsend", "**mpi_ibsend %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
-	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     /* ... end of body of routine ... */
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_ibsend", "**mpi_ibsend %p %d %D %d %d %C %p", buf, count, datatype, dest, tag, comm, request);
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

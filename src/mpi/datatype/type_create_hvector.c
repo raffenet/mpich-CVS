@@ -54,7 +54,8 @@ int MPI_Type_create_hvector(int count,
 {
     static const char FCNAME[] = "MPI_Type_create_hvector";
     int mpi_errno = MPI_SUCCESS;
-
+    MPID_Datatype *new_dtp;
+    int ints[2];
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
@@ -73,10 +74,7 @@ int MPI_Type_create_hvector(int count,
 		MPID_Datatype_get_ptr(oldtype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    }
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
-                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -89,22 +87,20 @@ int MPI_Type_create_hvector(int count,
 				 oldtype,
 				 newtype);
 
-    if (mpi_errno == MPI_SUCCESS) {
-	MPID_Datatype *new_dtp;
-	int ints[2];
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
 
-	ints[0] = count;
-	ints[1] = blocklength;
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_HVECTOR,
-					       3, /* ints (count, blocklength) */
-					       1, /* aints */
-					       1, /* types */
-					       ints,
-					       &stride,
-					       &oldtype);
-    }
+    ints[0] = count;
+    ints[1] = blocklength;
+    MPID_Datatype_get_ptr(*newtype, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_HVECTOR,
+				           3, /* ints (count, blocklength) */
+				           1, /* aints */
+				           1, /* types */
+				           ints,
+				           &stride,
+				           &oldtype);
 
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -113,6 +109,7 @@ int MPI_Type_create_hvector(int count,
     }
 
     /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno,
 				     MPIR_ERR_RECOVERABLE,
 				     FCNAME,

@@ -88,7 +88,11 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 	    mpi_errno = MPID_Type_contiguous(mysize,
 					     type_old,
 					     type_new);
-	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
 	}
 	else {
 	    for (i=0; i<dim; i++) stride *= array_of_gsizes[i];
@@ -98,7 +102,11 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 					 1, /* stride in bytes */
 					 type_old,
 					 type_new);
-	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
 	}
     }
     else {
@@ -106,7 +114,11 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 	    mpi_errno = MPID_Type_contiguous(mysize,
 					     type_old,
 					     type_new);
-	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
 	}
 	else {
 	    for (i=ndims-1; i>dim; i--) stride *= array_of_gsizes[i];
@@ -116,9 +128,12 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 					 1, /* stride in bytes */
 					 type_old,
 					 type_new);
-	    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
 	}
-
     }
 
     *st_offset = blksize * rank;
@@ -190,7 +205,11 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				 1, /* stride in bytes */
 				 type_old,
 				 type_new);
-    if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
 
     if (rem) {
 	/* if the last block is of size less than blksize, include
@@ -208,10 +227,16 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				     disps,
 				     types,
 				     &type_tmp);
-	PMPI_Type_free(type_new);
+	MPIR_Nest_incr();
+	NMPI_Type_free(type_new);
+	MPIR_Nest_decr();
 	*type_new = type_tmp;
 
-	if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
     }
 
     /* In the first iteration, we need to set the displacement in that
@@ -231,11 +256,16 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				     disps,
 				     types,
 				     &type_tmp);
-
-        PMPI_Type_free(type_new);
+	MPIR_Nest_incr();
+        NMPI_Type_free(type_new);
+	MPIR_Nest_decr();
         *type_new = type_tmp;
 
-	if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
 
         *st_offset = 0;  /* set it to 0 because it is taken care of in
                             the struct above */
@@ -396,11 +426,7 @@ int MPI_Type_create_darray(int size,
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If datatype_ptr is not valid, it will be reset to null */
 	    /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno)
-	    {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    /* --END ERROR HANDLING-- */
         }
         MPID_END_ERROR_CHECKS;
@@ -421,7 +447,11 @@ int MPI_Type_create_darray(int size,
     }
 
     st_offsets = (MPI_Aint *) MPIU_Malloc(ndims*sizeof(MPI_Aint));
-    assert(st_offsets != NULL);
+    if (st_offsets == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	goto fn_fail;
+    }
 
     type_old = oldtype;
 
@@ -470,10 +500,15 @@ int MPI_Type_create_darray(int size,
 					    st_offsets+i); 
 		break;
 	    }
-	    if (i) PMPI_Type_free(&type_old);
+	    if (i)
+	    {
+		MPIR_Nest_incr();
+		NMPI_Type_free(&type_old);
+		MPIR_Nest_decr();
+	    }
 	    type_old = type_new;
 
-	    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
 
 	/* add displacement and UB */
@@ -531,10 +566,15 @@ int MPI_Type_create_darray(int size,
 					    st_offsets+i); 
 		break;
 	    }
-	    if (i != ndims-1) PMPI_Type_free(&type_old);
+	    if (i != ndims-1)
+	    {
+		MPIR_Nest_incr();
+		NMPI_Type_free(&type_old);
+		MPIR_Nest_decr();
+	    }
 	    type_old = type_new;
 
-	    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
 
 	/* add displacement and UB */
@@ -562,9 +602,11 @@ int MPI_Type_create_darray(int size,
 				 disps,
 				 types,
 				 newtype);
-    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    PMPI_Type_free(&type_new);
+    MPIR_Nest_incr();
+    NMPI_Type_free(&type_new);
+    MPIR_Nest_decr();
     MPIU_Free(st_offsets);
     MPIU_Free(coords);
 
@@ -575,7 +617,11 @@ int MPI_Type_create_darray(int size,
 
     /* Save contents */
     ints = (int *) MPIU_Malloc((4 * ndims + 4) * sizeof(int));
-    assert(ints != NULL);
+    if (ints == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	goto fn_fail;
+    }
 
     ints[0] = size;
     ints[1] = rank;
@@ -605,13 +651,13 @@ int MPI_Type_create_darray(int size,
 					   &oldtype);
     MPIU_Free(ints);
 
- fn_exit:
-    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
 	return MPI_SUCCESS;
     }
+fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_type_create_darray", "**mpi_type_create_darray %d %d %d %p %p %p %p %d %D %p",
 	size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype);

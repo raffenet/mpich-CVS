@@ -89,10 +89,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 		MPID_Keyval_get_ptr( type_keyval, keyval_ptr );
 		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
 		}
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -119,8 +116,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	    if (mpi_errno)
 	    {
 		MPID_Common_thread_unlock();
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    p->value = attribute_val;
@@ -132,8 +128,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	    if (!new_p)
 	    {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
-		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    new_p->keyval	 = keyval_ptr;
@@ -155,10 +150,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	if (!new_p)
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_type_set_attr", "**mpi_type_set_attr %D %d %p", type, type_keyval, attribute_val);
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
 	/* Did not find in list.  Add at end */
@@ -179,4 +171,11 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_set_attr", "**mpi_type_set_attr %D %d %p", type, type_keyval, attribute_val);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

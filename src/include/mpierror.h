@@ -11,6 +11,10 @@
 #define MPIR_ERR_FATAL 1
 #define MPIR_ERR_RECOVERABLE 0
 
+struct MPID_Comm;
+struct MPID_Win;
+/*struct MPID_File;*/
+
 /* Bindings for internal routines */
 int MPIR_Err_return_comm( struct MPID_Comm *, const char [], int );
 int MPIR_Err_return_win( struct MPID_Win *, const char [], int );
@@ -94,10 +98,8 @@ void MPIR_Err_preinit( void );
   See 'errgetmsg' for one idea.
 
   @*/
-void MPIR_Err_get_string(int, char *);
 typedef int (* MPIR_Err_get_class_string_func_t)(int error, char *str, int length);
-void MPIR_Err_get_string_ext(int, char *, int, MPIR_Err_get_class_string_func_t fn);
-
+void MPIR_Err_get_string( int, char *, int, MPIR_Err_get_class_string_func_t );
 void MPIR_Err_print_stack(FILE *, int);
 extern int MPIR_Err_print_stack_flag;
 void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen);

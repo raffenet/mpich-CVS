@@ -71,10 +71,7 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -91,10 +88,7 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
     else if (topo_ptr->kind != MPI_CART) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, "**notcarttopo", 0 );
     }
-    if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+    if (mpi_errno) goto fn_fail;
 
     /* Determine the number of remaining dimensions */
     ndims = topo_ptr->topo.cart.ndims;
@@ -122,17 +116,13 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
     MPIR_Nest_incr();
     mpi_errno = NMPI_Comm_split( comm, color, key, comm_new );
     MPIR_Nest_decr();
-    if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+    if (mpi_errno) goto fn_fail;
     
     /* Save the topology of this new communicator */
     toponew_ptr = (MPIR_Topology *)MPIU_Malloc( sizeof( MPIR_Topology) );
     if (!toponew_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
 	
     toponew_ptr->kind		  = MPI_CART;
@@ -145,8 +135,7 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 	if (!toponew_ptr->topo.cart.dims || ! toponew_ptr->topo.cart.periodic ||
 	    !toponew_ptr->topo.cart.position) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
-	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
     }
     else {
@@ -174,12 +163,16 @@ int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
     }
 
     mpi_errno = MPIR_Topology_put( newcomm_ptr, toponew_ptr );
-    if (mpi_errno) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+    if (mpi_errno) goto fn_fail;
 
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_cart_sub", "**mpi_cart_sub %C %p %p", comm, remain_dims, comm_new);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_SUB);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

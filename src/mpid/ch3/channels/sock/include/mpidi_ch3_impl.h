@@ -104,6 +104,9 @@ typedef struct MPIDI_CH3I_Connection
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
+#define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
+#define MPIDI_CH3I_PORT_KEY              "port"
+
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 short MPIDI_CH3I_Listener_get_port(void);

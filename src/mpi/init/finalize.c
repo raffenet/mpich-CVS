@@ -51,7 +51,7 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 	   MPIR_Process.initialized to decide how to signal the error */
 	(void)MPIU_Internal_error_printf( "overflow in finalize stack!\n" );
 	if (MPIR_Process.initialized == MPICH_WITHIN_MPI) {
-	    MPID_Abort( NULL, MPI_SUCCESS, 13 );
+	    MPID_Abort( NULL, MPI_SUCCESS, 13, NULL );
 	}
 	else {
 	    exit(1);
@@ -115,9 +115,7 @@ int MPI_Finalize( void )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-	    }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -146,7 +144,7 @@ int MPI_Finalize( void )
     /* Question: why is this not one of the finalize callbacks?.  Do we need
        pre and post MPID_Finalize callbacks? */
     MPIU_Timer_finalize();
-    
+
     MPID_Finalize();
 
     /* delete local and remote groups on comm_world and comm_self if
@@ -190,6 +188,16 @@ int MPI_Finalize( void )
 #endif
     /* ... end of body of routine ... */
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_finalize", 0);
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
-    return mpi_errno;
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

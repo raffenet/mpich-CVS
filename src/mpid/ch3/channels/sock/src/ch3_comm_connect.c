@@ -178,7 +178,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
                 /* FIXME - Reached the limit. Either return error
                    code or realloc memory for data structures that
                    are of size NUMPGS. Abort for now. */
-                /*MPID_Abort(NULL, mpi_errno, 13);*/
+                /*MPID_Abort(NULL, mpi_errno, 13, NULL);*/
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "reached the limit of available process groups");
 		return mpi_errno;
             }
@@ -554,7 +554,7 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_
             if (strcmp(pg->pg_id, new_pg->pg_id) == 0) {
                 /* pg already exists! Need to return error code
                    here. Abort for now. */
-                /*MPID_Abort(NULL, mpi_errno, 13);*/
+                /*MPID_Abort(NULL, mpi_errno, 13, NULL);*/
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "process group already connected");
 		return mpi_errno;
             }

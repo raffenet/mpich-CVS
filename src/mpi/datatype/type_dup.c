@@ -50,6 +50,7 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
     static const char FCNAME[] = "MPI_Type_dup";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPID_Datatype *new_dtp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_DUP);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_DUP);
@@ -63,10 +64,7 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -74,39 +72,36 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 
     mpi_errno = MPID_Type_dup(datatype, newtype);
 
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
+
+    MPID_Datatype_get_ptr(*newtype, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_DUP,
+				           0, /* ints */
+				           0, /* aints */
+				           1, /* types */
+				           NULL,
+				           NULL,
+				           &datatype);
+
+    /* Copy attributes, executing the attribute copy functions */
+    /* This accesses the attribute dup function through the perprocess
+       structure to prevent type_dup from forcing the linking of the
+       attribute functions.  The actual function is (by default)
+       MPIR_Attr_dup_list 
+    */
+    if (mpi_errno == MPI_SUCCESS && MPIR_Process.attr_dup)
     {
-	MPID_Datatype *new_dtp;
-
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_DUP,
-					       0, /* ints */
-					       0, /* aints */
-					       1, /* types */
-					       NULL,
-					       NULL,
-					       &datatype);
-
-	/* Copy attributes, executing the attribute copy functions */
-	/* This accesses the attribute dup function through the perprocess
-	   structure to prevent type_dup from forcing the linking of the
-	   attribute functions.  The actual function is (by default)
-	   MPIR_Attr_dup_list 
-	*/
-	if (mpi_errno == MPI_SUCCESS && MPIR_Process.attr_dup)
+	new_dtp->attributes = 0;
+	mpi_errno = MPIR_Process.attr_dup( datatype_ptr->handle, 
+	    datatype_ptr->attributes, 
+	    &new_dtp->attributes );
+	if (mpi_errno)
 	{
-	    new_dtp->attributes = 0;
-	    mpi_errno = MPIR_Process.attr_dup( datatype_ptr->handle, 
-					       datatype_ptr->attributes, 
-					       &new_dtp->attributes );
-	    if (mpi_errno)
-	    {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
-		*newtype = MPI_DATATYPE_NULL;
-		/* FIXME - free new_dtp */
-		
-	    }
+	    *newtype = MPI_DATATYPE_NULL;
+	    /* FIXME - free new_dtp */
+	    goto fn_fail;
 	}
     }
 
@@ -115,10 +110,13 @@ int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
 	return MPI_SUCCESS;
     }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
 				     "**mpi_type_dup", "**mpi_type_dup %D %p",
 				     datatype, newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
     return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

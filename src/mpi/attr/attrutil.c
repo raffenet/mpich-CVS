@@ -57,10 +57,11 @@ void MPID_Attr_free(MPID_Attribute *attr_ptr)
   in MPICH2.  
 
   Note that this simply invokes the attribute delete function.  It does not
-  remote the attribute from the list of attributes.
+  remove the attribute from the list of attributes.
 */
 int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 {
+    static const char FCNAME[] = "MPIR_Call_attr_delete";
     MPID_Delete_function delfn;
     MPID_Lang_t          language;
     int                  mpi_errno=0;
@@ -74,6 +75,10 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 						attr_p->keyval->handle, 
 						attr_p->value, 
 						attr_p->keyval->extra_state );
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+	    }
 	}
 	break;
 
@@ -85,6 +90,10 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 						attr_p->value,
 						attr_p->keyval->extra_state, 
 				(void (*)(void)) delfn.C_DeleteFunction );
+	    if (mpi_errno != 0)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+	    }
 	}
 	break;
 #endif
@@ -104,6 +113,10 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 		else      mpi_errno = MPI_SUCCESS;
+		if (mpi_errno != 0)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+		}
 	    }
 	}
 	break;
@@ -120,6 +133,10 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 		else      mpi_errno = MPI_SUCCESS;
+		if (mpi_errno != 0)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+		}
 	    }
 	}
 	break;
@@ -132,6 +149,7 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs, 
 			MPID_Attribute **new_attr )
 {
+    static const char FCNAME[] = "MPIR_Attr_dup_list";
     MPID_Attribute     *p, *new_p, **next_new_attr_ptr = new_attr;
     MPID_Copy_function copyfn;
     MPID_Lang_t        language;
@@ -159,6 +177,10 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 						p->keyval->handle, 
 						p->keyval->extra_state, 
 						p->value, &new_value, &flag );
+		if (mpi_errno != 0)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**usercopy %d", mpi_errno);
+		}
 	    }
 	    break;
 #ifdef HAVE_CXX_BINDING
@@ -182,6 +204,10 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag      = fflag;
 		    new_value = (void *)fnew;
+		    if (mpi_errno != 0)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**usercopy %d", mpi_errno);
+		    }
 		}
 	    }
 	    break;
@@ -199,6 +225,10 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 		    if (ierr) mpi_errno = (int)ierr;
 		    flag = fflag;
 		    new_value = (void *)fnew;
+		    if (mpi_errno != 0)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**usercopy %d", mpi_errno);
+		    }
 		}
 	    }
 	    break;
@@ -243,6 +273,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 /* Routine to delete an attribute list */
 int MPIR_Attr_delete_list( int handle, MPID_Attribute *attr )
 {
+    static const char FCNAME[] = "MPIR_Attr_delete_list";
     MPID_Attribute *p, *new_p;
     int mpi_errno = MPI_SUCCESS;
 
@@ -256,7 +287,7 @@ int MPIR_Attr_delete_list( int handle, MPID_Attribute *attr )
 	/* Check the sentinals first */
 	/* --BEGIN ERROR HANDLING-- */
 	if (p->pre_sentinal != 0 || p->post_sentinal != 0) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Attr_delete_list", __LINE__,
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
 					      MPI_ERR_OTHER, "**attrsentinal", 0 );
 	    /* We could keep trying to free the attributes, but for now
 	       we'll just bag it */

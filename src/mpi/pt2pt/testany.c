@@ -75,9 +75,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -104,9 +102,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
 		}
 	    }
 	    /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno) {
-                goto fn_exit;
-            }
+            if (mpi_errno) goto fn_fail;
 	    /* --END ERROR HANDLING-- */
 	}
         MPID_END_ERROR_CHECKS;
@@ -125,9 +121,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
 	if (request_ptrs == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", count * sizeof(MPID_Request*));
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_testany", "**mpi_testany %d %p %p %p %p", count, array_of_requests, index, flag, status);
-	    goto fn_exit;
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
     }
@@ -144,10 +138,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
 		MPID_BEGIN_ERROR_CHECKS;
 		{
 		    MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
-		    if (mpi_errno) {
-			goto fn_exit;
-		    }
-		    
+		    if (mpi_errno) goto fn_fail;
 		}
 		MPID_END_ERROR_CHECKS;
 	    }
@@ -175,9 +166,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_testany", "**mpi_testany %d %p %p %p %p", count, array_of_requests, index, flag, status);
-	goto fn_exit;
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 	
@@ -206,7 +195,17 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
 	/* status set to empty by MPIR_Request_complete() */
     }
     
-  fn_exit:
+fn_exit:
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
+	return MPI_SUCCESS;
+    }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_testany", "**mpi_testany %d %p %p %p %p", count, array_of_requests, index, flag, status);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

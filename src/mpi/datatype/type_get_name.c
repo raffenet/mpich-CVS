@@ -91,20 +91,31 @@ static mpi_names_t mpi_names[] = {
 
 /* This routine is also needed by type_set_name */
 
-void MPIR_Datatype_init_names( void ) 
+int MPIR_Datatype_init_names( void ) 
 {
+    static const char FCNAME[] = "MPIR_Datatype_init_names";
+    int mpi_errno = MPI_SUCCESS;
     int i;
     MPID_Datatype *datatype_ptr = NULL;
     static int setup = 0;
+    char error_msg[1024];
     
-    if (setup) return;
+    if (setup)
+    {
+	return MPI_SUCCESS;
+    }
 
     MPID_Common_thread_lock();
     {
 	if (!setup) {
 
 	    /* Make sure that the datatypes are initialized */
-	    MPIR_Datatype_init();
+	    mpi_errno = MPIR_Datatype_init();
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
 
 	    /* For each predefined type, ensure that there is a corresponding
 	       object and that the object's name is set */
@@ -113,11 +124,22 @@ void MPIR_Datatype_init_names( void )
 		if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
 
 		MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
+		if (datatype_ptr < MPID_Datatype_builtin || datatype_ptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
+		{
+		    MPIU_Snprintf(error_msg, 1024, "%dth builtin datatype handle references invalid memory", i);
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
+		    return mpi_errno;
+		}
 		/* --BEGIN ERROR HANDLING-- */
 		if (!datatype_ptr) {
+		    /*
 		    MPIU_dbg_printf("IMPLEMENTATION ERROR for datatype %d\n", 
 			     i );
 		    continue;
+		    */
+		    MPIU_Snprintf(error_msg, 1024, "Did not initialize name for all of the predefined datatypes (only did first %d)\n", i-1 );
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
+		    return mpi_errno;
 		}
 		/* --END ERROR HANDLING-- */
 		/* MPIU_dbg_printf("mpi_names[%d].name = %x\n", i, (int) mpi_names[i].name ); */
@@ -128,6 +150,7 @@ void MPIR_Datatype_init_names( void )
 	}
 	MPID_Common_thread_unlock();
     }
+    return mpi_errno;
 }
 #endif
 
@@ -173,10 +196,7 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 	    /* If datatype_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(type_name,"type_name", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen", mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_NAME);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -185,7 +205,9 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
     /* ... body of routine ...  */
     /* If this is the first call, initialize all of the predefined names */
     if (!setup) { 
-	MPIR_Datatype_init_names();
+	mpi_errno = MPIR_Datatype_init_names();
+	if (mpi_errno != MPI_SUCCESS)
+	    goto fn_fail;
 	setup = 1;
     }
 
@@ -196,4 +218,11 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_NAME);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_get_name", "**mpi_type_get_name %D %p %p", datatype, type_name, resultlen);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_NAME);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

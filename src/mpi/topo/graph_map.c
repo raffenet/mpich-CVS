@@ -70,10 +70,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
 	    MPIR_ERRTEST_ARGNULL(index,"index",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
 	    MPIR_ERRTEST_ARGNONPOS(nnodes,"nnodes",mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -83,10 +80,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
     if (comm_ptr->local_size < nnodes)
     {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**graphnnodes", 0 );
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_graph_map", "**mpi_graph_map %C %d %p %p %p", comm_old, nnodes, index, edges, newrank);
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	goto fn_fail;
     }
     
     /* This is the trivial version that does not remap any processes.
@@ -100,4 +94,11 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_graph_map", "**mpi_graph_map %C %d %p %p %p", comm_old, nnodes, index, edges, newrank);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -698,6 +698,17 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC *vc, MPID_IOV *iov, int n, int (*rfn)(int
 #endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
+
+    /* FIXME */
+    /* Remove this stripping code after the updated segment code no longer
+       produces iov's with empty buffers */
+    /* strip any trailing empty buffers */
+    /*
+    while (n && iov[n-1].MPID_IOV_LEN == 0)
+	n--;
+    */
+    MPIU_Assert(iov[n-1].MPID_IOV_LEN > 0);
+
     vc->ch.read.total = 0;
 #ifdef USE_SHM_IOV_COPY
     /* This isn't necessary if we require the iov to be valid for the duration of the operation */

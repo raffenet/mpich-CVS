@@ -60,10 +60,7 @@ int MPI_Attr_delete(MPI_Comm comm, int keyval)
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_DELETE);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -71,19 +68,19 @@ int MPI_Attr_delete(MPI_Comm comm, int keyval)
 
     /* ... body of routine ...  */
     MPIR_Nest_incr();
-    mpi_errno = PMPI_Comm_delete_attr( comm, keyval );
+    mpi_errno = NMPI_Comm_delete_attr( comm, keyval );
     MPIR_Nest_decr();
-    if (mpi_errno)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	    /* IT IS VERY, VERY WRONG TO REPLACE THE ERROR CODE HERE */
-#if 0
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_attr_delete", "**mpi_attr_delete %C %d", comm, keyval);
-#endif
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_DELETE);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	return MPI_SUCCESS;
     }
-    /* ... end of body of routine ... */
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_attr_delete", "**mpi_attr_delete %C %d", comm, keyval);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_DELETE);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -72,10 +72,7 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
             MPID_Group_valid_ptr( group_ptr2, mpi_errno );
 	    /* If either group_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -129,10 +126,7 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
 	if (mpi_errno)
 	{
 	    MPID_Common_thread_unlock();
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-		"**mpi_group_intersection", "**mpi_group_intersection %G %G %p", group1, group2, newgroup);
-	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
-	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
 	new_group_ptr->rank = MPI_UNDEFINED;
@@ -157,5 +151,12 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_group_intersection", "**mpi_group_intersection %G %G %p", group1, group2, newgroup);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
+    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
 

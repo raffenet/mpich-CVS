@@ -78,10 +78,7 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 						  "**dims", "**dims %d", 
 						  ndims );
 		}
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -105,8 +102,7 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 						  "**topotoolarge",
 						  "**topotoolarge %d %d",
 						  size, nranks );
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                goto fn_fail;
 	    }
         }
         MPID_END_ERROR_CHECKS;
@@ -124,4 +120,11 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_cart_map", "**mpi_cart_map %C %d %p %p %p", comm_old, ndims, dims, periods, newrank);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_MAP);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

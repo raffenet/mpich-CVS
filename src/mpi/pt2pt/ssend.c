@@ -64,9 +64,7 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -87,27 +85,18 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	    MPID_Datatype * datatype_ptr = NULL;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
-                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
 	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	    
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
-            if (mpi_errno) {
-                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -115,57 +104,53 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
     mpi_errno = MPID_Ssend(buf, count, datatype, dest, tag, comm_ptr,
 			   MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS)
+	goto fn_fail;
+
+    if (request_ptr == NULL)
     {
-	if (request_ptr == NULL)
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
+	return MPI_SUCCESS;
+    }
+    else
+    {
+	/* If a request was returned, then we need to block until the
+	request is complete */
+	while((*(request_ptr)->cc_ptr) != 0)
 	{
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
-	    return MPI_SUCCESS;
-	}
-	else
-	{
-	    /* If a request was returned, then we need to block until the
-	       request is complete */
-	    while((*(request_ptr)->cc_ptr) != 0)
+	    MPID_Progress_start();
+
+	    if ((*(request_ptr)->cc_ptr) != 0)
 	    {
-		MPID_Progress_start();
-		
-		if ((*(request_ptr)->cc_ptr) != 0)
+		mpi_errno = MPID_Progress_wait();
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno != MPI_SUCCESS)
 		{
-		    mpi_errno = MPID_Progress_wait();
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			goto fn_exit;
-		    }
-		    /* --END ERROR HANDLING-- */
+		    goto fn_fail;
 		}
-		else
-		{
-		    MPID_Progress_end();
-		    break;
-		}
+		/* --END ERROR HANDLING-- */
 	    }
-	
-	    mpi_errno = request_ptr->status.MPI_ERROR;
-	    MPID_Request_release(request_ptr);
-		
-	    if (mpi_errno == MPI_SUCCESS)
+	    else
 	    {
-		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
-		return MPI_SUCCESS;
+		MPID_Progress_end();
+		break;
 	    }
 	}
+
+	mpi_errno = request_ptr->status.MPI_ERROR;
+	MPID_Request_release(request_ptr);
     }
     /* ... end of body of routine ... */
 
-    /* --BEGIN ERROR HANDLING-- */
-  fn_exit:
-    if (mpi_errno != MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_ssend", "**mpi_ssend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
+	return MPI_SUCCESS;
     }
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_ssend", "**mpi_ssend %p %d %D %d %d %C", buf, count, datatype, dest, tag, comm);
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SSEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     /* --END ERROR HANDLING-- */

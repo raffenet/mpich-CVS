@@ -61,7 +61,7 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
     static const char FCNAME[] = "MPI_Win_start";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPID_Group *group_ptr=NULL;
+    MPID_Group *group_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_START);
 
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_START);
@@ -72,9 +72,7 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -91,16 +89,10 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
-                return MPIR_Err_return_win( NULL, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 
             MPID_Group_valid_ptr(group_ptr, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
-                return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -112,5 +104,10 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
     return MPI_SUCCESS;
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_win_start", "**mpi_win_start %G %A %W", group, assert, win);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_START);
+    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
 }
 

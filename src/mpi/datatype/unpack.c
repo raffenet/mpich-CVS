@@ -91,10 +91,7 @@ int MPI_Unpack(void *inbuf,
 		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 	    }
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
-                return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
-            }
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -112,8 +109,7 @@ int MPI_Unpack(void *inbuf,
 					 "**nomem",
 					 "**nomem %s",
 					 "MPID_Segment_alloc");
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
-	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
     MPID_Segment_init(outbuf, outcount, datatype, segp, 0);
@@ -135,6 +131,14 @@ int MPI_Unpack(void *inbuf,
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
     return MPI_SUCCESS;
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_unpack", "**mpi_unpack %p %d %p %p %d %D %C", inbuf, insize, position, outbuf, outcount, datatype, comm);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
+    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }
 
 

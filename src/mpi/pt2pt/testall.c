@@ -89,9 +89,7 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            if (mpi_errno) {
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -116,9 +114,7 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
 		    MPIR_ERRTEST_REQUEST(array_of_requests[i], mpi_errno);
 		}
 	    }
-            if (mpi_errno) {
-                goto fn_exit;
-            }
+            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -135,8 +131,8 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
 	/* --BEGIN ERROR HANDLING-- */
 	if (request_ptrs == NULL)
 	{
-	    mpi_errno = MPIR_ERR_MEMALLOCFAILED;
-	    goto fn_exit;
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
     }
@@ -153,10 +149,7 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
 		MPID_BEGIN_ERROR_CHECKS;
 		{
 		    MPID_Request_valid_ptr( request_ptrs[i], mpi_errno );
-		    if (mpi_errno) {
-			goto fn_exit;
-		    }
-		    
+		    if (mpi_errno) goto fn_fail;
 		}
 		MPID_END_ERROR_CHECKS;
 	    }
@@ -173,9 +166,7 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_testall", "**mpi_testall %d %p %p %p", count, array_of_requests, flag, array_of_statuses);
-	goto fn_exit;
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 	    
@@ -237,15 +228,25 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Statu
 	    }
 	}
     }
-	
+
     *flag = (n_completed == count) ? TRUE : FALSE;
 
-  fn_exit:
     if (request_ptrs != request_ptr_array && request_ptrs != NULL)
     {
 	MPIU_Free(request_ptrs);
     }
 
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTALL);
+	return MPI_SUCCESS;
+    }
+
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TESTALL);
-    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_testall", "**mpi_testall %d %p %p %p", count, array_of_requests, flag, array_of_statuses);
+    return MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

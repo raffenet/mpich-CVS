@@ -37,7 +37,7 @@
 	if (!(a_))														\
 	{															\
 	    MPIU_Internal_error_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
-            MPID_Abort(NULL, MPI_SUCCESS, 1);											\
+            MPID_Abort(NULL, MPI_SUCCESS, 1, NULL);										\
 	}															\
     }
 #else
@@ -56,7 +56,7 @@
     if (!(a_))														\
     {															\
         MPIU_Internal_error_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
-        MPID_Abort(NULL, MPI_SUCCESS, 1);										\
+        MPID_Abort(NULL, MPI_SUCCESS, 1, NULL);										\
     }															\
 }
 

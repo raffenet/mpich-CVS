@@ -69,10 +69,7 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(nnodes, "nnodes", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL(nedges, "nedges", mpi_errno );
-            if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPHDIMS_GET);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-            }
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -89,10 +86,7 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TOPOLOGY, 
 						  "**notgraphtopo", 0 );
 	    }
-	    if (mpi_errno) {
-		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPHDIMS_GET);
-		return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-	    }
+	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -107,4 +101,11 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPHDIMS_GET);
     return MPI_SUCCESS;
+    /* --BEGIN ERROR HANDLING-- */
+fn_fail:
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_graphdims_get", "**mpi_graphdims_get %C %p %p", comm, nnodes, nedges);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPHDIMS_GET);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
