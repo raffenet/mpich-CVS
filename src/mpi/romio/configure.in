@@ -1172,8 +1172,37 @@ if test $TRY_WEAK_SYMBOLS = 1 ; then
 #pragma weak PFoo = Foo
 int Foo(a) { return a; }
 ],[return PFoo(1);],has_pragma_weak=1)
+  #
+  # Some systems (Linux ia64 and ecc, for example), support weak symbols
+  # only within a single object file!  This tests that case.
   if test "$has_pragma_weak" = 1 ; then
     AC_MSG_RESULT([pragma weak])
+    AC_MSG_CHECKING([that weak symbols are visible to other files])
+    rm -f conftest*
+    cat >>conftest1.c <<EOF
+#pragma weak PFoo = Foo
+int Foo(int);
+int Foo(a) { return a; }
+EOF
+    cat >>conftest2.c <<EOF
+int main() {
+return PFoo(0);}
+EOF
+    ac_link2='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest1.c conftest2.c $LIBS >conftest.out 2>&1'
+    if eval $ac_link2 ; then
+        AC_MSG_RESULT(yes)
+    else
+      echo "$ac_link2" >>config.log
+      echo "Failed program was" >>config.log
+      cat conftest1.c >>config.log
+      cat conftest2.c >>config.log
+      if test -s conftest.out ; then cat conftest.out >> config.log ; fi
+      AC_MSG_RESULT(no)
+      has_pragma_weak=0
+    fi
+    rm -f conftest*
+  fi
+  if test "$has_pragma_weak" = 1 ; then
     HAVE_WEAK_SYMBOLS=1
     AC_DEFINE(HAVE_WEAK_SYMBOLS)
     AC_DEFINE(HAVE_PRAGMA_WEAK)
