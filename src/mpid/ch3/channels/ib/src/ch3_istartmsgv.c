@@ -95,7 +95,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
 	int nb;
-	
+	int offset = 0;
+
 	/* MT - need some signalling to lock down our right to use the
 	channel, thus insuring that the progress engine does also try to
 	write */
@@ -122,7 +123,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	}
 
 	MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb));
-	int offset = 0;
+	offset = 0;
 
 	while (offset < n_iov)
 	{

@@ -32,6 +32,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     int key_max_sz;
     int val_max_sz;
     int name_sz;
+    int id_sz;
 
     MPIU_DBG_PRINTF(("entering ch3_init.\n"));
     /*
