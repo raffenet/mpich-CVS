@@ -108,7 +108,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     }
 
     if (strcmp(local_port, remote_port) == 0) {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_port", "**join_port %s %s", local_port, remote_port);
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**join_portname", "**join_portname %s %s", local_port, remote_port);
         goto fn_fail;
     }
 
