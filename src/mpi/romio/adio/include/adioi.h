@@ -49,7 +49,7 @@ typedef struct ADIOI_Malloc_req_ptr {
     struct ADIOI_Malloc_req_ptr *next;
 } ADIOI_Malloc_req;
 
-/* used to keep track of fs-independent hint/info values.
+/* used to keep track of hint/info values.
  * Note that there are a lot of int-sized values in here...they are
  * used as int-sized entities other places as well.  This would be a 
  * problem on 32-bit systems using > 2GB files in some cases...
@@ -67,9 +67,17 @@ struct ADIOI_Hints_struct {
     int ind_wr_buffer_size;
     char *cb_config_list;
     int *ranklist;
+    union {
+	    struct {
+		    int listio_read;
+		    int listio_write;
+	    } pvfs;
+    } fs_hints;
+
 };
 
 /* Values for use with cb_read, cb_write, ds_read, and ds_write 
+ * and some fs-specific hints
    (IBM xlc, Compaq Tru64 compilers object to a comma after the last item)
    (that's just wrong)
  */
