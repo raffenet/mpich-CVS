@@ -38,8 +38,8 @@
  */
 
 static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
-				  int ptrdiff, 
-				  DLOOP_Handle handle);
+				  int ptrdiff);
+
 
 /*@
   Dataloop_alloc - allocate the resources used to store a dataloop
@@ -70,7 +70,6 @@ void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop)
   Input Parameters:
 + dest   - pointer to destination region
 . src    - pointer to original dataloop structure
-. handle - handle for new datatype
 - size   - size of dataloop structure
 
   This routine parses the dataloop structure as it goes in order to
@@ -89,13 +88,14 @@ void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop *dataloop)
 @*/
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,
-				   DLOOP_Handle handle,
 				   int size)
 {
     int ptrdiff;
 
-    printf("copy: dest=%x, src=%x, handle=%x, size=%d\n", (int) dest, 
-	   (int) src, (int) handle, size);
+#if 0
+    printf("copy: dest=%x, src=%x, size=%d\n", (int) dest, (int) src, 
+	   size);
+#endif
 
     /* copy region first */
     memcpy(dest, src, size);
@@ -105,34 +105,27 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
     ptrdiff = (char *)dest - (char *)src;
 
     /* traverse structure updating pointers */
-    DLOOP_Dataloop_update(dest, ptrdiff, handle);
+    DLOOP_Dataloop_update(dest, ptrdiff);
 
     return;
 }
 
 /*@
-  DLOOP_Dataloop_update - update pointers and handle after a copy operation
+  DLOOP_Dataloop_update - update pointers after a copy operation
 
   Input Parameters:
 + dataloop - pointer to loop to update
-. ptrdiff - value indicating offset between old and new pointer values
-- handle - new datatype handle
+- ptrdiff - value indicating offset between old and new pointer values
 
-  This function is used to recursively update all the pointers and ids in a
+  This function is used to recursively update all the pointers in a
   dataloop tree.
 @*/
 static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
-				  int ptrdiff, 
-				  DLOOP_Handle handle)
+				  int ptrdiff)
 {
     /* OPT: only declare these variables down in the Struct case */
     int i;
     struct DLOOP_Dataloop **looparray;
-
-#if 0
-    /* easy part, update id to match new id */
-    dataloop->handle = handle;
-#endif
 
     switch(dataloop->kind) {
     case DLOOP_KIND_CONTIG:
@@ -147,14 +140,14 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	dataloop->loop_params.c_t.u.dataloop = (struct DLOOP_Dataloop *) 
 	    ((char *) dataloop->loop_params.c_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.c_t.u.dataloop, ptrdiff, handle);
+	DLOOP_Dataloop_update(dataloop->loop_params.c_t.u.dataloop, ptrdiff);
 	break;
 
     case DLOOP_KIND_VECTOR:
 	dataloop->loop_params.v_t.u.dataloop = (struct DLOOP_Dataloop *)
 	    ((char *) dataloop->loop_params.v_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.v_t.u.dataloop, ptrdiff, handle);
+	DLOOP_Dataloop_update(dataloop->loop_params.v_t.u.dataloop, ptrdiff);
 	break;
 
     case DLOOP_KIND_BLOCKINDEXED:
@@ -163,7 +156,7 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	dataloop->loop_params.bi_t.u.dataloop = (struct DLOOP_Dataloop *)
 	    ((char *) dataloop->loop_params.bi_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.bi_t.u.dataloop, ptrdiff, handle);
+	DLOOP_Dataloop_update(dataloop->loop_params.bi_t.u.dataloop, ptrdiff);
 	break;
 
     case DLOOP_KIND_INDEXED:
@@ -174,7 +167,7 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	dataloop->loop_params.i_t.u.dataloop = (struct DLOOP_Dataloop *)
 	    ((char *) dataloop->loop_params.i_t.u.dataloop + ptrdiff);
 
-	DLOOP_Dataloop_update(dataloop->loop_params.i_t.u.dataloop, ptrdiff, handle);
+	DLOOP_Dataloop_update(dataloop->loop_params.i_t.u.dataloop, ptrdiff);
 	break;
 
     case DLOOP_KIND_STRUCT:
@@ -193,7 +186,7 @@ static void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
 	}
 
 	for (i=0; i < dataloop->loop_params.s_t.count; i++) {
-	    DLOOP_Dataloop_update(looparray[i], ptrdiff, handle);
+	    DLOOP_Dataloop_update(looparray[i], ptrdiff);
 	}
 	break;
 #if 0

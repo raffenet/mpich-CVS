@@ -56,7 +56,6 @@ typedef struct MPID_Dataloop * MPID_Dataloop_foo; /* HACK */
 
 void MPID_Dataloop_copy(void *dest,
 			void *src,
-			MPI_Datatype handle,
 			int size);
 
 void MPID_Dataloop_print(struct MPID_Dataloop *dataloop,

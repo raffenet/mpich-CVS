@@ -54,7 +54,7 @@
  */
 
 /*S
-  MPID_Dataloop_contig - Description of a contiguous dataloop
+  DLOOP_Dataloop_contig - Description of a contiguous dataloop
 
   Fields:
 + count - Number of elements
@@ -252,6 +252,7 @@ typedef struct DLOOP_Dataloop {
 + curcount - Current loop count value (between 0 and 
              loop.loop_params.count-1) 
 . curoffset - Offset for relative offsets in dataloops 
+. curblock - Current block value
 - loop_p  - pointer to Loop-based description of the dataloop
 
 S*/
@@ -322,7 +323,6 @@ typedef struct DLOOP_Segment {
 /* Dataloop functions */
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,
-				   DLOOP_Handle handle,
 				   int size);
 
 void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,

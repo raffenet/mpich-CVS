@@ -83,6 +83,7 @@ int MPID_Type_vector(int count,
 	new_dtp->true_lb        = 0;
 	new_dtp->alignsize      = oldsize;
 	new_dtp->n_elements     = count * blocklength;
+	new_dtp->is_contig      = ((stride == blocklength || count == 1) ? 1 : 0);
 
 	/* allocate dataloop */
 	new_dtp->loopsize       = sizeof(struct MPID_Dataloop);
@@ -91,6 +92,7 @@ int MPID_Type_vector(int count,
 	 * the types???
 	 */
 	dlp                     = (struct MPID_Dataloop *)MPIU_Malloc(sizeof(struct MPID_Dataloop));
+	if (dlp == NULL) assert(0);
 	new_dtp->opt_loopinfo   = dlp;
 	new_dtp->loopinfo       = dlp;
 
@@ -104,21 +106,55 @@ int MPID_Type_vector(int count,
 	dlp->el_extent                  = oldsize;
 	dlp->el_size                    = oldsize;
     }
-    else /* user-defined type */ {
-	assert(0);
-	/* get pointer to old datatype from handle */
+    else /* user-defined base type */ {
+	int new_loopsize;
+	MPID_Datatype *old_dtp;
+	char *curpos;
 
-	/* get old values from the old datatype structure */
+	/* get pointer to old datatype from handle */
+	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
+
+	/* fill in datatype */
+	new_dtp->size           = old_dtp->size * count * blocklength;
+	new_dtp->extent         = ((count - 1) * stride + blocklength) * old_dtp->extent; /* ??? */
+	new_dtp->has_mpi1_ub    = old_dtp->has_mpi1_ub;
+	new_dtp->has_mpi1_lb    = old_dtp->has_mpi1_lb;
+	new_dtp->loopinfo_depth = old_dtp->loopinfo_depth + 1;
+	new_dtp->true_lb        = old_dtp->true_lb; /* ??? */
+	new_dtp->alignsize      = old_dtp->alignsize;
+	new_dtp->n_elements     = old_dtp->n_elements * count * blocklength; /* ??? */
+
+	if (old_dtp->is_contig && (stride == blocklength || count == 1)) new_dtp->is_contig = 1;
+	else new_dtp->is_contig = 0;
 
 	/* allocate space for dataloop */
+	new_loopsize = old_dtp->loopsize + sizeof(struct MPID_Dataloop);
+	dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loopsize);
+	if (dlp == NULL) assert(0);
+
+	new_dtp->loopinfo = dlp;
+	new_dtp->opt_loopinfo = dlp;
+	new_dtp->loopsize = new_loopsize;
 
 	/* fill in top part of dataloop */
+	dlp->kind                       = DLOOP_KIND_VECTOR | (old_dtp->size << DLOOP_ELMSIZE_SHIFT); /* WRONG I THINK */
+	dlp->loop_params.v_t.count      = count;
+	dlp->loop_params.v_t.blocksize  = blocklength;
+	dlp->loop_params.v_t.stride     = stride * new_dtp->size; /* in bytes */
+	dlp->el_extent                  = old_dtp->extent;
+	dlp->el_size                    = old_dtp->size;
 
 	/* copy in old dataloop */
+	curpos = (char *) dlp; /* NEED TO PAD? */
+	curpos += sizeof(struct MPID_Dataloop);
+
+	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
+	dlp->loop_params.v_t.u.dataloop = (struct MPID_Dataloop *) curpos;
     }
 
     /* return handle to new datatype in last parameter */
     *newtype = new_dtp->handle;
+
     return MPI_SUCCESS;
 }
 
