@@ -88,6 +88,9 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	int attr_idx = comm_keyval && 0x0000000f;
 	void **attr_val_p = (void **)attribute_val;
 	*flag = 1;
+
+	/* FIXME: We could initialize some of these here; only tag_ub is 
+	 used in the error checking. */
 	switch (attr_idx) {
 	case 1: /* TAG_UB */
 	    *attr_val_p = &MPIR_Process.attrs.tag_ub;

@@ -84,10 +84,20 @@ was not started with MPI_GREQUEST_START
 **group:Invalid group
 **commnotintra:An intracommunicator is required but an intercommunicator \
  was provided.
+**ranklocal:Error specifying local_leader 
+**ranklocal %d %d:Error specifying local_leader; rank given was %d but must\
+be in the range 0 to %d
+**rankremote:Error specifying remote_leader 
+**rankremote %d %d:Error specifying remote_leader; rank given was %d but must\
+be in the range 0 to %d
+**tag:Invalid tag
+**tag %d:Invalid tag, value is %d
+**count:Invalid count
+**count %d:Invalid count, value = %d
+**bufnull:Null buffer pointer
 #---- The messages below this line haven't been used yet.
 
 **buffer:Invalid buffer pointer
-**bufnull:Null buffer pointer
 **bufbsend:Insufficient space in Bsend buffer
 **bufbsend %d %d:Insufficient space in Bsend buffer; requested %d but only %d \
 available.
@@ -96,8 +106,6 @@ available.
 **bufsize:Invalid buffer size
 **bufsize %d:Invalid buffer size (value is %d)
 **bsendnobuf:No buffer to detach. 
-**count:Invalid count
-**count %d:Invalid count (value = %d)
 **countarray:Invalid count in count array 
 **countarray %d %d:Invalid count in the %d element of the count array; value\
 is %d
@@ -113,8 +121,6 @@ is %d
 **dtypename:Cannot set name in data type 
 **dtypenomatch:Type signatures do not match in communication
 **dtypecomm:Pack buffer not packed for this communicator.  
-**tag:Invalid tag
-**tag %d:Invalid tag (value is %d)
 **comm:Invalid communicator
 **commnull:Null communicator
 **intercomm:Intercommunicator is not allowed 
@@ -126,12 +132,6 @@ is %d
 **rankarray %d %d %d:Invalid rank in rank array at index %d, has value %d but must\
 be in the range 0 to %d
 **rankarray %d %d %d:Invalid rank in rank array[%d], value is %d but must be in 0 to %d.
-**ranklocal:Error specifying local_leader 
-**ranklocal %d %d:Error specifying local_leader; rank given was %d but must\
-be in the range 0 to %d
-**rankremote:Error specifying remote_leader 
-**rankremote %d %d:Error specifying remote_leader; rank given was %d but must\
-be in the range 0 to %d
 **root:Invalid root
 **root %d:Invalid root (value given was %d)
 **rootlarge:Value of root is too large
