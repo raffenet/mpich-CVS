@@ -272,7 +272,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 static volatile int mask_in_use = 0;
 /* lowestContextId is used to break ties when multiple threads
    are contending for the mask */
-#define MPIR_MAXID (1 < 30)
+#define MPIR_MAXID (1 << 30)
 static volatile int lowestContextId = MPIR_MAXID;
 
 int MPIR_Get_contextid( MPID_Comm *comm_ptr )
@@ -283,6 +283,9 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 
     /* We lock only around access to the mask.  If another thread is
        using the mask, we take a mask of zero */
+    MPIU_DBG_PRINTF_CLASS( MPIU_DBG_COMM | MPIU_DBG_CONTEXTID, 1,
+			   ( "Entering; shared state is %d:%d\n", mask_in_use, 
+			     lowestContextId ) );
     while (context_id == 0) {
 	MPID_Common_thread_lock();
 	if (initialize_context_mask) {
@@ -293,12 +296,17 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	    if (comm_ptr->context_id < lowestContextId) {
 		lowestContextId = comm_ptr->context_id;
 	    }
+	    MPIU_DBG_PRINTF_CLASS( MPIU_DBG_COMM | MPIU_DBG_CONTEXTID, 2,
+				   ( "In in-use, sed lowestContextId to %d\n", 
+				     lowestContextId ) );
 	}
 	else {
 	    memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
 	    mask_in_use     = 1;
 	    own_mask        = 1;
 	    lowestContextId = comm_ptr->context_id;
+	    MPIU_DBG_PRINTF_CLASS( MPIU_DBG_COMM | MPIU_DBG_CONTEXTID, 2, 
+				   ( "Copied local_mask\n" ) );
 	}
 	MPID_Common_thread_unlock();
 	
@@ -314,6 +322,8 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	    MPID_Common_thread_lock();
 	    /* Find_context_bit updates the context array if it finds a match */
 	    context_id = MPIR_Find_context_bit( local_mask );
+	    MPIU_DBG_PRINTF_CLASS( MPIU_DBG_COMM | MPIU_DBG_CONTEXTID, 1, 
+				   ( "Context id is now %d\n", context_id ) );
 	    if (context_id > 0) {
 		/* If we were the lowest context id, reset the value to
 		   allow the other threads to compete for the mask */
