@@ -29,7 +29,9 @@
 <xsl:template match="MPITEST">
     <tr bgcolor="white">
     <td valign="top">	
-    <xsl:value-of select="NAME"/>
+    <xsl:value-of select="NAME"/><br/>
+    <xsl:value-of select="NP"/> processes<br/>
+    <xsl:value-of select="WORKDIR"/>
     </td><td valign="top">
     <xsl:value-of select="STATUS"/>
     </td><td WIDTH="40%"><pre>
