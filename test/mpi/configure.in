@@ -461,6 +461,7 @@ AC_OUTPUT(maint/testmerge \
 	  f77/io/iodisp.h \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
+	  cxx/attr/Makefile \
 	  cxx/comm/Makefile \
 	  cxx/coll/Makefile \
           cxx/info/Makefile \
