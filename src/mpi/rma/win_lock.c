@@ -77,6 +77,8 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+            MPID_Comm *comm_ptr;
+
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
                             "**initialized", 0 );
@@ -84,6 +86,13 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not value, it will be reset to null */
+
+            if (lock_type != MPI_LOCK_SHARED && lock_type != MPI_LOCK_EXCLUSIVE)
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**locktype", 0 );
+
+            MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
+            MPIR_ERRTEST_SEND_RANK(comm_ptr, rank, mpi_errno);
+
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
                 return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );

@@ -655,13 +655,17 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 
             if (put_pkt->count == 0)
 	    {
+                MPID_Win *win_ptr;
+
                 /* it's a 0-byte message sent just to decrement the
                    completion counter. This happens only in
                    post/start/complete/wait sync model; therefore, no need
                    to check lock queue. */
-                /* FIXME: MT: this has to be done atomically */
-                if (put_pkt->win_ptr != NULL)
-                    put_pkt->win_ptr->my_counter -= 1;
+                if (put_pkt->target_win_handle != MPI_WIN_NULL) {
+                    MPID_Win_get_ptr(put_pkt->target_win_handle, win_ptr);
+                    /* FIXME: MT: this has to be done atomically */
+                    win_ptr->my_counter -= 1;
+                }
                 MPIDI_CH3_Progress_signal_completion();	
 		*rreqp = NULL;
             }
@@ -672,7 +676,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 
                 req->dev.user_buf = put_pkt->addr;
                 req->dev.user_count = put_pkt->count;
-                req->dev.win_ptr = put_pkt->win_ptr;
+                req->dev.target_win_handle = put_pkt->target_win_handle;
+                req->dev.source_win_handle = put_pkt->source_win_handle;
 
                 if (HANDLE_GET_KIND(put_pkt->datatype) == HANDLE_KIND_BUILTIN)
 		{
@@ -750,8 +755,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 
             req->dev.user_count = accum_pkt->count;
             req->dev.op = accum_pkt->op;
-            req->dev.win_ptr = accum_pkt->win_ptr;
             req->dev.real_user_buf = accum_pkt->addr;
+            req->dev.target_win_handle = accum_pkt->target_win_handle;
+            req->dev.source_win_handle = accum_pkt->source_win_handle;
 
             if (HANDLE_GET_KIND(accum_pkt->datatype) == HANDLE_KIND_BUILTIN)
 	    {
@@ -843,7 +849,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received get pkt"));
 
             req = MPID_Request_create();
-            req->dev.win_ptr = get_pkt->win_ptr;
+            req->dev.target_win_handle = get_pkt->target_win_handle;
+            req->dev.source_win_handle = get_pkt->source_win_handle;
             req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 
             if (HANDLE_GET_KIND(get_pkt->datatype) == HANDLE_KIND_BUILTIN)
@@ -856,7 +863,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 req->kind = MPID_REQUEST_SEND;
 
                 get_resp_pkt->type = MPIDI_CH3_PKT_GET_RESP;
-                get_resp_pkt->request = get_pkt->request;
+                get_resp_pkt->request_handle = get_pkt->request_handle;
                 
                 iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
                 iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
@@ -888,7 +895,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 req->dev.user_buf = get_pkt->addr;
                 req->dev.user_count = get_pkt->count;
                 req->dev.datatype = MPI_DATATYPE_NULL;
-                req->dev.request = get_pkt->request;
+                req->dev.request_handle = get_pkt->request_handle;
 
                 req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
                     MPIU_Malloc(sizeof(MPIDI_RMA_dtype_info));
@@ -930,7 +937,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received get response pkt"));
 
-            req = get_resp_pkt->request;  /* FIXME: use handle */
+            MPID_Request_get_ptr(get_resp_pkt->request_handle, req);
 
             MPID_Datatype_get_size_macro(req->dev.datatype, type_size);
             req->dev.recv_data_sz = type_size * req->dev.user_count;
@@ -951,25 +958,27 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	case MPIDI_CH3_PKT_LOCK:
 	{
 	    MPIDI_CH3_Pkt_lock_t * lock_pkt = &pkt->lock;
+            MPID_Win *win_ptr;
 
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received lock pkt"));
 
-            if (MPIDI_CH3I_Try_acquire_win_lock(lock_pkt->win_ptr, 
+            MPID_Win_get_ptr(lock_pkt->target_win_handle, win_ptr);
+
+            if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, 
                                                 lock_pkt->lock_type) == 1)
 	    {
                 /* send lock granted packet. */
                 mpi_errno = MPIDI_CH3I_Send_lock_granted_pkt(vc,
-                                              lock_pkt->lock_granted_flag_ptr);
-
+                                              lock_pkt->source_win_handle);
             }
 
             else {
                 /* queue the lock information */
                 MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
 
-                /* FIXME: MT: This may need to be done atomically. Check. */
+                /* FIXME: MT: This may need to be done atomically. */
 
-                curr_ptr = (MPIDI_Win_lock_queue *) lock_pkt->win_ptr->lock_queue;
+                curr_ptr = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
                 prev_ptr = curr_ptr;
                 while (curr_ptr != NULL)
                 {
@@ -988,11 +997,11 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
                 if (prev_ptr != NULL)
                     prev_ptr->next = new_ptr;
                 else 
-                    lock_pkt->win_ptr->lock_queue = new_ptr;
+                    win_ptr->lock_queue = new_ptr;
         
                 new_ptr->next = NULL;  
                 new_ptr->lock_type = lock_pkt->lock_type;
-                new_ptr->lock_granted_flag_ptr = lock_pkt->lock_granted_flag_ptr;
+                new_ptr->source_win_handle = lock_pkt->source_win_handle;
                 new_ptr->vc = vc;
             }
 
@@ -1004,10 +1013,29 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt, MPI
 	case MPIDI_CH3_PKT_LOCK_GRANTED:
 	{
 	    MPIDI_CH3_Pkt_lock_granted_t * lock_granted_pkt = &pkt->lock_granted;
+            MPID_Win *win_ptr;
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received lock granted pkt"));
 
+            MPID_Win_get_ptr(lock_granted_pkt->source_win_handle, win_ptr);
             /* set the lock_granted flag in the window */
-            *(lock_granted_pkt->lock_granted_flag_ptr) = 1;
+            win_ptr->lock_granted = 1;
+
+            *rreqp = NULL;
+            MPIDI_CH3_Progress_signal_completion();	
+
+            break;
+        }
+
+	case MPIDI_CH3_PKT_SHARED_LOCK_OPS_DONE:
+	{
+	    MPIDI_CH3_Pkt_shared_lock_ops_done_t * shared_lock_ops_done_pkt = &pkt->shared_lock_ops_done;
+            MPID_Win *win_ptr;
+
+	    MPIDI_DBG_PRINTF((30, FCNAME, "received shared lock ops done pkt"));
+
+            MPID_Win_get_ptr(shared_lock_ops_done_pkt->source_win_handle, win_ptr);
+            /* reset the lock_granted flag in the window */
+            win_ptr->lock_granted = 0;
 
             *rreqp = NULL;
             MPIDI_CH3_Progress_signal_completion();	
@@ -1189,7 +1217,7 @@ int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock)
 }
 
 
-int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int *lock_granted_flag_ptr)
+int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int source_win_handle)
 {
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_lock_granted_t *lock_granted_pkt = &upkt.lock_granted;
@@ -1198,7 +1226,7 @@ int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int *lock_granted_flag_ptr)
 
     /* send lock granted packet */
     lock_granted_pkt->type = MPIDI_CH3_PKT_LOCK_GRANTED;
-    lock_granted_pkt->lock_granted_flag_ptr = lock_granted_flag_ptr;
+    lock_granted_pkt->source_win_handle = source_win_handle;
         
     mpi_errno = MPIDI_CH3_iStartMsg(vc, lock_granted_pkt,
                                     sizeof(*lock_granted_pkt), &req);

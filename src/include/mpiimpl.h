@@ -1338,7 +1338,7 @@ typedef struct MPID_Win {
     void **base_addrs;     /* array of base addresses of the windows of
                               all processes */
     int *disp_units;      /* array of displacement units of all windows */
-    struct MPID_Win **all_win_ptrs;    /* array of addresses of the window objects
+    int *all_win_handles;    /* array of handles to the window objects
                                           of all processes */
     MPIDI_RMA_ops *rma_ops_list; /* list of outstanding RMA requests */
     volatile int lock_granted;  /* flag to indicate whether lock has 
@@ -1348,7 +1348,7 @@ typedef struct MPID_Win {
                               * (none, shared, exclusive) */
     volatile int shared_lock_ref_cnt;
     struct MPIDI_Win_lock_queue volatile *lock_queue;  /* list of unsatisfied locks */
-
+ 
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to
        integrate threads into MPICH2 before including these fields. */

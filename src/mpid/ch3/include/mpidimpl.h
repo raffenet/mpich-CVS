@@ -114,7 +114,8 @@ extern MPIDI_Process_t MPIDI_Process;
     (_req)->dev.datatype_ptr = NULL;				\
     MPIDI_Request_state_init((_req));				\
     (_req)->dev.cancel_pending = FALSE;				\
-    (_req)->dev.win_ptr = NULL;				        \
+    (_req)->dev.target_win_handle = MPI_WIN_NULL;               \
+    (_req)->dev.source_win_handle = MPI_WIN_NULL;               \
     (_req)->dev.dtype_info = NULL;				\
     (_req)->dev.dataloop = NULL;				\
 }
@@ -473,12 +474,12 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt);
 #define MPID_LOCK_NONE 0
 
 int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            MPID_Win *dest_win_ptr, MPIDI_RMA_dtype_info
+                            int target_win_handle, MPIDI_RMA_dtype_info
                             *dtype_info, void **dataloop, MPID_Request
                             **request);
 
 int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            MPID_Win *dest_win_ptr, MPIDI_RMA_dtype_info
+                            int target_win_handle, MPIDI_RMA_dtype_info
                             *dtype_info, void **dataloop, MPID_Request
                             **request); 
 
@@ -486,7 +487,9 @@ int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr);
 
 int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock);
 
-int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int *lock_granted_flag_ptr);
+int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int source_win_ptr);
+
+int MPIDI_CH3I_Send_shared_lock_ops_done_pkt(MPIDI_VC *vc, int source_win_ptr);
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
 

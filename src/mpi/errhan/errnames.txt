@@ -394,7 +394,7 @@ with MPI_Alloc_mem.
 **freemembase:Invalid base address in MPI_Free_mem 
 **base:Invalid base address
 **base %d:Invalid base address %d
-**locktype:Invalid locktype
+**locktype:Invalid lock type
 **keyvalnull:Null keyval 
 **keyvalperm:Cannot free permanent attribute key
 **keyvalcomm:Keyval is not in communicator 
@@ -406,6 +406,8 @@ with MPI_Alloc_mem.
 **rmasize %d:Invalid size argument in RMA call (value is %d)
 **rmadisp:Invalid displacement argument in RMA call 
 **assert:Invalid assert argument
+**winunlockrank:Invalid rank argument
+**winunlockrank %d %d:Invalid rank argument %d, should be %d
 **nomemreq:failure occurred while allocating memory for a request object
 **notcstatignore:MPI_STATUS_IGNORE cannot be passed to MPI_Status_c2f()
 **notfstatignore:MPI_STATUS_IGNORE cannot be passed to MPI_Status_f2c()

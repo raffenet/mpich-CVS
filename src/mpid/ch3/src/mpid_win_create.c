@@ -59,6 +59,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->start_assert = 0; 
     (*win_ptr)->attributes = NULL;
     (*win_ptr)->rma_ops_list = NULL;
+    (*win_ptr)->lock_granted = 0;
     (*win_ptr)->current_lock_type = MPID_LOCK_NONE;
     (*win_ptr)->shared_lock_ref_cnt = 0;
     (*win_ptr)->lock_queue = NULL;
@@ -98,10 +99,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
     /* --END ERROR HANDLING-- */
 
-    (*win_ptr)->all_win_ptrs = (struct MPID_Win **) MPIU_Malloc(comm_size *
-                                                    sizeof(struct MPID_Win *));
+    (*win_ptr)->all_win_handles = (int *) MPIU_Malloc(comm_size * sizeof(int));
     /* --BEGIN ERROR HANDLING-- */
-    if (!(*win_ptr)->all_win_ptrs)
+    if (!(*win_ptr)->all_win_handles)
     {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
@@ -128,7 +128,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     */
     tmp_buf[3*rank] = base;
     tmp_buf[3*rank+1] = (void *) disp_unit;
-    tmp_buf[3*rank+2] = (void *) *win_ptr; 
+    tmp_buf[3*rank+2] = (void *) (*win_ptr)->handle; 
 
     mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                tmp_buf, 3, MPI_LONG, comm_ptr->handle);
@@ -146,7 +146,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     {
         (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
         (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
-        (*win_ptr)->all_win_ptrs[i] = tmp_buf[3*i+2];
+        (*win_ptr)->all_win_handles[i] = (int) tmp_buf[3*i+2];
     }
 
     MPIU_Free(tmp_buf);

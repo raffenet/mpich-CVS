@@ -25,6 +25,8 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_UNLOCK);
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_UNLOCK);
 
+    if (dest == MPI_PROC_NULL) goto fn_exit;
+
     MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
 
     if (dest == comm_ptr->rank) {
@@ -35,9 +37,19 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     }
 
     rma_op = win_ptr->rma_ops_list;
+
     if ( (rma_op == NULL) || (rma_op->type != MPIDI_RMA_LOCK) ) { 
-        /* win_lock not called. return error. */
+        /* win_lock was not called. return error */
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**rmasync", 0 );
+        goto fn_exit;
     }
+
+    if (rma_op->target_rank != dest) {
+        /* The target rank is different from the one passed to win_lock! */
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**winunlockrank", "**winunlockrank %d %d", dest, rma_op->target_rank);
+        goto fn_exit;
+    }
+
     if (rma_op->next == NULL) {
         /* only win_lock called, no put/get/acc. Do nothing and return. */
         MPIU_Free(rma_op);
@@ -49,9 +61,9 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
      * reply. then do all the RMA ops. */ 
     
     lock_pkt->type = MPIDI_CH3_PKT_LOCK;
-    lock_pkt->win_ptr = win_ptr->all_win_ptrs[dest];
     lock_pkt->lock_type = rma_op->lock_type;
-    lock_pkt->lock_granted_flag_ptr = (int *) &(win_ptr->lock_granted);
+    lock_pkt->target_win_handle = win_ptr->all_win_handles[dest];
+    lock_pkt->source_win_handle = win_ptr->handle;
     
     vc = comm_ptr->vcr[dest];
     
@@ -102,6 +114,39 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
     /* Now do all the RMA operations */
     mpi_errno = MPIDI_CH3I_Do_passive_target_rma(win_ptr);
 
+    /* If the lock is a shared lock, we need to wait until the target informs 
+       us that all operations are done on the target. */
+    if (lock_pkt->lock_type == MPI_LOCK_SHARED) {
+        /* wait until the "shared lock ops done" packet is received from the 
+           target. This packet resets the win_ptr->lock_granted flag back to 
+           0. */
+
+        /* poke the progress engine until lock_granted flag is reset to 0 */
+        while (win_ptr->lock_granted != 0)
+        {
+            MPID_Progress_start();
+            
+            if (win_ptr->lock_granted != 0)
+            {
+                mpi_errno = MPID_Progress_wait();
+                /* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+            }
+            else
+            {
+                MPID_Progress_end();
+                break;
+            }
+        }
+    }
+    else
+        win_ptr->lock_granted = 0; /* not really necessary, but we do it anyway */
+
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
     return mpi_errno;
@@ -110,12 +155,10 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 
 static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
 {
-    int mpi_errno = MPI_SUCCESS, comm_size, done;
-    int i, nops;
+    int mpi_errno = MPI_SUCCESS, comm_size, done, i, nops, target_win_handle;
     MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests=NULL; /* array of requests */
-    MPID_Win *dest_win_ptr;
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
 
@@ -134,10 +177,6 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
     while (curr_ptr != NULL) {
         nops++;
         curr_ptr = curr_ptr->next;
-    }
-
-    if (nops == 0) {
-        /* flag an error */
     }
 
     requests = (MPID_Request **) MPIU_Malloc(nops * sizeof(MPID_Request*));
@@ -178,19 +217,20 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
     while (curr_ptr != NULL)
     {
         /* To unlock the window at the target after the last RMA operation,
-           we pass the dest_win_ptr only on the last operation. Otherwise, 
-           we pass NULL */
+           we pass the target_win_handle only on the last operation. Otherwise, 
+           we pass MPI_WIN_NULL. */
         if (i == nops - 1)
-            dest_win_ptr = win_ptr->all_win_ptrs[curr_ptr->target_rank];
+            target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
         else 
-            dest_win_ptr = NULL;
+            target_win_handle = MPI_WIN_NULL;
         
         switch (curr_ptr->type)
         {
         case (MPIDI_RMA_PUT):  /* same as accumulate */
         case (MPIDI_RMA_ACCUMULATE):
             mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                                                dest_win_ptr, &dtype_infos[i], &dataloops[i], &requests[i]);
+                                                target_win_handle, &dtype_infos[i],
+                                                &dataloops[i], &requests[i]);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
@@ -201,7 +241,8 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
             break;
         case (MPIDI_RMA_GET):
             mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                                                dest_win_ptr, &dtype_infos[i], &dataloops[i], &requests[i]);
+                                                target_win_handle, &dtype_infos[i],
+                                                &dataloops[i], &requests[i]);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
@@ -240,8 +281,7 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
                     if (mpi_errno != MPI_SUCCESS)
                     {
                         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "rma message operation failed");
-                        MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
-                        return mpi_errno;
+                        goto fn_exit;
                     }
                     /* --END ERROR HANDLING-- */
                     /* if origin datatype was a derived
@@ -259,8 +299,7 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr)
             if (mpi_errno != MPI_SUCCESS)
             {
                 mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "making progress on the rma messages failed");
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
-                return mpi_errno;
+                goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
             done = 1;

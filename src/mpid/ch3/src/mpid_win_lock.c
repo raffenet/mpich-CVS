@@ -27,9 +27,7 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 #endif
 #endif
 
-    if (win_ptr->rma_ops_list != NULL) {
-        /* flag error */
-    }
+    if (dest == MPI_PROC_NULL) goto fn_exit;
 
     MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
 
