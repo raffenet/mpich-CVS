@@ -365,7 +365,9 @@ case $ARCH in
 esac
 
 AC_PROG_CC
-AC_PROG_F77
+if test "$NOF77" != 1 ; then
+    AC_PROG_F77
+fi
 if test "$CC" = "gcc" -a -z "$C_DEBUG_FLAG" ; then
      C_DEBUG_FLAG="-g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
 fi
