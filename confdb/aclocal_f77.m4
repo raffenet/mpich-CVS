@@ -1057,7 +1057,7 @@ dnl
 dnl
 dnl
 AC_DEFUN(PAC_PROG_F77_CHECK_FLIBS,
-[AC_MSG_CHECKING([Whether C can link with $FLIBS])
+[AC_MSG_CHECKING([whether C can link with $FLIBS])
 # Try to link a C program with all of these libraries
 save_LIBS="$LIBS"
 LIBS="$LIBS $FLIBS"
