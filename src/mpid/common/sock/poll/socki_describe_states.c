@@ -129,7 +129,7 @@ static char *get_random_color_str()
     return random_color_str;
 }
 
-int Socki_Describe_timer_states()
+int Socki_describe_timer_states()
 {
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_SOCKI_HANDLE_ACCEPT,
