@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "ibimpl.h"
+#include "psc_iba.h"
 
 #ifdef WITH_METHOD_IB
 
@@ -53,8 +54,8 @@ int ib_make_progress()
     }
     if (completion_data.status != IB_COMP_ST_SUCCESS)
     {
-	err_printf("error: status = %d != IB_COMP_ST_SUCCESS\n", 
-	    completion_data.status);
+	err_printf("error: status = %d != IB_COMP_ST_SUCCESS, %s\n", 
+	    completion_data.status, iba_errstr(status));
 	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
 	return -1;
     }

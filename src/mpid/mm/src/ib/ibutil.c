@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "ibimpl.h"
+#include "psc_iba.h"
 
 int ibu_post_receive(MPIDI_VC *vc_ptr)
 {
