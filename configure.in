@@ -715,8 +715,11 @@ for type in short int long long_long float double long_double wchar_t \
     elif test $len -le 31 ; then
          len=`expr $len - 16`
          eval len_$type="1$len"
+    elif test $len -le 63 ; then
+         len=`expr $len - 32`
+         eval len_$type="2$len"
     else
-         AC_MSG_ERROR([Type sizes greater than 31 bytes not supported]) 
+         AC_MSG_ERROR([Type sizes greater than 63 bytes not supported (type $type is $len bytes)]) 
     fi
 done
 # By definition, sizeof char is 1
