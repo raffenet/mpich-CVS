@@ -49,7 +49,15 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	pkt_ptr = &vc->ssm.read_shmq->packet[index];
 	mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
 	num_bytes = pkt_ptr->num_bytes;
-	assert(num_bytes > 0);
+#ifdef MPICH_DBG_OUTPUT
+	/*assert(num_bytes > 0);*/
+	if (num_bytex < 1)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmq", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
+	    return mpi_errno;
+	}
+#endif
 
 	iter_ptr = mem_ptr;
 
@@ -124,7 +132,14 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     {
 	int sock_errno;
 	sock_size_t nb;
-	assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_CONNECTED);
+#ifdef MPICH_DBG_OUTPUT
+	/*assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_CONNECTED);*/
+	if (vc->ssm.state != MPIDI_CH3I_VC_STATE_CONNECTED)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ssm.state);
+	    goto fn_exit;
+	}
+#endif
 
 	/* increment the number of active reads */
 	MPIDI_CH3I_sock_read_active++;

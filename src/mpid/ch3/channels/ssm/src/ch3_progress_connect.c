@@ -281,7 +281,13 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
+    /*assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);*/
+    if (vc->ssm.state != MPIDI_CH3I_VC_STATE_UNCONNECTED)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ssm.state);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_VC_POST_CONNECT);
+	return mpi_errno;
+    }
 
     vc->ssm.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
@@ -314,8 +320,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC * vc)
     }
 
     connected = FALSE;
-    rc = MPIDI_CH3I_Shm_connect(vc, val, &connected);
-    if (rc != MPI_SUCCESS)
+    mpi_errno = MPIDI_CH3I_Shm_connect(vc, val, &connected);
+    if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**post_connect", "**post_connect %s", "MPIDI_CH3I_Shm_connect");
 	return mpi_errno;

@@ -129,12 +129,24 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		}
 		else
 		{
-		    assert(ca < MPIDI_CH3I_CA_END_SSM_CHANNEL);
+		    /*assert(ca < MPIDI_CH3I_CA_END_SSM_CHANNEL);*/
+		    if (ca >= MPIDI_CH3I_CA_END_SSM_CHANNEL)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ca", "**ca %d", ca);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
+			return mpi_errno;
+		    }
 		}
 	    }
 	    else
 	    {
-		assert(req->ssm.iov_offset < req->ch3.iov_count);
+		/*assert(req->ssm.iov_offset < req->ch3.iov_count);*/
+		if (req->ssm.iov_offset >= req->ch3.iov_count)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ssm.iov_offset, req->ch3.iov_count);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
+		    return mpi_errno;
+		}
 	    }
 	}
 	else if (nb == 0)
@@ -154,7 +166,13 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     }
     else
     {
-	assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_CONNECTED);
+	/*assert(vc->ssm.state == MPIDI_CH3I_VC_STATE_CONNECTED);*/
+	if (vc->ssm.state != MPIDI_CH3I_VC_STATE_CONNECTED)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ssm.state);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
+	    return mpi_errno;
+	}
 	req->ssm.iov_offset = 0;
 	MPIDI_CH3I_SSM_VC_post_write(vc, req);
     }

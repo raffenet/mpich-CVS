@@ -21,6 +21,9 @@ MPIU_Object_alloc_t MPID_Request_mem = {
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_Request * MPIDI_CH3_Request_create()
 {
+#ifdef MPICH_DBG_OUTPUT
+    int mpi_errno;
+#endif
     MPID_Request * req;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
 
@@ -31,7 +34,14 @@ MPID_Request * MPIDI_CH3_Request_create()
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "allocated request, handle=0x%08x",
 			  req->handle));
-	assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+#ifdef MPICH_DBG_OUTPUT
+	/*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+	}
+#endif
 	MPIDI_CH3U_Request_create(req);
     }
     else
@@ -51,9 +61,19 @@ MPID_Request * MPIDI_CH3_Request_create()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPIDI_CH3_Request_add_ref(MPID_Request * req)
 {
+#ifdef MPICH_DBG_OUTPUT
+    int mpi_errno;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+    if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+    }
+#endif
     MPIU_Object_add_ref(req);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
 }
@@ -66,11 +86,28 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
 {
+#ifdef MPICH_DBG_OUTPUT
+    int mpi_errno;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+    if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+    }
+#endif
     MPIU_Object_release_ref(req, ref_count);
-    assert(req->ref_count >= 0);
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(req->ref_count >= 0);*/
+    if (req->ref_count < 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+    }
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
 }
 #endif
@@ -81,12 +118,27 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPIDI_CH3_Request_destroy(MPID_Request * req)
 {
+#ifdef MPICH_DBG_OUTPUT
+    int mpi_errno;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
     MPIDI_DBG_PRINTF((60, FCNAME, "freeing request, handle=0x%08x",
 		      req->handle));
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
-    assert(req->ref_count == 0);
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+    if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+    }
+    /*assert(req->ref_count == 0);*/
+    if (req->ref_count != 0)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1);
+    }
+#endif
     MPIDI_CH3U_Request_destroy(req);
     MPIU_Handle_obj_free(&MPID_Request_mem, req);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);

@@ -80,6 +80,9 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC * vc, void *buf, int len, int *num_bytes_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
 {
+#ifdef MPICH_DBG_OUTPUT
+    int mpi_errno;
+#endif
     int i;
     unsigned int total = 0;
     unsigned int num_bytes;
@@ -119,7 +122,15 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 	total = vc->ssm.write_shmq->packet[index].num_bytes;
 	MPID_WRITE_BARRIER();
 	vc->ssm.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
-	assert(index == vc->ssm.write_shmq->tail_index);
+#ifdef MPICH_DBG_OUTPUT
+	/*assert(index == vc->ssm.write_shmq->tail_index);*/
+	if (index != vc->ssm.write_shmq->tail_index)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmq_index", "**shmq_index %d %d", index, vc->ssm.write_shmq->tail_index);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
+	    return mpi_errno;
+	}
+#endif
 	vc->ssm.write_shmq->tail_index =
 	    (vc->ssm.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
 	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", vc->ssm.write_shmq->tail_index));
@@ -228,6 +239,9 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC *vc, MPID_IOV *iov, int n, int *num_bytes_ptr
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout, MPIDI_VC **vc_pptr, int *num_bytes_ptr)
 {
+#ifdef MPICH_DBG_OUTPUT
+    int mpi_errno;
+#endif
     void *mem_ptr;
     char *iter_ptr;
     int num_bytes;
@@ -298,7 +312,15 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
-		    assert(&shm_ptr->packet[index] == pkt_ptr);
+#ifdef MPICH_DBG_OUTPUT
+		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
+		    if (shm_ptr->packet[index] != pkt_ptr)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+			return mpi_errno;
+		    }
+#endif
 		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
 		}
@@ -364,7 +386,15 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
-		    assert(&shm_ptr->packet[index] == pkt_ptr);
+#ifdef MPICH_DBG_OUTPUT
+		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
+		    if (shm_ptr->packet[index] != pkt_ptr)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+			return mpi_errno;
+		    }
+#endif
 		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
 		}
@@ -412,7 +442,15 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC *recv_vc_ptr, int millisecond_timeout,
 		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
-		    assert(&shm_ptr->packet[index] == pkt_ptr);
+#ifdef MPICH_DBG_OUTPUT
+		    /*assert(&shm_ptr->packet[index] == pkt_ptr);*/
+		    if (shm_ptr->packet[index] != pkt_ptr)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+			return mpi_errno;
+		    }
+#endif
 		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
 		}

@@ -52,7 +52,12 @@ int MPIDI_CH3_Progress(int is_blocking)
 	    if (rc == MPI_SUCCESS)
 	    {
 		MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-		handle_shm_read(vc_ptr, num_bytes);
+		mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+		    goto fn_exit;
+		}
 		bShmProgressMade = TRUE;
 	    }
 	    else
@@ -149,7 +154,14 @@ int MPIDI_CH3_Progress(int is_blocking)
 		mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
 		goto fn_exit;
 	    }
-	    assert(num_bytes == 0 || num_bytes == sizeof(info));
+#ifdef MPICH_DBG_OUTPUT
+	    /*assert(num_bytes == 0 || num_bytes == sizeof(info));*/
+	    if (num_bytes != 0 && num_bytes != sizeof(info))
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bootqmsg", "**bootqmsg %d", num_bytes);
+		goto fn_exit;
+	    }
+#endif
 	    if (num_bytes)
 	    {
 		vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
@@ -220,7 +232,14 @@ int MPIDI_CH3I_Message_queue_progress()
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
 	return mpi_errno;
     }
-    assert(num_bytes == 0 || num_bytes == sizeof(info));
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(num_bytes == 0 || num_bytes == sizeof(info));*/
+    if (num_bytes != 0 && num_bytes != sizeof(info))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bootqmsg", "**bootqmsg %d", num_bytes);
+	return mpi_errno;
+    }
+#endif
     if (num_bytes)
     {
 	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
@@ -280,7 +299,12 @@ int MPIDI_CH3_Progress_test()
 	if (rc == MPI_SUCCESS)
 	{
 	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-	    handle_shm_read(vc_ptr, num_bytes);
+	    mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_test", 0);
+		goto fn_exit;
+	    }
 	}
     }
 
@@ -329,6 +353,7 @@ int MPIDI_CH3_Progress_test()
     }
 #endif
 
+fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
     return mpi_errno;
 }
@@ -386,13 +411,19 @@ int MPIDI_CH3_Progress_wait()
 		if (rc == MPI_SUCCESS)
 		{
 		    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-		    handle_shm_read(vc_ptr, num_bytes);
+		    mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+			goto fn_exit;
+		    }
 		}
 		else
 		{
 		    if (rc != SHM_WAIT_TIMEOUT)
 		    {
 			MPIDI_err_printf("MPIDI_CH3_Progress", "MPIDI_CH3I_SHM_read_progress returned error %d\n", rc);
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
 			goto fn_exit;
 		    }
 		    /*
@@ -644,7 +675,14 @@ int MPIDI_CH3I_Message_queue_progress()
 	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
 	return mpi_errno;
     }
-    assert(num_bytes == 0 || num_bytes == sizeof(info));
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(num_bytes == 0 || num_bytes == sizeof(info));*/
+    if (num_bytes != 0 && num_bytes != sizeof(info))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bootqmsg", "**bootqmsg %d", num_bytes);
+	return mpi_errno;
+    }
+#endif
     if (num_bytes)
     {
 	vc_ptr = &MPIDI_CH3I_Process.pg->vc_table[info.pg_rank];
@@ -726,13 +764,19 @@ int MPIDI_CH3_Progress(int is_blocking)
 		if (rc == MPI_SUCCESS)
 		{
 		    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-		    handle_shm_read(vc_ptr, num_bytes);
+		    mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+			goto fn_exit;
+		    }
 		}
 		else
 		{
 		    if (rc != SHM_WAIT_TIMEOUT)
 		    {
 			MPIDI_err_printf("MPIDI_CH3_Progress", "MPIDI_CH3I_SHM_read_progress returned error %d\n", rc);
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
 			goto fn_exit;
 		    }
 		    /*

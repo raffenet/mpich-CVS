@@ -29,7 +29,7 @@
     if (offset == 0) \
     { \
 	/* memcpy(&sreq->ssm.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
-	assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t)); \
+	/*assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));*/ \
 	sreq->ssm.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
 	sreq->ch3.iov[0].MPID_IOV_BUF = (char *) &sreq->ssm.pkt; \
     } \
@@ -70,8 +70,10 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
+    /*
     assert(n_iov <= MPID_IOV_LIMIT);
     assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
+    */
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
@@ -165,7 +167,13 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	    else
 	    {
 		sreq = MPIDI_CH3_Request_create();
-		assert(sreq != NULL);
+		if (sreq == NULL)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+		    return mpi_errno;
+		}
+		/*assert(sreq != NULL);*/
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
 		/* TODO: Create an appropriate error message based on the value of errno */
@@ -231,6 +239,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 	    return mpi_errno;
 	}
 	sreq->kind = MPID_REQUEST_SEND;

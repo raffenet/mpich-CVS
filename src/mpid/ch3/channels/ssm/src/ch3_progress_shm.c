@@ -53,8 +53,11 @@ static inline int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz
 #define FUNCNAME handle_shm_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void handle_shm_read(MPIDI_VC *vc, int nb)
+int handle_shm_read(MPIDI_VC *vc, int nb)
 {
+#ifdef MPICH_DBG_OUTPUT
+    int mpi_errno;
+#endif
     MPID_Request * req;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_SHM_READ);
 
@@ -67,7 +70,7 @@ void handle_shm_read(MPIDI_VC *vc, int nb)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-	return;
+	return MPI_SUCCESS;
     }
 
     if (nb > 0)
@@ -88,7 +91,7 @@ void handle_shm_read(MPIDI_VC *vc, int nb)
 		vc->ssm.shm_reading_pkt = TRUE;
 		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-		return;
+		return MPI_SUCCESS;
 	    }
 	    else if (ca < MPIDI_CH3_CA_END_CH3)
 	    {
@@ -105,21 +108,39 @@ void handle_shm_read(MPIDI_VC *vc, int nb)
 		    vc->ssm.shm_reading_pkt = TRUE;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-		    return;
+		    return MPI_SUCCESS;
 		}
 	    }
 	    else
 	    {
+#ifdef MPICH_DBG_OUTPUT
+		/*
 		assert(ca != MPIDI_CH3I_CA_HANDLE_PKT);
 		assert(ca < MPIDI_CH3_CA_END_CH3);
+		*/
+		if (ca == MPIDI_CH3I_CA_HANDLE_PKT || ca >= MPIDI_CH3_CA_END_CH3)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ca", "**ca %d", ca);
+		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
+		    return mpi_errno;
+		}
+#endif
 	    }
 	}
 	else
 	{
-	    assert(req->ssm.iov_offset < req->ch3.iov_count);
+#ifdef MPICH_DBG_OUTPUT
+	    /*assert(req->ssm.iov_offset < req->ch3.iov_count);*/
+	    if (req->ssm.iov_offset >= req->ch3.iov_count)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ssm.iov_offset, req->ch3.iov_count);
+		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
+		return mpi_errno;
+	    }
+#endif
 	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-	    return;
+	    return MPI_SUCCESS;
 	}
     }
     else
@@ -130,6 +151,7 @@ void handle_shm_read(MPIDI_VC *vc, int nb)
     
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
+    return MPI_SUCCESS;
 }
 
 #undef FUNCNAME
@@ -150,13 +172,14 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
     {
 	MPID_Request * req = vc->ssm.send_active;
 
-	/*
+#ifdef MPICH_DBG_OUTPUT
 	if (req->ssm.iov_offset >= req->ch3.iov_count)
 	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "iov_offset(%d) >= iov_count(%d)", req->ssm.iov_offset, req->ch3.iov_count));
+	    error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ssm.iov_offset, req->ch3.iov_count);
+	    MPID_Abort(MPIR_Process.comm_world, error, -1);
 	}
-	*/
-	assert(req->ssm.iov_offset < req->ch3.iov_count);
+	/*assert(req->ssm.iov_offset < req->ch3.iov_count);*/
+#endif
 	/* Check here or inside shm_writev?
 	if (vc->ssm.write_shmq->packet[vc->ssm.write_shmq->tail_index].avail == MPIDI_CH3I_PKT_EMPTY)
 	    error = MPIDI_CH3I_SHM_writev(vc, req->ch3.iov + req->ssm.iov_offset, req->ch3.iov_count - req->ssm.iov_offset, &nb);

@@ -82,5 +82,5 @@ void connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
 
 int handle_sock_op(sock_event_t *event_ptr);
 
-void handle_shm_read(MPIDI_VC *vc, int nb);
+int handle_shm_read(MPIDI_VC *vc, int nb);
 int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc);
