@@ -105,6 +105,7 @@ MPID_Isend( MPID_Request *request )
        info (use request->to or request->packet.to) */
     RMQ_Set_method( request );
     // This could return the method as its value or RMQ_NO_METHOD for error 
+    // Alternatively, it could just invoke the appropriate method.
     
     /* Invoke appropriate method */
     switch (request->method) {
@@ -147,7 +148,7 @@ MPID_Wait( MPID_Request *request, MPI_Status *status )
        A timer (thread lock?)
        A thread (thread lock?)
 */
-MPID_Poll( int blocking )
+RMQ_Poll( int blocking )
 {
     make sure we are atomic: if running return else lock;
 
@@ -258,6 +259,8 @@ RMQ_Push_request( MPID_Request *request )
     }
 }
 
+? Should there be an RMQ_Request_matched that is called by MPID (or RMQ?) when a 
+previously unexpected receive is no matched by a (MPI) receive.
 
 TCP method
 ==========
