@@ -180,6 +180,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 {
+#ifdef MPIDI_CH3_CHANNEL_RNDV
     int mpi_errno = MPI_SUCCESS;
     int i;
     char *rbuf, *sbuf;
@@ -318,6 +319,15 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
     /*printf("ibu_rdma: on exit 2 - sreq = 0x%x, rreq = 0x%x.\n", reload_pkt->sreq, reload_pkt->sreq);*/
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
     return mpi_errno;
+#else
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_WRITEV);
+    return mpi_errno;
+#endif
 }
 
 #undef FUNCNAME
@@ -326,6 +336,7 @@ int MPIDI_CH3I_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
 {
+#ifdef MPIDI_CH3_CHANNEL_RNDV
     int mpi_errno = MPI_SUCCESS;
     int i;
     char *rbuf, *sbuf;
@@ -438,26 +449,6 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
 		    /* send the reload sender message after the rdma reads have completed */
 		    rreq->ch.reload_state = MPIDI_CH3I_RELOAD_SENDER;
 
-#if 0
-		    /*printf("sending reload packet to the sender.\n");fflush(stdout);*/
-		    reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
-		    reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
-		    mpi_errno = MPIDI_CH3_iStartMsg(vc, reload_pkt, sizeof(*reload_pkt), &reload_rreq);
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
-			return mpi_errno;
-		    }
-		    /* --END ERROR HANDLING-- */
-		    if (reload_rreq != NULL)
-		    {
-			/* The sender doesn't need to know when the packet has been sent.
-			   So release the request immediately */
-			MPID_Request_release(reload_rreq);
-		    }
-#endif
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
 		    return MPI_SUCCESS;
 		}
@@ -478,47 +469,17 @@ int MPIDI_CH3I_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
     rreq->ch.siov_offset = siov_offset;
     rreq->ch.reload_state != MPIDI_CH3I_RELOAD_RECEIVER;
 
-#if 0
-    /* update the sender's request */
-    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, rreq, &complete);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma read");
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
-	return mpi_errno;
-    }
-
-    if (complete || (siov_offset == send_count))
-    {
-	/*printf("sending reload send packet.\n");fflush(stdout);*/
-	/* send the reload/done packet to the sender */
-	reload_pkt->type = MPIDI_CH3_PKT_RELOAD;
-	reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_SEND;
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, reload_pkt, sizeof(*reload_pkt), &reload_rreq);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
-	    return mpi_errno;
-	}
-	/* --END ERROR HANDLING-- */
-	if (reload_rreq != NULL)
-	{
-	    /* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
-	    MPID_Request_release(reload_rreq);
-	}
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
-	return MPI_SUCCESS;
-    }
-
-    rreq->dev.rdma_iov_offset = siov_offset;
-    rreq->dev.rdma_iov[siov_offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sbuf;
-    rreq->dev.rdma_iov[siov_offset].MPID_IOV_LEN = sbuf_len;
-#endif
-
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
     return mpi_errno;
+#else
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_RDMA_READV);
+    return mpi_errno;
+#endif
 }
 
 #endif /* USE_IB_VAPI */

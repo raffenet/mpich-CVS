@@ -447,6 +447,7 @@ int shmi_readv_unex(MPIDI_VC *vc_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 {
+#ifdef MPIDI_CH3_CHANNEL_RDNV
     int mpi_errno = MPI_SUCCESS;
     int i;
     char *rbuf, *sbuf;
@@ -724,6 +725,15 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
     return mpi_errno;
+#else
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+    return mpi_errno;
+#endif
 }
 
 #undef FUNCNAME
@@ -732,6 +742,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
 {
+#ifdef MPIDI_CH3_CHANNEL_RNDV
     int mpi_errno = MPI_SUCCESS;
     int i;
     char *rbuf, *sbuf;
@@ -963,6 +974,15 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
     return mpi_errno;
+#else
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
+    return mpi_errno;
+#endif
 }
 
 #undef FUNCNAME

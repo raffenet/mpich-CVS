@@ -184,6 +184,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 #endif
 	switch (completion_data.opcode)
 	{
+#ifdef MPIDI_CH3_CHANNEL_RNDV
 	case VAPI_CQE_SQ_RDMA_WRITE:
 	    if (completion_data.status != VAPI_SUCCESS)
 	    {
@@ -385,6 +386,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		}
 	    }
 	    break;
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 	case VAPI_CQE_SQ_SEND_DATA:
 	    if (completion_data.status != VAPI_SUCCESS)
 	    {
@@ -466,6 +468,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	    pkt_offset = 0;
 	    if (recv_vc_ptr->ch.reading_pkt)
 	    {
+#ifdef MPIDI_CH3_CHANNEL_RNDV
 		if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type > MPIDI_CH3_PKT_END_CH3)
 		{
 		    if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_RTS_IOV)
@@ -738,6 +741,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 		    }
 		}
 		else
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 		{
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
 		    if (mpi_errno != MPI_SUCCESS)
@@ -858,15 +862,11 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 			return IBU_SUCCESS;
 		    }
+#ifdef MPIDI_CH3_CHANNEL_RNDV
 		    else if (recv_vc_ptr->ch.recv_active->kind == MPIDI_CH3I_RTS_IOV_READ_REQUEST)
 		    {
 			int found;
 			/*printf("received rts iov_read.\n");fflush(stdout);*/
-
-			/* rreq->rdma_request needs to be transferred to the request just like rdma_iov and rdma_iov_count 
-			 * But instead of adding a third parameter to MPIDI_CH3U_Handle_recv_pkt, the dev.sender_req_id field
-			 * from the rts packet is used.
-			 */
 
 			mpi_errno = MPIDI_CH3U_Handle_recv_pkt_rtsA(recv_vc_ptr,
 								    &recv_vc_ptr->ch.recv_active->ch.pkt,
@@ -962,6 +962,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			return IBU_SUCCESS;
 			break;
 		    }
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 		    else
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "invalid request type", recv_vc_ptr->ch.recv_active->kind);
