@@ -25,7 +25,7 @@ SHELL = /bin/sh
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/relax/g \
 	template.orig > template.tex
-	latex template </dev/null 2>&1 >/dev/null
+	-latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi $*.dvi
@@ -80,7 +80,7 @@ pt2ptdesc.dvi: pt2ptdesc.tex Makefile template.orig
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
-	latex template </dev/null 2>&1 >/dev/null
+	-latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi pt2ptdesc.dvi
@@ -96,7 +96,7 @@ colldesc.dvi: colldesc.tex Makefile template.orig
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
-	latex template </dev/null 2>&1 >/dev/null
+	-latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi colldesc.dvi
@@ -112,7 +112,7 @@ mmca.dvi: mmca.tex Makefile template.orig
 	    -e s/@section@/section/g \
 	    -e s/@newsection@/section/g \
 	    template.orig > template.tex
-	latex template </dev/null 2>&1 >/dev/null
+	-latex template </dev/null 2>&1 >/dev/null
 	-bibtex template
 	latex template
 	mv template.dvi mmca.dvi

@@ -63,7 +63,7 @@ refman.sty: $(DOCTEXTSTYLE)/refman.sty
 adi3man.dvi: adi3man/MPID_Init.c $(ADI3FILES) refman.sty
 	${MAKE} lists
 	-cp adi3man.tex adi3man/adi3man.tex
-	(cd adi3man ;
+	-(cd adi3man ;
 	latex adi3man < /dev/null 2>&1 >/dev/null ;\
 	bibtex adi3man ;\
 	make -f ../Makefile adi3man.ind ; \
@@ -85,10 +85,10 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps mpiddir.eps Makefile adi3man/MPID_Init.tex refman.sty
 adi3new.ps: $(ADI3NEWFILES)
 	touch adi3new.ind
-	latex adi3new < /dev/null 2>&1 >/dev/null
+	-latex adi3new < /dev/null 2>&1 >/dev/null
 	-bibtex adi3new
 	make adi3new.ind 
-	latex adi3new < /dev/null 2>&1 >/dev/null
+	-latex adi3new < /dev/null 2>&1 >/dev/null
 	latex adi3new < /dev/null
 	dvips adi3new
 
