@@ -581,7 +581,7 @@ typedef struct {
                                            error handler */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
     char              bnr_dbname[100];
-    MPI_Comm          comm_parent;
+    MPID_Comm         *comm_parent;
     OpenPortNode_t    *port_list;
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;

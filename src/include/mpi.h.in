@@ -82,9 +82,11 @@ typedef int MPI_Group;
 
 /* RMA and Windows */
 typedef int MPI_Win;
+#define MPI_WIN_NULL ((MPI_Win)0x20000000)
 
 /* File and IO */
 typedef int MPI_File;
+#define MPI_FILE_NULL ((MPI_File)0x10000000)
 
 /* Collective operations */
 typedef int MPI_Op;
@@ -115,12 +117,12 @@ typedef int MPI_Op;
 #define MPIR_WTIME_IS_GLOBAL 86
 
 /* Define some null objects */
-#define MPI_COMM_NULL      ((MPI_Comm)0)
-#define MPI_OP_NULL        ((MPI_Op)0)
-#define MPI_GROUP_NULL     ((MPI_Group)0)
-#define MPI_DATATYPE_NULL  ((MPI_Datatype)0)
+#define MPI_COMM_NULL      ((MPI_Comm)0x04000000)
+#define MPI_OP_NULL        ((MPI_Op)0x18000000)
+#define MPI_GROUP_NULL     ((MPI_Group)0x08000000)
+#define MPI_DATATYPE_NULL  ((MPI_Datatype)0x0c000000)
 #define MPI_REQUEST_NULL   ((MPI_Request)0)
-#define MPI_ERRHANDLER_NULL ((MPI_Errhandler )0)
+#define MPI_ERRHANDLER_NULL ((MPI_Errhandler )0x14000000)
 
 /* These are only guesses; make sure you change them in mpif.h as well */
 #define MPI_MAX_PROCESSOR_NAME 256
@@ -132,7 +134,7 @@ typedef int MPI_Op;
 /* Pre-defined constants */
 #define MPI_UNDEFINED      (-32766)
 #define MPI_UNDEFINED_RANK MPI_UNDEFINED
-#define MPI_KEYVAL_INVALID 0
+#define MPI_KEYVAL_INVALID 0x24000000
 
 /* Upper bound on the overhead in bsend for each message buffer */
 #define MPI_BSEND_OVERHEAD 512
@@ -224,7 +226,7 @@ enum {
 
 /* for info */
 typedef int MPI_Info;
-# define MPI_INFO_NULL         ((MPI_Info) 0)
+# define MPI_INFO_NULL         ((MPI_Info) 0x1c000000)
 # define MPI_MAX_INFO_KEY       255
 # define MPI_MAX_INFO_VAL      1024
 
