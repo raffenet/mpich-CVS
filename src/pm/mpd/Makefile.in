@@ -65,7 +65,7 @@ mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
 	$(C_LINK) -o $* $*.o $(LIBS)
 
 clean: 
-	@-/bin/rm -f *.o *.dep *~ ${EXAMPLES} core*
+	@-/bin/rm -f *.o *.dep *~ ${EXAMPLES} core* *.1
 
 # echo "some of the following might be executables you want to remove"
 # ls -l | grep rwx
@@ -141,3 +141,8 @@ mtv:
 
 install_mtv:	mtv.so
 	-@${INSTALL} -m 755 mtv.so ${bindir}/mtv.so
+
+# EXPERIMENTAL MAN STUFF
+man:
+	pydoc mpdtrace | txt2man -t mpdtrace -s 1 -v "mpd cmds" | awk ' NR != 1 { print } ' > mpdtrace.1
+	# nroff -man mpdtrace.1 | less
