@@ -68,7 +68,6 @@ void SendTime(ArgStruct *p, double *t, int *rpt);
 void RecvTime(ArgStruct *p, double *t, int *rpt);
 int Establish(ArgStruct *p);
 int  CleanUp(ArgStruct *p);
-void task(char *cmdLine);
 double TestLatency(ArgStruct *p);
 double TestSyncTime(ArgStruct *p);
 void PrintOptions(void);
