@@ -9,3 +9,5 @@ glpid_SOURCES = glpid.c
 grouptest_SOURCES = grouptest.c
 grouptest2_SOURCES = grouptest2.c
 groupcreate_SOURCES = groupcreate.c
+gtranks_SOURCES = gtranks.c
+gtranks_LDADD = ../util/mtest.o
