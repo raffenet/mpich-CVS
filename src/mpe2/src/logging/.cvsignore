@@ -8,3 +8,4 @@ config.h.in
 autom4te.cache
 Makefile
 mpe_logging_conf.h
+mpe_logging_conf.h.in~
