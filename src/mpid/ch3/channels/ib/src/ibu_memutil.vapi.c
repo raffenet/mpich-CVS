@@ -281,7 +281,7 @@ void * ibuBlockAllocIB(ibuQueue_t *p)
 	}
 	q->block[IBU_PACKET_COUNT-1].next = NULL;
 	q->pNextFree = &q->block[0];
-	IBU_Process.offset_to_lkey = (char*)&b[1].data - (char*)&b[1];
+	IBU_Process.offset_to_lkey = (int)((char*)&b[1].data - (char*)&b[1]);
 
 	p->next_q = q;
 	p->pNextFree = q->pNextFree;

@@ -821,7 +821,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			num_bytes = 0;
 		    }
 		}
-		offset = (unsigned char*)iter_ptr - (unsigned char*)mem_ptr;
+		offset = (unsigned int)((unsigned char*)iter_ptr - (unsigned char*)mem_ptr);
 		ibu->read.total += offset;
 		if (num_bytes == 0)
 		{
