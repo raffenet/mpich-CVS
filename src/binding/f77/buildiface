@@ -133,8 +133,10 @@ foreach $_ (@ARGV) {
 	   'MPI_Aint' => 'MPI_Fint *',   # Should be MPIR_FAint
 	   'MPI_Offset' => 'MPI_Offset *', # Should be MPIR_FOint
 	   'int' => 'MPI_Fint *',
+	   'int[]' => 'MPI_Fint',        # no * because we'll use array form
 	   'int[][3]' => 'MPI_Fint',     # no * because we'll use array form
 	   'MPI_Datatype*' => 'MPI_Fint *',
+	   'MPI_Datatype[]' => 'MPI_Fint', # no * because we'll use array form
 	   'MPI_Comm*' => 'MPI_Fint *',
 	   'MPI_File*' => 'MPI_Fint *',
 	   'MPI_Win*' => 'MPI_Fint *', 
