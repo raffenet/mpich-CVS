@@ -33,8 +33,16 @@ int main(int argc, char *argv[])
         if (s = getenv("MPD_CON_EXT"))
         {
             strncat(console_name,"_",1);
-            strncat(console_name,s,(NAME_LEN-strlen(console_name)));
-            console_name[NAME_LEN-1] = '\0';  /* just to be safe */
+            if (NAME_LEN-strlen(console_name) > 0)
+            {
+                strncat(console_name,s,(NAME_LEN-strlen(console_name)));
+                console_name[NAME_LEN-1] = '\0';  /* just to be safe */
+            }
+            else
+            {
+                printf("console_name buffer too small\n");
+                exit(-1);
+            }
         }
 
         /* handle undocumented options: */
@@ -104,7 +112,15 @@ int main(int argc, char *argv[])
     {
         cmd[0] = '\0';
     }
-    strncat(cmd,"mpdchkpyver.py",(NAME_LEN-strlen(cmd)));
+    if (NAME_LEN-strlen(cmd) > 0)
+    {
+        strncat(cmd,"mpdchkpyver.py",(NAME_LEN-strlen(cmd)));
+    }
+    else
+    {
+        printf("cmd buffer too small\n");
+        exit(-1);
+    }
     cmd[NAME_LEN-1] = '\0';  /* just to be safe */
     /* printf("MPDROOT: CMD=%s\n",cmd); */
     newargv[0] = cmd;
