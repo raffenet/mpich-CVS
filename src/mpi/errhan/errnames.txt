@@ -32,7 +32,7 @@
 **noerrclasses:No more user-defined error classes
 **noerrcodes:No more user-defined error codes
 **rankdup:Duplicate ranks in rank array 
-**rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is \
+**rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is\
 also the value at index %d
 **topotoolarge:Topology size is greater than communicator size
 **topotoolarge %d %d:Topology size %d is larger than communicator size (%d)
@@ -43,25 +43,25 @@ also the value at index %d
 **dimsmany %d %d:Number of dimensions %d is too large (maximum is %d)
 **dimspartition:Cannot partition nodes as requested 
 **cartcoordinvalid:Cartesian coordinate is invalid (not in range)
-**cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate \
+**cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate\
  is %d but must be between 0 and %d
 **cartdim:Size of Cartesian grid is larger than the size of the communicator
-**cartdim %d %d:Size of the communicator (%d) is smaller than the size of the \
+**cartdim %d %d:Size of the communicator (%d) is smaller than the size of the\
  Cartesian topology (%d)
 **cartshiftzero:Displacement must be non-zero
 **edgeoutrange:Edge index in graph topology is out of range
-**edgeoutrange %d %d %d:Edge index edges[%d] is %d but must be nonnegative \
+**edgeoutrange %d %d %d:Edge index edges[%d] is %d but must be nonnegative\
  and less than %d
 **nulledge:Edge detected from a node to the same node
 **nulledge %d %d:Edge for node %d (entry edges[%d]) is to itself
 **indexneg:Index value in graph topology must be nonnegative
 **indexneg %d %d:Index value for index[%d] is %d but must be nonnegative
 **indexnonmonotone:Index values in graph topology must be monotone nondecreasing
-**indexnonmonotone %d %d %d:Index values in graph topology must be monotone \
+**indexnonmonotone %d %d %d:Index values in graph topology must be monotone\
  nondecreasing but index[%d] is %d but the next index value is %d
 **graphnnodes:Number of graph nodes exceeds size of communicator.
 **rangedup:The range array specifies duplicate entries
-**rangedup %d %d %d:The range array specifies duplicate entries; process %d \
+**rangedup %d %d %d:The range array specifies duplicate entries; process %d\
  specified in range array %d was previously specified in range array %d
 **rank:Invalid rank
 **rank %d %d:Invalid rank has value %d but must be nonnegative and less than %d
@@ -70,10 +70,10 @@ also the value at index %d
 **stridezero:Zero stride is invalid
 **rangeinvalid:Invalid range
 **rangestartinvalid:Some element of a range array is either negative or too large
-**rangestartinvalid %d %d %d:The %dth element of a range array starts at %d \
+**rangestartinvalid %d %d %d:The %dth element of a range array starts at %d\
  but must be nonnegative and less than %d
 **rangeendinvalid:Some element of a range array is either negative or too large
-**rangeendinvalid %d %d %d:The %dth element of a range array ends at %d \
+**rangeendinvalid %d %d %d:The %dth element of a range array ends at %d\
  but must be nonnegative and less than %d
 **argrange:Argument is not within valid range
 **argrange %s %d %d:Argument %s has value %d but must be within [0,%d]
@@ -82,14 +82,14 @@ also the value at index %d
 **bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
 **bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
 **bsendbufsmall %d %d:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
-**notgenreq:Attempt to complete a request with MPI_GREQUEST_COMPLETE that \
+**notgenreq:Attempt to complete a request with MPI_GREQUEST_COMPLETE that\
 was not started with MPI_GREQUEST_START
 **cancelperrecv:Cancellation of persistent receive requests is not supported
 **cancelpersend:Cancellation of persistent send requests is not supported
 **cancelsend:Cancellation of send requests is not supported
 **cancelunknown:Attempt to cancel an unknown type of request
 **permop:Cannot free permanent MPI_Op 
-**attrsentinal:Internal fields in an attribute have been overwritten; \
+**attrsentinal:Internal fields in an attribute have been overwritten;\
  possible errors in using the attribute value in user code.
 **toomanycomm:Too many communicators
 **commperm:Cannot free permanent communicator
@@ -97,9 +97,9 @@ was not started with MPI_GREQUEST_START
 **group:Invalid group
 **groupnotincomm:Specified group is not within the communicator
 **groupnotincomm %d:Rank %d of the specified group is not a member of this communicator
-**commnotintra:An intracommunicator is required but an intercommunicator \
+**commnotintra:An intracommunicator is required but an intercommunicator\
  was provided.
-**commnotinter:An intercommunicator is required but an intracommunicator \
+**commnotinter:An intercommunicator is required but an intracommunicator\
  was provided.
 **ranklocal:Error specifying local_leader 
 **ranklocal %d %d:Error specifying local_leader; rank given was %d but must\
@@ -107,6 +107,11 @@ be in the range 0 to %d
 **rankremote:Error specifying remote_leader 
 **rankremote %d %d:Error specifying remote_leader; rank given was %d but must\
 be in the range 0 to %d
+**ranksdistinct:Local and remote leaders must be different processes
+**dupprocesses:Local and remote groups in MPI_Intercomm_create must not\
+ contain the same processes
+**dupprocesses %d:Local and remote groups in MPI_Intercomm_create must not\
+ contain the same processes; both contain process %d
 **tag:Invalid tag
 **tag %d:Invalid tag, value is %d
 **count:Invalid count
@@ -115,7 +120,7 @@ be in the range 0 to %d
 **intercommcoll:Intercommunicator collective operations have not been implemented
 **intercommcoll %s:Intercommunicator collective operation for %s has not been implemented
 **bufbsend:Insufficient space in Bsend buffer
-**bufbsend %d %d:Insufficient space in Bsend buffer; requested %d; total \
+**bufbsend %d %d:Insufficient space in Bsend buffer; requested %d; total\
  buffer size is %d
 #---- The messages below this line haven't been used yet.
 
@@ -162,41 +167,54 @@ be in the range 0 to %d
 **opundefined %s:MPI_Op %s operation not defined for this datatype 
 **topology:Invalid topology
 **grapharraysize:Specified edge less than zero or greater than nnodes
- (optional arguments: index, value, nnodes (int))
+**grapharraysize %d %d %d:Specified edge %d is %d but must be at least zero\
+ and less than %d
 **dims:Invalid dimension argument
 **dims %d:Invalid dimension argument (value is %d)
 **dimsarray:Invalid dimension argument in array 
-      (optional arguments: index, value (int))
-**dimstensor:Tensor product size does not 
-      match nnodes (optional arguments: tensor product size and nnodes (int))
+**dimsarray %d %d:Value of dims[%d] is %d which is invalid
+**dimstensor:Tensor product size does not match nnodes
+**dimstensor %d %d:Tensor product size is %d but must be the same as the number of\
+ nodes, which is %d
 **dimspartition:Cannot partition nodes as requested 
 **arg:Invalid argument
 **arg %s:Invalid argument %s
 **argerrcode:Invalid error code
 **argerrcode %d:Invalid error code %d
-**argaddress:Address of location given to MPI_ADDRESS does not fix in a \
+**argaddress:Address of location given to MPI_ADDRESS does not fix in a\
 Fortran integer
-**argaddress %ld:Address of location given to MPI_ADDRESS does not fix in a \
+**argaddress %ld:Address of location given to MPI_ADDRESS does not fix in a\
 Fortran integer (value is %ld)
 **errhandler:Invalid errhandler
 **errhandlernull:Null errhandler 
 **errhandlerperm:Cannot free permanent error handler
 **errhandlerperm %s:Cannot free permanent error handler %s
 **statusignore:Invalid use of MPI_STATUS_IGNORE or MPI_STATUSES_IGNORE
-**argarray:Invalid value in array (optional arguments: name of variable (string), index (int), value (int))
-**argnamed:Invalid argument (optional arguments: name (string), value (int))
+**argarray:Invalid value in array
+**argarray %s %d %d:Invalid value in %s[%d] = %d
+**argnamed:Invalid argument
+**argnamed %s %d:Invalid argument %s with value %d
 **darraydist:For MPI_DISTRIBUTE_NONE, the number of processes in that\
-      dimension of the grid must be 1 (optional arguments: index of\
-      array_of_psizes, value (int))
+      dimension of the grid must be 1
+**darraydist %d %d:For MPI_DISTRIBUTE_NONE, the value of array_of_psizes[%d]\
+ is %d but must have value 1
 **darrayunknown:Unknown distribution type 
-**darrayblock:Value of m must be positive for block(m) distribution (optional argument: value of m (int))
-**darrayblock2:m * nprocs is less than array_size and is not valid for \
-      block(m) distribution \
+**darrayblock:Value of m must be positive for block(m) distribution
+**darrayblock %d: Value of m in block(m) distribution is %d must must be\
+ positive
+**darrayblock2:m * nprocs is less than array_size and is not valid for\
+      block(m) distribution\
       (optional arguments: {m*nprocs}, {array_size} (int))
-**darraycyclic:Value of m must be positive for a cyclic(m) distribution (optional argument: m (int))
-**argposneg:Value of position must be nonnegative (optional argument: value (int))
-**infonkey:n (for nth key/value) is invalid (optional arguments: \
-      n, number of keys in info (int))
+**darrayblock2 %d %d:m * nprocs is %d but must equal the array size %d and is\
+ not valid for block(m) distribution
+**darraycyclic:Value of m must be positive for a cyclic(m) distribution
+**darraycyclic %d:Value of m is %d but must be positive for a cyclic(m) \
+ distribution
+**argposneg:Value of position must be nonnegative
+**argposneg %d:Value of position is %d but must be nonnegative
+**infonkey:n (for nth key/value) is invalid
+**infonkey %d %d:n = %d (for nth key/value) is invalid; must be at least \
+ zero and less than %d
 **unknown:Unknown error.  Please file a bug report.
 **truncate:Message truncated
 **truncate %d %d:Message truncated; %d bytes received but buffer size is %d
@@ -204,12 +222,13 @@ Fortran integer (value is %ld)
 **othersys:System resource limit exceeded 
 **othersys %s:System resource (%s) limit exceeded 
 **rsendnomatch:Ready send had no matching receive 
-      (optional arguments: source, destination, tag (int))
-**preinit:MPI_Init must be 
-      called first (optional argument: name of calling routine (string))
-**startup:Error on startup, such as a \
-      mismatch between mpiexec and the MPI libraries (optional \
-      argument: text with detailed reason (string))
+**rsendnomatch %d %d %d:Ready send from source %d, for destination %d and \
+ with tag %d had no matching receive
+**preinit:MPI_Init or MPI_Init_thread must be called first
+**preinit %s:MPI_Init or MPI_Init_thread must be called before %s
+**startup:Error on startup, such as a\
+      mismatch between mpiexec and the MPI libraries
+**startup %s:Error on startup: reason is %s
 **attrcopy:User defined attribute copy routine returned a non-zero return code
 **attrcopy %d:User defined attribute copy routine returned a non-zero return code %d
 **intern:Internal MPI error!
@@ -224,21 +243,22 @@ Fortran integer (value is %ld)
 **fileaccess %s:Access denied to file %s
 **fileamode:Invalid amode value in MPI_File_open 
 **fileamode %d:Invalid amode value of %d in MPI_File_open 
-**fileamodeone:Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or \
+**fileamodeone:Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or\
  MPI_MODE_RDWR must be specified
-**fileamoderead:Cannot use MPI_MODE_CREATE or MPI_MODE_EXCL with \
+**fileamoderead:Cannot use MPI_MODE_CREATE or MPI_MODE_EXCL with\
  MPI_MODE_RDONLY 
 **fileamodeseq:Cannot specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR
 **filename:Invalid file name
 **filename %s:Invalid file name %s
 **filenamelong:Pathname too long
 **filenamelong %s %d %d:Pathname %s too long (%d characters, maximum is %d)
-**filenamedir:Invalid or missing directory (optional argument: name (string))
+**filenamedir:Invalid or missing directory
+**filenamedir %s:Invalid or missing directory %s
 **conversion:An error occurred in a user-defined data conversion function
-**datarep:The requested datarep name has already been specified to \
+**datarep:The requested datarep name has already been specified to\
  MPI_REGISTER_DATAREP
 **fileinuse:File in use by some process
-**fileinuse %s:File %s is in use by some process (optional 
+**fileinuse %s:File %s is in use by some process
 **file:Invalid MPI_File
 **filenull:Null MPI_File 
 **info:Invalid MPI_Info
@@ -259,20 +279,25 @@ Fortran integer (value is %ld)
 **io:Other I/O error 
 **io %s:Other I/O error %s
 **ioetype:Only an integral number of etypes can be accessed
-**iofstype:Cannot determine filesystem type \
-      (optional argument: name of file (string))
-**iofstypeunsupported:Specified filesystem is not available (optional argument: name of filesystem (string))
+**iofstype:Cannot determine filesystem type
+**iofstype %s:Cannot determine filesystem type for file %s
+**iofstypeunsupported:Specified filesystem is not available
+**iofstypeunsupported %s:Specified filesystem %s is not available
 **iosplitcoll:Only one active split collective I/O operation is allowed per file handle
 **iosplitcollnone:No split collective I/O operation is active
 **ioasyncwaiting:There are outstanding nonblocking I/O operations on this file
 **ioneedrdwr:Read/write access is required to this file
 **iofiletype:Filetype must be constructed out of one or more etypes
-**iosharedunsupported:Shared file pointers not supported (optional argument: name of file system (string))
-**ioamodeseq:Cannot use this function when the file is opened with amode \
-    MPI_MODE_SEQUENTIAL (optional argument: name of routine (string))
+**iosharedunsupported:Shared file pointers not supported
+**iosharedunsupported %s:Shared file pointers not supported on filesystem %s
+**ioamodeseq:Cannot use this function when the file is opened with amode\
+    MPI_MODE_SEQUENTIAL 
+**ioamodeseq %s:Cannot use function %s when the file is opened with amode\
+    MPI_MODE_SEQUENTIAL
 **iowronly:Cannot read from a file opened with amode MPI_MODE_WRONLY
-**iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system \
- (optional argument: name of file       system (string))
+**iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system
+
+**iosequnsupported %s:MPI_MODE_SEQUENTIAL not supported on file system %s
 **servicename:Attempt to lookup an unknown service name 
 **servicename %s:Attempt to lookup an unknown service name %s
 **allocmem:Unable to allocate memory for MPI_Alloc_mem
@@ -282,8 +307,9 @@ Fortran integer (value is %ld)
 **notsamevalue:Arguments to collective routine must be the same
 **notsamevalue %s %s:Argument %s to collective routine %s must be the same
 **notsameroot:Inconsistent root 
-**notsameorder:Collective routines called in an inconsistent order (optional arguments: null terminated
-      array of names (array of string))
+**notsameorder:Collective routines called in an inconsistent order
+#**notsameorder:Collective routines called in an inconsistent order (optional arguments: null terminated
+#      array of names (array of string))
 **filenospace:Not enough space for file 
 **filenospace %s %d %d:Not enough space for file %s; %d needed but only %d available
 **filenoexist:File does not exist
@@ -299,11 +325,14 @@ Fortran integer (value is %ld)
 **filerdonly %s:Read-only file or filesystem name %s
 **nameservice:Invalid service name (see MPI_Publish_name)
 **nameservice %s:Invalid service name %s (see MPI_Publish_name)
-**servicenameunpublish:Attempt to unpublish an unknown service name (optional arg: name (string))
+**servicenameunpublish:Attempt to unpublish an unknown service name
+**servicenameunpublish %s:Attempt to unpublish an unknown service name %s
 **spawn:Error in spawn call
 **spawnfail:Could not spawn all requested processes 
-**spawnpgm:The named program could not be found (optional arg: name (spawn))
-**spawnmanager:The process manager returned an error (optional arg: text from process manager (string))
+**spawnpgm:The named program could not be found
+**spawnpgm %s:The program %s could not be found
+**spawnmanager:The process manager returned an error
+**spawnmanager %s:The process manager returned an error: %s
 **datarepunsupported:Unsupported datarep passed to MPI_File_set_view 
 **datarepunsupported %s:Unsupported datarep %s passed to MPI_File_set_view
 **fileopunsupported:Unsupported file operation 
@@ -330,4 +359,5 @@ with MPI_Alloc_mem.
 **assert:Invalid assert argument
 
 # Duplicates?
-#**argnull:Invalid null parameter (optional arg: name of argument (string))
+#**argnull:Invalid null parameter
+#**argnull %s:Invalid null parameter %s
