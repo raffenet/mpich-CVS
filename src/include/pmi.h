@@ -18,9 +18,14 @@ PMI_ - return code definitions
 Module:
 PMI
 D*/
-#define PMI_SUCCESS           0
-#define PMI_FAIL             -1
-#define PMI_ERR_INVALID_ARG   1
+#define PMI_SUCCESS                0
+#define PMI_FAIL                  -1
+#define PMI_ERR_INVALID_ARG        1
+#define PMI_ERR_INVALID_KEY
+#define PMI_ERR_INVALID_KEY_LENGTH 2
+#define PMI_ERR_INVALID_VAL
+#define PMI_ERR_INVALID_VAL_LENGTH 3
+#define PMI_ERR_INVALID_LENGTH
 
 typedef int PMI_BOOL;
 #define PMI_TRUE     1
@@ -31,8 +36,9 @@ typedef int PMI_BOOL;
 /*@
 PMI_Init - initialize the Process Manager Interface
 
-Return value: success or failure
+Return values:
 + PMI_SUCCESS - initialization completed successfully
+. PMI_INVALID_ARG - invalid argument
 - PMI_FAIL - initialization failed
 
 Notes:
@@ -48,9 +54,18 @@ int PMI_Init( int *spawned );
 /*@
 PMI_Initialized - check if PMI has been initialized
 
-Return value: success or failure
-+ PMI_TRUE - initialize has been called
-- PMI_FALSE - initialize has not been called or previously failed
+Output Parameter:
+. initialized - boolean value
+
+Return values:
++ PMI_SUCCESS - initialized successfully set
+. PMI_INVALID_ARG - invalid argument
+- PMI_FAIL - unable to set the variable
+
+Notes:
+On successful output, initialized will either be PMI_TRUE or PMI_FALSE.
+PMI_TRUE - initialize has been called.
+PMI_FALSE - initialize has not been called or previously failed.
 
 Module:
 PMI
@@ -60,7 +75,7 @@ int PMI_Initialized( PMI_BOOL *initialized );
 /*@
 PMI_Finalize - finalize the Process Manager Interface
 
-Return value: success or failure
+Return values:
 + PMI_SUCCESS - finalization completed successfully
 - PMI_FAIL - finalization failed
 
@@ -78,8 +93,9 @@ PMI_Get_size - obtain the size of the process group
 Output Parameters:
 . size - pointer to an integer that receives the size of the process group
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - size successfully obtained
+. PMI_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the size
 
 Notes:
@@ -97,8 +113,9 @@ PMI_Get_rank - obtain the rank of the local process in the process group
 Output Parameters:
 . rank - pointer to an integer that receives the rank in the process group
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - rank successfully obtained
+. PMI_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the rank
 
 Notes:
@@ -112,12 +129,16 @@ int PMI_Get_rank( int *rank );
 /*@
 PMI_Get_id - obtain the id of the process group
 
-Output Parameters:
+Input Parameter:
+. length - length of the id_str character array
+
+Output Parameter:
 . id_str - character array that receives the id of the process group
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - id successfully obtained
 . PMI_ERR_INVALID_ARG - invalid rank argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
 - PMI_FAIL - unable to return the id
 
 Notes:
@@ -133,15 +154,16 @@ int PMI_Get_id( char id_str[], int length );
 /*@
 PMI_Get_kvs_domain_id - obtain the id of the PMI domain
 
-Input Parameters:
+Input Parameter:
 . length - length of id_str
 
-Output Parameters:
+Output Parameter:
 . id_str - character array that receives the id of the PMI domain
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - id successfully obtained
 . PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
 - PMI_FAIL - unable to return the id
 
 Notes:
@@ -160,7 +182,7 @@ PMI_Get_id_length_max - obtain the maximum length of an id string
 Output Parameters:
 . length - the maximum length of an id string
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - length successfully set
 . PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the maximum length
@@ -176,7 +198,7 @@ int PMI_Get_id_length_max( int *length );
 /*@
 PMI_Barrier - barrier across the process group
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - barrier successfully finished
 - PMI_FAIL - barrier failed
 
@@ -196,8 +218,9 @@ PMI_Get_clique_size - obtain the number of processes on the local node
 Output Parameters:
 . size - pointer to an integer that receives the size of the clique
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - size successfully obtained
+. PMI_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to return the clique size
 
 Notes:
@@ -221,9 +244,10 @@ Input Parameters:
 Output Parameters:
 . ranks - pointer to an array of integers that receive the local ranks
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - ranks successfully obtained
 . PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
 - PMI_FAIL - unable to return the ranks
 
 Notes:
@@ -243,14 +267,15 @@ int PMI_Get_clique_ranks( int ranks[], int length );
 PMI_KVS_Get_my_name - obtain the name of the keyval space the local process group has access to
 
 Input Parameters:
-. length - length of the kvsname string
+. length - length of the kvsname character array
 
 Output Parameters:
 . kvsname - a string that receives the keyval space name
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - kvsname successfully obtained
 . PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
 - PMI_FAIL - unable to return the kvsname
 
 Notes:
@@ -270,7 +295,7 @@ PMI_KVS_Get_name_length_max - obtain the length necessary to store a kvsname
 Output Parameter:
 . length - maximum length required to hold a keyval space name
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - length successfully set
 . PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to set the length
@@ -289,7 +314,7 @@ PMI_KVS_Get_key_length_max - obtain the length necessary to store a key
 Output Parameter:
 . length - maximum length required to hold a key string.
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - length successfully set
 . PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to set the length
@@ -308,7 +333,7 @@ PMI_KVS_Get_value_length_max - obtain the length necessary to store a value
 Output Parameter:
 . length - maximum length required to hold a keyval space value
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - length successfully set
 . PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to set the length
@@ -331,9 +356,10 @@ Input Parameter:
 Output Parameters:
 . kvsname - a string that receives the keyval space name
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - keyval space successfully created
 . PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
 - PMI_FAIL - unable to create a new keyval space
 
 Notes:
@@ -354,7 +380,7 @@ PMI_KVS_Destroy - destroy keyval space
 Input Parameters:
 . kvsname - keyval space name
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - keyval space successfully destroyed
 . PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - unable to destroy the keyval space
@@ -375,9 +401,11 @@ Input Parameters:
 . key - key
 - value - value
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - keyval pair successfully put in keyval space
-. PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_KVS - invalid kvsname argument
+. PMI_ERR_INVALID_KEY - invalid key argument
+. PMI_ERR_INVALID_VAL - invalid val argument
 - PMI_FAIL - put failed
 
 Notes:
@@ -399,7 +427,7 @@ PMI_KVS_Commit - commit all previous puts to the keyval space
 Input Parameters:
 . kvsname - keyval space name
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - commit succeeded
 . PMI_ERR_INVALID_ARG - invalid argument
 - PMI_FAIL - commit failed
@@ -424,9 +452,12 @@ Input Parameters:
 Output Parameters:
 . value - value
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - get succeeded
-. PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_KVS - invalid kvsname argument
+. PMI_ERR_INVALID_KEY - invalid key argument
+. PMI_ERR_INVALID_VAL - invalid val argument
+. PMI_ERR_INVALID_LENGTH - invalid length argument
 - PMI_FAIL - get failed
 
 Notes:
@@ -449,9 +480,13 @@ Output Parameters:
 + key - key
 - value - value
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - keyval pair successfully retrieved from the keyval space
-. PMI_ERR_INVALID_ARG - invalid argument
+. PMI_ERR_INVALID_KVS - invalid kvsname argument
+. PMI_ERR_INVALID_KEY - invalid key argument
+. PMI_ERR_INVALID_KEY_LENGTH - invalid key length argument
+. PMI_ERR_INVALID_VAL - invalid val argument
+. PMI_ERR_INVALID_VAL_LENGTH - invalid val length argument
 - PMI_FAIL - failed to initialize the iterator and get the first keyval pair
 
 Notes:
@@ -478,8 +513,13 @@ Output Parameters:
 + key - key
 - value - value
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - keyval pair successfully retrieved from the keyval space
+. PMI_ERR_INVALID_KVS - invalid kvsname argument
+. PMI_ERR_INVALID_KEY - invalid key argument
+. PMI_ERR_INVALID_KEY_LENGTH - invalid key length argument
+. PMI_ERR_INVALID_VAL - invalid val argument
+. PMI_ERR_INVALID_VAL_LENGTH - invalid val length argument
 - PMI_FAIL - failed to get the next keyval pair
 
 Notes:
@@ -528,8 +568,9 @@ Input Parameters:
 Output Parameters:
 . errors - array of errors for each command
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - spawn successful
+. PMI_INVALID_ARG - invalid argument
 - PMI_FAIL - spawn failed
 
 Notes:
@@ -570,8 +611,9 @@ Output Parameters:
 + keyvalp - array of keyvals
 - size - size of the allocated array
 
-Return value: a PMI error code
+Return values:
 + PMI_SUCCESS - success
+. PMI_INVALID_ARG - invalid argument
 - PMI_FAIL - fail
 
 Notes:
