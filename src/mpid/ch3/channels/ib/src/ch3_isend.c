@@ -28,7 +28,6 @@ static void update_request(MPID_Request * sreq, void * hdr, int hdr_sz, int nb)
 void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
-    MPIDI_STATE_DECL(MPID_STATE_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
@@ -51,11 +50,9 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
                also try to write */
 	    do
 	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_WRITE);
-		/*************nb = write(vc->ib.fd, hdr, hdr_sz);***************/
+		MPIU_dbg_printf("ibu_post_write(%d bytes)\n", hdr_sz);
 		ibu_post_write(vc->ib.ibu, hdr, hdr_sz, NULL);
 		nb = 0;
-		MPIDI_FUNC_EXIT(MPID_STATE_WRITE);
 	    }
 	    while (nb == -1 && errno == EINTR);
 	    
@@ -80,8 +77,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		MPIDI_CH3I_IB_post_write(vc, sreq);
 	    }
-	    else if (nb == 0 || errno == EAGAIN ||
-		     errno == EWOULDBLOCK || errno == ENOMEM)
+	    else if (nb == 0)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
 		update_request(sreq, hdr, hdr_sz, 0);
@@ -107,23 +103,6 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
-#if 0
-    else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
-    {
-	/* Form a new connection, queuing the data so it can be sent later. */
-	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  enqueuing request"));
-	MPIDI_CH3I_TCP_post_connect(vc);
-	update_request(sreq, hdr, hdr_sz, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-    else if (vc->ib.state != MPIDI_CH3I_VC_STATE_FAILED)
-    {
-	/* Unable to send data at the moment, so queue it for later */
-	MPIDI_DBG_PRINTF((55, FCNAME, "still connecting.  enqueuing request"));
-	update_request(sreq, hdr, hdr_sz, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-    }
-#endif
     else
     {
 	/* Connection failed.  Mark the request complete and return an error. */

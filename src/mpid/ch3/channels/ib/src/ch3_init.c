@@ -129,12 +129,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     rc = PMI_KVS_Put(pg->kvs_name, key, val);
     assert(rc == 0);
 
-#   if defined(DEBUG)
-    {
-	dbg_printf("[%d] Published lid=%d\n", pg_rank, port);
-	fflush(stdout);
-    }
-#   endif
+    dbg_printf("[%d] Published lid=%d\n", pg_rank, port);
     
     rc = PMI_KVS_Commit(pg->kvs_name);
     assert(rc == 0);
@@ -144,7 +139,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     MPIU_Free(val);
     MPIU_Free(key);
     
-#   if defined(DEBUG)
     {
 	for (p = 0; p < pg_size; p++)
 	{
@@ -157,7 +151,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	    fflush(stdout);
 	}
     }
-#   endif
     
     /* XXX - has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;

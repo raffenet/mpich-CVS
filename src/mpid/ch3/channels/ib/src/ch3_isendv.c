@@ -40,7 +40,6 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
-    MPIDI_STATE_DECL(MPID_STATE_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
@@ -66,11 +65,9 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
                as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
 	    do
 	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_WRITEV);
-		/*************nb = writev(vc->ib.fd, iov, n_iov);**********************/
+		MPIU_dbg_printf("ibu_post_writev(%d elements)\n", n_iov);
 		ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
 		nb = 0;
-		MPIDI_FUNC_EXIT(MPID_STATE_WRITEV);
 	    }
 	    while (nb == -1 && errno == EINTR);
 	    

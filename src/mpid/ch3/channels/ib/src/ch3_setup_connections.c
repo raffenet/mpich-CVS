@@ -40,6 +40,7 @@ int MPIDI_CH3I_Setup_connections()
 	dlid = atoi(val);
 	assert(dlid >= 0);
 	/* connect to the dlid */
+	MPIU_dbg_printf("calling ibu_create_qp(%d)\n", dlid);
 	vc->ib.ibu =
 	    ibu_create_qp(MPIDI_CH3I_Process.set, dlid);
 	assert(vc->ib.ibu != NULL);
@@ -55,6 +56,8 @@ int MPIDI_CH3I_Setup_connections()
 	vc->ib.req->ch3.ca = MPIDI_CH3I_CA_HANDLE_PKT;
 	vc->ib.recv_active = vc->ib.req;
     }
+
+    PMI_Barrier();
 
     MPIU_Free(val);
     MPIU_Free(key);
