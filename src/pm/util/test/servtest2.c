@@ -5,6 +5,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "process.h"
 #include "pmiserv.h"
 #include "ioloop.h"
@@ -39,7 +41,7 @@ int main( int argc, char *argv[], char *envp[] )
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
     MPIE_PrintProcessUniverse( stdout, &pUniv );
     
-    PMIServInit( );
+    PMIServInit(0,0);
     PMISetupNewGroup( pUniv.worlds[0].nProcess );
     MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &rundata,
 			myprefork, 0, mypostamble, 0 );
@@ -130,7 +132,7 @@ int labeler( int fd, int rdwr, void *data )
     }
     return 0;
 }
-int mpiexec_usage( const char *str )
+void mpiexec_usage( const char *str )
 {
     fprintf( stderr, "Usage: %s\n", str );
     return 0;

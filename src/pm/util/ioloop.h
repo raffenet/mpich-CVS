@@ -1,3 +1,6 @@
+#ifndef IOLOOP_H_INCLUDED
+#define IOLOOP_H_INCLUDED
+
 typedef struct {
     int fd;
     int rdwr;
@@ -8,5 +11,14 @@ typedef struct {
 #define IO_READ  0x1
 #define IO_WRITE 0x2
 
+/* Return values for MPIE_IOLoop */
+#define IOLOOP_SUCCESS 0
+#define IOLOOP_TIMEOUT 0x1
+#define IOLOOP_ERROR   0x2
+
 int MPIE_IORegister( int, int, int (*)(int,int,void*), void * );
 int MPIE_IOLoop( int );
+void TimeoutInit( int );
+int  TimeoutGetRemaining( void );
+
+#endif

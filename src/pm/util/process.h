@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#ifndef PROCESS_H_INCLUDED
+#define PROCESS_H_INCLUDED
+
 #include <sys/types.h>
 
 /*
@@ -99,6 +102,7 @@ typedef struct ProcessApp {
     ProcessSoftSpec soft;            /* "soft" spec, if any */
     int            nProcess;         /* Number of processes in this app */
     ProcessState   *pState;          /* Array of process states */
+    struct ProcessWorld   *pWorld;   /* World containing this app */
 
     struct ProcessApp *nextApp;      /* Next App */
 } ProcessApp;
@@ -106,13 +110,17 @@ typedef struct ProcessApp {
 typedef struct ProcessWorld {
     int        nApps;                /* Number of Apps in this world */
     int        nProcess;             /* Number of processes in this world */
+    int        worldNum;             /* Number of this world; initial
+					world is 0 */
     ProcessApp *apps;                /* Array of Apps */
     struct ProcessWorld *nextWorld;
 } ProcessWorld;
 
 typedef struct ProcessUniverse {
     ProcessWorld *worlds;
+    int          nWorlds;            /* Number of worlds */
     int          size;               /* Universe size */
+    int          timeout;            /* Timeout in seconds (-1 for none) */
 } ProcessUniverse;
 
 /* There is only one universe */
@@ -123,12 +131,21 @@ int MPIE_ForkProcesses( ProcessWorld *, char *[],
 			int (*)(void*), void *,
 			int (*)(void*,void*,ProcessState*), void *,
 			int (*)(void*,void*,ProcessState*), void * );
+int MPIE_ExecProgram( ProcessState *, char *[] );
 ProcessState *MPIE_FindProcessByPid( pid_t );
 void MPIE_ProcessInit( void );
 void MPIE_SetupSigChld( void );
 int MPIE_ProcessGetExitStatus( void );
+void MPIE_ProcessSetExitStatus( ProcessState *, int );
+int MPIE_InitWorldWithSoft( ProcessWorld *, int );
+void MPIE_PrintFailureReasons( FILE * );
+int MPIE_WaitForProcesses( ProcessUniverse *, int );
 
-/* Temporary debug definitions */
-#define DBG_PRINTF(a) printf a
-#define DBG_FPRINTF(a) fprintf a
-#define DBG_FFLUSH(a) fflush(a)
+int MPIE_SignalWorld( ProcessWorld *, int );
+int MPIE_KillWorld( ProcessWorld * );
+int MPIE_KillUniverse( ProcessUniverse * );
+
+int MPIE_ForwardSignal( int );
+int MPIE_ForwardCommonSignals( void );
+
+#endif

@@ -21,9 +21,13 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#include <string.h>
+#include <ctype.h>
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"
+#include "pmutil.h"
 #include "process.h"
+#include "cmnargs.h"
 #include "ioloop.h"
 #include "pmiserv.h"
 
@@ -32,18 +36,23 @@
 
 /* ??? */
 #include "simple_pmiutil.h"
-#define DBG_PRINTF printf
 
 #ifdef HAVE_SNPRINTF
 #define MPIU_Snprintf snprintf
+#ifdef NEEDS_SNPRINTF_DECL
+int snprintf(char *, size_t, const char *, ...);
+#endif
 #endif
 
 /* These need to be imported from the pmiclient */
 #define MAXPMICMD   256         /* max length of a PMI command */
 
-/* These is only a single PMI master, so we allocate it here */
+/* There is only a single PMI master, so we allocate it here */
 static PMIMaster pmimaster = { 0, 0, 0 };
-
+/* Allow the user to register a routine to be used for the PMI spawn 
+   command */
+static int (*userSpawner)( ProcessWorld *, void *) = 0;
+static void *userSpawnerData = 0;
 static int pmidebug = 1;
 
 #if 0
@@ -107,13 +116,9 @@ typedef struct {
 } PMIState;
 
 static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
-
 #endif
 
 /* Functions that handle PMI requests */
-static int  fPMI_Allocate_kvs( int *, char [] );
-static int  fPMI_Allocate_kvs_group( void );
-
 static int fPMI_Handle_finalize( PMIProcess * );
 static int fPMI_Handle_abort( PMIProcess * );
 static int fPMI_Handle_barrier( PMIProcess * );
@@ -205,6 +210,8 @@ int PMISetupInClient( PMISetup *pmiinfo )
 	perror( "Reason: " );
 	return 1;
     }
+    /* Indicate that this is a spawned process */
+    /* putenv( "PMI_SPAWNED=1" ); */
     return 0;
 }
 
@@ -246,7 +253,7 @@ PMIProcess *PMISetupNewProcess( int fd, ProcessState *pState )
 /* Initialize a new PMI group that will be the parent of all
    PMIProcesses until the next group is created 
    Each group also starts with a KV Space */
-int PMISetupNewGroup( int nProcess )
+int PMISetupNewGroup( int nProcess, PMIKVSpace *kvs )
 {
     PMIGroup *g;
     curPMIGroup = (PMIGroup *)MPIU_Malloc( sizeof(PMIGroup) );
@@ -273,7 +280,12 @@ int PMISetupNewGroup( int nProcess )
 	    g = g->nextGroup;
 	}
     }
-    curPMIGroup->kvs = fPMIKVSAllocate();
+    if (kvs) {
+	curPMIGroup->kvs = kvs;
+    }
+    else {
+	curPMIGroup->kvs = fPMIKVSAllocate();
+    }
 
     return 0;
 }
@@ -318,20 +330,20 @@ int IOSetupPMIHandler( IOSpec *ios, int fd, ProcessState *pstate,
 int PMIServHandleInput( int fd, int rdwr, void *extra )
 {
     PMIProcess *pentry = (PMIProcess *)extra;
-    int  rc;
-    int  returnCode = 0;
-    char inbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
+    int        rc;
+    int        returnCode = 0;
+    char       inbuf[PMIU_MAXLINE], cmd[MAXPMICMD];
     PMICmdMap *p;
+    int        cmdtype;
 
-    DBG_PRINTF( "Handling PMI input\n" ); fflush(stdout);
+    DBG_PRINTFCOND(pmidebug,("Handling PMI input\n") );
     if ( ( rc = PMIU_readline( pentry->fd, inbuf, PMIU_MAXLINE ) ) > 0 ) {
-	if (pmidebug) {
-	    DBG_PRINTF( "Entering PMIServHandleInputFd %s\n", inbuf );
-	}
+	DBG_PRINTFCOND(pmidebug,
+		       ("Entering PMIServHandleInputFd %s\n", inbuf) );
 
 	PMIU_parse_keyvals( inbuf );
-	PMIU_getval( "cmd", cmd, MAXPMICMD );
-	DBG_PRINTF( "cmd = %s\n", cmd ); fflush(stdout);
+	cmdtype = PMIGetCommand( cmd, sizeof(cmd) );
+	DBG_PRINTFCOND(pmidebug,( "cmd = %s\n", cmd ));
 	p = pmiCommands;
 	while (p->handler) {
 	    if (strncmp( cmd, p->cmdName, MAXPMICMD ) == 0) {
@@ -345,8 +357,8 @@ int PMIServHandleInput( int fd, int rdwr, void *extra )
 	}
     }
     else {                        /* lost contact with client */
-	/* close( pentry->fd );  */
-	pentry->fd = -1;          /* forget the fd now that it is not valid */
+	DBG_PRINTFCOND(pmidebug,("EOF on PMI input\n"));
+	/* returning a 1 causes the IO loop code to close the socket */
 	returnCode = 1;
     }
     return returnCode;
@@ -361,9 +373,11 @@ int PMIServHandleInput( int fd, int rdwr, void *extra )
  * kvsname is the initial kvs name (provide a string of size MAXKVSNAME.
  * Return value: groupid
  */
-int PMIServInit( void )
+int PMIServInit( int (*spawner)(ProcessWorld *, void*), void * spawnerData )
 {
-    /* Nothing to do? */
+    userSpawner     = spawner;
+    userSpawnerData = spawnerData;
+
     return 0;
 }
 #if 0
@@ -424,6 +438,29 @@ int PMIServAddtoGroup( int group, int rank, pid_t pid, int fd )
     return 0;
 }
 #endif
+
+
+/* ------------------------------------------------------------------------ */
+/* Additional service routines                                              */
+/* ------------------------------------------------------------------------ */
+/*
+ * Get either a cmd=val or mcmd=val.  return 0 if cmd, 1 if mcmd, and -1 
+ * if neither (an error, since all PMI messages should contain one of
+ * these).
+ */
+int PMIGetCommand( char *cmd, int cmdlen )
+{
+    char *valptr;
+    int  cmdtype = 0;
+    
+    valptr = PMIU_getval( "cmd", cmd, cmdlen );
+    if (!valptr) {
+	valptr = PMIU_getval( "mcmd", cmd, cmdlen );
+	if (valptr) cmdtype = 1;
+	else        cmdtype = -1;
+    }
+    return cmdtype;
+}
 
 /* ------------------------------------------------------------------------- */
 /* The rest of these routines are internal                                   */
@@ -488,9 +525,8 @@ static int fPMI_Handle_barrier( PMIProcess *pentry )
     int i;
     PMIGroup *group = pentry->group;
 
-    if (pmidebug) {
-	DBG_PRINTF( "Entering PMI_Handle_barrier for group %d\n", group );
-    }
+    DBG_PRINTFCOND(pmidebug,("Entering PMI_Handle_barrier for group %d\n", 
+		    group->groupID) );
 
     group->nInBarrier++;
     if (group->nInBarrier == group->nProcess) {
@@ -615,7 +651,7 @@ static PMIKVSpace *fPMIKVSFindSpace( const char kvsname[] )
 
     /* We require the kvs spaces to be stored in a sorted order */
     while (kvs) {
-	rc = strcmp( kvsname, kvs->kvsname );
+	rc = strcmp( kvs->kvsname, kvsname );
 	if (rc == 0) {
 	    /* Found */
 	    return kvs;
@@ -682,9 +718,7 @@ static int fPMI_Handle_create_kvs( PMIProcess *pentry )
     }
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=newkvs kvsname=%s\n", kvsname );
     PMIU_writeline( pentry->fd, outbuf );
-    if (pmidebug) {
-	DBG_PRINTF( "Handle_create_kvs new name %s\n", kvsname );
-    }
+    DBG_PRINTFCOND(pmidebug, ("Handle_create_kvs new name %s\n", kvsname ) );
     return 0;
 }
 
@@ -693,10 +727,10 @@ static int fPMI_Handle_create_kvs( PMIProcess *pentry )
  */
 static int fPMI_Handle_destroy_kvs( PMIProcess *pentry )
 {
-    int  i, rc=0;
+    int         rc=0;
     PMIKVSpace *kvs;
-    char kvsname[MAXKVSNAME];
-    char message[PMIU_MAXLINE], outbuf[PMIU_MAXLINE];
+    char        kvsname[MAXKVSNAME];
+    char        message[PMIU_MAXLINE], outbuf[PMIU_MAXLINE];
     
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
     kvs = fPMIKVSFindSpace( kvsname );
@@ -720,16 +754,14 @@ static int fPMI_Handle_destroy_kvs( PMIProcess *pentry )
  */
 static int fPMI_Handle_put( PMIProcess *pentry )
 {
-    int  i, j, rc=0;
+    int         rc=0;
     PMIKVSpace *kvs;
-    char kvsname[MAXKVSNAME];
-    char message[PMIU_MAXLINE], outbuf[PMIU_MAXLINE];
-    char key[MAXKEYLEN], val[MAXVALLEN];
+    char        kvsname[MAXKVSNAME];
+    char        message[PMIU_MAXLINE], outbuf[PMIU_MAXLINE];
+    char        key[MAXKEYLEN], val[MAXVALLEN];
 
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
-    if (pmidebug) {
-	DBG_PRINTF( "Put: Finding kvs %s\n", kvsname );
-    }
+    DBG_PRINTFCOND(pmidebug,( "Put: Finding kvs %s\n", kvsname ) );
 
     kvs = fPMIKVSFindSpace( kvsname );
     if (kvs) {
@@ -767,15 +799,14 @@ static int fPMI_Handle_put( PMIProcess *pentry )
 static int fPMI_Handle_get( PMIProcess *pentry )
 {
     PMIKVSpace *kvs;
-    int  i, j, rc=0;
-    char kvsname[MAXKVSNAME];
-    char message[PMIU_MAXLINE], key[PMIU_MAXLINE], value[PMIU_MAXLINE];
-    char outbuf[PMIU_MAXLINE];
+    int         rc=0;
+    char        kvsname[MAXKVSNAME];
+    char        message[PMIU_MAXLINE], key[PMIU_MAXLINE], value[PMIU_MAXLINE];
+    char        outbuf[PMIU_MAXLINE];
     
     PMIU_getval( "kvsname", kvsname, MAXKVSNAME );
-    if (pmidebug) {
-	DBG_PRINTF( "Get: Finding kvs %s\n", kvsname );
-    }
+    DBG_PRINTFCOND(pmidebug,( "Get: Finding kvs %s\n", kvsname ) );
+
     kvs = fPMIKVSFindSpace( kvsname );
     if (kvs) {
 	PMIU_getval( "key", key, PMIU_MAXLINE );
@@ -800,7 +831,7 @@ static int fPMI_Handle_get( PMIProcess *pentry )
 		   "cmd=get_result rc=%d msg=%s value=%s\n",
 		   rc, message, value );
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND( pmidebug, ("%s", outbuf ));
     return rc;
 }
 
@@ -820,7 +851,7 @@ static int fPMI_Handle_get_my_kvsname( PMIProcess *pentry )
 	return -1;
     }
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
 
@@ -832,7 +863,7 @@ static int fPMI_Handle_get_universe_size( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=universe_size size=%d\n",
 	      pUniv.size );
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
 
@@ -844,7 +875,7 @@ static int fPMI_Handle_get_appnum( PMIProcess *pentry )
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=appnum appnum=%d\n",
 		   app->myAppNum );		
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
 
@@ -868,7 +899,7 @@ static int fPMI_Handle_init( PMIProcess *pentry )
 	      "cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n",
 	      PMI_VERSION, PMI_SUBVERSION, rc);
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
 
@@ -880,7 +911,7 @@ static int fPMI_Handle_get_maxes( PMIProcess *pentry )
 	      "cmd=maxes kvsname_max=%d keylen_max=%d vallen_max=%d\n",
 	      MAXKVSNAME, MAXKEYLEN, MAXVALLEN );
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
 
@@ -928,7 +959,7 @@ static int fPMI_Handle_getbyidx( PMIProcess *pentry )
     }
 
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return rc;
 }
 
@@ -941,34 +972,227 @@ static int fPMI_Handle_init_port( PMIProcess *pentry )
 {
     char outbuf[PMIU_MAXLINE];
 
-    if (pmidebug) {
-	DBG_PRINTF( "Entering fPMI_Handle_init to start connection\n" );
-    }
+    DBG_PRINTFCOND(pmidebug,
+		   ( "Entering fPMI_Handle_init to start connection\n" ));
 
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set size=%d\n", 
 		   pentry->group->nProcess );
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set rank=%d\n", 
 		   pentry->pState->wRank );
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=set debug=%d\n", 1 );
     PMIU_writeline( pentry->fd, outbuf );
-    DBG_PRINTF( "%s", outbuf );
+    DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
 }
 
+/* Handle a spawn command.  This makes use of the spawner routine that
+   was set during PMIServInit
+   
+   Spawn command in the simple PMI is handled as multiple lines with the
+   subcommands:
+   nprocs=%d
+   execname=%s
+   totspawns=%d
+   spawnssofar=%d
+   argcnt=%d
+   arg%d=%s
+   preput_num=%d
+   preput_key_%d=%s
+   preput_val_%d=%s
+   info_num=%d
+   endcmd
+
+   After all of the data is collected, a ProcessWorld structure is
+   created and passed to the user's spawner command.  That command
+   is responsible for adding the ProcessWorld to the pUniv (ProcessUniverse)
+   structure (in case there is an error and the spawn fails, the user
+   can decide whether to included the failed world in the pUniv structure).
+
+
+   Note that this routine must create the new "current" PMI group so that
+   there will be a place for the associated KV Space.
+  
+*/
+
+/* Maximum number of arguments */
+#define PMI_MAX_ARGS 256
 static int fPMI_Handle_spawn( PMIProcess *pentry )
 {
+    char          inbuf[PMIU_MAXLINE];
+    char          *(args[PMI_MAX_ARGS]);
+    char          key[MAXKEYLEN];
+    char          outbuf[PMIU_MAXLINE];
+    ProcessWorld *pWorld;
+    ProcessApp   *app = 0;
+    int           preputNum = 0, rc;
+    int           i;
+    int           totspawns, spawnnum;
+    PMIKVSpace    *kvs = 0;
+
+    DBG_PRINTFCOND(pmidebug,( "Entering fPMI_Handle_spawn\n" ));
+
+    pWorld = (ProcessWorld *)MPIU_Malloc( sizeof(ProcessWorld) );
+    /* FIXME check pWorld */
+    
+    pWorld->apps      = 0;
+    pWorld->nProcess  = 0;
+    pWorld->nextWorld = 0;
+    pWorld->nApps     = 0;
+    pWorld->worldNum  = pUniv.nWorlds++;
+
+    /* Create an initial app */
+    app = (ProcessApp *)MPIU_Malloc( sizeof(ProcessApp) );
+    app->myAppNum  = 0;
+    app->exename   = 0;
+    app->arch      = 0;
+    app->path      = 0;
+    app->wdir      = 0;
+    app->hostname  = 0;
+    app->args      = 0;
+    app->nArgs     = 0;
+    app->soft.nelm = 0;
+    app->nProcess  = 0;
+    app->pState    = 0;
+    app->nextApp   = 0;
+    app->pWorld    = pWorld;
+
+    kvs = fPMIKVSAllocate();
+
+    for (i=0; i<PMI_MAX_ARGS; i++) args[i] = 0;
+
     /* Input:
-       nprocs=%d execname=%s arg=%s
+       (see above)
 
        Output:
        cmd=spawn_result remote_kvsname=name rc=integer
-
-       DBG_PRINTF( "%s", outbuf );
     */
+
+    /* Get lines until we find either cmd or mcmd (an error) or endcmd 
+       (expected end) */
+    while ((rc = PMIU_readline( pentry->fd, inbuf, sizeof(inbuf) )) > 0) {
+	char *cmdPtr, *valPtr, *p;
+
+	printf( "Spawn: read line %s", inbuf );
+	/* Find the command = format */
+	p = inbuf;
+	/* Find first nonblank */
+	while (*p && isascii(*p) && isspace(*p)) p++;
+	if (!*p) {
+	    /* Empty string.  Ignore */
+	    continue;
+	}
+	cmdPtr = p++;
+	/* Find '=' */
+	while (*p && *p != '=') p++;
+	if (!*p) {
+	    /* No =.  Check for endcmd */
+	    p--;
+	    /* Trim spaces */
+	    while (isascii(*p) && isspace(*p)) p--;
+	    /* Add null to end */
+	    *++p = 0;
+	    if (strcmp( "endcmd", cmdPtr ) == 0) { break; }
+	    /* FIXME: Otherwise, we have a problem */
+	}
+	else {
+	    *p = 0;
+	}
+	
+	printf( "Cmd = %s\n", cmdPtr );
+	/* Found an = .  value is the rest of the line */
+	valPtr = ++p; 
+	while (*p && *p != '\n') p++;
+	if (*p) *p = 0;     /* Remove the newline */
+
+	/* Now, process the cmd and value */
+	if (strcmp( "nprocs", cmdPtr ) == 0) {
+	    app->nProcess     = atoi(valPtr);
+	    pWorld->nProcess += app->nProcess;
+	}
+	else if (strcmp( "execname", cmdPtr ) == 0) {
+	    app->exename = MPIU_Strdup( valPtr );
+	}
+	else if (strcmp( "totspawns", cmdPtr ) == 0) {
+	    /* This tells us how many separate spawn commands
+	       we expect to see (e.g., for spawn multiple).
+	       Each spawn command is a separate "app" */
+	    totspawns = atoi(valPtr);
+	}
+	else if (strcmp( "spawnssofar", cmdPtr ) == 0) {
+	    /* This tells us which app we are (starting from 1) */
+	    spawnnum      = atoi(valPtr);
+	    app->myAppNum = spawnnum - 1;
+	}
+	else if (strcmp( "argcnt", cmdPtr ) == 0) {
+	    /* argcnt may not be set before the args */
+	    app->nArgs = atoi(valPtr);
+	}
+	else if (strncmp( "arg", cmdPtr, 3 ) == 0) {
+	    int argnum;
+	    /* argcnt may not be set before the args */
+	    /* Handle arg%d.  Values are 1 - origin */
+	    argnum = atoi( cmdPtr + 3 ) - 1;
+	    printf( "Argnum = %d, arg = %s\n", argnum, valPtr );
+	    if (argnum < 0 || argnum >= PMI_MAX_ARGS) {
+		/* FIXME: malformed command */
+	    }
+	    args[argnum] = (char *)MPIU_Strdup( valPtr );
+	}
+	else if (strcmp( "preput_num", cmdPtr ) == 0) {
+	    preputNum = atoi(valPtr);
+	}
+	else if (strncmp( "preput_key_", cmdPtr, 11 ) == 0) {
+	    /* Save the key */
+	    MPIU_Strncpy( key, valPtr, sizeof(key) );
+	}
+	else if (strncmp( "preput_val_", cmdPtr, 11 ) == 0) {
+	    /* Place the key,val into the space associate with the current 
+	       PMI group */
+	    fPMIKVSAddPair( kvs, key, valPtr );
+	}
+	else if (strcmp( "info_num", cmdPtr ) == 0) {
+	}
+	else {
+	    /* FIXME: Unrecognized subcommand */
+	}
+    }	
+    
+    /* Now that we've read the commands, invoke the user's spawn command */
+    pWorld->nApps ++;
+    /* FIXME: Add to end */
+    pWorld->apps  = app;
+    if (app->nArgs > 0) {
+	app->args  = (const char **)MPIU_Malloc( app->nArgs * sizeof(char *) );
+	for (i=0; i<app->nArgs; i++) {
+	    printf( "Setting args[%d] to %s\n", i, args[i] );
+	    app->args[i] = args[i];
+	    args[i]      = 0;
+	}
+    }
+
+    if (totspawns == spawnnum) {
+	PMISetupNewGroup( pWorld->nProcess, kvs );
+	
+	if (userSpawner) {
+	    rc = (*userSpawner)( pWorld, userSpawnerData );
+	}
+	else {
+	    printf( "Unable to spawn %s\n", app->exename );
+	    rc = 1;
+	    MPIE_PrintProcessWorld( stdout, pWorld );
+	}
+	
+	MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=spawn_result rc=%d\n", rc );
+	PMIU_writeline( pentry->fd, outbuf );
+	DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
+    }
+    
+    /* If totspawnnum != spawnnum, then we are expecting a 
+       spawnmult with additional items */
     return 0;
 }
 
@@ -1008,13 +1232,10 @@ int PMI_Init_port_connection( int fd )
     char message[PMIU_MAXLINE], cmd[MAXPMICMD];
     int pmiid = -1;
 
-    if (pmidebug) {
-	DBG_PRINTF( "Beginning initial handshake read\n" ); fflush(stdout);
-    }
+    DBG_PRINTFCOND(pmidebug,( "Beginning initial handshake read\n" ));
     PMIU_readline( fd, message, PMIU_MAXLINE );
-    if (pmidebug) {
-	DBG_PRINTF( "received message %s\n", message );fflush(stdout);
-    }
+    DBG_PRINTFCOND(pmidebug,( "received message %s\n", message ));
+
     PMIU_parse_keyvals( message );
     PMIU_getval( "cmd", cmd, MAXPMICMD );
     if (strcmp(cmd,"initack")) {

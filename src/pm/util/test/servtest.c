@@ -5,6 +5,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "process.h"
 #include "ioloop.h"
 
@@ -109,7 +111,7 @@ int labeler( int fd, int rdwr, void *data )
     }
     return 0;
 }
-int mpiexec_usage( const char *str )
+void mpiexec_usage( const char *str )
 {
     fprintf( stderr, "Usage: %s\n", str );
     return 0;

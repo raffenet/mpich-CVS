@@ -25,7 +25,7 @@ int main( int argc, char *argv[], char *envp[] )
     return rc;
 }
 
-int mpiexec_usage( const char *str )
+void mpiexec_usage( const char *str )
 {
     fprintf( stderr, "Usage: %s\n", str );
     return 0;

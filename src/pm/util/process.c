@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #endif
 
+#include "pmutil.h"
 #include "process.h"
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"
@@ -33,6 +34,12 @@ extern char *strsignal(int);
 
 /* There is only one universe */
 ProcessUniverse pUniv;
+
+/* This is the home of the common debug flag */
+int MPIE_Debug = 0;
+
+/* Local, forward references */
+static void MPIE_InstallSigHandler( int sig, void (*handler)(int) );
 
 /*
   Fork numprocs processes, with the current PMI groupid and kvsname 
@@ -67,6 +74,9 @@ ProcessUniverse pUniv;
   that is then inherited by the forked process.  The 'postfork' and
   'postamble' can close any unneeded file descriptors
 
+  Returns:
+  The number of created processes.
+
   @*/
 int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 			int (*preamble)(void*), void *preambleData,
@@ -78,9 +88,10 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 {
     pid_t         pid;
     ProcessApp   *app;
-    ProcessState *pState;
+    ProcessState *pState=0;
     int          wRank = 0;    /* Rank in this comm world of the process */
     int          i, rc;
+    int          nProcess = 0;
 
     app = pWorld->apps;
     while (app) {
@@ -93,6 +104,7 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 	    }
 	    app->pState = pState;
 	}
+	pState = app->pState;
 
 	for (i=0; i<app->nProcess; i++) {
 	    pState[i].app    = app;
@@ -127,6 +139,8 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 	    }
 	    else {
 		/* Parent */
+		nProcess++;
+
 		pState[i].pid = pid;
 
 		if (postamble) {
@@ -144,7 +158,7 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 	
 	app = app->nextApp;
     }
-    return i;
+    return nProcess;
 }
 
 /*@
@@ -190,7 +204,6 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     ProcessApp *app;
 
     /* Provide local variables in which to hold new environment variables. */
-    char env_pmi_fd[MAXNAMELEN];
     char env_pmi_rank[MAXNAMELEN];
     char env_pmi_size[MAXNAMELEN];
     char env_pmi_debug[MAXNAMELEN];
@@ -203,25 +216,24 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     app = pState->app;
 
     /* build environment for client */
-    for ( j = 0; envp[j] && j < MAX_CLIENT_ENV-7; j++ )
-	client_env[j] = envp[j]; /* copy mpiexec environment */
-
+    if (envp) {
+	for ( j = 0; envp[j] && j < MAX_CLIENT_ENV-7; j++ )
+	    client_env[j] = envp[j]; /* copy mpiexec environment */
+    }
+    else {
+	j = 0;
+    }
     if (j == MAX_CLIENT_ENV-7) {
 	MPIU_Error_printf( "Environment is too large (max is %d)\n",
 			   MAX_CLIENT_ENV-7);
 	exit(-1);
     }
-    /*    if (pmifd >= 0) {
-	MPIU_Snprintf( env_pmi_fd, MAXNAMELEN, "PMI_FD=%d" , pmifd );
-	client_env[j++] = env_pmi_fd;
-    }
-    */
     MPIU_Snprintf( env_pmi_rank, MAXNAMELEN, "PMI_RANK=%d", pState->wRank );
     client_env[j++] = env_pmi_rank;
     MPIU_Snprintf( env_pmi_size, MAXNAMELEN, "PMI_SIZE=%d", app->nProcess );
     client_env[j++] = env_pmi_size;
-    /*    MPIU_Snprintf( env_pmi_debug, MAXNAMELEN, "PMI_DEBUG=%d", debug );
-	  client_env[j++] = env_pmi_debug; */
+    MPIU_Snprintf( env_pmi_debug, MAXNAMELEN, "PMI_DEBUG=%d", MPIE_Debug );
+    client_env[j++] = env_pmi_debug; 
     /* FIXME: Get the correct universsize */
     MPIU_Snprintf( env_appnum, MAXNAMELEN, "MPI_APPNUM=%d", app->myAppNum );
     client_env[j++] = env_appnum;
@@ -235,7 +247,8 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	    exit( 1 );
 	}
     
-    /* change working directory if specified, replace argv[0], and exec client */
+    /* change working directory if specified, replace argv[0], 
+       and exec client */
     if (app->wdir) {
 	rc = chdir( app->wdir );
 	if (rc < 0) {
@@ -273,6 +286,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 					app->exename );
 	exit( 1 );
     }
+    return 0;
 }
 
 /*@
@@ -333,7 +347,7 @@ void MPIE_ProcessSetExitStatus( ProcessState *pState, int prog_stat )
 }
 
 /* ------------------------------------------------------------------------- */
-/* SIGNALS and CHILDRED                                                      */
+/* SIGNALS and CHILDREN                                                      */
 /* ------------------------------------------------------------------------- */
 
 /*
@@ -394,13 +408,8 @@ static void handle_sigchild( int sig )
 	return;
     }
 
-    DBG_PRINTF( ("Entering sigchild handler\n") ); DBG_FFLUSH(stdout);
-#if 0
-    if (debug) {
-	DBG_FPRINTF( (stderr, "Waiting for any child on signal\n") );
-	DBG_FFLUSH( stderr );
-    }
-#endif
+    DBG_PRINTF( ("Entering sigchild handler\n") );
+    DBG_EPRINTF((stderr, "Waiting for any child on signal\n") );
 
     /* Since signals may be coallesced, we process all children that
        have exited */
@@ -415,23 +424,14 @@ static void handle_sigchild( int sig )
 	       generating an error message */
 	    /* Generate a debug message if we enter the handler but 
 	       do not find a child */
-#if 0
-	    if (debug && !foundChild) {
-		DBG_FPRINTF( (stderr, "Did not find child process!\n") );
-		DBG_FFLUSH( stderr );
-	    }
-#endif
+	    DBG_EPRINTFCOND(MPIE_Debug && !foundChild,
+			    (stderr, "Did not find child process!\n") );
 	    break;
 	}
 	foundChild = 1;
 	/* Receives a child failure or exit.  
 	   If *failure*, kill the others */
-#if 0
-	if (debug) {
-	    DBG_FPRINTF( (stderr, "Found process %d in sigchld handler\n", pid ) );
-	    DBG_FFLUSH( stderr );
-	}
-#endif
+	DBG_PRINTF(("Found process %d in sigchld handler\n", pid ) );
 	pState = MPIE_FindProcessByPid( pid );
 	if (pState) {
 	    MPIE_ProcessSetExitStatus( pState, prog_stat );
@@ -458,101 +458,351 @@ static void handle_sigchild( int sig )
   @*/
 void MPIE_ProcessInit( void )
 {
-     MPIE_SetupSigChld();
-     pUniv.worlds = 0;
+    MPIE_InstallSigHandler( SIGCHLD, handle_sigchild );
+    pUniv.worlds = 0;
 }
 
-#ifdef USE_SIGACTION
-/*@
-  MPIE_ProcessInit - Initialize the support for process creation
-
-  Notes:
-  The major chore of this routine is to set the 'SIGCHLD' signal handler
-  @*/
-void MPIE_SetupSigChld( void )
+/*
+ * Wait upto timeout seconds for all processes to exit.  
+ * Because we are using a SIGCHLD handler to get the exit reason and
+ * status from exiting children, this routine waits for those
+ * signal handlers to return.  (POSIX requires a SIGCHLD handler, and leaving
+ * the signal handler in charge avoids race conditions and possible loss
+ * of information).
+ */
+int MPIE_WaitForProcesses( ProcessUniverse *pUniv, int timeout )
 {
+    ProcessWorld *world;
+    ProcessApp   *app;
+    ProcessState *pState;
+    int           i, nactive;
+
+    /* Determine the number of processes that we have left to wait on */
+    TimeoutInit( timeout );
+    nactive = 0;
+    do {
+	world = pUniv->worlds;
+	while (world) {
+	    app = world->apps;
+	    while (app) {
+		pState = app->pState;
+		for (i=0; i<app->nProcess; i++) {
+		    if (pState[i].status != PROCESS_GONE &&
+			pState[i].pid > 0) nactive++;
+		}
+		app = app->nextApp;
+	    }
+	    world = world->nextWorld;
+	}
+    } while (nactive > 0 && TimeoutGetRemaining() > 0);
+
+    return 0;
+}
+
+/*
+ * Convert the ProcessList into an array of process states.  
+ * In the general case,
+ * the mpiexec program will use a resource manager to provide this function;
+ * the resource manager may use a list of host names or query a sophisticated
+ * resource management system.  Since the forker process manager runs all
+ * processes on the same host, this function need only expand the 
+ * process list into a process table.
+ *
+ * 
+ * Updates the ProcessTable with the new processes, and updates the
+ * number of processes.  All processses are added to the end of the
+ * current array.  Only the "spec" part of the state element is initialized
+ *
+ * Return value is the number of processes added, or a negative value
+ * if an error is encountered.
+ *
+ * We use a state array so that we can convert any plist into an array
+ * of states.  This allows use to use spawn during an mpiexec run.
+ *
+ * This routine could also check for inconsistent arguments, such as
+ * a hostname that is not the calling host, or an architecture that does
+ * not match the calling host's architecture.
+ *
+ * TODO: How do we handle the UNIVERSE_SIZE in this assignment (we 
+ * need at least one process from each appnum; that is, from each
+ * requested set of processes.
+ *
+ */
+
+/*@
+  MPIE_InitWorldWithSoft - Initialize a process world from any 
+  soft specifications
+
+  Input Parameter:
+. maxnp - The maximum number of processes to allow.
+
+  Input/Output Parameter:
+. world - Process world.  On return, the 'ProcessState' fields for
+  any soft specifications have been initialized 
+  @*/
+int MPIE_InitWorldWithSoft( ProcessWorld *world, int maxnp )
+{
+    ProcessApp *app;
+    int        minNeeded, maxNeeded;
+    int        j;
+
+    /* Compute the number of available processes */
+    maxnp -= world->nProcess;
+
+    /* Compute the number of requested processes */
+    minNeeded = maxNeeded = 0;
+    app       = world->apps;
+    while (app) {
+	if (app->soft.nelm > 0 && app->nProcess == 0) {
+	    /* Found a soft spec */
+	    for (j=0; j<app->soft.nelm; j++) {
+		int *tuple, start, end, stride;
+		tuple = app->soft.tuples[j];
+		start  = tuple[0];
+		end    = tuple[1];
+		stride = tuple[2];
+		
+		if (stride > 0) {
+		    minNeeded += start;
+		    maxNeeded += start + stride * ( (start-end)/stride );
+		}
+		else if (stride < 0) {
+		    minNeeded += start + stride * ( (end-start)/stride );
+		    maxNeeded += start;
+		}
+	    }
+	}
+	app = app->nextApp;
+    }
+
+    if (minNeeded > maxnp) {
+	/* Requested more than there are available */
+	return 1;
+    }
+    if (maxNeeded > maxnp) {
+	/* Must take fewer than the maximum.  Take the minimum for now */
+	app       = world->apps;
+	while (app) {
+	    if (app->soft.nelm > 0 && app->nProcess == 0) {
+		/* Found a soft spec */
+		for (j=0; j<app->soft.nelm; j++) {
+		    int *tuple, start, end, stride;
+		    tuple = app->soft.tuples[j];
+		    start  = tuple[0];
+		    end    = tuple[1];
+		    stride = tuple[2];
+		    
+		    if (stride > 0) {
+			app->nProcess = start;
+		    }
+		    else if (stride < 0) {
+			app->nProcess = 
+			    start + stride * ( (end-start)/stride );
+		    }
+		}
+	    }
+	    app = app->nextApp;
+	}
+	/* If we wanted to get closer to the maximum number, we could
+	   iterative all stride to each set until we reached the limit.
+	   But this isn't necessary to conform to the standard */
+    }
+    else {
+	/* Take the maximum */
+	app = world->apps;
+	while (app) {
+	    if (app->soft.nelm > 0 && app->nProcess == 0) {
+		/* Found a soft spec */
+		for (j=0; j<app->soft.nelm; j++) {
+		    int *tuple, start, end, stride;
+		    tuple = app->soft.tuples[j];
+		    start  = tuple[0];
+		    end    = tuple[1];
+		    stride = tuple[2];
+		    
+		    /* Compute the "real" end */
+		    if (stride > 0) {
+			app->nProcess = 
+			    start + stride * ( (start-end)/stride );
+		    }
+		    else if (stride < 0) {
+			app->nProcess = start;
+		    }
+		}
+	    }
+	    app = app->nextApp;
+	}
+    }
+    return 0;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Routines to deliver signals to every process in a world                  */
+/* ------------------------------------------------------------------------ */
+
+/*@
+  MPIE_SignalWorld - Send a signal to every process in a world 
+
+  @*/
+int MPIE_SignalWorld( ProcessWorld *world, int signum )
+{
+    ProcessApp   *app;
+    ProcessState *pState;
+    int           np, i;
+    
+    app = world->apps;
+    while (app) {
+	pState = app->pState;
+	np     = app->nProcess;
+	for (i=0; i<np; i++) {
+	    pid_t pid;
+	    pid = pState[i].pid;
+	    if (pid > 0) {
+		/* Ignore error returns */
+		kill( pid, signum );
+	    }
+	}
+	app = app->nextApp;
+    }
+    return 0;
+}
+    
+
+/*@
+  MPIE_KillWorld - Kill all of the processes in a world
+ @*/
+int MPIE_KillWorld( ProcessWorld *world )
+{
+    MPIE_SignalWorld( world, SIGINT );
+
+    /* We should wait here to give time for the processes to exit */
+    sleep( 1 );
+    MPIE_SignalWorld( world, SIGQUIT );
+
+    return 0;
+}
+
+/*@
+  MPIE_KillUniverse - Kill all of the processes in a universe
+  @*/
+int MPIE_KillUniverse( ProcessUniverse *pUniv )
+{
+    ProcessWorld *world;
+
+    world = pUniv->worlds;
+    while (world) {
+	MPIE_KillWorld( world );
+	world = world->nextWorld;
+    }
+    return 0;
+}
+
+/* Print out the reasons for failure for any processes that did not
+   exit cleanly */
+void MPIE_PrintFailureReasons( FILE *fp )
+{
+    int                i;
+    int                rc, sig, order;
+    ProcessExitState_t exitReason;
+    ProcessWorld      *world;
+    ProcessApp        *app;
+    ProcessState      *pState;
+
+    world = pUniv.worlds;
+    while (world) {
+	app = world->apps;
+	while (app) {
+	    app    = app->nextApp;
+	    pState = app->pState;
+	    for (i=0; i<app->nProcess; i++) {
+		rc         = pState[i].exitStatus.exitStatus;
+		sig        = pState[i].exitStatus.exitSig;
+		order      = pState[i].exitStatus.exitOrder;
+		exitReason = pState[i].exitStatus.exitReason;
+
+		/* If signalled and we did not send the signal (INT or KILL)*/
+		if (sig && (exitReason != EXIT_KILLED || 
+			    (sig != SIGKILL && sig != SIGINT))) {
+#ifdef HAVE_STRSIGNAL
+		    MPIU_Error_printf( 
+				      "Return code = %d, signaled with %s\n", 
+				      rc, strsignal(sig) );
+#else
+		    MPIU_Error_printf( 
+				      "Return code = %d, signaled with %d\n", 
+				      rc, sig );
+#endif
+		}
+		else if (MPIE_Debug || rc) {
+		    MPIU_Error_printf( "Return code = %d\n", rc );
+		}
+	    }
+	}
+	world = world->nextWorld;
+    }
+}
+
+/*
+  
+ */
+static void handle_forwardsig( int sig )
+{
+    ProcessWorld *world;
+
+    world = pUniv.worlds;
+    while (world) {
+	MPIE_SignalWorld( world, sig );
+	world = world->nextWorld;
+    }
+    return;
+}
+
+int MPIE_ForwardSignal( int sig )
+{
+    MPIE_InstallSigHandler( sig, handle_forwardsig );
+    return 0;
+}
+
+int MPIE_ForwardCommonSignals( void )
+{
+    MPIE_ForwardSignal( SIGINT );
+    MPIE_ForwardSignal( SIGQUIT );
+    MPIE_ForwardSignal( SIGTERM );
+#ifdef SIGSTOP
+    MPIE_ForwardSignal( SIGSTOP );
+#endif
+#ifdef SIGCONT
+    MPIE_ForwardSignal( SIGCONT );
+#endif
+    /* Do we want to forward usr1 and usr2? */
+}
+
+/*
+  Install a signal handler
+*/
+static void MPIE_InstallSigHandler( int sig, void (*handler)(int) )
+{
+#ifdef USE_SIGACTION
     struct sigaction oldact;
 
     /* Get the old signal action, reset the function and 
        if possible turn off the reset-handler-to-default bit, then
        set the new handler */
-    sigaction( SIGCHLD, (struct sigaction *)0, &oldact );
-    oldact.sa_handler = (void (*)(int))handle_sigchild;
+    sigaction( sig, (struct sigaction *)0, &oldact );
+    oldact.sa_handler = (void (*)(int))handler
 #ifdef SA_RESETHAND
     /* Note that if this feature is not supported, there is a race
        condition in the handling of signals, and the OS is fundementally
        flawed */
     oldact.sa_flags   = oldact.sa_flags & ~(SA_RESETHAND);
 #endif
-    sigaddset( &oldact.sa_mask, SIGCHLD );
-    sigaction( SIGCHLD, &oldact, (struct sigaction *)0 );
-}
+    sigaddset( &oldact.sa_mask, sig );
+    sigaction( sig, &oldact, (struct sigaction *)0 );
 #elif defined(USE_SIGNAL)
-void MPIE_SetupSigChld( void )
-{
     /* Set new handler; ignore old choice */
-    (void)signal( SIGCHLD, handle_sigchild );
-}
+    (void)signal( sig, handler );
 #else
-void MPIE_SetupSigChld( void )
-{
     /* No way to set up sigchld */
-#error "Unknown signal handling!  This routine must set a signal for SIGCHLD"
-}
+#error "Unknown signal handling!"
 #endif
-
-
-#if 0
-int MPIE_WaitProcesses( ProcessUniverse *pUniv )
-{
-    ProcessWorld *world;
-    ProcessApp   *app;
-    ProcessState *pState;
-    int           i, nactive;
-    pid_t         pid;
-    int           prog_stat;
-
-    /* Determine the number of processes that we have left to wait on */
-    nactive = 0;
-    world = pUniv->worlds;
-    while (world) {
-	app = world->apps;
-	while (app) {
-	    pState = app->pState;
-	    for (i=0; i<app->nProcess; i++) {
-		if (pState[i].status != PROCESS_GONE &&
-		    pState[i].pid > 0) nactive++;
-	    }
-	    app = app->nextApp;
-	}
-	world = world->nextWorld;
-    }
-
-    while (nactive > 0) {
-	pid = wait( &prog_stat );
-	pState = MPIE_FindProcessByPid( pUniv, pid );
-	if (pState) {
-	    int rc = 0, sigval = 0;
-	    if (WIFEXITED(prog_stat)) {
-		rc = WEXITSTATUS(prog_stat);
-	    }
-	    if (WIFSIGNALED(prog_stat)) {
-		sigval = WTERMSIG(prog_stat);
-	    }
-	    pState->exitStatus.exitStatus = rc;
-	    pState->exitStatus.exitSig    = sigval;
-	    if (sigval) 
-		pState->exitStatus.exitReason = EXIT_SIGNALLED;
-	    else {
-		if (pState->status >= PROCESS_ALIVE &&
-		    pState->status <= PROCESS_COMMUNICATING) 
-		    pState->exitStatus.exitReason = EXIT_NOFINALIZE;
-		else 
-		    pState->exitStatus.exitReason = EXIT_NORMAL;
-	    }
-	    nactive --;
-	}
-    }
 }
-
-#endif

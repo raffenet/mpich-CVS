@@ -6,9 +6,6 @@
 
 /* OWNER=gropp */
 #include "pmutilconf.h"
-#include "process.h"
-/* #include "pmutil.h" */
-
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -21,10 +18,12 @@
 #endif
 #include <ctype.h>
 
+#include "pmutil.h"
+#include "process.h"
+#include "cmnargs.h"
 
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"
-/* End temporary */
 
 /* ----------------------------------------------------------------------- */
 /* Process options                                                         */
@@ -48,6 +47,7 @@
 
 /* Internal routines */
 static int getInt( int, int, char *[] );
+static int GetIntValue( const char [], int );
 static int ParseSoftspec( const char *, ProcessSoftSpec * );
 static int ReadConfigFile( const char *, ProcessUniverse * );
 
@@ -113,6 +113,8 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
     pUniv->worlds->nApps     = 0;
     pUniv->worlds->nProcess  = 0;
     pUniv->worlds->nextWorld = 0;
+    pUniv->worlds->worldNum  = 0;
+    pUniv->nWorlds           = 1;
     nextAppPtr = &(pUniv->worlds->apps); /* Pointer to set with the next app */
 
     for (i=1; i<argc; i++) {
@@ -193,6 +195,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 	    nextAppPtr = &(pApp->nextApp);
 	    pApp->nextApp = 0;
 	    pUniv->worlds[0].nApps++;
+	    pApp->pWorld = &pUniv->worlds[0];
 
 	    pApp->pState  = 0;
 	    /* Save the properties of this app */
@@ -258,6 +261,121 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
     return curplist;
 }
 
+/*@
+  MPIE_CheckEnv - Check the environment for parameters and default values
+
+  Output Parameter:
+. pUniv - Process universe structure; some fields are set (see notes)
+
+  Notes:
+
+  @*/
+int MPIE_CheckEnv( ProcessUniverse *pUniv, 
+		   int (*processEnv)( ProcessUniverse *, void * ), 
+		   void *extraData )
+{
+    int rc = 0;
+    /* A negative universe size is none set */
+    pUniv->size    = GetIntValue( "MPIEXEC_UNIVERSE_SIZE", -1 );
+    /* A negative timeout is infinite */
+    pUniv->timeout = GetIntValue( "MPIEXEC_TIMEOUT", -1 );
+
+    if (getenv( "MPIEXEC_DEBUG" )) {
+	MPIE_Debug = 1;
+    }
+
+    if (processEnv) {
+	rc = (*processEnv)( pUniv, extraData );
+    }
+
+    return rc;
+}
+
+/*@
+  MPIE_ArgDescription - Return a pointer to a description of the
+  arguments handled by MPIE_Args
+  @*/
+const char *MPIE_ArgDescription( void )
+{
+    return "-n <numprocs> -soft <softness> -host <hostname> \\\n\
+               -wdir <working directory> -path <search path> \\\n\
+               -file <filename> -configfile <filename> execname <args>\n";
+}
+
+/*@ MPIE_PrintProcessUniverse - Debugging routine used to print out the 
+    results from MPIE_Args
+    
+    Input Parameters:
++   fp - File for output
+-   pUniv - Process Univers
+ @*/
+void MPIE_PrintProcessUniverse( FILE *fp, ProcessUniverse *pUniv )
+{
+    ProcessWorld    *pWorld;
+    int              nWorld = 0;
+
+    pWorld = pUniv->worlds;
+    while (pWorld) {
+	fprintf(fp,"Apps for world %d\n", nWorld );
+	MPIE_PrintProcessWorld( fp, pWorld );
+	pWorld = pWorld->nextWorld;
+	nWorld++;
+    }
+}
+
+/*@ MPIE_PrintProcessWorld - Print a ProcessWorld structure
+    
+    Input Parameters:
++   fp - File for output
+-   pWorld - Process World
+ @*/
+void MPIE_PrintProcessWorld( FILE *fp, ProcessWorld *pWorld )
+{
+    int              j;
+    ProcessApp      *pApp;
+    ProcessSoftSpec *sSpec;
+
+    pApp   = pWorld->apps;
+    while (pApp) {
+	fprintf( fp, "App %d:\n\
+    exename   = %s\n\
+    hostname  = %s\n\
+    arch      = %s\n\
+    path      = %s\n\
+    wdir      = %s\n", pApp->myAppNum, 
+		      pApp->exename  ? pApp->exename : "<NULL>", 
+		      pApp->hostname ? pApp->hostname : "<NULL>", 
+		      pApp->arch     ? pApp->arch     : "<NULL>", 
+		      pApp->path     ? pApp->path     : "<NULL>", 
+		      pApp->wdir     ? pApp->wdir     : "<NULL>" );
+	fprintf(fp, "    args (%d):\n", pApp->nArgs );
+	for (j=0; j<pApp->nArgs; j++) {
+	    fprintf(fp, "        %s\n", 
+			  pApp->args[j] ? pApp->args[j] : "<NULL>" );
+	}
+	sSpec = &(pApp->soft);
+	if (sSpec->nelm > 0) {
+	    fprintf(fp, "    Soft spec with %d tuples\n", sSpec->nelm );
+	    for (j=0; j<sSpec->nelm; j++) {
+		fprintf(fp, "        %d:%d:%d\n", 
+			      sSpec->tuples[j][0],
+			      sSpec->tuples[j][1],
+			      sSpec->tuples[j][2]);
+	    }
+	}
+	else {
+	    fprintf(fp, "    n         = %d\n", pApp->nProcess );
+	    fprintf(fp, "    No soft spec\n");
+	}
+	pApp = pApp->nextApp;
+    }
+    fflush( fp );
+}
+
+/* ------------------------------------------------------------------------- */
+/* Internal Routines                                                         */
+/* ------------------------------------------------------------------------- */
+
 /* Return the int-value of the given argument.  If there is no 
    argument, or it is not a valid int, exit with an error message */
 static int getInt( int argnum, int argc, char *argv[] )
@@ -290,7 +408,7 @@ static int getInt( int argnum, int argc, char *argv[] )
  * Try to get an integer value from the enviroment.  Return the default
  * if the value is not available or invalid
  */
-int mpiexecGetIntValue( const char name[], int default_val )
+static int GetIntValue( const char name[], int default_val )
 {
     const char *env_val;
     int  val = default_val;
@@ -400,7 +518,6 @@ static int ReadConfigFile( const char *filename, ProcessUniverse *pUniv)
     char linebuf[MAXLINEBUF];
     char *(argv[MAXARGV]);       /* A kind of dummy argv */
     int  argc, newplist;
-    ProcessApp *pApp, **nextAppPtr;
     
 
     fp = fopen( filename, "r" );
@@ -456,56 +573,6 @@ static int LineToArgv( char *linebuf, char *(argv[]), int maxargv )
 	argc++;
 	*p++ = 0;
     }
+    return 0;
 }
 
-/*
- * Debugging routine used to print out the results from mpiexecArgs
- */
-void MPIE_PrintProcessUniverse( FILE *fp, ProcessUniverse *pUniv )
-{
-    int i, j;
-    ProcessWorld    *pWorld;
-    ProcessApp      *pApp;
-    ProcessSoftSpec *sSpec;
-    int             nWorld = 0;
-
-    pWorld = pUniv->worlds;
-    while (pWorld) {
-	DBG_FPRINTF( (fp,"Apps for world %d\n", nWorld ) );
-	pApp   = pWorld->apps;
-	while (pApp) {
-	    DBG_FPRINTF( (fp, "App %d:\n\
-    exename   = %s\n\
-    hostname  = %s\n\
-    arch      = %s\n\
-    path      = %s\n\
-    wdir      = %s\n", pApp->myAppNum, 
-		 pApp->exename  ? pApp->exename : "<NULL>", 
-		 pApp->hostname ? pApp->hostname : "<NULL>", 
-		 pApp->arch     ? pApp->arch     : "<NULL>", 
-		 pApp->path     ? pApp->path     : "<NULL>", 
-		 pApp->wdir     ? pApp->wdir     : "<NULL>") );
-	    DBG_FPRINTF( (fp, "    args:\n") );
-	    for (j=0; j<pApp->nArgs; j++) {
-		DBG_FPRINTF( (fp, "        %s\n", pApp->args[j]) );
-	    }
-	    sSpec = &(pApp->soft);
-	    if (sSpec->nelm > 0) {
-		DBG_FPRINTF( (fp, "    Soft spec with %d tuples\n", sSpec->nelm) );
-		for (j=0; j<sSpec->nelm; j++) {
-		    DBG_FPRINTF( (fp, "        %d:%d:%d\n", 
-				  sSpec->tuples[j][0],
-				  sSpec->tuples[j][1],
-				  sSpec->tuples[j][2]) );
-		}
-	    }
-	    else {
-		DBG_FPRINTF( (fp, "    n         = %d\n", pApp->nProcess ) );
-		DBG_FPRINTF( (fp, "    No soft spec\n") );
-	    }
-	    pApp = pApp->nextApp;
-	}
-	pWorld = pWorld->nextWorld;
-	nWorld++;
-    }
-}

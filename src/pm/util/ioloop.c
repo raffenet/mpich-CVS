@@ -18,6 +18,7 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <errno.h>
+#include "pmutil.h"
 #include "ioloop.h"
 
 /* 
@@ -34,9 +35,6 @@
 static IOHandle handlesByFD[MAXFD+1];
 static int maxFD = -1;
 
-void TimeoutInit( int );
-int  TimeoutGetTimeout( void );
-
 /*@ 
   MPIE_IORegister - Register a handler for an FD
 
@@ -50,7 +48,6 @@ int MPIE_IORegister( int fd, int rdwr,
 {
     int i;
 
-    printf( "Registering fd %d\n", fd );
     if (fd > MAXFD) {
 	/* Error; fd is too large */
 	return 1;
@@ -69,6 +66,8 @@ int MPIE_IORegister( int fd, int rdwr,
     handlesByFD[fd].rdwr       = rdwr;
     handlesByFD[fd].handler    = handler;
     handlesByFD[fd].extra_data = extra_data;
+    
+    return 0;
 }
 
 /*@
@@ -78,14 +77,18 @@ int MPIE_IORegister( int fd, int rdwr,
 .  timeoutSeconds - Seconds until this routine should return with a 
    timeout error.  If negative, no timeout.  If 0, return immediatedly
    after a nonblocking check for I/O.
+
+   Return Value:
+   Returns zero on success.  Returns 'IOLOOP_TIMEOUT' if the timeout
+   is reached and 'IOLOOP_ERROR' on other errors.
 @*/
 int MPIE_IOLoop( int timeoutSeconds )
 {
-    int    i, maxfd, fd, nfds,rc;
+    int    i, maxfd, fd, nfds, rc=0, rc2;
     fd_set readfds, writefds;
-    int (*handler)(int,int,void*);
+    int    (*handler)(int,int,void*);
     struct timeval tv;
-    int activefds = 0;
+    int    activefds = 0;
 
 
     /* Loop on the fds, with the timeout */
@@ -113,12 +116,10 @@ int MPIE_IOLoop( int timeoutSeconds )
 		}
 	    }
 	}
-	printf( "Found %d activefds\n", activefds );
 	if (maxfd < 0) break;
-	printf( "Entering selected with readfds = %x\n", readfds );
-	nfds = select( maxfd + 1, &readfds, &writefds, 0, &tv );
+	MPIE_SYSCALL(nfds,select,( maxfd + 1, &readfds, &writefds, 0, &tv ));
 	if (nfds < 0 && errno == EINTR) {
-	    printf( "Continuing through EINTR\n" );
+	    /* Continuing through EINTR */
 	    continue;
 	}
 	if (nfds < 0) {
@@ -128,10 +129,9 @@ int MPIE_IOLoop( int timeoutSeconds )
 	}
 	if (nfds == 0) { 
 	    /* Timeout from select */
-	    return 0;
+	    return IOLOOP_TIMEOUT;
 	}
 	/* nfds > 0 */
-	printf ("nfds = %d\n", nfds );
 	for (fd=0; fd<=maxfd; fd++) {
 	    if (FD_ISSET( fd, &writefds )) {
 		handler = handlesByFD[fd].handler;
@@ -140,27 +140,26 @@ int MPIE_IOLoop( int timeoutSeconds )
 		}
 		if (rc == 1) {
 		    /* EOF? */
-		    close(fd);
+		    MPIE_SYSCALL(rc2,close,(fd));
 		    handlesByFD[fd].rdwr = 0;
 		    FD_CLR(fd,&writefds);
 		}
 	    }
 	    if (FD_ISSET( fd, &readfds )) {
-		printf( "processing fd %d\n", fd );
 		handler = handlesByFD[fd].handler;
 		if (handler) {
 		    rc = (*handler)( fd, IO_READ, handlesByFD[fd].extra_data );
 		}
 		if (rc == 1) {
 		    /* EOF? */
-		    close(fd);
+		    MPIE_SYSCALL(rc2,close,(fd));
 		    handlesByFD[fd].rdwr = 0;
 		    FD_CLR(fd,&readfds);
-		    printf( "Clearing fd %d\n", fd );
 		}
 	    }
 	}
     }
+    return 0;
 }
 
 

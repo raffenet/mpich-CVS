@@ -159,15 +159,18 @@ dnl
 dnl Check for signal handlers
 AC_CHECK_FUNCS(sigaction signal sigset)
 if test "$ac_cv_func_sigaction" = "yes" ; then
+    # Make sure that the fields that we need in sigaction are defined
     AC_MSG_CHECKING(for struct sigaction)
     AC_TRY_COMPILE([#include <signal.h>],[
-struct sigaction act; sigaddset( &act.sa_mask, SIGINT );],sigaction_ok="yes",sigaction_ok="no")
+struct sigaction act; sigaddset( &act.sa_mask, SIGINT );
+act.sa_handler = SIG_IGN;],sigaction_ok="yes",sigaction_ok="no")
     AC_MSG_RESULT($sigaction_ok)
     if test "$sigaction_ok" = "no" ; then
         AC_MSG_CHECKING(for struct sigaction with _POSIX_SOURCE)
         AC_TRY_COMPILE([#define _POSIX_SOURCE
 #include <signal.h>],[
-struct sigaction act; sigaddset( &act.sa_mask, SIGINT );],sigaction_with_posix_ok="yes",sigaction_with_posix_ok="no")
+struct sigaction act; sigaddset( &act.sa_mask, SIGINT );
+act.sa_handler = SIG_IGN;],sigaction_with_posix_ok="yes",sigaction_with_posix_ok="no")
         AC_MSG_RESULT($sigaction_with_posix_ok)
         if test "$sigaction_with_posix_ok" = "yes" ; then
             sigaction_ok=yes
