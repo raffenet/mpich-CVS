@@ -5,8 +5,12 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
+#include "mpitestconf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 static int verbose = 0;
 
