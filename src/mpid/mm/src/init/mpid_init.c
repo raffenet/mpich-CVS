@@ -31,18 +31,19 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_INIT);
 
-    MPID_Process.pmi_dbname[0] = '\0';
+    MPID_Process.pmi_kvsname[0] = '\0';
     MPID_Process.comm_parent = (MPID_Comm *)0;
-    //MPID_Process.lock
     MPID_Process.port_list = (OpenPortNode_t *)0;
 
     PMI_Init(&spawned);
-    PMI_KVS_Get_my_name(MPID_Process.pmi_dbname);
+    PMI_Get_rank(&MPIR_Process.comm_world->rank);
+    PMI_Get_size(&MPIR_Process.comm_world->size);
+    PMI_KVS_Get_my_name(MPID_Process.pmi_kvsname);
     PMI_Barrier();
 
     if (spawned)
     {
-	PMI_KVS_Get(MPID_Process.pmi_dbname, MPICH_PARENT_PORT_KEY, pszPortName);
+	PMI_KVS_Get(MPID_Process.pmi_kvsname, MPICH_PARENT_PORT_KEY, pszPortName);
 	//PMPI_Comm_connect(pszPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &MPID_Process.comm_parent);
     }
     else
