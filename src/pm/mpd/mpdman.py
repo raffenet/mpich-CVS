@@ -9,7 +9,7 @@ from re     import findall, sub
 from signal import signal, SIGKILL, SIGUSR1, SIGTSTP, SIGCONT, SIGCHLD, SIG_DFL, SIG_IGN
 from md5    import new
 from mpdlib import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
-                   mpd_send_one_line, mpd_send_one_msg, mpd_recv_one_msg, \
+                   mpd_send_one_line, mpd_recv_one_line, mpd_send_one_msg, mpd_recv_one_msg, \
                    mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
                    mpd_get_my_username, mpd_raise, mpdError, mpd_version
 
@@ -139,7 +139,7 @@ def mpdman():
         close(pipe_cli_end)
         (pmiSocket,pmiAddr) = clientListenSocket.accept()
         pmiFile = fdopen(pmiSocket.fileno(),'r')
-        msg = pmiFile.readline()
+	msg = mpd_recv_one_line(pmiFile)
         ## mpd_print(0000, "recvd pmi handshake=:%s:" % msg )
         if not msg  or  msg != 'cmd=pmi_handler\n':    # handshake
             mpd_raise('%d: invalid msg from handler :%s:' % (myRank,msg) )
@@ -540,7 +540,7 @@ def mpdman():
                 else:
                     mpd_print(1, "unrecognized msg from spawned child :%s:" % line )
             elif readySocket == pmiSocket:
-                line = pmiFile.readline()
+	        line = mpd_recv_one_line(pmiFile)
                 if not line:
                     (donePid,status) = waitpid(clientPid,0)
                     msgToSend = { 'cmd' : 'client_exit_status', 'status' : status,

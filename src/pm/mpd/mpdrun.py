@@ -260,6 +260,9 @@ def mpdrun():
                     if not msg:
                         # mpd_raise('mpdrun: empty msg from man; it must have terminated early')
                         print 'mpdrun: empty msg from man; it must have terminated early'
+                        del socketsToSelect[readySocket]
+                        readySocket.close()
+                        done += 1
 		    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
                     elif msg['cmd'] == 'job_terminated_early':

@@ -130,6 +130,14 @@ def mpd_send_one_line(sock,line):
     except Exception, errmsg:
         mpd_print_tb(1, 'mpd_send_one_line: errmsg=:%s:' % (errmsg) )
 
+def mpd_recv_one_line(file):
+    try:
+        msg = file.readline()
+    except Exception, errmsg:
+	msg = ''
+        mpd_print_tb(0, 'mpd_recv_one_line: errmsg=:%s:' % (errmsg) )
+    return msg
+
 def mpd_send_one_msg(sock,msg):
     pickledMsg = dumps(msg)
     try:
