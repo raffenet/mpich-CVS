@@ -1,4 +1,7 @@
 #include "bsocketimpl.h"
+#ifdef HAVE_STDIO_H
+#include <stdio.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -38,13 +41,16 @@
 #endif
 #ifdef HAVE_WINSOCK2_H
 #include <time.h>
+#define snprintf _snprintf
 #endif
 
 /*#define DEBUG_BSOCKET*/
 #undef DEBUG_BSOCKET
 
+#define BPRINTF printf
+
 #ifdef DEBUG_BSOCKET
-#define DBG_MSG(paramlist) printf( paramlist )
+#define DBG_MSG(paramlist) BPRINTF( paramlist )
 #else
 #define DBG_MSG(paramlist) 
 #endif
@@ -149,7 +155,7 @@ int bsocket_init(void)
     /* Start the Winsock dll */
     if ((err = WSAStartup(MAKEWORD(2, 0), &wsaData)) != 0)
     {
-	printf("Winsock2 dll not initialized, error %d\n", err);
+	BPRINTF("Winsock2 dll not initialized, error %d\n", err);
 	return err;
     }
 #else
@@ -165,7 +171,6 @@ int bsocket_init(void)
     if (pszEnvVar != NULL)
 	g_bbuflen = atoi(pszEnvVar);
 
-    //Bsocket_mem.size = sizeof(BFD_Buffer) + g_bbuflen;
     Bsocket_mem = BlockAllocInit(sizeof(BFD_Buffer) + g_bbuflen, 64, 64, malloc, free);
 
     g_bInitFinalize = 1;
@@ -233,7 +238,6 @@ int bsocket(int family, int type, int protocol)
     {
 	DBG_MSG("ERROR in bsocket: socket returned SOCKET_ERROR\n");
 	memset(pbfd, 0, sizeof(BFD_Buffer));
-	//MPIU_Handle_obj_free( &Bsocket_mem, pbfd );
 	BlockFree( Bsocket_mem, pbfd );
 	return -1;
     }
@@ -419,7 +423,7 @@ int bwrite(int bfd, char *ubuf, int len)
 
 /*
 #define DBG_BWRITEV
-#define DBG_BWRITEV_PRINT(a) printf a
+#define DBG_BWRITEV_PRINT(a) BPRINTF a
 */
 #undef DBG_BWRITEV
 #define DBG_BWRITEV_PRINT
@@ -444,9 +448,9 @@ int bwritev(int bfd, B_VECTOR *pIOVec, int n)
     if (n == 0)
 	return 0;
 #ifdef DBG_BWRITEV
-    printf("(bwritev");
+    BPRINTF("(bwritev");
     for (i=0; i<n; i++)
-	printf(":%d", pIOVec[i].B_VECTOR_LEN);
+	BPRINTF(":%d", pIOVec[i].B_VECTOR_LEN);
 #endif
     if (WSASend(((BFD_Buffer*)bfd)->real_fd, pIOVec, n, &dwNumSent, 0, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
     {
@@ -563,7 +567,7 @@ int bread(int bfd, char *ubuf, int len)
     memcpy(ubuf, bbuf, num_used);
     pbfd->curpos += num_used;
     pbfd->num_avail -= num_used;
-    /*if (pbfd->num_avail > 0) printf("bread: %d extra bytes read into bbuf %d\n", pbfd->num_avail, pbfd->real_fd);*/
+    /*if (pbfd->num_avail > 0) BPRINTF("bread: %d extra bytes read into bbuf %d\n", pbfd->num_avail, pbfd->real_fd);*/
     pbfd->state = BFD_IDLE;
 
     DBG_MSG(("bread: Read %d bytes on socket %d into bbuf\n", n, fd));
@@ -575,7 +579,7 @@ int bread(int bfd, char *ubuf, int len)
 
 /*
 #define DBG_BREADV
-#define DBG_BREADV_PRINT(a) printf a
+#define DBG_BREADV_PRINT(a) BPRINTF a
 */
 #undef DBG_BREADV
 #define DBG_BREADV_PRINT(a) 
@@ -623,9 +627,9 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
     bbuf = pbfd->read_buf;
     
 #ifdef DBG_BREADV
-    printf("(breadv");
+    BPRINTF("(breadv");
     for (i=0; i<veclen; i++)
-	printf(":%d", vec[i].B_VECTOR_LEN);
+	BPRINTF(":%d", vec[i].B_VECTOR_LEN);
 #endif
     num_read = 0;
     for (i=0; i<veclen; i++)
@@ -682,9 +686,9 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
     vec[veclen].B_VECTOR_LEN = g_bbuflen;
 
 #ifdef DBG_BREADV
-    printf(",breadv");
+    BPRINTF(",breadv");
     for (k=0; k<veclen-i+1; k++)
-	printf(":%d", vec[k+i].B_VECTOR_LEN);
+	BPRINTF(":%d", vec[k+i].B_VECTOR_LEN);
 #endif
 #ifdef HAVE_WINSOCK2_H
     if (WSARecv(fd, &vec[i], veclen - i + 1, &n, &nFlags, NULL/*overlapped*/, NULL/*completion routine*/) == SOCKET_ERROR)
@@ -693,9 +697,9 @@ int breadv(int bfd, B_VECTOR *vec, int veclen)
 	{
 	    pbfd->state = BFD_ERROR;
 	    pbfd->errval = WSAGetLastError();
-	    printf("***WSARecv failed reading %d WSABUFs, error %d***\n", veclen - i + 1, pbfd->errval);
+	    BPRINTF("***WSARecv failed reading %d WSABUFs, error %d***\n", veclen - i + 1, pbfd->errval);
 	    for (k=0; k<veclen-i+1; k++)
-		printf("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k+i, vec[k+i].B_VECTOR_LEN, k+i, vec[k+i].B_VECTOR_BUF);
+		BPRINTF("vec[%d] len: %d\nvec[%d] buf: 0x%x\n", k+i, vec[k+i].B_VECTOR_LEN, k+i, vec[k+i].B_VECTOR_BUF);
 	    n = 0; /* Set this to zero so it can be added to num_read */
 	}
     }
@@ -751,7 +755,6 @@ int bclose(int bfd)
 
     close(((BFD_Buffer*)bfd)->real_fd);
     memset((void*)bfd, 0, sizeof(BFD_Buffer));
-    //MPIU_Handle_obj_free( &Bsocket_mem, (BFD_Buffer*)bfd );
     BlockFree( Bsocket_mem, (BFD_Buffer*)bfd );
 
     return 0;
@@ -998,11 +1001,11 @@ int beasy_closesocket(int bfd)
 	    /*
 	    if (WaitForSingleObject(hEvent, 100) == WAIT_TIMEOUT)
 	    {
-		printf("wait for close timed out\n");fflush(stdout);
+		BPRINTF("wait for close timed out\n");fflush(stdout);
 	    }
 	    else
 	    {
-		printf("wait for close succeeded\n");fflush(stdout);
+		BPRINTF("wait for close succeeded\n");fflush(stdout);
 	    }
 	    */
 	    WSACloseEvent(hEvent);
@@ -1060,7 +1063,7 @@ int beasy_get_ip_string(char *ipstring)
     b = (unsigned char)(pH->h_addr_list[0][1]);
     c = (unsigned char)(pH->h_addr_list[0][2]);
     d = (unsigned char)(pH->h_addr_list[0][3]);
-    sprintf(ipstring, "%u.%u.%u.%u", a, b, c, d);
+    snprintf(ipstring, 100, "%u.%u.%u.%u", a, b, c, d);
     return 0;
 }
 
@@ -1128,7 +1131,7 @@ int beasy_receive(int bfd, char *buffer, int len)
 	    {
 		if (num_received == 0)
 		{
-		    /*printf("beasy_receive: socket closed\n");*/
+		    /*BPRINTF("beasy_receive: socket closed\n");*/
 		    /*bmake_blocking(bfd);*/
 		    return 0;
 		}
@@ -1189,7 +1192,7 @@ int beasy_receive_some(int bfd, char *buffer, int len)
 	{
 	    if (num_received == 0)
 	    {
-		/*printf("beasy_receive_some: socket closed\n");*/
+		/*BPRINTF("beasy_receive_some: socket closed\n");*/
 		/*bmake_blocking(bfd);*/
 		return 0;
 	    }
@@ -1251,7 +1254,7 @@ int beasy_receive_timeout(int bfd, char *buffer, int len, int timeout)
 	    {
 		if (num_received == 0)
 		{
-		    /*printf("beasy_receive_timeout: socket closed\n");*/
+		    /*BPRINTF("beasy_receive_timeout: socket closed\n");*/
 		    /*bmake_blocking(bfd);*/
 		    return total - len;
 		}
@@ -1346,7 +1349,7 @@ int beasy_send(int bfd, char *buffer, int length)
 	    {
 		if (num_written == 0)
 		{
-		    /*printf("beasy_send: socket closed\n");*/
+		    /*BPRINTF("beasy_send: socket closed\n");*/
 		    return total - length;
 		}
 		length -= num_written;
@@ -1389,14 +1392,13 @@ int beasy_error_to_string(int error, char *str, int length)
 	memcpy(str, str_local, num_bytes+1);
     else
     {
-	/* sprintf(str, "error %d", error); */
 	LocalFree(str);
 	return num_bytes+1;
     }
     LocalFree(str);
     strtok(str, "\r\n"); /* remove any CR/LF characters from the output */
 #else
-    sprintf(str, "error %d", error);
+    snprintf(str, length, "error %d", error);
 #endif
     return 0;
 }

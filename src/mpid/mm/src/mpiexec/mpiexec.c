@@ -65,7 +65,7 @@ int CreateParameters(int *argcp, char **argvp[], int *pCount, char ***pCmds, cha
     while (argv[1] && (argv[1][0] == '-' || argv[1][0] == '/'))
     {
 	nArgsToStrip = 1;
-	if ((strcmp(&argv[1][1], "n") == 0) || (strcmp(&argv[1][1], "np") == 0))
+	if ((strncmp(&argv[1][1], "n", 2) == 0) || (strncmp(&argv[1][1], "np", 3) == 0))
 	{
 	    if (argc < 3)
 	    {
@@ -80,67 +80,67 @@ int CreateParameters(int *argcp, char **argvp[], int *pCount, char ***pCmds, cha
 	    }
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "wdir") == 0)
+	else if (strncmp(&argv[1][1], "wdir", 5) == 0)
 	{
 	    if (argc < 3)
 	    {
 		printf("Error: no directory after -wdir option\n");
 		return 0;
 	    }
-	    strcpy(pszDir, argv[2]);
+	    strncpy(pszDir, argv[2], MAX_PATH);
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "soft") == 0)
+	else if (strncmp(&argv[1][1], "soft", 5) == 0)
 	{
 	    if (argc < 3)
 	    {
 		printf("Error: nothing after -soft option\n");
 		return 0;
 	    }
-	    strcpy(pszSoft, argv[2]);
+	    strncpy(pszSoft, argv[2], 100);
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "host") == 0)
+	else if (strncmp(&argv[1][1], "host", 5) == 0)
 	{
 	    if (argc < 3)
 	    {
 		printf("Error: no hostname after -host option\n");
 		return 0;
 	    }
-	    strcpy(pszHost, argv[2]);
+	    strncpy(pszHost, argv[2], 100);
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "arch") == 0)
+	else if (strncmp(&argv[1][1], "arch", 5) == 0)
 	{
 	    if (argc < 3)
 	    {
 		printf("Error: no architecture after -arch option\n");
 		return 0;
 	    }
-	    strcpy(pszArch, argv[2]);
+	    strncpy(pszArch, argv[2], 100);
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "path") == 0)
+	else if (strncmp(&argv[1][1], "path", 5) == 0)
 	{
 	    if (argc < 3)
 	    {
 		printf("Error: no path after -path option\n");
 		return 0;
 	    }
-	    strcpy(pszPath, argv[2]);
+	    strncpy(pszPath, argv[2], MAX_PATH);
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "file") == 0)
+	else if (strncmp(&argv[1][1], "file", 5) == 0)
 	{
 	    if (argc < 3)
 	    {
 		printf("Error: no filename after -file option\n");
 		return 0;
 	    }
-	    strcpy(pszFile, argv[2]);
+	    strncpy(pszFile, argv[2], MAX_PATH);
 	    nArgsToStrip = 2;
 	}
-	else if (strcmp(&argv[1][1], "help") == 0 || argv[1][1] == '?')
+	else if (strncmp(&argv[1][1], "help", 5) == 0 || argv[1][1] == '?')
 	{
 	    PrintOptions();
 	    return 0;
@@ -162,7 +162,7 @@ int CreateParameters(int *argcp, char **argvp[], int *pCount, char ***pCmds, cha
     }
 
     /* The next argument is the executable or a configuration file */
-    strcpy(pszExe, argv[1]);
+    strncpy(pszExe, argv[1], MAX_PATH);
 
     /* All the rest of the arguments are passed to the application */
     pszArgs[0] = '\0';
