@@ -34,16 +34,16 @@
 # TODO:
 #    The derived classes (such as Intracomm) must *not* have their own
 #    protected the_real_intracomm; instead, the must refer to the 
-#    parent class's private storage.
+#    parent class's private storage. - DONE
 #
 #    The pack, unpack, packsize, init, and finalize routines must be 
-#    placed in initcpp.cpp.
+#    placed in initcpp.cpp. - DONE
 #
 #    externs for the predefined objects need to be added to the
-#    end of mpicxx.h
+#    end of mpicxx.h - DONE
 #
 #    The optional no-status versions need to be created for 
-#    methods such as Recv, Test, and Sendrecv .
+#    methods such as Recv, Test, and Sendrecv . - DONE
 #
 # Setup global variables
 $buildfiles = 1;
@@ -208,18 +208,18 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'file-Open-2' => 'in:const',
 		     'file-Delete-1' => 'in:const',
 		     'Set_view-4' => 'in:const',
-		     'Write-1' => 'in:const',
-		     'Write_all-1' => 'in:const',
+		     'Write-2' => 'in:const',
+		     'Write_all-2' => 'in:const',
 		     'Iwrite_at-2' => 'in:const',
-		     'Iwrite-1' => 'in:const',
-		     'Write_at-2' => 'in:const',
-		     'Write_at_all-2' => 'in:const',
-		     'Write_at_all_begin-2' => 'in:const',
-		     'Write_at_all_end-1' => 'in:const',
-		     'Write_all_begin-1' => 'in:const',
-		     'Write_all_end-1' => 'in:const',
-		     'Write_ordered_begin-1' => 'in:const',
-		     'Write_ordered_end-1' => 'in:const',
+		     'Iwrite-2' => 'in:const',
+		     'Write_at-3' => 'in:const',
+		     'Write_at_all-3' => 'in:const',
+		     'Write_at_all_begin-3' => 'in:const',
+		     'Write_at_all_end-2' => 'in:const',
+		     'Write_all_begin-2' => 'in:const',
+		     'Write_all_end-2' => 'in:const',
+		     'Write_ordered_begin-2' => 'in:const',
+		     'Write_ordered_end-2' => 'in:const',
 		     'Set_atomicity-2' => 'in:bool',
 
 		     'Put-1' => 'in:const',
@@ -372,63 +372,118 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 %class_mpi2req = ();
 %class_mpi2greq = ( 'Complete' => 0 );
 %class_mpi2st = ();
-%class_mpi2file = ();
+%class_mpi2file = ( );
 if ($build_io) {
     %class_mpi2file = ( 
-		   'File_open' => 'static:MPI_File:2',
-		   'File_close' => 0,
-		   'File_delete' => 'static:0:1',
-		   'File_set_size' => 0,
-		   'File_preallocate' => 0,
-		   'File_get_size' => 'MPI_Offset',
-		   'File_get_group' => 'MPI_Group',
-		   'File_get_amode' => 'int',
-		   'File_set_info' => 0,
-		   'File_get_info' => 'MPI_Info',
-		   'File_set_view' => '0:4',
-		   'File_get_view' => 0,
-		   'File_read_at' => 0,
-		   'File_read_at_all' => 0,
-		   'File_write_at' => '0:2',
-		   'File_write_at_all' => '0:2',
-		   'File_iread_at' => 'MPI_Request', 
-		   'File_iwrite_at' => 'MPI_Request:1',
-		   'File_read' => 0,
-		   'File_read_all' => 0,
-		   'File_write' => '0:1',
-		   'File_write_all' => '0:1',
-		   'File_iread' => 'MPI_Request',
-		   'File_iwrite' => 'MPI_Request:1',
-		   'File_seek' => 0,
-		   'File_get_position' => 'MPI_Offset',
-		   'File_get_byte_offset' => 'MPI_Offset',
-		   'File_read_shared' => 0,
-		   'File_write_shared' => 0,
-		   'File_iread_shared' => 'MPI_Request',
-		   'File_iwrite_shared' => 'MPI_Request:1',
-		   'File_read_ordered' => 0,
-		   'File_write_ordered' => '0:1',
-		   'File_seek_shared' => 0,
-		   'File_get_position_shared' => 'MPI_Offset',
-		   'File_read_at_all_begin' => 0,
-		   'File_read_at_all_end' => 0,
-		   'File_write_at_all_begin' => '0:2',
-		   'File_write_at_all_end' => '0:1',
-		   'File_read_all_begin' => 0,
-		   'File_read_all_end' => 0,
-		   'File_write_all_begin' => '0:1',
-		   'File_write_all_end' => '0:1',
-		   'File_read_ordered_begin' => 0,
-		   'File_read_ordered_end' => 0,
-		   'File_write_ordered_begin' => '0:1',
-		   'File_write_ordered_end' => '0:1',
-		   'File_get_type_extent' => 'MPI_Aint',
-		   'File_set_atomicity' => '0:1',
-		   'File_get_atomicity' => 'bool',
-		   'File_sync' => 0,
-		   'File_set_errhandler' => 'MPI_Errhandler',
-		   'File_get_errhandler' => 0,
+		   'Open' => 'static:MPI_File:2',
+		   'Close' => 0,
+		   'Delete' => 'static:0:1',
+		   'Set_size' => 0,
+		   'Preallocate' => 0,
+		   'Get_size' => 'MPI_Offset',
+		   'Get_group' => 'MPI_Group',
+		   'Get_amode' => 'int',
+		   'Set_info' => 0,
+		   'Get_info' => 'MPI_Info',
+		   'Set_view' => '0:4',
+		   'Get_view' => 0,
+		   'Read_at' => 0,
+		   'Read_at_all' => 0,
+		   'Write_at' => '0:3',
+		   'Write_at_all' => '0:3',
+		   'Iread_at' => 'MPI_Request', 
+		   'Iwrite_at' => 'MPI_Request:2',
+		   'Read' => 0,
+		   'Read_all' => 0,
+		   'Write' => '0:2',
+		   'Write_all' => '0:2',
+		   'Iread' => 'MPI_Request',
+		   'Iwrite' => 'MPI_Request:2',
+		   'Seek' => 0,
+		   'Get_position' => 'MPI_Offset',
+		   'Get_byte_offset' => 'MPI_Offset',
+		   'Read_shared' => 0,
+		   'Write_shared' => '0:2',
+		   'Iread_shared' => 'MPI_Request',
+		   'Iwrite_shared' => 'MPI_Request:2',
+		   'Read_ordered' => 0,
+		   'Write_ordered' => '0:2',
+		   'Seek_shared' => 0,
+		   'Get_position_shared' => 'MPI_Offset',
+		   'Read_at_all_begin' => 0,
+		   'Read_at_all_end' => 0,
+		   'Write_at_all_begin' => '0:3',
+		   'Write_at_all_end' => '0:2',
+		   'Read_all_begin' => 0,
+		   'Read_all_end' => 0,
+		   'Write_all_begin' => '0:2',
+		   'Write_all_end' => '0:2',
+		   'Read_ordered_begin' => 0,
+		   'Read_ordered_end' => 0,
+		   'Write_ordered_begin' => '0:2',
+		   'Write_ordered_end' => '0:2',
+		   'Get_type_extent' => 'MPI_Aint',
+		   'Set_atomicity' => '0:2',
+		   'Get_atomicity' => 'int;bool',
+		   'Sync' => 0,
+		   'Get_errhandler' => 'MPI_Errhandler',
+		   'Set_errhandler' => 0,
 		   );		
+#     %class_mpi2file = ( 
+# 		   'File_open' => 'static:MPI_File:2',
+# 		   'File_close' => 0,
+# 		   'File_delete' => 'static:0:1',
+# 		   'File_set_size' => 0,
+# 		   'File_preallocate' => 0,
+# 		   'File_get_size' => 'MPI_Offset',
+# 		   'File_get_group' => 'MPI_Group',
+# 		   'File_get_amode' => 'int',
+# 		   'File_set_info' => 0,
+# 		   'File_get_info' => 'MPI_Info',
+# 		   'File_set_view' => '0:4',
+# 		   'File_get_view' => 0,
+# 		   'File_read_at' => 0,
+# 		   'File_read_at_all' => 0,
+# 		   'File_write_at' => '0:2',
+# 		   'File_write_at_all' => '0:2',
+# 		   'File_iread_at' => 'MPI_Request', 
+# 		   'File_iwrite_at' => 'MPI_Request:1',
+# 		   'File_read' => 0,
+# 		   'File_read_all' => 0,
+# 		   'File_write' => '0:1',
+# 		   'File_write_all' => '0:1',
+# 		   'File_iread' => 'MPI_Request',
+# 		   'File_iwrite' => 'MPI_Request:1',
+# 		   'File_seek' => 0,
+# 		   'File_get_position' => 'MPI_Offset',
+# 		   'File_get_byte_offset' => 'MPI_Offset',
+# 		   'File_read_shared' => 0,
+# 		   'File_write_shared' => 0,
+# 		   'File_iread_shared' => 'MPI_Request',
+# 		   'File_iwrite_shared' => 'MPI_Request:1',
+# 		   'File_read_ordered' => 0,
+# 		   'File_write_ordered' => '0:1',
+# 		   'File_seek_shared' => 0,
+# 		   'File_get_position_shared' => 'MPI_Offset',
+# 		   'File_read_at_all_begin' => 0,
+# 		   'File_read_at_all_end' => 0,
+# 		   'File_write_at_all_begin' => '0:2',
+# 		   'File_write_at_all_end' => '0:1',
+# 		   'File_read_all_begin' => 0,
+# 		   'File_read_all_end' => 0,
+# 		   'File_write_all_begin' => '0:1',
+# 		   'File_write_all_end' => '0:1',
+# 		   'File_read_ordered_begin' => 0,
+# 		   'File_read_ordered_end' => 0,
+# 		   'File_write_ordered_begin' => '0:1',
+# 		   'File_write_ordered_end' => '0:1',
+# 		   'File_get_type_extent' => 'MPI_Aint',
+# 		   'File_set_atomicity' => '0:1',
+# 		   'File_get_atomicity' => 'bool',
+# 		   'File_sync' => 0,
+# 		   'File_set_errhandler' => 'MPI_Errhandler',
+# 		   'File_get_errhandler' => 0,
+# 		   );		
 }
 %class_mpi2win = (  'Put' => '0:1', 'Get' => 0, 
 		    'Accumulate' => '0', 
@@ -647,15 +702,15 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 # The friends are the full class names
 %class_friends = ( 'comm' => 'Cartcomm,Intercomm,Intracomm,Graphcomm,Datatype,Win,File',
 		   'cart' => '',
-		   'dtype' => 'Comm,Status,Intracomm,Intercomm,Win',
-		   'errh' => 'Comm',
+		   'dtype' => 'Comm,Status,Intracomm,Intercomm,Win,File',
+		   'errh' => 'Comm,File,Win',
 		   'graph' => '',
 		   'group' => 'Comm,Intracomm,Intercomm,Win,File',
 		   'inter' => 'Intracomm',
 		   'intra' => 'Cartcomm,Graphcomm,Datatype',
 		   'op' => 'Intracomm,Intercomm,Win',
 		   'preq' => '',
-		   'req' => 'Comm',
+		   'req' => 'Comm,File',
 		   'st' => 'Comm,File,Request',
 		   'greq' => '',
 		   'info' => 'File,Win,Comm',
@@ -837,10 +892,23 @@ foreach $class (@classes) {
 
     # Special case to skip over the file routines (whose prototypes cause
     # us some problems).
-    if ($class eq "file" && !$build_io) { next; }
+    if ($class eq "file") {
+        if (!$build_io) { next; }
+	# Add a definition for MPI_FILE_NULL and MPI_File if none available
+	print $OUTFD "#ifndef MPI_FILE_NULL\
+#define MPI_FILE_NULL 0\
+typedef int MPI_File;\
+#endif\n";
+    }
     
     # Begin the class, writing the common operations (destructors etc.)
     &BeginClass( $class );
+
+    # Hack to ifdef out the file routines
+    if ($class eq "file") {
+	# Define the file type only if supported.
+	print $OUTFD "#ifdef MPI_MODE_RDONLY\n";
+    }
 
     foreach $mpilevel (@mpilevels) {
         $mpiclass = "$mpilevel$class";
@@ -865,6 +933,12 @@ foreach $class (@classes) {
     if (defined($class_extra_fnc{$class})) {
 	$extrafnc = $class_extra_fnc{$class};
 	&$extrafnc( $OUTFD );
+    }
+
+    # Hack to ifdef out the file routines
+    if ($class eq "file") {
+	# Define the file type only if supported.
+	print $OUTFD "#endif\n";
     }
     &EndClass;
 
@@ -1196,14 +1270,22 @@ sub print_call_args {
 	    # We'll unilateraly assume this for now
 	    # This must be first, so that it has a priority over the
 	    # class pos location.
-	    if ($parm =~ /MPI_/) {
+	    if ($parm =~ /MPI_/ && !($parm =~ /MPI_Offset/) &&
+		!($parm =~ /MPI_Aint/) ) {
 		my $lctype = $real_return_type;
 		# Convert class_type to the appropriate name
 		$lctype = lc($lctype);
 		if (defined($mytopclass{$lctype})) {
 		    $lctype = $mytopclass{$lctype};
 		}
-		print $OUTFD "&(v$count->the_real_$lctype)";
+		# Handle the MPIO_Request problem (temp until ROMIO uses
+		# MPI_Requests)
+		$cast = "";
+		if ($parm =~ /MPI_Request/ &&
+		    $class eq "file") {
+		    $cast = "(MPIO_Request *)";
+		}
+		print $OUTFD "$cast&(v$count->the_real_$lctype)";
 	    }
 	    else {
 		print $OUTFD "&v$count";
@@ -1670,6 +1752,7 @@ sub FindReturnInfo {
     else {
 	# Return info is a type. Find the matching location
 	my $count = 1;
+	$return_type = "";
 	for $parm (@parms) {
 	    if ($parm =~ /$return_info\s*\*/) {
 		$return_parm_pos = $count;
@@ -1677,6 +1760,9 @@ sub FindReturnInfo {
 		last;
 	    }
 	    $count ++;
+	}
+	if ($return_type eq "") {
+	    print STDERR "Warning: no return type found for $routine\n";
 	}
     }
     if ($return_actual_type eq "") { $return_actual_type = $return_type; }
@@ -1717,6 +1803,10 @@ sub HandleObjectParm {
 	else {
 	    $newparm = "($parmtype)($parm.the_real_$lctype)";
 	}
+	return $newparm;
+    }
+    elsif ($parmtype =~ /MPI_Offset\s*\*/) {
+	$newparm = "&$parm";
 	return $newparm;
     }
     return $parm;
@@ -1971,6 +2061,12 @@ sub PrintRoutineDef {
     # Output any declaration needed for the return type
     &ReturnTypeDecl( $OUTFD );
 
+#     if ($routine eq "Get_atomicity") {
+# 	print STDERR "Croutine = $Croutine\n";
+# 	print STDERR "cArgs = $cArgs\n";
+# 	print STDERR "arginfo = $arginfo\n";
+# 	print STDERR "special_args = $special_args\n";
+#     }
     # Output any other declarations
     &RoutineTempDecls( $OUTFD, $routine, $cArgs, $special_args );
 
@@ -2135,6 +2231,12 @@ sub GetCArgs {
 	    $mpi_routine_name = $altname{"$class-$routine"};
 	    $args = $mpi_routine{$mpi_routine_name};
 	}
+	elsif ($class eq "file") {
+	    # File routines have a systematic name mapping
+	    $lcroutine = lc($routine);
+	    $mpi_routine_name = "File_$lcroutine";
+	    $args = $mpi_routine{$mpi_routine_name};
+	}
 	else {
 	    print STDERR "Name $routine has no known MPI routine\n";
 	}
@@ -2151,7 +2253,8 @@ sub ReturnTypeDecl {
     # If there is a return type, declare it here
     $finalcast = "";
     if ($return_parm_pos > 0) {
-	if ($return_type =~ /MPI_/) {
+	if ($return_type =~ /MPI_/ && !($return_type =~ /MPI_Offset/) 
+	    && !($return_type =~ /MPI_Aint/)) {
 	    print $OUTFD "$indent    $real_return_type *v$return_parm_pos = new $real_return_type;\n";
 	    $finalcast = "*";
 	}
