@@ -26,6 +26,8 @@ $mpiexec = "mpiexec";    # Name of mpiexec program (including path, if necessary
 $np_arg  = "-n";         # Name of argument to specify the number of processes
 $err_count = 0;          # Number of programs that failed.
 
+# Output forms
+$xmloutput = 0;          # Set to true to get xml output (also specify file)
 $verbose = 0;            # Set to true to get more output
 
 #---------------------------------------------------------------------------
@@ -35,6 +37,11 @@ foreach $_ (@ARGV) {
     if (/-mpiexec=(.*)/) { $mpiexec = $1; }
     elsif (/-tests=(.*)/) { $listfiles = $1; }
     elsif (/-verbose/) { $verbose = 1; }
+    elsif (/-xmlfile=(.*)/) {
+	$xmlfile   = $1;
+	$xmloutput = 1;
+	open( XMLOUT, ">$xmlfile" ) || die "Cannot open $xmlfile\n";
+    }
     else {
 	print STDERR "Unrecognized argument $_\n";
     }
@@ -77,10 +84,14 @@ sub RunList {
     }
     close( LIST );
 }
+#
+# Run the program.  
+# ToDo: Add a way to limit the time that any particular program may run.
 sub RunMPIProgram {
     my ($programname,$np) = @_;
     my $found_error = 0;
 
+    &RunPreMsg( $programname );
     if ($verbose) {
 	print STDERR "$mpiexec $np_arg $np $programname\n";
     }
@@ -88,7 +99,9 @@ sub RunMPIProgram {
 	 die "Could not run $programname\n";
     $inline = "";
     while (<MPIOUT>) {
-	$inline = $_;
+	# Skip FORTRAN STOP
+	if (/FORTRAN STOP/) { next; }
+	$inline .= $_;
 	if (! /^\s*No Errors\s*$/ && !/^\s*Test Passed\s*$/) {
 	    print STDERR "Unexpected output $_";
 	    if (!$found_error) {
@@ -97,8 +110,16 @@ sub RunMPIProgram {
 	    }
 	}
     }
+    if ($found_error) {
+	&RunTestFailed( $inline );
+    }
+    else { 
+	&RunTestPassed;
+    }
     close ( MPIOUT );
+    &RunPostMsg;
 }
+
 sub BuildMPIProgram {
     my $programname = $_[0];
     if ($verbose) { print STDERR "making $programname\n"; }
@@ -107,7 +128,40 @@ sub BuildMPIProgram {
 	print STDERR "Failed to build $programname; $output\n";
     }
 }
+
 sub CleanUpAfterRun {
     my $programname = $_[0];
-    unlink $programname;
+    unlink $programname "$programname.o";
+}
+#
+# ----------------------------------------------------------------------------
+# Output routines:
+#  RunPreMsg( programname ) - Call before running a program
+#  RunTestFailed, RunTestPassed - Call after test
+#  RunPostMsg               - Call at end of each test
+#
+sub RunPreMsg {
+    my $programname = $_[0];	
+    if ($xmloutput) {
+	print XMLOUT "<MPITEST>$newline<NAME>$programname</NAME>$newline";
+    }
+}
+sub RunPostMsg {
+    if ($xmloutput) {
+	print XMLOUT "</MPITEST>$newline";
+    }
+}
+sub RunTestPassed {
+    if ($xmloutput) {
+	print XMLOUT "<STATUS>Passed</STATUS>$newline";
+    }
+}
+sub RunTestFailed {
+    my $output = $_[0];
+    $output =~ s/</\&lt;/g;
+    $output =~ s/>/\&gt;/g;
+    if ($xmloutput) {
+	print XMLOUT "<STATUS>Failed</STATUS>$newline";
+	print XMLOUT "<TESTDIFF>$output</TESTDIFF>$newline";
+    }
 }
