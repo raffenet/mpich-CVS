@@ -29,7 +29,7 @@ namespace MandelViewer
 		private static Bitmap bitmap = null;
 		private int nWidth, nHeight;
 		private int nNumColors;
-		private int nMax;
+		private static int nMax = 100;
 		private static Color [] colors = null;
 		private static double xmin = -1.0, ymin = -1.0, xmax = 1.0, ymax = 1.0;
 		private static bool bDrawing = false;
@@ -58,6 +58,7 @@ namespace MandelViewer
 				sock_writer.Write(ymin);
 				sock_writer.Write(xmax);
 				sock_writer.Write(ymax);
+				sock_writer.Write(nMax);
 
 				for (;;)
 				{
@@ -70,10 +71,13 @@ namespace MandelViewer
 						bDrawing = false;
 						return;
 					}
+
 					size = (temp[1] + 1 - temp[0]) * (temp[3] + 1 - temp[2]);
 					buffer = new int[size];
+
 					for (i=0; i<size; i++)
 						buffer[i] = sock_reader.ReadInt32();
+
 					int max_color = colors.Length;
 					Random rand = new Random();
 					try
@@ -85,12 +89,15 @@ namespace MandelViewer
 							{
 								for (i=temp[0]; i<=temp[1]; i++)
 								{
-									if (buffer[k] > 0 && buffer[k] < max_color)
+									bitmap.SetPixel(i, j, colors[buffer[k]]);
+									/*
+									if (buffer[k] >= 0 && buffer[k] < max_color)
 										bitmap.SetPixel(i, j, colors[buffer[k]]);
 									else
 									{
 										bitmap.SetPixel(i, j, Color.FromArgb(rand.Next(0, 255), rand.Next(0, 255), rand.Next(0,255)));
 									}
+									*/
 									k++;
 								}
 							}
@@ -126,7 +133,7 @@ namespace MandelViewer
 				// running from the web.
 				host.Text = System.Environment.MachineName;
 			} 
-			catch (Exception e)
+			catch (Exception)
 			{
 				host.Text = "localhost";
 			}
@@ -227,6 +234,7 @@ namespace MandelViewer
 		static void Main() 
 		{
 			double d = 0.0;
+			int i = 0;
 			MandelViewerForm f = new MandelViewerForm();
 			Application.Run(f);
 			try
@@ -236,6 +244,7 @@ namespace MandelViewer
 				MandelViewerForm.sock_writer.Write(d);
 				MandelViewerForm.sock_writer.Write(d);
 				MandelViewerForm.sock_writer.Write(d);
+				MandelViewerForm.sock_writer.Write(i);
 			}
 			catch (Exception)
 			{
@@ -287,10 +296,10 @@ namespace MandelViewer
 				nNumColors = 1024;
 			if (nNumColors < 1)
 				nNumColors = 128;
-			if (nMax > 5000)
-				nMax = 5000;
 			if (nMax < 1)
 				nMax = 100;
+			if (nMax > 5000)
+				nMax = 5000;
 			colors = new Color[nMax+1];
 			ColorRainbow.Make_color_array(nNumColors, colors);
 			colors[nMax] = Color.FromKnownColor(KnownColor.Black); // add one on the top to avoid edge errors
@@ -350,7 +359,6 @@ namespace MandelViewer
 				p1 = new Point(e.X, e.Y);
 				rBox = new Rectangle(p1.X, p1.Y, 0, 0);
 			}
-		
 		}
 
 		private void outputBox_MouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
