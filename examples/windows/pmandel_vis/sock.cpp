@@ -18,6 +18,7 @@ extern HDC g_hDC;
 extern int g_width, g_height;
 extern HANDLE g_hMutex;
 int g_num_colors;
+static int g_max_iter;
 color_t *colors;
 
 SOCKET sock;
@@ -110,15 +111,15 @@ color_t getColor(double fraction, double intensity)
     return RGBtocolor_t(r,g,b);
 }
 
-int Make_color_array(int num_colors, color_t colors[])
+int Make_color_array(int num_colors, int max, color_t colors[])
 {
     double fraction, intensity;
     int i;
 
     intensity = 1.0;
-    for (i=0; i<num_colors; i++)
+    for (i=0; i<max; i++)
     {
-	fraction = (double)i / (double)num_colors;
+	fraction = (double)(i % num_colors) / (double)num_colors;
 	colors[i] = getColor(fraction, intensity);
     }
     return 0;
@@ -173,11 +174,12 @@ int connect_to_pmandel(const char *host, int port, int &width, int &height)
     read_data(sock, (char*)&width, sizeof(int));
     read_data(sock, (char*)&height, sizeof(int));
     read_data(sock, (char*)&g_num_colors, sizeof(int));
+    read_data(sock, (char*)&g_max_iter, sizeof(int));
     g_width = width;
     g_height = height;
-    colors = new color_t[g_num_colors+1];
-    Make_color_array(g_num_colors, colors);
-    colors[g_num_colors] = 0; /* add one on the top to avoid edge errors */
+    colors = new color_t[g_max_iter+1];
+    Make_color_array(g_num_colors, g_max_iter, colors);
+    colors[g_max_iter] = 0; /* add one on the top to avoid edge errors */
     /*
     sprintf(err, "num_colors = %d", g_num_colors);
     MessageBox(NULL, err, "Note", MB_OK);
@@ -185,12 +187,13 @@ int connect_to_pmandel(const char *host, int port, int &width, int &height)
     return 0;
 }
 
-int send_xyminmax(double xmin, double ymin, double xmax, double ymax)
+int send_xyminmax(double xmin, double ymin, double xmax, double ymax, int max_iter)
 {
     double temp[4];
     int result, total;
     char err[100];
     RECT r;
+    char *buffer;
 
     if (xmin != xmax && ymin != ymax && g_hDC)
     {
@@ -206,9 +209,10 @@ int send_xyminmax(double xmin, double ymin, double xmax, double ymax)
     temp[1] = ymin;
     temp[2] = xmax;
     temp[3] = ymax;
+    buffer = (char *)temp;
     while (total)
     {
-	result = send(sock, (const char *)temp, 4*sizeof(double), 0);
+	result = send(sock, (const char *)buffer, total, 0);
 	if (result == SOCKET_ERROR)
 	{
 	    result = WSAGetLastError();
@@ -228,6 +232,44 @@ int send_xyminmax(double xmin, double ymin, double xmax, double ymax)
 	    return -1;
 	}
 	total -= result;
+	buffer += result;
+    }
+
+    total = sizeof(int);
+    buffer = (char*)&max_iter;
+    while (total)
+    {
+	result = send(sock, (const char *)buffer, total, 0);
+	if (result == SOCKET_ERROR)
+	{
+	    result = WSAGetLastError();
+	    if (result == WSAEWOULDBLOCK)
+	    {
+		timeval t;
+		fd_set set;
+		FD_ZERO(&set);
+		FD_SET(sock, &set);
+		t.tv_sec = 1;
+		t.tv_usec = 0;
+		select(1, NULL, &set, NULL, &t);
+		continue;
+	    }
+	    sprintf(err, "send failed: error %d", result);
+	    MessageBox(NULL, err, "Error", MB_OK);
+	    return -1;
+	}
+	total -= result;
+	buffer += result;
+    }
+
+    if (max_iter != g_max_iter)
+    {
+	if (colors)
+	    delete [] colors;
+	g_max_iter = max_iter;
+	colors = new color_t[g_max_iter+1];
+	Make_color_array(g_num_colors, g_max_iter, colors);
+	colors[g_max_iter] = 0; /* add one on the top to avoid edge errors */
     }
     return 0;
 }

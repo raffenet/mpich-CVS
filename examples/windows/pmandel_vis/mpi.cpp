@@ -17,6 +17,7 @@ extern HDC g_hDC;
 extern int g_width, g_height;
 extern HANDLE g_hMutex;
 static int g_num_colors;
+static int g_max_iter;
 static color_t *colors;
 
 MPI_Comm comm = MPI_COMM_NULL;
@@ -109,15 +110,15 @@ static color_t getColor(double fraction, double intensity)
     return RGBtocolor_t(r,g,b);
 }
 
-static int Make_color_array(int num_colors, color_t colors[])
+static int Make_color_array(int num_colors, int max, color_t colors[])
 {
     double fraction, intensity;
     int i;
 
     intensity = 1.0;
-    for (i=0; i<num_colors; i++)
+    for (i=0; i<max; i++)
     {
-	fraction = (double)i / (double)num_colors;
+	fraction = (double)(i % num_colors) / (double)num_colors;
 	colors[i] = getColor(fraction, intensity);
     }
     return 0;
@@ -148,11 +149,12 @@ int mpi_connect_to_pmandel(const char *port, int &width, int &height)
     MPI_Recv(&width, 1, MPI_INT, 0, 0, comm, &status);
     MPI_Recv(&height, 1, MPI_INT, 0, 0, comm, &status);
     MPI_Recv(&g_num_colors, 1, MPI_INT, 0, 0, comm, &status);
+    MPI_Recv(&g_max_iter, 1, MPI_INT, 0, 0, comm, &status);
     g_width = width;
     g_height = height;
-    colors = new color_t[g_num_colors+1];
-    Make_color_array(g_num_colors, colors);
-    colors[g_num_colors] = 0; /* add one on the top to avoid edge errors */
+    colors = new color_t[g_max_iter+1];
+    Make_color_array(g_num_colors, g_max_iter, colors);
+    colors[g_max_iter] = 0; /* add one on the top to avoid edge errors */
     /*
     sprintf(err, "num_colors = %d", g_num_colors);
     MessageBox(NULL, err, "Note", MB_OK);
@@ -160,7 +162,7 @@ int mpi_connect_to_pmandel(const char *port, int &width, int &height)
     return 0;
 }
 
-int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax)
+int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax, int max_iter)
 {
     int result;
     char err[100];
@@ -202,6 +204,22 @@ int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax)
 	sprintf(err, "send failed: error %d", result);
 	MessageBox(NULL, err, "Error", MB_OK);
 	return -1;
+    }
+    result = MPI_Send(&max_iter, 1, MPI_INT, 0, 0, comm);
+    if (result != MPI_SUCCESS)
+    {
+	sprintf(err, "send failed: error %d", result);
+	MessageBox(NULL, err, "Error", MB_OK);
+	return -1;
+    }
+    if (max_iter != g_max_iter)
+    {
+	if (colors)
+	    delete [] colors;
+	g_max_iter = max_iter;
+	colors = new color_t[g_max_iter+1];
+	Make_color_array(g_num_colors, g_max_iter, colors);
+	colors[g_max_iter] = 0; /* add one on the top to avoid edge errors */
     }
     return 0;
 }

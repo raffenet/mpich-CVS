@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "ExampleNode.h"
 
 class Cpman_visView : public CView
 {
@@ -50,6 +51,9 @@ public:
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
     afx_msg void OnMouseMove(UINT nFlags, CPoint point);
     afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+    afx_msg void OnFileEnterpoint();
+    afx_msg void OnFileEnterdemopoints();
+    afx_msg void OnFileStopdemo();
 };
 
 #ifndef _DEBUG  // debug version in pman_visView.cpp

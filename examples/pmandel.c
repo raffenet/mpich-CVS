@@ -311,6 +311,7 @@ int main(int argc, char *argv[])
 	    sock_write(sock, &ipixels_across, sizeof(int));
 	    sock_write(sock, &ipixels_down, sizeof(int));
 	    sock_write(sock, &num_colors, sizeof(int));
+	    sock_write(sock, &imax_iterations, sizeof(int));
 	}
 
 	for (;;)
@@ -318,7 +319,7 @@ int main(int argc, char *argv[])
 	    /* get x_min, x_max, y_min, and y_max */
 	    if (use_stdin)
 	    {
-		printf("input xmin ymin xmax ymax, (0 0 0 0 to quit):\n");fflush(stdout);
+		printf("input xmin ymin xmax ymax max_iter, (0 0 0 0 0 to quit):\n");fflush(stdout);
 		fgets(line, 1024, stdin);
 		printf("read <%s> from stdin\n", line);fflush(stdout);
 		token = strtok(line, " \n");
@@ -329,6 +330,8 @@ int main(int argc, char *argv[])
 		x_max = atof(token);
 		token = strtok(NULL, " \n");
 		y_max = atof(token);
+		token = strtok(NULL, " \n");
+		imax_iterations = atoi(token);
 		/*sscanf(line, "%g %g %g %g", &x_min, &y_min, &x_max, &y_max);*/
 		/*scanf("%g %g %g %g", &x_min, &y_min, &x_max, &y_max);*/
 	    }
@@ -339,8 +342,9 @@ int main(int argc, char *argv[])
 		sock_read(sock, &y_min, sizeof(double));
 		sock_read(sock, &x_max, sizeof(double));
 		sock_read(sock, &y_max, sizeof(double));
+		sock_read(sock, &imax_iterations, sizeof(int));
 	    }
-	    printf("x0,y0 = (%f, %f) x1,y1 = (%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);
+	    printf("x0,y0 = (%f, %f) x1,y1 = (%f,%f) max_iter = %d\n", x_min, y_min, x_max, y_max, imax_iterations);fflush(stdout);
 
 	    /* break the work up into 400 pieces */
 	    istep = ipixels_across / 20;
@@ -379,6 +383,7 @@ int main(int argc, char *argv[])
 	    MPI_Bcast(&x_max, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	    MPI_Bcast(&y_min, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	    MPI_Bcast(&y_max, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	    MPI_Bcast(&imax_iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	    /* check for the end condition */
 	    if (x_min == x_max && y_min == y_max)
@@ -456,6 +461,7 @@ int main(int argc, char *argv[])
 	    MPI_Bcast(&x_max, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	    MPI_Bcast(&y_min, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	    MPI_Bcast(&y_max, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	    MPI_Bcast(&imax_iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	    /* check for the end condition */
 	    if (x_min == x_max && y_min == y_max)

@@ -346,6 +346,12 @@ int main(int argc, char *argv[])
 		printf("Unable to send num_colors to visualizer, aborting.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	    }
+	    error = MPI_Send(&imax_iterations, 1, MPI_INT, 0, 0, comm);
+	    if (error != MPI_SUCCESS)
+	    {
+		printf("Unable to send imax_iterations to visualizer, aborting.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	    }
 	}
 
 	for (;;)
@@ -353,7 +359,7 @@ int main(int argc, char *argv[])
 	    /* get x_min, x_max, y_min, and y_max */
 	    if (use_stdin)
 	    {
-		printf("input xmin ymin xmax ymax, (0 0 0 0 to quit):\n");fflush(stdout);
+		printf("input xmin ymin xmax ymax max_iter, (0 0 0 0 0 to quit):\n");fflush(stdout);
 		fgets(line, 1024, stdin);
 		printf("read <%s> from stdin\n", line);fflush(stdout);
 		token = strtok(line, " \n");
@@ -364,6 +370,8 @@ int main(int argc, char *argv[])
 		x_max = atof(token);
 		token = strtok(NULL, " \n");
 		y_max = atof(token);
+		token = strtok(NULL, " \n");
+		imax_iterations = atoi(token);
 		/*sscanf(line, "%g %g %g %g", &x_min, &y_min, &x_max, &y_max);*/
 		/*scanf("%g %g %g %g", &x_min, &y_min, &x_max, &y_max);*/
 	    }
@@ -394,8 +402,14 @@ int main(int argc, char *argv[])
 		    printf("Unable to receive y_max from the visualizer, aborting.\n");
 		    MPI_Abort(MPI_COMM_WORLD, -1);
 		}
+		error = MPI_Recv(&imax_iterations, 1, MPI_INT, 0, 0, comm, &status);
+		if (error != MPI_SUCCESS)
+		{
+		    printf("Unable to receive imax_iterations from the visualizer, aborting.\n");
+		    MPI_Abort(MPI_COMM_WORLD, -1);
+		}
 	    }
-	    printf("x0,y0 = (%f, %f) x1,y1 = (%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);
+	    printf("x0,y0 = (%f, %f) x1,y1 = (%f,%f) max_iter = %d\n", x_min, y_min, x_max, y_max, imax_iterations);fflush(stdout);
 
 	    /* break the work up into 400 pieces */
 	    istep = ipixels_across / 20;
@@ -436,6 +450,7 @@ int main(int argc, char *argv[])
 		MPI_Send(&x_max, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
 		MPI_Send(&y_min, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
 		MPI_Send(&y_max, 1, MPI_DOUBLE, 0, 0, child_comm[i]);
+		MPI_Send(&imax_iterations, 1, MPI_INT, 0, 0, child_comm[i]);
 	    }
 
 	    /* check for the end condition */
@@ -519,6 +534,7 @@ int main(int argc, char *argv[])
 	    MPI_Recv(&x_max, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
 	    MPI_Recv(&y_min, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
 	    MPI_Recv(&y_max, 1, MPI_DOUBLE, 0, 0, parent, MPI_STATUS_IGNORE);
+	    MPI_Recv(&imax_iterations, 1, MPI_INT, 0, 0, parent, MPI_STATUS_IGNORE);
 	    /*printf("received bounding box: (%f,%f)(%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);*/
 
 	    /* check for the end condition */

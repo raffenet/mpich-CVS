@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 // pman_visView.cpp : implementation of the Cpman_visView class
 //
 #include "stdafx.h"
@@ -7,17 +12,19 @@
 #include "pman_visView.h"
 #include ".\pman_visview.h"
 #include "ConnectDialog.h"
+#include "BoundsDlg.h"
+#include "DemoPointsDlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 int connect_to_pmandel(const char *host, int port, int &width, int &height);
-int send_xyminmax(double xmin, double ymin, double xmax, double ymax);
+int send_xyminmax(double xmin, double ymin, double xmax, double ymax, int max_iter);
 int get_pmandel_data();
 
 int mpi_connect_to_pmandel(const char *port, int &width, int &height);
-int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax);
+int mpi_send_xyminmax(double xmin, double ymin, double xmax, double ymax, int max_iter);
 int mpi_get_pmandel_data();
 void mpi_thread_fn(void *p);
 void mpi_barrier_client();
@@ -32,6 +39,9 @@ HANDLE g_hMutex = NULL;
 HWND g_hWnd;
 bool g_bDrawing;
 double g_xmin, g_xmax, g_ymin, g_ymax;
+int g_max_iter;
+bool g_bDemoMode;
+CExampleNode *g_demo_list, *g_cur_node;
 
 bool g_bUseMPI = true;
 HANDLE g_hEventA = NULL;
@@ -56,6 +66,9 @@ BEGIN_MESSAGE_MAP(Cpman_visView, CView)
 	ON_WM_ERASEBKGND()
 	ON_WM_MOUSEMOVE()
 	ON_WM_RBUTTONUP()
+	ON_COMMAND(ID_FILE_ENTERPOINT, OnFileEnterpoint)
+	ON_COMMAND(ID_FILE_ENTERDEMOPOINTS, OnFileEnterdemopoints)
+	ON_COMMAND(ID_FILE_STOPDEMO, OnFileStopdemo)
 END_MESSAGE_MAP()
 
 // Cpman_visView construction/destruction
@@ -64,11 +77,15 @@ Cpman_visView::Cpman_visView()
 {
     g_hMutex = CreateMutex(NULL, FALSE, NULL);
     g_bDrawing = false;
+    g_bDemoMode = false;
     m_hThread = NULL;
+    g_demo_list = NULL;
+    g_cur_node = NULL;
     g_xmin = -1;
     g_xmax = 1;
     g_ymin = -1;
     g_ymax = 1;
+    g_max_iter = 100;
     g_hEventA = CreateEvent(NULL, TRUE, FALSE, NULL);
     g_hEventB = CreateEvent(NULL, TRUE, FALSE, NULL);
     g_hEventC = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -90,7 +107,7 @@ Cpman_visView::~Cpman_visView()
     {
 	WaitForSingleObject(m_hThread, INFINITE);
 	CloseHandle(m_hThread);
-	send_xyminmax(0, 0, 0, 0);
+	send_xyminmax(0, 0, 0, 0, 0);
     }
 }
 
@@ -178,17 +195,58 @@ Cpman_visDoc* Cpman_visView::GetDocument() const // non-debug version is inline
 
 // Cpman_visView message handlers
 
+int get_next_demo_data()
+{
+    if (g_cur_node == NULL)
+	g_cur_node = g_demo_list;
+    if (g_cur_node == NULL)
+    {
+	/* error */
+	mpi_send_xyminmax(0, 0, 0, 0, 0);
+	mpi_disconnect();
+	mpi_finalize();
+	return -1;
+    }
+    g_xmin = g_cur_node->xmin;
+    g_xmax = g_cur_node->xmax;
+    g_ymin = g_cur_node->ymin;
+    g_ymax = g_cur_node->ymax;
+    g_max_iter = g_cur_node->max_iter;
+    g_cur_node = g_cur_node->next;
+    return 0;
+}
+
 int work_thread(void *p)
 {
-    send_xyminmax(g_xmin, g_ymin, g_xmax, g_ymax);
-    get_pmandel_data();
+    if (g_bDemoMode)
+    {
+	while (g_bDemoMode)
+	{
+	    if (get_next_demo_data())
+		return -1;
+	    send_xyminmax(g_xmin, g_ymin, g_xmax, g_ymax, g_max_iter);
+	    get_pmandel_data();
+
+	    if (g_bDemoMode)
+	    {
+		Sleep(5000);
+		if (get_next_demo_data())
+		    return -1;
+	    }
+	}
+    }
+    else
+    {
+	send_xyminmax(g_xmin, g_ymin, g_xmax, g_ymax, g_max_iter);
+	get_pmandel_data();
+    }
     g_bDrawing = false;
     return 0;
 }
 
 int mpi_work_thread(void *p)
 {
-    mpi_send_xyminmax(g_xmin, g_ymin, g_xmax, g_ymax);
+    mpi_send_xyminmax(g_xmin, g_ymin, g_xmax, g_ymax, g_max_iter);
     mpi_get_pmandel_data();
     g_bDrawing = false;
     return 0;
@@ -222,13 +280,28 @@ void mpi_thread_fn(void *p)
     if ((g_xmin != g_xmax) && (g_ymin != g_ymax))
     {
 	/*mpi_connect_to_pmandel(g_mpi_port, g_width, g_height);*/
-	mpi_barrier_thread();
+	if (g_bDemoMode)
+	{
+	    if (get_next_demo_data())
+		return;
+	}
+	else
+	    mpi_barrier_thread();
 	while ((g_xmin != g_xmax) && (g_ymin != g_ymax))
 	{
 	    mpi_work_thread(NULL);
-	    mpi_barrier_thread();
+	    if (g_bDemoMode)
+	    {
+		Sleep(5000);
+		if (get_next_demo_data())
+		    return;
+	    }
+	    else
+	    {
+		mpi_barrier_thread();
+	    }
 	}
-	mpi_send_xyminmax(0, 0, 0, 0);
+	mpi_send_xyminmax(0, 0, 0, 0, 0);
 	mpi_disconnect();
     }
     mpi_finalize();
@@ -412,6 +485,7 @@ void Cpman_visView::OnRButtonUp(UINT nFlags, CPoint point)
 	g_xmax = 1;
 	g_ymin = -1;
 	g_ymax = 1;
+	g_max_iter = 100;
 	g_bDrawing = true;
 	if (g_bUseMPI)
 	{
@@ -422,4 +496,64 @@ void Cpman_visView::OnRButtonUp(UINT nFlags, CPoint point)
 	    m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
     }
     CView::OnRButtonUp(nFlags, point);
+}
+
+void Cpman_visView::OnFileEnterpoint()
+{
+    if (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread)))
+    {
+	CBoundsDlg dlg;
+	if (dlg.DoModal() == IDOK)
+	{
+	    if (m_hThread)
+		CloseHandle(m_hThread);
+	    g_xmin = dlg.m_xmin;
+	    g_xmax = dlg.m_xmax;
+	    g_ymin = dlg.m_ymin;
+	    g_ymax = dlg.m_ymax;
+	    g_max_iter = dlg.m_max_iter;
+	    g_bDrawing = true;
+	    if (g_bUseMPI)
+	    {
+		//m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+		mpi_barrier_client();
+	    }
+	    else
+		m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
+	}
+    }
+}
+
+void Cpman_visView::OnFileEnterdemopoints()
+{
+    CDemoPointsDlg dlg;
+    if (dlg.DoModal() == IDOK)
+    {
+	g_demo_list = dlg.m_node_list;
+	g_cur_node = g_demo_list;
+	g_bDemoMode = true;
+	if (!g_bDrawing && (m_hThread || (g_bUseMPI && g_hMPIThread)))
+	{
+	    if (m_hThread)
+		CloseHandle(m_hThread);
+	    g_xmin = g_cur_node->xmin;
+	    g_xmax = g_cur_node->xmax;
+	    g_ymin = g_cur_node->ymin;
+	    g_ymax = g_cur_node->ymax;
+	    g_max_iter = g_cur_node->max_iter;
+	    g_bDrawing = true;
+	    if (g_bUseMPI)
+	    {
+		//m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)mpi_work_thread, NULL, 0, NULL);
+		mpi_barrier_client();
+	    }
+	    else
+		m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)work_thread, NULL, 0, NULL);
+	}
+    }
+}
+
+void Cpman_visView::OnFileStopdemo()
+{
+    g_bDemoMode = false;
 }
