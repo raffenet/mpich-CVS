@@ -84,6 +84,8 @@ $SumConfigStart = "Config status = ";
 $SumConfigEnd   = "\n";
 $SumMakeStart = "Make status = ";
 $SumMakeEnd   = "\n";
+$SumGlobStart  = "Global name check status = ";
+$SumGlobEnd    = "\n";
 $SumInstStart = "Install status = ";
 $SumInstEnd   = "\n";
 $SumTestRunStart = "Test status = ";
@@ -248,10 +250,11 @@ sub RunTest {
     if ( ! (-x "$srcdir/configure") && (-x "./configure") ) {
 	$srcdir = ".";
     }
-    $config_status  = "none";
-    $make_status    = "none";
-    $install_status = "none";
-    $test_status    = "none";
+    $config_status    = "none";
+    $make_status      = "none";
+    $globcheck_status = "none";
+    $install_status   = "none";
+    $test_status      = "none";
     if ($show) {
 	print "Configure: $enable_args $with_args $config_args\n";
 	if ($envset ne "") {
@@ -296,7 +299,7 @@ sub RunTest {
 		    my @pgm = split( /\s+/, 
               "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
 		    print $OUTFD $GlobNameStart;
-		    $rc = &RunProgram( @pgm );
+		    $globcheck_status = &RunProgram( @pgm );
 		    print $OUTFD $GlobNameEnd;
 		}
 
@@ -326,6 +329,9 @@ sub RunTest {
     print $OUTFD $SumMakeStart;
     print $OUTFD $make_status;
     print $OUTFD $SumMakeEnd;
+    print $OUTFD $SumGlobStart;
+    print $OUTFD $globcheck_status;
+    print $OUTFD $SumGlobEnd;
     print $OUTFD $SumInstStart;
     print $OUTFD $install_status;
     print $OUTFD $SumInstEnd;
@@ -622,6 +628,8 @@ sub XMLStyle {
     $SumConfigEnd   = "</STATUS>\n";
     $SumMakeStart  = "<STATUS NAME=\"make\">";
     $SumMakeEnd    = "</STATUS>\n";
+    $SumGlobStart  = "<STATUS NAME=\"globname\">";
+    $SumGlobEnd    = "</STATUS>\n";
     $SumInstStart  = "<STATUS NAME=\"install\">";
     $SumInstEnd    = "</STATUS>\n";
     $SumTestRunStart = "<STATUS NAME=\"test\">";
