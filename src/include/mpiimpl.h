@@ -2009,7 +2009,7 @@ int MPIR_Request_get_error(MPID_Request *);
   for the 'required' argument to 'MPI_Init_thread', except that we define
   an enum for these values.
 
-  Output Parameter:
+  Output Parameters:
 + provided - Provided level of thread support.  May be less than the 
   requested level of support.
 . has_args - Set to true if 'argc_p' and 'argv_p' contain the command
@@ -2138,8 +2138,13 @@ int MPIR_Request_get_error(MPID_Request *);
   will need to use different algorithms and most fatal errors detected by the 
   MPI implementation should abort only the affected process, not all processes.
   @*/
-int MPID_Init( int *argc_p, char ***argv_p, int requested,
+int MPID_Init( int *argc_p, char ***argv_p, int requested, 
 	       int *provided, int *has_args, int *has_env );
+
+/* was: 
+ int MPID_Init( int *argc_p, char ***argv_p, 
+	       int requested, int *provided,
+	       MPID_Comm **parent_comm, int *has_args, int *has_env ); */
 
 /*@
   MPID_Finalize - Perform the device-specific termination of an MPI job
