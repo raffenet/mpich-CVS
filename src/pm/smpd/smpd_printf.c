@@ -270,6 +270,7 @@ void smpd_trim_logfile()
     /* Do nothing until I can figure out why the trim code isn't working */
 }
 
+#if 0
 void smpd_trim_logfile_new()
 {
     static int count = 0;
@@ -517,6 +518,7 @@ void smpd_trim_logfile_old()
 	copy_number++;
     }
 }
+#endif
 
 int smpd_err_printf(char *str, ...)
 {

@@ -838,7 +838,7 @@ int smpd_get_default_hosts()
 #endif
     }
 
-    /* Insert code here to parse a compressed host string */
+    /* FIXME: Insert code here to parse a compressed host string */
     /* For now, just use a space separated list of host names */
 
     host = strtok(hosts, " \t\r\n");
