@@ -482,6 +482,7 @@ int MPIDU_Describe_timer_states()
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPID_BSEND_INIT, "MPID_Bsend_init", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPID_STARTALL, "MPID_Startall", get_random_color_str());
     RLOG_DescribeState(g_pRLOG, MPID_STATE_MPID_WIN_FENCE, "MPID_Win_fence", get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, MPID_STATE_MPID_GET_PROCESSOR_NAME, "MPID_Get_processor_name", get_random_color_str());
 
     /* bsocket functions */
     RLOG_DescribeState(g_pRLOG, MPID_STATE_BACCEPT, "baccept", get_random_color_str());
