@@ -92,7 +92,7 @@ int MPIR_Bcast (
   rank = comm_ptr->rank;
   
   /* If there is only one process, return */
-  if (comm_size == 1) return mpi_errno;
+  if (comm_size == 1) return MPI_SUCCESS;
 
   if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
       is_contig = 1;
@@ -174,7 +174,11 @@ int MPIR_Bcast (
               if (src < 0) src += comm_size;
               mpi_errno = MPIC_Recv(buffer,count,datatype,src,
                                    MPIR_BCAST_TAG,comm,&status);
-              if (mpi_errno) return mpi_errno;
+              if (mpi_errno != MPI_SUCCESS)
+	      {
+		  mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		  return mpi_errno;
+	      }
               break;
           }
           mask <<= 1;
@@ -198,7 +202,11 @@ int MPIR_Bcast (
               if (dst >= comm_size) dst -= comm_size;
               mpi_errno = MPIC_Send (buffer,count,datatype,dst,
                                      MPIR_BCAST_TAG,comm); 
-              if (mpi_errno) return mpi_errno;
+              if (mpi_errno != MPI_SUCCESS)
+	      {
+		  mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		  return mpi_errno;
+	      }
           }
           mask >>= 1;
       }
@@ -257,7 +265,11 @@ int MPIR_Bcast (
                                          relative_rank*scatter_size),
                                         recv_size, MPI_BYTE, src,
                                         MPIR_BCAST_TAG, comm, &status);
-                  if (mpi_errno) return mpi_errno;
+                  if (mpi_errno != MPI_SUCCESS)
+		  {
+		      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		      return mpi_errno;
+		  }
 
                   /* query actual size of data received */
                   NMPI_Get_count(&status, MPI_BYTE, &curr_size);
@@ -286,7 +298,11 @@ int MPIR_Bcast (
                                          scatter_size*(relative_rank+mask)),
                                         send_size, MPI_BYTE, dst,
                                         MPIR_BCAST_TAG, comm);
-                  if (mpi_errno) return mpi_errno;
+                  if (mpi_errno != MPI_SUCCESS)
+		  {
+		      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		      return mpi_errno;
+		  }
                   curr_size -= send_size;
               }
           }
@@ -326,7 +342,11 @@ int MPIR_Bcast (
                                             ((char *)tmp_buf + recv_offset),
                                             scatter_size*mask, MPI_BYTE, dst,
                                             MPIR_BCAST_TAG, comm, &status);
-                  if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+                  if (mpi_errno != MPI_SUCCESS)
+		  {
+		      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		      return mpi_errno;
+		  }
                   NMPI_Get_count(&status, MPI_BYTE, &recv_size);
                   curr_size += recv_size;
               }
@@ -385,7 +405,11 @@ int MPIR_Bcast (
                           /* recv_size was set in the previous
                              receive. that's the amount of data to be
                              sent now. */
-                          if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+                          if (mpi_errno != MPI_SUCCESS)
+			  {
+			      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			      return mpi_errno;
+			  }
                       }
                       /* recv only if this proc. doesn't have data and sender
                          has data */
@@ -400,7 +424,11 @@ int MPIR_Bcast (
                                                 comm, &status); 
                           /* nprocs_completed is also equal to the no. of processes
                              whose data we don't have */
-                          if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+                          if (mpi_errno != MPI_SUCCESS)
+			  {
+			      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			      return mpi_errno;
+			  }
                           NMPI_Get_count(&status, MPI_BYTE, &recv_size);
                           curr_size += recv_size;
                           /* printf("Rank %d, recv from %d, offset %d, size %d\n", rank, dst, offset, recv_size);
@@ -458,7 +486,12 @@ int MPIR_Bcast (
                                 recvcnts[(jnext-root+comm_size)%comm_size],  
                                 MPI_BYTE, left,   
                                 MPIR_BCAST_TAG, comm, MPI_STATUS_IGNORE);
-              if (mpi_errno) break;
+              if (mpi_errno != MPI_SUCCESS)
+	      {
+		  /*break;*/
+		  mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		  return mpi_errno;
+	      }
               j	    = jnext;
               jnext = (comm_size + jnext - 1) % comm_size;
           }
@@ -497,6 +530,7 @@ int MPIR_Bcast_inter (
     Root sends to rank 0 in remote group. Remote group does local
     intracommunicator broadcast.
 */
+    static const char FCNAME[] = "MPIR_Bcast_inter";
     int rank, mpi_errno;
     MPI_Status status;
     MPID_Comm *newcomm_ptr = NULL;
@@ -513,6 +547,10 @@ int MPIR_Bcast_inter (
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         mpi_errno =  MPIC_Send(buffer, count, datatype, 0,
                                MPIR_BCAST_TAG, comm); 
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	}
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
         return mpi_errno;
     }
@@ -524,7 +562,11 @@ int MPIR_Bcast_inter (
         if (rank == 0) {
             mpi_errno = MPIC_Recv(buffer, count, datatype, root,
                                   MPIR_BCAST_TAG, comm, &status);
-            if (mpi_errno) return mpi_errno;
+            if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
         }
         
         /* Get the local intracommunicator */
@@ -536,6 +578,10 @@ int MPIR_Bcast_inter (
         /* now do the usual broadcast on this intracommunicator
            with rank 0 as root. */
         mpi_errno = MPIR_Bcast(buffer, count, datatype, 0, newcomm_ptr);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	}
     }
     
     return mpi_errno;
@@ -661,6 +707,7 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     else
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
     /* ... end of body of routine ... */

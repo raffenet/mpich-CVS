@@ -17,6 +17,10 @@ extern void MPIR_Datatype_iscontig( MPI_Datatype , int * );
    sends/receives by setting the context offset to
    MPID_CONTEXT_INTRA_COLL or MPID_CONTEXT_INTER_COLL. */
 
+#undef FUNCNAME
+#define FUNCNAME MPIC_Send
+#undef FCNAME
+#define FCNAME "MPIC_Send"
 int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm)
 {
@@ -35,17 +39,25 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                           context_id, &request_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	MPID_MPI_PT2PT_FUNC_EXIT_FRONT(MPID_STATE_MPIC_SEND);
 	return mpi_errno;
     }
     if (request_ptr) {
         mpi_errno = MPIC_Wait(request_ptr);
+	if (mpi_errno != MPI_SUCCESS) {
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	}
         MPID_Request_release(request_ptr);
     }
     MPID_MPI_PT2PT_FUNC_EXIT_FRONT(MPID_STATE_MPIC_SEND);
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIC_Recv
+#undef FCNAME
+#define FCNAME "MPIC_Recv"
 int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	     MPI_Comm comm, MPI_Status *status)
 {
@@ -64,6 +76,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
                           context_id, status, &request_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
 	return mpi_errno;
     }
@@ -77,12 +90,20 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	    }
 	    mpi_errno = request_ptr->status.MPI_ERROR;
 	}
+	else
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	}
         MPID_Request_release(request_ptr);
     }
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_RECV);
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIC_Sendrecv
+#undef FCNAME
+#define FCNAME "MPIC_Sendrecv"
 int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   int dest, int sendtag, void *recvbuf, int recvcount,
                   MPI_Datatype recvtype, int source, int recvtag,
@@ -103,6 +124,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                            comm_ptr, context_id, &recv_req_ptr);
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
 	return mpi_errno;
     }
@@ -110,6 +132,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                            comm_ptr, context_id, &send_req_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPIC_SENDRECV);
 	return mpi_errno;
     }
@@ -117,12 +140,14 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     mpi_errno = MPIC_Wait(send_req_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	goto fn_exit;
     }
     
     mpi_errno = MPIC_Wait(recv_req_ptr);
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	goto fn_exit;
     }
     if (status != MPI_STATUS_IGNORE)
@@ -137,6 +162,10 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIR_Localcopy
+#undef FCNAME
+#define FCNAME "MPIR_Localcopy"
 int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype)
 {
@@ -158,11 +187,18 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                     recvbuf, recvcount, recvtype,
                                     rank, MPIR_LOCALCOPY_TAG,
                                     MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+	if (mpi_errno != MPI_SUCCESS) {
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	}
     }
     return mpi_errno;
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIC_Isend
+#undef FCNAME
+#define FCNAME "MPIC_Isend"
 int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm, MPI_Request *request)
 {
@@ -181,6 +217,7 @@ int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                           context_id, &request_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_ISEND);
 	return mpi_errno;
     }
@@ -192,6 +229,10 @@ int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIC_Irecv
+#undef FCNAME
+#define FCNAME "MPIC_Irecv"
 int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
                source, int tag, MPI_Comm comm, MPI_Request *request)
 {
@@ -210,6 +251,7 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
                           context_id, &request_ptr); 
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPIC_IRECV);
 	return mpi_errno;
     }
@@ -220,6 +262,10 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIC_Wait
+#undef FCNAME
+#define FCNAME "MPIC_Wait"
 int MPIC_Wait(MPID_Request * request_ptr)
 {
     MPID_MPI_STATE_DECL(MPID_STATE_MPIC_WAIT);
@@ -236,6 +282,7 @@ int MPIC_Wait(MPID_Request * request_ptr)
 	    mpi_errno = MPID_Progress_wait();
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_WAIT);
 		return mpi_errno;
 	    }
