@@ -19,8 +19,12 @@ all-local:
 	fi
 all-preamble:
 	@echo "Beginning make"
+# Add any final extras
 all-postamble:
+	if [ "@BUILD_TVDLL@" ] ; then \
+	( cd src/mpi/debugger && $(MAKE) ./libtvmpich.so ) ; fi
 	@echo "Make completed"
+
 distclean-local:
 	-@rm -f lib/lib${MPILIBNAME}.a lib/pkglist lib/pkglist.new
 	-@rm -f src/include/${MPILIBNAME}conf.h
@@ -73,6 +77,11 @@ optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
 INSTALL_SUBDIRS = src/env src/pm/@pm_name@ @bindings_dirs@
+
+install-local:
+	-if [ "@BUILD_TVDLL@" ] ; then \
+	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.so \
+			${libdir}/libtvmpich.so ; fi
 
 #install_DOC = 
 #install_HTML = 
