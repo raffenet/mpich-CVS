@@ -142,10 +142,15 @@ sub CreateErrMsgMapping {
 	    if ($namehasformat != $replhasformat) {
 		print STDERR "Warning: format control usage in $name and $repl do not agree in errnames.txt\n";
 	    }
-	    if (!defined($longnames{"\"$name\""}))
+#	    if (!defined($longnames{"\"$name\""}))
+#	    {
+#		$longnames{"\"$name\""} = $repl;
+#		$longnamesDefined{"\"$name\""} = "$sourcefile:$linecount";
+#	    }
+	    if (!defined($longnames{$name}))
 	    {
-		$longnames{"\"$name\""} = $repl;
-		$longnamesDefined{"\"$name\""} = "$sourcefile:$linecount";
+		$longnames{$name} = $repl;
+		$longnamesDefined{$name} = "$sourcefile:$linecount";
 	    }
 	    else
 	    {
@@ -175,10 +180,15 @@ sub CreateErrMsgMapping {
 		print STDERR "Warning: generic message $shortmsg in baseerrnames.txt contains format control\n";
 	    }
 
-	    $generic_msgs{"\"$shortmsg\""}++;
-	    $generic_loc{"\"$shortmsg\""} = ":baseerrnames.txt";
+	    # Can we avoid using the quotes?  We'd like to because
+	    # they change the sort order
+#	    $generic_msgs{"\"$shortmsg\""}++;
+#	    $generic_loc{"\"$shortmsg\""} = ":baseerrnames.txt";
+	    $generic_msgs{$shortmsg}++;
+	    $generic_loc{$shortmsg} = ":baseerrnames.txt";
 
-	    $class_msgs[$num] = "\"$shortmsg\"";
+#	    $class_msgs[$num] = "\"$shortmsg\"";
+	    $class_msgs[$num] = "$shortmsg";
 	}
     }
     close (FD);
@@ -199,7 +209,7 @@ sub CreateErrMsgMapping {
 	if (!defined($longnames{$key}))
 	{
 	    $seenfile = $generic_loc{$key};
-	    print STDERR "Shortname $key has no expansion (first seen in file $seenfile)\n";
+	    print STDERR "Shortname $key for generic messages has no expansion (first seen in file $seenfile)\n";
 	    next;
 	}
 	else {
@@ -211,7 +221,8 @@ sub CreateErrMsgMapping {
 	$longvalue = s/(?<!\\)\"/\\\"/;
 	$longvalue = "\"" . $longnames{$key} . "\"";
 
-	print $OUTFD "static const char short_gen$num\[\] = $key;\n";
+	print $OUTFD "static const char short_gen$num\[\] = \"$key\";\n";
+#	print $OUTFD "static const char short_gen$num\[\] = $key;\n";
 	print $OUTFD "static const char long_gen$num\[\]  = $longvalue;\n";
 	# Remember the number assigned to this short string.
 	$short_to_num{$key} = $num;
@@ -242,7 +253,7 @@ sub CreateErrMsgMapping {
 
 	if (!defined($longnames{$key}))
 	{
-	    print STDERR "Shortname $key has no expansion (first seen in file $specific_loc{$key})\n";
+	    print STDERR "Shortname $key for specific messages has no expansion (first seen in file $specific_loc{$key})\n";
 	    next;
 	}
 	else {
@@ -254,7 +265,8 @@ sub CreateErrMsgMapping {
 	$longvalue = s/(?<!\\)\"/\\\"/;
 	$longvalue = "\"" . $longnames{$key} . "\"";
 
-	print $OUTFD "static const char short_spc$num\[\] = $key;\n";
+	print $OUTFD "static const char short_spc$num\[\] = \"$key\";\n";
+#	print $OUTFD "static const char short_spc$num\[\] = $key;\n";
 	print $OUTFD "static const char long_spc$num\[\]  = $longvalue;\n";
 	$num ++;
     }
@@ -518,11 +530,19 @@ sub ProcessFile
 		&AddTestCall( @args )
 	    }
 
-	    $generic_msgs{$generic_msg}++;
-	    $generic_loc{$generic_msg} .= ":$filename";
+	    if ($generic_msg =~ /^\"(.*)\"$/) {
+		$generic_msg = $1;
+		$generic_msgs{$generic_msg}++;
+		$generic_loc{$generic_msg} .= ":$filename";
+	    }
+	    else {
+		$generic_msgs{$generic_msg}++;
+		$generic_loc{$generic_msg} .= ":$filename";
+	    }
 
-	    if ($specific_msg =~ /^\"\*\*/)
+	    if ($specific_msg =~ /^\"(\*\*.*)\"/)
 	    {
+		$specific_msg = $1;
 		$specific_msgs{$specific_msg}++;
 		$specific_loc{$specific_msg} .= ":$filename";
 	    }
