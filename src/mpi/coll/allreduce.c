@@ -906,11 +906,11 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
                                        op, comm_ptr); 
         else {
             /* intercommunicator */
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
+/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-/*            mpi_errno = MPIR_Allreduce_inter(sendbuf, recvbuf, count,
-	      datatype, op, comm_ptr);       */
+					      "**intercommcoll %s", FCNAME );*/
+            mpi_errno = MPIR_Allreduce_inter(sendbuf, recvbuf, count,
+					     datatype, op, comm_ptr);       
         }
     }
     if (mpi_errno == MPI_SUCCESS)
