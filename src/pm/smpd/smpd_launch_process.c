@@ -916,6 +916,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_dbg_printf("searching for '%s' in '%s'\n", temp_exe, process->path);
 	if (smpd_search_path(process->path, temp_exe, SMPD_MAX_EXE_LENGTH, exe_data))
 	{
+	    smpd_dbg_printf("found: '%s'\n", temp_exe);
 	    if (strstr(exe_data, " "))
 	    {
 		smpd_err_printf("Currently unable to handle paths with spaces in them.\n");
