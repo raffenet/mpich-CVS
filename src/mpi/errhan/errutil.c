@@ -74,7 +74,7 @@ static MPID_Thread_lock_t error_ring_mutex;
 #endif
 #endif
 
-int MPIR_Err_print_stack_flag = TRUE;
+int MPIR_Err_print_stack_flag = FALSE;
 static int MPIR_Err_abort_on_error = FALSE;
 
 void MPIR_Err_init( void )
@@ -150,7 +150,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	    comm_ptr = MPIR_Process.comm_world;
 	}
     }
-    
+
     if (MPIR_Err_is_fatal(errcode) ||
 	comm_ptr == NULL || comm_ptr->errhandler == NULL || comm_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL)
     {
