@@ -626,10 +626,10 @@ if ($build_io) {
 %class_extra_fnc = ( 'st'        => 'Status_methods',
                      'except'    => 'Exception_methods',
 		     'comm'      => 'Comm_methods',
-		     'intercomm' => 'Intercomm_methods',
-		     'intracomm' => 'Intracomm_methods',
-		     'graphcomm' => 'Graphcomm_methods',
-		     'cartcomm'  => 'Cartcomm_methods',
+		     'inter' => 'Intercomm_methods',
+		     'intra' => 'Intracomm_methods',
+		     'graph' => 'Graphcomm_methods',
+		     'cart'  => 'Cartcomm_methods',
 		     'dtype'     => 'Datatype_methods',
 		     'op'        => 'Op_methods',
 		     'file'      => 'File_methods',
@@ -1696,12 +1696,12 @@ extern Datatype TWOINTEGER;
     }
     # MPI Empty argvs
     if ($giveValue) {
-	print $OUTFD "char ** const ARGV_NULL = 0;\n";
-	print $OUTFD "char *** const ARGVS_NULL = 0;\n";
+	print $OUTFD "const char ** const ARGV_NULL = 0;\n";
+	print $OUTFD "const char *** const ARGVS_NULL = 0;\n";
     }
     else {
-	print $OUTFD "extern char ** const ARGV_NULL;\n";
-	print $OUTFD "extern char *** const ARGVS_NULL;\n";
+	print $OUTFD "extern const char ** const ARGV_NULL;\n";
+	print $OUTFD "extern const char *** const ARGVS_NULL;\n";
     }
 
     # Predefined other
@@ -2104,6 +2104,11 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
     &PrintWrapper( $OUTFD, "void", "Unpublish_name", 
                     "const char *sn, const Info &info, const char *pn",
                     "", "", "(char *)sn, (MPI_Info)info, (char *)pn", "");
+
+    &PrintWrapper( $OUTFD, "Intercomm", "Comm::Get_parent", "void", 
+                   "MPI::Intercomm *v = new Intercomm;MPI_Comm vv;", 
+                   "Comm_get_parent",
+                   "&vv", "(*v = (Intercomm)vv, *v)" );
 
 
     print $OUTFD "} // namespace MPI\n";
@@ -2512,6 +2517,52 @@ sub Intercomm_methods {
 sub Intracomm_methods {
     my $OUTFD = $_[0];
     &Clone_method( $OUTFD, "Intracomm" );
+
+    print $OUTFD "\
+Intercomm Spawn(const char* command, const char* argv[], int maxprocs, const MPI::Info& info, int root) const {
+    Intercomm *ic = new Intercomm;
+    MPIX_CALL( MPI_Comm_spawn( (char *)command, (char **)argv, 
+                maxprocs, info.the_real_info, root, the_real_comm, 
+                &(ic->the_real_comm), MPI_ERRCODES_IGNORE ) );
+    return *ic;
+}
+Intercomm Spawn(const char* command, const char* argv[], int maxprocs, const MPI::Info& info, int root, int array_of_errcodes[]) const {
+    Intercomm *ic = new Intercomm;
+    MPIX_CALL( MPI_Comm_spawn( (char *)command, (char **)argv, 
+                maxprocs, info.the_real_info, root, the_real_comm, 
+                &(ic->the_real_comm), array_of_errcodes ) );
+    return *ic;
+}
+Intercomm Spawn_multiple(int count, const char* array_of_commands[], const char** array_of_argv[], const int array_of_maxprocs[], const MPI::Info array_of_info[], int root) {
+    Intercomm *ic = new Intercomm;
+    MPI_Info  *li = new MPI_Info [count];
+    int i;
+    for (i=0; i<count; i++) {
+        li[i] = array_of_info[i].the_real_info;
+    }
+    MPIX_CALL( MPI_Comm_spawn_multiple( count, (char **)array_of_commands, 
+          (char ***)array_of_argv, (int *)array_of_maxprocs, 
+                li, root, the_real_comm, &(ic->the_real_comm), 
+                MPI_ERRCODES_IGNORE ) );
+    delete [] li;
+    return *ic;
+}
+Intercomm Spawn_multiple(int count, const char* array_of_commands[], const char** array_of_argv[], const int array_of_maxprocs[], const MPI::Info array_of_info[], int root, int array_of_errcodes[]) {
+    Intercomm *ic = new Intercomm;
+    MPI_Info  *li = new MPI_Info [count];
+    int i;
+    for (i=0; i<count; i++) {
+        li[i] = array_of_info[i].the_real_info;
+    }
+    MPIX_CALL( MPI_Comm_spawn_multiple( count, (char **)array_of_commands, 
+          (char ***)array_of_argv, (int *)array_of_maxprocs, 
+                li, root, the_real_comm, &(ic->the_real_comm), 
+                array_of_errcodes ) );
+    delete [] li;
+    return *ic;
+}
+
+";    
 }
 
 sub Op_methods {
