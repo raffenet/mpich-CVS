@@ -219,7 +219,10 @@ def mpd_get_inet_listen_socket(host,port):
 
 def mpd_get_inet_socket_and_connect(host,port):
     tempSocket = socket(AF_INET,SOCK_STREAM)
-    tempSocket.connect((host,port))  # note double parens
+    try:
+        tempSocket.connect((host,port))  # note double parens
+    except:
+        mpd_raise('connect failed to host %s  port %d')
     return tempSocket
 
 def mpd_get_ranks_in_binary_tree(myRank,nprocs):
