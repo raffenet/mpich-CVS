@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /***********************************************************************
  * This is a DRAFT
  * All parts of this document are subject to (and expected to) change
@@ -111,13 +112,23 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
   object for which MPI opaque types the data is valid.  These are defined
   as bits to allow future expansion to the case where an object is value for
   multiple types (for example, we may want a universal error handler for 
-  errors return).
+  errors return).  This is also used to indicate the type of MPI object a 
+  MPI handle represents.
 
   Module:
   Attribute-DS
   E*/
 typedef enum { 
-  MPID_COMM=1, MPID_WIN=2, MPID_FILE=4, MPID_DATATYPE=8 } MPID_Object_kind;
+  MPID_COMM       = 0x0, 
+  MPID_GROUP      = 0x1,
+  MPID_DATATYPE   = 0x2,
+  MPID_FILE       = 0x3,
+  MPID_ERRHANDLER = 0x4,
+  MPID_OP         = 0x5,
+  MPID_INFO       = 0x6,
+  MPID_WIN        = 0x7,
+  MPID_KEYVAL     = 0x8 
+} MPID_Object_kind;
 
 /*E
   MPID_Copy_function - MPID Structure to hold an attribute copy function
@@ -194,23 +205,6 @@ typedef union {
 
   Module:
   Attribute-DS
-
-  Question:
-  Because this structure contains pointers to user-functions, there is always
-  the danger that a user-error that overwrites the memory locations storing 
-  the function pointers.  Should there be sentinals around either the entire
-  keyval entry or around each function pointer that would be tested before 
-  invoking the function?  
-  For example, we could define
-.vb
-  typedef struct { 
-      unsigned long sentinal1;
-      void (*f)(void);           // pointers to functions are different from
-                                 // pointers to nonfunctions 
-      unsigned long sentinal2;
-  } MPID_Protected_function_ptr;
-.ve
-  and compute the sentinals based on the value of the function pointer.
 
   S*/
 typedef struct {
@@ -619,8 +613,8 @@ typedef struct {
  'MPI_Comm_spawn' or 'MPI_Comm_spawn_multiple' or added by 'MPI_Comm_attach' 
  or  
  'MPI_Comm_connect'
- are numbered greater than 'size - 1' (on the calling process) (See the 
- discussion of LocalPID values).
+ are numbered greater than 'size - 1' (on the calling process). See the 
+ discussion of LocalPID values.
 
  Note that when dynamic process creation is used, the pids are `not` unique
  across the universe of connected MPI processes.  This is ok, as long as
@@ -640,8 +634,6 @@ typedef struct {
  Module:
  Group-DS
 
- Questions:
- Do we want a rank of this process in the group (if any)?
  S*/
 typedef struct {
     int          id;
@@ -725,28 +717,23 @@ typedef struct {
   we either need the 'local_group' or we need a virtual connection table
   corresponding to the 'local_group' (we may want this anyway to simplify
   the implementation of the intercommunicator collective routines).
+
+  The pointer to the structure containing pointers to the collective 
+  routines allows an implementation to replace each routine on a 
+  routine-by-routine basis.  By default, this pointer is null, as are the 
+  pointers within the structure.  If either pointer is null, the implementation
+  uses the generic provided implementation.  This choice, rather than
+  initializing the table with pointers to all of the collective routines,
+  is made to reduce the space used in the communicators and to eliminate the
+  need to include the implementation of all collective routines in all MPI 
+  executables, even if the routines are not used.
+
   
   Module:
   Communicator-DS
 
+
   Question:
-  Do we want to have the collective operations pointer here?
-  Do we want to optimize for the common case of "use the standard
-  routines"?  We could do this by having a pointer to a table (with its
-  own reference count so that we can do a lazy copy), and in the null-pointer
-  case, we use the default routines.  The advantage of this, besides the
-  reduction in space used by communicators, is that a small MPI application
-  need not load all of the collective routines.
-
-  Do we want to make the context id available to other tools?  For example,
-  having a global context id makes message matching for tools like Jumpshot 
-  `much` easier.  In fact, the ADI could provide a function to provide a 
-  unique context id, which most implementations would implement directly from 
-  the given id.  Note that this is a unique, not a globally unique, id, since 
-  the value needs only be unique relative to the processes that can share in 
-  communication.  In other words, only the tuple (source/destination, 
-  context_id) must identify a unique communicator at each MPI process.
-
   For fault tolerance, do we want to have a standard field for communicator 
   health?  For example, ok, failure detected, all (live) members of failed 
   communicator have acked.
@@ -765,12 +752,13 @@ typedef struct {
 				    same for intra communicators */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+    struct MPID_Collops_struct  *coll_fns;    /* Pointer to a table of 
+						 functions implementing the 
+						 collective routines */
   /* other, device-specific information */
-    int           is_singlemethod; /* An example, device-specific field,
-				      this is used in a multi-method
-				      device to indicate that all processes
-				      in this communicator belong to the
-				      same method */
+#ifdef MPID_DEV_COMM_DECL
+    MPID_DEV_COMM_DECL
+#endif
 } MPID_Comm;
 
 /*S
@@ -790,18 +778,19 @@ typedef struct {
   These correspond to the values in 'length', 'start_address', and 
   'disp_unit'.
 
+  The communicator in the window is the same communicator that the user
+  provided to 'MPI_Win_create' (not a dup).  However, each intracommunicator
+  has a special context id that may be used if MPI communication is used 
+  by the implementation to implement the RMA operations.
+
+  There is no separate window group; the group of the communicator should be
+  used.
+
   Question:
-  Should a win be defined after 'MPID_Segment' in case the device wants to 
+  Should a 'MPID_Win' be defined after 'MPID_Segment' in case the device 
+  wants to 
   store a queue of pending put/get operations, described with 'MPID_Segment'
   (or 'MPID_Request')s?
-   
-  What is the communicator of the window?  Is this the same communicator passed
-  to 'MPI_Win_create'?  Is it a (shallow) copy; that is, a dup without 
-  carrying the (user) attributes?
-
-  Should there be a separate 'MPID_Group', or will we use the group of 
-  the communicator?  Since extracting the group from a window is likely to
-  be a rare operation, we should extract the group from the communicator.
 
   S*/
 typedef struct {
@@ -812,7 +801,7 @@ typedef struct {
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_List    attributes;
     MPID_Comm    *comm;         /* communicator of window */
-    char         name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
+    char         name[MPI_MAX_OBJECT_NAME];  
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     /* other, device-specific information 
        This is likely to include a list of pending RMA operations
@@ -935,23 +924,37 @@ typedef struct {
     /* other, device-specific information */
 } MPID_Segment;
 
+/*E
+  MPID_Request_kind - Kinds of MPI Requests
+
+  Module:
+  Request-DS
+
+  E*/
+typedef { MPID_REQ_SEND, MPID_REQ_RECV, MPID_REQ_PERSISTENT_SEND, 
+	      MPID_REQ_PERSISTENT_RECV, MPID_REQ_USER } MPID_Request_kind;
+
 /*S
   MPID_Request - Description of the Request data structure
 
   Module:
   Request-DS
 
-  Question:
-  Do we need an 'MPID_Datatype *' to hold the datatype in the event of a 
-  nonblocking (and not yet completed) operation involving a complex datatype,
-  or do we need a pointer to an 'MPID_Buffer'?  Or is it device-specific?
-
-  Does this need an 'id' so that 'MPI_Request_c2f' can be implemented easily?
-  How about a 'ref_count'?
+  Notes:
+  If it is necessary to remember the MPI datatype, this information is 
+  saved within the 'segment', not as part of a separate 'MPID_Datatype' 
+  entry.
+  
   S*/
 typedef struct {
-    volatile int ready;   /* Set to true when the request may be used */
-    volatile int complete; /* Set to true when the request is completed */
+    int          id;      /* Value of MPI_Request for this structure */
+    volatile int ref_count;
+    volatile int complete; /* Set to zero when the request is completed */
+    MPID_Request_kind kind; /* Kind of request */
+    /* The various types of requests may define subclasses for each 
+       kind.  In particular, the user and persistent requests need
+       special information */
+    MPID_Segment segment;
     /* other, device-specific information */
 } MPID_Request;
 
@@ -1056,11 +1059,11 @@ typedef struct {
   Module:
   Collective-DS
   E*/
-typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4, 
-	       MPID_LAND_OP=5, MPID_BAND_OP=6, MPID_LOR_OP=7, MPID_BOR_OP=8,
-	       MPID_LXOR_OP=9, MPID_BXOR_OP=10, MPID_MAXLOC_OP=11, 
-               MPID_MINLOC_OP=12, MPID_REPLACE_OP=13, 
-               MPID_USER_COMMUTE_OP=32, MPID_USER_OP=33 }
+typedef enum { MPID_OP_MAX=1, MPID_OP_MIN=2, MPID_OP_SUM=3, MPID_OP_PROD=4, 
+	       MPID_OP_LAND=5, MPID_OP_BAND=6, MPID_OP_LOR=7, MPID_OP_BOR=8,
+	       MPID_OP_LXOR=9, MPID_OP_BXOR=10, MPID_OP_MAXLOC=11, 
+               MPID_OP_MINLOC=12, MPID_OP_REPLACE=13, 
+               MPID_OP_USER_NONCOMMUTE=32, MPID_OP_USER=33 }
   MPID_Op_kind;
 
 /*S
@@ -1109,8 +1112,9 @@ typedef union {
   MPID_Op - MPI_Op structure
 
   Notes:
-  All of the predefined functions are cummutative.  Only user functions may 
-  be noncummutative, so that property is included in the 'MPID_Op_kind'.
+  All of the predefined functions are commutative.  Only user functions may 
+  be noncummutative, so there are two separate op types for commutative and
+  non-commutative user-defined operations.
 
   Operations do not require reference counts because there are no nonblocking
   operations that accept user-defined operations.  Thus, there is no way that
@@ -1133,19 +1137,12 @@ typedef struct {
   Constants - Description of constants defined by the device.
 
   The thread levels are 'define'd rather than enumerated so that they 
-  can be used in preprocessor tests.
-
-  Question: 
-  Do we want enumerated values as well?  Why not use the MPI values (MPI
-  instead of MPID)?
+  can be used in preprocessor tests.  These are defined within the 'mpi.h'
+  file.
 
   Module:
   Environment-DS
   D*/
-#define MPID_THREAD_SINGLE     0
-#define MPID_THREAD_FUNNELLED  1
-#define MPID_THREAD_SERIALIZED 2
-#define MPID_THREAD_MULTIPLE   3
 
 /*D
   MPID_MAX_THREAD_LEVEL - Indicates the maximum level of thread

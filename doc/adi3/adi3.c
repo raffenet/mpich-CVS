@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 #include "adi3.h"
 
 /***********************************************************************
@@ -70,7 +71,8 @@
 /*TDSOverview.tex
   
   MPI has a number of data structures, most of which are represented by 
-  an opaque handle in an MPI program.  In MPID, these handles are represented
+  an opaque handle in an MPI program.  In the MPICH implementation of MPI, 
+  these handles are represented
   as integers; this makes implementation of the C/Fortran handle transfer 
   calls (part of MPI-2) easy.  
  
@@ -370,7 +372,8 @@ int MPID_Datatype_commit( MPID_Datatype *datatype )
   MPICH-G2 uses a clever approach that makes use of the vendor MPI wherever
   possible, and this cannot require any particular format.
 
-  Note that XDR isn''t really an option, because it doesn''t handle all of the
+  Note that using XDR by itself isn''t really an option, because it doesn''t 
+  handle all of the 
   C datatypes (e.g., 'long double') or Fortran (e.g., 'LOGICAL'), though we
   could use XDR with some supplementary types (e.g., encoding 'LOGICAL' as
   an integer).
@@ -573,10 +576,9 @@ MPID_Comm *MPID_Comm_create( MPID_Comm *old_comm,
   used in MPICH-1).  Freeing a communicator returns the context id to the 
   shared pool.
 
-  Question:
-  Should there be a way to request more than one context id, to allow a 
-  communicator to cache a few contexts in order to improve the performance
-  of 'MPI_Comm_dup'?
+  Rather than provide a way to return multiple context values, this routine 
+  should be used to return a single basic value that can be multiplied by
+  a power of two in order to provide a cluster of consequtive values.
 
   Module:
   Communicator
@@ -662,8 +664,8 @@ void MPID_Comm_free( MPID_Comm *comm )
   This routine allows the device to find out when an attribute value changes.
   This can be used by a device that defines its own keyvals (see 
   'MPID_Init') to allow the MPI user to communicate preferences to 
-  the device.  This has already been used in MPICH-G to pass quality-of-service
-  information to the device.
+  the device.  This has already been used in MPICH-G2 to pass 
+  quality-of-service information to the device.
 
   The language value is necessary because Fortran 77 attributes are integers,
   while C, C++, and Fortran 90 attributes are pointers (addresses).  These
@@ -672,8 +674,9 @@ void MPID_Comm_free( MPID_Comm *comm )
   has its own binding (the Fortran 90 one is 'MPI_Comm_attr_set'; the 
   Fortran 77 one is 'MPI_Attr_set').
 
-  By default, this is '#define' as empty.  A device that wishes to use 
-  this function should '#undef' it in the device include file ('mpidev.h').
+  By default, this is '#define'd as empty in 'mpiimpl.h'.  A device that 
+  wishes to use 
+  this function should '#undef' it in the device include file ('mpidevpost.h').
 
   Module:
   Attribute
@@ -793,7 +796,7 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
  * MPID_Waitsome will be presented with all kinds of requests.
  */
 
-/*@
+/* @
   MPID_Request_recv_FOA - Find or allocate a request matching the conditions 
   for receive operations
 
@@ -841,13 +844,13 @@ void MPID_Comm_thread_unlock( MPID_Comm *comm )
   Do we really need this routine?  If we have 'MPID_Irecv', is this 
   needed at all?  Is it a routine that is used to implement 'MPID_Irecv', 
   using only the 'MPID_CORE' routines?
-  @*/
+  @ */
 MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm, 
 				     int *found )
 {
 }
 
-/*@
+/* @
   MPID_Request_send_FOA - Find or allocate a request matching the conditions 
   for send operations
 
@@ -901,7 +904,7 @@ MPID_Request *MPID_Request_recv_FOA( int tag, int rank, MPID_Comm *comm,
   so would help isolate the impact of communication on one communicator with
   another.
 
-  @*/
+  @ */
 MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm, 
 				     int *found )
 {
@@ -914,7 +917,8 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   Input Parameters:
 + tag - Tag to match (or 'MPI_ANY_TAG')
 . rank - rank to match (or 'MPI_ANY_SOURCE')
-- comm - communicator to match.
+. comm - communicator to match.
+- context_id - context id of communicator to match
 
   Output Parameter:
 . status - 'MPI_Status' set as defined by 'MPI_Iprobe' (only when return 
@@ -930,7 +934,13 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   MPI receive operation only if no other thread attempts to receive the same
   message.  
   (See the 
-  discussion of probe in Section 8.7.2 Clarifications of the MPI-2 standard.)
+  discussion of probe in Section 8.7.2 (Clarifications) of the MPI-2 standard.)
+
+  Providing the 'context_id' is necessary at this level to support the 
+  way in which the MPICH implementation uses context ids in the implementation
+  of other operations.  The communicator is present to allow the device 
+  to use message-queues attached to particular communicators or connections
+  between processes.
 
   Module:
   Request
@@ -948,7 +958,8 @@ int MPID_Request_iprobe( int tag, int rank, MPID_Comm *comm,
   Input Parameters:
 + tag - Tag to match (or 'MPI_ANY_TAG')
 . rank - rank to match (or 'MPI_ANY_SOURCE')
-- comm - communicator to match.
+. comm - communicator to match.
+- context_id - context id of communicator to match
 
   Output Parameter:
 . status - 'MPI_Status' set as defined by 'MPI_Iprobe' (only when return 
@@ -963,6 +974,16 @@ int MPID_Request_iprobe( int tag, int rank, MPID_Comm *comm,
   (See the 
   discussion of probe in Section 8.7.2 Clarifications of the MPI-2 standard.)
 
+  Providing the 'context_id' is necessary at this level to support the 
+  way in which the MPICH implementation uses context ids in the implementation
+  of other operations.  The communicator is present to allow the device 
+  to use message-queues attached to particular communicators or connections
+  between processes.
+
+  Question:
+  Should this have an error return in case a failure on the communicator
+  is detected?
+
   Module:
   Request
 
@@ -973,10 +994,10 @@ void MPID_Request_probe( int tag, int rank, MPID_Comm *comm,
 }
 
 /*@
-  MPID_Request_cancel - Cancel the indicated request
+  MPID_Request_cancel_send - Cancel the indicated send request
 
   Input Parameter:
-. request - Request to cancel
+. request - Send request to cancel
 
   Notes:
   Cancel is a tricky operation, particularly for sends.  Read the
@@ -990,11 +1011,11 @@ void MPID_Request_probe( int tag, int rank, MPID_Comm *comm,
   Question:
   What MPID calls should be used to perform the wait or test mentioned above?
   @*/
-void MPID_Request_cancel( MPID_Request *request )
+void MPID_Request_cancel_send( MPID_Request *request )
 {
 }
 
-/*@
+/* @
   MPID_Request_ready - Mark a request as ready for use
 
   Input Parameter:
@@ -1025,12 +1046,12 @@ void MPID_Request_cancel( MPID_Request *request )
 
   Module:
   Request
-  @*/
+  @ */
 void MPID_Request_ready( MPID_Request *request )
 {
 }
 
-/*@
+/* @
   MPID_Request_free - Free a request 
 
   Input Parameter:
@@ -1041,7 +1062,7 @@ void MPID_Request_ready( MPID_Request *request )
 
   Module:
   Request
-@*/
+@ */
 void MPID_Request_free( MPID_Request *request )
 {
 }
@@ -1075,6 +1096,10 @@ void MPID_Request_free( MPID_Request *request )
   good form of 'malloc' than collective shared-memory allocators such as
   the 'shmalloc' found on SGI systems.
 
+  Implementations of this routine may wish to use 'MPID_Memory_register'.  
+  However, this routine has slighly different requirements, so a separate
+  entry point is provided.
+
   Module:
   Win
   @*/
@@ -1102,26 +1127,56 @@ int MPID_Mem_free( void *ptr )
 {
 }
 
+/*@
+  MPID_Mem_was_alloced - Return true if this memory was allocated with 
+  'MPID_Mem_alloc'
+
+  Input Parameters:
++ ptr  - Address of memory
+- size - Size of reqion in bytes.
+
+  Return value:
+  True if the memory was allocated with 'MPID_Mem_alloc', false otherwise.
+
+  Notes:
+  This routine may be needed by 'MPI_Win_create' to ensure that the memory 
+  for passive target RMA operations was allocated with 'MPI_Mem_alloc'.
+  Module:
+  Win
+  @*/
+int MPID_Mem_free( void *ptr )
+{
+}
+
 /*
  * Section 2: Communication
  */
 
 /*TCMOverview.tex
  *
- * General Notes: Communication operations are non-blocking, with a completion
- * flag.  In some cases, the flag may be specified as 'NULL'; where this is
- * true, completion must be ensured by some other test.
+ * Communication operations are non-blocking, with a completion
+ * counter.  In some cases, the address of the counter may be specified as 
+ * 'NULL'; where this is
+ * true, completion must be ensured by some other test.  Counters are used
+ * instead of boolean flags to provide a way to handle operations that 
+ * involve multiple (internal) steps.
  *
  * Flow control is the responsibility of the device; these routines are
  * non-blocking, allowing the device to queue communication for
  * later completion.
  * 
- * Because the communication/data transfer routines ('MPID_Put_contig', 
- * 'MPID_Get_contig', and 'MPID_Rhcv') are nonblocking, the buffers 
+ * Because the communication/data transfer routines (e.g., 'MPID_Put_contig', 
+ * 'MPID_Get_contig', and 'MPID_Isend') are nonblocking, the buffers 
  * containing the data to 
  * be transfered must not be modified until the operation has (locally) 
- * completed (as marked by the appropriate flag).
+ * completed (as marked by the appropriate counter).
  *
+ * Because it may be necessary to update the reference count on the MPI 
+ * objects, there are few parameters that may be specified as 'const'.
+ *
+ T*/
+
+/* old text -
  * I am unconvinced that we want to define 'MPID_Isend', 'MPID_Irecv', etc.,
  * as part of the ADI, because of the complexities in handling general 
  * datatypes.  Further, this doesn't offer much of an abstraction, since an 
@@ -1129,7 +1184,7 @@ int MPID_Mem_free( void *ptr )
  * of the routine.  We may instead want to define either some routines for
  * simpler datatypes (e.g., contiguous, strided, or Unix-style iovec blocks), 
  * or enhance or change the stream interface.
- T*/
+ */
 
 /*@
   MPID_Put_contig - Copy local memory to a remote process
@@ -1263,9 +1318,9 @@ int MPID_Flags_waitall( int count, int *(flag_ptrs[]) )
   Module:
   Communication
   @*/
-int MPID_Putsametype( const void *origin_buf, int n, MPID_Datatype *dtype,
-		      MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
-		      volatile int *local_flag, MPI_Aint target_flag )
+int MPID_Put_sametype( const void *origin_buf, int n, MPID_Datatype *dtype,
+		       MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
+		       volatile int *local_flag, MPI_Aint target_flag )
 {}
 
 /* @
@@ -1398,9 +1453,9 @@ int MPID_Get_contig( void * origin_buf, int n,
   Module:
   Communication
   @*/
-int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
-		      MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
-		      volatile int *local_flag, MPI_Aint target_flag )
+int MPID_Get_sametype( void *origin_buf, int n, MPID_Datatype *dtype,
+		       MPI_Aint target_offset, int target_rank, MPID_Comm *comm,
+		       volatile int *local_flag, MPI_Aint target_flag )
 {}
 
 /*@
@@ -1554,18 +1609,15 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
   Notes:
   The only difference between this and 'MPI_Isend' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
-  have been made, and the MPI opaque objects have been replaced by
-  MPID objects.
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id is provided in addition to the communicator.
 
   Module:
   Communication
 
-  Question:
-  We could introduce 'const' into the appropriate places in these 
-  prototypes.  Should we?
   @*/
-int MPID_Isend( void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, 
+int MPID_Isend( const void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, int context_id,
 		MPID_Request **request )
 {
 }
@@ -1576,15 +1628,15 @@ int MPID_Isend( void *buf, int count, MPID_Datatype *datatype,
   Notes:
   The only difference between this and 'MPI_Issend' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
-  have been made, and the MPI opaque objects have been replaced by
-  MPID objects.
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id is provided in addition to the communicator.
 
   Module:
   Communication
 
   @*/
-int MPID_Issend( void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, 
+int MPID_Issend( const void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, int context_id,
 		MPID_Request **request )
 {
 }
@@ -1595,15 +1647,15 @@ int MPID_Issend( void *buf, int count, MPID_Datatype *datatype,
   Notes:
   The only difference between this and 'MPI_Irsend' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
-  have been made, and the MPI opaque objects have been replaced by
-  MPID objects.
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id is provided in addition to the communicator.
 
   Module:
   Communication
 
   @*/
-int MPID_Irsend( void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, 
+int MPID_Irsend( const void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, int context_id,
 		MPID_Request **request )
 {
 }
@@ -1614,18 +1666,19 @@ int MPID_Irsend( void *buf, int count, MPID_Datatype *datatype,
   Notes:
   The only difference between this and 'MPI_Irecv' is that the basic
   error checks (e.g., valid communicator, datatype, rank, and tag)
-  have been made, and the MPI opaque objects have been replaced by
-  MPID objects.
+  have been made, the MPI opaque objects have been replaced by
+  MPID objects, and a context id is provided in addition to the communicator.
 
   Module:
   Communication
 
   @*/
 int MPID_Irecv( void *buf, int count, MPID_Datatype *datatype,
-		int tag, int rank, MPID_Comm *comm, 
+		int tag, int rank, MPID_Comm *comm, int context_id,
 		MPID_Request **request )
 {
 }
+
 
 /* @
   MPID_Waitsome - MPID entry point for MPI_Waitsome
@@ -1666,7 +1719,7 @@ int MPID_Testsome( int incount, MPID_Request *(array_of_requests[]),
 
   Notes:
   This has the semantics of 'MPI_Bsend', except that it returns the internal
-  error code 'MPID_WOULD_BLOCK' if the message can''t be sent immediately.
+  error code 'MPID_WOULD_BLOCK' if the message can''t be sent immediately
   (t is for "try").  
  
   The reason that this interface is chosen over a query to check whether
@@ -1688,14 +1741,14 @@ int MPID_Testsome( int incount, MPID_Request *(array_of_requests[]),
   Should there be a compile-time capability for this?  E.g., an
   'MPID_HAS_TBSEND' or should the device just do
 .vb
-  #define MPID_tBsend( a, b, c, d, e, f ) MPID_WOULD_BLOCK
+  #define MPID_tBsend( a, b, c, d, e, f, g ) MPID_WOULD_BLOCK
 .ve
 
   Module:
   Communication
   @*/
-int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
-		 int tag, int rank, MPID_Comm *comm )
+int MPID_tBsend( const void *buf, int count, MPID_Datatype *datatype,
+		 int tag, int rank, MPID_Comm *comm, int context_id )
 {
 }
 
@@ -1726,6 +1779,8 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
  * These routines also provide a way to specify a data area that may be
  * used in store-and-forward algorithms, without requiring copies to and
  * from an intermediate device buffer.  
+ *
+ * Note that 'MPID_Request's include a segment descriptoin within them.
  T*/
 
 /*@
@@ -1856,7 +1911,8 @@ void *MPID_Segment_pack( MPID_Segment *segment, int *first, int *last,
 
   Do we need both an init pack and init unpack?
   @*/
-void * MPID_Segment_init_unpack( void *buf, int maxcount, MPID_Datatype *dtype,
+void * MPID_Segment_init_unpack( const void *buf, int maxcount, 
+				 MPID_Datatype *dtype,
                                  MPID_Comm *comm, int rank, 
                                  MPID_Segment *segment )
 {
@@ -1975,7 +2031,7 @@ int MPID_Memory_register( void *buf, int len, MPID_Comm *comm, int rank,
   failed.
 
   Notes:
-  The arguments must be exactly the same as thous used to register memory.
+  The arguments must be exactly the same as those used to register memory.
 
   It is valid to call this routine as many times as 'MPID_Memory_register'
   returned success on the calling process.  If the same memory location is
@@ -1987,14 +2043,33 @@ int MPID_Memory_register( void *buf, int len, MPID_Comm *comm, int rank,
   a reference count mechanism for registered memory.
 
   Question:
-  How do routines that free requests (such as 'MPI_Wait' and 'MPI_Request_free'
-  know to call this routine?  Is there a registered memory pointer?
+  How do routines that free requests (such as 'MPI_Wait' and 
+  'MPI_Request_free') know to call this routine?  
+  Is there a registered memory pointer?  Do we need to keep track of 
+  what type of memory (user-provide, registered, mpich-provided) is used
+  in different operations?
 
   Module:
   Communication
   @*/
 int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
 			    int rdwt )
+{
+}
+
+/*@
+  MPID_Memory_isregistered - Indicate whether the specified memory region is 
+  currently registered
+
+  Input Parameters:
++ buf - Pointer to start of memory
+- len - Length of buffer, in bytes
+
+  Question:
+  Do we also need to know the communicator or process group?
+
+  @*/
+int MPID_Memory_isregistered( void *buf, int len )
 {
 }
 
@@ -2005,7 +2080,8 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
 /*TStmOverview.tex
  *
  * Algorithms for collective communication are often of the
- * store and forward (to one or more processes); collective computation (such 
+ * store and forward or store and scatter (to one or more processes); 
+ * collective computation (such 
  * as reduce or scan) adds a processing step before forwarding.
  * This section describes the routines needed for these operations.
  * They rely on the 'MPID_Segment' to provide an interface between the 
@@ -2030,7 +2106,17 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
  * block.  This avoids the unpack/pack cycle that is required when only
  * send/receive routines are used.
  *
- * Note to implementors:
+ * Notes on xfer versus stream.  The original stream interface allowed the 
+ * programmer to explicitly describe the steps used to process each section
+ * (or segment) of the stream.  This gave the programmer a great deal of 
+ * control and flexibility over the handling of each part of a stream.  
+ * However, it also made it very difficult for the device to efficiently 
+ * handle a stream transfer, particularly for non-polling devices.  The xfer
+ * approach essentially builds a simple data transfer program that is then
+ * executed by the device.  This is not as flexible as the stream interface,
+ * but the device may be able to more efficiently implement xfer.
+ *
+ * Note to Implementors:
  * In determining the block size, you cannot look at the datatype,
  * since the datatypes used by the sender and the receiver may be
  * different.  For example, even though the sender has a contiguous
@@ -2074,7 +2160,7 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
  * for RMA operations?
  T*/
 
-/*@
+/* @
   MPID_Stream_isend - Initialize a stream and begin sending.
 
   Input Parameters:
@@ -2118,7 +2204,7 @@ int MPID_Memory_unregister( void *buf, int len, MPID_Comm *comm, int rank,
   can.  For example, if we use this to implement 'MPID_Isend'.  How do
   we indicate whether that should happen, or only the designated part of the
   segment should be sent before 'MPID_Stream_wait' is called?
-  @*/
+  @ */
 int MPID_Stream_isend( MPID_Segment *segment, 		       
 		       void *header, int header_size,
 		       int tag, int rank, MPID_Comm *comm, 
@@ -2126,7 +2212,7 @@ int MPID_Stream_isend( MPID_Segment *segment,
 {
 }
 
-/*@
+/* @
   MPID_Stream_irecv - Initialize a stream for receiving
 
   Input Parameters:
@@ -2168,7 +2254,7 @@ int MPID_Stream_isend( MPID_Segment *segment,
   an error?  That would happen if there was a collective operation
   mismatch on the communicator.
 
-  @*/
+  @ */
 int MPID_Stream_irecv( MPID_Segment *segment, int offset, 
 		       void *header, int max_header_size, int tag, int rank, 
 		       MPID_Comm *comm, int will_forward, 
@@ -2176,7 +2262,7 @@ int MPID_Stream_irecv( MPID_Segment *segment, int offset,
 {
 }
 
-/*@
+/* @
   MPID_Stream_wait - Wait for a stream 
   
   Input Parameter:
@@ -2231,12 +2317,12 @@ int MPID_Stream_irecv( MPID_Segment *segment, int offset,
   Question:
   Since wait frees the stream, do we want it to set the pointer to
   null, i.e., use 'MPID_Stream **stream' instead?
-  @*/
+  @ */
 int MPID_Stream_wait( MPID_Stream *stream )
 {
 }	       
 
-/*@
+/* @
   MPID_Stream_iforward - Forward a stream
 
   Input Parameters:
@@ -2267,7 +2353,7 @@ int MPID_Stream_wait( MPID_Stream *stream )
   Note:
   There is no output stream because this is a forward of an existing 
   stream. 
-  @*/
+  @ */
 int MPID_Stream_iforward( MPID_Stream *stream, void *header, 
 			  int header_size, int tag, int ranks[],
 			  int nranks, MPID_Comm *comm )
@@ -2572,15 +2658,20 @@ int MPID_Init( int *argc_p, char *(*argv_p)[],
 
   'MPI_Finalize' requires that attributes on 'MPI_COMM_SELF' be deleted 
   before anything else happens; this allows libraries to attach end-of-job
-  actions to 'MPI_Finalize'.  It would be valuable to have a similar 
+  actions to 'MPI_Finalize'.  It is valuable to have a similar 
   capability on 'MPI_Abort', with the caveat that 'MPI_Abort' may not 
-  guarantee that the run-on-abort routines were called.  Should we do
-  this?  Once 'MPI_Abort' is called, further communication may not 
-  be possible.  Can we limit the functions called in that case to ones
-  that do not perform any communication?  Do we need to set up a time
-  limit on actions?  Do we want to do the same thing as 'MPI_Finalize' and
-  delete the attributes on 'MPI_COMM_SELF' or do we want to do something
-  else, such as add an extension that adds actions to be run to 'MPID_Abort'?
+  guarantee that the run-on-abort routines were called.  This provides a
+  consistent way for the MPICH implementation to handle freeing any 
+  persistent resources.  However, such callbacks must be limited since
+  communication may not be possible once 'MPI_Abort' is called.  Further,
+  any callbacks must guarantee that they have finite termination.  
+  
+  One possible extension would be to allow `users` to add actions to be 
+  run when 'MPI_Abort' is called, perhaps through a special attribute value
+  applied to 'MPI_COMM_SELF'.  Note that is is incorrect to call the delete 
+  functions for the normal attributes on 'MPI_COMM_SELF' because MPI
+  only specifies that those are run on 'MPI_Finalize' (i.e., normal 
+  termination). 
 
   Module:
   MPID_CORE
@@ -2637,7 +2728,7 @@ value might be "not yet heterogeneous").
   MPICH explicity prohibits the appearence of 'malloc', 'free', 
   'calloc', 'realloc', or 'strdup' in any code implementing a device or 
   MPI call (of course, users may use any of these calls in their code).  
-  That is, you must use 'MPIU_Malloc' etc.; if these are defined
+  Instead, you must use 'MPIU_Malloc' etc.; if these are defined
   as 'malloc', that is allowed, but an explicit use of 'malloc' instead of
   'MPIU_Malloc' in the source code is not allowed.  This restriction is
   made to simplify the use of portable tools to test for memory leaks, 
@@ -2655,8 +2746,8 @@ value might be "not yet heterogeneous").
   MPI error class for out-of-memory).
 
   Question:
-  Do we want to have an aligned allocation routine?  E.g., aligned on a 
-  cache-line.
+  Do we want to have an aligned allocation routine?  E.g., one that
+  aligns memory on a cache-line.
   D*/
 
 /*@
@@ -3105,7 +3196,7 @@ double MPID_Gwtick( int pid1, int pid2 )
  */
 
 /*@
-  MPID_Attr_find - Find a attribute for a given keyval
+  MPID_Attr_find - Find and optionally insert an attribute for a given keyval
 
   Input Parameters:
 + list - Attribute list to search
@@ -3113,14 +3204,14 @@ double MPID_Gwtick( int pid1, int pid2 )
 - insert - True if attribute should be inserted if it is not found.
 
   Return Value:
-  A pointer to the matching attribute, or null if no attribute matching the
-  keyval was found.
+  A pointer to the matching attribute entry, or null if no attribute matching 
+  the keyval was found.
 
   Notes:
   This routine should only be used in a context where no other thread
   may modify the attribute list of the underlying object.  It may be
-  necessary to use 'MPID_xxx_thread_lock' and 'MPID_xxx_thread_unlock'
-  around uses of this routine.
+  necessary to use 'MPID_Thread_lock' and 'MPID_Thread_unlock'
+  with the per-process 'common_lock' around uses of this routine.
 
   Using a value of 0 for 'insert' makes it easy to implement 'MPI_Attr_get';
   a value of 1 is used for 'MPI_Attr_put' (and the MPI-2 versions of
@@ -3170,13 +3261,29 @@ MPID_Attribute *MPID_Attr_list_walk( MPID_List *list, MPID_Attribute *prev )
 + list - Attribute list to search
 - keyval - keyval to look for
  
+  Output Parameter:
+. flag - true if the attribute was found, false otherwise.
+
   Return value:
-  Zero if the attribute was found and deleted, an MPI error code otherwise.
+  The attribute value (not the 'MPID_Attribute' entry, the user\'s attribute
+  value.  Note that the attribute entry has been deleted from 
+  the list but the attribute itself is property of the user.  This allows us
+  to invoke the appropriate attribute delete function, if one is defined for 
+  this keyval.  If the attribute was not found, return null.  However, since 
+  null is also a valid value, a return flag is used.
+
+  Note that there are no error conditions possible (other that internal
+  corruption in the list datastructure).
+
+  Notes: 
+  We return the attribute value instead of the flag indicating that the 
+  attribute was found because returning the pointer to the void pointer 
+  through the argumnet list is ugly in C.
   
   Module:
   Attribute
   @*/
-int MPID_Attr_delete( MPID_List *list, int keyval )
+void *MPID_Attr_delete( MPID_List *list, int keyval )
 {
 }
 
@@ -3198,11 +3305,14 @@ int MPID_Attr_delete( MPID_List *list, int keyval )
   a handle and not a pointer, MPIU (utility) routines are provided to handle
   the allocation and deallocation of 'MPID_Info' elements.
 
-  Thread Safety
+  Thread Safety:
 
-  The info interface itself is not thread safe.  In particular, the routines
+  The info interface itself is not thread-robust.  In particular, the routines
   'MPI_INFO_GET_NKEYS' and 'MPI_INFO_GET_NTHKEY' assume that no other 
-  thread modifies the info key.  Further, 'MPI_INFO_DUP', while not 
+  thread modifies the info key.  (If the info routines had the concept
+  of a next value, they would not be thread safe.  As it stands, a user
+  must be careful if several threads have access to the same info object.) 
+  Further, 'MPI_INFO_DUP', while not 
   explicitly advising implementers to be careful of one thread modifying the
   'MPI_Info' structure while 'MPI_INFO_DUP' is copying it, requires that the
   operation take place in a thread-safe manner.
@@ -3235,7 +3345,7 @@ MPID_Info *MPIU_Info_create( void )
 {}
 
 /*@
-  MPIU_Info_destroy - Free an info structure
+  MPIU_Info_destroy - Free an info structure and everything that it contains
  
   Input Parameters:
 . info_ptr - Pointer to an info list
@@ -3376,6 +3486,29 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
 {
 }
 
+/* @
+   MPID_Comm_get_contextid - Return the internal context id used in the
+   communicator
+
+  Input Parameter:
+. comm - Communicator to get context value for.
+
+  Return value:
+  Context id used in this communicator
+
+  Notes:
+  This routine makes the context id available to other tools.  For example,
+  having a global context id makes message matching for tools like Jumpshot 
+  `much` easier.  In fact, the ADI could provide a function to provide a 
+  unique context id, which most implementations would implement directly from 
+  the given id.  Note that this is a unique, not a globally unique, id, since 
+  the value needs only be unique relative to the processes that can share in 
+  communication.  In other words, only the tuple (source/destination, 
+  context_id) must identify a unique communicator at each MPI process.
+
+@ */
+int MPID_Comm_get_contextid( MPID_Comm * )
+
 /*
  * Error Reporting
  */
@@ -3396,7 +3529,7 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
  Notes:
  A typical use is\:
 .vb
-   return MPID_Err_create_code( MPI_ERR_RANK, "Invalid Rank",
+   mpi_errno = MPID_Err_create_code( MPI_ERR_RANK, "Invalid Rank",
                                 "Invalid rank %d", rank );
 .ve
  
@@ -3420,9 +3553,6 @@ int MPID_Comm_disconnect( MPID_Comm *comm )
   Module:
   Error
 
-  Question:
-  Do we want to have a procedural interface for defining the full message that
-  corresponds to each predefined message?  
   @*/
 int MPID_Err_create_code( int class, const char *generic_msg, 
                           const char *instance_msg, ... )
@@ -3460,9 +3590,10 @@ int MPID_Err_set_msg( int code, const char *msg_string )
   This is used to implement 'MPI_Add_error_class'; it may also be used by a 
   device to add device-specific error classes.  Unlike the MPI version, this 
   combines returning a class with setting the associated message.  
- 
-  Question:
-  How do we handle the predefined classes?
+
+  Predefined classes are handled directly; this routine is not used to 
+  initialize the predefined MPI error classes.  This is done to reduce the
+  number of steps that must be executed when starting an MPI program.
 
   Module:
   Error
@@ -3501,6 +3632,13 @@ int MPID_Err_add_code( int class, const char *msg_string,
   Input Parameter:
 . code - Code to delete.
  
+  Notes:
+  This routine is not needed to implement any MPI routine (there are no
+  routines for deleting error codes or classes in MPI-2), but it is 
+  included both for completeness and to remind the implementation to 
+  carefully manage the memory used for dynamically create error codes and
+  classes.
+
   Module:
   Error
   @*/

@@ -111,46 +111,68 @@ and that provided by MPI.  The rationale for these are described in
 Section~\ref{sec-intermediate}. 
 \end{enumerate}
 
-The modules are (THIS LIST IS INCOMPLETE):
+The modules are:
 \begin{description}
 \item[MPID CORE.] Basic functions to start, stop, and communicate
 between processes.  This also includes the \code{mpiexec} program.
 This is the only module for which there is no generic implementation; as
 described in Section~\ref{sec-minimal}, implementing just this module,
 combined with the generic implementation of the other modules, provides a
-complete ADI-3 implementation.
+complete ADI-3 implementation.  This set of routines is in turn
+layered, so that basic implementations need implement only a few
+routines.  Slightly more sophisticated implementations, by
+implementing a few more of the routines in this module (rather than
+using the optional emulation routines provided) can provide better and
+more complete services.
+
 \item[Attribute.] MPI Keyvals and attributes
+
 \item[Datatype.] MPI Datatypes and pack/unpack operations and a new
 object, \code{MPID_Segment}, used only within the MPI implementation.
+
 \item[Dynamic.] Support for MPI-2 dynamic process operations.  This
 module must be implemented to support the dynamic process chapter of MPI-2.
+
 \item[Group.] MPI Groups
+
 \item[Communicator.] MPI Communicators
+
 \item[Request.] MPI Requests.  Requests are fundemental to many
 operations; most devices that implement more than MPID CORE will need
 to replace this module.
+
 \item[Window.] MPI Windows.
+
 \item[Point to point]Functions directly implementing the MPI
 point-to-point communication functions or some key subsets.
+
 \item[Topology.]Information on the physical interconnect.  Currently
 limited to hierarchical information necessary to support clusters of
 SMPs and similar systems.
+
 \item[Timer.] Support for fast timers, including synchronized timers.
+
 \item[Stream.] Communication routines designed to support
 important algorithms for collective communication.
+
 \item[Collective.] Alternate support for collective
 routines. Note that this may end up being an MPI module, not
 an MPID module, exploiting the routines in the \textbf{Stream} module.
+
 \item[Utility.] Routines to simplify correctness and performance
 debugging, and to provide a common interface to OS services that have
 different interfaces on different platforms.
+
 \item[Environment.] This module contains both compile-time and run-time
 constants that describe the environment. 
-\item[Communication.] The routines that carry out communication among MPI
-  processes. 
+
+% \item[Communication.] The routines that carry out communication among MPI
+%   processes. 
+
 \item[Error Reporting.] This provides support for detailed error
 reporting.  Most implementations will use the generic implementation
 of this module.
+
 \item[Extensions.] This module contains no required routines; instead,
 it documents some of the various extensions that the MPICH group is
 considering, such as checkpointing.
@@ -175,7 +197,8 @@ for a description of that module.
 \label{sec-minimal}
 
 While ADI-3 defines a large number of routines, only a few must be implemented
-by a developer.  For all modules except the \code{MPID_CORE} module, MPICH
+by a developer who is porting MPICH to a new communications platform.
+For all modules except the \code{MPID_CORE} module, MPICH 
 provides a generic implementation.  Thus, only the routines in
 \code{MPID_CORE} must be implemented when porting MPICH to a new interprocess
 communication mechanism.  To further simplify the task of implementing MPI
@@ -190,29 +213,55 @@ routines needed to implement the remote memory access chapter).  The
 \code{MPID_Init} is sufficient (\code{MPI_Init_thread} is an MPI-2
 replacement for \code{MPI_Init}; if the MPI Forum was starting from
 scratch, there would probably not be a separate \code{MPI_Init_thread}).
+
 \item[\code{MPID_Finalize}.] This is the devices's counterpart to
 \code{MPI_Finalize}
+
 \item[\code{MPID_Abort}.] This is the device's counterpart to \code{MPI_Abort}.
-\item[\code{MPID_Put_contig}.] This is used for data movement; it is roughly an
-\code{MPI_Put} using only contiguous data.  However, it uses a
-different mechanism for indicating completion of data transfers (see \code{MPID_Flags_waitsome} and \code{MPID_Flags_testsome})
-\item[\code{MPID_Rhcv}.] This is used for messages; it is roughly an
-active-message call.  However, only predefined actions are allowed,
-and these actions are enumerated.
-\item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}.] These
-are used to complete \code{MPID_Rhcv} 
-and \code{MPID_Put_contig} operations (and non-core routines such as
-\code{MPID_Get_contig} and \code{MPID_Put_sametype}). 
-\item[\code{MPID_Poll}.] This routine provides a way for a polling routine to
-be called.  A device is permitted to define this as a no-op if polling
-is not needed.  In other words, this routine is provided to
-\emph{allow} polling implementations, not to \emph{require} them.
-This routine also provides a way for an MPI implementation that used
-ADI3 to express ``polling point,'' locations in the code where it
-would be a helpful to poll in a polling implementation.  Even a
-non-polling implementation may use these points to check for
-communication, allowing a clever implementation to avoid the cost of a
-context switch in some cases. 
+
+\item[\code{MPID_Put_contig}.] This is used for data movement; it is
+roughly equivalent to an
+
+\code{MPI_Put} that handles only contiguous data.  However, it uses a
+different mechanism for indicating completion of data transfers.
+% (see \code{MPID_Flags_waitsome} and \code{MPID_Flags_testsome})
+
+\item[several routines for remote service]These are used to implement
+the MPI-1 cancel of send and the MPI-2 passive-target RMA routines.
+There may be five of these: cancel-send, abort, passive-put,
+passive-get, and passive-accumulate.  The three passive RMA calls will
+need to handle arbitrary datatypes.  All five of these functions in
+turn can be implemented using a single remote service call.  In
+previous versions of this document, this remote service call was
+provided by the routine \code{MPID_Rhcv}.
+
+% \item[\code{MPID_Rhcv}.] This is used for messages; it is roughly an
+% active-message call.  However, only predefined actions are allowed,
+% and these actions are enumerated.
+
+%\item[\code{MPID_Flags_waitsome}, \code{MPID_Flags_testsome}.] These
+%are used to complete \code{MPID_Rhcv} 
+%and \code{MPID_Put_contig} operations (and non-core routines such as
+%\code{MPID_Get_contig} and \code{MPID_Put_sametype}). 
+
+\item[polling routines]Several polling routines are defined to allow
+for thread-safe implementations of polling.  Note that an ADI
+implementation that does not need polling is free to define these as
+macros that expand to no code, so the overhead of these is such a
+device is zero.  These routines are defined to provide polling points
+in the MPI code.
+
+% \item[\code{MPID_Poll}.] This routine provides a way for a polling routine to
+% be called.  A device is permitted to define this as a no-op if polling
+% is not needed.  In other words, this routine is provided to
+% \emph{allow} polling implementations, not to \emph{require} them.
+% This routine also provides a way for an MPI implementation that used
+% ADI3 to express ``polling point,'' locations in the code where it
+% would be a helpful to poll in a polling implementation.  Even a
+% non-polling implementation may use these points to check for
+% communication, allowing a clever implementation to avoid the cost of a
+% context switch in some cases. 
+
 \item[\code{mpiexec}.] An implementation of \code{mpiexec}, as defined in the
   MPI-2 standard, for starting MPI jobs.  While not a routine, it must be 
   provided by any device.  
@@ -261,24 +310,25 @@ solution to the approach used in the second version of Illinois Fast
 Messages \cite{pakinxx}; FM provides a send-fragment operation.
 
 \subsection{Dynamic}
-\textbf{Should the routines in this section be replaced by BNR calls?
-How do these relate to BNR?}
-What relationship does the ADI interface to dynamic processes 
-have to the BNR interface?  
-How do BNR groups and MPID groups relate (note that there can be many
-MPI groups in an application, more than we probably want BNR to know
-about. 
+% \textbf{Should the routines in this section be replaced by BNR calls?
+% How do these relate to BNR?}
+% What relationship does the ADI interface to dynamic processes 
+% have to the BNR interface?  
+% How do BNR groups and MPID groups relate (note that there can be many
+% MPI groups in an application, more than we probably want BNR to know
+% about. 
 
 For a full MPI-2 implementation, the dynamic module must also be
 implemented.  That is, for a full MPI-2 implementation, the dynamic
 module is really part of \code{MPID_CORE}.  This module is separated
 out both because it is unnecessary for MPI-1 and because the
-implementation of these routines is (usually) very different from the
-communication support in \code{MPID_CORE}.  The contents of the
+implementation of these routines may be very different from the
+communication support in \code{MPID_CORE}.  
+The contents of the
 dynamic module include:
 
 \begin{description}
-\item[\code{MPID_Comm_Spawn_Multiple}.] Spawns new processes.
+\item[\code{MPID_Comm_spawn_multiple}.] Spawns new processes.
 \item[\code{MPID_Port_open}.] Open a port for connecting to processes. 
 \item[\code{MPID_Port_close}.] Close a port opened with \code{MPID_Port_open}.
 \item[\code{MPID_Comm_connect}.] Connect to an MPI program.
@@ -289,6 +339,12 @@ An implementation that does not plan to support \code{MPI_Comm_spawn} or
 any of the other MPI-2 functions in the Dynamic chapter of the MPI-2 Standard
 can implement these as routines that return failure.  Such an implementation
 will not implement all of MPI-2. 
+
+The implementation of these routines in the MPICH ADI3 device make use
+of the BNR dynamic process management routines \cite{butleretal-bnr}.
+These routines 
+provide portable access through a scalable API to third-party process
+managers.  
 %  The
 %   routines \code{MPID_Open_port}, \code{MPID_Close_port},
 %   \code{MPID_Comm_connect}, \code{MPID_Comm_attach}, and
@@ -405,6 +461,9 @@ module contains these routines.
 
 \textbf{Has stream been replaced by xfer?  If not, how do xfer and
 stream relate to each other?}
+\textbf{Answer (maybe): yes, I believe that xfer replaces stream.
+However, much of the stream rationale remains, and we may want some of
+the ``short cut'' routines that stream provides.}
 
 \item Scatter/Gather --- A number of algorithms rely on dividing the
 message up into separate pieces, based on viewing the message as a
@@ -440,8 +499,24 @@ the method to determine the appropriate protocol for delivering a message.
 ADI-3 has been designed (like ADI-1 and ADI-2) to permit both polling and
 non-polling (e.g., interrupt-driven or thread-scheduled) implementations.
 Thus, some routines are provided that provide convenient points for a polling
-implementation to poll or wait.  \code{MPID_Flags_waitsome} and
-\code{MPID_Test_waitsome} are examples.
+implementation to poll or wait.  In addition, there are two types of
+polls defined: a weak poll, where a polling-based implementation may
+choose whether or not to perform a poll, and a strong poll, where a
+polling implementation is expected to poll.  For example, a weak poll
+may implement some form of skip polling, checking only those
+communication methods that have fast polls or that haven't been
+checked recently (e.g., check a shared-memory queue but not a
+socket-based method).  A strong poll will check both.
+
+In addition, some poll routines accept a time-quantum to provide a
+hint at the time that should be waited.  For example, in certain
+circumstances, actively polling (e.g., in a spin loop) for one or two
+times the round-trip delay and then switching to a more passive form
+(e.g., yield the thread) provides better performance than either
+spinning only or yeilding immediately.
+
+%\code{MPID_Flags_waitsome} and
+%\code{MPID_Test_waitsome} are examples.
 
 It is the responsibility of the implementation of the ADI to ensure that
 progress is made on all communication, particularly passive-target RMA
@@ -455,10 +530,11 @@ polling interface at appropriate places, such as before posting a
 receive or after posting a send.  An implementation that exclusively
 relies on a separate communication agent thread is free to define
 these routines as macros that expand to no code (thus eliminating all
-overhead).  These are the \code{MPID_PE_poll_xxx} routines (see
-Section~???).
+overhead). 
+%These are the \code{MPID_PE_poll_xxx} routines (see
+%Section~???).
 
-\subsection{Contrast with ADI-1 and ADI-2}
+\subsubsection{Contrast with ADI-1 and ADI-2}
 \label{sec-historical}
 
 ADI-1, the first abstract device interface, was designed to enable MPI
@@ -508,8 +584,9 @@ communication.  ADI-3 adapts to these changes.
 % is not based on communication channels but is more of an active message
 % core
 %
-This subsection describes our implementation plans at Argonne.  The next
-subsection describes how collaborators (vendors, researchers, and others) can
+This subsection describes our implementation plans at Argonne.  
+Section~\ref{sec:collaborators} describes how others (vendors,
+researchers, and others) can 
 use the structure of ADI-3 to leverage our implementation work and their own
 high-speed communication methodologies to produce a particular MPI
 implememtation.
@@ -556,25 +633,6 @@ route that allows outside groups to take advantage of the
 communication methods (such as shared memory or TCP) implemented
 within the multi-method device while providing their own method for a
 specialized communication layer (such as VIA or LAPI).
-
-\subsection{How Collaborators May Participate}
-\label{sec:collaborators}
-
-Thus there are several options for collaborators, depending on their
-objectives.
-\begin{enumerate}
-\item A collaborator might implement all of ADI-3 in his own way, using his
-  own data structures, handling datatypes, etc., but taking advantage of our
-  collective operations, for example, and argument-checking checking code in
-  the MPI-over-ADI-3 implementation.
-\item A collaborator might implement only the routines in MPI Core, taking
-  advantage of our data structures for communicators, datatypes, and other
-  objects making up our Rhcv Device implementation.
-\item A collaborator might do something in between the above two options,
-  using only parts of the Rhcv Device implementation.
-\item A collaborator might add a method to the RMQ Device, using its internal
-  interface and library routines, and not implement any of the ADI-3 functions.
-\end{enumerate}
 
 \section{Things Left to do}
 
@@ -626,22 +684,69 @@ progress, and (4) inter method operations.
 %\input adi3data.tex
 
 
-\section{Integrating a Device into the MPICH build tree}
-Still to do.  This section needs to cover:
+\section{Integrating a New Device into the MPICH Build Tree}
+This section describes how to add a device or method into the MPICH
+build tree.  This section is intended both to describe the process of
+adding a device and the rationale for the design of the
+device-dependent modules.
+
+\subsection{How To Interact With the MPICH Group on MPI Implementations}
+\label{sec:collaborators}
+
+Thus there are several options for those wishing to work with the
+MPICH implementation, depending on their objectives.
 \begin{enumerate}
-\item \code{mpiexec}.  How does MPICH create the correct \code{mpiexec}?
-\item Installation.  How does MPICH get the proper device-specific files
-  installed; e.g., the \code{mpd} for the \code{mpd} device?  There
-should probably be \code{install} targets in the device's top-level
-\file{Makefile}.  
+\item Implement all of ADI-3 in his own way, using his
+  own data structures, handling datatypes, etc., but taking advantage of our
+  collective operations, for example, and argument-checking checking code in
+  the MPI-over-ADI-3 implementation.
+\item Implement only the routines in MPI Core, taking
+  advantage of our data structures for communicators, datatypes, and other
+  objects making up our Rhcv Device implementation.
+%\item A collaborator might do something in between the above two options,
+%  using only parts of the Rhcv Device implementation.
+\item Implement a method for the multi-method device, using its internal
+  interface and library routines, and not implement any of the ADI-3 functions.
+\end{enumerate}
+
+\subsection{Steps Needed in Implementing a Device}
+\begin{enumerate}
+\item \code{mpiexec}.  Define how \mpich\ creates the correct
+\code{mpiexec}.  There must be an \code{mpiexec} target in the
+device's \file{Makefile}.
+
+\item Installation.  Define how \mpich\ gets the proper device-specific files
+  installed; e.g., if the device uses the multi-purpose demon
+  (\code{mpd}}, ensure that the \code{mpd} is installed.  Provide an
+  \code{install} target in the device's \file{Makefile}.
+
 \item Device-specific documentation, such as environment variables and
-  command-line arguments used only by a particular device.  This
-should probably be placed into a specific file, such as \file{devdoc.txt}.
-\item Testing codes for device-specific functions.  These should be
-placed in a \file{test} subdirectory of the device, and the tests
+  command-line arguments used only by a particular device.  Place this
+  information into the file \file{devdoc.txt}.  The \mpich\
+  documentation generators will look for this file.
+
+\item Testing codes for device-specific functions.  Place these
+in a \file{test} subdirectory of the device. These tests 
 should be performed through a \code{test} target in the device's
 \file{Makefile}. 
 
+\item Include files.  Any include files that are needed by
+\file{mpiimpl.h} (used to build the implementation of the MPI
+routines} should be \emph{copied} into \file{mpich/src/include} as
+part of the device's configure step.  Provide the files
+\file{mpiddevpre.h} and \file{mpiddevpost.h}.  The implementation of all MPI
+routines include files in this order:
+\begin{description}
+\item[mpi.h]The standard \file{mpi.h} that all MPI users include
+\item[mpiddevpre.h]Any definitions needed \emph{before} the provided
+definitions of the contents of the internal structures.  This can
+included definitions that override parts of \file{mpiimpl.h}
+\item[contents of mpiimpl.h]The bulk of the internal definitions.
+This also includes information on the timers.
+\item[mpiddevpost.h]Any definitions needed by the device after the rest
+of the definitions in \file{mpiimpl.h}.  In many cases, this file may
+be empty.
+\end{description}
 \end{enumerate}
 
 \subsection{Directory Structure}
@@ -658,8 +763,10 @@ Each device must have a \code{configure} script.  This will be run by
 the \mpich\ \code{configure} as part of the top-level configuration.
 Any other commands that a device needs for setup should be run using
 the \code{AC_OUTPUT_COMMANDS} \code{autoconf} macro.  Autoconf version
-2.13 or later should be used.  Do not modify the \mpich\
-\code{configure} to support a device.
+2.13 or later should be used; we recommend using the macros defined in
+\file{mpich/confdb/aclocal.m4}.  
+Do not modify the \mpich\ \code{configure} to support a device.
+
 
 \section{Motivation}
 \label{sec:motivation}
@@ -1015,7 +1122,7 @@ return the `envelope` and `contents` of a datatype.
 
 \section{Streams}
 \textbf{How do these relate to the xfer interface?  Are they
-superceeded?  Are streams used to implemente xfer?}
+superceeded?  Are streams used to implement xfer?}
 \input StmOverview.tex
 %\subsection{Data Structures}
 %\input Stream-DS-list.tex
@@ -1023,6 +1130,11 @@ superceeded?  Are streams used to implemente xfer?}
 \input Stream-list.tex
 
 \section{Collective Computation}
+Special structures are needed to support collective computation.
+Because the same object is used for both the predefined operations
+(such as \code{MPI_SUM}) and for user-defined operations.  The
+predefined operations are also used in with 'MPI_Accumulate'.
+
 %\input CollOverview.tex
 \subsection{Data Structures}
 \input Collective-DS-list.tex
@@ -1031,6 +1143,8 @@ superceeded?  Are streams used to implemente xfer?}
 
 \section{Window Objects}
 \label{sec:window-objects}
+Window objects in MPI are used to support the remote memory access
+(RMA) operations.  
 \subsection{Data Structures}
 \input Win-DS-list.tex
 \subsection{Functions}
@@ -1052,6 +1166,12 @@ The timer is local to a process (no global timer).
 %Question: Should the basic timer be part of MPID CORE?  In some sense, it
 %should.  Yet we could use the OS-supplied timers by default on most platforms.
 
+To simplify the support of different timers and in particular to
+support lightweight, high-resolution, machine-specific timers, the
+timer module has its own \code{configure} and include files.  The
+\code{configure} in the timer module copies the appropriate
+\file{mpichtimer.h} file into \file{mpich/src/include} for use by the
+MPI implementation.
 %%%
 %%% Global timers commented out because they are too far down the
 %%% priority list.
@@ -1104,13 +1224,15 @@ instance id&base code&base class\\
 \end{center}
 where the fields are
 \begin{description}
-\item[\texttt{base class}]The MPI error class, from the defined
+\item[\texttt{base class}:]The MPI error class, from the defined
 classes.  There are about 45 predefined classes.
-\item[\texttt{base code}]Specifies a more specific error message than
+
+\item[\texttt{base code}:]Specifies a more specific error message than
 the \code{base class} but which contains no instance-specific data.
 For example, within \code{MPI_ERR_ARG}, there are different base codes
 for negative arguments, out-of-range arguments, etc.
-\item[\texttt{instance id}]Used to indicate an instance-specific message
+
+\item[\texttt{instance id}:]Used to indicate an instance-specific message
 \end{description}
 
 Values of zero for the \code{base code} and \code{instance id} are
@@ -1118,10 +1240,12 @@ always valid; in that case the error code is simply the error class.
 
 The values encoded in \code{instance id} are defined by
 \code{MPID_Err_create_code}; the routine \code{MPID_Err_get_string}
-understands the \code{instance id} field.  One possible implementation
-of this is described in (technical note not yet written, but described
-in ALICE brown bag talk and Coding Standards document), and is
-included with the MPICH implementation.
+understands the \code{instance id} field.  The MPICH-1 code contains a
+partial implementation of this approach.
+%One possible implementation
+%of this is described in (technical note not yet written, but described
+%in ALICE brown bag talk and Coding Standards document), and is
+%included with the MPICH implementation.
 
 Messages are \code{char *} instead of \code{wchar_t *} because (a)
 strings in C are \code{char *} and error strings in MPI are \code{char
@@ -1132,8 +1256,9 @@ message as either \code{char} or \code{wchar_t}.
 MPI-2 provides an interface that allows users to add their own error
 codes and classes.  The standard is silent on the number of codes and
 classes that the user may add.  In order to provide a reasonable
-balance between effective, instance specific messages and user-defined
-error codes and classes, we will probably allow 255 classes and 255
+balance between effective, instance-specific messages and user-defined
+error codes and classes, we will allow 255 classes (not counting
+\code{MPI_SUCCESS} and 255
 codes within each class.  This includes both the predefined codes and
 classes and the user-defined codes and classes.
 
@@ -1157,7 +1282,7 @@ and \code{emacs} modes for creating and maintaing files of messages.
 
 Here is a short primer on using the \code{gettext} routines.  Note that for
 the most part these will not be used directly in the MPICH code; rather, they
-will be used as part of the implementation of the error reporting ADI3
+may be used as part of the implementation of the error reporting ADI3
 routines.
 
 The initialization is performed with this code:
@@ -1211,21 +1336,31 @@ code routines.
        \code{MPID_Err_partner}.
    \end{enumerate}
 \end{enumerate}
-By default, \code{MPID_Err_link} and \code{MPID_Err_partner} simply
+By default, \code{MPID_Err_link} and \code{MPID_Err_partner} would simply
 call \code{MPID_Abort}.  However, a ADI implementation that is
-tolerant of communication failure can use these to 
+tolerant of communication failure can use these to update the status
+of communication connections and to mark communicators as
+``damaged''.  These routines have not yet been precisely defined, and
+should not be used in MPICH-2.
 
 %\input Error-handling-list.tex
 
 \section{Miscellaneous}
 \label{sec:misc}
 
+\subsection{Message Queue Implementation}
+The tests for message-matching can be done by using a single 64-bit
+integer compare (possibly with a mask applied).  For special cases
+(more limited tag ranges, communicator context ids, and numbers of
+processes), even 32 bits is enough.  The generic queue code will allow
+the use of \code{int64_t} as an option to simplify and speed the
+search for messages matching a specified communicator, tag, and rank
+tuple.
+
 \subsection{Flow Control}
 \label{sec:flow-control}
 These routines provide support for flow control on communications.
 They should be used if no other mechanism provides flow control.
-
-Questions:
 
 \makeussubscript
 There are several different approaches for flow control.  All of these
@@ -1274,6 +1409,11 @@ to check that a message can be send, \code{MPID_Flow_ack} to process
 an ack packet, \code{MPID_Flow_recv} to update 
 \makeussubscript$n_{inuse}$\makeustext\ and
 \code{MPID_Flow_send} to update \makeussubscript$n_{sent}$\makeustext.
+
+A device (or communication method) is free to use these routines or to
+use any other (correct) approach to flow control.  These routines will
+be provided to make it easier for new communication methods to be
+created that implement the necessary flow-control.
 
 \section{Extensions}
 \input Extension-list.tex
@@ -1335,6 +1475,24 @@ implement attributes and \code{MPI_Info} because they are both lists
 of key/value pairs.  This isn't a good idea because both the key and
 values are so different in the two cases.
 
+\subsubsection{Protecting Function Pointers.}
+  Because the keyval structure contains pointers to user-functions,
+  there is always 
+  the danger that a user-error that overwrites the memory locations storing 
+  the function pointers.  Should there be sentinals around either the entire
+  keyval entry or around each function pointer that would be tested before 
+  invoking the function?  
+  For example, we could define
+\begin{verbatim}
+  typedef struct { 
+      unsigned long sentinal1;
+      void (*f)(void);           // pointers to functions are different from
+                                 // pointers to nonfunctions 
+      unsigned long sentinal2;
+  } MPID_Protected_function_ptr;
+\end{verbatim}
+  and compute the sentinals based on the value of the function pointer.
+
 \subsection{Generalized Waitsome}
 We can generalize \code{MPID_Flags_waitsome} by adding a min and max
 count to return.  This allows us to combine all 
@@ -1343,7 +1501,7 @@ example,
 
 \begin{center}
 \begin{tabular}{lll}
-      min_count  & max_count&    equivalent routine\\\hline
+      \code{min_count}  & \code{max_count}&    equivalent routine\\\hline
       0          & 1        &    test or testany\\
       0          & count    &    testsome or testall (what is the difference?)\\
       1          & 1        &    wait or waitany\\
@@ -1354,7 +1512,7 @@ example,
   This allows the generalization:
 \begin{center}
 \begin{tabular}{lll}
-      min_count  & max_count&    equivalent routine\\\hline
+      \code{min_count}  & \code{max_count}&    equivalent routine\\\hline
       0          & 4        &    testforatmost(4)
 \end{tabular}
 \end{center}
@@ -1408,6 +1566,17 @@ choose to make these values (all integers) available as part of the
 % int MPID_Attr_predefined( int keyval )
 % {
 % }
+\subsection{Streads and Xfer}
+The stream interface originally proposed was reasonable for
+implementing MPI's blocking collective with the more general
+scatter/gather bassed algorithms.  However, the stream API placed the
+control of scheduling of the operations outside of the device; for
+example, a \code{MPID_Stream_wait} routine was provided to let the
+code that was using streams wait for completion of the current data
+transfer.  This is not a good fit to nonpolling devices, and even for
+polling devices, makes it difficult for the device to efficiently
+schedule operations.  Thus, the xfer interface defines a data transfer
+\emph{program} and lets the device execute that program.
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
