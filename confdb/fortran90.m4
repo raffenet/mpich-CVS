@@ -883,3 +883,135 @@ dnl Backwards compatibility features
 dnl
 AC_DEFUN([PAC_PROG_F90],[AC_PROG_F90])
 AC_DEFUN([PAC_LANG_FORTRAN90],[AC_LANG_PUSH(Fortran 90)])
+
+dnl ---------
+dnl
+dnl ------------------------------------------------------------------------
+dnl Special characteristics that have no autoconf counterpart but that
+dnl we need as part of the Fortran 90 support.  To distinquish these, they
+dnl have a [PAC] prefix.
+dnl 
+dnl
+dnl PAC_F90_MODULE_EXT(action if found,action if not found)
+dnl
+AC_DEFUN([PAC_F90_MODULE_EXT],
+[AC_CACHE_CHECK([for Fortran 90 module extension],
+pac_cv_f90_module_ext,[
+pac_cv_f90_module_case="unknown"
+AC_LANG_PUSH(Fortran 90)
+cat >conftest.$ac_ext <<EOF
+	module conftest
+        integer n
+        parameter (n=1)
+        end module conftest
+EOF
+if AC_TRY_EVAL(ac_compile) ; then
+   dnl Look for module name
+   pac_MOD=`ls conftest* AS_MESSAGE_LOG_FD>&1 2>&1 | grep -v conftest.$ac_ext | grep -v conftest.o`
+   pac_MOD=`echo $pac_MOD | sed -e 's/conftest\.//g'`
+   pac_cv_f90_module_case="lower"
+   if test "X$pac_MOD" = "X" ; then
+	for file in CONFTEST* ; do
+	    if test "x$file" = "xCONFTEST.$ac_ext" ; then continue ; fi
+	    if test "x$file" = "xCONFTEST.o" ; then continue ; fi
+	    if test -s "$file" ; then 
+	        pac_MOD=$file
+	        break
+	    fi
+	done
+        pac_MOD=`echo $pac_MOD | sed -e 's/CONFTEST\.//g'`
+	if test -n "$pac_MOD" ; then
+	    testname="CONFTEST"
+	    pac_cv_f90_module_case="upper"
+	fi
+    fi
+    if test -z "$pac_MOD" ; then 
+	pac_cv_f90_module_ext="unknown"
+    else
+	pac_cv_f90_module_ext=$pac_MOD
+    fi
+else
+    echo "configure: failed program was:" >&AC_FD_CC
+    cat conftest.$ac_ext >&AC_FD_CC
+    pac_cv_f90_module_ext="unknown"
+fi
+AC_LANG_POP
+rm -f conftest*
+])
+AC_SUBST(F90MODEXT)
+if test "$pac_cv_f90_module_ext" = "unknown" ; then
+    ifelse($2,,:,[$2])
+else
+    ifelse($1,,F90MODEXT=$pac_MOD,[$1])
+fi
+])
+dnl
+dnl PAC_F90_MODULE_INCFLAG
+AC_DEFUN([PAC_F90_MODULE_INCFLAG],[
+AC_CACHE_CHECK([for Fortran 90 module include flag],
+pac_cv_f90_module_incflag,[
+AC_REQUIRE([PAC_F90_MODULE_EXT])
+AC_LANG_PUSH(Fortran 90)
+cat >conftest.$ac_ext <<EOF
+	module conf
+        integer n
+        parameter (n=1)
+        end module conf
+EOF
+pac_madedir="no"
+if test ! -d conf ; then mkdir conf ; pac_madedir="yes"; fi
+if test "$pac_cv_f90_module_case" = "upper" ; then
+    pac_module="CONF.$pac_cv_f90_module_ext"
+else
+    pac_module="conf.$pac_cv_f90_module_ext"
+fi
+if AC_TRY_EVAL(ac_compile) ; then
+    cp $pac_module conf
+else
+    echo "configure: failed program was:" >&AC_FD_CC
+    cat conftest.$ac_ext >&AC_FD_CC
+fi
+rm -f conftest.$ac_ext
+cat >conftest.$ac_ext <<EOF
+    program main
+    use conf
+    end
+EOF
+if ${F90-f90} -c $F90FLAGS -Iconf conftest.$ac_ext 1>&AC_FD_CC && \
+	test -s conftest.o ; then
+    pac_cv_f90_module_incflag="-I"
+elif ${F90-f90} -c $F90FLAGS -Mconf conftest.$ac_ext 1>&AC_FD_CC && \
+	test-s conftest.o ; then
+    pac_cv_f90_module_incflag="-M"
+elif ${F90-f90} -c $F90FLAGS -pconf conftest.$ac_ext 1>&AC_FD_CC && \
+	test -s conftest.o ; then
+    pac_cv_f90_module_incflag="-p"
+else
+    pac_cv_f90_module_incflag="unknown"
+fi
+if test "$pac_madedir" = "yes" ; then rm -rf conf ; fi
+rm -f conftest*
+AC_LANG_POP
+])
+AC_SUBST(F90MODINCFLAG)
+F90MODINCFLAG=$pac_cv_f90_module_incflag
+])
+AC_DEFUN([PAC_F90_MODULE],[
+PAC_F90_MODULE_EXT
+PAC_F90_MODULE_INCFLAG
+])
+AC_DEFUN([PAC_F90_EXT],[
+AC_CACHE_CHECK([whether Fortran 90 accepts f90 suffix],
+pac_cv_f90_ext_f90,[
+save_ac_f90ext=$ac_f90ext
+ac_f90ext="f90"
+AC_LANG_PUSH(Fortran 90)
+AC_TRY_COMPILE(,,pac_cv_f90_ext_f90="yes",pac_cv_f90_ext_f90="no")
+AC_LANG_POP
+])
+if test "$pac_cv_f90_ext_f90" = "yes" ; then
+    ac_f90ext=f90
+else
+    ac_f90ext=f
+fi
+])
