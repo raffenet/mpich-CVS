@@ -442,7 +442,11 @@ MPID_REQUEST_DECL
 #endif
 
 
-#define MPID_PROGRESS_STATE_DECL MPIDI_CH3_PROGRESS_STATE_DECL
+#if defined(MPIDI_CH3_PROGRESS_STATE_DECL)
+#   define MPID_PROGRESS_STATE_DECL MPIDI_CH3_PROGRESS_STATE_DECL
+#else
+#   define MPID_PROGRESS_STATE_DECL int
+#endif
 
 
 /* for keeping track of RMA ops, which will be executed at the next sync call */
