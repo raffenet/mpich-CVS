@@ -59,10 +59,6 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    if (request != NULL)
-	    {
-		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
-	    }
             if (mpi_errno) {
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
@@ -78,6 +74,11 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+	    MPIR_ERRTEST_ARGNULL(request, "request", mpi_errno);
+	    if (request != NULL)
+	    {
+		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
+	    }
 	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);

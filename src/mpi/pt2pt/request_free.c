@@ -81,10 +81,29 @@ int MPI_Request_free(MPI_Request *request)
 	    
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REQUEST_FREE);
     
+    /* Check the arguments */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_ARGNULL(request, "request", mpi_errno);
+	    if (request != NULL)
+	    {
+		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
+	    }
+	    MPIR_ERRTEST_REQUEST(request, mpi_errno);
+	    if (mpi_errno) {
+		goto fn_exit;
+            }
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+    
     /* Convert MPI object handles to object pointers */
     MPID_Request_get_ptr( *request, request_ptr );
 
-    /* Validate parameters if error checking is enabled */
+    /* Validate object pointers if error checking is enabled */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -92,8 +111,7 @@ int MPI_Request_free(MPI_Request *request)
 	    /* Validate request_ptr */
             MPID_Request_valid_ptr( request_ptr, mpi_errno );
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+		goto fn_exit;
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -131,6 +149,7 @@ int MPI_Request_free(MPI_Request *request)
     MPID_Request_release(request_ptr);
     *request = MPI_REQUEST_NULL;
     
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_FREE);
-    return MPI_SUCCESS;
+    return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }
