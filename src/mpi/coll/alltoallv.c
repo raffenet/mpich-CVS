@@ -292,10 +292,12 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
             if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                 MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                MPID_Datatype_committed_ptr( sendtype_ptr, mpi_errno );
             }
             if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                 MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+                MPID_Datatype_committed_ptr( recvtype_ptr, mpi_errno );
             }
 
             

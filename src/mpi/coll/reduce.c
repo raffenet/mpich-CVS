@@ -751,6 +751,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
                 if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                     MPID_Datatype_get_ptr(datatype, datatype_ptr);
                     MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                    MPID_Datatype_committed_ptr( datatype_ptr, mpi_errno );
                 }
 
                 if (sendbuf != MPI_IN_PLACE)
@@ -774,6 +775,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
                     if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                         MPID_Datatype_get_ptr(datatype, datatype_ptr);
                         MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                        MPID_Datatype_committed_ptr( datatype_ptr, mpi_errno );
                     }
                     MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
                     MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
@@ -785,6 +787,7 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
                     if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                         MPID_Datatype_get_ptr(datatype, datatype_ptr);
                         MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                        MPID_Datatype_committed_ptr( datatype_ptr, mpi_errno );
                     }
                     MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, count, mpi_errno);
                     MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);

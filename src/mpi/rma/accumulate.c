@@ -98,6 +98,24 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	    MPIR_ERRTEST_DATATYPE(target_count, target_datatype, mpi_errno);
 	    MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
+            if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
+            {
+                MPID_Datatype *datatype_ptr = NULL;
+                
+                MPID_Datatype_get_ptr(origin_datatype, datatype_ptr);
+                MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+            }
+
+            if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN)
+            {
+                MPID_Datatype *datatype_ptr = NULL;
+                
+                MPID_Datatype_get_ptr(target_datatype, datatype_ptr);
+                MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+            }
+
             MPIR_Nest_incr();
             NMPI_Comm_size(win_ptr->comm, &comm_size);
             MPIR_Nest_decr();
@@ -120,11 +138,6 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 
     if (target_rank == MPI_PROC_NULL) return MPI_SUCCESS;
 
-/*    if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
-        printf("ERROR: RMA operations not supported for derived datatypes on target\n");
-        NMPI_Abort(MPI_COMM_WORLD,1);
-    }
-*/
     mpi_errno = MPID_Accumulate(origin_addr, origin_count, origin_datatype,
                                 target_rank, target_disp, target_count,
                                 target_datatype, op, win_ptr);
@@ -135,7 +148,7 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	    "**mpi_accumulate", "**mpi_accumulate %p %d %D %d %d %d %D %O %W",
 	    origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, op, win);
 	MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);
-	return mpi_errno;
+        return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
     }
 
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);

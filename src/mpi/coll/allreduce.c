@@ -875,6 +875,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                MPID_Datatype_committed_ptr( datatype_ptr, mpi_errno );
             }
 
 	    if (comm_ptr->comm_kind == MPID_INTERCOMM)

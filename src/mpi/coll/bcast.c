@@ -703,6 +703,7 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                MPID_Datatype_committed_ptr( datatype_ptr, mpi_errno );
             }
 
             MPIR_ERRTEST_BUF_INPLACE(buffer, count, mpi_errno);
