@@ -194,7 +194,7 @@ int MPID_Type_indexed(int count,
 
 	/* copy in old dataloop */
 	curpos = (char *) dlp; /* NEED TO PAD? */
-	curpos += sizeof(struct MPID_Dataloop);
+	curpos += new_loopsize - old_dtp->loopsize;
 
 	MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
 	dlp->loop_params.i_t.u.dataloop = (struct MPID_Dataloop *) curpos;
