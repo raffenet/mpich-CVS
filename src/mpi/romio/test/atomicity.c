@@ -1,5 +1,5 @@
 #include "mpi.h"
-#include "mpio.h"
+#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,9 +12,9 @@
 
 #define BUFSIZE 10000    /* no. of integers */
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-    int *writebuf, *readbuf, i, mynod, nprocs, flag, len, err;
+    int *writebuf, *readbuf, i, mynod, nprocs, len, err;
     char *filename;
     MPI_Datatype newtype;
     MPI_File fh;
@@ -107,7 +107,6 @@ main(int argc, char **argv)
     MPI_File_close(&fh);
 	
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("Process %d: Atomic mode works correctly for contiguous accesses\n", mynod);
 
 
 /* repeat the same test with a noncontiguous filetype */
@@ -167,7 +166,6 @@ main(int argc, char **argv)
     MPI_File_close(&fh);
 	
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("Process %d: Atomic mode works correctly for noncontiguous accesses\n", mynod);
 
     MPI_Type_free(&newtype);
     MPI_Info_free(&info);
@@ -176,4 +174,5 @@ main(int argc, char **argv)
     free(filename);
 
     MPI_Finalize();
+    return 0;
 }
