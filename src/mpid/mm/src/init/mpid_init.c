@@ -29,7 +29,7 @@ int MPID_Init( void )
     MPID_Process.bnr_dbname[0] = '\0';
     MPID_Process.comm_parent = MPI_COMM_NULL;
     //MPID_Process.lock
-    MPID_Process.port_list = NULL;
+    MPID_Process.port_list = 0;
 
     BNR_Init(&spawned);
     BNR_DB_Get_my_name(MPID_Process.bnr_dbname);
