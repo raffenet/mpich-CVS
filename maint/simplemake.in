@@ -1313,7 +1313,7 @@ sub TargetAll {
 	&TargetPreamble( "all" );
 	print_make_endline( FD );
 	$has_dot = 0;
-	foreach $dir (@subdirs) {
+	foreach $dir (@subdirs, @extra_dirs) {
 	    if ($dir eq ".") {
 		if (scalar(@alltargets) || 
 		    defined($usertargets{"all-local"})) {
