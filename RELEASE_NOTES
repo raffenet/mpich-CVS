@@ -58,6 +58,14 @@
   that will cause progress to occur. Progress occurs only when the user
   calls an MPI function at the target (which could well be MPI_WIN_FREE).
 
+- gcc 3.2 (and possibly other C++ compilers) may fail to compile the tests in
+  test/cxx/io.  This is due to a known problem in the MPI design caused by the
+  use of MPI::SEEK_SET and friends as C++ versions of MPI_SEEK_SET.
+  Unfortunately, SEEK_SET is in <stdio.h> and is usually #defined to an integer
+  constant.  There is no fix for this, but the next release of MPICH2 will
+  provide better diagnostics and will have modified tests that will avoid this
+  name conflict.
+
 
 -------------------------------------------------------------------------------
 			Issues for Developers
