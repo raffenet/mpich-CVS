@@ -55,20 +55,15 @@ static inline int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int handle_shm_read(MPIDI_VC *vc, int nb)
 {
-#ifdef MPICH_DBG_OUTPUT
-    int mpi_errno;
-#endif
+    int mpi_errno = MPI_SUCCESS;
     MPID_Request * req;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_SHM_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_SHM_READ);
-    
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
     req = vc->ch.recv_active;
     if (req == NULL)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
 	return MPI_SUCCESS;
     }
@@ -81,7 +76,17 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	    MPIDI_CA_t ca = req->dev.ca;
 	    
 	    vc->ch.recv_active = NULL;
+	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    }
+	    if (req->dev.iov_count == 0)
+	    {
+		vc->ch.shm_reading_pkt = TRUE;
+	    }
 
+#if 0
 	    if (ca == MPIDI_CH3_CA_COMPLETE)
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "received requested data, decrementing CC"));
@@ -124,6 +129,7 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 		}
 #endif
 	    }
+#endif
 	}
 	else
 	{
@@ -132,13 +138,8 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
 	    if (req->ch.iov_offset >= req->dev.iov_count)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
-		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-		return mpi_errno;
 	    }
 #endif
-	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-	    return MPI_SUCCESS;
 	}
     }
     else
@@ -149,7 +150,7 @@ int handle_shm_read(MPIDI_VC *vc, int nb)
     
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -203,7 +204,20 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		MPIDI_CA_t ca = req->dev.ca;
 			
 		vc->ch.send_active = NULL;
-		
+
+		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
+		    return mpi_errno;
+		}
+		if (req->dev.iov_count == 0 && vc->ch.sendq_head != NULL)
+		{
+		    MPIDI_CH3I_SendQ_dequeue(vc);
+		}
+		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
+#if 0
 		if (ca == MPIDI_CH3_CA_COMPLETE)
 		{
 		    MPIDI_DBG_PRINTF((65, FCNAME, "sent requested data, decrementing CC"));
@@ -250,6 +264,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		    MPIDI_DBG_PRINTF((65, FCNAME, "ca = %d", ca));
 		    assert(ca < MPIDI_CH3I_CA_END_SSHM_CHANNEL);
 		}
+#endif
 	    }
 	    else
 	    {

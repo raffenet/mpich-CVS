@@ -53,7 +53,14 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    /*assert(pkt_sz <= sizeof(MPIDI_CH3_Pkt_t));*/
+#ifdef MPICH_DBG_OUTPUT
+    if (pkt_sz > sizeof(MPIDI_CH3_Pkt_t))
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	return mpi_errno;
+    }
+#endif
 
     /* The MM channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     pkt_sz = sizeof(MPIDI_CH3_Pkt_t);
@@ -66,38 +73,50 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 	{
 	    int nb;
 
+	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
+
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
 
 	    mpi_errno = MPIDI_CH3I_SHM_write(vc, pkt, pkt_sz, &nb);
-	    if (mpi_errno != MPI_SUCCESS)
+	    if (mpi_errno == MPI_SUCCESS)
 	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-		return mpi_errno;
-	    }
+		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
 
-	    MPIDI_DBG_PRINTF((55, FCNAME, "wrote %d bytes", nb));
-
-	    if (nb == pkt_sz)
-	    { 
-		MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete, %d bytes", nb));
-		/* done.  get us out of here as quickly as possible. */
+		if (nb == pkt_sz)
+		{ 
+		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete, %d bytes", nb));
+		    /* done.  get us out of here as quickly as possible. */
+		}
+		else
+		{
+		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
+		    create_request(sreq, pkt, pkt_sz, nb);
+		    /*sreq = create_request(pkt, pkt_sz, nb);
+		    if (sreq == NULL)
+		    {
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		    return mpi_errno;
+		    }
+		    */
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		    vc->ch.send_active = sreq;
+		}
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
-		create_request(sreq, pkt, pkt_sz, nb);
-		/*sreq = create_request(pkt, pkt_sz, nb);
+		sreq = MPIDI_CH3_Request_create();
 		if (sreq == NULL)
 		{
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-		return mpi_errno;
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		    return mpi_errno;
 		}
-		*/
-		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		vc->ch.send_active = sreq;
+		sreq->kind = MPID_REQUEST_SEND;
+		sreq->cc = 0;
+		/* TODO: Create an appropriate error message based on the return value */
+		sreq->status.MPI_ERROR = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ssmwrite", 0);
 	    }
 	}
 	else
@@ -118,9 +137,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
     else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  posting connect and enqueuing request"));
-	
-	/* Form a new connection */
-	/*MPIDI_CH3I_VC_post_connect(vc);*/
 
 	/* queue the data so it can be sent after the connection is formed */
 	create_request(sreq, pkt, pkt_sz, 0);
@@ -172,5 +188,5 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_R
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }

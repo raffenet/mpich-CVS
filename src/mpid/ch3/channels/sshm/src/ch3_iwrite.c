@@ -85,7 +85,21 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 	    MPIDI_CA_t ca = req->dev.ca;
 
 	    vc->ch.send_active = NULL;
+	    
+	    mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
+		return mpi_errno;
+	    }
+	    if (req->dev.iov_count == 0 && vc->ch.sendq_head != NULL)
+	    {
+		MPIDI_CH3I_SendQ_dequeue(vc);
+	    }
+	    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 
+#if 0
 	    if (ca == MPIDI_CH3_CA_COMPLETE)
 	    {
 		/* FIXME: MT: the queuing code is not thread safe */
@@ -135,6 +149,7 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
 		    return mpi_errno;
 		}
 	    }
+#endif
 	}
 	else
 	{
