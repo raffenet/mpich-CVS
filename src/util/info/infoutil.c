@@ -7,7 +7,7 @@
 
 #include "mpiimpl.h"
 #include "mpiinfo.h"
-#include <stdio.h>
+/*#include <stdio.h>*/
 
 /* This is the utility file for info that contains the basic info items
    and storage management */

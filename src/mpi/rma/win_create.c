@@ -66,7 +66,7 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
-            /* Validate win_ptr */
+            /* Validate pointers */
 	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    MPID_Info_valid_ptr( info_ptr, mpi_errno );
 	    /* If comm_ptr is not value, it will be reset to null */
