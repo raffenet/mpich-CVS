@@ -530,7 +530,8 @@ def mpdman():
                 line = pmiFile.readline()
                 if not line:
                     (donePid,status) = waitpid(clientPid,0)
-		    msgToSend = { 'cmd' : 'client_exit_status', 'status' : status, 'id' : myId }
+		    msgToSend = { 'cmd' : 'client_exit_status', 'status' : status,
+		                  'id' : myId, 'rank' : myRank }
 		    if myRank == 0:
 		        mpd_send_one_msg(conSocket,msgToSend)
 		    else:

@@ -2,7 +2,8 @@
 
 from sys             import argv, exit, stdout, stderr
 from os              import environ, fork, execvpe, getuid, getpid, path, getcwd, \
-                            close, wait, waitpid, kill, _exit
+                            close, wait, waitpid, kill, _exit,  \
+			    WIFSIGNALED, WEXITSTATUS
 from socket          import socket, fromfd, AF_UNIX, SOCK_STREAM, gethostname
 from select          import select
 from signal          import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
@@ -272,13 +273,14 @@ def mpdrun():
                         done += 1
                     elif (msg['cmd'] == 'client_exit_status'):
 			status = msg['status']
-			killed_status = status & 0x000f
-			if killed_status:
-			    killed_status = killed_status & 0xef  # AND off core flag
-		            # print 'exit status of client %s: killed by signal %d ' % (msg['id'],killed_status)
+			if WIFSIGNALED(status):
+			    killed_status = status & 0x007f  # AND off core flag
+		            print 'exit status of rank %d: killed by signal %d ' % \
+			          (msg['rank'],killed_status)
 			else:
-			    exit_status = status >> 8
-		            # print 'exit status of client %s: return code %d ' % (msg['id'],exit_status)
+			    exit_status = WEXITSTATUS(status)
+		            print 'exit status of rank %d: return code %d ' % \
+			          (msg['rank'],exit_status)
 		    else:
 		        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
