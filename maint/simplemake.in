@@ -309,7 +309,8 @@ $sysconfdir_name =           'sysconfdir      = @' . "sysconfdir"  . '@';
 # Sigh.  ginstall (!!!) doesn't support the -p switch.
 # This means that there is no way to install a library under Darwin
 # without defining INSTALL_DATA as install -p, which configure 
-# does not figure out(!)
+# does not figure out(!).  The MPICH2 configure does check for 
+# whether install works with or without -p.
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
 		     'SHLIB'   => '$(INSTALL_PROGRAM)',
@@ -2734,6 +2735,7 @@ sub TargetDocs {
 #
 # Install target.  Question: does this need to list (or use a shell command
 # to get) the filename for each individual file?
+#
 sub InstallDocs {
     # Add target only at the top
     if (!$doc_attop) { return; }
@@ -2772,6 +2774,10 @@ sub InstallDocDirs {
 # Installation is complicated by VPATH builds; files that are derived and
 # files that are not may be in different locations (one relative, the other
 # absolute with respect to the source tree)
+#
+# Also, note that the documents and some other files may be pre-existing, so 
+# that we need to get them from the srcdir, not the build dir.  However,
+# maintainers may create them in the builddir.
 sub TargetInstall {
     %dirschecked = ();
     if (!scalar(%install_files) && !scalar($install_dirs)) { return ; }
@@ -2852,6 +2858,7 @@ sub TargetInstall {
 	    # install should be constrained.  If there is a reason for an 
 	    # install with three levels of directories, either install the 
 	    # subdirectories separately or modify this code.
+
 	    print FD "\t\@-test -d $srcdir && cd $srcdir && for name in * ; do \\
 \t if [ -f \$\$name ] ; then \\
 \t    echo \"$this_install_choice \$\$name \${$dir}/\$\$name\" ; \\
