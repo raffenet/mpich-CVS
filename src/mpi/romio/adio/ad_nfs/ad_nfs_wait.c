@@ -103,7 +103,7 @@ void ADIOI_NFS_ReadComplete(ADIO_Request *request, ADIO_Status *status, int *err
 	}
 	else *error_code = MPI_SUCCESS;
     }
-    else *error_code = MPI_SUCCESS;  /* if ( (*request)->queued )
+    else *error_code = MPI_SUCCESS;  /* if ( (*request)->queued ) */
 
 #ifdef HAVE_STATUS_SET_BYTES
     if ((*request)->nbytes != -1)
