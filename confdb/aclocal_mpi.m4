@@ -130,7 +130,7 @@ if test "X$ac_mpi_type" = "X" ; then
         ac_mpi_type=unknown
     fi
 fi
-if test -z "$ac_mpi_type" -a "$pac_lib_mpi_is_building" = "yes" ; then
+if test "$ac_mpi_type" = "unknown" -a "$pac_lib_mpi_is_building" = "yes" ; then
     ac_mpi_type="mpich"
 fi
 case $ac_mpi_type in
@@ -229,9 +229,19 @@ case $ac_mpi_type in
 	AC_PROG_F77
 	AC_PROG_CXX
 	PAC_PROG_F90
-	# Set defaults for the TEST versions
-	TESTCC=${CC:=cc}; TESTF77=${F77:=f77}; 
-	TESTCXX=${CXX:=CC}; TESTF90=${F90:=f90}
+	# Set defaults for the TEST versions if not already set
+	if test -z "$TESTCC" ; then 
+	    TESTCC=${CC:=cc}
+        fi
+	if test -z "$TESTF77" ; then 
+  	    TESTF77=${F77:=f77}
+        fi
+	if test -z "$TESTCXX" ; then
+	    TESTCXX=${CXX:=CC}
+        fi
+	if test -z "$TESTF90" ; then
+       	    TESTF90=${F90:=f90}
+	fi
 	;;
 esac
 ])
