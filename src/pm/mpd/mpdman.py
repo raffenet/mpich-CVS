@@ -158,7 +158,7 @@ def mpdman():
             execvpe(clientPgm,clientPgmArgs,environ)    # client
         except Exception, errmsg:
             ## mpd_raise('execvpe failed for client %s; errmsg=:%s:' % (clientPgm,errmsg) )
-            print '%s: execvpe failed for: %s' % (myId,clientPgm)
+            print '%s: could not run %s; probably executable file not found' % (myId,clientPgm)
             exit(0)
         _exit(0)  # just in case (does no cleanup)
     close(pipe_write_cli_stdout)

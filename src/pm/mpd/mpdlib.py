@@ -12,7 +12,7 @@ from grp        import getgrall
 from pwd        import getpwnam, getpwuid
 
 global mpd_version
-mpd_version = (0,1,2,'edi')    # major, minor, micro, special
+mpd_version = (0,1,3,'supercomputing prerelease')    # major, minor, micro, special
 
 class mpdError(Exception):
     def __init__(self,args=None):

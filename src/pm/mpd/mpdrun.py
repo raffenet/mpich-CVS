@@ -266,7 +266,8 @@ def mpdrun():
 		    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
                     elif msg['cmd'] == 'job_terminated_early':
-                        print 'mpdrun: job %s terminated early at rank %d' % (msg['jobid'], msg['rank'])
+                        print 'rank %d in job %s terminated without calling MPI_Finalize' %  ( msg['rank'], msg['jobid'] )
+                        # print 'mpdrun: job %s terminated early at rank %d' % (msg['jobid'], msg['rank'])
                         # del socketsToSelect[readySocket]
                         # readySocket.close()
                         # done += 1

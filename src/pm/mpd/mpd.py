@@ -94,7 +94,10 @@ def _mpd_init():
                 tempSocket.close()
                 unlink(g.conListenName)
         if consoleAlreadyExists:
-            mpd_raise('an mpd is already running with console at %s' %  (g.conListenName) )
+            # mpd_raise('an mpd is already running with console at %s' %  (g.conListenName) )
+            print 'An mpd is already running with console at %s on %s. ' %  (g.conListenName, g.myHost) 
+            print 'Start mpd with the -n option for second mpd on same host.'
+            _exit(0)
         g.conListenSocket = socket(AF_UNIX,SOCK_STREAM)  # UNIX
         g.conListenSocket.bind(g.conListenName)
         g.conListenSocket.listen(1)
@@ -776,9 +779,14 @@ def _process_configfile_params():
     except:
         mode = ''
     if not mode:
-        mpd_raise('%s: config file not found' % (configFilename) )
+        # mpd_raise('%s: config file not found' % (configFilename) )
+        print 'configuration file %s not found' % (configFilename)
+        _exit(0)
     if  (mode & 0x3f):
-        mpd_raise('%s: config file accessible by others' % (configFilename) )
+        # mpd_raise('%s: config file accessible by others' % (configFilename) )
+        print 'configuration file %s is accessible by others' % (configFilename)
+        print 'change permissions to allow read and write access only by you'
+        _exit(0)
     configFile = open(configFilename,'r')
     g.configParams = {}
     for line in configFile:
@@ -850,8 +858,8 @@ def sigchld_handler(signum,frame):
 
 def usage():
     print 'mpd version %s' % str(mpd_version)
-    print 'usage: %s -h -p -t -n -e -d -b' % argv[0]
-    print '   or: %s --host --port --trace --noconsole --echo --daemon --bulletproof' % argv[0]
+    print 'usage: %s -h -p -t -n -e -d -b -i' % argv[0]
+    print '   or: %s --host --port --trace --noconsole --echo --daemon --bulletproof --idmyhost' % argv[0]
     print 'host and port must be specified together and tell where to enter a ring;'
     print '  if they are not coded, the mpd forms a stand-alone ring that other mpds'
     print '  may enter later'
@@ -861,7 +869,10 @@ def usage():
     print 'echo says to echo the listener port for the mpd; useful in scripts'
     print 'daemon causes mpd to run backgrounded, with no controlling tty'
     print 'bulletproof says to turn bulletproofing on (experimental)'
-    
+    print 'idmyhost specifies an alternate hostname for the host this mpd is running on'
+    print '.mpd.conf file must be present in home directory with read and write access' 
+    print '  only for user, and must contain at least a line with password=<password>'
+
     exit(-1)
 
 def _cleanup():
