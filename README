@@ -6,14 +6,18 @@ MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
 no actual code.  It is intended to become a portable, high-performance
 implementation of the entire MPI-2 standard.  This release has many
-MPI-2 features but is not quite complete.  It also currently supports
-only a few communication methods.
+MPI-2 features but is not quite complete (see below for the status of MPI-2 
+features in MPICH2).  It also currently supports only a few communication
+methods. 
 
 This is an early release of MPICH2.  It has been tested by us on a
 variety of machines in our own environment, but not extensively tested
 by outside users.  If you have problems, please report them to
 mpich2-maint@mcs.anl.gov; we are interested in incorporating user
-experiences as quickly as possible.
+experiences as quickly as possible.  The web site 
+http://www.mcs.anl.gov/mpi/mpich2 will also have information on 
+bug fixes and new releases.  This release does not include user or 
+installation manuals.
 
 Getting Started
 ===============
@@ -293,14 +297,16 @@ specify that you want to use forker by doing
 
 on the configure command line.
 
-remsh
+remsh (not yet available)
+-------------------------
 
 Remsh is a process manager that starts the processes via remote shell.
 It does not require any pre-existing user daemons, since it uses the
 remote shell daemon.  It does not provide as scalable a startup speed as
 MPD, and its version of mpiexec may not support all of the standard
 options and arguments.  It is useful if you are having difficulties with
-MPD, since it does not require a python installation.
+MPD, since it does not require a python installation.  This process 
+manager is still under development.
 
 
 Alternative channels and devices
@@ -386,9 +392,9 @@ Language bindings:
                  It has been tested with the Fortran parts of the Intel
 		 test suite.
   --enable-f90 - Build the Fortran 90 bindings.  This is not on by
-                 default, since these have not yet bee tested. 
+                 default, since these have not yet been tested. 
   --enable-cxx - Build the C++ bindings.  This has been tested with the
-                 MPICH-1 C++ test suite.
+                 Notre Dame C++ test suite.
 
 Cross compilation:
 
@@ -420,10 +426,25 @@ Compilation options for development:
   --enable-g=value - Controls the amount of debugging information
                  collected by the code.  The most useful choice here is
 		 dbg, which compiles with -g.
-  --enable-coverage - An experimental option for enable GNU coverage
+  --enable-coverage - An experimental option that enables GNU coverage
                  analysis.
   --with-logging=name - Select a logging library for recording the 
                  timings of the internal routines.  We have used this
 		 to understand the performance of the internals of MPICH2.
 		 Wait for the next release for detailed instructions.
 
+Status of MPI-2 Features in MPICH2
+==================================
+MPICH2 includes all of MPI-1 and the following parts of MPI-2:
+
+MPI-I/O, except for the external data representations (e.g., MPICH2 includes
+    all of ROMIO)
+
+Active target RMA is functional, including for derived datatypes at the target
+
+Name publishing is supported on shared file systems (other name publishers
+are under development)
+
+Routine not implemented include the dynamic process routines (MPI_Comm_spawn
+and friends); other routines, such as the intercommunicator extensions to the
+collective routines, have not been extensively tested.
