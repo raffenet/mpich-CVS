@@ -64,12 +64,15 @@ int MPID_Type_indexed(int count,
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
-    if (!new_dtp) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!new_dtp)
+    {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					 "MPID_Type_indexed", __LINE__,
 					 MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* handle is filled in by MPIU_Handle_obj_alloc() */
     MPIU_Object_set_ref(new_dtp, 1);
@@ -86,7 +89,8 @@ int MPID_Type_indexed(int count,
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-    if (count == 0) {
+    if (count == 0)
+    {
 	/* we are interpreting the standard here based on the fact that
 	 * with a zero count there is nothing in the typemap.
 	 *
@@ -122,7 +126,8 @@ int MPID_Type_indexed(int count,
 	
 	return MPI_SUCCESS;
     }
-    else if (is_builtin) {
+    else if (is_builtin)
+    {
 	/* builtins are handled differently than user-defined types because
 	 * they have no associated dataloop or datatype structure.
 	 */
@@ -145,7 +150,9 @@ int MPID_Type_indexed(int count,
 	new_dtp->element_size = el_sz;
 	new_dtp->eltype       = el_type;
     }
-    else /* user-defined base type (oldtype) */ {
+    else
+    {
+	/* user-defined base type (oldtype) */
 	MPID_Datatype *old_dtp;
 
 	MPID_Datatype_get_ptr(oldtype, old_dtp);
@@ -181,7 +188,8 @@ int MPID_Type_indexed(int count,
 			      max_ub);
 
     /* determine min lb, max ub, and count of old types */
-    for (i=1; i < count; i++) {
+    for (i=1; i < count; i++)
+    {
 	MPI_Aint tmp_lb, tmp_ub;
 	
 	old_ct += blocklength_array[i]; /* add more oldtypes */
@@ -222,10 +230,12 @@ int MPID_Type_indexed(int count,
 						   dispinbytes,
 						   old_extent);
 
-    if ((contig_count == 1) && (new_dtp->size == new_dtp->extent)) {
+    if ((contig_count == 1) && (new_dtp->size == new_dtp->extent))
+    {
 	new_dtp->is_contig = old_is_contig;
     }
-    else {
+    else
+    {
 	new_dtp->is_contig = 0;
     }
 
@@ -278,19 +288,22 @@ void MPID_Dataloop_create_indexed(int count,
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-    if (is_builtin) {
+    if (is_builtin)
+    {
 	old_extent     = MPID_Datatype_get_basic_size(oldtype);
 	old_loop_sz    = 0;
 	old_loop_depth = 0;
     }
-    else {
+    else
+    {
 	MPID_Datatype_get_ptr(oldtype, old_dtp);
 	old_extent     = old_dtp->extent;
 	old_loop_sz    = old_dtp->loopsize;
 	old_loop_depth = old_dtp->loopinfo_depth;
     }
 
-    for (i=0; i < count; i++) {
+    for (i=0; i < count; i++)
+    {
 	old_type_count += blocklength_array[i];
     }
 
@@ -325,7 +338,8 @@ void MPID_Dataloop_create_indexed(int count,
      * a single element blockindexed rather than a lot of individual
      * blocks.
      */
-    if (contig_count == 1) {
+    if (contig_count == 1)
+    {
 	MPID_Dataloop_create_blockindexed(1,
 					  old_type_count,
 					  displacement_array,
@@ -344,13 +358,16 @@ void MPID_Dataloop_create_indexed(int count,
      * blockindexed rather than an indexed dataloop.
      */
     blksz = blocklength_array[0];
-    for (i=1; i < count; i++) {
-	if (blocklength_array[i] != blksz) {
+    for (i=1; i < count; i++)
+    {
+	if (blocklength_array[i] != blksz)
+	{
 	    blksz--;
 	    break;
 	}
     }
-    if (blksz == blocklength_array[0]) {
+    if (blksz == blocklength_array[0])
+    {
 	MPID_Dataloop_create_blockindexed(count,
 					  blocklength_array[0],
 					  displacement_array,
@@ -374,16 +391,19 @@ void MPID_Dataloop_create_indexed(int count,
     new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
     assert(new_dlp != NULL);
 
-    if (is_builtin) {
+    if (is_builtin)
+    {
 	new_dlp->kind = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK;
 
-	if (flags & MPID_DATALOOP_ALL_BYTES) {
+	if (flags & MPID_DATALOOP_ALL_BYTES)
+	{
 	    /* blocklengths are modified below */
 	    new_dlp->el_size   = 1;
 	    new_dlp->el_extent = 1;
 	    new_dlp->el_type   = MPI_BYTE;
 	}
-	else {
+	else
+	{
 	    new_dlp->el_size   = old_extent;
 	    new_dlp->el_extent = old_extent;
 	    new_dlp->el_type   = oldtype;
@@ -391,7 +411,8 @@ void MPID_Dataloop_create_indexed(int count,
 
 	new_dlp->loop_params.i_t.dataloop = NULL;
     }
-    else {
+    else
+    {
 	new_dlp->kind      = DLOOP_KIND_INDEXED;
 	new_dlp->el_size   = old_dtp->size;
 	new_dlp->el_extent = old_dtp->extent;
@@ -428,10 +449,12 @@ void MPID_Dataloop_create_indexed(int count,
 				  dispinbytes,
 				  old_extent);
 
-    if (is_builtin && (flags & MPID_DATALOOP_ALL_BYTES)) {
+    if (is_builtin && (flags & MPID_DATALOOP_ALL_BYTES))
+    {
 	int *tmp_blklen_array = new_dlp->loop_params.i_t.blocksize_array;
 
-	for (i=0; i < contig_count; i++) {
+	for (i=0; i < contig_count; i++)
+	{
 	    /* increase block lengths so they are in bytes */
 	    tmp_blklen_array[i] *= old_extent;
 	}
@@ -462,33 +485,39 @@ static int MPIDI_Type_indexed_count_contig(int count,
     int i, contig_count = 1;
     int cur_blklen = blocklength_array[0];
 
-    if (!dispinbytes) {
+    if (!dispinbytes)
+    {
 	int cur_tdisp = ((int *) displacement_array)[0];
 	
-	for (i = 1; i < count; i++) {
+	for (i = 1; i < count; i++)
+	{
 	    if (cur_tdisp + cur_blklen == ((int *) displacement_array)[i])
 	    {
 		/* adjacent to current block; add to block */
 		cur_blklen += blocklength_array[i];
 	    }
-	    else {
+	    else
+	    {
 		cur_tdisp  = ((int *) displacement_array)[i];
 		cur_blklen = blocklength_array[i];
 		contig_count++;
 	    }
 	}
     }
-    else {
+    else
+    {
 	MPI_Aint cur_bdisp = ((MPI_Aint *) displacement_array)[0];
 	
-	for (i = 1; i < count; i++) {
+	for (i = 1; i < count; i++)
+	{
 	    if (cur_bdisp + cur_blklen * old_extent ==
 		((MPI_Aint *) displacement_array)[i])
 	    {
 		/* adjacent to current block; add to block */
 		cur_blklen += blocklength_array[i];
 	    }
-	    else {
+	    else
+	    {
 		cur_bdisp  = ((MPI_Aint *) displacement_array)[i];
 		cur_blklen = blocklength_array[i];
 		contig_count++;
@@ -518,17 +547,20 @@ static void MPIDI_Type_indexed_array_copy(int count,
 
     out_blklen_array[0] = in_blklen_array[0];
 
-    if (!dispinbytes) {
+    if (!dispinbytes)
+    {
 	 out_disp_array[0] = (MPI_Aint) ((int *) in_disp_array)[0];
 	
-	for (i = 1; i < count; i++) {
+	for (i = 1; i < count; i++)
+	{
 	    if (out_disp_array[cur_idx] + ((MPI_Aint) out_blklen_array[cur_idx]) * old_extent ==
 		((MPI_Aint) ((int *) in_disp_array)[i]) * old_extent)
 	    {
 		/* adjacent to current block; add to block */
 		out_blklen_array[cur_idx] += in_blklen_array[i];
 	    }
-	    else {
+	    else
+	    {
 		cur_idx++;
 		assert(cur_idx < contig_count);
 		out_disp_array[cur_idx] = ((MPI_Aint) ((int *) in_disp_array)[i]) * old_extent;
@@ -536,17 +568,20 @@ static void MPIDI_Type_indexed_array_copy(int count,
 	    }
 	}
     }
-    else {
+    else
+    {
 	out_disp_array[0] = ((MPI_Aint *) in_disp_array)[0];
 	
-	for (i = 1; i < count; i++) {
+	for (i = 1; i < count; i++)
+	{
 	    if (out_disp_array[cur_idx] + ((MPI_Aint) out_blklen_array[cur_idx]) * old_extent ==
 		((MPI_Aint *) in_disp_array)[i])
 	    {
 		/* adjacent to current block; add to block */
 		out_blklen_array[cur_idx] += in_blklen_array[i];
 	    }
-	    else {
+	    else
+	    {
 		cur_idx++;
 		assert(cur_idx < contig_count);
 		out_disp_array[cur_idx]   = ((MPI_Aint *) in_disp_array)[i];

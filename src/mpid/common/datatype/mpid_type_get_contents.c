@@ -11,8 +11,6 @@
 #include <mpid_dataloop.h>
 #include <assert.h>
 
-static int create_error_to_return(void);
-
 /*@
   MPID_Type_get_contents - get content information from datatype
 
@@ -36,26 +34,34 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 			   MPI_Aint array_of_addresses[], 
 			   MPI_Datatype array_of_datatypes[])
 {
+    int mpi_errno;
     int i;
     MPID_Datatype *dtp;
     MPID_Datatype_contents *cp;
     char *ptr;
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+    {
 	/* this is erroneous according to the standard */
-	return create_error_to_return();
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_get_contents", __LINE__, MPI_ERR_OTHER, "**dtype", 0);
+	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     MPID_Datatype_get_ptr(datatype, dtp);
     cp = dtp->contents;
-    if (cp == NULL) assert(0);
+    assert(cp != NULL);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (max_integers < cp->nr_ints ||
 	max_addresses < cp->nr_aints ||
 	max_datatypes < cp->nr_types)
     {
-	return create_error_to_return();
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_get_contents", __LINE__, MPI_ERR_OTHER, "**dtype", 0);
+	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* recall that contents data is stored contiguously after the
      * contents structure, in types, ints, aints order
@@ -64,32 +70,22 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
     memcpy(array_of_datatypes, ptr, cp->nr_types * sizeof(MPI_Datatype));
     ptr += cp->nr_types * sizeof(MPI_Datatype);
 
-    if (cp->nr_ints > 0) {
+    if (cp->nr_ints > 0)
+    {
 	memcpy(array_of_integers, ptr, cp->nr_ints * sizeof(int));
 	ptr += cp->nr_ints * sizeof(int);
     }
 
     if (cp->nr_aints > 0) memcpy(array_of_addresses, ptr, cp->nr_aints * sizeof(MPI_Aint));
 
-    for (i=0; i < cp->nr_types; i++) {
-    	if (HANDLE_GET_KIND(array_of_datatypes[i]) != HANDLE_KIND_BUILTIN) {
+    for (i=0; i < cp->nr_types; i++)
+    {
+    	if (HANDLE_GET_KIND(array_of_datatypes[i]) != HANDLE_KIND_BUILTIN)
+	{
 	    MPID_Datatype_get_ptr(array_of_datatypes[i], dtp);
 	    MPID_Datatype_add_ref(dtp);
 	}
     }
 
     return MPI_SUCCESS;
-}
-
-/* create_error_to_return() - create an error code and return the value
- *
- * Basically there are a million points in this function where I need to do
- * this, so I created a static function to do it instead.
- */
-static int create_error_to_return(void)
-{
-    int mpi_errno;
-
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_get_contents", __LINE__, MPI_ERR_OTHER, "**dtype", 0);
-    return mpi_errno;
 }

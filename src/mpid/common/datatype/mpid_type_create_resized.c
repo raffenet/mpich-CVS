@@ -22,10 +22,13 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
     struct MPID_Dataloop *dlp;
 
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
-    if (!new_dtp) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!new_dtp)
+    {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPID_Type_create_resized", __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* handle is filled in by MPIU_Handle_obj_alloc() */
     MPIU_Object_set_ref(new_dtp, 1);
@@ -37,7 +40,8 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
     new_dtp->contents     = 0;
 
     /* if oldtype is a basic, we build a contiguous dataloop of count = 1 */
-    if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN)
+    {
 	int oldsize = MPID_Datatype_get_basic_size(oldtype);
 
 	new_dtp->size           = oldsize;
@@ -68,7 +72,9 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	dlp->el_extent                  = extent;
 	dlp->el_type                    = oldtype;
     }
-    else /* user-defined base type */ {
+    else
+    {
+	/* user-defined base type */
 	MPID_Datatype *old_dtp;
 	char *curpos;
 

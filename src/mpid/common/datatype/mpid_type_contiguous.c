@@ -37,13 +37,16 @@ int MPID_Type_contiguous(int count,
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
-    if (!new_dtp) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!new_dtp)
+    {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					 "MPID_Type_contiguous",
 					 __LINE__, MPI_ERR_OTHER,
 					 "**nomem", 0);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* handle is filled in by MPIU_Handle_obj_alloc() */
     MPIU_Object_set_ref(new_dtp, 1);
@@ -60,7 +63,8 @@ int MPID_Type_contiguous(int count,
     
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-    if (count == 0) {
+    if (count == 0)
+    {
 	/* we are interpreting the standard here based on the fact that
 	 * with a zero count there is nothing in the typemap.
 	 *
@@ -91,7 +95,8 @@ int MPID_Type_contiguous(int count,
 	
 	return MPI_SUCCESS;
     }
-    else if (is_builtin) {
+    else if (is_builtin)
+    {
 	el_sz   = MPID_Datatype_get_basic_size(oldtype);
 	el_type = oldtype;
 
@@ -111,7 +116,9 @@ int MPID_Type_contiguous(int count,
 	new_dtp->is_contig     = 1;
 
     }
-    else /* user-defined base type (oldtype) */ {
+    else
+    {
+	/* user-defined base type (oldtype) */
 	MPID_Datatype *old_dtp;
 
 	MPID_Datatype_get_ptr(oldtype, old_dtp);
@@ -181,11 +188,13 @@ void MPID_Dataloop_create_contiguous(int count,
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-    if (is_builtin) {
+    if (is_builtin)
+    {
 	new_loop_sz    = sizeof(struct MPID_Dataloop);
 	new_loop_depth = 1;
     }
-    else {
+    else
+    {
 	MPID_Datatype_get_ptr(oldtype, old_dtp); /* fills in old_dtp */
 
 	/* if we have a simple combination of contigs, coalesce */
@@ -197,7 +206,8 @@ void MPID_Dataloop_create_contiguous(int count,
 	    new_loop_sz             = old_dtp->loopsize;
 	    new_loop_depth          = old_dtp->loopinfo_depth;
 	}
-	else {
+	else
+	{
 	    /* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
 	    new_loop_sz    = sizeof(struct MPID_Dataloop) + old_dtp->loopsize;
 	    new_loop_depth = old_dtp->loopinfo_depth + 1;
@@ -207,16 +217,19 @@ void MPID_Dataloop_create_contiguous(int count,
     new_dlp = (struct MPID_Dataloop *) MPIU_Malloc(new_loop_sz);
     assert(new_dlp != NULL);
 
-    if (is_builtin) {
+    if (is_builtin)
+    {
 	new_dlp->kind      = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
 
-	if (flags & MPID_DATALOOP_ALL_BYTES) {
+	if (flags & MPID_DATALOOP_ALL_BYTES)
+	{
 	    count             *= MPID_Datatype_get_basic_size(oldtype);
 	    new_dlp->el_size   = 1;
 	    new_dlp->el_extent = 1;
 	    new_dlp->el_type   = MPI_BYTE;
 	}
-	else {
+	else
+	{
 	    new_dlp->el_size   = MPID_Datatype_get_basic_size(oldtype);
 	    new_dlp->el_extent = new_dlp->el_size;
 	    new_dlp->el_type   = oldtype;
@@ -226,12 +239,16 @@ void MPID_Dataloop_create_contiguous(int count,
 
 	new_dlp->loop_params.c_t.count = count;
     }
-    else /* user-defined base type (oldtype) */ {
-	if (apply_contig_coalescing) {
+    else
+    {
+	/* user-defined base type (oldtype) */
+	if (apply_contig_coalescing)
+	{
 	    MPID_Dataloop_copy(new_dlp, old_dtp->loopinfo, old_dtp->loopsize);
 	    new_dlp->loop_params.c_t.count *= count;
 	}
-	else {
+	else
+	{
 	    char *curpos;
 	    
 	    new_dlp->kind      = DLOOP_KIND_CONTIG;

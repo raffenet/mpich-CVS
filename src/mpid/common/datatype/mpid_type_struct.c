@@ -22,13 +22,16 @@ int MPID_Type_struct_alignsize(int count,
 {
     int i, max_alignsize = 0, tmp_alignsize;
 
-    for (i=0; i < count; i++) {
+    for (i=0; i < count; i++)
+    {
 	/* shouldn't be called with an LB or UB, but we'll handle it nicely */
 	if (oldtype_array[i] == MPI_LB || oldtype_array[i] == MPI_UB) continue;
-	else if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) {
+	else if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN)
+	{
 	    tmp_alignsize = MPID_Datatype_get_basic_size(oldtype_array[i]);
 	}
-	else {
+	else
+	{
 	    MPID_Datatype *dtp;	    
 
 	    MPID_Datatype_get_ptr(oldtype_array[i], dtp);
@@ -85,7 +88,8 @@ int MPID_Type_struct(int count,
 #ifdef MPID_STRUCT_DEBUG
     MPIDI_Datatype_printf(oldtype_array[0], 1, displacement_array[0],
 			  blocklength_array[0], 1);
-    for (i=1; i < count; i++) {
+    for (i=1; i < count; i++)
+    {
 	MPIDI_Datatype_printf(oldtype_array[i], 1, displacement_array[i],
 			      blocklength_array[i], 0);
     }
@@ -93,13 +97,16 @@ int MPID_Type_struct(int count,
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
-    if (!new_dtp) {
+    /* --BEGIN ERROR HANDLING-- */
+    if (!new_dtp)
+    {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					 "MPID_Type_struct",
 					 __LINE__, MPI_ERR_OTHER,
 					 "**nomem", 0);
 	return mpi_errno;
     }
+    /* --END ERROR HANDLING-- */
 
     /* handle is filled in by MPIU_Handle_obj_alloc() */
     MPIU_Object_set_ref(new_dtp, 1);
@@ -114,7 +121,8 @@ int MPID_Type_struct(int count,
     new_dtp->loopinfo       = NULL;
     new_dtp->loopinfo_depth = -1;
 
-    if (count == 0) {
+    if (count == 0)
+    {
 	/* we are interpreting the standard here based on the fact that
 	 * with a zero count there is nothing in the typemap.
 	 *
@@ -150,7 +158,8 @@ int MPID_Type_struct(int count,
 	return MPI_SUCCESS;
     }
 
-    for (i=0; i < count; i++) {
+    for (i=0; i < count; i++)
+    {
 	int is_builtin =
 	    (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN);
 	MPI_Aint tmp_lb, tmp_ub, tmp_true_lb, tmp_true_ub;
@@ -158,7 +167,8 @@ int MPID_Type_struct(int count,
 	MPI_Datatype tmp_el_type;
 	MPID_Datatype *old_dtp = NULL;
 
-	if (is_builtin) {
+	if (is_builtin)
+	{
 	    /* Q: DO LB or UBs count in element counts? */
 	    tmp_el_sz   = MPID_Datatype_get_basic_size(oldtype_array[i]);
 	    tmp_el_type = oldtype_array[i];
@@ -175,7 +185,8 @@ int MPID_Type_struct(int count,
 
 	    size += tmp_el_sz * blocklength_array[i];
 	}
-	else {
+	else
+	{
 	    MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
 
 	    tmp_el_sz   = old_dtp->element_size;
@@ -195,16 +206,19 @@ int MPID_Type_struct(int count,
 	}
 
 	/* element size and type */
-	if (i == 0) {
+	if (i == 0)
+	{
 	    el_sz = tmp_el_sz;
 	    el_type = tmp_el_type;
 	}
-	else if (el_sz != tmp_el_sz) {
+	else if (el_sz != tmp_el_sz)
+	{
 	    /* Q: should LB and UB have any effect here? */
 	    el_sz = -1;
 	    el_type = MPI_DATATYPE_NULL;
 	}
-	else if (el_type != tmp_el_type) {
+	else if (el_type != tmp_el_type)
+	{
 	    /* Q: should we set el_sz = -1 even though the same? */
 	    el_type = MPI_DATATYPE_NULL;
 	}
@@ -213,11 +227,13 @@ int MPID_Type_struct(int count,
 	if ((oldtype_array[i] == MPI_LB) ||
 	    (!is_builtin && old_dtp->has_sticky_lb))
 	{
-	    if (!found_sticky_lb) {
+	    if (!found_sticky_lb)
+	    {
 		found_sticky_lb = 1;
 		sticky_lb_disp  = tmp_lb;
 	    }
-	    else if (sticky_lb_disp > tmp_lb) {
+	    else if (sticky_lb_disp > tmp_lb)
+	    {
 		sticky_lb_disp = tmp_lb;
 	    }
 	}
@@ -226,17 +242,20 @@ int MPID_Type_struct(int count,
 	if ((oldtype_array[i] == MPI_UB) || 
 	    (!is_builtin && old_dtp->has_sticky_ub))
 	{
-	    if (!found_sticky_ub) {
+	    if (!found_sticky_ub)
+	    {
 		found_sticky_ub = 1;
 		sticky_ub_disp  = tmp_ub;
 	    }
-	    else if (sticky_ub_disp < tmp_ub) {
+	    else if (sticky_ub_disp < tmp_ub)
+	    {
 		sticky_ub_disp = tmp_ub;
 	    }
 	}
 
 	/* keep lowest true lb and highest true ub */
-	if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB) {
+	if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB)
+	{
 	    if (!found_true_lb)
 	    {
 		found_true_lb = 1;
@@ -257,7 +276,8 @@ int MPID_Type_struct(int count,
 	    }
 	}
 
-	if (!is_builtin && !old_dtp->is_contig) {
+	if (!is_builtin && !old_dtp->is_contig)
+	{
 	    old_are_contig = 0;
 	}
     }
@@ -277,11 +297,13 @@ int MPID_Type_struct(int count,
     new_dtp->alignsize = MPID_Type_struct_alignsize(count, oldtype_array);
 
     new_dtp->extent = new_dtp->ub - new_dtp->lb;
-    if ((!found_sticky_lb) && (!found_sticky_ub)) {
+    if ((!found_sticky_lb) && (!found_sticky_ub))
+    {
 	/* account for padding */
 	MPI_Aint epsilon = new_dtp->extent % new_dtp->alignsize;
 
-	if (epsilon) {
+	if (epsilon)
+	{
 	    new_dtp->ub    += (new_dtp->alignsize - epsilon);
 	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
 	}
@@ -292,10 +314,12 @@ int MPID_Type_struct(int count,
     /* new type is contig for N types if its size and extent are the
      * same, and the old type was also contiguous
      */
-    if ((new_dtp->size == new_dtp->extent) && old_are_contig) {
+    if ((new_dtp->size == new_dtp->extent) && old_are_contig)
+    {
 	new_dtp->is_contig = 1;
     }
-    else {
+    else
+    {
 	new_dtp->is_contig = 0;
     }
 
@@ -358,25 +382,32 @@ void MPID_Dataloop_create_struct(int count,
     }
 
     /* browse the old types and characterize */
-    for (i=0; i < count; i++) {
+    for (i=0; i < count; i++)
+    {
 	if (oldtype_array[i] != MPI_LB && oldtype_array[i] != MPI_UB)
 	{
-	    if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) {
-		if (nr_basics == 0) {
+	    if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN)
+	    {
+		if (nr_basics == 0)
+		{
 		    first_basic = oldtype_array[i];
 		    type_pos = i;
 		}
-		else if (oldtype_array[i] != first_basic) {
+		else if (oldtype_array[i] != first_basic)
+		{
 		    first_basic = MPI_DATATYPE_NULL;
 		}
 		nr_basics++;
 	    }
-	    else /* derived type */ {
-		if (nr_derived == 0) {
+	    else /* derived type */
+	    {
+		if (nr_derived == 0)
+		{
 		    first_derived = oldtype_array[i];
 		    type_pos = i;
 		}
-		else if (oldtype_array[i] != first_derived) {
+		else if (oldtype_array[i] != first_derived)
+		{
 		    first_derived = MPI_DATATYPE_NULL;
 		}
 		nr_derived++;
@@ -391,11 +422,13 @@ void MPID_Dataloop_create_struct(int count,
      * calculations here.
      */
 
-    if (nr_basics + nr_derived == 0) {
+    if (nr_basics + nr_derived == 0)
+    {
 	/* WHAT DO WE DO HERE? */
 	assert(0);
     }
-    else if (nr_basics + nr_derived == 1) {
+    else if (nr_basics + nr_derived == 1)
+    {
 	/* type_pos is index to only real type in array */
 	/* note: indexed call will a contig if possible */
 	MPID_Dataloop_create_indexed(1, /* count */
@@ -424,8 +457,10 @@ void MPID_Dataloop_create_struct(int count,
 	tmp_disp_array   = (MPI_Aint *) MPIU_Malloc(count * sizeof(MPI_Aint));
 	assert(tmp_disp_array != NULL);
 
-	for (i=type_pos; i < count; i++) {
-	    if (oldtype_array[i] == oldtype_array[type_pos]) {
+	for (i=type_pos; i < count; i++)
+	{
+	    if (oldtype_array[i] == oldtype_array[type_pos])
+	    {
 		tmp_blklen_array[cur_pos] = blklen_array[i];
 		tmp_disp_array[cur_pos]   = disp_array[i];
 		cur_pos++;
@@ -458,8 +493,10 @@ void MPID_Dataloop_create_struct(int count,
 	tmp_disp_array   = (MPI_Aint *) MPIU_Malloc(count * sizeof(MPI_Aint));
 	assert(tmp_disp_array != NULL);
 
-	for (i=0; i < count; i++) {
-	    if (oldtype_array[i] != MPI_LB && oldtype_array[i] != MPI_UB) {
+	for (i=0; i < count; i++)
+	{
+	    if (oldtype_array[i] != MPI_LB && oldtype_array[i] != MPI_UB)
+	    {
 		int sz = MPID_Datatype_get_basic_size(oldtype_array[i]);
 
 		tmp_blklen_array[cur_pos] = sz * blklen_array[i];
@@ -494,7 +531,8 @@ void MPID_Dataloop_create_struct(int count,
 	segp = MPID_Segment_alloc();
 
 	/* use segment code once to count contiguous regions */
-	for (i=0; i < count; i++) {
+	for (i=0; i < count; i++)
+	{
 	    int is_basic;
 	    
 	    is_basic = (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN);
@@ -504,7 +542,8 @@ void MPID_Dataloop_create_struct(int count,
 	    {
 		nr_blks++;
 	    }
-	    else /* derived type; get a count of contig blocks */ {
+	    else /* derived type; get a count of contig blocks */
+	    {
 		int tmp_nr_blks;
 
 		MPID_Segment_init(NULL,
@@ -533,7 +572,8 @@ void MPID_Dataloop_create_struct(int count,
 
 	/* use segment code again to flatten the type */
 	first = 0;
-	for (i=0; i < count; i++) {
+	for (i=0; i < count; i++)
+	{
 	    /* we're going to use the segment code to flatten the type.
 	     * we put in our displacement as the buffer location, and use
 	     * the blocklength as the count value to get N contiguous copies
@@ -542,7 +582,8 @@ void MPID_Dataloop_create_struct(int count,
 	     * Note that we're going to get back values in bytes, so that will
 	     * be our new element type.
 	     */
-	    if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB) {
+	    if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB)
+	    {
 		MPID_Segment_init((char *) disp_array[i],
 				  blklen_array[i],
 				  oldtype_array[i],
@@ -570,7 +611,8 @@ void MPID_Dataloop_create_struct(int count,
 	MPIU_dbg_printf("--- end of flattened type ---\n");
 #endif
 
-	for (i=0; i < nr_blks; i++) {
+	for (i=0; i < nr_blks; i++)
+	{
 	    tmp_blklen_array[i]  = iov_array[i].MPID_IOV_LEN;
 	    tmp_disp_array[i] = (MPI_Aint) iov_array[i].MPID_IOV_BUF;
 	}
@@ -591,28 +633,34 @@ void MPID_Dataloop_create_struct(int count,
 	MPIU_Free(tmp_disp_array);
 	return;
     }
-    else /* general case, allow branches */ {
+    else /* general case, allow branches */
+    {
 	int loop_idx = 0, new_loop_sz = 0, new_loop_depth, old_loop_depth = 0;
 	char *curpos;
 	MPID_Datatype *old_dtp;
 	struct MPID_Dataloop *new_dlp;
 
 	/* scan through types and gather derived type info */
-	for (i=0; i < count; i++) {
-	    if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN) {
+	for (i=0; i < count; i++)
+	{
+	    if (HANDLE_GET_KIND(oldtype_array[i]) != HANDLE_KIND_BUILTIN)
+	    {
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
 
-		if (old_dtp->loopinfo_depth > old_loop_depth) {
+		if (old_dtp->loopinfo_depth > old_loop_depth)
+		{
 		    old_loop_depth = old_dtp->loopinfo_depth;
 		}
 		new_loop_sz += old_dtp->loopsize;
 	    }
 	}
 
-	if (nr_basics > 0) {
+	if (nr_basics > 0)
+	{
 	    new_loop_depth = ((old_loop_depth+1) > 2) ? (old_loop_depth+1) : 2;
 	}
-	else {
+	else
+	{
 	    new_loop_depth = old_loop_depth + 1;
 	}
 
@@ -654,13 +702,16 @@ void MPID_Dataloop_create_struct(int count,
 	curpos += sizeof(struct MPID_Dataloop) + (nr_basics + nr_derived) *
 	    (sizeof(int) + 2*sizeof(MPI_Aint) + sizeof(struct MPID_Dataloop *));
 
-	for (i=0; i < count; i++) {
-	    if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN) {
+	for (i=0; i < count; i++)
+	{
+	    if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN)
+	    {
 		struct MPID_Dataloop *dummy_dlp;
 		int dummy_sz, dummy_depth;
 
 		/* LBs and UBs already taken care of -- skip them */
-		if (oldtype_array[i] == MPI_LB || oldtype_array[i] == MPI_UB) {
+		if (oldtype_array[i] == MPI_LB || oldtype_array[i] == MPI_UB)
+		{
 		    continue;
 		}
 
@@ -687,7 +738,8 @@ void MPID_Dataloop_create_struct(int count,
 		    blklen_array[i] * dummy_dlp->el_extent;
 		MPIU_Free(dummy_dlp);
 	    }
-	    else {
+	    else
+	    {
 		MPID_Datatype_get_ptr(oldtype_array[i], old_dtp);
 
 		MPID_Dataloop_copy(curpos, old_dtp->loopinfo, old_dtp->loopsize);
