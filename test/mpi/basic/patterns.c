@@ -10,6 +10,8 @@
 #define FALSE 0
 #endif
 
+#define DEFAULT_RNDV_SIZE 24*1024
+
 int SendRecvTest(int rank, int n)
 {
     int tag = 1;
@@ -226,7 +228,7 @@ int main(int argc, char *argv[])
     int size, rank;
     int bDoAll = FALSE;
     int reps;
-    int rndv_size;
+    int rndv_size = DEFAULT_RNDV_SIZE;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -235,6 +237,18 @@ int main(int argc, char *argv[])
     if (size < 2)
     {
 	printf("Two processes needed.\n");
+	printf("options:\n");
+	printf(" sr [reps] ............... send/recv\n");
+	printf(" isr ..................... isend/irecv\n");
+	printf(" iisr .................... isend,isend/irecv,irecv wait\n");
+	printf(" oo ...................... out of order isend/irecv\n");
+	printf(" unex .................... force unexpected msg\n");
+	printf(" rndv [size] ............. rndv\n");
+	printf(" rndv_reps [reps] [size] . rndv\n");
+	printf(" rndv_iisr [size] ........ rndv iisr\n");
+	printf(" rndv_oo [size] .......... rndv oo\n");
+	printf(" rndv_unex [size] ........ rndv unex\n");
+	printf("default rndv size = %d bytes\n", DEFAULT_RNDV_SIZE);
 	MPI_Finalize();
 	return 0;
     }
@@ -333,7 +347,6 @@ int main(int argc, char *argv[])
 
 	if (bDoAll || (strcmp(argv[1], "rndv") == 0))
 	{
-	    rndv_size = 24*1024;
 	    if (argc > 2)
 	    {
 		rndv_size = atoi(argv[2]);
@@ -355,13 +368,16 @@ int main(int argc, char *argv[])
 
 	if (bDoAll || (strcmp(argv[1], "rndv_reps") == 0))
 	{
-	    rndv_size = 24*1024;
 	    reps = 100;
 	    if (argc > 2)
 	    {
 		reps = atoi(argv[2]);
 		if (reps < 1)
 		    reps = 1;
+	    }
+	    if (argc > 3)
+	    {
+		rndv_size = atoi(argv[3]);
 	    }
 	    if (rank == 0)
 	    {
@@ -383,7 +399,11 @@ int main(int argc, char *argv[])
 		printf("Rndv isend,isend/irecv,irecv wait wait test\n");
 		fflush(stdout);
 	    }
-	    result = IsendIrecvTest2(rank, 24*1024);
+	    if (argc > 2)
+	    {
+		rndv_size = atoi(argv[2]);
+	    }
+	    result = IsendIrecvTest2(rank, rndv_size);
 	    if (rank == 0)
 	    {
 		printf(result ? "SUCCESS\n" : "FAILURE\n");
@@ -398,7 +418,11 @@ int main(int argc, char *argv[])
 		printf("Rndv out of order isend/irecv test\n");
 		fflush(stdout);
 	    }
-	    result = OutOfOrderTest(rank, 24*1024);
+	    if (argc > 2)
+	    {
+		rndv_size = atoi(argv[2]);
+	    }
+	    result = OutOfOrderTest(rank, rndv_size);
 	    if (rank == 0)
 	    {
 		printf(result ? "SUCCESS\n" : "FAILURE\n");
@@ -408,7 +432,6 @@ int main(int argc, char *argv[])
 
 	if (bDoAll || (strcmp(argv[1], "rndv_unex") == 0))
 	{
-	    rndv_size = 24*1024;
 	    if (argc > 2)
 	    {
 		rndv_size = atoi(argv[2]);

@@ -1,66 +1,67 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[])
 {
     int size, rank;
     char buffer[100] = "garbage";
-    /*MPI_Request request;*/
+    /*MPI_Request request; */
     MPI_Status status;
     int tag = 1;
     int reps = 1;
     int i;
-
-    printf("Simple Send/Recv test.\n");fflush(stdout);
-
+    
+    printf("Simple Send/Recv test.\n"); fflush(stdout);
+    
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+    
     if (size < 2)
     {
 	printf("Two processes needed.\n");
 	MPI_Finalize();
 	return 0;
     }
-
+    
     if (argc > 1)
-      {
+    {
 	reps = atoi(argv[1]);
 	if (reps < 1)
-	  reps = 1;
-      }
-
+	    reps = 1;
+    }
+    
     if (rank == 0)
     {
-      printf("Rank 0: sending message to process 1.\n");fflush(stdout);
+	printf("Rank 0: sending message to process 1.\n"); fflush(stdout);
 	strcpy(buffer, "Hello process one.");
-	for (i=0; i<reps; i++)
-	  {
+	for (i = 0; i<reps; i++)
+	{
 	    /*MPI_Isend(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD, &request);
-	      MPI_Wait(&request, &status);*/
+	    MPI_Wait(&request, &status); */
 	    MPI_Send(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD);
 	    MPI_Recv(buffer, 100, MPI_BYTE, 1, tag, MPI_COMM_WORLD, &status);
-	  }
+	}
     }
     else if (rank == 1)
     {
-      printf("Rank 1: receiving message from process 0.\n");fflush(stdout);
-      for (i=0; i<reps; i++)
+	printf("Rank 1: receiving message from process 0.\n"); fflush(stdout);
+	for (i = 0; i<reps; i++)
 	{
-	  /*MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &request);
-	    MPI_Wait(&request, &status);*/
-	  MPI_Recv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &status);
-	  MPI_Send(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD);
+	    /*MPI_Irecv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &request);
+	    MPI_Wait(&request, &status); */
+	    MPI_Recv(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD, &status);
+	    MPI_Send(buffer, 100, MPI_BYTE, 0, tag, MPI_COMM_WORLD);
 	}
-	printf("Rank 1: received message '%s'\n", buffer);fflush(stdout);
+	printf("Rank 1: received message '%s'\n", buffer); fflush(stdout);
     }
     else
     {
-      printf("Rank %d, I am not participating.\n", rank);fflush(stdout);
+	printf("Rank %d, I am not participating.\n", rank); fflush(stdout);
     }
-
+    
     MPI_Finalize();
     return 0;
 }
