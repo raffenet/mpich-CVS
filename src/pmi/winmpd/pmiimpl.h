@@ -10,13 +10,8 @@
 
 #include "pmi.h"
 #include "mpd.h"
-#ifdef USE_WINCONF_H
-#include "winmpidconf.h"
-#include "winmpichconf.h"
-#else
-#include "mpidconf.h"
+#include "mpidi_ch3_conf.h"
 #include "mpichconf.h"
-#endif
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>
 #include <windows.h>

@@ -5,11 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifdef USE_WINCONF_H
-#include "wintrace_impl.h"
-#else
 #include "trace_impl.h"
-#endif
 #include "rlog.h"
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

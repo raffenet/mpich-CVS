@@ -7,11 +7,7 @@
 #ifndef IPMI_H
 #define IPMI_H
 
-#ifdef USE_WINCONF_H
-#include "winpmiconf.h"
-#else
 #include "pmiconf.h" 
-#endif
 
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H

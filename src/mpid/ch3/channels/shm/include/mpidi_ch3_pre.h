@@ -7,13 +7,8 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#ifdef USE_WINCONF_H
-#include "winmpidi_ch3i_shm_conf.h"
-#include "winmpid_locksconf.h"
-#else
 #include "mpidi_ch3i_shm_conf.h"
 #include "mpid_locksconf.h"
-#endif
 
 /*#define MPICH_DBG_OUTPUT*/
 

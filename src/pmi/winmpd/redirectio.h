@@ -8,11 +8,7 @@
 #ifndef REDIRECT_IO_H
 #define REDIRECT_IO_H
 
-#ifdef USE_WINCONF_H
-#include "winmpichconf.h"
-#else
 #include "mpichconf.h"
-#endif
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>
 #include <windows.h>

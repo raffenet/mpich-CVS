@@ -7,11 +7,7 @@
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
 #define MPICH_MPIDPRE_H_INCLUDED
 
-#ifdef USE_WINCONF_H
-#include "winmpidi_ch3_conf.h"
-#else
 #include "mpidi_ch3_conf.h"
-#endif
 
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
@@ -40,6 +36,7 @@ typedef MPI_Aint MPIDI_msg_sz_t;
 typedef unsigned long MPID_Seqnum_t;
 #endif
 
+#include "mpichconf.h"
 typedef struct MPIDI_Message_match
 {
     int32_t tag;

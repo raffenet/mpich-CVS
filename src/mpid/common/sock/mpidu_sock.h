@@ -20,12 +20,7 @@
 CPLUSPLUS_BEGIN
 
 /* config header file */
-#ifdef USE_WINCONF_H
-#include "winsockconf.h"
-#else
 #include "mpidu_sock_conf.h"
-#endif
-
 #include "mpitypedefs.h"
 
 /* implemenatation specific header file */    

@@ -7,11 +7,7 @@
 #if !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED)
 #define MPICH_MPIDI_CH3_IMPL_H_INCLUDED
 
-#ifdef USE_WINCONF_H
-#include "winmpidi_ch3i_shm_conf.h"
-#else
 #include "mpidi_ch3i_shm_conf.h"
-#endif
 #include "mpidimpl.h"
 #include "mpidu_process_locks.h"
 

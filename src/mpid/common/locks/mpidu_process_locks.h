@@ -8,11 +8,7 @@
 #define MPIDU_PROCESS_LOCKS_H
 
 #include "mpiimpl.h"
-#ifdef USE_WINCONF_H
-#include "winmpid_locksconf.h"
-#else
 #include "mpid_locksconf.h"
-#endif
 
 #include <stdio.h>
 

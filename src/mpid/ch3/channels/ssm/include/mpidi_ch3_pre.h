@@ -8,13 +8,8 @@
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
 #include "mpidu_sock.h"
-#ifdef USE_WINCONF_H
-#include "winmpidi_ch3i_ssm_conf.h"
-#include "winmpidi_ch3_conf.h"
-#else
 #include "mpidi_ch3i_ssm_conf.h"
 #include "mpidi_ch3_conf.h"
-#endif
 
 #if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
 #define USE_POSIX_SHM
