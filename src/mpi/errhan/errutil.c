@@ -549,6 +549,46 @@ static const char * GetDTypeString(MPI_Datatype d)
     return default_str;
 }
 
+static const char * GetMPIOpString(MPI_Op o)
+{
+    static char default_str[64];
+
+    switch (o)
+    {
+    case MPI_OP_NULL:
+	return "MPI_OP_NULL";
+    case MPI_MAX:
+	return "MPI_MAX";
+    case MPI_MIN:
+	return "MPI_MIN";
+    case MPI_SUM:
+	return "MPI_SUM";
+    case MPI_PROD:
+	return "MPI_PROD";
+    case MPI_LAND:
+	return "MPI_LAND";
+    case MPI_BAND:
+	return "MPI_BAND";
+    case MPI_LOR:
+	return "MPI_LOR";
+    case MPI_BOR:
+	return "MPI_BOR";
+    case MPI_LXOR:
+	return "MPI_LXOR";
+    case MPI_BXOR:
+	return "MPI_BXOR";
+    case MPI_MINLOC:
+	return "MPI_MINLOC";
+    case MPI_MAXLOC:
+	return "MPI_MAXLOC";
+    case MPI_REPLACE:
+	return "MPI_REPLACE";
+    }
+    /* default is not thread safe */
+    MPIU_Snprintf(default_str, 64, "op=0x%x", o);
+    return default_str;
+}
+
 static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list list)
 {
     char *begin, *end, *fmt;
@@ -669,14 +709,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	    break;
 	case (int)'O':
 	    O = va_arg(list, MPI_Op);
-	    if (O == MPI_OP_NULL)
-	    {
-		MPIU_Strncpy(str, "MPI_OP_NULL", maxlen);
-	    }
-	    else
-	    {
-		MPIU_Snprintf(str, maxlen, "op=0x%x", O);
-	    }
+	    MPIU_Snprintf(str, maxlen, "%s", GetMPIOpString(O));
 	    break;
 	case (int)'R':
 	    R = va_arg(list, MPI_Request);
