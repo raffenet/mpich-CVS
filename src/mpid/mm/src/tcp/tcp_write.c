@@ -17,6 +17,12 @@ int tcp_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 int tcp_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#ifdef WITH_METHOD_IB
+int tcp_write_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
+#ifdef WITH_METHOD_NEW
+int tcp_write_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
 
 int tcp_write(MPIDI_VC *vc_ptr)
 {
@@ -81,6 +87,13 @@ int tcp_write(MPIDI_VC *vc_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
 	return ret_val;
 	break;
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	ret_val = tcp_write_ib(vc_ptr, car_ptr, buf_ptr);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_WRITE);
+	return ret_val;
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = tcp_write_new(vc_ptr, car_ptr, buf_ptr);

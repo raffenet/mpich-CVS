@@ -81,6 +81,13 @@ int socket_write(MPIDI_VC *vc_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_WRITE);
 	return ret_val;
 	break;
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	ret_val = socket_write_ib(vc_ptr, car_ptr, buf_ptr);
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_WRITE);
+	return ret_val;
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = socket_write_new(vc_ptr, car_ptr, buf_ptr);

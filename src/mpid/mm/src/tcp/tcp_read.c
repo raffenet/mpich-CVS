@@ -21,6 +21,12 @@ int tcp_read_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int tcp_read_connecting(MPIDI_VC *vc_ptr);
+#ifdef WITH_METHOD_IB
+int tcp_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
+#ifdef WITH_METHOD_NEW
+int tcp_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
 
 int tcp_read_header(MPIDI_VC *vc_ptr)
 {
@@ -141,6 +147,13 @@ int tcp_read_data(MPIDI_VC *vc_ptr)
 	return ret_val;
 	break;
 #endif
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	ret_val = tcp_read_ib(vc_ptr, car_ptr, buf_ptr);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_DATA);
+	return ret_val;
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = tcp_read_new(vc_ptr, car_ptr, buf_ptr);
@@ -186,6 +199,26 @@ int tcp_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_
     MPIDI_STATE_DECL(MPID_STATE_TCP_READ_VIA_RDMA);
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_READ_VIA_RDMA);
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_VIA_RDMA);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_IB
+int tcp_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_TCP_READ_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_READ_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_IB);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_NEW
+int tcp_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_TCP_READ_NEW);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_READ_NEW);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_READ_NEW);
     return MPI_SUCCESS;
 }
 #endif

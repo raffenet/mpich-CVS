@@ -48,6 +48,9 @@ typedef enum MM_METHOD {
 #ifdef WITH_METHOD_SOCKET
     MM_SOCKET_METHOD,
 #endif
+#ifdef WITH_METHOD_IB
+    MM_IB_METHOD,
+#endif
 #ifdef WITH_METHOD_VIA
     MM_VIA_METHOD,
 #endif
@@ -115,6 +118,12 @@ typedef union VC_Method_data
         void *shm_ptr;
     } shm;
 #endif
+#ifdef WITH_METHOD_IB
+    struct vc_ib
+    {
+	void *ptr;
+    } ib;
+#endif
 #ifdef WITH_METHOD_VIA
     struct vc_via
     {
@@ -180,6 +189,9 @@ typedef struct MPIDI_VCRT
 #endif
 #ifdef WITH_METHOD_SOCKET
 #include "mm_socket.h"
+#endif
+#ifdef WITH_METHOD_IB
+#include "mm_ib.h"
 #endif
 #ifdef WITH_METHOD_VIA
 #include "mm_via.h"

@@ -22,6 +22,9 @@ int mm_make_progress()
 #ifdef WITH_METHOD_SHM
     shm_make_progress();
 #endif
+#ifdef WITH_METHOD_IB
+    ib_make_progress();
+#endif
 #ifdef WITH_METHOD_VIA
     via_make_progress();
 #endif

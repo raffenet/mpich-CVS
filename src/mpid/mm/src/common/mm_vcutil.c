@@ -257,6 +257,32 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->pkt_car.msg_header.buf.simple.len = sizeof(MPID_Packet);
 	break;
 #endif
+#ifdef WITH_METHOD_IB
+    case MM_IB_METHOD:
+	/* mm required functions */
+	vc_ptr->post_read = ib_post_read;
+	vc_ptr->merge_with_unexpected = ib_merge_with_unexpected;
+	vc_ptr->merge_with_posted = ib_merge_with_posted;
+	vc_ptr->merge_unexpected_data = ib_merge_unexpected_data;
+	vc_ptr->post_write = ib_post_write;
+	vc_ptr->reset_car = ib_reset_car;
+	vc_ptr->post_read_pkt = ib_post_read_pkt;
+	vc_ptr->enqueue_read_at_head = ib_enqueue_read_at_head;
+	vc_ptr->enqueue_write_at_head = ib_enqueue_write_at_head;
+	vc_ptr->setup_packet_car = ib_setup_packet_car;
+	/* ib specific */
+	vc_ptr->pkt_car.type = MM_HEAD_CAR | MM_READ_CAR; /* static car used to read headers */
+	vc_ptr->pkt_car.vc_ptr = vc_ptr;
+	vc_ptr->pkt_car.next_ptr = NULL;
+	vc_ptr->pkt_car.vcqnext_ptr = NULL;
+	vc_ptr->pkt_car.freeme = FALSE;
+	vc_ptr->pkt_car.request_ptr = NULL;
+	vc_ptr->pkt_car.buf_ptr = &vc_ptr->pkt_car.msg_header.buf;
+	vc_ptr->pkt_car.msg_header.buf.type = MM_SIMPLE_BUFFER;
+	vc_ptr->pkt_car.msg_header.buf.simple.buf = &vc_ptr->pkt_car.msg_header.pkt;
+	vc_ptr->pkt_car.msg_header.buf.simple.len = sizeof(MPID_Packet);
+	break;
+#endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_METHOD:
 	/* data members */

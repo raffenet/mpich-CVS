@@ -72,6 +72,13 @@ static void order_methods_from_environment()
 	    MPID_Process.num_ordered_methods++;
 	}
 #endif
+#ifdef WITH_METHOD_IB
+	if (strcmp(order, "IB") == 0)
+	{
+	    MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_IB_METHOD;
+	    MPID_Process.num_ordered_methods++;
+	}
+#endif
 #ifdef WITH_METHOD_NEW
 	if (strcmp(order, "NEW") == 0)
 	{
@@ -148,6 +155,18 @@ static void order_methods()
     if (!found)
     {
 	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_SOCKET_METHOD;
+	MPID_Process.num_ordered_methods++;
+    }
+#endif
+#ifdef WITH_METHOD_IB
+    for (i=0, found = FALSE; i<MPID_Process.num_ordered_methods; i++)
+    {
+	if (MPID_Process.method_order[i] == MM_IB_METHOD)
+	    found = TRUE;
+    }
+    if (!found)
+    {
+	MPID_Process.method_order[MPID_Process.num_ordered_methods] = MM_IB_METHOD;
 	MPID_Process.num_ordered_methods++;
     }
 #endif
@@ -260,6 +279,9 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
 #ifdef WITH_METHOD_VIA_RDMA
     via_rdma_init();
 #endif
+#ifdef WITH_METHOD_IB
+    ib_init();
+#endif
 #ifdef WITH_METHOD_NEW
     new_method_init();
 #endif
@@ -327,6 +349,12 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     strncat(sCapabilities, "via_rdma,", 9);
     via_rdma_get_business_card(value, value_len);
     snprintf(key, key_len, "business_card_via_rdma:%d", MPIR_Process.comm_world->rank);
+    PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
+#endif
+#ifdef WITH_METHOD_IB
+    strncat(sCapabilities, "ib,", 3);
+    ib_get_business_card(value, value_len);
+    snprintf(key, key_len, "business_card_ib:%d", MPIR_Process.comm_world->rank);
     PMI_KVS_Put(MPID_Process.pmi_kvsname, key, value);
 #endif
 #ifdef WITH_METHOD_NEW

@@ -21,6 +21,12 @@ int tcp_merge_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
 int tcp_merge_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
 int tcp_merge_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
 int tcp_merge_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
+#ifdef WITH_METHOD_IB
+int tcp_merge_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
+#endif
+#ifdef WITH_METHOD_NEW
+int tcp_merge_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length);
+#endif
 
 int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, int length)
 {
@@ -81,6 +87,13 @@ int tcp_merge_unexpected_data(MPIDI_VC *vc_ptr, MM_Car *car_ptr, char *buffer, i
 	return ret_val;
 	break;
 #endif
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	ret_val = tcp_merge_ib(vc_ptr, car_ptr, buf_ptr, buffer, length);
+	MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_UNEXPECTED_DATA);
+	return ret_val;
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = tcp_merge_new(vc_ptr, car_ptr, buf_ptr, buffer, length);
@@ -126,6 +139,26 @@ int tcp_merge_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf
     MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_VIA_RDMA);
     MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_VIA_RDMA);
     MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_VIA_RDMA);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_IB
+int tcp_merge_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
+{
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_IB);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_NEW
+int tcp_merge_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, char *buffer, int length)
+{
+    MPIDI_STATE_DECL(MPID_STATE_TCP_MERGE_NEW);
+    MPIDI_FUNC_ENTER(MPID_STATE_TCP_MERGE_NEW);
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_MERGE_NEW);
     return MPI_SUCCESS;
 }
 #endif

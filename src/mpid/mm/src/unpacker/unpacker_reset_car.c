@@ -51,6 +51,10 @@ int unpacker_reset_car(MM_Car *car_ptr)
     case MM_VIA_RDMA_BUFFER:
 	break;
 #endif
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	break;

@@ -155,6 +155,10 @@ int packer_make_progress()
 	    case MM_VIA_RDMA_BUFFER:
 		break;
 #endif
+#ifdef WITH_MEHTOD_IB
+	    case MM_IB_BUFFER:
+		break;
+#endif
 #ifdef WITH_METHOD_NEW
 	    case MM_NEW_METHOD_BUFFER:
 		break;

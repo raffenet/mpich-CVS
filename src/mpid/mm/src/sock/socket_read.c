@@ -26,6 +26,14 @@ int socket_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_pt
 int socket_handle_read_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read);
 int socket_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int socket_handle_read_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read);
+#ifdef WITH_METHOD_IB
+int socket_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+int socket_handle_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read);
+#endif
+#ifdef WITH_METHOD_NEW
+int socket_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+int socket_handle_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read);
+#endif
 
 int socket_read_header(MPIDI_VC *vc_ptr)
 {
@@ -118,6 +126,13 @@ int socket_read_data(MPIDI_VC *vc_ptr)
 	return ret_val;
 	break;
 #endif
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	ret_val = socket_read_ib(vc_ptr, car_ptr, buf_ptr);
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_READ_DATA);
+	return ret_val;
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = socket_read_new(vc_ptr, car_ptr, buf_ptr);
@@ -202,6 +217,13 @@ int socket_handle_read_data(MPIDI_VC *vc_ptr, int num_read)
 	return ret_val;
 	break;
 #endif
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	ret_val =socket_handle_read_ib(vc_ptr, car_ptr, buf_ptr, num_read);
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ_DATA);
+	return ret_val;
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	ret_val = socket_handle_read_new(vc_ptr, car_ptr, buf_ptr, num_read);
@@ -271,6 +293,40 @@ int socket_handle_read_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_bu
     MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_READ_VIA_RDMA);
     MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ_VIA_RDMA);
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ_VIA_RDMA);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_IB
+int socket_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_SOCKET_READ_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_READ_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_READ_IB);
+    return MPI_SUCCESS;
+}
+int socket_handle_read_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read)
+{
+    MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_READ_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ_IB);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_NEW
+int socket_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_SOCKET_READ_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_READ_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_READ_IB);
+    return MPI_SUCCESS;
+}
+int socket_handle_read_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr, int num_read)
+{
+    MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_READ_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_READ_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_HANDLE_READ_IB);
     return MPI_SUCCESS;
 }
 #endif

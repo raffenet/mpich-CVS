@@ -208,6 +208,16 @@ int socket_stuff_vector_simple(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_
     return FALSE;
 }
 
+#ifdef WITH_METHOD_IB
+int socket_stuff_vector_ib(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_SOCKET_STUFF_VECTOR_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_STUFF_VECTOR_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCKET_STUFF_VECTOR_IB);
+    return FALSE;
+}
+#endif
+
 #ifdef WITH_METHOD_NEW
 int socket_stuff_vector_new(MPID_IOV *vec, int *cur_pos, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
 {
@@ -379,6 +389,10 @@ int socket_update_car_num_written(MM_Car *car_ptr, int *num_written_ptr)
 	    mm_car_free(car_ptr);
 	}
 	break;
+#ifdef WITH_METHOD_IB
+    case MM_IB_BUFFER:
+	break;
+#endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD_BUFFER:
 	break;
@@ -474,6 +488,11 @@ int socket_write_aggressive(MPIDI_VC *vc_ptr)
 	case MM_SIMPLE_BUFFER:
 	    stop = !socket_stuff_vector_simple(vec, &cur_pos, car_ptr, buf_ptr);
 	    break;
+#ifdef WITH_METHOD_IB
+	case MM_IB_BUFFER:
+	    stop = !socket_stuff_vector_ib(vec, &cur_pos, car_ptr, buf_ptr);
+	    break;
+#endif
 #ifdef WITH_METHOD_NEW
 	case MM_NEW_METHOD_BUFFER:
 	    stop = !socket_stuff_vector_new(vec, &cur_pos, car_ptr, buf_ptr);

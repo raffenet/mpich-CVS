@@ -21,6 +21,9 @@
 #ifdef WITH_METHOD_SHM
 #include "mm_shm_pre.h"
 #endif
+#ifdef WITH_METHOD_IB
+#include "mm_ib_pre.h"
+#endif
 #ifdef WITH_METHOD_VIA
 #include "mm_via_pre.h"
 #endif
@@ -54,6 +57,9 @@ typedef enum MM_BUFFER_TYPE {
     MM_VEC_BUFFER,
 #ifdef WITH_METHOD_SHM
     MM_SHM_BUFFER,
+#endif
+#ifdef WITH_METHOD_IB
+    MM_IB_BUFFER,
 #endif
 #ifdef WITH_METHOD_VIA
     MM_VIA_BUFFER,
@@ -203,6 +209,14 @@ typedef union MM_Segment_buffer
 	int num_read;
     } shm;
 #endif
+#ifdef WITH_METHOD_IB
+    struct mm_segment_ib
+    {
+	MM_BUFFER_TYPE type;
+	void *mr_ptr;
+	int num_read;
+    } ib;
+#endif
 #ifdef WITH_METHOD_VIA
     struct mm_segment_via
     {
@@ -299,6 +313,9 @@ typedef union MM_Car_data
 #endif
 #ifdef WITH_METHOD_SOCKET
     MM_Car_data_socket socket;
+#endif
+#ifdef WITH_METHOD_IB
+    MM_Car_data_ib ib;
 #endif
 #ifdef WITH_METHOD_VIA
     MM_Car_data_via via;

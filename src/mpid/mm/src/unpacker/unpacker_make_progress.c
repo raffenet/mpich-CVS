@@ -17,6 +17,12 @@ int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer
 int unpacker_write_vec(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int unpacker_write_tmp(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
 int unpacker_write_simple(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#ifdef WITH_METHOD_IB
+int unpacker_write_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
+#ifdef WITH_METHOD_NEW
+int unpacker_write_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr);
+#endif
 
 /*@
    unpacker_make_progress - make progress
@@ -75,6 +81,11 @@ int unpacker_make_progress()
 	case MM_TMP_BUFFER:
 	    unpacker_write_tmp(vc_ptr, car_ptr, buf_ptr);
 	    break;
+#ifdef WITH_METHOD_IB
+	case MM_IB_BUFFER:
+	    unpacker_write_ib(vc_ptr, car_ptr, buf_ptr);
+	    break;
+#endif
 #ifdef WITH_METHOD_NEW
 	case MM_NEW_METHOD_BUFFER:
 	    unpacker_write_new(vc_ptr, car_ptr, buf_ptr);
@@ -120,6 +131,26 @@ int unpacker_write_via_rdma(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer
     MPIDI_STATE_DECL(MPID_STATE_UNPACKER_WRITE_VIA_RDMA);
     MPIDI_FUNC_ENTER(MPID_STATE_UNPACKER_WRITE_VIA_RDMA);
     MPIDI_FUNC_EXIT(MPID_STATE_UNPACKER_WRITE_VIA_RDMA);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_IB
+int unpacker_write_ib(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_UNPACKER_WRITE_IB);
+    MPIDI_FUNC_ENTER(MPID_STATE_UNPACKER_WRITE_IB);
+    MPIDI_FUNC_EXIT(MPID_STATE_UNPACKER_WRITE_IB);
+    return MPI_SUCCESS;
+}
+#endif
+
+#ifdef WITH_METHOD_NEW
+int unpacker_write_new(MPIDI_VC *vc_ptr, MM_Car *car_ptr, MM_Segment_buffer *buf_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_UNPACKER_WRITE_NEW);
+    MPIDI_FUNC_ENTER(MPID_STATE_UNPACKER_WRITE_NEW);
+    MPIDI_FUNC_EXIT(MPID_STATE_UNPACKER_WRITE_NEW);
     return MPI_SUCCESS;
 }
 #endif

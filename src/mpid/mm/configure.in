@@ -277,6 +277,9 @@ for method in $method_subdirs ; do
        AC_DEFINE(WITH_METHOD_VIA_RDMA, 1, [via rdma method enabled])
        echo via rdma method enabled 
     fi
+    if test "$method" = "ib" ; then
+       AC_DEFINE(WITH_METHOD_IB, 1, [infiniband method enabled])
+    fi
 done
 dnl
 dnl Choose the socket type
@@ -312,22 +315,23 @@ AC_OUTPUT_COMMANDS(cp ${use_top_srcdir}/include/*_pre.h ../../include)
 dnl Generate the Makefiles from Makefile.in
 
 AC_OUTPUT(Makefile \
-          src/Makefile \
-          src/bsocket/Makefile \
-          src/common/Makefile \
-          src/init/Makefile \
-          src/mm/Makefile \
-          src/progress/Makefile \
-          src/pt2pt/Makefile \
-          src/request/Makefile \
-          src/spawn/Makefile \
-          src/util/Makefile \
-          src/xfer/Makefile \
-          src/sock/Makefile \
-          src/tcp/Makefile \
-          src/via/Makefile \
-          src/shm/Makefile \
-          src/viardma/Makefile \
-          src/packer/Makefile \
-          src/unpacker/Makefile
+ src/Makefile \
+ src/bsocket/Makefile \
+ src/common/Makefile \
+ src/init/Makefile \
+ src/mm/Makefile \
+ src/progress/Makefile \
+ src/pt2pt/Makefile \
+ src/request/Makefile \
+ src/spawn/Makefile \
+ src/util/Makefile \
+ src/xfer/Makefile \
+ src/sock/Makefile \
+ src/ib/Makefile \
+ src/tcp/Makefile \
+ src/via/Makefile \
+ src/shm/Makefile \
+ src/viardma/Makefile \
+ src/packer/Makefile \
+ src/unpacker/Makefile
 )
