@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "mpitest.h"
 
+/* Check that freed communicators are detected */
 int main( int argc, char *argv[] )
 {
     MPI_Comm dup, dupcopy;
@@ -17,8 +18,9 @@ int main( int argc, char *argv[] )
     ierr = MPI_Barrier( dup );
     if (ierr == MPI_SUCCESS) {
 	errs ++;
-	printf( "Returned wrong code in barrier\n" );
+	printf( "Returned wrong code (SUCCESS) in barrier\n" );
     }
+
     {
 	int in, *input = &in;
 	int out, *output = &out;
@@ -26,7 +28,7 @@ int main( int argc, char *argv[] )
     }
     if (ierr == MPI_SUCCESS) {
 	errs ++;
-	printf( "Returned wrong code in allgather\n" );
+	printf( "Returned wrong code (SUCCESS) in allgather\n" );
     }
 
     MTest_Finalize( errs );
