@@ -521,7 +521,14 @@ with MPI_Alloc_mem.
 **FindWindowEx %d:FindWindowEx failed, error %d
 **boot_attach:failed to attach to a bootstrap queue
 **boot_attach %s:failed to attach to a bootstrap queue - %s
-
+**mq_open:failed to open a posix message queue
+**mq_open %d:failed to open a posix message queue, error %d
+**mq_close:failed to close a posix message queue
+**mq_close %d:failed to close a posix message queue, error %d
+**mq_send:failed to send a posix message queue message
+**mq_send %d:failed to send a posix message queue message, error %d
+**mq_receive:failed to receive a posix message queue message
+**mq_receive %d:failed to receive a posix message queue message, error %d
 **attach_to_mem:attach to shared memory segment failed
 **boot_detach:detaching from message queue failed
 **boot_recv:receiving bootstrap message failed
