@@ -1096,6 +1096,7 @@ int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_S
     easy_get_sock_info(listen_state->listen_sock, host, port);
     listen_state->user_ptr = user_ptr;
     listen_state->type = SOCKI_LISTENER;
+    listen_state->set = set;
 
     /* post the accept(s) last to make sure the listener state structure is completely initialized before
        a completion thread has the chance to satisfy the AcceptEx call */
@@ -1683,7 +1684,12 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	shutdown(s, SD_BOTH);
 	closesocket(s);
 	*sp = INVALID_SOCKET;
-	PostQueuedCompletionStatus(sock->set, 0, (ULONG_PTR)sock, NULL);
+	if (!PostQueuedCompletionStatus(sock->set, 0, (ULONG_PTR)sock, NULL))
+	{
+	    mpi_errno = mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**fail", "**fail %d", GetLastError());
+	    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	    return mpi_errno;
+	}
     /*
     }
     */
@@ -2654,6 +2660,92 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    {
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 		return MPIDU_SOCK_ERR_TIMEOUT;
+	    }
+	    if (mpi_errno = ERROR_OPERATION_ABORTED)
+	    {
+		/* A thread exited causing GetQueuedCompletionStatus to return prematurely. */
+		if (sock != NULL)
+		{
+		    /* re-post the aborted operation */
+		    if (sock->type == SOCKI_SOCKET)
+		    {
+			if (ovl == &sock->read.ovl)
+			{
+			    if (sock->read.use_iov)
+			    {
+				/*printf("repost readv of length %d\n", sock->read.iovlen);fflush(stdout);*/
+				mpi_errno = MPIDU_Sock_post_readv(sock, sock->read.iov, sock->read.iovlen, NULL);
+				if (mpi_errno != MPI_SUCCESS)
+				{
+				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted readv operation");
+				}
+			    }
+			    else
+			    {
+				/*printf("repost read of length %d\n", sock->read.bufflen);fflush(stdout);*/
+				mpi_errno = MPIDU_Sock_post_read(sock, sock->read.buffer, sock->read.bufflen, sock->read.bufflen, NULL);
+				if (mpi_errno != MPI_SUCCESS)
+				{
+				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted read operation");
+				}
+			    }
+			}
+			else if (ovl == &sock->write.ovl)
+			{
+			    if (sock->write.use_iov)
+			    {
+				/*printf("repost writev of length %d\n", sock->write.iovlen);fflush(stdout);*/
+				mpi_errno = MPIDU_Sock_post_writev(sock, sock->write.iov, sock->write.iovlen, NULL);
+				if (mpi_errno != MPI_SUCCESS)
+				{
+				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted writev operation");
+				}
+			    }
+			    else
+			    {
+				/*printf("repost write of length %d\n", sock->write.bufflen);fflush(stdout);*/
+				mpi_errno = MPIDU_Sock_post_write(sock, sock->write.buffer, sock->write.bufflen, sock->write.bufflen, NULL);
+				if (mpi_errno != MPI_SUCCESS)
+				{
+				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+				    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted write operation");
+				}
+			    }
+			}
+			else
+			{
+			    /*printf("aborted sock operation\n");fflush(stdout);*/
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted socket operation");
+			}
+		    }
+		    else if (sock->type == SOCKI_WAKEUP)
+		    {
+			/*printf("aborted wakeup operation\n");fflush(stdout);*/
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted wakeup operation");
+		    }
+		    else if (sock->type == SOCKI_LISTENER)
+		    {
+			/*printf("aborted listener operation\n");fflush(stdout);*/
+			mpi_errno = post_next_accept(sock);
+			if (mpi_errno != MPI_SUCCESS)
+			{
+			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted accept operation");
+			}
+		    }
+		    else
+		    {
+			/*printf("aborted unknown socket operation\n");fflush(stdout);*/
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
+			return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted unknown socket operation");
+		    }
+		}
+		continue;
 	    }
 	    MPIU_DBG_PRINTF(("GetQueuedCompletionStatus failed, GetLastError: %d\n", mpi_errno));
 	    if (sock != NULL)
