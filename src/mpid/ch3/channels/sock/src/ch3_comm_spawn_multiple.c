@@ -59,6 +59,9 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 	/* convert the infos into PMI keyvals */
         info_keyval_sizes = (int *) MPIU_Malloc(count * sizeof(int));
 	info_keyval_vectors = (PMI_keyval_t**) MPIU_Malloc(count * sizeof(PMI_keyval_t*));
+
+        MPIR_Nest_incr();
+
         for (i=0; i<count; i++)
 	{
 	    if (info_ptrs != NULL)
@@ -117,6 +120,8 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 		info_keyval_vectors[i] = NULL;
 	    }
 	}
+
+        MPIR_Nest_decr();
 
         mpi_errno = MPIDI_CH3_Open_port(port_name);
         if (mpi_errno != MPI_SUCCESS)
