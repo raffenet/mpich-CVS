@@ -49,6 +49,9 @@ also the value at index %d
  but must be nonnegative and less than %d
 **argrange:Argument is not within valid range
 **argrange %s %d %d:Argument %s has value %d but must be within [0,%d]
+**bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
+**bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
+**bsendbufsmall %d %d:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
 #----
 
 **buffer:Invalid buffer pointer
@@ -60,9 +63,6 @@ available.
 **bufalias %s %s:Buffer parameters %s and %s must not be aliased 
 **bufsize:Invalid buffer size
 **bufsize %d:Invalid buffer size (value is %d)
-**bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
-**bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
-**bsendbufsmall:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
 **bsendnobuf:No buffer to detach. 
 **count:Invalid count
 **count %d:Invalid count (value = %d)
