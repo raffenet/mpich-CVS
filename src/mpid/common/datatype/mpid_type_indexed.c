@@ -542,7 +542,11 @@ static int MPIDI_Type_indexed_count_contig(int count,
 	
 	for (i = 1; i < count; i++)
 	{
-	    if (cur_tdisp + cur_blklen == ((int *) displacement_array)[i])
+	    if (blocklength_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (cur_tdisp + cur_blklen == ((int *) displacement_array)[i])
 	    {
 		/* adjacent to current block; add to block */
 		cur_blklen += blocklength_array[i];
@@ -561,8 +565,12 @@ static int MPIDI_Type_indexed_count_contig(int count,
 	
 	for (i = 1; i < count; i++)
 	{
-	    if (cur_bdisp + cur_blklen * old_extent ==
-		((MPI_Aint *) displacement_array)[i])
+	    if (blocklength_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (cur_bdisp + cur_blklen * old_extent ==
+		     ((MPI_Aint *) displacement_array)[i])
 	    {
 		/* adjacent to current block; add to block */
 		cur_blklen += blocklength_array[i];
@@ -581,7 +589,8 @@ static int MPIDI_Type_indexed_count_contig(int count,
 
 /* MPIDI_Type_indexed_array_copy()
  *
- * Copies arrays into place, combining adjacent contiguous regions.
+ * Copies arrays into place, combining adjacent contiguous regions and
+ * dropping zero-length regions.
  *
  * Extent passed in is for the original type.
  *
@@ -607,8 +616,13 @@ static void MPIDI_Type_indexed_array_copy(int count,
 	
 	for (i = 1; i < count; i++)
 	{
-	    if (out_disp_array[cur_idx] + ((MPI_Aint) out_blklen_array[cur_idx]) * old_extent ==
-		((MPI_Aint) ((int *) in_disp_array)[i]) * old_extent)
+	    if (in_blklen_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (out_disp_array[cur_idx] +
+		     ((MPI_Aint) out_blklen_array[cur_idx]) * old_extent ==
+		     ((MPI_Aint) ((int *) in_disp_array)[i]) * old_extent)
 	    {
 		/* adjacent to current block; add to block */
 		out_blklen_array[cur_idx] += in_blklen_array[i];
@@ -628,8 +642,13 @@ static void MPIDI_Type_indexed_array_copy(int count,
 	
 	for (i = 1; i < count; i++)
 	{
-	    if (out_disp_array[cur_idx] + ((MPI_Aint) out_blklen_array[cur_idx]) * old_extent ==
-		((MPI_Aint *) in_disp_array)[i])
+	    if (in_blklen_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (out_disp_array[cur_idx] +
+		     ((MPI_Aint) out_blklen_array[cur_idx]) * old_extent ==
+		     ((MPI_Aint *) in_disp_array)[i])
 	    {
 		/* adjacent to current block; add to block */
 		out_blklen_array[cur_idx] += in_blklen_array[i];
