@@ -82,7 +82,11 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	   or an explicit selection of the fatal error handler */
 	/* Try to print the associated message */
 	const char *p = MPIR_Err_get_string( errcode );
-	
+
+	/* The default handler should try the following:
+	   Provide the rank in comm_world.  If the process is not
+	   in comm world, use something else.  If the communicator
+	   exists and has a name, provide that name */
 	if (p) {
 	    fprintf( stderr, "Fatal error: %s in %s\n", p, fcname );
 	}
