@@ -2479,7 +2479,7 @@ TEST_LIBNAME=$LIBNAME
 #
 # if MPICH, use mpicc in test programs
 #
-if test $MPI = "mpich" ; then
+if test $FROM_MPICH = 1 ; then
    MPICH_HOME=`dirname $ROMIO_HOME`
    TEST_CC=$MPICH_HOME/bin/mpicc
    MPI_LIB=""
@@ -2552,6 +2552,8 @@ DEFS="$DEFS -DHAVE_PROTOTYPES=1"
 
 fi
 
+#
+   CC=$MPICH_HOME/bin/mpicc
 fi
 #
 if test -z "$TEST_CC" ; then
@@ -2565,6 +2567,8 @@ CFLAGS="$CFLAGS $DEFS"
 #
 echo "setting CC to $CC"
 echo "setting F77 to $F77"
+echo "setting TEST_CC to $TEST_CC"
+echo "setting TEST_F77 to $TEST_F77"
 echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
