@@ -62,7 +62,44 @@ Argonne National Laboratory}{00}{\today}
 \pagestyle{headings}
 
 \section{Introduction}
-\section{Functions}
+
+\section{Requests}
+\subsection{Creation}
+%\input{ch3man/MPIDI_CH3_Request_create.tex}
+%\input{ch3man/MPIDI_CH3U_Request_create.tex}
+\subsection{Reference counting}
+%\input{ch3man/MPIDI_CH3_Request_add_ref.tex}
+%\input{ch3man/MPIDI_CH3_Request_release_ref.tex}
+\subsection{Completion}
+% talk about req->cc and req->cc_ptr; also point at MPID_CH3_Progress_signal_completion()
+\subsection{Destruction}
+%\input{ch3man/MPIDI_CH3_Request_destroy.tex}
+%\input{ch3man/MPIDI_CH3U_Request_destroy.tex}
+
+\section{Sending a Message}
+%\input{ch3man/MPIDI_CH3_iStartmsg}
+%\input{ch3man/MPIDI_CH3_iStartmsgv}
+%\input{ch3man/MPIDI_CH3_iSend}
+%\input{ch3man/MPIDI_CH3_iSendv}
+%\input{ch3man/MPIDI_CH3_iWrite}
+%\input{ch3man/MPIDI_CH3U_Handle_send_req}
+
+\section{Receiving a Message}
+%\input{ch3man/MPIDI_CH3U_Handle_recv_pkt}
+%\input{ch3man/MPIDI_CH3_iRead}
+%\input{ch3man/MPIDI_CH3U_Handle_recv_req}
+
+\section{Progress}
+%\input{ch3man/MPIDI_CH3_Progress_start.tex}
+%\input{ch3man/MPIDI_CH3_Progress_end.tex}
+%\input{ch3man/MPIDI_CH3_Progress.tex}
+%\input{ch3man/MPIDI_CH3_Progress_poke.tex}
+%\input{ch3man/MPIDI_CH3_Progress_signal_completion.tex}
+
+\section{Miscellaneous}
+%\input{ch3man/MPIDI_CH3_Init.tex}
+%\input{ch3man/MPIDI_CH3_Finalize.tex}
+%\input{ch3man/MPIDI_CH3_InitParent.tex}
 
 % Index
 %\openin\testfile{ch3.ind}
