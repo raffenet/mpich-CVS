@@ -1120,6 +1120,7 @@ def _enter_existing_ring():
     g.lhsIP   = g.entryIP
     g.lhsPort = g.entryPort
     inRing = 0
+    g.generationFromMsg = -1    # default before loop below
     numEnterTries = 0
     while not inRing  and  numEnterTries < 8:
         numEnterTries += 1
