@@ -22,7 +22,7 @@ from mpdlib   import mpd_set_my_id, mpd_print, mpd_print_tb, \
                      mpd_send_one_line, mpd_send_one_line_noprint, mpd_recv_one_line, \
                      mpd_get_inet_listen_socket, mpd_get_inet_socket_and_connect, \
                      mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
-                     mpd_socketpair, mpd_get_ranks_in_binary_tree, mpd_recv
+                     mpd_socketpair, mpd_get_ranks_in_binary_tree, mpd_recv, mpd_read
 
 global clientPid, clientExited, clientExitStatus, clientExitStatusSent
 
@@ -232,7 +232,7 @@ def mpdman():
         dup2(fd_write_cli_stderr,2)  # closes fd 2 (stderr) if open
         close(fd_write_cli_stderr)
 
-        msg = read(pipe_cli_end,2)
+        msg = mpd_read(pipe_cli_end,2)
         if msg != 'go':
             mpd_raise('%s: invalid go msg from man :%s:' % (myId,msg) )
         close(pipe_cli_end)
@@ -671,7 +671,7 @@ def mpdman():
                 rhsSocket.close()
                 rhsSocket = 0
             elif readySocket == clientStdoutFD:
-                line = read(clientStdoutFD,1024)
+                line = mpd_read(clientStdoutFD,1024)
                 # line = clientStdoutFile.readline()
                 if not line:
                     del socketsToSelect[clientStdoutFD]
@@ -705,7 +705,7 @@ def mpdman():
                         mpd_send_one_line_noprint(parentStdoutSocket,line)
                         # parentStdoutSocket.sendall('STDOUT by %d: |%s|' % (myRank,line) )
             elif readySocket == clientStderrFD:
-                line = read(clientStderrFD,1024)
+                line = mpd_read(clientStderrFD,1024)
                 # line = clientStderrFile.readline()
                 if not line:
                     del socketsToSelect[clientStderrFD]

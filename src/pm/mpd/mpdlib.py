@@ -374,6 +374,24 @@ def mpd_recv(sock,nbytes):
             mpd_print(1, 'other error after recv %s :%s:' % ( data.__class__, data) )
     return rv
 
+def mpd_read(fd,nbytes):
+    rv = ''
+    done = 0
+    while not done:
+        try:
+            rv = read(fd,nbytes)
+            done = 1
+        except error, data:
+            if data[0] == EINTR:        # will come here if receive SIGCHLD, for example
+                continue
+            elif data[0] == ECONNRESET:   # connection reset (treat as eof)
+                break
+            else:
+                mpd_print(1, 'read error: %s' % strerror(data[0]))
+        except Exception, data:
+            mpd_print(1, 'other error after read %s :%s:' % ( data.__class__, data) )
+    return rv
+
 def mpd_get_my_username():
     return getpwuid(getuid())[0]    #### instead of environ['USER']
 
