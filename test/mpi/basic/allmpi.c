@@ -4,78 +4,35 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
+/* necessary to get the conditional definitions */
+#ifdef USE_WINCONF_H
+#include "winmpichconf.h"
+#else
+#include "mpichconf.h"
+#endif
 #include <stdio.h>
 #include <string.h>
 
-void handler( MPI_Comm *comm_ptr, int *int_ptr, ... )
-{
-}
-int comm_copy_attr_fn(MPI_Comm comm, int i, void * buf1, void *buf2, void *buf3, int *int_ptr)
-{
-    return 0;
-}
-int comm_delete_attr_fn(MPI_Comm comm, int i, void *buf1, void *buf2)
-{
-    return 0;
-}
-int tcopy_attr_fn(MPI_Datatype dtype, int i, void *buf1, void *buf2, void *buf3, int *int_ptr)
-{
-    return 0;
-}
-int tdelete_attr_fn(MPI_Datatype dtype, int i, void *buf1, void *buf2)
-{
-    return 0;
-}
-int win_copy_attr_fn(MPI_Win win, int i, void *buf1, void *buf2, void *buf3, int *int_ptr)
-{
-    return 0;
-}
-int win_delete_attr_fn(MPI_Win win, int i, void *buf1, void *buf2)
-{
-    return 0;
-}
-void comm_errhan(MPI_Comm *comm_ptr, int *int_ptr, ...)
-{
-}
+void handler( MPI_Comm *comm_ptr, int *int_ptr, ... ) {}
+int comm_copy_attr_fn(MPI_Comm comm, int i, void * buf1, void *buf2, void *buf3, int *int_ptr) {return 0;}
+int comm_delete_attr_fn(MPI_Comm comm, int i, void *buf1, void *buf2) {return 0;}
+int tcopy_attr_fn(MPI_Datatype dtype, int i, void *buf1, void *buf2, void *buf3, int *int_ptr) {return 0;}
+int tdelete_attr_fn(MPI_Datatype dtype, int i, void *buf1, void *buf2) {return 0;}
+int win_copy_attr_fn(MPI_Win win, int i, void *buf1, void *buf2, void *buf3, int *int_ptr) {return 0;}
+int win_delete_attr_fn(MPI_Win win, int i, void *buf1, void *buf2) {return 0;}
+void comm_errhan(MPI_Comm *comm_ptr, int *int_ptr, ...) {}
 #ifdef ROMIO_VERSION
-void file_errhan(MPI_File *file_ptr, int *int_ptr, ...)
-{
-}
+void file_errhan(MPI_File *file_ptr, int *int_ptr, ...) {}
 #endif
-void win_errhan(MPI_Win *win_ptr, int *int_ptr, ...)
-{
-}
-void user_fn( void *buf1, void *buf2, int *int_ptr, MPI_Datatype *dtype_ptr)
-{
-}
-int copy_fn(MPI_Comm comm, int i, void *buf1, void *buf2, void *buf3, int *int_ptr)
-{
-    return 0;
-}
-int delete_fn(MPI_Comm comm, int i, void *buf1, void *buf2)
-{
-    return 0;
-}
-int cancel_fn(void *buf, int i)
-{
-    return 0;
-}
-int free_fn(void *buf)
-{
-    return 0;
-}
-int query_fn(void *buf, MPI_Status *status_ptr)
-{
-    return 0;
-}
-int conversion_fn(void *buf1, MPI_Datatype dtype, int i, void *buf2, MPI_Offset offset, void *buf3)
-{
-    return 0;
-}
-int extent_fn(MPI_Datatype dtype, MPI_Aint *aint_ptr, void *buf)
-{
-    return 0;
-}
+void win_errhan(MPI_Win *win_ptr, int *int_ptr, ...) {}
+void user_fn( void *buf1, void *buf2, int *int_ptr, MPI_Datatype *dtype_ptr) {}
+int copy_fn(MPI_Comm comm, int i, void *buf1, void *buf2, void *buf3, int *int_ptr) {return 0;}
+int delete_fn(MPI_Comm comm, int i, void *buf1, void *buf2) {return 0;}
+int cancel_fn(void *buf, int i) {return 0;}
+int free_fn(void *buf) {return 0;}
+int query_fn(void *buf, MPI_Status *status_ptr) {return 0;}
+int conversion_fn(void *buf1, MPI_Datatype dtype, int i, void *buf2, MPI_Offset offset, void *buf3) {return 0;}
+int extent_fn(MPI_Datatype dtype, MPI_Aint *aint_ptr, void *buf) {return 0;}
 
 void testAll(void)
 {
@@ -334,8 +291,10 @@ void testAll(void)
     MPI_Pack_external(cbuf, vbuf, i, dtype, vbuf, aint, &aint); 
     MPI_Pack_external_size(cbuf, i, dtype, &aint); 
     MPI_Request_get_status(request, &i, &status);
-    /*MPI_Status_c2f(&status, &fint);*/
-    /*MPI_Status_f2c(&fint, &status);*/
+#ifdef HAVE_FORTRAN_BINDING
+    MPI_Status_c2f(&status, &fint);
+    MPI_Status_f2c(&fint, &status);
+#endif
     MPI_Type_create_darray(i, i, i, &i, &i, &i, &i, i, dtype, &dtype);
     MPI_Type_create_hindexed(i, &i, &aint, dtype, &dtype);
     MPI_Type_create_hvector(i, i, aint, dtype, &dtype);
@@ -407,6 +366,7 @@ void testAll(void)
     MPI_Type_create_darray(i, i, i, &i, &i, &i, &i, i, dtype, &dtype);
     MPI_File_f2c(fint);
     MPI_File_c2f(file);
+    /* These are in mpio.h  Are they MPI functions? */
     /*
     MPIO_Test(&iorequest, &i, &status);
     MPIO_Wait(&iorequest, &status);
@@ -420,6 +380,7 @@ int main(int argc, char *argv[])
 {
     MPI_Init(&argc, &argv);
 
+    /* make it possible to call testAll so the compiler doesn't optimize out the code? */
     if (argc > 1 && strcmp(argv[1], "flooglebottom") == 0)
 	testAll();
 
