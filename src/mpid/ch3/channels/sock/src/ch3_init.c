@@ -15,9 +15,6 @@
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
-/* XXX - all calls to assert() need to be turned into real error checking and
-   return meaningful errors */
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
@@ -221,9 +218,17 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	for (p = 0; p < pg_size; p++)
 	{
 	    mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", p);
-	    assert(mpi_errno > -1 && mpi_errno < key_max_sz);
+	    if (mpi_errno < 0 || mpi_errno >= key_max_sz)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		return mpi_errno;
+	    }
 	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
-	    assert(mpi_errno == 0);
+	    if (mpi_errno != PMI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get", "**pmi_get %d", mpi_errno);
+		return mpi_errno;
+	    }
 
 	    MPIU_dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	    fflush(stdout);
@@ -459,15 +464,26 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         /* get the business cards of other processes into the root's
            cache so that they get sent over to the parents. Temporary hack. */
     
-        for (i=1; i<pg_size; i++) {
+        for (i=1; i<pg_size; i++)
+	{
             mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", i);
-            assert(mpi_errno > -1 && mpi_errno < key_max_sz);
-            mpi_errno = -1; 
-            while (mpi_errno != 0) {
+            if (mpi_errno < 0 || mpi_errno >= key_max_sz)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		return mpi_errno;
+	    }
+            mpi_errno = -1;
+            while (mpi_errno != PMI_SUCCESS)
+	    {
                 mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
                 usleep(1000);
             }
             mpi_errno = PMI_KVS_Put(pg->kvs_name, key, val);
+	    if (mpi_errno != PMI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_put", "**pmi_put %d", mpi_errno);
+		return mpi_errno;
+	    }
             MPIU_dbg_printf("Child: rank %d b card %s\n", i, val);
             fflush(stdout);
         }
@@ -493,9 +509,17 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	for (p = 0; p < pg_size; p++)
 	{
 	    mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", p);
-	    assert(mpi_errno > -1 && mpi_errno < key_max_sz);
+	    if (mpi_errno < 0 || mpi_errno >= key_max_sz)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		return mpi_errno;
+	    }
 	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
-	    assert(mpi_errno == 0);
+	    if (mpi_errno != PMI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get", "**pmi_get %d", mpi_errno);
+		return mpi_errno;
+	    }
 
 	    MPIU_dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	    fflush(stdout);
@@ -511,7 +535,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         /* This process was spawned. Create intercommunicator with parents. */
 
         parent_kvsname = MPIU_Malloc(val_max_sz);
-        assert(parent_kvsname != NULL);
+	if (parent_kvsname == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    return mpi_errno;
+	}
         
         mpi_errno = MPIU_Snprintf(key, key_max_sz, "PMI_PARENT_KVSNAME");
 	if (mpi_errno < 0 || mpi_errno > key_max_sz)

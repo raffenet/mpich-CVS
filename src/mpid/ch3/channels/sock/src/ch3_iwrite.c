@@ -19,7 +19,15 @@ int MPIDI_CH3_iWrite(MPIDI_VC * vc, MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IWRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IWRITE);
-    assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);*/
+    if (vc->sc.state != MPIDI_CH3I_VC_STATE_CONNECTED)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->sc.state);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IWRITE);
+	return mpi_errno;
+    }
+#endif
     req->sc.iov_offset = 0;
     
     mpi_errno = MPIDI_CH3I_VC_post_write(vc, req);

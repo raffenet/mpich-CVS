@@ -20,7 +20,14 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
-    assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);
+#ifdef MPICH_DBG_OUTPUT
+    /*assert(vc->sc.state == MPIDI_CH3I_VC_STATE_CONNECTED);*/
+    if (vc->sc.state != MPIDI_CH3I_VC_STATE_CONNECTED)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->sc.state);
+	goto fn_exit;
+    }
+#endif
 
     mpi_errno = MPIDU_Sock_readv(vc->sc.sock, rreq->ch3.iov, rreq->ch3.iov_count, &nb);
     if (mpi_errno == MPI_SUCCESS)

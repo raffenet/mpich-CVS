@@ -14,7 +14,9 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
 
     sreq = MPIDI_CH3_Request_create();
-    assert(sreq != NULL);
+    /*assert(sreq != NULL);*/
+    if (sreq == NULL)
+	return NULL;
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind = MPID_REQUEST_SEND;
     /* memcpy(&sreq->sc.pkt, hdr, hdr_sz); */
@@ -80,12 +82,19 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 		{
 		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
 		    sreq = create_request(hdr, hdr_sz, nb);
-		    assert(sreq != NULL);
+		    if (sreq == NULL)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+			return mpi_errno;
+		    }
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    mpi_errno = MPIDI_CH3I_VC_post_write(vc, sreq);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
-			MPID_Abort(NULL, mpi_errno, 13);
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|post_write", 0);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+			return mpi_errno;
 		    }
 		}
 	    }
@@ -93,7 +102,12 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_write failed, rc=%d", rc));
 		sreq = MPIDI_CH3_Request_create();
-		assert(sreq != NULL);
+		if (sreq == NULL)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		    return mpi_errno;
+		}
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
 		/* TODO: Create an appropriate error message based on the return value */
@@ -104,7 +118,12 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send in progress, request enqueued"));
 	    sreq = create_request(hdr, hdr_sz, 0);
-	    assert(sreq != NULL);
+	    if (sreq == NULL)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+		return mpi_errno;
+	    }
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
@@ -114,7 +133,12 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	
 	/* queue the data so it can be sent after the connection is formed */
 	sreq = create_request(hdr, hdr_sz, 0);
-	assert(sreq != NULL);
+	if (sreq == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	    return mpi_errno;
+	}
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 
 	/* Form a new connection */
@@ -125,7 +149,12 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
 	sreq = create_request(hdr, hdr_sz, 0);
-	assert(sreq != NULL);
+	if (sreq == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	    return mpi_errno;
+	}
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     else
@@ -133,7 +162,12 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID_R
 	/* Connection failed, so allocate a request and return an error. */
 	MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed"));
 	sreq = MPIDI_CH3_Request_create();
-	assert(sreq != NULL);
+	if (sreq == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+	    return mpi_errno;
+	}
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->cc = 0;
 	/* TODO: Create an appropriate error message */
