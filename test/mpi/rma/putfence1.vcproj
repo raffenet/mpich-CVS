@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="putfence1"
-	ProjectGUID="{D8480A0D-B48E-47E8-AD81-E13F9DD834B1}"
+	ProjectGUID="{745aa97f-9f7f-4128-a1bd-1679aacd10e2}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -69,6 +69,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\..\src\include;..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="4"
 				UsePrecompiledHeader="0"
@@ -79,8 +80,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="mpich2.lib ws2_32.lib"
 				OutputFile="$(OutDir)/putfence1.exe"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -114,23 +117,23 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
-			<File
-				RelativePath="..\util\mtest.c">
-			</File>
+			UniqueIdentifier="{671b27ef-b522-4554-a96c-af8e8e7a7d78}">
 			<File
 				RelativePath=".\putfence1.c">
+			</File>
+			<File
+				RelativePath="..\util\mtest.c">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			UniqueIdentifier="{58b081b4-2182-42aa-8769-be0ab1279271}">
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
+			UniqueIdentifier="{43a5bdbf-cf33-4f78-9469-a4cd970eb9d8}">
 		</Filter>
 	</Files>
 	<Globals>
