@@ -1585,7 +1585,7 @@ int iPMI_Spawn_multiple(int count,
     return PMI_SUCCESS;
 }
 
-int iPMI_Args_to_keyval(int *argcp, char **argvp[], PMI_keyval_t *keyvalp[], int *size)
+int iPMI_Args_to_keyval(int *argcp, char *((*argvp)[]), PMI_keyval_t (*keyvalp)[], int *size)
 {
     if (argcp == NULL || argvp == NULL || keyvalp == NULL || size == NULL)
 	return PMI_ERR_INVALID_ARG;
