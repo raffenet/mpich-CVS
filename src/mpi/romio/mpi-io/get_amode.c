@@ -50,6 +50,8 @@ int MPI_File_get_amode(MPI_File mpi_fh, int *amode)
     /* --END ERROR HANDLING-- */
 
     *amode = fh->access_mode;
+
+fn_exit:
     MPID_CS_EXIT();
     return MPI_SUCCESS;
 }
