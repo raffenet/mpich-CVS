@@ -22,7 +22,23 @@ fi
 
 PAC_PROG_MAKE
 
-AC_CHECK_HEADERS(assert.h sys/types.h sys/socket.h netdb.h net/if.h netinet/in.h sys/ioctl.h sys/sockio.h errno.h)
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <net/if.h>
+],[
+return 0;
+],AC_DEFINE(HAVE_NET_IF_H, 1, [net/if.h is present on this system]))
+fi
+
+AC_CHECK_HEADERS(				\
+	assert.h				\
+	netdb.h					\
+	netinet/in.h				\
+	sys/ioctl.h				\
+	sys/socket.h				\
+	sys/sockio.h				\
+	sys/types.h				\
+	errno.h)
 
 AC_SUBST(DEVICE)
 AC_SUBST(CHANNEL)
