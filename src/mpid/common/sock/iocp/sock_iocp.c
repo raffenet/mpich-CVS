@@ -285,6 +285,8 @@ static int BlockFree(BlockAllocator p, void *pBlock)
 
 /* utility socket functions */
 
+static int g_last_os_error = SOCK_SUCCESS;
+
 int WinToSockError(int error)
 {
     switch (error)
@@ -396,25 +398,20 @@ int WinToSockError(int error)
 	return SOCK_ERR_NOMEM;
 	break;
     case WSA_OPERATION_ABORTED:
+	return SOCK_ERR_OP_ABORTED;
 	break;
-	/*
-    case WSAINVALIDPROCTABLE:
-	break;
-	*/
-	/*
-    case WSAINVALIDPROVIDER:
-	break;
-	*/
-	/*
-    case WSAPROVIDERFAILEDINIT:
-	break;
-	*/
     case WSASYSCALLFAILURE:
 	break;
     }
     /* save error */
+    g_last_os_error = error;
     MPIU_DBG_PRINTF(("***** WinToSockError returning os specific error %d *****\n", error));
     return SOCK_ERR_OS_SPECIFIC;
+}
+
+int sock_get_last_os_error(void)
+{
+    return g_last_os_error;
 }
 
 static int easy_create(SOCKET *sock, int port, unsigned long addr)
@@ -907,15 +904,63 @@ int sock_post_close(sock_t sock)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_CLOSE);
 
+    if (sock == SOCK_INVALID_SOCK)
+    {
+	MPIU_DBG_PRINTF(("attempting to post a close but sock == SOCK_INVALID_SOCK.\n"));
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	return SOCK_FAIL;
+    }
+    if (sock->sock == INVALID_SOCKET)
+    {
+	MPIU_DBG_PRINTF(("attempting to post a close but sock.sock == INVALID_SOCKET.\n"));
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	return SOCK_FAIL;
+    }
+
+    if (sock->closing)
+    {
+	MPIU_DBG_PRINTF(("sock_post_close(%d) called more than once.\n", sock_getid(sock)));
+	MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_CLOSE);
+	return SOCK_FAIL;
+    }
+
     if (sock->pending_operations != 0)
     {
 #ifdef MPICH_DBG_OUTPUT
 	if (sock->state & SOCK_CONNECTING)
-	    MPIU_DBG_PRINTF(("sock_post_close called while sock is connecting.\n"));
+	    MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is connecting.\n", sock_getid(sock)));
 	if (sock->state & SOCK_READING)
-	    MPIU_DBG_PRINTF(("sock_post_close called while sock is reading.\n"));
+	{
+	    if (sock->read.use_iov)
+	    {
+		int i, n = 0;
+		for (i=0; i<sock->read.iovlen; i++)
+		    n += sock->read.iov[i].SOCK_IOV_LEN;
+		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is reading: %d bytes out of %d, index %d, iovlen %d.\n",
+		    sock_getid(sock), sock->read.total, n, sock->read.index, sock->read.iovlen));
+	    }
+	    else
+	    {
+		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is reading: %d bytes out of %d.\n",
+		    sock_getid(sock), sock->read.total, sock->read.bufflen));
+	    }
+	}
 	if (sock->state & SOCK_WRITING)
-	    MPIU_DBG_PRINTF(("sock_post_close called while sock is writing.\n"));
+	{
+	    if (sock->write.use_iov)
+	    {
+		int i, n = 0;
+		for (i=0; i<sock->write.iovlen; i++)
+		    n += sock->write.iov[i].SOCK_IOV_LEN;
+		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is writing: %d bytes out of %d, index %d, iovlen %d.\n",
+		    sock_getid(sock), sock->write.total, n, sock->write.index, sock->write.iovlen));
+	    }
+	    else
+	    {
+		MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is writing: %d bytes out of %d.\n",
+		    sock_getid(sock), sock->write.total, sock->write.bufflen));
+	    }
+	}
 	fflush(stdout);
 #endif
 	/*
@@ -926,10 +971,12 @@ int sock_post_close(sock_t sock)
     }
 
     sock->closing = TRUE;
+
     /*
     if (sock->pending_operations == 0)
     {
     */
+	sock->pending_operations = 0;
 	/*printf("flushing socket buffer before closing\n");fflush(stdout);*/
 	FlushFileBuffers((HANDLE)sock->sock);
 	shutdown(sock->sock, SD_BOTH);
@@ -997,6 +1044,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	/* initialize to NULL so we can compare the output of GetQueuedCompletionStatus */
 	sock = NULL;
 	ovl = NULL;
+	num_bytes = 0;
 	if (GetQueuedCompletionStatus(set, &num_bytes, (DWORD*)&sock, &ovl, millisecond_timeout))
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
@@ -1004,9 +1052,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    {
 		if (sock->closing && sock->pending_operations == 0)
 		{
+		    out->op_type = SOCK_OP_CLOSE;
 		    out->num_bytes = 0;
 		    out->error = SOCK_SUCCESS;
-		    out->op_type = SOCK_OP_CLOSE;
 		    out->user_ptr = sock->user_ptr;
 		    CloseHandle(sock->read.ovl.hEvent);
 		    CloseHandle(sock->write.ovl.hEvent);
@@ -1043,9 +1091,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			if (sock->read.iovlen == 0)
 			{
 			    MPIU_DBG_PRINTF(("sock_wait readv %d bytes\n", sock->read.total));
-			    out->error = SOCK_SUCCESS;
-			    out->num_bytes = sock->read.total;
 			    out->op_type = SOCK_OP_READ;
+			    out->num_bytes = sock->read.total;
+			    out->error = SOCK_SUCCESS;
 			    out->user_ptr = sock->user_ptr;
 			    sock->pending_operations--;
 			    sock->state ^= SOCK_READING; /* remove the SOCK_READING bit */
@@ -1070,9 +1118,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    error = WSAGetLastError();
 			    if (error == 0)
 			    {
-				out->error = SOCK_EOF;
-				out->num_bytes = sock->read.total;
 				out->op_type = SOCK_OP_READ;
+				out->num_bytes = sock->read.total;
+				out->error = SOCK_EOF;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
 				sock->state ^= SOCK_READING;
@@ -1089,9 +1137,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    }
 			    if (error != WSA_IO_PENDING)
 			    {
-				out->error = WinToSockError(error);
-				out->num_bytes = sock->read.total;
 				out->op_type = SOCK_OP_READ;
+				out->num_bytes = sock->read.total;
+				out->error = WinToSockError(error);
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
 				sock->state ^= SOCK_READING;
@@ -1115,9 +1163,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			if (sock->read.bufflen == 0)
 			{
 			    MPIU_DBG_PRINTF(("sock_wait read %d bytes\n", sock->read.total));
-			    out->error = SOCK_SUCCESS;
-			    out->num_bytes = sock->read.total;
 			    out->op_type = SOCK_OP_READ;
+			    out->num_bytes = sock->read.total;
+			    out->error = SOCK_SUCCESS;
 			    out->user_ptr = sock->user_ptr;
 			    sock->pending_operations--;
 			    sock->state ^= SOCK_READING; /* remove the SOCK_READING bit */
@@ -1139,11 +1187,12 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			if (!ReadFile((HANDLE)(sock->sock), sock->read.buffer, sock->read.bufflen, &sock->read.num_bytes, &sock->read.ovl))
 			{
 			    error = GetLastError();
+			    MPIU_DBG_PRINTF(("GetLastError: %d\n", error));
 			    if (error == ERROR_HANDLE_EOF || error == 0)
 			    {
-				out->error = SOCK_EOF;
-				out->num_bytes = sock->read.total;
 				out->op_type = SOCK_OP_READ;
+				out->num_bytes = sock->read.total;
+				out->error = SOCK_EOF;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
 				sock->state ^= SOCK_READING;
@@ -1160,9 +1209,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    }
 			    if (error != ERROR_IO_PENDING)
 			    {
-				out->error = WinToSockError(error);
-				out->num_bytes = sock->read.total;
 				out->op_type = SOCK_OP_READ;
+				out->num_bytes = sock->read.total;
+				out->error = WinToSockError(error);
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
 				sock->state ^= SOCK_READING;
@@ -1186,8 +1235,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		    {
 			/* insert code here to determine that the connect succeeded */
 			/* ... */
-			out->error = SOCK_SUCCESS;
 			out->op_type = SOCK_OP_CONNECT;
+			out->num_bytes = 0;
+			out->error = SOCK_SUCCESS;
 			out->user_ptr = sock->user_ptr;
 			sock->pending_operations--;
 			sock->state ^= SOCK_CONNECTING; /* remove the SOCK_CONNECTING bit */
@@ -1234,9 +1284,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				{
 				    MPIU_DBG_PRINTF(("sock_wait wrotev %d bytes\n", sock->write.total));
 				}
-				out->error = SOCK_SUCCESS;
-				out->num_bytes = sock->write.total;
 				out->op_type = SOCK_OP_WRITE;
+				out->num_bytes = sock->write.total;
+				out->error = SOCK_SUCCESS;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
 				sock->state ^= SOCK_WRITING; /* remove the SOCK_WRITING bit */
@@ -1261,9 +1311,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				error = WSAGetLastError();
 				if (error == 0)
 				{
-				    out->error = SOCK_EOF;
-				    out->num_bytes = sock->write.total;
 				    out->op_type = SOCK_OP_WRITE;
+				    out->num_bytes = sock->write.total;
+				    out->error = SOCK_EOF;
 				    out->user_ptr = sock->user_ptr;
 				    sock->pending_operations--;
 				    sock->state ^= SOCK_WRITING;
@@ -1280,9 +1330,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				}
 				if (error != WSA_IO_PENDING)
 				{
-				    out->error = WinToSockError(error);
-				    out->num_bytes = sock->write.total;
 				    out->op_type = SOCK_OP_WRITE;
+				    out->num_bytes = sock->write.total;
+				    out->error = WinToSockError(error);
 				    out->user_ptr = sock->user_ptr;
 				    sock->pending_operations--;
 				    sock->state ^= SOCK_WRITING;
@@ -1311,9 +1361,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				    MPIU_DBG_PRINTF(("sock_wait wrote %d bytes\n", sock->write.total));
 				}
 #endif
-				out->error = SOCK_SUCCESS;
-				out->num_bytes = sock->write.total;
 				out->op_type = SOCK_OP_WRITE;
+				out->num_bytes = sock->write.total;
+				out->error = SOCK_SUCCESS;
 				out->user_ptr = sock->user_ptr;
 				sock->pending_operations--;
 				sock->state ^= SOCK_WRITING; /* remove the SOCK_WRITING bit */
@@ -1335,11 +1385,12 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 			    if (!WriteFile((HANDLE)(sock->sock), sock->write.buffer, sock->write.bufflen, &sock->write.num_bytes, &sock->write.ovl))
 			    {
 				error = GetLastError();
+				MPIU_DBG_PRINTF(("GetLastError: %d\n", error));
 				if (error == ERROR_HANDLE_EOF || error == 0)
 				{
-				    out->error = SOCK_EOF;
-				    out->num_bytes = sock->write.total;
 				    out->op_type = SOCK_OP_WRITE;
+				    out->num_bytes = sock->write.total;
+				    out->error = SOCK_EOF;
 				    out->user_ptr = sock->user_ptr;
 				    sock->pending_operations--;
 				    sock->state ^= SOCK_WRITING;
@@ -1356,9 +1407,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 				}
 				if (error != ERROR_IO_PENDING)
 				{
-				    out->error = WinToSockError(error);
-				    out->num_bytes = sock->write.total;
 				    out->op_type = SOCK_OP_WRITE;
+				    out->num_bytes = sock->write.total;
+				    out->error = WinToSockError(error);
 				    out->user_ptr = sock->user_ptr;
 				    sock->pending_operations--;
 				    sock->state ^= SOCK_WRITING;
@@ -1379,24 +1430,73 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 		}
 		else
 		{
-		    MPIU_Error_printf("sock_wait", "returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);
-		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
-		    return SOCK_FAIL;
+		    if (num_bytes == 0)
+		    {
+			if ((sock->state & SOCK_READING))// && sock-sock != INVALID_SOCKET)
+			{
+			    MPIU_DBG_PRINTF(("EOF with posted read on sock %d\n", sock->sock));
+			    out->op_type = SOCK_OP_READ;
+			    out->num_bytes = sock->read.total;
+			    out->error = SOCK_EOF;
+			    out->user_ptr = sock->user_ptr;
+			    sock->state ^= SOCK_READING;
+			    sock->pending_operations--;
+			    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			    return SOCK_SUCCESS;
+			}
+			if ((sock->state & SOCK_WRITING))// && sock->sock != INVALID_SOCKET)
+			{
+			    MPIU_DBG_PRINTF(("EOF with posted write on sock %d\n", sock->sock));
+			    out->op_type = SOCK_OP_WRITE;
+			    out->num_bytes = sock->write.total;
+			    out->error = SOCK_EOF;
+			    out->user_ptr = sock->user_ptr;
+			    sock->state ^= SOCK_WRITING;
+			    sock->pending_operations--;
+			    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			    return SOCK_SUCCESS;
+			}
+			/*
+			if (sock->state & SOCK_CLOSING)
+			{
+			    out->op_type = SOCK_OP_CLOSE;
+			    out->num_bytes = 0;
+			    out->error = SOCK_SUCCESS;
+			    out->user_ptr = sock->user_ptr;
+			    sock->state ^= SOCK_CLOSING;
+			    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			    return SOCK_SUCCESS;
+			}
+			*/
+			MPIU_DBG_PRINTF(("ignoring EOF notification on unknown sock %d.\n", sock_getid(sock)));
+		    }
+
+		    if (sock->sock != INVALID_SOCKET)
+		    {
+			MPIU_DBG_PRINTF(("unmatched ovl: pending: %d, state = %d\n", sock->pending_operations, sock->state));
+			MPIU_Error_printf("returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);
+			MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
+			return SOCK_FAIL;
+		    }
+		    else
+		    {
+			MPIU_DBG_PRINTF(("ignoring notification on invalid sock.\n"));
+		    }
 		}
 	    }
 	    else if (sock->type == SOCK_LISTENER)
 	    {
 		sock->state |= SOCK_ACCEPTED;
-		out->error = SOCK_SUCCESS;
-		out->num_bytes = num_bytes;
 		out->op_type = SOCK_OP_ACCEPT;
+		out->num_bytes = num_bytes;
+		out->error = SOCK_SUCCESS;
 		out->user_ptr = sock->user_ptr;
 		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		return SOCK_SUCCESS;
 	    }
 	    else
 	    {
-		MPIU_Error_printf("sock_wait", "sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);
+		MPIU_Error_printf("sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);
 		MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		return SOCK_FAIL;
 	    }
@@ -1405,6 +1505,7 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	{
 	    /*MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);*/ /* Maybe the logging will reset the last error? */
 	    error = GetLastError();
+	    MPIU_DBG_PRINTF(("GetLastError: %d\n", error));
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	    /* interpret error, return appropriate SOCK_ERR_... macro */
 	    if (error == WAIT_TIMEOUT)
@@ -1416,15 +1517,15 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	    {
 		if (sock->type == SOCK_SOCKET || sock->type == SOCK_NATIVE)
 		{
-		    out->num_bytes = 0;
-		    out->error = error;
-		    out->user_ptr = sock->user_ptr;
 		    if (ovl == &sock->read.ovl)
 			out->op_type = SOCK_OP_READ;
 		    else if (ovl == &sock->write.ovl)
 			out->op_type = SOCK_OP_WRITE;
 		    else
 			out->op_type = -1;
+		    out->num_bytes = 0;
+		    out->error = WinToSockError(error);
+		    out->user_ptr = sock->user_ptr;
 		    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_WAIT);
 		    return SOCK_SUCCESS;
 		}
@@ -1471,6 +1572,7 @@ int sock_read(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_read)
 	}
 	else
 	{
+	    MPIU_DBG_PRINTF(("sock_read error %d\n", e));
 	    e = WinToSockError(e);
 	}
     }
@@ -1479,7 +1581,12 @@ int sock_read(sock_t sock, void *buf, sock_size_t len, sock_size_t *num_read)
 	*num_read = e;
 	e = (e == 0) ? SOCK_EOF : SOCK_SUCCESS;
     }
-    MPIU_DBG_PRINTF(("sock_read %d of %d bytes\n", *num_read, len));
+#ifdef MPICH_DBG_OUTPUT
+    if (e == SOCK_SUCCESS)
+    {
+	MPIU_DBG_PRINTF(("sock_read %d of %d bytes\n", *num_read, len));
+    }
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_READ);
     return e;
 }
@@ -1641,6 +1748,7 @@ int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size
 	    switch (e = GetLastError())
 	    {
 	    case ERROR_HANDLE_EOF:
+		MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 		e = SOCK_EOF;
 		InterlockedDecrement(&g_nPostedIO);
 		break;
@@ -1648,6 +1756,7 @@ int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size
 		e = SOCK_SUCCESS;
 		break;
 	    default:
+		MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 		e = WinToSockError(e);
 		InterlockedDecrement(&g_nPostedIO);
 		break;
@@ -1662,6 +1771,7 @@ int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size
 	switch (e = GetLastError())
 	{
 	case ERROR_HANDLE_EOF:
+	    MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 	    printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
 	    e = SOCK_EOF;
 	    break;
@@ -1669,12 +1779,15 @@ int sock_post_read(sock_t sock, void *buf, sock_size_t len, int (*rfn)(sock_size
 	    e = SOCK_SUCCESS;
 	    break;
 	default:
+	    MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 	    printf("sock_post_read: ReadFile failed, error %d\n", GetLastError());fflush(stdout);
 	    e = WinToSockError(e);
 	    break;
 	}
     }
     }
+    if (e != SOCK_SUCCESS)
+	sock->state ^= SOCK_READING;
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_READ);
     return e;
 }
@@ -1736,6 +1849,8 @@ int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(sock_size_t, v
 	}
 	Sleep(200);
     }
+    if (e != SOCK_SUCCESS)
+	sock->state ^= SOCK_READING;
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_READV);
     return e;
 }
@@ -1767,13 +1882,16 @@ int sock_post_write(sock_t sock, void *buf, sock_size_t len, int (*wfn)(sock_siz
 	    switch (e = GetLastError())
 	    {
 	    case ERROR_HANDLE_EOF:
+		MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 		e = SOCK_EOF;
 		InterlockedDecrement(&g_nPostedIO);
 		break;
 	    case ERROR_IO_PENDING:
+		MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 		e = SOCK_SUCCESS;
 		break;
 	    default:
+		MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 		e = WinToSockError(e);
 		InterlockedDecrement(&g_nPostedIO);
 		break;
@@ -1787,17 +1905,21 @@ int sock_post_write(sock_t sock, void *buf, sock_size_t len, int (*wfn)(sock_siz
 	switch (e = GetLastError())
 	{
 	case ERROR_HANDLE_EOF:
+	    MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 	    e = SOCK_EOF;
 	    break;
         case ERROR_IO_PENDING:
 	    e = SOCK_SUCCESS;
 	    break;
 	default:
+	    MPIU_DBG_PRINTF(("GetLastError: %d\n", e));
 	    e = WinToSockError(e);
 	    break;
 	}
     }
     }
+    if (e != SOCK_SUCCESS)
+	sock->state ^= SOCK_WRITING;
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_WRITE);
     return e;
 }
@@ -1874,8 +1996,10 @@ int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(sock_size_t, 
 	}
 	Sleep(200);
     }
+    if (e != SOCK_SUCCESS)
+	sock->state ^= SOCK_WRITING;
     MPIDI_FUNC_EXIT(MPID_STATE_SOCK_POST_WRITEV);
-    return SOCK_SUCCESS;
+    return e;
 }
 
 /* extended functions */
