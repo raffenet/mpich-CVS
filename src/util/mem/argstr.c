@@ -800,3 +800,69 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
 
     return MPIU_STR_SUCCESS;
 }
+
+/*
+int test_argstrings()
+{
+    char buffer[1024];
+    char buffer2[1024];
+    char key[100];
+    char val[1024];
+    int maxlen, maxlen2;
+    char *iter, *iter2;
+    int ibuf[3] = { 1, 2, 3 };
+    int age;
+
+    iter = buffer;
+    maxlen = 1024;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "name", "David Ashton");
+    MPIU_Str_add_string_arg(&iter, &maxlen, "a b", "c d");
+    MPIU_Str_add_binary_arg(&iter, &maxlen, "array", ibuf, 12);
+    MPIU_Str_add_string_arg(&iter, &maxlen, "=", "equals");
+    MPIU_Str_add_string_arg(&iter, &maxlen, "\"help=", "=\"");
+    MPIU_Str_add_int_arg(&iter, &maxlen, "age", 123);
+
+    printf("encoded buffer: <%s>\n", buffer);
+
+    MPIU_Str_get_string_arg(buffer, "name", val, 1024);
+    printf("name = '%s'\n", val);
+    MPIU_Str_get_string_arg(buffer, "a b", val, 1024);
+    printf("a b = '%s'\n", val);
+    MPIU_Str_get_string_arg(buffer, "=", val, 1024);
+    printf("= = '%s'\n", val);
+    MPIU_Str_get_string_arg(buffer, "\"help=", val, 1024);
+    printf("\"help= = '%s'\n", val);
+    MPIU_Str_get_int_arg(buffer, "age", &age);
+    printf("age = %d\n", age);
+    MPIU_Str_get_binary_arg(buffer, "array", ibuf, 12);
+    printf("ibuf[0] = %d\n", ibuf[0]);
+    printf("ibuf[1] = %d\n", ibuf[1]);
+    printf("ibuf[2] = %d\n", ibuf[2]);
+
+    iter = buffer2;
+    maxlen = 1024;
+    MPIU_Str_add_string_arg(&iter, &maxlen, "big arg", buffer);
+    MPIU_Str_add_string(&iter, &maxlen, "Once isn't enough for me");
+    MPIU_Str_add_int_arg(&iter, &maxlen, "size", 100);
+    printf("doubly encoded buffer: <%s>\n", buffer2);
+
+    MPIU_Str_get_string_arg(buffer2, "big arg", buffer, 1024);
+    printf("big arg = '%s'\n", buffer);
+    MPIU_Str_get_string_arg(buffer, "name", val, 1024);
+    printf("name = '%s'\n", val);
+    MPIU_Str_get_string_arg(buffer, "a b", val, 1024);
+    printf("a b = '%s'\n", val);
+    MPIU_Str_get_string_arg(buffer, "=", val, 1024);
+    printf("= = '%s'\n", val);
+    MPIU_Str_get_int_arg(buffer, "age", &age);
+    printf("age = %d\n", age);
+    MPIU_Str_get_binary_arg(buffer, "array", ibuf, 12);
+    printf("ibuf[0] = %d\n", ibuf[0]);
+    printf("ibuf[1] = %d\n", ibuf[1]);
+    printf("ibuf[2] = %d\n", ibuf[2]);
+
+    MPIU_Str_get_int_arg(buffer2, "size", &age);
+    printf("size = %d\n", age);
+    return 0;
+}
+*/
