@@ -114,7 +114,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     ADIOI_PVFS2_fs * pvfs_fs;
     PVFS_sysresp_io resp_io;
 
-#define MAX_ARRAY_SIZE 1024
+    /* TODO: increase this to the maximum value */
+#define MAX_ARRAY_SIZE 64
 
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_PVFS_WRITESTRIDED";
