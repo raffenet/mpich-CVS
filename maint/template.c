@@ -125,7 +125,8 @@ int MPI_Foo( MPI_Comm comm, MPI_Datatype dataype, int a )
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_isend",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+	    MPI_ERR_OTHER, "**mpi_foo",
 	    "**mpi_foo %C %D %d", comm, datatype, a);
     }
 #   endif
