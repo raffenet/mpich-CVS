@@ -37,6 +37,7 @@ libdir=@libdir@
 # Determined by a combination of environment variables and tests within
 # configure (e.g., determining whehter -lsocket is needee)
 F90="@F90@"
+F90CPP="@F90CPP@"
 MPI_F90FLAGS="@MPI_F90FLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
@@ -137,10 +138,62 @@ for arg in "$@" ; do
 	# any spaces)
     *\"*) 
     qarg="'"$arg"'"
+    case $arg in 
+       -D*)
+       cppflags="$cppflags $qarg"
+       ;;
+    esac
     ;;
     *\'*) 
     qarg='\"'"$arg"'\"'
+    case $arg in 
+       -D*)
+       cppflags="$cppflags $qarg"
+       ;;
+    esac
     ;;
+    # The following are special args used to handle .F files when the
+    # Fortran compiler itself does not handle these options
+    -I*)
+    cppflags="$cppflags $arg"
+    ;;
+    -D*)
+    cppflags="$cppflags $arg"
+    ;;
+    *.F|*.F90)
+# If F90CPP is not empty, then we need to do the following:
+#    If any input files have the .F or .F90 extension, then    
+#        If F90CPP = false, then
+#            generate an error message and exit
+#        Use F90CPP to convert the file from .F to .f, using 
+#            $TMPDIR/f$$-$count.f as the output file name
+#            Replace the input file with this name in the args
+# This is needed only for very broken systems
+#     
+    if [ -n "$F90CPP" ] ; then
+        if [ "$F90CPP" = "false" ] ; then
+            echo "This Fortran compiler does not accept .F or .F90 files"
+	    exit 1
+        fi
+        addarg=no
+        bfile=`basename $arg .F`
+	TMPDIR=${TMPDIR:-/tmp}
+        tmpfile=$TMPDIR/f$$-$bfile.f
+        if $F90CPP $cppflags $arg > $tmpfile ; then
+            # Add this file to the commandline list
+	    count=`expr $count + 1`
+	    allargs="$allargs $tmpfile"
+	    rmfiles="$rmfiles $tmpfile"
+        else
+	    echo "Aborting compilation because of failure in preprocessing step"
+	    echo "for file $arg ."
+	    exit 1
+        fi
+    fi
+    # Otherwise, just accept the argument
+    ;;
+    # - end of special handling for .F files
+
     *)
     ;;
 
@@ -161,17 +214,6 @@ mpilibs=-l$MPILIBNAME
 F90FLAGS="$F90FLAGS $MPI_F90FLAGS"
 LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
 #
-# Look through the arguments for arguments that indicate compile only.
-# If these are *not* found, add the library options
-linking=yes
-for arg in "$@" ; do
-    case $arg in 
-    -c|-S|-E|-M)
-    linking=no
-    ;;
-    esac
-done
-#
 # A temporary statement to invoke the compiler
 # Place the -L before any args incase there are any mpi libraries in there.
 # Eventually, we'll want to move this after any non-MPI implementation 
@@ -182,6 +224,18 @@ if [ "$linking" = yes ] ; then
 else
     $Show $F90 $F90FLAGS -I$includedir $allargs
     rc=$?
+fi
+if [ -n "$rmfiles" ] ; then
+    for file in $rmfiles ; do
+        objfile=`basename $file .f`
+	if [ -s "${objfile}.o" ] ; then
+	    # Rename 
+	    destfile=`echo $objfile | sed -e "s/.*$$-//"`
+	    mv -f ${objfile}.o ${destfile}.o
+	fi
+        rm -f $file
+    done
+    rm -f $rmfiles
 fi
 exit $rc
 
