@@ -81,7 +81,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	    if (rreq->cc == 0)
 	    {
 		/* All of the data has arrived, we need to unpack the data and then free the buffer and the request. */
-		if (count > 0)
+		if (rreq->ch3.recv_data_sz > 0)
 		{
 		    MPIDI_CH3U_Request_unpack_uebuf(rreq);
 		    MPIU_Free(rreq->ch3.tmpbuf);
@@ -92,6 +92,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		{
 		    *status = rreq->status;
 		}
+		
 		MPID_Request_release(rreq);
 		rreq = NULL;
 		

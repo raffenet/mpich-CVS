@@ -31,7 +31,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
     {
 	case MPIDI_CH3_CA_COMPLETE:
 	{
-	    /* mark data transfer as complete adn decrment CC */
+	    /* mark data transfer as complete and decrment CC */
 	    rreq->ch3.iov_count = 0;
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
@@ -39,9 +39,13 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	
 	case MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE:
 	{
-	    MPIDI_CH3U_Request_unpack_uebuf(rreq);
-	    MPIU_Free(rreq->ch3.tmpbuf);
-	    /* mark data transfer as complete adn decrment CC */
+	    if (rreq->ch3.recv_data_sz > 0)
+	    {
+		MPIDI_CH3U_Request_unpack_uebuf(rreq);
+		MPIU_Free(rreq->ch3.tmpbuf);
+	    }
+	    
+	    /* mark data transfer as complete and decrment CC */
 	    rreq->ch3.iov_count = 0;
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;
@@ -50,7 +54,7 @@ void MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq)
 	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE:
 	{
 	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
-	    /* mark data transfer as complete adn decrment CC */
+	    /* mark data transfer as complete and decrment CC */
 	    rreq->ch3.iov_count = 0;
 	    MPIDI_CH3U_Request_complete(rreq);
 	    break;

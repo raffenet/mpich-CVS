@@ -105,7 +105,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	    if (rreq->cc == 0)
 	    {
 		/* All of the data has arrived, we need to copy the data and then free the buffer and the request. */
-		if (count > 0)
+		if (rreq->ch3.recv_data_sz > 0)
 		{
 		    MPIDI_CH3U_Request_unpack_uebuf(rreq);
 		    MPIU_Free(rreq->ch3.tmpbuf);

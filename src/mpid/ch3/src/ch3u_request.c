@@ -782,31 +782,34 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
 	mpi_errno = MPI_ERR_TRUNCATE;
     }
-	
-    if (dt_contig)
-    {
-	/* TODO - check that amount of data is consistent with datatype.  In other words, if we were to use Segment_unpack() would
-           last = unpack?  If not we should return an error (unless configured with --enable-fast) */
-	memcpy(rreq->ch3.user_buf, rreq->ch3.tmpbuf, unpack_sz);
-    }
-    else
-    {
-	MPID_Segment seg;
-	int last;
 
-	MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &seg);
-	last = unpack_sz;
-	MPID_Segment_unpack(&seg, 0, &last, rreq->ch3.tmpbuf);
-	if (last != unpack_sz && mpi_errno == MPI_SUCCESS)
+    if (unpack_sz > 0)
+    {
+	if (dt_contig)
 	{
-	    /* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic
-	       datatype */
-	    rreq->status.count = last;
-	    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
-	    mpi_errno = MPI_ERR_UNKNOWN;
+	    /* TODO - check that amount of data is consistent with datatype.  In other words, if we were to use Segment_unpack()
+	       would last = unpack?  If not we should return an error (unless configured with --enable-fast) */
+	    memcpy(rreq->ch3.user_buf, rreq->ch3.tmpbuf, unpack_sz);
+	}
+	else
+	{
+	    MPID_Segment seg;
+	    int last;
+
+	    MPID_Segment_init(rreq->ch3.user_buf, rreq->ch3.user_count, rreq->ch3.datatype, &seg);
+	    last = unpack_sz;
+	    MPID_Segment_unpack(&seg, 0, &last, rreq->ch3.tmpbuf);
+	    if (last != unpack_sz && mpi_errno == MPI_SUCCESS)
+	    {
+		/* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic
+		   datatype */
+		rreq->status.count = last;
+		rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
+		mpi_errno = MPI_ERR_UNKNOWN;
+	    }
 	}
     }
-
+    
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
     return mpi_errno;
 }
