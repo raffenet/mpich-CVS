@@ -1413,6 +1413,21 @@ AC_SUBST(FILE_SYS_DIRS)
 #
 CFLAGS="$CFLAGS -DHAVE_ROMIOCONF_H"
 #
+
+AC_CHECK_HEADERS(unistd.h,
+        AC_MSG_CHECKING(for large file defines)
+        AC_TRY_COMPILE([
+                #include <unistd.h>
+                ], [
+                #ifndef _LFS64_LARGEFILE
+                #error no largefile defines
+                #endif
+                ],
+                CFLAGS="${CFLAGS} -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+                AC_MSG_RESULT(yes),
+                AC_MSG_RESULT(none) )
+        )
+
 echo "setting CC to $CC"
 echo "setting F77 to $F77"
 echo "setting TEST_CC to $TEST_CC"
