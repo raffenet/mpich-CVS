@@ -304,44 +304,36 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
     }
 
     for (;;) {
-	if ((cur_elmp->loop_p->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT) assert(0);
-
 #ifdef DLOOP_M_VERBOSE
         DLOOP_dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n", cur_sp, (unsigned) cur_elmp);
 #endif
 
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
 	    int partial_flag, piecefn_indicated_exit;
-	    DLOOP_Offset piece_size, basic_size, dtype_size;
+	    DLOOP_Offset piece_size, basic_size;
 	    /* process data region */
 
 	    /* First discover how large a region we *could* process, if it
 	     * could all be handled by the processing function.
 	     */
-	    dtype_size = cur_elmp->loop_p->el_size;
 
 	    /* this is the fundamental size at which we should work.
-	     * this could theoretically be smaller than the 
-	     * dtype size; dunno yet.  if so, it will be a big mess
-	     * to keep up with...
-	     *
-	     * TODO: GET THIS FROM THE TYPE MORE CORRECTLY
 	     */
 	    basic_size = cur_elmp->loop_p->el_size;
 
 	    switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
-		    piece_size = cur_elmp->curcount * dtype_size;
+		    piece_size = cur_elmp->curcount * basic_size;
 		    break;
          	case DLOOP_KIND_BLOCKINDEXED:
 		case DLOOP_KIND_INDEXED:
-		    piece_size = cur_elmp->curblock * dtype_size;
+		    piece_size = cur_elmp->curblock * basic_size;
 		    break;
 		case DLOOP_KIND_VECTOR:
 		    /* TODO: RECOGNIZE ABILITY TO DO STRIDED COPIES --
 		     * ONLY GOOD FOR THE NON-VECTOR CASES...
 		     */
-		    piece_size = cur_elmp->curblock * dtype_size;
+		    piece_size = cur_elmp->curblock * basic_size;
 		    break;
 		default:
 		    assert(0);
@@ -382,23 +374,21 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		cur_elmp->curoffset += piece_size;
 
 		/* definitely didn't process everything in this contig. region */
-		/* NOTE: THIS CODE ASSUMES THAT WE'RE WORKING IN WHOLE DTYPE SIZES!!! */
+		/* NOTE: THIS CODE ASSUMES THAT WE STOP ON WHOLE BASIC SIZES!!! */
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_CONTIG:
-			cur_elmp->curcount -= piece_size / dtype_size;
+			cur_elmp->curcount -= piece_size / basic_size;
 			break;
 		    case DLOOP_KIND_BLOCKINDEXED:
 		    case DLOOP_KIND_INDEXED:
-			cur_elmp->curblock -= piece_size / dtype_size;
+			cur_elmp->curblock -= piece_size / basic_size;
 			break;
 		    case DLOOP_KIND_VECTOR:
 			/* TODO: RECOGNIZE ABILITY TO DO STRIDED COPIES --
 			 * ONLY GOOD FOR THE NON-VECTOR CASES...
 			 */
-			cur_elmp->curblock -= piece_size / dtype_size;
+			cur_elmp->curblock -= piece_size / basic_size;
 			break;
-		    default:
-			assert(0);
 		}
 #ifdef DLOOP_M_VERBOSE
 		DLOOP_dbg_printf("partial flag, returning sooner than expected.\n");
@@ -417,7 +407,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		 */
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_CONTIG:
-			cur_elmp->curoffset += piece_size;
+			/* cur_elmp->curoffset += piece_size; */ /* shouldn't need since popping */
 			DLOOP_SEGMENT_POP_AND_MAYBE_EXIT; /* currently always handling the whole contig */
 			break;
 		    case DLOOP_KIND_BLOCKINDEXED:
@@ -440,14 +430,16 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			else {
 			    cur_elmp->curblock = cur_elmp->orig_block;
 			    /* NOTE: stride is in bytes */
-			    /* TODO: CLEAN THIS ONE UP */
+			    cur_elmp->curoffset = cur_elmp->orig_offset + (cur_elmp->orig_count - cur_elmp->curcount) *
+				cur_elmp->loop_p->loop_params.v_t.stride;
+#if 0
+			    /* ABOVE LINE SHOULD REPLACE THESE TWO */
 			    cur_elmp->curoffset += piece_size;
 			    cur_elmp->curoffset += cur_elmp->loop_p->loop_params.v_t.stride - 
 				(cur_elmp->orig_block * cur_elmp->loop_p->el_extent);
+#endif
 			}
 			break;
-		    default:
-			assert(0);
 		}
 	    }
 		
@@ -540,8 +532,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			block_index * cur_elmp->loop_p->el_extent +
 			DLOOP_STACKELM_INDEXED_OFFSET(cur_elmp, count_index);
 		    break;
-		default:
-		    assert(0);
 	    } /* end of switch */
 
 #ifdef DLOOP_M_VERBOSE
@@ -572,8 +562,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    next_elmp->curblock  = DLOOP_STACKELM_INDEXED_BLOCKSIZE(next_elmp, 0);
 		    next_elmp->curoffset = next_elmp->orig_offset + DLOOP_STACKELM_INDEXED_OFFSET(next_elmp, 0);
 		    break;
-		default:
-		    assert(0);
 	    } /* end of switch */
 	    /* TODO: HANDLE NON-ZERO OFFSETS IN NEXT_ELMP HERE? */
 
@@ -586,7 +574,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    cur_elmp->curblock--;
 	    DLOOP_SEGMENT_PUSH;
 	} /* end of else push the datatype */
-    } /* end of while cur_sp >= 0 */
+    } /* end of for (;;) */
 
 #ifdef DLOOP_M_VERBOSE
     DLOOP_dbg_printf("hit end of datatype\n");
