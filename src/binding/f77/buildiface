@@ -144,7 +144,7 @@ foreach $_ (@ARGV) {
                   'MPI_Datatype *' => '(MPI_Datatype *)(ARG)',
 		  'MPI_Status *' => '(MPI_Status *)(ARG)',
 		  'MPI_Info *' => '(MPI_Info *)(ARG)',
-		  'MPI_Info' => '(MPI_Info)(Arg)',
+		  'MPI_Info' => '(MPI_Info)(ARG)',
 		  'int [][3]' => '(int (*)[3])(ARG)'
 );
 
