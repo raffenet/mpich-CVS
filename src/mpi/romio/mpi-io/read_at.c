@@ -116,6 +116,9 @@ int MPI_File_read_at(MPI_File fh, MPI_Offset offset, void *buf,
 #ifdef MPI_hpux
 	HPMP_IO_END(fl_xmpi, fh, datatype, count);
 #endif /* MPI_hpux */
+#ifdef HAVE_STATUS_SET_BYTES
+       MPIR_Status_set_bytes(status, datatype, 0);
+#endif
 	return MPI_SUCCESS;
     }
 
