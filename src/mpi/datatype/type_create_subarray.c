@@ -77,6 +77,8 @@ int MPI_Type_create_subarray(int ndims,
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
+    MPIR_Nest_incr();
+    
     /* Get handles to MPI objects. */
     MPID_Datatype_get_ptr( oldtype, datatype_ptr );
 #   ifdef HAVE_ERROR_CHECKING
@@ -108,7 +110,7 @@ int MPI_Type_create_subarray(int ndims,
 
 #if 0
 	    /* TODO: INTEGRATE THIS CHECK AS WELL */
-	    PMPI_Type_extent(oldtype, &extent);
+	    NMPI_Type_extent(oldtype, &extent);
 
 	    /* check if MPI_Aint is large enough for size of global array. 
 	       if not, complain. */
@@ -127,8 +129,7 @@ int MPI_Type_create_subarray(int ndims,
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If datatype_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
-                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+		goto fn_exit;
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -138,7 +139,7 @@ int MPI_Type_create_subarray(int ndims,
     /* TODO: CHECK THE ERROR RETURNS FROM ALL THESE!!! */
 
     /* TODO: GRAB EXTENT WITH A MACRO OR SOMETHING FASTER */
-    PMPI_Type_extent(oldtype, &extent);
+    NMPI_Type_extent(oldtype, &extent);
 
     if (order == MPI_ORDER_FORTRAN) {
 	if (ndims == 1)
@@ -162,7 +163,7 @@ int MPI_Type_create_subarray(int ndims,
 					     1, /* stride in bytes */
 					     tmp1,
 					     &tmp2);
-		PMPI_Type_free(&tmp1);
+		NMPI_Type_free(&tmp1);
 		tmp1 = tmp2;
 	    }
 	}
@@ -200,7 +201,7 @@ int MPI_Type_create_subarray(int ndims,
 					     1, /* stride in bytes */
 					     tmp1,
 					     &tmp2);
-		PMPI_Type_free(&tmp1);
+		NMPI_Type_free(&tmp1);
 		tmp1 = tmp2;
 	    }
 	}
@@ -233,7 +234,7 @@ int MPI_Type_create_subarray(int ndims,
 				 types,
 				 newtype);
 
-    PMPI_Type_free(&tmp1);
+    NMPI_Type_free(&tmp1);
 
     /* at this point we have the new type, and we've cleaned up any
      * intermediate types created in the process.  we just need to save
@@ -268,6 +269,8 @@ int MPI_Type_create_subarray(int ndims,
 
     MPIU_Free(ints);
 
+  fn_exit:
+    MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
     if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
     else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
