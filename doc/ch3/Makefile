@@ -24,7 +24,7 @@ ch3.ps: $(CH3_FILES)
 	-rm -f ch3man/*.tex ch3man/tmp.*
 	(cd ch3man ; \
 	${DOCTEXT} -latex -nolocation -quotefmt ../../../src/mpid/ch3/include/mpidpost.h ;\
-	../manextract ../../src/mpid/ch3/include/mpidpost.h > /dev/null )
+	../manextract ../../../src/mpid/ch3/include/mpidpost.h > /dev/null )
 	latex ch3 < /dev/null
 	-bibtex ch3
 	sed -e 's/{\\tt *\\char *`\\_ *}/_/g' \
