@@ -832,3 +832,466 @@ with MPI_Alloc_mem.
 **pmi_kvs_iter_next %d:PMI_KVS_iter_next returned %d
 **pmi_spawn_multiple:PMI_Spawn_multiple failed
 **pmi_spawn_multiple %d:PMI_Spawn_multiple returned %d
+
+#
+# mpi functions
+#
+**mpi_send:MPI_Send failed
+**mpi_send %p %d %D %d %d %C:MPI_Send(%p, %d, %D, %d, %d, %C) failed
+**mpi_recv:MPI_Recv failed
+**mpi_recv %p %d %D %d %d %C %p:MPI_Recv(%p, %d %D, %d, %C, %p) failed
+**mpi_get_count:MPI_Get_count failed
+**mpi_get_count %p %D %p:MPI_Get_count(%p, %D, %p) failed
+**mpi_bsend:MPI_Bsend failed
+**mpi_bsend %p %d %D %d %d %C:MPI_Bsend(%p, %d, %D, %d, %d, %C) failed
+**mpi_ssend:MPI_Ssend failed
+**mpi_ssend %p %d %D %d %d %C:MPI_Ssend(%p, %d, %D, %d, %d, %C) failed
+**mpi_rsend:MPI_Rsend failed
+**mpi_rsend %p %d %D %d %d %C:MPI_Rsend(%p, %d, %D, %d, %d, %C) failed
+**mpi_buffer_attach:MPI_Buffer_attach failed
+**mpi_buffer_attach %p %d:MPI_Buffer_attach(%p, %d) failed
+**mpi_buffer_detach:MPI_Buffer_detach failed
+**mpi_buffer_detach %p %p:MPI_Buffer_detach(%p, %p) failed
+**mpi_isend:MPI_Isend failed
+**mpi_isend %p %d %D %d %d %C %p:MPI_Isend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_ibsend:MPI_Ibsend failed
+**mpi_ibsend %p %d %D %d %d %C %p:MPI_Ibsend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_issend:MPI_Issend failed
+**mpi_issend %p %d %D %d %d %C %p:MPI_Issend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_irsend:MPI_Irsend failed
+**mpi_irsend %p %d %D %d %d %C %p:MPI_Irsend(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_irecv:MPI_Irecv failed
+**mpi_irecv %p %d %D %d %d %C %p:MPI_Irecv(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_wait:MPI_Wait failed
+**mpi_wait %p %p:MPI_Wait(%p, %p) failed
+**mpi_test:MPI_Test failed
+**mpi_test %p %p %p:MPI_Test(%p, %p, %p) failed
+**mpi_request_free:MPI_Request_free failed
+**mpi_request_free %p:MPI_Request_free(%p) failed
+**mpi_waitany:MPI_Waitany failed
+**mpi_waitany %d %p %p %p:MPI_Waitany(%d, %p, %p, %p) failed
+**mpi_testany:MPI_Testany failed
+**mpi_testany %d %p %p %p %p:MPI_Testany(%d, %p, %p, %p, %p) failed
+**mpi_waitall:MPI_Waitall failed
+**mpi_waitall %d %p %p:MPI_Waitall(%d, %p, %p) failed
+**mpi_testall:MPI_Testall failed
+**mpi_testall %d %p %p %p:MPI_Testall(%d, %p, %p, %p) failed
+**mpi_waitsome:MPI_Waitsome failed
+**mpi_waitsome %d %p %p %p %p:MPI_Waitsome(%d, %p, %p, %p, %p) failed
+**mpi_testsome:MPI_Testsome failed
+**mpi_testsome %d %p %p %p %p:MPI_Testsome(%d, %p, %p, %p, %p) failed
+**mpi_iprobe:MPI_Iprobe failed
+**mpi_iprobe %d %d %C %p %p:MPI_Iprobe(%d, %d, %C, %p, %p) failed
+**mpi_probe:MPI_Probe failed
+**mpi_probe %d %d %C %p:MPI_Probe(%d, %d, %C, %p) failed
+**mpi_cancel:MPI_Cancel failed
+**mpi_cancel %p:MPI_Cancel(%p) failed
+**mpi_test_cancelled:MPI_Test_cancelled failed
+**mpi_test_cancelled %p %p:MPI_Test_cancelled(%p, %p) failed
+**mpi_send_init:MPI_Send_init failed
+**mpi_send_init %p %d %D %d %d %C %p:MPI_Send_init(%p %d %D %d %d %C %p) failed
+**mpi_bsend_init:MPI_Bsend_init failed
+**mpi_bsend_init %p %d %D %d %d %C %p:MPI_Bsend_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_ssend_init:MPI_Ssend_init failed
+**mpi_ssend_init %p %d %D %d %d %C %p:MPI_Ssend_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_rsend_init:MPI_Rsend_init failed
+**mpi_rsend_init %p %d %D %d %d %C %p:MPI_Rsend_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_recv_init:MPI_Recv_init failed
+**mpi_recv_init %p %d %D %d %d %C %p:MPI_Recv_init(%p, %d, %D, %d, %d, %C, %p) failed
+**mpi_start:MPI_Start failed
+**mpi_start %p:MPI_Start(%p) failed
+**mpi_startall:MPI_Start_all failed
+**mpi_startall %d %p:MPI_Startall(%d, %p) failed
+**mpi_sendrecv:MPI_Sendrecv failed
+**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p:MPI_Sendrecv(%p, %d, %D, %d, %d, %p, %d, %D, %d, %d, %C, %p) failed
+**mpi_sendrecv_replace:MPI_Sendrecv_replace failed
+**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p:MPI_Sendrecv_replace(%p, %d, %D, %d, %d, %d, %d, %C, %p) failed
+**mpi_type_contiguous:MPI_Type_continuous failed
+**mpi_type_contiguous %d %D %p:MPI_Type_contiguous(%d, %D, %p) failed
+**mpi_type_vector:MPI_Type_vector failed
+**mpi_type_vector %d %d %d %D %p:MPI_Type_vector(%d, %d, %d, %D, %p) failed
+**mpi_type_hvector:MPI_Type_hvector failed
+**mpi_type_hvector %d %d %d %D %p:MPI_Type_hvector(%d, %d, %d, %D, %p) failed
+**mpi_type_indexed:MPI_Type_indexed failed
+**mpi_type_indexed %d %p %p %D %p:MPI_Type_indexed(%d, %p, %p, %D, %p) failed
+**mpi_type_hindexed:MPI_Type_hindexed failed
+**mpi_type_hindexed %d %p %p %D %p:MPI_Type_hindexed(%d, %p, %p, %D, %p) failed
+**mpi_type_struct:MPI_Type_struct failed
+**mpi_type_struct %d %p %p %p %p:MPI_Type_struct(%d, %p, %p, %p, %p) failed
+**mpi_address:MPI_Address failed
+**mpi_address %p %p:MPI_Address(%p, %p) failed
+**mpi_type_extent:MPI_Type_extent failed
+**mpi_type_extent %D %p:MPI_Type_extent(%D, %p) failed
+**mpi_type_size:MPI_Type_size failed
+**mpi_type_size %D %p:MPI_Type_size(%D) failed
+**mpi_type_lb:MPI_Type_lb failed
+**mpi_type_lb %D %p:MPI_Type_lb(%D, %p) failed
+**mpi_type_ub:MPI_Type_ub failed
+**mpi_type_ub %D %p:MPI_Type_ub(%D, %p) failed
+**mpi_type_commit:MPI_Type_commit failed
+**mpi_type_commit %p:MPI_Type_commit(%p) failed
+**mpi_type_free:MPI_Type_free failed
+**mpi_type_free %p:MPI_Type_free(%p) failed
+**mpi_get_elements:MPI_Get_elements failed
+**mpi_get_elements %p %D %p:MPI_Get_elements(%p, %D, %p) failed
+**mpi_pack:MPI_Pack failed
+**mpi_pack %p %d %D %p %d %p %C:MPI_Pack(%p, %d, %D, %p, %d, %p, %C) failed
+**mpi_unpack:MPI_Unpack failed
+**mpi_unpack %p %d %p %p %d %D %C:MPI_Unpack(%p, %d, %p, %p, %d, %D, %C) failed
+**mpi_pack_size:MPI_Pack_size failed
+**mpi_pack_size %d %D %C %p:MPI_Pack_size(%d, %D, %C, %p) failed
+**mpi_barrier:MPI_Barrier failed
+**mpi_barrier %C:MPI_Barrier(%C) failed
+**mpi_bcast:MPI_Bcast failed
+**mpi_bcast %p %d %D %d %C:MPI_Bcast(%p, %d, %D, %d, %C) failed
+**mpi_gather:MPI_Gather failed
+**mpi_gather %p %d %D %p %d %D %d %C:MPI_Gather(%p, %d, %D, %p, %d, %D, %d, %C) failed
+**mpi_gatherv:MPI_Gatherv failed
+**mpi_gatherv %p %d %D %p %p %p %D %d %C:MPI_Gatherv failed(%p, %d, %D, %p, %p, %p, %D, %d, %C) failed
+**mpi_scatter:MPI_Scatter failed
+**mpi_scatter %p %d %D %p %d %D %d %C:MPI_Scatter(%p, %d, %D, %p, %d, %D, %d, %C) failed
+**mpi_scatterv:MPI_Scatterv failed
+**mpi_scatterv %p %p %p %D %p %d %D %d %C:MPI_Scatterv(%p, %p, %p, %D, %p, %d, %D, %d, %C) failed
+**mpi_allgather:MPI_Allgather failed
+**mpi_allgather %p %d %D %p %d %D %C:MPI_Allgather(%p, %d, %D, %p, %d, %D, %C) failed
+**mpi_allgatherv:MPI_Allgatherv failed
+**mpi_allgatherv %p %d %D %p %p %p %D %C:MPI_Allgatherv(%p, %d, %D, %p, %p, %p, %D, %C) failed
+**mpi_alltoall:MPI_Alltoall failed
+**mpi_alltoall %p %d %D %p %d %D %C:MPI_Alltoall(%p, %d, %D, %p, %d, %D, %C) failed
+**mpi_alltoallv:MPI_Alltoallv failed
+**mpi_alltoallv %p %p %p %D %p %p %p %D %C:MPI_Alltoallv(%p, %p, %p, %D, %p, %p, %p, %D, %C) failed
+**mpi_reduce:MPI_Reduce failed
+**mpi_reduce %p %p %d %D %O %d %C:MPI_Reduce(%p, %p, %d, %D, %O, %d, %C) failed
+**mpi_op_create:MPI_Op_create failed
+**mpi_op_create %p %d %p:MPI_Op_create(%p, %d, %p) failed
+**mpi_op_free:MPI_Op_free failed
+**mpi_op_free %p:MPI_Op_free(%p) failed
+**mpi_allreduce:MPI_Allreduce failed
+**mpi_allreduce %p %p %d %D %O %C:MPI_Allreduce(%p, %p, %d, %D, %O, %C) failed
+**mpi_reduce_scatter:MPI_Reduce_scatter failed
+**mpi_reduce_scatter %p %p %p %D %O %C:MPI_Reduce_scatter(%p, %p, %p, %D, %O, %C) failed
+**mpi_scan:MPI_Scan failed
+**mpi_scan %p %p %d %D %O %C:MPI_Scan(%p, %p, %d, %D, %O, %C) failed
+**mpi_group_size:MPI_Group_size failed
+**mpi_group_size %G %p:MPI_Group_size(%G, %p) failed
+**mpi_group_rank:MPI_Group_rank failed
+**mpi_group_rank %G %p:MPI_Group_rank(%G, %p) failed
+**mpi_group_translate_ranks:MPI_Group_translate_ranks failed
+**mpi_group_translate_ranks %G %d %p %G %p:MPI_Group_translate_ranks(%G, %d, %p, %G, %p) failed
+**mpi_group_compare:MPI_Group_compare failed
+**mpi_group_compare %G %G %p:MPI_Group_compare(%G, %G, %p) failed
+**mpi_comm_group:MPI_Comm_group failed
+**mpi_comm_group %C %p:MPI_Comm_group(%C, %p) failed
+**mpi_group_union:MPI_Group_union failed
+**mpi_group_union %G %G %p:MPI_Group_union(%G, %G, %p) failed
+**mpi_group_intersection:MPI_Group_intersection failed
+**mpi_group_intersection %G %G %p:MPI_Group_intersection(%G, %G, %p) failed
+**mpi_group_difference:MPI_Group_difference failed
+**mpi_group_difference %G %G %p:MPI_Group_difference(%G, %G, %p) failed
+**mpi_group_incl:MPI_Group_incl failed
+**mpi_group_incl %G %d %p %p:MPI_Group_incl(%G, %d, %p, %p) failed
+**mpi_group_excl:MPI_Group_excl failed
+**mpi_group_excl %G %d %p %p:MPI_Group_excl(%G, %d, %p, %p) failed
+**mpi_group_range_incl:MPI_Group_range_incl failed
+**mpi_group_range_incl %G %d %p %p:MPI_Group_range_incl(%G, %d, %p, %p) failed
+**mpi_group_range_excl:MPI_Group_range_excl failed
+**mpi_group_range_excl %G %d %p %p:MPI_Group_range_excl(%G, %d, %p, %p) failed
+**mpi_group_free:MPI_Group_free failed
+**mpi_group_free %p:MPI_Group_free(%p) failed
+**mpi_comm_size:MPI_Comm_size failed
+**mpi_comm_size %C %p:MPI_Comm_size(%C, %p) failed
+**mpi_comm_rank:MPI_Comm_rank failed
+**mpi_comm_rank %C %p:MPI_Comm_rank(%C, %p) failed
+**mpi_comm_compare:MPI_Comm_compare failed
+**mpi_comm_compare %C %C %p:MPI_Comm_compare(%C, %C, %p) failed
+**mpi_comm_dup:MPI_Comm_dup failed
+**mpi_comm_dup %C %p:MPI_Comm_dup(%C, %p) failed
+**mpi_comm_create:MPI_Comm_create failed
+**mpi_comm_create %C %G %p:MPI_Comm_create(%C, %G, %p) failed
+**mpi_comm_split:MPI_Comm_split failed
+**mpi_comm_split %C %d %d %p:MPI_Comm_split(%C, %d, %d, %p) failed
+**mpi_comm_free:MPI_Comm_free failed
+**mpi_comm_free %p:MPI_Comm_free(%p) failed
+**mpi_comm_test_inter:MPI_Comm_test_inter failed
+**mpi_comm_test_inter %C %p:MPI_Comm_test_inter(%C, %p) failed
+**mpi_comm_remote_size:MPI_Comm_remote_size failed
+**mpi_comm_remote_size %C %p:MPI_Comm_remote_size(%C, %p) failed
+**mpi_comm_remote_group:MPI_Comm_remote_group failed
+**mpi_comm_remote_group %C %p:MPI_Comm_remote_group(%C, %p) failed
+**mpi_intercomm_create:MPI_Intercomm_create failed
+**mpi_intercomm_create %C %d %C %d %d %p:MPI_Intercomm_create(%C, %d, %C, %d, %d, %p) failed
+**mpi_intercomm_merge:MPI_Intercomm_merge failed
+**mpi_intercomm_merge %C %d %p:MPI_Intercomm_merge(%C, %d, %p) failed
+**mpi_keyval_create:MPI_Keyval_create failed
+**mpi_keyval_create %p %p %p %p:MPI_Keyval_create(%p, %p, %p, %p) failed
+**mpi_keyval_free:MPI_Keyval_free failed
+**mpi_keyval_free %p:MPI_Keyval_free(%p) failed
+**mpi_attr_put:MPI_Attr_put failed
+**mpi_attr_put %C %d %p:MPI_Attr_put(%C, %d, %p) failed
+**mpi_attr_get:MPI_Attr_get failed
+**mpi_attr_get %C %d %p %p:MPI_Atr_get(%C, %d, %p, %p) failed
+**mpi_attr_delete:MPI_Attr_delete failed
+**mpi_attr_delete %C %d:MPI_Attr_delete(%C, %d) failed
+**mpi_topo_test:MPI_Topo_test failed
+**mpi_topo_test %C %p:MPI_Topo_test(%C, %p) failed
+**mpi_cart_create:MPI_Cart_create failed
+**mpi_cart_create %C %d %p %p %d %p:MPI_Cart_create(%C, %d, %p, %p, %d, %p) failed
+**mpi_dims_create:MPI_Dims_create failed
+**mpi_dims_create %d %d %p:MPI_Dims_create(%d, %d, %p) failed
+**mpi_graph_create:MPI_Graph_create failed
+**mpi_graph_create %C %d %p %p %d %p:MPI_Graph_create(%C, %d, %p, %p, %d, %p) failed
+**mpi_graphdims_get:MPI_Graphdims_get failed
+**mpi_graphdims_get %C %p %p:MPI_Graphdims_get(%C, %p, %p) failed
+**mpi_graph_get:MPI_Graph_get failed
+**mpi_graph_get %C %d %d %p %p:MPI_Graph_get(%C, %d, %d, %p, %p) failed
+**mpi_cartdim_get:MPI_Cartdim_get failed
+**mpi_cartdim_get %C %p:MPI_Cartdim_get(%C, %p) failed
+**mpi_cart_get:MPI_Cart_get failed
+**mpi_cart_get %C %d %p %p %p:MPI_Cart_get(%C, %d, %p, %p, %p) failed
+**mpi_cart_rank:MPI_Cart_rank failed
+**mpi_cart_rank %C %p %p:MPI_Cart_rank(%C, %p, %p) failed
+**mpi_cart_coords:MPI_Cart_coords failed
+**mpi_cart_coords %C %d %d %p:MPI_Cart_coords(%C, %d, %d, %p) failed
+**mpi_graph_neighbors_count:MPI_Graph_neighbors_count failed
+**mpi_graph_neighbors_count %C %d %p:MPI_Graph_neighbors_count(%C, %d, %p) failed
+**mpi_graph_neighbors:MPI_Graph_neighbors failed
+**mpi_graph_neighbors %C %d %d %p:MPI_Graph_neighbors(%C, %d, %d, %p) failed
+**mpi_cart_shift:MPI_Cart_shift failed
+**mpi_cart_shift %C %d %d %p %p:MPI_Cart_shift(%C, %d, %d, %p, %p) failed
+**mpi_cart_sub:MPI_Cart_sub failed
+**mpi_cart_sub %C %p %p:MPI_Cart_sub(%C, %p, %p) failed
+**mpi_cart_map:MPI_Cart_map failed
+**mpi_cart_map %C %d %p %p %p:MPI_Cart_map(%C, %d, %p, %p) failed
+**mpi_graph_map:MPI_Graph_map failed
+**mpi_graph_map %C %d %p %p %p:MPI_Graph_map(%C, %d, %p, %p, %p) failed
+**mpi_get_processor_name:MPI_Get_processor_name failed
+**mpi_get_processor_name %p %p:MPI_Get_processor_name(%p, %p) failed
+**mpi_get_version:MPI_Get_version failed
+**mpi_get_version %p %p:MPI_Get_version(%p, %p) failed
+**mpi_errhandler_create:MPI_Errhandler_create failed
+**mpi_errhandler_create %p %p:MPI_Errhandler_create(%p) failed
+**mpi_errhandler_set:MPI_Errhandler_set failed
+**mpi_errhandler_set %C %E:MPI_Errhandler_set(%C, %E) failed
+**mpi_errhandler_get:MPI_Errhandler_get failed
+**mpi_errhandler_get %C %p:MPI_Errhandler_get(%C, %p) failed
+**mpi_errhandler_free:MPI_Errhandler_free failed
+**mpi_errhandler_free %p:MPI_Errhandler_free(%p) failed
+**mpi_error_string:MPI_Error_string failed
+**mpi_error_string %d %p %p:MPI_Error_string(%d, %p, %p) failed
+**mpi_error_class:MPI_Error_class failed
+**mpi_error_class %d %p:MPI_Error_class(%d, %p) failed
+**mpi_wtime:MPI_Wtime failed
+**mpi_wtick:MPI_Wtick failed
+**mpi_init:MPI_Init failed
+**mpi_init %p %p:MPI_Init(%p, %p) failed
+**mpi_finalize:MPI_Finalize failed
+**mpi_initialized:MPI_Initialized failed
+**mpi_initialized %p:MPI_Initialized(%p) failed
+**mpi_abort:MPI_Abort failed
+**mpi_abort %C %d:MPI_Abort(%C, %d) failed
+**mpi_close_port:MPI_Close_port failed
+**mpi_close_port %s:MPI_Close_port(%s) failed
+**mpi_comm_accept:MPI_Comm_accept failed
+**mpi_comm_accept %p %I %d %C %p:MPI_Comm_accept(%p, %I, %d, %C, %p) failed
+**mpi_comm_connect:MPI_Comm_connect failed
+**mpi_comm_connect %p %I %d %C %p:MPI_Comm_connect(%p, %I, %d, %C, %p) failed
+**mpi_comm_disconnect:MPI_Comm_disconnect failed
+**mpi_comm_disconnect %p:MPI_Comm_disconnect(%p) failed
+**mpi_comm_get_parent:MPI_Comm_get_parent failed
+**mpi_comm_get_parent %p:MPI_Comm_get_parent(%p) failed
+**mpi_comm_join:MPI_Comm_join failed
+**mpi_comm_join %d %p:MPI_Comm_join(%d, %p) failed
+**mpi_comm_spawn:MPI_Comm_spawn failed
+**mpi_comm_spawn %p %p %d %I %d %C %p %p:MPI_Comm_spawn(%p, %p, %d, %I, %d, %C, %p, %p) failed
+**mpi_comm_spawn_multiple:MPI_Comm_spawn_multiple failed
+**mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p:MPI_Comm_spawn_multiple(%d, %p, %p, %p, %p, %d, %C, %p, %p) failed
+**mpi_lookup_name:MPI_Lookup_name failed
+**mpi_lookup_name %p %I %p:MPI_Lookup_name(%p, %I, %p) failed
+**mpi_open_port:MPI_Open_port failed
+**mpi_open_port %I %s:MPI_Open_port(%I, %s) failed
+**mpi_publish_name:MPI_Publish_name failed
+**mpi_publish_name %s %I %s:MPI_Publish_name(%s, %I, %s) failed
+**mpi_unpublish_name:MPI_Unpublish_name failed
+**mpi_unpublish_name %s %I %s:MPI_Unpublish_name(%s, %I, %s) failed
+**mpi_accumulate:MPI_Accumulate failed
+**mpi_accumulate %p %d %D %d %d %d %D %O %W:MPI_Accumulate(%p, %d, %D, %d, %d, %d, %D, %O, %W) failed
+**mpi_get:MPI_Get failed
+**mpi_get %p %d %D %d %d %d %D %W:MPI_Get(%p, %d, %D, %d, %d, %d, %D, %W) failed
+**mpi_put:MPI_Put failed
+**mpi_put %p %d %D %d %d %d %D %W:MPI_Put(%p, %d, %D, %d, %d, %d, %D, %W) failed
+**mpi_win_complete:MPI_Win_complete failed
+**mpi_win_complete %W:MPI_Win_complete(%W) failed
+**mpi_win_create:MPI_Win_create failed
+**mpi_win_create %p %d %d %I %C %p:MPI_Win_create(%p, %d, %d, %I, %C, %p) failed
+**mpi_win_fence:MPI_Win_fence failed
+**mpi_win_fence %d %W:MPI_Win_fence(%d, %W) failed
+**mpi_win_free:MPI_Win_free failed
+**mpi_win_free %p:MPI_Win_free(%p) failed
+**mpi_win_get_group:MPI_Win_get_group failed
+**mpi_win_get_group %W %p:MPI_Win_get_group(%W, %p) failed
+**mpi_win_lock:MPI_Win_lock failed
+**mpi_win_lock %d %d %d %W:MPI_Win_lock(%d, %d, %d, %W) failed
+**mpi_win_post:MPI_Win_post failed
+**mpi_win_post %G %d %W:MPI_Win_post(%G, %d, %W) failed
+**mpi_win_start:MPI_Win_start failed
+**mpi_win_start %G %d %W:MPI_Win_start(%G, %d, %W) failed
+**mpi_win_test:MPI_Win_test failed
+**mpi_win_test %W %p:MPI_Win_test(%W, %p) failed
+**mpi_win_unlock:MPI_Win_unlock failed
+**mpi_win_unlock %d %W:MPI_Win_unlock(%d, %W) failed
+**mpi_win_wait:MPI_Win_wait failed
+**mpi_win_wait %W:MPI_Win_wait failed
+**mpi_alltoallw:MPI_Alltoallw failed
+**mpi_alltoallw %p %p %p %p %p %p %p %p %C:MPI_Alltoallw(%p, %p, %p, %p, %p, %p, %p, %p, %C) failed
+**mpi_exscan:MPI_Exscan failed
+**mpi_exscan %p %p %d %D %O %C:MPI_Exscan(%p, %p, %d, %D, %O, %C) failed
+**mpi_add_error_class:MPI_Add_error_class failed
+**mpi_add_error_class %p:MPI_Add_error_class(%p) failed
+**mpi_add_error_code:MPI_Add_error_code failed
+**mpi_add_error_code %d %p:MPI_Add_error_code(%d, %p) failed
+**mpi_add_error_string:MPI_Add_error_string failed
+**mpi_add_error_string %d %s:MPI_Add_error_string(%d, %s) failed
+**mpi_comm_call_errhandler:MPI_Comm_call_errhandler failed
+**mpi_comm_call_errhandler %C %d:MPI_Comm_call_errhandler(%C, %d) failed
+**mpi_comm_create_keyval:MPI_Comm_create_keyval failed
+**mpi_comm_create_keyval %p %p %p %p:MPI_Comm_create_keyval(%p, %p, %p, %p) failed
+**mpi_comm_delete_attr:MPI_Comm_delete_attr failed
+**mpi_comm_delete_attr %C %d:MPI_Comm_delete_attr(%C, %d) failed
+**mpi_comm_free_keyval:MPI_Comm_free_keyval failed
+**mpi_comm_free_keyval %p:MPI_Comm_free_keyval(%p) failed
+**mpi_comm_get_attr:MPI_Comm_get_attr failed
+**mpi_comm_get_attr %C %d %p %p:MPI_Comm_get_attr(%C, %d, %p, %p) failed
+**mpi_comm_get_name:MPI_Comm_get_name failed
+**mpi_comm_get_name %C %p %p:MPI_Comm_get_name(%C, %p, %p) failed
+**mpi_comm_set_attr:MPI_Comm_set_attr failed
+**mpi_comm_set_attr %C %d %p:MPI_Comm_set_attr(%C, %d, %p) failed
+**mpi_comm_set_name:MPI_Comm_set_name failed
+**mpi_comm_set_name %C %p:MPI_Comm_set_name(%C, %p) failed
+**mpi_file_call_errhandler:MPI_File_call_errhandler failed
+**mpi_file_call_errhandler %F %d:MPI_File_call_errhandler(%F, %d) failed
+**mpi_grequest_complete:MPI_Grequest_complete failed
+**mpi_grequest_complete %R:MPI_Grequest_complete(%R) failed
+**mpi_grequest_start:MPI_Grequest_start failed
+**mpi_grequest_start %p %p %p %p %p:MPI_Grequest_start(%p, %p, %p, %p, %p) failed
+**mpi_init_thread:MPI_Init_thread failed
+**mpi_init_thread %p %p %d %p:MPI_Init_thread(%p, %p, %d, %p)
+**mpi_is_thread_main:MPI_Is_thread_main failed
+**mpi_is_thread_main %p:MPI_Is_thread_main(%p) failed
+**mpi_query_thread:MPI_Query_thread failed
+**mpi_query_thread %p:MPI_Query_thread(%p) failed
+**mpi_status_set_cancelled:MPI_Status_set_cancelled failed
+**mpi_status_set_cancelled %p %d:MPI_Status_set_cancelled(%p, %d) failed
+**mpi_status_set_elements:MPI_Status_set_elements failed
+**mpi_status_set_elements %p %D %d:MPI_Status_set_elements(%p, %D, %d) failed
+**mpi_type_create_keyval:MPI_Type_create_keyval failed
+**mpi_type_create_keyval %p %p %p %p:MPI_Type_create_keyval(%p, %p, %p, %p) failed
+**mpi_type_delete_attr:MPI_Type_delete_attr failed
+**mpi_type_delete_attr %D %d:MPI_Type_delete_atrr(%D, %d) failed
+**mpi_type_dup:MPI_Type_dup failed
+**mpi_type_dup %D %p:MPI_Type_dup(%D, %p) failed
+**mpi_type_free_keyval:MPI_Type_free_keyval failed
+**mpi_type_free_keyval %p:MPI_Type_free_keyval(%p) failed
+**mpi_type_get_attr:MPI_Type_get_attr failed
+**mpi_type_get_attr %D %d %p %p:MPI_Type_get_attr(%D, %d, %p, %p) failed
+**mpi_type_get_contents:MPI_Type_get_contents failed
+**mpi_type_get_contents %D %d %d %d %p %p %p:MPI_Type_get_contents(%D, %d, %d, %d, %p, %p, %p) failed
+**mpi_type_get_envelope:MPI_Type_get_envelope failed
+**mpi_type_get_envelope %D %p %p %p %p:MPI_Type_get_envelope(%D, %p, %p, %p, %p) failed
+**mpi_type_get_name:MPI_Type_get_name failed
+**mpi_type_get_name %D %p %p:MPI_Type_get_name(%D, %p, %p) failed
+**mpi_type_set_attr:MPI_Type_set_attr failed
+**mpi_type_set_attr %D %d %p:MPI_Type_set_attr(%D, %d, %p) failed
+**mpi_type_set_name:MPI_Type_set_name failed
+**mpi_type_set_name %D %p:MPI_Type_set_name(%D, %p) failed
+**mpi_type_match_size:MPI_Type_match_size failed
+**mpi_type_match_size %d %d %p:MPI_Type_match_size(%d, %d, %p) failed
+**mpi_win_call_errhandler:MPI_Win_call_errhandler failed
+**mpi_win_call_errhandler %W %d:MPI_Win_call_errhandler(%W, %d) failed
+**mpi_win_create_keyval:MPI_Win_create_keyval failed
+**mpi_win_create_keyval %p %p %p %p:MPI_Win_create_keyval(%p, %p, %p, %p) failed
+**mpi_win_delete_attr:MPI_Win_delete_attr failed
+**mpi_win_delete_attr %W %d:MPI_Win_delete_attr(%W, %d) failed
+**mpi_win_free_keyval:MPI_Win_free_keyval failed
+**mpi_win_free_keyval %p:MPI_Win_free_keyval(%p) failed
+**mpi_win_get_attr:MPI_Win_get_attr failed
+**mpi_win_get_attr %W %d %p %p:MPI_Win_get_attr(%W, %d, %p, %p) failed
+**mpi_win_get_name:MPI_Win_get_name failed
+**mpi_win_get_name %W %p %p:MPI_Win_get_name(%W, %p, %p) failed
+**mpi_win_set_attr:MPI_Win_set_attr failed
+**mpi_win_set_attr %W %d %p:MPI_Win_set_attr(%W, %d, %p) failed
+**mpi_win_set_name:MPI_Win_set_name failed
+**mpi_win_set_name %W %p:MPI_Win_set_name(%W, %p) failed
+**mpi_alloc_mem:MPI_Alloc_mem failed
+**mpi_alloc_mem %d %I %p:MPI_Alloc_mem(%d, %I, %p) failed
+**mpi_comm_create_errhandler:MPI_Comm_create_errhandler failed
+**mpi_comm_create_errhandler %p %p:MPI_Comm_create_errhandler(%p, %p) failed
+**mpi_comm_get_errhandler:MPI_Comm_get_errhandler failed
+**mpi_comm_get_errhandler %C %p:MPI_Comm_get_errhandler(%C, %p) failed
+**mpi_comm_set_errhandler:MPI_Comm_set_errhandler failed
+**mpi_comm_set_errhandler %C %E:MPI_Comm_set_errhandler(%C, %E) failed
+**mpi_file_create_errhandler:MPI_File_create_errhandler failed
+**mpi_file_create_errhandler %p %p:MPI_File_create_errhandler(%p, %p) failed
+**mpi_file_get_errhandler:MPI_File_get_errhandler failed
+**mpi_file_get_errhandler %F %p:MPI_File_get_errhandler(%F, %p) failed
+**mpi_file_set_errhandler:MPI_File_set_errhandler failed
+**mpi_file_set_errhandler %F %E:MPI_File_set_errhandler(%F, %E) failed
+**mpi_finalized:MPI_Finalized failed
+**mpi_finalized %p:MPI_Finalized(%p) failed
+**mpi_free_mem:MPI_Free_mem failed
+**mpi_free_mem %p:MPI_Free_mem(%p) failed
+**mpi_get_address:MPI_Get_address failed
+**mpi_get_address %p %p:MPI_Get_address(%p, %p) failed
+**mpi_info_create:MPI_Info_create failed
+**mpi_info_create %p:MPI_Info_create(%p) failed
+**mpi_info_delete:MPI_Info_delete failed
+**mpi_info_delete %I %p:MPI_Info_delete(%I, %p) failed
+**mpi_info_dup:MPI_Info_dup failed
+**mpi_info_dup %I %p:MPI_Info_dup(%I, %p) failed
+**mpi_info_free:MPI_Info_free failed
+**mpi_info_free %p:MPI_Info_free(%p) failed
+**mpi_info_get:MPI_Info_get failed
+**mpi_info_get %I %p %d %p %p:MPI_Info_get(%I, %p, %d, %p, %p) failed
+**mpi_info_get_nkeys:MPI_Info_get_nkeys failed
+**mpi_info_get_nkeys %I %p:MPI_Info_get_nkeys(%I, %p) failed
+**mpi_info_get_nthkey:MPI_Info_get_nthkey failed
+**mpi_info_get_nthkey %I %d %p:MPI_Info_get_nthkey(%I, %d, %p) failed
+**mpi_info_get_valuelen:MPI_Info_get_valuelen failed
+**mpi_info_get_valuelen %I %p %p %p:MPI_Info_get_valuelen(%I, %p, %p, %p) failed
+**mpi_info_set:MPI_Info_set failed
+**mpi_info_set %I %p %p:MPI_Info_set(%I, %p, %p) failed
+**mpi_pack_external:MPI_Pack_external failed
+**mpi_pack_external %p %p %d %D %p %d %p:MPI_Pack_external(%p, %p, %d, %D, %p, %d, %p) failed
+**mpi_pack_external_size:MPI_Pack_external_size failed
+**mpi_pack_external_size %p %d %D %p:MPI_Pack_external_size(%p, %d, %D, %p) failed
+**mpi_request_get_status:MPI_Request_get_status failed
+**mpi_request_get_status %R %p %p:MPI_Request_get_status(%R, %p, %p) failed
+**mpi_status_c2f:MPI_Status_c2f failed
+**mpi_status_c2f %p %p:MPI_Status_c2f(%p, %p) failed
+**mpi_status_f2c:MPI_Status_f2c failed
+**mpi_status_f2c %p %p:MPI_Status_f2c(%p, %p) failed
+**mpi_type_create_darray:MPI_Type_create_darray failed
+**mpi_type_create_darray %d %d %d %p %p %p %p %d %D %p:MPI_Type_create_darray(%d, %d, %d, %p, %p, %p, %p, %d, %D, %p) failed
+**mpi_type_create_hindexed:MPI_Type_create_hindexed failed
+**mpi_type_create_hindexed %d %p %p %D %p:MPI_Type_create_hindexed(%d, %p, %p, %D, %p) failed
+**mpi_type_create_hvector:MPI_Type_create_hvector failed
+**mpi_type_create_hvector %d %d %d %D %p:MPI_Type_create_hvector(%d, %d, %d, %D, %p) failed
+**mpi_type_create_indexed_block:MPI_Type_create_indexed_block failed
+**mpi_type_create_indexed_block %d %d %p %D %p:MPI_Type_create_indexed_block(%d, %d, %p, %D, %p) failed
+**mpi_type_create_resized:MPI_Type_create_resized failed
+**mpi_type_create_resized %D %d %d %p:MPI_Type_create_resized(%D, %d, %d, %p) failed
+**mpi_type_create_struct:MPI_Type_create_struct failed
+**mpi_type_create_struct %d %p %p %p %p:MPI_Type_create_struct(%d, %p, %p, %p, %p) failed
+**mpi_type_create_subarray:MPI_Type_create_subarray failed
+**mpi_type_create_subarray %d %p %p %p %d %D %p:MPI_Type_create_subarray(%d, %p, %p, %p, %d, %D, %p) failed
+**mpi_type_get_extent:MPI_Type_get_extent failed
+**mpi_type_get_extent %D %p %p:MPI_Type_get_extent(%D, %p, %p) failed
+**mpi_type_get_true_extent:MPI_Type_get_true_extent failed
+**mpi_type_get_true_extent %D %p %p:MPI_Type_get_true_extent
+**mpi_unpack_external:MPI_Unpack_external failed
+**mpi_unpack_external %p %p %d %p %p %d %D:MPI_Unpack_external(%p, %p, %d, %p, %p, %d, %D) failed
+**mpi_win_create_errhandler:MPI_Win_create_errhandler failed
+**mpi_win_create_errhandler %p %p:MPI_Win_create_errhandler(%p, %p) failed
+**mpi_win_get_errhandler:MPI_Win_get_errhandler failed
+**mpi_win_get_errhandler %W %p:MPI_Win_get_errhandler(%W, %p) failed
+**mpi_win_set_errhandler:MPI_Win_set_errhandler failed
+**mpi_win_set_errhandler %W %E:MPI_Win_set_errhandler(%W, %E) failed
