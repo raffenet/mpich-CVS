@@ -355,8 +355,9 @@ foreach $_ (@ARGV) {
     'Comm_connect' => '1', 'Comm_connect-1' => 'in:addnull',
     'Comm_get_name' => '2', 'Comm_get_name-2' => 'out:blankpad',
     'Comm_set_name' => '2', 'Comm_set_name-2' => 'in:addnull',
-    'Comm_spawn' => '1:2', 'Comm_spawn-1' => 'in:addnull', 
+    'Comm_spawn' => '1:2:8', 'Comm_spawn-1' => 'in:addnull', 
 		 'Comm_spawn-2' => 'in:chararray',
+		  'Comm_spawn-8' => 'in:errcodesignore',
     'Comm_test_inter' => '2', 'Comm_test_inter-2' => 'out:logical',
     'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
     'Error_string' => '2', 'Error_string-2' => 'out:blankpad',
@@ -378,9 +379,10 @@ foreach $_ (@ARGV) {
     'Publish_name' => '1:3', 'Publish_name-1' => 'in:addnull',
 		  'Publish_name-3' => 'in:addnull',
 # comm spawn multiple needs slightly different routines
-    'Comm_spawn_multiple' => '2:3',
+    'Comm_spawn_multiple' => '2:3:9',
 		 'Comm_spawn_multiple-2' => 'in:chararray:*v1',
 		 'Comm_spawn_multiple-3' => 'in:chararray2:*v1',
+		  'Comm_spawn_multiple-9' => 'in:errcodesignore',
     'Initialized' => '1', 'Initialized-1' => 'out:logical',
     'Iprobe' => '4:5', 'Iprobe-4' => 'out:logical',
 		 'Iprobe-5' => 'in:status',
@@ -1275,6 +1277,27 @@ sub status_in_arg {
     print $OUTFD "(MPI_Status *)v$count";
 }
 # --------------------------------------------------------------------------
+# 
+# Handle MPI_ERRCODES_IGNORE
+sub errcodesignore_ftoc {
+    my $count = $_[0];
+    # Cast MPI_STATUS_IGNORE back to an MPI_Fint (we'll re-cast it back
+    # to (MPI_Status *) in the call to the C version of the routine)
+    print $OUTFD "\
+    if (v$count == MPI_F_ERRCODES_IGNORE) { v$count = MPI_ERRCODES_IGNORE; }\n";
+}
+sub errcodesignore_ctof {
+    my $coutvar = $_[0];
+    my $outvar  = $_[1];
+}
+sub errcodesignore_in_decl {
+    my $count = $_[0];
+}
+sub errcodesignore_in_arg {
+    my $count = $_[0];
+    print $OUTFD "(int *)v$count";
+}
+# --------------------------------------------------------------------------
 #
 # Index variables, but for an array.  
 # Array args can use the global $Array_size and $Array_typedef if necessary
@@ -1434,7 +1457,9 @@ sub chararray_ftoc {
 	print $OUTFD "\
       pcpy$count = v$count;
       for (asize$count=1; 1; asize$count++) {
-          if (*pcpy$count == ' ') break;
+          char *pt = pcpy$count + d$count - 1;
+          while (*pt == ' ' && pt > pcpy$count) pt--;
+          if (*pt == ' ') break;
           pcpy$count += d$count;
       }\n";
     }
@@ -1449,9 +1474,9 @@ sub chararray_ftoc {
           p$count\[i\] = pdest;
           /* Move to the end and work back */
           pin = p + d$count - 1;
-          while (*p == ' ' && pin > p) pin--;
+          while (*pin == ' ' && pin > p) pin--;
           /* Copy and then null terminate */
-          for (j=0; j<(pin-p); j++) { pdest\[j\] = p\[j\]; }
+          for (j=0; j<(pin-p)+1; j++) { pdest\[j\] = p\[j\]; }
           pdest\[j\] = 0;
           }
     /* Null terminate the array */
@@ -1463,6 +1488,7 @@ sub chararray_ftoc {
 # Add null to 2-dimensional arrays of input strings.  Used only 
 # by comm_spawn_multiple
 # FIXME : THIS CODE IS NOT CORRECT YET
+# Note the special handling of MPI_ARGVS_NULL
 sub chararray2_in_decl {
     my $count = $_[0];
     print $OUTFD "    char ***p$count=0;\n";
@@ -1484,11 +1510,18 @@ sub chararray2_ftoc {
     # Since this is a 2-d array, we always know the first dimension,
     # the second dimension must be computed, this is asize$count
     print $OUTFD "\
-    { int i, k;
+    if (v$count == MPI_F_ARGVS_NULL) { v$count = MPI_ARGVS_NULL; } 
+    else { \n";
+
+      # We must be careful.  A blank line is ALL blank, not just leading blank
+      print $OUTFD "  int i, k;
       char *ptmp;
       pcpy$count = v$count;
       for (asize$count=1; 1; asize$count++) {
-          if (*pcpy$count == ' ') break;
+          char *p = pcpy$count + d$count -1;
+          while (*p == ' ' && p > pcpy$count) p--;
+          /* Are we at the last char ? (e.g., all were blank?) */
+          if (*p == ' ') break;
           pcpy$count += d$count;
       }\n";
 
@@ -1504,9 +1537,9 @@ sub chararray2_ftoc {
           p$count\[i\]\[k\] = pdest;
           /* Move to the end and work back */
           pin = p + d$count - 1;
-          while (*p == ' ' && pin > p) pin--;
+          while (*pin == ' ' && pin > p) pin--;
           /* Copy and then null terminate */
-          for (j=0; j<(pin-p); j++) { pdest\[j\] = p\[j\]; }
+          for (j=0; j<(pin-p)+1; j++) { pdest\[j\] = p\[j\]; }
           pdest\[j\] = 0;
           }
        }
@@ -1514,7 +1547,7 @@ sub chararray2_ftoc {
     p$count\[asize$count-1\]\[$Array_size-1\] = 0;
     }\n";
 
-    $clean_up .= "    $free( p$count\[0\] ); $free( p$count );\n";
+    $clean_up .= "if (v$count != MPI_ARGVS_NULL){ $free( p$count\[0\] ); $free( p$count );}\n";
 }
 
 # ---------------------------------------------------------------------------
@@ -1690,6 +1723,16 @@ if ($write_mpif) {
     # Fortran compilers from complaining excessively.
     print MPIFFD "       INTEGER MPI_STATUS_IGNORE(MPI_STATUS_SIZE)\n";
     print MPIFFD "       INTEGER MPI_STATUSES_IGNORE(MPI_STATUS_SIZE,1)\n";
+    #
+    # Other special constants.  ERRCODES_IGNORE and ARGVS_NULL
+    # are both like STATUS(ES)_IGNORE
+    print MPIFFD "       INTEGER MPI_ERRCODES_IGNORE(1)\n";
+    print MPIFFD "       CHARACTER*1 MPI_ARGVS_NULL(1,1)\n";
+    # ARGV_IGNORE can actually be a single blank string, but it needs
+    # to be typed as a character array
+    print MPIFFD "       CHARACTER*1 MPI_ARGV_NULL(1)\n";
+    # Unfortunately, we cannot parameter initialize this.  Further,
+    # there is no default initialization.  We could use a block data item...
 
     #
     # Error Classes
@@ -1811,7 +1854,9 @@ if ($write_mpif) {
     # Finally, the special symbols
     print MPIFFD "       INTEGER MPI_BOTTOM\n";
 
-    # And the external names
+    # And the external names.  This are necessary to 
+    # ensure that these are passed as routines, not implicitly-defined 
+    # variables
     print MPIFFD "       EXTERNAL MPI_DUP_FN, MPI_NULL_DELETE_FN, MPI_NULL_COPY_FN\n";
     # the time/tick functions
     print MPIFFD "       DOUBLE PRECISION MPI_WTIME, MPI_WTICK\n";
@@ -1820,6 +1865,12 @@ if ($write_mpif) {
     # compilers then insist on linking with the routines, even if 
     # they are not used.  Combined with systems that do not have weak
     # symbols, and you can get some strange link failures.
+
+    # Add the common block for the special constants
+    print MPIFFD "\
+       COMMON /MPIPRIV/ MPI_BOTTOM, MPI_STATUS_IGNORE,                    &\n";
+    print MPIFFD "     &      MPI_STATUSES_IGNORE, MPI_ERRCODES_IGNORE\n";
+    print MPIFFD "       SAVE /MPIPRIV/\n";
 
     close( MPIFFD );
 } # if write_mpif
@@ -1941,16 +1992,19 @@ const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
 void *MPIR_F_MPI_BOTTOM     = 0;
 void *MPI_F_STATUS_IGNORE   = 0;
 void *MPI_F_STATUSES_IGNORE = 0;
+int  *MPI_F_ERRCODES_IGNORE = 0;
+void *MPI_F_ARGVS_NULL      = 0;
 #endif
 \n";
 
 
     print $OUTFD "
-FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c )
+FORTRAN_API void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d )
 {
     MPIR_F_MPI_BOTTOM     = a;
     MPI_F_STATUS_IGNORE   = b;
     MPI_F_STATUSES_IGNORE = c;
+    MPI_F_ERRCODES_IGNORE = (int *)d;
 }
 ";
     close ($OUTFD);
