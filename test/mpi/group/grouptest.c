@@ -14,7 +14,7 @@
 */
 int main( int argc, char *argv[] )
 {
-    MPI_Group g1, g2, g4, g5, g45, selfgroup;
+    MPI_Group g1, g2, g4, g5, g45, selfgroup, g6;
     int ranks[16], size, rank, myrank, range[1][3];
     int errs = 0;
     int i, rin[16], rout[16], result;
@@ -91,6 +91,23 @@ int main( int argc, char *argv[] )
 		errs++;
 	    }
 	}
+
+	/* Exclude everyone in our group */
+	{
+	    int i, *ranks, g1size;
+
+	    MPI_Group_size( g1, &g1size );
+	    
+	    ranks = (int *)malloc( g1size * sizeof(int) );
+	    for (i=0; i<g1size; i++) ranks[i] = i;
+	    MPI_Group_excl( g1, g1size, ranks, &g6 );
+	    if (g6 != MPI_GROUP_EMPTY) {
+		fprintf( stderr, "Group formed by excluding all ranks not empty\n" );
+		errs++;
+		MPI_Group_free( &g6 );
+	    }
+	    free( ranks );
+	}
 	
 	/* Add tests for additional group operations */
 	/* 
@@ -126,6 +143,29 @@ int main( int argc, char *argv[] )
 	if (result != MPI_UNEQUAL) {
 	    errs++;
 	    fprintf( stderr, "Comparison with empty group gave %d, not 3\n",
+		     result );
+	}
+	MPI_Group_free( &g4 );
+	MPI_Group_free( &g5 );
+	MPI_Group_free( &g45 );
+
+	/* Now, duplicate the test, but using negative strides */
+	range[0][0] = size-1;
+	range[0][1] = 1;
+	range[0][2] = -2;
+	MPI_Group_range_excl( g1, 1, range, &g5 );
+
+	range[0][0] = size-1;
+	range[0][1] = 1;
+	range[0][2] = -2;
+	MPI_Group_range_incl( g1, 1, range, &g4 );
+
+	MPI_Group_union( g4, g5, &g45 );
+
+	MPI_Group_compare( MPI_GROUP_EMPTY, g4, &result );
+	if (result != MPI_UNEQUAL) {
+	    errs++;
+	    fprintf( stderr, "Comparison with empty group (formed with negative strides) gave %d, not 3\n",
 		     result );
 	}
 	MPI_Group_free( &g4 );
