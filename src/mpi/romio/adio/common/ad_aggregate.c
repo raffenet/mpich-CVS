@@ -43,14 +43,6 @@
  *    uneven distributions
  */
 
-static int ADIOI_Calc_aggregator(ADIO_File fd,
-				 ADIO_Offset off, 
-				 ADIO_Offset min_off, 
-				 ADIO_Offset *len, 
-				 ADIO_Offset fd_size,
-				 ADIO_Offset *fd_start,
-				 ADIO_Offset *fd_end);
-
 /* ADIOI_Calc_aggregator()
  *
  * The intention here is to implement a function which provides basically 
@@ -78,13 +70,13 @@ static int ADIOI_Calc_aggregator(ADIO_File fd,
  * The "len" parameter is also modified to indicate the amount of data
  * actually available in this file domain.
  */
-static int ADIOI_Calc_aggregator(ADIO_File fd,
-				 ADIO_Offset off, 
-				 ADIO_Offset min_off, 
-				 ADIO_Offset *len, 
-				 ADIO_Offset fd_size,
-				 ADIO_Offset *fd_start,
-				 ADIO_Offset *fd_end)
+int ADIOI_Calc_aggregator(ADIO_File fd,
+			 ADIO_Offset off, 
+			 ADIO_Offset min_off, 
+			 ADIO_Offset *len, 
+			 ADIO_Offset fd_size,
+			 ADIO_Offset *fd_start,
+			 ADIO_Offset *fd_end)
 {
     int rank_index, rank;
     ADIO_Offset avail_bytes;

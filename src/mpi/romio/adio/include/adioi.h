@@ -318,6 +318,13 @@ void ADIOI_Calc_file_domains(ADIO_Offset *st_offsets, ADIO_Offset
 			     ADIO_Offset *min_st_offset_ptr,
 			     ADIO_Offset **fd_start_ptr, ADIO_Offset 
 			     **fd_end_ptr, ADIO_Offset *fd_size_ptr);
+int ADIOI_Calc_aggregator(ADIO_File fd,
+                                 ADIO_Offset off,
+                                 ADIO_Offset min_off,
+                                 ADIO_Offset *len,
+                                 ADIO_Offset fd_size,
+                                 ADIO_Offset *fd_start,
+                                 ADIO_Offset *fd_end);
 void ADIOI_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, 
 			    int *len_list, int
 			    contig_access_count, ADIO_Offset 
