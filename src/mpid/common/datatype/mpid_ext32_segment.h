@@ -76,30 +76,30 @@
 
 #if (MANUAL_BYTESWAPS == 1)
 #define BASIC_convert32(src, dest)      \
-do {                                    \
+{                                    \
     dest = (((src >> 24) & 0x000000FF) |\
             ((src >>  8) & 0x0000FF00) |\
             ((src <<  8) & 0x00FF0000) |\
             ((src << 24) & 0xFF000000));\
-} while(0)
+}
 #else
 #define BASIC_convert32(src, dest)      \
-do {                                    \
+{                                    \
     dest = htonl((uint32_t)src);        \
-} while(0)
+}
 #endif
 
 #if (MANUAL_BYTESWAPS == 1)
 #define BASIC_convert16(src, dest)  \
-do {                                \
+{                                \
     dest = (((src >> 8) & 0x00FF) | \
             ((src << 8) & 0xFF00)); \
-} while(0)
+}
 #else
 #define BASIC_convert16(src, dest)  \
-do {                                \
+{                                \
     dest = htons((uint16_t)src);    \
-} while(0)
+}
 #endif
 
 static inline void BASIC_convert64(uint64_t *src, uint64_t *dest)
@@ -159,7 +159,7 @@ static inline void BASIC_convert128(char *src, char *dest)
 
 #if (BLENDIAN == 1)
 #define BASIC_convert(src, dest)               \
-do {                                           \
+{                                           \
     register int type_byte_size = sizeof(src); \
     switch(type_byte_size)                     \
     {                                          \
@@ -177,7 +177,7 @@ do {                                           \
                             (uint64_t *)&dest);\
             break;                             \
     }                                          \
-} while(0)
+}
 
 /*
   http://www.mpi-forum.org/docs/mpi-20-html/node200.htm
@@ -191,9 +191,9 @@ do {                                           \
 #define BASIC_mixed_convert(src, dest)
 #else
 #define BASIC_convert(src, dest)               \
-        do { dest = src; } while(0)
+        { dest = src; }
 #define BASIC_mixed_convert(src, dest)         \
-        do { dest = src; } while(0)
+        { dest = src; }
 #endif
 
 /*
@@ -306,7 +306,7 @@ do {                                           \
 
 #if (BLENDIAN == 1)
 #define FLOAT_convert(src, dest)              \
-do {                                          \
+{                                          \
     register int type_byte_size = sizeof(src);\
     switch(type_byte_size)                    \
     {                                         \
@@ -334,10 +334,10 @@ do {                                          \
         }                                     \
         break;                                \
     }                                         \
-} while(0)
+}
 #else
 #define FLOAT_convert(src, dest)              \
-        do { dest = src; } while(0)
+        { dest = src; }
 #endif
 
 #ifdef HAVE_INT16_T

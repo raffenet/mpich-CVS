@@ -269,24 +269,24 @@ void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp)
  * NOTE: THIS IMPLEMENTATION CANNOT HANDLE STRUCT DATALOOPS.
  */
 #define DLOOP_SEGMENT_SAVE_LOCAL_VALUES		\
-do {						\
+{						\
     segp->cur_sp     = cur_sp;			\
     segp->valid_sp   = valid_sp;		\
     segp->stream_off = stream_off;		\
     *lastp           = stream_off;		\
-} while (0)
+}
 
 #define DLOOP_SEGMENT_LOAD_LOCAL_VALUES		\
-do {						\
+{						\
     last       = *lastp;			\
     cur_sp     = segp->cur_sp;			\
     valid_sp   = segp->valid_sp;		\
     stream_off = segp->stream_off;		\
     cur_elmp   = &(segp->stackelm[cur_sp]);	\
-} while (0)
+}
 
 #define DLOOP_SEGMENT_RESET_VALUES						    \
-do {										    \
+{										    \
     segp->stream_off     = 0;							    \
     segp->cur_sp         = 0; 							    \
     cur_elmp             = &(segp->stackelm[0]);				    \
@@ -294,44 +294,44 @@ do {										    \
     cur_elmp->orig_block = DLOOP_Stackelm_blocksize(cur_elmp);			    \
     cur_elmp->curblock   = cur_elmp->orig_block;				    \
     cur_elmp->curoffset  = cur_elmp->orig_offset + DLOOP_Stackelm_offset(cur_elmp); \
-} while (0)
+}
 
 #define DLOOP_SEGMENT_POP_AND_MAYBE_EXIT			\
-do {								\
+{								\
     cur_sp--;							\
     if (cur_sp >= 0) cur_elmp = &segp->stackelm[cur_sp];	\
     else {							\
 	DLOOP_SEGMENT_SAVE_LOCAL_VALUES;			\
 	return;							\
     }								\
-} while (0)
+}
 
 #define DLOOP_SEGMENT_PUSH			\
-do {						\
+{						\
     cur_sp++;					\
     cur_elmp = &segp->stackelm[cur_sp];		\
-} while (0)
+}
 
-#define DLOOP_STACKELM_BLOCKINDEXED_OFFSET(__elmp, __curcount) \
-(__elmp)->loop_p->loop_params.bi_t.offset_array[(__curcount)]
+#define DLOOP_STACKELM_BLOCKINDEXED_OFFSET(elmp_, curcount_) \
+(elmp_)->loop_p->loop_params.bi_t.offset_array[(curcount_)]
 
-#define DLOOP_STACKELM_INDEXED_OFFSET(__elmp, __curcount) \
-(__elmp)->loop_p->loop_params.i_t.offset_array[(__curcount)]
+#define DLOOP_STACKELM_INDEXED_OFFSET(elmp_, curcount_) \
+(elmp_)->loop_p->loop_params.i_t.offset_array[(curcount_)]
 
-#define DLOOP_STACKELM_INDEXED_BLOCKSIZE(__elmp, __curcount) \
-(__elmp)->loop_p->loop_params.i_t.blocksize_array[(__curcount)]
+#define DLOOP_STACKELM_INDEXED_BLOCKSIZE(elmp_, curcount_) \
+(elmp_)->loop_p->loop_params.i_t.blocksize_array[(curcount_)]
 
-#define DLOOP_STACKELM_STRUCT_OFFSET(__elmp, __curcount) \
-(__elmp)->loop_p->loop_params.s_t.offset_array[(__curcount)]
+#define DLOOP_STACKELM_STRUCT_OFFSET(elmp_, curcount_) \
+(elmp_)->loop_p->loop_params.s_t.offset_array[(curcount_)]
 
-#define DLOOP_STACKELM_STRUCT_BLOCKSIZE(__elmp, __curcount) \
-(__elmp)->loop_p->loop_params.s_t.blocksize_array[(__curcount)]
+#define DLOOP_STACKELM_STRUCT_BLOCKSIZE(elmp_, curcount_) \
+(elmp_)->loop_p->loop_params.s_t.blocksize_array[(curcount_)]
 
-#define DLOOP_STACKELM_STRUCT_EL_EXTENT(__elmp, __curcount) \
-(__elmp)->loop_p->loop_params.s_t.el_extent_array[(__curcount)]
+#define DLOOP_STACKELM_STRUCT_EL_EXTENT(elmp_, curcount_) \
+(elmp_)->loop_p->loop_params.s_t.el_extent_array[(curcount_)]
 
-#define DLOOP_STACKELM_STRUCT_DATALOOP(__elmp, __curcount) \
-(__elmp)->loop_p->loop_params.s_t.dataloop_array[(__curcount)]
+#define DLOOP_STACKELM_STRUCT_DATALOOP(elmp_, curcount_) \
+(elmp_)->loop_p->loop_params.s_t.dataloop_array[(curcount_)]
 
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first, 

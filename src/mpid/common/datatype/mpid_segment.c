@@ -50,7 +50,7 @@ struct MPID_Segment_piece_params {
 };
 
 #define MPIDI_COPY_FROM_VEC(src,dest,stride,type,nelms,count)	\
-do {								\
+{								\
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
     int i, j;							\
     const int l_stride = stride;				\
@@ -70,10 +70,10 @@ do {								\
     }								\
     dest = (char *) l_dest;					\
     src  = (char *) l_src;                                      \
-} while (0)
+}
 
 #define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count)	\
-do {								\
+{								\
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
     int i, j;							\
     const int l_stride = stride;				\
@@ -93,7 +93,7 @@ do {								\
     }								\
     dest = (char *) l_dest;					\
     src  = (char *) l_src;                                      \
-} while (0)
+}
 
 /* prototypes of internal functions */
 static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,

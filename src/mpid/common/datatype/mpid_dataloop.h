@@ -46,26 +46,26 @@
 /* NOTE: put get size into mpiimpl.h; the others go here until such time
  * as we see that we need them elsewhere.
  */
-#define DLOOP_Handle_get_loopdepth_macro(__handle,__depth,__hetero) \
-    MPID_Datatype_get_loopdepth_macro(__handle,__depth,__hetero)
+#define DLOOP_Handle_get_loopdepth_macro(handle_,depth_,hetero_) \
+    MPID_Datatype_get_loopdepth_macro(handle_,depth_,hetero_)
 
-#define DLOOP_Handle_get_loopsize_macro(__handle,__size,__hetero) \
-    MPID_Datatype_get_loopsize_macro(__handle,__size,__hetero)
+#define DLOOP_Handle_get_loopsize_macro(handle_,size_,hetero_) \
+    MPID_Datatype_get_loopsize_macro(handle_,size_,hetero_)
 
-#define DLOOP_Handle_get_loopptr_macro(__handle,__lptr,__hetero) \
-    MPID_Datatype_get_loopptr_macro(__handle,__lptr,__hetero)
+#define DLOOP_Handle_get_loopptr_macro(handle_,lptr_,hetero_) \
+    MPID_Datatype_get_loopptr_macro(handle_,lptr_,hetero_)
 
-#define DLOOP_Handle_get_size_macro(__handle,__size) \
-    MPID_Datatype_get_size_macro(__handle,__size)
+#define DLOOP_Handle_get_size_macro(handle_,size_) \
+    MPID_Datatype_get_size_macro(handle_,size_)
 
-#define DLOOP_Handle_get_basic_type_macro(__handle,__eltype) \
-    MPID_Datatype_get_basic_type(__handle, __eltype)
+#define DLOOP_Handle_get_basic_type_macro(handle_,eltype_) \
+    MPID_Datatype_get_basic_type(handle_, eltype_)
 
-#define DLOOP_Handle_get_extent_macro(__handle,__extent) \
-    MPID_Datatype_get_extent_macro(__handle,__extent)
+#define DLOOP_Handle_get_extent_macro(handle_,extent_) \
+    MPID_Datatype_get_extent_macro(handle_,extent_)
 
-#define DLOOP_Handle_hasloop_macro(__handle)                           \
-    ((HANDLE_GET_KIND(__handle) == HANDLE_KIND_BUILTIN) ? 0 : 1)
+#define DLOOP_Handle_hasloop_macro(handle_)                           \
+    ((HANDLE_GET_KIND(handle_) == HANDLE_KIND_BUILTIN) ? 0 : 1)
 
 /* allocate and free functions must also be defined. */
 #define DLOOP_Malloc MPIU_Malloc
