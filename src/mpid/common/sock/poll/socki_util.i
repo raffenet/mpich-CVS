@@ -305,7 +305,7 @@ static int MPIDU_Socki_write(struct pollfd * const pollfd, struct pollinfo * con
 	{
 #warning handle write errors
 	    pollfd->events &= ~POLLOUT;
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|conn_failed", "**sock|conn_failed %d", errno);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|connfailed", "**sock|poll|connfailed %d", errno);
 #if 0	    
 	    sock_errno = socki_errno_to_sock_errno(errno);
 	    socki_event_enqueue(pollinfo->sock->sock_set, SOCK_OP_WRITE, pollinfo->write_nb, pollinfo->user_ptr, sock_errno);
