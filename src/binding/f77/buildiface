@@ -346,7 +346,7 @@ for ($i=0; $i<=$#files; $i++) {
 }
 &print_endline( MAKEFD );
 
-print MAKEFD "lib\${MPILIBMAME}_a_SOURCES = \${mpi_sources}\
+print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources}\
 \
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${top_srcdir}/src/include\
@@ -835,10 +835,10 @@ open ( MPIFD, "<../../include/mpi.h.in" ) || die "Could not open mpi.h.in\n";
 #
 # First, find the values that we need
 while (<MPIFD>) {
-    if (/#define\s*(MPI_[A-Z_0-9]*)\s*([^\s]*)/) {
+    if (/#\s*define\s+(MPI_[A-Z_0-9]*)\s*([^\s]*)/) {
 	$mpidef{$1} = $2;
     }
-    elsif (/typedef\s\s*enum\s*{\s*(.*)/) {
+    elsif (/typedef\s+enum\s*{\s*(.*)/) {
 	# Eat until we find the closing right brace
 	$enum_line = $1;
 	while (! ($enum_line =~ /}/)) { $enum_line .= <MPIFD>; }
@@ -943,10 +943,13 @@ foreach $key (GRAPH, CART) {
 #
 # Datatypes
 # These are determined and set at configure time
-foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER, '2INTEGER', '2COMPLEX', '2DOUBLE_PRECISION', '2REAL', '2DOULBLE_COMPLEX', CHARACTER) {
+foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER, '2INTEGER', '2COMPLEX', '2DOUBLE_PRECISION', '2REAL', '2DOUBLE_COMPLEX', CHARACTER) {
     print MPIFFD "       INTEGER MPI_$key\n";
     print MPIFFD "       PARAMETER (MPI_$key=\@MPI_$key\@)\n";
 }
+# HACK!
+# Value of MPI_BYTE from top level configure!
+$mpidef{"MPI_BYTE"} = hex "0x4c000111";
 &print_mpif_int( "MPI_BYTE" );
 &print_mpif_int( "MPI_UB" );
 &print_mpif_int( "MPI_LB" );
@@ -1010,12 +1013,13 @@ sub print_routine_type_decl {
 sub build_specials {
     open( $OUTFD, ">initf.c" ) || die "Cannot open initf.c\n";
     @files[$#files+1] = "initf.c";
-    &print_header( "MPI_Init", "mpi_init" );
-    &print_routine_type_decl( $OUTFD, "mpi_init" );
+    &print_header( "MPI_Init", "init" );
+    &print_routine_type_decl( $OUTFD, "init" );
     $args = "";
     &print_args( $OUTFD, $args );
     &print_attr;
     print $OUTFD "{\n";
+    print $OUTFD "    /* Still to do: set logical values, MPI_BOTTOM */\n";
     print $OUTFD "    *ierr = MPI_Init( 0, 0 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
@@ -1028,8 +1032,8 @@ sub build_specials {
     
     open( $OUTFD, ">pcontrolf.c" ) || die "Cannot open pcontrolf.c\n";
     @files[$#files+1] = "pcontrolf.c";
-    &print_header( "MPI_Pcontrol", "mpi_pcontrol" );
-    &print_routine_type_decl( $OUTFD, "mpi_pcontrol" );
+    &print_header( "MPI_Pcontrol", "pcontrol" );
+    &print_routine_type_decl( $OUTFD, "pcontrol" );
     $args = "int";
     &print_args( $OUTFD, $args );
     &print_attr;

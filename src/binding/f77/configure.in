@@ -198,8 +198,6 @@ if test "$enable_f90" != "no" ; then
     fi
     AC_SUBST(F90LINKER)
 fi
-PAC_ARG_MPI_TYPES
-
 dnl
 dnl Checks for programs
 PAC_PROG_MAKE
@@ -220,6 +218,7 @@ if test -z "$F77LINKER" ; then
     F77LINKER="$F77"
 fi
 
+AC_SUBST(MPILIBNAME)
 #
 # The following variables are used in mpif77.in and reflect the MPI
 # implementation that is in use.
@@ -229,7 +228,6 @@ if test "$pac_lib_mpi_is_building" = "yes" ; then
     # Alternately, if we are building a *new* Fortran library for a
     # pre-existing MPICH build, we need to get these variables from
     # the MPICH library configuration file.
-    AC_SUBST(MPILIBNAME)
     AC_SUBST(LIB_PATH)
     AC_SUBST(BASE_LIB_LIST)
     AC_SUBST(HASMPE)
@@ -378,7 +376,141 @@ AC_TRY_COMPILE(,[      real*4 a],has_real_4=4,has_real_4=0)
 AC_TRY_COMPILE(,[      real*8 a],has_real_8=8,has_real_8=0)
 AC_TRY_COMPILE(,[      real*16 a],has_real_16=16,has_real_16=0)
 
+# Create the default datatype names for the standard MPI Fortran types
+MPI_CHARACTER=0x4c000120
+AC_SUBST(MPI_CHARACTER)
 
+len_integer=$pac_cv_f77_sizeof_integer
+# Convert to two digit hex
+if test $len_integer -le 0 ; then 
+     len_integer=00
+elif test $len_integer -le 9 ; then
+     len_integer=0$len_integer 
+elif test $len_integer -le 15 ; then
+     case $len_integer in 
+         10) char=a ;;
+	 11) char=b ;;
+	 12) char=c ;;
+	 13) char=d ;;
+	 14) char=e ;;
+	 15) char=f ;;
+         esac
+    len_integer="0$char"
+else
+    AC_MSG_ERROR([Integer type sizes greater than 15 are not supported])
+fi
+
+MPI_INTEGER=0x4c00${len_integer}21
+MPI_REAL=0x4c00${len_integer}22
+MPI_LOGICAL=0x4c00${len_integer}23
+AC_SUBST(MPI_INTEGER)
+AC_SUBST(MPI_REAL)
+AC_SUBST(MPI_LOGICAL)
+
+len_double=$pac_cv_f77_sizeof_double_precision
+# Convert to two digit hex
+if test $len_double -le 0 ; then 
+     len_double=00
+elif test $len_double -le 9 ; then
+     len_double=0$len_double 
+elif test $len_double -le 15 ; then
+     case $len_double in 
+         10) char=a ;;
+	 11) char=b ;;
+	 12) char=c ;;
+	 13) char=d ;;
+	 14) char=e ;;
+	 15) char=f ;;
+         esac
+    len_double="0$char"
+elif test $len_double -le 31 ; then
+         len_double=`expr $len_double - 16`
+         len_double="1$len_double"
+else
+    AC_MSG_ERROR([Double Precision type sizes greater than 31 are not supported])
+fi
+
+MPI_COMPLEX=0x4c00${len_double}24
+MPI_DOUBLE_PRECISION=0x4c00${len_double}25
+MPI_2INTEGER=0x4c00${len_double}26
+MPI_2REAL=0x4c00${len_double}27
+AC_SUBST(MPI_COMPLEX)
+AC_SUBST(MPI_DOUBLE_PRECISION)
+AC_SUBST(MPI_2INTEGER)
+AC_SUBST(MPI_2REAL)
+
+len_doublecplx=`expr $pac_cv_f77_sizeof_double_precision \* 2`
+# Convert to two digit hex
+if test $len_doublecplx -le 0 ; then 
+     len_doublecplx=00
+elif test $len_doublecplx -le 9 ; then
+     len_doublecplx=0$len_doublecplx 
+elif test $len_doublecplx -le 15 ; then
+     case $len_doublecplx in 
+         10) char=a ;;
+	 11) char=b ;;
+	 12) char=c ;;
+	 13) char=d ;;
+	 14) char=e ;;
+	 15) char=f ;;
+         esac
+    len_doublecplx="0$char"
+elif test $len_doublecplx -le 31 ; then
+         len_doublecplx=`expr $len_doublecplx - 16`
+         len_doublecplx="1$len_double"
+else
+    AC_MSG_ERROR([Double Complex type sizes greater than 31 are not supported])
+fi
+
+MPI_DOUBLE_COMPLEX=0x4c00${len_doublecplx}28
+MPI_2DOUBLE_PRECISION=0x4c00${len_doublecplx}29
+MPI_2COMPLEX=0x4c00${len_doublecplx}2a
+AC_SUBST(MPI_DOUBLE_COMPLEX)
+AC_SUBST(MPI_2DOUBLE_PRECISION)
+AC_SUBST(MPI_2COMPLEX)
+
+len_2dc=`expr $pac_cv_f77_sizeof_double_precision \* 4`
+firstdigit=0
+seconddigit=0
+while test $len_2dc -ge 16 ; do
+    firstdigit=`expr $firstdigit + 1`
+    len_2dc=`expr $len_2dc - 16`    
+done
+case $len_2dc in
+    10) seconddigit=a ;;
+    11) seconddigit=b ;;
+    12) seconddigit=c ;;
+    13) seconddigit=d ;;
+    14) seconddigit=e ;;
+    15) seconddigit=f ;;
+     *) seconddigit=$len_2dc ;;
+esac
+len_2dc="$firstdigit$seconddigit"
+#echo "2double complex = $len_2dc"
+MPI_2DOUBLE_COMPLEX=0x4c00${len_2dc}2b
+AC_SUBST(MPI_2DOUBLE_COMPLEX)
+#
+# We must convert all hex values to decimal (!)
+for var in CHARACTER INTEGER REAL LOGICAL DOUBLE_PRECISION COMPLEX DOUBLE_COMPLEX 2INTEGER 2REAL 2COMPLEX 2DOUBLE_PRECISION 2DOUBLE_COMPLEX ; do
+    fullvar="MPI_$var"
+    eval fullvarvalue=\$$fullvar
+    echo "$fullvar = $fullvarvalue"
+    value=0
+    for pos in 3 4 5 6 7 8 9 10 ; do
+        char=`expr substr $fullvarvalue $pos 1`
+        case $char in 
+            a) char=10 ;;
+	    b) char=11 ;;
+	    c) char=12 ;;
+	    d) char=13 ;;
+	    e) char=14 ;;
+	    f) char=15 ;;
+        esac
+        value=`expr $value \* 16 + $char`
+    done
+    #echo "$fullvar = $value"
+    eval $fullvar=$value
+done
 # Compare the sizes of these types to the C types
 
 AC_LANG_C
@@ -519,6 +651,7 @@ fi
 # These values are exported from the upper-layer configure.
 AC_SUBST(PROFILE_DEF_MPI)
 AC_SUBST(NO_WEAK_SYM)
+AC_SUBST(NO_WEAK_SYM_TARGET)
 #
 # Try to get values for Fortran logical variables.
 if test "$cross_compiling" = "no" ; then

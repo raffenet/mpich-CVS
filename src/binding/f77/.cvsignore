@@ -8,6 +8,8 @@ mpi_fortconf.h
 configure
 config.log
 config.status
+config.cache
+config.system
 abortf.c
 accumulatef.c
 adderrclassf.c
