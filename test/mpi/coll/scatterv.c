@@ -150,7 +150,7 @@ int main( int argc, char **argv )
     MPI_Allreduce( &errs, &tot_errs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
     if (rank == 0) {
 	if (tot_errs == 0)
-	    printf( "No Errors\n" );
+	    printf( " No Errors\n" );
 	else
 	    printf( "%d errors in use of MPI_SCATTERV\n", tot_errs );
 	}
