@@ -37,9 +37,9 @@
    is the macro that may be used to extract the data (usually a MASK and
    a (right)shift)
 
-   [0-5] Class (same as predefined error classes);  ERROR_CLASS_MASK
-   [6]   Is dynamic; ERROR_DYN_MASK and ERROR_DYN_SHIFT
-   [7-18] Code index (for messages); ERROR_GENERIC_MASK and ERROR_GENERIC_SHIFT
+   [0-6] Class (same as predefined error classes);  ERROR_CLASS_MASK
+   [7]   Is dynamic; ERROR_DYN_MASK and ERROR_DYN_SHIFT
+   [8-18] Code index (for messages); ERROR_GENERIC_MASK and ERROR_GENERIC_SHIFT
    [19-31] Zero (unused but defined as zero)
 */
 

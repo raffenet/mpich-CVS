@@ -37,21 +37,24 @@ void MPIR_Err_delete_class( int );
    is-fatal?: the error is fatal and should not be returned to the user
  */
 
-#define ERROR_CLASS_MASK          0x0000003F
-#define ERROR_DYN_MASK            0x00000040
-#define ERROR_DYN_SHIFT           6
-#define ERROR_GENERIC_MASK        0x0007FF80
-#define ERROR_GENERIC_SHIFT       7
-#define ERROR_SPECIFIC_INDEX_MASK 0x00F80000
+#define ERROR_CLASS_MASK          0x0000007F
+#define ERROR_CLASS_SIZE          128
+#define ERROR_DYN_MASK            0x00000080
+#define ERROR_DYN_SHIFT           7
+#define ERROR_GENERIC_MASK        0x0007FF00
+#define ERROR_GENERIC_SIZE        2048
+#define ERROR_GENERIC_SHIFT       8
+#define ERROR_SPECIFIC_INDEX_MASK 0x03F80000
+#define ERROR_SPECIFIC_INDEX_SIZE 128
 #define ERROR_SPECIFIC_INDEX_SHIFT 19
-#define ERROR_SPECIFIC_SEQ_MASK   0x3F000000
+#define ERROR_SPECIFIC_SEQ_MASK   0x7C000000
 /* Size is size of field as an integer, not the number of bits */
-#define ERROR_SPECIFIC_SEQ_SIZE   64
-#define ERROR_SPECIFIC_SEQ_SHIFT  24
+#define ERROR_SPECIFIC_SEQ_SIZE   32
+#define ERROR_SPECIFIC_SEQ_SHIFT  26
 #define ERROR_FATAL_MASK          0x80000000
 #define ERROR_GET_CLASS( code ) ((code) & ERROR_CLASS_MASK)
 
 /* These must correspond to the masks defined above */
-#define ERROR_MAX_NCLASS 64
+#define ERROR_MAX_NCLASS ERROR_CLASS_SIZE
 #define ERROR_MAX_NCODE  8192
 #endif

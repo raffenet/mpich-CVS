@@ -47,19 +47,27 @@ static const char *get_class_msg( int class );
  * error messages.
  */
 #if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
-#define MAX_ERROR_RING 32
+#define MAX_ERROR_RING ERROR_SPECIFIC_INDEX_SIZE
 #define MAX_FCNAME_LEN 63
 
-typedef struct ErrorMsg {
-    int  seq;              /* Sequence number; used to check for validity
-			      of instance-specific messages */
-    int  prev_error;       /* The previous error code that caused this error to be generated;
-			      this allows errors to be chained together */
-    char msg[MPI_MAX_ERROR_STRING+1];
+typedef struct MPIR_Err_msg
+{
+    /* identifier used to check for validity of instance-specific messages; consists of the class, generic index and hash of the
+       specific message */
+    int  id;
+    
+    /* The previous error code that caused this error to be generated; this allows errors to be chained together */
+    int  prev_error;
+    
+    /* function name and line number where the error occurred */
     char fcname[MAX_FCNAME_LEN+1];
-} ErrorMsg;
+    
+    /* actual error message */
+    char msg[MPI_MAX_ERROR_STRING+1];
+}
+MPIR_Err_msg_t;
 
-static ErrorMsg ErrorRing[MAX_ERROR_RING];
+static MPIR_Err_msg_t ErrorRing[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc = 0;
 #if !defined(MPICH_SINGLE_THREADED)
 static MPID_Thread_lock_t error_ring_mutex;
@@ -417,11 +425,13 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 		ring_seq += (unsigned int) ring_msg[i];
 	    }
 	    ring_seq %= ERROR_SPECIFIC_SEQ_SIZE;
-	    ErrorRing[ring_idx].seq = ring_seq;
+	    
+	    ErrorRing[ring_idx].id = class & ERROR_CLASS_MASK;
+	    ErrorRing[ring_idx].id |= (generic_idx + 1) << ERROR_GENERIC_SHIFT;
+	    ErrorRing[ring_idx].id |= ring_seq << ERROR_SPECIFIC_SEQ_SHIFT;
 	    ErrorRing[ring_idx].prev_error = lastcode;
 	    if (fcname != NULL)
 	    {
-		/*MPIU_Strncpy(ErrorRing[ring_idx].fcname, fcname, MAX_FCNAME_LEN);*/
 		MPIU_Snprintf(ErrorRing[ring_idx].fcname, MAX_FCNAME_LEN, "%s(%d)", fcname, line);
 		ErrorRing[ring_idx].fcname[MAX_FCNAME_LEN] = '\0';
 	    }
@@ -432,8 +442,8 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[], int line
 	}
 	MPID_Thread_unlock(&error_ring_mutex);
 	
-	err_code |= (ring_idx << ERROR_SPECIFIC_INDEX_SHIFT);
-	err_code |= (ring_seq << ERROR_SPECIFIC_SEQ_SHIFT);
+	err_code |= ring_idx << ERROR_SPECIFIC_INDEX_SHIFT;
+	err_code |= ring_seq << ERROR_SPECIFIC_SEQ_SHIFT;
 
     }
 #   endif
@@ -528,10 +538,12 @@ void MPIR_Err_get_string( int errorcode, char * msg )
 
 		MPID_Thread_lock(&error_ring_mutex);
 		{
-		    if (ErrorRing[ring_idx].seq == ring_seq)
+		    int ring_id;
+
+		    ring_id = errorcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
+
+		    if (ErrorRing[ring_idx].id == ring_id)
 		    {
-			/* TODO: MT: this is not thread safe.  the string must be copied into a thread specific storage or the user
-			   must provide a buffer.  Otherwise the error message could be overwritten before it is used. */
 			if (MPIU_Strncpy(msg, ErrorRing[ring_idx].msg, MPI_MAX_ERROR_STRING))
 			{
 			    msg[MPI_MAX_ERROR_STRING - 1] = '\0';
@@ -582,11 +594,11 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 	    while (errcode != MPI_SUCCESS)
 	    {
 		int ring_idx;
-		int ring_seq;
+		int ring_id;
 		int generic_idx;
-	
+
 		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_seq    = (errcode & ERROR_SPECIFIC_SEQ_MASK) >> ERROR_SPECIFIC_SEQ_SHIFT;
+		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
 		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
 
 		if (generic_idx < 0)
@@ -594,7 +606,7 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 		    break;
 		}
 		    
-		if (ErrorRing[ring_idx].seq == ring_seq)
+		if (ErrorRing[ring_idx].id == ring_id)
 		{
 		    fprintf(fp, "%s: %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
 		    errcode = ErrorRing[ring_idx].prev_error;
