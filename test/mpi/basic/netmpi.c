@@ -58,7 +58,7 @@ struct data
     int    repeat;
 };
 
-double When();
+double When(void);
 int Setup(ArgStruct *p);
 void Sync(ArgStruct *p);
 void SendData(ArgStruct *p);
@@ -71,6 +71,8 @@ int  CleanUp(ArgStruct *p);
 void task(char *cmdLine);
 double TestLatency(ArgStruct *p);
 double TestSyncTime(ArgStruct *p);
+void PrintOptions(void);
+int DetermineLatencyReps(ArgStruct *p);
 
 void PrintOptions()
 {
@@ -92,7 +94,7 @@ void PrintOptions()
 
 int main(int argc, char *argv[])
 {
-    FILE *out;			/* Output data file 				*/
+    FILE *out=0;		/* Output data file 				*/
     char s[255]; 		/* Generic string				*/
     char *memtmp;
     char *memtmp1;
@@ -189,8 +191,8 @@ int main(int argc, char *argv[])
     }
     if (args.tr && printopt)
     {
-	fprintf(stdout,"Latency: %lf\n", latency);
-	fprintf(stdout,"Sync Time: %lf\n", synctime);
+	fprintf(stdout,"Latency: %f\n", latency);
+	fprintf(stdout,"Sync Time: %f\n", synctime);
 	fprintf(stdout,"Now starting main loop\n");
 	fflush(stdout);
     }
@@ -395,9 +397,9 @@ int main(int argc, char *argv[])
 	    {
 		if (bSavePert)
 		{
-		/* fprintf(out,"%lf\t%lf\t%d\t%d\t%lf\n", bwdata[n].t, bwdata[n].bps,
+		/* fprintf(out,"%f\t%f\t%d\t%d\t%f\n", bwdata[n].t, bwdata[n].bps,
 		    bwdata[n].bits, bwdata[n].bits / 8, bwdata[n].variance); */
-		    fprintf(out,"%d\t%lf\t%lf\n", bwdata[n].bits / 8, bwdata[n].bps, bwdata[n].t);
+		    fprintf(out,"%d\t%f\t%f\n", bwdata[n].bits / 8, bwdata[n].bps, bwdata[n].t);
 		    fflush(out);
 		}
 	    }
@@ -407,7 +409,7 @@ int main(int argc, char *argv[])
 	    
 	    if (args.tr && printopt)
 	    {
-		fprintf(stdout," %6.2lf Mbps in %lf sec\n", bwdata[n].bps, tlast);
+		fprintf(stdout," %6.2f Mbps in %f sec\n", bwdata[n].bps, tlast);
 		fflush(stdout);
 	    }
 	} /* End of perturbation loop */	
@@ -424,7 +426,7 @@ int main(int argc, char *argv[])
 		    dmax = bwdata[n-ipert].bps;
 		}
 	    }
-	    fprintf(out,"%d\t%lf\t%lf\n", bwdata[n-index].bits / 8, bwdata[n-index].bps, bwdata[n-index].t);
+	    fprintf(out,"%d\t%f\t%f\n", bwdata[n-index].bits / 8, bwdata[n-index].bps, bwdata[n-index].t);
 	    fflush(out);
 	}
     } /* End of main loop  */
