@@ -5145,7 +5145,7 @@ int smpd_handle_command(smpd_context_t *context)
     }
     else if (strcmp(cmd->cmd_str, "close_stdin") == 0)
     {
-	result = smpd_handle_stdin_command(context);
+	result = smpd_handle_close_stdin_command(context);
 	smpd_exit_fn(FCNAME);
 	return result;
     }
