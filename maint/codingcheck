@@ -112,10 +112,11 @@ sub ProcessFile {
     %AllowedRoutines = ();
     # Include system defined names
     %AllowedDefines = ( 'SA_RESETHAND' => 'sys', 
-		        'WORDS_BIGENDIAN' => 'autoconf'
+		        'WORDS_BIGENDIAN' => 'autoconf',
 			'EAGAIN' => 'sys',
 			'ENOENT' => 'sys',
 			'EIDRM'  => 'sys',
+			'EPERM'  => 'sys',
 			);
     %defsUsed = ();
     my $cxx_comments_found = 0;
