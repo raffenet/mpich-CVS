@@ -217,6 +217,9 @@
 			<File
 				RelativePath="smpd.h">
 			</File>
+			<File
+				RelativePath=".\smpd_service.h">
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
