@@ -45,6 +45,7 @@ int MPID_Type_struct_alignsize(int count,
      * alignment was either "largest", in which case we just use what we found,
      * or "unknown", in which case what we found is as good a guess as any.
      */
+
     return max_alignsize;
 }
 
@@ -220,15 +221,15 @@ int MPID_Type_struct(int count,
 
     new_dtp->alignsize = MPID_Type_struct_alignsize(count, oldtype_array);
 
-    if (found_sticky_lb || found_sticky_ub) {
-	new_dtp->extent = new_dtp->ub - new_dtp->lb;
-    }
-    else {
+    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+    if ((!found_sticky_lb) && (!found_sticky_ub)) {
 	/* account for padding */
 	MPI_Aint epsilon = new_dtp->extent % new_dtp->alignsize;
 
-	if (epsilon) new_dtp->ub += (new_dtp->alignsize - epsilon);
-	new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	if (epsilon) {
+	    new_dtp->ub    += (new_dtp->alignsize - epsilon);
+	    new_dtp->extent = new_dtp->ub - new_dtp->lb;
+	}
     }
 
     new_dtp->size = size;
