@@ -239,10 +239,11 @@ void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
 #endif
 
 /* Routines to initialize handle allocations */
+/* These are now internal to the handlemem package
 void *MPIU_Handle_direct_init( void *, int, int, int );
 void *MPIU_Handle_indirect_init( void *(**)[], int *, int, int, int, int );
 int MPIU_Handle_free( void *((*)[]), int );
-
+*/
 /* Handles conversion */
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
@@ -394,49 +395,13 @@ extern MPIU_Object_alloc_t MPID_Comm_mem;
 /* Preallocated comm objects */
 extern MPID_Comm MPID_Comm_direct[];
 
-/* Collective operations */
-typedef struct MPID_Collops_struct {
-    int ref_count;   /* Supports lazy copies */
-    /* Contains pointers to the functions for the MPI collectives */
-    int (*Barrier) (MPID_Comm *);
-    int (*Bcast) (void*, int, MPID_Datatype *, int, MPID_Comm * );
-    int (*Gather) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
-		   int, MPID_Comm *); 
-    int (*Gatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
-		    MPID_Datatype *, int, MPID_Comm *); 
-    int (*Scatter) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
-		    int, MPID_Comm *);
-    int (*Scatterv) (void*, int *, int *, MPID_Datatype *, void*, int, 
-		    MPID_Datatype *, int, MPID_Comm *);
-    int (*Allgather) (void*, int, MPID_Datatype *, void*, int, 
-		      MPID_Datatype *, MPID_Comm *);
-    int (*Allgatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
-		       MPID_Datatype *, MPID_Comm *);
-    int (*Alltoall) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
-			       MPID_Comm *);
-    int (*Alltoallv) (void*, int *, int *, MPID_Datatype *, void*, int *, 
-		     int *, MPID_Datatype *, MPID_Comm *);
-    int (*Alltoallw) (void*, int *, int *, MPID_Datatype *, void*, int *, 
-		     int *, MPID_Datatype *, MPID_Comm *);
-    int (*Reduce) (void*, void*, int, MPID_Datatype *, MPI_Op, int, 
-		   MPID_Comm *);
-    int (*Allreduce) (void*, void*, int, MPID_Datatype *, MPI_Op, 
-		      MPID_Comm *);
-    int (*Reduce_scatter) (void*, void*, int *, MPID_Datatype *, MPI_Op, 
-			   MPID_Comm *);
-    int (*Scan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
-    int (*Exscan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
-};
-    
-} MPID_Collops;
-        
 
 /* Windows */
 typedef struct {
     int           id;             /* value of MPI_Win for this structure */
     volatile int  ref_count;
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
-    MPID_Aint    length;        
+    MPI_Aint    length;        
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_List    attributes;
     MPID_Comm    *comm;         /* communicator of window */
@@ -504,6 +469,42 @@ extern MPIU_Object_alloc_t MPID_Datatype_mem;
 /* Preallocated datatype objects */
 extern MPID_Datatype MPID_Datatype_direct[];
 
+/* Collective operations */
+typedef struct MPID_Collops_struct {
+    int ref_count;   /* Supports lazy copies */
+    /* Contains pointers to the functions for the MPI collectives */
+    int (*Barrier) (MPID_Comm *);
+    int (*Bcast) (void*, int, MPID_Datatype *, int, MPID_Comm * );
+    int (*Gather) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+		   int, MPID_Comm *); 
+    int (*Gatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
+		    MPID_Datatype *, int, MPID_Comm *); 
+    int (*Scatter) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+		    int, MPID_Comm *);
+    int (*Scatterv) (void*, int *, int *, MPID_Datatype *, void*, int, 
+		    MPID_Datatype *, int, MPID_Comm *);
+    int (*Allgather) (void*, int, MPID_Datatype *, void*, int, 
+		      MPID_Datatype *, MPID_Comm *);
+    int (*Allgatherv) (void*, int, MPID_Datatype *, void*, int *, int *, 
+		       MPID_Datatype *, MPID_Comm *);
+    int (*Alltoall) (void*, int, MPID_Datatype *, void*, int, MPID_Datatype *, 
+			       MPID_Comm *);
+    int (*Alltoallv) (void*, int *, int *, MPID_Datatype *, void*, int *, 
+		     int *, MPID_Datatype *, MPID_Comm *);
+    int (*Alltoallw) (void*, int *, int *, MPID_Datatype *, void*, int *, 
+		     int *, MPID_Datatype *, MPID_Comm *);
+    int (*Reduce) (void*, void*, int, MPID_Datatype *, MPI_Op, int, 
+		   MPID_Comm *);
+    int (*Allreduce) (void*, void*, int, MPID_Datatype *, MPI_Op, 
+		      MPID_Comm *);
+    int (*Reduce_scatter) (void*, void*, int *, MPID_Datatype *, MPI_Op, 
+			   MPID_Comm *);
+    int (*Scan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
+    int (*Exscan) (void*, void*, int, MPID_Datatype *, MPI_Op, MPID_Comm * );
+    
+} MPID_Collops;
+        
+/* Files */
 typedef struct {
     int           id;             /* value of MPI_File for this structure */
     volatile int  ref_count;

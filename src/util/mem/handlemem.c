@@ -91,7 +91,7 @@ MPID_Info *MPID_Info_Get_ptr_indirect( int handle )
 #endif
 
 /* This routine is called by finalize when MPI exits */
-int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
+static int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
 {
     int i;
     
@@ -107,8 +107,9 @@ int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
     return 0;
 }
 
-void *MPIU_Handle_direct_init( void *direct, int direct_size, int obj_size, 
-			       int handle_type )
+static void *MPIU_Handle_direct_init( void *direct, int direct_size, 
+				      int obj_size, 
+				      int handle_type )
 {
     int                i;
     MPIU_Handle_common *hptr=0;
@@ -126,10 +127,11 @@ void *MPIU_Handle_direct_init( void *direct, int direct_size, int obj_size,
 }
 
 /* indirect is really a pointer to a pointer to an array of pointers */
-void *MPIU_Handle_indirect_init( void *(**indirect)[], int *indirect_size, 
-				 int indirect_max_size,
-				 int indirect_block_size, int obj_size, 
-				 int handle_type )
+static void *MPIU_Handle_indirect_init( void *(**indirect)[], 
+					int *indirect_size, 
+					int indirect_max_size,
+					int indirect_block_size, int obj_size, 
+					int handle_type )
 {
     void               *block_ptr;
     MPIU_Handle_common *hptr=0;
@@ -193,7 +195,22 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
        and then did not destroy */
     return 0;
 }
-/* Create an object using the handle allocator */
+/*+
+  MPIU_Handle_obj_new - Create an object using the handle allocator
+
+  Input Parameter:
+. objmem - Pointer to object memory block.
+
+  Return Value:
+  Pointer to new object.  Null if no more objects are available or can 
+  be allocated.
+
+  Notes:
+  In addition to returning a pointer to a new object, this routine may
+  allocation additional space for more objects.
+
+  This routine is thread-safe.
+  +*/
 void *MPIU_Handle_obj_new( MPIU_Object_alloc_t *objmem )
 {
     MPIU_Handle_common *ptr;
@@ -244,6 +261,16 @@ void *MPIU_Handle_obj_new( MPIU_Object_alloc_t *objmem )
     return ptr;
 }   
 
+/*+
+  MPIU_Handle_obj_free - Free an object allocated with MPID_Handle_obj_new
+
+  Input Parameters:
++ objmem - Pointer to object block
+- object - Object to delete
+
+  Notes: 
+  This routine is thread-safe.
+  +*/
 void MPIU_Handle_obj_free( MPIU_Object_alloc_t *objmem, void *object )
 {
     MPIU_Handle_common *obj = (MPIU_Handle_common *)object;
