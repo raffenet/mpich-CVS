@@ -52,7 +52,7 @@ that use MPI, and pointers to other MPI resources.
 
 Version:
 
-MPICH2 version 0.97
+MPICH2 version 1.0
 
 License:
 
