@@ -72,6 +72,10 @@
 
 # AC_LANG(Fortran 90)
 # -------------------
+# There is a problem here.  There is no standard extension for Fortran 90,
+# and some compiler will fail to accept f90; others fail to accept f (the
+# various IBM xlf/f90 compilers are very picky, and there is no extension
+# that both IBM compilers will accept without additional options).
 m4_define([AC_LANG(Fortran 90)],
 [ac_ext=${ac_f90ext-f}
 ac_compile='$F90 -c $F90FLAGS conftest.$ac_ext >&AS_MESSAGE_LOG_FD'
@@ -228,6 +232,7 @@ EOF
     pac_cv_f90_ext=$ac_ext
     rm -f conftest*
 fi
+
 # Provide some information about the compiler.
 echo "$as_me:__oline__:" \
      "checking for _AC_LANG compiler version" >&AS_MESSAGE_LOG_FD
@@ -1038,7 +1043,7 @@ AC_CACHE_CHECK([whether Fortran 90 works with Fortran 77],
 pac_cv_f90_and_f77,[
 pac_cv_f90_and_f77="unknown"
 rm -f conftest*
-if test -z "$ac_ext_f90" ; then ac_ext_f90=$pac_cv_f90_ext ; fi
+if test -z "$ac_ext_f90" -a -n "$pac_cv_f90_ext" ; then ac_ext_f90=$pac_cv_f90_ext ; fi
 # Define the two language-specific steps
 link_f90='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest1.$ac_ext_f90 conftest2.o $LIBS 1>&AC_FD_CC'
 compile_f77='${F77-f77} -c $FFLAGS conftest2.f 1>&AC_FD_CC'

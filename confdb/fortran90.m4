@@ -256,7 +256,6 @@ AC_CHECK_TOOLS(F90,
       [m4_default([$1],
                   [f90 xlf90 pgf90 epcf90 f95 fort xlf95 lf95 g95])])
 
-
 # once we find the compiler, confirm the extension 
 AC_MSG_CHECKING([that $ac_ext works as the extension for Fortran 90 program])
 cat > conftest.$ac_ext <<EOF
@@ -1121,7 +1120,7 @@ AC_CACHE_CHECK([whether Fortran 90 works with Fortran 77],
 pac_cv_f90_and_f77,[
 pac_cv_f90_and_f77="unknown"
 rm -f conftest*
-if test -z "$ac_ext_f90" ; then ac_ext_f90=$pac_cv_f90_ext ; fi
+if test -z "$ac_ext_f90" -a -n "$pac_cv_f90_ext" ; then ac_ext_f90=$pac_cv_f90_ext ; fi
 # Define the two language-specific steps
 link_f90='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest1.$ac_ext_f90 conftest2.o $LIBS 1>&AC_FD_CC'
 compile_f77='${F77-f77} -c $FFLAGS conftest2.f 1>&AC_FD_CC'
