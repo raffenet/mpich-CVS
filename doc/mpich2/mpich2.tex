@@ -6426,6 +6426,22 @@ Like \mpifunc{MPI_WIN_POST}, but for the complete counter.
 \subsection{Starting and Ending MPI}
 \label{sec:init}
 
+This is a difficult part of the MPICH implementation because these routines
+must interact with the outside environment.  Some things that we must keep in
+mind:
+\begin{itemize}
+\item The MPI program should execute within a separate process group by
+  default, if \code{stdin} is not connected to a terminal.  This prevents
+  failures in the MPI application from causing a controlling script to exit.
+  See the code in MPICH-1 in \file{mpid/util/sesson.c}.  There should be 
+  both configure time and runtime control over this behavior (but the default
+  should be as above).
+
+\item Signals must not be \emph{relied} on to abort MPI processes on failures,
+  since some signals cannot be caught.
+
+\end{itemize}
+
 \subsubsection{\mpifunc{MPI_ABORT}}
 \mpidfunc{MPID_Abort}.  This should abort only the specified communicator.  If
 no communicator is specified, abort all.  
