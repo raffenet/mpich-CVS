@@ -1263,7 +1263,7 @@ else
 	fi
     fi
 fi
-if test "$FROM_MPICH" != no ; then
+if test "$FROM_MPICH2" != no ; then
     # use the error handlers from MPICH2
     MPIO_EXTRA_OBJECTS=
     MPIO_EXTRA_TMP_POBJECTS=
