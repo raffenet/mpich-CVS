@@ -21,6 +21,148 @@ MPIDI_VC_functions g_ib_vc_functions =
     ib_post_read_pkt
 };
 
+ib_uint32_t modifyQp( IB_Info *ib, Ib_qp_state qp_state )
+{
+    ib_uint32_t status;
+    ib_qp_attr_list_t attrList;
+    ib_address_vector_t av;
+    static attr_rec_t *attr_rec;
+
+    if (qp_state == IB_QP_STATE_INIT)
+	{
+	    if ((attr_rec = (attr_rec_t *)
+		 malloc(sizeof (attr_rec_t) * 5)) == NULL )
+		{
+		    printf("Malloc failed %d\n", __LINE__);
+		    return IB_FAILURE;
+		}
+	    
+	    ((attr_rec[0]).id) = IB_QP_ATTR_PRIMARY_PORT;
+	    ((attr_rec[0]).data) = 1;
+	    ((attr_rec[1]).id) = IB_QP_ATTR_PRIMARY_P_KEY_IX;
+	    ((attr_rec[1]).data) = 0;
+	    ((attr_rec[2]).id) = IB_QP_ATTR_RDMA_W_F;
+	    ((attr_rec[2]).data) = 1;
+	    ((attr_rec[3]).id) = IB_QP_ATTR_RDMA_R_F;
+	    ((attr_rec[3]).data) = 1;
+	    ((attr_rec[4]).id) = IB_QP_ATTR_ATOMIC_F;
+	    ((attr_rec[4]).data) = 0;
+	    
+	    attrList.attr_num = 5;
+	    attrList.attr_rec_p = &attr_rec[0];
+	    
+	}
+    else if (qp_state == IB_QP_STATE_RTR) 
+	{
+	    av.sl                         = 0;
+	    av.dest_lid                   = ib->m_dlid;
+	    av.grh_f                      = 0;
+	    av.path_bits                  = 0;
+	    av.max_static_rate            = 1;
+	    av.global.flow_label          = 1;
+	    av.global.hop_limit           = 1;
+	    av.global.src_gid_index       = 0;
+	    av.global.traffic_class       = 1;
+	    
+	    if ((attr_rec = (attr_rec_t *)
+		 malloc(sizeof (attr_rec_t) * 6)) == NULL )
+		{
+		    printf("Malloc failed %d\n", __LINE__);
+		    return IB_FAILURE;
+		}
+
+	    ((attr_rec[0]).id) = IB_QP_ATTR_PRIMARY_ADDR;
+	    ((attr_rec[0]).data) = (int)&av;
+	    ((attr_rec[1]).id) = IB_QP_ATTR_DEST_QPN;
+	    ((attr_rec[1]).data) = ib->m_dest_qp_num;
+	    ((attr_rec[2]).id) = IB_QP_ATTR_RCV_PSN;
+	    ((attr_rec[2]).data) = 0;
+	    ((attr_rec[3]).id) = IB_QP_ATTR_MTU;
+	    ((attr_rec[3]).data) = ib->m_mtu_size;
+	    ((attr_rec[4]).id) = IB_QP_ATTR_RDMA_READ_LIMIT;
+	    ((attr_rec[4]).data) = 4;
+	    ((attr_rec[5]).id) = IB_QP_ATTR_RNR_NAK_TIMER;
+	    ((attr_rec[5]).data) = 1;
+	    
+	    attrList.attr_num = 6;
+	    attrList.attr_rec_p = &attr_rec[0];
+
+	}
+    else if (qp_state == IB_QP_STATE_RTS)
+    {
+	if ((attr_rec = (attr_rec_t *)
+	     malloc(sizeof (attr_rec_t) * 5)) == NULL )
+	{
+	    printf("Malloc failed %d\n", __LINE__);
+	    return IB_FAILURE;
+	}
+
+	((attr_rec[0]).id)    = IB_QP_ATTR_SEND_PSN;
+	((attr_rec[0]).data)  = 0; 
+	((attr_rec[1]).id)    = IB_QP_ATTR_TIMEOUT;
+	((attr_rec[1]).data)  = 0x7c;
+	((attr_rec[2]).id)    = IB_QP_ATTR_RETRY_COUNT;
+	((attr_rec[2]).data)  = 2048;
+	((attr_rec[3]).id)    = IB_QP_ATTR_RNR_RETRY_COUNT;
+	((attr_rec[3]).data)  = 2048;
+	((attr_rec[4]).id)    = IB_QP_ATTR_DEST_RDMA_READ_LIMIT;
+	((attr_rec[4]).data)  = 4;
+	
+	attrList.attr_num = 5; 
+	attrList.attr_rec_p = &attr_rec[0];
+    }
+    else if (qp_state == IB_QP_STATE_RESET)
+    {
+	attrList.attr_num = 0;
+	attrList.attr_rec_p = NULL;
+    }
+    else
+	return IB_FAILURE;
+
+    status = ib_qp_modify_us(IB_Process.hca_handle, 
+			     ib->m_qp_handle, 
+			     qp_state, &attrList );
+    if( status != IB_SUCCESS )
+    {
+	return status;
+    }
+
+    return IB_SUCCESS;
+}
+
+ib_uint32_t createQP(IB_Info *ib)
+{
+    ib_uint32_t status;
+    ib_uint32_t qp_num;
+    ib_qp_attr_list_t attrList;
+    attr_rec_t attr_rec[] = {
+	{IB_QP_ATTR_SERVICE_TYPE, IB_ST_RELIABLE_CONNECTION},
+	{IB_QP_ATTR_SEND_CQ, 0},
+	{IB_QP_ATTR_RCV_CQ, 0},
+	{IB_QP_ATTR_SEND_REQ_MAX, 0},
+	{IB_QP_ATTR_RCV_REQ_MAX, 0},
+	{IB_QP_ATTR_SEND_SGE_MAX, 8},
+	{IB_QP_ATTR_RCV_SGE_MAX, 8},
+	{IB_QP_ATTR_SIGNALING_TYPE, QP_SIGNAL_ALL}
+    };
+
+    attr_rec[1].data = (int)ib->m_send_cq_handle;
+    attr_rec[2].data = (int)ib->m_recv_cq_handle;
+    attr_rec[3].data = ib->m_max_wqes;
+    attr_rec[4].data = ib->m_max_wqes;
+
+    attrList.attr_num = sizeof(attr_rec)/sizeof(attr_rec[0]);
+    attrList.attr_rec_p = &attr_rec[0];
+
+    status = ib_qp_create_us(IB_Process.hca_handle,
+			     IB_Process.pd_handle,
+			     &attrList, &ib->m_qp_handle, &qp_num, NULL);
+    if (status != IBA_OK)
+	return status;
+    ib->m_dest_qp_num = qp_num;
+    return IB_SUCCESS;
+}
+
 int ib_setup_connections()
 {
     MPID_Comm *comm_ptr;
@@ -68,7 +210,7 @@ int ib_setup_connections()
     for (i=0; i<comm_ptr->remote_size; i++)
     {
 	if ( i == comm_ptr->rank)
-	    continue;
+	    continue; /* don't make a connection to myself */
 	vc_ptr = comm_ptr->vcr[i];
 	if (vc_ptr == NULL)
 	{
@@ -192,10 +334,22 @@ int ib_setup_connections()
 		ib->m_send_sglist.data_seg_p[i].va = (ib_uint64_t)ib->m_virtual_address;
 		ib->m_send_sglist.data_seg_p[i].l_key = lkey;
 	    }
+
+	/* Create the queue pair */
+	status = createQP(ib);
+	if (status != IB_SUCCESS)
+	    {
+		MPIU_dbg_printf("createQP failed, error %d\n", status);
+		free(key);
+		free(value);
+		MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
+		return -1;
+	    }
     }
 
     MPIU_dbg_printf("calling PMI_Barrier\n");
     PMI_Barrier();
+    MPIU_dbg_printf("PMI_Barrier returned\n");
 
     free(key);
     free(value);
