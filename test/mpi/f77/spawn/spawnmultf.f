@@ -56,7 +56,7 @@ C	    Master
 	if (rsize .ne. np(1) + np(2)) then
 	    errs = errs + 1
 	    print *, "Did not create ", np(1)+np(2), " processes (got
-	1	 ", rsize, ")" 
+     &         ", rsize, ")" 
 	 endif
 	 do i=0, rsize-1
 	    call MPI_Send( i, 1, MPI_INTEGER, i, 0, intercomm, ierr )
@@ -66,7 +66,7 @@ C       children, but we'll use a simpler loop to make sure that
 C       we get valid data 
 	 do i=0, rsize-1
 	    call MPI_Recv( err, 1, MPI_INTEGER, i, 1, intercomm,
-	1	 MPI_STATUS_IGNORE, ierr )
+     &                     MPI_STATUS_IGNORE, ierr )
 	    errs = errs + err
 	 enddo
 	else 
@@ -77,14 +77,14 @@ C       (the error count will still be reported to the parent)
 	   do i=1, argc
 	      call getarg( i, argv(i) )
 	   enddo
-	if (size .ne. np(1) + np(2)) then
+	if (size .ne. 2) then
 	    errs = errs + 1
-	    print *, "(Child) Did not create ", np, " processes (got ",
-	1	 size, ")"
+	    print *, "(Child) Did not create ", 2,
+     &	 " processes (got ",size, ")"
 	 endif
 
 	 call MPI_Recv( i, 1, MPI_INTEGER, 0, 0, intercomm, status, ierr
-	1     )
+     &     )
 	if (i .ne. rank) then
 	   errs = errs + 1
 	   print *, "Unexpected rank on child ", rank, "(",i,")"
@@ -99,7 +99,7 @@ C       Check the command line
 	   if (argv(i) .ne. outargv(i,rank+1)) then
 	      errs = errs + 1
 	      print *, "Found arg ", argv(i), " but expected ",
-	1	   outargv(i,rank+1) 
+     1   outargv(i,rank+1) 
 	   endif
 	enddo
  200	continue
