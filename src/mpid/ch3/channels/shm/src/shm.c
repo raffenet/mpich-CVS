@@ -511,7 +511,6 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC *vc, MPID_Request *sreq)
 	    while (sbuf_len)
 	    {
 		len = MPIDU_MIN(sbuf_len, rbuf_len);
-		printf("w");fflush(stdout);
 		/*printf("writing %d bytes to remote process.\n", len);fflush(stdout);*/
 #ifdef HAVE_WINDOWS_H
 		if (!WriteProcessMemory(vc->ch.hSharedProcessHandle, rbuf, sbuf, len, &num_written))
@@ -736,7 +735,6 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC *vc, MPID_Request *rreq)
 	    while (rbuf_len)
 	    {
 		len = MPIDU_MIN(rbuf_len, sbuf_len);
-		printf("r");fflush(stdout);
 		/*printf("reading %d bytes from the remote process.\n", len);fflush(stdout);*/
 #ifdef HAVE_WINDOWS_H
 		if (!ReadProcessMemory(vc->ch.hSharedProcessHandle, sbuf, rbuf, len, &num_read))
