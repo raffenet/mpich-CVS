@@ -365,6 +365,10 @@ AC_CACHE_VAL(pac_cv_prog_f77_cmdarg,
     f77_getarg="${F77_GETARG:-call GETARG(i,s)}"
     f77_iargc="${F77_IARGC:-IARGC()}"
     #    
+    # Grumble.  The Absoft Fortran compiler computes i - i as 0 and then
+    # 1.0 / 0 at compile time, even though the code may never be executed.
+    # What we need is a way to generate an error, so the second usage of i
+    # was replaced with f77_iargc.  
     cat > conftest.f <<EOF
         program main
 $fxx_module
@@ -375,7 +379,7 @@ $fxx_module
         $f77_getarg
         i=$f77_iargc
 	if (i .gt. 1) then
-	    j = i - i
+	    j = i - $f77_iargc
 	    j = 1.0 / j
 	endif
         end
@@ -578,7 +582,8 @@ $flag"
 	   ;;
 	esac
 	# Create the program.  Make sure that we can run it.
-	# Force a divide-by-zero if there is a problem
+	# Force a divide-by-zero if there is a problem (but only at runtime!
+        # (the Absoft compiler does divide-by-zero at compile time)
         cat > conftest.f <<EOF
         program main
 $FXX_MODULE
@@ -589,7 +594,7 @@ $FXX_MODULE
         $F77_GETARG
         i=$F77_IARGC
 	if (i .gt. 1) then
-	    j = i - i
+	    j = i - $F77_IARGC
 	    j = 1.0 / j
 	endif
         end
