@@ -8,7 +8,7 @@
 %
 % VCs - abstraction of connection
 %
-% CARs (and operation and data descriptors) - abstract entity to describe ops
+% Method requests (and operation and data descriptors) - abstract entity to describe ops
 %
 % Posting operations (recv car processing/send car proc, 
 %     only posting parts) - interface
@@ -32,6 +32,20 @@
 %
 %
 
+% TODO:
+%
+% - Bill would like us to explore the addition of debugging information to each
+%   message.  On the sending side it seems trivial to add the information since
+%   we can simply add another data descriptor or even a special debugging
+%   descriptor.  The receive side, however, is complicated by the need to know
+%   how much debugging information will be received or requiring the device
+%   to dynamically allocate buffers for the debugging information.  Ideally,
+%   the debugging information would have as minimal of an impact on timing as
+%   possible.
+%
+% - We need to start thinking about and documenting the progress engine.  Bill
+%   is particularily interested in how we are going to handle waitsome() and
+%   testsome(). 
 
 \documentclass[11pt,letterpaper]{article}
 %\documentclass[10pt,twocolumn,letterpaper]{article}
@@ -65,10 +79,10 @@
 
 \thispagestyle{empty}
 
-\section{Communication Agent and Related Topics}
+\section{Multi-method Communication Architecture}
 
 
-\subsection{Quick Architecture Overview}
+\subsection{Architecture Overview}
 
 % include the figure here
 \begin{figure}
@@ -78,23 +92,48 @@
 \end{center}
 \end{figure}
 
-% [BRT] Ideally, the general architecture of the multi-method implementation
-% would have been presented in an earlier section.  This would allow this
-% section to focus on present the first order details concerning communication
-% requests, methods, polling, etc.
+In Figure \ref{fig:arch}, we present a diagram of the component layers
+comprising MPICH2.  In this diagram, the components are respresented
+by boxes and the interfaces are expressed as heavy lines between the
+components.  At the top, we have the application which uses the
+Message Passing Interface (MPI) as defined by the MPI Forum to
+communicate data amongst its processes.  At the bottom, we have the
+various communication network devices (or software interfaces) over
+which the application's data might be communicated.
 
-% [BRT] It seems that this section would flow better if concepts were briefly
-% introduced top-down and the described bottom-up...
+The MPI component layer performs a variety of tasks including
+comprehensive error checking before employing the MPICH device layer
+(MPID) to perform the actual communication.  The MPID layer provides
+an opportunity for the hardware vendor to plug in a streamlined MPI
+implementation which is highly tuned to their networking device.  It
+also provides an opportunity to develop an implementation which can
+coordinate communication across multiple communication networks,
+chosing the best communication path between any two processes.  The
+remainder of this section is dedicated to describing the architecture
+of such an multi-method device.
 
-% [BRT] We should include the network devices and network software interfaces
-% in this picture.
-In Figure \ref{fig:arch} we've got a sketch of the component layers.
-At the top, we have the Message Passing Interface as defined by the
-MPI Forum.  At the bottom, we several network devices potentially
-present several different software interfaces.  Between these two
-layers, we have a series of software interfaces designed to abstract
-away the differences in the various network devices while minimizing
-the performance lost to these abstractions.
+This multi-method device, represented by the unshaded region of the
+figure, simultaneously couples MPICH2 to one or more communication
+networks.  The multi-method device is responsbile for choosing the
+most appropriate method for communicating messages between any two
+processes.  The details about how messages are communicated across any
+one of these networks is managed by a method implemented specifically
+for that networking device.
+
+Third party developers may ``plug in'' additional communications
+methods by implementing the interfaces defined throughout this
+section.
+
+
+
+
+As discussed in \ref{sec:mpid}, this layer
+
+ At the bottom, we several network devices potentially present
+several different software interfaces.  Between these two layers, we have a
+series of software interfaces designed to abstract away the differences in the
+various network devices while minimizing the performance lost to these
+abstractions.
 
 In this section we're mostly going to gloss over the MPI and MPID layers,
 instead focusing on the Methods, Communcation Agent, and Xfer interface.
@@ -118,8 +157,7 @@ point...
 % of the multi-method device.  First, it defines communication agent
 % requests which abstractly convey actions to be performed by the
 % communication methods.  Second, it provides a progress engine that
-% schedules CPU resources across methods, optimizing tuning on-the-fly
-% to minimize latency and
+% manages CPU (and memory?) resources to insure that the methods cooperate.
 
 In a common case, the communication agent is passed sets of CARs by the Xfer
 interface.  These CARs are of two general types.  Send CARs are associated
@@ -136,9 +174,8 @@ The bulk of the send/receive processing code exists in the method
 implementations, and as such a large portion of this section will detail a
 sample implementation of a method (?).
 
-This diagram does not show the method to method interface, which is necessary
-for pipelined forwarding operations (?).  We will discuss this interface
-further later in this section.
+This diagram now shows the method to method interface, but we still
+need to talk about it...
 
 %------------------------------------------------------------------------------
 
@@ -191,7 +228,7 @@ faciliate late binding, we introduce a virtual connection (VC).
 A virtual connection is an object representing an abstract connection between
 two processes.  Initially, the programming interfaces presented by the VC are
 bound to a set of ``unbound'' functions.  These functions are responsible for
-selectly the communication method to be used by this VC, rebinding the
+selecting the communication method to be used by this VC, rebinding the
 interfaces to the functions provided by that method, and establishing a
 connection using this newly bound method..
 
