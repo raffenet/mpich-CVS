@@ -1,11 +1,11 @@
-#include "adio.h"
+#include "mpioimpl.h"
 
 #ifdef MPICH2
 
 int MPIR_Err_return_file( MPI_File file_ptr, const char fcname[], int errcode )
 {
     /* First, check the nesting level */
-    if (MPIR_Nest_value()) return errcode;
+    /*if (MPIR_Nest_value()) return errcode;*/
 
     /* Now, invoke the error handler for the file */
     if (file_ptr && file_ptr->err_handler) {
