@@ -842,6 +842,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
     ib_uint32_t status;
     ib_work_completion_t completion_data;
     void *mem_ptr;
+    char *iter_ptr;
     ibu_t ibu;
     unsigned int num_bytes;
     MPIDI_STATE_DECL(MPID_STATE_IBU_WAIT);
@@ -969,16 +970,26 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    ibu->read.total += num_bytes;
 	    if (ibu->read.use_iov)
 	    {
+		iter_ptr = mem_ptr;
 		while (num_bytes)
 		{
 		    if (ibu->read.iov[ibu->read.index].IBU_IOV_LEN <= num_bytes)
 		    {
+			/* copy the received data */
+			memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, iter_ptr,
+			    ibu->read.iov[ibu->read.index].IBU_IOV_LEN);
+			iter_ptr += ibu->read.iov[ibu->read.index].IBU_IOV_LEN;
+			/* update the iov */
 			num_bytes -= ibu->read.iov[ibu->read.index].IBU_IOV_LEN;
 			ibu->read.index++;
 			ibu->read.iovlen--;
 		    }
 		    else
 		    {
+			/* copy the received data */
+			memcpy(ibu->read.iov[ibu->read.index].IBU_IOV_BUF, iter_ptr, num_bytes);
+			iter_ptr += num_bytes;
+			/* update the iov */
 			ibu->read.iov[ibu->read.index].IBU_IOV_LEN -= num_bytes;
 			ibu->read.iov[ibu->read.index].IBU_IOV_BUF = 
 			    (char*)(ibu->read.iov[ibu->read.index].IBU_IOV_BUF) + num_bytes;
@@ -1016,6 +1027,8 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 	    }
 	    else
 	    {
+		/* copy the received data */
+		memcpy(ibu->read.buffer, mem_ptr, num_bytes);
 		/* advance the user pointer */
 		ibu->read.buffer = (char*)(ibu->read.buffer) + num_bytes;
 		ibu->read.bufflen -= num_bytes;
