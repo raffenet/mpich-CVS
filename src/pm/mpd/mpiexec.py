@@ -196,13 +196,13 @@ def collect_args(args):
         argidx += 1
     localArgsKey = 0
     while argidx < len(args):
-        if args[argidx] == ':':
-            localArgsKey += 1
-            localArgSets[localArgsKey] = []
-        elif args[argidx] == '-ghost'  or  args[argidx] == '-host':
+        if args[argidx] == '-ghost'  or  args[argidx] == '-host':
             if globalArgs['-machinefile']:
                 print '-host (or -ghost) and -machinefile are incompatible'
                 exit(-1)
+        if args[argidx] == ':':
+            localArgsKey += 1
+            localArgSets[localArgsKey] = []
         else:
             localArgSets[localArgsKey].append(args[argidx])
         argidx += 1
@@ -319,8 +319,9 @@ def handle_argset(argset,xmlDOC,xmlCPG,machineFileInfo):
     loRange = argsetLoRange
     hiRange = argsetHiRange
 
+    defaultHostForArgset = host
     while loRange <= argsetHiRange:
-        host = globalArgs['-ghost']
+        host = defaultHostForArgset
         ifhn = ''
         if machineFileInfo:
             if len(machineFileInfo) <= hiRange:

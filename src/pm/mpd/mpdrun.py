@@ -268,7 +268,7 @@ def mpdrun():
                 for host in msg['remaining_hosts'].values():
                     if host != '_any_':
                         try:
-                            print '        %s' % (gethostbyaddr(host)[0])
+                            print '        %s (%s)' % (host,gethostbyaddr(host)[0])
                         except:
                             print '        %s' % (host)
             elif  msg['reason'] == 'invalid_username':
