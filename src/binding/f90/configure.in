@@ -93,8 +93,8 @@ rm -f conftest*
 AC_MSG_CHECKING([whether Fortran 90 compiler processes .F90 files with C preprocessor])
 cat >conftest.F90 <<EOF
         program main
-#define SIZE 10
-        integer a(SIZE)
+#define ASIZE 10
+        integer a(ASIZE)
         end
 EOF
 pac_cv_f90_accepts_F90=no
