@@ -68,10 +68,12 @@ typedef struct BFD_Buffer_struct BFD_Buffer;
 typedef struct
 {
     fd_set set;
-    BFD_Buffer *p;
+    int n;
+    BFD_Buffer *p[FD_SETSIZE];
 } bfd_set;
-#define BFD_CLR(bfd, s)       FD_CLR( bget_fd(bfd), & (s) -> set )
-#define BFD_ZERO(s)           { FD_ZERO(& (s) -> set); (s) -> p = NULL; }
+/*#define BFD_CLR(bfd, s)       FD_CLR( bget_fd(bfd), & (s) -> set )*/
+#define BFD_CLR(bfd, s)       bclr( bfd, s )
+#define BFD_ZERO(s)           { FD_ZERO(& (s) -> set); (s) -> n = 0; }
 #define BFD_SET(bfd, s)       bset( bfd , s )
 #define BFD_ISSET(bfd, s)     FD_ISSET( bget_fd(bfd), & (s) -> set )
 /*
@@ -87,6 +89,7 @@ typedef struct
 /* bsockets.c */
 unsigned int bget_fd(int bfd);
 void bset(int bfd, bfd_set *s);
+void bclr(int bfd, bfd_set *s);
 int bsocket_init( void );
 int bsocket_finalize( void );
 int bsocket( int, int, int );

@@ -93,13 +93,6 @@ struct BFD_Buffer_struct {
 #define BSOCKET_PREALLOC 256
 #endif
 
-/* Preallocated datatype objects */
-/*
-BFD_Buffer Bsocket_direct[BSOCKET_PREALLOC];
-MPIU_Object_alloc_t Bsocket_mem = { 0, 0, 0, 0, 0, 
-				    sizeof(BFD_Buffer) + 1024, Bsocket_direct,
-				    BSOCKET_PREALLOC };
-*/
 BlockAllocator Bsocket_mem;
 
 #define BSOCKET_MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -142,10 +135,10 @@ static void log_warning(char *lpszMsg)
 #endif
 
 /*@
-   bget_fd - 
+   bget_fd - get fd
 
    Parameters:
-+  int bfd
++  int bfd - bfd
 
    Notes:
 @*/
@@ -155,23 +148,60 @@ unsigned int bget_fd(int bfd)
 }
 
 /*@
-   bset - 
+   bset - bset
 
    Parameters:
-+  int bfd
--  bfd_set *s
++  int bfd - bfd
+-  bfd_set *s - set
 
    Notes:
 @*/
 void bset(int bfd, bfd_set *s)
 {
+    int i;
     FD_SET( bget_fd(bfd), & (s) -> set );
-    ((BFD_Buffer*)bfd) -> next = s->p;
-    s->p = (BFD_Buffer*)bfd;
+    for (i=0; i<s->n; i++)
+    {
+	if (s->p[i] == (BFD_Buffer*)bfd)
+	    return;
+    }
+    s->p[s->n] = (BFD_Buffer*)bfd;
+    s->n++;
 }
 
 /*@
-bsocket_init - 
+   bclr - blcr
+
+   Parameters:
++  int bfd - bfd
+-  bfd_set *s - set
+
+   Notes:
+@*/
+void bclr(int bfd, bfd_set *s)
+{
+    int i;
+    BFD_Buffer* p;
+
+    FD_CLR( bget_fd(bfd), & (s) -> set );
+
+    if (s->n == 0)
+	return;
+
+    p = (BFD_Buffer*)bfd;
+    for (i=0; i<s->n; i++)
+    {
+	if (s->p[i] == p)
+	{
+	    s->p[i] = s->p[s->n-1];
+	    s->n--;
+	    return;
+	}
+    }
+}
+
+/*@
+bsocket_init - init
 
   
     Notes:
@@ -215,7 +245,7 @@ int bsocket_init(void)
 }
 
 /*@
-bsocket_finalize - 
+bsocket_finalize - finalize
 
   
     Notes:
@@ -237,12 +267,12 @@ int bsocket_finalize(void)
 }
 
 /*@
-bsocket - 
+bsocket - socket
 
   Parameters:
-  +   int family
-  .  int type
-  -  int protocol
++  int family - family
+.  int type - type
+-  int protocol - protocol
   
     Notes:
 @*/
@@ -252,14 +282,6 @@ int bsocket(int family, int type, int protocol)
     
     DBG_MSG("Enter bsocket\n");
     
-    /*
-    pbfd = (BFD_Buffer *)MPIU_Handle_obj_alloc( &Bsocket_mem );
-    if (pbfd == 0) 
-    {
-	DBG_MSG(("ERROR in bsocket: MPIU_Handle_obj_alloc returned NULL"));
-	return -1;
-    }
-    */
     pbfd = (BFD_Buffer *)BlockAlloc( Bsocket_mem );
     if (pbfd == 0) 
     {
@@ -284,10 +306,10 @@ int bsocket(int family, int type, int protocol)
 /*@
 bbind - bind
 
-  Parameters:
-  +  int bfd - bsocket
-  .  const struct sockaddr *servaddr - address
-  -  socklen_t servaddr_len - address length
+Parameters:
++  int bfd - bsocket
+.  const struct sockaddr *servaddr - address
+-  socklen_t servaddr_len - address length
   
     Notes:
 @*/
@@ -302,9 +324,9 @@ int bbind(int bfd, const struct sockaddr *servaddr,
 /*@
 blisten - listen
 
-  Parameters:
-  +  int bfd - bsocket
-  -  int backlog - backlog
+Parameters:
++  int bfd - bsocket
+-  int backlog - backlog
   
     Notes:
 @*/
@@ -355,14 +377,6 @@ int baccept(int bfd, struct sockaddr *cliaddr, socklen_t *clilen)
 	return BFD_INVALID_SOCKET;
     }
     
-    /*
-    new_bfd = (BFD_Buffer *)MPIU_Handle_obj_alloc( &Bsocket_mem );
-    if (new_bfd == 0) 
-    {
-	DBG_MSG(("ERROR in baccept: MPIU_Handle_obj_alloc return NULL\n"));
-	return BFD_INVALID_SOCKET;
-    }
-    */
     new_bfd = (BFD_Buffer *)BlockAlloc( Bsocket_mem );
     if (new_bfd == 0) 
     {
@@ -411,6 +425,7 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
     int 	   nbfds;
     bfd_set        rcopy;
     BFD_Buffer     *p;
+    int            i;
 
     DBG_MSG("Enter bselect\n");
     
@@ -427,15 +442,14 @@ int bselect(int maxfds, bfd_set *readbfds, bfd_set *writebfds,
     
     if (readbfds)
     {
-	p =  readbfds->p;
-	while (p)
+	for (i=0; i<readbfds->n; i++)
 	{
+	    p = readbfds->p[i];
 	    if (p->num_avail > 0 && (FD_ISSET(p->real_fd, &rcopy.set)) && !(FD_ISSET(p->real_fd, &readbfds->set)))
 	    {
 		FD_SET((unsigned int)p->real_fd, &readbfds->set);
 		nbfds++;
 	    }
-	    p = p->next;
 	}
     }
     
