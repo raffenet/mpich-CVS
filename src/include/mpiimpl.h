@@ -194,6 +194,7 @@ typedef enum MPIU_dbg_state_t
     MPIU_DBG_STATE_MEMLOG = 4
 }
 MPIU_dbg_state_t;
+int MPIU_dbg_init(int rank);
 int MPIU_dbg_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
 int MPIU_dbglog_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
 int MPIU_dbglog_vprintf(char *str, va_list ap);
