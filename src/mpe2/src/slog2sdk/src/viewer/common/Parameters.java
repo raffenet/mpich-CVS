@@ -29,15 +29,23 @@ import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String       VERSION_INFO             = "1.0.0.10";
+    private static final String       VERSION_INFO             = "1.0.0.11";
     private static       String       setupfile_path           = null;
 
+    // Options for Legend window
+    public  static       boolean      LEGEND_PREVIEW_ORDER     = true;
+    public  static       boolean      LEGEND_TOPOLOGY_ORDER    = true;
+
+
+    //  Options for all windows
     public  static       boolean      AUTO_WINDOWS_LOCATION    = true;
     public  static       short        INIT_SLOG2_LEVEL_READ    = 4;
     public  static       float        SCREEN_HEIGHT_RATIO      = 0.5f;
     public  static       float        TIME_SCROLL_UNIT_RATIO   = 0.01f;
-
     public  static       String       Y_AXIS_ROOT_LABEL        = "SLOG-2";
+
+
+    // Options for Timeline window
     public  static       boolean      Y_AXIS_ROOT_VISIBLE      = true;
     public  static       Alias        BACKGROUND_COLOR
                                       = Const.COLOR_BLACK;
@@ -56,7 +64,7 @@ public class Parameters
     public  static       int          CLICK_RADIUS_TO_LINE     = 3;
 
     public  static       String       PREVIEW_STATE_DISPLAY
-                                      = PreviewState.OVERLAP_RATIOS;
+                                      = PreviewState.CUMULATIVE_EXCLUSION;
     public  static       int          PREVIEW_STATE_LEGEND_H   = 2;
     public  static       StateBorder  PREVIEW_STATE_BORDER
                                       = StateBorder.COLOR_XOR_BORDER;
@@ -116,16 +124,28 @@ public class Parameters
         Properties pptys = new Properties();
         pptys.setProperty( "VERSION_INFO", VERSION_INFO );
 
+        // Options for all windows
         pptys.setProperty( "Y_AXIS_ROOT_LABEL", Y_AXIS_ROOT_LABEL );
         pptys.setProperty( "INIT_SLOG2_LEVEL_READ",
                            String.valueOf( INIT_SLOG2_LEVEL_READ ) );
-        pptys.setProperty( "SCREEN_HEIGHT_RATIO",
-                           String.valueOf( SCREEN_HEIGHT_RATIO ) );
         pptys.setProperty( "AUTO_WINDOWS_LOCATION",
                            String.valueOf( AUTO_WINDOWS_LOCATION ) );
+        pptys.setProperty( "SCREEN_HEIGHT_RATIO",
+                           String.valueOf( SCREEN_HEIGHT_RATIO ) );
         pptys.setProperty( "TIME_SCROLL_UNIT_RATIO",
                            String.valueOf( TIME_SCROLL_UNIT_RATIO ) );
 
+
+
+        // Options for Legend window
+        pptys.setProperty( "LEGEND_PREVIEW_ORDER",
+                           String.valueOf( LEGEND_PREVIEW_ORDER ) );
+        pptys.setProperty( "LEGEND_TOPOLOGY_ORDER",
+                           String.valueOf( LEGEND_TOPOLOGY_ORDER ) );
+
+
+
+        // Options for Timeline window
         pptys.setProperty( "Y_AXIS_ROOT_VISIBLE",
                            String.valueOf( Y_AXIS_ROOT_VISIBLE ) );
         pptys.setProperty( "BACKGROUND_COLOR",
@@ -218,6 +238,7 @@ public class Parameters
                         + "You may want to SAVE your preferences again in the "
                         + "Preference window to avoid this warning message." );
 
+        // Options for all windows
         ppty_val = pptys.getProperty( "Y_AXIS_ROOT_LABEL" );
         if ( ppty_val != null )
             Y_AXIS_ROOT_LABEL = ppty_val;
@@ -235,6 +256,21 @@ public class Parameters
         if ( ppty_val != null )
             TIME_SCROLL_UNIT_RATIO = Float.parseFloat( ppty_val );
 
+
+
+        // Options for Legend window
+        ppty_val = pptys.getProperty( "LEGEND_PREVIEW_ORDER" );
+        if ( ppty_val != null ) 
+            LEGEND_PREVIEW_ORDER =    ppty_val.equalsIgnoreCase( "true" )
+                                   || ppty_val.equalsIgnoreCase( "yes" );
+        ppty_val = pptys.getProperty( "LEGEND_TOPOLOGY_ORDER" );
+        if ( ppty_val != null ) 
+            LEGEND_TOPOLOGY_ORDER =    ppty_val.equalsIgnoreCase( "true" )
+                                    || ppty_val.equalsIgnoreCase( "yes" );
+
+
+
+        // Options for Timeline window
         ppty_val = pptys.getProperty( "Y_AXIS_ROOT_VISIBLE" );
         if ( ppty_val != null ) 
             Y_AXIS_ROOT_VISIBLE =    ppty_val.equalsIgnoreCase( "true" )
@@ -329,6 +365,9 @@ public class Parameters
         rep.append( "INIT_SLOG2_LEVEL_READ = " + INIT_SLOG2_LEVEL_READ + "\n" );
         rep.append( "AUTO_WINDOWS_LOCATION = " + AUTO_WINDOWS_LOCATION + "\n" );
         rep.append( "TIME_SCROLL_UNIT_RATIO = "+ TIME_SCROLL_UNIT_RATIO+ "\n" );
+
+        rep.append( "LEGEND_PREVIEW_ORDER = "  + LEGEND_PREVIEW_ORDER  + "\n" );
+        rep.append( "LEGEND_TOPOLOGY_ORDER = " + LEGEND_TOPOLOGY_ORDER + "\n" );
 
         rep.append( "Y_AXIS_ROOT_VISIBLE = "   + Y_AXIS_ROOT_VISIBLE   + "\n" );
         rep.append( "BACKGROUND_COLOR = "      + BACKGROUND_COLOR      + "\n" );

@@ -26,6 +26,9 @@ public class PreferencePanel extends JPanel
     private        LabeledFloatSlider     sdr_SCREEN_HEIGHT_RATIO;
     private        LabeledFloatSlider     sdr_TIME_SCROLL_UNIT_RATIO;
 
+    private        LabeledComboBox        lst_LEGEND_PREVIEW_ORDER;
+    private        LabeledComboBox        lst_LEGEND_TOPOLOGY_ORDER;
+
     private        LabeledComboBox        lst_Y_AXIS_ROOT_VISIBLE;
     private        LabeledComboBox        lst_BACKGROUND_COLOR;
 
@@ -61,6 +64,9 @@ public class PreferencePanel extends JPanel
 
         JPanel label_panel;
         JLabel label;
+
+        /*  Options for all windows                               */
+
         label_panel = new JPanel();
         label_panel.setLayout( new BoxLayout( label_panel, BoxLayout.X_AXIS ) );
             label = new JLabel( "Options for all windows" );
@@ -126,7 +132,38 @@ public class PreferencePanel extends JPanel
 
         super.add( Box.createVerticalStrut( 2 * VERTICAL_GAP_HEIGHT ) );
 
-        /*                                                        */
+        /*  Options for Legend window                             */
+
+        label_panel = new JPanel();
+        label_panel.setLayout( new BoxLayout( label_panel, BoxLayout.X_AXIS ) );
+            label = new JLabel( "Options for Legend window" );
+            label.setToolTipText( "Options become effective after return "
+                                + "and the Legend window is redrawn" );
+        label_panel.add( Box.createHorizontalStrut( Const.LABEL_INDENTATION ) );
+        label_panel.add( label );
+        label_panel.add( Box.createHorizontalGlue() );
+        label_panel.setAlignmentX( Component.LEFT_ALIGNMENT );
+        super.add( label_panel );
+
+        lst_LEGEND_PREVIEW_ORDER = new LabeledComboBox(
+                                       "LEGEND_PREVIEW_ORDER" );
+        lst_LEGEND_PREVIEW_ORDER.addItem( Boolean.TRUE );
+        lst_LEGEND_PREVIEW_ORDER.addItem( Boolean.FALSE );
+        lst_LEGEND_PREVIEW_ORDER.setToolTipText(
+        "Whelther to arrange the legends with a hidden Preview order." );
+        super.add( lst_LEGEND_PREVIEW_ORDER );
+
+        lst_LEGEND_TOPOLOGY_ORDER = new LabeledComboBox(
+                                       "LEGEND_TOPOLOGY_ORDER" );
+        lst_LEGEND_TOPOLOGY_ORDER.addItem( Boolean.TRUE );
+        lst_LEGEND_TOPOLOGY_ORDER.addItem( Boolean.FALSE );
+        lst_LEGEND_TOPOLOGY_ORDER.setToolTipText(
+        "Whelther to arrange the legends with a hidden Topology order." );
+        super.add( lst_LEGEND_TOPOLOGY_ORDER );
+
+        super.add( Box.createVerticalStrut( 2 * VERTICAL_GAP_HEIGHT ) );
+
+        /*  Options for Timeline window                           */
 
         label_panel = new JPanel();
         label_panel.setLayout( new BoxLayout( label_panel, BoxLayout.X_AXIS ) );
@@ -255,10 +292,11 @@ public class PreferencePanel extends JPanel
 
         lst_PREVIEW_STATE_DISPLAY = new LabeledComboBox(
                                         "PREVIEW_STATE_DISPLAY" );
-        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.OVERLAP_RATIOS );
-        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.CUMULATIVE_RATIOS );
-        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.CUMULATIVE_EXCLUSION );
         lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.FIT_MOST_LEGENDS );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.OVERLAP_INCLUSION );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.CUMULATIVE_INCLUSION );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.OVERLAP_EXCLUSION );
+        lst_PREVIEW_STATE_DISPLAY.addItem( PreviewState.CUMULATIVE_EXCLUSION );
         lst_PREVIEW_STATE_DISPLAY.setToolTipText(
         "Display option of Preview state." );
         super.add( lst_PREVIEW_STATE_DISPLAY );
@@ -372,6 +410,7 @@ public class PreferencePanel extends JPanel
 
     public void updateAllFieldsFromParameters()
     {
+        // Options for all window
         fld_Y_AXIS_ROOT_LABEL.setText( Parameters.Y_AXIS_ROOT_LABEL );
         sdr_SCREEN_HEIGHT_RATIO.setFloat( Parameters.SCREEN_HEIGHT_RATIO );
         fld_INIT_SLOG2_LEVEL_READ.setShort( Parameters.INIT_SLOG2_LEVEL_READ );
@@ -380,6 +419,13 @@ public class PreferencePanel extends JPanel
         sdr_TIME_SCROLL_UNIT_RATIO.setFloat(
                                    Parameters.TIME_SCROLL_UNIT_RATIO );
 
+        // Options for Legend window
+        lst_LEGEND_PREVIEW_ORDER.setSelectedBooleanItem(
+                                 Parameters.LEGEND_PREVIEW_ORDER );
+        lst_LEGEND_TOPOLOGY_ORDER.setSelectedBooleanItem(
+                                  Parameters.LEGEND_TOPOLOGY_ORDER );
+
+        // Options for Timeline window
         lst_Y_AXIS_ROOT_VISIBLE.setSelectedBooleanItem(
                                 Parameters.Y_AXIS_ROOT_VISIBLE );
         lst_BACKGROUND_COLOR.setSelectedItem( Parameters.BACKGROUND_COLOR );
@@ -421,6 +467,7 @@ public class PreferencePanel extends JPanel
 
     public void updateAllParametersFromFields()
     {
+        // Options for all window
         Parameters.Y_AXIS_ROOT_LABEL
                   = fld_Y_AXIS_ROOT_LABEL.getText();
         Parameters.SCREEN_HEIGHT_RATIO
@@ -432,6 +479,13 @@ public class PreferencePanel extends JPanel
         Parameters.TIME_SCROLL_UNIT_RATIO
                   = sdr_TIME_SCROLL_UNIT_RATIO.getFloat();
 
+        // Options for Legend window
+        Parameters.LEGEND_PREVIEW_ORDER
+                  = lst_LEGEND_PREVIEW_ORDER.getSelectedBooleanItem();
+        Parameters.LEGEND_TOPOLOGY_ORDER
+                  = lst_LEGEND_TOPOLOGY_ORDER.getSelectedBooleanItem();
+
+        // Options for Timeline window
         Parameters.Y_AXIS_ROOT_VISIBLE
                   = lst_Y_AXIS_ROOT_VISIBLE.getSelectedBooleanItem();
         Parameters.BACKGROUND_COLOR
