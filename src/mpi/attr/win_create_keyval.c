@@ -39,6 +39,12 @@
    Output Parameter:
 . win_keyval - key value for future access (integer) 
 
+   Notes:
+   Default copy and delete functions are available.  This includes
++ MPI_WIN_NULL_COPY_FN   - empty copy function
+. MPI_WIN_NULL_DELETE_FN - empty delete function
+- MPI_WIN_DUP_FN         - simple dup function
+
 .N Fortran
 
 .N Errors
