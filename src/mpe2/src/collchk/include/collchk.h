@@ -1,6 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+#include "mpe_collchk_conf.h"
+
+#if defined( STDC_HEADERS ) || defined( HAVE_UNISTD_H )
 #include <unistd.h>
+#endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
+#include <stdlib.h>
+#endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
+#include <stdio.h>
+#endif
+
 #include "mpi.h"
 
 /* file handlers */
