@@ -28,7 +28,7 @@ namespace MandelViewer
 		private static BinaryReader sock_reader = null;
 		private static Bitmap bitmap = null;
 		private int nWidth, nHeight;
-		private int nNumColors;
+		private static int nNumColors = 100;
 		private static int nMax = 100;
 		private static Color [] colors = null;
 		private static double xmin = -1.0, ymin = -1.0, xmax = 1.0, ymax = 1.0;
@@ -36,7 +36,13 @@ namespace MandelViewer
 		private static PictureBox pBox = null;
 		private Point p1, p2;
 		private Thread thread = null;
+		private System.Windows.Forms.Button demo_button;
+		private System.Windows.Forms.ComboBox points_comboBox;
 		private Rectangle rBox;
+		private System.Windows.Forms.Button go_stop_button;
+		private static ArrayList demo_list = null;
+		private static bool bDemoMode = false;
+		private static int demo_iter = 0;
 
 		static void work_thread()
 		{
@@ -46,75 +52,105 @@ namespace MandelViewer
 			int i, j, k;
 			Graphics g;
 
-			try
+			do
 			{
-				g = Graphics.FromImage(bitmap);
-				g.Clear(Color.Black);
-				g.Dispose();
-				g = null;
-				pBox.Invalidate();
-
-				sock_writer.Write(xmin);
-				sock_writer.Write(ymin);
-				sock_writer.Write(xmax);
-				sock_writer.Write(ymax);
-				sock_writer.Write(nMax);
-
-				for (;;)
+				try
 				{
-					temp[0] = sock_reader.ReadInt32();
-					temp[1] = sock_reader.ReadInt32();
-					temp[2] = sock_reader.ReadInt32();
-					temp[3] = sock_reader.ReadInt32();
-					if (temp[0] == 0 && temp[1] == 0 && temp[2] == 0 && temp[3] == 0)
+					g = Graphics.FromImage(bitmap);
+					g.Clear(Color.Black);
+					g.Dispose();
+					g = null;
+					pBox.Invalidate();
+
+					if (bDemoMode)
 					{
-						bDrawing = false;
-						return;
+						if (demo_list != null)
+						{
+							if (demo_list.Count > demo_iter)
+							{
+								xmin = ((ExamplePoint)demo_list[demo_iter]).xmin;
+								ymin = ((ExamplePoint)demo_list[demo_iter]).ymin;
+								xmax = ((ExamplePoint)demo_list[demo_iter]).xmax;
+								ymax = ((ExamplePoint)demo_list[demo_iter]).ymax;
+								nMax = ((ExamplePoint)demo_list[demo_iter]).max_iter;
+								colors = new Color[nMax+1];
+								ColorRainbow.Make_color_array(nNumColors, colors);
+								colors[nMax] = Color.FromKnownColor(KnownColor.Black); // add one on the top to avoid edge errors
+							}
+							demo_iter++;
+							if (demo_iter >= demo_list.Count)
+								demo_iter = 0;
+						}
 					}
 
-					size = (temp[1] + 1 - temp[0]) * (temp[3] + 1 - temp[2]);
-					buffer = new int[size];
+					sock_writer.Write(xmin);
+					sock_writer.Write(ymin);
+					sock_writer.Write(xmax);
+					sock_writer.Write(ymax);
+					sock_writer.Write(nMax);
 
-					for (i=0; i<size; i++)
-						buffer[i] = sock_reader.ReadInt32();
-
-					int max_color = colors.Length;
-					Random rand = new Random();
-					try
+					for (;;)
 					{
-						lock (bitmap)
+						temp[0] = sock_reader.ReadInt32();
+						temp[1] = sock_reader.ReadInt32();
+						temp[2] = sock_reader.ReadInt32();
+						temp[3] = sock_reader.ReadInt32();
+						if (temp[0] == 0 && temp[1] == 0 && temp[2] == 0 && temp[3] == 0)
 						{
-							k = 0;
-							for (j=temp[2]; j<=temp[3]; j++)
+							if (bDemoMode)
 							{
-								for (i=temp[0]; i<=temp[1]; i++)
+								Thread.Sleep(5000);
+								break;
+							}
+							bDrawing = false;
+							return;
+						}
+
+						size = (temp[1] + 1 - temp[0]) * (temp[3] + 1 - temp[2]);
+						buffer = new int[size];
+
+						for (i=0; i<size; i++)
+							buffer[i] = sock_reader.ReadInt32();
+
+						int max_color = colors.Length;
+						Random rand = new Random();
+						try
+						{
+							lock (bitmap)
+							{
+								k = 0;
+								for (j=temp[2]; j<=temp[3]; j++)
 								{
-									bitmap.SetPixel(i, j, colors[buffer[k]]);
-									/*
-									if (buffer[k] >= 0 && buffer[k] < max_color)
-										bitmap.SetPixel(i, j, colors[buffer[k]]);
-									else
+									for (i=temp[0]; i<=temp[1]; i++)
 									{
-										bitmap.SetPixel(i, j, Color.FromArgb(rand.Next(0, 255), rand.Next(0, 255), rand.Next(0,255)));
+										//bitmap.SetPixel(i, j, colors[buffer[k]]);
+										
+										if (buffer[k] >= 0 && buffer[k] < max_color)
+											bitmap.SetPixel(i, j, colors[buffer[k]]);
+										else
+										{
+											bitmap.SetPixel(i, j, Color.FromArgb(rand.Next(0, 255), rand.Next(0, 255), rand.Next(0,255)));
+										}
+										
+										k++;
 									}
-									*/
-									k++;
 								}
 							}
 						}
+						catch (Exception e)
+						{
+							MessageBox.Show("exception thrown while accessing bitmap: " + e.Message, "Error");
+						}
+						pBox.Invalidate();
 					}
-					catch (Exception e)
-					{
-						MessageBox.Show("exception thrown while accessing bitmap: " + e.Message, "Error");
-					}
-					pBox.Invalidate();
 				}
-			}
-			catch (Exception e)
-			{
-				// do something with the exception
-				MessageBox.Show("Exception thrown in worker thread: " + e.Message, "Error");
-			}
+				catch (Exception e)
+				{
+					// do something with the exception
+					MessageBox.Show("Exception thrown in worker thread: " + e.Message, "Error");
+					break;
+				}
+			} while (bDemoMode);
 			bDrawing = false;
 		}
 
@@ -141,6 +177,7 @@ namespace MandelViewer
 			p1 = new Point(0,0);
 			p2 = new Point(0,0);
 			rBox = new Rectangle(0,0,0,0);
+			go_stop_button.Enabled = false;
 		}
 
 		/// <summary>
@@ -169,6 +206,9 @@ namespace MandelViewer
 			this.host = new System.Windows.Forms.TextBox();
 			this.port = new System.Windows.Forms.TextBox();
 			this.outputBox = new System.Windows.Forms.PictureBox();
+			this.demo_button = new System.Windows.Forms.Button();
+			this.points_comboBox = new System.Windows.Forms.ComboBox();
+			this.go_stop_button = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// connect_button
@@ -202,7 +242,7 @@ namespace MandelViewer
 			this.outputBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.outputBox.Location = new System.Drawing.Point(8, 40);
 			this.outputBox.Name = "outputBox";
-			this.outputBox.Size = new System.Drawing.Size(768, 720);
+			this.outputBox.Size = new System.Drawing.Size(768, 768);
 			this.outputBox.TabIndex = 3;
 			this.outputBox.TabStop = false;
 			this.outputBox.Paint += new System.Windows.Forms.PaintEventHandler(this.outputBox_Paint);
@@ -210,10 +250,39 @@ namespace MandelViewer
 			this.outputBox.MouseMove += new System.Windows.Forms.MouseEventHandler(this.outputBox_MouseMove);
 			this.outputBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.outputBox_MouseDown);
 			// 
+			// demo_button
+			// 
+			this.demo_button.Location = new System.Drawing.Point(288, 8);
+			this.demo_button.Name = "demo_button";
+			this.demo_button.Size = new System.Drawing.Size(88, 23);
+			this.demo_button.TabIndex = 4;
+			this.demo_button.Text = "Demo Points";
+			this.demo_button.Click += new System.EventHandler(this.demo_button_Click);
+			// 
+			// points_comboBox
+			// 
+			this.points_comboBox.Location = new System.Drawing.Point(384, 8);
+			this.points_comboBox.Name = "points_comboBox";
+			this.points_comboBox.Size = new System.Drawing.Size(344, 21);
+			this.points_comboBox.TabIndex = 5;
+			this.points_comboBox.Text = "points";
+			// 
+			// go_stop_button
+			// 
+			this.go_stop_button.Location = new System.Drawing.Point(736, 8);
+			this.go_stop_button.Name = "go_stop_button";
+			this.go_stop_button.Size = new System.Drawing.Size(40, 23);
+			this.go_stop_button.TabIndex = 6;
+			this.go_stop_button.Text = "Go";
+			this.go_stop_button.Click += new System.EventHandler(this.go_stop_button_Click);
+			// 
 			// MandelViewerForm
 			// 
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-			this.ClientSize = new System.Drawing.Size(788, 767);
+			this.ClientSize = new System.Drawing.Size(788, 819);
+			this.Controls.Add(this.go_stop_button);
+			this.Controls.Add(this.points_comboBox);
+			this.Controls.Add(this.demo_button);
 			this.Controls.Add(this.outputBox);
 			this.Controls.Add(this.port);
 			this.Controls.Add(this.host);
@@ -221,7 +290,6 @@ namespace MandelViewer
 			this.Name = "MandelViewerForm";
 			this.Text = "MandelViewerForm";
 			this.Resize += new System.EventHandler(this.MandelViewerForm_Resize);
-			this.Paint += new System.Windows.Forms.PaintEventHandler(this.MandelViewerForm_Paint);
 			this.ResumeLayout(false);
 
 		}
@@ -309,6 +377,7 @@ namespace MandelViewer
 			g.Clear(Color.FromKnownColor(KnownColor.Black));
 			g.Dispose();
 
+			/*
 			Rectangle rButton = connect_button.Bounds;
 			Rectangle rBox = outputBox.Bounds;
 			outputBox.SetBounds(rButton.Left, rButton.Top, rBox.Width, rBox.Height + (rBox.Top - rButton.Top));
@@ -316,16 +385,16 @@ namespace MandelViewer
 			host.Hide();
 			port.Hide();
 			outputBox.Invalidate();
+			*/
+			connect_button.Enabled = false;
+			host.ReadOnly = true;
+			port.ReadOnly = true;
 
 			bDrawing = true;
 			pBox = outputBox;
 			ThreadStart threadProc = new ThreadStart(work_thread);
 		    thread = new Thread(threadProc);
 			thread.Start();
-		}
-
-		private void MandelViewerForm_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
-		{
 		}
 
 		private void outputBox_Paint(object sender, System.Windows.Forms.PaintEventArgs e)
@@ -383,8 +452,13 @@ namespace MandelViewer
 					Rectangle r;
 					double x1,y1,x2,y2;
 					double width, height, pixel_width, pixel_height;
-
 					int x, y;
+
+					if (p1.X == e.X && p1.Y == e.Y)
+					{
+						return;
+					}
+
 					p2 = new Point(e.X, e.Y);
 					x = Math.Min(p1.X, p2.X);
 					y = Math.Min(p1.Y, p2.Y);
@@ -394,8 +468,8 @@ namespace MandelViewer
 					r = new Rectangle(x, y, Math.Max(p1.X, p2.X) - x, Math.Max(p1.Y, p2.Y) - y);
 					width = xmax - xmin;
 					height = ymax - ymin;
-					pixel_width = outputBox.Width; //nWidth;
-					pixel_height = outputBox.Height; //nHeight;
+					pixel_width = outputBox.Width;
+					pixel_height = outputBox.Height;
 					x1 = xmin + ((double)r.Left * width / pixel_width);
 					x2 = xmin + ((double)r.Right * width / pixel_width);
 					y2 = ymin + ((double)(pixel_height - r.Top) * height / pixel_height);
@@ -434,6 +508,149 @@ namespace MandelViewer
 					outputBox.Invalidate();
 				}
 			}
+		}
+
+		private void demo_button_Click(object sender, System.EventArgs e)
+		{
+			if (demo_list == null)
+				demo_list = new ArrayList();
+			OpenFileDialog dlg = new OpenFileDialog();
+
+			dlg.InitialDirectory = "c:\\";
+			dlg.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
+			dlg.FilterIndex = 1;
+			dlg.RestoreDirectory = true;
+
+			if(dlg.ShowDialog() == DialogResult.OK)
+			{
+				using (StreamReader sr = new StreamReader(dlg.OpenFile()))
+				{
+					String line;
+					String [] elements;
+					double xmin=0, ymin=0, xmax=0, ymax=0;
+					double xcenter=0, ycenter=0, radius=0;
+					int max_iter=0;
+
+					while ((line = sr.ReadLine()) != null) 
+					{
+						line.Trim();
+						if (line.Length > 0 && line[0] != '#')
+						{
+							xmin = 0;
+							ymin = 0;
+							xmax = 0;
+							ymax = 0;
+							xcenter = 0;
+							ycenter = 0;
+							radius = 0;
+							max_iter = 100;
+							//MessageBox.Show(line);
+							elements = line.Split(' ');
+							if (elements != null)
+							{
+								for (int i=0; i<elements.Length-1; i++)
+								{
+									//MessageBox.Show(elements[i], "element");
+									if (elements[i] == "-rmin")
+									{
+										xmin = Convert.ToDouble(elements[i+1]);
+									}
+									if (elements[i] == "-rmax")
+									{
+										xmax = Convert.ToDouble(elements[i+1]);
+									}
+									if (elements[i] == "-imin")
+									{
+										ymin = Convert.ToDouble(elements[i+1]);
+									}
+									if (elements[i] == "-imax")
+									{
+										ymax = Convert.ToDouble(elements[i+1]);
+									}
+									if (elements[i] == "-maxiter")
+									{
+										max_iter = Convert.ToInt32(elements[i+1]);
+									}
+									if (elements[i] == "-rcenter")
+									{
+										xcenter = Convert.ToDouble(elements[i+1]);
+									}
+									if (elements[i] == "-icenter")
+									{
+										ycenter = Convert.ToDouble(elements[i+1]);
+									}
+									if (elements[i] == "-radius")
+									{
+										radius = Convert.ToDouble(elements[i+1]);
+									}
+								}
+								if (xmin != xmax && ymin != ymax)
+								{
+									ExamplePoint node = new ExamplePoint(xmin, ymin, xmax, ymax, max_iter);
+									demo_list.Add(node);
+									//MessageBox.Show(node.ToString(), "box");
+								}
+								if (radius != 0)
+								{
+									ExamplePoint node = new ExamplePoint(
+										xcenter - radius, ycenter - radius,
+										xcenter + radius, ycenter + radius,
+										max_iter);
+									demo_list.Add(node);
+									//MessageBox.Show(node.ToString(), "center");
+								}
+							}
+						}
+					}
+					sr.Close();
+
+					points_comboBox.Items.Clear();
+					for (int i=0; i<demo_list.Count; i++)
+					{
+						//MessageBox.Show(((ExamplePoint)demo_list[i]).ToString(), String.Format("demo: {0}", i));
+						points_comboBox.Items.Add(((ExamplePoint)demo_list[i]).ToString());
+					}
+					points_comboBox.SelectedIndex = 0;
+					go_stop_button.Enabled = true;
+				}
+			}
+		}
+
+		private void go_stop_button_Click(object sender, System.EventArgs e)
+		{
+			if (bDemoMode)
+			{
+				go_stop_button.Text = "Go";
+				bDemoMode = false;
+			}
+			else
+			{
+				go_stop_button.Text = "Stop";
+				bDemoMode = true;
+			}
+		}
+	}
+
+	public class ExamplePoint
+	{
+		public double xmin;
+		public double ymin;
+		public double xmax;
+		public double ymax;
+		public int max_iter;
+
+		public ExamplePoint(double x0, double y0, double x1, double y1, int m)
+		{
+			xmin = x0;
+			ymin = y0;
+			xmax = x1;
+			ymax = y1;
+			max_iter = m;
+		}
+		public override string ToString()
+		{
+			return String.Format("({0},{1}) ({2},{3}) max_iter {4}",
+				xmin, ymin, xmax, ymax, max_iter);
 		}
 	}
 
