@@ -15,6 +15,8 @@
 #include <mpid_dataloop.h>
 #include <mpiimpl.h>
 
+#define M_VERBOSE
+
 #ifndef GEN_DATALOOP_H
 #error "You must explicitly include a header that sets the PREPEND_PREFIX and includes gen_dataloop.h"
 #endif
@@ -126,7 +128,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	 */
 	elmp->curcount   = dlp->loop_params.count;
 	elmp->orig_count = elmp->curcount;
-	elmp->curoffset  = 0;
+	elmp->curoffset  = 0; /* TODO: FIX!!! */
 	elmp->loop_p     = dlp; /* DO NOT MOVE THIS BELOW THE blocksize CALL! */
 	elmp->curblock   = DLOOP_Stackelm_blocksize(elmp);
 	elmp->orig_block = elmp->curblock;
@@ -376,12 +378,13 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		ret = 1; /* forces return below */
 	    }
 	    else {
+		/* we at least finished a whole block */
 		/* Update the stack elements.  Either we're done with the count,
 		 * in which case it is time to pop off, or we need to reset the
 		 * block value (because we just handled an entire block).
 		 *
 		 * Note that this will get more complicated as I add the ability
-		 * to handle more of the partial processing cases.
+		 * to handle more of the partial processing cases. ???
 		 */
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_CONTIG:
@@ -401,6 +404,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 			else {
 			    cur_elmp->orig_block = DLOOP_Stackelm_blocksize(cur_elmp);
 			    cur_elmp->curblock   = cur_elmp->orig_block;
+			    cur_elmp->curoffset  = cur_elmp->loop_p->loop_params.i_t.offset_array[cur_elmp->orig_count - cur_elmp->curcount];
 			}
 			break;
 		    case DLOOP_KIND_VECTOR:
