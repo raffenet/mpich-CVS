@@ -480,6 +480,8 @@ AC_SUBST(master_top_builddir)
 export master_top_builddir
 dnl
 dnl This goes here because we need the top_srcdir
+FROM_MPICH2=yes
+export FROM_MPICH2
 if test "$enable_romio" = "yes" ; then
    if test -d $use_top_srcdir/src/mpi/romio ; then
        subsystems="$subsystems src/mpi/romio"
@@ -487,8 +489,6 @@ if test "$enable_romio" = "yes" ; then
        # Set environment variables that the romio configure expects
        romio_dir=romio
        AC_SUBST(romio_dir)
-       FROM_MPICH2=yes
-       export FROM_MPICH2
        export use_top_srcdir
        top_build_dir=`pwd`
        export top_build_dir
