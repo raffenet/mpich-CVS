@@ -111,6 +111,12 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 	newcomm_ptr->attributes = 0;
 	mpi_errno = MPIR_Process.comm_attr_dup( comm_ptr, 
 						&newcomm_ptr->attributes );
+	if (mpi_errno) {
+	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_DUP);
+	    *newcomm = MPI_COMM_NULL;
+	    /* FIXME - free newcomm */
+	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+	}
     }
 
     *newcomm = newcomm_ptr->handle;
