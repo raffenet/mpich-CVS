@@ -96,6 +96,19 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
 	    nall += cnt;
 	}
     }
+    /* If nfactors == 0, n was a prime, so return that */
+    if (nfactors == 0) {
+	nfactors = 1;
+        nall = 1;
+        factors[0].val = n;
+        factors[0].cnt = 1;
+    }
+    else if (n > 1) {
+	/* We need one more factor (a single prime > n_root) */
+	factors[nfactors].val = n;
+	factors[nfactors++].cnt   = 1;
+	nall++;
+    }
     *ndivisors = nall;
     return nfactors;
 }
@@ -217,6 +230,12 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
           This is done in an ad hoc fashion
     */
 
+/* DEBUG
+    printf( "factors are (%d of them) with %d divisors\n", nfactors, ndivisors );
+    for (j=0; j<nfactors; j++) {
+	printf( "val = %d repeated %d\n", factors[j].val, factors[j].cnt );
+    }
+*/
     /* Distribute the factors among the dimensions */
     if (ndivisors <= dims_needed) {
 	/* Just use the factors as needed */
@@ -224,8 +243,14 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	for (i=0; i<ndims; i++) {
 	    if (dims[i] == 0) {
 		dims[i] = factors[j].val;
-		if (--factors[j].cnt == 0) j++;
+		if (--factors[j].cnt == 0) {
+		    if (++j >= nfactors) break;
+		}
 	    }
+	}
+	/* Any remaining dims are set to one */
+	for (i++;i<ndims; i++) {
+	    dims[i] = 1;
 	}
     }
     else {
@@ -238,8 +263,8 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 	if (nfactors == 1) {
 	    /* Special case for k**n, such as powers of 2 */
 	    int factor = factors[0].val;
-	    int cnt    = factors[0].cnt;
-	    int cnteach = cnt / dims_needed;
+	    int cnt    = factors[0].cnt; /* Numver of factors left */
+	    int cnteach = ( cnt + dims_needed - 1 )/ dims_needed;
 	    int factor_each;
 	    
 	    factor_each = factor;
