@@ -135,7 +135,7 @@ static inline void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
     memset(lock, 0, sizeof(MPIDU_Process_lock_t));
     err = mutex_init(lock, USYNC_PROCESS, 0);
     if (err)
-      printf("mutex_init error: %d\n", err);
+	MPIU_Error_printf("mutex_init error: %d\n", err);
 #else
     *(lock) = 0;
 #endif
@@ -148,7 +148,7 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
     int err;
     err = mutex_lock(lock);
     if (err)
-      printf("mutex_lock error: %d\n", err);
+	MPIU_Error_printf("mutex_lock error: %d\n", err);
 #else
     int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_PROCESS_LOCK);
@@ -192,7 +192,7 @@ static inline void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
 #ifdef HAVE_MUTEX_INIT
     err = mutex_lock(lock);
     if (err)
-      printf("mutex_unlock error: %d\n", err);
+	MPIU_Error_printf("mutex_unlock error: %d\n", err);
 #else
     *(lock) = 0;
 #endif
@@ -210,10 +210,10 @@ static inline void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock )
 #ifdef HAVE_MUTEX_INIT
     err = mutex_lock(lock);
     if (err)
-      printf("mutex_lock error: %d\n", err);
+	MPIU_Error_printf("mutex_lock error: %d\n", err);
     err = mutex_unlock(lock);
     if (err)
-      printf("mutex_unlock error: %d\n", err);
+	MPIU_Error_printf("mutex_unlock error: %d\n", err);
 #else
     for (;;)
     {
@@ -239,7 +239,7 @@ static inline void MPIDU_Process_lock_free( MPIDU_Process_lock_t *lock )
 #ifdef HAVE_MUTEX_INIT
     err = mutex_destroy(lock);
     if (err)
-      printf("mutex_destroy error: %d\n", err);
+	MPIU_Error_printf("mutex_destroy error: %d\n", err);
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_FREE);
 }
