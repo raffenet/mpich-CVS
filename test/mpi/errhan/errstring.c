@@ -7,7 +7,7 @@ int main( int argc, char **argv )
     int i, len;
 
     MPI_Init(0,0);
-    for (i=0; i<45; i++) {
+    for (i=0; i<54; i++) {
 	MPI_Error_string( i, msg, &len );
 	printf( "msg for %d is %s\n", i, msg );
     }

@@ -197,7 +197,7 @@ MPI_Errhandler_create,1,1,1,2,Bill,,.05,3/8/02
 MPI_Errhandler_set,1,1,1,2,Bill,MPI_Errhandler_create,.05,3/8/02
 MPI_Errhandler_get,1,1,1,2,Bill,MPI_Errhandler_create,.05,3/8/02
 MPI_Errhandler_free,1,1,1,2,Bill,MPI_Errhandler_create,.1,3/8/02
-MPI_Error_string,1,3,2,2,Bill,
+MPI_Error_string,1,3,2,2,Bill,,.2,6/6/02
 MPI_Error_class,1,3,2,2,Bill,,.05,1/7/02
 MPI_Wtime,1,1,1,1,Bill,MPID_Wtime,.2,9/20/01
 MPI_Wtick,1,1,1,1,Bill,MPID_Wtick,.2,9/20/01

@@ -189,7 +189,7 @@ Fortran integer (optional       argument: address (long int))
 **filenamedir:Invalid or missing directory (optional argument: name (string))
 **conversion:An error occurred in a user-defined data conversion function
 **datarep:The requested datarep name has already been specified to \
-   MPI_REGISTER_DATAREP (optional arg: name (string))
+   MPI_REGISTER_DATAREP
 **fileinuse:File in use by some process
 **fileinuse %s:File %s is in use by some process (optional 
 **file:Invalid MPI_File
@@ -199,12 +199,12 @@ Fortran integer (optional       argument: address (long int))
 **infokey:Invalid key for MPI_Info 
 **infokeynull:Null key
 **infokeylong:Key is too long
-**infokeylong:Key %s is too long (length is %d but maximum allowed is %d)
+**infokeylong %s %d %d:Key %s is too long (length is %d but maximum allowed is %d)
 **infokeyempty:Empty or blank key 
 **infoval:Invalid MPI_Info value 
 **infovalnull:Null value
 **infovallong:Value is too long 
-**infovallong:Value %s is too long (length is %d but maximum length is %d)
+**infovallong %s %d %d:Value %s is too long (length is %d but maximum length is %d)
 **infonokey:MPI_Info key is not defined 
 **infonokey %s:MPI_Info key %s is not defined 
 **infonkey:Requested nth key does not exist
@@ -240,7 +240,7 @@ that is not consistent (string))
 **notsameorder:Collective routines called in an inconsistent order (optional arguments: null terminated
       array of names (array of string))
 **filenospace:Not enough space for file 
-**filenospace:Not enough space for file %s; %d needed but only %d available
+**filenospace %s %d %d:Not enough space for file %s; %d needed but only %d available
 **filenoexist:File does not exist
 **filenoexist %s:File %s does not exist
 **port:Invalid port
@@ -251,7 +251,7 @@ that is not consistent (string))
 **filequota:Quota exceeded for files
 **filequota %s:Quota %s exceeded for files
 **filerdonly:Read-only file or filesystem name
-**filerdonly:Read-only file or filesystem name %s
+**filerdonly %s:Read-only file or filesystem name %s
 **nameservice:Invalid service name (see MPI_Publish_name)
 **nameservice %s:Invalid service name %s (see MPI_Publish_name)
 **servicenameunpublish:Attempt to unpublish an unknown service name (optional arg: name (string))
@@ -260,7 +260,7 @@ that is not consistent (string))
 **spawnpgm:The named program could not be found (optional arg: name (spawn))
 **spawnmanager:The process manager returned an error (optional arg: text from process manager (string))
 **datarepunsupported:Unsupported datarep passed to MPI_File_set_view 
-**datarepunsupported:Unsupported datarep %s passed to MPI_File_set_view
+**datarepunsupported %s:Unsupported datarep %s passed to MPI_File_set_view
 **fileopunsupported:Unsupported file operation 
 **fileopunsupported %s:Unsupported file operation %s
 **win:Invalid MPI_Win

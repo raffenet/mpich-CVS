@@ -10,6 +10,7 @@ distclean-local:
 	-@rm -f src/include/mpichconf.h
 
 install_LIB = lib/libmpich.a
+install_INCLUDE = src/include/mpi.h
 optinstall_LIB = lib/libpmpich.a
 optinstall_SHLIB = lib/libmpich.so
 #install_DOC = 

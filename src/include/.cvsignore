@@ -6,3 +6,5 @@ winmpichtimer.h
 mpid_datatype.h
 mpid_dataloop.h
 gen_dataloop.h
+mpichconf.h
+mpichconf.h.in

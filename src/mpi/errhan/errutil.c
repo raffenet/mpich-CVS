@@ -137,7 +137,7 @@ static int FindMsgIndex( const char *msg )
 {
     int i, c;
     for (i=0; i<generic_msgs_len; i++) {
-	c = strcmp( generic_msg[i].short_name, msg );
+	c = strcmp( generic_err_msgs[i].short_name, msg );
 	if (c == 0) return i;
 	if (c < 0) return -1;
     }
@@ -233,7 +233,7 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
  */
 const char *MPIR_Err_get_generic_string( int class )
 {
-#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
+#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
     if (class >= 0 && class < MPIR_MAX_ERROR_CLASS_INDEX) {
 	return generic_err_msgs[class_to_index[class]].long_name;
     }

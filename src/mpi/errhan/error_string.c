@@ -77,7 +77,7 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 	   else use generic code (lookup index in table of messages)
        }
      */
-    if ( (errorcode && ERROR_CLASS_MASK) == errorcode) {
+    if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
 	/* code is a raw error class.  Convert the class to an index */
 	const char *p = MPIR_Err_get_generic_string( errorcode );
 	*resultlen = strlen( p );

@@ -91,6 +91,11 @@ generic is $arg2 and specific is $arg3\r\n";
 		else {
 		    $specific_msgs[$generic_count] = "";
 		}
+		# Check that the generic message does *not* have a format
+		# control
+		if ($arg2 =~ /%/) {
+		    print STDERR "Warning: generic message $arg2 in $filename contains a format control\n";
+		    }
 		$generic_msgs{$arg2} = $generic_count++;
 	    }
 	    $generic_loc{$arg2} .= ":$filename";
@@ -150,6 +155,11 @@ sub CreateErrMsgMapping {
 		$repl =~ s/\\\s*$//;
 		$repl .= <FD>;
 	    }
+	    $namehasformat = ($name =~ /%/);
+	    $replhasformat = ($repl =~ /%/);
+	    if ($namehasformat != $replhasformat) {
+		print STDERR "Warning: format control usage in $name and $repl do not agree in errnames.txt\n";
+	    }
 	    $longnames{"\"$name\""} = $repl;
 	}
     }
@@ -168,6 +178,9 @@ sub CreateErrMsgMapping {
 	s/#.*$//;
 	($mpiname,$num,$shortmsg) = split(/\s\s*/);
 	if ($shortmsg ne "") {
+	    if ($shortmsg =~ /\%/) {
+		print STDERR "Generic message $shortmsg in baseerrnames.txt contains a format control\n";
+	    }
 	    if (!defined($generic_msgs{"\"$shortmsg\""})) {
 		$generic_msgs{"\"$shortmsg\""} = $generic_count;
 		$generic_count ++;
@@ -215,7 +228,7 @@ sub CreateErrMsgMapping {
     # Generate the mapping of short to long names
     print $OUTFD "static const int generic_msgs_len = $num;\n";
     my $i = 0;
-    print $OUTFD "static msgpair generic_err_msgs[] {\n";
+    print $OUTFD "static msgpair generic_err_msgs[] = {\n";
     for (my $i = 0; $i < $num ; $i ++) {
 	print $OUTFD "{ short$i, long$i },\n";
     }
@@ -250,7 +263,7 @@ sub CreateErrMsgMapping {
     }
     # Generate the mapping of short to long names
     my $i = 0;
-    print $OUTFD "static msgpair specific_err_msgs[] {\n";
+    print $OUTFD "static msgpair specific_err_msgs[] = {\n";
     for (my $i = 0; $i < $num ; $i ++) {
 	if ($has_spec[$i]) {
 	    print $OUTFD "{ short_spc$i, long_spc$i },\n";

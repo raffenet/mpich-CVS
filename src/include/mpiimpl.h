@@ -10,6 +10,13 @@
 /* Include the mpi definitions */
 #include "mpi.h"
 
+/* There are a few definitions that must be made *before* the mpichconf.h 
+   file is included.  These include the definitions of the error levels */
+#define MPICH_ERROR_MSG_NONE 0
+#define MPICH_ERROR_MSG_CLASS 1
+#define MPICH_ERROR_MSG_GENERIC 2
+#define MPICH_ERROR_MSG_ALL 8
+
 /* Data computed by configure.  This is included *after* mpi.h because we
    do not want mpi.h to depend on any other files or configure flags */
 #include "mpichconf.h"
