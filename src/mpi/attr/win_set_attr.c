@@ -64,64 +64,47 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
     MPID_Attribute *p, **old_p;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SET_ATTR);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_ATTR);
-    /* Get handles to MPI objects. */
-    MPID_Win_get_ptr( win, win_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
-	    if (mpi_errno) goto fn_fail;
+	    MPIR_ERRTEST_WIN(win, mpi_errno);
+	    MPIR_ERRTEST_KEYVAL(win_keyval, MPID_WIN, "window", mpi_errno);
+	    MPIR_ERRTEST_KEYVAL_PERM(win_keyval, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+
+    /* Convert MPI object handles to object pointers */
+    MPID_Win_get_ptr( win, win_ptr );
+    MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not valid, it will be reset to null */
 	    /* Validate keyval */
-	    if (win_keyval == MPI_KEYVAL_INVALID) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-						  MPIR_ERR_RECOVERABLE,
-						  FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, 
-						  "**keyvalinvalid", 0 );
-	    }
-	    else if (HANDLE_GET_MPI_KIND(win_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-						  MPIR_ERR_RECOVERABLE, 
-						  FCNAME, __LINE__, 
-						  MPI_ERR_KEYVAL, 
-						  "**keyval", 0 );
-	    } 
-	    else if (((win_keyval&0x03c00000) >> 22) != MPID_WIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-						  MPIR_ERR_RECOVERABLE, 
-						  FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, 
-						  "**keyvalnotwin", 0 );
-	    }
-	    else if (HANDLE_GET_KIND(win_keyval) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-						  MPIR_ERR_RECOVERABLE, 
-						  FCNAME, __LINE__, 
-						  MPI_ERR_OTHER, 
-						  "**permattr", 0 );
-	    }
-	    else {
-		MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
-		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
-		}
+	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
-	}
-	MPID_ELSE_ERROR_CHECKS;
-	{
-	    MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
 	}
         MPID_END_ERROR_CHECKS;
     }
-#   else    
-    MPID_Keyval_get_ptr( win_keyval, keyval_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* Look for attribute.  They are ordered by keyval handle.  This uses 
        a simple linear list algorithm because few applications use more than a 
        handful of attributes */
@@ -188,18 +171,24 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
        MPID_Dev_win_attr_hook( win_ptr, keyval, attribute_val );
     */
     MPID_Common_thread_unlock(  );
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-    return MPI_SUCCESS;
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**mpi_win_set_attr", 
-				     "**mpi_win_set_attr %W %d %p", 
-				     win, win_keyval, attribute_val);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_set_attr", 
+	    "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

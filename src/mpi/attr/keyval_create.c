@@ -70,30 +70,49 @@ int MPI_Keyval_create(MPI_Copy_function *copy_fn,
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_KEYVAL_CREATE);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_KEYVAL_CREATE);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_ARGNULL(keyval, "keyval", mpi_errno);
+            if (mpi_errno) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     MPIR_Nest_incr();
     mpi_errno = NMPI_Comm_create_keyval( copy_fn, delete_fn, keyval, 
 					extra_state );
     MPIR_Nest_decr();
-    if (mpi_errno == MPI_SUCCESS)
-    {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_CREATE);
-	return MPI_SUCCESS;
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    /* --BEGIN ERROR HANDLING-- */
-    /* fn_fail: *//* No use of fn_fail in this routine (yet) */
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_keyval_create", "**mpi_keyval_create %p %p %p %p", 
-				     copy_fn, delete_fn, keyval, extra_state);
-#endif
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_KEYVAL_CREATE);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_keyval_create",
+	    "**mpi_keyval_create %p %p %p %p", copy_fn, delete_fn, keyval, extra_state);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 

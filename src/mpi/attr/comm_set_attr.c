@@ -70,56 +70,46 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     MPID_Attribute *p, **old_p;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SET_ATTR);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SET_ATTR);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+	    MPIR_ERRTEST_KEYVAL(comm_keyval, MPID_COMM, "communicator", mpi_errno);
+	    MPIR_ERRTEST_KEYVAL_PERM(comm_keyval, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
 
+    /* Convert MPI object handles to object pointers */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-	    /* Validate keyval */
-	    if (comm_keyval == MPI_KEYVAL_INVALID) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-				MPI_ERR_KEYVAL, "**keyvalinvalid", 0 );
-	    }
-	    else if (HANDLE_GET_MPI_KIND(comm_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-                                MPI_ERR_KEYVAL, "**keyval", 0 );
-	    } 
-	    else if (((comm_keyval&0x03c00000) >> 22) != MPID_COMM) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-				MPI_ERR_KEYVAL, "**keyvalnotcomm", 0 );
-	    }
-	    else if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                                MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-                                MPI_ERR_OTHER, "**permattr", 0 );
-	    }
-	    else {
-		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
-		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
-		}
+	    /* Validate keyval_ptr */
+	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
 	}
-	MPID_ELSE_ERROR_CHECKS;
-	{
-	    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
-	}
-        MPID_END_ERROR_CHECKS;
     }
-#   else    
-    MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* Look for attribute.  They are ordered by keyval handle.  This uses 
        a simple linear list algorithm because few applications use more than a 
        handful of attributes */
@@ -175,18 +165,24 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
        MPID_Dev_comm_attr_hook( comm_ptr, keyval, attribute_val );
     */
     MPID_Comm_thread_unlock( comm_ptr );
+    
     /* ... end of body of routine ... */
 
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_comm_set_attr", "**mpi_comm_set_attr %C %d %p", comm, comm_keyval, attribute_val);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_set_attr",
+	    "**mpi_comm_set_attr %C %d %p", comm, comm_keyval, attribute_val);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -68,14 +68,29 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     int size, i;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_EXCL);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_EXCL);
-    /* Get handles to MPI objects. */
-    MPID_Group_get_ptr( group, group_ptr );
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_GROUP(group, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Group_get_ptr( group, group_ptr );
+
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not valid, it will be reset to null */
@@ -91,11 +106,12 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* Allocate a new group and lrank_to_lpid array */
     size = group_ptr->size;
     if (size == n) {
 	*newgroup = MPI_GROUP_EMPTY;
-	return MPI_SUCCESS;
+	goto fn_exit;
     }
     mpi_errno = MPIR_Group_create( size - n, &new_group_ptr );
     /* --BEGIN ERROR HANDLING-- */
@@ -138,17 +154,24 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     new_group_ptr->idx_of_first_lpid = -1;
 
     *newgroup = new_group_ptr->handle;
+    
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_EXCL);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_group_excl", "**mpi_group_excl %G %d %p %p", group, n, ranks, newgroup);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_EXCL);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_group_excl",
+	    "**mpi_group_excl %G %d %p %p", group, n, ranks, newgroup);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

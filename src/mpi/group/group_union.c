@@ -60,15 +60,33 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     int g1_idx, g2_idx, nnew, i, k, size1, size2, mylpid;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_UNION);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_UNION);
-    /* Get handles to MPI objects. */
-    MPID_Group_get_ptr( group1, group_ptr1 );
-    MPID_Group_get_ptr( group2, group_ptr2 );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_GROUP(group1, mpi_errno);
+	    MPIR_ERRTEST_GROUP(group2, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Group_get_ptr( group1, group_ptr1 );
+    MPID_Group_get_ptr( group2, group_ptr2 );
+    
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
 	    MPID_Group_valid_ptr( group_ptr2, mpi_errno );
@@ -184,16 +202,22 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     *newgroup = new_group_ptr->handle;
 
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_group_union", "**mpi_group_union %G %G %p", group1, group2, newgroup);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_group_union",
+	    "**mpi_group_union %G %G %p", group1, group2, newgroup);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

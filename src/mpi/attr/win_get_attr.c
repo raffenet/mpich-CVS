@@ -63,37 +63,45 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val,
     MPID_Win *win_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_GET_ATTR);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_GET_ATTR);
-    MPIR_ERRTEST_INITIALIZED_FIRSTORJUMP;
 
+    /* Validate parameters, especially handles needing to be converted */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    MPIR_ERRTEST_WIN(win, mpi_errno);
+	    MPIR_ERRTEST_KEYVAL(win_keyval, MPID_WIN, "window", mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
     MPID_Win_get_ptr( win, win_ptr );
+    
+    /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
 	MPID_BEGIN_ERROR_CHECKS;
+	{
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
 	    /* If win_ptr is not valid, it will be reset to null */
-	    /* Validate keyval */
-	    if (HANDLE_GET_MPI_KIND(win_keyval) != MPID_KEYVAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-						  MPIR_ERR_RECOVERABLE,
-						  FCNAME, __LINE__, 
-						  MPI_ERR_KEYVAL, 
-						  "**keyval", 0 );
-	    } 
-	    else if (((win_keyval&0x03c00000) >> 22) != MPID_WIN) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-						  MPIR_ERR_RECOVERABLE, 
-						  FCNAME, __LINE__,
-						  MPI_ERR_KEYVAL, 
-						  "**keyvalnotwin", 0 );
-	    }
+	    MPIR_ERRTEST_ARGNULL(attribute_val, "attribute_val", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
             if (mpi_errno) goto fn_fail;
-	
+	}
 	MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */    
 
+    /* ... body of routine ...  */
+    
     /* Check for builtin attribute */
     /* This code is ok for correct programs, but it would be better
        to copy the values from the per-process block and pass the user
@@ -158,16 +166,23 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val,
 	}
     }
 
+    /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
-    return MPI_SUCCESS;
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
-				     FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**mpi_win_get_attr", 
-				     "**mpi_win_get_attr %W %d %p %p", 
-				     win, win_keyval, attribute_val, flag);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ATTR);
-    return MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_get_attr", 
+	    "**mpi_win_get_attr %W %d %p %p", win, win_keyval, attribute_val, flag);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

@@ -28,9 +28,8 @@
 **success:No MPI error
 **fileexist:File exists
 **fileexist %s:File %s exists
-**keyvalnotcomm:Keyval was not defined for communicators
-**keyvalnotwin:Keyval was not defined for window objects
-**keyvalnotdatatype:Keyval was not defined for datatype
+**keyvalobj:Keyval was not defined for the supplied object
+**keyvalobj %s:Keyval was not defined for %s objects
 **keyvalinvalid:Attribute key was MPI_KEYVAL_INVALID
 **permattr:Cannot set permanent attribute
 **keyval:Invalid keyval

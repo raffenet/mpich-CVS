@@ -66,14 +66,31 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3],
     int first, last, stride, nnew, i, j, k;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_RANGE_INCL);
 
+    MPIR_ERRTEST_INITIALIZED_ORRETURN();
+    
+    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_RANGE_INCL);
-    /* Get handles to MPI objects. */
-    MPID_Group_get_ptr( group, group_ptr );
+
+    /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_GROUP(group, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif
+    
+    /* Convert MPI object handles to object pointers */
+    MPID_Group_get_ptr( group, group_ptr );
+
+    /* Validate parameters and objects (post conversion) */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not value, it will be reset to null */
@@ -88,6 +105,7 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3],
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    
     /* Compute size, assuming that included ranks are valid (and distinct) */
     nnew = 0;
     for (i=0; i<n; i++) {
@@ -99,18 +117,12 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3],
 
     if (nnew == 0) {
 	*newgroup = MPI_GROUP_EMPTY;
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
-	return MPI_SUCCESS;
+	goto fn_exit;
     }
 	
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( nnew, &new_group_ptr );
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
-    {
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) goto fn_fail;
     new_group_ptr->rank = MPI_UNDEFINED;
 
     /* Group members taken in order specified by the range array */
@@ -143,17 +155,23 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3],
     *newgroup = new_group_ptr->handle;
 
     /* ... end of body of routine ... */
+
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
-    return MPI_SUCCESS;
+    MPID_CS_EXIT();
+    return mpi_errno;
+
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-fn_fail:
-#ifdef HAVE_ERROR_CHECKING
-    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
-				     __LINE__, MPI_ERR_OTHER,
-	"**mpi_group_range_incl", "**mpi_group_range_incl %G %d %p %p", group, n, ranges, newgroup);
-#endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANGE_INCL);
-    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_group_range_incl",
+	    "**mpi_group_range_incl %G %d %p %p", group, n, ranges, newgroup);
+    }
+#   endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 
