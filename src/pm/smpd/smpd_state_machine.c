@@ -456,7 +456,7 @@ int smpd_state_reading_stdin(smpd_context_t *context, sock_event_t *event_ptr)
     smpd_enter_fn("smpd_state_reading_stdin");
     if (event_ptr->error != SOCK_SUCCESS)
     {
-	smpd_err_printf("unable to read from stdin, %s.\n", get_sock_error_string(event_ptr->error));
+	/*smpd_err_printf("unable to read from stdin, %s.\n", get_sock_error_string(event_ptr->error));*/
 	smpd_exit_fn("smpd_state_reading_stdin");
 	return SMPD_FAIL;
     }
