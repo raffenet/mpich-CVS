@@ -105,10 +105,9 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
-    win_ptr->start_group_ptr = group_ptr;
-    MPIU_Object_add_ref( group_ptr );
-    win_ptr->start_assert = assert;
+
+    mpi_errno = MPID_Win_start(group_ptr, assert, win_ptr);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 

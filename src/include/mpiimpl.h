@@ -2860,7 +2860,7 @@ int MPID_Cancel_send(MPID_Request *);
   @*/
 int MPID_Cancel_recv(MPID_Request *);
 
-int MPID_Win_create(void *, MPI_Aint, int, MPI_Info, MPID_Comm *,
+int MPID_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                     MPID_Win **);
 int MPID_Win_fence(int, MPID_Win *);
 int MPID_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
@@ -2874,6 +2874,7 @@ int MPID_Win_test(MPID_Win *win_ptr, int *flag);
 int MPID_Win_wait(MPID_Win *win_ptr);
 int MPID_Win_complete(MPID_Win *win_ptr);
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
+int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
 int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr);
 int MPID_Win_unlock(int dest, MPID_Win *win_ptr);
 

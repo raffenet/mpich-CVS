@@ -55,6 +55,8 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_Comm *comm_ptr = NULL;
+    MPID_Info *info_ptr = NULL;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORRETURN();
@@ -76,16 +78,13 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Info_get_ptr( info, info_ptr );
 
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPID_Info *info_ptr = NULL;
-
-            MPID_Info_get_ptr( info, info_ptr );
-
             /* Validate pointers */
 	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
@@ -111,7 +110,7 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPID_Win_create(base, size, disp_unit, info, comm_ptr, &win_ptr);
+    mpi_errno = MPID_Win_create(base, size, disp_unit, info_ptr, comm_ptr, &win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* return the handle of the window object to the user */

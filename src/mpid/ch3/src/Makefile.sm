@@ -44,6 +44,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_win_complete.c		\
     mpid_win_wait.c		\
     mpid_win_post.c		\
+    mpid_win_start.c		\
     mpid_win_unlock.c		\
     mpid_win_create.c		\
     mpid_win_lock.c		\

@@ -12,358 +12,371 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 {
-    int mpi_errno = MPI_SUCCESS, comm_size, done, *recvcnts;
-    int *rma_target_proc, *nops_to_proc, i, total_op_count, *curr_ops_cnt;
-    MPIDI_RMA_ops *curr_ptr, *next_ptr;
-    MPID_Comm *comm_ptr;
-    MPID_Request **requests=NULL; /* array of requests */
-    MPI_Win source_win_handle, target_win_handle;
-    MPIDI_RMA_dtype_info *dtype_infos=NULL;
-    void **dataloops=NULL;    /* to store dataloops for each datatype */
-    MPID_Progress_state progress_state;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_FENCE);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
 
-    /* In case this process was previously the target of passive target rma
-     * operations, we need to take care of the following...
-     * Since we allow MPI_Win_unlock to return without a done ack from
-     * the target in the case of multiple rma ops and exclusive lock,
-     * we need to check whether there is a lock on the window, and if
-     * there is a lock, poke the progress engine until the operartions
-     * have completed and the lock is released. */
-    if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+#   if defined(MPIDI_CH3_IMPLEMENTS_START_EPOCH)
     {
-	MPID_Progress_start(&progress_state);
-	while (win_ptr->current_lock_type != MPID_LOCK_NONE)
-	{
-	    /* poke the progress engine */
-	    mpi_errno = MPID_Progress_wait(&progress_state);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		MPID_Progress_end(&progress_state);
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail",
-						 "**fail %s", "making progress on the rma messages failed");
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-	}
-	MPID_Progress_end(&progress_state);
+	mpi_errno = MPIDI_CH3_Win_start_epoch(NULL, MPIDI_CH3I_ACCESS_AND_EXPOSURE_EPOCH, 
+                                              assert, win_ptr);
     }
-
-    if (assert & MPI_MODE_NOPRECEDE)
+#   else
     {
-        win_ptr->fence_cnt = (assert & MPI_MODE_NOSUCCEED) ? 0 : 1;
-        goto fn_exit;
-    }
 
-    if ((win_ptr->fence_cnt == 0) && ((assert & MPI_MODE_NOSUCCEED) != 1))
-    {
-        /* win_ptr->fence_cnt == 0 means either this is the very first
-           call to fence or the preceding fence had the
-           MPI_MODE_NOSUCCEED assert. 
-           Do nothing except increment the count. */
-        win_ptr->fence_cnt = 1;
-    }
-    else
-    {
-        /* This is the second or later fence. Do all the preceding RMA ops. */
-
-        MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
-
-        /* First inform every process whether it is a target of RMA
-           ops from this process */
-        comm_size = comm_ptr->local_size;
-        rma_target_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
-	/* --BEGIN ERROR HANDLING-- */
-        if (!rma_target_proc)
-	{
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
-
-        /* keep track of no. of ops to each proc. Needed for knowing
-           whether or not to decrement the completion counter. The
-           completion counter is decremented only on the last
-           operation. */
-        nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
-	/* --BEGIN ERROR HANDLING-- */
-        if (!nops_to_proc)
-	{
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
-
-        /* set rma_target_proc[i] to 1 if rank i is a target of RMA
-           ops from this process */
-        total_op_count = 0;
-        curr_ptr = win_ptr->rma_ops_list;
-        while (curr_ptr != NULL)
-	{
-            total_op_count++;
-            rma_target_proc[curr_ptr->target_rank] = 1;
-            nops_to_proc[curr_ptr->target_rank]++;
-            curr_ptr = curr_ptr->next;
-        }
-
-        curr_ops_cnt = (int *) MPIU_Calloc(comm_size, sizeof(int));
-	/* --BEGIN ERROR HANDLING-- */
-        if (!curr_ops_cnt)
-	{
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
-
-        if (total_op_count != 0)
-	{
-            requests = (MPID_Request **) MPIU_Malloc(total_op_count *
-                                                     sizeof(MPID_Request*));
-	    /* --BEGIN ERROR HANDLING-- */
-            if (!requests)
-	    {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                goto fn_exit;
-            }
-	    /* --END ERROR HANDLING-- */
-            
-            dtype_infos = (MPIDI_RMA_dtype_info *)
-                MPIU_Malloc(total_op_count*sizeof(MPIDI_RMA_dtype_info));
-	    /* --BEGIN ERROR HANDLING-- */
-            if (!dtype_infos)
-	    {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                goto fn_exit;
-            }
-	    /* --END ERROR HANDLING-- */
-            
-            dataloops = (void **) MPIU_Malloc(total_op_count*sizeof(void*));
-            /* allocate one extra for use when receiving data. see below */
-	    /* --BEGIN ERROR HANDLING-- */
-            if (!dataloops)
-	    {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                goto fn_exit;
-            }
-	    /* --END ERROR HANDLING-- */
-            for (i=0; i<total_op_count; i++)
-	    {
-                dataloops[i] = NULL;
-	    }
-        }
-
-        /* do a reduce_scatter (with MPI_SUM) on rma_target_proc. As a result,
-           each process knows how many other processes will be doing
-           RMA ops on its window */  
+        int comm_size, done, *recvcnts;
+        int *rma_target_proc, *nops_to_proc, i, total_op_count, *curr_ops_cnt;
+        MPIDI_RMA_ops *curr_ptr, *next_ptr;
+        MPID_Comm *comm_ptr;
+        MPID_Request **requests=NULL; /* array of requests */
+        MPI_Win source_win_handle, target_win_handle;
+        MPIDI_RMA_dtype_info *dtype_infos=NULL;
+        void **dataloops=NULL;    /* to store dataloops for each datatype */
+        MPID_Progress_state progress_state;
         
-        /* first initialize the completion counter. */
-        win_ptr->my_counter = comm_size;
-
-        /* set up the recvcnts array for reduce scatter */
-
-        recvcnts = (int *) MPIU_Malloc(comm_size * sizeof(int));
-	/* --BEGIN ERROR HANDLING-- */
-        if (!recvcnts)
-	{
-            mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
-        for (i=0; i<comm_size; i++)
-	{
-	    recvcnts[i] = 1;
-	}
-
-        MPIR_Nest_incr();
-        mpi_errno = NMPI_Reduce_scatter(MPI_IN_PLACE, rma_target_proc, recvcnts,
-                                   MPI_INT, MPI_SUM, win_ptr->comm);
-        /* result is stored in rma_target_proc[0] */
-        MPIR_Nest_decr();
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "The reduce_scatter to send out the data to all the nodes in the fence failed");
-            goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
-
-        /* Set the completion counter */
-        /* FIXME: MT: this needs to be done atomically because other
-           procs have the address and could decrement it. */
-        win_ptr->my_counter = win_ptr->my_counter - comm_size +
-                              rma_target_proc[0];  
-
-        MPIU_Free(recvcnts);
-        MPIU_Free(rma_target_proc);
-
-        i = 0;
-        curr_ptr = win_ptr->rma_ops_list;
-        while (curr_ptr != NULL)
-	{
-        /* The completion counter at the target is decremented only on 
-           the last RMA operation. We indicate the last operation by 
-           passing the source_win_handle only on the last operation. 
-           Otherwise, we pass NULL */
-            if (curr_ops_cnt[curr_ptr->target_rank] ==
-                nops_to_proc[curr_ptr->target_rank] - 1) 
-                source_win_handle = win_ptr->handle;
-            else 
-                source_win_handle = MPI_WIN_NULL;
-
-            target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
-
-            switch (curr_ptr->type)
-	    {
-            case (MPIDI_RMA_PUT):
-            case (MPIDI_RMA_ACCUMULATE):
-                mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                     source_win_handle, target_win_handle, &dtype_infos[i],
-                                  &dataloops[i], &requests[i]);
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "sending the rma message failed");
-                    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-                break;
-            case (MPIDI_RMA_GET):
-                mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                        source_win_handle, target_win_handle, &dtype_infos[i], 
-                                  &dataloops[i], &requests[i]);
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "receiving the rma message failed");
-                    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-                break;
-            default:
-		/* --BEGIN ERROR HANDLING-- */
-                /* FIXME - return some error code here */
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "invalid RMA operation");
-                goto fn_exit;
-		/* --END ERROR HANDLING-- */
-            }
-            i++;
-            curr_ops_cnt[curr_ptr->target_rank]++;
-            curr_ptr = curr_ptr->next;
-        }
-
-        MPIU_Free(nops_to_proc);
-        MPIU_Free(curr_ops_cnt);
-
-	
-        if (total_op_count)
-	{ 
-	    done = 1;
-	    MPID_Progress_start(&progress_state);
-	    while (total_op_count)
-	    {
-		for (i=0; i<total_op_count; i++)
-		{
-		    if (requests[i] != NULL)
-		    {
-			if (*(requests[i]->cc_ptr) != 0)
-			{
-			    done = 0;
-			    break;
-			}
-			else
-			{
-			    mpi_errno = requests[i]->status.MPI_ERROR;
-			    /* --BEGIN ERROR HANDLING-- */
-			    if (mpi_errno != MPI_SUCCESS)
-			    {
-				MPID_Progress_end(&progress_state);
-				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-								 "**fail", "**fail %s", "rma message operation failed");
-				goto fn_exit;
-			    }
-			    /* --END ERROR HANDLING-- */
-			    /* if origin datatype was a derived
-			       datatype, it will get freed when the
-			       request gets freed. */ 
-			    MPID_Request_release(requests[i]);
-			    requests[i] = NULL;
-			}
-		    }
-		}
-	    
-		if (done)
-		{
-		    break;
-		}
-	    
-		mpi_errno = MPID_Progress_wait(&progress_state);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    MPID_Progress_end(&progress_state);
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail",
-						     "**fail %s", "making progress on the rma messages failed");
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-	    
-		done = 1;
-	    } 
-	    MPID_Progress_end(&progress_state);
-	}
-	
-        if (total_op_count != 0)
-	{
-            MPIU_Free(requests);
-            MPIU_Free(dtype_infos);
-            for (i=0; i<total_op_count; i++)
-	    {
-                if (dataloops[i] != NULL)
-		{
-                    MPIU_Free(dataloops[i]);
-		}
-	    }
-            MPIU_Free(dataloops);
-        }
-
-        /* free MPIDI_RMA_ops_list */
-        curr_ptr = win_ptr->rma_ops_list;
-        while (curr_ptr != NULL)
-	{
-            next_ptr = curr_ptr->next;
-            MPIU_Free(curr_ptr);
-            curr_ptr = next_ptr;
-        }
-        win_ptr->rma_ops_list = NULL;
-
-        /* wait for all operations from other processes to finish */
-	if (win_ptr->my_counter)
-	{
-	    MPID_Progress_start(&progress_state);
-	    while (win_ptr->my_counter)
-	    {
+        /* In case this process was previously the target of passive target rma
+         * operations, we need to take care of the following...
+         * Since we allow MPI_Win_unlock to return without a done ack from
+         * the target in the case of multiple rma ops and exclusive lock,
+         * we need to check whether there is a lock on the window, and if
+         * there is a lock, poke the progress engine until the operartions
+         * have completed and the lock is released. */
+        if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+        {
+            MPID_Progress_start(&progress_state);
+            while (win_ptr->current_lock_type != MPID_LOCK_NONE)
+            {
+                /* poke the progress engine */
                 mpi_errno = MPID_Progress_wait(&progress_state);
-		/* --BEGIN ERROR HANDLING-- */
+                /* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
-		{
-		    MPID_Progress_end(&progress_state);
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail",
-						     "**fail %s", "making progress on the rma messages failed");
+                {
+                    MPID_Progress_end(&progress_state);
+                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail",
+                                                     "**fail %s", "making progress on the rma messages failed");
                     goto fn_exit;
                 }
-		/* --END ERROR HANDLING-- */
+                /* --END ERROR HANDLING-- */
             }
-	    MPID_Progress_end(&progress_state);
-        } 
+            MPID_Progress_end(&progress_state);
+        }
+        
+        if (assert & MPI_MODE_NOPRECEDE)
+        {
+            win_ptr->fence_cnt = (assert & MPI_MODE_NOSUCCEED) ? 0 : 1;
+            goto fn_exit;
+        }
+        
+        if ((win_ptr->fence_cnt == 0) && ((assert & MPI_MODE_NOSUCCEED) != 1))
+        {
+            /* win_ptr->fence_cnt == 0 means either this is the very first
+               call to fence or the preceding fence had the
+               MPI_MODE_NOSUCCEED assert. 
+               Do nothing except increment the count. */
+            win_ptr->fence_cnt = 1;
+        }
+        else
+        {
+            /* This is the second or later fence. Do all the preceding RMA ops. */
+            
+            MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
+            
+            /* First inform every process whether it is a target of RMA
+               ops from this process */
+            comm_size = comm_ptr->local_size;
+            rma_target_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
+            /* --BEGIN ERROR HANDLING-- */
+            if (!rma_target_proc)
+            {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+            
+            /* keep track of no. of ops to each proc. Needed for knowing
+               whether or not to decrement the completion counter. The
+               completion counter is decremented only on the last
+               operation. */
+            nops_to_proc = (int *) MPIU_Calloc(comm_size, sizeof(int));
+            /* --BEGIN ERROR HANDLING-- */
+            if (!nops_to_proc)
+            {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+            
+            /* set rma_target_proc[i] to 1 if rank i is a target of RMA
+               ops from this process */
+            total_op_count = 0;
+            curr_ptr = win_ptr->rma_ops_list;
+            while (curr_ptr != NULL)
+            {
+                total_op_count++;
+                rma_target_proc[curr_ptr->target_rank] = 1;
+                nops_to_proc[curr_ptr->target_rank]++;
+                curr_ptr = curr_ptr->next;
+            }
+            
+            curr_ops_cnt = (int *) MPIU_Calloc(comm_size, sizeof(int));
+            /* --BEGIN ERROR HANDLING-- */
+            if (!curr_ops_cnt)
+            {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+            
+            if (total_op_count != 0)
+            {
+                requests = (MPID_Request **) MPIU_Malloc(total_op_count *
+                                                         sizeof(MPID_Request*));
+                /* --BEGIN ERROR HANDLING-- */
+                if (!requests)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+                
+                dtype_infos = (MPIDI_RMA_dtype_info *)
+                    MPIU_Malloc(total_op_count*sizeof(MPIDI_RMA_dtype_info));
+                /* --BEGIN ERROR HANDLING-- */
+                if (!dtype_infos)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+                
+                dataloops = (void **) MPIU_Malloc(total_op_count*sizeof(void*));
+                /* allocate one extra for use when receiving data. see below */
+                /* --BEGIN ERROR HANDLING-- */
+                if (!dataloops)
+                {
+                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                    goto fn_exit;
+                }
+                /* --END ERROR HANDLING-- */
+                for (i=0; i<total_op_count; i++)
+                {
+                    dataloops[i] = NULL;
+                }
+            }
+            
+            /* do a reduce_scatter (with MPI_SUM) on rma_target_proc. As a result,
+               each process knows how many other processes will be doing
+               RMA ops on its window */  
+            
+            /* first initialize the completion counter. */
+            win_ptr->my_counter = comm_size;
+            
+            /* set up the recvcnts array for reduce scatter */
+            
+            recvcnts = (int *) MPIU_Malloc(comm_size * sizeof(int));
+            /* --BEGIN ERROR HANDLING-- */
+            if (!recvcnts)
+            {
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+            for (i=0; i<comm_size; i++)
+            {
+                recvcnts[i] = 1;
+            }
+            
+            MPIR_Nest_incr();
+            mpi_errno = NMPI_Reduce_scatter(MPI_IN_PLACE, rma_target_proc, recvcnts,
+                                            MPI_INT, MPI_SUM, win_ptr->comm);
+            /* result is stored in rma_target_proc[0] */
+            MPIR_Nest_decr();
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "The reduce_scatter to send out the data to all the nodes in the fence failed");
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
+            
+            /* Set the completion counter */
+            /* FIXME: MT: this needs to be done atomically because other
+               procs have the address and could decrement it. */
+            win_ptr->my_counter = win_ptr->my_counter - comm_size +
+                rma_target_proc[0];  
+            
+            MPIU_Free(recvcnts);
+            MPIU_Free(rma_target_proc);
+            
+            i = 0;
+            curr_ptr = win_ptr->rma_ops_list;
+            while (curr_ptr != NULL)
+            {
+                /* The completion counter at the target is decremented only on 
+                   the last RMA operation. We indicate the last operation by 
+                   passing the source_win_handle only on the last operation. 
+                   Otherwise, we pass NULL */
+                if (curr_ops_cnt[curr_ptr->target_rank] ==
+                    nops_to_proc[curr_ptr->target_rank] - 1) 
+                    source_win_handle = win_ptr->handle;
+                else 
+                    source_win_handle = MPI_WIN_NULL;
+                
+                target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
+                
+                switch (curr_ptr->type)
+                {
+                case (MPIDI_RMA_PUT):
+                case (MPIDI_RMA_ACCUMULATE):
+                    mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
+                                                        source_win_handle, target_win_handle, &dtype_infos[i],
+                                                        &dataloops[i], &requests[i]);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno != MPI_SUCCESS)
+                    {
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "sending the rma message failed");
+                        goto fn_exit;
+                    }
+                    /* --END ERROR HANDLING-- */
+                    break;
+                case (MPIDI_RMA_GET):
+                    mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
+                                                        source_win_handle, target_win_handle, &dtype_infos[i], 
+                                                        &dataloops[i], &requests[i]);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno != MPI_SUCCESS)
+                    {
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "receiving the rma message failed");
+                        goto fn_exit;
+                    }
+                    /* --END ERROR HANDLING-- */
+                    break;
+                default:
+                    /* --BEGIN ERROR HANDLING-- */
+                    /* FIXME - return some error code here */
+                    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "invalid RMA operation");
+                    goto fn_exit;
+                    /* --END ERROR HANDLING-- */
+                }
+                i++;
+                curr_ops_cnt[curr_ptr->target_rank]++;
+                curr_ptr = curr_ptr->next;
+            }
+            
+            MPIU_Free(nops_to_proc);
+            MPIU_Free(curr_ops_cnt);
+            
+            
+            if (total_op_count)
+            { 
+                done = 1;
+                MPID_Progress_start(&progress_state);
+                while (total_op_count)
+                {
+                    for (i=0; i<total_op_count; i++)
+                    {
+                        if (requests[i] != NULL)
+                        {
+                            if (*(requests[i]->cc_ptr) != 0)
+                            {
+                                done = 0;
+                                break;
+                            }
+                            else
+                            {
+                                mpi_errno = requests[i]->status.MPI_ERROR;
+                                /* --BEGIN ERROR HANDLING-- */
+                                if (mpi_errno != MPI_SUCCESS)
+                                {
+                                    MPID_Progress_end(&progress_state);
+                                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                                                     "**fail", "**fail %s", "rma message operation failed");
+                                    goto fn_exit;
+                                }
+                                /* --END ERROR HANDLING-- */
+                                /* if origin datatype was a derived
+                                   datatype, it will get freed when the
+                                   request gets freed. */ 
+                                MPID_Request_release(requests[i]);
+                                requests[i] = NULL;
+                            }
+                        }
+                    }
+                    
+                    if (done)
+                    {
+                        break;
+                    }
+                    
+                    mpi_errno = MPID_Progress_wait(&progress_state);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno != MPI_SUCCESS)
+                    {
+                        MPID_Progress_end(&progress_state);
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail",
+                                                         "**fail %s", "making progress on the rma messages failed");
+                        goto fn_exit;
+                    }
+                    /* --END ERROR HANDLING-- */
+                    
+                    done = 1;
+                } 
+                MPID_Progress_end(&progress_state);
+            }
+            
+            if (total_op_count != 0)
+            {
+                MPIU_Free(requests);
+                MPIU_Free(dtype_infos);
+                for (i=0; i<total_op_count; i++)
+                {
+                    if (dataloops[i] != NULL)
+                    {
+                        MPIU_Free(dataloops[i]);
+                    }
+                }
+                MPIU_Free(dataloops);
+            }
+            
+            /* free MPIDI_RMA_ops_list */
+            curr_ptr = win_ptr->rma_ops_list;
+            while (curr_ptr != NULL)
+            {
+                next_ptr = curr_ptr->next;
+                MPIU_Free(curr_ptr);
+                curr_ptr = next_ptr;
+            }
+            win_ptr->rma_ops_list = NULL;
+            
+            /* wait for all operations from other processes to finish */
+            if (win_ptr->my_counter)
+            {
+                MPID_Progress_start(&progress_state);
+                while (win_ptr->my_counter)
+                {
+                    mpi_errno = MPID_Progress_wait(&progress_state);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno != MPI_SUCCESS)
+                    {
+                        MPID_Progress_end(&progress_state);
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail",
+                                                         "**fail %s", "making progress on the rma messages failed");
+                        goto fn_exit;
+                    }
+                    /* --END ERROR HANDLING-- */
+                }
+                MPID_Progress_end(&progress_state);
+            } 
+            
+            if (assert & MPI_MODE_NOSUCCEED)
+            {
+                win_ptr->fence_cnt = 0;
+            }
+        }
 
-        if (assert & MPI_MODE_NOSUCCEED)
-	{
-            win_ptr->fence_cnt = 0;
-	}
     }
+#   endif
 
  fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);

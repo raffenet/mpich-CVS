@@ -18,26 +18,35 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
 
-    /* wait for all operations from other processes to finish */
-    if (win_ptr->my_counter)
+#   if defined(MPIDI_CH3_IMPLEMENTS_END_EPOCH)
     {
-	MPID_Progress_state progress_state;
-	
-        MPID_Progress_start(&progress_state);
-	while (win_ptr->my_counter)
-	{
-            mpi_errno = MPID_Progress_wait(&progress_state);
-	    /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-	    {
-		MPID_Progress_end(&progress_state);
-                MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
-                return mpi_errno;
+	mpi_errno = MPIDI_CH3_Win_end_epoch(MPIDI_CH3I_ACCESS_EPOCH, win_ptr);
+    }
+#   else
+    {
+        /* wait for all operations from other processes to finish */
+        if (win_ptr->my_counter)
+        {
+            MPID_Progress_state progress_state;
+            
+            MPID_Progress_start(&progress_state);
+            while (win_ptr->my_counter)
+            {
+                mpi_errno = MPID_Progress_wait(&progress_state);
+                /* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno != MPI_SUCCESS)
+                {
+                    MPID_Progress_end(&progress_state);
+                    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
+                    return mpi_errno;
+                }
+                /* --END ERROR HANDLING-- */
             }
-	    /* --END ERROR HANDLING-- */
-        }
-	MPID_Progress_end(&progress_state);
-    } 
+            MPID_Progress_end(&progress_state);
+        } 
+        
+    }
+#   endif
 
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
     return mpi_errno;
