@@ -539,6 +539,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    assert(0);
 	    } /* end of switch */
 
+	    /* now we deal with the upcoming type */
 	    switch (next_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
 		    next_elmp->curcount = next_elmp->orig_count;
@@ -553,7 +554,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    break;
 		case DLOOP_KIND_INDEXED:
 		    next_elmp->curcount    = next_elmp->orig_count;
+		    /* ??? WHY AM I DORKING WITH THIS ORIG OFFSET ??? */
 		    next_elmp->orig_offset = next_elmp->curoffset +
+			DLOOP_Stackelm_offset(next_elmp);
+		    next_elmp->curoffset = next_elmp->curoffset +
 			DLOOP_Stackelm_offset(next_elmp);
 		    next_elmp->curblock    = DLOOP_Stackelm_blocksize(next_elmp);
 #ifdef DLOOP_M_VERBOSE
