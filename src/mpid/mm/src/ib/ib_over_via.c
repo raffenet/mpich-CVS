@@ -83,6 +83,27 @@ ib_int32_t ib_cq_create_us( ib_hca_handle_t hca_handle,
     return IB_SUCCESS;
 }
 
+ib_int32_t ib_post_send_req_us(ib_hca_handle_t hca_handle,
+			       ib_qp_handle_t qp_handle,
+			       ib_work_req_send_t * work_req)
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_post_rcv_req_us(ib_hca_handle_t hca_handle,
+			      ib_qp_handle_t qp_handle,
+			      ib_work_req_rcv_t * work_req)
+{
+    return IB_SUCCESS;
+}
+
+ib_int32_t ib_completion_poll_us(ib_hca_handle_t hca_handle,
+				 ib_cq_handle_t  cq_handle,
+				 ib_work_completion_t * work_c)
+{
+    return IB_SUCCESS;
+}
+
 #if 0
 
 /* complete set of functions */

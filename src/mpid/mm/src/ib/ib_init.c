@@ -152,8 +152,8 @@ ib_uint32_t createQP(IB_Info *ib)
 	{IB_QP_ATTR_SIGNALING_TYPE, QP_SIGNAL_ALL}
     };
 
-    attr_rec[1].data = (int)ib->m_send_cq_handle;
-    attr_rec[2].data = (int)ib->m_recv_cq_handle;
+    attr_rec[1].data = (int)IB_Process.cq_handle;
+    attr_rec[2].data = (int)IB_Process.cq_handle;
     attr_rec[3].data = ib->m_max_wqes;
     attr_rec[4].data = ib->m_max_wqes;
 
@@ -219,7 +219,7 @@ int ib_setup_connections()
     IB_Info *ib;
     ib_uint32_t status;
     //ib_uint32_t lkey, rkey;
-    ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
+    //ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
     MPIDI_STATE_DECL(MPID_STATE_IB_SETUP_CONNECTIONS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_SETUP_CONNECTIONS);
@@ -318,6 +318,7 @@ int ib_setup_connections()
 	ib->m_snd_posted = 0;
 	/* ***************************************** */
 	/*MPIU_dbg_printf("creating the send/recv completion queues\n");*/
+	/*
 	max_cq_entries = IB_MAX_CQ_ENTRIES + 1;
 	status = ib_cq_create_us(IB_Process.hca_handle, 
 				 IB_Process.cqd_handle,
@@ -346,7 +347,7 @@ int ib_setup_connections()
 	    MPIDI_FUNC_EXIT(MPID_STATE_IB_SETUP_CONNECTIONS);
 	    return -1;
 	}
-
+	*/
 	/*******************************************
 	  Is this section on setting up receive and 
 	  send segments bogus? Does it assume there
@@ -461,7 +462,9 @@ int ib_init()
 {
     ib_uint32_t status;
     char key[100], value[100];
+    ib_uint32_t max_cq_entries = IB_MAX_CQ_ENTRIES+1;
     MPIDI_STATE_DECL(MPID_STATE_IB_INIT);
+
     MPIDI_FUNC_ENTER(MPID_STATE_IB_INIT);
 
     ib_init_us();
@@ -472,6 +475,7 @@ int ib_init()
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_open_us failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
     /* get a protection domain handle */
@@ -479,6 +483,7 @@ int ib_init()
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_pd_allocate_us failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
     /* get a completion queue domain handle */
@@ -487,15 +492,29 @@ int ib_init()
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_cqd_create_us failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
 #endif
+    /* create the completion queue */
+    status = ib_cq_create_us(IB_Process.hca_handle, 
+	IB_Process.cqd_handle,
+	&max_cq_entries,
+	&IB_Process.cq_handle,
+	NULL);
+    if (status != IB_SUCCESS)
+    {
+	err_printf("ib_init: ib_cq_create_us failed, error %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
+	return -1;
+    }
     /* get the lid */
     status = ib_hca_query_us(IB_Process.hca_handle, &IB_Process.attr, 
 			     HCA_QUERY_HCA_STATIC);
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_HCA_STATIC) failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
     IB_Process.attr.port_dynamic_info_p = 
@@ -506,6 +525,7 @@ int ib_init()
     if (status != IB_SUCCESS)
     {
 	err_printf("ib_init: ib_hca_query_us(HCA_QUERY_PORT_INFO_DYNAMIC) failed, status %d\n", status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
 	return status;
     }
     IB_Process.lid = IB_Process.attr.port_dynamic_info_p->lid;

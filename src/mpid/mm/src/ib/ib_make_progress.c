@@ -28,9 +28,45 @@ int ib_handle_accept()
 @*/
 int ib_make_progress()
 {
+    ib_uint32_t status;
+    ib_work_completion_t completion_data;
     MPIDI_STATE_DECL(MPID_STATE_IB_MAKE_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IB_MAKE_PROGRESS);
+
+    status = ib_completion_poll_us(
+	IB_Process.hca_handle,
+	IB_Process.cq_handle,
+	&completion_data);
+    if (status == IBA_CQ_EMPTY)
+    {
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
+	return MPI_SUCCESS;
+    }
+    if (status != IBA_OK)
+    {
+	err_printf("error: ib_completion_poll_us did not return IBA_OK\n");
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
+	return -1;
+    }
+    if (completion_data.status != IB_COMP_ST_SUCCESS)
+    {
+	err_printf("error: status = %d != IB_COMP_ST_SUCCESS\n", 
+	    completion_data.status);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
+	return -1;
+    }
+
+    switch (completion_data.op_type)
+    {
+    case OP_SEND:
+	break;
+    case OP_RECEIVE:
+	break;
+    default:
+	MPIU_dbg_printf("unknown ib op_type: %d\n", completion_data.op_type);
+	break;
+    }
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MAKE_PROGRESS);
     return MPI_SUCCESS;

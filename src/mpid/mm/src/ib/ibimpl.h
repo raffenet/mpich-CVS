@@ -27,6 +27,7 @@ typedef struct IB_PerProcess {
        ib_hca_handle_t hca_handle;
         ib_pd_handle_t pd_handle;
        ib_cqd_handle_t cqd_handle;
+        ib_cq_handle_t cq_handle;
                    int lid;
          ib_hca_attr_t attr;
 		   int error;

@@ -21,7 +21,7 @@ typedef struct IB_Info
 
     ib_mr_handle_t   m_mr_handle;
     ib_uint32_t      m_lkey;
-    ib_cq_handle_t   m_send_cq_handle, m_recv_cq_handle;
+    //ib_cq_handle_t   m_send_cq_handle, m_recv_cq_handle;
     ib_qp_handle_t   m_qp_handle;
     //void            *m_virtual_address;
     BlockAllocator   m_allocator;
