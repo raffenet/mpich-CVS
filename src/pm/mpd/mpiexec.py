@@ -98,7 +98,7 @@ def mpiexec():
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
         xmlFile.close()
     fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
-    mpdrun = path.normpath(fullDirName + '/mpdrun.py')
+    mpdrun = path.join(fullDirName,'mpdrun.py')
     if not access(mpdrun,X_OK):
         print 'mpiexec: cannot execute mpdrun %s' % mpdrun
         exit(0);

@@ -46,7 +46,7 @@ def _mpd_init():
 
     # get manager path before doing chdir as daemon below
     g.fullDirName = path.abspath(path.split(argv[0])[0])  # normalize for platform also
-    g.manager = path.normpath(g.fullDirName + '/mpdman.py')
+    g.manager = path.join(g.fullDirName,'mpdman.py')
     if not access(g.manager,X_OK):
         mpd_raise('cannot execute manager %s' % (g.manager) )
 
