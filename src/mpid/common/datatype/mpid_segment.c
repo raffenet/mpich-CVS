@@ -33,7 +33,7 @@ struct MPID_Segment_piece_params {
             int length;
         } pack_vector;
         struct {
-	    DLOOP_Offset *offp;
+	    int64_t *offp;
 	    int *sizep; /* see notes in Segment_flatten header */
             int index;
             int length;
@@ -250,7 +250,7 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 {
     struct MPID_Segment_piece_params packvec_params;
 
-    packvec_params.u.flatten.offp = offp;
+    packvec_params.u.flatten.offp = (int64_t *) offp;
     packvec_params.u.flatten.sizep = sizep;
     packvec_params.u.flatten.index   = 0;
     packvec_params.u.flatten.length  = *lengthp;
@@ -492,14 +492,14 @@ static int MPID_Segment_contig_flatten(int *blocks_p,
 		    size);
 #endif
     
-    if (paramp->u.flatten.index > 0 && ((DLOOP_Offset) bufp + rel_off) ==
+    if (index > 0 && ((DLOOP_Offset) bufp + rel_off) ==
 	((paramp->u.flatten.offp[index - 1]) + (DLOOP_Offset) paramp->u.flatten.sizep[index - 1]))
     {
 	/* add this size to the last vector rather than using up another one */
 	paramp->u.flatten.sizep[index - 1] += size;
     }
     else {
-	paramp->u.flatten.offp[index] = (DLOOP_Offset) bufp + rel_off;
+	paramp->u.flatten.offp[index] = (int64_t) bufp + (int64_t) rel_off;
 	paramp->u.flatten.sizep[index] = size;
 
 	paramp->u.flatten.index++;

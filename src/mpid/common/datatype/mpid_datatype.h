@@ -393,5 +393,12 @@ void MPID_Datatype_free(struct MPID_Datatype *ptr);
 void DLOOP_Dataloop_update(struct DLOOP_Dataloop *dataloop,
                            MPI_Aint ptrdiff);
 
+int MPIR_Type_get_contig_blocks(MPI_Datatype type,
+				int *nr_blocks_p);
+
+int MPIR_Type_flatten(MPI_Datatype type,
+		      MPI_Aint *off_array,
+		      int *size_array,
+		      MPI_Aint *array_len_p);
 /* end of file */
 #endif

@@ -293,6 +293,19 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
     DLOOP_SEGMENT_LOAD_LOCAL_VALUES;
 
+    if (first == *lastp) {
+	/* This really shouldn't ever happen, as it indicates that we should
+	 * do nothing, and the user shouldn't call us in this case.  However,
+	 * if we don't account for it here, some of the code below gets pretty
+	 * upset when it happens.
+	 *
+	 * We print a warning to help us find any spots where we do this for no
+	 * good reason.
+	 */
+	DLOOP_dbg_printf("dloop_segment_manipulate: warning: first == last (%d)\n", (int) first);
+	return;
+    }
+
     /* first we ensure that stream_off and first are in the same spot */
     if (first != stream_off) {
 	DLOOP_Offset tmp_last;
@@ -372,7 +385,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 #endif
 
 	    /* ??? SHOULD THIS BE >= FOR SOME REASON ??? */
-	    if (last != SEGMENT_IGNORE_LAST && stream_off + myblocks * basic_size > last) {
+	    if (last != SEGMENT_IGNORE_LAST && (stream_off + myblocks * basic_size > last)) {
 		/* Cannot process the entire "piece" -- round down */
 		myblocks = ((last - stream_off) / basic_size);
 #ifdef DLOOP_M_VERBOSE

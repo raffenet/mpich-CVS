@@ -40,7 +40,8 @@
 #define DLOOP_Segment               PREPEND_PREFIX(Segment)
 #define DLOOP_Dataloop_stackelm     PREPEND_PREFIX(Dataloop_stackelm)
 
-#define SEGMENT_IGNORE_LAST ((DLOOP_Offset) 0)
+/* NOTE: ASSUMING LAST TYPE IS SIGNED */
+#define SEGMENT_IGNORE_LAST ((DLOOP_Offset) -1)
 /*
  * Each of the MPI datatypes can be mapped into one of 5 very simple
  * loops.  This loop has the following parameters:
