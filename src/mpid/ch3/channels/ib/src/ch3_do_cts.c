@@ -13,11 +13,13 @@
 int MPIDI_CH3_do_cts(MPIDI_VC * vc, MPID_Request * rreq)
 {
     int mpi_errno = MPI_SUCCESS;
-#ifndef USE_SHM_RDMA_GET
+#ifdef USE_SHM_RDMA_GET
+    /* int i;*/
+#else
     MPIDI_CH3_Pkt_t pkt;
     MPID_Request *request_ptr;
+    int i;
 #endif
-    /*int i;*/
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_DO_CTS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_CTS);
@@ -52,7 +54,10 @@ int MPIDI_CH3_do_cts(MPIDI_VC * vc, MPID_Request * rreq)
     rreq->dev.rdma_iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     rreq->dev.rdma_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.iov;
     rreq->dev.rdma_iov[1].MPID_IOV_LEN = rreq->dev.iov_count * sizeof(MPID_IOV);
+    rreq->dev.rdma_iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&rreq->ch.local_iov_mem[0];
+    rreq->dev.rdma_iov[2].MPID_IOV_LEN = rreq->dev.iov_count * sizeof(ibu_mem_t);
 
+    /*printf("do_cts: rreq=0x%x\n", rreq->handle);*/
     /*
     for (i=0; i<rreq->dev.iov_count; i++)
     {
@@ -60,7 +65,12 @@ int MPIDI_CH3_do_cts(MPIDI_VC * vc, MPID_Request * rreq)
     }
     fflush(stdout);
     */
-    mpi_errno = MPIDI_CH3_iStartMsgv(vc, rreq->dev.rdma_iov, 2, &request_ptr);
+    /*printf("registering the receiver's iov.\n");fflush(stdout);*/
+    for (i=0; i<rreq->dev.iov_count; i++)
+    {
+	ibu_register_memory(rreq->dev.iov[i].MPID_IOV_BUF, rreq->dev.iov[i].MPID_IOV_LEN, &rreq->ch.local_iov_mem[i]);
+    }
+    mpi_errno = MPIDI_CH3_iStartMsgv(vc, rreq->dev.rdma_iov, 3, &request_ptr);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {

@@ -14,15 +14,18 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * rts_sreq;
-    /*int i;*/
 #ifdef USE_SHM_RDMA_GET
+    /*int i;*/
     MPIDI_CH3_Pkt_t pkt;
+#else
+    int i;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_DO_RTS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_RTS);
 
 #ifdef USE_SHM_RDMA_GET
+
     pkt.rts_iov.type = MPIDI_CH3_PKT_RTS_IOV;
     pkt.rts_iov.sreq = sreq->handle;
     pkt.rts_iov.iov_len = sreq->dev.iov_count;
@@ -57,7 +60,9 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
 	/* The sender doesn't need to know when the message has been sent.  So release the request immediately */
 	MPID_Request_release(rts_sreq);
     }
+
 #else
+
     /*
     for (i=0; i<sreq->dev.iov_count; i++)
     {
@@ -65,6 +70,7 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
     }
     fflush(stdout);
     */
+    sreq->ch.riov_offset = 0;
     mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -81,6 +87,12 @@ int MPIDI_CH3_do_rts(MPIDI_VC * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_p
 	/* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
 	MPID_Request_release(rts_sreq);
     }
+    /*printf("registering the sender's iov.\n");fflush(stdout);*/
+    for (i=0; i<sreq->dev.iov_count; i++)
+    {
+	ibu_register_memory(sreq->dev.iov[i].MPID_IOV_BUF, sreq->dev.iov[i].MPID_IOV_LEN, &sreq->ch.local_iov_mem[i]);
+    }
+
 #endif
 
 fn_exit:

@@ -99,6 +99,8 @@ typedef struct MPIDI_CH3I_VC
 MPIDI_CH3I_CA_HANDLE_PKT,			\
 MPIDI_CH3I_CA_END_IB,
 
+#define MPIDI_CH3I_RELOAD_SENDER   0x1
+#define MPIDI_CH3I_RELOAD_RECEIVER 0x2
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
@@ -114,6 +116,11 @@ struct MPIDI_CH3I_Request						\
     MPIDI_CH3_Pkt_t pkt;						\
 									\
     struct MPID_Request *req;						\
+									\
+    int riov_offset;							\
+    int reload_state;							\
+    ibu_mem_t local_iov_mem[MPID_IOV_LIMIT];                            \
+    ibu_mem_t remote_iov_mem[MPID_IOV_LIMIT];                           \
 } ch;
 
 /*
