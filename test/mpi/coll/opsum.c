@@ -82,33 +82,35 @@ int main( int argc, char *argv[] )
 	}
     }
 
-    /* double complex */
-    dinbuf[0].r = 1;
-    dinbuf[1].r = 0;
-    dinbuf[2].r = (rank > 0);
-    dinbuf[0].i = -1;
-    dinbuf[1].i = 0;
-    dinbuf[2].i = -(rank > 0);
+    if (MPI_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {
+	/* double complex; may be null if we do not have Fortran support */
+	dinbuf[0].r = 1;
+	dinbuf[1].r = 0;
+	dinbuf[2].r = (rank > 0);
+	dinbuf[0].i = -1;
+	dinbuf[1].i = 0;
+	dinbuf[2].i = -(rank > 0);
 
-    doutbuf[0].r = 0;
-    doutbuf[1].r = 1;
-    doutbuf[2].r = 1;
-    doutbuf[0].i = 0;
-    doutbuf[1].i = 1;
-    doutbuf[2].i = 1;
-    MPI_Reduce( dinbuf, doutbuf, 3, MPI_DOUBLE_COMPLEX, MPI_SUM, 0, comm );
-    if (rank == 0) {
-	if (doutbuf[0].r != size || doutbuf[0].i != -size) {
-	    errs++;
-	    fprintf( stderr, "double complex SUM(1) test failed\n" );
-	}
-	if (doutbuf[1].r != 0 || doutbuf[1].i != 0) {
-	    errs++;
-	    fprintf( stderr, "double complex SUM(0) test failed\n" );
-	}
-	if (doutbuf[2].r != size - 1 || doutbuf[2].i != 1 - size) {
-	    errs++;
-	    fprintf( stderr, "double complex SUM(>) test failed\n" );
+	doutbuf[0].r = 0;
+	doutbuf[1].r = 1;
+	doutbuf[2].r = 1;
+	doutbuf[0].i = 0;
+	doutbuf[1].i = 1;
+	doutbuf[2].i = 1;
+	MPI_Reduce( dinbuf, doutbuf, 3, MPI_DOUBLE_COMPLEX, MPI_SUM, 0, comm );
+	if (rank == 0) {
+	    if (doutbuf[0].r != size || doutbuf[0].i != -size) {
+		errs++;
+		fprintf( stderr, "double complex SUM(1) test failed\n" );
+	    }
+	    if (doutbuf[1].r != 0 || doutbuf[1].i != 0) {
+		errs++;
+		fprintf( stderr, "double complex SUM(0) test failed\n" );
+	    }
+	    if (doutbuf[2].r != size - 1 || doutbuf[2].i != 1 - size) {
+		errs++;
+		fprintf( stderr, "double complex SUM(>) test failed\n" );
+	    }
 	}
     }
 

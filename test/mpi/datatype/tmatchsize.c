@@ -11,6 +11,11 @@
 
 static char MTEST_Descrip[] = "Test of type_match_size";
 
+/*
+ * type match size is part of the extended Fortran support, and may not
+ * be present in 
+ */
+
 int main( int argc, char *argv[] )
 {
     int errs = 0, err;
@@ -125,29 +130,38 @@ int main( int argc, char *argv[] )
     }
 #endif
 
-    err = MPI_Type_match_size( MPI_TYPECLASS_COMPLEX, 2*sizeof(float), &newtype );
-    if (err) {
-	errs++;
-	MTestPrintErrorMsg( "Complex: ", err );
-    }
-    else {
-	MPI_Type_size( newtype, &dsize );
-	if (dsize != 2*sizeof(float)) {
+    /* COMPLEX is a FORTRAN type.  The MPICH2 Type_match_size attempts
+       to give a valid datatype, but if Fortran is not available,
+       MPI_COMPLEX and MPI_DOUBLE_COMPLEX are not supported.  
+       Allow this case by testing for MPI_DATATYPE_NULL */
+    if (MPI_COMPLEX != MPI_DATATYPE_NULL) {
+	err = MPI_Type_match_size( MPI_TYPECLASS_COMPLEX, 2*sizeof(float), &newtype );
+	if (err) {
 	    errs++;
-	    printf( "Unexpected size for complex\n" );
+	    MTestPrintErrorMsg( "Complex: ", err );
+	}
+	else {
+	    MPI_Type_size( newtype, &dsize );
+	    if (dsize != 2*sizeof(float)) {
+		errs++;
+		printf( "Unexpected size for complex\n" );
+	    }
 	}
     }
 
-    err = MPI_Type_match_size( MPI_TYPECLASS_COMPLEX, 2*sizeof(double), &newtype );
-    if (err) {
-	errs++;
-	MTestPrintErrorMsg( "Double complex: ", err );
-    }
-    else {
-	MPI_Type_size( newtype, &dsize );
-	if (dsize != 2*sizeof(double)) {
+    if (MPI_COMPLEX != MPI_DATATYPE_NULL &&
+	MPI_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {
+	err = MPI_Type_match_size( MPI_TYPECLASS_COMPLEX, 2*sizeof(double), &newtype );
+	if (err) {
 	    errs++;
-	    printf( "Unexpected size for double complex\n" );
+	    MTestPrintErrorMsg( "Double complex: ", err );
+	}
+	else {
+	    MPI_Type_size( newtype, &dsize );
+	    if (dsize != 2*sizeof(double)) {
+		errs++;
+		printf( "Unexpected size for double complex\n" );
+	    }
 	}
     }
     

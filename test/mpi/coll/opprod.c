@@ -90,43 +90,45 @@ int main( int argc, char *argv[] )
 	}
     }
 
-    /* double complex */
-    dinbuf[0].r = (rank < maxsize && rank > 0) ? rank : 1;
-    dinbuf[1].r = 0;
-    dinbuf[2].r = (rank > 0);
-    dinbuf[0].i = 0;
-    dinbuf[1].i = 1;
-    dinbuf[2].i = -(rank > 0);
-
-    doutbuf[0].r = 0;
-    doutbuf[1].r = 1;
-    doutbuf[2].r = 1;
-    doutbuf[0].i = 0;
-    doutbuf[1].i = 1;
-    doutbuf[2].i = 1;
-    MPI_Reduce( dinbuf, doutbuf, 3, MPI_DOUBLE_COMPLEX, MPI_PROD, 0, comm );
-    if (rank == 0) {
-	double imag, real;
-	if (doutbuf[0].r != (double)result[maxsize-1] || doutbuf[0].i != 0) {
-	    errs++;
-	    fprintf( stderr, "double complex PROD(rank) test failed\n" );
-	}
-	/* Multiplying the imaginary part depends on size mod 4 */
-	imag = 1.0; real = 0.0; /* Make compiler happy */
-	switch (size % 4) {
-	case 1: imag = 1.0; real = 0.0; break;
-	case 2: imag = 0.0; real = -1.0; break;
-	case 3: imag =-1.0; real = 0.0; break;
-	case 0: imag = 0.0; real = 1.0; break; 
-	}
-	if (doutbuf[1].r != real || doutbuf[1].i != imag) {
-	    errs++;
-	    fprintf( stderr, "double complex PROD(i) test failed (%f,%f)!=(%f,%f)\n",
-		     doutbuf[1].r,doutbuf[1].i,real,imag);
-	}
-	if (doutbuf[2].r != 0 || doutbuf[2].i != 0) {
-	    errs++;
-	    fprintf( stderr, "double complex PROD(>) test failed\n" );
+    if (MPI_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {
+	/* double complex; may be null if we do not have Fortran support */
+	dinbuf[0].r = (rank < maxsize && rank > 0) ? rank : 1;
+	dinbuf[1].r = 0;
+	dinbuf[2].r = (rank > 0);
+	dinbuf[0].i = 0;
+	dinbuf[1].i = 1;
+	dinbuf[2].i = -(rank > 0);
+	
+	doutbuf[0].r = 0;
+	doutbuf[1].r = 1;
+	doutbuf[2].r = 1;
+	doutbuf[0].i = 0;
+	doutbuf[1].i = 1;
+	doutbuf[2].i = 1;
+	MPI_Reduce( dinbuf, doutbuf, 3, MPI_DOUBLE_COMPLEX, MPI_PROD, 0, comm );
+	if (rank == 0) {
+	    double imag, real;
+	    if (doutbuf[0].r != (double)result[maxsize-1] || doutbuf[0].i != 0) {
+		errs++;
+		fprintf( stderr, "double complex PROD(rank) test failed\n" );
+	    }
+	    /* Multiplying the imaginary part depends on size mod 4 */
+	    imag = 1.0; real = 0.0; /* Make compiler happy */
+	    switch (size % 4) {
+	    case 1: imag = 1.0; real = 0.0; break;
+	    case 2: imag = 0.0; real = -1.0; break;
+	    case 3: imag =-1.0; real = 0.0; break;
+	    case 0: imag = 0.0; real = 1.0; break; 
+	    }
+	    if (doutbuf[1].r != real || doutbuf[1].i != imag) {
+		errs++;
+		fprintf( stderr, "double complex PROD(i) test failed (%f,%f)!=(%f,%f)\n",
+			 doutbuf[1].r,doutbuf[1].i,real,imag);
+	    }
+	    if (doutbuf[2].r != 0 || doutbuf[2].i != 0) {
+		errs++;
+		fprintf( stderr, "double complex PROD(>) test failed\n" );
+	    }
 	}
     }
 
