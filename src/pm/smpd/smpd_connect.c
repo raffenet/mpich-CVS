@@ -131,7 +131,9 @@ smpd_global_t smpd_process =
 #endif
       "",               /* printf_buffer           */
       SMPD_SUCCESS,     /* state_machine_ret_val   */
-      SMPD_FALSE        /* exit_on_done            */
+      SMPD_FALSE,       /* exit_on_done            */
+      0,                /* tree_parent             */
+      1                 /* tree_id                 */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -716,6 +718,13 @@ int smpd_get_default_hosts()
 
     smpd_enter_fn("smpd_get_default_hosts");
 
+    if (smpd_process.default_host_list != NULL && smpd_process.cur_default_host != NULL)
+    {
+	smpd_dbg_printf("default list already populated, returning success.\n");
+	smpd_exit_fn("smpd_get_default_hosts");
+	return SMPD_SUCCESS;
+    }
+
     if (smpd_get_smpd_data("hosts", hosts, 8192) != SMPD_SUCCESS)
     {
 #ifdef HAVE_WINDOWS_H
@@ -790,7 +799,7 @@ int smpd_get_default_hosts()
 #endif
     }
 
-    /* Insert code here to parse a compresses host string */
+    /* Insert code here to parse a compressed host string */
     /* For now, just use a space separated list of host names */
 
     host = strtok(hosts, " \t\r\n");

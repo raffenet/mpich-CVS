@@ -2444,8 +2444,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 
     cmd = &context->read_cmd;
     smpd_process.exit_on_done = SMPD_TRUE;
+    /* populate the host list */
+    smpd_get_default_hosts();
 
+    
     /* prepare the result command */
+
+
     result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
     if (result != SMPD_SUCCESS)
     {
@@ -2476,7 +2481,10 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	return SMPD_FAIL;
     }
 
+
     /* parse the spawn command */
+
+
     if (MPIU_Str_get_int_arg(cmd->cmd, "ncmds", &ncmds) != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to get the ncmds parameter from the spawn command '%s'.\n", cmd->cmd);
@@ -2661,6 +2669,17 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    /* interpret the infos for this command */
 	}
     }
+    if (info != NULL)
+    {
+	/* free the last round of infos */
+	for (j=0; j<nkeyvals[i-1]; j++)
+	{
+	    free(info[j].key);
+	    free(info[j].val);
+	}
+	free(info);
+    }
+    info = NULL;
 
     /* Get the keyval pairs to be put in the process group keyval space before the processes are launched. */
     if (MPIU_Str_get_int_arg(cmd->cmd, "npreput", &npreput) != MPIU_STR_SUCCESS)
@@ -2688,7 +2707,14 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     free(maxprocs);
     free(nkeyvals);
 
+
     /* do the spawn stuff */
+
+    /* create the host list */
+    /* connect up the new smpd hosts */
+    /* create the new kvs space */
+    /* send the launch commands */
+
     launch_iter = launch_list;
     while (launch_iter)
     {
@@ -2701,6 +2727,10 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	free(launch_temp);
     }
     fflush(stdout);
+
+
+    /* return the result */
+
 
     /* add the result */
     result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);

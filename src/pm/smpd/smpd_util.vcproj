@@ -131,6 +131,9 @@
 				RelativePath=".\smpd_handle_command.c">
 			</File>
 			<File
+				RelativePath=".\smpd_host_util.c">
+			</File>
+			<File
 				RelativePath="smpd_launch_process.c">
 			</File>
 			<File

@@ -464,6 +464,8 @@ typedef struct smpd_global_t
     char printf_buffer[SMPD_MAX_DBG_PRINTF_LENGTH];
     int state_machine_ret_val;
     SMPD_BOOL exit_on_done;
+    int tree_parent;
+    int tree_id;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -598,5 +600,12 @@ int smpd_lock_smpd_data(void);
 int smpd_unlock_smpd_data(void);
 int smpd_insert_into_dynamic_hosts(void);
 int smpd_remove_from_dynamic_hosts(void);
+int smpd_get_pwd_from_file(char *file_name);
+int smpd_get_next_hostname(char *host);
+SMPD_BOOL smpd_parse_machine_file(char *file_name);
+int smpd_get_host_id(char *host, int *id_ptr);
+int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *launch_node);
+SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp);
+int smpd_create_cliques(smpd_launch_node_t *list);
 
 #endif

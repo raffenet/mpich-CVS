@@ -172,475 +172,6 @@ static int isnumber(char *str)
     return SMPD_TRUE;
 }
 
-int mp_get_pwd_from_file(char *file_name)
-{
-    char line[1024];
-    FILE *fin;
-
-    /* open the file */
-    fin = fopen(file_name, "r");
-    if (fin == NULL)
-    {
-	printf("Error, unable to open account file '%s'\n", file_name);
-	return SMPD_FAIL;
-    }
-
-    /* read the account */
-    if (!fgets(line, 1024, fin))
-    {
-	printf("Error, unable to read the account in '%s'\n", file_name);
-	fclose(fin);
-	return SMPD_FAIL;
-    }
-
-    /* strip off the newline characters */
-    while (strlen(line) && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
-	line[strlen(line)-1] = '\0';
-    if (strlen(line) == 0)
-    {
-	printf("Error, first line in password file must be the account name. (%s)\n", file_name);
-	fclose(fin);
-	return SMPD_FAIL;
-    }
-
-    /* save the account */
-    strcpy(smpd_process.UserAccount, line);
-
-    /* read the password */
-    if (!fgets(line, 1024, fin))
-    {
-	printf("Error, unable to read the password in '%s'\n", file_name);
-	fclose(fin);
-	return SMPD_FAIL;
-    }
-    /* strip off the newline characters */
-    while (strlen(line) && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
-	line[strlen(line)-1] = '\0';
-
-    /* save the password */
-    if (strlen(line))
-	strcpy(smpd_process.UserPassword, line);
-    else
-	smpd_process.UserPassword[0] = '\0';
-
-    fclose(fin);
-
-    return SMPD_SUCCESS;
-}
-
-static smpd_host_node_t *s_host_list = NULL, *s_cur_host = NULL;
-static int s_cur_count = 0;
-int mp_get_next_hostname(char *host)
-{
-    if (s_host_list == NULL)
-    {
-	if (smpd_process.cur_default_host)
-	{
-	    if (smpd_process.cur_default_iproc >= smpd_process.cur_default_host->nproc)
-	    {
-		smpd_process.cur_default_host = smpd_process.cur_default_host->next;
-		smpd_process.cur_default_iproc = 0;
-		if (smpd_process.cur_default_host == NULL) /* This should never happen because the hosts are in a ring */
-		    return SMPD_FAIL;
-	    }
-	    strcpy(host, smpd_process.cur_default_host->host);
-	    smpd_process.cur_default_iproc++;
-	}
-	else
-	{
-	    if (gethostname(host, SMPD_MAX_HOST_LENGTH) != 0)
-		return SMPD_FAIL;
-	}
-	return SMPD_SUCCESS;
-    }
-    if (s_cur_host == NULL)
-    {
-	s_cur_host = s_host_list;
-	s_cur_count = 0;
-    }
-    strcpy(host, s_cur_host->host);
-    s_cur_count++;
-    if (s_cur_count >= s_cur_host->nproc)
-    {
-	s_cur_host = s_cur_host->next;
-	s_cur_count = 0;
-    }
-    return SMPD_SUCCESS;
-}
-
-SMPD_BOOL mp_parse_machine_file(char *file_name)
-{
-    char line[1024];
-    FILE *fin;
-    smpd_host_node_t *node, *node_iter;
-    char *hostname, *iter;
-    int nproc;
-
-    s_host_list = NULL;
-    s_cur_host = NULL;
-    s_cur_count = 0;
-
-    /* open the file */
-    fin = fopen(file_name, "r");
-    if (fin == NULL)
-    {
-	printf("Error, unable to open machine file '%s'\n", file_name);
-	return SMPD_FALSE;
-    }
-
-    while (fgets(line, 1024, fin))
-    {
-	/* strip off the newline characters */
-	while (strlen(line) && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
-	    line[strlen(line)-1] = '\0';
-	hostname = line;
-	/* move over any leading whitespace */
-	while (isspace(*hostname))
-	    hostname++;
-	if (strlen(hostname) != 0 && hostname[0] != '#')
-	{
-	    iter = hostname;
-	    /* move over the hostname and see if there is a number after it */
-	    while (*iter != '\0' && !isspace(*iter))
-		iter++;
-	    if (*iter != '\0')
-	    {
-		*iter = '\0';
-		iter++;
-		while (isspace(*iter))
-		    iter++;
-		nproc = atoi(iter);
-		if (nproc < 1)
-		    nproc = 1;
-	    }
-	    else
-	    {
-		nproc = 1;
-	    }
-	    node = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
-	    strcpy(node->host, hostname);
-	    node->id = -1;
-	    node->parent = -1;
-	    node->nproc = nproc;
-	    node->next = NULL;
-	    if (s_host_list == NULL)
-		s_host_list = node;
-	    else
-	    {
-		node_iter = s_host_list;
-		while (node_iter->next != NULL)
-		    node_iter = node_iter->next;
-		node_iter->next = node;
-	    }
-	}
-    }
-    if (s_host_list != NULL)
-    {
-	node = s_host_list;
-	while (node)
-	{
-	    smpd_dbg_printf("host = %s, nproc = %d\n", node->host, node->nproc);
-	    node = node->next;
-	}
-	return SMPD_TRUE;
-    }
-    return SMPD_FALSE;
-}
-
-int mp_get_host_id(char *host, int *id_ptr)
-{
-    smpd_host_node_t *node;
-    static int parent = 0;
-    static int id = 1;
-    int bit, mask, temp;
-
-    /* look for the host in the list */
-    node = smpd_process.host_list;
-    while (node)
-    {
-	if (strcmp(node->host, host) == 0)
-	{
-	    /* return the id */
-	    *id_ptr = node->id;
-	    return SMPD_SUCCESS;
-	}
-	if (node->next == NULL)
-	    break;
-	node = node->next;
-    }
-
-    /* allocate a new node */
-    if (node != NULL)
-    {
-	node->next = (smpd_host_node_t *)malloc(sizeof(smpd_host_node_t));
-	node = node->next;
-    }
-    else
-    {
-	node = (smpd_host_node_t *)malloc(sizeof(smpd_host_node_t));
-	smpd_process.host_list = node;
-    }
-    if (node == NULL)
-    {
-	smpd_err_printf("malloc failed to allocate a host node structure\n");
-	return SMPD_FAIL;
-    }
-    strcpy(node->host, host);
-    node->parent = parent;
-    node->id = id;
-    node->next = NULL;
-
-    /* move to the next id and parent */
-    id++;
-
-    temp = id >> 2;
-    bit = 1;
-    while (temp)
-    {
-	bit <<= 1;
-	temp >>= 1;
-    }
-    mask = bit - 1;
-    parent = bit | (id & mask);
-
-    /* return the id */
-    *id_ptr = node->id;
-
-    return SMPD_SUCCESS;
-}
-
-int mp_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *launch_node)
-{
-    int result;
-    char host[SMPD_MAX_HOST_LENGTH];
-    smpd_host_node_t *host_node_ptr;
-
-    if (*host_node_pptr == NULL)
-    {
-	result = mp_get_next_hostname(host);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to get the next available host name\n");
-	    return SMPD_FAIL;
-	}
-	result = mp_get_host_id(host, &launch_node->host_id);
-	if (result != SMPD_SUCCESS)
-	{
-	    smpd_err_printf("unable to get a id for host %s\n", host);
-	    return SMPD_FAIL;
-	}
-	return SMPD_SUCCESS;
-    }
-
-    host_node_ptr = *host_node_pptr;
-    if (host_node_ptr->nproc == 0)
-    {
-	(*host_node_pptr) = (*host_node_pptr)->next;
-	free(host_node_ptr);
-	host_node_ptr = *host_node_pptr;
-	if (host_node_ptr == NULL)
-	{
-	    smpd_err_printf("no more hosts in the list.\n");
-	    return SMPD_FAIL;
-	}
-    }
-    result = mp_get_host_id(host_node_ptr->host, &launch_node->host_id);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to get a id for host %s\n", host_node_ptr->host);
-	return SMPD_FAIL;
-    }
-    host_node_ptr->nproc--;
-    if (host_node_ptr->nproc == 0)
-    {
-	(*host_node_pptr) = (*host_node_pptr)->next;
-	free(host_node_ptr);
-    }
-
-    return SMPD_SUCCESS;
-}
-
-SMPD_BOOL mp_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
-{
-    /* maximum of 8192 characters per line and 1023 args */
-    static char line[8192];
-    static char *argv[1024];
-    char *token;
-    int index;
-
-    smpd_enter_fn("mp_get_argcv_from_file");
-
-    argv[0] = "bogus.exe";
-    while (fgets(line, 8192, fin))
-    {
-	index = 1;
-	token = strtok(line, " \r\n");
-	while (token)
-	{
-	    argv[index] = token;
-	    index++;
-	    if (index == 1024)
-	    {
-		argv[1023] = NULL;
-		break;
-	    }
-	    token = strtok(NULL, " \r\n");
-	}
-	if (index != 1)
-	{
-	    if (index < 1024)
-		argv[index] = NULL;
-	    *argcp = index;
-	    *argvp = argv;
-	    return SMPD_TRUE;
-	}
-    }
-
-    smpd_exit_fn("mp_get_argcv_from_file");
-    return SMPD_FALSE;
-}
-
-static smpd_launch_node_t *next_launch_node(smpd_launch_node_t *node, int id)
-{
-    while (node)
-    {
-	if (node->host_id == id)
-	    return node;
-	node = node->next;
-    }
-    return NULL;
-}
-
-static smpd_launch_node_t *prev_launch_node(smpd_launch_node_t *node, int id)
-{
-    while (node)
-    {
-	if (node->host_id == id)
-	    return node;
-	node = node->prev;
-    }
-    return NULL;
-}
-
-int mp_create_cliques(smpd_launch_node_t *list)
-{
-    smpd_launch_node_t *iter, *cur_node;
-    int cur_iproc, printed_iproc;
-    char *cur_str;
-
-    if (list == NULL)
-	return SMPD_SUCCESS;
-
-    if (list->iproc == 0)
-    {
-	/* in order */
-	cur_node = list;
-	while (cur_node)
-	{
-	    /* point to the current structures */
-	    printed_iproc = cur_iproc = cur_node->iproc;
-	    cur_str = cur_node->clique;
-	    cur_str += sprintf(cur_str, "%d", cur_iproc);
-	    /* add the ranks of all other nodes with the same id */
-	    iter = next_launch_node(cur_node->next, cur_node->host_id);
-	    while (iter)
-	    {
-		if (iter->iproc == cur_iproc + 1)
-		{
-		    cur_iproc = iter->iproc;
-		    iter = next_launch_node(iter->next, iter->host_id);
-		    if (iter == NULL)
-			cur_str += sprintf(cur_str, "..%d", cur_iproc);
-		}
-		else
-		{
-		    if (printed_iproc == cur_iproc)
-		    {
-			cur_str += sprintf(cur_str, ",%d", iter->iproc);
-		    }
-		    else
-		    {
-			cur_str += sprintf(cur_str, "..%d,%d", cur_iproc, iter->iproc);
-		    }
-		    printed_iproc = cur_iproc = iter->iproc;
-		    iter = next_launch_node(iter->next, iter->host_id);
-		}
-	    }
-	    /* copy the clique string to all the nodes with the same id */
-	    iter = next_launch_node(cur_node->next, cur_node->host_id);
-	    while (iter)
-	    {
-		strcpy(iter->clique, cur_node->clique);
-		iter = next_launch_node(iter->next, iter->host_id);
-	    }
-	    /* move to the next node that doesn't have a clique string yet */
-	    cur_node = cur_node->next;
-	    while (cur_node && cur_node->clique[0] != '\0')
-		cur_node = cur_node->next;
-	}
-    }
-    else
-    {
-	/* reverse order */
-	cur_node = list;
-	/* go to the end of the list */
-	while (cur_node->next)
-	    cur_node = cur_node->next;
-	while (cur_node)
-	{
-	    /* point to the current structures */
-	    printed_iproc = cur_iproc = cur_node->iproc;
-	    cur_str = cur_node->clique;
-	    cur_str += sprintf(cur_str, "%d", cur_iproc);
-	    /* add the ranks of all other nodes with the same id */
-	    iter = prev_launch_node(cur_node->prev, cur_node->host_id);
-	    while (iter)
-	    {
-		if (iter->iproc == cur_iproc + 1)
-		{
-		    cur_iproc = iter->iproc;
-		    iter = prev_launch_node(iter->prev, iter->host_id);
-		    if (iter == NULL)
-			cur_str += sprintf(cur_str, "..%d", cur_iproc);
-		}
-		else
-		{
-		    if (printed_iproc == cur_iproc)
-		    {
-			cur_str += sprintf(cur_str, ",%d", iter->iproc);
-		    }
-		    else
-		    {
-			cur_str += sprintf(cur_str, "..%d,%d", cur_iproc, iter->iproc);
-		    }
-		    printed_iproc = cur_iproc = iter->iproc;
-		    iter = prev_launch_node(iter->prev, iter->host_id);
-		}
-	    }
-	    /* copy the clique string to all the nodes with the same id */
-	    iter = prev_launch_node(cur_node->prev, cur_node->host_id);
-	    while (iter)
-	    {
-		strcpy(iter->clique, cur_node->clique);
-		iter = prev_launch_node(iter->prev, iter->host_id);
-	    }
-	    /* move to the next node that doesn't have a clique string yet */
-	    cur_node = cur_node->prev;
-	    while (cur_node && cur_node->clique[0] != '\0')
-		cur_node = cur_node->prev;
-	}
-    }
-    /*
-    iter = list;
-    while (iter)
-    {
-	printf("clique: <%s>\n", iter->clique);
-	iter = iter->next;
-    }
-    */
-    return SMPD_SUCCESS;
-}
-
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
     int cur_rank;
@@ -874,7 +405,7 @@ configfile_loop:
 		    smpd_exit_fn("mp_parse_command_args");
 		    return SMPD_FAIL;
 		}
-		if (!mp_get_argcv_from_file(fin_config, argcp, argvp))
+		if (!smpd_get_argcv_from_file(fin_config, argcp, argvp))
 		{
 		    fclose(fin_config);
 		    printf("Error: unable to parse config file '%s'\n", configfilename);
@@ -967,7 +498,7 @@ configfile_loop:
 		}
 		strncpy(machine_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
 		use_machine_file = SMPD_TRUE;
-		mp_parse_machine_file(machine_file_name);
+		smpd_parse_machine_file(machine_file_name);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "map") == 0)
@@ -1054,7 +585,7 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		strncpy(pwd_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
-		mp_get_pwd_from_file(pwd_file_name);
+		smpd_get_pwd_from_file(pwd_file_name);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "file") == 0)
@@ -1456,7 +987,7 @@ configfile_loop:
 		return SMPD_FAIL;
 	    }
 	    launch_node->clique[0] = '\0';
-	    mp_get_next_host(&host_list, launch_node);
+	    smpd_get_next_host(&host_list, launch_node);
 	    launch_node->iproc = cur_rank++;
 	    launch_node->env = launch_node->env_data;
 	    strcpy(launch_node->env_data, env_data);
@@ -1517,7 +1048,7 @@ configfile_loop:
 
 	if (use_configfile)
 	{
-	    if (mp_get_argcv_from_file(fin_config, argcp, argvp))
+	    if (smpd_get_argcv_from_file(fin_config, argcp, argvp))
 		goto configfile_loop;
 	    fclose(fin_config);
 	}
@@ -1537,7 +1068,7 @@ configfile_loop:
     }
 
     /* create the cliques */
-    mp_create_cliques(smpd_process.launch_list);
+    smpd_create_cliques(smpd_process.launch_list);
 
     smpd_exit_fn("mp_parse_command_args");
     return SMPD_SUCCESS;
