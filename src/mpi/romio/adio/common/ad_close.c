@@ -70,6 +70,7 @@ void ADIO_Close(ADIO_File fd, int *error_code)
 	if (!myrank) ADIO_Delete(fd->filename, &err);
     }
 
+    ADIOI_Free(fd->hints);
     ADIOI_Free(fd->fns);
     MPI_Comm_free(&(fd->comm));
     /* deferred open: if we created an aggregator communicator, free it */
