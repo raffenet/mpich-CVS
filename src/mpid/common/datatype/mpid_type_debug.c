@@ -13,6 +13,7 @@
 
 static char *MPIDI_combiner_to_string(int combiner);
 static char *MPIDI_datatype_builtin_to_string(MPI_Datatype type);
+void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p, int depth, int header);
 
 void MPIDI_Datatype_dot_printf(MPI_Datatype type,
 			       int depth,
