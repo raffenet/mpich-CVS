@@ -59,6 +59,12 @@
 #define MPIO_Request MPI_Request
 #endif
 
+/* MPI_FAint is used as the C type corresponding to the Fortran type 
+   used for addresses.  For now, we make this the same as MPI_Aint.  
+   Note that since this is defined only for this private include file,
+   we can get away with calling MPI_xxx */
+typedef MPI_Aint MPI_FAint;
+
 /* Utility functions */
 
 /* Define the internal values needed for Fortran support */
