@@ -78,12 +78,14 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
 	if (mpi_errno != MPI_SUCCESS)
 	{
+	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	    MPIDI_CH3U_Request_complete(sreq);
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
 	    return mpi_errno;
 	}
 
-	if (nb > 0)
+	if (nb >= 0)
 	{
 	    int offset = 0;
 	    
@@ -108,21 +110,15 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 	    if (offset == n_iov)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
+		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		MPIDI_CH3U_Handle_send_req(vc, sreq);
-		if (sreq->dev.iov_count != 0)
+		if (sreq->dev.iov_count == 0)
 		{
 		/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but
 		    request may still be active (see MPI_Ssend()) */
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
 	    }
-	}
-	else if (nb == 0)
-	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "unable to write, enqueuing"));
-	    update_request(sreq, iov, n_iov, 0, 0);
-	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    vc->ch.send_active = sreq;
 	}
 	else
 	{
