@@ -1961,6 +1961,9 @@ if ($write_mpif) {
 
     
     # Now, write out the file
+    # This first line makes sure that other tools know that this is a
+    # Fortran file
+    print MPIFFD "$cchar      /* -*- Mode: Fortran; -*- */\n";
     print MPIFFD "$cchar      \n";
     print MPIFFD "$cchar      (C) 2001 by Argonne National Laboratory.\n";
     print MPIFFD "$cchar      See COPYRIGHT in top-level directory.\n";
