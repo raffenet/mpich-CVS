@@ -1287,7 +1287,7 @@ int ibu_post_readv(ibu_t ibu, IBU_IOV *iov, int n, int (*rfn)(int, void*))
     {
 	s += sprintf(s, "%d,", iov[i].IBU_IOV_LEN);
     }
-    MPIU_dbg_printf("%s\n", s);
+    MPIU_dbg_printf("%s\n", str);
     /*MPIU_dbg_printf("ibu_post_readv\n");*/
     ibu->read.total = 0;
     /*ibu->read.iov = iov;*/
