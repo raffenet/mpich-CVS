@@ -41,7 +41,12 @@ Each of the programs has a "-h" option to show its usage.
 The Development environment includes the RunTime environment and the
 extra directories: src/, trace_sample/ and possibly other trace_xxx/.
 The doc/ directory contains both the documentation for the runtime and
-development environment.
+development environment.  The Development environment is Unix based
+but can be used under Windows's cygwin environment.
+
+For MS Windows user: As long as a Java2 runtime environment is installed,
+                     Jumpshot can be launched with better JVM option by
+                     clicking jumpshot_launcher.jar.
 
 
 
@@ -159,22 +164,29 @@ where all the executable jar files are located.  The utility programs
 mentioned above has its bytecode archived by the following jar file
 of the same name.  They are
 
-slog2print.jar: a execuatable jar file prints the slog2 file
+slog2print.jar: executable jar file prints the slog2 file
                 usage: java -jar slog2print.jar slog2filename
 
-slog2navigator.jar: a execuatable jar file that navigates in the slog2 file
+slog2navigator.jar: executable jar file that navigates in the slog2 file
                     usage: java -jar slog2navigator slog2filename
  
-traceprint.jar: a execuatable jar file prints the trace file
+traceprint.jar: executable jar file prints the trace file
                 usage: java -Djava.library.path=<location_to_libTraceInput.so>
                        -jar traceprint.jar tracefilename
 
-traceTOslog2.jar: a execuatable jar file converts trace to slog2 file
+traceTOslog2.jar: executable jar file converts trace to slog2 file
                   usage: java -Djava.library.path=<location_to_libTraceInput.so>
                          -jar traceTOslog2.jar tracefilename
 
-clogprint.jar: a execuatable jar file prints the clog file
+clogprint.jar: executable jar file prints the clog file
                usage: java -jar traceprint.jar clogfilename
 
-clogTOslog2.jar: a execuatable jar file converts clog to slog2 file
+clogTOslog2.jar: executable jar file converts clog to slog2 file
                  usage: java -jar traceTOslog2.jar clogfilename
+
+jumpshot.jar: executable jar file that visualizes slog2 file and convert
+              clog, rlog and ute files to slog2 file.
+              usage: java -Xms64m -Xmx256m -jar jumpshot.jar [filename]
+
+jumpshot_launcher.jar: executable jar file that launchs jumpshot.jar
+                       usage:java -jar jumpshot_launcher

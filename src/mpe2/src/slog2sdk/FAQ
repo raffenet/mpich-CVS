@@ -28,3 +28,9 @@ Frequent Asked Question and Anwser:
    can be easily seen when the background is black, i.e. all states 
    may appear to be darker.
    
+3, How can launch Jumpshot-4 in native Windows enviroment ?
+
+   First install Java2 runtime enviroment on Windows, i.e. jre 1.2.2 to 1.4.2
+   or up, then launch Jumpshot-4 in native Windows environment by clicking
+   on the lib/jumpshot_launcher.jar.  The Java Virtual Machine's launch 
+   parameters can be modified in $HOME/.jumpshot_launcher.conf.

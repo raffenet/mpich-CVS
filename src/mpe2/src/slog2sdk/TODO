@@ -4,4 +4,3 @@
 
 2, separate the code that reads slog2's treenode from the main event
    dispatching thread, i.e. increase overlap.
-

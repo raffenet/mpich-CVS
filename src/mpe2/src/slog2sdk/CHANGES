@@ -42,3 +42,8 @@ of TRACE-API in trace_sample/
 
 9/9/03  added a GUI logfile convertor to convert non-slog2 file.  The 
         supported logfile formats for the logfile convertor are clog and rlog.
+
+10/1/03 added a jumpshot launcher.  It is mainly designed with MS windows user
+        in mind.  The launcher will launch jumpshot with some better option
+        than JVM's standard options.  User can modify those options in 
+        $HOME/.jumpshot_launcher.conf
