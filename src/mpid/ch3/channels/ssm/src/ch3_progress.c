@@ -12,7 +12,12 @@ int MPIDI_CH3I_sock_read_active = 0;
 int MPIDI_CH3I_sock_write_active = 0;
 int MPIDI_CH3I_active_flag = 0;
 
-/* naive progress engine */
+#ifdef USE_NAIVE_PROGRESS_ENGINE
+/*****************************/
+/*                           */
+/*   naive progress engine   */
+/*                           */
+/*****************************/
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress
@@ -92,13 +97,6 @@ int MPIDI_CH3I_Progress(int is_blocking)
 		vc_ptr = vc_ptr->ch.shm_next_writer;
 	    }
 	}
-
-	/*
-	if (bShmProgressMade)
-	{
-	    continue;
-	}
-	*/
 
 	MPIDU_Yield();
 
@@ -184,9 +182,15 @@ fn_exit:
     return mpi_errno;
 }
 
-#if 0 /* Original progress code */
+#else /* USE_NAIVE_PROGRESS_ENGINE */
+
 
 #if defined(USE_FIXED_SPIN_WAITS) || !defined(MPID_CPU_TICK)
+/****************************************/
+/*                                      */
+/*   Fixed spin waits progress engine   */
+/*                                      */
+/****************************************/
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress
@@ -267,7 +271,8 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	    }
 	}
 
-	if (bShmProgressMade)
+#if 0
+	if (bShmProgressMade) /* This variable is not determined correctly */
 	{
 	    spin_count = 1;
 #ifdef USE_SLEEP_YIELD
@@ -275,6 +280,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 #endif
 	    continue;
 	}
+#endif
 
 	if (spin_count >= MPIDI_CH3I_Process.pg->nShmWaitSpinCount)
 	{
@@ -385,9 +391,14 @@ fn_exit:
     return mpi_errno;
 }
 
-#endif
+#endif /* USE_FIXED_SPIN_WAITS */
 
 #if defined(USE_ADAPTIVE_PROGRESS) && defined(MPID_CPU_TICK)
+/********************************/
+/*                              */
+/*   Adaptive progress engine   */
+/*                              */
+/********************************/
 
 #define MPIDI_CH3I_UPDATE_ITERATIONS    10
 #define MPID_SINGLE_ACTIVE_FACTOR      100
@@ -856,6 +867,14 @@ fn_exit:
 #endif /* USE_ADAPTIVE_PROGRESS */
 
 #ifdef USE_FIXED_ACTIVE_PROGRESS
+/**********************************************************/
+/*                                                        */
+/*   Fixed active progress engine                         */
+/*                                                        */
+/*   Like the adaptive engine but active reps are fixed   */
+/*   instead of calculated from CPU time.                 */
+/*                                                        */
+/**********************************************************/
 
 #define MPIDI_CH3I_UPDATE_ITERATIONS    10
 #define MPID_SINGLE_ACTIVE_FACTOR      100
@@ -1199,9 +1218,9 @@ fn_exit:
     return mpi_errno;
 }
 
-#endif
+#endif /* USE_FIXED_ACTIVE_PROGRESS */
 
-#endif /* Original progress code */
+#endif /* else branch of USE_NAIVE_PROGRESS_ENGINE */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_poke
