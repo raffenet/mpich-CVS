@@ -80,14 +80,14 @@ MPI_Issend,,,,,Brian,,done,not tested
 MPI_Irsend,,,,,Brian,,done,not tested
 MPI_Irecv,,,,,David/Brian,,done
 MPI_Wait,,,,,Brian,,done
-MPI_Test,,,,,David/Bill/Brian,,
+MPI_Test,,,,,Brian/David/Bill,,done
 MPI_Request_free,.1,.15,.2,,Brian,,.1,05/14/02
-MPI_Waitany,,,,,Brian,,
-MPI_Testany,,,,,Brian,,
-MPI_Waitall,,,,,Brian,,
-MPI_Testall,,,,,Brian,,
-MPI_Waitsome,,,,,Brian,,
-MPI_Testsome,,,,,Brian,,
+MPI_Waitany,,,,,Brian,,done
+MPI_Testany,,,,,Brian,,done
+MPI_Waitall,,,,,Brian,,done
+MPI_Testall,,,,,Brian,,done
+MPI_Waitsome,,,,,Brian,,done
+MPI_Testsome,,,,,Brian,,done
 MPI_Iprobe,,,,,Brian,,.1,04/23/2002
 MPI_Probe,,,,,Brian,,.1,04/23/2002
 MPI_Cancel,.25,.5,1,,Brian,,
