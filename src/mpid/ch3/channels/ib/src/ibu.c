@@ -997,7 +997,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	len = min (num_avail, iov[iov_index].IBU_IOV_LEN);
 	num_avail -= len;
 	total += len;
-	printf("copying %d bytes to ib buffer\n", len);fflush(stdout);
+	printf("copying %d bytes to ib buffer - num_avail: %d\n", len, num_avail);fflush(stdout);
 	memcpy(buf, iov[iov_index].IBU_IOV_BUF, len);
 	if (num_avail)
 	    buf += len;
