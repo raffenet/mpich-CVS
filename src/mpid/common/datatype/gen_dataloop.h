@@ -67,7 +67,7 @@ typedef struct DLOOP_Dataloop_contig {
     DLOOP_Count count;
     union {
 	struct DLOOP_Dataloop *dataloop;
-	DLOOP_Handle handle;
+	DLOOP_Handle handle; /* only used if this is a leaf */
     } u;
 } DLOOP_Dataloop_contig;
 
@@ -87,7 +87,7 @@ typedef struct DLOOP_Dataloop_vector {
     DLOOP_Count count;
     union {
 	struct DLOOP_Dataloop *dataloop;
-	DLOOP_Handle handle;
+	DLOOP_Handle handle; /* only used if this is a leaf */
     } u;
     DLOOP_Count blocksize;
     DLOOP_Offset stride;
@@ -110,7 +110,7 @@ typedef struct DLOOP_Dataloop_blockindexed {
     DLOOP_Count count;
     union {
 	struct DLOOP_Dataloop *dataloop;
-	DLOOP_Handle handle;
+	DLOOP_Handle handle; /* only used if this is a leaf */
     } u;
     DLOOP_Count blocksize;
     DLOOP_Offset *offset_array;
@@ -133,7 +133,7 @@ typedef struct DLOOP_Dataloop_indexed {
     DLOOP_Count count;
     union {
 	struct DLOOP_Dataloop *dataloop;
-	DLOOP_Handle handle;
+	DLOOP_Handle handle; /* only used if this is a leaf */
     } u;
     DLOOP_Count *blocksize_array;
     DLOOP_Offset *offset_array;
@@ -169,7 +169,7 @@ typedef struct DLOOP_Dataloop_common {
     DLOOP_Count count;
     union {
 	struct DLOOP_Dataloop *dataloop;
-	DLOOP_Handle handle;
+	DLOOP_Handle handle; /* only used if this is a leaf */
     } u;
 } DLOOP_Dataloop_common;
 

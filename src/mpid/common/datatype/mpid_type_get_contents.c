@@ -68,7 +68,10 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	    array_of_integers[0]  = dlp->loop_params.v_t.count;
 	    array_of_integers[1]  = dlp->loop_params.v_t.blocksize;
 	    array_of_integers[2]  = dlp->loop_params.v_t.stride;
-	    array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
+	    if (dlp->kind & DLOOP_FINAL_MASK)
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.handle;
+	    else
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
 	}
 	else return create_error_to_return();
     }
@@ -77,7 +80,10 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	    array_of_integers[0]  = dlp->loop_params.v_t.count;
 	    array_of_integers[1]  = dlp->loop_params.v_t.blocksize;
 	    array_of_addresses[0] = dlp->loop_params.v_t.stride;
-	    array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
+	    if (dlp->kind & DLOOP_FINAL_MASK)
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.handle;
+	    else
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
 	}
 	else return create_error_to_return();
     }
@@ -93,7 +99,10 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	    for (i=0; i < count; i++) {
 		array_of_integers[i+count+1] = dlp->loop_params.i_t.offset_array[i];
 	    }
-	    array_of_datatypes[0] = dlp->loop_params.i_t.u.dataloop->handle;
+	    if (dlp->kind & DLOOP_FINAL_MASK)
+		array_of_datatypes[0] = dlp->loop_params.i_t.u.handle;
+	    else
+		array_of_datatypes[0] = dlp->loop_params.i_t.u.dataloop->handle;
 	}
 	else return create_error_to_return();
     }
@@ -110,7 +119,10 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	    for (i=0; i < count; i++) {
 		array_of_addresses[i] = dlp->loop_params.i_t.offset_array[i];
 	    }
-	    array_of_datatypes[0] = dlp->loop_params.i_t.u.dataloop->handle;
+	    if (dlp->kind & DLOOP_FINAL_MASK)
+		array_of_datatypes[0] = dlp->loop_params.i_t.u.handle;
+	    else
+		array_of_datatypes[0] = dlp->loop_params.i_t.u.dataloop->handle;
 	}
 	else return create_error_to_return();
     }
@@ -144,7 +156,10 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	    array_of_integers[0]  = dlp->loop_params.v_t.count;
 	    array_of_integers[0]  = dlp->loop_params.v_t.blocksize;
 	    array_of_integers[0]  = dlp->loop_params.v_t.stride;
-	    array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
+	    if (dlp->kind & DLOOP_FINAL_MASK)
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.handle;
+	    else
+		array_of_datatypes[0] = dlp->loop_params.v_t.u.dataloop->handle;
 	}
 	else return create_error_to_return();
     }
@@ -160,7 +175,10 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	    for (i=0; i < count; i++) {
 		array_of_integers[i+count+1] = dlp->loop_params.i_t.offset_array[i];
 	    }
-	    array_of_datatypes[0] = dlp->loop_params.i_t.u.dataloop->handle;
+	    if (dlp->kind & DLOOP_FINAL_MASK)
+		array_of_datatypes[0] = dlp->loop_params.i_t.u.handle;
+	    else
+		array_of_datatypes[0] = dlp->loop_params.i_t.u.dataloop->handle;
 	}
 	else return create_error_to_return();
     }
@@ -174,7 +192,10 @@ int MPID_Type_get_contents(MPI_Datatype datatype,
 	    for (i=0; i < count; i++) {
 		array_of_integers[i+2] = dlp->loop_params.bi_t.offset_array[i];
 	    }
-	    array_of_datatypes[0] = dlp->loop_params.bi_t.u.dataloop->handle;
+	    if (dlp->kind & DLOOP_FINAL_MASK)
+		array_of_datatypes[0] = dlp->loop_params.bi_t.u.handle;
+	    else
+		array_of_datatypes[0] = dlp->loop_params.bi_t.u.dataloop->handle;
 	}
 	else return create_error_to_return();
     }
