@@ -384,8 +384,8 @@ foreach $_ (@ARGV) {
     'Info_get' => '2:4:5', 'Info_get-2' => 'in:addnull',
 		  'Info_get-4' => 'out:blankpad',
 		  'Info_get-5' => 'out:logical',
-    'Info_set' => '2:3', 'Info_set-2' => 'in:addnull', 
-		  'Info_set-3' => 'in:addnull',
+    'Info_set' => '2:3', 'Info_set-2' => 'in:addnullandtrim', 
+		  'Info_set-3' => 'in:addnullandtrim',
     'Info_get_nthkey' => '3', 'Info_get_nthkey-3' => 'out:blankpad',
     'Info_get_valuelen' => '2:4', 'Info_get_valuelen-2' => 'in:addnull',
 		  'Info_get_valuelen-4' => 'out:logical',
@@ -486,6 +486,8 @@ foreach $_ (@ARGV) {
 		'Comm_create_keyval-3' => 'setF90keyval',
 		'Win_create_keyval' => 3,
 		'Win_create_keyval-3' => 'setF90keyval', 
+		'Grequest_start' => 5,
+		'Grequest_start-5' => 'setF77greq',
 		);
 
 #
@@ -1516,7 +1518,44 @@ sub addnull_ftoc {
 ";
     $clean_up .= "    $free( p$count );\n";
 }
+# ----------------------------------------------------------------------------
+# Add null to input strings, also trim all LEADING and trailing blanks.
+# This is required by Info_set (but not explicitly for the other
+# routines).
+# We must make a copy 
+sub addnullandtrim_in_decl {
+    my $count = $_[0];
+    print $OUTFD "    char *p$count;\n";
+}
+sub addnullandtrim_in_arg {
+    my $count = $_[0];
+    print $OUTFD "p$count";
+}
+sub addnullandtrim_ftoc {
+    my $count = $_[0];
+    
+    # Working backwards from the length argument, find the first 
+    # nonblank character
+    # end of the string.  The declared length is given by a variable
+    # whose name is derived from outvar
+    $strlen = "v$count";
+    $strlen =~ s/^v/d/;
+    print $OUTFD "\
+    {char *p = v$count + $strlen - 1;
+     char *pin = v$count;
+     int  li;
+        while (*p == ' ' && p > v$count) p--;
+        p++;
+        while (*pin == ' ' && pin < p) pin++;
+        p$count = (char *)$malloc( p-pin + 1 );
+        for (li=0; li<(p-pin); li++) { p$count\[li\] = pin\[li\]; }
+        p$count\[li\] = 0; 
+    }
+";
+    $clean_up .= "    $free( p$count );\n";
+}
 
+# ----------------------------------------------------------------------------
 # Add null to arrays of input strings
 # We must make a copy 
 sub chararray_in_decl {
@@ -1788,6 +1827,16 @@ sub setF90keyval {
          MPIR_Keyval_set_fortran90( *v$argnum );
     }\n";
 }
+sub setF77greq {
+    my $FD = $_[0];
+    my $argnum = $_[1];
+
+    print $FD "\
+    if (*ierr == MPI_SUCCESS) {
+         MPIR_Grequest_set_lang_f77( *v$argnum );
+    }\n";
+}
+
 
 # ---------------------------------------------------------------------------
 # This routine handles the special arguments in the *call*
