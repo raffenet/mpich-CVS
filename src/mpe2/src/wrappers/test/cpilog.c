@@ -24,7 +24,7 @@ int main( int argc, char *argv[] )
         event3a, event3b, event4a, event4b;
     char processor_name[ MPI_MAX_PROCESSOR_NAME ];
 
-    MPI_Init( &argc,&argv );
+    MPI_Init( &argc, &argv );
         
         MPI_Pcontrol( 0 );
 
