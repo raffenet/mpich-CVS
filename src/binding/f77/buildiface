@@ -113,6 +113,7 @@ foreach $_ (@ARGV) {
 # No blanks should be used in the key.
 %tof77 = ( 'MPI_Datatype' => 'MPI_Fint *',
 	   'MPI_Comm' => 'MPI_Fint *',
+#MPI_File must be handled specially, since ROMIO still uses pointers
 	   'MPI_File' => 'MPI_Fint *',
 	   'MPI_Win' => 'MPI_Fint *',
 	   'MPI_Request' => 'MPI_Fint *',
@@ -168,8 +169,9 @@ foreach $_ (@ARGV) {
 
 %argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)',
 		  'MPI_Status *'  => '(MPI_Status *)(ARG)',
-		  'MPI_File' => '(MPI_File)(ARG)',
-		  'MPI_File *' => '(MPI_File *)(ARG)', 
+		  'MPI_File' => 'MPI_File_f2c(ARG)',
+#  If the file is an output argument, we need to handle it specially
+#		  'MPI_File *' => '(MPI_File *)(ARG)', 
 		  'MPI_Comm' => '(MPI_Comm)(ARG)',
 		  'MPI_Comm *' => '(MPI_Comm *)(ARG)',
                   'MPI_Datatype' => '(MPI_Datatype)(ARG)',
@@ -432,7 +434,8 @@ foreach $_ (@ARGV) {
     'Waitsome' => '4:5', 'Waitsome-4' => 'out:index_array:*v3',
 		 'Waitsome-5' => 'in:status_array',
 # File routines are separate
-    'File_open' => '2', 'File_open-2' => 'in:addnull',
+    'File_open' => '2:5', 'File_open-2' => 'in:addnull',
+		 'File_open-5' => 'out:FileToFint',
     'File_delete' => '1', 'File_delete-1' => 'in:addnull',
     'File_set_view' => '5', 'File_set_view-5' => 'in:addnull',
     'File_get_view' => '5', 'File_get_view-5' => 'out:blankpad',
@@ -462,12 +465,15 @@ if ($build_prototypes) {
 \n";
 }
 
-
+%skipBlocks = ();
 &ReadAndProcessInterface( $prototype_file );
 
 # if doing MPI2, we also need to read the MPI-2 protottypes
 if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
+    %skipBlocks = ( 'HAVE_MPI_DARRAY_SUBARRAY' => 1, 
+		   'HAVE_MPI_INFO' => 1 );
     &ReadAndProcessInterface( "../../mpi/romio/include/mpio.h.in" );
+    %skipBlocks = ();
 }
 
 if ($is_MPI) {
@@ -603,7 +609,21 @@ sub print_profiling_block {
 	print $OUTFD "\
 /* Begin MPI profiling block */\
 #if defined(HAVE_WEAK_SYMBOLS)\
-#if defined(HAVE_PRAGMA_WEAK)\
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)\n";
+        &print_weak_decl( $OUTFD, "MPI_$ucname", $args, $lcname ); 
+	&print_weak_decl( $OUTFD, "mpi_${lcname}__", $args, $lcname );
+	&print_weak_decl( $OUTFD, "mpi_${lcname}", $args, $lcname );
+	&print_weak_decl( $OUTFD, "mpi_${lcname}_", $args, $lcname );
+	&print_weak_decl( $OUTFD, "pmpi_${lcname}_", $args, $lcname );
+	print $OUTFD "\
+#pragma weak MPI_$ucname = pmpi_${lcname}__
+#pragma weak mpi_${lcname}__ = pmpi_${lcname}__
+#pragma weak mpi_${lcname}_ = pmpi_${lcname}__
+#pragma weak mpi_${lcname} = pmpi_${lcname}__
+#pragma weak pmpi_${lcname}_ = pmpi_${lcname}__\n\n";
+
+       print $OUTFD "\
+#elif defined(HAVE_PRAGMA_WEAK)\
 
 #if defined(F77_NAME_UPPER)\n";
         &print_weak_decl( $OUTFD, "MPI_$ucname", $args, $lcname );
@@ -1516,6 +1536,23 @@ sub intToAint_in_arg {
     print $OUTFD "l$count";
 }
 
+# ---------------------------------------------------------------------------
+# Convert from an FILE to a fortran int
+# input
+sub FileToFint_out_decl {
+    my $count = $_[0];
+    print $OUTFD "    MPI_File l$count;\n";
+}
+sub FileToFint_ctof {
+    my $lvar = $_[0];
+    my $gvar = $_[1];
+    print $OUTFD "    *$gvar = MPI_File_c2f($lvar);\n";
+}
+sub FileToFint_out_arg {
+    my $count = $_[0];
+    print $OUTFD "&l$count";
+}
+
 
 # ---------------------------------------------------------------------------
 # This routine handles the special arguments in the *call*
@@ -1578,7 +1615,10 @@ sub print_special_decls {
 
 &ReadInterfaceForDefinitions( $prototype_file );
 if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
+    %skipBlocks = ( 'HAVE_MPI_DARRAY_SUBARRAY' => 1, 
+		   'HAVE_MPI_INFO' => 1 );
     &ReadInterfaceForDefinitions( "../../mpi/romio/include/mpio.h.in" );
+    %skipBlocks = ();
 }
 #
 if ($write_mpif) {
@@ -2154,6 +2194,15 @@ sub ReadAndProcessInterface {
 	s/\/\*.*\*\///g;
 	print $_ if $debug;
 	if (/\/\*\s*End Prototypes/) { last; }
+
+	# We should also skip #ifndef xxx, for some xxx.  
+	if (/^#\s*ifndef\s+(\w*)/) {
+	    $ndefname = $1;
+	    if (defined($skipBlocks{$ndefname})) {
+		&SkipCPPIfdef( FD );
+	    }
+	}
+
 	if (/^int\s+$routine_prefix($routine_pattern)\s*\((.*)/) {
 	    $routine_name = $1;
 	    $args = $2;
@@ -2265,6 +2314,15 @@ sub ReadInterfaceForDefinitions {
     while (<MPIFD>) {
 	# Remove any comments
 	s/\/\*.*\*\///g;
+
+	# We should also skip #ifndef xxx, for some xxx.  
+	if (/^#\s*ifndef\s+(\w*)/) {
+	    $ndefname = $1;
+	    if (defined($skipBlocks{$ndefname})) {
+		&SkipCPPIfdef( MPIFD );
+	    }
+	}
+
 	if (/#\s*define\s+(MPI_[A-Za-z_0-9]*)\s*([^\s]*)(.*)/) {
 	    my $name      = $1;
 	    my $val       = $2;
@@ -2376,3 +2434,22 @@ sub CheckAutoconf {
 # is a character.  Note that for Sendrecv, there is no unique
 # solution unless you know more about the MPI datatypes.
 # 
+# ----------------------------------------------------------------------------
+sub SkipCPPIfdef {
+    my $FD = $_[0];
+    my $depth = 1;
+
+    while (<$FD>) {
+	if (/^#\s*endif/) { 
+	    $depth--; 
+	    #print "Depth is now $depth\n";
+	}
+        elsif (/^#\s*if/) { 
+	    $depth++; 
+	    #print "Depth is now $depth\n";   
+	}
+	#print "Skipping $_";
+	if ($depth <= 0) { last; }
+    }
+    return 0;
+}

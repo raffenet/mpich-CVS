@@ -147,6 +147,15 @@ typedef char *MPID_FCHAR_T;
 #define MPIR_USE_LOCAL_ARRAY 32
 #endif
 
-
-
-
+/* Undefine the names that are used in mpi.h for the predefined keyval
+   copy and delete functions.  This is necessary in case the Fortran 
+   compiler uses uppercase names, because in that case there would be 
+   a conflict in the names */
+#ifdef MPI_DUP_FN
+#undef MPI_DUP_FN
+#undef MPI_NULL_COPY_FN
+#undef MPI_NULL_DELETE_FN
+#undef MPI_COMM_NULL_COPY_FN
+#undef MPI_COMM_NULL_DELETE_FN
+#undef MPI_COMM_DUP_FN
+#endif
