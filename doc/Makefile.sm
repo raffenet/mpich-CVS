@@ -1,1 +1,14 @@
 DOC_SUBDIRS = mansrc
+
+DEVELOPER_SUBDIRS = adi3 ch3 mpich2 pmi namepub develop
+
+devdocs:
+	for dir in $(DEVELOPER_SUBDIRS) ; do \
+	    (cd $$dir && $(MAKE) ) ; done
+
+install-devdocs: 
+	for dir in $(DEVELOPER_SUBDIRS) ; do \
+	    DEV_INSTALL_PREFIX=$() ; export DEV_INSTALL_PREFIX ; \
+	    (cd $$dir && $(MAKE) install-devdocs ) ; done
+
+

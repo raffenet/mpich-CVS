@@ -24,6 +24,11 @@ clean:
 distclean: clean
 	rm -f namepub.ps namepub.pdf
 
+install-devdocs: namepub.pdf
+	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \
+	    echo "You must set DEV_INSTALL_PREFIX first" ; \
+	    exit 1 ; fi
+	cp -f namepub.pdf $(DEV_INSTALL_PREFIX)
 
 # Handle older fig2dev programs
 .fig.eps:

@@ -89,6 +89,12 @@ clean:
 distclean: clean
 	rm -f paper.ps paper.pdf pmi.ps pmi.pdf
 
+install-devdocs: pmi.pdf
+	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \
+	    echo "You must set DEV_INSTALL_PREFIX first" ; \
+	    exit 1 ; fi
+	cp -f pmi.pdf $(DEV_INSTALL_PREFIX)
+
 # Handle older fig2dev programs
 .fig.eps:
 	-fig2dev -L eps -l landscape $*.fig > $*.eps

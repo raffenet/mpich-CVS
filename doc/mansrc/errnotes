@@ -1,6 +1,14 @@
 This file contains definitions of the MPI error CLASSES for inclusion in the
 man pages.  Use .N err name
 
+/*N errhandler
+
+    Error handlers:
+    For MPI routines that do not have an obvious communicator, file, or
+    window object, the MPI standard specifies that the error handler 
+    attached to 'MPI_COMM_WORLD' be used.
+N*/
+
 /*N Errors
 Errors:
 

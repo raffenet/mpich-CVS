@@ -72,6 +72,12 @@ clean:
 	rm -f *.ilg *.ind *.idx *.blg *.toc
 	rm -f ch3man/*.tex
 
+install-devdocs: ch3.pdf
+	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \
+	    echo "You must set DEV_INSTALL_PREFIX first" ; \
+	    exit 1 ; fi
+	cp -f ch3.pdf $(DEV_INSTALL_PREFIX)
+
 # Handle older fig2dev programs
 .fig.eps:
 	-fig2dev -L eps -l landscape $*.fig > $*.eps

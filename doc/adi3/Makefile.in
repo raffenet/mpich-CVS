@@ -206,3 +206,10 @@ lists: findmod
 		fig2dev -L ps -l landscape $*.fig > $*.eps ; fi
 
 goals.dvi: goals.tex adi-ov.eps
+
+install-devdocs: adi3new.pdf tcpadi3.pdf
+	if [ ! -d "$(DEV_INSTALL_PREFIX)" ] ; then \
+	    echo "You must set DEV_INSTALL_PREFIX first" ; \
+	    exit 1 ; fi
+	cp -f adi3new.pdf $(DEV_INSTALL_PREFIX)
+	cp -f tcpadi3.pdf $(DEV_INSTALL_PREFIX)
