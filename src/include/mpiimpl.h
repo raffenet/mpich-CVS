@@ -1348,6 +1348,13 @@ typedef struct MPID_Win {
                               * (none, shared, exclusive) */
     volatile int shared_lock_ref_cnt;
     struct MPIDI_Win_lock_queue volatile *lock_queue;  /* list of unsatisfied locks */
+
+    int *pt_rma_puts_accs;  /* array containing the no. of passive target
+                               puts/accums issued from this process to other 
+                               processes. */
+    volatile int my_pt_rma_puts_accs;  /* no. of passive target puts/accums
+                                          that this process has 
+                                          completed as target */
  
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to

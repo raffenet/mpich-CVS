@@ -17,7 +17,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
     MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests=NULL; /* array of requests */
-    int *recvcnts;
+    int *recvcnts, source_win_handle;
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
 
@@ -186,22 +186,25 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
         curr_ptr = win_ptr->rma_ops_list;
         while (curr_ptr != NULL)
 	{
-            /* The completion counter at the target is decremented
-               only on the last RMA operation. For that
-               purpose, we pass the target_win_handle only on the last
-               operation. Otherwise, we pass NULL */
+        /* The completion counter at the target is decremented only on 
+           the last RMA operation. We indicate the last operation by 
+           passing the source_win_handle only on the last operation. 
+           Otherwise, we pass NULL */
             if (curr_ops_cnt[curr_ptr->target_rank] ==
                 nops_to_proc[curr_ptr->target_rank] - 1) 
-                target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
+                source_win_handle = win_ptr->handle;
             else 
-                target_win_handle = MPI_WIN_NULL;
+                source_win_handle = MPI_WIN_NULL;
+
+            target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
 
             switch (curr_ptr->type)
 	    {
             case (MPIDI_RMA_PUT):
             case (MPIDI_RMA_ACCUMULATE):
                 mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                     target_win_handle, &dtype_infos[i], &dataloops[i], &requests[i]);
+                     source_win_handle, target_win_handle, &dtype_infos[i],
+                                  &dataloops[i], &requests[i]);
 		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
 		{
@@ -213,7 +216,8 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
                 break;
             case (MPIDI_RMA_GET):
                 mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                     target_win_handle, &dtype_infos[i], &dataloops[i], &requests[i]);
+                        source_win_handle, target_win_handle, &dtype_infos[i], 
+                                  &dataloops[i], &requests[i]);
 		/* --BEGIN ERROR HANDLING-- */
                 if (mpi_errno != MPI_SUCCESS)
 		{
@@ -350,9 +354,9 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
 
 int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int target_win_handle, MPIDI_RMA_dtype_info
-                            *dtype_info, void **dataloop, MPID_Request
-                            **request) 
+                            int source_win_handle, int target_win_handle, 
+                            MPIDI_RMA_dtype_info *dtype_info, 
+                            void **dataloop, MPID_Request **request) 
 {
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_put_t *put_pkt = &upkt.put;
@@ -377,7 +381,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         put_pkt->datatype = rma_op->target_datatype;
         put_pkt->dataloop_size = 0;
         put_pkt->target_win_handle = target_win_handle;
-        put_pkt->source_win_handle = win_ptr->handle;
+        put_pkt->source_win_handle = source_win_handle;
 
         iov[0].MPID_IOV_BUF = (void*) put_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*put_pkt);
@@ -392,7 +396,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         accum_pkt->dataloop_size = 0;
         accum_pkt->op = rma_op->op;
         accum_pkt->target_win_handle = target_win_handle;
-        accum_pkt->source_win_handle = win_ptr->handle;
+        accum_pkt->source_win_handle = source_win_handle;
 
         iov[0].MPID_IOV_BUF = (void*) accum_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*accum_pkt);
@@ -581,9 +585,9 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
 
 int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int target_win_handle, MPIDI_RMA_dtype_info
-                            *dtype_info, void **dataloop, MPID_Request
-                            **request) 
+                            int source_win_handle, int target_win_handle, 
+                            MPIDI_RMA_dtype_info *dtype_info, void **dataloop, 
+                            MPID_Request **request) 
 {
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_get_t *get_pkt = &upkt.get;
@@ -610,7 +614,7 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     req->dev.user_count = rma_op->origin_count;
     req->dev.datatype = rma_op->origin_datatype;
     req->dev.target_win_handle = MPI_WIN_NULL;
-    req->dev.source_win_handle = win_ptr->handle;
+    req->dev.source_win_handle = source_win_handle;
     if (HANDLE_GET_KIND(req->dev.datatype) != HANDLE_KIND_BUILTIN)
     {
         MPID_Datatype_get_ptr(req->dev.datatype, dtp);
@@ -626,7 +630,7 @@ int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     get_pkt->datatype = rma_op->target_datatype;
     get_pkt->request_handle = req->handle;
     get_pkt->target_win_handle = target_win_handle;
-    get_pkt->source_win_handle = win_ptr->handle;
+    get_pkt->source_win_handle = source_win_handle;
 
 /*    printf("send pkt: type %d, addr %d, count %d, base %d\n", rma_pkt->type,
            rma_pkt->addr, rma_pkt->count, win_ptr->base_addrs[rma_op->target_rank]);

@@ -17,7 +17,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests; /* array of requests */
-    int new_total_op_count;
+    int new_total_op_count, source_win_handle;
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
     MPI_Group win_grp, start_grp;
@@ -172,22 +172,25 @@ int MPID_Win_complete(MPID_Win *win_ptr)
     curr_ptr = win_ptr->rma_ops_list;
     while (curr_ptr != NULL)
     {
-        /* The completion counter at the target is decremented
-           only on the last RMA operation. For this purpose,
-           we pass the target_win_handle only on the last
-           operation. Otherwise, we pass NULL */
+        /* The completion counter at the target is decremented only on 
+           the last RMA operation. We indicate the last operation by 
+           passing the source_win_handle only on the last operation. 
+           Otherwise, we pass NULL */
         if (curr_ops_cnt[curr_ptr->target_rank] ==
             nops_to_proc[curr_ptr->target_rank] - 1) 
-            target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
+            source_win_handle = win_ptr->handle;
         else 
-            target_win_handle = MPI_WIN_NULL;
+            source_win_handle = MPI_WIN_NULL;
+
+        target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
 
         switch (curr_ptr->type)
 	{
         case (MPIDI_RMA_PUT):
         case (MPIDI_RMA_ACCUMULATE):
             mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                     target_win_handle, &dtype_infos[i], &dataloops[i], &requests[i]); 
+                         source_win_handle, target_win_handle, &dtype_infos[i],
+                         &dataloops[i], &requests[i]); 
 	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -198,7 +201,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
             break;
         case (MPIDI_RMA_GET):
             mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                     target_win_handle, &dtype_infos[i], &dataloops[i], &requests[i]);
+                        source_win_handle, target_win_handle, &dtype_infos[i], 
+                                   &dataloops[i], &requests[i]);
 	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
 	    {

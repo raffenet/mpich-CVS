@@ -199,49 +199,56 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma
     MPID_Request **requests=NULL; /* array of requests */
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
+    int source_win_handle;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_DO_PASSIVE_TARGET_RMA);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_DO_PASSIVE_TARGET_RMA);
 
-    /* To determine if an rma_done packet is needed at the end, check
-       if any of the rma ops is a get. If so, move it to the end of
-       the list and do it last, in which case an rma done pkt is not
-       needed. If there is no get, an rma done pkt is needed */
-    
-    /* First check whether the last operation is a get. Skip the first op, 
-       which is a lock. */
-    curr_ptr = win_ptr->rma_ops_list->next;
-    while (curr_ptr->next != NULL) 
-        curr_ptr = curr_ptr->next;
-    
-    if (curr_ptr->type == MPIDI_RMA_GET) {
-        /* last operation is a get. no need to wait for rma done pkt */
+    if (win_ptr->rma_ops_list->lock_type == MPI_LOCK_EXCLUSIVE) {
+        /* exclusive lock. no need to wait for rma done pkt at the end */
         *wait_for_rma_done_pkt = 0;
     }
     else {
-        /* go through the list and move the first get operation 
-           (if there is one) to the end */
-        
-        curr_ptr = win_ptr->rma_ops_list->next;
-        curr_ptr_ptr = &(win_ptr->rma_ops_list->next);
+        /* shared lock. check if any of the rma ops is a get. If so, move it 
+           to the end of the list and do it last, in which case an rma done 
+           pkt is not needed. If there is no get, rma done pkt is needed */
 
-        *wait_for_rma_done_pkt = 1;
-        
-        while (curr_ptr != NULL) {
-            if (curr_ptr->type == MPIDI_RMA_GET) {
-                *wait_for_rma_done_pkt = 0;
-                *curr_ptr_ptr = curr_ptr->next;
-                tmp_ptr = curr_ptr;
-                while (curr_ptr->next != NULL)
+        /* First check whether the last operation is a get. Skip the first op, 
+           which is a lock. */
+
+        curr_ptr = win_ptr->rma_ops_list->next;
+        while (curr_ptr->next != NULL) 
+            curr_ptr = curr_ptr->next;
+    
+        if (curr_ptr->type == MPIDI_RMA_GET) {
+            /* last operation is a get. no need to wait for rma done pkt */
+            *wait_for_rma_done_pkt = 0;
+        }
+        else {
+            /* go through the list and move the first get operation 
+               (if there is one) to the end */
+            
+            curr_ptr = win_ptr->rma_ops_list->next;
+            curr_ptr_ptr = &(win_ptr->rma_ops_list->next);
+            
+            *wait_for_rma_done_pkt = 1;
+            
+            while (curr_ptr != NULL) {
+                if (curr_ptr->type == MPIDI_RMA_GET) {
+                    *wait_for_rma_done_pkt = 0;
+                    *curr_ptr_ptr = curr_ptr->next;
+                    tmp_ptr = curr_ptr;
+                    while (curr_ptr->next != NULL)
+                        curr_ptr = curr_ptr->next;
+                    curr_ptr->next = tmp_ptr;
+                    tmp_ptr->next = NULL;
+                    break;
+                }
+                else {
+                    curr_ptr_ptr = &(curr_ptr->next);
                     curr_ptr = curr_ptr->next;
-                curr_ptr->next = tmp_ptr;
-                tmp_ptr->next = NULL;
-                break;
-            }
-            else {
-                curr_ptr_ptr = &(curr_ptr->next);
-                curr_ptr = curr_ptr->next;
+                }
             }
         }
     }
@@ -294,22 +301,24 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma
     
     i = 0;
     curr_ptr = win_ptr->rma_ops_list->next;
+    target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
     while (curr_ptr != NULL)
     {
-        /* To unlock the window at the target after the last RMA operation,
-           we pass the target_win_handle only on the last operation. Otherwise, 
+        /* To indicate the last RMA operation, we pass the
+           source_win_handle only on the last operation. Otherwise, 
            we pass MPI_WIN_NULL. */
         if (i == nops - 1)
-            target_win_handle = win_ptr->all_win_handles[curr_ptr->target_rank];
+            source_win_handle = win_ptr->handle;
         else 
-            target_win_handle = MPI_WIN_NULL;
+            source_win_handle = MPI_WIN_NULL;
         
         switch (curr_ptr->type)
         {
         case (MPIDI_RMA_PUT):  /* same as accumulate */
         case (MPIDI_RMA_ACCUMULATE):
+            win_ptr->pt_rma_puts_accs[curr_ptr->target_rank]++;
             mpi_errno = MPIDI_CH3I_Send_rma_msg(curr_ptr, win_ptr,
-                                                target_win_handle, &dtype_infos[i],
+                         source_win_handle, target_win_handle, &dtype_infos[i],
                                                 &dataloops[i], &requests[i]);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
@@ -321,7 +330,7 @@ static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma
             break;
         case (MPIDI_RMA_GET):
             mpi_errno = MPIDI_CH3I_Recv_rma_msg(curr_ptr, win_ptr,
-                                                target_win_handle, &dtype_infos[i],
+                         source_win_handle, target_win_handle, &dtype_infos[i],
                                                 &dataloops[i], &requests[i]);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
@@ -441,6 +450,8 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     lock_type = win_ptr->rma_ops_list->lock_type;
 
     rma_op = win_ptr->rma_ops_list->next;
+
+    win_ptr->pt_rma_puts_accs[rma_op->target_rank]++;
 
     if (rma_op->type == MPIDI_RMA_PUT) {
         lock_put_unlock_pkt->type = MPIDI_CH3_PKT_LOCK_PUT_UNLOCK;

@@ -64,6 +64,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->shared_lock_ref_cnt = 0;
     (*win_ptr)->lock_queue = NULL;
     (*win_ptr)->my_counter = 0;
+    (*win_ptr)->my_pt_rma_puts_accs = 0;
+
     
     MPIR_Nest_incr();
 
@@ -102,6 +104,16 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     (*win_ptr)->all_win_handles = (int *) MPIU_Malloc(comm_size * sizeof(int));
     /* --BEGIN ERROR HANDLING-- */
     if (!(*win_ptr)->all_win_handles)
+    {
+        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
+        return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
+
+    (*win_ptr)->pt_rma_puts_accs = (int *) MPIU_Calloc(comm_size, sizeof(int));
+    /* --BEGIN ERROR HANDLING-- */
+    if (!(*win_ptr)->pt_rma_puts_accs)
     {
         mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);

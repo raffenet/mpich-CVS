@@ -39,26 +39,49 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 		MPIDI_CH3U_Request_complete(rreq);
 		*complete = TRUE;
 	    }
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP)
+            else if ((MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP) ||
+                     (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP))
 	    {
-                if (rreq->dev.target_win_handle != MPI_WIN_NULL) {
+                if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP) {
+                    /* accumulate data from tmp_buf into user_buf */
+                    mpi_errno = do_accumulate_op(rreq);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+                    {
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                        goto fn_exit;
+                    }
+                    /* --END ERROR HANDLING-- */
+                }
+
+                MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
+                
+                /* if passive target RMA, increment counter */
+                if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+                    win_ptr->my_pt_rma_puts_accs++;
+
+                if (rreq->dev.source_win_handle != MPI_WIN_NULL) {
                     /* Last RMA operation from source. If active
                        target RMA, decrement window counter. If
-                       passive target RMA, send rma_done packet,
-                       release lock on window and grant next lock in
-                       the lock queue if there is any. */
+                       passive target RMA, release lock on window and
+                       grant next lock in the lock queue if there is
+                       any. If it's a shared lock or a lock-put-unlock
+                       type of optimization, we also need to send an
+                       ack to the source. */ 
 
-                    MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
                     if (win_ptr->current_lock_type == MPID_LOCK_NONE) {
                         /* FIXME: MT: this has to be done atomically */
                         win_ptr->my_counter -= 1;
                     }
                     else {
-                        mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
+                        if ((win_ptr->current_lock_type == MPI_LOCK_SHARED) ||
+                            (rreq->dev.single_op_opt == 1)) {
+                            mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
                                                   rreq->dev.source_win_handle);
-                        /* --BEGIN ERROR HANDLING-- */
-                        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                        /* --END ERROR HANDLING-- */
+                            /* --BEGIN ERROR HANDLING-- */
+                            if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+                            /* --END ERROR HANDLING-- */
+                        }
                         mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
                     }
                 }
@@ -67,45 +90,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 		MPIDI_CH3U_Request_complete(rreq);
 		*complete = TRUE;
             }
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP)
-	    {
-                /* accumulate data from tmp_buf into user_buf */
-                mpi_errno = do_accumulate_op(rreq);
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
 
-                if (rreq->dev.target_win_handle != MPI_WIN_NULL) {
-                    /* Last RMA operation from source. If active
-                       target RMA, decrement window counter. If
-                       passive target RMA, send rma_done packet,
-                       release lock on window and grant next lock in
-                       the lock queue if there is any. */
-
-                    MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
-                    if (win_ptr->current_lock_type == MPID_LOCK_NONE) {
-                        /* FIXME: MT: this has to be done atomically */
-                        win_ptr->my_counter -= 1;
-                    }
-                    else {
-                        mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
-                                               rreq->dev.source_win_handle);
-                        /* --BEGIN ERROR HANDLING-- */
-                        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                        /* --END ERROR HANDLING-- */
-                        mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
-                    }
-                }
-
-                /* mark data transfer as complete and decrement CC */
-		MPIDI_CH3U_Request_complete(rreq);
-		*complete = TRUE;
-            
-            }
             else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT)
 	    {
                 MPID_Datatype *new_dtp;
@@ -274,9 +259,10 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 		MPIDI_CH3U_Request_complete(rreq);
 		*complete = TRUE;
             }
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PT_SINGLE_PUT)
+            else if ((MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PT_SINGLE_PUT) ||
+                     (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PT_SINGLE_ACCUM))
 	    {
-                /* received all the data for single lock-put-unlock 
+                /* received all the data for single lock-put(accum)-unlock 
                    optimization where the lock was not acquired in 
                    ch3u_handle_recv_pkt. Try to acquire the lock and do the 
                    operation. */
@@ -291,74 +277,26 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
                 if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, 
                                              lock_queue_entry->lock_type) == 1)
                 {
-                    /* copy the data over */
-                    mpi_errno = MPIR_Localcopy(rreq->dev.user_buf,
-                                               rreq->dev.user_count,
-                                               rreq->dev.datatype,
+
+                    if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PT_SINGLE_PUT) {
+                        /* copy the data over */
+                        mpi_errno = MPIR_Localcopy(rreq->dev.user_buf,
+                                                   rreq->dev.user_count,
+                                                   rreq->dev.datatype,
                                          lock_queue_entry->pt_single_op->addr,
                                          lock_queue_entry->pt_single_op->count,
                                      lock_queue_entry->pt_single_op->datatype);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno != MPI_SUCCESS)
-                        goto fn_exit;
-                    /* --END ERROR HANDLING-- */
+                    }
+                    else {
+                        mpi_errno = do_simple_accumulate(lock_queue_entry->pt_single_op);
+                    }
 
-                    /* free lock_queue_entry including data buffer and remove 
-                       it from the queue. */
-                    curr_ptr = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
-                    curr_ptr_ptr = (MPIDI_Win_lock_queue **) &(win_ptr->lock_queue);
-                    while (curr_ptr != lock_queue_entry) {
-                        curr_ptr_ptr = &(curr_ptr->next);
-                        curr_ptr = curr_ptr->next;
-                    }                    
-                    *curr_ptr_ptr = curr_ptr->next;
-
-                    /* send done packet */
-                    mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
-                                         lock_queue_entry->source_win_handle);
                     /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno != MPI_SUCCESS) goto fn_exit;
                     /* --END ERROR HANDLING-- */
 
-                    MPIU_Free(lock_queue_entry->pt_single_op->data);
-                    MPIU_Free(lock_queue_entry->pt_single_op);
-                    MPIU_Free(lock_queue_entry);
-
-                    /* Release lock and grant next lock if there is one. */
-                    mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
-                }
-                else {
-                    /* could not acquire lock. mark data recd as 1 */
-                    lock_queue_entry->pt_single_op->data_recd = 1;
-                }
-
-                /* mark data transfer as complete and decrement CC */
-		MPIDI_CH3U_Request_complete(rreq);
-		*complete = TRUE;
-            }
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PT_SINGLE_ACCUM)
-	    {
-                /* received all the data for single lock-accum-unlock 
-                   optimization where the lock was not acquired in 
-                   ch3u_handle_recv_pkt. Try to acquire the lock and do the 
-                   operation. */
-
-                MPID_Win *win_ptr;
-                MPIDI_Win_lock_queue *lock_queue_entry, *curr_ptr, **curr_ptr_ptr;
-
-                MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
-
-                lock_queue_entry = rreq->dev.lock_queue_entry;
-                
-                if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, 
-                                             lock_queue_entry->lock_type) == 1)
-                {
-                    /* do the accumulate */
-                    mpi_errno = do_simple_accumulate(lock_queue_entry->pt_single_op);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno != MPI_SUCCESS)
-                        goto fn_exit;
-                    /* --END ERROR HANDLING-- */
+                    /* increment counter */
+                    win_ptr->my_pt_rma_puts_accs++;
 
                     /* send done packet */
                     mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
@@ -435,60 +373,50 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC * vc, MPID_Request * rreq, int * complet
 	{
 	    MPIDI_CH3U_Request_unpack_srbuf(rreq);
 
-            if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP)
-	    {
-                if (rreq->dev.target_win_handle != MPI_WIN_NULL) {
-                    /* Last RMA operation from source. If active
-                       target RMA, decrement window counter. If
-                       passive target RMA, send rma_done packet,
-                       release lock on window and grant next lock in
-                       the lock queue if there is any. */
+            if ((MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP) ||
+               (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP))
 
-                    MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
-                    if (win_ptr->current_lock_type == MPID_LOCK_NONE) {
-                        /* FIXME: MT: this has to be done atomically */
-                        win_ptr->my_counter -= 1;
+	    {
+                if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP) {
+                    /* accumulate data from tmp_buf into user_buf */
+                    mpi_errno = do_accumulate_op(rreq);
+                    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+                    {
+                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                        goto fn_exit;
                     }
-                    else {
-                        mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
-                                                 rreq->dev.source_win_handle);
-                        /* --BEGIN ERROR HANDLING-- */
-                        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                        /* --END ERROR HANDLING-- */
-                        mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
-                    }
+                    /* --END ERROR HANDLING-- */
                 }
-            }
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP)
-	    {
-                /* accumulate data from tmp_buf into user_buf */
-                mpi_errno = do_accumulate_op(rreq);
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
 
-                if (rreq->dev.target_win_handle != MPI_WIN_NULL) {
+                MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
+                
+                /* if passive target RMA, increment counter */
+                if (win_ptr->current_lock_type != MPID_LOCK_NONE)
+                    win_ptr->my_pt_rma_puts_accs++;
+                
+                if (rreq->dev.source_win_handle != MPI_WIN_NULL) {
                     /* Last RMA operation from source. If active
                        target RMA, decrement window counter. If
-                       passive target RMA, send rma_done packet,
-                       release lock on window and grant next lock in
-                       the lock queue if there is any. */
-
-                    MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
+                       passive target RMA, release lock on window and
+                       grant next lock in the lock queue if there is
+                       any. If it's a shared lock or a lock-put-unlock
+                       type of optimization, we also need to send an
+                       ack to the source. */ 
+                    
                     if (win_ptr->current_lock_type == MPID_LOCK_NONE) {
                         /* FIXME: MT: this has to be done atomically */
                         win_ptr->my_counter -= 1;
                     }
                     else {
-                        mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
-                                                  rreq->dev.source_win_handle);
-                        /* --BEGIN ERROR HANDLING-- */
-                        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                        /* --END ERROR HANDLING-- */
+                        if ((win_ptr->current_lock_type == MPI_LOCK_SHARED) ||
+                            (rreq->dev.single_op_opt == 1)) {
+                            mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
+                                                          rreq->dev.source_win_handle);
+                            /* --BEGIN ERROR HANDLING-- */
+                            if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+                            /* --END ERROR HANDLING-- */
+                        }
                         mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
                     }
                 }
@@ -786,6 +714,9 @@ int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
 
                         /* if put or accumulate, send rma done packet and release lock. */
                         if (single_op->type != MPIDI_RMA_GET) {
+                            /* increment counter */
+                            win_ptr->my_pt_rma_puts_accs++;
+
                             mpi_errno = 
                                MPIDI_CH3I_Send_pt_rma_done_pkt(lock_queue->vc, 
                                          lock_queue->source_win_handle);
@@ -869,11 +800,11 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC *vc, int source_win_handle)
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_pt_rma_done_t *pt_rma_done_pkt = &upkt.pt_rma_done;
     MPID_Request *req;
-    int mpi_errno;
+    int mpi_errno=MPI_SUCCESS;
 
     pt_rma_done_pkt->type = MPIDI_CH3_PKT_PT_RMA_DONE;
     pt_rma_done_pkt->source_win_handle = source_win_handle;
-        
+
     mpi_errno = MPIDI_CH3_iStartMsg(vc, pt_rma_done_pkt,
                                     sizeof(*pt_rma_done_pkt), &req);
     /* --BEGIN ERROR HANDLING-- */

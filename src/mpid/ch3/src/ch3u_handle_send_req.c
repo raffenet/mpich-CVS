@@ -27,9 +27,9 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC * vc, MPID_Request * sreq, int *complete
 	{
             if (MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_GET_RESP)
 	    { 
-                if (sreq->dev.target_win_handle != MPI_WIN_NULL) {
+                if (sreq->dev.source_win_handle != MPI_WIN_NULL) {
                     MPID_Win *win_ptr;
-                    /* Last RMA operation from source. If active target RMA,
+                    /* Last RMA operation (get) from source. If active target RMA,
                        decrement window counter. If passive target RMA, 
                        release lock on window and grant next lock in the 
                        lock queue if there is any; no need to send rma done 
