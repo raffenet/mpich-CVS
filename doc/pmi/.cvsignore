@@ -6,3 +6,11 @@ paper.ps
 *.bbl
 *.blg
 .deps
+*.toc
+*.ind
+*.idx
+*.ilg
+paper.pdf
+pmi.pdf
+pmi.ps
+pmiman
