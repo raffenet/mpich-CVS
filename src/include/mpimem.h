@@ -120,8 +120,8 @@ char *MPIU_Strdup( const char * );
 
 
 #define MPIU_STR_SUCCESS    0
-#define MPIU_STR_FAIL       1
-#define MPIU_STR_NOMEM     -1
+#define MPIU_STR_FAIL      -1
+#define MPIU_STR_NOMEM      1
 
 #define MPIU_TRUE  1
 #define MPIU_FALSE 0
