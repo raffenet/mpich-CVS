@@ -1090,7 +1090,7 @@ sub print_special_decls {
 # and mpio.h.in (or other files)
 
 &ReadInterfaceForDefinitions( $prototype_file );
-if ($build_io) {
+if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
     &ReadInterfaceForDefinitions( "../../mpi/romio/include/mpio.h.in" );
 }
 #
