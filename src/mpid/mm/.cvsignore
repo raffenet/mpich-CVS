@@ -1,8 +1,8 @@
 *.o
 Makefile
 Makefile.in
-Debug
-Release
+Debug*
+Release*
 *.dsp
 *.plg
 configure
