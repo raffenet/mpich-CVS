@@ -23,7 +23,7 @@
 \renewcommand{\floatpagefraction}{0.9}
 
 \begin{document}
-\title{{\bf Process Management in MPICH2}\\[.2in] DRAFT}
+\title{{\bf Process Management in MPICH2}\\[.2in] DRAFT 2.1}
 \author{The MPICH Team\\Argonne National Laboratory}
 \maketitle
 
@@ -104,7 +104,7 @@ The problem to be addressed has several components:
   we assume that such communication is needed for implementing MPI.
   Thus this information could include hosts, ports, interfaces,
   shared-memory keys, and other information.
-\item MPI-2 dynamic process management functions requires extra support
+\item MPI-2 dynamic process management functions require extra support
   for implementing {\tt MPI\_Comm\_Spawn}, {\tt MPI\_Comm\_\{Connect/Accept\}},
   {\tt MPI\_\{Publish/Lookup\}\_name}, etc.
 \item The interface should be simple and straightforward, particularly
@@ -127,7 +127,8 @@ information.  Although the approach we take in the implementations below
 is to combine the process startup and information exchange functionality
 in a single interface, a different implementation could separate these,
 using an existing process-startup mechanism and adding a new component
-to implement the other parts of the interface.
+to implement the other parts of the interface.  One approach along these
+lines is outlined in Section~\ref{sec:adding}.
 
 \section{Our Approach}
 \label{sec:approach}
@@ -155,7 +156,7 @@ implemented the dynamic process management functions in MPICH2, some
 evolution of Part 2 of PMI may take place as we do so.
 
 The fundamental idea of Part 1 is the {\em key-value space}, or KVS,
-containing a set of key=value pairs of strings.  Processes acquire 
+containing a set of (key, value) pairs of strings.  Processes acquire 
 access to one or more KVS's through PMI and can perform {\tt put/get}
 operations on them.  Synchronization is defined in a scalable way via
 the barrier operation, so that processes can be assure that the necessary
@@ -234,25 +235,28 @@ in Section~\ref{sec:adding}.
   section of the MPI Standard.
 \item Similarly, multiple KVS's are only really needed in the dynamic
   process management case.  An initial implementation could omit {\tt
-    PMI\_KVS\_Create} and {\tt PMI\_KVS\_Destroy}.
+    PMI\_KVS\_Create} and {\tt PMI\_KVS\_Destroy}.  The iterators {\tt
+    int PMI\_KVS\_iter\_first} and {\tt int PMI\_KVS\_iter\_next} are used to
+  transfer KVS's in grid environments, and could also be omitted from
+  some implementations.
 \item The {\tt spawned} argument to {\tt PMI\_Init} is necessary to
   implement MPI-2 functionality, in particular {\tt MPI\_Get\_parent}.
   In a PMI implementation that does not support dynamic process
-  management, it can always just be return a pointer to 0.
+  management, it can always just return a pointer to 0.
 \item The {\tt PMI\_Commit} exists so that in case {\tt PMI\_Put} is an
   expensive operation, involving communication with an external process,
   several {\tt PMI\_Put}s can be batched locally and only sent off when
   the {\tt PMI\_Commit} is done.
-\item The notion of KVS is reminiscent of Linda, in which process
-  execute put and get operations on a shared ``tuple space''.  Why not
-  use the Linda interface?  The reason is scalability.  Linda implements
-  a blocking get, in which the calling process blocks until data with
-  the requested key is put into the tuple space.  While this is a
-  convenient synchronizing operation, and could in theory be
-  used here, it would not be scalable.  Note that in PMI, there is no
-  point-to-point communication.  The only synchronization operation is
-  the {\tt PMI\_Barrier}, which can have a variety of scalable
-  implementations, depending on the environment.
+\item The notion of KVS is reminiscent of Linda, in which processes
+  execute {\tt read} and {\tt write} operations on a shared ``tuple
+  space''.  Why not use the Linda interface?  The reason is scalability.
+  Linda implements a blocking {\tt read}, in which the calling process blocks
+  until data with the requested key is put into the tuple space by
+  another process.  While this is a convenient synchronizing operation,
+  and could in theory be used here, it would not be scalable.  Note that
+  in PMI, there is no point-to-point communication.  The only
+  synchronization operation is the {\tt PMI\_Barrier}, which can have a
+  variety of scalable implementations, depending on the environment.
 \end{itemize}
 
 \subsection{Part 2:  Advanced PMI Routines}
@@ -298,7 +302,7 @@ used to support MPI communication.  Connections between processes are
 established by the normal socket {\tt connect}/{\tt accept} mechanism.
 For this to work, before the first {\tt MPI\_SEND} from one process to
 another, one process must have acquired a port from the operating system
-be listening on it with the normal {\tt socket}/{\tt bind}/{\tt listen}
+and be listening on it with the normal {\tt socket}/{\tt bind}/{\tt listen}
 sequence.  The other process, typically on a separate host, will execute
 the corresponding {\tt socket}/{\tt connect} sequence, at which time the
 first process will issue an {\tt accept}, establishing the TCP
@@ -307,7 +311,7 @@ advertise in some way the port it is listening on.  Since for the sake
 of scalability and rapid startup we don't establish these connections
 until they are needed, the {\tt connect} operation is not executed until
 the socket is needed, typically the first time a process issues an {\tt
-  MPI\_Send}.  At this point MPICH implementation must determine from the
+  MPI\_SEND}.  At this point the MPICH implementation must determine from the
 MPI rank of the destination process which host, and which port on that
 host, to connect to in order to establish the connection.
 
@@ -316,30 +320,30 @@ listening port, keyed by rank, and the the second process finds out this
 information.  Thus the sequence of events during {\tt MPI\_Init} goes
 like this:
 \begin{enumerate}
-\item During {\tt MPI\_Init}, each process learns its MPI rank by calling
-  {\tt PMI\_Get\_rank}.
-\item Each process calls {\tt PMI\_Init}, in order to perform whatever
-  initialization is needed by the PMI implementation.
-\item Each process calls {\tt PMI\_Get\_rank} to find out its rank in
-  the MPI job.
+\item During {\tt MPI\_Init}, each process calls {\tt PMI\_Init}, in
+  order to perform whatever initialization is needed by the PMI
+  implementation.
+\item Still in {\tt MPI\_Init}, each process calls {\tt PMI\_Get\_rank}
+  to find out its rank in the MPI job.
 \item Each process executes {\tt gethostname} to find out its host and
   {\tt socket}/{\tt bind} to obtain a port.
 \item Each process creates a key from its rank and a value for that key
-  from its host and port.
-\item Each process does a {\tt PMI\_KVS\_Put} to put this key=value pair into
-  the default KVS.  It may deposit other information with other calls to
-  {\tt PMI\_put}.  It does a {\tt PMI\_Commit} to flush all of the
-  key=value pairs to the KVS.
+  from its host and port.  We actually use two pairs, using keys {\tt
+    P<rank>-hostname} and {\tt P<rank>-port}.
+\item Each process does a {\tt PMI\_KVS\_Put} to put its (key, value)
+  pairs into the default KVS.  It may deposit other information with
+  other calls to {\tt PMI\_KVS\_Put}.  It does a {\tt PMI\_Commit} to
+  flush all of the (key, value) pairs to the KVS.
 \item All processes execute {\tt PMI\_Barrier} to synchronize.  It is
   assumed that this operation is implemented in a scalable way.  Note
   that MPI communication is not available yet, so this is not an {\tt
-    MPI\_Barrier}.  We are still inside {\tt MPI\_Init}
+    MPI\_Barrier}.  We are still inside {\tt MPI\_Init}.
 \end{enumerate}
 At this point the only non-local communication that has taken place is
-the barrier.  Now, each process can exit from {\tt MPI\_Init}, having
+the barrier.  Now, each process can exit from {\tt MPI\_INIT}, having
 made available the information that only it knows (the listening port).
 
-Now when a process executes any form of {\tt MPI\_Send}, the
+When a process executes any form of {\tt MPI\_SEND}, the
 implementation can check to see if a connection to the destination
 process already exists, and if not, use the rank to create the
 appropriate key and do {\tt PMI\_KVS\_Get} to find the host and port of the
@@ -348,10 +352,10 @@ sockets open for the rest of the job, but there is nothing to preclude
 closing and reopening them as needed.
 
 The above sequence is of course not the only way to use the PMI
-interface, but it illustrates the usefulness.  Note that even if more
-information is conveyed in this way, the actual size of the KVS is not
-anticipated to be large.  Room for a few key=value pairs for each
-process is all that is necessary.
+interface, but it constitutes a typical example of its use.  Note that
+even if more information is conveyed in this way, the actual size of the
+KVS is not anticipated to be large.  Room for a few (key, value) pairs
+for each process is all that is necessary.
 
 \section{Implementing PMI}
 \label{sec:implementing}
@@ -444,14 +448,14 @@ global all-to-all-exchange, implemented in a scalable way.  Then the
 \subsection{Adding a PMI Module to an Existing Process Starter}
 \label{sec:adding}
 
-In our implementations as listed above, we have combined the PMI
+In the implementations listed above, we have combined the PMI
 implementation, particularly the server side, with a process startup
-mechanism being implemented at the same time.  Some systems may already
-have scalable methods in place for starting processes and might be
-looking for the simplest way to add PMI capabilities.  Although the 
-best approach is likely to be to incorporate PMI server-side
-capabilities into the process starter, it may be that the following
-approach, though less scalable, might be serviceable:
+mechanism being implemented at the same time.  Some systems, such as
+SLURM, may already have scalable methods in place for starting processes
+and might be looking for the simplest way to add PMI capabilities.
+Although the best approach is likely to be to incorporate PMI
+server-side capabilities into the process starter, it may be that the
+following approach, though less scalable, might be serviceable:
 \begin{enumerate}
 \item At the time each process of the MPI job is started, it is passed
   its rank and the size of the job in an environment variable, since
