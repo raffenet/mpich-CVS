@@ -106,10 +106,6 @@ static void MPIR_Init_err_dyncodes( void )
 #endif
 }
 
-#ifdef FCNAME
-#undef FCNAME
-#endif
-#define FCNAME "MPIR_Err_set_msg"
 /*+
   MPIR_Err_set_msg - Change the message for an error code or class
 
@@ -128,6 +124,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
     int errcode, errclass;
     size_t msg_len;
     char *str;
+    static char FCNAME[] = "MPIR_Err_set_msg";
 
     /* --BEGIN ERROR HANDLING-- */
     if (not_initialized) {
