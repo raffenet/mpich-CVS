@@ -1899,8 +1899,10 @@ static BOOL SafeTerminateProcess(HANDLE hProcess, UINT uExitCode)
 	    hRT = CreateRemoteThread((bDup) ? hProcessDup : hProcess,
 		NULL,
 		0,
-		// This relies on the probability that Kernel32.dll is mapped to the same place on all processes
-		// If it gets relocated, this function will produce spurious results
+		/*
+		This relies on the probability that Kernel32.dll is mapped to the same place on all processes
+		If it gets relocated, this function will produce spurious results
+		*/
 		(LPTHREAD_START_ROUTINE)pfnExitProc,
 		UintToPtr(uExitCode)/*(LPVOID)uExitCode*/, 0, &dwTID);
 	}
