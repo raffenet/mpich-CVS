@@ -116,11 +116,14 @@ sub CheckForBadSubs {
 	    }
 	}
     }
-#    foreach $subname (@guardedsubs) {
-#	if (/$subname\s*\(/) {
-#	    print "Caution: found reference to routine $subname in $filename\n";
-#	}
-#    }
+    # The guarded subs are ones that GNU autoconf is worried about.
+    # This code should look for some sort of configure-style CPP value
+    # and allow the ones that are properly guarded.
+    foreach $subname (@guardedsubs) {
+	if (/$subname\s*\(/) {
+	    print "Caution: found reference to routine $subname in $filename\n";
+	}
+    }
     foreach $subname (@guardsubs) {
         if (/(?<!\w)$subname\s*\(/ && !defined($AllowedRoutines{$subname})) {
             $msg = "Caution: found $subname in $filename";
