@@ -135,7 +135,7 @@ dist-with-version:
 	rm -rf tmpdir
 
 # Check that all modules are present in the development version
-MODULE_DIRS = confdb src/util/thread src/mpi/romio src/mpe2 src/pm/smpd src/pm/mpd doc/notes doc/mpich2 doc/adi3
+MODULE_DIRS = confdb src/util/thread src/mpi/romio src/mpe2 src/pm/smpd src/pm/mpd doc/notes 
 dist-check:
 	@for dir in $(MODULE_DIRS) ; do \
 	    if [ ! -d $(master_top_srcdir)/$$dir ] ; then \
