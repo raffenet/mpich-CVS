@@ -80,14 +80,16 @@ int ib_make_progress()
     {
     case OP_SEND:
 	g_num_send_posted--;
-	printf("%d:s%d ", MPIR_Process.comm_world->rank, g_num_send_posted);
+	/*printf("%d:s%d ", MPIR_Process.comm_world->rank, g_num_send_posted);*/
+	msg_printf("s%d ", g_num_send_posted);
 	ib_handle_written(vc_ptr, mem_ptr, ibu_next_num_written());
 	/* put the send packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
 	break;
     case OP_RECEIVE:
 	g_num_receive_posted--;
-	printf("%d:r%d ", MPIR_Process.comm_world->rank, g_num_receive_posted);
+	/*printf("%d:r%d ", MPIR_Process.comm_world->rank, g_num_receive_posted);*/
+	msg_printf("r%d ", g_num_receive_posted);
 	ib_handle_read(vc_ptr, mem_ptr, completion_data.bytes_num);
 	/* put the receive packet back in the pool */
 	BlockFree(vc_ptr->data.ib.info.m_allocator, mem_ptr);
