@@ -646,7 +646,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    (*argvp)[1][index-1] = (*argvp)[1][index];
 		    index++;
 		}
-		(*argvp)[1][index] = '\0';
+		(*argvp)[1][index-1] = '\0';
 	    }
 
 	    num_args_to_strip = 1;
