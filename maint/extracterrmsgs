@@ -108,15 +108,14 @@ sub ProcessFile {
 		$reverse_loc{$arg2} = $filename;
 		if ($arg3 ne "0") {
 		    # Check arg3 matches
-		    $arg2 =~ /^\"\*\*(\w)/;
+		    $arg2 =~ /^\"\*\*(\S+).*\"/;
 		    $testarg1 = $1;
-		    $arg3 =~ /^\"\*\*(\w)/;
+		    $arg3 =~ /^\"\*\*(\S+).*\"/;
 		    $testarg2 = $1;
 		    $reverse_loc{$arg3} = $filename;
 		    if ($testarg1 ne $testarg2) {
 			print STDERR
-                       "Possible inconsistent error msg in $filename\r\n\
-generic is $arg2 and specific is $arg3\r\n";
+                       "Possible inconsistent error msg in $filename\r\ngeneric is $arg2 and specific is $arg3\r\n";
 		    }
 		}
 	    }
@@ -187,7 +186,7 @@ sub CreateErrMsgMapping {
     open( FD, "<src/mpi/errhan/errnames.txt" ) || return 0;
     while (<FD>) {
 	if (/^\s*\#/) { next; }
-	if (/^\s*(\*\*.*):(.*)$/) {
+	if (/^\s*(\*\*[^:]*):(.*)$/) {
 	    my $name = $1;
 	    my $repl = $2;
 	    $repl =~ s/\r*\n*$//g;
@@ -276,8 +275,11 @@ sub CreateErrMsgMapping {
     print $OUTFD "static const int generic_msgs_len = $num;\n";
     my $i = 0;
     print $OUTFD "static msgpair generic_err_msgs[] = {\n";
-    for (my $i = 0; $i < $num ; $i ++) {
+    for (my $i = 0; $i < $num - 1; $i ++) {
 	print $OUTFD "{ short$i, long$i },\n";
+    }
+    if ($num > 0) {
+	print $OUTFD "{ short$num, long$num }\n";
     }
     print $OUTFD "};\n";
     print $OUTFD "#endif\n";
