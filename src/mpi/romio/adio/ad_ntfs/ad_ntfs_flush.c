@@ -9,7 +9,6 @@
 
 void ADIOI_NTFS_Flush(ADIO_File fd, int *error_code)
 {
-    //ADIOI_GEN_Flush(fd, error_code);
     int err;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_GEN_FLUSH";
