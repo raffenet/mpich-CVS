@@ -23,12 +23,13 @@ import base.topology.Line;
 import base.topology.Arrow;
 import base.topology.StateBorder;
 import base.topology.State;
+import base.topology.PreviewState;
 import base.drawable.Shadow;
 import base.drawable.NestingStacks;
 
 public class Parameters
 {
-    private static final String       VERSION_INFO             = "1.0.0.4";
+    private static final String       VERSION_INFO             = "1.0.0.5";
     private static       String       setupfile_path           = null;
 
     public  static       boolean      AUTO_WINDOWS_LOCATION    = true;
@@ -41,9 +42,9 @@ public class Parameters
                                       = Const.COLOR_BLACK;
 
     public  static       int          Y_AXIS_ROW_HEIGHT        = 71;
-    public  static       StateBorder  STATE_BORDER_STYLE
+    public  static       StateBorder  STATE_BORDER
                                       = StateBorder.COLOR_RAISED_BORDER;
-    public  static       float        STATE_HEIGHT_FACTOR      = 0.99f;
+    public  static       float        STATE_HEIGHT_FACTOR      = 0.90f;
     public  static       float        NESTING_HEIGHT_FACTOR    = 0.80f;
 
     public  static       Alias        ARROW_ANTIALIASING
@@ -52,9 +53,14 @@ public class Parameters
     public  static       int          ARROW_HEAD_HALF_WIDTH    = 3;
     public  static       int          CLICK_RADIUS_TO_LINE     = 3;
 
-    public  static       int          SHADOW_STATE_BDR_WID     = 3;
-    public  static       int          SHADOW_STATE_BDR_HGT     = 2;
-    public  static       float        SHADOW_ARROW_LINE_WID    = 3.0f;
+    public  static       String       PREVIEW_STATE_DISPLAY
+                                      = PreviewState.DECRE_WEIGHT_ORDER;
+    public  static       int          PREVIEW_STATE_LEGEND_H   = 2;
+    public  static       StateBorder  PREVIEW_STATE_BORDER
+                                      = StateBorder.WHITE_RAISED_BORDER;
+    public  static       int          PREVIEW_STATE_BORDER_W   = 3;
+    public  static       int          PREVIEW_STATE_BORDER_H   = 0;
+    public  static       float        PREVIEW_ARROW_LINE_W     = 3.0f;
 
     public  static       int          MIN_WIDTH_TO_DRAG        = 4;
     public  static       int          SEARCH_ARROW_LENGTH      = 20;
@@ -81,13 +87,16 @@ public class Parameters
         // Define how close a pixel is considered to be lying on a Line/Arrow
         Line.setPixelClosenessTolerance( Parameters.CLICK_RADIUS_TO_LINE );
         // Define state border type
-        State.setBorderStyle( Parameters.STATE_BORDER_STYLE );
+        State.setBorderStyle( Parameters.STATE_BORDER );
+        PreviewState.setBorderStyle( Parameters.PREVIEW_STATE_BORDER );
+        PreviewState.setDisplayType( Parameters.PREVIEW_STATE_DISPLAY );
+        PreviewState.setMinCategoryHeight( Parameters.PREVIEW_STATE_LEGEND_H );
 
         // Define Shadow State's insets dimension
-        Shadow.setStateInsetsDimension( Parameters.SHADOW_STATE_BDR_WID,
-                                        Parameters.SHADOW_STATE_BDR_HGT );
+        Shadow.setStateInsetsDimension( Parameters.PREVIEW_STATE_BORDER_W,
+                                        Parameters.PREVIEW_STATE_BORDER_H );
         // Define Shadow Arrow's thickness
-        Shadow.setArrowLineThickness( Parameters.SHADOW_ARROW_LINE_WID );
+        Shadow.setArrowLineThickness( Parameters.PREVIEW_ARROW_LINE_W );
         // Define all nesting related properties
         NestingStacks.setInitialNestingHeight(
                       Parameters.STATE_HEIGHT_FACTOR );
@@ -119,8 +128,8 @@ public class Parameters
 
         pptys.setProperty( "Y_AXIS_ROW_HEIGHT",
                            String.valueOf( Y_AXIS_ROW_HEIGHT ) );
-        pptys.setProperty( "STATE_BORDER_STYLE",
-                           String.valueOf( STATE_BORDER_STYLE ) );
+        pptys.setProperty( "STATE_BORDER",
+                           String.valueOf( STATE_BORDER ) );
         pptys.setProperty( "STATE_HEIGHT_FACTOR",
                            String.valueOf( STATE_HEIGHT_FACTOR ) );
         pptys.setProperty( "NESTING_HEIGHT_FACTOR",
@@ -135,12 +144,17 @@ public class Parameters
         pptys.setProperty( "CLICK_RADIUS_TO_LINE",
                            String.valueOf( CLICK_RADIUS_TO_LINE ) );
 
-        pptys.setProperty( "SHADOW_STATE_BDR_WID",
-                           String.valueOf( SHADOW_STATE_BDR_WID ) );
-        pptys.setProperty( "SHADOW_STATE_BDR_HGT",
-                           String.valueOf( SHADOW_STATE_BDR_HGT ) );
-        pptys.setProperty( "SHADOW_ARROW_LINE_WID",
-                           String.valueOf( SHADOW_ARROW_LINE_WID ) );
+        pptys.setProperty( "PREVIEW_STATE_DISPLAY", PREVIEW_STATE_DISPLAY );
+        pptys.setProperty( "PREVIEW_STATE_BORDER",
+                           String.valueOf( PREVIEW_STATE_BORDER ) );
+        pptys.setProperty( "PREVIEW_STATE_LEGEND_H",
+                           String.valueOf( PREVIEW_STATE_LEGEND_H ) );
+        pptys.setProperty( "PREVIEW_STATE_BORDER_W",
+                           String.valueOf( PREVIEW_STATE_BORDER_W ) );
+        pptys.setProperty( "PREVIEW_STATE_BORDER_H",
+                           String.valueOf( PREVIEW_STATE_BORDER_H ) );
+        pptys.setProperty( "PREVIEW_ARROW_LINE_W",
+                           String.valueOf( PREVIEW_ARROW_LINE_W ) );
 
         pptys.setProperty( "MIN_WIDTH_TO_DRAG",
                            String.valueOf( MIN_WIDTH_TO_DRAG ) );
@@ -220,9 +234,9 @@ public class Parameters
         ppty_val = pptys.getProperty( "BACKGROUND_COLOR" );
         if ( ppty_val != null )
             BACKGROUND_COLOR = Const.parseBackgroundColor( ppty_val );
-        ppty_val = pptys.getProperty( "STATE_BORDER_STYLE" );
+        ppty_val = pptys.getProperty( "STATE_BORDER" );
         if ( ppty_val != null )
-            STATE_BORDER_STYLE = StateBorder.parseString( ppty_val );
+            STATE_BORDER = StateBorder.parseString( ppty_val );
         ppty_val = pptys.getProperty( "STATE_HEIGHT_FACTOR" );
         if ( ppty_val != null )
             STATE_HEIGHT_FACTOR = Float.parseFloat( ppty_val );
@@ -243,15 +257,24 @@ public class Parameters
         if ( ppty_val != null )
             CLICK_RADIUS_TO_LINE = Integer.parseInt( ppty_val );
 
-        ppty_val = pptys.getProperty( "SHADOW_STATE_BDR_WID" );
+        ppty_val = pptys.getProperty( "PREVIEW_STATE_DISPLAY" );
         if ( ppty_val != null )
-            SHADOW_STATE_BDR_WID = Integer.parseInt( ppty_val );
-        ppty_val = pptys.getProperty( "SHADOW_STATE_BDR_HGT" );
+            PREVIEW_STATE_DISPLAY = ppty_val;
+        ppty_val = pptys.getProperty( "PREVIEW_STATE_BORDER" );
         if ( ppty_val != null )
-            SHADOW_STATE_BDR_HGT = Integer.parseInt( ppty_val );
-        ppty_val = pptys.getProperty( "SHADOW_ARROW_LINE_WID" );
+            PREVIEW_STATE_BORDER = StateBorder.parseString( ppty_val );
+        ppty_val = pptys.getProperty( "PREVIEW_STATE_LEGEND_H" );
         if ( ppty_val != null )
-            SHADOW_ARROW_LINE_WID = Float.parseFloat( ppty_val );
+            PREVIEW_STATE_LEGEND_H = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "PREVIEW_STATE_BORDER_W" );
+        if ( ppty_val != null )
+            PREVIEW_STATE_BORDER_W = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "PREVIEW_STATE_BORDER_H" );
+        if ( ppty_val != null )
+            PREVIEW_STATE_BORDER_H = Integer.parseInt( ppty_val );
+        ppty_val = pptys.getProperty( "PREVIEW_ARROW_LINE_W" );
+        if ( ppty_val != null )
+            PREVIEW_ARROW_LINE_W = Float.parseFloat( ppty_val );
 
         ppty_val = pptys.getProperty( "MIN_WIDTH_TO_DRAG" );
         if ( ppty_val != null )
@@ -283,7 +306,7 @@ public class Parameters
         rep.append( "BACKGROUND_COLOR = "      + BACKGROUND_COLOR      + "\n" );
 
         rep.append( "Y_AXIS_ROW_HEIGHT = "     + Y_AXIS_ROW_HEIGHT     + "\n" );
-        rep.append( "STATE_BORDER_STYLE = "    + STATE_BORDER_STYLE    + "\n" );
+        rep.append( "STATE_BORDER = "          + STATE_BORDER          + "\n" );
         rep.append( "STATE_HEIGHT_FACTOR = "   + STATE_HEIGHT_FACTOR   + "\n" );
         rep.append( "NESTING_HEIGHT_FACTOR = " + NESTING_HEIGHT_FACTOR + "\n" );
 
@@ -292,9 +315,12 @@ public class Parameters
         rep.append( "ARROW_HEAD_HALF_WIDTH = " + ARROW_HEAD_HALF_WIDTH + "\n" );
         rep.append( "CLICK_RADIUS_TO_LINE = "  + CLICK_RADIUS_TO_LINE  + "\n" );
 
-        rep.append( "SHADOW_STATE_BDR_WID = "  + SHADOW_STATE_BDR_WID  + "\n" );
-        rep.append( "SHADOW_STATE_BDR_HGT = "  + SHADOW_STATE_BDR_HGT  + "\n" );
-        rep.append( "SHADOW_ARROW_LINE_WID = " + SHADOW_ARROW_LINE_WID + "\n" );
+        rep.append( "PREVIEW_STATE_DISPLAY = " + PREVIEW_STATE_DISPLAY + "\n" );
+        rep.append( "PREVIEW_STATE_BORDER = "  + PREVIEW_STATE_BORDER  + "\n" );
+        rep.append( "PREVIEW_STATE_LEGEND_H = "+ PREVIEW_STATE_LEGEND_H+ "\n" );
+        rep.append( "PREVIEW_STATE_BORDER_W = "+ PREVIEW_STATE_BORDER_W+ "\n" );
+        rep.append( "PREVIEW_STATE_BORDER_H = "+ PREVIEW_STATE_BORDER_H+ "\n" );
+        rep.append( "PREVIEW_ARROW_LINE_W = "  + PREVIEW_ARROW_LINE_W  + "\n" );
 
         rep.append( "MIN_WIDTH_TO_DRAG = "     + MIN_WIDTH_TO_DRAG     + "\n" );
         rep.append( "SEARCH_ARROW_LENGTH = "   + SEARCH_ARROW_LENGTH   + "\n" );
