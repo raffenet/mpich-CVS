@@ -51,7 +51,7 @@ MPIDI_Message_match;
  * MPIDI_CH3_Pkt_type_t
  *
  */
-typedef enum 
+typedef enum MPIDI_CH3_Pkt_type
 {
     MPIDI_CH3_PKT_EAGER_SEND = 0,
     MPIDI_CH3_PKT_EAGER_SYNC_SEND,
@@ -71,7 +71,7 @@ typedef enum
 }
 MPIDI_CH3_Pkt_type_t;
 
-typedef struct
+typedef struct MPIDI_CH3_Pkt_send
 {
     MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
     MPIDI_Message_match match;
@@ -89,7 +89,7 @@ typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_sync_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_ready_send_t;
 
-typedef struct
+typedef struct MPIDI_CH3_Pkt_eager_sync_ack
 {
     MPIDI_CH3_Pkt_type_t type;
     MPI_Request sender_req_id;
@@ -98,7 +98,7 @@ MPIDI_CH3_Pkt_eager_sync_ack_t;
 
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_rndv_req_to_send_t;
 
-typedef struct
+typedef struct MPIDI_CH3_Pkt_rndv_clr_to_send
 {
     MPIDI_CH3_Pkt_type_t type;
     MPI_Request sender_req_id;
@@ -106,14 +106,14 @@ typedef struct
 }
 MPIDI_CH3_Pkt_rndv_clr_to_send_t;
 
-typedef struct
+typedef struct MPIDI_CH3_Pkt_rndv_send
 {
     MPIDI_CH3_Pkt_type_t type;
     MPI_Request receiver_req_id;
 }
 MPIDI_CH3_Pkt_rndv_send_t;
 
-typedef struct
+typedef struct MPIDI_CH3_Pkt_cancel_send_req
 {
     MPIDI_CH3_Pkt_type_t type;
     MPIDI_Message_match match;
@@ -121,7 +121,7 @@ typedef struct
 }
 MPIDI_CH3_Pkt_cancel_send_req_t;
 
-typedef struct
+typedef struct MPIDI_CH3_Pkt_cancel_send_resp
 {
     MPIDI_CH3_Pkt_type_t type;
     MPI_Request sender_req_id;
@@ -134,7 +134,7 @@ MPIDI_CH3_Pkt_cancel_send_resp_t;
 MPIDI_CH3_PKT_DEFS
 #endif
 
-typedef union
+typedef union MPIDI_CH3_Pkt
 {
     MPIDI_CH3_Pkt_type_t type;
     MPIDI_CH3_Pkt_eager_send_t eager_send;
@@ -153,7 +153,7 @@ typedef union
 MPIDI_CH3_Pkt_t;
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
-typedef struct MPIDI_CH3_Pkt_send_container_s
+typedef struct MPIDI_CH3_Pkt_send_container
 {
     MPIDI_CH3_Pkt_send_t pkt;
     struct MPIDI_CH3_Pkt_send_container_s * next;
@@ -188,7 +188,7 @@ MPIDI_CH3_Pkt_send_container_t;
  * by channel device.  Any actions numerically greater than MPIDI_CA_END are internal to the channel instance and must be handled
  * by the channel instance.
  */
-typedef enum
+typedef enum MPIDI_CA
 {
     MPIDI_CH3_CA_COMPLETE,
     MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE,

@@ -15,7 +15,7 @@
 
 #define MPIDI_IOV_DENSITY_MIN 128
 
-typedef struct
+typedef struct MPIDI_Process
 {
     MPID_Request * recv_posted_head;
     MPID_Request * recv_posted_tail;
