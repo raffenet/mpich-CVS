@@ -5,6 +5,7 @@
  */
 
 #include "mpidi_ch3_impl.h"
+#include "mpidu_process_locks.h"
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
@@ -201,7 +202,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 	switch (wait_result)
 	{
 	case IBU_OP_TIMEOUT:
-	    /*MPIDU_Yield();*/
+	    MPIDU_Yield();
 	    /*sched_yield();*/
 	    break;
 	case IBU_OP_READ:
