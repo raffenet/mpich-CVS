@@ -134,7 +134,7 @@ int smpd_read_string(sock_set_t set, sock_t sock, char *str, int maxlen)
 	num_bytes = read_string(sock, str, maxlen);
 	if (num_bytes == -1)
 	    return SMPD_FAIL;
-	if (str[num_bytes-1] == '\0')
+	if (num_bytes > 0 && str[num_bytes-1] == '\0')
 	    return SMPD_SUCCESS;
 	if (num_bytes == maxlen)
 	{
