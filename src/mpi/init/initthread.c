@@ -111,7 +111,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
     /* Initialize necessary subsystems and setup the predefined attribute
        values.  Subsystems may change these values. */
-    MPIR_Process.attrs.appnum          = 0;
+    MPIR_Process.attrs.appnum          = -1;
     MPIR_Process.attrs.host            = 0;
     MPIR_Process.attrs.io              = 0;
     MPIR_Process.attrs.lastusedcode    = MPI_ERR_LASTCODE;
