@@ -898,12 +898,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
 			    {
-				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
-				    FCNAME, __LINE__,
-				    MPI_ERR_OTHER,
-				    "**ch3|postrecv",
-				    "**ch3|postrecv %s",
-				    "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				return mpi_errno;
 			    }
@@ -912,10 +907,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
 			    {
-				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
-				    FCNAME, __LINE__,
-				    MPI_ERR_OTHER,
-				    "**ch3|ctspkt", 0);
+				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 				MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 				return mpi_errno;
 			    }
