@@ -50,7 +50,7 @@ void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 					   MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__,
 					   MPI_ERR_ARG,
-					   "Unknown flag passed to ADIOI_PVFS2_FCNTL", 0);
+					   "**flag", "**flag %d", flag);
     /* --END ERROR HANDLING-- */
     }
 }

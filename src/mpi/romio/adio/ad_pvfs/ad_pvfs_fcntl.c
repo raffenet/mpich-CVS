@@ -53,8 +53,7 @@ void ADIOI_PVFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 					   MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__,
 					   MPI_ERR_ARG,
-					   "Unknown flag",
-					   0);
+					   "**flag", "**flag %d", flag);
 	return;  
 	/* --END ERROR HANDLING-- */
     }

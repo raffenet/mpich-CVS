@@ -74,8 +74,8 @@ void ADIOI_PFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
     default:
 	/* --BEGIN ERROR HANDLING-- */
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPI_ERR_RECOVERABLE,
-					   myname, __LINE__, MPI_ERR_IO,
-					   "Unknown flag", 0);
+					   myname, __LINE__, MPI_ERR_ARG,
+					   "**flag", "**flag %d", flag);
 	return;
 	/* --END ERROR HANDLING-- */
     }
