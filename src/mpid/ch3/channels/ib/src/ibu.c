@@ -1786,7 +1786,7 @@ int ibu_post_write(ibu_t ibu, void *buf, int len, int (*wfn)(int, void*))
     num_bytes = ibui_post_write(ibu, buf, len, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITE);
     //return IBU_SUCCESS;
-    MPIU_DBG_PRINTF(("ibu_post_write returning %d\n", num_bytes));
+    MPIU_dbg_printf("ibu_post_write returning %d\n", num_bytes);
     return num_bytes;
 }
 
@@ -1821,7 +1821,7 @@ int ibu_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*wfn)(int, void*))
     num_bytes = ibui_post_writev(ibu, ibu->write.iov, n, wfn);
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_POST_WRITEV);
     //return IBU_SUCCESS;
-    MPIU_DBG_PRINTF(("ibu_post_writev returning %d\n", num_bytes));
+    MPIU_dbg_printf("ibu_post_writev returning %d\n", num_bytes);
     return num_bytes;
 }
 
