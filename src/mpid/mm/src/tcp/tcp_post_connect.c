@@ -107,7 +107,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 	err_printf("tcp_post_connect:GetHostAndPort: invalid business card\n");
 	return -1;
     }
-    strcpy(host, temp);
+    /*strcpy(host, token);*/
     /* move to the ip part */
     token = strtok(NULL, ":");
     if (token == NULL)
@@ -116,6 +116,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 	err_printf("tcp_post_connect:GetHostAndPort: invalid business card\n");
 	return -1;
     }
+    strcpy(host, token); /* use the ip string instead of the hostname, it's more reliable */
     /* move to the port part */
     token = strtok(NULL, ":");
     if (token == NULL)
@@ -182,7 +183,7 @@ int tcp_post_connect(MPIDI_VC *vc_ptr, char *business_card)
     {
 	TCP_Process.error = beasy_getlasterror();
 	beasy_error_to_string(TCP_Process.error, TCP_Process.err_msg, TCP_ERROR_MSG_LENGTH);
-	err_printf("tcp_post_connect: beasy_connect failed, error %d: %s\n", TCP_Process.error, TCP_Process.err_msg);
+	err_printf("tcp_post_connect: beasy_connect(%s:%d) failed, error %d: %s\n", host, port, TCP_Process.error, TCP_Process.err_msg);
 	MPID_Thread_unlock(vc_ptr->lock);
 	MPIDI_FUNC_EXIT(MPID_STATE_TCP_POST_CONNECT);
 	return -1;
