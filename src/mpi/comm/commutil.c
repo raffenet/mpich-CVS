@@ -142,6 +142,7 @@ int MPIR_Get_contextid( MPI_Comm comm )
 		    /* Found the leading set bit */
 		    context_mask[i] &= ~mask;
 		    context_id = 4 * (32 * i + j);
+		    /*printf( "returning contextid = %d\n", context_id ); */
 		    return context_id;
 		}
 		mask >>= 1;
@@ -156,11 +157,13 @@ void MPIR_Free_contextid( int context_id )
 {
     int idx, bitpos;
     /* Convert the context id to the bit position */
+    /* printf( "Freeed id = %d\n", context_id ); */
     context_id <<= 2;       /* Remove the shift of a factor of four */
     idx = context_id % 32;
     bitpos = context_id / 32;
 
     context_mask[idx] |= (0x1 << bitpos);
+
 }
 /* Get a context for a new intercomm.  There are two approaches 
    here (for MPI-1 codes only)
@@ -189,13 +192,22 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 
     context_id = MPIR_Get_contextid( comm_ptr->local_comm->handle );
     if (context_id == 0) return 0;
-    
-    /* FIXME - need to use a different context on the communicator */
+
+    /* MPIC routine uses an internal context id.  The local leads (process 0)
+       exchange data */
+    remote_context_id = -1;
     if (comm_ptr->rank == 0) {
-	NMPI_Sendrecv( &context_id, 1, MPI_INT, 0, tag,
+	MPIC_Sendrecv( &context_id, 1, MPI_INT, 0, tag,
 		       &remote_context_id, 1, MPI_INT, 0, tag, 
 		       comm_ptr->handle, MPI_STATUS_IGNORE );
     }
+    /*printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout);*/
+    if (remote_context_id < 0) { 
+	/* FIXME: there is a problem with the receive buffer not being set */
+	printf( "PANIC: Internal error in Sendrecv used to get intercomm context\n" );fflush( stdout);
+	remote_context_id = context_id;
+    }
+    /* printf( "sent %d received %d\n", context_id, remote_context_id );fflush(stdout); */
 
     /* We need to do something with the context ids.  For 
        MPI1, we can just take the min of the two context ids and
@@ -212,6 +224,7 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
     if (final_context_id != context_id) {
 	MPIR_Free_contextid( context_id );
     }
+    /* printf( "intercomm context = %d\n", final_context_id ); */
     return final_context_id;
 }
 #else
