@@ -720,6 +720,8 @@ void MPIU_Param_finalize( void );
   S*/
 typedef struct MPID_Info {
     int                handle;
+    volatile int       ref_count;  /* FIXME: ref_count isn't needed by Info objects, but MPIU_Info_free does not work correctly
+				      unless MPID_Info and MPIU_Handle_common have the next pointer in the same location */
     struct MPID_Info   *next;
     char               *key;
     char               *value;
