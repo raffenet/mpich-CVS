@@ -293,7 +293,7 @@ int smpd_add_string(char *str, int maxlen, const char *val)
 {
     int num_chars;
 
-    if (strstr(val, " "))
+    if (strstr(val, " ") || val[0] == SMPD_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(str, maxlen, val);
 	if (num_chars < maxlen)
@@ -344,7 +344,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const
 	return SMPD_FAIL;
 
     /* add the flag */
-    if (strstr(flag, " ") || strstr(flag, SMPD_DELIM_STR))
+    if (strstr(flag, " ") || strstr(flag, SMPD_DELIM_STR) || flag[0] == SMPD_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, flag);
     }
@@ -367,7 +367,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const
     *maxlen_ptr = *maxlen_ptr - 1;
 
     /* add the value string */
-    if (strstr(val, " ") || strstr(val, SMPD_DELIM_STR))
+    if (strstr(val, " ") || strstr(val, SMPD_DELIM_STR) || val[0] == SMPD_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, val);
     }
