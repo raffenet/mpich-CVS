@@ -46,11 +46,49 @@ State [handle result]
 			Change_State([writing cred ack no],[label="fail"])
 State [writing cred ack sspi]
         Event [data written]
-                Change_State([writing sspi setup])
-State [writing sspi setup]
+                Change_State([writing sspi_init])
+State [writing sspi_init]
         Event [data written]
-                Change_State([handle sspi result],[style=dotted])
-State [handle sspi result]
+                Change_State([sspi_init result],[style=dotted])
+State [sspi_init result]
+        Event [data read]
+                Change_State([writing client sspi header])
+State [writing client sspi header],[label="writing client sspi header"]
+        Event [data written]
+                Change_State([writing client sspi buffer])
+State [writing client sspi buffer],[label="writing client sspi buffer"]
+        Event [data written]
+                Change_State([reading client sspi header])
+State [reading client sspi header],[label="reading client sspi header"]
+        Event [data read]
+                if sspi_iter
+                        Change_State([reading client sspi buffer],[label="sspi iter"])
+                else delegate
+                        Invoke_Action([delegate],[label="delegate"])
+Action [delegate],[label="delegate"]
+        if delegate yes
+                Change_State([writing delegate yes],[label="yes"])
+        else delegate no
+                Change_State([writing delegate no],[label="no"])
+State [reading client sspi buffer],[label="reading client sspi buffer"]
+        Event [data read]
+                Change_State([writing sspi_iter],[label="sspi_iter"])
+State [writing sspi_iter],[label="writing sspi_iter"]
+        Event [data written]
+                Change_State([sspi_iter result],[style=dotted])
+State [sspi_iter result],[label="sspi_iter result"]
+        Event [data read]
+		if no buffer returned
+			Change_State([reading client sspi header],[label="no data"]
+		else
+	                Change_State([writing client sspi header])
+State [writing delegate yes],[label="writing delegate yes"]
+        Event [data written]
+                Change_State([reading impersonate result])
+State [writing delegate no],[label="writing delegate no"]
+        Event [data written]
+                Change_State([reading impersonate result])
+State [reading impersonate result],[label="reading impersonate result"]
         Event [data read]
                 if success
                         Change_State([reading reconnect request],[label="success"])

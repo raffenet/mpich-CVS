@@ -40,16 +40,37 @@ State [reading cred ack],[label="reading cred ack"]
 		else no
 			Change_State([closing],[label="no"])
 	        else sspi
-	                Change_State([reading sspi setup],[label="sspi"])
-State [reading sspi setup],[label="reading sspi setup"]
+	                Change_State([reading sspi header],[label="sspi"])
+State [reading sspi header],[label="reading sspi header"]
         Event [data read]
-                Change_State([handle sspi result],[style=dotted])
-State [handle sspi result],[label="handle sspi result"]
+                Change_State([reading sspi buffer])
+State [reading sspi buffer],[label="reading sspi buffer"]
         Event [data read]
-                if success
-                        Change_State([writing reconnect request],[label="success"])
-                else fail
-                        Change_State([closing],[label="fail"])
+                if more date
+                        Change_State([writing sspi header],[label="more data"])
+                else done
+                        Change_State([writing delegate],[label="done"])
+State [writing sspi header],[label="writing sspi header"]
+        Event [data written]
+                Change_State([writing sspi buffer])
+State [writing sspi buffer],[label="writing sspi buffer"]
+        Event [data written]
+                Change_State([reading sspi header])
+State [writing delegate],[label="writing delegate"]
+        Event [data written]
+                Change_State([reading delegate yes/no])
+State [reading delegate yes/no],[label="reading delegate yes/no"]
+        Event [data read]
+                if impersonate success
+                        Change_State([writing impersonate success],[label="success"])
+                else impersonate fail
+                        Change_State([writing impersonate failure],[label="fail"])
+State [writing impersonate success],[label="writing impersonate success"]
+        Event [data written]
+                Change_State([writing reconnect request])
+State [writing impersonate failure],[label="writing impersonate failure"]
+        Event [data written]
+                Change_State([closing])
 State [writing nocred request],[label="writing nocred request"]
 	Event [data written]
 		if win
