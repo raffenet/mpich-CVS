@@ -4,7 +4,7 @@ dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes
 dnl bugs in autoconf caching.
 dnl
 dnl The file name here refers to a file in the source being configured
-AC_INIT(src/include/mpidimpl.h)
+AC_INIT(include/mpidimpl.h)
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(include/mpidconf.h)
@@ -430,12 +430,12 @@ dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
 
-AC_OUTPUT(Makefile mm/Makefile \
-          mm/src/Makefile \
-          mm/src/bsocket/Makefile \
-	  mm/src/init/Makefile \
-          mm/src/mm/Makefile \
-	  mm/src/spawn/Makefile \
+AC_OUTPUT(Makefile \
+          src/Makefile \
+          src/bsocket/Makefile \
+	  src/init/Makefile \
+          src/mm/Makefile \
+	  src/spawn/Makefile \
 )
 
 
