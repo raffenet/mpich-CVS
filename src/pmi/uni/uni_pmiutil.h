@@ -15,5 +15,5 @@ char PMIU_print_id[PMIU_IDSIZE];
 void PMIU_printf( int print_flag, char *fmt, ... );
 int  PMIU_parse_keyvals( char *st );
 void PMIU_dump_keyvals( void );
-char *PMIU_getval( char *keystr, char *valstr );
-void PMIU_chgval( char *keystr, char *valstr );
+char *PMIU_getval( const char *keystr, char *valstr );
+void PMIU_chgval( const char *keystr, char *valstr );
