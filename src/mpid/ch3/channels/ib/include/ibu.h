@@ -12,7 +12,7 @@ extern "C" {
 
 /* config header file */
 //#include "mpichconf.h"
-#include "mpidi_ch3i_ib_conf.h"
+#include "mpidi_ch3_conf.h"
 #include "iba.h"
 #include "psc_iba.h"
 
