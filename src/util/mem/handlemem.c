@@ -74,7 +74,7 @@ MPID_Info *MPID_Info_Get_ptr_indirect( int handle )
     int block_num, index_num;
 
     /* Check for a valid handle type */
-    if (HANDLE_KIND(handle) != MPID_INFO) {
+    if (HANDLE_GET_KIND(handle) != MPID_INFO) {
 	return 0;
     }
 
@@ -118,7 +118,7 @@ void *MPIU_Handle_direct_init( void *direct, int direct_size, int obj_size,
 	hptr = (MPIU_Handle_common *)ptr;
 	ptr  = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->id   = (CONSTRUCT_DIRECT << 30) | (handle_type << 27) | i;
+	hptr->id   = (HANDLE_KIND_DIRECT << 30) | (handle_type << 27) | i;
 	}
     hptr->next = 0;
     return direct;
@@ -163,7 +163,7 @@ void *MPIU_Handle_indirect_init( void *(**indirect)[], int *indirect_size,
 	hptr       = (MPIU_Handle_common *)ptr;
 	ptr        = ptr + obj_size;
 	hptr->next = ptr;
-	hptr->id   = (CONSTRUCT_INDIRECT << 30) | (handle_type << 27) | 
+	hptr->id   = (HANDLE_KIND_INDIRECT << 30) | (handle_type << 27) | 
 	    (*indirect_size << 16) | i;
     }
     hptr->next = 0;
@@ -187,20 +187,20 @@ void MPIU_Print_handle( int handle )
 {
     int type, kind, block, index;
 
-    type = CONSTRUCT_TYPE(handle);
-    kind = HANDLE_KIND(handle);
+    type = HANDLE_GET_MPI_KIND(handle);
+    kind = HANDLE_GET_KIND(handle);
     switch (type) {
-    case CONSTRUCT_INVALID:
+    case HANDLE_KIND_INVALID:
 	printf( "invalid" );
 	break;
-    case CONSTRUCT_BUILTIN:
+    case HANDLE_KIND_BUILTIN:
 	printf( "builtin" );
 	break;
-    case CONSTRUCT_DIRECT:
+    case HANDLE_KIND_DIRECT:
 	index = HANDLE_INDEX(handle);
 	printf( "direct: %d", index );
 	break;
-    case CONSTRUCT_INDIRECT:
+    case HANDLE_KIND_INDIRECT:
 	block = HANDLE_BLOCK(handle);
 	index = HANDLE_BLOCK_INDEX(handle);
 	printf( "indirect: block %d index %d", block, index );

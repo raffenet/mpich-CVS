@@ -23,7 +23,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     }
     else {
 	/* No communicator, so errors are fatal */
-	printf( "Fatal error %d\n", errcode );
+	printf( "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;

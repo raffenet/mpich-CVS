@@ -121,7 +121,6 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	curr_ptr->value  = MPIU_Strdup(value);
 	curr_ptr->next   = 0;
     }
-
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_SET);

@@ -35,7 +35,7 @@ MPID_Info *MPID_Info_Get_ptr_indirect( int handle )
     int block_num, index_num;
 
     /* Check for a valid handle type */
-    if (HANDLE_KIND(handle) != MPID_INFO) {
+    if (HANDLE_GET_MPI_KIND(handle) != MPID_INFO) {
 	return 0;
     }
 

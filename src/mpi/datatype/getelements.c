@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "dataloop.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Get_elements */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -22,21 +23,25 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Get_elements PMPI_Get_elements
 
+/* Return the number of elements */
 static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
 {
-    if ( (datatype_ptr->dataloop.kind & DATALOOP_KIND_MASK) == MPID_STRUCT) {
+    int mpi_errno;
+
+    if ( (datatype_ptr->loopinfo->kind & DATALOOP_KIND_MASK) == MPID_STRUCT) {
 	/* This is the hard case; we must loop through the components of the 
 	   datatype */
 	/* NOT DONE */
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
-	MPIR_Err_return_comm( 0, mpi_errno, "Get_elements" );
+	MPIR_Err_return_comm( 0, "Get_elements", mpi_errno );
     }
     else {
 	/* Recusively apply the algorithm */
 	/* NOT DONE */
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
-	MPIR_Err_return_comm( 0, mpi_errno, "Get_elements" );
+	MPIR_Err_return_comm( 0, "Get_elements", mpi_errno );
     }
+    return 0;
 }
 #endif
 

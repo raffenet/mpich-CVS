@@ -368,6 +368,9 @@ dnl
 # Temporary values for MPI_Fint (need help from the Fortran subsystem)
 MPI_FINT=int
 AC_SUBST(MPI_FINT)
+# Temporary values for MPI_Offset (need help from IO subsystem)
+MPI_OFFSET=long
+AC_SUBST(MPI_OFFSET)
 dnl
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)

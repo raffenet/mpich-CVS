@@ -4,7 +4,7 @@
 
 #define MAX_INFOS 256
 #define info_list 16
-/* #define DBG */
+/* #define DBG  */
 
 int main( int arg, char *argv[] )
 {
@@ -17,9 +17,15 @@ int main( int arg, char *argv[] )
     
     for (i=0; i<MAX_INFOS; i++) {
 	MPI_Info_create( &infos[i] );
+#ifdef DBG
+	printf( "Info handle is %x\n", infos[i] );
+#endif
 	for (j=0; j<info_list; j++) {
 	    sprintf( key, "key%d-%d", i, j );
 	    sprintf( value, "value%d-%d", i, j );
+#ifdef DBG
+	    printf( "Creating key/value %s=%s\n", key, value );
+#endif
 	    MPI_Info_set( infos[i], key, value );
 	}
 #ifdef DBG

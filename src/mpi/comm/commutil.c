@@ -33,7 +33,7 @@ MPID_Comm *MPID_Comm_Get_ptr_indirect( int handle )
     int block_num, index_num;
 
     /* Check for a valid handle type */
-    if (HANDLE_KIND(handle) != MPID_COMM) {
+    if (HANDLE_GET_MPI_KIND(handle) != MPID_COMM) {
 	return 0;
     }
 

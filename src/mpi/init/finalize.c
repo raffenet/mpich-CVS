@@ -44,7 +44,7 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data )
     fstack[fstack_sp].f            = f;
     fstack[fstack_sp++].extra_data = extra_data;
 }
-static void MPIR_Call_finalize( void )
+static void MPIR_Call_finalize_callbacks( void )
 {
     int i;
     for (i=fstack_sp-1; i>=0; i--) {
@@ -97,7 +97,15 @@ int MPI_Finalize( void )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    MPIR_Call_finalize();
+    MPIR_Call_finalize_callbacks();
+
+    /* If memory debugging is enabled, check the memory here */
+#ifdef USE_MEMORY_TRACING
+    if (1) {
+	MPIU_trdump( (void *)0 );
+    }
+#endif
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
     return MPI_SUCCESS;

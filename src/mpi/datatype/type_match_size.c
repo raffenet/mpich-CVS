@@ -50,7 +50,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);
     /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+    MPID_Datatype_get_ptr( *datatype, datatype_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;

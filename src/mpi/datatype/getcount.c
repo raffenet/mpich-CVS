@@ -85,12 +85,13 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
     if (datatype_ptr->size == 0) {
 	if (status->count > 0)
 	    (*count) = MPI_UNDEFINED;
-	else
+	else {
 	    /* This is ambiguous.  However, discussions on MPI Forum
 	       reached a consensus that this is the correct return 
 	       value
 	    */
 	    (*count) = 0;
+	}
     }
     else {
 	if ((status->count % (datatype_ptr->size)) != 0)

@@ -135,7 +135,7 @@ typedef enum {
   MPID_INFO       = 0x6,
   MPID_WIN        = 0x7,
   } MPID_Object_kind;
-#define HANDLE_MPI_KIND(a) ( ((a)&0x38000000) >> 27 )
+#define HANDLE_GET_MPI_KIND(a) ( ((a)&0x38000000) >> 27 )
 
 /* Handle types.  These are really 2 bits */
 #define HANDLE_KIND_INVALID  0x0
@@ -211,7 +211,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
 #define MPID_Get_ptr(kind,a,ptr) \
-     switch (HANDLE_KIND(a)) {\
+     switch (HANDLE_GET_KIND(a)) {\
          case HANDLE_KIND_INVALID: ptr=0; break;\
          case HANDLE_KIND_BUILTIN: ptr=0;break;\
          case HANDLE_KIND_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
@@ -230,7 +230,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
 #define MPID_Valid_ptr(kind,ptr,err) \
-    {if (!(ptr)) { err = 1; } }
+  {if (!(ptr)) { err = MPIR_Err_create_code( MPI_ERR_OTHER, "**nullptr" ); } }
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
 #define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr(Comm,ptr,err)
 #define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr(Datatype,ptr,err)
@@ -405,6 +405,10 @@ typedef struct MPID_Datatype_st {
 
     /* other, device-specific information */
 } MPID_Datatype;
+/* Preallocated datatype objects */
+extern MPID_Datatype MPID_Datatype_direct[];
+/* Function to access indirect objects */
+extern MPID_Datatype *MPID_Datatype_Get_ptr_indirect( int handle );
 
 typedef struct {
     int           id;             /* value of MPI_File for this structure */
