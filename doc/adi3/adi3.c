@@ -2858,7 +2858,7 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   includes the 'MPID_Request's and any other data structures used by 
   the device.
 
-  The arguments 'has_args' and 'has_env' indicates whether the process was
+  The arguments 'has_args' and 'has_env' indicate whether the process was
   started with command-line arguments or environment variables.  In some
   cases, only the root process is started with these values; in others, 
   the startup environment ensures that each process receives the 
@@ -2866,7 +2866,8 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
   While the MPI standard makes no requirements that command line arguments or 
   environment variables are provided to all processes, most users expect a
   common environment.  These variables allow an MPI implementation (that is
-  based on ADI-3) to provide both of these.
+  based on ADI-3) to provide both of these by making use of MPI communication
+  after 'MPID_Init' is called but before 'MPI_Init' returns to the user.
 
   This routine is used to implement both 'MPI_Init' and 'MPI_Init_thread'.
 
