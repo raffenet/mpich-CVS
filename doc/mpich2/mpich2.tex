@@ -189,6 +189,7 @@ Error handlers should be chosen using the following decision tree:
 \input errcodes.tex 
 
 \subsubsection{Error handling and Fault Tolerance}
+\label{sec:errs-and-faults}
 In order to support fault tolerance, errors should be handled as
 gracefully as possible.  If it is possible to remain in a consistent
 state, the process should not abort (unless, of course, the error
@@ -1674,15 +1675,73 @@ If no match is found, then wait until another message is receive and check
 again.  In a polling, single-threaded implementation, this can simply invoke a
 blocking call to wait for incoming messages. 
 
-Note that in a multithreaded MPI implementation, this much watch for the race
+This routine immediately brings up the problem of how to structure code that
+uses multiple threads to achieve good performance when a blocking call is used
+by one or more user threads.
+
+Note that in a multithreaded MPI implementation, this must watch for the race
 condition of
 \begin{verbatim}
      Thread 1                    Thread 2
  Check queue, no match found
-                                 Handling incoming unexpected message
+                                 Handle incoming unexpected message
  Wait for a message to arrive
 \end{verbatim}
 Handling this is device-implementation specific.
+
+Consider the following cases:
+\begin{enumerate}
+\item There is only one thread (e.g., the current \code{ch_p4} case).  In this
+  case, after checking the queue, a call that polls the communication agent
+  and waits for something to arrive (e.g., with \code{select} for TCP-only
+  devices) may be used.  A multimethod device might briefly spin on all
+  ``fast'' devices (e.g., shared-memory queues) and then yield the time slice.
+\item There is a single thread that acts as the communication agent (see
+  Section~\ref{sec:comm-agent}) that is different from the user's thread.
+  In this case, the user's thread could pass control to the communication
+  agent.  For example, it could use \code{pthread_cond_wait} to wait on the
+  communication agent.  The communication agent can use
+  \code{pthread_cond_broadcast} to release any user thread that is waiting on
+  the communication agent (\code{pthread_cond_signal} may be better if only
+  one user thread ever holds the condition variable).
+\item There is one communication agent for each method.  For example,
+  a TCP method that waits in select for activity on an fd and a thread that
+  handles shared memory and may use (in Linux) \code{sched_yield} after
+  spinwaiting (or, in systems that support condition variables shared between
+  processes, may use that to wait for an incoming event or message).
+  A similar approach may be used here: \code{pthread_cond_broadcast} can be
+  used from any method's communication agent thread to release all waiting
+  threads. 
+\end{enumerate}
+
+%Question: how efficient are the pthread condition wait routines?  Do they spin
+%or do they yield the processor to other threads?  This is not specified in the
+%POSIX standard; the question is more about the quality of implementation.
+
+The POSIX \code{pthread_cond_wait} has two arguments: a mutex and a condition
+variable.  The routine atomically unlocks the mutex and waits for the
+condition variable. This suggests, for pthreads, the following solution for
+\code{MPID_Request_probe} in the multithreaded cases:
+\begin{verbatim}
+    while (1) {
+        pthread_mutex_lock( &queue_mutex );
+        <look through queue>
+        if (found) {
+            pthread_mutex_unlock( &queue_mutex );
+            return;
+            }
+        else 
+            pthread_cond_wait( &queue_mutex, &cond );
+    }
+\end{verbatim}
+In the case of a single user thread, you might want to try
+\begin{verbatim}
+    <look through queue>
+    if (found) return;
+    <same code as above>
+\end{verbatim}
+This is ok as long as the communication agent can't remove items from the
+queue.  Unfortunately, cancel does just that.  
 \end{mmadi}
 \end{adi3}
 
@@ -2028,6 +2087,7 @@ See \mpifunc{MPI_Testany}.
 Call \mpidfunc{MPID_Waitsome}.
 
 \subsection{Communication Agent}
+\label{sec:comm-agent}
 All implementations require some sort of communication agent.  This agent
 handles the delivery of data as described by \mpifunc{MPI_Recv} and
 \mpifunc{MPI_Irecv}, RMA operations that require action at the target (such as
