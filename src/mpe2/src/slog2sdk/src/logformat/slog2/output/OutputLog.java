@@ -221,7 +221,7 @@ public class OutputLog
     public void close()
     {
         this.writeTreeDir();
-        System.out.println( treedir.toString() );
+        // System.out.println( treedir.toString() );
         this.writeHeader();
         System.out.println( filehdr.toString() );
 
