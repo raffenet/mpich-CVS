@@ -1917,6 +1917,15 @@ Sub AddDefinitions( fout, filename )
 					fout.WriteLine("/* #undef _REENTRANT */")
 				Case "_THREAD_SAFE"
 					fout.WriteLine("/* #undef _THREAD_SAFE */")
+				Case "HAVE_SYS_POLL_H"
+					fout.WriteLine("/* #undef HAVE_SYS_POLL_H */")
+				Case "USE_IB_IBAL"
+					fout.WriteLine("/* #undef USE_IB_IBAL */")
+				Case "USE_IB_VAPI"
+					fout.WriteLine("#define USE_IB_VAPI 1")
+				Case "MPID_IBU_TYPE_UNIX"
+					fout.WriteLine("/* #undef MPID_IBU_TYPE_UNIX */")
+					'fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -2109,6 +2118,26 @@ If f.FileExists("src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in") 
 	Call WriteHeader(fout, "mpidi_ch3i_sshm_")
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in")
 	fout.WriteLine("#define HAVE_MASM_AND_X86")
+	Call WriteFooter(fout)
+	fout.Close()
+End If
+
+'
+' mpidi_ch3i_ib_conf.h
+'
+If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
+	Set fout = f.CreateTextFile("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_ib_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in")
+	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
+	If bWin64 then
+		fout.WriteLine("#define __ia64__")
+	else
+		fout.WriteLine("#define __i386__")
+		fout.WriteLine("#define HAVE_32BIT_POINTERS")
+	End If
+	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	fout.WriteLine("#define USE_RDMA_GET")
 	Call WriteFooter(fout)
 	fout.Close()
 End If
