@@ -27,10 +27,8 @@ int MPI_Win_fence(int assert, MPI_Win win)
     }
     else {
         /* init not called */
-        /*
-           return CollChk_err_han("MPI_Init() has not been called!",
-                                  COLLCHK_ERR_NOT_INIT, call, comm);
-        */
+        return CollChk_err_han("MPI_Init() has not been called!",
+                               COLLCHK_ERR_NOT_INIT, call, comm);
     }
 }
 
