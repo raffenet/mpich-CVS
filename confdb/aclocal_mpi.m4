@@ -226,9 +226,17 @@ case $ac_mpi_type in
 	*)
 	# Find the compilers
 	PAC_PROG_CC
-	AC_PROG_F77
-	AC_PROG_CXX
-	PAC_PROG_F90
+	# We only look for the other compilers if there is no
+	# disable for them
+	if test "$enable_f77" != no -a "$enable_fortran" != no ; then
+   	    AC_PROG_F77
+        fi
+	if test "$enable_cxx" != no ; then
+	    AC_PROG_CXX
+	fi
+	if test "$enable_f90" != no ; then
+	    PAC_PROG_F90
+	fi
 	# Set defaults for the TEST versions if not already set
 	if test -z "$TESTCC" ; then 
 	    TESTCC=${CC:=cc}
