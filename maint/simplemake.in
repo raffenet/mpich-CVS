@@ -436,9 +436,12 @@ sub ReadMfile {
 	}
         elsif (/^SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
-            @subdirs = split(/ /,$1);
+            @subdirs = split(/\s+/,$1);
 	    $subdirs_has_autoconf = 0;
         }
+	elsif (/^INSTALL_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
+	    @install_subdirs = split(/\s+/,$1);
+	}
         elsif (/^EXTRA_PROGRAMS\s*=\s*(.*)\s*$/) {
 	    $extra_programs{$1} = 1;
 	}
@@ -643,7 +646,9 @@ sub DefaultRules {
     }
 
     if (scalar(%install_files)) { 
-	print FD "INSTALL     = \@INSTALL\@$newline";
+	print FD "INSTALL         = \@INSTALL\@$newline";
+	print FD "INSTALL_PROGRAM = \@INSTALL_PROGRAM\@$newline";
+	print FD "INSTALL_DATA    = \@INSTALL_DATA\@$newline";
     }
 
     # Directory definitions
@@ -1543,7 +1548,7 @@ sub TargetInstall {
 	foreach $file ($install_files{$kind}) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
-	    print FD "\t\@INSTALL_PROGRAM\@ $file \${$dir}/$destfile$newline";
+	    print FD "\t\$(INSTALL_PROGRAM) $file \${$dir}/$destfile$newline";
 	}
     }
     foreach $kind (keys(%optinstall_files)) {
@@ -1555,8 +1560,11 @@ sub TargetInstall {
 	foreach $file ($optinstall_files{$kind}) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
-	    print FD "\tif [ -s $file ] ; then \@INSTALL_PROGRAM\@ $file \${$dir}/$destfile ; fi$newline";
+	    print FD "\tif [ -s $file ] ; then \$(INSTALL_PROGRAM) $file \${$dir}/$destfile ; fi$newline";
 	}
+    }
+    foreach $extradir (@install_subdirs) {
+	print FD "\t(cd $extradir && \$(MAKE) install)$newline";
     }
     print FD "$newline";
 }

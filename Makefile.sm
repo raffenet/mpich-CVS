@@ -31,6 +31,9 @@ install_LIB = lib/libmpich.a
 install_INCLUDE = src/include/mpi.h
 optinstall_LIB = lib/libpmpich.a
 optinstall_SHLIB = lib/libmpich.so
+# Some of the subsidiary packages may need to be installed.  This target will
+# invoke their install targets as part of the installation process
+INSTALL_SUBDIRS = src/pmi/impls/@pmi_name@
 #install_DOC = 
 #install_HTML = 
 #install_MAN = 

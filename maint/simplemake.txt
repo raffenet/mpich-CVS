@@ -96,6 +96,10 @@ EXTERNAL_LIBS        = Names of libraries that are external to this
 		       lists for programs.  For example, if -lm is a 
 		       library in a <name>_LDADD list, add m to 
 		       EXTERNAL_LIBS
+INSTALL_SUBDIRS      = Names of directories that have their own install
+		       targets.  The names may contain either configure 
+		       or make variables (e.g., either @foo@ or $(foo)).
+
 Other lines are copied as provided.  Variables (e.g., name = ...) are placed
 before other targets.  
 
