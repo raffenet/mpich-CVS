@@ -409,7 +409,7 @@ extern int snprintf( char *, size_t, const char *, ... ) ATTRIBUTE((format(print
 #else
 int MPIU_Snprintf( char *str, size_t size, const char *format, ... ) 
      ATTRIBUTE((format(printf,3,4)));
-#endif
+#endif /* HAVE_SNPRINTF */
 
 /* ------------------------------------------------------------------------- */
 /* end of mpimem.h */
