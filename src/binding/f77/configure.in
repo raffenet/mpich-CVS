@@ -4,11 +4,6 @@ AC_INIT(Makefile.in)
 # aliases for others (allowed under MPI-1 but not MPI-2).
 use_alias_types=no
 dnl
-dnl Cygwin uses PREREQ to decide which autoconf/autoheader to run.  
-dnl It does not do this correctly, since it compares against 2.13 but
-dnl needs to compare agains 2.57 (as of July 30, 2003).  
-dnl AC _PREREQ(2.13) 
-dnl needed for SHELL, added in 2.13
 rm -f ${srcdir}/mpi_fortconf.h mpi_fortconf.h
 AC_CONFIG_HEADER(mpi_fortconf.h)
 dnl We need install.sh, config.guess, etc. for the code that
