@@ -5,8 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#if !defined(SOCKIMPLH_H_INCLUDED)
-#define SOCKIMPL_H_INCLUDED
+#if !defined(SOCKI_H_INCLUDED)
+#define SOCKI_H_INCLUDED
 
 #include "sockpollconf.h"
 
@@ -32,4 +32,11 @@ typedef struct sock_set * sock_set_t;
 typedef struct sock * sock_t;
 typedef size_t sock_size_t;
 
-#endif /* !defined(SOCLIMPL_H_INCLUDED) */
+#define SOCKI_STATE_LIST \
+SOCKI_SOCK_ALLOC, \
+SOCKI_SOCK_FREE, \
+SOCKI_EVENT_ENQUEUE, \
+SOCKI_EVENT_DEQUEUE, \
+SOCKI_ADJUST_IOV,
+
+#endif /* !defined(SOCKI_H_INCLUDED) */
