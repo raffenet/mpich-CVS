@@ -18,22 +18,6 @@
 #define FALSE 0
 #endif
 
-#define  TRIALS 	7
-int 	 g_NSAMP =	250;
-#define  PERT		3
-#define  LONGTIME	1e99
-#define  CHARSIZE	8
-#define  RUNTM		0.1
-double	 g_STOPTM = 	0.1;
-#define  MAXINT 	2147483647
-int      g_latency012_reps = 1000;
-#define  MAX_LAT_TIME   2
-#define  LEFT_PROCESS   0
-#define  MIDDLE_PROCESS 1
-#define  RIGHT_PROCESS  2
-int      g_left_rank =  -1;
-int      g_proc_loc =   -1;
-
 #define MIN(x, y)	(((x) < (y))?(x):(y))
 #define MAX(x, y)	(((x) > (y))?(x):(y))
 
@@ -43,36 +27,51 @@ int      g_proc_loc =   -1;
 #define POINTER_TO_INT(a)   ( ( int )( a ) )
 #endif
 
-#define When MPI_Wtime
+#define CREATE_DIFFERENCE_CURVES
+#undef CREATE_SINGLE_CURVE
 
-int g_nIproc = 0, g_nNproc = 0;
+#define MAX_MSG_SIZE    1024*1024*8
+#define TRIALS          7
+#define PERT            3
+#define LONGTIME        1e99
+#define CHARSIZE        8
+#define RUNTM		0.1
+#define MAXINT          2147483647
+#define MAX_LAT_TIME    2
+#define LEFT_PROCESS    0
+#define MIDDLE_PROCESS  1
+#define RIGHT_PROCESS   2
 
-typedef struct argstruct ArgStruct;
-struct argstruct 
+int     g_left_rank       = -1;
+int     g_proc_loc        = -1;
+int 	g_NSAMP           = 250;
+double	g_STOPTM          = 0.1;
+int     g_latency012_reps = 1000;
+int     g_nIproc          = 0;
+int     g_nNproc          = 0;
+
+typedef struct ArgStruct
 {
     char *sbuff;        /* Send buffer      */
     char *rbuff;        /* Recv buffer      */
     int  bufflen;       /* Length of buffer */
-    int  nbor, nbor2,   /* neighbor */
-	 iproc,         /* rank */
-	 tr,            /* transmitter/receiver flag */
-	 latency_reps;  /* reps needed to time latency */
-};
+    int  nbor, nbor2;   /* neighbor */
+    int  iproc;         /* rank */
+    int  tr;            /* transmitter/receiver flag */
+    int  latency_reps;  /* reps needed to time latency */
+} ArgStruct;
 
-typedef struct data Data;
-struct data
+typedef struct Data
 {
     double t;
     double bps;
     int    bits;
     int    repeat;
-};
+} Data;
 
 int Setup(int middle_rank, ArgStruct *p01, ArgStruct *p12, ArgStruct *p012);
 void Sync(ArgStruct *p);
 void Sync012(ArgStruct *p);
-#define SendData( p ) MPI_Send( p . sbuff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD)
-#define RecvData( p ) MPI_Recv( p . rbuff,  p . bufflen, MPI_BYTE,  p . nbor, 1, MPI_COMM_WORLD, &status)
 void SendTime(ArgStruct *p, double *t);
 void RecvTime(ArgStruct *p, double *t);
 void SendReps(ArgStruct *p, int *rpt);
@@ -109,7 +108,7 @@ int main(int argc, char *argv[])
     char *memtmp1;
     MPI_Status status;
 
-    int i, j, n, nq,		/* Loop indices					*/
+    int ii, i, j, n, nq,	/* Loop indices					*/
 	bufoffset = 0,		/* Align buffer to this				*/
 	bufalign = 16*1024,	/* Boundary to align buffer to			*/
 	nrepeat01, nrepeat12,	/* Number of time to do the transmission	*/
@@ -130,6 +129,10 @@ int main(int argc, char *argv[])
 	tlast01, tlast12, tlast012,/* Time for the last transmission		*/
 	latency01, latency12,	/* Network message latency			*/
 	latency012, tdouble;    /* Network message latency to go from 0 -> 1 -> 2 */
+#ifdef CREATE_DIFFERENCE_CURVES
+    int itrial, ntrials;
+    double *dtrials;
+#endif
 
     Data *bwdata01, *bwdata12, *bwdata012;/* Bandwidth curve data 		*/
     
@@ -232,6 +235,22 @@ int main(int argc, char *argv[])
     args12.bufflen = start;
     args012.bufflen = start;
 
+    /* print the header line of the output file */
+    if (g_nIproc == 0)
+    {
+	fprintf(out, "bytes\tMbits/s\ttime\tMbits/s\ttime");
+	for (ii=1; ii<MAX_MSG_SIZE; ii <<= 1)
+	    fprintf(out, "\t%d", ii);
+	fprintf(out, "\n");
+	fflush(out);
+    }
+#ifdef CREATE_DIFFERENCE_CURVES
+    ntrials = 1;
+    for (ii=1; ii<MAX_MSG_SIZE; ii <<= 1)
+	ntrials++;
+    dtrials = malloc(sizeof(double)*ntrials);
+#endif
+
     /* Main loop of benchmark */
     for (nq = n = 0, len = start; 
          n < g_NSAMP && tlast012 < g_STOPTM && len <= end; 
@@ -239,7 +258,13 @@ int main(int argc, char *argv[])
     {
 	if (nq > 2)
 	    inc = (nq % 2) ? inc + inc : inc;
-	
+
+	/* clear the old values */
+	for (itrial = 0; itrial < ntrials; itrial++)
+	{
+	    dtrials[itrial] = LONGTIME;
+	}
+
 	/* This is a perturbation loop to test nearby values */
 	for (ipert = 0, pert = (inc > PERT + 1) ? -PERT : 0;
 	     pert <= PERT; 
@@ -345,18 +370,18 @@ int main(int argc, char *argv[])
 		    }
 		    
 		    Sync(&args01);
-		    t0 = When();
+		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat01; j++)
 		    {
-			SendData(args01);
-			RecvData(args01);
+			MPI_Send(args01.sbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD);
+			MPI_Recv(args01.rbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD, &status);
 			if (bNoCache)
 			{
 			    args01.sbuff += args01.bufflen;
 			    /* args01.rbuff += args01.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat01);
+		    t = (MPI_Wtime() - t0)/(2 * nrepeat01);
 
 		    t1 += t;
 		    bwdata01[n].t = MIN(bwdata01[n].t, t);
@@ -384,18 +409,18 @@ int main(int argc, char *argv[])
 		    }
 		    
 		    Sync(&args01);
-		    t0 = When();
+		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat01; j++)
 		    {
-			RecvData(args01);
-			SendData(args01);
+			MPI_Recv(args01.rbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args01.sbuff,  args01.bufflen, MPI_BYTE,  args01.nbor, 1, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args01.sbuff += args01.bufflen;
 			    /* args01.rbuff += args01.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat01);
+		    t = (MPI_Wtime() - t0)/(2 * nrepeat01);
 		}
 		RecvTime(&args01, &bwdata01[n].t);
 	    }
@@ -549,18 +574,18 @@ skip_01_trial:
 		    }
 		    
 		    Sync(&args12);
-		    t0 = When();
+		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat12; j++)
 		    {
-			SendData(args12);
-			RecvData(args12);
+			MPI_Send(args12.sbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD);
+			MPI_Recv(args12.rbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD, &status);
 			if (bNoCache)
 			{
 			    args12.sbuff += args12.bufflen;
 			    /* args12.rbuff += args12.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat12);
+		    t = (MPI_Wtime() - t0)/(2 * nrepeat12);
 
 		    t1 += t;
 		    bwdata12[n].t = MIN(bwdata12[n].t, t);
@@ -588,18 +613,18 @@ skip_01_trial:
 		    }
 		    
 		    Sync(&args12);
-		    t0 = When();
+		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat12; j++)
 		    {
-			RecvData(args12);
-			SendData(args12);
+			MPI_Recv(args12.rbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD, &status);
+			MPI_Send(args12.sbuff,  args12.bufflen, MPI_BYTE,  args12.nbor, 1, MPI_COMM_WORLD);
 			if (bNoCache)
 			{
 			    args12.sbuff += args12.bufflen;
 			    /* args12.rbuff += args12.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat12);
+		    t = (MPI_Wtime() - t0)/(2 * nrepeat12);
 		}
 		RecvTime(&args12, &bwdata12[n].t);
 	    }
@@ -653,6 +678,240 @@ skip_12_trial:
 	    }
 
 
+#ifdef CREATE_DIFFERENCE_CURVES
+	    /*****************************************************/
+	    /*         Run a trial between rank 0, 1 and 2       */
+	    /*****************************************************/
+
+	    MPI_Barrier(MPI_COMM_WORLD);
+
+
+	    /* Calculate howmany times to repeat the experiment. */
+	    if (g_nIproc == 0)
+	    {
+		if (args012.bufflen == 0)
+		    nrepeat012 = g_latency012_reps;
+		else
+		    nrepeat012 = (int)(MAX((RUNTM / ((double)args012.bufflen /
+			           (args012.bufflen - inc + 1.0) * tlast012)), TRIALS));
+		MPI_Bcast(&nrepeat012, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	    }
+	    else
+	    {
+		MPI_Bcast(&nrepeat012, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	    }
+
+	    /* Allocate the buffer */
+	    args012.bufflen = len + pert;
+	    /* printf("allocating %d bytes\n", args12.bufflen * nrepeat012 + bufalign); */
+	    if (bNoCache)
+	    {
+		if ((args012.sbuff = (char *)malloc(args012.bufflen * nrepeat012 + bufalign)) == (char *)NULL)
+		{
+		    fprintf(stdout,"Couldn't allocate memory\n");
+		    fflush(stdout);
+		    break;
+		}
+	    }
+	    else
+	    {
+		if ((args012.sbuff = (char *)malloc(args012.bufflen + bufalign)) == (char *)NULL)
+		{
+		    fprintf(stdout,"Couldn't allocate memory\n");
+		    fflush(stdout);
+		    break;
+		}
+	    }
+	    /* if ((args012.rbuff = (char *)malloc(args012.bufflen * nrepeat012 + bufalign)) == (char *)NULL) */
+	    if ((args012.rbuff = (char *)malloc(args012.bufflen + bufalign)) == (char *)NULL)
+	    {
+		fprintf(stdout,"Couldn't allocate memory\n");
+		fflush(stdout);
+		break;
+	    }
+
+	    /* save the original pointers in case alignment moves them */
+	    memtmp = args012.sbuff;
+	    memtmp1 = args012.rbuff;
+	    
+	    /* Possibly align the data buffer */
+	    if (!bNoCache)
+	    {
+		if (bufalign != 0)
+		{
+		    args012.sbuff += (bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign;
+		    /* args12.rbuff += (bufalign - ((int)args12.rbuff % bufalign) + bufoffset) % bufalign; */
+		}
+	    }
+	    args012.rbuff += (bufalign - (POINTER_TO_INT(args012.rbuff) % bufalign) + bufoffset) % bufalign;
+	    
+	    if (g_nIproc == 0 && printopt)
+	    {
+		printf("%3d: %9d bytes %4d times --> ", n, args012.bufflen, nrepeat012);
+		fflush(stdout);
+	    }
+
+	    for (itrial=0, ii=1; ii<=args012.bufflen; ii <<= 1, itrial++)
+	    {
+		/* Finally, we get to transmit or receive and time */
+		switch (g_proc_loc)
+		{
+		case LEFT_PROCESS:
+		    bwdata012[n].t = LONGTIME;
+		    t1 = 0;
+		    for (i = 0; i < TRIALS; i++)
+		    {
+			if (bNoCache)
+			{
+			    if (bufalign != 0)
+			    {
+				args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
+				/* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+			    }
+			    else
+			    {
+				args012.sbuff = memtmp;
+				/* args012.rbuff = memtmp1; */
+			    }
+			}
+
+			Sync012(&args012);
+			t0 = MPI_Wtime();
+			for (j = 0; j < nrepeat012; j++)
+			{
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			    if (bNoCache)
+			    {
+				args012.sbuff += args012.bufflen;
+				/* args012.rbuff += args012.bufflen; */
+			    }
+			}
+			t = (MPI_Wtime() - t0)/(2 * nrepeat012);
+
+			t1 += t;
+			bwdata012[n].t = MIN(bwdata012[n].t, t);
+		    }
+		    MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
+		    break;
+		case MIDDLE_PROCESS:
+		    bwdata012[n].t = LONGTIME;
+		    t1 = 0;
+		    for (i = 0; i < TRIALS; i++)
+		    {
+			if (bNoCache)
+			{
+			    if (bufalign != 0)
+			    {
+				args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
+				/* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+			    }
+			    else
+			    {
+				args012.sbuff = memtmp;
+				/* args012.rbuff = memtmp1; */
+			    }
+			}
+
+			Sync012(&args012);
+			t0 = MPI_Wtime();
+
+			/******* use the ii variable here !!! ******/
+
+			for (j = 0; j < nrepeat012; j++)
+			{
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD);
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor2, 1, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			    if (bNoCache)
+			    {
+				args012.sbuff += args012.bufflen;
+				/* args012.rbuff += args012.bufflen; */
+			    }
+			}
+			t = (MPI_Wtime() - t0)/(2 * nrepeat012);
+		    }
+		    MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
+		    break;
+		case RIGHT_PROCESS:
+		    bwdata012[n].t = LONGTIME;
+		    t1 = 0;
+		    for (i = 0; i < TRIALS; i++)
+		    {
+			if (bNoCache)
+			{
+			    if (bufalign != 0)
+			    {
+				args012.sbuff = memtmp + ((bufalign - (POINTER_TO_INT(args012.sbuff) % bufalign) + bufoffset) % bufalign);
+				/* args012.rbuff = memtmp1 + ((bufalign - ((int)args012.rbuff % bufalign) + bufoffset) % bufalign); */
+			    }
+			    else
+			    {
+				args012.sbuff = memtmp;
+				/* args012.rbuff = memtmp1; */
+			    }
+			}
+
+			Sync012(&args012);
+			t0 = MPI_Wtime();
+			for (j = 0; j < nrepeat012; j++)
+			{
+			    MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
+			    MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
+			    if (bNoCache)
+			    {
+				args012.sbuff += args012.bufflen;
+				/* args012.rbuff += args012.bufflen; */
+			    }
+			}
+			t = (MPI_Wtime() - t0)/(2 * nrepeat012);
+		    }
+		    MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
+		    break;
+		}
+		tlast012 = bwdata012[n].t;
+		bwdata012[n].bits = args012.bufflen * CHARSIZE;
+		bwdata012[n].bps = bwdata012[n].bits / (bwdata012[n].t * 1024 * 1024);
+		bwdata012[n].repeat = nrepeat012;
+		if (itrial < ntrials)
+		{
+		    dtrials[itrial] = MIN(dtrials[itrial], bwdata012[n].t);
+		}
+
+		if (g_nIproc == 0)
+		{
+		    if (bSavePert)
+		    {
+			fprintf(out, "\t%0.9f", bwdata012[n].t);
+			fflush(out);
+		    }
+		    if (printopt)
+		    {
+			printf(" %0.9f", tlast012);
+			fflush(stdout);
+		    }
+		}
+	    }
+	    if (g_nIproc == 0)
+	    {
+		if (bSavePert)
+		{
+		    fprintf(out, "\n");
+		    fflush(out);
+		}
+		if (printopt)
+		{
+		    printf("\n");
+		    fflush(stdout);
+		}
+	    }
+	    
+	    free(memtmp);
+	    free(memtmp1);
+#endif
+
+#ifdef CREATE_SINGLE_CURVE
 	    /*****************************************************/
 	    /*         Run a trial between rank 0, 1 and 2       */
 	    /*****************************************************/
@@ -748,7 +1007,7 @@ skip_12_trial:
 		    }
 		    
 		    Sync012(&args012);
-		    t0 = When();
+		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat012; j++)
 		    {
 			MPI_Send(args012.sbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD);
@@ -759,7 +1018,7 @@ skip_12_trial:
 			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat012);
+		    t = (MPI_Wtime() - t0)/(2 * nrepeat012);
 
 		    t1 += t;
 		    bwdata012[n].t = MIN(bwdata012[n].t, t);
@@ -786,7 +1045,7 @@ skip_12_trial:
 		    }
 		    
 		    Sync012(&args012);
-		    t0 = When();
+		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat012; j++)
 		    {
 			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
@@ -799,7 +1058,7 @@ skip_12_trial:
 			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat012);
+		    t = (MPI_Wtime() - t0)/(2 * nrepeat012);
 		}
 		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
 		break;
@@ -823,7 +1082,7 @@ skip_12_trial:
 		    }
 		    
 		    Sync012(&args012);
-		    t0 = When();
+		    t0 = MPI_Wtime();
 		    for (j = 0; j < nrepeat012; j++)
 		    {
 			MPI_Recv(args012.rbuff, args012.bufflen, MPI_BYTE, args012.nbor, 1, MPI_COMM_WORLD, &status);
@@ -834,7 +1093,7 @@ skip_12_trial:
 			    /* args012.rbuff += args012.bufflen; */
 			}
 		    }
-		    t = (When() - t0)/(2 * nrepeat012);
+		    t = (MPI_Wtime() - t0)/(2 * nrepeat012);
 		}
 		MPI_Bcast(&bwdata012[n].t, 1, MPI_DOUBLE, g_left_rank, MPI_COMM_WORLD);
 		break;
@@ -867,6 +1126,8 @@ skip_12_trial:
 		    printf(" %6.2f Mbps in %0.9f sec\n", bwdata012[n].bps, tlast012);
 		fflush(stdout);
 	    }
+#endif
+
 	} /* End of perturbation loop */
 
 	if (!bSavePert)/* && g_nIproc == 0)*/
@@ -875,7 +1136,9 @@ skip_12_trial:
 	    int index01 = 1, index12 = 1, index012 = 1;
 	    double dmax01 = bwdata01[n-1].bps;
 	    double dmax12 = bwdata12[n-1].bps;
+#ifdef CREATE_SINGLE_CURVE
 	    double dmax012 = bwdata012[n-1].bps;
+#endif
 	    for (; ipert > 1; ipert--)
 	    {
 		if (bwdata01[n-ipert].bps > dmax01)
@@ -888,11 +1151,13 @@ skip_12_trial:
 		    index12 = ipert;
 		    dmax12 = bwdata12[n-ipert].bps;
 		}
+#ifdef CREATE_SINGLE_CURVE
 		if (bwdata012[n-ipert].bps > dmax012)
 		{
 		    index012 = ipert;
 		    dmax012 = bwdata012[n-ipert].bps;
 		}
+#endif
 	    }
 	    if (g_proc_loc == LEFT_PROCESS && g_nIproc != 0)
 	    {
@@ -927,14 +1192,25 @@ skip_12_trial:
 		{
 		    fprintf(out, "%d\t%f\t%0.9f\t", bwdata01[n-index01].bits / 8, bwdata01[n-index01].bps / 8, bwdata01[n-index01].t);
 		    fprintf(out, "%f\t%0.9f\t", bwdata12[n-index12].bps / 8, bwdata12[n-index12].t);
+#ifdef CREATE_SINGLE_CURVE
 		    fprintf(out, "%f\t%0.9f\n", bwdata012[n-index012].bps / 8, bwdata012[n-index012].t);
+#endif
 		}
 		else
 		{
 		    fprintf(out, "%d\t%f\t%0.9f\t", bwdata01[n-index01].bits / 8, bwdata01[n-index01].bps, bwdata01[n-index01].t);
 		    fprintf(out, "%f\t%0.9f\t", bwdata12[n-index12].bps, bwdata12[n-index12].t);
+#ifdef CREATE_SINGLE_CURVE
 		    fprintf(out, "%f\t%0.9f\n", bwdata012[n-index012].bps, bwdata012[n-index012].t);
+#endif
 		}
+#ifdef CREATE_DIFFERENC_CURVES
+		for (itrial = 0; itrial < ntrials && dtrials[itrial] != LONGTIME; itrial++)
+		{
+		    fprintf(out, "%0.9f\t", dtrials[itrial]);
+		}
+		fprintf(out, "\n");
+#endif
 		fflush(out);
 	    }
 	}
@@ -1126,18 +1402,18 @@ int DetermineLatencyReps(ArgStruct *p)
     /* test how long it takes to send n messages 
      * where n = 1, 2, 4, 8, 16, 32, ...
      */
-    t0 = When();
-    t0 = When();
-    t0 = When();
+    t0 = MPI_Wtime();
+    t0 = MPI_Wtime();
+    t0 = MPI_Wtime();
     while ( (duration < RUNTM) ||
 	    (duration < MAX_LAT_TIME && reps < 1000))
     {
-	t0 = When();
+	t0 = MPI_Wtime();
 	for (i=0; i<reps-prev_reps; i++)
 	{
 	    Sync(p);
 	}
-	duration += When() - t0;
+	duration += MPI_Wtime() - t0;
 	prev_reps = reps;
 	reps = reps * 2;
 
@@ -1165,18 +1441,18 @@ int DetermineLatencyReps012(ArgStruct *p)
     /* test how long it takes to send n messages 
      * where n = 1, 2, 4, 8, 16, 32, ...
      */
-    t0 = When();
-    t0 = When();
-    t0 = When();
+    t0 = MPI_Wtime();
+    t0 = MPI_Wtime();
+    t0 = MPI_Wtime();
     while ( (duration < RUNTM) ||
 	    (duration < MAX_LAT_TIME && reps < 1000))
     {
-	t0 = When();
+	t0 = MPI_Wtime();
 	for (i=0; i<reps-prev_reps; i++)
 	{
 	    Sync012(p);
 	}
-	duration += When() - t0;
+	duration += MPI_Wtime() - t0;
 	prev_reps = reps;
 	reps = reps * 2;
 
@@ -1214,10 +1490,10 @@ double TestLatency(ArgStruct *p)
     for (j=0; j<TRIALS; j++)
     {
 	Sync(p);
-	t0 = When();
-	t0 = When();
-	t0 = When();
-	t0 = When();
+	t0 = MPI_Wtime();
+	t0 = MPI_Wtime();
+	t0 = MPI_Wtime();
+	t0 = MPI_Wtime();
 	for (i = 0; i < p->latency_reps; i++)
 	{
 	    if (p->tr)
@@ -1231,7 +1507,7 @@ double TestLatency(ArgStruct *p)
 		MPI_Send(NULL, 0, MPI_BYTE, p->nbor, 1, MPI_COMM_WORLD);
 	    }
 	}
-	latency = (When() - t0)/(2 * p->latency_reps);
+	latency = (MPI_Wtime() - t0)/(2 * p->latency_reps);
 	min_latency = MIN(min_latency, latency);
     }
 
@@ -1254,10 +1530,10 @@ double TestLatency012(ArgStruct *p)
     for (j=0; j<TRIALS; j++)
     {
 	Sync012(p);
-	t0 = When();
-	t0 = When();
-	t0 = When();
-	t0 = When();
+	t0 = MPI_Wtime();
+	t0 = MPI_Wtime();
+	t0 = MPI_Wtime();
+	t0 = MPI_Wtime();
 	for (i = 0; i < g_latency012_reps; i++)
 	{
 	    switch (g_proc_loc)
@@ -1278,7 +1554,7 @@ double TestLatency012(ArgStruct *p)
 		break;
 	    }
 	}
-	latency = (When() - t0)/(2 * g_latency012_reps);
+	latency = (MPI_Wtime() - t0)/(2 * g_latency012_reps);
 	min_latency = MIN(min_latency, latency);
     }
 
