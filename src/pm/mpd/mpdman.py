@@ -70,6 +70,7 @@ def mpdman():
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
     exec('%s = {}' % (default_kvsname) )
     kvs_next_id = 1
+    jobEndingEarly = 0
     pmiCollectiveJob = 0
     doingBNR = 0  ## BNR
 
@@ -365,13 +366,15 @@ def mpdman():
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'signal':
                     if msg['signo'] == 'SIGINT':
-                        if conSocket:
-                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'id' : myId }
-                            mpd_send_one_msg(conSocket,msgToSend)
-                            conSocket.close()
+                        jobEndingEarly = 1
                         if rhsSocket in socketsToSelect.keys():  # still alive ?
                             mpd_send_one_msg(rhsSocket,msg)
                             rhsSocket.close()
+                        if conSocket:
+                            msgToSend = { 'cmd' : 'job_sigint_early',
+                                          'jobid' : jobid, 'id' : myId }
+                            mpd_send_one_msg(conSocket,msgToSend)
+                            conSocket.close()
                         kill(0,SIGKILL)  # pid 0 -> all in my process group
                         _exit(0)
                     elif msg['signo'] == 'SIGTSTP':
@@ -388,18 +391,21 @@ def mpdman():
                     else:
                         mpd_send_one_msg(rhsSocket,msg)
                 elif msg['cmd'] == 'collective_abort':
+                    jobEndingEarly = 1
                     if msg['src'] != myId:
-                        if conSocket:
-                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'rank' : msg['rank'] }
-                            mpd_send_one_msg(conSocket,msgToSend)
-                            # conSocket.close()
                         if rhsSocket in socketsToSelect.keys():  # still alive ?
                             mpd_send_one_msg(rhsSocket,msg)
                             # rhsSocket.close()
-                        try:
-                            kill(clientPid,SIGKILL)
-                        except:
-                            pass    # client may already be gone
+                    if conSocket:
+                        msgToSend = { 'cmd' : 'job_aborted_early', 'jobid' : jobid,
+                                      'rank' : msg['rank'], 
+                                      'exit_status' : msg['exit_status'] }
+                        mpd_send_one_msg(conSocket,msgToSend)
+                        # conSocket.close()
+                    try:
+                        kill(clientPid,SIGKILL)
+                    except:
+                        pass    # client may already be gone
                 elif msg['cmd'] == 'stdin_from_user':
                     if msg['src'] != myId:
                         mpd_send_one_msg(rhsSocket,msg)
@@ -579,14 +585,12 @@ def mpdman():
                     pmiSocket.close()
 		    pmiSocket = 0
                     if pmiCollectiveJob:
-                        if conSocket:
-                            msgToSend = { 'cmd' : 'job_terminated_early', 'jobid' : jobid, 'rank' : myRank }
-                            mpd_send_one_msg(conSocket,msgToSend)
-                            # conSocket.close()
                         if rhsSocket in socketsToSelect.keys():  # still alive ?
-                            msgToSend = { 'cmd' : 'collective_abort', 'src' : myId, 'rank' : myRank}
-                            mpd_send_one_msg(rhsSocket,msgToSend)
-                            # rhsSocket.close()
+                            if not jobEndingEarly:  # if I did not already know this
+                                msgToSend = { 'cmd' : 'collective_abort', 'src' : myId,
+                                              'rank' : myRank, 'exit_status' : status }
+                                mpd_send_one_msg(rhsSocket,msgToSend)
+                                # rhsSocket.close()
                         try:
                             kill(clientPid,SIGKILL)
                         except:

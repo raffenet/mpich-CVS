@@ -279,18 +279,26 @@ def mpdrun():
                         done += 1
 		    elif not msg.has_key('cmd'):
                         mpd_raise('mpdrun: from man, invalid msg=:%s:' % (msg) )
-                    elif msg['cmd'] == 'job_terminated_early':
-                        print 'rank %d in job %s terminated without calling MPI_Finalize' %  ( msg['rank'], msg['jobid'] )
-                        # print 'mpdrun: job %s terminated early at rank %d' % (msg['jobid'], msg['rank'])
+                    elif msg['cmd'] == 'job_sigint_early':
+                        print 'job %s terminated with SIGINT' %  ( msg['jobid'] )
                         # del socketsToSelect[readySocket]
                         # readySocket.close()
                         # done += 1
-                    elif msg['cmd'] == 'job_terminated_early':
-                        print 'rank %d in job %s aborted with reason :%s:' % \
-                              ( msg['rank'], msg['jobid'], msg['reason'] )
-                        del socketsToSelect[readySocket]
-                        readySocket.close()
-                        done += 1
+                    elif msg['cmd'] == 'job_aborted_early':
+                        print 'rank %d in job %s caused collective abort of all ranks' % \
+                              ( msg['rank'], msg['jobid'] )
+			status = msg['exit_status']
+			if WIFSIGNALED(status):
+			    killed_status = status & 0x007f  # AND off core flag
+		            print '  exit status of rank %d: killed by signal %d ' % \
+                                  (msg['rank'],killed_status)
+			else:
+			    exit_status = WEXITSTATUS(status)
+		            print '  exit status of rank %d: return code %d ' % \
+                                  (msg['rank'],exit_status)
+                        # del socketsToSelect[readySocket]
+                        # readySocket.close()
+                        # done += 1
                     elif (msg['cmd'] == 'job_terminated'):
                         del socketsToSelect[readySocket]
                         readySocket.close()
