@@ -604,7 +604,7 @@ const char *MTestGetIntercommName( void )
 
 int MTestGetComm( MPI_Comm *comm, int min_size )
 {
-    int idx;
+    int idx=0;
     static int getinter = 0;
 
     if (!getinter) {
