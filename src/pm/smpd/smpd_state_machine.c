@@ -2473,8 +2473,10 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	}
 	else
 	{
+	    /*
 	    smpd_err_printf("this code seems to never get executed.\n");
 	    return SMPD_FAIL;
+	    */
 
 	    smpd_dbg_printf("hosts connected, sending start_dbs command.\n");
 	    /* create the start_dbs command to be sent to the first host */
