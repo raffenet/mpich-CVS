@@ -507,64 +507,41 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 		    fixEndEOFBug=yes
 		fi
                 rm -rf .ctmp
-	    fi
-#	    if [ -s "$dir/configure2.in" ] ; then
-	        # There is a version 1 and version 2 configure in this
-	        # directory.  
-	        if [ $dir = "./src/mpi/romio" ] ; then
-		    echo $dir
-#  		    if [ $acVersion = "2-57" ] ; then
-#  			echo "Working around hideous bug in autoheader 2.57..."
-#  	            # Note that the 2.57 autoheader *ignores* the command-line
-#  	            # argument (!)  Yes, this is very badly broken.
-#  		    # Also note that aclocal tends to read *everything* in the 
-#  		    # include directory, rather than processing the files. 
-#  		    # This breaks the handling of the different autoconf
-#  		    # versions by the macros in that directory
-#  		        if [ -s $dir/configure.in ] ; then
-#  			    mv -f $dir/configure.in $dir/configure.in.orig
-#  			fi
-#  			cp -f $dir/configure2.in $dir/configure.in
-#   		        (cd $dir && \
-#  		        autoheader $acIncDirFlag ../../../confdb ; \
-#  		        autoconf $acIncDirFlag ../../../confdb )
-#  			if [ -s $dir/configure.in.orig ] ; then
-#  			    mv -f $dir/configure.in.orig $dir/configure.in
-#  			fi
-#  		    else
-		        # Using an explicit acIncDirFlag will force
-		        # a consistent choice of autoconf
-		        # Only use autoheader if AC_CONFIG_HEADER is
-	 		# present
-			if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
-		        (cd $dir && $autoheader $acIncDirFlag . )
-			fi
-			(cd $dir && \
+	    fi # dir = src/binding/f77
+
+            if [ $dir = "./src/mpi/romio" ] ; then
+		echo $dir
+		# Using an explicit acIncDirFlag will force
+		# a consistent choice of autoconf
+		# Only use autoheader if AC_CONFIG_HEADER is
+	 	# present
+		if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
+		    (cd $dir && $autoheader $acIncDirFlag . )
+		fi
+		(cd $dir && \
 			$autoconf $acIncDirFlag . && rm -rf autom4te.cache )
-#		     fi
-#		fi
-	            if grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
-		        fixBackWhackCtrlMBug=yes
-                    fi
-	            # Add other tests here (sigh) as necessary
-	            if [ $fixBackWhackCtrlMBug = yes ] ; then
-		         rm -f c.tmp 
-		        sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
-		        rm -f $dir/configure
-		        mv c.tmp $dir/configure
-			chmod a+x $dir/configure
-	            fi
-	            continue
-	        elif [ $dir = "./src/mpe" ] ; then
-		    # Use acIncDirFlag to ensure that a consistent
-		    # choice of autoconf is made by systems that 
-		    # support 2.1x and 2.57+
-		    echo $dir
- 		    if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
-		        (cd $dir && $autoheader $acIncDirFlag . )
-		    fi
-		    (cd $dir && $autoconf $acIncDirFlag . )
-		    continue
+	        if grep 'mpi2-other/info/Makefile \\' $dir/configure 2>&1 >/dev/null ; then 
+		    fixBackWhackCtrlMBug=yes
+                fi
+	        # Add other tests here (sigh) as necessary
+	        if [ $fixBackWhackCtrlMBug = yes ] ; then
+		     rm -f c.tmp 
+		     sed -e '/"\\/d' -e 's/\\//g' $dir/configure > c.tmp
+		     rm -f $dir/configure
+		     mv c.tmp $dir/configure
+		     chmod a+x $dir/configure
+	        fi
+	        continue
+	    elif [ $dir = "./src/mpe" ] ; then
+		# Use acIncDirFlag to ensure that a consistent
+		# choice of autoconf is made by systems that 
+		# support 2.1x and 2.57+
+		echo $dir
+ 		if grep AC_CONFIG_HEADER $dir/configure.in >/dev/null 2>&1 ; then
+		    (cd $dir && $autoheader $acIncDirFlag . )
+		fi
+		(cd $dir && $autoconf $acIncDirFlag . )
+		continue
 	    fi
 	    # First, check for a configure target in Makefile.in
 	    if grep 'configure:' $dir/Makefile.in >/dev/null 2>&1 ; then
@@ -580,6 +557,9 @@ in maint/ac2.13.diff for a possible patch.  updatefiles attempted a workaround."
 	        echo "Found $dir/configure.in" ; \
 	        make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
 	        )
+		if [ ! -x $dir/configure ] ; then
+		    echo "Error! Could not build configure in $dir with make configure"
+		fi
             else 
 		if [ -x $dir/makeconfigure ] ; then
 		    echo "Using makeconfigure in $dir"
@@ -640,6 +620,15 @@ EOF/g' $dir/configure > c.tmp
 		mv c.tmp $dir/configure
 	    fi
         fi
+    if [ ! -x $dir/configure ] ; then
+        # Check for a few allowed exceptions
+        if [ "$dir" = "./src/pmi/winmpd" ] ; then
+	    continue
+        fi
+        echo "Could not build configure from configure.in in $dir"
+	echo "Aborting updatefiles!"
+	exit 1
+    fi
     done
 elif [ "$has_unix_find" = no ] ; then
     echo "You need to install find (in findutils)"
