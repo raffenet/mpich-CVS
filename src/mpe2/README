@@ -476,6 +476,31 @@ cicc -I${MPICH_INSTALL_DIR}/include -L${MPICH_INSTALL_DIR}/lib $@ <-lmpi>
     make install PREFIX=${MPE_INSTALL_DIR}
 
 
+For BlueGene/Light's frontend node,
+
+    ${MPE_SRC_DIR}/configure \
+    CC=xlc F77=xlf \
+    MPI_CC="xlc -F /etc/opt/ibmcmp/blrts-ppcfloor.cfg" \
+    MPI_F77="xlf -F /etc/opt/ibmcmp/blrts-ppcfloor.cfg" \
+    MPI_INC="-I/bgl/BlueLight/ppcfloor/bglsys/include" \
+    MPI_LIBS="-L/bgl/BlueLight/ppcfloor/bglsys/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts -lc"
+    --with-java=/usr/lib/IBMJava2/jre \
+    --disable-misc --disable-graphics --disable-sample --disable-rlog
+
+or MPI_INC and MPI_LIBS can be included in a mpicc_ibm and mpif77_ibm scripts.
+
+     ${MPE_SRC_DIR}/configure 
+     MPI_CC=/home/chan/bin/mpicc_ibm \
+     MPI_F77=/home/chan/bin/mpif77_ibm \
+     CC=/opt/ibmcmp/vac/7.0/bin/xlc \
+     F77=/opt/ibmcmp/xlf/9.1/bin/xlf \
+     --with-java=/usr/lib/IBMJava2/jre \
+     --disable-misc --disable-graphics --disable-sample --disable-rlog
+
+     make
+     make install PREFIX=${MPE_INSTALL_DIR}
+
+
 
 
 IV.  EXAMPLE PROGRAMS
