@@ -136,6 +136,9 @@ typedef MPIU_INT64_T int64_t;
 #endif
 #endif
 
+#define MPIDU_MAX(a,b)    (((a) > (b)) ? (a) : (b))
+#define MPIDU_MIN(a,b)    (((a) < (b)) ? (a) : (b))
+
 /* IOVs */
 /* The basic channel interface uses IOVs */
 #ifdef HAVE_WINSOCK2_H
