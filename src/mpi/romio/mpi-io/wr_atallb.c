@@ -99,7 +99,7 @@ int MPI_File_write_at_all_begin(MPI_File fh, MPI_Offset offset, void *buf,
 
     if (fh->access_mode & MPI_MODE_SEQUENTIAL) {
 #ifdef MPICH2
-	    error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, \
+	    error_code = MPIR_Err_create_code(MPI_ERR_UNSUPPORTED_OPERATION, 
 			    "**ioamodeseq", "**ioamodeseq");
 #elif PRINT_ERR_MSG
         FPRINTF(stderr, "MPI_File_write_at_all_begin: Can't use this function because file was opened with MPI_MODE_SEQUENTIAL\n");
