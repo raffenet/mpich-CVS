@@ -85,7 +85,7 @@ typedef struct BlockAllocator_struct * BlockAllocator;
 typedef volatile long SOCKI_Lock_t;
 #endif
 
-static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p));
+static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
 static int BlockAllocFinalize(BlockAllocator *p);
 static void * BlockAlloc(BlockAllocator p);
 static int BlockFree(BlockAllocator p, void *pBlock);
@@ -186,7 +186,7 @@ static char *get_error_string(int error_code)
     return error_msg;
 }
 
-static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(unsigned int size), void (* free_fn)(void *p))
+static BlockAllocator BlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p))
 {
     BlockAllocator p;
     void **ppVoid;
@@ -1681,6 +1681,15 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	sock->pending_operations = 0;
 	/*printf("flushing socket buffer before closing\n");fflush(stdout);*/
 	FlushFileBuffers((HANDLE)s);
+
+	/*
+	shutdown(s, SD_SEND);
+	if (sock->state ^ SOCKI_READING)
+	{
+	    Post a read to get notification of when the socket is empty
+	}
+	*/
+
 	shutdown(s, SD_BOTH);
 	closesocket(s);
 	*sp = INVALID_SOCKET;
@@ -2677,8 +2686,12 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				mpi_errno = MPIDU_Sock_post_readv(sock, sock->read.iov, sock->read.iovlen, NULL);
 				if (mpi_errno != MPI_SUCCESS)
 				{
+				    out->op_type = MPIDU_SOCK_OP_READ;
+				    out->num_bytes = 0;
+				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted readv operation");
+				    out->user_ptr = sock->user_ptr;
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted readv operation");
+				    return MPI_SUCCESS;
 				}
 			    }
 			    else
@@ -2687,8 +2700,12 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				mpi_errno = MPIDU_Sock_post_read(sock, sock->read.buffer, sock->read.bufflen, sock->read.bufflen, NULL);
 				if (mpi_errno != MPI_SUCCESS)
 				{
+				    out->op_type = MPIDU_SOCK_OP_READ;
+				    out->num_bytes = 0;
+				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted read operation");
+				    out->user_ptr = sock->user_ptr;
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted read operation");
+				    return MPI_SUCCESS;
 				}
 			    }
 			}
@@ -2700,8 +2717,12 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				mpi_errno = MPIDU_Sock_post_writev(sock, sock->write.iov, sock->write.iovlen, NULL);
 				if (mpi_errno != MPI_SUCCESS)
 				{
+				    out->op_type = MPIDU_SOCK_OP_WRITE;
+				    out->num_bytes = 0;
+				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted writev operation");
+				    out->user_ptr = sock->user_ptr;
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted writev operation");
+				    return MPI_SUCCESS;
 				}
 			    }
 			    else
@@ -2710,23 +2731,35 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				mpi_errno = MPIDU_Sock_post_write(sock, sock->write.buffer, sock->write.bufflen, sock->write.bufflen, NULL);
 				if (mpi_errno != MPI_SUCCESS)
 				{
+				    out->op_type = MPIDU_SOCK_OP_WRITE;
+				    out->num_bytes = 0;
+				    out->error = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted write operation");
+				    out->user_ptr = sock->user_ptr;
 				    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-				    return MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted write operation");
+				    return MPI_SUCCESS;
 				}
 			    }
 			}
 			else
 			{
 			    /*printf("aborted sock operation\n");fflush(stdout);*/
+			    out->op_type = -1;
+			    out->num_bytes = 0;
+			    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted socket operation");
+			    out->user_ptr = sock->user_ptr;
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-			    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted socket operation");
+			    return MPI_SUCCESS;
 			}
 		    }
 		    else if (sock->type == SOCKI_WAKEUP)
 		    {
 			/*printf("aborted wakeup operation\n");fflush(stdout);*/
+			out->op_type = MPIDU_SOCK_OP_WAKEUP;
+			out->num_bytes = 0;
+			out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted wakeup operation");
+			out->user_ptr = sock->user_ptr;
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-			return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted wakeup operation");
+			return MPI_SUCCESS;
 		    }
 		    else if (sock->type == SOCKI_LISTENER)
 		    {
@@ -2734,15 +2767,23 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			mpi_errno = post_next_accept(sock);
 			if (mpi_errno != MPI_SUCCESS)
 			{
+			    out->op_type = MPIDU_SOCK_OP_ACCEPT;
+			    out->num_bytes = 0;
+			    out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted accept operation");
+			    out->user_ptr = sock->user_ptr;
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-			    return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Unable to re-post an aborted accept operation");
+			    return MPI_SUCCESS;
 			}
 		    }
 		    else
 		    {
 			/*printf("aborted unknown socket operation\n");fflush(stdout);*/
+			out->op_type = -1;
+			out->num_bytes = 0;
+			out->error = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted unknown socket operation");
+			out->user_ptr = sock->user_ptr;
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
-			return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", "Aborted unknown socket operation");
+			return MPI_SUCCESS;
 		    }
 		    continue;
 		}
