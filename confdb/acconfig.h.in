@@ -4,3 +4,4 @@
    to form acconfig.h with cpp 
  */
 #include "acconfig_f77.h"
+#include "acconfig_cc.h"

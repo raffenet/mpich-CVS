@@ -15,10 +15,22 @@ dnl code.  There is no acceptable fix.
 dnl
 dnl
 dnl
-dnl This assumes that "MAKE" holds the name of the make program.  If it
-dnl determines that it is an improperly built gnumake, it adds
-dnl --no-print-directorytries to the symbol MAKE.
+dnl/*D
+dnl PAC_PROG_MAKE_ECHOS_DIR - Check whether make echos all directory changes
+dnl
+dnl Synopsis:
+dnl PAC_PROG_MAKE_ECHOS_DIR
+dnl
+dnl Output Effect:
+dnl  If make echos directory changes, append '--no-print-directory' to the 
+dnl  symbol 'MAKE'.  If 'MAKE' is not set, chooses 'make' for 'MAKE'.
+dnl
+dnl See also:
+dnl PAC_PROG_MAKE
+dnlD*/
+dnl
 AC_DEFUN(PAC_PROG_MAKE_ECHOS_DIR,[
+MAKE=${MAKE:-make}
 AC_CACHE_CHECK([whether make echos directory changes],
 pac_cv_prog_make_echos_dir,
 [
@@ -47,9 +59,24 @@ str=""
 ])
 ])dnl
 dnl
-dnl This make does not support "include filename"
-dnl (some versions of BSD 4.4 required #include instead of include)
-dnl PAC_PROG_MAKE_INCLUDE([true text])
+dnl/*D
+dnl PAC_PROG_MAKE_INCLUDE - Check whether make supports include
+dnl
+dnl Synopsis:
+dnl PAC_PROG_MAKE_INCLUDE([action if true],[action if false])
+dnl
+dnl Output Effect:
+dnl   None
+dnl
+dnl Notes:
+dnl  This checks for makes that do not support 'include filename'.  Some
+dnl  versions of BSD 4.4 make required '#include' instead; some versions of
+dnl  'pmake' have the same syntax.
+dnl
+dnl See Also:
+dnl  PAC_PROG_MAKE
+dnl
+dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_INCLUDE,[
 AC_CACHE_CHECK([whether make supports include],pac_cv_prog_make_include,[
@@ -61,19 +88,38 @@ ALL:
 cat > conftest1 <<.
 include conftest
 .
-str=`$MAKE -f conftest1 2>&1`
+pac_str=`$MAKE -f conftest1 2>&1`
 /bin/rm -f conftest conftest1
-if test "$str" != "success" ; then
+if test "$pac_str" != "success" ; then
     pac_cv_prog_make_include="no"
-    ifelse([$1],,[$1])
 else
     pac_cv_prog_make_include="yes"
 fi
-str=""
-])])dnl
+])
+if test "$pac_cv_prog_make_include" = "no" ; then
+    ifelse([$2],,[$2],:)
+else
+    ifelse([$1],,[$1],:)
+fi
+])dnl
 dnl
-dnl PAC_PROG_MAKE_ALLOWS_COMMENTS([true text])
-dnl (some versions of OSF V3 make do not all comments in action commands)
+dnl/*D
+dnl PAC_PROG_MAKE_ALLOWS_COMMENTS - Check whether comments are allowed in 
+dnl   shell commands in a makefile
+dnl
+dnl Synopsis:
+dnl PAC_PROG_MAKE_ALLOWS_COMMENTS([false text])
+dnl
+dnl Output Effect:
+dnl Issues a warning message if comments are not allowed in a makefile.
+dnl Executes the argument if one is given.
+dnl
+dnl Notes:
+dnl Some versions of OSF V3 make do not all comments in action commands.
+dnl
+dnl See Also:
+dnl  PAC_PROG_MAKE
+dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_ALLOWS_COMMENTS,[
 AC_CACHE_CHECK([whether make allows comments in actions],
@@ -85,28 +131,48 @@ ALL:
 	@# This is a valid comment!
 	@echo "success"
 .
-str=`$MAKE -f conftest 2>&1`
+pac_str=`$MAKE -f conftest 2>&1`
 /bin/rm -f conftest 
-if test "$str" != "success" ; then
+if test "$pac_str" != "success" ; then
     pac_cv_prog_make_allows_comments="no"
+else
+    pac_cv_prog_make_allows_comments="yes"
+fi
+])
+if test "$pac_cv_prog_make_allows_comments" = "no" ; then
     AC_MSG_WARN([Your make does not allow comments in target code.])
     AC_MSG_WARN([Using this make may cause problems when building programs.])
     AC_MSG_WARN([You should consider using gnumake instead.])
     ifelse([$1],,[$1])
-else
-    pac_cv_prog_make_allows_comments="yes"
 fi
-str=""
-])
 ])dnl
 dnl
-dnl Look for a style of VPATH.  Known forms are
-dnl VPATH = .:dir
-dnl .PATH: . dir
+dnl/*D
+dnl PAC_PROG_MAKE_VPATH - Check whether make supports source-code paths.
 dnl
-dnl Defines VPATH or .PATH with . $(srcdir)
-dnl Requires that vpath work with implicit targets
+dnl Synopsis:
+dnl PAC_PROG_MAKE_VPATH
+dnl
+dnl Output Effect:
+dnl Sets the variable 'VPATH' to either
+dnl.vb
+dnl VPATH = .:${srcdir}
+dnl.ve
+dnl or
+dnl.vb
+dnl .PATH: . ${srcdir}
+dnl.ve
+dnl 
+dnl Notes:
+dnl The test checks that the path works with implicit targets (some makes
+dnl support only explicit targets with 'VPATH' or 'PATH').
+dnl
 dnl NEED TO DO: Check that $< works on explicit targets.
+dnl
+dnl See Also:
+dnl PAC_PROG_MAKE
+dnl
+dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE_VPATH,[
 AC_SUBST(VPATH)
@@ -147,8 +213,23 @@ rm -rf conftest*
 ])
 ])dnl
 dnl
+dnl/*D
+dnl PAC_PROG_MAKE_SET_CFLAGS - Check whether make sets CFLAGS
+dnl
+dnl Synopsis:
 dnl PAC_PROG_MAKE_SET_CFLAGS([action if true],[action if false])
 dnl
+dnl Output Effects:
+dnl Executes the first argument if 'CFLAGS' is set by 'make'; executes
+dnl the second argument if 'CFLAGS' is not set by 'make'.
+dnl
+dnl Notes:
+dnl If 'CFLAGS' is set by make, you may wish to override that choice in your
+dnl makefile.
+dnl
+dnl See Also:
+dnl PAC_PROG_MAKE
+dnlD*/
 AC_DEFUN(PAC_PROG_MAKE_SET_CFLAGS,[
 AC_CACHE_CHECK([whether make sets CFLAGS],
 pac_cv_prog_make_set_cflags,[
@@ -162,19 +243,34 @@ pac_str=`$MAKE -f conftest 2>&1`
 /bin/rm -f conftest 
 if test "$pac_str" = "XX" ; then
     pac_cv_prog_make_set_cflags="no"
-    ifelse([$2],,[$2])
 else
     pac_cv_prog_make_set_cflags="yes"
-    ifelse([$1],,[$1])
 fi
 ])
+if test "$pac_cv_prog_make_set_cflags" = "no" ; then
+    ifelse([$2],,[$2])
+else
+    ifelse([$1],,[$1])
+fi
 ])dnl
 dnl
-dnl
-dnl PAC_PROG_MAKE checks for the varieties of MAKE, including support for 
+dnl/*D
+dnl PAC_PROG_MAKE - Checks for the varieties of MAKE, including support for 
 dnl VPATH
 dnl
-dnl Also sets SET_CFLAGS if make defines CFLAGS for you.
+dnl Synopsis:
+dnl PAC_PROG_MAKE
+dnl
+dnl Output Effect:
+dnl Sets 'MAKE' to the make program to use if 'MAKE' is not already set.
+dnl Sets the variable 'SET_CFLAGS' to 'CFLAGS =' if make sets 'CFLAGS'.
+dnl
+dnl Notes:
+dnl This macro uses 'PAC_PROG_MAKE_ECHOS_DIR', 'PAC_PROG_MAKE_INCLUDE',
+dnl 'PAC_PROG_MAKE_ALLOWS_COMMENTS', 'PAC_PROG_MAKE_VPATH', and
+dnl 'PAC_PROG_MAKE_SET_CFLAGS'.  See those commands for details about their
+dnl actions.
+dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_MAKE,[
 if test "X$MAKE" = "X" ; then

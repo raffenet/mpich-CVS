@@ -18,14 +18,14 @@ if test "X$pac_save_level" = "X" ; then
 	AC_PROG_CPP
     fi
     pac_save_CPP="$CPP"
-    CC="${TESTCC-$CC}"
-    CXX="${TESTCXX-$CXX}"
-    F77="${TESTF77-$F77}"
-    F90="${TESTF90-$F90}"
+    CC="${TESTCC:=$CC}"
+    CXX="${TESTCXX:=$CXX}"
+    F77="${TESTF77:=$F77}"
+    F90="${TESTF90:=$F90}"
     if test -z "$TESTCPP" ; then
         PAC_PROG_TESTCPP
     fi
-    CPP="${TESTCPP-$CPP}"
+    CPP="${TESTCPP:=$CPP}"
     pac_save_level="0"
 fi
 pac_save_level=`expr $pac_save_level + 1`

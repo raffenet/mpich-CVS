@@ -1,23 +1,34 @@
 dnl
-dnl Determine how the Fortran compiler mangles names
+dnl/*D
+dnl PAC_PROG_F77_NAME_MANGLE - Determine how the Fortran compiler mangles
+dnl names 
 dnl
-dnl This test checks for
+dnl Synopsis:
+dnl PAC_PROG_F77_NAME_MANGLE([action])
+dnl
+dnl Output Effect:
+dnl If no action is specified, one of the following names is defined:
+dnl.vb
+dnl If fortran names are mapped:
 dnl   lower -> lower                  F77_NAME_LOWER
 dnl   lower -> lower_                 F77_NAME_LOWER_USCORE
 dnl   lower -> UPPER                  F77_NAME_UPPER
 dnl   lower_lower -> lower__          F77_NAME_LOWER_2USCORE
 dnl   mixed -> mixed                  F77_NAME_MIXED
 dnl   mixed -> mixed_                 F77_NAME_MIXED_USCORE
+dnl.ve
+dnl If an action is specified, it is executed instead.
 dnl 
+dnl Notes:
 dnl We assume that if lower -> lower (any underscore), upper -> upper with the
 dnl same underscore behavior.  Previous versions did this by 
 dnl compiling a Fortran program and running strings -a over it.  Depending on 
 dnl strings is a bad idea, so instead we try compiling and linking with a 
-dnl C program, since that's why we are doing this anyway.  A similar approach
+dnl C program, since that is why we are doing this anyway.  A similar approach
 dnl is used by FFTW, though without some of the cases we check (specifically, 
 dnl mixed name mangling)
 dnl
-dnl If no argument, defines the default names above
+dnlD*/
 dnl
 AC_DEFUN(PAC_PROG_F77_NAME_MANGLE,[
 AC_CACHE_CHECK([for Fortran 77 name mangling],

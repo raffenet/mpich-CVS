@@ -1,21 +1,31 @@
 dnl
-dnl Check for MPI.
-dnl Currently, only checks for lib mpi and mpi.h.  Later, we'll add
-dnl MPI_Pcontrol prototype (const int or not?)
+dnl/*D 
+dnl PAC_LIB_MPI - Check for MPI library
+dnl
+dnl Synopsis:
+dnl PAC_LIB_MPI([action if found],[action if not found])
+dnl
+dnl Output Effect:
+dnl
+dnl Notes:
+dnl Currently, only checks for lib mpi and mpi.h.  Later, we will add
+dnl MPI_Pcontrol prototype (const int or not?).  
+dnl
+dnl If PAC_ARG_MPICH_BUILDING is included, this will work correctly 
+dnl when MPICH is being built
+dnlD*/
+dnl Other tests to add:
 dnl Version of MPI
 dnl MPI-2 I/O?
 dnl MPI-2 Spawn?
 dnl MPI-2 RMA?
-dnl
-dnl If PAC_ARG_MPICH_BUILDING is included, this will work correctly 
-dnl when MPICH is being built
 dnl PAC_LIB_MPI([found text],[not found text])
 AC_DEFUN(PAC_LIB_MPI,[
 if test "X$pac_lib_mpi_is_building" != "Xyes" ; then
   # Use CC if TESTCC is defined
   if test "X$pac_save_level" != "X" ; then
-     pac_save_TESTCC="$TESTCC"
-     pac_save_TESTCPP="$TESTCPP"
+     pac_save_TESTCC="${TESTCC}"
+     pac_save_TESTCPP="${TESTCPP}"
      CC="$pac_save_CC"
      if test "X$pac_save_CPP" != "X" ; then
          CPP="$pac_save_CPP"

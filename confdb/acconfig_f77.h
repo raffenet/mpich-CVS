@@ -1,3 +1,4 @@
+/* acconfig_f77.h */
 /* Define if Fortran uses lowercase name mangling */
 #undef F77_NAME_LOWER
 

@@ -2,9 +2,27 @@ dnl
 dnl This is a replacement for AC_PROG_CC that does not prefer gcc and
 dnl that does not mess with CFLAGS.  See acspecific.m4 for the original defn.
 dnl
+dnl/*D
+dnl PAC_PROG_CC - Find a working C compiler
+dnl
+dnl Synopsis:
+dnl PAC_PROG_CC
+dnl
+dnl Output Effect:
+dnl   Sets the variable CC if it is not already set
+dnl
+dnl Notes:
+dnl   Unlike AC_PROG_CC, this does not prefer gcc and does not set CFLAGS.
+dnl   It does check that the compiler can compile a simple C program.
+dnl   It also sets the variable GCC to yes if the compiler is gcc.  It does
+dnl   not yet check for some special options needed in particular for 
+dnl   parallel computers, such as -Tcray-t3e, or special options to get
+dnl   full ANSI/ISO C, such as -Aa for HP.
+dnl
+dnlD*/
 AC_DEFUN(PAC_PROG_CC,[
 AC_PROVIDE([AC_PROG_CC])
-AC_CHECK_PROG(CC, cc gcc xlC xlc)
+AC_CHECK_PROGS(CC, cc gcc xlC xlc pgcc )
 test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
 AC_PROG_CC_WORKS
 AC_PROG_CC_GNU
@@ -132,9 +150,13 @@ cat >conftest.c <<EOF
     #include "confdefs.h"
     int f(void) { return 0; }
 EOF
-for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-M" "-c -M"; do
+dnl -xM1 is Solaris C compiler (no /usr/include files)
+dnl -MM is gcc (no /usr/include files)
+dnl -MMD is gcc to .d
+dnl .u is xlC (AIX) output
+for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
     AC_MSG_CHECKING([whether $copt option generates dependencies])
-    rm -f conftest.o conftest.u conftest.err
+    rm -f conftest.o conftest.u conftest.d conftest.err
     dnl also need to check that error output is empty
     if $CC $CFLAGS $copt conftest.c >conftest.out 2>conftest.err && \
 	test ! -s conftest.err ; then
@@ -143,6 +165,10 @@ for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-M" "-c -M"; do
 	    C_DEPEND_OUT=""
 	    C_DEPEND_MV='mv $[*].u $[*].dep'
             pac_dep_file=conftest.u 
+        elif test -s conftest.d ; then
+	    C_DEPEND_OUT=""
+	    C_DEPEND_MV='mv $[*].d $[*].dep'
+            pac_dep_file=conftest.d 
         else
 	    C_DEPEND_OUT='>$[*].dep'
 	    C_DEPEND_MV=:
@@ -177,3 +203,117 @@ dnl
 dnl Eventually, we can add an option to the C_DEPEND_MV to strip system
 dnl includes, such as /usr/xxxx and /opt/xxxx
 dnl
+dnl
+dnl
+dnl Check that the compile accepts ANSI prototypes.  Perform first arg if yes,
+dnl second if false.  Only test if it hasn't been tested for this compiler
+dnl (and flags) before
+dnl PAC_C_PROTOTYPES(true-action, false-action)
+dnl
+AC_DEFUN(PAC_C_PROTOTYPES,[
+AC_CACHE_CHECK([if $CC supports function prototypes],
+pac_cv_c_prototypes,[
+AC_TRY_COMPILE([int f(double a){return 0;}],[return 0];,
+pac_cv_c_prototypes="yes",pac_cv_c_prototypes="no")])
+if test "$pac_cv_c_prototypes" = "yes" ; then
+    ifelse([$1],,:,[$1])
+else
+    ifelse([$2],,:,[$2])
+fi
+])dnl
+dnl
+dnl
+dnl Check for semctl and arguments
+AC_DEFUN(PAC_FUNC_SEMCTL,[
+AC_CACHE_CHECK([for union semun],
+pac_cv_type_union_semun,[
+AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>],[union semun arg;arg.val=0;],
+pac_cv_type_union_semun="yes",pac_cv_type_union_semun="no")])
+  if test "$pac_cv_type_union_semun" = "yes" ; then
+      AC_DEFINE(HAVE_UNION_SEMUN)
+  #
+  # See if we can use an int in semctl or if we need the union
+  AC_CACHE_CHECK([whether semctl needs union semun],
+  pac_cv_func_semctl_needs_semun,[
+  AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>],[
+int arg = 0; semctl( 1, 1, SETVAL, arg );],
+  pac_cv_func_semctl_needs_semun="yes",pac_cv_func_semctl_needs_semun="no")
+  ])
+  if test "$pac_cv_func_semctl_needs_semun" = "yes" ; then
+      AC_DEFINE(SEMCTL_NEEDS_SEMUN)
+  fi
+fi
+])
+dnl
+dnl/*D
+dnl PAC_C_VOLATILE - Check if C supports volatile
+dnl
+dnl Synopsis:
+dnl PAC_C_VOLATILE
+dnl
+dnl Output Effect:
+dnl Defines 'HAS_VOLATILE' if 'volatile int a;' can be compiled.
+dnl
+dnlD*/
+AC_DEFUN(PAC_C_VOLATILE,[
+AC_CACHE_CHECK([for volatile],
+pac_cv_c_volatile,[
+AC_TRY_COMPILE(,[volatile int a;],pac_cv_c_volatile="yes",
+pac_cv_c_volatile="no")])
+if test "$pac_cv_c_volatile" = "yes" ; then
+    AC_DEFINE(HAS_VOLATILE)
+fi
+])dnl
+dnl
+dnl/*D
+dnl PAC_C_CPP_CONCAT - Check whether the C compiler accepts ISO CPP string
+dnl   concatenation
+dnl
+dnl Synopsis:
+dnl PAC_C_CPP_CONCAT([true-action],[false-action])
+dnl
+dnl Output Effects:
+dnl Invokes the true or false action
+dnl
+dnlD*/
+AC_DEFUN(PAC_C_CPP_CONCAT,[
+pac_pound="#"
+AC_CACHE_CHECK([that the compiler $CC accepts $ac_pound$ac_pound for concatenation in cpp],
+pac_cv_c_cpp_concat,[
+AC_TRY_COMPILE([
+#define concat(a,b) a##b],[int concat(a,b);return ab;],
+pac_cv_cpp_concat="yes",pac_cv_cpp_concat="no")])
+if test $pac_cv_c_cpp_concat = "yes" ; then
+    ifelse([$1],,:,[$1])
+else
+    ifelse([$2],,:,[$2])
+fi
+])dnl
+dnl
+dnl/*D
+dnl PAC_FUNC_GETTIMEOFDAY - Check whether gettimeofday takes 1 or 2 arguments
+dnl
+dnl Synopsis
+dnl  PAC_IS_GETTIMEOFDAY_OK(ok_action,failure_action)
+dnl
+dnl Notes:
+dnl One version of Solaris accepted only one argument.
+dnl
+dnlD*/
+AC_DEFUN(PAC_FUNC_GETTIMEOFDAY,[
+AC_CACHE_CHECK([whether gettimeofday takes 2 arguments],
+pac_cv_func_gettimeofday,[
+AC_TRY_COMPILE([#include <sys/time.h>],[struct timeval tp;
+gettimeofday(&tp,(void*)0);return 0;],pac_cv_func_gettimeofday="yes",
+pac_cv_func_gettimeofday="no")
+])
+if test "$pac_cv_func_gettimeofday" = "yes" ; then
+     ifelse($1,,:,$1)
+else
+     ifelse($2,,:,$2)
+fi
+])
