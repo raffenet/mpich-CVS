@@ -270,6 +270,7 @@ typedef @MPI_FINT@ MPI_Fint;
 #define HAVE_MPI_OFFSET
 typedef @MPI_OFFSET@ MPI_Offset;
 
+/* The order of these elements must match that in mpif.h */
 typedef struct { 
     int count;
     int cancelled;
