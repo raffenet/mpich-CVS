@@ -92,6 +92,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 #endif
     pg->nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
     pg->nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
+
+    /* Figure out how many processors are available and set the spin count accordingly */
+    /* If there were topology information available we could calculate a multi-cpu number */
 #ifdef HAVE_WINDOWS_H
     {
 	/* if you know the number of processors, calculate the spin count relative to that number */
@@ -100,12 +103,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
         if (info.dwNumberOfProcessors == 1)
             pg->nShmWaitSpinCount = 1;
 	/*
-        else if (info.dwNumberOfProcessors < (DWORD) num_procs_per_node) / / pg_size)
-            pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / pg_size;
+        else if (info.dwNumberOfProcessors < (DWORD) num_procs_per_node)
+            pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / num_procs_per_node;
 	*/
     }
 #else
-    /* figure out how many processors are available and set the spin count accordingly */
 #ifdef HAVE_SYSCONF
     {
 	int num_cpus;
@@ -131,23 +133,23 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3U_VC_init(&vc_table[p], p);
-	vc_table[p].mm.pg = pg;
-	vc_table[p].mm.pg_rank = p;
-	vc_table[p].mm.sendq_head = NULL;
-	vc_table[p].mm.sendq_tail = NULL;
-	vc_table[p].mm.recv_active = NULL;
-	vc_table[p].mm.send_active = NULL;
-	vc_table[p].mm.req = NULL;
-	vc_table[p].mm.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vc_table[p].mm.sock = SOCK_INVALID_SOCK;
-	vc_table[p].mm.conn = NULL;
-	vc_table[p].mm.read_shmq = NULL;
-	vc_table[p].mm.write_shmq = NULL;
-	vc_table[p].mm.shm = NULL;
-	vc_table[p].mm.shm_state = 0;
-	vc_table[p].mm.shm_next_reader = NULL;
-	vc_table[p].mm.shm_next_writer = NULL;
-	vc_table[p].mm.bShm = FALSE;
+	vc_table[p].ssm.pg = pg;
+	vc_table[p].ssm.pg_rank = p;
+	vc_table[p].ssm.sendq_head = NULL;
+	vc_table[p].ssm.sendq_tail = NULL;
+	vc_table[p].ssm.recv_active = NULL;
+	vc_table[p].ssm.send_active = NULL;
+	vc_table[p].ssm.req = NULL;
+	vc_table[p].ssm.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	vc_table[p].ssm.sock = SOCK_INVALID_SOCK;
+	vc_table[p].ssm.conn = NULL;
+	vc_table[p].ssm.read_shmq = NULL;
+	vc_table[p].ssm.write_shmq = NULL;
+	vc_table[p].ssm.shm = NULL;
+	vc_table[p].ssm.shm_state = 0;
+	vc_table[p].ssm.shm_next_reader = NULL;
+	vc_table[p].ssm.shm_next_writer = NULL;
+	vc_table[p].ssm.bShm = FALSE;
     }
     pg->vc_table = vc_table;
     
