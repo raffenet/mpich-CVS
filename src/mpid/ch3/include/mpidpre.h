@@ -59,6 +59,9 @@ MPIDI_Message_match;
 typedef enum 
 {
     MPIDI_CH3_PKT_EAGER_SEND = 0,
+    MPIDI_CH3_PKT_EAGER_SYNC_SEND,
+    MPIDI_CH3_PKT_EAGER_SYNC_ACK,
+    MPIDI_CH3_PKT_READY_SEND,
     MPIDI_CH3_PKT_RNDV_REQ_TO_SEND,
     MPIDI_CH3_PKT_RNDV_CLR_TO_SEND,
     MPIDI_CH3_PKT_RNDV_SEND,
@@ -77,10 +80,22 @@ typedef struct
 {
     MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
     MPIDI_Message_match match;
-    MPI_Request sender_req_id;	/* needed to cancel a send */
+    MPI_Request sender_req_id;	/* needed for ssend and send cancel */
     MPIDI_msg_sz_t data_sz;
 }
 MPIDI_CH3_Pkt_eager_send_t;
+
+/* NOTE: Normal and synchronous eager sends, as well as all ready-mode sends,
+   use the same structure but have a different type value. */
+typedef MPIDI_CH3_Pkt_eager_send_t MPIDI_CH3_Pkt_eager_sync_send_t;
+typedef MPIDI_CH3_Pkt_eager_send_t MPIDI_CH3_Pkt_ready_send_t;
+
+typedef struct
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPI_Request sender_req_id;
+}
+MPIDI_CH3_Pkt_eager_sync_ack_t;
 
 typedef struct
 {
@@ -131,6 +146,9 @@ typedef union
 {
     MPIDI_CH3_Pkt_type_t type;
     MPIDI_CH3_Pkt_eager_send_t eager_send;
+    MPIDI_CH3_Pkt_eager_sync_send_t eager_sync_send;
+    MPIDI_CH3_Pkt_eager_sync_ack_t eager_sync_ack;
+    MPIDI_CH3_Pkt_eager_send_t ready_send;
     MPIDI_CH3_Pkt_rndv_req_to_send_t rndv_req_to_send;
     MPIDI_CH3_Pkt_rndv_clr_to_send_t rndv_clr_to_send;
     MPIDI_CH3_Pkt_rndv_send_t rndv_send;

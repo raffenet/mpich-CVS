@@ -50,6 +50,26 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank,
 	    /* This is an eager message */
 	    MPIDI_DBG_PRINTF((15, FCNAME, "eager message in the request"));
 	    
+	    /* If this is a eager synchronous message, then we need to send an
+               acknowledgement back to the sender of that message */
+	    if (MPIDI_Request_get_sync_send_flag(rreq))
+	    {
+		MPIDI_CH3_Pkt_t upkt;
+		MPIDI_CH3_Pkt_eager_sync_ack_t * const esa_pkt =
+		    &upkt.eager_sync_ack;
+		MPID_Request * esa_req;
+		    
+		MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
+		esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
+		esa_pkt->sender_req_id = rreq->ch3.sender_req_id;
+		esa_req = MPIDI_CH3_iStartMsg(rreq->ch3.vc, esa_pkt,
+					      sizeof(*esa_pkt));
+		if (esa_req != NULL)
+		{
+		    MPID_Request_release(esa_req);
+		}
+	    }
+
 	    if (rreq->cc == 0)
 	    {
 		/* All of the data has arrived, we need to copy the data and

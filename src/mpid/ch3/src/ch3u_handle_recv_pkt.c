@@ -26,6 +26,8 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
     switch(pkt->type)
     {
 	case MPIDI_CH3_PKT_EAGER_SEND:
+	case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
+	case MPIDI_CH3_PKT_READY_SEND:
 	{
 	    MPIDI_CH3_Pkt_eager_send_t * eager_pkt = &pkt->eager_send;
 	    MPID_Request * rreq;
@@ -54,7 +56,36 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 				  "completion counter",
 				  (found ? "posted request found" :
 				   "unexpected request allocated")));
+		
 		MPIDI_CH3U_Request_complete(rreq);
+		
+		if (pkt->type == MPIDI_CH3_PKT_EAGER_SYNC_SEND)
+		{
+		    if (found)
+		    {
+			
+			MPIDI_CH3_Pkt_t upkt;
+			MPIDI_CH3_Pkt_eager_sync_ack_t * const esa_pkt =
+			    &upkt.eager_sync_ack;
+			MPID_Request * esa_req;
+		    
+			MPIDI_DBG_PRINTF(
+			    (30, FCNAME, "sending eager sync ack"));
+			
+			esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
+			esa_pkt->sender_req_id = eager_pkt->sender_req_id;
+			esa_req = MPIDI_CH3_iStartMsg(
+			    vc, esa_pkt, sizeof(*esa_pkt));
+			if (esa_req != NULL)
+			{
+			    MPID_Request_release(esa_req);
+			}
+		    }
+		    else
+		    {
+			MPIDI_Request_set_sync_send_flag(rreq, TRUE);
+		    }
+		}
 	    }
 	    else if (found)
 	    {
@@ -64,6 +95,24 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		
 		MPIDI_DBG_PRINTF((30, FCNAME, "posted request found"));
 
+		if (pkt->type == MPIDI_CH3_PKT_EAGER_SYNC_SEND)
+		{
+		    MPIDI_CH3_Pkt_t upkt;
+		    MPIDI_CH3_Pkt_eager_sync_ack_t * const esa_pkt =
+			&upkt.eager_sync_ack;
+		    MPID_Request * esa_req;
+
+		    MPIDI_DBG_PRINTF((30, FCNAME, "sending eager sync ack"));
+		    esa_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_ACK;
+		    esa_pkt->sender_req_id = eager_pkt->sender_req_id;
+		    esa_req = MPIDI_CH3_iStartMsg(vc, esa_pkt,
+						  sizeof(*esa_pkt));
+		    if (esa_req != NULL)
+		    {
+			MPID_Request_release(esa_req);
+		    }
+		}
+		
 		if (HANDLE_GET_KIND(rreq->ch3.datatype) == HANDLE_KIND_BUILTIN)
 		{
 		    dt_contig = TRUE;
@@ -130,23 +179,57 @@ void MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC * vc, MPIDI_CH3_Pkt_t * pkt)
 		MPIDI_DBG_PRINTF((35, FCNAME, "posting iRead"));
 		MPIDI_CH3_iRead(vc, rreq);
 	    }
-	    else
+	    else /* if (!found) */
 	    {
-		MPIDI_DBG_PRINTF((30, FCNAME, "unexpected request allocated"));
-		
-		/* TODO: to improve performance, allocate temporary buffer
-		   from a specialized buffer pool. */
+		if (pkt->type != MPIDI_CH3_PKT_READY_SEND)
+		{
+		    /* TODO: to improve performance, allocate temporary buffer
+		       from a specialized buffer pool. */
+		    MPIDI_DBG_PRINTF((30, FCNAME,
+				      "unexpected request allocated"));
+		    rreq->ch3.tmpbuf = MPIU_Malloc(rreq->ch3.recv_data_sz);
+		    rreq->ch3.tmpbuf_sz = rreq->ch3.recv_data_sz;
 		    
-		rreq->ch3.tmpbuf = MPIU_Malloc(rreq->ch3.recv_data_sz);
-		rreq->ch3.tmpbuf_sz = rreq->ch3.recv_data_sz;
+		    rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.tmpbuf;
+		    rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.recv_data_sz;
+		    rreq->ch3.iov_count = 1;
+		    rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+
+		    if (pkt->type == MPIDI_CH3_PKT_EAGER_SYNC_SEND)
+		    {
+			MPIDI_Request_set_sync_send_flag(rreq, TRUE);
+		    }
+
+		    MPIDI_CH3_iRead(vc, rreq);
+		}
+		else
+		{
+		    /* If this is a ready-mode send and a matching request has
+                       not been posted, then we need to consume the data and
+                       mark the request with an error. */
 		    
-		rreq->ch3.iov[0].MPID_IOV_BUF = rreq->ch3.tmpbuf;
-		rreq->ch3.iov[0].MPID_IOV_LEN = rreq->ch3.recv_data_sz;
-		rreq->ch3.iov_count = 1;
-		rreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
-		MPIDI_CH3_iRead(vc, rreq);
+		    int mpi_errno;
+		    
+		    rreq->status.MPI_ERROR = MPI_ERR_UNKNOWN;
+		    rreq->status.count = 0;
+		    rreq->ch3.segment_first = 0;
+		    rreq->ch3.segment_size = 0;
+		    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+		    assert(mpi_errno != MPI_SUCCESS);
+		    MPIDI_CH3_iRead(vc, rreq);
+		}
 	    }
 	    
+	    break;
+	}
+
+	case MPIDI_CH3_PKT_EAGER_SYNC_ACK:
+	{
+	    MPIDI_CH3_Pkt_eager_sync_ack_t * esa_pkt = &pkt->eager_sync_ack;
+	    MPID_Request * sreq;
+	    
+	    MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
+	    MPIDI_CH3U_Request_complete(sreq);
 	    break;
 	}
 	

@@ -9,15 +9,15 @@
 /* XXX - HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
 
 /*
- * MPID_Isend()
+ * MPID_Issend()
  */
 #undef FUNCNAME
-#define FUNCNAME MPID_Isend
+#define FUNCNAME MPID_Issend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
-	       int tag, MPID_Comm * comm, int context_offset,
-               MPID_Request ** request)
+int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank,
+		int tag, MPID_Comm * comm, int context_offset,
+		MPID_Request ** request)
 {
     MPIDI_msg_sz_t data_sz;
     int dt_contig;
@@ -70,61 +70,74 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
     if (data_sz == 0)
     {
 	MPIDI_CH3_Pkt_t upkt;
-	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
+	MPIDI_CH3_Pkt_eager_sync_send_t * const es_pkt = &upkt.eager_sync_send;
 
-	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
-	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
-	    
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
-	eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
-	eager_pkt->match.rank = comm->rank;
-	eager_pkt->match.tag = tag;
-	eager_pkt->match.context_id = comm->context_id + context_offset;
-	eager_pkt->sender_req_id = sreq->handle;
-	eager_pkt->data_sz = 0;
 
-	MPIDI_CH3_iSend(sreq->ch3.vc, sreq, eager_pkt, sizeof(*eager_pkt));
+	sreq->cc = 2;
+	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	
+	es_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_SEND;
+	es_pkt->match.rank = comm->rank;
+	es_pkt->match.tag = tag;
+	es_pkt->match.context_id = comm->context_id + context_offset;
+	es_pkt->sender_req_id = sreq->handle;
+	es_pkt->data_sz = 0;
 
+	MPIDI_CH3_iSend(comm->vcr[rank], sreq, es_pkt, sizeof(*es_pkt));
 	goto fn_exit;
     }
     
-    /* TODO - flow control: limit number of outstanding eager messsages */
+    /* TODO - flow control: limit number of outstanding eager messsages that
+       contain data which may need to be buffered by the receiver */
+
+    /* TODO - handle case where data_sz is greater than what can be stored in
+       iov.MPID_IOV_LEN.  probably just hand off to segment code. */
     
-    if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=
+    if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_sync_send_t) <=
 	MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {
 	MPIDI_CH3_Pkt_t upkt;
-	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
+	MPIDI_CH3_Pkt_eager_sync_send_t * const es_pkt = &upkt.eager_sync_send;
 	MPID_IOV iov[MPID_IOV_LIMIT];
-	int iov_n;
+	    
+	sreq->cc = 2;
+	sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
 	
-	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
-	
-	eager_pkt->type = MPIDI_CH3_PKT_EAGER_SEND;
-	eager_pkt->match.rank = comm->rank;
-	eager_pkt->match.tag = tag;
-	eager_pkt->match.context_id = comm->context_id + context_offset;
-	eager_pkt->sender_req_id = sreq->handle;
-	eager_pkt->data_sz = data_sz;
-	
-	iov[0].MPID_IOV_BUF = eager_pkt;
-	iov[0].MPID_IOV_LEN = sizeof(*eager_pkt);
-	
+	es_pkt->type = MPIDI_CH3_PKT_EAGER_SYNC_SEND;
+	es_pkt->match.rank = comm->rank;
+	es_pkt->match.tag = tag;
+	es_pkt->match.context_id = comm->context_id + context_offset;
+	es_pkt->sender_req_id = sreq->handle;
+	es_pkt->data_sz = data_sz;
+
+	iov[0].MPID_IOV_BUF = es_pkt;
+	iov[0].MPID_IOV_LEN = sizeof(*es_pkt);
+
 	if (dt_contig)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous eager message, "
-			      "data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
-	    
-	    sreq->ch3.ca = MPIDI_CH3_CA_COMPLETE;
+	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous sync eager "
+			      "message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	    iov[1].MPID_IOV_BUF = (void *) buf;
 	    iov[1].MPID_IOV_LEN = data_sz;
-	    iov_n = 2;
+	    MPIDI_CH3_iSendv(sreq->ch3.vc, sreq, iov, 2);
 	}
 	else
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous eager "
+	    int iov_n;
+	    
+	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous sync eager "
 			      "message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	    
+	    sreq = MPIDI_CH3_Request_create();
+	    if (sreq == NULL)
+	    {
+		MPIDI_DBG_PRINTF((15, FCNAME,
+				  "send request allocation failed"));
+		mpi_errno = MPI_ERR_NOMEM;
+		goto fn_exit;
+	    }
 	    
 	    MPID_Segment_init(buf, count, datatype, &sreq->ch3.segment);
 	    sreq->ch3.segment_first = 0;
@@ -135,25 +148,26 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 		sreq, &iov[1], &iov_n);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
+		iov_n += 1;
+		MPIDI_CH3_iSendv(sreq->ch3.vc, sreq, iov, iov_n);
+	    }
+	    else
+	    {
 		MPID_Request_release(sreq);
 		sreq = NULL;
 		goto fn_exit;
 	    }
-	    iov_n += 1;
 	}
-	
-	MPIDI_CH3_iSendv(sreq->ch3.vc, sreq, iov, iov_n);
     }
     else
     {
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt =
 	    &upkt.rndv_req_to_send;
-	    
+	
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz="
 			  MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_RNDV_MSG);
 	sreq->ch3.ca = MPIDI_CH3_CA_NONE;
 	
 	rts_pkt->type = MPIDI_CH3_PKT_RNDV_REQ_TO_SEND;
@@ -164,6 +178,11 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	rts_pkt->data_sz = data_sz;
 
 	MPIDI_CH3_iSend(comm->vcr[rank], sreq, rts_pkt, sizeof(*rts_pkt));
+
+	/* TODO: fill temporary IOV or pack temporary buffer after send to hide
+           some latency.  This require synchronization because CTS could arrive
+           and be processed before the above iSend completes (depending on the
+           progress engine, threads, etc.). */
     }
 
   fn_exit:

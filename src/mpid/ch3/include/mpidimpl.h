@@ -71,7 +71,7 @@ extern MPIDI_Process_t MPIDI_Process;
     req->ch3.state = 0;				\
 }
 
-#define MPIDI_REQUEST_MSG_MASK 3
+#define MPIDI_REQUEST_MSG_MASK (0x3 << MPIDI_REQUEST_MSG_SHIFT)
 #define MPIDI_REQUEST_MSG_SHIFT 0
 #define MPIDI_REQUEST_NO_MSG 0
 #define MPIDI_REQUEST_EAGER_MSG 1
@@ -87,7 +87,7 @@ extern MPIDI_Process_t MPIDI_Process;
 	& MPIDI_REQUEST_MSG_MASK;				\
 }
 
-#define MPIDI_REQUEST_SRBUF_MASK 1
+#define MPIDI_REQUEST_SRBUF_MASK (0x1 << MPIDI_REQUEST_SRBUF_SHIFT)
 #define MPIDI_REQUEST_SRBUF_SHIFT 2
 
 #define MPIDI_Request_get_srbuf_flag(req)				     \
@@ -98,6 +98,20 @@ extern MPIDI_Process_t MPIDI_Process;
     req->ch3.state &= ~MPIDI_REQUEST_SRBUF_MASK;		\
     req->ch3.state |= (flag << MPIDI_REQUEST_SRBUF_SHIFT)	\
 	& MPIDI_REQUEST_SRBUF_MASK;				\
+}
+
+#define MPIDI_REQUEST_SYNC_SEND_MASK (0x1 << MPIDI_REQUEST_SYNC_SEND_SHIFT)
+#define MPIDI_REQUEST_SYNC_SEND_SHIFT 3
+
+#define MPIDI_Request_get_sync_send_flag(req)		\
+((req->ch3.state & MPIDI_REQUEST_SYNC_SEND_MASK) >>	\
+ MPIDI_REQUEST_SYNC_SEND_SHIFT)
+
+#define MPIDI_Request_set_sync_send_flag(req, flag)		\
+{								\
+    req->ch3.state &= ~MPIDI_REQUEST_SYNC_SEND_MASK;		\
+    req->ch3.state |= (flag << MPIDI_REQUEST_SYNC_SEND_SHIFT)	\
+	& MPIDI_REQUEST_SYNC_SEND_MASK;				\
 }
 
 /*

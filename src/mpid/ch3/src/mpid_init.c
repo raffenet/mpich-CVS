@@ -18,8 +18,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
 {
     int mpi_errno = MPI_SUCCESS;
     int has_parent;
-    MPID_Collops * collops;
-
     MPIDI_dbg_printf(10, FCNAME, "entering");
     
     MPIDI_Process.recv_posted_head = NULL;
@@ -28,32 +26,40 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided,
     MPIDI_Process.recv_unexpected_tail = NULL;
 
     /*
-     * Initialize the collective operations operations for the MPI_COMM_WORLD
-     * and MPI_COMM_SELF
+     * Initialize the collective operations for the MPI_COMM_WORLD and
+     * MPI_COMM_SELF
+     *
+     * NOTE: now using the default collective operations supplied by MPICH
      */
-    collops = MPIU_Calloc(1, sizeof(MPID_Collops));
-    assert(collops != NULL);
+#   if FALSE
+    {
+	MPID_Collops * collops;
+	
+	collops = MPIU_Calloc(1, sizeof(MPID_Collops));
+	assert(collops != NULL);
 
-    collops->ref_count = 2;
-    collops->Barrier = MPIDI_Barrier;
-    collops->Bcast = NULL;
-    collops->Gather = NULL;
-    collops->Gatherv = NULL;
-    collops->Scatter = NULL;
-    collops->Scatterv = NULL;
-    collops->Allgather = NULL;
-    collops->Allgatherv = NULL;
-    collops->Alltoall = NULL;
-    collops->Alltoallv = NULL;
-    collops->Alltoallw = NULL;
-    collops->Reduce = NULL;
-    collops->Allreduce = NULL;
-    collops->Reduce_scatter = NULL;
-    collops->Scan = NULL;
-    collops->Exscan = NULL;
+	collops->ref_count = 2;
+	collops->Barrier = MPIDI_Barrier;
+	collops->Bcast = NULL;
+	collops->Gather = NULL;
+	collops->Gatherv = NULL;
+	collops->Scatter = NULL;
+	collops->Scatterv = NULL;
+	collops->Allgather = NULL;
+	collops->Allgatherv = NULL;
+	collops->Alltoall = NULL;
+	collops->Alltoallv = NULL;
+	collops->Alltoallw = NULL;
+	collops->Reduce = NULL;
+	collops->Allreduce = NULL;
+	collops->Reduce_scatter = NULL;
+	collops->Scan = NULL;
+	collops->Exscan = NULL;
     
-    MPIR_Process.comm_world->coll_fns = collops;
-    MPIR_Process.comm_self->coll_fns = collops;
+	MPIR_Process.comm_world->coll_fns = collops;
+	MPIR_Process.comm_self->coll_fns = collops;
+    }
+#   endif
     
     /*
      * Set process attributes.  These can be overridden by the channel if

@@ -8,6 +8,9 @@
 
 /* XXX - HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
 
+/*
+ * MPID_Send()
+ */
 #undef FUNCNAME
 #define FUNCNAME MPID_Send
 #undef FCNAME
