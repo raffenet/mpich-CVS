@@ -34,6 +34,10 @@ int main(int argc, char* argv[])
         { TEXT(SMPD_SERVICE_NAME), (LPSERVICE_MAIN_FUNCTION)smpd_service_main },
         { NULL, NULL }
     };
+#else
+    char smpd_filename[SMPD_MAX_FILENAME] = "";
+    char response[100] = "no";
+    char *homedir;
 #endif
 
     smpd_enter_fn("main");
@@ -91,7 +95,46 @@ int main(int argc, char* argv[])
     fflush(stdout);
     smpd_process.bService = SMPD_FALSE;
 #endif
-    
+
+    if (smpd_process.passphrase[0] == '\0')
+    {
+	if (smpd_process.noprompt)
+	{
+	    printf("Error: No smpd passphrase specified through the registry or .smpd file, exiting.\n");
+	    smpd_exit_fn("main");
+	    return -1;
+	}
+	printf("Please specify an authentication passphrase for this smpd: ");
+	fflush(stdout);
+	smpd_get_password(smpd_process.passphrase);
+#ifndef HAVE_WINDOWS_H
+	homedir = getenv("HOME");
+	strcpy(homedir, smpd_filename);
+	if (smpd_filename[strlen(smpd_filename)-1] != '/')
+	    strcat(smpd_filename, "/.smpd");
+	else
+	    strcat(smpd_filename, ".smpd");
+	printf("Would you like to save this passphrase in '%s'? ");
+	fflush(stdout);
+	fgets(response, 100, stdin);
+	if (strcmp(response, "yes") == 0 || strcmp(response, "Yes") == 0 || strcmp(response, "YES") == 0 ||
+	    strcmp(response, "Y") == 0 || strcmp(response, "y") == 0)
+	{
+	    FILE *fout;
+	    umask(0);
+	    fout = fopen(smpd_filename, "w");
+	    if (fout == NULL)
+	    {
+		printf("Error: unable to open '%s', errno = %d\n", smpd_filename, errno);
+		smpd_exit_fn("main");
+		return errno;
+	    }
+	    fprintf(fout, "%s\n", smpd_process.passphrase);
+	    fclose(fout);
+	}
+#endif
+    }
+
     result = smpd_entry_point(argc, argv);
 
     smpd_finalize_printf();

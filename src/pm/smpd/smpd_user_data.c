@@ -227,15 +227,34 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
 int smpd_get_smpd_data_default(const char *key, char *value, int value_len)
 {
     smpd_enter_fn("smpd_get_smpd_data_default");
+#ifdef HAVE_WINDOWS_H
+    /* A default passphrase is only available for Windows */
     if (strcmp(key, "phrase") == 0)
     {
-	/*smpd_dbg_printf("returning default phrase: %s\n", SMPD_DEFAULT_PASSPHRASE);*/
 	strncpy(value, SMPD_DEFAULT_PASSPHRASE, value_len);
 	value[value_len-1] = '\0';
+	smpd_exit_fn("smpd_get_smpd_data_default");
+	return SMPD_SUCCESS;
     }
-    else if (strcmp(key, "foo") == 0)
+#endif
+    if (strcmp(key, "log") == 0)
     {
-	strncpy(value, "bar", value_len);
+	strncpy(value, "no", value_len);
+	value[value_len-1] = '\0';
+    }
+    else if (strcmp(key, "prepend_rank") == 0)
+    {
+	strncpy(value, "yes", value_len);
+	value[value_len-1] = '\0';
+    }
+    else if (strcmp(key, "trace") == 0)
+    {
+	strncpy(value, "yes", value_len);
+	value[value_len-1] = '\0';
+    }
+    else if (strcmp(key, "noprompt") == 0)
+    {
+	strncpy(value, "no", value_len);
 	value[value_len-1] = '\0';
     }
     else
