@@ -1966,6 +1966,12 @@ sub TargetSharedLibraryFinal {
     my $libname = $_[0];
     my $newlibname = $_[1];
     my $libdir = $_[2];
+    if ($libdir eq "" || $newlibname eq "" || $libname eq "") {
+	# If we don't have these names, we cannot create a valid library
+	print STDOUT "Unable to create shared libary target (no directory\n\
+library, or new library name)\n" if $debug;
+	return;
+    }
     print FD "# Build the shared library from the shared object files\n";
     print FD "$libdir/$newlibname: $libdir/$libname\n";
     print FD "\tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi\n";
