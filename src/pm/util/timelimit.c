@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include "pmutil.h"
+
 /*
  * Provide a simple timeout capability.  Initialize the time with 
  * InitTimeout.  Call GetRemainingTime to get the time in seconds left.

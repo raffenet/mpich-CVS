@@ -53,6 +53,7 @@ static ProcessTable *ptable = 0;
 static int killOnAbort = 0;
 
 static void setup_sigchild( void );
+static int SetProcessExitStatus( ProcessTable *, pid_t, int );
 
 /* Call this routine to initialize the sigchild and set the process table
    pointer */
@@ -62,6 +63,8 @@ void initPtableForSigchild( ProcessTable *t )
     setup_sigchild( );
 }
 
+static volatile int inHandler = 0;
+static volatile int skipHandler = 0;
 /*
  * Note that signals are not queued.  Thus we must process all pending
  * processes, and not be concerned if we are invoked but we have already
@@ -69,7 +72,16 @@ void initPtableForSigchild( ProcessTable *t )
  */
 static void handle_sigchild( int sig )
 {
-    int prog_stat, pid, rc, sigval, i;
+    int prog_stat, pid;
+    int foundChild = 0;
+
+    /* Set a flag to indicate that we're in the handler, and check 
+       to see if we should ignore the signal */
+    inHandler = 1;
+    if (skipHandler) {
+	inHandler = 0;
+	return;
+    }
 
     DBG_PRINTF( "Entering sigchild handler\n" ); fflush(stdout);
     if (debug) {
@@ -82,49 +94,28 @@ static void handle_sigchild( int sig )
 	pid = waitpid( (pid_t)(-1), &prog_stat, WNOHANG );
     
 	if (pid <= 0) {
-	    if (debug) {
+	    /* Generate a debug message if we enter the handler but 
+	       do not find a child */
+	    if (debug && !foundChild) {
 		DBG_FPRINTF( stderr, "Did not find child process!\n" );
 		fflush( stderr );
 	    }
 	    break;
 	}
+	foundChild = 1;
 	/* Receives a child failure or exit.  
 	   If *failure*, kill the others */
 	if (debug) {
 	    DBG_FPRINTF( stderr, "Found process %d in sigchld handler\n", pid );
 	    fflush( stderr );
 	}
-	rc = 0;
-	if (WIFEXITED(prog_stat)) {
-	    rc = WEXITSTATUS(prog_stat);
-	}
-	sigval = 0;
-	if (WIFSIGNALED(prog_stat)) {
-	    sigval = WTERMSIG(prog_stat);
-	}
-	if (sigval || rc) {
-	    /* Look up this pid in the exitstatus */
-	    for (i=0; i<ptable->nProcesses; i++) {
-		if (ptable->table[i].pid == pid) {
-		    if (debug) {
-			DBG_FPRINTF( stderr, "Found process %d in table in sigchld handler\n", pid );
-			fflush( stderr );
-		    }
-		    ptable->table[i].state             = GONE;
-		    ptable->table[i].status.exitStatus = rc;
-		    ptable->table[i].status.exitSig    = sigval;
-		    ptable->nActive--;
-		    break;
-		}
-	    }
-	    if (i == ptable->nProcesses) {
-		/* Did not find the matching pid */
-		;
-	    }
+	/* Return value is 0 on success and non zero if the process 
+	   was not found */
+	SetProcessExitStatus( ptable, pid, prog_stat );
 	    /*	    if (killOnAbort) 
 		    KillChildren(); */
-	}
     }
+    inHandler = 0;
 }
 
 #ifdef USE_SIGACTION
@@ -159,6 +150,53 @@ static void setup_sigchild( void )
 }
 #endif
 
+void WaitForChildren( ProcessTable *ptable )
+{
+    pid_t pid;
+    int   i, nactive, prog_stat;
+
+    /* Tell the signal handler to ignore signals */
+    skipHandler = 1;
+
+    /* Wait for the handler to exit if it is running */
+    while (inHandler) ;
+
+    /* Determine the number of processes that we have left to wait on */
+    nactive = 0;
+    for (i=0; i<ptable->nProcesses; i++) {
+	if (ptable->table[i].state != GONE) nactive++;
+    }
+    while (nactive) {
+	pid = wait( &prog_stat );
+	SetProcessExitStatus( ptable, pid, prog_stat );
+	nactive --;
+    }
+}
+
+int ComputeExitStatus( ProcessTable *ptable, int rule )
+{
+    int i, rc, prc;
+    
+    rc = 0;
+    
+    for (i=0; i<ptable->nProcesses; i++) {
+	if (ptable->table[i].state == GONE) {
+	    prc = ptable->table[i].status.exitStatus;
+	    switch (rule) {
+	    case 0:  /* Max */
+		if (prc > rc) rc = prc;
+		break;
+	    case 1: /* Sum */
+		rc += prc;
+		break;
+	    default: /* bitwise or */
+		rc |= prc;
+		break;
+	    }
+	}
+    }
+    return rc;
+}
 #ifdef FOO
 /* Send a given signal to all processes */
 void SignalAllProcesses( ProcessTable_t *ptable, int sig, const char msg[] )
@@ -233,3 +271,40 @@ void KillChildren( ProcessTable_t *ptable )
     }
 }
 #endif
+
+
+static int SetProcessExitStatus( ProcessTable *ptable, 
+				 pid_t pid, int prog_stat )
+{
+    int   rc, sigval, i;
+
+    rc = 0;
+    if (WIFEXITED(prog_stat)) {
+	rc = WEXITSTATUS(prog_stat);
+    }
+    sigval = 0;
+    if (WIFSIGNALED(prog_stat)) {
+	sigval = WTERMSIG(prog_stat);
+    }
+    if (sigval || rc) {
+	/* Look up this pid in the exitstatus */
+	for (i=0; i<ptable->nProcesses; i++) {
+	    if (ptable->table[i].pid == pid) {
+		if (debug) {
+		    DBG_FPRINTF( stderr, "Found process %d in table in sigchld handler\n", pid );
+		    fflush( stderr );
+		}
+		ptable->table[i].state             = GONE;
+		ptable->table[i].status.exitStatus = rc;
+		ptable->table[i].status.exitSig    = sigval;
+		ptable->nActive--;
+		break;
+	    }
+	}
+	if (i == ptable->nProcesses) {
+	    /* Did not find the matching pid */
+	    ;
+	}
+    }
+    return 0;
+}

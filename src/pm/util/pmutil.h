@@ -181,10 +181,20 @@ typedef struct {
    Function prototypes 
    ---------------------------------------------------------------------------
  */
+#include <stdio.h>
 
 /* Functions to process arguments */
+int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist, 
+		 int (*ProcessArg)( int, char *[], void *), void *extraData );
 int mpiexecRMProcessArg( int argc, char *argv[], void *extra );
+void mpiexecPrintProcessList( FILE *fp, ProcessList *plist, int nplist );
 int getIntValue( const char [], int );
+extern void mpiexec_usage( const char * );
+
+/* timeout */
+void InitTimeout( int seconds );
+int GetRemainingTime( void );
+
 /* 
    ---------------------------------------------------------------------------
    Miscellaneous

@@ -49,11 +49,12 @@
  */
 static int getInt( int, int, char *[] );
 int getIntValue( const char [], int );
+static int mpiexecParseSoftspec( const char *, SoftSpec * );
 
 int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist, 
 		 int (*ProcessArg)( int, char *[], void *), void *extraData )
 {
-    int         i, j;
+    int         i;
     int         np=1;      /* These 6 values are set by command line options */
     const char *host=0;    /* These are the defaults.  When a program name */
     const char *arch=0;    /* is seen, the values in these variables are */
@@ -141,10 +142,13 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 	    }
 
 	    plist[curplist].np = np;
-	    /* Fixme: handle soft options */
-	    plist[curplist].soft.nelm = 0;
-	    plist[curplist].soft.tuples = 0;
-
+	    if (soft) {
+		mpiexecParseSoftspec( soft, &plist[curplist].soft );
+	    }
+	    else {
+		plist[curplist].soft.nelm = 0;
+		plist[curplist].soft.tuples = 0;
+	    }
 	    curplist++;
 
 	    /* Now, clear all of the values for the next set */
@@ -221,6 +225,82 @@ int getIntValue( const char name[], int default_val )
 #endif
     }
     return val;
+}
+
+/*
+ * Process a "soft" specification.  Returns the maximum of the 
+ * number of requested processes, or -1 on error
+ *   Format is in pseudo BNF:
+ *  soft -> element[,element]
+ *  element -> number | range
+ *  range   -> number:number[:number]
+ */
+static int mpiexecParseSoftspec( const char *str, SoftSpec *sspec )
+{
+    const char *p = str, *p1, *p2;
+    int s, e, incr;
+    int nelm;
+    int maxproc = 1;
+    /* First, count the number of commas to preallocate the SoftSpec 
+       tuples array */
+    nelm = 1;
+    p1 = p;
+    while ( (p1 = strchr(p1,',')) != NULL ) {
+	nelm ++;
+	p1++;
+    }
+    sspec->nelm   = nelm;
+    sspec->tuples = (int (*)[3]) MPIU_Malloc( nelm * sizeof(int [3]));
+
+    nelm = 0;
+    while ( *p ) {
+	p1 = strchr(p,',');
+	if (!p1) {
+	    /* Use the rest of the string */
+	    p1 = p + strlen(p);
+	}
+	/* Extract the element between p and p1-1 */
+	/* FIXME: handle sign, invalid input */
+	s = 0; e = 0; incr = 1;
+	p2 = p;
+	while (p2 < p1 && *p2 != ':') {
+	    s += 10 * s + (*p2 - '0');
+	    p2++;
+	}
+	if (*p2 == ':') {
+	    /* Keep going */
+	    p2++;
+	    while (p2 < p1 && *p2 != ':') {
+		e += 10 * e + (*p2 - '0');
+		p2++;
+	    }
+	    if (*p2 == ':') {
+		/* Keep going */
+		p2++;
+		incr = 0;
+		while (p2 < p1 && *p2 != ':') {
+		    incr += 10 * incr + (*p2 - '0');
+		    p2++;
+		}
+	    }
+	}
+	else {
+	    e = s; 
+	}
+
+	/* Save the results */
+	sspec->tuples[nelm][0] = s;
+	sspec->tuples[nelm][1] = e;
+	sspec->tuples[nelm][2] = incr;
+
+	/* FIXME: handle negative increments, and e not s + k incr */
+	if (e > maxproc) maxproc = e;
+	nelm++;
+
+	p = p1;
+	if (*p == ',') p++;
+    }
+    return maxproc;
 }
 
 /*
