@@ -11,17 +11,22 @@
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset,
-		MPI_Status * status)
+		int * flag, MPI_Status * status)
 {
     MPID_Request * rreq;
+    const int context = comm->context_id + context_offset;
     
-    rreq = MPIDI_CH3U_Request_FU(source, tag, 
-				 comm->context_id + context_offset);
+    rreq = MPIDI_CH3U_Request_FU(source, tag, context);
     if (rreq != NULL)
     {
 	*status = rreq->status;
 	MPID_Request_release(rreq);
+	*flag = TRUE;
+    }
+    else
+    {
+	*flag = FALSE;
     }
     
-    return MPI_ERR_INTERN;
+    return MPI_SUCCESS;
 }
