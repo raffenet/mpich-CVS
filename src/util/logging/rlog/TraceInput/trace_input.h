@@ -15,10 +15,13 @@
 extern "C" {
 #endif
 
+
 typedef struct _trace_file *TRACE_file;
-#ifdef _WINDOWS
+#ifdef WIN32
+#define TRACE_EXPORT __declspec(dllexport)
 #define TRACE_int64_t  __int64
 #else
+#define TRACE_EXPORT
 #define TRACE_int64_t long long
 #endif
 
@@ -107,26 +110,26 @@ typedef struct {
 
 */
 
-int TRACE_Open( const char filespec[], TRACE_file *fp );
+TRACE_EXPORT int TRACE_Open( const char filespec[], TRACE_file *fp );
 
-int TRACE_Close( TRACE_file *fp );
+TRACE_EXPORT int TRACE_Close( TRACE_file *fp );
 
 /*
-int TRACE_Get_total_time( const TRACE_file fp, 
+TRACE_EXPORT int TRACE_Get_total_time( const TRACE_file fp, 
                           double *starttime, double *endtime );
 */
 
-int TRACE_Peek_next_kind( const TRACE_file fp, TRACE_Rec_Kind_t *next_kind );
+TRACE_EXPORT int TRACE_Peek_next_kind( const TRACE_file fp, TRACE_Rec_Kind_t *next_kind );
 
-int TRACE_Get_next_method( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Get_next_method( const TRACE_file fp,
                            char method_name[], char method_extra[], 
                            int *methodID );
 
-int TRACE_Peek_next_category( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_category( const TRACE_file fp,
                               int *n_legend, int *n_label,
                               int *n_methodIDs );
 
-int TRACE_Get_next_category( const TRACE_file fp, 
+TRACE_EXPORT int TRACE_Get_next_category( const TRACE_file fp, 
                              TRACE_Category_head_t *head,
                              int *n_legend, char *legend_base,
                              int *legend_pos, const int legend_max,
@@ -135,13 +138,13 @@ int TRACE_Get_next_category( const TRACE_file fp,
                              int *n_methodIDs, int *methodID_base,
                              int *methodID_pos, const int methodID_max );
 
-int TRACE_Peek_next_ycoordmap( TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_ycoordmap( TRACE_file fp,
                                int *n_rows, int *n_columns,
                                int *max_column_name,
                                int *max_title_name,
                                int *n_methodIDs );
 
-int TRACE_Get_next_ycoordmap( TRACE_file fp,
+TRACE_EXPORT int TRACE_Get_next_ycoordmap( TRACE_file fp,
                               char *title_name,
                               char **column_names,
                               int *coordmap_sz, int *coordmap_base,
@@ -149,11 +152,11 @@ int TRACE_Get_next_ycoordmap( TRACE_file fp,
                               int *n_methodIDs, int *methodID_base,
                               int *methodID_pos, const int methodID_max );
 
-int TRACE_Peek_next_primitive( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_primitive( const TRACE_file fp,
                                double *starttime, double *endtime,
                                int *n_tcoords, int *n_ycoords, int *n_bytes );
 
-int TRACE_Get_next_primitive( const TRACE_file fp, 
+TRACE_EXPORT int TRACE_Get_next_primitive( const TRACE_file fp, 
                               int *category_index, 
                               int *n_tcoords, double *tcoord_base,
                               int *tcoord_pos, const int tcoord_max, 
@@ -162,21 +165,21 @@ int TRACE_Get_next_primitive( const TRACE_file fp,
                               int *n_bytes, char *byte_base,
                               int *byte_pos, const int byte_max );
 
-int TRACE_Peek_next_composite( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_composite( const TRACE_file fp,
                                double *starttime, double *endtime,
                                int *n_primitives, int *n_bytes );
 
-int TRACE_Get_next_composite( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Get_next_composite( const TRACE_file fp,
                               int *category_index,
                               int *n_bytes, char *byte_base,
                               int *byte_pos, const int byte_max );
 
 
-int TRACE_Get_position( TRACE_file fp, TRACE_int64_t *offset );
+TRACE_EXPORT int TRACE_Get_position( TRACE_file fp, TRACE_int64_t *offset );
 
-int TRACE_Set_position( TRACE_file fp, TRACE_int64_t offset );
+TRACE_EXPORT int TRACE_Set_position( TRACE_file fp, TRACE_int64_t offset );
 
-char *TRACE_Get_err_string( int ierr );
+TRACE_EXPORT char *TRACE_Get_err_string( int ierr );
 
 #if defined(__cplusplus)
 }

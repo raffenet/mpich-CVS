@@ -71,7 +71,7 @@ BOOL PackQuadDouble(double d1, double d2, int *length, double *base, int *pos, c
     return TRUE;
 }
 
-int TRACE_Open( const char filespec[], TRACE_file *fp )
+TRACE_EXPORT int TRACE_Open( const char filespec[], TRACE_file *fp )
 {
     int i, j;
     RLOG_IOStruct *pInput;
@@ -119,7 +119,7 @@ int TRACE_Open( const char filespec[], TRACE_file *fp )
     return TRACEINPUT_SUCCESS;
 }
 
-int TRACE_Close( TRACE_file *fp )
+TRACE_EXPORT int TRACE_Close( TRACE_file *fp )
 {
     int i;
 
@@ -147,7 +147,7 @@ int TRACE_Close( TRACE_file *fp )
     return TRACEINPUT_SUCCESS;
 }
 
-int TRACE_Peek_next_kind( const TRACE_file fp, TRACE_Rec_Kind_t *next_kind )
+TRACE_EXPORT int TRACE_Peek_next_kind( const TRACE_file fp, TRACE_Rec_Kind_t *next_kind )
 {
     int i,j;
 
@@ -178,14 +178,14 @@ int TRACE_Peek_next_kind( const TRACE_file fp, TRACE_Rec_Kind_t *next_kind )
     return TRACEINPUT_SUCCESS;
 }
 
-int TRACE_Get_next_method( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Get_next_method( const TRACE_file fp,
                            char method_name[], char method_extra[], 
                            int *methodID )
 {
     return TRACEINPUT_FAIL;
 }
 
-int TRACE_Peek_next_category( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_category( const TRACE_file fp,
                               int *n_legend, int *n_label,
                               int *n_methodIDs )
 {
@@ -201,7 +201,7 @@ int TRACE_Peek_next_category( const TRACE_file fp,
     return TRACEINPUT_SUCCESS;
 }
 
-int TRACE_Get_next_category( const TRACE_file fp, 
+TRACE_EXPORT int TRACE_Get_next_category( const TRACE_file fp, 
                              TRACE_Category_head_t *head,
                              int *n_legend, char *legend_base,
                              int *legend_pos, const int legend_max,
@@ -242,7 +242,7 @@ int TRACE_Get_next_category( const TRACE_file fp,
     return TRACEINPUT_SUCCESS;
 }
 
-int TRACE_Peek_next_ycoordmap( TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_ycoordmap( TRACE_file fp,
                                int *n_rows, int *n_columns,
                                int *max_column_name,
                                int *max_title_name,
@@ -251,7 +251,7 @@ int TRACE_Peek_next_ycoordmap( TRACE_file fp,
     return TRACEINPUT_FAIL;
 }
 
-int TRACE_Get_next_ycoordmap( TRACE_file fp,
+TRACE_EXPORT int TRACE_Get_next_ycoordmap( TRACE_file fp,
                               char *title_name,
                               char **column_names,
                               int *coordmap_sz, int *coordmap_base,
@@ -262,11 +262,11 @@ int TRACE_Get_next_ycoordmap( TRACE_file fp,
     return TRACEINPUT_FAIL;
 }
 
-int TRACE_Peek_next_primitive( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_primitive( const TRACE_file fp,
                                double *starttime, double *endtime,
                                int *n_tcoords, int *n_ycoords, int *n_bytes )
 {
-    int i, j, rank_index = -1, index = -1;
+    int i, j, rank = -1, level = -1;
     double dmin;
     BOOL done = FALSE;
 
@@ -280,14 +280,14 @@ int TRACE_Peek_next_primitive( const TRACE_file fp,
 	{
 	    if (fp->ppEventAvail[j][i])
 	    {
-		index = i;
-		rank_index  = j;
+		level = i;
+		rank  = j;
 		dmin = fp->ppEvent[j][i].end_time;
 		done = TRUE;
 	    }
 	}
     }
-    if (index == -1)
+    if (level == -1)
     {
 	if (!fp->bArrowAvail)
 	    return TRACEINPUT_FAIL;
@@ -295,16 +295,16 @@ int TRACE_Peek_next_primitive( const TRACE_file fp,
 	*endtime = fp->arrow.end_time;
 	return TRACEINPUT_SUCCESS;
     }
-    for (j=rank_index; j<fp->pInput->nNumRanks; j++)
+    for (j=0; j<fp->pInput->nNumRanks; j++)
     {
-	for (i=index; i<fp->pInput->pNumEventRecursions[j]; i++)
+	for (i=0; i<fp->pInput->pNumEventRecursions[j]; i++)
 	{
 	    if (fp->ppEventAvail[j][i])
 	    {
 		if (fp->ppEvent[j][i].end_time < dmin)
 		{
-		    index = i;
-		    rank_index = j;
+		    level = i;
+		    rank = j;
 		    dmin = fp->ppEvent[j][i].end_time;
 		}
 	    }
@@ -319,13 +319,13 @@ int TRACE_Peek_next_primitive( const TRACE_file fp,
 	    return TRACEINPUT_SUCCESS;
 	}
     }
-    *starttime = fp->ppEvent[rank_index][index].start_time;
-    *endtime = fp->ppEvent[rank_index][index].end_time;
+    *starttime = fp->ppEvent[rank][level].start_time;
+    *endtime = fp->ppEvent[rank][level].end_time;
 
     return TRACEINPUT_SUCCESS;
 }
 
-int TRACE_Get_next_primitive( const TRACE_file fp, 
+TRACE_EXPORT int TRACE_Get_next_primitive( const TRACE_file fp, 
                               int *category_index, 
                               int *n_tcoords, double *tcoord_base,
                               int *tcoord_pos, const int tcoord_max, 
@@ -334,7 +334,7 @@ int TRACE_Get_next_primitive( const TRACE_file fp,
                               int *n_bytes, char *byte_base,
                               int *byte_pos, const int byte_max )
 {
-    int i, j, rank_index = 1, index = -1;
+    int i, j, rank = 1, level = -1;
     double dmin;
     BOOL done = FALSE;
 
@@ -346,33 +346,39 @@ int TRACE_Get_next_primitive( const TRACE_file fp,
 	{
 	    if (fp->ppEventAvail[j][i])
 	    {
-		index = i;
-		rank_index = j;
+		level = i;
+		rank = j;
 		dmin = fp->ppEvent[j][i].end_time;
 		break;
 	    }
 	}
     }
-    if (index == -1)
+    if (level == -1)
     {
 	if (!fp->bArrowAvail)
 	    return TRACEINPUT_FAIL;
 	*category_index = RLOG_ARROW_EVENT_ID;
-	PackQuadDouble(fp->arrow.start_time, fp->arrow.end_time, n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
-	PackQuadInt(fp->arrow.src, fp->arrow.dest, n_ycoords, ycoord_base, ycoord_pos, ycoord_max);
+	PackQuadDouble(
+	    fp->arrow.start_time, 
+	    fp->arrow.end_time, 
+	    n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	PackQuadInt(
+	    fp->arrow.src, 
+	    fp->arrow.dest, 
+	    n_ycoords, ycoord_base, ycoord_pos, ycoord_max);
 	fp->bArrowAvail = (RLOG_GetNextArrow(fp->pInput, &fp->arrow) == 0);
 	return TRACEINPUT_SUCCESS;
     }
-    for (j=rank_index; j<fp->pInput->nNumRanks; j++)
+    for (j=0; j<fp->pInput->nNumRanks; j++)
     {
-	for (i=index; i<fp->pInput->pNumEventRecursions[j]; i++)
+	for (i=0; i<fp->pInput->pNumEventRecursions[j]; i++)
 	{
 	    if (fp->ppEventAvail[j][i])
 	    {
 		if (fp->ppEvent[j][i].end_time < dmin)
 		{
-		    index = i;
-		    rank_index = j;
+		    level = i;
+		    rank = j;
 		    dmin = fp->ppEvent[j][i].end_time;
 		}
 	    }
@@ -383,28 +389,45 @@ int TRACE_Get_next_primitive( const TRACE_file fp,
 	if (fp->arrow.end_time < dmin)
 	{
 	    *category_index = RLOG_ARROW_EVENT_ID;
-	    PackQuadDouble(fp->arrow.start_time, fp->arrow.end_time, n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
-	    PackQuadInt(fp->arrow.src, fp->arrow.dest, n_ycoords, ycoord_base, ycoord_pos, ycoord_max);
+	    PackQuadDouble(
+		fp->arrow.start_time, 
+		fp->arrow.end_time, 
+		n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+	    PackQuadInt(
+		fp->arrow.src, 
+		fp->arrow.dest, 
+		n_ycoords, ycoord_base, ycoord_pos, ycoord_max);
 	    fp->bArrowAvail = (RLOG_GetNextArrow(fp->pInput, &fp->arrow) == 0);
 	    return TRACEINPUT_SUCCESS;
 	}
     }
-    *category_index = fp->ppEvent[rank_index][index].event;
-    PackQuadDouble(fp->ppEvent[rank_index][index].start_time, fp->ppEvent[rank_index][index].end_time, n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
-    PackQuadInt(fp->ppEvent[rank_index][index].rank, fp->ppEvent[rank_index][index].rank, n_ycoords, ycoord_base, ycoord_pos, ycoord_max);
-    fp->ppEventAvail[rank_index][index] = (RLOG_GetNextEvent(fp->pInput, rank_index + fp->pInput->header.nMinRank, index, &fp->ppEvent[rank_index][index]) == 0);
+    *category_index = fp->ppEvent[rank][level].event;
+    PackQuadDouble(
+	fp->ppEvent[rank][level].start_time, 
+	fp->ppEvent[rank][level].end_time, 
+	n_tcoords, tcoord_base, tcoord_pos, tcoord_max);
+    PackQuadInt(
+	fp->ppEvent[rank][level].rank, 
+	fp->ppEvent[rank][level].rank, 
+	n_ycoords, ycoord_base, ycoord_pos, ycoord_max);
+    fp->ppEventAvail[rank][level] = 
+	(RLOG_GetNextEvent(
+			    fp->pInput, 
+			    rank + fp->pInput->header.nMinRank, 
+			    level, 
+			    &fp->ppEvent[rank][level]) == 0);
 
     return TRACEINPUT_SUCCESS;
 }
 
-int TRACE_Peek_next_composite( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Peek_next_composite( const TRACE_file fp,
                                double *starttime, double *endtime,
                                int *n_primitives, int *n_bytes )
 {
     return TRACEINPUT_FAIL;
 }
 
-int TRACE_Get_next_composite( const TRACE_file fp,
+TRACE_EXPORT int TRACE_Get_next_composite( const TRACE_file fp,
                               int *category_index,
                               int *n_bytes, char *byte_base,
                               int *byte_pos, const int byte_max )
@@ -413,17 +436,17 @@ int TRACE_Get_next_composite( const TRACE_file fp,
 }
 
 
-int TRACE_Get_position( TRACE_file fp, TRACE_int64_t *offset )
+TRACE_EXPORT int TRACE_Get_position( TRACE_file fp, TRACE_int64_t *offset )
 {
     return TRACEINPUT_FAIL;
 }
 
-int TRACE_Set_position( TRACE_file fp, TRACE_int64_t offset )
+TRACE_EXPORT int TRACE_Set_position( TRACE_file fp, TRACE_int64_t offset )
 {
     return TRACEINPUT_FAIL;
 }
 
-char *TRACE_Get_err_string( int ierr )
+TRACE_EXPORT char *TRACE_Get_err_string( int ierr )
 {
     return "failure";
 }
