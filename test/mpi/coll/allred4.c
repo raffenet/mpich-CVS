@@ -148,6 +148,7 @@ int main( int argc, char *argv[] )
     int *buf, *bufout;
     MPI_Op op;
     MPI_Datatype mattype;
+    int i;
 
     MTest_Init( &argc, &argv );
 
@@ -158,7 +159,7 @@ int main( int argc, char *argv[] )
     MPI_Type_commit( &mattype );
     
     while (MTestGetIntracommGeneral( &comm, minsize, 1 )) {
-	if (comm == MPI_COMM_NULL) continue
+	if (comm == MPI_COMM_NULL) continue;
 
 	MPI_Comm_size( comm, &size );
 
@@ -183,7 +184,10 @@ int main( int argc, char *argv[] )
 	    errs += checkResult( count, bufout );
 
 	    /* Try the same test, but using MPI_IN_PLACE */
-	    initMat( comm, bufout );
+	    /*initMat( comm, bufout );*/
+	    for (i=0; i < count; i++) {
+		initMat( comm, i, &bufout[i*9] );
+	    }
 	    MPI_Allreduce( MPI_IN_PLACE, bufout, count, mattype, op, comm );
 	    errs += checkResult( count, bufout );
 
@@ -194,7 +198,7 @@ int main( int argc, char *argv[] )
     }
 	
     MPI_Op_free( &op );
-    MPI_Datatype_free( &mattype );
+    MPI_Type_free( &mattype );
 
     MTest_Finalize( errs );
     MPI_Finalize();
