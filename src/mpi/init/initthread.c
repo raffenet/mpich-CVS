@@ -76,6 +76,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.attrs.universe        = 1;
     MPIR_Process.attrs.wtime_is_global = 0;
 
+    /* Set the functions used to duplicate attributes.  These are 
+       when the first corresponding keyval is created */
+    MPIR_Process.comm_attr_dup = 0;
+    MPIR_Process.type_attr_dup = 0;
+
     /* "Allocate" from the reserved space for builtin communicators and
        (partially) initialize predefined communicators.  comm_parent is
        intially NULL and will be allocated by the device if the process group
@@ -84,10 +89,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_world->handle = MPI_COMM_WORLD;
     MPIR_Process.comm_world->ref_count = 1;
     MPIR_Process.comm_world->context_id = 0; /* XXX */
-    MPIR_Process.comm_world->attributes.item = NULL;
-    MPIR_Process.comm_world->attributes.next = NULL;
+    MPIR_Process.comm_world->attributes = NULL;
     MPIR_Process.comm_world->local_group = NULL;
     MPIR_Process.comm_world->remote_group = NULL;
+    /* This initialization of the comm name could be done only when 
+       comm_get_name is called */
     strncpy(MPIR_Process.comm_world->name, "MPI_COMM_WORLD",
 	    MPI_MAX_OBJECT_NAME);
     MPIR_Process.comm_world->errhandler = NULL; /* XXX */
@@ -97,8 +103,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_self->handle = MPI_COMM_SELF;
     MPIR_Process.comm_self->ref_count = 1;
     MPIR_Process.comm_self->context_id = 4; /* XXX */
-    MPIR_Process.comm_self->attributes.item = NULL;
-    MPIR_Process.comm_self->attributes.next = NULL;
+    MPIR_Process.comm_self->attributes = NULL;
     MPIR_Process.comm_self->local_group = NULL;
     MPIR_Process.comm_self->remote_group = NULL;
     strncpy(MPIR_Process.comm_self->name, "MPI_COMM_SELF",

@@ -158,6 +158,7 @@ typedef enum {
   MPID_INFO       = 0x7,
   MPID_WIN        = 0x8,
   MPID_KEYVAL     = 0x9,
+  MPID_ATTR       = 0xa,
   } MPID_Object_kind;
 /* The above objects should correspond to MPI objects only. */
 #define HANDLE_MPI_KIND_SHIFT 26
@@ -310,6 +311,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Info_get_ptr(a,ptr)       MPID_Get_ptr(Info,a,ptr)
 #define MPID_Win_get_ptr(a,ptr)        MPID_Get_ptr(Win,a,ptr)
 #define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
+#define MPID_Keyval_get_ptr(a,ptr)     MPID_Get_ptr(Keyval,a,ptr)
 
 /* Valid pointer checks */
 /* This test is lame.  Should eventually include cookie test 
@@ -326,6 +328,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Errhandler_valid_ptr(ptr,err) MPID_Valid_ptr(Errhandler,ptr,err)
 #define MPID_File_valid_ptr(ptr,err) MPID_Valid_ptr(File,ptr,err)
 #define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr(Request,ptr,err)
+#define MPID_Keyval_valid_ptr(ptr,err) MPID_Valid_ptr(Keyval,ptr,err)
 
 /* Generic pointer test.  This is applied to any address, not just one from
    an MPI object.
@@ -385,13 +388,7 @@ extern MPIU_Object_alloc_t MPID_Errhandler_mem;
 /* Preallocated errhandler objects */
 extern MPID_Errhandler MPID_Errhandler_direct[];
 
-/* Lists and attributes */
-typedef struct MPID_List_elm {
-    struct MPID_List_elm *next;
-    void   *item;
-    /* other, device-specific information */
-} MPID_List;
-
+/* Keyvals and attributes */
 typedef union {
   int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
   void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
@@ -405,7 +402,7 @@ typedef union {
 } MPID_Copy_function;
 
 typedef union {
-  int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
+  int  (*C_CommDeleteFunction)  ( MPI_Comm, int, void *, void * );
   void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
                               MPI_Fint * );
   void (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
@@ -424,27 +421,53 @@ typedef struct {
     MPID_Copy_function   copyfn;
     MPID_Delete_function delfn;
   /* other, device-specific information */
+#ifdef MPID_DEV_KEYVAL_DECL
+    MPID_DEV_KEYVAL_DECL
+#endif
 } MPID_Keyval;
 
-typedef struct {
-    void *      value;              /* Stored value */
+/* Attributes need no ref count or handle, but since we want to use the
+   common block allocator for them, we must provide those elements 
+*/
+typedef struct MPID_Attr_s {
+    int                  handle;
+    volatile int         ref_count;
     MPID_Keyval *keyval;            /* Keyval structure for this attribute */
+    struct MPID_Attr_s *next;       /* Pointer to next in the list */
+    long        pre_sentinal;       /* Used to detect user errors in accessing
+				       the value */
+    void *      value;              /* Stored value */
+    long        post_sentinal;      /* Like pre_sentinal */
     /* other, device-specific information */
+#ifdef MPID_DEV_ATTR_DECL
+    MPID_DEV_ATTR_DECL
+#endif
 } MPID_Attribute;
 
+/*---------------------------------------------------------------------------
+ * Groups are *not* a major data structure in MPICH-2.  They are provided
+ * only because they are required for the group operations (e.g., 
+ * MPI_Group_intersection) and for the scalable RMA synchronization
+ *---------------------------------------------------------------------------*/
 /* This structure is used to implement the group operations such as 
    MPI_Group_translate_ranks */
 typedef struct {
-    int          lpid, lrank;
+    int          lrank;     /* Local rank in group (between 0 and size-1) */
+    int          lpid;      /* local process id, from VCONN */
+    int          next_lpid; /* Index of next lpid (in lpid order) */
+    int          flag;      /* marker, used to implement group operations */
 } MPID_Group_pmap_t;
 
 typedef struct {
     int          handle;
     volatile int ref_count;
     int          size;           /* Size of a group */
-    int          *lrank_to_lpid; /* Array mapping a local rank to local 
-                                    process number */
-    MPID_Group_pmap_t *lpid_to_lrank;
+    int          rank;           /* rank of this process relative to this 
+				    group */
+    int          idx_of_first_lpid;
+    MPID_Group_pmap_t *lrank_to_lpid; /* Array mapping a local rank to local 
+					 process number */
+    /* We may want some additional data for the RMA syncrhonization calls */
   /* Other, device-specific information */
 #ifdef MPID_DEV_GROUP_DECL
     MPID_DEV_GROUP_DECL
@@ -469,7 +492,7 @@ typedef struct MPID_Comm {
     int           rank;          /* Value of MPI_Comm_rank */
     MPID_VCRT     vcrt;          /* virtual connecton reference table */
     MPID_VCR     *vcr;           /* alias to the array of virtual connections in vcrt */
-    MPID_List     attributes;    /* List of attributes */
+    MPID_Attribute *attributes;    /* List of attributes */
     int           local_size;    /* Value of MPI_Comm_size for local group */
     MPID_Group   *local_group,   /* Groups in communicator. */
                  *remote_group;  /* The local and remote groups are the
@@ -540,7 +563,7 @@ typedef struct {
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     MPI_Aint    length;        
     int          disp_unit;      /* Displacement unit of *local* window */
-    MPID_List    attributes;
+    MPID_Attribute *attributes;
     MPID_Comm    *comm;         /* communicator of window */
     char          name[MPI_MAX_OBJECT_NAME];  
   /* Other, device-specific information */
@@ -592,7 +615,7 @@ typedef struct MPID_Datatype_st {
                                      cannot be processed (see MPID_Segment) */
     /* int opt_loopinfo_depth ??? */
 
-    MPID_List     attributes;    /* MPI-2 adds datatype attributes */
+    MPID_Attribute   *attributes;    /* MPI-2 adds datatype attributes */
 
     int32_t       cache_id;      /* These are used to track which processes */
     /* MPID_Lpidmask mask; */         /* have cached values of this datatype */
@@ -728,6 +751,12 @@ typedef struct {
     PreDefined_attrs  attrs;            /* Predefined attribute values */
     /* Communicator context ids.  Special data is needed for thread-safety */
     int context_id_mask[32];
+    /* Attribute dup functions.  Here for lazy initialization */
+    int (*comm_attr_dup)( MPID_Comm *, MPID_Attribute **new_attr );
+    int (*comm_attr_free)( MPID_Comm *, MPID_Attribute *attr_p );
+    int (*type_attr_dup)( MPID_Datatype *, MPID_Attribute **new_attr );
+    int (*type_attr_free)( MPID_Datatype *, MPID_Attribute *attr_p );
+    int (*win_attr_free)( MPID_Win *, MPID_Attribute *attr_p );
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
