@@ -9,7 +9,7 @@
 #include <errno.h>
 #endif
 
-int close_connection(sock_set_t, sock_t);
+static int close_connection(sock_set_t, sock_t);
 
 static int close_connection(sock_set_t set, sock_t sock)
 {
