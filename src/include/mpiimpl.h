@@ -488,6 +488,7 @@ extern MPID_Group MPID_Group_direct[];
 typedef struct MPIDI_VCRT * MPID_VCRT;
 typedef struct MPIDI_VC   * MPID_VCR;
 
+typedef enum { MPID_INTRACOMM = 0, MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
 /* Communicators */
 typedef struct MPID_Comm { 
     int           handle;        /* value of MPI_Comm for this structure */
@@ -502,6 +503,7 @@ typedef struct MPID_Comm {
     MPID_Group   *local_group,   /* Groups in communicator. */
                  *remote_group;  /* The local and remote groups are the
                                     same for intra communicators */
+    MPID_Comm_kind_t comm_kind;  /* MPID_INTRACOMM or MPID_INTERCOMM */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     struct MPID_Collops_struct  *coll_fns; /* Pointer to a table of functions 
