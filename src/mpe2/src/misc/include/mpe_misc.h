@@ -5,6 +5,8 @@
 #ifndef _MPE_MISC
 #define _MPE_MISC
 
+
+#ifndef MPE_NOMPI 
 #include "mpi.h"
 
 void MPE_Seq_begin ( MPI_Comm, int );
@@ -33,5 +35,9 @@ void MPE_Signals_call_debugger ( void );
 int  MPE_Decomp1d ( int, int, int, int *, int * );
 
 void MPE_Comm_global_rank ( MPI_Comm, int, int * );
+
+#else
+void MPE_GetHostName       ( char *, int );
+#endif
 
 #endif
