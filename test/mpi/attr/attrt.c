@@ -9,7 +9,7 @@
 #include "mpi.h"
 #include "mpitest.h"
 
-#define DEBUG
+/* #define DEBUG */
 int test_communicators ( void );
 int copy_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int delete_fn ( MPI_Comm, int, void *, void * );
@@ -142,6 +142,7 @@ int test_communicators( void )
 
 	/* This may generate a compilation warning; it is, however, an
 	   easy way to cache a value instead of a pointer */
+	/* printf( "key1 = %x key3 = %x\n", key_1, key_3 ); */
 	MPI_Attr_put(lo_comm, key_1, (void *)world_rank );
 	/*         MPI_Attr_put(lo_comm, key_2, world_size ) */
 	MPI_Attr_put(lo_comm, key_3, (void *)0 );
@@ -245,7 +246,7 @@ int test_communicators( void )
     MPI_Group_range_incl(world_group, 1, ranges, &rev_group );
     MPI_Comm_create(world_comm, rev_group, &rev_comm );
     MPI_Comm_compare(world_comm, rev_comm, &result );
-    if (result != MPI_SIMILAR) {
+    if (result != MPI_SIMILAR && world_size != 1) {
 	errs++;
 	printf( "incorrect similar result: %d\n", result );
 	MPI_Abort(MPI_COMM_WORLD, 3012 );
@@ -253,7 +254,7 @@ int test_communicators( void )
     
     if (lo_comm != MPI_COMM_NULL) {
 	MPI_Comm_compare(world_comm, lo_comm, &result );
-	if (result != MPI_UNEQUAL) {
+	if (result != MPI_UNEQUAL && world_size != 1) {
 	    errs++;
 	    printf( "incorrect unequal result: %d\n", result );
 	    MPI_Abort(MPI_COMM_WORLD, 3013 );

@@ -69,7 +69,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
 						  "**keyval", 0 );
 	    } 
-	    else if (((comm_keyval&0x3c0000) >> 18) != MPID_COMM) {
+	    else if (((comm_keyval&0x3c00000) >> 22) != MPID_COMM) {
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_KEYVAL, 
 						  "**keyvalnotcomm", 0 );
 	    }
@@ -80,6 +80,12 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    else {
 		MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
 		MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
+
+		/* Sanity check */
+		if (comm_keyval != keyval_ptr->handle) {
+		    printf( "PANIC: keyval space corrupted! (%x != %x)\n",
+			    comm_keyval, keyval_ptr->handle );
+		}
 	    }
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
@@ -116,12 +122,12 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
-	    new_p->keyval = keyval_ptr;
-	    new_p->pre_sentinal = 0;
-	    new_p->value = attribute_val;
+	    new_p->keyval	 = keyval_ptr;
+	    new_p->pre_sentinal	 = 0;
+	    new_p->value	 = attribute_val;
 	    new_p->post_sentinal = 0;
-	    new_p->next = p->next;
-	    p->next = new_p;
+	    new_p->next		 = p->next;
+	    p->next		 = new_p;
 	    break;
 	}
 	old_p = &p->next;
@@ -135,12 +141,12 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 	/* Did not find in list.  Add at end */
-	new_p->keyval = keyval_ptr;
-	new_p->pre_sentinal = 0;
-	new_p->value = attribute_val;
+	new_p->keyval	     = keyval_ptr;
+	new_p->pre_sentinal  = 0;
+	new_p->value	     = attribute_val;
 	new_p->post_sentinal = 0;
-	new_p->next = 0;
-	*old_p = new_p;
+	new_p->next	     = 0;
+	*old_p		     = new_p;
     }
     MPID_Comm_thread_unlock( comm_ptr );
     /* ... end of body of routine ... */

@@ -390,7 +390,28 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Info_get_ptr(a,ptr)       MPID_Get_ptr(Info,a,ptr)
 #define MPID_Win_get_ptr(a,ptr)        MPID_Get_ptr(Win,a,ptr)
 #define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
-#define MPID_Keyval_get_ptr(a,ptr)     MPID_Get_ptr(Keyval,a,ptr)
+/* Keyvals have a special format. This is roughly MPID_Get_ptrb, but
+   the handle index is in a smaller bit field.  In addition, 
+   there is no storage for the builtin keyvals */
+#define MPID_Keyval_get_ptr(a,ptr)     \
+{                                                                       \
+   switch (HANDLE_GET_KIND(a)) {                                        \
+      case HANDLE_KIND_BUILTIN:                                         \
+          ptr=0;                                                        \
+          break;                                                        \
+      case HANDLE_KIND_DIRECT:                                          \
+          ptr=MPID_Keyval_direct+((a)&0x3fffff);                       \
+          break;                                                        \
+      case HANDLE_KIND_INDIRECT:                                        \
+          ptr=((MPID_Keyval*)                                           \
+               MPIU_Handle_get_ptr_indirect(a,&MPID_Keyval_mem));       \
+          break;                                                        \
+      case HANDLE_KIND_INVALID:                                         \
+      default:								\
+          ptr=0;							\
+          break;							\
+    }                                                                   \
+}
 
 
 /* Note: Probably there is some clever way to build all of these from a macro.

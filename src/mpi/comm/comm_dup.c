@@ -108,6 +108,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
        structure to prevent comm_dup from forcing the linking of the
        attribute functions */
     if (MPIR_Process.comm_attr_dup) {
+	newcomm_ptr->attributes = 0;
 	mpi_errno = MPIR_Process.comm_attr_dup( comm_ptr, 
 						&newcomm_ptr->attributes );
     }

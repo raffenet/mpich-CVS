@@ -85,8 +85,8 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
 
     /* The handle encodes the keyval kind.  Modify it to have the correct
        field */
-    keyval_ptr->handle           = (keyval_ptr->handle & ~(0x3c0000)) |
-	(MPID_COMM << 18);
+    keyval_ptr->handle           = (keyval_ptr->handle & ~(0x03c00000)) |
+	(MPID_COMM << 22);
     *comm_keyval		 = keyval_ptr->handle;
     keyval_ptr->ref_count        = 1;
     keyval_ptr->language         = MPID_LANG_C;

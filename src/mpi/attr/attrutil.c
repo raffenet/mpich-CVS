@@ -49,32 +49,92 @@ void MPID_Attr_free(MPID_Attribute *attr_ptr)
 /* Routine to duplicate an attribute list */
 int MPIR_Comm_attr_dup( MPID_Comm *comm_ptr, MPID_Attribute **new_attr )
 {
-    MPID_Attribute *p, *new_p, *last_new_p = 0, *new_head = 0;
-    int mpi_errno;
+    MPID_Attribute     *p, *new_p, **next_new_attr_ptr = new_attr;
+    MPID_Copy_function copyfn;
+    MPID_Lang_t        language;
+    void               *new_value;
+    int                flag;
+    int                mpi_errno = 0;
 
     p = comm_ptr->attributes;
     while (p) {
-	/* duplicate the attribute by creating new storage, copying the
-	   attribute value, and invoking the copy function */
-	new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	if (!new_p) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-	    return mpi_errno;
-	}
-	if (!new_head) { 
-	    new_head = new_p;
-	}
-	else {
-	    last_new_p->next = new_p;
-	}
-	last_new_p       = new_p;
-	new_p->keyval = p->keyval;
-	new_p->pre_sentinal = 0;
 	/* Call the copy function here */
-	new_p->value = p->value;
-	new_p->post_sentinal = 0;
-	new_p->next = p->next;
+	copyfn   = p->keyval->copyfn;
+	language = p->keyval->language;
+	/* Run the copy function if present */
+	flag = 0;
+	switch (language) {
+	case MPID_LANG_C: 
+#ifdef HAVE_CXX_BINDING
+	case MPID_LANG_CXX: 
+#endif
+	    if (copyfn.C_CommCopyFunction) {
+		mpi_errno = copyfn.C_CommCopyFunction( comm_ptr->handle, 
+						p->keyval->handle, 
+						p->keyval->extra_state, 
+						p->value, &new_value, &flag );
+	    }
+	    break;
+#ifdef HAVE_FORTRAN_BINDING
+	case MPID_LANG_FORTRAN: 
+	    {
+		MPI_Fint fcomm, fkeyval, fvalue, fextra, fflag, fnew, ierr;
+		if (copyfn.F77_CopyFunction) {
+		    fcomm   = (MPI_Fint) (comm_ptr->handle);
+		    fkeyval = (MPI_Fint) (p->keyval->handle);
+		    fvalue  = (MPI_Fint) (p->value);
+		    fextra  = (MPI_Fint) (p->keyval->extra_state );
+		    delfn.F77_DeleteFunction( &fcomm, &fkeyval, &fextra,
+					      &fvalue, &fnew, &flag, &ierr );
+		    if (ierr) mpi_errno = (int)ierr;
+		    flag = fflag;
+		}
+	    }
+	    break;
+	case MPID_LANG_FORTRAN90: 
+	    {
+		MPI_Fint fcomm, fkeyval, fflag, ierr;
+		MPI_Aint fvalue, fnew, fextra;
+		if (copyfn.F90_CopyFunction) {
+		    fcomm   = (MPI_Fint) (comm_ptr->handle);
+		    fkeyval = (MPI_Fint) (p->keyval->handle);
+		    fvalue  = (MPI_Aint) (p->value);
+		    fextra  = (MPI_Aint) (p->keyval->extra_state );
+		    delfn.F90_DeleteFunction( &fcomm, &fkeyval, &fextra,
+					      &fvalue, &fnew, &fflag, &ierr );
+		    if (ierr) mpi_errno = (int)ierr;
+		    flag = fflag;
+		}
+	    }
+	    break;
+#endif
+	}
 	
+	/* If flag was returned as true and there was no error, then
+	   insert this attribute into the new list (new_attr) */
+	if (flag && !mpi_errno) {
+	    /* duplicate the attribute by creating new storage, copying the
+	       attribute value, and invoking the copy function */
+	    new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	    if (!new_p) {
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+		return mpi_errno;
+	    }
+	    if (!*new_attr) { 
+		*new_attr = new_p;
+	    }
+	    new_p->keyval        = p->keyval;
+	    *(next_new_attr_ptr) = new_p;
+	    
+	    new_p->pre_sentinal  = 0;
+	    new_p->value 	 = new_value;
+	    new_p->post_sentinal = 0;
+	    new_p->next	         = 0;
+	    next_new_attr_ptr    = &(new_p->next);
+	}
+	else if (mpi_errno) 
+	    return mpi_errno;
+
 	p = p->next;
     }
     return MPI_SUCCESS;

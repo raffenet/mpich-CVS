@@ -144,6 +144,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     }
 
+    newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
     /* Since the group has been provided, let the new communicator know
        about the group */
     newcomm_ptr->local_group  = group_ptr;
