@@ -193,7 +193,11 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Stat
 	    }
 	}
 
-	MPID_Progress_wait();
+	mpi_errno = MPID_Progress_wait();
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    goto fn_exit;
+	}
     }
   break_l1:
 

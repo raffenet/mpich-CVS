@@ -133,7 +133,25 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	else
 	{
 	    /* If a request was returned, then we need to block until the request is complete */
-	    MPIR_Wait(request_ptr);
+	    while((*(request_ptr)->cc_ptr) != 0)
+	    {
+		MPID_Progress_start();
+		
+		if ((*(request_ptr)->cc_ptr) != 0)
+		{
+		    mpi_errno = MPID_Progress_wait();
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			goto fn_exit;
+		    }
+		}
+		else
+		{
+		    MPID_Progress_end();
+		    break;
+		}
+	    }
+
 	    mpi_errno = request_ptr->status.MPI_ERROR;
 	    MPIR_Request_extract_status(request_ptr, status);
 	    MPID_Request_release(request_ptr);
@@ -146,6 +164,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	}
     }
 
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

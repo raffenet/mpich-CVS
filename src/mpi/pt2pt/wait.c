@@ -113,7 +113,25 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    MPIR_Wait(request_ptr);
+    while((*(request_ptr)->cc_ptr) != 0)
+    {
+	MPID_Progress_start();
+	
+	if ((*(request_ptr)->cc_ptr) != 0)
+	{
+	    mpi_errno = MPID_Progress_wait();
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		goto fn_exit;
+	    }
+	}
+	else
+	{
+	    MPID_Progress_end();
+	    break;
+	}
+    }
+
     mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
 
   fn_exit:

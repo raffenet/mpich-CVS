@@ -172,7 +172,11 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     
     n_active = 0;
     
-    MPID_Progress_test();
+    mpi_errno = MPID_Progress_test();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	goto fn_exit;
+    }
 
     for (i = 0; i < incount; i++)
     {

@@ -132,7 +132,11 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     }
 #   endif    
 
-    MPID_Progress_test();
+    mpi_errno = MPID_Progress_test();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	goto fn_exit;
+    }
     
     if (*request_ptr->cc_ptr == 0)
     {

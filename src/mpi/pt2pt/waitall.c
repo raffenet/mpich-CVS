@@ -225,7 +225,11 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_
 	    break;
 	}
 
-	MPID_Progress_wait();
+	mpi_errno = MPID_Progress_wait();
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    goto fn_exit;
+	}
     }
 
   fn_exit:

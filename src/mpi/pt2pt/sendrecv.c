@@ -153,7 +153,11 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, int dest, 
 	
 	if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	{
-	    MPID_Progress_wait();
+	    mpi_errno = MPID_Progress_wait();
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		goto fn_exit;
+	    }
 	}
 	else
 	{

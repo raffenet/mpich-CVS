@@ -102,13 +102,13 @@ int MPI_Cancel(MPI_Request *request)
     {
 	case MPID_REQUEST_SEND:
 	{
-	    MPID_Cancel_send(request_ptr);
+	    mpi_errno = MPID_Cancel_send(request_ptr);
 	    break;
 	}
 
 	case MPID_REQUEST_RECV:
 	{
-	    MPID_Cancel_recv(request_ptr);
+	    mpi_errno = MPID_Cancel_recv(request_ptr);
 	    break;
 	}
 
@@ -116,11 +116,12 @@ int MPI_Cancel(MPI_Request *request)
 	{
 	    if (request_ptr->partner_request != NULL)
 	    {
-		MPID_Cancel_send(request_ptr->partner_request);
+		mpi_errno = MPID_Cancel_send(request_ptr->partner_request);
 	    }
 	    else
 	    {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_REQUEST, "**requestpersistactive", 0);
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_REQUEST,
+						  "**requestpersistactive", 0);
 	    }
 	    
 	    break;
@@ -130,11 +131,12 @@ int MPI_Cancel(MPI_Request *request)
 	{
 	    if (request_ptr->partner_request != NULL)
 	    {
-		MPID_Cancel_recv(request_ptr->partner_request);
+		mpi_errno = MPID_Cancel_recv(request_ptr->partner_request);
 	    }
 	    else
 	    {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_REQUEST, "**requestpersistactive", 0);
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_REQUEST,
+						  "**requestpersistactive", 0);
 	    }
 
 	    break;

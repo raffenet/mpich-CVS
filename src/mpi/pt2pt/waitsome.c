@@ -178,7 +178,11 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
     
     /* Bill Gropp says MPI_Waitsome() is expected to try to make progress even if some requests have already completed;
        therefore, we kick the pipes once and then fall into a loop checking for completion and waiting for progress. */
-    MPID_Progress_test();
+    mpi_errno = MPID_Progress_test();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	goto fn_exit;
+    }
 
     n_active = 0;
     for(;;)
@@ -246,7 +250,11 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[], int *outcount, in
 	    break;
 	}
 
-	MPID_Progress_wait();
+	mpi_errno = MPID_Progress_wait();
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    goto fn_exit;
+	}
     }
 
   fn_exit:

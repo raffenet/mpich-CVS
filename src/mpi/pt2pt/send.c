@@ -131,7 +131,24 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	{
 	    /* If a request was returned, then we need to block until the
 	       request is complete */
-	    MPIR_Wait(request_ptr);
+	    while((*(request_ptr)->cc_ptr) != 0)
+	    {
+		MPID_Progress_start();
+		
+		if ((*(request_ptr)->cc_ptr) != 0)
+		{
+		    mpi_errno = MPID_Progress_wait();
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			goto fn_exit;
+		    }
+		}
+		else
+		{
+		    MPID_Progress_end();
+		    break;
+		}
+	    }
 	
 	    mpi_errno = request_ptr->status.MPI_ERROR;
 	    MPID_Request_release(request_ptr);
@@ -145,7 +162,8 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     }
     
     /* ... end of body of routine ... */
-    
+
+  fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_SEND);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

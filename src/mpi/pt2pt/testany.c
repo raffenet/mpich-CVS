@@ -165,7 +165,11 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
     *flag = FALSE;
     *index = MPI_UNDEFINED;
     
-    MPID_Progress_test();
+    mpi_errno = MPID_Progress_test();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	goto fn_exit;
+    }
 	
     for (i = 0; i < count; i++)
     {

@@ -180,7 +180,11 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest, 
 	
 	    if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
 	    {
-		MPID_Progress_wait();
+		mpi_errno = MPID_Progress_wait();
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    goto blk_exit;
+		}
 	    }
 	    else
 	    {
