@@ -36,14 +36,6 @@ void ADIOI_PVFS_WriteContig(ADIO_File fd, void *buf, int count,
                       MPI_Datatype datatype, int file_ptr_type,
                       ADIO_Offset offset, ADIO_Status *status, int
 		      *error_code);   
-void ADIOI_PVFS_IwriteContig(ADIO_File fd, void *buf, int count, 
-                      MPI_Datatype datatype, int file_ptr_type,
-                      ADIO_Offset offset, ADIO_Request *request, int
-		      *error_code);   
-void ADIOI_PVFS_IreadContig(ADIO_File fd, void *buf, int count, 
-                      MPI_Datatype datatype, int file_ptr_type,
-                      ADIO_Offset offset, ADIO_Request *request, int
-		      *error_code);   
 int ADIOI_PVFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int
 		       *error_code);
 int ADIOI_PVFS_WriteDone(ADIO_Request *request, ADIO_Status *status, int

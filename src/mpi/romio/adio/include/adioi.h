@@ -313,10 +313,18 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
 			  MPI_Datatype datatype, int file_ptr_type,
 			  ADIO_Offset offset, ADIO_Status *status,
 			  int *error_code);
+void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count, 
+			   MPI_Datatype datatype, int file_ptr_type,
+			   ADIO_Offset offset, ADIO_Request *request,
+			   int *error_code);
 void ADIOI_GEN_WriteContig(ADIO_File fd, void *buf, int count, 
 			   MPI_Datatype datatype, int file_ptr_type,
 			   ADIO_Offset offset, ADIO_Status *status,
 			   int *error_code);
+void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count, 
+			    MPI_Datatype datatype, int file_ptr_type,
+			    ADIO_Offset offset, ADIO_Request *request,
+			    int *error_code);
 void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
 			   MPI_Datatype datatype, int file_ptr_type,
 			   ADIO_Offset offset, ADIO_Status *status, int

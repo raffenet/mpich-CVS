@@ -23,8 +23,8 @@ struct ADIOI_Fns_struct ADIO_PIOFS_operations = {
     ADIOI_GEN_ReadStrided, /* ReadStrided */
     ADIOI_PIOFS_WriteStrided, /* WriteStrided */
     ADIOI_GEN_Close, /* Close */
-    ADIOI_PIOFS_IreadContig, /* IreadContig */
-    ADIOI_PIOFS_IwriteContig, /* IwriteContig */
+    ADIOI_GEN_IreadContig, /* IreadContig */
+    ADIOI_GEN_IwriteContig, /* IwriteContig */
     ADIOI_PIOFS_ReadDone, /* ReadDone */
     ADIOI_PIOFS_WriteDone, /* WriteDone */
     ADIOI_PIOFS_ReadComplete, /* ReadComplete */

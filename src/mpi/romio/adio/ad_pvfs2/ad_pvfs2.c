@@ -23,8 +23,8 @@ struct ADIOI_Fns_struct ADIO_PVFS2_operations = {
     ADIOI_PVFS2_ReadStrided, /* ReadStrided */
     ADIOI_PVFS2_WriteStrided, /* WriteStrided */
     ADIOI_PVFS2_Close, /* Close */
-    ADIOI_PVFS2_IreadContig, /* IreadContig */
-    ADIOI_PVFS2_IwriteContig, /* IwriteContig */
+    ADIOI_GEN_IreadContig, /* IreadContig */
+    ADIOI_GEN_IwriteContig, /* IwriteContig */
     ADIOI_PVFS2_ReadDone, /* ReadDone */
     ADIOI_PVFS2_WriteDone, /* WriteDone */
     ADIOI_PVFS2_ReadComplete, /* ReadComplete */

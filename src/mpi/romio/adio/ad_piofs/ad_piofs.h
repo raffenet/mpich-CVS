@@ -28,14 +28,6 @@ void ADIOI_PIOFS_WriteContig(ADIO_File fd, void *buf, int count,
                       MPI_Datatype datatype, int file_ptr_type,
                       ADIO_Offset offset, ADIO_Status *status, int
 		      *error_code);   
-void ADIOI_PIOFS_IwriteContig(ADIO_File fd, void *buf, int count, 
-                      MPI_Datatype datatype, int file_ptr_type,
-                      ADIO_Offset offset, ADIO_Request *request, int
-		      *error_code);   
-void ADIOI_PIOFS_IreadContig(ADIO_File fd, void *buf, int count, 
-                      MPI_Datatype datatype, int file_ptr_type,
-                      ADIO_Offset offset, ADIO_Request *request, int
-		      *error_code);   
 int ADIOI_PIOFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int
 		       *error_code);
 int ADIOI_PIOFS_WriteDone(ADIO_Request *request, ADIO_Status *status, int
