@@ -28,10 +28,20 @@
  * error code that points at this message is in fact for this particular 
  * message.  This is used to handle the unlikely but possible situation where 
  * so many error messages are generated that the ring is overlapped.
+ *
+ * The message arrays are preallocated to ensure that there is space for these
+ * messages when an error occurs.  One variation would be to allow these
+ * to be dynamically allocated, but it is probably better to either preallocate
+ * these or turn off all error message generation (which will eliminate these
+ * arrays).
+ *
+ * One possible alternative is to use the message ring *only* for instance
+ * messages and use the predefined messages in-place for the generic
+ * messages.  This approach is used to provide uniform handling of all 
+ * error messages.
  */
 #if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
 #define MAX_ERROR_RING 32
-#define MAX_ERROR_BIGRING 8192
 
 static char error_ring[MAX_ERROR_RING][MPI_MAX_ERROR_STRING+1];
 static int error_ring_seq[MAX_ERROR_RING];
@@ -45,8 +55,10 @@ void MPIR_Err_preinit( void )
     fprintf( stderr, "Error encountered before initializing MPICH\n" );
 }
 
-
-/* void for now until error handlers are defined */
+/*
+ * This is the routine that is invoked by most MPI routines to 
+ * report an error 
+ */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
 			  int errcode )
 {
@@ -106,13 +118,16 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     return errcode;
 }
 
+/* 
+ * MPI routines that detect errors on window objects use this to report errors
+ */
 int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], 
 			  int errcode )
 {
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
 
-    /* Now, invoke the error handler for the communicator */
+    /* Now, invoke the error handler for the window */
     if (win_ptr && win_ptr->errhandler) {
 	switch (win_ptr->errhandler->language) {
 	case MPID_LANG_C:
@@ -132,20 +147,23 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
 	}
     }
     else {
-	/* No communicator, so errors are fatal */
+	/* No window, so errors are fatal */
 	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;
 }
 
+/* 
+ * MPI routines that detect errors on files use this to report errors 
+ */
 int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[], 
 			  int errcode )
 {
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
 
-    /* Now, invoke the error handler for the communicator */
+    /* Now, invoke the error handler for the file */
     if (file_ptr && file_ptr->errhandler) {
 	switch (file_ptr->errhandler->language) {
 	case MPID_LANG_C:
@@ -165,7 +183,7 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 	}
     }
     else {
-	/* No communicator, so errors are fatal */
+	/* No file, so errors are fatal */
 	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
 	exit(1); /* Change this to MPID_Abort */
     }
@@ -412,23 +430,3 @@ void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr)
 {
     MPIU_Handle_obj_free(&MPID_Errhandler_mem, errhan_ptr);
 }
-
-#ifdef FOO
-/*
- * Should we have a simple set code, call error handler for the nomem case?
- * If we do this, we need to modify the coding check to accept this as
- * an alternative to the MPID_MPI_FUNC_EXIT call.
- *
- * Unfortunately, we can't do this without the timestamp from the state call.
- * Do we want to pass that in as well?
- */
-int MPIR_Err_comm_nomem( MPID_Comm *comm_ptr, const char fcname[], 
-			 int stateid )
-{
-    int mpi_errno;
-
-    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-    MPID_MPI_FUNC_EXIT(stateid);
-    return MPIR_Err_return_comm( 0, fcname, mpi_errno );
-}
-#endif

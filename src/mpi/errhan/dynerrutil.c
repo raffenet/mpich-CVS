@@ -33,7 +33,7 @@
    ERROR_MAX_NCODE) codes, and distribute these among the error codes.
 */
 
-static int  initialized = 0;
+static int  not_initialized = 1;  /* This allows us to use atomic decr */
 static char *(user_class_msgs[ERROR_MAX_NCLASS]) = { 0 };
 static char *(user_code_msgs[ERROR_MAX_NCODE]) = { 0 };
 static char *(user_instance_msgs[ERROR_MAX_NCODE]) = { 0 };
@@ -68,8 +68,9 @@ static void MPIR_Init_err_dyncodes( void )
 #if MPID_MAX_THREAD_LEVEL > MPI_THREAD_FUNNELED
     { 
 	int init_value;
-	MPIR_Fetch_and_increment( &initialized, &init_value );
-	if (init_value != 0) {
+
+	MPID_Atomic_decr_flag( &not_initialized, &inuse );
+	if (inuse != 0) {
 	    /* Some other thread is initializing the data.  Wait
 	       until that thread completes */
 	    while (!ready) {
@@ -78,7 +79,7 @@ static void MPIR_Init_err_dyncodes( void )
 	}
     }
 #else
-    initialized = 1;
+    not_initialized = 0;
 #endif
     
     for (i=0; i<ERROR_MAX_NCLASS; i++) {
@@ -94,6 +95,8 @@ static void MPIR_Init_err_dyncodes( void )
 
 #if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
     /* Release the other threads */
+    /* FIXME - Add MPID_Write_barrier for thread-safe operation,
+       or consider using a flag incr that contains a write barrier */
     ready = 1;
 #endif
 }
@@ -115,9 +118,14 @@ const char *MPIR_Err_get_dynerr_string( int code );
 @*/
 int MPIR_Err_set_msg( int code, const char *msg_string )
 {
-    if (!initialized)
+    if (not_initialized)
 	MPIR_Init_err_dyncodes();
 
+    /* FIXME 
+       get index from code.  
+       Get length of string
+       save in usercodemsgs 
+    */
     return MPI_SUCCESS;
 }
 
@@ -150,7 +158,7 @@ int MPIR_Err_add_class( const char *msg_string,
 {
     int new_class;
 
-    if (!initialized)
+    if (not_initialized)
 	MPIR_Init_err_dyncodes();
 	
     /* Get new class */
@@ -195,7 +203,7 @@ int MPIR_Err_add_code( int class, const char *msg_string,
 {
     int new_code;
 
-    if (!initialized)
+    if (not_initialized)
 	MPIR_Init_err_dyncodes();
 
     /* Get the new code */
@@ -221,7 +229,7 @@ int MPIR_Err_add_code( int class, const char *msg_string,
   This routine is not needed to implement any MPI routine (there are no
   routines for deleting error codes or classes in MPI-2), but it is 
   included both for completeness and to remind the implementation to 
-  carefully manage the memory used for dynamically create error codes and
+  carefully manage the memory used for dynamically created error codes and
   classes.
 
   Module:
@@ -229,8 +237,9 @@ int MPIR_Err_add_code( int class, const char *msg_string,
   @*/
 void MPIR_Err_delete_code( int code )
 {
-    if (!initialized)
+    if (not_initialized)
 	MPIR_Init_err_dyncodes();
+    /* FIXME - mark as free */
 }
 
 /*+
@@ -244,9 +253,17 @@ void MPIR_Err_delete_code( int code )
   @*/
 void MPIR_Err_delete_class( int class )
 {
-    if (!initialized)
+    if (not_initialized)
 	MPIR_Init_err_dyncodes();
+    /* FIXME - mark as free */
 }
+
+/* FIXME: For the delete code/class, at least delete if at the top of the
+   list; slightly better is to keep minvalue of freed and count; whenever
+   the minvalue + number = current top; reset.  This allows modular 
+   alloc/dealloc to recover codes and classes independent of the order in
+   which they are freed.
+*/
 
 /*+
   MPIR_Err_get_dynerr_string - Get the message string that corresponds to a
