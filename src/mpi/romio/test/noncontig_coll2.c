@@ -302,7 +302,7 @@ void simple_shuffle_str(int mynod, int len, ADIO_cb_name_array array, char *dest
 
 int main(int argc, char **argv)
 {
-    int i, mynod, nprocs, len, errs=0, verbose=0;
+    int i, mynod, nprocs, len, errs=0, sum_errs=0, verbose=0;
     char *filename;
     char * cb_config_string;
     int cb_config_len;
@@ -381,9 +381,11 @@ int main(int argc, char **argv)
     /* second half, first half */
     simple_shuffle_str(mynod, cb_config_len, array, cb_config_string);
     errs += test_file(filename, mynod, nprocs, cb_config_string, "collective w/ hinting: permutation2", verbose);
+
+    MPI_Allreduce(&errs, &sum_errs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 	 
     if (!mynod) {
-	    if (errs) fprintf(stderr, "Found %d error cases\n", errs);
+	    if (sum_errs) fprintf(stderr, "Found %d error cases\n", sum_errs);
 	    else printf("No errors.\n");
     }
     free(filename);
