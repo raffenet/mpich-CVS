@@ -19,6 +19,19 @@ AC_ARG_WITH(device,
 [--with-device=name - Specify the communication device for MPICH.],,
 with_device=default)
 
+dnl This test is complicated by the fact that top_srcdir is not set until
+dnl the very end of configure.  Instead, we get it ourselves
+if test -z "$top_srcdir" ; then
+    use_top_srcdir=$srcdir   
+else
+    use_top_srcdir=$top_srcdir
+fi
+if test -z "$master_top_srcdir" ; then 
+    master_top_srcdir=$use_top_srcdir
+fi
+AC_SUBST(master_top_srcdir)
+export master_top_srcdir
+dnl
 dnl Extract the device and channel name from the --with-device argument
 if test "$with_device" = "default" ; then
 DEVICE=ch3
