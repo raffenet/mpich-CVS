@@ -273,7 +273,7 @@ const char *MTestGetDatatypeName( MTestDatatype *dtype )
     static char name[MPI_MAX_OBJECT_NAME];
     int rlen;
 
-    dtype->datatype.Get_name( name, &rlen );
+    dtype->datatype.Get_name( name, rlen );
     return (const char *)name;
 }
 /* ----------------------------------------------------------------------- */

@@ -242,7 +242,11 @@ AC_OUTPUT(maint/testmerge \
 	  f77/io/iooffset.h \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
+	  cxx/comm/Makefile \
 	  cxx/coll/Makefile \
 	  cxx/io/Makefile \
+	  cxx/init/Makefile \
+	  cxx/rma/Makefile \
+	  cxx/spawn/Makefile \
 	  testlist \
 	  )
