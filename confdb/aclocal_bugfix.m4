@@ -98,6 +98,7 @@ else
     cat conftest.c >&AC_FD_CC
 fi
 rm -f conftest*
+])dnl
 if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
   AC_MSG_RESULT(yes)
   ifelse([$2], , :, [$2])
@@ -106,6 +107,5 @@ else
 ifelse([$3], , , [$3
 ])dnl
 fi
-])
 ])
 
