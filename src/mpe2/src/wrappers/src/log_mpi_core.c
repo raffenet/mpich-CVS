@@ -1677,7 +1677,7 @@ MPI_Errhandler errhandler;
   return returnVal;
 }
 
-int  MPI_Finalize(  )
+int  MPI_Finalize( )
 {
     MPE_State  *state;
     int         cnt[MPE_MAX_KNOWN_STATES], totcnt[MPE_MAX_KNOWN_STATES];
@@ -1709,11 +1709,18 @@ int  MPI_Finalize(  )
 
     MPE_Finish_log( logFileName_0 );
     if (procid_0 == 0)
-        fprintf( stderr, "Finished writing logfile.\n");
+        fprintf( stderr, "Finished writing logfile %s.\n", logFileName_0 );
 
      /* Recover all of the allocated requests */
      rq_end( requests_avail_0 );
 
+     /*
+        To guard again erroneous implementation of PMPI_Finalize which
+        make MPI_ calls, e.g. BG/L, from calling MPE_Log_events
+        i.e. writing to the CLOG's stream when it is already closed in
+        MPE_Finish_log(), turn the trace off explicitly.
+     */
+     trace_on = 0;
      returnVal = PMPI_Finalize(  );
 
      return returnVal;
