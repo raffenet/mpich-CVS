@@ -76,6 +76,8 @@ int main( int argc, char *argv[] )
 
     /* Note that the MTest_Finalize get errs only over COMM_WORLD */
     MTest_Finalize( errs );
+
+    sleep(5);
     MPI_Finalize();
     return 0;
 }
