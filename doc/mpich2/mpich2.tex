@@ -1592,6 +1592,7 @@ should surround the error handling code:
 % eliminate the #ifdef and endif statements.  (Please see comments early about
 % the style of such blocks)
 % [WDG] We did something like this in MPICH and I really didn't like it.
+% Some compilers would also complain, which in turn generated bug reports.
 
 There is a configure option,
 \cfgoption{--disable-error-checking},  
@@ -1611,7 +1612,7 @@ routine is responsible for setting the value of
 error checking.
 
 
-\subsubsection{Errors to test for}
+\subsubsection{Errors requiring tests}
 Most values should be tested to ensure that they are in-range.  For example,
 tags must be nonnegative for sending (and nonnegative or
 \mpiconst{MPI_ANY_TAG} for receiving). 
@@ -1770,6 +1771,28 @@ void MPIR_Nest_decr(void)
 int MPIR_Nest_value(void)
 \end{verbatim}
 See Section~\ref{sec:perthread} for details on the thread-specific storage.
+
+\subsubsection{Checking Error Codes}
+\label{sec:err-handling-chkmacros}
+Proposal:
+
+To simplify the code used to handle errors returned by routines from within
+the MPICH2 implementation, we use several macros to check an error code and
+set 
+\begin{verbatim}
+    MPID_CHKCODE(code,genericname)
+    MPID_CHKCODE_FATAL(code,genericnme)
+    MPID_CHKCODE1(code,genericname,specificname,arg)
+\end{verbatim}
+The macros \code{MPID_CHKCODE} and \code{MPID_CHKCODE1}--\code{4}
+automatically jump to the label \code{fn_fail}.  
+The macro \code{MPID_CHKCODE_FATAL} calls \code{MPID_Abort} on
+\code{MPI_COMM_SELF}. 
+If a different action is desired, the following macros can be used:
+\begin{verbatim}
+    MPID_CHKCODE_STMT(code,genericname,action)
+    MPID_CHKCODE1_STMT(code,genericname,specificname,arg,action)
+\end{verbatim}
 
 \subsection{Per Thread and Per Process Data}
 \label{sec:perthread}
