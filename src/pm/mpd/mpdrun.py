@@ -21,13 +21,13 @@ class mpdrunInterrupted(Exception):
 
 global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
        try0Locally, lineLabels, jobAlias, hostsFile
-global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
+global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho, myExitStatus
 
 
 def mpdrun():
     global nprocs, pgm, pgmArgs, mship, rship, argsFilename, delArgsFile, \
            try0Locally, lineLabels, jobAlias, hostsFile
-    global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho
+    global manSocket, timeout, sigExitDueToTimeout, stdinGoesToWho, myExitStatus
 
     mpd_set_my_id('mpdrun_' + `getpid()`)
     pgm = ''
@@ -330,6 +330,8 @@ def mpdrun():
 			else:
 			    exit_status = WEXITSTATUS(status)
 		            # print 'exit status of rank %d: return code %d ' % (msg['rank'],exit_status)
+			    if exit_status > myExitStatus:
+			        myExitStatus = exit_status
 		    else:
 		        print 'unrecognized msg from manager :%s:' % msg
                 elif readySocket == manCliStdoutSocket:
@@ -530,9 +532,11 @@ def usage():
 
 if __name__ == '__main__':
 
-    global manSocket
+    global manSocket, mmyExitStatus
 
     manSocket = 0    # set when we get conn'd to a manager
+    myExitStatus = 0
+
     signal(SIGINT,sig_handler)
     signal(SIGTSTP,sig_handler)
     signal(SIGCONT,sig_handler)
@@ -543,3 +547,4 @@ if __name__ == '__main__':
 	print 'mpdrun failed: %s' % (errmsg)
     except SystemExit, errmsg:
         pass
+    exit(myExitStatus)
