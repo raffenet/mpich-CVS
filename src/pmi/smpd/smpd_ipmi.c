@@ -1499,6 +1499,7 @@ int iPMI_KVS_Get(const char kvsname[], const char key[], char value[], int lengt
     }
     if (strcmp(str, DBS_SUCCESS_STR))
     {
+	/* FIXME: If we are going to use pmi for the publish/lookup interface then gets should be allowed to fail without printing errors */
 	pmi_err_printf("PMI_KVS_Get failed: '%s'\n", str);
 	return PMI_FAIL;
     }
