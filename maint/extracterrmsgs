@@ -275,11 +275,10 @@ sub CreateErrMsgMapping {
     print $OUTFD "static const int generic_msgs_len = $num;\n";
     my $i = 0;
     print $OUTFD "static msgpair generic_err_msgs[] = {\n";
-    for (my $i = 0; $i < $num - 1; $i ++) {
-	print $OUTFD "{ short$i, long$i },\n";
-    }
-    if ($num > 0) {
-	print $OUTFD "{ short$num, long$num }\n";
+    for (my $i = 0; $i < $num; $i ++) {
+	print $OUTFD "{ short$i, long$i }";
+	print $OUTFD "," if ($i < $num - 1);
+	print $OUTFD "\n";
     }
     print $OUTFD "};\n";
     print $OUTFD "#endif\n";
@@ -317,11 +316,13 @@ sub CreateErrMsgMapping {
     print $OUTFD "static msgpair specific_err_msgs[] = {\n";
     for ($i = 0; $i < $num ; $i ++) {
 	if ($has_spec[$i]) {
-	    print $OUTFD "{ short_spc$i, long_spc$i },\n";
+	    print $OUTFD "{ short_spc$i, long_spc$i }";
 	}
 	else {
-	    print $OUTFD "{ 0, 0 },\n";
+	    print $OUTFD "{ 0, 0 }";
 	}
+	print $OUTFD "," if ($i < $num - 1);
+	print $OUTFD "\n";
     }
     print $OUTFD "};\n";
     print $OUTFD "#endif\n";
@@ -331,7 +332,8 @@ sub CreateErrMsgMapping {
     print $OUTFD "#define MPIR_MAX_ERROR_CLASS_INDEX $maxval\n";
     print $OUTFD "static int class_to_index[] = {\n";
     for ($i=0; $i<=$#mpimsg; $i++) {
-	print $OUTFD "$short_to_num{$mpimsg[$i]},";
+	print $OUTFD "$short_to_num{$mpimsg[$i]}";
+	print $OUTFD "," if ($i < $#mpimsg);
 	print $OUTFD "\n" if !(($i + 1) % 10);
     }
     print $OUTFD "};\n";
