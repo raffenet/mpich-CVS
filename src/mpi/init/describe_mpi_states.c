@@ -11,6 +11,8 @@
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 
+#if HAVE_TIMING
+
 #if (USE_LOGGING == MPID_LOGGING_DLOG)
 
 int MPIR_Describe_mpi_timer_states()
@@ -337,4 +339,5 @@ int MPIR_Describe_mpi_timer_states()
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */
 
+#endif /* HAVE_TIMING */
 #endif /* MPICH_MPI_FROM_PMPI */
