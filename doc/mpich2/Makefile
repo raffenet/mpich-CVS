@@ -1,7 +1,7 @@
 ALL: mpich2.ps
 SHELL = /bin/sh
 
-.SUFFIXES: .ps .dvi .tex
+.SUFFIXES: .ps .dvi .tex .fig .eps
 
 .dvi.ps:
 	dvips $*
@@ -12,7 +12,7 @@ SHELL = /bin/sh
 #	-latex $*
 
 # We touch mpich2.ind to work around a LaTeX bug in accessing the index file
-mpich2.ps: mpich2.tex Makefile fixupindex
+mpich2.ps: mpich2.tex Makefile fixupindex scanpattern.eps
 	touch mpich2.ind
 	latex mpich2
 	-bibtex mpich2
@@ -43,3 +43,5 @@ install-web: mpich2.ps
 clean:
 	rm -f *.log *.aux *.dvi *.bbl mpich2.ps *~ *.toc
 
+.fig.eps:
+	fig2dev -L ps -l landscape $*.fig > $*.eps
