@@ -20,7 +20,6 @@ DOCTEXTSTYLE = @DOCTEXTSTYLE@
 
 .SUFFIXES: .ps .pdf .dvi .tex .eps .fig .idx .ind
 
-adi3.dvi: adi3.tex
 paper.dvi: paper.tex
 
 .dvi.ps:
@@ -171,7 +170,7 @@ install-web-old: adi3man.ps adi3man.pdf
 	rm -f .foo
 
 clean:
-	rm -f *.log *.aux *.dvi adi3.ps *.bbl paper.ps findmod adi3man.ps
+	rm -f *.log *.aux *.dvi *.bbl paper.ps findmod adi3man.ps
 	rm -f *.ilg adi3man.ind adi3new.ind *.blg *.toc *.out 
 	rm -f adi3newpdf.idx adi3newpdf.ind adi3new.idx 
 distclean: clean

@@ -1,7 +1,0 @@
-configure
-config.*
-autom4te.cache
-ldapnameservconf.h.in
-ldapnameservconf.h
-Makefile
-Makefile.in
