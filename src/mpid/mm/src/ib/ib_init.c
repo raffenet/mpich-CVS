@@ -194,6 +194,7 @@ int ib_setup_connections()
 	    }
     }
 
+    MPIU_dbg_printf("calling PMI_Barrier\n");
     PMI_Barrier();
 
     free(key);
@@ -269,6 +270,7 @@ int ib_init()
     PMI_Barrier();
 
     ib_setup_connections();
+    MPIU_dbg_printf("ib_setup_connections returned\n");
 
     MPIDI_FUNC_EXIT(MPID_STATE_IB_INIT);
     return MPI_SUCCESS;
