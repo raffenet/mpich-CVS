@@ -30,7 +30,9 @@
 
 static inline int DLOOP_Stackelm_blocksize(struct DLOOP_Dataloop_stackelm *elmp);
 static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp);
-
+static inline void DLOOP_Stackelm_load(struct DLOOP_Dataloop_stackelm *elmp,
+				       struct DLOOP_Dataloop *dlp,
+				       int branch_flag);
 /* Segment_init
  *
  * buf    - datatype buffer location
@@ -48,9 +50,8 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 struct DLOOP_Segment *segp)
 {
     int i, elmsize = 0, depth = 0;
-#ifdef DLOOP_SUPPORTS_STRUCT
     int branch_detected = 0;
-#endif
+
     struct DLOOP_Dataloop_stackelm *elmp;
     struct DLOOP_Dataloop *dlp = 0, *sblp = &segp->builtin_loop;
     
@@ -156,35 +157,13 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     segp->valid_sp = 0;
 
     /* initialize the first stackelm in its entirety */
-    /* note: counts and blocks start at maximum value and are decremented to 0 */
     elmp = &(segp->stackelm[0]);
-    elmp->loop_p = dlp;
+    DLOOP_Stackelm_load(elmp, dlp, 0);
+    branch_detected = elmp->may_require_reloading;
 
-    /* note: for consistency we use blksize to hold the size of a contig, not count */
-    if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG) {
-	elmp->orig_count = 1;
-    }
-    else {
-	elmp->orig_count = dlp->loop_params.count;
-    }
-
-#ifdef DLOOP_SUPPORTS_STRUCT
-    if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT) {
-	branch_detected = 1;
-	elmp->may_require_reloading = 1;
-    }
-    else {
-	elmp->may_require_reloading = 0;
-    }
-#endif
-    
-    elmp->curcount    = elmp->orig_count;
+    /* Fill in parameters not set by DLOOP_Stackelm_load */
     elmp->orig_offset = 0;
-
-    /* DLOOP_Stackelm_blocksize assumes correct orig_count, curcount, loop_p */
-    elmp->orig_block  = DLOOP_Stackelm_blocksize(elmp);
     elmp->curblock    = elmp->orig_block;
-
     /* DLOOP_Stackelm_offset assumes correct orig_count, curcount, loop_p */
     elmp->curoffset   = /* elmp->orig_offset + */ DLOOP_Stackelm_offset(elmp);
     
@@ -195,28 +174,9 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	 * the rest are filled in at processing time.
 	 */
 	elmp = &(segp->stackelm[i]);
-	elmp->loop_p     = dlp; /* DO NOT MOVE THIS BELOW THE Stackelm CALLS! */
-	if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG) {
-	    elmp->orig_count = 1;
-	}
-	else {
-	    elmp->orig_count = dlp->loop_params.count;
-	}
 
-#ifdef DLOOP_SUPPORTS_STRUCT
-	if (branch_detected ||
-	    (dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT)
-	{
-	    branch_detected = 1;
-	    elmp->may_require_reloading = 1;
-	}
-	else {
-	    elmp->may_require_reloading = 0;
-	}
-#endif
-
-	elmp->curcount   = elmp->orig_count; /* required by DLOOP_Stackelm_blocksize */
-	elmp->orig_block = DLOOP_Stackelm_blocksize(elmp);
+	DLOOP_Stackelm_load(elmp, dlp, branch_detected);
+	branch_detected = elmp->may_require_reloading;
 
 	if (i < depth-1) {
 	    assert (!(dlp->kind & DLOOP_FINAL_MASK));
@@ -835,6 +795,36 @@ static inline int DLOOP_Stackelm_offset(struct DLOOP_Dataloop_stackelm *elmp)
 	    break;
     }
     return -1;
+}
+
+/* DLOOP_Stackelm_load
+ * loop_p, orig_count, orig_block, and curcount are all filled by us now.
+ * the rest are filled in at processing time.
+ */
+static inline void DLOOP_Stackelm_load(struct DLOOP_Dataloop_stackelm *elmp,
+				       struct DLOOP_Dataloop *dlp,
+				       int branch_flag)
+{
+    elmp->loop_p = dlp;
+
+    if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_CONTIG) {
+	elmp->orig_count = 1; /* put in blocksize instead */
+    }
+    else {
+	elmp->orig_count = dlp->loop_params.count;
+    }
+
+    if (branch_flag || (dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT)
+    {
+	elmp->may_require_reloading = 1;
+    }
+    else {
+	elmp->may_require_reloading = 0;
+    }
+
+    elmp->curcount = elmp->orig_count; /* required by DLOOP_Stackelm_blocksize */
+    elmp->orig_block = DLOOP_Stackelm_blocksize(elmp);
+    /* TODO: GO AHEAD AND FILL IN CURBLOCK? */
 }
 
 /* 
