@@ -1,5 +1,5 @@
 mpi_sources = bsend.c bsend_init.c bufattach.c buffree.c \
- cancel.c commreq_free.c greq_start.c greq_complete.cibsend.c iprobe.c \
+ cancel.c commreq_free.c greq_start.c greq_complete.c ibsend.c iprobe.c \
  irecv.c irsend.c isend.c issend.c probe.c recv.c recv_init.c \
  request_get_status.c rsend.c rsend_init.c send.c send_init.c \
  sendrecv.c sendrecv_rep.c status_set_cancelled.c ssend.c ssend_init.c \
