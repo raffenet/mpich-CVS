@@ -32,7 +32,7 @@
 **noerrclasses:No more user-defined error classes
 **noerrcodes:No more user-defined error codes
 **rankdup:Duplicate ranks in rank array 
-**rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is\
+**rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is \
 also the value at index %d
 **topotoolarge:Topology size is greater than communicator size
 **topotoolarge %d %d:Topology size %d is larger than communicator size (%d)
@@ -43,14 +43,14 @@ also the value at index %d
 **dimsmany %d %d:Number of dimensions %d is too large (maximum is %d)
 **dimspartition:Cannot partition nodes as requested 
 **cartcoordinvalid:Cartesian coordinate is invalid (not in range)
-**cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate\
+**cartcoordinvalid %d %d %d: Cartesian coordinate for the %d coordinate \
  is %d but must be between 0 and %d
 **cartdim:Size of Cartesian grid is larger than the size of the communicator
-**cartdim %d %d:Size of the communicator (%d) is smaller than the size of the\
+**cartdim %d %d:Size of the communicator (%d) is smaller than the size of the \
  Cartesian topology (%d)
 **cartshiftzero:Displacement must be non-zero
 **edgeoutrange:Edge index in graph topology is out of range
-**edgeoutrange %d %d %d:Edge index edges[%d] is %d but must be nonnegative\
+**edgeoutrange %d %d %d:Edge index edges[%d] is %d but must be nonnegative \
  and less than %d
 **nulledge:Edge detected from a node to the same node
 **nulledge %d %d:Edge for node %d (entry edges[%d]) is to itself
@@ -82,14 +82,14 @@ also the value at index %d
 **bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
 **bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
 **bsendbufsmall %d %d:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
-**notgenreq:Attempt to complete a request with MPI_GREQUEST_COMPLETE that\
+**notgenreq:Attempt to complete a request with MPI_GREQUEST_COMPLETE that \
 was not started with MPI_GREQUEST_START
 **cancelperrecv:Cancellation of persistent receive requests is not supported
 **cancelpersend:Cancellation of persistent send requests is not supported
 **cancelsend:Cancellation of send requests is not supported
 **cancelunknown:Attempt to cancel an unknown type of request
 **permop:Cannot free permanent MPI_Op 
-**attrsentinal:Internal fields in an attribute have been overwritten;\
+**attrsentinal:Internal fields in an attribute have been overwritten; \
  possible errors in using the attribute value in user code.
 **toomanycomm:Too many communicators
 **commperm:Cannot free permanent communicator
@@ -97,20 +97,20 @@ was not started with MPI_GREQUEST_START
 **group:Invalid group
 **groupnotincomm:Specified group is not within the communicator
 **groupnotincomm %d:Rank %d of the specified group is not a member of this communicator
-**commnotintra:An intracommunicator is required but an intercommunicator\
+**commnotintra:An intracommunicator is required but an intercommunicator \
  was provided.
-**commnotinter:An intercommunicator is required but an intracommunicator\
+**commnotinter:An intercommunicator is required but an intracommunicator \
  was provided.
 **ranklocal:Error specifying local_leader 
-**ranklocal %d %d:Error specifying local_leader; rank given was %d but must\
+**ranklocal %d %d:Error specifying local_leader; rank given was %d but must \
 be in the range 0 to %d
 **rankremote:Error specifying remote_leader 
-**rankremote %d %d:Error specifying remote_leader; rank given was %d but must\
+**rankremote %d %d:Error specifying remote_leader; rank given was %d but must \
 be in the range 0 to %d
 **ranksdistinct:Local and remote leaders must be different processes
-**dupprocesses:Local and remote groups in MPI_Intercomm_create must not\
+**dupprocesses:Local and remote groups in MPI_Intercomm_create must not \
  contain the same processes
-**dupprocesses %d:Local and remote groups in MPI_Intercomm_create must not\
+**dupprocesses %d:Local and remote groups in MPI_Intercomm_create must not \
  contain the same processes; both contain process %d
 **tag:Invalid tag
 **tag %d:Invalid tag, value is %d
@@ -120,7 +120,7 @@ be in the range 0 to %d
 **intercommcoll:Intercommunicator collective operations have not been implemented
 **intercommcoll %s:Intercommunicator collective operation for %s has not been implemented
 **bufbsend:Insufficient space in Bsend buffer
-**bufbsend %d %d:Insufficient space in Bsend buffer; requested %d; total\
+**bufbsend %d %d:Insufficient space in Bsend buffer; requested %d; total \
  buffer size is %d
 **bsendnobuf:No buffer to detach. 
 **inttoosmall:An address does not fit into a Fortran INTEGER.  Use \
@@ -139,7 +139,7 @@ be in the range 0 to %d
 **bufsize:Invalid buffer size
 **bufsize %d:Invalid buffer size (value is %d)
 **countarray:Invalid count in count array 
-**countarray %d %d:Invalid count in the %d element of the count array; value\
+**countarray %d %d:Invalid count in the %d element of the count array; value \
 is %d
 **dtype:Invalid datatype
 **dtypenull:Null datatype
@@ -161,7 +161,7 @@ is %d
 **commpeer:Peer communicator is not valid 
 **commlocalnull:Local communicator must not be MPI_COMM_NULL
 **rankarray:Invalid rank in rank array
-**rankarray %d %d %d:Invalid rank in rank array at index %d, has value %d but must\
+**rankarray %d %d %d:Invalid rank in rank array at index %d, has value %d but must \
 be in the range 0 to %d
 **rankarray %d %d %d:Invalid rank in rank array[%d], value is %d but must be in 0 to %d.
 **root:Invalid root
@@ -175,23 +175,23 @@ be in the range 0 to %d
 **opundefined %s:MPI_Op %s operation not defined for this datatype 
 **topology:Invalid topology
 **grapharraysize:Specified edge less than zero or greater than nnodes
-**grapharraysize %d %d %d:Specified edge %d is %d but must be at least zero\
+**grapharraysize %d %d %d:Specified edge %d is %d but must be at least zero \
  and less than %d
 **dims:Invalid dimension argument
 **dims %d:Invalid dimension argument (value is %d)
 **dimsarray:Invalid dimension argument in array 
 **dimsarray %d %d:Value of dims[%d] is %d which is invalid
 **dimstensor:Tensor product size does not match nnodes
-**dimstensor %d %d:Tensor product size is %d but must be the same as the number of\
+**dimstensor %d %d:Tensor product size is %d but must be the same as the number of \
  nodes, which is %d
 **dimspartition:Cannot partition nodes as requested 
 **arg:Invalid argument
 **arg %s:Invalid argument %s
 **argerrcode:Invalid error code
 **argerrcode %d:Invalid error code %d
-**argaddress:Address of location given to MPI_ADDRESS does not fix in a\
+**argaddress:Address of location given to MPI_ADDRESS does not fix in a \
 Fortran integer
-**argaddress %ld:Address of location given to MPI_ADDRESS does not fix in a\
+**argaddress %ld:Address of location given to MPI_ADDRESS does not fix in a \
 Fortran integer (value is %ld)
 **errhandler:Invalid errhandler
 **errhandlernull:Null errhandler 
@@ -202,18 +202,18 @@ Fortran integer (value is %ld)
 **argarray %s %d %d:Invalid value in %s[%d] = %d
 **argnamed:Invalid argument
 **argnamed %s %d:Invalid argument %s with value %d
-**darraydist:For MPI_DISTRIBUTE_NONE, the number of processes in that\
+**darraydist:For MPI_DISTRIBUTE_NONE, the number of processes in that \
       dimension of the grid must be 1
-**darraydist %d %d:For MPI_DISTRIBUTE_NONE, the value of array_of_psizes[%d]\
+**darraydist %d %d:For MPI_DISTRIBUTE_NONE, the value of array_of_psizes[%d] \
  is %d but must have value 1
 **darrayunknown:Unknown distribution type 
 **darrayblock:Value of m must be positive for block(m) distribution
-**darrayblock %d: Value of m in block(m) distribution is %d must must be\
+**darrayblock %d: Value of m in block(m) distribution is %d must must be \
  positive
-**darrayblock2:m * nprocs is less than array_size and is not valid for\
-      block(m) distribution\
+**darrayblock2:m * nprocs is less than array_size and is not valid for \
+      block(m) distribution \
       (optional arguments: {m*nprocs}, {array_size} (int))
-**darrayblock2 %d %d:m * nprocs is %d but must equal the array size %d and is\
+**darrayblock2 %d %d:m * nprocs is %d but must equal the array size %d and is \
  not valid for block(m) distribution
 **darraycyclic:Value of m must be positive for a cyclic(m) distribution
 **darraycyclic %d:Value of m is %d but must be positive for a cyclic(m) \
@@ -234,7 +234,7 @@ Fortran integer (value is %ld)
  with tag %d had no matching receive
 **preinit:MPI_Init or MPI_Init_thread must be called first
 **preinit %s:MPI_Init or MPI_Init_thread must be called before %s
-**startup:Error on startup, such as a\
+**startup:Error on startup, such as a \
       mismatch between mpiexec and the MPI libraries
 **startup %s:Error on startup: reason is %s
 **attrcopy:User defined attribute copy routine returned a non-zero return code
@@ -251,9 +251,9 @@ Fortran integer (value is %ld)
 **fileaccess %s:Access denied to file %s
 **fileamode:Invalid amode value in MPI_File_open 
 **fileamode %d:Invalid amode value of %d in MPI_File_open 
-**fileamodeone:Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or\
+**fileamodeone:Exactly one of MPI_MODE_RDONLY, MPI_MODE_WRONLY, or \
  MPI_MODE_RDWR must be specified
-**fileamoderead:Cannot use MPI_MODE_CREATE or MPI_MODE_EXCL with\
+**fileamoderead:Cannot use MPI_MODE_CREATE or MPI_MODE_EXCL with \
  MPI_MODE_RDONLY 
 **fileamodeseq:Cannot specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR
 **filename:Invalid file name
@@ -263,7 +263,7 @@ Fortran integer (value is %ld)
 **filenamedir:Invalid or missing directory
 **filenamedir %s:Invalid or missing directory %s
 **conversion:An error occurred in a user-defined data conversion function
-**datarep:The requested datarep name has already been specified to\
+**datarep:The requested datarep name has already been specified to \
  MPI_REGISTER_DATAREP
 **fileinuse:File in use by some process
 **fileinuse %s:File %s is in use by some process
@@ -300,9 +300,9 @@ Fortran integer (value is %ld)
 **iofiletype:Filetype must be constructed out of one or more etypes
 **iosharedunsupported:Shared file pointers not supported
 **iosharedunsupported %s:Shared file pointers not supported on filesystem %s
-**ioamodeseq:Cannot use this function when the file is opened with amode\
+**ioamodeseq:Cannot use this function when the file is opened with amode \
     MPI_MODE_SEQUENTIAL 
-**ioamodeseq %s:Cannot use function %s when the file is opened with amode\
+**ioamodeseq %s:Cannot use function %s when the file is opened with amode \
     MPI_MODE_SEQUENTIAL
 **iowronly:Cannot read from a file opened with amode MPI_MODE_WRONLY
 **iosequnsupported:MPI_MODE_SEQUENTIAL not supported on this file system
@@ -367,7 +367,7 @@ Fortran integer (value is %ld)
 **win:Invalid MPI_Win
 **winnull:Null MPI_Win
 **winname:Cannot set window object name 
-**winpassive:Attempt to use passive target access with a window not allocated\
+**winpassive:Attempt to use passive target access with a window not allocated \
 with MPI_Alloc_mem. 
 **freemembase:Invalid base address in MPI_Free_mem 
 **base:Invalid base address
@@ -403,23 +403,23 @@ with MPI_Alloc_mem.
 #
 # CH3:sock errors
 #
-**ch3|sock|strdup:[ch3_sock] MPIU_Strdup failed
-**ch3|sock|connclose:[ch3_sock] active connection unexpectedly closed
-**ch3|sock|hostlookup:[ch3_sock] hostname lookup failed
-**ch3|sock|hostlookup %d %d %s:[ch3_sock] failed to obtain host information for process %d-%d (%s)
-**ch3|sock|connrefused:[ch3_sock] connection refused
-**ch3|sock|connrefused %d %d %s:[ch3_sock] failed to connect to process %d-%d (%s)
-**ch3|sock|connterm:[ch3_sock] active connection unexpectedly terminated
-**ch3|sock|connfailed:[ch3_sock] failed to connnect to remote process
-**ch3|sock|connfailed %d %d:[ch3_sock] failed to connnect to remote process %d-%d
-**ch3|sock|badsock:[ch3_sock] internal error - bad sock
-**ch3|sock|failure:[ch3_sock] unknown failure
-**ch3|sock|failure %d:[ch3_sock] unknown failure, sock_errno=%d
-**ch3|sock|badpacket:[ch3_sock] received packet of unknow type
-**ch3|sock|badpacket %d:[ch3_sock] received packet of unknown type (%d)
-**ch3|sock|badbuscard:[ch3_sock] GetHostAndPort - Invalid business card
-**ch3|sock|badbuscard %s:[ch3_sock] GetHostAndPort - Invalid business card (%s)
-**ch3|sock|connallocfailed:[ch3_sock] unable to allocate a connection structure
+**ch3|sock|strdup:[ch3:sock] MPIU_Strdup failed
+**ch3|sock|connclose:[ch3:sock] active connection unexpectedly closed
+**ch3|sock|hostlookup:[ch3:sock] hostname lookup failed
+**ch3|sock|hostlookup %d %d %s:[ch3:sock] failed to obtain host information for process %d:%d (%s)
+**ch3|sock|connrefused:[ch3:sock] connection refused
+**ch3|sock|connrefused %d %d %s:[ch3:sock] failed to connect to process %d:%d (%s)
+**ch3|sock|connterm:[ch3:sock] active connection unexpectedly terminated
+**ch3|sock|connfailed:[ch3:sock] failed to connnect to remote process
+**ch3|sock|connfailed %d %d:[ch3:sock] failed to connnect to remote process %d:%d
+**ch3|sock|badsock:[ch3:sock] internal error - bad sock
+**ch3|sock|failure:[ch3:sock] unknown failure
+**ch3|sock|failure %d:[ch3:sock] unknown failure, sock_errno=%d
+**ch3|sock|badpacket:[ch3:sock] received packet of unknow type
+**ch3|sock|badpacket %d:[ch3:sock] received packet of unknown type (%d)
+**ch3|sock|badbuscard:[ch3:sock] GetHostAndPort - Invalid business card
+**ch3|sock|badbuscard %s:[ch3:sock] GetHostAndPort - Invalid business card (%s)
+**ch3|sock|connallocfailed:[ch3:sock] unable to allocate a connection structure
 **ch3|sock|pmi_finalize:PMI_Finalize failed
 **ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
 
