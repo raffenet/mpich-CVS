@@ -108,7 +108,7 @@ int MPI_Type_create_subarray(int ndims,
 
 #if 0
 	    /* TODO: INTEGRATE THIS CHECK AS WELL */
-	    MPI_Type_extent(oldtype, &extent);
+	    PMPI_Type_extent(oldtype, &extent);
 
 	    /* check if MPI_Aint is large enough for size of global array. 
 	       if not, complain. */
@@ -138,7 +138,7 @@ int MPI_Type_create_subarray(int ndims,
     /* TODO: CHECK THE ERROR RETURNS FROM ALL THESE!!! */
 
     /* TODO: GRAB EXTENT WITH A MACRO OR SOMETHING FASTER */
-    MPI_Type_extent(oldtype, &extent);
+    PMPI_Type_extent(oldtype, &extent);
 
     if (order == MPI_ORDER_FORTRAN) {
 	if (ndims == 1)
@@ -162,7 +162,7 @@ int MPI_Type_create_subarray(int ndims,
 					     1, /* stride in bytes */
 					     tmp1,
 					     &tmp2);
-		MPI_Type_free(&tmp1);
+		PMPI_Type_free(&tmp1);
 		tmp1 = tmp2;
 	    }
 	}
@@ -200,7 +200,7 @@ int MPI_Type_create_subarray(int ndims,
 					     1, /* stride in bytes */
 					     tmp1,
 					     &tmp2);
-		MPI_Type_free(&tmp1);
+		PMPI_Type_free(&tmp1);
 		tmp1 = tmp2;
 	    }
 	}
@@ -233,7 +233,7 @@ int MPI_Type_create_subarray(int ndims,
 				 types,
 				 newtype);
 
-    MPI_Type_free(&tmp1);
+    PMPI_Type_free(&tmp1);
 
     /* at this point we have the new type, and we've cleaned up any
      * intermediate types created in the process.  we just need to save
