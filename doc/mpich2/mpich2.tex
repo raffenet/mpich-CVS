@@ -2769,8 +2769,9 @@ errors must indicate that the error occurred in \code{MPI_START}, not
 \subsubsection{\mpifunc{MPI_STARTALL}}
 Do we want startall to allow for some scheduling of the operations?  For
 example, it could start the ``furthest away'' first.  It could also batch
-operations (see the paper on improving TCP performance \cite{??}).  If so, we
-need an \mpidfunc{MPID_Startall}.
+operations.
+% (see the paper on improving TCP performance \cite{??}).  
+If so, we need an \mpidfunc{MPID_Startall}.
 
 Should each of the individual persistent routines provide an internal
 routine that is used to start the operation?
@@ -5418,40 +5419,66 @@ Many of these sections can be implemented independently, once the
 infrastructure list is settled. 
 \begin{enumerate}
 \item Infrastructure
+
+  These are necessary before any coding can commence.
   \begin{enumerate}
     \item Directory structure
     \item MPI routine source code template
-    \item mpich2 bug list (first entry: \file{config/confdb} is wrong; it
-      appears to be a snapshot (complete with bugs) of the correct one).
+    \item Partial definitions for key structures, such as communicators and
+      datatypes 
+    \item Coding standards (documentation, style, associated tests)
+    \item Integral profiling and data collection.  Definition of macros for
+      collecting timing data and for generating slog records.
   \end{enumerate}
+
 \item MPI Major Sections
+  Each of these sections should consider
+  \begin{enumerate}
+    \item Thread safety,
+    \item Error handling,
+    \item Core ADI for 3rd parties (non-multimethod),
+    \item Core method ADI for 3rd parties (as part of our multimethod device),
+      and 
+    \item Performance in MPI communication (whether point-to-point,
+      collective, or RMA).
+    \end{enumerate}
+    In addition, scalability to 10,000 processes is required and scalability
+    beyond that to 1,000,000 processes should be considered.  However, if
+    scalability to a million processes complicates the design or the code, we
+    should design for fewer processes and document the reasons in the
+    Rationale (Section~\ref{sec:rationale}).
+
+    The highest-priority items are: Point-to-point, collective, RMA, and
+    dynamic processes, along with the communication agent.  Of course, these
+    will require some specification of datatypes, communicators, groups, etc.,
+    but they will also drive the details of those objects (e.g., datatypes
+    must be defined to support the operations needed for communication).
+
   \begin{enumerate}
   \item Attributes. 
   \item Info.
   \item Datatypes.
   \item Groups.
-  \item Communicators.
   \item Point-to-point.  
     \begin{enumerate}
     \item Make the scenario (Section~\ref{sec:pt-2-pt-scenarios})
       consistent with the description of the individual routines and with
-      the most current discussions of the active queue implementation.
+      the most current discussions of the active queue implementation,
+      including the support of collective communication.
     \item Define the communicator data structure, including the handling
       of processes that are not part of the original
       \mpiconst{MPI_COMM_WORLD}.
     \item Address the issues of the multiple completion routines (e.g.,
       \mpifunc{MPI_Waitsome}). 
     \end{enumerate}
-  \item Communication agent.
+  \item Communication agent. 
+    This ensures the progress of MPI communication including passive RMA
+    access.  As such, it it closely connected to the point-to-point and RMA
+    sections.  
   \item Collective.  
-% Most of this can be left until later.  However, it
-%     would be good to include details for \mpifunc{MPI_Bcast} and
-%     \mpifunc{MPI_Scatter} that show how the routines use the lower-level
-%     point-to-point routines (e.g., what is called ``stream'' in this
-%     document).  Also:
     \begin{enumerate}
-    \item \mpifunc{MPI_Bcast} and \mpifunc{MPI_Scatter} with ``stream''
-      operations.
+    \item \mpifunc{MPI_Bcast}, \mpifunc{MPI_Scatter}, and \mpifunc{MPI_Reduce}
+      with ``stream'' operations.
     \item Plan for developing algorithms for the other collective routines.
     \item Design to allow implementors to replace any collective routine with
       a device-specific version
@@ -5469,12 +5496,13 @@ infrastructure list is settled.
   \begin{enumerate}
     \item Scenarios
   \end{enumerate}
-  \item Starting and Ending MPI.
+  \item Starting and Ending MPI (e.g., init, finalize, and abort).
   \item Dynamic processes.
-  \item User-defined requests.
+  \item Name service.
+  \item User-defined requests (needed for I/O).
   \item Error handlers. (These are the MPI error handlers, not the error
     reporting routines.)
-  \item Handle Transfers.
+  \item Handle Transfers (e.g., \code{MPI_Request_c2f})
   \item Timers.
   \item I/O.  For the most part, we will take ROMIO without any changes for
     now.  However, there are a few things to handle:
@@ -5484,98 +5512,135 @@ infrastructure list is settled.
     \item Update error reporting with new routines
     \item Check on datatype handling
     \end{enumerate}
-  \item Runtime Environment.
+  \item Runtime Environment.  (Processor name and MPI version.)
   \item Profiling.
   \item MPI command environment (\code{mpiexec}, \code{mpicc}, etc.)
   \end{enumerate}
 \item Source code, portability, and framework
   \begin{enumerate}
   \item Error reporting routines, particularly the handling of
-    instance-specific messages.
-  \item Configure.
-  \item Cross compilation
+    instance-specific messages and internationalization.
+  \item mpich2 bug list.
+  \item Runtime parameter access (e.g., socket buffer sizes from an
+    environment variable or \file{.mpichrc} file).
+  \item Configure and automake, particularly a style-sheet on modifying the
+    autoconf and automake input files
+  \item Cross compilation and compilation environment (using different
+    compilers from the ones MPICH is built with)
   \item Fortran
   \item C++
   \item Testing.  Needs new test harness; intelligent sampling of the possible
-    combinations; archiving of results (including performance tests).
-  \item Integral profiling and data collection.  Definition of macros for
-    collecting timing data and for generating slog records.
+    combinations; archiving of results (including performance tests).  The
+    tests must work with any MPI, not just MPICH (just like the current test
+    suite).  Separate tests for MPICH-specific features should be provided in
+    a separate suite of tests.
   \end{enumerate}
 \end{enumerate}
 
-\section{Development Plan}
-\label{sec:development}
-This section proposes a development and implementation plan.  The
-emphasis here is on independent subprojects, allowing development to
-proceed without waiting for all of the pieces to be in place.
+% \section{Development Plan}
+% \label{sec:development}
+% This section proposes a development and implementation plan.  The
+% emphasis here is on independent subprojects, allowing development to
+% proceed without waiting for all of the pieces to be in place.
 
-\begin{enumerate}
-\item ADI Implementation
-    \begin{enumerate}
-    \item Design Development
-        \begin{enumerate}
-        \item Design and implement a subset of general datatype pack/unpack
-        \item Design and implement a subset (e.g., Allreduce, Bcast, and
-          Alltoall) of collective operations using the Stream and Segment MPID
-          functions.
-        \item Test improved collectives for performance and functionality
-        \item Similar design/implement/test for RMA and Dynamic; details yet
-          to be determined.
-        \end{enumerate}
-    \item Multi-method ADI for shared memory, VIA, and TCP/UDP
-        \begin{enumerate}
-        \item Design and implement general datatype point-to-point
-        \item Design and implement general datatype collective
-        (layered on ADI segment and stream interfaces)
-        \item Design and implement RMA
-        \item Design and implement Dynamic and connect with BNR
-        \end{enumerate}
-    \item ADI on \code{MPID_CORE}
-        \begin{enumerate}
-        \item Implement all ADI-3 modules on top of the core.  Refine
-        the design of the core during this process.   
-        \end{enumerate}
-    \item Implement common ADI services.  These are modules that are
-    needed by other ADI modules that do not (directly) involve
-    interprocess communication but will be common for most ADI
-    implementations, including both the core and the multi-method
-    implementation. 
-        \begin{enumerate}
-        \item Error handling
-        \item Attributes
-        \item Info
-        \item Runtime parameters
-        \item Topology
-        \item Datatype
-        \item Group
-        \item Timer
-        \item Utility
-        \end{enumerate}
-    \end{enumerate}
-\item MPICH Implementation on ADI
-    \begin{enumerate}
-    \item For each MPI routine, write the ``top'': structured comment,
-    routine header and error checking.
-    \item Implement the action of each MPI routine in terms of the
-    full ADI-3 design.
-    \end{enumerate}
-\item Test Suite
-    \begin{enumerate}
-    \item Design standard test harness: test communicators, datatypes,
-    operation mixtures, run script, and result checking.
-    \end{enumerate}
-\item Deployment
-    \begin{enumerate}
-    \item Implement new configure.  Design database for both configure
-    macros and for data (such as compiler options and names) that
-    configure cannot determine.
-    \item Shared library support.
-    \end{enumerate}
-\end{enumerate}
+% \begin{enumerate}
+% \item ADI Implementation
+%     \begin{enumerate}
+%     \item Design Development
+%         \begin{enumerate}
+%         \item Design and implement a subset of general datatype pack/unpack
+%         \item Design and implement a subset (e.g., Allreduce, Bcast, and
+%           Alltoall) of collective operations using the Stream and Segment MPID
+%           functions.
+%         \item Test improved collectives for performance and functionality
+%         \item Similar design/implement/test for RMA and Dynamic; details yet
+%           to be determined.
+%         \end{enumerate}
+%     \item Multi-method ADI for shared memory, VIA, and TCP/UDP
+%         \begin{enumerate}
+%         \item Design and implement general datatype point-to-point
+%         \item Design and implement general datatype collective
+%         (layered on ADI segment and stream interfaces)
+%         \item Design and implement RMA
+%         \item Design and implement Dynamic and connect with BNR
+%         \end{enumerate}
+%     \item ADI on \code{MPID_CORE}
+%         \begin{enumerate}
+%         \item Implement all ADI-3 modules on top of the core.  Refine
+%         the design of the core during this process.   
+%         \end{enumerate}
+%     \item Implement common ADI services.  These are modules that are
+%     needed by other ADI modules that do not (directly) involve
+%     interprocess communication but will be common for most ADI
+%     implementations, including both the core and the multi-method
+%     implementation. 
+%         \begin{enumerate}
+%         \item Error handling
+%         \item Attributes
+%         \item Info
+%         \item Runtime parameters
+%         \item Topology
+%         \item Datatype
+%         \item Group
+%         \item Timer
+%         \item Utility
+%         \end{enumerate}
+%     \end{enumerate}
+% \item MPICH Implementation on ADI
+%     \begin{enumerate}
+%     \item For each MPI routine, write the ``top'': structured comment,
+%     routine header and error checking.
+%     \item Implement the action of each MPI routine in terms of the
+%     full ADI-3 design.
+%     \end{enumerate}
+% \item Test Suite
+%     \begin{enumerate}
+%     \item Design standard test harness: test communicators, datatypes,
+%     operation mixtures, run script, and result checking.
+%     \end{enumerate}
+% \item Deployment
+%     \begin{enumerate}
+%     \item Implement new configure.  Design database for both configure
+%     macros and for data (such as compiler options and names) that
+%     configure cannot determine.
+%     \item Shared library support.
+%     \end{enumerate}
+% \end{enumerate}
 
 %
 % Eventually include table or a project as Postscript from project.
 %
+\appendix
+\section{Rationale}
+\label{sec:rationale}
+
+This appendix contains some of the discussion about the particular choices
+made in the design of the MPICH2 implementation, and include both design
+alternatives and discussion of constraints that may not be obvious to a casual
+reader of the MPI standard.  This appendix is organized by major section.
+
+\subsection{Attributes} 
+\subsection{Info}
+\subsection{Datatypes}
+\subsection{Groups}
+\subsection{Communicators}
+\subsection{Point-to-point}  
+\subsection{Communication agent}
+\subsection{Collective}  
+\subsection{Communicators}
+\subsection{Topology}
+\subsection{RMA}  
+\subsection{Starting and Ending MPI}
+\subsection{Dynamic processes}
+\subsection{Name service}
+\subsection{User-defined requests}
+\subsection{Error handlers}
+\subsection{Handle Transfers}
+\subsection{Timers}
+\subsection{I/O}  
+\subsection{Runtime Environment}
+\subsection{Profiling}
+\subsection{MPI command environment}
 
 \let\SaveBibliography=\thebibliography
 \def\thebibliography#1{\SaveBibliography{#1}\addcontentsline{toc}{section}{References}}
