@@ -23,7 +23,7 @@ int ADIOI_Set_lock(int fd, int cmd, int type, ADIO_Offset offset, int whence,
     } while (err && (errno == EINTR));
 
     if (err && (errno != EBADF)) {
-	printf("File locking failed in ADIOI_Set_lock\n");
+	printf("File locking failed in ADIOI_Set_lock. If the file system is NFS, you need to use NFS version 3 and mount the directory with the "noac" option (no attribute caching).\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
