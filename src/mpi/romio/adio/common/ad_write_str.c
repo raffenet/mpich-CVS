@@ -270,6 +270,7 @@ void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
         writebuf_off = 0;
         writebuf_len = 0;
         writebuf = (char *) ADIOI_Malloc(max_bufsize);
+	memset(writebuf, -1, max_bufsize);
 
 	if (buftype_is_contig && !filetype_is_contig) {
 
