@@ -8,220 +8,6 @@
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
-static inline int handle_read(MPIDI_VC *vc, int nb);
-static inline int handle_written(MPIDI_VC * vc);
-
-#ifndef MPICH_SINGLE_THREADED
-void MPIDI_CH3_Progress_start()
-{
-    /* MT - This function is empty for the single-threaded implementation */
-}
-#endif
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress(int is_blocking)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_VC *vc_ptr;
-    int num_bytes;
-    ibu_op_t wait_result;
-    unsigned register count;
-    unsigned completions = MPIDI_CH3I_progress_completions;
-    int i;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
-
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
-    do
-    {
-	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, (void*)&vc_ptr, &num_bytes, &wait_result);
-	if (mpi_errno != IBU_SUCCESS)
-	{
-	    MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL\n");
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_wait", "**ibu_wait %d", mpi_errno);
-	    goto fn_exit;
-	}
-	switch (wait_result)
-	{
-	case IBU_OP_TIMEOUT:
-	    /*MPIDU_Yield();*/
-	    /*sched_yield();*/
-	    break;
-	case IBU_OP_READ:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read", num_bytes));
-	    mpi_errno = handle_read(vc_ptr, num_bytes);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
-		goto fn_exit;
-	    }
-	    break;
-	case IBU_OP_WRITE:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes written", num_bytes));
-	    mpi_errno = handle_written(vc_ptr);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
-		goto fn_exit;
-	    }
-	    break;
-	case IBU_OP_CLOSE:
-	    break;
-	default:
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_op", "**ibu_op %d", wait_result);
-	    goto fn_exit;
-	}
-
-	/* pound on the write queues since ibu_wait currently does not return IBU_OP_WRITE */
-	for (i=0; i<MPIDI_CH3I_Process.pg->size; i++)
-	{
-	    if (MPIDI_CH3I_Process.pg->vc_table[i].ch.send_active != NULL)
-		/*if (i != MPIR_Process.comm_world->rank)*/
-	    {
-		mpi_errno = handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
-		    return mpi_errno;
-		}
-	    }
-	}
-    } 
-    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
-
-fn_exit:
-#ifdef MPICH_DBG_OUTPUT
-    count = MPIDI_CH3I_progress_completions - completions;
-    if (is_blocking)
-    {
-	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
-    }
-    else
-    {
-	if (count > 0)
-	{
-	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", count));
-	}
-    }
-#endif
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress_poke
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress_poke()
-{
-    int mpi_errno;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    mpi_errno = MPIDI_CH3I_Progress(0);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    return mpi_errno;
-}
-
-#ifndef MPICH_SINGLE_THREADED
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress_end
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_end()
-{
-    /* MT - This function is empty for the single-threaded implementation */
-}
-#endif
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Progress_init
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress_init()
-{
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
-    return MPI_SUCCESS;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Progress_finalize
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress_finalize()
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
-
-    /*
-     * Wait for any pending communication to complete.  This prevents another process from hanging if it performs a send and then
-     * attempts to cancel it.
-     */
-    MPIR_Nest_incr();
-    {
-	mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_finalize", 0);
-	}
-    }
-    MPIR_Nest_decr();
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
-    return mpi_errno;
-}
-
-/*
- * MPIDI_CH3I_Request_adjust_iov()
- *
- * Adjust the iovec in the request by the supplied number of bytes.  If the iovec has been consumed, return true; otherwise return
- * false.
- */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Request_adjust_iov
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
-{
-    int offset = req->ch.iov_offset;
-    const int count = req->dev.iov_count;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-    
-    while (offset < count)
-    {
-	if (req->dev.iov[offset].MPID_IOV_LEN <= (unsigned int)nb)
-	{
-	    nb -= req->dev.iov[offset].MPID_IOV_LEN;
-	    offset++;
-	}
-	else
-	{
-	    req->dev.iov[offset].MPID_IOV_BUF = (char*)req->dev.iov[offset].MPID_IOV_BUF + nb;
-	    req->dev.iov[offset].MPID_IOV_LEN -= nb;
-	    req->ch.iov_offset = offset;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-	    return FALSE;
-	}
-    }
-    
-    req->ch.iov_offset = offset;
-
-    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
-    return TRUE;
-}
-
 #undef FUNCNAME
 #define FUNCNAME handle_read
 #undef FCNAME
@@ -480,4 +266,219 @@ static inline int handle_written(MPIDI_VC * vc)
 
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
     return mpi_errno;
+}
+
+#ifndef MPICH_SINGLE_THREADED
+void MPIDI_CH3_Progress_start()
+{
+    /* MT - This function is empty for the single-threaded implementation */
+}
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Progress(int is_blocking)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_VC *vc_ptr;
+    int num_bytes;
+    ibu_op_t wait_result;
+    unsigned register count;
+    unsigned completions = MPIDI_CH3I_progress_completions;
+    int i;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
+
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
+    do
+    {
+	mpi_errno = ibu_wait(MPIDI_CH3I_Process.set, 0, (void*)&vc_ptr, &num_bytes, &wait_result);
+	if (mpi_errno != IBU_SUCCESS)
+	{
+	    MPIU_Internal_error_printf("ibu_wait returned IBU_FAIL\n");
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_wait", "**ibu_wait %d", mpi_errno);
+	    goto fn_exit;
+	}
+	switch (wait_result)
+	{
+	case IBU_OP_TIMEOUT:
+	    /*MPIDU_Yield();*/
+	    /*sched_yield();*/
+	    break;
+	case IBU_OP_READ:
+	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes read", num_bytes));
+	    mpi_errno = handle_read(vc_ptr, num_bytes);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+		goto fn_exit;
+	    }
+	    break;
+	case IBU_OP_WRITE:
+	    MPIDI_DBG_PRINTF((50, FCNAME, "ibu_wait reported %d bytes written", num_bytes));
+	    mpi_errno = handle_written(vc_ptr);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+		goto fn_exit;
+	    }
+	    break;
+	case IBU_OP_CLOSE:
+	    break;
+	default:
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibu_op", "**ibu_op %d", wait_result);
+	    goto fn_exit;
+	}
+
+	/* pound on the write queues since ibu_wait currently does not return IBU_OP_WRITE */
+	for (i=0; i<MPIDI_CH3I_Process.pg->size; i++)
+	{
+	    if (MPIDI_CH3I_Process.pg->vc_table[i].ch.send_active != NULL)
+		/*if (i != MPIR_Process.comm_world->rank)*/
+	    {
+		mpi_errno = handle_written(&MPIDI_CH3I_Process.pg->vc_table[i]);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
+		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
+		    return mpi_errno;
+		}
+	    }
+	}
+    } 
+    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
+
+fn_exit:
+#ifdef MPICH_DBG_OUTPUT
+    count = MPIDI_CH3I_progress_completions - completions;
+    if (is_blocking)
+    {
+	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
+    }
+    else
+    {
+	if (count > 0)
+	{
+	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", count));
+	}
+    }
+#endif
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress_poke
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Progress_poke()
+{
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    mpi_errno = MPIDI_CH3I_Progress(0);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    return mpi_errno;
+}
+
+#ifndef MPICH_SINGLE_THREADED
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress_end
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3_Progress_end()
+{
+    /* MT - This function is empty for the single-threaded implementation */
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_END);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_END);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_END);
+}
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Progress_init()
+{
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
+    return MPI_SUCCESS;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Progress_finalize()
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
+
+    /*
+     * Wait for any pending communication to complete.  This prevents another process from hanging if it performs a send and then
+     * attempts to cancel it.
+     */
+    MPIR_Nest_incr();
+    {
+	mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_finalize", 0);
+	}
+    }
+    MPIR_Nest_decr();
+    
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_FINALIZE);
+    return mpi_errno;
+}
+
+/*
+ * MPIDI_CH3I_Request_adjust_iov()
+ *
+ * Adjust the iovec in the request by the supplied number of bytes.  If the iovec has been consumed, return true; otherwise return
+ * false.
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Request_adjust_iov
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
+{
+    int offset = req->ch.iov_offset;
+    const int count = req->dev.iov_count;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+    
+    while (offset < count)
+    {
+	if (req->dev.iov[offset].MPID_IOV_LEN <= (unsigned int)nb)
+	{
+	    nb -= req->dev.iov[offset].MPID_IOV_LEN;
+	    offset++;
+	}
+	else
+	{
+	    req->dev.iov[offset].MPID_IOV_BUF = (char*)req->dev.iov[offset].MPID_IOV_BUF + nb;
+	    req->dev.iov[offset].MPID_IOV_LEN -= nb;
+	    req->ch.iov_offset = offset;
+	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+	    return FALSE;
+	}
+    }
+    
+    req->ch.iov_offset = offset;
+
+    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
+    return TRUE;
 }

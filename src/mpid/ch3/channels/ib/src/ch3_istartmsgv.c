@@ -105,42 +105,6 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	    ibu_write(vc->ch.ibu, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN, &nb);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
-	    return mpi_errno;
-	}
-
-	MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb));
-	if (nb > 0)
-	{
-	    int offset = 0;
-	    
-	    while (offset < n_iov)
-	    {
-		if (nb >= (int)iov[offset].MPID_IOV_LEN)
-		{
-		    nb -= iov[offset].MPID_IOV_LEN;
-		    offset++;
-		}
-		else
-		{
-		    MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev did not complete the send, allocating request\n"));
-		    create_request(sreq, iov, n_iov, offset, nb);
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    vc->ch.send_active = sreq;
-		    break;
-		}
-	    }
-	}
-	else if (nb == 0)
-	{
-	    MPIU_DBG_PRINTF(("ch3_istartmsgv: this should be an error because the sendQ is empty but ibu_post_writev() returned 0 bytes.\n"));
-	    create_request(sreq, iov, n_iov, 0, 0);
-	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	    vc->ch.send_active = sreq;
-	}
-	else
-	{
 	    sreq = MPIDI_CH3_Request_create();
 	    if (sreq == NULL)
 	    {
@@ -150,8 +114,31 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov, MPID_Request 
 	    }
 	    sreq->kind = MPID_REQUEST_SEND;
 	    sreq->cc = 0;
-	    /* TODO: Create an appropriate error message based on the value of errno */
+	    /* TODO: Create an appropriate error message based on the return value */
 	    sreq->status.MPI_ERROR = MPI_ERR_INTERN;
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ibwrite", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+	    return mpi_errno;
+	}
+
+	MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb));
+	int offset = 0;
+
+	while (offset < n_iov)
+	{
+	    if (nb >= (int)iov[offset].MPID_IOV_LEN)
+	    {
+		nb -= iov[offset].MPID_IOV_LEN;
+		offset++;
+	    }
+	    else
+	    {
+		MPIU_DBG_PRINTF(("ch3_istartmsgv: ibu_post_writev did not complete the send, allocating request\n"));
+		create_request(sreq, iov, n_iov, offset, nb);
+		MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+		vc->ch.send_active = sreq;
+		break;
+	    }
 	}
     }
     else
