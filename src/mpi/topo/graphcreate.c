@@ -82,10 +82,12 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 	    if (comm_ptr) {
 		MPIR_ERRTEST_COMM_INTRA(comm_ptr,mpi_errno);
 	    }
-	    MPIR_ERRTEST_ARGNULL(index,"index",mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(comm_graph,"comm_graph",mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(nnodes,"nnodes",mpi_errno);
+	    if (nnodes > 0) {
+		MPIR_ERRTEST_ARGNULL(index,"index",mpi_errno);
+		MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
+	    }
+	    MPIR_ERRTEST_ARGNULL(comm_graph,"comm_graph",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -133,11 +135,13 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 	    }
 
 	    /* Check that edge number is in range */
-	    for (i=0; i<index[nnodes-1]; i++) {
-		if (edges[i] > nnodes || edges[i] < 0) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
-			      "**edgeoutrange", "**edgeoutrange %d %d %d", 
-						      i, edges[i], nnodes );
+	    if (nnodes > 0) { 
+		for (i=0; i<index[nnodes-1]; i++) {
+		    if (edges[i] > nnodes || edges[i] < 0) {
+			mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
+				  "**edgeoutrange", "**edgeoutrange %d %d %d", 
+						  i, edges[i], nnodes );
+		    }
 		}
 	    }
 	    /* We could also check that no edge is from a node to itself.
