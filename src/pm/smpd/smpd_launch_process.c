@@ -1174,18 +1174,27 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	smpd_dbg_printf("env: PMI_SMPD_KEY=%s\n", str);
 	setenv("PMI_SMPD_KEY", str, 1);
 
-	close(0); 		  /* close stdin     */
-	dup(stdin_pipe_fds[0]);   /* dup a new stdin */
+	result = dup2(stdin_pipe_fds[0], 0);   /* dup a new stdin */
+	if (result == -1)
+	{
+	    smpd_err_printf("dup2 stdin failed: %d\n", errno);
+	}
 	close(stdin_pipe_fds[0]);
 	close(stdin_pipe_fds[1]);
 
-	close(1);		  /* close stdout     */
-	dup(stdout_pipe_fds[1]);  /* dup a new stdout */
+	result = dup2(stdout_pipe_fds[1], 1);  /* dup a new stdout */
+	if (result == -1)
+	{
+	    smpd_err_printf("dup2 stdout failed: %d\n", errno);
+	}
 	close(stdout_pipe_fds[0]);
 	close(stdout_pipe_fds[1]);
 
-	close(2);		  /* close stderr     */
-	dup(stderr_pipe_fds[1]);  /* dup a new stderr */
+	result = dup2(stderr_pipe_fds[1], 2);  /* dup a new stderr */
+	if (result == -1)
+	{
+	    smpd_err_printf("dup2 stderr failed: %d\n", errno);
+	}
 	close(stderr_pipe_fds[0]);
 	close(stderr_pipe_fds[1]);
 
