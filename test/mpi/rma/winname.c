@@ -37,7 +37,8 @@ int main( int argc, char *argv[] )
 	    printf( "Unexpected name, was %s but should be %s\n",
 		    nameout, name );
 	}
-	
+
+	MTestFreeWin( &win );
 	MPI_Win_free( &win );
     }
 
