@@ -70,7 +70,7 @@ foreach $_ (@ARGV) {
     if (/-nocomments/) { $nocomments = 1; }
     elsif (/-v/) { $verbose = 1; }
     elsif (/-am/) { $am_a = "_a"; }
-    elsif (/-libdir=(\w*)=(.*)$/) {
+    elsif (/-libdir=([^=]*)=(.*)$/) {
 	print "libdir{$1} = $2\n";
 	$libdir{$1}  = "$2/";
     }

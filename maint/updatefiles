@@ -1,0 +1,22 @@
+#! /bin/sh
+#
+# Update all of the derived files
+# Execute this in the top-level directory
+#
+# Get the Autoconf macro files
+if [ ! -d confdb ] ; then
+    cvs -q -d /home/gropp/cvsMaster_z checkout confdb
+fi
+#
+# Create the Makefile.in files
+maint/simplemake -common=maint/makedefs \
+    -autoconf="-l ROOTDIR/confdb" \
+    -libdir='${MPILIBNAME}'=ROOTDIR/lib \
+    Makefile.sm
+#
+# Create the configure files and run autoheader
+for dir in `find . -name 'configure.in' -print` ; do
+    dir=`dirname $dir`
+    echo "Found $dir/configure.in"
+    (cd $dir ; make -f Makefile.in configure)
+done

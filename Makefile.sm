@@ -1,1 +1,3 @@
-SRCDIR = src .
+SUBDIRS = . src
+all-local:
+	if [ ! -d lib ] ; then mkdir lib ; fi

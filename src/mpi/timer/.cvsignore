@@ -1,0 +1,9 @@
+configure
+config.log
+config.status
+config.cache
+*.o
+Makefile
+Makefile.in
+timerconf.h.in
+timerconf.h

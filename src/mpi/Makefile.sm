@@ -1,1 +1,1 @@
-SRCDIR = init .
+SUBDIRS = init timer .
