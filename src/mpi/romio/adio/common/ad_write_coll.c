@@ -252,7 +252,7 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
    at least another 8Mbytes of temp space is unacceptable. */
 
     int hole, i, j, m, size, ntimes, max_ntimes, buftype_is_contig;
-    ADIO_Offset st_loc=0, end_loc=0, off, done, req_off;
+    ADIO_Offset st_loc=-1, end_loc=-1, off, done, req_off;
     char *write_buf;
     int *curr_offlen_ptr, *count, *send_size, req_len, *recv_size;
     int *partial_recv, *sent_to_proc, *start_pos, flag;
@@ -296,7 +296,7 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 
     ntimes = (int) ((end_loc - st_loc + coll_bufsize)/coll_bufsize);
 
-    if (!st_loc && !end_loc) ntimes = 0; /* this process does no I/O. */
+    if ((st_loc==-1) && (end_loc==-1)) ntimes = 0; /* this process does no I/O. */
 
     MPI_Allreduce(&ntimes, &max_ntimes, 1, MPI_INT, MPI_MAX,
 		  fd->comm); 
