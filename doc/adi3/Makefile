@@ -89,7 +89,7 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 #	tohtml -default adi3new.tex
 #	tohtml -default adi3new.tex
 
-ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps Makefile
+ADI3NEWFILES = adi3new.tex adi3.c adi3.h adi-ov.eps blockdiag.eps layers.eps mpiddir.eps Makefile
 adi3new.ps: $(ADI3NEWFILES)
 	touch adi3new.ind
 	-if [ ! -d adi3man ] ; then mkdir adi3man ; fi
