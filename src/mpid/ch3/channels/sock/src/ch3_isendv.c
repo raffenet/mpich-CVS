@@ -40,7 +40,6 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
-    MPIDI_STATE_DECL(MPID_STATE_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));

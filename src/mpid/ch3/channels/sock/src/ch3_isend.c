@@ -28,7 +28,6 @@ static void update_request(MPID_Request * sreq, void * hdr, int hdr_sz, int nb)
 void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
-    MPIDI_STATE_DECL(MPID_STATE_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
