@@ -147,7 +147,10 @@ typedef struct {
 
 static PMIState pmi = { 0, 0, };   /* Arrays are uninitialized */
 
-
+/* ----------------------------------------------------------------------- */
+/* Debugging                                                               */
+/* ----------------------------------------------------------------------- */
+static int debug = 1;
 /* ----------------------------------------------------------------------- */
 /* Prototypes                                                              */
 /* ----------------------------------------------------------------------- */
@@ -175,11 +178,13 @@ int main( int argc, char *argv[] )
     /* Determine the hosts to run on */
     rc = mpiexecChooseHosts( &processTable );
 
-    mpiexecPrintTable( &processTable );
+    if (debug) 
+	mpiexecPrintTable( &processTable );
 
     /* Create the PMI INET socket */
     rc = mpiexecGetPort( &fdPMI, &portnum );
-    printf( "rc = %d, Using port %d and fd %d\n", rc, portnum, fdPMI );
+    if (debug) 
+	printf( "rc = %d, Using port %d and fd %d\n", rc, portnum, fdPMI );
     if (rc) return rc;
 
     /* Optionally stage the executables */
@@ -188,9 +193,10 @@ int main( int argc, char *argv[] )
     rc = mpiexecStartProcesses( &processTable, myname, portnum );
 
     /* Poll on the active FDs and handle each input type */
+    /* FIXME: NOT DONE */
 
     /* Clean up and determine the return code.  Log any anomolous events */
-
+    /* FIXME: NOT DONE */
     return rc;
 }
 
@@ -427,6 +433,23 @@ int mpiexecChooseHosts( ProcessTable_t *ptable )
 #define MAXLINE 256
 const char defaultMachinesPath[] = DEFAULT_MACHINES_PATH;
 
+/* Read the associate machines file for the given architecture, returning
+   a table with nNeeded machines.  The format of this file is
+
+   # comments
+   hostname
+   
+   Eventually, we'll allow
+   hostname [ : nproc [ : login ] ]
+
+   The files are for the format:
+
+   path/machines.<arch>
+   or
+   path/machines 
+   (if no arch is specified)
+   
+*/
 MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 {
     FILE *fp;
@@ -466,8 +489,15 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
 	    strcpy( machinesfile, dirname );
 	    strcat( machinesfile, "/machines" );
 	}
+	if (debug) 
+	    printf( "Attempting to open %s\n", machinesfile );
 	fp = fopen( machinesfile, "r" );
 	if (fp) break;  /* Found one */
+
+	if (next_path) 
+	    path = next_path + 1;
+	else
+	    path = 0;
     }
 	
     if (!fp) {
@@ -486,7 +516,7 @@ MachineTable *mpiexecReadMachines( const char *arch, int nNeeded )
     }
     while (nNeeded) {
 	if (!fgets( buf, MAXLINE, fp )) break;
-	printf( "line: %s\n", buf );
+	if (debug) printf( "line: %s", buf );
 	/* Skip comment lines */
 	p = buf;
 	while (isascii(*p) && isspace(*p)) p++;
@@ -539,7 +569,7 @@ int mpiexecGetPort( int *fdout, int *portout )
     }
 
     for (portnum=low_port; portnum<=high_port; portnum++) {
-	bzero( &sa, sizeof(sa) );
+	bzero( (void *)&sa, sizeof(sa) );
 	sa.sin_family	   = AF_INET;
 	sa.sin_port	   = htons( portnum );
 	sa.sin_addr.s_addr = INADDR_ANY;
@@ -583,6 +613,7 @@ int mpiexecGetPort( int *fdout, int *portout )
     return 0;
 }
 
+#include <netdb.h>
 int mpiexecGetMyHostName( char myname[MAX_HOST_NAME+1] )
 {
     struct hostent     *hp;
@@ -638,6 +669,9 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	if (pipe(write_in_pipe)) return -1;
 	if (pipe(read_err_pipe)) return -1;
 
+	if (debug)
+	    printf( "About to fork process %d\n", i );
+
 	pid = fork();
 	if (pid > 0) {
 	    /* We are (and remain) the parent */
@@ -651,12 +685,11 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    ps->fdStdout = read_out_pipe[0];
 	    ps->fdStderr = read_err_pipe[0];
 	    ps->fdStdin  = write_in_pipe[1];
-	    
 	}
 	else if (pid == 0) {
 	    char **myargv;
 	    char port_as_string[1024];
-	    int rshNargs, j;
+	    int rshNargs, j, rc;
 
 	    /* FIXME: we need to close the fdPMI */
 	    close(read_out_pipe[0]);
@@ -707,8 +740,10 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 	    printf( "\n" );
 	    }
 #endif
-	    execvp( myargv[0], myargv );
-	    /* never returns */
+	    rc = execvp( myargv[0], myargv );
+	    if (rc) 
+		printf( "Error from execvp: %d\n", errno );
+	    /* should never returns */
 	}
 	else {
 	    /* Error on fork */
@@ -729,6 +764,7 @@ int mpiexecStartProcesses( ProcessTable_t *ptable, char myname[], int port )
 /* For example, this allows "ssh -2" as a command                          */
 /* ----------------------------------------------------------------------- */
 const char defaultRemoteshell[] = DEFAULT_REMOTE_SHELL;
+
 int mpiexecGetRemshellArgv( char *argv[], int nargv )
 {
     static char *(remshell[10]);

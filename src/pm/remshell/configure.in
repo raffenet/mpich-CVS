@@ -119,6 +119,16 @@ elif test "$ac_cv_func_signal" = "yes" ; then
     AC_DEFINE(USE_SIGNAL,,[Define if signal should be used to set signals])
 fi
 dnl
+AC_PATH_PROG(SSH,ssh)
+if test -z "$SSH" ; then
+    AC_PATH_PROG(RSH,rsh)
+    if test -n "$RSH" ; then
+        remshell="$RSH"
+    fi
+else
+    remshell="$SSH"
+fi
+
 dnl Setup other replaceable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
@@ -129,8 +139,9 @@ AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(master_top_srcdir)
 
-AC_DEFINE(DEFAULT_MACHINES_PATH,"$datadir:.",[Define the search path for machines files])
-AC_DEFINE(DEFAULT_REMOTE_SHELL,"ssh",[Define the default remote shell program to use])
+eval eval_datadir=$datadir
+AC_DEFINE_UNQUOTED(DEFAULT_MACHINES_PATH,"$eval_datadir:.",[Define the search path for machines files])
+AC_DEFINE_UNQUOTED(DEFAULT_REMOTE_SHELL,"$remshell",[Define the default remote shell program to use])
 dnl
 dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile)
