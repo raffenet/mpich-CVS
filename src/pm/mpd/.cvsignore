@@ -9,3 +9,4 @@ mpdconf.h
 Makefile
 mpdroot
 .deps
+autom4te.cache
