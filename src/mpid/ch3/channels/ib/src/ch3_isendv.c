@@ -41,6 +41,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
+    MPIU_dbg_printf("ch3_isendv\n");
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(n_iov <= MPID_IOV_LIMIT);

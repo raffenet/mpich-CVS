@@ -31,6 +31,7 @@ void MPIDI_CH3_iSend(MPIDI_VC * vc, MPID_Request * sreq, void * hdr, int hdr_sz)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
+    MPIU_dbg_printf("ch3_isend\n");
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
