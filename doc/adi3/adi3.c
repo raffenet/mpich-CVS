@@ -59,8 +59,8 @@
  * Routines to manage and interrogate the data structures.
  *
  T*/
-/*D
-  Datastructure - Overview of MPID data structures
+/*T
+  Section : Data Structures
 
   MPI has a number of data structures, most of which are represented by 
   an opaque handle in an MPI program.  In MPID, these handles are represented
@@ -471,7 +471,7 @@ int MPID_Comm_incr( MPID_Comm *comm, int incr )
 
 /*T
  *
- * Section x - Communicator attributes
+ * Section : - Communicator attributes
  *
  * These provide a way for the user to pass data to the MPI implementation,
  * on a communicator-by-communicator basis.  To allow an implementation to
@@ -958,6 +958,9 @@ int MPID_Put( const void *origin_buf, int n,
   Note that it takes a communicator as an argument.  When used on behalf of
   an 'MPI_Win' object, the communicator associated with the window is used.
 
+  Module:
+  Communication
+
   Questions: 
   The same as for MPID_Put on the local flag.
   @*/
@@ -967,13 +970,13 @@ int MPID_Rhc( int rank, MPID_Comm *comm, MPID_Handler_id id, void *ptr, int n,
 }
 
 /*@
-  Wait for completion of flags specified with MPID_Put, MPID_Get, or MPID_Rhc.
+  MPID_Flags_waitall - Wait for completion of flags specified with
+  MPID_Put, MPID_Get, MPID_Rhc, or MPID_Rhcv
+
+  Note:
   These are local flags only (including local flags that were specified 
   as target flags by a remote process with this process as target).
 
-  ? Do we want waitsome or waitany instead?
-
-  Note:
   This routine allows a device to optimize waiting on completion.  For example,
   a TCP device could use select with a null timeout while waiting for an 
   operation, such as a write to a socket, to complete.  A shared-memory
@@ -981,10 +984,20 @@ int MPID_Rhc( int rank, MPID_Comm *comm, MPID_Handler_id id, void *ptr, int n,
   
   This also allows devices that have special addresses for completion to
   transfer those completion values to the specified local flags.
+
+  Module:
+  Communication
   @*/
 int MPID_Flags_waitall( int count, int *(flags[]) )
 {
 }
+
+/*@
+  MPID_Flags_testall - .
+
+  Module:
+  Communication
+  @*/
 int MPID_Flags_testall( int count, int *(flags[]), int *found )
 {
 }
@@ -1082,6 +1095,8 @@ int MPID_Flags_testsome( int count, int *(flags[]) )
   datatype 'MPI_BYTE'.  The major differences are the completion
   flags 'local_flag' and 'target_flag', which behave just as for 'MPID_Put'.
 
+  Module:
+  Communication
   @*/
 int MPID_Get( void * origin_buf, int n, 
 	      MPI_Aint target_offset, int target_rank, MPID_Win window, 
@@ -1160,16 +1175,56 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
  * As for the other routines in MPID, these only check for errors that are 
  * difficult to check for without performing the operation.
  * 
- * A special case is
- * MPID_tBsend.
- * This has the semantics of MPI_Bsend, except that it returns the internal
- * error code MPID_WOULD_BLOCK if the message can't be sent immediately.
- * (t is for "try").  
- *
- * The reason that this interface is chosen over a query to check whether
- * a message *can* be sent is that the query approach is not thread-safe.
+ * A special case is MPID_tBsend (see below)
  * 
  */
+
+/*@
+  MPID_Isend - 
+
+  Notes:
+  The only difference between this and 'MPI_Isend' is that the basic
+  error checks (e.g., valid communicator, datatype, rank, and tag)
+  have been made, and the MPI opaque objects have been replaced by
+  MPID objects.
+
+  Module:
+  Communication
+
+  @*/
+int MPID_Isend( void *buf, int count, MPID_Datatype *datatype,
+		int tag, int rank, MPID_Comm *comm, 
+		MPID_Request **request )
+{
+}
+
+/*@
+  MPID_tBsend - Attempt a send and return if it would block
+
+  Notes:
+  This has the semantics of 'MPI_Bsend', except that it returns the internal
+  error code 'MPID_WOULD_BLOCK' if the message can't be sent immediately.
+  (t is for "try").  
+ 
+  The reason that this interface is chosen over a query to check whether
+  a message `can` be sent is that the query approach is not
+  thread-safe.  Since the decision on whether a message can be sent
+  without blocking depends (among other things) on the state of flow
+  control managed by the device, this approach also gives the device
+  the greatest freedom in implementing flow control.  In particular,
+  if another MPI process can change the flow control parameters, then
+  even in a single-threaded implementation, it would not be safe to
+  return, for example, a message size that could be sent with 'MPI_Bsend'.
+
+  This routine allows an MPI implementation to optimize 'MPI_Bsend'
+  for the case when the message can be delivered without blocking the
+  calling process.  An ADI implementation is free to have this routine
+  always return 'MPID_WOULD_BLOCK', but is encouraged not to.
+  @*/
+int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
+		 int tag, int rank, MPID_Comm *comm )
+{
+}
 
 /*T 
  * Section 3: Communication Buffer management
@@ -1235,12 +1290,11 @@ int MPID_Rhcv( int rank, MPID_Comm *comm, MPID_Handler_id id,
 
   However, the code is somewhat simplified if a segment is always used
   (in an case where a segment `may` be used).  
-
   
   @*/
 int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
-			 MPID_Comm *comm, int rank, 
-			 MPID_Segment *segment )
+			    MPID_Comm *comm, int rank, 
+			    MPID_Segment *segment )
 {
 }
 
@@ -1248,7 +1302,7 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   MPID_Segment_pack - Pack up the designated buffer with a range of bytes.
 
   Input Parameters:
-+ buf_desc - Buffer descriptor (initialized with 'MPID_Buffer_get_send')
++ buf_desc - Buffer descriptor (initialized with 'MPID_Segment_init_pack')
 - send_buffer - Pointer to buffer to place data in.  May be 'NULL', in which 
   case 'MPID_Segment_fill' uses an internal buffer (and returns it).
 
@@ -1270,7 +1324,7 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   The values of 'first' and 'last' that are returned must satisfy the 
   following restrictions\:
 + 1 -  (last-first) on output must be less than or equal to (last-first) on 
-input.
+  input.
 . 2 -  (last+1) on output must have the property that when used as first on a 
   subsequent input, the value is unchanged.
 - 3 - If first is zero on input, then first must be 0 on output.
@@ -1283,10 +1337,10 @@ input.
   Questions:
   If 'MPID_Segment_pack' returns an internal buffer, who is responsible for
   freeing it?  It can''t be a single static buffer because that isn''t 
-  thread-safe.
+  thread-safe.  Is it freed as part of 'MPID_Segment_free'?
 
   If a send buffer is going to be provided, do we want to tell 
-  MPID_Segment_init so that no internal buffer is allocated?
+  'MPID_Segment_init_pack' so that no internal buffer is allocated?
 
   Should we return the number of bytes packed in a variable, just
   to simplify the use of the result (which, after all, is a pointer `and`
@@ -1319,7 +1373,14 @@ int MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last,
 }
 
 /*@
-  MPID_Segment_free - .
+  MPID_Segment_free - Free a segment
+
+  Input Parameter:
+. segment - Segment to free
+
+  Question:
+  Should we pass the address of the segment pointer so that we can set
+  it to NULL, as the MPI routines do?
   @*/
 int MPID_Segment_free( MPID_Segment *segment )
 {
@@ -1408,6 +1469,32 @@ int MPID_Memory_unregister( void *buf, int len, int rdwt )
  * that we may need more information that just the "tag" that point-to-point
  * provides.  Thus, at the beginning of a store-and-forward operation,
  * a small amount of additional data may be sent.
+ *
+ * Streams are actually delivered in blocks; as each block is
+ * delivered, the application has the option to process and/or forward
+ * the block to another process (or processes).  The block size is
+ * determined by the device.
+ *
+ * Note to implementors:
+ * In determining the block size, you cannot look at the datatype,
+ * since the datatypes used by the sender and the receiver may be
+ * different.  For example, even though the sender has a contiguous
+ * buffer and thus could send a large block without allocating memory
+ * or copying data, the receiver may have specified a non-contiguous 
+ * data buffer (in the segment definition), thus limiting the size of
+ * the block for receiving.
+ *
+ * An implementation should also consider at least double buffering
+ * the communication of a stream.  In other words, once one block is
+ * delivered, allowing 'MPID_Wait_stream' to return with that block,
+ * begin delivering the next block into a separate buffer.  Where it
+ * makes sense, if there is storage for the entire message, an
+ * implementation may choose to deliver the entire message as quickly
+ * as possible, updating the stream->cur_length as data is delivered.
+ * This points out that while the stream routines disucss motion in blocks,
+ * there is no particular limit to the number of blocks that are delivered
+ * each time.
+ *
  T*/
 
 /*@
@@ -1433,13 +1520,25 @@ int MPID_Memory_unregister( void *buf, int len, int rdwt )
 
   This communication defines a `stream` consisting of several
   communication steps.  The data sent by this routine may only be
-  received with 'MPID_Irecv_stream'; th
+  received with 'MPID_Irecv_stream'; this contrasts with other MPI
+  point-to-point communication calls.
+
+  Module:
+  Stream
 
   Question:
   Can we modify the stream buffer?  E.g., for allreduce or scan?  
   See 'MPID_Iforward_stream' below.
+
+  We may sometimes want to send the stream starting from the last byte
+  rather than the first byte, particularly in cases where we will be
+  forwarding.
+
+  See the discussion on 'MPID_Wait_stream'.  Do we want to also define
+  an 'MPID_Send_stream'?  How often will we want the nonblocking version?
   @*/
-int MPID_Isend_stream( MPID_Segment *segment, void *header, int header_size,
+int MPID_Isend_stream( MPID_Segment *segment, 		       
+		       void *header, int header_size,
 		       int tag, int rank, MPID_Comm *comm, 
 		       int first, int last, MPID_Stream **stream )
 {
@@ -1447,6 +1546,33 @@ int MPID_Isend_stream( MPID_Segment *segment, void *header, int header_size,
 
 /*@
   MPID_Irecv_stream - Initialize a stream for receiving
+
+  Input Parameters:
++ segment - The buffer to be sent, defined by a segment type.
+. offset  - offset of the segment within the stream.  If the segment
+            describes the entire stream, use zero for the offset
+. header  - An optional pointer to additional data to send.  If provided,
+            the stream receivers must provide a matching buffer
+. header_size - Number of bytes in 'header' to send.  Use zero if 'header' is 
+  null.
+. tag - Message tag.
+. rank - Rank of destination process
+. comm - Communicator to send stream in
+- will_forward - Set to true if the stream will be forward to other
+  processes, otherwise set it to false.   See 'MPID_Iforward_stream'.
+ 
+  Output Parameter:
+. stream - Pointer to a stream object.  This is similar to an
+  'MPID_Request', but contains information needed to process streams.
+
+  Notes:
+  Because of the store and forward semantics, each receiver of a
+  stream may receive more data than will locally be stored; the rest
+  of the data is forwarded.  This is why the location of the segment
+  within the stream must be specified.
+
+  Module:
+  Stream
 
   Question:
   Where do I find the delivered header size?  
@@ -1458,14 +1584,68 @@ int MPID_Isend_stream( MPID_Segment *segment, void *header, int header_size,
   mismatch on the communicator.
 
   @*/
-int MPID_Irecv_stream( MPID_Segment *segment, void *header, int
-		       max_header_size, int tag, int rank, 
-		       MPID_Comm *comm, MPID_Stream **stream )
+int MPID_Irecv_stream( MPID_Segment *segment, int offset, 
+		       void *header, int max_header_size, int tag, int rank, 
+		       MPID_Comm *comm, int will_forward, 
+		       MPID_Stream **stream )
 {
 }
 
 /*@
-  MPID_Wait_stream - Wait for a stream to deliver the next segment of data.
+  MPID_Wait_stream - Wait for a stream 
+  
+  Input Parameter:
+. stream - Stream to wait on.  See notes.
+
+  Return value:
+  Stream status; returns 0 normally, -1 when the end of the stream is 
+  reached, and an MPI error code for other errors.  The end of stream 
+  value is set when the last part of the stream has been received.
+
+  Notes:  
+  The semantics of 'MPID_Wait_stream' are very similar to those for
+  'MPI_Wait'.  In particular, when 'MPID_Wait_stream' returns, the
+  buffer is ready for use.  The difference from 'MPI_Wait' is in the
+  definition of the buffer; in the case of 'MPID_Wait_stream', it
+  refers to the current data block.  
+
+  Rather than use a separate 'status' variable, the length of the data
+  (in bytes) is part of the stream structure, and can be accessed as
+  'stream->cur_length'.  The address of the buffer containing the
+  stream is 'stream->cur_ptr'.
+
+  A classic "store and forward" communication could be written as follows\:
+.vb
+    MPID_Segment_init_unpack( buf, count, datatype, comm, rank,
+                              &segment );
+    MPID_Irecv_stream( segment, NULL, 0, tag, from_rank, comm, 1, 
+                       &stream );
+    first = 0;		       
+    do {
+        eos = MPID_Wait_stream( stream );
+	if (eos > 0) error();
+	MPID_Iforward_stream( stream, NULL, 0, tag, 
+                              &to_rank, 1, comm	);
+	last = first + stream->cur_length;		      
+        MPID_Segment_unpack( segment, &first, &last, stream->cur_ptr );
+	first = last + 1;
+    } while( eos == 0 );
+    MPID_Segment_free( segment );
+.ve
+  Once 'MPID_Wait_stream' returns '1', the stream is freed and the
+  pointer becomes invalid.
+
+  For a sending stream (e.g., one created with 'MPID_Isend_stream',
+  'MPID_Wait_stream' has the same semantics: it returns when the
+  current chunck has been sent, and that part of the stream is
+  (logically) available for reuse.
+
+  Module:
+  Stream
+
+  Question:
+  Since wait frees the stream, do we want it to set the pointer to
+  null, i.e., use 'MPID_Stream **stream' instead?
   @*/
 int MPID_Wait_stream( MPID_Stream *stream )
 {
@@ -1474,20 +1654,42 @@ int MPID_Wait_stream( MPID_Stream *stream )
 /*@
   MPID_Iforward_stream - Forward a stream
 
+  Input Parameters:
++ stream - A stream created with 'MPID_Irecv_stream'
+. header  - An optional pointer to additional data to send.  If provided,
+            the stream receivers must provide a matching buffer
+. header_size - Number of bytes in 'header' to send.  Use zero if 'header' is 
+  null.
+. tag - Message tag.
+. ranks - Array of ranks of destination processes
+. nranks - Number of processes in 'ranks'
+- comm - Communicator to send stream in
+
+  Notes:
+  This routine describes a common operation in collective communication and
+  computation and it allows the device to optimize for this case.  For example,
+  the data that was received (with 'MPID_Irecv_stream') can be left in a 
+  location and format convienent for further communication.   In a 
+  shared-memory device, the message could be left in shared memory, allowing it
+  to be sent to other destinations without making another copy of the data.
+  High-performance interconnects with on-board memory can leave the data 
+  in the interconnect.  
+
+  Module:
+  Stream
+
   Question:
   There is no output stream because this is a forward of an existing 
-  stream. Is this the right thing to do?
+  stream. Is this the right thing to do?  Yes, I think so.
   @*/
 int MPID_Iforward_stream( MPID_Stream *stream, void *header, 
-			   int header_size, int tag, int rank, 
-			   MPID_Comm *comm )
+			  int header_size, int tag, int ranks[],
+			  int nranks, MPID_Comm *comm )
 {
 }
 
-
-
 /*T
- * Section x: Topology
+ * Section : Topology
  *
  * The MPI collective and topology routines can benefit from information 
  * about the topology of the underlying interconnect.  Unfortunately, there
@@ -1564,7 +1766,7 @@ int MPID_Topo_cluster_info( int *levels, int my_cluster[], int my_rank[] )
 }
 
 /*T
- * Section n: Miscellaneous
+ * Section : Miscellaneous
  T*/
 /*@
   MPID_Thread_init - Initialize the device
@@ -1676,7 +1878,7 @@ value might be "not yet heterogeneous").
 ? MPID_Put and MPID_Rhc.
 
 /*T
- * Section n+1: Service Routines
+ * Section : Service Routines
  *
  * Many of these may be implemented (as macros) by their underlying routine
  * However, in some cases, it may be advantageous to use special routines.
@@ -2080,7 +2282,7 @@ int MPID_Attr_delete( MPID_List *list, int keyval )
 }
 
 /*T
- * Section x: Environment
+ * Section : Environment
  *
  * These are the global defines and variables that other modules may
  * refer to.  
