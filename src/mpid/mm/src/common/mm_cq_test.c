@@ -80,7 +80,7 @@ int mm_cq_test()
 		    }
 		    MPID_Thread_unlock(MPID_Process.qlock);
 		    /* merge the unex car with the posted car using the method in the vc */
-		    iter_ptr->vc_ptr->merge_unexpected(car_ptr, iter_ptr);
+		    iter_ptr->vc_ptr->merge_with_unexpected(car_ptr, iter_ptr);
 		    found = TRUE;
 		    break;
 		}

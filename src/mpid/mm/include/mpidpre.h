@@ -88,9 +88,10 @@ typedef int MM_CAR_TYPE;
 /* packet definitions */
 typedef struct MPID_Packet
 {
+    int type;
     int context;
     int tag;
-    /*int src;*/
+    int src;
     int size;
 } MPID_Packet;
 

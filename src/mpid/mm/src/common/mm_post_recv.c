@@ -47,7 +47,7 @@ int mm_post_recv(MM_Car *car_ptr)
 	    }
 	    MPID_Thread_unlock(MPID_Process.qlock);
 	    /* merge the unex car with the posted car using the method in the vc */
-	    iter_ptr->vc_ptr->merge_unexpected(car_ptr, iter_ptr);
+	    iter_ptr->vc_ptr->merge_with_unexpected(car_ptr, iter_ptr);
 	    return MPI_SUCCESS;
 	}
 	if (trailer_ptr != iter_ptr)

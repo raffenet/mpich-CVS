@@ -48,7 +48,7 @@ int tcp_accept_connection()
 	vc_ptr->data.tcp.connected = FALSE;
 	vc_ptr->data.tcp.connecting = TRUE;
 	vc_ptr->post_read = tcp_post_read;
-	vc_ptr->merge_unexpected = tcp_merge_unexpected;
+	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
 	vc_ptr->post_write = tcp_post_write;
 
 	/* send a keep acknowledgement */

@@ -148,7 +148,7 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	break;
 #ifdef WITH_METHOD_SHM
     case MM_SHM_METHOD:
-	vc_ptr->merge_unexpected = shm_merge_unexpected;
+	vc_ptr->merge_with_unexpected = shm_merge_with_unexpected;
 	vc_ptr->post_write = shm_post_write;
 	break;
 #endif
@@ -158,25 +158,25 @@ MPIDI_VC * mm_vc_alloc(MM_METHOD method)
 	vc_ptr->data.tcp.connected = FALSE;
 	vc_ptr->data.tcp.connecting = FALSE;
 	vc_ptr->post_read = tcp_post_read;
-	vc_ptr->merge_unexpected = tcp_merge_unexpected;
+	vc_ptr->merge_with_unexpected = tcp_merge_with_unexpected;
 	vc_ptr->post_write = tcp_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA
     case MM_VIA_METHOD:
-	vc_ptr->merge_unexpected = via_merge_unexpected;
+	vc_ptr->merge_with_unexpected = via_merge_with_unexpected;
 	vc_ptr->post_write = via_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_VIA_RDMA
     case MM_VIA_RDMA_METHOD:
-	vc_ptr->merge_unexpected = via_rdma_merge_unexpected;
+	vc_ptr->merge_with_unexpected = via_rdma_merge_with_unexpected;
 	vc_ptr->post_write = via_rdma_post_write;
 	break;
 #endif
 #ifdef WITH_METHOD_NEW
     case MM_NEW_METHOD:
-	vc_ptr->merge_unexpected = new_merge_unexpected;
+	vc_ptr->merge_with_unexpected = new_merge_with_unexpected;
 	vc_ptr->post_write = new_post_write;
 	break;
 #endif

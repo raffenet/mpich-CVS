@@ -121,7 +121,7 @@ typedef struct MPIDI_VC
              char * pmi_kvsname; /* name of the key_value database where the remote process put its business card */
                 int rank; /* the rank of the remote process relative to MPI_COMM_WORLD in the key_value database described by pmi_kvsname */
               int (*post_read)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
-              int (*merge_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
+              int (*merge_with_unexpected)(MM_Car *car_ptr, MM_Car *unex_car_ptr);
 	      int (*post_write)(struct MPIDI_VC *vc_ptr, MM_Car *car_ptr);
   struct MPIDI_VC * read_next_ptr;
   struct MPIDI_VC * write_next_ptr;
