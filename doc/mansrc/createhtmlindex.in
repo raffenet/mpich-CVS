@@ -11,6 +11,8 @@ chop $WWWRoot;
 $URLBase = "http://www.mcs.anl.gov/mpi/mpich2/www";
 # End of line character (\r\n is DOS-friendly)
 $eol = "\r\n";
+# Number of colums in table of names
+$TableCols = 3;
 #
 # Process arguments for any changes
 foreach $_ (@ARGV) {
@@ -48,13 +50,13 @@ open( OUTFD, ">$WWWRoot/www/index.htm" ) ||
 &AddHeader( "Web pages for MPI and MPE" );
 
 print OUTFD "<H2>MPI Commands</H2>$eol";
-&AddDirectoryContents( "www/www1" );
+&AddDirectoryContents( "www", "www1" );
 
 print OUTFD "<H2>MPI Routines</H2>$eol";
-&AddDirectoryContents( "www/www3" );
+&AddDirectoryContents( "www", "www3" );
 
 #print OUTFD "<H2>MPE Routines</H2>$eol";
-#&AddDirectoryContents( "www/www4" );
+#&AddDirectoryContents( "www", "www4" );
 
 &AddTrailer( );
 
@@ -65,25 +67,28 @@ open( OUTFD, ">$WWWRoot/www/www1/index.htm" ) ||
     die "Cannot open $WWWRoot/www/www1/index.htm\n";
 
 &AddHeader( "Web pages for MPICH2 Commands" );
-&AddDirectoryContents( "www/www1" );
+&AddDirectoryContents( "www/www1", "." );
+&AddTrailer( );
 close( OUTFD );
 
 open( OUTFD, ">$WWWRoot/www/www3/index.htm" ) || 
     die "Cannot open $WWWRoot/www/www3/index.htm\n";
 
 &AddHeader( "Web pages for MPI Routines" );
-&AddDirectoryContents( "www/www3" );
+&AddDirectoryContents( "www/www3", "." );
+&AddTrailer( );
 close( OUTFD );
 
 # open( OUTFD, ">$WWWRoot/www/www4/index.htm" ) || 
 #     die "Cannot open $WWWRoot/www/www4/index.htm\n";
 
 # &AddHeader( "Web pages for MPE Routines" );
-# &AddDirectoryContents( "www/www4" );
+# &AddDirectoryContents( "www/www4", "." );
+# &AddTrailer( );
 # close( OUTFD );
 
 
-return 0;
+0;
 # ---------------------------------------------------------------------------
 # Support routines.
 # All write to OUTFD and use $eol for end-of-line
@@ -107,18 +112,29 @@ sub AddTrailer {
 # 2. Use the routine MakeHTMLTable to create a table with a given
 # number of columns, adding the links within the columns
 @HTMLFiles = ();
+# Look in $1/$2 for files, but make links relative to $2
 sub AddDirectoryContents {
-    my $dirname = $_[0];
+    my $rootdir = $_[0];
+    my $dirname = $_[1];
  
     # 1 Read the files
     @HTMLFiles = ();
-    opendir DIR, "$dirname";
+    opendir DIR, "$rootdir/$dirname";
+    if ($dirname eq ".") { 
+	$prefixname = "";
+    }
+    else {
+	$prefixname = "$dirname/";
+    }
     while ($filename = readdir DIR) {
+	if ($filename =~ /index\.html?/) { next; }
 	if ($filename =~ /.*\.html?$/) {
-	    $HTMLFiles[$#HTMLFiles+1] = "$dirname/$filename";
+	    $HTMLFiles[$#HTMLFiles+1] = "$prefixname$filename";
 	}
     }
     closedir DIR;
+
+    @HTMLFiles = sort( @HTMLFiles );
 
     # Format the table
     &MakeHTMLTable;
@@ -129,13 +145,15 @@ sub AddDirectoryContents {
 sub MakeHTMLTable {
     my $nvals = $#HTMLFiles;
 
-    my $nrows = ($nvals + $TableCols - 1) / $TableCols;
+    my $nrows = int ( ($nvals + $TableCols - 1) / $TableCols );
+    print OUTFD "<TABLE>$eol";
     for ($j=0; $j<$nrows; $j++) {
 	print OUTFD "<TR>";
 	for ($e=0; $e<$TableCols; $e++) {
 	    $filename = $HTMLFiles[$j + $e * $nrows];
 	    $linkname = $filename;
 	    $linkname =~ s/\.html?//;
+	    $linkname =~ s/.*\///;
 	    if ($filename ne "") {
 		$line = "<A HREF=\"$filename\">$linkname</A>";
 	    }
@@ -146,4 +164,5 @@ sub MakeHTMLTable {
 	}
 	print OUTFD "</TR>$eol";
     }
+    print OUTFD "</TABLE>$eol";
 }
