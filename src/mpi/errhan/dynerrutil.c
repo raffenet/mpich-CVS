@@ -103,7 +103,7 @@ int MPIR_Err_add_class( const char *msg_string,
     }
 
     if (msg_string) {
-	user_class_msgs[new_class] = strdup( msg_string );
+	user_class_msgs[new_class] = MPIU_Strdup( msg_string );
     }
     else {
 	user_class_msgs[new_class] = 0;

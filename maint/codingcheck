@@ -22,6 +22,7 @@ foreach $arg (@ARGV) {
 # Call once for each file
 sub ProcessFile {
     $filename = $_[0];
+    %warningmsgs = ();
     open( FD, "<$filename" ) || die "Could not open $filename";
     while (<FD>) {
 #	if (/\/\*-ALLOW-PRINTF-\*\//) {
@@ -45,6 +46,10 @@ sub ProcessFile {
 	&CheckForBadSubs( $_, $filename );
         &CheckForBadDefines( FD, $_, $filename );
     }
+    # Output summary messages
+    foreach $key (keys(%warningmsgs)) {
+	print "$key ($warningmsgs{$key} times)\n";
+    }
 }
 
 #
@@ -64,7 +69,13 @@ sub CheckForBadSubs {
     my $filename = $_[1];
     foreach $subname (@avoidsubs) {
 	if (/(?<!\w)$subname\s*\(/) {
-	    print "Warning: found reference to routine $subname in $filename\n";
+	    $msg = "Warning: found reference to routine $subname in $filename";
+	    if (defined($warningmsgs{$msg})) { 
+		$warningmsgs{$msg} = $warningmsgs{$msg} + 1;
+	    }
+	    else {
+		$warningmsgs{$msg} = 1;
+	    }
 	}
     }
     foreach $subname (@guardedsubs) {
@@ -85,6 +96,8 @@ sub CheckForBadSubs {
 	       'STDC_HEADERS', '__cplusplus',
 	       'MPID_[A-Za-z0-9_]*',
 	       'MPICH_[A-Za-z0-9_]*', 
+	       'DBG_[A-Z0-9_]*',
+	       'WITH_[A-Z0-9_]*',
 	       'MPI_BUILD_PROFILING' );
 @BadNames = ( 'rs6000', 'solaris', 'hpux', 'linux', 'HPUX', 'IRIX' );
 sub CheckName {

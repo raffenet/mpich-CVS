@@ -47,6 +47,19 @@ typedef short int16_t;
 typedef int int32_t;
 #endif
 
+/* Debugging and printf control */
+/* Use these *only* for debugging output intended for the implementors
+   and maintainers of MPICH.  Do *not* use these for any output that
+   general users may normally see.  Use either the error code creation
+   routines for error messages or msg_printf etc. for general messages 
+   (msg_printf will go through gettext).  
+*/
+#define dbg_printf printf
+#define dbg_fprintf fprintf
+/* The following are temporary definitions */
+#define msg_printf printf
+#define msg_fprintf fprintf
+
 /* Thread basics */
 #ifdef MPICH_SINGLE_THREADED
 typedef int MPID_Thread_key_t;

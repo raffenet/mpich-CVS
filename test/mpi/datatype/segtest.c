@@ -43,7 +43,7 @@ MPID_Dataloop *MPID_Dataloop_init_contig( int count )
     ct->loop_params.c_t.count    = count;
     ct->loop_params.c_t.dataloop = 0;
     ct->extent                   = count;
-    ct->id                       = 0;
+    ct->handle                       = 0;
 
     return ct;
 }
@@ -63,7 +63,7 @@ MPID_Dataloop *MPID_Dataloop_init_vector( int count, int blocksize,
     v->loop_params.v_t.stride    = stride;
     v->loop_params.v_t.dataloop  = 0;
     v->extent                    = (count-1)*stride + blocksize;
-    v->id                        = 0;
+    v->handle                        = 0;
 
     return v;
 }
@@ -91,7 +91,7 @@ MPID_Dataloop *MPID_Dataloop_init_blockindexed( int count, int blocksize,
     }
     bi->loop_params.bi_t.dataloop  = 0;
     bi->extent                     = extent;
-    bi->id                         = 0;
+    bi->handle                         = 0;
 
     return bi;
 }
@@ -120,7 +120,7 @@ MPID_Dataloop *MPID_Dataloop_init_indexed( int count, int *blocksize,
     }
     it->loop_params.i_t.dataloop  = 0;
     it->extent                    = extent;
-    it->id                        = 0;
+    it->handle                        = 0;
 
     return it;
 }

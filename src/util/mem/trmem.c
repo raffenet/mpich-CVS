@@ -191,8 +191,8 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     frags     ++;
 
     if (TRlevel & TR_MALLOC) 
-	fprintf( stderr, "[%d] Allocating %d bytes at %lx in %s:%d\n", 
-		 world_rank, a, (PointerInt)new, fname, lineno );
+	msg_fprintf( stderr, "[%d] Allocating %d bytes at %lx in %s:%d\n", 
+		     world_rank, a, (PointerInt)new, fname, lineno );
     return (void *)new;
 }
 
@@ -224,7 +224,8 @@ void MPIU_trfree( void *a_ptr, int line, const char file[] )
     head  = (TRSPACE *)a;
     if (head->cookie != COOKIE_VALUE) {
 	/* Damaged header */
-	fprintf( stderr, "[%d] Block at address %lx is corrupted; cannot free;\n\
+	msg_fprintf( stderr, 
+		     "[%d] Block at address %lx is corrupted; cannot free;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n\
 called in %s at line %d\n", world_rank, (PointerInt)a, file, line );
 	return;
@@ -233,7 +234,7 @@ called in %s at line %d\n", world_rank, (PointerInt)a, file, line );
 /* Check that nend is properly aligned */
     if ((sizeof(long) == 4 && ((long)nend & 0x3) != 0) ||
 	(sizeof(long) == 8 && ((long)nend & 0x7) != 0)) {
-	fprintf( stderr,
+	msg_fprintf( stderr,
  "[%d] Block at address %lx is corrupted (invalid address or header)\n\
 called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE), 
 		 file, line );
@@ -241,26 +242,26 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     }
     if (*nend != COOKIE_VALUE) {
 	if (*nend == ALREADY_FREED) {
-	    fprintf( stderr, 
+	    msg_fprintf( stderr, 
 		     "[%d] Block [id=%d(%lu)] at address %lx was already freed\n", 
 		     world_rank, head->id, head->size, (PointerInt)a + sizeof(TrSPACE) );
 	    head->fname[TR_FNAME_LEN-1]	  = 0;  /* Just in case */
 	    head->freed_fname[TR_FNAME_LEN-1] = 0;  /* Just in case */
-	    fprintf( stderr, 
+	    msg_fprintf( stderr, 
 		     "[%d] Block freed in %s[%d]\n", world_rank, head->freed_fname, 
 		     head->freed_lineno );
-	    fprintf( stderr, 
+	    msg_fprintf( stderr, 
 		     "[%d] Block allocated at %s[%d]\n", 
 		     world_rank, head->fname, head->lineno );
 	    return;
 	}
 	else {
 	    /* Damaged tail */
-	    fprintf( stderr, 
+	    msg_fprintf( stderr, 
 		     "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
 		     world_rank, head->id, head->size, (PointerInt)a );
 	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
-	    fprintf( stderr, 
+	    msg_fprintf( stderr, 
 		     "[%d] Block allocated in %s[%d]\n", world_rank, 
 		     head->fname, head->lineno );
 	}
@@ -281,9 +282,9 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     if (head->next)
 	head->next->prev = head->prev;
     if (TRlevel & TR_FREE)
-	fprintf( stderr, "[%d] Freeing %lu bytes at %lx in %s:%d\n", 
-		 world_rank, head->size, (PointerInt)a + sizeof(TrSPACE),
-		 file, line );
+	msg_fprintf( stderr, "[%d] Freeing %lu bytes at %lx in %s:%d\n", 
+		     world_rank, head->size, (PointerInt)a + sizeof(TrSPACE),
+		     file, line );
     
     /* 
        Now, scrub the data (except possibly the first few ints) to
@@ -324,39 +325,39 @@ $   Block at address %lx is corrupted
 +*/
 int MPIU_trvalid( const char str[] )
 {
-TRSPACE *head;
-char    *a;
-unsigned long *nend;
-int     errs = 0;
+    TRSPACE *head;
+    char    *a;
+    unsigned long *nend;
+    int     errs = 0;
 
-head = TRhead;
-while (head) {
-    if (head->cookie != COOKIE_VALUE) {
-	if (!errs) fprintf( stderr, "%s\n", str );
-	errs++;
-	fprintf( stderr, "[%d] Block at address %lx is corrupted\n", 
-                 world_rank, (PointerInt)head );
-	/* Must stop because if head is invalid, then the data in the
-	   head is probably also invalid, and using could lead to SEGV or BUS
-	 */
-	return errs;
+    head = TRhead;
+    while (head) {
+	if (head->cookie != COOKIE_VALUE) {
+	    if (!errs) msg_fprintf( stderr, "%s\n", str );
+	    errs++;
+	    fprintf( stderr, "[%d] Block at address %lx is corrupted\n", 
+		     world_rank, (PointerInt)head );
+	    /* Must stop because if head is invalid, then the data in the
+	       head is probably also invalid, and using could lead to 
+	       SEGV or BUS  */
+	    return errs;
 	}
-    a    = (char *)(((TrSPACE*)head) + 1);
-    nend = (unsigned long *)(a + head->size);
-    if (nend[0] != COOKIE_VALUE) {
-	if (!errs) fprintf( stderr, "%s\n", str );
-	errs++;
-	head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
-	fprintf( stderr, 
+	a    = (char *)(((TrSPACE*)head) + 1);
+	nend = (unsigned long *)(a + head->size);
+	if (nend[0] != COOKIE_VALUE) {
+	    if (!errs) fprintf( stderr, "%s\n", str );
+	    errs++;
+	    head->fname[TR_FNAME_LEN-1]= 0;  /* Just in case */
+	    msg_fprintf( stderr, 
 "[%d] Block [id=%d(%lu)] at address %lx is corrupted (probably write past end)\n", 
-	     world_rank, head->id, head->size, (PointerInt)a );
-	fprintf( stderr, 
-		"[%d] Block allocated in %s[%d]\n", 
-                world_rank, head->fname, head->lineno );
+			 world_rank, head->id, head->size, (PointerInt)a );
+	    msg_fprintf( stderr, 
+			 "[%d] Block allocated in %s[%d]\n", 
+			 world_rank, head->fname, head->lineno );
 	}
-    head = head->next;
+	head = head->next;
     }
-return errs;
+    return errs;
 }
 
 /*+C
@@ -389,24 +390,24 @@ void MPIU_trdump( FILE *fp )
     if (fp == 0) fp = stderr;
     head = TRhead;
     while (head) {
-	fprintf( fp, "[%d] %lu at [%lx], id = ", 
+	msg_fprintf( fp, "[%d] %lu at [%lx], id = ", 
 		 world_rank, head->size, (PointerInt)head + sizeof(TrSPACE) );
 	if (head->id >= 0) {
 	    head->fname[TR_FNAME_LEN-1] = 0;
-	    fprintf( fp, "%d %s[%d]\n", 
+	    msg_fprintf( fp, "%d %s[%d]\n", 
 		     head->id, head->fname, head->lineno );
 	}
 	else {
 	    /* Decode the package values */
 	    head->fname[TR_FNAME_LEN-1] = 0;
 	    id = head->id;
-	    fprintf( fp, "%d %s[%d]\n", 
+	    msg_fprintf( fp, "%d %s[%d]\n", 
 		     id, head->fname, head->lineno );
 	}
 	head = head->next;
     }
 /*
-    fprintf( fp, "# [%d] The maximum space allocated was %ld bytes [%ld]\n", 
+    msg_fprintf( fp, "# [%d] The maximum space allocated was %ld bytes [%ld]\n", 
 	     world_rank, TRMaxMem, TRMaxMemId );
  */
 }
@@ -444,7 +445,7 @@ static FILE *TRFP = 0;
 static void PrintSum( TRINFO **a, VISIT order, int level )
 { 
     if (order == postorder || order == leaf) 
-	fprintf( TRFP, "[%d]%s[%d] has %d\n", 
+	msg_fprintf( TRFP, "[%d]%s[%d] has %d\n", 
 		 (*a)->id, (*a)->fname, (*a)->lineno, (*a)->size );
 }
 
@@ -490,15 +491,16 @@ void MPIU_trSummary( FILE *fp )
     TRFP = fp;
     twalk( (char *)root, (void (*)())PrintSum );
     /*
-      fprintf( fp, "# [%d] The maximum space allocated was %d bytes [%d]\n", 
+      msg_fprintf( fp, "# [%d] The maximum space allocated was %d bytes [%d]\n", 
       world_rank, TRMaxMem, TRMaxMemId );
     */
 }
 #else
 void MPIU_trSummary( FILE *fp )
 {
-    fprintf( fp, "# [%d] The maximum space allocated was %ld bytes [%ld]\n", 
-	     world_rank, TRMaxMem, TRMaxMemId );
+    msg_fprintf( fp, 
+		 "# [%d] The maximum space allocated was %ld bytes [%ld]\n", 
+		 world_rank, TRMaxMem, TRMaxMemId );
 }	
 #endif
 
@@ -615,9 +617,10 @@ void *MPIU_trrealloc( void *p, int size, int lineno, const char fname[] )
     head = (TRSPACE *)(pa - sizeof(TrSPACE));
     if (head->cookie != COOKIE_VALUE) {
 	/* Damaged header */
-	fprintf( stderr, "[%d] Block at address %lx is corrupted; cannot realloc;\n\
+	msg_fprintf( stderr, 
+"[%d] Block at address %lx is corrupted; cannot realloc;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n", 
-		 world_rank, (PointerInt)pa );
+		     world_rank, (PointerInt)pa );
 	return 0;
     }
 
@@ -759,9 +762,10 @@ void MPIU_trdumpGrouped( FILE *fp )
 	    nbytes += (int)cur->size;
 	    cur    = cur->next;
 	}
-	fprintf( fp, "[%d] File %13s line %5d: %d bytes in %d allocation%c\n", 
-		 world_rank, head->fname, head->lineno, nbytes, nblocks, 
-		 (nblocks > 1) ? 's' : ' ' );
+	msg_fprintf( fp, 
+"[%d] File %13s line %5d: %d bytes in %d allocation%c\n", 
+		     world_rank, head->fname, head->lineno, nbytes, nblocks, 
+		     (nblocks > 1) ? 's' : ' ' );
 	head = cur;
     }
     fflush( fp );

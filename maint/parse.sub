@@ -167,7 +167,7 @@ sub GetSubArgs {
     return ($leader, $remainder, @args );
 }
 
-# remainder = StripCommens( FD, inputline )
+# remainder = StripComments( FD, inputline )
 # removes comments from a line and returns the line.  Read more if necessary
 sub StripComments {
     my $FD = $_[0];

@@ -6,12 +6,14 @@ $debug = 0;
 $entrycount = 0;
 %defined_args = ();
 $showfiles = 0;
+$quiet = 0;
 
 # Check for special args
 @files = ();
 foreach $arg (@ARGV) {
     if ($arg =~ /^-showfiles/) { $showfiles = 1; }
     elsif( $arg =~ /-debug/) { $debug = 1; }
+    elsif( $arg =~ /-quiet/) { $quiet = 1; }
     else {
 	print "Adding $arg to files\n" if $debug;
 	$files[$#files+1] = $arg;
@@ -32,6 +34,8 @@ sub ProcessFile {
     open (FD, "<$filename" ) || die "Could not open $filename\n";
 
     while (<FD>) {
+	# First, remove any comments
+	$_ = StripComments( FD, $_ );
 	# Skip the definition of the function
 	if (/int\s*MPIR_Err_create_code/) { next; }
 	while (/MPIR_Err_create_code\s*(\(.*$)/) {
@@ -41,10 +45,10 @@ sub ProcessFile {
 		    print "|$arg|\n";
 		}
 	    }
-	    # Check the 2nd and third arguments
+	    # Check the 2nd and 3rd arguments
 	    $arg2 = $args[1];
 	    if ($arg2 =~ /\s$/) {
-		print "trailing blank on arg $arg2 in $filename!\n"; 
+		print STDERR "trailing blank on arg $arg2 in $filename!\n"; 
 	    }
 	    if ($#args >1) {
 		$arg3 = $args[2];
@@ -120,6 +124,7 @@ foreach $file (@files) {
 # ...
 # static const namemap[] = { {short1, long1}, {...} }
 sub CreateErrMsgMapping {
+    $OUTFD = $_[0];
     #
     # Read the file with the long names
     #...
@@ -167,8 +172,8 @@ sub CreateErrMsgMapping {
 
     # Now, output each short,long key
     # Do the generic, followed by the specific, messages
-    print "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS\n";
-    print "/* The names are in sorted order, allowing the use of a simple\
+    print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS\n";
+    print $OUTFD "/* The names are in sorted order, allowing the use of a simple\
   linear search or bisection algorithm to find the message corresponding to\
   a particular message */\n";
     my $num = 0;
@@ -184,23 +189,25 @@ sub CreateErrMsgMapping {
 		$longvalue = "\"" . $longnames{$key} . "\"";
 	    }
 	}
-	print "static const char short$num\[\] = $key;\n";
-	print "static const char long$num\[\]  = $longvalue;\n";
+	print $OUTFD "static const char short$num\[\] = $key;\n";
+	print $OUTFD "static const char long$num\[\]  = $longvalue;\n";
+	# Remember the number assigned to this short string.
+	$short_to_num{$key} = $num;
 	$num ++;
     }
     # Generate the mapping of short to long names
-    print "static const int generic_msgs_len = $num;\n";
+    print $OUTFD "static const int generic_msgs_len = $num;\n";
     my $i = 0;
-    print "static msgpair generic_err_msgs[] {\n";
+    print $OUTFD "static msgpair generic_err_msgs[] {\n";
     for (my $i = 0; $i < $num ; $i ++) {
-	print "{ short$i, long$i },\n";
+	print $OUTFD "{ short$i, long$i },\n";
     }
-    print "};\n";
-    print "#endif\n";
+    print $OUTFD "};\n";
+    print $OUTFD "#endif\n";
 
     my $num = 0;
     # Do in exactly the same order as the generic messages
-    print "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC\n";
+    print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC\n";
     foreach $key (sort keys %generic_msgs) {
 	$longvalue = "\"\0\"";
 	$specname = $specific_msgs[$generic_msgs{$key}];
@@ -215,8 +222,8 @@ sub CreateErrMsgMapping {
 	    }
 	}
 	if ($specname ne "" && $specname ne "0") {
-	    print "static const char short_spc$num\[\] = $specname;\n";
-	    print "static const char long_spc$num\[\]  = $longvalue;\n";
+	    print $OUTFD "static const char short_spc$num\[\] = $specname;\n";
+	    print $OUTFD "static const char long_spc$num\[\]  = $longvalue;\n";
 	    $has_spec[$num] = 1;
 	}
 	else {
@@ -226,24 +233,24 @@ sub CreateErrMsgMapping {
     }
     # Generate the mapping of short to long names
     my $i = 0;
-    print "static msgpair specific_err_msgs[] {\n";
+    print $OUTFD "static msgpair specific_err_msgs[] {\n";
     for (my $i = 0; $i < $num ; $i ++) {
 	if ($has_spec[$i]) {
-	    print "{ short_spc$i, long_spc$i },\n";
+	    print $OUTFD "{ short_spc$i, long_spc$i },\n";
 	}
 	else {
-	    print "{ 0, 0 },\n";
+	    print $OUTFD "{ 0, 0 },\n";
 	}
     }
-    print "};\n";
-    print "#endif\n";
+    print $OUTFD "};\n";
+    print $OUTFD "#endif\n";
 
-    print "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
-    print "static int class_to_index[] = {\n";
+    print $OUTFD "#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE\n";
+    print $OUTFD "static int class_to_index[] = {\n";
     for ($i=0; $i<=$#mpimsg; $i++) {
-	print "$mpimsg[$i],";
-	print "\n" if !(($i + 1) % 10);
+	print $OUTFD "$short_to_num{$mpimsg[$i]},";
+	print $OUTFD "\n" if !(($i + 1) % 10);
     }
-    print "};\n";
-    print "#endif\n";
+    print $OUTFD "};\n";
+    print $OUTFD "#endif\n";
 }

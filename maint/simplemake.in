@@ -43,6 +43,7 @@ $smdir =~ s/\/?simplemake$//;
 #print "smdir = $smdir\n";
 
 $debug = 0;
+$quiet = 0;
 
 %libdir = ();
 #
@@ -168,7 +169,7 @@ foreach $_ (@ARGV) {
     elsif (/-v/) { $verbose = 1; }
     elsif (/-am/) { $am_a = "_a"; }
     elsif (/-libdir=([^=]*)=(.*)$/) {
-	print "libdir{$1} = $2$newline";
+	print "libdir{$1} = $2$newline" if (!$quiet);
 	$libdir{$1}  = "$2/";
     }
     elsif (/-common=(.*)$/) {
@@ -224,6 +225,7 @@ foreach $_ (@ARGV) {
     elsif (/-debug/) {
 	$debug = 1;
     }
+    elsif (/-quiet/) { $quiet = 1; }
     elsif (/-help/) {
 	&printHelp;
 	exit 0;
@@ -737,7 +739,7 @@ sub ExpandMakeVars {
 sub ProcessFile {
     $file = $_[0];
 
-    print "Processing $curdir$file\n";
+    print "Processing $curdir$file\n" if (!$quiet);
     if (-s "configure.in") {
 	&ReadAutoconf;
     }
