@@ -5,13 +5,3 @@
 2, separate the code that reads slog2's treenode from the main event
    dispatching thread, i.e. increase overlap.
 
-3, coordinate the color change in Legend window to that of Timeline window
-
-4, reorder of the category label in the Legend window
-
-5, make Drawable Info Box prettier
-
-6, Allow user to set the pixel/time, view_init_time, view_final_time in 
-   the Timeline window
-
-7, 
