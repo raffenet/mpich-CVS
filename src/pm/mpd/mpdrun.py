@@ -4,8 +4,12 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-from signal          import signal, alarm, SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, \
-                            SIGCONT, SIGALRM
+try:
+    from signal          import signal, alarm, SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, \
+                                SIGCONT, SIGALRM
+except KeyboardInterrupt:
+    exit(0)
+
 signal(SIGINT,SIG_IGN)
 signal(SIGTSTP,SIG_IGN)
 signal(SIGCONT,SIG_IGN)

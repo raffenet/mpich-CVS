@@ -4,7 +4,10 @@
 #       See COPYRIGHT in top-level directory.
 #
 
-from signal          import signal, SIG_IGN, SIGINT
+try:
+    from signal          import signal, SIG_IGN, SIGINT
+except KeyboardInterrupt:
+    exit(0)
 
 signal(SIGINT,SIG_IGN)
 
@@ -15,24 +18,28 @@ from pwd    import getpwuid
 from urllib import quote
 import xml.dom.minidom
 
-global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall
+global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall, appnum, usize
 global gEnv, gHost, gWDIR, gPath, gNProcs
 
 def mpiexec():
-    global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall
+    global totalProcs, nextRange, argvCopy, configLines, configIdx, setenvall, \
+           appnum, usize
     global gEnv, gHost, gWDIR, gPath, gNProcs
-    totalProcs = 0
-    nextRange  = 0
-    configLines = []
-    configIdx = 0
+    totalProcs    = 0
+    nextRange     = 0
+    configLines   = []
+    configIdx     = 0
     xmlForArgsets = []
-    defaultArgs = []
-    setenvall = 0
-    gEnv = {}
-    gHost = ''  # default
-    gWDIR  = path.abspath(getcwd())   # default
-    gPath = environ['PATH']   # default ; avoid name conflict with python path module
-    gNProcs = 1  # default
+    defaultArgs   = []
+    setenvall     = 0
+    linelabels    = 0
+    usize         = 1                   # default universe size for MPI
+    appnum        = 0                   # appnum counter for MPI
+    gEnv          = {}
+    gHost         = ''                  # default
+    gWDIR         = path.abspath(getcwd())   # default
+    gPath         = environ['PATH'] # default ; avoid name conflict with python path module
+    gNProcs       = 1                   # default
 
     if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '-help'  or  argv[1] == '--help':
 	usage()
@@ -77,6 +84,15 @@ def mpiexec():
                     (var,val) = defaultArgs[gargIdx+1].split('=')
                     gEnv[var] = val
                     gargIdx += 2
+                elif defaultArgs[gargIdx] == '-l':
+                    linelabels = 1
+                    gargIdx += 1
+                elif defaultArgs[gargIdx] == '-usize':
+                    usize = defaultArgs[gargIdx+1]
+                    if not usize.isdigit():
+                        print 'non-numeric usize: %s' % usize
+                        usage()
+                    gargIdx += 2
                 elif defaultArgs[gargIdx] == '-host':
                     gHost = defaultArgs[gargIdx+1]
                     gargIdx += 2
@@ -101,6 +117,8 @@ def mpiexec():
 	    handle_argset(argset,xmlDOC,xmlCPG)
             argset = get_next_argset()
         xmlCPG.setAttribute('totalprocs', str(totalProcs) )  # after handling argsets
+        if linelabels:
+            xmlCPG.setAttribute('line_labels', '1')
         xmlFilename = '/tmp/%s_tempxml_%d' % (getpwuid(getuid())[0],getpid())
         xmlFile = open(xmlFilename,'w')
         print >>xmlFile, xmlDOC.toprettyxml(indent='   ')
@@ -139,7 +157,7 @@ def get_next_argset():
     return argset
 
 def handle_argset(argset,xmlDOC,xmlCPG):
-    global totalProcs, nextRange, setenvall
+    global totalProcs, nextRange, setenvall, appnum, usize
     global gEnv, gHost, gWDIR, gPath, gNProcs
     host   = gHost
     wdir   = gWDIR
@@ -148,8 +166,8 @@ def handle_argset(argset,xmlDOC,xmlCPG):
     cmdAndArgs = []
     argidx = 0    # can not use range here
     while argidx < len(argset):
-        if argset[argidx][0] != '-':
-            break
+        if argset[argidx][0] != '-':    
+            break                       # since now at executable
         if argset[argidx] == '-n' or argset[argidx] == '-np':
             nProcs = int(argset[argidx+1])
         elif argset[argidx] == '-host':
@@ -209,7 +227,7 @@ def handle_argset(argset,xmlDOC,xmlCPG):
     xmlCPG.appendChild(xmlENVVARS)
     xmlENVVARS.setAttribute('range','%d-%d' % (thisRange[0],thisRange[1]) ) 
     if setenvall:
-        for envvar in environ:
+        for envvar in environ.keys():
             xmlENVVAR = xmlDOC.createElement('envvar')
             xmlENVVARS.appendChild(xmlENVVAR)
             xmlENVVAR.setAttribute('key', '%s' % (envvar))
@@ -219,6 +237,16 @@ def handle_argset(argset,xmlDOC,xmlCPG):
         xmlENVVARS.appendChild(xmlENVVAR)
         xmlENVVAR.setAttribute('key', '%s' % (envvar))
         xmlENVVAR.setAttribute('value', '%s' % (gEnv[envvar]))
+    xmlENVVAR = xmlDOC.createElement('envvar')
+    xmlENVVARS.appendChild(xmlENVVAR)
+    xmlENVVAR.setAttribute('key', 'MPI_UNIVERSE_SIZE')
+    xmlENVVAR.setAttribute('value', '%s' % (usize))
+    xmlENVVAR = xmlDOC.createElement('envvar')
+    xmlENVVARS.appendChild(xmlENVVAR)
+    xmlENVVAR.setAttribute('key', 'MPI_APPNUM')
+    xmlENVVAR.setAttribute('value', '%s' % str(appnum))
+    appnum += 1
+
 
 def usage():
     print ''
@@ -226,6 +254,9 @@ def usage():
     print 'mpiexec -file filename  # where filename contains pre-built xml for mpdrun'
     print 'mpiexec -configfile filename  # where filename contains cmd-line arg-sets'
     print 'mpiexec -default defaultArgs -n <n> -host <h> -wdir <w> -path <p> cmd args : more_arg_sets : ...'
+    print '    other default arguments can be -l (line labels on stdout, stderr) and'
+    print '    -setenvall (pass entire environment of mpiexec to all processes),'
+    print '    -env KEY1=VALUE1 -env KEY2=VALUE2 ...'
     print '    defaultArgs are passed to all processes unless overridden'
     print 'sample execution:'
     print '    mpiexec.py  -default -n 2 -wdir /bin -env RMB3=e3 : pwd : -wdir /tmp pwd : printenv'

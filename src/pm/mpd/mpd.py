@@ -30,7 +30,6 @@ from mpdlib    import mpd_print, mpd_print_tb, mpd_get_ranks_in_binary_tree, \
                       mpd_socketpair, mpd_same_ips
 from mpdman    import mpdman
 
-
 class _ActiveSockInfo:
     pass
 
@@ -508,6 +507,9 @@ def _do_mpdrun(msg):
                 setgroups(mpd_get_groups_for_username(username))
                 setregid(gid,gid)
                 setreuid(uid,uid)
+            # import profile
+            # print 'profiling the manager'
+            # profile.run('mpdman()')
             mpdman()
             _exit(0)  # do NOT do cleanup
         else:

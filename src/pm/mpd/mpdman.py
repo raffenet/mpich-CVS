@@ -20,7 +20,6 @@ from mpdlib  import mpd_set_my_id, mpd_print, mpd_print_tb, mpd_get_ranks_in_bin
                    mpd_get_my_username, mpd_raise, mpdError, mpd_version, \
                    mpd_socketpair
 
-
 def mpdman():
     signal(SIGCHLD,SIG_DFL)  # reset mpd's values
 
@@ -73,6 +72,11 @@ def mpdman():
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
     default_kvsname = sub('\-','_',default_kvsname)  # chg node-0 to node_0
     exec('%s = {}' % (default_kvsname) )
+    x = [y for y in clientPgmEnv if (y.startswith('MPI_UNIVERSE_SIZE') or \
+                                     y.startswith('MPI_APPNUM'))]
+    for z in x:
+        (key,val) = z.split('=')
+        exec('%s["%s"]=%s' % (default_kvsname, key, val))
     kvs_next_id = 1
     jobEndingEarly = 0
     pmiCollectiveJob = 0
