@@ -54,13 +54,14 @@ mpio:
         fi
 	@sleep 1
 
+# FIXME: This should invoke the clean targets in each of the Makefiles.
 clean:
 	@-rm -f work.pc work.pcl
 	@for dir in $(DIRS) $(FILE_SYS_DIRS) $(EXTRA_SRC_DIRS) ;\
          do \
             echo " " ;\
             echo cleaning directory $$dir ;\
-            (cd $$dir && rm -f *.o) ;\
+            (cd $$dir && rm -f *.o *.lo) ;\
          done; \
          echo " " ;\
          echo cleaning directory test ;\
