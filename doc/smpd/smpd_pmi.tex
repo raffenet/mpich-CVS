@@ -271,4 +271,35 @@ nkeyvals=2 keyvals0=``0=$\backslash$``host=toad$\backslash$''
 1=$\backslash$``path=/home/me$\backslash$'''' 
 npreput=1 preput=``0=$\backslash$``port=1244$\backslash$''''}
 
+\section{string format}
+This describes the format of key=value elements in a stream.
+
+stream := element frame_char | element separ_char stream
+
+element := key delim_char value
+
+key := string
+
+value := string
+
+string := literal | quoted
+
+literal := array of chars without separators, deliminators, or quotes
+
+quoted := quote_char array of escaped characters quote_char
+
+chars := ascii characters
+
+escapted chars := ascii characters with escape_char quote_char and escape_char escape_char
+
+quote_char := "
+
+escape_char := \
+
+delim_char := =
+
+separ_char := ' '
+
+frame_char := ???
+
 \end{document}
