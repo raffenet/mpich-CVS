@@ -689,6 +689,7 @@ with MPI_Alloc_mem.
 **sock|connclosed %d %d:connection closed by peer (set=%d,sock=%d)
 **sock|connfailed:connection failure
 **sock|connfailed %d %d:connection failure (set=%d,sock=%d)
+**sock|connfailed %d:connection failure (errno=%d)
 **sock|connrefused:connection refused
 **sock|closing:sock is in the process of being closed locally
 **sock|closing %d %d:sock is in the process of being closed locally (set=%d,sock=%d)
@@ -716,6 +717,7 @@ with MPI_Alloc_mem.
 **sock|poll|bind:unable to bind socket to port
 **sock|poll|bind %d %d:unable to bind socket to port (port=%d,errno=%d)
 **sock|poll|connfailed %d %d %d:connection failure (set=%d,sock=%d,errno=%d)
+**sock|poll|connfailed %d:connection failure (errno=%d)
 **sock|poll|connrefused %d %d %s:connection refused (set=%d,sock=%d,host=%s)
 **sock|poll|eqmalloc:MPIU_Malloc failed to allocate memory for an event queue structure
 **sock|poll|eqfail:fatal error: failed to enqueue an event; event was lost
