@@ -20,7 +20,7 @@ static char MTEST_Descrip[] = "Test nonblocking I/O";
 int main(int argc, char **argv)
 {
     int *buf, i, mynod, nprocs, len, b[3];
-    int errs=0, toterrs;
+    int errs=0;
     MPI_Aint d[3];
     MPI_File fh;
     MPI_Status status;
@@ -46,13 +46,20 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
+	    len      = 8;
+	    filename = (char *)malloc(len + 10);
+	    strcpy( filename, "testfile" );
+	    /*
 	    fprintf(stderr, "\n*#  Usage: i_noncontig -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
+	    */
 	}
-	argv++;
-	len = strlen(*argv);
-	filename = (char *) malloc(len+1);
-	strcpy(filename, *argv);
+	else {
+	    argv++;
+	    len = strlen(*argv);
+	    filename = (char *) malloc(len+1);
+	    strcpy(filename, *argv);
+	}
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(filename, len+1, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
@@ -229,19 +236,10 @@ int main(int argc, char **argv)
 
     MPI_File_close(&fh);
 
-    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
-    if (mynod == 0) {
-	if( toterrs > 0) {
-	    fprintf( stderr, "Found %d errors\n", toterrs );
-	}
-	else {
-	    fprintf( stdout, " No Errors\n" );
-	}
-    }
     MPI_Type_free(&newtype);
     free(buf);
     free(filename);
-    MTest_Finalize(toterrs);
+    MTest_Finalize(errs);
     MPI_Finalize();
     return 0;
 }

@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 {
     int *buf, i, rank, nints, len;
     char *filename, *tmp;
-    int errs=0, toterrs;
+    int errs=0;
     MPI_File fh;
     MPI_Status status;
     MPIO_Request request;
@@ -37,13 +37,21 @@ int main(int argc, char **argv)
 	    argv++;
 	}
 	if (i >= argc) {
+	    /* Use a default filename of testfile */
+	    len      = 8;
+	    filename = (char *)malloc(len + 10);
+	    strcpy( filename, "testfile" );
+	    /* 
 	    fprintf(stderr, "\n*#  Usage: async -fname filename\n\n");
 	    MPI_Abort(MPI_COMM_WORLD, 1);
+	    */
 	}
-	argv++;
-	len = strlen(*argv);
-	filename = (char *) malloc(len+10);
-	strcpy(filename, *argv);
+	else {
+	    argv++;
+	    len = strlen(*argv);
+	    filename = (char *) malloc(len+10);
+	    strcpy(filename, *argv);
+	}
 	MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(filename, len+10, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
@@ -88,21 +96,11 @@ int main(int argc, char **argv)
 	}
     }
 
-    MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
-    if (rank == 0) {
-	if( toterrs > 0) {
-	    fprintf( stderr, "Found %d errors\n", toterrs );
-	}
-	else {
-	    fprintf( stdout, " No Errors\n" );
-	}
-    }
-
     free(buf);
     free(filename);
     free(tmp);
 
-    MTest_Finalize(toterrs);
+    MTest_Finalize(errs);
     MPI_Finalize();
     return 0; 
 }
