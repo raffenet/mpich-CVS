@@ -1,25 +1,28 @@
+#ifdef HAVE_WINDOWS_H
+#include <winsock2.h>
+#include <windows.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
 #include "GetOpt.h"
 #include <string.h>
 
-#define  DEFPORT			5002
-#define  TRIALS 			7
-#define  REPEAT 			1000
-int 	 g_NSAMP =			150;
-#define  PERT				3
-#define  LATENCYREPS		1000
-#define  LONGTIME			1e99
-#define  CHARSIZE			8
-#define  PATIENCE			50
-#define  RUNTM				0.25
-double	 g_STOPTM = 		0.1;
-#define  MAXINT 			2147483647
+#define  TRIALS 	7
+#define  REPEAT 	1000
+int 	 g_NSAMP =	250;
+#define  PERT		3
+#define  LATENCYREPS	1000
+#define  LONGTIME	1e99
+#define  CHARSIZE	8
+#define  PATIENCE	50
+#define  RUNTM		0.25
+double	 g_STOPTM = 	0.1;
+#define  MAXINT 	2147483647
 
-#define 	ABS(x)	   (((x) < 0)?(-(x)):(x))
-#define 	MIN(x, y)	(((x) < (y))?(x):(y))
-#define 	MAX(x, y)	(((x) > (y))?(x):(y))
+#define ABS(x)		(((x) < 0)?(-(x)):(x))
+#define MIN(x, y)	(((x) < (y))?(x):(y))
+#define MAX(x, y)	(((x) > (y))?(x):(y))
 
 int g_nIproc = 0, g_nNproc = 0;
 
@@ -32,17 +35,16 @@ struct protocolstruct
 typedef struct argstruct ArgStruct;
 struct argstruct 
 {
-    /* This is the common information that is needed for all tests			*/
-    char	 *host;			/* Name of receiving host						*/
-    short	 port;			/* Port used for connection 					*/
-    char	 *buff;			/* Transmitted buffer							*/
-    char	 *buff1;		/* Transmitted buffer							*/
-    int 	 bufflen,		/* Length of transmitted buffer 				*/
-	tr, 			/* Transmit flag 								*/
-	nbuff;			/* Number of buffers to transmit 				*/
+    /* This is the common information that is needed for all tests		*/
+    char    *host;	/* Name of receiving host				*/
+    char    *buff;	/* Transmitted buffer					*/
+    char    *buff1;	/* Transmitted buffer					*/
+    int     bufflen,	/* Length of transmitted buffer 			*/
+	    tr, 	/* Transmit flag 					*/
+	    nbuff;	/* Number of buffers to transmit 			*/
     
-    /* Now we work with a union of information for protocol dependent stuff  */
-    ProtocolStruct prot;	/* Structure holding necessary info for TCP 	 */
+    /* Now we work with a union of information for protocol dependent stuff	*/
+    ProtocolStruct prot;	/* Structure holding necessary info for TCP 	*/
 };
 
 typedef struct data Data;
@@ -79,45 +81,47 @@ void PrintOptions()
     printf("       -out outputfile\n");
     printf("       -nocache\n");
     printf("       -headtohead\n");
+    printf("       -pert\n");
+    printf("       -noprint\n");
     printf("Requires exactly two processes\n");
     printf("\n");
 }
 
 int main(int argc, char *argv[])
 {
-    FILE		*out;				/* Output data file 						 */
-    char		s[255]; 			/* Generic string							 */
-    char		*memtmp;
-    char		*memtmp1;
+    FILE *out;			/* Output data file 				*/
+    char s[255]; 		/* Generic string				*/
+    char *memtmp;
+    char *memtmp1;
     
-    int i, j, n, nq,				/* Loop indices								*/
-	bufoffset = 0,				/* Align buffer to this						*/
-	bufalign = 16*1024,			/* Boundary to align buffer to				*/
-	nrepeat,					/* Number of time to do the transmission	*/
+    int i, j, n, nq,		/* Loop indices					*/
+	bufoffset = 0,		/* Align buffer to this				*/
+	bufalign = 16*1024,	/* Boundary to align buffer to			*/
+	nrepeat,		/* Number of time to do the transmission	*/
 	nzero = 0,
-	len,						/* Number of bytes to be transmitted		*/
-	inc = 1,					/* Increment value							*/
-	detailflag = 0,				/* Set to examine the signature curve detail*/
-	bufszflag = 0,				/* Set to change the TCP socket buffer size */
-	pert,						/* Perturbation value						*/
-	start = 1,					/* Starting value for signature curve 		*/
-	end = MAXINT,				/* Ending value for signature curve			*/
-	streamopt = 0,				/* Streaming mode flag						*/
-	printopt = 0;				/* Debug print statements flag				*/
+	len,			/* Number of bytes to be transmitted		*/
+	inc = 1,		/* Increment value				*/
+	detailflag = 0,		/* Set to examine the signature curve detail*/
+	pert,			/* Perturbation value				*/
+        ipert,                  /* index of the perturbation loop		*/
+	start = 1,		/* Starting value for signature curve 		*/
+	end = MAXINT,		/* Ending value for signature curve		*/
+	streamopt = 0,		/* Streaming mode flag				*/
+	printopt = 1;		/* Debug print statements flag			*/
     
-    ArgStruct	args;				/* Argumentsfor all the calls				*/
+    ArgStruct	args;		/* Argumentsfor all the calls			*/
     
-    double		t, t0, t1, t2,		/* Time variables							*/
-	tlast,						/* Time for the last transmission			*/
+    double t, t0, t1, t2,	/* Time variables				*/
+	tlast,			/* Time for the last transmission		*/
 	tzero = 0,
-	latency,					/* Network message latency					*/
-	synctime;					/* Network synchronization time 			*/
+	latency,		/* Network message latency			*/
+	synctime;		/* Network synchronization time 		*/
     
-    Data		*bwdata;			/* Bandwidth curve data 					*/
+    Data *bwdata;		/* Bandwidth curve data 			*/
     
-    short		port = DEFPORT;		/* Port number for connection 				*/
     bool bNoCache = false;
     bool bHeadToHead = false;
+    bool bSavePert = false;
 
     MPI_Init(&argc, &argv);
     
@@ -138,14 +142,16 @@ int main(int argc, char *argv[])
     GetOptInt(&argc, &argv, "-end", &end);
     bNoCache = GetOpt(&argc, &argv, "-nocache");
     bHeadToHead = GetOpt(&argc, &argv, "-headtohead");
+    if (GetOpt(&argc, &argv, "-noprint"))
+	printopt = 0;
+    bSavePert = GetOpt(&argc, &argv, "-pert");
     
-    bwdata = malloc(g_NSAMP * sizeof(Data));
+    bwdata = malloc((g_NSAMP+1) * sizeof(Data));
 
     if (g_nIproc == 0)
 	strcpy(s, "Netpipe.out");
     GetOptString(&argc, &argv, "-out", s);
     
-    printopt = 1;
     if (start > end)
     {
 	fprintf(stdout, "Start MUST be LESS than end\n");
@@ -153,7 +159,6 @@ int main(int argc, char *argv[])
     }
     
     args.nbuff = TRIALS;
-    args.port = port;
     
     Setup(&args);
     Establish(&args);
@@ -224,16 +229,16 @@ int main(int argc, char *argv[])
     
     /* Main loop of benchmark */
     for (nq = n = 0, len = start; 
-    n < g_NSAMP && tlast < g_STOPTM && len <= end; 
-    len = len + inc, nq++)
+         n < g_NSAMP && tlast < g_STOPTM && len <= end; 
+	 len = len + inc, nq++)
     {
 	if (nq > 2 && !detailflag)
 	    inc = ((nq % 2))? inc + inc: inc;
 	
 	/* This is a perturbation loop to test nearby values */
-	for (pert = (!detailflag && inc > PERT + 1)? -PERT: 0;
-	pert <= PERT; 
-	n++, pert += (!detailflag && inc > PERT + 1)? PERT: PERT + 1)
+	for (ipert = 0, pert = (!detailflag && inc > PERT + 1)? -PERT: 0;
+	     pert <= PERT; 
+	     ipert++, n++, pert += (!detailflag && inc > PERT + 1)? PERT: PERT + 1)
 	{
 	    
 	    /* Calculate howmany times to repeat the experiment. */
@@ -417,10 +422,13 @@ int main(int argc, char *argv[])
 	    
 	    if (args.tr)
 	    {
-	    /* fprintf(out,"%lf\t%lf\t%d\t%d\t%lf\n", bwdata[n].t, bwdata[n].bps,
-		bwdata[n].bits, bwdata[n].bits / 8, bwdata[n].variance); */
-		fprintf(out,"%d\t%lf\t%lf\n", bwdata[n].bits / 8, bwdata[n].bps, bwdata[n].t);
-		fflush(out);
+		if (bSavePert)
+		{
+		/* fprintf(out,"%lf\t%lf\t%d\t%d\t%lf\n", bwdata[n].t, bwdata[n].bps,
+		    bwdata[n].bits, bwdata[n].bits / 8, bwdata[n].variance); */
+		    fprintf(out,"%d\t%lf\t%lf\n", bwdata[n].bits / 8, bwdata[n].bps, bwdata[n].t);
+		    fflush(out);
+		}
 	    }
 	    
 	    free(memtmp);
@@ -431,17 +439,31 @@ int main(int argc, char *argv[])
 		fprintf(stdout," %6.2lf Mbps in %lf sec\n", bwdata[n].bps, tlast);
 		fflush(stdout);
 	    }
-		} /* End of perturbation loop */
-		
-	} /* End of main loop  */
+	} /* End of perturbation loop */	
+	if (!bSavePert && args.tr)
+	{
+	    /* if we didn't save all of the perturbation loops, find the max and save it */
+	    int index = 1;
+	    double dmax = bwdata[n-1].bps;
+	    for (; ipert > 1; ipert--)
+	    {
+		if (bwdata[n-ipert].bps > dmax)
+		{
+		    index = ipert;
+		    dmax = bwdata[n-ipert].bps;
+		}
+	    }
+	    fprintf(out,"%d\t%lf\t%lf\n", bwdata[n-index].bits / 8, bwdata[n-index].bps, bwdata[n-index].t);
+	    fflush(out);
+	}
+    } /* End of main loop  */
 	
-	if (args.tr)
-	    fclose(out);
-	/* THE_END:		 */
-	CleanUp(&args);
-	/*delete bwdata;*/
-	free(bwdata);
-	return 0;
+    if (args.tr)
+	fclose(out);
+    /* THE_END:		 */
+    CleanUp(&args);
+    free(bwdata);
+    return 0;
 }
 
 
