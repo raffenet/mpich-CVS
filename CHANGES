@@ -32,13 +32,41 @@
   a structure or union to be iniitialized prior to use.  This prevents programs
   like Valgrind from complaining about unitialized accesses.
 
-- The dist-with-version and snap rules in the top-level Makefile.sm now
+- The dist-with-version and snap targets in the top-level Makefile.sm now
   properly produce mpich2-<ver>/maint/Version instead of mpich2-<ver>/Version.
   In addition, they now properly update the VERSION variable in Makfile.sm
   without clobbering the sed line that performs the update.
 
-- The dist and snap rules in the top-level Makefile.sm now both use
-  dist-with-version to avoid inconsistencies.
+- The dist and snap targets in the top-level Makefile.sm now both use the
+  dist-with-version target to avoid inconsistencies.
+
+- The following changes were made to simplemake:
+
+  - The environment variables DEBUG, DEBUG_DIRS, and DEBUG_CONFDIR can now be
+    used to control debugging output.
+
+  - Many fixes were made to make simplemake so that it would run cleanly with
+    perl -w.
+
+  - Installation of *all* files from a directory is now possible (example,
+    installing all of the man pages).
+
+  - The clean targets now remove the cache files produced by newer versions of
+    autoconf.
+
+  - The determination of the source directory has been improved, allowing for
+    better control of configure.
+
+  - Short loops over subdirectories are now unrolled.
+
+  - The maintainerclean target has been renamed to maintainer-clean to match
+    GNU guidelines.
+
+  - The distclean and maintainer-clean targets have been improved.
+
+  - An option was added to perform one ar command per directory instead of one
+    per file when creating the profiling version of routines (needed only for
+    systems that do not support weak symbols).
 
 
 ===============================================================================
