@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>2.1 Relationship between SLOG-2 and Jumpshot-4</TITLE>
+<META NAME="description" CONTENT="2.1 Relationship between SLOG-2 and Jumpshot-4">
+<META NAME="keywords" CONTENT="usersguide">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="usersguide.css">
+
+<LINK REL="next" HREF="node5.html">
+<LINK REL="previous" HREF="node3.html">
+<LINK REL="up" HREF="node3.html">
+<LINK REL="next" HREF="node5.html">
+</HEAD>
+
+<BODY >
+<!--Navigation Panel-->
+<A NAME="tex2html139"
+  HREF="node5.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html135"
+  HREF="node3.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html129"
+  HREF="node3.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html137"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html140"
+  HREF="node5.html">2.2 Understanding the Preview</A>
+<B> Up:</B> <A NAME="tex2html136"
+  HREF="node3.html">2. Introduction to SLOG-2</A>
+<B> Previous:</B> <A NAME="tex2html130"
+  HREF="node3.html">2. Introduction to SLOG-2</A>
+ &nbsp; <B>  <A NAME="tex2html138"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00310000000000000000">
+2.1 Relationship between SLOG-2 and Jumpshot-4</A>
+</H1>
+
+<P>
+The main visual component in the SLOG-2 visualization program, Jumpshot-4,
+is the <I>timeline canvas</I> which is zoomable and scrollable in
+both horizontal and vertical axes. The timeline canvas can be thought
+of as a <SMALL>TIMELINE</SMALL> vs <SMALL>TIME</SMALL> coordinate system. Each
+point on the canvas is identified by two numbers, a timestamp and
+a timeline ID. The canvas is where the graphical objects contained
+in SLOG-2 file are being drawn on. These objects are called <I>Drawables.</I>
+There are 2 kinds of drawable objects. They are <I>Primitive</I> and
+<I>Composite</I> drawables. The primitive drawables are the simplest
+drawables and are considered to be basic elements of slog2 file. They
+are categoried based on their topological structures. Currently, there
+are 3 topologies supported in SLOG-2. They are <I>State</I>, <I>Arrow</I>
+and <I>Event</I>. Both state and arrow are drawables identified by
+2 points in the timeline canvas, i.e. a pair of (timestamp, timelineID)
+coordinates. State's start timeline ID is the same as its final timeline
+ID, but arrow is different from state in the way that arrow's start
+and final timeline IDs may be different. Event consists of only 1
+point in the timeline canvas, i.e. it has only 1 timestamp and 1 timeline
+ID. Composite drawable is more complicated and is constructed by a
+collection of primitive drawables<A NAME="tex2html5"
+  HREF="#foot41"><SUP>2.1</SUP></A>. In order to centralize the properties of drawables, all the displayable
+attributes of a drawable is stored in its corresponding <I>Category</I>
+object, e.g. color, legend name, topology and other shared description
+of a drawable. Both the category and drawable definitions are stored
+in the SLOG-2 file. These definition are interpreted and displayed
+by the display program, Jumpshot-4.
+
+<P>
+
+<DIV ALIGN="CENTER"><A NAME="fig:legend_popup"></A><A NAME="403"></A>
+<TABLE>
+<CAPTION ALIGN="BOTTOM"><STRONG>Figure:</STRONG>
+A typical Legend window when slog2 file
+is first loaded into Jumpshot-4.</CAPTION>
+<TR><TD><IMG
+  WIDTH="186" HEIGHT="619" ALIGN="BOTTOM" BORDER="0"
+ SRC="./legend_popup.png"
+ ALT="Image legend_popup">
+
+<P></TD></TR>
+</TABLE>
+</DIV>
+
+<P>
+<BR><HR><H4>Footnotes</H4>
+<DL>
+<DT><A NAME="foot41">... drawables</A><A
+ HREF="node4.html#tex2html5"><SUP>2.1</SUP></A></DT>
+<DD>In general, composite drawable can be seen as composed of other simpler
+composite drawables.
+
+</DD>
+</DL><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html139"
+  HREF="node5.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next" SRC="next.png"></A> 
+<A NAME="tex2html135"
+  HREF="node3.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up" SRC="up.png"></A> 
+<A NAME="tex2html129"
+  HREF="node3.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous" SRC="prev.png"></A> 
+<A NAME="tex2html137"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents" SRC="contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html140"
+  HREF="node5.html">2.2 Understanding the Preview</A>
+<B> Up:</B> <A NAME="tex2html136"
+  HREF="node3.html">2. Introduction to SLOG-2</A>
+<B> Previous:</B> <A NAME="tex2html130"
+  HREF="node3.html">2. Introduction to SLOG-2</A>
+ &nbsp; <B>  <A NAME="tex2html138"
+  HREF="node1.html">Contents</A></B> 
+<!--End of Navigation Panel-->
+
+</BODY>
+</HTML>
