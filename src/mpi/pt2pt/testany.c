@@ -44,20 +44,23 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *flag, MPI_Status *status)
+int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, 
+		int *flag, MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Testany";
     int mpi_errno = MPI_SUCCESS;
+    int i, k;
+    MPID_Request *request_ptr;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TESTANY);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(index,"index",mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -67,6 +70,39 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, int *fla
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+    /* Iterate at most twice; the second is after a progress_test, if needed */
+    *flag = 0;
+    for (k=0; k<2; k++) {
+	MPID_Progress_start();
+	for (i=0; i<count; i++) {
+	    /* Get handles to MPI objects. */
+	    if (array_of_requests[i] == MPI_REQUEST_NULL) {
+		continue;
+	    }
+	    MPID_Request_get_ptr( array_of_requests[i], request_ptr );
+	    
+	    if ((request_ptr->cc_ptr) == 0) {
+		/* Found one */
+		*index = i;
+		*flag  = 1;
+		if (status != NULL && 
+		    (request_ptr->kind == MPID_REQUEST_RECV ||
+		     request_ptr->kind == MPID_PREQUEST_RECV)) {
+		    *status = request_ptr->status;
+		}
+		array_of_requests[i] = MPI_REQUEST_NULL;
+		break;
+	    }
+	}
+	if (i == count) 
+	    MPID_Progress_test();
+	else {
+	    MPID_Progress_end();
+	    break;
+	}
+    }
+    /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TESTANY);
     return MPI_SUCCESS;
 }
