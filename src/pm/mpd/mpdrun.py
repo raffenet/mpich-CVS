@@ -276,7 +276,7 @@ def mpdrun():
                 host = msg['procinfo'][i][0]
                 pgm  = msg['procinfo'][i][1]
                 pid  = msg['procinfo'][i][2]
-                print "%d %s %s %d" % (i,host,pgm,pid)
+                # print "%d %s %s %d" % (i,host,pgm,pid)
                 mtv.append_proctable_entry(host,pgm,pid)
             mtv.complete_spawn()
             msgToSend = { 'cmd' : 'tv_ready' }
