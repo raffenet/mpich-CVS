@@ -13,7 +13,7 @@ extern "C" {
 /* config header file */
 #include "mpidi_ch3i_ib_conf.h"
 
-#ifdef IBU_TYPE_WINDOWS
+#ifdef MPID_IBU_TYPE_WINDOWS
 #include <winsock2.h>
 #include <windows.h>
 #endif
@@ -41,7 +41,7 @@ typedef enum IBU_OP
 
 
 /* definitions/structures specific to Windows */
-#ifdef IBU_TYPE_WINDOWS
+#ifdef MPID_IBU_TYPE_WINDOWS
 
 #define IBU_IOV             WSABUF
 #define IBU_IOV_LEN         len
@@ -51,7 +51,7 @@ typedef enum IBU_OP
 #define IBU_INVALID_QP      0
 
 /* definitions/structures specific to Unix */
-#elif defined(IBU_TYPE_UNIX)
+#elif defined(MPID_IBU_TYPE_UNIX)
 
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
@@ -64,7 +64,7 @@ typedef enum IBU_OP
 #define IBU_INVALID_QP      0
 
 #else
-#error Error: IBU_TYPE not defined
+#error Error: MPID_IBU_TYPE not defined
 #endif
 
 typedef ib_cq_handle_t ibu_set_t;
