@@ -74,7 +74,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 
 	for (i = 0; i < vcrt->size; i++)
 	{
-	    MPID_VCR_release(vcrt->vcr_table[i]);
+	    MPID_VCR_Release(vcrt->vcr_table[i]);
 	}
 	
 	MPIU_Free(vcrt);
@@ -93,7 +93,7 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
     return MPI_SUCCESS;
 }
 
-int MPID_VCR_dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
+int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCR_DUP);
 
@@ -105,7 +105,7 @@ int MPID_VCR_dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
     return MPI_SUCCESS;
 }
 
-int MPID_VCR_release(MPID_VCR vcr)
+int MPID_VCR_Release(MPID_VCR vcr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCR_RELEASE);
 
@@ -116,7 +116,7 @@ int MPID_VCR_release(MPID_VCR vcr)
     return MPI_SUCCESS;
 }
 
-int MPID_VCR_get_lpid(MPID_VCR vcr, int * lpid_ptr)
+int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCR_GET_LPID);
 

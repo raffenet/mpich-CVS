@@ -190,6 +190,10 @@ SOURCE=.\src\mpi\attr\attr_put.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\mpi\attr\attrutil.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\mpi\coll\barrier.c
 # End Source File
 # Begin Source File
