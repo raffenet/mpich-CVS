@@ -18,15 +18,16 @@ int PMI_Init(int *spawned)
 {
     char *dll_name;
 #ifdef HAVE_WINDOWS_H
-#define LoadLibrary(a,b) a = LoadLibrary( b )
+#define PMILoadLibrary(a,b) a = LoadLibrary( b )
+#define PMIGetProcAddress GetProcAddress
     HMODULE hModule;
 #elif defined(HAVE_DLOPEN)
-#define LoadLibrary(a, b) a = dlopen( b , RTLD_LAZY /* or RTLD_NOW */)
-#define GetProcAddress dlsym
+#define PMILoadLibrary(a, b) a = dlopen( b , RTLD_LAZY /* or RTLD_NOW */)
+#define PMIGetProcAddress dlsym
     void *hModule;
 #elif defined(HAVE_NSLINKMODULE)
     NSModule hModule;
-#define LoadLibrary(a, b) \
+#define PMILoadLibrary(a, b) \
 { \
     NSObjectFileImage fileImage; \
     NSObjectFileImageReturnCode returnCode = \
@@ -41,7 +42,9 @@ int PMI_Init(int *spawned)
 	a = NULL; \
     } \
 }
-#define GetProcAddress(a, b) NSAddressOfSymbol( NSLookupSymbolInModule( a, b ) )
+#define PMIGetProcAddress(a, b) NSAddressOfSymbol( NSLookupSymbolInModule( a, b ) )
+#else
+#error PMILoadLibrary function needed
 #endif
 
     if (fn.PMI_Init != NULL)
@@ -53,37 +56,37 @@ int PMI_Init(int *spawned)
     dll_name = getenv("PMI_DLL_NAME");
     if (dll_name)
     {
-	LoadLibrary(hModule, dll_name);
+	PMILoadLibrary(hModule, dll_name);
 	if (hModule != NULL)
 	{
-	    fn.PMI_Init = (int (*)(int *))GetProcAddress(hModule, "PMI_Init");
+	    fn.PMI_Init = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Init");
 	    if (fn.PMI_Init == NULL)
 	    {
 		return PMI_FAIL;
 	    }
-	    fn.PMI_Initialized = (int (*)(void))GetProcAddress(hModule, "PMI_Initialized");
-	    fn.PMI_Finalize = (int (*)(void))GetProcAddress(hModule, "PMI_Finalize");
-	    fn.PMI_Get_size = (int (*)(int *))GetProcAddress(hModule, "PMI_Get_size");
-	    fn.PMI_Get_rank = (int (*)(int *))GetProcAddress(hModule, "PMI_Get_rank");
-	    fn.PMI_Get_id = (int (*)(char *))GetProcAddress(hModule, "PMI_Get_id");
-	    fn.PMI_Get_kvs_domain_id = (int (*)(char *))GetProcAddress(hModule, "PMI_Get_kvs_domain_id");
-	    fn.PMI_Get_id_length_max = (int (*)(void))GetProcAddress(hModule, "PMI_Get_id_length_max");
-	    fn.PMI_Barrier = (int (*)(void))GetProcAddress(hModule, "PMI_Barrier");
-	    fn.PMI_Get_clique_size = (int (*)(int *))GetProcAddress(hModule, "PMI_Get_clique_size");
-	    fn.PMI_Get_clique_ranks = (int (*)(int *))GetProcAddress(hModule, "PMI_Get_clique_ranks");
-	    fn.PMI_KVS_Get_my_name = (int (*)(char *))GetProcAddress(hModule, "PMI_KVS_Get_my_name");
-	    fn.PMI_KVS_Get_name_length_max = (int (*)(void))GetProcAddress(hModule, "PMI_KVS_Get_name_length_max");
-	    fn.PMI_KVS_Get_key_length_max = (int (*)(void))GetProcAddress(hModule, "PMI_KVS_Get_key_length_max");
-	    fn.PMI_KVS_Get_value_length_max = (int (*)(void))GetProcAddress(hModule, "PMI_KVS_Get_value_length_max");
-	    fn.PMI_KVS_Create = (int (*)(char *))GetProcAddress(hModule, "PMI_KVS_Create");
-	    fn.PMI_KVS_Destroy = (int (*)(const char *))GetProcAddress(hModule, "PMI_KVS_Destroy");
-	    fn.PMI_KVS_Put = (int (*)(const char *, const char *, const char *))GetProcAddress(hModule, "PMI_KVS_Put");
-	    fn.PMI_KVS_Commit = (int (*)(const char *))GetProcAddress(hModule, "PMI_KVS_Commit");
-	    fn.PMI_KVS_Get = (int (*)(const char *, const char *, char *))GetProcAddress(hModule, "PMI_KVS_Get");
-	    fn.PMI_KVS_Iter_first = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_Iter_first");
-	    fn.PMI_KVS_Iter_next = (int (*)(const char *, char *, char *))GetProcAddress(hModule, "PMI_KVS_Iter_next");
-	    fn.PMI_Spawn_multiple = (int (*)(int, const char **, const char ***, const int *, const int *, const PMI_keyval_t **, int, const PMI_keyval_t *, int *))GetProcAddress(hModule, "PMI_Spawn_multiple");
-	    fn.PMI_Args_to_keyval = (int (*)(int *, char ***, PMI_keyval_t *, int *))GetProcAddress(hModule, "PMI_Args_to_keyval");
+	    fn.PMI_Initialized = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Initialized");
+	    fn.PMI_Finalize = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Finalize");
+	    fn.PMI_Get_size = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_size");
+	    fn.PMI_Get_rank = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_rank");
+	    fn.PMI_Get_id = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_Get_id");
+	    fn.PMI_Get_kvs_domain_id = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_Get_kvs_domain_id");
+	    fn.PMI_Get_id_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Get_id_length_max");
+	    fn.PMI_Barrier = (int (*)(void))PMIGetProcAddress(hModule, "PMI_Barrier");
+	    fn.PMI_Get_clique_size = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_clique_size");
+	    fn.PMI_Get_clique_ranks = (int (*)(int *))PMIGetProcAddress(hModule, "PMI_Get_clique_ranks");
+	    fn.PMI_KVS_Get_my_name = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_KVS_Get_my_name");
+	    fn.PMI_KVS_Get_name_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_KVS_Get_name_length_max");
+	    fn.PMI_KVS_Get_key_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_KVS_Get_key_length_max");
+	    fn.PMI_KVS_Get_value_length_max = (int (*)(void))PMIGetProcAddress(hModule, "PMI_KVS_Get_value_length_max");
+	    fn.PMI_KVS_Create = (int (*)(char *))PMIGetProcAddress(hModule, "PMI_KVS_Create");
+	    fn.PMI_KVS_Destroy = (int (*)(const char *))PMIGetProcAddress(hModule, "PMI_KVS_Destroy");
+	    fn.PMI_KVS_Put = (int (*)(const char *, const char *, const char *))PMIGetProcAddress(hModule, "PMI_KVS_Put");
+	    fn.PMI_KVS_Commit = (int (*)(const char *))PMIGetProcAddress(hModule, "PMI_KVS_Commit");
+	    fn.PMI_KVS_Get = (int (*)(const char *, const char *, char *))PMIGetProcAddress(hModule, "PMI_KVS_Get");
+	    fn.PMI_KVS_Iter_first = (int (*)(const char *, char *, char *))PMIGetProcAddress(hModule, "PMI_KVS_Iter_first");
+	    fn.PMI_KVS_Iter_next = (int (*)(const char *, char *, char *))PMIGetProcAddress(hModule, "PMI_KVS_Iter_next");
+	    fn.PMI_Spawn_multiple = (int (*)(int, const char **, const char ***, const int *, const int *, const PMI_keyval_t **, int, const PMI_keyval_t *, int *))PMIGetProcAddress(hModule, "PMI_Spawn_multiple");
+	    fn.PMI_Args_to_keyval = (int (*)(int *, char ***, PMI_keyval_t *, int *))PMIGetProcAddress(hModule, "PMI_Args_to_keyval");
 	    return fn.PMI_Init(spawned);
 	}
     }
