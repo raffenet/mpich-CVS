@@ -17,6 +17,8 @@ maint/updatefiles
 Outside of MCS, but with an MCS account (replace "yourname" with your 
 MCS login name):
 
+   setenv CVS_RSH ssh
+
    cvs -d :ext:yournamer@shakey.mcs.anl.gov:/home/MPI/cvsMaster checkout mpich2all
    cd mpich2
    cvs -d :ext:yourname@shakey.mcs.anl.gov:/home/gropp/cvsMaster_z checkout confdb
