@@ -19,6 +19,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#endif
 #include "pmi.h"
 #include "sock.h"
 #include "smpd.h"
@@ -369,7 +372,7 @@ int PMI_KVS_Destroy(const char * kvsname)
 	pmi_err_printf("unable to add the key to the dbdestroy command.\n");
 	return PMI_FAIL;
     }
-    result = smpd_add_command_arg(cmd_ptr, "kvs_name", kvsname);
+    result = smpd_add_command_arg(cmd_ptr, "kvs_name", (char*)kvsname);
     if (result != SMPD_SUCCESS)
     {
 	pmi_err_printf("unable to add the kvsname to the dbdestroy command.\n");
