@@ -312,7 +312,7 @@ else
 fi
 logging_subdirs=""
 if test "$logging_name" = "dlog" ; then
-    logging_subdirs="dlog dlog2slog"
+    logging_subdirs="slog_api dlog dlog2slog"
     subsystems="$subsystems src/util/logging/slog_api"
 fi
 AC_SUBST(logging_name)
