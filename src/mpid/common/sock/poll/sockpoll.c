@@ -186,6 +186,20 @@ int sock_set_user_ptr(sock_t sock, void * user_ptr)
 
 
 #undef FUNCNAME
+#define FUNCNAME sock_native_to_sock
+#undef FCNAME
+#define FCNAME SOCKI_QUOTE(FUNCNAME)
+int sock_native_to_sock(sock_set_t set, SOCK_NATIVE_FD fd, void *user_ptr, sock_t *sock_ptr)
+{
+    MPIDI_STATE_DECL(MPID_STATE_SOCK_NATIVE_TO_SOCK);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCK_NATIVE_TO_SOCK);
+    MPIDI_FUNC_EXIT(MPID_STATE_SOCK_NATIVE_TO_SOCK);
+    return SOCK_FAIL;
+}
+
+
+#undef FUNCNAME
 #define FUNCNAME sock_listen
 #undef FCNAME
 #define FCNAME SOCKI_QUOTE(FUNCNAME)
