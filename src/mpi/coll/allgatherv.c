@@ -324,7 +324,7 @@ PMPI_LOCAL int MPIR_Allgatherv (
                         k--;
                     }
                 }
-		/* --BEGIN EXPERIMENTAL-- */
+		/* --END EXPERIMENTAL-- */
                 
                 mask <<= 1;
                 i++;
