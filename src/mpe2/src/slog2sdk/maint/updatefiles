@@ -23,7 +23,7 @@ fi
 if [ "$acWorks" != yes ] ; then
     echo "Selected version of autoconf cannot handle version 2.52"
     echo "Trying to find an autoconf-2.xx..."
-    for ver in 60 59 58 57 56 55 54 53 52 51 50 13 11 0 ; do
+    for ver in 57 56 55 54 53 52 ; do
         autoconf="autoconf-2.$ver"
         if (cd .tmp && $autoconf >/dev/null 2>&1 ) ; then
 	    SLOG2_AUTOCONF=$autoconf
