@@ -505,7 +505,7 @@ AC_SUBST(MPI_2DOUBLE_COMPLEX)
 for var in CHARACTER INTEGER REAL LOGICAL DOUBLE_PRECISION COMPLEX DOUBLE_COMPLEX 2INTEGER 2REAL 2COMPLEX 2DOUBLE_PRECISION 2DOUBLE_COMPLEX ; do
     fullvar="MPI_$var"
     eval fullvarvalue=\$$fullvar
-    echo "$fullvar = $fullvarvalue"
+    #echo "$fullvar = $fullvarvalue"
     value=0
     for pos in 3 4 5 6 7 8 9 10 ; do
         char=`expr substr $fullvarvalue $pos 1`
@@ -634,20 +634,20 @@ for c_type in char short int long "long_long" ; do
        "$ctypelen" -gt 0 ; then
 	c_type=`echo $c_type | sed -e 's/_/ /g'`
 	AC_MSG_RESULT($c_type)
-	MPI_FINT_TYPE=$c_type
+	MPI_FINT=$c_type
 	noval="no"
 	break
     fi
 done
 if test "$noval" = "yes" ; then
     # Set a default
-    MPI_FINT_TYPE="int"
+    MPI_FINT="int"
     AC_MSG_RESULT([unavailable])
 fi
-AC_SUBST(MPI_FINT_TYPE)
+AC_SUBST(MPI_FINT)
 dnl
 dnl Include a defined value for Fint is int
-if test "$MPI_FINT_TYPE" = "int" ; then
+if test "$MPI_FINT" = "int" ; then
     AC_DEFINE(FINT_IS_INT,,[Define if Fortran integer are the same size as C ints])
 fi
 
@@ -672,7 +672,7 @@ if test "$cross_compiling" = "no" ; then
 #include <stdio.h>
 int main()
 {
-    $MPI_FINT_TYPE itrue, ifalse;
+    $MPI_FINT itrue, ifalse;
     FILE *f = fopen("conftestval", "w" );
     if (!f) exit(1);
     ftest_( &itrue, &ifalse );

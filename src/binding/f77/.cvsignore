@@ -3,6 +3,7 @@ Makefile.in
 Makefile
 mpi_fortconf.h.in
 mpi_fortconf.h
+mpif77.conf
 *.o
 *.lo
 configure

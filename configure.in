@@ -638,9 +638,37 @@ export CC
 PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems)
 dnl
-# Temporary values for MPI_Fint (need help from the Fortran subsystem)
-MPI_FINT=int
+dnl Once the subsystems are configured, we can inquire about what
+dnl they have been found.  For example, we need the values for the
+dnl Fortran datatypes from the Fortran system, if they are defined.
+if test "$enable_f77" = "yes" -a -s src/binding/f77/mpif77.conf ; then
+    # Load the values from the generated configuration file
+    # These set the datatypes and the other Fortran types
+    . ./src/binding/f77/mpif77.conf
+else
+    for name in CHARACTER INTEGER REAL LOGICAL COMPLEX DOUBLE_PRECISION \
+	2INTEGER 2REAL DOUBLE_COMPLEX 2COMPLEX 2DOUBLE_PRECISION \
+	2DOUBLE_COMPLEX ; do
+	fullname="MPI_$name"
+	eval $fullname=MPI_DATATYPE_NULL
+    done
+    # Temporary values for MPI_Fint (need help from the Fortran subsystem)
+    MPI_FINT=int
+fi
+AC_SUBST(MPI_CHARACTER)
+AC_SUBST(MPI_INTEGER)
+AC_SUBST(MPI_REAL)
+AC_SUBST(MPI_LOGICAL)
+AC_SUBST(MPI_COMPLEX)
+AC_SUBST(MPI_DOUBLE_PRECISION)
+AC_SUBST(MPI_2INTEGER)
+AC_SUBST(MPI_2REAL)
+AC_SUBST(MPI_DOUBLE_COMPLEX)
+AC_SUBST(MPI_2DOUBLE_PRECISION)
+AC_SUBST(MPI_2COMPLEX)
+AC_SUBST(MPI_2DOUBLE_COMPLEX)
 AC_SUBST(MPI_FINT)
+
 # Temporary values for MPI_Offset (need help from IO subsystem)
 MPI_OFFSET=long
 AC_SUBST(MPI_OFFSET)
