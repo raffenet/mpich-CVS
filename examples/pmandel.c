@@ -25,6 +25,7 @@
 #define MAX(x, y)	(((x) > (y))?(x):(y))
 #endif
 
+#define DEFAULT_PORT 7470   /* default por to listen on */
 #define NOVALUE 99999       /* indicates a parameter is as of yet unspecified */
 #define MAX_ITERATIONS 10000 /* maximum 'depth' to look for mandelbrot value */
 #define INFINITE_LIMIT 4.0  /* evalue when fractal is considered diverging */
@@ -258,11 +259,31 @@ int main(int argc, char *argv[])
 	{
 	    addr.sin_family = AF_INET;
 	    addr.sin_addr.s_addr = INADDR_ANY;
-	    addr.sin_port = 0;
+	    addr.sin_port = DEFAULT_PORT;
 
 	    listener = socket(AF_INET, SOCK_STREAM, 0);
-	    bind(listener, &addr, sizeof(addr));
-	    listen(listener, 1);
+	    if (listener == -1)
+	    {
+		printf("unable to create a listener socket.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+		exit(-1);
+	    }
+	    if (bind(listener, &addr, sizeof(addr)) == -1)
+	    {
+		addr.sin_port = 0;
+		if (bind(listener, &addr, sizeof(addr)) == -1)
+		{
+		    printf("unable to create a listener socket.\n");
+		    MPI_Abort(MPI_COMM_WORLD, -1);
+		    exit(-1);
+		}
+	    }
+	    if (listen(listener, 1) == -1)
+	    {
+		printf("unable to listen.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+		exit(-1);
+	    }
 	    len = sizeof(addr);
 	    getsockname(listener, &addr, &len);
 	    
@@ -270,6 +291,12 @@ int main(int argc, char *argv[])
 	    fflush(stdout);
 
 	    sock = accept(listener, NULL, NULL);
+	    if (sock == -1)
+	    {
+		printf("unable to accept a socket connection.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+		exit(-1);
+	    }
 	    printf("accepted connection from visualization program.\n");
 	    fflush(stdout);
 
