@@ -2631,9 +2631,17 @@ sub Exception_methods {
     my $OUTFD = $_[0];
     
     print $OUTFD "\
+  protected:
+    char the_error_message[MPI_MAX_ERROR_STRING];
+  public:
     int Get_error_code(void) { return the_real_exception; } 
     int Get_error_class(void) { return MPI::Get_error_class(the_real_exception); } 
-    const char *Get_error_string(void) { return 0;}
+    const char *Get_error_string(void)
+    {
+	int len;
+	MPI_Error_string(the_real_exception, the_error_message, &len);
+	return the_error_message;
+    }
 ";
 }
 
@@ -3356,7 +3364,12 @@ sub boolarray_out_ctocxx {
     print $OUTFD "$indent    { 
             int i$count; 
             for (i$count=0;i$count<$n;i$count++) {
-                v$count\[i$count] = l$count\[i$count];
+		// Unfortunately, at least one C++ compiler (Microsoft's)
+		// generates warning messages when the type size changes
+		// even when an explicit cast is used.  To avoid these messages, we 
+		// cause the generated code to explicitly compute a
+		// boolean value
+                v$count\[i$count] = l$count\[i$count] != 0;
             }
             delete[] l$count;
         }\n";
