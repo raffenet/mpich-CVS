@@ -1841,7 +1841,15 @@ sub TargetInstall {
 	}
     }
     foreach $extradir (@install_subdirs) {
-	print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$newline";
+	# Check for configure substitutions in the list.  Make
+	# these conditional, so that they can be empty
+	$endline = "";
+	if ($extradir =~ /^@/) {
+	    print FD "\tif [ -n \"$extradir\" ] ; then \\$newline";
+	    $endline = " ; fi";
+	}
+	print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$endline$newline";
+	
     }
     print FD "$newline";
 
