@@ -106,13 +106,6 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, 
 
     if (mpi_errno == MPI_SUCCESS)
     {
-	if (request_ptr == NULL)
-	{
-	    /* *request = MPID_STATIC_FINISHED_REQUEST; */
-	    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IRECV);
-	    return MPI_SUCCESS;
-	}
-
 	/* return the handle of the request to the user */
 	*request = request_ptr->handle;
 	
