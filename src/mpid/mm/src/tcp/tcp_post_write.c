@@ -33,6 +33,7 @@ int tcp_post_write(MPIDI_VC *vc_ptr, MM_Car *car_ptr)
     }
     else
     {
+	msg_printf(".");
 	/* create a request to send car */
 	rndv_car_ptr = mm_car_alloc();
 
