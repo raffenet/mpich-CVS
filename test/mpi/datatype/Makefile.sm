@@ -42,6 +42,9 @@ tmatchsize_LDADD = ../util/mtest.o
 
 tresized2_SOURCES = tresized2.c
 tresized2_LDADD = ../util/mtest.o 
+
+tfree_SOURCES = tfree.c
+tfree_LDADD = ../util/mtest.o 
 		 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
