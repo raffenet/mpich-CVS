@@ -5,7 +5,8 @@
 #
 
 from sys        import version_info, stdout, exc_info, exit
-from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex
+from socket     import socket, AF_INET, SOCK_STREAM, gethostbyname_ex, \
+                       SOL_SOCKET,SO_REUSEADDR
 from re         import sub, split
 from marshal    import dumps, loads
 from traceback  import extract_stack, format_list, extract_tb
@@ -247,6 +248,8 @@ def mpd_recv_one_msg(sock):
 
 def mpd_get_inet_listen_socket(host,port):
     sock = socket(AF_INET,SOCK_STREAM)
+    rc = sock.setsockopt(SOL_SOCKET,SO_REUSEADDR,1)
+    # print "PORT=%d rc=%s" % (port,str(rc))  # rc may be None
     sock.bind((host,port))  # note user may specify port 0 (anonymous)
     sock.listen(5)
     actualPort = sock.getsockname()[1]
@@ -254,6 +257,7 @@ def mpd_get_inet_listen_socket(host,port):
 
 def mpd_get_inet_socket_and_connect(host,port):
     tempSocket = socket(AF_INET,SOCK_STREAM)
+    # tempSocket.setsockopt(SOL_SOCKET,SO_REUSEADDR,1)
     try:
         tempSocket.connect((host,port))  # note double parens
     except:
