@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 static const char *get_class_msg( int error_class );
-    
+
 /*
  * Instance-specific error messages are stored in a ring.
  * Messages are written into the error_ring; the corresponding entry in
@@ -1328,6 +1328,187 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 	else
 	{
 	    fprintf(fp, "Error code contains an invalid class (%d)\n", error_class);
+	}
+    }
+    
+  fn_exit:
+    return;
+}
+
+void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
+{
+    int len;
+#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+    {
+	MPID_Thread_lock(&error_ring_mutex);
+	{
+	    while (errcode != MPI_SUCCESS)
+	    {
+		int ring_idx;
+		int ring_id;
+		int generic_idx;
+
+		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
+		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+
+		if (generic_idx < 0)
+		{
+		    break;
+		}
+		    
+		if (ErrorRing[ring_idx].id == ring_id)
+		{
+		    MPIU_Snprintf(str, maxlen, "%s: %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
+		    len = (int)strlen(str);
+		    maxlen -= len;
+		    str += len;
+		    errcode = ErrorRing[ring_idx].prev_error;
+		}
+		else
+		{
+		    break;
+		}
+	    }
+	}
+	MPID_Thread_unlock(&error_ring_mutex);
+
+	if (errcode == MPI_SUCCESS)
+	{
+	    goto fn_exit;
+	}
+    }
+#   endif
+
+#   if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
+    {
+	int generic_idx;
+		    
+	generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+	
+	if (generic_idx >= 0)
+	{
+	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", generic_err_msgs[generic_idx].long_name);
+	    len = (int)strlen(str);
+	    maxlen -= len;
+	    str += len;
+	    goto fn_exit;
+	}
+    }
+#   endif
+    
+    {
+	int error_class;
+
+	error_class = ERROR_GET_CLASS(errcode);
+	
+	if (error_class <= MPICH_ERR_LAST_CLASS)
+	{
+	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", get_class_msg(ERROR_GET_CLASS(errcode)));
+	    len = (int)strlen(str);
+	    maxlen -= len;
+	    str += len;
+	}
+	else
+	{
+	    MPIU_Snprintf(str, maxlen, "Error code contains an invalid class (%d)\n", error_class);
+	    len = (int)strlen(str);
+	    maxlen -= len;
+	    str += len;
+	}
+    }
+    
+  fn_exit:
+    return;
+}
+
+void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Err_get_class_string_func_t fn)
+{
+    int len;
+#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+    {
+	MPID_Thread_lock(&error_ring_mutex);
+	{
+	    while (errcode != MPI_SUCCESS)
+	    {
+		int ring_idx;
+		int ring_id;
+		int generic_idx;
+
+		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
+		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+
+		if (generic_idx < 0)
+		{
+		    break;
+		}
+		    
+		if (ErrorRing[ring_idx].id == ring_id)
+		{
+		    MPIU_Snprintf(str, maxlen, "%s: %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
+		    len = (int)strlen(str);
+		    maxlen -= len;
+		    str += len;
+		    errcode = ErrorRing[ring_idx].prev_error;
+		}
+		else
+		{
+		    break;
+		}
+	    }
+	}
+	MPID_Thread_unlock(&error_ring_mutex);
+
+	if (errcode == MPI_SUCCESS)
+	{
+	    goto fn_exit;
+	}
+    }
+#   endif
+
+#   if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
+    {
+	int generic_idx;
+		    
+	generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+	
+	if (generic_idx >= 0)
+	{
+	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", generic_err_msgs[generic_idx].long_name);
+	    len = (int)strlen(str);
+	    maxlen -= len;
+	    str += len;
+	    goto fn_exit;
+	}
+    }
+#   endif
+    
+    {
+	int error_class;
+
+	error_class = ERROR_GET_CLASS(errcode);
+	
+	if (error_class <= MPICH_ERR_LAST_CLASS)
+	{
+	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", get_class_msg(ERROR_GET_CLASS(errcode)));
+	    len = (int)strlen(str);
+	    maxlen -= len;
+	    str += len;
+	}
+	else
+	{
+	    if (fn != NULL)
+	    {
+		fn(errcode, str, maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "Error code contains an invalid class (%d)\n", error_class);
+	    }
+	    len = (int)strlen(str);
+	    maxlen -= len;
+	    str += len;
 	}
     }
     

@@ -100,6 +100,8 @@ void MPIR_Err_get_string_ext(int, char *, int, MPIR_Err_get_class_string_func_t 
 
 void MPIR_Err_print_stack(FILE *, int);
 extern int MPIR_Err_print_stack_flag;
+void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen);
+void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Err_get_class_string_func_t fn);
 
 int MPIR_Err_set_msg( int code, const char *msg_string );
 
