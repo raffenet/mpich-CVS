@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpir_pt2pt.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Send */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -45,15 +46,16 @@
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+	     MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Send";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_Datatype * datatype_ptr = NULL;
+    MPID_Request * request_ptr = NULL;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SEND);
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    /* Verify that MPI has been initialized */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -61,10 +63,33 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
                 mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
                             "**initialized", 0 );
+                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
-            /* Validate comm_ptr */
+	}
+        MPID_END_ERROR_CHECKS;
+    }
+#   endif /* HAVE_ERROR_CHECKING */
+	    
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_SEND);
+    
+    /* Get handles to MPI objects. */
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    MPID_Datatype_get_ptr(datatype, datatype_ptr);
+
+    /* Validate parameters if error checking is enabled */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+        MPID_BEGIN_ERROR_CHECKS;
+        {
+	    /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not value, it will be reset to null */
+            if (mpi_errno) {
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+	    
+            /* Validate datatype_ptr */
+            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
@@ -74,6 +99,30 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    mpi_errno = MPID_Send(buf, count, datatype_ptr, dest, tag, comm_ptr, 0,
+			  &request_ptr);
+    if (!mpi_errno)
+    {
+	if (request_ptr == NULL)
+	{
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+		return MPI_SUCCESS;
+	}
+	else
+	{
+	    /* If a request was returned, then we need to block until the
+	       request is complete */
+	    MPIR_Wait(request_ptr);
+	
+	    mpi_errno = request_ptr->status.MPI_ERROR;
+	    if (!mpi_errno)
+	    {
+		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
+		return MPI_SUCCESS;
+	    }
+	}
+    }
+    
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_SEND);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 }

@@ -1,4 +1,4 @@
-lib${MPILIBNAME}_a_SOURCES = 
+lib${MPILIBNAME}_a_SOURCES = send.c recv.c wait.c
 # As routines are implemented, add there files to the list.
 # (unimplemented routines should cause link-time, not run-time failures)
 #lib${MPILIBNAME}_a_SOURCES = bsend.c bsend_init.c bufattach.c buffree.c \
