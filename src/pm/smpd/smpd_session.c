@@ -11,8 +11,9 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
-
-#ifndef HAVE_WINDOWS_H
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 
 #if 0
 int exists(char *filename)
@@ -25,29 +26,7 @@ int exists(char *filename)
     }
     return 1;
 }
-#endif
 
-int GetFullPathName(const char *filename, int maxlen, char *buf, char **file_part)
-{
-    char *path = NULL;
-    char cwd[SMPD_MAX_EXE_LENGTH] = "";
-
-    getcwd(cwd, SMPD_MAX_EXE_LENGTH);
-    path = (char*)malloc((strlen(getenv("PATH")) + 1) * sizeof(char));
-
-    if (cwd[strlen(cwd)-1] != '/')
-	strcat(cwd, "/");
-
-    /* add searching of the path and verifying file exists */
-
-    /* for now, just put whatever they give you tacked on to the cwd */
-    snprintf(buf, maxlen, "%s%s", cwd, filename);
-
-    free(path);
-    return 0;
-}
-
-#if 0
 /* SEARCH_PATH() - use the given environment, find the PATH variable,
  * search the path for cmd, return a string with the full path to
  * the command.
@@ -174,7 +153,6 @@ int is_executable(char *fn, char *un, int uid, int gid)
     }
     return(0);
 }
-#endif
 #endif
 
 SMPD_BOOL smpd_get_full_path_name(const char *exe, int maxlen, char *exe_path, char **namepart)
