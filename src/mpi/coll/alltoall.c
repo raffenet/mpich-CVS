@@ -55,7 +55,7 @@ PMPI_LOCAL int MPIR_Alltoall(
     MPI_Datatype recvtype, 
     MPID_Comm *comm_ptr )
 {
-    int          comm_size, i, j, k, p;
+    int          comm_size, i, j, k, p, pof2;
     MPI_Aint     sendtype_extent, recvtype_extent, sendbuf_extent, lb=0;
     int          mpi_errno = MPI_SUCCESS;
     MPI_Status status;
@@ -64,6 +64,8 @@ PMPI_LOCAL int MPIR_Alltoall(
     int sendtype_size;
     void *tmp_buf;
     MPI_Comm comm;
+    MPI_Request *reqarray;
+    MPI_Status *starray;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -79,34 +81,7 @@ PMPI_LOCAL int MPIR_Alltoall(
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
     
-    if (nbytes > MPIR_ALLTOALL_SHORT_MSG) {
-        /* Long message. Use pairwise exchange algorithm. */
-        
-        /* Make local copy first */
-        mpi_errno = MPIR_Localcopy(((char *)sendbuf + 
-                                    rank*sendcount*sendtype_extent), 
-                                   sendcount, sendtype, 
-                                   ((char *)recvbuf +
-                                    rank*recvcount*recvtype_extent),
-                                   recvcount, recvtype);
-        if (mpi_errno) return mpi_errno;
-        
-        /* Do the pairwise exchanges */
-        for (i=1; i<comm_size; i++) {
-            src = (rank - i + comm_size) % comm_size;
-            dst = (rank + i) % comm_size;
-            mpi_errno = MPIC_Sendrecv(((char *)sendbuf +
-                                       dst*sendcount*sendtype_extent), 
-                                      sendcount, sendtype, dst,
-                                      MPIR_ALLTOALL_TAG, 
-                                      ((char *)recvbuf +
-                                       src*recvcount*recvtype_extent),
-                                      recvcount, recvtype, src,
-                                      MPIR_ALLTOALL_TAG, comm, &status);
-            if (mpi_errno) return mpi_errno;
-        }
-    }
-    else {
+    if (nbytes <= MPIR_ALLTOALL_SHORT_MSG) {
         /* Short message. Use recursive doubling. Each process sends all
            its data at each step along with all data it received in
            previous steps. */
@@ -240,6 +215,94 @@ PMPI_LOCAL int MPIR_Alltoall(
         }
         
         MPIU_Free((char *)tmp_buf+lb); 
+    }
+
+    else if ((nbytes > MPIR_ALLTOALL_SHORT_MSG) && 
+             (nbytes <= MPIR_ALLTOALL_MEDIUM_MSG)) {  
+        /* Medium-size message. Use isend/irecv with scattered
+           destinations */
+
+        reqarray = (MPI_Request *) MPIU_Malloc(2*comm_size*sizeof(MPI_Request));
+        starray = (MPI_Status *) MPIU_Malloc(2*comm_size*sizeof(MPI_Status));
+
+        /* do the communication -- post all sends and receives: */
+        for ( i=0; i<comm_size; i++ ) { 
+            dst = (rank+i) % comm_size;
+            mpi_errno = MPIC_Irecv((char *)recvbuf +
+                                  dst*recvcount*recvtype_extent, 
+                                  recvcount, recvtype, dst,
+                                  MPIR_ALLTOALL_TAG, comm,
+                                  &reqarray[i]);
+            if (mpi_errno) return mpi_errno;
+        }
+
+        for ( i=0; i<comm_size; i++ ) { 
+            dst = (rank+i) % comm_size;
+            mpi_errno = MPIC_Isend((char *)sendbuf +
+                                   dst*sendcount*sendtype_extent, 
+                                   sendcount, sendtype, dst,
+                                   MPIR_ALLTOALL_TAG, comm,
+                                   &reqarray[i+comm_size]);
+            if (mpi_errno) return mpi_errno;
+        }
+  
+        /* ... then wait for *all* of them to finish: */
+        mpi_errno = NMPI_Waitall(2*comm_size,reqarray,starray);
+        if (mpi_errno == MPI_ERR_IN_STATUS) {
+            for (j=0; j<2*comm_size; j++) {
+                if (starray[j].MPI_ERROR != MPI_SUCCESS) 
+                    mpi_errno = starray[j].MPI_ERROR;
+            }
+        }
+
+        MPIU_Free(starray);
+        MPIU_Free(reqarray);
+    }
+
+    else {
+        /* Long message. Use pairwise exchange. If comm_size is a
+           power-of-two, use exclusive-or to create pairs. Else send
+           to rank+i, receive from rank-i. */
+        
+        /* Make local copy first */
+        mpi_errno = MPIR_Localcopy(((char *)sendbuf + 
+                                    rank*sendcount*sendtype_extent), 
+                                   sendcount, sendtype, 
+                                   ((char *)recvbuf +
+                                    rank*recvcount*recvtype_extent),
+                                   recvcount, recvtype);
+        if (mpi_errno) return mpi_errno;
+
+        /* Is comm_size a power-of-two? */
+        i = 1;
+        while (i < comm_size)
+            i *= 2;
+        if (i == comm_size)
+            pof2 = 1;
+        else 
+            pof2 = 0;
+
+        /* Do the pairwise exchanges */
+        for (i=1; i<comm_size; i++) {
+            if (pof2 == 1) {
+                /* use exclusive-or algorithm */
+                src = dst = rank ^ i;
+            }
+            else {
+                src = (rank - i + comm_size) % comm_size;
+                dst = (rank + i) % comm_size;
+            }
+
+            mpi_errno = MPIC_Sendrecv(((char *)sendbuf +
+                                       dst*sendcount*sendtype_extent), 
+                                      sendcount, sendtype, dst,
+                                      MPIR_ALLTOALL_TAG, 
+                                      ((char *)recvbuf +
+                                       src*recvcount*recvtype_extent),
+                                      recvcount, recvtype, src,
+                                      MPIR_ALLTOALL_TAG, comm, &status);
+            if (mpi_errno) return mpi_errno;
+        }
     }
     
     /* Unlock for collective operation */

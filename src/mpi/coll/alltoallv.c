@@ -54,8 +54,9 @@ PMPI_LOCAL int MPIR_Alltoallv (
     int        comm_size, i;
     MPI_Aint   send_extent, recv_extent;
     int        mpi_errno = MPI_SUCCESS;
-    MPI_Status status;
-    int src, dst, rank;
+    MPI_Status *starray;
+    MPI_Request *reqarray;
+    int dst, rank;
     MPI_Comm comm;
     
     comm = comm_ptr->handle;
@@ -69,6 +70,41 @@ PMPI_LOCAL int MPIR_Alltoallv (
     /* Lock for collective operation */
     MPID_Comm_thread_lock( comm_ptr );
 
+    starray = (MPI_Status *) MPIU_Malloc(2*comm_size*sizeof(MPI_Status));
+    reqarray = (MPI_Request *) MPIU_Malloc(2*comm_size*sizeof(MPI_Request));
+
+    for ( i=0; i<comm_size; i++ ) { 
+        dst = (rank+i) % comm_size;
+        mpi_errno = MPIC_Irecv((char *)recvbuf+rdispls[dst]*recv_extent, 
+                               recvcnts[dst], recvtype, dst,
+                               MPIR_ALLTOALLV_TAG, comm,
+                               &reqarray[i]);
+        if (mpi_errno) return mpi_errno;
+    }
+
+    for ( i=0; i<comm_size; i++ ) { 
+        dst = (rank+i) % comm_size;
+        mpi_errno = MPIC_Isend((char *)sendbuf+sdispls[dst]*send_extent, 
+                               sendcnts[dst], sendtype, dst,
+                               MPIR_ALLTOALLV_TAG, comm,
+                               &reqarray[i+comm_size]);
+        if (mpi_errno) return mpi_errno;
+    }
+
+    mpi_errno = NMPI_Waitall(2*comm_size, reqarray, starray);
+
+    if (mpi_errno == MPI_ERR_IN_STATUS) {
+        for (i=0; i<2*comm_size; i++) {
+            if (starray[i].MPI_ERROR != MPI_SUCCESS) 
+                mpi_errno = starray[i].MPI_ERROR;
+        }
+    }
+    
+    MPIU_Free(reqarray);
+    MPIU_Free(starray);
+
+
+#ifdef FOO
     /* Use pairwise exchange algorithm. */
     
     /* Make local copy first */
@@ -89,6 +125,7 @@ PMPI_LOCAL int MPIR_Alltoallv (
                                   MPIR_ALLTOALLV_TAG, comm, &status);
         if (mpi_errno) return mpi_errno;
     }
+#endif
     
     /* Unlock for collective operation */
     MPID_Comm_thread_unlock( comm_ptr );

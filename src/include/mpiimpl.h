@@ -1528,6 +1528,7 @@ void MPIR_WaitForDebugger( void );
 #define MPIR_BCAST_SHORT_MSG          12288
 #define MPIR_BCAST_MIN_PROCS          8
 #define MPIR_ALLTOALL_SHORT_MSG       128
+#define MPIR_ALLTOALL_MEDIUM_MSG      262144
 #define MPIR_REDUCE_SCATTER_SHORT_MSG 512  
 #define MPIR_SCATTER_SHORT_MSG        2048  /* for intercommunicator scatter */
 #define MPIR_GATHER_SHORT_MSG         2048  /* for intercommunicator scatter */
@@ -1573,6 +1574,11 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   MPI_Comm comm, MPI_Status *status);
 int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype);
+int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
+               source, int tag, MPI_Comm comm, MPI_Request *request);
+int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+               MPI_Comm comm, MPI_Request *request);
+
 
 void MPIR_MAXF  ( void *, void *, int *, MPI_Datatype * ) ;
 void MPIR_MINF  ( void *, void *, int *, MPI_Datatype * ) ;

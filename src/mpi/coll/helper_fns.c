@@ -10,7 +10,7 @@
 /* These functions are used in the implementation of collective
    operations. They are wrappers around MPID send/recv functions. They do
    sends/receives by setting the context offset to
-   MPID_CONTEXT_INTRA_COLL or MPI_CONTEX_INTER_COLL. */
+   MPID_CONTEXT_INTRA_COLL or MPID_CONTEXT_INTER_COLL. */
 
 int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm)
@@ -64,8 +64,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     }
     if (request_ptr) {
         MPIR_Wait(request_ptr);
-	/* FIXME : use only STATUS_IGNORE */
-        if (status != NULL && status != MPI_STATUS_IGNORE)
+        if (status != MPI_STATUS_IGNORE)
             *status = request_ptr->status;
         mpi_errno = request_ptr->status.MPI_ERROR;
         MPID_Request_release(request_ptr);
@@ -109,8 +108,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPID_Request_release(send_req_ptr);
 
     MPIR_Wait(recv_req_ptr);
-    /* FIXME : use only STATUS_IGNORE */
-    if (status != NULL && status != MPI_STATUS_IGNORE)
+    if (status != MPI_STATUS_IGNORE)
         *status = recv_req_ptr->status;
     mpi_errno = recv_req_ptr->status.MPI_ERROR;
     MPID_Request_release(recv_req_ptr);
@@ -153,5 +151,63 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                     rank, MPIR_LOCALCOPY_TAG,
                                     MPI_COMM_WORLD, &status );
     }
+    return mpi_errno;
+}
+
+
+int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+              MPI_Comm comm, MPI_Request *request)
+{
+    int mpi_errno, context_id;
+    MPID_Request *request_ptr=NULL;
+    MPID_Comm *comm_ptr=NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_ISEND);
+
+    MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPIC_ISEND);
+
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
+        MPID_CONTEXT_INTRA_COLL : MPID_CONTEXT_INTER_COLL;
+
+    mpi_errno = MPID_Isend(buf, count, datatype, dest, tag, comm_ptr,
+                          context_id, &request_ptr); 
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_ISEND);
+	return mpi_errno;
+    }
+
+    *request = request_ptr->handle;
+
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_ISEND);
+    return mpi_errno;
+}
+
+
+int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
+               source, int tag, MPI_Comm comm, MPI_Request *request)
+{
+    int mpi_errno, context_id;
+    MPID_Request *request_ptr=NULL;
+    MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIC_IRECV);
+
+    MPID_MPI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPIC_IRECV);
+
+    MPID_Comm_get_ptr( comm, comm_ptr );
+    context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
+        MPID_CONTEXT_INTRA_COLL : MPID_CONTEXT_INTER_COLL;
+
+    mpi_errno = MPID_Irecv(buf, count, datatype, source, tag, comm_ptr,
+                          context_id, &request_ptr); 
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_IRECV);
+	return mpi_errno;
+    }
+
+    *request = request_ptr->handle;
+
+    MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_IRECV);
     return mpi_errno;
 }
