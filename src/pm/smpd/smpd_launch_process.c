@@ -1418,6 +1418,7 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 {
 #ifdef HAVE_WINDOWS_H
     int result;
+    DWORD exit_code;
     smpd_enter_fn("smpd_wait_process");
 
     if (WaitForSingleObject(wait.hProcess, INFINITE) != WAIT_OBJECT_0)
@@ -1427,7 +1428,7 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 	smpd_exit_fn("smpd_wait_process");
 	return SMPD_FAIL;
     }
-    result = GetExitCodeProcess(wait.hProcess, exit_code_ptr);
+    result = GetExitCodeProcess(wait.hProcess, &exit_code);
     if (!result)
     {
 	smpd_err_printf("GetExitCodeProcess failed, error %d\n", GetLastError());
@@ -1437,6 +1438,8 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     }
     CloseHandle(wait.hProcess);
     CloseHandle(wait.hThread);
+
+    *exit_code_ptr = exit_code;
 
     smpd_exit_fn("smpd_wait_process");
     return SMPD_SUCCESS;
