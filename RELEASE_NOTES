@@ -29,7 +29,7 @@
   the MPI_PACK_EXTERNAL and MPI_UNPACK_EXTERNAL routines, as well the external
   data representation capabilities of ROMIO.
 
-- MPI_THREAD_MULTIPLE and MPI_THREAD_SERIALIZE are not supported at present;
+- MPI_THREAD_MULTIPLE and MPI_THREAD_SERIALIZED are not supported at present;
   however, we expect MPICH2 to be thread-safe in time for the next release.
 
 - Previous releases of MPICH2 supported the "forker" process manager.  This
