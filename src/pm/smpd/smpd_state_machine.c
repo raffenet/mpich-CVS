@@ -672,10 +672,6 @@ int smpd_state_reading_connect_result(smpd_context_t *context, MPIDU_Sock_event_
     context->read_state = SMPD_IDLE;
     if (strcmp(context->pszChallengeResponse, SMPD_AUTHENTICATION_ACCEPTED_STR))
     {
-	/* FIXME */
-	/* the close operation needs to know that the state machine needs to exit */
-	/* How is this going to be done? Where does the state go since context->state is taken? */
-
 	/* rejected connection, close */
 	smpd_dbg_printf("connection rejected, server returned - %s\n", context->pszChallengeResponse);
 	context->read_state = SMPD_IDLE;
@@ -2987,7 +2983,6 @@ int smpd_state_reading_client_sspi_buffer(smpd_context_t *context, MPIDU_Sock_ev
     if (dest_context == NULL)
     {
 	/* I am node 0 so handle the command here. */
-	/* FIXME: insert code here. */
 	result = smpd_sspi_context_iter(context->sspi_context->id, &context->sspi_context->buffer, &context->sspi_context->buffer_length);
 	if (result != SMPD_SUCCESS)
 	{
@@ -3215,8 +3210,8 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	GetUserName(context->account, &len);
 	if (sec_result == SEC_E_OK)
 	{
-	    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
-	    smpd_dbg_printf("impersonated user: '%s'\n", context->account);
+	    /*smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);*/
+	    /*smpd_dbg_printf("impersonated user: '%s'\n", context->account);*/
 	}
 	else
 	{
@@ -3228,10 +3223,37 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 	    {
 		/* FIXME: insert implementation here: */
 		/* verify local admin */
-		/*result_str = SMPD_FAIL_STR;*/
-		/* Let's allow access now to test the code */
-		smpd_dbg_printf("allowing admin access to smpd\n");
-		context->access = SMPD_ACCESS_ADMIN;
+		BOOL b;
+		SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+		PSID AdministratorsGroup;
+		b = AllocateAndInitializeSid(
+		    &NtAuthority,
+		    2,
+		    SECURITY_BUILTIN_DOMAIN_RID,
+		    DOMAIN_ALIAS_RID_ADMINS,
+		    0, 0, 0, 0, 0, 0,
+		    &AdministratorsGroup);
+		if (b)
+		{
+		    if (!CheckTokenMembership(NULL, AdministratorsGroup, &b)) 
+		    {
+			b = FALSE;
+		    } 
+		    FreeSid(AdministratorsGroup); 
+		}
+		smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+		smpd_dbg_printf("impersonated user: '%s'\n", context->account);
+
+		if (b)
+		{
+		    smpd_dbg_printf("allowing admin access to smpd\n");
+		    context->access = SMPD_ACCESS_ADMIN;
+		}
+		else
+		{
+		    context->access = SMPD_ACCESS_NONE;
+		    result_str = SMPD_FAIL_STR;
+		}
 	    }
 	    else
 	    {
@@ -3256,6 +3278,11 @@ int smpd_state_reading_delegate_request_result(smpd_context_t *context, MPIDU_So
 
 	    smpd_exit_fn(FCNAME);
 	    return result == MPI_SUCCESS ? SMPD_SUCCESS : SMPD_FAIL;
+	}
+	if (sec_result == SEC_E_OK)
+	{
+	    smpd_process.sec_fn->RevertSecurityContext(&context->sspi_context->context);
+	    smpd_dbg_printf("impersonated user: '%s'\n", context->account);
 	}
 
 	if (strcmp(context->sspi_header, "key") != 0)
