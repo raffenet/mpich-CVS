@@ -120,6 +120,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
+#if 0
     else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  requesting connection "
@@ -139,6 +140,7 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	sreq = create_request(hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
+#endif
     else
     {
 	/* Connection failed, so allocate a request and return an error. */

@@ -144,6 +144,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
+#if 0
     else if (vc->ib.state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
@@ -157,6 +158,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	sreq = create_request(iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
+#endif
     else
     {
 	/* Connection failed, so allocate a request and return an error. */
