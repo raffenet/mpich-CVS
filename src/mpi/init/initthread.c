@@ -35,26 +35,15 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     int mpi_errno = MPI_SUCCESS;
     int has_args;
     int has_env;
-
-    /* XXX - if we pass provided to MPID_Init() then the following code has
-       little effect, and may in fact, allow the setting in MPIR_Process to be
-       out of sync with the value returned from MPID_Init() */
-    if (required > MPID_MAX_THREAD_LEVEL) {
-	MPIR_Process.thread_provided = MPID_MAX_THREAD_LEVEL;
-    }
-    else {
-	MPIR_Process.thread_provided = required;
-    }
-    if (provided) *provided =  MPIR_Process.thread_provided;
+    int thread_provided;
 
 #ifdef MPICH_SINGLE_THREADED
 #else
-    MPIR_Process.thread_key = MPID_GetThreadKey();
+    MPIR_Process.thread_key    = MPID_GetThreadKey();
     MPIR_Process.master_thread = MPID_GetThreadId();
     MPID_Thread_lock_init( MPIR_Process.common_lock );
     MPID_Thread_lock_init( MPIR_Process.allocation_lock );
 #endif    
-    /* Remember level of thread support promised */
 
 #ifdef HAVE_ERROR_CHECKING
     /* Eventually this will support commandline and environment options
@@ -131,12 +120,18 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Err_init();
     MPID_Wtime_init();
     /* MPIU_Timer_pre_init(); */
-    mpi_errno = MPID_Init(argc, argv, required, provided, &has_args, &has_env);
+    mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
+			  &has_args, &has_env);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, "MPIR_Init_thread", __LINE__, MPI_ERR_OTHER, "**init", 0);
 	return mpi_errno;
     }
+
+    /* Capture the level of thread support provided */
+    MPIR_Process.thread_provided = thread_provided;
+    if (provided) *provided = thread_provided;
+
     MPIU_dbg_init(MPIR_Process.comm_world->rank);
     MPIU_Timer_init(MPIR_Process.comm_world->rank,
 		    MPIR_Process.comm_world->local_size);
