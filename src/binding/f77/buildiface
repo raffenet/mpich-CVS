@@ -142,12 +142,15 @@ foreach $_ (@ARGV) {
 	     'file_get_type_extent-3' => 'MPI_FAint *',
 	     'pack_external-6' => 'MPI_Aint *',        # Value in C call
 	     'pack_external-7' => 'MPI_Aint *',
+	     'pack_external_size-4' => 'MPI_Aint *',
 	     'type_create_hvector-3' => 'MPI_Aint *',  # Value in C call
 	     'type_create_hindexed-3' => 'MPI_Aint *',
 	     'type_create_struct-3' => 'MPI_Aint *',
              'type_get_contents-6' => 'MPI_Aint *',
 	     'type_get_extent-2' => 'MPI_Aint *',
 	     'type_get_extent-3' => 'MPI_Aint *',
+	     'type_get_true_extent-2' => 'MPI_Aint *',
+	     'type_get_true_extent-3' => 'MPI_Aint *',
 	     'type_create_resized-2' => 'MPI_Aint *',  # Value in C call
 	     'type_create_resized-3' => 'MPI_Aint *',  # Value in C call
 	     'unpack_external-3' => 'MPI_Aint *',      # Value in C call
