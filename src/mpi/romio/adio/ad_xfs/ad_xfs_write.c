@@ -14,7 +14,7 @@ void ADIOI_XFS_WriteContig(ADIO_File fd, void *buf, int count,
                      MPI_Datatype datatype, int file_ptr_type,
 		     ADIO_Offset offset, ADIO_Status *status, int *error_code)
 {
-    int err=-1, datatype_size, len, diff, size;
+    int err=-1, datatype_size, len, diff, size, nbytes;
     void *newbuf;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIOI_XFS_WRITECONTIG";
@@ -45,26 +45,26 @@ void ADIOI_XFS_WriteContig(ADIO_File fd, void *buf, int count,
 	else if (offset % fd->d_miniosz) {
 	    diff = fd->d_miniosz - (offset % fd->d_miniosz);
 	    diff = ADIOI_MIN(diff, len);
-	    err = pwrite(fd->fd_sys, buf, diff, offset);
-	    if (err == diff) {
-		buf = ((char *) buf) + diff;
-		offset += diff;
-		size = len - diff;
-		if (!(((long) buf) % fd->d_mem))
-		    ADIOI_XFS_Aligned_Mem_File_Write(fd, buf, size, offset, &err);
-		else {
-		    newbuf = (void *) memalign(XFS_MEMALIGN, size);
-		    if (newbuf) {
-			memcpy(newbuf, buf, size);
-			ADIOI_XFS_Aligned_Mem_File_Write(fd, newbuf, size, offset, &err);
-			free(newbuf);
-		    }
-		    else err = pwrite(fd->fd_sys, buf, size, offset);
-		    if (err != size) err = -1;
-		}
-		if (err != -1) err = len;
+	    nbytes = pwrite(fd->fd_sys, buf, diff, offset);
+
+	    buf = ((char *) buf) + diff;
+	    offset += diff;
+	    size = len - diff;
+	    if (!(((long) buf) % fd->d_mem)) {
+		ADIOI_XFS_Aligned_Mem_File_Write(fd, buf, size, offset, &err);
+		nbytes += err;
 	    }
-	    else err = -1;
+	    else {
+		newbuf = (void *) memalign(XFS_MEMALIGN, size);
+		if (newbuf) {
+		    memcpy(newbuf, buf, size);
+		    ADIOI_XFS_Aligned_Mem_File_Write(fd, newbuf, size, offset, &err);
+		    nbytes += err;
+		    free(newbuf);
+		}
+		else nbytes += pwrite(fd->fd_sys, buf, size, offset);
+	    }
+	    err = nbytes;
 	}
 
         /* (3) if !mem_aligned && file_aligned
@@ -102,7 +102,7 @@ void ADIOI_XFS_WriteContig(ADIO_File fd, void *buf, int count,
 void ADIOI_XFS_Aligned_Mem_File_Write(ADIO_File fd, void *buf, int len, 
               ADIO_Offset offset, int *err)
 {
-    int ntimes, rem, newrem, i, size;
+    int ntimes, rem, newrem, i, size, nbytes;
 
     /* memory buffer is aligned, offset in file is aligned,
        io_size may or may not be of the right size.
@@ -117,60 +117,36 @@ void ADIOI_XFS_Aligned_Mem_File_Write(ADIO_File fd, void *buf, int len,
     else if (len > fd->d_maxiosz) {
 	ntimes = len/(fd->d_maxiosz);
 	rem = len - ntimes * fd->d_maxiosz;
+	nbytes = 0;
 	for (i=0; i<ntimes; i++) {
-	    *err = pwrite(fd->fd_direct, ((char *)buf) + i * fd->d_maxiosz,
+	    nbytes += pwrite(fd->fd_direct, ((char *)buf) + i * fd->d_maxiosz,
 			 fd->d_maxiosz, offset);
-	    if (*err != fd->d_maxiosz) {
-		*err = -1;
-		return;
-	    }
 	    offset += fd->d_maxiosz;
 	}
 	if (rem) {
-	    if (!(rem % fd->d_miniosz)) {
-		*err = pwrite(fd->fd_direct, 
-		     ((char *)buf) + ntimes * fd->d_maxiosz, rem, offset);
-		if (*err != rem) {
-		    *err = -1;
-		    return;
-		}
-	    }
+	    if (!(rem % fd->d_miniosz))
+		nbytes += pwrite(fd->fd_direct, 
+		             ((char *)buf) + ntimes * fd->d_maxiosz, rem, offset);
 	    else {
 		newrem = rem % fd->d_miniosz;
 		size = rem - newrem;
 		if (size) {
-		    *err = pwrite(fd->fd_direct, 
-		      ((char *)buf) + ntimes * fd->d_maxiosz, size, offset);
-		    if (*err != size) {
-			*err = -1;
-			return;
-		    }
+		    nbytes += pwrite(fd->fd_direct, 
+		            ((char *)buf) + ntimes * fd->d_maxiosz, size, offset);
 		    offset += size;
 		}
-		*err = pwrite(fd->fd_sys, 
-	          ((char *)buf) + ntimes*fd->d_maxiosz + size, newrem, offset);
-		if (*err != newrem) {
-		    *err = -1;
-		    return;
-		}
+		nbytes += pwrite(fd->fd_sys, 
+	              ((char *)buf) + ntimes*fd->d_maxiosz + size, newrem, offset);
 	    }
 	}
-	*err = len;
+	*err = nbytes;
     }
     else {
 	rem = len % fd->d_miniosz;
 	size = len - rem;
-	*err = pwrite(fd->fd_direct, buf, size, offset);
-	if (*err != size) {
-	    *err = -1;
-	    return;
-	}
-	*err = pwrite(fd->fd_sys, (char *)buf + size, rem, offset+size);
-	if (*err != rem) {
-	    *err = -1;
-	    return;
-	}
-	*err = len;
+	nbytes = pwrite(fd->fd_direct, buf, size, offset);
+	nbytes += pwrite(fd->fd_sys, (char *)buf + size, rem, offset+size);
+	*err = nbytes;
     }
 }
 
