@@ -21,7 +21,7 @@ def mpdman():
     get_sigtype_from_mpd = 0
     signal(SIGUSR1,sigusr1_handler)
 
-    myHost = gethostname()
+    myHost = environ['MPDMAN_MYHOST']
     myRank = int(environ['MPDMAN_RANK'])
     myId = myHost + '_mpdman_' + str(myRank)
     spawned = int(environ['MPDMAN_SPAWNED'])

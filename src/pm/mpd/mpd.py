@@ -34,7 +34,6 @@ class g:    # global data items
 def _mpd_init():
     global stdout
     close(0)
-    g.myHost = gethostname()
     g.myPid = getpid()
     # print "mpd version 0.8 for Edi"   
     (g.mySocket,g.myPort) = mpd_get_inet_listen_socket('',0)
@@ -85,8 +84,17 @@ def _mpd_init():
     g.allExiting      = 0
     if g.allowConsole:
         g.conListenName = '/tmp/mpd2.console_' + mpd_get_my_username()
-        if access(g.conListenName,R_OK):
-            mpd_raise('%s: unix socket already exists' % (g.conListenName) )
+        consoleAlreadyExists = 0
+        if access(g.conListenName,R_OK):    # if console is there, see if mpd is listening
+            tempSocket = socket(AF_UNIX,SOCK_STREAM)  # note: UNIX socket
+            try:
+                tempSocket.connect(g.conListenName)
+                consoleAlreadyExists = 1
+            except Exception, errmsg:
+                tempSocket.close()
+                unlink(g.conListenName)
+        if consoleAlreadyExists:
+            mpd_raise('an mpd is already running with console at %s' %  (g.conListenName) )
         g.conListenSocket = socket(AF_UNIX,SOCK_STREAM)  # UNIX
         g.conListenSocket.bind(g.conListenName)
         g.conListenSocket.listen(1)
@@ -451,6 +459,7 @@ def _do_mpdrun(msg):
             for sock in g.activeSockets:
                 sock.close()
             setpgrp()
+            environ['MPDMAN_MYHOST'] = g.myHost
             environ['MPDMAN_JOBID'] = jobid
             environ['MPDMAN_CLI_PGM'] = pgm
             environ['MPDMAN_CLI_PATH'] = pathForExec
@@ -786,20 +795,6 @@ def _process_configfile_params():
     if 'password' not in g.configParams.keys():
         mpd_raise('%s: configFile has no password' % (configFilename) )
 
-def sigchld_handler(signum,frame):
-    (donePid,status) = waitpid(-1,WNOHANG)
-    while donePid != 0:
-        for jobid in g.activeJobs.keys():
-            if g.activeJobs[jobid].has_key(donePid):
-                del g.activeJobs[jobid][donePid]
-                if len(g.activeJobs[jobid]) == 0:
-                    del g.activeJobs[jobid]
-                break
-        try:
-            (donePid,status) = waitpid(-1,WNOHANG)
-        except:    ## may occur if no more child processes
-            donePid = 0
-
 def _process_cmdline_args():
     g.entryHost    = ''
     g.entryPort    = 0
@@ -808,10 +803,14 @@ def _process_cmdline_args():
     g.echoPortNum  = 0
     g.daemon       = 0
     g.bulletproof  = 0
+    if g.configParams.has_key('idmyhost'):
+        g.myHost   = g.configParams['idmyhost']
+    else:
+        g.myHost   = gethostname()
     try:
         (opts,args) = getopt(argv[1:],
-                             'h:p:tnedb',
-                             ['host=','port=','trace','noconsole','echo',
+                             'h:p:i:tnedb',
+                             ['host=','port=','idmyhost','trace','noconsole','echo',
 			      'daemon','bulletproof'])
     except:
         usage()
@@ -821,6 +820,8 @@ def _process_cmdline_args():
             g.entryHost = opt[1]
         elif opt[0] == '-p'  or  opt[0] == '--port':
             g.entryPort = int(opt[1])
+        elif opt[0] == '-i'  or  opt[0] == '--idmyhost':
+            g.myHost = opt[1]
         elif opt[0] == '-t'  or  opt[0] == '--trace':
             g.tracingMPD = 1
         elif opt[0] == '-n'  or  opt[0] == '--noconsole':
@@ -835,6 +836,20 @@ def _process_cmdline_args():
             pass    ## getopt raises an exception if not recognized
     if (g.entryHost and not g.entryPort) or (not g.entryHost and g.entryPort):
         mpd_raise('host and port must be specified together')
+
+def sigchld_handler(signum,frame):
+    (donePid,status) = waitpid(-1,WNOHANG)
+    while donePid != 0:
+        for jobid in g.activeJobs.keys():
+            if g.activeJobs[jobid].has_key(donePid):
+                del g.activeJobs[jobid][donePid]
+                if len(g.activeJobs[jobid]) == 0:
+                    del g.activeJobs[jobid]
+                break
+        try:
+            (donePid,status) = waitpid(-1,WNOHANG)
+        except:    ## may occur if no more child processes
+            donePid = 0
 
 def usage():
     print 'mpd version %s' % str(mpd_version)
