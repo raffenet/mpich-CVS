@@ -69,7 +69,43 @@ int MPID_Type_vector(int count,
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-    if (is_builtin) {
+    if (count == 0) {
+	/* we are interpreting the standard here based on the fact that
+	 * with a zero count there is nothing in the typemap.
+	 *
+	 * we handle this case explicitly to get it out of the way.
+	 */
+	new_dtp->has_sticky_ub = 0;
+	new_dtp->has_sticky_lb = 0;
+
+	new_dtp->alignsize    = 0;
+	new_dtp->element_size = 0;
+	new_dtp->eltype       = 0;
+
+	new_dtp->size    = 0;
+	new_dtp->lb      = 0;
+	new_dtp->ub      = 0;
+	new_dtp->true_lb = 0;
+	new_dtp->true_ub = 0;
+	new_dtp->extent  = 0;
+
+	new_dtp->n_elements = 0;
+	new_dtp->is_contig  = 1;
+
+	MPID_Dataloop_create_vector(0,
+				    0,
+				    0,
+				    0,
+				    MPI_INT, /* dummy type */
+				    &(new_dtp->loopinfo),
+				    &(new_dtp->loopsize),
+				    &(new_dtp->loopinfo_depth),
+				    0);
+	*newtype = new_dtp->handle;
+	
+	return MPI_SUCCESS;
+    }
+    else if (is_builtin) {
 	el_sz   = MPID_Datatype_get_basic_size(oldtype);
 	el_type = oldtype;
 
@@ -173,6 +209,19 @@ void MPID_Dataloop_create_vector(int count,
 
     MPID_Datatype *old_dtp = NULL;
     struct MPID_Dataloop *new_dlp;
+
+    /* if count is zero, handle with contig code, call it a int */
+    if (count == 0)
+    {
+
+	MPID_Dataloop_create_contiguous(0,
+					MPI_INT,
+					dlp_p,
+					dlsz_p,
+					dldepth_p,
+					flags);
+	return;
+    }
 
     /* optimization:
      *

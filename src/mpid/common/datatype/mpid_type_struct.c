@@ -113,6 +113,42 @@ int MPID_Type_struct(int count,
     new_dtp->loopinfo       = NULL;
     new_dtp->loopinfo_depth = -1;
 
+    if (count == 0) {
+	/* we are interpreting the standard here based on the fact that
+	 * with a zero count there is nothing in the typemap.
+	 *
+	 * we handle this case explicitly to get it out of the way.
+	 */
+	new_dtp->has_sticky_ub = 0;
+	new_dtp->has_sticky_lb = 0;
+
+	new_dtp->alignsize    = 0;
+	new_dtp->element_size = 0;
+	new_dtp->eltype       = 0;
+
+	new_dtp->size    = 0;
+	new_dtp->lb      = 0;
+	new_dtp->ub      = 0;
+	new_dtp->true_lb = 0;
+	new_dtp->true_ub = 0;
+	new_dtp->extent  = 0;
+
+	new_dtp->n_elements = 0;
+	new_dtp->is_contig  = 1;
+
+	MPID_Dataloop_create_struct(0,
+				    NULL,
+				    NULL,
+				    NULL,
+				    &(new_dtp->loopinfo),
+				    &(new_dtp->loopsize),
+				    &(new_dtp->loopinfo_depth),
+				    0);
+	*newtype = new_dtp->handle;
+	
+	return MPI_SUCCESS;
+    }
+
     for (i=0; i < count; i++) {
 	int is_builtin =
 	    (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN);
@@ -293,6 +329,19 @@ void MPID_Dataloop_create_struct(int count,
 
     MPI_Datatype first_basic = MPI_DATATYPE_NULL,
 	first_derived = MPI_DATATYPE_NULL;
+
+    /* if count is zero, handle with contig code, call it a int */
+    if (count == 0)
+    {
+
+	MPID_Dataloop_create_contiguous(0,
+					MPI_INT,
+					dlp_p,
+					dlsz_p,
+					dldepth_p,
+					flags);
+	return;
+    }
 
     /* browse the old types and characterize */
     for (i=0; i < count; i++) {

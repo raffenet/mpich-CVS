@@ -60,25 +60,55 @@ int MPID_Type_contiguous(int count,
     
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-    if (is_builtin) {
+    if (count == 0) {
+	/* we are interpreting the standard here based on the fact that
+	 * with a zero count there is nothing in the typemap.
+	 *
+	 * we handle this case explicitly to get it out of the way.
+	 */
+	new_dtp->size          = 0;
+	new_dtp->has_sticky_ub = 0;
+	new_dtp->has_sticky_lb = 0;
+	new_dtp->lb            = 0;
+	new_dtp->ub            = 0;
+	new_dtp->true_lb       = 0;
+	new_dtp->true_ub       = 0;
+	new_dtp->extent        = 0;
+
+	new_dtp->alignsize     = 0;
+	new_dtp->element_size  = 0;
+	new_dtp->eltype        = 0;
+	new_dtp->n_elements    = 0;
+	new_dtp->is_contig     = 1;
+
+	MPID_Dataloop_create_contiguous(0,
+					MPI_INT, /* dummy type */
+					&(new_dtp->loopinfo),
+					&(new_dtp->loopsize),
+					&(new_dtp->loopinfo_depth),
+					0);
+	*newtype = new_dtp->handle;
+	
+	return MPI_SUCCESS;
+    }
+    else if (is_builtin) {
 	el_sz   = MPID_Datatype_get_basic_size(oldtype);
 	el_type = oldtype;
 
-	new_dtp->size           = count * el_sz;
-	new_dtp->has_sticky_ub  = 0;
-	new_dtp->has_sticky_lb  = 0;
-	new_dtp->true_lb        = 0;
-	new_dtp->lb             = 0;
-	new_dtp->true_ub        = count * el_sz;
-	new_dtp->ub             = new_dtp->true_ub;
-	new_dtp->extent         = new_dtp->ub - new_dtp->lb;
+	new_dtp->size          = count * el_sz;
+	new_dtp->has_sticky_ub = 0;
+	new_dtp->has_sticky_lb = 0;
+	new_dtp->true_lb       = 0;
+	new_dtp->lb            = 0;
+	new_dtp->true_ub       = count * el_sz;
+	new_dtp->ub            = new_dtp->true_ub;
+	new_dtp->extent        = new_dtp->ub - new_dtp->lb;
 
-	new_dtp->alignsize      = el_sz;
-	new_dtp->n_elements     = count;
-	new_dtp->element_size   = el_sz;
-        new_dtp->eltype         = el_type;
-
-	new_dtp->is_contig      = 1;
+	new_dtp->alignsize     = el_sz;
+	new_dtp->n_elements    = count;
+	new_dtp->element_size  = el_sz;
+        new_dtp->eltype        = el_type;
+	new_dtp->is_contig     = 1;
 
     }
     else /* user-defined base type (oldtype) */ {

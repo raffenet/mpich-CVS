@@ -86,10 +86,46 @@ int MPID_Type_indexed(int count,
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
-    /* builtins are handled differently than user-defined types because they
-     * have no associated dataloop or datatype structure.
-     */
-    if (is_builtin) {
+    if (count == 0) {
+	/* we are interpreting the standard here based on the fact that
+	 * with a zero count there is nothing in the typemap.
+	 *
+	 * we handle this case explicitly to get it out of the way.
+	 */
+	new_dtp->has_sticky_ub = 0;
+	new_dtp->has_sticky_lb = 0;
+
+	new_dtp->alignsize    = 0;
+	new_dtp->element_size = 0;
+	new_dtp->eltype       = 0;
+
+	new_dtp->size    = 0;
+	new_dtp->lb      = 0;
+	new_dtp->ub      = 0;
+	new_dtp->true_lb = 0;
+	new_dtp->true_ub = 0;
+	new_dtp->extent  = 0;
+
+	new_dtp->n_elements = 0;
+	new_dtp->is_contig  = 1;
+
+	MPID_Dataloop_create_indexed(0,
+				     NULL,
+				     NULL,
+				     0,
+				     MPI_INT, /* dummy type */
+				     &(new_dtp->loopinfo),
+				     &(new_dtp->loopsize),
+				     &(new_dtp->loopinfo_depth),
+				     0);
+	*newtype = new_dtp->handle;
+	
+	return MPI_SUCCESS;
+    }
+    else if (is_builtin) {
+	/* builtins are handled differently than user-defined types because
+	 * they have no associated dataloop or datatype structure.
+	 */
 	el_sz      = MPID_Datatype_get_basic_size(oldtype);
 	old_sz     = el_sz;
 	el_ct      = 1;
@@ -205,10 +241,6 @@ int MPID_Type_indexed(int count,
 				 0);
 
     *newtype = new_dtp->handle;
-
-#ifdef MPID_TYPE_ALLOC_DEBUG
-    MPIU_dbg_printf("(h)indexed type %x created.\n", new_dtp->handle);
-#endif
     return MPI_SUCCESS;
 }
 
@@ -231,6 +263,19 @@ void MPID_Dataloop_create_indexed(int count,
 
     MPID_Datatype *old_dtp = NULL;
     struct MPID_Dataloop *new_dlp;
+
+    /* if count is zero, handle with contig code, call it a int */
+    if (count == 0)
+    {
+
+	MPID_Dataloop_create_contiguous(0,
+					MPI_INT,
+					dlp_p,
+					dlsz_p,
+					dldepth_p,
+					flags);
+	return;
+    }
 
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
