@@ -406,6 +406,7 @@ typedef int (MPI_Datarep_extent_function)(MPI_Datatype datatype, MPI_Aint *,
  */
 #ifndef MPICH_SUPPRESS_PROTOTYPES
 /* We require that the C compiler support prototypes */
+/* Begin Prototypes */
 int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
 int MPI_Get_count(MPI_Status *, MPI_Datatype, int *);
@@ -413,7 +414,7 @@ int MPI_Bsend(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int MPI_Ssend(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int MPI_Rsend(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int MPI_Buffer_attach( void*, int);
-int MPI_Buffer_detach( void*, int*);
+int MPI_Buffer_detach( void*, int *);
 int MPI_Isend(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *);
 int MPI_Ibsend(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *);
 int MPI_Issend(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *);
@@ -454,8 +455,8 @@ int MPI_Type_extent(MPI_Datatype, MPI_Aint *);
 /* int MPI_Type_size(MPI_Datatype, MPI_Aint *size); */
 int MPI_Type_size(MPI_Datatype, int *);
 int MPI_Type_count(MPI_Datatype, int *);
-int MPI_Type_lb(MPI_Datatype, MPI_Aint*);
-int MPI_Type_ub(MPI_Datatype, MPI_Aint*);
+int MPI_Type_lb(MPI_Datatype, MPI_Aint *);
+int MPI_Type_ub(MPI_Datatype, MPI_Aint *);
 int MPI_Type_commit(MPI_Datatype *);
 int MPI_Type_free(MPI_Datatype *);
 int MPI_Get_elements(MPI_Status *, MPI_Datatype, int *);
@@ -478,18 +479,18 @@ int MPI_Op_free( MPI_Op *);
 int MPI_Allreduce(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm);
 int MPI_Reduce_scatter(void* , void*, int *, MPI_Datatype, MPI_Op, MPI_Comm);
 int MPI_Scan(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm );
-int MPI_Group_size(MPI_Group group, int *);
-int MPI_Group_rank(MPI_Group group, int *);
+int MPI_Group_size(MPI_Group, int *);
+int MPI_Group_rank(MPI_Group, int *);
 int MPI_Group_translate_ranks (MPI_Group, int, int *, MPI_Group, int *);
 int MPI_Group_compare(MPI_Group, MPI_Group, int *);
 int MPI_Comm_group(MPI_Comm, MPI_Group *);
 int MPI_Group_union(MPI_Group, MPI_Group, MPI_Group *);
 int MPI_Group_intersection(MPI_Group, MPI_Group, MPI_Group *);
 int MPI_Group_difference(MPI_Group, MPI_Group, MPI_Group *);
-int MPI_Group_incl(MPI_Group group, int, int *, MPI_Group *);
-int MPI_Group_excl(MPI_Group group, int, int *, MPI_Group *);
-int MPI_Group_range_incl(MPI_Group group, int, int [][3], MPI_Group *);
-int MPI_Group_range_excl(MPI_Group group, int, int [][3], MPI_Group *);
+int MPI_Group_incl(MPI_Group, int, int *, MPI_Group *);
+int MPI_Group_excl(MPI_Group, int, int *, MPI_Group *);
+int MPI_Group_range_incl(MPI_Group, int, int [][3], MPI_Group *);
+int MPI_Group_range_excl(MPI_Group, int, int [][3], MPI_Group *);
 int MPI_Group_free(MPI_Group *);
 int MPI_Comm_size(MPI_Comm, int *);
 int MPI_Comm_rank(MPI_Comm, int *);
@@ -723,6 +724,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *, MPI_Errhandler *);
 int MPI_Win_get_errhandler(MPI_Win, MPI_Errhandler *);
 int MPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
 
+/* End Prototypes */
 #endif /* MPICH_SUPPRESS_PROTOTYPES */
 
 
@@ -736,7 +738,7 @@ int PMPI_Bsend(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int PMPI_Ssend(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int PMPI_Rsend(void*, int, MPI_Datatype, int, int, MPI_Comm);
 int PMPI_Buffer_attach( void* buffer, int);
-int PMPI_Buffer_detach( void* buffer, int*);
+int PMPI_Buffer_detach( void* buffer, int *);
 int PMPI_Isend(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *);
 int PMPI_Ibsend(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *);
 int PMPI_Issend(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Request *);
@@ -777,8 +779,8 @@ int PMPI_Type_extent(MPI_Datatype, MPI_Aint *);
 /* int PMPI_Type_size(MPI_Datatype, MPI_Aint *); */
 int PMPI_Type_size(MPI_Datatype, int *);
 int PMPI_Type_count(MPI_Datatype, int *);
-int PMPI_Type_lb(MPI_Datatype, MPI_Aint*);
-int PMPI_Type_ub(MPI_Datatype, MPI_Aint*);
+int PMPI_Type_lb(MPI_Datatype, MPI_Aint *);
+int PMPI_Type_ub(MPI_Datatype, MPI_Aint *);
 int PMPI_Type_commit(MPI_Datatype *);
 int PMPI_Type_free(MPI_Datatype *);
 int PMPI_Get_elements(MPI_Status *, MPI_Datatype, int *);
@@ -801,18 +803,18 @@ int PMPI_Op_free( MPI_Op *);
 int PMPI_Allreduce(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm);
 int PMPI_Reduce_scatter(void* , void*, int *, MPI_Datatype, MPI_Op, MPI_Comm);
 int PMPI_Scan(void* , void*, int, MPI_Datatype, MPI_Op, MPI_Comm );
-int PMPI_Group_size(MPI_Group group, int *);
-int PMPI_Group_rank(MPI_Group group, int *);
+int PMPI_Group_size(MPI_Group, int *);
+int PMPI_Group_rank(MPI_Group, int *);
 int PMPI_Group_translate_ranks (MPI_Group, int, int *, MPI_Group, int *);
 int PMPI_Group_compare(MPI_Group, MPI_Group, int *);
 int PMPI_Comm_group(MPI_Comm, MPI_Group *);
 int PMPI_Group_union(MPI_Group, MPI_Group, MPI_Group *);
 int PMPI_Group_intersection(MPI_Group, MPI_Group, MPI_Group *);
 int PMPI_Group_difference(MPI_Group, MPI_Group, MPI_Group *);
-int PMPI_Group_incl(MPI_Group group, int, int *, MPI_Group *);
-int PMPI_Group_excl(MPI_Group group, int, int *, MPI_Group *);
-int PMPI_Group_range_incl(MPI_Group group, int, int [][3], MPI_Group *);
-int PMPI_Group_range_excl(MPI_Group group, int, int [][3], MPI_Group *);
+int PMPI_Group_incl(MPI_Group, int, int *, MPI_Group *);
+int PMPI_Group_excl(MPI_Group, int, int *, MPI_Group *);
+int PMPI_Group_range_incl(MPI_Group, int, int [][3], MPI_Group *);
+int PMPI_Group_range_excl(MPI_Group, int, int [][3], MPI_Group *);
 int PMPI_Group_free(MPI_Group *);
 int PMPI_Comm_size(MPI_Comm, int *);
 int PMPI_Comm_rank(MPI_Comm, int *);
