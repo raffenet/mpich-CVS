@@ -1,13 +1,71 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                    Version 1.0.2 beta, September 1998
+                      Version 1.0.2 beta, August 1999
 
 
 Major Changes in This Version:
 -----------------------------
 
 * Implemented the shared file pointer functions (Section 9.4.4) and 
-  split collective I/O functions (Section 9.4.5).
+  split collective I/O functions (Section 9.4.5). Therefore, the main
+   components of the MPI-2 I/O chapter not yet implemented are 
+  file interoperability and error handling.
+
+* Added support for using "direct I/O" on SGI's XFS file system. 
+  Direct I/O is an optional feature of XFS in which data is moved
+  directly between the user's buffer and the storage devices, bypassing 
+  the file-system cache. This can improve performance significantly on 
+  systems with high disk bandwidth. Without high disk bandwidth,
+  regular I/O (that uses the file-system cache) perfoms better.
+  In ROMIO, direct I/O is not used by default . The user can
+  turn on direct I/O (separately for reading and writing) either by
+  using environment variables or by using MPI's hints mechanism (info). 
+  To use the environment-variables method, do
+       setenv MPIO_DIRECT_READ TRUE
+       setenv MPIO_DIRECT_WRITE TRUE
+  To use the hints method, the two keys are "direct_read" and "direct_write". 
+  By default their values are "false". To turn on direct I/O, set the values 
+  to "true". The environment variables have priority over the info keys.
+  In other words, if the environment variables are set to TRUE, direct I/O
+  will be used even if the info keys say "false", and vice versa. 
+  Note that direct I/O must be turned on separately for reading 
+  and writing.
+  The environment-variables method assumes that the environment
+  variables can be read by each process in the MPI job. This is
+  not guaranteed by the MPI Standard, but it works with SGI's MPI
+  and the ch_shmem device of MPICH.
+
+* Added support (new ADIO device, ad_pvfs) for the PVFS parallel 
+  file system for Linux clusters, developed at Clemson University
+  (see http://parl.clemson.edu/pvfs ). 
+
+* Uses weak symbols (where available) for building the profiling version,
+  i.e., the PMPI routines. As a result, the size of the library is reduced
+  considerably. 
+
+* The Makefiles use VPATH if supported by the make utility. GNU make
+  supports it, for example. This feature allows you to untar the
+  distribution in some directory, say a slow NFS directory,
+  and compile the library (the .o files) in another 
+  directory, say on a faster local disk. For example, if the tar file
+  has been untarred in an NFS directory called /home/thakur/romio,
+  one can compile it in a different directory, say /tmp, as follows:
+        cd /tmp
+        /home/thakur/romio/configure
+        make
+  The .o files will be created in /tmp; the library will be created in
+  /home/thakur/romio/lib/$ARCH/libmpio.a .
+  This method works only if the make utility supports virtual paths.
+  If the default make does not, you can install GNU make which does,
+  and specify it to configure as
+       /home/thakur/romio/configure -make=/usr/gnu/bin/gmake (or whatever)
+
+* Lots of miscellaneous bug fixes and other enhancements.
+
+* This version is included in MPICH 1.1.3. If you are using MPICH, you
+  need not download ROMIO separately; it gets built as part of MPICH.
+  (The previous version of ROMIO is included in LAM, HP MPI, and SGI MPI.)
+
 
 
 Major Changes in Version 1.0.1:
@@ -74,9 +132,8 @@ General Information
 -------------------
 
 ROMIO is a high-performance, portable implementation of MPI-IO (the
-I/O chapter in MPI-2). ROMIO's home page is at
-http://www.mcs.anl.gov/home/thakur/romio . The MPI-2 standard itself
-is available at http://www.mpi-forum.org/docs/docs.html .
+I/O chapter in MPI-2). ROMIO's home page is at http://www.mcs.anl.gov/romio .
+The MPI-2 standard is available at http://www.mpi-forum.org/docs/docs.html . 
 
 This version of ROMIO includes everything defined in the MPI-2 I/O
 chapter except support for file interoperability (Sec. 9.5), I/O error
@@ -93,14 +150,14 @@ Please read the limitations of this version of ROMIO that are listed
 below (e.g., MPIO_Request object, restriction to homogeneous environments).
 
 This version of ROMIO runs on the following machines: IBM SP; Intel
-Paragon; HP Exemplar; SGI Origin2000; NEC SX-4; other symmetric
-multiprocessors from HP, SGI, DEC, and IBM; and networks of
+Paragon; HP Exemplar; SGI Origin2000; Cray T3E; NEC SX-4; other
+symmetric multiprocessors from HP, SGI, DEC, and IBM; and networks of
 workstations (Sun, SGI, HP, IBM, DEC, Linux, and FreeBSD).
 Supported file systems are IBM PIOFS, Intel PFS, HP/Convex
-HFS, SGI XFS, NEC SFS, NFS, and any Unix file system (UFS).
+HFS, SGI XFS, NEC SFS, PVFS, NFS, and any Unix file system (UFS).
 
-This version of ROMIO works with and is included in MPICH 1.1.1 and in
-HP MPI 1.4. It also works with SGI MPI 3.1 and higher and with NEC MPI.
+This version of ROMIO is included in MPICH 1.1.3. The previous version
+is included in LAM, HP MPI, and SGI MPI. It can be used with NEC MPI.
 
 You can open files on multiple file systems in the same program. The
 only restriction is that the directory where the file is to be opened
@@ -120,14 +177,10 @@ mv, cp, rm, ftp.
 Installation Instructions
 -------------------------
 
-ROMIO is included in MPICH 1.1.1 and gets built as part of MPICH 1.1.1.
-ROMIO is also included in HP MPI 1.4 (see http://www.hp.com/go/mpi).
-Therefore, if you are using MPICH 1.1.1 or HP MPI 1.4, you need not install
-ROMIO separately. If you are using other versions of MPICH or HP MPI,
-we encourage you to upgrade to the latest versions, which include ROMIO. 
-
-If you are using SGI MPI or NEC MPI (NEC's version of MPICH), 
-you can configure and build ROMIO as follows:
+Since ROMIO is included in MPICH, LAM, HP MPI, and SGI MPI, you don't
+need to install it separately if using these MPI implementations.
+If you are using some other MPI, e.g., NEC MPI, you can configure and
+build ROMIO as follows: 
 
 Untar the tar file as
 
@@ -207,13 +260,12 @@ a directory corresponding to that file system as follows:
 Compiling and Running MPI-IO Programs
 -------------------------------------
 
-If you are using SGI MPI or NEC MPI, you need to include the file
-mpio.h for C or mpiof.h for Fortran in your MPI-IO program. 
-In MPICH 1.1.1 and HP MPI 1.4, these files are already included in
-mpi.h and mpif.h, respectively.
+If ROMIO is not already included in the MPI implementation, you need
+to include the file mpio.h for C or mpiof.h for Fortran in your MPI-IO
+program.  
 
 Note that on HP machines running HPUX and on NEC SX-4, you need to
-compile Fortran programs with mpif90, becuase the f77 compilers on
+compile Fortran programs with mpif90, because the f77 compilers on
 these machines don't support 8-byte integers. 
 
 With MPICH or HP MPI, you can compile MPI-IO programs as 
@@ -222,9 +274,9 @@ or
    mpif77 foo.f
 
 With SGI MPI, you can compile MPI-IO programs as 
-   cc -Iromio_path/include foo.c romio_path/lib/IRIX64/libmpio.a -lmpi
+   cc foo.c -lmpi
 or
-   f77 -Iromio_path/include foo.f romio_path/lib/IRIX64/libmpio.a -lmpi
+   f77 foo.f -lmpi
 
 With NEC MPI, you can compile MPI-IO programs as 
    mpicc -Iromio_path/include foo.c romio_path/lib/SX4/libmpio.a
@@ -324,7 +376,7 @@ Reporting Bugs
 
 If you have trouble, first check the users guide (in
 romio/doc/users-guide.ps.gz). Then check the on-line list of known
-bugs and patches at http://www.mcs.anl.gov/home/thakur/romio .
+bugs and patches at http://www.mcs.anl.gov/romio .
 Finally, if you still have problems, send a detailed message containing:
 
    The type of system (often, uname -a)
@@ -344,4 +396,4 @@ implementation is an internal abstract I/O device layer called
 ADIO. Most users of ROMIO will not need to deal with the ADIO layer at
 all. However, ADIO is useful to those who want to port ROMIO to some
 other file system. The ROMIO source code and the ADIO paper
-(doc/adio.ps.gz) will help you get started.
+(see doc/README) will help you get started.
