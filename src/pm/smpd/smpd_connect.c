@@ -156,11 +156,11 @@ int smpd_close_connection(sock_set_t set, sock_t sock)
     smpd_enter_fn("smpd_close_connection");
 
     /* close the sock and its set */
-    smpd_dbg_printf("closing sock %d\n", sock_getid(sock));
+    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(sock));
     result = sock_post_close(sock);
     if (result != SOCK_SUCCESS)
     {
-	smpd_err_printf("error closing socket: %s\n", get_sock_error_string(result));
+	smpd_err_printf("error closing sock: %s\n", get_sock_error_string(result));
 	smpd_exit_fn("smpd_close_connection");
 	return SMPD_FAIL;
     }
@@ -439,6 +439,7 @@ int smpd_connect_to_smpd(sock_set_t parent_set, sock_t parent_sock, char *host, 
 	{
 	    smpd_dbg_printf("closing the old socket.\n");
 	    /* close the old sock */
+	    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(sock));
 	    result = sock_post_close(sock);
 	    if (result != SOCK_SUCCESS)
 	    {

@@ -147,6 +147,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_dbg_printf("accepted sock %d into set %d\n", sock_getid(session_sock), sock_getsetid(session_set));
 	smpd_dbg_printf("closing the manager's listener set.\n");
 	/* Are we allowed to post a close on the listener?
+	smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(listener));
 	result = sock_post_close(listener);
 	if (result != SOCK_SUCCESS)
 	{

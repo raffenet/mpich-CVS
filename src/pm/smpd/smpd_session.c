@@ -100,7 +100,9 @@ int handle_command(smpd_context_t *context)
 		}
 	    }
 	    smpd_exit_fn("handle_command");
+	    /* If we return success here, a post_read will be made for the next command header. */
 	    return SMPD_SUCCESS;
+	    /*return SMPD_CLOSE;*/
 	}
 	result = smpd_create_command("closed", smpd_process.id, context->id, &temp_cmd);
 	if (result != SMPD_SUCCESS)
@@ -132,6 +134,7 @@ int handle_command(smpd_context_t *context)
 	if (context == smpd_process.left_context)
 	{
 	    smpd_dbg_printf("closed command received from left child, closing sock.\n");
+	    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.left_context->sock));
 	    sock_post_close(smpd_process.left_context->sock);
 	    /*free(smpd_process.left_context);*/ /* can't free the context because it is used when sock_wait returns sock_op_close */
 	    /*smpd_process.left_context = NULL;*/
@@ -144,6 +147,7 @@ int handle_command(smpd_context_t *context)
 	else if (context == smpd_process.right_context)
 	{
 	    smpd_dbg_printf("closed command received from right child, closing sock.\n");
+	    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.right_context->sock));
 	    sock_post_close(smpd_process.right_context->sock);
 	    /*free(smpd_process.right_context);*/ /* can't free the context because it is used when sock_wait returns sock_op_close */
 	    /*smpd_process.right_context = NULL;*/
@@ -153,28 +157,57 @@ int handle_command(smpd_context_t *context)
 		return SMPD_CLOSE;
 	    }
 	}
+	else if (context == smpd_process.parent_context)
+	{
+	    smpd_dbg_printf("closed command received from parent, closing sock.\n");
+	    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(smpd_process.parent_context->sock));
+	    sock_post_close(smpd_process.parent_context->sock);
+	    smpd_exit_fn("handle_command");
+	    return SMPD_CLOSE;
+	}
 	else
 	{
-	    smpd_err_printf("closed command received from non-child context.\n");
+	    smpd_err_printf("closed command received from unknown context.\n");
 	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
-	result = smpd_create_command("closed", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
+	result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("unable to create a closed command for the parent context.\n");
+	    smpd_err_printf("unable to create a closed_request command for the parent context.\n");
 	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
-	smpd_dbg_printf("sending closed command to parent: \"%s\"\n", temp_cmd->cmd);
+	smpd_dbg_printf("sending closed_request command to parent: \"%s\"\n", temp_cmd->cmd);
 	result = smpd_post_write_command(smpd_process.parent_context, temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("unable to post a write of the closed command to the parent context.\n");
+	    smpd_err_printf("unable to post a write of the closed_request command to the parent context.\n");
 	    smpd_exit_fn("handle_command");
 	    return SMPD_FAIL;
 	}
-	smpd_dbg_printf("posted closed command to parent.\n");
+	smpd_dbg_printf("posted closed_request command to parent.\n");
+	smpd_exit_fn("handle_command");
+	return SMPD_CLOSE;
+    }
+    else if (strcmp(cmd->cmd_str, "closed_request") == 0)
+    {
+	result = smpd_create_command("closed", smpd_process.id, context->id, &temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a closed command for the context.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending closed command to context: \"%s\"\n", temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the closed command to the context.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("posted closed command to context.\n");
 	smpd_exit_fn("handle_command");
 	return SMPD_CLOSE;
     }
@@ -515,6 +548,7 @@ int smpd_handle_written(smpd_context_t *context)
 	if (strcmp(cmd->cmd_str, "closed") == 0)
 	{
 	    smpd_dbg_printf("closed command written, posting close of the sock.\n");
+	    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(context->sock));
 	    ret_val = sock_post_close(context->sock);
 	    if (ret_val != SOCK_SUCCESS)
 	    {
@@ -583,7 +617,8 @@ int smpd_post_close_context(smpd_context_t *context)
 	smpd_exit_fn("smpd_post_close_context");
 	return SMPD_FAIL;
     }
-    
+
+    smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(context->sock));
     result = sock_post_close(context->sock);
     if (result != SOCK_SUCCESS)
     {
@@ -766,24 +801,24 @@ int smpd_session(sock_set_t set, sock_t sock)
 		if (smpd_process.left_context == NULL && smpd_process.right_context == NULL)
 		{
 		    /* all children have closed, send a 'closed' command to the parent */
-		    result = smpd_create_command("closed", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
+		    result = smpd_create_command("closed_request", smpd_process.id, smpd_process.parent_context->id, &temp_cmd);
 		    if (result != SMPD_SUCCESS)
 		    {
-			smpd_err_printf("unable to create a closed command for the parent context.\n");
+			smpd_err_printf("unable to create a closed_request command for the parent context.\n");
 			smpd_close_connection(set, sock);
 			smpd_exit_fn("smpd_session");
 			return SMPD_FAIL;
 		    }
-		    smpd_dbg_printf("sending 'closed' command to parent: \"%s\"\n", temp_cmd->cmd);
+		    smpd_dbg_printf("sending 'closed_request' command to parent: \"%s\"\n", temp_cmd->cmd);
 		    result = smpd_post_write_command(smpd_process.parent_context, temp_cmd);
 		    if (result != SMPD_SUCCESS)
 		    {
-			smpd_err_printf("unable to post a write of the closed command to the parent context.\n");
+			smpd_err_printf("unable to post a write of the closed_request command to the parent context.\n");
 			smpd_close_connection(set, sock);
 			smpd_exit_fn("smpd_session");
 			return SMPD_FAIL;
 		    }
-		    smpd_dbg_printf("posted 'closed' command to parent.\n");
+		    smpd_dbg_printf("posted 'closed_request' command to parent.\n");
 		}
 	    }
 	    break;

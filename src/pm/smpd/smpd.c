@@ -122,6 +122,7 @@ int main(int argc, char* argv[])
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("server connection authentication failed.\n");
+		smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(new_sock));
 		result = sock_post_close(new_sock);
 		if (result != SOCK_SUCCESS)
 		{

@@ -85,7 +85,7 @@ int handle_command(smpd_context_t *context)
 {
     int result;
     smpd_context_t *dest;
-    smpd_command_t *cmd;
+    smpd_command_t *cmd, *temp_cmd;
 
     mp_enter_fn("handle_command");
 
@@ -129,6 +129,7 @@ int handle_command(smpd_context_t *context)
     if ((strcmp(cmd->cmd_str, "closed") == 0) || (strcmp(cmd->cmd_str, "down") == 0))
     {
 	mp_dbg_printf("handling '%s' command, posting close of the sock.\n", cmd->cmd_str);
+	smpd_dbg_printf("sock_post_close(%d)\n", sock_getid(context->sock));
 	result = sock_post_close(context->sock);
 	if (result != SOCK_SUCCESS)
 	{
@@ -138,6 +139,27 @@ int handle_command(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 	mp_exit_fn("handle_command");
+	return SMPD_CLOSE;
+    }
+    else if (strcmp(cmd->cmd_str, "closed_request") == 0)
+    {
+	result = smpd_create_command("closed", smpd_process.id, context->id, &temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create a closed command for the context.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("sending closed command to context: \"%s\"\n", temp_cmd->cmd);
+	result = smpd_post_write_command(context, temp_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the closed command to the context.\n");
+	    smpd_exit_fn("handle_command");
+	    return SMPD_FAIL;
+	}
+	smpd_dbg_printf("posted closed command to context.\n");
+	smpd_exit_fn("handle_command");
 	return SMPD_CLOSE;
     }
 
@@ -344,6 +366,20 @@ int handle_written(smpd_context_t *context, int num_written, int error)
 	case SMPD_CMD_WRITING_CMD:
 	    cmd = context->write_list;
 	    context->write_list = context->write_list->next;
+	    if (strcmp(cmd->cmd_str, "closed") == 0)
+	    {
+		mp_dbg_printf("closed command written, posting close of the sock.\n");
+		mp_dbg_printf("sock_post_close(%d)\n", sock_getid(context->sock));
+		ret_val = sock_post_close(context->sock);
+		if (ret_val != SOCK_SUCCESS)
+		{
+		    mp_err_printf("unable to post a close of the sock after writing a 'closed' command, sock error:\n%s\n",
+			get_sock_error_string(ret_val));
+		    smpd_free_command(cmd);
+		    ret_val = SMPD_FAIL;
+		    break;
+		}
+	    }
 	    ret_val = smpd_free_command(cmd);
 	    if (ret_val != SMPD_SUCCESS)
 	    {
