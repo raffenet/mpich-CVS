@@ -138,6 +138,10 @@ be in the range 0 to %d
 **namepubfile:Unable to publish service name
 **namepubfile %s %s %s:Unable to publish service name %s using file %s for \
  reason %s
+**namepubnotfound:Lookup failed for service name
+**namepubnotfound %s:Lookup failed for service name %s
+**namepubnotunpub:Failed to unpublish service name
+**namepubnotunpub %s:Failed to unpublish service name %s
 **needthreads:This function needs threads and threads have not been enabled
 **sendbuf_inplace:sendbuf cannot be MPI_IN_PLACE
 **recvbuf_inplace:recvbuf cannot be MPI_IN_PLACE
