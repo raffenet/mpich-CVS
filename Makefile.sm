@@ -1,5 +1,5 @@
-SUBDIRS = . src examples
-# Do not include test in the basic build.
+SUBDIRS = . src @EXTERNAL_SRC_DIRS@ examples
+# Do not include test in the basic build.  
 OTHER_DIRS = test
 DOC_SUBDIRS = doc
 # The all-local target makes sure that when different subsystems are selected
@@ -26,10 +26,12 @@ all-local:
 	fi
 all-preamble:
 	@echo "Beginning make"
-# Add any final extras.  Move the "pkglist.new" file to "pkglist" on 
-# successful completion
+
+# Add any final extras:
+#    1) Build the debugger interface if requested
+# Move the "pkglist.new" file to "pkglist" on successful completion
 all-postamble:
-	if [ "@BUILD_TVDLL@" = "yes" ] ; then \
+	@if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	( cd src/mpi/debugger && $(MAKE) ./libtvmpich.so ) ; fi
 	@if [ -s lib/pkglist.new ] ; then mv -f lib/pkglist.new lib/pkglist ; fi
 	@echo "Make completed"
@@ -178,6 +180,9 @@ install-local:
 	    $(MKDIR_P) ${exec_prefix}/examples ; \
 	fi
 	$(INSTALL_PROGRAM) examples/cpi ${exec_prefix}/examples/cpi
+
+install-devdocs:
+	(cd doc && $(MAKE) install-devdocs)
 
 install_DOC = 
 optinstall_DOC = \
