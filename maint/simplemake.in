@@ -1725,7 +1725,6 @@ sub TargetDocs {
 	# This assumes a particular layout for the directories that
 	# we'll eventually want to make adjustable.
 	if ($doc_attop) {
-	    $doc_attop = 0;
 	    if ($kind eq "html") {
 		print FD "\tif [ ! -d www ] ; then mkdir www ; fi$newline";
 		print FD "\tif [ ! -d www/www3 ] ; then mkdir www/www3 ; fi$newline";
@@ -1735,6 +1734,7 @@ sub TargetDocs {
 		print FD "\tif [ ! -d man/man3 ] ; then mkdir man/man3 ; fi$newline";
 	    }
 	    elsif ($kind eq "latex") {
+		print FD "\tif [ ! -d doc ] ; then mkdir doc ; fi$newline";
 		print FD "\tif [ ! -d doc/refman ] ; then mkdir doc/refman ; fi$newline";
 	    }
 	    else {
@@ -1744,6 +1744,7 @@ sub TargetDocs {
 	&RecursiveOp( $kind );
 	$didkind{$kind} = 1;
     }
+    $doc_attop = 0;
     # 
     # For any directory that does not have any source files, we must still
     # generate a target *if* any directory set the source.
