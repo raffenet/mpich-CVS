@@ -190,12 +190,20 @@ int MPIDU_Describe_timer_states()
 		       "MPID_Win_create",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_WIN_COMPLETE,
+		       "MPID_Win_complete",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPID_WIN_FENCE,
 		       "MPID_Win_fence",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_MPID_WIN_FREE,
 		       "MPID_Win_free",
+		       get_random_color_str());
+    RLOG_DescribeState(g_pRLOG, 
+		       MPID_STATE_MPID_WIN_WAIT,
+		       "MPID_Win_wait",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
 		       MPID_STATE_CREATE_REQUEST,
