@@ -270,9 +270,14 @@ while (<FD>) {
 	    print "Skiping $routine_name\n" if $debug;
 	}
 	else {
+	    # Check for duplicates in the list of routines
+	    if (defined($mpi_routines{$routine_name})) {
+		print STDERR "Duplicate prototypes for $routine_name\n";
+	    }
 	    # Clear variables
 	    $clean_up = "";
 	    &clean_args;
+	    $mpi_routines{$routine_name} = $args;
 	    if ($buildfiles) {
 		if (defined($name_map{$lcname})) {
 		    $filename = $name_map{$lcname} . "f.c";
@@ -453,6 +458,9 @@ sub print_profiling_block {
 
 #
 # Print the code that modifies the name
+# The function prototypes must be loaded *after* the name block so that the
+# name used in the function prototypes will match the one that is declared
+# in this file.
 sub print_name_map_block {
     my $routine_name = $_[0];
     my $lcname = $_[1];
@@ -484,6 +492,9 @@ sub print_name_map_block {
 #endif
 
 #endif /* MPICH_MPI_FROM_PMPI */
+
+/* Prototypes for the Fortran interfaces */
+#include \"fproto.h\"
 ";
 }
 
@@ -1052,21 +1063,29 @@ sub build_specials {
     # We may not want to do this if we are supporting multiple
     # Fortran compilers with different values for Fortran .TRUE. and
     # .FALSE., but to get started, this is easiest.
-    open( $OUTFD, ">initf.c.in" ) || die "Cannot open initf.c\n";
-    @files[$#files+1] = "initf.c.in";
+    open( $OUTFD, ">initf.c" ) || die "Cannot open initf.c\n";
+    @files[$#files+1] = "initf.c";
     &print_header( "MPI_Init", "init" );
+    # This is temporary.  Eventually, these should move into
+    # support file.
+    # Note that the global variables have values.  This is to work around
+    # a bug in some C environments (e.g., Mac OS/X) that don't load
+    # external symbols that don't have a value assigned at compile time 
+    # (so called common symbols)
+    print $OUTFD "
+#if !defined(F77RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
+const MPI_Fint MPIR_F_TRUE= F77_TRUE_VALUE, MPIR_F_FALSE= F77_FALSE_VALUE;
+#else
+MPI_Fint MPIR_F_TRUE = 1, MPIR_F_FALSE = 0;
+#endif
+";
     &print_routine_type_decl( $OUTFD, "init" );
     $args = "";
     &print_args( $OUTFD, $args );
     &print_attr;
     print $OUTFD "{\n";
-    print $OUTFD "#ifndef @RUNTIME_VALUES
-#ifdef F77_TRUE_VALUE_SET
-    MPIR_F_TRUE  = \@F77_TRUE_VALUE\@;
-    MPIR_F_FALSE = \@F77_FALSE_VALUE\@;
-#else
-#   abort \"Fortran logical values must be determined at configure time\"
-#endif
+    print $OUTFD "#ifndef F77RUNTIME_VALUES
+    /* any compile/link time values go here */
 #else
 #   abort \"Fortran values must be determined at configure time\"
 #endif
@@ -1077,7 +1096,7 @@ sub build_specials {
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
-	&print_routine_type_decl( PROTOFD, "mpi_init" );
+	&print_routine_type_decl( PROTOFD, "init" );
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }
@@ -1095,7 +1114,7 @@ sub build_specials {
     print $OUTFD "}\n";
     close ($OUTFD);
     if ($build_prototypes) {
-	&print_routine_type_decl( PROTOFD, "mpi_pcontrol" );
+	&print_routine_type_decl( PROTOFD, "pcontrol" );
 	&print_args( PROTOFD, $args );
 	print PROTOFD ";\n";
     }

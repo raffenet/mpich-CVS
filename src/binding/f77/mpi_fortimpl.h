@@ -51,7 +51,11 @@
 
 /* Fortran logical values */
 #ifndef _CRAY
+#if !defined(F77RUNTIME_VALUES) && defined(F77_TRUE_VALUE_SET)
+extern const MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
+#else
 extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
+#endif
 #define MPIR_TO_FLOG(a) ((a) ? MPIR_F_TRUE : MPIR_F_FALSE)
 /* 
    Note on true and false.  This code is only an approximation.
