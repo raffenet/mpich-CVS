@@ -152,6 +152,16 @@ core.dvi: core.tex adi3.c adi3.h
 	-latex core
 	-latex core
 
+tcpadi3.pdf: tcpadi3.tex
+	rm -f tcpadi3pdf.tex
+	sed -e 's/documentclass{article}/documentclass[dvipdfm]{article}/' \
+	    -e 's/%hyperref .*/\\usepackage[dvipdfm]{hyperref}/' \
+		tcpadi3.tex > tcpadi3pdf.tex
+	make tcpadi3pdf.dvi
+	dvipdfm tcpadi3pdf
+	-mv tcpadi3pdf.pdf tcpadi3.pdf
+	rm -f tcpadi3pdf.tex tcpadi3pdf.dvi 
+
 # This uses the full-featured date program in Linux
 WEBDIR = /mcs/www-unix/mpi/mpich/adi3
 install-web: adi3new.ps adi3new.pdf adi3new/adi3new.htm tcpadi3.ps tcpadi3.pdf
