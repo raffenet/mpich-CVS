@@ -268,7 +268,7 @@ static ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
 	*/
 	qp_mod.state.rtr.primary_av.static_rate = 0;
 	qp_mod.state.rtr.primary_av.path_bits = 0;
-	qp_mod.state.rtr.primary_av.conn.path_mtu = MTU1024;
+	qp_mod.state.rtr.primary_av.conn.path_mtu = IB_MTU_1024;
 	qp_mod.state.rtr.primary_av.conn.local_ack_timeout = 0;
 	qp_mod.state.rtr.primary_av.conn.seq_err_retry_cnt = 0;
 	qp_mod.state.rtr.primary_av.conn.rnr_retry_cnt = 0;
