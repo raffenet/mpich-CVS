@@ -8,7 +8,6 @@
 #include "ibu.h"
 #include "iba.h"
 #include "psc_iba.h"
-//#include "blockallocator.h"
 #include <stdio.h>
 
 struct ibuBlockAllocator_struct
@@ -88,7 +87,6 @@ typedef struct ibu_state_t
     ibu_unex_read_t *unex_list;
     ibu_buffer write;
     int nAvailRemote, nUnacked;
-    //ibu_num_written_node_t *write_list_head, *write_list_tail;
     /* user pointer */
     void *user_ptr;
     /* unexpected queue pointer */
@@ -712,13 +710,6 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
-/*
-static int s_cur_receive = 0;
-static int s_cur_send = 0;
-int g_num_receive_posted = 0;
-int g_num_send_posted = 0;
-*/
-
 #undef FUNCNAME
 #define FUNCNAME ibui_post_receive
 #undef FCNAME
@@ -753,12 +744,7 @@ static int ibui_post_receive(ibu_t ibu)
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 
-    /*
-    printf("ibui_post_receive %d\n", s_cur_receive++);
-    g_num_receive_posted++;
-    */
     MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_rcv_req_us"));
-
     status = ib_post_rcv_req_us(IBU_Process.hca_handle, 
 				ibu->qp_handle,
 				&work_req);
@@ -769,8 +755,7 @@ static int ibui_post_receive(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
     }
-    ibu->nUnacked++;
-    if (ibu->nUnacked > IBU_ACK_WATER_LEVEL)
+    if (++ibu->nUnacked > IBU_ACK_WATER_LEVEL)
     {
 	ibui_post_ack_write(ibu);
     }
@@ -779,59 +764,6 @@ static int ibui_post_receive(ibu_t ibu)
     return IBU_SUCCESS;
 }
 
-/*****************************/
-/*
-static ibu_num_written_node_t *g_write_list_head = NULL;
-static ibu_num_written_node_t *g_write_list_tail = NULL;
-
-#undef FUNCNAME
-#define FUNCNAME ibui_next_num_written
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_next_num_written()
-{
-    ibu_num_written_node_t *p;
-    int num_bytes;
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
-
-    p = g_write_list_head;
-    g_write_list_head = g_write_list_head->next;
-    if (g_write_list_head == NULL)
-	g_write_list_tail = NULL;
-    num_bytes = p->num_bytes;
-    free(p);
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
-    return num_bytes;
-}
-*/
-/*****************************/
-
-/*
-#undef FUNCNAME
-#define FUNCNAME ibui_next_num_written
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_next_num_written(ibu_t ibu)
-{
-    ibu_num_written_node_t *p;
-    int num_bytes;
-    MPIDI_STATE_DECL(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
-
-    p = ibu->write_list_head;
-    ibu->write_list_head = ibu->write_list_head->next;
-    if (ibu->write_list_head == NULL)
-	ibu->write_list_tail = NULL;
-    num_bytes = p->num_bytes;
-    free(p);
-    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_NEXT_NUM_WRITTEN);
-    return num_bytes;
-}
-*/
-
 #undef FUNCNAME
 #define FUNCNAME ibui_post_ack_write
 #undef FCNAME
@@ -839,23 +771,11 @@ static int ibui_next_num_written(ibu_t ibu)
 static int ibui_post_ack_write(ibu_t ibu)
 {
     ib_uint32_t status;
-    /*
-    ib_scatter_gather_list_t sg_list;
-    ib_data_segment_t data;
-    */
     ib_work_req_send_t work_req;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
 
-    /*
-    sg_list.data_seg_p = &data;
-    sg_list.data_seg_num = 0;
-    data.length = 0;
-    data.va = NULL;
-    data.l_key = ibu->lkey;
-    */
-    
     work_req.dest_address      = 0;
     work_req.dest_q_key        = 0;
     work_req.dest_qpn          = 0; /*var.m_dest_qp_num;  // not needed */
@@ -868,7 +788,6 @@ static int ibui_post_ack_write(ibu_t ibu)
     work_req.remote_addr.va    = 0;
     work_req.remote_addr.key   = 0;
     work_req.se_f              = 0;
-    //work_req.sg_list           = sg_list;
     work_req.sg_list.data_seg_num = 0;
     work_req.sg_list.data_seg_p = NULL;
     work_req.signaled_f        = 0;
@@ -904,7 +823,6 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
     ib_data_segment_t data;
     ib_work_req_send_t work_req;
     void *mem_ptr;
-    //ibu_num_written_node_t *p;
     int length;
     int total = 0;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITE);
@@ -963,11 +881,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
 	((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)mem_ptr;
 	
-	/*
-	printf("ib_post_send_req_us %d\n", s_cur_send++);
-	g_num_send_posted++;
-	*/
-	MPIDI_DBG_PRINTF((60, FCNAME, "ib_post_send_req_us(%d bytes)", length));
+	MPIDI_DBG_PRINTF((60, FCNAME, "calling ib_post_send_req_us(%d bytes)", length));
 	status = ib_post_send_req_us( IBU_Process.hca_handle,
 	    ibu->qp_handle, 
 	    &work_req);
@@ -985,7 +899,6 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITE);
     return total;
-    /*return IBU_SUCCESS;*/
 }
 
 /*
@@ -1031,7 +944,6 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     while (n && index < IBU_MAX_DATA_SEGMENTS)
     {
 	len = iov[iov_index].IBU_IOV_LEN;
-	//total += len;
 	if (len <= IBU_PACKET_SIZE)
 	{
 	    mem_ptr = ibuBlockAlloc(ibu->allocator);
@@ -1134,7 +1046,6 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-    //return IBU_SUCCESS;
     return total;
 }
 #endif
@@ -1143,7 +1054,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 #define FUNCNAME ibui_post_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress_update)(int, void*))
+static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov_orig, int n, int (*write_progress_update)(int, void*))
 {
     ib_uint32_t status;
     ib_scatter_gather_list_t sg_list;
@@ -1154,10 +1065,12 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     int total = 0;
     unsigned int num_avail;
     unsigned char *buf;
+    IBU_IOV iov_[IBU_IOV_MAXLEN], *iov = iov_;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITEV);
 
+    memcpy(iov, iov_orig, sizeof(IBU_IOV) * n);
     do
     {
 	if (ibu->nAvailRemote < 1)
@@ -1192,10 +1105,10 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 	    }
 	    else
 	    {
-		/*
+		/**/
 		iov->IBU_IOV_LEN -= len;
 		iov->IBU_IOV_BUF = (unsigned char *)(iov->IBU_IOV_BUF) + len;
-		*/
+		/**/
 	    }
 	}
 	msg_size = IBU_PACKET_SIZE - num_avail;
@@ -1248,7 +1161,6 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     //} while (0); // lets force the progress engine to reload after each packet.
     
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_WRITEV);
-    //return IBU_SUCCESS;
     return total;
 }
 
