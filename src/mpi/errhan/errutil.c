@@ -67,7 +67,18 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     }
     else {
 	/* No communicator, so errors are fatal */
-	fprintf( stderr, "Fatal error %d in %s\n", errcode, fcname );
+	/* Try to print the associated message */
+#ifdef FIXME
+	char *p = MPIR_Error_get_string( errcode );
+	
+	if (!p) {
+	    fprintf( stderr, "Fatal error %s in %s\n", p, fcname );
+	}
+	else
+#endif
+	{
+	    fprintf( stderr, "Fatal error (code %d) in %s\n", errcode, fcname );
+	}
 	exit(1); /* Change this to MPID_Abort */
     }
     return errcode;
@@ -139,7 +150,7 @@ static int FindMsgIndex( const char *msg )
     for (i=0; i<generic_msgs_len; i++) {
 	c = strcmp( generic_err_msgs[i].short_name, msg );
 	if (c == 0) return i;
-	if (c < 0) return -1;
+	if (c > 0) return -1;
     }
     return -1;
 }
@@ -148,7 +159,7 @@ static int FindMsgIndex( const char *msg )
    i_low = 0; i_high = generic_msg_len - 1;
    while (i_high - i_low >= 0) {
        i_mid = (i_high + i_low) / 2;
-       c = strcmp( generic_msg[i].short_name, msg );
+       c = strcmp( generic_err_msgs[i].short_name, msg );
        if (c == 0) return i_mid;
        if (c < 0) { i_low = i_mid + 1; }
        else       { i_high = i_mid - 1; }

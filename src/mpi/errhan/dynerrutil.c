@@ -40,7 +40,7 @@ volatile static int ready = 0;
 #endif
 
 /* Forward reference */
-int MPIR_Err_get_string( int code, char *msg, int msg_len );
+int MPIR_Err_get_string( int code, char *msg, int *msg_len );
 
 /* Each user_code_msgs is allowed to have a single related instance message,
    so no separate counter is required for allocating user_instance_msgs */
@@ -94,7 +94,7 @@ static void MPIR_Init_err_dyncodes( )
 #endif
 }
 
-int MPIR_Err_get_string( int code, char *msg, int msg_len );
+int MPIR_Err_get_string( int code, char *msg, int *msg_len );
 
 /*+
   MPIR_Err_set_msg - Change the message for an error code or class
@@ -251,11 +251,11 @@ void MPIR_Err_delete_class( int class )
   Input Parameter:
 + code - An error class or code.  If a code, it must have been created by 
   'MPIR_Err_create_code'.
-- msg_len - Length of 'msg'.
 
   Output Parameter:
-. msg - A null-terminated text string of length (including the null) of no
++ msg - A null-terminated text string of length (including the null) of no
   more than 'msg_len'.  
+- msg_len - Length of 'msg'.
 
   Return value:
   Zero on success.  Non-zero returns indicate either (a) 'msg_len' is too
@@ -276,7 +276,7 @@ void MPIR_Err_delete_class( int class )
   See 'errgetmsg' for one idea.
 
   @*/
-int MPIR_Err_get_string( int code, char *msg, int msg_len )
+int MPIR_Err_get_string( int code, char *msg, int *msg_len )
 {
     return MPI_SUCCESS;
 }
