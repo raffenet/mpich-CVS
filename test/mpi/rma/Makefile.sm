@@ -4,6 +4,7 @@ INCLUDES = -I../include -I${top_srcdir}/include
 EXTERNAL_LIBS = m
 LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
+smvar_do_sharedlibs = 0
 #
 cpi_SOURCES = cpi.c
 cpi_LDADD = -lm

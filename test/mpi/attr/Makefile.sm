@@ -2,6 +2,7 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
 	 -I${srcdir}/../include
 LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
+smvar_do_sharedlibs = 0
 
 attrt_SOURCES = attrt.c
 attrt_LDADD = ../util/mtest.o

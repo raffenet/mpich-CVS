@@ -4,6 +4,7 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include
 EXTERNAL_LIBS = m
 LDADD = -L../../../lib
 DEPADD = ../../../lib/lib${MPILIBNAME}.a
+smvar_do_sharedlibs = 0
 #
 bcasttest_SOURCES = bcasttest.c
 allred_SOURCES = allred.c

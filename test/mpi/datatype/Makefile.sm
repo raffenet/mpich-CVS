@@ -1,5 +1,6 @@
 LDADD = -L../../../lib -lmpich
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
+smvar_do_sharedlibs = 0
 
 typename_SOURCES = typename.c
 
