@@ -111,6 +111,26 @@
     </runtime>
 <script language="VBScript">
 
+' check if we are running cscript or wscript
+bEcho = false
+If InStr(1, LCase(WScript.FullName), "cscript") > 0 Then
+	bEcho = true
+End If
+Function cEcho(str)
+	If bEcho Then
+		On Error Resume Next
+		WScript.Echo str
+		if err <> 0 then
+			num_chars = Len(str) / 2
+			if num_chars > 4096 then
+				num_chars = 4096
+			end if
+			WScript.Echo Left(str, num_chars) & vbCrLf & "..." & vbCrLf
+			WScript.Echo Right(str, num_chars)
+		end if
+	End If
+End Function
+
 bUseIbRDMA = False
 bRemoveFortran = False
 bWin64 = False
@@ -887,6 +907,48 @@ if bAddDllDecoration then
 end if
 fout.Write(contents)
 fout.Close()
+
+Function internalFindCFiles(ByRef key, ByRef files, folder)
+	For Each sub_folder in folder.SubFolders
+		internalFindCFiles key, files, sub_folder
+	Next
+	For Each file in folder.Files
+		If Right(file.Name, 2) = ".c" Then
+			files.Add key, file.Path
+			key = key + 1
+		End If
+	Next
+End Function
+Function FindCFiles(ByRef files, folder)
+	files.RemoveAll()
+	key = 0
+	internalFindCFiles key, files, folder
+End Function
+
+' Add the dll decorations to the source files
+if bAddDllDecoration then
+	set c_files = CreateObject("Scripting.Dictionary")
+	FindCFiles c_files, f.GetFolder("src\mpi")
+	' replace "int MPI_" with "EXPORT_MPI_API int MPI_CALL MPI_"
+	' fixup MPI_Fint MPI_
+	a = c_files.Items
+	If c_files.Count > 0 Then
+		For i = 0 to c_files.Count - 1
+			'cEcho a(i)
+			set fin = f.OpenTextFile(a(i))
+			contents = fin.ReadAll()
+			fin.Close()
+			new_contents = Replace(contents, "int MPI_", "EXPORT_MPI_API int MPI_CALL MPI_")
+			new_contents = Replace(new_contents, "MPI_FEXPORT_MPI_API int", "EXPORT_MPI_API MPI_Fint")
+			if new_contents <> contents then
+				'cEcho new_contents
+				set fout = f.CreateTextFile(a(i))
+				fout.Write(new_contents)
+				fout.Close()
+			end if
+		Next
+	End If
+end if
 
 '
 ' Generate mpichtimer.h
