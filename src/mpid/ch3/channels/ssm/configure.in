@@ -96,6 +96,8 @@ else
 fi
 
 
+dnl gcc checking
+
 cpu_gcc_x86_cycle=no
 AC_TRY_COMPILE(,[
     long long var, *var_ptr=&var;
@@ -156,6 +158,52 @@ if test "$lac_cv_have_gcc_asm_and_x86_lfence" = "yes" ; then
     AC_DEFINE(HAVE_GCC_ASM_AND_X86_LFENCE, 1, [Define if using gcc on a x86 system with the lfence instruction])
 fi
 
+dnl icc checking
+
+AC_MSG_CHECKING([for x86 mfence instruction])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    __asm _emit 0x0f __asm _emit 0xae __asm _emit 0xf0 ;
+    exit(0);
+}
+],
+AC_MSG_RESULT(yes); lac_cv_have___asm_and_x86_mfence=yes,
+AC_MSG_RESULT(no); lac_cv_have___asm_and_x86_mfence=no,
+AC_MSG_RESULT(not checking when cross compiling), lac_cv_have___asm_and_x86_mfence=no)
+if test "$lac_cv_have___asm_and_x86_mfence" = "yes" ; then
+    AC_DEFINE(HAVE___ASM_AND_X86_MFENCE, 1, [Define if using __asm on a x86 system with the mfence instruction])
+fi
+
+AC_MSG_CHECKING([for x86 sfence instruction])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    __asm sfence ;
+    exit(0);
+}
+],
+AC_MSG_RESULT(yes); lac_cv_have___asm_and_x86_sfence=yes,
+AC_MSG_RESULT(no); lac_cv_have___asm_and_x86_sfence=no,
+AC_MSG_RESULT(not checking when cross compiling), lac_cv_have___asm_and_x86_sfence=no)
+if test "$lac_cv_have___asm_and_x86_sfence" = "yes" ; then
+    AC_DEFINE(HAVE___ASM_AND_X86_SFENCE, 1, [Define if using __asm on a x86 system with the sfence instruction])
+fi
+
+AC_MSG_CHECKING([for x86 lfence instruction])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    __asm _emit 0x0f __asm _emit 0xae __asm _emit 0xe8 ;
+    exit(0);
+}
+],
+AC_MSG_RESULT(yes); lac_cv_have___asm_and_x86_lfence=yes,
+AC_MSG_RESULT(no); lac_cv_have___asm_and_x86_lfence=no,
+AC_MSG_RESULT(not checking when cross compiling), lac_cv_have___asm_and_x86_lfence=no)
+if test "$lac_cv_have___asm_and_x86_lfence" = "yes" ; then
+    AC_DEFINE(HAVE___ASM_AND_X86_LFENCE, 1, [Define if using __asm on a x86 system with the lfence instruction])
+fi
 
 SSM_LIBS=$LIBS
 LIBS=$save_libs
