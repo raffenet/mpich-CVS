@@ -678,6 +678,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\mpid_alloc_mem.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\mpid_bsend_init.c"
 				>
 			</File>
@@ -711,6 +715,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_finalize.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_free_mem.c"
 				>
 			</File>
 			<File
