@@ -215,9 +215,14 @@ dnl AC_MSG_CHECKING(FEATURE-DESCRIPTION)
 dnl 
 dnl Define these only for autoconf version 1.  If FD_MSG defined, then 
 dnl we probably already have what we need
-ifdef([AC_FD_MSG],[define(PAC_ALREADY_HAVE_FDMSG,1)],[
-define(AC_FD_MSG,1)
-define(AC_MSG_CHECKING,[dnl
+dnl Grr.  2.57 uses AS_MESSAGE_FD instead of AC_FD_MSG
+dnl m4_ifdef([AC_PROVIDE_IFELSE],[errprint(AS_AA)],[errprint(AS_BB)])
+ifdef([AC_FD_MSG],[define([PAC_ALREADY_HAVE_FDMSG],1)])
+ifdef([AS_MESSAGE_FD],[define([PAC_ALREADY_HAVE_FDMSG],1)])
+ifdef([AC_PROVIDE_IFELSE],[define([PAC_ALREADY_HAVE_FDMSG],1)])
+ifdef([PAC_ALREADY_HAVE_FDMSG],,[
+define([AC_FD_MSG],1)
+define([AC_MSG_CHECKING],[dnl
 if test -z "$ac_echo_n" ; then
 AC_PROG_ECHO_N
 fi
@@ -254,10 +259,10 @@ else
 [echo "$ac_t""$1" 1>&AC_FD_MSG]
 fi)])dnl
 dnl
-define(PAC_GET_SPECIAL_SYSTEM_INFO,[
+define([PAC_GET_SPECIAL_SYSTEM_INFO],[
 #
 if test -n "$arch_IRIX"; then
-   AC_MSG_CHECKING(for IRIX OS version)
+   AC_MSG_CHECKING([for IRIX OS version])
    dnl This block of code replaces a generic "IRIX" arch value with
    dnl  IRIX_<version>_<chip>
    dnl  For example
@@ -268,9 +273,11 @@ if test -n "$arch_IRIX"; then
    changequote(,)dnl
    dnl Get the second field (looking for 6.1)
    osvminor=`uname -r | sed 's/[0-9]\.\([0-9]*\)\..*/\1/'`
+   changequote([,])dnl
    AC_MSG_RESULT($osversion)
    dnl Get SGI processor count by quick hack
-   AC_MSG_CHECKING(for IRIX cpucount)
+   AC_MSG_CHECKING([for IRIX cpucount])
+   changequote(,)dnl
    cpucount=`hinv | grep '[0-9]* [0-9]* MHZ IP[0-9]* Proc' | cut -f 1 -d' '`
    if test "$cpucount" = "" ; then
      cpucount=`hinv | grep 'Processor [0-9]*:' | wc -l | sed -e 's/ //g'`
@@ -285,7 +292,7 @@ if test -n "$arch_IRIX"; then
    fi
    AC_MSG_RESULT($cpucount)
    dnl
-   AC_MSG_CHECKING(for IRIX cpumodel)
+   AC_MSG_CHECKING([for IRIX cpumodel])
    dnl The tail -1 is necessary for multiple processor SGI boxes
    dnl We might use this to detect SGI multiprocessors and recommend
    dnl -comm=shared
@@ -324,7 +331,7 @@ if test -n "$arch_IRIX"; then
        print_error "to romio-maint@mcs.anl.gov"
        exit 1
    fi
-   AC_MSG_CHECKING(for cputype)
+   AC_MSG_CHECKING([for cputype])
    OLD_ARCH=IRIX
    IRIXARCH="$ARCH_$osversion"
    dnl Now, handle the chip set
@@ -1287,4 +1294,5 @@ EOF
 dnl
 dnl
 dnl
-
+dnl This works around some wierd interaction with autoconf 2.57
+ifdef([AS_MESSAGE_LOG_FD],,[define([AS_MESSAGE_LOG_FD],[AC_FD_MSG])])
