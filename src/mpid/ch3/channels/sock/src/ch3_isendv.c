@@ -116,16 +116,10 @@ int MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_i
 		if (offset == n_iov)
 		{
 		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-		    if (complete)
+		    if (!complete)
 		    {
-			/* NOTE: dev.iov_count is used to detect completion instead of cc because the transfer may be complete, but
-                           the request may still be active (see MPI_Ssend()) */
-			MPIDI_CH3I_SendQ_dequeue(vc);
-		    }
-		    else
-		    {
+			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 			vc->ch.conn->send_active = sreq;
 			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
