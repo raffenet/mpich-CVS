@@ -92,7 +92,7 @@
 #include "mpiimplthread.h"
 #include "mpiatomic.h"
 #include "mpiu_monitors.h"
-#include "mpiallstates.h"
+
 #include "mpiutil.h"
 
 /* Include definitions from the device which must exist before items in this
