@@ -209,7 +209,7 @@ int MPID_Type_struct(int count,
 	    el_type = MPI_DATATYPE_NULL;
 	}
 
-	/* keep up with sticky lb and ub separately */
+	/* keep lowest sticky lb */
 	if ((oldtype_array[i] == MPI_LB) ||
 	    (!is_builtin && old_dtp->has_sticky_lb))
 	{
@@ -221,7 +221,9 @@ int MPID_Type_struct(int count,
 		sticky_lb_disp = tmp_lb;
 	    }
 	}
-	else if ((oldtype_array[i] == MPI_UB) || 
+
+	/* keep highest sticky ub */
+	if ((oldtype_array[i] == MPI_UB) || 
 	    (!is_builtin && old_dtp->has_sticky_ub))
 	{
 	    if (!found_sticky_ub) {
@@ -233,7 +235,7 @@ int MPID_Type_struct(int count,
 	    }
 	}
 
-	/* save lowest true lb and highest true ub */
+	/* keep lowest true lb and highest true ub */
 	if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB) {
 	    if (!found_true_lb)
 	    {
