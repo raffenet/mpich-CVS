@@ -149,8 +149,8 @@ Language bindings:
   --enable-f77 - Build the Fortran 77 bindings.  This has been tested with
                  the Fortran parts of the Intel test suite.  Fortran 90
 		 is not yet available.
-  --enable-cxx - Build the C++ bindings.  This has *not* been tested and
-                 is not quite ready for use.  Wait for the next release.
+  --enable-cxx - Build the C++ bindings.  This has been tested with the
+                 C++ test suite.
 
 Cross compilation:
   --with-cross=filename - Provide values for the tests that required
