@@ -15,24 +15,23 @@ import java.util.Map;
 
 public abstract class Drawable extends InfoBox
 {
-    /*
-       Both nesting_ftr and row_ID are for State Drawable, i.e. nestable.
-    */
+    // exclusion, nesting_ftr & row_ID are for Nestable Drawable, i.e. state.
     public  static final float    NON_NESTABLE      = 1.0f; 
     public  static final int      INVALID_ROW       = Integer.MIN_VALUE; 
+
+    private              double   exclusion;     // For SLOG-2 Output API
 
     private              float    nesting_ftr;   // For SLOG-2 Input API
     private              int      row_ID;        // For SLOG-2 Input API
 
-    /*
-       non-null parent indicates this Drawable is part of a Composite Drawable
-    */
+    // non-null parent => this Drawable is part of a Composite Drawable
     private              Drawable parent;        // For SLOG-2 Input API
 
 
     public Drawable()
     {
         super();
+        exclusion    = 0.0d;
         nesting_ftr  = NON_NESTABLE;
         parent       = null;
     }
@@ -40,6 +39,7 @@ public abstract class Drawable extends InfoBox
     public Drawable( final Category in_type )
     {
         super( in_type );
+        exclusion    = 0.0d;
         nesting_ftr  = NON_NESTABLE;
         parent       = null;
     }
@@ -49,6 +49,7 @@ public abstract class Drawable extends InfoBox
     public Drawable( final Drawable dobj )
     {
         super( dobj );  // InfoBox( InfoBox );
+        exclusion    = 0.0d;
         nesting_ftr  = NON_NESTABLE;
         // parent       = null; 
         parent       = dobj.parent; 
@@ -57,6 +58,7 @@ public abstract class Drawable extends InfoBox
     public Drawable( Category in_type, final Drawable dobj )
     {
         super( in_type, dobj );
+        exclusion    = 0.0d;
         nesting_ftr  = NON_NESTABLE;
         // parent       = null; 
         parent       = dobj.parent;
@@ -67,8 +69,30 @@ public abstract class Drawable extends InfoBox
     {
         super( in_type_idx );
         super.setInfoBuffer( byte_infovals );
+        exclusion    = 0.0d;
         nesting_ftr  = NON_NESTABLE;
         parent       = null;
+    }
+
+    //  For SLOG-2 Output API
+    public void initExclusion( Object[] childshades )
+    {
+        exclusion = super.getDuration();
+        for ( int idx = childshades.length-1; idx >= 0; idx-- )
+            exclusion -= super.getIntersectionDuration(
+                               (TimeBoundingBox) childshades[ idx ] );
+    }
+
+    //  For SLOG-2 Output API
+    public void decrementExclusion( double decre )
+    {
+        exclusion -= decre;
+    }
+
+    //  For SLOG-2 Output API
+    public double getExclusion()
+    {
+        return exclusion;
     }
 
     //  For SLOG-2 Input API

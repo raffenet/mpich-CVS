@@ -16,10 +16,13 @@ import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Stack;
 import java.util.Iterator;
 
 import base.io.MixedDataInput;
@@ -31,38 +34,50 @@ import base.topology.PreviewState;
 
 public class Shadow extends Primitive
 {
-    private static final int     BYTESIZE = TimeBoundingBox.BYTESIZE /*super*/
-                                          + 8  /* num_real_objs */
-                                          + 4  /* map_type2twgt's size() */;
+    private static final int     BYTESIZE   = TimeBoundingBox.BYTESIZE /*super*/
+                                            + 8  /* num_real_objs */
+                                            + 4  /* map_type2twgt's size() */;
 
-    private              long              num_real_objs;
+    private static final DrawOrderComparator DRAWING_ORDER
+                                             = new DrawOrderComparator();
 
-    private              CategoryWeight[]  twgt_ary;         // For Input
-    private              Map               map_type2dobjs;   // For Output
-    private              Map               map_type2twgt;    // For Output
+    private              long                num_real_objs;
 
-    private              Category          selected_subtype; // For Jumpshot
+    private              CategoryWeight[]    twgt_ary;           // For Input
+
+    // For SLOG2 Ouput, map_type2twgt ?= null determine getByteSize().
+    private              Map                 map_type2twgt;      // For Output
+    private              Map                 map_type2dobjs;     // For Output
+    private              Set                 set_nestables;      // For Output 
+    private              List                list_childshades;   // For Ouput;
+
+    private              Category            selected_subtype;   // For Jumpshot
 
     // For SLOG-2 Input
     public Shadow()
     {
         super();
-        num_real_objs    = 0;
-        twgt_ary         = null;
-        map_type2dobjs   = null;
-        map_type2twgt    = null;
-        selected_subtype = null;
+        num_real_objs       = 0;
+        twgt_ary            = null;
+        map_type2dobjs      = null;
+        map_type2twgt       = null;
+        set_nestables       = null;
+        list_childshades    = null;
+        selected_subtype    = null;
     }
 
-    // For SLOG-2 Output
+    // For SLOG-2 Output : a copy constructor when merging 2 BufForShadows
     public Shadow( final Shadow shade )
     {
         super( shade );
-        num_real_objs    = shade.num_real_objs;
+        num_real_objs       = shade.num_real_objs;
 
-        twgt_ary         = null;
-        map_type2twgt    = new HashMap();
-        map_type2dobjs   = null;
+        twgt_ary            = null;
+        map_type2twgt       = new HashMap();
+        // map_type2dobjs, set_nestables & list_childshades are NOT needed
+        map_type2dobjs      = null;
+        set_nestables       = null;
+        list_childshades    = null;
 
         //  Make a deep copy of shade's map_type2twgt
         CategoryWeight  shade_twgt;
@@ -73,24 +88,38 @@ public class Shadow extends Primitive
             map_type2twgt.put( shade_twgt.getCategory(),
                                new CategoryWeight( shade_twgt ) );
         }
-        selected_subtype = null;   // meaningless for SLOG-2 Output
+
+        selected_subtype    = null;   // meaningless for SLOG-2 Output
     }
 
-    // For SLOG-2 Output
+    // For SLOG-2 Output : a real constructor when adding new real Primitive
     public Shadow( Category shadow_type, final Primitive prime )
     {
         super( shadow_type, prime );
-        num_real_objs   = 1;
+        num_real_objs       = 1;
 
-        twgt_ary        = null;
-        map_type2twgt   = new HashMap();
-        map_type2dobjs  = new HashMap();
+        //  map_type2dobjs and set_nestables are needed in this constructor
+        twgt_ary            = null;
+        map_type2twgt       = null;
+        map_type2dobjs      = new HashMap();
 
+        // Update both map_type2dobjs and set_nestables
         List  dobj_list;
         dobj_list       = new ArrayList();
         dobj_list.add( prime );
         map_type2dobjs.put( prime.getCategory(), dobj_list );
-        selected_subtype = null;   // meaningless for SLOG-2 Output
+
+        if ( shadow_type.getTopology().isState() ) {
+            set_nestables     = new TreeSet( DRAWING_ORDER );
+            set_nestables.add( prime );
+            list_childshades  = new ArrayList();
+        }
+        else {
+            set_nestables     = null;
+            list_childshades  = null;
+        }
+
+        selected_subtype    = null;   // meaningless for SLOG-2 Output
     }
 
     public void mergeWithPrimitive( final Primitive prime )
@@ -118,6 +147,7 @@ public class Shadow extends Primitive
         // time_err = ( super.getLatestTime() - super.getEarliestTime() ) / 2.0;
         num_real_objs++;
 
+        // Update both map_type2dobjs and set_nestables
         List dobj_list = (List) map_type2dobjs.get( prime.getCategory() );
         if ( dobj_list == null ) {
             dobj_list = new ArrayList();
@@ -126,6 +156,10 @@ public class Shadow extends Primitive
         }
         else
             dobj_list.add( prime );
+
+        // if ( super.getCategory().getTopology().isState() )
+        if ( set_nestables != null )
+            set_nestables.add( prime );
     }
 
     public void mergeWithShadow( final Shadow sobj )
@@ -159,6 +193,8 @@ public class Shadow extends Primitive
         // time_err = ( super.getLatestTime() - super.getEarliestTime() ) / 2.0;
         num_real_objs += sobj.num_real_objs;
 
+        // Don't check for (map_type2twgt == null) so it coredumps with trace
+
         // Since this class's TimeBoundingBox has been affected by sobj,
         // all map_type2twgt must adjust their weight accordingly. 
         CategoryWeight this_twgt, sobj_twgt;
@@ -169,7 +205,7 @@ public class Shadow extends Primitive
             this_twgts_itr = this.map_type2twgt.values().iterator();
             while ( this_twgts_itr.hasNext() ) {
                 this_twgt = (CategoryWeight) this_twgts_itr.next(); 
-                this_twgt.rescaleRatio( duration_ratio ); 
+                this_twgt.rescaleAllRatios( duration_ratio ); 
             }
         }
 
@@ -184,28 +220,83 @@ public class Shadow extends Primitive
             this_twgt = (CategoryWeight) this.map_type2twgt.get( sobj_type ); 
             if ( this_twgt == null ) {
                 this_twgt = new CategoryWeight( sobj_twgt );// sobj_twgt's clone
-                this_twgt.rescaleRatio( duration_ratio ); 
+                this_twgt.rescaleAllRatios( duration_ratio ); 
                 map_type2twgt.put( sobj_type, this_twgt );
             }
             else
-                this_twgt.addRatio( sobj_twgt, duration_ratio );
+                this_twgt.addAllRatios( sobj_twgt, duration_ratio );
         }
+
+        // if ( super.getCategory().getTopology().isState() )
+        if ( set_nestables != null )
+            list_childshades.add( sobj );
 
         // System.err.println( "Shadow.mergeWithShadow(): END" );
     }
 
     // For SLOG-2 Output API
-    public void setMapOfCategoryWeights()
+    private void setNestingExclusion()
     {
-        Iterator   type_dobjs_itr, dobjs_itr;
-        Map.Entry  type_dobj;
-        List       dobj_list;
-        Category   type;
-        double     shadow_duration;
-        double     ratio;
-        float      weight;
-        int        size;
-        size             = map_type2dobjs.size();
+        Object[]          childshades;
+        Stack             nesting_stack;
+        Iterator          dobjs_itr;
+        Drawable          curr_dobj, stacked_dobj;
+
+        childshades    = list_childshades.toArray();
+        nesting_stack  = new Stack();
+
+        //  Assume dobjs_itr returns in Increasing Starttime order
+        dobjs_itr      = set_nestables.iterator();
+        while ( dobjs_itr.hasNext() ) {
+            curr_dobj  = (Drawable) dobjs_itr.next();
+            curr_dobj.initExclusion( childshades );
+            while ( ! nesting_stack.empty() ) {
+                stacked_dobj = (Drawable) nesting_stack.peek();
+                if ( stacked_dobj.covers( curr_dobj ) ) {
+                    stacked_dobj.decrementExclusion( curr_dobj.getExclusion() );
+                    break;
+                }
+                else
+                    nesting_stack.pop();
+            }
+            nesting_stack.push( curr_dobj );
+        }
+        nesting_stack.clear();
+
+        // set_nestables & list_childshades are NOT used anymore
+        list_childshades.clear();
+        list_childshades  = null;
+        set_nestables.clear();
+        set_nestables     = null;
+    }
+
+    /*
+       For SLOG-2 Output API : set InclusiveDurationRatio in CategoryWeight
+
+       This routine sets or initializes the size of map_type2dobjs which
+       determines the size of this shadow object.
+    */
+    public void initializeMapOfCategoryWeights()
+    {
+        Iterator        type_dobjs_itr, dobjs_itr;
+        Map.Entry       type_dobj;
+        List            dobj_list;
+        Category        type;
+        Drawable        dobj;
+        CategoryWeight  twgt;
+        double          shadow_duration;
+        double          incl_fract;
+        float           incl_ratio;
+
+        /*
+           Check if map_type2twgt == null to tell if this shadow is created
+           as real constructor or shallow copy constructor which map_type2twgt
+           has been created.  Creation of map_type2twgt tells getByteSize()
+           to use map_type2twgt to determine the disk footprint of this shadow.
+        */
+        if ( map_type2twgt == null )
+            map_type2twgt  = new HashMap();
+
         shadow_duration  = super.getDuration();
         type_dobjs_itr   = map_type2dobjs.entrySet().iterator();
         while ( type_dobjs_itr.hasNext() ) {
@@ -213,19 +304,71 @@ public class Shadow extends Primitive
             type       = (Category) type_dobj.getKey();
             dobj_list  = (List) type_dobj.getValue();
 
-            // Compute the total weight of each Category of dobj in this sobj
-            weight     = 0.0f;
+            // Compute the InclusiveRatio of each Category in this Shadow 
+            incl_ratio = 0.0f;
             dobjs_itr  = dobj_list.iterator();
             while ( dobjs_itr.hasNext() ) {
-                ratio  = ((TimeBoundingBox) dobjs_itr.next()).getDuration()
-                       / shadow_duration;
-                weight += (float) ratio;
+                dobj        = (Drawable) dobjs_itr.next();
+                incl_fract  = dobj.getDuration() / shadow_duration;
+                incl_ratio += (float) incl_fract;
             }
-            map_type2twgt.put( type, new CategoryWeight( type, weight ) );
+            twgt  = new CategoryWeight( type, incl_ratio, 0.0f );
+            map_type2twgt.put( type, twgt );
             dobj_list  = null;
         }
-        map_type2dobjs.clear();
-        map_type2dobjs = null;  // set to null so toString() works
+    }
+
+    /*
+       For SLOG-2 Output API : set ExclusionDurationRatio in CategoryWeight
+
+       This routine finalizes the size of map_type2dobjs.  Whatever the size
+       of the map_type2dobjs set by the finitializeMapOfCategoryWeights()
+       will be left unchanged, i.e. the disk size of the shadow object will be
+       the same when finalizeMapOfCategoryWeights() is called.
+    */
+    public void finalizeMapOfCategoryWeights()
+    {
+        Iterator        type_dobjs_itr, dobjs_itr;
+        Map.Entry       type_dobj;
+        List            dobj_list;
+        Category        type;
+        Drawable        dobj;
+        CategoryWeight  twgt;
+        double          shadow_duration;
+        double          excl_fract;
+        float           excl_ratio;
+
+        // Check if this Shadow is of nestable type, i.e. state.
+        if ( set_nestables != null ) {
+            this.setNestingExclusion();
+
+            //  Finalize/Update the map_type2twgt
+            shadow_duration  = super.getDuration();
+            type_dobjs_itr   = map_type2dobjs.entrySet().iterator();
+            while ( type_dobjs_itr.hasNext() ) {
+                type_dobj  = (Map.Entry) type_dobjs_itr.next();
+                type       = (Category) type_dobj.getKey();
+                dobj_list  = (List) type_dobj.getValue();
+
+                // Compute the ExclusiveRatio of each Category in this Shadow 
+                excl_ratio = 0.0f;
+                dobjs_itr  = dobj_list.iterator();
+                while ( dobjs_itr.hasNext() ) {
+                    dobj        = (Drawable) dobjs_itr.next();
+                    excl_fract  = dobj.getExclusion() / shadow_duration;
+                    excl_ratio += (float) excl_fract;
+                }
+                twgt  = (CategoryWeight) map_type2twgt.get( type );
+                twgt.addExclusiveRatio( excl_ratio );
+                dobj_list  = null;
+            }
+        }
+
+        // map_type2dobjs is NOT used anymore
+        if ( map_type2dobjs != null ) {
+            map_type2dobjs.clear();
+            map_type2dobjs = null;  // set to null so toString() works
+        }
     }
 
     private static double aveOverAllObjs( double sobj_time, long sobj_Nobjs,
@@ -240,12 +383,12 @@ public class Shadow extends Primitive
         if ( twgt_ary != null )  // For SLOG-2 Input
             return super.getByteSize() + BYTESIZE
                  + CategoryWeight.BYTESIZE * twgt_ary.length;
-        else if ( map_type2dobjs != null )  // For SLOG-2 Output
-            return super.getByteSize() + BYTESIZE
-                 + CategoryWeight.BYTESIZE * map_type2dobjs.size();
-        else                                // For SLOG-2 Output
+        else if ( map_type2twgt != null )  // For SLOG-2 Output
             return super.getByteSize() + BYTESIZE
                  + CategoryWeight.BYTESIZE * map_type2twgt.size();
+        else // if ( map_type2dobjs != null )  // For SLOG-2 Output
+            return super.getByteSize() + BYTESIZE
+                 + CategoryWeight.BYTESIZE * map_type2dobjs.size();
     }
 
     // For SLOG-2 Input API, used by BufForShadows.readObject()
@@ -291,7 +434,7 @@ public class Shadow extends Primitive
         if ( this.map_type2twgt.size() > 0 ) {
             Object[]  twgts;
             twgts = this.map_type2twgt.values().toArray();
-            Arrays.sort( twgts, CategoryWeight.RATIO_ORDER );
+            Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
             int  twgts_length = twgts.length;
             outs.writeInt( twgts_length );
             for ( int idx = 0; idx < twgts_length; idx++ )
