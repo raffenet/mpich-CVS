@@ -904,7 +904,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     const char *str_iter;
     int total, num_chars;
     char *actual_exe, exe_data[SMPD_MAX_EXE_LENGTH];
-    const char *args;
+    const char *temp_str;
     char temp_exe[SMPD_MAX_EXE_LENGTH];
     int num_chars;
 
@@ -913,14 +913,18 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     /* resolve the executable name */
     if (process->path[0] != '\0')
     {
-	args = smpd_get_string(process->exe, temp_exe, SMPD_MAX_EXE_LENGTH, &num_chars);
+	temp_str = smpd_get_string(process->exe, temp_exe, SMPD_MAX_EXE_LENGTH, &num_chars);
 	smpd_dbg_printf("searching for '%s' in '%s'\n", temp_exe, process->path);
 	if (smpd_search_path(process->path, temp_exe, SMPD_MAX_EXE_LENGTH, exe_data))
 	{
-	    if (args != NULL)
+	    if (strstr(exe_data, " "))
+	    {
+		smpd_err_printf("Currently unable to handle paths with spaces in them.\n");
+	    }
+	    if (temp_str != NULL)
 	    {
 		strncat(exe_data, " ", SMPD_MAX_EXE_LENGTH - strlen(exe_data));
-		strncat(exe_data, args, SMPD_MAX_EXE_LENGTH - strlen(exe_data));
+		strncat(exe_data, temp_str, SMPD_MAX_EXE_LENGTH - strlen(exe_data));
 		exe_data[SMPD_MAX_EXE_LENGTH-1] = '\0';
 	    }
 	    actual_exe = exe_data;
