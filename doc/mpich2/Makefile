@@ -1,4 +1,4 @@
-ALL: mpich2.ps
+ALL: mpich2.pdf
 SHELL = /bin/sh
 
 .SUFFIXES: .pdf .ps .dvi .tex .fig .txt .dot .eps
