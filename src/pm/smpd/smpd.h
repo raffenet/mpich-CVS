@@ -27,6 +27,7 @@
 #define SMPD_CLOSE                          2
 #define SMPD_CONNECTED                      3
 #define SMPD_EXIT                           4
+#define SMPD_DBS_RETURN                     5
 
 #define SMPD_TRUE                           1
 #define SMPD_FALSE                          0
@@ -163,6 +164,7 @@ typedef enum smpd_context_type_t
     SMPD_CONTEXT_CHILD,
     SMPD_CONTEXT_LISTENER,
     SMPD_CONTEXT_SMPD,
+    SMPD_CONTEXT_PMI,
     SMPD_CONTEXT_UNDETERMINED,
     SMPD_CONTEXT_FREED
 } smpd_context_type_t;
@@ -239,7 +241,7 @@ typedef struct smpd_context_t
 typedef struct smpd_process_t
 {
     int num_valid_contexts;
-    smpd_context_t *in, *out, *err;
+    smpd_context_t *in, *out, *err, *pmi;
     int context_refcount;
     int pid;
     char exe[SMPD_MAX_EXE_LENGTH];
