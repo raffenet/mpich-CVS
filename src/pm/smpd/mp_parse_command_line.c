@@ -142,6 +142,8 @@ void mp_print_extra_options(void)
     printf("  delete the encrypted credentials from the Windows registry.\n");
     printf("-validate [-host hostname]\n");
     printf("  validate the encrypted credentials for the current or specified host.\n");
+    printf("-timeout seconds\n");
+    printf("  timeout for the job.\n");
 }
 
 static int strip_args(int *argcp, char **argvp[], int n)
@@ -171,6 +173,17 @@ static int isnumber(char *str)
     }
     return SMPD_TRUE;
 }
+
+#ifdef HAVE_WINDOWS_H
+static int g_timeout = 0;
+static HANDLE g_hTimeoutThread = NULL;
+void timeout_thread(void *p)
+{
+    Sleep(g_timeout * 1000);
+    smpd_err_printf("mpiexec terminated job due to %d second timeout.\n", g_timeout);
+    ExitProcess(-1);
+}
+#endif
 
 int mp_parse_command_args(int *argcp, char **argvp[])
 {
@@ -881,12 +894,44 @@ configfile_loop:
 		}
 		num_args_to_strip = 2;
 	    }
+	    else if (strcmp(&(*argvp)[1][1], "timeout") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no timeout specified after -timeout option.\n");
+		    smpd_exit_fn("mp_parse_command_args");
+		    return SMPD_FAIL;
+		}
+		g_timeout = atoi((*argvp)[2]);
+#ifdef HAVE_WINDOWS_H
+		if (g_timeout > 0 && g_hTimeoutThread == NULL)
+		{
+		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
+		}
+#endif
+		num_args_to_strip = 2;
+	    }
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);
 	    }
 	    strip_args(argcp, argvp, num_args_to_strip);
 	}
+
+#ifdef HAVE_WINDOWS_H
+	if (g_hTimeoutThread == NULL)
+	{
+	    char *p = getenv("MPIEXEC_TIMEOUT");
+	    if (p)
+	    {
+		g_timeout = atoi(p);
+		if (g_timeout > 0)
+		{
+		    g_hTimeoutThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timeout_thread, NULL, 0, NULL);
+		}
+	    }
+	}
+#endif
 
 
 	/* remaining args are the executable and it's args */
