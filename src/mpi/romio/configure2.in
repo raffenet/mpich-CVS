@@ -560,8 +560,9 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
         AC_HEADER_CHECK(aio.h,has_aio_h=yes,has_aio_h=no)
 	add_lib=""
 	AC_SEARCH_LIBS(aio_write,aio,add_lib="-laio")
-	# What function do we want -lrt for?
-	AC_HAVE_LIBRARY(rt,add_lib="$add_lib -lrt")
+	# What function do we want -lrt for?  In recent Linux, aio_write64
+	# is here, as is lio_listio
+	AC_SEARCH_LIBS(aio_write64,rt,add_lib="$add_lib -lrt")
 	AC_SEARCH_LIBS(pthread_create,pthread,[add_lib="$add_lib -lpthread"
 has_pthread=yes],[has_pthread=no])
         AC_FUNC_CHECK(aio_write,has_aio_write=yes,has_aio_write=no)
@@ -888,9 +889,9 @@ AC_CHECK_SIZEOF(void*,$CROSS_SIZEOF_VOID_P)
 AC_CACHE_CHECK([for int large enough for pointers],
 pac_cv_int_hold_pointer,[
 if test "$ac_cv_sizeof_int" = "0" -o \
-	"$ac_cv_sizeof_void_p" = "0" ; then
+	"$ac_cv_sizeof_voidp" = "0" ; then
     pac_cv_int_hold_pointer=unknown
-elif test "$ac_cv_sizeof_int" -lt "$ac_cv_sizeof_void_p" ; then
+elif test "$ac_cv_sizeof_int" -lt "$ac_cv_sizeof_voidp" ; then
     pac_cv_int_hold_pointer=no
 else
     pac_cv_int_hold_pointer=yes
@@ -1133,8 +1134,38 @@ if test -n "$file_system_sfs"; then
 fi
 if test -n "$file_system_xfs"; then
     AC_DEFINE(XFS,,[Define for XFS])
-    PAC_GET_XFS_MEMALIGN
+    # Check for memalign value (this was P A C_GET_XFS_MEMALIGN,
+    # switched to autoconf 2)
+    AC_CACHE_CHECK([for memory alignment needed for direct I/O],
+pac_cv_memalignval,[
+/bin/rm -f confmemalignval
+/bin/rm -f /tmp/romio_tmp.bin
+AC_TRY_RUN([#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+main() { 
+  struct dioattr st;
+  int fd = open("/tmp/romio_tmp.bin", O_RDWR | O_CREAT, 0644);
+  FILE *f=fopen("confmemalignval","w");
+  if (fd == -1) exit(1);
+  if (!f) exit(1);
+  fcntl(fd, F_DIOINFO, &st);
+  fprintf( f, "%u\n", st.d_mem);
+  exit(0);
+}],pac_cv_memalignval=`cat confmemalignval`,pac_cv_memalignval="unknown",pac_cv_memalignval="unknown")
+    /bin/rm -f confmemalignval
+    /bin/rm -f /tmp/romio_tmp.bin
+])
+    if test -n "$pac_cv_memalignval" -a "$pac_cv_memalignval" != 0 -a \
+    "$pac_cv_memalignval" != "unknown" ; then
+        CFLAGS="$CFLAGS -DXFS_MEMALIGN=$pac_cv_memalignval"
+    else
+        AC_MSG_RESULT(assuming 128 for memory alignment)
+        CFLAGS="$CFLAGS -DXFS_MEMALIGN=128"
+    fi
 fi
+
 if test -n "$file_system_pvfs"; then
    # Use ROMIO_PVFS instead of PVFS because FREEBSD defines PVFS.
     AC_DEFINE(ROMIO_PVFS,,[Define for Romio with PVFS])
