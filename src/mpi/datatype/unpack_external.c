@@ -50,34 +50,68 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Unpack_external(char *datarep, void *inbuf, MPI_Aint insize, MPI_Aint *position, void *outbuf, int outcount, MPI_Datatype datatype)
+int MPI_Unpack_external(char *datarep,
+			void *inbuf,
+			MPI_Aint insize,
+			MPI_Aint *position,
+			void *outbuf,
+			int outcount,
+			MPI_Datatype datatype)
 {
     static const char FCNAME[] = "MPI_Unpack_external";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
+    MPI_Aint first, last;
+    MPID_Segment *segp;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPACK_EXTERNAL);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPACK_EXTERNAL);
-    /* Get handles to MPI objects. */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+	    MPIR_ERRTEST_ARGNULL(inbuf, "input buffer", mpi_errno);
+	    /* NOTE: outbuf could be MPI_BOTTOM; don't test for NULL */
+	    MPIR_ERRTEST_COUNT(insize, mpi_errno);
+	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
+
+	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+		MPID_Datatype *datatype_ptr = NULL;
+
+		MPID_Datatype_get_ptr(datatype, datatype_ptr);
+		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+	    }
+		
 	    /* If datatye_ptr is not valid, it will be reset to null */
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
-                return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* FIXME - unimplemented */
+    segp = MPID_Segment_alloc();
+    MPID_Segment_init(outbuf, outcount, datatype, segp);
+
+    /* NOTE: buffer values and positions in MPI_Unpack_external are used very
+     * differently from use in MPID_Segment_unpack_external...
+     */
+    first = 0;
+    last  = SEGMENT_IGNORE_LAST;
+
+    MPID_Segment_unpack_external(segp,
+				 first,
+				 &last,
+				 (void *) ((char *) inbuf + *position));
+
+    *position += (int) last;
+
+    MPID_Segment_free(segp);
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
     return MPI_SUCCESS;

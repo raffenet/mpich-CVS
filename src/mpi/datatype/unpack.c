@@ -64,16 +64,12 @@ int MPI_Unpack(void *inbuf,
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint first, last;
     MPID_Comm *comm_ptr = NULL;
-    MPID_Datatype *datatype_ptr = NULL;
     MPID_Segment *segp;
-
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPACK);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPACK);
 
-    /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
+    MPID_Comm_get_ptr(comm, comm_ptr);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -83,16 +79,21 @@ int MPI_Unpack(void *inbuf,
 	    /* Note: outbuf could be MPI_BOTTOM; don't test for NULL */
 	    MPIR_ERRTEST_COUNT(insize, mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
+
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
-		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+		MPID_Datatype *datatype_ptr = NULL;
+
+		MPID_Datatype_get_ptr(datatype, datatype_ptr);
+		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 	    }
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno != MPI_SUCCESS) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                return MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
             }
         }
         MPID_END_ERROR_CHECKS;
