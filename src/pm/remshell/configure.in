@@ -167,6 +167,9 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(master_top_srcdir)
+dnl
+dnl Dependency handling
+AC_SUBST(MAKE_DEPEND_C)
 
 eval eval_datadir=$datadir
 AC_DEFINE_UNQUOTED(DEFAULT_MACHINES_PATH,"$eval_datadir:.",[Define the search path for machines files])

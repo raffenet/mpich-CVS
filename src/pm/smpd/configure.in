@@ -106,6 +106,9 @@ AC_SUBST(C_LINK_SHL)
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(master_top_srcdir)
 dnl
+dnl Dependency handling
+AC_SUBST(MAKE_DEPEND_C)
+dnl
 dnl Get any LIBS required by the sock implementation
 dnl
 . ../../mpid/common/sock/localdefs

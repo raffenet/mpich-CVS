@@ -122,6 +122,9 @@ AC_CHECK_FUNCS(yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd ge
 AC_CHECK_FUNCS(pthread_mutexattr_setpshared pthread_mutexattr_init)
 
 dnl Generate the Makefiles from Makefile.in
+dnl
+dnl Dependency handling
+AC_SUBST(MAKE_DEPEND_C)
 
 AC_OUTPUT(Makefile \
  src/Makefile \

@@ -38,12 +38,27 @@ fi
 AC_CHECK_HEADERS(				\
 	assert.h				\
 	netdb.h					\
-	netinet/in.h				\
 	sys/ioctl.h				\
 	sys/socket.h				\
 	sys/sockio.h				\
 	sys/types.h				\
 	errno.h)
+
+# netinet/in.h often requires sys/types.h first.  With AC 2.57, check_headers
+# does the right thing, which is to test whether the header is found 
+# by the compiler, but this can cause problems when the header needs 
+# other headers.  2.57 changes the syntax (!) of check_headers to allow 
+# additional headers.
+AC_CACHE_CHECK([for netinet/in.h],ac_cv_header_netinet_in_h,[
+AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <netinet/in.h>],[int a=0;],
+    ac_cv_header_netinet_in_h=yes,
+    ac_cv_header_netinet_in_h=no)])
+if test "$ac_cv_header_netinet_in_h" = yes ; then
+    AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
+fi
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
@@ -58,5 +73,8 @@ AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(master_top_srcdir)
+dnl
+dnl Dependency handling
+AC_SUBST(MAKE_DEPEND_C)
 
 AC_OUTPUT(Makefile src/Makefile localdefs)

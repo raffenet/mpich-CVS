@@ -59,5 +59,8 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(master_top_srcdir)
+dnl
+dnl Dependency handling
+AC_SUBST(MAKE_DEPEND_C)
 
 AC_OUTPUT(Makefile src/Makefile localdefs)
