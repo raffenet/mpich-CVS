@@ -3,7 +3,7 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#include "smpd_dbs_internal.h"
+#include "smpd.h"
 
 int smpd_dbs_init()
 {
@@ -172,7 +172,7 @@ int smpd_dbs_create_name_in(char *name)
     return SMPD_DBS_SUCCESS;
 }
 
-int smpd_dbs_get(char *name, char *key, char *value)
+int smpd_dbs_get(const char *name, const char *key, char *value)
 {
     smpd_database_node_t *pNode;
     smpd_database_element_t *pElement;
@@ -214,7 +214,7 @@ int smpd_dbs_get(char *name, char *key, char *value)
     return SMPD_DBS_FAIL;
 }
 
-int smpd_dbs_put(char *name, char *key, char *value)
+int smpd_dbs_put(const char *name, const char *key, const char *value)
 {
     smpd_database_node_t *pNode;
     smpd_database_element_t *pElement;
@@ -266,7 +266,7 @@ int smpd_dbs_put(char *name, char *key, char *value)
     return SMPD_DBS_FAIL;
 }
 
-int smpd_dbs_delete(char *name, char *key)
+int smpd_dbs_delete(const char *name, const char *key)
 {
     smpd_database_node_t *pNode;
     smpd_database_element_t *pElement, *pElementTrailer;
@@ -318,7 +318,7 @@ int smpd_dbs_delete(char *name, char *key)
     return SMPD_DBS_FAIL;
 }
 
-int smpd_dbs_destroy(char *name)
+int smpd_dbs_destroy(const char *name)
 {
     smpd_database_node_t *pNode, *pNodeTrailer;
     smpd_database_element_t *pElement;
@@ -363,7 +363,7 @@ int smpd_dbs_destroy(char *name)
     return SMPD_DBS_FAIL;
 }
 
-int smpd_dbs_first(char *name, char *key, char *value)
+int smpd_dbs_first(const char *name, char *key, char *value)
 {
     smpd_database_node_t *pNode;
 
@@ -412,7 +412,7 @@ int smpd_dbs_first(char *name, char *key, char *value)
     return SMPD_DBS_FAIL;
 }
 
-int smpd_dbs_next(char *name, char *key, char *value)
+int smpd_dbs_next(const char *name, char *key, char *value)
 {
     smpd_database_node_t *pNode;
 
