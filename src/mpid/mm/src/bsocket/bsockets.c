@@ -87,12 +87,6 @@ struct BFD_Buffer_struct {
     struct BFD_Buffer_struct *next;
 };
 
-/* This is the utility file for bsockets that contains the basic bsocket items
-   and storage management */
-#ifndef BSOCKET_PREALLOC 
-#define BSOCKET_PREALLOC 256
-#endif
-
 BlockAllocator Bsocket_mem;
 
 #define BSOCKET_MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -103,17 +97,23 @@ static int g_buf_pool_size = FD_SETSIZE;
 static int g_beasy_connection_attempts = 5;
 
 #ifdef HAVE_WINSOCK2_H
-static void log_warning(char *lpszMsg)
+static void log_warning(char *str, ...)
 {
-    char    szMsg[256];
+    char    szMsg[256] = "bsocket error";
     HANDLE  hEventSource;
     char   *lpszStrings[2];
+    char pszStr[4096];
+    va_list list;
+
+    // Write to a temporary string
+    va_start(list, str);
+    vsprintf(pszStr, str, list);
+    va_end(list);
     
     hEventSource = RegisterEventSource(NULL, "bsocket");
     
-    strcpy(szMsg, "bsocket error");
     lpszStrings[0] = szMsg;
-    lpszStrings[1] = lpszMsg;
+    lpszStrings[1] = pszStr;
     
     if (hEventSource != NULL) 
     {
@@ -935,6 +935,10 @@ int beasy_connect(int bfd, char *host, int port)
     struct hostent *lphost;
     struct sockaddr_in sockAddr;
     struct linger linger;
+#ifdef HAVE_WINSOCK2_H
+    /* use this array to make sure the warning only gets logged once */
+    BOOL bWarningLogged[4] = { FALSE, FALSE, FALSE, FALSE };
+#endif
     memset(&sockAddr,0,sizeof(sockAddr));
     
     sockAddr.sin_family = AF_INET;
@@ -965,16 +969,32 @@ int beasy_connect(int bfd, char *host, int port)
 	    switch (error)
 	    {
 	    case WSAECONNREFUSED:
-		log_warning("WSAECONNREFUSED error, re-attempting bconnect");
+		if (!bWarningLogged[0])
+		{
+		    /*log_warning("WSAECONNREFUSED error, re-attempting bconnect(%s)", host);*/
+		    bWarningLogged[0] = TRUE;
+		}
 		break;
 	    case WSAETIMEDOUT:
-		log_warning("WSAETIMEDOUT error, re-attempting bconnect");
+		if (!bWarningLogged[1])
+		{
+		    log_warning("WSAETIMEDOUT error, re-attempting bconnect(%s)", host);
+		    bWarningLogged[1] = TRUE;
+		}
 		break;
 	    case WSAENETUNREACH:
-		log_warning("WSAENETUNREACH error, re-attempting bconnect");
+		if (!bWarningLogged[2])
+		{
+		    log_warning("WSAENETUNREACH error, re-attempting bconnect(%s)", host);
+		    bWarningLogged[2] = TRUE;
+		}
 		break;
 	    case WSAEADDRINUSE:
-		log_warning("WSAEADDRINUSE error, re-attempting bconnect");
+		if (!bWarningLogged[3])
+		{
+		    log_warning("WSAEADDRINUSE error, re-attempting bconnect(%s)", host);
+		    bWarningLogged[3] = TRUE;
+		}
 		break;
 	    default:
 		log_warning("%d error, re-attempting bconnect");
