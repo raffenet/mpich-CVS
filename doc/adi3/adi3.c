@@ -5,6 +5,7 @@
  * This is a DRAFT
  * All parts of this document are subject to (and expected to) change
  * This DRAFT dated September 22, 2000
+ * Updated May 21, 2002
  ***********************************************************************/
 /*TOverview.tex
  The following are routines that a device must implement; these are used
@@ -3294,6 +3295,28 @@ char *MPIU_Strdup( const char *str )
   extra data.
   @*/
 void MPIU_Trdump( FILE *file )
+{}
+/*
+ * Information about the device and environment 
+ */
+/*@
+  MPID_Get_processor_name - Return the name of the current processor
+
+  Output Parameters:
++ name - A unique specifier for the actual (as opposed to virtual) node. This
+  must be an array of size at least 'MPI_MAX_PROCESSOR_NAME'.
+- resultlen - Length (in characters) of the name 
+
+  Notes:
+  The name returned should identify a particular piece of hardware; 
+  the exact format is implementation defined.  This name may or may not
+  be the same as might be returned by 'gethostname', 'uname', or 'sysinfo'.
+
+  This routine is essentially an MPID version of 'MPI_Get_processor_name' .  
+  It must be part of the device because not all environments support calls
+  to return the processor name.
+  @*/
+int MPID__Get_processor_name( char *name, int *resultlen)
 {}
 
 /*
