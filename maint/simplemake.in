@@ -1389,6 +1389,10 @@ sub TargetDocs {
     }
 }
 
+#
+# Installation is complicated by VPATH builds; files that are derived and
+# files that are not may be in different locations (one relative, the other
+# absolute with respect to the source tree)
 sub TargetInstall {
     %dirschecked = ();
     if (!scalar(%install_files)) { return ; }
@@ -1397,6 +1401,12 @@ sub TargetInstall {
     foreach $kind (keys(%install_files)) {
 	$dir = $install_dir{$kind};
 	if (!defined($dirschecked{$dir})) {
+	    # Check on dependent directories
+	    $checkdir = $required_dirs{$dir};
+	    if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
+		$dirschecked{$checkdir} = 1;
+		print FD "\tif [ ! -d \${$checkdir} ] ; then mkdir \${$checkdir} ; fi$newline";
+	    }
 	    print FD "\tif [ ! -d \${$dir} ] ; then mkdir \${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
 	}
