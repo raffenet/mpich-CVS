@@ -814,7 +814,7 @@ int smpd_get_default_hosts()
 	cur_host = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
 	if (cur_host != NULL)
 	{
-	    printf("default host: %s\n", host);
+	    /*printf("default host: %s\n", host);*/
 	    strcpy(cur_host->host, host);
 	    cur_host->nproc = 1;
 	    cur_host->connected = SMPD_FALSE;

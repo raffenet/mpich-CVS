@@ -624,5 +624,6 @@ int smpd_get_host_id(char *host, int *id_ptr);
 int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *launch_node);
 SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp);
 int smpd_create_cliques(smpd_launch_node_t *list);
+int smpd_handle_spawn_command(smpd_context_t *context);
 
 #endif
