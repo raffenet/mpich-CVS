@@ -653,6 +653,14 @@ namespace wmpiexec
 		private void wdir_browse_button_Click(object sender, System.EventArgs e)
 		{
 			FolderBrowserDialog dlg = new FolderBrowserDialog();
+			if (wdir_textBox.Text.Length > 0)
+			{
+				dlg.SelectedPath = wdir_textBox.Text;
+			}
+			else
+			{
+				dlg.SelectedPath = Environment.CurrentDirectory;
+			}
 			if (dlg.ShowDialog() == DialogResult.OK)
 			{
 				wdir_textBox.Text = dlg.SelectedPath;
@@ -1158,23 +1166,83 @@ namespace wmpiexec
 		{
 			int index, last;
 			string app = application_comboBox.Text;
+			if (app[0] == '\"')
+			{
+				// remove the quotes to be restored at the end
+				app = app.Replace("\"", "");
+			}
 			index = app.LastIndexOf('\\');
 			if (index == -1)
 			{
 				index = 0;
 			}
 			last = index;
+			// find the index of .exe starting from the last \
 			index = app.IndexOf(".exe", last);
 			if (index == -1)
 			{
+				// no .exe so find the first space after the last \
+				// This assumes the executable does not have spaces in its name
 				index = app.IndexOf(' ', last);
 				if (index == -1)
 				{
+					// no .exe and no spaces found so take the entire string
 					index = app.Length;
 				}
 			}
 			app = app.Substring(0, index) + ".exe.clog2";
 			app = app.Trim();
+			if (!File.Exists(app) && wdir_textBox.Text.Length > 0)
+			{
+				// file not found from the application combo box so try finding it in the working directory
+				string app2 = application_comboBox.Text;
+				if (app2[0] == '\"')
+				{
+					// remove the quotes to be restored at the end
+					app2 = app2.Replace("\"", "");
+				}
+				index = app2.LastIndexOf('\\');
+				if (index != -1)
+				{
+					// remove the path
+					app2 = app2.Remove(0, index);
+				}
+				// find the index of .exe
+				index = app2.IndexOf(".exe");
+				if (index != -1)
+				{
+					// remove any arguments after the executable name
+					app2 = app2.Substring(0, index + 4);
+				}
+				else
+				{
+					// no .exe so find the first space
+					// This assumes the executable does not have spaces in its name
+					index = app.IndexOf(' ');
+					if (index != -1)
+					{
+						app2 = app2.Substring(0, index) + ".exe";
+					}
+					else
+					{
+						// no .exe and no arguments so append .exe
+						app2 += ".exe";
+					}
+				}
+				// app2 should now contain only the executable name
+				// Add the wdir path and clog2 extension
+				if (wdir_textBox.Text.EndsWith("\\"))
+					app2 = wdir_textBox.Text + app2 + ".clog2";
+				else
+					app2 = wdir_textBox.Text + "\\" + app2 + ".clog2";
+				if (File.Exists(app2))
+				{
+					app = app2;
+					FileStream f = File.OpenRead(app2);
+					app = f.Name;
+					f.Close();
+				}
+			}
 			if (app.IndexOf(' ') != -1)
 			{
 				app = "\"" + app + "\"";
@@ -1673,6 +1741,7 @@ namespace wmpiexec
 			Process p;
 			string args = "-Xms32m -Xmx256m -jar " + get_jumpshot() + " " + get_clog2();
 			//MessageBox.Show("javaw.exe " + args);
+			//output_richTextBox.AppendText("javaw.exe " + args + "\r\n");
 			try
 			{
 				p = Process.Start("javaw.exe", args);
