@@ -677,7 +677,7 @@ sub RunCxxTestSuite {
 
 sub RunIntelTestSuite {
     my $nargs = 0;
-
+    my $testname = "newtestl";
     $cwd = `pwd`;
     chomp $cwd;
 
@@ -692,7 +692,9 @@ sub RunIntelTestSuite {
     $config[$nargs++] = "$projects_dir/MPITEST/configure";
     $config[$nargs++] = "--with-mpich2=$instdir";
     if (!defined($chosenEnable{"f77"})) {
+	# Only run the C tests if we did not build fortran
 	$config[$nargs++] = "--disable-f77";
+	$testname = "newtestl_c";
     }
     if (defined($ENV{"MAKE"})) {
 	$makepgm = $ENV{"MAKE"};
@@ -710,7 +712,7 @@ sub RunIntelTestSuite {
 	if ($built_for_mpd) {
 	    &RunMPD;
 	}
-	$rc = &RunProgram( "$makepgm newtestl" );
+	$rc = &RunProgram( "$makepgm $testname" );
 	$test_status = $rc;
 	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
 	if ($built_for_mpd) {
