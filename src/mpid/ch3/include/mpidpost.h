@@ -7,15 +7,9 @@
 #if !defined(MPICH_MPIDPOST_H_INCLUDED)
 #define MPICH_MPIDPOST_H_INCLUDED
 
-#define MPID_Request_free(req) {MPIDI_CH3_Request_free(req);}
-
-#define MPID_Progress_start()
-#define MPID_Progress_end()
-#define MPID_Progress_test() (MPIDI_CH3_Progress(0))
-#define MPID_Progress_wait() {MPIDI_CH3_Progress(1);}
-#define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
-
-/* Channel API prototypes */
+/*
+ * Channel API prototypes
+ */
 int MPIDI_CH3_Init(int *, int *, int *);
 int MPIDI_CH3_Finalize(void);
 void MPIDI_CH3_InitParent(MPID_Comm *);
@@ -27,19 +21,57 @@ void MPIDI_CH3_iSend(MPIDI_VC *, MPID_Request *, void *, int);
 void MPIDI_CH3_iWrite(MPIDI_VC *, MPID_Request *);
 void MPIDI_CH3_iRead(MPIDI_VC *, MPID_Request *);
 
-MPID_Request * MPIDI_CH3_Request_new();
-void MPIDI_CH3_Request_free(MPID_Request *);
+MPID_Request * MPIDI_CH3_Request_create(void);
+void MPIDI_CH3_Request_add_ref(MPID_Request *);
+int MPIDI_CH3_Request_release_ref(MPID_Request *, int *);
+void MPIDI_CH3_Request_destroy(MPID_Request *);
 
 void MPIDI_CH3_Progress_start(void);
 void MPIDI_CH3_Progress_end(void);
 int MPIDI_CH3_Progress(int);
 void MPIDI_CH3_Progress_poke(void);
 
-/* Channel utility prototypes */
-MPID_Request * MPIDI_CH3U_Request_FUOAP(
-    int source, int tag, int context_id, int * found);
-MPID_Request * MPIDI_CH3U_Request_FPOAU(
-    MPIDI_Message_match * match, int * found);
+/*
+ * Channel utility prototypes
+ */
+MPID_Request * MPIDI_CH3U_Request_FUOAP(int, int, int, int *);
+MPID_Request * MPIDI_CH3U_Request_FPOAU(MPIDI_Message_match *, int *);
+int MPIDI_CH3U_Request_adjust_iov(MPID_Request *, int);
+void MPIDI_CH3U_Handle_packet(MPIDI_VC *, MPIDI_CH3_Pkt_t *);
+void MPIDI_CH3U_Handle_req(MPIDI_VC *, MPID_Request *);
+
+
+/*
+ * Macros defining both device and channel level request management routines
+ */
+#define MPIDI_CH3_Request_add_ref(req)		\
+MPIU_Object_add_ref(req)
+
+#define MPIDI_CH3_Request_release_ref(req, req_ref_count)	\
+{								\
+    MPIU_Object_release_ref(req, req_ref_count);		\
+    assert(req->ref_count >= 0);				\
+}
+
+#define MPID_Request_free(req)					\
+{								\
+    int ref_count;						\
+    								\
+    MPIDI_CH3_Request_release_ref(req, &ref_count);		\
+    if (ref_count == 0)						\
+    {								\
+	MPIDI_CH3_Request_destroy(req);				\
+    }								\
+}
+
+/*
+ * Macros defining device level progress engine routines
+ */
+#define MPID_Progress_start()
+#define MPID_Progress_end()
+#define MPID_Progress_test() (MPIDI_CH3_Progress(0))
+#define MPID_Progress_wait() {MPIDI_CH3_Progress(1);}
+#define MPID_Progress_poke() {MPIDI_CH3_Progress_poke();}
 
 /* Include definitions from the channel which require items defined by this
    file (mpidimpl.h) or the file it includes (mpiimpl.h).  NOTE: This include

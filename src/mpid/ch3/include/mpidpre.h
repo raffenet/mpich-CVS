@@ -7,6 +7,8 @@
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
 #define MPICH_MPIDPRE_H_INCLUDED
 
+#include <assert.h>
+
 /* Include definitions from the channel which must exist before items in this
    file (mpidimpl.h) or the file it includes (mpiimple.h) can be defined.
    NOTE: This include requires the channel to copy mpidi_ch3_pre.h to the
@@ -118,32 +120,33 @@ MPIDI_CH3_Pkt_t;
  * An enumeration of the actions to perform when the requested I/O operation
  * has completed.
  *
- * MPIDI_CH3_CA_NONE - Do nothing.  Used in situations where the request will
+ * MPIDI_CA_NONE - Do nothing.  Used in situations where the request will
  * be referenced later by an incoming packet.
  *
- * MPIDI_CH3_CA_PROCESS_PKT - The packet contained within the request needs to
- * be handled.
- *
- * MPIDI_CH3_CA_RELOAD_IOV - This request contains more segments of data than
+ * MPIDI_CA_RELOAD_IOV - This request contains more segments of data than
  * the IOV or buffer space allow.  Since the previously request operation has
  * completed, the IOV in the request should be reload at this time.
  *
- * MPIDI_CH3_CA_COMPLETE - The last operation for this request has completed.
- * The completion counter should be decremented.  If it has reached zero, then
- * the request should be "freed" by calling MPIDI_CH3_Request_free().
+ * MPIDI_CA_COMPLETE - The last operation for this request has completed.  The
+ * completion counter should be decremented.  If it has reached zero, then the
+ * request should be "freed" by calling MPID_Request_free().
  *
+ * MPIDI_CA_END_CH3 - This not a real action, but rather a marker.  All actions
+ * numerically less than MPID_CA_END are defined by channel device.  Any
+ * actions numerically greater than MPIDI_CA_END are internal to the channel
+ * instance and must be handled by the channel instance.
  */
 typedef enum
 {
-    MPIDI_CH3_CA_NONE,
-    MPIDI_CH3_CA_PROCESS_PKT,
-    MPIDI_CH3_CA_RELOAD_IOV,
-    MPIDI_CH3_CA_COMPLETE,
-# if defined(MPIDI_CH3I_CA_ENUM)
-    MPIDI_CH3I_CA_ENUM
+    MPIDI_CA_NONE,
+    MPIDI_CA_RELOAD_IOV,
+    MPIDI_CA_COMPLETE,
+    MPIDI_CA_END_CH3,
+# if defined(MPIDI_CH3_CA_ENUM)
+    MPIDI_CH3_CA_ENUM
 # endif
 }
-MPIDI_CH3_CA_t;
+MPIDI_CA_t;
 
 #define MPID_REQUEST_DECL						\
 struct MPIDI_Request							\
@@ -167,15 +170,12 @@ struct MPIDI_Request							\
 									\
     /* ca (completion action) identifies the action to take once the	\
        operation described by the iov has completed */			\
-    MPIDI_CH3_CA_t ca;							\
+    MPIDI_CA_t ca;							\
 									\
     /* tmp_buf and tmp_sz describe temporary storage used for things	\
-       like unexpected eager messages and packing/unpacking buffers.	\
-       pkt is used to temporarily store a packet header associated	\
-       with this request */						\
+       like unexpected eager messages and packing/unpacking buffers. */	\
     void * tmp_buf;							\
     long tmp_sz;							\
-    MPIDI_CH3_Pkt_t pkt;						\
 									\
     struct MPID_Request * next;						\
 } ch3;

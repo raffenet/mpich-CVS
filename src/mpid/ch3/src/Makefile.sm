@@ -1,9 +1,7 @@
-# lib${MPILIBNAME}_a_SOURCES = \
-#     mpid_init.c mpid_finalize.c mpid_send.c mpid_recv.c \
-#     ch3u_request.c
-
 lib${MPILIBNAME}_a_SOURCES = \
-    mpid_init.c mpid_finalize.c mpid_vcrt.c
+    mpid_init.c mpid_finalize.c mpid_vcrt.c \
+    mpid_send.c mpid_recv.c \
+    ch3u_request.c ch3u_handle_pkt.c ch3u_handle_req.c
 
 INCLUDES = -I../include -I${top_srcdir}/include \
            -I../../../include -I${master_top_srcdir}/src/include

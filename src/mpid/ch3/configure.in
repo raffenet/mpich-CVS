@@ -17,6 +17,8 @@ echo "RUNNING CONFIGURE FOR DEVICE CH3"
 AC_ARG_WITH(device,
 [--with-device=name - Specify the communication device for MPICH.],,
 with_device=default)
+AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
+CFLAGS="$CFLAGS -O -Wall -Wstrict-prototypes -Wmissing-prototypes")
 
 dnl Extract the device and channel name from the --with-device argument
 if test "$with_device" = "default" ; then
