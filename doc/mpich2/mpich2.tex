@@ -40,6 +40,8 @@ Argonne National Laboratory}{00}{\today}
 \raggedright
 % raggedright resets parindent
 \parindent 1em
+% no parskip when parindent used
+\parskip 0pt
 \pagenumbering{arabic}
 \pagestyle{headings}
 
@@ -89,7 +91,6 @@ miscellaneous rationale for the decisions in this document
 
 This section contains general recommendations and requirements for
 writing the code.  
-
 This section starts with a discussion of the directory structure for the
 MPICH2 project; this introduces the logical decomposition of components of the
 MPICH implementation.  This decomposition makes it easier to experiment with
@@ -292,6 +293,11 @@ because an MPI implementation is not complete without these components.
     \item[installguide]
     \item[mpich2] (This document.)
     \item[adi3]
+    \item[mansrc] Contains source files for creating manual pages.  This 
+    directory is \emph{not} part of the regular distribution but is delivered 
+    on request.  The reason for this is to encourage those that are
+    building on MPICH to let us know about their work.
+   
   \end{description}
 
 
@@ -375,7 +381,7 @@ One of the greatest challenges will be maintaining modularity of the source
 code.  Here are a few guidelines.
 
 \begin{description}
-\item[mpich/src/include]: This should be the home only for files that are
+\item[mpich/src/include] should be the home only for files that are
   common to 
 the implementation of the routines in \file{mpich/src/mpi}, and should not be
 the 
@@ -392,12 +398,13 @@ module), you can use the per thread or per process blocks in
 BNR, 
 or the timer, should use their own structures to hold global variables. 
 
-\item[mpich/configure.in]: This should have only the tests necessary for the
+\item[mpich/configure.in] should have only the tests necessary for the
   code in 
 \file{src/mpi}, excluding \file{src/mpi/timer} .  Any tests for
 device-dependent features 
 must be made in a configure within that particular device, using
-\code{AC_CONFIG_SUBDIRS} .  In particular, no tests for features needed by
+\code{AC_CONFIG_SUBDIRS} (the \code{configure} in the device directory
+is automatically invoked).  In particular, no tests for features needed by
 BNR, the 
 timer, or the device should be made here. 
 
@@ -415,44 +422,55 @@ The following is a sample implementation template for an MPI routine.
 This template should be used when a file is created that implements an
 MPI routine.  This file should be edited as appropriate for the
 routine.  To make it easier to identify which MPI routines have not
-yet been implemented, files should not be created for those routines.
+yet been implemented, files should not be created or built for those routines.
 % I thought that the above was obvious, but live and learn
 
 A few comments first:
 \begin{enumerate}
 \item The first line must set the C style.  Because of limitations in
 \code{emacs}, we settled on simply setting the indentation level.
-\item The comment block includes the copyright statement
+
+\item The comment block includes the copyright statement.
+
 \item The first C statement must be the include of \file{mpiimpl.h}.  This
   ensures that the configuration switches (in \file{mpichconf.h}) are set as
   well as all include files defining the various MPICH internals are loaded
   before any other statements are encountered.
+
 \item The profiling block comes next.  The comments must not be modified
   because they will be used if it is necessary to update this block of text (a
   program will look for these lines and update appropriately).
+
 \item The block after the profiling block (on \code{MPICH_MPI_FROM_PMPI})
   servies two purposes.  One is to define the MPI version of the routines if
   weak symbols are not supported.  The other is to include a single definition
   of an internal routine (included with the PMPI definition).
+
 \item The two lines the undefine \code{FUNCNAME} and then define
 \code{FUNCNAME} as \code{MPI_Foo} make it possible to create new names
 from the name of the function.  This can be helpful and is more
 general than the \code{const char FCNAME[]} that is defined to include
 the name of the routine.
+
 \item The structured comment block uses predefined text for the possible error
   classes.  These are specified as \code{.N name}, along with common text on
   errors \code{.N Errors}.
+
 \item The declaration of \code{FCNAME}\index{FCNAME} ensures that all macros and
 routines can easily access the name of the routine.  While some
 compilers (such as \code{gcc}) provide \code{__FUNCTION__} for this,
 that is not portable.
+
 \item 
 The first executable statement starts the timer (and in general,
 any profiling) for the routine.  This
   is a macro that will expand into the appropriate code, including no code for
   the fastest production version and logging code for SLOG output.
-  Since the intent is to bracket the body of the function, and to
+  Since the intent is to bracket the body of the function and to
   allow other more general operations, this is a macro.
+  The expansion of this macro is controlled by the
+  \cfgoption{--enable-timing} argument to \code{configure}.
+
 % [BRT] should this be more generic, such as MPID_MPI_FUNC_ENTER, to allow
 % more flexibility?  We should probably define a CPP macro with the name
 % of the function (in addition to defining the FCNAME variable) so that
@@ -460,9 +478,11 @@ any profiling) for the routine.  This
 % MPID_TimerStateBegin(MPID_STATE_MPI_FOO)
 % [WDG] I changed the names but I haven't added the CPP value for the
 % function name.
+
 \item Routines of the form \code{MPID_Xxx_get_ptr} return the pointer
 for an opaque handle.  These do no (or limited) error checking (see
 \code{MPID_Comm_valid_ptr} below).
+
 \item The actual error checks are guarded by both a compile-time test and a
   runtime test.  Note that only at the end of the list is an error return
   issued (this allows us to consider adding code to catch \emph{all}
@@ -474,6 +494,8 @@ for an opaque handle.  These do no (or limited) error checking (see
   local to the block.  Similarly, a block is explicitly shown for the
   \code{MPID_BEGIN_ERROR_CHECKS} to \code{MPID_END_ERROR_CHECKS} to
   visually set off this code from the surrounding code.
+  The expansion of this macro is controlled by the
+\cfgoption{--enable-error-checking} to \code{configure}.
 % [BRT] for CPP conditions in the code, I like to see the statements indented
 % along with the code.  Also, for macros that begin and end blocks, I like to
 % see a explicit block created.  For example:
@@ -487,19 +509,23 @@ for an opaque handle.  These do no (or limited) error checking (see
 %         MPID_END_ERROR_CHECKS;
 %     }
 % #   endif /* defined(HAVE_ERROR_CHECKING) */
+
 \item Pointers to opaque objects are validated with macros of the
 form \code{MPID_Xxx_valid_ptr}.  This sets the second argument with an
 error message if the pointer is not valid, and also resets the pointer
 to null. 
+
 \item Error codes are generated with \code{MPIR_Err_create_code}.  These use
   predefined name strings (see error reporting in the ADI manual and
 Appendix~\ref{sec:error-codes}). 
+
 \item If an error is detected, the proper error handler is invoked
 with \code{MPID_Err_return_xxx}, where \code{xxx} is either
 \code{comm}, \code{win}, or \code{file} (the MPI objects with attached
 error handlers).  If the object pointer is \code{NULL}, the
 appropriate error handler will be used (usually the handler on
 \code{MPI_COMM_WORLD} or \code{MPI_FILE_NULL}).
+
 \item The example shows the use of MPID routines to lock the communicator
   against other threads.  As with the error checking code above, a
 block is used to visually indicate the extent of the code that is
@@ -683,7 +709,10 @@ are passed to \code{simplemake} through its command line; this is done in the
 \subsection{Include Files}
 The include file \file{mpi.h} should not require any \code{-Dxxx}
 definitions by the compiler.  This will require generating the
-\file{mpi.h} from another file.
+\file{mpi.h} from another file in order to handle, for example, the
+definitions of types such as \code{MPI_Aint} that depend on the
+characteristices of the particular system.
+
 % (and probably not using \code{configure} and an
 %\file{mpi.h.in}).  
 It should not include any other
@@ -798,9 +827,14 @@ is set in \code{configure}.
 Some sets of routines need a variable that persists between calls.
 Rather than make the variable a global variable, it should become a
 \code{static} variable in a file, where if possible the variable is used
-entirely within that file (e.g., a file of utility routines).  If that is not
-possible, then it should be accessed through \code{MPIR_} or \code{MPID_}
-routines.  
+entirely within that file, such as a file of utility routines.  See
+\file{mpidtimer.c} for another example in the support for the Windows
+high-resoultion timer, where a static variable is used to hold the
+clock frequency.  If it is not possible to keep the variable within
+the file or module, then it should be accessed through \code{MPIR_} or
+\code{MPID_} 
+routines.  However, wherever possible, keep the varibles within the
+defining module (e.g., \file{timer}, \file{topo}, etc.).
 
 % Rather than 
 % make the variable truly global, we could use \code{static} to
@@ -835,10 +869,16 @@ is necessary since object libraries usually store files by name only, ignoring
 the directory.  For include files, using unique names aids in identifying
 exactly which include file was used.
 
+Even distinct modules (such as different implementations of a process
+manager) should use different names to allow the runtime-choice of
+module from within a single executable (without dynamically loaded
+shared libraries).
+
 \subsection{MPI Opaque Objects}
 \label{sec:mpi-opaque}
 Most objects in MPI (with the exception of \mpifunc{MPI_Status}) are
-opaque.  In the MPICH2 implementation, opaque objects are represented
+opaque to the MPI programmer.  In the MPICH2 implementation, opaque
+objects are represented 
 by integers.  This simplifies the implementation of the functions for
 transfering handles between C/C++ and Fortran.  
 
@@ -896,11 +936,11 @@ currently do not include \mpiconst{MPI_Request} because there is a
 premium on efficiency for creating and deleting requests; these other
 objects do not require extremely fast creation.
 
-Nomenclature is subject to change.
+% Nomenclature is subject to change.
 
-Different architectures have ints of varied sizes, so we must rely on
-\code{sizeof(int)} to determine what we have to work with.  However,
-we will assume for now that an \code{int} is at least 32 bits.
+% Different architectures have ints of varied sizes, so we must rely on
+% \code{sizeof(int)} to determine what we have to work with.  However,
+% we will assume for now that an \code{int} is at least 32 bits.
 
 There are 4 kinds of handles.  These are indicated by two bits in the
 31,30 (from 0) location.
@@ -928,18 +968,18 @@ bad parameters passed to us (although negative ints won't be caught).
 
 The next four highest bits will encode the MPI type stored:
 \begin{description}
-\item[\code{MPI_Comm}]     (0000) \mpidconst{MPID_COMM}
+\item[\code{MPI_Comm}]     (0001) \mpidconst{MPID_COMM}
 \item[\code{MPI_Group}]    (0001) \mpidconst{MPID_GROUP}
-\item[\code{MPI_Datatype}] (0010) \mpidconst{MPID_DATATYPE}
-\item[\code{MPI_File}]     (0011) \mpidconst{MPID_FILE}
-\item[\code{MPI_Errhandler}](0100) \mpidconst{MPID_ERRHANDLER}
-\item[\code{MPI_Op}]       (0101) \mpidconst{MPID_OP}
-\item[\code{MPI_Info}]     (0110) \mpidconst{MPID_INFO}
-\item[\code{MPI_Win}]      (0111) \mpidconst{MPID_WIN}
-\item[keyval]              (1000) \mpidconst{MPID_KEYVAL}
+\item[\code{MPI_Datatype}] (0011) \mpidconst{MPID_DATATYPE}
+\item[\code{MPI_File}]     (0100) \mpidconst{MPID_FILE}
+\item[\code{MPI_Errhandler}](0101) \mpidconst{MPID_ERRHANDLER}
+\item[\code{MPI_Op}]       (0110) \mpidconst{MPID_OP}
+\item[\code{MPI_Info}]     (0111) \mpidconst{MPID_INFO}
+\item[\code{MPI_Win}]      (1000) \mpidconst{MPID_WIN}
+\item[keyval]              (1001) \mpidconst{MPID_KEYVAL}
 \end{description}
-MPI \code{keyval}s are defined as type integer, but each keyval is associated
-with a structure.  
+(MPI \code{keyval}s are defined as type integer, but each keyval is associated
+with a structure.)
 The macro \code{HANDLE_MPI_TYPE(id)} returns this value as an integer in
 the range $0$--$15$.  The names belong to the enum type
 \mpidconst{MPID_Object_kind}. 
@@ -948,21 +988,23 @@ Note that by using \code{HANDLE_INVALID} along with the MPI handle
 kinds defined above, we can create values for \code{MPI_xxx_NULL} that
 are distinct from \code{MPI_yyy_NULL}.  E.g., 
 \begin{description}
-\item[\code{MPI_COMM_NULL}]       \code{0x00000000}
-\item[\code{MPI_GROUP_NULL}]      \code{0x04000000}
-\item[\code{MPI_TYPE_NULL}]       \code{0x08000000}
-\item[\code{MPI_FILE_NULL}]       \code{0x0c000000}
-\item[\code{MPI_ERRHANDLER_NULL}] \code{0x10000000}
-\item[\code{MPI_OP_NULL}]         \code{0x14000000}
-\item[\code{MPI_INFO_NULL}]       \code{0x18000000}
-\item[\code{MPI_WIN_NULL}]        \code{0x1c000000}
-\item[\code{MPI_KEYVAL_INVALID}]  \code{0x20000000}
+\item[\code{MPI_COMM_NULL}]       \code{0x04000000}
+\item[\code{MPI_GROUP_NULL}]      \code{0x08000000}
+\item[\code{MPI_DATATYPE_NULL}]   \code{0x0c000000}
+\item[\code{MPI_FILE_NULL}]       \code{0x10000000}
+\item[\code{MPI_ERRHANDLER_NULL}] \code{0x14000000}
+\item[\code{MPI_OP_NULL}]         \code{0x18000000}
+\item[\code{MPI_INFO_NULL}]       \code{0x1c000000}
+\item[\code{MPI_WIN_NULL}]        \code{0x20000000}
+\item[\code{MPI_KEYVAL_INVALID}]  \code{0x24000000}
 \end{description}
-(In fact, to make \code{MPI_COMM_NULL} different from zero, we should
-either move make \code{MPID_COMM} have the value \code{1001} or add
-some bits in the remainder of the handle.
 
-For a 32 bit integer, there are 27 bits remaining (59 in a 64 bit integer).
+% (In fact, to make \code{MPI_COMM_NULL} different from zero, we should
+% either move make \code{MPID_COMM} have the value \code{1001} or add
+% some bits in the remainder of the handle.
+
+For a 32 bit integer, there are 27 bits remaining.
+% (59 in a 64 bit integer).
 The use of these bits depends on the kind of handle.  For handles to
 builtin objects, we have the following:
 
@@ -970,18 +1012,22 @@ builtin objects, we have the following:
 \item[Datatypes]
 There are more than 32 but less than 64 predefined datatypes, so 6 bits are
 adequate to encode all of the predefined datatypes.
-Note that C2000 adds another 31 types, so we will need 7 bits eventually.
-That leaves us at least 5 bits
-(usually 21) to specify the size.  We'll be specifying size in bytes,
+Note that C2000 adds another 31 types to the C language, so if MPI 2.x
+defines corresponding types, we will need 7 bits eventually.
+That leaves us at least 21 bits
+to specify the size.  We'll be specifying size in bytes,
 which will be adequate (if long double is 16 bytes, then the long complex and
-long-double-int types may be 32 bytes, but on these systems, sizeof(int) will
+long-double-int types may be 32 bytes, but on these systems,
+\code{sizeof(int)} will
 be at least 32 bits, leaving us enough room for the size of these longer
 types). 
 
 \item[Groups and Communicators]
 For predefined Groups and Communicators we simply use the remaining bits
 to specify the particular group/communicator (e.g. \code{MPI_COMM_WORLD}) and 
-either the rank of the process or the size (or both!).  
+either the rank of the process or the size (or both!).  No decision
+has been made on this yet.
+
 % Actually, for
 % small integers we  
 % might not have enough bits, so we should think about this a little
@@ -997,7 +1043,12 @@ invocation).
 \item[Info] There are no builtin \code{MPI_Info} objects.
 \item[Win] There are no builtin \code{MPI_Win} objects.
 \item[File] There are no builtin \code{MPI_File} objects.
-\item[Keyval] There are no builtin keyval objects.
+\item[Keyval] There are a number of predefined keyvals, but these are
+rarely used items and there is no advantage to be gained in treating
+them specially\footnote{One exception would be minimizing the size of
+an executable while still providing the predefined keyvals in an
+application that created no new keyvals, and hence needs no support
+for user-defined keyvals or attributes.}
 \end{description}
 
 The last two handle types point at other storage where the object is
@@ -1009,6 +1060,18 @@ This table should be
 a memory page or two in size, 
 minus estimated \code{malloc} overhead (if we dynamically allocate).
 The macro \code{HANDLE_INDEX(id)} returns this index value.
+Figure~\ref{fig:handle-direct} shows
+
+\begin{figure}
+%\centerline{\psfig{file=direct.eps,width=4in}
+\begin{verbatim}
+standin for a figure showing preallocated array of objects and
+avail pointer.
+\end{verbatim}
+\caption{Data structure for converting a direct handle into a
+particular statically allocated object.}
+\label{fig:handle-direct}
+\end{figure}
 
 For indirectly accessed values (\mpidconst{HANDLE_KIND_INDIRECT}) the
 remaining bits specify an allocated block 
@@ -1022,13 +1085,14 @@ return these values.
 Figure~\ref{fig:indirect} illustrates how the indirect handles are managed.
 This approach allows a modest number of objects to be preallocated and
 additional elements to be allocated dynamically as required.  More
-details on this is described below under \textbf{Memory Management for
+details on this is described below under
+Section~\ref{sec:handle-mem-mng}, \textbf{Memory Management for 
 Handles}. 
 
 \begin{figure}
 \centerline{\psfig{file=indirect.eps,width=4in}}
 \caption{Data structures for converting an indirect handle into a particular
-  dynamically allocated object}
+  dynamically allocated object.}
 \label{fig:indirect}
 \end{figure}
 
@@ -1050,16 +1114,21 @@ Be sure to increment and decrement the reference count as necessary,
 using the routines for atomically modifying the reference count (i.e.,
 \code{MPIU_Object_add_ref} or \code{MPIU_Object_release_ref}). 
 
-Question: are there any objects where some elements might not have
-pointers?  For example, if basic datatypes are encoded into the
-handle, there is no need to have an object to point to.  Current
-thinking on this is that there should be such an object, even if it is
-rarely referred to, just to allow code to work with the single general
-case if it chooses to.  Note that in the case of datatypes, MPI-2
-specifies routines to set the name of a datatype; these routines can
-be applied to the basic datatypes, requiring at least some of the
-members of the \code{MPID_Datatype} structure be maintained even for
-the basic datatypes.
+% Question: are there any objects where some elements might not have
+% pointers?  For example, if basic datatypes are encoded into the
+% handle, there is no need to have an object to point to.  Current
+% thinking on this is that there should be such an object, even if it is
+% rarely referred to, just to allow code to work with the single general
+% case if it chooses to.  Note that in the case of datatypes, MPI-2
+% specifies routines to set the name of a datatype; these routines can
+% be applied to the basic datatypes, requiring at least some of the
+% members of the \code{MPID_Datatype} structure be maintained even for
+% the basic datatypes.
+
+Also note that most objects have features that require a full
+representation, even for the predefined objects.  For example,
+datatypes can have names (see \mpifunc{MPI_Type_get_name}), even the
+predefined types.
 
 \subsubsection{Required Structure Layout for Objects}
 Each object is described by a struct that contains object-specific
@@ -1069,25 +1138,28 @@ count update routines, the first two members of all objects are
 defined by
 \begin{verbatim}
 typedef struct {
-    int id;
+    const int id;
     volatile int ref_count;
 } MPIU_Handle_head;
 \end{verbatim}
 (Objects that do not have reference count semantics do not have the
 \code{ref_count} field.)  The \code{id} is the handle value for the
-object and the \code{ref_count} is the reference count.
+object and the \code{ref_count} is the reference count.  It is fixed
+once the object is allocated, and so is declared \code{const}.
 
 Objects that are unused and available for allocation have a slightly
 different header:
 \begin{verbatim}
 typedef struct {
-    int  id;
+    const int  id;
     void *next;   /* Free handles use this field to point to the next
                      free object */
 } MPIU_Handle_common;
 \end{verbatim}
+All objects are large enough to contain this structure.  
 
 \subsubsection{Memory Management for Handles}
+\label{sec:handle-mem-mng}
 Because handles are not pointers, we need an easy way to find the
 memory block that contains the data to which the handle refers.  
 This is done though a combination of preallocated and dynamically
@@ -1134,7 +1206,8 @@ while (ptr = avail) {
 The \code{asm} code is not correct and merely indicates the instructions
 needed; the \code{sete} instruction is used to set the flag if the compare and
 exchange (\code{cmpxchg}) succeeded.  The pseudoinstruction \code{lock} is
-actually an opcode prefix that causes the \code{cmpxchg} instruction to happen
+actually an IA32 opcode prefix that causes the \code{cmpxchg}
+instruction to happen 
 atomically (this is the default on some but not all Pentiums).  Finally,
 if \code{avail} is null this code falls through; that case requires special
 handling and is discussed below.
@@ -1166,10 +1239,11 @@ instruction, the pseudocode is
 As above, this \code{asm} code is not correct but simply sketches the
 operations that are necessary.  Similar code is used to free an object.
 
-In both of these cases, the \mpids{MPIR_Process}{allocation_lock} is still
+In both of these cases, a lock is still
 needed when allocating new blocks of storage; this code is invoked when a
 thread detects that \code{avail} is \code{NULL}.  A sketch of the appropriate
-code is
+code, using the \mpids{MPIR_Process}{allocation_lock} in
+\code{MPIR_Process} is, 
 \begin{verbatim}
    top:
    <appropriate code from above>
@@ -1230,12 +1304,23 @@ no runtime control) or
 % the style of such blocks)
 % [WDG] We did something like this in MPICH and I really didn't like it.
 
-There must be a configure option,
+There is a configure option,
 \cfgoption{--disable-error-checking},  
 that prevents \code{HAVE_ERROR_CHECKING} from being defined.  The
 \cfgoption{--enable-error-checking} 
-takes the argument \texttt{all} (and \texttt{runtime} as a synonym) to allow
-runtime control (otherwise, error checking is always on).
+takes the arguments
+\begin{description}
+\item[all]For all options, that is, runtime control over error checking
+\item[runtime]A synonym for \code{all}
+\item[always]Error checking is always on (no runtime control)
+\item[no]Disables all error checking
+\end{description}
+
+\mpidfunc{MPIR_Init_thread} calls \mpidfunc{MPIR_Err_init}.  This
+routine is responsible for setting the value of
+\code{MPIR_Process.do_error_checks} when there is runtime control over
+error checking.
+
 
 \subsubsection{Errors to test for}
 Most values should be tested to ensure that they are in-range.  For example,
@@ -1287,12 +1372,13 @@ error handler.
 \begin{enumerate}
 \item If still in the initialization step (e.g., within
 \mpifunc{MPI_Init_thread}), errors invoke a special pre-initialization error
-handler. (\textbf{What is it?})  This handler may either abort or
+handler named \mpidfunc{MPIR_Err_preinit}.  This handler may either abort or
 return; by default, it will abort. 
 A return may be prefered for some fault-tolerant applications.
 
 \item Check if executing inside a layered routine (i.e., an MPI routine called
-  within the implementation of another MPI routine).  If so, return error
+  within the implementation of another MPI routine).  If so, return
+  the error
   code; do not invoke the error handler.  See
   Section~\ref{sec:err-handling-nested}; the \code{MPIR_Err_return_xxx} routine
   makes this test.
@@ -1325,6 +1411,7 @@ communicator, file, or window can include the predefined name block
 \begin{verbatim}
 .N errhandler
 \end{verbatim}
+  (The text for the named documentation blocks is in \file{doc/mansrc}.)
 
 \item For MPI-IO, the default error handler is attached to
   \code{MPI_FILE_NULL} (see Section 9.7 in the MPI-2 standard: ``The default
@@ -1332,13 +1419,14 @@ communicator, file, or window can include the predefined name block
   \code{fh} argument to \mpifunc{MPI_FILE_SET_ERRHANDLER}'').  Note that this
   requires \mpifunc{MPI_FILE_SET_ERRHANDLER} and
   \mpifunc{MPI_FILE_GET_ERRHANDLER} to handle this special case for
-  \mpiconst{MPI_FILE_NULL}.  We also need either a full
-  \mpiconst{MPI_File} object associated with \mpiconst{MPI_FILE_NULL} or
-  the various associated properties.  It might be eaiser for the
-  implementation of \mpifunc{PMPI_File_set_errhandler} and
-  \mpifunc{PMPI_File_get_errhandler} to be in the same file and share a
-  static variable (see Section~\ref{sec:pmpi-routines}) such as
-  \mpidconst{MPIR_File_errhandler}. 
+  \mpiconst{MPI_FILE_NULL}.  
+%   We also need either a full
+%   \mpiconst{MPI_File} object associated with \mpiconst{MPI_FILE_NULL} or
+%   the various associated properties.  It might be eaiser for the
+%   implementation of \mpifunc{PMPI_File_set_errhandler} and
+%   \mpifunc{PMPI_File_get_errhandler} to be in the same file and share a
+%   static variable (see Section~\ref{sec:pmpi-routines}) such as
+%   \mpidconst{MPIR_File_errhandler}. 
 \end{enumerate}
 
 When the object holding the correct error handler has been determined, it
@@ -1369,7 +1457,8 @@ PMPI) routines.  In these cases, it is important for any error handler
 ``top-level'' routine.  
 This is managed by maintaining a per-thread nesting level.  Before an error
 handler is invoked, the nesting level is tested.  If the level is different
-from zero, the error code is returned.  The interface is
+from zero, the error code is returned.  The interface to update and
+get the nesting values is
 \index{MPIR_Nest_incr}\index{MPIR_Nest_decr}\index{MPIR_Nest_value}
 \begin{verbatim}
 void MPIR_Nest_incr(void)
@@ -1433,6 +1522,9 @@ typedef struct {
     int               do_error_checks;  /* runtime error check control */
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */
+    MPID_Comm         *comm_parent;     /* Easy access to the parent
+                                           of comm_world, if any (null
+                                           if none) */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
@@ -1466,22 +1558,23 @@ routines.
 \label{sec:builtin-timing}
 All programs should contain basic timing and usage instrumentation.  This
 section describes the MPICH approach.
-There are two basic types of profiling: state recording, ala SLOG, and
+There are two basic types of profiling: state recording, ala SLOG
+\cite{slog}, and 
 statistics gathering.  States are assumed to be nested (within a
 thread) while statistics can be collected anywhere.  In fact, the
 state recording calls also collect statistics, allowing a build to
 choose between full state logging, simple statistics collection, and
 no data collection at all.  Separate statistics-collection calls are
-provide to augment, not replace, the state recording calls.
+provided to augment, not replace, the state recording calls.
 
 \subsubsection{Basic Timer Routines.}
 These provide a basic mechanism for accessing a fast timer.  The value of the
 timer is an opaque \emph{timestamp}; for example, it may be a simple cycle
-counter\footnote{A 64-bit counter so that rollover is not a problem}.  These
+counter\footnote{A 64-bit counter so that rollover is not a problem.}.  These
 are described in detail in the ADI3 document. 
 The routine \mpidfunc{MPID_Wtime_diff} converts the difference
-between two timestamps into a number of seconds (a \code{double}).  These
-provide the basic support for timing on a process.  
+between two timestamps into a number of seconds (as a \code{double}).  These
+provide the basic support for timing on a process.  The basic routines are
 
 \begin{verbatim}
 typedef ... MPID_Time_t;
@@ -1503,7 +1596,8 @@ simply
 (See questions in the ADI document on whether these should be explicitly
 pointers or if values are prefered.)
 
-Note that these timers should normally not be used directly; instead,
+Note that these timers should normally not be used directly in most
+code; instead, 
 the timer macros \code{MPID_TimerStateBegin} and
 \code{MPID_TimerStateEnd} should be used.  
 
@@ -1543,8 +1637,12 @@ bitwise tests on a 32 bit \code{unsigned int}).  Instrumentation can be
 controlled:
 \begin{description}
 \item[at compile time]with the \cfgoption{--enable-timing} configure flag.
-% Options to this can restrict timing code to particular classes, e.g.,
-% enable-timing=all,class=pt2pt,class=coll.
+ Options to this can restrict timing code to particular classes, e.g.,
+ enable-timing=all,class=pt2pt,class=coll.  These are implemented by
+ defining the class as \code{MPID_STATE_CLASS_xxx} before including
+ \file{mpiimpl.h}, and having code in \file{mpiimpl.h} check the class
+ when defining these macros.
+
 \item[at run time]with the \code{MPICH_TIMING} environment variable or
   \code{-mpich-timing} command line argument; the value is a string of timing
   class names.
@@ -1560,7 +1658,8 @@ and separate entries for each place where the code waits.  For example,
 In addition, nontrivial system calls should be timed because they can
 sometimes take surprising amounts of time (e.g., \code{gethostbyname}).
 These can be timed using the same macros, with state names that include the
-function name (e.g., \code{MPID_STATE_SYS_GETHOSTBYNAME}).
+function name (e.g., \code{MPID_STATE_SYS_GETHOSTBYNAME}).  The state
+names for all system routines start with \code{MPID_STATE_SYS_}.  
 
 While it would be nice to dynamically allocate the state ids, this part of the
 code should be fast; this argues for predefined state numbers
@@ -1635,16 +1734,25 @@ The definitions of these macros allow for thread-safe
 implementations.  For example,
 \begin{description}
 \item[\code{MPID_STAT_BEGIN}]Allows for a thread lock; it can also find the 
-per-thread data block containing statistics information. 
+per-thread data block containing statistics information.  This does
+not guarantee a thread lock, only that the update routines (e.g.,
+\code{MPID_STAT_ACC}) are atomic.  For example, if the accumulate
+functions can be implemented atomically without a lock, they may be.
+This macro allows a single lock to be used \emph{if necessary}, rather
+than a lock ofr each item updated.
+
 \item[\code{MPID_STAT_ACC}]Accumulates an integer value into a predefined
 \code{statid}.  This can be as simple as a sum or can include code to
 track maximum and minimum values, standard deviations, or even
 histograms. 
+
 \item[\code{MPID_STAT_ACC_RANGE}]Accumulates an integer value that
 represents a single value in a range.  The purpose of this is to keep
 which values are used, and how many times they are used (e.g.,
 file \code{fd}s).
+
 \item[\code{MPID_STAT_END}]Allows for the release of a thread lock.
+
 \item[\code{MPID_STAT_ACC_SIMPLE}]is a short-hand for 
 \begin{verbatim}
     #ifdef COLLECT_STATS
@@ -1659,6 +1767,7 @@ file \code{fd}s).
 \end{verbatim}
 This is appropriate for cases where only a single value is being
 collected.
+
 \item[\code{MPID_STAT_MISC}]includes the statement only if
 \code{COLLECT_STATS} is defined.  This is useful for declaring and
 initializing local variables that may be used to update a statistics
@@ -1670,7 +1779,8 @@ only if the update operations require
 them; an alternative is to use atomic update or assembly code that
 exploits load-link/store-conditional instructions.  Arranging the code
 this way abstracts out the use of thread locks so that they can be
-avoided where they aren't needed.
+avoided where they aren't needed.  It also allows mulitple \code{STAT}
+values to be handled with a single lock.
 
 The value of \code{statid} is of the form \code{MPID_STAT_ID_xxx}.  These are
 constant values that are set in the file \file{mpistat.h}.  We may provide a
@@ -1697,8 +1807,8 @@ statistics values.  In a single-threaded implementation, these routines are
 effectively no-ops.  
 In order to make use of tools such as the Alice Memory Snooper
 (\url{www.mcs.anl.gov/AMS}), we will need to provide a generic locking
-mechanism for the statistics, somewhat separate from the thread locks.  This
-still needs work.
+mechanism for the statistics, somewhat separate from the thread locks.  
+%This still needs work.
 
 \subsection{Memory Allocation}
 As a software package, MPICH should minimize the perturbation of the user's
@@ -1722,10 +1832,14 @@ arrays needed for MPI indexed datatypes and info value strings.
 
 Memory allocation follows the usual rules for a separate subpackage: there are
 initialization routines and a registered routine to be called in
-\mpifunc{MPI_Finalize}. (See Section~\ref{sec:finalize}.)  This end-of-job
+\mpifunc{MPI_Finalize}. (See Section~\ref{sec:finalize}.)  
+This end-of-job
 handler must call the 
 routine \mpidfunc{MPIU_Trdump} if the runtime parameter
-\code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  
+\code{MPICH_TRDUMP}\eindex{MPICH_TRDUMP} is set.  This routine
+provides information on any memory that is still allocated; using this
+routine allows us to check for memory leaks without using any special
+third-party software, and it works on any platform.
 
 % Question: Should there be separate per-thread and per-process memory
 % allocators? (answer: Per process only)
@@ -1748,7 +1862,7 @@ allocations are freed before an error return.
 % a routine so that out-of-memory errors can be cleanly handled (e.g., freeing
 % all memory allocated within the routine)?  
 
-This could have something like
+The definition is 
 \begin{verbatim}
 #define MAX_MEM_STACK 16
 typedef struct { int n_alloc; void *ptrs[MAX_MEM_STACK]; } MPIU_Mem_stack;
@@ -1762,7 +1876,7 @@ memory.  The memory allocator could be
 #define MALLOC_STK(n,a) {a=MPIU_Malloc(n);\
                if (memstack.n_alloc >= MAX_MEM_STACK) abort(implerror);\
                memstack.ptrs[memstack.n_alloc++] = a;}
-#define FREE_STK     {int i; for (i=memstack.n_alloc-1;i>=0;i--) {\
+#define MALLOC_STK_FREE     {int i; for (i=memstack.n_alloc-1;i>=0;i--) {\
                MPIU_Free(memstack.ptrs[i]);}}
 #define MALLOC_STK_INIT memstack.n_alloc = 0
 #define MALLOC_STK_DECL MPIU_Mem_stack memstack
@@ -1779,17 +1893,17 @@ declared within the routine.  A typical use might be
     ...
     MALLOC_STK(sizeof(MPID_Dataloop)*n,new->dataloops);
     if (!new->dataloops) {
-        FREE_STK;
+        MALLOC_STK_FREE;
         return MPIR_Err_return_comm( ... );
     }
     MALLOC_STK(m,new->other);
     if (!new->other) {
-        FREE_STK;
+        MALLOC_STK_FREE;
         return MPIR_Err_return_comm( ... );
     }
     ...
     if (count < 0) {
-        FREE_STK; 
+        MALLOC_STK_FREE; 
         return MPIR_Err_return_comm( ... );
     }
 \end{verbatim}
@@ -1856,15 +1970,17 @@ call across \code{MPI_COMM_WORLD}.  This allows an implementation to use one
 process to read the environment and any initialization file and then use MPI
 communication to communicate the parameters to other processes.  
 
-The routine \code{MPIU_Param_register} allows the MPICH implementation to
+The routine \code{MPIU_Param_register} allows the MPICH2 implementation to
 indicate which parameters are used and to provide a help string for each one.
-This allows an automated tool to compile a listing of such parameters and
+We will provide an automated tool to compile a listing of such parameters and
 allows \code{MPIU_Param_finalize} to identify unused command-line arguments
 (often misspellings of valid arguments).
 
 These routines return zero on success.  The routines that return the values of
-parameters return one if no value was specified (this allows a routine to
-determine if the default value was provided) and two on an error (such as an
+parameters return \code{MPIU_PARAM_OK} if no value was specified (this
+allows a routine to 
+determine if the default value was provided) and
+\code{MPIU_PARAM_ERROR} on an error (such as an
 integer value containing a non-digit).  These values are provided by
 \begin{verbatim}
 typedef enum { MPIU_PARAM_FOUND = 0, 
@@ -1884,8 +2000,8 @@ In fact, we may want to enforce the following order:
   line option to suppress reading of the configuration files.
 \item Use default (compile-time) value
 \end{enumerate}
-The configuration file is read once, by one process (at
-\code{MPI_Init} time).  
+The configuration file is read once (most likely by one process) at
+\code{MPI_Init} time.  
 
 Note that errors are indicated by a non-zero return from the routine.
 For example, if \mpidfunc{MPIU_Param_get_int} is called but the value
@@ -1924,8 +2040,8 @@ fourth argument.
 % would also allow text describing the parameter to be provided from
 % within the code.
 
-An alternative to \code{MPIU_Param_register} is to use a tool, similar to that
-for error reporting, that finds all uses of the parameter routines.
+% An alternative to \code{MPIU_Param_register} is to use a tool, similar to that
+% for error reporting, that finds all uses of the parameter routines.
 
 % For example, the pre-init routine code could read just a few environment
 % variables 
@@ -1945,15 +2061,19 @@ for commandline options and environment variables?
 \subsection{Threads}
 \label{sec:threads}
 All thread-related operations must not assume a particular thread
-package.  At least four different packages are of interest:
+package.  At least five different packages are of interest:
 \begin{enumerate}
 \item pthreads.  This provides a powerful model with reasonable
 portability to most Unix platforms, including Linux.  
+
 \item Solaris threads.
+
 \item Windows threads.  
+
 \item OpenMP threads.  OpenMP has a small set of thread runtime
 routines (such as lock/unlock), including the ability to run different blocks
 of code in different threads.
+
 \item No threads.  That is, a single-threaded implementation.  
 \end{enumerate}
 Solaris LWP (light-weight processes) may also be of interest.
@@ -1961,36 +2081,41 @@ There are some operations, such as condition variables, monitors, and
 thread-scheduling control, that may not be available (e.g., OpenMP
 has no condition variables).  
 
-Question: do we just want to emulate the missing operations, or (and?)
-do we want to know that they are missing so that an alternative
-approach can be taken?  For example, condition variables can be emulated using
-spinlocks, but not efficiently.  Instead of only providing a functional (but
-not performant) implementation of a condition variable, there should also be
-an indicator that the condition variable is emulated.
+For thread packages that do not provide all operations efficiently, we
+will want to have an indication of that fact.  For example, if
+condition variables are not provided any must be emulated by a spin
+loop, there should be a macro indicating that fact, such as
+\code{MPID_THREAD_EMULATE_COND_VAR}.  What these are and which we need
+will be decided as we implemente the code that needs these thread
+operations.
 
-Question: Where are the MPID versions of the thread operations?  What
-is the include file that contains the definition of these operations?
-What is the set of operations?  Note that in most cases, no thread
+The MPID versions of the thread operations are currently in 
+\file{include/mpiimpl.h} and
+\file{src/util/thread/gthread.c}.  The full set of operations has not
+been defined yet.  Note that in most cases, no thread
 operations should be used explicitly; instead, higher-level
 abstractions such as reference count increment and
 \code{MPID_Comm_thread_lock}. 
-Currently these are in \file{include/mpiimpl.h} and
-\file{src/util/thread/gthread.c}.  
 
 Note that threads may be used in two places.  One is in the
 implementation of the ADI, such as the use of a thread to provide for
 progress.  The other is the use of threads by the users application
 which requires that the MPI routines use compatible thread routines to
 provide for thread private storage.  To keep it simple, we require
-that only one thread package be chosen.
+that only one thread package be chosen.  A different MPICH must be
+built for each flavor of threads.  Fortunately, most systems provide
+only one or two flavors of threads.
 
 \subsection{Initialization and Finalization}
 \label{sec:initialization}
 In order to simplify the development of independent modules for parts
-of MPICH (such as the topology or collective routines),
-\code{MPI_Init} and \code{MPI_Init_thread} call a series of
+of MPICH (such as the topology or collective routines),  where
+possible, each module initializes itself on the first use (we call
+this \emph{lazy} initialization\index{lazy initialization}).  In cases
+where this is not possible, 
+\code{MPI_Init} and \code{MPI_Init_thread} may call a series of
 initialization routines for each such package (which may be a null
-macro if no initialization is required, such as with most timers).  To handle
+macro if no initialization is required).  To handle
 \code{MPI_Finalize}, each package can register an exit handler.  See
 Section~\ref{sec:finalize} for details.
 In general, lazy initialization is the goal, both to reduce the time
@@ -2022,18 +2147,21 @@ implementing the MPI Standard), \code{MPIR_} for internal routines
 used only in the MPICH (and not MPID) code, \code{MPIU_} for utility
 routines, and \code{MPID_} for all
 other internal routines.  
-Global symbols, such as device-specific keyvals, should use
+Global symbols visible to the MPI programmer, such as device-specific
+keyvals, should use 
 \code{MPICH_} as the 
-prefix.  Also consider the use of \code{inline}, along with the
-autoconf macro \code{AC_C_INLINE} to test for this feature.
+prefix.  Also consider the use of \code{inline} (\code{configure} uses the
+autoconf macro \code{AC_C_INLINE} to test for this feature, and
+defines \code{inline} as empty if it is not supported) with
+internal functions.
 
 \item[Parameter declarations.]
 Parameters (with the exception of the MPI routines defined by the
 standard) should follow the guidelines in \code{coding}
 \cite{coding-standards}.  In 
-particular, \code{const} and \code{restrict} should be used.
+particular, \code{const} and \code{restrict} should be used where appropriate.
 Parameters that are semantically arrays should be declared as arrays
-(using \code{[]}).  
+(using \code{[]}) rather than as pointers.
 
 \item[Indentation style.]
 A common indentation level of 4 is specified for all files.
@@ -2063,6 +2191,10 @@ that can be different from each developer's personnal style.
 % Comment [BRT]: Yes.  Having a style standard makes it much easier to
 % read and modify code written by others.
 
+\item[Source Formatting.] 
+Where possible, keep line lengths to 80 characters.  This permits
+side-by-side display on common displays.  
+
 \item[File header.]
 There is a standard file header contained within the sample template
 file \file{maint/template.c} that contains the copyright and
@@ -2070,7 +2202,8 @@ standardized includes (e.g., \file{mpiimpl.h}).
 
 \item[Function Name.]
 The function name is available as \code{FCNAME}.  Each routine is responsible
-for setting this variable; it should be of type \code{static const char[]}.
+for setting this variable; it should be of type \code{static const
+char[]}.
 % A configure test will
 % determine if \code{__FUNCTION__} is available as the value of this (e.g.,
 % \code{gcc} sets this value).  Note that PETSc uses \code{__FUNCTION__} on a
@@ -2120,7 +2253,8 @@ structure.  Global variables that may be widely used can be placed
 within the per process (\code{MPIR_Process}) or per thread
 (\code{MPIR_Thread}) blocks.  Global variables that are needed only
 within a subsystem should, of course, be defined only within that
-subsystem (collected into a structure as appropriate).
+subsystem (collected into a structure as appropriate), and made
+\code{static} within a single file if possible and natural.
 
 Global variables should also be initialized to avoid problems with
 some object library formats\footnote{Uninitialized global variables
@@ -2151,7 +2285,9 @@ subsystem-dependent tests.
 
 Note that autoconf version 2 better handles communication options between
 modules, as long as the subsidiary module has its configure invoked using
-\code{AC_CONFIG_SUBDIRS}.  In addition, the changes to the autoconf
+\code{AC_CONFIG_SUBDIRS} and \code{PAC_SUBDIR_CACHE} is invoked first
+(this ensures that \code{AC_CONFIG_SUBDIRS} uses any information
+discovered by this code{configure}).  In addition, the changes to the autoconf
 macros defined in the \file{confdb} subdirectory correctly pass
 information to the subsidiary configures (unlike the stock
 \code{autoconf}).
@@ -2194,6 +2330,13 @@ Some issues that have come up:
   processor provides \code{xdr_longlong} or \code{xdr_hyper} (note that the
   XDR type ``hyper'' is defined as an 8-byte integer (see RFC1014) and should
   be available everywhere).
+
+  To solve the problem of matching XDR lengths to actual lengths,
+  partners should first negotiate a precision or length, and then
+  choose the corresponding XDR type.  In other words, we need to
+  introduce another level of indirection between the MPI datatypes and
+  the XDR types, rather than assuming that \code{MPI_INT} can be
+  represented by \code{xdr_int}.  
 
 \end{enumerate}
 
@@ -2264,6 +2407,14 @@ communicators, datatypes, and windows.  The information is accessed
 through a \emph{keyval} and consists of a single pointer or, in the
 Fortran 77 case, an integer.
 
+Attributes are implemented as a simple linear list on each
+communicator.  The major issue with the implementation of attributes
+is thread-safety: ensuring that valid updates to the attributes on the
+same communicator by different threads are performed correctly.  An
+example of valid updates by two threads is the deletion of different
+attributes; an example of an invalid update by two threads is the
+deletion of the same attribute.
+
 Error classes defined for keyvals and attributes:
 \mpiconst{MPI_ERR_KEYVAL} (note that this is new in MPI-2).
 
@@ -2276,13 +2427,15 @@ message.  For example, if \code{MPI_ATTR_DELETE} is called by the
 user and an error occurs when that routine calls
 \code{MPI_COMM_DELETE_ATTR}, then the error message returned to the
 user will indicate that the error occured in \code{MPI_ATTR_DELETE}, not
-\code{MPI_COMM_DELETE_ATTR}.
+\code{MPI_COMM_DELETE_ATTR}.  This is easily accomplished using the
+\mpidfunc{MPID_Nest_incr} and \mpidfunc{MPID_Nest_decr} functions.
 
 \subsubsection{\mpifunc{MPI_ATTR_DELETE}}
-Set error handler to return on error (see
+Increment the nest count (see
 Section~\ref{sec:err-handling-nested}).
 Call \mpifunc{PMPI_COMM_DELETE_ATTR}.
-Restore error handler and if an error, invoke the correct handler.
+Decrement the nest count.  
+If an error was found, invoke the correct handler.
 All layered calls manage the error handler in this way.
 
 \subsubsection{\mpifunc{MPI_ATTR_GET}}
@@ -2302,7 +2455,7 @@ The MPICH implementation treats attributes on communicators, windows,
 and datatypes in the same way, using the same structure
 (\code{MPID_Keyval}).  The keyval does retain the type of object for
 which the keyval was created in the \mpids{MPID_Keyval}{kind} field;
-however, this value is used only to check for user-errors and select
+however, this value is used only to check for user-errors and to select
 the appropriate function pointer on attribute copy or delete events.  
 Because most keyval operations are simple, a set of separate routines
 may not be necessary for most operations involving keyvals, with the
@@ -2311,7 +2464,7 @@ routines that invoke the attribute copy and delete functions.
 
 \subsubsection{\mpifunc{MPI_COMM_CREATE_KEYVAL}}
 Calls \mpidfunc{MPIU_Handle_obj_create} with object type
-\mpidconst{MPID_COMM}.  Fills in the fields of the returned
+\mpidconst{MPID_KEYVAL}.  Fills in the fields of the returned
 \code{MPID_Keyval} structure.  Returns the \mpids{MPID_Keyval}{id}
 value as the keyval.
 
@@ -2436,20 +2589,20 @@ See \mpifunc{MPI_COMM_DELETE_ATTR}.
 \label{sec:info}
 \paragraph{Info.}
 
-Error values defined for info:
-\mpiconst{MPI_ERR_INFO_KEY},
-\mpiconst{MPI_ERR_INFO_VALUE},
-\mpiconst{MPI_ERR_INFO_NOKEY}.
+Predefined info keys are (by module):
 
-Constants defined for info: 
-\mpiconst{MPI_MAX_INFO_KEY},
-\mpiconst{MPI_MAX_INFO_VAL}.
-Note that the MPI standard sets limits on the ranges that these can take.
-
-Predefined info keys are:
-\mpiconst{access_style}\index{MPI_Info!keys!access_style}, 
+Dynamic Processes:
 \mpiconst{appnum}\index{MPI_Info!keys!appnum}, 
 \mpiconst{arch}\index{MPI_Info!keys!arch}, 
+\mpiconst{host}\index{MPI_Info!keys!host}, 
+\mpiconst{ip_address}\index{MPI_Info!keys!ip_address}, 
+\mpiconst{ip_port}\index{MPI_Info!keys!ip_port}, 
+\mpiconst{path}\index{MPI_Info!keys!path}, 
+\mpiconst{soft}\index{MPI_Info!keys!soft}, 
+\mpiconst{wdir}\index{MPI_Info!keys!wdir}.
+
+Files:
+\mpiconst{access_style}\index{MPI_Info!keys!access_style}, 
 \mpiconst{cb_block_size}\index{MPI_Info!keys!cb_block_size}, 
 \mpiconst{cb_buffer_size}\index{MPI_Info!keys!cb_buffer_size}, 
 \mpiconst{cb_nodes}\index{MPI_Info!keys!cb_nodes}, 
@@ -2458,32 +2611,30 @@ Predefined info keys are:
 \mpiconst{chunked_size}\index{MPI_Info!keys!chunked_size}, 
 \mpiconst{collective_buffering}\index{MPI_Info!keys!collective_buffering}, 
 \mpiconst{external32}\index{MPI_Info!keys!external32}, 
-\mpiconst{false}\index{MPI_Info!keys!false}, 
 \mpiconst{file}\index{MPI_Info!keys!file}, 
 \mpiconst{file_perm}\index{MPI_Info!keys!file_perm}, 
 \mpiconst{filename}\index{MPI_Info!keys!filename}, 
-\mpiconst{host}\index{MPI_Info!keys!host}, 
 \mpiconst{internal}\index{MPI_Info!keys!internal}, 
 \mpiconst{io_node_list}\index{MPI_Info!keys!io_node_list}, 
-\mpiconst{ip_address}\index{MPI_Info!keys!ip_address}, 
-\mpiconst{ip_port}\index{MPI_Info!keys!ip_port}, 
 \mpiconst{native}\index{MPI_Info!keys!native}, 
 \mpiconst{nb_proc}\index{MPI_Info!keys!nb_proc}, 
-\mpiconst{no_locks}\index{MPI_Info!keys!no_locks}, 
 \mpiconst{num_io_nodes}\index{MPI_Info!keys!num_io_nodes}, 
-\mpiconst{path}\index{MPI_Info!keys!path}, 
 \mpiconst{random}\index{MPI_Info!keys!random}, 
 \mpiconst{read_mostly}\index{MPI_Info!keys!read_mostly}, 
 \mpiconst{read_once}\index{MPI_Info!keys!read_once}, 
 \mpiconst{reverse_sequential}\index{MPI_Info!keys!reverse_sequential}, 
 \mpiconst{sequential}\index{MPI_Info!keys!sequential}, 
-\mpiconst{soft}\index{MPI_Info!keys!soft}, 
 \mpiconst{striping_factor}\index{MPI_Info!keys!striping_factor}, 
 \mpiconst{striping_unit}\index{MPI_Info!keys!striping_unit}, 
-\mpiconst{true}\index{MPI_Info!keys!true}, 
-\mpiconst{wdir}\index{MPI_Info!keys!wdir}, 
 \mpiconst{write_mostly}\index{MPI_Info!keys!write_mostly}, 
-\mpiconst{write_once}.
+\mpiconst{write_once}\index{MPI_Info!keys!write_once}.
+
+RMA:
+\mpiconst{no_locks}\index{MPI_Info!keys!no_locks}.
+
+Predefined info values include:
+\mpiconst{true}\index{MPI_Info!values!true}, 
+\mpiconst{false}\index{MPI_Info!values!false}, 
 
 Note also that the interface to access the info values is not
 thread-safe, since it has the implicit assumption that the number of
@@ -2504,6 +2655,16 @@ helpful error messages in this case.  We may also want to add an
 extension that raises a special error code if a different thread
 modifies an \code{MPI_Info} while any of the routines with a notion of
 the ``current'' state of info are operating on it.
+
+Error values defined for info:
+\mpiconst{MPI_ERR_INFO_KEY},
+\mpiconst{MPI_ERR_INFO_VALUE},
+\mpiconst{MPI_ERR_INFO_NOKEY}.
+
+Constants defined for info: 
+\mpiconst{MPI_MAX_INFO_KEY},
+\mpiconst{MPI_MAX_INFO_VAL}.
+Note that the MPI standard sets limits on the ranges that these can take.
 
 \paragraph{Implementing Info.}
 There are two ways to handle \code{MPI_Info}.  One is to implement a general
@@ -2539,6 +2700,10 @@ could use processor-atomic operations to update the list without using locks.
 The descriptions below use the term ``lock'' only to indicate the need to
 perform the operations atomically.
 
+\paragraph{Memory Usage.}
+The info routines may use \mpidfunc{MPIU_Malloc} to allocate space in
+which to store the keys and values.  
+
 \subsubsection{\mpifunc{MPI_INFO_CREATE}}
 Call \mpidfunc{MPIU_Handle_obj_create}.
 
@@ -2558,16 +2723,18 @@ the lock is necessary.
 % \mpids{MPI_Info}{cookie} to make sure that the object is a valid (and
 % not a deleted) \mpiconst{MPI_Info} object.  The check happens within
 % the lock to ensure that the object is never deleted by another thread
-% between the check and acquring the lock.
+% between the check and acquiring the lock.
 The ``check that object is valid'' happens within
 the lock to ensure that the object is never deleted by another thread
-between the check and acquring the lock (this is a simple test to
-detect a user-error).  This is an optional test.  That is, it is shown here to
+between the check and acquiring the lock. This is a simple test to
+detect a user-error.  This is an optional test.  That is, it is shown here to
 indicate where the test should be placed for maximum effectiveness in catching
 thread-race conditions.
 
 \subsubsection{\mpifunc{MPI_INFO_DUP}}
-Note that this routine must be thread-safe.  This requires info routines that
+Note that this routine must be thread-safe; in particular, if one
+thread modifies the same info structure while another is dup'ing it,
+some valid info must be returned.  This requires info routines that
 modify the info structure or the list of key/value pairs to operate safely.
 Because none of the info routines are performance critical, and because none
 of these operations is very complex, using a single lock per \code{MPI_Info}
@@ -2641,7 +2808,7 @@ unlock info
 
 For applications that are accessing each element of an info list, this forces
 a complexity that is the square of the number of elements in the info list.  
-An alternative approach that is linear is described in the rationale.
+An alternative approach that is linear is described in the rationale (Section~\ref{sec:rationale}).
 
 \subsubsection{\mpifunc{MPI_INFO_GET_VALUELEN}}
 \begin{algorithm}
@@ -7977,6 +8144,14 @@ considered too ugly for words.
 
 \subsection{Opaque Handles}
 \label{sec:rationale-opaque-handles}
+
+Integers are used for opaque handles rather than addresses because
+Fortran integers may be smaller than addresses, and providing a
+mapping from integer address to pointer proved to be troublesome in
+MPICH-1.  In addition, using pointers can be risky, since a malformed
+value (for example, an out-of-position argument to an MPI routine) can
+cause a SEGV when used.  Using integers that encode the type and other
+data make it easier to detect user errors.
 
 The reason for the indirect blocks is to provide a balance between fast
 startup and small memory size and the ability to provide large numbers of

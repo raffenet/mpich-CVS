@@ -1,1 +1,7 @@
 MPILIBNAME  = @MPILIBNAME@
+#
+# Add the profiling definitions from the mpich2 document here?
+# Do we want to only add this for the mpi directories that will define
+# profing, perhaps by adding an 
+# "include mpiprof" to the Makefile.sm, and have simplemake handle these
+# includes?

@@ -158,7 +158,8 @@ operation can be implemented, even in a TCP/sockets environment.
 Unresolved questions on CH3:
 
 Who provides the queue manipulation routines (e.g., FOA)?  Is this part of the
-base set of CH3 routines, or is it an MPID routine?  
+base set of CH3 routines, or is it an MPID routine?  Or is it
+something in the middle?  
 
 Thread-safety of FOA (currently, inserted request must be marked as unready
 unless the other receive parameters are passed to FOA so that the request can
@@ -194,7 +195,7 @@ ____goals.tex____ MPID_Isend, MPID_Irecv, Progress routines ______
   packets
 
 
-____tcpaci3.tex____CH3_Writev, CH3_startmsgv ____________________
+____tcpadi3.tex____CH3_Writev, CH3_Startmsgv ____________________
 
 
      select                              owns/allocates
@@ -207,6 +208,14 @@ ____tcpaci3.tex____CH3_Writev, CH3_startmsgv ____________________
 \end{verbatim}
 
 \section{Pseudo-code for some of the \code{MPID_} routines}
+This section outlines the code for some of the major MPID routines.
+
+\subsection{Sending}
+The code for \code{MPID_Isend} is shown below.  The code for the other
+MPID send routines is similar, with the appropriate choice of eager
+(for rsend) or rendezvous (for ssend) operations.  Blocking and
+nonblocking versions differ only in whether a request is returned if
+the message is complete.
 
 \begin{verbatim}
 MPID_Isend( )
@@ -231,6 +240,9 @@ MPID_Isend( )
 }
 \end{verbatim}
 
+\subsection{Receiving}
+Both \code{MPID_Irecv} and \code{MPID_Recv} use similar code.
+
 \begin{verbatim}
 MPID_Irecv( )
 {
@@ -253,6 +265,54 @@ MPID_Irecv( )
 }
 \end{verbatim}
 
+Note that this code cannot avoid the allocation of a request, even in
+the case of \code{MPID_Recv} and the data is already available.  To
+optimize for low latency in the case of a small, contiguous transfer,
+we may want to have a version of \code{MPID_Recv} that looks something
+like
+\begin{verbatim}
+    if (datatype is contiguous and small &&
+        receive queue for this tag/context/source is empty &&
+        no active receive request) {
+        Try to read next packet
+        if (packet read) {
+            if (packet type is eager &&
+                MPI envelope matches this receive) {
+                transfer data to destination
+                if (transfer complete) return # null request since done.
+                else {
+                    create request, make active
+                    return request
+                }
+            }
+            else {
+                dispatch packet (e.g., same code as in progress engine)
+            }
+	} 
+    }
+    /* fall through in case we didn't receive the message */
+    MPID_Irecv( ... )
+\end{verbatim}
+An advantage of this is that it avoids both the need for allocating a
+request and it avoids calling the Progress routine (note that we must
+still ensure that the progress routine is called sufficiently often).
+The complicated tests are necessary to ensure that correct message
+ordering is preserved. Note that the test ``receive queue for this tag
+etc.'' need not be perfect in that false negatives (queue may be
+nonempty) are allowed, since this only drops the code into the
+\code{MPID_Irecv} case.  For example, a simple test to see if the
+queue is empty is sufficient.
+
+This example also serves to illustrate why the MPID interface includes
+blocking receive.
+
+\subsection{Completion}
+The ADI does not provide completion routines that correspond directly
+to the MPI completion routines (e.g., \code{MPI_Test}).  Instead,
+there are routines to make progress on communication.  To test whether
+a request is complete, the \mpids{MPID_Request}{busy} flag is checked.
+
+The progress routine may be implemented as
 \begin{verbatim}
 CH3_Progress_wait/test()
 {
@@ -457,5 +517,55 @@ advantages.  The quickest option is the first.
 \appendix
 \section{CH3 Routines}
 \label{app:ch3}
+
+This section provides pseudocode for a TCP implementation of the CH3
+routines.
+
+\subsection{iWrite}
+iWrite is called to continue a data transfer.  This is used by the
+segment processing code to handle the incremental packing and sending
+of noncontiguous datatypes.
+
+\begin{verbatim}
+CH3_iWrite( MPID_VC *, MPID_Request * )
+    if request is not the active request on this VC, internal error
+    try to write on fd associated with MPID_VC.  
+    record amount of data written in request.
+    If all data written
+        switch(request->state)
+            0: decrement request->busy and remove this request from
+               the active list
+            >0: invoke MPID_CH3_Request_update( request )
+    return
+\end{verbatim}
+The request update routine handles incremental packing; typically, it
+
+\begin{verbatim}
+CH3_iStartMsg( MPID_VC *, void *header, int header_count )
+\end{verbatim}
+
+\begin{verbatim}
+CH3_iStartMsgv( MPID_VC *, struct iovec *iov, int count )
+\end{verbatim}
+
+\begin{verbatim}
+CH3_iRead( MPID_VC *, MPID_Request * )
+\end{verbatim}
+
+\begin{verbatim}
+CH3_Progress( int is_blocking )
+\end{verbatim}
+
+\begin{verbatim}
+CH3_Init( )
+\end{verbatim}
+
+\begin{verbatim}
+CH3_Finalize( )
+\end{verbatim}
+
+\begin{verbatim}
+CH3_iPut( MPID_VC *, void *buf, int count, MPID_RemoteAddress offset )
+\end{verbatim}
 
 \end{document}

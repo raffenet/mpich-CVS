@@ -961,6 +961,8 @@ typedef struct {
        kind.  In particular, the user and persistent requests need
        special information */
     MPID_Segment segment;
+    MPID_Comm    *comm;   /* Originating Comm; needed to find error
+                             handler if necessary */
     /* other, device-specific information */
 } MPID_Request;
 
