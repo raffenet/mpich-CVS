@@ -37,7 +37,7 @@ Major Changes in This Version:
 
 * Added support (new ADIO device, ad_pvfs) for the PVFS parallel 
   file system for Linux clusters, developed at Clemson University
-  (see http://parl.clemson.edu/pvfs ). To use it, you must first install
+  (see http://www.parl.clemson.edu/pvfs ). To use it, you must first install
   PVFS and then when configuring ROMIO, specify "-file_system=pvfs" in 
   addition to any other options to "configure". You will need to
   specify the path to the PVFS include files via the "cflags" option to 
