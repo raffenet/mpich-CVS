@@ -81,11 +81,11 @@ fi
 # Sets F90MODINCFLAG (and adds it to the list substed)
 PAC_F90_MODULE
 if test "$pac_cv_f90_module_case" = "upper" ; then
-    MPIMOD=MPI
+    MPIMODNAME=MPI
 else
-    MPIMOD=mpi
+    MPIMODNAME=mpi
 fi
-AC_SUBST(MPIMOD)
+AC_SUBST(MPIMODNAME)
 #
 # For now, assume that all f90 compilers accept -I for include directories
 F90INC=-I
