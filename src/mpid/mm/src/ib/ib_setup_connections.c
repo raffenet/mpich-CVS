@@ -259,7 +259,7 @@ int ib_setup_connections()
 	ib->m_allocator = BlockAllocInit(IB_PACKET_SIZE, IB_PACKET_COUNT, IB_PACKET_COUNT, ib_malloc_register, ib_free_deregister);
 	ib->m_mr_handle = s_mr_handle; /* Not thread safe. This handle is reset every time ib_malloc_register is called. */
 	ib->m_polling = TRUE;
-	ib->m_max_wqes = 50;
+	ib->m_max_wqes = 255;
 	ib->m_mtu_size = 3; /* 3 = 2048 */
 
 	/* ***************************************** */
