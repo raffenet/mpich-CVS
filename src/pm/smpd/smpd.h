@@ -75,6 +75,7 @@ typedef int SMPD_BOOL;
 #define SMPD_DEFAULT_PASSPHRASE           "behappy" /* must be less than 13 characers */
 #define SMPD_DEFAULT_PASSWORD             "gastroduodenostomy"
 #define SMPD_REGISTRY_KEY                 "SOFTWARE\\MPICH\\SMPD"
+#define MPICH_REGISTRY_KEY                "SOFTWARE\\MPICH"
 #define SMPD_CRED_REQUEST                 "credentials"
 #define SMPD_NO_CRED_REQUEST              "nocredentials"
 #define SMPD_PWD_REQUEST                  "pwd"
@@ -118,6 +119,7 @@ typedef enum smpd_state_t
 {
     SMPD_IDLE,
     SMPD_EXITING,
+    SMPD_RESTARTING,
     SMPD_DONE,
     SMPD_CLOSING,
     SMPD_SMPD_LISTENING,
@@ -351,6 +353,8 @@ typedef struct smpd_global_t
     int  bNoTTY;
     int  bPasswordProtect;
     char SMPDPassword[100];
+    char passphrase[SMPD_PASSPHRASE_MAX_LENGTH];
+    SMPD_BOOL logon;
     char UserAccount[100];
     char UserPassword[100];
     int  cur_tag;
@@ -376,7 +380,7 @@ typedef struct smpd_global_t
     int use_process_session;
     int nproc;
     int verbose;
-    int shutdown, restart; /* built in commands */
+    int shutdown, restart, validate; /* built in commands */
 #ifdef HAVE_WINDOWS_H
     BOOL bOutputInitialized;
     HANDLE hOutputMutex;
@@ -396,6 +400,7 @@ typedef struct smpd_global_t
     HANDLE hBombThread;
 #endif
     SMPD_BOOL service_stop;
+    SMPD_BOOL noprompt;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -501,6 +506,17 @@ SMPD_BOOL smpd_search_path(const char *path, const char *exe, int maxlen, char *
 #ifdef HAVE_WINDOWS_H
 int smpd_process_from_registry(smpd_process_t *process);
 int smpd_process_to_registry(smpd_process_t *process, char *actual_exe);
+int smpd_clear_process_registry();
+int smpd_validate_process_registry();
+SMPD_BOOL smpd_setup_crypto_client();
+SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword);
+SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPassword, SMPD_BOOL persistent);
+SMPD_BOOL smpd_delete_current_password_registry_entry();
+int smpd_cache_password(const char *account, const char *password);
+SMPD_BOOL smpd_get_cached_password(char *account, char *password);
+int smpd_delete_cached_password();
 #endif
+int smpd_do_console();
+int smpd_restart();
 
 #endif

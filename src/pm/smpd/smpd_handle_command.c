@@ -197,7 +197,7 @@ int smpd_handle_result(smpd_context_t *context)
     int result, ret_val;
     char str[1024];
     char err_msg[SMPD_MAX_ERROR_LEN];
-    smpd_command_t *iter, *trailer;
+    smpd_command_t *iter, *trailer, *cmd_ptr;
     int match_tag;
     char ctx_key[100];
     int process_id;
@@ -316,19 +316,34 @@ int smpd_handle_result(smpd_context_t *context)
 		}
 		else if (iter->cmd_str[0] == 'd' && iter->cmd_str[1] == 'b')
 		{
-		    /*
-		    printf("dbs result matched, returning SMPD_DBS_RETURN.\n");
-		    fflush(stdout);
-		    */
 		    ret_val = SMPD_DBS_RETURN;
 		}
 		else if (strcmp(iter->cmd_str, "barrier") == 0)
 		{
-		    /*
-		    printf("barrier result matched, returning SMPD_DBS_RETURN.\n");
-		    fflush(stdout);
-		    */
 		    ret_val = SMPD_DBS_RETURN;
+		}
+		else if (strcmp(iter->cmd_str, "validate") == 0)
+		{
+		    /* print the result of the validate command */
+		    printf("%s\n", str);
+		    /* close the session */
+		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
+		    if (ret_val == SMPD_SUCCESS)
+		    {
+			ret_val = smpd_post_write_command(context, cmd_ptr);
+			if (ret_val == SMPD_SUCCESS)
+			{
+			    ret_val = SMPD_CLOSE;
+			}
+			else
+			{
+			    smpd_err_printf("unable to post a write of a done command.\n");
+			}
+		    }
+		    else
+		    {
+			smpd_err_printf("unable to create a done command.\n");
+		    }
 		}
 		else
 		{
@@ -1393,6 +1408,90 @@ int smpd_handle_abort_command(smpd_context_t *context)
     return SMPD_EXIT;
 }
 
+int smpd_handle_validate_command(smpd_context_t *context)
+{
+    int result = SMPD_SUCCESS;
+    smpd_command_t *cmd, *temp_cmd;
+    char fullaccount[SMPD_MAX_ACCOUNT_LENGTH]="", domain[SMPD_MAX_ACCOUNT_LENGTH];
+    char account[SMPD_MAX_ACCOUNT_LENGTH]="", password[SMPD_MAX_PASSWORD_LENGTH]="";
+    char result_str[100];
+#ifdef HAVE_WINDOWS_H
+    HANDLE hUser;
+#endif
+
+    smpd_enter_fn("smpd_handle_validate_command");
+
+    cmd = &context->read_cmd;
+
+    if (!smpd_get_string_arg(cmd->cmd, "account", fullaccount, SMPD_MAX_ACCOUNT_LENGTH))
+    {
+	smpd_err_printf("validate command missing account parameter\n");
+	smpd_exit_fn("smpd_handle_validate_command");
+	return SMPD_FAIL;
+    }
+    if (!smpd_get_string_arg(cmd->cmd, "password", password, SMPD_MAX_PASSWORD_LENGTH))
+    {
+	smpd_err_printf("validate command missing password parameter\n");
+	smpd_exit_fn("smpd_handle_validate_command");
+	return SMPD_FAIL;
+    }
+
+    /* validate user */
+#ifdef HAVE_WINDOWS_H
+    smpd_parse_account_domain(fullaccount, account, domain);
+    result = smpd_get_user_handle(account, domain, password, &hUser);
+    if (result != SMPD_SUCCESS)
+    {
+	strcpy(result_str, SMPD_FAIL_STR);
+    }
+    else
+    {
+	strcpy(result_str, SMPD_SUCCESS_STR);
+    }
+    if (hUser != INVALID_HANDLE_VALUE)
+	CloseHandle(hUser);
+#else
+    strcpy(result_str, SMPD_FAIL_STR);
+#endif
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a validate command.\n");
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a validate command.\n");
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a validate command.\n");
+	smpd_exit_fn("smpd_handle_dbs_command");
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to validate command: \"%s\"\n", temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn("handle_stat_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_validate_command");
+    return result;
+}
+
 #if 0
 /* use this template to add new command handler functions */
 int smpd_handle__command(smpd_context_t *context)
@@ -1595,8 +1694,10 @@ int smpd_handle_command(smpd_context_t *context)
 	/* handle root commands */
 	if (smpd_process.root_smpd)
 	{
-	    if (strcmp(cmd->cmd_str, "shutdown") == 0)
+	    if ( (strcmp(cmd->cmd_str, "shutdown") == 0) || (strcmp(cmd->cmd_str, "restart") == 0) )
 	    {
+		if (strcmp(cmd->cmd_str, "restart") == 0)
+		    smpd_process.restart = SMPD_TRUE;
 		result = smpd_create_command("down", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
 		if (result != SMPD_SUCCESS)
 		{
@@ -1614,6 +1715,12 @@ int smpd_handle_command(smpd_context_t *context)
 		}
 		smpd_exit_fn("smpd_handle_command");
 		return SMPD_EXITING; /* return close to prevent posting another read on this context */
+	    }
+	    else if (strcmp(cmd->cmd_str, "validate") == 0)
+	    {
+		result = smpd_handle_validate_command(context);
+		smpd_exit_fn("smpd_handle_command");
+		return result;
 	    }
 	    else if (strcmp(cmd->cmd_str, "stat") == 0)
 	    {

@@ -149,6 +149,56 @@ static int isnumber(char *str)
     return SMPD_TRUE;
 }
 
+int mp_get_pwd_from_file(char *file_name)
+{
+    char line[1024];
+    FILE *fin;
+
+    /* open the file */
+    fin = fopen(file_name, "r");
+    if (fin == NULL)
+    {
+	printf("Error, unable to open account file '%s'\n", file_name);
+	return SMPD_FAIL;
+    }
+
+    /* read the account */
+    if (!fgets(line, 1024, fin))
+    {
+	printf("Error, unable to read the account in '%s'\n", file_name);
+	return SMPD_FAIL;
+    }
+
+    /* strip off the newline characters */
+    while (strlen(line) && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
+	line[strlen(line)-1] = '\0';
+    if (strlen(line) == 0)
+    {
+	printf("Error, first line in password file must be the account name. (%s)\n", file_name);
+	return SMPD_FAIL;
+    }
+
+    /* save the account */
+    strcpy(smpd_process.UserAccount, line);
+
+    /* read the password */
+    if (!fgets(line, 1024, fin))
+    {
+	printf("Error, unable to read the password in '%s'\n", file_name);
+	return SMPD_FAIL;
+    }
+    /* strip off the newline characters */
+    while (strlen(line) && (line[strlen(line)-1] == '\r' || line[strlen(line)-1] == '\n'))
+	line[strlen(line)-1] = '\0';
+
+    /* save the password */
+    if (strlen(line))
+	strcpy(smpd_process.UserPassword, line);
+    else
+	smpd_process.UserPassword[0] = '\0';
+    return SMPD_SUCCESS;
+}
+
 int mp_get_next_hostname(char *host)
 {
     if (gethostname(host, SMPD_MAX_HOST_LENGTH) == 0)
@@ -285,7 +335,6 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char *env_str, env_data[SMPD_MAX_ENV_LENGTH];
     char *equal_sign_pos;
     char wdir[SMPD_MAX_DIR_LENGTH];
-    int logon;
     int use_debug_flag;
     char pwd_file_name[SMPD_MAX_FILENAME];
     int use_pwd_file;
@@ -300,101 +349,84 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     smpd_launch_node_t *launch_node, *launch_node_iter;
     int total;
     char path[SMPD_MAX_PATH_LENGTH];
+    char temp_password[SMPD_MAX_PASSWORD_LENGTH];
 
     smpd_enter_fn("mp_parse_command_args");
 
-    /* check for console options: must be the first option */
-    if (strcmp((*argvp)[1], "-console") == 0)
+#ifdef HAVE_WINDOWS_H
+    if (*argcp > 1)
     {
-	if (smpd_get_opt_string(argcp, argvp, "-console", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+	if (strcmp((*argvp)[1], "-register") == 0)
 	{
-	    smpd_process.do_console = 1;
+	    for (;;)
+	    {
+		smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
+		printf("confirm password: ");fflush(stdout);
+		smpd_get_password(temp_password);
+		if (strcmp(smpd_process.UserPassword, temp_password) == 0)
+		    break;
+		printf("passwords don't match, please try again.\n");
+	    }
+	    if (smpd_setup_crypto_client())
+	    {
+		if (smpd_save_password_to_registry(smpd_process.UserAccount, smpd_process.UserPassword, SMPD_TRUE)) 
+		{
+		    printf("Password encrypted into the Registry.\n");
+		    smpd_delete_cached_password();
+		}
+		else
+		{
+		    printf("Error: Unable to save encrypted password.\n");
+		}
+	    }
+	    else
+	    {
+		printf("Error: Unable to setup the encryption service.\n");
+	    }
+	    smpd_exit(0);
 	}
-	if (smpd_get_opt(argcp, argvp, "-console"))
+	if ( (strcmp((*argvp)[1], "-remove") == 0) || (strcmp((*argvp)[1], "-unregister") == 0) )
 	{
-	    smpd_process.do_console = 1;
-	    gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	    if (smpd_delete_current_password_registry_entry())
+	    {
+		smpd_delete_cached_password();
+		printf("Account and password removed from the Registry.\n");
+	    }
+	    else
+	    {
+		printf("ERROR: Unable to remove the encrypted password.\n");
+	    }
+	    smpd_exit(0);
 	}
-	/* This may need to be changed to avoid conflict */
-	if (smpd_get_opt(argcp, argvp, "-p"))
+	if (strcmp((*argvp)[1], "-validate") == 0)
 	{
-	    smpd_process.use_process_session = 1;
+	    if (smpd_setup_crypto_client())
+	    {
+		if (smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword))
+		{
+		    if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+		    {
+			DWORD len = SMPD_MAX_HOST_LENGTH;
+			GetComputerName(smpd_process.console_host, &len);
+		    }
+		    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
+		    smpd_get_opt_string(argcp, argvp, "-phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+		    smpd_process.validate = SMPD_TRUE;
+		    smpd_do_console();
+		}
+		else
+		{
+		    printf("FAIL: Unable to read the credentials from the registry.\n");fflush(stdout);
+		}
+	    }
+	    else
+	    {
+		printf("FAIL: Unable to setup the encryption service.\n");fflush(stdout);
+	    }
+	    smpd_exit(0);
 	}
-	if (*argcp != 1)
-	{
-	    smpd_err_printf("ignoring extra arguments passed with -console option.\n");
-	}
-	smpd_process.host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
-	if (smpd_process.host_list == NULL)
-	{
-	    smpd_err_printf("unable to allocate a host node.\n");
-	    smpd_exit_fn("mp_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	strcpy(smpd_process.host_list->host, smpd_process.console_host);
-	smpd_process.host_list->id = 1;
-	smpd_process.host_list->nproc = 0;
-	smpd_process.host_list->parent = 0;
-	smpd_process.host_list->next = NULL;
-	/* check for port option */
-	smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
-	smpd_exit_fn("mp_parse_command_args");
-	return SMPD_SUCCESS;
     }
-
-    if (strcmp((*argvp)[1], "-shutdown") == 0)
-    {
-	smpd_get_opt_string(argcp, argvp, "-shutdown", smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
-	if (smpd_get_opt(argcp, argvp, "-shutdown"))
-	{
-	    gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
-	}
-	smpd_process.do_console = 1;
-	smpd_process.shutdown = 1;
-	smpd_process.host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
-	if (smpd_process.host_list == NULL)
-	{
-	    smpd_err_printf("unable to allocate a host node.\n");
-	    smpd_exit_fn("mp_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	strcpy(smpd_process.host_list->host, smpd_process.console_host);
-	smpd_process.host_list->id = 1;
-	smpd_process.host_list->nproc = 0;
-	smpd_process.host_list->parent = 0;
-	smpd_process.host_list->next = NULL;
-	/* check for port option */
-	smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
-	smpd_exit_fn("mp_parse_command_args");
-	return SMPD_SUCCESS;
-    }
-
-    if (strcmp((*argvp)[1], "-restart") == 0)
-    {
-	smpd_get_opt_string(argcp, argvp, "-restart", smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
-	if (smpd_get_opt(argcp, argvp, "-restart"))
-	{
-	    gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
-	}
-	smpd_process.do_console = 1;
-	smpd_process.restart = 1;
-	smpd_process.host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
-	if (smpd_process.host_list == NULL)
-	{
-	    smpd_err_printf("unable to allocate a host node.\n");
-	    smpd_exit_fn("mp_parse_command_args");
-	    return SMPD_FAIL;
-	}
-	strcpy(smpd_process.host_list->host, smpd_process.console_host);
-	smpd_process.host_list->id = 1;
-	smpd_process.host_list->nproc = 0;
-	smpd_process.host_list->parent = 0;
-	smpd_process.host_list->next = NULL;
-	/* check for port option */
-	smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
-	smpd_exit_fn("mp_parse_command_args");
-	return SMPD_SUCCESS;
-    }
+#endif
 
     /* check for mpi options */
     /*
@@ -468,7 +500,6 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	drive_map_list = NULL;
 	env_list = NULL;
 	wdir[0] = '\0';
-	logon = SMPD_FALSE;
 	use_debug_flag = SMPD_FALSE;
 	use_pwd_file = SMPD_FALSE;
 	host_list = NULL;
@@ -625,7 +656,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "logon") == 0)
 	    {
-		logon = SMPD_TRUE;
+		smpd_process.logon = SMPD_TRUE;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
 	    {
@@ -645,6 +676,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    return SMPD_FAIL;
 		}
 		strncpy(pwd_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
+		mp_get_pwd_from_file(pwd_file_name);
 		num_args_to_strip = 2;
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "file") == 0)
@@ -892,6 +924,10 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		}
 		strncpy(path, (*argvp)[2], SMPD_MAX_PATH_LENGTH);
 		num_args_to_strip = 2;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "noprompt") == 0)
+	    {
+		smpd_process.noprompt = SMPD_TRUE;
 	    }
 	    else
 	    {

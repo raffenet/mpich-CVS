@@ -23,6 +23,99 @@
 
 #ifdef HAVE_WINDOWS_H
 
+int smpd_clear_process_registry()
+{
+    if (RegDeleteKey(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process") != ERROR_SUCCESS)
+    {
+	/* It's ok if the key does not exist */
+    }
+    return SMPD_SUCCESS;
+}
+
+int smpd_validate_process_registry()
+{
+    int error;
+    HKEY tkey;
+    DWORD dwLen, result;
+    int i;
+    DWORD dwNumSubKeys, dwMaxSubKeyLen;
+    char pid_str[100];
+    int pid;
+    HANDLE hTemp;
+
+    smpd_enter_fn("smpd_validate_process_registry");
+
+    result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process", 0, KEY_ALL_ACCESS, &tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	if (result != ERROR_PATH_NOT_FOUND)
+	{
+	    smpd_err_printf("Unable to open the smpd\\process registry key, error %d\n", result);
+	    smpd_exit_fn("smpd_validate_process_registry");
+	    return SMPD_FAIL;
+	}
+	return SMPD_SUCCESS;
+    }
+
+    result = RegQueryInfoKey(tkey, NULL, NULL, NULL, &dwNumSubKeys, &dwMaxSubKeyLen, NULL, NULL, NULL, NULL, NULL, NULL);
+    if (result != ERROR_SUCCESS)
+    {
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_validate_process_registry");
+	return SMPD_FAIL;
+    }
+    if (dwMaxSubKeyLen > 100)
+    {
+	smpd_err_printf("Error: Invalid process subkeys, max length is too large: %d\n", dwMaxSubKeyLen);
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_validate_process_registry");
+	return SMPD_FAIL;
+    }
+    if (dwNumSubKeys == 0)
+    {
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_validate_process_registry");
+	return SMPD_SUCCESS;
+    }
+    /* count backwards so keys can be removed */
+    for (i=dwNumSubKeys-1; i>=0; i--)
+    {
+	dwLen = 100;
+	result = RegEnumKeyEx(tkey, i, pid_str, &dwLen, NULL, NULL, NULL, NULL);
+	if (result != ERROR_SUCCESS)
+	{
+	    smpd_err_printf("Error: Unable to enumerate the %d subkey in the smpd\\process registry key\n", i);
+	    RegCloseKey(tkey);
+	    smpd_exit_fn("smpd_validate_process_registry");
+	    return SMPD_FAIL;
+	}
+	pid = atoi(pid_str);
+	printf("pid = %d\n", pid);fflush(stdout);
+	hTemp = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+	if (hTemp == NULL)
+	{
+	    error = GetLastError();
+	    if (error == ERROR_INVALID_PARAMETER)
+	    {
+		RegDeleteKey(tkey, pid_str);
+	    }
+	    /*
+	    else
+	    {
+		printf("error = %d\n", error);
+	    }
+	    */
+	}
+	else
+	{
+	    CloseHandle(hTemp);
+	}
+    }
+    RegCloseKey(tkey);
+    smpd_exit_fn("smpd_validate_process_registry");
+    return SMPD_SUCCESS;
+}
+
 int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
 {
     HKEY tkey;

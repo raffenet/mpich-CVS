@@ -113,13 +113,14 @@ int smpd_entry_point()
     if (smpd_process.bService)
     {
 	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
-	if (!ReportStatusToSCMgr(SERVICE_RUNNING, NO_ERROR, 0))
+	if (!smpd_report_status_to_sc_mgr(SERVICE_RUNNING, NO_ERROR, 0))
 	{
 	    result = GetLastError();
 	    smpd_err_printf("Unable to report that the service has started, error: %d\n", result);
 	    smpd_exit_fn("smpd_entry_point");
 	    return result;
 	}
+	smpd_clear_process_registry();
     }
 #else
     /* put myself in the background if flag is set */

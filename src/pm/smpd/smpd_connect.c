@@ -52,6 +52,8 @@ smpd_global_t smpd_process =
       SMPD_TRUE,        /* bNoTTY                 */
       SMPD_FALSE,       /* bPasswordProtect       */
       "",               /* SMPDPassword           */
+      "",               /* passphrase             */
+      SMPD_FALSE,       /* logon                  */
       "",               /* UserAccount            */
       "",               /* UserPassword           */
       0,                /* cur_tag                */
@@ -79,6 +81,7 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* verbose                */
       SMPD_FALSE,       /* shutdown               */
       SMPD_FALSE,       /* restart                */
+      SMPD_FALSE,       /* validate               */
 #ifdef HAVE_WINDOWS_H
       FALSE,            /* bOutputInitialized     */
       NULL,             /* hOutputMutex           */
@@ -105,7 +108,8 @@ smpd_global_t smpd_process =
       NULL,             /* hBombDiffuseEvent       */
       NULL,             /* hBombThread             */
 #endif
-      SMPD_FALSE        /* service_stop            */
+      SMPD_FALSE,       /* service_stop            */
+      SMPD_FALSE        /* noprompt                */
     };
 
 int smpd_post_abort_command(char *fmt, ...)
@@ -608,7 +612,6 @@ void smpd_get_account_and_password(char *account, char *password)
 
     smpd_enter_fn("smpd_get_account_and_password");
 
-    fprintf(stderr, "credentials needed to launch processes:\n");
     do
     {
 	fprintf(stderr, "account (domain\\user): ");

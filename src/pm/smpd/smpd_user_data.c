@@ -128,7 +128,7 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
     result = RegQueryValueEx(tkey, key, 0, NULL, (unsigned char *)value, &len);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to read the smpd registry key '%s', error %d\n", key, result);
+	smpd_dbg_printf("Unable to read the smpd registry key '%s', error %d\n", key, result);
 	RegCloseKey(tkey);
 	smpd_exit_fn("smpd_get_user_data");
 	return SMPD_FAIL;
@@ -200,7 +200,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	RegCloseKey(tkey);
 	if (smpd_get_smpd_data_default(key, value, value_len) != SMPD_SUCCESS)
 	{
-	    smpd_err_printf("Unable to get the data for the key '%s'\n", key);
+	    smpd_dbg_printf("Unable to get the data for the key '%s'\n", key);
 	    smpd_exit_fn("smpd_get_smpd_data");
 	    return SMPD_FAIL;
 	}

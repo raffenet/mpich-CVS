@@ -1048,15 +1048,49 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    }
 		    else
 		    {
-			smpd_get_account_and_password(account, password);
+			fprintf(stderr, "User credentials needed to launch processes:\n");
+			smpd_get_account_and_password(context->account, context->password);
 		    }
 #else
-		    smpd_get_account_and_password(context->account, context->password);
+#ifdef HAVE_WINDOWS_H
+		    if (smpd_process.UserAccount[0] == '\0')
+		    {
+			if (smpd_process.logon || !smpd_read_password_from_registry(context->account, context->password))
+			{
+			    if (smpd_process.credentials_prompt)
+			    {
+				fprintf(stderr, "User credentials needed to launch processes:\n");
+				smpd_get_account_and_password(context->account, context->password);
+			    }
+			    else
+			    {
+				/*smpd_post_abort_command("User credentials needed to launch processes.\n");*/
+				strcpy(context->account, "invalid account");
+			    }
+			}
+		    }
+#else
+		    if (smpd_process.UserAccount[0] == '\0')
+		    {
+			if (smpd_process.credentials_prompt)
+			{
+			    fprintf(stderr, "User credentials needed to launch processes:\n");
+			    smpd_get_account_and_password(context->account, context->password);
+			}
+			else
+			{
+			    /*smpd_post_abort_command("User credentials needed to launch processes.\n");*/
+			    strcpy(context->account, "invalid account");
+			}
+		    }
 #endif
-
+#endif
 		    if (strcmp(context->account, "invalid account") == 0)
 		    {
-			smpd_err_printf("attempting to create a session with an smpd that requires credentials without having obtained any credentials.\n");
+			smpd_err_printf("Attempting to create a session with an smpd that requires credentials without having obtained any credentials.\n");
+			/* FIXME */
+			/* This should probably post a close of the sock and continue to SMPD_EXIT? */
+			/* For now, just bail out. */
 			smpd_exit_fn("smpd_enter_at_state");
 			return SMPD_FAIL;
 		    }
@@ -1325,7 +1359,10 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		else if (strcmp(cmd_ptr->cmd_str, "down") == 0)
 		{
 		    smpd_dbg_printf("down command written, posting a close of the %s context\n", smpd_get_context_str(context));
-		    context->state = SMPD_EXITING;
+		    if (smpd_process.restart)
+			context->state = SMPD_RESTARTING;
+		    else
+			context->state = SMPD_EXITING;
 		    result = sock_post_close(context->sock);
 		    if (result != SOCK_SUCCESS)
 		    {
@@ -1860,6 +1897,41 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			break;
 		    }
 
+		    /* check to see if this is a validate session */
+		    if (smpd_process.validate)
+		    {
+			result = smpd_create_command("validate", 0, 1, SMPD_TRUE, &cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to create a validate command.\n");
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			result = smpd_add_command_arg(cmd_ptr, "account", smpd_process.UserAccount);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to add the account(%s) to the validate command.\n", smpd_process.UserAccount);
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			result = smpd_add_command_arg(cmd_ptr, "password", smpd_process.UserPassword);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to add the password to the validate command.\n");
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			result = smpd_post_write_command(context, cmd_ptr);
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to post a write of the shutdown command on the %s context.\n",
+				smpd_get_context_str(context));
+			    smpd_exit_fn("smpd_enter_at_state");
+			    return SMPD_FAIL;
+			}
+			break;
+		    }
+
 		    /* get a handle to stdin */
 #ifdef HAVE_WINDOWS_H
 		    result = smpd_make_socket_loop((SOCKET*)&stdin_fd, &hWrite);
@@ -2260,6 +2332,9 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		smpd_free_context(context);
 		smpd_exit_fn("smpd_enter_at_state");
 		return SMPD_SUCCESS;
+	    case SMPD_RESTARTING:
+		smpd_restart();
+		break;
 	    case SMPD_EXITING:
 		if (smpd_process.listener_context)
 		{

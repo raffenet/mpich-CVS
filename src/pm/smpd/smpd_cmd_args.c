@@ -11,12 +11,12 @@
 
 int smpd_parse_command_args(int *argcp, char **argvp[])
 {
+    int result;
 #ifdef HAVE_WINDOWS_H
     char str[20], read_handle_str[20], write_handle_str[20];
     int port;
     sock_t listener;
     sock_set_t set;
-    int result;
     HANDLE hWrite, hRead;
     DWORD num_written, num_read;
 #endif
@@ -41,9 +41,22 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.bNoTTY = SMPD_FALSE;
 	smpd_process.bService = SMPD_FALSE;
     }
+    if (smpd_get_opt_int(argcp, argvp, "-debug", &dbg_flag))
+    {
+	smpd_process.dbg_state = dbg_flag;
+	smpd_process.bNoTTY = SMPD_FALSE;
+	smpd_process.bService = SMPD_FALSE;
+    }
+    if (smpd_get_opt(argcp, argvp, "-debug"))
+    {
+	smpd_process.dbg_state = SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_PREPEND_RANK | SMPD_DBG_STATE_TRACE;
+	smpd_process.bNoTTY = SMPD_FALSE;
+	smpd_process.bService = SMPD_FALSE;
+    }
 
     /* check for port option */
     smpd_get_opt_int(argcp, argvp, "-p", &smpd_process.port);
+    smpd_get_opt_int(argcp, argvp, "-port", &smpd_process.port);
 
 #ifdef HAVE_WINDOWS_H
 
@@ -211,6 +224,64 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	ExitProcess(0);
     }
 #endif
+
+    /* check for console options */
+    if (smpd_get_opt_string(argcp, argvp, "-console", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+    {
+	smpd_process.do_console = 1;
+    }
+    else if (smpd_get_opt(argcp, argvp, "-console"))
+    {
+	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_process.do_console = 1;
+    }
+    if (smpd_process.do_console)
+    {
+	/* This may need to be changed to avoid conflict */
+	if (smpd_get_opt(argcp, argvp, "-p"))
+	{
+	    smpd_process.use_process_session = 1;
+	}
+    }
+
+    if (smpd_get_opt_string(argcp, argvp, "-shutdown", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+    {
+	smpd_process.do_console = 1;
+	smpd_process.shutdown = 1;
+    }
+    else if (smpd_get_opt(argcp, argvp, "-shutdown"))
+    {
+	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_process.do_console = 1;
+	smpd_process.shutdown = 1;
+    }
+
+    if (smpd_get_opt_string(argcp, argvp, "-restart", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+    {
+	smpd_process.do_console = 1;
+	smpd_process.restart = 1;
+    }
+    else if (smpd_get_opt(argcp, argvp, "-restart"))
+    {
+#ifdef HAVE_WINDOWS_H
+	printf("restarting the smpd service...\n");
+	smpd_stop_service();
+	Sleep(1000);
+	smpd_start_service();
+	smpd_exit(0);
+#else
+	gethostname(smpd_process.console_host, SMPD_MAX_HOST_LENGTH);
+	smpd_process.do_console = 1;
+	smpd_process.restart = 1;
+#endif
+    }
+
+    if (smpd_process.do_console)
+    {
+	result = smpd_do_console();
+	smpd_exit_fn("smpd_parse_command_args");
+	return result;
+    }
 
     smpd_exit_fn("smpd_parse_command_args");
     return SMPD_SUCCESS;

@@ -13,7 +13,7 @@
 #include <ntsecapi.h>
 
 VOID WINAPI smpd_service_ctrl(DWORD dwCtrlCode);
-static LPTSTR GetLastErrorText( LPTSTR lpszBuf, DWORD dwSize );
+static LPTSTR smpd_get_last_error_text( LPTSTR lpszBuf, DWORD dwSize );
 
 /*
   FUNCTION: smpd_service_main
@@ -45,18 +45,19 @@ void smpd_service_main(int argc, char *argv[])
     smpd_process.ssStatus.dwServiceSpecificExitCode = 0;
 
     /* report the status to the service control manager. */
-    if (!ReportStatusToSCMgr(SERVICE_START_PENDING, NO_ERROR, 3000))
+    if (!smpd_report_status_to_sc_mgr(SERVICE_START_PENDING, NO_ERROR, 3000))
     {
-	ReportStatusToSCMgr(SERVICE_STOPPED, NO_ERROR, 0);
+	smpd_report_status_to_sc_mgr(SERVICE_STOPPED, NO_ERROR, 0);
 	return;
     }
 
     smpd_entry_point();
+    smpd_clear_process_registry();
 
     /* try to report the stopped status to the service control manager. */
     if (smpd_process.sshStatusHandle)
     {
-	ReportStatusToSCMgr(SERVICE_STOPPED, 0, 0);
+	smpd_report_status_to_sc_mgr(SERVICE_STOPPED, 0, 0);
     }
 }
 
@@ -120,13 +121,13 @@ VOID WINAPI smpd_service_ctrl(DWORD dwCtrlCode)
 	break;
 	
     }
-    ReportStatusToSCMgr(smpd_process.ssStatus.dwCurrentState, NO_ERROR, 0);
+    smpd_report_status_to_sc_mgr(smpd_process.ssStatus.dwCurrentState, NO_ERROR, 0);
 }
 
 
 
 /*
-  FUNCTION: ReportStatusToSCMgr()
+  FUNCTION: smpd_report_status_to_sc_mgr()
 
   PURPOSE: Sets the current status of the service and
            reports it to the Service Control Manager
@@ -142,10 +143,10 @@ VOID WINAPI smpd_service_ctrl(DWORD dwCtrlCode)
 
   COMMENTS:
 */
-BOOL ReportStatusToSCMgr(DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD dwWaitHint)
+SMPD_BOOL smpd_report_status_to_sc_mgr(DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD dwWaitHint)
 {
     static DWORD dwCheckPoint = 1;
-    BOOL fResult = TRUE;
+    SMPD_BOOL fResult = SMPD_TRUE;
 
     if (dwCurrentState == SERVICE_START_PENDING)
 	smpd_process.ssStatus.dwControlsAccepted = 0;
@@ -215,48 +216,8 @@ void smpd_add_error_to_message_log(char *msg)
     }
 }
 
-
-
 /*
-  FUNCTION: AddInfoToMessageLog(LPTSTR lpszMsg)
-
-  PURPOSE: Allows any thread to log an info message
-
-  PARAMETERS:
-    lpszMsg - text for message
-
-  RETURN VALUE:
-    none
-
-  COMMENTS:
-*/
-VOID AddInfoToMessageLog(LPTSTR lpszMsg)
-{
-    HANDLE  hEventSource;
-    LPTSTR  lpszStrings[1];
-
-    /* Use event logging to log the message. */
-    hEventSource = RegisterEventSource(NULL, TEXT(SMPD_SERVICE_NAME));
-
-    lpszStrings[0] = lpszMsg;
-
-    if (hEventSource != NULL) {
-	ReportEvent(hEventSource, /* handle of event source */
-	    EVENTLOG_INFORMATION_TYPE,  /* event type */
-	    0,                    /* event category */
-	    0,                    /* event ID */
-	    NULL,                 /* current user's SID */
-	    1,                    /* strings in lpszStrings */
-	    0,                    /* no bytes of raw data */
-	    (LPCTSTR*)lpszStrings,/* array of error strings */
-	    NULL);                /* no raw data */
-
-	(VOID) DeregisterEventSource(hEventSource);
-    }
-}
-
-/*
-  FUNCTION: Setup_Service_restart( SC_HANDLE schService )
+  FUNCTION: smpd_setup_service_restart( SC_HANDLE schService )
 
   PURPOSE: Setup the service to automatically restart if it has been down for 5 minutes
 
@@ -269,7 +230,7 @@ VOID AddInfoToMessageLog(LPTSTR lpszMsg)
   COMMENTS:
     code provided by Bradley, Peter C. (MIS/CFD) [bradlepc@pweh.com]
 */
-static BOOL Setup_Service_restart( SC_HANDLE schService )
+static BOOL smpd_setup_service_restart( SC_HANDLE schService )
 {
     SC_ACTION	actionList[3];
     SERVICE_FAILURE_ACTIONS schActionOptions;
@@ -328,7 +289,7 @@ void smpd_install_service(SMPD_BOOL interact, SMPD_BOOL bSetupRestart)
     
     if ( GetModuleFileName( NULL, szPath, 1024 ) == 0 )
     {
-        _tprintf(TEXT("Unable to install %s.\n%s\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME), GetLastErrorText(szErr, 256));
+        _tprintf(TEXT("Unable to install %s.\n%s\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME), smpd_get_last_error_text(szErr, 256));
 	fflush(stdout);
         return;
     }
@@ -358,19 +319,19 @@ void smpd_install_service(SMPD_BOOL interact, SMPD_BOOL bSetupRestart)
         if ( schService )
         {
 	    if (bSetupRestart)
-		Setup_Service_restart( schService );
+		smpd_setup_service_restart( schService );
 
 	    /* Start the service */
 	    if (StartService(schService, 0, NULL))
 		_tprintf(TEXT("%s installed.\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME) );
 	    else
-		_tprintf(TEXT("%s installed, but failed to start:\n%s.\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME), GetLastErrorText(szErr, 256) );
+		_tprintf(TEXT("%s installed, but failed to start:\n%s.\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME), smpd_get_last_error_text(szErr, 256) );
 	    fflush(stdout);
             CloseServiceHandle(schService);
         }
         else
         {
-            _tprintf(TEXT("CreateService failed:\n%s\n"), GetLastErrorText(szErr, 256));
+            _tprintf(TEXT("CreateService failed:\n%s\n"), smpd_get_last_error_text(szErr, 256));
 	    fflush(stdout);
         }
 	
@@ -378,7 +339,7 @@ void smpd_install_service(SMPD_BOOL interact, SMPD_BOOL bSetupRestart)
     }
     else
     {
-        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), GetLastErrorText(szErr,256));
+        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 	fflush(stdout);
     }
 }
@@ -456,7 +417,7 @@ SMPD_BOOL smpd_remove_service(SMPD_BOOL bErrorOnNotInstalled)
 	    }
             else
 	    {
-                _tprintf(TEXT("DeleteService failed:\n%s\n"), GetLastErrorText(szErr,256));
+                _tprintf(TEXT("DeleteService failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 		fflush(stdout);
 	    }
 
@@ -466,7 +427,7 @@ SMPD_BOOL smpd_remove_service(SMPD_BOOL bErrorOnNotInstalled)
 	{
 	    if (bErrorOnNotInstalled)
 	    {
-		_tprintf(TEXT("OpenService failed:\n%s\n"), GetLastErrorText(szErr,256));
+		_tprintf(TEXT("OpenService failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 		fflush(stdout);
 	    }
 	    else
@@ -479,7 +440,7 @@ SMPD_BOOL smpd_remove_service(SMPD_BOOL bErrorOnNotInstalled)
     }
     else
     {
-        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), GetLastErrorText(szErr,256));
+        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 	fflush(stdout);
     }
     return bRetVal;
@@ -547,7 +508,7 @@ void smpd_stop_service()
         }
         else
 	{
-            _tprintf(TEXT("OpenService failed:\n%s\n"), GetLastErrorText(szErr,256));
+            _tprintf(TEXT("OpenService failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 	    fflush(stdout);
 	}
 	
@@ -555,7 +516,7 @@ void smpd_stop_service()
     }
     else
     {
-        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), GetLastErrorText(szErr,256));
+        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 	fflush(stdout);
     }
 }
@@ -594,14 +555,14 @@ void smpd_start_service()
 	    }
 	    else
 	    {
-		_tprintf(TEXT("%s failed to start.\n%s.\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME), GetLastErrorText(szErr, 256) );
+		_tprintf(TEXT("%s failed to start.\n%s.\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME), smpd_get_last_error_text(szErr, 256) );
 		fflush(stdout);
 	    }
             CloseServiceHandle(schService);
         }
         else
         {
-            _tprintf(TEXT("OpenService failed:\n%s\n"), GetLastErrorText(szErr,256));
+            _tprintf(TEXT("OpenService failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 	    fflush(stdout);
         }
 	
@@ -609,13 +570,13 @@ void smpd_start_service()
     }
     else
     {
-        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), GetLastErrorText(szErr,256));
+        _tprintf(TEXT("OpenSCManager failed:\n%s\n"), smpd_get_last_error_text(szErr,256));
 	fflush(stdout);
     }
 }
 
 /*
-  FUNCTION: GetLastErrorText
+  FUNCTION: smpd_get_last_error_text
 
   PURPOSE: copies error message text to string
 
@@ -628,7 +589,7 @@ void smpd_start_service()
 
   COMMENTS:
 */
-LPTSTR GetLastErrorText( LPTSTR lpszBuf, DWORD dwSize )
+static LPTSTR smpd_get_last_error_text( LPTSTR lpszBuf, DWORD dwSize )
 {
     DWORD dwRet;
     LPTSTR lpszTemp = NULL;
@@ -657,11 +618,11 @@ LPTSTR GetLastErrorText( LPTSTR lpszBuf, DWORD dwSize )
 }
 
 /* A bomb thread can be used to guarantee that the service will exit when a stop command is processed */
-void BombThread()
+void smpd_bomb_thread()
 {
     if (WaitForSingleObject(smpd_process.hBombDiffuseEvent, 10000) == WAIT_TIMEOUT)
     {
-	smpd_dbg_printf("BombThread timed out, exiting.\n");
+	smpd_dbg_printf("smpd_bomb_thread timed out, exiting.\n");
 	ExitProcess(-1);
     }
 }
@@ -697,7 +658,7 @@ void smpd_service_stop()
 
     for (iter=0; iter<10; iter++)
     {
-	smpd_process.hBombThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)BombThread, NULL, 0, &dwThreadID);
+	smpd_process.hBombThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_bomb_thread, NULL, 0, &dwThreadID);
 	if (smpd_process.hBombThread != NULL)
 	    break;
 	Sleep(250);

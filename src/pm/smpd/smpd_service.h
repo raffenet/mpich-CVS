@@ -21,7 +21,6 @@ void smpd_start_service();
 void smpd_service_main(int argc, char *argv[]);
 void smpd_service_stop();
 void smpd_add_error_to_message_log(char *msg);
-SMPD_BOOL ReportStatusToSCMgr(DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD dwWaitHint);
-void AddInfoToMessageLog(LPTSTR lpszMsg);
+SMPD_BOOL smpd_report_status_to_sc_mgr(DWORD dwCurrentState, DWORD dwWin32ExitCode, DWORD dwWaitHint);
 
 #endif
