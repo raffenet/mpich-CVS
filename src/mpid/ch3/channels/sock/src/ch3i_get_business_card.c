@@ -172,8 +172,9 @@ static int GetLocalIPs(int32_t *pIP, int max)
 	}
 
 	/*
-	 *  Increment pointer to the next ifreq; some adjustment may be
-	 *  required if the address is an IPv6 address
+	 *  Increment pointer to the next ifreq; some adjustment may be required if the address is an IPv6 address.  Stevens states
+	 *  that there is not standard regarding whether SIOCGIFCONF may return IPv6 addresses, and thus we need to account for
+	 *  the size difference should a IPv6 address be returned.
 	 */
 	ptr += sizeof(struct ifreq);
 	
@@ -181,7 +182,16 @@ static int GetLocalIPs(int32_t *pIP, int max)
 	{
 	    if (ifreq->ifr_addr.sa_family == AF_INET6)
 	    {
-		ptr += sizeof(struct sockaddr_in6) - sizeof(struct sockaddr);
+		int size_in6;
+
+		/*
+		 * Req #108 reports that we are doing a sizeof() on an incomplete type.  The following lines were broken up so we
+                 * could determine which structure was incomplete and thus test for it in configure.  I'm guessing it is
+                 * sockaddr_in6.  Perhaps we need a better way to detect if the system is be IPv6 enabled and therefore might
+                 * return IPv6 addresses.
+		 */
+		size_in6 = sizeof(struct sockaddr_in6);
+		ptr += size_in6 - sizeof(struct sockaddr);
 	    }
 	}
 #	endif
