@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef USE_MEMORY_TRACING
+int MPIU_trvalid( const char str[] );
+#endif
+
 /* Temporary.  sig values will change */
 /* style: allow:malloc:3 sig:0 */
 /* style: allow:calloc:2 sig:0 */
@@ -399,7 +403,7 @@ void MPIU_trdump( FILE *fp )
     if (fp == 0) fp = stderr;
     head = TRhead;
     while (head) {
-	FPRINTF( "[%d] %lu at [%lx], id = ", 
+	FPRINTF( fp, "[%d] %lu at [%lx], id = ", 
 		 world_rank, head->size, (PointerInt)head + sizeof(TrSPACE) );
 	if (head->id >= 0) {
 	    head->fname[TR_FNAME_LEN-1] = 0;
