@@ -15,7 +15,7 @@ $verbose = 0;        # set to 1 to get more information
 $am_a = "";          # set to _a for automake style input
 $do_dependencies = 1;# set to 1 to attempt to generate dependency information
 $autoconf_args = ""; # Extra arguments for autoconf
-$do_sharedlibs  = 0; # set to 1 the generate targets for shared libraries
+$do_sharedlibs  = 1; # set to 1 the generate targets for shared libraries
 $found_sharedlib = 0;# set to 1 if a specific shared library target is found
 
 $root_tags = 1;      # set to 1 to create a tags file in the root dir
@@ -1789,7 +1789,10 @@ sub TargetTags {
 	    print FD "\${HEADERS} \${SOURCES}$newline";
 	    $rpath = $rootdirpath;
 	    $rpath =~ s/\/$//;
-	    print FD "\tetags -o $rpath/TAGS --append \${HEADERS} \${SOURCES}$newline";
+	    # For vpath builds, make the root path point to the
+	    # VPATH root.
+	    
+	    print FD "\there=\`cd $rpath && pwd\` ; cd \${srcdir} && etags -o \$\$here/TAGS --append \${HEADERS} \${SOURCES}$newline";
         }
         else {
 	    print FD "$newline";
