@@ -87,6 +87,17 @@ dnl
 MPILIBNAME=mpich
 AC_SUBST(MPILIBNAME)
 
+dnl
+dnl How do I get configure to find these values for me?
+dnl
+java_home=/soft/com/packages/j2sdk1.4.0
+java_arch=linux
+AC_SUBST(java_home)
+AC_SUBST(java_arch)
+
+dnl CC_SHL=${CC} -shared
+dnl AC_SUBST(CC_SHL)
+
 dnl AC_SEARCH_LIBS(socket, socket)
 dnl AC_CHECK_LIB(thread, mutex_init)
 dnl AC_CHECK_HEADERS(foo.h bar.h)
@@ -98,4 +109,3 @@ dnl Generate the Makefiles from Makefile.in
 
 dnl AC_OUTPUT(Makefile TraceInput/Makefile)
 AC_OUTPUT(Makefile)
-

@@ -318,16 +318,9 @@ fi
 if test "$logging_name" = "rlog" ; then
     logging_subdirs="rlog"
 fi
-dnl use_logging_variable="USE_LOGGING_`echo $logging_name | tr a-z A-Z`"
-dnl AC_DEFINE_UNQUOTED($use_logging_variable,,[define to choose logging library])
 use_logging_variable="MPID_LOGGING_`echo $logging_name | tr a-z A-Z`"
 AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging library])
-dnl if test "$logging_name" = "dlog" ; then
-dnl AC_DEFINE(USE_LOGGING_DLOG,,[define to choose the dlog logging library])
-dnl fi
-dnl if test "$logging_name" = "rlog" ; then
-dnl AC_DEFINE(USE_LOGGING_RLOG,,[define to choose the rlog logging library])
-dnl fi
+dnl
 AC_SUBST(logging_name)
 AC_SUBST(logging_subdirs)
 dnl The recommended order for items in a configure.in file is

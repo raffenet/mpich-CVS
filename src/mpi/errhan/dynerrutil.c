@@ -39,7 +39,7 @@ static int  first_free_code  = 0;
    A cleaner implementation could replace this exposed global with a method
    defined in the error_string.c file that allowed this package to set 
    the routine. */
-extern void (*MPIR_dnyErr_to_string)( int, char *, int );
+extern int (*MPIR_dnyErr_to_string)( int, char *, int );
 
 int MPIR_Err_get_string( int code, char *msg, int msg_len );
 

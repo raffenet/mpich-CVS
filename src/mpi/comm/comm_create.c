@@ -116,7 +116,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     for (i=0; i<n; i++) {
 	/* For rank i in the new communicator, find the corresponding
 	   rank in the input communicator */
-	MPID_VCR_Dup( comm_ptr->vcr[mapping[i]], newcomm_ptr->vcr[i] );
+	MPID_VCR_Dup( comm_ptr->vcr[mapping[i]], &newcomm_ptr->vcr[i] );
     }
 
     /* Notify the device of this new communicator */

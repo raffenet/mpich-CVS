@@ -26,6 +26,7 @@
 /* This global is used to decouple the code for the predefined from the
    dynamically defined error codes and classes */
 int (*MPIR_dnyErr_to_string)( int, char *, int ) = 0;
+const char *MPIR_Err_get_generic_string( int class );
 #endif
 
 #undef FUNCNAME
