@@ -493,6 +493,8 @@ if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPH
     else 
         CFLAGS="$CFLAGS -O"
     fi
+    # Find the CPP before the header check
+    AC_PROG_CPP
     if test "$enable_aio" != "yes" ; then
         AC_DEFINE(NO_AIO,,[Define if AIO should not be used])
     else
@@ -836,6 +838,8 @@ fi
 AC_C_INLINE
 
 # Header files
+# Find the CPP before the header check
+AC_PROG_CPP
 AC_CHECK_HEADERS(unistd.h)
 #
 CROSS_SIZEOF_INT=${CROSS_SIZEOF_INT:-0}
