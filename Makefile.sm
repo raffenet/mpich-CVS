@@ -28,6 +28,8 @@ all-postamble:
 distclean-local:
 	-@rm -f lib/lib${MPILIBNAME}.a lib/pkglist lib/pkglist.new
 	-@rm -f src/include/${MPILIBNAME}conf.h
+	-@rm -f src/include/mpio.h
+	-@rm -f bin/mpicc
 
 # Build a distribution tarfile
 #  Extract into a temporary directory
@@ -79,7 +81,7 @@ optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
 INSTALL_SUBDIRS = src/env src/pm/@pm_name@ @bindings_dirs@
 
 install-local:
-	-if [ "@BUILD_TVDLL@" ] ; then \
+	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.so \
 			${libdir}/libtvmpich.so ; fi
 

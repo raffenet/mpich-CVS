@@ -936,6 +936,7 @@ else
 fi
 ])dnl
 dnl
+
 dnl
 dnl Look for a style of VPATH.  Known forms are
 dnl VPATH = .:dir

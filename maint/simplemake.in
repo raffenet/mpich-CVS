@@ -956,7 +956,7 @@ sub DefaultRules {
 	&print_make_longline( FD,  "\${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
 	&print_make_setpos( 8 );
 	&FindWorkingAutoconf ;
-	# Use autoheader only if AC_CONFIG_HEADERS is in the configure file
+	# Use autoheader only if AC_CONFIG_HEADER is in the configure file
 	# 
 	if ($configure_has_config_headers ne "no") {
 	    &print_make_longline( FD,  "\t(cd \${srcdir} && autoheader $aargs ; \\$newline\t$autoconf $aargs )" );
@@ -1495,6 +1495,10 @@ sub TargetClean {
     if (defined($autoconf_files_by_dir{$lcurdir})) {
 	$rmfile = $autoconf_files_by_dir{$lcurdir};
 	print FD "\t-rm -f $rmfile$newline";
+    }
+    if ($configure_has_config_headers ne "no") {
+	# Add the AC_CONFIG_HEADER file, if any.
+	print FD "\t-rm -f $configure_has_config_headers$newline";
     }
     if ($distcleanfiles ne "") {
 	print FD "\t-rm -f $distcleanfiles$newline";
@@ -2196,6 +2200,8 @@ sub ReadAutoconf {
 	#if (/^\s*#/) { next; }
 	if (/^\s*AC_CONFIG_HEADER\((.*)\)/) {
 	    # Record file name of header in result variable
+	    # We also need to add this to the list of files to remove
+	    # in the distclean target
 	    $configure_has_config_headers = $1;
 	}
 	if (/^\s*AC_OUTPUT\(/) {

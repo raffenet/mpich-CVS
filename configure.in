@@ -1314,8 +1314,8 @@ AC_OUTPUT(Makefile src/Makefile \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
 	  test/util/info/Makefile \
-	  examples/Makefile\
-          src/util/logging/Makefile\
+	  examples/Makefile \
+          src/util/logging/Makefile \
           src/util/timing/Makefile )
 
 dnl The following files should be created by the appropriate configure within

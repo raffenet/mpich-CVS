@@ -21,9 +21,10 @@ reasons for them.
  ones that represent some internal error that a user may see if
  something goes wrong).  Debugging messages should be either wrapped
  in 
- DEBUG(...) (as in DEBUG(printf( ....))) or use DBG_PRINTF and DBG_FPRINTF.  
+ MPIDEBUG(...) (as in MPIDEBUG(printf( ....))) or use DBG_PRINTF and DBG_FPRINTF.  
 
-4. C++ files should use a C++ suffix (e.g., cc or cpp).  C++ header
+4. C++ files should use a C++ suffix (e.g., cxx or cpp; cxx is used by the
+   C++ binding).  C++ header
     files should set the Emacs mode to C++, as in 
     /* -*- Mode: C++;  c-basic-offset:4 ; -*- */  
    Don't forget that // is not a valid C comment.
@@ -40,7 +41,13 @@ reasons for them.
    an strncpy( a, argv[i], strlen(argv[i])+1 ), whoever wrote this
    abomination owes a round of drinks for the group :). 
 
-6. There are always exceptions.  These can be handled either by
+6. NMPI_xxx routines should only be used when the error handler has
+   switched to errors return; this is easily done with the error nesting
+   calls, and these can be nested, so that is it safe to use these for
+   routines that may be called from inside a routine that has set 
+   a nested call.  
+
+7. There are always exceptions.  These can be handled either by
    telling the code checker to skip a file (appropriate only for
    external files, such as crypt.h), or by enhancing the code checker.
    For example, in working on the printf stuff, I realized that we
@@ -50,7 +57,7 @@ reasons for them.
    is something you think we should be checking for (and an easy way
    to do it), please contribute it. 
 
-7. By default, the codechecks ignore directories that are named
+8. By default, the codechecks ignore directories that are named
    "test".  This provides an easy way to both clearly separate these
    programs (we've had bug reports about the test programs because
    they were in the source directory) and avoid complaints from the

@@ -1,1 +1,3 @@
 SUBDIRS = mpi mpid util .
+distclean-local:
+	rm -f runtests
