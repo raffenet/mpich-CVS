@@ -120,7 +120,10 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     mpi_errno = MPID_Init(argc, argv, required, provided, &has_args, &has_env);
 
     MPIR_Process.initialized = MPICH_WITHIN_MPI;
-    
+
+    MPID_Timer_init(MPIR_Process.comm_world->rank,
+		    MPIR_Process.comm_world->local_size);
+
     return mpi_errno;
 }
 #endif
