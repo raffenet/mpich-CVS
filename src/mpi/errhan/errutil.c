@@ -73,15 +73,19 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     else {
 	switch (comm_ptr->errhandler->language) {
 	case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX:
+#endif
 	    (*comm_ptr->errhandler->errfn.C_Comm_Handler_function)( 
 		&comm_ptr->handle, &errcode );
 	    break;
+#ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
 	    (*comm_ptr->errhandler->errfn.F77_Handler_function)( 
 		(MPI_Fint *)&comm_ptr->handle, &errcode );
 	    break;
+#endif
 	}
     }
     return errcode;
@@ -97,15 +101,19 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[],
     if (win_ptr && win_ptr->errhandler) {
 	switch (win_ptr->errhandler->language) {
 	case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX:
+#endif
 	    (*win_ptr->errhandler->errfn.C_Comm_Handler_function)( 
 		&win_ptr->handle, &errcode );
 	    break;
+#ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
 	    (*win_ptr->errhandler->errfn.F77_Handler_function)( 
 		(MPI_Fint *)&win_ptr->handle, &errcode );
 	    break;
+#endif
 	}
     }
     else {
@@ -126,15 +134,19 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
     if (file_ptr && file_ptr->errhandler) {
 	switch (file_ptr->errhandler->language) {
 	case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX:
+#endif
 	    (*file_ptr->errhandler->errfn.C_Comm_Handler_function)( 
 		&file_ptr->handle, &errcode );
 	    break;
+#ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
 	    (*file_ptr->errhandler->errfn.F77_Handler_function)( 
 		(MPI_Fint *)&file_ptr->handle, &errcode );
 	    break;
+#endif
 	}
     }
     else {

@@ -99,8 +99,12 @@ PMPI_LOCAL int MPIR_Exscan (
         else
             is_commutative = 1;
         
+#ifdef HAVE_CXX_BINDING
         if ((op_ptr->language == MPID_LANG_C) || (op_ptr->language ==
                                                   MPID_LANG_CXX)) 
+#else
+	if ((op_ptr->language == MPID_LANG_C))
+#endif
             uop = (MPI_User_function *) op_ptr->function.c_function;
         else
             uop = (MPI_User_function *) op_ptr->function.f77_function;

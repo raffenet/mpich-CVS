@@ -195,8 +195,15 @@ int MPIU_usage_printf( char *str, ... );
 int MPIU_error_printf( char *str, ... );
 
 /* Known language bindings */
-typedef enum MPID_Lang_t { MPID_LANG_C, MPID_LANG_FORTRAN, 
-               MPID_LANG_CXX, MPID_LANG_FORTRAN90 } MPID_Lang_t;
+typedef enum MPID_Lang_t { MPID_LANG_C, 
+#ifdef HAVE_FORTRAN_BINDING
+			   MPID_LANG_FORTRAN, 
+			   MPID_LANG_FORTRAN90,
+#endif
+#ifdef HAVE_CXX_BINDING
+			   MPID_LANG_CXX, 
+#endif
+} MPID_Lang_t;
 
 /* Known MPI object types.  These are used for both the error handlers 
    and for the handles.  This is a 4 bit value.  0 is reserved for so 

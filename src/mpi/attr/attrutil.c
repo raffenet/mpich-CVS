@@ -111,7 +111,9 @@ int MPIR_Comm_attr_delete( MPID_Comm *comm_ptr, MPID_Attribute *attr )
 	language = p->keyval->language;
 	switch (language) {
 	case MPID_LANG_C: 
+#ifdef HAVE_CXX_BINDING
 	case MPID_LANG_CXX: 
+#endif
 	    mpi_errno = delfn.C_CommDeleteFunction( comm_ptr->handle, 
 					  p->keyval->handle, 
 					  p->value, p->keyval->extra_state );

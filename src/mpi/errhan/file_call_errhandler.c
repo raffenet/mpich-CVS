@@ -72,15 +72,19 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
     /* ... body of routine ...  */
     switch (file_ptr->errhandler->language) {
     case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
     case MPID_LANG_CXX:
+#endif
 	(*file_ptr->errhandler->errfn.C_File_Handler_function)( 
 	    &file_ptr->handle, &errorcode );
 	break;
+#ifdef HAVE_FORTRAN_BINDING
     case MPID_LANG_FORTRAN90:
     case MPID_LANG_FORTRAN:
 	(*file_ptr->errhandler->errfn.F77_Handler_function)( 
 	    (MPI_Fint *)&file_ptr->handle, &errorcode );
 	break;
+#endif
     }
     /* ... end of body of routine ... */
 

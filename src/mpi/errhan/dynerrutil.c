@@ -61,7 +61,7 @@ const char *MPIR_Err_get_dynerr_string( int code );
 static void MPIR_Init_err_dyncodes( void )
 {
     int i;
-#if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_FUNNELED
+#if MPID_MAX_THREAD_LEVEL > MPI_THREAD_FUNNELED
     { 
 	int init_value;
 	MPIR_Fetch_and_increment( &initialized, &init_value );
@@ -69,7 +69,7 @@ static void MPIR_Init_err_dyncodes( void )
 	    /* Some other thread is initializing the data.  Wait
 	       until that thread completes */
 	    while (!ready) {
-		MPIR_Thread_yield();
+		MPID_Thread_yield();
 	    }
 	}
     }

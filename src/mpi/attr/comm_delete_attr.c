@@ -120,6 +120,7 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 	   storage */
 	if ( keyval_ptr->delfn.C_CommDeleteFunction ) {
 	    switch (keyval_ptr->language) {
+#ifdef HAVE_FORTRAN_BINDING
 	    case MPID_LANG_FORTRAN:
 	    case MPID_LANG_FORTRAN90: 
 	    {
@@ -133,9 +134,11 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 		p->value = (void *)(MPI_Aint)inval;
 	    }
 	    break;
-		
+#endif		
 	    case MPID_LANG_C:
+#ifdef HAVE_CXX_BINDING
 	    case MPID_LANG_CXX:
+#endif
 		mpi_errno = (*keyval_ptr->delfn.C_CommDeleteFunction)(comm, 
 						  comm_keyval, p->value,
 						  keyval_ptr->extra_state );
