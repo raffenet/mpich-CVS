@@ -71,7 +71,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.attrs.appnum          = 0;
     MPIR_Process.attrs.host            = 0;
     MPIR_Process.attrs.io              = 0;
-    MPIR_Process.attrs.lastusedcode    = 0;
+    MPIR_Process.attrs.lastusedcode    = MPI_ERR_LASTCODE;
     MPIR_Process.attrs.tag_ub          = 0;
     MPIR_Process.attrs.universe        = 1;
     MPIR_Process.attrs.wtime_is_global = 0;
