@@ -24,6 +24,8 @@
 #define MAXHOSTNAME 256
 #endif
 #endif
+/* This should be moved to pmiu for shutdown */
+#include <sys/socket.h>
 /* mpimem includes the definitions for MPIU_Snprintfl, MPIU_Malloc, and 
    MPIU_Free */
 #include "mpimem.h"
@@ -300,8 +302,8 @@ int PMI_Get_clique_ranks( int ranks[], int length )
 /* Inform the process manager that we're in finalize */
 int PMI_Finalize( )
 {
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 #ifdef USE_HUMAN_READABLE_TOKENS
-    char buf[PMIU_MAXLINE];
     char *iter;
     int maxlen;
 #endif
@@ -318,6 +320,7 @@ int PMI_Finalize( )
 #else
 	PMIU_writeline( PMI_fd, "cmd=finalize\n" );
 #endif
+	shutdown( PMI_fd, SHUT_RDWR );
 	close( PMI_fd );
     }
     return( 0 );
