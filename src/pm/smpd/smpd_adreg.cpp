@@ -529,11 +529,8 @@ SMPD_BOOL smpd_setup_scp()
 
     if (dwStatus == NO_ERROR)
     {
-	dwStatus = SpnRegister(
-	    pwszComputerName,    /* Account on which SPNs are registered. */
-	    pspn,                /* Array of SPNs to register. */
-	    ulSpn,               /* Number of SPNs in array. */
-	    DS_SPN_REPLACE_SPN_OP/*DS_SPN_ADD_SPN_OP*/);  /* Operation code: Add SPNs. */
+	/*dwStatus = SpnRegister(pwszComputerName, pspn, ulSpn, DS_SPN_DELETE_SPN_OP);*/
+	dwStatus = SpnRegister(pwszComputerName, pspn, ulSpn, DS_SPN_ADD_SPN_OP);
 	if (dwStatus != NO_ERROR)
 	{
 	    ReportError(TEXT("SpnRegister failed"), dwStatus);
