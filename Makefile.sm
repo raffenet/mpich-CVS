@@ -6,7 +6,8 @@ DOC_SUBDIRS = doc
 # for the configure step, the libraries are removed and the object files 
 # cleaned out.  Without this step, it is possible to run make and encounter
 # errors caused by out-of-date objects in the directories and in the 
-# library
+# library.  We do not replace the pkglist file until the make completes,
+# using the all-postamble target.
 all-local:
 	if [ ! -d lib ] ; then mkdir lib ; \
 	else \
@@ -18,16 +19,17 @@ all-local:
             else \
 	        rm -f lib/lib${MPILIBNAME}.a lib/libp${MPILIBNAME}.a ; \
 		rm -f lib/pkglist ; \
-	        mv -f lib/pkglist.new lib/pkglist ; \
 		${MAKE} clean ; cd test && ${MAKE} clean ; \
 	    fi ; \
 	fi
 all-preamble:
 	@echo "Beginning make"
-# Add any final extras
+# Add any final extras.  Move the "pkglist.new" file to "pkglist" on 
+# successful completion
 all-postamble:
 	if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	( cd src/mpi/debugger && $(MAKE) ./libtvmpich.so ) ; fi
+	@if [ -s lib/pkglist.new ] ; then mv -f lib/pkglist.new lib/pkglist ; fi
 	@echo "Make completed"
 
 distclean-local:
