@@ -29,92 +29,92 @@ void MPE_Init_MPIRMA( void )
 
   state = &states[MPE_ACCUMULATE_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "ACCUMULATE";
+  state->name = "MPI_Accumulate";
   state->color = "purple";
 
   state = &states[MPE_ALLOC_MEM_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "ALLOC_MEM";
+  state->name = "MPI_Alloc_mem";
   state->color = "purple";
 
   state = &states[MPE_FREE_MEM_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "FREE_MEM";
+  state->name = "MPI_Free_mem";
   state->color = "purple";
 
   state = &states[MPE_GET_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "GET";
+  state->name = "MPI_Get";
   state->color = "LightGreen";
 
   state = &states[MPE_PUT_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "PUT";
+  state->name = "MPI_Put";
   state->color = "LightBlue";
 
   state = &states[MPE_WIN_COMPLETE_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_COMPLETE";
+  state->name = "MPI_Win_complete";
   state->color = "purple";
 
   state = &states[MPE_WIN_CREATE_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_CREATE";
+  state->name = "MPI_Win_create";
   state->color = "purple";
 
   state = &states[MPE_WIN_FENCE_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_FENCE";
+  state->name = "MPI_Win_fence";
   state->color = "tomato";
 
   state = &states[MPE_WIN_FREE_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_FREE";
+  state->name = "MPI_Win_free";
   state->color = "purple";
 
   state = &states[MPE_WIN_GET_GROUP_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_GET_GROUP";
+  state->name = "MPI_Win_get_group";
   state->color = "purple";
 
   state = &states[MPE_WIN_GET_NAME_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_GET_NAME";
+  state->name = "MPI_Win_get_name";
   state->color = "purple";
 
   state = &states[MPE_WIN_LOCK_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_LOCK";
+  state->name = "MPI_Win_lock";
   state->color = "purple";
 
   state = &states[MPE_WIN_POST_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_POST";
+  state->name = "MPI_Win_post";
   state->color = "DarkGreen";
 
   state = &states[MPE_WIN_SET_NAME_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_SET_NAME";
+  state->name = "MPI_Win_set_name";
   state->color = "purple";
 
   state = &states[MPE_WIN_START_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_START";
+  state->name = "MPI_Win_start";
   state->color = "purple";
 
   state = &states[MPE_WIN_TEST_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_TEST";
+  state->name = "MPI_Win_test";
   state->color = "DarkOrange";
 
   state = &states[MPE_WIN_UNLOCK_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_UNLOCK";
+  state->name = "MPI_Win_unlock";
   state->color = "purple";
 
   state = &states[MPE_WIN_WAIT_ID];
   state->kind_mask = MPE_KIND_RMA;
-  state->name = "WIN_WAIT";
+  state->name = "MPI_Win_wait";
   state->color = "maroon";
 }
 

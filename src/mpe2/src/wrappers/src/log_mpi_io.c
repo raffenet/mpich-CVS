@@ -69,264 +69,263 @@ void MPE_Init_MPIIO( void )
   
   state = &states[MPE_FILE_OPEN_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_OPEN";
+  state->name = "MPI_File_open";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_CLOSE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_CLOSE";
+  state->name = "MPI_File_close";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_DELETE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_DELETE";
+  state->name = "MPI_File_delete";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_SET_SIZE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_SET_SIZE";
+  state->name = "MPI_File_set_size";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_PREALLOCATE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_PREALLOCATE";
+  state->name = "MPI_File_preallocate";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_SIZE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_SIZE";
+  state->name = "MPI_File_get_size";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_GROUP_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_GROUP";
+  state->name = "MPI_File_get_group";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_AMODE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_AMODE";
+  state->name = "MPI_File_get_amode";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_SET_INFO_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_SET_INFO";
+  state->name = "MPI_File_set_info";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_INFO_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_INFO";
+  state->name = "MPI_File_get_info";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_SET_VIEW_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_SET_VIEW";
+  state->name = "MPI_File_set_view";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_VIEW_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_VIEW";
+  state->name = "MPI_File_get_view";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_AT_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_AT";
+  state->name = "MPI_File_read_at";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_AT_ALL_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_AT_ALL";
+  state->name = "MPI_File_read_at_all";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_AT_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_AT";
+  state->name = "MPI_File_write_at";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_AT_ALL_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_AT_ALL";
+  state->name = "MPI_File_write_at_all";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_IREAD_AT_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_IREAD_AT";
+  state->name = "MPI_File_iread_at";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_IWRITE_AT_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_IWRITE_AT";
+  state->name = "MPI_File_iwrite_at";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ";
+  state->name = "MPI_File_read";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_ALL_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_ALL";
+  state->name = "MPI_File_read_all";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE";
+  state->name = "MPI_File_write";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_ALL_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_ALL";
+  state->name = "MPI_File_write_all";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_IREAD_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_IREAD";
+  state->name = "MPI_File_iread";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_IWRITE_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_IWRITE";
+  state->name = "MPI_File_iwrite";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_SEEK_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_SEEK";
+  state->name = "MPI_File_seek";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_POSITION_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_POSITION";
+  state->name = "MPI_File_get_position";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_BYTE_OFFSET_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_BYTE_OFFSET";
+  state->name = "MPI_File_get_byte_offset";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_SHARED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_SHARED";
+  state->name = "MPI_File_read_shared";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_SHARED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_SHARED";
+  state->name = "MPI_File_write_shared";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_IREAD_SHARED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_IREAD_SHARED";
+  state->name = "MPI_File_iread_shared";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_IWRITE_SHARED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_IWRITE_SHARED";
+  state->name = "MPI_File_iwrite_shared";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_ORDERED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_ORDERED";
+  state->name = "MPI_File_read_ordered";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_ORDERED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_ORDERED";
+  state->name = "MPI_File_write_ordered";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_SEEK_SHARED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_SEEK_SHARED";
+  state->name = "MPI_File_seek_shared";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_POSITION_SHARED_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_POSITION_SHARED";
+  state->name = "MPI_File_get_position_shared";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_AT_ALL_BEGIN_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_AT_ALL_BEGIN";
+  state->name = "MPI_File_read_at_all_begin";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_AT_ALL_END_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_AT_ALL_END";
+  state->name = "MPI_File_read_at_all_end";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_AT_ALL_BEGIN_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_AT_ALL_BEGIN";
+  state->name = "MPI_File_write_at_all_begin";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_AT_ALL_END_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_AT_ALL_END";
+  state->name = "MPI_File_write_at_all_end";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_ALL_BEGIN_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_ALL_BEGIN";
+  state->name = "MPI_File_read_all_begin";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_ALL_END_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_ALL_END";
+  state->name = "MPI_File_read_all_end";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_ALL_BEGIN_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_ALL_BEGIN";
+  state->name = "MPI_File_write_all_begin";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_ALL_END_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_ALL_END";
+  state->name = "MPI_File_write_all_end";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_ORDERED_BEGIN_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_ORDERED_BEGIN";
+  state->name = "MPI_File_read_ordered_begin";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_READ_ORDERED_END_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_READ_ORDERED_END";
+  state->name = "MPI_File_read_ordered_end";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_ORDERED_BEGIN_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_ORDERED_BEGIN";
+  state->name = "MPI_File_write_ordered_begin";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_WRITE_ORDERED_END_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_WRITE_ORDERED_END";
+  state->name = "MPI_File_write_ordered_end";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_TYPE_EXTENT_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_TYPE_EXTENT";
+  state->name = "MPI_File_get_type_extent";
   state->color = "brown:gray2";
   
   state = &states[MPE_REGISTER_DATAREP_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "REGISTER_DATAREP";
+  state->name = "MPI_Register_datarep";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_SET_ATOMICITY_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_SET_ATOMICITY";
+  state->name = "MPI_File_set_atomicity";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_GET_ATOMICITY_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_GET_ATOMICITY";
+  state->name = "MPI_File_get_atomicity";
   state->color = "brown:gray2";
   
   state = &states[MPE_FILE_SYNC_ID];
   state->kind_mask = MPE_KIND_FILE;
-  state->name = "FILE_SYNC";
+  state->name = "MPI_File_sync";
   state->color = "brown:gray2";
-  
 }
 
 

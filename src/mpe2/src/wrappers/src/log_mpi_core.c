@@ -1754,526 +1754,526 @@ char *** argv;
    */
   state = &states[MPE_ALLGATHER_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "ALLGATHER";
+  state->name = "MPI_Allgather";
 
   state = &states[MPE_ALLGATHERV_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "ALLGATHERV";
+  state->name = "MPI_Allgatherv";
 
   state = &states[MPE_ALLREDUCE_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "ALLREDUCE";
+  state->name = "MPI_Allreduce";
   state->color = "purple:vlines3";
 
   state = &states[MPE_ALLTOALL_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "ALLTOALL";
+  state->name = "MPI_Alltoall";
 
   state = &states[MPE_ALLTOALLV_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "ALLTOALLV";
+  state->name = "MPI_Alltoallv";
 
   state = &states[MPE_BARRIER_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "BARRIER";
+  state->name = "MPI_Barrier";
   state->color = "yellow:dimple3";
 
   state = &states[MPE_BCAST_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "BCAST";
+  state->name = "MPI_Bcast";
   state->color = "cyan:boxes";
 
   state = &states[MPE_GATHER_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "GATHER";
+  state->name = "MPI_Gather";
 
   state = &states[MPE_OP_CREATE_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "OP_CREATE";
+  state->name = "MPI_Op_create";
 
   state = &states[MPE_OP_FREE_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "OP_FREE";
+  state->name = "MPI_Op_free";
 
   state = &states[MPE_REDUCE_SCATTER_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "REDUCE_SCATTER";
+  state->name = "MPI_Reduce_scatter";
 
   state = &states[MPE_REDUCE_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "REDUCE";
+  state->name = "MPI_Reduce";
   state->color = "purple:2x2";
 
   state = &states[MPE_SCAN_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "SCAN";
+  state->name = "MPI_Scan";
 
   state = &states[MPE_SCATTER_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "SCATTER";
+  state->name = "MPI_Scatter";
 
   state = &states[MPE_SCATTERV_ID];
   state->kind_mask = MPE_KIND_COLL;
-  state->name = "SCATTERV";
+  state->name = "MPI_Scatterv";
 
   state = &states[MPE_ATTR_DELETE_ID];
   state->kind_mask = MPE_KIND_ATTR;
-  state->name = "ATTR_DELETE";
+  state->name = "MPI_Attr_delete";
 
   state = &states[MPE_ATTR_GET_ID];
   state->kind_mask = MPE_KIND_ATTR;
-  state->name = "ATTR_GET";
+  state->name = "MPI_Attr_get";
 
   state = &states[MPE_ATTR_PUT_ID];
   state->kind_mask = MPE_KIND_ATTR;
-  state->name = "ATTR_PUT";
+  state->name = "MPI_Attr_put";
 
   state = &states[MPE_COMM_COMPARE_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
-  state->name = "COMM_COMPARE";
+  state->name = "MPI_Comm_compare";
 
   state = &states[MPE_COMM_CREATE_ID];
   state->kind_mask = MPE_KIND_COMM;
-  state->name = "COMM_CREATE";
+  state->name = "MPI_Comm_create";
 
   state = &states[MPE_COMM_DUP_ID];
   state->kind_mask = MPE_KIND_COMM;
-  state->name = "COMM_DUP";
+  state->name = "MPI_Comm_dup";
 
   state = &states[MPE_COMM_FREE_ID];
   state->kind_mask = MPE_KIND_COMM;
-  state->name = "COMM_FREE";
+  state->name = "MPI_Comm_free";
 
   state = &states[MPE_COMM_GROUP_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
-  state->name = "COMM_GROUP";
+  state->name = "MPI_Comm_group";
 
   state = &states[MPE_COMM_RANK_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
-  state->name = "COMM_RANK";
+  state->name = "MPI_Comm_rank";
 
   state = &states[MPE_COMM_REMOTE_GROUP_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
-  state->name = "COMM_REMOTE_GROUP";
+  state->name = "MPI_Comm_remote_group";
 
   state = &states[MPE_COMM_REMOTE_SIZE_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
-  state->name = "COMM_REMOTE_SIZE";
+  state->name = "MPI_Comm_remote_size";
 
   state = &states[MPE_COMM_SIZE_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
-  state->name = "COMM_SIZE";
+  state->name = "MPI_Comm_size";
 
   state = &states[MPE_COMM_SPLIT_ID];
   state->kind_mask = MPE_KIND_COMM;
-  state->name = "COMM_SPLIT";
+  state->name = "MPI_Comm_split";
 
   state = &states[MPE_COMM_TEST_INTER_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
-  state->name = "COMM_TEST_INTER";
+  state->name = "MPI_Comm_test_inter";
 
   state = &states[MPE_GROUP_COMPARE_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_COMPARE";
+  state->name = "MPI_Group_compare";
 
   state = &states[MPE_GROUP_DIFFERENCE_ID];  state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_DIFFERENCE";
+  state->name = "MPI_Group_difference";
 
   state = &states[MPE_GROUP_EXCL_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_EXCL";
+  state->name = "MPI_Group_excl";
 
   state = &states[MPE_GROUP_FREE_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_FREE";
+  state->name = "MPI_Group_free";
 
   state = &states[MPE_GROUP_INCL_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_INCL";
+  state->name = "MPI_Group_incl";
 
   state = &states[MPE_GROUP_INTERSECTION_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_INTERSECTION";
+  state->name = "MPI_Group_intersection";
 
   state = &states[MPE_GROUP_RANK_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_RANK";
+  state->name = "MPI_Group_rank";
 
   state = &states[MPE_GROUP_RANGE_EXCL_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_RANGE_EXCL";
+  state->name = "MPI_Group_range_excl";
 
   state = &states[MPE_GROUP_RANGE_INCL_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_RANGE_INCL";
+  state->name = "MPI_Group_range_incl";
 
   state = &states[MPE_GROUP_SIZE_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_SIZE";
+  state->name = "MPI_Group_size";
 
   state = &states[MPE_GROUP_TRANSLATE_RANKS_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_TRANSLATE_RANKS";
+  state->name = "MPI_Group_translate_ranks";
 
   state = &states[MPE_GROUP_UNION_ID];
   state->kind_mask = MPE_KIND_GROUP;
-  state->name = "GROUP_UNION";
+  state->name = "MPI_Group_union";
 
   state = &states[MPE_INTERCOMM_CREATE_ID];
   state->kind_mask = MPE_KIND_COMM;
-  state->name = "INTERCOMM_CREATE";
+  state->name = "MPI_Intercomm_create";
 
   state = &states[MPE_INTERCOMM_MERGE_ID];
   state->kind_mask = MPE_KIND_COMM;
-  state->name = "INTERCOMM_MERGE";
+  state->name = "MPI_Intercomm_merge";
 
   state = &states[MPE_KEYVAL_CREATE_ID];
   state->kind_mask = MPE_KIND_ATTR;
-  state->name = "KEYVAL_CREATE";
+  state->name = "MPI_Keyval_create";
 
   state = &states[MPE_KEYVAL_FREE_ID];
   state->kind_mask = MPE_KIND_ATTR;
-  state->name = "KEYVAL_FREE";
+  state->name = "MPI_Keyval_free";
 
   state = &states[MPE_ABORT_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "ABORT";
+  state->name = "MPI_Abort";
 
   state = &states[MPE_ERROR_CLASS_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "ERROR_CLASS";
+  state->name = "MPI_Error_class";
 
   state = &states[MPE_ERRHANDLER_CREATE_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "ERRHANDLER_CREATE";
+  state->name = "MPI_Errhandler_create";
 
   state = &states[MPE_ERRHANDLER_FREE_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "ERRHANDLER_FREE";
+  state->name = "MPI_Errhandler_free";
 
   state = &states[MPE_ERRHANDLER_GET_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "ERRHANDLER_GET";
+  state->name = "MPI_Errhandler_get";
 
   state = &states[MPE_ERROR_STRING_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "ERROR_STRING";
+  state->name = "MPI_Error_string";
 
   state = &states[MPE_ERRHANDLER_SET_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "ERRHANDLER_SET";
+  state->name = "MPI_Errhandler_set";
 
   state = &states[MPE_GET_PROCESSOR_NAME_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "GET_PROCESSOR_NAME";
+  state->name = "MPI_Get_processor_name";
 
   state = &states[MPE_INITIALIZED_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "INITIALIZED";
+  state->name = "MPI_Initialized";
 
   state = &states[MPE_WTICK_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "WTICK";
+  state->name = "MPI_Wtick";
 
   state = &states[MPE_WTIME_ID];
   state->kind_mask = MPE_KIND_ENV;
-  state->name = "WTIME";
+  state->name = "MPI_Wtime";
 
   state = &states[MPE_ADDRESS_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "ADDRESS";
+  state->name = "MPI_Address";
 
   state = &states[MPE_BSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "BSEND";
+  state->name = "MPI_Bsend";
   state->color = "blue:gray3";
 
   state = &states[MPE_BSEND_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "BSEND_INIT";
+  state->name = "MPI_Bsend_init";
 
   state = &states[MPE_BUFFER_ATTACH_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "BUFFER_ATTACH";
+  state->name = "MPI_Buffer_attach";
 
   state = &states[MPE_BUFFER_DETACH_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "BUFFER_DETACH";
+  state->name = "MPI_Buffer_detach";
 
   state = &states[MPE_CANCEL_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "CANCEL";
+  state->name = "MPI_Cancel";
 
   state = &states[MPE_REQUEST_FREE_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "REQUEST_FREE";
+  state->name = "MPI_Request_free";
 
   state = &states[MPE_RECV_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "RECV_INIT";
+  state->name = "MPI_Recv_init";
 
   state = &states[MPE_SEND_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "SEND_INIT";
+  state->name = "MPI_Send_init";
 
   state = &states[MPE_GET_ELEMENTS_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "GET_ELEMENTS";
+  state->name = "MPI_Get_elements";
 
   state = &states[MPE_GET_COUNT_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "GET_COUNT";
+  state->name = "MPI_Get_count";
 
   state = &states[MPE_IBSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "IBSEND";
+  state->name = "MPI_Ibsend";
 
   state = &states[MPE_IPROBE_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "IPROBE";
+  state->name = "MPI_Iprobe";
   state->color = "seagreen:gray";
 
   state = &states[MPE_IRECV_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "IRECV";
+  state->name = "MPI_Irecv";
   state->color = "springgreen:gray";
 
   state = &states[MPE_IRSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "IRSEND";
+  state->name = "MPI_Irsend";
 
   state = &states[MPE_ISEND_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "ISEND";
+  state->name = "MPI_Isend";
   state->color = "skyblue:gray";
   
   state = &states[MPE_ISSEND_ID];
   state->kind_mask = MPE_ISSEND_ID;
-  state->name = "ISSEND";
+  state->name = "MPI_Issend";
   state->color = "seagreen:gray";
   
   state = &states[MPE_PACK_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "PACK";
+  state->name = "MPI_Pack";
   
   state = &states[MPE_PACK_SIZE_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "PACK_SIZE";
+  state->name = "MPI_Pack_size";
 
   state = &states[MPE_PROBE_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "PROBE";
+  state->name = "MPI_Probe";
   state->color = "seagreen:gray";
   
   state = &states[MPE_RECV_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "RECV";
+  state->name = "MPI_Recv";
   state->color = "green:light_gray";
   
   state = &states[MPE_RSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "RSEND";
+  state->name = "MPI_Rsend";
   state->color = "DeepSkyBlue:gray";
 
   state = &states[MPE_RSEND_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "RSEND_INIT";
+  state->name = "MPI_Rsend_init";
 
   state = &states[MPE_SEND_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "SEND";
+  state->name = "MPI_Send";
   state->color = "blue:gray3";
 
   state = &states[MPE_SENDRECV_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "SENDRECV";
+  state->name = "MPI_Sendrecv";
   state->color = "seagreen:gray";
   
   state = &states[MPE_SENDRECV_REPLACE_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "SENDRECV_REPLACE";
+  state->name = "MPI_Sendrecv_replace";
   state->color = "seagreen:gray";
 
   state = &states[MPE_SSEND_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "SSEND";
+  state->name = "MPI_Ssend";
   state->color = "deepskyblue:gray";
 
   state = &states[MPE_SSEND_INIT_ID];
   state->kind_mask = MPE_KIND_MSG_INIT;
-  state->name = "SSEND_INIT";
+  state->name = "MPI_Ssend_init";
 
   state = &states[MPE_START_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "START";
+  state->name = "MPI_Start";
 
   state = &states[MPE_STARTALL_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "STARTALL";
+  state->name = "MPI_Startall";
   
   state = &states[MPE_TEST_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "TEST";
+  state->name = "MPI_Test";
   state->color = "orange:gray";
 
   state = &states[MPE_TESTALL_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "TESTALL";
+  state->name = "MPI_Testall";
   state->color = "orange:gray";
 
   state = &states[MPE_TESTANY_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "TESTANY";
+  state->name = "MPI_Testany";
   state->color = "orange:gray";
 
   state = &states[MPE_TEST_CANCELLED_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "TEST_CANCELLED";
+  state->name = "MPI_Test_cancelled";
 
   state = &states[MPE_TESTSOME_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "TESTSOME";
+  state->name = "MPI_Testsome";
   state->color = "orange:gray";
 
   state = &states[MPE_TYPE_COMMIT_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_COMMIT";
+  state->name = "MPI_Type_commit";
 
   state = &states[MPE_TYPE_CONTIGUOUS_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_CONTIGUOUS";
+  state->name = "MPI_Type_contiguous";
 
   state = &states[MPE_TYPE_EXTENT_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_EXTENT";
+  state->name = "MPI_Type_extent";
 
   state = &states[MPE_TYPE_FREE_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_FREE";
+  state->name = "MPI_Type_free";
 
   state = &states[MPE_TYPE_HINDEXED_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_HINDEXED";
+  state->name = "MPI_Type_hindexed";
 
   state = &states[MPE_TYPE_INDEXED_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_INDEXED";
+  state->name = "MPI_Type_indexed";
 
   state = &states[MPE_TYPE_HVECTOR_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_HVECTOR";
+  state->name = "MPI_Type_hvector";
 
   state = &states[MPE_TYPE_LB_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_LB";
+  state->name = "MPI_Type_lb";
 
   state = &states[MPE_TYPE_SIZE_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_SIZE";
+  state->name = "MPI_Type_size";
 
   state = &states[MPE_TYPE_STRUCT_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_STRUCT";
+  state->name = "MPI_Type_struct";
 
   state = &states[MPE_TYPE_UB_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_UB";
+  state->name = "MPI_Type_ub";
 
   state = &states[MPE_TYPE_VECTOR_ID];
   state->kind_mask = MPE_KIND_DATATYPE;
-  state->name = "TYPE_VECTOR";
+  state->name = "MPI_Type_vector";
 
   state = &states[MPE_UNPACK_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "UNPACK";
+  state->name = "MPI_Unpack";
 
   state = &states[MPE_WAIT_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "WAIT";
+  state->name = "MPI_Wait";
   state->color = "red:black";
 
   state = &states[MPE_WAITALL_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "WAITALL";
+  state->name = "MPI_Waitall";
   state->color = "OrangeRed:gray";
 
   state = &states[MPE_WAITANY_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "WAITANY";
+  state->name = "MPI_Waitany";
   state->color = "coral:gray";
 
   state = &states[MPE_WAITSOME_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "WAITSOME";
+  state->name = "MPI_Waitsome";
   state->color = "red:black";
   
   state = &states[MPE_CART_COORDS_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CART_COORDS";
+  state->name = "MPI_Cart_coords";
 
   state = &states[MPE_CART_CREATE_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CART_CREATE";
+  state->name = "MPI_Cart_create";
 
   state = &states[MPE_CART_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CART_GET";
+  state->name = "MPI_Cart_get";
 
   state = &states[MPE_CART_MAP_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CART_MAP";
+  state->name = "MPI_Cart_map";
 
   state = &states[MPE_CART_RANK_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CART_RANK";
+  state->name = "MPI_Cart_rank";
 
   state = &states[MPE_CART_SHIFT_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CART_SHIFT";
+  state->name = "MPI_Cart_shift";
 
   state = &states[MPE_CART_SUB_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CART_SUB";
+  state->name = "MPI_Cart_sub";
 
   state = &states[MPE_CARTDIM_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "CARTDIM_GET";
+  state->name = "MPI_Cartdim_get";
 
   state = &states[MPE_DIMS_CREATE_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "DIMS_CREATE";
+  state->name = "MPI_Dims_create";
 
   state = &states[MPE_GRAPH_CREATE_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "GRAPH_CREATE";
+  state->name = "MPI_Graph_create";
 
   state = &states[MPE_GRAPH_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "GRAPH_GET";
+  state->name = "MPI_Graph_get";
 
   state = &states[MPE_GRAPH_MAP_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "GRAPH_MAP";
+  state->name = "MPI_Graph_map";
 
   state = &states[MPE_GRAPH_NEIGHBORS_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "GRAPH_NEIGHBORS";
+  state->name = "MPI_Graph_neighbors";
 
   state = &states[MPE_GRAPH_NEIGHBORS_COUNT_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "GRAPH_NEIGHBORS_COUNT";
+  state->name = "MPI_Graph_neighbors_count";
 
   state = &states[MPE_GRAPHDIMS_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "GRAPHDIMS_GET";
+  state->name = "MPI_Graphdims_get";
 
   state = &states[MPE_TOPO_TEST_ID];
   state->kind_mask = MPE_KIND_TOPO;
-  state->name = "TOPO_TEST";
+  state->name = "MPI_Topo_test";
 
   state = &states[MPE_RECV_IDLE_ID];
   state->kind_mask = MPE_KIND_MSG;
-  state->name = "RECV_IDLE";
+  state->name = "MPI_Recv_idle";
 
 #ifdef HAVE_MPI_IO
   MPE_Init_MPIIO();
