@@ -11,8 +11,10 @@
 #include <assert.h>
 #include <limits.h>
 
-char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type);
+void MPIDI_Datatype_dot_printf(MPI_Datatype type, int depth, int header);
 void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p, int depth, int header);
+void MPIDI_Datatype_contents_printf(MPI_Datatype type, int depth, int acount);
+static char *MPIDI_Datatype_depth_spacing(int depth);
 
 void MPIDI_Datatype_dot_printf(MPI_Datatype type,
 			       int depth,
@@ -90,7 +92,7 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 			    loop_p->el_extent);
 	    break;
 	case DLOOP_KIND_BLOCKINDEXED:
-	    MPIU_dbg_printf("      dl%d [shape = record, label = \"blockindexed |{ ct = %d; blk = %d; regions = ",
+	    MPIU_dbg_printf("      dl%d [shape = record, label = \"blockindexed |{ ct = %d; blk = %d; disps = ",
 			    depth,
 			    loop_p->loop_params.bi_t.count,
 			    loop_p->loop_params.bi_t.blocksize);
@@ -350,7 +352,40 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     return NULL;
 }
 
-static char *MPIDI_Datatype_depth_spacing(depth)
+void MPIDU_Datatype_debug(MPI_Datatype type,
+			  int array_ct)
+{
+    int is_builtin;
+    MPID_Datatype *dtp;
+
+    is_builtin = (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN);
+
+    MPIU_dbg_printf("# MPIU_Datatype_debug: MPI_Datatype = 0x%0x (%s)\n", type,
+		    (is_builtin) ? MPIDU_Datatype_builtin_to_string(type) :
+		    "derived");
+
+    if (is_builtin) return;
+
+    MPID_Datatype_get_ptr(type, dtp);
+
+    MPIU_dbg_printf("# Size = %d, Extent = %d, LB = %d%s, UB = %d%s, Extent = %d, %s\n",
+		    dtp->size,
+		    dtp->extent,
+		    dtp->lb,
+		    (dtp->has_sticky_lb) ? "(sticky)" : "",
+		    dtp->ub,
+		    (dtp->has_sticky_ub) ? "(sticky)" : "",
+		    dtp->extent,
+		    dtp->is_contig ? "is N contig" : "is not N contig");
+
+    MPIU_dbg_printf("# Contents:\n");
+    MPIDI_Datatype_contents_printf(type, 0, array_ct);
+
+    MPIU_dbg_printf("# Dataloop:\n");
+    MPIDI_Datatype_dot_printf(type, 0, 1);
+}
+
+static char *MPIDI_Datatype_depth_spacing(int depth)
 {
     static char d0[] = "";
     static char d1[] = "  ";
@@ -382,7 +417,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
     int *ints;
 
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
-	MPIU_dbg_printf("%stype: %s\n",
+	MPIU_dbg_printf("# %stype: %s\n",
 			MPIDI_Datatype_depth_spacing(depth),
 			MPIDU_Datatype_builtin_to_string(type));
 	return;
@@ -398,7 +433,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
     aints = (MPI_Aint *) (((char *) ints) +
 			  cp->nr_ints * sizeof(int));
 
-    MPIU_dbg_printf("%scombiner: %s\n",
+    MPIU_dbg_printf("# %scombiner: %s\n",
 		    MPIDI_Datatype_depth_spacing(depth),
 		    MPIDU_Datatype_combiner_to_string(cp->combiner));
 
@@ -410,7 +445,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 	    /* not done */
 	    return;
 	case MPI_COMBINER_CONTIGUOUS:
-	    MPIU_dbg_printf("%scontig ct = %d\n", 
+	    MPIU_dbg_printf("# %scontig ct = %d\n", 
 			    MPIDI_Datatype_depth_spacing(depth),
 			    *ints);
 	    MPIDI_Datatype_contents_printf(*types,
@@ -418,7 +453,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 					   acount);
 	    return;
 	case MPI_COMBINER_VECTOR:
-	    MPIU_dbg_printf("%svector ct = %d, blk = %d, str = %d\n",
+	    MPIU_dbg_printf("# %svector ct = %d, blk = %d, str = %d\n",
 			    MPIDI_Datatype_depth_spacing(depth),
 			    ints[0],
 			    ints[1],
@@ -428,7 +463,7 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 					   acount);
 	    return;
 	case MPI_COMBINER_HVECTOR:
-	    MPIU_dbg_printf("%shvector ct = %d, blk = %d, str = %d\n",
+	    MPIU_dbg_printf("# %shvector ct = %d, blk = %d, str = %d\n",
 			    MPIDI_Datatype_depth_spacing(depth),
 			    ints[0],
 			    ints[1],
@@ -438,11 +473,11 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 					   acount);
 	    return;
 	case MPI_COMBINER_INDEXED:
-	    MPIU_dbg_printf("%sindexed ct = %d:\n",
+	    MPIU_dbg_printf("# %sindexed ct = %d:\n",
 			    MPIDI_Datatype_depth_spacing(depth),
 			    ints[0]);
 	    for (i=0; i < acount && i < ints[0]; i++) {
-		MPIU_dbg_printf("%s  indexed [%d]: blk = %d, disp = %d\n",
+		MPIU_dbg_printf("# %s  indexed [%d]: blk = %d, disp = %d\n",
 				MPIDI_Datatype_depth_spacing(depth),
 				i,
 				ints[2*i+1],
@@ -453,11 +488,11 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 	    }
 	    return;
 	case MPI_COMBINER_HINDEXED:
-	    MPIU_dbg_printf("%shindexed ct = %d:\n",
+	    MPIU_dbg_printf("# %shindexed ct = %d:\n",
 			    MPIDI_Datatype_depth_spacing(depth),
 			    ints[0]);
 	    for (i=0; i < acount && i < ints[0]; i++) {
-		MPIU_dbg_printf("%s  hindexed [%d]: blk = %d, disp = %d\n",
+		MPIU_dbg_printf("# %s  hindexed [%d]: blk = %d, disp = %d\n",
 				MPIDI_Datatype_depth_spacing(depth),
 				i,
 				ints[i+1],
@@ -468,11 +503,11 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 	    }
 	    return;
 	case MPI_COMBINER_STRUCT:
-	    MPIU_dbg_printf("%sstruct ct = %d:\n",
+	    MPIU_dbg_printf("# %sstruct ct = %d:\n",
 			    MPIDI_Datatype_depth_spacing(depth),
 			    ints[0]);
 	    for (i=0; i < acount && i < ints[0]; i++) {
-		MPIU_dbg_printf("%s  struct[%d]: blk = %d, disp = %d\n",
+		MPIU_dbg_printf("# %s  struct[%d]: blk = %d, disp = %d\n",
 				MPIDI_Datatype_depth_spacing(depth),
 				i,
 				ints[i+1],
@@ -483,8 +518,11 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 	    }
 	    return;
 	default:
-	    MPIU_dbg_printf("%sunhandled combiner\n",
+	    MPIU_dbg_printf("# %sunhandled combiner\n",
 			MPIDI_Datatype_depth_spacing(depth));
 	    return;
     }
 }
+
+
+
