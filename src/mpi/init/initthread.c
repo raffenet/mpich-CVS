@@ -189,6 +189,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIU_dbg_init(MPIR_Process.comm_world->rank);
     MPIU_Timer_init(MPIR_Process.comm_world->rank,
 		    MPIR_Process.comm_world->local_size);
+#ifdef USE_MEMORY_TRACING
+    MPIU_trinit( MPIR_Process.comm_world->rank );
+#endif
 
 #ifdef HAVE_FORTRAN_BINDING
     /* Initialize Fortran special names (MPI_BOTTOM and STATUS_IGNOREs) */
