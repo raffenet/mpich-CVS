@@ -33,12 +33,11 @@
 #include "mpiprof.h"
 #endif
 
-int    MPE_Log_hasBeenInit = 0;
-int    MPE_Log_hasBeenClosed = 0;
-/* end of borrowing */
-
-CLOG_Stream_t *clog_stream;
-CLOG_Buffer_t *clog_buffer;
+/* Global variables for MPE logging */
+CLOG_Stream_t  *clog_stream            = NULL;
+CLOG_Buffer_t  *clog_buffer            = NULL;
+int             MPE_Log_hasBeenInit    = 0;
+int             MPE_Log_hasBeenClosed  = 0;
 
 
 /*@
@@ -63,8 +62,8 @@ int MPE_Init_log( void )
 {
     if (!MPE_Log_hasBeenInit || MPE_Log_hasBeenClosed) {
         clog_stream  = CLOG_Open();
-        clog_buffer  = clog_stream->buffer;
         CLOG_Local_init( clog_stream, NULL );
+        clog_buffer  = clog_stream->buffer;
 #if !defined( CLOG_NOMPI )
         CLOG_Buffer_save_commevt( clog_buffer, CLOG_COMM_INIT,
                                   CLOG_COMM_NULL, (int) MPI_COMM_WORLD );
@@ -80,6 +79,7 @@ int MPE_Init_log( void )
         MPE_Log_hasBeenInit = 1;        /* set MPE_Log as being initialized */
         MPE_Log_hasBeenClosed = 0;
     }
+    MPE_Start_log();
     return MPE_LOG_OK;
 }
 
@@ -572,11 +572,15 @@ int MPE_Finish_log( char *filename )
 {
 /*
    The environment variable MPE_LOG_FORMAT is NOT read
- */
+*/
     char         *env_logfile_prefix;
 
     if ( MPE_Log_hasBeenClosed == 0 ) {
         CLOG_Local_finalize( clog_stream );
+        /*
+           Call MPE_Stop_log() before CLOG_Close() which nullifies clog_stream
+        */
+        MPE_Stop_log();
 
         env_logfile_prefix = (char *) getenv( "MPE_LOGFILE_PREFIX" );
         if ( env_logfile_prefix != NULL )
@@ -586,10 +590,14 @@ int MPE_Finish_log( char *filename )
         CLOG_Converge_sort( clog_stream );
         CLOG_Converge_finalize( clog_stream );
 
-        CLOG_Close( clog_stream );
+        /*
+           Finalize the CLOG_Stream_t and nullify clog_buffer so calling
+           other MPE routines after MPE_Finish_log will cause seg. fault.
+        */
+        CLOG_Close( &clog_stream );
+        clog_buffer = NULL;
 
         MPE_Log_hasBeenClosed = 1;
-        MPE_Stop_log();
     }
     return MPE_LOG_OK;
 }
