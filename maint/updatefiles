@@ -18,6 +18,7 @@ do_codingcheck=yes
 codecheck_args=""
 do_geterrmsgs=yes
 do_bindings=yes
+do_f77=yes
 #
 # Extract the arguments intended for updatefiles.  Any others are
 # given to simplemake.  
@@ -46,7 +47,12 @@ for arg in "$@" ; do
     -without-bindings|--without-bindings)
     do_bindings=no
     ;;
-
+    -with-f77|--with-f77)
+    do_f77=yes
+    ;;
+    -without-f77|--without-f77)
+    do_f77=no
+    ;;
     -help|--help|-usage|--usage)
     cat <<EOF
     updatefiles [ --with-codecheck | --without-codecheck ] 
@@ -120,12 +126,16 @@ rm -rf .tmp
 #
 # Create the bindings if necessary 
 if [ $do_bindings = "yes" ] ; then
-    if [ ! -s src/binding/f77/abortf.c ] ; then 
-	build_f77=yes
-    elif find -name 'src/binding/f77/buildiface' -newer 'src/binding/f77/abortf.c' ; then
-	build_f77=yes
+    if [ $do_f77 = "yes" ] ; then
+        if [ ! -s src/binding/f77/abortf.c ] ; then 
+	    build_f77=yes
+        elif find -name 'src/binding/f77/buildiface' -newer 'src/binding/f77/abortf.c' ; then
+	    build_f77=yes
+        else
+	    build_f77=no
+        fi
     else
-	build_f77=no
+        build_f77=no
     fi
 
     if [ $build_f77 = "yes" ] ; then
@@ -327,6 +337,12 @@ if [ "$has_unix_find" = "yes" ] ; then
     for dir in `find . -name 'configure.in' -print` ; do
         dir=`dirname $dir`
 	#echo $dir
+	if [ $dir = "./src/binding/f77" -a $do_f77 != yes ] ; then
+	    # Skip building the f77 configure (it requires special 
+	    # support because of bugs in the Fortran support in 
+	    # various releases of autoconf)
+	    continue
+	fi
 	if [ -s $dir/Makefile.in ] ; then 
             #echo "Found $dir/configure.in"
 	    #
