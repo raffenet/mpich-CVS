@@ -26,6 +26,7 @@ import base.drawable.Drawable;
 import base.drawable.Composite;
 import base.drawable.Primitive;
 import base.drawable.Shadow;
+import base.topology.SummaryState;
 
 public class TimeAveBox extends TimeBoundingBox
 {
@@ -35,15 +36,18 @@ public class TimeAveBox extends TimeBoundingBox
     private              Map                 map_type2twgt;
     private              List                list_nestables;
     private              SortedSet           set_timeblocks;
+    private              CategoryTimeBox[]   typebox_ary;
     private              double              box_duration;
     private              double              num_real_objs;
 
-    public TimeAveBox( final TimeBoundingBox timebox, boolean isNestable )
+    public TimeAveBox( final TimeBoundingBox  timebox,
+                             boolean          isNestable )
     {
         super( timebox );
         map_type2twgt   = new HashMap();
         box_duration    = super.getDuration();
         num_real_objs   = 0.0d;
+        typebox_ary     = null;
 
         if ( isNestable ) {
             list_nestables = new ArrayList();
@@ -55,7 +59,13 @@ public class TimeAveBox extends TimeBoundingBox
         }
     }
 
-    public void mergeWithReal( final Drawable dobj )
+    public TimeAveBox( final TimeAveBox  avebox )
+    {
+        this( avebox, avebox.list_nestables != null );
+        this.mergeWithTimeAveBox( avebox );
+    }
+
+    public void mergeWithReal( final Drawable  dobj )
     {
         Category          type;
         CategoryWeight    twgt;
@@ -81,7 +91,7 @@ public class TimeAveBox extends TimeBoundingBox
             list_nestables.add( dobj );
     }
 
-    public void mergeWithShadow( final Shadow shade )
+    public void mergeWithShadow( final Shadow  shade )
     {
         TimeBoundingBox   timeblock;
         Category          sobj_type;
@@ -113,6 +123,39 @@ public class TimeAveBox extends TimeBoundingBox
 
         if ( list_nestables != null )
             set_timeblocks.add( shade );
+    }
+
+    public void mergeWithTimeAveBox( final TimeAveBox  avebox )
+    {
+        TimeBoundingBox   timeblock;
+        Category          abox_type;
+        CategoryWeight    abox_twgt, this_twgt;
+        Iterator          abox_twgts;
+        double            overlap_duration;
+        float             duration_ratio;
+        int               idx;
+
+        overlap_duration = super.getIntersectionDuration( avebox );
+        duration_ratio   = (float) (overlap_duration / box_duration);
+
+        abox_twgts = avebox.map_type2twgt.values().iterator();
+        while ( abox_twgts.hasNext() ) {
+            abox_twgt = (CategoryWeight) abox_twgts.next();
+            abox_type = abox_twgt.getCategory();
+            this_twgt = (CategoryWeight) map_type2twgt.get( abox_type );
+            if ( this_twgt == null ) {
+                this_twgt = new CategoryWeight( abox_twgt );// abox_twgt's clone
+                this_twgt.rescaleAllRatios( duration_ratio );
+                map_type2twgt.put( abox_type, this_twgt );
+            }
+            else
+                this_twgt.addAllRatios( abox_twgt, duration_ratio );
+        }
+        num_real_objs += overlap_duration / avebox.getDuration()
+                       * avebox.num_real_objs;
+
+        if ( list_nestables != null )
+            set_timeblocks.add( avebox );
     }
 
     private void patchSetOfTimeBlocks()
@@ -195,7 +238,8 @@ public class TimeAveBox extends TimeBoundingBox
             dobj_twgt.addExclusiveRatio( excl_ratio );
         }
         list_nestables.clear();
-        list_nestables = null;
+        // Don't set list_nestables=null so list_nestables indicates Nestability
+        // list_nestables = null;
     }
 
     public void setNestingExclusion()
@@ -205,6 +249,39 @@ public class TimeAveBox extends TimeBoundingBox
         this.adjustMapOfCategoryWeights();
     }
 
+    public void initializeCategoryTimeBoxes( boolean isZeroTimeOrigin )
+    {
+        Iterator        twgts_itr;
+        CategoryWeight  twgt;
+        CategoryTimeBox typebox;
+        int             idx;
+
+        if ( typebox_ary == null ) {
+            typebox_ary = new CategoryTimeBox[ map_type2twgt.size() ];
+            idx         = 0;
+            twgts_itr   = map_type2twgt.values().iterator();
+            while ( twgts_itr.hasNext() ) {
+                twgt    = (CategoryWeight) twgts_itr.next();
+                typebox = new CategoryTimeBox( twgt );
+                typebox_ary[ idx ] = typebox;
+                idx++;
+            }
+        }
+
+        if ( isZeroTimeOrigin )
+            SummaryState.setTimeBoundingBox( typebox_ary,
+                                             0.0d, super.getDuration() );
+        else
+            SummaryState.setTimeBoundingBox( typebox_ary,
+                                             super.getEarliestTime(),
+                                             super.getLatestTime() );
+    }
+
+    public CategoryTimeBox[] arrayOfCategoryTimeBoxes()
+    {
+        return typebox_ary;
+    }
+
     public String toString()
     {
         StringBuffer rep = new StringBuffer( super.toString() );
@@ -212,7 +289,7 @@ public class TimeAveBox extends TimeBoundingBox
 
         if ( map_type2twgt.size() > 0 ) {
             Object[] twgts;
-            twgts = map_type2twgt.values().toArray();
+            twgts = map_type2twgt.values().toArray( new CategoryWeight[0] );
             Arrays.sort( twgts, CategoryWeight.INCL_RATIO_ORDER );
             int  twgts_length = twgts.length;
             for ( int idx = 0; idx < twgts_length; idx++ )
