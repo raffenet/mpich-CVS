@@ -126,11 +126,13 @@ for arg in "$@" ; do
 	echo "Configuration file mpif77-$F77name.conf not found"
     fi
     ;;
-    -compile_info)
+    -compile-info|-compile_info)
+    # -compile_info included for backward compatibility
     Show=echo
     addarg=no
     ;;
-    -link_info)
+    -link-info|-link_info)
+    # -link_info included for backward compatibility
     Show=echo
     addarg=no
     ;;
