@@ -1,0 +1,23 @@
+INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../../include \
+	 -I${srcdir}/../../include
+LDADD = -L../../../lib ../util/mtest.o 
+smvar_do_sharedlibs = 0
+
+#attrt_SOURCES = attrt.cxx
+#attric_SOURCES = attric.cxx
+#attrerr_SOURCES = attrerr.cxx
+#attrerrcomm_SOURCES = attrerrcomm.cxx
+#attrerrtype_SOURCES = attrerrtype.cxx
+#attrorder_SOURCES = attrorder.cxx
+#attrordercomm_SOURCES = attrordercomm.cxx
+#attrordertype_SOURCES = attrordertype.cxx
+#attrorderwin_SOURCES = attrorderwin.cxx
+#baseattr2_SOURCES = baseattr2.cxx
+baseattrcommx_SOURCES = baseattrcommx.cxx
+#baseattrwin_SOURCES = baseattrwin.cxx
+fkeyvalcommx_SOURCES = fkeyvalcommx.cxx
+fkeyvaltypex_SOURCES = fkeyvaltypex.cxx
+fkeyvalwinx_SOURCES = fkeyvalwinx.cxx 
+
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o)
