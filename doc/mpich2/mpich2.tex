@@ -861,17 +861,6 @@ The macro \mpidfunc{HANDLE_GET_KIND(a)} returns the handle kind,
 corresponding to the handle kind.
 
 
-% We will use the 2 highest bits to encode a type of construct.  These are:
-% \begin{description}
-% \item[\code{CONSTRUCT_INVALID}]  (00)
-% \item[\code{CONSTRUCT_BUILTIN}]  (01)
-% \item[\code{CONSTRUCT_DIRECT}]   (10)
-% \item[\code{CONSTRUCT_INDIRECT}] (11)
-% \end{description}
-% In addition, the macro \code{CONSTRUCT_MASK} may be used to return
-% just these bits and \code{CONSTRUST_TYPE(id)} returns these values as the
-% integers $0$--$3$.
-
 Using $00$ as invalid, especially in the two high bits, will help detect
 bad parameters passed to us (although negative ints won't be caught).
 
@@ -894,12 +883,12 @@ The next four highest bits will encode the MPI type stored:
 MPI \code{keyval}s are defined as type integer, but each keyval is associated
 with a structure.  
 The macro \code{HANDLE_MPI_TYPE(id)} returns this value as an integer in
-the range $0$--$7$.  The names belong to the enum type
+the range $0$--$15$.  The names belong to the enum type
 \mpidconst{MPID_Object_kind}. 
 
 For a 32 bit integer, there are 27 bits remaining (59 in a 64 bit integer).
 The use of these bits depends on the kind of handle.  For handles to
-builtin objects (\code{})
+builtin objects, we have the following:
 
 \begin{description}
 \item[Datatypes]
@@ -931,6 +920,7 @@ invocation).
 \item[Info] There are no builtin \code{MPI_Info} objects.
 \item[Win] There are no builtin \code{MPI_Win} objects.
 \item[File] There are no builtin \code{MPI_File} objects.
+\item[Keyval] There are no builtin keyval objects.
 \end{description}
 
 The last two handle types point at other storage where the object is
@@ -2265,15 +2255,17 @@ of the structure, or is a pointer to the list head used?
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_COMM_DELETE_ATTR}}
-\begin{adi3}
-\mpidfunc{MPID_Attr_delete}.
 \begin{algorithm}
 lock
 find
-remove
+remove from list
 unlock
+execute delete function
+return attribute to free list
 \end{algorithm}
-\end{adi3}
+The above order is used to avoid the possibility of a deadly embrace
+caused by another operation that uses the same lock being executed by
+the attribute delete function.
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_ATTR}}
 See \mpifunc{MPI_COMM_GET_ATTR}.

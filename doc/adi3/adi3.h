@@ -1,7 +1,7 @@
 /***********************************************************************
  * This is a DRAFT
  * All parts of this document are subject to (and expected to) change
- * This DRAFT dated September 22, 2000
+ * This DRAFT dated September 24, 2001
  ***********************************************************************/
 
 /*
@@ -17,18 +17,32 @@
  *
  * Question:
  * Do we want to mark parts 'Public' or 'Private'
+ *
+ * I have removed some items from the documentation by inserting a space 
+ * in the structured comment identifier.  If these are reintroduced, 
+ * just delete the blanks.
  */
 
 /*TOpaqOverview.tex
   MPI Opaque Objects:
 
-  MPI Opaque objects are specified by integers in the range [0,...] (in
-  the MPICH2 implementation).
-  Out of range values are invalid; the value 0 is reserved for use as
-  the 'MPI_xxx_NULL' value.  In the debugging case, we may want to reserve
-  0 for an invalid value and 1 for 'MPI_xxx_NULL'.
+  MPI Opaque objects such as 'MPI_Comm' or 'MPI_Datatype' are specified by 
+  integers (in the MPICH2 implementation); the MPI standard calls these
+  handles.  
+  Out of range values are invalid; the value 0 is reserved.
+  For most (with the possible exception of 
+  'MPI_Request' for performance reasons) MPI Opaque objects, the integer
+  encodes both the kind of object (allowing runtime tests to detect a datatype
+  passed where a communicator is expected) and important properties of the 
+  object.  Even the 'MPI_xxx_NULL' values should be encoded so that 
+  different null handles can be distinguished.  The details of the encoding
+  of the handles is covered in more detail in the MPICH2 Design Document.
+  For the most part, the ADI uses pointers to the underlying structures
+  rather than the handles themselves.  However, each structure contains an 
+  'id' field that is the corresponding integer handle for the MPI object.
 
-  MPID objects are not opaque.
+  MPID objects (objects used within the implementation of MPI) are not opaque.
+
   T*/
 
 /*
@@ -64,6 +78,14 @@ typedef enum { MPID_LANG_C, MPID_LANG_FORTRAN,
 
 /* Keyval functions - Data types for attribute copy and delete routines. */
 /*TKyOverview.tex
+
+  Keyvals are MPI objects that, unlike most MPI objects, are defined to be
+  integers rather than a handle (e.g., 'MPI_Comm').  However, they really
+  `are` MPI opaque objects and are handled by the MPICH implementation in
+  the same way as all other MPI opaque objects.  The only difference is that
+  there is no 'typedef int MPI_Keyval;' in 'mpi.h'.  In particular, keyvals
+  are encoded (for direct and indirect references) in the same way that 
+  other MPI opaque objects are
 
   Each keyval has a copy and a delete function associated with it.
   Unfortunately, these have a slightly different calling sequence for
@@ -101,22 +123,34 @@ typedef enum {
   The appropriate element of this union is selected by using the language
   field of the 'keyval'.
 
+  The function types used in the union are provided by 'mpi.h'.  The
+  correspond to\:
+.vb
+  int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
+  int (*C_WinCopyFunction) ( MPI_Win, int, void *, void *, void *, int * );
+  int (*C_TypeCopyFunction) ( MPI_Datatype, int, 
+			      void *, void *, void *, int * );
+.ve
+  There are no corresponding typedefs for the Fortran functions.  The 
+  F77 function corresponds to the Fortran 77 binding used in MPI-1 and the
+  F90 function corresponds to the Fortran 90 binding used in MPI-2.
+
   Question:
-  Do we want to create typedefs for the various functions?
+  Do we want to create typedefs for the two Fortran functions?
 
   Module:
   Attribute
 
+
   E*/
 typedef union {
-  int  (*C_CommCopyFunction)( MPI_Comm, int, void *, void *, void *, int * );
+  MPI_Comm_copy_attr_function *C_CommCopyFunction;
+  MPI_Win_copy_attr_function  *C_WinCopyFunction;
+  MPI_Type_copy_attr_function *C_TypeCopyFunction;
   void (*F77_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
 			      MPI_Fint *, MPI_Fint *, MPI_Fint * );
   void (*F90_CopyFunction)  ( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *,
 			      MPI_Aint *, MPI_Fint *, MPI_Fint * );
-  int (*C_FileCopyFunction) ( MPI_Comm, int, void *, void *, void *, int * );
-  int (*C_TypeCopyFunction) ( MPI_Datatype, int, 
-			      void *, void *, void *, int * );
   /* The C++ function is the same as the C function */
 } MPID_Copy_function;
 
@@ -127,18 +161,29 @@ typedef union {
   The appropriate element of this union is selected by using the language
   field of the 'keyval'.
 
+  The function types used in the union are provided by 'mpi.h'.  The
+  correspond to\:
+.vb
+  int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
+  int  (*C_WinDeleteFunction)  ( MPI_Win, int, void *, void * );
+  int  (*C_TypeDeleteFunction)  ( MPI_Datatype, int, void *, void * );
+.ve
+  There are no corresponding typedefs for the Fortran functions.  The 
+  F77 function corresponds to the Fortran 77 binding used in MPI-1 and the
+  F90 function corresponds to the Fortran 90 binding used in MPI-2.
+
   Module:
   Attribute
 
   E*/
 typedef union {
-  int  (*C_DeleteFunction)  ( MPI_Comm, int, void *, void * );
+  MPI_Comm_delete_attr_function *C_CommDeleteFunction;
+  MPI_Win_delete_attr_function  *C_WinDeleteFunction;
+  MPI_Type_delete_attr_function *C_TypeDeleteFunction;
   void (*F77_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, 
 			      MPI_Fint * );
   void (*F90_DeleteFunction)( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, 
 			      MPI_Fint * );
-  int  (*C_FileDeleteFunction)  ( MPI_File, int, void *, void * );
-  int  (*C_TypeDeleteFunction)  ( MPI_Datatype, int, void *, void * );
   
 } MPID_Delete_function;
 
@@ -154,6 +199,17 @@ typedef union {
   the function pointers.  Should there be sentinals around either the entire
   keyval entry or around each function pointer that would be tested before 
   invoking the function?  
+  For example, we could define
+.vb
+  typedef struct { 
+      unsigned long sentinal1;
+      void (*f)(void);           // pointers to functions are different from
+                                 // pointers to nonfunctions 
+      unsigned long sentinal2;
+  } MPID_Protected_function_ptr;
+.ve
+  and compute the sentinals based on the value of the function pointer.
+
   S*/
 typedef struct {
     int                  id;
@@ -170,7 +226,7 @@ typedef struct {
   MPID_Attribute - Structure of an MPID attribute
 
   Notes:
-  Attributes don''t have ref_counts because they don''t have reference
+  Attributes don''t have 'ref_count's because they don''t have reference
   count semantics.  That is, there are no shallow copies or duplicates
   of an attibute.  An attribute is copied when the communicator that
   it is attached to is duplicated.  Subsequent operations, such as
@@ -183,6 +239,12 @@ typedef struct {
   A pointer to the keyval, rather than the (integer) keyval itself is
   used since there is no need within the attribute structure to make
   it any harder to find the keyval structure.
+
+  The attribute value is a 'void *'.  If 'sizeof(MPI_Fint)' > 'sizeof(void*)',
+  then this must be changed (no such system has been encountered yet).
+  For the Fortran 77 routines in the case where 'sizeof(MPI_Fint)' < 
+  'sizeof(void*)', the high end of the 'void *' value is used.  That is,
+  we cast it to 'MPI_Fint *' and use that value.
  
   Module:
   Attribute
@@ -207,33 +269,58 @@ typedef struct {
   A linked list is used because the typical 'MPI_Info' list will be short
   and a simple linked list is easy to implement and to maintain.  Similarly,
   a single structure rather than separate header and element structures are
-  defined for simplicity.  Note that there is no access lock for thread
-  access control because the user is responsible for this (it is invalid for
-  the user to modify the same info item from concurrently from several 
-  threads).
+  defined for simplicity.  No separate thread lock is provided because
+  info routines are not performance critical; they use the 'common_lock' 
+  in the 'MPIR_Process' structure when they need a thread lock.
   
+  This particular form of linked list (in particular, with this particular
+  choice of the first two members) is used because it allows us to use 
+  the same routines to manage this list as are used to manage the 
+  list of free objects (in the file 'src/util/mem/handlemem.c').  In 
+  particular, if lock-free routines for updating a linked list are 
+  provided, they can be used for managing the 'MPID_Info' structure as well.
+
+  The MPI standard requires that keys can be no less that 32 characters and
+  no more than 255 characters.  There is no mandated limit on the size 
+  of values.
+
   Module:
-  Attribute
+  Info
   S*/
 typedef struct MPID_Info_s {
     int                id;
+    struct MPID_Info_s *next;
     char               *key;
     char               *value;
-    struct MPID_Info_s *next;
 } MPID_Info;
 
 /*D
   LocalPID - Description of the local process ids
 
-  (yet to do: write text describing local pids.  These are basically the 
-  id by which the calling process knows the other processes, and is not
-  guaranteed to be number as a different process may use to identify
-  the same (third) process.  This is the reason that this is a `local`
-  process id.
+  MPI specifies communication among processes.  The MPI object that 
+  describes collections of processes is the 'MPI_Group'.  In MPI-1, 
+  processes are uniquely identified by their rank in 'MPI_COMM_WORLD'.
+  In MPI-2, the situation is more complex, since processes (beyond
+  'MPI_COMM_WORLD') may come and go as a result of calls to 
+  routines such as 'MPI_Comm_spawn' and 'MPI_Comm_detach'.  To 
+  implement the various operations on MPI groups, it is very helpful to
+  have an enumeration of the processes.  This enumeration need not be 
+  consequtive (gaps are acceptable) and it need not correspond to the 
+  enumeration of the same processes on a different MPI process.  That is,
+  such an enumeration need only be local.  These are called 'LocalPID's,
+  and are allocated by the MPI routines that change the number of 
+  processes that are connected (for most applications, a simple counter
+  could be used).  
 
-  Question:
-  Do we want to have a local pid type that maps a virtual local process 
-  number to a specific process or link?
+  Local process ids are used only by the 'MPI_Group' routines and for caching
+  datatypes in the RMA routines.  Communication
+  uses `virtual connections` to select the appropriate communication path 
+  from one process to another.  This is different from the implementation 
+  of MPICH using ADI-1 and ADI-2 where the mapping from communicator rank
+  to rank in 'MPI_COMM_WORLD' (through the 'MPI_Group' associated with 
+  a communicator) was used to identify the process with which to communicate.
+  See the discussion of the 'MPI_Group' routines in the MPICH Design 
+  Document for more details on the use of local process ids.  
   D*/
 
 /*S
@@ -242,11 +329,16 @@ typedef struct MPID_Info_s {
   Allows quick determination whether a designated processor is within the
   set of active processes.
 
-  Typical implementation is a bitvector.
+  A typical implementation is a bitvector.
 
-  This is used to help manage datatypes for remote memory operations.
+  This is used to help manage datatypes for remote memory operations (for
+  efficient implementation of 'MPI_Put', 'MPI_Get', or 'MPI_Accumulate' 
+  when using nontrivial datatypes, it is necessary to cache a copy of the 
+  datatype on the remote process.  Using a processor mask makes it easy to 
+  check whether a remote process already has a copy of a particular MPI 
+  datatype).
 
-  Note that groups can not use these because groups need ordering
+  Note that groups can not use processor masks because groups need ordering
   information (e.g., pid 0 might have rank in the group of 245).
 
   This structure is manipulated with the routines\:
@@ -289,7 +381,7 @@ typedef struct {
   S*/
 typedef struct {
     int count;
-    struct dataloop_ *datatype;
+    struct dataloop_ *dataloop;
 } MPID_Dataloop_contig;
 
 /*S
@@ -310,7 +402,7 @@ typedef struct {
   S*/
 typedef struct { 
     int      count;
-    struct dataloop_ *datatype;
+    struct dataloop_ *dataloop;
     int      blocksize;
     MPI_Aint stride;
 } MPID_Dataloop_vector;
@@ -334,7 +426,7 @@ typedef struct {
   S*/
 typedef struct {
     int      count;
-    struct dataloop_ *datatype;
+    struct dataloop_ *dataloop;
     int      blocksize;
     MPI_Aint *offset;
 } MPID_Dataloop_blockindexed;
@@ -358,7 +450,7 @@ typedef struct {
   S*/
 typedef struct {
     int      count;
-    struct dataloop_ *datatype;
+    struct dataloop_ *dataloop;
     int      *blocksize;
     MPI_Aint *offset;
 } MPID_Dataloop_indexed;
@@ -382,7 +474,7 @@ typedef struct {
   S*/
 typedef struct {
     int      count;
-    struct dataloop_ *datatype;
+    struct dataloop_ *dataloop;
     int      *blocksize;
     MPI_Aint *offset;
 } MPID_Dataloop_struct;
@@ -518,10 +610,13 @@ typedef struct {
 /*S
  MPID_Group - Description of the Group data structure
 
- The processes in the group of 'MPI_COMM_WORLD' have lpid values 0 to size-1,
- where size is the size of 'MPI_COMM_WORLD'.  Processes created by 
- 'MPI_Comm_spawn', 'MPI_Comm_spawn_multiple', 'MPI_Attach', or 'MPI_Connect'
- are numbered greater than 'size - 1' (on the calling process).
+ The processes in the group of 'MPI_COMM_WORLD' have lpid values 0 to 'size'-1,
+ where 'size' is the size of 'MPI_COMM_WORLD'.  Processes created by 
+ 'MPI_Comm_spawn' or 'MPI_Comm_spawn_multiple' or added by 'MPI_Comm_attach' 
+ or  
+ 'MPI_Comm_connect'
+ are numbered greater than 'size - 1' (on the calling process) (See the 
+ discussion of LocalPID values).
 
  Note that when dynamic process creation is used, the pids are `not` unique
  across the universe of connected MPI processes.  This is ok, as long as
@@ -545,8 +640,10 @@ typedef struct {
  Do we want a rank of this process in the group (if any)?
  S*/
 typedef struct {
+    int          id;
     volatile int ref_count;
     int          size;           /* Size of a group */
+    int          rank;           /* Rank of this process in this group */
     int          *lrank_to_lpid; /* Array mapping a local rank to local 
 				    process number */
   /* other, device-specific information */
@@ -604,18 +701,25 @@ typedef struct {
   Notes:
   Note that the size (and possibly rank) duplicate data in the groups that
   make up this communicator.  These are used often enough that this
-  optimization is valuable.
-  We may also want the local-rank to lpid mapping to be included as well,
-  skipping the indirection through the (remote) group (using a pointer to
-  the same storage).
+  optimization is valuable.  
 
+  The virtual connection table is an explicit member of this structure.
+  This contains the information used to contact a particular process,
+  indexed by the rank relative to this communicator.
+
+  Groups may be allocated lazily.  That is, the group pointers may be
+  null, created only when needed by a routine such as 'MPI_Comm_group'.
+  The local process ids needed to form the group are available within
+  the virtual connection table.
+  For intercommunicators, we may want to always have the groups.  If not, 
+  we either need the 'local_group' or we need a virtual connection table
+  corresponding to the 'local_group' (we may want this anyway to simplify
+  the implementation of the intercommunicator collective routines).
+  
   Module:
   Communicator
 
   Question:
-  Do we want a communicator type (intra or inter) or do we use
-  'comm->local_group == comm->remote_group'?
-
   Do we want to have the collective operations pointer here?
   Do we want to optimize for the common case of "use the standard
   routines"?  We could do this by having a pointer to a table (with its
@@ -638,11 +742,13 @@ typedef struct {
   communicator have acked.
   S*/
 typedef struct { 
+    int           id;            /* value of MPI_Comm for this structure */
     volatile int ref_count;
     int16_t       context_id;    /* Assigned context id */
     int           size;          /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
-    int           id;            /* value of MPI_Comm for this structure */
+    MPID_VC *(*virtural connection)[]; /* Virtual connection table */
+    int           comm_kind;     /* MPID_INTRACOMM or MPID_INTERCOMM */
     MPID_List     attributes;    /* List of attributes */
     MPID_Group    *local_group,  /* Groups in communicator. */
                   *remote_group; /* The local and remote groups are the
@@ -684,7 +790,8 @@ typedef struct {
   carrying the (user) attributes?
 
   Should there be a separate 'MPID_Group', or will we use the group of 
-  the communicator?
+  the communicator?  Since extracting the group from a window is likely to
+  be a rare operation, we should extract the group from the communicator.
 
   S*/
 typedef struct {
@@ -806,7 +913,7 @@ typedef struct {
     int  alloc_bytes;    /* For a receive buffer, this may > bytes */
 
     /* stuff to manage pack/unpack */
-    MPID_Dataloop_stackelm loopinfo[MPID_MAX_DATATYPE_DEPTH];
+    MPID_Dataloop_stackelm loopstack[MPID_MAX_DATATYPE_DEPTH];
     int  cur_sp;   /* Current stack pointer when using loopinfo */
     int  valid_sp; /* maximum valid stack pointer.  This is used to 
 		      maintain information on the stack after it has
@@ -826,6 +933,9 @@ typedef struct {
   Do we need an 'MPID_Datatype *' to hold the datatype in the event of a 
   nonblocking (and not yet completed) operation involving a complex datatype,
   or do we need a pointer to an 'MPID_Buffer'?  Or is it device-specific?
+
+  Does this need an 'id' so that 'MPI_Request_c2f' can be implemented easily?
+  How about a 'ref_count'?
   S*/
 typedef struct {
     volatile int ready;   /* Set to true when the request may be used */
@@ -833,7 +943,7 @@ typedef struct {
     /* other, device-specific information */
 } MPID_Request;
 
-/*E
+/* E
   Handlers - Description of the remote handlers and their arguments
   
   Enumerate the possible Remote Handler Call types.  For each of these
@@ -849,7 +959,7 @@ typedef struct {
   Module:
   MPID_CORE
 
-  E*/
+  E */
 typedef enum { MPID_Hid_Request_to_send = 1, 
 	       ... many other predefined handler ids ...,
 	       MPID_Hid_Cancel,
@@ -863,7 +973,7 @@ typedef enum { MPID_Hid_Request_to_send = 1,
  * Handler Definitions
  */
 
-/*S 
+/* S 
   MPID_Hid_Request_to_send_t - Handler type for point-to-point communication
 
   Notes: 
@@ -888,7 +998,7 @@ typedef enum { MPID_Hid_Request_to_send = 1,
   Module:
   MPID_CORE
 
- S*/
+ S */
 typedef struct {
   int32_t tag;
   int16_t context_id;
@@ -898,7 +1008,7 @@ typedef struct {
   /* other, device-specific information */
 } MPID_Hid_Request_to_send_t;
 
-/*S
+/* S
    MPID_Hid_Cancel_t - Cancel a communication operation
 
    Notes: 
@@ -911,7 +1021,7 @@ typedef struct {
    Module:
    MPID_CORE
 
-  S*/
+  S */
 typedef struct {
    int16_t request_id;
    /* other, device-specific information */
@@ -932,7 +1042,7 @@ typedef struct {
   extensions (such as a Read-Modify-Write operation).
 
   Module:
-  Win  
+  Collective  
   E*/
 typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4, 
 	       MPID_LAND_OP=5, MPID_BAND_OP=6, MPID_LOR_OP=7, MPID_BOR_OP=8,
@@ -942,7 +1052,7 @@ typedef enum { MPID_MAX_OP=1, MPID_MIN_OP=2, MPID_SUM_OP=3, MPID_PROD_OP=4,
   MPID_Op_kind;
 
 /*S
-  MPID_User_function - Definition of a user function for MPI_OP types.
+  MPID_User_function - Definition of a user function for MPI_Op types.
 
   Notes:
   This includes a 'const' to make clear which is the 'in' argument and 
@@ -995,7 +1105,7 @@ typedef union {
   a valid program can free an 'MPI_Op' while it is in use.
 
   Module:
-  Win
+  Collective
   S*/
 typedef struct {
      MPID_Op_kind       kind;
@@ -1030,7 +1140,7 @@ typedef struct {
   support provided at compile time.
  
   Values:
-  Any of the 'MPI_THREAD_xxx' values (but as preprocessor-time constants)
+  Any of the 'MPI_THREAD_xxx' values (these are preprocessor-time constants)
 
   Notes:
   The macro 'MPID_MAX_THREAD_LEVEL' defines the maximum level of
@@ -1039,7 +1149,7 @@ typedef struct {
 
   A typical use is 
 .vb
-  #if MPID_MAX_THREAD_LEVEL >= MPID_THREAD_MULTIPLE
+  #if MPID_MAX_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
      lock((r)->lock_ptr);
      (r)->ref_count++;
      unlock((r)->lock_ptr);
