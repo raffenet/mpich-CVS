@@ -9,7 +9,11 @@ dnl
 dnl To use libtool, you need macros that are defined by libtool for libtool
 dnl Don't even think about the consequences of this for updating and for
 dnl using user-versions of libtool :(
-builtin(include,libtool.m4)
+dnl 
+dnl !!!!!!!!!!!!!!!!!!!!!
+dnl libtool requires ac 2.50 !!!!!!!!!!!!!!!!!
+dnl 
+dnl builtin(include,libtool.m4)
 dnl
 dnl/*D
 dnl PAC_ARG_SHAREDLIBS - Add --enable-sharedlibs=kind to configure.
@@ -71,7 +75,8 @@ case "$enable_sharedlibs" in
     dnl various stuff that libtool needs.  Without this, you'll get a
     dnl bizarre error message about libtool being unable to find
     dnl configure.in or configure.ac (!)
-    AC_PROG_LIBTOOL
+dnl AC_PROG_LIBTOOL requires 2.50 or better !!!!!!!!!!!!!!!!
+dnl    AC_PROG_LIBTOOL
 dnl    AC_CHECK_PROGS(LIBTOOL,libtool,false)
     if test "$LIBTOOL" = "false" ; then
 	AC_MSG_WARN([Could not find libtool])
