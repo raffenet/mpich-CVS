@@ -527,6 +527,7 @@ def _handle_new_connection():
     if (not msg.has_key('cmd')) or (not msg.has_key('host')) or  \
        (not msg.has_key('port')):
         mpd_print(1, 'INVALID msg from new connection :%s: msg=:%s:' % (newConnAddr,msg) )
+        newConnSocket.close()
         return
     if msg['cmd'] == 'request_to_enter_as_rhs':
         if msg['mpd_version'] != mpd_version:
@@ -567,6 +568,7 @@ def _handle_new_connection():
                            msg['host'],msg['port'])
     else:
         mpd_print(1, 'INVALID msg from new connection :%s: msg=:%s:' % (newConnAddr,msg) )
+        newConnSocket.close()
 
 def _handle_lhs_challenge_response(responseSocket):
     msg = mpd_recv_one_msg(responseSocket)
