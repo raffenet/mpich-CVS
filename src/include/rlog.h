@@ -164,12 +164,10 @@ typedef struct RLOG_Struct
 
 /* function prototypes */
 
-#define RLOG_timestamp PMPI_Wtime
-
 /* logging functions */
 RLOG_Struct* RLOG_InitLog(int rank, int size);
 int RLOG_FinishLog(RLOG_Struct* pRLOG, const char *filename);
-void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion);
+/*void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion);*/
 void RLOG_LogSend(RLOG_Struct* pRLOG, int dest, int tag, int size);
 void RLOG_LogRecv(RLOG_Struct* pRLOG, int src, int tag, int size);
 void RLOG_LogCommID(RLOG_Struct* pRLOG, int id);
@@ -216,6 +214,36 @@ int RLOG_HitTest(RLOG_IOStruct *pInput, int rank, int level, double timestamp, R
 
 /* debugging functions */
 int RLOG_PrintGlobalState(RLOG_IOStruct *pInput);
+
+/* macros */
+
+#define RLOG_timestamp PMPI_Wtime
+
+#define RLOG_HEADER_CAST() ((RLOG_HEADER*)pRLOG->pOutput->pCurHeader)
+#define RLOG_EVENT_CAST()  ((RLOG_EVENT*)((char*)pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER)))
+
+#define RLOG_LogEvent(pRLOG, event_param, starttime, endtime, recursion_param) \
+if (pRLOG->bLogging) \
+{ \
+    if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_EVENT) > pRLOG->pOutput->pEnd) \
+    { \
+	WriteCurrentDataAndLogEvent(pRLOG, event_param, starttime, endtime, recursion_param); \
+    } \
+    else \
+    { \
+	RLOG_HEADER_CAST()->type = RLOG_EVENT_TYPE; \
+	RLOG_HEADER_CAST()->length = sizeof(RLOG_HEADER) + sizeof(RLOG_EVENT); \
+	RLOG_EVENT_CAST()->rank = pRLOG->nRank; \
+	RLOG_EVENT_CAST()->end_time = endtime - pRLOG->dFirstTimestamp; \
+	RLOG_EVENT_CAST()->start_time = starttime - pRLOG->dFirstTimestamp; \
+	RLOG_EVENT_CAST()->event = event_param; \
+	RLOG_EVENT_CAST()->recursion = recursion_param; \
+	/* advance the current position pointer */ \
+	pRLOG->pOutput->pCurHeader += sizeof(RLOG_HEADER) + sizeof(RLOG_EVENT); \
+    } \
+}
+
+void WriteCurrentDataAndLogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion);
 
 #if defined(__cplusplus)
 }

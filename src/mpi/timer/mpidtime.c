@@ -135,30 +135,32 @@ void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {
 }
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER
-static double timer_frequency=0.0;  /* High performance counter frequency */
+double g_timer_frequency=0.0;  /* High performance counter frequency */
 void MPID_Wtime_init(void)
 {
     LARGE_INTEGER n;
     QueryPerformanceFrequency(&n);
-    timer_frequency = (double)n.QuadPart;
+    g_timer_frequency = (double)n.QuadPart;
 }
 double MPID_Wtick(void)
 {
-    return timer_frequency;
+    return g_timer_frequency;
 }
+/*
 void MPID_Wtime( MPID_Time_t *timeval )
 {
     QueryPerformanceCounter(timeval);
 }
+*/
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
-    *val = (double)t->QuadPart / timer_frequency;
+    *val = (double)t->QuadPart / g_timer_frequency;
 }
 void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 {
     LARGE_INTEGER n;
     n.QuadPart = t2->QuadPart - t1->QuadPart;
-    *diff = (double)n.QuadPart / timer_frequency;
+    *diff = (double)n.QuadPart / g_timer_frequency;
 }
 void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
 {

@@ -114,7 +114,7 @@ int RLOG_GetNextEventID(RLOG_Struct* pRLOG)
     return pRLOG->nCurEventId++;
 }
 
-static void WriteCurrentDataAndLogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion)
+void WriteCurrentDataAndLogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion)
 {
     double disk_start, disk_end;
     /* save the disk event start */
@@ -139,6 +139,7 @@ static void WriteCurrentDataAndLogEvent(RLOG_Struct *pRLOG, int event, double st
 #define RLOG_EVENT_CAST()  ((RLOG_EVENT*)((char*)pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER)))
 #define RLOG_IARROW_CAST()  ((RLOG_IARROW*)((char*)pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER)))
 
+#ifndef RLOG_LogEvent
 void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion)
 {
     if (pRLOG->bLogging == FALSE)
@@ -161,6 +162,7 @@ void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endti
     /* advance the current position pointer */
     pRLOG->pOutput->pCurHeader += sizeof(RLOG_HEADER) + sizeof(RLOG_EVENT);
 }
+#endif
 
 void RLOG_LogSend(RLOG_Struct* pRLOG, int dest, int tag, int size)
 {

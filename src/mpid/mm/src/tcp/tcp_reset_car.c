@@ -137,7 +137,8 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
     buf_ptr->type = MM_SIMPLE_BUFFER;
     buf_ptr->simple.buf = (void*)&car_ptr->msg_header.pkt;
     buf_ptr->simple.len = sizeof(MPID_Packet);
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_SETUP_PACKET_CAR);
     return MPI_SUCCESS;
 }
 
@@ -205,7 +206,8 @@ int tcp_setup_packet_car(MPIDI_VC *vc_ptr, MM_CAR_TYPE read_write, int src_dest,
     buf_ptr->vec.buf_size = sizeof(MPID_Packet);
     buf_ptr->vec.num_cars = 1;
     buf_ptr->vec.num_cars_outstanding = 1;
-    
+
+    MPIDI_FUNC_EXIT(MPID_STATE_TCP_SETUP_PACKET_CAR);
     return MPI_SUCCESS;
 }
 #endif
