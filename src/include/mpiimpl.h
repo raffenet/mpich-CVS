@@ -77,6 +77,14 @@
 #define ATTRIBUTE(a)
 #endif
 
+
+/*
+ * Basic utility macros
+ */
+#define MPIU_QUOTE(A) MPIU_QUOTE2(A)
+#define MPIU_QUOTE2(A) #A
+
+
 /* 
    Include the implementation definitions (e.g., error reporting, thread
    portability)
