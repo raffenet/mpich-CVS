@@ -210,14 +210,6 @@ int PMI_Init( int *spawned )
     if ( ! PMI_initialized )
 	PMI_initialized = NORMAL_INIT_WITH_PM;
 
-    /*****   RMB TEST BLOCK
-    {
-	int size, rc;
-	rc = PMI_Get_universe_size( &size );
-	PMIU_printf( 1, "PMI_INIT GOT RC=%d UNIVSIZE=%d\n", rc,size );
-    }
-    *****/
-
     return( 0 );
 }
 
@@ -283,6 +275,32 @@ int PMI_Get_universe_size( int *size)
     }
     else
 	*size = 1;
+    return( PMI_SUCCESS );
+}
+
+int PMI_Get_appnum( int *appnum )
+{
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], appnum_c[PMIU_MAXLINE];
+
+    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
+    {
+	PMIU_writeline( PMI_fd, "cmd=get_appnum\n" );
+	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+	if ( strncmp( cmd, "appnum", PMIU_MAXLINE ) != 0 ) {
+	    PMIU_printf( 1, "expecting cmd=appnum, got %s\n", buf );
+	    return( PMI_FAIL );
+	}
+	else {
+	    PMIU_getval( "appnum", appnum_c, PMIU_MAXLINE );
+	    *appnum = atoi(appnum_c);
+	    return( PMI_SUCCESS );
+	}
+    }
+    else
+	*appnum = -1;
+
     return( PMI_SUCCESS );
 }
 
