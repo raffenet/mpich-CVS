@@ -1,5 +1,7 @@
 #include "mpidimpl.h"
 
+#if HAVE_TIMING
+
 /* This section of code is for the DLOG logging library */
 #if (USE_LOGGING == MPID_LOGGING_DLOG)
 
@@ -514,3 +516,5 @@ int MPIDU_Describe_timer_states()
 }
 
 #endif /* USE_LOGGING == MPID_LOGGING_RLOG */
+
+#endif /* HAVE_TIMING */
