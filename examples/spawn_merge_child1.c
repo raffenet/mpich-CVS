@@ -26,7 +26,7 @@ int main( int argc, char *argv[] )
 
     MPI_Comm_rank(intercomm2, &rank);
 
-    if (rank == 2) {
+    if (rank == 3) {
         err = MPI_Recv(str, 3, MPI_CHAR, 1, 0, intercomm2, MPI_STATUS_IGNORE);
         printf("Parent (first child) received from child 2: %s\n", str);
         fflush(stdout);
