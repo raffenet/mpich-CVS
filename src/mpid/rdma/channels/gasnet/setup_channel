@@ -46,11 +46,16 @@ if test -n "$gasnet_dir" ; then
   CPPFLAGS="$CPPFLAGS -I${gasnet_dir}/include -I${gasnet_dir}/include/gm-conduit"
   LDFLAGS="$LDFLAGS -L${gasnet_dir}/lib"
 fi
+if test -n "$gasnet_include_dir" ; then
+  CPPFLAGS="$CPPFLAGS -I${gasnet_include_dir} -I${gasnet_include_dir}/gm-conduit"
+fi
+if test -n "$gasnet_lib_dir" ; then
+  LDFLAGS="$LDFLAGS -L${gasnet_lib_dir}"
+fi
 LIBS="$LIBS -lgasnet-gm-seq"
 
 #include gm
-if test -n "$gm_dir" ; then
-  CPPFLAGS="$CPPFLAGS -I${gm_dir}/include"
-  LDFLAGS="$LDFLAGS -L${gm_dir}/lib"
+if test -n "$gm_lib_dir" ; then
+  LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
 fi
 LIBS="$LIBS -lgm"
