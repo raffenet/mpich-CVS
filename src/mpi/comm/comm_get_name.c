@@ -28,7 +28,7 @@
 #define FUNCNAME MPI_Comm_get_name
 
 /*@
-  MPI_Comm_get_name - return the print name from the communicator
+  MPI_Comm_get_name - Return the print name from the communicator
 
   Input Parameter:
 . comm - Communicator to get name of (handle)
@@ -37,6 +37,11 @@
 + comm_name - One output, contains the name of the communicator.  It must
   be an array of size at least 'MPI_MAX_OBJECT_NAME'.
 - resultlen - Number of characters in name
+
+ Notes:
+ Because MPI specifies that null objects (e.g., 'MPI_COMM_NULL') are invalid
+ as input to MPI routines unless otherwise specified, using 'MPI_COMM_NULL'
+ as input to this routine is an error.
 
 .N Fortran
 
@@ -53,17 +58,14 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GET_NAME);
     /* Get handles to MPI objects. */
-    MPID_Comm_get_ptr( comm, comm_ptr );
 #   ifdef HAVE_ERROR_CHECKING
     {
+	MPID_Comm_get_ptr( comm, comm_ptr );
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INITIALIZED(mpi_errno);
-            /* Validate comm_ptr */
-	    if (comm != MPI_COMM_NULL)
-	    {
-		MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    }
+	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL( comm_name, "comm_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( resultlen, "resultlen", mpi_errno );
@@ -71,23 +73,20 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
         }
         MPID_END_ERROR_CHECKS;
     }
+#   else
+    MPID_Comm_get_ptr( comm, comm_ptr );
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
     /* The user must allocate a large enough section of memory */
-    if (comm == MPI_COMM_NULL)
-    {
-	MPIU_Strncpy( comm_name, "MPI_COMM_NULL", MPI_MAX_OBJECT_NAME );
-    }
-    else
-    {
-	MPIU_Strncpy( comm_name, comm_ptr->name, MPI_MAX_OBJECT_NAME );
-    }
+    MPIU_Strncpy( comm_name, comm_ptr->name, MPI_MAX_OBJECT_NAME );
+
     *resultlen = (int)strlen( comm_name );
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
     return MPI_SUCCESS;
+
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
