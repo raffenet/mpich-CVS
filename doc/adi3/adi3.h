@@ -995,7 +995,8 @@ typedef struct {
   can be used in preprocessor tests.
 
   Question: 
-  Do we want enumerated values as well?
+  Do we want enumerated values as well?  Why not use the MPI values (MPI
+  instead of MPID)?
 
   Module:
   Environment
