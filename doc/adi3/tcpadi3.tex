@@ -12,6 +12,8 @@
 \textwidth=6.1in
 \oddsidemargin=.2in
 \topmargin=-.50in
+% \mpids{MPI_Comm}{rank}.  Prints the second argument.
+\def\mpids#1#2{\code{#2}\index{#1!#2}}
 
 \def\nopound{\catcode`\#=13}
 {\nopound\gdef#{{\tt \char`\#}}}
@@ -288,7 +290,7 @@ like
             else {
                 dispatch packet (e.g., same code as in progress engine)
             }
-	} 
+        } 
     }
     /* fall through in case we didn't receive the message */
     MPID_Irecv( ... )
