@@ -90,6 +90,14 @@ LIB32=link.exe -lib
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;f90;for;f;fpp"
 # Begin Source File
 
+SOURCE=.\block_allocator.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\bsockets.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\crypt.c
 # End Source File
 # Begin Source File

@@ -1,6 +1,5 @@
 mpi.h
 mpichtimer.h
-bnr.h
 mpid*.h
 mpid*.h.in
 winmpichtimer.h
@@ -15,3 +14,5 @@ mm_via_pre.h
 mm_via_rdma_pre.h
 dlogconf.h
 rlogconf.h
+*Debug*
+*Release*

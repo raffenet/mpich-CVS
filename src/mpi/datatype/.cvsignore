@@ -7,3 +7,5 @@
 *.gcov
 Makefile
 Makefile.in
+*Debug*
+*Release*

@@ -1,6 +1,6 @@
 *.plg
-Debug
-Release
+*Debug*
+*Release*
 *.o
 *.bb
 *.bbg
