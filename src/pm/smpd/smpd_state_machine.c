@@ -33,6 +33,7 @@ void smpd_stdin_thread(SOCKET hWrite)
     char str[SMPD_MAX_CMD_LENGTH];
     int index;
     HANDLE h;
+    /*char bogus_char;*/
 
     smpd_dbg_printf("smpd_stdin_thread started.\n");
     /* acquire the launch process mutex to avoid grabbing a redirected input handle */
@@ -43,7 +44,7 @@ void smpd_stdin_thread(SOCKET hWrite)
     {
 	/* Don't print an error in case there is no stdin handle */
 	smpd_dbg_printf("Unable to get the stdin handle.\n");
-	return;
+	goto fn_fail;
     }
     index = 0;
     for (;;)
@@ -61,14 +62,12 @@ void smpd_stdin_thread(SOCKET hWrite)
 		    if (send(hWrite, str, index, 0) == SOCKET_ERROR)
 		    {
 			smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
-			return;
+			goto fn_fail;
 		    }
 		}
 		/* ReadFile failed, what do I do? */
-		shutdown(hWrite, SD_BOTH);
-		closesocket(hWrite);
 		smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
-		return;
+		goto fn_fail;
 	    }
 	    /*printf("CHAR(%d)", (int)str[index]);fflush(stdout);*/
 	    if (str[index] == '\n' || index == SMPD_MAX_CMD_LENGTH-1)
@@ -80,7 +79,7 @@ void smpd_stdin_thread(SOCKET hWrite)
 		if (send(hWrite, str, num_read, 0) == SOCKET_ERROR)
 		{
 		    smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
-		    return;
+		    goto fn_fail;
 		}
 	    }
 	    else
@@ -96,16 +95,25 @@ void smpd_stdin_thread(SOCKET hWrite)
 		if (send(hWrite, str, index, 0) == SOCKET_ERROR)
 		{
 		    smpd_err_printf("unable to forward stdin, send failed, error %d\n", WSAGetLastError());
-		    return;
+		    goto fn_fail;
 		}
 	    }
 	    /* ReadFile failed, what do I do? */
-	    shutdown(hWrite, SD_BOTH);
-	    closesocket(hWrite);
 	    smpd_dbg_printf("ReadFile failed, closing stdin reader thread.\n");
-	    return;
+	    goto fn_fail;
 	}
     }
+fn_exit:
+    return;
+fn_fail:
+    /* graceful shutdown
+    shutdown(hWrite, SD_SEND);
+    recv(hWrite, &bogus_char, 1, 0);
+    closesocket(hWrite);
+    */
+    shutdown(hWrite, SD_BOTH);
+    closesocket(hWrite);
+    goto fn_exit;
 }
 /* forward entire input lines at a time version */
 #if 0
