@@ -6,6 +6,11 @@ cvs -d /home/MPI/cvsMaster checkout mpich2all
 cd mpich2
 maint/updatefiles
 
+To update files faster, use:
+
+    maint/updatefiles --without-codecheck
+
+
 Within MCS (Windows), assuming cygwin and that 
 drive f: is mapped to /home/gropp:
 
