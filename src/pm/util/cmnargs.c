@@ -55,12 +55,12 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 		 int (*ProcessArg)( int, char *[], void *), void *extraData )
 {
     int         i;
-    int         np=1;      /* These 6 values are set by command line options */
     int         appnum=0;
+    int         np=-1;     /* These 6 values are set by command line options */
     const char *host=0;    /* These are the defaults.  When a program name */
     const char *arch=0;    /* is seen, the values in these variables are */
     const char *wdir=0;    /* used to initialize the ProcessState entries */
-    const char *path=0;
+    const char *path=0;    /* we use np == -1 to detect both -n and -soft */
     const char *soft=0;
     const char *exename=0;
     int        indexOfFirstArg=-1;
@@ -140,11 +140,18 @@ int mpiexecArgs( int argc, char *argv[], ProcessList *plist, int nplist,
 		plist[curplist].spec.nArgs    = 0;
 	    }
 
-	    plist[curplist].np = np;
 	    if (soft) {
+		/* Set the np to 0 to indicate valid softspec */
+		plist[curplist].np = 0;
+		if (np > 0) {
+		    /* FIXME: Could warn about np and soft? */
+		    ;
+		}
 		mpiexecParseSoftspec( soft, &plist[curplist].soft );
 	    }
 	    else {
+		if (np == -1) np = 1;
+		plist[curplist].np = np;
 		plist[curplist].soft.nelm = 0;
 		plist[curplist].soft.tuples = 0;
 	    }

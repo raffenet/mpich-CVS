@@ -185,6 +185,22 @@ extern void mpiexec_usage( const char * );
 void InitTimeout( int seconds );
 int GetRemainingTime( void );
 
+/* IO Handlers */
+int IOHandleStdOut( int, void * );
+int IOSetupOutHandler( IOSpec *, int, int, char * );
+int IOHandleLoop( ProcessTable *, int * );
+void IOHandlersCloseAll( ProcessState *, int );
+void GetPrefixFromEnv( int, char [], int, int, int );
+
+/* sigs */
+void initPtableForSigchild( ProcessTable * );
+void WaitForChildren( ProcessTable * );
+int ComputeExitStatus( ProcessTable *, int );
+void PrintFailureReasons( FILE *, ProcessTable * );
+void KillChildren( ProcessTable * );
+
+
+
 /* 
    ---------------------------------------------------------------------------
    Miscellaneous

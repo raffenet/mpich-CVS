@@ -101,13 +101,14 @@ int IOSetupOutHandler( IOSpec *ios, int fdSource, int fdDest, char *leader )
 /* handle input for all of the processes in a process table.  Returns
    after a single invocation of select returns, with the number of active
    processes.  */
-int IOHandleLoop( ProcessTable *ptable )
+int IOHandleLoop( ProcessTable *ptable, int *reason )
 {
     int    i, j;
     fd_set readfds, writefds;
     int    nfds, maxfd, fd;
     ProcessState *pstate;
     int    nactive;
+    struct timeval tv;
 
     /* Setup the select sets */
     FD_ZERO( &readfds );
@@ -133,24 +134,32 @@ int IOHandleLoop( ProcessTable *ptable )
 	    }
 	}
     }
-    if (maxfd == -1) return 0;
+    if (maxfd == -1) { *reason = 1; return 0; }
 
     if (debug) {
 	printf( "Found %d active fds\n", nactive );
     }
 
-    /* A null timeout is wait forever.  
-       FIXME: We need to set a limit on this (using the timeout) */
-    nfds = select( maxfd+1, &readfds, &writefds, 0, 0 );
+    /* A null timeout is wait forever.  We set a timeout here */
+    tv.tv_sec  = GetRemainingTime();
+    nfds = select( maxfd+1, &readfds, &writefds, 0, &tv );
     if (nfds < 0) {
 	/* It may be EINTR, in which case we need to recompute the active
 	   fds */
-	if (errno == EINTR) return nactive;
+	if (errno == EINTR) { *reason = 2; return nactive; }
 
 	/* Otherwise, we have a problem */
 	printf( "Error in select!\n" );
 	perror( "Reason: " );
 	/* FIXME */
+    }
+    if (nfds == 0) {
+	/* This is a timeout from the select.  This is either a 
+	   total time expired or a polling time limit.  */
+	if (GetRemainingTime() <= 0) *reason = 2;
+	else                         *reason = 3;  /* Must be poll timeout */
+	/* Note that no poll timeout is implemented yet */
+	return 0;
     }
     if (nfds > 0) {
 	/* Find all of the fd's with activity */
@@ -192,6 +201,7 @@ int IOHandleLoop( ProcessTable *ptable )
 	    }
 	}
     }
+    *reason = 0;
     return nactive;
 }
 
@@ -208,5 +218,103 @@ void IOHandlersCloseAll( ProcessState *pstate, int np )
 	for (j=0; j<pstate[i].nIos; j++) {
 	    close( pstate[i].ios[j].fd );
 	}
+    }
+}
+
+/* Get the prefix to use on output lines from the environment. 
+   This is a common routine so that the same environment variables
+   and effects can be used by many versions of mpiexec
+   
+   The choices are these:
+   MPIEXEC_PREFIX_DEFAULT set:
+       stdout gets "rank>"
+       stderr gets "rank(err)>"
+   MPIEXEX_PREFIX_STDOUT and MPIEXEC_PREFIX_STDERR replace those
+   choices.
+   
+   The value can contain %d for the rank and eventually %w for the
+   number of MPI_COMM_WORLD (e.g., 0 for the original one and > 0 
+   for any subsequent spawned processes.  
+
+   FIXME: We may want an easy way to generate no output for %w if there is 
+   only one comm_world, and to also suppress other characters, such as
+      1>  (only one comm world; we are rank 1)
+      [2]3> (at least 3 comm worlds, we're #2 and rank 3 in that)
+*/
+void GetPrefixFromEnv( int isErr, char value[], int maxlen, int rank,
+		       int world )
+{
+    const char *envval = 0;
+    int         useDefault = 0;
+
+    /* Get the default, if any */
+    if (getenv( "MPIEXEC_PREFIX_DEFAULT" )) useDefault = 1;
+
+
+    if (isErr) 
+	envval = getenv( "MPIEXEC_PREFIX_STDERR" );
+    else 
+	envval = getenv( "MPIEXEC_PREFIX_STDOUT" );
+
+    if (!envval) {
+	if (useDefault) 
+	    if (isErr) 
+		envval = "%d(err)>";
+	    else
+		envval = "%d>";
+    }
+    value[0] = 0;
+    if (envval) {
+	const char *pin;
+	char *pout = value;
+	char digits[20];
+	int  dlen;
+	int  lenleft = maxlen-1;
+	/* Convert %d and %w to the given values */
+	while (lenleft > 0 && *pin) {
+	    if (*pin == '%') {
+		pin++;
+		/* Get the control */
+		switch (*pin) {
+		case '%': *pout++ = '%'; lenleft--; break;
+		case 'd': 
+		    sprintf( digits, "%d", rank );
+		    dlen = strlen( digits );
+		    if (dlen < lenleft) {
+			strcat( pout, digits );
+			pout += dlen;
+			lenleft -= dlen;
+		    }
+		    else {
+			*pout++ = '*';
+			lenleft--;
+		    }
+		    break;
+		case 'w':
+		    sprintf( digits, "%d", world );
+		    dlen = strlen(digits);
+		    if (dlen < lenleft) {
+			strcat( pout, digits );
+			pout += dlen;
+			lenleft -= dlen;
+		    }
+		    else {
+			*pout++ = '*';
+			lenleft--;
+		    }
+		    break;
+		default:
+		    /* Ignore the control */
+		    *pout++ = '%'; lenleft--; 
+		    if (lenleft--) *pout++ = *pin;
+		}
+		pin++;
+	    }
+	    else {
+		*pout++ = *pin++;
+		lenleft--;
+	    }
+	}
+	*pout = 0;
     }
 }

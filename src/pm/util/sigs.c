@@ -63,8 +63,14 @@ void initPtableForSigchild( ProcessTable *t )
     setup_sigchild( );
 }
 
+/* inHandler and skipHandler are used to control the SIGCHLD handler and
+   to avoid (or at least narrow) race conditions */
 static volatile int inHandler = 0;
 static volatile int skipHandler = 0;
+/* nExited is used to keep track of how many processes have exited and
+   to set the exitOrder field */
+static int      nExited = 0;
+
 /*
  * Note that signals are not queued.  Thus we must process all pending
  * processes, and not be concerned if we are invoked but we have already
@@ -197,9 +203,10 @@ int ComputeExitStatus( ProcessTable *ptable, int rule )
     }
     return rc;
 }
-#ifdef FOO
+
+
 /* Send a given signal to all processes */
-void SignalAllProcesses( ProcessTable_t *ptable, int sig, const char msg[] )
+void SignalAllProcesses( ProcessTable *ptable, int sig, const char msg[] )
 {
     int   i, rc;
     pid_t pid;
@@ -220,6 +227,7 @@ void SignalAllProcesses( ProcessTable_t *ptable, int sig, const char msg[] )
 		    }
 		}
 	    }
+	    ptable->table[i].state = KILLED;
 	}
     }
 }
@@ -230,7 +238,7 @@ void SignalAllProcesses( ProcessTable_t *ptable, int sig, const char msg[] )
  * selected (on by default).
  */
 static inKillChildren = 0;
-void KillChildren( ProcessTable_t *ptable )
+void KillChildren( ProcessTable *ptable )
 {
     int i, pid, rc;
 
@@ -251,27 +259,11 @@ void KillChildren( ProcessTable_t *ptable )
     SignalAllProcesses( ptable, SIGINT, "Could not kill with SIGINT" );
 
     /* We should wait here to give time for the processes to exit */
-    
     sleep( 1 );
     SignalAllProcesses( ptable, SIGQUIT, "Could not kill with SIGQUIT" );
-    
-    /* Try to wait for the processes */
-    for (i=0; i<=ptable->nProcesses; i++) {
-	/* FIXME - is GONE the right test? */
-	if (ptable->table[i].state != GONE) {
-	    pid = ptable->table[i].pid;
-	    if (pid > 0) {
-		if (debug) {
-		    DBG_PRINTF( "Wait on %d\n", pid ); fflush( stdout );
-		}
-		/* Nonblocking wait */
-		rc = waitOnProcess( i, 0, KILLED );
-	    }
-	}
-    }
-}
-#endif
 
+    /* We don't wait on the processes; a separate step handles that */
+}
 
 static int SetProcessExitStatus( ProcessTable *ptable, 
 				 pid_t pid, int prog_stat )
@@ -297,6 +289,18 @@ static int SetProcessExitStatus( ProcessTable *ptable,
 	    /* Abnormal exit if either rc or sigval is set */
 	    ptable->table[i].status.exitStatus = rc;
 	    ptable->table[i].status.exitSig    = sigval;
+	    ptable->table[i].status.exitOrder  = nExited++;
+	    if (ptable->table[i].state <= COMMUNICATING &&
+		ptable->table[i].state >= ALIVE) {
+		/* We have an abnormal exit if it was an MPI job */
+		if (sigval) 
+		    ptable->table[i].status.exitReason = SIGNALLED;
+		else 
+		    ptable->table[i].status.exitReason = NOFINALIZE;
+	    }
+	    else {
+		ptable->table[i].status.exitReason = NORMAL;
+	    }
 	    ptable->nActive--;
 	    break;
 	}
@@ -309,4 +313,36 @@ static int SetProcessExitStatus( ProcessTable *ptable,
 	   exits before the table is initialized */
     }
     return 0;
+}
+
+/* Print out the reasons for failure for any processes that did not
+   exit cleanly */
+void PrintFailureReasons( FILE *fp, ProcessTable *ptable )
+{
+    int i;
+    int rc, sig, order;
+    exit_state_t reason;
+    ProcessState *pstate = ptable->table;
+
+    for (i=0; i<ptable->nProcesses; i++) {
+	rc     = pstate[i].status.exitStatus;
+	sig    = pstate[i].status.exitSig;
+	order  = pstate[i].status.exitOrder;
+	reason = pstate[i].status.exitReason;
+
+	/* If signalled and we did not send the signal (INT or KILL)*/
+	if (sig && (reason != KILLED || (sig != SIGKILL && sig != SIGINT))) {
+#ifdef HAVE_STRSIGNAL
+	    MPIU_Error_printf( 
+		     "Return code = %d, signaled with %s\n", rc, 
+		     strsignal(sig) );
+#else
+	    MPIU_Error_printf( 
+		     "Return code = %d, signaled with %d\n", rc, sig );
+#endif
+	}
+	else if (debug || rc) {
+	    MPIU_Error_printf( "Return code = %d\n", rc );
+	}
+    }
 }
