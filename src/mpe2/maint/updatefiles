@@ -57,5 +57,5 @@ for cfgin in $cfgins ; do
     if [ -n "`grep AC_CONFIG_HEADER $cfgin`" ] ; then
         $MPE_AUTOHEADER
     fi
-    $MPE_AUTOCONF
+    $MPE_AUTOCONF && rm -rf autom4te*.cache
 done
