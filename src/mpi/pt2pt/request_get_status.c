@@ -195,7 +195,9 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	*flag = FALSE;
     }
     
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REQUEST_GET_STATUS);
     return (mpi_errno == MPI_SUCCESS) ? MPI_SUCCESS : MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 }
