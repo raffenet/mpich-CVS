@@ -7,6 +7,7 @@
 #
 # Eventually, we want to allow this script to be executed anywhere in the
 # mpich tree.  This is not yet implemented.
+error_summary=""
 at_top=no
 if [ -d maint -a -s maint/simplemake.in ] ; then
     at_top=yes
@@ -110,6 +111,9 @@ versions of autoconf, including autoconf 2.52 .  You can use
 to see the version of autoconf (unfortunately, there is no standard 
 format for the version output and it changes between autoconf versions).
 EOF
+    error_summary="$error_summary\
+Your do not have a usable version of autoconf (either no version found\
+or version 2.57 or later"
 fi
 rm -rf .tmp
 
@@ -169,6 +173,8 @@ if [ -x maint/extracterrmsgs -a $do_geterrmsgs = "yes" ] ; then
        if [ -s .err2 ] ; then
            echo "Because of errors in extracting error messages, the file"
            echo "src/mpi/errhan/defmsg.h was not updated."
+	   error_summary="$error_summary\
+Error message files in src/mpi/errhan were not updated."
            update_errdefs=no
 	   rm -f .tmp
        fi
@@ -213,10 +219,18 @@ if [ ! -x maint/simplemake -o ! -x maint/getstates ] ; then
 fi
 #
 # The following relies on the Unix find command
-if find -name 'maint/simplemake.in' -newer 'maint/simplemake' ; then
+if [ -s maint/simplemake ] ; then
+    if find -name 'maint/simplemake.in' -newer 'maint/simplemake' ; then
+        run_configure=yes
+    fi
+else
     run_configure=yes
 fi
-if find -name 'maint/getstates.in' -newer 'maint/getstates' ; then
+if [ -s maint/getstates ] ; then 
+    if find -name 'maint/getstates.in' -newer 'maint/getstates' ; then
+        run_configure=yes
+    fi
+else
     run_configure=yes
 fi
 
@@ -336,12 +350,19 @@ EOF
 		autoconf
 		# The bug is that the EOF doesn't go onto the next line
 		if grep endEOF configure 2>&1 >/dev/null ; then
+		    echo " "
+   echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 		    echo "The available version of configure has a bug"
 		    echo "in handling Fortran programs and cannot be used"
 		    echo "This bug is an improper placement of the EOF"
 		    echo "token used to implement AC_TRY_COMPILE for Fortran."
 		    echo "A patch for this version is available in "
 		    echo "maint/ac2.13.diff ."
+   echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+		    echo " "
+		    error_summary="$error_summary\
+Your version of autoconf cannot properly handle Fortran.  See the diff \
+in maint/ac2.13.diff for a possible patch"
 		    cd ..
 		    rm -rf .ctmp
 		    continue
@@ -435,4 +456,10 @@ if [ -x maint/codingcheck -a $do_codingcheck = "yes" ] ; then
 		      -skipfile=./src/mpi/romio/adio/sgi/mpi3.1/mpif.h \
 	 	      -skipfile=./src/mpi/romio/adio/include/mpisgi2.h \
 			$codecheck_args src 
+fi
+if [ -s "$error_summary" ] ; then
+    echo " "
+    echo "Problems encountered while running updatefiles"
+    echo "These may cause problems when configuring or building MPICH2"
+    echo $error_summary
 fi
