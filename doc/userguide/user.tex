@@ -1,6 +1,6 @@
 \documentclass[dvipdfm,11pt]{article}
 \usepackage[dvipdfm]{hyperref} % Upgraded url package
-\usepackage{code}
+% \usepackage{code}
 \parskip=.1in
 
 \begin{document}
@@ -240,22 +240,21 @@ as a shared library.
 
 Some users may get error messages such as
 \begin{verbatim}
-SEEK_SET is #defined but must not be for the C++ binding of MPI
+    SEEK_SET is #defined but must not be for the C++ binding of MPI
 \end{verbatim}
-The problem is that both \file{stdio.h} and the MPI C++ interface use
-\code{SEEK_SET}, \code{SEEK_CUR}, and \code{SEEK_END}.  This is really a bug
-in the MPI-2 standard.  You can 
-try adding 
+The problem is that both \texttt{stdio.h} and the MPI C++ interface use
+\texttt{SEEK\_SET}, \texttt{SEEK\_CUR}, and \texttt{SEEK\_END}.  This is really a bug
+in the MPI-2 standard.  You can try adding 
 \begin{verbatim}
-#undef SEEK_SET
-#undef SEEK_END
-#undef SEEK_CUR
+    #undef SEEK_SET
+    #undef SEEK_END
+    #undef SEEK_CUR
 \end{verbatim}
-before \file{mpi.h} is included, or add the definition
+before \texttt{mpi.h} is included, or add the definition
 \begin{verbatim}
--DMPICH_IGNORE_CXX_SEEK
+    -DMPICH_IGNORE_CXX_SEEK
 \end{verbatim}
-to the command line (this will cause the MPI versions of \code{SEEK_SET}
+to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
 etc. to be skipped).
 
 \subsection{Special Issues for Fortran}
@@ -466,8 +465,64 @@ Some extension parameters have only global versions.  They are
   been compiled and linked using the \texttt{ch\_p4mpd} or
   \texttt{myrinet} device in MPICH1.  The MPD process manager provides
   backward compatibility in this case.
+\item[\texttt{-machinefile}] can be used to specify information
+about each of a set of machines.  This information may include the
+number of processes to run on each host when executing user programs.
+For example, assume that a machinefile named mf contains:
+\begin{verbatim}
+    # comment line
+    hosta
+    hostb:2
+    hostc    ifhn=hostc-gige
+    hostd:4  ifhn=hostd=gige
+\end{verbatim}
+In addition to specifying hosts and number of processes to run on each,
+this machinefile indicates that processes running on hostc and hostd
+should use the \texttt{gige} interface on \texttt{hostc} and
+\texttt{hostd}
+respectively for MPI communications.  (\texttt{ifhn} stands for
+``interface host name'' and should be set to an alternate host name for
+the machine that is used to designate an alternate communication interface.
+This interface information causes the MPI implementation to choose the
+alternate host name when making connections.  When the alternate
+hostname specifies a particular interface, MPICH communication will then
+travel over that interface.
+
+You might use this machinefile in the following way:
+\begin{verbatim}
+    mpiexec -machinefile mf -n 7 p0
+\end{verbatim}
+Process rank 0 is to run on \texttt{hosta}, ranks 1 and 2 on
+\texttt{hostb}, rank 3 on \texttt{hostc}, and ranks 4-6 on
+\texttt{hostd}.  Note that the file specifies information for up to 8
+ranks and we only used 7.  That is OK.  But, if we had used ``\texttt{-n
+  9}'', an error would be raised.  The file is NOT used as a pool of
+machines that are cycled through; the processes are mapped to the hosts
+in the order specified in the file.
+
+A more complex command-line example might be:
+\begin{verbatim}
+    mpiexec -l -machinefile mf -n 3 p1 : -n 2 p2 : -n 2 p3
+\end{verbatim}
+Here, ranks 0-2 all run program \texttt{p1} and are executed placing
+rank 0 on \texttt{hosta} and ranks 1-2 on \texttt{hostb}.  Similarly,
+ranks 3-4 run \texttt{p2} and are executed on \texttt{hostc} and
+\texttt{hostd}, respectively.  Ranks 5-6 run on \texttt{hostd} and
+execute \texttt{p3}.
 \end{description}
 
+A ``\texttt{:}'' can optionally be used between global args
+and normal argument sets, e.g.:
+\begin{verbatim}
+    mpiexec -l -n 1 -host host1 pgm1 : -n 4 host2 pgm2
+\end{verbatim}
+is equivalent to:
+\begin{verbatim}
+    mpiexec -l : -n 1 -host host1 pgm1 : -n 4 host2 pgm2
+\end{verbatim}
+This option implies that the global arguments can occur on a separate
+line in the file specified by \texttt{-configfile} when it is used to 
+replace a long command line.
 
 \subsubsection{Environment Variables Affecting \texttt{mpiexec}}
 \label{sec:mpd-mpiexec-env}
