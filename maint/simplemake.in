@@ -64,6 +64,7 @@ $quiet = 0;
 %extrules = ( 'c:o' => '$(C_COMPILE) -c $<', 
 	      'f:o' => '$(F77_COMPILE) -c $<',
 	      'cxx:o' => '$(CXX_COMPILE) -c $<',
+	      'cpp:o' => '$(CXX_COMPILE) -c $<',
 	      's:o' => '$(AS_COMPILE) $<',
 	      'f90:o' => '$(F90_COMPILE) -c $<',
 # Assembler *output* definitions
@@ -83,6 +84,8 @@ $quiet = 0;
 	      'f:lo' => '$(F77_COMPILE_SHL) -c $<
 	@mv -f $*.o $*.lo',
 	      'cxx:lo' => '$(CXX_COMPILE_SHL) -c $<
+	@mv -f $*.o $*.lo',
+	      'cpp:lo' => '$(CXX_COMPILE_SHL) -c $<
 	@mv -f $*.o $*.lo',
 	      'f90:lo' => '$(F90_COMPILE_SHL) -c $<
 	@mv -f $*.o $*.lo',
@@ -108,6 +111,9 @@ F77_COMPILE = $(FC) $(FFLAGS)',
 	    'cxx:o' => 'CXX         = @CXX@
 CXXFLAGS    = @CXXFLAGS@
 CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
+	    'cpp:o' => 'CXX         = @CXX@
+CXXFLAGS    = @CXXFLAGS@
+CXX_COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
 	    's:o'   => 'AS          = @AS@
 AS_COMPILE  = $(AS)',
 	    'f90:o'   => 'F90          = @F90@
@@ -119,17 +125,21 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS)',
 	    'f:lo'   => 'FC_SHL      = @FC_SHL@
 F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)',
 	    'cxx:lo' => 'CXX_SHL     = @CXX_SHL@
-CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
+CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
+	    'cpp:lo' => 'CXX_SHL     = @CXX_SHL@
+CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)',
 	   );
 #
 # Rules to build programs (.o:)
 %progrules = ( 'c' => '$(C_LINK)',
 	       'cxx' => '$(CXX_LINK)',
-	       'f'   => '$(F77_LINK)'
+	       'cpp' => '$(CXX_LINK)',
+	       'f'   => '$(F77_LINK)',
 	      );
 %progdefs = ( 'c' =>   'C_LINK      = $(CC)',
 	      'cxx' => 'CXX_LINK    = $(CXX)',
-	      'f'   => 'F77_LINK    = $(FC)'
+	      'cpp' => 'CXX_LINK    = $(CXX)',
+	      'f'   => 'F77_LINK    = $(FC)',
 	     );
 
 # Rules to build shared libraries (these are like programs
@@ -137,11 +147,13 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS)'
 # These are out-of-date.
 %shlibdefs = ( 'c' =>   'C_LINK_SHL  = @C_LINK_SHL@',
 	       'cxx' => 'CXX_LINK_SHL= @CXX_LINK_SHL@',
-	       'f'   => 'F77_LINK_SHL= @F77_LINK_SHL@'
+	       'cpp' => 'CXX_LINK_SHL= @CXX_LINK_SHL@',
+	       'f'   => 'F77_LINK_SHL= @F77_LINK_SHL@',
 	     );
 %shlibrules = ( 'c' => '$(C_LINK_SHL)',
 	       'cxx' => '$(CXX_LINK_SHL)',
-	       'f'   => '$(F77_LINK_SHL)'
+	       'cpp' => '$(CXX_LINK_SHL)',
+	       'f'   => '$(F77_LINK_SHL)',
 	      );
 #
 # Directories needed.  These are the prefix etc.  Many are needed only
@@ -653,7 +665,8 @@ sub DefaultRules {
     # Miscellaneous.  This needs to be improved.  This is really needed
     # only for some targets
     # The definition of DEFS is the same as for Automake
-    if (defined($ext_seen{"c"}) || defined($ext_seen{"cxx"})) {
+    if (defined($ext_seen{"c"}) || defined($ext_seen{"cxx"}) ||
+	defined($ext_seen{"cpp"})) {
 	print FD "DEFS        = \@DEFS\@ -I. -I\${srcdir}$newline";
 	# What to do about includes?  If they were set explicitly,
 	# don't use the default.
@@ -810,7 +823,13 @@ sub DefaultRules {
 	}
 	print FD "\t\tMakefile.sm )$newline";
 	print FD "Makefile: \${srcdir}/Makefile.in$newline";
-	print FD "\tcd ${rootdirpath} && \\$newline";
+	my $topdir = $rootdirpath;
+	if ($topdir eq "") {	
+	    $topdir = ".";
+	}		
+	if ($topdir ne ".") {
+	    print FD "\tcd $topdir && \\$newline";
+	}
 	print FD "\tCONFIG_FILES=${curdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status$newline";
     }
     # Clean targets

@@ -27,6 +27,7 @@
 #endif
 
 /* Preallocated op objects */
+MPID_Op MPID_Op_builtin[MPID_OP_N_BUILTIN];
 MPID_Op MPID_Op_direct[MPID_OP_PREALLOC];
 MPIU_Object_alloc_t MPID_Op_mem = { 0, 0, 0, 0, MPID_OP, 
 					    sizeof(MPID_Op), 

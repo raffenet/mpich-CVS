@@ -884,6 +884,8 @@ typedef struct {
      MPID_Lang_t        language;
      MPID_User_function function;
   } MPID_Op;
+#define MPID_OP_N_BUILTIN 14
+extern MPID_Op MPID_Op_builtin[MPID_OP_N_BUILTIN];
 extern MPID_Op MPID_Op_direct[];
 extern MPIU_Object_alloc_t MPID_Op_mem;
 

@@ -206,6 +206,16 @@ if [ "$has_unix_find" = "yes" ] ; then
         dir=`dirname $dir`
 	if [ -s $dir/Makefile.in ] ; then 
             echo "Found $dir/configure.in"
+	    #
+	    # Check for known problems
+	    if [ $dir = "src/binding/f77" -a \
+		! -x /home/gropp/bin/linux/autoconf ] ; then
+		# We need a *patched*, version 2.13 form of autoconf
+		# Version 2.62 breaks the Fortran 90 extensions
+		# to TRY_COMPILE, and stock 2.13 generates bogus 
+		# code for language FORTRAN.
+		continue
+	    fi
             (cd $dir ; rm -f mf.tmp ; \
 	    sed -e 's%^SHELL *=.*%SHELL = /bin/sh%' \
 		-e "s%@srcdir@%.%g" Makefile.in > mf.tmp ;\
