@@ -15,7 +15,7 @@ C
       call mtest_init( ierr )
 
       call mpi_comm_size( MPI_COMM_WORLD, size, ierr )
-      call mpi_comm_size( MPI_COMM_WORLD, rank, ierr )
+      call mpi_comm_rank( MPI_COMM_WORLD, rank, ierr )
       if (size .lt. 2) then
          print *, 'This example must have at least 2 processes'
          call mpi_abort( MPI_COMM_WORLD, 1, ierr )
@@ -26,11 +26,14 @@ C side is rank >= size/2
       color = 0
       if (rank .ge. size/2) color = 1
       call mpi_comm_split( MPI_COMM_WORLD, color, rank, comm, ierr )
+C
       if (rank .lt. size/2) then
 C        Server
-         call mpi_open_port( MPI_INFO_NULL, portname, ierr )
-         call mpi_publish_name( "fservtest", MPI_INFO_NULL, 
-     &                          portname, ierr )
+         if (rank .eq. 0) then
+             call mpi_open_port( MPI_INFO_NULL, portname, ierr )
+             call mpi_publish_name( "fservtest", MPI_INFO_NULL, 
+     &            portname, ierr )
+         endif
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          call mpi_comm_accept( portname, MPI_INFO_NULL, 0, comm, 
      &                         intercomm, ierr )
@@ -43,6 +46,7 @@ C        Client
          ierr = MPI_SUCCESS
          call mpi_lookup_name( "fservtest", MPI_INFO_NULL, 
      &                         portname, ierr )
+         ierr = MPI_ERR_NAME
          if (ierr .eq. MPI_SUCCESS) then
             errs = errs + 1
             print *, 'lookup name returned a value before published'
