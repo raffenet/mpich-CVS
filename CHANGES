@@ -2,6 +2,8 @@
 				Changes in 1.0
 ===============================================================================
 
+- MPICH2 now works on Solaris.
+
 - The User's Guide has been expanded considerably.  The Installation Guide has
   been expanded some as well.
 
@@ -10,6 +12,13 @@
 
 - MPI_COMM_CONNECT and MPI_COMM_ACCEPT are now allowed to connect with remote
   process to which they are already connected.
+
+- Shared libraries can now be built (and used) on IA32 Linux with the GNU
+  compilers (--enable-sharedlibs=gcc), and on Solaris with the native Sun
+  Workshop compilers (--enable-sharedlibs=solaris).  They may also work on
+  other operating systems with GCC, but that has not been tested.  Previous
+  restrictions disallowing C++ and Fortran bindings when building shared
+  libraries have been removed.
 
 - The dataloop and datatype contents code has been improved to address
   alignment issues on all platforms.
@@ -30,7 +39,7 @@
 
   - The commands 'mpdcheck' and 'testconfig' have been to installations using
     MPD.  These commands test the setup of the machines on which you wish to
-    run MPICH2 jobs.  They help to identify misconfigurations, firewall issues,
+    run MPICH2 jobs.  They help to identify misconfiguration, firewall issues,
     and other communication problems.
 
   - Support for MPI_APPNUM and MPI_UNIVERSE_SIZE has been added to the Simple
@@ -47,7 +56,7 @@
 - The following changes were made to ROMIO:
 
   - The amount of duplicated ROMIO code in the close, resize, preallocate,
-    read, write, asyncronous io, and sync routines has been substantially
+    read, write, asynchronous I/O, and sync routines has been substantially
     reduced.
 
   - A bug in flattening code, triggered by nested datatypes, has been fixed.
@@ -72,8 +81,13 @@
 - MPE and CLOG have been updated to version 2.1. For more details, please see
   src/mpe2/README.
 
-- MPICH2 now works on Solaris.
+- New macros for memory management were added to support function local
+  allocations (alloca), to rollback pending allocations when error conditions
+  are detected to avoid memory leaks, and to improve the conciseness of code
+  performing memory allocations.
 
+- New error handling macros were added to make internal error handling code
+  more concise.
 
 ===============================================================================
 			       Changes in 0.971
@@ -92,13 +106,13 @@
 
 - A new command, mpich2version, was added to allow the user to obtain
   information about the MPICH2 installation.  This command is currently a
-  simple shell script.  We anticiapte that the mpich2version command will
+  simple shell script.  We anticipate that the mpich2version command will
   eventually provide additional information such as the patches applied and the
   date of the release.
 
 - The following changes were made to MPD2:
 
-  - Support was addded for MPI's "singleton init", in which a single
+  - Support was added for MPI's "singleton init", in which a single
     process started in the normal way (i.e., not by mpiexec or mpirun)
     becomes an MPI process with an MPI_COMM_WORLD of size one by
     calling MPI_Init.  After this the process can call other MPI
@@ -124,9 +138,8 @@
 
   - Minor improvements have been made to mpdboot.
 
-  - Support for the (now depricated) BNR interface has been added to
+  - Support for the (now deprecated) BNR interface has been added to
     allow MPICH1 programs to also be run via MPD2.
-
 
 - Shared libraries are now supported on Linux systems using the GNU compilers
   with the caveat that C++ support must be disabled (--disable-cxx).
@@ -138,12 +151,12 @@
   the documentation in doc/logging for details.
 
 - A "meminit" option was added to --enable-g to force all bytes associated with
-  a structure or union to be iniitialized prior to use.  This prevents programs
-  like Valgrind from complaining about unitialized accesses.
+  a structure or union to be initialized prior to use.  This prevents programs
+  like Valgrind from complaining about uninitialized accesses.
 
 - The dist-with-version and snap targets in the top-level Makefile.sm now
   properly produce mpich2-<ver>/maint/Version instead of mpich2-<ver>/Version.
-  In addition, they now properly update the VERSION variable in Makfile.sm
+  In addition, they now properly update the VERSION variable in Makefile.sm
   without clobbering the sed line that performs the update.
 
 - The dist and snap targets in the top-level Makefile.sm now both use the
@@ -183,6 +196,7 @@
 ===============================================================================
 				Changes in 0.97
 ===============================================================================
+
 - MPI-2 one-sided communication has been implemented in the CH3 device.
 
 - mpigdb works as a simple parallel debugger for MPI programs started
@@ -196,13 +210,13 @@
 
 - Improve scalability and performance of some ROMIO PVFS and PVFS2 routines 
 
-- An error message string parameter was added to MPID_Abort().  If the parameter
-  is non-NULL this string will be used as the message with the abort output.
-  Otherwise, the output message will be base on the error message associated
-  with the mpi_errno parameter.
+- An error message string parameter was added to MPID_Abort().  If the
+  parameter is non-NULL this string will be used as the message with the abort
+  output.  Otherwise, the output message will be base on the error message
+  associated with the mpi_errno parameter.
 
 - MPID_Segment_init() now takes an additional boolean parameter that specifies
-  if the segment processing code is to produce/consume homogenous (FALSE) or
+  if the segment processing code is to produce/consume homogeneous (FALSE) or
   heterogeneous (TRUE) data.
 
 - The definitions of MPID_VCR and MPID_VCRT are now defined by the device.
@@ -237,20 +251,20 @@
   writers will notice the following.  (This is still a work in progress.  See
   the note below.)
 
-  * The introduction of a process group object (MPIDI_PG_t) and a new
+  - The introduction of a process group object (MPIDI_PG_t) and a new
     set of routines to manipulate that object.
 
-  * The renaming of the MPIDI_VC object to MPIDI_VC_t to make it more
+  - The renaming of the MPIDI_VC object to MPIDI_VC_t to make it more
     consistent with the naming of other objects in the device.
 
-  * The process group information in the MPIDI_VC_t moved from the channel
+  - The process group information in the MPIDI_VC_t moved from the channel
     specific portion to the device layer.
 
-  * MPIDI_CH3_Connection_terminate() was added to the CH3 interface to allow
+  - MPIDI_CH3_Connection_terminate() was added to the CH3 interface to allow
     the channel to properly shutdown a connection before the device deletes all
     associated data structures.
 
-  * A new upcall routine, MPIDI_CH3_Handle_connection(), was added to allow the
+  - A new upcall routine, MPIDI_CH3_Handle_connection(), was added to allow the
     device to notify the device when a connection related event has completed.
     A present the only event is MPIDI_CH3_VC_EVENT_TERMINATED, which notify the
     device that the underlying connection associated with a VC has been
@@ -259,7 +273,7 @@
     MPIDI_CH3_Handle_connection().  MPID_Finalize() will likely hang if this
     rule is not followed.
 
-  * MPIDI_CH3_Get_parent_port() was added to provide MPID_Init() with the port
+  - MPIDI_CH3_Get_parent_port() was added to provide MPID_Init() with the port
     name of the the parent (spawner).  This port name is used by MPID_Init()
     and MPID_Comm_connect() to create an intercommunicator between the parent
     (spawner) and child (spawnee).  Eventually, MPID_Comm_spawn_multiple() will
@@ -269,21 +283,22 @@
   Note: the changes noted are relatively fresh and are the beginning to a set
   of future changes.  The goal is to minimize the amount of code required by a
   channel to support MPI dynamic process functionality.  As such, portions of
-  the device will change dramaticly in a future release.  A few more changes to
-  the CH3 interface are also quite likely.
+  the device will change dramatically in a future release.  A few more changes
+  to the CH3 interface are also quite likely.
 
 - MPIDI_CH3_{iRead,iWrite}() have been removed from the CH3 interface.
   MPIDI_CH3U_Handle_recv_pkt() now returns a receive request with a populated
   iovec to receive data associated with the request.
   MPIDU_CH3U_Handle_{recv,send}_req() reload the iovec in the request and
   return and set the complete argument to TRUE if more data is to read or
-  written.  If data transfer for the request is complete, the coomplete
-  argument must be set to FALSE.
+  written.  If data transfer for the request is complete, the complete argument
+  must be set to FALSE.
 
 
 =============================================================================== 
                                Changes in 0.96p2
 ===============================================================================
+
 The shm and ssm channels have been added back into the distribution.
 Officially, these channels are supported only on x86 platforms using the gcc
 compiler.  The necessary assembly instructions to guarantee proper ordering of
@@ -291,15 +306,16 @@ memory operations are lacking for other platforms and compilers.  That said, we
 have seen a high success rate when testing these channels on unsupported
 systems.
 
-This patch release also includes a new unsupported channel.  The scalable shared
-memory, or sshm, channel is similar to the shm channel except that it allocates
-shared memory communication queues only when necessary instead of preallocating
-N-squared queues.
+This patch release also includes a new unsupported channel.  The scalable
+shared memory, or sshm, channel is similar to the shm channel except that it
+allocates shared memory communication queues only when necessary instead of
+preallocating N-squared queues.
 
 
 ===============================================================================
                                Changes in 0.96p1
 ===============================================================================
+
 This patch release fixes a problem with building MPICH2 on Microsoft Windows
 platforms.  It also corrects a serious bug in the poll implementation of the
 Sock interface.
@@ -308,6 +324,7 @@ Sock interface.
 ===============================================================================
                                 Changes in 0.96
 ===============================================================================
+
 The 0.96 distribution is largely a bug fix release.  In addition to the many
 bug fixes, major improvements have been made to the code that supports the
 dynamic process management routines (MPI_Comm_{connect,accept,spawn,...}()).
@@ -320,18 +337,19 @@ rendezvous protocol.  The channel can use this extra information to pin memory
 and perform a zero-copy transfer.  If all goes well, the results will be rolled
 back into the CH3 device.
 
-Due to last minute difficulties, this release does not contain the shm or
-ssm channels.  These channels will be included in a subsequent patch release.
+Due to last minute difficulties, this release does not contain the shm or ssm
+channels.  These channels will be included in a subsequent patch release.
 
 
 ===============================================================================
 				Changes in 0.94
 ===============================================================================
-Active target one-sided communication is now available for the ch3:sock channel.
-This new functionality has undergone some correctness testing but has not been
-optimized in terms of performance.  Future release will include performance
-enhancements, passive target communication, and availability in channels other
-than just ch3:sock.
+
+Active target one-sided communication is now available for the ch3:sock
+channel.  This new functionality has undergone some correctness testing but has
+not been optimized in terms of performance.  Future release will include
+performance enhancements, passive target communication, and availability in
+channels other than just ch3:sock.
 
 The shared memory channel (ch3:shm), which performs communication using shared
 memory on a single machine, is now complete and has been extensively tested.
@@ -347,7 +365,7 @@ channel (ch3:shm), this channel only supports IA32 based machines and must be
 compiled with gcc.  In future releases, the ch3:ssm channel will support
 additional architectures and compilers.
 
-The two channels that perform communcation using shared memory, ch3:shm and
+The two channels that perform commutation using shared memory, ch3:shm and
 ch3:ssm, now support the allocation of shared memory using both the POSIX and
 System V interfaces.  The POSIX interface will be used if available; otherwise,
 the System V interface is used.
@@ -358,18 +376,19 @@ both the code and the configure scripts.
 And, as always, many bugs have been fixed :-).
 
 
-***** INTEFACE CHANGES ****
+***** INTERFACE CHANGES ****
 
 The parameters to MPID_Abort() have changed.  MPID_Abort() now takes a pointer
 to communicator object, an MPI error code, and an exit code.
 
-MPIDI_CH3_Progress() has been split into two functions: MPIDI_CH3_Progress_wait()
-and MPIDI_CH3_Progress_test().
+MPIDI_CH3_Progress() has been split into two functions:
+ MPIDI_CH3_Progress_wait() and MPIDI_CH3_Progress_test().
 
 
 ===============================================================================
 				Changes in 0.93
 ===============================================================================
+
 Version 0.93 has undergone extensive changes to provide better error reporting.
 Part of these changes involved modifications to the ADI3 and CH3 interfaces.
 The following routines now return MPI error codes:
@@ -403,10 +422,9 @@ while the semantics changed, the type signatures did not.
 The function used to create error codes, MPIR_Err_create_code(), has also
 changed.  It now takes additional parameters, allowing it create a stack of
 errors and making it possible for the reporting function to indicate in which
-function and on which line the error occurred.  It also allows an error
-to be designated as fatal or recoverable.  Fatal errors always result in
-program termination regardless of the error handler installed by the
-application.
+function and on which line the error occurred.  It also allows an error to be
+designated as fatal or recoverable.  Fatal errors always result in program
+termination regardless of the error handler installed by the application.
 
 A RDMA channel has been added and includes communication methods for shared
 memory and shmem.  This is recent development and the RDMA interface is still
