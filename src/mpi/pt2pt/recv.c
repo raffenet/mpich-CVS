@@ -83,11 +83,16 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
         {
 	    MPID_Datatype * datatype_ptr = NULL;
 
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) {
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
+                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            }
+	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    MPIR_ERRTEST_RECV_TAG(tag, mpi_errno);
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RECV);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

@@ -84,16 +84,26 @@ int MPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
         {
 	    MPID_Datatype * datatype_ptr = NULL;
 	    
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) {
+                MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISSEND);
+                return MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+            }
+	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
 	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
+	    if (request != NULL)
+	    {
+		MPIR_ERRTEST_REQUEST(*request, mpi_errno);
+	    }
             if (mpi_errno) {
                 MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_ISSEND);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
             }
-	    
+
 	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
