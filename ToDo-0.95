@@ -221,6 +221,9 @@ Open Tasks:
   lines to send to a perl script.  Having a shell script prevents the 
   integration with the Windows configure script, winconfigure.wsf.
 
+* remove MPIR and MPID dependencies from MPIU functions.  For example: separate
+  MPIU_Create_error_code and error ring code from MPIR_Err_return_comm.
+
 --------------------
 
 Completed?
