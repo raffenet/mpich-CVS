@@ -147,6 +147,8 @@ typedef int SMPD_BOOL;
 #define SMPD_DEFAULT_TIMEOUT              120
 #define SMPD_SHORT_TIMEOUT                 60
 
+#define SMPD_UNREFERENCED_ARG(a) a
+
 #ifdef HAVE_WINDOWS_H
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
