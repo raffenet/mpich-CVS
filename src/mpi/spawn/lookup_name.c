@@ -27,7 +27,7 @@
    Most routines will use lookup (if they use any of the name publishing
    interface at all), we place this in MPI_Lookup_name. 
 */
-PMPI_LOCAL MPID_NS_Handle MPIR_Namepub = 0;
+MPID_NS_Handle MPIR_Namepub = 0;
 
 #endif
 
