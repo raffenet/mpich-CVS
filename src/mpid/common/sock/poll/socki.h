@@ -26,7 +26,9 @@
 #define SOCK_IOV_MAXLEN      16
 #define SOCK_INFINITE_TIME   -1
 #define SOCK_INVALID_SOCK    NULL
+#define SOCK_INVALID_SET     NULL
 #define SOCK_SIZE_MAX	     SSIZE_MAX
+#define SOCK_NATIVE_FD       int
 
 typedef struct sock_set * sock_set_t;
 typedef struct sock * sock_t;
