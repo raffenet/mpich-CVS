@@ -429,7 +429,7 @@ sub ReadMfile {
 	elsif ($nocomments && /^\s*#/) {
 	       ;
 	   }
-	elsif (/smvar_(.*)\s*=\s*(.*)/) {
+	elsif (/^smvar_([^\s]*)\s*=\s*(.*)/) {
 	    # Allow the user to override any simplemake variable 
 	    # E.g.,
 	    # smvar_autoconf = /foo/bar/fixedac
@@ -437,6 +437,7 @@ sub ReadMfile {
 	    $varname = $1;
 	    $value   = $2;
 	    $$varname = $value;
+	    print STDERR "setting $varname to $value\n" if $debug;
 	}
 	elsif (/^noinst/) {
 	    # Automake target to identify some programs/libraries as
