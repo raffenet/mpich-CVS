@@ -537,6 +537,7 @@ int smpd_handle_result(smpd_context_t *context)
 		else if (strcmp(iter->cmd_str, "status") == 0)
 		{
 		    /* print the result of the status command */
+		    printf("smpd running on %s\n", smpd_process.console_host);
 		    printf("dynamic hosts: %s\n", str);
 		    ret_val = smpd_create_command("done", smpd_process.id, context->id, SMPD_FALSE, &cmd_ptr);
 		    if (ret_val == SMPD_SUCCESS)
