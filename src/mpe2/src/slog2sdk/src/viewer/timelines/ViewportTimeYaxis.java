@@ -352,6 +352,7 @@ public class ViewportTimeYaxis extends ViewportTime
         if ( info_popup != null ) {
             searching_time = info_popup.getClickedTime();
             info_popup.getCloseButton().doClick();
+            this.repaint();
             return true;
         }
         else {

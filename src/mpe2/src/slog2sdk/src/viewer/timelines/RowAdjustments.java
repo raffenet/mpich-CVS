@@ -157,8 +157,14 @@ public class RowAdjustments
         // to the size = row_height * row_count
         slider_VIS_ROW_HEIGHT.setMinLabel( 0 );
         slider_VIS_ROW_HEIGHT.setMaxLabel( row_height * row_count ); 
-        slider_VIS_ROW_COUNT.setMinLabel( 1 );
-        slider_VIS_ROW_COUNT.setMaxLabel( row_count );
+        if ( row_count > 1 ) {
+            slider_VIS_ROW_COUNT.setMinLabel( 1 );
+            slider_VIS_ROW_COUNT.setMaxLabel( row_count );
+        }
+        else {
+            slider_VIS_ROW_COUNT.setMinLabel( 0 );
+            slider_VIS_ROW_COUNT.setMaxLabel( 1 );
+        }
 
         if ( Parameters.ROW_RESIZE_MODE.equals( ROW_COUNT_RESIZE ) ) {
             combo_ROW_RESIZE.setSelectedItem( ROW_COUNT_RESIZE );
