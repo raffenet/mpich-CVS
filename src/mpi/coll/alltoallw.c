@@ -52,6 +52,7 @@ PMPI_LOCAL int MPIR_Alltoallw (
 	MPI_Datatype *recvtypes, 
 	MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Alltoallw";
     int        comm_size, i;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Status *starray;
@@ -75,7 +76,13 @@ PMPI_LOCAL int MPIR_Alltoallw (
                                recvcnts[dst], recvtypes[dst], dst,
                                MPIR_ALLTOALLW_TAG, comm,
                                &reqarray[i]);
-        if (mpi_errno) return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
     }
 
     for ( i=0; i<comm_size; i++ ) { 
@@ -84,7 +91,13 @@ PMPI_LOCAL int MPIR_Alltoallw (
                                sendcnts[dst], sendtypes[dst], dst,
                                MPIR_ALLTOALLW_TAG, comm,
                                &reqarray[i+comm_size]);
-        if (mpi_errno) return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
     }
 
     mpi_errno = NMPI_Waitall(2*comm_size, reqarray, starray);
@@ -108,7 +121,13 @@ PMPI_LOCAL int MPIR_Alltoallw (
                                sendcnts[rank], sendtypes[rank], 
                                ((char *)recvbuf+rdispls[rank]), 
                                recvcnts[rank], recvtypes[rank]);
-    if (mpi_errno) return mpi_errno;
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
     /* Do the pairwise exchange. */
     for (i=1; i<comm_size; i++) {
         src = (rank - i + comm_size) % comm_size;
@@ -119,7 +138,13 @@ PMPI_LOCAL int MPIR_Alltoallw (
                                   ((char *)recvbuf+rdispls[src]), 
                                   recvcnts[src], recvtypes[dst], src,
                                   MPIR_ALLTOALLW_TAG, comm, &status);
-        if (mpi_errno) return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
     }
 #endif
     
@@ -152,7 +177,7 @@ PMPI_LOCAL int MPIR_Alltoallw_inter (
 
    FIXME: change algorithm to match intracommunicator alltoallv
 */
-
+    static const char FCNAME[] = "MPIR_Alltoallw_inter";
     int local_size, remote_size, max_size, i;
     int mpi_errno = MPI_SUCCESS;
     MPI_Status status;
@@ -201,7 +226,13 @@ PMPI_LOCAL int MPIR_Alltoallw_inter (
                                   dst, MPIR_ALLTOALLW_TAG, recvaddr, 
                                   recvcount, recvtype, src,
                                   MPIR_ALLTOALLW_TAG, comm, &status);
-        if (mpi_errno) return mpi_errno;
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
     }
     
     /* check if multiple threads are calling this collective function */
@@ -362,20 +393,18 @@ int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype *send
         }
 	MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_alltoallw", "**mpi_alltoallw %p %p %p %p %p %p %p %p %C",
 	    sendbuf, sendcnts, sdispls, sendtypes, recvbuf, recvcnts, rdispls, recvtypes, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLW);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -144,11 +144,13 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     }
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_type_match_size", "**mpi_type_match_size %d %d %p", typeclass, size, datatype);
 	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     }
+    /* --END ERROR HANDLING-- */
     return MPI_SUCCESS;
 }

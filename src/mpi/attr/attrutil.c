@@ -252,6 +252,7 @@ int MPIR_Attr_delete_list( int handle, MPID_Attribute *attr )
 	new_p = p->next;
 	
 	/* Check the sentinals first */
+	/* --BEGIN ERROR HANDLING-- */
 	if (p->pre_sentinal != 0 || p->post_sentinal != 0) {
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Attr_delete_list", __LINE__,
 					      MPI_ERR_OTHER, "**attrsentinal", 0 );
@@ -259,6 +260,7 @@ int MPIR_Attr_delete_list( int handle, MPID_Attribute *attr )
 	       we'll just bag it */
 	    return mpi_errno;
 	}
+	/* --END ERROR HANDLING-- */
 	/* For this attribute, find the delete function for the 
 	   corresponding keyval */
 	/* Still to do: capture any error returns but continue to 

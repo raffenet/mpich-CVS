@@ -135,7 +135,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                             ((char *)recvbuf +
                                              rank*recvcount*recvtype_extent), 
                                             recvcount, recvtype);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
             
             curr_cnt = recvcount;
@@ -166,7 +172,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                               ((char *)recvbuf + recv_offset),
                                               recvcount*mask, recvtype, dst,
                                               MPIR_ALLGATHER_TAG, comm, &status);
-                    if (mpi_errno) return mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                     
                     NMPI_Get_count(&status, recvtype, &last_recv_cnt);
                     curr_cnt += last_recv_cnt;
@@ -218,7 +230,13 @@ PMPI_LOCAL int MPIR_Allgather (
                             /* last_recv_cnt was set in the previous
                                receive. that's the amount of data to be
                                sent now. */
-                            if (mpi_errno) return mpi_errno;
+			    /* --BEGIN ERROR HANDLING-- */
+                            if (mpi_errno)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
                         }
                         /* recv only if this proc. doesn't have data and sender
                            has data */
@@ -232,7 +250,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                                   comm, &status); 
                             /* nprocs_completed is also equal to the
                                no. of processes whose data we don't have */
-                            if (mpi_errno) return mpi_errno;
+			    /* --BEGIN ERROR HANDLING-- */
+                            if (mpi_errno)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
                             NMPI_Get_count(&status, recvtype, &last_recv_cnt);
                             curr_cnt += last_recv_cnt;
                         }
@@ -314,7 +338,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                               ((char *)tmp_buf + recv_offset),
                                               nbytes*mask, MPI_BYTE, dst,
                                               MPIR_ALLGATHER_TAG, comm, &status);
-                    if (mpi_errno) return mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                     
                     NMPI_Get_count(&status, MPI_BYTE, &last_recv_cnt);
                     curr_cnt += last_recv_cnt;
@@ -367,7 +397,13 @@ PMPI_LOCAL int MPIR_Allgather (
                             /* last_recv_cnt was set in the previous
                                receive. that's the amount of data to be
                                sent now. */
-                            if (mpi_errno) return mpi_errno;
+			    /* --BEGIN ERROR HANDLING-- */
+                            if (mpi_errno)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
                         }
                         /* recv only if this proc. doesn't have data and sender
                            has data */
@@ -381,7 +417,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                                   comm, &status); 
                             /* nprocs_completed is also equal to the
                                no. of processes whose data we don't have */
-                            if (mpi_errno) return mpi_errno;
+			    /* --BEGIN ERROR HANDLING-- */
+                            if (mpi_errno)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
                             NMPI_Get_count(&status, MPI_BYTE, &last_recv_cnt);
                             curr_cnt += last_recv_cnt;
                         }
@@ -412,7 +454,11 @@ PMPI_LOCAL int MPIR_Allgather (
         mpi_errno = NMPI_Type_get_true_extent(recvtype, &recvtype_true_lb,
                                               &recvtype_true_extent);  
         /* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
         /* --END ERROR HANDLING-- */
             
         recvbuf_extent = recvcount * comm_size *
@@ -433,14 +479,26 @@ PMPI_LOCAL int MPIR_Allgather (
         if (sendbuf != MPI_IN_PLACE) {
             mpi_errno = MPIR_Localcopy (sendbuf, sendcount, sendtype,
                                         tmp_buf, recvcount, recvtype);
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
         else {
             mpi_errno = MPIR_Localcopy (((char *)recvbuf +
                                          rank * recvcount * recvtype_extent), 
                                         recvcount, recvtype, tmp_buf, 
                                         recvcount, recvtype);
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
         
         /* do the first \floor(\lg p) steps */
@@ -457,7 +515,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                       curr_cnt, recvtype,
                                       src, MPIR_ALLGATHER_TAG, comm,
                                       MPI_STATUS_IGNORE);
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
 
             curr_cnt *= 2;
             pof2 *= 2;
@@ -476,7 +540,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                       rem * recvcount, recvtype,
                                       src, MPIR_ALLGATHER_TAG, comm,
                                       MPI_STATUS_IGNORE);
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
 
         /* Rotate blocks in tmp_buf down by (rank) blocks and store
@@ -484,15 +554,27 @@ PMPI_LOCAL int MPIR_Allgather (
         
         mpi_errno = MPIR_Localcopy(tmp_buf, (comm_size-rank)*recvcount,
                   recvtype, (char *) recvbuf + rank*recvcount*recvtype_extent, 
-                                       (comm_size-rank)*recvcount, recvtype); 
-        if (mpi_errno) return mpi_errno;
+                                       (comm_size-rank)*recvcount, recvtype);
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
 
         if (rank) {
             mpi_errno = MPIR_Localcopy((char *) tmp_buf + 
                                    (comm_size-rank)*recvcount*recvtype_extent, 
                                        rank*recvcount, recvtype, recvbuf,
-                                       rank*recvcount, recvtype); 
-            if (mpi_errno) return mpi_errno;
+                                       rank*recvcount, recvtype);
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
 
         MPIU_Free((char*)tmp_buf + recvtype_true_lb);
@@ -507,7 +589,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                        ((char *)recvbuf +
                                         rank*recvcount*recvtype_extent),  
                                        recvcount, recvtype);
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
         
         /* 
@@ -529,7 +617,13 @@ PMPI_LOCAL int MPIR_Allgather (
                                       recvcount, recvtype, left, 
                                       MPIR_ALLGATHER_TAG, comm,
                                       MPI_STATUS_IGNORE);
-            if (mpi_errno) break;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		break;
+	    }
+	    /* --END ERROR HANDLING-- */
             j	    = jnext;
             jnext = (comm_size + jnext - 1) % comm_size;
         }
@@ -571,9 +665,14 @@ PMPI_LOCAL int MPIR_Allgather_inter (
     if (rank == 0) {
         /* In each group, rank 0 allocates temp. buffer for local
            gather */
-        mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb,
-                                              &true_extent);  
-        if (mpi_errno) return mpi_errno;
+        mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb, &true_extent);
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
         MPID_Datatype_get_extent_macro( sendtype, send_extent );
         extent = MPIR_MAX(send_extent, true_extent);
 
@@ -597,7 +696,13 @@ PMPI_LOCAL int MPIR_Allgather_inter (
 
     mpi_errno = MPIR_Gather(sendbuf, sendcount, sendtype, tmp_buf, sendcount,
                             sendtype, 0, newcomm_ptr);
-    if (mpi_errno) return mpi_errno;
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
 
     /* first broadcast from left to right group, then from right to
        left group */
@@ -605,25 +710,49 @@ PMPI_LOCAL int MPIR_Allgather_inter (
         /* bcast to right*/
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
-                               sendtype, root, comm_ptr); 
-        if (mpi_errno) return mpi_errno;
+                               sendtype, root, comm_ptr);
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
         /* receive bcast from right */
         root = 0;
         mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
-                               recvtype, root, comm_ptr); 
-        if (mpi_errno) return mpi_errno;
+                               recvtype, root, comm_ptr);
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
     }
     else {
         /* receive bcast from left */
         root = 0;
         mpi_errno = MPIR_Bcast_inter(recvbuf, recvcount*remote_size,
-                               recvtype, root, comm_ptr); 
-        if (mpi_errno) return mpi_errno;
+                               recvtype, root, comm_ptr);
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
         /* bcast to left */
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
         mpi_errno = MPIR_Bcast_inter(tmp_buf, sendcount*local_size,
-                               sendtype, root, comm_ptr);  
-        if (mpi_errno) return mpi_errno;
+                               sendtype, root, comm_ptr);
+	/* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
     }
     
     if (rank == 0)
@@ -777,19 +906,18 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *rec
         }
 	MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHER);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_allgather", "**mpi_allgather %p %d %D %p %d %D %C",
 	    sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHER);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
-    /* ... end of body of routine ... */
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHER);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

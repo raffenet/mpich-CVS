@@ -109,12 +109,14 @@ int MPIR_Bcast (
       is_homogeneous = 0;
 #endif
 
-  if (is_contig && is_homogeneous) {
+  if (is_contig && is_homogeneous)
+  {
       /* contiguous and homogeneous */
       MPID_Datatype_get_size_macro(datatype, type_size);
       nbytes = type_size * count;
   }
-  else {
+  else
+  {
       mpi_errno = NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
       /* --BEGIN ERROR HANDLING-- */
       if (mpi_errno != MPI_SUCCESS)
@@ -131,7 +133,8 @@ int MPIR_Bcast (
          how much 'position' is incremented, and multiply that by count. */
       tmp_buf = MPIU_Malloc(tmp_buf_size);
       /* --BEGIN ERROR HANDLING-- */
-      if (!tmp_buf) {
+      if (!tmp_buf)
+      {
           mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
 					    "**nomem %d", tmp_buf_size );
           return mpi_errno;
@@ -150,7 +153,8 @@ int MPIR_Bcast (
   /* check if multiple threads are calling this collective function */
   MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
-  if ((nbytes < MPIR_BCAST_SHORT_MSG) || (comm_size <= MPIR_BCAST_MIN_PROCS)) {
+  if ((nbytes < MPIR_BCAST_SHORT_MSG) || (comm_size <= MPIR_BCAST_MIN_PROCS))
+  {
 
       /* Use short message algorithm, namely, binary tree */
 
@@ -178,8 +182,10 @@ int MPIR_Bcast (
          by this code, since it has no bits set.  */
 
       mask = 0x1;
-      while (mask < comm_size) {
-          if (relative_rank & mask) {
+      while (mask < comm_size)
+      {
+          if (relative_rank & mask)
+	  {
               src = rank - mask; 
               if (src < 0) src += comm_size;
               mpi_errno = MPIC_Recv(buffer,count,datatype,src,
@@ -208,8 +214,10 @@ int MPIR_Bcast (
          be needed).  */
 
       mask >>= 1;
-      while (mask > 0) {
-          if (relative_rank + mask < comm_size) {
+      while (mask > 0)
+      {
+          if (relative_rank + mask < comm_size)
+	  {
               dst = rank + mask;
               if (dst >= comm_size) dst -= comm_size;
               mpi_errno = MPIC_Send (buffer,count,datatype,dst,
@@ -226,7 +234,8 @@ int MPIR_Bcast (
       }
   }
 
-  else { 
+  else
+  { 
       /* use long message algorithm: binary tree scatter followed by an allgather */
 
       /* The scatter algorithm divides the buffer into nprocs pieces and
@@ -239,25 +248,35 @@ int MPIR_Bcast (
          scattered data is stored at the same offset in the buffer as it is
          on the root process. */ 
 
-      if (is_contig && is_homogeneous) {
+      if (is_contig && is_homogeneous)
+      {
           /* contiguous and homogeneous. no need to pack. */
           mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
-                                                &true_extent);  
-          if (mpi_errno) return mpi_errno;
+                                                &true_extent);
+	  /* --BEGIN ERROR HANDLING-- */
+          if (mpi_errno)
+	  {
+	      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	      return mpi_errno;
+	  }
+	  /* --END ERROR HANDLING-- */
           tmp_buf = (char *) buffer + true_lb;
       }
-      else {
+      else
+      {
           /* noncontiguous or heterogeneous. pack into temporary buffer. */
           tmp_buf = MPIU_Malloc(nbytes);
 	  /* --BEGIN ERROR HANDLING-- */
-          if (!tmp_buf) {
+          if (!tmp_buf)
+	  {
               mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
 						"**nomem %d", nbytes );
               return mpi_errno;
           }
 	  /* --END ERROR HANDLING-- */
 
-          if (rank == root) {
+          if (rank == root)
+	  {
               position = 0;
               NMPI_Pack(buffer, count, datatype, tmp_buf, nbytes,
                         &position, comm);
@@ -269,18 +288,23 @@ int MPIR_Bcast (
                                                   data */
 
       mask = 0x1;
-      while (mask < comm_size) {
-          if (relative_rank & mask) {
+      while (mask < comm_size)
+      {
+          if (relative_rank & mask)
+	  {
               src = rank - mask; 
               if (src < 0) src += comm_size;
               recv_size = nbytes - relative_rank*scatter_size;
               /* recv_size is larger than what might actually be sent by the
                  sender. We don't need compute the exact value because MPI
                  allows you to post a larger recv.*/ 
-              if (recv_size <= 0) 
+              if (recv_size <= 0)
+	      {
                   curr_size = 0; /* this process doesn't receive any data
                                     because of uneven division */
-              else {
+	      }
+              else
+	      {
                   mpi_errno = MPIC_Recv(((char *)tmp_buf +
                                          relative_rank*scatter_size),
                                         recv_size, MPI_BYTE, src,
@@ -307,13 +331,15 @@ int MPIR_Bcast (
          one. */
 
       mask >>= 1;
-      while (mask > 0) {
-          if (relative_rank + mask < comm_size) {
-              
+      while (mask > 0)
+      {
+          if (relative_rank + mask < comm_size)
+	  {
               send_size = curr_size - scatter_size * mask; 
               /* mask is also the size of this process's subtree */
 
-              if (send_size > 0) {
+              if (send_size > 0)
+	      {
                   dst = rank + mask;
                   if (dst >= comm_size) dst -= comm_size;
                   mpi_errno = MPIC_Send (((char *)tmp_buf +
@@ -335,12 +361,14 @@ int MPIR_Bcast (
 
       /* Scatter complete. Now do an allgather .  */ 
 
-      if (nbytes < MPIR_BCAST_LONG_MSG) {
+      if (nbytes < MPIR_BCAST_LONG_MSG)
+      {
           /* short message allgather. use recurive doubling. */
 
           mask = 0x1;
           i = 0;
-          while (mask < comm_size) {
+          while (mask < comm_size)
+	  {
               relative_dst = relative_rank ^ mask;
               
               dst = (relative_dst + root) % comm_size; 
@@ -360,7 +388,8 @@ int MPIR_Bcast (
               send_offset = my_tree_root * scatter_size;
               recv_offset = dst_tree_root * scatter_size;
               
-              if (relative_dst < comm_size) {
+              if (relative_dst < comm_size)
+	      {
                   mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset),
                                             curr_size, MPI_BYTE, dst, MPIR_BCAST_TAG, 
                                             ((char *)tmp_buf + recv_offset),
@@ -385,7 +414,8 @@ int MPIR_Bcast (
                  the havenots. We use a logarithmic recursive-halfing algorithm
                  for this. */
               
-              if (dst_tree_root + mask > comm_size) {
+              if (dst_tree_root + mask > comm_size)
+	      {
                   nprocs_completed = comm_size - my_tree_root - mask;
                   /* nprocs_completed is the number of processes in this
                      subtree that have all the data. Send data to others
@@ -395,7 +425,8 @@ int MPIR_Bcast (
                      must be zeroed out to find the rank of the root */ 
                   j = mask;
                   k = 0;
-                  while (j) {
+                  while (j)
+		  {
                       j >>= 1;
                       k++;
                   }
@@ -404,7 +435,8 @@ int MPIR_Bcast (
                   offset = scatter_size * (my_tree_root + mask);
                   tmp_mask = mask >> 1;
                   
-                  while (tmp_mask) {
+                  while (tmp_mask)
+		  {
                       relative_dst = relative_rank ^ tmp_mask;
                       dst = (relative_dst + root) % comm_size; 
                       
@@ -421,7 +453,8 @@ int MPIR_Bcast (
                       
                       if ((relative_dst > relative_rank) && 
                           (relative_rank < tree_root + nprocs_completed)
-                          && (relative_dst >= tree_root + nprocs_completed)) {
+                          && (relative_dst >= tree_root + nprocs_completed))
+		      {
                           
                           /* printf("Rank %d, send to %d, offset %d, size %d\n", rank, dst, offset, recv_size);
                              fflush(stdout); */
@@ -443,7 +476,8 @@ int MPIR_Bcast (
                          has data */
                       else if ((relative_dst < relative_rank) && 
                                (relative_dst < tree_root + nprocs_completed) &&
-                               (relative_rank >= tree_root + nprocs_completed)) {
+                               (relative_rank >= tree_root + nprocs_completed))
+		      {
                           /* printf("Rank %d waiting to recv from rank %d\n",
                              relative_rank, dst); */
                           mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
@@ -472,14 +506,15 @@ int MPIR_Bcast (
               mask <<= 1;
               i++;
           }
-      }
- 
-      else {
+      } 
+      else
+      {
           /* long-message allgather. use ring algorithm. */
 
           recvcnts = MPIU_Malloc(comm_size*sizeof(int));
 	  /* --BEGIN ERROR HANDLING-- */
-          if (!recvcnts) {
+          if (!recvcnts)
+	  {
               mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
 						"**nomem %d", comm_size * sizeof(int));
               return mpi_errno;
@@ -487,14 +522,16 @@ int MPIR_Bcast (
 	  /* --END ERROR HANDLING-- */
           displs = MPIU_Malloc(comm_size*sizeof(int));
 	  /* --BEGIN ERROR HANDLING-- */
-          if (!displs) {
+          if (!displs)
+	  {
               mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
 						"**nomem %d", comm_size * sizeof(int));
               return mpi_errno;
           }
 	  /* --END ERROR HANDLING-- */
           
-          for (i=0; i<comm_size; i++) {
+          for (i=0; i<comm_size; i++)
+	  {
               recvcnts[i] = nbytes - i*scatter_size;
               if (recvcnts[i] > scatter_size)
                   recvcnts[i] = scatter_size;
@@ -511,7 +548,8 @@ int MPIR_Bcast (
           
           j     = rank;
           jnext = left;
-          for (i=1; i<comm_size; i++) {
+          for (i=1; i<comm_size; i++)
+	  {
               mpi_errno = 
                   MPIC_Sendrecv((char *)tmp_buf +
                                 displs[(j-root+comm_size)%comm_size],  
@@ -538,8 +576,10 @@ int MPIR_Bcast (
           MPIU_Free(displs);
       }
 
-      if (!is_contig || !is_homogeneous) {
-          if (rank != root) {
+      if (!is_contig || !is_homogeneous)
+      {
+          if (rank != root)
+	  {
               position = 0;
               NMPI_Unpack(tmp_buf, nbytes, &position, buffer, count,
                           datatype, comm);
@@ -576,11 +616,13 @@ int MPIR_Bcast_inter (
 
     comm = comm_ptr->handle;
 
-    if (root == MPI_PROC_NULL) {
+    if (root == MPI_PROC_NULL)
+    {
         /* local processes other than root do nothing */
         mpi_errno = MPI_SUCCESS;
     }
-    else if (root == MPI_ROOT) {
+    else if (root == MPI_ROOT)
+    {
         /* root sends to rank 0 on remote group and returns */
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         mpi_errno =  MPIC_Send(buffer, count, datatype, 0,
@@ -594,12 +636,14 @@ int MPIR_Bcast_inter (
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
         return mpi_errno;
     }
-    else {
+    else
+    {
         /* remote group. rank 0 on remote group receives from root */
         
         rank = comm_ptr->rank;
         
-        if (rank == 0) {
+        if (rank == 0)
+	{
             mpi_errno = MPIC_Recv(buffer, count, datatype, root,
                                   MPIR_BCAST_TAG, comm, &status);
 	    /* --BEGIN ERROR HANDLING-- */
@@ -732,10 +776,13 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     else
     {
 	MPIR_Nest_incr();
-        if (comm_ptr->comm_kind == MPID_INTRACOMM) 
+        if (comm_ptr->comm_kind == MPID_INTRACOMM)
+	{
             /* intracommunicator */
             mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
-        else {
+	}
+        else
+	{
             /* intercommunicator */
 	    /*
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
@@ -747,17 +794,19 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
         }
 	MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_bcast", "**mpi_bcast %p %d %D %d %C", buffer, count, datatype, root, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
+
     /* ... end of body of routine ... */
+
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -127,8 +127,14 @@ PMPI_LOCAL int MPIR_Exscan (
     
     /* need to allocate temporary buffer to store partial scan*/
     mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
-                                          &true_extent);  
-    if (mpi_errno) return mpi_errno;
+                                          &true_extent);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
     MPID_Datatype_get_extent_macro( datatype, extent );
 
     partial_scan = MPIU_Malloc(count*(MPIR_MAX(true_extent,extent)));
@@ -154,7 +160,13 @@ PMPI_LOCAL int MPIR_Exscan (
     
     mpi_errno = MPIR_Localcopy(sendbuf, count, datatype,
                               partial_scan, count, datatype);
-    if (mpi_errno) return mpi_errno;
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
 
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
@@ -169,8 +181,14 @@ PMPI_LOCAL int MPIR_Exscan (
                                       dst, MPIR_EXSCAN_TAG, tmp_buf,
                                       count, datatype, dst,
                                       MPIR_EXSCAN_TAG, comm,
-                                      &status); 
-            if (mpi_errno) return mpi_errno;
+                                      &status);
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
             
             if (rank > dst) {
 #ifdef HAVE_CXX_BINDING
@@ -191,7 +209,13 @@ PMPI_LOCAL int MPIR_Exscan (
                         /* simply copy data recd from rank 0 into recvbuf */
                         mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
                                                    recvbuf, count, datatype);
-                        if (mpi_errno) return mpi_errno;
+			/* --BEGIN ERROR HANDLING-- */
+                        if (mpi_errno)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    return mpi_errno;
+			}
+			/* --END ERROR HANDLING-- */
                         flag = 1;
                     }
                     else {
@@ -229,7 +253,13 @@ PMPI_LOCAL int MPIR_Exscan (
                     mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
                                                partial_scan,
                                                count, datatype);
-                    if (mpi_errno) return mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                 }
             }
         }
@@ -383,18 +413,19 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, M
                               op, comm_ptr); 
 	MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_exscan", "**mpi_exscan %p %p %d %D %O %C", sendbuf, recvbuf, count, datatype, op, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
     /* ... end of body of routine ... */
+
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_EXSCAN);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -144,13 +144,24 @@ PMPI_LOCAL int MPIR_Scatter (
                                    sendcnt*(comm_size-rank-1),
                                    sendtype, (char *)tmp_buf + nbytes, 
                                    nbytes*(comm_size-rank-1), MPI_BYTE);
-
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
 
                 mpi_errno = MPIR_Localcopy(sendbuf, sendcnt*rank, sendtype, 
                                ((char *) tmp_buf + nbytes*(comm_size-rank)),
                                nbytes*rank, MPI_BYTE);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
 
                 curr_cnt = nbytes*comm_size;
             } 
@@ -173,16 +184,28 @@ PMPI_LOCAL int MPIR_Scatter (
                     mpi_errno = MPIC_Recv(recvbuf, recvcnt, recvtype,
                                           src, MPIR_SCATTER_TAG, comm, 
                                           &status);
-                    if (mpi_errno) return mpi_errno;
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
                 }
                 else {
                     mpi_errno = MPIC_Recv(tmp_buf, mask * recvcnt *
                                           recvtype_size, MPI_BYTE, src,
                                           MPIR_SCATTER_TAG, comm, 
                                           &status);
-                    if (mpi_errno) return mpi_errno;
-                    
-                    /* the recv size is larger than what may be sent in
+		    /* --BEGIN ERROR HANDLING-- */
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
+		    /* --END ERROR HANDLING-- */
+
+		    /* the recv size is larger than what may be sent in
                        some cases. query amount of data actually received */
                     NMPI_Get_count(&status, MPI_BYTE, &curr_cnt);
                 }
@@ -202,7 +225,8 @@ PMPI_LOCAL int MPIR_Scatter (
                 dst = rank + mask;
                 if (dst >= comm_size) dst -= comm_size;
                 
-                if ((rank == root) && (root == 0)) {
+                if ((rank == root) && (root == 0))
+		{
                     send_subtree_cnt = curr_cnt - sendcnt * mask; 
                     /* mask is also the size of this process's subtree */
                     mpi_errno = MPIC_Send (((char *)sendbuf + 
@@ -211,7 +235,8 @@ PMPI_LOCAL int MPIR_Scatter (
                                            sendtype, dst, 
                                            MPIR_SCATTER_TAG, comm);
                 }
-                else {
+                else
+		{
                     /* non-zero root and others */
                     send_subtree_cnt = curr_cnt - nbytes*mask; 
                     /* mask is also the size of this process's subtree */
@@ -220,7 +245,13 @@ PMPI_LOCAL int MPIR_Scatter (
                                            MPI_BYTE, dst,
                                            MPIR_SCATTER_TAG, comm);
                 }
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
                 curr_cnt -= send_subtree_cnt;
             }
             mask >>= 1;
@@ -230,14 +261,26 @@ PMPI_LOCAL int MPIR_Scatter (
             /* for root=0, put root's data in recvbuf if not MPI_IN_PLACE */
             mpi_errno = MPIR_Localcopy ( sendbuf, sendcnt, sendtype, 
                                          recvbuf, recvcnt, recvtype );
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
         }
         else if (!(relative_rank % 2) && (recvbuf != MPI_IN_PLACE)) {
             /* for non-zero root and non-leaf nodes, copy from tmp_buf
                into recvbuf */ 
             mpi_errno = MPIR_Localcopy ( tmp_buf, nbytes, MPI_BYTE, 
                                          recvbuf, recvcnt, recvtype);
-            if (mpi_errno) return mpi_errno;
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
             MPIU_Free(tmp_buf);
         }
     }
@@ -327,7 +370,13 @@ PMPI_LOCAL int MPIR_Scatter (
                 
                 mpi_errno = MPIC_Recv(tmp_buf, mask*nbytes, MPI_BYTE, src,
                                      MPIR_SCATTER_TAG, comm, &status);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
                 /* the recv size is larger than what may be sent in
                    some cases. query amount of data actually received */
                 NMPI_Get_count(&status, MPI_BYTE, &curr_cnt);
@@ -352,7 +401,13 @@ PMPI_LOCAL int MPIR_Scatter (
                 mpi_errno = MPIC_Send (((char *)tmp_buf + nbytes*mask),
                                       send_subtree_cnt, MPI_BYTE, dst,
                                       MPIR_SCATTER_TAG, comm);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
                 curr_cnt -= send_subtree_cnt;
             }
             mask >>= 1;
@@ -439,8 +494,14 @@ PMPI_LOCAL int MPIR_Scatter_inter (
             
             if (rank == 0) {
                 mpi_errno = NMPI_Type_get_true_extent(recvtype, &true_lb,
-                                                      &true_extent);  
-                if (mpi_errno) return mpi_errno;
+                                                      &true_extent);
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
 
                 MPID_Datatype_get_extent_macro(recvtype, extent);
                 tmp_buf =
@@ -459,7 +520,13 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                                       recvtype, root,
                                       MPIR_SCATTER_TAG, comm, &status); 
                 MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
             
             /* Get the local intracommunicator */
@@ -485,7 +552,13 @@ PMPI_LOCAL int MPIR_Scatter_inter (
                 mpi_errno = MPIC_Send(((char *)sendbuf+sendcnt*i*extent), 
                                       sendcnt, sendtype, i,
                                       MPIR_SCATTER_TAG, comm);
-                if (mpi_errno) return mpi_errno;                
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
         }
         else {
@@ -665,12 +738,12 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
         }
 	MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
 	return MPI_SUCCESS;
     }
-
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_scatter", "**mpi_scatter %p %d %D %p %d %D %d %C", sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 
@@ -678,4 +751,5 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
 
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTER);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

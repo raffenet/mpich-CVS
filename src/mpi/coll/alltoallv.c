@@ -53,6 +53,7 @@ PMPI_LOCAL int MPIR_Alltoallv (
 	MPI_Datatype recvtype, 
 	MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Alltoallv";
     int        comm_size, i;
     MPI_Aint   send_extent, recv_extent;
     int        mpi_errno = MPI_SUCCESS;
@@ -84,7 +85,11 @@ PMPI_LOCAL int MPIR_Alltoallv (
                                    MPIR_ALLTOALLV_TAG, comm,
                                    &reqarray[req_cnt]);
             /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno) return mpi_errno;
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
             /* --END ERROR HANDLING-- */
             req_cnt++;
         }
@@ -98,7 +103,11 @@ PMPI_LOCAL int MPIR_Alltoallv (
                                    MPIR_ALLTOALLV_TAG, comm,
                                    &reqarray[req_cnt]);
             /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno) return mpi_errno;
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
             /* --END ERROR HANDLING-- */
             req_cnt++;
         }
@@ -149,7 +158,7 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
    FIXME: change algorithm to match intracommunicator alltoallv
 
 */
-
+    static const char FCNAME[] = "MPIR_Alltoallv_inter";
     int local_size, remote_size, max_size, i;
     MPI_Aint   send_extent, recv_extent;
     int        mpi_errno = MPI_SUCCESS;
@@ -199,7 +208,11 @@ PMPI_LOCAL int MPIR_Alltoallv_inter (
                                   recvtype, src, MPIR_ALLTOALLV_TAG,
                                   comm, &status); 
 	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno) return mpi_errno;
+        if (mpi_errno)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    return mpi_errno;
+	}
 	/* --END ERROR HANDLING-- */
     }
     
@@ -359,20 +372,18 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, MPI_Datatype sendt
         }
 	MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLV);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_alltoallv", "**mpi_alltoallv %p %p %p %D %p %p %p %D %C",
 	    sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLV);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLV);
-    return MPI_SUCCESS;
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

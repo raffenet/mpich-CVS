@@ -40,6 +40,8 @@
 */
 
 /* not declared static because it is called in intercomm. reduce_scatter */
+#undef FUNCNAME
+#define FUNCNAME MPIR_Scatterv
 int MPIR_Scatterv ( 
 	void *sendbuf, 
 	int *sendcnts, 
@@ -51,6 +53,7 @@ int MPIR_Scatterv (
 	int root, 
 	MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Scatterv";
     int rank, mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
     MPI_Aint extent;
@@ -78,7 +81,13 @@ int MPIR_Scatterv (
                 mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
                                       sendcnts[i], sendtype, i,
                                       MPIR_SCATTERV_TAG, comm);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
         }
         if (recvbuf != MPI_IN_PLACE) {
@@ -86,7 +95,13 @@ int MPIR_Scatterv (
                 mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
                                            sendcnts[rank], sendtype, 
                                            recvbuf, recvcnt, recvtype);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
         }        
         for ( i=root+1; i<comm_size; i++ ) {
@@ -94,7 +109,13 @@ int MPIR_Scatterv (
                 mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
                                       sendcnts[i], sendtype, i, 
                                       MPIR_SCATTERV_TAG, comm);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
         }
     }
@@ -111,7 +132,13 @@ int MPIR_Scatterv (
                 mpi_errno = MPIC_Send(((char *)sendbuf+displs[i]*extent), 
                                       sendcnts[i], sendtype, i,
                                       MPIR_SCATTERV_TAG, comm);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }          
         }
     }
@@ -315,6 +342,7 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
                                   root, comm_ptr); 
         MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTERV);
@@ -328,5 +356,5 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendty
 
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCATTERV);
     return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }
- 

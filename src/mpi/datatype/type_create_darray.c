@@ -395,10 +395,13 @@ int MPI_Type_create_darray(int size,
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If datatype_ptr is not valid, it will be reset to null */
-            if (mpi_errno) {
+	    /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno)
+	    {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
+	    /* --END ERROR HANDLING-- */
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -603,7 +606,16 @@ int MPI_Type_create_darray(int size,
     MPIU_Free(ints);
 
  fn_exit:
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
+	return MPI_SUCCESS;
+    }
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	"**mpi_type_create_darray", "**mpi_type_create_darray %d %d %d %p %p %p %p %d %D %p",
+	size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype);
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
-    if (mpi_errno == MPI_SUCCESS) return MPI_SUCCESS;
-    else return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    /* --END ERROR HANDLING-- */
 }

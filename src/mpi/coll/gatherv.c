@@ -51,6 +51,7 @@ int MPIR_Gatherv (
 	int root, 
 	MPID_Comm *comm_ptr )
 {
+    static const char FCNAME[] = "MPIR_Gatherv";
     int        comm_size, rank, remote_comm_size;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
@@ -74,8 +75,14 @@ int MPIR_Gatherv (
                 mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
                                       recvcnts[i], recvtype, i,
                                       MPIR_GATHERV_TAG, comm,
-                                      MPI_STATUS_IGNORE); 
-                if (mpi_errno) return mpi_errno;
+                                      MPI_STATUS_IGNORE);
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
         }
         if (sendbuf != MPI_IN_PLACE) {
@@ -83,7 +90,13 @@ int MPIR_Gatherv (
                 mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                            ((char *)recvbuf+displs[rank]*extent), 
                                            recvcnts[rank], recvtype);
-                if (mpi_errno) return mpi_errno;
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
         }
         for ( i=root+1; i<comm_size; i++ ) {
@@ -91,8 +104,14 @@ int MPIR_Gatherv (
                 mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
                                       recvcnts[i], recvtype, i,
                                       MPIR_GATHERV_TAG, comm,
-                                      MPI_STATUS_IGNORE); 
-                if (mpi_errno) return mpi_errno;
+                                      MPI_STATUS_IGNORE);
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }
         }
     }
@@ -107,8 +126,14 @@ int MPIR_Gatherv (
                 mpi_errno = MPIC_Recv(((char *)recvbuf+displs[i]*extent), 
                                       recvcnts[i], recvtype, i,
                                       MPIR_GATHERV_TAG, comm,
-                                      MPI_STATUS_IGNORE);  
-                if (mpi_errno) return mpi_errno;
+                                      MPI_STATUS_IGNORE);
+		/* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
             }                
         }
     }
@@ -309,19 +334,18 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf
                                  displs, recvtype, root, comm_ptr); 
         MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHERV);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_gatherv", "**mpi_gatherv %p %d %D %p %p %p %D %d %C", 
 	    sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHERV);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
-    /* ... end of body of routine ... */
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHERV);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

@@ -89,57 +89,76 @@ int MPIR_Gather (
     if (rank == root) 
         MPID_Datatype_get_extent_macro(recvtype, extent);
     
-    if (is_homogeneous) {
+    if (is_homogeneous)
+    {
         /* communicator is homogeneous. no need to pack buffer. */
 
-        if (rank == root) {
+        if (rank == root)
+	{
             MPID_Datatype_get_size_macro(recvtype, recvtype_size);
             nbytes = recvtype_size * recvcnt;
         }
-        else {
+        else
+	{
             MPID_Datatype_get_size_macro(sendtype, sendtype_size);
             nbytes = sendtype_size * sendcnt;
         }
 
-        if (rank == root) {
-            if (root != 0) {
+        if (rank == root)
+	{
+            if (root != 0)
+	    {
                 /* allocate temporary buffer to receive data because it
                    will not be in the right order. We will need to
                    reorder it into the recv_buf. */
                 tmp_buf = MPIU_Malloc(nbytes*comm_size);
 		/* --BEGIN ERROR HANDLING-- */
-                if (!tmp_buf) {
+                if (!tmp_buf)
+		{
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
 		/* --END ERROR HANDLING-- */
 
-                if (sendbuf != MPI_IN_PLACE) {
+                if (sendbuf != MPI_IN_PLACE)
+		{
                     /* copy root's sendbuf into tmpbuf just so that it is
                        easier to unpack everything later into the recv_buf */
                     mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                                tmp_buf, nbytes, MPI_BYTE);
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
                 }
                 curr_cnt = nbytes;
             }
-            else {
+            else
+	    {
                 /* root is 0. no tmp_buf needed at root. */
                 /* copy root's sendbuf into recvbuf */
-                if (sendbuf != MPI_IN_PLACE) {
+                if (sendbuf != MPI_IN_PLACE)
+		{
                     mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                                recvbuf, recvcnt, recvtype);
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
                 }
                 curr_cnt = recvcnt;
             }          
         }
-        else if (!(relative_rank % 2)) {
+        else if (!(relative_rank % 2))
+	{
             /* allocate temporary buffer for nodes other than leaf
                nodes. max size needed is (nbytes*comm_size)/2. */
             tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
 	    /* --BEGIN ERROR HANDLING-- */
-            if (!tmp_buf) {
+            if (!tmp_buf)
+	    {
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                 return mpi_errno;
             }
@@ -147,33 +166,50 @@ int MPIR_Gather (
             /* copy from sendbuf into tmp_buf */
             mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                        tmp_buf, nbytes, MPI_BYTE);
-            if (mpi_errno) return mpi_errno;
+            if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
             curr_cnt = nbytes;
         }
         
         mask = 0x1;
-        while (mask < comm_size) {
-            if ((mask & relative_rank) == 0) {
+        while (mask < comm_size)
+	{
+            if ((mask & relative_rank) == 0)
+	    {
                 src = relative_rank | mask;
-                if (src < comm_size) {
+                if (src < comm_size)
+		{
                     src = (src + root) % comm_size;
-                    if ((rank == root) && (root == 0)) {
+                    if ((rank == root) && (root == 0))
+		    {
                         /* root is 0. Receive directly into recvbuf */
                         mpi_errno = MPIC_Recv(((char *)recvbuf + 
                                                src*recvcnt*extent), 
                                               recvcnt*mask, recvtype, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
-                        if (mpi_errno) return mpi_errno;
+                        if (mpi_errno)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    return mpi_errno;
+			}
                     }
-                    else {
+                    else
+		    {
                         /* intermediate nodes or nonzero root. store in
                            tmp_buf */
                         mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt), 
                                               mask*nbytes, MPI_BYTE, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
-                        if (mpi_errno) return mpi_errno;
+                        if (mpi_errno)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    return mpi_errno;
+			}
                         /* the recv size is larger than what may be sent in
                            some cases. query amount of data actually received */
                         NMPI_Get_count(&status, MPI_BYTE, &recv_size);
@@ -181,35 +217,49 @@ int MPIR_Gather (
                     }
                 }
             }
-            else {
+            else
+	    {
                 dst = relative_rank ^ mask;
                 dst = (dst + root) % comm_size;
-                if (relative_rank % 2) {
+                if (relative_rank % 2)
+		{
                     /* leaf nodes send directly from sendbuf */
                     mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype, dst,
                                           MPIR_GATHER_TAG, comm); 
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
                 }
-                else {
+                else
+		{
                     mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
                                           MPIR_GATHER_TAG, comm); 
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
                 }
                 break;
             }
             mask <<= 1;
         }
         
-        if ((rank == root) && (root != 0)) {
+        if ((rank == root) && (root != 0))
+	{
             /* reorder and copy from tmp_buf into recvbuf */
             position = 0;
 
-            if (sendbuf != MPI_IN_PLACE) {
+            if (sendbuf != MPI_IN_PLACE)
+	    {
                 MPIR_Localcopy(tmp_buf, nbytes*(comm_size-rank), MPI_BYTE, 
                                ((char *) recvbuf + extent*recvcnt*rank),
                                recvcnt*(comm_size-rank), recvtype);
             }
-            else {
+            else
+	    {
                 MPIR_Localcopy((char *) tmp_buf + nbytes,
                                nbytes*(comm_size-rank-1), MPI_BYTE,  
                                ((char *) recvbuf + extent*recvcnt*(rank+1)),
@@ -226,7 +276,8 @@ int MPIR_Gather (
     }
     
 #ifdef MPID_HAS_HETERO
-    else { /* communicator is heterogeneous. pack data into tmp_buf. */
+    else
+    { /* communicator is heterogeneous. pack data into tmp_buf. */
         if (rank == root)
             NMPI_Pack_size(recvcnt*comm_size, recvtype, comm,
                            &tmp_buf_size); 
@@ -236,19 +287,22 @@ int MPIR_Gather (
 
         tmp_buf = MPIU_Malloc(tmp_buf_size);
 	/* --BEGIN ERROR HANDLING-- */
-        if (!tmp_buf) { 
+        if (!tmp_buf)
+	{ 
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
 	/* --END ERROR HANDLING-- */
 
         position = 0;
-        if (sendbuf != MPI_IN_PLACE) {
+        if (sendbuf != MPI_IN_PLACE)
+	{
             NMPI_Pack(sendbuf, sendcnt, sendtype, tmp_buf,
                       tmp_buf_size, &position, comm);
             nbytes = position;
         }
-        else {
+        else
+	{
             /* do a dummy pack just to calculate nbytes */
             NMPI_Pack(recvbuf, 1, recvtype, tmp_buf,
                       tmp_buf_size, &position, comm);
@@ -258,42 +312,57 @@ int MPIR_Gather (
         curr_cnt = nbytes;
         
         mask = 0x1;
-        while (mask < comm_size) {
-            if ((mask & relative_rank) == 0) {
+        while (mask < comm_size)
+	{
+            if ((mask & relative_rank) == 0)
+	    {
                 src = relative_rank | mask;
-                if (src < comm_size) {
+                if (src < comm_size)
+		{
                     src = (src + root) % comm_size;
                     mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt), 
                                           mask*nbytes, MPI_BYTE, src,
                                           MPIR_GATHER_TAG, comm, 
                                           &status);
-                    if (mpi_errno) return mpi_errno;
+                    if (mpi_errno)
+		    {
+			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			return mpi_errno;
+		    }
                     /* the recv size is larger than what may be sent in
                        some cases. query amount of data actually received */
                     NMPI_Get_count(&status, MPI_BYTE, &recv_size);
                     curr_cnt += recv_size;
                 }
             }
-            else {
+            else
+	    {
                 dst = relative_rank ^ mask;
                 dst = (dst + root) % comm_size;
                 mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
                                       MPIR_GATHER_TAG, comm); 
-                if (mpi_errno) return mpi_errno;
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
                 break;
             }
             mask <<= 1;
         }
         
-        if (rank == root) {
+        if (rank == root)
+	{
             /* reorder and copy from tmp_buf into recvbuf */
-            if (sendbuf != MPI_IN_PLACE) {
+            if (sendbuf != MPI_IN_PLACE)
+	    {
                 position = 0;
                 NMPI_Unpack(tmp_buf, tmp_buf_size, &position,
                             ((char *) recvbuf + extent*recvcnt*rank),
                             recvcnt*(comm_size-rank), recvtype, comm); 
             }
-            else {
+            else
+	    {
                 position = nbytes;
                 NMPI_Unpack(tmp_buf, tmp_buf_size, &position,
                             ((char *) recvbuf + extent*recvcnt*(rank+1)),
@@ -347,7 +416,8 @@ PMPI_LOCAL int MPIR_Gather_inter (
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
 
-    if (root == MPI_PROC_NULL) {
+    if (root == MPI_PROC_NULL)
+    {
         /* local processes other than root do nothing */
         return MPI_SUCCESS;
     }
@@ -356,18 +426,22 @@ PMPI_LOCAL int MPIR_Gather_inter (
     remote_size = comm_ptr->remote_size; 
     local_size = comm_ptr->local_size; 
 
-    if (root == MPI_ROOT) {
+    if (root == MPI_ROOT)
+    {
         MPID_Datatype_get_size_macro(recvtype, recvtype_size);
         nbytes = recvtype_size * recvcnt * remote_size;
     }
-    else {
+    else
+    {
         /* remote side */
         MPID_Datatype_get_size_macro(sendtype, sendtype_size);
         nbytes = sendtype_size * sendcnt * local_size;
     }
 
-    if (nbytes < MPIR_GATHER_SHORT_MSG) {
-        if (root == MPI_ROOT) {
+    if (nbytes < MPIR_GATHER_SHORT_MSG)
+    {
+        if (root == MPI_ROOT)
+	{
             /* root receives data from rank 0 on remote group */
             MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
             mpi_errno = MPIC_Recv(recvbuf, recvcnt*remote_size,
@@ -377,23 +451,30 @@ PMPI_LOCAL int MPIR_Gather_inter (
  
             return mpi_errno;
         }
-        else {
+        else
+	{
             /* remote group. Rank 0 allocates temporary buffer, does
                local intracommunicator gather, and then sends the data
                to root. */
             
             rank = comm_ptr->rank;
             
-            if (rank == 0) {
+            if (rank == 0)
+	    {
                 mpi_errno = NMPI_Type_get_true_extent(sendtype, &true_lb,
                                                       &true_extent);  
-                if (mpi_errno) return mpi_errno;
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
                 MPID_Datatype_get_extent_macro(sendtype, extent);
  
                 tmp_buf =
                     MPIU_Malloc(sendcnt*local_size*(MPIR_MAX(extent,true_extent)));  
 		/* --BEGIN ERROR HANDLING-- */
-                if (!tmp_buf) {
+                if (!tmp_buf)
+		{
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
                     return mpi_errno;
                 }
@@ -412,30 +493,43 @@ PMPI_LOCAL int MPIR_Gather_inter (
             mpi_errno = MPIR_Gather(sendbuf, sendcnt, sendtype,
                                     tmp_buf, sendcnt, sendtype, 0,
                                     newcomm_ptr); 
-            if (rank == 0) {
+            if (rank == 0)
+	    {
                 MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
                 mpi_errno = MPIC_Send(tmp_buf, sendcnt*local_size,
                                       sendtype, root,
                                       MPIR_GATHER_TAG, comm); 
                 MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
-                if (mpi_errno) return mpi_errno;
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
                 MPIU_Free(((char*)tmp_buf+true_lb));
             }
         }
     }
-    else {
+    else
+    {
         /* long message. use linear algorithm. */
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
-        if (root == MPI_ROOT) {
+        if (root == MPI_ROOT)
+	{
             MPID_Datatype_get_extent_macro(recvtype, extent);
-            for (i=0; i<remote_size; i++) {
+            for (i=0; i<remote_size; i++)
+	    {
                 mpi_errno = MPIC_Recv(((char *)recvbuf+recvcnt*i*extent), 
                                       recvcnt, recvtype, i,
                                       MPIR_GATHER_TAG, comm, &status);
-                if (mpi_errno) return mpi_errno;                
+                if (mpi_errno)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
             }
         }
-        else {
+        else
+	{
             mpi_errno = MPIC_Send(sendbuf,sendcnt,sendtype,root,
                                   MPIR_GATHER_TAG,comm);
         }
@@ -600,7 +694,8 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
             mpi_errno = MPIR_Gather(sendbuf, sendcnt, sendtype,
                                     recvbuf, recvcnt, recvtype, root,
                                     comm_ptr);  
-        else {
+        else
+	{
             /* intercommunicator */ 
 /*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
@@ -611,20 +706,20 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf,
         }
 	MPIR_Nest_decr();
     }
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHER);
 	return MPI_SUCCESS;
     }
-    else
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+
+    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_gather", "**mpi_gather %p %d %D %p %d %D %d %C",
 	    sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
-	MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHER);
-	return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-    }
 
     /* ... end of body of routine ... */
 
+    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHER);
+    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    /* --END ERROR HANDLING-- */
 }

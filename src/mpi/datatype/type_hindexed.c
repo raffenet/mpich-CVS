@@ -108,11 +108,13 @@ int MPI_Type_hindexed(int count,
 	int i, *ints;
 
 	ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
+	/* --BEGIN ERROR HANDLING-- */
 	if (ints == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %d", (count+1) * sizeof(int));
 	    goto fn_exit;
 	}
+	/* --END ERROR HANDLING-- */
 
 	ints[0] = count;
 
@@ -132,6 +134,7 @@ int MPI_Type_hindexed(int count,
     }
 
 fn_exit:
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_SUCCESS)
     {
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
@@ -139,6 +142,7 @@ fn_exit:
     }
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	"**mpi_type_hindexed", "**mpi_type_hindexed %d %p %p %D %p", count, blocklens, indices, old_type, newtype);
+    /* --END ERROR HANDLING-- */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
     return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
 }

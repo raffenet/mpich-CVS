@@ -132,12 +132,14 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
     /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_DELETE_ATTR);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_win_delete_attr", "**mpi_win_delete_attr %W %d", win, win_keyval);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
+    /* --END ERROR HANDLING-- */
 
     return MPI_SUCCESS;
 }

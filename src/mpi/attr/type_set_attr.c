@@ -115,21 +115,27 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	    /* If found, call the delete function before replacing the 
 	       attribute */
 	    mpi_errno = MPIR_Call_attr_delete( type, p );
-	    if (mpi_errno) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno)
+	    {
 		MPID_Common_thread_unlock();
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
+	    /* --END ERROR HANDLING-- */
 	    p->value = attribute_val;
 	    break;
 	}
 	else if (p->keyval->handle > keyval_ptr->handle) {
 	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
-	    if (!new_p) {
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (!new_p)
+	    {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	    }
+	    /* --END ERROR HANDLING-- */
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->pre_sentinal	 = 0;
 	    new_p->value	 = attribute_val;
@@ -145,6 +151,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
     if (!p)
     {
 	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	/* --BEGIN ERROR HANDLING-- */
 	if (!new_p)
 	{
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Attribute" );
@@ -153,6 +160,7 @@ int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 	    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_ATTR);
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
+	/* --END ERROR HANDLING-- */
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;
 	new_p->pre_sentinal  = 0;
