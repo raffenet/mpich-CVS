@@ -78,6 +78,17 @@ sub CountUncoveredLines {
 	    }
 	    next;	       
 	}
+	# Skip any blocks marked as debugging or unavoidable error checking
+	# code 
+	if (/^\s*\/\* --BEGIN DEBUG-- \*\//) {
+	    while (<FD>) {
+		$linecount++;
+		if (/^\s*\/\* --END DEBUG-- \*\//) {
+		    last; 
+		}
+	    }
+	    next;	       
+	}
 	# If requested, skip obvious error checking lines
 	if ($skipErrExits && 
 	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
