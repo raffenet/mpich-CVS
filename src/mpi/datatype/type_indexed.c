@@ -132,11 +132,15 @@ int MPI_Type_indexed(int count,
      * includes the count, the blocklengths, and the displacements.
      */
     ints = (int *) MPIU_Malloc((2*count + 1) * sizeof(int));
+    /* --BEGIN ERROR HANDLING-- */
     if (ints == NULL)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					 FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**nomem", 0);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     ints[0] = count;
 
@@ -148,13 +152,13 @@ int MPI_Type_indexed(int count,
     }
     MPID_Datatype_get_ptr(*newtype, new_dtp);
     mpi_errno = MPID_Datatype_set_contents(new_dtp,
-	MPI_COMBINER_INDEXED,
-	2*count + 1, /* ints */
-	0, /* aints  */
-	1, /* types */
-	ints,
-	NULL,
-	&old_type);
+					   MPI_COMBINER_INDEXED,
+					   2*count + 1, /* ints */
+					   0, /* aints  */
+					   1, /* types */
+					   ints,
+					   NULL,
+					   &old_type);
     MPIU_Free(ints);
 
     if (mpi_errno == MPI_SUCCESS)

@@ -106,11 +106,13 @@ int MPI_Type_create_hindexed(int count,
     /* --END ERROR HANDLING-- */
 
     ints = (int *) MPIU_Malloc((count + 1) * sizeof(int));
+    /* --BEGIN ERROR HANDLING-- */
     if (ints == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     ints[0] = count;
 

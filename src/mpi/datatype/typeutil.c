@@ -167,10 +167,12 @@ int MPIR_Datatype_builtin_fillin(void)
     static int is_init = 0;
     char error_msg[1024];
 
+    /* --BEGIN ERROR HANDLING-- */
     if (is_init)
     {
 	return MPI_SUCCESS;
     }
+    /* --END ERROR HANDLING-- */
 
     {
 	MPID_Common_thread_lock();
