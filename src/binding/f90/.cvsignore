@@ -6,6 +6,7 @@ configure
 config.*
 autom4te.cache
 mpi.f90
+mpimod.pcl
 .deps
 *.mod
 *.MOD
