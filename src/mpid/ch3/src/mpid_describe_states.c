@@ -350,8 +350,8 @@ int MPIDU_Describe_timer_states()
 		       "MPID_VCR_Get_lpid",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG, 
-			MPID_STATE_MPID_COMM_SPAWN,
-		       "MPID_Comm_spawn",
+			MPID_STATE_MPID_COMM_SPAWN_MULTIPLE,
+		       "MPID_Comm_spawn_multiple",
 		       get_random_color_str());
     RLOG_DescribeState(g_pRLOG,
 		       MPID_STATE_MPIDI_CH3U_BUFFER_COPY,
