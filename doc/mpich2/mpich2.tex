@@ -65,25 +65,36 @@ difficult since the MPI standard is defined to encourage efficient
 implementations.  While it is possible to meet the functional
 definitions of MPI with fewer routines, achieving performance requires
 something relatively close to what MPI defines.
-
-One possibility is to consider a few classes of systems.  Pure
-distributed memory is one important case.  Another is shared memory,
-or at least some common shared memory.  Of course, multi-method
-devices make this more difficult.  However, to be concrete, this
-approach is taken here; the details are described in
-Section~\ref{sec:mpi-operations}.
+The approach taken in this document is to illustrate the
+implementation in a few specific cases, such as all-distributed memory
+or all shared-memory.
+%% One possibility is to consider a few classes of systems.  Pure
+%% distributed memory is one important case.  Another is shared memory,
+%% or at least some common shared memory.  Of course, multi-method
+%% devices make this more difficult.  However, to be concrete,  this
+%% approach is taken here; the details are described in
+%% Section~\ref{sec:mpi-operations}.
 
 % Outline:
 This document is structured as follows.  Section~\ref{sec:goals}
 outlines the goals of MPICH.  Section~\ref{sec:general} discusses
 the general layout of MPICH project and recommendations for coding the
 routines.  
+Section~\ref{sec:adding-methods} describes how to add a new
+communication device.  Section~\ref{sec:special-issues} covers some
+special issues that must be considered in a full implementation.
+Section~\ref{sec:portability} covers the support in MPICH for a wide
+variety of systems.  Section~\ref{sec:standard-features} covers
+standard features of the MPICH2 design. 
+% Section~\ref{sec:testing}
+%describes the MPICH2 test suite, including instructions for extending
+%the tests.
 %Section~\ref{sec:pt-2-pt-scenarios} provides a discussion of
 %point-to-point communication by looking at particular implementations.
 Section~\ref{sec:mpi-operations} describes the implementation of
 MPI on a routine-by-routine basis.  Section~\ref{sec:portability} covers some
 of the more subtle issues in achieving a highly portable implementation.
-Section~\ref{sec:testing} describes the new MPI test suite.  The appendices
+The appendices
 include a list of all errors codes (Appendix~\ref{sec:error-codes}) and
 miscellaneous rationale for the decisions in this document
 (Appendix~\ref{sec:rationale}). 
@@ -92,11 +103,12 @@ miscellaneous rationale for the decisions in this document
 \section{Goals of MPICH}
 \label{sec:goals}
 
-MPICH is a full implementation of the MPI standard and is intended to
-support research into high-quality, high-performance MPI
+MPICH is a full implementation of the MPI standard, both MPI-1 and
+MPI-2, and is intended to support research into high-quality,
+high-performance MPI 
 implementations.  Issues addressed in MPICH include:
 \begin{itemize}
-\item Scalable to large numbers of (MPI) processes.  This requires
+\item Scalablilty to large numbers of (MPI) processes.  This requires
   care in the construction of data structures and memory footprint.
 \item Performance
 \item Thread-safety with performance
@@ -126,7 +138,7 @@ implementation of the MPI routines for MPICH.
 
 \subsection{Source Directory Structure}
 \label{sec:dir-structure}
-This describes the directory structure of the MPICH development tree. 
+This section provides a brief overview of the MPICH development tree. 
 This does not include some of the independent packages such as \code{MPE} and
 the performance tests (\code{perftest}), nor does it include various
 contributed programs.  These already exist in the MPICH CVS repository, and
@@ -192,15 +204,14 @@ because an MPI implementation is not complete without these components.
       (Section~\ref{sec:profile}), and Handle transfers
       (Section~\ref{sec:handle-transfer}).  Handle transfer includes handle to
       pointer transfers. MPI Info (Section~\ref{sec:info}); note that
-      the MPID implementation of Info is provided in \file{util/info}.
+      the implementation of Info is provided in \file{src/util/info}.
     \item[romio]The ROMIO implementation (Section~\ref{sec:io}).  
       ROMIO has been enhanced to not build or include the miscellaneous MPI-2 
       routines such as the info support that are supported by other 
       directories in MPICH2.  Currently, this follows the original ROMIO
       directory structure, without separate \file{src} and \file{include}
-      directories.    ROMIO has a new, version 2 \file{configure.in} file and
-      includes special handling when built from within MPICH2.  ROMIO may 
-      still be used independently of MPICH.
+      directories.    ROMIO has a new, version~2 \file{configure.in} file and
+      includes special handling when built from within MPICH2.  
     \end{description}
 \item[include]Main MPI includes (like \file{mpi.h} and \file{mpiimpl.h}).  
 %\textbf{Should most include files go here?  What about replacable modules,
@@ -240,12 +251,14 @@ because an MPI implementation is not complete without these components.
       different
       parts of the code.  The subdirectories include
     \begin{description}
-      \item[dlog]\fixme{What does this do?  It should have at least a README.}
-      \item[dlog2slog]\fixme{What does this do?  It should have at least a README.}
-      \item[lwlog]A light-weight logging system that only records
-      start and end times, and that makes full use of the fastest
-      time-stamp routines.
-      \item[rlog]\fixme{What does this do?  It should have at least a README.}
+      \item[common]Contains common routines; currently a routine to
+      describe states.
+%      \item[lwlog]A light-weight logging system that only records
+%      start and end times, and that makes full use of the fastest
+%      time-stamp routines.
+      \item[rlog]\fixme{What does this do?  It should have at least a
+      README.}Some documentation on \file{rlog} is in \file{doc/logging}.
+
     \end{description}
     \item[mem]Memory allocation and management.  These include the tracing
       malloc routines (\file{tr2} in the MPICH implementation) and
@@ -258,19 +271,47 @@ because an MPI implementation is not complete without these components.
     \item[param]Runtime parameter routines (e.g., like PETSc options database)
     \item[thread]Thread portability layer.  Supports at least pthreads,
       openmp, Solaris threads, and Windows.
-    \item[timer]\fixme{This looks misplaced; it contains one file that
+    \item[timing]\fixme{This looks misplaced; it contains one file that
       should probably be in the logging directory instead, and given a
       more descriptive name.}
     \end{description}
   \item[mpid]Implementation of the ADI3.  There are many
     subdirectories here, one for each device.  Currently, directories include
     \begin{description}
-    \item[common]Common utility routines for device implementations
-    \item[ch3]The ADI-3 version of the channel interface, with a TCP
-    implementation
-    \item[rdma]An experimental remote direct memory access device.
-    \item[mm]An experimental multimethod, not currently being worked on.
+    \item[common]Common utility routines for device implementations.
+    Subdirectories include:
+    \begin{description}
+      \item[datatype]Optimized code for processing MPI datatypes.
+      Most if not all devices will make use of this code.  See
+      \cite{ross-datatype} for a discussion of this approach to
+      datatype processing.
+      \item[locks]A set of thread-lock routines
+      \item[logging]\fixme{This looks like a copy of util/timing and
+      has the same problems (rlog specific and file name is misleading)}
+      \item[sock]An set of routines to support the use of sockets,
+      relying (for now) on the \code{poll} system call instead of the
+      \code{select} call.
     \end{description}
+    \item[ch3]The ADI-3 version of the channel interface.  A number of
+      communication methods have been implemented for this device.
+      These are contained in the directory \file{channels}, with a TCP
+      implementation, 
+      \begin{description}
+      \item[sock]A sockets (TCP) implementation.  This is the default.
+      \item[shm]A shared-memory implementation.
+      \item[sshm]A multi-method implementation supporting both sockets
+	and shared memory
+      \item[gasnet]An experimental remote direct memory access device,
+	built on top of Gasnet.
+      \item[ib]An experimental Infiniband implementation.  Other
+	implementations for Infiniband are also available from other
+	groups, such as Ohio State.
+      \end{description}
+    \item[rdma]An experimental remote direct memory access device.
+    \item[mm]An experimental multimethod, not currently being worked
+      on.
+    \end{description}
+
 %    Question: we may also want a \file{include} directory under the
 %    \file{mpid} directory into which include files needed by the
 %    device (and only the device) can be placed.
@@ -333,8 +374,8 @@ because an MPI implementation is not complete without these components.
     \item[cxx]C++ binding (includes \file{configure}); \code{cxx} is
     used instead of \code{c++} to avoid using special characters in
     directory names.  
-    \item[fortran77]Fortran 77 binding (includes \file{configure}).
-    \item[fortran90]Fortran 90 binding (includes \file{configure}).
+    \item[f77]Fortran 77 binding (includes \file{configure}).
+    \item[f90]Fortran 90 binding (includes \file{configure}).
         The Fortran 90 configure may require that Fortran 77 be
   configured first.
     \item[csharp]C\# binding (includes \file{configure});  \file{cs} is
@@ -352,8 +393,8 @@ because an MPI implementation is not complete without these components.
 
 \item[doc]Documentation
   \begin{description}
-    \item[userguide]A separate users guide.  Not yet written.
-    \item[installguide]A separate installation guide.  Not yet written.
+    \item[userguide]A separate users guide.  
+    \item[installguide]A separate installation guide.  
     \item[develop]A separate developers guide.  This augments this
     document and provides specific information on how to add modules
     to MPICH2.
@@ -373,6 +414,7 @@ because an MPI implementation is not complete without these components.
     process manager.
     \item[smpd]Describes the wire protocol used by the \code{smpd}
     process manager.
+    \item[logging]Describes the \file{rlog} logging mechanism.
   \end{description}
   In addition to these directories, the make target \code{devdocs} in
   the \file{doc} directory will build all of the developer documents,
@@ -396,13 +438,14 @@ with MPICH2 (since it is used by \code{autoconf} to build
     \item[util]Tests for some utility services, such as the low-level timers
     \item[mpi]Test of MPI.  Must work with \emph{any} MPI implementation.
       \begin{description}
-        \item[\emph{xxx}]The directory structure should match that for the
-          \file{src/mpi}, at least for the major sections.  A \file{misc}
-          directory is acceptable for the more minor sections.
+        \item[\emph{xxx}]The directory structure matches that for the
+          \file{src/mpi}, at least for the major sections.  
         \item[util]Contains utilities for running the tests and routines
 for generating test cases, such as collections of communicators and
 datatypes.  Also contains code for reporting results so that no
 example output files are required (as they are by the MPICH tests).
+        \item[f77,f90,cxx]These directories are used for the tests in 
+	  Fortran 77, Fortran 90, and C++ respectively.
       \end{description}
     \item[mpid]Test of the MPID routines.  This currently contains
     only a few tests for some very low-level operations.
@@ -427,7 +470,8 @@ These directories include
 % [WDG] Moved these directories into a section decribing the build
 % directories
 \item[lib]Contains \file{libmpich.a} and related (e.g., shared)
-libraries
+libraries.  For systems that do not support weak symbols, this
+directory will also contain the file \file{libpmpich.a}.
 \item[include]Contains the \file{mpi.h}, \file{mpif.h}, and related
 files.  Also contains any Fortran 90 module files (but not the Fortran
 90 module libraries).
@@ -436,9 +480,10 @@ files.  Also contains any Fortran 90 module files (but not the Fortran
 \subsection{The Installation Directories}
 \label{sec:install-dirs}
 The install directories follow, as
-much as possible, GNU guidelines.  The major issues include support
-for different flavors of devices and compilation environments.  
-We have not yet decided how to support different flavors of devices.
+much as possible, GNU guidelines.  
+%The major issues include support
+%for different flavors of devices and compilation environments.  
+%We have not yet decided how to support different flavors of devices.
 Note that, as long as the various compilers on a system are
 ``compatible'' (including using the same sizes for all datatypes), a
 single build of MPICH2 may be used with the compiler of the user's
@@ -465,32 +510,33 @@ choice.
 
 \subsection{Modularity}
 \label{sec:modularity}
-One of the greatest challenges will be maintaining modularity of the source
-code.  Here are a few guidelines.
+One of the greatest challenges has been maintaining the modularity of
+the source code.  Here are the rules that we followed:
 
 \begin{description}
-\item[mpich/src/include] should be the home only for files that are
+\item[src/include] is be the home only for files that are
   common to 
-the implementation of the routines in \file{mpich/src/mpi}, and should not be
+the implementation of the routines in \file{src/mpi}, and is not be
 the 
 (CVS) home for any files in a separate module (defined as anything that does
-or should have its own configure).  
+or should have its own configure).  \fixme{currently contains some
+  leftovers, such as rlog macros.}
 %% Use \code{AC_OUTPUT_COMMANDS} to copy any
-%% necessary include files into \file{mpich/src/include} from their natural home
+%% necessary include files into \file{src/include} from their natural home
 %% location.  
 Instead, separate modules should add the necessary include paths to
 CPPFLAGS by adding a \file{localdefs} file that is in Bourne shell
 format and that sets the appropriate variables (by \emph{adding}, not
 replacing, values).
-See \file{mpich/src/mpi/timer/configure.in} for an
+See \file{src/mpi/timer/configure.in} for an
 example. 
 
 Note that paths for generated files must be relative to the \emph{build}
-directory, not the source directory.  This is needed to support vpath
-(virtual path feature of many \code{make} programs) builds.
+directory, not the source directory.  This is needed to support
+vpath\index{vpath} (virtual path feature of many \code{make} programs) builds.
 
 \item[Global variables] should be grouped together by module.  For the routines
-in \file{mpich/src/mpi} (but not counting \file{src/mpi/timer} because that is
+in \file{src/mpi} (but not counting \file{src/mpi/timer} because that is
 a separate 
 module), you can use the per thread or per process blocks in
 \file{src/include/mpiimpl.h}.  Other modules, such as the ADI implementations,
@@ -502,7 +548,7 @@ possible and that global variables must have names that mark them as
 part of the MPICH2 project.  The valid names are described in
 Section~\ref{sec:coding-practices}. 
 
-\item[mpich/configure.in] should have only the tests necessary for the
+\item[configure.in] should have only the tests necessary for the
   code in 
 \file{src/mpi}, excluding \file{src/mpi/timer} .  Any tests for
 device-dependent features 
@@ -528,7 +574,7 @@ to initialize them.  Use the finalize callbacks to register any routine used
 to clean up during \code{MPI_Finalize} (see Section~\ref{sec:finalize}
 for details on the finalize callbacks).
 
-\textbf{There are some possible problems in the current (January 2004)
+\fixme{There are some possible problems in the current (January 2004)
   implementation of the init routine, particularly routines that
   initialize err, wtime, and debug.}
 
@@ -588,7 +634,8 @@ level, rather then defining a more complex style.
   classes.  These are specified as \code{.N name}, along with common text on
   errors \code{.N Errors}.  This structured comment block is read by
   the \code{doctext} program; see \cite{doctext} for details of the
-  format of the structured comment block.
+  format of the structured comment block.  The text for the predefined
+  names is provided in the file \file{maint/docnotes}.
 
 \item The declaration of \code{FCNAME}\index{FCNAME} ensures that all
   macros and 
@@ -732,8 +779,7 @@ several variations on this described in Section~\ref{sec:builtin-timing}.
 
 \begin{verbatim}
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -754,7 +800,8 @@ several variations on this described in Section~\ref{sec:builtin-timing}.
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Foo PMPI_Foo
-/* Any internal routines can go here */
+/* Any internal routines can go here.  Use PMPI_LOCAL for routines
+   that are local to this routine only. */
 int MPIR_Foo_util( int a, MPID_Comm *comm )
 {
 ...
@@ -767,20 +814,24 @@ int MPIR_Foo_util( int a, MPID_Comm *comm )
 /*@
    MPI_Foo - short description
 
-   Input Arguments:
-+  first - 
-.  middle - 
--  last - 
+   Input Parameters:
++  first - text for first parm
+.  middle - ditto for second
+-  last - text for the last parm.  
 
-   Output Arguments:
+   Output Parameter:
+.  only - a single parameter
 
    Notes:
+   Any brief discussion of the routine
+
+.N ThreadSafe
 
 .N Errors
 .N MPI_SUCCESS
 .N ... others
 @*/
-int MPI_Foo( MPI_Comm comm, int a ) 
+int MPI_Foo( MPI_Comm comm, int middle, int *last, int *only ) 
 {
     static const char FCNAME[] = "MPI_Foo";
     int mpi_errno = MPI_SUCCESS;
@@ -793,10 +844,13 @@ int MPI_Foo( MPI_Comm comm, int a )
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_INITIALIZE(mpi_errno);
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
+	    /* Use predefined macros for tests where possible */
             if (a < 0) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
-                            "**negarg", "**negarg %s %d", "a", a );
+                mpi_errno = MPIR_Err_create_code( mpi_errno, 
+		            MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+			    MPI_ERR_ARG, 
+			    "**negarg", "**negarg %s %d", "a", a );
             } 
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
@@ -832,7 +886,7 @@ int MPI_Foo( MPI_Comm comm, int a )
 % clause emphasizes the connection.
 
 Header (``\texttt{.h}'') files follow similar rules, including the copyright
-block.  Header files that will be used \emph{only} with C++ compilers must
+block.  Header files that will be used \emph{only} with C++ compilers should
 also include the comment
 \begin{verbatim}
 /* style: c++ header */
@@ -890,7 +944,8 @@ SUBDIRS = shm tcp common datatype .
 This specifies four sudirectories and further that the current directory
 should be processed \emph{after} the subdirectories (because of the position
 of the ``dot'' directory ``\file{.}'').  It also adds \file{wrapack.o}
-to the mpich library. 
+to the MPICH library (normally \file{libmpich.a}; the name may be
+changed by setting the environment variable \code{MPILIBNAME}).
 
 If a particular \file{Makefile} needs a special-purpose target, that target
 can be added to the \file{Makefile.sm}, because lines in the
@@ -910,6 +965,14 @@ run \code{simplemake} directly; either user \file{maint/updatefiles}
 (\code{simplemake} adds a target to rebuild \file{Makefile.in} from
 \file{Makefile.sm}.) 
 
+Targets can be augmented by adding a special target with the name
+\code{targetname-local}.  For example, to add commands to the clean
+target, use
+\begin{verbatim}
+clean-local:
+        rm -f myoptprog
+\end{verbatim}
+
 \subsection{Include Files}
 The include file \file{mpi.h} must not require any \code{-Dxxx}
 definitions by the compiler.  This requires generating the
@@ -926,27 +989,21 @@ support and \file{mpio.h} for ROMIO.
 % MPI support.
 % [WDG] We can *always* make exceptions.
 
-The \file{mpif.h} (or \file{mpif.h.in}) used with Fortran are
+The \file{mpif.h} (actually \file{mpif.h.in}) that is used with Fortran is
 created from 
-\file{mpi.h} so that the various integer values (e.g., error classes, 
-datatypes, etc.) are guaranteed to be consistent.  This can be done prior to
+\file{mpi.h.in} so that the various integer values (e.g., error classes, 
+datatypes, etc.) are guaranteed to be consistent.  This is done prior to
 distribution, similar to the way \file{configure} is generated from
-\file{configure.in}.  The point is to automate this and ensure that,
-at least in the development \file{Makefile}s, the \file{mpif.h.in} file
-should be created from the \file{mpi.h} automatically, at least with
-respect to any values. 
+\file{configure.in}, using the scripts \code{buildiface} in the
+\file{src/binding/f77} directory.  The point is to automate this and
+ensure that the \file{mpif.h.in} file
+is created from the \file{mpi.h} automatically, at least with
+respect to any values compile-time values.
 
-%Question: Is there an easy Perl script for this, particularly, for the values?
-
-% [BRT] Alternatively, we could use a description file to express all of the
-% constants, etc.  All of the files, including mpi.h, could be generated from
-% that file.  This avoids having to parse C :-).
-% [WDG] Good point, though we may be able to do what we need with sed.
-
-For module-dependent includes, comments in \file{mpiimpl.h} should explain the
-search rules expected (e.g., link or copy in the same directory; file in
-search path).  Module-dependent includes should be used for any complex
-subsystem, particularly one that includes its own \code{configure}.
+%% For module-dependent includes, comments in \file{mpiimpl.h} should explain the
+%% search rules expected (e.g., link or copy in the same directory; file in
+%% search path).  Module-dependent includes should be used for any complex
+%% subsystem, particularly one that includes its own \code{configure}.
 
 All preprocessor definitions should be placed in a file, such as the
 header files automatically generated by
@@ -958,13 +1015,13 @@ where weak symbols are not supported, as described in
 Section~\ref{sec:pmpi-routines}, because the same file is compiled in
 two ways to build the MPI and PMPI versions.
 
-To avoid problems with setting include paths for include files from
-various directories, such as problems with conflicting names from
-separate device implementations, include files that are not common to
-all devices and choices should live in their natural directory and be
-copied into either \file{src/include} or \file{src/mpid/include}.  Of
-course, the copy should be made relative to the build directory to
-enable vpath builds.
+%% To avoid problems with setting include paths for include files from
+%% various directories, such as problems with conflicting names from
+%% separate device implementations, include files that are not common to
+%% all devices and choices should live in their natural directory and be
+%% copied into either \file{src/include} or \file{src/mpid/include}.  Of
+%% course, the copy should be made relative to the build directory to
+%% enable vpath builds.
 
 \subsection{MPI and PMPI Routines}
 \label{sec:pmpi-routines}
@@ -1069,8 +1126,8 @@ definitions of the \code{NMPI_xxx} routines is in
 \cfgoption{--enable-nmpi-as-mpi} allows MPICH2 to be configured with
 the NMPI routines mapping to MPI rather than PMPI.
 In addition, all nested calls to MPI routines must ensure that the
-errors-return error handler is called.  See
-Section~\ref{sec:err-handling-nested} for how this is done.
+errors-return error handler is called.  
+Section~\ref{sec:err-handling-nested} describes how this is done.
 
 \subsection{Internal Routine Names}
 \label{sec:routine-names}
@@ -1091,7 +1148,6 @@ Many routines will have the \code{MPID} prefix.
 \label{sec:mpi-src-filenames}
 File names should be chosen so that they are unique throughout the source
 tree.  That is, no file name should appear in more than one directory.  
-\fixme{We have multiple copies of crypt.c/h and des.c/h}
 This
 is necessary since object libraries usually store files by name only, ignoring
 the directory.  For include files, using unique names aids in identifying
@@ -1105,14 +1161,14 @@ shared libraries).
 Of course, it isn't always possible to ensure that modules have
 distinct names for all internal files.  For example, device
 implementations (e.g., files starting at the level
-\file{mpich/src/mpid/mydevice}) will never be combined with other
+\file{src/mpid/mydevice}) will never be combined with other
 devices, and hence need not have file names that are distinct from
 those \emph{in other devices}.  
 
 \subsection{MPI Opaque Objects}
 \label{sec:mpi-opaque}
-Most objects in MPI (with the exception of \mpifunc{MPI_Status}) are
-opaque to the MPI programmer.  In the MPICH2 implementation, opaque
+Objects in MPI are opaque to the MPI programmer.  
+In the MPICH2 implementation, opaque 
 objects are represented 
 by integers.  That is, their handle is an integer.
 This simplifies the implementation of the functions for
@@ -1165,7 +1221,7 @@ expected.  When all handles are \code{typedef}ed to \code{int}, this
 cannot be done at compile-time.
 \end{itemize}
 
-Using the same system for storing all these constructs should be more
+Using the same system for storing all these constructs is more
 space-efficient.
 
 The MPI opaque objects include \mpiconst{MPI_Comm}, \mpiconst{MPI_Group},
@@ -1175,10 +1231,10 @@ Also included are MPI keyvals, whose handles are defined to be of type
 \code{int} by the MPI standard but which are just another opaque
 object.
 This is nine types of opaque objects overall.
-We
-currently do not include \mpiconst{MPI_Request} because there is a
-premium on efficiency for creating and deleting requests; these other
-objects do not require extremely fast creation.
+%% We
+%% currently do not include \mpiconst{MPI_Request} because there is a
+%% premium on efficiency for creating and deleting requests; these other
+%% objects do not require extremely fast creation.
 
 % Nomenclature is subject to change.
 
@@ -1260,7 +1316,7 @@ There are more than 32 but less than 64 predefined datatypes, so 6 bits are
 adequate to encode all of the predefined datatypes.
 Note that C2000 adds another 31 types to the C language, so if MPI 2.x
 defines corresponding types, we will need 7 bits eventually (and so we
-should allow seven \emph{now}.
+allow seven \emph{now}).
 That leaves us at least 20 bits (assuming 7 to identify the type)
 to specify the size.  We'll be specifying size in bytes,
 which will be adequate (if long double is 16 bytes, then the long complex and
@@ -1542,6 +1598,9 @@ was null.  Note also the need for write barriers on some platforms to
 force write ordering; these operations should be included as needed
 (unfortunately, they must be issued through an \code{asm} statement).
 
+\fixme{We need a set of atomic list manipulation routines so that we
+  can hide the use of assembler}
+
 \subsection{Error reporting}
 \label{sec:error-reporting}
 
@@ -1575,7 +1634,7 @@ In some cases, it is desirable to check for error cases even when
 error testing is turned off, to include tests for errors (just because
 the users don't want error tests doesn't mean that we can depend on
 their code being error free).  To improve the quality of the data from
-a coverage analyzer, comments \emph{exactly} of the following form
+a coverage analyzer, comments of \emph{exactly} the following form
 should surround the error handling code:
 \begin{verbatim}
         /* --BEGIN ERROR HANDLING-- */
@@ -1602,7 +1661,6 @@ takes the arguments
 \begin{description}
 \item[all]For all options, that is, runtime control over error checking
 \item[runtime]A synonym for \code{all}
-\item[always]Error checking is always on (no runtime control)
 \item[no]Disables all error checking
 \end{description}
 
@@ -1611,6 +1669,9 @@ routine is responsible for setting the value of
 \code{MPIR_Process.do_error_checks} when there is runtime control over
 error checking.
 
+Many error checks are handled through macros defined in
+\file{src/include/mpierrs.h}.  These handle the various error levels
+and simplify the addition of error checks.
 
 \subsubsection{Errors requiring tests}
 Most values should be tested to ensure that they are in-range.  For example,
@@ -1629,23 +1690,27 @@ called erroneously before MPI is initialized.}
 \item Are output parameter pointers valid?  The macro
   \code{MPID_Pointer_is_invalid(void *p,alignment)} returns one for
 invalid pointers. 
-  Note that this may be as simple as \code{((p) == 0)} or
-  \code{(long(p)<=0)} or \code{(!(p) || (unsigned long)(p) > STACKLIMIT)}, or
-  even call a routine that attempts to access the pointer with a
-  \code{SIGSEGV} and \code{SIGBUS} handler set.  An enhancement of
-this is to return 
-zero on success and nonzero on failure, with the particular non-zero
-value indicating the reason for failure, including null, SEGV
-(out-of-range), unaligned (which is why there is an alignment
-requirement in the call). Alignment values are macros of the form
-\code{MPID_ALIGNED_PTR_xxx}, where \code{xxx} is \code{INT}, \code{LONG},
-etc.  \code{configure} can determine the alignment requirements or
-these can be specified through a configuration file.
-The amount of checking may be controlled at configure time through the
-configure option \cfgoption{--enable-g=strongpointercheck}.
-  \fixme{This is not yet implemented.}
+  Currently, this simply checks for null pointers.  Later versions of 
+  MPICH2 may provide more extensive checks when extensive error
+  checking is enabled.
+%%   Note that this may be as simple as \code{((p) == 0)} or
+%%   \code{(long(p)<=0)} or \code{(!(p) || (unsigned long)(p) > STACKLIMIT)}, or
+%%   even call a routine that attempts to access the pointer with a
+%%   \code{SIGSEGV} and \code{SIGBUS} handler set.  An enhancement of
+%% this is to return 
+%% zero on success and nonzero on failure, with the particular non-zero
+%% value indicating the reason for failure, including null, SEGV
+%% (out-of-range), unaligned (which is why there is an alignment
+%% requirement in the call). Alignment values are macros of the form
+%% \code{MPID_ALIGNED_PTR_xxx}, where \code{xxx} is \code{INT}, \code{LONG},
+%% etc.  \code{configure} can determine the alignment requirements or
+%% these can be specified through a configuration file.
+%% The amount of checking may be controlled at configure time through the
+%% configure option \cfgoption{--enable-g=strongpointercheck}.
+%%   \fixme{This is not yet implemented.}
 \end{itemize}
-Note that message buffer pointers depend on the datatype; if the datatype is a
+Note that message buffer pointers depend on the datatype; for example,
+if the datatype is a
 struct type, then a null pointer or otherwise invalid value for the message
 buffer may in fact be valid when combined with the datatype.
 The test \code{MPID_Check_user_buffer( buf, count, datatype )} checks that the
@@ -1669,6 +1734,7 @@ error handler.
 handler named \mpidfunc{MPIR_Err_preinit}.  This handler may either abort or
 return; by default, it will abort. 
 A return may be prefered for some fault-tolerant applications.
+\fixme{This has not been implemented}
 
 \item Check if executing inside a layered routine (i.e., an MPI routine called
   within the implementation of another MPI routine).  If so, return
@@ -1711,10 +1777,10 @@ in the \mpids{MPI_Status}{MPI_ERROR} element of the status.
 communicator, file, or window can include the predefined name block
 \code{errhandler} in the structured comment documentation block with
 \begin{verbatim}
-.N errhandler
+.N Errhandler
 \end{verbatim}
   (The text for the named documentation blocks is in
-  \file{doc/mansrc/errnotes}.) 
+  \file{maint/docnotes}.) 
 
 \item For MPI-IO, the default error handler is attached to
   \code{MPI_FILE_NULL} (see Section~9.7 in the MPI-2 standard: ``The default
@@ -1819,7 +1885,9 @@ typedef struct {
 typedef struct {
     int              nest_count;   /* For layered MPI implementation */
     int              op_errno;     /* For errors in predefined MPI_Ops */
+#ifdef HAVE_TIMING
     MPID_Stateinfo_t timestamps[MPICH_MAX_STATES];  /* per thread state info */
+#endif
 #if defined(MPID_DEV_PERTHREAD_DECL)
     MPID_DEV_PERTHREAD_DECL
 #endif    
@@ -1889,7 +1957,7 @@ Access to the fields in \code{MPICH_PerThread_t} is made through a macro that
 allows both the compile-time and run-time single-threaded case to directly
 access the data without using, for example, \code{pthread_getspecific}.
 To access this data, the routine \code{MPID_GetPerThread} is used.  This
-has a definition like
+has the following definition:
 \begin{verbatim}
 #ifdef MPICH_SINGLE_THREADED
 extern MPICH_PerThread_t MPIR_Thread;
@@ -1956,6 +2024,10 @@ simply
 \begin{verbatim}
     *t3  += (*t2 - *t1);
 \end{verbatim}
+If these are aggregate types (such as an array of two longs or a
+struct with two parts), these functions provide a way to transparently
+implement the accumulate and different operatoins.
+
 %(See questions in the ADI document on whether these should be explicitly
 %pointers or if values are prefered.)
 
@@ -1965,11 +2037,21 @@ the timer macros \code{MPID_TimerStateBegin} and
 \code{MPID_TimerStateEnd} should be used.  
 
 \subsubsection{Instrumenting the MPI code for States.}
-Each major routine will contain references to 
+Each major routine contains references to a macro that indicates where
+the function begins and where it ends.  The most basic versions are
 \begin{verbatim}
 MPID_MPI_FUNC_ENTER( stateid );
 MPID_MPI_FUNC_EXIT( stateid );
 \end{verbatim}
+For many of the routines, the macro name also indicates the kind of
+routine, such as point-to-point communication or collective
+communication, e.g.,
+\begin{verbatim}
+MPID_MPI_PT2PT_FUNC_BEGIN( stateid );
+MPID_MPI_PT2PT_FUNC_END( stateid );
+\end{verbatim}
+\fixme{there are a number of undocumented varients of these that need
+  to be explained or removed, such as func\_enter\_front}
 These will normally be defined as the corresponding timer calls
 \begin{verbatim}
 MPID_TimerStateBegin( stateid );
@@ -1978,7 +2060,8 @@ MPID_TimerStateEnd( stateid );
 The value of \code{stateid} is \code{MPID_STATE_functionname}, for example,
 \code{MPID_STATE_MPI_SEND}.  The timer code will accumulate the sum of
 timestamps, along with the number of calls.  These are defined in the file
-\file{include/mpistates.h}. 
+\file{include/mpistates.h}.  However, alternate definitions can be
+used by redefining
 
 Simple informational routines such as \code{MPI_Comm_size} and
 \code{MPI_Wtime} will not be timed.
@@ -1999,201 +2082,210 @@ Each state belongs to a class; there are at most 32 classes (so that we can use
 bitwise tests on a 32 bit \code{unsigned int}).  Instrumentation can be
 controlled:
 \begin{description}
-\item[at compile time]with the \cfgoption{--enable-timing} configure flag.
- Options to this can restrict timing code to particular classes, e.g.,
- \code{--enable-timing=all,class=pt2pt,class=coll}.  These are implemented by
- defining the class as \code{MPID_STATE_CLASS_xxx} before including
- \file{mpiimpl.h}, and having code in \file{mpiimpl.h} check the class
- when defining these macros.
+\item[at compile time]with the \cfgoption{--enable-timing} configure
+  flag.
+%% The following good idea was never implemented.
+%%  Options to this can restrict timing code to particular classes, e.g.,
+%%  \code{--enable-timing=all,class=pt2pt,class=coll}.  These are implemented by
+%%  defining the class as \code{MPID_STATE_CLASS_xxx} before including
+%%  \file{mpiimpl.h}, and having code in \file{mpiimpl.h} check the class
+%%  when defining these macros.
 
-The feature of picking classes is not yet implemented.
+%% The feature of picking classes is not yet implemented.
 
-\item[at run time]with the \code{MPICH_TIMING} environment variable or
-  \code{-mpich-timing} command line argument; the value is a string of timing
-  class names.
+%% The ``at run time'' argument was never implemented and cannot be
+%%  without the ``param'' support.
+%% \item[at run time]with the \code{MPICH_TIMING} environment variable or
+%%   \code{-mpich-timing} command line argument; the value is a string of timing
+%%   class names.
+
 \end{description}
 %\textbf{Question: do we want to allow even finer grain control?}
 
-In addition to timing the routines, we also need to instrument important
-states.  For example, the idle time in an \code{MPI_Wait} or in a blocking
-\code{select} should be covered.  We will also have a class for idle time
-and separate entries for each place where the code waits.  For example,
-\code{MPID_STATE_PROGRESS_WAIT} (see the implementation of \code{MPI_Wait}).
+The original design included mechanisms to instrument important
+internal states.  This has been rejected by a majority of the MPICH2
+team.
 
-In addition, nontrivial system calls should be timed because they can
-sometimes take surprising amounts of time (e.g., \code{gethostbyname}).
-These can be timed using the same macros, with state names that include the
-function name (e.g., \code{MPID_STATE_SYS_GETHOSTBYNAME}).  The state
-names for all system routines start with \code{MPID_STATE_SYS_}, and
-are defined in the file \file{mpisysstates.h}.
+%% In addition to timing the routines, we also need to instrument important
+%% states.  For example, the idle time in an \code{MPI_Wait} or in a blocking
+%% \code{select} should be covered.  We will also have a class for idle time
+%% and separate entries for each place where the code waits.  For example,
+%% \code{MPID_STATE_PROGRESS_WAIT} (see the implementation of \code{MPI_Wait}).
 
-While it would be nice to dynamically allocate the state ids, this part of the
-code should be fast; this argues for predefined state numbers
-(\code{\#define}d).  Because of this, many of these definitions are
-created automatically by scripts invoked by \file{maint/updatefiles}.
+%% In addition, nontrivial system calls should be timed because they can
+%% sometimes take surprising amounts of time (e.g., \code{gethostbyname}).
+%% These can be timed using the same macros, with state names that include the
+%% function name (e.g., \code{MPID_STATE_SYS_GETHOSTBYNAME}).  The state
+%% names for all system routines start with \code{MPID_STATE_SYS_}, and
+%% are defined in the file \file{mpisysstates.h}.
 
-There are two additional items to watch:
-\begin{enumerate}
-\item Resource usage
-\item Flow control
-\end{enumerate}
+%% While it would be nice to dynamically allocate the state ids, this part of the
+%% code should be fast; this argues for predefined state numbers
+%% (\code{\#define}d).  Because of this, many of these definitions are
+%% created automatically by scripts invoked by \file{maint/updatefiles}.
 
-There are three levels to the state timers:
-\begin{description}
-\item[none]No data is available (macros evaluate to empty).  This is
-  appropriate for production versions of MPICH, and is the default value.
-\item[time]Only the total accumulate time in each state is available.
-\item[log]Logfiles are collected (using SLOG).
-\end{description}
-If state timers are enabled (with \cfgoption{--enable-timing}), these are
-controlled by the runtime parameter code.
+%% There are two additional items to watch:
+%% \begin{enumerate}
+%% \item Resource usage
+%% \item Flow control
+%% \end{enumerate}
 
-\paragraph{Adding data to the state.}
-Because it is often valuable to have data with the state, there are
-two more forms of \code{MPID_MPI_FUNC_EXIT}:
-\begin{verbatim}
-MPID_MPI_FUNC_EXITI1(stateid,i1)
-MPID_MPI_FUNC_EXITI2(stateid,i1,i2)
-\end{verbatim}
-These allow including one or two integers in the state.  If more
-complex state information is required, it should be handled by making
-direct calls to the appropriate profiling routines (suitably wrapped
-to obey the selected profiling level).
+%% There are three levels to the state timers:
+%% \begin{description}
+%% \item[none]No data is available (macros evaluate to empty).  This is
+%%   appropriate for production versions of MPICH, and is the default value.
+%% \item[time]Only the total accumulate time in each state is available.
+%% \item[log]Logfiles are collected (using SLOG).
+%% \end{description}
+%% If state timers are enabled (with \cfgoption{--enable-timing}), these are
+%% controlled by the runtime parameter code.
 
-\paragraph{Controlling the Collection of State Data.}
-The routine \code{MPID_TimerStateControl} can be used to control the
-collection of data.  This routine has the form
-\begin{verbatim}
-    void MPID_TimerStateControl( int onoff, int category )
-\end{verbatim}
-The first argument simply controls whether data collection is on or
-off.  The second controls the states that the first argument applies
-to.  Initially, \code{category} will be ignored and all states will be
-either on or off.  The \code{category} flag allows finer control
-should we find that we need it.
+%% \paragraph{Adding data to the state.}
+%% Because it is often valuable to have data with the state, there are
+%% two more forms of \code{MPID_MPI_FUNC_EXIT}:
+%% \begin{verbatim}
+%% MPID_MPI_FUNC_EXITI1(stateid,i1)
+%% MPID_MPI_FUNC_EXITI2(stateid,i1,i2)
+%% \end{verbatim}
+%% These allow including one or two integers in the state.  If more
+%% complex state information is required, it should be handled by making
+%% direct calls to the appropriate profiling routines (suitably wrapped
+%% to obey the selected profiling level).
 
-This function has not been implemented.
+%% \paragraph{Controlling the Collection of State Data.}
+%% The routine \code{MPID_TimerStateControl} can be used to control the
+%% collection of data.  This routine has the form
+%% \begin{verbatim}
+%%     void MPID_TimerStateControl( int onoff, int category )
+%% \end{verbatim}
+%% The first argument simply controls whether data collection is on or
+%% off.  The second controls the states that the first argument applies
+%% to.  Initially, \code{category} will be ignored and all states will be
+%% either on or off.  The \code{category} flag allows finer control
+%% should we find that we need it.
 
-\subsubsection{Instrumenting the MPI code for Statistics.}
-The material in this section has not been implemented.  In MPICH1, ad
-hoc code along these lines was very valuable; the cost of collecting
-this data is much smaller than more general logging, particularly if
-all operations are inlined (and hence avoiding any routine calls),
-which these macros allow and encourage.  
+%% This function has not been implemented.
 
-Statistics are collected by items, such as \code{writev} calls or
-number of times an I/O call returns with an \code{errno} of
-\code{EAGAIN}\index{EAGAIN}.  
+%% \subsubsection{Instrumenting the MPI code for Statistics.}
+%% The material in this section has not been implemented.  In MPICH1, ad
+%% hoc code along these lines was very valuable; the cost of collecting
+%% this data is much smaller than more general logging, particularly if
+%% all operations are inlined (and hence avoiding any routine calls),
+%% which these macros allow and encourage.  
 
-The most general form is
-\begin{verbatim}
-    #ifdef MPID_COLLECT_STATS
-    {
-        MPID_STAT_BEGIN;
-        {
-            MPID_STAT_ACC(statid,val);
-            MPID_STAT_ACC_RANGE(statid2,rval);
-        }
-        MPID_STAT_END;
-    }
-    #endif
-\end{verbatim}
+%% Statistics are collected by items, such as \code{writev} calls or
+%% number of times an I/O call returns with an \code{errno} of
+%% \code{EAGAIN}\index{EAGAIN}.  
 
-For very simple uses, these two one-line forms are provided:
-\begin{verbatim}
-    MPID_STAT_MISC(any statement);
-    MPID_STAT_ACC_SIMPLE(statid,val);
-\end{verbatim}
+%% The most general form is
+%% \begin{verbatim}
+%%     #ifdef MPID_COLLECT_STATS
+%%     {
+%%         MPID_STAT_BEGIN;
+%%         {
+%%             MPID_STAT_ACC(statid,val);
+%%             MPID_STAT_ACC_RANGE(statid2,rval);
+%%         }
+%%         MPID_STAT_END;
+%%     }
+%%     #endif
+%% \end{verbatim}
 
-The definitions of these macros allow for thread-safe
-implementations.  For example,
-\begin{description}
-\item[\code{MPID_STAT_BEGIN}]Allows for a thread lock; it can also find the 
-per-thread data block containing statistics information.  This does
-not guarantee a thread lock, only that the update routines (e.g.,
-\code{MPID_STAT_ACC}) are atomic.  For example, if the accumulate
-functions can be implemented atomically without a lock, they may be.
-This macro allows a single lock to be used \emph{if necessary}, rather
-than a lock for each item updated.
+%% For very simple uses, these two one-line forms are provided:
+%% \begin{verbatim}
+%%     MPID_STAT_MISC(any statement);
+%%     MPID_STAT_ACC_SIMPLE(statid,val);
+%% \end{verbatim}
 
-\item[\code{MPID_STAT_ACC}]Accumulates an integer value into a predefined
-\code{statid}.  This can be as simple as a sum or can include code to
-track maximum and minimum values, standard deviations, or even
-histograms. 
+%% The definitions of these macros allow for thread-safe
+%% implementations.  For example,
+%% \begin{description}
+%% \item[\code{MPID_STAT_BEGIN}]Allows for a thread lock; it can also find the 
+%% per-thread data block containing statistics information.  This does
+%% not guarantee a thread lock, only that the update routines (e.g.,
+%% \code{MPID_STAT_ACC}) are atomic.  For example, if the accumulate
+%% functions can be implemented atomically without a lock, they may be.
+%% This macro allows a single lock to be used \emph{if necessary}, rather
+%% than a lock for each item updated.
 
-\item[\code{MPID_STAT_ACC_RANGE}]Accumulates an integer value that
-represents a single value in a range.  The purpose of this is to keep
-which values are used, and how many times they are used (e.g.,
-file \code{fd}s).
+%% \item[\code{MPID_STAT_ACC}]Accumulates an integer value into a predefined
+%% \code{statid}.  This can be as simple as a sum or can include code to
+%% track maximum and minimum values, standard deviations, or even
+%% histograms. 
 
-\item[\code{MPID_STAT_END}]Allows for the release of a thread lock.
+%% \item[\code{MPID_STAT_ACC_RANGE}]Accumulates an integer value that
+%% represents a single value in a range.  The purpose of this is to keep
+%% which values are used, and how many times they are used (e.g.,
+%% file \code{fd}s).
 
-\item[\code{MPID_STAT_ACC_SIMPLE}]is a short-hand for 
-\begin{verbatim}
-    #ifdef MPID_COLLECT_STATS
-    {
-    MPID_STAT_BEGIN;
-        {
-        MPID_STAT_ACC(statid,val);
-        }
-    MPID_STAT_END;
-    }
-    #endif
-\end{verbatim}
-This is appropriate for cases where only a single value is being
-collected.
+%% \item[\code{MPID_STAT_END}]Allows for the release of a thread lock.
 
-\item[\code{MPID_STAT_MISC}]includes the statement only if
-\code{COLLECT_STATS} is defined.  This is useful for declaring and
-initializing local variables that may be used to update a statistics
-value (e.g., the \code{val} in the example above).
-\end{description}
+%% \item[\code{MPID_STAT_ACC_SIMPLE}]is a short-hand for 
+%% \begin{verbatim}
+%%     #ifdef MPID_COLLECT_STATS
+%%     {
+%%     MPID_STAT_BEGIN;
+%%         {
+%%         MPID_STAT_ACC(statid,val);
+%%         }
+%%     MPID_STAT_END;
+%%     }
+%%     #endif
+%% \end{verbatim}
+%% This is appropriate for cases where only a single value is being
+%% collected.
 
-The implementation of \code{MPID_STAT_BEGIN} requires thread locks
-only if the update operations require 
-them; an alternative is to use atomic update or assembly code that
-exploits load-link/store-conditional instructions.  Arranging the code
-this way abstracts out the use of thread locks so that they can be
-avoided where they aren't needed.  It also allows mulitple \code{STAT}
-values to be updated with a single lock.
+%% \item[\code{MPID_STAT_MISC}]includes the statement only if
+%% \code{COLLECT_STATS} is defined.  This is useful for declaring and
+%% initializing local variables that may be used to update a statistics
+%% value (e.g., the \code{val} in the example above).
+%% \end{description}
 
-The value of \code{statid} is of the form \code{MPID_STAT_ID_xxx}.  These are
-constant values that are set in the file \file{mpistats.h} (not the
-same as \file{mpistates.h}).  We may provide a
-simple tool to search through the source files and create these values
-automatically.  Each \code{statid} refers to an element of an
-\code{MPID_Stat_t} structure whose definition is
-\begin{verbatim}
-typedef struct {
-    int accval, maxval, minval, nval;
-} MPID_Stat_t;
-\end{verbatim}
-This allows the accumulation of the value (\code{accval}), the min and max
-ranges seen, and the number of values (\code{nval}).  More complex versions of
-this type could also include bins for histogramming the range of values seen.
+%% The implementation of \code{MPID_STAT_BEGIN} requires thread locks
+%% only if the update operations require 
+%% them; an alternative is to use atomic update or assembly code that
+%% exploits load-link/store-conditional instructions.  Arranging the code
+%% this way abstracts out the use of thread locks so that they can be
+%% avoided where they aren't needed.  It also allows mulitple \code{STAT}
+%% values to be updated with a single lock.
 
-In order to read and optionally reset the statistics values in a thread-safe
-way, the two routines\index{thread overhead!statistics}
-\begin{verbatim}
-MPID_Stat_lock()
-MPID_Stat_unlock()
-\end{verbatim}
-are provided.  While the lock is held, no updates will be made to the
-statistics values.  In a single-threaded implementation, these routines are
-effectively no-ops.  
-In order to make use of tools such as the Alice Memory Snooper
-(\url{www.mcs.anl.gov/AMS}), we must provide a generic locking
-mechanism for the statistics, somewhat separate from the thread locks.  
-%This still needs work.
+%% The value of \code{statid} is of the form \code{MPID_STAT_ID_xxx}.  These are
+%% constant values that are set in the file \file{mpistats.h} (not the
+%% same as \file{mpistates.h}).  We may provide a
+%% simple tool to search through the source files and create these values
+%% automatically.  Each \code{statid} refers to an element of an
+%% \code{MPID_Stat_t} structure whose definition is
+%% \begin{verbatim}
+%% typedef struct {
+%%     int accval, maxval, minval, nval;
+%% } MPID_Stat_t;
+%% \end{verbatim}
+%% This allows the accumulation of the value (\code{accval}), the min and max
+%% ranges seen, and the number of values (\code{nval}).  More complex versions of
+%% this type could also include bins for histogramming the range of values seen.
 
-The results of statistics collection are reported through the use of a
-callback that is registered with \code{MPI_Finalize}.  These are
-registered as part of the initialization process, because the
-particular choice of data collection and output format can be set at
-runtime during \code{MPI_Init}.  We should have at least two
-statistics reporters: one that sums values over all processes and
-produces an aggregate output, with only a single processor writing
-output, and one that writes each process's data to a separate file.
+%% In order to read and optionally reset the statistics values in a thread-safe
+%% way, the two routines\index{thread overhead!statistics}
+%% \begin{verbatim}
+%% MPID_Stat_lock()
+%% MPID_Stat_unlock()
+%% \end{verbatim}
+%% are provided.  While the lock is held, no updates will be made to the
+%% statistics values.  In a single-threaded implementation, these routines are
+%% effectively no-ops.  
+%% In order to make use of tools such as the Alice Memory Snooper
+%% (\url{www.mcs.anl.gov/AMS}), we must provide a generic locking
+%% mechanism for the statistics, somewhat separate from the thread locks.  
+%% %This still needs work.
+
+%% The results of statistics collection are reported through the use of a
+%% callback that is registered with \code{MPI_Finalize}.  These are
+%% registered as part of the initialization process, because the
+%% particular choice of data collection and output format can be set at
+%% runtime during \code{MPI_Init}.  We should have at least two
+%% statistics reporters: one that sums values over all processes and
+%% produces an aggregate output, with only a single processor writing
+%% output, and one that writes each process's data to a separate file.
 
 \subsection{Memory Allocation}
 As a software package, MPICH should minimize the perturbation of the user's
@@ -2474,7 +2566,7 @@ Memory tests are enabled by the configure option
 
 \subsection{Naming Rules}
 %(not written; covers how to name routines)
-Routines should be name following rules similar to that used for the
+Routines must be named following rules similar to that used for the
 MPI-2 routines.  The prefix should be \code{MPID_} for routines used
 within the ADI (and in other parts of the implementation),
 \code{MPIU_} for utility functions, and \code{MPIR_} for routines used
@@ -2499,155 +2591,155 @@ reaches zero), we chose the terms create and destroy.\fixme{We should
 
 \subsection{Runtime Parameters}
 \label{sec:runtime-params}
-The material in this section has not been implemented\fixme{Decide
-  whether we want to do this, something else, or just keep the ad hoc
-  mechanism that is in the current code.}
+The original design provided an abstraction for handling parameters
+and for unifying the use and documentation of those parameters.  A
+majority of the MPICH2 team has decided to rely on \code{getenv}
+instead.
 
+%% Mpichco-1 suffers from having many compile-time parameters that could just as
+%% easily be either runtime or at least initialization-time.  These parameters
+%% include search paths and buffer sizes.  In MPICH2, these have a compile-time
+%% default (particularly the search paths) as well as having an easy way
+%% to override at 
+%% initialization and/or run time.  While environment variables are one way to do
+%% this, we should not rely on them, since not all environments guarantee that
+%% environment variables are propagated to all processes.
 
-MPICH-1 suffers from having many compile-time parameters that could just as
-easily be either runtime or at least initialization-time.  These parameters
-include search paths and buffer sizes.  In MPICH2, these have a compile-time
-default (particularly the search paths) as well as having an easy way
-to override at 
-initialization and/or run time.  While environment variables are one way to do
-this, we should not rely on them, since not all environments guarantee that
-environment variables are propagated to all processes.
+%% The design of such an interface is complicated by the fact that not
+%% all processes may have access to the data before \code{MPI_Init}
+%% completes, yet some of the information (e.g., socket buffer sizes) may
+%% be needed before \code{MPI_Init} completes.  Thus, there are really
+%% two classes of parameters: those that must be available during the
+%% initialization step, and those that need be available only after the
+%% initialization completes.  
 
-The design of such an interface is complicated by the fact that not
-all processes may have access to the data before \code{MPI_Init}
-completes, yet some of the information (e.g., socket buffer sizes) may
-be needed before \code{MPI_Init} completes.  Thus, there are really
-two classes of parameters: those that must be available during the
-initialization step, and those that need be available only after the
-initialization completes.  
+%% A sample interface for the parameters provided \emph{after}
+%% initialization is:\index{MPIU_Param_init}\index{MPIU_Param_get_int}%
+%% \index{MPIU_Param_get_string}\index{MPIU_Param_finalize}%
+%% \index{MPIU_Param_bcast}\index{MPIU_Param_register}
+%% \begin{verbatim}
+%% int MPIU_Param_init( int *argc, char **argv[] );
+%% int MPIU_Param_bcast( void );
+%% int MPIU_Param_register( const char name[], const char envname[], 
+%%                          const char description[] );
+%% int MPIU_Param_get_int( const char name[], int default_val, int *value );
+%% int MPIU_Param_get_string( const char name[], const char *default val,
+%%                            char **value );
+%% void MPIU_Param_finalize( void );
+%% \end{verbatim}
+%% We use pointers to \code{argc} and \code{argv} to allow parameters to be
+%% removed.  The return code indicates success or failure; an example of a
+%% failure is a non-integer value provided to the parameter accessed with
+%% \code{MPIU_Param_get_int}. 
+%% The routine \code{MPIU_Param_init} is called by the master process (the one
+%% that will be rank zero in \code{MPI_COMM_WORLD}); this should happen early
+%% enough that any startup parameters are available to the master process.  The
+%% routine \code{MPIU_Param_bcast} is called within \code{MPI_Init} or
+%% \code{MPI_Init_thread} after all processes have started and is a collective
+%% call across \code{MPI_COMM_WORLD}.  This allows (but does not require)
+%% an implementation to use one 
+%% process to read the environment and any initialization file and then use MPI
+%% communication to communicate the parameters to other processes.  
 
-A sample interface for the parameters provided \emph{after}
-initialization is:\index{MPIU_Param_init}\index{MPIU_Param_get_int}%
-\index{MPIU_Param_get_string}\index{MPIU_Param_finalize}%
-\index{MPIU_Param_bcast}\index{MPIU_Param_register}
-\begin{verbatim}
-int MPIU_Param_init( int *argc, char **argv[] );
-int MPIU_Param_bcast( void );
-int MPIU_Param_register( const char name[], const char envname[], 
-                         const char description[] );
-int MPIU_Param_get_int( const char name[], int default_val, int *value );
-int MPIU_Param_get_string( const char name[], const char *default val,
-                           char **value );
-void MPIU_Param_finalize( void );
-\end{verbatim}
-We use pointers to \code{argc} and \code{argv} to allow parameters to be
-removed.  The return code indicates success or failure; an example of a
-failure is a non-integer value provided to the parameter accessed with
-\code{MPIU_Param_get_int}. 
-The routine \code{MPIU_Param_init} is called by the master process (the one
-that will be rank zero in \code{MPI_COMM_WORLD}); this should happen early
-enough that any startup parameters are available to the master process.  The
-routine \code{MPIU_Param_bcast} is called within \code{MPI_Init} or
-\code{MPI_Init_thread} after all processes have started and is a collective
-call across \code{MPI_COMM_WORLD}.  This allows (but does not require)
-an implementation to use one 
-process to read the environment and any initialization file and then use MPI
-communication to communicate the parameters to other processes.  
+%% The routine \code{MPIU_Param_register} allows the MPICH2 implementation to
+%% indicate which parameters are used and to provide a help string for each one.
+%% We provide an automated tool to compile a listing of such parameters
+%% (\code{maint/extractparams}) and
+%% allow \code{MPIU_Param_finalize} to identify unused command-line arguments
+%% (which may be misspellings of valid arguments).  This tool uses the same
+%% utility routines as the program to extract error messages
+%% (\code{extracterrmsgs}) and configure options (\code{extractconfigopts}).
 
-The routine \code{MPIU_Param_register} allows the MPICH2 implementation to
-indicate which parameters are used and to provide a help string for each one.
-We provide an automated tool to compile a listing of such parameters
-(\code{maint/extractparams}) and
-allow \code{MPIU_Param_finalize} to identify unused command-line arguments
-(which may be misspellings of valid arguments).  This tool uses the same
-utility routines as the program to extract error messages
-(\code{extracterrmsgs}) and configure options (\code{extractconfigopts}).
+%% These routines return zero on success.  The routines that return the values of
+%% parameters return \code{MPIU_PARAM_OK} if no value was specified (this
+%% allows a routine to 
+%% determine if the default value was provided) and
+%% \code{MPIU_PARAM_ERROR} on an error (such as an
+%% integer value containing a non-digit).  These values are provided by
+%% \begin{verbatim}
+%% typedef enum { MPIU_PARAM_FOUND = 0, 
+%%                MPIU_PARAM_OK = 1, 
+%%                MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
+%% \end{verbatim}
 
-These routines return zero on success.  The routines that return the values of
-parameters return \code{MPIU_PARAM_OK} if no value was specified (this
-allows a routine to 
-determine if the default value was provided) and
-\code{MPIU_PARAM_ERROR} on an error (such as an
-integer value containing a non-digit).  These values are provided by
-\begin{verbatim}
-typedef enum { MPIU_PARAM_FOUND = 0, 
-               MPIU_PARAM_OK = 1, 
-               MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
-\end{verbatim}
+%% The \mpidfunc{MPIU_Param_init} and \mpidfunc{MPIU_Param_finalize} allows
+%% values to also be passed via the command line.  
+%% In fact, we have the following order:
+%% \begin{enumerate}
+%% \item Check for an override value (e.g., a priority environment
+%%   variable, using the original environment variable name followed by 
+%%   \code{_OVERRIDE}).
+%% \item Use any info or attribute value,
+%% \item Use environment value,
+%% \item Use configure file value (\file{.mpichrc}, followed by
+%%   \file{~/.mpichrc}).  There should be an environment variable and command
+%%   line option to suppress reading of the configuration files.  There
+%%   may also be a way to select a different file, and
+%% \item Use default (compile-time) value.
+%% \end{enumerate}
+%% The configuration file is read once (most likely by one process) at
+%% \code{MPI_Init} time.  
 
-The \mpidfunc{MPIU_Param_init} and \mpidfunc{MPIU_Param_finalize} allows
-values to also be passed via the command line.  
-In fact, we have the following order:
-\begin{enumerate}
-\item Check for an override value (e.g., a priority environment
-  variable, using the original environment variable name followed by 
-  \code{_OVERRIDE}).
-\item Use any info or attribute value,
-\item Use environment value,
-\item Use configure file value (\file{.mpichrc}, followed by
-  \file{~/.mpichrc}).  There should be an environment variable and command
-  line option to suppress reading of the configuration files.  There
-  may also be a way to select a different file, and
-\item Use default (compile-time) value.
-\end{enumerate}
-The configuration file is read once (most likely by one process) at
-\code{MPI_Init} time.  
+%% Note that there are two success values, one for the default was used
+%% and another for an specified and valid value.  The return value
+%% \code{MPIU_PARAM_ERROR} is used 
+%% if, for example, \mpidfunc{MPIU_Param_get_int} is called but the value
+%% is the string \code{"big"}.
 
-Note that there are two success values, one for the default was used
-and another for an specified and valid value.  The return value
-\code{MPIU_PARAM_ERROR} is used 
-if, for example, \mpidfunc{MPIU_Param_get_int} is called but the value
-is the string \code{"big"}.
+%% To support ``override'' values, the routines must also
+%% return an indication of the priority of the value.  This  allows
+%% the code to decide whether to accept a value from the runtime
+%% parameter routines or to use a value provided through an MPI Info hint
+%% or attribute.
 
-To support ``override'' values, the routines must also
-return an indication of the priority of the value.  This  allows
-the code to decide whether to accept a value from the runtime
-parameter routines or to use a value provided through an MPI Info hint
-or attribute.
+%% \fixme{What are the names of the environment variables that are
+%% used to select which value to use?  What are the command-line options
+%% to use?  Is the environment variable \code{MPICH_USE_ENV}?}
 
-\fixme{What are the names of the environment variables that are
-used to select which value to use?  What are the command-line options
-to use?  Is the environment variable \code{MPICH_USE_ENV}?}
+%% %% Question: The definition of \code{MPIU_Param_bcast} given above
+%% %% requires that the MPI communication system be initialized.  This
+%% %% implicitly assumes that the parameter calls are not used for any
+%% %% communication setup.  This isn't adequate for initializing sockets in
+%% %% a TCP device or allocating message-buffer space for a shared memory or
+%% %% VIA device.  It may be more appropriate to provide two separate
+%% %% phases:
+%% %% \begin{description}
+%% %% \item[\code{MPIU_Param_init}]No values are available until after this call.  
+%% %% After this call, some values are available (see below).
+%% %% \item[\code{MPIU_Param_bcast}]All values are available to all processes.  This 
+%% %% call may use MPI communication
+%% %% \end{description}
+%% %% To make this work, \code{MPIU_Param_register} must indicate when the
+%% %% value is needed; i.e., either before or after
+%% %% \code{MPIU_Param_bcast}.  All parameters that are needed before
+%% %% \code{MPIU_Param_bcast} must be communicated to all processes through
+%% %% a mechanism that does \emph{not} rely on MPI communication, such as
+%% %% PMI put and get calls.  This would use an ``intent'' variable as a
+%% %% fourth argument.
 
-%% Question: The definition of \code{MPIU_Param_bcast} given above
-%% requires that the MPI communication system be initialized.  This
-%% implicitly assumes that the parameter calls are not used for any
-%% communication setup.  This isn't adequate for initializing sockets in
-%% a TCP device or allocating message-buffer space for a shared memory or
-%% VIA device.  It may be more appropriate to provide two separate
-%% phases:
-%% \begin{description}
-%% \item[\code{MPIU_Param_init}]No values are available until after this call.  
-%% After this call, some values are available (see below).
-%% \item[\code{MPIU_Param_bcast}]All values are available to all processes.  This 
-%% call may use MPI communication
-%% \end{description}
-%% To make this work, \code{MPIU_Param_register} must indicate when the
-%% value is needed; i.e., either before or after
-%% \code{MPIU_Param_bcast}.  All parameters that are needed before
-%% \code{MPIU_Param_bcast} must be communicated to all processes through
-%% a mechanism that does \emph{not} rely on MPI communication, such as
-%% PMI put and get calls.  This would use an ``intent'' variable as a
-%% fourth argument.
+%% % Question: should parameters be registered?  This allows the runtime
+%% % system to find them (e.g., with BNR put/fence/get), and simplifies the
+%% % generation of help text.  It 
+%% % would also allow text describing the parameter to be provided from
+%% % within the code.
 
-% Question: should parameters be registered?  This allows the runtime
-% system to find them (e.g., with BNR put/fence/get), and simplifies the
-% generation of help text.  It 
-% would also allow text describing the parameter to be provided from
-% within the code.
+%% % An alternative to \code{MPIU_Param_register} is to use a tool, similar to that
+%% % for error reporting, that finds all uses of the parameter routines.
 
-% An alternative to \code{MPIU_Param_register} is to use a tool, similar to that
-% for error reporting, that finds all uses of the parameter routines.
+%% % For example, the pre-init routine code could read just a few environment
+%% % variables 
+%% % for any preinitialization code.  The post-init routine would be collective,
+%% % ensuring that all processes created the same database (and allowing a single
+%% % process to read any configuration files).
 
-% For example, the pre-init routine code could read just a few environment
-% variables 
-% for any preinitialization code.  The post-init routine would be collective,
-% ensuring that all processes created the same database (and allowing a single
-% process to read any configuration files).
+%% The format of the configuration file has not been defined.  We may use
+%% an XML format to allow for the simple use of tools to manage the file and
+%% a standard way to organize parameters in hierarchies.
 
-The format of the configuration file has not been defined.  We may use
-an XML format to allow for the simple use of tools to manage the file and
-a standard way to organize parameters in hierarchies.
-
-A side note: in MPICH 1.2.2, a command-line option for controlling the
-p4 socket code using the format \code{-p4sctrl name=val:name=val:...}
-was used.  \fixme{Should we standardize on this (key \code{=} value pairs)
-for commandline options and environment variables?}
+%% A side note: in MPICH 1.2.2, a command-line option for controlling the
+%% p4 socket code using the format \code{-p4sctrl name=val:name=val:...}
+%% was used.  \fixme{Should we standardize on this (key \code{=} value pairs)
+%% for commandline options and environment variables?}
 
 \subsection{Threads}
 \label{sec:threads}
@@ -2729,211 +2821,215 @@ size and link time by excluding unneeded code.  It is also a good way
 to ensure that the code is modular; that is, any modeul is self
 initializing and self contained.
 
-\subsection{Coding Practices}
-\label{sec:coding-practices}
-This section reviews some coding practices for the MPICH code and the
-rationale for those choices.  Many of these practices are checked with
-either the \code{--enable-strict} option to \code{configure} or the
-script \file{maint/codingcheck}.
+%%
+%% The majority view is that these are unimportant.  I've removed them
+%% so that readers will not be confused about what we claim to do
+%% versus what we actually do.
+%% \subsection{Coding Practices}
+%% \label{sec:coding-practices}
+%% This section reviews some coding practices for the MPICH code and the
+%% rationale for those choices. 
+%% These are recommendations that have
+%% occasionally been followed.
 
-\begin{description}
-\item[Function prototypes.]
-All routines should be prototyped and declared in prototype form.  The
-prototypes should be in the 
-smallest scope possible.  For example, if the routine is used only
-within the files in a subdirectory, the prototype should be in an
-include file within that directory.  This helps identify functions that are
-used outside of their intended scope.
+%% \begin{description}
+%% \item[Function prototypes.]
+%% All routines should be prototyped and declared in prototype form.  The
+%% prototypes should be in the 
+%% smallest scope possible.  For example, if the routine is used only
+%% within the files in a subdirectory, the prototype should be in an
+%% include file within that directory.  This helps identify functions that are
+%% used outside of their intended scope.
 
-The function prototype may include the variables names for the parameters;
-however the prototypes in \file{mpi.h} will provide only the types.
+%% The function prototype may include the variables names for the parameters;
+%% however the prototypes in \file{mpi.h} will provide only the types.
 
-\item[Static and internal functions.]
-Functions used entirely within a single file should be declared
-\code{static}.  Functions that are not static must follow the naming
-convention of starting with \code{MPI_} or \code{PMPI_} (for routines
-implementing the MPI Standard), \code{MPIR_} for internal routines
-used only in the MPICH (and not MPID) code, \code{MPIU_} for utility
-routines, and \code{MPID_} for all
-other internal routines.  ROMIO also makes use of \code{MPIO_} and
-\code{ADIO_} prefixes.
-Functions and variables that can be static only if weak symbols are
-used should use \code{PMPI_LOCAL}\index{PMPI_LOCAL} rather than \code{static}.
-Global symbols visible to the MPI programmer and not appropriate for
-the per process or per thread structures, such as device-specific
-keyvals, should use 
-\code{MPICH_} as the 
-prefix.  Also consider the use of \code{inline} (\code{configure} uses the
-autoconf macro \code{AC_C_INLINE} to test for this feature, and
-defines \code{inline} as empty if it is not supported) with
-internal functions.
+%% \item[Static and internal functions.]
+%% Functions used entirely within a single file should be declared
+%% \code{static}.  Functions that are not static must follow the naming
+%% convention of starting with \code{MPI_} or \code{PMPI_} (for routines
+%% implementing the MPI Standard), \code{MPIR_} for internal routines
+%% used only in the MPICH (and not MPID) code, \code{MPIU_} for utility
+%% routines, and \code{MPID_} for all
+%% other internal routines.  ROMIO also makes use of \code{MPIO_} and
+%% \code{ADIO_} prefixes.
+%% Functions and variables that can be static only if weak symbols are
+%% used should use \code{PMPI_LOCAL}\index{PMPI_LOCAL} rather than \code{static}.
+%% Global symbols visible to the MPI programmer and not appropriate for
+%% the per process or per thread structures, such as device-specific
+%% keyvals, should use 
+%% \code{MPICH_} as the 
+%% prefix.  Also consider the use of \code{inline} (\code{configure} uses the
+%% autoconf macro \code{AC_C_INLINE} to test for this feature, and
+%% defines \code{inline} as empty if it is not supported) with
+%% internal functions.
 
-\item[Parameter declarations.]
-Parameters (with the exception of the MPI routines defined by the
-standard) should follow the guidelines in the Coding Standard document
-\cite{coding-standards}.  In 
-particular, \code{const} and \code{restrict} should be used where appropriate.
-Parameters that are semantically arrays should be declared as arrays
-(using \code{[]}) rather than as pointers.
+%% \item[Parameter declarations.]
+%% Parameters (with the exception of the MPI routines defined by the
+%% standard) should follow the guidelines in the Coding Standard document
+%% \cite{coding-standards}.  In 
+%% particular, \code{const} and \code{restrict} should be used where appropriate.
+%% Parameters that are semantically arrays should be declared as arrays
+%% (using \code{[]}) rather than as pointers.
 
-\item[Indentation style.]
-A common indentation level of 4 is specified for all files.
-%specify it at the top of each file (as an emacs command) so that emacs
-%will use the correct style for users with other styles or projects.
-All C source files (including header files) begin with 
-\begin{verbatim}
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-\end{verbatim}
-%/* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
-This is interpreted by Emacs and allows us to define an
-indentation style for MPICH code 
-that can be different from each developer's personnal style.
+%% \item[Indentation style.]
+%% A common indentation level of 4 is specified for all files.
+%% %specify it at the top of each file (as an emacs command) so that emacs
+%% %will use the correct style for users with other styles or projects.
+%% All C source files (including header files) begin with 
+%% \begin{verbatim}
+%% /* -*- Mode: C; c-basic-offset:4 ; -*- */
+%% \end{verbatim}
+%% %/* -*- Mode: C; eval: (c-set-style "mpich"); -*- */
+%% This is interpreted by Emacs and allows us to define an
+%% indentation style for MPICH code 
+%% that can be different from each developer's personnal style.
 
-C++ files must use mode C++.  Header (\file{.h}) files should use
-either mode C or mode C++; if they use mode C++, they must also
-include the line
-\begin{verbatim}
-  /* style:c++ */
-\end{verbatim}
-This helps to ensure that files that must be compiled by a C++
-compiler are not accidentally included among files that are compiled
-by a C compiler.  This is necessary because some compilers now accept
-a mixture of both C and C++, making it more difficult to catch these
-errors.
+%% C++ files must use mode C++.  Header (\file{.h}) files should use
+%% either mode C or mode C++; if they use mode C++, they must also
+%% include the line
+%% \begin{verbatim}
+%%   /* style:c++ */
+%% \end{verbatim}
+%% This helps to ensure that files that must be compiled by a C++
+%% compiler are not accidentally included among files that are compiled
+%% by a C compiler.  This is necessary because some compilers now accept
+%% a mixture of both C and C++, making it more difficult to catch these
+%% errors.
 
-%The style \code{mpich} is defined in \file{maint/mpich.el}.
+%% %The style \code{mpich} is defined in \file{maint/mpich.el}.
 
-% Question: Is there a predefined style that we can agree on?  Is there a
-% variable (rather than a function to eval) that we can use to set the
-% style?
-% Note: Current homework assignment.  If we can all agree on a base
-% style such as \texttt{k\&r} or \code{bsd} and a few specific variable
-% values, such as 
-% \begin{verbatim}
-% \end{verbatim}
-% we can avoid the eval.
-% We might need to set \code{c-offsets-alist} which would be messy.
+%% % Question: Is there a predefined style that we can agree on?  Is there a
+%% % variable (rather than a function to eval) that we can use to set the
+%% % style?
+%% % Note: Current homework assignment.  If we can all agree on a base
+%% % style such as \texttt{k\&r} or \code{bsd} and a few specific variable
+%% % values, such as 
+%% % \begin{verbatim}
+%% % \end{verbatim}
+%% % we can avoid the eval.
+%% % We might need to set \code{c-offsets-alist} which would be messy.
 
-% Comment [BRT]: Yes.  Having a style standard makes it much easier to
-% read and modify code written by others.
+%% % Comment [BRT]: Yes.  Having a style standard makes it much easier to
+%% % read and modify code written by others.
 
-\item[Source formatting.] 
-Where possible, keep line lengths to 80 characters.  This permits
-side-by-side display on common displays.  Break lines at natural
-locations to enhance readability on printed output.
+%% \item[Source formatting.] 
+%% Where possible, keep line lengths to 80 characters.  This permits
+%% side-by-side display on common displays.  Break lines at natural
+%% locations to enhance readability on printed output.
 
-\item[File header.]
-There is a standard file header contained within the sample template
-file \file{maint/template.c} that contains the copyright and
-standardized includes (e.g., \file{mpiimpl.h}).  All files must
-contain the C-style and copyright block preamble.
+%% \item[File header.]
+%% There is a standard file header contained within the sample template
+%% file \file{maint/template.c} that contains the copyright and
+%% standardized includes (e.g., \file{mpiimpl.h}).  All files must
+%% contain the C-style and copyright block preamble.
 
-\item[Function name.]
-The function name is available as \code{FCNAME}.  Each routine is responsible
-for setting this variable; it should be of type \code{static const
-char[]}.
-% A configure test will
-% determine if \code{__FUNCTION__} is available as the value of this (e.g.,
-% \code{gcc} sets this value).  Note that PETSc uses \code{__FUNCTION__} on a
-% wide variety of platforms.
+%% \item[Function name.]
+%% The function name is available as \code{FCNAME}.  Each routine is responsible
+%% for setting this variable; it should be of type \code{static const
+%% char[]}.
+%% % A configure test will
+%% % determine if \code{__FUNCTION__} is available as the value of this (e.g.,
+%% % \code{gcc} sets this value).  Note that PETSc uses \code{__FUNCTION__} on a
+%% % wide variety of platforms.
 
-% There should be a macro, \code{__FUNCTION__}, containing the name of the
-% function.  This name is chosen because some versions of \code{gcc} will set it
-% for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
-% in the declarations part of the program \emph{or} we should include the
-% appropriate \code{\#define} line (as PETSc does) before the function
-% declaration. 
+%% % There should be a macro, \code{__FUNCTION__}, containing the name of the
+%% % function.  This name is chosen because some versions of \code{gcc} will set it
+%% % for you.  The statement \code{SET_FUNCTION_NAME("name");} should be included
+%% % in the declarations part of the program \emph{or} we should include the
+%% % appropriate \code{\#define} line (as PETSc does) before the function
+%% % declaration. 
 
-% Alternately, we could use \code{FCNAME} and include optional code to
-% set it to either \code{__FUNCTION__} for systems that define that or
-% explicitly to the name.
+%% % Alternately, we could use \code{FCNAME} and include optional code to
+%% % set it to either \code{__FUNCTION__} for systems that define that or
+%% % explicitly to the name.
 
-% Comment [BRT]: Names beginning with an underscore are reserved for the
-% compiler and runtime system.  Use of \code{__FUNCTION__} could affect
-% portability.  So, I prefer the use of \code{FCNAME}.
+%% % Comment [BRT]: Names beginning with an underscore are reserved for the
+%% % compiler and runtime system.  Use of \code{__FUNCTION__} could affect
+%% % portability.  So, I prefer the use of \code{FCNAME}.
 
-% \item[Boolean Flags.]
-% Data structures that contain a number of flags should store them
-% together in a flag vector and use special macros to check and set
-% them.  This is done to keep the structures tighter and to provide better cache
-% and instruction utilization (load and store are much more expensive than
-% bitwise-and).  
+%% % \item[Boolean Flags.]
+%% % Data structures that contain a number of flags should store them
+%% % together in a flag vector and use special macros to check and set
+%% % them.  This is done to keep the structures tighter and to provide better cache
+%% % and instruction utilization (load and store are much more expensive than
+%% % bitwise-and).  
 
-% Question: should the flag values be defined or enums that are assigned
-% special values?
+%% % Question: should the flag values be defined or enums that are assigned
+%% % special values?
 
-% Question: Are the following acceptable for working with flags?  These
-% assume that several data structures use flags.
-% \begin{verbatim}
-% #define MPID_FLAG_DECL             int _flag
-% #define MPID_CLR_ALL_FLAGS(ds)     (ds)->_flag = 0
-% #define MPID_IS_FLAG_SET(ds,field) ((ds)->_flag & (field))
-% #define MPID_SET_FLAG(ds,field)    (ds)->_flag |= (field)
-% #define MPID_CLR_FLAG(ds,field)    (ds)->_flag &= ~(field)
-% \end{verbatim}
-% \mpiconst{MPI_Datatype}s need multiple boolean flags (e.g., has a
-% sticky upper bound marker, lower bound marker).  MPI Window objects also
-% have multiple flags.
+%% % Question: Are the following acceptable for working with flags?  These
+%% % assume that several data structures use flags.
+%% % \begin{verbatim}
+%% % #define MPID_FLAG_DECL             int _flag
+%% % #define MPID_CLR_ALL_FLAGS(ds)     (ds)->_flag = 0
+%% % #define MPID_IS_FLAG_SET(ds,field) ((ds)->_flag & (field))
+%% % #define MPID_SET_FLAG(ds,field)    (ds)->_flag |= (field)
+%% % #define MPID_CLR_FLAG(ds,field)    (ds)->_flag &= ~(field)
+%% % \end{verbatim}
+%% % \mpiconst{MPI_Datatype}s need multiple boolean flags (e.g., has a
+%% % sticky upper bound marker, lower bound marker).  MPI Window objects also
+%% % have multiple flags.
 
-\item[Global variables]should be avoided where possible; in cases
-where they cannot be avoided, they should be collected into a
-structure.  Global variables that may be widely used can be placed
-within the per process (\code{MPIR_Process}) or per thread
-(\code{MPIR_Thread}) blocks.  Global variables that are needed only
-within a subsystem should, of course, be defined only within that
-subsystem (collected into a structure as appropriate), and made
-\code{static} within a single file if possible and natural.
+%% \item[Global variables]should be avoided where possible; in cases
+%% where they cannot be avoided, they should be collected into a
+%% structure.  Global variables that may be widely used can be placed
+%% within the per process (\code{MPIR_Process}) or per thread
+%% (\code{MPIR_Thread}) blocks.  Global variables that are needed only
+%% within a subsystem should, of course, be defined only within that
+%% subsystem (collected into a structure as appropriate), and made
+%% \code{static} within a single file if possible and natural.
 
-Some collections of routines need a variable that persists between calls.
-Rather than make the variable a global variable, it should become a
-\code{static} variable in a file, where if possible the variable is used
-entirely within that file, such as a file of utility routines.  See
-\file{mpidtimer.c} for another example in the support for the Windows
-high-resoultion timer, where a static variable is used to hold the
-clock frequency.  If it is not possible to keep the variable within
-the file or module, then it should be accessed through \code{MPIR_} or
-\code{MPID_} 
-routines.  However, wherever possible, keep the varibles within the
-defining module (e.g., \file{timer}, \file{topo}, etc.).
+%% Some collections of routines need a variable that persists between calls.
+%% Rather than make the variable a global variable, it should become a
+%% \code{static} variable in a file, where if possible the variable is used
+%% entirely within that file, such as a file of utility routines.  See
+%% \file{mpidtimer.c} for another example in the support for the Windows
+%% high-resoultion timer, where a static variable is used to hold the
+%% clock frequency.  If it is not possible to keep the variable within
+%% the file or module, then it should be accessed through \code{MPIR_} or
+%% \code{MPID_} 
+%% routines.  However, wherever possible, keep the varibles within the
+%% defining module (e.g., \file{timer}, \file{topo}, etc.).
 
-Be careful with files that are may be compiled twice, once to generate
-the MPI version of a routine and once to generate the PMPI version.
-Make sure that any helper routines or global variables are defined in
-the PMPI verison rather than the MPI version, since a user application
-that uses the profiling interface may replace the MPI version.
+%% Be careful with files that are may be compiled twice, once to generate
+%% the MPI version of a routine and once to generate the PMPI version.
+%% Make sure that any helper routines or global variables are defined in
+%% the PMPI verison rather than the MPI version, since a user application
+%% that uses the profiling interface may replace the MPI version.
 
-Global variables should also be initialized to avoid problems with
-some object library formats\footnote{Uninitialized global variables
-are given type ``common'' by many Unix C compilers; initialized
-variables have type ``global''.  Some \texttt{ar} or \texttt{ranlib}
-programs do not consider common symbols as defining the use of a name(!)
-unless special options are used; this causes link steps to fail.
-Because of this, the use of common symbols is considered an error.}. 
+%% Global variables should also be initialized to avoid problems with
+%% some object library formats\footnote{Uninitialized global variables
+%% are given type ``common'' by many Unix C compilers; initialized
+%% variables have type ``global''.  Some \texttt{ar} or \texttt{ranlib}
+%% programs do not consider common symbols as defining the use of a name(!)
+%% unless special options are used; this causes link steps to fail.
+%% Because of this, the use of common symbols is considered an error.}. 
 
-\item[Open file descriptors]
-Whereever possible, open file descriptors should have \code{FD_CLOEXEC} 
-set (close on exec) to avoid problems if \code{fork} and \code{exec} are 
-called, either by another routine in the MPICH library or by a user routine.
+%% \item[Open file descriptors]
+%% Whereever possible, open file descriptors should have \code{FD_CLOEXEC} 
+%% set (close on exec) to avoid problems if \code{fork} and \code{exec} are 
+%% called, either by another routine in the MPICH library or by a user routine.
 
-\item[Fixmes]Known issues in the code should be marked with a
-  ``fixme'' comment in the following format
-\begin{verbatim}
- /* FIXME: test for error return */
-\end{verbatim}
-If you want to take responsibility for making the fix, you can add
-your name in parenthesis after the \code{FIXME}:
-\begin{verbatim}
- /* FIXME (myname): test for error return */
-\end{verbatim}
+%% \item[Fixmes]Known issues in the code should be marked with a
+%%   ``fixme'' comment in the following format
+%% \begin{verbatim}
+%%  /* FIXME: test for error return */
+%% \end{verbatim}
+%% If you want to take responsibility for making the fix, you can add
+%% your name in parenthesis after the \code{FIXME}:
+%% \begin{verbatim}
+%%  /* FIXME (myname): test for error return */
+%% \end{verbatim}
 
-If you want to take responsibility for every FIXME in a file, add the
-following comment near the top of the file:
-\begin{verbatim}
-/* OWNER=myname */
-\end{verbatim}
+%% If you want to take responsibility for every FIXME in a file, add the
+%% following comment near the top of the file:
+%% \begin{verbatim}
+%% /* OWNER=myname */
+%% \end{verbatim}
 
 
-\end{description}
+%% \end{description}
 
 \subsection{Other Subsystems}
 In MPICH, there is code that is not directly part of the MPI
@@ -2968,11 +3064,16 @@ information to the subsidiary configures (unlike the stock
 \subsection{Deprecated Routines}
 
 The MPI-2 standard deprecated some routines (see Section~2.6.1 in the MPI-2
-Standard).  The manual pages for the deprecated routines should make clear
-that they are deprecated and what functions should be used instead.  In
-addition, we should provide a library created with \code{wrappergen} that
-generates a single warning message for each deprecated routine used in an
-application (and of course document this).
+Standard).  The structured command (and hence the man pages) mark
+these routines with 
+\begin{verbatim}
+.N Deprecated
+\end{verbatim}
+%% The manual pages for the deprecated routines should make clear
+%% that they are deprecated and what functions should be used instead.  In
+%% addition, we should provide a library created with \code{wrappergen} that
+%% generates a single warning message for each deprecated routine used in an
+%% application (and of course document this).
 
 
 % Scenarios (move to ADI doc?)
@@ -2992,11 +3093,11 @@ ways to add a communication method:
   because achieving high bandwidth and low latency with shared memory
   is special enough that a general approach was deemed unsuitable.
 
-\item[MultiMethod Device]This is a device designed to support both multiple
-  communication methods and more complex data management.  It is possible to
-  add a method to this device and to use the other methods as well.  For
-  example, this provides TCP, Infiniband, shared memory, and VIA methods.
-  This device is not complete and is not being developed.
+%% \item[MultiMethod Device]This is a device designed to support both multiple
+%%   communication methods and more complex data management.  It is possible to
+%%   add a method to this device and to use the other methods as well.  For
+%%   example, this provides TCP, Infiniband, shared memory, and VIA methods.
+%%   This device is not complete and is not being developed.
 
 \item[Abstract Device Interface]This is the most general interface; the
   Channel device and the Multimethod implement this interface.  The ADI gives
@@ -3007,59 +3108,62 @@ ways to add a communication method:
 \subsection{Adding a Method To the Channel Device}
 \label{sec:adding-channel}
 
-\begin{enumerate}
-\item Create a new directory under \file{src/mpid/ch3/channels}.  For purposes
-  of illustration, call this directory \code{newdev}.
-\item Add \code{newdev} to the list of directories in the file
-  \file{src/mpid/ch3/channels/Makefile.sm} defined by the variable
-  \code{SUBDIRS_channel_name} .  This tells the build system what directories
-  may be used by MPICH.
-\item Add a file \file{src/mpid/ch3/channels/newdev/Makefile.sm} .  This file
-  is used to create the \file{Makefile.in} file used to build this
-  device.  Use one of the other, existing channels as an example.
-\item Add a \file{configure.in} file to
-  \file{src/mpid/ch3/channels/newdev} that will handle any configuration
-  issues; it will also create the \file{Makefile} from the \file{Makefile.in}
-  file.
-%\item (Optional) Add a \file{setup_device} file to
-%  \file{src/mpid/ch3/channels/newdev}. 
-%  This file is sourced by the top-level MPICH configure, and should contain
-%  any variable assignments (such as adding paths to the C preprocessor) needed
-%  to build that particular method.  
-\item (Optional) Add a \file{localdefs} (or a \file{localdefs.in} that will be
-  used as input by the \code{configure} in this directory).  This file will be
-  sourced by the top-level MPICH configure \emph{after} the \code{configure}
-  in this directory has been run.  This is an appropriate place to put any
-  extra libraries needed by this method.  For example, the file
-  \file{localdefs.in} may contain just
-\begin{verbatim}
-   LIBS="$LIBS @NEWDEV_LIBS@"
-\end{verbatim} 
-  where the \code{configure} program puts the libraries needed by this method
-  into the configure variable NEWDEV_LIBS.  See the \code{configure} and
-  \code{localdefs.in} file in \file{src/mpid/ch3/channels/tcp} for an example.
-\end{enumerate}
+This section needs to be written.
 
-Once these steps are complete, go to the top level of MPICH and execute
-\begin{verbatim}
-    maint/updatefiles 
-\end{verbatim}
-This is a shell script that executes a number of programs to rebuild the
-\file{Makefile}s and other parts of MPICH2.  As this tool is not intended for
-general use, you may need to make a few changes.  For example, several of the
-programs are Perl scripts; while \code{updatefiles} tries to find a version of
-Perl, not all of the scripts are updated to use the version of Perl that it
-finds.  
+%% The following it the old text.
+%% \begin{enumerate}
+%% \item Create a new directory under \file{src/mpid/ch3/channels}.  For purposes
+%%   of illustration, call this directory \code{newdev}.
+%% \item Add \code{newdev} to the list of directories in the file
+%%   \file{src/mpid/ch3/channels/Makefile.sm} defined by the variable
+%%   \code{SUBDIRS_channel_name} .  This tells the build system what directories
+%%   may be used by MPICH.
+%% \item Add a file \file{src/mpid/ch3/channels/newdev/Makefile.sm} .  This file
+%%   is used to create the \file{Makefile.in} file used to build this
+%%   device.  Use one of the other, existing channels as an example.
+%% \item Add a \file{configure.in} file to
+%%   \file{src/mpid/ch3/channels/newdev} that will handle any configuration
+%%   issues; it will also create the \file{Makefile} from the \file{Makefile.in}
+%%   file.
+%% %\item (Optional) Add a \file{setup_device} file to
+%% %  \file{src/mpid/ch3/channels/newdev}. 
+%% %  This file is sourced by the top-level MPICH configure, and should contain
+%% %  any variable assignments (such as adding paths to the C preprocessor) needed
+%% %  to build that particular method.  
+%% \item (Optional) Add a \file{localdefs} (or a \file{localdefs.in} that will be
+%%   used as input by the \code{configure} in this directory).  This file will be
+%%   sourced by the top-level MPICH configure \emph{after} the \code{configure}
+%%   in this directory has been run.  This is an appropriate place to put any
+%%   extra libraries needed by this method.  For example, the file
+%%   \file{localdefs.in} may contain just
+%% \begin{verbatim}
+%%    LIBS="$LIBS @NEWDEV_LIBS@"
+%% \end{verbatim} 
+%%   where the \code{configure} program puts the libraries needed by this method
+%%   into the configure variable NEWDEV_LIBS.  See the \code{configure} and
+%%   \code{localdefs.in} file in \file{src/mpid/ch3/channels/tcp} for an example.
+%% \end{enumerate}
 
-Once these steps have completed, you should be able to execute
-\begin{verbatim}
-    configure --with-device=ch3:newdev --prefix=/my/mpi2-install
-\end{verbatim}
-to build MPICH2 with your new channel device.
+%% Once these steps are complete, go to the top level of MPICH and execute
+%% \begin{verbatim}
+%%     maint/updatefiles 
+%% \end{verbatim}
+%% This is a shell script that executes a number of programs to rebuild the
+%% \file{Makefile}s and other parts of MPICH2.  As this tool is not intended for
+%% general use, you may need to make a few changes.  For example, several of the
+%% programs are Perl scripts; while \code{updatefiles} tries to find a version of
+%% Perl, not all of the scripts are updated to use the version of Perl that it
+%% finds.  
 
-Note that no changes are made to the top-level \code{configure}.  This
-approach makes it easy for groups to develop new communication methods while
-staying synchronized with MPICH2 development.
+%% Once these steps have completed, you should be able to execute
+%% \begin{verbatim}
+%%     configure --with-device=ch3:newdev --prefix=/my/mpi2-install
+%% \end{verbatim}
+%% to build MPICH2 with your new channel device.
+
+%% Note that no changes are made to the top-level \code{configure}.  This
+%% approach makes it easy for groups to develop new communication methods while
+%% staying synchronized with MPICH2 development.
 
 %% \subsection{Adding a Method To the Multimethod Device}
 %% \label{sec:adding-mm}
@@ -3083,28 +3187,29 @@ representations is difficult, particularly when the differences are more than
 just differences in the lengths of datatypes (non-IEEE floating point formats
 are particularly painful).
 
-Some issues that have come up:
-\begin{enumerate}
-\item When using XDR\index{XDR}, the assignment of native types to XDR types
-  is not as easy as it appears.  For example, the external representation for
-  a C \code{long} provided by the \code{xdr_long} actually moves 32 bits
-  even for systems where a \code{long} is 64 bits.  I.e., the XDR types (e.g.,
-  \code{xdr_long}) match a specific set of sizes, not the particular sizes
-  chosen by the C compiler.  Thus, when choosing the XDR routines to use, the
-  sizes of the datatypes need to be considered, as well as whether the local
-  processor provides \code{xdr_longlong} or \code{xdr_hyper} (note that the
-  XDR type ``hyper'' is defined as an 8-byte integer (see RFC1014) and should
-  be available everywhere).  In fact, it is best to think of these
-  routines as if they had names like \code{xdr_int32} or \code{xdr_float64}.
+%% Some issues that have come up:
 
-  To solve the problem of matching XDR lengths to actual lengths,
-  partners should first negotiate a precision or length, and then
-  choose the corresponding XDR type.  In other words, we need to
-  introduce another level of indirection between the MPI datatypes and
-  the XDR types, rather than assuming that \code{MPI_INT} can be
-  represented by \code{xdr_int}.  
+%% \begin{enumerate}
+%% \item When using XDR\index{XDR}, the assignment of native types to XDR types
+%%   is not as easy as it appears.  For example, the external representation for
+%%   a C \code{long} provided by the \code{xdr_long} actually moves 32 bits
+%%   even for systems where a \code{long} is 64 bits.  I.e., the XDR types (e.g.,
+%%   \code{xdr_long}) match a specific set of sizes, not the particular sizes
+%%   chosen by the C compiler.  Thus, when choosing the XDR routines to use, the
+%%   sizes of the datatypes need to be considered, as well as whether the local
+%%   processor provides \code{xdr_longlong} or \code{xdr_hyper} (note that the
+%%   XDR type ``hyper'' is defined as an 8-byte integer (see RFC1014) and should
+%%   be available everywhere).  In fact, it is best to think of these
+%%   routines as if they had names like \code{xdr_int32} or \code{xdr_float64}.
 
-\end{enumerate}
+%%   To solve the problem of matching XDR lengths to actual lengths,
+%%   partners should first negotiate a precision or length, and then
+%%   choose the corresponding XDR type.  In other words, we need to
+%%   introduce another level of indirection between the MPI datatypes and
+%%   the XDR types, rather than assuming that \code{MPI_INT} can be
+%%   represented by \code{xdr_int}.  
+
+%% \end{enumerate}
 
 \subsection{Fault Tolerance}
 Almost by definition, fault tolerance requires extending the MPI
@@ -3173,18 +3278,20 @@ Standard \code{configure} and \code{Makefile} variables
 %%   \cfgoption{--enable-strict} sets this to strict compilation (e.g.,
 %%   \code{-Wall -Wstrict-prototypes} etc.) when using the \code{gcc} compiler.
 
-\item[\texttt{CFLAGS}]Do not set this value.  Allow the user to use this to
-  change, for example, the optimization level or the debugging level.  For
-  example, the user should be able to do
-\begin{verbatim}
-  setenv CFLAGS -g
-  make clean
-  make
-\end{verbatim}
-  to rebuild the package with \code{-g} added to all compile lines.
-  There are a few exceptions in the current code for developers'
-  targets for operations such as coverage analysis and strict language
-  conformance.  
+% It would be a good idea not to set CFLAGS.  But this seems too hard
+% for GNU autoconf.
+%% \item[\texttt{CFLAGS}]Do not set this value.  Allow the user to use this to
+%%   change, for example, the optimization level or the debugging level.  For
+%%   example, the user should be able to do
+%% \begin{verbatim}
+%%   setenv CFLAGS -g
+%%   make clean
+%%   make
+%% \end{verbatim}
+%%   to rebuild the package with \code{-g} added to all compile lines.
+%%   There are a few exceptions in the current code for developers'
+%%   targets for operations such as coverage analysis and strict language
+%%   conformance.  
 \end{description}
 
 \subsection{Configure Flags}
@@ -3274,103 +3381,103 @@ create a step that does something like \code{set | grep 'CROSS_' |
 sed ...} to ensure that any subdirectory configures inherit the
 correct values for cross-compilation variables.
 
-\subsubsection{Complex Configuration Data}
-The following section has not been implemented and may not be.
+%% \subsubsection{Complex Configuration Data}
+%% The following section has not been implemented and may not be.
 
-Much of the complexity in the current configure system comes from
-handling special cases, particularly for compiler and linker options.
-We may replace this code with a separate (yet simple) data list
-that can be edited separately from the configure script, and which
-contains information on various compilers and linkers.
-This file can be considered a very simple database, where each record
-contains the following information (some of the information is used
-only by compile steps; other by link or shared library steps.  There
-is enough overlap that the combined list is given).
-There are two kinds of values.  The first are keys that identify a particular
-compiler (or compiler class, like \code{gcc}).  These include
-\begin{description}
-\item[kind]C, C++, Fortran 77, or Fortran 90.  Perhaps Java as well.
-\item[action]compile, link, create static library, or create shared library
-\item[name]E.g., cc, xlc, pgcc, gcc
-\item[ostype]OS that has this compiler.  For some compilers, this is
-  \code{*} (a wild-card valye that matches any name).  Names may also
-  include \code{*} for partial matches (such as \code{Linux*}).
-\item[signature]A regular expression that should match the value
-generated by version.  This may be slightly extended to allow a
-particular line of the output to be matched.
-\end{description}
+%% Much of the complexity in the current configure system comes from
+%% handling special cases, particularly for compiler and linker options.
+%% We may replace this code with a separate (yet simple) data list
+%% that can be edited separately from the configure script, and which
+%% contains information on various compilers and linkers.
+%% This file can be considered a very simple database, where each record
+%% contains the following information (some of the information is used
+%% only by compile steps; other by link or shared library steps.  There
+%% is enough overlap that the combined list is given).
+%% There are two kinds of values.  The first are keys that identify a particular
+%% compiler (or compiler class, like \code{gcc}).  These include
+%% \begin{description}
+%% \item[kind]C, C++, Fortran 77, or Fortran 90.  Perhaps Java as well.
+%% \item[action]compile, link, create static library, or create shared library
+%% \item[name]E.g., cc, xlc, pgcc, gcc
+%% \item[ostype]OS that has this compiler.  For some compilers, this is
+%%   \code{*} (a wild-card valye that matches any name).  Names may also
+%%   include \code{*} for partial matches (such as \code{Linux*}).
+%% \item[signature]A regular expression that should match the value
+%% generated by version.  This may be slightly extended to allow a
+%% particular line of the output to be matched.
+%% \end{description}
 
-The second kind of values provide information about the compiler, such as
-options for generating optimized code or for creating object files for shared libraries.
-\begin{description}
-\item[optimize]Options for optimizing.
-\item[debug]Options for debugging.
-\item[ansi]Options to force ANSI (or a superset)
-\item[posix]Options to force POSIX
-\item[threads]Options to allow threads
-\item[sharedobject]Options to create a shared object
-\item[version]Options to generate a version and name string.  See signature
-\item[size32]Options for 32-bit pointers
-\item[size64]Options for 64-bit pointers
-\item[size=xx]Options for other sizes (128 bit pointers, anyone?) or
-for special versions (e.g., IRIX n32)
-\item[shlibsearchdir]Options to specify search directories for shared
-libraries
-\item[searchdirkind]Indicates whether the \code{shlibsearchdir} option
-supplements (as \code{-I} does for include files) or replaces the
-search directories.  
-\item[sharedlib]Options to create a shared library
-\item[cross]Specify values for \code{CROSS_xxx} for cross-compiler case
-\item[verbose]Options to generate verbose output, particularly showing
-the command-line options passed to other tools such as ld when a
-compiler command is used to link a program.  This is useful in
-determining the libraries needed for multilanguage programs.
-\item[verboseoptionsep]Option separator for the output from verbose.
-Often either space or comma.
-\item[strict]Options for strict (lint-like) compilation
-\end{description}
-Question: are these enough?  We should check what libtool uses.
-We may also want a option that says ``check for a clean compile before
-accepting these values''.  Compiler version numbers may also be
-important; for that, there needs to be a command specified to extract and
-compare the version number.
+%% The second kind of values provide information about the compiler, such as
+%% options for generating optimized code or for creating object files for shared libraries.
+%% \begin{description}
+%% \item[optimize]Options for optimizing.
+%% \item[debug]Options for debugging.
+%% \item[ansi]Options to force ANSI (or a superset)
+%% \item[posix]Options to force POSIX
+%% \item[threads]Options to allow threads
+%% \item[sharedobject]Options to create a shared object
+%% \item[version]Options to generate a version and name string.  See signature
+%% \item[size32]Options for 32-bit pointers
+%% \item[size64]Options for 64-bit pointers
+%% \item[size=xx]Options for other sizes (128 bit pointers, anyone?) or
+%% for special versions (e.g., IRIX n32)
+%% \item[shlibsearchdir]Options to specify search directories for shared
+%% libraries
+%% \item[searchdirkind]Indicates whether the \code{shlibsearchdir} option
+%% supplements (as \code{-I} does for include files) or replaces the
+%% search directories.  
+%% \item[sharedlib]Options to create a shared library
+%% \item[cross]Specify values for \code{CROSS_xxx} for cross-compiler case
+%% \item[verbose]Options to generate verbose output, particularly showing
+%% the command-line options passed to other tools such as ld when a
+%% compiler command is used to link a program.  This is useful in
+%% determining the libraries needed for multilanguage programs.
+%% \item[verboseoptionsep]Option separator for the output from verbose.
+%% Often either space or comma.
+%% \item[strict]Options for strict (lint-like) compilation
+%% \end{description}
+%% Question: are these enough?  We should check what libtool uses.
+%% We may also want a option that says ``check for a clean compile before
+%% accepting these values''.  Compiler version numbers may also be
+%% important; for that, there needs to be a command specified to extract and
+%% compare the version number.
 
-This file should have both specific rules and generic rules.  For
-example, a generic description of \code{cc} would specify \code{-g}
-for debugging, \code{-O} for optimization, and little else.  
+%% This file should have both specific rules and generic rules.  For
+%% example, a generic description of \code{cc} would specify \code{-g}
+%% for debugging, \code{-O} for optimization, and little else.  
 
-In some cases, we may want to try several options.  For example, for
-optimization, we may want to try \code{-Ofast} or \code{-O2} before \code{-O}.
-%% Question:
-%% what should the syntax for this be?
+%% In some cases, we may want to try several options.  For example, for
+%% optimization, we may want to try \code{-Ofast} or \code{-O2} before \code{-O}.
+%% %% Question:
+%% %% what should the syntax for this be?
 
-%% I recommend that the syntax for this file be key=value pairs, using a
-%% trailing backslash to continue lines:
-%% \begin{verbatim}
-%% # comment describing compiler
-%% kind=c action=compile name=xlc system=AIX \
-%%   optimize="-O3 -qarch=native" \
-%%   etc.
-%% kind=c action=compile name=cc system=* \
-%%   optimize=-O \
-%%   debug=-g \
-%%   etc.
-%% \end{verbatim}
-%% This is most easily processed using perl or (possibly) python, though
-%% another alternative is to bootstrap by using the usual configure
-%% macros to find a C compiler and then compile a simple program to read
-%% this file.  In the cross compilation case, either a different compiler
-%% may be used, the user can prebuild the program, or all of the
-%% necessary data can be supplied through environment variables.
+%% %% I recommend that the syntax for this file be key=value pairs, using a
+%% %% trailing backslash to continue lines:
+%% %% \begin{verbatim}
+%% %% # comment describing compiler
+%% %% kind=c action=compile name=xlc system=AIX \
+%% %%   optimize="-O3 -qarch=native" \
+%% %%   etc.
+%% %% kind=c action=compile name=cc system=* \
+%% %%   optimize=-O \
+%% %%   debug=-g \
+%% %%   etc.
+%% %% \end{verbatim}
+%% %% This is most easily processed using perl or (possibly) python, though
+%% %% another alternative is to bootstrap by using the usual configure
+%% %% macros to find a C compiler and then compile a simple program to read
+%% %% this file.  In the cross compilation case, either a different compiler
+%% %% may be used, the user can prebuild the program, or all of the
+%% %% necessary data can be supplied through environment variables.
 
-%% Question: This is not trivially parseable.  Another option is one value per
-%% line, or tab-separated values.  We should write perl or C code to parse it and
-%% adjust the format for easy handling.
+%% %% Question: This is not trivially parseable.  Another option is one value per
+%% %% line, or tab-separated values.  We should write perl or C code to parse it and
+%% %% adjust the format for easy handling.
 
-An XML format for this data may be the most flexible; in fact, there
-may be existing schemas that we can adopt or extend.  Furhter, once we
-have an (optional and simple) XML parser available to tools such as
-\code{configure}, there are many other places where we could use it.
+%% An XML format for this data may be the most flexible; in fact, there
+%% may be existing schemas that we can adopt or extend.  Furhter, once we
+%% have an (optional and simple) XML parser available to tools such as
+%% \code{configure}, there are many other places where we could use it.
 
 %% \subsection{Makefile Structure}
 %% \label{sec:makefiles}
@@ -3379,155 +3486,160 @@ have an (optional and simple) XML parser available to tools such as
 %% directory?  Bill is leaning toward fewer (configure) constructed Makefiles,
 %% and using the \code{include} command (now the FreeBSD supports it).
 
-\subsection{Coding Rules}
-To help catch errors before code is released, we have defined a set of
-coding standards
-% which everyone is ignoring because they don't care 
-and a set of tools to check for violations of these standards.
+%% I've removed this section because the majority of the MPICH2 team 
+%% disagrees with this approach.  The majority opinion is to perform
+%% ``reactive'' coding, fixing problems when they are obsevered,
+%% rather than to benefit from long experience and try to avoid them
+%% in advance.
+%% \subsection{Coding Rules}
+%% To help catch errors before code is released, we have defined a set of
+%% coding standards
+%% % which everyone is ignoring because they don't care 
+%% and a set of tools to check for violations of these standards.
 
-The followint tools are available:
-\begin{description}
-\item[checkforglobs]Check for global symbol names.  Currently part of the
-  \code{sowing} package in \file{sowing/bin/checkforglobs}. 
-\item[codingcheck]Check for use of routines that should be avoided
-  (e.g., \code{printf}, 
-\code{alloca}) and other coding style problems.  This routine is in
-\file{mpich2/maint}.  This also checks for C preprocessor names that
-may indicate a portability problem, such as the use of tests on
-particular system names or features, or names that are reserved by the
-  language, such as names with two leading underscores.  Additional
-  tests include ones for proper file headers, use of MPI routines, and
-  matching statement begin/end blocks.
+%% The followint tools are available:
+%% \begin{description}
+%% \item[checkforglobs]Check for global symbol names.  Currently part of the
+%%   \code{sowing} package in \file{sowing/bin/checkforglobs}. 
+%% \item[codingcheck]Check for use of routines that should be avoided
+%%   (e.g., \code{printf}, 
+%% \code{alloca}) and other coding style problems.  This routine is in
+%% \file{mpich2/maint}.  This also checks for C preprocessor names that
+%% may indicate a portability problem, such as the use of tests on
+%% particular system names or features, or names that are reserved by the
+%%   language, such as names with two leading underscores.  Additional
+%%   tests include ones for proper file headers, use of MPI routines, and
+%%   matching statement begin/end blocks.
 
-%%   One good source of information on routines that can cause trouble is the
-%%   ``Particular Functions'' topic in the \code{autoconf} documentation.  These
-%%   are routines that require nontrivial tests, and should be avoided if
-%%   possible.  These include
-%% \begin{verbatim}
-%%   alloca, closedir, fnmatch, getloadavg, getmntent, getpgrp, memcmp,
-%%   mmap, setpgrp, setvbuf, strcoll, strftime, utime, vfork, vprintf, wait3
-%% \end{verbatim}
+%% %%   One good source of information on routines that can cause trouble is the
+%% %%   ``Particular Functions'' topic in the \code{autoconf} documentation.  These
+%% %%   are routines that require nontrivial tests, and should be avoided if
+%% %%   possible.  These include
+%% %% \begin{verbatim}
+%% %%   alloca, closedir, fnmatch, getloadavg, getmntent, getpgrp, memcmp,
+%% %%   mmap, setpgrp, setvbuf, strcoll, strftime, utime, vfork, vprintf, wait3
+%% %% \end{verbatim}
 
-\item[gcc -Wall etc.]Missing prototypes, return values, etc.  This can be set
-  in \code{configure} with the \code{PAC_ARG_STRICT} macro which
-  defined \cfgoption{--enable-strict}.
-% \item[finddefines]Check for OS name or system type in a preprocessor
-%   statement (look for \emph{all} \code{\#ifdef} or \code{\#if defined()} and
-%   check against permitted values).  (Only partially implemented.  Currently in \file{/home/MPI/maint/util}.)
-\end{description}
+%% \item[gcc -Wall etc.]Missing prototypes, return values, etc.  This can be set
+%%   in \code{configure} with the \code{PAC_ARG_STRICT} macro which
+%%   defined \cfgoption{--enable-strict}.
+%% % \item[finddefines]Check for OS name or system type in a preprocessor
+%% %   statement (look for \emph{all} \code{\#ifdef} or \code{\#if defined()} and
+%% %   check against permitted values).  (Only partially implemented.  Currently in \file{/home/MPI/maint/util}.)
+%% \end{description}
 
-We also need tools for the following:
-\begin{itemize}
-\item Look for header files and functions that are not universal and
-  ensure that they are properly guarded.
-  An example of a function that must be guarded is \code{rindex}.
-Note that the \code{AC_FUNC_MMAP} test is inadequate and must be supplemented
-by a more rigorous test (as used in MPICH1).
-\end{itemize}
+%% We also need tools for the following:
+%% \begin{itemize}
+%% \item Look for header files and functions that are not universal and
+%%   ensure that they are properly guarded.
+%%   An example of a function that must be guarded is \code{rindex}.
+%% Note that the \code{AC_FUNC_MMAP} test is inadequate and must be supplemented
+%% by a more rigorous test (as used in MPICH1).
+%% \end{itemize}
 
-\subsubsection{Printing and Other Messages}
-Rule: do not use \code{printf} or \code{fprintf} except (possibly) for
-messages intended only the for the developers of MPICH2.
+%% \subsubsection{Printing and Other Messages}
+%% Rule: do not use \code{printf} or \code{fprintf} except (possibly) for
+%% messages intended only the for the developers of MPICH2.
 
-Even for developer messages, using \code{printf} is not a good idea.
-It is better to call a routine that can handle recording the results.
+%% Even for developer messages, using \code{printf} is not a good idea.
+%% It is better to call a routine that can handle recording the results.
 
-The following should be used instead of \code{printf} or \code{fprintf}:
-\begin{description}
-\item[\texttt{dbg_printf}]Print a debugging message.  This should be
-  used only for messages intended for the developers of MPICH.  This
-  has the same calling sequence as \code{printf}.
-\item[\texttt{MPIU_Usage_printf}]Print a usage message (informational) for
-  the user.  This has the same calling sequence as \code{printf}.
-\item[\texttt{MPIU_Error_printf}]Print an error message for the user.  This
-  has the same calling sequence as \code{printf}.  Note that this
-  routine should not be used by any routine called by the MPI
-  implementation; it is provided for the implementation of separate
-  exectuables such as the \code{mpiexec} command.  Related routines
-  include \code{MPIU_Internal_error_printf} (for errors in the
-  implementation rather than user errors), and
-  \code{MPIU_Internal_sys_error_printf} for internal errors flagged by
-  a failure in a system call
-\end{description}
-The routines for printing user messages will attempt to use
-\code{gettext} or some similar routine to handle output for other
-languages.  On systems without convenient \code{stdout} or
-\code{stderr}, these may also generate alternative output (e.g., popup
-a window).
+%% The following should be used instead of \code{printf} or \code{fprintf}:
+%% \begin{description}
+%% \item[\texttt{dbg_printf}]Print a debugging message.  This should be
+%%   used only for messages intended for the developers of MPICH.  This
+%%   has the same calling sequence as \code{printf}.
+%% \item[\texttt{MPIU_Usage_printf}]Print a usage message (informational) for
+%%   the user.  This has the same calling sequence as \code{printf}.
+%% \item[\texttt{MPIU_Error_printf}]Print an error message for the user.  This
+%%   has the same calling sequence as \code{printf}.  Note that this
+%%   routine should not be used by any routine called by the MPI
+%%   implementation; it is provided for the implementation of separate
+%%   exectuables such as the \code{mpiexec} command.  Related routines
+%%   include \code{MPIU_Internal_error_printf} (for errors in the
+%%   implementation rather than user errors), and
+%%   \code{MPIU_Internal_sys_error_printf} for internal errors flagged by
+%%   a failure in a system call
+%% \end{description}
+%% The routines for printing user messages will attempt to use
+%% \code{gettext} or some similar routine to handle output for other
+%% languages.  On systems without convenient \code{stdout} or
+%% \code{stderr}, these may also generate alternative output (e.g., popup
+%% a window).
 
-% See PETSc approach for printing.  
+%% % See PETSc approach for printing.  
 
-%% Question: Should we define \code{PRINTF} etc. as we have in MPICH, or
-%% ban those values entirely?  
+%% %% Question: Should we define \code{PRINTF} etc. as we have in MPICH, or
+%% %% ban those values entirely?  
 
-The following has not been implemented.
-MPICH1 provided a simple internal logging function that recorded the
-most recent messages in a circular buffer.  On a error, these most
-recent messages could be written out; this can be very useful when debugging.
-The configure option that controls this should be something like
-\cfgoption{--enable-g=msgtrack}.  The values may be
-\begin{description}
-\item[n]The size of the buffer (e.g., \code{--enable-g=msgtrack:100}).
-\end{description}
-Note that this should also have runtime control, so that debugging
-implementations can be built with this capability, but the decision on
-whether to dump the saved logged messages can be made based on a
-runtime parameter.
+%% The following has not been implemented.
+%% MPICH1 provided a simple internal logging function that recorded the
+%% most recent messages in a circular buffer.  On a error, these most
+%% recent messages could be written out; this can be very useful when debugging.
+%% The configure option that controls this should be something like
+%% \cfgoption{--enable-g=msgtrack}.  The values may be
+%% \begin{description}
+%% \item[n]The size of the buffer (e.g., \code{--enable-g=msgtrack:100}).
+%% \end{description}
+%% Note that this should also have runtime control, so that debugging
+%% implementations can be built with this capability, but the decision on
+%% whether to dump the saved logged messages can be made based on a
+%% runtime parameter.
 
-%% Question:  Should we have something like the following:
-%% \begin{verbatim}
-%% void MPIR_Dbg_msg( int kindmask, const char *fmt, ... )
-%% \end{verbatim}
-%% where \code{kindmask} is used to indicate what kind of debugging
-%% message this is; this is a bit field and allows a message to belong to
-%% multiple kinds.  The remaining arguments are interpreted as
-%% \code{printf} arguments.  
+%% %% Question:  Should we have something like the following:
+%% %% \begin{verbatim}
+%% %% void MPIR_Dbg_msg( int kindmask, const char *fmt, ... )
+%% %% \end{verbatim}
+%% %% where \code{kindmask} is used to indicate what kind of debugging
+%% %% message this is; this is a bit field and allows a message to belong to
+%% %% multiple kinds.  The remaining arguments are interpreted as
+%% %% \code{printf} arguments.  
 
-%% Question:  To allow this to be a macro, do we want to use
-%% \begin{verbatim}
-%% #ifdef USE_DEBUG
-%% #defind MPIR_DBG_MSG(a) MPIR_Dbg_msg a
-%% #else
-%% #define MPIR_DBG_MSG(a)
-%% #endif
-%% \end{verbatim}
-%% in the code?
+%% %% Question:  To allow this to be a macro, do we want to use
+%% %% \begin{verbatim}
+%% %% #ifdef USE_DEBUG
+%% %% #defind MPIR_DBG_MSG(a) MPIR_Dbg_msg a
+%% %% #else
+%% %% #define MPIR_DBG_MSG(a)
+%% %% #endif
+%% %% \end{verbatim}
+%% %% in the code?
 
-%% ToDo:
-%% Need instructions for output messages so that they can properly use
-%% internationalization.  For example, do we want
-%% \code{MPIR_User_msg( FILE *, const char *, ... )}?
-%% Do we want
-%% \begin{verbatim}
-%% #ifdef HAVE_INTERNATIONAL_MSGS
-%% #define MPIR_User_msg( a ) MPIRi_User_msg a
-%% #else
-%% #define MPIR_User_msg( a ) fprintf a
-%% #endif
-%% \end{verbatim}
-%% with usage
-%% \begin{verbatim}
-%% MPIR_User_msg( (stderr, "Error in input" ) );
-%% \end{verbatim}
+%% %% ToDo:
+%% %% Need instructions for output messages so that they can properly use
+%% %% internationalization.  For example, do we want
+%% %% \code{MPIR_User_msg( FILE *, const char *, ... )}?
+%% %% Do we want
+%% %% \begin{verbatim}
+%% %% #ifdef HAVE_INTERNATIONAL_MSGS
+%% %% #define MPIR_User_msg( a ) MPIRi_User_msg a
+%% %% #else
+%% %% #define MPIR_User_msg( a ) fprintf a
+%% %% #endif
+%% %% \end{verbatim}
+%% %% with usage
+%% %% \begin{verbatim}
+%% %% MPIR_User_msg( (stderr, "Error in input" ) );
+%% %% \end{verbatim}
 
 
-\subsection{Windows-Friendly}
+%% \subsection{Windows-Friendly}
 
-One goal is to make MPICH2 Windows-friendly.  
-\fixme{What does this mean?  How can we avoid the proliferation of
-  project files and keep these up-to-date?}
-%% Declare all user-visible routines \code{EXPORT_MPI_API}\index{EXPORT_MPI_API}.
-%% This is a 
-%% macro that is defined as empty for UNIX and as the appropriate
-%% Microsoft-specific extension for Windows.
+%% One goal is to make MPICH2 Windows-friendly.  
+%% \fixme{What does this mean?  How can we avoid the proliferation of
+%%   project files and keep these up-to-date?}
+%% %% Declare all user-visible routines \code{EXPORT_MPI_API}\index{EXPORT_MPI_API}.
+%% %% This is a 
+%% %% macro that is defined as empty for UNIX and as the appropriate
+%% %% Microsoft-specific extension for Windows.
 
-%% Question: we can use a file to list these functions instead of
-%% \code{EXPORT_MPI_API}.  Should we do that instead?  Answer: yes.
+%% %% Question: we can use a file to list these functions instead of
+%% %% \code{EXPORT_MPI_API}.  Should we do that instead?  Answer: yes.
 
-%% Avoiding \code{printf} is important for Windows applications.
+%% %% Avoiding \code{printf} is important for Windows applications.
 
-%% Question: What else do we need to consider here? (David Ashton to
-%% answer.  Well, David???????)
+%% %% Question: What else do we need to consider here? (David Ashton to
+%% %% answer.  Well, David???????)
 
 
 \section{Standard Features}
@@ -3536,44 +3648,46 @@ This section contains the standard features, such as command line
 handling, environment variables, configure options for error checking,
 etc., that we desire in a complete MPICH2 implementation and distribution.
 
-\subsection{Command line and environment}
-The implementation must provide the \emph{service} of providing
-command-line arguments to each process.  If the startup environment
-does not do so, the implementation must (see the discussion of
-\mpidfunc{MPID_Init}).  
+%% The majority of the team disagrees with the following.
+%% \subsection{Command line and environment}
+%% The implementation must provide the \emph{service} of providing
+%% command-line arguments to each process.  If the startup environment
+%% does not do so, the implementation must (see the discussion of
+%% \mpidfunc{MPID_Init}).  
 
-Note that we must also allow different command lines for different processes
-if the user wishes.
-\fixme{We should add a test that determines whether the command line
-  and/or environment has these properties.  While MPI does not require
-  this behavior, we should ensure that MPICH2 does provide this service.}
+%% Note that we must also allow different command lines for different processes
+%% if the user wishes.
+%% \fixme{We should add a test that determines whether the command line
+%%   and/or environment has these properties.  While MPI does not require
+%%   this behavior, we should ensure that MPICH2 does provide this service.}
 
-\subsection{Standard I/O}
-I/O handling, particularly for stdin, remains troublesome.  We need to
-be more precise about what is available and what isn't.  We need to
-pay closer attention to the value of the attribute \mpiconst{MPI_IO},
-and we may want to consider adding new keyvals with more control, such
-as \mpidconst{MPICH_IO_STDIN}, \mpidconst{MPICH_IO_STDOUT}, and
-\mpidconst{MPICH_IO_STDERR}. 
+% The following is unimplemented and unlikely to be
+%% \subsection{Standard I/O}
+%% I/O handling, particularly for stdin, remains troublesome.  We need to
+%% be more precise about what is available and what isn't.  We need to
+%% pay closer attention to the value of the attribute \mpiconst{MPI_IO},
+%% and we may want to consider adding new keyvals with more control, such
+%% as \mpidconst{MPICH_IO_STDIN}, \mpidconst{MPICH_IO_STDOUT}, and
+%% \mpidconst{MPICH_IO_STDERR}. 
 
-\fixme{Where are additional keyvals documented?  Do we want a
-string-to-keyval translator?  E.g., a routine that, given a string
-description, returns the corresponding keyval, if any?}
+%% \fixme{Where are additional keyvals documented?  Do we want a
+%% string-to-keyval translator?  E.g., a routine that, given a string
+%% description, returns the corresponding keyval, if any?}
 
-\subsection{Other parts of the environment}
-There are many parts to the state of a user's environment that we may want to 
-ensure are propagated to all MPI processes.  One request from a user was for
-the \code{umask}\index{umask} to be maintained.  We should list all components
-of a process's state and make an explicit decision about what is and is not
-carried over to new processes.  A partial list includes
-\begin{description}
-\item[umask]
-\item[priority (e.g., nice value)]
-\item[uid,euid,gid,egid]
-\item[environment]
-\item[resource limits]
-\item[shell]
-\end{description}
+%% \subsection{Other parts of the environment}
+%% There are many parts to the state of a user's environment that we may want to 
+%% ensure are propagated to all MPI processes.  One request from a user was for
+%% the \code{umask}\index{umask} to be maintained.  We should list all components
+%% of a process's state and make an explicit decision about what is and is not
+%% carried over to new processes.  A partial list includes
+%% \begin{description}
+%% \item[umask]
+%% \item[priority (e.g., nice value)]
+%% \item[uid,euid,gid,egid]
+%% \item[environment]
+%% \item[resource limits]
+%% \item[shell]
+%% \end{description}
 
 \subsection{Documentation and Man Pages}
 The MPI standard requires that the MPI implementation document certain
@@ -3591,200 +3705,204 @@ directory (\file{mpid/foo}).
   We need to add targets for building the various documents and
   bundling them into a nice block.}
 
-\section{Testing}
-\label{sec:testing}
-
-The tests for MPICH2 are organized in a different way than in MPICH. They
-follow these principles:
-\begin{enumerate}
-\item Require no user intervention (e.g., to inspect the results)
-\item Are implementation independent (i.e., useful for
-\emph{any} MPI implementation) unless they are testing \emph{only}
-features specific to MPICH2.  An example that is not
-implementation-independent is any test of error messages
-and error class/code values; any test that expects a particular
-message must not be combined with a general test of standard
-conformance.
-\item Require no extra files (the \file{.std} files in the MPICH
-version), other than a common utility file.
-\item Testing is applied to a range of communicators and
-datatypes, not just \code{MPI_COMM_WORLD}.  
-\item Testing is controlled by a file listing the tests rather
-than a script.  That is, the script \code{runtests} is generic,
-working with a file in each testing directory that lists the test
-programs and any special options (e.g., number of processes, command
-line arguments, environment variables).  The file that \code{runtests}
-reads is \file{testlist}, and may contain both test names and
-directory names.  
-\item Testing that enables memory tracing is simple and
-organized so that it can be run regularly.
-\item Testing should have short duration, so that the testing program can
-signal failure because a program has not completed within the given
-time.
-\item All tests should have positive output.  Not all MPI
-implementations are reliable at indicating a non-zero return code or at
-flushing output.  A requirement for an output of ``\code{ No Errors}'' is
-necessary. 
-\item The only output on success should be ``\code{ No Errors}''.
-\item Verbose output can be enabled with the environment variable
-  \code{MPITEST_VERBOSE}.  This makes 
-  it easy to rerun tests that have failed with more output.
-\item Errors should not be reported as a result of a feature
-having been disabled (i.e., tests for the long long type should not
-report a failure when the system is configured with
-\code{--disable-long-long}).
-\end{enumerate}
-
-Results should be maintained in a database which should include
-\begin{enumerate}
-\item Configuration options
-\item System description (including compiler version and machines file)
-\item CVS tag (or nearest value, e.g., weekly tag + date that source
-cut was made).
-\item Results summary (success or failure; if failure, reason).
-\item We should consider an XML format for the output.
-\end{enumerate}
-This database of results has not been implemented.
-
-The first steps toward such testing have been taken.  The Perl script
-\file{test/runtests} can run and collect the data for all programs in a
-directory; the file \file{test/mpi/util/mtest.c} contains common routines for
-running tests, including error reporting; that file will contain routines for
-the construction of datatypes and communicators. 
-
-Testing should also contain performances tests.  This is also not implemented.
-\begin{enumerate}
-\item Configuration options
-\item System description (including compiler version and machines file)
-\item CVS tag (or nearest value, e.g., weekly tag + date that source
-cut was made).
-\item Results for the following tests:
-    \begin{enumerate}
-    \item \code{mpptest -logscale} To get the general trend in performance
-    \item \code{mpptest -auto} To get details for the short message
-performance. 
-    \item bisection bandwidth test for a large number of processes.
-    We may want to use beff instead of mpptest.
-    \item \code{mpptest -logscale -halo -npartner 8} To get more
-    realistic communication performance
-    \item \code{mpptest -logscale -gop -dsum} 
-    \item Similar test for alltoallv. 
-    \item Tests for I/O. \fixme{These I/O performance tests have not
-    been identified.}
-    \item Tests for put/get/accumulate as those become available.
-    Start with \code{mpptest -logscale -put} and \code{mpptest
--logscale -halo -npartner 8}
-    \end{enumerate}
-\item This should also be in XML format.
-%%     Question: Should we add an XML output format to \code{mpptest}?
-%% Is there any clear XML definition yet for 2-d data?
-%% Tabular output can use the \code{gtable} library to generate output in
-%% different formats.
+%% The majority of the MPICH2 team did not agree with these goals and 
+%% procedures for implementing testing.
+%\section{Testing}
+%\label{sec:testing}
 
 
-\end{enumerate}
-We should maintain the same data for vendor and other MPI
-implementations, and we should ask for a standard set of tests.  
 
-\subsection{Communication Tests}
-\label{sec:testing-comm}
+%% The tests for MPICH2 are organized in a different way than in MPICH. They
+%% follow these principles:
+%% \begin{enumerate}
+%% \item Require no user intervention (e.g., to inspect the results)
+%% \item Are implementation independent (i.e., useful for
+%% \emph{any} MPI implementation) unless they are testing \emph{only}
+%% features specific to MPICH2.  An example that is not
+%% implementation-independent is any test of error messages
+%% and error class/code values; any test that expects a particular
+%% message must not be combined with a general test of standard
+%% conformance.
+%% \item Require no extra files (the \file{.std} files in the MPICH
+%% version), other than a common utility file.
+%% \item Testing is applied to a range of communicators and
+%% datatypes, not just \code{MPI_COMM_WORLD}.  
+%% \item Testing is controlled by a file listing the tests rather
+%% than a script.  That is, the script \code{runtests} is generic,
+%% working with a file in each testing directory that lists the test
+%% programs and any special options (e.g., number of processes, command
+%% line arguments, environment variables).  The file that \code{runtests}
+%% reads is \file{testlist}, and may contain both test names and
+%% directory names.  
+%% \item Testing that enables memory tracing is simple and
+%% organized so that it can be run regularly.
+%% \item Testing should have short duration, so that the testing program can
+%% signal failure because a program has not completed within the given
+%% time.
+%% \item All tests should have positive output.  Not all MPI
+%% implementations are reliable at indicating a non-zero return code or at
+%% flushing output.  A requirement for an output of ``\code{ No Errors}'' is
+%% necessary. 
+%% \item The only output on success should be ``\code{ No Errors}''.
+%% \item Verbose output can be enabled with the environment variable
+%%   \code{MPITEST_VERBOSE}.  This makes 
+%%   it easy to rerun tests that have failed with more output.
+%% \item Errors should not be reported as a result of a feature
+%% having been disabled (i.e., tests for the long long type should not
+%% report a failure when the system is configured with
+%% \code{--disable-long-long}).
+%% \end{enumerate}
 
-The MPI communication routines are quite general and allow many
-combinations of arguments.  A comprehensive test needs to check many
-of these combinations.  
+%% Results should be maintained in a database which should include
+%% \begin{enumerate}
+%% \item Configuration options
+%% \item System description (including compiler version and machines file)
+%% \item CVS tag (or nearest value, e.g., weekly tag + date that source
+%% cut was made).
+%% \item Results summary (success or failure; if failure, reason).
+%% \item We should consider an XML format for the output.
+%% \end{enumerate}
+%% This database of results has not been implemented.
 
-\begin{enumerate}
+%% The first steps toward such testing have been taken.  The Perl script
+%% \file{test/runtests} can run and collect the data for all programs in a
+%% directory; the file \file{test/mpi/util/mtest.c} contains common routines for
+%% running tests, including error reporting; that file will contain routines for
+%% the construction of datatypes and communicators. 
 
-\item Datatypes. It is particularly important to check cases where the
-sender and receiver use datatypes with the same type signature but 
-different type maps (e.g., contiguous data at the sender and indexed
-at the receiver).  The kinds of datatypes to test include
+%% Testing should also contain performances tests.  This is also not implemented.
+%% \begin{enumerate}
+%% \item Configuration options
+%% \item System description (including compiler version and machines file)
+%% \item CVS tag (or nearest value, e.g., weekly tag + date that source
+%% cut was made).
+%% \item Results for the following tests:
+%%     \begin{enumerate}
+%%     \item \code{mpptest -logscale} To get the general trend in performance
+%%     \item \code{mpptest -auto} To get details for the short message
+%% performance. 
+%%     \item bisection bandwidth test for a large number of processes.
+%%     We may want to use beff instead of mpptest.
+%%     \item \code{mpptest -logscale -halo -npartner 8} To get more
+%%     realistic communication performance
+%%     \item \code{mpptest -logscale -gop -dsum} 
+%%     \item Similar test for alltoallv. 
+%%     \item Tests for I/O. \fixme{These I/O performance tests have not
+%%     been identified.}
+%%     \item Tests for put/get/accumulate as those become available.
+%%     Start with \code{mpptest -logscale -put} and \code{mpptest
+%% -logscale -halo -npartner 8}
+%%     \end{enumerate}
+%% \item This should also be in XML format.
+%% %%     Question: Should we add an XML output format to \code{mpptest}?
+%% %% Is there any clear XML definition yet for 2-d data?
+%% %% Tabular output can use the \code{gtable} library to generate output in
+%% %% different formats.
 
-     \begin{enumerate}
-     \item All predefined datatypes. \fixme{Only a small set is
-     currently included}
-     \item Some mixed types
-     \item Different patterns (contig, vector (block count of one,
-           two, 13), indexed (monotone
-           increasing and nonmonotone)) \fixme{Only a few of these
-             are implemented.}
-     \item \code{MPI_PACKED} sent but received either with
-           \code{MPI_PACKED} or with the matching type signature
-     \end{enumerate}
-     To implement this, with each datatype, the MTest package (in
-     \file{test/mpi/util/mtest.c} provides routines to
-     \begin{enumerate}
-     \item Allocate the send buffer.  Leave room for sentinals at both
-     ends of the buffer.
-     \item Initialize the send buffer.  Make sure that most bits are
-           set.  E.g., 64-bit int values should include values with
-           bits set in the high 32 bits.
-     \item Allocate receive buffer.
-     \item Check that the correct data has been received (and that no
-           other data has been set).  This takes the data buffer, the
-           count, the status value, and the structure containing the
-           description of this datatype.
-     \item Release buffers.
-     \end{enumerate}
-%%      This list suggests that a routine be used to return an array of
-%%      structures that contain both the datatypes to use (providing
-%%      separate send and receive datatypes), the functions to allocate,
-%%      initialize, and check the data buffers.  This function can query
-%%      the test initialization routine to determine the number of
-%%      datatypes to provide; for example, choosing all types, only the
-%%      most popular types (e.g., \code{MPI_INT} and \code{MPI_DOUBLE}),
-%%      or a specific type (e.g., an environment variable containing a
-%%      string that names the datatype).  The allocation routines must
-%%      take an \code{nelm} that specifies the number of basic
-%%      types.  If there is a required divisor of \code{nelm} (e.g., the
-%%      datatype is a vector with a block count of 13), that is
-%%      specified, allowing the testing code to compute valid
-%%      \code{nelm}s.
 
-     To make it easy to add types and to control the types used in
-     testing (so that exhaustive and reduced tests are easy to
-     manage), there should be a table-driven form, based on text
-     strings.  SKaMPI may use a similar approach.
+%% \end{enumerate}
+%% We should maintain the same data for vendor and other MPI
+%% implementations, and we should ask for a standard set of tests.  
 
-     Question:  For collective scatter and gather routines
-     (particularly the ``v'' versions), do we also need routines to
-     allocate, initialize, and check the communication buffers?
+%% \subsection{Communication Tests}
+%% \label{sec:testing-comm}
 
-\item Communicators
-    \begin{enumerate}
-    \item \code{MPI_COMM_WORLD}
-    \item Dup of \code{MPI_COMM_WORLD}
-    \item rerank from $r$ to $n-r-1$ of \code{MPI_COMM_WORLD} (i.e.,
-    reverse the order of the ranks
-    \item Split into communicators containing only the odd and only
-    the even ranks from \code{MPI_COMM_WORLD}
-    \item \code{MPI_COMM_SELF} (note that this can't be used for some
-    blocking communication)
-    \item Intercommunicator (built from the groups containing odd,
-or even ranks in MPI 
-    \end{enumerate}
+%% The MPI communication routines are quite general and allow many
+%% combinations of arguments.  A comprehensive test needs to check many
+%% of these combinations.  
 
-\item Message sizes from zero to at least 128 KB.  These must be cover
-enough range so that all protocols are tested within the device.  To
-simplify this, there should be a way to query the device about the
-number of protocols and message sizes (even if the results are only
-approximate, as they could be for an adaptive method).
+%% \begin{enumerate}
 
-\item Communication Patterns.
-In addition to the unit tests, there must be a way to test
-interactions between different pending operations.  We may want to
-have a set of communication specifications, containing setup,
-initiate, wait, and rundown, that would allow various combinations of
-nonblocking and blocking communication to be selected either from a
-table or at random.  These should also include successive collective
-operations, using the same and different operations.
+%% \item Datatypes. It is particularly important to check cases where the
+%% sender and receiver use datatypes with the same type signature but 
+%% different type maps (e.g., contiguous data at the sender and indexed
+%% at the receiver).  The kinds of datatypes to test include
 
-\end{enumerate}
+%%      \begin{enumerate}
+%%      \item All predefined datatypes. \fixme{Only a small set is
+%%      currently included}
+%%      \item Some mixed types
+%%      \item Different patterns (contig, vector (block count of one,
+%%            two, 13), indexed (monotone
+%%            increasing and nonmonotone)) \fixme{Only a few of these
+%%              are implemented.}
+%%      \item \code{MPI_PACKED} sent but received either with
+%%            \code{MPI_PACKED} or with the matching type signature
+%%      \end{enumerate}
+%%      To implement this, with each datatype, the MTest package (in
+%%      \file{test/mpi/util/mtest.c} provides routines to
+%%      \begin{enumerate}
+%%      \item Allocate the send buffer.  Leave room for sentinals at both
+%%      ends of the buffer.
+%%      \item Initialize the send buffer.  Make sure that most bits are
+%%            set.  E.g., 64-bit int values should include values with
+%%            bits set in the high 32 bits.
+%%      \item Allocate receive buffer.
+%%      \item Check that the correct data has been received (and that no
+%%            other data has been set).  This takes the data buffer, the
+%%            count, the status value, and the structure containing the
+%%            description of this datatype.
+%%      \item Release buffers.
+%%      \end{enumerate}
+%% %%      This list suggests that a routine be used to return an array of
+%% %%      structures that contain both the datatypes to use (providing
+%% %%      separate send and receive datatypes), the functions to allocate,
+%% %%      initialize, and check the data buffers.  This function can query
+%% %%      the test initialization routine to determine the number of
+%% %%      datatypes to provide; for example, choosing all types, only the
+%% %%      most popular types (e.g., \code{MPI_INT} and \code{MPI_DOUBLE}),
+%% %%      or a specific type (e.g., an environment variable containing a
+%% %%      string that names the datatype).  The allocation routines must
+%% %%      take an \code{nelm} that specifies the number of basic
+%% %%      types.  If there is a required divisor of \code{nelm} (e.g., the
+%% %%      datatype is a vector with a block count of 13), that is
+%% %%      specified, allowing the testing code to compute valid
+%% %%      \code{nelm}s.
 
-% Make the test harness description a separate file so that we can
-% easily generate a short description (much like the coding standards
-% document has separate files for sections on CVS, shared libraries, etc.
-\input testharness.tex
+%%      To make it easy to add types and to control the types used in
+%%      testing (so that exhaustive and reduced tests are easy to
+%%      manage), there should be a table-driven form, based on text
+%%      strings.  SKaMPI may use a similar approach.
+
+%%      Question:  For collective scatter and gather routines
+%%      (particularly the ``v'' versions), do we also need routines to
+%%      allocate, initialize, and check the communication buffers?
+
+%% \item Communicators
+%%     \begin{enumerate}
+%%     \item \code{MPI_COMM_WORLD}
+%%     \item Dup of \code{MPI_COMM_WORLD}
+%%     \item rerank from $r$ to $n-r-1$ of \code{MPI_COMM_WORLD} (i.e.,
+%%     reverse the order of the ranks
+%%     \item Split into communicators containing only the odd and only
+%%     the even ranks from \code{MPI_COMM_WORLD}
+%%     \item \code{MPI_COMM_SELF} (note that this can't be used for some
+%%     blocking communication)
+%%     \item Intercommunicator (built from the groups containing odd,
+%% or even ranks in MPI 
+%%     \end{enumerate}
+
+%% \item Message sizes from zero to at least 128 KB.  These must be cover
+%% enough range so that all protocols are tested within the device.  To
+%% simplify this, there should be a way to query the device about the
+%% number of protocols and message sizes (even if the results are only
+%% approximate, as they could be for an adaptive method).
+
+%% \item Communication Patterns.
+%% In addition to the unit tests, there must be a way to test
+%% interactions between different pending operations.  We may want to
+%% have a set of communication specifications, containing setup,
+%% initiate, wait, and rundown, that would allow various combinations of
+%% nonblocking and blocking communication to be selected either from a
+%% table or at random.  These should also include successive collective
+%% operations, using the same and different operations.
+
+%% \end{enumerate}
+
+%% % Make the test harness description a separate file so that we can
+%% % easily generate a short description (much like the coding standards
+%% % document has separate files for sections on CVS, shared libraries, etc.
+%% \input testharness.tex
 
 \subsection{Debugger Interface}
 \label{sec:debug-interface}
@@ -4185,7 +4303,7 @@ Note that the MPI standard sets limits on the ranges that these can take.
 \paragraph{Implementing Info.}
 There are two ways to handle \code{MPI_Info}.  One is to implement a general
 mechanism for handling key/value pairs, much like the code that is part of
-\file{mpich/src/misc2}.  The other is to implement only the defined keys that
+\file{src/misc2}.  The other is to implement only the defined keys that
 MPICH2 needs.  This is the approach used by IBM; in this model, the known keys
 are not stored; instead, the keys are mapped to a predefined set of values
 (e.g., to an enum).  This makes it easy to extract a value from a particular
@@ -4438,10 +4556,12 @@ The lengths of the language types are computed by \code{configure}.  For
 systems where cross compilation is used, these values must be provided by
 defining the appropriate \code{CROSS_SIZEOF_xxx} environment variables.
 
-All builtin types are predefined (at compile time), including the
-names of the datatypes (the name accessed through
-\mpifunc{MPI_Type_get_name})\footnote{An alternative is to provide the
-names only if \texttt{MPI_Type_get_name} is used by the user's program.}.
+All builtin types are predefined (at compile time).  
+The names of the datatypes (the name accessed through
+\mpifunc{MPI_Type_get_name}), however, is set only if 
+\mpifunc{MPI_Type_get_name} or \mpifunc{MPI_Type_set_name} is used.
+This \emph{lazy initialization} is one of the many steps that MPICH2
+takes to reduce the size of the code and speed initialization.
 
 \subsubsection{Creating a New Datatype}
 Here are the steps to create and return a new datatype.
@@ -4767,7 +4887,7 @@ not want to call the new function.  Note that the combiner name is
 \subsubsection{\mpifunc{MPI_GET_ADDRESS}}
 \funcstatus{implemented}
 See the implementation in MPICH-1 \mpifunc{MPI_ADDRESS} in
-\file{mpich/src/pt2pt/address.c}. 
+\file{src/pt2pt/address.c}. 
 The preprocessor symbol \mpidconst{CHAR_PTR_IS_BYTE} is set by
 \code{configure} if casting a \code{char *} pointer to \code{MPI_Aint}
 gives a byte address (this assumes that a \code{char} is a byte). 
@@ -5991,7 +6111,7 @@ What utility routine should be defined to allocate buffer space from the
 user-specified buffer?  How will it be made thread-safe?  What is the
 interface to \mpifunc{MPI_REQUEST_FREE}?  How do we ensure that we wait on
 pending bsend operations in a polling implementation?  See the file
-\file{mpich/src/util/bsendutil2.c} in MPICH-1.  Note that while the buffer is
+\file{src/util/bsendutil2.c} in MPICH-1.  Note that while the buffer is
 a global (thread safety warning)\index{thread safety!buffered send},
 it can be stored as a local 
 \code{static} variable in the file the implements the buffer
@@ -6668,7 +6788,7 @@ discussion of the agents for the particular devices.
 % \mpids{MPID_Hid_data}{size}, and \mpids{MPID_Hid_data}{data}.  We may
 % also want to include the corresponding
 % \mpids{MPID_Hid_data}{request_id} to simplify the process of handling
-% the case wheere the data is delivered in several parts.
+% the case where the data is delivered in several parts.
 
 % \item[\mpidconst{MPID_Hid_cancel}.]Attempt to access a previous
 % request.  If unmatched, remove it and return a success
