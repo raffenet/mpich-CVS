@@ -122,18 +122,19 @@ static void log_warning(char *lpszMsg)
     lpszStrings[0] = szMsg;
     lpszStrings[1] = lpszMsg;
     
-    if (hEventSource != NULL) {
-	ReportEvent(hEventSource, // handle of event source
-	    EVENTLOG_WARNING_TYPE,  // event type
-	    0,                    // event category
-	    0,                    // event ID
-	    NULL,                 // current user's SID
-	    2,                    // strings in lpszStrings
-	    0,                    // no bytes of raw data
-	    (LPCTSTR*)lpszStrings,// array of error strings
-	    NULL);                // no raw data
+    if (hEventSource != NULL) 
+    {
+	ReportEvent(hEventSource, /* handle of event source */
+	    EVENTLOG_WARNING_TYPE,  /* event type */
+	    0,                    /* event category */
+	    0,                    /* event ID */
+	    NULL,                 /* current user's SID */
+	    2,                    /* strings in lpszStrings */
+	    0,                    /* no bytes of raw data */
+	    (LPCTSTR*)lpszStrings,/* array of error strings */
+	    NULL);                /* no raw data */
 	
-	(VOID) DeregisterEventSource(hEventSource);
+	DeregisterEventSource(hEventSource);
     }
 }
 #else
