@@ -61,7 +61,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
             /* Validate info_ptr */
@@ -91,7 +91,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
     }	
     else {
 	/* n is invalid */
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_ARG,
 					  "**infonkey", "**infonkey %d %d", 
 					  n, nkeys );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NTHKEY);

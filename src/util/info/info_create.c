@@ -53,7 +53,7 @@ int MPI_Info_create( MPI_Info *info )
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
             if (mpi_errno) {
@@ -68,7 +68,7 @@ int MPI_Info_create( MPI_Info *info )
     /* ... body of routine ...  */
     info_ptr = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
     if (!info_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }

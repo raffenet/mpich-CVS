@@ -61,27 +61,27 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
         {
 	    int keylen;
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
 	    /* Check input arguments */
 	    if (!key) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_KEY,
 						  "**infokeynull", 0 );
 	    }
 	    else if ((keylen = strlen(key)) > MPI_MAX_INFO_KEY) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_KEY,
 						  "**infokeylong", 0 );
 	    } else if (keylen == 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_KEY,
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_KEY,
 						  "**infokeyempty", 0 );
 	    }
 	    if (!value) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_VALUE, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_VALUE, 
 						  "**infovalnull", 0 );
 	    }
 	    else if (strlen(value) > MPI_MAX_INFO_VAL) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_INFO_VALUE, 
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_INFO_VALUE, 
 						  "**infovallong", 0 );
 	    }
             /* Validate info_ptr */
@@ -114,7 +114,7 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
 	/* Key not present, insert value */
 	curr_ptr         = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
 	if (!curr_ptr) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, 
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, 
 					      "**nomem", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}

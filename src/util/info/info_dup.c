@@ -61,7 +61,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
         MPID_BEGIN_ERROR_CHECKS;
         {
             if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER,
+                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER,
                             "**initialized", 0 );
             }
             /* Validate info_ptr */
@@ -90,7 +90,7 @@ int MPI_Info_dup( MPI_Info info, MPI_Info *newinfo )
     while (curr_old) {
 	curr_new->next = (MPID_Info *)MPIU_Handle_obj_alloc( &MPID_Info_mem );
 	if (!curr_new->next) {
-	    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, MPI_ERR_OTHER, "**nomem", 0 );
 	    return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
 	}
 	curr_new	 = curr_new->next;
