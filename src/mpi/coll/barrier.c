@@ -173,7 +173,7 @@ PMPI_LOCAL int MPIR_Barrier( MPID_Comm *comm_ptr )
 	MPID_Send( 0, 0, MPI_BYTE, rank - twon_within, MPIR_BARRIER_TAG,
 		   comm_ptr, MPID_CONTEXT_INTRA_COLL, &request_ptr );
 	if (request_ptr) {
-	    mpi_errno = MPIR_Wait(request_ptr);
+	    mpi_errno = MPIC_Wait(request_ptr);
 	    MPID_Request_release(request_ptr);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
