@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
-#define USE_NEW_WAY
+#define USE_AGGRESSIVE_READ
 
 /*
  * MPIDI_CH3_iRead()
@@ -18,7 +18,7 @@
 int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 {
     int mpi_errno;
-#ifdef USE_NEW_WAY
+#ifdef USE_AGGRESSIVE_READ
     void *mem_ptr;
     char *iter_ptr;
     int num_bytes;
@@ -32,7 +32,7 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
     MPIDI_DBG_PRINTF((60, FCNAME, "ch3_iread\n"));
 
-#ifdef USE_NEW_WAY
+#ifdef USE_AGGRESSIVE_READ
     index = vc->shm.read_shmq->head_index;
     if (vc->shm.read_shmq->packet[index].avail == MPIDI_CH3I_PKT_AVAILABLE)
     {
@@ -44,7 +44,6 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 
     pkt_ptr = &vc->shm.read_shmq->packet[index];
     mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
-    /*mem_ptr = (void*)vc->shm.read_shmq->packet[index].cur_pos;*/
     num_bytes = vc->shm.read_shmq->packet[index].num_bytes;
     assert(num_bytes > 0);
 
@@ -106,46 +105,14 @@ int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
 	MPIDI_CH3U_Handle_recv_req(vc, rreq);
     }
 
-#else
+#else /* USE_AGGRESSIVE_READ */
 
     rreq->shm.iov_offset = 0;
     vc->shm.recv_active = rreq;
     MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
 
-#endif
+#endif /* USE_AGGRESSIVE_READ */
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
     return MPI_SUCCESS;
 }
-
-#if 0
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-
-#include "mpidi_ch3_impl.h"
-
-/*
- * MPIDI_CH3_iRead()
- */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_iRead
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
-{
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_IREAD);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_IREAD);
-    MPIDI_DBG_PRINTF((60, FCNAME, "ch3_iread\n"));
-
-    rreq->shm.iov_offset = 0;
-    vc->shm.recv_active = rreq;
-    MPIDI_CH3I_SHM_post_readv(vc, rreq->ch3.iov + rreq->shm.iov_offset, rreq->ch3.iov_count - rreq->shm.iov_offset, NULL);
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_IREAD);
-    return MPI_SUCCESS;
-}
-#endif
