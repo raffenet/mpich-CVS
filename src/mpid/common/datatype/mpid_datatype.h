@@ -49,29 +49,29 @@ do {									\
  * and, if the refct is then zero, frees the MPID_Datatype and associated
  * structures.
  */
-#define MPID_Datatype_release(datatype_ptr)					\
-do {										\
-    int inuse;									\
-										\
-    MPIU_Object_release_ref((datatype_ptr),&inuse);				\
-    if (!inuse) {								\
-        int lmpi_errno = MPI_SUCCESS;						\
-	if (MPIR_Process.attr_free && datatype_ptr->attributes) {		\
-	    lmpi_errno = MPIR_Process.attr_free( datatype_ptr->handle,		\
-						datatype_ptr->attributes );	\
-	}									\
- 	/* LEAVE THIS COMMENTED OUT UNTIL WE HAVE SOME USE FOR THE FREE_FN	\
-	if (datatype_ptr->free_fn) {						\
-	    mpi_errno = (datatype_ptr->free_fn)( datatype_ptr );		\
-	     if (mpi_errno) {							\
-		 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);			\
-		 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );		\
-	     }									\
-	} */									\
-        if (lmpi_errno == MPI_SUCCESS) {					\
-	    MPID_Datatype_free(datatype_ptr);					\
-        }									\
-    }										\
+#define MPID_Datatype_release(datatype_ptr)				    \
+do {									    \
+    int inuse;								    \
+									    \
+    MPIU_Object_release_ref((datatype_ptr),&inuse);			    \
+    if (!inuse) {							    \
+        int lmpi_errno = MPI_SUCCESS;					    \
+	if (MPIR_Process.attr_free && datatype_ptr->attributes) {	    \
+	    lmpi_errno = MPIR_Process.attr_free( datatype_ptr->handle,	    \
+						datatype_ptr->attributes ); \
+	}								    \
+ 	/* LEAVE THIS COMMENTED OUT UNTIL WE HAVE SOME USE FOR THE FREE_FN  \
+	if (datatype_ptr->free_fn) {					    \
+	    mpi_errno = (datatype_ptr->free_fn)( datatype_ptr );	    \
+	     if (mpi_errno) {						    \
+		 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE);		    \
+		 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );	    \
+	     }								    \
+	} */								    \
+        if (lmpi_errno == MPI_SUCCESS) {				    \
+	    MPID_Datatype_free(datatype_ptr);				    \
+        }								    \
+    }                                                                       \
 } while (0)
 
 /* Note: Probably there is some clever way to build all of these from a macro.
@@ -142,25 +142,25 @@ do {                                                                    \
     }                                                                   \
 } while (0)
         
-#define MPID_Datatype_get_extent_macro(a,__extent)				\
-do {										\
-    void *ptr;									\
-    switch (HANDLE_GET_KIND(a)) {						\
-        case HANDLE_KIND_DIRECT:						\
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);				\
-            __extent = ((MPID_Datatype *) ptr)->extent;				\
-            break;								\
-        case HANDLE_KIND_INDIRECT:						\
-            ptr = ((MPID_Datatype *)						\
-		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));		\
-            __extent = ((MPID_Datatype *) ptr)->extent;				\
-            break;								\
-        case HANDLE_KIND_INVALID:						\
-        case HANDLE_KIND_BUILTIN:						\
-        default:								\
-            __extent = MPID_Datatype_get_basic_size(a);  /* same as size */	\
-            break;								\
-    }										\
+#define MPID_Datatype_get_extent_macro(a,__extent)			    \
+do {									    \
+    void *ptr;								    \
+    switch (HANDLE_GET_KIND(a)) {					    \
+        case HANDLE_KIND_DIRECT:					    \
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			    \
+            __extent = ((MPID_Datatype *) ptr)->extent;			    \
+            break;							    \
+        case HANDLE_KIND_INDIRECT:					    \
+            ptr = ((MPID_Datatype *)					    \
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	    \
+            __extent = ((MPID_Datatype *) ptr)->extent;			    \
+            break;							    \
+        case HANDLE_KIND_INVALID:					    \
+        case HANDLE_KIND_BUILTIN:					    \
+        default:							    \
+            __extent = MPID_Datatype_get_basic_size(a);  /* same as size */ \
+            break;							    \
+    }									    \
 } while (0)
 
 #define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr_class(Datatype,ptr,MPI_ERR_TYPE,err)
@@ -169,10 +169,16 @@ do {										\
  * err == MPI_SUCCESS ensures that we won't try to dereference the
  * pointer if something has already been detected as wrong.
  */
-#define MPID_Datatype_committed_ptr(ptr,err)				\
-do {									\
-    if ((err == MPI_SUCCESS) && !((ptr)->is_committed))			\
-        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypecommit", 0);	\
+#define MPID_Datatype_committed_ptr(ptr,err)			\
+do {								\
+    if ((err == MPI_SUCCESS) && !((ptr)->is_committed))		\
+        err = MPIR_Err_create_code(MPI_SUCCESS,			\
+				   MPIR_ERR_RECOVERABLE,	\
+				   FCNAME,			\
+				   __LINE__,			\
+				   MPI_ERR_TYPE,		\
+				   "**dtypecommit",		\
+				   0);				\
 } while (0)
 
 typedef struct MPID_Datatype_contents {
@@ -297,47 +303,61 @@ extern MPID_Datatype MPID_Datatype_direct[];
 
 /* LB/UB calculation helper macros */
 
-#define MPID_DATATYPE_CONTIG_LB_UB(__cnt, __old_lb, __old_ub, __old_extent, __lb, __ub)	\
-do {											\
-    if (__cnt == 0) {									\
-	__lb = __old_lb;								\
-	__ub = __old_ub;								\
-    }											\
-    else if (__old_ub >= __old_lb) {							\
-        __lb = __old_lb;								\
-        __ub = __old_ub + (__old_extent) * (__cnt - 1);					\
-    }											\
-    else /* negative extent */ {							\
-	__lb = __old_lb + (__old_extent) * (__cnt - 1);					\
-	__ub = __old_ub;								\
-    }											\
+#define MPID_DATATYPE_CONTIG_LB_UB(__cnt,		\
+				   __old_lb,		\
+				   __old_ub,		\
+				   __old_extent,	\
+				   __lb,		\
+				   __ub)		\
+do {							\
+    if (__cnt == 0) {					\
+	__lb = __old_lb;				\
+	__ub = __old_ub;				\
+    }							\
+    else if (__old_ub >= __old_lb) {			\
+        __lb = __old_lb;				\
+        __ub = __old_ub + (__old_extent) * (__cnt - 1);	\
+    }							\
+    else /* negative extent */ {			\
+	__lb = __old_lb + (__old_extent) * (__cnt - 1);	\
+	__ub = __old_ub;				\
+    }                                                   \
 } while (0)
 
 /* MPID_DATATYPE_VECTOR_LB_UB()
  *
  */
-#define MPID_DATATYPE_VECTOR_LB_UB(__cnt, __stride, __blklen, __old_lb, __old_ub, __old_extent, __lb, __ub) \
-do {													    \
-    if (__cnt == 0 || __blklen == 0) {									    \
-	__lb = __old_lb;										    \
-	__ub = __old_ub;										    \
-    }													    \
-    else if (__stride >= 0 && (__old_extent) >= 0) {							    \
-	__lb = __old_lb;										    \
-	__ub = __old_ub + (__old_extent) * ((__blklen) - 1) + (__stride) * ((__cnt) - 1);		    \
-    }													    \
-    else if (__stride < 0 && (__old_extent) >= 0) {							    \
-	__lb = __old_lb + (__stride) * ((__cnt) - 1);							    \
-	__ub = __old_ub + (__old_extent) * ((__blklen) - 1);						    \
-    }													    \
-    else if (__stride >= 0 && (__old_extent) < 0) {							    \
-	__lb = __old_lb + (__old_extent) * ((__blklen) - 1);						    \
-	__ub = __old_ub + (__stride) * ((__cnt) - 1);							    \
-    }													    \
-    else {												    \
-	__lb = __old_lb + (__old_extent) * ((__blklen) - 1) + (__stride) * ((__cnt) - 1);		    \
-	__ub = __old_ub;										    \
-    }													    \
+#define MPID_DATATYPE_VECTOR_LB_UB(__cnt,			\
+				   __stride,			\
+				   __blklen,			\
+				   __old_lb,			\
+				   __old_ub,			\
+				   __old_extent,		\
+				   __lb,			\
+				   __ub)			\
+do {								\
+    if (__cnt == 0 || __blklen == 0) {				\
+	__lb = __old_lb;					\
+	__ub = __old_ub;					\
+    }								\
+    else if (__stride >= 0 && (__old_extent) >= 0) {		\
+	__lb = __old_lb;					\
+	__ub = __old_ub + (__old_extent) * ((__blklen) - 1) +	\
+	    (__stride) * ((__cnt) - 1);				\
+    }								\
+    else if (__stride < 0 && (__old_extent) >= 0) {		\
+	__lb = __old_lb + (__stride) * ((__cnt) - 1);		\
+	__ub = __old_ub + (__old_extent) * ((__blklen) - 1);	\
+    }								\
+    else if (__stride >= 0 && (__old_extent) < 0) {		\
+	__lb = __old_lb + (__old_extent) * ((__blklen) - 1);	\
+	__ub = __old_ub + (__stride) * ((__cnt) - 1);		\
+    }								\
+    else {							\
+	__lb = __old_lb + (__old_extent) * ((__blklen) - 1) +	\
+	    (__stride) * ((__cnt) - 1);				\
+	__ub = __old_ub;					\
+    }								\
 } while (0)
 
 /* MPID_DATATYPE_BLOCK_LB_UB()
@@ -345,20 +365,26 @@ do {													    \
  * Note: we need the extent here in addition to the lb and ub because the
  * extent might have some padding in it that we need to take into account.
  */
-#define MPID_DATATYPE_BLOCK_LB_UB(__cnt, __disp, __old_lb, __old_ub, __old_extent, __lb, __ub)	\
-do {												\
-    if (__cnt == 0) {										\
-	__lb = __old_lb + (__disp);								\
-	__ub = __old_ub + (__disp);								\
-    }												\
-    else if (__old_ub >= __old_lb) {								\
-        __lb = __old_lb + (__disp);								\
-        __ub = __old_ub + (__disp) + (__old_extent) * ((__cnt) - 1);				\
-    }												\
-    else /* negative extent */ {								\
-	__lb = __old_lb + (__disp) + (__old_extent) * ((__cnt) - 1);				\
-	__ub = __old_ub + (__disp);								\
-    }												\
+#define MPID_DATATYPE_BLOCK_LB_UB(__cnt,				\
+				  __disp,				\
+				  __old_lb,				\
+				  __old_ub,				\
+				  __old_extent,				\
+				  __lb,					\
+				  __ub)					\
+do {									\
+    if (__cnt == 0) {							\
+	__lb = __old_lb + (__disp);					\
+	__ub = __old_ub + (__disp);					\
+    }									\
+    else if (__old_ub >= __old_lb) {					\
+        __lb = __old_lb + (__disp);					\
+        __ub = __old_ub + (__disp) + (__old_extent) * ((__cnt) - 1);	\
+    }									\
+    else /* negative extent */ {					\
+	__lb = __old_lb + (__disp) + (__old_extent) * ((__cnt) - 1);	\
+	__ub = __old_ub + (__disp);					\
+    }									\
 } while (0)
 
 /* Datatype functions */
