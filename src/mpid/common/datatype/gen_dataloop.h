@@ -8,7 +8,9 @@
 #ifndef GEN_DATALOOP_H
 #define GEN_DATALOOP_H
 
+#ifndef HAVE_SYS_UIO_H
 #define HAVE_SYS_UIO_H
+#endif
 
 /* Check that all the appropriate defines are present */
 #ifndef PREPEND_PREFIX
@@ -65,10 +67,10 @@
   Module:
   Datatype
   S*/
-struct DLOOP_Dataloop_contig {
+typedef struct DLOOP_Dataloop_contig {
     DLOOP_Count count;
     struct DLOOP_Dataloop *dataloop;
-};
+} DLOOP_Dataloop_contig;
 
 /*S
   DLOOP_Dataloop_vector - Description of a vector or strided dataloop
@@ -82,12 +84,12 @@ struct DLOOP_Dataloop_contig {
   Module:
   Datatype
   S*/
-struct DLOOP_Dataloop_vector { 
+typedef struct DLOOP_Dataloop_vector { 
     DLOOP_Count count;
     struct DLOOP_Dataloop *dataloop;
     DLOOP_Count blocksize;
     DLOOP_Offset stride;
-};
+} DLOOP_Dataloop_vector;
 
 /*S
   DLOOP_Dataloop_blockindexed - Description of a block-indexed dataloop
@@ -102,12 +104,12 @@ struct DLOOP_Dataloop_vector {
   Datatype
 
   S*/
-struct DLOOP_Dataloop_blockindexed {
+typedef struct DLOOP_Dataloop_blockindexed {
     DLOOP_Count count;
     struct DLOOP_Dataloop *dataloop;
     DLOOP_Count blocksize;
     DLOOP_Offset *offset_array;
-};
+} DLOOP_Dataloop_blockindexed;
 
 /*S
   DLOOP_Dataloop_indexed - Description of an indexed dataloop
@@ -122,12 +124,12 @@ struct DLOOP_Dataloop_blockindexed {
   Datatype
 
   S*/
-struct DLOOP_Dataloop_indexed {
+typedef struct DLOOP_Dataloop_indexed {
     DLOOP_Count count;
     struct DLOOP_Dataloop *dataloop;
     DLOOP_Count *blocksize_array;
     DLOOP_Offset *offset_array;
-};
+} DLOOP_Dataloop_indexed;
 
 /*S
   DLOOP_Dataloop_struct - Description of a structure dataloop
@@ -142,12 +144,12 @@ struct DLOOP_Dataloop_indexed {
   Datatype
 
   S*/
-struct DLOOP_Dataloop_struct {
+typedef struct DLOOP_Dataloop_struct {
     DLOOP_Count count;
     struct DLOOP_Dataloop **dataloop_array;
     DLOOP_Count *blocksize_array;
     DLOOP_Offset *offset_array;
-};
+} DLOOP_Dataloop_struct;
 
 /* In many cases, we need the count and the next dataloop item. This
    common structure gives a quick access to both.  Note that all other 
@@ -155,10 +157,10 @@ struct DLOOP_Dataloop_struct {
    Question: should we put the pointer first in case 
    sizeof(pointer)>sizeof(int) ? 
 */
-struct DLOOP_Dataloop_common {
+typedef struct DLOOP_Dataloop_common {
     DLOOP_Count count;
     struct DLOOP_Dataloop *dataloop;
-};
+} DLOOP_Dataloop_common;
 
 /*S
   DLOOP_Dataloop - Description of the structure used to hold a dataloop
@@ -192,25 +194,25 @@ struct DLOOP_Dataloop_common {
   Datatype
 
   S*/
-struct DLOOP_Dataloop { 
+typedef struct DLOOP_Dataloop { 
     int kind;                  /* Contains both the loop type 
 				  (contig, vector, blockindexed, indexed,
 				  or struct) and a bit that indicates 
 				  whether the dataloop is a leaf type. */
     union {
 	DLOOP_Count                        count;
-	struct DLOOP_Dataloop_contig       c_t;
-	struct DLOOP_Dataloop_vector       v_t;
-	struct DLOOP_Dataloop_blockindexed bi_t;
-	struct DLOOP_Dataloop_indexed      i_t;
-	struct DLOOP_Dataloop_struct       s_t;
-	struct DLOOP_Dataloop_common       cm_t;
+	DLOOP_Dataloop_contig       c_t;
+	DLOOP_Dataloop_vector       v_t;
+	DLOOP_Dataloop_blockindexed bi_t;
+	DLOOP_Dataloop_indexed      i_t;
+	DLOOP_Dataloop_struct       s_t;
+	DLOOP_Dataloop_common       cm_t;
     } loop_params;
     DLOOP_Offset el_size; /* I don't feel like dealing with the bit manip. 
 			   * needed to get the packed size right at the moment.
 			   */
     DLOOP_Offset el_extent;
-};
+} DLOOP_Dataloop;
 
 #define DLOOP_FINAL_MASK 0x00000008
 #define DLOOP_KIND_MASK  0x00000007
@@ -239,12 +241,12 @@ struct DLOOP_Dataloop {
 - loop_p  - pointer to Loop-based description of the dataloop
 
 S*/
-struct DLOOP_Dataloop_stackelm {
+typedef struct DLOOP_Dataloop_stackelm {
     DLOOP_Count curcount;
     DLOOP_Offset curoffset;
     DLOOP_Count curblock; /* NOTE: THIS WASN'T HERE IN MPICH2 VERSION??? */
     struct DLOOP_Dataloop *loop_p;
-};
+} DLOOP_Dataloop_stackelm;
 
 
 
@@ -260,7 +262,7 @@ struct DLOOP_Dataloop_stackelm {
   Questions:
   Should this have an id for allocation and similarity purposes?
   S*/
-struct DLOOP_Segment { 
+typedef struct DLOOP_Segment { 
     void *ptr; /* pointer to datatype buffer */
     DLOOP_Handle handle;
     DLOOP_Offset stream_off; /* next offset into data stream resulting from datatype
@@ -281,7 +283,7 @@ struct DLOOP_Segment {
 				  * to handle it
 				  */
     /* other, device-specific information */
-};
+} DLOOP_Segment;
 
 #if 0
 
