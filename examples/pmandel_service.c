@@ -2,16 +2,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#ifdef HAVE_WINDOWS_H
-#include <process.h> /* getpid() */
-#include <winsock2.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <errno.h>
-#endif
 #include "mpi.h"
+#ifdef HAVE_WINDOWS_H
+#include <process.h>
+#endif
 
 /* definitions */
 
@@ -25,7 +19,6 @@
 #define MAX(x, y)	(((x) > (y))?(x):(y))
 #endif
 
-#define DEFAULT_PORT 7470   /* default port to listen on */
 #define NOVALUE 99999       /* indicates a parameter is as of yet unspecified */
 #define MAX_ITERATIONS 10000 /* maximum 'depth' to look for mandelbrot value */
 #define INFINITE_LIMIT 4.0  /* evalue when fractal is considered diverging */
@@ -98,8 +91,6 @@ color_t getColor(double fraction, double intensity);
 int Make_color_array(int num_colors, color_t colors[]);
 void output_data(int *in_grid_array, int coord[4], int *out_grid_array, int width, int height);
 void PrintUsage();
-static int sock_write(int sock, void *buffer, int length);
-static int sock_read(int sock, void *buffer, int length);
 
 #ifdef USE_PPM
 const char *default_filename = "pmandel.ppm";
@@ -129,7 +120,7 @@ const char *default_filename = "pmandel.pgm";
 
 int myid;
 int use_stdin = 0;
-int sock;
+MPI_Comm comm;
 
 void swap(int *i, int *j)
 {
@@ -159,9 +150,10 @@ int main(int argc, char *argv[])
     int num_colors;
     color_t *colors = NULL;
     MPI_Status status;
-    int listener;
     int save_image = 0;
-    int optval;
+    int result;
+    char mpi_port[MPI_MAX_PORT_NAME];
+    MPI_Info info;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
@@ -194,6 +186,7 @@ int main(int argc, char *argv[])
 	if (julia == 1) /* we're doing a julia figure */
 	    check_julia_params(&julia_constant.real, &julia_constant.imaginary);
 
+	MPI_Bcast(&use_stdin, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&num_colors, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&imax_iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&ipixels_across, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -206,6 +199,7 @@ int main(int argc, char *argv[])
     }
     else
     {
+	MPI_Bcast(&use_stdin, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&num_colors, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&imax_iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&ipixels_across, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -242,8 +236,6 @@ int main(int argc, char *argv[])
 	int istep, jstep, cur_proc;
 	int i1[400], i2[400], j1[400], j2[400];
 	int ii, jj;
-	struct sockaddr_in addr;
-	int len;
 	char line[1024], *token;
 
 	if ( (out_grid_array = (int *)calloc(ipixels_across * ipixels_down, sizeof(int))) == NULL)
@@ -257,58 +249,58 @@ int main(int argc, char *argv[])
 
 	if (!use_stdin)
 	{
-	    addr.sin_family = AF_INET;
-	    addr.sin_addr.s_addr = INADDR_ANY;
-	    addr.sin_port = DEFAULT_PORT;
-
-	    listener = socket(AF_INET, SOCK_STREAM, 0);
-	    if (listener == -1)
+	    result = MPI_Info_create(&info);
+	    if (result != MPI_SUCCESS)
 	    {
-		printf("unable to create a listener socket.\n");
+		printf("Unable to create an MPI_Info to be used in MPI_Open_port.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	    }
+	    result = MPI_Open_port(info, mpi_port);
+	    if (result != MPI_SUCCESS)
+	    {
+		printf("MPI_Open_port failed, aborting.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 		exit(-1);
 	    }
-	    if (bind(listener, &addr, sizeof(addr)) == -1)
+	    result = MPI_Bcast(mpi_port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
+	    if (result != MPI_SUCCESS)
 	    {
-		addr.sin_port = 0;
-		if (bind(listener, &addr, sizeof(addr)) == -1)
-		{
-		    printf("unable to create a listener socket.\n");
-		    MPI_Abort(MPI_COMM_WORLD, -1);
-		    exit(-1);
-		}
-	    }
-	    if (listen(listener, 1) == -1)
-	    {
-		printf("unable to listen.\n");
+		printf("Unable to broadcast the port name to COMM_WORLD.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
-		exit(-1);
 	    }
-	    len = sizeof(addr);
-	    getsockname(listener, &addr, &len);
-	    
-	    printf("%s listening on port %d\n", processor_name, addr.sin_port);
+	    printf("%s listening on port: %s\n", processor_name, mpi_port);
 	    fflush(stdout);
 
-	    sock = accept(listener, NULL, NULL);
-	    if (sock == -1)
+	    result = MPI_Comm_accept(mpi_port, info, 0, MPI_COMM_WORLD, &comm);
+	    if (result != MPI_SUCCESS)
 	    {
-		printf("unable to accept a socket connection.\n");
+		printf("MPI_Comm_accept failed, aborting.\n");
 		MPI_Abort(MPI_COMM_WORLD, -1);
 		exit(-1);
 	    }
 	    printf("accepted connection from visualization program.\n");
 	    fflush(stdout);
 
-#ifdef HAVE_WINDOWS_H
-	    optval = 1;
-	    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval));
-#endif
-
 	    printf("sending image size to visualizer.\n");
-	    sock_write(sock, &ipixels_across, sizeof(int));
-	    sock_write(sock, &ipixels_down, sizeof(int));
-	    sock_write(sock, &num_colors, sizeof(int));
+	    fflush(stdout);
+	    result = MPI_Send(&ipixels_across, 1, MPI_INT, 0, 0, comm);
+	    if (result != MPI_SUCCESS)
+	    {
+		printf("Unable to send pixel width to visualizer, aborting.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	    }
+	    result = MPI_Send(&ipixels_down, 1, MPI_INT, 0, 0, comm);
+	    if (result != MPI_SUCCESS)
+	    {
+		printf("Unable to send pixel height to visualizer, aborting.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	    }
+	    MPI_Send(&num_colors, 1, MPI_INT, 0, 0, comm);
+	    if (result != MPI_SUCCESS)
+	    {
+		printf("Unable to send num_colors to visualizer, aborting.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	    }
 	}
 
 	for (;;)
@@ -318,7 +310,7 @@ int main(int argc, char *argv[])
 	    {
 		printf("input xmin ymin xmax ymax, (0 0 0 0 to quit):\n");fflush(stdout);
 		fgets(line, 1024, stdin);
-		printf("read <%s> from stdin\n", line);fflush(stdout);
+		/*printf("read <%s> from stdin\n", line);fflush(stdout);*/
 		token = strtok(line, " \n");
 		x_min = atof(token);
 		token = strtok(NULL, " \n");
@@ -333,10 +325,30 @@ int main(int argc, char *argv[])
 	    else
 	    {
 		printf("reading xmin,ymin,xmax,ymax.\n");fflush(stdout);
-		sock_read(sock, &x_min, sizeof(double));
-		sock_read(sock, &y_min, sizeof(double));
-		sock_read(sock, &x_max, sizeof(double));
-		sock_read(sock, &y_max, sizeof(double));
+		result = MPI_Recv(&x_min, 1, MPI_DOUBLE, 0, 0, comm, &status);
+		if (result != MPI_SUCCESS)
+		{
+		    printf("Unable to receive x_min from the visualizer, aborting.\n");
+		    MPI_Abort(MPI_COMM_WORLD, -1);
+		}
+		result = MPI_Recv(&y_min, 1, MPI_DOUBLE, 0, 0, comm, &status);
+		if (result != MPI_SUCCESS)
+		{
+		    printf("Unable to receive y_min from the visualizer, aborting.\n");
+		    MPI_Abort(MPI_COMM_WORLD, -1);
+		}
+		result = MPI_Recv(&x_max, 1, MPI_DOUBLE, 0, 0, comm, &status);
+		if (result != MPI_SUCCESS)
+		{
+		    printf("Unable to receive x_max from the visualizer, aborting.\n");
+		    MPI_Abort(MPI_COMM_WORLD, -1);
+		}
+		result = MPI_Recv(&y_max, 1, MPI_DOUBLE, 0, 0, comm, &status);
+		if (result != MPI_SUCCESS)
+		{
+		    printf("Unable to receive y_max from the visualizer, aborting.\n");
+		    MPI_Abort(MPI_COMM_WORLD, -1);
+		}
 	    }
 	    printf("x0,y0 = (%f, %f) x1,y1 = (%f,%f)\n", x_min, y_min, x_max, y_max);fflush(stdout);
 
@@ -442,12 +454,42 @@ int main(int argc, char *argv[])
 		temp[1] = 0;
 		temp[2] = 0;
 		temp[3] = 0;
-		sock_write(sock, temp, 4 * sizeof(int));
+		result = MPI_Send(temp, 4, MPI_INT, 0, 0, comm);
+		if (result != MPI_SUCCESS)
+		{
+		    printf("Unable to send a done command to the visualizer, aborting.\n");
+		    MPI_Abort(MPI_COMM_WORLD, -1);
+		}
 	    }
 	}
     }
     else
     {
+	if (!use_stdin)
+	{
+	    result = MPI_Info_create(&info);
+	    if (result != MPI_SUCCESS)
+	    {
+		printf("Unable to create an MPI_Info to be used in MPI_Open_port.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	    }
+	    result = MPI_Bcast(mpi_port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
+	    if (result != MPI_SUCCESS)
+	    {
+		printf("Unable to broadcast the port name on COMM_WORLD.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	    }
+	    printf("%s listening on port: %s\n", processor_name, mpi_port);
+	    fflush(stdout);
+
+	    result = MPI_Comm_accept(mpi_port, info, 0, MPI_COMM_WORLD, &comm);
+	    if (result != MPI_SUCCESS)
+	    {
+		printf("MPI_Comm_accept failed, aborting.\n");
+		MPI_Abort(MPI_COMM_WORLD, -1);
+		exit(-1);
+	    }
+	}
 	for (;;)
 	{
 	    MPI_Bcast(&x_min, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -568,98 +610,6 @@ void PrintUsage()
 	IDEAL_MIN_X_VALUE, IDEAL_MAX_X_VALUE, IDEAL_MIN_Y_VALUE, IDEAL_MAX_Y_VALUE, IDEAL_ITERATIONS,
 	IDEAL_WIDTH, IDEAL_HEIGHT, default_filename);
     fflush(stdout);
-}
-
-int sock_write(int sock, void *buffer, int length)
-{
-    int result;
-    int num_bytes;
-    /*char err[100];*/
-    int total = 0;
-    struct timeval t;
-    fd_set set;
-
-    while (length)
-    {
-	num_bytes = send(sock, buffer, length, 0);
-	if (num_bytes == -1)
-	{
-#ifdef HAVE_WINDOWS_H
-	    result = WSAGetLastError();
-	    if (result == WSAEWOULDBLOCK)
-	    {
-		FD_ZERO(&set);
-		FD_SET(sock, &set);
-		t.tv_sec = 1;
-		t.tv_usec = 0;
-		select(1, &set, NULL, NULL, &t);
-		continue;
-	    }
-#else
-	    if (errno == EWOULDBLOCK)
-	    {
-		FD_ZERO(&set);
-		FD_SET(sock, &set);
-		t.tv_sec = 1;
-		t.tv_usec = 0;
-		select(1, &set, NULL, NULL, &t);
-		continue;
-	    }
-#endif
-	    return total;
-	}
-	length -= num_bytes;
-	buffer = (char*)buffer + num_bytes;
-	total += num_bytes;
-    }
-    return total;
-    /*return send(sock, buffer, length, 0);*/
-}
-
-int sock_read(int sock, void *buffer, int length)
-{
-    int result;
-    int num_bytes;
-    /*char err[100];*/
-    int total = 0;
-    struct timeval t;
-    fd_set set;
-
-    while (length)
-    {
-	num_bytes = recv(sock, buffer, length, 0);
-	if (num_bytes == -1)
-	{
-#ifdef HAVE_WINDOWS_H
-	    result = WSAGetLastError();
-	    if (result == WSAEWOULDBLOCK)
-	    {
-		FD_ZERO(&set);
-		FD_SET(sock, &set);
-		t.tv_sec = 1;
-		t.tv_usec = 0;
-		select(1, &set, NULL, NULL, &t);
-		continue;
-	    }
-#else
-	    if (errno == EWOULDBLOCK)
-	    {
-		FD_ZERO(&set);
-		FD_SET(sock, &set);
-		t.tv_sec = 1;
-		t.tv_usec = 0;
-		select(1, &set, NULL, NULL, &t);
-		continue;
-	    }
-#endif
-	    return total;
-	}
-	length -= num_bytes;
-	buffer = (char*)buffer + num_bytes;
-	total += num_bytes;
-    }
-    return total;
-    /*return recv(sock, buffer, length, 0);*/
 }
 
 color_t getColor(double fraction, double intensity)
@@ -1292,6 +1242,8 @@ int single_mandelbrot_point(complex_t coord_point,
 void output_data(int *in_grid_array, int coord[4], int *out_grid_array, int width, int height)
 {
     int i, j, k;
+    int result;
+
     k = 0;
     for (j=coord[2]; j<=coord[3]; j++)
     {
@@ -1303,9 +1255,18 @@ void output_data(int *in_grid_array, int coord[4], int *out_grid_array, int widt
     }
     if (!use_stdin)
     {
-	sock_write(sock, coord, 4 * sizeof(int));
-	sock_write(sock, in_grid_array, ((coord[1] + 1 - coord[0]) * (coord[3] + 1 - coord[2])) * sizeof(int));
-	/* send the data to the visualizer */
+	result = MPI_Send(coord, 4, MPI_INT, 0, 0, comm);
+	if (result != MPI_SUCCESS)
+	{
+	    printf("Unable to send coordinates to the visualizer, aborting.\n");
+	    MPI_Abort(MPI_COMM_WORLD, -1);
+	}
+	result = MPI_Send(in_grid_array, (coord[1] + 1 - coord[0]) * (coord[3] + 1 - coord[2]), MPI_INT, 0, 0, comm);
+	if (result != MPI_SUCCESS)
+	{
+	    printf("Unable to send coordinate data to the visualizer, aborting.\n");
+	    MPI_Abort(MPI_COMM_WORLD, -1);
+	}
     }
 }
 
