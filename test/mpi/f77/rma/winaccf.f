@@ -62,18 +62,18 @@ C
 C Check the results
          if (left .ne. MPI_PROC_NULL) then
             do i=1, nrows
-               ans = rank * (ncols * nrows) - ncols + i - 1
+               ans = rank * (ncols * nrows) - nrows + i - 1
                if (buf(i,0) .ne. ans) then
                   errs = errs + 1
                   if (errs .le. 10) then
-                     print *, ' buf(',i,'0) = ', buf(i,0)
+                     print *, ' buf(',i,',0) = ', buf(i,0)
                   endif
                endif
             enddo
          endif
          if (right .ne. MPI_PROC_NULL) then
             do i=1, nrows
-               ans = rank * (ncols * nrows) + nrows * (ncols-1) + i - 1
+               ans = (rank + 1) * (ncols * nrows) + i - 1
                if (buf(i,ncols+1) .ne. ans) then
                   errs = errs + 1
                   if (errs .le. 10) then

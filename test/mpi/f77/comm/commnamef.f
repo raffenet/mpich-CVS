@@ -58,7 +58,7 @@ C
       do while( i.le. 4 .and. MTestGetIntracomm( comm(i), 1, .true. ) ) 
          ncomm = i
          write( inname(i), '(a,i1)') 'myname',i
-         call mpi_comm_set_name( comm(i), inname, ierr )
+         call mpi_comm_set_name( comm(i), inname(i), ierr )
          i = i + 1
       enddo
 C

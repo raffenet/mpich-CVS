@@ -44,12 +44,15 @@ C write
            call mpi_file_get_position_shared( fh, offset, ierr )
            if (offset .ne. fileintsize * i) then
               errs = errs + 1
-              print *, ' Shared position is ', offset, ' should be ',
+              print *, r, ' Shared position is ', offset,' should be ',
      &                 fileintsize * i
            endif
+           call mpi_barrier( comm, ierr )
         enddo
         call mpi_file_close( fh, ierr )
-        call mpi_file_delete( filename, ierr )
+	if (r .eq. 0) then
+            call mpi_file_delete( filename, MPI_INFO_NULL, ierr )
+        endif
         if (ierr .ne. MPI_SUCCESS) then
            errs = errs + 1
            if (errs .le. 10) then
