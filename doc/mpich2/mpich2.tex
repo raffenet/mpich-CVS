@@ -4151,7 +4151,14 @@ Each device and method in a device will also require initialization.
 \begin{tcp}
 Acquire enough information to establish a connection with each process
 in \mpiconst{MPI_COMM_WORLD}.  This may include host and port for
-TCP.  
+TCP.  This is likely to use something like the following:
+\begin{verbatim}
+   <Get contact port>
+   sprintf( key, "%d:%d:contact", gid, lrank );
+   sprintf( value, "%s:%d", hostname, port );
+   BNR_Put( key, value );
+   BNR_Fence();
+\end{verbatim}
 \end{tcp}
 \begin{shmem}
 Create a shared memory area for \mpidconst{MPID_Request}s, short
@@ -4190,6 +4197,16 @@ Also setup information for the debugger (process tables, etc.)
 Question: Do we want to support the special case of a single language?  I.e.,
 only C or C++?  Do we do that by dynamically loading the Fortran, Fortran 90,
 and C++ initialization routines as required?
+
+Question:  We need to describe here how connections are established, even if
+they are established lazily.  That is, we shold describe here, even if the
+connections are not established until needed, how connections are
+established.  For example, for \tcpname, the code might look like
+\begin{verbatim}
+   sprintf( key, "%d:%d:contact", gid_of_process, lrank_of_process );
+   BNR_Get( key, value );
+   <use value as hostname:port to contact>
+\end{verbatim}\index{BNR_Get}
 
 \subsubsection{\mpifunc{MPI_QUERY_THREAD}}
 This returns the level of thread support provided.  Should there be an
