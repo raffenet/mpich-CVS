@@ -324,6 +324,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 
 	/* At this point, we're done with the local lpids; they'll
 	   be freed with the other local memory on exit */
+
+	MPIR_Nest_decr();
     } /* End of the first phase of the leader communication */
 
     /* 
@@ -343,6 +345,10 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     }
     /* --END ERROR HANDLING-- */
     DEBUG(printf( "Got contextid\n" ));
+
+    /* Increment the nest count for everyone because all processes
+       will be communicating now */
+    MPIR_Nest_incr();
     /* Leaders can now swap context ids and then broadcast the value
        to the local group of processes */
     if (comm_ptr->rank == local_leader) {
@@ -396,6 +402,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 
     /* At last, we now have the information that we need to build the 
        intercommunicator */
+    /* Decrement the nesting pointer because we're done making MPI calls */
+    MPIR_Nest_decr();
 
     /* All processes in the local_comm now build the communicator */
 
