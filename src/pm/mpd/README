@@ -45,8 +45,8 @@ This starts a ring of one mpd.  Other mpd's join the ring by being run
 with host and port arguments for the first mpd.  You can automate this
 process by using mpdboot.
  
-Make a file with machine names in it.  It will be handy to use the default,
-which is ./mpd.hosts .
+Make a file with machine names in it.  This file should *not* include the
+local machine.  It will be handy to use the default, which is ./mpd.hosts .
 
 donner% cat ./mpd.hosts
 foo.mcs.anl.gov
@@ -66,12 +66,13 @@ Put in .bashrc: export PATH=/home/you/mpich2/bin:$PATH
 
 To start some mpds, use mpdboot.  It uses the mpd.hosts file:
 
-donner% mpdboot.py -n 4 
+donner% mpdboot -n 4 
 donner%
 
 This command starts a total of 4 daemons, one on the local machine and the
 rest on machines in the mpd.hosts file.  You can specify another file (-f) or
-another mpd command (-m).
+another mpd command (-m).  The mpdboot command uses ssh to start the mpd on
+each machine in the mpd.hosts file.
 
 You can use mpdtrace to see where your mpd's are running:
 
