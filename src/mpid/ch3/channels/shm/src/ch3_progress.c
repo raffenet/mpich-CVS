@@ -34,7 +34,7 @@ int MPIDI_CH3_Progress(int is_blocking)
     do
     {
 #if 0
-	rc = ibu_wait(MPIDI_CH3I_Process.set, 0, &out);
+	rc = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.set, 0, &out);
 	if (rc == IBU_FAIL)
 	    err_printf("ibu_wait returned IBU_FAIL, error %d\n", out.error);
 	assert(rc != IBU_FAIL);
@@ -293,7 +293,6 @@ static inline void handle_written(MPIDI_VC * vc)
 	*/
 	assert(req->shm.iov_offset < req->ch3.iov_count);
 	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling shm_writev"));*/
-	//nb = MPIDI_CH3I_SHM_writev(vc->shm.shm, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset);
 	nb = MPIDI_CH3I_SHM_writev(vc, req->ch3.iov + req->shm.iov_offset, req->ch3.iov_count - req->shm.iov_offset);
 	MPIDI_DBG_PRINTF((60, FCNAME, "shm_writev returned %d", nb));
 

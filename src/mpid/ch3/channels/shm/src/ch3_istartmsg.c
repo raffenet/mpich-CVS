@@ -49,11 +49,11 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
-    /* The TCP implementation uses a fixed length header, the size of which is
+    /* The SHM implementation uses a fixed length header, the size of which is
        the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
     
-    /* Connection already formed.  If send queue is empty attempt to send
+    /* If send queue is empty attempt to send
        data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
@@ -63,7 +63,6 @@ MPID_Request * MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, int hdr_sz)
 	   channel, thus insuring that the progress engine does also try to
 	   write */
 	
-	//nb = MPIDI_CH3I_SHM_write(vc->shm.shm, hdr, hdr_sz);
 	nb = MPIDI_CH3I_SHM_write(vc, hdr, hdr_sz);
 	
 	if (nb == hdr_sz)

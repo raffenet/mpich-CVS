@@ -44,7 +44,7 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
     assert(n_iov <= MPID_IOV_LIMIT);
     assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
-    /* The TCP implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The SHM implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     
     /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
@@ -63,8 +63,6 @@ void MPIDI_CH3_iSendv(MPIDI_VC * vc, MPID_Request * sreq, MPID_IOV * iov, int n_
 	nb = (n_iov > 1) ?
 	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov) :
 	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
-	    //MPIDI_CH3I_SHM_writev(vc->shm.shm, iov, n_iov) :
-	    //MPIDI_CH3I_SHM_write(vc->shm.shm, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
 	
 	if (nb > 0)
 	{

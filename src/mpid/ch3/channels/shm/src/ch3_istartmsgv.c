@@ -73,11 +73,11 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
     assert(n_iov <= MPID_IOV_LIMIT);
     assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
-    /* The TCP implementation uses a fixed length header, the size of which is
+    /* The SHM implementation uses a fixed length header, the size of which is
        the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     
-    /* Connection already formed.  If send queue is empty attempt to send
+    /* If send queue is empty attempt to send
     data, queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
@@ -90,8 +90,6 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 	nb = (n_iov > 1) ?
 	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov) :
 	    MPIDI_CH3I_SHM_write(vc, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
-	    //MPIDI_CH3I_SHM_writev(vc->shm.shm, iov, n_iov) :
-	    //MPIDI_CH3I_SHM_write(vc->shm.shm, iov->MPID_IOV_BUF, iov->MPID_IOV_LEN);
 	
 	MPIU_DBG_PRINTF(("ch3_istartmsgv: shm_writev returned %d bytes\n", nb));
 	if (nb > 0)
