@@ -1137,10 +1137,12 @@ extern MPICH_PerThread_t MPIR_Thread;
 #define MPID_Request_construct(request_ptr_)		\
 {							\
     MPID_Thread_lock_init((request_ptr_)->mutex);	\
+    MPID_Thread_lock_init((request_ptr_)->initialized);	\
 }
-#define MPID_Request_destruct(request_ptr_)		\
-{							\
-    MPID_Thread_lock_destroy((request_ptr_)->mutex);	\
+#define MPID_Request_destruct(request_ptr_)			\
+{								\
+    MPID_Thread_lock_destroy((request_ptr_)->mutex);		\
+    MPID_Thread_lock_destroy((request_ptr_)->initialized);	\
 }
 #define MPID_Request_thread_lock(request_ptr_) MPID_Thread_lock(&(request_ptr_)->mutex)
 #define MPID_Request_thread_unlock(request_ptr_) MPID_Thread_unlock(&(request_ptr_)->mutex)
