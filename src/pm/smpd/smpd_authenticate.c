@@ -34,7 +34,7 @@ int smpd_authenticate(sock_set_t set, sock_t sock, int type)
 	ret_val = smpd_server_authenticate(set, sock, SMPD_DEFAULT_PASSPHRASE);
 	break;
     case SMPD_CLIENT_AUTHENTICATION:
-	smpd_dbg_printf("authenticating from client\n");
+	/*smpd_dbg_printf("authenticating from client\n");*/
 	ret_val = smpd_client_authenticate(set, sock, SMPD_DEFAULT_PASSPHRASE);
 	break;
     default:
@@ -78,11 +78,13 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 	smpd_err_printf("smpd_server_authenticate: failed to generate the authentication strings\n");
 	return SMPD_FAIL;
     }
+    /*
     smpd_dbg_printf("gen_authentication_strings:\n passphrase - %s\n pszStr - %s\n pszCrypt - %s\n",
 	passphrase, pszStr, pszCrypt);
+    */
 
     /* write the challenge string*/
-    smpd_dbg_printf("writing challenge string: %s\n", pszStr);
+    /*smpd_dbg_printf("writing challenge string: %s\n", pszStr);*/
     if (smpd_write_string(set, sock, pszStr) != SMPD_SUCCESS)
     {
 	smpd_err_printf("smpd_server_authenticate: Writing challenge string failed\n");
@@ -97,7 +99,7 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     }
     /*smpd_dbg_printf("read challenge-response string: %s\n", pszStr);*/
 
-    smpd_dbg_printf("read response, comparing with crypted string:\n%s\n%s\n", pszStr, pszCrypt);
+    /*smpd_dbg_printf("read response, comparing with crypted string:\n%s\n%s\n", pszStr, pszCrypt);*/
     /* compare the response with the encrypted result and write success or failure*/
     if (strcmp(pszStr, pszCrypt) == 0)
 	ret_val = smpd_write_string(set, sock, SMPD_AUTHENTICATION_ACCEPTED_STR);
@@ -109,6 +111,7 @@ int smpd_server_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 	return SMPD_FAIL;
     }
 
+    smpd_dbg_printf("successful server authentication\n");
     return SMPD_SUCCESS;
 }
 
@@ -126,7 +129,7 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
 	smpd_err_printf("smpd_client_authenticate: Reading challenge string failed\n");
 	return SMPD_FAIL;
     }
-    smpd_dbg_printf("challenge string read: %s\n", pszStr);
+    /*smpd_dbg_printf("challenge string read: %s\n", pszStr);*/
 
     /* crypt the passphrase + the challenge*/
     if (strlen(phrase) + strlen(pszStr) > SMPD_PASSPHRASE_MAX_LENGTH)
@@ -136,11 +139,11 @@ int smpd_client_authenticate(sock_set_t set, sock_t sock, char *passphrase)
     }
     strcat(phrase, pszStr);
 
-    smpd_dbg_printf("crypting: %s\n", phrase);
+    /*smpd_dbg_printf("crypting: %s\n", phrase);*/
     result = crypt(phrase, SMPD_SALT_VALUE);
     strcpy(pszStr, result);
 
-    smpd_dbg_printf("writing response: %s\n", pszStr);
+    /*smpd_dbg_printf("writing response: %s\n", pszStr);*/
     /* write the response*/
     if (smpd_write_string(set, sock, pszStr) != SMPD_SUCCESS)
     {

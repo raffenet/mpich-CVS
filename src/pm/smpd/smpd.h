@@ -27,7 +27,7 @@
 #define SMPD_AUTHENTICATION_ACCEPTED_STR  "SUCCESS"
 #define SMPD_SMPD_SESSION_STR             "smpd"
 #define SMPD_PROCESS_SESSION_STR          "process"
-#define SMPD_DEFAULT_PASSPHRASE           "MPICH2IsGreat"
+#define SMPD_DEFAULT_PASSPHRASE           "behappy" /* must be less than 13 characers */
 #define SMPD_DEFAULT_PASSWORD             "gastroduodenostomy"
 #define SMPD_REGISTRY_KEY                 "SOFTWARE\\MPICH\\SMPD"
 #define SMPD_CRED_REQUEST                 "credentials"
