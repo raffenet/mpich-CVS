@@ -238,7 +238,6 @@ MPID_Isend( )
         fill in rest of request (datatype, buffer, count)
         CH3U_Request_change_state( waiting to rndv )
     } 
-
 }
 \end{verbatim}
 
@@ -541,13 +540,26 @@ CH3_iWrite( MPID_VC *, MPID_Request * )
     return
 \end{verbatim}
 The request update routine handles incremental packing; typically, it
+uses \code{MPIR_Segment_pack} to pack the next segment of bytes and
+then calls \code{CH3_iWrite} to continue writing the data (note that
+the request is left on the active list in case some other thread want
+to start sending data on this connection).
 
 \begin{verbatim}
 CH3_iStartMsg( MPID_VC *, void *header, int header_count )
+   if there is no active request on this VC
+      write the header.
+      if the entire header is written, return null
+   else
+      create a request
+      fill it in with the remaining data to write
+      add to the pending send queue
+      return request
 \end{verbatim}
 
 \begin{verbatim}
 CH3_iStartMsgv( MPID_VC *, struct iovec *iov, int count )
+Like CH3_iStartMsg, but for all of the data in the iov
 \end{verbatim}
 
 \begin{verbatim}

@@ -2902,15 +2902,25 @@ The lengths of the language types are computed by \code{configure}.  For
 systems where cross compilation is used, these values must be provided by
 defining the appropriate \code{CROSS_SIZEOF_xxx} environment variables.
 
+All builtin types are predefined (at compile time), including the
+names of the datatypes (the name accessed through
+\mpifunc{MPI_Type_get_name})\footnote{An alternative is to provide the
+names only if \texttt{MPI\_Type\_get\_name} is used by the user's program.}.
+
 \subsubsection{Creating a New Datatype}
 Here are the steps to create and return a new datatype.
 \begin{enumerate}
-\item Allocate a new object.
+\item Allocate a new object using \code{MPIU_Handle_new_obj}.
+
 \item Allocate two dataloops: one to hold the description as given (needed to
   return the contents and envelope) and one to hold the optimized loop.
   If the two loops are identical, only the optimized loop is allocated; the
-  other is left null.
+  other is left null.  \code{MPIU_Malloc} may be used to allocate the
+  dataloops.  Alternatively, let the \code{MPID_Datatype} structure
+  contain the first two dataloops (as part of the structure itself).
+
 \item Initialize the fields and datatype name.
+
 \item Setup the two dataloops.  For datatypes that require copies of input
   arrays (e.g., \code{MPI_Type_indexed}), only the
   \mpids{MPID_Datatype}{opt_loopinfo} should contain a copy if possible.  
@@ -2971,7 +2981,7 @@ Here are the steps to create and return a new datatype.
 
 \end{enumerate}
 
-\subsubsection{Error classes}
+\paragraph{Error classes for datatype creation.}
 Error classes include \mpiconst{MPI_ERR_TYPE},
 \mpiconst{MPI_ERR_ARG}, and \mpiconst{MPI_ERR_OTHER} (for
 out-of-memory allocating internal fields).
@@ -2981,7 +2991,8 @@ choice for implementing operations that involve datatypes, such as
 \mpifunc{MPI_Pack} and \mpifunc{MPI_Unpack}.
 
 \subsubsection{Computing the Extent}
-All datatypes should call the function
+There are two cases to computing the extent: \code{MPI_Type_struct}
+and other.  Most routines should call the function
 \mpidfunc{MPIR_Type_compute_extent} to compute the extent because the
 computation is a bit complex.  Here is the rule for the extent:
 \begin{algorithm}
@@ -3008,6 +3019,11 @@ multiple of the alignment size.
 Note that the choice of alignment rule is made at runtime, using the
 routines in Section~\ref{sec:runtime-params}.  The default alignment
 rule is determined by configure using \code{PAC_C_STRUCT_ALIGNMENT}.
+This macro returns the values \code{packed}, \code{largest},
+\code{two}, \code{four}, or \code{eight}.
+
+In the case of datatypes created with \code{MPI_Type_struct}, the
+routine itself must compute the extent, using the same rules as above.
 
 Questions about the implementation of datatypes:
 
@@ -3097,9 +3113,10 @@ Questions about the implementation of datatypes:
     (e.g., one using a non-IEEE floating point format) may need to use
     XDR.  
 
-\item Should all datatype creation routines call a routine to compute
-the representative type signature?  This could be
-\mpidfunc{MPIR_type_signature}.  The configure option
+\item All datatype creation routines should call the routine
+\mpidfunc{MPIR_Type_signature} to compute 	
+the representative type signature.
+The configure option
 \cfgoption{--disable-type-signature} could turn this off (and remove
 the overhead from the communication, since the signature value must be
 communicated to the destination to allow it to be checked).
@@ -3117,9 +3134,9 @@ special case of a
 datatype of size zero and a message of size zero; this should return a count
 of zero (see the MPI errata discussion). 
 
-Question: should this call an MPID function for this for systems that want to
+Question: should this call an MPID function for systems that want to
 manage the count field differently, that is, not use it to store the number of
-bytes in the message?  
+bytes in the message (e.g., Globus)?  
 
 \subsubsection{\mpifunc{MPI_GET_ELEMENTS}}
 This requires some care.  This should return the number of basic datatypes in
@@ -3167,12 +3184,20 @@ Questions: Where are the values defined for the count field(s) in the status?
 Is this just the \mpids{MPI_Status}{count} field?  Is there an
 \mpidfunc{MPID_Status_set_elements} routine?
 
+In the near term, this will simply set the \code{count} field.  Later,
+we may provide a hook to an optional device routine to handle this.
+
 \subsubsection{\mpifunc{MPI_TYPE_HINDEXED}}
 Deprecated.  However, we can't easily use \mpifunc{MPI_TYPE_CREATE_HINDEXED}
 because that could (if \code{MPI_Aint} is longer than \code{int}) require
 making a copy of an array argument.  Thus, this code should copy most
 of \mpifunc{MPI_TYPE_CREATE_HINDEXED}.  Note that the combiner name for this
 is \mpiconst{MPI_COMBINER_HINDEXED_INTEGER}.
+
+To reduce code size and complexity in the common case where
+\code{sizeof(MPI_Aint} is the same as \code{sizeof(int)}, use the
+C preprocessor value \code{SIZEOF_INT_IS_AINT} that is defined by
+\code{configure}.  
 
 \subsubsection{\mpifunc{MPI_TYPE_HVECTOR}}
 Deprecated.  Use \mpifunc{MPI_TYPE_CREATE_HVECTOR}.  Note that the combiner
@@ -3184,7 +3209,8 @@ not want to call the new function.  Note that the combiner name is
 \mpiconst{MPI_COMBINER_STRUCT_INTEGER}. 
 
 \subsubsection{\mpifunc{MPI_GET_ADDRESS}}
-See the MPICH-1 \mpifunc{MPI_ADDRESS} in \file{mpich/src/pt2pt/address.c}.
+See the implementation in MPICH-1 \mpifunc{MPI_ADDRESS} in
+\file{mpich/src/pt2pt/address.c}. 
 The preprocessor symbol \mpidconst{CHAR_PTR_IS_BYTE} is set by
 \code{configure} if casting a \code{char *} pointer to \code{MPI_Aint}
 gives a byte address (this assumes that a \code{char} is a byte). 
@@ -3248,7 +3274,11 @@ Optimize the datatype for communication.
 Question:  How do we want to organize the optimization code for datatypes?  We
 shouldn't embed it within the \code{MPI_TYPE_COMMIT} function.  Should each of
 the dataloop types (e.g., \code{MPID_VECTOR}) have a corresponding routine
-that is called with the entire datatype (not just the specific dataloop)?
+that is called with the entire datatype (not just the specific
+dataloop)?  If so, it should be stored in a function pointer within
+the datatype itself, rather than as a function name known to the
+commit function.
+
 
 One special case is to identify datatypes that are contiguous.  
 
@@ -3271,15 +3301,16 @@ erroneous user programs, we can use the same strategy as used for the
 
 \subsubsection{\mpifunc{MPI_TYPE_FREE}}
 This first calls \mpidfunc{MPIU_Object_release_ref}.  If
-the returned value is zero, it should free the contents of \code{dataloop} and
-then call \mpidfunc{MPIR_Datatype_free}.  Invoke the common attribute list
-delete code.
+the returned value is zero, it should invoke the free function
+attached to the datatype.  That free function
+(\mpids{MPID_Datatype}{free_fn}) should free the dataloop
+and any other allocated space.
 
-Question:  Should each (major) datatype contain its own free function?  Then
-the datatype could contain a pointer to the function needed to free whatever
-datatype-specific storage that it has used.  Common code, such as the
-attribute delete code, would be handled by the \code{MPIR_Datatype_free}
-routine.  
+% Question:  Should each (major) datatype contain its own free function?  Then
+% the datatype could contain a pointer to the function needed to free whatever
+% datatype-specific storage that it has used.  Common code, such as the
+% attribute delete code, would be handled by the \code{MPIR_Datatype_free}
+% routine.  
 
 \subsubsection{\mpifunc{MPI_TYPE_EXTENT}}
 Simply uses the \mpids{MPI_Datatype}{extent} field in the structure.
@@ -3297,9 +3328,17 @@ Simply uses the \mpids{MPI_Datatype}{ub} field in the structure.
 Simply uses the \mpids{MPI_Datatype}{true_extent} field in the structure.
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_CONTENTS}}
-Uses the \code{dataloop} field to access the data uses to create the datatype.
-Actually, must use a separate dataloop field so that the arguments that the
-user provided are returned, rather than an optimized form).
+Uses the \mpids{MPID_Datatype}{dataloop} (not the
+\mpids{MPID_Datatype}{opt_datatloop}) field to access the data uses to
+create the datatype. 
+
+This function is the reason for having two dataloop fields in the
+datatype structure.  
+
+Question: Should this function know how to return the contents of all
+datatypes, or should the datatype structure contain a pointer to the
+function that understands the datatype?  I prefer a function pointer
+within the datatype structure.
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_ENVELOPE}}
 Uses \code{dataloop} field to identify how the datatype was constructed.
@@ -3325,7 +3364,9 @@ The \code{combiner} type must be one of
 \mpiconst{MPI_COMBINER_RESIZED}\\
 
 \subsubsection{\mpifunc{MPI_TYPE_GET_EXTENT}}
-Simply uses \mpids{MPI_Datatype}{extent} field.
+Simply uses \mpids{MPI_Datatype}{extent} and \mpids{MPI_Datatype}{lb}
+fields.  Note that this is the MPI-2 replacement for
+\mpifunc{MPI_Type_ub}, \mpifunc{MPI_Type_lb}, and \mpifunc{MPI_Type_extent}.
 
 \subsubsection{\mpifunc{MPI_TYPE_MATCH_SIZE}}
 This function returns the MPI Datatype corresponding to a specified type class
@@ -3350,7 +3391,14 @@ switch (typeclass) {
 \subsubsection{\mpifunc{MPI_TYPE_GET_NAME}}
 Uses the \mpids{MPI_Datatype}{name} field.  Note that the Fortran
 versions must be careful to 
-blank-pad the value rather than null-terminating it.
+blank-pad the value rather than null-terminating the name.
+
+We may want to consider lazy definition of these values for the
+predefined datatypes.  For example, the first call to either
+\mpifunc{MPI_Type_get_name} or \mpifunc{MPI_Type_set_name} could
+initialize the names for all of the predefined types.  
+In the case where debugger support is included, we may want to
+initialize these names at \code{MPI_Init}.
 
 % Question: We should have a common routine to handle the Fortran version of all
 % of the get/set name routines.  I propose \mpidfunc{MPIR_C2F_get_name} and
@@ -3391,7 +3439,7 @@ possibility is to compute a
 \mpids{MPI_Datatype}{pack_size} and \mpids{MPI_Datatype}{pack_alignment} for
 each datatype and use that to compute the final size, at least for choices
 that are not dependent on the rank in the communicator.  Or, if there
-are only a few choices, one for each hoice.
+are only a few choices, one for each choice.
 \end{adi3}
 
 \subsubsection{\mpifunc{MPI_UNPACK}}
@@ -3528,25 +3576,33 @@ than special macros.  For example,
 \end{verbatim}
 even if some code is duplicated as a result.  This is an exception to the ``no
 duplicated code'' rule, partly because in fact we expect little code to be
-duplicated and in part because the duplicated code will be close by in the
+duplicated and partly because the duplicated code will be close by in the
 file rather than off in some other file where it may be overlooked when a bug
 is fixed.
 
 \subsection{Groups}
 \label{sec:groups}
 
-Error classes include \mpiconst{MPI_ERR_GROUP}, \mpiconst{MPI_ERR_RANK}, 
-\mpiconst{MPI_ERR_ARG}, and \mpiconst{MPI_ERR_OTHER} (memory allocation). 
+% Groups are simple.  The key point here is to make sure that the use of
+% groups to map from ranks in a communicator to a particular destination
+% process is fast.
+% To provide a fast implementation of \mpifunc{MPI_COMM_GROUP}, groups must
+% have reference counts (\mpids{MPI_Group}{ref_count}).
 
-Groups are simple.  The key point here is to make sure that the use of
-groups to map from ranks in a communicator to a particular destination
-process is fast.
-To provide a fast implementation of \mpifunc{MPI_COMM_GROUP}, groups must
-have reference counts (\mpids{MPI_Group}{ref_count}).
+% Question: Do we want a special case for the groups of self and comm
+% world?  This would eliminate a lookup in the group table for the a very
+% common case.  Should there be an \code{MPID_GROUP_WORLD}?  
 
-Question: Do we want a special case for the groups of self and comm
-world?  This would eliminate a lookup in the group table for the a very
-common case.  Should there be an \code{MPID_GROUP_WORLD}?  
+In the implementation of MPICH-2, groups are rarely used.  For
+example, groups are not used to provide a mapping from relative rank
+in a communicator to some ``global'' rank, as they were in the
+implementation of MPICH-1.  That function is provided by the virtual
+connection array.  Groups are provide primarily to support the MPI
+routines that require them.  
+
+Groups are not even allocated for communicators unless they are
+required \mpifunc{MPI_Comm_group}.  In other words, we create the
+groups only as required to support the MPI routines that need them.
 
 Question: What data structure should be used to represent groups?
 MPICH-1 used a simple array that mapped rank in a group to rank in the
@@ -3577,6 +3633,9 @@ Note: the MPICH-1 implementation of \mpifunc{MPI_Group_difference},
 that is the product of the sizes of the groups (!).  The MPICH-2
 implementation described in this section has lower complexity (potentially
 linear).  
+
+Error classes include \mpiconst{MPI_ERR_GROUP}, \mpiconst{MPI_ERR_RANK}, 
+\mpiconst{MPI_ERR_ARG}, and \mpiconst{MPI_ERR_OTHER} (memory allocation). 
 
 \subsubsection{\mpifunc{MPI_GROUP_RANK}}
 Simply return \mpids{MPI_Group}{rank} field.
@@ -3609,17 +3668,17 @@ If either group is not a subset of \code{MPI_COMM_WORLD}, then
 \end{enumerate}
 %\end{algorithm}
 
-Question: should there be a
-\code{MINIMUM_MEMORY}\index{MINIMUM_MEMORY} option that controls when 
-memory is left allocated to speed subsequent operations?  In this case, we
-leave the memory allocated so as to speed subsequent translations.  Normally,
-this routine is only used in tracing libraries to convert relative ranks into
-absolute ranks; in that case, it is likely to be called frequently.
-This should/could also be a runtime parameter.
+% Question: should there be a
+% \code{MINIMUM_MEMORY}\index{MINIMUM_MEMORY} option that controls when 
+% memory is left allocated to speed subsequent operations?  In this case, we
+% leave the memory allocated so as to speed subsequent translations.  Normally,
+% this routine is only used in tracing libraries to convert relative ranks into
+% absolute ranks; in that case, it is likely to be called frequently.
+% This should/could also be a runtime parameter.
 
 \subsubsection{\mpifunc{MPI_GROUP_FREE}}
 Free all internal fields (e.g., \mpids{MPI_Group}{lpid_to_lrank}) and then
-call \mpidfunc{MPID_Group_free}. 
+call \mpidfunc{MPID_Dev_Group_free_hook}. 
 
 \subsubsection{\mpifunc{MPI_GROUP_COMPARE}}
 \begin{enumerate}
@@ -3634,8 +3693,8 @@ set \code{result} to \mpiconst{MPI_IDENT} and return.
   local process ids (they'll be in the same order), return
   \mpiconst{MPI_SIMILAR}, otherwise return 
   \mpiconst{MPI_UNEQUAL}.  
-  Question: should we free the new arrays if we allocate them?  See
-  the discussion in \mpifunc{MPI_GROUP_TRANSLATE_RANKS}.
+%  Question: should we free the new arrays if we allocate them?  See
+%  the discussion in \mpifunc{MPI_GROUP_TRANSLATE_RANKS}.
 \end{enumerate}
 
 Question: what routines should we use to manage the marker arrays?
