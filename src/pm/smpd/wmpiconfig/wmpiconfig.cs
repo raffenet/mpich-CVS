@@ -71,13 +71,13 @@ namespace wmpiconfig
 
 			// set defaults
 			hash["log"] = new Setting("log", "", "no", "yes,no");
-			hash["logfile"] = new Setting("logfile", "", "none", "");
-			hash["channel"] = new Setting("channel", "", "sock", "sock,ssm,shm,sshm,ib,auto");
-			hash["internode_channel"] = new Setting("internode_channel", "", "ssm", "sock,ssm,ib");
+			hash["logfile"] = new Setting("logfile", "", "none", @"filename (example: c:\temp\smpd.log)");
+			hash["channel"] = new Setting("channel", "", "sock", "sock,mt,ssm,essm,shm,sshm,ib,auto");
+			hash["internode_channel"] = new Setting("internode_channel", "", "ssm", "sock,mt,ssm,essm,ib");
 			hash["phrase"] = new Setting("phrase", "", "", "");
-			hash["hosts"] = new Setting("hosts", "", "localhost", "");
-			hash["max_logfile_size"] = new Setting("max_logfile_size", "", "unlimited", "");
-			hash["timeout"] = new Setting("timeout", "", "infinite", "");
+			hash["hosts"] = new Setting("hosts", "", "localhost", "list of hostnames (example: foo bar bazz)");
+			hash["max_logfile_size"] = new Setting("max_logfile_size", "", "unlimited", "max number of bytes");
+			hash["timeout"] = new Setting("timeout", "", "infinite", "max number of seconds");
 			//hash["map_drives"] = new Setting("map_drives", "", "no", "yes,no");
 			hash["exitcodes"] = new Setting("exitcodes", "", "no", "yes,no");
 			hash["port"] = new Setting("port", "", "8676", "");
@@ -87,6 +87,7 @@ namespace wmpiconfig
 			hash["plaintext"] = new Setting("plaintext", "", "no", "yes,no");
 			hash["localonly"] = new Setting("localonly", "", "no", "yes,no");
 			hash["nocache"] = new Setting("nocache", "", "no", "yes,no");
+			hash["delegate"] = new Setting("delegate", "", "no", "yes,no");
 
 			UpdateHash(get_settings(host_textBox.Text));
 			UpdateListBox();
