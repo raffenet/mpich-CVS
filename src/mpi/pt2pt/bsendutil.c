@@ -245,6 +245,8 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 				   dest, tag, comm_ptr,
 				   MPID_CONTEXT_INTRA_PT2PT, &p->request );
 	    if(mpi_errno) {
+		/* This is a printf (instead of an MPIU_Error_printf) because
+		   this is a bug that needs to be fixed! */
 		printf ("Surprise! err = %d\n", mpi_errno );
 	    }
 	    /* If the error is "request not available", put this on the
@@ -326,7 +328,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 		 p,p->size, ((char *)p)+p->total_size));
 
 #ifdef DBG_PRINT_ARENA
-    PRINTF( "At the begining of free_segment with size %d:\n", p->total_size );
+    DBG_PRINTF( "At the begining of free_segment with size %d:\n", p->total_size );
     MPIR_Bsend_dump();
 #endif    
 
@@ -404,7 +406,7 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	p->prev           = 0;
     }
 #ifdef DBG_PRINT_ARENA
-    PRINTF( "At the end of free_segment:\n" );
+    DBG_PRINTF( "At the end of free_segment:\n" );
     MPIR_Bsend_dump();
 #endif    
 }
@@ -494,8 +496,8 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
        allocate for this buffer. */
 
 #ifdef DBG_PRINT_ARENA
-    PRINTF( "Taking %d bytes from a block with %d bytes\n", alloc_size, 
-	    p->total_size );
+    DBG_PRINTF( "Taking %d bytes from a block with %d bytes\n", alloc_size, 
+		p->total_size );
 #endif
 
     /* Is there enough space left to create a new block? */
@@ -524,8 +526,8 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	p->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
 
 #ifdef DBG_PRINT_ARENA
-	PRINTF( "broken blocks p (%d) and new (%d)\n",
-		p->total_size, newp->total_size ); fflush(stdout);
+	DBG_PRINTF( "broken blocks p (%d) and new (%d)\n",
+		    p->total_size, newp->total_size ); fflush(stdout);
 #endif
     }
 
@@ -550,7 +552,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     BsendBuffer.active = p;
 
 #ifdef DBG_PRINT_ARENA
-    PRINTF( "At end of take buffer\n" );
+    DBG_PRINTF( "At end of take buffer\n" );
     MPIR_Bsend_dump();
 #endif
     DEBUG(printf("segment %x now head of active\n", p ));
@@ -574,30 +576,30 @@ void MPIR_Bsend_dump( void )
 {
     BsendData_t *a = BsendBuffer.avail;
 
-    PRINTF( "Total size is %d\n", BsendBuffer.buffer_size );
-    PRINTF( "Avail list is:\n" );
+    DBG_PRINTF( "Total size is %d\n", BsendBuffer.buffer_size );
+    DBG_PRINTF( "Avail list is:\n" );
     while (a) {
-	PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
-		a->total_size );
+	DBG_PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+		    a->total_size );
 	if (a == a->next) {
-	    PRINTF( "@@@Corrupt list; avail block points at itself\n" );
+	    DBG_PRINTF( "@@@Corrupt list; avail block points at itself\n" );
 	    break;
 	}
 	a = a->next;
     }
 
-    PRINTF( "Active list is:\n" );
+    DBG_PRINTF( "Active list is:\n" );
     a = BsendBuffer.active;
     while (a) {
-	PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
-		a->total_size );
+	DBG_PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
+		    a->total_size );
 	if (a == a->next) {
-	    PRINTF( "@@@Corrupt list; active block points at itself\n" );
+	    DBG_PRINTF( "@@@Corrupt list; active block points at itself\n" );
 	    break;
 	}
 	a = a->next;
     }
-    PRINTF( "end of list\n" );
+    DBG_PRINTF( "end of list\n" );
     fflush( stdout );
 }
 #endif
