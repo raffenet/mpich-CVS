@@ -174,8 +174,6 @@ Open Tasks:
 * (pm, mpd, req #124,111,110,104,91,84,76,71,70,62,36,33) various MPD reqs
   [Rusty/Ralph]
 
-* (pm, forker, req 107) empty string from PMI_KVS_Get() on peta01
-
 * (pm, forker, req #98) by default, the forker PM should not timeout
 
 * have configure print out available channels, process managers, etc. for
@@ -238,6 +236,8 @@ Completed?
   rather than using short for of [A-Z][a-z].  [Bill]
 
 * (ch3:ssm, req #105) hang in message queue code [David]
+
+* (pm, forker, req 107) empty string from PMI_KVS_Get() on peta01 [David]
 
 --------------------
 
