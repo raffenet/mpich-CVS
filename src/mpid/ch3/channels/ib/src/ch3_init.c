@@ -13,6 +13,10 @@ MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 /* XXX - all calls to assert() need to be turned into real error checking and
    return meaningful errors */
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 {
     int mpi_errno;
@@ -27,7 +31,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     char * val;
     int key_max_sz;
     int val_max_sz;
-    
+
+    MPIDI_DBG_PRINTF((65, "ch3_init", "entering ch3_init.\n"));fflush(stdout);
     /*
      * Extract process group related information from PMI and initialize
      * structures that track the process group connections, MPI_COMM_WORLD, and
@@ -68,7 +73,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
     }
-    rc = PMI_KVS_Get_my_name(pg->kvs_name);
+    mpi_errno = PMI_KVS_Get_my_name(pg->kvs_name);
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", mpi_errno);
@@ -222,10 +227,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     {
 	for (p = 0; p < pg_size; p++)
 	{
-	    rc = snprintf(key, key_max_sz, "P%d-lid", p);
-	    assert(rc > -1 && rc < key_max_sz);
-	    rc = PMI_KVS_Get(pg->kvs_name, key, val);
-	    assert(rc == 0);
+	    mpi_errno = snprintf(key, key_max_sz, "P%d-lid", p);
+	    assert(mpi_errno > -1 && mpi_errno < key_max_sz);
+	    mpi_errno = PMI_KVS_Get(pg->kvs_name, key, val);
+	    assert(mpi_errno == 0);
 	    
 	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, val);
 	    fflush(stdout);
@@ -264,7 +269,9 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     }
 
     /* for now, connect all the processes at init time */
+    MPIDI_DBG_PRINTF((65, "ch3_init", "calling setup_connections.\n"));fflush(stdout);
     MPIDI_CH3I_Setup_connections();
+    MPIDI_DBG_PRINTF((65, "ch3_init", "connections formed, exiting\n"));fflush(stdout);
 
     MPIU_Free(val);
     MPIU_Free(key);

@@ -8,6 +8,10 @@
 #include "pmi.h"
 #include "ibu.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Setup_connections
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Setup_connections()
 {
     int mpi_errno;
