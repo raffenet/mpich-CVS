@@ -18,10 +18,6 @@
 MPID_Comm MPID_Comm_direct[MPID_COMM_PREALLOC];
 static int initialized = 0;
 
-/* Next available comm object */
-typedef struct _MPID_Comm_list { 
-    int    id;
-    struct _MPID_Comm_list *next; } MPID_Comm_list;
 static MPIU_Handle_common *avail = 0;
 
 /* Extension objects */

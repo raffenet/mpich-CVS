@@ -8,7 +8,7 @@
  */
 
 /*S
-  MPID_Datatype_contig - Description of a contiguous datatype
+  MPID_Dataloop_contig - Description of a contiguous datatype
 
   Fields:
 + count - Number of elements
@@ -20,10 +20,10 @@
 typedef struct {
     int     count;
     struct MPID_Dataloop_st *datatype;
-} MPID_Datatype_contig;
+} MPID_Dataloop_contig;
 
 /*S
-  MPID_Datatype_vector - Description of a vector or strided datatype
+  MPID_Dataloop_vector - Description of a vector or strided datatype
 
   Fields:
 + count - Number of elements
@@ -39,10 +39,10 @@ typedef struct {
     struct MPID_Dataloop_st *datatype;
     int     blocksize;
     int     stride;
-} MPID_Datatype_vector;
+} MPID_Dataloop_vector;
 
 /*S
-  MPID_Datatype_blockindexed - Description of a block-indexed datatype
+  MPID_Dataloop_blockindexed - Description of a block-indexed datatype
 
   Fields:
 + count - Number of blocks
@@ -59,10 +59,10 @@ typedef struct {
     struct MPID_Dataloop_st *datatype;
     int      blocksize;
     MPI_Aint *offset;
-} MPID_Datatype_blockindexed;
+} MPID_Dataloop_blockindexed;
 
 /*S
-  MPID_Datatype_indexed - Description of an indexed datatype
+  MPID_Dataloop_indexed - Description of an indexed datatype
 
   Fields:
 + count - Number of blocks
@@ -79,10 +79,10 @@ typedef struct {
     struct MPID_Dataloop_st *datatype;
     int      *blocksize;
     MPI_Aint *offset;
-} MPID_Datatype_indexed;
+} MPID_Dataloop_indexed;
 
 /*S
-  MPID_Datatype_struct - Description of a structure datatype
+  MPID_Dataloop_struct - Description of a structure datatype
 
   Fields:
 + count - Number of blocks
@@ -99,7 +99,7 @@ typedef struct {
     struct MPID_Dataloop_st *datatype;
     int      *blocksize;
     MPI_Aint *offset;
-} MPID_Datatype_struct;
+} MPID_Dataloop_struct;
 
 /* In many cases, we need the count and the next dataloop item. This
    common structure gives a quick access to both.  Note that all other 
@@ -110,7 +110,7 @@ typedef struct {
 typedef struct {
     int      count;
     struct MPID_Dataloop_st *datatype;
-} MPID_Datatype_common;
+} MPID_Dataloop_common;
 
 /*S
   MPID_Dataloop - Description of the structure used to hold a datatype
@@ -132,7 +132,7 @@ typedef struct {
   The dataloop type is one of 'MPID_CONTIG', 'MPID_VECTOR', 
   'MPID_BLOCKINDEXED', 'MPID_INDEXED', or 'MPID_STRUCT'.  
 . loop_parms - A union containing the 5 datatype structures, e.g., 
-  'MPID_Datatype_contig', 'MPID_Datatype_vector', etc.  A sixth element in
+  'MPID_Dataloop_contig', 'MPID_Dataloop_vector', etc.  A sixth element in
   this union, 'count', allows quick access to the shared 'count' field in the
   five datatype structure.
 . extent - The extent of the datatype
@@ -149,12 +149,12 @@ typedef struct MPID_Dataloop_st {
 				  whether the datatype is a leaf type. */
     union {
 	int                        count;
-	MPID_Datatype_contig       c_t;
-	MPID_Datatype_vector       v_t;
-	MPID_Datatype_blockindexed bi_t;
-	MPID_Datatype_indexed      i_t;
-	MPID_Datatype_struct       s_t;
-	MPID_Datatype_common       cm_t;
+	MPID_Dataloop_contig       c_t;
+	MPID_Dataloop_vector       v_t;
+	MPID_Dataloop_blockindexed bi_t;
+	MPID_Dataloop_indexed      i_t;
+	MPID_Dataloop_struct       s_t;
+	MPID_Dataloop_common       cm_t;
     } loop_params;
     MPI_Aint extent;
     int id;                       /* Having the id here allows us to find the
