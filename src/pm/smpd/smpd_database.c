@@ -73,6 +73,14 @@ static void get_uuid(char *str)
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+#elif defined(HAVE_CFUUIDCREATE)
+    CFUUIDRef       myUUID;
+    CFStringRef     myUUIDString;
+    char            strBuffer[100];
+    myUUID = CFUUIDCreate(kCFAllocatorDefault);
+    myUUIDString = CFUUIDCreateString(kCFAllocatorDefault, myUUID);// This is the safest way to obtain a C string from a CFString.
+    CFStringGetCString(myUUIDString, str, SMPD_MAX_DBS_NAME_LEN, kCFStringEncodingASCII);
+    CFRelease(myUUIDString);
 #else
     uuid_t guid;
     uuid_generate(guid);
