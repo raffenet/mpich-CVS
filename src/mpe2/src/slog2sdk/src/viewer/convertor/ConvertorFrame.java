@@ -30,7 +30,14 @@ public class ConvertorFrame extends JFrame
         super.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 
         top_panel = new ConvertorPanel( null );
-        top_panel.addActionListenerForCloseButton( new ActionListener() {
+        top_panel.addActionListenerForOkayButton( new ActionListener() {
+            public void actionPerformed( ActionEvent evt ) {
+                ConvertorFrame.this.setVisible( false );
+                ConvertorFrame.this.dispose();
+                System.exit( 0 );
+            }
+        } );
+        top_panel.addActionListenerForCancelButton( new ActionListener() {
             public void actionPerformed( ActionEvent evt ) {
                 ConvertorFrame.this.setVisible( false );
                 ConvertorFrame.this.dispose();

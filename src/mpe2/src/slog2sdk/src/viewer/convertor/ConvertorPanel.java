@@ -70,7 +70,8 @@ public class ConvertorPanel extends JPanel
     private JButton            cmd_start_btn;
     private JButton            cmd_stop_btn;
     private JButton            cmd_help_btn;
-    private JButton            cmd_close_btn;
+    private JButton            cmd_close4ok_btn;
+    private JButton            cmd_close4cancel_btn;
 
     private Window             top_window;
     private LogFileChooser     file_chooser;
@@ -82,13 +83,13 @@ public class ConvertorPanel extends JPanel
     public ConvertorPanel( LogFileChooser  in_file_chooser )
     {
         super();
-        this.initComponents();
+        this.initComponents( in_file_chooser != null );
         this.initAllTextFields();
 
         if ( in_file_chooser != null )
-            file_chooser = in_file_chooser;
+            file_chooser  = in_file_chooser;
         else
-            file_chooser = new LogFileChooser( false );
+            file_chooser  = new LogFileChooser( false );
 
         cmd_pulldown.addActionListener( new PulldownListener() );
         cmd_infile.addActionListener( new LogNameListener() );
@@ -114,6 +115,10 @@ public class ConvertorPanel extends JPanel
             cmd_infile.fireActionPerformed(); // Invoke LogNameListener()
             cmd_pulldown.setSelectedItem(
                          ConvertorConst.getDefaultConvertor( filename ) );
+            if ( cmd_close4ok_btn != null )
+                cmd_close4ok_btn.setEnabled( false );
+            if ( cmd_close4cancel_btn != null )
+                cmd_close4cancel_btn.setEnabled( true );
         }
         if ( err_msg != null )
             Dialogs.error( top_window, err_msg );
@@ -128,7 +133,7 @@ public class ConvertorPanel extends JPanel
         return url;
     }
 
-    private void initComponents()
+    private void initComponents( boolean has_close4ok_btn )
     {
         Border   raised_border, etched_border;
         raised_border  = BorderFactory.createRaisedBevelBorder();
@@ -498,21 +503,37 @@ public class ConvertorPanel extends JPanel
             cmd_button_panel.add( cmd_help_btn );
             cmd_button_panel.add( Box.createHorizontalGlue() );
 
-                cmd_close_btn = new JButton( "Return" );
-                icon_URL = getURL( Const.IMG_PATH + "Home24.gif" );
+                cmd_close4cancel_btn = new JButton( "Cancel" );
+                icon_URL = getURL( Const.IMG_PATH + "ConvertCancel24.gif" );
                 if ( icon_URL != null ) {
-                    cmd_close_btn.setIcon( new ImageIcon( icon_URL ) );
-                    cmd_close_btn.setVerticalTextPosition(
-                                  AbstractButton.CENTER );
-                    cmd_close_btn.setHorizontalTextPosition(
-                                  AbstractButton.RIGHT );
-                    // cmd_close_btn.setMargin( btn_insets );
+                    cmd_close4cancel_btn.setIcon( new ImageIcon( icon_URL ) );
+                    cmd_close4cancel_btn.setVerticalTextPosition(
+                                         AbstractButton.CENTER );
+                    cmd_close4cancel_btn.setHorizontalTextPosition(
+                                         AbstractButton.RIGHT );
+                    // cmd_close4cancel_btn.setMargin( btn_insets );
                 }
-                cmd_close_btn.setToolTipText(
-                    "Close this panel and Return to the previous component." );
-            cmd_button_panel.add( cmd_close_btn );
-
+                cmd_close4cancel_btn.setToolTipText( "Close this panel." );
+            cmd_button_panel.add( cmd_close4cancel_btn );
             cmd_button_panel.add( Box.createHorizontalGlue() );
+
+            cmd_close4ok_btn = null;
+            if ( has_close4ok_btn ) {
+                cmd_close4ok_btn = new JButton( "OK" );
+                icon_URL = getURL( Const.IMG_PATH + "ConvertOk24.gif" );
+                if ( icon_URL != null ) {
+                    cmd_close4ok_btn.setIcon( new ImageIcon( icon_URL ) );
+                    cmd_close4ok_btn.setVerticalTextPosition(
+                                     AbstractButton.CENTER );
+                    cmd_close4ok_btn.setHorizontalTextPosition(
+                                     AbstractButton.RIGHT );
+                    // cmd_close4ok_btn.setMargin( btn_insets );
+                }
+                cmd_close4ok_btn.setToolTipText( "Close this panel and "
+                    + "Display the last converted SLOG2 logfile." );
+                cmd_button_panel.add( cmd_close4ok_btn );
+                cmd_button_panel.add( Box.createHorizontalGlue() );
+            }
 
         super.add( cmd_button_panel );
     }
@@ -750,7 +771,10 @@ public class ConvertorPanel extends JPanel
         cmd_start_btn.setEnabled( !isConvertingLogfile );
         cmd_stop_btn.setEnabled( isConvertingLogfile );
         cmd_help_btn.setEnabled( !isConvertingLogfile );
-        cmd_close_btn.setEnabled( !isConvertingLogfile );
+        if ( cmd_close4ok_btn != null )
+            cmd_close4ok_btn.setEnabled( !isConvertingLogfile );
+        if ( cmd_close4cancel_btn != null )
+            cmd_close4cancel_btn.setEnabled( !isConvertingLogfile );
     }
 
     // Interface for WaitingContainer (used by SwingProcessWorker)
@@ -769,10 +793,16 @@ public class ConvertorPanel extends JPanel
                                                  CustomCursor.Normal );
     }
 
-    public void addActionListenerForCloseButton( ActionListener action )
+    public void addActionListenerForOkayButton( ActionListener action )
     {
-        if ( action != null )
-            cmd_close_btn.addActionListener( action );
+        if ( action != null && cmd_close4ok_btn != null )
+            cmd_close4ok_btn.addActionListener( action );
+    }
+
+    public void addActionListenerForCancelButton( ActionListener action )
+    {
+        if ( action != null && cmd_close4cancel_btn != null )
+            cmd_close4cancel_btn.addActionListener( action );
     }
 
     public String getOutputSLOG2Name()
