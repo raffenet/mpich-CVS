@@ -176,7 +176,6 @@ int MPIU_dbg_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
 int MPIU_dbglog_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
 int MPIU_dbglog_vprintf(char *str, va_list ap);
 #if defined(MPICH_DBG_OUTPUT)
-extern MPIU_dbg_state_t MPIUI_dbg_state;
 #define MPIU_DBG_PRINTF(e)			\
 {						\
     if (MPIUI_dbg_state != MPIU_DBG_STATE_NONE)	\
@@ -184,6 +183,10 @@ extern MPIU_dbg_state_t MPIUI_dbg_state;
 	MPIU_dbg_printf e;			\
     }						\
 }
+#else
+#define MPIU_DBG_PRINTF(e)
+#endif
+extern MPIU_dbg_state_t MPIUI_dbg_state;
 #define MPIU_dbglog_flush()				\
 {							\
     if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)	\
@@ -191,10 +194,6 @@ extern MPIU_dbg_state_t MPIUI_dbg_state;
 	fflush(stdout);					\
     }							\
 }
-#else
-#define MPIU_DBG_PRINTF(e)
-#define MPIU_dbglog_flush()
-#endif
 void MPIU_dump_dbg_memlog_to_stdout(void);
 void MPIU_dump_dbg_memlog_to_file(char *filename);
 void MPIU_dump_dbg_memlog(FILE * fp);
