@@ -786,7 +786,7 @@ def _process_cmdline_args():
     try:
         (opts,args) = getopt(argv[1:],
                              'h:p:i:tnedb',
-                             ['host=','port=','idmyhost','trace','noconsole','echo',
+                             ['host=','port=','idmyhost=','trace','noconsole','echo',
                               'daemon','bulletproof'])
     except:
         usage()
