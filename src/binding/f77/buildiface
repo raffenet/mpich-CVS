@@ -1717,7 +1717,7 @@ sub chararray2_ftoc {
         /* For each command, find the number of command-line arguments.
            They are terminated by an empty entry. */
         /* Find the first entry in the Fortran array for this row */
-        char *p = v$count + k * ($Array_size * d$count);
+        char *p = v$count + k * d$count;
         int arglen = 0, argcnt=0, i;
         char **pargs, *pdata;
         for (argcnt=0; 1; argcnt ++) {
@@ -1733,7 +1733,7 @@ sub chararray2_ftoc {
             /* Keep track of the amount of space needed */
             arglen += (pin - p) + 2;   /* add 1 for the null */
             /* Advance to the next entry in the array */
-            p += d$count;
+            p += ($Array_size) * d$count;
         }
 
         /* argcnt is the number of provided arguments.  
@@ -1744,7 +1744,7 @@ sub chararray2_ftoc {
         pargs\[argcnt\] = 0;  /* Null terminate end */
         /* Copy each argument to consequtive locations in pdata, 
            and set the corresponding pointer entry */
-        p = v$count + k * ($Array_size * d$count);
+        p = v$count + k * d$count;
         for (i=0; i<argcnt; i++) {
             int j;
             char *pin;
@@ -1756,8 +1756,10 @@ sub chararray2_ftoc {
             for (j=0; j<(pin-p)+1; j++) { *pdata++ = p\[j\]; }
             *pdata++ = 0;
             /* Advance to the next entry in the array */
-            p += d$count;
+            p += ($Array_size) * d$count;
         }
+	/* Set the terminator */
+        p3[k][i] = 0;
        }
     }\n";
 
