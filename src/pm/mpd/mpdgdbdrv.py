@@ -85,7 +85,7 @@ while 1:
                 for i in range(2):    # drain multi-line response
                     gdb_line = gdb_sout_serr.readline()  # drain response
                 write(gdb_sin_fileno,user_line)
-                for i in range(5):    # drain multi-line response
+                for i in range(6):    # drain multi-line response
                     gdb_line = gdb_sout_serr.readline()  # drain reaponse
                     # print "RESPLINE=|%s|" % (gdb_line) ; stdout.flush()
 
