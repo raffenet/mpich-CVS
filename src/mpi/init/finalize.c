@@ -4,6 +4,7 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+/* style: allow:fprintf:1 sig:0 */
 
 #include "mpiimpl.h"
 
@@ -125,6 +126,19 @@ int MPI_Finalize( void )
     rank = MPIR_Process.comm_world->rank;
 #endif    
 
+    /* Remove the attributes, executing the attribute delete routine.
+       Do this only if the attribute functions are defined. */ 
+    /* The standard (MPI-2, section 4.8) says that the attributes on 
+       MPI_COMM_SELF are deleted before almost anything else happens */
+    if (MPIR_Process.attr_free && MPIR_Process.comm_self->attributes) {
+        mpi_errno = MPIR_Process.attr_free( MPI_COMM_SELF,
+                                         MPIR_Process.comm_self->attributes);
+    }
+    if (MPIR_Process.attr_free && MPIR_Process.comm_world->attributes) {
+        mpi_errno = MPIR_Process.attr_free( MPI_COMM_WORLD, 
+                                         MPIR_Process.comm_world->attributes);
+    }
+
     /* Question: why is this not one of the finalize callbacks?.  Do we need
        pre and post MPID_Finalize callbacks? */
     MPIU_Timer_finalize();
@@ -143,18 +157,6 @@ int MPI_Finalize( void )
     if (MPIR_Process.comm_self->remote_group)
         MPIR_Group_release(MPIR_Process.comm_self->remote_group);
 
-    /* Remove the attributes, executing the attribute delete routine.
-       Do this only if the attribute functions are defined. */ 
-    if (MPIR_Process.attr_free && MPIR_Process.comm_world->attributes) {
-        mpi_errno = MPIR_Process.attr_free( MPI_COMM_WORLD, 
-                                         MPIR_Process.comm_world->attributes);
-    }
-    if (MPIR_Process.attr_free && MPIR_Process.comm_self->attributes) {
-        mpi_errno = MPIR_Process.attr_free( MPI_COMM_SELF,
-                                         MPIR_Process.comm_self->attributes);
-    }
-
-
     MPIR_Call_finalize_callbacks();
 
     /* If memory debugging is enabled, check the memory here, after all
@@ -162,6 +164,15 @@ int MPI_Finalize( void )
 #ifdef USE_MEMORY_TRACING
     if (1) {
 	MPIU_trdump( (void *)0 );
+    }
+#endif
+#ifdef MPICH_DEBUG_NESTING
+    if (1) {
+	/* Check for an error in the nesting level */
+	if (MPIR_Nest_value()) {
+	    fprintf( stderr, "Unexpected value for nesting level = %d\n", 
+		     MPIR_Nest_value() );
+	}
     }
 #endif
 

@@ -375,6 +375,7 @@ for option in $enable_g ; do
 	mem|all|yes)
 	AC_DEFINE(USE_MEMORY_TRACING,1,[Define to enable memory tracing])
 	AC_DEFINE(MPICH_DEBUG_INTERNAL,1,[Define to compile in optional debugging tests and output])
+	AC_DEFINE(MPICH_DEBUG_NESTING,1,[Define to check nesting level on exit])
 	enable_g_mem=yes
 	CFLAGS="$CFLAGS -g"
 	;;
