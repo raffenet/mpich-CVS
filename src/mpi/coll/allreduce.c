@@ -109,7 +109,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 	    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
 	    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
 	}
-	dtype_size = MPID_Datatype_get_size(datatype);
+	MPID_Datatype_get_size_macro(datatype, dtype_size);
 	
 	memcpy( recvbuf, sendbuf, count*dtype_size );
     }

@@ -69,7 +69,7 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     /* If this is a built-in datatype, then get the size out of the handle */
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
     {
-	*size = MPID_Datatype_get_size(datatype);
+	MPID_Datatype_get_size_macro(datatype, *size);
 	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SIZE);
 	return MPI_SUCCESS;
     }
