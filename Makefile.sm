@@ -49,16 +49,16 @@ MPICVSHOME = @MPICVSHOME@
 #     updatefile with code check on the older MPE directories)
 #  Tar it up
 dist:
-	version=${VERSION} ; \
+	@version=${VERSION} ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
 	if test "$$prever" = "-CVS" ; then version=$${version}-`date "+%Y%m%d"` ; fi ; \
 	$(MAKE) version=$${version} dist-with-version
 
 dist-with-version:
-	if [ -z "$(version)" ] ; then \
+	@if [ -z "$(version)" ] ; then \
 	    echo "Must invoke with make version=value dist-with-version" ;\
 	    exit 1 ; fi 
-	echo "Cutting version ${version} of the MPICH2 distribution"
+	@echo "Cutting version ${version} of the MPICH2 distribution"
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
 	rm -f cvsexp.log 
 	if [ -n "${TAG}" ] ; then \
@@ -80,16 +80,18 @@ dist-with-version:
 	cp -r tmpdir2/man tmpdir/${PACKAGE}-${version}/man
 	cp -r tmpdir2/www tmpdir/${PACKAGE}-${version}/www
 	cp -r tmpdir2/doc/refman tmpdir/${PACKAGE}-${version}/doc
+	( cd tmpdir2/doc/adi3 && ${MAKE} && ${MAKE} clean )
+	( cd tmpdir2/doc/mpich2 && ${MAKE} && ${MAKE} clean )
+	cp -f tmpdir2/doc/adi3/*.pdf tmpdir/${PACKAGE}-${version}/doc/adi3
+	cp -f tmpdir2/doc/mpich2/*.pdf tmpdir/${PACKAGE}-${version}/doc/mpich2
 	rm -rf tmpdir2
-	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
 	(cd tmpdir/${PACKAGE}-${version}/src && cvs -d $(MPICVSHOME) export -D 'now' mpe >>cvsexp.log 2>&1 && \
 	rm -rf mpe/slog_api mpe/viewers mpe/profiling )
+	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib --without-codecheck )
 	(cd tmpdir/${PACKAGE}-${version}/src/mpe && cvs -d $(MPICVSHOME) export -D 'now' slog2sdk >>cvsexp.log 2>&1 )
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes )
-	( cd tmpdir/${PACKAGE}-${version}/doc/adi3 && ${MAKE} && ${MAKE} clean )
-	( cd tmpdir/${PACKAGE}-${version}/doc/mpich2 && ${MAKE} && ${MAKE} clean )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
-	mv tmpdir/${PACKAGE}-${version}.tar . 
+	mv -f tmpdir/${PACKAGE}-${version}.tar . 
 	rm -rf tmpdir
 
 # Set the document sources and types (empty lists still cause recursion)
