@@ -1,5 +1,6 @@
 #include "mpi.h" 
 #include "stdio.h"
+#include "mpitest.h"
 
 /* transposes a matrix using post/start/complete/wait and derived
    datatypes. Uses  vector and hvector (Example 3.32 from MPI 1.1

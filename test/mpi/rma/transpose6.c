@@ -1,5 +1,6 @@
 #include "mpi.h" 
 #include "stdio.h"
+#include "mpitest.h"
 
 /* This does a local transpose-cum-accumulate operation. Uses 
    vector and hvector datatypes (Example 3.32 from MPI 1.1

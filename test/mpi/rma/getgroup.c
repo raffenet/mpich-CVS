@@ -12,7 +12,7 @@ static char MTEST_Descrip[] = "Test of Win_get_group";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int result;
     int buf[10];
     MPI_Win   win;

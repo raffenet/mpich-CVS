@@ -1,5 +1,6 @@
 #include "mpi.h" 
 #include "stdio.h"
+#include "mpitest.h"
 
 /* This does a transpose with a get operation, fence, and derived
    datatypes. Uses vector and hvector (Example 3.32 from MPI 1.1

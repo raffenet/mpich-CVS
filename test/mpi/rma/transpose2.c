@@ -1,5 +1,6 @@
 #include "mpi.h" 
 #include "stdio.h"
+#include "mpitest.h"
 
 /* transposes a matrix using put, fence, and derived
    datatypes. Uses vector and struct (Example 3.33 from MPI 1.1
