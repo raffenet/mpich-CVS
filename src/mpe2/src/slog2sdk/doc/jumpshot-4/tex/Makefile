@@ -31,7 +31,7 @@ txt:	$(TARGET).txt
 
 #  Latex2html on the *.tex file generated from lyx.
 html:	$(TARGET).pdf
-	$(RM) -rf $(HTML_DIR) ; \
+	$(RM) -f $(HTML_DIR)/* ; \
 	$(LATEX2HTML) -mkdir -dir $(HTML_DIR) -noaddress -show_section_numbers \
 	              -no_footnode -nonumbered_footnotes -local_icons \
 	              $(TARGET).tex
