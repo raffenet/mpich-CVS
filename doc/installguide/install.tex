@@ -521,10 +521,9 @@ So for example, to see a complete list of the possible arguments for
 \subsubsection{Options for \texttt{mpd}}
 
 \begin{description}
-\item[-procspernode] is used when allowing MPD to pick the hosts: it tells MPD
+\item[-ncpus] is used when allowing MPD to pick the hosts: it tells MPD
   how many processes should be started by each MPD in the ring as the
-  processes are started in round-robin fashion.  \texttt{-ppn} is an
-  alias for \texttt{-procspernode}.
+  processes are started in round-robin fashion.
 \end{description}
 
 \subsubsection{Running MPD as Root}
@@ -953,6 +952,7 @@ If the executable is not found, make sure that you have
 \texttt{MPDDIR} in your path and that mpd is in that dir.
 
 If you get something like:
+\begin{small}
 \begin{verbatim}
     configuration file /home/you/.mpd.conf not found
     A file named .mpd.conf file must be present in the users home
@@ -960,9 +960,13 @@ If you get something like:
     only for the user, and must contain at least a line with:
     secretword=<secretword>
 \end{verbatim}
+\end{small}
 then create a file named \texttt{.mpd.conf} (note the leading dot) in your
-homdedir using an editor.  That file must contain a line
-secretword=<secretword> where you replace <secretword> with some string
+home directory using an editor.  That file must contain a line
+\begin{verbatim}
+    secretword=<secretword>
+\end{verbatim}
+where you replace \verb+<secretword>+ with some string
 you like.  Then make sure the file has mode 600 (\texttt{chmod 600 .mpd.conf}).
 
 Then, try mpd again.
