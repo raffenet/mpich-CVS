@@ -8,14 +8,6 @@
 #include "new_method_pre.h"
 #endif
 
-typedef struct MPID_VC
-{
-    volatile int ref_count;
-    struct MM_Car * writeq_head;
-    struct MM_Car * writeq_tail;
-    struct MM_Car * recvq;
-} MPID_VC;
-
 enum MM_CAR_TYPE { 
     MM_UNBOUND_WRITE_CAR,
     MM_UNPACK_CAR,
@@ -39,6 +31,7 @@ enum MM_CAR_TYPE {
 typedef struct MM_Car
 {
     struct MPID_Request *request_ptr;
+    struct MPIDI_VC *vc_ptr;
     int dest;
     enum MM_CAR_TYPE type;
     union {

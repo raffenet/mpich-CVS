@@ -16,14 +16,22 @@
 @*/
 int xfer_scatter_start(MPID_Request *request_ptr)
 {
+    int mpi_errno;
     MPID_Request *pRequest;
 
+    /* choose the buffers scheme to complete this operation */
     pRequest = request_ptr;
     while (pRequest)
     {
-	/*mm_choose_buffers(pRequest);*/
+	mpi_errno = mm_choose_buffer(pRequest);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    return mpi_errno;
+	}
 	pRequest = pRequest->mm.next_ptr;
     }
+
+    /* enqueue the cars */
 
     return MPI_SUCCESS;
 }

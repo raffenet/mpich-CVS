@@ -14,6 +14,11 @@ void mm_car_init()
     MM_Car_allocator = BlockAllocInit(sizeof(MM_Car), 100, 100, malloc, free);
 }
 
+void mm_car_finalize()
+{
+    BlockAllocFinalize(&MM_Car_allocator);
+}
+
 MM_Car* mm_car_alloc()
 {
     MM_Car *pCar;

@@ -26,6 +26,20 @@ typedef struct {
 } MPID_PerProcess_t;
 extern MPID_PerProcess_t MPID_Process;
 
+typedef struct MPIDI_VC
+{
+    volatile int ref_count;
+    struct MM_Car * writeq_head;
+    struct MM_Car * writeq_tail;
+    struct MM_Car * recvq;
+} MPIDI_VC;
+
+typedef struct MM_VCTABLE
+{
+    volatile int ref_count;
+    MPIDI_VC *table_ptr;
+} MM_VCTABLE;
+
 int mm_open_port(MPID_Info *, char *);
 int mm_close_port(char *);
 int mm_accept(MPID_Info *, char *);
@@ -36,8 +50,15 @@ int mm_close(int);
 MPID_Request * mm_request_alloc();
 void mm_request_free(MPID_Request *request_ptr);
 void mm_car_init();
+void mm_car_finalize();
 MM_Car* mm_car_alloc();
 void mm_car_free(MM_Car *car_ptr);
+int mm_choose_buffer(MPID_Request *request_ptr);
+MPIDI_VC *mm_get_vc(MPID_Comm *comm_ptr, int dest);
+void mm_vctable_init();
+void mm_vctable_finalize();
+int mm_alloc_vc_table(MPID_Comm *comm_ptr);
+int mm_release_vc_table(MM_VCTABLE *p);
 
 /*
 What is an xfer block? - A block is defined by an init call, followed by one or more

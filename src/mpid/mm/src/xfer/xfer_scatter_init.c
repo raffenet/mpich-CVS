@@ -22,6 +22,7 @@ int xfer_scatter_init(int src, int tag, MPID_Comm *comm_ptr, MPID_Request **requ
     MPID_Request *pRequest;
 
     pRequest = mm_request_alloc();
+
     pRequest->mm.src = src;
     pRequest->mm.tag = tag;
     pRequest->mm.op_valid = FALSE;

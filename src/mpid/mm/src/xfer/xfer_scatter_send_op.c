@@ -70,6 +70,7 @@ int xfer_scatter_send_op(MPID_Request *request_ptr, const void *buf, int count, 
     
     pCar->request_ptr = request_ptr;
     pCar->type = MM_UNBOUND_WRITE_CAR;
+    pCar->vc_ptr = mm_get_vc(request_ptr->comm, dest);
     pCar->dest = dest;
     pCar->next_ptr = NULL;
 

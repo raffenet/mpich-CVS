@@ -49,6 +49,7 @@ int MPID_Init(int *argcp, char ***argvp, int requested, int *provided, int *flag
     }
 
     mm_car_init();
+    mm_vctable_init();
 
     return MPI_SUCCESS;
 }

@@ -20,5 +20,8 @@
 @*/
 int MPID_Finalize( void )
 {
+    mm_car_finalize();
+    mm_vctable_finalize();
+
     return MPI_SUCCESS;
 }
