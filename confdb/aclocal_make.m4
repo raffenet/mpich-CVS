@@ -346,7 +346,10 @@ PAC_PROG_MAKE_ECHOS_DIR
 PAC_PROG_MAKE_INCLUDE
 PAC_PROG_MAKE_ALLOWS_COMMENTS
 PAC_PROG_MAKE_VPATH
-PAC_PROG_MAKE_HAS_PATTERN_RULES
+dnl 
+dnl We're not using patterns any more, and Compaq/DEC OSF-1 sometimes hangs
+dnl at this test
+dnl PAC_PROG_MAKE_HAS_PATTERN_RULES
 AC_SUBST(SET_CFLAGS)AM_IGNORE(SET_CFLAGS)
 PAC_PROG_MAKE_SET_CFLAGS([SET_CFLAGS='CFLAGS='])
 if test "$pac_cv_prog_make_echos_dir" = "no" ; then

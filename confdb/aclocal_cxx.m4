@@ -67,7 +67,7 @@ if AC_TRY_EVAL(ac_compile_special) ; then
     if AC_TRY_EVAL(ac_compile) ; then
 	# Look for a new directory
 	for file in `ls` ; do
-	    if test -d "$file" -a "$file" != "." - "$file" != ".." ; then
+	    if test -d "$file" -a "$file" != "." -a "$file" != ".." ; then
 	         pac_cv_cxx_template_dir="$pac_cv_cxx_template_dir $file"
 	    fi
         done
