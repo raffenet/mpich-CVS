@@ -448,7 +448,7 @@ if test -n "$arch_rs6000"; then
         mpi_mpich=1
     fi
     if test -z "$FILE_SYSTEM" ; then
-        if test $CC = "mpcc" ; then
+        if test $CC = "mpcc" || test $CC = "mpCC" ; then
             file_system_piofs=1
             FILE_SYSTEM="piofs"
             echo "configuring for file systems piofs, ufs, and nfs"
