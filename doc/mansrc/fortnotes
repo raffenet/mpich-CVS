@@ -10,6 +10,13 @@ All MPI objects (e.g., 'MPI_Datatype', 'MPI_Comm') are of type 'INTEGER'
 in Fortran.  
 N*/
 
+# - This should always be used with .N Fortran
+/*N FortranStatus
+
+The 'status' variable must be defined as an array of integer with size
+'MPI_STATUS_SIZE'.  
+N*/
+
 /*N collops
 Notes on collective operations:
 

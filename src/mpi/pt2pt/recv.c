@@ -47,6 +47,8 @@ number can be determined with 'MPI_Get_count'.
 
 .N Fortran
 
+.N FortranStatus
+
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_COMM

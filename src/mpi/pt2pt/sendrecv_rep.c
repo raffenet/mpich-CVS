@@ -45,6 +45,8 @@ Output Parameters:
 
 .N Fortran
 
+.N FortranStatus
+
 .N Errors
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
