@@ -272,7 +272,7 @@ int mpiexec_rsh()
 	{
 	    /* -localonly option and dynamic rPMI initialization */
 	    env_str = &process->env[strlen(process->env)];
-	    maxlen = SMPD_MAX_ENV_LENGTH - strlen(process->env);
+	    maxlen = (int)(SMPD_MAX_ENV_LENGTH - strlen(process->env));
 	    MPIU_Str_add_int_arg(&env_str, &maxlen, "PMI_RANK", launch_node_ptr->iproc);
 	    MPIU_Str_add_int_arg(&env_str, &maxlen, "PMI_SIZE", launch_node_ptr->nproc);
 	    MPIU_Str_add_string_arg(&env_str, &maxlen, "PMI_KVS", smpd_process.kvs_name);
