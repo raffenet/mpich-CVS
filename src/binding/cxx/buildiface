@@ -184,6 +184,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		     'Pack-6' => 'in:refint',
 		     'Unpack-5' => 'in:refint',
 
+		     'Get_error_string-3' => 'in:refint', 
 		     'Create_struct-4' => 'in:dtypearray:1',
 
 		     'Merge-2' => 'in:bool',
@@ -321,7 +322,7 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 # These are the routines that are in no class, minus the few that require
 # special handling (Init, Wtime, and Wtick).
 %class_mpi1base = ( 'Get_processor_name' => '0:2',
-		    'Get_error_string' => 0,
+		    'Get_error_string' => '0:3',
 		    'Get_error_class', => '2', 
 		    'Compute_dims' => 0,
 		    'Finalize' => 0,
@@ -334,6 +335,9 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 # Here are the MPI-2 methods
 # WARNING: These are incomplete.  They primarily define only the
 # MPI-2 routines implemented by MPICH2.
+%class_mpi2base = ( 'Alloc_mem' => '3;void *',
+		    'Free_mem' => '0', 
+		    );
 %class_mpi2comm = ( 'Get_attr' => 'int',
 		    'Set_attr' => 0,
 		    'Delete_attr' => 0,
@@ -342,7 +346,9 @@ if (! -d "../../mpi/romio") { $build_io = 0; }
 		   );
 %class_mpi2cart = ();
 %class_mpi2dtype = ( 'Set_name' => 0, 
-		     'Get_name' => 0
+		     'Get_name' => 0,
+		     'Dup' => 'MPI_Datatype',
+		     'Get_extent' => '0,',
 );
 %class_mpi2errh = ();
 %class_mpi2graph = ();
@@ -782,6 +788,8 @@ if ( -s "../../mpi/romio/include/mpio.h.in" ) {
 	     'dtype-Get_size' => 'Type_size',
 	     'dtype-Get_name' => 'Type_get_name',
 	     'dtype-Set_name' => 'Type_set_name',
+	     'dtype-Get_extent' => 'Type_get_extent',
+	     'dtype-Dup' => 'Type_dup',
 	     'group-Get_size' => 'Group_size',
 	     'group-Get_rank' => 'Group_rank',
 	     'group-Intersect' => 'Group_intersection',
@@ -875,6 +883,9 @@ foreach $routine (keys(%class_mpi1base)) {
     &PrintRoutineDef( $OUTFD, "", $routine, $arginfo, 1 );
 }
 
+# mpi2base adds a few routines which need definitions (Info), so
+# all of them are at the end, right before the extern declarations
+
 #
 # Here's the loop structure
 # foreach class 
@@ -950,7 +961,15 @@ typedef int MPI_File;\
     }
 }
 
+    # Add a few more external functions (some require the above definitions)
+    foreach $routine (keys(%class_mpi2base)) {
+        # These aren't really a class, so they don't use Begin/EndClass
+        $arginfo = $class_mpi2base{$routine};
+        print $OUTFD "extern ";
+        &PrintRoutineDef( $OUTFD, "", $routine, $arginfo, 1 );
+    }
 
+    print $OUTFD "\n";
     # As for the typedefs, we must leave off the MPI:: within an MPI 
     # namespace
     foreach $dtype (@dtypes) {
@@ -995,6 +1014,9 @@ extern Datatype TWOINTEGER;
     print $OUTFD "extern const Errhandler ERRORS_RETURN;\n";
     print $OUTFD "extern const Errhandler ERRORS_ARE_FATAL;\n";
     print $OUTFD "extern const Errhandler ERRORS_THROW_EXCEPTIONS;\n";
+
+    # Predefined info
+    print $OUTFD "extern const Info INFO_NULL;\n";
 
     # Predefined integers.  Include MPI-2 predefined keyvals
     foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
@@ -1418,6 +1440,10 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     # but it is close.
     print $OUTFD "const Errhandler ERRORS_THROW_EXCEPTIONS(MPI_ERRORS_RETURN);\n";
 
+    # Predefined info
+    print $OUTFD "const Info INFO_NULL;\n";
+
+
     # Predefined integers
     foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
 		  IDENT, SIMILAR, CONGRUENT, UNEQUAL, PROC_NULL,
@@ -1503,11 +1529,30 @@ Datatype TWOINTEGER(MPI_2INTEGER);
     return errclass;
     }\n";
 
+    print $OUTFD "void Get_error_string( int errcode, char *name, int &resultlen ) 
+    {
+    MPIX_CALL( MPI_Error_string( errcode, name, &resultlen ) );
+    }\n";
+
     print $OUTFD "Aint Get_address( void *ptr )
     {
     MPI_Aint a;
     MPI_Address( ptr, &a );
     return (Aint)a;
+    }\n";
+
+    # The 2.0 standard has &info, while the C version has no *.  
+    # Is the reference an error?
+    print $OUTFD "void *Alloc_mem( Aint size, const Info info )
+    {
+    void *result;
+    MPI_Alloc_mem( size, (MPI_Info)info, &result );
+    return result;
+    }\n";
+
+    print $OUTFD "void Free_mem( void * base )
+    {
+    MPI_Free_mem( base );
     }\n";
 
     # Init is a difficult function because we must allow C to call a 
@@ -1810,6 +1855,10 @@ sub HandleObjectParm {
 	$newparm = "&$parm";
 	return $newparm;
     }
+    elsif ($parmtype =~ /MPI_Aint\s*\*/) {
+	$newparm = "&$parm";
+	return $newparm;
+    }
     return $parm;
 }
 # ----------------------------------------------------------------------------
@@ -2024,7 +2073,7 @@ sub EndClass {
 # for each parameter that identifies itself as requring special processing
 # ----------------------------------------------------------------------------
 #
-# PrintRoutineDef( outfd, class, routine, arginfo )
+# PrintRoutineDef( outfd, class, routine, arginfo, defonly )
 sub PrintRoutineDef {
     my $OUTFD   = $_[0];
     my $class   = $_[1];
