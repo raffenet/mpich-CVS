@@ -48,6 +48,7 @@ typedef struct {
     char              local_filename[ CLOG_PATH_STRLEN ];
     off_t             timeshift_fptr;
     int               delete_localfile;
+    int               log_overhead;
 
     int               status;
 } CLOG_Buffer_t;

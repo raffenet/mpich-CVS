@@ -70,6 +70,7 @@ CLOG_Buffer_t* CLOG_Buffer_create( void )
     strcpy( buffer->local_filename, "" );
     buffer->timeshift_fptr   = 0;
     buffer->delete_localfile = CLOG_BOOL_TRUE;
+    buffer->log_overhead     = CLOG_BOOL_TRUE;
     buffer->status           = CLOG_UNINIT;
 
     return buffer;
@@ -100,6 +101,7 @@ void CLOG_Buffer_free( CLOG_Buffer_t **buffer_handle )
 void CLOG_Buffer_env_init( CLOG_Buffer_t *buffer )
 {
     char          *env_delete_localfile;
+    char          *env_log_overhead;
 #if !defined( CLOG_NOMPI )
     int            ierr;
 #endif
@@ -113,13 +115,31 @@ void CLOG_Buffer_env_init( CLOG_Buffer_t *buffer )
             buffer->delete_localfile = CLOG_BOOL_FALSE;
     }
 
+    env_log_overhead     = (char *) getenv( "MPE_LOG_OVERHEAD" );
+    if ( env_log_overhead != NULL ) {
+        if (    strcmp( env_log_overhead, "false" ) == 0
+             || strcmp( env_log_overhead, "FALSE" ) == 0
+             || strcmp( env_log_overhead, "no" ) == 0
+             || strcmp( env_log_overhead, "NO" ) == 0 )
+            buffer->log_overhead = CLOG_BOOL_FALSE;
+    }
+
 #if !defined( CLOG_NOMPI )
     /*  Let everyone in MPI_COMM_WORLD know what root has */
     ierr = PMPI_Bcast( &(buffer->delete_localfile), 1, MPI_INT,
                        0, MPI_COMM_WORLD );
     if ( ierr != MPI_SUCCESS ) {
         fprintf( stderr, __FILE__":CLOG_Buffer_env_init() - \n"
-                         "\t""PMPI_Bcast() fails\n" );
+                         "\t""PMPI_Bcast(buffer->delete_localfile) fails!\n" );
+        fflush( stderr );
+        PMPI_Abort( MPI_COMM_WORLD, 1 );
+    }
+
+    ierr = PMPI_Bcast( &(buffer->log_overhead), 1, MPI_INT,
+                       0, MPI_COMM_WORLD );
+    if ( ierr != MPI_SUCCESS ) {
+        fprintf( stderr, __FILE__":CLOG_Buffer_env_init() - \n"
+                         "\t""PMPI_Bcast(buffer->log_overhead) fails!\n" );
         fflush( stderr );
         PMPI_Abort( MPI_COMM_WORLD, 1 );
     }
@@ -181,8 +201,10 @@ void CLOG_Buffer_init( CLOG_Buffer_t *buffer, const char *local_tmpfile_name )
        Initialize the CLOG_Buffer's minimum block size:
        CLOG_REC_ENDBLOCK + CLOG_REC_BAREEVT for CLOG_Buffer_write2disk
     */
-    clog_buffer_minblocksize = CLOG_Rec_size( CLOG_REC_ENDBLOCK )
-                             + CLOG_Rec_size( CLOG_REC_BAREEVT );
+    clog_buffer_minblocksize = CLOG_Rec_size( CLOG_REC_ENDBLOCK );
+
+    if ( buffer->log_overhead == CLOG_BOOL_TRUE )
+        clog_buffer_minblocksize += CLOG_Rec_size( CLOG_REC_BAREEVT );
 }
 
 /*
@@ -253,9 +275,10 @@ void CLOG_Buffer_advance_block( CLOG_Buffer_t *buffer )
         /*
            Assume space has already been reserved for CLOG_Buffer_write2disk,
            So save the state CLOG_Buffer_write2disk without checking.
-           Can't check anyway, circular logic.
+           Can't check anyway, circular logic!
         */
-        CLOG_Buffer_save_bareevt_0chk( buffer, CLOG_EVT_BUFFERWRITE_START );
+        if ( buffer->log_overhead == CLOG_BOOL_TRUE )
+            CLOG_Buffer_save_bareevt_0chk( buffer, CLOG_EVT_BUFFERWRITE_START );
         CLOG_Buffer_save_endblock( buffer );
 
         if ( buffer->local_fd == CLOG_NULL_FILE )
@@ -263,7 +286,8 @@ void CLOG_Buffer_advance_block( CLOG_Buffer_t *buffer )
         CLOG_Buffer_localIO_write( buffer );
         CLOG_Block_reset( buffer->curr_block );
 
-        CLOG_Buffer_save_bareevt( buffer, CLOG_EVT_BUFFERWRITE_FINAL );
+        if ( buffer->log_overhead == CLOG_BOOL_TRUE )
+            CLOG_Buffer_save_bareevt( buffer, CLOG_EVT_BUFFERWRITE_FINAL );
     }
 }
 

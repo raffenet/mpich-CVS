@@ -88,7 +88,8 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
     CLOG_Buffer_init_timeshift( stream->buffer );
 
     /* Adding the CLOG_Buffer_write2disk's state definition */
-    if ( stream->buffer->local_mpi_rank == 0 ) {
+    if (    stream->buffer->local_mpi_rank  == 0 
+         && stream->buffer->log_overhead    == CLOG_BOOL_TRUE ) {
         CLOG_Buffer_save_statedef( stream->buffer,
                                    CLOG_STATEID_BUFFERWRITE,
                                    CLOG_EVT_BUFFERWRITE_START,
