@@ -41,7 +41,7 @@ int IOHandleStdOut( int fd, void *extra )
     int       n, nin;
 
     if (debug) {
-	printf( "Reading from fd %d\n", fd );
+	DBG_PRINTF( "Reading from fd %d\n", fd );
     }
     n = read( fd, iodata->buf, MAXCHARBUF );
     if (n <= 0) return 0;
@@ -137,7 +137,7 @@ int IOHandleLoop( ProcessTable *ptable, int *reason )
     if (maxfd == -1) { *reason = 1; return 0; }
 
     if (debug) {
-	printf( "Found %d active fds\n", nactive );
+	DBG_PRINTF( "Found %d active fds\n", nactive );
     }
 
     /* A null timeout is wait forever.  We set a timeout here */
@@ -177,7 +177,7 @@ int IOHandleLoop( ProcessTable *ptable, int *reason )
 					    pstate[i].ios[j].extra_state );
 			    if (err < 0) {
 				if (debug) {
-				    printf( "closing io handler %d on %d\n",
+				    DBG_PRINTF( "closing io handler %d on %d\n",
 					    j, i );
 				}
 				pstate[i].ios[j].fdstate = IO_FINISHED;
@@ -190,7 +190,7 @@ int IOHandleLoop( ProcessTable *ptable, int *reason )
 					    pstate[i].ios[j].extra_state );
 			    if (err <= 0) {
 				if (debug) {
-				    printf( "closing io handler %d on %d\n",
+				    DBG_PRINTF( "closing io handler %d on %d\n",
 					    j, i );
 				}
 				pstate[i].ios[j].fdstate = IO_FINISHED;
