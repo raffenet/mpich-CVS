@@ -1,5 +1,5 @@
 # SUBDIRS_pm_name are the names that @ pm_name @ can take in SUBDIRS
-SUBDIRS_pm_name = mpd forker
+SUBDIRS_pm_name = mpd forker remshell
 SUBDIRS = @pm_name@ .
 all-postamble:
 	build_prefix=`cd ../.. && pwd` && cd @pm_name@ && \
