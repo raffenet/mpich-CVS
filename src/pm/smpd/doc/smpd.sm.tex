@@ -32,7 +32,13 @@ State [reading session request],[label="reading session request"]
 			Change_State([writing nopwd request],[label="smpd"])
 State [writing cred request],[label="writing cred request"]
 	Event [data written]
-		Change_State([reading account])
+		Change_State([reading cred ack])
+State [reading cred ack],[label="reading cred ack"]
+	Event [data read]
+		if yes
+			Change_State([reading account],[label="yes"])
+		else no
+			Change_State([closing],[label="no"])
 State [writing nocred request],[label="writing nocred request"]
 	Event [data written]
 		if win
