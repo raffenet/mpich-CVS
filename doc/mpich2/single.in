@@ -11,6 +11,7 @@
 \setlength\marginparwidth{0.7in}
 \begin{document}
 
+\def\insingle{\relax}
 \input %infile%
 
 \end{document}

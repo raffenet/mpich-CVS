@@ -1,3 +1,11 @@
+\ifx\insingle\undefined
+\else
+% If we're in the single-page version, promote the sections
+\typeout{hi!}
+\let\subsubsection=\subsection
+\let\subsection=\section
+\fi
+
 \subsection{Writing New Tests}
 \label{sec:new-tests}
 This section describes how to add tests to the tests that are executed
@@ -80,8 +88,9 @@ example.
 directory name to the \file{Makefile.sm} in that directory on the
 \code{SUBDIRS} line.  Also add the directory name to the
 \file{testlist} file in the parent directory.
-\item In \file{test/mpi/configure.in}, add your new directory to the
-\code{AC_OUTPUT} list (e.g., add \code{newdir/Makefile}).
+\item In \file{test/mpi/configure.in}, add the \file{Makefile} for
+your new directory to the 
+\code{AC_OUTPUT} list (e.g., \code{newdir/Makefile}).
 \item Rerun \file{maint/updatefiles} to rebuild the \code{configure}
 and \code{Makefile.in} files.  Rerun \code{configure} to rebuild the
 \code{Makefile}s.  
@@ -274,8 +283,28 @@ Note that the MTest package is still under development; there may be
 additional routines and additional examples of communicators and
 datatypes.  
 
+There are a few additional routines in the MTest package.  These include:
+\begin{description}
+\item[\code{MTestGetIntracomm}]Like \code{MTestGetIntracommGeneral},
+but always provides a communicator (but never \code{MPI_COMM_NULL}).
+\item[\code{MTestGetIntercomm}]Like \code{MTestGetIntracomm}, but
+provides an intercommunicator instead of an intracommunicator.  Also
+indicates if the calling process is a member of the ``left'' group of
+processes.  The output communicator may, in some cases, be
+\code{MPI_COMM_NULL}.  
+\item[\code{MTestGetIntercommName}]Like \code{MTestGetIntracommName},
+but returns the name of an intercommunicator.
+\item[\code{MTestGetComm}]Like \code{MTestGetIntracomm}, but for both
+inter- and intra-communicators.
+\item[\code{MTestPrintErrorMsg}]Like \code{MTestPrintError}, but
+includes an additional message.
+\item[\code{MTestGetWin}]Provides an MPI Window object.  Active and
+passive windows are provided.  
+\item[\code{MTestGetWinName}]Get the name associated with a window object
+\end{description}
 
 \if 1=0
+% This is an old section and is commented out to the end of the file.
 \subsubsection{Test harness}
 There is a common test harness for running tests.  
 
@@ -343,17 +372,5 @@ automated test mode, \code{MTest_Message} produces no output; in the
 full debugging mode, it performs a \code{printf/fflush} with each
 call.  Other versions of \code{MTest_Get_datatypes} and
 \code{MTest_Check_recv} can be used for collective routines.
-
-\paragraph{Routine Summary.}
-This is incomplete.
-\begin{verbatim}
-void MTest_Init( int *argc, char ***argv );
-int MTest_Get_datatypes( ... );
-void MTest_Reset_datatypes(void);
-MPI_Comm MTest_Get_comm( int, int );
-void MTest_Errmsg( msg, ... );
-void MTest_Message( msg, ... );
-void MTest_Finalize( int errcount );
-\end{verbatim}
 
 \fi
