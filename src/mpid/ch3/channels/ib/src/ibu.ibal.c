@@ -1757,9 +1757,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 			MPIU_Internal_error_printf("ibu_wait: read mem_ptr == NULL\n");
 		    assert(mem_ptr != NULL);
 #ifdef USE_INLINE_PKT_RECEIVE
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
+		    ibuBlockFree(ibu->allocator, mem_ptr_orig);
 #else
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
+		    ibuBlockFree(ibu->allocator, mem_ptr);
 #endif
 		    ibui_post_receive(ibu);
 		}
@@ -1813,9 +1813,9 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out)
 		    ibu->read.bufflen -= num_bytes;
 		    /* put the receive packet back in the pool */
 #ifdef USE_INLINE_PKT_RECEIVE
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
+		    ibuBlockFree(ibu->allocator, mem_ptr_orig);
 #else
-		    ibuBlockFreeIB(ibu->allocator, mem_ptr);
+		    ibuBlockFree(ibu->allocator, mem_ptr);
 #endif
 		    ibui_post_receive(ibu);
 		}
