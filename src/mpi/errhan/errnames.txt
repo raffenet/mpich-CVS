@@ -306,7 +306,7 @@ Fortran integer (value is %ld)
     was opened with MPI_MODE_SEQUENTIAL
 **iodispnotcurrent:Displacement must be set to MPI_DISPLACEMENT_CURRENT \
     since file was opened with MPI_MODE_SEQUENTIAL
-**iobaddisp:Invalid disp argument
+**iobaddisp:Invalid displacement argument
 **iobadoffset:Invalid offset argument
 **ionegoffset:Negative offset argument
 **iobadcount:Invalid count argument
