@@ -275,6 +275,7 @@ def _handle_lhs_input():
                                                    'reason' : 'some_procs_not_started'} )
                 return
             msg['first_loop'] = 0
+            msg['nstarted_on_this_loop'] = 0
         _do_mpdrun(msg)
     elif msg['cmd'] == 'mpdtrace_info':
         if msg['dest'] == g.myId:
