@@ -14,7 +14,6 @@ lib${MPILIBNAME}_a_SOURCES = bsend.c bsendutil.c bufattach.c buffree.c \
 
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include
-profilelib_${MPILIBNAME} = p${MPILIBNAME}
 #
 # This is a test for the document generation
 doc_HTML_SOURCES = ${mpi_sources}
