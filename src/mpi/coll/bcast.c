@@ -608,7 +608,12 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    /* FIXME - For intercomms, the root may be MPI_PROCNULL or 
 	       MPI_ROOT */
-	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+		MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
+	    }
+	    else {
+		MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
+	    }
 	    
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
@@ -639,11 +644,13 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
             mpi_errno = MPIR_Bcast( buffer, count, datatype, root, comm_ptr );
         else {
             /* intercommunicator */
+	    /*
 	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
 					      "**intercommcoll",
 					      "**intercommcoll %s", FCNAME );
-            /*mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,
-	      root, comm_ptr );*/
+	    */
+            mpi_errno = MPIR_Bcast_inter( buffer, count, datatype,
+	      root, comm_ptr );
         }
 	MPIR_Nest_decr();
     }
