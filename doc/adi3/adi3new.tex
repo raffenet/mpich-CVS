@@ -120,6 +120,33 @@ device-dependent modules.
 \input adi3man/MPID_Segment_free
 
 \section{Progress Engine}
+The progress engine provides a way for the MPI implementation and the
+ADI implementation to coordinate progress on communication.  The
+design makes no assumptions about whether the ADI uses polling or a
+separate communication thread or interrupts or any other mechanism to
+make progress.  
+
+Here are several implementation sketches.
+First, a polling implementation for a single-threaded implementation:
+\begin{verbatim}
+MPID_Progress_start - no-op
+MPID_Progress_end - no-op
+MPID_Progress_test - select with no wait
+MPID_Progress_wait - select with infinite wait
+MPID_Progress_poke - select with no wait
+\end{verbatim}
+
+A non-polling, single-threaded implementation that used a separate
+thread for communication could use (this isn't correct yet)
+\begin{verbatim}
+MPID_Progress_start - Set flag indicating checks in progress
+MPID_Progress_end - Clear flag
+MPID_Progress_test - yield to communication thread
+MPID_Progress_wait - if no completions since flag set, 
+                     wait on condition variable.  Otherwise, return.
+MPID_Progress_poke - either no-op or yield to communication thread
+\end{verbatim}
+
 \input adi3man/MPID_Progress_start.tex
 \input adi3man/MPID_Progress_end.tex
 \input adi3man/MPID_Progress_test.tex

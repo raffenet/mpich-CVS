@@ -708,7 +708,7 @@ typedef enum { MPID_INTRACOMM = 0, MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
   MPID_Comm - Description of the Communicator data structure
 
   Notes:
-  Note that the size (and possibly rank) duplicate data in the groups that
+  Note that the size and rank duplicate data in the groups that
   make up this communicator.  These are used often enough that this
   optimization is valuable.  
 
@@ -716,7 +716,7 @@ typedef enum { MPID_INTRACOMM = 0, MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
   This contains the information used to contact a particular process,
   indexed by the rank relative to this communicator.
 
-  Groups may be allocated lazily.  That is, the group pointers may be
+  Groups are allocated lazily.  That is, the group pointers may be
   null, created only when needed by a routine such as 'MPI_Comm_group'.
   The local process ids needed to form the group are available within
   the virtual connection table.
@@ -848,7 +848,7 @@ typedef struct {
   MPID_Segment - Description of the Segment data structure
 
   Notes:
-  This has no corresponding MPI datatype.
+  This has no corresponding MPI object.
 
   The dataloop stack works as follows (the actual code will of course
   optimize the access to the stack elements and eliminate, for example,
@@ -939,7 +939,7 @@ typedef struct {
   Request-DS
 
   E*/
-typedef { MPID_REQ_SEND, MPID_REQ_RECV, MPID_REQ_PERSISTENT_SEND, 
+typedef enum { MPID_REQ_SEND, MPID_REQ_RECV, MPID_REQ_PERSISTENT_SEND, 
 	      MPID_REQ_PERSISTENT_RECV, MPID_REQ_USER } MPID_Request_kind;
 
 /*S

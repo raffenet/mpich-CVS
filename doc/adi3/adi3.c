@@ -968,6 +968,9 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   Return Value:
   True if a matching request was found, false otherwise.
 
+  We should consider changing this to an error return, in the event that 
+  a problem is detected in the communicator.
+
   Notes:
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
@@ -985,7 +988,7 @@ MPID_Request *MPID_Request_send_FOA( int tag, int rank, MPID_Comm *comm,
   Request
 
   @*/
-int MPID_Iprobe( int source, int taga, MPID_Comm *comm, int context_offset, 
+int MPID_Iprobe( int source, int tag, MPID_Comm *comm, int context_offset, 
 		 MPI_Status *status )
 {
 }
@@ -1003,6 +1006,7 @@ int MPID_Iprobe( int source, int taga, MPID_Comm *comm, int context_offset,
   Output Parameter:
 . status - 'MPI_Status' set as defined by 'MPI_Probe'
 
+
   Notes:
   Note that the values returned in 'status' will be valid for a subsequent
   MPI receive operation only if no other thread attempts to receive the same
@@ -1016,9 +1020,9 @@ int MPID_Iprobe( int source, int taga, MPID_Comm *comm, int context_offset,
   to use message-queues attached to particular communicators or connections
   between processes.
 
-  Question:
-  Should this have an error return in case a failure on the communicator
-  is detected?
+  
+  We should consider changing this routine to include  an error return, in 
+  the event that a problem is detected in the communicator.
 
   Module:
   Request
@@ -1942,7 +1946,12 @@ int MPID_Recv_init( void *buf, int count, MPI_Datatype datatype,
   Notes:
   The only difference between this and 'MPI_Startall' is that the basic
   error checks (e.g., count) have been made, and the MPI opaque objects
-  have been replaced by pointers to MPID objects
+  have been replaced by pointers to MPID objects.  
+
+  Rationale:
+  This allows the device to schedule communication involving multiple requests,
+  whereas an implementation built on just 'MPID_Start' would force the
+  ADI to initiate the communication in the order encountered.
   @*/
 int MPID_Startall( int count, MPID_Request requests[] )
 {}
