@@ -848,13 +848,16 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
     OVERLAPPED *ovl;
     DWORD dwFlags = 0;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_WAIT);
+    MPIDI_STATE_DECL(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_WAIT);
 
     for (;;) 
     {
+	MPIDI_FUNC_ENTER(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	if (GetQueuedCompletionStatus(set, &num_bytes, (DWORD*)&sock, &ovl, millisecond_timeout))
 	{
+	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	    if (sock->type == SOCK_SOCKET)
 	    {
 		if (sock->closing && sock->pending_operations == 0)
@@ -1080,7 +1083,9 @@ int sock_wait(sock_set_t set, int millisecond_timeout, sock_event_t *out)
 	}
 	else
 	{
+	    /*MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);*/ /* Maybe the logging will reset the last error? */
 	    error = GetLastError();
+	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 	    /* interpret error, return appropriate SOCK_ERR_... macro */
 	    if (error == WAIT_TIMEOUT)
 	    {
@@ -1201,7 +1206,7 @@ int sock_post_read(sock_t sock, void *buf, int len, int (*rfn)(int, void*))
 
 int sock_post_readv(sock_t sock, SOCK_IOV *iov, int n, int (*rfn)(int, void*))
 {
-    int i;
+    /*int i;*/
     DWORD flags = 0;
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_READV);
 
@@ -1250,7 +1255,7 @@ int sock_post_write(sock_t sock, void *buf, int len, int (*wfn)(int, void*))
 
 int sock_post_writev(sock_t sock, SOCK_IOV *iov, int n, int (*wfn)(int, void*))
 {
-    int i;
+    /*int i;*/
     MPIDI_STATE_DECL(MPID_STATE_SOCK_POST_WRITEV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SOCK_POST_WRITEV);
