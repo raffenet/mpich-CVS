@@ -610,7 +610,7 @@ SMPD_BOOL smpd_remove_scp()
     result = smpd_lookup_spn(spn, SMPD_MAX_NAME_LENGTH, pszDnsComputerName, SMPD_LISTENER_PORT);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to lookup the smpd SPN for %s.\n", pszDnsComputerName);
+	smpd_err_printf("unable to lookup the smpd Service Principal Name for %s.\n", pszDnsComputerName);
 	result = SMPD_FALSE;
 	goto fn_exit;
     }
