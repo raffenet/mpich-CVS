@@ -25,7 +25,7 @@ import viewer.common.RuntimeExecCommand;
 
 public class Launcher
 {
-    private static       String  setupfile_path           = null;
+    private static       String  setupfile_path   = null;
 
     // Assume Unix convention.
     private static       String  FileSeparator    = "/";
@@ -34,11 +34,11 @@ public class Launcher
     private static       String  ClassPath        = null;
     private static       String  UserHome         = null;
 
-    private static final String  SETUP_FILENAME   = ".jumpshot_launcher.conf";
     private static final String  VERSION_INFO     = "1.0.0.1";
     private static       String  JVM              = "java";
     private static       String  JVM_OPTIONS      = "-Xms64m -Xmx256m";
     private static       String  VIEWER_JAR       = "jumpshot.jar";
+    private static       boolean VERBOSE          = true;
 
     private static void initializeSystemProperties()
     {
@@ -61,7 +61,7 @@ public class Launcher
         else
             JVM = "javaw.exe";
 
-        setupfile_path = UserHome + FileSeparator + SETUP_FILENAME;
+        setupfile_path = UserHome + FileSeparator + ".jumpshot_launcher.conf";
     }
 
     private static final String CONFIGURATION_HEADER
@@ -69,7 +69,9 @@ public class Launcher
                    + "#VERSION_INFO: version-ID of the jumpshot-launcher.\n"
                    + "#JVM: Java Virtual Machine name, can be absolute path.\n"
                    + "#JVM_OPTIONS: JVM launch parameters.\n"
-                   + "#VIEWER_JAR: executable jar file to be launched.";
+                   + "#VIEWER_JAR: executable jar file to be launched.\n"
+                   + "#VERBOSE: be informative about this setup file change, "
+                   +           "true(yes) or false(no).\n";
 
     private static String readLauncherConstants()
     {
@@ -105,28 +107,39 @@ public class Launcher
         if ( ppty_val != null && !JVM.equals( ppty_val ) ) {
             if ( msgbuf == null )
                 msgbuf = new StringBuffer();
+            else
+                msgbuf.append( "\n" );
             msgbuf.append( "The default JVM, " + JVM + ",\n"
-                         + "is overriden by your setup specification,\n"
-                         + ppty_val + ".\n" );
+                         + "is overriden by value, " + ppty_val + ",\n"
+                         + "specified in your setup file.\n" );
             JVM          = ppty_val;
         }
         ppty_val = setup_pptys.getProperty( "JVM_OPTIONS" );
         if ( ppty_val != null && !JVM_OPTIONS.equals( ppty_val ) ) {
             if ( msgbuf == null )
                 msgbuf = new StringBuffer();
+            else
+                msgbuf.append( "\n" );
             msgbuf.append( "The default JVM_OPTIONS, " + JVM_OPTIONS + ",\n"
-                          + "is overriden by your setup specification,\n"
-                          + ppty_val + ".\n" );
+                         + "is overriden by value, " + ppty_val + ",\n"
+                         + "specified in your setup file.\n" );
             JVM_OPTIONS  = ppty_val;
         }
         ppty_val = setup_pptys.getProperty( "VIEWER_JAR" );
         if ( ppty_val != null && !VIEWER_JAR.equals( ppty_val ) ) {
             if ( msgbuf == null )
                 msgbuf = new StringBuffer();
+            else
+                msgbuf.append( "\n" );
             msgbuf.append( "The default VIEWER_JAR, " + VIEWER_JAR + ",\n"
-                         + "is overriden by your setup specification,\n"
-                         + ppty_val + ".\n" );
+                         + "is overriden by value, " + ppty_val + ",\n"
+                         + "specified in your setup file.\n" );
             VIEWER_JAR   = ppty_val;
+        }
+        ppty_val = setup_pptys.getProperty( "VERBOSE" );
+        if ( ppty_val != null ) {
+            VERBOSE      =    ppty_val.equalsIgnoreCase( "true" )
+                           || ppty_val.equalsIgnoreCase( "yes" );
         }
         if ( msgbuf != null )
             return msgbuf.toString();
@@ -145,6 +158,7 @@ public class Launcher
             setup_pptys.setProperty( "JVM", JVM );
             setup_pptys.setProperty( "JVM_OPTIONS", JVM_OPTIONS );
             setup_pptys.setProperty( "VIEWER_JAR", VIEWER_JAR );
+            setup_pptys.setProperty( "VERBOSE", String.valueOf( VERBOSE ) );
             setup_pptys.store( fouts, CONFIGURATION_HEADER );
             fouts.close();
         } catch ( IOException ioerr ) {
@@ -249,7 +263,8 @@ public class Launcher
         Launcher.initializeLauncherConstants();
         setupfile_msg = Launcher.readLauncherConstants();
         if ( setupfile_msg != null ) {
-            Dialogs.info( null, setupfile_msg, null );
+            if ( Launcher.VERBOSE )
+                Dialogs.info( null, setupfile_msg, null );
             Launcher.writeLauncherConstants();
         }
 
