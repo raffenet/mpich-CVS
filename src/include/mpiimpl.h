@@ -1297,28 +1297,6 @@ extern int MPID_THREAD_LEVEL;
    src/mpi/pt2pt? */
 /* ------------------------------------------------------------------------- */
 
-#ifdef MPICH_MACROS_ARE_FUNCTIONS
-void MPIR_Wait(MPID_Request *);
-#else
-#define MPIR_Wait(request_ptr_)			\
-{						\
-    while((*(request_ptr_)->cc_ptr) != 0)	\
-    {						\
-        MPID_Progress_start();			\
-						\
-        if ((*(request_ptr_)->cc_ptr) != 0)	\
-        {					\
-            MPID_Progress_wait();		\
-        }					\
-        else					\
-        {					\
-            MPID_Progress_end();		\
-            break;				\
-        }					\
-    }						\
-}
-#endif
-
 #define MPIR_Status_set_empty(status_)			\
 {							\
     if ((status_) != MPI_STATUS_IGNORE)			\
@@ -1580,6 +1558,7 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
                source, int tag, MPI_Comm comm, MPI_Request *request);
 int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                MPI_Comm comm, MPI_Request *request);
+int MPIC_Wait(MPID_Request * request_ptr);
 
 
 void MPIR_MAXF  ( void *, void *, int *, MPI_Datatype * ) ;
