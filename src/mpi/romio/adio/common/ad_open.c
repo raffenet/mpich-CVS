@@ -62,7 +62,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     ADIOI_SetFunctions(fd);
 
 /* create and initialize info object */
-    fd->hints = ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));
+    fd->hints = (ADIOI_Hints *)ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));
     if (fd->hints == NULL) {
 	/* NEED TO HANDLE ENOMEM ERRORS */
     }
@@ -84,7 +84,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
     MPI_Comm_rank(comm, &rank);
     if (rank == 0) {
 	MPI_Comm_size(comm, &procs);
-	tmp_ranklist = ADIOI_Malloc(sizeof(int) * procs);
+	tmp_ranklist = (int *) ADIOI_Malloc(sizeof(int) * procs);
 	if (tmp_ranklist == NULL) {
 	    /* NEED TO HANDLE ENOMEM ERRORS */
 	}
@@ -95,7 +95,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 
 	/* store the ranklist using the minimum amount of memory */
 	if (rank_ct > 0) {
-	    fd->hints->ranklist = ADIOI_Malloc(sizeof(int) * rank_ct);
+	    fd->hints->ranklist = (int *) ADIOI_Malloc(sizeof(int) * rank_ct);
 	    for (i=0; i < rank_ct; i++) {
 		fd->hints->ranklist[i] = tmp_ranklist[i];
 	    }
