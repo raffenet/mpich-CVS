@@ -74,6 +74,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = PMI_KVS_Get_name_length_max(&name_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_name_length_max", "**pmi_kvs_get_name_length_max %d", mpi_errno);
+	return mpi_errno;
     }
     pg->kvs_name = MPIU_Malloc(name_sz + 1);
     if (pg->kvs_name == NULL)
@@ -91,6 +93,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = PMI_Get_id_length_max(&id_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
+	return mpi_errno;
     }
     pg->pg_id = MPIU_Malloc(id_sz + 1);
     if (pg->pg_id == NULL)
@@ -101,7 +105,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = PMI_Get_id(pg->pg_id, id_sz);
     if (mpi_errno != 0)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_id", "**pmi_kvs_get_id %d", mpi_errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id", "**pmi_get_id %d", mpi_errno);
 	return mpi_errno;
     }
 
@@ -186,6 +190,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", mpi_errno);
+	return mpi_errno;
     }
     key = MPIU_Malloc(key_max_sz);
     if (key == NULL)
@@ -196,6 +202,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
     mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get_value_length_max", "**pmi_kvs_get_value_length_max %d", mpi_errno);
+	return mpi_errno;
     }
     val = MPIU_Malloc(val_max_sz);
     if (val == NULL)
