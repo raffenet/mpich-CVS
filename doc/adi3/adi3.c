@@ -1164,7 +1164,7 @@ void MPID_Request_ready( MPID_Request *request )
   Module:
   Request
 @*/
-void MPID_Request_free( MPID_Request *request )
+void MPID_Request_release( MPID_Request *request )
 {
 }
 
