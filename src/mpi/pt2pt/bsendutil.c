@@ -127,7 +127,11 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 					     "**bufexists", 0 );
 	    }
 	    if (buffer_size < MPI_BSEND_OVERHEAD) {
-		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", __LINE__, MPI_ERR_OTHER, 
+		/* MPI_ERR_OTHER is another valid choice for this error,
+		 but the Intel test wants MPI_ERR_BUFFER, and it seems
+		 to violate the principle of least surprise to not use
+		 MPI_ERR_BUFFER for errors with the Buffer */
+		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", __LINE__, MPI_ERR_BUFFER, 
 					     "**bsendbufsmall", "**bsendbufsmall %d %d", buffer_size, MPI_BSEND_OVERHEAD );
 	    }
 	}
