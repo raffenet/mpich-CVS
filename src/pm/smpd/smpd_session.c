@@ -504,24 +504,28 @@ int handle_command(smpd_context_t *context)
 	if (!smpd_get_string_arg(cmd->cmd, "host", host, SMPD_MAX_HOST_LENGTH))
 	{
 	    smpd_err_printf("connect command does not have a target host argument, discarding: \"%s\"\n", cmd->cmd);
+	    /* return failure result */
 	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
 	if (!smpd_get_int_arg(cmd->cmd, "id", &dest_id))
 	{
 	    smpd_err_printf("connect command does not have a target id argument, discarding: \"%s\"\n", cmd->cmd);
+	    /* return failure result */
 	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
 	if (dest_id < smpd_process.id)
 	{
 	    smpd_dbg_printf("connect command has an invalid id, discarding: %d\n", dest_id);
+	    /* return failure result */
 	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
 	if (smpd_process.left_context != NULL && smpd_process.right_context != NULL)
 	{
 	    smpd_err_printf("unable to connect to a new session, left and right sessions already exist, discarding.\n");
+	    /* return failure result */
 	    smpd_exit_fn("handle_command");
 	    return SMPD_SUCCESS;
 	}
@@ -610,7 +614,7 @@ int handle_command(smpd_context_t *context)
 	    return SMPD_FAIL;
 	}
 	/* write a success result back to the connect requester */
-	result = smpd_create_command("result", smpd_process.id, context->id, SMPD_FALSE, &temp_cmd);
+	result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to create a result command for the connect request.\n");

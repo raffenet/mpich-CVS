@@ -311,8 +311,11 @@ int handle_command(smpd_context_t *context)
 	{
 	    mp_err_printf("no iproc in exit command: '%s'\n", cmd->cmd);
 	}
-	printf("process %d exited with exit code %d\n", iproc, exitcode);
-	fflush(stdout);
+	if (mp_process.output_exit_codes)
+	{
+	    printf("process %d exited with exit code %d\n", iproc, exitcode);
+	    fflush(stdout);
+	}
 	mp_process.nproc--;
 	if (mp_process.nproc == 0)
 	{
