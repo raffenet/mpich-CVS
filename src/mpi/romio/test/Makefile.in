@@ -73,10 +73,10 @@ error: error.o
 	$(CC) $(USER_CFLAGS) -o error error.o $(LIBS)
 
 shared_fp: shared_fp.o
-	$(CC) $(USER_FFLAGS) -o shared_fp shared_fp.o $(LIBS)
+	$(CC) $(USER_CFLAGS) -o shared_fp shared_fp.o $(LIBS)
 
 split_coll: split_coll.o
-	$(CC) $(USER_FFLAGS) -o split_coll split_coll.o $(LIBS)
+	$(CC) $(USER_CFLAGS) -o split_coll split_coll.o $(LIBS)
 
 fperf: fperf.o
 	$(F77) $(USER_FFLAGS) -o fperf fperf.o $(LIBS)
