@@ -183,6 +183,7 @@ def mpdman():
     if singinitPORT:
         pmiListenSocket = 0
         pmiSocket = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
+        socketsToSelect[pmiSocket] = 1    # do this now for singinits
         sock_write_cli_stdin  = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
         fd_write_cli_stdin = sock_write_cli_stdin.fileno()
         sock_read_cli_stdout = mpd_get_inet_socket_and_connect(myHost,singinitPORT)
