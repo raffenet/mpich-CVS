@@ -16,20 +16,154 @@
 
 #ifdef USE_IB_VAPI
 
+#define IBU_ERROR_MSG_LENGTH       255
+#define IBU_PACKET_SIZE            (1024 * 64)
+#define IBU_PACKET_COUNT           128
+#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
+#define IBU_MAX_POSTED_SENDS       8192
+#define IBU_MAX_DATA_SEGMENTS      100
+#define IBU_ACK_WATER_LEVEL        32
+
 #ifdef MPICH_DBG_OUTPUT
 static int g_num_received = 0;
 static int g_num_sent = 0;
 static int g_num_posted_receives = 0;
 static int g_num_posted_sends = 0;
+static int g_ps = 0;
+static int g_pr = 0;
 #endif
 
-#define GETLKEY(p) (((ibmem_t*)p) - 1)->lkey
-typedef struct ibmem_t
+#if 0
+typedef struct mem_node_t
 {
+    void *p;
+    struct mem_node_t *next;
+} mem_node_t;
+mem_node_t *g_pList = NULL;
+
+void add2list(void *p)
+{
+    mem_node_t *node;
+
+    node = (mem_node_t*)malloc(sizeof(mem_node_t));
+    node->p = p;
+    node->next = g_pList;
+    g_pList = node;
+}
+
+void checklist(void *p)
+{
+    mem_node_t *node;
+    node = g_pList;
+    while (node)
+    {
+	if (node->p == p)
+	{
+	    printf("pointer %p already in global list.\n", p);fflush(stdout);
+	}
+	node = node->next;
+    }
+}
+
+void removefromlist(void *p)
+{
+    mem_node_t *trailer, *iter;
+    iter = trailer = g_pList;
+    while (iter)
+    {
+	if (iter->p == p)
+	{
+	    if (iter == g_pList)
+	    {
+		g_pList = g_pList->next;
+		free(iter);
+		return;
+	    }
+	    else
+	    {
+		trailer->next = iter->next;
+		free(iter);
+		return;
+	    }
+	}
+	if (trailer != iter)
+	{
+	    trailer = trailer->next;
+	}
+	iter = iter->next;
+    }
+    printf("remove error: pointer %p not in global list.\n", p);fflush(stdout);
+}
+
+void *s_base = NULL;
+int s_offset = 0;
+void sanity_check_recv(VAPI_rr_desc_t *work_req)
+{
+    VAPI_sg_lst_entry_t *data;
+    int i;
+
+    for (i=0; i<work_req->sg_lst_len; i++)
+    {
+	data = &work_req->sg_lst_p[i];
+	if (data->len < 1 || data->len > IBU_PACKET_SIZE)
+	{
+	    printf("ERROR: data[%d].len = %d\n", i, data->len);fflush(stdout);
+	}
+	if ((void*)data->addr < s_base)
+	{
+	    printf("ERROR: ptr %p < %p base\n", data->addr, s_base);fflush(stdout);
+	}
+	if (((char*)data->addr + data->len) > ((char*)s_base + s_offset))
+	{
+	    printf("ERROR: ptr %p + len %d > %p base + %d offset\n",
+		   data->addr, data->len, s_base, s_offset);
+	    fflush(stdout);
+	} 
+    }
+}
+void sanity_check_send(VAPI_sr_desc_t *work_req)
+{
+    VAPI_sg_lst_entry_t *data;
+    int i;
+
+    for (i=0; i<work_req->sg_lst_len; i++)
+    {
+	data = &work_req->sg_lst_p[i];
+	if (data->len < 1 || data->len > IBU_PACKET_SIZE)
+	{
+	    printf("ERROR: data[%d].len = %d\n", i, data->len);fflush(stdout);
+	}
+	if ((void*)data->addr < s_base)
+	{
+	    printf("ERROR: ptr %p < %p base\n", data->addr, s_base);fflush(stdout);
+	}
+	if (((char*)data->addr + data->len) > ((char*)s_base + s_offset))
+	{
+	    printf("ERROR: ptr %p + len %d > %p base + %d offset\n",
+		   data->addr, data->len, s_base, s_offset);
+	    fflush(stdout);
+	} 
+    }
+}
+#endif
+
+typedef struct ibuBlock_t
+{
+    struct ibuBlock_t *next;
     VAPI_mr_hndl_t handle;
     VAPI_lkey_t lkey;
-    VAPI_rkey_t rkey;
-} ibmem_t;
+    unsigned char data[IBU_PACKET_SIZE];
+} ibuBlock_t;
+
+typedef struct ibuQueue_t
+{
+    struct ibuQueue_t *next_q;
+    ibuBlock_t *pNextFree;
+    ibuBlock_t block[IBU_PACKET_COUNT];
+} ibuQueue_t;
+
+static int g_offset;
+#define GETLKEY(p) (((ibuBlock_t*)((char *)p - g_offset))->lkey)
 
 struct ibuBlockAllocator_struct
 {
@@ -99,7 +233,8 @@ typedef struct ibu_state_t
 {
     IBU_STATE state;
     VAPI_qp_hndl_t qp_handle;
-    ibuBlockAllocator allocator;
+    /*ibuBlockAllocator allocator;*/
+    ibuQueue_t *allocator;
 
     IB_lid_t dlid;
     VAPI_qp_num_t qp_num, dest_qp_num;
@@ -118,14 +253,6 @@ typedef struct ibu_state_t
     struct ibu_state_t *unex_finished_queue;
 } ibu_state_t;
 
-#define IBU_ERROR_MSG_LENGTH       255
-#define IBU_PACKET_SIZE            (1024 * 64)
-#define IBU_PACKET_COUNT           128
-#define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
-#define IBU_MAX_POSTED_SENDS       8192
-#define IBU_MAX_DATA_SEGMENTS      100
-#define IBU_ACK_WATER_LEVEL        32
-
 typedef struct IBU_Global {
     VAPI_hca_hndl_t  hca_handle;
     VAPI_pd_hndl_t   pd_handle;
@@ -136,6 +263,10 @@ typedef struct IBU_Global {
     ibu_state_t *    unex_finished_list;
     int              error;
     char             err_msg[IBU_ERROR_MSG_LENGTH];
+    /* hack to get around zero sized messages */
+    void *           ack_mem_ptr;
+    /*VAPI_mr_hndl_t   ack_mr_handle;*/
+    VAPI_lkey_t      ack_lkey;
 } IBU_Global;
 
 IBU_Global IBU_Process;
@@ -161,11 +292,15 @@ static int ibui_post_ack_write(ibu_t ibu);
 /* utility allocator functions */
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p));
-static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp), void (* free_fn)(void *p));
+static ibuQueue_t * ibuBlockAllocInitIB();
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p);
+static int ibuBlockAllocFinalizeIB(ibuQueue_t *p);
 static void * ibuBlockAlloc(ibuBlockAllocator p);
+static void * ibuBlockAllocIB(ibuQueue_t *p);
 static int ibuBlockFree(ibuBlockAllocator p, void *pBlock);
-static int ibuBlockFreeIB(ibuBlockAllocator p, void *pBlock);
+static int ibuBlockFreeIB(ibuQueue_t *p, void *pBlock);
+static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *lp, VAPI_rkey_t *rp);
+static void ib_free_deregister(void *p);
 
 static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size), void (* free_fn)(void *p))
 {
@@ -194,53 +329,31 @@ static ibuBlockAllocator ibuBlockAllocInit(unsigned int blocksize, int count, in
     return p;
 }
 
-static ibuBlockAllocator ibuBlockAllocInitIB(unsigned int blocksize, int count, int incrementsize, void *(* alloc_fn)(size_t size, VAPI_mr_hndl_t *hp, VAPI_lkey_t *lp, VAPI_rkey_t *rp), void (* free_fn)(void *p))
+static ibuQueue_t *ibuBlockAllocInitIB()
 {
-    ibuBlockAllocator p;
-    void **ppVoid;
+    ibuQueue_t *q;
     int i;
+    ibuBlock_t b[2];
     VAPI_mr_hndl_t handle;
     VAPI_lkey_t lkey;
     VAPI_rkey_t rkey;
-    ibmem_t *mem_ptr;
-    void *pVoid;
 
-    blocksize += sizeof(ibmem_t);
-    incrementsize += sizeof(ibmem_t);
-
-    p = alloc_fn( sizeof(struct ibuBlockAllocator_struct) + ((blocksize + sizeof(void**)) * count), &handle, &lkey, &rkey );
-    /*assert(lkey == s_lkey);*/
-
-    p->alloc_fn = (void*(*)(size_t ))alloc_fn;
-    p->free_fn = free_fn;
-    p->nIncrementSize = incrementsize;
-    p->pNextAllocation = NULL;
-    p->nCount = count;
-    p->nBlockSize = blocksize;
-    p->pNextFree = (void**)(p + 1);
-
-    ppVoid = (void**)(p + 1);
-    for (i=0; i<count-1; i++)
+    q = (ibuQueue_t*)ib_malloc_register(sizeof(ibuQueue_t), &handle, &lkey, &rkey);
+    if (q == NULL)
     {
-	*ppVoid = (void*)((char*)ppVoid + sizeof(void**) + blocksize);
-	ppVoid = *ppVoid;
+	return NULL;
     }
-    *ppVoid = NULL;
-
-    ppVoid = p->pNextFree;
-    while (*ppVoid != NULL)
+    q->next_q = NULL;
+    for (i=0; i<IBU_PACKET_COUNT; i++)
     {
-	pVoid = (void*)((ibmem_t*)((void**)ppVoid + 1) + 1);
-	mem_ptr = (ibmem_t*)pVoid;
-	mem_ptr--;
-	mem_ptr->handle = handle;
-	mem_ptr->lkey = lkey;
-	mem_ptr->rkey = rkey;
-	ppVoid = *ppVoid;
+	q->block[i].next = &q->block[i+1];
+	q->block[i].handle = handle;
+	q->block[i].lkey = lkey;
     }
-    /*assert(GETLKEY(((ibmem_t*)((void**)p->pNextFree + 1)) + 1) == s_lkey);*/
-
-    return p;
+    q->block[IBU_PACKET_COUNT-1].next = NULL;
+    q->pNextFree = &q->block[0];
+    g_offset = (char*)&b[1].data - (char*)&b[1];
+    return q;
 }
 
 static int ibuBlockAllocFinalize(ibuBlockAllocator *p)
@@ -252,6 +365,14 @@ static int ibuBlockAllocFinalize(ibuBlockAllocator *p)
 	(*p)->free_fn(*p);
     *p = NULL;
     return 0;
+}
+
+static int ibuBlockAllocFinalizeIB(ibuQueue_t *p)
+{
+    if (p == NULL)
+	return 0;
+    ibuBlockAllocFinalizeIB(p->next_q);
+    ib_free_deregister(p);
 }
 
 static void * ibuBlockAlloc(ibuBlockAllocator p)
@@ -270,20 +391,23 @@ static void * ibuBlockAlloc(ibuBlockAllocator p)
     return pVoid;
 }
 
-static void * ibuBlockAllocIB(ibuBlockAllocator p)
+static void * ibuBlockAllocIB(ibuQueue_t *p)
 {
     void *pVoid;
 
     if (p->pNextFree == NULL)
     {
-	MPIU_DBG_PRINTF(("ibuBlockAlloc returning NULL\n"));
+	MPIU_DBG_PRINTF(("ibuBlockAllocIB returning NULL\n"));
 	return NULL;
-    }
+    } 
+    pVoid = p->pNextFree->data;
+    p->pNextFree = p->pNextFree->next;
 
-    pVoid = (void*)(((ibmem_t*)((void**)(p->pNextFree) + 1)) + 1);
-    p->pNextFree = *(p->pNextFree);
+#if 0
+    checklist(pVoid);
+    add2list(pVoid);
+#endif
 
-    /*assert(GETLKEY(pVoid) == s_lkey);*/
     return pVoid;
 }
 
@@ -296,12 +420,17 @@ static int ibuBlockFree(ibuBlockAllocator p, void *pBlock)
     return 0;
 }
 
-static int ibuBlockFreeIB(ibuBlockAllocator p, void *pBlock)
+static int ibuBlockFreeIB(ibuQueue_t *p, void *pBlock)
 {
-    ((ibmem_t*)pBlock)--;
-    ((void**)pBlock)--;
-    *((void**)pBlock) = p->pNextFree;
-    p->pNextFree = pBlock;
+    ibuBlock_t *b;
+#if 0
+    removefromlist(pBlock);
+    checklist(pBlock);
+#endif
+
+    b = (ibuBlock_t *)((char *)pBlock - g_offset);
+    b->next = p->pNextFree;
+    p->pNextFree = b;
     return 0;
 }
 
@@ -490,6 +619,10 @@ static void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *l
     s_mr_handle = *mhp;
     s_lkey = mem_out.l_key;
 */
+#if 0
+    s_base = ptr;
+    s_offset = size;
+#endif
 
     MPIU_DBG_PRINTF(("exiting ib_malloc_register\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IB_MALLOC_REGISTER);
@@ -532,9 +665,9 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
 
     memset(p, 0, sizeof(ibu_state_t));
     p->state = 0;
-    p->allocator = ibuBlockAllocInitIB(IBU_PACKET_SIZE, IBU_PACKET_COUNT,
+    p->allocator = ibuBlockAllocInitIB(); /*IBU_PACKET_SIZE, IBU_PACKET_COUNT,
 				     IBU_PACKET_COUNT,
-				     ib_malloc_register, ib_free_deregister);
+				     ib_malloc_register, ib_free_deregister);*/
 
     /*MPIDI_DBG_PRINTF((60, FCNAME, "creating the queue pair\n"));*/
     /* Create the queue pair */
@@ -599,7 +732,7 @@ int ibu_finish_qp(ibu_t p, int dest_lid, int dest_qp_num)
 	ibui_post_receive_unacked(p);
 	p->nAvailRemote++; /* assumes the other side is executing this same code */
     }
-    p->nAvailRemote--; /* remove one from nAvailRemote so a ack packet can always get through */
+    p->nAvailRemote -= 5; /* remove one from nAvailRemote so a ack packet can always get through */
 
     MPIU_DBG_PRINTF(("exiting ibu_create_qp\n"));    
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_FINISH_QP);
@@ -660,8 +793,8 @@ static int ibui_post_receive_unacked(ibu_t ibu)
     data.lkey = GETLKEY(mem_ptr);
     /*assert(data.lkey == s_lkey);*/
 
+    /*sanity_check_recv(&work_req);*/
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
-
     status = VAPI_post_rr(IBU_Process.hca_handle, 
 				ibu->qp_handle,
 				&work_req);
@@ -672,6 +805,7 @@ static int ibui_post_receive_unacked(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE_UNACKED);
 	return status;
     }
+    MPIU_DBG_PRINTF(("", g_pr++));
     MPIU_DBG_PRINTF(("___posted_r: %d\n", ++g_num_posted_receives));
 
     MPIU_DBG_PRINTF(("exiting ibui_post_receive_unacked\n"));
@@ -729,8 +863,8 @@ static int ibui_post_receive(ibu_t ibu)
     data.lkey = GETLKEY(mem_ptr);
     /*assert(data.lkey == s_lkey);*/
 
+    /*sanity_check_recv(&work_req);*/
     MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_rr"));
-
     status = VAPI_post_rr(IBU_Process.hca_handle, 
 				ibu->qp_handle,
 				&work_req);
@@ -741,6 +875,7 @@ static int ibui_post_receive(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_RECEIVE);
 	return status;
     }
+    MPIU_DBG_PRINTF(("", g_pr++));
     MPIU_DBG_PRINTF(("___posted_r: %d\n", ++g_num_posted_receives));
     if (++ibu->nUnacked > IBU_ACK_WATER_LEVEL)
     {
@@ -767,15 +902,25 @@ static int ibui_post_ack_write(ibu_t ibu)
 {
     VAPI_ret_t status;
     VAPI_sr_desc_t work_req;
+    VAPI_sg_lst_entry_t data;
     MPIDI_STATE_DECL(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_ACK_WRITE);
 
     MPIU_DBG_PRINTF(("entering ibui_post_ack_write\n"));
+    if (IBU_Process.ack_mem_ptr == NULL)
+    {
+	IBU_Process.ack_mem_ptr = ibuBlockAllocIB(ibu->allocator);
+	IBU_Process.ack_lkey = GETLKEY(IBU_Process.ack_mem_ptr);
+    }
+    data.len = 1;
+    data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)IBU_Process.ack_mem_ptr;
+    data.lkey = IBU_Process.ack_lkey;
+
     work_req.opcode = VAPI_SEND_WITH_IMM;
     work_req.comp_type = VAPI_SIGNALED;
-    work_req.sg_lst_p = NULL;
-    work_req.sg_lst_len = 0;
+    work_req.sg_lst_p = &data;/*NULL;*/
+    work_req.sg_lst_len = 1;/*0;*/
     work_req.imm_data = ibu->nUnacked;
     work_req.fence = 0;
     work_req.remote_ah = 0;
@@ -802,7 +947,8 @@ static int ibui_post_ack_write(ibu_t ibu)
     ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;
     ((ibu_work_id_handle_t*)work_req.id)->mem = (void*)-1;
 #endif
-    
+
+    /*sanity_check_send(&work_req);*/
     MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d byte ack)", ibu->nUnacked));
     status = VAPI_post_sr( IBU_Process.hca_handle,
 	ibu->qp_handle, 
@@ -814,6 +960,7 @@ static int ibui_post_ack_write(ibu_t ibu)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return status;
     }
+    MPIU_DBG_PRINTF(("", g_ps++));
     MPIU_DBG_PRINTF(("___posted_s: %d\n", ++g_num_posted_sends));
     ibu->nUnacked = 0;
 
@@ -911,7 +1058,8 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	id_ptr->ptr = (void*)ibu;
 	id_ptr->mem = (void*)mem_ptr;
 #endif
-	
+
+	/*sanity_check_send(&work_req);*/
 	MPIDI_DBG_PRINTF((60, FCNAME, "calling VAPI_post_sr(%d bytes)", length));
 	status = VAPI_post_sr( IBU_Process.hca_handle,
 	    ibu->qp_handle, 
@@ -923,6 +1071,7 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
 	    return -1;
 	}
+	MPIU_DBG_PRINTF(("", g_ps++));
 	MPIU_DBG_PRINTF(("___posted_s: %d\n", ++g_num_posted_sends));
 	ibu->nAvailRemote--;
 	MPIU_DBG_PRINTF(("send posted, nAvailRemote: %d, nUnacked: %d\n", ibu->nAvailRemote, ibu->nUnacked));
@@ -1013,8 +1162,9 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	g_num_bytes_written_stack[g_cur_write_stack_index].length = msg_size;
 	g_num_bytes_written_stack[g_cur_write_stack_index].mem_ptr = mem_ptr;
 	g_cur_write_stack_index++;
-	
+
 	data.len = msg_size;
+	assert(data.len);
 	data.addr = (VAPI_virt_addr_t)mem_ptr;
 	data.lkey = GETLKEY(mem_ptr);
 	/*assert(data.lkey == s_lkey);*/
@@ -1052,7 +1202,8 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	id_ptr->ptr = (void*)ibu;
 	id_ptr->mem = (void*)mem_ptr;
 #endif
-	
+
+	/*sanity_check_send(&work_req);*/
 	MPIDI_DBG_PRINTF((60, FCNAME, "VAPI_post_sr(%d bytes)", msg_size));
 	status = VAPI_post_sr( IBU_Process.hca_handle,
 	    ibu->qp_handle, 
@@ -1064,6 +1215,7 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITEV);
 	    return IBU_FAIL;
 	}
+	MPIU_DBG_PRINTF(("", g_ps++));
 	MPIU_DBG_PRINTF(("___posted_s: %d\n", ++g_num_posted_sends));
 	ibu->nAvailRemote--;
 	MPIU_DBG_PRINTF(("send posted, nAvailRemote: %d, nUnacked: %d\n", ibu->nAvailRemote, ibu->nUnacked));
@@ -1088,6 +1240,7 @@ int ibu_init()
     VAPI_hca_id_t id = "InfiniHost0";
     VAPI_hca_vendor_t vendor;
     VAPI_hca_cap_t hca_cap;
+    VAPI_rkey_t rkey;
     MPIDI_STATE_DECL(MPID_STATE_IBU_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_INIT);
@@ -1131,21 +1284,14 @@ int ibu_init()
     }
     IBU_Process.lid = IBU_Process.hca_port.lid;
 
-#if 0
-    status = VAPI_set_comp_event_handler(IBU_Process.hca_handle, NULL, NULL);
-    if (status != VAPI_OK)
-    {
-	MPIU_Internal_error_printf("ibu_init: VAPI_set_comp_event_handler failed, status %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
-	return status;
-    }
-#endif
-
     /*
     MPIU_DBG_PRINTF(("infiniband:\n mtu: %d\n msg_size: %d\n",
 	IBU_Process.attr_p->port_static_info_p->mtu,
 	IBU_Process.attr_p->port_static_info_p->msg_size));
     */
+
+    /*IBU_Process.ack_mem_ptr = ib_malloc_register(4096, &IBU_Process.ack_mr_handle, &IBU_Process.ack_lkey, &rkey);*/
+    IBU_Process.ack_mem_ptr = NULL;
 
     /* non infiniband initialization */
     IBU_Process.unex_finished_list = NULL;
@@ -1214,31 +1360,6 @@ int ibu_create_set(ibu_set_t *set)
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
 	return status;
     }
-#if 0
-    status = EVAPI_set_comp_eventh(IBU_Process.hca_handle, *set, FooBar /* EVAPI_POLL_CQ_UNBLOCK_HANDLER */, NULL, &ch);
-    if (status != VAPI_OK)
-    {
-	MPIU_Internal_error_printf("ibu_create_set: VAPI_set_comp_evenh failed, status %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
-	return status;
-    }
-    /*
-    status = EVAPI_clear_comp_eventh(IBU_Process.hca_handle, ch);
-    if (status != VAPI_OK)
-    {
-	MPIU_Internal_error_printf("ibu_create_set: VAPI_clear_comp_eventh failed, status %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
-	return status;
-    }
-    */
-    status = EVAPI_set_async_event_handler(IBU_Process.hca_handle, FooBar2, NULL, &ah);
-    if (status != VAPI_OK)
-    {
-	MPIU_Internal_error_printf("ibu_create_set: EVAPI_set_async_event_handler failed, status %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
-	return status;
-    }
-#endif
 
     MPIU_DBG_PRINTF(("exiting ibu_create_set\n"));
     MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_SET);
@@ -1455,6 +1576,32 @@ char * op2str(int opcode)
     return str;
 }
 
+void PrintWC(VAPI_wc_desc_t *p)
+{
+    printf("Work Completion Descriptor:\n");
+    printf(" id: %d\n", (int)p->id);
+    printf(" opcode: %u = %s\n",
+	   p->opcode, VAPI_cqe_opcode_sym(p->opcode));
+    printf(" byte_len: %d\n", p->byte_len);
+    printf(" imm_data_valid: %d\n", (int)p->imm_data_valid);
+    printf(" imm_data: %u\n", (unsigned int)p->imm_data);
+    printf(" remote_node_addr:\n");
+    printf("  type: %u = %s\n",
+	   p->remote_node_addr.type,
+	   VAPI_remote_node_addr_sym(p->remote_node_addr.type));
+    printf("  slid: %d\n", (int)p->remote_node_addr.slid);
+    printf("  sl: %d\n", (int)p->remote_node_addr.sl);
+    printf("  qp: %d\n", (int)p->remote_node_addr.qp_ety.qp);
+    printf("  loc_eecn: %d\n", (int)p->remote_node_addr.ee_dlid.loc_eecn);
+    printf(" grh_flag: %d\n", (int)p->grh_flag);
+    printf(" pkey_ix: %d\n", p->pkey_ix);
+    printf(" status: %u = %s\n",
+	   (int)p->status, VAPI_wc_status_sym(p->status));
+    printf(" vendor_err_syndrome: %d\n", p->vendor_err_syndrome);
+    printf(" free_res_count: %d\n", p->free_res_count);
+    fflush(stdout);
+}
+
 #undef FUNCNAME
 #define FUNCNAME ibu_wait
 #undef FCNAME
@@ -1558,15 +1705,18 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	case VAPI_CQE_SQ_SEND_DATA:
 	    if (completion_data.status != VAPI_SUCCESS)
 	    {
-		MPIU_Internal_error_printf("%s: send completion status = %s != VAPI_SUCCESS\n", 
-		    FCNAME, VAPI_strerror(completion_data.status));
-		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends));
+		MPIU_Internal_error_printf("%s: send completion status = %s\n",
+                    FCNAME, VAPI_wc_status_sym(completion_data.status));
+		PrintWC(&completion_data);
+		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d, g_pr: %d, g_ps: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends, g_pr, g_ps));
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		return IBU_FAIL;
 	    }
+	    MPIU_DBG_PRINTF(("", g_ps--));
 	    if (mem_ptr == (void*)-1)
 	    {
+		/*printf("ack sent\n");fflush(stdout);*/
 		/* flow control ack completed, no user data so break out here */
 		MPIU_DBG_PRINTF(("ack sent.\n"));
 		break;
@@ -1608,20 +1758,22 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 	case VAPI_CQE_RQ_SEND_DATA:
 	    if (completion_data.status != VAPI_SUCCESS)
 	    {
-		MPIU_Internal_error_printf("%s: recv completion status = %s != VAPI_SUCCESS\n", 
-		    FCNAME, VAPI_strerror(completion_data.status));
-		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends));
+		MPIU_Internal_error_printf("%s: recv completion status = %s\n",
+                    FCNAME, VAPI_wc_status_sym(completion_data.status));
+		PrintWC(&completion_data);
+		MPIU_DBG_PRINTF(("at time of error: total_s: %d, total_r: %d, posted_r: %d, posted_s: %d, g_pr: %d, g_ps: %d\n", g_num_sent, g_num_received, g_num_posted_receives, g_num_posted_sends, g_pr, g_ps));
 		MPIU_DBG_PRINTFX(("exiting ibu_wait 4\n"));
 		MPIDI_FUNC_EXIT(MPID_STATE_IBU_WAIT);
 		return IBU_FAIL;
 	    }
+	    MPIU_DBG_PRINTF(("", g_pr--));
 	    if (completion_data.imm_data_valid)
 	    {
 		ibu->nAvailRemote += completion_data.imm_data;
 		MPIDI_DBG_PRINTF((60, FCNAME, "%d packets acked, nAvailRemote now = %d", completion_data.imm_data, ibu->nAvailRemote));
 		ibuBlockFreeIB(ibu->allocator, mem_ptr);
 		ibui_post_receive_unacked(ibu);
-		assert(completion_data.byte_len == 0); /* check this after the printfs to see if the immediate data is correct */
+		assert(completion_data.byte_len == 1); /* check this after the printfs to see if the immediate data is correct */
 		break;
 	    }
 	    MPIU_DBG_PRINTF(("___total_r: %d\n", ++g_num_received));
@@ -1656,7 +1808,7 @@ int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_by
 
 		if (num_bytes == 0)
 		{
-		    ibuBlockFree(ibu->allocator, mem_ptr_orig);
+		    ibuBlockFreeIB(ibu->allocator, mem_ptr_orig);
 		    ibui_post_receive(ibu);
 		    break;
 		}
