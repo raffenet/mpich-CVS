@@ -37,9 +37,11 @@ int win_delete_attr_fn(MPI_Win win, int i, void *buf1, void *buf2)
 void comm_errhan(MPI_Comm *comm_ptr, int *int_ptr, ...)
 {
 }
+#ifdef ROMIO_VERSION
 void file_errhan(MPI_File *file_ptr, int *int_ptr, ...)
 {
 }
+#endif
 void win_errhan(MPI_Win *win_ptr, int *int_ptr, ...)
 {
 }
@@ -103,7 +105,9 @@ void testAll(void)
     MPI_Info info = MPI_INFO_NULL;
     char *cmd = NULL;
     char *type_name = NULL;
+#ifdef ROMIO_VERSION
     MPI_File file = MPI_FILE_NULL;
+#endif
     char *filename = NULL;
     int amode = 0;
     MPI_Offset size = 0, offset = 0;
@@ -278,7 +282,9 @@ void testAll(void)
     MPI_Comm_get_name(comm, cbuf, &i);
     MPI_Comm_set_attr(comm, i, vbuf);
     MPI_Comm_set_name(comm, cbuf);
+#ifdef ROMIO_VERSION
     /*MPI_File_call_errhandler(file, i);*/
+#endif
     MPI_Grequest_complete(request);
     MPI_Grequest_start(&query_fn, &free_fn, &cancel_fn, vbuf, &request);
     MPI_Init_thread(&argc, &argv, i, &i);
@@ -308,9 +314,11 @@ void testAll(void)
     MPI_Comm_create_errhandler(&comm_errhan, &errhan);
     MPI_Comm_get_errhandler(comm, &errhan);
     MPI_Comm_set_errhandler(comm, errhan);
+#ifdef ROMIO_VERSION
     /*MPI_File_create_errhandler(&file_errhan, &errhan);*/
     MPI_File_get_errhandler(file, &errhan);
     MPI_File_set_errhandler(file, errhan);
+#endif
     MPI_Finalized(&i);
     MPI_Free_mem(vbuf);
     MPI_Get_address(vbuf, &aint);
