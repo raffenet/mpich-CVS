@@ -2,6 +2,7 @@ allred 4
 allredmany 4
 alltoallv 4
 bcasttest 4
+bcast2 8
 coll2 5
 coll3 5
 coll4 4

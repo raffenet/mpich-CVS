@@ -252,11 +252,13 @@ int MTestCheckRecv( MPI_Status *status, MTestDatatype *recvtype )
     int count;
     int errs = 0;
 
-    MPI_Get_count( status, recvtype->datatype, &count );
-
-    /* Check count against expected count */
-    if (count != recvtype->count) {
-	errs ++;
+    if (status) {
+	MPI_Get_count( status, recvtype->datatype, &count );
+	
+	/* Check count against expected count */
+	if (count != recvtype->count) {
+	    errs ++;
+	}
     }
 
     /* Check received data */

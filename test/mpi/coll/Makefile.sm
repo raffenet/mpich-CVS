@@ -8,6 +8,7 @@ DEPADD = ../../../lib/lib${MPILIBNAME}.a
 smvar_do_sharedlibs = 0
 #
 bcasttest_SOURCES = bcasttest.c
+bcast2_SOURCES = bcast2.c
 allred_SOURCES = allred.c
 allred_LDADD = -lm
 coll8_SOURCES = coll8.c
@@ -32,3 +33,4 @@ scattern_SOURCES = scattern.c
 rerr_SOURCES = rerr.c
 icbcast_SOURCES = icbcast.c
 icbcast_LDADD = ../util/mtest.o
+bcast2_LDADD = ../util/mtest.o
