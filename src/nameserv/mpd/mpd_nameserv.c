@@ -46,7 +46,7 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     rc = PMI_Publish_name( service_name, port );
     if (rc != PMI_SUCCESS) {
 	/* --BEGIN ERROR HANDLING-- */
-	printf( "PMI_Publish_name failed for %s\n", service_name );
+	/* printf( "PMI_Publish_name failed for %s\n", service_name ); */
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NAME, "**namepubnotpub", "**namepubnotpub %s", service_name );
 	/* --END ERROR HANDLING-- */
     }
@@ -65,7 +65,7 @@ int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     rc = PMI_Lookup_name( service_name, port );
     if (rc != PMI_SUCCESS) {
 	/* --BEGIN ERROR HANDLING-- */
-	printf( "PMI_Lookup_name failed for %s\n", service_name );
+	/* printf( "PMI_Lookup_name failed for %s\n", service_name ); */
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NAME, "**namepubnotfound", "**namepubnotfound %s", service_name );
 	/* --END ERROR HANDLING-- */
     }
@@ -84,7 +84,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     rc = PMI_Unpublish_name( service_name );
     if (rc != PMI_SUCCESS) {
 	/* --BEGIN ERROR HANDLING-- */
-	printf( "PMI_Unpublish_name failed for %s\n", service_name );
+	/* printf( "PMI_Unpublish_name failed for %s\n", service_name ); */
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NAME, "**namepubnotunpub", "**namepubnotunpub %s", service_name );
 	/* --END ERROR HANDLING-- */
     }
