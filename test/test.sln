@@ -23,10 +23,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adapt", "mpi\basic\adapt.vc
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contents", "mpi\datatype\contents\contents.vcproj", "{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "allmpi", "mpi\basic\allmpi.vcproj", "{D9F19E35-7870-4549-A69D-AD810E8BC167}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
@@ -109,10 +105,6 @@ Global
 		{007A861C-6EA1-4FF5-BD37-93C21EDE532D}.Debug.Build.0 = Debug|Win32
 		{007A861C-6EA1-4FF5-BD37-93C21EDE532D}.Release.ActiveCfg = Release|Win32
 		{007A861C-6EA1-4FF5-BD37-93C21EDE532D}.Release.Build.0 = Release|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Debug.ActiveCfg = Debug|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Debug.Build.0 = Debug|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Release.ActiveCfg = Release|Win32
-		{DD6091F4-B4C1-4DB1-8C8E-0847F7E3936B}.Release.Build.0 = Release|Win32
 		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Debug.ActiveCfg = Debug|Win32
 		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Debug.Build.0 = Debug|Win32
 		{D9F19E35-7870-4549-A69D-AD810E8BC167}.Release.ActiveCfg = Release|Win32

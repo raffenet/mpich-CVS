@@ -1261,6 +1261,15 @@ Call WriteFooter(fout)
 fout.Close()
 
 '
+' mpidi_ch3i_sshm_conf.h
+'
+Set fout = f.CreateTextFile("src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h")
+Call WriteHeader(fout, "mpidi_ch3i_sshm_")
+Call AddDefinitions(fout, "src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in")
+Call WriteFooter(fout)
+fout.Close()
+
+'
 ' trace_impl.h
 '
 Set fout = f.CreateTextFile("src\util\logging\rlog\trace_impl.h")
