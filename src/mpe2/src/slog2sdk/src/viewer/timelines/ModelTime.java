@@ -64,9 +64,6 @@ public class ModelTime extends DefaultBoundedRangeModel
     // the zoom focus in graphics pixel coodinates
     private int    iZoom_focus;
 
-    // the zoom level indicates how many time zoomIn() has been called.
-    private int    iZoom_level;
-
     // pixel coordinates of the time axis of the viewport
     // are buried inside the superclass DefaultBoundedRangeModel
 
@@ -74,8 +71,9 @@ public class ModelTime extends DefaultBoundedRangeModel
     private int    iView_width = -1;
     private double iViewPerTime;         // No. of View pixel per unit time
     private double iScrollbarPerTime;    // No. of ScrollBar pixel per unit time
-    private double tZoomFactor = 2.0;
-    private double tZoomScale  = 1.0;
+    private double tZoomScale  = 1.0d;
+    private double tZoomFactor;
+    private double logZoomFactor;;
 
     // special purpose ChangeListeners, TimeListeners, to avoid conflict with
     // the EventListenerList, listenerList, in DefaultBoundedRangeModel
@@ -95,7 +93,8 @@ public class ModelTime extends DefaultBoundedRangeModel
         setTimeGlobalMinimum( init_global_time );
         setTimeGlobalMaximum( final_global_time );
         setTimeZoomFocus();
-        iZoom_level        = 0;
+        tZoomFactor        = 2.0d;
+        logZoomFactor      = Math.log( tZoomFactor );
     }
 
     /*
@@ -317,8 +316,6 @@ public class ModelTime extends DefaultBoundedRangeModel
     public void setTimeZoomFactor( double inTimeZoomFactor )
     {
         tZoomFactor = inTimeZoomFactor;
-        for ( int idx = 0; idx < iZoom_level; idx++ )
-            tZoomScale *= tZoomFactor;
     }
 
     public double getTimeZoomFactor()
@@ -350,7 +347,7 @@ public class ModelTime extends DefaultBoundedRangeModel
     */
     public int getZoomLevel()
     {
-        return iZoom_level;
+        return (int) Math.round( Math.log( tZoomScale ) / logZoomFactor );
     }
 
     private void setScrollBarIncrements()
@@ -398,7 +395,6 @@ public class ModelTime extends DefaultBoundedRangeModel
     {
         double tZoom_center;
 
-        iZoom_level += 1;
         tZoomScale  *= tZoomFactor;
         if (    tView_init  < tZoom_focus
              && tZoom_focus < tView_init + tView_extent )
@@ -417,7 +413,6 @@ public class ModelTime extends DefaultBoundedRangeModel
     {
         double tZoom_center;
 
-        iZoom_level -= 1;
         tZoomScale  /= tZoomFactor;
         if (    tView_init  < tZoom_focus
              && tZoom_focus < tView_init + tView_extent )
@@ -432,19 +427,13 @@ public class ModelTime extends DefaultBoundedRangeModel
         this.setScrollBarIncrements();
     }
 
-    public void zoomInRapidly( double tZoom_init, double tZoom_extent )
+    public void zoomInRapidly( double new_tView_init, double new_tView_extent )
     {
         double tZoom_center;
 
-        iZoom_level += 1;
-        tZoomScale  *= tZoomFactor;
-        if (    tView_init  < tZoom_focus
-             && tZoom_focus < tView_init + tView_extent )
-            tZoom_center = tZoom_focus;
-        else
-            tZoom_center = tView_init + tView_extent / 2.0;
-        this.setTimeViewExtent( tView_extent / tZoomFactor );
-        this.setTimeViewPosition( tZoom_center - tView_extent / 2.0 );
+        tZoomScale  *= tView_extent / new_tView_extent;
+        this.setTimeViewExtent( new_tView_extent );
+        this.setTimeViewPosition( new_tView_init );
 
         iViewPerTime = iView_width / tView_extent;
         this.updatePixelCoords();
@@ -453,8 +442,7 @@ public class ModelTime extends DefaultBoundedRangeModel
 
     public void zoomHome()
     {
-        iZoom_level = 0;
-        // tZoomScale  = 1.0;
+        tZoomScale  = 1.0;
         this.setTimeViewExtent( tGlobal_extent );
         this.setTimeViewPosition( tGlobal_min );
 

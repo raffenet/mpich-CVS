@@ -88,8 +88,8 @@ public class RulerTime extends ScrollableObject
             offGraphics.setFont( FONT );
             offGraphics.setColor( Color.black );
 
-            if ( timebounds.getLength() != tRange ) {
-                tRange     = timebounds.getLength();
+            if ( timebounds.getDuration() != tRange ) {
+                tRange     = timebounds.getDuration();
                 tIncrement = tRange / ( NumViewsPerImage * 10.0 );
                 tIncrement = ModelTime.getRulerIncrement( tIncrement );
             }

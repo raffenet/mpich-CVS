@@ -26,9 +26,9 @@ public class ViewportTime extends JViewport
 //                                     HierarchyBoundsListener
 {
     private static final Color   ZOOM_LINE_COLOR = Color.red;
-    private static final Color   ZOOM_AREA_COLOR = new Color(255,255,  0,64);
+    private static final Color   ZOOM_AREA_COLOR = new Color(132,112,255,96);
     private static final Color   INFO_LINE_COLOR = Color.green;
-    private static final Color   INFO_AREA_COLOR = new Color(132,112,255,96);
+    private static final Color   INFO_AREA_COLOR = new Color(255,255,  0,64);
 
     private Point                     view_pt;
     // view_img is both a Component and ScrollableView object
@@ -70,8 +70,7 @@ public class ViewportTime extends JViewport
 
         zoom_timebox        = new TimeBoundingBox();
         double init_time    = time_model.getTimeZoomFocus();
-        zoom_timebox.setEarliestTime( init_time );
-        zoom_timebox.setLatestTime( init_time );
+        zoom_timebox.setZeroDuration( init_time );
     }
 
     public void setView( Component view )
@@ -441,14 +440,12 @@ public class ViewportTime extends JViewport
             Point vport_click = mouse_evt.getPoint();
             click_time = coord_xform.convertPixelToTime( vport_click.x );
             if ( SwingUtilities.isLeftMouseButton( mouse_evt ) ) {
-                zoom_timebox.setEarliestTime( click_time );
-                zoom_timebox.setLatestTime( click_time );
+                zoom_timebox.setZeroDuration( click_time );
                 this.repaint();
             }
             else if ( SwingUtilities.isRightMouseButton( mouse_evt ) ) {
                 info_timebox = new TimeBoundingBox();
-                info_timebox.setEarliestTime( click_time );
-                info_timebox.setLatestTime( click_time );
+                info_timebox.setZeroDuration( click_time );
                 this.repaint();
             }
             mouse_pressed_time = click_time;
@@ -496,11 +493,10 @@ public class ViewportTime extends JViewport
                              + zoom_timebox.getLatestTime() ) / 2.0d;
                 time_model.setTimeZoomFocus( focus_time );
                 this.repaint();
-                if ( zoom_timebox.getLength() > 0.0d ) {
+                if ( zoom_timebox.getDuration() > 0.0d ) {
                     time_model.zoomInRapidly( zoom_timebox.getEarliestTime(),
-                                              zoom_timebox.getLength() );
-                    zoom_timebox.setEarliestTime( focus_time );
-                    zoom_timebox.setLatestTime( focus_time );
+                                              zoom_timebox.getDuration() );
+                    zoom_timebox.setZeroDuration( focus_time );
                     this.repaint();
                 }
             }
@@ -509,7 +505,7 @@ public class ViewportTime extends JViewport
                     info_timebox.setLatestTime( click_time );
                 else
                     info_timebox.setEarliestTime( click_time );
-                if ( info_timebox.getLength() == 0.0d ) {
+                if ( info_timebox.getDuration() == 0.0d ) {
                     scrollable = (ScrollableObject) view_img;
                     view_click = SwingUtilities.convertPoint( this,
                                                               vport_click,

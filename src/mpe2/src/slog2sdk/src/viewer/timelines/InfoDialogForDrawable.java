@@ -19,6 +19,7 @@ import java.util.Map;
 import base.drawable.Coord;
 import base.drawable.Drawable;
 import base.drawable.Primitive;
+import base.drawable.Shadow;
 import viewer.common.Const;
 import viewer.common.Routines;
 import viewer.legends.CategoryLabel;
@@ -85,10 +86,21 @@ public class InfoDialogForDrawable extends InfoDialog
             double duration = coords[coords_length-1].time - coords[0].time;
             textbuf.append( "duration = " + fmt.format(duration) );
 
-            String info_str = prime.toInfoBoxString().trim();
-            if ( info_str.length() > 0 ) {
-                textbuf.append( "\n" + info_str );
+            if ( prime instanceof Shadow ) {
+                Shadow shade = (Shadow) prime;
+                linebuf = new StringBuffer( "Number of Real Drawables = " );
+                linebuf.append( shade.getNumOfRealObjects() );
+                if ( num_cols < linebuf.length() )
+                    num_cols = linebuf.length();
+                textbuf.append( "\n" + linebuf.toString() );
                 num_rows++;
+            }
+            else {
+                String info_str = prime.toInfoBoxString().trim();
+                if ( info_str.length() > 0 ) {
+                    textbuf.append( "\n" + info_str );
+                    num_rows++;
+                }
             }
 
             JTextArea text_area = new JTextArea( textbuf.toString() );

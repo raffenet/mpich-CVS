@@ -15,6 +15,7 @@ import java.net.*;
 import javax.swing.*;
 
 import viewer.common.Const;
+import viewer.common.Dialogs;
 
 public class ActionZoomIn implements ActionListener
 {
@@ -31,15 +32,25 @@ public class ActionZoomIn implements ActionListener
 
     public void actionPerformed( ActionEvent event )
     {
-        model.zoomIn();
         zoomlevel = model.getZoomLevel();
+        if ( zoomlevel >= Const.MAX_ZOOM_LEVEL ) {
+            Frame frame = (Frame) SwingUtilities.windowForComponent( toolbar );
+            String msg = "The Current ZoomLevel(" + zoomlevel + ") exceeds "
+                       + "the Maximum ZoomLevel(" + Const.MAX_ZOOM_LEVEL + ")!";
+            Dialogs.error( frame, msg );
+        }
+        else
+            model.zoomIn();
 
+        /*
         // Set toolbar buttons to reflect status
+        zoomlevel = model.getZoomLevel();
         if ( toolbar != null ) {
             toolbar.zoomIn_btn.setEnabled( zoomlevel < Const.MAX_ZOOM_LEVEL );
             toolbar.home_btn.setEnabled( zoomlevel != Const.MIN_ZOOM_LEVEL );
             toolbar.zoomOut_btn.setEnabled( zoomlevel > Const.MIN_ZOOM_LEVEL );
         }
+        */
 
         if ( Debug.isActive() )
             Debug.println( "Action for Zoom In button. ZoomLevel = "

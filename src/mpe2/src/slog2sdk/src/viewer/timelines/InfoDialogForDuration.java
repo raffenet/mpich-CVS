@@ -63,7 +63,7 @@ public class InfoDialogForDuration extends InfoDialog
             
             linebuf = new StringBuffer();
             linebuf.append( "duration = "
-                          + fmt.format(timebox.getLength()) );
+                          + fmt.format(timebox.getDuration()) );
             if ( num_cols < linebuf.length() )
                 num_cols = linebuf.length();
             textbuf.append( linebuf.toString() );

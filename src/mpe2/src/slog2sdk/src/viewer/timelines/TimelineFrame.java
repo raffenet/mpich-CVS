@@ -54,7 +54,7 @@ public class TimelineFrame extends JFrame
         System.out.println( "Java is version " + vers + "." );
         if ( vers.compareTo( "1.2.0" ) < 0 )
             System.err.println ( "WARNING: Java is version " + vers + ". \n" +
-                                 "\t It is too old to run this prototype." );
+                                 "\t It is too old to run this viewer." );
     }
 
     public static void main( String[] args )

@@ -82,6 +82,7 @@ public class CanvasTime extends ScrollableObject
             depth_init = 0;
         treetrunk.growInTreeWindow( treeroot, depth_init,
                                     new TimeBoundingBox( treeroot ) );
+        treetrunk.setNumOfViewsPerUpdate( ScrollableObject.NumViewsTotal );
 
         root_window     = null;
         change_event    = null;

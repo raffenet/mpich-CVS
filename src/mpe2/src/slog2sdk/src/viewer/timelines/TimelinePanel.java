@@ -91,8 +91,7 @@ public class TimelinePanel extends JPanel
         treeroot      = treetrunk.getTreeRoot();
         time_model    = new ModelTime( treeroot.getEarliestTime(), 
                                        treeroot.getLatestTime() );
-        time_model.setTimeZoomFactor(
-                   (double) slog_ins.getNumChildrenPerNode() );
+        time_model.setTimeZoomFactor( treetrunk.getTimeZoomFactor() );
         System.out.println( "slog_ins.tZoomFtr = "
                           + time_model.getTimeZoomFactor() );
 

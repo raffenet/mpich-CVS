@@ -337,8 +337,8 @@ public class TimelineToolBar extends JToolBar
         backward_btn.setEnabled( true );
         forward_btn.setEnabled( true );
         zoomIn_btn.setEnabled( true );
-        home_btn.setEnabled( false );
-        zoomOut_btn.setEnabled( false );
+        home_btn.setEnabled( true );
+        zoomOut_btn.setEnabled( true );
 
         jumpBack_btn.setEnabled( false );
         jump_btn.setEnabled( false );
