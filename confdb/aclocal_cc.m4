@@ -143,7 +143,7 @@ dnlD*/
 AC_DEFUN(PAC_C_OPTIMIZATION,[
     for copt in "-O4 -Ofast" "-Ofast" "-fast" "-O3" "-xO3" "-O" ; do
         PAC_C_CHECK_COMPILER_OPTION($copt,found_opt=yes,found_opt=no)
-        if test $found_opt = "yes" ; then
+        if test "$found_opt" = "yes" ; then
 	    ifelse($1,,COPTIONS="$COPTIONS $copt",$1)
 	    break
         fi
