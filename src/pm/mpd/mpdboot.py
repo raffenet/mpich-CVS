@@ -86,6 +86,7 @@ def mpdboot():
             print 'unable to open (or read) hostsfile %s' % hostsFile
             usage()
         hosts = [ x.strip() for x in hosts if x[0] != '#' ]
+        hosts = [ x  for x in hosts if x != '' ]    # delete empty lines
         if oneLocal:
             hosts = [ x for x in hosts if not mpd_same_ips(x,myHost) ]
             # hosts = [ x for x in hosts if x != myHost ]
