@@ -35,7 +35,8 @@
 \catcode`\_=11
 \def\code#1{{\tt #1}}
 \let\url=\code
-
+\def\makeussubscript{\catcode`\_=8}
+\def\makeustext{\catcode`\_=11}
 %\tpageoneskip
 \ANLTMTitle{MPICH Abstract Device Interface\\
 Version 3\\
@@ -933,6 +934,7 @@ They should be used if no other mechanism provides flow control.
 
 Questions:
 
+\makeussubscript
 There are several different approaches for flow control.  All of these
 mechanisms make use of a system that counts the amount of resources.
 These are usually managed one per communication link.  In the typical
@@ -967,6 +969,7 @@ to move the packet from one process to another.
 \emph{not} accepted. 
 
 \end{enumerate}
+\makeustext
 
 Question: which should we implement?  Both of the positive acks
 strategies? 
@@ -975,8 +978,9 @@ The likely routines are
 \code{MPID_Flow_init} and \code{MPID_Flow_finalize} to create and
 release the data structures and routines/macros \code{MPID_Flow_check}
 to check that a message can be send, \code{MPID_Flow_ack} to process
-an ack packet, \code{MPID_Flow_recv} to update $n_{inuse}$ and
-\code{MPID_Flow_send} to update $n_{sent}$.
+an ack packet, \code{MPID_Flow_recv} to update 
+\makeussubscript$n_{inuse}$\makeustext and
+\code{MPID_Flow_send} to update \makeussubscript$n_{sent}$\makeustext.
 
 \section{Extensions}
 \input Extension-list.tex

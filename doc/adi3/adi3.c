@@ -1436,7 +1436,7 @@ int MPID_Getsametype( void *origin_buf, int n, MPID_Datatype *dtype,
 
   When this routine returns, all parameters may be reused.  For
   example, the 'vector' argument can be allocated off of the stack; if
-  'MPID_Rhcv' hasn't sent the message or invoked the handler by the
+  'MPID_Rhcv' hasn''t sent the message or invoked the handler by the
   time it returns, 'MPID_Rhcv' will make an internal copy of the
   contents of 'vector' (that is, the elements of the vector, not what
   they point at).  
@@ -1799,7 +1799,7 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   a length)?
   @*/
 void *MPID_Segment_pack( MPID_Segment *segment, int *first, int *last, 
-			void *send_buffer ) 
+			 void *send_buffer ) 
 {
 }
 

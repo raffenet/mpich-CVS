@@ -10,3 +10,8 @@ background
 adi3man
 adi3man.ps
 findmod
+tpds_lapi.ps
+*.ind
+core.ps
+rmq2.txt
+*.idx

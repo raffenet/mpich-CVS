@@ -46,6 +46,11 @@ adi3man/adi3man.htm: adi3man.tex adi3.c adi3.h Makefile
 	tohtml -default adi3man.tex
 	tohtml -default adi3man.tex
 
+core.dvi: core.tex adi3.c adi3.h
+	touch core-list.ind
+	-latex core
+	-latex core
+
 # This uses the full-featured date program in Linux
 install-web: adi3man.ps
 	-rm -f /mcs/www-unix/mpi/mpich/adi3/adi3.[ch]
