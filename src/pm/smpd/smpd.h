@@ -644,6 +644,9 @@ extern smpd_global_t smpd_process;
 
 
 /* function prototypes */
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 int smpd_parse_command_args(int *argcp, char **argvp[]);
 #ifdef HAVE_WINDOWS_H
@@ -805,5 +808,9 @@ SMPD_BOOL smpd_map_user_drives(char *pszMap, char *pszAccount, char *pszPassword
 SMPD_BOOL smpd_unmap_user_drives(char *pszMap);
 void smpd_finalize_drive_maps();
 int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
