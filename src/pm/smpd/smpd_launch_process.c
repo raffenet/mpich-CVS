@@ -867,10 +867,25 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char *token;
     int i;
     char str[1024];
+    char *str_iter;
+    int total, num_chars;
 
     smpd_enter_fn("smpd_launch_process");
 
-    /* parse the command for arguments */
+    /* create argv from the command */
+    i = 0;
+    total = 0;
+    str_iter = process->exe;
+    while (str_iter)
+    {
+	str_iter = smpd_get_string(str_iter, &args[total], SMPD_MAX_EXE_LENGTH - total, &num_chars);
+	argv[i] = &args[total];
+	i++;
+	total += num_chars+1; /* move over the null termination */
+    }
+    argv[i] = NULL;
+
+#if 0
     args[0] = '\0';
     strcpy(args, process->exe);
     i = 0;
@@ -884,6 +899,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	    break;
     }
     argv[i] = NULL;
+#endif
 
     /* create pipes for redirecting I/O */
     /*

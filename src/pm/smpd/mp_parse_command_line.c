@@ -297,11 +297,12 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     int index, i;
     char configfilename[SMPD_MAX_FILENAME];
     int use_configfile;
-    char exe[SMPD_MAX_EXE_LENGTH], args[SMPD_MAX_EXE_LENGTH];
+    char exe[SMPD_MAX_EXE_LENGTH]/*, args[SMPD_MAX_ARGS_LENGTH]*/;
 #ifdef HAVE_WINDOWS_H
     char temp_exe[SMPD_MAX_EXE_LENGTH], *namepart;
 #endif
     smpd_launch_node_t *launch_node, *launch_node_iter;
+    int total;
 
     smpd_enter_fn("mp_parse_command_args");
 
@@ -835,7 +836,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    else if (strcmp(&(*argvp)[1][1], "verbose") == 0)
 	    {
 		smpd_process.verbose = SMPD_TRUE;
-		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT;
+		smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
 	    }
 	    else
 	    {
@@ -860,7 +861,26 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		smpd_exit_fn("mp_parse_command_args");
 		return SMPD_FAIL;
 	    }
-	    
+
+#ifdef HAVE_WINDOWS_H
+	    if (!((*argvp)[1][0] == '\\' && (*argvp)[1][1] == '\\') && (*argvp)[1][0] != '/')
+	    {
+		GetFullPathName((*argvp)[1], MAX_PATH, temp_exe, &namepart);
+		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, temp_exe);
+	    }
+	    else
+	    {
+		total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
+	    }
+#else
+	    total = smpd_add_string(exe, SMPD_MAX_EXE_LENGTH, (*argvp)[1]);
+#endif
+	    for (i=2; i<argc; i++)
+	    {
+		total += smpd_add_string(&exe[total], SMPD_MAX_EXE_LENGTH - total, (*argvp)[i]);
+	    }
+	    smpd_dbg_printf("handling executable:\n%s\n", exe);
+#if 0
 	    strncpy(exe, (*argvp)[1], SMPD_MAX_EXE_LENGTH);
 	    exe[SMPD_MAX_EXE_LENGTH-1] = '\0';
 
@@ -875,26 +895,22 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    }
 #ifdef HAVE_WINDOWS_H
 	    /* Fix up the executable name */
-	    if (exe[0] == '/')
+	    if (exe[0] == '\\' && exe[1] == '\\')
 	    {
+		strncpy(temp_exe, exe, SMPD_MAX_EXE_LENGTH);
+		temp_exe[SMPD_MAX_EXE_LENGTH-1] = '\0';
+		/* Quote the executable in case there are spaces in the path */
+		sprintf(exe, "\"%s\"", temp_exe);
 	    }
-	    else
+	    else if (exe[0] != '/')
 	    {
-		if (exe[0] == '\\' && exe[1] == '\\')
-		{
-		    strncpy(temp_exe, exe, SMPD_MAX_EXE_LENGTH);
-		    temp_exe[SMPD_MAX_EXE_LENGTH-1] = '\0';
-		}
-		else
-		{
-		    GetFullPathName(exe, MAX_PATH, temp_exe, &namepart);
-		}
+		GetFullPathName(exe, MAX_PATH, temp_exe, &namepart);
 		/* Quote the executable in case there are spaces in the path */
 		sprintf(exe, "\"%s\"", temp_exe);
 	    }
 #endif
-
 	    smpd_dbg_printf("handling executable:\n%s %s\n", exe, args);
+#endif
 	}
 
 	if (nproc == 0)
@@ -923,9 +939,11 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    launch_node->iproc = cur_rank++;
 	    launch_node->env = launch_node->env_data;
 	    launch_node->env_data[0] = '\0';
+#if 0
 	    if (args[0] != '\0')
 		sprintf(launch_node->exe, "%s %s", exe, args);
 	    else
+#endif
 		strcpy(launch_node->exe, exe);
 	    launch_node->next = NULL;
 	    if (smpd_process.launch_list == NULL)

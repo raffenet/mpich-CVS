@@ -248,7 +248,7 @@ int smpd_get_int_arg(const char *str, char *flag, int *val_ptr)
     return SMPD_FALSE;
 }
 
-static int quoted_printf(char *str, int maxlen, char *val)
+static int quoted_printf(char *str, int maxlen, const char *val)
 {
     int count = 0;
     if (maxlen < 1)
@@ -287,6 +287,53 @@ static int quoted_printf(char *str, int maxlen, char *val)
 	*str = '\0';
     }
     return count;
+}
+
+int smpd_add_string(char *str, int maxlen, const char *val)
+{
+    int num_chars;
+
+    if (strstr(val, " "))
+    {
+	num_chars = quoted_printf(str, maxlen, val);
+	if (num_chars < maxlen)
+	{
+	    str[num_chars] = ' ';
+	    str[num_chars+1] = '\0';
+	}
+	num_chars++;
+    }
+    else
+    {
+	num_chars = snprintf(str, maxlen, "%s ", val);
+    }
+    return num_chars;
+}
+
+const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_chars)
+{
+    if (maxlen < 1)
+    {
+	*num_chars = 0;
+	return NULL;
+    }
+
+    /* line up with the first token */
+    str = first_token(str);
+    if (str == NULL)
+    {
+	*num_chars = 0;
+	return NULL;
+    }
+
+    /* copy the token */
+    token_copy(str, val, maxlen);
+    *num_chars = (int)strlen(val);
+
+    /* move to the next token */
+    str = next_token(str);
+
+    return str;
 }
 
 int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, char *flag, char *val)
