@@ -95,7 +95,7 @@ def mpdboot():
         print 'cmd=:%s %s %s %s -e: (executed on %s)' % (mpdCmd, localConsoleVal, entryHost, entryPort, myHost)
     if verbosity == 1:
         print 'starting local mpd on %s' % (myHost)
-    locMPD = Popen3('%s %s %s %s -e' % (mpdCmd, localConsoleVal, entryHost, entryPort), 1)
+    locMPD = Popen3('%s %s %s %s -d -e' % (mpdCmd, localConsoleVal, entryHost, entryPort), 1)
     numStarted = 1
     myPort = locMPD.fromchild.readline().strip()
     try:
