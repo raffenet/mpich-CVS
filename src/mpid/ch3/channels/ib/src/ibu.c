@@ -816,7 +816,7 @@ static int ibui_post_write(ibu_t ibu, void *buf, int len, int (*write_progress_u
 	printf("ib_post_send_req_us %d\n", s_cur_send++);
 	g_num_send_posted++;
 	*/
-	MPIU_dbg_printf("ibui_post_write(%d bytes)\n", length);
+	MPIU_dbg_printf("ib_post_send_req_us(%d bytes)\n", length);
 	status = ib_post_send_req_us( IBU_Process.hca_handle,
 	    ibu->qp_handle, 
 	    &work_req);
@@ -865,7 +865,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
 
     MPIDI_FUNC_ENTER(MPID_STATE_IBUI_POST_WRITEV);
 
-    while (n)
+    while (n && index < IBU_MAX_DATA_SEGMENTS)
     {
 	len = iov[iov_index].IBU_IOV_LEN;
 	//total += len;
@@ -956,7 +956,7 @@ static int ibui_post_writev(ibu_t ibu, IBU_IOV *iov, int n, int (*write_progress
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.ptr = (ib_uint32_t)ibu;
     ((ibu_work_id_handle_t*)&work_req.work_req_id)->data.mem = (ib_uint32_t)NULL;
 
-    MPIU_dbg_printf("ibui_post_write(%d bytes)\n", total);
+    MPIU_dbg_printf("ib_post_send_req_us(%d bytes)\n", total);
     status = ib_post_send_req_us( IBU_Process.hca_handle,
 	ibu->qp_handle, 
 	&work_req);

@@ -95,6 +95,7 @@ MPID_Request * MPIDI_CH3_iStartMsgv(MPIDI_VC * vc, MPID_IOV * iov, int n_iov)
 
 	    nb = ibu_post_writev(vc->ib.ibu, iov, n_iov, NULL);
 
+	    MPIU_dbg_printf("ch3_istartmsgv: ibu_post_writev returned %d bytes\n", nb);
 	    if (nb > 0)
 	    {
 		int offset = 0;
