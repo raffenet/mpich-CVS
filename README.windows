@@ -7,7 +7,7 @@ administrative privileges on your machines.
 Create the directories and files:
 1) unzip the package.
 2) cd into the mpich2 directory
-3) run winconfigure to generate mpi.h and other header files.
+3) run winconfigure to generate mpi.h and other header files. (perl required)
 
 Build the libraries:
 4) open the mpich2 solution (mpich2.sln)
