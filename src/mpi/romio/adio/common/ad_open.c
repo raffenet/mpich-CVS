@@ -20,7 +20,7 @@ ADIO_File ADIO_Open(MPI_Comm orig_comm,
 {
     ADIO_File fd;
     ADIO_cb_name_array array;
-    int orig_amode, err, rank, procs, i;
+    int orig_amode, err, rank, procs;
     char *value;
 #ifndef PRINT_ERR_MSG
     static char myname[] = "ADIO_OPEN";
