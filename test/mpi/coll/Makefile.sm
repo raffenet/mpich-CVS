@@ -15,6 +15,8 @@ coll8_SOURCES = coll8.c
 coll13_SOURCES = coll13.c
 alltoallv_SOURCES = alltoallv.c
 alltoallv_LDADD = ../util/mtest.o
+alltoallw1_SOURCES = alltoallw1.c
+alltoallw1_LDADD = ../util/mtest.o
 alltoall1_SOURCES = alltoall1.c
 redscat_SOURCES = redscat.c
 coll9_SOURCES = coll9.c
@@ -35,6 +37,10 @@ scattern_SOURCES = scattern.c
 rerr_SOURCES = rerr.c
 icbcast_SOURCES = icbcast.c
 icbcast_LDADD = ../util/mtest.o
+icscatter_SOURCES = icscatter.c
+icscatter_LDADD = ../util/mtest.o
+icgather_SOURCES = icgather.c
+icgather_LDADD = ../util/mtest.o
 icallreduce_SOURCES = icallreduce.c
 icallreduce_LDADD = ../util/mtest.o
 icreduce_SOURCES = icreduce.c
@@ -53,3 +59,6 @@ opsum_SOURCES = opsum.c
 opsum_LDADD = ../util/mtest.o
 exscan_SOURCES = exscan.c
 exscan_LDADD = ../util/mtest.o
+
+../util/mtest.o:
+	(cd ../util && $(MAKE))
