@@ -1941,7 +1941,8 @@ sub ReadInterfaceForDefinitions {
 		$mpidef{$name} = $val;
 	    }
 	}
-	elsif (/typedef\s+enum\s*{\s*(.*)/) {
+	elsif (/typedef\s+enum\s*[A-Za-z0-9_]*\s*{\s*(.*)/) {
+	    # Allow a named type
 	    # Eat until we find the closing right brace
 	    $enum_line = $1;
 	    while (! ($enum_line =~ /}/)) { $enum_line .= <MPIFD>; }
