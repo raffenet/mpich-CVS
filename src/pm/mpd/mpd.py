@@ -565,7 +565,7 @@ def _do_mpdrun(msg):
             environ['MPDMAN_SPAWNED'] = str(msg['spawned'])
             environ['MPDMAN_NPROCS'] = str(msg['nprocs'])
             environ['MPDMAN_MPD_LISTEN_PORT'] = str(g.myPort)
-            environ['MPDMAN_MPD_CONF_PASSWD'] = g.configParams['password']
+            environ['MPDMAN_MPD_CONF_SECRETWORD'] = g.configParams['secretword']
             environ['MPDMAN_CONHOST'] = msg['conhost']
             environ['MPDMAN_CONPORT'] = str(msg['conport'])
             environ['MPDMAN_RANK'] = str(currRank)
@@ -666,7 +666,7 @@ def _handle_new_connection():
             return
         randNumStr = '%04d' % (randrange(1,randHiRange))  # 0001-(hi-1), inclusive
         g.correctChallengeResponse[newConnSocket] = \
-            new(''.join([g.configParams['password'],randNumStr])).digest()
+            new(''.join([g.configParams['secretword'],randNumStr])).digest()
         msgToSend = { 'cmd'        : 'challenge',
                       'randnum'    : randNumStr,
                       'g.generation' : g.generation }  # only send to rhs
@@ -677,7 +677,7 @@ def _handle_new_connection():
     elif msg['cmd'] == 'request_to_enter_as_lhs':
         randNumStr = '%04d' % (randrange(1,randHiRange))  # 0001-(hi-1), inclusive
         g.correctChallengeResponse[newConnSocket] = \
-            new(''.join([g.configParams['password'],randNumStr])).digest()
+            new(''.join([g.configParams['secretword'],randNumStr])).digest()
         msgToSend = { 'cmd' : 'challenge',
                       'randnum' : randNumStr }
         mpd_send_one_msg(newConnSocket,msgToSend)
@@ -828,7 +828,7 @@ def _enter_existing_ring():
         del g.activeSockets[g.lhsSocket]
         g.lhsSocket.close()
         return -1
-    response = new(''.join([g.configParams['password'],msg['randnum']])).digest()
+    response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
     msgToSend = { 'cmd' : 'challenge_response',
                   'response' : response,
                   'host' : g.myHost,
@@ -854,7 +854,7 @@ def _enter_existing_ring():
        (not msg.has_key('cmd')) or  \
        (msg['cmd'] != 'challenge') or (not msg.has_key('randnum')):
         mpd_raise('failed to recv challenge from rhs; msg=:%s:' % (msg) )
-    response = new(''.join([g.configParams['password'],msg['randnum']])).digest()
+    response = new(''.join([g.configParams['secretword'],msg['randnum']])).digest()
     msgToSend = { 'cmd' : 'challenge_response',
                   'response' : response,
                   'host' : g.myHost,
@@ -910,8 +910,10 @@ def _process_configfile_params():
             g.configParams[splitLine[0]] = splitLine[1]
         else:
             mpd_print(0, 'skipping config file line = :%s:' % (line) )
-    if 'password' not in g.configParams.keys():
-        mpd_raise('%s: configFile has no password' % (configFilename) )
+    if 'secretword' not in g.configParams.keys():
+        print 'configFile %s has no secretword' % (configFilename)
+	print 'note: password has been replaced by secretword'
+	exit(0)
 
 def _process_cmdline_args():
     g.entryHost    = ''
@@ -996,7 +998,7 @@ def usage():
     print ''
     print 'A file named .mpd.conf file must be present in the user''s home directory'
     print '  with read and write access only for the user, and must contain at least'
-    print '  a line with password=<password>'
+    print '  a line with secretword=<secretword>'
     print ''
     print 'To run mpd as root, install it while root and instead of a .mpd.conf file'
     print 'use mpd.conf (no initial dot) in the /etc directory.' 

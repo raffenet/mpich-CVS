@@ -43,8 +43,8 @@ def mpdman():
     jobid = environ['MPDMAN_JOBID']
     nprocs = int(environ['MPDMAN_NPROCS'])
     mpdPort = int(environ['MPDMAN_MPD_LISTEN_PORT'])
-    mpdConfPasswd = environ['MPDMAN_MPD_CONF_PASSWD']
-    environ['MPDMAN_MPD_CONF_PASSWD'] = ''  ## do NOT pass it on to clients
+    mpdConfPasswd = environ['MPDMAN_MPD_CONF_SECRETWORD']
+    environ['MPDMAN_MPD_CONF_SECRETWORD'] = ''  ## do NOT pass it on to clients
     conHost = environ['MPDMAN_CONHOST']
     conPort = int(environ['MPDMAN_CONPORT'])
     lhsHost = environ['MPDMAN_LHSHOST']
