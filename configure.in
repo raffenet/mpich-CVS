@@ -1801,6 +1801,7 @@ AC_OUTPUT(Makefile src/Makefile \
 	  examples/f90/Makefile \
 	  examples/cxx/Makefile \
           src/util/logging/Makefile \
+          src/util/logging/common/Makefile \
           src/util/timing/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
 	  doc/adi3/Makefile doc/installguide/Makefile doc/userguide/Makefile \

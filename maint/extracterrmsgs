@@ -506,7 +506,7 @@ sub ExpandDir {
 	elsif (-d "$dir/$filename") {
 	    $otherdirs[$#otherdirs+1] = "$dir/$filename";
 	}
-	elsif ($filename =~ /(.*\.c)$/) {
+	elsif ($filename =~ /(.*\.[chi])$/) {
 	    $files[$#files + 1] = "$dir/$filename";
 	}
     }

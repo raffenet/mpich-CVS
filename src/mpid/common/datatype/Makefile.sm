@@ -17,6 +17,5 @@ lib${MPILIBNAME}_a_SOURCES = gen_segment.c \
 	mpid_type_get_envelope.c \
 	mpid_datatype_free.c \
 	mpid_datatype_contents.c \
-	mpid_type_get_contents.c \
-	segment_describe_states.c
+	mpid_type_get_contents.c
 INCLUDES = -I${srcdir} -I../../../include -I${master_top_srcdir}/src/include
