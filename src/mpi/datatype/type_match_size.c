@@ -130,13 +130,31 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	}
 	break;
     default:
-	mpi_errno = MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**typematchnoclass", 0);
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(mpi_errno,
+					 MPIR_ERR_RECOVERABLE,
+					 FCNAME,
+					 __LINE__,
+					 MPI_ERR_ARG,
+					 "**typematchnoclass",
+					 0);
 	break;
+	/* --END ERROR HANDLING-- */
     }
 
     if (mpi_errno == MPI_SUCCESS) {
 	if (matched_datatype == MPI_DATATYPE_NULL) {
-	    mpi_errno = MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG, "**typematchsize", "**typematchsize %s %d", tname, size );
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(mpi_errno,
+					     MPIR_ERR_RECOVERABLE,
+					     FCNAME,
+					     __LINE__,
+					     MPI_ERR_ARG,
+					     "**typematchsize",
+					     "**typematchsize %s %d",
+					     tname,
+					     size);
+	    /* --END ERROR HANDLING-- */
 	}
 	else {
 	    *datatype = matched_datatype;
@@ -147,8 +165,16 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_type_match_size", "**mpi_type_match_size %d %d %p", typeclass, size, datatype);
+	mpi_errno = MPIR_Err_create_code(mpi_errno,
+					 MPIR_ERR_RECOVERABLE,
+					 FCNAME,
+					 __LINE__,
+					 MPI_ERR_OTHER,
+					 "**mpi_type_match_size",
+					 "**mpi_type_match_size %d %d %p",
+					 typeclass,
+					 size,
+					 datatype);
 	return MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     }
     /* --END ERROR HANDLING-- */
