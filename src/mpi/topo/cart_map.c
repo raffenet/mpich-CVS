@@ -101,7 +101,7 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    
 	    /* Test that the communicator is large enough */
 	    if (size < nranks) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_DIMS,
 						  "**topotoolarge",
 						  "**topotoolarge %d %d",
 						  size, nranks );

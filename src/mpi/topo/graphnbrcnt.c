@@ -89,7 +89,9 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_TOPOLOGY, 
 						  "**notgraphtopo", 0 );
 	    }
-	    if (rank < 0 || rank >= graph_ptr->topo.graph.nnodes) {
+	    else if (rank < 0 || rank >= graph_ptr->topo.graph.nnodes) {
+		/* Must use an else because we need a valid graph_ptr 
+		   for this test */
 		mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK,
 					  "**rank", "**rank %d %d",
 					  rank, graph_ptr->topo.graph.nnodes );

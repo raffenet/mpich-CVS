@@ -69,6 +69,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges, int *ne
 	    MPIR_ERRTEST_ARGNULL(newrank,"newrank",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(index,"index",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(nnodes,"nnodes",mpi_errno);
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
                 return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

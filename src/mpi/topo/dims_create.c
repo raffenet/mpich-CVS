@@ -160,7 +160,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if (dims[i] < 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG,
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_DIMS,
 						  "**argarrayneg", 
 						  "**argarrayneg %s %d %d", 
 						  "dims", i, dims[i] );
@@ -181,7 +181,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    if ( (nnodes / dims_product ) * dims_product != nnodes ) {
-		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, 
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_DIMS, 
 						  "**dimspartition", 0 );
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIMS_CREATE);
 		return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
