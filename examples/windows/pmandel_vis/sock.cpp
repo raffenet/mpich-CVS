@@ -171,10 +171,18 @@ int connect_to_pmandel(const char *host, int port, int &width, int &height)
     }
     optval = 1;
     setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval));
-    read_data(sock, (char*)&width, sizeof(int));
-    read_data(sock, (char*)&height, sizeof(int));
-    read_data(sock, (char*)&g_num_colors, sizeof(int));
-    read_data(sock, (char*)&g_max_iter, sizeof(int));
+    result = read_data(sock, (char*)&width, sizeof(int));
+    if (result)
+	return -1;
+    result = read_data(sock, (char*)&height, sizeof(int));
+    if (result)
+	return -1;
+    result = read_data(sock, (char*)&g_num_colors, sizeof(int));
+    if (result)
+	return -1;
+    result = read_data(sock, (char*)&g_max_iter, sizeof(int));
+    if (result)
+	return -1;
     g_width = width;
     g_height = height;
     colors = new color_t[g_max_iter+1];
@@ -300,6 +308,11 @@ int read_data(SOCKET sock, char *buffer, int length)
 	    sprintf(err, "recv failed: error %d", result);
 	    MessageBox(NULL, err, "Error", MB_OK);
 	    return result;
+	}
+	if (num_bytes == 0)
+	{
+	    MessageBox(NULL, "socket connection to pmandel closed", "Error", MB_OK);
+	    return SOCKET_ERROR;
 	}
 	length -= num_bytes;
 	buffer += num_bytes;
