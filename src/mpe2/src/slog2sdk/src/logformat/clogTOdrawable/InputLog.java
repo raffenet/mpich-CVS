@@ -295,7 +295,7 @@ public class InputLog extends logformat.clog.InputLog
         ColorAlpha white_near_opaque = new ColorAlpha( ColorAlpha.white,
                                                        ColorAlpha.NEAR_OPAQUE );
         if ( aTopo.isEvent() ) {
-            type = new Category( -1, "Shadow_" + aTopo.toString(),
+            type = new Category( -1, "Preview_" + aTopo.toString(),
                                  aTopo, white_near_opaque, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
@@ -303,7 +303,7 @@ public class InputLog extends logformat.clog.InputLog
             return type;
         }
         else if ( aTopo.isArrow() ) {
-            type = new Category( -2, "Shadow_" + aTopo.toString(),
+            type = new Category( -2, "Preview_" + aTopo.toString(),
                                  aTopo, yellow_opaque, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\nmsg_size=%d\n" );
@@ -311,7 +311,7 @@ public class InputLog extends logformat.clog.InputLog
             return type;
         }
         else if ( aTopo.isState() ) {
-            type = new Category( -3, "Shadow_" + aTopo.toString(),
+            type = new Category( -3, "Preview_" + aTopo.toString(),
                                  aTopo, white_near_opaque, 5 );
             /*
             type.setInfoKeys( "num_real_objs=%d\ntime_error=%E\n" );
