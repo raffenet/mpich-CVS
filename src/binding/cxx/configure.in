@@ -10,11 +10,26 @@ AC_ARG_ENABLE(coverage,
 [--enable-coverage - Turn on coverage analysis],,
 enable_coverage=no)
 
-dnl
-dnl First check that we have a clean build if we are doing a VPATH build
-if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
-    AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
-    configured.  Run "make distclean" in $srcdir first.])
+# First check that we have a clean build if we are doing a VPATH build
+# Test for derived files as well and config.status to detect "dirty" 
+# source directory in a VPATH build
+if test "`cd $srcdir && pwd`" != "`pwd`" ; then
+    dirtyfiles=""
+    for file in config.status Makefile mpicxx mpicxx.h mpicxx.conf cov2html ; do
+        if test -f $srcdir/$file ; then 
+	    dirtyfiles="$dirtyfiles $file"
+	fi
+    done
+    if test -n "$dirtyfiles" ; then
+        if test -f $srcdir/Makefile ; then
+            AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Run "make distclean" in $srcdir first and make sure that the
+    files $dirtyfiles have been removed.])
+        else
+            AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Remove the files $dirtyfiles in $srcdir.])
+        fi
+    fi
 fi
 
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
