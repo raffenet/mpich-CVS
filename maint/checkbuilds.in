@@ -166,6 +166,9 @@ foreach $_ (@ARGV) {
     elsif (/-tmpdir=(.*)/) {
 	$tmpdir = $1;
     }
+    elsif (/-builddir=(.*)/) {
+	$builddir = $1;
+    }
     elsif (/-xml/) {
 	&XMLStyle;
 	$is_xml = 1;
@@ -195,7 +198,7 @@ foreach $_ (@ARGV) {
     elsif (/-help/) {
 	print STDERR "\
 checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
-            [-srcdir=SRCDIR] [-instdir=INSTALLDIR] 
+            [-srcdir=SRCDIR] [-instdir=INSTALLDIR] [-builddir=BUILDDIR]
             [-maxcount=MAXCNT] [-maxtime=MAXTIME] 
             [-norand ] [-enable=enable-args] [-with=with-args]
             [-tmpdir=dir]
@@ -223,6 +226,10 @@ checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
 if ($instdir eq "") {
     $instdir = "$tmpdir/cb/mpi2-inst";
 }
+# Make the builddir compatible with the installation directory
+if ($builddir eq "") {
+    $builddir = "$tmpdir/cb/mpich2";
+}
 
 # ---------------------------------------------------------------------------
 
@@ -231,6 +238,12 @@ if ($instdir eq "") {
 # Run one instance of the configuration
 sub RunTest {
     my $makepgm;
+
+    $rc = chdir $builddir;
+    if (!$rc) {
+	print STDERR "Cannot change to $builddir\n";
+	return;
+    }
     # 
     # Create the with and enable options
     #$enable_args = "--enable-strict";  # Only if compiler is gcc
@@ -351,45 +364,49 @@ sub RunTest {
 	    if ($rc == 0) {
 		# Only perform these steps if the make succeeded
 
-		# Check the libraries for nonconforming global symbols.
-		$globnametest = "$sowing_dir/bin/checkforglobs";
-		if ( -x $globnametest ) { 
-		    my @pgm = split( /\s+/, 
-              "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
-		    print $OUTFD $GlobNameStart;
-		    $globcheck_status = &RunProgram( @pgm );
-		    print $OUTFD $GlobNameEnd;
-		    # It would also be good to run
-		    #   find . -name Makefile -exec egrep '@[A-Za-z0-9_]*@' \
-		    #   \{\} /dev/null \;
-		    # over the files to check for unsubstituted names
-		}
-
-		# Sometimes build the hellow test
-		if (-x "examples/hellow" && -x "maint/showsizes") {
-		    my $cwd = `pwd`;
-		    chomp $cwd;
-		    $rc = chdir "examples";
-		    if ($rc) {
-			my @pgm = split( /\s+/, 
-					"../maint/showsizes -mpionly hellow" );
-			print $OUTFD $UsedNameStart;
-			$usedname_status = &RunProgram( @pgm );
-			# Also try the load map (even if showsizes failed)
-			# This assumes that (a) -M to ld generates a load map
-			# and (b) -Wl passes args to ld.
-			@pgm = split( /\s+/,"../bin/mpicc -Wl,-M -o hellow $srcdir/examples/hellow.c" );
-			$usedname_status = &RunProgram( @pgm );
-			print $OUTFD $UsedNameEnd;
-
-			
-		    }
-		    
-		    $rc = chdir $cwd;
-		    if (!$rc) {
-			print STDERR "Could not change to $cwd\n";
-		    }
-		}
+# Deleted this test because it is no longer a design goal for MPICH
+# that it have no nonconforming global symbols
+#		# Check the libraries for nonconforming global symbols.
+#		$globnametest = "$sowing_dir/bin/checkforglobs";
+#		if ( -x $globnametest ) { 
+#		    my @pgm = split( /\s+/, 
+#              "$globnametest -mpich2 -c++ -exclude=initcxx.o lib/libmpich.a" );
+#		    print $OUTFD $GlobNameStart;
+#		    $globcheck_status = &RunProgram( @pgm );
+#		    print $OUTFD $GlobNameEnd;
+#		    # It would also be good to run
+#		    #   find . -name Makefile -exec egrep '@[A-Za-z0-9_]*@' \
+#		    #   \{\} /dev/null \;
+#		    # over the files to check for unsubstituted names
+#		}
+#
+# Deleted this test because it is no longer a design goal for MPICH2
+# to have a minimum memory and routine footprint.
+#		# Sometimes build the hellow test
+#		if (-x "examples/hellow" && -x "maint/showsizes") {
+#		    my $cwd = `pwd`;
+#		    chomp $cwd;
+#		    $rc = chdir "examples";
+#		    if ($rc) {
+#			my @pgm = split( /\s+/, 
+#					"../maint/showsizes -mpionly hellow" );
+#			print $OUTFD $UsedNameStart;
+#			$usedname_status = &RunProgram( @pgm );
+#			# Also try the load map (even if showsizes failed)
+#			# This assumes that (a) -M to ld generates a load map
+#			# and (b) -Wl passes args to ld.
+#			@pgm = split( /\s+/,"../bin/mpicc -Wl,-M -o hellow $srcdir/examples/hellow.c" );
+#			$usedname_status = &RunProgram( @pgm );
+#			print $OUTFD $UsedNameEnd;
+#
+#			
+#		    }
+#		    
+#		    $rc = chdir $cwd;
+#		    if (!$rc) {
+#			print STDERR "Could not change to $cwd\n";
+#		    }
+#		}
 
 		# Install the libraries
 		print $OUTFD $MakeInstStart;
@@ -824,8 +841,10 @@ sub RunMPICH2TestSuite {
     $cwd = `pwd`;
     chomp $cwd;
 
+    # This must match the directory into which mpich2 was built for
+    # us to use the configure there.
     if ($mpich2_test_dir eq "") {
-	$mpich2_test_dir = "$tmpdir/cb/mpich2/test";
+	$mpich2_test_dir = "$builddir/test";
     }
 
     $rc = chdir $mpich2_test_dir;
@@ -867,7 +886,9 @@ sub RunProgram {
     # we close the output file before the fork.  This guarantees that
     # the data is flushed.  We reopen it after the fork (which is implicit
     # in the open)
-    close $OUTFD;
+    if ($outfile ne "") {
+	close $OUTFD;
+    }
 
     # We now use a different approach that uses a open that creates a 
     # fork and associates file handle (CFD for Child FD).
@@ -884,7 +905,9 @@ sub RunProgram {
     }
     else {
 	# Read from the child
-	open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile for appending\n";
+	if ($outfile ne "") {
+	    open( $OUTFD, ">>$outfile" ) || die "Could not reopen $outfile for appending\n";
+	}
 	while (<CFD>) {
 	    if ($is_xml) {
 		$_ = &XMLify( $_ );

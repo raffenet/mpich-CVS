@@ -1980,13 +1980,11 @@ AC_OUTPUT(Makefile src/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
 	  doc/mansrc/createhtmlindex \
 	  doc/refman/Makefile \
-	  doc/adi3/Makefile doc/installguide/Makefile doc/userguide/Makefile \
-	  doc/develop/Makefile \
-)
+	  doc/adi3/Makefile )
 
 dnl The following files should be created by the appropriate configure within
 dnl the device.
-dnl          src/mpid/mm/Makefile \
+dnl          src/mpid/mm/Makefile 
 
 
 PAC_SUBDIR_CACHE_CLEANUP
