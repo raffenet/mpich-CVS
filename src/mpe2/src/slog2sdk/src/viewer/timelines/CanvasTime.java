@@ -255,15 +255,15 @@ public class CanvasTime extends ScrollableObject
             Iterator dobjs;
             Drawable dobj;
 
-            // Compute the NestingFactor of Nestable Real Drawables and Shadows
+            // set NestingFactor/RowID of Nestable Real Drawables and Shadows
             dobjs = treetrunk.iteratorOfAllDrawables( timebounds,
                                                       INCRE_STARTTIME_ORDER,
                                                       true );
             while ( dobjs.hasNext() ) {
                 dobj = (Drawable) dobjs.next();
                 if ( dobj.getCategory().isVisible() ) {
-                    dobj.setStateNesting( coord_xform, map_line2row,
-                                          nesting_stacks );
+                    dobj.setStateRowAndNesting( coord_xform, map_line2row,
+                                                nesting_stacks );
                 }
             }
 

@@ -334,7 +334,7 @@ public class TimelineToolBar extends JToolBar
             searchFore_btn = new JButton( new ImageIcon( icon_URL ) );
         else
             searchFore_btn = new JButton( "SearchForward" );
-        searchFore_btn.setToolTipText( "Search backward in time" );
+        searchFore_btn.setToolTipText( "Search forward in time" );
         searchFore_btn.setMnemonic( KeyEvent.VK_F );
         // searchFore_btn.setPreferredSize( btn_dim );
         searchFore_btn.addActionListener(
