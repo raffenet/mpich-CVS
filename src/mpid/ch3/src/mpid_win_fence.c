@@ -12,12 +12,12 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 {
-    int mpi_errno = MPI_SUCCESS, comm_size, done, target_win_handle;
+    int mpi_errno = MPI_SUCCESS, comm_size, done, *recvcnts;
     int *rma_target_proc, *nops_to_proc, i, total_op_count, *curr_ops_cnt;
     MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests=NULL; /* array of requests */
-    int *recvcnts, source_win_handle;
+    MPI_Win source_win_handle, target_win_handle;
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
 
@@ -354,7 +354,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
 
 int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int source_win_handle, int target_win_handle, 
+                            MPI_Win source_win_handle, MPI_Win target_win_handle, 
                             MPIDI_RMA_dtype_info *dtype_info, 
                             void **dataloop, MPID_Request **request) 
 {
@@ -585,7 +585,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 
 
 int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int source_win_handle, int target_win_handle, 
+                            MPI_Win source_win_handle, MPI_Win target_win_handle, 
                             MPIDI_RMA_dtype_info *dtype_info, void **dataloop, 
                             MPID_Request **request) 
 {

@@ -193,13 +193,13 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 
 static int MPIDI_CH3I_Do_passive_target_rma(MPID_Win *win_ptr, int *wait_for_rma_done_pkt)
 {
-    int mpi_errno = MPI_SUCCESS, comm_size, done, i, nops, target_win_handle;
+    int mpi_errno = MPI_SUCCESS, comm_size, done, i, nops;
     MPIDI_RMA_ops *curr_ptr, *next_ptr, **curr_ptr_ptr, *tmp_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests=NULL; /* array of requests */
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
-    int source_win_handle;
+    MPI_Win source_win_handle, target_win_handle;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_DO_PASSIVE_TARGET_RMA);
 

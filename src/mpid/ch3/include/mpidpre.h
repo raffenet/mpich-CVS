@@ -147,11 +147,11 @@ typedef struct MPIDI_CH3_Pkt_put
     int count;
     MPI_Datatype datatype;
     int dataloop_size;   /* for derived datatypes */
-    int target_win_handle; /* Used in the last RMA operation in each
+    MPI_Win target_win_handle; /* Used in the last RMA operation in each
                                * epoch for decrementing rma op counter in
                                * active target rma and for unlocking window 
                                * in passive target rma. Otherwise set to NULL*/
-    int source_win_handle; /* Used in the last RMA operation in an
+    MPI_Win source_win_handle; /* Used in the last RMA operation in an
                                * epoch in the case of passive target rma
                                * with shared locks. Otherwise set to NULL*/
 }
@@ -164,12 +164,12 @@ typedef struct MPIDI_CH3_Pkt_get
     int count;
     MPI_Datatype datatype;
     int dataloop_size;   /* for derived datatypes */
-    int request_handle;
-    int target_win_handle; /* Used in the last RMA operation in each
+    MPI_Request request_handle;
+    MPI_Win target_win_handle; /* Used in the last RMA operation in each
                                * epoch for decrementing rma op counter in
                                * active target rma and for unlocking window 
                                * in passive target rma. Otherwise set to NULL*/
-    int source_win_handle; /* Used in the last RMA operation in an
+    MPI_Win source_win_handle; /* Used in the last RMA operation in an
                                * epoch in the case of passive target rma
                                * with shared locks. Otherwise set to NULL*/
 }
@@ -178,7 +178,7 @@ MPIDI_CH3_Pkt_get_t;
 typedef struct MPIDI_CH3_Pkt_get_resp
 {
     MPIDI_CH3_Pkt_type_t type;
-    int request_handle;
+    MPI_Request request_handle;
 }
 MPIDI_CH3_Pkt_get_resp_t;
 
@@ -190,11 +190,11 @@ typedef struct MPIDI_CH3_Pkt_accum
     MPI_Datatype datatype;
     int dataloop_size;   /* for derived datatypes */
     MPI_Op op;
-    int target_win_handle; /* Used in the last RMA operation in each
+    MPI_Win target_win_handle; /* Used in the last RMA operation in each
                                * epoch for decrementing rma op counter in
                                * active target rma and for unlocking window 
                                * in passive target rma. Otherwise set to NULL*/
-    int source_win_handle; /* Used in the last RMA operation in an
+    MPI_Win source_win_handle; /* Used in the last RMA operation in an
                                * epoch in the case of passive target rma
                                * with shared locks. Otherwise set to NULL*/
 }
@@ -204,15 +204,15 @@ typedef struct MPIDI_CH3_Pkt_lock
 {
     MPIDI_CH3_Pkt_type_t type;
     int lock_type;
-    int target_win_handle;
-    int source_win_handle;
+    MPI_Win target_win_handle;
+    MPI_Win source_win_handle;
 }
 MPIDI_CH3_Pkt_lock_t;
 
 typedef struct MPIDI_CH3_Pkt_lock_granted
 {
     MPIDI_CH3_Pkt_type_t type;
-    int source_win_handle;
+    MPI_Win source_win_handle;
 }
 MPIDI_CH3_Pkt_lock_granted_t;
 
@@ -221,8 +221,8 @@ typedef MPIDI_CH3_Pkt_lock_granted_t MPIDI_CH3_Pkt_pt_rma_done_t;
 typedef struct MPIDI_CH3_Pkt_lock_put_unlock
 {
     MPIDI_CH3_Pkt_type_t type;
-    int target_win_handle;
-    int source_win_handle;
+    MPI_Win target_win_handle;
+    MPI_Win source_win_handle;
     int lock_type;
     void *addr;
     int count;
@@ -233,21 +233,21 @@ MPIDI_CH3_Pkt_lock_put_unlock_t;
 typedef struct MPIDI_CH3_Pkt_lock_get_unlock
 {
     MPIDI_CH3_Pkt_type_t type;
-    int target_win_handle;
-    int source_win_handle;
+    MPI_Win target_win_handle;
+    MPI_Win source_win_handle;
     int lock_type;
     void *addr;
     int count;
     MPI_Datatype datatype;
-    int request_handle;
+    MPI_Request request_handle;
 }
 MPIDI_CH3_Pkt_lock_get_unlock_t;
 
 typedef struct MPIDI_CH3_Pkt_lock_accum_unlock
 {
     MPIDI_CH3_Pkt_type_t type;
-    int target_win_handle;
-    int source_win_handle;
+    MPI_Win target_win_handle;
+    MPI_Win source_win_handle;
     int lock_type;
     void *addr;
     int count;
@@ -422,9 +422,9 @@ struct MPIDI_Request														\
     MPIDI_RMA_dtype_info *dtype_info;												\
     void *dataloop;													        \
     /* req. handle needed to implement derived datatype gets  */					                        \
-    int request_handle;											                        \
-    int target_win_handle;   										                        \
-    int source_win_handle;   										                        \
+    MPI_Request request_handle;											                        \
+    MPI_Win target_win_handle;   										                        \
+    MPI_Win source_win_handle;   										                        \
     int single_op_opt;   /* to indicate a lock-put-unlock optimization case */                                                  \
     MPIDI_Win_lock_queue *lock_queue_entry; /* for single lock-put-unlock optimization */		                        \
 																\
@@ -465,14 +465,14 @@ typedef struct MPIDI_PT_single_op {
     MPI_Datatype datatype;
     MPI_Op op;
     void *data;  /* for queued puts and accumulates, data is copied here */
-    int request_handle;  /* for gets */
+    MPI_Request request_handle;  /* for gets */
     int data_recd;  /* to indicate if the data has been received */
 } MPIDI_PT_single_op;
 
 typedef struct MPIDI_Win_lock_queue {
     struct MPIDI_Win_lock_queue *next;
     int lock_type;
-    int source_win_handle;
+    MPI_Win source_win_handle;
     MPIDI_VC *vc;
     struct MPIDI_PT_single_op *pt_single_op;  /* to store info for lock-put-unlock optimization */
 } MPIDI_Win_lock_queue;

@@ -1525,7 +1525,7 @@ int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock)
 }
 
 
-int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, int source_win_handle)
+int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC *vc, MPI_Win source_win_handle)
 {
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_lock_granted_t *lock_granted_pkt = &upkt.lock_granted;

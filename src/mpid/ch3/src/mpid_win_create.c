@@ -101,7 +101,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     }
     /* --END ERROR HANDLING-- */
 
-    (*win_ptr)->all_win_handles = (int *) MPIU_Malloc(comm_size * sizeof(int));
+    (*win_ptr)->all_win_handles = (MPI_Win *) MPIU_Malloc(comm_size * sizeof(MPI_Win));
     /* --BEGIN ERROR HANDLING-- */
     if (!(*win_ptr)->all_win_handles)
     {
@@ -158,7 +158,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     {
         (*win_ptr)->base_addrs[i] = tmp_buf[3*i];
         (*win_ptr)->disp_units[i] = (int) tmp_buf[3*i+1];
-        (*win_ptr)->all_win_handles[i] = (int) tmp_buf[3*i+2];
+        (*win_ptr)->all_win_handles[i] = (MPI_Win) tmp_buf[3*i+2];
     }
 
     MPIU_Free(tmp_buf);

@@ -479,12 +479,12 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt);
 #define MPID_LOCK_NONE 0
 
 int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int source_win_handle, int target_win_handle, 
+                            MPI_Win source_win_handle, MPI_Win target_win_handle, 
                             MPIDI_RMA_dtype_info *dtype_info, 
                             void **dataloop, MPID_Request **request);
 
 int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
-                            int source_win_handle, int target_win_handle, 
+                            MPI_Win source_win_handle, MPI_Win target_win_handle, 
                             MPIDI_RMA_dtype_info *dtype_info, 
                             void **dataloop, MPID_Request **request); 
 

@@ -12,12 +12,12 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Win_complete(MPID_Win *win_ptr)
 {
-    int mpi_errno = MPI_SUCCESS, comm_size, *nops_to_proc, src;
-    int i, j, dst, done, total_op_count, *curr_ops_cnt, target_win_handle;
+    int mpi_errno = MPI_SUCCESS, comm_size, *nops_to_proc, src, new_total_op_count;
+    int i, j, dst, done, total_op_count, *curr_ops_cnt;
     MPIDI_RMA_ops *curr_ptr, *next_ptr;
     MPID_Comm *comm_ptr;
     MPID_Request **requests; /* array of requests */
-    int new_total_op_count, source_win_handle;
+    MPI_Win source_win_handle, target_win_handle;
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
     MPI_Group win_grp, start_grp;
