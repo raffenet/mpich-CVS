@@ -554,6 +554,10 @@ skip_sock_loop:
 		    ) / MPIDI_CH3I_UPDATE_ITERATIONS;
 		if (shmReps < 1)
 		    shmReps = 1;
+		if (shmReps > 256)
+		{
+		    shmReps = 256;
+		}
 		sockReps = (int)
 		    (
 		     (
@@ -563,6 +567,10 @@ skip_sock_loop:
 		    ) / MPIDI_CH3I_UPDATE_ITERATIONS;
 		if (sockReps < 1)
 		    sockReps = 1;
+		if (sockReps > 100)
+		{
+		    sockReps = 100;
+		}
 		/*MPIU_DBG_PRINTF(("(BOTH_BITS: shmReps = %d, sockReps = %d)", shmReps, sockReps));*/
 		break;
 	    default:
