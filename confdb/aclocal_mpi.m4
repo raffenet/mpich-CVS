@@ -102,12 +102,8 @@ AC_SUBST(CXX)
 AC_SUBST(F77)
 AC_SUBST(F90)
 AC_ARG_WITH(mpich,
-[--with-mpich=path  - Assume that we are building with MPICH],[
-ac_mpi_type=mpich
-save_PATH="$PATH"
-if test "$withval" != "yes" -a "$withval" != "no" ; then 
-PATH=$withval:${PATH}
-fi])
+[--with-mpich=path  - Assume that we are building with MPICH],
+ac_mpi_type=mpich)
 AC_ARG_WITH(ibmmpi,
 [--with-ibmmpi    - Use the IBM SP implementation of MPI],
 ac_mpi_type=ibmmpi)
@@ -124,6 +120,10 @@ case $ac_mpi_type in
         dnl 
         dnl This isn't correct.  It should try to get the underlying compiler
         dnl from the mpicc and mpif77 scripts or mpireconfig
+        save_PATH="$PATH"
+        if test "$with_mpich" != "yes" -a "$with_mpich" != "no" ; then 
+            PATH=$ac_mpich_withval:${PATH}
+        fi
         AC_PATH_PROG(MPICC,mpicc)
         TESTCC=${CC-cc}
         CC="$MPICC"
@@ -136,7 +136,7 @@ case $ac_mpi_type in
         AC_PATH_PROG(MPICXX,mpiCC)
         TESTCXX=${CXX-CC}
         CXX="$MPICXX"
-        PATH="$save_PATH"
+	PATH="$save_PATH"
 	;;
 	ibmmpi)
 	TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf
