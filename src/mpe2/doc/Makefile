@@ -1,22 +1,24 @@
 #  Output Directory
 
-MAN_DIR  = ./man/man3
-HTML_DIR = ./html
+MAN_DIR  = mpe/man/man3
+HTML_DIR = mpe/html
 
 #  Input Directory
 
 SRC_DIR  = ../src
 
-.SUFFIXES:	.c .txt
+.SUFFIXES:	.c .in .txt
 
 #  Name of the sources
-API_SRC = clog.c clog_merge.c clog_util.c mpe_log.c \
-          mpe_graphics.c xmouse.c \
-          decomp.c examine.c getgrank.c mpe_counter.c mpe_io.c \
-          mpe_seq.c privtags.c
+API_TPL = misc/src/dbxerr.c.in
+API_SRC = misc/src/mpe_seq.c misc/src/privtags.c misc/src/mpe_io.c \
+          misc/src/mpehname.c misc/src/decomp.c misc/src/getgrank.c \
+          logging/src/mpe_log.c \
+          graphics/src/mpe_graphics.c graphics/src/xmouse.c
 INC_TXT = 
 
 #  The following statements require GNU make.
+REAL_TPL = $(API_TPL:%.in=$(SRC_DIR)/%.in)
 REAL_SRC = $(API_SRC:%.c=$(SRC_DIR)/%.c)
 REAL_TXT = $(INC_TXT:%.txt=$(SRC_DIR)/%.txt)
 
@@ -29,7 +31,8 @@ all:	man html
 man:	FORCE 
 	if [ ! -d $(MAN_DIR) ] ; then \
 		mkdir -p $(MAN_DIR) ; fi
-	$(DOCTEXT) -mpath $(MAN_DIR) $(DOC_OPT) $(REAL_TXT) $(REAL_SRC)
+	$(DOCTEXT) -mpath $(MAN_DIR) $(DOC_OPT) \
+	                  $(REAL_TXT) $(REAL_SRC) $(REAL_TPL)
 FORCE:
 
 html:	FORCE
@@ -37,7 +40,7 @@ html:	FORCE
 		mkdir -p $(HTML_DIR) ; fi
 	$(DOCTEXT) -html -mpath $(HTML_DIR) $(DOC_OPT) \
 	           -index $(HTML_DIR)/libmpe.cit -indexdir $(HTML_DIR) \
-	           $(REAL_TXT) $(REAL_SRC)
+	           $(REAL_TXT) $(REAL_SRC) $(REAL_TPL)
 FORCE:
 
 clean:
