@@ -859,8 +859,9 @@ int smpd_handle_read(smpd_context_t *context)
 	    smpd_exit_fn("smpd_handle_read");
 	    return SMPD_FAIL;
 	}
+	smpd_dbg_printf("%d bytes read from %s\n", num_read+1, context->type == SMPD_CONTEXT_STDOUT ? "stdout" : "stderr");
 	smpd_encode_buffer(buffer, SMPD_MAX_CMD_LENGTH, context->read_cmd.cmd, num_read+1, &num_encoded);
-	smpd_dbg_printf("encoded output buffer: '%s'\n", buffer);
+	smpd_dbg_printf("encoded %d characters: '%s'\n", num_encoded, buffer);
 
 	/* create an output command */
 	result = smpd_create_command(

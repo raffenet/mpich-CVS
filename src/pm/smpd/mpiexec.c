@@ -113,7 +113,6 @@ int main(int argc, char* argv[])
 	    /* initialize the pmi database engine on the root node */
 	}
 
-#if 0
 	/* launch the processes */
 	mp_dbg_printf("launching the processes.\n");
 	launch_node_ptr = mp_process.launch_list;
@@ -227,7 +226,6 @@ int main(int argc, char* argv[])
 		break;
 	    }
 	}
-#endif
 
 	/* close the tree */
 	mp_dbg_printf("closing the job tree.\n");
