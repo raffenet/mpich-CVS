@@ -93,6 +93,75 @@ smpd_global_t smpd_process =
       NULL              /* barrier_list           */
     };
 
+int smpd_post_abort_command(char *fmt, ...)
+{
+    int result;
+    char error_str[2048] = "";
+    smpd_command_t *cmd_ptr;
+    smpd_context_t *context;
+    va_list list;
+
+    smpd_enter_fn("smpd_post_abort_command");
+
+    va_start(list, fmt);
+    vsnprintf(error_str, 2048, fmt, list);
+    va_end(list);
+
+    result = smpd_create_command("abort", smpd_process.id, 0, SMPD_FALSE, &cmd_ptr);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create an abort command.\n");
+	smpd_exit_fn("smpd_post_abort_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(cmd_ptr, "error", error_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("Unable to add the error string to the abort command.\n");
+	smpd_exit_fn("smpd_post_abort_command");
+	return SMPD_FAIL;
+    }
+    smpd_command_destination(0, &context);
+    if (context == NULL)
+    {
+	if (smpd_process.left_context == NULL)
+	{
+	    smpd_err_printf("aborting.\n");
+	    smpd_exit_fn("smpd_post_abort_command");
+	    smpd_exit(-1);
+	}
+
+	smpd_process.closing = SMPD_TRUE;
+	result = smpd_create_command("close", 0, 1, SMPD_FALSE, &cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to create the close command to tear down the job tree.\n");
+	    smpd_exit_fn("smpd_enter_at_state");
+	    return SMPD_FAIL;
+	}
+	result = smpd_post_write_command(smpd_process.left_context, cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the close command to tear down the job tree.\n");
+	    smpd_exit_fn("smpd_enter_at_state");
+	    return SMPD_FAIL;
+	}
+    }
+    else
+    {
+	smpd_dbg_printf("sending abort command to %s context: \"%s\"\n", smpd_get_context_str(context), cmd_ptr->cmd);
+	result = smpd_post_write_command(context, cmd_ptr);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the abort command to the %s context.\n", smpd_get_context_str(context));
+	    smpd_exit_fn("smpd_post_abort_command");
+	    return SMPD_FAIL;
+	}
+    }
+    smpd_exit_fn("smpd_post_abort_command");
+    return SMPD_SUCCESS;
+}
+
 #ifdef HAVE_SIGACTION
 void smpd_child_handler(int code)
 {
@@ -398,7 +467,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, sock_se
 	result = sock_set_user_ptr(sock, context);
 	if (result != SOCK_SUCCESS)
 	{
-	    smpd_err_printf("unable to set the sock user ptr while initializing context, sock error:\n%s\n",
+	    smpd_err_printf("unable to set the sock user ptr while initializing context,\nsock error: %s\n",
 		get_sock_error_string(result));
 	}
     }
