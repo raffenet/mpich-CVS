@@ -1,13 +1,13 @@
 #! /bin/sh
 #
-# mpif77
+# mpif90
 # Simple script to compile and/or link MPI programs.
 # This script knows the default flags and libraries, and can handle
 # alternative C compilers and the associated flags and libraries.
 # The important terms are:
 #    includedir, libdir - Directories containing an *installed* mpich2
 #    prefix, execprefix - Often used to define includedir and libdir
-#    FC                 - Fortran 77 compiler
+#    F90                - Fortran 90 compiler
 #    MPI_FFLAGS         - Any special flags needed to compile 
 #    MPI_LDFLAGS        - Any special flags needed to link
 #    MPILIBNAME         - Name of the MPI library

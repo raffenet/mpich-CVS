@@ -4,6 +4,8 @@ require "binding.sub";
 $prototype_file = "../../include/mpi.h.in";
 
 %mpi_routines = ();
+%NeedConstants = ();   # constants needed for declaration, hased by routine
+
 %parmc2f = ( 'int' => 'INTEGER',
 	     'int[]' => 'INTEGER %name%(*)',
 	     'int[][3]' => 'INTEGER %name%(3,*)',
@@ -130,9 +132,20 @@ $prototype_file = "../../include/mpi.h.in";
 # First pass.  Ignore the issue of choice routines
 # Print header
 open (MPIFD, ">mpi.f90" ) || die "Could not open mpi.f90\n";
-print MPIFD "        MODULE MPI
-        IMPLICIT NONE
-        INTERFACE\n";
+print MPIFD "       MODULE MPI
+       IMPLICIT NONE
+!      This module was created by the script buildiface
+       USE MPI_CONSTANTS,                                               &
+     &      BASE_MPI_WTIME => MPI_WTIME, BASE_MPI_WTICK => MPI_WTICK
+       USE MPIBASE
+       END MODULE MPI\n";
+  
+close (MPIFD);
+# ----------------------------------------------------------------------------
+open ( MPIBASEFD, ">mpibase.f90" ) || die "Could not open mpibase.f90\n";
+print MPIBASEFD "       MODULE MPIBASE
+       IMPLICIT NONE
+!      This module was created by the script buildiface\n";
 
 foreach $routine (keys(%mpi_routines)) {
     $ucname = uc($routine);
@@ -150,11 +163,11 @@ foreach $routine (keys(%mpi_routines)) {
 	print "Skipping $routine because of void argument\n" if $debug;
 	next;
     }
-    print MPIFD "       SUBROUTINE MPI_$ucname(";
+    print MPIBASEFD "       SUBROUTINE MPI_$ucname(";
     for ($i=0; $i<=$#parms; $i++) {
-	print MPIFD "v$i,";
+	print MPIBASEFD "v$i,";
     }
-    print MPIFD "ierror)\n";
+    print MPIBASEFD "ierror)\n";
     # Determine if we need any constants (e.g., MPI_STATUS_SIZE, 
     # MPI_OFFSET_KIND)
     %use_constants = ();
@@ -177,13 +190,14 @@ foreach $routine (keys(%mpi_routines)) {
 	}
     }
     if ($found_constants) {
-	print MPIFD "       USE MPI_CONSTANTS,ONLY:";
+	print MPIBASEFD "       USE MPI_CONSTANTS,ONLY:";
 	$sep = "";
 	foreach $name (keys(%use_constants)) {
-	    print MPIFD "$sep$name";
+	    print MPIBASEFD "$sep$name";
 	    $sep = ", ";
+	    $NeedConstants{$routine} .= "$name ";
 	}
-	print MPIFD "\n";
+	print MPIBASEFD "\n";
     }
 
     # Output argument types
@@ -203,17 +217,17 @@ foreach $routine (keys(%mpi_routines)) {
 	}
 	if ($fparm =~ /%name%/) {
 	    $fparm =~ s/%name%/v$i/;
-	    print MPIFD "       $fparm\n";
+	    print MPIBASEFD "       $fparm\n";
 	}
 	else {
-	    print MPIFD "       $fparm v$i\n";
+	    print MPIBASEFD "       $fparm v$i\n";
 	}
     }
-    print MPIFD "       INTEGER ierror\n";
-    print MPIFD "       END SUBROUTINE MPI_$ucname\n\n";
+    print MPIBASEFD "       INTEGER ierror\n";
+    print MPIBASEFD "       END SUBROUTINE MPI_$ucname\n\n";
 }
-print MPIFD "       END INTERFACE\n       END MODULE MPI\n";
-close MPIFD;
+print MPIBASEFD "       END INTERFACE\n       END MODULE MPIBASE\n";
+close MPIBASEFD;
 
 open ( MPIFD, ">mpi_constants.f90" ) || die "Cannot open mpi_constants.f90\n";
 print MPIFD "        MODULE MPI_CONSTANTS
@@ -238,9 +252,9 @@ foreach $routine (keys(%mpi_choice_routines)) {
     print MPIFD "        END INTERFACE MPI_$ucname\n\n";
 }
 
-print MPIFD "        CONTAINS\n";
+print MPIFD "        CONTAINS\n\n";
 
-# For each, add the modules
+# For each choice routine, add the modules
 foreach $routine (keys(%mpi_choice_routines)) {
     $ucname = uc($routine);
     $args   = $mpi_routines{$routine};
@@ -251,9 +265,59 @@ foreach $routine (keys(%mpi_choice_routines)) {
 	print MPIFD "v$i,";
     }
     print MPIFD "ierror)\n";
+
+    if (defined($NeedConstants{$routine})) {
+	print MPIFD "       USE MPI_CONSTANTS,ONLY:";
+	$sep = "";
+	foreach $name (split(/\s+/,$NeedConstants{$routine})) {
+	    print MPIFD "$sep$name";
+	    $sep = ", ";
+	}
+	print MPIFD "\n";
+    }
+
     # print the arg decls ...
     # convert %type% to the various types and %dims% to the dimensions,
     # including scalar.
+    $nchoice = 0;
+    for ($i=0; $i<=$#parms; $i++) {
+	$parm = $parms[$i];
+	# Check for special args
+	$loc = $i+1;
+	if (defined($special_args{"$routine-$loc"})) {
+	    $parm = $special_args{"$routine-$loc"};
+	}
+
+	if ($parm =~ /void/) {
+	    # An alternative to this is to have a separate file for
+	    # routines with 2 choice arguments
+	    if ($nchoice == 0) {
+		print MPIFD "        <type> v$i<dims>\n";
+	    }
+	    else {
+		print MPIFD "        <type$nchoice> v$i<dims$nchoice>\n";
+	    }
+	    $nchoice ++;
+	}
+	else {
+	    # Map the C type to the Fortran type
+	    $cparm = $parm;
+	    $cparm =~ s/\s+//g;
+	    $fparm = $parmc2f{$cparm};
+	    if ($fparm eq "") {
+		print STDERR "$routine: No parm type for $cparm ($parm)\n";
+	    }
+	    if ($fparm =~ /%name%/) {
+		$fparm =~ s/%name%/v$i/;
+		print MPIFD "        $fparm\n";
+	    }
+	    else {
+		print MPIFD "        $fparm v$i\n";
+	    }
+	}
+    }
+    print MPIFD "        INTEGER ierror\n";
+    print MPIFD "        EXTERNAL MPI_${ucname}\n";
     print MPIFD "        CALL MPI_${ucname}(";
     for ($i=0; $i<=$#parms; $i++) {
 	print MPIFD "v$i,";
@@ -261,10 +325,61 @@ foreach $routine (keys(%mpi_choice_routines)) {
     print MPIFD "ierror)\n";
     print MPIFD "        END SUBROUTINE MPI_${ucname}_T\n\n";
 }
+print MPIFD "        END MODULE MPI_t1_s\n";
 close MPIFD;
+
+# -----------------------------------------------------------------------------
+# This block can be used to create the Makefile
+open ( MAKEFD, ">Makefile.sm" ) || die "Cannot create Makefile.sm";
+print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
+
+print MAKEFD "smvar_do_dependencies = 0\n";
+
+print MAKEFD "mpi.\$(MOD): mpi.f90\
+\t\$(F90) -c \$(F90FLAGS) mpi.f90\n";
+
+print MAKEFD "maint-clean:\
+\trm -f \${mpi_sources} fproto.h\n";
+
+print MAKEFD "install_BIN     = mpif90\n";
+print MAKEFD "install_ETC     = mpif90.conf\n";
+
+# Since configure copies mpif90 to the bin dir, we need to remove it
+# in a distclean step.
+print MAKEFD "distclean-local:\n";
+print MAKEFD "\trm -f ../../../bin/mpif90\n";
+
+close( MAKEFD );
 
 #
 # Still to do
 # make sure that we fit within the Fortran line length rules
 # Look into alternatives for generating a zillion files
 # Handle routines with more than one choice argument
+#
+# ------------------------------------------------------------------------
+# Procedures
+# print_line( FD, line, count, continue, continuelen )
+# Print line to FD; if line size > count, output continue string and
+# continue.  Use print_endline to finish a line
+sub print_line {
+    my $FD = $_[0];
+    my $line = $_[1];
+    my $count = $_[2];
+    my $continue = $_[3];
+    my $continue_len = $_[4];
+    
+    $linelen = length( $line );
+    #print "linelen = $linelen, print_line_len = $print_line_len\n";
+    if ($print_line_len + $linelen > $count) {
+	print $FD $continue;
+	$print_line_len = $continue_len;
+    }
+    print $FD $line;
+    $print_line_len += $linelen;
+}
+sub print_endline {
+    my $FD = $_[0];
+    print $FD "\n";
+    $print_line_len = 0;
+}
