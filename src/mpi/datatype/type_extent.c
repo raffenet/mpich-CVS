@@ -57,10 +57,7 @@ int MPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                            "**initialized", 0 );
-            }
+            MPIR_ERRTEST_INITIALIZED(mpi_errno);
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
             if (mpi_errno) {
