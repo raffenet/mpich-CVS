@@ -1,3 +1,8 @@
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 /* args.h - argument handling stuff */
 
 #ifndef _ARGS_H_
