@@ -22,7 +22,10 @@
 #define MPID_trvalid(a)
 #endif
 
-/* CLOG_FILE_TYPE determines default CLOG2 file extension, i.e. ".clog2" */
+/*
+   CLOG_FILE_TYPE determines default CLOG2 file extension, i.e. ".clog2"
+   as well as the prefix for the local temporary clog2 file.
+*/
 #define  CLOG_FILE_TYPE      "clog2"
 
 #define  CLOG_BOOL_NULL       -1
