@@ -212,7 +212,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC * vc)
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
 		    return mpi_errno;
 		}
-		if (req->dev.iov_count == 0 && vc->ch.sendq_head != NULL)
+		if (req->dev.iov_count == 0 && vc->ch.sendq_head != req)
 		{
 		    MPIDI_CH3I_SendQ_dequeue(vc);
 		}
