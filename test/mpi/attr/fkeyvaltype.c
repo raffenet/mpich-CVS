@@ -44,6 +44,9 @@ int main( int argc, char *argv[] )
     int i, key[32], keyval, saveKeyval;
     MPI_Datatype type, duptype;
     MTest_Datatype mstype, mrtype;
+    char typename[MPI_MAX_OBJECT_NAME];
+    int tnlen;
+
     MTest_Init( &argc, &argv );
 
     while (MTestGetDatatypes( &mstype, &mrtype )) {
@@ -67,24 +70,27 @@ int main( int argc, char *argv[] )
 	/* Check that the attribute was copied */
 	if (attrval != 2) {
 	    errs++;
+	    MPI_Type_get_name( type, typename, &tnlen );
 	    printf( "Attribute not incremented when type dup'ed (%s)\n",
-		    MTestGetIntracommName() );
+		     typename );
 	}
 	MPI_Type_free( &duptype );
 	if (attrval != 1) {
 	    errs++;
+	    MPI_Type_get_name( type, typename, &tnlen );
 	    printf( "Attribute not decremented when duptype %s freed\n",
-		    MTestGetIntracommName() );
+		    typename );
 	}
 	/* Check that the attribute was freed in the duptype */
 
 	if (!mstype.isBasic) {
+	    MPI_Type_get_name( type, typename, &tnlen );
 	    MPI_Type_free( &type );
 	    /* Check that the original attribute was freed */
 	    if (attrval != 0) {
 		errs++;
 		printf( "Attribute not decremented when type %s freed\n",
-			MTestGetIntracommName() );
+			typename );
 	    }
 	}
 	else {
@@ -99,9 +105,6 @@ int main( int argc, char *argv[] )
     MTest_Finalize( errs );
     MPI_Finalize();
 
-    /* The attributes on comm self and world were deleted by finalize 
-       (see separate test) */
-    
     return 0;
   
 }
