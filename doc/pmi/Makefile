@@ -1,4 +1,4 @@
-ALL: paper.ps pmi.ps pmi.pdf wire.pdf
+ALL: paper.ps pmi.ps pmi.pdf 
 SHELL = /bin/sh
 
 DOCTEXT = doctext
