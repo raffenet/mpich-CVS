@@ -7,52 +7,54 @@
 
 #include "mpiimpl.h"
 
-/* -- Begin Profiling Symbol Block for routine MPI_Get_address */
+/* -- Begin Profiling Symbol Block for routine MPI_Address */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPI_Get_address = PMPI_Get_address
+#pragma weak MPI_Address = PMPI_Address
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPI_Get_address  MPI_Get_address
+#pragma _HP_SECONDARY_DEF PMPI_Address  MPI_Address
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPI_Get_address as PMPI_Get_address
+#pragma _CRI duplicate MPI_Address as PMPI_Address
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#define MPI_Get_address PMPI_Get_address
+#define MPI_Address PMPI_Address
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPI_Get_address
+#define FUNCNAME MPI_Address
 
 /*@
-   MPI_Get_address - get address
+    MPI_Address - Gets the address of a location in memory  
 
-   Arguments:
-+  void *location - location
--  MPI_Aint *address - address
+Input Argument:
+. location - location in caller memory (choice) 
 
-   Notes:
+Output Argument:
+. address - address of location (integer) 
+
+    Note:
     This routine is provided for both the Fortran and C programmers.
     On many systems, the address returned by this routine will be the same
     as produced by the C '&' operator, but this is not required in C and
     may not be true of systems with word- rather than byte-oriented 
     instructions or systems with segmented address spaces.  
-
-    This routine should be used instead of 'MPI_Address'. 
-.N Fortran
+ 
+    This function is deprecated.  Use 'MPI_Get_address' instead.
+.N fortran
 
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Get_address(void *location, MPI_Aint *address)
+int MPI_Address( void *location, MPI_Aint *address )
 {
-    static const char FCNAME[] = "MPI_Get_address";
+    static const char FCNAME[] = "MPI_Address";
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_ADDRESS);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ADDRESS);
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -62,7 +64,7 @@ int MPI_Get_address(void *location, MPI_Aint *address)
                             "**initialized", 0 );
             }
             if (mpi_errno) {
-                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ADDRESS);
+                MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADDRESS);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
             }
         }
@@ -88,9 +90,9 @@ int MPI_Get_address(void *location, MPI_Aint *address)
        of bytes from 0 to location */
     *address = (MPI_Aint) ((char *)location - (char *)MPI_BOTTOM);
 #endif
-    /* The same code is used in MPI_Address */
+    /* The same code is used in MPI_Get_address */
     /* ... end of body of routine ... */
 
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ADDRESS);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADDRESS);
     return MPI_SUCCESS;
 }

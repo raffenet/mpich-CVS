@@ -783,13 +783,25 @@ opaque.  In the MPICH2 implementation, opaque objects are represented
 by integers.  This simplifies the implementation of the functions for
 transfering handles between C/C++ and Fortran.  
 
-Question:  One interesting idea is to encode information in the opaque
-handle.  For example, the \code{sizeof} a basic datatype, and whether
-a type is basic, could be part of the handle for an
-\code{MPI_Datatype}. In that case, an implementation can avoid looking
-up the datatype (e.g., by using the integer of the opaque type as an
-array index) and instead perform a few simple operations on the handle
-(e.g., mask and test and mask and shift).  Similarly, for
+In order to simplify some processing as well as to avoid some loads
+and stores on commonly used, predefined objects, the handles encode
+some information about the object.  For example, the type of the
+object is encoded in the handle; this allows for runtime checks that
+the correct objects are passed to routines (this is not possible with
+implementations that use small-valued integers for all handles).  In
+addition, some common objects, such as the predefined MPI datatypes,
+can have the most important information about them (e.g., the size of
+the datatype) encoded directly in the handle.  This avoids extra load
+operations at the cost of a few mask and shifts. 
+
+% Question:  One interesting idea is to encode information in the opaque
+% handle.  For example, the \code{sizeof} a basic datatype, and whether
+% a type is basic, could be part of the handle for an
+% \code{MPI_Datatype}. In that case, an implementation can avoid looking
+% up the datatype (e.g., by using the integer of the opaque type as an
+% array index) and instead perform a few simple operations on the handle
+% (e.g., mask and test and mask and shift).  
+Similarly, for
 communicators that are dups of \code{MPI_COMM_WORLD}, the handle could
 contain the \code{context_id}, again avoiding the need to look up the
 communicator, since in addition the mapping from rank to local pid for 
@@ -797,19 +809,15 @@ communicators similar to \code{MPI_COMM_WORLD} is the identity
 mapping.  Thus a single bit test on the opaque handle could eliminate
 a number of tests and memory references for an important common case.
 
-The questions are: do we want to make this possible?  If so, do we
-want to implement it from the beginning?  Note that encoding
-information into the opaque handle makes that handle conversion
-functions more complex.
-
-\subsubsection{Proposed Opaque Handle Format}
-
-We're going to use ints as handles to datatypes and to other constructs such
-as communicators.  Some of the considerations in this are:
+\subsubsection{Opaque Handle Format}
+All handles (with the possible exception of \code{MPI_Request}s) are
+\code{int}s.  Some of the considerations in this are:
 \begin{itemize}
 \item fast resolution for some number of user-created constructs
 \item particularly fast resolution for built-ins
 \item minimal added limitations on number of user-defined constructs 
+\item no more than four byte \code{int}s to match the needs of most
+Fortran compilers and the \code{MPI_xxx_c2f} functions.
 \end{itemize}
 
 Using the same system for storing all these constructs should be more
@@ -817,48 +825,73 @@ space-efficient.
 
 The MPI opaque objects include \mpiconst{MPI_Comm}, \mpiconst{MPI_Group},
 \mpiconst{MPI_Datatype}, \mpiconst{MPI_Errhandler}, \mpiconst{MPI_File},
-\mpiconst{MPI_Info}, \mpiconst{MPI_Op}, and \mpiconst{MPI_Win}.
+\mpiconst{MPI_Info}, \mpiconst{MPI_Op}, and \mpiconst{MPI_Win}.  We
+currently do not include \mpiconst{MPI_Request} because there is a
+premium on efficiency for creating and deleting requests; these other
+objects do not require extremely fast creation.
 
 Nomenclature is subject to change.
 
 Different architectures have ints of varied sizes, so we must rely on
-\code{sizeof(int)} to determine what we have to work with.
+\code{sizeof(int)} to determine what we have to work with.  However,
+we will assume for now that an \code{int} is at least 32 bits.
 
-We will use the 2 highest bits to encode a type of construct.  These are:
+There are 4 kinds of handles.  These are indicated by two bits in the
+31,30 (from 0) location.
 \begin{description}
-\item[\code{CONSTRUCT_INVALID}]  (00)
-\item[\code{CONSTRUCT_BUILTIN}]  (01)
-\item[\code{CONSTRUCT_DIRECT}]   (10)
-\item[\code{CONSTRUCT_INDIRECT}] (11)
+\item[\code{HANDLE_KIND_INVALID}] (00) Not a valid handle.
+\item[\code{HANDLE_KIND_BUILTIN}] (01) A handle to a predefined,
+builtin object. 
+\item[\code{HANDLE_KIND_DIRECT}] (10) A handle allocated from a
+preallocated array 
+\item[\code{HANDLE_KIND_INDIRECT}] (11) A handle allocated from dynamically
+allocated storage.
 \end{description}
-In addition, the macro \code{CONSTRUCT_MASK} may be used to return
-just these bits and \code{CONSTRUST_TYPE(id)} returns these values as the
-integers $0$--$3$.
+The macro \mpidfunc{HANDLE_GET_KIND(a)} returns the handle kind,
+\mpidfunc{HANDLE_SET_KIND(a,kind)} sets the handle kind, and
+\mpidconst{HANDLE_KIND_MASK} masks out all but the two bits
+corresponding to the handle kind.
+
+
+% We will use the 2 highest bits to encode a type of construct.  These are:
+% \begin{description}
+% \item[\code{CONSTRUCT_INVALID}]  (00)
+% \item[\code{CONSTRUCT_BUILTIN}]  (01)
+% \item[\code{CONSTRUCT_DIRECT}]   (10)
+% \item[\code{CONSTRUCT_INDIRECT}] (11)
+% \end{description}
+% In addition, the macro \code{CONSTRUCT_MASK} may be used to return
+% just these bits and \code{CONSTRUST_TYPE(id)} returns these values as the
+% integers $0$--$3$.
 
 Using $00$ as invalid, especially in the two high bits, will help detect
 bad parameters passed to us (although negative ints won't be caught).
 
-\code{CONSTRUCT_BUILTIN} types include the predefined datatypes such as
+\code{HANDLE_KIND_BUILTIN} types include the predefined datatypes such as
 \code{MPI_BYTE} and \code{MPI_DOUBLE} as well as the predefined communicators
 \code{MPI_COMM_WORLD} and \code{MPI_COMM_SELF}.
 
 The next three highest bits will encode the MPI type stored:
 \begin{description}
-\item[\code{MPI_Comm}]     (000)
-\item[\code{MPI_Group}]    (001)
-\item[\code{MPI_Datatype}] (010)
-\item[\code{MPI_File}]     (011)
-\item[\code{MPI_Errhandler}](100)
-\item[\code{MPI_Op}]       (101)
-\item[\code{MPI_Info}]     (110)
-\item[\code{MPI_Win}]      (111)
+\item[\code{MPI_Comm}]     (000) \mpidconst{MPID_COMM}
+\item[\code{MPI_Group}]    (001) \mpidconst{MPID_GROUP}
+\item[\code{MPI_Datatype}] (010) \mpidconst{MPID_DATATYPE}
+\item[\code{MPI_File}]     (011) \mpidconst{MPID_FILE}
+\item[\code{MPI_Errhandler}](100) \mpidconst{MPID_ERRHANDLER}
+\item[\code{MPI_Op}]       (101) \mpidconst{MPID_OP}
+\item[\code{MPI_Info}]     (110) \mpidconst{MPID_INFO}
+\item[\code{MPI_Win}]      (111) \mpidconst{MPID_WIN}
 \end{description}
-The macro \code{HANDLE_KIND(id)} returns this value as an integer in
-the range $0$--$7$.
+The macro \code{HANDLE_MPI_TYPE(id)} returns this value as an integer in
+the range $0$--$7$.  The names belong to the enum type
+\mpidconst{MPID_Object_kind}. 
 
-At this point we can reasonably expect to have at least 11 bits remaining
-to work with, usually 27 and for some architectures 59.
+For a 32 bit integer, there are 27 bits remaining (59 in a 64 bit integer).
+The use of these bits depends on the kind of handle.  For handles to
+builtin objects (\code{})
 
+\begin{description}
+\item[Datatypes]
 There are more than 32 but less than 64 predefined datatypes, so 6 bits are
 adequate to encode all of the predefined datatypes.
 Note that C2000 adds another 31 types, so we will need 7 bits eventually.
@@ -869,21 +902,38 @@ long-double-int types may be 32 bytes, but on these systems, sizeof(int) will
 be at least 32 bits, leaving us enough room for the size of these longer
 types). 
 
+\item[Groups and Communicators]
 For predefined Groups and Communicators we simply use the remaining bits
 to specify the particular group/communicator (e.g. \code{MPI_COMM_WORLD}) and 
 either the rank of the process or the size (or both!).  Actually, for
 small integers we  
-might not have enough bits, so we should think about this a little more.
+might not have enough bits, so we should think about this a little
+more.
 
-For the directly accessed values the remaining bits are used as indices into
-a table of pointers or an array of preallocated objects (using the array
-removes one indirect reference and ensures that storage is available at init
-time).  This table should be 
+\item[Errhandler] Use the remaining bits to indicate errors return or
+errors are fatal, neither of which invokes a use-specified routine
+(and hence does not need to handle the language-specific error handler
+invocation).
+
+\item[Op] Use the remaining bits to indicate the particular builtin operation.
+
+\item[Info] There are no builtin \code{MPI_Info} objects.
+\item[Win] There are no builtin \code{MPI_Win} objects.
+\item[File] There are no builtin \code{MPI_File} objects.
+\end{description}
+
+The last two handle types point at other storage where the object is
+actually stored.
+For the directly accessed values (\mpidconst{HANDLE_KIND_DIRECT}) the
+remaining bits are used as indices into 
+an array of preallocated objects.
+This table should be 
 a memory page or two in size, 
 minus estimated \code{malloc} overhead (if we dynamically allocate).
 The macro \code{HANDLE_INDEX(id)} returns this index value.
 
-For indirectly accessed values the remaining bits specify an allocated block
+For indirectly accessed values (\mpidconst{HANDLE_KIND_INDIRECT}) the
+remaining bits specify an allocated block 
 for storing pointers and an index into that block.  We'll split the bits
 based on the number of pointers we can store in a block (which will need
 to be statically calculable; the \code{_SC_PAGE_SIZE} value in the
@@ -893,7 +943,9 @@ The macros \code{HANDLE_BLOCK(id)} and \code{HANDLE_BLOCK_INDEX(id)}
 return these values.
 Figure~\ref{fig:indirect} illustrates how the indirect handles are managed.
 This approach allows a modest number of objects to be preallocated and
-additional elements to be allocated dynamically as required.
+additional elements to be allocated dynamically as required.  More
+details on this is described below under \textbf{Memory Management for
+Handles}. 
 
 \begin{figure}
 \centerline{\psfig{file=indirect.eps,width=4in}}
@@ -924,6 +976,32 @@ thinking on this is that there should be such an object, even if it is
 rarely referred to, just to allow code to work with the single general
 case if it chooses to.
 
+\subsubsection{Required Structure Layout for Objects}
+Each object is described by a struct that contains object-specific
+data.  However, to allow for a common set of memory management
+routines for objects, as well a common set of thread-safe reference
+count update routines, the first two members of all objects are
+defined by
+\begin{verbatim}
+typedef struct {
+    int id;
+    volatile int ref_count;
+} MPIU_Handle_head;
+\end{verbatim}
+(Objects that do not have reference count semantics do not have the
+\code{ref_count} field.)  The \code{id} is the handle value for the
+object and the \code{ref_count} is the reference count.
+
+Objects that are unused and available for allocation have a slightly
+different header:
+\begin{verbatim}
+typedef struct {
+    int  id;
+    void *next;   /* Free handles use this field to point to the next
+		     free object */
+} MPIU_Handle_common;
+\end{verbatim}
+
 \subsubsection{Memory Management for Handles}
 Because handles are not pointers, we need an easy way to find the
 memory block that contains the data to which the handle refers.  
@@ -932,10 +1010,10 @@ allocated arrays; the handle contains an index into the appropriate
 array.  
 
 Each object has a separate set of arrays.  One is preallocated and is
-used by handles with type \code{CONSTRUCT_DIRECT}.  The dynamically
+used by handles with type \code{HANDLE_DIRECT}.  The dynamically
 allocated array 
 (actually an array of pointers to arrays) is used for handles with
-type \code{CONSTRUCT_INDIRECT}.  Elements are allocated from these
+type \code{HANDLE_INDIRECT}.  Elements are allocated from these
 arrays by using a simple linked list, usually managed by a separate
 utility routine.  See the file \file{src/util/mem/handlemem.c} for routines to
 manage the allocation and deallocation of objects and
@@ -2428,8 +2506,8 @@ The following has not yet been implemented:
 Since the most likely use of this routine is to search for all keys,
 we remember the index and location in the list of the last key
 returned (or modified).  This value is stored in the 
-first info element (using the otherwise ununsed \code{key} and
-\code{value} fields.  This change lowers the cost of extracting every 
+first info element (using the otherwise unused \code{key} and
+\code{value} fields).  This change lowers the cost of extracting every 
 key from $n^2$ in the length of the list to $n$.  
 
 Inorder to get the
@@ -2805,8 +2883,9 @@ not want to call the new function.  Note that the combiner name is
 
 \subsubsection{\mpifunc{MPI_GET_ADDRESS}}
 See the MPICH-1 \mpifunc{MPI_ADDRESS} in \file{mpich/src/pt2pt/address.c}.
-We may want a configure test that the integer value of a \code{char *} pointer
-is the address in bytes.
+The preprocessor symbol \mpidconst{CHAR_PTR_IS_BYTE} is set by
+\code{configure} if casting a \code{char *} pointer to \code{MPI_Aint}
+gives a byte address (assumes that a \code{char} is a byte). 
 
 \subsubsection{\mpifunc{MPI_TYPE_CONTIGUOUS}}
 Create a new datatype with \mpidfunc{MPID_Type_create} and fill in the dataloop

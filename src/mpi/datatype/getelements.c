@@ -22,6 +22,22 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Get_elements PMPI_Get_elements
 
+static int MPIR_Type_get_elements( int m_rem, MPID_Datatype *datatype_ptr )
+{
+    if ( (datatype_ptr->dataloop.kind & DATALOOP_KIND_MASK) == MPID_STRUCT) {
+	/* This is the hard case; we must loop through the components of the 
+	   datatype */
+	/* NOT DONE */
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
+	MPIR_Err_return_comm( 0, mpi_errno, "Get_elements" );
+    }
+    else {
+	/* Recusively apply the algorithm */
+	/* NOT DONE */
+	mpi_errno = MPIR_Err_create_code( MPI_ERR_INTERN, "**notimpl", 0 );
+	MPIR_Err_return_comm( 0, mpi_errno, "Get_elements" );
+    }
+}
 #endif
 
 #undef FUNCNAME
@@ -46,6 +62,7 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
     static const char FCNAME[] = "MPI_Get_elements";
     int mpi_errno = MPI_SUCCESS;
+    int m_count, m_rem;
     MPID_Datatype *datatype_ptr = NULL;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_ELEMENTS);
@@ -69,6 +86,38 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    /* INCOMPLETE */
+    /* Check for correct number of bytes */
+    if (datatype_ptr->size == 0) {
+	if (status->count > 0)
+	    (*elements) = MPI_UNDEFINED;
+	else {
+	    /* This is ambiguous.  However, discussions on MPI Forum
+	       reached a consensus that this is the correct return 
+	       value
+	    */
+	    (*elements) = 0;
+	}
+    }
+    else {
+	m_count = status->count / datatype_ptr->size;
+	m_rem   = status->count % datatype_ptr->size;
+	if (m_rem == 0) {
+	    (*elements) = m_count * datatype_ptr->n_elements;
+	}
+	else if (datatype_ptr->element_size > 0) {
+	    (*elements) = status->count / datatype_ptr->element_size;
+	}
+	else {
+	    /* This is the hard case */
+	    (*elements) = m_count * datatype_ptr->n_elements;
+	    /* Recusively handle the remaining (m_rem) bytes. */
+	    *elements += MPIR_Type_get_elements( m_rem, datatype_ptr );
+	}
+    }
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
     return MPI_SUCCESS;

@@ -280,6 +280,10 @@ typedef struct {
 + count - Number of elements
 - datatype - datatype that this datatype consists of
 
+  Notes:
+  'Count' may be in terms of the number of elements stored in the dataloop 
+  'kind' field, particularly for leaf dataloops.
+
   Module:
   Datatype
   S*/
@@ -292,19 +296,23 @@ typedef struct {
   MPID_Dataloop_vector - Description of a vector or strided datatype
 
   Fields:
-+ count - Number of elements
-. blocksize - Number of datatypes in each element
-. stride - Stride (in bytes) between each block
++ count - Number of blocks
+. blocksize - Number of datatypes in each block
+. stride - Stride (in elements) between each block
 - datatype - Datatype of each element
+
+  Notes:
+  'Stride' may be in terms of the number of elements stored in 
+  the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
   Datatype
   S*/
 typedef struct { 
-    int count;
+    int      count;
     struct dataloop_ *datatype;
-    int blocksize;
-    int stride;
+    int      blocksize;
+    MPI_Aint stride;
 } MPID_Dataloop_vector;
 
 /*S
@@ -313,8 +321,12 @@ typedef struct {
   Fields:
 + count - Number of blocks
 . blocksize - Number of elements in each block
-. offset - Array of offsets (in bytes) to each block
+. offset - Array of offsets (in elements) to each block
 - datatype - Datatype of each element
+
+  Notes:
+  'Offset' and 'blocksize' may be in terms of the number of elements stored in 
+  the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
   Datatype
@@ -333,8 +345,12 @@ typedef struct {
   Fields:
 + count - Number of blocks
 . blocksize - Array giving the number of elements in each block
-. offset - Array of offsets (in bytes) to each block
+. offset - Array of offsets (in elements) to each block
 - datatype - Datatype of each element
+
+  Notes:
+  'Offset' and 'blocksize' may be in terms of the number of elements stored in 
+  the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
   Datatype
@@ -353,8 +369,12 @@ typedef struct {
   Fields:
 + count - Number of blocks
 . blocksize - Array giving the number of elements in each block
-. offset - Array of offsets (in bytes) to each block
+. offset - Array of offsets (in elements) to each block
 - datatype - Array of datatypes describing the elements of each block
+
+  Notes:
+  'Blocksize' and 'offset' may be in terms of the number of elements stored in 
+  the dataloop 'kind' field, particularly for leaf dataloops.
 
   Module:
   Datatype
@@ -373,12 +393,12 @@ typedef struct {
 
   Fields:
 +  kind - Indicates what type of datatype.  May have the value
-  'MPID_Contig', 'MPID_Vector', 'MPID_BlockIndexed', 'MPID_Indexed', or
-  'MPID_Struct'.  
-. loop_parms - A union containing the 5 datatype structures, e.g., 
+  'MPID_CONTIG', 'MPID_VECTOR', 'MPID_BLOCKINDEXED', 'MPID_INDEXED', or
+  'MPID_STRUCT'.  
+. loop_parms - A union containing the 5 dataloop structures, e.g., 
   'MPID_Dataloop_contig', 'MPID_Dataloop_vector', etc.  A sixth element in
   this union, 'count', allows quick access to the shared 'count' field in the
-  five datatype structure.
+  five dataloop structure.
 . extent - The extent of the datatype
 - id     - id for the corresponding 'MPI_Datatype'.
 
@@ -422,31 +442,38 @@ typedef struct dataloop_ {
   Module:
   Datatype
 
-  Question:
-  For some of the boolean information (e.g., is_contig), should we just use
-  a single bit to help reduce the size of the structure.
+  Notes:
 
-  For 'MPI_Type_dup', we may want to do a shallow copy.  For example, 
-  if the original type was created with 'MPI_Type_indexed' with a large, 
-  user-provided array, then we''d like not to copy that large array.
-  That arguments for another pointer: 'MPID_Datatype *dup_parent;' 
-  When 'MPI_Type_dup' is executed, a new datatype is created and setup, but
-  the dup_parent is set to the previous datatype (or its parent if it has 
-  one).  The cost is that all (non-basic) datatype operations involve another
-  test (do I have a parent?).
+  Alternatives:
+  The following alternatives for the layout of this structure were considered.
+  Most were not chosen because any benefit in performance or memory 
+  efficiency was outweighed by the added complexity of the implementation.
 
-  For datatypes built from other datatypes, do I want to copy the loop
-  information from the old datatypes?  This is the 'MPID_Dataloop'
-  information (e.g., precopy the entire dataloop stack)?
+  A number of fields contain only boolean inforation ('is_contig', 
+  'has_mpi1_ub', 'has_mpi1_lb', 'is_permanent', 'is_committed').  These 
+  could be combined and stored in a single bit vector.  
 
-  We may want to have separate 'dataloop' fields for heterogeneous and
-  homogeneous communication, along with a dataloop field used to 
-  implement fast pack and unpack operations.  These would be 
-  among the device-dependent fields.
+  'MPI_Type_dup' could be implemented with a shallow copy, where most of the
+  data fields, particularly the 'opt_dataloop' field, would not be copied into
+  the new object created by 'MPI_Type_dup'; instead, the new object could 
+  point to the data fields in the old object.  However, this requires 
+  more code to make sure that fields are found in the correct objects and that
+  deleting the old object doesn't invalidate the dup'ed datatype.
 
-  We may want to place the booleans like 'has_mpi1_ub' into a bit-vector.
-  Question: do we want to define a type like 'boolean' instead of 'int'
-  for values that are true/false?
+  A related optimization would point to the 'opt_dataloop' and 'dataloop' 
+  fields in other datatypes.  This has the same problems as the shallow 
+  copy implementation.
+
+  In addition to the separate 'dataloop' and 'opt_dataloop' fields, we could
+  in addition have a separate 'hetero_dataloop' optimized for heterogeneous
+  communication for systems with different data representations. 
+
+  Earlier versions of the ADI used a single API to change the 'ref_count', 
+  with each MPI object type having a separate routine.  Since reference
+  count changes are always up or down one, and since all MPI objects 
+  are defined to have the 'ref_count' field in the same place, the current
+  ADI3 API uses two routines, 'MPID_Object_add_ref' and 
+  'MPID_Object_release_ref', to increment and decrement the reference count.
 
   S*/
 typedef struct { 
@@ -454,7 +481,6 @@ typedef struct {
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
 				    a (count,datatype) pair) */
-    int           is_perm;       /* True if datatype is a predefined type */
     MPID_Dataloop loopinfo;      /* Describes the arguments that the
                                     user provided for creating the datatype;
 				    these are used to implement the
@@ -486,7 +512,6 @@ typedef struct {
 
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
 
-  /* The following describes a generate datatype */
   /* other, device-specific information */
 } MPID_Datatype;
 
@@ -704,7 +729,7 @@ typedef struct {
 } MPID_Dataloop_stackelm;
 
 /*S
-  MPID_Segment - Description of the Segment datatype
+  MPID_Segment - Description of the Segment data structure
 
   Notes:
   This has no corresponding MPI datatype.
@@ -754,8 +779,8 @@ typedef struct {
 
   This may look a little bit messy (and not all of the code is here),
   but it shows how 'valid_sp' is used to avoid recopying the
-  information on a datatype in the non-struct case.  For example, a
-  vector of vector has the datatype description read only once, not
+  information contained in a dataloop in the non-struct case.  For example, a
+  vector of vector has the dataloop description read only once, not
   once for each count of the outer vector.
 
   Note that a relatively small value of 'MPID_MAX_DATATYPE_DEPTH', such as

@@ -28,14 +28,17 @@
 #define FUNCNAME MPI_Type_vector
 
 /*@
-   MPI_Type_vector - type vector
+    MPI_Type_vector - Creates a vector (strided) datatype
 
-   Arguments:
-+  int count - count
-.  int blocklen - blocklen
-.  int stride - stride
-.  MPI_Datatype old_type - old datatype
--  MPI_Datatype *newtype - new datatype
+Input Parameters:
++ count - number of blocks (nonnegative integer) 
+. blocklength - number of elements in each block 
+(nonnegative integer) 
+. stride - number of elements between start of each block (integer) 
+- oldtype - old datatype (handle) 
+
+Output Parameter:
+. newtype - new datatype (handle) 
 
    Notes:
 
@@ -64,6 +67,17 @@ int MPI_Type_vector(int count, int blocklen, int stride, MPI_Datatype old_type, 
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If datatype_ptr is not value, it will be reset to null */
+	    /* Validate other arguments */
+	    if (count < 0) 
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_COUNT, "**countneg",
+						  "**countneg %d", count );
+	    if (blocklen < 0) 
+		mpi_errno = MPIR_Err_create_code( MPI_ERR_ARG, "**argneg",
+						  "**argneg %s %d", 
+						  "blocklen", blocklen );
+	    /* MPICH 1 code also checked for old type equal to MPI_UB or LB.
+	       We may want to check on length 0 datatypes */
+
             if (mpi_errno) {
                 MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
                 return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
@@ -72,6 +86,10 @@ int MPI_Type_vector(int count, int blocklen, int stride, MPI_Datatype old_type, 
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
+
+    /* ... body of routine ...  */
+    
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_VECTOR);
     return MPI_SUCCESS;

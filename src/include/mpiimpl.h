@@ -37,6 +37,7 @@
 typedef short int16_t;
 #endif
 #ifndef HAVE_INT32_T
+/* Fix me (int may not be correct) */
 typedef int int32_t;
 #endif
 
@@ -134,16 +135,17 @@ typedef enum {
   MPID_INFO       = 0x6,
   MPID_WIN        = 0x7,
   } MPID_Object_kind;
-#define HANDLE_KIND(a) ( ((a)&0x38000000) >> 27 )
+#define HANDLE_MPI_KIND(a) ( ((a)&0x38000000) >> 27 )
 
 /* Handle types.  These are really 2 bits */
-#define CONSTRUCT_INVALID  0x0
-#define CONSTRUCT_BUILTIN  0x1
-#define CONSTRUCT_DIRECT   0x2
-#define CONSTRUCT_INDIRECT 0x3
+#define HANDLE_KIND_INVALID  0x0
+#define HANDLE_KIND_BUILTIN  0x1
+#define HANDLE_KIND_DIRECT   0x2
+#define HANDLE_KIND_INDIRECT 0x3
 /* Mask assumes that ints are at least 4 bytes */
-#define CONSTRUCT_MASK 0xC0000000
-#define CONSTRUCT_TYPE(a) ((a)&CONSTRUCT_MASK)>>30
+#define HANDLE_KIND_MASK 0xC0000000
+#define HANDLE_GET_KIND(a) (((a)&HANDLE_KIND_MASK)>>30)
+#define HANDLE_SET_KIND(a,kind) ((a)|(kind)>>30)
 
 /* For indirect, the remainder of the handle has a block and index */
 #define HANDLE_BLOCK(a) (((a)& 0x07FF0000) >> 16)
@@ -160,14 +162,45 @@ typedef enum {
 #define HANDLE_BLOCK_INDEX_SIZE 1024
 
 #define PREDEFINED_HANDLE(name,index) \
-     (CONSTRUCT_DIRECT << 30) | (MPID_##name <<27) | index
+     (HANDLE_KIND_DIRECT << 30) | (MPID_##name <<27) | index
 
-/* ALL handle objects have the id as the first value. */
+/* ALL objects have the id as the first value. */
+/* Inactive (unused and stored on the appropriate avail list) objects 
+   have MPIU_Handle_common as the head */
 typedef struct {
     int  id;
     void *next;   /* Free handles use this field to point to the next
 		     free object */
 } MPIU_Handle_common;
+
+/* All *active* (in use) objects have the id as the first value; objects
+   with referene counts have the reference count as the second value.
+   See MPIU_Object_add_ref and MPIU_Object_release_ref. */
+typedef struct {
+    int id;
+    volatile int ref_count;
+} MPIU_Handle_head;
+
+/* This isn't quite right, since we need to distinguish between multiple 
+   user threads and multiple implementation threads.
+ */
+#ifdef MPICH_SINGLE_THREADED
+#define MPID_Object_add_ref(objptr) \
+    ((MPIU_Handle_head*)(objptr))->ref_count++
+#define MPID_Object_release_ref(objptr) \
+    --((MPIU_Handle_head*)(objptr))->ref_count
+#else
+/* These can be implemented using special assembly language operations
+   on most processors.  If no such operation is available, then each
+   object, in addition to the ref_count field, must have a thread-lock. */
+#define MPID_Object_add_ref(objptr) \
+    {MPID_Thread_lock(&(objptr)->mutex);(objptr)->ref_count++;\
+    MPID_Thread_unlock(&(objptr)->mutex);}
+#define MPID_Object_release_ref(objptr) \
+    (MPID_Thread_lock(&(objptr)->mutex),obj_count=--(objptr)->ref_count,\
+    MPID_Thread_unlock(&(objptr)->mutex),obj_count)
+static int obj_count;
+#endif
 
 /* Routines to initialize handle allocations */
 void *MPIU_Handle_direct_init( void *, int, int, int );
@@ -178,15 +211,15 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* Question.  Should this do ptr=0 first, particularly if doing --enable-strict
    complication? */
 #define MPID_Get_ptr(kind,a,ptr) \
-     switch (CONSTRUCT_TYPE(a)) {\
-         case CONSTRUCT_INVALID: ptr=0; break;\
-         case CONSTRUCT_BUILTIN: ptr=0;break;\
-         case CONSTRUCT_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
-         case CONSTRUCT_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
+     switch (HANDLE_KIND(a)) {\
+         case HANDLE_KIND_INVALID: ptr=0; break;\
+         case HANDLE_KIND_BUILTIN: ptr=0;break;\
+         case HANDLE_KIND_DIRECT: ptr=MPID_##kind##_direct+HANDLE_INDEX(a);break;\
+         case HANDLE_KIND_INDIRECT: ptr=MPID_##kind##_Get_ptr_indirect(a);break;\
      }
 #define MPID_Comm_get_ptr(a,ptr) MPID_Get_ptr(Comm,a,ptr)
 #define MPID_Group_get_ptr(a,ptr)
-#define MPID_Datatype_get_ptr(a,ptr)
+#define MPID_Datatype_get_ptr(a,ptr) MPID_Get_ptr(Datatype,a,ptr)
 #define MPID_File_get_ptr(a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr)
 #define MPID_Op_get_ptr(a,ptr)
@@ -196,7 +229,8 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* Valid pointer checks */
 /* This test is lame.  Should eventually include cookie test 
    and in-range addresses */
-#define MPID_Valid_ptr(kind,ptr,err) if (!(ptr)) { err = 1; }
+#define MPID_Valid_ptr(kind,ptr,err) \
+    {if (!(ptr)) { err = 1; } }
 #define MPID_Info_valid_ptr(ptr,err) MPID_Valid_ptr(Info,ptr,err)
 #define MPID_Comm_valid_ptr(ptr,err) MPID_Valid_ptr(Comm,ptr,err)
 #define MPID_Datatype_valid_ptr(ptr,err) MPID_Valid_ptr(Datatype,ptr,err)
@@ -364,8 +398,12 @@ typedef struct MPID_Datatype_st {
 
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
 
-  /* The following describes a generate datatype */
-  /* other, device-specific information */
+    /* The following is needed to efficiently implement MPI_Get_elements */
+    int           n_elements;   /* Number of basic elements in this datatype */
+    MPI_Aint      element_size; /* Size of each element or -1 if elements are
+				   not all the same size */
+
+    /* other, device-specific information */
 } MPID_Datatype;
 
 typedef struct {

@@ -153,71 +153,91 @@ void MPID_Datatype_free( MPID_Datatype *datatype )
 }
 
 /*@
-   MPID_Datatype_incr - Change the reference count for a datatype
+   MPIU_Object_add_ref - Increment the reference count for an MPI object
 
-   Input Parameters:
-+  datatype - Pointer to the datatype
--  incr     - Amount to change the reference count by (typically '1' or '-1')
-
-   Return value:
-   Value of the updated reference count.
+   Input Parameter:
+.  ptr - Pointer to the object.
 
    Notes:
    In an unthreaded implementation, this function will usually be implemented
    as a single-statement macro.  In an 'MPI_THREAD_MULTIPLE' implementation,
    this routine must implement an atomic increment operation, using, for 
-   example, a lock on datatypes or special assembly code (such as 
+   example, a lock on datatypes or special assembly code such as 
 .vb
    try-again:
       load-link          refcount-address to r2
-      add                incr to r2
+      add                1 to r2
       store-conditional  r2 to refcount-address
       if failed branch to try-again:
 .ve
    on RISC architectures or
 .vb
    lock
-   inc                   refcount-address (for up) or
-   lock
-   dec                   refcount-address (for down).
+   inc                   refcount-address or
 .ve
    on IA32; "lock" is a special opcode prefix that forces atomicity.  This 
    is not a separate instruction; however, the GNU assembler expects opcode
-   prefixes on a separate line).
+   prefixes on a separate line.
+
+   Module: 
+   MPID_CORE
+@*/
+void MPID_Object_add_ref( MPIU_Object_head *ptr )
+{}
+
+/*@
+   MPIU_Object_release_ref - Decrement the reference count for an MPI object
+
+   Input Parameter:
+.  ptr - Pointer to the object.
+
+   Return value:
+   Value of the reference count after decrementing.
+   
+   Notes:
+   In an unthreaded implementation, this function will usually be implemented
+   as a single-statement macro.  In an 'MPI_THREAD_MULTIPLE' implementation,
+   this routine must implement an atomic decrement operation, using, for 
+   example, a lock on datatypes or special assembly code such as 
+.vb
+   try-again:
+      load-link          refcount-address to r2
+      sub                1 to r2
+      store-conditional  r2 to refcount-address
+      if failed branch to try-again:
+.ve
+   on RISC architectures or
+.vb
+   lock
+   dec                   refcount-address or
+.ve
+   on IA32; "lock" is a special opcode prefix that forces atomicity.  This 
+   is not a separate instruction; however, the GNU assembler expects opcode
+   prefixes on a separate line.
 
    Once the reference count is decremented to zero, it is an error to 
    change it.  A correct MPI program will never do that, but an incorrect one 
    (particularly a multithreaded program with a race condition) might.  
-   
+
    The following code is `invalid`\:
 .vb
-   MPID_Datatype_incr( datatype, -1 );
-   if (datatype->ref_count == 0) MPID_Datatype_free( datatype );
+   MPID_Object_release_ref( datatype_ptr );
+   if (datatype_ptr->ref_count == 0) MPID_Datatype_free( datatype_ptr );
 .ve
-   In a multi-threaded implementation, the value of 'datatype->ref_count'
+   In a multi-threaded implementation, the value of 'datatype_ptr->ref_count'
    may have been changed by another thread, resulting in both threads calling
    'MPID_Datatype_free'.  Instead, use
 .vb
-   if (MPID_Datatype_incr( datatype, -1 ) == 0) 
-       MPID_Datatype_free( datatype );
+   if (MPID_Object_release_ref( datatype_ptr ) == 0) 
+       MPID_Datatype_free( datatype_ptr );
 .ve
 
-   Module:
-   Datatype
-
-   Question:
-   Do we want incr to free a datatype that has a reference count of zero?
-   (Current vote is no.)
-   The pro is that any incr(-1) will then automatically check for a need
-   to free the storage.  The con is that the incr routine must now know 
-   about freeing a datatype.  And it really is only one line of code (and
-   it isn''t hard to check).
-
-   An alternative is to have two functions, such as 'MPID_Datatype_addref'
-   and 'MPID_Datatype_release'.  Do we want to do that?
+   Module: 
+   MPID_CORE
   @*/
-int MPID_Datatype_incr( MPID_Datatype *datatype, int incr )
+int MPID_Object_release_ref( MPIU_Object_head *ptr )
 {}
+
 
 /*@
   MPID_Datatype_commit - Commits a datatype for use in communication
@@ -269,7 +289,7 @@ int MPID_Datatype_commit( MPID_Datatype *datatype )
   Datatype
 
   Questions:
-  Do we really want this as a separate routine, or can use the 
+  Do we really want this as a separate routine, or can we use the 
   'MPID_Segment_xxx'
   routines?  If we can''t use the segment routines, does that mean that we 
   don''t have the right API yet, or is there an important difference?
@@ -287,7 +307,7 @@ int MPID_Datatype_commit( MPID_Datatype *datatype )
   If we use receiver-makes-right, then we don''t need to do this, and we 
   don''t even need the '(comm,rank)' arguments.  That also matches the MPI
   notion of allowing data sent with 'MPI_PACKED' to be received with a 
-  specific (an type-signature-conforming) datatype. However, 
+  specific (and type-signature-conforming) datatype. However, 
   receiver-makes-right requires more code at the Unpack end (as well
   as '(comm,rank)').
 
@@ -298,7 +318,9 @@ int MPID_Datatype_commit( MPID_Datatype *datatype )
   possible, and this cannot require any particular format.
 
   Note that XDR isn''t really an option, because it doesn''t handle all of the
-  C datatypes (e.g., 'long double') or Fortran (e.g., 'LOGICAL').
+  C datatypes (e.g., 'long double') or Fortran (e.g., 'LOGICAL'), though we
+  could use XDR with some supplementary types (e.g., encoding 'LOGICAL' as
+  an integer).
 
   Another option is to add the packed type to the head of the output buffer;
   then all that is needed is a bit in the envelope telling the receiver that 
@@ -314,6 +336,10 @@ int MPID_Pack( const void *inbuf, int count, MPID_Datatype *type,
 
 /*@
   MPID_Unpack - Unpack a buffer created with MPID_Pack
+
+  Notes:
+  See 'MPID_Pack'.  As for that routine, this routine may be a
+  special case of 'MPID_Segment_unpack'.
 
   Module:
   Datatype
@@ -390,26 +416,6 @@ MPID_Group *MPID_Group_new( int size )
   Group
   @*/
 void MPID_Group_free( MPID_Group *group )
-{
-}
-
-/*@
-  MPID_Group_incr - Atomically update the reference count for a group.
-
-   Input Parameters:
-+  datatype - Pointer to the group
--  incr     - Amount to change the reference count by (typically '1' or '-1')
-
-   Return value:
-   Value of the updated reference count.
-
-  Notes:
-  'MPI_Group_dup' may be implemented by '(void) MPID_Group_incr( group, 1 )'.
-
-  Module:
-  Group
-  @*/
-int MPID_Group_incr( MPID_Group *group, int incr )
 {
 }
 
@@ -528,23 +534,6 @@ int MPID_Comm_context_id( MPID_Comm *old_comm, MPID_Group *new_group )
   Communicator
   @*/
 void MPID_Comm_free( MPID_Comm *comm )
-{
-}
-
-/*@
-  MPID_Comm_incr - Change the reference count for a communicator
-
-  Input Parameters:
-+ comm - Communicator to update 
-- incr - value of change (positive to increment, negative to decrement)
-
-  Return value:
-  Returns the updated value of the reference count.
-
-  Module:
-  Communicator
-  @*/
-int MPID_Comm_incr( MPID_Comm *comm, int incr )
 {
 }
 
@@ -1680,7 +1669,7 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
 
   Notes:
   Initializes a 'MPID_Segment' from a specified user buffer which is 
-  described by (buf,count,datatype) and hence may represent noncontiguous
+  described by '(buf,count,datatype)' and hence may represent noncontiguous
   data or contiguous data in a heterogeneous system.
 
   Module:
@@ -1703,8 +1692,8 @@ int MPID_tBsend( void *buf, int count, MPID_Datatype *datatype,
   
   @*/
 int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
-			    MPID_Comm *comm, int rank, 
-			    MPID_Segment *segment )
+                            MPID_Comm *comm, int rank, 
+                            MPID_Segment *segment )
 {
 }
 
@@ -1742,7 +1731,10 @@ int MPID_Segment_init_pack( const void *buf, int count, MPID_Datatype *dtype,
   In addition, the `change` in first should be as small as possible.  
   For example, moving first so as to align the first byte on a word or 
   cache-line boundary (subject to the 3 requirements above) is allowed 
-  (and is the reason to make first an in/out parameter).
+  (and is the reason to make first an in/out parameter).  However, as 
+  rule three requires, if first is zero on input, no change to first is 
+  allowed even for alignment purposes.  However, it is permissible to require
+  that the buffers satisfy language- or processor-specified alignment rules.
 
   Module:
   Segment
@@ -1789,7 +1781,8 @@ void *MPID_Segment_pack( MPID_Segment *segment, int *first, int *last,
   Do we need both an init pack and init unpack?
   @*/
 void * MPID_Segment_init_unpack( void *buf, int maxcount, MPID_Datatype *dtype,
-    MPID_Comm *comm, int rank, MPID_Segment *segment )
+                                 MPID_Comm *comm, int rank, 
+                                 MPID_Segment *segment )
 {
 }
 
@@ -1824,12 +1817,13 @@ void *MPID_Segment_unpack( MPID_Segment *segment, int *first, int *last,
   Input Parameter:
 . segment - Segment to free
 
+  Notes:
+  Unlike the MPI routines to free objects, the MPID routines typically do not
+  also set the object handle to 'NULL'.
+
   Module:
   Segment
 
-  Question:
-  Should we pass the address of the segment pointer so that we can set
-  it to 'NULL', as the MPI routines do?
   @*/
 int MPID_Segment_free( MPID_Segment *segment )
 {

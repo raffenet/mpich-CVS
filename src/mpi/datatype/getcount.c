@@ -86,7 +86,10 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 	if (status->count > 0)
 	    (*count) = MPI_UNDEFINED;
 	else
-	    /* This is ambiguous */
+	    /* This is ambiguous.  However, discussions on MPI Forum
+	       reached a consensus that this is the correct return 
+	       value
+	    */
 	    (*count) = 0;
     }
     else {

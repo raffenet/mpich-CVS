@@ -163,6 +163,7 @@ typedef struct MPID_Dataloop_st {
 } MPID_Dataloop;
 
 #define DATALOOP_FINAL_MASK 0x00000008
+#define DATALOOP_KIND_MASK  0x00000007
 #define MPID_CONTIG 0x1
 #define MPID_VECTOR 0x2
 #define MPID_BLOCKINDEXED 0x3

@@ -179,6 +179,19 @@ PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
 PAC_C_STRUCT_ALIGNMENT
+dnl
+dnl Get the size of the C types for encoding in the basic datatypes and for
+dnl the specific-sized integers
+AC_CHECK_SIZEOF(short,CROSS_SIZEOF_SHORT)
+AC_CHECK_SIZEOF(int,CROSS_SIZEOF_INT)
+AC_CHECK_SIZEOF(long,CROSS_SIZEOF_LONG)
+AC_CHECK_SIZEOF(long long,CROSS_SIZEOF_LONG_LONG)
+AC_CHECK_SIZEOF(float,CROSS_SIZEOF_FLOAT)
+AC_CHECK_SIZEOF(double,CROSS_SIZEOF_DOUBLE)
+AC_CHECK_SIZEOF(long double,CROSS_SIZEOF_LONG_DOUBLE)
+AC_CHECK_SIZEOF(wchar_t,CROSS_SIZEOF_WCHAR_T)
+AC_CHECK_SIZEOF(void *,CROSS_SIZEOF_VOID_P)
+dnl
 AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
 AC_TRY_COMPILE([#include <sys/types.h>],[int16_t a=0;],
 pac_cv_int16_t=yes,pac_cv_int16_t=no)])
@@ -215,18 +228,8 @@ else
     AC_DEFINE(HAVE_INT32_T,,[Define if int32_t is supported by the C compiler])
 fi
 dnl
-dnl Get the size of the C types for encoding in the basic datatypes
-AC_CHECK_SIZEOF(short,CROSS_SIZEOF_SHORT)
-AC_CHECK_SIZEOF(int,CROSS_SIZEOF_INT)
-AC_CHECK_SIZEOF(long,CROSS_SIZEOF_LONG)
-AC_CHECK_SIZEOF(long long,CROSS_SIZEOF_LONG_LONG)
-AC_CHECK_SIZEOF(float,CROSS_SIZEOF_FLOAT)
-AC_CHECK_SIZEOF(double,CROSS_SIZEOF_DOUBLE)
-AC_CHECK_SIZEOF(long double,CROSS_SIZEOF_LONG_DOUBLE)
-AC_CHECK_SIZEOF(wchar_t,CROSS_SIZEOF_WCHAR_T)
-dnl
 dnl Generate a hex version of the size of each type
-for type in short int long long_long float double long_double ; do
+for type in short int long long_long float double long_double wchar_t ; do
     eval len=\$ac_cv_sizeof_$type
     if test -z "$len" ; then len=0 ; fi
     if test $len -le 0 ; then
@@ -262,6 +265,7 @@ MPI_FLOAT="0x50000b$len_float"
 MPI_DOUBLE="0x50000d$len_double"
 MPI_LONG_DOUBLE="0x50000f$len_long_double"
 MPI_BYTE="0x50001101"
+MPI_WCHAR_T="0x500013$len_wchar_t"
 AC_SUBST(MPI_CHAR)
 AC_SUBST(MPI_UNSIGNED_CHAR)
 AC_SUBST(MPI_SHORT)
@@ -275,11 +279,21 @@ AC_SUBST(MPI_FLOAT)
 AC_SUBST(MPI_DOUBLE)
 AC_SUBST(MPI_LONG_DOUBLE)
 AC_SUBST(MPI_BYTE)
+AC_SUBST(MPI_WCHAR_T)
 dnl
-dnl Still to do: create values for #define MPI_DOUBLE etc.
-dnl These will be of the form #define MPI_DOUBLE 0x5080002,
-dnl where this is CONSTRUCT_BUILTIN | MPID_DATATYPE | sizeof==8 | full object
-dnl is at index 2.
+dnl Is char * the byte address?
+AC_CACHE_CHECK([if char * pointers use give byte addresses],
+pac_cv_c_char_p_is_byte,[
+AC_TRY_RUN([
+int main(int argc, char **argv ){
+char *a, buf;
+a = &buf;
+if ((long)(a-(char*)0) == (long)(a)) return 0; return 1;
+}],pac_cv_c_char_p_is_byte=yes,pac_cv_char_p_is_byte=no,
+pac_cv_char_p_is_byte=unknown)])
+if test "$pac_cv_char_p_is_byte" = "yes" ; then
+    AC_DEFINE(CHAR_PTR_IS_BYTE,,[define if char * is byte pointer])
+fi
 dnl
 dnl check for library functions
 if test -n "$thread_type" ; then
@@ -331,12 +345,15 @@ dnl
 dnl Setup other replaceable values
 MPILIBNAME=mpich
 AC_SUBST(MPILIBNAME)
-# Temporary values
 MPI_AINT=int
-MPI_FINT=int
+for type in int long long_long short ; do
+    eval len=\$ac_cv_sizeof_$type
+    if test "$len" = "$ac_cv_sizeof_void_p" ; then
+        MPI_AINT=`echo $type | sed -e 's/_/ /'`
+        break
+    fi
+done
 AC_SUBST(MPI_AINT)
-AC_SUBST(MPI_FINT)
-AC_SUBST(EXTRA_STATUS_DECL)
 dnl
 dnl Configure any subdirectories.  Note that config.status will *not* 
 dnl reexecute these!
@@ -347,6 +364,14 @@ export MPILIBNAME
 export CC
 PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(src/mpi/timer $subsystems )
+dnl
+# Temporary values for MPI_Fint (need help from the Fortran subsystem)
+MPI_FINT=int
+AC_SUBST(MPI_FINT)
+dnl
+dnl Temporary value for extra status information, from device subsystem
+AC_SUBST(EXTRA_STATUS_DECL)
+dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
 dnl from the file.
