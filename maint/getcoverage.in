@@ -226,8 +226,11 @@ sub CountUncoveredLines {
 	     /MPIR_Err_create_code/)) {
 	    next;
 	}
-	if (/^\s*######/) {
-	    if (! /^\s*######\s*\}\s*/) {
+	# Gcc 3.3 generates a different output form (!) with only
+	# 5 sharps instead of 6.  It does mark lines that are not 
+	# executable with a -.
+	if (/^\s*######?/) {
+	    if (! /^\s*######?\s*\}\s*/) {
 		$missed_lines++;
 		
 		# The char\s+.* allows char or const char (or other 
