@@ -109,6 +109,37 @@ static int g_bbuflen = 1024;
 static int g_buf_pool_size = FD_SETSIZE;
 static int g_beasy_connection_attempts = 5;
 
+#ifdef HAVE_WINSOCK2_H
+static void log_warning(char *lpszMsg)
+{
+    char    szMsg[256];
+    HANDLE  hEventSource;
+    char   *lpszStrings[2];
+    
+    hEventSource = RegisterEventSource(NULL, "bsocket");
+    
+    strcpy(szMsg, "bsocket error");
+    lpszStrings[0] = szMsg;
+    lpszStrings[1] = lpszMsg;
+    
+    if (hEventSource != NULL) {
+	ReportEvent(hEventSource, // handle of event source
+	    EVENTLOG_WARNING_TYPE,  // event type
+	    0,                    // event category
+	    0,                    // event ID
+	    NULL,                 // current user's SID
+	    2,                    // strings in lpszStrings
+	    0,                    // no bytes of raw data
+	    (LPCTSTR*)lpszStrings,// array of error strings
+	    NULL);                // no raw data
+	
+	(VOID) DeregisterEventSource(hEventSource);
+    }
+}
+#else
+#define log_warning()
+#endif
+
 /*@
    bget_fd - 
 
@@ -916,6 +947,24 @@ int beasy_connect(int bfd, char *host, int port)
 	    double d = (double)rand() / (double)RAND_MAX;
 	    Sleep(200 + (int)(d*200));
 	    reps++;
+	    switch (error)
+	    {
+	    case WSAECONNREFUSED:
+		log_warning("WSAECONNREFUSED error, re-attempting bconnect");
+		break;
+	    case WSAETIMEDOUT:
+		log_warning("WSAETIMEDOUT error, re-attempting bconnect");
+		break;
+	    case WSAENETUNREACH:
+		log_warning("WSAENETUNREACH error, re-attempting bconnect");
+		break;
+	    case WSAEADDRINUSE:
+		log_warning("WSAEADDRINUSE error, re-attempting bconnect");
+		break;
+	    default:
+		log_warning("%d error, re-attempting bconnect");
+		break;
+	    }
 	}
 	else
 	{
