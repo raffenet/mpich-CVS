@@ -73,18 +73,8 @@ End Function
 
 Function RunTest(cmd_line)
 	Set oExec = WshShell.Exec(cmd_line)
-	cmd_output = ""
-	Do While True
-		If Not oExec.StdOut.AtEndOfStream Then
-			cmd_output = cmd_output & oExec.StdOut.Read(1)
-		Else
-			Exit Do
-		End If
-			WScript.Sleep 10
-	Loop
-	Do While oExec.Status <> 1
-		WScript.Sleep 10
-	Loop
+	cmd_output = oExec.StdOut.ReadAll()
+	cmd_output = cmd_output & oExec.StdErr.ReadAll()
 	RunTest = cmd_output
 End Function
 
@@ -105,7 +95,7 @@ Function RunTests(filename)
 				exe = Replace( filename, "testlist", config + twostrings(0) + ".exe" )
 				cmd = "mpiexec -timeout 180 -n " + twostrings(1) + " " + exe
 				if bEcho = true then
-			 		WScript.Echo cmd + vbCrLf
+			 		WScript.Echo cmd '+ vbCrLf
 				end if
 				set fout = f.OpenTextFile(outfile_name, 8, True)
 				'fout.Write( cmd + vbCrLf )
@@ -118,7 +108,7 @@ Function RunTests(filename)
 					num_skipped = num_skipped + 1
 				end if
 				if bEcho = true then
-					WScript.Echo result + vbCrLf
+					WScript.Echo result '+ vbCrLf
 				end if
 				'fout.Write( result + vbCrLf )
 				if Instr(result, " No Errors") And len(result) < 14 Then
