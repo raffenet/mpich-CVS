@@ -6,7 +6,7 @@
 
 #include "smpd.h"
 
-int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, int *num_encoded)
+int smpd_encode_buffer(char *dest, int dest_length, const char *src, int src_length, int *num_encoded)
 {
     int num_used;
     int n = 0;
@@ -31,7 +31,7 @@ int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, i
     return SMPD_SUCCESS;
 }
 
-int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded)
+int smpd_decode_buffer(const char *str, char *dest, int length, int *num_decoded)
 {
     char hex[3];
     int value;

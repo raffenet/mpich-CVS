@@ -372,3 +372,25 @@ int smpd_exit_fn(char *fcname)
     }
     return SMPD_SUCCESS;
 }
+
+SMPD_BOOL smpd_snprintf_update(char **str_pptr, int *len_ptr, char *str_format, ...)
+{
+    va_list list;
+    int n;
+
+    va_start(list, str_format);
+    n = vsnprintf(*str_pptr, *len_ptr, str_format, list);
+    va_end(list);
+
+    if (n < 0)
+    {
+	(*str_pptr)[(*len_ptr)-1] = '\0';
+	*len_ptr = 0;
+	return SMPD_FALSE;
+    }
+
+    (*str_pptr )= &(*str_pptr)[n];
+    *len_ptr = (*len_ptr) - n;
+
+    return SMPD_TRUE;
+}

@@ -11,6 +11,78 @@
 #include <unistd.h>
 #endif
 
+char * smpd_get_cmd_state_string(smpd_command_state_t state)
+{
+    static char unknown_str[100];
+
+    switch (state)
+    {
+    case SMPD_CMD_INVALID:
+	return "SMPD_CMD_INVALID";
+    case SMPD_CMD_READING_HDR:
+	return "SMPD_CMD_READING_HDR";
+    case SMPD_CMD_READING_CMD:
+	return "SMPD_CMD_READING_CMD";
+    case SMPD_CMD_WRITING_CMD:
+	return "SMPD_CMD_WRITING_CMD";
+    case SMPD_CMD_READY:
+	return "SMPD_CMD_READY";
+    case SMPD_CMD_HANDLED:
+	return "SMPD_CMD_HANDLED";
+    }
+    sprintf(unknown_str, "unknown state %d", state);
+    return unknown_str;
+}
+
+SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd_command_t *cmd_ptr)
+{
+    char indent_str[SMPD_MAX_TO_STRING_INDENT+1];
+
+    if (*len_ptr < 1)
+	return SMPD_FALSE;
+
+    if (indent > SMPD_MAX_TO_STRING_INDENT)
+	indent = SMPD_MAX_TO_STRING_INDENT;
+
+    memset(indent_str, ' ', indent);
+    indent_str[indent] = '\0';
+
+    smpd_snprintf_update(str_pptr, len_ptr, "%sstate: %s\n", indent_str, smpd_get_cmd_state_string(cmd_ptr->state));
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%scmd_str: %s\n", indent_str, cmd_ptr->cmd_str);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%ssrc: %d\n", indent_str, cmd_ptr->src);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%sdest: %d\n", indent_str, cmd_ptr->dest);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%stag: %d\n", indent_str, cmd_ptr->tag);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%swait: %s\n", indent_str, cmd_ptr->wait ? "TRUE" : "FALSE");
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%scmd_hdr_str: %s\n", indent_str, cmd_ptr->cmd_hdr_str);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%slength: %d\n", indent_str, cmd_ptr->length);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%scmd: %s\n", indent_str, cmd_ptr->cmd);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%sfreed: %d\n", indent_str, cmd_ptr->freed);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].buf: %p\n", indent_str, cmd_ptr->iov[0].SOCK_IOV_BUF);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].len: %d\n", indent_str, cmd_ptr->iov[0].SOCK_IOV_LEN);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].buf: %p\n", indent_str, cmd_ptr->iov[1].SOCK_IOV_BUF);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].len: %d\n", indent_str, cmd_ptr->iov[1].SOCK_IOV_LEN);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%sstdin_read_offset: %d\n", indent_str, cmd_ptr->stdin_read_offset);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%snext: %p\n", indent_str, cmd_ptr->next);
+    if (*len_ptr < 1) return SMPD_FALSE; /* this misses the case of an exact fit */
+
+    return SMPD_TRUE;
+}
+
 int smpd_command_destination(int dest, smpd_context_t **dest_context)
 {
     int src, level_bit, sub_tree_mask;
@@ -311,6 +383,7 @@ int smpd_create_context(smpd_context_type_t type, sock_set_t set, sock_t sock, i
 
 int smpd_free_context(smpd_context_t *context)
 {
+    SMPD_BOOL found = SMPD_FALSE;
     smpd_context_t *iter, *trailer;
 
     smpd_enter_fn("smpd_free_context");
@@ -326,11 +399,25 @@ int smpd_free_context(smpd_context_t *context)
 		    smpd_process.context_list = smpd_process.context_list->next;
 		else
 		    trailer->next = iter->next;
+		found = SMPD_TRUE;
 		break;
 	    }
 	    if (trailer != iter)
 		trailer = trailer->next;
 	    iter = iter->next;
+	}
+
+	if (context->type == SMPD_CONTEXT_FREED)
+	{
+	    smpd_err_printf("context already freed.\n");
+	    smpd_exit_fn("smpd_free_context");
+	    return SMPD_FAIL;
+	}
+
+	if (!found)
+	{
+	    smpd_dbg_printf("freeing a context not in the global list - this should be impossible.  "
+		"No context should be allocated without calling smpd_create_context.\n");
 	}
 
 	/* this check isn't full-proof because random data might match SMPD_CONTEXT_FREED */

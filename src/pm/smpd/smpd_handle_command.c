@@ -195,7 +195,7 @@ launch_failure:
 int smpd_handle_result(smpd_context_t *context)
 {
     int result, ret_val;
-    char str[1024];
+    char str[SMPD_MAX_CMD_LENGTH];
     char err_msg[SMPD_MAX_ERROR_LEN];
     smpd_command_t *iter, *trailer, *cmd_ptr;
     int match_tag;
@@ -246,7 +246,7 @@ int smpd_handle_result(smpd_context_t *context)
 	if (iter->tag == match_tag)
 	{
 	    ret_val = SMPD_SUCCESS;
-	    if (smpd_get_string_arg(context->read_cmd.cmd, "result", str, 1024))
+	    if (smpd_get_string_arg(context->read_cmd.cmd, "result", str, SMPD_MAX_CMD_LENGTH))
 	    {
 		if (strcmp(iter->cmd_str, "connect") == 0)
 		{
@@ -344,6 +344,16 @@ int smpd_handle_result(smpd_context_t *context)
 		    {
 			smpd_err_printf("unable to create a done command.\n");
 		    }
+		}
+		else if (strcmp(iter->cmd_str, "set") == 0 || strcmp(iter->cmd_str, "delete") == 0)
+		{
+		    /* print the result of the set command */
+		    printf("%s\n", str);
+		}
+		else if (strcmp(iter->cmd_str, "stat") == 0)
+		{
+		    /* print the result of the stat command */
+		    printf("%s\n", str);
 		}
 		else
 		{
@@ -1367,29 +1377,128 @@ int smpd_handle_print_command(smpd_context_t *context)
 int smpd_handle_stat_command(smpd_context_t *context)
 {
     int result;
-    smpd_command_t *cmd, *temp_cmd;
+    smpd_command_t *cmd, *temp_cmd, *cmd_iter;
+    char param[100];
+    char result_str[SMPD_MAX_CMD_LENGTH-100];
+    smpd_context_t *iter;
+    char *str;
+    int len;
 
-    smpd_enter_fn("handle_stat_command");
+    smpd_enter_fn("smpd_handle_stat_command");
 
     cmd = &context->read_cmd;
 
-    result = smpd_create_command("all ok", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
-    if (result != SMPD_SUCCESS)
+    if (!smpd_get_string_arg(cmd->cmd, "param", param, 1024))
     {
-	smpd_err_printf("unable to create an 'all ok' command for the context.\n");
-	smpd_exit_fn("handle_stat_command");
+	smpd_err_printf("stat command missing param parameter\n");
+	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
+
+    if (strcmp(param, "context") == 0)
+    {
+	if (smpd_process.context_list == NULL)
+	{
+	    strcpy(result_str, "none");
+	}
+	else
+	{
+	    str = result_str;
+	    len = SMPD_MAX_CMD_LENGTH-100;
+	    iter = smpd_process.context_list;
+	    while (iter)
+	    {
+		smpd_snprintf_update(&str, &len, "{\n");
+		smpd_snprintf_update(&str, &len, " type               = %s\n", smpd_get_context_str(iter));
+		smpd_snprintf_update(&str, &len, " id                 = %d\n", iter->id);
+		smpd_snprintf_update(&str, &len, " state              = %s\n", smpd_get_state_string(iter->state));
+		smpd_snprintf_update(&str, &len, " read_state         = %s\n", smpd_get_state_string(iter->read_state));
+		smpd_snprintf_update(&str, &len, " read_cmd:\n");
+		smpd_command_to_string(&str, &len, 2, &iter->read_cmd);
+		smpd_snprintf_update(&str, &len, " write_state        = %s\n", smpd_get_state_string(iter->write_state));
+		smpd_snprintf_update(&str, &len, " write_list         = %p\n", iter->write_list);
+		cmd_iter = iter->write_list;
+		while (cmd_iter)
+		{
+		    smpd_snprintf_update(&str, &len, " write_cmd:\n");
+		    smpd_command_to_string(&str, &len, 2, cmd_iter);
+		    cmd_iter = cmd_iter->next;
+		}
+		smpd_snprintf_update(&str, &len, " host               = %s\n", iter->host);
+		smpd_snprintf_update(&str, &len, " rank               = %d\n", iter->rank);
+		smpd_snprintf_update(&str, &len, " set                = %d\n", sock_getsetid(iter->set));
+		smpd_snprintf_update(&str, &len, " sock               = %d\n", sock_getid(iter->sock));
+		smpd_snprintf_update(&str, &len, " account            = %s\n", iter->account);
+		smpd_snprintf_update(&str, &len, " password           = ***\n");
+		smpd_snprintf_update(&str, &len, " connect_return_id  = %d\n", iter->connect_return_id);
+		smpd_snprintf_update(&str, &len, " connect_return_tag = %d\n", iter->connect_return_tag);
+		smpd_snprintf_update(&str, &len, " connect_to         = %p\n", iter->connect_to);
+		smpd_snprintf_update(&str, &len, " cred_request       = %s\n", iter->cred_request);
+		smpd_snprintf_update(&str, &len, " port_str           = %s\n", iter->port_str);
+		smpd_snprintf_update(&str, &len, " pszChallengeResponse = %s\n", iter->pszChallengeResponse);
+		smpd_snprintf_update(&str, &len, " pszCrypt           = %s\n", iter->pszCrypt);
+		smpd_snprintf_update(&str, &len, " pwd_request        = %s\n", iter->pwd_request);
+		smpd_snprintf_update(&str, &len, " session            = %s\n", iter->session);
+		smpd_snprintf_update(&str, &len, " session_header     = '%s'\n", iter->session_header);
+		smpd_snprintf_update(&str, &len, " smpd_pwd           = %s\n", iter->smpd_pwd);
+		smpd_snprintf_update(&str, &len, " wait               = %d\n", (int)(iter->wait));
+		smpd_snprintf_update(&str, &len, " wait_list          = %p\n", iter->wait_list);
+		smpd_snprintf_update(&str, &len, " process            = %p\n", iter->process);
+		if (iter->process)
+		{
+		    smpd_process_to_string(&str, &len, 2, iter->process);
+		}
+		smpd_snprintf_update(&str, &len, " next               = %p\n", iter->next);
+		smpd_snprintf_update(&str, &len, "}\n");
+		iter = iter->next;
+	    }
+	}
+    }
+    else if (strcmp(param, "process") == 0)
+    {
+	strcpy(result_str, "none");
+    }
+    else
+    {
+	strcpy(result_str, "unknown");
+    }
+
+    /* create a result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for the context.\n");
+	smpd_exit_fn("smpd_handle_stat_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a stat command.\n");
+	smpd_exit_fn("smpd_handle_validate_command");
+	return SMPD_FAIL;
+    }
+    /* add the result string */
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a stat command.\n");
+	smpd_exit_fn("smpd_handle_stat_command");
+	return SMPD_FAIL;
+    }
+
+    /* post the result command */
     smpd_dbg_printf("replying to stat command: \"%s\"\n", temp_cmd->cmd);
     result = smpd_post_write_command(context, temp_cmd);
     if (result != SMPD_SUCCESS)
     {
-	smpd_err_printf("unable to post a write of the 'all ok' command to the context.\n");
-	smpd_exit_fn("handle_stat_command");
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn("smpd_handle_stat_command");
 	return SMPD_FAIL;
     }
 
-    smpd_exit_fn("handle_stat_command");
+    smpd_exit_fn("smpd_handle_stat_command");
     return result;
 }
 
@@ -1459,7 +1568,7 @@ int smpd_handle_validate_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to create a result command for a validate command.\n");
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
     /* add the command tag for result matching */
@@ -1467,14 +1576,14 @@ int smpd_handle_validate_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the tag to the result command for a validate command.\n");
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
     result = smpd_add_command_arg(temp_cmd, "result", result_str);
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the result string to the result command for a validate command.\n");
-	smpd_exit_fn("smpd_handle_dbs_command");
+	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
 
@@ -1484,11 +1593,150 @@ int smpd_handle_validate_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
-	smpd_exit_fn("handle_stat_command");
+	smpd_exit_fn("smpd_handle_validate_command");
 	return SMPD_FAIL;
     }
 
     smpd_exit_fn("smpd_handle_validate_command");
+    return result;
+}
+
+int smpd_handle_set_command(smpd_context_t *context)
+{
+    int result = SMPD_SUCCESS;
+    smpd_command_t *cmd, *temp_cmd;
+    char result_str[100];
+    char key[SMPD_MAX_DBS_KEY_LEN];
+    char value[SMPD_MAX_DBS_VALUE_LEN];
+
+    smpd_enter_fn("smpd_handle_set_command");
+
+    cmd = &context->read_cmd;
+
+    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_DBS_KEY_LEN))
+    {
+	smpd_err_printf("set command missing key parameter\n");
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
+    if (!smpd_get_string_arg(cmd->cmd, "value", value, SMPD_MAX_DBS_VALUE_LEN))
+    {
+	smpd_err_printf("set command missing value parameter\n");
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
+
+    /* set key=value */
+    result = smpd_set_smpd_data(key, value);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to set %s=%s\n", key, value);
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
+    strcpy(result_str, SMPD_SUCCESS_STR);
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a set %s=%s command.\n", key, value);
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a set %s=%s command.\n", key, value);
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a set %s=%s command.\n", key, value);
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to set %s=%s command: \"%s\"\n", key, value, temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the context.\n");
+	smpd_exit_fn("smpd_handle_set_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_set_command");
+    return result;
+}
+
+int smpd_handle_delete_command(smpd_context_t *context)
+{
+    int result = SMPD_SUCCESS;
+    smpd_command_t *cmd, *temp_cmd;
+    char result_str[100];
+    char key[SMPD_MAX_DBS_KEY_LEN];
+
+    smpd_enter_fn("smpd_handle_delete_command");
+
+    cmd = &context->read_cmd;
+
+    if (!smpd_get_string_arg(cmd->cmd, "key", key, SMPD_MAX_DBS_KEY_LEN))
+    {
+	smpd_err_printf("set command missing key parameter\n");
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
+
+    /* delete key */
+    result = smpd_delete_smpd_data(key);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to delete smpd data %s\n", key);
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
+    strcpy(result_str, SMPD_SUCCESS_STR);
+
+    /* prepare the result command */
+    result = smpd_create_command("result", smpd_process.id, cmd->src, SMPD_FALSE, &temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a result command for a delete %s command.\n", key);
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
+    /* add the command tag for result matching */
+    result = smpd_add_command_int_arg(temp_cmd, "cmd_tag", cmd->tag);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the tag to the result command for a delete %s command.\n", key);
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
+    result = smpd_add_command_arg(temp_cmd, "result", result_str);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to add the result string to the result command for a delete %s command.\n", key);
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
+
+    /* send result back */
+    smpd_dbg_printf("replying to delete %s command: \"%s\"\n", key, temp_cmd->cmd);
+    result = smpd_post_write_command(context, temp_cmd);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to post a write of the result command to the %s context.\n", smpd_get_context_str(context));
+	smpd_exit_fn("smpd_handle_delete_command");
+	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn("smpd_handle_delete_command");
     return result;
 }
 
@@ -1725,6 +1973,18 @@ int smpd_handle_command(smpd_context_t *context)
 	    else if (strcmp(cmd->cmd_str, "stat") == 0)
 	    {
 		result = smpd_handle_stat_command(context);
+		smpd_exit_fn("smpd_handle_command");
+		return result;
+	    }
+	    else if (strcmp(cmd->cmd_str, "set") == 0)
+	    {
+		result = smpd_handle_set_command(context);
+		smpd_exit_fn("smpd_handle_command");
+		return result;
+	    }
+	    else if (strcmp(cmd->cmd_str, "delete") == 0)
+	    {
+		result = smpd_handle_delete_command(context);
 		smpd_exit_fn("smpd_handle_command");
 		return result;
 	    }

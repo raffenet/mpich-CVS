@@ -420,11 +420,109 @@ SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword)
 
 int smpd_cache_password(const char *account, const char *password)
 {
-    return SMPD_FAIL;
+    int nError;
+    char szEncodedPassword[SMPD_MAX_PASSWORD_LENGTH*2+1];
+    HKEY hRegKey = NULL;
+    int num_bytes;
+    DWORD len;
+
+    RegDeleteKey(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY);
+    if (RegCreateKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY,
+	0, 
+	NULL, 
+	REG_OPTION_VOLATILE,
+	KEY_ALL_ACCESS, 
+	NULL,
+	&hRegKey, 
+	NULL) != ERROR_SUCCESS) 
+    {
+	nError = GetLastError();
+	/*smpd_err_printf("CachePassword:RegDeleteKey(...) failed, error: %d\n", nError);*/
+	return SMPD_FAIL;
+    }
+
+    /* Store the account name*/
+    len = (DWORD)strlen(account)+1;
+    if ((nError = RegSetValueEx(
+	hRegKey, "smpda", 0, REG_SZ, 
+	(BYTE*)account, 
+	len
+	))!=ERROR_SUCCESS)
+    {
+	/*smpd_err_printf("CachePassword:RegSetValueEx(%s) failed, error: %d\n", g_pszAccount, nError);*/
+	RegCloseKey(hRegKey);
+	return SMPD_FAIL;
+    }
+
+    /* encode the password*/
+    smpd_encode_buffer(szEncodedPassword, SMPD_MAX_PASSWORD_LENGTH*2, password, (int)strlen(password)+1, &num_bytes);
+    szEncodedPassword[num_bytes*2] = '\0';
+    /*smpd_dbg_printf("szEncodedPassword = '%s'\n", szEncodedPassword);*/
+
+    /* Store the encoded password*/
+    if ((nError = RegSetValueEx(
+	hRegKey, "smpdp", 0, REG_SZ, 
+	(BYTE*)szEncodedPassword, 
+	num_bytes*2
+	))!=ERROR_SUCCESS)
+    {
+	/*smpd_err_printf("CachePassword:RegSetValueEx(...) failed, error: %d\n", nError);*/
+	RegCloseKey(hRegKey);
+	return SMPD_FAIL;
+    }
+
+    RegCloseKey(hRegKey);
+    return SMPD_SUCCESS;
 }
 
 SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 {
+    int nError;
+    char szAccount[SMPD_MAX_ACCOUNT_LENGTH];
+    char szPassword[SMPD_MAX_PASSWORD_LENGTH*2];
+    HKEY hRegKey = NULL;
+    DWORD dwLength;
+    int num_bytes;
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_CACHE_KEY, 0, KEY_QUERY_VALUE, &hRegKey) == ERROR_SUCCESS) 
+    {
+	*szAccount = '\0';
+	dwLength = SMPD_MAX_ACCOUNT_LENGTH;
+	if ((nError = RegQueryValueEx(
+	    hRegKey, 
+	    "smpda", NULL, 
+	    NULL, 
+	    (BYTE*)szAccount, 
+	    &dwLength))!=ERROR_SUCCESS)
+	{
+	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
+	    RegCloseKey(hRegKey);
+	    return SMPD_FALSE;
+	}
+	if (strlen(szAccount) < 1)
+	    return SMPD_FALSE;
+
+	*szPassword = '\0';
+	dwLength = SMPD_MAX_PASSWORD_LENGTH*2;
+	if ((nError = RegQueryValueEx(
+	    hRegKey, 
+	    "smpdp", NULL, 
+	    NULL, 
+	    (BYTE*)szPassword, 
+	    &dwLength))!=ERROR_SUCCESS)
+	{
+	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
+	    RegCloseKey(hRegKey);
+	    return SMPD_FALSE;
+	}
+
+	RegCloseKey(hRegKey);
+
+	strcpy(account, szAccount);
+	smpd_decode_buffer(szPassword, password, SMPD_MAX_PASSWORD_LENGTH, &num_bytes);
+	return SMPD_TRUE;
+    }
+
     return SMPD_FALSE;
 }
 

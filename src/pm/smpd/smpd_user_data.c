@@ -18,6 +18,84 @@ SMPD_BOOL smpd_option_on(const char *option)
     return SMPD_FALSE;
 }
 
+int smpd_delete_user_data(const char *key)
+{
+#ifdef HAVE_WINDOWS_H
+    HKEY tkey;
+    DWORD result;
+
+    smpd_enter_fn("smpd_delete_user_data");
+
+    if (key == NULL)
+	return SMPD_FAIL;
+
+    result = RegCreateKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY,
+	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_exit_fn("smpd_delete_user_data");
+	return SMPD_FAIL;
+    }
+
+    result = RegDeleteValue(tkey, key);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to delete the user smpd registry value '%s', error %d\n", key, result);
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_delete_user_data");
+	return SMPD_FAIL;
+    }
+
+    RegCloseKey(tkey);
+    smpd_exit_fn("smpd_delete_user_data");
+    return SMPD_SUCCESS;
+#else
+    smpd_enter_fn("smpd_delete_user_data");
+    smpd_exit_fn("smpd_delete_user_data");
+    return SMPD_FAIL;
+#endif
+}
+
+int smpd_delete_smpd_data(const char *key)
+{
+#ifdef HAVE_WINDOWS_H
+    HKEY tkey;
+    DWORD result;
+
+    smpd_enter_fn("smpd_delete_smpd_data");
+
+    if (key == NULL)
+	return SMPD_FAIL;
+
+    result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
+	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_exit_fn("smpd_delete_smpd_data");
+	return SMPD_FAIL;
+    }
+
+    result = RegDeleteValue(tkey, key);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_err_printf("Unable to delete the smpd registry value '%s', error %d\n", key, result);
+	RegCloseKey(tkey);
+	smpd_exit_fn("smpd_delete_smpd_data");
+	return SMPD_FAIL;
+    }
+
+    RegCloseKey(tkey);
+    smpd_exit_fn("smpd_delete_smpd_data");
+    return SMPD_SUCCESS;
+#else
+    smpd_enter_fn("smpd_delete_smpd_data");
+    smpd_exit_fn("smpd_delete_smpd_data");
+    return SMPD_FAIL;
+#endif
+}
+
 int smpd_set_user_data(const char *key, const char *value)
 {
 #ifdef HAVE_WINDOWS_H

@@ -470,6 +470,14 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 		    }
 		    smpd_init_command(cmd_ptr);
 		    strcpy(cmd_ptr->cmd, context->read_cmd.cmd);
+		    if (!smpd_get_int_arg(cmd_ptr->cmd, "src", &cmd_ptr->src))
+		    {
+			smpd_add_command_int_arg(cmd_ptr, "src", 0);
+		    }
+		    if (!smpd_get_int_arg(cmd_ptr->cmd, "dest", &cmd_ptr->dest))
+		    {
+			smpd_add_command_int_arg(cmd_ptr, "dest", 1);
+		    }
 		    result = smpd_parse_command(cmd_ptr);
 		    if (result != SMPD_SUCCESS)
 		    {
@@ -482,6 +490,18 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 			    if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
 			    {
 				smpd_dbg_printf("adding tag %d to connect command.\n", smpd_process.cur_tag);
+				smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);
+				cmd_ptr->tag = smpd_process.cur_tag;
+				smpd_process.cur_tag++;
+			    }
+			    cmd_ptr->wait = SMPD_TRUE;
+			}
+			if (strcmp(cmd_ptr->cmd_str, "set") == 0 || strcmp(cmd_ptr->cmd_str, "delete") == 0 ||
+			    strcmp(cmd_ptr->cmd_str, "stat") == 0)
+			{
+			    if (!smpd_get_int_arg(context->read_cmd.cmd, "tag", &cmd_ptr->tag))
+			    {
+				smpd_dbg_printf("adding tag %d to %s command.\n", smpd_process.cur_tag, cmd_ptr->cmd_str);
 				smpd_add_command_int_arg(cmd_ptr, "tag", smpd_process.cur_tag);
 				cmd_ptr->tag = smpd_process.cur_tag;
 				smpd_process.cur_tag++;
@@ -1055,18 +1075,26 @@ int smpd_enter_at_state(sock_set_t set, smpd_state_t state)
 #ifdef HAVE_WINDOWS_H
 		    if (smpd_process.UserAccount[0] == '\0')
 		    {
-			if (smpd_process.logon || !smpd_read_password_from_registry(context->account, context->password))
+			if (smpd_process.logon || (!smpd_get_cached_password(context->account, context->password) && !smpd_read_password_from_registry(context->account, context->password)))
 			{
 			    if (smpd_process.credentials_prompt)
 			    {
 				fprintf(stderr, "User credentials needed to launch processes:\n");
 				smpd_get_account_and_password(context->account, context->password);
+				smpd_cache_password(context->account, context->password);
 			    }
 			    else
 			    {
 				/*smpd_post_abort_command("User credentials needed to launch processes.\n");*/
 				strcpy(context->account, "invalid account");
 			    }
+			}
+			else if (!smpd_process.logon)
+			{
+			    /* This will re-cache cached passwords but I can't think of a way to determine the difference between
+			       a cached and non-cached password retrieval. */
+			    /*if (password_read_from_registry)*/
+			    smpd_cache_password(context->account, context->password);
 			}
 		    }
 #else

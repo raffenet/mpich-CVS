@@ -313,6 +313,61 @@ int smpd_create_process_struct(int rank, smpd_process_t **process_ptr)
     return SMPD_SUCCESS;
 }
 
+SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd_process_t *process)
+{
+    char indent_str[SMPD_MAX_TO_STRING_INDENT+1];
+
+    if (*len_ptr < 1)
+	return SMPD_FALSE;
+
+    if (indent > SMPD_MAX_TO_STRING_INDENT)
+	indent = SMPD_MAX_TO_STRING_INDENT;
+
+    memset(indent_str, ' ', indent);
+    indent_str[indent] = '\0';
+
+    smpd_snprintf_update(str_pptr, len_ptr, "%sid: %d\n", indent_str, process->id);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%srank: %d\n", indent_str, process->rank);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%sexe: %s\n", indent_str, process->exe);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%sdir: %s\n", indent_str, process->dir);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%senv: %s\n", indent_str, process->env);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%spath: %s\n", indent_str, process->path);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%spid: %d\n", indent_str, process->pid);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%sexitcode: %d\n", indent_str, process->exitcode);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%scontext_refcount: %s\n", indent_str, process->context_refcount);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%serr_msg: %s\n", indent_str, process->err_msg);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%snum_valid_contexts: %d\n", indent_str, process->num_valid_contexts);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%s in: %p\n", indent_str, process->in);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%s out: %p\n", indent_str, process->out);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%s err: %p\n", indent_str, process->err);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%s pmi: %p\n", indent_str, process->pmi);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%skvs_name: %s\n", indent_str, process->kvs_name);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%snproc: %d\n", indent_str, process->nproc);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%swait: %d\n", indent_str, (int)process->wait);
+    if (*len_ptr < 1) return SMPD_FALSE;
+    smpd_snprintf_update(str_pptr, len_ptr, "%snext: %p\n", indent_str, process->next);
+    if (*len_ptr < 1) return SMPD_FALSE; /* this misses the case of an exact fit */
+
+    return SMPD_TRUE;
+}
+
 int smpd_free_process_struct(smpd_process_t *process)
 {
     smpd_enter_fn("smpd_free_process_struct");

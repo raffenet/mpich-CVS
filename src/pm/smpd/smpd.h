@@ -63,6 +63,7 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_CRED_REQUEST_LENGTH      100
 #define SMPD_MAX_PWD_REQUEST_LENGTH       100
 #define SMPD_MAX_PORT_STR_LENGTH           20
+#define SMPD_MAX_TO_STRING_INDENT          20
 #define SMPD_PASSPHRASE_MAX_LENGTH        256
 #define SMPD_SALT_VALUE                   "14"
 #define SMPD_SESSION_REQUEST_LEN          100
@@ -75,6 +76,7 @@ typedef int SMPD_BOOL;
 #define SMPD_DEFAULT_PASSPHRASE           "behappy" /* must be less than 13 characers */
 #define SMPD_DEFAULT_PASSWORD             "gastroduodenostomy"
 #define SMPD_REGISTRY_KEY                 "SOFTWARE\\MPICH\\SMPD"
+#define SMPD_REGISTRY_CACHE_KEY           "SOFTWARE\\MPICH\\SMPD\\CACHE"
 #define MPICH_REGISTRY_KEY                "SOFTWARE\\MPICH"
 #define SMPD_CRED_REQUEST                 "credentials"
 #define SMPD_NO_CRED_REQUEST              "nocredentials"
@@ -447,6 +449,8 @@ int smpd_get_user_data_default(const char *key, char *value, int value_len);
 int smpd_get_smpd_data_default(const char *key, char *value, int value_len);
 int smpd_set_user_data(const char *key, const char *value);
 int smpd_set_smpd_data(const char *key, const char *value);
+int smpd_delete_user_data(const char *key);
+int smpd_delete_smpd_data(const char *key);
 int smpd_getpid(void);
 char * get_sock_error_string(int error);
 void smpd_get_password(char *password);
@@ -475,8 +479,8 @@ const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_ch
 int smpd_command_destination(int dest, smpd_context_t **dest_context);
 int smpd_forward_command(smpd_context_t *src, smpd_context_t *dest);
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, sock_set_t set);
-int smpd_encode_buffer(char *dest, int dest_length, char *src, int src_length, int *num_encoded);
-int smpd_decode_buffer(char *str, char *dest, int length, int *num_decoded);
+int smpd_encode_buffer(char *dest, int dest_length, const char *src, int src_length, int *num_encoded);
+int smpd_decode_buffer(const char *str, char *dest, int length, int *num_decoded);
 int smpd_create_process_struct(int rank, smpd_process_t **process_ptr);
 int smpd_free_process_struct(smpd_process_t *process);
 char * smpd_get_context_str(smpd_context_t *context);
@@ -518,5 +522,10 @@ int smpd_delete_cached_password();
 #endif
 int smpd_do_console();
 int smpd_restart();
+SMPD_BOOL smpd_snprintf_update(char **str_pptr, int *len_ptr, char *str_format, ...);
+char * smpd_get_state_string(smpd_state_t state);
+char * smpd_get_cmd_state_string(smpd_command_state_t state);
+SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd_command_t *cmd_ptr);
+SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd_process_t *process);
 
 #endif
