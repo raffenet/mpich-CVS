@@ -143,11 +143,12 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 	else {
 	    (void) PMPI_Cart_rank( comm, pos, dest );
 	}
-	pos[direction] = cart_ptr->topo.cart.position[i] - displ;
+
+	pos[direction] = cart_ptr->topo.cart.position[direction] - displ;
 	if (!cart_ptr->topo.cart.periodic[direction] &&
 	    (pos[direction] >= cart_ptr->topo.cart.dims[direction] ||
 	     pos[direction] < 0)) {
-	    *dest = MPI_PROC_NULL;
+	    *source = MPI_PROC_NULL;
 	}
 	else {
 	    (void) PMPI_Cart_rank( comm, pos, source );
