@@ -27,7 +27,7 @@ Install smpd.exe on each machine by copying smpd.exe to a local directory
 on each machine and executing "smpd -install" while logged on as a user with
 administrator privileges.
 
-6) build the mpich2 dlls and import libraries.
+5) build the mpich2 dlls and import libraries.
 This solution is found in mpich2\mpich2.sln.
 The mpich2 dlls can be built to use shared memory communication, tcp socket communication,
 or both.
@@ -35,13 +35,13 @@ Select the ch3sockDebug or ch3sockRelease configurations to build the sockets on
 Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only dlls.
 Select the ch3ssmDebug or ch3ssmRelease configurations to build the sockets+shmem dlls.
 
-7) compile an mpi application.  Use mpi.h from mpich2\src\include and 
+6) compile an mpi application.  Use mpi.h from mpich2\src\include and 
 the mpich2 import libraries in mpich2\lib
 
-8) Place your executable along with the mpich2 dlls somewhere accessable to
+7) Place your executable along with the mpich2 dlls somewhere accessable to
 all the machines.
 
-9) Execute a job by running:
+8) Execute a job by running:
 A) If you installed mpd  -> "mpirun -mpich2 -np 3 myapp.exe".
 B) If you installed smpd -> "mpiexec -n 3 myapp.exe".
 
