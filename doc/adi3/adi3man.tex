@@ -664,10 +664,13 @@ destruction of MPI objects, particularly communicators, datatypes, and
 files.  This is used in the version of the Globus device that allows
 the use of the vendor native MPI within a system.  It can also be used
 to help a device optimize for particular operations.  
-\textbf{Proposal:} These routines should be called
-\code{MPID_Dev_xxx_hook}, e.g., \code{MPID_Dev_comm_hook}.  This makes
+The routines called on creation have the form
+\code{MPID_Dev_xxx_create_hook}, e.g.,
+\code{MPID_Dev_comm_create_hook}; on destruction, the routine name has
+the form \code{MPID_Dev_xxx_destroy_hook}. This makes  
 it clear that these are hooks and not integral parts of the generic
-object creation or destruction code.
+object creation or destruction code.  A device may define these as a
+no-op macro to eliminate any unnecessary function calls.
 
 Yet another task is to clearly reorganize this document around
 specific, important interfaces, such as BNR, Xfer, and the

@@ -106,6 +106,53 @@ implementation of the ADI and providing the opportunity to later
 enhance the performance by selectively replacing some of these
 emulations.  Section~\ref{sec:layers} describes this in more detail.
 
+The ADI described here resembles the communication routines of the MPI
+standard.  The differences are
+\begin{enumerate}
+\item The MPI objects such as requests and communicators are not
+opaque objects; instead, the ADI uses pointers to structures with
+defined fields.
+
+\item Checking for correct parameter values is not performed by the
+ADI routines; the implementation of the MPI routines can make these
+tests before calling the ADI routines.
+
+\item Completion of MPI operations (e.g., \code{MPI\_Wait}) is handled
+by a combination of busy flags in requests and ADI calls to make
+progress, rather than through calls similar to the MPI wait and test
+calls. 
+
+\item RMA (remote memory access) operations are complemented by a
+special interface for low-latency operations, particularly in the
+passive target case.
+
+\item Collective operations are built out of point to point operations
+(though provision is made to replace each collective operation with an
+optimized function).  An enhancement is planned that allows the use of
+store and forward and scatter/gather (to collections of processes)
+communication.  
+
+\item Dynamic process operations use a similar interface to MPI, but the
+process of building the new intercommunicator is made more explicit
+through the use of \emph{virtual connections}.
+\end{enumerate}
+
+In addition, the ADI is \emph{not} responsible for the construction
+and management of other MPI objects such as datatypes, attributes,
+error handlers, and reduction operations.  
+
+Most implementors will choose to use a simpler interface that is
+(will be) documented separately---the method interface.  This defines
+a set of operations that are needed to implement communication on a
+single connection.  This interface allows multiple communication
+methods to be used in a single MPI program, such as TCP, VIA, and
+shared memory.  
+
+An even simpler interface based on only nonblocking \code{readv} and
+\code{writev}-like operations will also be defined.  This will replace
+the ``channel'' interface defined in ADI-2.  An implementation of
+ADI-3 will be provided with MPICH that is built on this simple interface.
+
 \section{High-level Overview}
 \label{sec:high-level}
 
@@ -163,6 +210,7 @@ described, as well as the design decisions that we have made based on these
 operations.
 
 \subsection{Communication Types}
+\label{sec:comm-types}
 
 While all MPI interprocess communication (including MPI-1 and MPI-2)
 can be supported by a single, suitably powerful mechanism such as
@@ -284,6 +332,8 @@ different objects for use by the ADI and translating between the MPI and ADI
 versions, avoids unnecessary 
 overhead within the device.  Let us look at several of these objects.
 
+\subsubsection{Structures Involved in Communication}
+
 \paragraph{MPI Requests.}
 The use of nonblocking operations to implement the low-level
 communication requires an object to hold the current state of the
@@ -373,12 +423,14 @@ has not completed, giving the calling routine more control over
 what steps to take to complete the request.  It sets the request
 pointer to NULL if it was able to complete without creating a request.
 
-An alternative design would have fewer routines but with additional
-arguments.  This design was chosen because it both provides a shorter
-code path (since the MPI send mode is known at compile time) and
-because it is easy to use C preprocessor macros to convert this form
-into calls to a single, parameterized routine but the reverse
-direction cannot be so implemented.
+% An alternative design would have fewer routines but with additional
+% arguments.  This design was chosen because it both provides a shorter
+% code path (since the MPI send mode is known at compile time) and
+% because it is easy to use C preprocessor macros to convert this form
+% into calls to a single, parameterized routine but the reverse
+% direction cannot be so implemented.
+% (e.g., could have a single MPID_Send(..., mode, is_immediate )
+% instead of multiple routines).
 
 The blocking receive case is similar to the blocking send case.  If,
 when the receive routine is called, the data is available, no request
@@ -398,6 +450,105 @@ made atomically.  These operations include
 \end{itemize}
 The MPID request is the appropriate list element to use in
 constructing these structures.
+
+While the request is allocated by the ADI, \code{MPID_Datatype}s are
+allocated by the MPI implementation.  In fact, most of the MPI
+objects, except for requests, will be allocated by the MPI
+implementation rather than within the ADI.  This is an arbitrary
+choice; for greatest generality, the ADI could be responsible for
+allocating all MPI objects.  However, we believe that most users of
+MPICH and ADI-3 will not need that flexibility, and managing the
+objects within the MPI layer instead of the ADI layer simplifies the
+implementation of the ADI.  However, to make provision for any
+ADI-specific features that must be associated with an MPI object, the
+definition of the structure associated with each object includes
+\begin{verbatim}
+    MPID_DEV_xxxx_DECL
+\end{verbatim}
+where \code{xxxx} may be \code{COMM}, \code{DATATYPE}, etc.  This
+provides a simple way to extend the objects defined by the MPI layer
+without forcing the ADI to provide a complete implementation.
+Whenever an object is created or destroyed, the MPI layer can call a
+\emph{hook} routine with a name of the form
+\begin{verbatim}
+    MPID_Dev_xxxx_create_hook( pointer to object )
+    MPID_Dev_xxxx_destroy_hook( pointer to object )
+\end{verbatim}
+
+\subsubsection{Communication Contexts and Groups}
+
+\paragraph{Communicators.}
+
+MPI Communicators describe both a collection of processes (a
+\code{MPI_Group}) and a unique communication context.  As described
+later, in MPICH and ADI-3, the communication context is encoded as an
+integer.  The target process of communication in MPI is described by a
+rank in a group associated with a communicator.  While this suggests
+that MPI groups are fundamental data structures, in MPICH-2, groups
+are not used in the ADI at all.  Instead, each communicator maintains
+an array of \emph{connections} that are indexed by the rank (there is
+a special connection for receives with rank \code{MPI_ANY_SOURCE}).
+The MPI implementation provides complete support for the MPI group
+operations (e.g., \code{MPI_Group_union}), but the ADI does not use
+groups at all.  
+
+\subsection{Completing Point-to-Point Operations}
+
+To complete some particular MPI communication (described by a request,
+such as in a call to \code{MPI_Wait}, it is necessary to have the ADI
+respond to \emph{any} pending communication.  Thus, it is not
+necessary to provide the ADI with a collection of request to test or
+wait on.  Instead, we merely need to ask the ADI to try to make
+progress on communication and they check (using the \code{busy} flag
+in each request) whether any particular MPI requests have completed.
+In the absence of threads, a simple interface would look like
+\begin{verbatim}
+   MPI_Waitsome( ... )
+   {
+   while( no completed requests found ) 
+       for (i=0; i<count; i++) {
+           if (any requests done, return those as complete)
+       }
+       MPID_Make_progress( TRUE );
+   }
+\end{verbatim}
+However, if there are multiple threads, particularly if there are
+separate threads that can complete communication, then this API is
+incorrect.  Instead, a slightly more complex interface is needed to
+eliminate any race conditions.  For example,
+\begin{verbatim}
+    MPI_Waitsome( ... )
+    {
+      while (1) {
+        MPID_Progress_start( );   // Notes that we are about to
+                                  // check ready flags.  No busy flags
+                                  // will be cleared
+        for (i=0; i<count; i++) {
+            if (any request done) { save info on request }
+        }
+        if (no requests done) 
+            MPID_Progress_wait();
+        else {
+            MPID_Progress_end();
+            break;
+        }
+      }
+    }
+\end{verbatim}
+The interface for test operations is similar, except that
+\code{MPID_Progress_wait} is replaced with \code{MPID_Progress_test},
+and no outer loop is needed.
+
+In a polling implementation, the ``start'' and ``end'' calls are
+no-ops and the ``wait'' and ``test'' calls are blocking and
+nonblocking polling calls respectively.  In a nonpolling
+implementation, the ``start'' and ``end'' calls may set and clear a thread lock
+or access lock, and the ``wait'' and ``test'' calls may yield to a
+communication thread (in addition, the wait version could wait to be
+signaled through a condition variable).  This interface allows us to
+use the same code for completing MPI nonblocking operations
+independent of the choice of polling, nonpolling, threaded, or
+nonthreaded implementations of the ADI.
 
 \subsection{Supporting Collective Operations}
 When implementing collective communication algorithms, the ability to
@@ -436,6 +587,11 @@ The ADI does not support the most general of these operations; the
 goal is to allow an MPI implementation to efficiently and correctly
 support the more common collective communication operations such as
 \code{MPI_Bcast}, \code{MPI_Scatter}, and \code{MPI_Allgather}.
+
+The very first version of ADI-3 may not include these more general
+multi-party communication operations.  It is the intent of ADI-3,
+however, to develop an efficient method for describing and
+implementing the operations needed for the MPI collective operations.
 
 \subsection{Remote Memory Access}
 \label{sec:rma-design}
@@ -496,7 +652,8 @@ calls
 
 \noindent
 can be converted into a single, atomic update operation on some
-systems (particularly on those that have no remote shared memory).
+systems (particularly on those that have no direct access to remote
+shared memory, such as a system that only supports TCP communication).
 
 To allow low-latency implementation of single-element remote updates
 (e.g., put or accumulate), the ADI design allows the MPI
@@ -638,20 +795,81 @@ no data structures that map a rank in a communicator into a ``global
 rank'' (i.e., rank in \code{MPI_COMM_WORLD}).  Instead, communicators
 have arrays of virtual connections that are indexed by the rank.
 
-(There is a kind of local process id that is used by the MPI group
+There is a kind of local process id that is used by the MPI group
 operations.  However, it is not critical item and, since the MPI group
-operations are implemented above the ADI, we do not discuss them here.)
+operations are implemented above the ADI, we do not discuss them here.
 
 \section{ADI Layers}
 \label{sec:layers}
+\textbf{This section has not been written}
 
-(This section describes 3 layered implementations.  First, just
+It is expected that implementations of the ADI will be \emph{layered},
+building the four types of communication described in
+Section~\ref{sec:comm-types} in terms of simpler communication methods.
+
+\subsection{Socket (TCP) communication}
+Socket-based communication provides a two-party communication similar
+to the type 1 communication in Section~\ref{sec:comm-types}.  A simple
+implementation can map all four kinds of communication into simple
+\code{read} and \code{write} calls as follows (with some caveats}
+\begin{enumerate}
+\item Point to point communication is a close match.  Some care is
+needed to handle flow control.
+
+\item Local completion communication is more difficult.  A simple (and
+not entirely correct) approach is to simply convert these operations
+(e.g., \code{MPID_Cancel_send}) into a message that is sent on the
+same socket as the type 1 point to point communication.  All that this
+requires is that messages sent on the socket connecting two processes
+include a header that describes the type of message (e.g., MPI message
+envelope, MPI cancel message, MPI cancel acknowledgement, etc.).  For
+those familar with the channel device in ADI-2, these are just the
+packet types.
+
+\item Active target RMA.  This can also be converted into simple
+messages sent on the same socket.  Note that there are some
+complications in handling complex MPI datatypes.
+
+\item Passive target RMA.  Just like active target RMA.  Note,
+however, that for correct behavior, the receive agent must be called
+at least occasionally, even if the target process makes no MPI calls.
+\end{enumerate}
+
+The progress engine is implemented by using \code{select}, and is a
+pure polling approach. 
+
+To correctly handle the local completion (type 2) and passive target
+(type 4) communication when using sockets, there must be an
+asynchronous communication agent.  One easy way to do this is to take
+the progress engine and place it in a separate thread.  The operating
+system then guarantees that the progress engine is called often enough
+to ensure that the locally completing communication operations make
+the necessary progress.  However, to illustrate the advantages of this
+approach, consider a different version where there are two sockets
+between communicating pairs of processes.  The first socket is used in
+a polling mode for point-to-point and active target communication
+(types 1 and 3).  This provides the low-latency associated with
+polling models.  The second socket is used for the locally-completing
+communication (types 2 and 4).  This approach provides correctness
+with the MPI progress model without sacrificing the low latency of the
+polling approach for the more common operations.  
+
+Of course, other approaches are possible, including one that uses a
+mix of polling and nonpolling even on type 1 and type 3 communication.
+
+\subsection{Remote Put}
+
+\subsection{Shared Memory}
+
+\textbf{Old text describing the plan for this section}
+This section describes 3 layered implementations.  First, just
 implement the TCP part.  Build the rest in terms of special messages.
-Sub cases: pure polling (doesn't implement cancel-send; passive-RMA)
+The TCP implementation has two important sub cases: pure polling
+(doesn't implement cancel-send; passive-RMA) 
 and mixed (separate receive-agent thread for those messages).  
 
 Second, include VIA-style remote put, only for contiguous put.  Show
-growth direction.  Passive RMA in terms of the AM handler
+growth direction.  Passive RMA in terms of the AM handler.
 
 Third, direct shared memory for passive operations: direct operation
 on memory.
@@ -659,5 +877,60 @@ on memory.
 \section{Summary}
 \label{sec:adi-summary}
 (This section should summarize the ADI routines, giving just their prototypes)
+
+\subsection{Point to point communication}
+Each simple MPI communication operation has its counterpart here:
+\begin{verbatim}
+MPID_Send
+MPID_Ssend
+MPID_Rsend
+MPID_Isend
+MPID_Issend
+MPID_Irsend
+MPID_Recv
+MPID_Irecv
+\end{verbatim}
+
+\subsection{Completion of Point to point communication}
+Completion of nonblocking (and incomplete in the case of a request
+returned by \code{MPID_Send}, \code{MPID_Ssend}, \code{MPID_Rsend}, or
+\code{MPID_Recv}) is handled by calling the progress engine routines
+and checking the \code{busy} value in a request.  The progress engine
+routines are
+\begin{verbatim}
+MPID_Progress_start
+MPID_Progress_end
+MPID_Progress_test
+MPID_Progress_wait
+\end{verbatim}
+
+\subsection{Starting and stopping}
+The routines to start and stop the ADI match the MPI counterparts.
+Note however that there are no calls to implement ``is initialized'';
+this is managed entirely at the MPI level.
+\begin{verbatim}
+MPID_Init_thread
+MPID_Finalize
+\end{verbatim}
+
+\subsection{RMA}
+The RMA routines haven't been set yet.  However, they will include
+MPID versions of put, get, and accumulate, along with a few calls to
+handle the aggregated operations (e.g., lock/accumulate/unlock).
+In addition, we expect to separate the \code{MPI_Win_lock} and
+\code{MPI_Win_unlock} into two kinds of operations: non-local, where
+the operation is really a start/end RMA operation, and local, where it
+really is lock/unlock.
+
+One question is whether there should be support at the MPI layer for
+caching data type descriptions (e.g., for complex MPI datatypes to be
+applied at the target process) and the corresponding ADI routines, or
+whether this should be handled entirely by the ADI.
+
+\subsection{Dynamic Processes}
+The MPID routines are similar to the MPI routines.  Undecided: does
+the MPI layer or the ADI layer setup the communicator?  The ADI layer
+needs only provide the pointers to the connection structure; the MPI
+layer could build the communicators and access the context id values.
 
 \end{document}
