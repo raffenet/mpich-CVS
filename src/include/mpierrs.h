@@ -9,9 +9,6 @@
 /* ------------------------------------------------------------------------- */
 /* mpierrs.h */
 /* ------------------------------------------------------------------------- */
-/* Error severity */
-#define MPIR_ERR_FATAL 1
-#define MPIR_ERR_RECOVERABLE 0
 
 /* Error checking (see --enable-error-checking for control of this) */
 #ifdef HAVE_ERROR_CHECKING
