@@ -1,9 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C++; c-basic-offset:4 ; -*- */
 /*  $Id$
  *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+/* style:c++ header */
 
 #if !defined(AFX_OFFSETDLG_H__D68F6BC3_370E_4A1E_8E0B_A718100A1984__INCLUDED_)
 #define AFX_OFFSETDLG_H__D68F6BC3_370E_4A1E_8E0B_A718100A1984__INCLUDED_

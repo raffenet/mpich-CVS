@@ -1,9 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C++; c-basic-offset:4 ; -*- */
 /*  $Id$
  *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+/* style:c++ header */
 
 #if !defined(AFX_ZOOMDLG_H__E425FB6A_FDA5_4359_AA8F_FF1283FF7B1B__INCLUDED_)
 #define AFX_ZOOMDLG_H__E425FB6A_FDA5_4359_AA8F_FF1283FF7B1B__INCLUDED_
