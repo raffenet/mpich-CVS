@@ -2714,8 +2714,10 @@ int smpd_state_writing_delegate_request(smpd_context_t *context, MPIDU_Sock_even
     smpd_enter_fn(FCNAME);
     if (event_ptr->error != MPI_SUCCESS)
     {
+#ifdef HAVE_WINDOWS_H
 	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
 	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+#endif
 	smpd_err_printf("unable to write the delegate request, %s.\n", get_sock_error_string(event_ptr->error));
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
@@ -2728,8 +2730,10 @@ int smpd_state_writing_delegate_request(smpd_context_t *context, MPIDU_Sock_even
     result = MPIDU_Sock_post_read(context->sock, context->sspi_header, SMPD_SSPI_HEADER_LENGTH, SMPD_SSPI_HEADER_LENGTH, NULL);
     if (result != MPI_SUCCESS)
     {
+#ifdef HAVE_WINDOWS_H
 	smpd_process.sec_fn->DeleteSecurityContext(&context->sspi_context);
 	smpd_process.sec_fn->FreeCredentialsHandle(&context->sspi_credential);
+#endif
 	smpd_err_printf("unable to post a read of the delegate request result,\nsock error: %s\n", get_sock_error_string(result));
 	context->state = SMPD_CLOSING;
 	result = MPIDU_Sock_post_close(context->sock);
