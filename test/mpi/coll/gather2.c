@@ -15,7 +15,7 @@
 int main( int argc, char **argv )
 {
     MPI_Datatype vec;
-    double *vecin, *vecout, ivalue;
+    double *vecin, *vecout;
     MPI_Comm comm;
     int    count, minsize = 2;
     int    root, i, n, stride, errs = 0;

@@ -13,7 +13,7 @@ static char MTEST_Descrip[] = "Test MPI_Allreduce with MPI_IN_PLACE";
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int rank, size;
     int minsize = 2, count; 
     MPI_Comm      comm;

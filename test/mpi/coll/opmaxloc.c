@@ -71,7 +71,7 @@ int main( int argc, char *argv[] )
 	cinbuf[0].loc = rank;
 	cinbuf[1].val = 0;
 	cinbuf[1].loc = rank;
-	cinbuf[2].val = rank;
+	cinbuf[2].val = (float)rank;
 	cinbuf[2].loc = rank;
 	
 	coutbuf[0].val = 0;

@@ -30,7 +30,6 @@ int copy_fn( MPI_Win oldwin, int keyval, void *extra_state,
 int delete_fn( MPI_Win win, int keyval, void *attribute_val, 
 	       void *extra_state)
 {
-    int world_rank;
     *(int *)attribute_val = *(int *)attribute_val - 1;
     return MPI_SUCCESS;
 }
@@ -38,7 +37,6 @@ int delete_fn( MPI_Win win, int keyval, void *attribute_val,
 int main( int argc, char *argv[] )
 {
     int errs = 0;
-    int world_rank;
     int attrval;
     int i, key[32], keyval, saveKeyval;
     MPI_Win win;

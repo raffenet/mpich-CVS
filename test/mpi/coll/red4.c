@@ -98,11 +98,11 @@ static int isIdentity( MPI_Comm comm, int mat[] )
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, err;
+    int errs = 0;
     int rank, size, root;
     int minsize = 2, count; 
     MPI_Comm      comm;
-    int *buf, *bufout, i;
+    int *buf, *bufout;
     MPI_Op op;
     MPI_Datatype mattype;
 

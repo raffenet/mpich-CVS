@@ -14,6 +14,8 @@
 
 #define MAX_SIZE 64
 
+MPI_Datatype transpose_type(int m, int n, MPI_Datatype type);
+MPI_Datatype submatrix_type(int N, int m, int n, MPI_Datatype type);
 void Transpose(float *localA, float *localB, int M, int N, 
 	       MPI_Comm comm)
 /* transpose MxN matrix A that is block distributed on  
@@ -132,7 +134,7 @@ int main( int argc, char *argv[] )
 	localB = (float *)malloc( gM * lnlast * sizeof(float) );
 	for (i=0; i<lmlast; i++) {
 	    for (j=0; j<gN; j++) {
-		localA[i*gN+j] = i*gN+j + rank * gN * lm;
+		localA[i*gN+j] = (float)(i*gN+j + rank * gN * lm);
 	    }
 	}
 	
@@ -142,7 +144,7 @@ int main( int argc, char *argv[] )
 	localB = (float *)malloc( gM * ln * sizeof(float) );
 	for (i=0; i<lm; i++) {
 	    for (j=0; j<gN; j++) {
-		localA[i*gN+j] = i*gN+j + rank * gN * lm;
+		localA[i*gN+j] = (float)(i*gN+j + rank * gN * lm);
 	    }
 	}
     }

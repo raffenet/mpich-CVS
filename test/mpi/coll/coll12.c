@@ -24,7 +24,7 @@ int main( int argc, char **argv )
   /* Copy data to the "in" buffer */
   for (i=0; i<TABLE_SIZE; i++) { 
 	in[i].a = a[i];
-	in[i].b = (double)rank;
+	in[i].b = rank;
   }
 
   /* Reduce it! */

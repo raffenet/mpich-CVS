@@ -15,10 +15,9 @@ int main( int argc, char *argv[] )
 {
     int errs = 0;
     int rank, size, root;
-    int *sendbuf, *recvbuf, i, j;
+    int *sendbuf, *recvbuf, i;
     int minsize = 2, count; 
     MPI_Comm      comm;
-    MPI_Status    status;
 
     MTest_Init( &argc, &argv );
 

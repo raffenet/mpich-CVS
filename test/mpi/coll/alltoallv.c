@@ -23,7 +23,7 @@ int main( int argc, char **argv )
     int      *sbuf, *rbuf;
     int      rank, size;
     int      *sendcounts, *recvcounts, *rdispls, *sdispls;
-    int      i, j, *p, err, toterr;
+    int      i, j, *p, err;
     
     MTest_Init( &argc, &argv );
     err = 0;
