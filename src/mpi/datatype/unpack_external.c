@@ -104,10 +104,10 @@ int MPI_Unpack_external(char *datarep,
     first = 0;
     last  = SEGMENT_IGNORE_LAST;
 
-    MPID_Segment_unpack_external(segp,
-				 first,
-				 &last,
-				 (void *) ((char *) inbuf + *position));
+    MPID_Segment_unpack_external32(segp,
+				   first,
+				   &last,
+				   (void *) ((char *) inbuf + *position));
 
     *position += (int) last;
 
