@@ -1176,3 +1176,48 @@ if test "$pac_cv_c_inline" = "no" ; then
 fi
 ])dnl
 define(AC_MSG_WARN,[AC_MSG_RESULT([Warning: $1])])
+dnl
+dnl PAC_CHECK_HEADER(HEADER-FILE, ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND],
+dnl PRE-REQ-HEADERS )
+dnl
+dnl BUG: AIX 4.1 can't handle a \055 (octal for -) in a tr string (sometimes;
+dnl it works from the shell but not within a file)
+dnl I've removed that and hoped that no header will include a - in the
+dnl name
+dnl
+dnl This can fail if the header needs OTHER headers for the compile
+dnl to succeed.  Those headers should be specified in the "pre-req-headers"
+dnl For example 
+dnl PAC_CHECK_HEADER(sys/vfs.h,AC_DEFINE(HAVE_SYS_VFS_H),,
+dnl                  [#include <sys/types.h>])
+dnl
+define(PAC_CHECK_HEADER,dnl
+[dnl Do the transliteration at runtime so arg 1 can be a shell variable.
+changequote(,)dnl
+ac_safe=`echo "$1" | tr '[a-z]./' '[A-Z]__'`
+changequote([,])dnl
+AC_MSG_CHECKING([for $1])
+dnl AC_CACHE_VAL(ac_cv_header_$ac_safe,[dnl
+AC_COMPILE_CHECK(,[$4]
+[#include <$1>],main();,eval "ac_cv_header_$ac_safe=yes",
+  eval "ac_cv_header_$ac_safe=no")dnl])dnl
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  AC_MSG_RESULT(yes)
+  ifelse([$2], , :, [$2])
+else
+  AC_MSG_RESULT(no)
+ifelse([$3], , , [$3
+])dnl
+fi
+])dnl
+dnl
+dnl PAC_CHECK_HEADERS(HEADER-FILE... [, ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
+define(PAC_CHECK_HEADERS,[for ac_hdr in $1
+do
+PAC_CHECK_HEADER($ac_hdr,
+[changequote(, )dnl
+  ac_tr_hdr=HAVE_`echo $ac_hdr | tr '[a-z]./' '[A-Z]__'`
+changequote([, ])dnl
+  AC_DEFINE($ac_tr_hdr) $2], $3)dnl
+done
+])dnl

@@ -19,6 +19,10 @@
 #define lseek eseek
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
 		      int whence, int *error_code)
 {

@@ -105,7 +105,7 @@ int ADIOI_cb_gather_name_array(MPI_Comm comm,
 			       MPI_Comm dupcomm,
 			       ADIO_cb_name_array *arrayp)
 {
-    char my_procname[MPI_MAX_PROCESSOR_NAME], **procname;
+    char my_procname[MPI_MAX_PROCESSOR_NAME], **procname = 0;
     int *procname_len = NULL, my_procname_len, *disp = NULL, i;
     int commsize, commrank, found;
     ADIO_cb_name_array array = NULL;

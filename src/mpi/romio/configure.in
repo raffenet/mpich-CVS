@@ -1063,6 +1063,9 @@ else
 fi
 #
 PAC_C_INLINE
+
+# Header files
+PAC_CHECK_HEADERS(unistd.h)
 #
 PAC_INT_LT_POINTER()
 #
