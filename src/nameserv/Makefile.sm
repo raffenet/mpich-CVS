@@ -1,4 +1,5 @@
-SUBDIRS_nameserv_name = file
-# ldap pmiext
+SUBDIRS_nameserv_name = file ldap
+# ldap not yet ready
+# pmiext
 SUBDIRS = @nameserv_name@ .
 

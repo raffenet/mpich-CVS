@@ -3,3 +3,4 @@ config.*
 ldapnameservconf.h.in
 ldapnameservconf.h
 Makefile
+Makefile.in
