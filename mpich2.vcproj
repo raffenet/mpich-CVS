@@ -21,8 +21,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\mm\include,src\mpid\common\datatype,src\mpid\mm\src\ib\paceline"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\mm\include,src\mpid\common\datatype,src\mpid\mm\src\ib\paceline"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -91,8 +91,8 @@ copy mmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -162,8 +162,8 @@ copy shmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\mm\include,src\mpid\common\datatype,src\mpid\mm\src\ib\paceline"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\mm\include,src\mpid\common\datatype,src\mpid\mm\src\ib\paceline"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -233,8 +233,8 @@ copy mmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\ch3\channels\shm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -303,8 +303,8 @@ copy shmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -374,8 +374,8 @@ copy ch3ssmDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -444,8 +444,8 @@ copy ch3ssmRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -520,8 +520,8 @@ copy ch3sockDebug\mpich2d.lib lib\mpich2d.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -597,8 +597,8 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\sock\include"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
@@ -617,7 +617,7 @@ copy ch3sockRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2sock.lib dbg.lib rlog.lib sock.lib ch3sock.lib pmi.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib"
+				AdditionalDependencies="smpd_util.lib dbg.lib sock.lib ch3sock.lib pmi.lib rlog.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib"
 				OutputFile="lib/mpich2.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -671,8 +671,8 @@ copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\ssm\include,src\mpid\ch3\include,src\mpid\common\locks"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG,MPIO_BUILD_PROFILING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -690,7 +690,7 @@ copy ch3sockPRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpich2mmcd.lib dbgd.lib rlogd.lib sockd.lib ch3ssmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
+				AdditionalDependencies="smpd_utild.lib dbgd.lib rlogd.lib sockd.lib ch3ssmd.lib pmid.lib mswsock.lib ws2_32.lib mpdutil.lib mpichinfo.lib crypt.lib odbc32.lib odbccp32.lib rpcrt4.lib"
 				OutputFile="lib/mpich2d.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -742,8 +742,8 @@ copy ch3ssmPDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shm"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shm"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -813,8 +813,8 @@ copy ch3rdmaDebug\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shm"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shm"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -883,8 +883,8 @@ copy ch3rdmaRelease\mpich2.lib lib\mpich2.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shmtp"
-				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shmtp"
+				PreprocessorDefinitions="WIN32,_DEBUG,USE_WINCONF_H,MPICH_DBG_OUTPUT,MPIO_BUILD_PROFILING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -954,8 +954,8 @@ copy $(ConfigurationName)\mpich2d.lib lib\mpich2d.lib
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shmtp"
-				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H"
+				AdditionalIncludeDirectories="src\mpi\romio\mpi-io,src\mpi\romio\adio\include,src\include,src\mpid\common\datatype,src\mpid\common\sock,src\mpid\common\sock\iocp,src\mpid\ch3\channels\rdma\include,src\mpid\ch3\include,src\mpid\common\locks,src\mpid\ch3\channels\rdma\src\shmtp"
+				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -1322,6 +1322,9 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\comm\commutil.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\mpi2-other\array\darray.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\delete.c">
@@ -2180,6 +2183,9 @@ copy $(ConfigurationName)\mpich2.lib lib\mpich2.lib
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\status_setb.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\mpi2-other\array\subarray.c">
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\test.c">
