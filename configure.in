@@ -160,6 +160,14 @@ else
    use_top_srcdir=$top_srcdir
 fi
 if test -z "$master_top_srcdir" ; then 
+    # This needs to be an absolute pathname
+    case "$use_top_srcdir" in
+    /) ;;
+    \.) ;;
+    *)
+        use_top_srcdir=`(cd $use_top_srcdir ; pwd)`
+	;;	
+    esac
     master_top_srcdir=$use_top_srcdir
 fi
 AC_SUBST(master_top_srcdir)
