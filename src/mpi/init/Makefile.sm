@@ -1,4 +1,5 @@
-lib${MPILIBNAME}_a_SOURCES =init.c initialized.c initthread.c ismain.c \
- finalize.c finalized.c querythread.c
+lib${MPILIBNAME}_a_SOURCES = abort.c init.c initialized.c initthread.c \
+	ismain.c \
+	 finalize.c finalized.c querythread.c
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${top_srcdir}/src/include

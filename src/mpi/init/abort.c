@@ -49,6 +49,7 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     static const char FCNAME[] = "MPI_Abort";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPID_MPI_STATE_DECLS;
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ABORT);
     /* Get handles to MPI objects. */
@@ -73,8 +74,13 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
+    /* ... body of routine ...  */
+
+    /* This is a temporary version */
     err_printf("user abort: rank %d\n", comm_ptr ? comm_ptr->rank : MPIR_Process.comm_world->rank);
     abort();
+    /* Should call MPID_Abort.... */
+    /* ... end of body of routine ... */
 
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ABORT);
     return MPI_SUCCESS;
