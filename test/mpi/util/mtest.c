@@ -68,7 +68,9 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
 	int  i, totsize;
 	MPI_Type_extent( mtype->datatype, &size );
 	totsize = size * mtype->count;
-	mtype->buf = (void *) malloc( totsize );
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
@@ -80,6 +82,9 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
 	}
     }
     else {
+	if (mtype->buf) {
+	    free( mtype->buf );
+	}
 	mtype->buf = 0;
     }
     return mtype->buf;
@@ -97,7 +102,9 @@ static void *MTestTypeContigInitRecv( MTestDatatype *mtype )
 	int  i, totsize;
 	MPI_Type_extent( mtype->datatype, &size );
 	totsize = size * mtype->count;
-	mtype->buf = (void *) malloc( totsize );
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
 	p = (signed char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
@@ -109,6 +116,9 @@ static void *MTestTypeContigInitRecv( MTestDatatype *mtype )
 	}
     }
     else {
+	if (mtype->buf) {
+	    free( mtype->buf );
+	}
 	mtype->buf = 0;
     }
     return mtype->buf;
@@ -160,7 +170,9 @@ static void *MTestTypeVectorInit( MTestDatatype *mtype )
 
 	MPI_Type_extent( mtype->datatype, &size );
 	totsize	   = mtype->count * size;
-	mtype->buf = (void *) malloc( totsize );
+	if (!mtype->buf) {
+	    mtype->buf = (void *) malloc( totsize );
+	}
 	p	   = (unsigned char *)(mtype->buf);
 	if (!p) {
 	    /* Error - out of memory */
@@ -214,20 +226,23 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 {
     sendtype->InitBuf	  = 0;
     sendtype->FreeBuf	  = 0;
-    sendtype->CheckBuf    = 0;
+    sendtype->CheckBuf	  = 0;
     sendtype->datatype	  = 0;
     sendtype->isBasic	  = 0;
     sendtype->printErrors = 0;
     recvtype->InitBuf	  = 0;
     recvtype->FreeBuf	  = 0;
-    recvtype->CheckBuf    = 0;
+    recvtype->CheckBuf	  = 0;
     recvtype->datatype	  = 0;
     recvtype->isBasic	  = 0;
     recvtype->printErrors = 0;
 
+    sendtype->buf	  = 0;
+    recvtype->buf	  = 0;
+
     /* Set the defaults for the message lengths */
-    sendtype->count    = count;
-    recvtype->count    = count;
+    sendtype->count	  = count;
+    recvtype->count	  = count;
     /* Use datatype_index to choose a datatype to use.  If at the end of the
        list, return 0 */
     switch (datatype_index) {
@@ -706,4 +721,5 @@ const char *MTestGetWinName( void )
     
     return winName;
 }
+/* To fix the storage leaks noted above, we need to have an MTestFreeWin */
 #endif

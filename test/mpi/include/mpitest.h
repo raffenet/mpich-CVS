@@ -16,6 +16,11 @@ void MTestPrintErrorMsg( const char [], int );
 
 /*
  * This structure contains the information used to test datatypes
+ * buf is set to null when an MTestDatatype is created; the
+ * InitBuf routine will allocate (if necessary) and initialize
+ * the data.  InitBuf may be called multiple times (this is particularly
+ * important for recv bufs), in which case the buffer will only 
+ * be allocated if it has not already been created.
  */
 typedef struct _MTestDatatype {
     MPI_Datatype datatype;
