@@ -29,7 +29,7 @@ int main( int argc, char *argv[] )
     }
 
     /* Check that all values are present */
-    for (i=0; i<NKEYS; i++) {
+    for (i=0; i<NKEYS; i++) { 
 	MPI_Info_get( info, keys[i], MPI_MAX_INFO_VAL, value, &flag );
 	if (!flag) {
 	    errs++;
@@ -37,7 +37,8 @@ int main( int argc, char *argv[] )
 	}
 	if (strcmp( value, values[i] )) {
 	    errs++;
-	    printf( "Incorrect value for key %s\n", keys[i] );
+	    printf( "Incorrect value for key %s, got %s expected %s\n", 
+		    keys[i], value, values[i] );
 	}
     }
 
@@ -59,7 +60,8 @@ int main( int argc, char *argv[] )
 	}
 	if (strcmp( value, values[i] )) {
 	    errs++;
-	    printf( "(after reset) Incorrect value for key %s\n", keys[i] );
+	    printf( "(after reset) Incorrect value for key %s, got %s expected %s\n", 
+		    keys[i], value, values[i] );
 	}
     }
 

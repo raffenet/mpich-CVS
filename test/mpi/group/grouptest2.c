@@ -123,6 +123,7 @@ int main( int argc, char **argv )
 	MPITEST_Group_print( basegroup );
     }
 #endif
+    for (i=0; i<size; i++) ranks[i] = i;
     MPI_Group_excl( basegroup, 1, ranks, &g4 );
 #ifdef DEBUG
     if (rank == 0) {

@@ -12,7 +12,8 @@ int main( int argc, char *argv[] )
 {
     int errs = 0;
     int provided, flag, claimed;
-    MTest_Init( &argc, &argv );
+
+    /* MTest_Init( &argc, &argv ); */
 
     MPI_Init_thread( 0, 0, MPI_THREAD_MULTIPLE, &provided );
     

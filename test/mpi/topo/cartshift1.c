@@ -20,7 +20,7 @@ int main( int argc, char *argv[] )
     
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
-    dims[0] = size;
+    dims[0]    = size;
     periods[0] = 1;
     MPI_Cart_create( MPI_COMM_WORLD, 1, dims, periods, 0, &comm );
     MPI_Cart_shift( comm, 0, 1, &source, &dest );
