@@ -271,7 +271,10 @@ residing on HFS file systems.
 * On HP machines running HPUX and on NEC SX-4, you need to compile
 Fortran programs with mpif90 instead of mpif77, because the f77
 compilers on these machines don't support 8-byte integers.
- 
+
+* The file-open mode MPI_MODE_EXCL does not work on Intel PFS file system,
+due to a bug in PFS.
+
 
 
 Usage Tips
@@ -291,6 +294,16 @@ or MPI_File_f2c (see MPI-2 Section 4.12.4). Such a situation occurs,
 for example, if a Fortran program uses an I/O library written in C
 with MPI-IO calls. Similar functions MPIO_Request_f2c and
 MPIO_Request_c2f are also provided.
+
+* For Fortran programs on the Intel Paragon, you may need
+to provide the complete path to mpif.h in the include statement, e.g.,
+        include '/usr/local/mpich/include/mpif.h'
+instead of 
+        include 'mpif.h'
+This is because the -I option to the Paragon Fortran compiler if77
+doesn't work correctly. It always looks in the default directories first 
+and, therefore, picks up Intel's mpif.h, which is actually the
+mpif.h of an older version of MPICH. 
 
 
 
