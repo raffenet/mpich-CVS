@@ -54,6 +54,10 @@ dnl
 dnl Find SSH.  If SSH is defined, use that instead
 dnl AC_PATH_PROG(SSH,ssh)
 dnl
+dnl
+dnl Check for shared library
+PAC_ARG_SHAREDLIBS
+dnl
 dnl Is there libnsl needed for gethostbyname?
 dnl AC_SEARCH_LIBS(gethostbyname,nsl)
 dnl
