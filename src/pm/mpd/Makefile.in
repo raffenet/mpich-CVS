@@ -43,6 +43,7 @@ example_SOURCES	 = sigcatcher.c infloop.c
 mpdroot_OBJECTS	= ${mpdroot_SOURCES:.c=.o}
 example_OBJECTS	= ${example_SOURCES:.c=.o}
 
+# -@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
 
 all: Makefile ${PROGRAMS}
 	@if [ ! -x ${srcdir}/install.sh ] ; then \
@@ -122,7 +123,6 @@ install: all
 	    ( cd ${bindir} && rm -f $$cmd ; ) ; \
 	    ( cd ${bindir} && @LN_S@ mpdroot $$cmd ; ) \
 	done
-	-@${INSTALL} -m 755 ${srcdir}/mpigdb.sh ${bindir}/mpigdb
 	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
 	-@cd ${bindir} && rm -f mpirun
 	-@cd ${bindir} && @LN_S@ mpdrun mpirun
