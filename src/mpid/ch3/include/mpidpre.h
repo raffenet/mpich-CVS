@@ -154,38 +154,38 @@ typedef enum
 }
 MPIDI_CA_t;
 
-#define MPID_REQUEST_DECL
-struct MPIDI_Request
-{
-    MPIDI_Message_match match;
-
-    /* TODO - user_buf, user_count, and datatype define a segment
-       and should be replaced by an MPID_Segment once one is defined
-       (is this true???) */
-    void * user_buf;
-    int user_count;
-    MPI_Datatype datatype;
-
-    MPIDI_VC * vc;
-
-    /* iov and iov_count define the data to be transferred; iov_offset
-       indicates the progress made in terms of an offset into iov */
-    struct iovec iov[IOV_MAX];
-    int iov_count;
-    int iov_offset;
-
-    /* ca (completion action) identifies the action to take once the
-       operation described by the iov has completed */
-    MPIDI_CA_t ca;
-
-    /* tmp_buf and tmp_sz describe temporary storage used for things
-       like unexpected eager messages and packing/unpacking buffers. */
-    void * tmp_buf;
-    long tmp_sz;
-
-    long recv_data_sz;
-    
-    struct MPID_Request * next;
+#define MPID_REQUEST_DECL						\
+struct MPIDI_Request							\
+{									\
+    MPIDI_Message_match match;						\
+									\
+    /* TODO - user_buf, user_count, and datatype define a segment	\
+       and should be replaced by an MPID_Segment once one is defined	\
+       (is this true???) */						\
+    void * user_buf;							\
+    int user_count;							\
+    MPI_Datatype datatype;						\
+									\
+    MPIDI_VC * vc;							\
+									\
+    /* iov and iov_count define the data to be transferred; iov_offset	\
+       indicates the progress made in terms of an offset into iov */	\
+    struct iovec iov[IOV_MAX];						\
+    int iov_count;							\
+    int iov_offset;							\
+									\
+    /* ca (completion action) identifies the action to take once the	\
+       operation described by the iov has completed */			\
+    MPIDI_CA_t ca;							\
+									\
+    /* tmp_buf and tmp_sz describe temporary storage used for things	\
+       like unexpected eager messages and packing/unpacking buffers. */	\
+    void * tmp_buf;							\
+    long tmp_sz;							\
+									\
+    long recv_data_sz;							\
+    									\
+    struct MPID_Request * next;						\
 } ch3;
 
 #if defined(MPIDI_CH3_REQUEST_DECL)
