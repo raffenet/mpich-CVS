@@ -613,6 +613,7 @@ int smpd_add_command_binary_arg(smpd_command_t *cmd_ptr, char *param, void *buff
     int len;
     int result;
     int cmd_length;
+    int saved_length;
 
     cmd_length = (int)strlen(cmd_ptr->cmd);
     if (cmd_length > SMPD_MAX_CMD_LENGTH)
@@ -640,10 +641,11 @@ int smpd_add_command_binary_arg(smpd_command_t *cmd_ptr, char *param, void *buff
 	}
     }
 
+    saved_length = len;
     result = MPIU_Str_add_binary_arg(&str, &len, param, buffer, length);
     if (result != MPIU_STR_SUCCESS)
     {
-	smpd_err_printf("unable to add the command parameter: %s=%d byte buffer\n", param, length);
+	smpd_err_printf("unable to add the command parameter: %s=%d byte buffer won't fit in %d character length string\n", param, length, saved_length);
 	return SMPD_FAIL;
     }
     return SMPD_SUCCESS;

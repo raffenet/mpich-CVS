@@ -3729,6 +3729,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
     char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
     char *target, target_[SMPD_MAX_NAME_LENGTH] = "";
+    double t1, t2;
     target = target_;
 
     smpd_enter_fn(FCNAME);
@@ -3747,6 +3748,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     /* FIXME: How do we determine whether to provide user credentials or impersonate the current user? */
     if (smpd_process.logon)
     {
+	/* This doesn't work because it causes LogonUser to be called and mpiexec can't do that */
 	identity = (SEC_WINNT_AUTH_IDENTITY *)malloc(sizeof(SEC_WINNT_AUTH_IDENTITY));
 	if (identity == NULL)
 	{
@@ -3806,7 +3808,10 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     smpd_dbg_printf("%s package, %s, with: max %d byte token, capabilities bitmask 0x%x\n",
 	info->Name, info->Comment, info->cbMaxToken, info->fCapabilities);
     smpd_dbg_printf("calling AcquireCredentialsHandle\n");
+    t1 = PMPI_Wtime();
     sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_OUTBOUND, NULL, identity, NULL, NULL, &sspi_context->credential, &ts);
+    t2 = PMPI_Wtime();
+    smpd_dbg_printf("AcquireCredentialsHandle took %0.6f seconds\n", t2-t1);
     if (identity != NULL)
     {
 	free(identity);
@@ -3817,7 +3822,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    sspi_context->buffer = malloc(info->cbMaxToken);
+    sspi_context->buffer = malloc(max(info->cbMaxToken, SMPD_SSPI_MAX_BUFFER_SIZE));
     if (sspi_context->buffer == NULL)
     {
 	smpd_err_printf("unable to allocate a %d byte sspi buffer\n", info->cbMaxToken);
@@ -3826,7 +3831,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     }
     smpd_dbg_printf("first sspi buffer of length %d bytes\n", info->cbMaxToken);
     sspi_context->buffer_length = info->cbMaxToken;
-    sspi_context->max_buffer_size = info->cbMaxToken;
+    sspi_context->max_buffer_size = max(info->cbMaxToken, SMPD_SSPI_MAX_BUFFER_SIZE);
     outbound_descriptor.ulVersion = SECBUFFER_VERSION;
     outbound_descriptor.cBuffers = 1;
     outbound_descriptor.pBuffers = &outbound_buffer;
@@ -3849,6 +3854,7 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
 	}
     }
     smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", sspi_context->target);
+    t1 = PMPI_Wtime();
     sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
 	&sspi_context->credential, NULL,
 	sspi_context->target,
@@ -3858,6 +3864,8 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
 	0,
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
 	NULL, 0, &sspi_context->context, &outbound_descriptor, &attr, &ts);
+    t2 = PMPI_Wtime();
+    smpd_dbg_printf("InitializeSecurityContext took %0.6f seconds\n", t2-t1);
     switch (sec_result)
     {
     case SEC_E_OK:
@@ -3995,6 +4003,7 @@ int smpd_handle_sspi_init_command(smpd_context_t *context)
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to add the data parameter to the result command.\n");
+	smpd_err_printf("temp_cmd.cmd = '%s'\n", temp_cmd->cmd);
 	smpd_exit_fn(FCNAME);
 	return result;
     }
@@ -4049,6 +4058,7 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
     TimeStamp ts;
     SecPkgInfo *info;
     smpd_sspi_client_context_t *sspi_context;
+    double t1, t2;
 
     smpd_enter_fn(FCNAME);
 
@@ -4119,6 +4129,7 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	return SMPD_FAIL;
     }
     smpd_dbg_printf("calling InitializeSecurityContext: target = %s\n", sspi_context->target);
+    t1 = PMPI_Wtime();
     sec_result = sec_result_copy = smpd_process.sec_fn->InitializeSecurityContext(
 	&sspi_context->credential,
 	&sspi_context->context,
@@ -4130,6 +4141,8 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 	/*SECURITY_NATIVE_DREP, */SECURITY_NETWORK_DREP,
 	&inbound_descriptor, 0, &sspi_context->context,
 	&outbound_descriptor, &attr, &ts);
+    t2 = PMPI_Wtime();
+    smpd_dbg_printf("InitializeSecurityContext took %0.6f seconds\n", t2-t1);
     switch (sec_result)
     {
     case SEC_E_OK:

@@ -2387,6 +2387,7 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     ULONG attr;
     TimeStamp ts;
     SMPD_BOOL first_call = SMPD_FALSE;
+    double t1, t2;
 
     smpd_enter_fn(FCNAME);
     if (event_ptr->error != MPI_SUCCESS)
@@ -2430,11 +2431,7 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	}
 	smpd_dbg_printf("%s package, %s, with: max %d byte token, capabilities bitmask 0x%x\n",
 	    info->Name, info->Comment, info->cbMaxToken, info->fCapabilities);
-	context->sspi_context->max_buffer_size = info->cbMaxToken;
-	if (context->sspi_context->max_buffer_size < 0)
-	{
-	    context->sspi_context->max_buffer_size = SMPD_SSPI_MAX_BUFFER_SIZE;
-	}
+	context->sspi_context->max_buffer_size = max(info->cbMaxToken, SMPD_SSPI_MAX_BUFFER_SIZE);
 	smpd_dbg_printf("calling FreeContextBuffer\n");
 	sec_result = smpd_process.sec_fn->FreeContextBuffer(info);
 	if (sec_result != SEC_E_OK)
@@ -2449,7 +2446,10 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     if (first_call)
     {
 	smpd_dbg_printf("calling AcquireCredentialsHandle\n");
+	t1 = PMPI_Wtime();
 	sec_result = smpd_process.sec_fn->AcquireCredentialsHandle(NULL, SMPD_SECURITY_PACKAGE, SECPKG_CRED_BOTH/*SECPKG_CRED_INBOUND*/, NULL, NULL, NULL, NULL, &context->sspi_context->credential, &context->sspi_context->expiration_time);
+	t2 = PMPI_Wtime();
+	smpd_dbg_printf("AcquireCredentialsHandle took %0.6f seconds\n", t2-t1);
 	if (sec_result != SEC_E_OK)
 	{
 	    smpd_err_printf("unable to acquire the security package credential, error %d.\n", sec_result);
@@ -2489,6 +2489,7 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
     smpd_dbg_printf("inbound buffer %d bytes, outbound %d bytes\n", inbound_buffer.cbBuffer, outbound_buffer.cbBuffer);
 
     smpd_dbg_printf("calling AcceptSecurityContext\n");
+    t1 = PMPI_Wtime();
     sec_result = sec_result_copy = smpd_process.sec_fn->AcceptSecurityContext(
 	&context->sspi_context->credential,
 	first_call ? NULL : &context->sspi_context->context,
@@ -2501,6 +2502,8 @@ int smpd_state_reading_sspi_buffer(smpd_context_t *context, MPIDU_Sock_event_t *
 	&context->sspi_context->context,
 	&outbound_descriptor,
 	&attr, &ts);
+    t2 = PMPI_Wtime();
+    smpd_dbg_printf("AcceptSecurityContext took %0.6f seconds\n", t2-t1);
     switch (sec_result)
     {
     case SEC_E_OK:

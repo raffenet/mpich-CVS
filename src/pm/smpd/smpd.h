@@ -80,7 +80,7 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_SESSION_HEADER_LENGTH   1024
 #define SMPD_MAX_ERROR_LEN               1024
 #define SMPD_CMD_HDR_LENGTH                13
-#define SMPD_MAX_CMD_LENGTH	         8192
+#define SMPD_MAX_CMD_LENGTH	        32768
 #define SMPD_MAX_DBG_PRINTF_LENGTH      (1024 + SMPD_MAX_CMD_LENGTH)
 #define SMPD_MAX_CMD_STR_LENGTH           100
 #define SMPD_MAX_HOST_LENGTH	           64
