@@ -420,6 +420,7 @@ def _handle_lhs_input():
                     or msg['username'] == 'root':
                         manSocket = g.activeJobs[jobid][manPid]['socktoman']
                         mpd_send_one_msg(manSocket, { 'cmd' : 'signal_to_handle',
+                                                      's_or_g' : msg['s_or_g'],
                                                       'sigtype' : msg['sigtype'] } )
                         handledHere = 1
         if handledHere:

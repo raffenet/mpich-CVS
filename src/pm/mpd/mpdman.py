@@ -999,10 +999,13 @@ def mpdman():
                         import signal as tmpimp  # just to get valid SIG's
                         exec('signum = %s' % 'tmpimp.SIG' + msg['sigtype'])
                     try:    
-                        pgrp = clientPid * (-1)   # neg Pid -> group
+                        if msg['s_or_g'] == 's':    # single (not entire group)
+                            pgrp = clientPid          # just client process
+                        else:
+                            pgrp = clientPid * (-1)   # neg Pid -> process group
                         kill(pgrp,signum)
                     except Exception, errmsg:
-                        mpd_print(1, 'invalid signal from mpd %d' % (signum) )
+                        mpd_print(1, 'invalid signal (%d) from mpd' % (signum) )
                 else:
                     mpd_print(1, 'invalid msg recvd on mpdSocket :%s:' % msg )
             elif readySocket == pmiListenSocket:
