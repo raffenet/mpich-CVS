@@ -130,7 +130,7 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 		    "**mpi_win_set_attr", "**mpi_win_set_attr %W %d %p", win, win_keyval, attribute_val);
 		MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ATTR);
-		/* FIXME: communicator of window? */
+		/* FIXME (gropp): communicator of window? */
 		return MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
 	    }
 	    p->value = attribute_val;
