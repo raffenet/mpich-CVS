@@ -358,8 +358,9 @@ def mpdrun():
                         readySocket.close()
                         done += 1
                     else:
-                        print >>stderr, msg,
+                        # print >>stderr, msg,
                         # print >>stderr, 'MS: %s' % (msg.strip())
+                        stderr.write(msg)
                         stderr.flush()
                 elif readySocket == stdin:
                     lineToSend = stdin.readline()
