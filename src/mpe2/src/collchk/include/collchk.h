@@ -23,9 +23,9 @@
 typedef struct {
         MPI_File fh;
         MPI_Comm comm;
-} CollChk_fh_struct;
+} CollChk_fh_t;
 
-CollChk_fh_struct *CollChk_fh_list;
+CollChk_fh_t *CollChk_fh_list;
 
 int CollChk_fh_cnt;
 
@@ -33,9 +33,9 @@ int CollChk_fh_cnt;
 typedef struct {
         MPI_Win win;
         MPI_Comm comm;
-} CollChk_win_struct;
+} CollChk_win_t;
 
-CollChk_win_struct *CollChk_win_list;
+CollChk_win_t *CollChk_win_list;
 
 int CollChk_win_cnt;
 
@@ -44,9 +44,9 @@ char CollChk_begin_str[128];
 
 /* the hash struct */
 typedef struct {
-        unsigned int hash_val; 
-        unsigned int hash_cnt;
-} CollChk_hash_struct;
+        unsigned int value; 
+        unsigned int count;
+} CollChk_hash_t;
 
 /* constants */
 int     COLLCHK_CALLED_BEGIN,
@@ -86,21 +86,36 @@ int CollChk_same_amode(MPI_Comm comm, int amode, char* call);
 int CollChk_same_call(MPI_Comm comm, char* call);
 int CollChk_same_datarep(MPI_Comm comm, char* datarep, char *call);
 
-void CollChk_hash_add(unsigned int alpha, unsigned int n,
-                      unsigned int beta, unsigned int m,
-                      unsigned int *hash_val, unsigned int *hash_cnt);
-int CollChk_get_val(MPI_Datatype dt);
-int CollChk_get_cnt(int n, int *ints, int combiner);
-void CollChk_hash_dtype(MPI_Datatype dt, int cnt,
-                        unsigned int *hash_val, unsigned int *hash_cnt);
-int CollChk_same_dtype(MPI_Comm comm, int cnt, MPI_Datatype dt, char* call);
-int CollChk_same_dtype_vector(MPI_Comm comm, int root, int cnt,
-                              int *rootcnts, MPI_Datatype dt, char *call);
-int CollChk_same_dtype_vector2(MPI_Comm comm, int *cnts,
-                               MPI_Datatype dt, char *call);
-int CollChk_same_dtype_general(MPI_Comm comm, int *rcnts, int *scnts,
-                               MPI_Datatype *rtypes, MPI_Datatype *stypes,
-                               char *call);
+int CollChk_hash_equal(const CollChk_hash_t *alpha,
+                       const CollChk_hash_t *beta);
+void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *dt_hash);
+                          
+int CollChk_dtype_bcast(MPI_Comm comm, MPI_Datatype type, int cnt, int root,
+                        char* call);
+int CollChk_dtype_scatter(MPI_Comm comm,
+                          MPI_Datatype sendtype, int sendcnt,
+                          MPI_Datatype recvtype, int recvcnt,
+                          int root, int are2buffs, char *call);
+int CollChk_dtype_scatterv(MPI_Comm comm,
+                           MPI_Datatype sendtype, int *sendcnts,
+                           MPI_Datatype recvtype, int recvcnt,
+                           int root, int are2buffs, char *call);
+int CollChk_dtype_allgather(MPI_Comm comm,
+                            MPI_Datatype sendtype, int sendcnt,
+                            MPI_Datatype recvtype, int recvcnt,
+                            int are2buffs, char *call);
+int CollChk_dtype_allgatherv(MPI_Comm comm,
+                             MPI_Datatype sendtype, int sendcnt,
+                             MPI_Datatype recvtype, int *recvcnts,
+                             int are2buffs, char *call);
+int CollChk_dtype_alltoallv(MPI_Comm comm,
+                            MPI_Datatype sendtype, int *sendcnts,
+                            MPI_Datatype recvtype, int *recvcnts,
+                            char *call);
+int CollChk_dtype_alltoallw(MPI_Comm comm,
+                            MPI_Datatype *sendtypes, int *sendcnts,
+                            MPI_Datatype *recvtypes, int *recvcnts,
+                            char *call);
 
 int CollChk_same_high_low(MPI_Comm comm, int high_low, char* call);
 int CollChk_same_int(MPI_Comm comm, int val, char* call, char* check,
@@ -111,3 +126,9 @@ int CollChk_same_op(MPI_Comm comm, MPI_Op op, char* call);
 int CollChk_same_root(MPI_Comm comm, int root, char* call);
 int CollChk_same_tag(MPI_Comm comm, int tag, char* call);
 int CollChk_same_whence(MPI_Comm comm, int whence, char* call);
+
+
+#define COLLCHK_NO_ERROR_STR   "no error"
+#define COLLCHK_SM_STRLEN      32
+#define COLLCHK_STD_STRLEN     256
+#define COLLCHK_LG_STRLEN      1024
