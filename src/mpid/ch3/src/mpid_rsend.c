@@ -118,7 +118,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype,
 	/* TODO - handle case where data_sz is greater than what can be stored
 	   in iov.MPID_IOV_LEN.  probably just hand off to segment code. */
     
-	iov[0].MPID_IOV_BUF = ready_pkt;
+	iov[0].MPID_IOV_BUF = (char *)ready_pkt;
 	iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
 
 	if (dt_contig)
