@@ -60,7 +60,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
 	MPID_Segment_unpack(&seg, 0, &last, sbuf);
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
-	if (last == sdata_sz)
+	if (last != sdata_sz)
 	{
 	    *smpi_errno = MPI_ERR_UNKNOWN;
 	    *rmpi_errno = MPI_ERR_UNKNOWN;
@@ -78,7 +78,7 @@ void MPIDI_CH3U_Buffer_copy(
 	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack last=" MPIDI_MSG_SZ_FMT, last ));
 	MPID_Segment_pack(&seg, 0, &last, rbuf);
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack last=" MPIDI_MSG_SZ_FMT, last ));
-	if (last == sdata_sz)
+	if (last != sdata_sz)
 	{
 	    *smpi_errno = MPI_ERR_UNKNOWN;
 	    *rmpi_errno = MPI_ERR_UNKNOWN;
