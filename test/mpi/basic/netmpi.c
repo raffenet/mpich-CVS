@@ -190,9 +190,11 @@ int main(int argc, char *argv[])
     }
     if (args.tr && printopt)
     {
-	fprintf(stdout,"Latency: %f\n", latency);
-	fprintf(stdout,"Sync Time: %f\n", synctime);
-	fprintf(stdout,"Now starting main loop\n");
+	printf("Latency: %f\n", latency);
+	fflush(stdout);
+	printf("Sync Time: %f\n", synctime);
+	fflush(stdout);
+	printf("Now starting main loop\n");
 	fflush(stdout);
     }
     tlast = latency;
@@ -234,6 +236,7 @@ int main(int argc, char *argv[])
 		if ((args.buff = (char *)malloc(args.bufflen * nrepeat + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
+		    fflush(stdout);
 		    break;
 		}
 	    }
@@ -242,6 +245,7 @@ int main(int argc, char *argv[])
 		if ((args.buff = (char *)malloc(args.bufflen + bufalign)) == (char *)NULL)
 		{
 		    fprintf(stdout,"Couldn't allocate memory\n");
+		    fflush(stdout);
 		    break;
 		}
 	    }
@@ -249,6 +253,7 @@ int main(int argc, char *argv[])
 	    if ((args.buff1 = (char *)malloc(args.bufflen + bufalign)) == (char *)NULL)
 	    {
 		fprintf(stdout,"Couldn't allocate memory\n");
+		fflush(stdout);
 		break;
 	    }
 	    /* Possibly align the data buffer */
