@@ -71,6 +71,11 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    if (!comm_ptr->errhandler) {
+	/* Set the default error handler if not already set */
+	comm_ptr->errhandler = &MPID_Errhandler_builtin[MPI_ERRORS_ARE_FATAL];
+    }
+
     switch (comm_ptr->errhandler->language) {
     case MPID_LANG_C:
 #ifdef HAVE_CXX_BINDING

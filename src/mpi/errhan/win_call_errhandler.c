@@ -66,6 +66,11 @@ int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    if (!win_ptr->errhandler) {
+	/* Set the default error handler if not already set */
+	win_ptr->errhandler = &MPID_Errhandler_builtin[MPI_ERRORS_ARE_FATAL];
+    }
+
     switch (win_ptr->errhandler->language) {
     case MPID_LANG_C:
 #ifdef HAVE_CXX_BINDING
