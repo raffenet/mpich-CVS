@@ -199,6 +199,8 @@ int ComputeExitStatus( ProcessTable *, int );
 void PrintFailureReasons( FILE *, ProcessTable * );
 void KillChildren( ProcessTable * );
 
+/* Resource Manager (rm) */
+int mpiexecChooseHosts( ProcessList *, int, ProcessTable * );
 
 
 /* 
