@@ -132,7 +132,7 @@ dnl
 dnl Look for Standard headers
 AC_HEADER_STDC
 dnl Check for a specific header
-AC_CHECK_HEADERS(sys/types.h signal.h sys/ptrace.h sys/uio.h)
+AC_CHECK_HEADERS(sys/types.h signal.h sys/ptrace.h sys/uio.h unistd.h)
 if test "$ac_cv_header_sys_uio_h" = "yes" ; then
     # Test for iovec defined
     AC_CACHE_CHECK([whether struct iovec is defined in sys/uio.h],
@@ -150,8 +150,17 @@ dnl found.  The braces around the second test are essential.
 dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
 AC_CHECK_FUNCS(strsignal)
 AC_CHECK_FUNCS(snprintf)
+if test "$ac_cv_func_strsignal" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],strsignal)
+fi
+AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
+fi
+AC_CHECK_FUNCS(strdup)
+if test "$ac_cv_func_strdup" = "yes" ; then
+    # Do we need to declare strdup?
+    PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
 fi
 dnl 
 dnl Check for signal handlers

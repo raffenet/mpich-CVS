@@ -428,8 +428,8 @@ void mpiexecPrintProcessList( FILE *fp, ProcessList *plist, int nplist )
     for (i=0; i<nplist; i++) {
 	pspec = &plist[i].spec;
 	sspec = &plist[i].soft;
-	DBG_FPRINTF( fp, "ProcessList[%d] for %d processes:\n", i, plist[i].np );
-	DBG_FPRINTF( fp, "\
+	DBG_FPRINTF( (fp, "ProcessList[%d] for %d processes:\n", i, plist[i].np ));
+	DBG_FPRINTF( (fp, "\
     exename   = %s\n\
     hostname  = %s\n\
     arch      = %s\n\
@@ -439,22 +439,22 @@ void mpiexecPrintProcessList( FILE *fp, ProcessList *plist, int nplist )
 		 pspec->hostname ? pspec->hostname : "<NULL>", 
 		 pspec->arch     ? pspec->arch     : "<NULL>", 
 		 pspec->path     ? pspec->path     : "<NULL>", 
-		 pspec->wdir     ? pspec->wdir     : "<NULL>" );
-	DBG_FPRINTF( fp, "    args:\n" );
+		 pspec->wdir     ? pspec->wdir     : "<NULL>") );
+	DBG_FPRINTF( (fp, "    args:\n") );
 	for (j=0; j<pspec->nArgs; j++) {
-	    DBG_FPRINTF( fp, "        %s\n", pspec->args[j] );
+	    DBG_FPRINTF( (fp, "        %s\n", pspec->args[j]) );
 	}
 	if (sspec->nelm > 0) {
-	    DBG_FPRINTF( fp, "    Soft spec with %d tuples\n", sspec->nelm );
+	    DBG_FPRINTF( (fp, "    Soft spec with %d tuples\n", sspec->nelm) );
 	    for (j=0; j<sspec->nelm; j++) {
-		DBG_FPRINTF( fp, "        %d:%d:%d\n", 
+		DBG_FPRINTF( (fp, "        %d:%d:%d\n", 
 			 sspec->tuples[j][0],
 			 sspec->tuples[j][1],
-			 sspec->tuples[j][2] );
+			 sspec->tuples[j][2]) );
 	    }
 	}
 	else {
-	    DBG_FPRINTF( fp, "    No soft spec\n" );
+	    DBG_FPRINTF( (fp, "    No soft spec\n") );
 	}
     }
 }

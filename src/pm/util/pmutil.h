@@ -198,6 +198,7 @@ void WaitForChildren( ProcessTable * );
 int ComputeExitStatus( ProcessTable *, int );
 void PrintFailureReasons( FILE *, ProcessTable * );
 void KillChildren( ProcessTable * );
+void SignalAllProcesses( ProcessTable *, int, const char [] );
 
 /* Resource Manager (rm) */
 int mpiexecChooseHosts( ProcessList *, int, ProcessTable * );
@@ -213,8 +214,9 @@ int mpiexecChooseHosts( ProcessList *, int, ProcessTable * );
 extern int debug;
 
 /* Temporary debug definitions */
-#define DBG_PRINTF printf
-#define DBG_FPRINTF fprintf
+#define DBG_PRINTF(a) printf a
+#define DBG_FPRINTF(a) fprintf a
+#define DBG_FFLUSH(a) fflush(a)
 
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"

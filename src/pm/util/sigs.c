@@ -32,6 +32,10 @@
 
 #include "pmutil.h"
 
+#ifdef NEEDS_STRSIGNAL_DECL
+extern char *strsignal(int);
+#endif
+
 /* 
  * Signal handler.  Detect a SIGCHLD exit.  The routines are
  *
@@ -42,7 +46,11 @@
  * the other children.  In most cases, we'll want to kill the other 
  * children if a child dies on a signal.
  * Sometimes we do *not* want to kill the children; particularly when
- * we are debugging.
+ * we are debugging.   We also do not want to kill processes during a
+ * normal exit, or if the MPI_Init/MPI_Init_thread routines were not called
+ * (e.g., if we're running a non-MPI program).  Because of these 
+ * considerations, we'll leave the decision to terminate a child process
+ * to the code that calls these routines.
  *
  * Because this is a signal handler, it needs access to the process table
  * through a global variable, ptable.
@@ -85,14 +93,16 @@ static void handle_sigchild( int sig )
        to see if we should ignore the signal */
     inHandler = 1;
     if (skipHandler) {
+	/* There is a small race condition here.  This should really
+	   use a test-and-set primative. */
 	inHandler = 0;
 	return;
     }
 
-    DBG_PRINTF( "Entering sigchild handler\n" ); fflush(stdout);
+    DBG_PRINTF( ("Entering sigchild handler\n") ); DBG_FFLUSH(stdout);
     if (debug) {
-	DBG_FPRINTF( stderr, "Waiting for any child on signal\n" );
-	fflush( stderr );
+	DBG_FPRINTF( (stderr, "Waiting for any child on signal\n") );
+	DBG_FFLUSH( stderr );
     }
 
     while (1) {
@@ -103,8 +113,8 @@ static void handle_sigchild( int sig )
 	    /* Generate a debug message if we enter the handler but 
 	       do not find a child */
 	    if (debug && !foundChild) {
-		DBG_FPRINTF( stderr, "Did not find child process!\n" );
-		fflush( stderr );
+		DBG_FPRINTF( (stderr, "Did not find child process!\n") );
+		DBG_FFLUSH( stderr );
 	    }
 	    break;
 	}
@@ -112,14 +122,12 @@ static void handle_sigchild( int sig )
 	/* Receives a child failure or exit.  
 	   If *failure*, kill the others */
 	if (debug) {
-	    DBG_FPRINTF( stderr, "Found process %d in sigchld handler\n", pid );
-	    fflush( stderr );
+	    DBG_FPRINTF( (stderr, "Found process %d in sigchld handler\n", pid ) );
+	    DBG_FFLUSH( stderr );
 	}
 	/* Return value is 0 on success and non zero if the process 
 	   was not found */
 	SetProcessExitStatus( ptable, pid, prog_stat );
-	    /*	    if (killOnAbort) 
-		    KillChildren(); */
     }
     inHandler = 0;
 }
@@ -217,7 +225,7 @@ void SignalAllProcesses( ProcessTable *ptable, int sig, const char msg[] )
 	    pid = ptable->table[i].pid;
 	    if (pid > 0) {
 		if (debug) {
-		    DBG_PRINTF( "sig %d to %d\n", sig, pid ); fflush( stdout );
+		    DBG_PRINTF( ("sig %d to %d\n", sig, pid) ); DBG_FFLUSH( stdout );
 		}
 		rc = kill( pid, sig );
 		if (rc) {
@@ -236,15 +244,17 @@ void SignalAllProcesses( ProcessTable *ptable, int sig, const char msg[] )
  * Kill all processes.  This is called when (a) a child dies with a non-zero 
  * error code or with a signal *and* (b) the "kill-on-failure" feature is
  * selected (on by default).
+ *
+ * This is provided as a service function that can terminate the processes
+ * in the process table.
  */
-static inKillChildren = 0;
+static int inKillChildren = 0;
 void KillChildren( ProcessTable *ptable )
 {
-    int i, pid, rc;
+    /* DBG_FPRINTF( (stderr, "Entering kill children\n") ); */
 
-    /* DBG_FPRINTF( stderr, "Entering kill children\n" ); */
-
-    /* Indicate within KillChildren */
+    /* Indicate within KillChildren.  This has a slight race and 
+     should use a test-and-set */
     if (inKillChildren) return;
     inKillChildren = 1;
 
@@ -282,8 +292,8 @@ static int SetProcessExitStatus( ProcessTable *ptable,
     for (i=0; i<ptable->nProcesses; i++) {
 	if (ptable->table[i].pid == pid) {
 	    if (debug) {
-		DBG_FPRINTF( stderr, "Found process %d in table in sigchld handler\n", pid );
-		fflush( stderr );
+		DBG_FPRINTF( (stderr, "Found process %d in table in sigchld handler\n", pid) );
+		DBG_FFLUSH( stderr );
 	    }
 	    ptable->table[i].state             = GONE;
 	    /* Abnormal exit if either rc or sigval is set */
