@@ -1,0 +1,110 @@
+/* mpe_wrappers_conf.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you have the <stdlib.h> header file.  */
+#undef HAVE_STDLIB_H
+
+/* Define if you have the <string.h> header file.  */
+#undef HAVE_STRING_H
+
+/* Define if MPI_PROCNULL not handled in MPI_Status  */
+#undef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
+
+/* Define if stdarg.h available  */
+#undef HAVE_STDARG_H
+
+/* Define is stdarg can be used  */
+#undef USE_STDARG
+
+/* Define if the compiler supports simple prototyptes  */
+#undef HAVE_PROTOTYPES
+
+/* Define if MPI-IO available  */
+#undef HAVE_MPI_IO
+
+/* Define if no MPIO_Request  */
+#undef HAVE_NO_MPIO_REQUEST
+
+/* Define if MPI-IO available  */
+#undef HAVE_MPI_IO
+
+/* Define if MPI_Comm_f2c and c2f available  */
+#undef HAVE_MPI_COMM_F2C
+
+/* Define as the size of MPI_STATUS_SIZE  */
+#undef MPI_STATUS_SIZE
+
+/* Define if MPI_Status_f2c and c2f available  */
+#undef HAVE_MPI_STATUS_F2C
+
+/* Define if MPI_Type_F2c and c2f available  */
+#undef HAVE_MPI_TYPE_F2C
+
+/* Define if MPI_Group_f2c and c2f available  */
+#undef HAVE_MPI_GROUP_F2C
+
+/* Define if MPI_Request_f2c and c2f available  */
+#undef HAVE_MPI_REQUEST_F2C
+
+/* Define if MPI_Op_f2c and c2f available  */
+#undef HAVE_MPI_OP_F2C
+
+/* Define if MPI_Errhandler_f2c and c2f available  */
+#undef HAVE_MPI_ERRHANDLER_F2C
+
+/* Define as the value for Fortran logical true  */
+#undef MPE_F77_TRUE_VALUE
+
+/* Define as the value for Fortran logical false  */
+#undef MPE_F77_FALSE_VALUE
+
+/* Define MPI_Fint as int  */
+#undef MPI_Fint
+
+/* Define if MPI_Comm_f2c and c2f available  */
+#undef HAVE_MPI_COMM_F2C
+
+/* Define as the size of MPI_STATUS_SIZE  */
+#undef MPI_STATUS_SIZE
+
+/* Define as the size of MPI_STATUS_SIZE  */
+#undef MPI_STATUS_SIZE
+
+/* Define if MPI_Status_f2c and c2f available  */
+#undef HAVE_MPI_STATUS_F2C
+
+/* Define if MPI_Type_F2c and c2f available  */
+#undef HAVE_MPI_TYPE_F2C
+
+/* Define if MPI_Group_f2c and c2f available  */
+#undef HAVE_MPI_GROUP_F2C
+
+/* Define if MPI_Request_f2c and c2f available  */
+#undef HAVE_MPI_REQUEST_F2C
+
+/* Define if MPI_Op_f2c and c2f available  */
+#undef HAVE_MPI_OP_F2C
+
+/* Define if MPI_Errhandler_f2c and c2f available  */
+#undef HAVE_MPI_ERRHANDLER_F2C
+
+/* Define as the value for Fortran logical true  */
+#undef MPE_F77_TRUE_VALUE
+
+/* Define as the value for Fortran logical false  */
+#undef MPE_F77_FALSE_VALUE
+
+/* Define as the value for Fortran logical true  */
+#undef MPE_F77_TRUE_VALUE
+
+/* Define as the value for Fortran logical false  */
+#undef MPE_F77_FALSE_VALUE
+
+/* Define if MPI_STATUS_IGNORE available  */
+#undef HAVE_MPI_STATUS_IGNORE
+

@@ -1,0 +1,20 @@
+#!/bin/sh
+AUTOHEADER=autoheader
+AUTOCONF=autoconf
+
+# The directory of this script is located
+curr_dir="$PWD/`dirname $0`"
+# The parent directory of where this script is located
+master_dir="`dirname $curr_dir`"
+
+# Locate all the configure.in under master_dir
+cfgins=`find $master_dir -name 'configure.in' -print`
+for cfgin in $cfgins ; do
+    dir="`dirname $cfgin`"
+    echo "Creating configure in $dir/ ..."
+    cd $dir
+    if [ -n "`grep AC_CONFIG_HEADER $cfgin`" ] ; then
+        $AUTOHEADER
+    fi
+    $AUTOCONF
+done

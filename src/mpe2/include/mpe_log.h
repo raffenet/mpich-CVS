@@ -1,0 +1,1 @@
+/* Empty MPE Logging header to be replaced by the real one if available */

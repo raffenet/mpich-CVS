@@ -1,0 +1,35 @@
+/* mpe_misc_conf.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you have the sysinfo function.  */
+#undef HAVE_SYSINFO
+
+/* Define if you have the <netdb.h> header file.  */
+#undef HAVE_NETDB_H
+
+/* Define if you have the <stdlib.h> header file.  */
+#undef HAVE_STDLIB_H
+
+/* Define if you have the <string.h> header file.  */
+#undef HAVE_STRING_H
+
+/* Define if you have the <sys/systeminfo.h> header file.  */
+#undef HAVE_SYS_SYSTEMINFO_H
+
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
+/* Define if uname availalble  */
+#undef HAVE_UNAME
+
+/* Define if gethostbyname available  */
+#undef HAVE_GETHOSTBYNAME
+
+/* Define if sighandler_t available  */
+#undef HAVE_SIGHANDLER_T
+
