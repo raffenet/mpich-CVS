@@ -49,7 +49,7 @@ void MPIDI_CH3_iRead(MPIDI_VC * vc, MPID_Request * rreq)
     {
 	int mpi_errno;
 
-	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(fcname, sock_errno);
+	mpi_errno = MPIDI_CH3I_sock_errno_to_mpi_errno(FCNAME, sock_errno);
 	MPID_Abort(NULL, mpi_errno);
     }
 

@@ -33,7 +33,7 @@ int MPIDI_CH3_Finalize()
     rc = PMI_Finalize();
     if (rc != 0)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPI_ERR_RECOVERABLE, FCNAME,
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME,
 					 MPI_ERR_OTHER, "**ch3|sock|pmi_finalize", "**ch3|sock|pmi_finalize %d", rc);
     }
 
