@@ -119,7 +119,7 @@ available, for building the profiling interface.
 "
 #
 echo " "
-echo "Configuring ROMIO Version 1.0.2 beta"
+echo "Configuring ROMIO Version 1.0.2"
 echo " "
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
