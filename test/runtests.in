@@ -527,6 +527,8 @@ sub RunTestFailed {
     $output =~ s/>/\*AMP\*gt;/g;
     $output =~ s/&/\*AMP\*amp;/g;
     $output =~ s/\*AMP\*/&/g;
+    # TODO: Also capture any non-printing characters (XML doesn't like them
+    # either).  
     if ($xmloutput) {
 	print XMLOUT "<STATUS>fail</STATUS>$newline";
 	print XMLOUT "<TESTDIFF>$newline$output</TESTDIFF>$newline";
