@@ -419,6 +419,7 @@ int MPIU_Str_get_binary_arg(const char *str, const char *flag, char *buffer, int
     } while (str);
     return MPIU_STR_FAIL;
 }
+
 int MPIU_Str_hide_string_arg(char *str, const char *flag)
 {
     /* line up with the first token */
@@ -585,74 +586,6 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen)
     /* failure */
     return -2;
 }
-
-#if 0
-int MPIU_Str_add_string(char *str, int maxlen, const char *val)
-{
-    int num_chars;
-
-    if (strchr(val, ' ') || strchr(val, MPIU_STR_QUOTE_CHAR) || strchr(val, MPIU_STR_DELIM_CHAR))
-    {
-	num_chars = quoted_printf(str, maxlen, val);
-	if (num_chars == maxlen)
-	{
-	    str[maxlen - 1] = '\0';
-	    return -1;
-	}
-	if (num_chars < maxlen - 1)
-	{
-	    str[num_chars] = ' ';
-	    str[num_chars+1] = '\0';
-	    num_chars++;
-	}
-	else
-	{
-	    str[num_chars] = '\0';
-	}
-    }
-    else
-    {
-	num_chars = snprintf(str, maxlen, "%s ", val);
-    }
-    return num_chars;
-}
-
-const char * MPIU_Str_get_string(const char *str, char *val, int maxlen, int *num_chars)
-{
-    int result;
-
-    if (maxlen < 1)
-    {
-	*num_chars = 0;
-	return NULL;
-    }
-
-    /* line up with the first token */
-    str = first_token(str);
-    if (str == NULL)
-    {
-	*num_chars = 0;
-	return NULL;
-    }
-
-    /* copy the token */
-    result = token_copy(str, val, maxlen);
-    if (result == MPIU_STR_SUCCESS)
-	*num_chars = (int)strlen(val);
-    else if (result == MPIU_STR_TRUNCATED)
-	*num_chars = -1;
-    else
-    {
-	*num_chars = -2;
-	return NULL;
-    }
-
-    /* move to the next token */
-    str = next_token(str);
-
-    return str;
-}
-#endif
 
 int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const char *val)
 {
