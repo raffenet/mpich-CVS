@@ -1,3 +1,4 @@
+AC_PREREQ(2.59)
 AC_INIT(Makefile.in)
 dnl
 dnl Do not use a PREREQ macro because cygwin uses that to select the
