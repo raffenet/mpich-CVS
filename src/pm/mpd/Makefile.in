@@ -29,11 +29,12 @@ OBJECTS   = ${mpdroot_OBJECTS} ${example_OBJECTS}
 HEADERS   = mpdconf.h mpdroot.h
 
 MPD      = mpd
+MPDBOOT  = mpdboot
 CMDS     = mpiexec mpdrun mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob \
            mpdexit mpdallexit mpdcleanup mpdhelp
 HELPERS  = mpdgdbdrv mpdman mpdlib mpdchkpyver
 
-PYTHON_SOURCE =  ${MPD} ${CMDS} ${HELPERS}
+PYTHON_SOURCE =  ${MPD} ${MPDBOOT} ${CMDS} ${HELPERS}
 
 mpdroot_SOURCES  = mpdroot.c
 example_SOURCES	 = sigcatcher.c infloop.c
@@ -103,6 +104,7 @@ install: all
 	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
 	( cd ${bindir} && @LN_S@ -f mpd.py mpd ; )
+	( cd ${bindir} && @LN_S@ -f mpdboot.py mpdboot ; )
 	-@for cmd in ${CMDS} ; do \
 	    ( cd ${bindir} && @LN_S@ -f mpdroot $$cmd ; ) \
 	done
