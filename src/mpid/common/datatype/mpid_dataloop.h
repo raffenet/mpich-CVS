@@ -71,11 +71,6 @@
  */
 #include <gen_dataloop.h>
 
-/* mpiimpl.h must be included after gen_dataloop.h because mpidpre.h needs the
- * definition of the MPID_Segment struct.
- */
-#include "mpiimpl.h"
-
 /* NOTE: WE MAY WANT TO UNDEF EVERYTHING HERE FOR NON-INTERNAL COMPILATIONS */
 
 #endif

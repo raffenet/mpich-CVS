@@ -8,10 +8,6 @@
 #ifndef GEN_DATALOOP_H
 #define GEN_DATALOOP_H
 
-#ifndef HAVE_SYS_UIO_H
-#define HAVE_SYS_UIO_H
-#endif
-
 /* Check that all the appropriate defines are present */
 #ifndef PREPEND_PREFIX
 #error "PREPEND_PREFIX must be defined before gen_dataloop.h is included."
