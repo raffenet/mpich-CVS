@@ -7,7 +7,7 @@
 from os     import environ, getuid, close
 from sys    import argv, exit
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
-from signal import signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT
+from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_send_one_msg, mpd_recv_one_msg, \
                    mpd_get_my_username, mpd_raise, mpdError
 
@@ -46,8 +46,10 @@ def mpdkilljob():
     mpd_send_one_msg(conSocket, {'cmd':'mpdkilljob',
                                  'jobnum' : jobnum, 'mpdid' : mpdid, 'jobalias' : jobalias,
                                  'username' : username})
-    msg = mpd_recv_one_msg(conSocket)
-    if not msg or msg['cmd'] != 'mpdkilljob_ack':
+    msg = recv_one_msg_with_timeout(conSocket,5)
+    if not msg:
+        mpd_raise('no msg recvd from mpd before timeout')
+    if msg['cmd'] != 'mpdkilljob_ack':
         if msg['cmd'] == 'already_have_a_console':
             print 'mpd already has a console (e.g. for long ringtest); try later'
         else:
@@ -58,11 +60,22 @@ def mpdkilljob():
         exit(-1)
     conSocket.close()
 
-def sigint_handler(signum,frame):
-    exit(-1)
+def signal_handler(signum,frame):
+    if signum == SIGALRM:
+        pass
+    else:
+        exit(-1)
+
+def recv_one_msg_with_timeout(sock,timeout):
+    oldTimeout = alarm(timeout)
+    msg = mpd_recv_one_msg(sock)    # fails WITHOUT a msg if sigalrm occurs
+    alarm(oldTimeout)
+    return(msg)
+
 
 if __name__ == '__main__':
-    signal(SIGINT,sigint_handler)
+    signal(SIGINT,signal_handler)
+    signal(SIGALRM,signal_handler)
     try:
 	mpdkilljob()
     except mpdError, errmsg:
