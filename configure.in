@@ -792,6 +792,8 @@ dnl    AC_DEFINE(USE_PMIEXT_FOR_NAMEPUB,1,[Define if pmiext should be used for n
         # Reset since no directory was set.
 	basedir='"."';
     fi
+    # We would like to use strerror in the file namepublisher
+    AC_CHECK_FUNCS(strerror)
     AC_DEFINE_UNQUOTED(FILE_NAMEPUB_BASEDIR,$basedir,[Directory to use in namepub])
     AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
     ;;
