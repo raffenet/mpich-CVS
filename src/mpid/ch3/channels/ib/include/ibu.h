@@ -18,6 +18,7 @@ extern "C" {
 #ifdef MPID_IBU_TYPE_WINDOWS
 #include <winsock2.h>
 #include <windows.h>
+#include <limits.h>
 #endif
 
 #ifdef USE_IB_VAPI
@@ -25,6 +26,7 @@ extern "C" {
 #define IBU_MAX_PINNED (32*1024*1024)
 
 #include <vapi.h>
+#include <vapi_common.h>
 #include <mpga.h>
 typedef VAPI_cq_hndl_t ibu_set_t;
 typedef struct ibu_mem_t
