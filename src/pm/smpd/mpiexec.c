@@ -174,6 +174,7 @@ int main(int argc, char* argv[])
     }
 
     /* Start the timeout mechanism if specified */
+    /* This code occurs after the rsh_mpiexec option check because the rsh code implementes timeouts differently */
     if (smpd_process.timeout > 0)
     {
 #ifdef HAVE_WINDOWS_H
