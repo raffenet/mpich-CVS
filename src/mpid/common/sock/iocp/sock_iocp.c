@@ -593,7 +593,7 @@ int sock_post_connect(sock_set_t set, void * user_ptr, char *host, int port, soc
     return SOCK_SUCCESS;
 }
 
-int sock_accept(sock_set_t set, void * user_ptr, sock_t listener, sock_t *accepted)
+int sock_accept(sock_t listener, sock_set_t set, void * user_ptr, sock_t * accepted)
 {
     BOOL b;
     struct linger linger;
