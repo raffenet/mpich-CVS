@@ -9,6 +9,7 @@ using System.Net; // Dns
 using System.IO; // File
 using System.Diagnostics; // Process
 using System.Runtime.InteropServices;
+using System.Text; // StringBuilder
 
 namespace wmpiconfig
 {
@@ -46,6 +47,9 @@ namespace wmpiconfig
 		/// Required designer variable.
 		/// </summary>
 		private System.ComponentModel.Container components = null;
+		private System.Windows.Forms.Button toggle_button;
+		private System.Windows.Forms.ProgressBar scan_progressBar;
+		private ToolTip tool_tip;
 
 		public wmpiconfig()
 		{
@@ -67,8 +71,8 @@ namespace wmpiconfig
 			// set defaults
 			hash["log"] = new Setting("log", "", "no", "yes,no");
 			hash["logfile"] = new Setting("logfile", "", "none", "");
-			hash["channel"] = new Setting("channel", "", "sock", "sock,ssm,shm,sshm,ib");
-			hash["internode_channel"] = new Setting("internode_channel", "", "sock", "sock,ssm,ib");
+			hash["channel"] = new Setting("channel", "", "sock", "sock,ssm,shm,sshm,ib,auto");
+			hash["internode_channel"] = new Setting("internode_channel", "", "ssm", "sock,ssm,ib");
 			hash["phrase"] = new Setting("phrase", "", "", "");
 			hash["hosts"] = new Setting("hosts", "", "localhost", "");
 			hash["max_logfile_size"] = new Setting("max_logfile_size", "", "unlimited", "");
@@ -76,6 +80,11 @@ namespace wmpiconfig
 			//hash["map_drives"] = new Setting("map_drives", "", "no", "yes,no");
 			hash["exitcodes"] = new Setting("exitcodes", "", "no", "yes,no");
 			hash["port"] = new Setting("port", "", "8676", "");
+			hash["noprompt"] = new Setting("noprompt", "", "no", "yes,no");
+			hash["priority"] = new Setting("priority", "", "2:3", "0..4[:0..5] idle, below, normal, above, high[:idle, lowest, below, normal, above, highest]");
+			hash["app_path"] = new Setting("app_path", "", "", "path to search for user executables");
+			hash["plaintext"] = new Setting("plaintext", "", "no", "yes,no");
+			hash["localonly"] = new Setting("localonly", "", "no", "yes,no");
 
 			UpdateHash(get_settings(host_textBox.Text));
 			UpdateListBox();
@@ -124,6 +133,8 @@ namespace wmpiconfig
 			this.apply_all_button = new System.Windows.Forms.Button();
 			this.append_checkBox = new System.Windows.Forms.CheckBox();
 			this.click_checkBox = new System.Windows.Forms.CheckBox();
+			this.toggle_button = new System.Windows.Forms.Button();
+			this.scan_progressBar = new System.Windows.Forms.ProgressBar();
 			this.SuspendLayout();
 			// 
 			// host_label
@@ -140,14 +151,14 @@ namespace wmpiconfig
 				| System.Windows.Forms.AnchorStyles.Right)));
 			this.host_textBox.Location = new System.Drawing.Point(176, 8);
 			this.host_textBox.Name = "host_textBox";
-			this.host_textBox.Size = new System.Drawing.Size(288, 20);
+			this.host_textBox.Size = new System.Drawing.Size(312, 20);
 			this.host_textBox.TabIndex = 1;
 			this.host_textBox.Text = "localhost";
 			// 
 			// get_settings_button
 			// 
 			this.get_settings_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.get_settings_button.Location = new System.Drawing.Point(384, 32);
+			this.get_settings_button.Location = new System.Drawing.Point(408, 32);
 			this.get_settings_button.Name = "get_settings_button";
 			this.get_settings_button.Size = new System.Drawing.Size(80, 23);
 			this.get_settings_button.TabIndex = 2;
@@ -159,6 +170,7 @@ namespace wmpiconfig
 			this.list.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
 				| System.Windows.Forms.AnchorStyles.Left) 
 				| System.Windows.Forms.AnchorStyles.Right)));
+			this.list.CheckBoxes = true;
 			this.list.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
 																				   this.SettingsHeader,
 																				   this.DefaultHeader,
@@ -168,11 +180,12 @@ namespace wmpiconfig
 			this.list.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
 			this.list.Location = new System.Drawing.Point(144, 64);
 			this.list.Name = "list";
-			this.list.Size = new System.Drawing.Size(320, 376);
+			this.list.Size = new System.Drawing.Size(344, 376);
 			this.list.TabIndex = 3;
 			this.list.View = System.Windows.Forms.View.Details;
 			this.list.ItemActivate += new System.EventHandler(this.list_ItemActivate);
 			this.list.AfterLabelEdit += new System.Windows.Forms.LabelEditEventHandler(this.list_AfterLabelEdit);
+			this.list.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.list_ItemCheck);
 			// 
 			// SettingsHeader
 			// 
@@ -191,7 +204,7 @@ namespace wmpiconfig
 			// apply_button
 			// 
 			this.apply_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.apply_button.Location = new System.Drawing.Point(224, 448);
+			this.apply_button.Location = new System.Drawing.Point(248, 448);
 			this.apply_button.Name = "apply_button";
 			this.apply_button.TabIndex = 4;
 			this.apply_button.Text = "&Apply";
@@ -200,7 +213,7 @@ namespace wmpiconfig
 			// cancel_button
 			// 
 			this.cancel_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.cancel_button.Location = new System.Drawing.Point(392, 448);
+			this.cancel_button.Location = new System.Drawing.Point(416, 448);
 			this.cancel_button.Name = "cancel_button";
 			this.cancel_button.TabIndex = 5;
 			this.cancel_button.Text = "&Cancel";
@@ -251,14 +264,15 @@ namespace wmpiconfig
 			this.output_textBox.Multiline = true;
 			this.output_textBox.Name = "output_textBox";
 			this.output_textBox.ReadOnly = true;
-			this.output_textBox.Size = new System.Drawing.Size(232, 32);
+			this.output_textBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+			this.output_textBox.Size = new System.Drawing.Size(256, 32);
 			this.output_textBox.TabIndex = 10;
 			this.output_textBox.Text = "";
 			// 
 			// ok_button
 			// 
 			this.ok_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.ok_button.Location = new System.Drawing.Point(312, 448);
+			this.ok_button.Location = new System.Drawing.Point(336, 448);
 			this.ok_button.Name = "ok_button";
 			this.ok_button.Size = new System.Drawing.Size(72, 23);
 			this.ok_button.TabIndex = 11;
@@ -284,7 +298,7 @@ namespace wmpiconfig
 			// apply_all_button
 			// 
 			this.apply_all_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-			this.apply_all_button.Location = new System.Drawing.Point(144, 448);
+			this.apply_all_button.Location = new System.Drawing.Point(168, 448);
 			this.apply_all_button.Name = "apply_all_button";
 			this.apply_all_button.TabIndex = 14;
 			this.apply_all_button.Text = "Apply All";
@@ -308,10 +322,30 @@ namespace wmpiconfig
 			this.click_checkBox.TabIndex = 16;
 			this.click_checkBox.Text = "click";
 			// 
+			// toggle_button
+			// 
+			this.toggle_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.toggle_button.Location = new System.Drawing.Point(144, 448);
+			this.toggle_button.Name = "toggle_button";
+			this.toggle_button.Size = new System.Drawing.Size(16, 23);
+			this.toggle_button.TabIndex = 17;
+			this.toggle_button.Text = "^";
+			this.toggle_button.Click += new System.EventHandler(this.toggle_button_Click);
+			// 
+			// scan_progressBar
+			// 
+			this.scan_progressBar.Location = new System.Drawing.Point(8, 104);
+			this.scan_progressBar.Name = "scan_progressBar";
+			this.scan_progressBar.Size = new System.Drawing.Size(128, 8);
+			this.scan_progressBar.Step = 1;
+			this.scan_progressBar.TabIndex = 18;
+			// 
 			// wmpiconfig
 			// 
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-			this.ClientSize = new System.Drawing.Size(472, 483);
+			this.ClientSize = new System.Drawing.Size(496, 483);
+			this.Controls.Add(this.scan_progressBar);
+			this.Controls.Add(this.toggle_button);
 			this.Controls.Add(this.cancel_button);
 			this.Controls.Add(this.apply_button);
 			this.Controls.Add(this.click_checkBox);
@@ -329,8 +363,10 @@ namespace wmpiconfig
 			this.Controls.Add(this.host_textBox);
 			this.Controls.Add(this.host_label);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+			this.MinimumSize = new System.Drawing.Size(504, 256);
 			this.Name = "wmpiconfig";
 			this.Text = "MPICH2 Configurable Settings";
+			this.Load += new System.EventHandler(this.wmpiconfig_Load);
 			this.ResumeLayout(false);
 
 		}
@@ -507,10 +543,14 @@ namespace wmpiconfig
 		private void UpdateHostScanResult(string result)
 		{
 			output_textBox.AppendText(result);
+			scan_progressBar.PerformStep();
 		}
 
 		private void scan_button_Click(object sender, System.EventArgs e)
 		{
+			scan_progressBar.Value = 0;
+			scan_progressBar.Maximum = hosts_list.Items.Count;
+			output_textBox.Text = "";
 			foreach (ListViewItem item in hosts_list.Items)
 			{
 				ScanHostDelegate shd = new ScanHostDelegate(ScanHost);
@@ -518,12 +558,72 @@ namespace wmpiconfig
 			}
 		}
 
+		private void VerifyEncryptedPasswordExists()
+		{
+			try
+			{
+				bool popup = true;
+				string mpiexec = get_mpiexec();
+
+				// Check the registry for the encrypted password
+				// This code will have to be kept synchronized with the smpd code
+				// The advantage of this approach is that the credentials don't have to be valid on the local host
+				RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\MPICH");
+				if (key != null)
+				{
+					// check to see that an encrypted password for the current user exists
+					object obj = key.GetValue("smpdPassword");
+					key.Close();
+					if (obj != null)
+					{
+						popup = false;
+					}
+				}
+
+				// Or run "mpiexec -validate" and check the output for SUCCESS
+				// This code will last longer because it doesn't rely on known information about the smpd implementation
+				// The disadvantage of this code is that the user credentials have to be valid on the local host.
+				/*
+				Process p1 = new Process();
+				p1.StartInfo.RedirectStandardOutput = true;
+				p1.StartInfo.RedirectStandardError = true;
+				p1.StartInfo.UseShellExecute = false;
+				p1.StartInfo.CreateNoWindow = true;
+				p1.StartInfo.FileName = mpiexec;
+				p1.StartInfo.Arguments = "-validate";
+				p1.Start();
+				string output = p1.StandardOutput.ReadToEnd() + p1.StandardError.ReadToEnd();
+				p1.WaitForExit();
+				p1.Close();
+				if (output.IndexOf("SUCCESS") != -1)
+				{
+					popup = false;
+				}
+				*/
+
+				if (popup)
+				{
+					string wmpiregister;
+					wmpiregister = mpiexec.Replace("mpiexec.exe", "wmpiregister.exe");
+					Process p = new Process();
+					p.StartInfo.FileName = wmpiregister;
+					p.Start();
+					p.WaitForExit();
+				}
+			}
+			catch (Exception)
+			{
+			}
+		}
+
 		private Hashtable get_settings(string host)
 		{
 			string option, val;
 			Hashtable hash = new Hashtable();
-			Process p = new Process();
 
+			VerifyEncryptedPasswordExists();
+
+			Process p = new Process();
 			p.StartInfo.FileName = mpiexec;
 			p.StartInfo.Arguments = string.Format("-noprompt -path {{SMPD_PATH}} -n 1 -host {0} smpd.exe -enumerate", host);
 			p.StartInfo.RedirectStandardOutput = true;
@@ -552,6 +652,73 @@ namespace wmpiconfig
 			{
 			}
 			return hash;
+		}
+
+		private void set_settings(string host, Hashtable h)
+		{
+			StringBuilder str;
+			string val;
+
+			if (h.Keys.Count < 1)
+			{
+				// nothing to set
+				return;
+			}
+
+			VerifyEncryptedPasswordExists();
+
+			str = new StringBuilder("-noprompt -path {SMPD_PATH} -n 1 -host ");
+			str.AppendFormat("{0} smpd.exe", host);
+			foreach (string key in h.Keys)
+			{
+				val = (string)h[key];
+				if (val.IndexOf(' ') != -1 || val.Length == 0)
+				{
+					str.AppendFormat(" -set {0} \"{1}\"", key, val);
+				}
+				else
+				{
+					str.AppendFormat(" -set {0} {1}", key, val);
+				}
+			}
+			//output_textBox.Text = str.ToString();
+
+			Process p = new Process();
+			p.StartInfo.FileName = mpiexec;
+			p.StartInfo.Arguments = str.ToString();
+			p.StartInfo.RedirectStandardOutput = true;
+			p.StartInfo.CreateNoWindow = true;
+			p.StartInfo.UseShellExecute = false;
+
+			//MessageBox.Show("About to launch: " + p.StartInfo.FileName + " " + p.StartInfo.Arguments);
+			try
+			{
+				output_textBox.AppendText(host + "\r\n");
+				p.Start();
+				while ((val = p.StandardOutput.ReadLine()) != null)
+				{
+					output_textBox.AppendText(val + "\r\n");
+				}
+				p.WaitForExit();
+				p.Close();
+			}
+			catch (Exception)
+			{
+			}
+		}
+
+		private Hashtable get_setttings_hash()
+		{
+			int i;
+			Hashtable h = new Hashtable();
+			for (i=0; i<list.Items.Count; i+=2)
+			{
+				if (list.Items[i].Checked)
+				{
+					h[list.Items[i].Text] = list.Items[i+1].Text;
+				}
+			}
+			return h;
 		}
 
 		private string get_mpiexec()
@@ -688,11 +855,14 @@ namespace wmpiconfig
 			try
 			{
 				RegistryKey regkey = Registry.LocalMachine.OpenSubKey(@"Software\MPICH\SMPD");
-				obj = regkey.GetValue(key);
-				regkey.Close();
-				if (obj != null)
+				if (regkey != null)
 				{
-					return obj.ToString();
+					obj = regkey.GetValue(key);
+					regkey.Close();
+					if (obj != null)
+					{
+						return obj.ToString();
+					}
 				}
 			}
 			catch (Exception)
@@ -728,10 +898,30 @@ namespace wmpiconfig
 
 		private void apply_button_Click(object sender, System.EventArgs e)
 		{
+			Hashtable h;
+
+			Cursor.Current = Cursors.WaitCursor;
+			output_textBox.Clear();
+			h = get_setttings_hash();
+			set_settings(host_textBox.Text, h);
+			Cursor.Current = Cursors.Default;
 		}
 
 		private void apply_all_button_Click(object sender, System.EventArgs e)
 		{
+			Hashtable h;
+
+			Cursor.Current = Cursors.WaitCursor;
+			output_textBox.Clear();
+			h = get_setttings_hash();
+			scan_progressBar.Value = 0;
+			scan_progressBar.Maximum = hosts_list.Items.Count;
+			foreach (ListViewItem item in hosts_list.Items)
+			{
+				set_settings(item.Text, h);
+				scan_progressBar.PerformStep();
+			}
+			Cursor.Current = Cursors.Default;
 		}
 
 		private void cancel_button_Click(object sender, System.EventArgs e)
@@ -759,6 +949,7 @@ namespace wmpiconfig
 		{
 			// turn off editing after a field has been modified to prevent the name from being modified
 			list.LabelEdit = false;
+			list.Items[e.Item].Checked = true;
 		}
 
 		private void ok_button_Click(object sender, System.EventArgs e)
@@ -818,6 +1009,80 @@ namespace wmpiconfig
 					}
 				}
 			}
+		}
+
+		private void wmpiconfig_Load(object sender, System.EventArgs e)
+		{
+			tool_tip = new ToolTip();
+
+			tool_tip.SetToolTip(append_checkBox, "Append hosts to the list");
+			tool_tip.SetToolTip(click_checkBox, "Get settings when a host name is selected");
+			tool_tip.SetToolTip(apply_button, "Apply the checked settings to the host in the host edit box");
+			tool_tip.SetToolTip(apply_all_button, "Apply the checked settings to all the hosts in the host list");
+			//tool_tip.SetToolTip(scan_button, "Retrieve the settings from the hosts in the host list");
+			tool_tip.SetToolTip(scan_button, "Scan and remove hosts from the list that don't have MPICH2 installed");
+			tool_tip.SetToolTip(get_hosts_button, "Get the host names from the specified domain");
+			tool_tip.SetToolTip(toggle_button, "Check or uncheck all the checked settings"); //"Toggle all the checked settings");
+		}
+
+		bool check_recursed = false;
+		private void list_ItemCheck(object sender, System.Windows.Forms.ItemCheckEventArgs e)
+		{
+			int other_index;
+			if (!check_recursed)
+			{
+				check_recursed = true;
+				other_index = ((e.Index & 0x1) == 0) ? e.Index + 1 : e.Index - 1;
+				list.Items[other_index].Checked = (e.NewValue == CheckState.Checked);
+				check_recursed = false;
+			}
+		}
+
+		/// <summary>
+		/// Toggle all the check boxes except the "phrase" and "port" options.
+		/// Those options must be selected manually to make their setting more intentional.
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		bool checkuncheck = true;
+		private void toggle_button_Click(object sender, System.EventArgs e)
+		{
+			int index = -1;
+			int port_index = -1;
+			bool phrase_checked = false;
+			bool port_checked = false;
+			check_recursed = true;
+			foreach (ListViewItem item in list.Items)
+			{
+				if (item.Text == "phrase")
+				{
+					// save the index of the item following the phrase item to reset it afterwards
+					index = item.Index + 1;
+					phrase_checked = item.Checked;
+				}
+				else if (item.Text == "port")
+				{
+					port_index = item.Index + 1;
+					port_checked = item.Checked;
+				}
+				else
+				{
+					item.Checked = checkuncheck; //!item.Checked;
+				}
+			}
+			if (index != -1)
+			{
+				// reset the phrase value
+				list.Items[index].Checked = phrase_checked;
+			}
+			if (port_index != -1)
+			{
+				// reset the port value
+				list.Items[port_index].Checked = port_checked;
+			}
+			checkuncheck = !checkuncheck;
+			toggle_button.Text = checkuncheck ? "x" : "o";
+			check_recursed = false;
 		}
 	}
 
