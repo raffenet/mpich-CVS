@@ -250,6 +250,7 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 		    arrow.end_time = temp_time;
 		    arrow.leftright = (arrow.leftright = RLOG_ARROW_LEFT) ? RLOG_ARROW_RIGHT : RLOG_ARROW_LEFT;
 		}
+		pArray[i] = arrow;
 	    }
 	}
 
