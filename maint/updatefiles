@@ -255,6 +255,10 @@ EOF
 		autoconf
 		# The bug is that the EOF doesn't go onto the next line
 		if grep endEOF configure 2>&1 >/dev/null ; then
+		    echo "The available version of configure has a bug"
+		    echo "in handling Fortran programs and cannot be used"
+		    echo "This bug is an improper placement of the EOF"
+		    echo "token used to implement AC_TRY_COMPILE for Fortran."
 		    cd ..
 		    rm -rf .ctmp
 		    continue
