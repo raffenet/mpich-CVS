@@ -28,13 +28,15 @@ public class InputLog
     private LineIDMapList          lineIDmaps;
 
     private byte[]                 buffer;
+    private String                 full_pathname;
 
 
     public InputLog( String filename )
     {
-        rand_file = null;
+        full_pathname = filename;
+        rand_file     = null;
         try {
-            rand_file = new MixedRandomAccessFile( filename, "r" );
+            rand_file = new MixedRandomAccessFile( full_pathname, "r" );
         // } catch ( FileNotFoundException ferr ) {
         } catch ( IOException ferr ) {
             System.err.println( "InputLog: Non-recoverable IOException! "
@@ -46,6 +48,30 @@ public class InputLog
         buffer    = null;
         bary_ins  = null;
         data_ins  = null;
+    }
+
+    // Used by Jumpshot4 to add extra titles to Timeline/Legend windows
+    public String getPathnameSuffix()
+    {
+        String file_sep = System.getProperty( "file.separator" );
+        int start_idx = full_pathname.lastIndexOf( file_sep );
+        if ( start_idx > 0 )
+            return full_pathname.substring( start_idx + 1 );
+        else
+            return full_pathname;
+    }
+
+    public String getLineIDMapName( int view_ID )
+    {
+        if ( lineIDmaps != null )
+            if ( view_ID >= 0 && view_ID < lineIDmaps.size() ) {
+                LineIDMap lineIDmap = (LineIDMap) lineIDmaps.get( view_ID );
+                return lineIDmap.getTitle();
+            }
+            else
+                return null;
+        else
+            return null;
     }
 
     public String getCompatibleHeader()
