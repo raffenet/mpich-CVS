@@ -11,8 +11,8 @@ MPICH-2 offers higher performance and greater robustness than the
 original MPICH.  It will eventually provide an implementation of the
 entire MPI-2 Standard.  Currently it contains all of MPI-1, the I/O part
 of MPI-2 (sometimes called MPI-I/O), and a preliminary implementation of
-the MPI remote-memory operations (MPI_Put/MPI_Get).  Dynamic process
-management functions will be coming in the next release.
+the MPI active-target remote-memory operations (MPI_Put/MPI_Get).  Dynamic
+process management functions will be coming in the next release.
 
 At this point not as many communication devices have been implemented as
 in MPICH-1, but communication over TCP sockets, or through shared
@@ -20,7 +20,7 @@ memory, or with a combination of the two, is currently supported.  The
 default configuration is for all communication to take place over
 sockets.
 
-You can download MPICH-2 from http://www.mcs.anl.gov/mpi/mpich.  It is
+You can download MPICH-2 from http://www.mcs.anl.gov/mpi/mpich2.  It is
 still considered a beta release since, although we have tested it
 thoroughly in our own environment, it has not yet been tested by a wide
 range of users.  We hope that this announcement will lead to more users.
