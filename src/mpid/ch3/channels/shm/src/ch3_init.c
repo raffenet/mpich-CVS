@@ -312,7 +312,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent)
 	if (num_cpus == 1)
 	    pg->nShmWaitSpinCount = 1;
 	else if (num_cpus > 0 && num_cpus < pg_size)
-	    pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / pg_size;
+            pg->nShmWaitSpinCount = 1;
+	    /* pg->nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / pg_size; */
     }
 #endif
 #endif
