@@ -51,7 +51,7 @@ where
    MPI_IMPL     = the MPI implementation with which ROMIO will be used
                   Valid values are mpich, sgi, hp. (case-sensitive)
                   Valid implementations are MPICH 1.1.1 or higher,
-                  SGI's MPI 3.0 or higher, and HP MPI 1.3 or higher.
+                  SGI's MPI 3.1 or higher, and HP MPI 1.3 or higher.
    MPI_INCLUDE_DIR = the full path of the directory where mpi.h is located.
                   Not needed if the directory is in the compiler's 
                   default include path
@@ -111,7 +111,7 @@ of MPI-IO.
 "
 #
 echo " "
-echo "Configuring ROMIO Version 1.0.1 beta"
+echo "Configuring ROMIO Version 1.0.1"
 echo " "
 CONFIGURE_ARGS="$*"
 if test -n "$CONFIGURE_ARGS" ; then
@@ -1124,8 +1124,32 @@ fi
    if test -z "$FILE_SYSTEM" ; then
        file_system_nfs=1
        FILE_SYSTEM="nfs"
-       echo checking for xfs
-cat > conftest.c <<EOF
+       if test -z "$ac_echo_n" ; then
+ac_echo_n=yes
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+ac_echo_test=`echo foo 1>&1`
+if test -z "$ac_echo_test" ; then
+     print_error "Your sh shell does not handle the output redirection"
+     print_error "1>&1 correctly.  Configure will work around this problem,"
+     print_error "but you should report the problem to your vendor."
+fi
+
+fi
+if test -z "$ac_echo_test" -a 1 = 1 ; then
+echo $ac_n "checking for xfs""... $ac_c"
+else
+echo $ac_n "checking for xfs""... $ac_c" 1>&1
+fi
+       cat > conftest.c <<EOF
 #include "confdefs.h"
 
 #include <aio.h>
@@ -1140,7 +1164,7 @@ fi
 rm -f conftest*
 
        if test "$file_system_xfs" = 1 ; then 
-	   if test -z "$ac_echo_test" -a 1 = 1 ; then
+          if test -z "$ac_echo_test" -a 1 = 1 ; then
 echo "$ac_t""yes"
 else
 echo "$ac_t""yes" 1>&1
@@ -2224,54 +2248,6 @@ fi
 #
 # Check to see if the compiler accepts prototypes
 #
-# File system stat stuff
-for hdr in sys/statvfs.h sys/mount.h sys/param.h sys/stat.h sys/vfs.h
-do
-trhdr=HAVE_`echo $hdr | tr '[a-z]./' '[A-Z]__'`
-echo checking for ${hdr}
-echo checking how to run the C preprocessor
-if test -z "$CPP"; then
-  # This must be in double quotes, not single quotes, because CPP may get
-  # substituted into the Makefile and ``${CC-cc}'' will simply confuse
-  # make.  It must be expanded now.
-  CPP="${CC-cc} -E"
-  cat > conftest.c <<EOF
-#include "confdefs.h"
-#include <stdio.h>
-Syntax Error
-EOF
-err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
-if test -z "$err"; then
-  :
-else
-  rm -rf conftest*
-  CPP=/lib/cpp
-fi
-rm -f conftest*
-fi
-test ".${verbose}" != "." && echo "	setting CPP to $CPP"
-
-cat > conftest.c <<EOF
-#include "confdefs.h"
-#include <${hdr}>
-EOF
-err=`eval "($CPP conftest.c >/dev/null) 2>&1"`
-if test -z "$err"; then
-  rm -rf conftest*
-  
-{
-test -n "$verbose" && \
-echo "	defining ${trhdr}"
-echo "#define" ${trhdr} 1 >> confdefs.h
-DEFS="$DEFS -D${trhdr}=1"
-}
-
-
-fi
-rm -f conftest*
-done
-
-#
 if test -n "$file_system_nfs"; then
     CFLAGS="$CFLAGS -D__NFS"
 fi
@@ -2678,7 +2654,6 @@ trap 'rm -f Makefile mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/M
 RANLIB='$RANLIB'
 CC='$CC'
 F77='$F77'
-CPP='$CPP'
 FILE_SYSTEM='$FILE_SYSTEM'
 CFLAGS='$CFLAGS'
 USER_CFLAGS='$USER_CFLAGS'
@@ -2754,13 +2729,12 @@ for file in .. ${CONFIG_FILES}; do if test "x$file" != x..; then
   echo creating $file
   rm -f $file
   echo "# Generated automatically from `echo $file|sed 's|.*/||'`.in by configure." > $file
-cat $top_srcdir/${file}.in | sed -e "
+  sed -e "
 $prsub
 $extrasub
 s%@RANLIB@%$RANLIB%g
 s%@CC@%$CC%g
 s%@F77@%$F77%g
-s%@CPP@%$CPP%g
 s%@FILE_SYSTEM@%$FILE_SYSTEM%g
 s%@CFLAGS@%$CFLAGS%g
 s%@USER_CFLAGS@%$USER_CFLAGS%g
@@ -2796,7 +2770,7 @@ s%@MPI_FINFO2@%$MPI_FINFO2%g
 s%@MPI_FINFO3@%$MPI_FINFO3%g
 s%@MPI_FINFO4@%$MPI_FINFO4%g
 s%@MPI_FARRAY1@%$MPI_FARRAY1%g
-s%@MPI_FARRAY2@%$MPI_FARRAY2%g" | sed -e "
+s%@MPI_FARRAY2@%$MPI_FARRAY2%g
 s%@MPI_FARRAY3@%$MPI_FARRAY3%g
 s%@MPI_FARRAY4@%$MPI_FARRAY4%g
 s%@MPI_FARRAY5@%$MPI_FARRAY5%g
@@ -2815,14 +2789,14 @@ s%@MPIRUN@%$MPIRUN%g
 s%@LIBS@%$LIBS%g
 s%@srcdir@%$srcdir%g
 s%@DEFS@%$DEFS%
-" >> $file
+" $top_srcdir/${file}.in >> $file
 fi; done
 
 
 exit 0
 EOF
 chmod +x config.status
-${CONFIG_SHELL-/bin/sh} ./config.status
+${CONFIG_SHELL-/bin/sh} config.status
 
 if test "$NOF77" = 0; then
     CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/fperf.f"

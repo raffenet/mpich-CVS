@@ -23,7 +23,7 @@ mpio:
 	$(MAKE) mpiolib
 	$(MAKE) clean
 	@if test "$(NOPROFILE)" = 0 ; then\
-	    $(MAKE) profile; \
+            $(MAKE) profile; \
         fi;\
 	$(MAKE) clean
 	$(RANLIB) $(LIBNAME)
@@ -77,8 +77,8 @@ mpiolib:
             echo "deleting previously built library if it exists" ;\
             rm -f $(LIBNAME) ;\
         fi; \
-	dirs=`echo "$(DIRS)"`; \
-	for x in $(FILE_SYSTEM) ;\
+        dirs=`echo "$(DIRS)"`; \
+        for x in $(FILE_SYSTEM) ;\
          do \
              dirs=`echo "$$dirs" adio/ad_$$x` ;\
          done ; \
