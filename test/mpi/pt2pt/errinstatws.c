@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
 
     src  = 1;
     dest = 0;
-    if (rank == src) {
+    if (rank == dest) {
 	MPI_Irecv( b1, 10, MPI_INT, src, 0, comm, &r[0] );
 	MPI_Irecv( b2, 10, MPI_INT, src, 10, comm, &r[1] );
 
@@ -68,7 +68,7 @@ int main( int argc, char *argv[] )
 	}
 
     }
-    else if (rank == dest) {
+    else if (rank == src) {
 	/* Send messages, then barrier so that the wait does not start 
 	   until we are sure that the sends have begun */
 	MPI_Send( b1, 10, MPI_INT, dest, 0, comm );

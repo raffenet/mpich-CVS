@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
 
     src  = 1;
     dest = 0;
-    if (rank == src) {
+    if (rank == dest) {
 	MPI_Irecv( b1, 10, MPI_INT, src, 0, comm, &r[0] );
 	MPI_Irecv( b2, 10, MPI_INT, src, 10, comm, &r[1] );
 
@@ -44,7 +44,8 @@ int main( int argc, char *argv[] )
 	errval = MPI_Testsome( 2, r, &outcount, indices, s );
 	if (errval != MPI_ERR_IN_STATUS) {
 	    errs++;
-	    printf( "Did not get ERR_IN_STATUS in Testsome\n" );
+	    printf( "Did not get ERR_IN_STATUS in Testsome (outcount = %d)\n",
+		    outcount );
 	}
 	else if (outcount != 2) {
 	    errs++;
@@ -68,7 +69,7 @@ int main( int argc, char *argv[] )
 	}
 
     }
-    else if (rank == dest) {
+    else if (rank == src) {
 	/* Send messages, then barrier so that the test does not start 
 	   until we are sure that the sends have begun */
 	MPI_Send( b1, 10, MPI_INT, dest, 0, comm );
