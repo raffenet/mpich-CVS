@@ -5798,7 +5798,7 @@ Multiple implementations of the BNR interface are possible;  indeed, a
 design goal for the BNR interface definition is to provide the functionality
 required by a parallel library like MPICH without constraining the
 implementation.  Although we intend to provide at least one implementation of
-BNR (MPD), we will encourage other process manager suppliers to implement is
+BNR (MPD), we will encourage other process manager suppliers to implement it
 as well.
 
 \subsubsection{The BNR Interface}
@@ -5841,7 +5841,7 @@ called ``precommunication.''  Since only the process manager knows
 where other processes have been started, it may be necessary to ask at
 run time how to communicate with other processes.  We allow other
 processes to deposit their ``business cards'' into a keymap accessible
-to other processes in the same job, with information on who they may
+to other processes in the same job, with information on how they may
 be contacted (shmem keys, IP host/ports, switch ports, etc.)  Thus
 precommunication takes place through this keymap.  Keymap are
 identified by name, names are assigned by the process manger; no
@@ -5864,29 +5864,25 @@ interface.
 
 ({\em Rationale:\/}  In our initial design, we said that a keymap would be
 local to a process group.  All process in the process group would be able to
-insert (put) or extract (get) information from the keymap.  If a member of
+put or get information from the keymap.  If a member of
 the process group desired to share the information contained within one of its
 keymaps, it could extract the information using the iterator functions, and
-communicate the key-value pairs to a non-member using a mechanism external to
-BNR.  If the recipient of this information was also using BNR, it could create
-a new keymap using BNR and populate the keymap with the key-value pairs it
+communicate the key-value pairs to a process in another group.  The recipient 
+could create a new keymap and populate it with the key-value pairs it
 received, thus making the information available to all members of its process
 group.
 
-Rusty pointed out that the recipient process group might very well be in the
-same keymap domain, and that extracting and communicating all of the data
+If the recipient process group is able to issue gets and puts directly to the sender's
+keymap, extracting and communicating all of the data
 within a keymap would be unnecessary and costly.  We realized that if we
-associated a keymap to some notion of a domain rather than a particular
-process group then we might be able to avoid this potentially costly
-replication of information when process groups needed to exchange information.
+associate a keymap to some notion of a domain rather than a particular
+process group then we might be able to pass the keymap name to the receiveing 
+process group instead of the keymap contents and avoid the potentially costly
+replication of information.
 
 To make this practical, we restrict a process group to a single BNR domain.  A
 keymap is accessible to any process in the domain so long as that process
-knows the name of the keymap.
-
-BNR-Spawn-multiple may instantiate the set of requested processes in a domain
-outside of the one its calling process belongs to so long as the entire process
-group resides within a single domain.)
+knows the name of the keymap.)
 
 BNR {\em spawn\/} is the ability to launch a set of processes within a job.  These
 processes must be in a single BNR domain but they need not be in the same domain
@@ -5931,7 +5927,9 @@ given by a separate function.  - WDG.
 
 \begin{verbatim}
   int BNR_KM_Get_my_name(char *dbname)        - get name of keymap
-  int BNR_KM_Get_name_length_max( )           - needed since might be sent
+  int BNR_KM_Get_name_length_max()            - needed to communicate keymap
+  int BNR_KM_Get_key_length_max()               contents to a foreign domain
+  int BNR_KM_Get_value_length_max()
   int BNR_KM_Create(char *dbname [OUT})       - make a new one, get name 
   int BNR_KM_Destroy(const char *dbname [IN]) - finish with one 
   int BNR_KM_Put(char *dbname, const char *key,
