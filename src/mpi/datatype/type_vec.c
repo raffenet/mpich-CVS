@@ -106,7 +106,6 @@ int MPI_Type_vector(int count, int blocklength, int stride,
 
     new_ptr->ref_count	     = 1;
     new_ptr->is_contig	     = 0;
-    new_ptr->is_perm	     = 0;
     new_ptr->opt_loopinfo    = (struct MPID_Dataloop_st *)MPIU_Calloc( 1, 
 				       sizeof(struct MPID_Dataloop_st) );
     new_ptr->loopsize	     = 1;

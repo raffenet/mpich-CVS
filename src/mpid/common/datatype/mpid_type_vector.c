@@ -39,8 +39,7 @@ int MPID_Type_vector(int count,
      */
 
     new_dtp->combiner     = MPI_COMBINER_VECTOR;
-    new_dtp->is_perm      = 0;
-    new_dtp->is_permanent = 0; /* TODO: get rid of one of these! */
+    new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;

@@ -725,7 +725,6 @@ typedef struct MPID_Datatype_st {
     volatile int  ref_count;
     int           is_contig;     /* True if data is contiguous (even with 
                                     a (count,datatype) pair) */
-    int           is_perm;       /* True if datatype is a predefined type */
     struct MPID_Dataloop *opt_loopinfo;  /* "optimized" loopinfo.  
                                     Filled in at create
                                     time; not touched by MPI calls.  This will
@@ -748,7 +747,7 @@ typedef struct MPID_Datatype_st {
                                           creating and when getting contents */
     int           has_mpi1_ub;   /* The MPI_UB and MPI_LB are sticky */
     int           has_mpi1_lb;
-    int           is_permanent;  /* */
+    int           is_permanent;  /* True if datatype is a predefined type */
     int           is_committed;  /* */
 
     int           loopinfo_depth; /* Depth of dataloop stack needed

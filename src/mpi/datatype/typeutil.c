@@ -80,16 +80,16 @@ void MPIR_Datatype_init( void )
 	MPID_Common_thread_lock();
 	if (!is_init) { 
 	    for (i=0; i<MPID_DATATYPE_N_BUILTIN; i++) {
-		dptr		= &MPID_Datatype_builtin[i];
-		dptr->handle	= mpi_dtypes[i];
-		dptr->is_perm	= 1;
-		dptr->is_contig	= 1;
-		dptr->ref_count	= 1;
-		dptr->size	= MPID_Datatype_get_size(mpi_dtypes[i]);
-		dptr->extent	= dptr->size;
-		dptr->ub	= dptr->size;
-		dptr->true_ub	= dptr->size;
-		dptr->combiner	= MPI_COMBINER_NAMED;
+		dptr		   = &MPID_Datatype_builtin[i];
+		dptr->handle	   = mpi_dtypes[i];
+		dptr->is_permanent = 1;
+		dptr->is_contig	   = 1;
+		dptr->ref_count	   = 1;
+		dptr->size	   = MPID_Datatype_get_size(mpi_dtypes[i]);
+		dptr->extent	   = dptr->size;
+		dptr->ub	   = dptr->size;
+		dptr->true_ub	   = dptr->size;
+		dptr->combiner	   = MPI_COMBINER_NAMED;
 	    }
 	    is_init = 1;
 	}
