@@ -28,6 +28,6 @@ int PMI_KVS_iter_first(const char *kvsname, char *key, char *val);  /* loop thro
 int PMI_KVS_iter_next(const char *kvsname, char *key, char *val);   /* pairs in the kvs */
 
 /* PMI Process Creation functions */
-int PMI_Spawn_multiple(int count, const char **cmds, const char ***argvs, 
+int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
                        const int *maxprocs, const void *info, int *errors, 
                        int *same_domain, const void *preput_info);
