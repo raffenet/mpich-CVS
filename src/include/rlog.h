@@ -33,7 +33,7 @@ extern "C" {
 #define RLOG_BUFFSIZE           (8*1024*1024)
 #define RLOG_MAX_RECORD_SIZE     1024
 #define RLOG_COLOR_LENGTH       (3 * sizeof(double))
-#define RLOG_DESCRIPTION_LENGTH (4 * sizeof(double))
+#define RLOG_DESCRIPTION_LENGTH (5 * sizeof(double))
 #define RLOG_MAX_DOUBLE         (1e100)
 #define RLOG_MIN_DOUBLE         (-1e100)
 
