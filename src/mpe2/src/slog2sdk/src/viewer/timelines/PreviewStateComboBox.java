@@ -41,12 +41,22 @@ public class PreviewStateComboBox extends JComboBox
         pref_frame         = null;
     }
 
-    public void init( JButton btn )
+    public void addRedrawListener( JButton btn )
     {
         canvas_redraw_btn = btn;
-        super.setSelectedItem( Parameters.PREVIEW_STATE_DISPLAY );
         super.addActionListener( new PreviewModeActionListener() );
         pref_frame = (PreferenceFrame) TopWindow.Preference.getWindow();
+    }
+
+    public void init()
+    {
+        /*
+            Since JComboBox.setSelectedItem() invokes ActionListener which
+            call canvas_redraw_btn.doClick(), i.e. JComboBox.setSelectedItem()
+            redraws the Timeline window.  There init() needs to be called
+            after RowAdjustment.initSlidersAndTextFields().
+        */
+        super.setSelectedItem( Parameters.PREVIEW_STATE_DISPLAY );
     }
 
     private class PreviewModeActionListener implements ActionListener

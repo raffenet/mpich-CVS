@@ -378,7 +378,8 @@ public class TimelinePanel extends JPanel
         */ 
             y_tree.init();
             row_adjs.initYLabelTreeSize();
-            preview_state_combobox.init( toolbar.getPropertyRefreshButton() );
+            preview_state_combobox.addRedrawListener(
+                                   toolbar.getPropertyRefreshButton() );
     }
 
     public void init()
@@ -388,6 +389,13 @@ public class TimelinePanel extends JPanel
         // Initialize toolbar after creation of YaxisTree view
         toolbar.init();
         row_adjs.initSlidersAndTextFields();
+        /*
+           Strictly speaking:
+           Since PreviewStateComboBox listens to canvas redraw events, so
+           it cannot be initialized with any value before RowAdjustment has
+           determined the number of timelines for the canvas in the JTextField.
+        */
+        preview_state_combobox.init();
         if ( err_msg != null )
             Dialogs.error( root_window, err_msg );
 
