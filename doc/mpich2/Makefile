@@ -1,10 +1,12 @@
 ALL: mpich2.ps
 SHELL = /bin/sh
 
-.SUFFIXES: .ps .dvi .tex .fig .eps
+.SUFFIXES: .pdf .ps .dvi .tex .fig .eps
 
 .dvi.ps:
 	dvips $*
+.dvi.pdf:
+	(unset TEXMF ; dvipdfm $* )
 #.tex.dvi:
 #	-latex $*
 #	-bibtex $*
@@ -114,8 +116,9 @@ mmca.dvi: mmca.tex Makefile template.orig
 
 
 # This uses the full-featured date program in Linux
-install-web: mpich2.ps
+install-web: mpich2.ps mpich2.pdf
 	cp mpich2.ps /mcs/www-unix/mpi/mpich/adi3
+	cp mpich2.pdf /mcs/www-unix/mpi/mpich/adi3
 	cp /mcs/www-unix/mpi/mpich/adi3/index.html .foo
 	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`./" \
 		.foo > /mcs/www-unix/mpi/mpich/adi3/index.html

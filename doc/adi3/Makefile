@@ -4,13 +4,15 @@ SHELL = /bin/sh
 #
 # Use doctext in /home/gropp/bin/$ARCH/doctext 
 DOCTEXT = doctext
-.SUFFIXES: .ps .dvi .tex
+.SUFFIXES: .ps .pdf .dvi .tex
 
 adi3.dvi: adi3.tex
 paper.dvi: paper.tex
 
 .dvi.ps:
 	dvips $*
+.dvi.pdf:
+	(unset TEXMF ; dvipdfm $* )
 .tex.dvi:
 	-latex $*
 	-bibtex $*
@@ -38,6 +40,7 @@ adi3man.ps: adi3man.tex adi3.c adi3.h Makefile
 	dvips adi3man )
 	rm -f adi3man.ps
 	mv adi3man/adi3man.ps .
+	mv adi3man/adi3man.dvi .
 
 # This isn't ready yet.  We'd like to use doctext to generate the 
 # HTML for the 
@@ -52,10 +55,11 @@ core.dvi: core.tex adi3.c adi3.h
 	-latex core
 
 # This uses the full-featured date program in Linux
-install-web: adi3man.ps
+install-web: adi3man.ps adi3man.pdf
 	-rm -f /mcs/www-unix/mpi/mpich/adi3/adi3.[ch]
 	cp adi3.[ch] /mcs/www-unix/mpi/mpich/adi3
 	cp adi3man.ps /mcs/www-unix/mpi/mpich/adi3
+	cp adi3man.pdf /mcs/www-unix/mpi/mpich/adi3
 	cp /mcs/www-unix/mpi/mpich/adi3/index.html .foo
 	sed "s/Last updated .*$$/Last updated on `date '+%B %e, %Y'`./" \
 		.foo > /mcs/www-unix/mpi/mpich/adi3/index.html
