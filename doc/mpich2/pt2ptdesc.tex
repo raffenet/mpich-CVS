@@ -21,7 +21,9 @@ We may want to consider the more general \code{iovec} (array of structures
 contain a pointer and length in bytes for each member).  However, this is not
 an efficient way to handle common vector datatypes or fixed blocksize hindexed
 datatypes.  How important is it to handle the case where a modest-sized
-\code{iovec} array can be used?  
+\code{iovec} array can be used?  (Rob feels that this can be a big
+win, particularly for master-slave program containing a header plus a
+block of significant data.)
 
 (Still to do: modify code samples to allow for the short iovec case.)
 
@@ -67,10 +69,18 @@ The basic communication is provided by
 \begin{enumerate}
 \item Buffered read and write.  These are roughly like the Unix \code{fread}
   and \code{fwrite}.  Just as for those routines, using buffered routines can
-  reduce the number of system calls and data motion.  One major difference is
-  that these are nonblocking in the MPI sense.  That is, the buffered read
-  returns a pointer into the internal buffer, and the buffered write accepts
-  pointers without making a temporary copy.  The write varient sets an integer
+  reduce the number of system calls and data motion.  
+%  One major difference is
+%  that these are nonblocking in the MPI sense.  
+  To avoid copies, however, these are slightly different.
+  That is, the buffered read
+  returns a pointer into the internal buffer rather than copying the
+  data.
+  (This requires releasing the data when it is no longer needed, but
+  does eliminate a message copy.)
+  The buffered write accepts
+  pointers without making a temporary copy, and is nonblocking (in the
+  MPI sense).  The write variant sets an integer
   flag when the data is written.
 
   Note that this functionality is provided (I believe) by the current active
@@ -112,10 +122,11 @@ The basic communication is provided by
     matching request number.
 
     A stream used for reading data is similar, with data read into a
-    contiguous buffer and then unpacked instead.  In addition, and bytes in
+    contiguous buffer and then unpacked instead.  Bytes in
     the read buffer are used first; then one or more calls to \code{read} are
     used for the remainder of the data.  A further refinement is to allow the
-    use of \code{readv} once the read buffer is flushed.  
+    use of \code{readv} once the read buffer is flushed for
+    noncontiguous messages.  
 
     To implement these stream operations, the current active queue code may
     need to be modified.
@@ -123,7 +134,10 @@ The basic communication is provided by
     Question: We could use \code{MSG_PEEK} and \code{recv} instead of
     \code{read} to see how much data is available without reading it.  Can we
     use this, or is it better to just read some of the data (one system call)?
-    Rob tells us that there is a way to get the number of bytes in the buffer.
+    Rob tells us that there is a way to get the number of bytes in the
+    buffer.  On Linux, see \code{man 7 tcp}; the \code{ioctl} options
+    are \code{FIONREAD} (amount of unread data in buffer) and
+    \code{TIOCOUTQ} (amount of unsent data in send buffer).
 
 
   Question: Where is the buffer to pack into allocated?  Is this part of the 
@@ -132,8 +146,17 @@ The basic communication is provided by
   good for this particular method (e.g., are segments allocated with a source
   or destination rank and a group/communicator)?  Note that the ADI-3 provides
   a \mpidfunc{MPID_Segment_init_pack} (and an unpack) that takes the
-  communicator and rank for the destination.  In a multi-method device, each
-  device must provide this function (unless it is happy with generic memory).
+  communicator and rank for the destination These are needed for the
+  heterogeneous case, since this may affect how the data is
+  packed. The communicator and rank of the destination may also be
+  needed if special method-dependent memory is allocated for the pack
+  buffer (e.g., shared or pinned memory). In a multi-method device, each
+  device must provide this function (unless it is happy with generic
+  memory).
+  One reason to leave the allocation to the segment routines is that
+  the size may depend on the particular method or even datatype
+  layout; some methods may have particularly efficient methods for
+  handling vectors (e.g., shared memory); others may not.  
 
   Note that it is very useful to know if a datatype represents contiguous
   data; a \mpids{MPI_Datatype}{is_contig} flag value may be helpful.  Note
@@ -141,7 +164,9 @@ The basic communication is provided by
   \code{count} of $1$ may not be contiguous with a \code{count} greater than
   one (e.g., when the MPI UB (upperbound) is past the last data byte).  Do we
   want a separate flag for that?  Or should we optimize only for 
-  the case of a datatype that is contiguous regardless of \code{count}?
+  the case of a datatype that is contiguous regardless of
+  \code{count}?  Rob has suggested a refinement that looks at, for
+  example, the ratio of the overall size to the \code{count}.
 
     A refinement that is not discussed in detail here is to allow for
     \emph{double 
@@ -181,7 +206,11 @@ The basic communication is provided by
     
 \item Direct read and write.  These are roughly like the Unix
   \code{read} and \code{write}.  They are not used directly, but are a special
-  case of the stream read and write.
+  case of the stream read and write.  For example, a direct read may
+  be used for a transfering a large message directly to a contiguous
+  user's buffer.  This can be generalized to a \code{readv} for
+  user-datatypes with acceptable size/count ratios.  Similar rules
+  would hold for \code{write} and \code{writev}.  
 
 \item Socket agent.  This can be thought of as a \code{select}
     or \code{poll} loop that advances the communication.  In the case
@@ -205,7 +234,9 @@ These are the low-level communication services that are used to
 implemement a TCP version of a two-sided communication method.
 These can be implemented with an ``active queue'' system.  In this
 approach, each I/O operation adds an element to a FIFO queue.  Each
-file descriptor has separate read and write queues.  As operations
+file descriptor has separate read and write queues (note that only
+active connections need queues; we should not preestablish all
+possible connections on large systems).  As operations
 complete, the queue element is removed.  Special operations, such as
 streams, stay in their position in the queue until all data has been
 transfered.  This allows us to use the underlying flow control in TCP,
@@ -219,7 +250,7 @@ function call is made).  The second most common
 sets a flag to one; this is normally used to set the
 \code{request_ptr->xfer_completed} flag.  For efficiency, this could be a
 special case of the \code{NULL} handler with a non-null argument.
-For a stream involving a noncontiguous datatype, it could call a true
+For a stream involving a datatype that was packed, it could call a true
 routine to free up any temporary buffers (this is, in fact, part of the
 interface proposed here).
 
@@ -232,6 +263,11 @@ performance-diagnostic mode.)  Only if a connection cannot be reestablished
 within a reasonable time (defined by a runtime parameter) should an error be
 propagated up to the MPI levels.  The procedure for passing an error will be
 discussed later.
+
+Question: we could use an attribute value on the communicator to allow
+the user to give us some guidence on what to do if a TCP connection
+fails.  Should we do that?  What should it look like? (It is too bad
+that the communicator construction don't have an info hint.)
 
 \implementation{{General Notes}}
 The basic structures include the following:
@@ -249,7 +285,7 @@ typedef struct {
      void          *ptr;
      int           count;
      MPID_Datatype *dtype;
-     MPID_Comm     *comm_ptr;
+     MPID_Comm     *comm_ptr;  /* Needed for heterogeneous case */
 } MPID_Buf_info;          /* Info describing the user's buffer */
 
 #define MPID_REQ_REGULAR_MASK 0x1
@@ -272,7 +308,7 @@ typedef union {
   ... many other types ...
 } MPID_Packet;
 
-typedef struct _MPID_Stream {
+typedef struct _MPID_Segment {
   /* Remember the source (send) or destination (recv) buffer */
   void             *user_buffer;
   /* Describe the (count,datatype) */
@@ -280,6 +316,10 @@ typedef struct _MPID_Stream {
   int              count, cur_sp;
   /* Used to hold contig form of data */
   void             *tmp_buf;  
+} MPID_Segment;
+
+typedef struct _MPID_Stream {
+  MPID_Segment segment;
   /* Completion routine */
   void (*completion_fn)( struct _MPID_Stream *, void * );
   /* and argument */
@@ -338,16 +378,19 @@ Notes:
   make packet headers \emph{shorter}: there is no need to record the length of
   the packet header since they are all the same.
 
-\item Should the \code{MPID_Eager_info} and \code{MPID_Rndv_info} be in a
+\item Should the \code{MPID_Eager_info} and \code{MPID_Rndv_info} in
+  the \code{MPID_Request} be in a
   union?  That would help reduce the overall size of an \code{MPID_Request}.
   One goal should be to keep an \code{MPID_Request} to a single cache-line;
-  that will improve the performance, particular for the shared-memory devices.
+  that will improve the performance, particular for the shared-memory
+  devices.
+  Rob votes yes, in a union.
 \end{enumerate}
 
 In the case where there are multiple threads, it is necessary to ensure that
 only one thread (usually) modifies a request at a time.  This can be
 accomplished using (thread) locks or using flags (e.g., a \code{busy} flag).
-However, if flags are used, it is necessary to ensure that at pending writes
+However, if flags are used, it is necessary to ensure that all pending writes
 to memory on the process are completed before the flag is updated.  The macro
 \mpidfunc{MPID_MemWrite_ordered} can be used for this.  
 For example, for an Alpha processor using \code{gcc},
@@ -386,7 +429,13 @@ consider that?  This is complicated by the fact that threads are not
 required to register themselves with MPI (e.g., with a call to something
 like \code{MPI_Thread_initialize}).\index{thread overhead!request allocation}
 This probably isn't worth it, but it is a potential bottleneck on systems with
-large numbers of CPUs per node and a single MPI process per node.
+large numbers of CPUs per node and a single MPI process per node.  For
+such systems, we could dynamically partition the request ids by
+placing this information (and other per-thread information) into
+per-thread data.  Most thread packages provide a way to access such
+data; some systems even make it efficient.  For now, we won't worry
+about it.
+
 
 \implementation{{MPI_Irecv}}
 
@@ -398,7 +447,8 @@ Notes:
 \begin{enumerate}
 \item \mpidfunc{MPID_Request_recv_FOA} always returns a request.  If the
   request was found (and not \code{busy}), it is removed from the queue.  If
-  one was not found, it is inserted and marked as busy.  Marking it as busy
+  one was not found, a new one is inserted and marked as busy.
+  Marking it as busy 
   keeps another thread from finding the request, through another call to
   \mpidfunc{MPID_Request_recv_FOA}, of course, and attempting to use it before
   all of the fields have been set.  In a single threaded implementation, the
@@ -437,7 +487,9 @@ Notes:
   to return a convenient message (using predefined text).
 
 \item The next test is for the special case of a contiguous buffer.  In this
-  case, we can use \code{memcpy} directly.
+  case, we can use \code{memcpy} directly.  (Note: this should be
+  generalized to any buffer that does not require an intermediate
+  copy.  We need a term for that kind of data.)
 
   Question: do we want to use a private \code{memcpy} that might use, for 
   example, quadword load and store instructions that some system libraries
@@ -450,7 +502,8 @@ Notes:
   \code{-Msafeptr=auto,arg -Munroll=n:8} for \code{pgcc} showed that the
   \code{memcpy} and \code{long long} loop version had similar performance at
   1024 bytes but the (inlined) \code{long long} version was twice as fast at
-  128 bytes.  \code{double}s are \emph{terrible} on I86.
+  128 bytes.  \code{double}s are \emph{terrible} on i86 (17 to 30
+  \emph{times} slower).
 
 \item Otherwise, the user's buffer is not contiguous, and the data must be
   unpacked.  This is a simple case since all of the data is present, and 

@@ -4206,6 +4206,77 @@ Just as \mpifunc{MPI_INIT_THREAD} invokes initialization routines for
 the various subsystems, \mpifunc{MPI_FINALIZE} should invoke
 \mpidfunc{MPI_xxx_finalize} for those systems, in reverse order.
 
+Question: instead of having particular \code{MPI_xxx_finalize}
+routines, an alternative for the less-used subsystems, such as
+topologies and name servers, is to allow those subsystems to register
+routines to be called when \mpifunc{MPI_Finalize} is called.  For
+example, we could include a file containing
+\begin{verbatim}
+typedef struct {
+    static int (*f)( void * );
+    void *extra_data;
+} Finalize_func_t;
+
+#define MAX_FINALIZE_FUNC 16
+Finalize_func_t fstack[MAX_FINALIZE_FUNC];
+fstack_sp = 0;  /* First free entry */
+
+void MPIR_Add_finalize( static int (*f)( void * ), void *extra_data )
+{
+    if (fstack_sp >= MAX_FINALIZE_FUNC) {
+        /* panic ! */
+	}
+    fstack[fstack_sp].f = f;
+    fstack[fstack_sp++].extra_data = extra_data;
+}
+void MPIR_Call_finalize( void )
+{
+    int i;
+    for (i=fstack_sp-1; i>=0; i--) {
+        if (fstack[i].f) fstack[i].f( fstack[i].extra_data );
+    }
+    fstack_sp = 0;
+}
+\end{verbatim}
+and have \mpifunc{MPI_Finalize} call \mpidfunc{MPIR_Call_finalize}.
+
+The advantage to this is that applications that do not use parts of
+MPI that require additional libraries (such as \code{ldap} for the
+name server) do not need to load those libraries just to resolve
+symbols that appear only in the functions that appear in code called
+during \mpifunc{MPI_Finalize}.  
+
+Question:
+Since storing function pointers is vunerable to user-errors that
+overwrite memory, do we want to add sentinals, either on each side of
+the function stack or around each entry in the stack?
+
+Question: 
+Do we need to provide an ordering to these callbacks?  We could add a
+third argument that specified a phase; the callbacks would be called
+in phase order; within a phase, the order would be arbitrary.
+
+Question:
+Another approach is to add these as internal attributes on
+\mpiconst{MPI_COMM_SELF}, with the delete function corresponding to
+the callback defined above. The major problem with this is defining
+and communicating the private keyvals without losing the separation
+of the module from the rest of the code.  The other problem with
+relying on the attribute is that the order of invocation is not defined.
+
+A partial list of subsystems that we might handle with these finalize
+callbacks include 
+\begin{enumerate}
+\item Bsend 
+\item Name service
+\item Topologies
+\item Generalized requests
+\item Datareps
+\item Fortran 90 types created with \mpifunc{MPI_Type_create_f90_int} etc.
+%\item RMA (e.g., free any allocated shared memory)
+%\item I/O (e.g., close any open files)
+\end{enumerate}
+
 \subsection{Dynamic Processes}
 \label{sec:spawn}
 
@@ -4231,9 +4302,56 @@ Question:  Should this be a special case of spawn multiple?
 Question:  Do we want to define an API or a wire protocol for the name
 service?  Perhaps both?
 
+An alternative is to use OpenLDAP \cite{openldap}.  LDAP stands for
+``Lightweight Directory Access Protocol,'' and implements the X.500
+directory services.  For environments where TCP is available, LDAP
+provides all of the services needed by the MPI-2 name service.  The
+OpenLDAP project includes both a client library and a simple LDAP
+server (\code{slapd}).  
+
+A typical implementation using OpenLDAP might look something like
+this (this is incomplete and only includes the name of the ldap
+routines that can be used):
+\begin{verbatim}
+#include <ldap.h>
+static ?type? ldap_handle = 0;
+if (!ldap_handle) {
+    ? how do we get the server name ?
+    ? Use ldap_url_parse or ldap_is_ldap_url?
+    ldap_handle = ldap_init(?? );
+    ldap_bind_s( ldap_handle, ?? );
+    /* Or ldap_simple_bind_s or ldap_kerberos_bind_s */
+    MPIR_Add_finalize( MPID_Nameserver_finalize &ldap_handle );  
+          /* See MPI_Finalize */
+    }
+/* Synchronous call because MPI_LOOKUP_NAME is blocking */
+ldap_search_s( ??? ldap_handle, name, value );
+/* Use ldap_search_st to search with a timeout */
+ldap_parse_result();
+...
+static int MPID_Nameserver_finalize( void *ptr )
+{
+    ?? ldap_handle = (??) ptr;
+    ldap_unbind_s( ldap_handle ??? );
+    ldap_memfree( );
+    return 0;
+}
+...
+/* if an error seen, use */
+str = ldap_err2string( ... );
+MPIR_Err_setcode( "Error from ldap library during %s operation: %s", 
+                  routine_name, str );
+\end{verbatim}
+
 \subsubsection{\mpifunc{MPI_PUBLISH_NAME}}
+\begin{verbatim}
+ldap_add_s( ldap_handle, name, value ??? );
+\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_UNPUBLISH_NAME}}
+\begin{verbatim}
+ldap_delete_s( ldap_handle, name, ??? );
+\end{verbatim}
 
 \subsubsection{\mpifunc{MPI_OPEN_PORT}}
 
@@ -4819,7 +4937,8 @@ datatypes that are created during \mpifunc{MPI_Finalize}?  (I think so,
 particularly when trying to streamline codes to requiring only single-language
 support.)  What are the names of the routines?  Is there a common file that
 contains \mpidconst{MPID_F90_Predefined_types_head} as well as the routines to
-allocate and free these predefined types?
+allocate and free these predefined types?  See also the finalize
+callbacks in \mpifunc{MPI_Finalize}.
 
 \subsubsection{\mpifunc{MPI_TYPE_CREATE_F90_REAL}}
 See \mpifunc{MPI_TYPE_CREATE_F90_INTEGER}.
