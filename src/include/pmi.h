@@ -43,11 +43,28 @@ int PMI_KVS_iter_next(const char *kvsname, char *key, char *val);   /* pairs in 
 
 /* PMI Process Creation functions */
 
-int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
+typedef struct
+{
+    char * key;
+    char * val;
+}
+PMI_keyval_t;
+
+int PMI_Spawn_multiple(int count,
+                       const char ** cmds,
+                       const char *** argvs,
+                       const int * maxprocs,
+                       const int * info_keyval_sizes,
+                       const PMI_keyval_t ** info_keyval_vectors,
+                       int preput_keyval_size,
+                       const PMI_keyval_t * preput_keyval_vector,
+                       int * errors,
+                       int * same_domain);
+
+/* int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
                        const int *maxprocs, const void *info, int *errors, 
                        int *same_domain, const void *preput_info);
 
-/*
 int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
                        const int *maxprocs, const void *info, int *errors, 
                        int *same_domain, int preput_num,

@@ -155,7 +155,7 @@ int PMI_Init( int *spawned )
     else
 	PMI_spawned = 0;
     if (PMI_spawned)
-	*spawned = 0;    /**** RMB CHG BACK TO 1 AFTER TESTS *****/
+	*spawned = 1;    
     else
 	*spawned = 0;
 
@@ -434,14 +434,23 @@ int PMI_Spawn(const char *command, const char *argv[],
 int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
                        const int *maxprocs, const void *info, int *errors, 
                        int *same_domain, const void *preput_info)
-*****/
-
-#ifdef FOO
 
 int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
                        const int *maxprocs, const void *info, int *errors, 
                        int *same_domain, int preput_num,
 		       const char *preput_keys[], const char *preput_vals[])
+*****/
+
+int PMI_Spawn_multiple(int count,
+                       const char ** cmds,
+                       const char *** argvs,
+                       const int * maxprocs,
+                       const int * info_keyval_sizes,
+                       const PMI_keyval_t ** info_keyval_vectors,
+                       int preput_keyval_size,
+                       const PMI_keyval_t * preput_keyval_vector,
+                       int * errors,
+                       int * same_domain)
 {
     int  i,rc,argcnt,spawncnt;
     char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
@@ -465,13 +474,23 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
         snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d ",argcnt);
         strcat(buf,tempbuf);
     
-        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ",preput_num);
+/*        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ",preput_num);
         strcat(buf,tempbuf);
         for (i=0; i < preput_num; i++)
         {
 	    sprintf(tempbuf,"preput_%d=%s:%s ",i,preput_keys[i],preput_vals[i]);
 	    strcat(buf,tempbuf);
         }
+*/
+
+        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ", preput_keyval_size);
+        strcat(buf,tempbuf);
+        for (i=0; i < preput_keyval_size; i++)
+        { 
+	    sprintf(tempbuf,"preput_%d=%s:%s ",i,preput_keyval_vector[i].key,preput_keyval_vector[i].val);
+	    strcat(buf,tempbuf); 
+        } 
+
         strcat(buf, "\n");
         PMIU_writeline( PMI_fd, buf );
         PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
@@ -492,7 +511,6 @@ int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[],
     return( 0 );
 }
 
-#endif
 
 
 int PMI_Args_to_info(int *argcp, char ***argvp, void *infop)
