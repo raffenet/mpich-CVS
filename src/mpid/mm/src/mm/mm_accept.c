@@ -16,7 +16,7 @@ int MM_Accept(MPID_Info *info_ptr, char *port_name)
     p = MPID_Process.port_list;
     while (p)
     {
-	if (strcmp(p->port_name, port_name) == 0)
+	if (strncmp(p->port_name, port_name, MPI_MAX_PORT_NAME) == 0)
 	{
 	    bfd = beasy_accept(p->bfd);
 	    if (bfd == BFD_INVALID_SOCKET)

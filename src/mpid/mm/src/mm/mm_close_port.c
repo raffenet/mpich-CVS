@@ -17,7 +17,7 @@ int MM_Close_port(char *port_name)
 
     while (p)
     {
-	if (strcmp(port_name, p->port_name) == 0)
+	if (strncmp(port_name, p->port_name, MPI_MAX_PORT_NAME) == 0)
 	{
 	    beasy_closesocket(p->bfd);
 	    if (p == MPID_Process.port_list)
