@@ -122,7 +122,6 @@ typedef struct ibu_state_t
 #define IBU_PACKET_SIZE            (1024 * 64)
 #define IBU_PACKET_COUNT           128
 #define IBU_NUM_PREPOSTED_RECEIVES (IBU_ACK_WATER_LEVEL*3)
-#define IBU_MAX_CQ_ENTRIES         255
 #define IBU_MAX_POSTED_SENDS       8192
 #define IBU_MAX_DATA_SEGMENTS      100
 #define IBU_ACK_WATER_LEVEL        32
@@ -1111,6 +1110,7 @@ int ibu_init()
     }
     IBU_Process.port = 1;
     IBU_Process.cq_size = hca_cap.max_num_ent_cq;
+    MPIU_DBG_PRINTF(("cq size: %d\n", IBU_Process.cq_size));
     /* get a protection domain handle */
     status = VAPI_alloc_pd(IBU_Process.hca_handle, &IBU_Process.pd_handle);
     if (status != VAPI_OK)
