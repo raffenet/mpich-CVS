@@ -32,11 +32,8 @@ int MPID_Win_complete(MPID_Win *win_ptr)
         MPI_Aint ub, lb, true_ub, true_lb;
         int has_sticky_ub, has_sticky_lb;
     } MPIU_RMA_dtype_info;
-    MPIU_RMA_dtype_info *dtype_infos;
-    void **dataloops;    /* to store dataloops for each datatype */
     MPI_Group win_grp, start_grp;
     int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp;
-    MPID_Datatype *dtp;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_COMPLETE);
 
