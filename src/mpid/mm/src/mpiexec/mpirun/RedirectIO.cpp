@@ -6,7 +6,6 @@
  */
 #include "global.h"
 #include <stdio.h>
-#include "bsocket.h"
 #include "mpdutil.h"
 #include "RedirectIO.h"
 

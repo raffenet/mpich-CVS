@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\..\pm\winmpd\mpd,..\..\..\..\..\pm\winmpd\bsocket2,..\..\..\..\..\pm\winmpd\mpdutil"
-				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO,HAVE_WINBCONF_H,FD_SETSIZE=256,WSOCK2_BEFORE_WINDOWS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib crypt.lib bsocket2.lib mpdutil.lib ws2_32.lib odbc32.lib odbccp32.lib"
+				AdditionalDependencies="mpr.lib crypt.lib mpdutil.lib ws2_32.lib odbc32.lib odbccp32.lib"
 				OutputFile=".\Debug/MPIRun.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -78,7 +78,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\..\..\pm\winmpd\mpd,..\..\..\..\..\pm\winmpd\bsocket2,..\..\..\..\..\pm\winmpd\mpdutil"
-				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO"
+				PreprocessorDefinitions="USE_WINCONF_H,NEW_MPIIO,HAVE_WINBCONF_H,FD_SETSIZE=256,WSOCK2_BEFORE_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -96,7 +96,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib crypt.lib bsocket2.lib mpdutil.lib ws2_32.lib odbc32.lib odbccp32.lib"
+				AdditionalDependencies="mpr.lib crypt.lib mpdutil.lib ws2_32.lib odbc32.lib odbccp32.lib"
 				OutputFile=".\Release/MPIRun.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -164,10 +164,10 @@
 				RelativePath=".\LaunchProcess.h">
 			</File>
 			<File
-				RelativePath="..\Common\MPICH_pwd.h">
+				RelativePath=".\MPICH_pwd.h">
 			</File>
 			<File
-				RelativePath=".\MPICH_pwd.h">
+				RelativePath="..\Common\MPICH_pwd.h">
 			</File>
 			<File
 				RelativePath=".\MPIJobDefs.h">

@@ -5,7 +5,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "global.h"
-#include "bsocket.h"
 #include "mpd.h"
 
 // Global variables
