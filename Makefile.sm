@@ -43,7 +43,10 @@ PACKAGE = mpich2
 # Version < 1 is pre MPI-1 release.
 # Version >= 2 contains MPI-2
 # Version between 1 and 2 contains all of MPI1 and parts of MPI-2
-VERSION = 0.95-CVS
+# Version is now set in the Configure file so that we can easily include the
+# version on the configure output and to match the common practice of
+# current autoconfs
+VERSION = @VERSION@
 MPICVSHOME = @MPICVSHOME@
 #
 # Build a distribution tarfile

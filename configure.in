@@ -5,10 +5,12 @@ dnl bugs in autoconf caching.
 dnl
 dnl The file name here refers to a file in the source being configured
 AC_INIT(src/include/mpiimpl.h)
+VERSION="0.95-CVS"
+AC_SUBST(VERSION)
 CONFIGURE_ARGUMENTS="$*"
 AC_SUBST(CONFIGURE_ARGUMENTS)
 dnl
-echo "Configuring MPICH2 with $@"
+echo "Configuring MPICH2 version $VERSION with $@"
 dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(src/include/mpichconf.h)
@@ -28,7 +30,7 @@ AC_ARG_ENABLE(echo,
 dnl
 dnl # MPICH-1 used -Wshadow as well.
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],
-CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast")
+CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi")
 dnl
 AC_ARG_ENABLE(coverage,
 [--enable-coverage - Turn on coverage analysis using gcc and gcov],,
@@ -701,6 +703,12 @@ AC_CHECK_PROGS(AR,ar)
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
+# Check for broken handling of common symbols.  There are two fixes:
+# Force ranlib to handle correctly (ranlib -c on some BSD and MAC OS platforms)
+# or force gcc to not generate common symbols if using gcc (-fno-common).
+# This autoconf macro checks for this.
+PAC_PROG_C_BROKEN_COMMON
+#
 AC_PROG_INSTALL
 #
 # We also need mkdir -p.
