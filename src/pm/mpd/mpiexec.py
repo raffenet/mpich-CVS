@@ -256,7 +256,7 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
 def usage():
     print ''
     print 'mpiexec [ -h   or  -help   or  --help ]'
-    print 'mpiexec -file filename  # where filename contains pre-built xml for mpdrun'
+    print 'mpiexec -file filename  # where filename contains xml for job description'
     print 'mpiexec -configfile filename  # where filename contains cmd-line arg-sets'
     print 'mpiexec [ -default defaultArgs : ] argset : more_arg_sets : ...'
     print '    where each argset contains some of:'
@@ -267,8 +267,8 @@ def usage():
     print '    -env KEY1=VALUE1 -env KEY2=VALUE2 ...'
     print '    defaultArgs are passed to all processes unless overridden'
     print 'sample executions:'
-    print '    mpiexec.py  -n 1 pwd : -wdir /tmp pwd : printenv'
-    print '    mpiexec.py  -default -n 2 -wdir /bin -env RMB3=e3 : pwd : printenv'
+    print '    mpiexec -n 1 pwd : -wdir /tmp pwd : printenv'
+    print '    mpiexec -default -n 2 -wdir /bin -env RMB3=e3 : pwd : printenv'
     print ''
     exit(-1)
 
