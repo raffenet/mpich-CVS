@@ -324,7 +324,7 @@ EOF
   $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
   if test -x conftest ; then
       AC_MSG_RESULT(yes)
-      AC_DEFINE(HAVE_MPI_INFO,,[Define if MPI_Info available])
+      AC_DEFINE(HAVE_MPI_INFO,1,[Define if MPI_Info available])
       HAVE_MPI_INFO="#define HAVE_MPI_INFO"
       MPI_FINFO1="!"
       MPI_FINFO2="!"
