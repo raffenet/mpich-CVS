@@ -73,7 +73,7 @@ public class Clog2ToSlog2
         while ( ( next_kind = dobj_ins.peekNextKind() ) != Kind.EOF ) {
             if ( next_kind == Kind.TOPOLOGY ) {
                 topo = dobj_ins.getNextTopology();
-                objdef = dobj_ins.getShadowCategoryForTopology( topo );
+                objdef = Category.getShadowCategory( topo );
                 objdefs.put( new Integer( objdef.getIndex() ), objdef );
                 shadefs.put( topo, objdef );
                 // System.out.println( "TOPOLOGY: " + topo );
@@ -163,7 +163,7 @@ public class Clog2ToSlog2
             return Integer.parseInt( size_str );
     }
 
-    private static String help_msg = "Usage: java slog2.output.Clog2Slog "
+    private static String help_msg = "Usage: java slog2.output.Clog2ToSlog2 "
                                    + "[options] clog2_filename.\n"
                                    + " options: \n"
                                    + "\t [-h|--h|-help|--help]             "
@@ -196,7 +196,8 @@ public class Clog2ToSlog2
         String        arg_str;
         int           idx;
         StringBuffer  err_msg = new StringBuffer();
-        in_filename  = null;
+
+        in_filename              = null;
         enable_endtime_check     = false;
         continue_when_violation  = false;
         idx = 0;
