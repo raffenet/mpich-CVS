@@ -186,7 +186,7 @@ typedef int MPI_Errhandler;
 #define MPI_COMM_DUP_FN MPI_DUP_FN
 
 /* MPI request opjects */
-typedef union MPIR_HANDLE *MPI_Request;
+typedef int MPI_Request;
 
 /* User combination function */
 typedef void (MPI_User_function) ( void *, void *, int *, MPI_Datatype * ); 

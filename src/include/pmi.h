@@ -1,4 +1,11 @@
+#ifndef PMI_H
+#define PMI_H
+
 /* prototypes for the PMI interface in MPICH2 */
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /* PMI Group functions */
 int PMI_Init( int *spawned );  /* initialize PMI for this process group
@@ -31,3 +38,13 @@ int PMI_KVS_iter_next(const char *kvsname, char *key, char *val);   /* pairs in 
 int PMI_Spawn_multiple(int count, const char *cmds[], const char **argvs[], 
                        const int *maxprocs, const void *info, int *errors, 
                        int *same_domain, const void *preput_info);
+
+/* parse PMI implementation specific values into an info object that can then be passed to 
+   PMI_Spawn_multiple.  Remove PMI implementation specific arguments from argc and argv */
+int PMI_Args_to_info(int *argcp, char ***argvp, void *infop);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif
