@@ -40,27 +40,30 @@ $has_cxx = 1;
 		  'error-checking;no;runtime;all', 
 		  'error-messages;all;generic;class;none',
 		  'timer-type;linux86_cycle;gethrtime;clock_gettime;gettimeofday;linuxalpha_cycle',
-		  'timing;none;all;runtime',
+		  'timing;none;all;runtime;log;log_detailed',
 		  'mpi-macros',
 		  'g;none;all;handle;mem;dbg',
 		  'internat',
 		  'fast',
 		  'f77',
+		  'f90',
 		  'cxx',
 		  'romio',
 		  'coverage',
 		  'strict',
 		  'weak_symbols;no;yes',
 		  'debugger',
-		  'sharedlibs',
+		  'sharedlibs;gcc',
 #                 'threads;single;multiple',
+		  'dependencies',
 );
 %chosenEnable = ();
 @with_array = (
-	       'logging;none;rlog;dlog',
+	       'logging;none;rlog;dlog;lwlog',
 	       'pmi;simple',    #; uni no longer supported
 	       'pm;forker;mpd', #;remshell
-	       'device;ch3;ch3:shm',
+	       'namepublisher;no;file;pmiext', #;ldap:ldapserver',
+	       'device;ch3;ch3:shm;ch3:ssm',
 );
 %chosenWith = ();
 @env_array = (
@@ -502,6 +505,10 @@ sub time_left {
 sub RunTestSuites {
     my $run_status = 0;
     my $r_status = 0;
+    # Start by adding "notest" files to any optional tests
+    if (!$has_cxx) {
+	&SkipCxxTestSuite;
+    }
     foreach my $testname (split(';',$tests)) {
 	if ($testname eq "") { next; }
 	print $OUTFD $RunTestStart;
@@ -521,7 +528,7 @@ sub RunTestSuites {
 	elsif ($testname eq "intel") {
 	    &RunIntelTestSuite;
 	}
-	elsif ($testname eq "mpicxx") {
+	elsif ($testname eq "mpicxx" && $has_cxx) {
 	    &RunCxxTestSuite;
 	}
 	elsif ($testname eq "mpich2") {
@@ -648,6 +655,13 @@ sub RunMpichTestSuite {
     %ENV = %saveENV;
     chdir $cwd;
 }
+# ---------------------------------------------------------------------------
+sub SkipCxxTestSuite {
+    if ($mpicxx_test_dir eq "") {
+	$mpicxx_test_dir = "$tmpdir/cb/mpicxxtest";
+    }
+    `date > $mpicxx_test_dir/notest`;
+}
 sub RunCxxTestSuite {
     my $nargs = 0;
     $cwd = `pwd`;
@@ -669,6 +683,8 @@ sub RunCxxTestSuite {
 	#print STDERR "Cannot change to $mpicxx_test_dir\n";
 	return;
     }
+    # Remove any "notest" file
+    if (-s "notest") { unlink "notest"; }
     $config[$nargs++] = "$projects_dir/mpicxxtest/configure";
     $config[$nargs++] = "--with-mpich=$instdir";
     $config[$nargs++] = "--enable-xml";
