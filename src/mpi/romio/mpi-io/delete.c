@@ -57,8 +57,14 @@ int MPI_File_delete(char *filename, MPI_Info info)
    Can't initialize it here, because don't know argc, argv */
         MPI_Initialized(&flag);
         if (!flag) {
+#ifdef MPICH2
+	    error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, myname, __LINE__, MPI_ERR_INTERN, 
+					  "**initialized", 0);
+	    return MPIR_Err_return_file(MPI_FILE_NULL, myname, error_code);
+#else
             FPRINTF(stderr, "Error: MPI_Init() must be called before using MPI-IO\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
         }
 
         MPI_Keyval_create(MPI_NULL_COPY_FN, ADIOI_End_call, &ADIO_Init_keyval,

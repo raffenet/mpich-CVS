@@ -67,5 +67,6 @@ int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype,
 #endif
     }
 
+    /* FIXME: handle other file data representations */
     return MPI_Type_extent(datatype, extent);
 }

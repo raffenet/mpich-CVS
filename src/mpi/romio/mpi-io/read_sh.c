@@ -134,8 +134,14 @@ int MPI_File_read_shared(MPI_File fh, void *buf, int count,
     incr = (count*datatype_size)/fh->etype_size;
     ADIO_Get_shared_fp(fh, incr, &shared_fp, &error_code);
     if (error_code != MPI_SUCCESS) {
+#ifdef MPICH2
+	error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, myname, __LINE__, MPI_ERR_INTERN, 
+					  "**iosharedfailed", 0);
+	return MPIR_Err_return_file(fh, myname, error_code);
+#else
 	FPRINTF(stderr, "MPI_File_read_shared: Error! Could not access shared file pointer.\n");
 	MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
     }
 
     /* contiguous or strided? */

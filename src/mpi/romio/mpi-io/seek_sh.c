@@ -140,8 +140,14 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 	    /* get current location of shared file pointer */
 	    ADIO_Get_shared_fp(fh, 0, &curr_offset, &error_code);
 	    if (error_code != MPI_SUCCESS) {
+#ifdef MPICH2
+		error_code = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, myname, __LINE__, MPI_ERR_INTERN, 
+	    "**iosharedfailed", 0);
+		return MPIR_Err_return_file(fh, myname, error_code);
+#else
 		FPRINTF(stderr, "MPI_File_seek_shared: Error! Could not access shared file pointer.\n");
 		MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
 	    }
 	    offset += curr_offset;
 	    if (offset < 0) {
@@ -196,6 +202,7 @@ int MPI_File_seek_shared(MPI_File fh, MPI_Offset offset, int whence)
 	ADIO_Set_shared_fp(fh, offset, &error_code);
     }
 
+    /* FIXME: explain why the barrier is necessary */
     MPI_Barrier(fh->comm);
 
     return error_code;

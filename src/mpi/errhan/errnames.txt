@@ -302,6 +302,7 @@ Fortran integer (value is %ld)
 **iofiletype:Filetype must be constructed out of one or more etypes
 **iosharedunsupported:Shared file pointers not supported
 **iosharedunsupported %s:Shared file pointers not supported on filesystem %s
+**iosharedfailed:Could not access shared file pointer
 **ioamodeseq:Cannot use this function when the file is opened with amode \
     MPI_MODE_SEQUENTIAL 
 **ioamodeseq %s:Cannot use function %s when the file is opened with amode \
