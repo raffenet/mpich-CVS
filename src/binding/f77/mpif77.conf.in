@@ -1,45 +1,36 @@
 #! /bin/sh
-# Default compiler configuration
-# WARNING: THIS IS TAKEN FROM MPICH1; MUCH OF IT IS OUT-OF-DATE.
+#
+# This file contains configuration information for mpif77.  This is
+# essentially just the variable-initialization part of mpif77.
+# --------------------------------------------------------------------------
+# Set the default values of all variables.
 #
 # Directory locations: Fixed for any MPI implementation
+# Set from the directory arguments to configure (e.g., --prefix=/usr/local)
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 sysconfdir=@sysconfdir@
 includedir=@includedir@
 libdir=@libdir@
 #
-# Directory locations: Can change for each Fortran version
-f77includedir=@f77includedir@
-f77libdir=@f77libdir@
-#
-F77BASE="@F77@"
-FLINKERBASE="@F77LINKER@"
-LDFLAGSBASE="@LDFLAGS@"
-BASE_FFLAGS="@BASE_FFLAGS@ @F77_GETARG_FFLAGS@"
-FINC="@F77_INCDIR@"
-USER_FFLAGS="@FFLAGS@"
-#
-# Linker flags
-F77_LDFLAGS="@F77_LDFLAGS@"
-BASE_LIB_LIST="@BASE_LIB_LIST@"
-FLIB_LIST="@F77_GETARG_LDFLAGS@"
-FLIB_PATH_LEADER="@F77_LIBDIR_LEADER@"
-FLIB_PATH="${libdir}"
-LIB_PATH="@LIB_PATH@"
-FLIBNAME="@FLIBNAME@"
+# Default settings for compiler, flags, and libraries
+# Determined by a combination of environment variables and tests within
+# configure (e.g., determining whehter -lsocket is needee)
+FC="@FC@"
+F77CPP="@F77CPP@"
+MPI_FFLAGS="@MPI_FFLAGS@"
+MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
-# set to yes if the PMPI routines are in the same library with the MPI routines
-# (for example, they are built with weak symbols).
-MPI_WITH_PMPI="@MPI_WITH_PMPI@"
+MPI_OTHERLIBS="@LIBS@"
 #
-# Shared library support
-SHAREDKIND=@SHAREDKIND@
-SHARED_LIB_SEARCH_PATH_LEADER=@SHARED_LIB_SEARCH_PATH_LEADER@
-SHARED_LIB_LOCALDIR=@SHARED_LIB_LOCALDIR@
-sharedlibdir=@sharedlibbuild_dir@
+# MPIVERSION is the version of the MPICH2 library that mpif77 is intended for
+MPIVERSION=@MPIVERSION@
 #
-# New MPICH2 variables
+# ----------------------------------------------------------------------------
+# We also keep track of properties of the compilation system.  These
+# are read by the top-level configure to initialize the Fortran types
+# within the mpi.h file.
+#
 # MPI Types for the Fortran types
 MPI_COMPLEX=@MPI_COMPLEX@
 MPI_DOUBLE_COMPLEX=@MPI_DOUBLE_COMPLEX@

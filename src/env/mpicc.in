@@ -57,7 +57,7 @@ Show=eval
 # In addition, if there is a file $sysconfdir/mpicc-$CCname.conf, 
 # where CCname is the name of the compiler with all spaces replaced by hyphens
 # (e.g., "cc -64" becomes "cc--64", that file is sources, allowing other
-# changes to the compilatoin environment.  See the variables used by the 
+# changes to the compilation environment.  See the variables used by the 
 # script (defined above)
 if [ -n "$MPICH_CC" ] ; then
     CC="$MPICH_CC"

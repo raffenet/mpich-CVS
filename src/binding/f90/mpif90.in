@@ -22,8 +22,11 @@
 #
 # Special issues with shared libraries - todo
 #
+# --------------------------------------------------------------------------
+# Set the default values of all variables.
 #
-# Directory locations: Fixed for any MPI implementation
+# Directory locations: Fixed for any MPI implementation.
+# Set from the directory arguments to configure (e.g., --prefix=/usr/local)
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 sysconfdir=@sysconfdir@
@@ -31,12 +34,127 @@ includedir=@includedir@
 libdir=@libdir@
 #
 # Default settings for compiler, flags, and libraries
+# Determined by a combination of environment variables and tests within
+# configure (e.g., determining whehter -lsocket is needee)
 F90="@F90@"
 MPI_F90FLAGS="@MPI_F90FLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
 MPI_OTHERLIBS="@LIBS@"
+# MPIVERSION is the version of the MPICH2 library that mpicc is intended for
+MPIVERSION=@MPIVERSION@
 #
+#
+# Internal variables
+# Show is set to echo to cause the compilation command to be echoed instead 
+# of executed.
+Show=eval
+#
+# End of initialization of variables
+#---------------------------------------------------------------------
+# Environment Variables.
+# The environment variables MPICH_F90 may be used to override the 
+# default choices.
+# In addition, if there is a file $sysconfdir/mpif90-$F90name.conf, 
+# where F90name is the name of the compiler with all spaces replaced by hyphens
+# (e.g., "f90 -64" becomes "f90--64", that file is sources, allowing other
+# changes to the compilation environment.  See the variables used by the 
+# script (defined above)
+if [ -n "$MPICH_F90" ] ; then
+    F90="$MPICH_F90"
+    F90name=`echo $F90 | sed 's/ /-/g'`
+    if [ -s $sysconfdir/mpif90-$F90name.conf ] ; then
+        . $sysconfdir/mpif90-$F90name.conf
+    fi
+fi
+#
+# ------------------------------------------------------------------------
+# Argument processing.
+# This is somewhat awkward because of the handling of arguments within
+# the shell.  We want to handle arguments that include spaces without 
+# loosing the spacing (an alternative would be to use a more powerful
+# scripting language that would allow us to retain the array of values, 
+# which the basic (rather than enhanced) Bourne shell does not.  
+#
+# Look through the arguments for arguments that indicate compile only.
+# If these are *not* found, add the library options
+
+linking=yes
+allargs=""
+for arg in "$@" ; do
+    # Set addarg to no if this arg should be ignored by the C compiler
+    addarg=yes
+    qarg=$arg
+    case $arg in 
+ 	# ----------------------------------------------------------------
+	# Compiler options that affect whether we are linking or no
+    -c|-S|-E|-M|-MM)
+    # The compiler links by default
+    linking=no
+    ;;
+	# ----------------------------------------------------------------
+	# Options that control how we use mpif90 (e.g., -show, 
+	# -f90=* -config=*
+    -echo)
+    addarg=no
+    set -x
+    ;;
+    -f90=*)
+    F90=`echo A$arg | sed -e 's/A-f90=//g'`
+    addarg=no
+    ;;
+    -show)
+    addarg=no
+    Show=echo
+    ;;
+    -config=*)
+    addarg=no
+    F90name=`echo A$arg | sed -e 's/A-config=//g'`
+    if [ -s "$sysconfdir/mpif90-$F90name.conf" ] ; then
+        . "$sysconfdir/mpif90-$F90name.conf"
+    else
+	echo "Configuration file mpif90-$F90name.conf not found"
+    fi
+    ;;
+    -compile_info)
+    Show=echo
+    addarg=no
+    ;;
+    -link_info)
+    Show=echo
+    addarg=no
+    ;;
+    -v)
+    # Pass this argument to the compiler as well.
+    echo "mpif90 for $MPIVERSION"
+    ;;
+	# -help
+    -help)
+    ;;
+        # -----------------------------------------------------------------
+	# Other arguments.  We are careful to handle arguments with 
+	# quotes (we try to quote all arguments in case they include 
+	# any spaces)
+    *\"*) 
+    qarg="'"$arg"'"
+    ;;
+    *\'*) 
+    qarg='\"'"$arg"'\"'
+    ;;
+    *)
+    ;;
+
+    esac
+    if [ $addarg = yes ] ; then
+        allargs="$allargs $qarg"
+    fi
+done
+
+# -----------------------------------------------------------------------
+# Derived variables.  These are assembled from variables set from the
+# default, environment, configuration file (if any) and command-line
+# options (if any)
+
 mpilibs=-l$MPILIBNAME
 #
 # Concatenate the user flags with the ones needed by MPI
@@ -59,10 +177,10 @@ done
 # Eventually, we'll want to move this after any non-MPI implementation 
 # libraries
 if [ "$linking" = yes ] ; then
-    $F90 $F90FLAGS $LDFLAGS -I$includedir -L$libdir "$@" $mpilibs $MPI_OTHERLIBS
+    $Show $F90 $F90FLAGS $LDFLAGS -I$includedir -L$libdir $allargs $mpilibs $MPI_OTHERLIBS
     rc=$?
 else
-    $F90 $F90FLAGS -I$includedir "$@" 
+    $Show $F90 $F90FLAGS -I$includedir $allargs
     rc=$?
 fi
 exit $rc

@@ -1052,7 +1052,8 @@ INCLUDES = -I../../include -I\${top_srcdir}/src/include\
 maintainerclean-local:\
 \trm -f \${mpi_sources}\
 install_INCLUDE = mpicxx.h\
-install_BIN     = mpicxx\n";
+install_BIN     = mpicxx\
+install_ETC     = mpicxx.conf\n";
 
 # Since configure copies mpicxx to the bin dir, we need to remove it
 # in a distclean step.  

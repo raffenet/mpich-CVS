@@ -78,4 +78,4 @@ AC_OUTPUT_COMMANDS([chmod a+x mpicxx ;
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 )
-AC_OUTPUT(Makefile mpicxx mpicxx.h) 
+AC_OUTPUT(Makefile mpicxx mpicxx.h mpicxx.conf) 

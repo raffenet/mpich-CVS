@@ -1166,6 +1166,8 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 
+AC_SUBST(MPIVERSION)
+
 AC_OUTPUT_COMMANDS([chmod a+x mpif77 ;
    if test ! -d ../../../bin  ; then mkdir ../../../bin ; fi 
    sed -e 's%includedir=.*%includedir='$includebuild_dir% \

@@ -103,6 +103,7 @@ if test -z "$F90_LIBDIR_LEADER" ; then
     F90_LIBDIR_LEADER="-L"
 fi
 AC_SUBST(F90_LIBDIR_LEADER)
+AC_SUBST(MPIVERSION)
 
 AC_OUTPUT_COMMANDS([if test "$enable_echo" ; then set -x ; fi ])
 AC_OUTPUT(Makefile mpif90.conf mpif90)

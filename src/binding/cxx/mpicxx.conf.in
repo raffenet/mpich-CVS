@@ -1,7 +1,7 @@
 #! /bin/sh
 #
-# This file contains configuration information for mpicc.  This is
-# essentially just the variable-initialization part of mpif90.
+# This file contains configuration information for mpicxx.  This is
+# essentially just the variable-initialization part of mpicxx.
 # --------------------------------------------------------------------------
 # Set the default values of all variables.
 #
@@ -13,11 +13,11 @@ sysconfdir=@sysconfdir@
 includedir=@includedir@
 libdir=@libdir@
 #
-# Default settings for compiler, flags, and libraries
+# Default settings for compiler, flags, and libraries.
 # Determined by a combination of environment variables and tests within
 # configure (e.g., determining whehter -lsocket is needee)
-F90="@F90@"
-MPI_F90FLAGS="@MPI_F90FLAGS@"
+CXX="@CXX@"
+MPI_CXXFLAGS="@MPI_CXXFLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
 MPI_OTHERLIBS="@LIBS@"
