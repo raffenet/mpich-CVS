@@ -19,11 +19,20 @@ public class MixedDataInputStream extends DataInputStream
         super( in );
     }
 
-    // Return a trimed String from reading the Stream with a temporary buffer
+    // Extract the java string from the C string buffer byte_buf
     public String readString( int bytesize ) throws IOException
     {
-        byte[] bytebuf = new byte[ bytesize ];
-        super.readFully( bytebuf );
-        return ( new String( bytebuf ) ).trim();
+        byte[]  byte_buf;
+        String  byte_str;
+        int     cstr_end_idx;
+
+        byte_buf = new byte[ bytesize ];
+        super.readFully( byte_buf );
+        byte_str =  new String( byte_buf );
+        cstr_end_idx = byte_str.indexOf( '\0' );
+        if ( cstr_end_idx > 0 )
+            return byte_str.substring( 0, cstr_end_idx ).trim();
+        else
+            return null;
     }
 }
