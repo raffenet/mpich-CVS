@@ -7,3 +7,4 @@ dupic_SOURCES    = dupic.c
 ic1_SOURCES      = ic1.c
 cfree_SOURCES    = cfree.c
 commname_SOURCES = commname.c
+ctxalloc_SOURCES = ctxalloc.c
