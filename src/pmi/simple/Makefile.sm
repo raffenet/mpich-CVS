@@ -1,2 +1,5 @@
 lib${MPILIBNAME}_a_SOURCES = simple_pmiutil.c simple_pmi.c
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
+
+distclean-local:
+	@-rm -f pmiconf.h
