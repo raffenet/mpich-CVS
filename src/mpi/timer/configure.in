@@ -136,12 +136,14 @@ fi
 dnl
 dnl Check for valid timer and select datatypes for the time stamp
 case "$timer_type" in
+
     gethrtime)
     MPID_TIMER_TYPE=hrtime_t
     AC_CHECK_FUNC(gethrtime,,[
          AC_MSG_ERROR([Requested timer gethrtime is not available])
 ])
     ;;
+
     clock_gettime)
     AC_CHECK_FUNCS(clock_gettime clock_getres)
     MPID_TIMER_TYPE="struct timespec"
@@ -166,11 +168,25 @@ pac_cv_posix_clock_realtime=no)])
     ;;
 
     linux86_cycle|linux86_cycle_2)
+    AC_CACHE_CHECK([that linux86 cycle counter is available],
+pac_cv_linux86_cycle,[
+    AC_TRY_COMPILE(,[
+    long long var, *var_ptr=&var;
+    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" 
+                            : "=m" (*((char *) (var_ptr))), 
+                              "=m" (*(((char *) (var_ptr))+4)) 
+                            :: "eax", "ebx", "ecx", "edx" ); 
+],pac_cv_linux86_cycle=yes,pac_cv_linux86_cycle=no)])
+    if test "$pac_cv_linux86_cycle" != "yes" ; then
+        AC_MSG_ERROR([Linux86 cycle counter is not available on this system and or with the $CC compiler])
+    fi
     MPID_TIMER_TYPE="long long"
     ;;
+
     linuxalpha_cycle)
     MPID_TIMER_TYPE="long"
     ;;
+
     *)
     AC_MSG_ERROR([Invalid timer type $timer_type])
     ;;
