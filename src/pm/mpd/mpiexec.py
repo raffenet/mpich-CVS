@@ -81,9 +81,10 @@ def mpiexec():
                     setenvall = 1
                     gargIdx += 1
                 elif defaultArgs[gargIdx] == '-env':
-                    (var,val) = defaultArgs[gargIdx+1].split('=')
+                    var = defaultArgs[gargIdx+1]
+                    val = defaultArgs[gargIdx+2]
                     gEnv[var] = val
-                    gargIdx += 2
+                    gargIdx += 3
                 elif defaultArgs[gargIdx] == '-l':
                     linelabels = 1
                     gargIdx += 1
@@ -188,9 +189,10 @@ def handle_argset(argset,xmlDOC,xmlPROCSPEC,xmlHOSTSPEC):
             wpath = argset[argidx+1]
             argidx += 2
         elif argset[argidx] == '-env':
-            (var,val) = argset[argidx+1].split('=')
+            var = argset[argidx+1]
+            val = argset[argidx+2]
             lEnv[var] = val
-            argidx += 2
+            argidx += 3
         else:
             print 'unsupported or unrecognized option: %s' % argset[argidx]
             usage()

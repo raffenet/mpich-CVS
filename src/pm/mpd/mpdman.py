@@ -74,11 +74,10 @@ def mpdman():
     default_kvsname = sub('\.','_',default_kvsname)  # chg magpie.cs to magpie_cs
     default_kvsname = sub('\-','_',default_kvsname)  # chg node-0 to node_0
     KVSs[default_kvsname] = {}
-    x = [y for y in clientPgmEnv if (y.startswith('MPI_UNIVERSE_SIZE') or \
-                                     y.startswith('MPI_APPNUM'))]
-    for z in x:
-        (key,val) = z.split('=')
-        KVSs[default_kvsname][key] = val
+    x = [y for y in clientPgmEnv.keys() if (y.startswith('MPI_UNIVERSE_SIZE') or \
+                                            y.startswith('MPI_APPNUM'))]
+    for k in x:
+        KVSs[default_kvsname][k] = clientPgmEnv[k]
     kvs_next_id = 1
     jobEndingEarly = 0
     pmiCollectiveJob = 0
@@ -189,9 +188,7 @@ def mpdman():
         environ['MPD_JRANK'] = str(myRank)                                 ## BNR
         environ['MAN_MSGS_FD'] = environ['PMI_FD']                         ## BNR
         environ['CLIENT_LISTENER_FD'] = str(clientListenSocket.fileno())   ## BNR
-        for envvar in clientPgmEnv:
-            (envkey,envval) = envvar.split('=')
-            environ[envkey] = envval
+        environ.update(clientPgmEnv)
         for key in environ.keys():
             if key.startswith('MPDMAN_'):
                 del environ[key]

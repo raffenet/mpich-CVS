@@ -179,12 +179,12 @@ def mpdrun():
                 argVals[i-1] = unquote(argDict[i])
             args[(loRange,hiRange)] = argVals
 
-            envVals = []
+            envVals = {}
             envVarList = p.getElementsByTagName('env')
             for envVarElem in envVarList:
                 envkey = envVarElem.getAttribute('name')
                 envval = envVarElem.getAttribute('value')
-                envVals.append('%s=%s' % (envkey,envval) )
+                envVals[envkey] = envval
             envvars[(loRange,hiRange)] = envVals
 
             if hostList:
@@ -210,7 +210,7 @@ def mpdrun():
         cwds    = { (0,nprocs-1) : cwd }
         paths   = { (0,nprocs-1) : environ['PATH'] }
         args    = { (0,nprocs-1) : pgmArgs }
-        envvars = { (0,nprocs-1) : '' }
+        envvars = { (0,nprocs-1) : {} }
         if hostsFile:
             hosts = {}
             hostNames = hostsFile.readlines()
