@@ -19,3 +19,5 @@ rlogconf.*
 printrlog
 printirlog
 irlog2rlog
+*.ncb
+*.suo
