@@ -48,6 +48,9 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 struct DLOOP_Segment *segp)
 {
     int i, elmsize = 0, depth = 0;
+#ifdef DLOOP_SUPPORTS_STRUCT
+    int branch_detected = 0;
+#endif
     struct DLOOP_Dataloop_stackelm *elmp;
     struct DLOOP_Dataloop *dlp = 0, *sblp = &segp->builtin_loop;
     
@@ -164,15 +167,25 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     else {
 	elmp->orig_count = dlp->loop_params.count;
     }
+
+#ifdef DLOOP_SUPPORTS_STRUCT
+    if ((dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT) {
+	branch_detected = 1;
+	elmp->may_require_reloading = 1;
+    }
+    else {
+	elmp->may_require_reloading = 0;
+    }
+#endif
     
     elmp->curcount    = elmp->orig_count;
     elmp->orig_offset = 0;
 
-    /* note: DLOOP_Stackelm_blocksize assumes orig_count, curcount, and loop_p are correct */
+    /* DLOOP_Stackelm_blocksize assumes correct orig_count, curcount, loop_p */
     elmp->orig_block  = DLOOP_Stackelm_blocksize(elmp);
     elmp->curblock    = elmp->orig_block;
 
-    /* note: DLOOP_Stackelm_offset assumes orig_count, curcount, and loop_p are correct */
+    /* DLOOP_Stackelm_offset assumes correct orig_count, curcount, loop_p */
     elmp->curoffset   = /* elmp->orig_offset + */ DLOOP_Stackelm_offset(elmp);
     
     dlp = dlp->loop_params.cm_t.dataloop;
@@ -189,6 +202,19 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	else {
 	    elmp->orig_count = dlp->loop_params.count;
 	}
+
+#ifdef DLOOP_SUPPORTS_STRUCT
+	if (branch_detected ||
+	    (dlp->kind & DLOOP_KIND_MASK) == DLOOP_KIND_STRUCT)
+	{
+	    branch_detected = 1;
+	    elmp->may_require_reloading = 1;
+	}
+	else {
+	    elmp->may_require_reloading = 0;
+	}
+#endif
+
 	elmp->curcount   = elmp->orig_count; /* required by DLOOP_Stackelm_blocksize */
 	elmp->orig_block = DLOOP_Stackelm_blocksize(elmp);
 
@@ -388,8 +414,10 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
     for (;;) {
 #ifdef DEBUG_DLOOP_MANIPULATE
+#if 0
         DLOOP_dbg_printf("looptop; cur_sp=%d, cur_elmp=%x\n",
 			 cur_sp, (unsigned) cur_elmp);
+#endif
 #endif
 
 	if (cur_elmp->loop_p->kind & DLOOP_FINAL_MASK) {
@@ -511,9 +539,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	    assert(myblocks >= 0);
 	    stream_off += myblocks * stream_el_size;
 
-	    /* myblocks indicates how many blocks were processed by the
-	     * piecefn.  if it processed less than we expected, we will save
-	     * our state and return immediately (next two cases).
+	    /* myblocks of 0 or less than cur_elmp->curblock indicates
+	     * that we should stop processing and return.
 	     */
 	    if (myblocks == 0) {
 		DLOOP_SEGMENT_SAVE_LOCAL_VALUES;

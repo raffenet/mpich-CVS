@@ -223,9 +223,8 @@ typedef struct DLOOP_Dataloop {
     DLOOP_Type   el_type;
 } DLOOP_Dataloop;
 
-#define DLOOP_FINAL_MASK 0x00000008
-#define DLOOP_KIND_MASK  0x00000007
-#define DLOOP_ELMSIZE_SHIFT 4
+#define DLOOP_FINAL_MASK  0x00000008
+#define DLOOP_KIND_MASK   0x00000007
 #define DLOOP_KIND_CONTIG 0x1
 #define DLOOP_KIND_VECTOR 0x2
 #define DLOOP_KIND_BLOCKINDEXED 0x3
@@ -237,7 +236,6 @@ typedef struct DLOOP_Dataloop {
    datatype dependencies.  Defining this and testing when a datatype
    is created removes a test in the datatype evaluation loop. */
 #define DLOOP_MAX_DATATYPE_DEPTH 8
-
 
 /*S
   DLOOP_Dataloop_stackelm - Structure for an element of the stack used
@@ -261,14 +259,17 @@ typedef struct DLOOP_Dataloop {
 
 S*/
 typedef struct DLOOP_Dataloop_stackelm {
-    DLOOP_Count curcount;
+    int may_require_reloading;
+
+    DLOOP_Count  curcount;
     DLOOP_Offset curoffset;
-    DLOOP_Count curblock; /* NOTE: THIS WASN'T HERE IN MPICH2 VERSION??? */
-    struct DLOOP_Dataloop *loop_p;
-    DLOOP_Count orig_count;
+    DLOOP_Count  curblock;
+
+    DLOOP_Count  orig_count;
     DLOOP_Offset orig_offset;
-    DLOOP_Count orig_block;
-    /* TODO: DON'T NEED ORIG_OFFSET, RIGHT? */
+    DLOOP_Count  orig_block;
+
+    struct DLOOP_Dataloop *loop_p;
 } DLOOP_Dataloop_stackelm;
 
 

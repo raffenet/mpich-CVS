@@ -12,7 +12,7 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
-#define MPID_SP_VERBOSE
+#undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE
 
 /* MPID_Segment_piece_params
