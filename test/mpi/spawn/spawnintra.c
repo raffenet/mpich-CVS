@@ -16,7 +16,7 @@ int main( int argc, char *argv[] )
     int rank, size, rsize, i;
     int np = 2;
     int errcodes[2];
-    MPI_Comm      parentcomm, intercomm, intracomm;
+    MPI_Comm      parentcomm, intercomm, intracomm, intracomm2, intracomm3;
     int           isChild = 0;
     MPI_Status    status;
 
@@ -101,6 +101,62 @@ int main( int argc, char *argv[] )
 	}
     }
 
+    /* At this point, try to form the intracommunicator, with the other 
+     processes first */
+    MPI_Intercomm_merge( intercomm, !isChild, &intracomm2 );
+
+    /* Check on the intra comm */
+    {
+	int icsize, icrank, wrank;
+	
+	MPI_Comm_size( intracomm2, &icsize );
+	MPI_Comm_rank( intracomm2, &icrank );
+	MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
+
+	if (icsize != rsize + size) {
+	    errs++;
+	    printf( "(2)Intracomm rank %d thinks size is %d, not %d\n",
+		    icrank, icsize, rsize + size );
+	}
+	/* Make sure that the processes are ordered correctly */
+	if (isChild) {
+	    if (icrank != wrank ) {
+		errs++;
+		printf( "(2)Intracomm rank %d (from child) should have rank %d\n",
+			icrank, wrank );
+	    }
+	}
+	else {
+	    int csize;
+	    MPI_Comm_remote_size( intercomm, &csize );
+	    if (icrank != wrank + csize) {
+		errs++;
+		printf( "(2)Intracomm rank %d (from parent) should have rank %d\n",
+			icrank, wrank + csize );
+	    }
+	}
+    }
+
+    /* At this point, try to form the intracommunicator, with an 
+       arbitrary choice for the first group of processes */
+    MPI_Intercomm_merge( intercomm, 0, &intracomm3 );
+    /* Check on the intra comm */
+    {
+	int icsize, icrank, wrank;
+	
+	MPI_Comm_size( intracomm3, &icsize );
+	MPI_Comm_rank( intracomm3, &icrank );
+	MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
+
+	if (icsize != rsize + size) {
+	    errs++;
+	    printf( "(3)Intracomm rank %d thinks size is %d, not %d\n",
+		    icrank, icsize, rsize + size );
+	}
+	/* Eventually, we should test that the processes are ordered 
+	   correctly, by groups (must be one of the two cases above) */
+    }
+
     /* Update error count */
     if (isChild) {
 	/* Send the errs back to the master process */
@@ -118,9 +174,10 @@ int main( int argc, char *argv[] )
 	}
     }
 
-    /* It isn't necessary to free the intracomm, but it should not hurt */
+    /* It isn't necessary to free the intracomms, but it should not hurt */
     MPI_Comm_free( &intracomm );
-	
+    MPI_Comm_free( &intracomm2 );
+    MPI_Comm_free( &intracomm3 );
 
     /* It isn't necessary to free the intercomm, but it should not hurt */
     MPI_Comm_free( &intercomm );
