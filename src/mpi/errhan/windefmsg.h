@@ -287,7 +287,7 @@ static const char long_gen134[]  = "Error handler is not a file error handler";
 static const char short_gen135[] = "**errhandnotwin";
 static const char long_gen135[]  = "Error handler is not a win error handler";
 static const char short_gen136[] = "**fail";
-static const char long_gen136[]  = "generic failure";
+static const char long_gen136[]  = "";
 static const char short_gen137[] = "**file";
 static const char long_gen137[]  = "Invalid MPI_File";
 static const char short_gen138[] = "**fileaccess";
@@ -2105,7 +2105,7 @@ static const char long_spc51[]  = "Local and remote groups in MPI_Intercomm_crea
 static const char short_spc52[] = "**edgeoutrange %d %d %d";
 static const char long_spc52[]  = "Edge index edges[%d] is %d but must be nonnegative and less than %d";
 static const char short_spc53[] = "**fail %d";
-static const char long_spc53[]  = "generic failure (errno %d)";
+static const char long_spc53[]  = "generic failure with errno = %d";
 static const char short_spc54[] = "**fail %s";
 static const char long_spc54[]  = "%s";
 static const char short_spc55[] = "**fail %s %d";
