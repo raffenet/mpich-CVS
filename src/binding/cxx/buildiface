@@ -604,6 +604,38 @@ foreach $class (@classes) {
 	    else {
 		print $OUTFD ";\n"; 
 	    }
+	    
+	    # Check for Status as an arg
+	    if ($args =~ /Status/ && $class ne "st") {
+		#print "Class = $class\n";
+		print $OUTFD "${indent}$real_return_type $routine";
+		# OUTFD, C declaration, C datatype for Class, output info
+		$newargs = $args;
+		$newargs =~ s/,\s*MPI_Status\s*\*?//g;
+		$newargs =~ s/\s*MPI_Status\s*\*?\s*,//g;
+		#print "new args = $newargs\n";
+		&print_args( $OUTFD, $newargs, $class_type{$class}, $info );
+		print $OUTFD "${indent}{\n";
+
+		if ($return_parm_pos > 0) {
+		    if ($return_type =~ /MPI_/) {
+			print $OUTFD "$indent    $real_return_type *v$return_parm_pos = new $real_return_type;\n";
+			$finalcast = "*";
+		    }
+		    else {
+			print $OUTFD "$indent    $return_type v$return_parm_pos;\n";
+		    }
+		}
+		print $OUTFD "$indent    MPIX_CALL( MPI_$mpi_routine_name";
+		$newargs = $args;
+		$newargs =~ s/\s*MPI_Status\s*\*?/%%MPI_STATUS_IGNORE%%/g;
+		&print_call_args( $OUTFD, $newargs, $class_type{$class}, $info );
+		print $OUTFD ");\n";
+		if ($return_parm_pos > 0) {
+		    print $OUTFD "$indent    return ${finalcast}v$return_parm_pos;\n";
+		}
+		print $OUTFD "$indent}\n";
+	    }
 	}
     }
     if ($build_sep_files) {
@@ -895,6 +927,9 @@ sub print_call_args {
 	elsif (defined($special_args{"${routine_name}-$count"})) {
 	    # We must handle this argument specially
 	    &print_special_call_arg( $routine_name, $count );
+	}
+	elsif ($parm =~ /%%(.*)%%/) {
+	    print $OUTFD "$1";
 	}
 	else {
 	    # Convert to/from object type as required.  
