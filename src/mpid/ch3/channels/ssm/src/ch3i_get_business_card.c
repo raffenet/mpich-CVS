@@ -62,6 +62,8 @@ static int GetLocalIPs(int32_t *pIP, int max)
 
 #ifdef HAVE_NET_IF_H
 #ifdef __STRICT_ANSI__
+/* FIXME: THIS IS WRONG.  INSTEAD, SPECIFY THE SPECIFIC FEATURE LEVEL
+   NEEDED, AND THEN ONLY IF A CONFIGURE TEST SHOWS THAT IT IS REQUIRED */
 #define __USE_MISC /* This must be defined to get struct ifreq defined */
 #endif
 #include <net/if.h>
