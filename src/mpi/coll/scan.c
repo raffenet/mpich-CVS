@@ -215,7 +215,6 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
     static const char FCNAME[] = "MPI_Scan";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_Op *op_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SCAN);
 
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_SCAN);
@@ -248,6 +247,7 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPID_Datatype *datatype_ptr = NULL;
+            MPID_Op *op_ptr = NULL;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
@@ -258,19 +258,22 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_OP(op, mpi_errno);
 	    
-	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr(datatype, datatype_ptr);
+                MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) {
+                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
+                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                }
             }
-
-            /* MPID_Op_get_ptr(op, op_ptr);
-            MPID_Op_valid_ptr( op_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
-                } */
+            if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
+                MPID_Op_get_ptr(op, op_ptr);
+                MPID_Op_valid_ptr( op_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) {
+                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_SCAN);
+                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                }
+            }
         }
         MPID_END_ERROR_CHECKS;
     }

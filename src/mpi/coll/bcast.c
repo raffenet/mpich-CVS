@@ -470,7 +470,7 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPID_Datatype *datatype_ptr = NULL;
+            MPID_Datatype *datatype_ptr = NULL;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno != MPI_SUCCESS) {
@@ -481,11 +481,13 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 	    MPIR_ERRTEST_DATATYPE(count, datatype, mpi_errno);
 	    MPIR_ERRTEST_INTRA_ROOT(comm_ptr, root, mpi_errno);
 	    
-	    MPID_Datatype_get_ptr(datatype, datatype_ptr);
-            MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr(datatype, datatype_ptr);
+                MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) {
+                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_BCAST);
+                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                }
             }
         }
         MPID_END_ERROR_CHECKS;

@@ -420,7 +420,7 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPID_Datatype *sendtype_ptr=NULL, *recvtype_ptr=NULL;
+            MPID_Datatype *recvtype_ptr=NULL, *sendtype_ptr=NULL;
             int i, comm_size;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
@@ -438,18 +438,22 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, void *re
                 MPIR_ERRTEST_DATATYPE(recvcounts[i], recvtype, mpi_errno);
             }
 
-            MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
-            MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHERV);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
+                MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) {
+                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHERV);
+                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                }
             }
     
-	    MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
-            MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) {
-                MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHERV);
-                return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+            if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
+                MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) {
+                    MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLGATHERV);
+                    return MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+                }
             }
         }
         MPID_END_ERROR_CHECKS;
