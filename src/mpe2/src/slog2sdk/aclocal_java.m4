@@ -162,6 +162,8 @@ for dir in \
     /usr/jdk* \
     /usr/j2sdk* \
     /usr/java* \
+    /usr/java/jdk* \
+    /usr/java/j2sdk* \
     /usr/local \
     /usr/local/java* \
     /usr/local/jdk* \
