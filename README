@@ -57,8 +57,7 @@ What compiles but doesn't work
 We don't guarantee that *anything* works yet.  However, we have run MPICH2 
 against both the MPICH-1 test suite and an updated and correct version of the 
 Intel test suite.  MPICH2 passes most of these tests, including most error 
-handling.  Tests that do not yet pass include cancelling sends and some
-intercommunicator operations.
+handling.  Tests that do not yet pass include cancelling sends.
 Among the routines that compile but that are known not to work yet are:
 
 MPI_Cancel for sends, persistent requests

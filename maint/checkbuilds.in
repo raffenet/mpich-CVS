@@ -6,6 +6,7 @@
 # Set default values
 $srcdir  = "/home/gropp/projects/mpich2";
 $instdir = "/sandbox/gropp/mpi2-inst";
+$rundir = "";
 #
 # Set available options.  For enable and with, the values are
 # {with,enable}-name[;possiblevalues]*
@@ -56,6 +57,16 @@ $MakeStart   = " -- Begin Make Step --\n";
 $MakeEnd     = " -- End   Make Step --\n";
 $MakeInstStart = " -- Begin Make Install Step --\n";
 $MakeInstEnd   = " -- End   Make Install Step --\n";
+$SumStart = "";
+$SumEnd   = "";
+$SumConfigStart = "Config status = ";
+$SumConfigEnd   = "\n";
+$SumMakeStart = "Make status = ";
+$SumMakeEnd   = "\n";
+$SumInstStart = "Install status = ";
+$SumInstEnd   = "\n";
+$SumTestRunStart = "Test status = ";
+$SumTestRunEnd   = "\n";
 
 # Read the arguments
 foreach $_ (@ARGV) {
@@ -82,6 +93,9 @@ foreach $_ (@ARGV) {
     elsif (/-instdir=(.*)/) {
 	$instdir = $1;
     }
+    elsif (/-rundir=(.*)/) {
+	$rundir = $1;
+    }
     elsif (/-maxcount=(.*)/) {
 	# max count.  Set to -1 for infinity
 	$max_count = $1;
@@ -89,6 +103,9 @@ foreach $_ (@ARGV) {
     elsif (/-maxtime=(.*)/) {
 	# max time in seconds
 	set_time_left( $1 );
+    }
+    elsif (/-tests=(.*)/) {
+	$tests = ";" . $1 . ";";
     }
     elsif (/-outfile=(.*)/) {
 	$outfile = $1;
@@ -120,26 +137,8 @@ checkbuilds [ -enable-n=d ] [ -with-n=d ] [ -show ] [-envopt=name;value;... ]
     }
 }
 
-# Select the output file
-if ($outfile ne "") {
-    open( $OUTFD, ">$outfile" ) || die "Could not open $outfile for writing\n";
-}
-else {
-    $OUTFD = STDOUT;
-}
-
-
 # ---------------------------------------------------------------------------
-#
-# There are several ways to run the tests.  They are
-#   For a fixed number of times
-#   For a fixed length of time
-for ($test_count = 0; 
-     ($max_count < 0 || $test_count < $max_count) && &time_left;
-     $test_count++) {
-    print "\nRunning test $test_count\n\n";
-    &RunTest;
-}
+
 #
 # ---------------------------------------------------------------------------
 # Run one instance of the configuration
@@ -159,6 +158,7 @@ sub RunTest {
     # then process the env array to set the environment
     $env_args    = &RandArgs( $n_env, "env_array", "env" );
     $envset = "";
+    @saveENV = @ENV;
     foreach $_ (split(/ /,$env_args)) {
 	if (/--env-(.*)=(.*)/) {
 	    $name  = $1;
@@ -176,6 +176,10 @@ sub RunTest {
     if ( ! (-x "$srcdir/configure") && (-x "./configure") ) {
 	$srcdir = ".";
     }
+    $config_status  = "none";
+    $make_status    = "none";
+    $install_status = "none";
+    $test_status    = "none";
     if ($show) {
 	print "Configure: $enable_args $with_args\n";
 	if ($envset ne "") {
@@ -184,6 +188,7 @@ sub RunTest {
     }
     else {
 	print $OUTFD $TestStart;
+	unlink "Makefile";
 	print $OUTFD $ConfigStart;
 	@config = split( /\s+/, "$srcdir/configure --prefix=$instdir $enable_args $with_args" );
 	print "Configure: " . join(" ", @config) . "\n";
@@ -191,16 +196,45 @@ sub RunTest {
 	    print "Environment = $envset\n";
 	}
 	$rc = system @config;
+	$config_status = $rc;
+	if (! -s "Makefile" && $rc == 0) {
+	    $config_status = "No Makefile";
+	    $rc = 1;
+	}
 	print $OUTFD $ConfigEnd;
 	# print "rc = $rc\n";
-	print $OUTFD $MakeStart;
-	system "make";
-	print $OUTFD $MakeEnd;
-	print $OUTFD $MakeInstStart;
-	system split( /\s+/,"make install");
-	print $OUTFD $MakeInstEnd;
+	if ($rc == 0) {
+	    print $OUTFD $MakeStart;
+	    $rc = system "make";
+	    print $OUTFD $MakeEnd;
+	    $make_status = $rc;
+	    if ($rc == 0) {
+		print $OUTFD $MakeInstStart;
+		$install_status = system split( /\s+/,"make install");
+		print $OUTFD $MakeInstEnd;
+		if ($install_status == 0) {
+		    $test_status = &RunTestSuites;
+		}
+	    }
+	}
 	print $OUTFD $TestEnd;
     }
+    @ENV = @saveENV;
+
+    print $OUTFD $SumStart;
+    print $OUTFD $SumConfigStart;
+    print $OUTFD $config_status;
+    print $OUTFD $SumConfigEnd;
+    print $OUTFD $SumMakeStart;
+    print $OUTFD $make_status;
+    print $OUTFD $SumMakeEnd;
+    print $OUTFD $SumInstStart;
+    print $OUTFD $install_status;
+    print $OUTFD $SumInstEnd;
+    print $OUTFD $SumTestRunStart;
+    print $OUTFD $test_status;
+    print $OUTFD $SumTestRunEnd;
+    print $OUTFD $SumEnd;
 }
 
 # ---------------------------------------------------------------------------
@@ -248,20 +282,96 @@ sub time_left {
 }
 
 # ---------------------------------------------------------------------------
+# cb for check build
+$mpich_test_dir = "/sandbox/gropp/cb/mpitest";
+$intel_test_dir = "/sandbox/gropp/cb/MPITEST";
+#
+# Eventually, we'll need
+#   bootstep
+#   compiler names
+#   unbootstep
+# for each test.
+#
+sub RunTestSuites {
+    foreach my $testname (split(';',$tests)) {
+	print "Running test $testname...\n";
+	if ($testname eq "mpich") {
+	    $cwd = `pwd`;
+	    my @config;
+	    chdir $mpich_test_dir || die "Cannot change to $mpich_test_dir\n";
+	    $config[0] = "$mpich1_dir/examples/test/configure";
+	    $config[1] = "--prefix=$inst_dir";
+	    $config[2] = "-mpilibname=mpich";
+	    $config[3] = "-cc=\"gcc -I$inst_dir/include -L$inst_dir/lib\"";
+	    $config[4] = "-fc=\"f77 -I$inst_dir/include -L$inst_dir/lib\"";
+	    @saveENV = @ENV;
+	    $ENV{MPIRUN} = "$inst_dir/bin/mpiexec";
+	    $rc = system @config;
+	    if ($rc == 0) {
+		$rc = system "make testing";
+	    }
+	    @ENV = @saveENV;
+	    chdir $cwd;
+	}
+	else if ($testname eq "intel") {
+	    ;
+	}
+	else {
+	    print "Unrecognized test $testname\n";
+	}
+    }
+}
+# ---------------------------------------------------------------------------
 #
 # Change output style
 sub XMLStyle {
-    $TestStart = "<BUILDTEST>\n";
-    $TestEnd   = "</BUILDTEST>\n";
-    $ConfigStart = "<CONFIG>\n";
-    $ConfigEnd   = "</CONFIG>\n";
-    $MakeStart   = "<MAKE>\n";
-    $MakeEnd     = "</MAKE>\n";
+    $TestStart     = "<BUILDTEST>\n";
+    $TestEnd       = "</BUILDTEST>\n";
+    $ConfigStart   = "<CONFIG>\n";
+    $ConfigEnd     = "</CONFIG>\n";
+    $MakeStart     = "<MAKE>\n";
+    $MakeEnd       = "</MAKE>\n";
     $MakeInstStart = "<MAKEINST>\n";
     $MakeInstEnd   = "</MAKEINST>\n";
+    $SumStart      = "<SUMMARY>\n";
+    $SumEnd        = "</SUMMARY>\n";
+    $SumConfigStart = "<CONFIGSTAT>";
+    $SumConfigEnd   = "</CONFIGSTAT>\n";
+    $SumMakeStart  = "<MAKESTAT>";
+    $SumMakeEnd    = "</MAKESTAT>\n";
+    $SumInstStart  = "<INSTALLSTAT>";
+    $SumInstEnd    = "</INSTALLSTAT>\n";
+    $SumTestRunStart = "<TESTSTAT>";
+    $SumTestRunEnd   = "</TESTSTAT>\n";
 }
 # ---------------------------------------------------------------------------
 #
 # Other options
 # --enable-threads={single, multiple}
+# ---------------------------------------------------------------------------
+# Here's the real code to execute
+# ---------------------------------------------------------------------------
 
+if ($rundir ne "") { 
+    chdir $rundir || die "could not change directory to $rundir\n";
+}
+
+# Select the output file
+if ($outfile ne "") {
+    open( $OUTFD, ">$outfile" ) || die "Could not open $outfile for writing\n";
+}
+else {
+    $OUTFD = STDOUT;
+}
+
+# ---------------------------------------------------------------------------
+#
+# There are several ways to run the tests.  They are
+#   For a fixed number of times
+#   For a fixed length of time
+for ($test_count = 0; 
+     ($max_count < 0 || $test_count < $max_count) && &time_left;
+     $test_count++) {
+    print "\nRunning test $test_count\n\n";
+    &RunTest;
+}
