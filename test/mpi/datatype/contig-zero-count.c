@@ -14,7 +14,7 @@
 static int verbose = 0;
 
 /* tests */
-int no_real_types_test(void);
+int contig_test(void);
 
 /* helper functions */
 int parse_args(int argc, char **argv);
@@ -27,8 +27,8 @@ int main(int argc, char **argv)
     parse_args(argc, argv);
 
     /* perform some tests */
-    err = no_real_types_test();
-    if (err && verbose) fprintf(stderr, "%d errors in blockindexed test.\n",
+    err = contig_test();
+    if (err && verbose) fprintf(stderr, "%d errors in contig test.\n",
 				err);
     errs += err;
 
@@ -43,34 +43,29 @@ int main(int argc, char **argv)
     return 0;
 }
 
-/* no_real_types_test()
+/* contig_test()
  *
- * Tests behavior with an empty struct type
+ * Tests behavior with a zero-count contig.
  *
  * Returns the number of errors encountered.
  */
-int no_real_types_test(void)
+int contig_test(void)
 {
     int err, errs = 0;
 
-    int count = 1;
-    int len = 1;
-    MPI_Aint disp = 10;
-    MPI_Datatype type = MPI_LB;
+    int count = 0;
     MPI_Datatype newtype;
 
     int size;
     MPI_Aint extent;
 
-    err = MPI_Type_create_struct(count,
-				 &len,
-				 &disp,
-				 &type,
-				 &newtype);
+    err = MPI_Type_contiguous(count,
+			     MPI_INT,
+			     &newtype);
     if (err != MPI_SUCCESS) {
 	if (verbose) {
 	    fprintf(stderr,
-		    "error creating struct type no_real_types_test()\n");
+		    "error creating type in contig_test()\n");
 	}
 	errs++;
     }
@@ -79,7 +74,7 @@ int no_real_types_test(void)
     if (err != MPI_SUCCESS) {
 	if (verbose) {
 	    fprintf(stderr,
-		    "error obtaining type size in no_real_types_test()\n");
+		    "error obtaining type size in contig_test()\n");
 	}
 	errs++;
     }
@@ -87,7 +82,7 @@ int no_real_types_test(void)
     if (size != 0) {
 	if (verbose) {
 	    fprintf(stderr,
-		    "error: size != 0 in no_real_types_test()\n");
+		    "error: size != 0 in contig_test()\n");
 	}
 	errs++;
     }    
@@ -96,15 +91,15 @@ int no_real_types_test(void)
     if (err != MPI_SUCCESS) {
 	if (verbose) {
 	    fprintf(stderr,
-		    "error obtaining type extent in no_real_types_test()\n");
+		    "error obtaining type extent in contig_test()\n");
 	}
 	errs++;
     }
     
-    if (extent != -10) {
+    if (extent != 0) {
 	if (verbose) {
 	    fprintf(stderr,
-		    "error: extent != 0 in no_real_types_test()\n");
+		    "error: extent != 0 in contig_test()\n");
 	}
 	errs++;
     }    

@@ -24,3 +24,4 @@ pairtype-size-extent 1
 simple-commit 1
 simple-size-extent 1
 struct-no-real-types 1
+contig-zero-count 1
