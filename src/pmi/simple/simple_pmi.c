@@ -1039,7 +1039,7 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
         if ( strncmp( buf, "0", PMIU_MAXLINE ) != 0 ) {
             PMIU_getval( "pmi_version", buf, PMIU_MAXLINE );
             PMIU_getval( "pmi_subversion", buf1, PMIU_MAXLINE );
-	    sprintf(errmsg, "pmi_version mismatch; client=%d.%d mgr=%d.%d\n",
+	    sprintf(errmsg, "pmi_version mismatch; client=%d.%d mgr=%s.%s\n",
 		    PMI_VERSION, PMI_SUBVERSION, buf, buf1 );
 	    PMI_Abort( -1, errmsg );
         }
