@@ -1,0 +1,164 @@
+\ifx\indocument\undefined
+\documentclass{article}
+\usepackage[dvipdfm]{hyperref}
+\usepackage{mpidoc}
+\usepackage{../adi3/refman}
+\def\fixme#1{\marginpar{FIXME:}\textbf{FIXME: #1}}
+\let\subsubsection=\section
+\begin{document}
+\fi
+
+\subsection{Runtime Parameters}
+\label{sec:runtime-params}
+
+Mpich-1 suffers from having many compile-time parameters that could just as
+easily be either runtime or at least initialization-time.  These parameters
+include search paths and buffer sizes.  In MPICH2, these have a compile-time
+default (particularly the search paths) as well as having an easy way
+to override at 
+initialization and/or run time.  While environment variables are one way to do
+this, we should not rely on them, since not all environments guarantee that
+environment variables are propagated to all processes.
+
+The design of such an interface is complicated by the fact that not
+all processes may have access to the data before \code{MPI_Init}
+completes, yet some of the information (e.g., socket buffer sizes) may
+be needed before \code{MPI_Init} completes.  Thus, there are really
+two classes of parameters: those that must be available during the
+initialization step, and those that need be available only after the
+initialization completes.  
+
+A sample interface for the parameters provided \emph{after}
+initialization is:\index{MPIU_Param_init}\index{MPIU_Param_get_int}%
+\index{MPIU_Param_get_string}\index{MPIU_Param_finalize}%
+\index{MPIU_Param_bcast}\index{MPIU_Param_register}
+\begin{verbatim}
+int MPIU_Param_init( int *argc, char **argv[] );
+int MPIU_Param_bcast( void );
+int MPIU_Param_register( const char name[], const char envname[], 
+                         const char description[] );
+int MPIU_Param_get_int( const char name[], int default_val, int *value );
+int MPIU_Param_get_string( const char name[], const char *default val,
+                           char **value );
+void MPIU_Param_finalize( void );
+\end{verbatim}
+We use pointers to \code{argc} and \code{argv} to allow parameters to be
+removed.  The return code indicates success or failure; an example of a
+failure is a non-integer value provided to the parameter accessed with
+\code{MPIU_Param_get_int}. 
+The routine \code{MPIU_Param_init} is called by the master process (the one
+that will be rank zero in \code{MPI_COMM_WORLD}); this should happen early
+enough that any startup parameters are available to the master process.  The
+routine \code{MPIU_Param_bcast} is called within \code{MPI_Init} or
+\code{MPI_Init_thread} after all processes have started and is a collective
+call across \code{MPI_COMM_WORLD}.  This allows (but does not require)
+an implementation to use one 
+process to read the environment and any initialization file and then use MPI
+communication to communicate the parameters to other processes.  
+
+The routine \code{MPIU_Param_register} allows the MPICH2 implementation to
+indicate which parameters are used and to provide a help string for each one.
+We provide an automated tool to compile a listing of such parameters
+(\code{maint/extractparams}) and
+allow \code{MPIU_Param_finalize} to identify unused command-line arguments
+(which may be misspellings of valid arguments).  This tool uses the same
+utility routines as the program to extract error messages
+(\code{extracterrmsgs}) and configure options (\code{extractconfigopts}).
+
+These routines return zero on success.  The routines that return the values of
+parameters return \code{MPIU_PARAM_OK} if no value was specified (this
+allows a routine to 
+determine if the default value was provided) and
+\code{MPIU_PARAM_ERROR} on an error (such as an
+integer value containing a non-digit).  These values are provided by
+\begin{verbatim}
+typedef enum { MPIU_PARAM_FOUND = 0, 
+               MPIU_PARAM_OK = 1, 
+               MPIU_PARAM_ERROR = 2 } MPIU_Param_result_t;
+\end{verbatim}
+
+The \mpidfunc{MPIU_Param_init} and \mpidfunc{MPIU_Param_finalize} allows
+values to also be passed via the command line.  
+In fact, we have the following order:
+\begin{enumerate}
+\item Check for an override value (e.g., a priority environment
+  variable, using the original environment variable name followed by 
+  \code{_OVERRIDE}).
+\item Use any info or attribute value,
+\item Use environment value,
+\item Use configure file value (\file{.mpichrc}, followed by
+  \file{~/.mpichrc}).  There should be an environment variable and command
+  line option to suppress reading of the configuration files.  There
+  may also be a way to select a different file, and
+\item Use default (compile-time) value.
+\end{enumerate}
+The configuration file is read once (most likely by one process) at
+\code{MPI_Init} time.  
+
+Note that there are two success values, one for the default was used
+and another for an specified and valid value.  The return value
+\code{MPIU_PARAM_ERROR} is used 
+if, for example, \mpidfunc{MPIU_Param_get_int} is called but the value
+is the string \code{"big"}.
+
+To support ``override'' values, the routines must also
+return an indication of the priority of the value.  This  allows
+the code to decide whether to accept a value from the runtime
+parameter routines or to use a value provided through an MPI Info hint
+or attribute.
+
+\fixme{What are the names of the environment variables that are
+used to select which value to use?  What are the command-line options
+to use?  Is the environment variable \code{MPICH_USE_ENV}?}
+
+Question: The definition of \code{MPIU_Param_bcast} given above
+requires that the MPI communication system be initialized.  This
+implicitly assumes that the parameter calls are not used for any
+communication setup.  This isn't adequate for initializing sockets in
+a TCP device or allocating message-buffer space for a shared memory or
+VIA device.  It may be more appropriate to provide two separate
+phases:
+\begin{description}
+\item[\code{MPIU_Param_init}]No values are available until after this call.  
+After this call, some values are available (see below).
+\item[\code{MPIU_Param_bcast}]All values are available to all processes.  This 
+call may use MPI communication
+\end{description}
+To make this work, \code{MPIU_Param_register} must indicate when the
+value is needed; i.e., either before or after
+\code{MPIU_Param_bcast}.  All parameters that are needed before
+\code{MPIU_Param_bcast} must be communicated to all processes through
+a mechanism that does \emph{not} rely on MPI communication, such as
+PMI put and get calls.  This would use an ``intent'' variable as a
+fourth argument.
+
+Question: should parameters be registered?  This allows the runtime
+system to find them (e.g., with BNR put/fence/get), and simplifies the
+generation of help text.  It 
+would also allow text describing the parameter to be provided from
+within the code.
+
+An alternative to \code{MPIU_Param_register} is to use a tool, similar to that
+for error reporting, that finds all uses of the parameter routines.
+
+For example, the pre-init routine code could read just a few environment
+variables 
+for any preinitialization code.  The post-init routine would be collective,
+ensuring that all processes created the same database (and allowing a single
+process to read any configuration files).
+
+The format of the configuration file has not been defined.  We may use
+an XML format to allow for the simple use of tools to manage the file and
+a standard way to organize parameters in hierarchies.
+
+A side note: in MPICH 1.2.2, a command-line option for controlling the
+p4 socket code using the format \code{-p4sctrl name=val:name=val:...}
+was used.  \fixme{Should we standardize on this (key \code{=} value pairs)
+for commandline options and environment variables?}
+
+\ifx\indocument\undefined
+\gdef\LAST{\end{document}}
+\afterassignment\LAST
+\fi
+% Dummy to trigger the \LAST
+\count9=0

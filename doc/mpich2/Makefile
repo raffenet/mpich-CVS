@@ -18,6 +18,11 @@ topo.dvi: topo.tex
 	-bibtex $*
 	-latex $*
 	-latex $*
+parm.dvi: parm.tex
+	-latex $*
+	-bibtex $*
+	-latex $*
+	-latex $*
 
 # Here is a default target for subsections as separate docs
 .tex.dvi:
