@@ -1161,6 +1161,72 @@ complex state information is required, it should be handled by making
 direct calls to the appropriate profiling routines (suitably wrapped
 to obey the selected profiling level).
 
+\subsubsection{Instrumenting the MPI code for States.}
+Statistics are collected by items, such as \code{writev} calls or
+number of times an I/O call returns with an \code{errno} of
+\code{EAGAIN}\index{EAGAIN}.  
+
+The most general form is
+\begin{verbatim}
+    #ifdef COLLECT_STATS
+    {
+    MPID_STAT_BEGIN;
+        {
+        MPID_STAT_ACC(statid,val);
+        MPID_STAT_ACC_RANGE(statid2,rval);
+        }
+    MPID_STAT_END;
+    }
+    #endif
+\end{verbatim}
+
+For very simple uses, these two one-line forms are provided
+\begin{verbatim}
+    MPID_STAT_MISC(any statement);
+    MPID_STAT_ACC_SIMPLE(statid,val);
+\end{verbatim}
+
+The definitions of these macros allow for thread-safe
+implementations.  For example,
+\begin{description}
+\item[MPID\_STAT\_BEGIN]Allows for a thread lock; it can also find the 
+per-thread data block containing statistics information
+\item[MPID\_STAT\_ACC]Accumulates an integer value into a predefined
+\code{statid}.  This can be as simple as a sum or can include code to
+track maximum and minimum values, standard deviations, or even
+histograms. 
+\item[MPID\_STAT\_ACC\_RANGE]Accumulates an integer value that
+represents a single value in a range.  The purpose of this is to keep
+which values are used, and how many times they are used (e.g.,
+file \code{fd}s).
+\item[MPID\_STAT\_END]Allows for the release of a thread lock.
+\item[MPID\_STAT\_ACC\_SIMPLE]is a short-hand for 
+\begin{verbatim}
+    #ifdef COLLECT_STATS
+    {
+    MPID_STAT_BEGIN;
+        {
+        MPID_STAT_ACC(statid,val);
+        }
+    MPID_STAT_END;
+    }
+    #endif
+\end{verbatim}
+This is appropriate for cases where only a single value is being
+collected.
+\item[MPID\_STAT\_MISC]includes the statement only if
+\code{COLLECT_STATS} is defined.  This is useful for declaring and
+initializing local variables that may be used to update a statistics
+value (e.g., the \code{val} in the example).
+\end{description}
+
+The implementation of \code{MPID_STAT_BEGIN} requires thread locks
+only if the update operations require 
+them; an alternative is to use atomic update or assembly code that
+exploits load-link/store-conditional instructions.  Arranging the code
+this way abstracts out the use of thread locks so that they can be
+avoided where they aren't needed.
+
 \subsection{Memory Allocation}
 As a software package, MPICH should minimize the perturbation of the user's
 environment.  In 
@@ -1254,9 +1320,11 @@ The \file{tr2} (TRacing memory package) provides both tests for memory
 leaks and for memory overruns by using sentinels; it can also
 pre-initialize all allocated memory to various patterns.  These tests
 should be made a part of the nightly rounds (even in MPICH).  
-Question: what is the configure command to enable memory tracing, and
-what are the command-line/environment variables that are used to
-control the level of detail when tracing is enabled?
+Memory tests are enabled by the configure option
+\cfgoption{--enable-g=trmem} or \code{--enable-g=all}.
+% Question: what is the configure command to enable memory tracing, and
+% what are the command-line/environment variables that are used to
+% control the level of detail when tracing is enabled?
 
 \subsection{Runtime Parameters}
 \label{sec:runtime-params}
@@ -1269,36 +1337,36 @@ this, we should not rely on them, since not all environments guarantee that
 environment variables are propagated to all processes.
 
 Question: What should the routines be?  For 
-example,\index{MPIR_Param_init}\index{MPIR_Param_get_int}%
-\index{MPIR_Param_get_string}\index{MPIR_Param_finalize}%
-\index{MPIR_Param_bcast}\index{MPIR_Param_register}
+example,\index{MPID_Param_init}\index{MPID_Param_get_int}%
+\index{MPID_Param_get_string}\index{MPID_Param_finalize}%
+\index{MPID_Param_bcast}\index{MPID_Param_register}
 \begin{verbatim}
-int MPIR_Param_init( int *argc, char **argv[] );
-int MPIR_Param_bcast( );
-int MPIR_Param_register( const char name[], const char envname[], 
+int MPID_Param_init( int *argc, char **argv[] );
+int MPID_Param_bcast( );
+int MPID_Param_register( const char name[], const char envname[], 
                          const char description[] );
-int MPIR_Param_get_int( const char name[], int default_val, int *value );
-int MPIR_Param_get_string( const char name[], const char *default val,
+int MPID_Param_get_int( const char name[], int default_val, int *value );
+int MPID_Param_get_string( const char name[], const char *default val,
                            char **value );
-void MPIR_Param_finalize( void );
+void MPID_Param_finalize( void );
 \end{verbatim}
 We use pointers to \code{argc} and \code{argv} to allow parameters to be
 removed.  The return code indicates success or failure; an example of a
 failure is a non-integer value provided to the parameter accessed with
-\code{MPIR_Param_get_int}. 
-The routine \code{MPIR_Param_init} is called by the master process (the one
+\code{MPID_Param_get_int}. 
+The routine \code{MPID_Param_init} is called by the master process (the one
 that will be rank zero in \code{MPI_COMM_WORLD}); this should happen early
 enough that any startup parameters are available to the master process.  The
-routine \code{MPIR_Param_bcast} is called within \code{MPI_Init} or
+routine \code{MPID_Param_bcast} is called within \code{MPI_Init} or
 \code{MPI_Init_thread} after all processes have started and is a collective
 call across \code{MPI_COMM_WORLD}.  This allows an implementation to use one
 process to read the environment and any initialization file and then use MPI
 communication to communicate the parameters to other processes.  
 
-The routine \code{MPIR_Param_register} allows the MPICH implementation to
+The routine \code{MPID_Param_register} allows the MPICH implementation to
 indicate which parameters are used and to provide a help string for each one.
 This allows an automated tool to compile a listing of such parameters and
-allows \code{MPIR_Param_finalize} to identify unused command-line arguments
+allows \code{MPID_Param_finalize} to identify unused command-line arguments
 (often misspellings of valid arguments).
 
 These routines return zero on success.  The routines that return the values of
@@ -1311,7 +1379,7 @@ typedef enum { MPID_PARAM_FOUND = 0,
                MPID_PARAM_ERROR = 2 } MPID_Param_result_t;
 \end{verbatim}
 
-The \mpidfunc{MPIR_Param_init} and \mpidfunc{MPIR_Param_free} allows
+The \mpidfunc{MPID_Param_init} and \mpidfunc{MPID_Param_finalize} allows
 values to also be passed via the command line.  
 In fact, we may want to enforce the following order:
 \begin{enumerate}
@@ -1327,8 +1395,34 @@ The configuration file is read once, by one process (at
 \code{MPI_Init} time).  
 
 Note that errors are indicated by a non-zero return from the routine.
-For example, if \mpidfunc{MPIR_Param_get_int} is called but the value
+For example, if \mpidfunc{MPID_Param_get_int} is called but the value
 is \code{"big"}, it will return one.
+
+Question: To support ``override'' values, should the routines also
+return an indication of the priority of the value?  This would allow
+the code to decide whether to accept a value from the runtime
+parameter routines or to use a value provided through an MPI Info hint
+or attribute.
+
+Question: The definition of \code{MPID_Param_bcast} given above
+requires that the MPI communication system be initialized.  This
+implicitly assumes that the parameter calls are not used for any
+communication setup.  This isn't adequate for initializing sockets in
+a TCP device or allocating message-buffer space for a shared memory or
+VIA device.  It may be more appropriate to provide two separate
+phases:
+\begin{description}
+\item[Param\_init]No values are available until after this call.  
+After this call, some values are available (see below).
+\item[Param\_bcast]All values are available to all processes.  This
+call may use MPI communication
+\end{description}
+To make this work, \code{MPID_Param_register} must indicate when the
+value is needed; i.e., either before or after
+\code{MPID_Param_bcast}.  All parameters that are needed before
+\code{MPID_Param_bcast} must be communicated to all processes through
+a mechanism that does \emph{not} rely on MPI communication, such as
+BNR put and get calls.  
 
 % Question: should parameters be registered?  This allows the runtime
 % system to find them (e.g., with BNR put/fence/get), and simplifies the
@@ -1336,7 +1430,7 @@ is \code{"big"}, it will return one.
 % would also allow text describing the parameter to be provided from
 % within the code.
 
-An alternative to \code{MPIR_Param_register} is to use a tool, similar to that
+An alternative to \code{MPID_Param_register} is to use a tool, similar to that
 for error reporting, that finds all uses of the parameter routines.
 
 % For example, the pre-init routine code could read just a few environment
@@ -1370,7 +1464,7 @@ of code in different threads.
 Solaris LWP (light-weight processes) may also be of interest.
 There are some operations, such as condition variables, monitors, and
 thread-scheduling control, that may not be available (e.g., OpenMP
-has no condition variables)  
+has no condition variables).  
 
 Question: do we just want to emulate the missing operations, or (and?)
 do we want to know that they are missing so that an alternative
@@ -1378,6 +1472,13 @@ approach can be taken?  For example, condition variables can be emulated using
 spinlocks, but not efficiently.  Instead of only providing a functional (but
 not performant) implementation of a condition variable, there should also be
 an indicator that the condition variable is emulated.
+
+Question: Whare are the MPID versions of the thread operations?  What
+is the include file that contains the definition of these operations?
+What is the set of operations?  Note that in most cases, no thread
+operations should be used explicitly; instead, higher-level
+abstractions such as reference count increment and
+\code{MPID_Comm_thread_lock}. 
 
 \subsection{Initialization and Finalization}
 \label{sec:initialization}
@@ -1493,6 +1594,14 @@ assume that several data structures use flags.
 sticky upper bound marker, lower bound marker).  MPI Window objects also
 have multiple flags.
 
+\item[Global Variables]should be avoided where possible; in cases
+where they cannot be avoided, they should be collected into a
+structure.
+Global variables should also be initialized to avoid problems with
+some object library formats\footnote{Uninitialized global variables
+are given type ``common'' by many Unix C compilers; initialized
+variables have type ``global''.  Some \texttt{ar} or \texttt{ranlib}
+programs won't load common symbols(!) unless special options are used.}.
 \end{description}
 
 \subsection{Other Subsystems}
