@@ -458,26 +458,35 @@ export master_top_builddir
 dnl
 dnl This goes here because we need the top_srcdir
 if test "$enable_romio" = "yes" ; then
-   AC_DEFINE(HAVE_ROMIO,1,[Define if ROMIO is enabled])
    if test -d $use_top_srcdir/src/mpi/romio ; then
        subsystems="$subsystems src/mpi/romio"
+       AC_DEFINE(HAVE_ROMIO,1,[Define if ROMIO is enabled])
+       # Set environment variables that the romio configure expects
+       romio_dir=romio
+       AC_SUBST(romio_dir)
+       FROM_MPICH2=yes
+       export FROM_MPICH2
+       export use_top_srcdir
+       top_build_dir=`pwd`
+       export top_build_dir
+       # if there is no $top_build_dir/lib, romio puts lib in wrong place
+       dnl This test used -e under Linux, but not all test programs understand
+       dnl -e
+       if test ! -d lib ; then mkdir lib ; fi
+       # tell mpi.h to include mpio.h
+       PAC_HAVE_ROMIO
    else
        AC_MSG_WARN([ROMIO src directory is not available])
+       # Check for local developers
+       if test -d /home/MPI/cvsMaster/romio -o -d /homes/MPI/cvsMaster/romio ; then
+           AC_MSG_WARN([You need to check ROMIO out with 
+          cd $use_top_srcdir/src/mpi
+          cvs -d /home/MPI/cvsMaster checkout romio
+	  followed by
+	  cd ../.. && maint/updatefiles
+          ])
+       fi
    fi
-   # Set environment variables that the romio configure expects
-   romio_dir=romio
-   AC_SUBST(romio_dir)
-   FROM_MPICH2=yes
-   export FROM_MPICH2
-   export use_top_srcdir
-   top_build_dir=`pwd`
-   export top_build_dir
-   # if there is no $top_build_dir/lib, romio puts lib in wrong place
-   dnl This test used -e under Linux, but not all test programs understand
-   dnl -e
-   if test ! -d lib ; then mkdir lib ; fi
-   # tell mpi.h to include mpio.h
-   PAC_HAVE_ROMIO
 fi
 dnl
 #
@@ -556,10 +565,18 @@ AC_SUBST(other_pm_names)
 if test $with_mpe != no ; then
     if test ! -d $use_top_srcdir/src/mpe ; then
         if test $with_mpe = yes ; then
+	    # No warning message on the default
             AC_MSG_WARN([No MPE directory available])
         fi
     else
         subsystems="$subsystems src/mpe"
+	# Make sure that MPE knows that we're building from MPICH
+        # (similar to ROMIO)
+        FROM_MPICH2=yes
+        export FROM_MPICH2
+        export use_top_srcdir
+        top_build_dir=`pwd`
+        export top_build_dir
     fi
 fi
 #
