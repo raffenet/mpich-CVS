@@ -317,7 +317,7 @@ dnl
 dnl Synopsis:
 dnl PAC_C_PROTOTYPES([action if true],[action if false])
 dnl
-dnlD*/
+dnl D*/
 AC_DEFUN(PAC_C_PROTOTYPES,[
 AC_CACHE_CHECK([if $CC supports function prototypes],
 pac_cv_c_prototypes,[
@@ -1119,3 +1119,27 @@ pac_cv_c_struct_align=`cat ctest.out`
 rm -f ctest.out
 ])
 ])
+dnl
+dnl
+dnl/*D
+dnl PAC_FUNC_NEEDS_DECL - Set NEEDS_<funcname>_DECL if a declaration is needed
+dnl
+dnl Synopsis:
+dnl PAC_FUNC_NEEDS_DECL(headerfiles,funcname)
+dnl
+dnl Output Effect:
+dnl Sets 'NEEDS_<funcname>_DECL' if 'funcname' is not declared by the 
+dnl headerfiles.
+dnl D*/
+AC_DEFUN(PAC_FUNC_NEEDS_DECL,[
+AC_CACHE_CHECK([whether $2 needs a declaration],
+pac_cv_func_decl_$2,[
+AC_TRY_COMPILE([$1],[int a=$2(27,1.0,"foo");],
+pac_cv_func_decl_$2=yes,pac_cv_func_decl_$2=no)])
+if test "$pac_cv_func_decl_$2" = "yes" ; then
+changequote(, )dnl
+  ac_tr_func=NEEDS_`echo $1 | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`_DECL
+changequote([, ])dnl
+    AC_DEFINE_UNQUOTED($ac_tr_func,,[Define if $2 needs a declaration])
+fi
+])dnl
