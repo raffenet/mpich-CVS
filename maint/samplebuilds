@@ -202,6 +202,7 @@ fi
 #
 # Build with PVFS if available
 # --with-romio=--with-file-system=ufs+nfs+testfs+pvfs
+# Tests could be run in /pvfs/pvfsstage/$LOGNAME on Chiba
 if [ -d /pvfs ] ; then
     testname="pvfs"
     config_args="--with-romio=--with-file-system=ufs+nfs+testfs+pvfs"
