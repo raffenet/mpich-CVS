@@ -772,6 +772,7 @@ int MPIDI_CH3I_VC_post_write(MPIDI_VC * vc, MPID_Request * sreq)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_WRITE);
+    return mpi_errno;
 }
 
 #undef FUNCNAME
