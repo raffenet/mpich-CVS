@@ -21,6 +21,7 @@
 #define DLOOP_Offset     MPI_Aint
 #define DLOOP_Count      int
 #define DLOOP_Handle     MPI_Datatype
+#define DLOOP_Type       MPI_Datatype
 #define DLOOP_Buffer     void *
 #define DLOOP_VECTOR     MPID_IOV
 #define DLOOP_VECTOR_LEN MPID_IOV_LEN
