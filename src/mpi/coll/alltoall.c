@@ -180,6 +180,7 @@ PMPI_LOCAL int MPIR_Alltoall(
                                       MPIR_ALLTOALL_TAG, recvbuf, 1, newtype,
                                       src, MPIR_ALLTOALL_TAG, comm,
                                       MPI_STATUS_IGNORE);
+            if (mpi_errno) return mpi_errno;
 
             mpi_errno = NMPI_Type_free(&newtype);
             if (mpi_errno) return mpi_errno;
@@ -208,6 +209,8 @@ PMPI_LOCAL int MPIR_Alltoall(
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
             return mpi_errno;
         }
+        /* adjust for potential negative lower bound in datatype */
+        tmp_buf = (void *)((char*)tmp_buf - recvtype_true_lb);
 
         mpi_errno = MPIR_Localcopy((char *) recvbuf + (rank+1)*recvcount*recvtype_extent, 
                        (comm_size - rank - 1)*recvcount, recvtype, tmp_buf, 
@@ -227,7 +230,9 @@ PMPI_LOCAL int MPIR_Alltoall(
                            (char *) recvbuf + (comm_size-i-1)*recvcount*recvtype_extent, 
                            recvcount, recvtype); 
 
-        MPIU_Free(tmp_buf);
+        MPIU_Free((char*)tmp_buf + recvtype_true_lb);
+
+
 
 #ifdef OLD
         /* Short message. Use recursive doubling. Each process sends all

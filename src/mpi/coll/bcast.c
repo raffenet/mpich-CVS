@@ -183,7 +183,7 @@ int MPIR_Bcast (
               src = rank - mask; 
               if (src < 0) src += comm_size;
               mpi_errno = MPIC_Recv(buffer,count,datatype,src,
-                                   MPIR_BCAST_TAG,comm,&status);
+                                   MPIR_BCAST_TAG,comm,MPI_STATUS_IGNORE);
 	      /* --BEGIN ERROR HANDLING-- */
               if (mpi_errno != MPI_SUCCESS)
 	      {

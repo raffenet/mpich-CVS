@@ -416,8 +416,8 @@ PMPI_LOCAL int MPIR_Reduce_scatter (
 	    /* --END ERROR HANDLING-- */
         }
 
-        MPIU_Free(tmp_results);
-        MPIU_Free(tmp_recvbuf);
+        MPIU_Free((char*)tmp_results + true_lb);
+        MPIU_Free((char*)tmp_recvbuf + true_lb);
     }
     
     if ((is_commutative && (nbytes >=

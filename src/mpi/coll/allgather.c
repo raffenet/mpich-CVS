@@ -116,8 +116,7 @@ PMPI_LOCAL int MPIR_Allgather (
            recursive doubling algorithm below. We need a way to enable it 
            when the transport is TCP. */
 
-        /* allocate a temporary buffer of the same size as
-         * recvbuf. copy local data to the top of recvbuf */ 
+        /* allocate a temporary buffer of the same size as recvbuf. */
 
         /* get true extent of recvtype */
         mpi_errno = NMPI_Type_get_true_extent(recvtype, &recvtype_true_lb,
@@ -139,6 +138,7 @@ PMPI_LOCAL int MPIR_Allgather (
         /* adjust for potential negative lower bound in datatype */
         tmp_buf = (void *)((char*)tmp_buf - recvtype_true_lb);
 
+        /* copy local data to the top of tmp_buf */ 
         if (sendbuf != MPI_IN_PLACE) {
             mpi_errno = MPIR_Localcopy (sendbuf, sendcount, sendtype,
                                         tmp_buf, recvcount, recvtype);
