@@ -3228,7 +3228,9 @@ int smpd_state_writing_cred_ack_sspi(smpd_context_t *context, MPIDU_Sock_event_t
 	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
+	memcpy(context->sspi_buffer, sspi_context->buffer, sspi_context->buffer_length);
 	context->sspi_buffer_length = sspi_context->buffer_length;
+	context->sspi_id = sspi_context->id;
 	context->read_state = SMPD_IDLE;
 	context->write_state = SMPD_WRITING_CLIENT_SSPI_HEADER;
 	MPIU_Snprintf(context->sspi_header, SMPD_SSPI_HEADER_LENGTH, "%d", sspi_context->buffer_length);
