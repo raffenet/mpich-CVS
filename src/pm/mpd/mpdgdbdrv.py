@@ -111,13 +111,20 @@ while 1:
                     if gdb_line.startswith('(gdb)'):
                         break
                 write(gdb_sin_fileno,'info program\n')
-                gdb_line = gdb_sout_serr.readline()  # get pid
-                appPid = findall(r'Using .* image of child process (\d+)',gdb_line)
-                if not appPid:
-                    print 'mpdgdbdrv: expecting app pid, got :%s:' % (gdb_line)
+                gdb_line = gdb_sout_serr.readline().lstrip()  # get pid
+                if gdb_line.startswith('Using'):
+                    print "LINE=", gdb_line
+                    if gdb_line.find('process') >= 0:
+                        appPid = findall(r'Using .* image of child process (\d+)',gdb_line)
+                    elif gdb_line.find('Thread') >= 0:
+                        appPid = findall(r'Using .* image of child .* \(LWP (\d+)\).',gdb_line)
+                    else:
+                        print 'mpdgdbdrv: expecting process or thread line, got :%s:' % (gdb_line)
+                        exit(-1)
+                    appPid = int(appPid[0])
+                else:
+                    print 'mpdgdbdrv: expecting line with "Using"; got :%s:' % (gdb_line)
                     exit(-1)
-                appPid = int(appPid[0])
-                # print "PID=%d" % (appPid) ; stdout.flush()
                 while 1:    # drain to a prompt
                     gdb_line = gdb_sout_serr.readline()  # drain one line
                     if gdb_line.startswith('(gdb)'):
