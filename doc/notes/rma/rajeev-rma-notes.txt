@@ -1,3 +1,6 @@
+/* THESE NOTES ARE OLD AND MAY NOT REFLECT THE CURRENT IMPLEMENTATION. */
+
+
 Main features
 -------------
 
@@ -195,24 +198,7 @@ MPID_Win_test()
 }
 
 
-An MPI_Win_lock call cannot block, even for an exclusive lock. Here's why:
-
-Process 0          Process 1         Process 2       
-
-lock(1, excl)                        lock(1, excl)
-
-put(1)                               put (1)
-
-send(2)                              recv(0)
-
-unlock()                             unlock()
-
-
-The send-recv in the above code must go through. The lock is not a
-critical section. It only means that the set of RMA operations on the
-target window are atomic.
-
-Therefore, we implement it as follows. A lock gets sent as a lock
+We implement MPI_Win_lock as follows. A lock gets sent as a lock
 "request" to the target process. No response is needed. The lock
 request gets added to the request queue on the target. Lock requests
 from multiple processes may get queued. When the progress engine kicks
