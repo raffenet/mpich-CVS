@@ -365,6 +365,10 @@ dnl
 AC_CONFIG_HEADER(adio/include/romioconf.h)
 #
 PAC_FIXUP_SRCDIR
+# Get top_srcdir
+if test -z "$top_srcdir" ; then
+    top_srcdir=$srcdir
+fi
 #
 PAC_MAKE_VPATH
 #
@@ -1393,6 +1397,10 @@ if test ! -d adio ; then mkdir adio ; fi
 if test ! -d adio/include ; then mkdir adio/include ; fi
 if test ! -d mpi2-other ; then mkdir mpi2-other ; fi
 # 
+# Make sure we remove any configuration file incase there is out-of-date data.
+# We remove the version in include in case this is a vpath build
+rm -f adio/include/romioconf.h ${top_srcdir}/adio/include/romioconf.h 
+#
 # Create makefiles for all of the adio devices.  Only the ones that 
 # are active will be called by the top level ROMIO make
 AC_OUTPUT(Makefile mpi-io/Makefile mpi2-other/info/Makefile \
