@@ -24,13 +24,6 @@ int MPIDI_CH3_Finalize()
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_progress", 0);
     }
 
-    /* Free resources allocated in CH3_Init() */
-    MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
-    MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
-    MPIU_Free(MPIDI_CH3I_Process.pg->vc_table);
-    MPIU_Free(MPIDI_CH3I_Process.pg->kvs_name);
-    MPIU_Free(MPIDI_CH3I_Process.pg);
-    
     /* Let PMI know the process is about to exit */
     mpi_errno = PMI_Finalize();
     if (mpi_errno != PMI_SUCCESS)

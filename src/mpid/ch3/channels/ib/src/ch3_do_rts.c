@@ -6,8 +6,6 @@
 
 #include "mpidi_ch3_impl.h"
 
-#ifdef MPIDI_CH3_CHANNEL_RNDV
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_do_rts
 #undef FCNAME
@@ -17,14 +15,14 @@ int MPIDI_CH3_do_rts(MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * rts_sreq;
     int i;
-#ifdef USE_RDMA_GET
+#ifdef USE_SHM_RDMA_GET
     MPIDI_CH3_Pkt_t pkt;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_DO_RTS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_RTS);
 
-#ifdef USE_RDMA_GET
+#ifdef USE_SHM_RDMA_GET
 
     pkt.rts_iov.type = MPIDI_CH3_PKT_RTS_IOV;
     pkt.rts_iov.sreq = sreq->handle;
@@ -114,5 +112,3 @@ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_DO_RTS);
     return mpi_errno;
 }
-
-#endif /*MPIDI_CH3_CHANNEL_RNDV*/

@@ -42,7 +42,7 @@
 #endif
 typedef struct MPIDI_CH3I_Process_s
 {
-    MPIDI_CH3I_Process_group_t * pg;
+    MPIDI_PG_t * pg;
     ibu_set_t set;
 }
 MPIDI_CH3I_Process_t;
@@ -118,6 +118,8 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr);
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Request_adjust_iov(MPID_Request *, MPIDI_msg_sz_t);
-int MPIDI_CH3I_Setup_connections();
+int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank);
+int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq);
+int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

@@ -6,8 +6,6 @@
 
 #include "mpidi_ch3_impl.h"
 
-#ifdef MPIDI_CH3_CHANNEL_RNDV
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_do_cts
 #undef FCNAME
@@ -15,7 +13,7 @@
 int MPIDI_CH3_do_cts(MPIDI_VC_t * vc, MPID_Request * rreq)
 {
     int mpi_errno = MPI_SUCCESS;
-#ifdef USE_RDMA_GET
+#ifdef USE_SHM_RDMA_GET
     /* int i;*/
 #else
     MPIDI_CH3_Pkt_t pkt;
@@ -26,7 +24,7 @@ int MPIDI_CH3_do_cts(MPIDI_VC_t * vc, MPID_Request * rreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_CTS);
 
-#ifdef USE_RDMA_GET
+#ifdef USE_SHM_RDMA_GET
 
     /*
     for (i=0; i<rreq->dev.iov_count; i++)
@@ -108,5 +106,3 @@ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_DO_CTS);
     return mpi_errno;
 }
-
-#endif /*MPIDI_CH3_CHANNEL_RNDV*/

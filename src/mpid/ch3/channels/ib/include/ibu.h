@@ -22,14 +22,28 @@ extern "C" {
 
 #ifdef USE_IB_VAPI
 
+#define IBU_MAX_PINNED (32*1024*1024)
+
 #include <vapi.h>
 #include <mpga.h>
 typedef VAPI_cq_hndl_t ibu_set_t;
+typedef struct ibu_mem_t
+{
+    VAPI_mr_hndl_t handle;
+    VAPI_lkey_t lkey;
+    VAPI_rkey_t rkey;
+} ibu_mem_t;
 
 #elif defined(USE_IB_IBAL)
 
+#define IBU_MAX_PINNED (32*1024*1024)
+
 #include <ib_al.h>
 typedef ib_cq_handle_t ibu_set_t;
+typedef struct ibu_mem_t
+{
+    int m,l,r;
+} ibu_mem_t;
 
 #else
 #error No infiniband access layer specified
@@ -43,7 +57,8 @@ typedef enum ibu_op_e
     IBU_OP_TIMEOUT,
     IBU_OP_READ,
     IBU_OP_WRITE,
-    IBU_OP_CLOSE
+    IBU_OP_CLOSE,
+    IBU_OP_WAKEUP
 } ibu_op_t;
 
 /* insert error codes here */
@@ -93,6 +108,9 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr);
 
 /*int ibu_wait(ibu_set_t set, int millisecond_timeout, ibu_wait_t *out);*/
 int ibu_wait(ibu_set_t set, int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op_t *op_ptr);
+
+int ibu_register_memory(void *buf, int len, ibu_mem_t *state);
+int ibu_deregister_memory(void *buf, int len, ibu_mem_t *state);
 
 #ifdef __cplusplus
 }
