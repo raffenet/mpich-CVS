@@ -68,7 +68,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, MPI_Errhandler *e
     errhan_ptr = (MPID_Errhandler *)MPIU_Handle_obj_alloc( &MPID_Errhandler_mem );
     if (!errhan_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_CREATE);
+	MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
 	return MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     }
     *errhandler		 = errhan_ptr->handle;

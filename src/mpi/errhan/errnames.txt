@@ -18,6 +18,12 @@
 **success:No MPI error
 **fileexist:File exists
 **fileexist %s:File %s exists
+**keyvalnotcomm:Keyval was not defined for communicators
+**keyvalnotwin:Keyval was not defined for window objects
+**keyvalnotfile:Keyval was not defined for files
+**permattr:Cannot set permanent attribute
+**noerrclasses:No more user-defined error classes
+**noerrcodes:No more user-defined error codes
 ----
 **buffer:Invalid buffer pointer
 **bufnull:Null buffer pointer

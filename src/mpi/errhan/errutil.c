@@ -228,7 +228,7 @@ int MPIR_Err_create_code( int class, const char def_string[], ... )
    Note that since these use per-thread data, no locks or atomic update
    routines are required.
 
-   In a single-threaded environment, we could replace these with
+   In a single-threaded environment, These are replaced with
    MPIR_Thread.nest_count ++, --.  These are defined in the mpiimpl.h file.
  */
 #ifndef MPICH_SINGLE_THREADED
@@ -261,13 +261,34 @@ int MPIR_Nest_value( void )
 #define MPID_ERRHANDLER_PREALLOC 8
 #endif
 
-/* Preallocated info objects */
+/* Preallocated errorhandler objects */
 MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC];
 MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER, 
-				      sizeof(MPID_Errhandler), MPID_Errhandler_direct,
-                                      MPID_ERRHANDLER_PREALLOC, };
+					    sizeof(MPID_Errhandler), 
+					    MPID_Errhandler_direct,
+					    MPID_ERRHANDLER_PREALLOC, };
 
 void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr)
 {
     MPIU_Handle_obj_free(&MPID_Errhandler_mem, errhan_ptr);
 }
+
+#ifdef FOO
+/*
+ * Should we have a simple set code, call error handler for the nomem case?
+ * If we do this, we need to modify the coding check to accept this as
+ * an alternative to the MPID_MPI_FUNC_EXIT call.
+ *
+ * Unfortunately, we can't do this without the timestamp from the state call.
+ * Do we want to pass that in as well?
+ */
+int MPIR_Err_comm_nomem( MPID_Comm *comm_ptr, const char fcname[], 
+			 int stateid )
+{
+    int mpi_errno;
+
+    mpi_errno = MPIR_Err_create_code( MPI_ERR_OTHER, "**nomem", 0 );
+    MPID_MPI_FUNC_EXIT(stateid);
+    return MPIR_Err_return_comm( 0, fcname, mpi_errno );
+}
+#endif

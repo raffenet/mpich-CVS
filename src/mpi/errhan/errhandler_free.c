@@ -44,7 +44,7 @@ int MPI_Errhandler_free(MPI_Errhandler *errhandler)
 {
     static const char FCNAME[] = "MPI_Errhandler_free";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Errhandler *errhan_ptr;
+    MPID_Errhandler *errhan_ptr = NULL;
     int in_use;
     MPID_MPI_STATE_DECLS;
 
